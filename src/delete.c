@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.177 2008/10/06 16:18:40 danielk1977 Exp $
+** $Id: delete.c,v 1.178 2008/10/07 05:27:11 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -116,6 +116,42 @@ void sqlite3MaterializeView(
 }
 #endif /* !defined(SQLITE_OMIT_VIEW) && !defined(SQLITE_OMIT_TRIGGER) */
 
+#ifndef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+/*
+** Generate an expression tree to implement the WHERE, ORDER BY,
+** and LIMIT/OFFSET portion of DELETE and UPDATE statements.
+**
+**     DELETE FROM table_wxyz WHERE a<5 ORDER BY a LIMIT 1;
+**                            \__________________________/
+**                               pLimitWhere (pInClause)
+*/
+Expr *sqlite3LimitWhere(
+  Parse *pParse,          /* The parser context */
+  SrcList *pSrc,          /* the FROM clause -- which tables to scan */
+  Expr *pWhere,           /* The WHERE clause.  May be null */
+  ExprList *pOrderBy,     /* The ORDER BY clause.  May be null */
+  Expr *pLimit,           /* The LIMIT clause.  May be null */
+  Expr *pOffset           /* The OFFSET clause.  May be null */
+){
+  Expr *pWhereRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
+  Expr *pInClause = sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0);
+  Expr *pSelectRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
+  ExprList *pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid, 0);
+  SrcList *pSelectSrc = sqlite3SrcListDup(pParse->db, pSrc);
+  Select *pSelect = sqlite3SelectNew(pParse,pEList,pSelectSrc,pWhere,0,0,pOrderBy,0,pLimit,pOffset);
+  if( pSelect ) {
+    pInClause->pSelect = pSelect;
+    sqlite3ExprSetHeight(pParse, pInClause);
+    return pInClause;
+  }
+  sqlite3SrcListDelete(pParse->db, pSelectSrc);
+  sqlite3ExprListDelete(pParse->db, pEList);
+  sqlite3ExprDelete(pParse->db, pSelectRowid);
+  sqlite3ExprDelete(pParse->db, pInClause);
+  sqlite3ExprDelete(pParse->db, pWhereRowid);
+  return 0;
+}
+#endif /* !defined(SQLITE_OMIT_UPDATE_DELETE_LIMIT) */
 
 /*
 ** Generate code for a DELETE FROM statement.

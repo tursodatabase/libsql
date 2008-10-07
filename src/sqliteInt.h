@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.775 2008/10/06 16:18:40 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.776 2008/10/07 05:27:11 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2159,6 +2159,9 @@ void sqlite3SelectDelete(sqlite3*, Select*);
 Table *sqlite3SrcListLookup(Parse*, SrcList*);
 int sqlite3IsReadOnly(Parse*, Table*, int);
 void sqlite3OpenTable(Parse*, int iCur, int iDb, Table*, int);
+#ifndef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+Expr *sqlite3LimitWhere(Parse *, SrcList *, Expr *, ExprList *, Expr *, Expr *);
+#endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8);

@@ -1,5 +1,5 @@
-C Removed\sredundant\sassert().\s(CVS\s5773)
-D 2008-10-07T01:18:59
+C Initial\ssupport\sfor\sLIMIT\sclause\son\sDELETEs\sand\sUPDATEs.\s\sChanges\slikely\swith\smore\stesting.\s\sThe\scode\scan\sbe\somitted\swith\sthe\sdefine\sSQLITE_OMIT_UPDATE_DELETE_LIMIT.\s(CVS\s5774)
+D 2008-10-07T05:27:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e4ab842f9a64ef61d57093539a8aab76b12810db
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 5c092296c03d658e84884121a694150964d6861d
-F src/delete.c 924c43df7533479d0aa93dc0eed32c9b8cf64c9f
+F src/delete.c 7c9183a17b93b79dabbbc7cdb2159972d052b5a0
 F src/expr.c 30973b017bf95ca767f5eec64918c8afc425488d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
@@ -139,7 +139,7 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c 44eba010e81dcc9b772401b90d6a1c61ec24345b
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y d8edf095cd9f1a0083e6ff6b964396870523dc0d
+F src/parse.y 85d57c1dba3098da736a0c2ff8917c3d02a3a5f8
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
@@ -151,7 +151,7 @@ F src/select.c c1c555ee714c61db92b2688b307a0145d7405122
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in ea235b37a691b32e7941baa70fb0afaf6377dbb4
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 6c08ddc70e1c9b0581778543af6985342c5516f0
+F src/sqliteInt.h 78ec9e3cd535c8a092d6b19808c5ffb5276381f0
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -640,7 +640,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 83a7e446b2d4846a6f92bd831a2adaa265f5a786
-R aa8a31d65cc954485c711dc29b6f394a
+P 486b1124f76bcf0505b6be908f2a3e988ad6e05d
+R d465119c99c45922a96415b5f4873654
 U shane
-Z 0e61cf018a940fb3ad2af57c9790cf1b
+Z 57d43f78fc0572634b2aa36caa16bd30

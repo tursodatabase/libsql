@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.254 2008/10/06 16:18:40 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.255 2008/10/07 05:27:11 shane Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -578,10 +578,28 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 
 /////////////////////////// The DELETE statement /////////////////////////////
 //
-cmd ::= DELETE FROM fullname(X) indexed_opt(I) where_opt(Y). {
+%ifndef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+cmd ::= DELETE FROM fullname(X) indexed_opt(I) where_opt(W) orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
-  sqlite3DeleteFrom(pParse,X,Y);
+  if( O && !L.pLimit ){
+    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on DELETE");
+    pParse->parseError = 1;
+  } else if (L.pLimit) {
+    Expr *LW = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset);
+    if( LW ) {
+      sqlite3DeleteFrom(pParse,X,LW);
+    }
+  } else {
+    sqlite3DeleteFrom(pParse,X,W);
+  }
 }
+%endif
+%ifdef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+cmd ::= DELETE FROM fullname(X) indexed_opt(I) where_opt(W). {
+  sqlite3SrcListIndexedBy(pParse, X, &I);
+  sqlite3DeleteFrom(pParse,X,W);
+}
+%endif
 
 %type where_opt {Expr*}
 %destructor where_opt {sqlite3ExprDelete(pParse->db, $$);}
@@ -591,11 +609,30 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 
 ////////////////////////// The UPDATE command ////////////////////////////////
 //
-cmd ::= UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y) where_opt(Z).  {
+%ifndef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+cmd ::= UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y) where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  sqlite3Update(pParse,X,Y,Z,R);
+  if( O && !L.pLimit ){
+    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on UPDATE");
+    pParse->parseError = 1;
+  } else if (L.pLimit) {
+    Expr *LW = sqlite3LimitWhere(pParse, X, W, O, L.pLimit,L.pOffset);
+    if( LW ) {
+      sqlite3Update(pParse,X,Y,LW,R);
+    }
+  } else {
+    sqlite3Update(pParse,X,Y,W,R);
+  }
 }
+%endif
+%ifdef SQLITE_OMIT_UPDATE_DELETE_LIMIT
+cmd ::= UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y) where_opt(W).  {
+  sqlite3SrcListIndexedBy(pParse, X, &I);
+  sqlite3ExprListCheckLength(pParse,Y,"set list"); 
+  sqlite3Update(pParse,X,Y,W,R);
+}
+%endif
 
 %type setlist {ExprList*}
 %destructor setlist {sqlite3ExprListDelete(pParse->db, $$);}
