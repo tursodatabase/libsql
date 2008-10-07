@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.13 2007/12/10 05:03:48 danielk1977 Exp $
+# $Id: where2.test,v 1.14 2008/10/07 23:46:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -58,9 +58,8 @@ proc count sql {
 # occurring as expected.
 #
 proc cksort {sql} {
-  set ::sqlite_sort_count 0
   set data [execsql $sql]
-  if {$::sqlite_sort_count} {set x sort} {set x nosort}
+  if {[db status sort]} {set x sort} {set x nosort}
   lappend data $x
   return $data
 }

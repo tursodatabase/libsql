@@ -1,5 +1,5 @@
-C Raise\sthe\shard\supper\sbound\son\sSQLITE_MAX_FUNCTION_ARG\sto\s1000\sfrom\s100.\nThe\sdefault\supper\sbound\sis\sstill\s100,\sbut\sit\scan\snow\sbe\sraised\sas\shigh\nas\s1000\sat\scompile-time.\s(CVS\s5780)
-D 2008-10-07T19:53:14
+C Add\sthe\sexperimental\ssqlite3_stmt_status()\sinterface.\s(CVS\s5781)
+D 2008-10-07T23:46:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,14 +150,14 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 1971ff6996f1a73303339acf7f1de8497546045d
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in ea235b37a691b32e7941baa70fb0afaf6377dbb4
+F src/sqlite.h.in f2640167eca2e9273ec5ea97b37155344290bd2a
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 0d6bac3e25f0f37bac0efa4ed115d226c9252ba5
+F src/sqliteInt.h 3f38b600c978698014fdda68d29ca5f3792ad717
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c 6a7eeff5afd8f5f10fcb7fd7806e56c725dd2b07
-F src/test1.c fed7656affe3bc687043bb76d13650a40cb21aef
+F src/tclsqlite.c d8057cf17cc092a4bcf02e68b25a47dd3b443d34
+F src/test1.c 96331afde5bd2f64ed638c30cd9a4fea27e2bffa
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
 F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
@@ -190,17 +190,17 @@ F src/update.c 206fffc877379affe3a9b42c78e478ea0874c9fe
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
-F src/vdbe.c b1c79e640b23e4e592f02719d70910ded09e4037
+F src/vdbe.c 374961d5ac5fe91a1e0acf4ed5519531574b69c6
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
-F src/vdbeInt.h b48c74d86a9fb62b707a3186ccca76bb32f1c6be
-F src/vdbeapi.c 8f194355e0270f236838d5b2a3af3ae3572adf44
+F src/vdbeInt.h a20f479ec3bf41c61b0c2bd5176a9bad6b2a07ef
+F src/vdbeapi.c fd2c286cee63a146d5110c11c0aa2bf3a9ebe220
 F src/vdbeaux.c 20a7d109c95e32beee7891fba828c63e419af26c
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c da2a0e132d642acc6afc4df2fe31ecd6f963c035
+F src/where.c 53d495de5fec2d95678b4af29dab022df90c141d
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
@@ -610,8 +610,8 @@ F test/vtabC.test 9f2d9eb84bf65e606d6616f20977c5a32a11f548
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
-F test/where.test 7dcfe573d4a5c6c4b7670271d02c006f2c7414b8
-F test/where2.test 7012c0ad022a54430dd22c98288d3f4d6599dbcf
+F test/where.test 12396f15d8bf7a5763aa26129e071cdb441f600c
+F test/where2.test e446f55417f434929522d87164cd1473d54f10e2
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
@@ -641,7 +641,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 02a12eb1cfe9307c66556105a1a99d657cc01ab5
-R 5472677a4096378b94ede8934c9bcd72
+P 79df72ee836db91647913055ba6cf55558679b01
+R d426461dcb923755279eeb7df7038b4a
 U drh
-Z a3cb5746d8ce1de551ab384e92396b35
+Z 4b26af34158fc50efdf02ed1356ecdbc

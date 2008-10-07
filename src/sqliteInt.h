@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.778 2008/10/07 19:53:14 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.779 2008/10/07 23:46:38 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -469,6 +469,8 @@ struct BusyHandler {
   #define SQLITE_WSD const
   #define GLOBAL(t,v) (*(t*)sqlite3_wsd_find((void*)&(v), sizeof(v)))
   #define sqlite3GlobalConfig GLOBAL(struct Sqlite3Config, sqlite3Config)
+  int sqlite3_wsd_init(int N, int J);
+  void *sqlite3_wsd_find(void *K, int L);
 #else
   #define SQLITE_WSD 
   #define GLOBAL(t,v) v
@@ -1496,7 +1498,7 @@ struct WhereLevel {
   int nxt;              /* Jump here to start the next IN combination */
   int cont;             /* Jump here to continue with the next loop cycle */
   int top;              /* First instruction of interior of the loop */
-  int op, p1, p2;       /* Opcode used to terminate the loop */
+  int op, p1, p2, p5;   /* Opcode used to terminate the loop */
   int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
   struct InLoop {

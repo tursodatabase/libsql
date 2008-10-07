@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.780 2008/10/07 19:53:14 drh Exp $
+** $Id: vdbe.c,v 1.781 2008/10/07 23:46:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3742,6 +3742,7 @@ case OP_Sort: {        /* jump */
   sqlite3_sort_count++;
   sqlite3_search_count--;
 #endif
+  p->aCounter[SQLITE_STMTSTATUS_SORT-1]++;
   /* Fall through into OP_Rewind */
 }
 /* Opcode: Rewind P1 P2 * * *
@@ -3819,6 +3820,7 @@ case OP_Next: {        /* jump */
   pC->cacheStatus = CACHE_STALE;
   if( res==0 ){
     pc = pOp->p2 - 1;
+    if( pOp->p5 ) p->aCounter[pOp->p5-1]++;
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
@@ -3860,7 +3862,7 @@ case OP_IdxInsert: {        /* in2 */
   break;
 }
 
-/* Opcode: IdxDeleteM P1 P2 P3 * *
+/* Opcode: IdxDelete P1 P2 P3 * *
 **
 ** The content of P3 registers starting at register P2 form
 ** an unpacked index key. This opcode removes that entry from the 

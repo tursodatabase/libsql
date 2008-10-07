@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.154 2008/08/13 19:11:48 drh Exp $
+** $Id: vdbeInt.h,v 1.155 2008/10/07 23:46:38 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -323,10 +323,11 @@ struct Vdbe {
   i64 startTime;          /* Time when query started - used for profiling */
   int btreeMask;          /* Bitmask of db->aDb[] entries referenced */
   BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
+  int aCounter[2];        /* Counters used by sqlite3_stmt_status() */
   int nSql;             /* Number of bytes in zSql */
   char *zSql;           /* Text of the SQL statement that generated this */
 #ifdef SQLITE_DEBUG
-  FILE *trace;        /* Write an execution trace here, if not NULL */
+  FILE *trace;          /* Write an execution trace here, if not NULL */
 #endif
   int openedStatement;  /* True if this VM has opened a statement journal */
 #ifdef SQLITE_SSE

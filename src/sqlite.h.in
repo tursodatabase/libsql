@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.400 2008/10/02 14:33:57 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.401 2008/10/07 23:46:38 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6216,29 +6216,6 @@ int sqlite3_test_control(int op, ...);
 */
 SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 
-/*
-** CAPI3REF: Database Connection Status {H17201} <S60200>
-** EXPERIMENTAL
-**
-** This interface is used to retrieve runtime status information 
-** about a single [database connection].  The first argument is the
-** database connection object to be interrogated.  The second argument
-** is the parameter to interrogate.  Currently, the only allowed value
-** for the second parameter is [SQLITE_DBSTATUS_LOOKASIDE_USED].
-** Additional options will likely appear in future releases of SQLite.
-**
-** The current value of the request parameter is written into *pCur
-** and the highest instantaneous value is written into *pHiwtr.  If
-** the resetFlg is true, then the highest instantaneous value is
-** reset back down to the current value.
-**
-** See also: [sqlite3_status()].
-*/
-SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
-
-
-int sqlite3_wsd_init(int N, int J);
-void *sqlite3_wsd_find(void *K, int L);
 
 /*
 ** CAPI3REF: Status Parameters {H17250} <H17200>
@@ -6328,7 +6305,27 @@ void *sqlite3_wsd_find(void *K, int L);
 #define SQLITE_STATUS_SCRATCH_SIZE         8
 
 /*
-** CAPI3REF: Status Parameters for database connections {H17275} <H17200>
+** CAPI3REF: Database Connection Status {H17500} <S60200>
+** EXPERIMENTAL
+**
+** This interface is used to retrieve runtime status information 
+** about a single [database connection].  The first argument is the
+** database connection object to be interrogated.  The second argument
+** is the parameter to interrogate.  Currently, the only allowed value
+** for the second parameter is [SQLITE_DBSTATUS_LOOKASIDE_USED].
+** Additional options will likely appear in future releases of SQLite.
+**
+** The current value of the requested parameter is written into *pCur
+** and the highest instantaneous value is written into *pHiwtr.  If
+** the resetFlg is true, then the highest instantaneous value is
+** reset back down to the current value.
+**
+** See also: [sqlite3_status()] and [sqlite3_stmt_status()].
+*/
+SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+
+/*
+** CAPI3REF: Status Parameters for database connections {H17520} <H17500>
 ** EXPERIMENTAL
 **
 ** Status verbs for [sqlite3_db_status()].
@@ -6340,6 +6337,58 @@ void *sqlite3_wsd_find(void *K, int L);
 ** </dl>
 */
 #define SQLITE_DBSTATUS_LOOKASIDE_USED     0
+
+
+/*
+** CAPI3REF: Prepared Statement Status {H17550} <S60200>
+** EXPERIMENTAL
+**
+** Each prepared statement maintains various
+** [SQLITE_STMTSTATUS_SORT | counters] that measure the number
+** of times it has performed specific operations.  These counters can
+** be used to monitor the performance characteristics of the prepared
+** statements.  For example, if the number of table steps greatly exceeds
+** the number of table searches or result rows, that would tend to indicate
+** that the prepared statement is using a full table scan rather than
+** an index.  
+**
+** This interface is used to retrieve and reset counter values from
+** a [prepared statement].  The first argument is the prepared statement
+** object to be interrogated.  The second argument
+** is an integer code for a specific [SQLITE_STMTSTATUS_SORT | counter]
+** to be interrogated. 
+** The current value of the requested counter is returned.
+** If the resetFlg is true, then the counter is reset to zero after this
+** interface call returns.
+**
+** See also: [sqlite3_status()] and [sqlite3_db_status()].
+*/
+SQLITE_EXPERIMENTAL int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
+
+/*
+** CAPI3REF: Status Parameters for prepared statements {H17570} <H17550>
+** EXPERIMENTAL
+**
+** These preprocessor macros define integer codes that name counter
+** values associated with the [sqlite3_stmt_status()] interface.
+** The meanings of the various counters are as follows:
+**
+** <dl>
+** <dt>SQLITE_STMTSTATUS_FULLSCAN_STEP</dt>
+** <dd>This is the number of times that SQLite has stepped forward in
+** a table as part of a full table scan.  Large numbers for this counter
+** may indicate opportunities for performance improvement through 
+** careful use of indices.</dd>
+**
+** <dt>SQLITE_STMTSTATUS_SORT</dt>
+** <dd>This is the number of sort operations that have occurred.
+** A non-zero value in this counter may indicate an opportunity to
+** improvement performance through careful use of indices.</dd>
+**
+** </dl>
+*/
+#define SQLITE_STMTSTATUS_FULLSCAN_STEP     1
+#define SQLITE_STMTSTATUS_SORT              2
 
 /*
 ** Undo the hack that converts floating point types to integer for

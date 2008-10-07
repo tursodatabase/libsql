@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.226 2008/09/23 10:12:15 drh Exp $
+** $Id: tclsqlite.c,v 1.227 2008/10/07 23:46:38 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -117,6 +117,7 @@ struct SqliteDb {
   int maxStmt;               /* The next maximum number of stmtList */
   int nStmt;                 /* Number of statements in stmtList */
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
+  int nStep, nSort;          /* Statistics for most recent operation */
 };
 
 struct IncrblobChannel {
@@ -977,9 +978,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     "incrblob",           "interrupt",         "last_insert_rowid",
     "nullvalue",          "onecolumn",         "profile",
     "progress",           "rekey",             "rollback_hook",
-    "timeout",            "total_changes",     "trace",
-    "transaction",        "update_hook",       "version",
-    0                    
+    "status",             "timeout",           "total_changes",
+    "trace",              "transaction",       "update_hook",
+    "version",            0                    
   };
   enum DB_enum {
     DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
@@ -990,8 +991,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     DB_INCRBLOB,          DB_INTERRUPT,        DB_LAST_INSERT_ROWID,
     DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
     DB_PROGRESS,          DB_REKEY,            DB_ROLLBACK_HOOK,
-    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
-    DB_TRANSACTION,       DB_UPDATE_HOOK,      DB_VERSION
+    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
+    DB_TRACE,             DB_TRANSACTION,      DB_UPDATE_HOOK, 
+    DB_VERSION
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1760,6 +1762,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         }
   
         if( pScript ){
+          pDb->nStep = sqlite3_stmt_status(pStmt, 
+                                  SQLITE_STMTSTATUS_FULLSCAN_STEP, 0);
+          pDb->nSort = sqlite3_stmt_status(pStmt,
+                                  SQLITE_STMTSTATUS_SORT, 0);
           rc = Tcl_EvalObjEx(interp, pScript, 0);
           if( rc==TCL_CONTINUE ){
             rc = TCL_OK;
@@ -1798,6 +1804,10 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       ** flush the statement cache and try the statement again.
       */
       rc2 = sqlite3_reset(pStmt);
+      pDb->nStep = sqlite3_stmt_status(pStmt, 
+                                  SQLITE_STMTSTATUS_FULLSCAN_STEP, 1);
+      pDb->nSort = sqlite3_stmt_status(pStmt,
+                                  SQLITE_STMTSTATUS_SORT, 1);
       if( SQLITE_OK!=rc2 ){
         /* If a run-time error occurs, report the error and stop reading
         ** the SQL
@@ -2126,6 +2136,34 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     break;
   }
 
+  /*
+  **     $db status (step|sort)
+  **
+  ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or 
+  ** SQLITE_STMTSTATUS_SORT for the most recent eval.
+  */
+  case DB_STATUS: {
+    int ms;
+    int v;
+    const char *zOp;
+    if( objc!=3 ){
+      Tcl_WrongNumArgs(interp, 2, objv, "(step|sort)");
+      return TCL_ERROR;
+    }
+    zOp = Tcl_GetString(objv[2]);
+    if( strcmp(zOp, "step")==0 ){
+      v = pDb->nStep;
+    }else if( strcmp(zOp, "sort")==0 ){
+      v = pDb->nSort;
+    }else{
+      Tcl_AppendResult(interp, "bad argument: should be step or sort", 
+            (char*)0);
+      return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(v));
+    break;
+  }
+  
   /*
   **     $db timeout MILLESECONDS
   **
