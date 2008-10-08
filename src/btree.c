@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.524 2008/09/30 17:18:17 drh Exp $
+** $Id: btree.c,v 1.525 2008/10/08 17:58:49 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -368,7 +368,7 @@ static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
 /*
 ** Clear the current cursor position.
 */
-static void clearCursorPosition(BtCursor *pCur){
+void sqlite3BtreeClearCursor(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   sqlite3_free(pCur->pKey);
   pCur->pKey = 0;
@@ -2594,7 +2594,7 @@ void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
   BtCursor *p;
   sqlite3BtreeEnter(pBtree);
   for(p=pBtree->pBt->pCursor; p; p=p->pNext){
-    clearCursorPosition(p);
+    sqlite3BtreeClearCursor(p);
     p->eState = CURSOR_FAULT;
     p->skip = errCode;
   }
@@ -2867,7 +2867,7 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
     BtShared *pBt = pCur->pBt;
     sqlite3BtreeEnter(pBtree);
     pBt->db = pBtree->db;
-    clearCursorPosition(pCur);
+    sqlite3BtreeClearCursor(pCur);
     if( pCur->pPrev ){
       pCur->pPrev->pNext = pCur->pNext;
     }else{
@@ -3526,7 +3526,7 @@ static int moveToRoot(BtCursor *pCur){
     if( pCur->eState==CURSOR_FAULT ){
       return pCur->skip;
     }
-    clearCursorPosition(pCur);
+    sqlite3BtreeClearCursor(pCur);
   }
 
   if( pCur->iPage>=0 ){
@@ -5771,7 +5771,7 @@ int sqlite3BtreeInsert(
   }
 
   /* Save the positions of any other cursors open on this table */
-  clearCursorPosition(pCur);
+  sqlite3BtreeClearCursor(pCur);
   if( 
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
     SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, appendBias, &loc))
