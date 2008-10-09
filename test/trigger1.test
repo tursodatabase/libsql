@@ -627,5 +627,16 @@ do_test trigger1-11.1 {
   catchsql {SELECT raise(abort,'message');}
 } {1 {RAISE() may only be used within a trigger-program}}
 
+do_test trigger1-15.1 {
+  execsql {
+    CREATE TABLE tA(a INTEGER PRIMARY KEY, b, c);
+    CREATE TRIGGER tA_trigger BEFORE UPDATE ON "tA" BEGIN SELECT 1; END;
+    INSERT INTO tA VALUES(1, 2, 3);
+  }
+  catchsql { UPDATE tA SET a = 'abc' }
+} {1 {datatype mismatch}}
+do_test trigger1-15.2 {
+  catchsql { INSERT INTO tA VALUES('abc', 2, 3) }
+} {1 {datatype mismatch}}
 
 finish_test

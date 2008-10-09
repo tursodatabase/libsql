@@ -1,5 +1,5 @@
-C New\sspeed\stesting\stools.\s(CVS\s5786)
-D 2008-10-09T17:57:34
+C Fix\san\sassert()\sfailure\sthat\scan\soccur\sif\sthe\suser\sattempts\sto\sset\san\sinto\san\sinteger\sprimary\skey\scolumn\sto\sa\stext\svalue\sin\sa\stable\sthat\shas\sa\sBEFORE\sUPDATE\strigger.\s(CVS\s5787)
+D 2008-10-09T18:48:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
 F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
-F src/update.c 206fffc877379affe3a9b42c78e478ea0874c9fe
+F src/update.c ed233298db6dd23d340e449e4b4a81b9306da6aa
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
@@ -573,7 +573,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
-F test/trigger1.test 7c13f39ca36f529bf856e05c7d004fc0531d48b4
+F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
 F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
@@ -643,7 +643,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e90d5a5515f7096e247e6059cf77f8089ed90b2c
-R acf63e31bfe8fb60e83299dbf2d48b42
-U drh
-Z bbf583f0e0427f12e35f13f0fad6c899
+P 2d427746d53104ca032c404f7f65c51b41b7a20e
+R 7a5ac900e19ad3409dae5bcb06b20f5a
+U danielk1977
+Z 0940f286acf7bb42a4ff023aeb3c8678
