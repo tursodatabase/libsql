@@ -1,10 +1,10 @@
-C Minor\scleanup\sof\sthe\snew\s"status"\scommand\son\sthe\sTCL\sbindings.\s(CVS\s5783)
-D 2008-10-09T14:45:26
+C Update\sthe\sversion\snumber\sto\s3.6.4.\s(CVS\s5784)
+D 2008-10-09T15:56:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 708c93c5dbb97b8a8e4c39eb77c53dae43d96910
+F VERSION 5ba795c6239d62450dd2cb8b469acebda412ebc9
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -642,7 +642,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P af679f6170b346fe61df7dae963b2a2853e62a62
-R 884309d91a4b032d851e11d6a641c586
+P ec01bd72ee875df179c680c1a40304d2f807fe38
+R 8f6702073db25ee1c5fb916487a4ec6b
 U drh
-Z 1381eed17c40cf1fe3e8c1cd4d17265f
+Z 28ed5a3ec7c80a027758863ae9132762
