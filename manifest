@@ -1,5 +1,5 @@
-C After\san\sOP_NullRow\sis\sexecuted\son\sa\scursor,\scause\sany\ssubsequent\sOP_Next\sor\sOP_Prev\sto\sbehave\sas\sif\sthere\swere\sno\smore\srows\sto\straverse.\sTicket\s#3424.\s(CVS\s5782)
-D 2008-10-08T17:58:49
+C Minor\scleanup\sof\sthe\snew\s"status"\scommand\son\sthe\sTCL\sbindings.\s(CVS\s5783)
+D 2008-10-09T14:45:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/sqliteInt.h 3f38b600c978698014fdda68d29ca5f3792ad717
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
-F src/tclsqlite.c d8057cf17cc092a4bcf02e68b25a47dd3b443d34
+F src/tclsqlite.c 96049bd454f1547abff0a57c45f0dfa57701e076
 F src/test1.c 96331afde5bd2f64ed638c30cd9a4fea27e2bffa
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
@@ -510,7 +510,7 @@ F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
-F test/tclsqlite.test b2074cf37a6f7b3fb0544a7bac7bc8ff3ac6ea77
+F test/tclsqlite.test 001682e3c188967fbd790c617991efadf9518386
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
 F test/tester.tcl 12fd8394caeb71f7d961707da8668756389bc9d3
@@ -642,7 +642,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P de473efb35ffdf9a8222a70a84dfd7d3198c87c1
-R 2f077384d5708b8cad084e75cfae98e5
-U danielk1977
-Z 6ddad9a5e2687baf46af1a15bb5e4ff8
+P af679f6170b346fe61df7dae963b2a2853e62a62
+R 884309d91a4b032d851e11d6a641c586
+U drh
+Z 1381eed17c40cf1fe3e8c1cd4d17265f

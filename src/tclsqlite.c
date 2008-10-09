@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.227 2008/10/07 23:46:38 drh Exp $
+** $Id: tclsqlite.c,v 1.228 2008/10/09 14:45:26 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2143,7 +2143,6 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** SQLITE_STMTSTATUS_SORT for the most recent eval.
   */
   case DB_STATUS: {
-    int ms;
     int v;
     const char *zOp;
     if( objc!=3 ){
