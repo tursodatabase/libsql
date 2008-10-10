@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.39 2008/10/10 04:34:16 shane Exp $
+** $Id: test_config.c,v 1.40 2008/10/10 23:48:26 drh Exp $
 */
 
 #include "sqliteLimit.h"
@@ -402,6 +402,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
       STRINGVALUE(SQLITE_THREADSAFE), TCL_GLOBAL_ONLY);
   assert( sqlite3_threadsafe()==SQLITE_THREADSAFE );
 
+#ifdef SQLITE_OMIT_TEMPDB
+  Tcl_SetVar2(interp, "sqlite_options", "tempdb", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "tempdb", "1", TCL_GLOBAL_ONLY);
+#endif
+
 #ifdef SQLITE_OMIT_TRACE
   Tcl_SetVar2(interp, "sqlite_options", "trace", "0", TCL_GLOBAL_ONLY);
 #else
@@ -414,10 +420,10 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "trigger", "1", TCL_GLOBAL_ONLY);
 #endif
 
-#ifdef SQLITE_OMIT_TEMPDB
-  Tcl_SetVar2(interp, "sqlite_options", "tempdb", "0", TCL_GLOBAL_ONLY);
+#ifdef SQLITE_OMIT_TRUCATE_OPTIMIZATION
+  Tcl_SetVar2(interp, "sqlite_options", "truncate_opt", "0", TCL_GLOBAL_ONLY);
 #else
-  Tcl_SetVar2(interp, "sqlite_options", "tempdb", "1", TCL_GLOBAL_ONLY);
+  Tcl_SetVar2(interp, "sqlite_options", "truncate_opt", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_UTF16

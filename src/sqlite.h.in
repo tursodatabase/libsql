@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.402 2008/10/10 17:26:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.403 2008/10/10 23:48:26 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -983,95 +983,97 @@ int sqlite3_os_end(void);
 **
 ** INVARIANTS:
 **
-** {H14103} A successful invocation of sqlite3_config() shall return
-**          SQLITE_OK.
+** {H14103} A successful invocation of [sqlite3_config()] shall return
+**          [SQLITE_OK].
 **
-** {H14106} The sqlite3_config() interface shall return SQLITE_MISUSE
-**          if it is invoked in between calls to sqlite3_initialize() and
-**          sqlite3_shutdown().
+** {H14106} The [sqlite3_config()] interface shall return [SQLITE_MISUSE]
+**          if it is invoked in between calls to [sqlite3_initialize()] and
+**          [sqlite3_shutdown()].
 **
-** {H14120} A successful call to sqlite3_config(SQLITE_CONFIG_SINGLETHREAD)
+** {H14120} A successful call to [sqlite3_config]([SQLITE_CONFIG_SINGLETHREAD])
 **          shall set the default [threading mode] to Single-thread.
 **
-** {H14123} A successful call to sqlite3_config(SQLITE_CONFIG_MULTITHREAD)
+** {H14123} A successful call to [sqlite3_config]([SQLITE_CONFIG_MULTITHREAD])
 **          shall set the default [threading mode] to Multi-thread.
 **
-** {H14126} A successful call to sqlite3_config(SQLITE_CONFIG_SERIALIZED)
+** {H14126} A successful call to [sqlite3_config]([SQLITE_CONFIG_SERIALIZED])
 **          shall set the default [threading mode] to Serialized.
 **
-** {H14129} A successful call to sqlite3_config(SQLITE_CONFIG_MUTEX,X)
+** {H14129} A successful call to [sqlite3_config]([SQLITE_CONFIG_MUTEX],X)
 **          where X is a pointer to an initialized [sqlite3_mutex_methods]
 **          object shall cause all subsequent mutex operations performed
 **          by SQLite to use the mutex methods that were present in X
-**          during the call to sqlite3_config().
+**          during the call to [sqlite3_config()].
 **
-** {H14132} A successful call to sqlite3_config(SQLITE_CONFIG_GETMUTEX,X)
+** {H14132} A successful call to [sqlite3_config]([SQLITE_CONFIG_GETMUTEX],X)
 **          where X is a pointer to an [sqlite3_mutex_methods] object 
 **          shall overwrite the content of [sqlite3_mutex_methods] object
 **          with the mutex methods currently in use by SQLite.
 **
-** {H14135} A successful call to sqlite3_config(SQLITE_CONFIG_MALLOC,M)
+** {H14135} A successful call to [sqlite3_config]([SQLITE_CONFIG_MALLOC],M)
 **          where M is a pointer to an initialized [sqlite3_mem_methods]
 **          object shall cause all subsequent memory allocation operations
 **          performed by SQLite to use the methods that were present in 
-**          M during the call to sqlite3_config().
+**          M during the call to [sqlite3_config()].
 **
-** {H14138} A successful call to sqlite3_config(SQLITE_CONFIG_GETMALLOC,M)
+** {H14138} A successful call to [sqlite3_config]([SQLITE_CONFIG_GETMALLOC],M)
 **          where M is a pointer to an [sqlite3_mem_methods] object shall
 **          overwrite the content of [sqlite3_mem_methods] object with 
 **          the memory allocation methods currently in use by
 **          SQLite.
 **
-** {H14141} A successful call to sqlite3_config(SQLITE_CONFIG_MEMSTATUS,1)
+** {H14141} A successful call to [sqlite3_config]([SQLITE_CONFIG_MEMSTATUS],1)
 **          shall enable the memory allocation status collection logic.
 **
-** {H14144} A successful call to sqlite3_config(SQLITE_CONFIG_MEMSTATUS,0)
+** {H14144} A successful call to [sqlite3_config]([SQLITE_CONFIG_MEMSTATUS],0)
 **          shall disable the memory allocation status collection logic.
 **
 ** {H14147} The memory allocation status collection logic shall be
 **          enabled by default.
 **
-** {H14150} A successful call to sqlite3_config(SQLITE_CONFIG_SCRATCH,S,Z,N)
+** {H14150} A successful call to [sqlite3_config]([SQLITE_CONFIG_SCRATCH],S,Z,N)
 **          where Z and N are non-negative integers and 
 **          S is a pointer to an aligned memory buffer not less than
 **          Z*N bytes in size shall cause S to be used by the
 **          [scratch memory allocator] for as many as N simulataneous
 **          allocations each of size Z.
 **
-** {H14153} A successful call to sqlite3_config(SQLITE_CONFIG_SCRATCH,S,Z,N)
+** {H14153} A successful call to [sqlite3_config]([SQLITE_CONFIG_SCRATCH],S,Z,N)
 **          where S is a NULL pointer shall disable the
 **          [scratch memory allocator].
 **
-** {H14156} A successful call to sqlite3_config(SQLITE_CONFIG_PAGECACHE,S,Z,N)
+** {H14156} A successful call to
+**          [sqlite3_config]([SQLITE_CONFIG_PAGECACHE],S,Z,N)
 **          where Z and N are non-negative integers and 
 **          S is a pointer to an aligned memory buffer not less than
 **          Z*N bytes in size shall cause S to be used by the
 **          [pagecache memory allocator] for as many as N simulataneous
 **          allocations each of size Z.
 **
-** {H14159} A successful call to sqlite3_config(SQLITE_CONFIG_PAGECACHE,S,Z,N)
+** {H14159} A successful call to
+**          [sqlite3_config]([SQLITE_CONFIG_PAGECACHE],S,Z,N)
 **          where S is a NULL pointer shall disable the
 **          [pagecache memory allocator].
 **
-** {H14162} A successful call to sqlite3_config(SQLITE_CONFIG_HEAP,H,Z,N)
+** {H14162} A successful call to [sqlite3_config]([SQLITE_CONFIG_HEAP],H,Z,N)
 **          where Z and N are non-negative integers and 
 **          H is a pointer to an aligned memory buffer not less than
 **          Z bytes in size shall enable the [memsys5] memory allocator
 **          and cause it to use buffer S as its memory source and to use
 **          a minimum allocation size of N.
 **
-** {H14165} A successful call to sqlite3_config(SQLITE_CONFIG_HEAP,H,Z,N)
+** {H14165} A successful call to [sqlite3_config]([SQLITE_CONFIG_HEAP],H,Z,N)
 **          where H is a NULL pointer shall disable the
 **          [memsys5] memory allocator.
 **
-** {H14168} A successful call to sqlite3_config(SQLITE_CONFIG_LOOKASIZE,Z,N)
+** {H14168} A successful call to [sqlite3_config]([SQLITE_CONFIG_LOOKASIDE],Z,N)
 **          shall cause the default [lookaside memory allocator] configuration
 **          for new [database connections] to be N slots of Z bytes each.
 */
 SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 
 /*
-** CAPI3REF: Configure database connections  {H10180} <S20000>
+** CAPI3REF: Configure database connections  {H14200} <S20000>
 ** EXPERIMENTAL
 **
 ** The sqlite3_db_config() interface is used to make configuration
@@ -1088,6 +1090,38 @@ SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 ** The only choice for this value is [SQLITE_DBCONFIG_LOOKASIDE].
 ** New verbs are likely to be added in future releases of SQLite.
 ** Additional arguments depend on the verb.
+**
+** INVARIANTS:
+**
+** {H14203} A call to [sqlite3_db_config(D,V,...)] shall return [SQLITE_OK]
+**          if and only if the call is successful.
+**
+** {H14206} If one or more slots of the [lookaside memory allocator] for
+**          [database connection] D are in use, then a call to
+**          [sqlite3_db_config](D,[SQLITE_DBCONFIG_LOOKASIDE],...) shall
+**          fail with an [SQLITE_BUSY] return code.
+**
+** {H14209} A successful call to 
+**          [sqlite3_db_config](D,[SQLITE_DBCONFIG_LOOKASIDE],B,Z,N) where
+**          D is an open [database connection] and Z and N are positive
+**          integers and B is an aligned buffer at least Z*N bytes in size
+**          shall cause the [lookaside memory allocator] for D to use buffer B 
+**          with N slots of Z bytes each.
+**
+** {H14212} A successful call to 
+**          [sqlite3_db_config](D,[SQLITE_DBCONFIG_LOOKASIDE],B,Z,N) where
+**          D is an open [database connection] and Z and N are positive
+**          integers and B is NULL pointer shall cause the
+**          [lookaside memory allocator] for D to a obtain Z*N byte buffer
+**          from the primary memory allocator and use that buffer
+**          with N lookaside slots of Z bytes each.
+**
+** {H14215} A successful call to 
+**          [sqlite3_db_config](D,[SQLITE_DBCONFIG_LOOKASIDE],B,Z,N) where
+**          D is an open [database connection] and Z and N are zero shall
+**          disable the [lookaside memory allocator] for D.
+**
+**
 */
 SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 
@@ -1353,17 +1387,17 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** is another alias for the rowid.
 **
 ** This routine returns the rowid of the most recent
-** successful INSERT into the database from the [database connection]
-** in the first argument.  If no successful INSERTs
+** successful [INSERT] into the database from the [database connection]
+** in the first argument.  If no successful [INSERT]s
 ** have ever occurred on that database connection, zero is returned.
 **
-** If an INSERT occurs within a trigger, then the rowid of the inserted
+** If an [INSERT] occurs within a trigger, then the rowid of the inserted
 ** row is returned by this routine as long as the trigger is running.
 ** But once the trigger terminates, the value returned by this routine
 ** reverts to the last value inserted before the trigger fired.
 **
-** An INSERT that fails due to a constraint violation is not a
-** successful INSERT and does not change the value returned by this
+** An [INSERT] that fails due to a constraint violation is not a
+** successful [INSERT] and does not change the value returned by this
 ** routine.  Thus INSERT OR FAIL, INSERT OR IGNORE, INSERT OR ROLLBACK,
 ** and INSERT OR ABORT make no changes to the return value of this
 ** routine when their insertion fails.  When INSERT OR REPLACE
@@ -1372,23 +1406,24 @@ int sqlite3_extended_result_codes(sqlite3*, int onoff);
 ** the constraint problem so INSERT OR REPLACE will always change
 ** the return value of this interface.
 **
-** For the purposes of this routine, an INSERT is considered to
+** For the purposes of this routine, an [INSERT] is considered to
 ** be successful even if it is subsequently rolled back.
 **
 ** INVARIANTS:
 **
-** {H12221} The [sqlite3_last_insert_rowid()] function returns the rowid
-**          of the most recent successful INSERT performed on the same
+** {H12221} The [sqlite3_last_insert_rowid()] function shall return the rowid
+**          of the most recent successful [INSERT] performed on the same
 **          [database connection] and within the same or higher level
-**          trigger context, or zero if there have been no qualifying inserts.
+**          trigger context, or zero if there have been no qualifying
+**          [INSERT] statements.
 **
-** {H12223} The [sqlite3_last_insert_rowid()] function returns the
+** {H12223} The [sqlite3_last_insert_rowid()] function shall return the
 **          same value when called from the same trigger context
-**          immediately before and after a ROLLBACK.
+**          immediately before and after a [ROLLBACK].
 **
 ** ASSUMPTIONS:
 **
-** {A12232} If a separate thread performs a new INSERT on the same
+** {A12232} If a separate thread performs a new [INSERT] on the same
 **          database connection while the [sqlite3_last_insert_rowid()]
 **          function is running and thus changes the last insert rowid,
 **          then the value returned by [sqlite3_last_insert_rowid()] is
@@ -1403,8 +1438,8 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** This function returns the number of database rows that were changed
 ** or inserted or deleted by the most recently completed SQL statement
 ** on the [database connection] specified by the first parameter.
-** Only changes that are directly specified by the INSERT, UPDATE,
-** or DELETE statement are counted.  Auxiliary changes caused by
+** Only changes that are directly specified by the [INSERT], [UPDATE],
+** or [DELETE] statement are counted.  Auxiliary changes caused by
 ** triggers are not counted. Use the [sqlite3_total_changes()] function
 ** to find the total number of changes including changes caused by triggers.
 **
@@ -1438,13 +1473,15 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** caused by subtriggers since those have their own context.
 **
 ** SQLite implements the command "DELETE FROM table" without a WHERE clause
-** by dropping and recreating the table.  (This is much faster than going
-** through and deleting individual elements from the table.)  Because of this
+** by dropping and recreating the table.  Doing so is much faster than going
+** through and deleting individual elements from the table.  Because of this
 ** optimization, the deletions in "DELETE FROM table" are not row changes and
 ** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
 ** functions, regardless of the number of elements that were originally
 ** in the table.  To get an accurate count of the number of rows deleted, use
-** "DELETE FROM table WHERE 1" instead.
+** "DELETE FROM table WHERE 1" instead.  Or recompile using the
+** [SQLITE_OMIT_TRUNCATE_OPTIMIZATION] compile-time option to disable the
+** optimization on all queries.
 **
 ** INVARIANTS:
 **
@@ -1486,7 +1523,9 @@ int sqlite3_changes(sqlite3*);
 ** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
 ** functions, regardless of the number of elements that were originally
 ** in the table.  To get an accurate count of the number of rows deleted, use
-** "DELETE FROM table WHERE 1" instead.
+** "DELETE FROM table WHERE 1" instead.   Or recompile using the
+** [SQLITE_OMIT_TRUNCATE_OPTIMIZATION] compile-time option to disable the
+** optimization on all queries.
 **
 ** See also the [sqlite3_changes()] interface.
 **

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.181 2008/10/10 18:25:46 shane Exp $
+** $Id: delete.c,v 1.182 2008/10/10 23:48:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -364,6 +364,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, memCnt);
   }
 
+#ifndef SQLITE_OMIT_TRUNCATE_OPTIMIZATION
   /* Special case: A DELETE without a WHERE clause deletes everything.
   ** It is easier just to erase the whole table.  Note, however, that
   ** this means that the row change count will be incorrect.
@@ -391,11 +392,12 @@ void sqlite3DeleteFrom(
         sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
       }
     }
-  } 
+  }else
+#endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
   /* The usual case: There is a WHERE clause so we have to scan through
   ** the table and pick which records to delete.
   */
-  else{
+  {
     int iRowid = ++pParse->nMem;    /* Used for storing rowid values. */
 
     /* Begin the database scan
