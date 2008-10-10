@@ -1,0 +1,41 @@
+# 2008 August 01
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This test script checks malloc failures in LIMIT operations for 
+# UPDATE/DELETE statements.
+# 
+# $Id: mallocJ.test,v 1.1 2008/10/10 13:34:30 shane Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
+
+ifcapable {update_delete_limit} {
+
+  do_malloc_test mallocJ-4 -sqlprep {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(x int, y int);
+    INSERT INTO t1 VALUES(1,1);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(2,1);
+    INSERT INTO t1 VALUES(2,2);
+    INSERT INTO t1 VALUES(2,3);
+  } -sqlbody {
+    UPDATE t1 SET x=1 ORDER BY y LIMIT 2 OFFSET 2;
+    UPDATE t1 SET x=2 WHERE y=1 ORDER BY y LIMIT 2 OFFSET 2;
+    DELETE FROM t1 WHERE x=1 ORDER BY y LIMIT 2 OFFSET 2;
+    DELETE FROM t1 ORDER BY y LIMIT 2 OFFSET 2;
+  }
+
+}
+
+finish_test
