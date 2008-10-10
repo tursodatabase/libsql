@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.258 2008/10/10 17:47:21 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.259 2008/10/10 18:25:46 shane Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -582,13 +582,8 @@ limit_opt(A) ::= LIMIT expr(X) COMMA expr(Y).
 cmd ::= DELETE FROM fullname(X) indexed_opt(I) where_opt(W) 
         orderby_opt(O) limit_opt(L). {
   sqlite3SrcListIndexedBy(pParse, X, &I);
-  if( O && !L.pLimit ){
-    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on DELETE");
-    pParse->parseError = 1;
-  }else{
-    W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset);
-    sqlite3DeleteFrom(pParse,X,W);
-  }
+  W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "DELETE");
+  sqlite3DeleteFrom(pParse,X,W);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
@@ -610,13 +605,8 @@ where_opt(A) ::= WHERE expr(X).       {A = X;}
 cmd ::= UPDATE orconf(R) fullname(X) indexed_opt(I) SET setlist(Y) where_opt(W) orderby_opt(O) limit_opt(L).  {
   sqlite3SrcListIndexedBy(pParse, X, &I);
   sqlite3ExprListCheckLength(pParse,Y,"set list"); 
-  if( O && !L.pLimit ){
-    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on UPDATE");
-    pParse->parseError = 1;
-  }else{
-    W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit,L.pOffset);
-    sqlite3Update(pParse,X,Y,W,R);
-  }
+  W = sqlite3LimitWhere(pParse, X, W, O, L.pLimit, L.pOffset, "UPDATE");
+  sqlite3Update(pParse,X,Y,W,R);
 }
 %endif
 %ifndef SQLITE_ENABLE_UPDATE_DELETE_LIMIT

@@ -12,7 +12,7 @@
 # focus of this file is testing the LIMIT ... OFFSET ... clause
 #  of UPDATE and DELETE statements.
 #
-# $Id: wherelimit.test,v 1.1 2008/10/10 06:02:00 shane Exp $
+# $Id: wherelimit.test,v 1.2 2008/10/10 18:25:46 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -56,6 +56,15 @@ ifcapable {update_delete_limit} {
   do_test wherelimit-0.5 {
     catchsql {UPDATE t1 AS a SET y=1 WHERE x=1}
   } {1 {near "AS": syntax error}}
+
+  # OFFSET w/o LIMIT
+  do_test wherelimit-0.6 {
+    catchsql {DELETE FROM t1 WHERE x=1 OFFSET 2}
+  } {1 {near "OFFSET": syntax error}}
+  do_test wherelimit-0.7 {
+    catchsql {UPDATE t1 SET y=1 WHERE x=1 OFFSET 2}
+  } {1 {near "OFFSET": syntax error}}
+
 
   # check deletes w/o where clauses but with limit/offsets
   create_test_data 5

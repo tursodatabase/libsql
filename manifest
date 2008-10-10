@@ -1,5 +1,5 @@
-C Add\sthe\sgenfkey\sprogram\sto\sthe\stool/\sdirectory.\s(CVS\s5796)
-D 2008-10-10T17:58:27
+C Further\ssimplifications\sof\sthe\scode\sfor\sthe\sLIMIT\sclause\son\san\sUPDATE\sor\sDELETE.\s\sAdded\sa\sfew\stest\scases\sto\swherelimit.test.\s(CVS\s5797)
+D 2008-10-10T18:25:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
-F src/delete.c f72c98c5770c94f1a8b7bbdf7aeb49503a4927a4
+F src/delete.c c7aaf47f274494f9ae1f89cf095ca890b1d9d2bf
 F src/expr.c 0ceafeff3a4e0f460d6a7695a675ae12391e313d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
@@ -140,7 +140,7 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y 8862ab3391c9546f25d0e929906f100d0a9e7d2b
+F src/parse.y e8620c7efd46659fd7a9cbad13b51225af7f600c
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c f0f48d0d50e9d8fa785178fc2410244c06f6a287
@@ -152,7 +152,7 @@ F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 28e6466da6b90e56bfbc6c50a1a281931a8c733c
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 0da9c664d89995d28587548048837e3063fa0be3
+F src/sqliteInt.h f60fac64c8970ca366080daa3aa65b9a54a2334a
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -618,7 +618,7 @@ F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
-F test/wherelimit.test 3464395714151cdce9f7f28a19d2cf344bd934c8
+F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3bb33cf59da49f13201c0226e964cda067a4e780
-R aef0f958c65788fc079e6ee823734d14
-U danielk1977
-Z 3eb8c7cc05cdf3fbc1c3afcf6ba604ca
+P 84e73fe8a6f538c4b1bb4f641a661d6fafb60c76
+R eb4c22bf5cef8091ed9bce14d73bbe63
+U shane
+Z 9ca81fedb812b2854e888eab6c64b7ec

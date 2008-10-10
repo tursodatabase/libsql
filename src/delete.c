@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.180 2008/10/10 13:35:58 shane Exp $
+** $Id: delete.c,v 1.181 2008/10/10 18:25:46 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -126,24 +126,37 @@ void sqlite3MaterializeView(
 **                               pLimitWhere (pInClause)
 */
 Expr *sqlite3LimitWhere(
-  Parse *pParse,          /* The parser context */
-  SrcList *pSrc,          /* the FROM clause -- which tables to scan */
-  Expr *pWhere,           /* The WHERE clause.  May be null */
-  ExprList *pOrderBy,     /* The ORDER BY clause.  May be null */
-  Expr *pLimit,           /* The LIMIT clause.  May be null */
-  Expr *pOffset           /* The OFFSET clause.  May be null */
+  Parse *pParse,               /* The parser context */
+  SrcList *pSrc,               /* the FROM clause -- which tables to scan */
+  Expr *pWhere,                /* The WHERE clause.  May be null */
+  ExprList *pOrderBy,          /* The ORDER BY clause.  May be null */
+  Expr *pLimit,                /* The LIMIT clause.  May be null */
+  Expr *pOffset,               /* The OFFSET clause.  May be null */
+  char *zStmtType              /* Either DELETE or UPDATE.  For error messages. */
 ){
-  Expr *pWhereRowid = NULL;
-  Expr *pInClause = NULL;
-  Expr *pSelectRowid = NULL;
-  ExprList *pEList = NULL;
-  SrcList *pSelectSrc = NULL;
-  Select *pSelect = NULL;
+  Expr *pWhereRowid = NULL;    /* WHERE rowid .. */
+  Expr *pInClause = NULL;      /* WHERE rowid IN ( select ) */
+  Expr *pSelectRowid = NULL;   /* SELECT rowid ... */
+  ExprList *pEList = NULL;     /* Expression list contaning only pSelectRowid */
+  SrcList *pSelectSrc = NULL;  /* SELECT rowid FROM x ... (dup of pSrc) */
+  Select *pSelect = NULL;      /* Complete SELECT tree */
+
+  /* Check that there isn't an ORDER BY without a LIMIT clause.
+  */
+  if( pOrderBy && (pLimit == 0) ) {
+    sqlite3ErrorMsg(pParse, "ORDER BY without LIMIT on %s", zStmtType);
+    pParse->parseError = 1;
+    goto limit_where_cleanup_2;
+  }
 
   /* We only need to generate a select expression if there
   ** is a limit/offset term to enforce.
   */
-  if (!pLimit && !pOffset) return pWhere;
+  if( pLimit == 0 ) {
+    /* if pLimit is null, pOffset will always be null as well. */
+    assert( pOffset == 0 );
+    return pWhere;
+  }
 
   /* Generate a select expression tree to enforce the limit/offset 
   ** term for the DELETE or UPDATE statement.  For example:
@@ -155,34 +168,42 @@ Expr *sqlite3LimitWhere(
   */
 
   pSelectRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
-  if( pSelectRowid == 0 ) return 0;
+  if( pSelectRowid == 0 ) goto limit_where_cleanup_2;
   pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid, 0);
-  if( pEList == 0 ) return 0;
+  if( pEList == 0 ) goto limit_where_cleanup_2;
 
   /* duplicate the FROM clause as it is needed by both the DELETE/UPDATE tree
   ** and the SELECT subtree. */
   pSelectSrc = sqlite3SrcListDup(pParse->db, pSrc);
   if( pSelectSrc == 0 ) {
     sqlite3ExprListDelete(pParse->db, pEList);
-    return 0;
+    goto limit_where_cleanup_2;
   }
 
   /* generate the SELECT expression tree. */
   pSelect = sqlite3SelectNew(pParse,pEList,pSelectSrc,pWhere,0,0,pOrderBy,0,pLimit,pOffset);
   if( pSelect == 0 ) return 0;
 
+  /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
   pWhereRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
-  if( pWhereRowid == 0 ) goto limit_where_cleanup;
+  if( pWhereRowid == 0 ) goto limit_where_cleanup_1;
   pInClause = sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0);
-  if( pInClause == 0 ) goto limit_where_cleanup;
+  if( pInClause == 0 ) goto limit_where_cleanup_1;
 
   pInClause->pSelect = pSelect;
   sqlite3ExprSetHeight(pParse, pInClause);
   return pInClause;
 
   /* something went wrong. clean up anything allocated. */
-limit_where_cleanup:
+limit_where_cleanup_1:
   sqlite3SelectDelete(pParse->db, pSelect);
+  return 0;
+
+limit_where_cleanup_2:
+  sqlite3ExprDelete(pParse->db, pWhere);
+  sqlite3ExprListDelete(pParse->db, pOrderBy);
+  sqlite3ExprDelete(pParse->db, pLimit);
+  sqlite3ExprDelete(pParse->db, pOffset);
   return 0;
 }
 #endif /* defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY) */
