@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.33 2008/10/07 15:00:09 danielk1977 Exp $
+# $Id: permutations.test,v 1.34 2008/10/10 17:41:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,7 +39,7 @@ if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
   set ::perm::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
-    autovacuum_ioerr no_mutex_try
+    autovacuum_ioerr no_mutex_try fullmutex
   }
 }
 if {$::perm::testmode eq "targets"} { 

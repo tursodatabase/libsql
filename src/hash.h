@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.11 2007/09/04 14:31:47 danielk1977 Exp $
+** $Id: hash.h,v 1.12 2008/10/10 17:41:29 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -30,14 +30,13 @@ typedef struct HashElem HashElem;
 ** this structure opaque.
 */
 struct Hash {
-  char keyClass;          /* SQLITE_HASH_INT, _POINTER, _STRING, _BINARY */
-  char copyKey;           /* True if copy of key made on insert */
-  int count;              /* Number of entries in this table */
-  int htsize;             /* Number of buckets in the hash table */
-  HashElem *first;        /* The first element of the array */
-  struct _ht {            /* the hash table */
-    int count;               /* Number of entries with this hash */
-    HashElem *chain;         /* Pointer to first entry with this hash */
+  unsigned int copyKey: 1;  /* True if copy of key made on insert */
+  unsigned int htsize : 31; /* Number of buckets in the hash table */
+  unsigned int count;       /* Number of entries in this table */
+  HashElem *first;          /* The first element of the array */
+  struct _ht {              /* the hash table */
+    int count;                 /* Number of entries with this hash */
+    HashElem *chain;           /* Pointer to first entry with this hash */
   } *ht;
 };
 
@@ -54,31 +53,9 @@ struct HashElem {
 };
 
 /*
-** There are 4 different modes of operation for a hash table:
-**
-**   SQLITE_HASH_INT         nKey is used as the key and pKey is ignored.
-**
-**   SQLITE_HASH_POINTER     pKey is used as the key and nKey is ignored.
-**
-**   SQLITE_HASH_STRING      pKey points to a string that is nKey bytes long
-**                           (including the null-terminator, if any).  Case
-**                           is ignored in comparisons.
-**
-**   SQLITE_HASH_BINARY      pKey points to binary data nKey bytes long. 
-**                           memcmp() is used to compare keys.
-**
-** A copy of the key is made for SQLITE_HASH_STRING and SQLITE_HASH_BINARY
-** if the copyKey parameter to HashInit is 1.  
-*/
-/* #define SQLITE_HASH_INT       1 // NOT USED */
-/* #define SQLITE_HASH_POINTER   2 // NOT USED */
-#define SQLITE_HASH_STRING    3
-#define SQLITE_HASH_BINARY    4
-
-/*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqlite3HashInit(Hash*, int keytype, int copyKey);
+void sqlite3HashInit(Hash*, int copyKey);
 void *sqlite3HashInsert(Hash*, const void *pKey, int nKey, void *pData);
 void *sqlite3HashFind(const Hash*, const void *pKey, int nKey);
 HashElem *sqlite3HashFindElem(const Hash*, const void *pKey, int nKey);

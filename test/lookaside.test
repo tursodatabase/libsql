@@ -11,7 +11,7 @@
 #
 # Tests for the lookaside memory allocator.
 #
-# $Id: lookaside.test,v 1.6 2008/09/30 00:31:38 drh Exp $
+# $Id: lookaside.test,v 1.7 2008/10/10 17:41:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -76,6 +76,12 @@ do_test lookaside-2.3 {
 do_test lookaside-2.4 {
   db cache flush
   sqlite3_db_config_lookaside db 0 50 50
+} {0}  ;# SQLITE_OK
+do_test lookaside-2.5 {
+  sqlite3_db_config_lookaside db 0 -1 50
+} {0}  ;# SQLITE_OK
+do_test lookaside-2.6 {
+  sqlite3_db_config_lookaside db 0 50 -1
 } {0}  ;# SQLITE_OK
 
 # sqlite3_db_status() with an invalid verb returns an error.

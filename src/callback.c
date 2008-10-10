@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.31 2008/09/09 12:31:34 drh Exp $
+** $Id: callback.c,v 1.32 2008/10/10 17:41:29 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -410,14 +410,14 @@ void sqlite3SchemaFree(void *p){
 
   temp1 = pSchema->tblHash;
   temp2 = pSchema->trigHash;
-  sqlite3HashInit(&pSchema->trigHash, SQLITE_HASH_STRING, 0);
+  sqlite3HashInit(&pSchema->trigHash, 0);
   sqlite3HashClear(&pSchema->aFKey);
   sqlite3HashClear(&pSchema->idxHash);
   for(pElem=sqliteHashFirst(&temp2); pElem; pElem=sqliteHashNext(pElem)){
     sqlite3DeleteTrigger(0, (Trigger*)sqliteHashData(pElem));
   }
   sqlite3HashClear(&temp2);
-  sqlite3HashInit(&pSchema->tblHash, SQLITE_HASH_STRING, 0);
+  sqlite3HashInit(&pSchema->tblHash, 0);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTab = sqliteHashData(pElem);
     sqlite3DeleteTable(pTab);
@@ -441,10 +441,10 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   if( !p ){
     db->mallocFailed = 1;
   }else if ( 0==p->file_format ){
-    sqlite3HashInit(&p->tblHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->idxHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->trigHash, SQLITE_HASH_STRING, 0);
-    sqlite3HashInit(&p->aFKey, SQLITE_HASH_STRING, 1);
+    sqlite3HashInit(&p->tblHash, 0);
+    sqlite3HashInit(&p->idxHash, 0);
+    sqlite3HashInit(&p->trigHash, 0);
+    sqlite3HashInit(&p->aFKey, 1);
     p->enc = SQLITE_UTF8;
   }
   return p;

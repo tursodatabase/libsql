@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.47 2008/08/05 17:53:24 drh Exp $
+** $Id: test_malloc.c,v 1.48 2008/10/10 17:41:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -204,7 +204,16 @@ static int faultsimInstall(int install){
         faultsimBeginBenign, faultsimEndBenign
     );
   }else{
+    sqlite3_mem_methods m;
     assert(memfault.m.xMalloc);
+
+    /* One should be able to reset the default memory allocator by storing
+    ** a zeroed allocator then calling GETMALLOC. */
+    memset(&m, 0, sizeof(m));
+    sqlite3_config(SQLITE_CONFIG_MALLOC, &m);
+    sqlite3_config(SQLITE_CONFIG_GETMALLOC, &m);
+    assert( memcmp(&m, &memfault.m, sizeof(m))==0 );
+
     rc = sqlite3_config(SQLITE_CONFIG_MALLOC, &memfault.m);
     sqlite3_test_control(SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS, 0, 0);
   }

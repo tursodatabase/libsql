@@ -1,5 +1,5 @@
-C Documentation\supdates.\s\sNo\schanges\sto\scode.\s(CVS\s5793)
-D 2008-10-10T17:26:35
+C Simplify\sthe\ssymbol\shash\stable\sto\suse\sonly\sa\ssingle\skey\sclass.\s\sOther\nchanges\sto\simprove\scode\scoverage.\s(CVS\s5794)
+D 2008-10-10T17:41:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/btree.c 3e686f899659df8d79f2587d0f34f51fdf6a6276
 F src/btree.h 903682f2a88da37435f103da00cb915d63bc8015
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
-F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
+F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
 F src/delete.c f72c98c5770c94f1a8b7bbdf7aeb49503a4927a4
@@ -111,14 +111,14 @@ F src/expr.c 0ceafeff3a4e0f460d6a7695a675ae12391e313d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
-F src/hash.c eb64e48f3781100e5934f759fbe72a63a8fe78cb
-F src/hash.h 031cd9f915aff27e12262cb9eb570ac1b8326b53
+F src/hash.c 582c00618efe2051785e66ba1b6430d5a129de3f
+F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c cadd5df14bcda5ef0c26d815eb609a755861923e
-F src/main.c fccd1a32306147aa751d4aaacec8fecfe4a34d1c
+F src/main.c 6bdb35b22f061e076ffc98fa0df667b350236b0d
 F src/malloc.c 31f4ca218f4b664dce45ef9c4f1fcd2929c67a42
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
@@ -174,7 +174,7 @@ F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c 49abbf5d9c71fb06cf7a7cf96f9b9a799b77a421
+F src/test_malloc.c c4e5e3ea12c81b67e7b5473a06e900bc9881e722
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
@@ -406,7 +406,7 @@ F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test 904c20aec51d5dbff0a3aec6a4d35c5ae0257449
-F test/lookaside.test 28f730199350f3912c122c23bab2f01910530c84
+F test/lookaside.test 4a6a3336ef4259b0003d582330a901bc8d8d367a
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/malloc.test 2fa351108503f0da80e9183a8157fbd943c5d533
 F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
@@ -457,7 +457,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
-F test/permutations.test ae19b5e644425d850e288b78d6f02c257c780fea
+F test/permutations.test 2635ee42d1112ab7bfa0ec1da2b56afa256afed4
 F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -645,7 +645,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3de179630e812396ec29e77f7a06758472d0802f
-R 469bda2a774246df2b2a212f34becf13
+P 07b5f70317a0b2d32df86a01bdeec79ead00f68c
+R 3bc893b2b397067aee1a13ef81efd34f
 U drh
-Z 4f5f403cd825b04b1721f4c2665a843f
+Z b557b4a188b730c763fde4b73f663a4a
