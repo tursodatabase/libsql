@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.401 2008/10/07 23:46:38 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.402 2008/10/10 17:26:35 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -173,16 +173,11 @@ int sqlite3_libversion_number(void);
 **
 ** INVARIANTS:
 **
-** {H10101} The [sqlite3_threadsafe()] function shall return nonzero if
-**          and only if
-**          SQLite was compiled with the its mutexes enabled by default.
+** {H10101} The [sqlite3_threadsafe()] function shall return zero if
+**          and only if SQLite was compiled with mutexing code omitted.
 **
 ** {H10102} The value returned by the [sqlite3_threadsafe()] function
-**          shall not change when mutex setting are modified at
-**          runtime using the [sqlite3_config()] interface and 
-**          especially the [SQLITE_CONFIG_SINGLETHREAD],
-**          [SQLITE_CONFIG_MULTITHREAD], [SQLITE_CONFIG_SERIALIZED],
-**          and [SQLITE_CONFIG_MUTEX] verbs.
+**          shall remain the same across calls to [sqlite3_config()].
 */
 int sqlite3_threadsafe(void);
 
@@ -279,7 +274,7 @@ typedef sqlite_uint64 sqlite3_uint64;
 **          an [SQLITE_BUSY] error code.
 **
 ** {H12015} A call to [sqlite3_close(C)] where C is a NULL pointer shall
-**          return SQLITE_OK.
+**          be a harmless no-op returning SQLITE_OK.
 **
 ** {H12019} When [sqlite3_close(C)] is invoked on a [database connection] C
 **          that has a pending transaction, the transaction shall be
@@ -911,24 +906,24 @@ struct sqlite3_vfs {
 ** sqlite3_os_init().  Similarly, sqlite3_shutdown()
 ** shall invoke sqlite3_os_end().
 **
-** The sqlite3_initialize() routine returns SQLITE_OK on success.
+** The sqlite3_initialize() routine returns [SQLITE_OK] on success.
 ** If for some reason, sqlite3_initialize() is unable to initialize
 ** the library (perhaps it is unable to allocate a needed resource such
-** as a mutex) it returns an [error code] other than SQLITE_OK.
+** as a mutex) it returns an [error code] other than [SQLITE_OK].
 **
 ** The sqlite3_initialize() routine is called internally by many other
 ** SQLite interfaces so that an application usually does not need to
 ** invoke sqlite3_initialize() directly.  For example, [sqlite3_open()]
 ** calls sqlite3_initialize() so the SQLite library will be automatically
 ** initialized when [sqlite3_open()] is called if it has not be initialized
-** already.  However, if SQLite is compiled with the SQLITE_OMIT_AUTOINIT
+** already.  However, if SQLite is compiled with the [SQLITE_OMIT_AUTOINIT]
 ** compile-time option, then the automatic calls to sqlite3_initialize()
 ** are omitted and the application must call sqlite3_initialize() directly
 ** prior to using any other SQLite interface.  For maximum portability,
 ** it is recommended that applications always invoke sqlite3_initialize()
 ** directly prior to using any other SQLite interface.  Future releases
 ** of SQLite may require this.  In other words, the behavior exhibited
-** when SQLite is compiled with SQLITE_OMIT_AUTOINIT might become the
+** when SQLite is compiled with [SQLITE_OMIT_AUTOINIT] might become the
 ** default behavior in some future release of SQLite.
 **
 ** The sqlite3_os_init() routine does operating-system specific
@@ -946,11 +941,11 @@ struct sqlite3_vfs {
 ** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
 ** implementations for sqlite3_os_init() and sqlite3_os_end()
 ** are built into SQLite when it is compiled for unix, windows, or os/2.
-** When built for other platforms (using the SQLITE_OS_OTHER=1 compile-time
+** When built for other platforms (using the [SQLITE_OS_OTHER=1] compile-time
 ** option) the application must supply a suitable implementation for
 ** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
 ** implementation of sqlite3_os_init() or sqlite3_os_end()
-** must return SQLITE_OK on success and some other [error code] upon
+** must return [SQLITE_OK] on success and some other [error code] upon
 ** failure.
 */
 int sqlite3_initialize(void);
@@ -959,7 +954,7 @@ int sqlite3_os_init(void);
 int sqlite3_os_end(void);
 
 /*
-** CAPI3REF: Configuring The SQLite Library {H10145} <S20000><S30200>
+** CAPI3REF: Configuring The SQLite Library {H14100} <S20000><S30200>
 ** EXPERIMENTAL
 **
 ** The sqlite3_config() interface is used to make global configuration
@@ -982,9 +977,96 @@ int sqlite3_os_end(void);
 ** vary depending on the [SQLITE_CONFIG_SINGLETHREAD | configuration option]
 ** in the first argument.
 **
-** When a configuration option is set, sqlite3_config() returns SQLITE_OK.
+** When a configuration option is set, sqlite3_config() returns [SQLITE_OK].
 ** If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
+**
+** INVARIANTS:
+**
+** {H14103} A successful invocation of sqlite3_config() shall return
+**          SQLITE_OK.
+**
+** {H14106} The sqlite3_config() interface shall return SQLITE_MISUSE
+**          if it is invoked in between calls to sqlite3_initialize() and
+**          sqlite3_shutdown().
+**
+** {H14120} A successful call to sqlite3_config(SQLITE_CONFIG_SINGLETHREAD)
+**          shall set the default [threading mode] to Single-thread.
+**
+** {H14123} A successful call to sqlite3_config(SQLITE_CONFIG_MULTITHREAD)
+**          shall set the default [threading mode] to Multi-thread.
+**
+** {H14126} A successful call to sqlite3_config(SQLITE_CONFIG_SERIALIZED)
+**          shall set the default [threading mode] to Serialized.
+**
+** {H14129} A successful call to sqlite3_config(SQLITE_CONFIG_MUTEX,X)
+**          where X is a pointer to an initialized [sqlite3_mutex_methods]
+**          object shall cause all subsequent mutex operations performed
+**          by SQLite to use the mutex methods that were present in X
+**          during the call to sqlite3_config().
+**
+** {H14132} A successful call to sqlite3_config(SQLITE_CONFIG_GETMUTEX,X)
+**          where X is a pointer to an [sqlite3_mutex_methods] object 
+**          shall overwrite the content of [sqlite3_mutex_methods] object
+**          with the mutex methods currently in use by SQLite.
+**
+** {H14135} A successful call to sqlite3_config(SQLITE_CONFIG_MALLOC,M)
+**          where M is a pointer to an initialized [sqlite3_mem_methods]
+**          object shall cause all subsequent memory allocation operations
+**          performed by SQLite to use the methods that were present in 
+**          M during the call to sqlite3_config().
+**
+** {H14138} A successful call to sqlite3_config(SQLITE_CONFIG_GETMALLOC,M)
+**          where M is a pointer to an [sqlite3_mem_methods] object shall
+**          overwrite the content of [sqlite3_mem_methods] object with 
+**          the memory allocation methods currently in use by
+**          SQLite.
+**
+** {H14141} A successful call to sqlite3_config(SQLITE_CONFIG_MEMSTATUS,1)
+**          shall enable the memory allocation status collection logic.
+**
+** {H14144} A successful call to sqlite3_config(SQLITE_CONFIG_MEMSTATUS,0)
+**          shall disable the memory allocation status collection logic.
+**
+** {H14147} The memory allocation status collection logic shall be
+**          enabled by default.
+**
+** {H14150} A successful call to sqlite3_config(SQLITE_CONFIG_SCRATCH,S,Z,N)
+**          where Z and N are non-negative integers and 
+**          S is a pointer to an aligned memory buffer not less than
+**          Z*N bytes in size shall cause S to be used by the
+**          [scratch memory allocator] for as many as N simulataneous
+**          allocations each of size Z.
+**
+** {H14153} A successful call to sqlite3_config(SQLITE_CONFIG_SCRATCH,S,Z,N)
+**          where S is a NULL pointer shall disable the
+**          [scratch memory allocator].
+**
+** {H14156} A successful call to sqlite3_config(SQLITE_CONFIG_PAGECACHE,S,Z,N)
+**          where Z and N are non-negative integers and 
+**          S is a pointer to an aligned memory buffer not less than
+**          Z*N bytes in size shall cause S to be used by the
+**          [pagecache memory allocator] for as many as N simulataneous
+**          allocations each of size Z.
+**
+** {H14159} A successful call to sqlite3_config(SQLITE_CONFIG_PAGECACHE,S,Z,N)
+**          where S is a NULL pointer shall disable the
+**          [pagecache memory allocator].
+**
+** {H14162} A successful call to sqlite3_config(SQLITE_CONFIG_HEAP,H,Z,N)
+**          where Z and N are non-negative integers and 
+**          H is a pointer to an aligned memory buffer not less than
+**          Z bytes in size shall enable the [memsys5] memory allocator
+**          and cause it to use buffer S as its memory source and to use
+**          a minimum allocation size of N.
+**
+** {H14165} A successful call to sqlite3_config(SQLITE_CONFIG_HEAP,H,Z,N)
+**          where H is a NULL pointer shall disable the
+**          [memsys5] memory allocator.
+**
+** {H14168} A successful call to sqlite3_config(SQLITE_CONFIG_LOOKASIZE,Z,N)
+**          shall cause the default [lookaside memory allocator] configuration
+**          for new [database connections] to be N slots of Z bytes each.
 */
 SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 

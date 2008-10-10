@@ -1,5 +1,5 @@
-C Simplify\sthe\sparser\sreduction\scode\sfor\sthe\sLIMIT\sclause\son\san\sUPDATE\sor\nDELETE.\s(CVS\s5792)
-D 2008-10-10T14:27:17
+C Documentation\supdates.\s\sNo\schanges\sto\scode.\s(CVS\s5793)
+D 2008-10-10T17:26:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c d45e7b69f9ff653799384d7fcdd0c8d7096908b7
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in f2640167eca2e9273ec5ea97b37155344290bd2a
+F src/sqlite.h.in 28e6466da6b90e56bfbc6c50a1a281931a8c733c
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 0da9c664d89995d28587548048837e3063fa0be3
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -645,7 +645,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 43507bbefbf79e8db8fe31319ad621d48247983f
-R 0f3d53a6d1c1c43e26912a5b940877e0
+P 3de179630e812396ec29e77f7a06758472d0802f
+R 469bda2a774246df2b2a212f34becf13
 U drh
-Z 451d4561ebde2fb2ef1d789ddc49a01c
+Z 4f5f403cd825b04b1721f4c2665a843f
