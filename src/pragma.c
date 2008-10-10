@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.188 2008/09/26 21:08:08 drh Exp $
+** $Id: pragma.c,v 1.189 2008/10/10 17:47:21 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -220,6 +220,16 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
   return 0;
 }
 #endif /* SQLITE_OMIT_FLAG_PRAGMAS */
+
+static const char *actionName(u8 action){
+  switch( action ){
+    case OE_SetNull:  return "SET NULL";
+    case OE_SetDflt:  return "SET DEFAULT";
+    case OE_Restrict: return "RESTRICT";
+    case OE_Cascade:  return "CASCADE";
+  }
+  return "";
+}
 
 /*
 ** Process a pragma statement.  
@@ -873,24 +883,32 @@ void sqlite3Pragma(
       pFK = pTab->pFKey;
       if( pFK ){
         int i = 0; 
-        sqlite3VdbeSetNumCols(v, 5);
-        pParse->nMem = 5;
+        sqlite3VdbeSetNumCols(v, 8);
+        pParse->nMem = 8;
         sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "id", P4_STATIC);
         sqlite3VdbeSetColName(v, 1, COLNAME_NAME, "seq", P4_STATIC);
         sqlite3VdbeSetColName(v, 2, COLNAME_NAME, "table", P4_STATIC);
         sqlite3VdbeSetColName(v, 3, COLNAME_NAME, "from", P4_STATIC);
         sqlite3VdbeSetColName(v, 4, COLNAME_NAME, "to", P4_STATIC);
+        sqlite3VdbeSetColName(v, 5, COLNAME_NAME, "on_update", P4_STATIC);
+        sqlite3VdbeSetColName(v, 6, COLNAME_NAME, "on_delete", P4_STATIC);
+        sqlite3VdbeSetColName(v, 7, COLNAME_NAME, "match", P4_STATIC);
         while(pFK){
           int j;
           for(j=0; j<pFK->nCol; j++){
             char *zCol = pFK->aCol[j].zCol;
+            char *zOnUpdate = (char *)actionName(pFK->updateConf);
+            char *zOnDelete = (char *)actionName(pFK->deleteConf);
             sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
             sqlite3VdbeAddOp2(v, OP_Integer, j, 2);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pFK->zTo, 0);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 4, 0,
                               pTab->aCol[pFK->aCol[j].iFrom].zName, 0);
             sqlite3VdbeAddOp4(v, zCol ? OP_String8 : OP_Null, 0, 5, 0, zCol, 0);
-            sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 5);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 6, 0, zOnUpdate, 0);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 7, 0, zOnDelete, 0);
+            sqlite3VdbeAddOp4(v, OP_String8, 0, 8, 0, "NONE", 0);
+            sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 8);
           }
           ++i;
           pFK = pFK->pNextFrom;

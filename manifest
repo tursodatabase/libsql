@@ -1,5 +1,5 @@
-C Simplify\sthe\ssymbol\shash\stable\sto\suse\sonly\sa\ssingle\skey\sclass.\s\sOther\nchanges\sto\simprove\scode\scoverage.\s(CVS\s5794)
-D 2008-10-10T17:41:29
+C Change\s'pragma\sforeign_key_list'\sto\sreturn\ssome\sextra\sinformation.\s(CVS\s5795)
+D 2008-10-10T17:47:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,10 +140,10 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y 72fc66fd30bca541e05580f8ffbdcd0e983c1f66
+F src/parse.y 8862ab3391c9546f25d0e929906f100d0a9e7d2b
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
-F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
+F src/pragma.c f0f48d0d50e9d8fa785178fc2410244c06f6a287
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
@@ -294,7 +294,7 @@ F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 135ed46c049916688171e618c5c14312811618d4
 F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
 F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
-F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
+F test/fkey1.test c373e4f1ec43416957e0591c4a5cebb63b8a12e7
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
@@ -458,7 +458,7 @@ F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 2b4fa1bee5cfc338d8c04eb6ed7eaf41f478bf7c
 F test/permutations.test 2635ee42d1112ab7bfa0ec1da2b56afa256afed4
-F test/pragma.test c86359a8e0b28abdcc0ff4936f7966c446d0479a
+F test/pragma.test 583937903d01cad823ae195573d90c02ea945717
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
@@ -645,7 +645,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 07b5f70317a0b2d32df86a01bdeec79ead00f68c
-R 3bc893b2b397067aee1a13ef81efd34f
-U drh
-Z b557b4a188b730c763fde4b73f663a4a
+P ff50a8a7e5a15fac192939ff3206fa18d1c5a6dd
+R d494f278258b84f1c8204facbe950e86
+U danielk1977
+Z 706b49aeb2aa418df46d4fa5293d63e6

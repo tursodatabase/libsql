@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.257 2008/10/10 14:27:17 drh Exp $
+** @(#) $Id: parse.y,v 1.258 2008/10/10 17:47:21 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -281,7 +281,7 @@ autoinc(X) ::= AUTOINCR.  {X = 1;}
 //
 %type refargs {int}
 refargs(A) ::= .                     { A = OE_Restrict * 0x010101; }
-refargs(A) ::= refargs(X) refarg(Y). { A = (X & Y.mask) | Y.value; }
+refargs(A) ::= refargs(X) refarg(Y). { A = (X & ~Y.mask) | Y.value; }
 %type refarg {struct {int value; int mask;}}
 refarg(A) ::= MATCH nm.              { A.value = 0;     A.mask = 0x000000; }
 refarg(A) ::= ON DELETE refact(X).   { A.value = X;     A.mask = 0x0000ff; }

@@ -71,7 +71,40 @@ do_test fkey1-2.1 {
   }
 } {}
 
-   
-
+do_test fkey1-3.1 {
+  execsql {
+    CREATE TABLE t5(a PRIMARY KEY, b, c);
+    CREATE TABLE t6(
+      d REFERENCES t5,
+      e REFERENCES t5(c)
+    );
+    PRAGMA foreign_key_list(t6);
+  }
+} [concat            \
+  {0 0 t5 e c RESTRICT RESTRICT NONE}       \
+  {1 0 t5 d {} RESTRICT RESTRICT NONE}      \
+]
+do_test fkey1-3.2 {
+  execsql {
+    CREATE TABLE t7(d, e, f,
+      FOREIGN KEY (d, e) REFERENCES t5(a, b)
+    );
+    PRAGMA foreign_key_list(t7);
+  }
+} [concat                        \
+  {0 0 t5 d a RESTRICT RESTRICT NONE} \
+  {0 1 t5 e b RESTRICT RESTRICT NONE} \
+]
+do_test fkey1-3.3 {
+  execsql {
+    CREATE TABLE t8(d, e, f,
+      FOREIGN KEY (d, e) REFERENCES t5 ON DELETE CASCADE ON UPDATE SET NULL
+    );
+    PRAGMA foreign_key_list(t8);
+  }
+} [concat                        \
+  {0 0 t5 d {} {SET NULL} CASCADE NONE} \
+  {0 1 t5 e {} {SET NULL} CASCADE NONE} \
+]
 
 finish_test
