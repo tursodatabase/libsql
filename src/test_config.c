@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.38 2008/10/07 15:25:49 drh Exp $
+** $Id: test_config.c,v 1.39 2008/10/10 04:34:16 shane Exp $
 */
 
 #include "sqliteLimit.h"
@@ -448,6 +448,12 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "wsd", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "wsd", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#if defined(SQLITE_ENABLE_UPDATE_DELETE_LIMIT) && !defined(SQLITE_OMIT_SUBQUERY)
+  Tcl_SetVar2(interp, "sqlite_options", "update_delete_limit", "1", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "update_delete_limit", "0", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_SECURE_DELETE

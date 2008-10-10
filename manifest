@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scan\soccur\sif\sthe\suser\sattempts\sto\sset\san\sinto\san\sinteger\sprimary\skey\scolumn\sto\sa\stext\svalue\sin\sa\stable\sthat\shas\sa\sBEFORE\sUPDATE\strigger.\s(CVS\s5787)
-D 2008-10-09T18:48:31
+C Updated\sLIMIT\ssupport\sfor\sDELETE/UPDATE.\s\sOmit\soption\schanged\sto\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT.\s(CVS\s5788)
+D 2008-10-10T04:34:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
-F src/delete.c 7c9183a17b93b79dabbbc7cdb2159972d052b5a0
+F src/delete.c 24d4f58280bb0717c3eee8ff613d1b3200f101e3
 F src/expr.c 0ceafeff3a4e0f460d6a7695a675ae12391e313d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
@@ -140,19 +140,19 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y 85d57c1dba3098da736a0c2ff8917c3d02a3a5f8
+F src/parse.y ecabcd6402a611a223824291b8b4e026c622c2b3
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
-F src/resolve.c 1971ff6996f1a73303339acf7f1de8497546045d
+F src/resolve.c d45e7b69f9ff653799384d7fcdd0c8d7096908b7
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in f2640167eca2e9273ec5ea97b37155344290bd2a
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 3f38b600c978698014fdda68d29ca5f3792ad717
+F src/sqliteInt.h 0da9c664d89995d28587548048837e3063fa0be3
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -169,7 +169,7 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c 45024094ed7cf780c5d5dccda645145f95cf78ef
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
-F src/test_config.c f995f649dc2dc8173079d613694b29b0b3b5f84b
+F src/test_config.c e5d6390729f0c63333ebe7e5927c07e50bc9deea
 F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -643,7 +643,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2d427746d53104ca032c404f7f65c51b41b7a20e
-R 7a5ac900e19ad3409dae5bcb06b20f5a
-U danielk1977
-Z 0940f286acf7bb42a4ff023aeb3c8678
+P c2cf9d60d6626844193b008a37e4417aa0a0f323
+R dbb64f376591fe1fef8fc7d76b6610d5
+U shane
+Z b0043e2235752f0517ee1d3e5441bcb7
