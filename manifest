@@ -1,5 +1,5 @@
-C Added\smallocJ.test\sto\stest\sallocation\sfailure\shandling\sof\sthe\snew\sLIMIT/OFFSET\ssupport\sfor\sUPDATE/DELETE.\s(CVS\s5790)
-D 2008-10-10T13:34:30
+C Re-factored\smemory\sallocation\sfailure\shandling\sin\sthe\ssqlite3LimitWhere()\sfunction\sbased\son\sfailures\sin\sthe\smallocJ.test\sscript.\s(CVS\s5791)
+D 2008-10-10T13:35:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c 7a40fd44da3eb89e7f6eff30aa6f940c45d73a97
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
-F src/delete.c 24d4f58280bb0717c3eee8ff613d1b3200f101e3
+F src/delete.c f72c98c5770c94f1a8b7bbdf7aeb49503a4927a4
 F src/expr.c 0ceafeff3a4e0f460d6a7695a675ae12391e313d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
@@ -645,7 +645,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d9f5e15ca00d4d54dc395926e4c9171f1d24982a
-R dfa4b7b9e1553fcd1e404a370d8e4d74
+P 5375b348b12a4ae149472c84d6f05a78a5542a21
+R 49f64e7755b925909a2d8b6b2b92d853
 U shane
-Z ffe92c254732044ed662adfc03c644f0
+Z ba6b812faf4f8b8fc8236a25b1811c24
