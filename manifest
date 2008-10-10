@@ -1,5 +1,5 @@
-C Re-factored\smemory\sallocation\sfailure\shandling\sin\sthe\ssqlite3LimitWhere()\sfunction\sbased\son\sfailures\sin\sthe\smallocJ.test\sscript.\s(CVS\s5791)
-D 2008-10-10T13:35:58
+C Simplify\sthe\sparser\sreduction\scode\sfor\sthe\sLIMIT\sclause\son\san\sUPDATE\sor\nDELETE.\s(CVS\s5792)
+D 2008-10-10T14:27:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y ecabcd6402a611a223824291b8b4e026c622c2b3
+F src/parse.y 72fc66fd30bca541e05580f8ffbdcd0e983c1f66
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c 0b1c2d2a241dd79a7361bbeb8ff575a9e9d7cd71
@@ -645,7 +645,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5375b348b12a4ae149472c84d6f05a78a5542a21
-R 49f64e7755b925909a2d8b6b2b92d853
-U shane
-Z ba6b812faf4f8b8fc8236a25b1811c24
+P 43507bbefbf79e8db8fe31319ad621d48247983f
+R 0f3d53a6d1c1c43e26912a5b940877e0
+U drh
+Z 451d4561ebde2fb2ef1d789ddc49a01c
