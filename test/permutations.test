@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.34 2008/10/10 17:41:30 drh Exp $
+# $Id: permutations.test,v 1.35 2008/10/11 17:04:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -214,24 +214,8 @@ run_tests "memsubsys2" -description {
 
 # Run all tests with the lookaside allocator disabled.
 #
-run_tests "memsubsys3" -description {
+run_tests "nolookaside" -description {
   OOM tests with lookaside disabled
-} -include {
-  malloc.test
-  malloc3.test
-  malloc4.test
-  malloc5.test
-  malloc6.test
-  malloc7.test
-  malloc8.test
-  malloc9.test
-  mallocA.test
-  mallocB.test
-  mallocC.test
-  mallocD.test
-  mallocE.test
-  mallocF.test
-  mallocG.test
 } -initialize {
   catch {db close}
   sqlite3_shutdown
