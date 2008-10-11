@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_OMIT_TRUNCATE_OPTIMIZATION\soption.\s\sOther\sunrelated\ndocumentation\senhancements.\s(CVS\s5798)
-D 2008-10-10T23:48:26
+C Fix\san\sassertion\sfault\sthat\soccurs\swith\sSQLITE_THREADSAFE=0.\s(CVS\s5799)
+D 2008-10-11T15:20:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c cadd5df14bcda5ef0c26d815eb609a755861923e
-F src/main.c 6bdb35b22f061e076ffc98fa0df667b350236b0d
+F src/main.c eca6e80598aeccb58f722c2f1c0f25ee6b442c16
 F src/malloc.c 31f4ca218f4b664dce45ef9c4f1fcd2929c67a42
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 282c6a46b25f4e4278fd4c8b0b1cde1de28d8f51
-R 6ffb2f1fe0d56d1b89a5f8c7d49a18a5
+P fab4940d54fd1e5459a3d0d9b64b491e6972fd8d
+R 8cb8a1748def7de0b4ac00aa033b0078
 U drh
-Z e18361551100757c34ff8614b91b50fa
+Z 6d1bf3ab78bfeca6642c5036493454fe
