@@ -11,10 +11,15 @@
 #
 # Tests for the lookaside memory allocator.
 #
-# $Id: lookaside.test,v 1.7 2008/10/10 17:41:29 drh Exp $
+# $Id: lookaside.test,v 1.8 2008/10/11 17:06:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !lookaside {
+  finish_test
+  return
+}
 
 catch {db close}
 sqlite3_shutdown

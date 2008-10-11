@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.259 2008/10/10 18:25:46 shane Exp $
+** @(#) $Id: parse.y,v 1.260 2008/10/11 17:06:04 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -803,7 +803,9 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     sqlite3ExprListDelete(pParse->db, pList);
   } 
   if( N ) A = sqlite3PExpr(pParse, TK_NOT, A, 0, 0);
-  sqlite3ExprSpan(A,&W->span,&Y->span);
+  if( !pParse->db->mallocFailed ){
+    sqlite3ExprSpan(A,&W->span,&Y->span);
+  }
 }
 %ifndef SQLITE_OMIT_SUBQUERY
   %type in_op {int}
