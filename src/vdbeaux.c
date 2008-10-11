@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.411 2008/09/19 18:32:27 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.412 2008/10/11 17:51:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1731,7 +1731,9 @@ int sqlite3VdbeReset(Vdbe *p){
   */
   if( p->pc>=0 ){
     if( p->zErrMsg ){
+      sqlite3BeginBenignMalloc();
       sqlite3ValueSetStr(db->pErr,-1,p->zErrMsg,SQLITE_UTF8,SQLITE_TRANSIENT);
+      sqlite3EndBenignMalloc();
       db->errCode = p->rc;
       sqlite3DbFree(db, p->zErrMsg);
       p->zErrMsg = 0;
