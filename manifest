@@ -1,5 +1,5 @@
-C Added\san\sassert()\sto\sdetect\slookaside\smemory\sleaks.\s\sAlso\sadded\sthe\nSQLITE_OMIT_LOOKASIDE\scompile-time\soption\swhich\sis\suseful\sin\strying\sto\ntrack\sdown\slookaside\smemory\sleaks.\s(CVS\s5800)
-D 2008-10-11T15:38:30
+C Fix\sa\smemory\sleak\son\sORDER\sBY\sof\sa\scompound\sselect\scaused\sby\sthe\sresolver\non\sa\sflattened\squery.\s\sAlso\sfix\sa\sOOM\ssegfault\sin\sWHERE\sclause\sprocessing.\s(CVS\s5801)
+D 2008-10-11T16:47:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
 F src/delete.c d3f2adfdd07e701115a111cc81dca33ed6039d10
-F src/expr.c 0ceafeff3a4e0f460d6a7695a675ae12391e313d
+F src/expr.c f84e7606f4d6c4b7ae48f324ca625e3b4a90acdd
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -147,12 +147,12 @@ F src/pragma.c f0f48d0d50e9d8fa785178fc2410244c06f6a287
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
-F src/resolve.c d45e7b69f9ff653799384d7fcdd0c8d7096908b7
+F src/resolve.c 86a6f7e48ec58658576092b2289e780d6ec69992
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2b8ef43244589ef2d8060b076adaafacda58acf8
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h f60fac64c8970ca366080daa3aa65b9a54a2334a
+F src/sqliteInt.h 34c8038fc636b8a511264877419da18722587b0e
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -200,7 +200,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c ead88713b852576e2a924bc4ae696964bfbaec0a
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c 53d495de5fec2d95678b4af29dab022df90c141d
+F src/where.c 76bc0a7a5eb2e20b72b644f7c5f104c285143a54
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 28bba42b338afd63e1dad9f431d631f6f3027275
-R 74f64a08ff5ef738b9c92d4ed58f474f
+P 0c4c66071a46cecc5f87afb8f8f01ae2c90ee9b3
+R d48425ab1c982c0731642b395fb0ab56
 U drh
-Z 24abcbe1839acd523ab8a8985b39233b
+Z 8cc7993d430aea01378e521b4987bb36

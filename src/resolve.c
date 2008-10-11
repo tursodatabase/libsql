@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.8 2008/10/10 04:34:16 shane Exp $
+** $Id: resolve.c,v 1.9 2008/10/11 16:47:36 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -77,8 +77,7 @@ static void resolveAlias(
     pDup->pColl = pExpr->pColl;
     pDup->flags |= EP_ExpCollate;
   }
-  if( pExpr->span.dyn ) sqlite3DbFree(db, (char*)pExpr->span.z);
-  if( pExpr->token.dyn ) sqlite3DbFree(db, (char*)pExpr->token.z);
+  sqlite3ExprClear(db, pExpr);
   memcpy(pExpr, pDup, sizeof(*pExpr));
   sqlite3DbFree(db, pDup);
 }

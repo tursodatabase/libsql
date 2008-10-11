@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.325 2008/10/07 23:46:38 drh Exp $
+** $Id: where.c,v 1.326 2008/10/11 16:47:36 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1931,10 +1931,9 @@ static int nQPlan = 0;              /* Next free slow in _query_plan[] */
 /*
 ** Free a WhereInfo structure
 */
-static void whereInfoFree(WhereInfo *pWInfo){
+static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
   if( pWInfo ){
     int i;
-    sqlite3 *db = pWInfo->pParse->db;
     for(i=0; i<pWInfo->nLevel; i++){
       sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
       if( pInfo ){
@@ -2812,7 +2811,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Jump here if malloc fails */
 whereBeginError:
   whereClauseClear(&wc);
-  whereInfoFree(pWInfo);
+  whereInfoFree(db, pWInfo);
   return 0;
 }
 
@@ -2926,6 +2925,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Final cleanup
   */
-  whereInfoFree(pWInfo);
+  whereInfoFree(db, pWInfo);
   return;
 }

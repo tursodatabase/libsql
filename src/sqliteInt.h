@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.781 2008/10/10 18:25:46 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.782 2008/10/11 16:47:36 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2100,6 +2100,7 @@ Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
 void sqlite3ExprSpan(Expr*,Token*,Token*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*);
+void sqlite3ExprClear(sqlite3*, Expr*);
 void sqlite3ExprDelete(sqlite3*, Expr*);
 ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*,Token*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
