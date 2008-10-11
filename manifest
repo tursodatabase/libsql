@@ -1,5 +1,5 @@
-C Fix\sto\ssqlite3DbMallocRaw()\swhen\sSQLITE_OMIT_LOOKASIDE\sis\sdefined\sso\sthat\nonce\sit\sfails\sit\scontinues\sto\sfail.\s\sAdd\sa\scomment\sexplaining\swhy\sthis\sis\nimportant.\s(CVS\s5804)
-D 2008-10-11T17:35:16
+C Conditionally\somit\sprototypes\sin\spcache.h\swhen\sthe\scorresponding\sroutines\nare\snot\sused.\s\sTicket\s#3430.\s(CVS\s5805)
+D 2008-10-11T17:42:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
 F src/parse.y f4620f42b5e0141e20243b5f963d0fc9c180ab9b
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
-F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
+F src/pcache.h 974d8ba609c7069af7c050cd3de698cadd090405
 F src/pragma.c f0f48d0d50e9d8fa785178fc2410244c06f6a287
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2a21d52c651ba113c472b6686dcf8ba009924305
-R 53242d9d091be371ffc0e60642760de2
+P 63dd8be70d333c56171dfd254406abb1af685b0f
+R 2e8a3aab50bc76e37d67dde55564ae76
 U drh
-Z 6ab1452927e4563cdd9448fe0603ea26
+Z ec55c75de0e3851eb41128595a9d99a7
