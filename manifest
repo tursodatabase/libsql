@@ -1,5 +1,5 @@
-C When\stransfering\san\serror\smessage\sfrom\sa\sstatement\shandle\sto\sthe\sdatabase\shandle\sso\sthat\sit\scan\sbe\saccessed\sby\ssqlite3_errmsg(),\sa\smalloc\smay\sfail.\sIf\sthis\smalloc\sfails,\sit\sis\sconsidered\sbenign.\s(CVS\s5806)
-D 2008-10-11T17:51:39
+C Add\smacros\stests\sso\sthat\sthe\scompiler\salways\srecognizes\sthat\sx86_64\sis\slittle\sendian.\s(CVS\s5807)
+D 2008-10-11T18:11:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in 2b8ef43244589ef2d8060b076adaafacda58acf8
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
-F src/sqliteInt.h 34c8038fc636b8a511264877419da18722587b0e
+F src/sqliteInt.h d828c17fb591d8f27280cd23a06ac7a962606d24
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 977ae12c365846e1bc582fd17146151953b5ed68
-R 9c89f9db01f9afd53fe43920196dd01f
-U danielk1977
-Z 7852ef6101c10f09690b75f08c78bd02
+P 311003aff85e6b6c47e854d33f46eee31da6f30c
+R 73a9bcebaefbf1a7c969de4fbf89d37e
+U drh
+Z 624824476110295867c015cb7a9f3885
