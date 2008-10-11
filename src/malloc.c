@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.42 2008/09/23 16:41:30 danielk1977 Exp $
+** $Id: malloc.c,v 1.43 2008/10/11 15:38:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -485,9 +485,13 @@ void sqlite3PageFree(void *p){
 /*
 ** TRUE if p is a lookaside memory allocation from db
 */
+#ifndef SQLITE_OMIT_LOOKASIDE
 static int isLookaside(sqlite3 *db, void *p){
   return db && p && p>=db->lookaside.pStart && p<db->lookaside.pEnd;
 }
+#else
+#define isLookaside(A,B) 0
+#endif
 
 /*
 ** Return the size of a memory allocation previously obtained from
@@ -617,6 +621,7 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
   void *p;
+#ifndef SQLITE_OMIT_LOOKASIDE
   if( db ){
     LookasideSlot *pBuf;
     if( db->mallocFailed ){
@@ -632,6 +637,7 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
       return (void*)pBuf;
     }
   }
+#endif
   p = sqlite3Malloc(n);
   if( !p && db ){
     db->mallocFailed = 1;

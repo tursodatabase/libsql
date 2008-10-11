@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.506 2008/10/11 15:20:05 drh Exp $
+** $Id: main.c,v 1.507 2008/10/11 15:38:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -635,6 +635,7 @@ int sqlite3_close(sqlite3 *db){
   sqlite3_mutex_leave(db->mutex);
   db->magic = SQLITE_MAGIC_CLOSED;
   sqlite3_mutex_free(db->mutex);
+  assert( db->lookaside.nOut==0 );  /* Fails on a lookaside memory leak */
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
