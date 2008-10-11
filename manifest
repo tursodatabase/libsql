@@ -1,5 +1,5 @@
-C Fix\sa\sOOM\ssegfault\sin\sthe\sBETWEEN\soperator\sparsing\s-\sdiscovered\swhile\nusing\sSQLITE_OMIT_LOOKASIDE.\sAdd\sSQLITE_OMIT_LOOKASIDE\sto\stest_config.c\sand\nbypass\slookaside.test\swhen\sdefined.\s(CVS\s5803)
-D 2008-10-11T17:06:04
+C Fix\sto\ssqlite3DbMallocRaw()\swhen\sSQLITE_OMIT_LOOKASIDE\sis\sdefined\sso\sthat\nonce\sit\sfails\sit\scontinues\sto\sfail.\s\sAdd\sa\scomment\sexplaining\swhy\sthis\sis\nimportant.\s(CVS\s5804)
+D 2008-10-11T17:35:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c cadd5df14bcda5ef0c26d815eb609a755861923e
 F src/main.c 479e3b64066ac58d9957795608b0950425877f5f
-F src/malloc.c 20613ebf4664dec6eb47f62d76264b24ee2a7e4a
+F src/malloc.c 08f39c0fbc85f363d153452fc926cbcaebbef951
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
@@ -140,7 +140,7 @@ F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 04033a86a39f49cb8e348f515eb0116aa9d36678
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
-F src/parse.y e73dc4137eaf060c5836e04f7caf6ad54158dc8a
+F src/parse.y f4620f42b5e0141e20243b5f963d0fc9c180ab9b
 F src/pcache.c f8d7beceba164a34441ac37e88abb3a404f968a7
 F src/pcache.h 28d9ce2d66909db1f01652586450b62b64793093
 F src/pragma.c f0f48d0d50e9d8fa785178fc2410244c06f6a287
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 56fb7a22864774fcbd8cd00195359dc0f223ec8b
-R 2158ce4512a57fd4db4ca2df18c87ec3
+P 2a21d52c651ba113c472b6686dcf8ba009924305
+R 53242d9d091be371ffc0e60642760de2
 U drh
-Z 074e8ac5d86169b627d2bfca4057a8c5
+Z 6ab1452927e4563cdd9448fe0603ea26

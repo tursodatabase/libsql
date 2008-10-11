@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.43 2008/10/11 15:38:30 drh Exp $
+** $Id: malloc.c,v 1.44 2008/10/11 17:35:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -618,6 +618,20 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 /*
 ** Allocate and zero memory.  If the allocation fails, make
 ** the mallocFailed flag in the connection pointer.
+**
+** If db!=0 and db->mallocFailed is true (indicating a prior malloc
+** failure on the same database connection) then always return 0.
+** Hence for a particular database connection, once malloc starts
+** failing, it fails consistently until mallocFailed is reset.
+** This is an important assumption.  There are many places in the
+** code that do things like this:
+**
+**         int *a = (int*)sqlite3DbMallocRaw(db, 100);
+**         int *b = (int*)sqlite3DbMallocRaw(db, 200);
+**         if( b ) a[10] = 9;
+**
+** In other words, if a subsequent malloc (ex: "b") worked, it is assumed
+** that all prior mallocs (ex: "a") worked too.
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
   void *p;
@@ -636,6 +650,10 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
       }
       return (void*)pBuf;
     }
+  }
+#else
+  if( db && db->mallocFailed ){
+    return 0;
   }
 #endif
   p = sqlite3Malloc(n);
