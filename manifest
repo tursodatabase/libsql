@@ -1,7 +1,7 @@
-C Added\sSQLITE_OMIT_DEPRECATED\scompile\stime\soption\sto\sleave\sout\sdeprecated\sfunctions.\s\sUpdated\stest\sscripts\sto\sskip\stests\sof\sdeprecated\sfunctions\sif\sthey\sare\scompiled\sout.\s(CVS\s5808)
-D 2008-10-12T00:27:53
+C Add\sgcov\scompile\soptions\sto\slink\sline\swhen\sGCOV\soption\senabled.\s(CVS\s5809)
+D 2008-10-12T01:49:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
+F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 5ba795c6239d62450dd2cb8b469acebda412ebc9
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b201e7093c7c47b23b0f17a0890a344f3792d6d3
-R c254d73c09e9aab13a470ce7437a888c
+P ba3711acee6f4659bbf133a23d8f9f37e14d0f38
+R 9889fcb577e923bc3e84b7dfad354934
 U shane
-Z 6a75c2c0b434bdddb87ff679fa44ad65
+Z 99ef12344b107a9204ee3cff6d4b4142
