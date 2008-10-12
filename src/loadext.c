@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.55 2008/10/07 15:25:48 drh Exp $
+** $Id: loadext.c,v 1.56 2008/10/12 00:27:53 shane Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -124,7 +124,11 @@
 */
 static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_aggregate_context,
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_aggregate_count,
+#else
+  0,
+#endif
   sqlite3_bind_blob,
   sqlite3_bind_double,
   sqlite3_bind_int,
@@ -179,7 +183,11 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_errmsg,
   sqlite3_errmsg16,
   sqlite3_exec,
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_expired,
+#else
+  0,
+#endif
   sqlite3_finalize,
   sqlite3_free,
   sqlite3_free_table,
@@ -219,10 +227,18 @@ static const sqlite3_api_routines sqlite3Apis = {
   sqlite3_snprintf,
   sqlite3_step,
   sqlite3_table_column_metadata,
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_thread_cleanup,
+#else
+  0,
+#endif
   sqlite3_total_changes,
   sqlite3_trace,
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_transfer_bindings,
+#else
+  0,
+#endif
   sqlite3_update_hook,
   sqlite3_user_data,
   sqlite3_value_blob,

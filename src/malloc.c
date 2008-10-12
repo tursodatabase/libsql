@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.44 2008/10/11 17:35:16 drh Exp $
+** $Id: malloc.c,v 1.45 2008/10/12 00:27:53 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -196,6 +196,7 @@ int sqlite3MemoryAlarm(
   return SQLITE_OK;
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Deprecated external interface.  Internal/core SQLite code
 ** should call sqlite3MemoryAlarm.
@@ -207,6 +208,7 @@ int sqlite3_memory_alarm(
 ){
   return sqlite3MemoryAlarm(xCallback, pArg, iThreshold);
 }
+#endif
 
 /*
 ** Trigger the alarm 

@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.507 2008/10/11 15:38:30 drh Exp $
+** $Id: main.c,v 1.508 2008/10/12 00:27:53 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1802,6 +1802,7 @@ int sqlite3_collation_needed16(
 #endif /* SQLITE_OMIT_UTF16 */
 
 #ifndef SQLITE_OMIT_GLOBALRECOVER
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** This function is now an anachronism. It used to be used to recover from a
 ** malloc() failure, but SQLite now does this automatically.
@@ -1809,6 +1810,7 @@ int sqlite3_collation_needed16(
 int sqlite3_global_recover(void){
   return SQLITE_OK;
 }
+#endif
 #endif
 
 /*
@@ -1834,6 +1836,7 @@ int sqlite3Corrupt(void){
 }
 #endif
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** This is a convenience routine that makes sure that all thread-specific
 ** data for this thread has been deallocated.
@@ -1843,6 +1846,7 @@ int sqlite3Corrupt(void){
 */
 void sqlite3_thread_cleanup(void){
 }
+#endif
 
 /*
 ** Return meta information about a specific column of a database table.

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_transfer_bindings() API.
 #
-# $Id: bindxfer.test,v 1.5 2008/03/17 16:23:27 drh Exp $
+# $Id: bindxfer.test,v 1.6 2008/10/12 00:27:54 shane Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -50,33 +50,35 @@ do_test bindxfer-1.3 {
 do_test bindxfer-1.4 {
   sqlite3_bind_parameter_count $VM2
 } 3
-do_test bindxfer-1.5 {
-  sqlite_bind $VM1 1 one normal
-  set sqlite_static_bind_value two
-  sqlite_bind $VM1 2 {} static
-  sqlite_bind $VM1 3 {} null
-  sqlite3_transfer_bindings $VM1 $VM2
-  sqlite_step $VM1 VALUES COLNAMES
-} SQLITE_ROW
-do_test bindxfer-1.6 {
-  set VALUES
-} {{} {} {}}
-do_test bindxfer-1.7 {
-  sqlite_step $VM2 VALUES COLNAMES
-} SQLITE_ROW
-do_test bindxfer-1.8 {
-  set VALUES
-} {one two {}}
-do_test bindxfer-1.9-misuse {
-  catch {sqlite3_finalize $VM1}
-  catch {sqlite3_finalize $VM2}
-  sqlite3_transfer_bindings $VM1 $VM2
-} 21 ;# SQLITE_MISUSE
-do_test bindxfer-1.10 {
-  set VM1 [sqlite3_prepare $DB {SELECT ?, ?, ?} -1 TAIL]
-  set VM2 [sqlite3_prepare $DB {SELECT ?, ?, ?, ?} -1 TAIL]
-  sqlite3_transfer_bindings $VM1 $VM2
-} 1  ;# SQLITE_ERROR
+ifcapable deprecated {
+  do_test bindxfer-1.5 {
+    sqlite_bind $VM1 1 one normal
+    set sqlite_static_bind_value two
+    sqlite_bind $VM1 2 {} static
+    sqlite_bind $VM1 3 {} null
+    sqlite3_transfer_bindings $VM1 $VM2
+    sqlite_step $VM1 VALUES COLNAMES
+  } SQLITE_ROW
+  do_test bindxfer-1.6 {
+    set VALUES
+  } {{} {} {}}
+  do_test bindxfer-1.7 {
+    sqlite_step $VM2 VALUES COLNAMES
+  } SQLITE_ROW
+  do_test bindxfer-1.8 {
+    set VALUES
+  } {one two {}}
+  do_test bindxfer-1.9-misuse {
+    catch {sqlite3_finalize $VM1}
+    catch {sqlite3_finalize $VM2}
+    sqlite3_transfer_bindings $VM1 $VM2
+  } 21 ;# SQLITE_MISUSE
+  do_test bindxfer-1.10 {
+    set VM1 [sqlite3_prepare $DB {SELECT ?, ?, ?} -1 TAIL]
+    set VM2 [sqlite3_prepare $DB {SELECT ?, ?, ?, ?} -1 TAIL]
+    sqlite3_transfer_bindings $VM1 $VM2
+  } 1  ;# SQLITE_ERROR
+}
 catch {sqlite3_finalize $VM1}
 catch {sqlite3_finalize $VM2}
 

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.327 2008/10/07 23:46:38 drh Exp $
+** $Id: test1.c,v 1.328 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1039,9 +1039,12 @@ static void legacyCountStep(
 ){
   /* no-op */
 }
+
+#ifndef SQLITE_OMIT_DEPRECATED
 static void legacyCountFinalize(sqlite3_context *context){
   sqlite3_result_int(context, sqlite3_aggregate_count(context));
 }
+#endif
 
 /*
 ** Usage:  sqlite3_create_aggregate DB
@@ -1082,11 +1085,13 @@ static int test_create_aggregate(
     rc = sqlite3_create_function(db, "x_count", 1, SQLITE_UTF8, 0, 0,
         t1CountStep,t1CountFinalize);
   }
+#ifndef SQLITE_OMIT_DEPRECATED
   if( rc==SQLITE_OK ){
     rc = sqlite3_create_function(db, "legacy_count", 0, SQLITE_ANY, 0, 0,
         legacyCountStep, legacyCountFinalize
     );
   }
+#endif
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
   return TCL_OK;
@@ -2034,6 +2039,7 @@ static int test_expired(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_stmt *pStmt;
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -2042,6 +2048,7 @@ static int test_expired(
   }
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
   Tcl_SetObjResult(interp, Tcl_NewBooleanObj(sqlite3_expired(pStmt)));
+#endif
   return TCL_OK;
 }
 
@@ -2056,6 +2063,7 @@ static int test_transfer_bind(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_stmt *pStmt1, *pStmt2;
   if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
@@ -2066,6 +2074,7 @@ static int test_transfer_bind(
   if( getStmtPointer(interp, Tcl_GetString(objv[2]), &pStmt2)) return TCL_ERROR;
   Tcl_SetObjResult(interp, 
      Tcl_NewIntObj(sqlite3_transfer_bindings(pStmt1,pStmt2)));
+#endif
   return TCL_OK;
 }
 
@@ -3756,6 +3765,7 @@ static int test_global_recover(
   Tcl_Obj *CONST objv[]
 ){
 #ifndef SQLITE_OMIT_GLOBALRECOVER
+#ifndef SQLITE_OMIT_DEPRECATED
   int rc;
   if( objc!=1 ){
     Tcl_WrongNumArgs(interp, 1, objv, "");
@@ -3763,6 +3773,7 @@ static int test_global_recover(
   }
   rc = sqlite3_global_recover();
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+#endif
 #endif
   return TCL_OK;
 }
@@ -4139,10 +4150,11 @@ static int test_thread_cleanup(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_thread_cleanup();
+#endif
   return TCL_OK;
 }
-
 
 /*
 ** Usage:   sqlite3_pager_refcounts  DB

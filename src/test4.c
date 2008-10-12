@@ -11,7 +11,7 @@
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
 **
-** $Id: test4.c,v 1.23 2008/07/28 19:34:54 drh Exp $
+** $Id: test4.c,v 1.24 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -96,7 +96,9 @@ static void *thread_main(void *pArg){
     p->zErr = 0;
   }
   p->completed++;
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_thread_cleanup();
+#endif
   return 0;
 }
 

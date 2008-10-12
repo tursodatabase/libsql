@@ -13,7 +13,7 @@
 # cache context. What happens to connection B if one connection A encounters
 # an IO-error whilst reading or writing the file-system?
 #
-# $Id: shared_err.test,v 1.23 2008/09/29 14:12:57 danielk1977 Exp $
+# $Id: shared_err.test,v 1.24 2008/10/12 00:27:54 shane Exp $
 
 proc skip {args} {}
 
@@ -362,7 +362,9 @@ do_malloc_test shared_err-5 -tclbody {
 
 do_malloc_test shared_err-6 -tclbody {
   catch {db close}
-  sqlite3_thread_cleanup
+  ifcapable deprecated {
+    sqlite3_thread_cleanup
+  }
   sqlite3_enable_shared_cache 0
 } -cleanup {
   sqlite3_enable_shared_cache 1

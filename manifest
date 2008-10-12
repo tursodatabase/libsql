@@ -1,5 +1,5 @@
-C Add\smacros\stests\sso\sthat\sthe\scompiler\salways\srecognizes\sthat\sx86_64\sis\slittle\sendian.\s(CVS\s5807)
-D 2008-10-11T18:11:21
+C Added\sSQLITE_OMIT_DEPRECATED\scompile\stime\soption\sto\sleave\sout\sdeprecated\sfunctions.\s\sUpdated\stest\sscripts\sto\sskip\stests\sof\sdeprecated\sfunctions\sif\sthey\sare\scompiled\sout.\s(CVS\s5808)
+D 2008-10-12T00:27:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7fc26e087207e7a4a7723583dbd7997477af3b13
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,9 +117,9 @@ F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
-F src/loadext.c cadd5df14bcda5ef0c26d815eb609a755861923e
-F src/main.c 479e3b64066ac58d9957795608b0950425877f5f
-F src/malloc.c 08f39c0fbc85f363d153452fc926cbcaebbef951
+F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
+F src/main.c ff40f9f21c76d5062bc0bc06bd8853fc217dd170
+F src/malloc.c a213fb461b8df08aed7606f6a1e1d3452e089000
 F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
 F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
@@ -150,26 +150,26 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 86a6f7e48ec58658576092b2289e780d6ec69992
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 2b8ef43244589ef2d8060b076adaafacda58acf8
-F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
+F src/sqlite.h.in c255878b950548a136375f3ecdfcc367026dc951
+F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d828c17fb591d8f27280cd23a06ac7a962606d24
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 96049bd454f1547abff0a57c45f0dfa57701e076
-F src/test1.c 96331afde5bd2f64ed638c30cd9a4fea27e2bffa
+F src/test1.c a7310348961945e656c096e5f91d4d87dee6b61d
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
-F src/test4.c 41056378671e7b00e6305fa9ac6fa27e6f96f406
+F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
-F src/test7.c 475b1fa7e3275408b40a3cbdc9508cbdc41ffa02
+F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c 45024094ed7cf780c5d5dccda645145f95cf78ef
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
-F src/test_config.c 84004386841bb4738da0d03e372baf2f999aeda8
+F src/test_config.c bc71818f468494ff95ac1fe1f5906a21b25f937b
 F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -193,7 +193,7 @@ F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c b78adf571b9abac4092c641bec148832e8f26f34
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h a20f479ec3bf41c61b0c2bd5176a9bad6b2a07ef
-F src/vdbeapi.c fd2c286cee63a146d5110c11c0aa2bf3a9ebe220
+F src/vdbeapi.c 64c32499280b05fe5ec75df63efe532e066f9ff3
 F src/vdbeaux.c e007aa723a059b1e5357c15420eea84095de828a
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -228,7 +228,7 @@ F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 1134441f1ea47abd1c740090435a6ecbe9ceb263
-F test/bindxfer.test 995d2cf8df61204d748cde6960443121c4ccd2e1
+F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
 F test/bitvec.test 62a512c3f7041d1df12558eb25990e5a19820571
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
@@ -236,7 +236,7 @@ F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 36f87803c811b5986dd31eb5492cb704552776b4
 F test/capi3.test ffc1156d1f28738eb335df0b88dd294bb3c94c27
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
-F test/capi3c.test 208713e5f3a63442c3574c55b83baa7cf8ac5f28
+F test/capi3c.test 440ba10acccb74c0f160d7462a93abd1dc328224
 F test/capi3d.test 57d83b690d7364bde02cddbf8339a4b50d80ce23
 F test/cast.test ce8f14fc80f70b30ed984480cc0d8914a459e8f9
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
@@ -352,7 +352,7 @@ F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3near.test e8a9b4e16c63a795918b334b74d4aec14815bf8b
-F test/func.test 628dc9b321fc66dd6d055fca6525e157004744e1
+F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test 3856b9340b801671424ff0c581ef74342962aa7d
@@ -490,7 +490,7 @@ F test/shared.test b9f3bbd3ba727c5f1f8c815b7d0199262aacf214
 F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
-F test/shared_err.test ca197017cb84146a99937fc3183b4c9371bf0b4b
+F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
 F test/soak.test 3c317b3e55e1160731030c8e865d1858fab66fea
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 311003aff85e6b6c47e854d33f46eee31da6f30c
-R 73a9bcebaefbf1a7c969de4fbf89d37e
-U drh
-Z 624824476110295867c015cb7a9f3885
+P b201e7093c7c47b23b0f17a0890a344f3792d6d3
+R c254d73c09e9aab13a470ce7437a888c
+U shane
+Z 6a75c2c0b434bdddb87ff679fa44ad65

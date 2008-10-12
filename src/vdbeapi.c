@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.145 2008/10/07 23:46:38 drh Exp $
+** $Id: vdbeapi.c,v 1.146 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -174,6 +174,7 @@ int vdbeReprepare(Vdbe *p){
 #endif
 
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Return TRUE (non-zero) of the statement supplied as an argument needs
 ** to be recompiled.  A statement needs to be recompiled whenever the
@@ -186,6 +187,7 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe*)pStmt;
   return p==0 || p->expired;
 }
+#endif
 
 /*
 ** The following routine destroys a virtual machine that is created by
@@ -695,6 +697,7 @@ failed:
   }
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Return the number of times the Step function of a aggregate has been 
 ** called.
@@ -708,6 +711,7 @@ int sqlite3_aggregate_count(sqlite3_context *p){
   assert( p && p->pFunc && p->pFunc->xStep );
   return p->pMem->n;
 }
+#endif
 
 /*
 ** Return the number of columns in the result set for the statement pStmt.
@@ -1250,6 +1254,7 @@ int sqlite3TransferBindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   return rc;
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Deprecated external interface.  Internal/core SQLite code
 ** should call sqlite3TransferBindings.
@@ -1257,6 +1262,7 @@ int sqlite3TransferBindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
 int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   return sqlite3TransferBindings(pFromStmt, pToStmt);
 }
+#endif
 
 /*
 ** Return the sqlite3* database handle to which the prepared statement given

@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.403 2008/10/10 23:48:26 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.404 2008/10/12 00:27:54 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4125,12 +4125,14 @@ int sqlite3_create_function16(
 ** the use of these functions.  To help encourage people to avoid
 ** using these functions, we are not going to tell you want they do.
 */
+#ifndef SQLITE_OMIT_DEPRECATED
 SQLITE_DEPRECATED int sqlite3_aggregate_count(sqlite3_context*);
 SQLITE_DEPRECATED int sqlite3_expired(sqlite3_stmt*);
 SQLITE_DEPRECATED int sqlite3_transfer_bindings(sqlite3_stmt*, sqlite3_stmt*);
 SQLITE_DEPRECATED int sqlite3_global_recover(void);
 SQLITE_DEPRECATED void sqlite3_thread_cleanup(void);
 SQLITE_DEPRECATED int sqlite3_memory_alarm(void(*)(void*,sqlite3_int64,int),void*,sqlite3_int64);
+#endif
 
 /*
 ** CAPI3REF: Obtaining SQL Function Parameter Values {H15100} <S20200>

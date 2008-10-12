@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.41 2008/10/11 17:06:04 drh Exp $
+** $Id: test_config.c,v 1.42 2008/10/12 00:27:54 shane Exp $
 */
 
 #include "sqliteLimit.h"
@@ -211,6 +211,12 @@ static void set_options(Tcl_Interp *interp){
   Tcl_SetVar2(interp, "sqlite_options", "decltype", "0", TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp, "sqlite_options", "decltype", "1", TCL_GLOBAL_ONLY);
+#endif
+
+#ifdef SQLITE_OMIT_DEPRECATED
+  Tcl_SetVar2(interp, "sqlite_options", "deprecated", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "deprecated", "1", TCL_GLOBAL_ONLY);
 #endif
 
 #ifdef SQLITE_OMIT_DISKIO

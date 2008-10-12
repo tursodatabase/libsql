@@ -12,7 +12,7 @@
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
 **
-** $Id: test7.c,v 1.12 2008/07/28 19:34:54 drh Exp $
+** $Id: test7.c,v 1.13 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -118,7 +118,9 @@ static void *client_main(void *pArg){
     p->zErr = 0;
   }
   p->completed++;
+#ifndef SQLITE_OMIT_DEPRECATED
   sqlite3_thread_cleanup();
+#endif
   return 0;
 }
 
