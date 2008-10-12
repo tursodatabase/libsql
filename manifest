@@ -1,5 +1,5 @@
-C Add\sgcov\scompile\soptions\sto\slink\sline\swhen\sGCOV\soption\senabled.\s(CVS\s5809)
-D 2008-10-12T01:49:42
+C Added\s-DSQLITE_ENABLE_RTREE=1\sto\sthe\smkdll.sh\sscript.\sTicket\s#3427.\s(CVS\s5810)
+D 2008-10-12T02:03:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -80,7 +80,7 @@ F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
 F main.mk 5fc368ed5b618cc1713b7480a03346998719def4
-F mkdll.sh 79d1ed6ae221c10589dd969f130f8a3cccfffbb7
+F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ba3711acee6f4659bbf133a23d8f9f37e14d0f38
-R 9889fcb577e923bc3e84b7dfad354934
+P 3ddda111867f64d9dfd729c50c4d0555cac1499d
+R d7095f838634dd0d642e60614a14dbc5
 U shane
-Z 99ef12344b107a9204ee3cff6d4b4142
+Z be3eaa2d5aff0ace2311fedf53f7c677
