@@ -1,5 +1,5 @@
-C In\srollback.test,\sdo\snot\scheck\sfor\sjournal\sdeletion\sif\sthe\sjournal\smode\nis\snot\sDELETE.\s\sCall\sshow_memstats\safter\seach\stest\smodule\sin\sall.test\nand\squick.test.\s(CVS\s5814)
-D 2008-10-13T14:16:11
+C Fix\sthe\sSQLITE_OMIT_DATETIME_FUNCS\scompile-time\soption\sso\sthat\sit\sbuilds\nsuccessfully.\s(CVS\s5815)
+D 2008-10-13T15:35:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 8714bd809583bbe07bf22d0e1808a3fc31abe330
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 1b1fc801df40aae891bff8b03f65313df192d677
+F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
 F src/delete.c d3f2adfdd07e701115a111cc81dca33ed6039d10
 F src/expr.c f84e7606f4d6c4b7ae48f324ca625e3b4a90acdd
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -152,7 +152,7 @@ F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in c255878b950548a136375f3ecdfcc367026dc951
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h d828c17fb591d8f27280cd23a06ac7a962606d24
+F src/sqliteInt.h 69ad0023756cc738d2a5f9def8a0b21d90350667
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -635,7 +635,7 @@ F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl f74c5aacea1668dcf4ac0b75f3e1830942b733f6
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
-F tool/omittest.tcl 4be55add3ec87f45fe041b7bfa8f16dab8105431
+F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/report1.txt 9eae07f26a8fc53889b45fc833a66a33daa22816
 F tool/showdb.c a086a3d788c7a23cb008317c3180ceb19f20bce0
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 73efca985a05930df761b42886a3ba1c5199f32a
-R a137108881ea503d595235c9c0998c29
+P df2c28dc7310510bada292a2e8c1be073803858c
+R bc81ea37625583209032a34682fe8302
 U drh
-Z 0311988efaee1ccf84df6a1be703b5f6
+Z 0963db5df93e45df99a5a15dd02614fb

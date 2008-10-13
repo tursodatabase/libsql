@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.783 2008/10/11 18:11:21 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.784 2008/10/13 15:35:09 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -848,6 +848,8 @@ struct FuncDef {
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
   {nArg, SQLITE_UTF8, bNC*8, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName}
+#define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
+  {nArg, SQLITE_UTF8, bNC*8, pArg, 0, xFunc, 0, 0, #zName}
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
