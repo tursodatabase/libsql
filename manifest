@@ -1,5 +1,5 @@
-C Get\sthe\sload\sextension\stests\sworking\son\samd64.\s\sNeeded\sfor\stest\scoverage.\s(CVS\s5816)
-D 2008-10-13T17:09:11
+C fix\sa\sfew\sreturn\scodes\sin\sthe\sOS/2\sVFS\s(CVS\s5817)
+D 2008-10-13T21:46:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c e391fc95adc744bbdcefd4d11e3066998185a0a0
+F src/os_os2.c 24221ff5ab20cf3472e3ec7eec595f759de55298
 F src/os_unix.c f33b69d8a85372b270fe37ee664a4c2140a5217d
 F src/os_win.c 13bed718f62d64031b17bb3685adcf994dbf0232
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c3f91645159511250c9f86c2a97d819f0253d182
-R 124eeb349753184435d73bf21efc89f7
-U drh
-Z 4fcccca42757da9eff093bf77bc380bb
+P 119b69fba0c27c4c479749360176b6eb69d2e70f
+R 8572cc15f5ebd64ab3df6bc802843d95
+U pweilbacher
+Z d399e9a2a7b4d7e67abfaf5fa03ff952
