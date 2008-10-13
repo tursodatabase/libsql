@@ -12,7 +12,7 @@
 ** This file contains C code for 'genfkey', a program to generate trigger
 ** definitions that emulate foreign keys. See genfkey.README for details.
 **
-** $Id: genfkey.c,v 1.1 2008/10/10 17:58:27 danielk1977 Exp $
+** $Id: genfkey.c,v 1.2 2008/10/13 10:56:48 danielk1977 Exp $
 */
 
 #include "sqlite3.h"
@@ -585,8 +585,6 @@ static int populateTempTable(sqlite3 *db, char **pzErr, int *pHasErrors){
       "CREATE TABLE temp.fkey AS "
         "SELECT from_tbl, to_tbl, fkid, from_col, to_col, on_update, on_delete "
         "FROM temp.v_fkey WHERE database = 'main';"
-      "CREATE TABLE temp.col AS "
-        "SELECT * FROM temp.v_col WHERE database = 'main';"
 
       , 0, 0, pzErr
   );
@@ -596,7 +594,7 @@ static int populateTempTable(sqlite3 *db, char **pzErr, int *pHasErrors){
     "SELECT fkid, from_tbl "
     "FROM temp.fkey "
     "WHERE to_col IS NOT NULL AND NOT EXISTS (SELECT 1 "
-        "FROM temp.col WHERE tablename=to_tbl AND name==to_col"
+        "FROM temp.v_col WHERE tablename=to_tbl AND name==to_col"
     ")", pHasErrors
   );
   if( rc!=SQLITE_OK ) return rc;
@@ -629,7 +627,7 @@ static int populateTempTable(sqlite3 *db, char **pzErr, int *pHasErrors){
     "SELECT fkid, from_tbl "
     "FROM temp.fkey "
     "WHERE to_col IS NULL AND NOT EXISTS "
-      "(SELECT 1 FROM temp.col WHERE pk AND tablename = temp.fkey.to_tbl)"
+      "(SELECT 1 FROM temp.v_col WHERE pk AND tablename = temp.fkey.to_tbl)"
     , pHasErrors
   );
   if( rc!=SQLITE_OK ) return rc;
@@ -637,7 +635,7 @@ static int populateTempTable(sqlite3 *db, char **pzErr, int *pHasErrors){
   /* Fix all the implicit primary key mappings in the temp.fkey table. */
   rc = sqlite3_exec(db, 
     "UPDATE temp.fkey SET to_col = "
-      "(SELECT name FROM temp.col WHERE pk AND tablename=temp.fkey.to_tbl)"
+      "(SELECT name FROM temp.v_col WHERE pk AND tablename=temp.fkey.to_tbl)"
     " WHERE to_col IS NULL;"
     , 0, 0, pzErr
   );
@@ -653,7 +651,8 @@ static int populateTempTable(sqlite3 *db, char **pzErr, int *pHasErrors){
       "ii.name AS col "
       "FROM temp.v_idxlist AS il, temp.v_idxinfo AS ii "
       "WHERE il.isunique AND il.database='main' AND ii.indexname = il.name;"
-    "INSERT INTO temp.idx2 SELECT tablename, 'pk', name FROM temp.col WHERE pk;"
+    "INSERT INTO temp.idx2 "
+      "SELECT tablename, 'pk', name FROM temp.v_col WHERE pk;"
 
     "CREATE TABLE temp.idx AS SELECT "
       "tablename, indexname, sj(dq(col),',') AS cols "
