@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: vtab2.test,v 1.8 2008/01/31 15:53:46 drh Exp $
+# $Id: vtab2.test,v 1.9 2008/10/13 10:37:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -104,5 +104,33 @@ do_test vtab2-3.2 {
      WHERE a.rowid=1
   }
 } {main schema 0 database {} 0 {} 0 {} {} {} {} {} {} {} {} {}}
+
+do_test vtab2-4.1 {
+  execsql {
+    BEGIN TRANSACTION;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, UNIQUE(b, c));
+    CREATE TABLE fkey(
+      to_tbl,
+      to_col
+    );
+    INSERT INTO "fkey" VALUES('t1',NULL);
+    COMMIT;
+  }
+} {}
+do_test vtab2-4.2 {
+  execsql { CREATE VIRTUAL TABLE v_col USING schema }
+} {}
+do_test vtab2-4.3 {
+  execsql { SELECT name FROM v_col WHERE tablename = 't1' AND pk }
+} {a}
+do_test vtab2-4.4 {
+  execsql {
+    UPDATE fkey 
+    SET to_col = (SELECT name FROM v_col WHERE tablename = 't1' AND pk);
+  }
+} {}
+do_test vtab2-4.5 {
+  execsql { SELECT * FROM fkey }
+} {t1 a}
 
 finish_test

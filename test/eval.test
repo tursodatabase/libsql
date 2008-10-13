@@ -13,7 +13,7 @@
 # This file experiments with recursion using the "test_eval()" SQL function
 # in order to make sure that SQLite is reentrant.
 #
-# $Id: eval.test,v 1.1 2008/07/11 21:02:54 drh Exp $
+# $Id: eval.test,v 1.2 2008/10/13 10:37:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -67,5 +67,9 @@ do_test eval-3.1 {
     SELECT x, test_eval('UPDATE t2 SET y=y+100 WHERE x='||x), y FROM t2;
   }
 } {1 {} 102 2 {} 103 3 {} 104 4 {} 105}
+
+do_test eval-4.1 {
+  execsql { SELECT test_eval('SELECT "abcdefghij"') }
+} {abcdefghij}
 
 finish_test

@@ -1,5 +1,5 @@
-C Check\sfor\sfailures\sin\swinTruncate.\s\sTicket\s#3415.\s(CVS\s5811)
-D 2008-10-12T02:27:39
+C If\ssqlite3_column_value()\sis\scalled\sto\sobtain\sa\svalue\swith\sthe\sMEM_Static\sflag\sset,\sclear\sit\sand\sset\sthe\sMEM_Ephem\sflag\sbefore\sreturning.\sOtherwise,\sif\sthe\svalue\sis\spassed\sto\ssqlite3_bind_value()\sor\ssqlite3_result_value(),\ssqlite\smay\sattempt\sto\suse\sthe\sbuffer\safter\sthe\sstatement\shas\sbeen\sfinalized.\sThis\sis\snot\salways\svalid,\sas\sMEM_Static\sonly\sguarantees\sthat\sa\sMEM.z\sbuffer\swill\sbe\svalid\sfor\sthe\slifetime\sof\sthe\sowner\sstatement,\snot\sthat\sit\sis\sactually\sa\sstatic\sbuffer.\s(CVS\s5812)
+D 2008-10-13T10:37:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c b78adf571b9abac4092c641bec148832e8f26f34
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h a20f479ec3bf41c61b0c2bd5176a9bad6b2a07ef
-F src/vdbeapi.c 64c32499280b05fe5ec75df63efe532e066f9ff3
+F src/vdbeapi.c 6798c70cf176d23594ec557db88190ca8c7fa860
 F src/vdbeaux.c e007aa723a059b1e5357c15420eea84095de828a
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
@@ -287,7 +287,7 @@ F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
-F test/eval.test 020a21a236667bd4c56205d999c9992f1d944cac
+F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
 F test/exclusive.test 8d32ccf8eaf0260977dc8406bd70080ca2d7e6f8
 F test/exclusive2.test 7d2b1c0370f1e1dac4a728bd653f2dea5100fcf6
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
@@ -598,7 +598,7 @@ F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
 F test/view.test 7fba28a47f76541f6aea9542f62f3412e3519bad
 F test/vtab1.test e321e3c80434fe8de97fa4ad815882d2c7838d21
-F test/vtab2.test 1da49b015582965a8fc386aa23d051a5a622b08e
+F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
 F test/vtab5.test a0a84a89c622f4e2e816ebf39883dc319b4a1024
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 66f57ecb1626f3c5292070c1b9a9c1a9a9164d4f
-R d2184783a1dede3018139fe4efc9a35c
-U shane
-Z 353baa93eb7d9fe7bb0de61914f20a5a
+P 500c50561fba88948aad21d1aef1e1e96ab8c3aa
+R c4ea9493401c6b826e996873ceae56db
+U danielk1977
+Z e0758c74c431a8022c7792359e9dbeb0

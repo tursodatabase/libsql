@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.146 2008/10/12 00:27:54 shane Exp $
+** $Id: vdbeapi.c,v 1.147 2008/10/13 10:37:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -837,9 +837,13 @@ const unsigned char *sqlite3_column_text(sqlite3_stmt *pStmt, int i){
   return val;
 }
 sqlite3_value *sqlite3_column_value(sqlite3_stmt *pStmt, int i){
-  sqlite3_value *pOut = columnMem(pStmt, i);
+  Mem *pOut = columnMem(pStmt, i);
+  if( pOut->flags&MEM_Static ){
+    pOut->flags &= ~MEM_Static;
+    pOut->flags |= MEM_Ephem;
+  }
   columnMallocFailure(pStmt);
-  return pOut;
+  return (sqlite3_value *)pOut;
 }
 #ifndef SQLITE_OMIT_UTF16
 const void *sqlite3_column_text16(sqlite3_stmt *pStmt, int i){
