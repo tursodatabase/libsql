@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_OMIT_DATETIME_FUNCS\scompile-time\soption\sso\sthat\sit\sbuilds\nsuccessfully.\s(CVS\s5815)
-D 2008-10-13T15:35:09
+C Get\sthe\sload\sextension\stests\sworking\son\samd64.\s\sNeeded\sfor\stest\scoverage.\s(CVS\s5816)
+D 2008-10-13T17:09:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -399,7 +399,7 @@ F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
 F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
-F test/loadext.test 4972cb5a12ba70f23f827452b8265be08bb6d8cd
+F test/loadext.test 18db29c081380fdedcfbd8c633847712059ae104
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P df2c28dc7310510bada292a2e8c1be073803858c
-R bc81ea37625583209032a34682fe8302
+P c3f91645159511250c9f86c2a97d819f0253d182
+R 124eeb349753184435d73bf21efc89f7
 U drh
-Z 0963db5df93e45df99a5a15dd02614fb
+Z 4fcccca42757da9eff093bf77bc380bb

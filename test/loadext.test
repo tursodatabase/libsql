@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.15 2008/08/22 13:57:39 pweilbacher Exp $
+# $Id: loadext.test,v 1.16 2008/10/13 17:09:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ if {$::tcl_platform(platform) eq "windows" || $::tcl_platform(platform) eq "os2"
 } else {
   set testextension ./libtestloadext.so
 }
-set gcc_shared -shared
+set gcc_shared "-shared -fPIC"
 if {$::tcl_platform(os) eq "Darwin"} {
   set gcc_shared -dynamiclib
 }
@@ -75,7 +75,7 @@ if {![file exists $testextension]} {
   set srcdir [file dir $testdir]/src
   set testextsrc $srcdir/test_loadext.c
   if {[catch {
-    exec gcc $gcc_shared -Wall -I$srcdir -I. -g $testextsrc -o $testextension
+    exec gcc {*}[set gcc_shared] -Wall -I$srcdir -I. -g $testextsrc -o $testextension
   } msg]} {
     puts "Skipping loadext tests: Test extension not built..."
     puts $msg
