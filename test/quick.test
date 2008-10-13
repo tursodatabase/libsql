@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.87 2008/09/09 18:28:07 danielk1977 Exp $
+# $Id: quick.test,v 1.88 2008/10/13 14:16:11 drh Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -35,7 +35,10 @@ while {[set arg [lshift argv]] != ""} {
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
-proc finish_test {} {}
+proc finish_test {} {
+  catch {db close}
+  show_memstats
+}
 set ISQUICK 1
 
 set EXCLUDE {

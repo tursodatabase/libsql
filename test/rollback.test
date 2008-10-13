@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.8 2008/10/07 15:00:09 danielk1977 Exp $
+# $Id: rollback.test,v 1.9 2008/10/13 14:16:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -125,9 +125,11 @@ if {$tcl_platform(platform) == "unix" && $permutation ne "onefile"} {
       SELECT distinct tbl_name FROM sqlite_master;
     } db2
   } {t1 t3}
-  do_test rollback-2.3 {
-    file exists testA.db-journal
-  } 0
+  if {[lsearch {exclusive persistent_journal no_journal} $permutation]<0} {
+    do_test rollback-2.3 {
+      file exists testA.db-journal
+    } 0
+  }
   do_test rollback-2.4 {
     execsql {
       SELECT distinct tbl_name FROM sqlite_master;

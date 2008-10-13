@@ -1,5 +1,5 @@
-C Use\sone\sless\stemporary\stable\sin\sgenfkey.c.\sThe\sretired\stable\swas\sbeing\sused\sto\sworkaround\sthe\sbug\sfixed\sby\s(5812).\s(CVS\s5813)
-D 2008-10-13T10:56:48
+C In\srollback.test,\sdo\snot\scheck\sfor\sjournal\sdeletion\sif\sthe\sjournal\smode\nis\snot\sDELETE.\s\sCall\sshow_memstats\safter\seach\stest\smodule\sin\sall.test\nand\squick.test.\s(CVS\s5814)
+D 2008-10-13T14:16:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,7 +204,7 @@ F src/where.c 76bc0a7a5eb2e20b72b644f7c5f104c285143a54
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test c321c114a8a31a33e3cbda910fa39949f5d9dcb2
-F test/all.test e15e9df483e1a72ac0c9d6cad216c4c0bdc1c1c9
+F test/all.test 03cdd58d389e35bee8d57b7d24357b827aecc463
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
@@ -463,11 +463,11 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test bbaa1fbdac766cab2219d5599e9cd5bc2614d01e
+F test/quick.test 70695607082b3e1ca54023b2c856991604b07703
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/rollback.test 71ef4ea8cce5434045b1d1132aed36dabe177703
+F test/rollback.test d67022e8f99fdb1f115de7e8ea65139263b4bd40
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b055bfc4e5268d8a66d6a4f5e8aec1285fe4b8e7
-R a7f9557fc9b70a138a1706f314cf9726
-U danielk1977
-Z 55e2fccdb1a78cce9b6aee3d77c5f37e
+P 73efca985a05930df761b42886a3ba1c5199f32a
+R a137108881ea503d595235c9c0998c29
+U drh
+Z 0311988efaee1ccf84df6a1be703b5f6

@@ -10,13 +10,14 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.58 2008/09/09 18:28:07 danielk1977 Exp $
+# $Id: all.test,v 1.59 2008/10/13 14:16:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
 proc finish_test {} {
-  # no-op
+  catch {db close}
+  show_memstats
 }
 
 if {[file exists ./sqlite_test_count]} {
