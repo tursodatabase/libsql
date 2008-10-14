@@ -11,7 +11,7 @@
 #
 # This file is focused on testing the pcache module.
 #
-# $Id: pcache2.test,v 1.1 2008/09/15 15:36:58 drh Exp $
+# $Id: pcache2.test,v 1.2 2008/10/14 19:21:52 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -66,5 +66,8 @@ do_test pcache2-1.4 {
   sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0
 } {0 13 13}
 
+db close
 catch {db2 close}
+sqlite3_shutdown
+sqlite3_config_pagecache 0 0
 finish_test
