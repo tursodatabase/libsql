@@ -13,7 +13,7 @@
 # correctly. The emphasis of these tests are the _prepare(), _step() and
 # _finalize() calls.
 #
-# $Id: malloc3.test,v 1.23 2008/05/13 19:41:54 shane Exp $
+# $Id: malloc3.test,v 1.24 2008/10/14 15:54:08 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -197,7 +197,7 @@ TEST 1 {
   } {}
 }
 SQL { 
-  CREATE TABLE abc(a, b, c); 
+  CREATE TABLE IF NOT EXISTS abc(a, b, c); 
 }
 TEST 2 {
   do_test $testid.1 {

@@ -1,5 +1,5 @@
-C Update\smain.mk\sso\sthat\sa\scouple\sof\sfts3\sfiles\sare\scompiled\swith\sSQLITE_TEST\swhen\sbuilding\stestfixture.\s(CVS\s5819)
-D 2008-10-14T14:56:01
+C Make\ssure\smalloc3.test\sruns\seven\sif\sa\sCREATE\sTABLE\stransaction\scommits\nprior\sto\sthe\slast\sOOM\serror.\s(CVS\s5820)
+D 2008-10-14T15:54:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -409,7 +409,7 @@ F test/lock5.test 904c20aec51d5dbff0a3aec6a4d35c5ae0257449
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/malloc.test 2fa351108503f0da80e9183a8157fbd943c5d533
-F test/malloc3.test 094f8195fe8e409bd4da0f1d769f7745faec62c8
+F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a06d226dee0df0df1aedb9c17353332c6a6e712f
-R 8357d1b53908bd0c1999b27d27437d9d
-U danielk1977
-Z edca3a4ec25ca56425cb87ddb3480a25
+P 8eb315ee5c2a15919171b7d495ac4f1c851b2da9
+R a1042910d9b1fd17ce238ac2a8c362fc
+U drh
+Z 0f06f137a84a80abda597c94cdce859d
