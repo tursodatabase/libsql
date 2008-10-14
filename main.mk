@@ -44,14 +44,17 @@
 
 # This is how we compile
 #
-TCCX = $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree -I$(TOP)/ext/icu
+TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
+TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 
 # Object files for the SQLite library.
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o date.o delete.o \
-         expr.o fault.o func.o global.o hash.o \
+         callback.o complete.o date.o delete.o expr.o fault.o \
+         fts3.o fts3_hash.o fts3_icu.o fts3_porter.o \
+         fts3_tokenizer.o fts3_tokenizer1.o \
+         func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem1.o mem2.o mem3.o mem4.o mem5.o mem6.o \
          mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
@@ -62,6 +65,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
          walker.o where.o utf.o vtab.o
+
 
 
 # All of the source code files.
