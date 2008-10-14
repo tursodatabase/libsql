@@ -146,7 +146,7 @@ proc copy_file {filename} {
   set declpattern ^$declpattern
   while {![eof $in]} {
     set line [gets $in]
-    if {[regexp {^#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
+    if {[regexp {^\s*#\s*include\s+["<]([^">]+)[">]} $line all hdr]} {
       if {[info exists available_hdr($hdr)]} {
         if {$available_hdr($hdr)} {
           if {$hdr!="os_common.h" && $hdr!="hwtime.h"} {
