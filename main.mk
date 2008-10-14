@@ -243,7 +243,8 @@ TESTSRC2 = \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \
   $(TOP)/src/select.c $(TOP)/src/tokenize.c                                    \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c
+  $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
+  $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_tokenizer.c 
 
 # Header files used by all library source files.
 #
