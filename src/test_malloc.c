@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.48 2008/10/10 17:41:29 drh Exp $
+** $Id: test_malloc.c,v 1.49 2008/10/15 11:43:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1001,14 +1001,22 @@ static int test_config_lookaside(
 ){
   int rc;
   int sz, cnt;
+  Tcl_Obj *pRet;
   if( objc!=3 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SIZE COUNT");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &sz) ) return TCL_ERROR;
   if( Tcl_GetIntFromObj(interp, objv[2], &cnt) ) return TCL_ERROR;
+  pRet = Tcl_NewObj();
+  Tcl_ListObjAppendElement(
+      interp, pRet, Tcl_NewIntObj(sqlite3GlobalConfig.szLookaside)
+  );
+  Tcl_ListObjAppendElement(
+      interp, pRet, Tcl_NewIntObj(sqlite3GlobalConfig.nLookaside)
+  );
   rc = sqlite3_config(SQLITE_CONFIG_LOOKASIDE, sz, cnt);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  Tcl_SetObjResult(interp, pRet);
   return TCL_OK;
 }
 

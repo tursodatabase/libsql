@@ -13,12 +13,12 @@
 #
 # This is a copy of speed1.test modified to user prepared statements.
 #
-# $Id: speed1p.test,v 1.5 2008/07/30 13:15:46 drh Exp $
+# $Id: speed1p.test,v 1.6 2008/10/15 11:43:55 danielk1977 Exp $
 #
 
 sqlite3_shutdown
 #sqlite3_config_scratch 29000 1
-sqlite3_config_lookaside 2048 300
+set old_lookaside [sqlite3_config_lookaside 2048 300]
 #sqlite3_config_pagecache 1024 11000
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -326,7 +326,6 @@ speed_trial speed1p-random-del1 20000 row {
 do_test speed1p-1.1 {
   db one {SELECT count(*) FROM t1}
 } 30000
-
     
 # Delete 20000 more rows at random from the table.
 #
@@ -339,4 +338,7 @@ do_test speed1p-1.2 {
 } 10000
 speed_trial_summary speed1
 
+db close
+sqlite3_shutdown
+eval sqlite3_config_lookaside $old_lookaside
 finish_test
