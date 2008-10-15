@@ -1,5 +1,5 @@
-C After\srunning\sspeed1.test\sand\sspeed1p.test,\sreset\sthe\ssize\sof\sthe\slookaside\sbuffer.\sOtherwise,\ssubsequent\sruns\sof\smalloc5.test\smay\sreport\san\serror.\sChanges\sto\stest\scode\sonly.\s(CVS\s5824)
-D 2008-10-15T11:43:55
+C Version\s3.6.4\s(CVS\s5825)
+D 2008-10-15T11:59:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3d2d05b6286e2a22a711e02f37748065b3b7f86e
+P 9283478e69d84aa99b2d4636587c8c0b34e7c4da
 R 471b5d462241fc0e1a0cb7b7d4155791
-U danielk1977
-Z eee97e63dce82dee7a4ebfea59be659b
+U drh
+Z 9c14935f349136807f4793420af35d7b
