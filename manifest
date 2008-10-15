@@ -1,5 +1,5 @@
-C Do\snot\sopen\sand\ssync\sthe\sdirectory\sin\sunixDelete()\sif\sthe\sSQLITE_DISABLE_DIRSYNC\soption\sis\sdefined.\s(CVS\s5826)
-D 2008-10-15T16:02:49
+C Fix\sa\snaming\sproblem\swhen\sSQLITE_MUTEX_NOOP\sis\sused.\s(CVS\s5827)
+D 2008-10-15T19:03:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/mem5.c 706d462c13a9819dfec7c10d9dccedf8d199960c
 F src/mem6.c febe4db9ddef73df500989e68a9d4ac68602a075
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
-F src/mutex_noop.c 5356c291c6c58c09163888d2116f830468cd8157
+F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
 F src/mutex_unix.c 29049a61755cccddb2ee53904e6906bb7674223c
 F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cd73cffab39d80393f26a20c90aa97cb73d595ea
-R 4c5fbd54f3e4fdc4fd9305cb80318942
-U danielk1977
-Z 4abc96f5783c0e1097291f0a5823404e
+P 8ef141644edc5182785c6a554222c2ffbe92fef5
+R 1bb6aba69f0e6d873811151df726637f
+U drh
+Z eb9de0203accf5058eb797c96ab867a2

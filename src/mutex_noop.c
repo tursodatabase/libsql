@@ -25,7 +25,7 @@
 ** that does error checking on mutexes to make sure they are being
 ** called correctly.
 **
-** $Id: mutex_noop.c,v 1.1 2008/10/07 15:25:48 drh Exp $
+** $Id: mutex_noop.c,v 1.2 2008/10/15 19:03:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -44,7 +44,7 @@ static sqlite3_mutex *noopMutexAlloc(int id){ return (sqlite3_mutex*)8; }
 static void noopMutexFree(sqlite3_mutex *p){ return; }
 static void noopMutexEnter(sqlite3_mutex *p){ return; }
 static int noopMutexTry(sqlite3_mutex *p){ return SQLITE_OK; }
-static void debugMutexLeave(sqlite3_mutex *p){ return; }
+static void noopMutexLeave(sqlite3_mutex *p){ return; }
 
 sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   static sqlite3_mutex_methods sMutex = {
