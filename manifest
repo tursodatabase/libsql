@@ -1,5 +1,5 @@
-C Version\s3.6.4\s(CVS\s5825)
-D 2008-10-15T11:59:24
+C Do\snot\sopen\sand\ssync\sthe\sdirectory\sin\sunixDelete()\sif\sthe\sSQLITE_DISABLE_DIRSYNC\soption\sis\sdefined.\s(CVS\s5826)
+D 2008-10-15T16:02:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 24221ff5ab20cf3472e3ec7eec595f759de55298
-F src/os_unix.c 48527028ce548efb23c1e13f2e737eed8ee01444
+F src/os_unix.c 85d7e98eb2a81b9aae38b2cd7011b881c0f91ef0
 F src/os_win.c 13bed718f62d64031b17bb3685adcf994dbf0232
 F src/pager.c d98f56128e849083f2f612196efebd982c491fea
 F src/pager.h 9c1917be28fff58118e1fe0ddbc7adfb8dd4f44d
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9283478e69d84aa99b2d4636587c8c0b34e7c4da
-R 471b5d462241fc0e1a0cb7b7d4155791
-U drh
-Z 9c14935f349136807f4793420af35d7b
+P cd73cffab39d80393f26a20c90aa97cb73d595ea
+R 4c5fbd54f3e4fdc4fd9305cb80318942
+U danielk1977
+Z 4abc96f5783c0e1097291f0a5823404e
