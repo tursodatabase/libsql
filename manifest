@@ -1,5 +1,5 @@
-C Add\s"pragma\sjournal_mode=memory".\sChange\sthe\sway\srollback\sworks\sfor\sin-memory\sdatabases\sso\sthat\sit\sreuses\sthe\sjournal_mode=memory\scode.\s(CVS\s5830)
-D 2008-10-17T18:51:52
+C Add\sthe\smemjournal.c\sfile\sthat\sshould\shave\sbeen\swith\sthe\sprevious\scheckin.\s(CVS\s5831)
+D 2008-10-17T19:13:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,6 +126,7 @@ F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 706d462c13a9819dfec7c10d9dccedf8d199960c
 F src/mem6.c febe4db9ddef73df500989e68a9d4ac68602a075
+F src/memjournal.c b12b20d3441945e590b8dacdc6705d39e02ab33c
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
@@ -648,7 +649,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5ce2ddffea807d45318619cc9e259a99dfa14346
-R d3d208ea9f507cd99d0a55a9424ad33c
+P 39ebf01addf9d0867daafd06a38719e725128f9c
+R 1d4a997aeee082e5905b4c1b06561039
 U danielk1977
-Z e1e732a777069a84074d19c41d686a93
+Z 721a63141a485df7fdb37e6807d4ec32
