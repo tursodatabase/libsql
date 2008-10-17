@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.35 2008/10/11 17:04:04 danielk1977 Exp $
+# $Id: permutations.test,v 1.36 2008/10/17 18:51:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -447,6 +447,24 @@ run_tests "autovacuum_ioerr" -description {
 } -presql {
   pragma auto_vacuum = 1
 } -include ioerr.test
+
+# Run tests with an in-memory journal.
+#
+run_tests "inmemory_journal" -description {
+  Run tests with an in-memory journal file.
+} -presql {
+  pragma journal_mode = 'memory'
+} -exclude {
+  # Exclude all tests that simulate IO errors.
+  autovacuum_ioerr2.test incrvacuum_ioerr.test ioerr.test
+  ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
+  vacuum3.test incrblob_err.test diskfull.test 
+
+  # Exclude test scripts that use tcl IO to access journal files or count
+  # the number of fsync() calls.
+  pager.test exclusive.test jrnlmode.test sync.test misc1.test 
+  journal1.test conflict.test
+}
 
 ifcapable mem3 {
   run_tests "memsys3" -description {

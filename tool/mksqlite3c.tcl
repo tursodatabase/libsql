@@ -247,6 +247,7 @@ foreach file {
    vdbe.c
    vdbeblob.c
    journal.c
+   memjournal.c
 
    walker.c
    resolve.c

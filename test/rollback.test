@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.9 2008/10/13 14:16:11 drh Exp $
+# $Id: rollback.test,v 1.10 2008/10/17 18:51:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -81,7 +81,10 @@ do_test rollback-1.9 {
 
 set permutation ""
 catch {set permutation $::permutations_test_prefix}
-if {$tcl_platform(platform) == "unix" && $permutation ne "onefile"} {
+if {$tcl_platform(platform) == "unix" 
+ && $permutation ne "onefile"
+ && $permutation ne "inmemory_journal"
+} {
   do_test rollback-2.1 {
     execsql {
       BEGIN;

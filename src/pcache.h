@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.13 2008/10/11 17:42:29 drh Exp $
+** @(#) $Id: pcache.h,v 1.14 2008/10/17 18:51:53 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -40,7 +40,7 @@ struct PgHdr {
   */
   i16 nRef;                      /* Number of users of this page */
   PCache *pCache;                /* Cache that owns this page */
-  void *apSave[2];               /* Journal entries for in-memory databases */
+
   /**********************************************************************
   ** Elements above are accessible at any time by the owner of the cache
   ** without the need for a mutex.  The elements that follow can only be
@@ -108,11 +108,6 @@ void sqlite3PcacheMove(PgHdr*, Pgno);
 
 /* Remove all pages with pgno>x.  Reset the cache if x==0 */
 void sqlite3PcacheTruncate(PCache*, Pgno x);
-
-/* Routines used to implement transactions on memory-only databases. */
-int sqlite3PcachePreserve(PgHdr*, int);    /* Preserve current page content */
-void sqlite3PcacheCommit(PCache*, int);    /* Drop preserved copy */
-void sqlite3PcacheRollback(PCache*, int, void (*xReiniter)(PgHdr*));
 
 /* Get a list of all dirty pages in the cache, sorted by page number */
 PgHdr *sqlite3PcacheDirtyList(PCache*);

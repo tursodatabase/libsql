@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.33 2008/09/29 11:49:48 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.34 2008/10/17 18:51:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -491,8 +491,6 @@ static void pcachePageFree(PgHdr *p){
   if( p->pCache->bPurgeable ){
     pcache_g.nCurrentPage--;
   }
-  pcacheFree(p->apSave[0]);
-  pcacheFree(p->apSave[1]);
   pcacheFree(p);
 }
 
@@ -813,7 +811,6 @@ void sqlite3PcacheMakeDirty(PgHdr *p){
 
 static void pcacheMakeClean(PgHdr *p){
   PCache *pCache = p->pCache;
-  assert( p->apSave[0]==0 && p->apSave[1]==0 );
   assert( p->flags & PGHDR_DIRTY );
   pcacheRemoveFromList(&pCache->pDirty, p);
   pcacheAddToList(&pCache->pClean, p);
@@ -844,7 +841,6 @@ void sqlite3PcacheCleanAll(PCache *pCache){
   PgHdr *p;
   pcacheEnterMutex();
   while( (p = pCache->pDirty)!=0 ){
-    assert( p->apSave[0]==0 && p->apSave[1]==0 );
     pcacheRemoveFromList(&pCache->pDirty, p);
     p->flags &= ~PGHDR_DIRTY;
     pcacheAddToList(&pCache->pClean, p);
@@ -869,10 +865,6 @@ void sqlite3PcacheMove(PgHdr *p, Pgno newPgno){
   pcacheRemoveFromHash(p);
   p->pgno = newPgno;
   if( newPgno==0 ){
-    pcacheFree(p->apSave[0]);
-    pcacheFree(p->apSave[1]);
-    p->apSave[0] = 0;
-    p->apSave[1] = 0;
     if( (p->flags & PGHDR_DIRTY) ){
       pcacheMakeClean(p);
     }
@@ -970,72 +962,6 @@ void sqlite3PcacheClose(PCache *pCache){
   pcacheExitMutex();
 }
 
-/*
-** Preserve the content of the page.  It is assumed that the content
-** has not been preserved already.
-**
-** If idJournal==0 then this is for the overall transaction.
-** If idJournal==1 then this is for the statement journal.
-**
-** This routine is used for in-memory databases only.
-**
-** Return SQLITE_OK or SQLITE_NOMEM if a memory allocation fails.
-*/
-int sqlite3PcachePreserve(PgHdr *p, int idJournal){
-  void *x;
-  int sz;
-  assert( p->pCache->bPurgeable==0 );
-  assert( p->apSave[idJournal]==0 );
-  sz = p->pCache->szPage;
-  p->apSave[idJournal] = x = sqlite3PageMalloc( sz );
-  if( x==0 ) return SQLITE_NOMEM;
-  memcpy(x, p->pData, sz);
-  return SQLITE_OK;
-}
-
-/*
-** Commit a change previously preserved.
-*/
-void sqlite3PcacheCommit(PCache *pCache, int idJournal){
-  PgHdr *p;
-  int mask = idJournal==0 ? ~PGHDR_IN_JOURNAL : 0xffffff;
-  pcacheEnterMutex();     /* Mutex is required to call pcacheFree() */
-  for(p=pCache->pDirty; p; p=p->pNext){
-    if( p->apSave[idJournal] ){
-      pcacheFree(p->apSave[idJournal]);
-      p->apSave[idJournal] = 0;
-    }
-    p->flags &= mask;
-  }
-  pcacheExitMutex();
-}
-
-/*
-** Rollback a change previously preserved.
-*/
-void sqlite3PcacheRollback(
-  PCache *pCache,                  /* Pager cache */
-  int idJournal,                   /* Which copy to rollback to */
-  void (*xReiniter)(PgHdr*)        /* Called on each rolled back page */
-){
-  PgHdr *p;
-  int sz;
-  int mask = idJournal==0 ? ~PGHDR_IN_JOURNAL : 0xffffff;
-  pcacheEnterMutex();     /* Mutex is required to call pcacheFree() */
-  sz = pCache->szPage;
-  for(p=pCache->pDirty; p; p=p->pNext){
-    if( p->apSave[idJournal] ){
-      memcpy(p->pData, p->apSave[idJournal], sz);
-      pcacheFree(p->apSave[idJournal]);
-      p->apSave[idJournal] = 0;
-      if( xReiniter ){
-        xReiniter(p);
-      }
-    }
-    p->flags &= mask;
-  }
-  pcacheExitMutex();
-}
 
 #ifndef NDEBUG
 /* 

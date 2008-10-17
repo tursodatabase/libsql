@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.85 2008/09/29 11:49:48 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.86 2008/10/17 18:51:53 danielk1977 Exp $
 */
 
 #ifndef _PAGER_H_
@@ -66,6 +66,7 @@ typedef struct PgHdr DbPage;
 #define PAGER_JOURNALMODE_PERSIST     1   /* Commit by zeroing journal header */
 #define PAGER_JOURNALMODE_OFF         2   /* Journal omitted.  */
 #define PAGER_JOURNALMODE_TRUNCATE    3   /* Commit by truncating journal */
+#define PAGER_JOURNALMODE_MEMORY      4   /* In-memory journal file */
 
 /*
 ** See source code comments for a detailed description of the following
