@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.404 2008/10/12 00:27:54 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.405 2008/10/17 15:10:37 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2004,7 +2004,7 @@ char *sqlite3_snprintf(int,char*,const char*, ...);
 ** memory might result in a segmentation fault or other severe error.
 ** Memory corruption, a segmentation fault, or other severe error
 ** might result if sqlite3_free() is called with a non-NULL pointer that
-** was not obtained from sqlite3_malloc() or sqlite3_free().
+** was not obtained from sqlite3_malloc() or sqlite3_realloc().
 **
 ** The sqlite3_realloc() interface attempts to resize a
 ** prior memory allocation to be at least N bytes, where N is the

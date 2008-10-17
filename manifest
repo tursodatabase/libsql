@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\s(5826).\s(CVS\s5828)
-D 2008-10-16T13:27:41
+C Fix\sa\stypo\sin\sdocumentation.\s\sTicket\s#3447.\s(CVS\s5829)
+D 2008-10-17T15:10:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 86a6f7e48ec58658576092b2289e780d6ec69992
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in c255878b950548a136375f3ecdfcc367026dc951
+F src/sqlite.h.in ee95eeed2196e5fa98fdad007301b8d5d3733b6d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 69ad0023756cc738d2a5f9def8a0b21d90350667
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -648,7 +648,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 35ce71c6f19953a17aa37abe1c0c97685070e2f6
-R c1c21d438b41c18bd1620dc0c406c789
-U danielk1977
-Z 3caaf7b724140890e1c01c8a3a531546
+P 8065a92f705dfa04863ba4a828f5bd2803901be8
+R 4bd0b87e5fdde7ed86abc759091ffc21
+U drh
+Z 9251407651b2b71ae84b77628eaaa866
