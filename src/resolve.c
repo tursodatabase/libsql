@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.9 2008/10/11 16:47:36 drh Exp $
+** $Id: resolve.c,v 1.10 2008/10/19 21:03:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -320,6 +320,7 @@ static int lookupName(
   if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
     sqlite3DbFree(db, zCol);
     pExpr->op = TK_STRING;
+    pExpr->pTab = 0;
     return 0;
   }
 

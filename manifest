@@ -1,5 +1,5 @@
-C Add\sthe\smemjournal.c\sfile\sthat\sshould\shave\sbeen\swith\sthe\sprevious\scheckin.\s(CVS\s5831)
-D 2008-10-17T19:13:05
+C When\sa\sname\sin\sdouble\squotes\sfalls\sback\sto\sbeing\sa\sstring\sliteral,\nmake\ssure\sit\shas\sno\saffinity.\s\sTicket\s#3442.\s(CVS\s5832)
+D 2008-10-19T21:03:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2014e5a4010ad5ebbcaedff98240b3d14ee83838
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/pragma.c 10d61f211d819acd97174a41acc56394bd5bde7e
 F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
-F src/resolve.c 86a6f7e48ec58658576092b2289e780d6ec69992
+F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in ee95eeed2196e5fa98fdad007301b8d5d3733b6d
@@ -649,7 +649,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 39ebf01addf9d0867daafd06a38719e725128f9c
-R 1d4a997aeee082e5905b4c1b06561039
-U danielk1977
-Z 721a63141a485df7fdb37e6807d4ec32
+P 0509eff0e6b5cdeeb52c12c0574ea63e9715bcb5
+R 32b01070add0534bd17e58b3561021e2
+U drh
+Z a929a552424d6b9a1f5a1599d3128c03
