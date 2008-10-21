@@ -160,6 +160,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         delete.lo expr.lo fault.lo func.lo global.lo \
         hash.lo journal.lo insert.lo legacy.lo loadext.lo \
         main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
+        memjournal.o \
         mutex.lo mutex_noop.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
         pager.lo parse.lo pcache.lo pragma.lo prepare.lo printf.lo random.lo \
@@ -215,6 +216,7 @@ SRC = \
   $(TOP)/src/mem4.c \
   $(TOP)/src/mem5.c \
   $(TOP)/src/mem6.c \
+  $(TOP)/src/memjournal.c \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
   $(TOP)/src/mutex_noop.c \
@@ -569,6 +571,9 @@ mem5.lo:	$(TOP)/src/mem5.c $(HDR)
 
 mem6.lo:	$(TOP)/src/mem6.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem6.c
+
+memjournal.lo:	$(TOP)/src/memjournal.c $(HDR)
+	$(LTCOMPILE) -c $(TOP)/src/memjournal.c
 
 mutex.lo:	$(TOP)/src/mutex.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mutex.c
