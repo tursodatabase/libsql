@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.135 2008/10/12 02:27:39 shane Exp $
+** $Id: os_win.c,v 1.136 2008/10/22 16:55:47 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -73,7 +73,7 @@
 ** Determine if we are dealing with WindowsCE - which has a much
 ** reduced API.
 */
-#if defined(SQLITE_OS_WINCE)
+#if SQLITE_OS_WINCE
 # define AreFileApisANSI() 1
 #endif
 
@@ -790,11 +790,15 @@ static int getReadLock(winFile *pFile){
     ovlp.hEvent = 0;
     res = LockFileEx(pFile->h, LOCKFILE_FAIL_IMMEDIATELY,
                      0, SHARED_SIZE, 0, &ovlp);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
     pFile->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
     res = LockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
+#endif
   }
   return res;
 }
@@ -806,8 +810,12 @@ static int unlockReadLock(winFile *pFile){
   int res;
   if( isNT() ){
     res = UnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     res = UnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
+#endif
   }
   return res;
 }
@@ -1080,8 +1088,12 @@ static void *convertUtf8Filename(const char *zFilename){
   void *zConverted = 0;
   if( isNT() ){
     zConverted = utf8ToUnicode(zFilename);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     zConverted = utf8ToMbcs(zFilename);
+#endif
   }
   /* caller will handle out of memory */
   return zConverted;
@@ -1111,6 +1123,11 @@ static int getTempname(int nBuf, char *zBuf){
     }else{
       return SQLITE_NOMEM;
     }
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     char *zUtf8;
     char zMbcsPath[MAX_PATH];
@@ -1122,6 +1139,7 @@ static int getTempname(int nBuf, char *zBuf){
     }else{
       return SQLITE_NOMEM;
     }
+#endif
   }
   for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
@@ -1249,6 +1267,11 @@ static int winOpen(
        dwFlagsAndAttributes,
        NULL
     );
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     h = CreateFileA((char*)zConverted,
        dwDesiredAccess,
@@ -1258,6 +1281,7 @@ static int winOpen(
        dwFlagsAndAttributes,
        NULL
     );
+#endif
   }
   if( h==INVALID_HANDLE_VALUE ){
     free(zConverted);
@@ -1331,6 +1355,11 @@ static int winDelete(
                || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
            && (++cnt < MX_DELETION_ATTEMPTS)
            && (Sleep(100), 1) );
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     do{
       DeleteFileA(zConverted);
@@ -1338,6 +1367,7 @@ static int winDelete(
                || ((error = GetLastError()) == ERROR_ACCESS_DENIED))
            && (++cnt < MX_DELETION_ATTEMPTS)
            && (Sleep(100), 1) );
+#endif
   }
   free(zConverted);
   OSTRACE2("DELETE \"%s\"\n", zFilename);
@@ -1362,8 +1392,14 @@ static int winAccess(
   }
   if( isNT() ){
     attr = GetFileAttributesW((WCHAR*)zConverted);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     attr = GetFileAttributesA((char*)zConverted);
+#endif
   }
   free(zConverted);
   switch( flags ){
@@ -1422,6 +1458,11 @@ static int winFullPathname(
     free(zConverted);
     zOut = unicodeToUtf8(zTemp);
     free(zTemp);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     char *zTemp;
     nByte = GetFullPathNameA((char*)zConverted, 0, 0, 0) + 3;
@@ -1434,6 +1475,7 @@ static int winFullPathname(
     free(zConverted);
     zOut = mbcsToUtf8(zTemp);
     free(zTemp);
+#endif
   }
   if( zOut ){
     sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zOut);
@@ -1462,8 +1504,14 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   }
   if( isNT() ){
     h = LoadLibraryW((WCHAR*)zConverted);
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
   }else{
     h = LoadLibraryA((char*)zConverted);
+#endif
   }
   free(zConverted);
   return (void*)h;
