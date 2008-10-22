@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scan\soccur\sfollowing\sa\smalloc()\sfailure.\sTicket\s#3455.\s(CVS\s5834)
-D 2008-10-22T10:45:38
+C Test\scases\sfor\sticket\s#3442.\s(CVS\s5835)
+D 2008-10-22T16:04:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4352ab12369706c793f3e8165db35b102c929998
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -571,6 +571,7 @@ F test/tkt3346.test 2f9a2be8621a87cbdb6283177dd419c7c46dd2a1
 F test/tkt3357.test b37a51a12ba5e143d6714778276438606f8f9e27
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
+F test/tkt3442.test 33722a3fa4bdc0614448044eb5e28765aea28eb7
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -649,7 +650,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a3c810f0c80e3e9dfe60a0ffd8688d7c76a30d50
-R eb10ad551dda09e9891a5b737d1b43ef
-U danielk1977
-Z 78303c07616fabd1b430a1645d928812
+P e0d3aa75b4fa0e706185a3058b5962916e30d066
+R 59ff706943428be14662f4d5a4372928
+U shane
+Z 7e8bfbcdb85f2134260d3bc0bc1c0cf2
