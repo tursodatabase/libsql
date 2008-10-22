@@ -1489,7 +1489,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # The following RCS revision string applies to configure.in
-# $Revision: 1.64 $
+# $Revision: 1.65 $
 
 #########
 # Programs needed
@@ -12071,34 +12071,37 @@ else
 fi
 
 #########
-# attempt to duplicate any OMITS into the $(OPT_FEATURE_FLAGS) parameter
+# attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
 for option in $CFLAGS $CPPFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+    -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
   esac
 done
 
 
 
-# attempt to remove any OMITS from the $(CFLAGS) parameter
+# attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
 ac_temp_CFLAGS=""
 for option in $CFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
   esac
 done
 CFLAGS=$ac_temp_CFLAGS
 
 
-# attempt to remove any OMITS from the $(CPPFLAGS) parameter
+# attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
 ac_temp_CPPFLAGS=""
 for option in $CPPFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
   esac
 done
@@ -12111,6 +12114,7 @@ for option in $BUILD_CFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
   esac
 done

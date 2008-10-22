@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.49 $
+# $Revision: 1.50 $
 
 #########
 # Programs needed
@@ -611,46 +611,50 @@ else
 fi
 
 #########
-# attempt to duplicate any OMITS into the $(OPT_FEATURE_FLAGS) parameter
+# attempt to duplicate any OMITS and ENABLES into the $(OPT_FEATURE_FLAGS) parameter
 for option in $CFLAGS $CPPFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
+    -DSQLITE_ENABLE*) OPT_FEATURE_FLAGS="$OPT_FEATURE_FLAGS $option";;
   esac
 done
 AC_SUBST(OPT_FEATURE_FLAGS)
 
 
-# attempt to remove any OMITS from the $(CFLAGS) parameter
+# attempt to remove any OMITS and ENABLES from the $(CFLAGS) parameter
 ac_temp_CFLAGS=""
 for option in $CFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_CFLAGS="$ac_temp_CFLAGS $option";;
   esac
 done
 CFLAGS=$ac_temp_CFLAGS
 
 
-# attempt to remove any OMITS from the $(CPPFLAGS) parameter
+# attempt to remove any OMITS and ENABLES from the $(CPPFLAGS) parameter
 ac_temp_CPPFLAGS=""
 for option in $CPPFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_CPPFLAGS="$ac_temp_CPPFLAGS $option";;
   esac
 done
 CPPFLAGS=$ac_temp_CPPFLAGS
 
 
-# attempt to remove any OMITS from the $(BUILD_CFLAGS) parameter
+# attempt to remove any OMITS and ENABLES from the $(BUILD_CFLAGS) parameter
 ac_temp_BUILD_CFLAGS=""
 for option in $BUILD_CFLAGS
 do
   case $option in
     -DSQLITE_OMIT*) ;;
+    -DSQLITE_ENABLE*) ;;
     *) ac_temp_BUILD_CFLAGS="$ac_temp_BUILD_CFLAGS $option";;
   esac
 done

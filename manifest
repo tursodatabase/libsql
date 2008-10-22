@@ -1,7 +1,7 @@
-C Removed\ssome\smore\sdead\scode\sand\sfixed\ssome\sunresolved\sexternals\sfor\sWINCE.\s\sTicket\s#3420.\s(CVS\s5837)
-D 2008-10-22T16:55:47
+C Updated\sconfigure/makefiles\sto\shandle\sSQLITE_ENABLE*\scompile\soptions.\s\sMade\ssure\smakefile\spasses\scommand\sline\soptions\s(OPTS=-Dfoo)\sto\sthe\scompiler.\s\sAdd\s-DSQLITE_COVERAGE_TEST=1\sif\sgcov\sbeing\sused.\s(CVS\s5838)
+D 2008-10-22T18:27:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 4352ab12369706c793f3e8165db35b102c929998
+F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 5ba795c6239d62450dd2cb8b469acebda412ebc9
@@ -17,8 +17,8 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 3fda160d9a0ebbd6c22c0391354fa0036474680f
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure a013a40a9215b92fb9267603823f95d007ab5b00 x
-F configure.ac 24d54c19c2fb8045598495250230d117c2464502
+F configure f5bb190d8e9290c4e95349fd6919fd611b438bcf x
+F configure.ac 34d1ef70f1170b770049660b5de8398aa0ed7d28
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -650,7 +650,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b78f44c91fcf3920e69c11a6f72e8f032905a3c7
-R d00295cf1e272f696a9fb6229b295e8f
+P 5276e31d42070e7b94bd6050c4fa484dfbfe98ca
+R f75966f13a1a4c468b2ca255119ec8fb
 U shane
-Z b93484f56f8f995214898bd38d76728c
+Z 9d361f844e39732b7b3007eb2b6fdc97
