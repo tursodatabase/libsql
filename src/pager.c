@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.498 2008/10/17 18:51:52 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.499 2008/10/22 16:26:48 shane Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2582,8 +2582,8 @@ static int pagerSharedLock(Pager *pPager){
 
   if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs *pVfs = pPager->pVfs;
-    assert( !MEMDB );
     int isHotJournal;
+    assert( !MEMDB );
     assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
     if( !pPager->noReadlock ){
       rc = pager_wait_on_lock(pPager, SHARED_LOCK);
@@ -3267,10 +3267,10 @@ static int pager_write(PgHdr *pPg){
      && !pageInStatement(pPg) 
      && (int)pPg->pgno<=pPager->stmtSize 
     ){
-      assert( (pPg->flags&PGHDR_IN_JOURNAL) 
-                 || (int)pPg->pgno>pPager->origDbSize );
       i64 offset = pPager->stmtNRec*(4+pPager->pageSize);
       char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
+      assert( (pPg->flags&PGHDR_IN_JOURNAL) 
+                 || (int)pPg->pgno>pPager->origDbSize );
       rc = write32bits(pPager->stfd, offset, pPg->pgno);
       if( rc==SQLITE_OK ){
         rc = sqlite3OsWrite(pPager->stfd, pData2, pPager->pageSize, offset+4);

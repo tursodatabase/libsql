@@ -1,5 +1,5 @@
-C Test\scases\sfor\sticket\s#3442.\s(CVS\s5835)
-D 2008-10-22T16:04:43
+C Make\ssure\svariable\sdeclarations\soccur\sfirst\sin\scode\sblocks.\s(CVS\s5836)
+D 2008-10-22T16:26:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4352ab12369706c793f3e8165db35b102c929998
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 24221ff5ab20cf3472e3ec7eec595f759de55298
 F src/os_unix.c 5e3b3c9a54546249c1317cff5343e965192f7f2b
 F src/os_win.c 13bed718f62d64031b17bb3685adcf994dbf0232
-F src/pager.c fd11076a5a2f46a831688f036f03c57bd730dff5
+F src/pager.c 8377118bd5ae055b66683926b264f6c04442317e
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y f4620f42b5e0141e20243b5f963d0fc9c180ab9b
 F src/pcache.c 5b80676e664019c1ebc8356cc25332dd69da6269
@@ -650,7 +650,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e0d3aa75b4fa0e706185a3058b5962916e30d066
-R 59ff706943428be14662f4d5a4372928
+P a8bb5acf708c8f7e52d3f67b85094116386f10fa
+R 710931e3f1f060e772777d1613d702dc
 U shane
-Z 7e8bfbcdb85f2134260d3bc0bc1c0cf2
+Z 69aead5e2a809ed3469cd42f7cb51300
