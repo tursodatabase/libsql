@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.68 2008/10/10 17:47:21 danielk1977 Exp $
+# $Id: pragma.test,v 1.69 2008/10/23 05:45:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -568,6 +568,26 @@ ifcapable tempdb {
     }
   } {0 col_main {} 0 {} 0}
 }
+
+breakpoint
+do_test pragma-6.7 {
+  execsql {
+    CREATE TABLE test_table(
+      one INT NOT NULL DEFAULT -1, 
+      two text,
+      three VARCHAR(45, 65) DEFAULT 'abcde',
+      four REAL DEFAULT X'abcdef',
+      five DEFAULT CURRENT_TIME
+    );
+    PRAGMA table_info(test_table);
+  }
+} [concat \
+  {0 one INT 1 -1 0} \
+  {1 two text 0 {} 0} \
+  {2 three {VARCHAR(45, 65)} 0 'abcde' 0} \
+  {3 four REAL 0 X'abcdef' 0} \
+  {4 five {} 0 CURRENT_TIME 0} \
+]
 } ;# ifcapable schema_pragmas
 # Miscellaneous tests
 #
