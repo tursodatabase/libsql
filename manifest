@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\spragma\stable_info.\sColumn\sdefault\svalues\sspecified\sas\snegative\snumbers\s(col\sDEFAULT\s-1)\swere\sbeing\sreported\sas\sNULL\sby\sthe\spragma.\s(CVS\s5839)
-D 2008-10-23T05:45:07
+C Add\sfile\stkt3461.test\swith\sa\sfew\sexamples\sof\sbug\s#3461.\sBecause\sthese\stests\scurrently\sfail\sthey\sare\sdisabled\sfor\snow.\s(CVS\s5840)
+D 2008-10-25T09:35:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -572,6 +572,7 @@ F test/tkt3357.test b37a51a12ba5e143d6714778276438606f8f9e27
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
 F test/tkt3442.test 33722a3fa4bdc0614448044eb5e28765aea28eb7
+F test/tkt3461.test 721baececbbe1ff2d920c4afe144aec8f1cd4700
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -650,7 +651,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P acb106e51f8bb7449a0e214075c559cc66497277
-R 8af90eb2367e9d5ee419c115778199bf
+P 0e448bc6096c7ee3b21dbd22dc4ca9470ae7ba31
+R 647a880312760274ee6a7e651604e91e
 U danielk1977
-Z 1f739540af2aa117842cf86c5210d872
+Z dd44d62c4f3751c885e341c9f98ba13d
