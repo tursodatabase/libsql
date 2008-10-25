@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.326 2008/10/11 16:47:36 drh Exp $
+** $Id: where.c,v 1.327 2008/10/25 15:03:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2349,7 +2349,7 @@ WhereInfo *sqlite3WhereBegin(
   */
   notReady = ~(Bitmask)0;
   for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
-    int j;
+    int j, k;
     int iCur = pTabItem->iCursor;  /* The VDBE cursor for the table */
     Index *pIdx;       /* The index we will be using */
     int nxt;           /* Where to jump to continue with the next IN case */
@@ -2716,6 +2716,7 @@ WhereInfo *sqlite3WhereBegin(
     /* Insert code to test every subexpression that can be completely
     ** computed using the current set of tables.
     */
+    k = 0;
     for(pTerm=wc.a, j=wc.nTerm; j>0; j--, pTerm++){
       Expr *pE;
       testcase( pTerm->flags & TERM_VIRTUAL );
@@ -2727,7 +2728,10 @@ WhereInfo *sqlite3WhereBegin(
       if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
         continue;
       }
+      pParse->disableColCache += k;
       sqlite3ExprIfFalse(pParse, pE, cont, SQLITE_JUMPIFNULL);
+      pParse->disableColCache -= k;
+      k = 1;
       pTerm->flags |= TERM_CODED;
     }
 
