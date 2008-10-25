@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.9 2008/09/08 11:07:03 danielk1977 Exp $
+** $Id: rtree.c,v 1.10 2008/10/25 17:10:10 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -600,7 +600,7 @@ static void nodeGetCell(
 ** the virtual table module xCreate() and xConnect() methods.
 */
 static int rtreeInit(
-  sqlite3 *, void *, int, const char *const*, sqlite3_vtab **, char **, int, int
+  sqlite3 *, void *, int, const char *const*, sqlite3_vtab **, char **, int
 );
 
 /* 
@@ -613,7 +613,7 @@ static int rtreeCreate(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  return rtreeInit(db, pAux, argc, argv, ppVtab, pzErr, 1, (int)pAux);
+  return rtreeInit(db, pAux, argc, argv, ppVtab, pzErr, 1);
 }
 
 /* 
@@ -626,7 +626,7 @@ static int rtreeConnect(
   sqlite3_vtab **ppVtab,
   char **pzErr
 ){
-  return rtreeInit(db, pAux, argc, argv, ppVtab, pzErr, 0, (int)pAux);
+  return rtreeInit(db, pAux, argc, argv, ppVtab, pzErr, 0);
 }
 
 /*
@@ -2651,18 +2651,18 @@ static int getPageSize(sqlite3 *db, const char *zDb, int *piPageSize){
 */
 static int rtreeInit(
   sqlite3 *db,                        /* Database connection */
-  void *pAux,                         /* Pointer to head of rtree list */
+  void *pAux,                         /* One of the RTREE_COORD_* constants */
   int argc, const char *const*argv,   /* Parameters to CREATE TABLE statement */
   sqlite3_vtab **ppVtab,              /* OUT: New virtual table */
   char **pzErr,                       /* OUT: Error message, if any */
-  int isCreate,                       /* True for xCreate, false for xConnect */
-  int eCoordType                      /* One of the RTREE_COORD_* constants */
+  int isCreate                        /* True for xCreate, false for xConnect */
 ){
   int rc = SQLITE_OK;
   int iPageSize = 0;
   Rtree *pRtree;
   int nDb;              /* Length of string argv[1] */
   int nName;            /* Length of string argv[2] */
+  int eCoordType = (int)pAux;
 
   const char *aErrMsg[] = {
     0,                                                    /* 0 */
