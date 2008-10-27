@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.182 2008/10/10 23:48:26 drh Exp $
+** $Id: delete.c,v 1.183 2008/10/27 08:24:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -284,6 +284,7 @@ void sqlite3DeleteFrom(
   if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
     goto delete_from_cleanup;
   }
+  assert(!isView || triggers_exist);
 
   /* If pTab is really a view, make sure it has been initialized.
   */
@@ -370,27 +371,24 @@ void sqlite3DeleteFrom(
   ** this means that the row change count will be incorrect.
   */
   if( pWhere==0 && !triggers_exist && !IsVirtual(pTab) ){
+    assert( !isView );
     if( db->flags & SQLITE_CountRows ){
       /* If counting rows deleted, just count the total number of
       ** entries in the table. */
       int addr2;
-      if( !isView ){
-        sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
-      }
+      sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
       sqlite3VdbeAddOp2(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
       addr2 = sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
       sqlite3VdbeAddOp2(v, OP_Next, iCur, addr2);
       sqlite3VdbeAddOp1(v, OP_Close, iCur);
     }
-    if( !isView ){
-      sqlite3VdbeAddOp2(v, OP_Clear, pTab->tnum, iDb);
-      if( !pParse->nested ){
-        sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
-      }
-      for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
-        assert( pIdx->pSchema==pTab->pSchema );
-        sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
-      }
+    sqlite3VdbeAddOp2(v, OP_Clear, pTab->tnum, iDb);
+    if( !pParse->nested ){
+      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
+    }
+    for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+      assert( pIdx->pSchema==pTab->pSchema );
+      sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);
     }
   }else
 #endif /* SQLITE_OMIT_TRUNCATE_OPTIMIZATION */
