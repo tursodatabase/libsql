@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.43 2008/07/02 13:13:52 danielk1977 Exp $
+# $Id: auth.test,v 1.44 2008/10/27 15:34:33 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -418,7 +418,10 @@ do_test auth-1.49 {
 } {0 {}}
 do_test auth-1.50 {
   execsql {SELECT * FROM t2}
-} {11 2 33}
+} {}
+do_test auth-1.50.2 {
+  execsql {INSERT INTO t2 VALUES(11, 2, 33)}
+} {}
 
 do_test auth-1.51 {
   proc auth {code arg1 arg2 arg3 arg4} {

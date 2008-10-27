@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.184 2008/10/27 13:59:34 danielk1977 Exp $
+** $Id: delete.c,v 1.185 2008/10/27 15:34:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -234,6 +234,7 @@ void sqlite3DeleteFrom(
   NameContext sNC;       /* Name context to resolve expressions in */
   int iDb;               /* Database number */
   int memCnt = -1;       /* Memory cell used for change counting */
+  int rcauth;            /* Value returned by authorization callback */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -281,7 +282,9 @@ void sqlite3DeleteFrom(
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb<db->nDb );
   zDb = db->aDb[iDb].zName;
-  if( sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb) ){
+  rcauth = sqlite3AuthCheck(pParse, SQLITE_DELETE, pTab->zName, 0, zDb);
+  assert( rcauth==SQLITE_OK || rcauth==SQLITE_DENY || rcauth==SQLITE_IGNORE );
+  if( rcauth==SQLITE_DENY ){
     goto delete_from_cleanup;
   }
   assert(!isView || triggers_exist);
@@ -370,7 +373,7 @@ void sqlite3DeleteFrom(
   ** It is easier just to erase the whole table.  Note, however, that
   ** this means that the row change count will be incorrect.
   */
-  if( pWhere==0 && !triggers_exist && !IsVirtual(pTab) ){
+  if( rcauth==SQLITE_OK && pWhere==0 && !triggers_exist && !IsVirtual(pTab) ){
     assert( !isView );
     sqlite3VdbeAddOp3(v, OP_Clear, pTab->tnum, iDb, memCnt);
     if( !pParse->nested ){
