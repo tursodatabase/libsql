@@ -1,5 +1,5 @@
-C Remove\ssome\sif()\sconditions\sthat\sare\salways\strue\sfrom\sdelete.c.\s(CVS\s5843)
-D 2008-10-27T08:24:38
+C Make\ssqlite3_count_changes()\sand\stotal_changes()\swork\swith\s"DELETE\sFROM\s<table-name>".\s(CVS\s5844)
+D 2008-10-27T13:59:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,14 +99,14 @@ F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c 3e686f899659df8d79f2587d0f34f51fdf6a6276
-F src/btree.h 903682f2a88da37435f103da00cb915d63bc8015
+F src/btree.c 5d72b67ee20afba92e95827fc9fc599d917f7f68
+F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c d6d55f97abcb6f17ac3e9e7a1dd8c0db67db34fd
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
-F src/delete.c 8bb079e098c0d154f0469062ddbc8237d1cc0b55
+F src/delete.c b0b7c499ccf28c1857905c9cf42f4ddc49bf7331
 F src/expr.c 2b1945314fdc661fb04306cb86bd8516cfd12d4a
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
@@ -160,7 +160,7 @@ F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 96049bd454f1547abff0a57c45f0dfa57701e076
 F src/test1.c a7310348961945e656c096e5f91d4d87dee6b61d
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
-F src/test3.c e85b7ce5c28c3ce7fbdbf7f98e1467b19786c62b
+F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 0a0304a69cfa4962a429d084c6d451ff9e4fb572
@@ -191,7 +191,7 @@ F src/update.c ed233298db6dd23d340e449e4b4a81b9306da6aa
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
-F src/vdbe.c b78adf571b9abac4092c641bec148832e8f26f34
+F src/vdbe.c be81532805ee6fc1fe7bd2e1c82cf4a09b7b3061
 F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
 F src/vdbeInt.h a20f479ec3bf41c61b0c2bd5176a9bad6b2a07ef
 F src/vdbeapi.c 6798c70cf176d23594ec557db88190ca8c7fa860
@@ -396,7 +396,7 @@ F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/jrnlmode.test c2e8212a6f6d32f8fd8f869b93553154eaf2244c
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
-F test/laststmtchanges.test 18ead86c8a87ade949a1d5658f6dc4bb111d1b02
+F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
@@ -651,7 +651,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3224ea59812d0f3b5685bd92751054b81e3b681e
-R ba54cbfc3be9ecc00ba76b8e1609779a
+P 297ad90dd3a69002e6e4175e9e3938b3a627574d
+R a6b93c46cddb9e42feecabc035375dbb
 U danielk1977
-Z ccda3a5856c2017497ad6a21acb2893e
+Z 98ec3e2e89a662c96092f7315cee2195

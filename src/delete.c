@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.183 2008/10/27 08:24:38 danielk1977 Exp $
+** $Id: delete.c,v 1.184 2008/10/27 13:59:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -233,7 +233,7 @@ void sqlite3DeleteFrom(
   int oldIdx = -1;       /* Cursor for the OLD table of AFTER triggers */
   NameContext sNC;       /* Name context to resolve expressions in */
   int iDb;               /* Database number */
-  int memCnt = 0;        /* Memory cell used for change counting */
+  int memCnt = -1;       /* Memory cell used for change counting */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* True if attempting to delete from a view */
@@ -372,17 +372,7 @@ void sqlite3DeleteFrom(
   */
   if( pWhere==0 && !triggers_exist && !IsVirtual(pTab) ){
     assert( !isView );
-    if( db->flags & SQLITE_CountRows ){
-      /* If counting rows deleted, just count the total number of
-      ** entries in the table. */
-      int addr2;
-      sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
-      sqlite3VdbeAddOp2(v, OP_Rewind, iCur, sqlite3VdbeCurrentAddr(v)+2);
-      addr2 = sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
-      sqlite3VdbeAddOp2(v, OP_Next, iCur, addr2);
-      sqlite3VdbeAddOp1(v, OP_Close, iCur);
-    }
-    sqlite3VdbeAddOp2(v, OP_Clear, pTab->tnum, iDb);
+    sqlite3VdbeAddOp3(v, OP_Clear, pTab->tnum, iDb, memCnt);
     if( !pParse->nested ){
       sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
     }

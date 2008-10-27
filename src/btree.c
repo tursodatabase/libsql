@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.525 2008/10/08 17:58:49 danielk1977 Exp $
+** $Id: btree.c,v 1.526 2008/10/27 13:59:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6187,7 +6187,8 @@ static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
   Pgno pgno,            /* Page number to clear */
   MemPage *pParent,     /* Parent page.  NULL for the root */
-  int freePageFlag      /* Deallocate page if true */
+  int freePageFlag,     /* Deallocate page if true */
+  int *pnChange
 ){
   MemPage *pPage = 0;
   int rc;
@@ -6204,15 +6205,18 @@ static int clearDatabasePage(
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
-      rc = clearDatabasePage(pBt, get4byte(pCell), pPage, 1);
+      rc = clearDatabasePage(pBt, get4byte(pCell), pPage, 1, pnChange);
       if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
-    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage, 1);
+    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage, 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
+  }else if( pnChange ){
+    assert( pPage->intKey );
+    *pnChange += pPage->nCell;
   }
   if( freePageFlag ){
     rc = freePage(pPage);
@@ -6233,8 +6237,12 @@ cleardatabasepage_out:
 ** This routine will fail with SQLITE_LOCKED if there are any open
 ** read cursors on the table.  Open write cursors are moved to the
 ** root of the table.
+**
+** If pnChange is not NULL, then table iTable must be an intkey table. The
+** integer value pointed to by pnChange is incremented by the number of
+** entries in the table.
 */
-int sqlite3BtreeClearTable(Btree *p, int iTable){
+int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   int rc;
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
@@ -6246,7 +6254,7 @@ int sqlite3BtreeClearTable(Btree *p, int iTable){
   }else if( SQLITE_OK!=(rc = saveAllCursors(pBt, iTable, 0)) ){
     /* nothing to do */
   }else{
-    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, 0);
+    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, 0, pnChange);
   }
   sqlite3BtreeLeave(p);
   return rc;
@@ -6294,7 +6302,7 @@ static int btreeDropTable(Btree *p, int iTable, int *piMoved){
 
   rc = sqlite3BtreeGetPage(pBt, (Pgno)iTable, &pPage, 0);
   if( rc ) return rc;
-  rc = sqlite3BtreeClearTable(p, iTable);
+  rc = sqlite3BtreeClearTable(p, iTable, 0);
   if( rc ){
     releasePage(pPage);
     return rc;

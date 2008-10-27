@@ -1,3 +1,4 @@
+#
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
 #
@@ -19,6 +20,7 @@
 # Note 3: changes() is not changed by a change to a view (since everything
 #         is done within instead of trigger context).
 #
+# $Id: laststmtchanges.test,v 1.7 2008/10/27 13:59:34 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -277,5 +279,53 @@ do_test laststmtchanges-5.5 {
 } {0 {0 1 0 3}}
 
 } ;# ifcapable view
+
+
+# ----------------------------------------------------------------------------
+# 6.x - Test "DELETE FROM <table>" in the absence of triggers
+#
+do_test laststmtchanges-6.1 {
+  execsql {
+    CREATE TABLE t3(a, b, c);
+    INSERT INTO t3 VALUES(1, 2, 3);
+    INSERT INTO t3 VALUES(4, 5, 6);
+  }
+} {}
+do_test laststmtchanges-6.2 {
+  execsql {
+    BEGIN;
+    DELETE FROM t3;
+    SELECT changes();
+  }
+} {2}
+do_test laststmtchanges-6.3 {
+  execsql {
+    ROLLBACK;
+    BEGIN;
+    DELETE FROM t3 WHERE a IS NOT NULL;
+    SELECT changes();
+  }
+} {2}
+do_test laststmtchanges-6.4 {
+  execsql {
+    ROLLBACK;
+    CREATE INDEX t3_i1 ON t3(a);
+    BEGIN;
+    DELETE FROM t3;
+    SELECT changes();
+  }
+} {2}
+do_test laststmtchanges-6.5 {
+  execsql { ROLLBACK }
+  set nTotalChange [execsql {SELECT total_changes()}]
+  expr 0
+} {0}
+do_test laststmtchanges-6.6 {
+  execsql {
+    SELECT total_changes();
+    DELETE FROM t3;
+    SELECT total_changes();
+  }
+} [list $nTotalChange [expr $nTotalChange+2]]
 
 finish_test

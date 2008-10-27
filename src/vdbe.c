@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.782 2008/10/08 17:58:49 danielk1977 Exp $
+** $Id: vdbe.c,v 1.783 2008/10/27 13:59:34 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4042,7 +4042,7 @@ case OP_Destroy: {     /* out2-prerelease */
   break;
 }
 
-/* Opcode: Clear P1 P2 *
+/* Opcode: Clear P1 P2 P3
 **
 ** Delete all contents of the database table or index whose root page
 ** in the database file is given by P1.  But, unlike Destroy, do not
@@ -4052,11 +4052,26 @@ case OP_Destroy: {     /* out2-prerelease */
 ** P2==1 then the table to be clear is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
+** If the P3 value is non-zero, then the table refered to must be an
+** intkey table (an SQL table, not an index). In this case the row change 
+** count is incremented by the number of rows in the table being cleared. 
+** If P3 is greater than zero, then the value stored in register P3 is
+** also incremented by the number of rows in the table being cleared.
+**
 ** See also: Destroy
 */
 case OP_Clear: {
+  int nChange = 0;
   assert( (p->btreeMask & (1<<pOp->p2))!=0 );
-  rc = sqlite3BtreeClearTable(db->aDb[pOp->p2].pBt, pOp->p1);
+  rc = sqlite3BtreeClearTable(
+      db->aDb[pOp->p2].pBt, pOp->p1, (pOp->p3 ? &nChange : 0)
+  );
+  if( pOp->p3 ){
+    p->nChange += nChange;
+    if( pOp->p3>0 ){
+      p->aMem[pOp->p3].u.i += nChange;
+    }
+  }
   break;
 }
 
