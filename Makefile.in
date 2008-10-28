@@ -163,7 +163,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
         delete.lo expr.lo fault.lo func.lo global.lo \
         hash.lo journal.lo insert.lo legacy.lo loadext.lo \
-        main.lo malloc.lo mem1.lo mem2.lo mem3.lo mem4.lo mem5.lo mem6.lo \
+        main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
         memjournal.o \
         mutex.lo mutex_noop.lo mutex_os2.lo mutex_unix.lo mutex_w32.lo \
         opcodes.lo os.lo os_unix.lo os_win.lo os_os2.lo \
@@ -214,12 +214,11 @@ SRC = \
   $(TOP)/src/loadext.c \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
+  $(TOP)/src/mem0.c \
   $(TOP)/src/mem1.c \
   $(TOP)/src/mem2.c \
   $(TOP)/src/mem3.c \
-  $(TOP)/src/mem4.c \
   $(TOP)/src/mem5.c \
-  $(TOP)/src/mem6.c \
   $(TOP)/src/memjournal.c \
   $(TOP)/src/mutex.c \
   $(TOP)/src/mutex.h \
@@ -558,6 +557,9 @@ main.lo:	$(TOP)/src/main.c $(HDR)
 malloc.lo:	$(TOP)/src/malloc.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/malloc.c
 
+mem0.lo:	$(TOP)/src/mem0.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem0.c
+
 mem1.lo:	$(TOP)/src/mem1.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem1.c
 
@@ -567,14 +569,8 @@ mem2.lo:	$(TOP)/src/mem2.c $(HDR)
 mem3.lo:	$(TOP)/src/mem3.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem3.c
 
-mem4.lo:	$(TOP)/src/mem4.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem4.c
-
 mem5.lo:	$(TOP)/src/mem5.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem5.c
-
-mem6.lo:	$(TOP)/src/mem6.c $(HDR)
-	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/mem6.c
 
 memjournal.lo:	$(TOP)/src/memjournal.c $(HDR)
 	$(LTCOMPILE) -c $(TOP)/src/memjournal.c

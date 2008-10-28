@@ -23,37 +23,15 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.14 2008/09/02 17:52:52 danielk1977 Exp $
+** $Id: mem5.c,v 1.15 2008/10/28 18:58:20 drh Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** This version of the memory allocator is used only when 
-** SQLITE_POW2_MEMORY_SIZE is defined.
+** SQLITE_ENABLE_MEMSYS5 is defined.
 */
 #ifdef SQLITE_ENABLE_MEMSYS5
-
-/*
-** Log2 of the minimum size of an allocation.  For example, if
-** 4 then all allocations will be rounded up to at least 16 bytes.
-** If 5 then all allocations will be rounded up to at least 32 bytes.
-*/
-#ifndef SQLITE_POW2_LOGMIN
-# define SQLITE_POW2_LOGMIN 6
-#endif
-
-/*
-** Log2 of the maximum size of an allocation.
-*/
-#ifndef SQLITE_POW2_LOGMAX
-# define SQLITE_POW2_LOGMAX 20
-#endif
-#define POW2_MAX (((unsigned int)1)<<SQLITE_POW2_LOGMAX)
-
-/*
-** Number of distinct allocation sizes.
-*/
-#define NSIZE (SQLITE_POW2_LOGMAX - SQLITE_POW2_LOGMIN + 1)
 
 /*
 ** A minimum allocation is an instance of the following structure.

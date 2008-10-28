@@ -1,7 +1,7 @@
-C Add\sdata\sstructure\sdescription\scomments\sto\smemjournal.c.\s(CVS\s5847)
-D 2008-10-28T18:12:36
+C Remove\sthe\svestigial\smem4\sand\smem6\smemory\sallocators.\s\sAdd\sthe\nSQLITE_ZERO_MALLOC\scompile-time\soption\sand\sthe\smem0.c\smodule\sto\nhandle\smemory\sallocation\sfor\sthat\scase.\s(CVS\s5848)
+D 2008-10-28T18:58:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
+F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 5ba795c6239d62450dd2cb8b469acebda412ebc9
@@ -79,7 +79,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk c0baa7e57584ce3666a854015ad8743c5fe38dec
+F main.mk 187bbff650073ffad5e8313795665ea64f36c0d5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -120,12 +120,11 @@ F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
 F src/main.c ff40f9f21c76d5062bc0bc06bd8853fc217dd170
 F src/malloc.c a213fb461b8df08aed7606f6a1e1d3452e089000
-F src/mem1.c 5a529ff121c55ab067be14de00f86f6dcc4f4fb9
-F src/mem2.c f87e681d0d1ed8436870d089332ed0d27d885b5c
+F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
+F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
+F src/mem2.c 5d9968f576ba1babc787adbfb613cf428ab484ec
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
-F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
-F src/mem5.c 706d462c13a9819dfec7c10d9dccedf8d199960c
-F src/mem6.c febe4db9ddef73df500989e68a9d4ac68602a075
+F src/mem5.c 8cb9dfacf7e11a7822b4935757ae0c1749278b4e
 F src/memjournal.c 7ffe4ebf5e7792571c27d528ca005e495343d1c4
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -153,7 +152,7 @@ F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in ee95eeed2196e5fa98fdad007301b8d5d3733b6d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 0525efef6ba2b58a6e7a4a9353b496143147e288
+F src/sqliteInt.h 926279c94cdf21e53fc66badb8541d94aed25018
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -637,7 +636,7 @@ F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c c219ee2b8b5b8e7011cccfa1caec62d9812e82e7
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl ab98a8321f292b4871e362bb4435be234993d46b
+F tool/mksqlite3c.tcl f27bd970d5963cc4c6fb421d8553a2c439e61b9b
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -652,7 +651,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 679c0b35aaa1ea488a205cc03802e7078a2bcf29
-R 8c08739effdbffeefaabe6ecfcdcebaf
+P e9c2adbcbf5c28837b06e0fbba93f1764cc3607f
+R f7bf0b80936d7235124831741a662cca
 U drh
-Z 35d81495d6d4eb3c73d75e648d0cc22a
+Z dd0198037f61ae7a01ce16dbaae2a0df

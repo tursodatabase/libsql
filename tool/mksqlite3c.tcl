@@ -211,11 +211,11 @@ foreach file {
    os.c
 
    fault.c
+   mem0.c
    mem1.c
    mem2.c
    mem3.c
    mem5.c
-   mem6.c
    mutex.c
    mutex_noop.c
    mutex_os2.c

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.786 2008/10/28 17:52:39 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.787 2008/10/28 18:58:20 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2054,10 +2054,8 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
-const sqlite3_mem_methods *sqlite3MemGetDefault(void);
-const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
-const sqlite3_mem_methods *sqlite3MemGetMemsys6(void);
+const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
 int sqlite3MemoryAlarm(void (*)(void*, sqlite3_int64, int), void*, sqlite3_int64);
 
