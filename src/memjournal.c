@@ -1,5 +1,5 @@
 /*
-** 2007 August 22
+** 2008 October 7
 **
 ** The author disclaims copyright to this source code.  In place of
 ** a legal notice, here is a blessing:
@@ -10,32 +10,51 @@
 **
 *************************************************************************
 **
-** @(#) $Id: memjournal.c,v 1.1 2008/10/17 19:13:05 danielk1977 Exp $
+** This file contains code use to implement an in-memory rollback journal.
+** The in-memory rollback journal is used to journal transactions for
+** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
+**
+** @(#) $Id: memjournal.c,v 1.2 2008/10/28 18:12:36 drh Exp $
 */
-
-
 #include "sqliteInt.h"
 
+/* Forward references to internal structures */
 typedef struct MemJournal MemJournal;
 typedef struct FilePoint FilePoint;
 typedef struct FileChunk FileChunk;
 
+/* Space to hold the rollback journal is allocated in increments of
+** this many bytes.
+*/
 #define JOURNAL_CHUNKSIZE 1024
 
+/* Macro to find the minimum of two numeric values.
+*/
 #define MIN(x,y) ((x)<(y)?(x):(y))
 
+/*
+** The rollback journal is composed of a linked list of these structures.
+*/
 struct FileChunk {
-  FileChunk *pNext;
-  u8 zChunk[JOURNAL_CHUNKSIZE];
+  FileChunk *pNext;               /* Next chunk in the journal */
+  u8 zChunk[JOURNAL_CHUNKSIZE];   /* Content of this chunk */
 };
 
+/*
+** An instance of this object serves as a cursor into the rollback journal.
+** The cursor can be either for reading or writing.
+*/
 struct FilePoint {
-  sqlite3_int64 iOffset;
-  FileChunk *pChunk;
+  sqlite3_int64 iOffset;          /* Offset from the beginning of the file */
+  FileChunk *pChunk;              /* Specific chunk into which cursor points */
 };
 
+/*
+** This subclass is a subclass of sqlite3_file.  Each open memory-journal
+** is an instance of this class.
+*/
 struct MemJournal {
-  sqlite3_io_methods *pMethod;    /* I/O methods on journal files */
+  sqlite3_io_methods *pMethod;    /* Parent class. MUST BE FIRST */
   FileChunk *pFirst;              /* Head of in-memory chunk-list */
   FilePoint endpoint;             /* Pointer to the end of the file */
   FilePoint readpoint;            /* Pointer to the end of the last xRead() */
@@ -219,5 +238,3 @@ int sqlite3IsMemJournal(sqlite3_file *pJfd){
 int sqlite3MemJournalSize(){
   return sizeof(MemJournal);
 }
-
-

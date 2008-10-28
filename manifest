@@ -1,5 +1,5 @@
-C Avoid\sexposing\sinternal\sinterfaces\ssqlite_attach()\sand\ssqlite_detach()\sas\sSQL\sscalar\sfunctions.\sTicket\s#3466.\s(CVS\s5846)
-D 2008-10-28T17:52:39
+C Add\sdata\sstructure\sdescription\scomments\sto\smemjournal.c.\s(CVS\s5847)
+D 2008-10-28T18:12:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +126,7 @@ F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
 F src/mem4.c 6703adb1717b26d9d70a1c2586b4b7b7ffee7909
 F src/mem5.c 706d462c13a9819dfec7c10d9dccedf8d199960c
 F src/mem6.c febe4db9ddef73df500989e68a9d4ac68602a075
-F src/memjournal.c b12b20d3441945e590b8dacdc6705d39e02ab33c
+F src/memjournal.c 7ffe4ebf5e7792571c27d528ca005e495343d1c4
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
@@ -652,7 +652,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 65a2e131732399f0f14f982eb0689482fdb87b6c
-R 0cb9d60af76c276feb71e24e0ccd886d
-U danielk1977
-Z 104cd13ffd1795d54fed32e003437e94
+P 679c0b35aaa1ea488a205cc03802e7078a2bcf29
+R 8c08739effdbffeefaabe6ecfcdcebaf
+U drh
+Z 35d81495d6d4eb3c73d75e648d0cc22a
