@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.78 2008/08/20 16:35:10 drh Exp $
+** $Id: attach.c,v 1.79 2008/10/28 17:52:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -283,8 +283,7 @@ detach_error:
 static void codeAttach(
   Parse *pParse,       /* The parser context */
   int type,            /* Either SQLITE_ATTACH or SQLITE_DETACH */
-  const char *zFunc,   /* Either "sqlite_attach" or "sqlite_detach */
-  int nFunc,           /* Number of args to pass to zFunc */
+  FuncDef *pFunc,      /* FuncDef wrapper for detachFunc() or attachFunc() */
   Expr *pAuthArg,      /* Expression to pass to authorization callback */
   Expr *pFilename,     /* Name of database file */
   Expr *pDbname,       /* Name of the database to use internally */
@@ -293,7 +292,6 @@ static void codeAttach(
   int rc;
   NameContext sName;
   Vdbe *v;
-  FuncDef *pFunc;
   sqlite3* db = pParse->db;
   int regArgs;
 
@@ -332,9 +330,8 @@ static void codeAttach(
 
   assert( v || db->mallocFailed );
   if( v ){
-    sqlite3VdbeAddOp3(v, OP_Function, 0, regArgs+3-nFunc, regArgs+3);
-    sqlite3VdbeChangeP5(v, nFunc);
-    pFunc = sqlite3FindFunction(db, zFunc, strlen(zFunc), nFunc, SQLITE_UTF8,0);
+    sqlite3VdbeAddOp3(v, OP_Function, 0, regArgs+3-pFunc->nArg, regArgs+3);
+    sqlite3VdbeChangeP5(v, pFunc->nArg);
     sqlite3VdbeChangeP4(v, -1, (char *)pFunc, P4_FUNCDEF);
 
     /* Code an OP_Expire. For an ATTACH statement, set P1 to true (expire this
@@ -356,7 +353,19 @@ attach_end:
 **     DETACH pDbname
 */
 void sqlite3Detach(Parse *pParse, Expr *pDbname){
-  codeAttach(pParse, SQLITE_DETACH, "sqlite_detach", 1, pDbname, 0, 0, pDbname);
+  static FuncDef detach_func = {
+    1,                /* nArg */
+    SQLITE_UTF8,      /* iPrefEnc */
+    0,                /* flags */
+    0,                /* pUserData */
+    0,                /* pNext */
+    detachFunc,       /* xFunc */
+    0,                /* xStep */
+    0,                /* xFinalize */
+    "sqlite_detach",  /* zName */
+    0                 /* pHash */
+  };
+  codeAttach(pParse, SQLITE_DETACH, &detach_func, pDbname, 0, 0, pDbname);
 }
 
 /*
@@ -365,20 +374,21 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
 **     ATTACH p AS pDbname KEY pKey
 */
 void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
-  codeAttach(pParse, SQLITE_ATTACH, "sqlite_attach", 3, p, p, pDbname, pKey);
+  static FuncDef attach_func = {
+    3,                /* nArg */
+    SQLITE_UTF8,      /* iPrefEnc */
+    0,                /* flags */
+    0,                /* pUserData */
+    0,                /* pNext */
+    attachFunc,       /* xFunc */
+    0,                /* xStep */
+    0,                /* xFinalize */
+    "sqlite_attach",  /* zName */
+    0                 /* pHash */
+  };
+  codeAttach(pParse, SQLITE_ATTACH, &attach_func, p, p, pDbname, pKey);
 }
 #endif /* SQLITE_OMIT_ATTACH */
-
-/*
-** Register the functions sqlite_attach and sqlite_detach.
-*/
-void sqlite3AttachFunctions(sqlite3 *db){
-#ifndef SQLITE_OMIT_ATTACH
-  static const int enc = SQLITE_UTF8;
-  sqlite3CreateFunc(db, "sqlite_attach", 3, enc, 0, attachFunc, 0, 0);
-  sqlite3CreateFunc(db, "sqlite_detach", 1, enc, 0, detachFunc, 0, 0);
-#endif
-}
 
 /*
 ** Initialize a DbFixer structure.  This routine must be called prior

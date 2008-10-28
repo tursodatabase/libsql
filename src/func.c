@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.203 2008/09/03 17:11:16 drh Exp $
+** $Id: func.c,v 1.204 2008/10/28 17:52:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1216,9 +1216,6 @@ static void groupConcatFinalize(sqlite3_context *context){
 void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 #ifndef SQLITE_OMIT_ALTERTABLE
   sqlite3AlterFunctions(db);
-#endif
-#ifndef SQLITE_OMIT_PARSER
-  sqlite3AttachFunctions(db);
 #endif
   if( !db->mallocFailed ){
     int rc = sqlite3_overload_function(db, "MATCH", 2);

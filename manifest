@@ -1,5 +1,5 @@
-C If\san\sSQLITE_DELETE\sauthorization\scallback\sreturns\sSQLITE_IGNORE,\sproceed\swith\sthe\sdelete\soperation\sbut\sdisable\sthe\struncate\soptimization.\s(CVS\s5845)
-D 2008-10-27T15:34:33
+C Avoid\sexposing\sinternal\sinterfaces\ssqlite_attach()\sand\ssqlite_detach()\sas\sSQL\sscalar\sfunctions.\sTicket\s#3466.\s(CVS\s5846)
+D 2008-10-28T17:52:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3fe17eccd87d385b5adc9766828716cfdd154d6b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,7 @@ F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f462b637bac6c6576a9b7bc6da59c7a82ed5aab2
 F src/analyze.c 747ce8cb6b318bb0d0576cfb5277aed98cbbeb5c
-F src/attach.c db3f4a60538733c1e4dcb9d0217a6e0d6ccd615b
+F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
@@ -109,7 +109,7 @@ F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
 F src/delete.c f77efc8c63e656316e038b9bff014c6fd7b13f00
 F src/expr.c 2b1945314fdc661fb04306cb86bd8516cfd12d4a
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 8431b40a7843d1024145684d303c55b4ee087bbe
+F src/func.c d8eb180e4f454d480894522d8ed11de771a14c7e
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
 F src/hash.c 582c00618efe2051785e66ba1b6430d5a129de3f
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -153,7 +153,7 @@ F src/select.c d910d7350df0d918e22286c5bfd39d4ea68ec813
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in ee95eeed2196e5fa98fdad007301b8d5d3733b6d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h e5e3909f565fb020a820ccce11abca040902f075
+F src/sqliteInt.h 0525efef6ba2b58a6e7a4a9353b496143147e288
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -652,7 +652,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e68e4282adb9003aa297d033aeb5d9cadee215cd
-R 7698d63a46c3061737eee132dee3f7c9
+P 65a2e131732399f0f14f982eb0689482fdb87b6c
+R 0cb9d60af76c276feb71e24e0ccd886d
 U danielk1977
-Z 43f7a2c2ff97da790b34dc2cf861e4e2
+Z 104cd13ffd1795d54fed32e003437e94
