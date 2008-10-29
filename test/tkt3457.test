@@ -1,0 +1,78 @@
+# 2008 October 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# $Id: tkt3457.test,v 1.1 2008/10/29 07:01:57 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+if {$tcl_platform(platform) != "unix"} {
+  finish_test
+  return
+}
+
+#-----------------------------------------------------------------------
+# To roll back a hot-journal file, the application needs read and write 
+# permission on the journal file in question. The following tests test
+# the outcome of trying to rollback a hot-journal file when this is not
+# the case.
+# 
+#   tkt3457-1.2: Application has neither read, nor write permission on
+#                the hot-journal file. Result: SQLITE_CANTOPEN.
+#                
+#   tkt3457-1.3: Application has write but not read permission on
+#                the hot-journal file. Result: SQLITE_CANTOPEN.
+#
+#   tkt3457-1.4: Application has read but not write permission on
+#                the hot-journal file. Result: SQLITE_CANTOPEN.
+#
+#   tkt3457-1.5: Application has read/write permission on the hot-journal 
+#                file. Result: SQLITE_OK.
+# 
+do_test tkt3457-1.1 {
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(1, 2, 3);
+    BEGIN;
+    INSERT INTO t1 VALUES(4, 5, 6);
+  }
+
+  file copy -force test.db bak.db
+  file copy -force test.db-journal bak.db-journal
+
+  execsql COMMIT
+} {}
+
+do_test tkt3457-1.2 {
+  file copy -force bak.db-journal test.db-journal
+  file attributes test.db-journal -permissions ---------
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+do_test tkt3457-1.3 {
+  file copy -force bak.db-journal test.db-journal
+  file attributes test.db-journal -permissions -w--w--w-
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+do_test tkt3457-1.4 {
+  file copy -force bak.db-journal test.db-journal
+  file attributes test.db-journal -permissions r--r--r--
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+
+do_test tkt3457-1.5 {
+  file copy -force bak.db-journal test.db-journal
+  file attributes test.db-journal -permissions rw-rw-rw-
+  catchsql { SELECT * FROM t1 }
+} {0 {1 2 3 4 5 6}}
+
+finish_test
+

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.499 2008/10/22 16:26:48 shane Exp $
+** @(#) $Id: pager.c,v 1.500 2008/10/29 07:01:57 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2640,8 +2640,8 @@ static int pagerSharedLock(Pager *pPager){
             assert( !pPager->tempFile );
             rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
             assert( rc!=SQLITE_OK || pPager->jfd->pMethods );
-            if( fout&SQLITE_OPEN_READONLY ){
-              rc = SQLITE_BUSY;
+            if( rc==SQLITE_OK && fout&SQLITE_OPEN_READONLY ){
+              rc = SQLITE_CANTOPEN;
               sqlite3OsClose(pPager->jfd);
             }
           }else{
@@ -2652,11 +2652,6 @@ static int pagerSharedLock(Pager *pPager){
         }
       }
       if( rc!=SQLITE_OK ){
-        if( rc!=SQLITE_NOMEM && rc!=SQLITE_IOERR_UNLOCK 
-         && rc!=SQLITE_IOERR_NOMEM 
-        ){
-          rc = SQLITE_BUSY;
-        }
         goto failed;
       }
       pPager->journalOpen = 1;
