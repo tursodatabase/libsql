@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.480 2008/10/07 19:53:14 drh Exp $
+** $Id: select.c,v 1.481 2008/10/30 22:13:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2144,7 +2144,7 @@ static int multiSelectOrderBy(
     regPrev = 0;
   }else{
     int nExpr = p->pEList->nExpr;
-    assert( nOrderBy>=nExpr );
+    assert( nOrderBy>=nExpr || db->mallocFailed );
     regPrev = sqlite3GetTempRange(pParse, nExpr+1);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regPrev);
     pKeyDup = sqlite3DbMallocZero(db,
