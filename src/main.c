@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.508 2008/10/12 00:27:53 shane Exp $
+** $Id: main.c,v 1.509 2008/10/30 15:03:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1265,6 +1265,15 @@ int sqlite3_errcode(sqlite3 *db){
     return SQLITE_NOMEM;
   }
   return db->errCode & db->errMask;
+}
+int sqlite3_extended_errcode(sqlite3 *db){
+  if( db && !sqlite3SafetyCheckSickOrOk(db) ){
+    return SQLITE_MISUSE;
+  }
+  if( !db || db->mallocFailed ){
+    return SQLITE_NOMEM;
+  }
+  return db->errCode;
 }
 
 /*

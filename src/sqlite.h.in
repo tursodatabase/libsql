@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.405 2008/10/17 15:10:37 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.406 2008/10/30 15:03:16 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -378,12 +378,14 @@ typedef int (*sqlite3_callback)(void*,int,char**, char**);
 **          *E to NULL if E is not NULL and there are no errors.
 **
 ** {H12137} The [sqlite3_exec(D,S,C,A,E)] function shall set the [error code]
-**          and message accessible via [sqlite3_errcode()],
+**          and message accessible via [sqlite3_errcode()], 
+**          [sqlite3_extended_errcode()],
 **          [sqlite3_errmsg()], and [sqlite3_errmsg16()].
 **
 ** {H12138} If the S parameter to [sqlite3_exec(D,S,C,A,E)] is NULL or an
 **          empty string or contains nothing other than whitespace, comments,
 **          and/or semicolons, then results of [sqlite3_errcode()],
+**          [sqlite3_extended_errcode()],
 **          [sqlite3_errmsg()], and [sqlite3_errmsg16()]
 **          shall reset to indicate no errors.
 **
@@ -2658,7 +2660,10 @@ int sqlite3_open_v2(
 ** [extended result code] for the most recent failed sqlite3_* API call
 ** associated with a [database connection]. If a prior API call failed
 ** but the most recent API call succeeded, the return value from
-** sqlite3_errcode() is undefined.
+** sqlite3_errcode() is undefined.  The sqlite3_extended_errcode()
+** interface is the same except that it always returns the 
+** [extended result code] even when extended result codes are
+** disabled.
 **
 ** The sqlite3_errmsg() and sqlite3_errmsg16() return English-language
 ** text that describes the error, as either UTF-8 or UTF-16 respectively.
@@ -2677,6 +2682,10 @@ int sqlite3_open_v2(
 **          [result code] or [extended result code] for the most recently
 **          failed interface call associated with the [database connection] D.
 **
+** {H12802} The [sqlite3_extended_errcode(D)] interface returns the numeric
+**          [extended result code] for the most recently
+**          failed interface call associated with the [database connection] D.
+**
 ** {H12803} The [sqlite3_errmsg(D)] and [sqlite3_errmsg16(D)]
 **          interfaces return English-language text that describes
 **          the error in the mostly recently failed interface call,
@@ -2688,15 +2697,18 @@ int sqlite3_open_v2(
 ** {H12808} Calls to API routines that do not return an error code
 **          (example: [sqlite3_data_count()]) do not
 **          change the error code or message returned by
-**          [sqlite3_errcode()], [sqlite3_errmsg()], or [sqlite3_errmsg16()].
+**          [sqlite3_errcode()], [sqlite3_extended_errcode()],
+**          [sqlite3_errmsg()], or [sqlite3_errmsg16()].
 **
 ** {H12809} Interfaces that are not associated with a specific
 **          [database connection] (examples:
 **          [sqlite3_mprintf()] or [sqlite3_enable_shared_cache()]
 **          do not change the values returned by
-**          [sqlite3_errcode()], [sqlite3_errmsg()], or [sqlite3_errmsg16()].
+**          [sqlite3_errcode()], [sqlite3_extended_errcode()],
+**          [sqlite3_errmsg()], or [sqlite3_errmsg16()].
 */
 int sqlite3_errcode(sqlite3 *db);
+int sqlite3_extended_errcode(sqlite3 *db);
 const char *sqlite3_errmsg(sqlite3*);
 const void *sqlite3_errmsg16(sqlite3*);
 
@@ -5765,6 +5777,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 **
 ** {H17821} If an error occurs during evaluation of [sqlite3_blob_open(D,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_extended_errcode()], 
 **          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error.
 **
@@ -5878,6 +5891,7 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 **
 ** {H17868} If an error occurs during evaluation of [sqlite3_blob_read(P,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_extended_errcode()],
 **          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error, where D is the
 **          [database connection] that was used to open the [BLOB handle] P.
@@ -5947,6 +5961,7 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 **
 ** {H17888} If an error occurs during evaluation of [sqlite3_blob_write(D,...)]
 **          then subsequent calls to [sqlite3_errcode(D)],
+**          [sqlite3_extended_errcode()],
 **          [sqlite3_errmsg(D)], and [sqlite3_errmsg16(D)] shall return
 **          information appropriate for that error.
 */

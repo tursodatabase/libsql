@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.67 2008/07/12 15:55:55 danielk1977 Exp $
+# $Id: capi3.test,v 1.68 2008/10/30 15:03:16 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -61,8 +61,11 @@ do_test capi3-1.1 {
   sqlite3_finalize $STMT
   set TAIL
 } {}
-do_test capi3-1.2 {
+do_test capi3-1.2.1 {
   sqlite3_errcode $DB
+} {SQLITE_OK}
+do_test capi3-1.2.2 {
+  sqlite3_extended_errcode $DB
 } {SQLITE_OK}
 do_test capi3-1.3 {
   sqlite3_errmsg $DB
@@ -92,8 +95,11 @@ do_test capi3-1.7 {
     set STMT [sqlite3_prepare $DB $sql -1 TAIL]
   }
 } {1}
-do_test capi3-1.8 {
+do_test capi3-1.8.1 {
   sqlite3_errcode $DB
+} {SQLITE_ERROR}
+do_test capi3-1.8.2 {
+  sqlite3_extended_errcode $DB
 } {SQLITE_ERROR}
 do_test capi3-1.9 {
   sqlite3_errmsg $DB
@@ -118,8 +124,11 @@ ifcapable {utf16} {
       set STMT [sqlite3_prepare16 $DB $sql -1 TAIL]
     }
   } {1}
-  do_test capi3-2.4 {
+  do_test capi3-2.4.1 {
     sqlite3_errcode $DB
+  } {SQLITE_ERROR}
+  do_test capi3-2.4.2 {
+    sqlite3_extended_errcode $DB
   } {SQLITE_ERROR}
   do_test capi3-2.5 {
     sqlite3_errmsg $DB
@@ -157,7 +166,7 @@ do_test capi3-3.3 {
   catch {
     set db2 [sqlite3_open /bogus/path/test.db {}]
   }
-  sqlite3_errcode $db2
+  sqlite3_extended_errcode $db2
 } {SQLITE_CANTOPEN}
 do_test capi3-3.4 {
   sqlite3_errmsg $db2
@@ -824,12 +833,15 @@ do_test capi3-11.2 {
   set STMT [sqlite3_prepare $DB "SELECT func(b, a) FROM t1" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
-do_test capi3-11.3 {
+do_test capi3-11.3.1 {
   catchsql {
     COMMIT;
   }
 } {1 {cannot commit transaction - SQL statements in progress}}
-do_test capi3-11.3.1 {
+do_test capi3-11.3.2 {
+  sqlite3_extended_errcode $DB
+} {SQLITE_BUSY}
+do_test capi3-11.3.3 {
   sqlite3_get_autocommit $DB
 } 0
 do_test capi3-11.4 {

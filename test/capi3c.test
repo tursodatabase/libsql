@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.20 2008/10/12 00:27:54 shane Exp $
+# $Id: capi3c.test,v 1.21 2008/10/30 15:03:16 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -63,8 +63,11 @@ do_test capi3c-1.1 {
   sqlite3_finalize $STMT
   set TAIL
 } {}
-do_test capi3c-1.2 {
+do_test capi3c-1.2.1 {
   sqlite3_errcode $DB
+} {SQLITE_OK}
+do_test capi3c-1.2.2 {
+  sqlite3_extended_errcode $DB
 } {SQLITE_OK}
 do_test capi3c-1.3 {
   sqlite3_errmsg $DB
@@ -81,8 +84,11 @@ do_test capi3c-1.5 {
     set STMT [sqlite3_prepare_v2 $DB $sql -1 TAIL]
   }
 } {1}
-do_test capi3c-1.6 {
+do_test capi3c-1.6.1 {
   sqlite3_errcode $DB
+} {SQLITE_ERROR}
+do_test capi3c-1.6.2 {
+  sqlite3_extended_errcode $DB
 } {SQLITE_ERROR}
 do_test capi3c-1.7 {
   sqlite3_errmsg $DB
@@ -108,8 +114,11 @@ ifcapable {utf16} {
       set STMT [sqlite3_prepare16_v2  $DB $sql -1 TAIL]
     }
   } {1}
-  do_test capi3c-2.4 {
+  do_test capi3c-2.4.1 {
     sqlite3_errcode $DB
+  } {SQLITE_ERROR}
+  do_test capi3c-2.4.2 {
+    sqlite3_extended_errcode $DB
   } {SQLITE_ERROR}
   do_test capi3c-2.5 {
     sqlite3_errmsg $DB
@@ -1231,7 +1240,7 @@ ifcapable progress {
     sqlite3_step $STMT
   } {SQLITE_INTERRUPT}
   do_test capi3c-21.2 {
-    sqlite3_errcode $DB
+    sqlite3_extended_errcode $DB
   } {SQLITE_INTERRUPT}
   do_test capi3c-21.3 {
     sqlite3_finalize $STMT
@@ -1249,6 +1258,9 @@ ifcapable progress {
   } {SQLITE_INTERRUPT}
   do_test capi3c-21.7 {
     sqlite3_errcode $DB
+  } {SQLITE_INTERRUPT}
+  do_test capi3c-21.8 {
+    sqlite3_extended_errcode $DB
   } {SQLITE_INTERRUPT}
 }
 

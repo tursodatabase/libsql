@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.328 2008/10/12 00:27:54 shane Exp $
+** $Id: test1.c,v 1.329 2008/10/30 15:03:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -117,35 +117,53 @@ int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb){
 
 const char *sqlite3TestErrorName(int rc){
   const char *zName = 0;
-  switch( rc & 0xff ){
-    case SQLITE_OK:         zName = "SQLITE_OK";          break;
-    case SQLITE_ERROR:      zName = "SQLITE_ERROR";       break;
-    case SQLITE_PERM:       zName = "SQLITE_PERM";        break;
-    case SQLITE_ABORT:      zName = "SQLITE_ABORT";       break;
-    case SQLITE_BUSY:       zName = "SQLITE_BUSY";        break;
-    case SQLITE_LOCKED:     zName = "SQLITE_LOCKED";      break;
-    case SQLITE_NOMEM:      zName = "SQLITE_NOMEM";       break;
-    case SQLITE_READONLY:   zName = "SQLITE_READONLY";    break;
-    case SQLITE_INTERRUPT:  zName = "SQLITE_INTERRUPT";   break;
-    case SQLITE_IOERR:      zName = "SQLITE_IOERR";       break;
-    case SQLITE_CORRUPT:    zName = "SQLITE_CORRUPT";     break;
-    case SQLITE_FULL:       zName = "SQLITE_FULL";        break;
-    case SQLITE_CANTOPEN:   zName = "SQLITE_CANTOPEN";    break;
-    case SQLITE_PROTOCOL:   zName = "SQLITE_PROTOCOL";    break;
-    case SQLITE_EMPTY:      zName = "SQLITE_EMPTY";       break;
-    case SQLITE_SCHEMA:     zName = "SQLITE_SCHEMA";      break;
-    case SQLITE_CONSTRAINT: zName = "SQLITE_CONSTRAINT";  break;
-    case SQLITE_MISMATCH:   zName = "SQLITE_MISMATCH";    break;
-    case SQLITE_MISUSE:     zName = "SQLITE_MISUSE";      break;
-    case SQLITE_NOLFS:      zName = "SQLITE_NOLFS";       break;
-    case SQLITE_AUTH:       zName = "SQLITE_AUTH";        break;
-    case SQLITE_FORMAT:     zName = "SQLITE_FORMAT";      break;
-    case SQLITE_RANGE:      zName = "SQLITE_RANGE";       break;
-    case SQLITE_ROW:        zName = "SQLITE_ROW";         break;
-    case SQLITE_DONE:       zName = "SQLITE_DONE";        break;
-    case SQLITE_NOTADB:     zName = "SQLITE_NOTADB";      break;
-    case SQLITE_TOOBIG:     zName = "SQLITE_TOOBIG";      break;
-    default:                zName = "SQLITE_Unknown";     break;
+  switch( rc ){
+    case SQLITE_OK:                  zName = "SQLITE_OK";                break;
+    case SQLITE_ERROR:               zName = "SQLITE_ERROR";             break;
+    case SQLITE_INTERNAL:            zName = "SQLITE_INTERNAL";          break;
+    case SQLITE_PERM:                zName = "SQLITE_PERM";              break;
+    case SQLITE_ABORT:               zName = "SQLITE_ABORT";             break;
+    case SQLITE_BUSY:                zName = "SQLITE_BUSY";              break;
+    case SQLITE_LOCKED:              zName = "SQLITE_LOCKED";            break;
+    case SQLITE_NOMEM:               zName = "SQLITE_NOMEM";             break;
+    case SQLITE_READONLY:            zName = "SQLITE_READONLY";          break;
+    case SQLITE_INTERRUPT:           zName = "SQLITE_INTERRUPT";         break;
+    case SQLITE_IOERR:               zName = "SQLITE_IOERR";             break;
+    case SQLITE_CORRUPT:             zName = "SQLITE_CORRUPT";           break;
+    case SQLITE_NOTFOUND:            zName = "SQLITE_NOTFOUND";          break;
+    case SQLITE_FULL:                zName = "SQLITE_FULL";              break;
+    case SQLITE_CANTOPEN:            zName = "SQLITE_CANTOPEN";          break;
+    case SQLITE_PROTOCOL:            zName = "SQLITE_PROTOCOL";          break;
+    case SQLITE_EMPTY:               zName = "SQLITE_EMPTY";             break;
+    case SQLITE_SCHEMA:              zName = "SQLITE_SCHEMA";            break;
+    case SQLITE_TOOBIG:              zName = "SQLITE_TOOBIG";            break;
+    case SQLITE_CONSTRAINT:          zName = "SQLITE_CONSTRAINT";        break;
+    case SQLITE_MISMATCH:            zName = "SQLITE_MISMATCH";          break;
+    case SQLITE_MISUSE:              zName = "SQLITE_MISUSE";            break;
+    case SQLITE_NOLFS:               zName = "SQLITE_NOLFS";             break;
+    case SQLITE_AUTH:                zName = "SQLITE_AUTH";              break;
+    case SQLITE_FORMAT:              zName = "SQLITE_FORMAT";            break;
+    case SQLITE_RANGE:               zName = "SQLITE_RANGE";             break;
+    case SQLITE_NOTADB:              zName = "SQLITE_NOTADB";            break;
+    case SQLITE_ROW:                 zName = "SQLITE_ROW";               break;
+    case SQLITE_DONE:                zName = "SQLITE_DONE";              break;
+    case SQLITE_IOERR_READ:          zName = "SQLITE_IOERR_READ";        break;
+    case SQLITE_IOERR_SHORT_READ:    zName = "SQLITE_IOERR_SHORT_READ";  break;
+    case SQLITE_IOERR_WRITE:         zName = "SQLITE_IOERR_WRITE";       break;
+    case SQLITE_IOERR_FSYNC:         zName = "SQLITE_IOERR_FSYNC";       break;
+    case SQLITE_IOERR_DIR_FSYNC:     zName = "SQLITE_IOERR_DIR_FSYNC";   break;
+    case SQLITE_IOERR_TRUNCATE:      zName = "SQLITE_IOERR_TRUNCATE";    break;
+    case SQLITE_IOERR_FSTAT:         zName = "SQLITE_IOERR_FSTAT";       break;
+    case SQLITE_IOERR_UNLOCK:        zName = "SQLITE_IOERR_UNLOCK";      break;
+    case SQLITE_IOERR_RDLOCK:        zName = "SQLITE_IOERR_RDLOCK";      break;
+    case SQLITE_IOERR_DELETE:        zName = "SQLITE_IOERR_DELETE";      break;
+    case SQLITE_IOERR_BLOCKED:       zName = "SQLITE_IOERR_BLOCKED";     break;
+    case SQLITE_IOERR_NOMEM:         zName = "SQLITE_IOERR_NOMEM";       break;
+    case SQLITE_IOERR_ACCESS:        zName = "SQLITE_IOERR_ACCESS";      break;
+    case SQLITE_IOERR_CHECKRESERVEDLOCK:
+                               zName = "SQLITE_IOERR_CHECKRESERVEDLOCK"; break;
+    case SQLITE_IOERR_LOCK:          zName = "SQLITE_IOERR_LOCK";        break;
+    default:                         zName = "SQLITE_Unknown";           break;
   }
   return zName;
 }
@@ -3065,6 +3083,33 @@ static int test_sleep(
 }
 
 /*
+** Usage: sqlite3_extended_errcode DB
+**
+** Return the string representation of the most recent sqlite3_* API
+** error code. e.g. "SQLITE_ERROR".
+*/
+static int test_ex_errcode(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_extended_errcode(db);
+  Tcl_AppendResult(interp, (char *)t1ErrorName(rc), 0);
+  return TCL_OK;
+}
+
+
+/*
 ** Usage: sqlite3_errcode DB
 **
 ** Return the string representation of the most recent sqlite3_* API
@@ -3078,7 +3123,6 @@ static int test_errcode(
 ){
   sqlite3 *db;
   int rc;
-  char zBuf[30];
 
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -3087,12 +3131,7 @@ static int test_errcode(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   rc = sqlite3_errcode(db);
-  if( (rc&0xff)==rc ){
-    zBuf[0] = 0;
-  }else{
-    sprintf(zBuf,"+%d", rc>>8);
-  }
-  Tcl_AppendResult(interp, (char *)t1ErrorName(rc), zBuf, 0);
+  Tcl_AppendResult(interp, (char *)t1ErrorName(rc), 0);
   return TCL_OK;
 }
 
@@ -4667,6 +4706,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_clear_bindings",        test_clear_bindings, 0},
      { "sqlite3_sleep",                 test_sleep,          0},
      { "sqlite3_errcode",               test_errcode       ,0 },
+     { "sqlite3_extended_errcode",      test_ex_errcode    ,0 },
      { "sqlite3_errmsg",                test_errmsg        ,0 },
      { "sqlite3_errmsg16",              test_errmsg16      ,0 },
      { "sqlite3_open",                  test_open          ,0 },
