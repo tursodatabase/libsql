@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.123 2008/09/16 12:06:08 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.124 2008/10/30 17:21:13 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -985,6 +985,7 @@ int sqlite3ValueFromExpr(
     assert( pExpr->token.z[1]=='\'' );
     assert( pExpr->token.z[pExpr->token.n-1]=='\'' );
     pVal = sqlite3ValueNew(db);
+    if( !pVal ) goto no_mem;
     nVal = pExpr->token.n - 3;
     zVal = (char*)pExpr->token.z + 2;
     sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,

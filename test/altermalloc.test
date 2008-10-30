@@ -12,7 +12,7 @@
 # focus of this script is testing the ALTER TABLE statement and
 # specifically out-of-memory conditions within that command.
 #
-# $Id: altermalloc.test,v 1.9 2008/08/04 20:13:27 drh Exp $
+# $Id: altermalloc.test,v 1.10 2008/10/30 17:21:13 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -39,6 +39,7 @@ do_malloc_test altermalloc-1 -tclprep {
   ALTER TABLE t1 ADD COLUMN b INTEGER DEFAULT NULL;
   ALTER TABLE t1 ADD COLUMN c TEXT DEFAULT 'default-text';
   ALTER TABLE t1 RENAME TO t2;
+  ALTER TABLE t2 ADD COLUMN d BLOB DEFAULT X'ABCD';
 }
 
 # Test malloc() failure on an ALTER TABLE on a virtual table.
