@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.412 2008/10/11 17:51:39 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.413 2008/10/31 10:53:23 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1201,28 +1201,29 @@ void sqlite3VdbeSetNumCols(Vdbe *p, int nResColumn){
 **
 ** This call must be made after a call to sqlite3VdbeSetNumCols().
 **
-** If N==P4_STATIC  it means that zName is a pointer to a constant static
-** string and we can just copy the pointer. If it is P4_DYNAMIC, then 
-** the string is freed using sqlite3DbFree(db, ) when the vdbe is finished with
-** it. Otherwise, N bytes of zName are copied.
+** The final parameter, xDel, must be one of SQLITE_DYNAMIC, SQLITE_STATIC
+** or SQLITE_TRANSIENT. If it is SQLITE_DYNAMIC, then the buffer pointed
+** to by zName will be freed by sqlite3DbFree() when the vdbe is destroyed.
 */
-int sqlite3VdbeSetColName(Vdbe *p, int idx, int var, const char *zName, int N){
+int sqlite3VdbeSetColName(
+  Vdbe *p,                         /* Vdbe being configured */
+  int idx,                         /* Index of column zName applies to */
+  int var,                         /* One of the COLNAME_* constants */
+  const char *zName,               /* Pointer to buffer containing name */
+  void (*xDel)(void*)              /* Memory management strategy for zName */
+){
   int rc;
   Mem *pColName;
   assert( idx<p->nResColumn );
   assert( var<COLNAME_N );
-  if( p->db->mallocFailed ) return SQLITE_NOMEM;
+  if( p->db->mallocFailed ){
+    assert( !zName || xDel!=SQLITE_DYNAMIC );
+    return SQLITE_NOMEM;
+  }
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
-  if( N==P4_DYNAMIC || N==P4_STATIC ){
-    rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, SQLITE_STATIC);
-  }else{
-    rc = sqlite3VdbeMemSetStr(pColName, zName, N, SQLITE_UTF8,SQLITE_TRANSIENT);
-  }
-  if( rc==SQLITE_OK && N==P4_DYNAMIC ){
-    pColName->flags &= (~MEM_Static);
-    pColName->zMalloc = pColName->z;
-  }
+  rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
+  assert( p->db->mallocFailed || !zName || pColName->flags&MEM_Term );
   return rc;
 }
 

@@ -1,5 +1,5 @@
-C Fix\sa\sfaulty\sassert()\sin\sthe\smerge\simplementation\sof\sthe\sUNION\soperator.\nTicket\s#3467.\s(CVS\s5852)
-D 2008-10-30T22:13:23
+C Change\sthe\sway\ssqlite3VdbeSetColName()\sis\scalled\sso\sas\sto\sremove\sa\sfew\slines\sof\scode.\sThis\salso\sfixes\s#3470.\s(CVS\s5853)
+D 2008-10-31T10:53:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/build.c d6d55f97abcb6f17ac3e9e7a1dd8c0db67db34fd
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
-F src/delete.c f77efc8c63e656316e038b9bff014c6fd7b13f00
+F src/delete.c 3b156e1d396942fe50664af4e45e14e7de08c312
 F src/expr.c 2b1945314fdc661fb04306cb86bd8516cfd12d4a
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c d8eb180e4f454d480894522d8ed11de771a14c7e
@@ -114,7 +114,7 @@ F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
 F src/hash.c 582c00618efe2051785e66ba1b6430d5a129de3f
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 110cca7845ed5a66c08fdd413b02e706ae34455f
+F src/insert.c 1858f297892973b00a52848e76d0fed7a17677a3
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
@@ -143,12 +143,12 @@ F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
 F src/pcache.c 5b80676e664019c1ebc8356cc25332dd69da6269
 F src/pcache.h 2caf2deb6cbaa75c423b8b96fc1411069ee77c75
-F src/pragma.c 1eb8dad7282ec3985c4e0384f3b264c535e6dbef
-F src/prepare.c c7e00ed1b0bdcf699b1aad651247d4dc3d281b0b
+F src/pragma.c e8b5a6a92fa51c14c887f6c8d48c62f374e19644
+F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
-F src/select.c 59ffe26fe84e1f1f0bf8082dfa39f844c6a02f74
+F src/select.c 0d79c6c0b48b9d67a443853fd6add8c2967ba870
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
 F src/sqlite.h.in f74e769732013f96d1ea71e4fe9a489c76bed785
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -186,15 +186,15 @@ F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
 F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
-F src/update.c ed233298db6dd23d340e449e4b4a81b9306da6aa
+F src/update.c f22a6f4507f9a0ef082418919382f83b90fd2e63
 F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c e3629776ef4a49f997b271fbd83e54b6104d5607
-F src/vdbe.h 41c99aaad9167c1b5431993db446de74b2f71fc3
+F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h a20f479ec3bf41c61b0c2bd5176a9bad6b2a07ef
 F src/vdbeapi.c 6798c70cf176d23594ec557db88190ca8c7fa860
-F src/vdbeaux.c e007aa723a059b1e5357c15420eea84095de828a
+F src/vdbeaux.c 16498c4d9fbf35510e67ddc253428ad077293df1
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c c0e9d9947db8968762c7621369f821bb181c1c86
@@ -652,7 +652,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0996783b1b7e6dda166565071cbd19f23e7edbbc
-R 41c3494036b2c015e32affe1d847d6d3
-U drh
-Z 9a404301611b14e1f4a10624e376859d
+P cd1662e964d9c071a41038676c5a6ef2c990f1ac
+R b172d3b1ff630a63b0aeae4b91cf2a82
+U danielk1977
+Z 95f190d0347133a0479177ca7cc777a4
