@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sthe\sCursor\sobject\sto\sVdbeCursor.\s(CVS\s5857)
-D 2008-11-03T20:55:07
+C Test\scases\sto\sverify\sthat\sCOMMIT\sand\sROLLBACK\sreturn\sSQLITE_BUSY\swhen\nthere\sare\sactive\sstatements.\s(CVS\s5858)
+D 2008-11-03T21:40:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -579,6 +579,7 @@ F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
+F test/trans3.test b084fce94d4c9957b01715cc9b6923c573562cdd
 F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
 F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
@@ -653,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aca6b260c0dd1a1515b70f3567a0653b6bcdeea2
-R b9c53d3f4a7f5c2c3f4af9c477dc38c4
+P fdb98fd8c1706085ebeef8e48ac6737839bed5e5
+R 9c7bda7190e22054b1774abf6505159c
 U drh
-Z 8343f2dbffff187aba2a74daa96aa1fc
+Z 49be2f942838987ce25cf1c29fa9eda5
