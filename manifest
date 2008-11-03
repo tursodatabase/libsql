@@ -1,5 +1,5 @@
-C Test\sthat\ssingle\sbyte\scorruptions\sin\sincreasingly\slarger\squantities\sare\shandled\sgracefully.\s(CVS\s5854)
-D 2008-10-31T13:57:40
+C Fix\sa\sbug\sreported\son\sthe\smailing\slist\striggered\sby\sthe\spattern\s"SELECT\s<col>,\s(SELECT\s...\sFROM\stbl\sWHERE\srowid\s>\s<col>)\sFROM\s...".\s(CVS\s5855)
+D 2008-11-03T09:06:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -200,7 +200,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c c0e9d9947db8968762c7621369f821bb181c1c86
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c 1853c1bfb567a415d904d70a4613dc07b00c74c5
+F src/where.c 171c9b2583944f66484c8552daa85373ce9e949f
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -617,7 +617,7 @@ F test/vtabC.test 9f2d9eb84bf65e606d6616f20977c5a32a11f548
 F test/vtab_alter.test 3a299749fee97ca3d53bd55717f536e4a2284856
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test c19b2555b807ef2ee014c882cdda5bc8d84fcf48
-F test/where.test 12396f15d8bf7a5763aa26129e071cdb441f600c
+F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test e446f55417f434929522d87164cd1473d54f10e2
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
@@ -653,7 +653,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bfce91429b1dad6e0ca36929e41a7adfb30f8522
-R 7e7399b4dd0e7285795a33efa071b32a
-U shane
-Z 036cf1ab4484f24cac77efa2333c4427
+P c73d915923e393f72e1c0897526a20527db2e03c
+R 81b77b0f0b421033be987682a8d0b4be
+U danielk1977
+Z 86fef2c70c68267aff5116fbaf03ae0a

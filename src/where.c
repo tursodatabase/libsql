@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.327 2008/10/25 15:03:21 drh Exp $
+** $Id: where.c,v 1.328 2008/11/03 09:06:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2472,16 +2472,26 @@ WhereInfo *sqlite3WhereBegin(
       }
       if( pStart ){
         Expr *pX;
-        int r1, regFree1;
+        int r1;
         pX = pStart->pExpr;
         assert( pX!=0 );
         assert( pStart->leftCursor==iCur );
-        r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &regFree1);
+
+        /* The ForceInt instruction may modify the register that it operates
+        ** on. For example it may replace a real value with an integer one,
+        ** or if p3 is true it may increment the register value. For this
+        ** reason we need to make sure that register r1 is really a newly
+        ** allocated temporary register, and not part of the column-cache.
+        ** For this reason we cannot use sqlite3ExprCodeTemp() here.
+        */
+        r1 = sqlite3GetTempReg(pParse);
+        sqlite3ExprCode(pParse, pX->pRight, r1);
+
         sqlite3VdbeAddOp3(v, OP_ForceInt, r1, brk, 
                              pX->op==TK_LE || pX->op==TK_GT);
         sqlite3VdbeAddOp3(v, bRev ? OP_MoveLt : OP_MoveGe, iCur, brk, r1);
         VdbeComment((v, "pk"));
-        sqlite3ReleaseTempReg(pParse, regFree1);
+        sqlite3ReleaseTempReg(pParse, r1);
         disableTerm(pLevel, pStart);
       }else{
         sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, brk);
