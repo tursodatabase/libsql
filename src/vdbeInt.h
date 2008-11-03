@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.155 2008/10/07 23:46:38 drh Exp $
+** $Id: vdbeInt.h,v 1.156 2008/11/03 20:55:07 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -50,12 +50,12 @@ typedef unsigned char Bool;
 ** Every cursor that the virtual machine has open is represented by an
 ** instance of the following structure.
 **
-** If the Cursor.isTriggerRow flag is set it means that this cursor is
+** If the VdbeCursor.isTriggerRow flag is set it means that this cursor is
 ** really a single row that represents the NEW or OLD pseudo-table of
-** a row trigger.  The data for the row is stored in Cursor.pData and
-** the rowid is in Cursor.iKey.
+** a row trigger.  The data for the row is stored in VdbeCursor.pData and
+** the rowid is in VdbeCursor.iKey.
 */
-struct Cursor {
+struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
@@ -93,10 +93,10 @@ struct Cursor {
   u32 *aOffset;         /* Cached offsets to the start of each columns data */
   u8 *aRow;             /* Data for the current row, if all on one page */
 };
-typedef struct Cursor Cursor;
+typedef struct VdbeCursor VdbeCursor;
 
 /*
-** A value for Cursor.cacheValid that means the cache is always invalid.
+** A value for VdbeCursor.cacheValid that means the cache is always invalid.
 */
 #define CACHE_STALE 0
 
@@ -291,7 +291,7 @@ struct Vdbe {
   Mem **apArg;        /* Arguments to currently executing user function */
   Mem *aColName;      /* Column names to return */
   int nCursor;        /* Number of slots in apCsr[] */
-  Cursor **apCsr;     /* One element of this array for each open cursor */
+  VdbeCursor **apCsr; /* One element of this array for each open cursor */
   int nVar;           /* Number of entries in aVar[] */
   Mem *aVar;          /* Values for the OP_Variable opcode. */
   char **azVar;       /* Name of variables */
@@ -300,7 +300,7 @@ struct Vdbe {
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   int nCallback;          /* Number of callbacks invoked so far */
-  int cacheCtr;           /* Cursor row cache generation counter */
+  int cacheCtr;           /* VdbeCursor row cache generation counter */
   Fifo sFifo;             /* A list of ROWIDs */
   int contextStackTop;    /* Index of top element in the context stack */
   int contextStackDepth;  /* The size of the "context" stack */
@@ -351,9 +351,9 @@ struct Vdbe {
 /*
 ** Function prototypes
 */
-void sqlite3VdbeFreeCursor(Vdbe *, Cursor*);
+void sqlite3VdbeFreeCursor(Vdbe *, VdbeCursor*);
 void sqliteVdbePopStack(Vdbe*,int);
-int sqlite3VdbeCursorMoveto(Cursor*);
+int sqlite3VdbeCursorMoveto(VdbeCursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
@@ -364,7 +364,7 @@ int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);
-int sqlite3VdbeIdxKeyCompare(Cursor*,UnpackedRecord*,int*);
+int sqlite3VdbeIdxKeyCompare(VdbeCursor*,UnpackedRecord*,int*);
 int sqlite3VdbeIdxRowid(BtCursor *, i64 *);
 int sqlite3MemCompare(const Mem*, const Mem*, const CollSeq*);
 int sqlite3VdbeExec(Vdbe*);

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.499 2008/10/22 10:45:38 danielk1977 Exp $
+** $Id: build.c,v 1.500 2008/11/03 20:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3057,7 +3057,7 @@ SrcList *sqlite3SrcListAppend(
 }
 
 /*
-** Assign cursors to all tables in a SrcList
+** Assign VdbeCursor index numbers to all tables in a SrcList
 */
 void sqlite3SrcListAssignCursors(Parse *pParse, SrcList *pList){
   int i;

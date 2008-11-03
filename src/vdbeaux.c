@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.414 2008/11/03 09:39:45 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.415 2008/11/03 20:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1021,7 +1021,7 @@ void sqlite3VdbeMakeReady(
   /* For each cursor required, also allocate a memory cell. Memory
   ** cells (nMem+1-nCursor)..nMem, inclusive, will never be used by
   ** the vdbe program. Instead they are used to allocate space for
-  ** Cursor/BtCursor structures. The blob of memory associated with 
+  ** VdbeCursor/BtCursor structures. The blob of memory associated with 
   ** cursor 0 is stored in memory cell nMem. Memory cell (nMem-1)
   ** stores the blob of memory associated with cursor 1, etc.
   **
@@ -1045,7 +1045,7 @@ void sqlite3VdbeMakeReady(
       + nVar*sizeof(Mem)               /* aVar */
       + nArg*sizeof(Mem*)              /* apArg */
       + nVar*sizeof(char*)             /* azVar */
-      + nCursor*sizeof(Cursor*) + 1    /* apCsr */
+      + nCursor*sizeof(VdbeCursor*)+1  /* apCsr */
     );
     if( !db->mallocFailed ){
       p->aMem--;             /* aMem[] goes from 1..nMem */
@@ -1055,7 +1055,7 @@ void sqlite3VdbeMakeReady(
       p->okVar = 0;
       p->apArg = (Mem**)&p->aVar[nVar];
       p->azVar = (char**)&p->apArg[nArg];
-      p->apCsr = (Cursor**)&p->azVar[nVar];
+      p->apCsr = (VdbeCursor**)&p->azVar[nVar];
       p->nCursor = nCursor;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
@@ -1098,7 +1098,7 @@ void sqlite3VdbeMakeReady(
 ** Close a VDBE cursor and release all the resources that cursor 
 ** happens to hold.
 */
-void sqlite3VdbeFreeCursor(Vdbe *p, Cursor *pCx){
+void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   if( pCx==0 ){
     return;
   }
@@ -1133,7 +1133,7 @@ static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
   int i;
   if( p->apCsr==0 ) return;
   for(i=0; i<p->nCursor; i++){
-    Cursor *pC = p->apCsr[i];
+    VdbeCursor *pC = p->apCsr[i];
     if( pC && (!p->inVtabMethod || !pC->pVtabCursor) ){
       sqlite3VdbeFreeCursor(p, pC);
       p->apCsr[i] = 0;
@@ -1866,7 +1866,7 @@ void sqlite3VdbeDelete(Vdbe *p){
 ** MoveTo now.  Return an error code.  If no MoveTo is pending, this
 ** routine does nothing and returns SQLITE_OK.
 */
-int sqlite3VdbeCursorMoveto(Cursor *p){
+int sqlite3VdbeCursorMoveto(VdbeCursor *p){
   if( p->deferredMoveto ){
     int res, rc;
 #ifdef SQLITE_TEST
@@ -2433,7 +2433,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
 ** supplied it is used in place of pKey,nKey.
 */
 int sqlite3VdbeIdxKeyCompare(
-  Cursor *pC,                 /* The cursor to compare against */
+  VdbeCursor *pC,             /* The cursor to compare against */
   UnpackedRecord *pUnpacked,  /* Unpacked version of pKey and nKey */
   int *res                    /* Write the comparison result here */
 ){

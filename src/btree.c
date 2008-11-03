@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.526 2008/10/27 13:59:34 danielk1977 Exp $
+** $Id: btree.c,v 1.527 2008/11/03 20:55:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -406,7 +406,7 @@ int sqlite3BtreeRestoreCursorPosition(BtCursor *pCur){
 
 /*
 ** Determine whether or not a cursor has moved from the position it
-** was last placed at.  Cursor can move when the row they are pointing
+** was last placed at.  Cursors can move when the row they are pointing
 ** at is deleted out from under them.
 **
 ** This routine returns an error code if something goes wrong.  The

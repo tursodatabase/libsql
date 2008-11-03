@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.500 2008/10/29 07:01:57 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.501 2008/11/03 20:55:07 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3401,7 +3401,9 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 /*
 ** A call to this routine tells the pager that it is not necessary to
 ** write the information on page pPg back to the disk, even though
-** that page might be marked as dirty.
+** that page might be marked as dirty.  This happens, for example, when
+** the page has been added as a leaf of the freelist and so its
+** content no longer matters.
 **
 ** The overlying software layer calls this routine when all of the data
 ** on the given page is unused.  The pager marks the page as clean so

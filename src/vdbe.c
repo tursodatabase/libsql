@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.784 2008/10/30 15:03:16 drh Exp $
+** $Id: vdbe.c,v 1.785 2008/11/03 20:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -182,20 +182,20 @@ int sqlite3VdbeOpcodeHasProperty(int opcode, int mask){
 }
 
 /*
-** Allocate cursor number iCur.  Return a pointer to it.  Return NULL
+** Allocate VdbeCursor number iCur.  Return a pointer to it.  Return NULL
 ** if we run out of memory.
 */
-static Cursor *allocateCursor(
-  Vdbe *p, 
-  int iCur, 
-  Op *pOp,
-  int iDb, 
-  int isBtreeCursor
+static VdbeCursor *allocateCursor(
+  Vdbe *p,              /* The virtual machine */
+  int iCur,             /* Index of the new VdbeCursor */
+  Op *pOp,              /* */
+  int iDb,              /* */
+  int isBtreeCursor     /* */
 ){
   /* Find the memory cell that will be used to store the blob of memory
-  ** required for this Cursor structure. It is convenient to use a 
+  ** required for this VdbeCursor structure. It is convenient to use a 
   ** vdbe memory cell to manage the memory allocation required for a
-  ** Cursor structure for the following reasons:
+  ** VdbeCursor structure for the following reasons:
   **
   **   * Sometimes cursor numbers are used for a couple of different
   **     purposes in a vdbe program. The different uses might require
@@ -213,18 +213,18 @@ static Cursor *allocateCursor(
   Mem *pMem = &p->aMem[p->nMem-iCur];
 
   int nByte;
-  Cursor *pCx = 0;
+  VdbeCursor *pCx = 0;
   /* If the opcode of pOp is OP_SetNumColumns, then pOp->p2 contains
   ** the number of fields in the records contained in the table or
   ** index being opened. Use this to reserve space for the 
-  ** Cursor.aType[] array.
+  ** VdbeCursor.aType[] array.
   */
   int nField = 0;
   if( pOp->opcode==OP_SetNumColumns || pOp->opcode==OP_OpenEphemeral ){
     nField = pOp->p2;
   }
   nByte = 
-      sizeof(Cursor) + 
+      sizeof(VdbeCursor) + 
       (isBtreeCursor?sqlite3BtreeCursorSize():0) + 
       2*nField*sizeof(u32);
 
@@ -234,15 +234,16 @@ static Cursor *allocateCursor(
     p->apCsr[iCur] = 0;
   }
   if( SQLITE_OK==sqlite3VdbeMemGrow(pMem, nByte, 0) ){
-    p->apCsr[iCur] = pCx = (Cursor *)pMem->z;
+    p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->z;
     memset(pMem->z, 0, nByte);
     pCx->iDb = iDb;
     pCx->nField = nField;
     if( nField ){
-      pCx->aType = (u32 *)&pMem->z[sizeof(Cursor)];
+      pCx->aType = (u32 *)&pMem->z[sizeof(VdbeCursor)];
     }
     if( isBtreeCursor ){
-      pCx->pCursor = (BtCursor *)&pMem->z[sizeof(Cursor)+2*nField*sizeof(u32)];
+      pCx->pCursor = (BtCursor*)
+          &pMem->z[sizeof(VdbeCursor)+2*nField*sizeof(u32)];
     }
   }
   return pCx;
@@ -1958,9 +1959,6 @@ case OP_SetNumColumns: {
 **
 ** The value extracted is stored in register P3.
 **
-** If the KeyAsData opcode has previously executed on this cursor, then the
-** field might be extracted from the key rather than the data.
-**
 ** If the column contains fewer than P2 fields, then extract a NULL.  Or,
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
@@ -1969,7 +1967,7 @@ case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
   int p1 = pOp->p1;  /* P1 value of the opcode */
   int p2 = pOp->p2;  /* column number to retrieve */
-  Cursor *pC = 0;    /* The VDBE cursor */
+  VdbeCursor *pC = 0;/* The VDBE cursor */
   char *zRec;        /* Pointer to complete record-data */
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
@@ -1999,7 +1997,7 @@ case OP_Column: {
   ** If the data is unavailable,  zRec is set to NULL.
   **
   ** We also compute the number of columns in the record.  For cursors,
-  ** the number of columns is stored in the Cursor.nField element.
+  ** the number of columns is stored in the VdbeCursor.nField element.
   */
   pC = p->apCsr[p1];
   assert( pC!=0 );
@@ -2671,7 +2669,7 @@ case OP_OpenWrite: {
   int iDb = pOp->p3;
   int wrFlag;
   Btree *pX;
-  Cursor *pCur;
+  VdbeCursor *pCur;
   Db *pDb;
   
   assert( iDb>=0 && iDb<db->nDb );
@@ -2771,7 +2769,7 @@ case OP_OpenWrite: {
 */
 case OP_OpenEphemeral: {
   int i = pOp->p1;
-  Cursor *pCx;
+  VdbeCursor *pCx;
   static const int openFlags = 
       SQLITE_OPEN_READWRITE |
       SQLITE_OPEN_CREATE |
@@ -2837,7 +2835,7 @@ case OP_OpenEphemeral: {
 */
 case OP_OpenPseudo: {
   int i = pOp->p1;
-  Cursor *pCx;
+  VdbeCursor *pCx;
   assert( i>=0 );
   pCx = allocateCursor(p, i, &pOp[-1], -1, 0);
   if( pCx==0 ) goto no_mem;
@@ -2926,7 +2924,7 @@ case OP_MoveLe:         /* jump, in3 */
 case OP_MoveGe:         /* jump, in3 */
 case OP_MoveGt: {       /* jump, in3 */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
@@ -3043,7 +3041,7 @@ case OP_NotFound:       /* jump, in3 */
 case OP_Found: {        /* jump, in3 */
   int i = pOp->p1;
   int alreadyExists = 0;
-  Cursor *pC;
+  VdbeCursor *pC;
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor!=0 ){
@@ -3099,7 +3097,7 @@ case OP_Found: {        /* jump, in3 */
 */
 case OP_IsUnique: {        /* jump, in3 */
   int i = pOp->p1;
-  Cursor *pCx;
+  VdbeCursor *pCx;
   BtCursor *pCrsr;
   Mem *pK;
   i64 R;
@@ -3196,7 +3194,7 @@ case OP_IsUnique: {        /* jump, in3 */
 */
 case OP_NotExists: {        /* jump, in3 */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
@@ -3265,7 +3263,7 @@ case OP_Sequence: {           /* out2-prerelease */
 case OP_NewRowid: {           /* out2-prerelease */
   int i = pOp->p1;
   i64 v = 0;
-  Cursor *pC;
+  VdbeCursor *pC;
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pC = p->apCsr[i])->pCursor==0 ){
@@ -3433,7 +3431,7 @@ case OP_Insert: {
 
   i64 iKey;   /* The integer ROWID or key for the record to be inserted */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC!=0 );
@@ -3527,7 +3525,7 @@ case OP_Insert: {
 case OP_Delete: {
   int i = pOp->p1;
   i64 iKey;
-  Cursor *pC;
+  VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
@@ -3598,7 +3596,7 @@ case OP_ResetCount: {
 case OP_RowKey:
 case OP_RowData: {
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   u32 n;
 
@@ -3652,7 +3650,7 @@ case OP_RowData: {
 */
 case OP_Rowid: {                 /* out2-prerelease */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   i64 v;
 
   assert( i>=0 && i<p->nCursor );
@@ -3685,7 +3683,7 @@ case OP_Rowid: {                 /* out2-prerelease */
 */
 case OP_NullRow: {
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
@@ -3708,7 +3706,7 @@ case OP_NullRow: {
 */
 case OP_Last: {        /* jump */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
 
@@ -3758,7 +3756,7 @@ case OP_Sort: {        /* jump */
 */
 case OP_Rewind: {        /* jump */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
 
@@ -3803,7 +3801,7 @@ case OP_Rewind: {        /* jump */
 */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
 
@@ -3846,7 +3844,7 @@ case OP_Next: {        /* jump */
 */
 case OP_IdxInsert: {        /* in2 */
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
@@ -3873,7 +3871,7 @@ case OP_IdxInsert: {        /* in2 */
 */
 case OP_IdxDelete: {
   int i = pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
   BtCursor *pCrsr;
   assert( pOp->p3>0 );
   assert( pOp->p2>0 && pOp->p2+pOp->p3<=p->nMem );
@@ -3907,7 +3905,7 @@ case OP_IdxDelete: {
 case OP_IdxRowid: {              /* out2-prerelease */
   int i = pOp->p1;
   BtCursor *pCrsr;
-  Cursor *pC;
+  VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
@@ -3957,7 +3955,7 @@ case OP_IdxRowid: {              /* out2-prerelease */
 case OP_IdxLT:          /* jump, in3 */
 case OP_IdxGE: {        /* jump, in3 */
   int i= pOp->p1;
-  Cursor *pC;
+  VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
@@ -4640,7 +4638,7 @@ case OP_VDestroy: {
 ** table and stores that cursor in P1.
 */
 case OP_VOpen: {
-  Cursor *pCur = 0;
+  VdbeCursor *pCur = 0;
   sqlite3_vtab_cursor *pVtabCursor = 0;
 
   sqlite3_vtab *pVtab = pOp->p4.pVtab;
@@ -4699,7 +4697,7 @@ case OP_VFilter: {   /* jump */
   sqlite3_vtab_cursor *pVtabCursor;
   sqlite3_vtab *pVtab;
 
-  Cursor *pCur = p->apCsr[pOp->p1];
+  VdbeCursor *pCur = p->apCsr[pOp->p1];
 
   REGISTER_TRACE(pOp->p3, pQuery);
   assert( pCur->pVtabCursor );
@@ -4756,7 +4754,7 @@ case OP_VRowid: {             /* out2-prerelease */
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
   sqlite_int64 iRow;
-  Cursor *pCur = p->apCsr[pOp->p1];
+  VdbeCursor *pCur = p->apCsr[pOp->p1];
 
   assert( pCur->pVtabCursor );
   if( pCur->nullRow ){
@@ -4790,7 +4788,7 @@ case OP_VColumn: {
   Mem *pDest;
   sqlite3_context sContext;
 
-  Cursor *pCur = p->apCsr[pOp->p1];
+  VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pDest = &p->aMem[pOp->p3];
@@ -4848,7 +4846,7 @@ case OP_VNext: {   /* jump */
   const sqlite3_module *pModule;
   int res = 0;
 
-  Cursor *pCur = p->apCsr[pOp->p1];
+  VdbeCursor *pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   if( pCur->nullRow ){
     break;

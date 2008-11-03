@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.250 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: insert.c,v 1.251 2008/11/03 20:55:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1385,7 +1385,7 @@ void sqlite3CompleteInsertion(
 int sqlite3OpenTableAndIndices(
   Parse *pParse,   /* Parsing context */
   Table *pTab,     /* Table to be opened */
-  int baseCur,        /* Cursor number assigned to the table */
+  int baseCur,     /* Cursor number assigned to the table */
   int op           /* OP_OpenRead or OP_OpenWrite */
 ){
   int i;
