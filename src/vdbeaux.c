@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.413 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.414 2008/11/03 09:39:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1969,7 +1969,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
   if( flags&MEM_Real ){
     return 7;
   }
-  assert( flags&(MEM_Str|MEM_Blob) );
+  assert( pMem->db->mallocFailed || flags&(MEM_Str|MEM_Blob) );
   n = pMem->n;
   if( flags & MEM_Zero ){
     n += pMem->u.i;
