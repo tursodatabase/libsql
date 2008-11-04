@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.15 2008/10/07 15:25:49 drh Exp $
+# $Id: mutex1.test,v 1.16 2008/11/04 14:55:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -149,6 +149,29 @@ ifcapable threadsafe {
     set counters(recursive)
   } {0}
 }
+
+# Test the sqlite3_db_mutex() function.
+#
+do_test mutex1.4.1 {
+  catch {db close}
+  sqlite3 db test.db
+  enter_db_mutex db
+  db eval {SELECT 1, 2, 3}
+} {1 2 3}
+do_test mutex1.4.2 {
+  leave_db_mutex db
+  db eval {SELECT 1, 2, 3}
+} {1 2 3}
+do_test mutex1.4.3 {
+  catch {db close}
+  sqlite3 db test.db -nomutex 1
+  enter_db_mutex db
+  db eval {SELECT 1, 2, 3}
+} {1 2 3}
+do_test mutex1.4.4 {
+  leave_db_mutex db
+  db eval {SELECT 1, 2, 3}
+} {1 2 3}
 
 do_test mutex1-X {
   catch {db close}

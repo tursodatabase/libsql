@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.11 2008/07/19 13:43:24 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.12 2008/11/04 14:55:47 danielk1977 Exp $
 */
 
 #include "tcl.h"
@@ -359,6 +359,57 @@ static int test_config(
   return TCL_OK;
 }
 
+static sqlite3 *getDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
+  sqlite3 *db;
+  Tcl_CmdInfo info;
+  char *zCmd = Tcl_GetString(pObj);
+  if( 1!=Tcl_GetCommandInfo(pInterp, zCmd, &info) ){
+    Tcl_AppendResult(pInterp, "No such db-handle: \"", zCmd, "\"", 0);
+    return 0;
+  }
+  db = *((sqlite3 **)info.objClientData);
+  assert( db );
+  return db;
+}
+
+static int test_enter_db_mutex(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  db = getDbPointer(interp, objv[1]);
+  if( !db ){
+    return TCL_ERROR;
+  }
+  sqlite3_mutex_enter(sqlite3_db_mutex(db));
+  return TCL_OK;
+}
+
+static int test_leave_db_mutex(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3 *db;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+  db = getDbPointer(interp, objv[1]);
+  if( !db ){
+    return TCL_ERROR;
+  }
+  sqlite3_mutex_leave(sqlite3_db_mutex(db));
+  return TCL_OK;
+}
+
 int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   static struct {
     char *zName;
@@ -367,6 +418,9 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
     { "sqlite3_shutdown",        (Tcl_ObjCmdProc*)test_shutdown },
     { "sqlite3_initialize",      (Tcl_ObjCmdProc*)test_initialize },
     { "sqlite3_config",          (Tcl_ObjCmdProc*)test_config },
+
+    { "enter_db_mutex",          (Tcl_ObjCmdProc*)test_enter_db_mutex },
+    { "leave_db_mutex",          (Tcl_ObjCmdProc*)test_leave_db_mutex },
 
     { "alloc_dealloc_mutex",     (Tcl_ObjCmdProc*)test_alloc_mutex },
     { "install_mutex_counters",  (Tcl_ObjCmdProc*)test_install_mutex_counters },

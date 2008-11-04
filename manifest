@@ -1,5 +1,5 @@
-C Enhance\sdocumentation\sof\ssqlite3_db_mutex().\s(CVS\s5861)
-D 2008-11-04T14:48:23
+C Add\stest\scases\sfor\ssqlite3_db_mutex().\s(CVS\s5862)
+D 2008-11-04T14:55:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -176,7 +176,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 243244eb3ba2095db8b65a797d23de72c75e848c
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
-F src/test_mutex.c d3422d9f60cc1330249d102e74b333f0d24a0cb6
+F src/test_mutex.c 66c4ab4e0396a440ddb17cd9b58a05305144f05d
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -446,7 +446,7 @@ F test/misc5.test 6a5c1e3217a95b0db05ff9a0f1ecb5ce9043ffef
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
 F test/misc7.test edbbe77d48c7d70a60f8c33e2c7d182ca25f0181
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
-F test/mutex1.test ff260ddaf7240390dbb013d28aba3a33ec0dada4
+F test/mutex1.test 820bf4a91af8cf3c9aa63c261d6c65e07b3705b9
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P acf26cc0f77b3a308d86f6dc02ecda66a4b12fd0
-R 967144092ed873369fe78115fcdbc885
-U drh
-Z 0eeff37a296b9ff7c87511616dad08b9
+P 3aed410ab08557ec92101e5d7c4c90ba50555ddc
+R 044692e5a356507c7565b8f025f174c4
+U danielk1977
+Z 09a6c1112ff781922d9e5567a132381a
