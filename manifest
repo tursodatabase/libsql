@@ -1,5 +1,5 @@
-C Test\scases\sto\sverify\sthat\sCOMMIT\sand\sROLLBACK\sreturn\sSQLITE_BUSY\swhen\nthere\sare\sactive\sstatements.\s(CVS\s5858)
-D 2008-11-03T21:40:00
+C Add\sthe\ssqlite3_db_mutex()\sinterface.\s\sNo\stest\scases\syet.\s(CVS\s5859)
+D 2008-11-04T13:46:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in da817da72422f9b876602c225fcd17d6ca4182f7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,7 +118,7 @@ F src/insert.c d61998cb8d934bd42b77bd362f94cc3368c5d5f7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
-F src/main.c df799b66bb11deac9d6de66ba7931700923094b4
+F src/main.c 02e1f05f949f614563db03998b0f3ec70273332e
 F src/malloc.c a213fb461b8df08aed7606f6a1e1d3452e089000
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
@@ -150,7 +150,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c 0d79c6c0b48b9d67a443853fd6add8c2967ba870
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in f74e769732013f96d1ea71e4fe9a489c76bed785
+F src/sqlite.h.in 547b42c528ae337f7e5a0f547d013b8085d13b80
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 926279c94cdf21e53fc66badb8541d94aed25018
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fdb98fd8c1706085ebeef8e48ac6737839bed5e5
-R 9c7bda7190e22054b1774abf6505159c
+P cedfa214e4e979ab04a30f558f767d46862151de
+R 455fe7ce922ef8b355f1e416fa2f04b2
 U drh
-Z 49be2f942838987ce25cf1c29fa9eda5
+Z e3ee957bbe72b22fd564e398dd239acd

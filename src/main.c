@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.509 2008/10/30 15:03:16 drh Exp $
+** $Id: main.c,v 1.510 2008/11/04 13:46:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -413,6 +413,13 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     db->lookaside.bEnabled = 0;
   }
   return SQLITE_OK;
+}
+
+/*
+** Return the mutex associated with a database connection.
+*/
+sqlite3_mutex *sqlite3_db_mutex(sqlite3 *db){
+  return db->mutex;
 }
 
 /*

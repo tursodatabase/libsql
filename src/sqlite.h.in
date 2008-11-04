@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.406 2008/10/30 15:03:16 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.407 2008/11/04 13:46:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6258,6 +6258,17 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_random() */
 #define SQLITE_MUTEX_STATIC_LRU       6  /* lru page list */
 #define SQLITE_MUTEX_STATIC_LRU2      7  /* lru page list */
+
+/*
+** CAPI3REF: Retrieve the mutex for a database connection {H17002} <H17000>
+**
+** This interface returns a pointer the [sqlite3_mutex] object that 
+** serializes access to the [database connection] given in the argument
+** when the [threading mode] is Serialized.
+** If the [threading mode] is Single-thread or Multi-thread then this
+** routine returns a NULL pointer.
+*/
+sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 
 /*
 ** CAPI3REF: Low-Level Control Of Database Files {H11300} <S30800>
