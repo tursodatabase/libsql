@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.415 2008/11/03 20:55:07 drh Exp $
+** $Id: vdbeaux.c,v 1.416 2008/11/04 14:25:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1038,7 +1038,7 @@ void sqlite3VdbeMakeReady(
     /*resizeOpArray(p, p->nOp);*/
     assert( nVar>=0 );
     if( isExplain && nMem<10 ){
-      p->nMem = nMem = 10;
+      nMem = 10;
     }
     p->aMem = sqlite3DbMallocZero(db,
         nMem*sizeof(Mem)               /* aMem */
