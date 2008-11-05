@@ -1,5 +1,5 @@
-C The\sCOMMIT\scommand\snow\sworks\seven\sif\sthere\sare\spending\squeries,\sas\slong\nas\sthe\spending\squeries\sare\sreading\sand\snot\swriting\sthe\sdatabase.\s(CVS\s5864)
-D 2008-11-05T16:37:35
+C Fix\smemory\sallocation\sproblems\swhen\sstring\slength\sexceeds\slimits.\s(CVS\s5865)
+D 2008-11-05T17:41:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -194,10 +194,10 @@ F src/vdbe.c b6b989bbd0e306581695f8914c4246905a5c0d14
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h c9400778d6f801c2cb8ebe6151c909e19dd2d793
 F src/vdbeapi.c ea22e171704906632cd971668359b8c0c5053001
-F src/vdbeaux.c ec1ee5ac4c9aa3ac42c5e5c340960d29f3ec640e
+F src/vdbeaux.c 75258853624ec5fba72039f87397b3d88c586fa1
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
-F src/vdbemem.c c0e9d9947db8968762c7621369f821bb181c1c86
+F src/vdbemem.c ff746621ff0f695507ac9989fe3256ea8bee66ad
 F src/vtab.c 527c180e9c5fca417c9167d02af4b5039f892b4b
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c 171c9b2583944f66484c8552daa85373ce9e949f
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8b868604217571cf2f60cdf46adb9721ca071bf9
-R d0a748defad0c6542a6b42006bda2301
+P 51f04aaff2803487933b9dfcf39f27a249f18a98
+R 4df707a8bb3b3962cea01886e81cdebf
 U drh
-Z 8362aa5d8251e71533ab4c0ad20b06f7
+Z 119ecd7805404a0e1040dc60e69dd81f

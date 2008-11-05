@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.124 2008/10/30 17:21:13 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.125 2008/11/05 17:41:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -606,9 +606,6 @@ int sqlite3VdbeMemSetStr(
     }
     flags |= MEM_Term;
   }
-  if( nByte>iLimit ){
-    return SQLITE_TOOBIG;
-  }
 
   /* The following block sets the new values of Mem.z and Mem.xDel. It
   ** also sets a flag in local variable "flags" to indicate the memory
@@ -618,6 +615,9 @@ int sqlite3VdbeMemSetStr(
     int nAlloc = nByte;
     if( flags&MEM_Term ){
       nAlloc += (enc==SQLITE_UTF8?1:2);
+    }
+    if( nByte>iLimit ){
+      return SQLITE_TOOBIG;
     }
     if( sqlite3VdbeMemGrow(pMem, nAlloc, 0) ){
       return SQLITE_NOMEM;
@@ -632,6 +632,9 @@ int sqlite3VdbeMemSetStr(
     pMem->z = (char *)z;
     pMem->xDel = xDel;
     flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
+  }
+  if( nByte>iLimit ){
+    return SQLITE_TOOBIG;
   }
 
   pMem->n = nByte;

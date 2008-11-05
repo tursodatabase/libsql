@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.417 2008/11/05 16:37:35 drh Exp $
+** $Id: vdbeaux.c,v 1.418 2008/11/05 17:41:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1229,7 +1229,7 @@ int sqlite3VdbeSetColName(
   assert( p->aColName!=0 );
   pColName = &(p->aColName[idx+var*p->nResColumn]);
   rc = sqlite3VdbeMemSetStr(pColName, zName, -1, SQLITE_UTF8, xDel);
-  assert( p->db->mallocFailed || !zName || pColName->flags&MEM_Term );
+  assert( rc!=0 || !zName || (pColName->flags&MEM_Term)!=0 );
   return rc;
 }
 
