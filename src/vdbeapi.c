@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.147 2008/10/13 10:37:50 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.148 2008/11/05 16:37:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -468,6 +468,7 @@ static int sqlite3Step(Vdbe *p){
 #endif
 
     db->activeVdbeCnt++;
+    if( p->readOnly==0 ) db->writeVdbeCnt++;
     p->pc = 0;
     stmtLruRemove(p);
   }

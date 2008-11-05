@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi3.test,v 1.68 2008/10/30 15:03:16 drh Exp $
+# $Id: capi3.test,v 1.69 2008/11/05 16:37:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -833,17 +833,25 @@ do_test capi3-11.2 {
   set STMT [sqlite3_prepare $DB "SELECT func(b, a) FROM t1" -1 TAIL]
   sqlite3_step $STMT
 } {SQLITE_ROW}
+
+# As of 3.6.5 a COMMIT is OK during while a query is still running -
+# as long as it is a read-only query and not an incremental BLOB write.
+#
 do_test capi3-11.3.1 {
   catchsql {
     COMMIT;
   }
-} {1 {cannot commit transaction - SQL statements in progress}}
+} {0 {}}
 do_test capi3-11.3.2 {
   sqlite3_extended_errcode $DB
-} {SQLITE_BUSY}
+} {SQLITE_OK}
 do_test capi3-11.3.3 {
   sqlite3_get_autocommit $DB
-} 0
+} 1
+do_test capi3-11.3.4 {
+  db eval {PRAGMA lock_status}
+} {main shared temp closed}
+
 do_test capi3-11.4 {
   sqlite3_step $STMT
 } {SQLITE_ERROR}
@@ -855,15 +863,7 @@ do_test capi3-11.6 {
     SELECT * FROM t1;
   }
 } {0 {1 int 2 notatype}}
-do_test capi3-11.6.1 {
-  sqlite3_get_autocommit $DB
-} 0
 do_test capi3-11.7 {
-  catchsql {
-    COMMIT;
-  }
-} {0 {}}
-do_test capi3-11.7.1 {
   sqlite3_get_autocommit $DB
 } 1
 do_test capi3-11.8 {
@@ -950,13 +950,13 @@ do_test capi3-11.20 {
     BEGIN;
     COMMIT;
   }
-} {1 {cannot commit transaction - SQL statements in progress}}
+} {0 {}}
 do_test capi3-11.20 {
   sqlite3_reset $STMT
   catchsql {
     COMMIT;
   }
-} {0 {}}
+} {1 {cannot commit - no transaction is active}}
 do_test capi3-11.21 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: incrblob.test,v 1.22 2008/10/02 14:49:02 danielk1977 Exp $
+# $Id: incrblob.test,v 1.23 2008/11/05 16:37:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -450,8 +450,10 @@ do_test incrblob-6.9 {
   flush $::blob
 } {}
 
-# At this point rollback or commit should be illegal (because 
-# there is an open blob channel).
+# At this point rollback should be illegal (because 
+# there is an open blob channel).  But commit is allowed because
+# the blob is read-only.
+#
 do_test incrblob-6.10 {
   catchsql {
     ROLLBACK;
@@ -461,7 +463,7 @@ do_test incrblob-6.11 {
   catchsql {
     COMMIT;
   } db2
-} {1 {cannot commit transaction - SQL statements in progress}}
+} {0 {}}
 
 do_test incrblob-6.12 {
   execsql {
@@ -470,9 +472,6 @@ do_test incrblob-6.12 {
 } {}
 do_test incrblob-6.13 {
   close $::blob
-  execsql {
-    COMMIT;
-  } db2
 } {}
 do_test incrblob-6.14 {
   execsql {

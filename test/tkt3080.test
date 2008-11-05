@@ -14,7 +14,7 @@
 # Make sure that application-defined functions are able to recursively
 # invoke SQL statements that create and drop virtual tables.
 #
-# $Id: tkt3080.test,v 1.1 2008/04/28 17:12:11 drh Exp $
+# $Id: tkt3080.test,v 1.2 2008/11/05 16:37:35 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -48,7 +48,7 @@ do_test tkt3080.4 {
   db eval {
     SELECT name FROM sqlite_master;
   }
-} {t1 t2}
+} {t1 t2 t3}
 
 ifcapable vtab {
   register_echo_module [sqlite3_connection_pointer db]
@@ -66,7 +66,7 @@ ifcapable vtab {
        SELECT execsql(x) FROM t1
      }
      execsql {SELECT name FROM sqlite_master}
-  } {t1 t2}
+  } {t1 t2 t3}
   do_test tkt3080.11 {
      execsql {SELECT * FROM t2}
   } {123}

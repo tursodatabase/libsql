@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.785 2008/11/03 20:55:07 drh Exp $
+** $Id: vdbe.c,v 1.786 2008/11/05 16:37:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2393,33 +2393,40 @@ case OP_Statement: {
 ** This instruction causes the VM to halt.
 */
 case OP_AutoCommit: {
-  u8 i = pOp->p1;
-  u8 rollback = pOp->p2;
+  int desiredAutoCommit = pOp->p1;
+  int rollback = pOp->p2;
+  int turnOnAC = desiredAutoCommit && !db->autoCommit;
 
-  assert( i==1 || i==0 );
-  assert( i==1 || rollback==0 );
+  assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
+  assert( desiredAutoCommit==1 || rollback==0 );
 
   assert( db->activeVdbeCnt>0 );  /* At least this one VM is active */
 
-  if( db->activeVdbeCnt>1 && i && !db->autoCommit ){
-    /* If this instruction implements a COMMIT or ROLLBACK, other VMs are
+  if( turnOnAC && rollback && db->activeVdbeCnt>1 ){
+    /* If this instruction implements a ROLLBACK and other VMs are
     ** still running, and a transaction is active, return an error indicating
     ** that the other VMs must complete first. 
     */
-    sqlite3SetString(&p->zErrMsg, db, "cannot %s transaction - "
-        "SQL statements in progress",
-        rollback ? "rollback" : "commit");
+    sqlite3SetString(&p->zErrMsg, db, "cannot rollback transaction - "
+        "SQL statements in progress");
     rc = SQLITE_BUSY;
-  }else if( i!=db->autoCommit ){
+  }else if( turnOnAC && !rollback && db->writeVdbeCnt>1 ){
+    /* If this instruction implements a COMMIT and other VMs are writing
+    ** return an error indicating that the other VMs must complete first. 
+    */
+    sqlite3SetString(&p->zErrMsg, db, "cannot commit transaction - "
+        "SQL statements in progress");
+    rc = SQLITE_BUSY;
+  }else if( desiredAutoCommit!=db->autoCommit ){
     if( pOp->p2 ){
-      assert( i==1 );
+      assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db);
       db->autoCommit = 1;
     }else{
-      db->autoCommit = i;
+      db->autoCommit = desiredAutoCommit;
       if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
         p->pc = pc;
-        db->autoCommit = 1-i;
+        db->autoCommit = 1-desiredAutoCommit;
         p->rc = rc = SQLITE_BUSY;
         goto vdbe_return;
       }
@@ -2432,7 +2439,7 @@ case OP_AutoCommit: {
     goto vdbe_return;
   }else{
     sqlite3SetString(&p->zErrMsg, db,
-        (!i)?"cannot start a transaction within a transaction":(
+        (!desiredAutoCommit)?"cannot start a transaction within a transaction":(
         (rollback)?"cannot rollback - no transaction is active":
                    "cannot commit - no transaction is active"));
          

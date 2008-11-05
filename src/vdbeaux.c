@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.416 2008/11/04 14:25:06 drh Exp $
+** $Id: vdbeaux.c,v 1.417 2008/11/05 16:37:35 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -267,6 +267,8 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int *aLabel = p->aLabel;
   int doesStatementRollback = 0;
   int hasStatementBegin = 0;
+  p->readOnly = 1;
+  p->usesStmtJournal = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
@@ -283,8 +285,11 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
       }
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
+      p->usesStmtJournal = 1;
     }else if( opcode==OP_Destroy ){
       doesStatementRollback = 1;
+    }else if( opcode==OP_Transaction && pOp->p2!=0 ){
+      p->readOnly = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
       doesStatementRollback = 1;
@@ -313,6 +318,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   ** which can be expensive on some platforms.
   */
   if( hasStatementBegin && !doesStatementRollback ){
+    p->usesStmtJournal = 0;
     for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
       if( pOp->opcode==OP_Statement ){
         pOp->opcode = OP_Noop;
@@ -1454,14 +1460,17 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 static void checkActiveVdbeCnt(sqlite3 *db){
   Vdbe *p;
   int cnt = 0;
+  int nWrite = 0;
   p = db->pVdbe;
   while( p ){
     if( p->magic==VDBE_MAGIC_RUN && p->pc>=0 ){
       cnt++;
+      if( p->readOnly==0 ) nWrite++;
     }
     p = p->pNext;
   }
   assert( cnt==db->activeVdbeCnt );
+  assert( nWrite==db->writeVdbeCnt );
 }
 #else
 #define checkActiveVdbeCnt(x)
@@ -1549,42 +1558,15 @@ int sqlite3VdbeHalt(Vdbe *p){
     isSpecialError = mrc==SQLITE_NOMEM || mrc==SQLITE_IOERR
                      || mrc==SQLITE_INTERRUPT || mrc==SQLITE_FULL;
     if( isSpecialError ){
-      /* This loop does static analysis of the query to see which of the
-      ** following three categories it falls into:
-      **
-      **     Read-only
-      **     Query with statement journal
-      **     Query without statement journal
-      **
-      ** We could do something more elegant than this static analysis (i.e.
-      ** store the type of query as part of the compliation phase), but 
-      ** handling malloc() or IO failure is a fairly obscure edge case so 
-      ** this is probably easier. Todo: Might be an opportunity to reduce 
-      ** code size a very small amount though...
-      */
-      int notReadOnly = 0;
-      int isStatement = 0;
-      assert(p->aOp || p->nOp==0);
-      for(i=0; i<p->nOp; i++){ 
-        switch( p->aOp[i].opcode ){
-          case OP_Transaction:
-            notReadOnly |= p->aOp[i].p2;
-            break;
-          case OP_Statement:
-            isStatement = 1;
-            break;
-        }
-      }
-
-   
       /* If the query was read-only, we need do no rollback at all. Otherwise,
       ** proceed with the special handling.
       */
-      if( notReadOnly || mrc!=SQLITE_INTERRUPT ){
-        if( p->rc==SQLITE_IOERR_BLOCKED && isStatement ){
+      if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
+        if( p->rc==SQLITE_IOERR_BLOCKED && p->usesStmtJournal ){
           xFunc = sqlite3BtreeRollbackStmt;
           p->rc = SQLITE_BUSY;
-        } else if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL) && isStatement ){
+        }else if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL)
+                   && p->usesStmtJournal ){
           xFunc = sqlite3BtreeRollbackStmt;
         }else{
           /* We are forced to roll back the active transaction. Before doing
@@ -1601,9 +1583,9 @@ int sqlite3VdbeHalt(Vdbe *p){
     ** we do either a commit or rollback of the current transaction. 
     **
     ** Note: This block also runs if one of the special errors handled 
-    ** above has occured. 
+    ** above has occurred. 
     */
-    if( db->autoCommit && db->activeVdbeCnt==1 ){
+    if( db->autoCommit && db->writeVdbeCnt==(p->readOnly==0) ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
         /* The auto-commit flag is true, and the vdbe program was 
         ** successful or hit an 'OR FAIL' constraint. This means a commit 
@@ -1683,6 +1665,10 @@ int sqlite3VdbeHalt(Vdbe *p){
   /* We have successfully halted and closed the VM.  Record this fact. */
   if( p->pc>=0 ){
     db->activeVdbeCnt--;
+    if( !p->readOnly ){
+      db->writeVdbeCnt--;
+    }
+    assert( db->activeVdbeCnt>=db->writeVdbeCnt );
   }
   p->magic = VDBE_MAGIC_HALT;
   checkActiveVdbeCnt(db);
