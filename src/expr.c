@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.400 2008/10/25 15:03:21 drh Exp $
+** $Id: expr.c,v 1.401 2008/11/06 15:33:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1864,6 +1864,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       testcase( to_op==OP_ToNumeric );
       testcase( to_op==OP_ToInt );
       testcase( to_op==OP_ToReal );
+      if( inReg!=target ){
+        sqlite3VdbeAddOp2(v, OP_SCopy, inReg, target);
+        inReg = target;
+      }
       sqlite3VdbeAddOp1(v, to_op, inReg);
       testcase( usedAsColumnCache(pParse, inReg, inReg) );
       sqlite3ExprCacheAffinityChange(pParse, inReg, 1);

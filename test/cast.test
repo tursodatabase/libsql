@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CAST operator.
 #
-# $Id: cast.test,v 1.9 2008/01/19 20:11:26 drh Exp $
+# $Id: cast.test,v 1.10 2008/11/06 15:33:04 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -318,5 +318,29 @@ do_test cast-3.32.2 {
 do_test cast-3.32.3 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
+
+
+do_test cast-4.1 {
+  db eval {
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES('abc');
+    SELECT a, CAST(a AS integer) FROM t1;
+  }
+} {abc 0}
+do_test cast-4.2 {
+  db eval {
+    SELECT CAST(a AS integer), a FROM t1;
+  }
+} {0 abc}
+do_test cast-4.3 {
+  db eval {
+    SELECT a, CAST(a AS integer), a FROM t1;
+  }
+} {abc 0 abc}
+do_test cast-4.4 {
+  db eval {
+    SELECT CAST(a AS integer), a, CAST(a AS real), a FROM t1;
+  }
+} {0 abc 0.0 abc}
 
 finish_test

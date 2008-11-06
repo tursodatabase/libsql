@@ -1,5 +1,5 @@
-C Fix\smemory\sallocation\sproblems\swhen\sstring\slength\sexceeds\slimits.\s(CVS\s5865)
-D 2008-11-05T17:41:19
+C Fix\sa\sbug\sin\sthe\sCAST\soperator\sassociated\swith\sthe\scolumn\scache.\s(CVS\s5866)
+D 2008-11-06T15:33:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
 F src/delete.c 3b156e1d396942fe50664af4e45e14e7de08c312
-F src/expr.c 2b1945314fdc661fb04306cb86bd8516cfd12d4a
+F src/expr.c d48ae32513ba5d34f6a409d0a42731b4987cad25
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c d8eb180e4f454d480894522d8ed11de771a14c7e
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -239,7 +239,7 @@ F test/capi3.test 4d9c110e8c78fdfe0ea61171a17609e627630ca6
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
 F test/capi3c.test ce0fcbbaccfc9703fb247ea9ac5ada96dc9ca047
 F test/capi3d.test 57d83b690d7364bde02cddbf8339a4b50d80ce23
-F test/cast.test ce8f14fc80f70b30ed984480cc0d8914a459e8f9
+F test/cast.test 166951664a0b0a2e0f8fb5997a152490c6363932
 F test/check.test 024ed399600b799160378cf9d9f436bdf5dfd184
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 51f04aaff2803487933b9dfcf39f27a249f18a98
-R 4df707a8bb3b3962cea01886e81cdebf
+P b568e325205acaa2f63bce2d6cc2808edc9f2e01
+R 7fca972b76b1da77615b78ffd2aa98cc
 U drh
-Z 119ecd7805404a0e1040dc60e69dd81f
+Z 0371f6c304f61b7cf21fbe66f3d68ec0
