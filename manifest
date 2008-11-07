@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\sCAST\soperator\sassociated\swith\sthe\scolumn\scache.\s(CVS\s5866)
-D 2008-11-06T15:33:04
+C Add\sdocumentation\sto\smake\sit\sclear\sthat\sshort\sreads\sfrom\sxRead\sin\sthe\sVFS\nmust\sbe\szero-filled.\s(CVS\s5867)
+D 2008-11-07T00:06:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,9 +135,9 @@ F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 24221ff5ab20cf3472e3ec7eec595f759de55298
-F src/os_unix.c 5e3b3c9a54546249c1317cff5343e965192f7f2b
-F src/os_win.c a26292f39a73a446aa56b01871e73545da8ce3e4
+F src/os_os2.c 63be0987dbeb42e9b08c831863d2a315953b86e1
+F src/os_unix.c d17f694eda9d583676bcab87109efad42dd2abe1
+F src/os_win.c e208cbbceac63c1dd881d0909de5a4679a2c6992
 F src/pager.c e9103fc8ef7439db804425811a8d2b31fe3879b3
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
@@ -150,7 +150,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c 0d79c6c0b48b9d67a443853fd6add8c2967ba870
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in 2e1df3481504c85e3575e959685a8a748d1760c6
+F src/sqlite.h.in e5c0dc85b1340f566d977263d4cca7ca32183c34
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h e32c2dbd6d2e53c2a4d137ce977313a38df38f8a
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b568e325205acaa2f63bce2d6cc2808edc9f2e01
-R 7fca972b76b1da77615b78ffd2aa98cc
+P 1b6a5140446da896f69fddc8d1ea076815bb45e3
+R 08ee53a11b68016faeed82f91090e413
 U drh
-Z 0371f6c304f61b7cf21fbe66f3d68ec0
+Z 5e998c6356f65705edd280b38e19632c

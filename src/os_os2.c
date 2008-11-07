@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.57 2008/10/13 21:46:47 pweilbacher Exp $
+** $Id: os_os2.c,v 1.58 2008/11/07 00:06:18 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -124,6 +124,7 @@ static int os2Read(
   if( got == (ULONG)amt )
     return SQLITE_OK;
   else {
+    /* Unread portions of the input buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
   }

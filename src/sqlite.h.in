@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.408 2008/11/04 14:48:23 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.409 2008/11/07 00:06:18 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -682,6 +682,12 @@ struct sqlite3_file {
 ** way around.  The SQLITE_IOCAP_SEQUENTIAL property means that
 ** information is written to disk in the same order as calls
 ** to xWrite().
+**
+** If xRead() returns SQLITE_IOERR_SHORT_READ it must also fill
+** in the unread portions of the buffer with zeros.  A VFS that
+** fails to zero-fill short reads might seem to work.  However,
+** failure to zero-fill short reads will eventually lead to
+** database corruption.
 */
 typedef struct sqlite3_io_methods sqlite3_io_methods;
 struct sqlite3_io_methods {

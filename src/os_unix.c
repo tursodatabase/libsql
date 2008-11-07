@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.207 2008/10/16 13:27:41 danielk1977 Exp $
+** $Id: os_unix.c,v 1.208 2008/11/07 00:06:18 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -897,6 +897,7 @@ static int unixRead(
   }else if( got<0 ){
     return SQLITE_IOERR_READ;
   }else{
+    /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
   }

@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.136 2008/10/22 16:55:47 shane Exp $
+** $Id: os_win.c,v 1.137 2008/11/07 00:06:18 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -666,6 +666,7 @@ static int winRead(
   if( got==(DWORD)amt ){
     return SQLITE_OK;
   }else{
+    /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
   }
