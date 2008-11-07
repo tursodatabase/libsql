@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.501 2008/11/03 20:55:07 drh Exp $
+** @(#) $Id: pager.c,v 1.502 2008/11/07 00:24:54 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -203,7 +203,7 @@ struct Pager {
   i64 stmtHdrOff;             /* First journal header written this statement */
   i64 stmtCksum;              /* cksumInit when statement was started */
   i64 stmtJSize;              /* Size of journal at stmt_begin() */
-  int sectorSize;             /* Assumed sector size during rollback */
+  u32 sectorSize;             /* Assumed sector size during rollback */
 #ifdef SQLITE_TEST
   int nHit, nMiss;            /* Cache hits and missing */
   int nRead, nWrite;          /* Database pages read/written */
@@ -756,8 +756,12 @@ static int readJournalHdr(
   ** is being called from within pager_playback(). The local value
   ** of Pager.sectorSize is restored at the end of that routine.
   */
-  rc = read32bits(pPager->jfd, jrnlOff+12, (u32 *)&pPager->sectorSize);
+  rc = read32bits(pPager->jfd, jrnlOff+12, &pPager->sectorSize);
   if( rc ) return rc;
+  if( (pPager->sectorSize & (pPager->sectorSize-1))!=0
+         || pPager->sectorSize>0x1000000 ){
+    return SQLITE_DONE;
+  }
 
   pPager->journalOff += JOURNAL_HDR_SZ(pPager);
   return SQLITE_OK;
