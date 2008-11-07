@@ -1,5 +1,5 @@
-C Prevent\sa\srollback\sfrom\scrashing\sif\sthe\ssector-size\sfield\sof\sthe\nrollback\sjournal\sis\scorrupted.\s(CVS\s5868)
-D 2008-11-07T00:24:54
+C Prevent\sbuffer\soverruns\swhen\sconverting\smalformed\sUTF16\sto\sUTF8.\s\sTicket\s#3482.\s(CVS\s5869)
+D 2008-11-07T03:29:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -187,7 +187,7 @@ F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 649940b5bf5838a33721fb72372e7c9d1faf56a9
 F src/update.c f22a6f4507f9a0ef082418919382f83b90fd2e63
-F src/utf.c c63e6f69082f85c19ab88d62dedaf91d71ac1a50
+F src/utf.c 86dc0f8076f606432a01f1498ae054c32de1f9d2
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
 F src/vdbe.c b6b989bbd0e306581695f8914c4246905a5c0d14
@@ -596,7 +596,7 @@ F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
-F test/utf16align.test 7360e84472095518c56746f76b1f9d4dce99fb4d
+F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
 F test/vacuum2.test e7c5f5bf5e1f2266ca668d420393820cf501fdfc
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fb311d6f4098a08f05b3fac9a2a7e2a53c38bb5f
-R f50c7a2e7dd00ab08ec53c3aea49aa7d
+P cf9d1d933f6b6713018928d9a7680ae63e8edcd0
+R 9bf7e89e608c1daef418fcdb0945323f
 U drh
-Z f1bbebd3f9bc0e31bb789450c23f8559
+Z 70101d3438f4b5e0c424b1380b75c8cb

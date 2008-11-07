@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.65 2008/08/12 15:04:59 danielk1977 Exp $
+** $Id: utf.c,v 1.66 2008/11/07 03:29:34 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -226,7 +226,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
       return SQLITE_NOMEM;
     }
     zIn = (u8*)pMem->z;
-    zTerm = &zIn[pMem->n];
+    zTerm = &zIn[pMem->n&~1];
     while( zIn<zTerm ){
       temp = *zIn;
       *zIn = *(zIn+1);
@@ -244,6 +244,7 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     ** A single byte is required for the output string
     ** nul-terminator.
     */
+    pMem->n &= ~1;
     len = pMem->n * 2 + 1;
   }else{
     /* When converting from UTF-8 to UTF-16 the maximum growth is caused

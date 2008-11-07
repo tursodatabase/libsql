@@ -14,7 +14,7 @@
 # that all strings passed to that function are aligned on an even
 # byte boundary.
 #
-# $Id: utf16align.test,v 1.1 2006/02/16 18:16:38 drh Exp $
+# $Id: utf16align.test,v 1.2 2008/11/07 03:29:34 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -80,5 +80,16 @@ do_test utf16align-1.3 {
   expr {$unaligned_string_counter>0}
 } 0
 integrity_check utf16align-1.4
+
+# ticket #3482
+#
+db close
+sqlite3 db :memory:
+do_test utf16align-2.1 {
+  db eval {
+    PRAGMA encoding=UTF16be;
+    SELECT hex(ltrim(x'6efcda'));
+  }
+} {6EFC}
 
 finish_test
