@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.527 2008/11/03 20:55:07 drh Exp $
+** $Id: btree.c,v 1.528 2008/11/10 17:14:58 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2037,7 +2037,6 @@ trans_begun:
   return rc;
 }
 
-
 #ifndef SQLITE_OMIT_AUTOVACUUM
 
 /*
@@ -2427,7 +2426,7 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   return rc;
 }
 
-#endif
+#endif /* ifndef SQLITE_OMIT_AUTOVACUUM */
 
 /*
 ** This routine does the first phase of a two-phase commit.  This routine
@@ -5545,9 +5544,11 @@ static int balance_shallower(BtCursor *pCur){
               pChild->pgno, pPage->pgno));
     }
     assert( pPage->nOverflow==0 );
+#ifndef SQLITE_OMIT_AUTOVACUUM
     if( ISAUTOVACUUM ){
       rc = setChildPtrmaps(pPage);
     }
+#endif
     releasePage(pChild);
   }
 end_shallow_balance:
@@ -5609,9 +5610,11 @@ static int balance_deeper(BtCursor *pCur){
     TRACE(("BALANCE: copy root %d into %d\n", pPage->pgno, pChild->pgno));
     if( ISAUTOVACUUM ){
       rc = ptrmapPut(pBt, pChild->pgno, PTRMAP_BTREE, pPage->pgno);
+#ifndef SQLITE_OMIT_AUTOVACUUM
       if( rc==SQLITE_OK ){
         rc = setChildPtrmaps(pChild);
       }
+#endif
     }
   }
 

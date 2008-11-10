@@ -1,5 +1,5 @@
-C Fixed\stypos;\sConsistent\suse\sof\sMac\sOS\sX\sname;\s(CVS\s5870)
-D 2008-11-10T17:08:49
+C In\sbtree.c,\somit\scalls\sto\ssetChildPtrmaps()\sif\sSQLITE_OMIT_AUTOVACUUM\sis\sdefined.\sTicket\s#3439.\s(CVS\s5871)
+D 2008-11-10T17:14:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c bb0b12b258496ad1903732db55219dc46571fe09
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c 4320c62609de61a64231e8dcfe857966120844cc
+F src/btree.c e0ceb752348ab564434552f52e6c771294a5608c
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 41464eb891eb3672b30a5188a352187cba038af9
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3f657e88767f60d305dd6151e7aa54363341d052
-R bf365330fc5e332148151c6b5e77140a
+P dfc94743378e576ecc5c567ae4020bf9594a3fb9
+R ab50adb2868cd6b34252f3f59477e787
 U shane
-Z b9b4cb42d1c0d5e13f65a9208e9214a2
+Z f5661d40fe2eef239e43f4c5401e5473
