@@ -1,5 +1,5 @@
-C Removed\sa\sfew\smore\ssmall\sparts\sof\smemsys6\scode,\sincluding\ssome\sconfig\sand\stest\scode\sfor\sit;\s(CVS\s5872)
-D 2008-11-10T18:05:36
+C Add\scheck\sfor\sifcapable\sautovacuum\sto\svacuum2-3.3\stest.\sTicket\s#3435.\s(CVS\s5873)
+D 2008-11-10T18:20:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -598,7 +598,7 @@ F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
-F test/vacuum2.test e7c5f5bf5e1f2266ca668d420393820cf501fdfc
+F test/vacuum2.test fd87eec0ed72c6cc0809f7867929e2895affed92
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e0f07323e878c44ad2ccc38628c74c27f79e35ef
-R 4f16e7ef70c35c3587acb462727ce1c9
+P a11241d6fbc9e0408d5adc73d494b85124d2d609
+R 9554ff0c371842e72d3f4fc3b5fd82db
 U shane
-Z 142d3f5e3bd748fab846fd6e61a473a6
+Z 6625c24c71e5b290463502e727957390
