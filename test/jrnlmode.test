@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.7 2008/10/17 18:51:53 danielk1977 Exp $
+# $Id: jrnlmode.test,v 1.8 2008/11/10 19:24:38 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -121,7 +121,7 @@ ifcapable attach {
       PRAGMA aux2.journal_mode;
     }
   } {off memory memory}
-  do_test jrnlmode-1.11 {
+  do_test jrnlmode-1.13 {
     # The journal-mode used by in-memory databases cannot be changed.
     execsql {
       PRAGMA aux1.journal_mode = DELETE;
@@ -132,7 +132,7 @@ ifcapable attach {
       PRAGMA aux2.journal_mode;
     }
   } {off memory memory}
-  do_test jrnlmode-1.12 {
+  do_test jrnlmode-1.14 {
     execsql {
       PRAGMA journal_mode = delete;
     }
@@ -143,7 +143,7 @@ ifcapable attach {
       PRAGMA aux2.journal_mode;
     }
   } {delete delete memory memory}
-  do_test jrnlmode-1.13 {
+  do_test jrnlmode-1.15 {
     execsql {
       ATTACH ':memory:' as aux3;
     }
@@ -155,7 +155,7 @@ ifcapable attach {
       PRAGMA aux3.journal_mode;
     }
   } {delete delete memory memory memory}
-  do_test jrnlmode-1.14 {
+  do_test jrnlmode-1.16 {
     execsql {
       PRAGMA journal_mode = TRUNCATE;
     }
@@ -167,7 +167,7 @@ ifcapable attach {
       PRAGMA aux3.journal_mode;
     }
   } {truncate truncate memory memory memory}
-  
+
   do_test jrnlmode-1.99 {
     execsql {
       DETACH aux1;

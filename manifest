@@ -1,5 +1,5 @@
-C Add\scheck\sfor\sifcapable\sautovacuum\sto\svacuum2-3.3\stest.\sTicket\s#3435.\s(CVS\s5873)
-D 2008-11-10T18:20:16
+C Updated\scomment\sin\ssource.\s\sTicket\s#3453.\s(CVS\s5874)
+D 2008-11-10T19:24:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
 F src/pcache.c 5b80676e664019c1ebc8356cc25332dd69da6269
 F src/pcache.h 2caf2deb6cbaa75c423b8b96fc1411069ee77c75
-F src/pragma.c e8b5a6a92fa51c14c887f6c8d48c62f374e19644
+F src/pragma.c 5d4333a27ef4f770fc69ca4f138419d3b462c554
 F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
@@ -395,7 +395,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test c2e8212a6f6d32f8fd8f869b93553154eaf2244c
+F test/jrnlmode.test c4e4e40afdb6a128957e1f8ee404c8d670c4ce6f
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a11241d6fbc9e0408d5adc73d494b85124d2d609
-R 9554ff0c371842e72d3f4fc3b5fd82db
+P fc36f2fc45b2d319ef0be97e1af1748d3e862690
+R ce58f3b04b0a351d5b10e989b8c3d40c
 U shane
-Z 6625c24c71e5b290463502e727957390
+Z 50375b72b5602010a56aef20b01d8290

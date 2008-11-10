@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.192 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: pragma.c,v 1.193 2008/11/10 19:24:38 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -455,7 +455,7 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA [database.]journal_mode
-  **  PRAGMA [database.]journal_mode = (delete|persist|memory|off)
+  **  PRAGMA [database.]journal_mode = (delete|persist|off|truncate|memory)
   */
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
     int eMode;
