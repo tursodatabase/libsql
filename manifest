@@ -1,5 +1,5 @@
-C Updated\scomment\sin\ssource.\s\sTicket\s#3453.\s(CVS\s5874)
-D 2008-11-10T19:24:38
+C #ifdef\sout\sunused\sstatic\sfunction\smutexIsNT().\s\sTicket\s#3481.\s(CVS\s5875)
+D 2008-11-10T20:01:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
 F src/mutex_unix.c 29049a61755cccddb2ee53904e6906bb7674223c
-F src/mutex_w32.c f0d21ff1f6981e5aedc56796adf3a347423ef736
+F src/mutex_w32.c 017b522f63ef09b834fefc9daa876c9ec167e7b5
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fc36f2fc45b2d319ef0be97e1af1748d3e862690
-R ce58f3b04b0a351d5b10e989b8c3d40c
+P 83caa22087bcaa184eff559971262e4d7eecd0e0
+R 6e97ab19a3e294a77808d5b4d3a2dadc
 U shane
-Z 50375b72b5602010a56aef20b01d8290
+Z a00fa6ed5b6e3191d2c1a58f9c574997

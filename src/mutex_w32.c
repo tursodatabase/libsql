@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.11 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: mutex_w32.c,v 1.12 2008/11/10 20:01:41 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,14 @@ struct sqlite3_mutex {
 ** this routine is used to determine if the host is Win95/98/ME or
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
+**
+** mutexIsNT() is only used for the TryEnterCriticalSection() API call,
+** which is only available if your application was compiled with 
+** _WIN32_WINNT defined to a value >= 0x0400.  Currently, the only
+** call to TryEnterCriticalSection() is #ifdef'ed out, so #ifdef 
+** this out as well.
 */
+#if 0
 #if SQLITE_OS_WINCE
 # define mutexIsNT()  (1)
 #else
@@ -56,7 +63,7 @@ struct sqlite3_mutex {
     return osType==2;
   }
 #endif /* SQLITE_OS_WINCE */
-
+#endif
 
 #ifdef SQLITE_DEBUG
 /*
