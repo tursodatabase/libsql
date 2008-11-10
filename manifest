@@ -1,5 +1,5 @@
-C #ifdef\sout\sunused\sstatic\sfunction\smutexIsNT().\s\sTicket\s#3481.\s(CVS\s5875)
-D 2008-11-10T20:01:41
+C Fix\sthe\sdocumentation\sof\sthe\sSQLITE_FUNCTION\sauthorizer\scode\sso\sthat\sit\nagrees\swith\show\sSQLite\shas\salways\sbehaved.\s\sTicket\s#3489.\s(CVS\s5876)
+D 2008-11-10T23:54:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c 0d79c6c0b48b9d67a443853fd6add8c2967ba870
 F src/shell.c d83b578a8ccdd3e0e7fef4388a0887ce9f810967
-F src/sqlite.h.in d78bb41578104ca45d2e3e219b191f8e412bb726
+F src/sqlite.h.in b73e17f40b0dcfc4b17f5ef18ba90bca8d1e8bc5
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 1e112bd969e0b318c8ee13d7104d4ae0a30da822
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 83caa22087bcaa184eff559971262e4d7eecd0e0
-R 6e97ab19a3e294a77808d5b4d3a2dadc
-U shane
-Z a00fa6ed5b6e3191d2c1a58f9c574997
+P 239186804c7541abc512da33bba8f6fc7d24a374
+R ee6aa1a2f8d51d75cfc7bd7b3020fdfd
+U drh
+Z db4af086fc1384c13372fd47a63469cd
