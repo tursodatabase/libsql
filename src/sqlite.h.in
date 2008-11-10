@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.409 2008/11/07 00:06:18 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.410 2008/11/10 17:08:49 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -587,7 +587,7 @@ int sqlite3_exec(
 ** sync operation only needs to flush data to mass storage.  Inode
 ** information need not be flushed. The SQLITE_SYNC_NORMAL flag means
 ** to use normal fsync() semantics. The SQLITE_SYNC_FULL flag means
-** to use Mac OS-X style fullsync instead of fsync().
+** to use Mac OS X style fullsync instead of fsync().
 */
 #define SQLITE_SYNC_NORMAL        0x00002
 #define SQLITE_SYNC_FULL          0x00003
@@ -619,7 +619,7 @@ struct sqlite3_file {
 **
 ** The flags argument to xSync may be one of [SQLITE_SYNC_NORMAL] or
 ** [SQLITE_SYNC_FULL].  The first choice is the normal fsync().
-** The second choice is a Mac OS-X style fullsync.  The [SQLITE_SYNC_DATAONLY]
+** The second choice is a Mac OS X style fullsync.  The [SQLITE_SYNC_DATAONLY]
 ** flag may be ORed in to indicate that only the data of the file
 ** and not its inode needs to be synced.
 **
@@ -4151,7 +4151,7 @@ int sqlite3_create_function16(
 ** backwards compatibility with older code, these functions continue 
 ** to be supported.  However, new applications should avoid
 ** the use of these functions.  To help encourage people to avoid
-** using these functions, we are not going to tell you want they do.
+** using these functions, we are not going to tell you what they do.
 */
 #ifndef SQLITE_OMIT_DEPRECATED
 SQLITE_DEPRECATED int sqlite3_aggregate_count(sqlite3_context*);
