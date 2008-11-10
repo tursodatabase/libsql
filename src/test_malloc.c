@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.49 2008/10/15 11:43:55 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.50 2008/11/10 18:05:36 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -968,28 +968,6 @@ static int test_config_memstatus(
 }
 
 /*
-** Usage:    sqlite3_config_chunkalloc 
-**
-*/
-static int test_config_chunkalloc(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int rc;
-  int nThreshold;
-  if( objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "THRESHOLD");
-    return TCL_ERROR;
-  }
-  if( Tcl_GetIntFromObj(interp, objv[1], &nThreshold) ) return TCL_ERROR;
-  rc = sqlite3_config(SQLITE_CONFIG_CHUNKALLOC, nThreshold);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
-  return TCL_OK;
-}
-
-/*
 ** Usage:    sqlite3_config_lookaside  SIZE  COUNT
 **
 */
@@ -1339,7 +1317,6 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
      { "sqlite3_config_heap",        test_config_heap              ,0 },
      { "sqlite3_config_memstatus",   test_config_memstatus         ,0 },
-     { "sqlite3_config_chunkalloc",  test_config_chunkalloc        ,0 },
      { "sqlite3_config_lookaside",   test_config_lookaside         ,0 },
      { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },

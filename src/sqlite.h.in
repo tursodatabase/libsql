@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.410 2008/11/10 17:08:49 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.411 2008/11/10 18:05:36 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1332,7 +1332,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_MEMSTATUS     9  /* boolean */
 #define SQLITE_CONFIG_MUTEX        10  /* sqlite3_mutex_methods* */
 #define SQLITE_CONFIG_GETMUTEX     11  /* sqlite3_mutex_methods* */
-#define SQLITE_CONFIG_CHUNKALLOC   12  /* int threshold */
+/* previously SQLITE_CONFIG_CHUNKALLOC 12 which is now unused. */ 
 #define SQLITE_CONFIG_LOOKASIDE    13  /* int int */
 
 /*
