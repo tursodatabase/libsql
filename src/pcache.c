@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.34 2008/10/17 18:51:53 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.35 2008/11/11 00:36:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -524,7 +524,7 @@ static PgHdr *pcacheRecyclePage(void){
   PgHdr *p = 0;
   assert( sqlite3_mutex_held(pcache_g.mutex) );
 
-  if( (p=pcache_g.pLruTail) ){
+  if( (p=pcache_g.pLruTail)!=0 ){
     assert( (p->flags&PGHDR_DIRTY)==0 );
     pcacheRemoveFromLruList(p);
     pcacheRemoveFromHash(p);
@@ -940,7 +940,8 @@ void sqlite3PcacheTruncate(PCache *pCache, Pgno pgno){
 static void pcacheEnforceMaxPage(void){
   PgHdr *p;
   assert( sqlite3_mutex_held(pcache_g.mutex) );
-  while( pcache_g.nCurrentPage>pcache_g.nMaxPage && (p = pcacheRecyclePage()) ){
+  while( pcache_g.nCurrentPage>pcache_g.nMaxPage
+             && (p = pcacheRecyclePage())!=0 ){
     pcachePageFree(p);
   }
 }
