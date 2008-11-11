@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.2 2008/11/11 17:36:30 shane Exp $
+# $Id: corruptC.test,v 1.3 2008/11/11 20:51:51 shane Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -30,16 +30,16 @@ expr srand(0)
 do_test corruptC-1.1 {
   execsql {
     BEGIN;
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(1);
-    INSERT OR IGNORE INTO t1 SELECT x*2 FROM t1;
-    INSERT OR IGNORE INTO t1 SELECT x*3 FROM t1;
-    INSERT OR IGNORE INTO t1 SELECT x*5 FROM t1;
-    INSERT OR IGNORE INTO t1 SELECT x*7 FROM t1;
-    INSERT OR IGNORE INTO t1 SELECT x*11 FROM t1;
-    INSERT OR IGNORE INTO t1 SELECT x*13 FROM t1;
+    CREATE TABLE t1(x,y);
+    INSERT INTO t1 VALUES(1,1);
+    INSERT OR IGNORE INTO t1 SELECT x*2,y FROM t1;
+    INSERT OR IGNORE INTO t1 SELECT x*3,y FROM t1;
+    INSERT OR IGNORE INTO t1 SELECT x*5,y FROM t1;
+    INSERT OR IGNORE INTO t1 SELECT x*7,y FROM t1;
+    INSERT OR IGNORE INTO t1 SELECT x*11,y FROM t1;
+    INSERT OR IGNORE INTO t1 SELECT x*13,y FROM t1;
     CREATE INDEX t1i1 ON t1(x);
-    CREATE TABLE t2 AS SELECT * FROM t1 WHERE rowid%5!=0;
+    CREATE TABLE t2 AS SELECT x,2 FROM t1 WHERE rowid%5!=0;
     COMMIT;
   }
 } {}
@@ -68,7 +68,9 @@ proc copy_file {from to} {
 
 # Setup for the tests.  Make a backup copy of the good database in test.bu.
 #
+db close
 copy_file test.db test.bu
+sqlite3 db test.db
 set fsize [file size test.db]
 
 #
@@ -81,7 +83,7 @@ do_test corruptC-2.1 {
   copy_file test.bu test.db
 
   # insert corrupt byte(s)
-  hexio_write test.db 2053 04
+  hexio_write test.db 2053 [format %02x 0x04]
 
   sqlite3 db test.db
   catchsql {PRAGMA integrity_check}
@@ -89,6 +91,26 @@ do_test corruptC-2.1 {
 Corruption detected in header on page 3
 Multiple uses for byte 604 of page 3}}}
 
+# test that a corrupt content offset size is handled (seed 5649)
+do_test corruptC-2.2 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 27   [format %02x 0x08]
+  hexio_write test.db 233  [format %02x 0x6a]
+  hexio_write test.db 328  [format %02x 0x67]
+  hexio_write test.db 750  [format %02x 0x1f]
+  hexio_write test.db 1132 [format %02x 0x52]
+  hexio_write test.db 1133 [format %02x 0x84]
+  hexio_write test.db 1220 [format %02x 0x01]
+  hexio_write test.db 3688 [format %02x 0xc1]
+  hexio_write test.db 3714 [format %02x 0x58]
+  hexio_write test.db 3746 [format %02x 0x9a]
+
+  sqlite3 db test.db
+  catchsql {UPDATE t1 SET y=1}
+} {0 {}}
 
 #
 # now test for a series of quasi-random seeds
@@ -101,6 +123,7 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
   # setup for test
   db close
   copy_file test.bu test.db
+  sqlite3 db test.db
 
   # Seek to a random location in the file, and write a random single byte
   # value.  Then do various operations on the file to make sure that
@@ -110,12 +133,13 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
   for {set i 1} {$i<=1024 && !$last} {incr i 1} {
 
     # insert random byte at random location
+    db close
     hexio_write test.db [random $fsize] [format %02x [random 255]]
+    sqlite3 db test.db
 
     # do a few random operations to make sure that if 
     # they error, they error gracefully instead of crashing.
     do_test corruptC-3.$tn.$i.1 {
-      sqlite3 db test.db
       catchsql {SELECT count(*) FROM sqlite_master}
       set x {}
     } {}
@@ -133,6 +157,14 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
     } {}
     do_test corruptC-3.$tn.$i.5 {
       catchsql {SELECT count(*) FROM t2 WHERE x<13}
+      set x {}
+    } {}
+    do_test corruptC-3.$tn.$i.6 {
+      catchsql {UPDATE t1 SET y=1}
+      set x {}
+    } {}
+    do_test corruptC-3.$tn.$i.7 {
+      catchsql {UPDATE t2 SET y=2}
       set x {}
     } {}
 
@@ -154,14 +186,13 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
     }
 
     # Check that no page references were leaked.
-    do_test corruptC-3.$tn.$i.6 {
+    do_test corruptC-3.$tn.$i.8 {
       set bt [btree_from_db db]
       db_enter db
       array set stats [btree_pager_stats $bt]
       db_leave db
       set stats(ref)
     } {0}
-
   }
   # end for i
 

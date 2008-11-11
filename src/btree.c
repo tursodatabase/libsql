@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.529 2008/11/11 17:36:30 shane Exp $
+** $Id: btree.c,v 1.530 2008/11/11 20:51:51 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4570,7 +4570,8 @@ static void dropCell(MemPage *pPage, int idx, int sz){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
-  pc = get2byte(ptr);
+  /* mask the cell offset to ensure a corrupt db does not result in a crash */
+  pc = pPage->maskPage & get2byte(ptr);
   assert( pc>10 && pc+sz<=pPage->pBt->usableSize );
   freeSpace(pPage, pc, sz);
   for(i=idx+1; i<pPage->nCell; i++, ptr+=2){
