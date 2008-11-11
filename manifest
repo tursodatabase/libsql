@@ -1,5 +1,5 @@
-C Cleanup\sin\sflattenSubquery.\s\sAdd\sOOM\stests\sfor\sflattenSubquery.\s\sFix\sissues\nwith\sOOM\serrors\scauses\sproblems\sfor\sflattenSubquery.\s\sTicket\s#3485.\s(CVS\s5882)
-D 2008-11-11T18:28:59
+C Change\sthe\sway\sthreadsOverrideEachOthersLocks()\sworks\sto\savoid\strying\sto\swrite-lock\sa\s(potentially)\sread-only\sfiles.\sAlso,\sassume\sthat\son\snon-linux\ssystems\sthreads\sdo\soverride\seach\sothers\slocks.\sTicket\s#3472.\s(CVS\s5883)
+D 2008-11-11T18:34:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 63be0987dbeb42e9b08c831863d2a315953b86e1
-F src/os_unix.c d17f694eda9d583676bcab87109efad42dd2abe1
+F src/os_unix.c af390f03ebe339e63911aec2d4ccd1e53fde581e
 F src/os_win.c e208cbbceac63c1dd881d0909de5a4679a2c6992
 F src/pager.c 6b6f8eb4938d184d6612ea89631185dbace246b3
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
@@ -575,6 +575,7 @@ F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
 F test/tkt3442.test 33722a3fa4bdc0614448044eb5e28765aea28eb7
 F test/tkt3457.test e9ca2b90f0eb1fb8be73a30d29aacb2e3abedeb9
 F test/tkt3461.test 5a63e8d8ee5ce00f076b1e2f82aba5480a0f14ed
+F test/tkt3472.test cc1fa004edd040dbc4c5c03327f8f3d3bbcd9ccb
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
@@ -654,7 +655,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0659a666ff0a9fc81ee4df3c35e535164c79e588
-R 4feb3b063e6492d2c3095674c86d05b4
-U drh
-Z ccf27dcefe10bea054f7ff323046db0d
+P ea5f4baa041aed934600f0f96b84afb92a14bc47
+R 67f50952a830fd72a8913f41885cf6a5
+U danielk1977
+Z df5f98daf78e83087123ba4df516fc8d

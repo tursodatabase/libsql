@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.208 2008/11/07 00:06:18 drh Exp $
+** $Id: os_unix.c,v 1.209 2008/11/11 18:34:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -493,16 +493,19 @@ static int lockTrace(int fd, int op, struct flock *p){
 #define fcntl lockTrace
 #endif /* SQLITE_LOCK_TRACE */
 
+#ifdef __linux__
 /*
-** The testThreadLockingBehavior() routine launches two separate
-** threads on this routine.  This routine attempts to lock a file
-** descriptor then returns.  The success or failure of that attempt
-** allows the testThreadLockingBehavior() procedure to determine
-** whether or not threads can override each others locks.
-*/
+** This function is used as the main routine for a thread launched by
+** testThreadLockingBehavior(). It tests whether the shared-lock obtained
+** by the main thread in testThreadLockingBehavior() conflicts with a
+** hypothetical write-lock obtained by this thread on the same file.
+**
+** The write-lock is not actually acquired, as this is not possible if 
+** the file is open in read-only mode (see ticket #3472).
+*/ 
 static void *threadLockingTest(void *pArg){
   struct threadTestData *pData = (struct threadTestData*)pArg;
-  pData->result = fcntl(pData->fd, F_SETLK, &pData->lock);
+  pData->result = fcntl(pData->fd, F_GETLK, &pData->lock);
   return pArg;
 }
 
@@ -513,26 +516,39 @@ static void *threadLockingTest(void *pArg){
 */
 static void testThreadLockingBehavior(int fd_orig){
   int fd;
-  struct threadTestData d[2];
-  pthread_t t[2];
+  int rc;
+  struct threadTestData d;
+  struct flock l;
+  pthread_t t;
 
   fd = dup(fd_orig);
   if( fd<0 ) return;
-  memset(d, 0, sizeof(d));
-  d[0].fd = fd;
-  d[0].lock.l_type = F_RDLCK;
-  d[0].lock.l_len = 1;
-  d[0].lock.l_start = 0;
-  d[0].lock.l_whence = SEEK_SET;
-  d[1] = d[0];
-  d[1].lock.l_type = F_WRLCK;
-  pthread_create(&t[0], 0, threadLockingTest, &d[0]);
-  pthread_create(&t[1], 0, threadLockingTest, &d[1]);
-  pthread_join(t[0], 0);
-  pthread_join(t[1], 0);
+  memset(&l, 0, sizeof(l));
+  l.l_type = F_RDLCK;
+  l.l_len = 1;
+  l.l_start = 0;
+  l.l_whence = SEEK_SET;
+  rc = fcntl(fd_orig, F_SETLK, &l);
+  if( rc!=0 ) return;
+  memset(&d, 0, sizeof(d));
+  d.fd = fd;
+  d.lock = l;
+  d.lock.l_type = F_WRLCK;
+  pthread_create(&t, 0, threadLockingTest, &d);
+  pthread_join(t, 0);
   close(fd);
-  threadsOverrideEachOthersLocks =  d[0].result==0 && d[1].result==0;
+  if( d.result!=0 ) return;
+  threadsOverrideEachOthersLocks = (d.lock.l_type==F_UNLCK);
 }
+#else
+/*
+** On anything other than linux, assume threads override each others locks.
+*/
+static void testThreadLockingBehavior(int fd_orig){
+  threadsOverrideEachOthersLocks = 1;
+}
+#endif /* __linux__ */
+
 #endif /* SQLITE_THREADSAFE */
 
 /*
