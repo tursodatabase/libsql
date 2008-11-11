@@ -34,7 +34,7 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.7 2008/11/03 20:55:07 drh Exp $
+** @(#) $Id: bitvec.c,v 1.8 2008/11/11 15:48:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -165,7 +165,8 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
   }
   p->nSet++;
   if( p->nSet>=BITVEC_MXHASH ){
-    int j, rc;
+    unsigned int j;
+    int rc;
     u32 aiValues[BITVEC_NINT];
     memcpy(aiValues, p->u.aHash, sizeof(aiValues));
     memset(p->u.apSub, 0, sizeof(p->u.apSub[0])*BITVEC_NPTR);
@@ -197,7 +198,7 @@ void sqlite3BitvecClear(Bitvec *p, u32 i){
       sqlite3BitvecClear(p->u.apSub[bin], i);
     }
   }else{
-    int j;
+    unsigned int j;
     u32 aiValues[BITVEC_NINT];
     memcpy(aiValues, p->u.aHash, sizeof(aiValues));
     memset(p->u.aHash, 0, sizeof(p->u.aHash[0])*BITVEC_NINT);
@@ -216,7 +217,7 @@ void sqlite3BitvecClear(Bitvec *p, u32 i){
 void sqlite3BitvecDestroy(Bitvec *p){
   if( p==0 ) return;
   if( p->iDivisor ){
-    int i;
+    unsigned int i;
     for(i=0; i<BITVEC_NPTR; i++){
       sqlite3BitvecDestroy(p->u.apSub[i]);
     }

@@ -1,5 +1,5 @@
-C When\san\sassignment\soccurs\sin\sa\sboolean,\salways\stest\sthe\sresult\susing\s"!=0"\nto\savoid\sconfusion\sand\smake\sit\sclear\sthat\sassignment\sis\sintended,\snot\nan\sequality\stest.\s\sTicket\s#3491.\s(CVS\s5879)
-D 2008-11-11T00:36:17
+C Avoid\ssigned/unsigned\scomparison\swarnings\sin\sbitvec.c\sby\schanging\sthe\ntypes\sof\sloop\svariables\sto\sunsigned\sint.\s(CVS\s5880)
+D 2008-11-11T15:48:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -97,7 +97,7 @@ F src/alter.c a03c9236476f0469eb830bcd16ac30b695e09b83
 F src/analyze.c 91b958435cbb423721ef2a841dbc459c1959bb3a
 F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/bitvec.c bb0b12b258496ad1903732db55219dc46571fe09
+F src/bitvec.c 9e922b2577b7e46d8f95349bca6a52f7674d7582
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
 F src/btree.c e0ceb752348ab564434552f52e6c771294a5608c
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 68662e3b487b80b2c94cd2376060388bd8df0e4e
-R b04d26c0566a4afedd114219da887cda
+P 89ee5295bdea6f2c093eb6a44d69917dcc8459e3
+R b6fc8901bd4f0ae44bd1f62b8e1cdb9a
 U drh
-Z 782796680fc46f31d4a79a9bb86892f0
+Z 3403243b8c159a96a13870a6dc806973
