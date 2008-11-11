@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.185 2008/08/11 19:12:35 drh Exp $
+** $Id: shell.c,v 1.186 2008/11/11 00:30:12 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -1699,7 +1699,7 @@ static int process_input(struct callback_data *p, FILE *in){
       }
       continue;
     }
-    if( _is_command_terminator(zLine) ){
+    if( _is_command_terminator(zLine) && sqlite3_complete(zSql) ){
       memcpy(zLine,";",2);
     }
     nSqlPrior = nSql;
