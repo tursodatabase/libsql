@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.35 2008/11/11 00:36:17 drh Exp $
+** @(#) $Id: pcache.c,v 1.36 2008/11/11 18:43:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -502,8 +502,6 @@ static void pcachePageFree(PgHdr *p){
 static int pcachePageSize(PgHdr *p){
   assert( sqlite3_mutex_held(pcache_g.mutex) );
   assert( !pcache_g.pStart );
-  assert( p->apSave[0]==0 );
-  assert( p->apSave[1]==0 );
   assert( p && p->pCache );
   return sqlite3MallocSize(p);
 }

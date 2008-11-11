@@ -1,5 +1,5 @@
-C Change\sthe\sway\sthreadsOverrideEachOthersLocks()\sworks\sto\savoid\strying\sto\swrite-lock\sa\s(potentially)\sread-only\sfiles.\sAlso,\sassume\sthat\son\snon-linux\ssystems\sthreads\sdo\soverride\seach\sothers\slocks.\sTicket\s#3472.\s(CVS\s5883)
-D 2008-11-11T18:34:35
+C Remove\ssome\sasserts\sthat\srefer\sto\svariables\sremoved\sin\s(5830).\s(CVS\s5884)
+D 2008-11-11T18:43:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os_win.c e208cbbceac63c1dd881d0909de5a4679a2c6992
 F src/pager.c 6b6f8eb4938d184d6612ea89631185dbace246b3
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
-F src/pcache.c 81ded3368436eef000730399db67d986aba5d29b
+F src/pcache.c 3d547c392145113336d44b901e048b86ee6a4774
 F src/pcache.h 2caf2deb6cbaa75c423b8b96fc1411069ee77c75
 F src/pragma.c 5d4333a27ef4f770fc69ca4f138419d3b462c554
 F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
@@ -655,7 +655,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ea5f4baa041aed934600f0f96b84afb92a14bc47
-R 67f50952a830fd72a8913f41885cf6a5
+P 8ecae0943b06102fe22133db0dcaf58ecbd39545
+R 752482971b30c5293c421436a245fb22
 U danielk1977
-Z df5f98daf78e83087123ba4df516fc8d
+Z cdc8cf38d6f3ff2f77b3dbcd22961230
