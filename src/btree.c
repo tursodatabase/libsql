@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.530 2008/11/11 20:51:51 shane Exp $
+** $Id: btree.c,v 1.531 2008/11/11 22:18:20 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4651,6 +4651,8 @@ static int insertCell(
     idx = allocateSpace(pPage, sz);
     assert( idx>0 );
     assert( end <= get2byte(&data[hdr+5]) );
+    if (idx+sz > pPage->pBt->usableSize) 
+      return SQLITE_CORRUPT_BKPT;
     pPage->nCell++;
     pPage->nFree -= 2;
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
