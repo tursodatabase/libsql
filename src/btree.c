@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.528 2008/11/10 17:14:58 shane Exp $
+** $Id: btree.c,v 1.529 2008/11/11 17:36:30 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6800,8 +6800,14 @@ static int checkTreePage(
   if( hit==0 ){
     pCheck->mallocFailed = 1;
   }else{
-    memset(hit, 0, usableSize );
-    memset(hit, 1, get2byte(&data[hdr+5]));
+    u16 contentOffset = get2byte(&data[hdr+5]);
+    if (contentOffset > usableSize) {
+      checkAppendMsg(pCheck, 0, 
+                     "Corruption detected in header on page %d",iPage,0);
+      contentOffset = usableSize; /* try to keep going */
+    }
+    memset(hit+contentOffset, 0, usableSize-contentOffset);
+    memset(hit, 1, contentOffset);
     nCell = get2byte(&data[hdr+3]);
     cellStart = hdr + 12 - 4*pPage->leaf;
     for(i=0; i<nCell; i++){

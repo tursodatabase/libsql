@@ -15,12 +15,15 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.1 2008/10/31 13:57:40 shane Exp $
+# $Id: corruptC.test,v 1.2 2008/11/11 17:36:30 shane Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Set a uniform random seed
+expr srand(0)
 
 # Construct a compact, dense database for testing.
 #
@@ -68,7 +71,32 @@ proc copy_file {from to} {
 copy_file test.db test.bu
 set fsize [file size test.db]
 
-for {set tn 1} {$tn<=1024} {incr tn 1} {
+#
+# first test some specific corruption tests found from earlier runs
+#
+
+# test that a corrupt content offset size is handled (seed 5577)
+do_test corruptC-2.1 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 2053 04
+
+  sqlite3 db test.db
+  catchsql {PRAGMA integrity_check}
+} {0 {{*** in database main ***
+Corruption detected in header on page 3
+Multiple uses for byte 604 of page 3}}}
+
+
+#
+# now test for a series of quasi-random seeds
+#
+for {set tn 0} {$tn<=1024} {incr tn 1} {
+
+  # Set a quasi-random random seed
+  expr srand($tn)
 
   # setup for test
   db close
@@ -82,32 +110,28 @@ for {set tn 1} {$tn<=1024} {incr tn 1} {
   for {set i 1} {$i<=1024 && !$last} {incr i 1} {
 
     # insert random byte at random location
-    set fd [open test.db r+]
-    fconfigure $fd -translation binary
-    seek $fd [random $fsize]
-    puts -nonewline $fd [format "%c" [expr [random 255]]]
-    close $fd
+    hexio_write test.db [random $fsize] [format %02x [random 255]]
 
     # do a few random operations to make sure that if 
     # they error, they error gracefully instead of crashing.
-    do_test corruptC-2.$tn.$i.1 {
+    do_test corruptC-3.$tn.$i.1 {
       sqlite3 db test.db
       catchsql {SELECT count(*) FROM sqlite_master}
       set x {}
     } {}
-    do_test corruptC-2.$tn.$i.2 {
+    do_test corruptC-3.$tn.$i.2 {
       catchsql {SELECT count(*) FROM t1}
       set x {}
     } {}
-    do_test corruptC-2.$tn.$i.3 {
+    do_test corruptC-3.$tn.$i.3 {
       catchsql {SELECT count(*) FROM t1 WHERE x>13}
       set x {}
     } {}
-    do_test corruptC-2.$tn.$i.4 {
+    do_test corruptC-3.$tn.$i.4 {
       catchsql {SELECT count(*) FROM t2}
       set x {}
     } {}
-    do_test corruptC-2.$tn.$i.5 {
+    do_test corruptC-3.$tn.$i.5 {
       catchsql {SELECT count(*) FROM t2 WHERE x<13}
       set x {}
     } {}
@@ -130,7 +154,7 @@ for {set tn 1} {$tn<=1024} {incr tn 1} {
     }
 
     # Check that no page references were leaked.
-    do_test corruptC-2.$tn.$i.6 {
+    do_test corruptC-3.$tn.$i.6 {
       set bt [btree_from_db db]
       db_enter db
       array set stats [btree_pager_stats $bt]
