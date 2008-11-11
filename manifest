@@ -1,5 +1,5 @@
-C Fixed\scrash\sin\sintegrity_check\swith\scorrupt\scontent\soffset\ssize\sin\spage\sheader.\s(CVS\s5881)
-D 2008-11-11T17:36:30
+C Cleanup\sin\sflattenSubquery.\s\sAdd\sOOM\stests\sfor\sflattenSubquery.\s\sFix\sissues\nwith\sOOM\serrors\scauses\sproblems\sfor\sflattenSubquery.\s\sTicket\s#3485.\s(CVS\s5882)
+D 2008-11-11T18:28:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
 F src/btree.c 7824bc89b38bafb8a87b7091e912ea789b60e428
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
-F src/build.c 41464eb891eb3672b30a5188a352187cba038af9
+F src/build.c 98a6884d47c3cc12faeb2e9a926018d3a7382133
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
@@ -148,11 +148,11 @@ F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
-F src/select.c 0d79c6c0b48b9d67a443853fd6add8c2967ba870
+F src/select.c 058d5c227953755cc393ad359f35b653b9337fee
 F src/shell.c 33ae5c8ce9e8b1d02e0cd510b3b9de18e3c414ba
 F src/sqlite.h.in b73e17f40b0dcfc4b17f5ef18ba90bca8d1e8bc5
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 1e112bd969e0b318c8ee13d7104d4ae0a30da822
+F src/sqliteInt.h f2b50cd40d847ccf2d9baf5a622e744a05f136e3
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -428,7 +428,7 @@ F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test 6e24fe6444bd2999ccc81f984977b44c0d6e5591
-F test/mallocJ.test 9ed2275a7857fe1d5f5e1debc68dfdc285fc262f
+F test/mallocJ.test 44dfbbaca731cb933818ad300b4566265d652609
 F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test 8de36b8d33aab5ef295b11d9e95310aeded31af8
 F test/memdb.test a67bda4ff90a38f2b19f6c7f95aa7289e051d893
@@ -654,7 +654,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P da869446c53ec6ed769bba01cdc2b6fd69a8b5c9
-R e4f0f76dc4c5672626cf25fdc1112cb0
-U shane
-Z 42e5ec31ef7e6a7867cc9c00711cc593
+P 0659a666ff0a9fc81ee4df3c35e535164c79e588
+R 4feb3b063e6492d2c3095674c86d05b4
+U drh
+Z ccf27dcefe10bea054f7ff323046db0d

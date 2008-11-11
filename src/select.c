@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.482 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: select.c,v 1.483 2008/11/11 18:28:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2573,7 +2573,9 @@ static int flattenSubquery(
 
   /* Check to see if flattening is permitted.  Return 0 if not.
   */
+  assert( p!=0 );
   if( p==0 ) return 0;
+  assert( p->pPrior==0 );  /* Unable to flatten compound queries */
   pSrc = p->pSrc;
   assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
   pSubitem = &pSrc->a[iFrom];
@@ -2685,92 +2687,146 @@ static int flattenSubquery(
   **     SELECT <expr-list> FROM (<sub-query>) <where-clause> 
   **
   ** followed by any ORDER BY, LIMIT and/or OFFSET clauses. This block
-  ** creates N copies of the parent query without any ORDER BY, LIMIT or 
+  ** creates N-1 copies of the parent query without any ORDER BY, LIMIT or 
   ** OFFSET clauses and joins them to the left-hand-side of the original
   ** using UNION ALL operators. In this case N is the number of simple
   ** select statements in the compound sub-query.
+  **
+  ** Example:
+  **
+  **     SELECT a+1 FROM (
+  **        SELECT x FROM tab
+  **        UNION ALL
+  **        SELECT y FROM tab
+  **        UNION ALL
+  **        SELECT abs(z*2) FROM tab2
+  **     ) WHERE a!=5 ORDER BY 1
+  **
+  ** Transformed into:
+  **
+  **     SELECT x+1 FROM tab WHERE x+1!=5
+  **     UNION ALL
+  **     SELECT y+1 FROM tab WHERE y+1!=5
+  **     UNION ALL
+  **     SELECT abs(z*2)+1 FROM tab2 WHERE abs(z*2)+1!=5
+  **     ORDER BY 1
+  **
+  ** We call this the "compound-subquery flattening".
   */
   for(pSub=pSub->pPrior; pSub; pSub=pSub->pPrior){
     Select *pNew;
     ExprList *pOrderBy = p->pOrderBy;
     Expr *pLimit = p->pLimit;
-    Expr *pOffset = p->pOffset;
     Select *pPrior = p->pPrior;
     p->pOrderBy = 0;
     p->pSrc = 0;
     p->pPrior = 0;
     p->pLimit = 0;
     pNew = sqlite3SelectDup(db, p);
-    pNew->pPrior = pPrior;
-    p->pPrior = pNew;
-    p->pOrderBy = pOrderBy;
-    p->op = TK_ALL;
-    p->pSrc = pSrc;
     p->pLimit = pLimit;
-    p->pOffset = pOffset;
+    p->pOrderBy = pOrderBy;
+    p->pSrc = pSrc;
+    p->op = TK_ALL;
     p->pRightmost = 0;
-    pNew->pRightmost = 0;
+    if( pNew==0 ){
+      pNew = pPrior;
+    }else{
+      pNew->pPrior = pPrior;
+      pNew->pRightmost = 0;
+    }
+    p->pPrior = pNew;
+    if( db->mallocFailed ) return 1;
   }
 
   /* Begin flattening the iFrom-th entry of the FROM clause 
   ** in the outer query.
   */
   pSub = pSub1 = pSubitem->pSelect;
+
+  /* Delete the transient table structure associated with the
+  ** subquery
+  */
+  sqlite3DbFree(db, pSubitem->zDatabase);
+  sqlite3DbFree(db, pSubitem->zName);
+  sqlite3DbFree(db, pSubitem->zAlias);
+  pSubitem->zDatabase = 0;
+  pSubitem->zName = 0;
+  pSubitem->zAlias = 0;
+  pSubitem->pSelect = 0;
+
+  /* Defer deleting the Table object associated with the
+  ** subquery until code generation is
+  ** complete, since there may still exist Expr.pTab entries that
+  ** refer to the subquery even after flattening.  Ticket #3346.
+  */
+  if( pSubitem->pTab!=0 ){
+    Table *pTabToDel = pSubitem->pTab;
+    if( pTabToDel->nRef==1 ){
+      pTabToDel->pNextZombie = pParse->pZombieTab;
+      pParse->pZombieTab = pTabToDel;
+    }else{
+      pTabToDel->nRef--;
+    }
+    pSubitem->pTab = 0;
+  }
+
+  /* The following loop runs once for each term in a compound-subquery
+  ** flattening (as described above).  If we are doing a different kind
+  ** of flattening - a flattening other than a compound-subquery flattening -
+  ** then this loop only runs once.
+  **
+  ** This loop moves all of the FROM elements of the subquery into the
+  ** the FROM clause of the outer query.  Before doing this, remember
+  ** the cursor number for the original outer query FROM element in
+  ** iParent.  The iParent cursor will never be used.  Subsequent code
+  ** will scan expressions looking for iParent references and replace
+  ** those references with expressions that resolve to the subquery FROM
+  ** elements we are now copying in.
+  */
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
-    int nSubSrc = pSubSrc->nSrc;
+    int nSubSrc;
     int jointype = 0;
-    pSubSrc = pSub->pSrc;
-    pSrc = pParent->pSrc;
+    pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
+    nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
+    pSrc = pParent->pSrc;     /* FROM clause of the outer query */
 
-    /* Move all of the FROM elements of the subquery into the
-    ** the FROM clause of the outer query.  Before doing this, remember
-    ** the cursor number for the original outer query FROM element in
-    ** iParent.  The iParent cursor will never be used.  Subsequent code
-    ** will scan expressions looking for iParent references and replace
-    ** those references with expressions that resolve to the subquery FROM
-    ** elements we are now copying in.
-    */
     if( pSrc ){
-      Table *pTabToDel;
-      pSubitem = &pSrc->a[iFrom];
-      nSubSrc = pSubSrc->nSrc;
+      assert( pParent==p );  /* First time through the loop */
       jointype = pSubitem->jointype;
-      sqlite3DbFree(db, pSubitem->zDatabase);
-      sqlite3DbFree(db, pSubitem->zName);
-      sqlite3DbFree(db, pSubitem->zAlias);
-      pSubitem->zDatabase = 0;
-      pSubitem->zName = 0;
-      pSubitem->zAlias = 0;
+    }else{
+      assert( pParent!=p );  /* 2nd and subsequent times through the loop */
+      pSrc = pParent->pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
+      if( pSrc==0 ){
+        assert( db->mallocFailed );
+        break;
+      }
+    }
 
-      /* If the FROM element is a subquery, defer deleting the Table
-      ** object associated with that subquery until code generation is
-      ** complete, since there may still exist Expr.pTab entires that
-      ** refer to the subquery even after flattening.  Ticket #3346.
-      */
-      if( (pTabToDel = pSubitem->pTab)!=0 ){
-        if( pTabToDel->nRef==1 ){
-          pTabToDel->pNextZombie = pParse->pZombieTab;
-          pParse->pZombieTab = pTabToDel;
-        }else{
-          pTabToDel->nRef--;
-        }
-      }
-      pSubitem->pTab = 0;
-    }
-    if( nSubSrc!=1 || !pSrc ){
-      int extra = nSubSrc - 1;
-      for(i=(pSrc?1:0); i<nSubSrc; i++){
-        pSrc = sqlite3SrcListAppend(db, pSrc, 0, 0);
-        if( pSrc==0 ){
-          pParent->pSrc = 0;
-          return 1;
-        }
-      }
-      pParent->pSrc = pSrc;
-      for(i=pSrc->nSrc-1; i-extra>=iFrom; i--){
-        pSrc->a[i] = pSrc->a[i-extra];
+    /* The subquery uses a single slot of the FROM clause of the outer
+    ** query.  If the subquery has more than one element in its FROM clause,
+    ** then expand the outer query to make space for it to hold all elements
+    ** of the subquery.
+    **
+    ** Example:
+    **
+    **    SELECT * FROM tabA, (SELECT * FROM sub1, sub2), tabB;
+    **
+    ** The outer query has 3 slots in its FROM clause.  One slot of the
+    ** outer query (the middle slot) is used by the subquery.  The next
+    ** block of code will expand the out query to 4 slots.  The middle
+    ** slot is expanded to two slots in order to make space for the
+    ** two elements in the FROM clause of the subquery.
+    */
+    if( nSubSrc>1 ){
+      pParent->pSrc = pSrc = sqlite3SrcListEnlarge(db, pSrc, nSubSrc-1,iFrom+1);
+      if( db->mallocFailed ){
+        break;
       }
     }
+
+    /* Transfer the FROM clause terms from the subquery into the
+    ** outer query.
+    */
     for(i=0; i<nSubSrc; i++){
       pSrc->a[i+iFrom] = pSubSrc->a[i];
       memset(&pSubSrc->a[i], 0, sizeof(pSubSrc->a[i]));

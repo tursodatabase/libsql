@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.500 2008/11/03 20:55:07 drh Exp $
+** $Id: build.c,v 1.501 2008/11/11 18:28:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2992,10 +2992,80 @@ int sqlite3IdListIndex(IdList *pList, const char *zName){
 }
 
 /*
+** Expand the space allocated for the given SrcList object by
+** creating nExtra new slots beginning at iStart.  iStart is zero based.
+** New slots are zeroed.
+**
+** For example, suppose a SrcList initially contains two entries: A,B.
+** To append 3 new entries onto the end, do this:
+**
+**    sqlite3SrcListEnlarge(db, pSrclist, 3, 2);
+**
+** After the call above it would contain:  A, B, nil, nil, nil.
+** If the iStart argument had been 1 instead of 2, then the result
+** would have been:  A, nil, nil, nil, B.  To prepend the new slots,
+** the iStart value would be 0.  The result then would
+** be: nil, nil, nil, A, B.
+**
+** If a memory allocation fails the SrcList is unchanged.  The
+** db->mallocFailed flag will be set to true.
+*/
+SrcList *sqlite3SrcListEnlarge(
+  sqlite3 *db,       /* Database connection to notify of OOM errors */
+  SrcList *pSrc,     /* The SrcList to be enlarged */
+  int nExtra,        /* Number of new slots to add to pSrc->a[] */
+  int iStart         /* Index in pSrc->a[] of first new slot */
+){
+  int i;
+
+  /* Sanity checking on calling parameters */
+  assert( iStart>=0 );
+  assert( nExtra>=1 );
+  if( pSrc==0 || iStart>pSrc->nSrc ){
+    assert( db->mallocFailed );
+    return pSrc;
+  }
+
+  /* Allocate additional space if needed */
+  if( pSrc->nSrc+nExtra>pSrc->nAlloc ){
+    SrcList *pNew;
+    int nAlloc = pSrc->nSrc+nExtra;
+    pNew = sqlite3DbRealloc(db, pSrc,
+               sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
+    if( pNew==0 ){
+      assert( db->mallocFailed );
+      return pSrc;
+    }
+    pSrc = pNew;
+    pSrc->nAlloc = nAlloc;
+  }
+
+  /* Move existing slots that come after the newly inserted slots
+  ** out of the way */
+  for(i=pSrc->nSrc-1; i>=iStart; i--){
+    pSrc->a[i+nExtra] = pSrc->a[i];
+  }
+  pSrc->nSrc += nExtra;
+
+  /* Zero the newly allocated slots */
+  memset(&pSrc->a[iStart], 0, sizeof(pSrc->a[0])*nExtra);
+  for(i=iStart; i<iStart+nExtra; i++){
+    pSrc->a[i].iCursor = -1;
+  }
+
+  /* Return a pointer to the enlarged SrcList */
+  return pSrc;
+}
+
+
+/*
 ** Append a new table name to the given SrcList.  Create a new SrcList if
 ** need be.  A new entry is created in the SrcList even if pToken is NULL.
 **
-** A new SrcList is returned, or NULL if malloc() fails.
+** A SrcList is returned, or NULL if there is an OOM error.  The returned
+** SrcList might be the same as the SrcList that was input or it might be
+** a new one.  If an OOM error does occurs, then the prior value of pList
+** that is input to this routine is automatically freed.
 **
 ** If pDatabase is not null, it means that the table has an optional
 ** database name prefix.  Like this:  "database.table".  The pDatabase
@@ -3028,19 +3098,12 @@ SrcList *sqlite3SrcListAppend(
     if( pList==0 ) return 0;
     pList->nAlloc = 1;
   }
-  if( pList->nSrc>=pList->nAlloc ){
-    SrcList *pNew;
-    pList->nAlloc *= 2;
-    pNew = sqlite3DbRealloc(db, pList,
-               sizeof(*pList) + (pList->nAlloc-1)*sizeof(pList->a[0]) );
-    if( pNew==0 ){
-      sqlite3SrcListDelete(db, pList);
-      return 0;
-    }
-    pList = pNew;
+  pList = sqlite3SrcListEnlarge(db, pList, 1, pList->nSrc);
+  if( db->mallocFailed ){
+    sqlite3SrcListDelete(db, pList);
+    return 0;
   }
-  pItem = &pList->a[pList->nSrc];
-  memset(pItem, 0, sizeof(pList->a[0]));
+  pItem = &pList->a[pList->nSrc-1];
   if( pDatabase && pDatabase->z==0 ){
     pDatabase = 0;
   }
@@ -3051,8 +3114,6 @@ SrcList *sqlite3SrcListAppend(
   }
   pItem->zName = sqlite3NameFromToken(db, pTable);
   pItem->zDatabase = sqlite3NameFromToken(db, pDatabase);
-  pItem->iCursor = -1;
-  pList->nSrc++;
   return pList;
 }
 
