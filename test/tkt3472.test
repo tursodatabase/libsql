@@ -9,10 +9,19 @@
 #
 #***********************************************************************
 #     
-# $Id: tkt3472.test,v 1.1 2008/11/11 18:34:35 danielk1977 Exp $
+# $Id: tkt3472.test,v 1.2 2008/11/12 14:07:52 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable {!threadsafe} {
+  finish_test
+  return
+}
+if {$::tcl_platform(platform)!="unix"} {
+  finish_test
+  rturn
+}
 
 set ::correctvalue $threadsOverrideEachOthersLocks
 puts "threadsOverrideEachOthersLocks = $::correctvalue"
@@ -32,4 +41,3 @@ do_test tkt3472-1.2 {
 } $::correctvalue
 
 finish_test
-
