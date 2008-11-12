@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.7 2008/11/12 14:22:25 danielk1977 Exp $
+# $Id: corruptC.test,v 1.8 2008/11/12 18:21:36 danielk1977 Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -150,8 +150,8 @@ do_test corruptC-2.5 {
   catchsql {PRAGMA integrity_check}
 } {0 {{*** in database main ***
 Corruption detected in cell 710 on page 4
-Multiple uses for byte 116 of page 4
-Fragmented space is 0 byte reported as 21 on page 4}}}
+Multiple uses for byte 661 of page 4
+Fragmented space is 249 byte reported as 21 on page 4}}}
 
 # test that a corrupt free cell size is handled (seed 169595)
 do_test corruptC-2.6 {

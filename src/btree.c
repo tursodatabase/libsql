@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.533 2008/11/12 08:49:52 danielk1977 Exp $
+** $Id: btree.c,v 1.534 2008/11/12 18:21:36 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -734,14 +734,15 @@ static int defragmentPage(MemPage *pPage){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
-    if (pc >= pPage->pBt->usableSize) {
+    if( pc>=pPage->pBt->usableSize ){
       return SQLITE_CORRUPT_BKPT;
     }
     size = cellSizePtr(pPage, &temp[pc]);
     cbrk -= size;
-    if ((cbrk < cellOffset+2*nCell) || (cbrk+size>pPage->pBt->usableSize)) {
+    if( cbrk<cellOffset+2*nCell || pc+size>usableSize ){
       return SQLITE_CORRUPT_BKPT;
     }
+    assert( cbrk+size<=usableSize && cbrk>=0 );
     memcpy(&data[cbrk], &temp[pc], size);
     put2byte(pAddr, cbrk);
   }
@@ -3181,7 +3182,7 @@ static int accessPayload(
   u32 nKey;
   int iIdx = 0;
   MemPage *pPage = pCur->apPage[pCur->iPage]; /* Btree page of current entry */
-  BtShared *pBt;                              /* Btree this cursor belongs to */
+  BtShared *pBt = pCur->pBt;                  /* Btree this cursor belongs to */
 
   assert( pPage );
   assert( pCur->eState==CURSOR_VALID );
@@ -3196,7 +3197,9 @@ static int accessPayload(
   if( skipKey ){
     offset += nKey;
   }
-  if( offset+amt > nKey+pCur->info.nData ){
+  if( offset+amt > nKey+pCur->info.nData 
+   || &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
+  ){
     /* Trying to read or write past the end of the data is an error */
     return SQLITE_CORRUPT_BKPT;
   }
@@ -3215,7 +3218,6 @@ static int accessPayload(
     offset -= pCur->info.nLocal;
   }
 
-  pBt = pCur->pBt;
   if( rc==SQLITE_OK && amt>0 ){
     const int ovflSize = pBt->usableSize - 4;  /* Bytes content per ovfl page */
     Pgno nextPage;
