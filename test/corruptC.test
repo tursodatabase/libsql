@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.6 2008/11/12 11:57:42 danielk1977 Exp $
+# $Id: corruptC.test,v 1.7 2008/11/12 14:22:25 danielk1977 Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -29,6 +29,7 @@ expr srand(0)
 #
 do_test corruptC-1.1 {
   execsql {
+    PRAGMA auto_vacuum = 0;
     BEGIN;
     CREATE TABLE t1(x,y);
     INSERT INTO t1 VALUES(1,1);
