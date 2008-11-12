@@ -1,5 +1,5 @@
-C Modify\sa\sfailing\stest\scase\sin\scorruptC.test.\sThe\stest\scase\swas\sfailing\sonly\sbecause\sthe\sintegrity_check\swas\sreturning\sa\sslightly\sdifferent\serror\smessage\sthan\sexpected.\s(CVS\s5891)
-D 2008-11-12T11:57:42
+C Fix\sa\sfaulty\sassert\sin\sselect.c.\s\sTicket\s#3494.\s(CVS\s5892)
+D 2008-11-12T12:27:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
-F src/select.c 058d5c227953755cc393ad359f35b653b9337fee
+F src/select.c b03c6fe474ded7bd110ca7b551bf0236133c12da
 F src/shell.c 01835f435d2e42be95480f7d7cce48e9b255652e
 F src/sqlite.h.in b73e17f40b0dcfc4b17f5ef18ba90bca8d1e8bc5
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -656,7 +656,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 395084acbb4c8ef878d858f640f1ed6be908d175
-R e22f3f9d115df1e3bf8c36534969814d
-U danielk1977
-Z 81eb7b5b6ef663546461e6f2f223a801
+P 0953f300f8e8b2bed79ef3189a1cb29f058f388b
+R 897f44e6b888057f874e7e6e6adb79e1
+U drh
+Z f4b63678dd7bb7c1232c56c4b5a2a231

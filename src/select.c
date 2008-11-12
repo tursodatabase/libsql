@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.483 2008/11/11 18:28:59 drh Exp $
+** $Id: select.c,v 1.484 2008/11/12 12:27:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -65,7 +65,7 @@ Select *sqlite3SelectNew(
   Select standin;
   sqlite3 *db = pParse->db;
   pNew = sqlite3DbMallocZero(db, sizeof(*pNew) );
-  assert( !pOffset || pLimit );   /* Can't have OFFSET without LIMIT. */
+  assert( db->mallocFailed || !pOffset || pLimit ); /* OFFSET implies LIMIT */
   if( pNew==0 ){
     pNew = &standin;
     memset(pNew, 0, sizeof(*pNew));
