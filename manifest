@@ -1,5 +1,5 @@
-C In\scorruptC.test,\sexplicitly\sset\s"PRAGMA\sauto_vacuum\s=\s0".\s(CVS\s5895)
-D 2008-11-12T14:22:25
+C Do\snot\sredefine\sthe\sMIN\sand\sMAX\smacros\sif\sthey\sare\salready\sdefined.\s(CVS\s5896)
+D 2008-11-12T15:24:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -65,7 +65,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 250b7209e992b8663b67336a4bb1c39f2199eab7
+F ext/rtree/rtree.c 05d517734dad60165255581cc8dacea00c03b5c0
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 620223886bf1a319317e63235aac20790375c544
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
@@ -125,7 +125,7 @@ F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
 F src/mem2.c 5d9968f576ba1babc787adbfb613cf428ab484ec
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
 F src/mem5.c 8cb9dfacf7e11a7822b4935757ae0c1749278b4e
-F src/memjournal.c 7ffe4ebf5e7792571c27d528ca005e495343d1c4
+F src/memjournal.c e2551e89243b39a972a1fbefeedaf4f74438a0cf
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
@@ -656,7 +656,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f150b870e3a24d407d8d5ac374e2a7d0f4072a2d
-R 5817a89914444a68af66344987870f0a
-U danielk1977
-Z 1189f30309a2273fde86c60fc35682c4
+P b6563af8f9517760c2346a820e241b0517a10fe0
+R 217eb8bceae810089ca0de92c63eed2e
+U drh
+Z 5430f161427192e4cf40a0be3aef290b

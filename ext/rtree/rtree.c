@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.10 2008/10/25 17:10:10 danielk1977 Exp $
+** $Id: rtree.c,v 1.11 2008/11/12 15:24:27 drh Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -226,8 +226,12 @@ struct RtreeCell {
   RtreeCoord aCoord[RTREE_MAX_DIMENSIONS*2];
 };
 
-#define MAX(x,y) ((x) < (y) ? (y) : (x))
-#define MIN(x,y) ((x) > (y) ? (y) : (x))
+#ifndef MAX
+# define MAX(x,y) ((x) < (y) ? (y) : (x))
+#endif
+#ifndef MIN
+# define MIN(x,y) ((x) > (y) ? (y) : (x))
+#endif
 
 /*
 ** Functions to deserialize a 16 bit integer, 32 bit real number and

@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.2 2008/10/28 18:12:36 drh Exp $
+** @(#) $Id: memjournal.c,v 1.3 2008/11/12 15:24:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -30,7 +30,9 @@ typedef struct FileChunk FileChunk;
 
 /* Macro to find the minimum of two numeric values.
 */
-#define MIN(x,y) ((x)<(y)?(x):(y))
+#ifndef MIN
+# define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
 
 /*
 ** The rollback journal is composed of a linked list of these structures.
