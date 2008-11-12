@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.532 2008/11/12 04:55:34 shane Exp $
+** $Id: btree.c,v 1.533 2008/11/12 08:49:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -752,6 +752,9 @@ static int defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, cbrk-addr);
+  if( cbrk-addr!=pPage->nFree ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   return SQLITE_OK;
 }
 
