@@ -1,10 +1,10 @@
-C Omit\sthe\sthreadOverrideEachOthersLocks\stests\sfor\sbuilds\sthat\snon-unix\nor\snon-threadsafe.\s(CVS\s5893)
-D 2008-11-12T14:07:52
+C Update\sthe\sversion\snumber\sto\s3.6.5.\s(CVS\s5894)
+D 2008-11-12T14:21:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 5ba795c6239d62450dd2cb8b469acebda412ebc9
+F VERSION 4eb06187e9b9f72fdf3ba27c407e24665d0bb513
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -656,7 +656,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e89f9c806328e0de2e8633e09242f67e26f43d76
-R a9a864b8353a5e0947c7071ca0ebad06
+P ab418656dbf3d2e055b2462a155d90863fef6582
+R ab0f1dd33aa3f97dfdb4c83379a6f9dd
 U drh
-Z 9213c0dd1e2bf399e2f9fa5c3a02e1bc
+Z 9c9b36dc1efecbeb499191de93191367
