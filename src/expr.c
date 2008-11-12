@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.401 2008/11/06 15:33:04 drh Exp $
+** $Id: expr.c,v 1.402 2008/11/12 08:07:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -43,7 +43,9 @@ char sqlite3ExprAffinity(Expr *pExpr){
     return sqlite3AffinityType(&pExpr->token);
   }
 #endif
-  if( (op==TK_COLUMN || op==TK_REGISTER) && pExpr->pTab!=0 ){
+  if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) 
+   && pExpr->pTab!=0
+  ){
     /* op==TK_REGISTER && pExpr->pTab!=0 happens when pExpr was originally
     ** a TK_COLUMN but was previously evaluated and cached in a register */
     int j = pExpr->iColumn;
@@ -89,7 +91,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     pColl = p->pColl;
     if( pColl ) break;
     op = p->op;
-    if( (op==TK_COLUMN || op==TK_REGISTER) && p->pTab!=0 ){
+    if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) && p->pTab!=0 ){
       /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       const char *zColl;
