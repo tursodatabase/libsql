@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.531 2008/11/11 22:18:20 shane Exp $
+** $Id: btree.c,v 1.532 2008/11/12 04:55:34 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -702,7 +702,7 @@ static int ptrmapPutOvfl(MemPage *pPage, int iCell){
 ** big FreeBlk that occurs in between the header and cell
 ** pointer array and the cell content area.
 */
-static void defragmentPage(MemPage *pPage){
+static int defragmentPage(MemPage *pPage){
   int i;                     /* Loop counter */
   int pc;                    /* Address of a i-th cell */
   int addr;                  /* Offset of first byte after cell pointer array */
@@ -734,9 +734,14 @@ static void defragmentPage(MemPage *pPage){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
-    assert( pc<pPage->pBt->usableSize );
+    if (pc >= pPage->pBt->usableSize) {
+      return SQLITE_CORRUPT_BKPT;
+    }
     size = cellSizePtr(pPage, &temp[pc]);
     cbrk -= size;
+    if ((cbrk < cellOffset+2*nCell) || (cbrk+size>pPage->pBt->usableSize)) {
+      return SQLITE_CORRUPT_BKPT;
+    }
     memcpy(&data[cbrk], &temp[pc], size);
     put2byte(pAddr, cbrk);
   }
@@ -747,6 +752,7 @@ static void defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, cbrk-addr);
+  return SQLITE_OK;
 }
 
 /*
@@ -4558,7 +4564,7 @@ static int fillInCell(
 **
 ** "sz" must be the number of bytes in the cell.
 */
-static void dropCell(MemPage *pPage, int idx, int sz){
+static int dropCell(MemPage *pPage, int idx, int sz){
   int i;          /* Loop counter */
   int pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
@@ -4570,9 +4576,10 @@ static void dropCell(MemPage *pPage, int idx, int sz){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
-  /* mask the cell offset to ensure a corrupt db does not result in a crash */
-  pc = pPage->maskPage & get2byte(ptr);
-  assert( pc>10 && pc+sz<=pPage->pBt->usableSize );
+  pc = get2byte(ptr);
+  if ( pc<=10 || pc+sz>pPage->pBt->usableSize ) {
+    return SQLITE_CORRUPT_BKPT;
+  }
   freeSpace(pPage, pc, sz);
   for(i=idx+1; i<pPage->nCell; i++, ptr+=2){
     ptr[0] = ptr[2];
@@ -4581,6 +4588,7 @@ static void dropCell(MemPage *pPage, int idx, int sz){
   pPage->nCell--;
   put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
   pPage->nFree += 2;
+  return SQLITE_OK;
 }
 
 /*
@@ -4644,15 +4652,19 @@ static int insertCell(
     end = cellOffset + 2*pPage->nCell + 2;
     ins = cellOffset + 2*i;
     if( end > top - sz ){
-      defragmentPage(pPage);
+      rc = defragmentPage(pPage);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
       top = get2byte(&data[hdr+5]);
       assert( end + sz <= top );
     }
     idx = allocateSpace(pPage, sz);
     assert( idx>0 );
     assert( end <= get2byte(&data[hdr+5]) );
-    if (idx+sz > pPage->pBt->usableSize) 
+    if (idx+sz > pPage->pBt->usableSize) {
       return SQLITE_CORRUPT_BKPT;
+    }
     pPage->nCell++;
     pPage->nFree -= 2;
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
@@ -5814,7 +5826,10 @@ int sqlite3BtreeInsert(
     szOld = cellSizePtr(pPage, oldCell);
     rc = clearCell(pPage, oldCell);
     if( rc ) goto end_insert;
-    dropCell(pPage, idx, szOld);
+    rc = dropCell(pPage, idx, szOld);
+    if( rc!=SQLITE_OK ) {
+      goto end_insert;
+    }
   }else if( loc<0 && pPage->nCell>0 ){
     assert( pPage->leaf );
     idx = ++pCur->aiIdx[pCur->iPage];
@@ -6717,7 +6732,7 @@ static int checkTreePage(
   BtShared *pBt;
   int usableSize;
   char zContext[100];
-  char *hit;
+  char *hit = 0;
 
   sqlite3_snprintf(sizeof(zContext), zContext, "Page %d: ", iPage);
 
@@ -6807,7 +6822,7 @@ static int checkTreePage(
     if (contentOffset > usableSize) {
       checkAppendMsg(pCheck, 0, 
                      "Corruption detected in header on page %d",iPage,0);
-      contentOffset = usableSize; /* try to keep going */
+      goto check_page_abort;
     }
     memset(hit+contentOffset, 0, usableSize-contentOffset);
     memset(hit, 1, contentOffset);
@@ -6854,7 +6869,8 @@ static int checkTreePage(
           cnt, data[hdr+7], iPage);
     }
   }
-  sqlite3PageFree(hit);
+check_page_abort:
+  if (hit) sqlite3PageFree(hit);
 
   releasePage(pPage);
   return depth+1;

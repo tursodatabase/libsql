@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.4 2008/11/11 22:18:20 shane Exp $
+# $Id: corruptC.test,v 1.5 2008/11/12 04:55:34 shane Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -39,7 +39,7 @@ do_test corruptC-1.1 {
     INSERT OR IGNORE INTO t1 SELECT x*11,y FROM t1;
     INSERT OR IGNORE INTO t1 SELECT x*13,y FROM t1;
     CREATE INDEX t1i1 ON t1(x);
-    CREATE TABLE t2 AS SELECT x,2 FROM t1 WHERE rowid%5!=0;
+    CREATE TABLE t2 AS SELECT x,2 as y FROM t1 WHERE rowid%5!=0;
     COMMIT;
   }
 } {}
@@ -88,8 +88,7 @@ do_test corruptC-2.1 {
   sqlite3 db test.db
   catchsql {PRAGMA integrity_check}
 } {0 {{*** in database main ***
-Corruption detected in header on page 3
-Multiple uses for byte 604 of page 3}}}
+Corruption detected in header on page 3}}}
 
 # test that a corrupt content offset size is handled (seed 5649)
 do_test corruptC-2.2 {
@@ -110,7 +109,7 @@ do_test corruptC-2.2 {
 
   sqlite3 db test.db
   catchsql {UPDATE t1 SET y=1}
-} {0 {}}
+} {1 {database disk image is malformed}}
 
 # test that a corrupt free cell size is handled (seed 13329)
 do_test corruptC-2.3 {
@@ -122,7 +121,51 @@ do_test corruptC-2.3 {
 
   sqlite3 db test.db
   catchsql {UPDATE t1 SET y=1}
-} {0 {database disk image is malformed}}
+} {1 {database disk image is malformed}}
+
+# test that a corrupt free cell size is handled (seed 169571)
+do_test corruptC-2.4 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 3119 [format %02x 0xdf]
+
+  sqlite3 db test.db
+  catchsql {UPDATE t2 SET y='abcdef-uvwxyz'}
+} {1 {database disk image is malformed}}
+
+# test that a corrupt free cell size is handled (seed 169571)
+do_test corruptC-2.5 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 3119 [format %02x 0xdf]
+  hexio_write test.db 4073 [format %02x 0xbf]
+
+  sqlite3 db test.db
+  catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
+  catchsql {PRAGMA integrity_check}
+} {0 {{*** in database main ***
+On tree page 4 cell 49: invalid page number 1006653561
+Corruption detected in cell 49 on page 4
+Corruption detected in cell 710 on page 4
+Multiple uses for byte 116 of page 4
+Fragmented space is 0 byte reported as 21 on page 4}}}
+
+# test that a corrupt free cell size is handled (seed 169595)
+do_test corruptC-2.6 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 619 [format %02x 0xe2]
+  hexio_write test.db 3150 [format %02x 0xa8]
+
+  sqlite3 db test.db
+  catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
+} {1 {database disk image is malformed}}
 
 #
 # now test for a series of quasi-random seeds
@@ -176,7 +219,7 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
       set x {}
     } {}
     do_test corruptC-3.$tn.$i.7 {
-      catchsql {BEGIN; UPDATE t2 SET y=2; ROLLBACK;}
+      catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
       set x {}
     } {}
 

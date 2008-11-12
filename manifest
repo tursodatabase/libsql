@@ -1,5 +1,5 @@
-C Fixed\scrash\sduring\san\sUPDATE\swhen\sfree\scell\ssize\sis\scorrupt.\s(CVS\s5887)
-D 2008-11-11T22:18:20
+C Fixed\sa\sfew\smore\scrashes\swhen\sdealing\swith\scorrupt\sdb\sfiles.\s(CVS\s5888)
+D 2008-11-12T04:55:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 9e922b2577b7e46d8f95349bca6a52f7674d7582
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c 9794c9eee5c315a5076aafe56dc1739727a99419
+F src/btree.c 5406b753fbab8b3ff36cc1378d3f8fe329b667c0
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 98a6884d47c3cc12faeb2e9a926018d3a7382133
@@ -265,7 +265,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 505331779fe7a96fe38ecbb817f19c63bc27d171
-F test/corruptC.test b872e806a65d8d1ec670cb93ea7f24efb695971a
+F test/corruptC.test 98785fda64661720f2c96a3afab91f1acf4831f5
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 776f9363554c029fcce71d9e6600fa0ba6359ce7
@@ -655,7 +655,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 99d4172ed6825c7efb6cbb28eb00d98323a13954
-R 24c609efd12ad0665f130881447ef341
+P ec18667e2d2826a27f2c052ba3790ab5b8cf0bc4
+R 3fd6e153359a94e15331a1a8034f2f9f
 U shane
-Z fc2c6a9f24438ffffb0cff4c39242351
+Z 22bcacde70b802d010600360fc6793f1
