@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #     
-# $Id: tkt3472.test,v 1.2 2008/11/12 14:07:52 drh Exp $
+# $Id: tkt3472.test,v 1.3 2008/11/13 18:02:52 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -20,7 +20,7 @@ ifcapable {!threadsafe} {
 }
 if {$::tcl_platform(platform)!="unix"} {
   finish_test
-  rturn
+  return
 }
 
 set ::correctvalue $threadsOverrideEachOthersLocks

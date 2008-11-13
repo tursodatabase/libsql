@@ -1,5 +1,5 @@
-C Avoid\scommitting\sa\stransaction\sfrom\swithin\sthe\sxSync()\smethod\sof\sa\svirtual\stable.\sFix\sfor\s#3497.\s(CVS\s5902)
-D 2008-11-13T18:00:15
+C Fixed\stypo\sin\stkt3472.test\sthat\sprevented\sthe\stest\sfrom\srunning.\s(CVS\s5903)
+D 2008-11-13T18:02:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -576,7 +576,7 @@ F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
 F test/tkt3442.test 33722a3fa4bdc0614448044eb5e28765aea28eb7
 F test/tkt3457.test e9ca2b90f0eb1fb8be73a30d29aacb2e3abedeb9
 F test/tkt3461.test 5a63e8d8ee5ce00f076b1e2f82aba5480a0f14ed
-F test/tkt3472.test 33bec8e3b6d990b3926b3c91fb1ebd5cf8519d87
+F test/tkt3472.test e689a687631e59c7a47d9438148115fee23b16c3
 F test/tkt3493.test 8472b3464e49a27ff7271308eec46154209e667b
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 96453ca16e90bc0c0cbfb75b3e39899f56d6ea66
-R 7a24cf12a0679834e94bdaea4129f027
-U danielk1977
-Z 01120215381a9846d9b013baf9ce1048
+P eabb8b7591eab164c637d78ca4df00fcb5bd3c5b
+R 2ecf44e306b7d1d49266734c23e37e25
+U shane
+Z 8dffa1ec74c2c0db9f4d26b8359e648a
