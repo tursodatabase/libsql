@@ -338,6 +338,13 @@ void *sqlite3Fts3HashInsert(
     return old_data;
   }
   if( data==0 ) return 0;
+  if( pH->htsize==0 ){
+    fts3Rehash(pH,8);
+    if( pH->htsize==0 ){
+      pH->count = 0;
+      return data;
+    }
+  }
   new_elem = (fts3HashElem*)fts3HashMalloc( sizeof(fts3HashElem) );
   if( new_elem==0 ) return data;
   if( pH->copyKey && pKey!=0 ){
@@ -352,14 +359,6 @@ void *sqlite3Fts3HashInsert(
   }
   new_elem->nKey = nKey;
   pH->count++;
-  if( pH->htsize==0 ){
-    fts3Rehash(pH,8);
-    if( pH->htsize==0 ){
-      pH->count = 0;
-      fts3HashFree(new_elem);
-      return data;
-    }
-  }
   if( pH->count > pH->htsize ){
     fts3Rehash(pH,pH->htsize*2);
   }

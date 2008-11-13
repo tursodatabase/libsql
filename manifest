@@ -1,5 +1,5 @@
-C Fixed\sseveral\smore\scrashes\sdue\sto\scorrupt\sdb\sfiles.\s\sAdded\scorruptC.test\sto\ssoak.test.\s(CVS\s5905)
-D 2008-11-13T18:29:51
+C Fix\sa\scouple\sof\smemory\sleaks\sthat\smay\sfollow\smalloc\sfailures.\s(CVS\s5906)
+D 2008-11-13T19:12:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -53,7 +53,7 @@ F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c e67453b6ac421b79e600385491ed7f038b3bb271
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_hash.c 83e7bb4042106b32811681dd2859b4577a7a6b35
+F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
@@ -199,7 +199,7 @@ F src/vdbeaux.c 8915d2367a3f338858b3dd29878a69ecd6904147
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c 223e03281855515e9474dbf66f157452093a77c2
-F src/vtab.c fea22536197c69c2ee268305033b78409087c02f
+F src/vtab.c 02c51eac45dbff1a1d6e73f58febf92ecb563f7f
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c 171c9b2583944f66484c8552daa85373ce9e949f
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2649337937077d2dba7cdc7473fcd176aa252a52
-R eda786b9ca4d828a37954e12c4d14e7a
-U shane
-Z df50ccbe255d3c847dcb2b81abf98520
+P 9b7a52e952c81e50611e04d2d79003b0ddc57ee5
+R 9afadf1257281112a0d556b8ebf732a9
+U danielk1977
+Z ab2599b32c704145312e4fab548c649c

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.77 2008/11/13 18:00:15 danielk1977 Exp $
+** $Id: vtab.c,v 1.78 2008/11/13 19:12:36 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -46,6 +46,8 @@ static int createModule(
       db->mallocFailed = 1;
     }
     sqlite3ResetInternalSchema(db, 0);
+  }else if( xDestroy ){
+    xDestroy(pAux);
   }
   rc = sqlite3ApiExit(db, SQLITE_OK);
   sqlite3_mutex_leave(db->mutex);
