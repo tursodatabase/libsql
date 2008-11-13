@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.137 2008/11/07 00:06:18 drh Exp $
+** $Id: os_win.c,v 1.138 2008/11/13 18:20:43 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -751,11 +751,18 @@ static int winSync(sqlite3_file *id, int flags){
   }
   sqlite3_sync_count++;
 #endif
+  /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
+  ** no-op
+  */
+#ifdef SQLITE_NO_SYNC
+    return SQLITE_OK;
+#else
   if( FlushFileBuffers(pFile->h) ){
     return SQLITE_OK;
   }else{
     return SQLITE_IOERR;
   }
+#endif
 }
 
 /*
