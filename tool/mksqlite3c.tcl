@@ -235,6 +235,7 @@ foreach file {
 
    bitvec.c
    pcache.c
+   pcache1.c
    pager.c
 
    btmutex.c

@@ -1,5 +1,5 @@
-C Add\san\sAPI\sto\ssupport\scustom\spage\scache\simplementations.\s(CVS\s5899)
-D 2008-11-13T14:28:29
+C Update\smksqlite3c.tcl\sto\sinclude\snew\sfile\spcache1.c.\s(CVS\s5900)
+D 2008-11-13T14:42:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -642,7 +642,7 @@ F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
 F tool/mkkeywordhash.c c219ee2b8b5b8e7011cccfa1caec62d9812e82e7
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl f27bd970d5963cc4c6fb421d8553a2c439e61b9b
+F tool/mksqlite3c.tcl 619c0629ac51f670f1f522cd0ab1fbb62ca97d45
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P faa6bd7b615837c920b5b3b027115caa2f56ec15
-R d0a03787d9cbd01ae9ab954f29497939
+P 47866d6708e9b69e367937fd85f93580fd025447
+R b464181d11d19fffc9b5c5320f3ff6f2
 U danielk1977
-Z 6ca197766dcdc265d028d54cbf94409d
+Z b9f9a6d1771a566373b56a593f54a83f
