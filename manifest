@@ -1,5 +1,5 @@
-C Update\smksqlite3c.tcl\sto\sinclude\snew\sfile\spcache1.c.\s(CVS\s5900)
-D 2008-11-13T14:42:18
+C Minor\schanges\sto\sget\smemsys5\scompiling\sand\sits\stests\spassing.\sTicket\s#3495.\s(CVS\s5901)
+D 2008-11-13T16:21:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
 F src/mem2.c 5d9968f576ba1babc787adbfb613cf428ab484ec
 F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
-F src/mem5.c 8cb9dfacf7e11a7822b4935757ae0c1749278b4e
+F src/mem5.c e7c814fd4cf32f27e5824b61eabbe290a11ef311
 F src/memjournal.c e2551e89243b39a972a1fbefeedaf4f74438a0cf
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -459,8 +459,8 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
-F test/pcache2.test e2260293e892190be65de89526dbc4f92c8b5a7c
-F test/permutations.test b1b15770940d954dbd874f3e6296ec321b81b5c6
+F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
+F test/permutations.test 6f2952820e43568d7b869d54f4c7140bc695a5f0
 F test/pragma.test 165372b62391d233715cde82d99f34d306f9257f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 47866d6708e9b69e367937fd85f93580fd025447
-R b464181d11d19fffc9b5c5320f3ff6f2
+P 00442e0f57b52808d087154c84ece531bf1cfb62
+R 55c7eb74cfa0f462485977c0a42894ee
 U danielk1977
-Z b9f9a6d1771a566373b56a593f54a83f
+Z e462aafc1f4434010beb9b02c9989486

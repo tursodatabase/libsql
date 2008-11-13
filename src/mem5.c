@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.15 2008/10/28 18:58:20 drh Exp $
+** $Id: mem5.c,v 1.16 2008/11/13 16:21:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -213,7 +213,6 @@ static void *memsys5MallocUnsafe(int nByte){
   }
 
   /* Round nByte up to the next valid power of two */
-  if( nByte>POW2_MAX ) return 0;
   for(iFullSz=mem5.nAtom, iLogsize=0; iFullSz<nByte; iFullSz *= 2, iLogsize++){}
 
   /* Make sure mem5.aiFreelist[iLogsize] contains at least one free

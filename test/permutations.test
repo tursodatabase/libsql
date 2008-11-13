@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.37 2008/11/10 18:05:36 shane Exp $
+# $Id: permutations.test,v 1.38 2008/11/13 16:21:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -505,7 +505,7 @@ ifcapable mem5 {
     bitvec.test               index2.test               memsubsys1.test
     capi3c.test               ioerr.test                memsubsys2.test
     capi3.test                join3.test                pagesize.test
-    collate5.test             limit.test
+    collate5.test             limit.test                zeroblob.test
   } -initialize {
     catch {db close}
     sqlite3_reset_auto_extension
