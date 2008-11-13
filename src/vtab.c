@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.76 2008/08/20 16:35:10 drh Exp $
+** $Id: vtab.c,v 1.77 2008/11/13 18:00:15 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -710,7 +710,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
   ** virtual module xSync() callback. It is illegal to write to 
   ** virtual module tables in this case, so return SQLITE_LOCKED.
   */
-  if( 0==db->aVTrans && db->nVTrans>0 ){
+  if( sqlite3VtabInSync(db) ){
     return SQLITE_LOCKED;
   }
   if( !pVtab ){

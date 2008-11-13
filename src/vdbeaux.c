@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.418 2008/11/05 17:41:19 drh Exp $
+** $Id: vdbeaux.c,v 1.419 2008/11/13 18:00:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1585,7 +1585,10 @@ int sqlite3VdbeHalt(Vdbe *p){
     ** Note: This block also runs if one of the special errors handled 
     ** above has occurred. 
     */
-    if( db->autoCommit && db->writeVdbeCnt==(p->readOnly==0) ){
+    if( !sqlite3VtabInSync(db) 
+     && db->autoCommit 
+     && db->writeVdbeCnt==(p->readOnly==0) 
+    ){
       if( p->rc==SQLITE_OK || (p->errorAction==OE_Fail && !isSpecialError) ){
         /* The auto-commit flag is true, and the vdbe program was 
         ** successful or hit an 'OR FAIL' constraint. This means a commit 
