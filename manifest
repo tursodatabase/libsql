@@ -1,5 +1,5 @@
-C Added\ssupport\sfor\s-DSQLITE_NO_SYNC\sto\sos_win.c.\s(CVS\s5904)
-D 2008-11-13T18:20:43
+C Fixed\sseveral\smore\scrashes\sdue\sto\scorrupt\sdb\sfiles.\s\sAdded\scorruptC.test\sto\ssoak.test.\s(CVS\s5905)
+D 2008-11-13T18:29:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,10 +99,10 @@ F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 9e922b2577b7e46d8f95349bca6a52f7674d7582
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c be3e0aa63755b094941f9c4298a987fe93df0f22
+F src/btree.c 81c229650b57e1ca129279f4ca7f49a5111903e6
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
-F src/build.c 98a6884d47c3cc12faeb2e9a926018d3a7382133
+F src/build.c 7723123a571fcf9b0c3362dcfffeb1b64ec4f043
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 6f4277fa56d8c1b8e70c0bde838c9e99609f5ec0
@@ -191,7 +191,7 @@ F src/update.c f22a6f4507f9a0ef082418919382f83b90fd2e63
 F src/utf.c 86dc0f8076f606432a01f1498ae054c32de1f9d2
 F src/util.c afe659ccc05d1f8af9e8631dabfec3ee3a7144af
 F src/vacuum.c fd77433d0c26d3ff1eb96eab017a1787ac5aa642
-F src/vdbe.c b6b989bbd0e306581695f8914c4246905a5c0d14
+F src/vdbe.c c15dc80bd1a5dcb83a91792976eacf434d691ef6
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h c9400778d6f801c2cb8ebe6151c909e19dd2d793
 F src/vdbeapi.c ea22e171704906632cd971668359b8c0c5053001
@@ -266,7 +266,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 505331779fe7a96fe38ecbb817f19c63bc27d171
-F test/corruptC.test bcedf37afa205aff7cf1729a32b862c6a037fb5f
+F test/corruptC.test b8030bbeb90ae7b05c63bb4dc5fdd44810810963
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 776f9363554c029fcce71d9e6600fa0ba6359ce7
@@ -496,7 +496,7 @@ F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
-F test/soak.test 3c317b3e55e1160731030c8e865d1858fab66fea
+F test/soak.test d9d0a5e5c0157115c9a17f526f12691fe146768d
 F test/softheap1.test 73ebd6e020d2954d965da2072baba5922fc8fb6a
 F test/sort.test 0e4456e729e5a92a625907c63dcdedfbe72c5dc5
 F test/speed1.test c74564fea46e094d6b518bf464c355991905eea2
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 428a5479200dc24e2ee9b4a85ef6caadacbdbbd7
-R 0862238cedee5bfa8e1cf288700d9240
+P 2649337937077d2dba7cdc7473fcd176aa252a52
+R eda786b9ca4d828a37954e12c4d14e7a
 U shane
-Z 83a561c6084b21462d245b6589e2fbad
+Z df50ccbe255d3c847dcb2b81abf98520

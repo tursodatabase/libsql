@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.535 2008/11/13 14:28:29 danielk1977 Exp $
+** $Id: btree.c,v 1.536 2008/11/13 18:29:51 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -734,7 +734,7 @@ static int defragmentPage(MemPage *pPage){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
-    if( pc>=pPage->pBt->usableSize ){
+    if( pc>=usableSize ){
       return SQLITE_CORRUPT_BKPT;
     }
     size = cellSizePtr(pPage, &temp[pc]);
@@ -835,7 +835,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
 ** Most of the effort here is involved in coalesing adjacent
 ** free blocks into a single big free block.
 */
-static void freeSpace(MemPage *pPage, int start, int size){
+static int freeSpace(MemPage *pPage, int start, int size){
   int addr, pbegin, hdr;
   unsigned char *data = pPage->aData;
 
@@ -857,10 +857,14 @@ static void freeSpace(MemPage *pPage, int start, int size){
   addr = hdr + 1;
   while( (pbegin = get2byte(&data[addr]))<start && pbegin>0 ){
     assert( pbegin<=pPage->pBt->usableSize-4 );
-    assert( pbegin>addr );
+    if( pbegin<=addr ) {
+      return SQLITE_CORRUPT_BKPT;
+    }
     addr = pbegin;
   }
-  assert( pbegin<=pPage->pBt->usableSize-4 );
+  if ( pbegin>pPage->pBt->usableSize-4 ) {
+    return SQLITE_CORRUPT_BKPT;
+  }
   assert( pbegin>addr || pbegin==0 );
   put2byte(&data[addr], start);
   put2byte(&data[start], pbegin);
@@ -877,7 +881,9 @@ static void freeSpace(MemPage *pPage, int start, int size){
     psize = get2byte(&data[pbegin+2]);
     if( pbegin + psize + 3 >= pnext && pnext>0 ){
       int frag = pnext - (pbegin+psize);
-      assert( frag<=data[pPage->hdrOffset+7] );
+      if( (frag<0) || (frag>data[pPage->hdrOffset+7]) ){
+        return SQLITE_CORRUPT_BKPT;
+      }
       data[pPage->hdrOffset+7] -= frag;
       put2byte(&data[pbegin], get2byte(&data[pnext]));
       put2byte(&data[pbegin+2], pnext+get2byte(&data[pnext+2])-pbegin);
@@ -894,6 +900,7 @@ static void freeSpace(MemPage *pPage, int start, int size){
     top = get2byte(&data[hdr+5]);
     put2byte(&data[hdr+5], top + get2byte(&data[pbegin+2]));
   }
+  return SQLITE_OK;
 }
 
 /*
@@ -4579,6 +4586,7 @@ static int dropCell(MemPage *pPage, int idx, int sz){
   int pc;         /* Offset to cell content of cell being deleted */
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
+  int rc;         /* The return code */
 
   assert( idx>=0 && idx<pPage->nCell );
   assert( sz==cellSize(pPage, idx) );
@@ -4587,10 +4595,13 @@ static int dropCell(MemPage *pPage, int idx, int sz){
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
   pc = get2byte(ptr);
-  if ( pc<=10 || pc+sz>pPage->pBt->usableSize ) {
+  if ( (pc<pPage->hdrOffset+6+(pPage->leaf?0:4)) || (pc+sz>pPage->pBt->usableSize) ) {
     return SQLITE_CORRUPT_BKPT;
   }
-  freeSpace(pPage, pc, sz);
+  rc = freeSpace(pPage, pc, sz);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   for(i=idx+1; i<pPage->nCell; i++, ptr+=2){
     ptr[0] = ptr[2];
     ptr[1] = ptr[3];
@@ -6051,8 +6062,10 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   }else{
     TRACE(("DELETE: table=%d delete from leaf %d\n",
        pCur->pgnoRoot, pPage->pgno));
-    dropCell(pPage, idx, cellSizePtr(pPage, pCell));
-    rc = balance(pCur, 0);
+    rc = dropCell(pPage, idx, cellSizePtr(pPage, pCell));
+    if( rc==SQLITE_OK ){
+      rc = balance(pCur, 0);
+    }
   }
   if( rc==SQLITE_OK ){
     moveToRoot(pCur);

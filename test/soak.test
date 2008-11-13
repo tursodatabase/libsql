@@ -11,7 +11,7 @@
 # This file is the driver for the "soak" tests. It is a peer of the
 # quick.test and all.test scripts.
 #
-# $Id: soak.test,v 1.3 2008/07/12 14:52:20 drh Exp $
+# $Id: soak.test,v 1.4 2008/11/13 18:29:51 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -47,10 +47,10 @@ set argv [list]
 # global variable $TIMEOUT - tests are run for at least $TIMEOUT 
 # seconds.
 #
-#   fuzz.test   (pseudo-random SQL statements)
-#   trans.test  (pseudo-random changes to a database followed by rollbacks)
-#
-# fuzzy malloc?
+#   fuzz.test     (pseudo-random SQL statements)
+#   trans.test    (pseudo-random changes to a database followed by rollbacks)
+#   fuzz_malloc.test
+#   corruptC.test (pseudo-random corruption to a database)
 #
 # Many database changes maintaining some kind of invariant. 
 # Storing checksums etc.
@@ -62,6 +62,7 @@ set SOAKTESTS {
   fuzz.test
   fuzz_malloc.test
   trans.test
+  corruptC.test
 }
 
 set ISQUICK 1

@@ -15,15 +15,12 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.8 2008/11/12 18:21:36 danielk1977 Exp $
+# $Id: corruptC.test,v 1.9 2008/11/13 18:29:51 shane Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
-# Set a uniform random seed
-expr srand(0)
 
 # Construct a compact, dense database for testing.
 #
@@ -52,19 +49,13 @@ ifcapable {integrityck} {
 # Generate random integer
 #
 proc random {range} {
-    return [expr {round(rand()*$range)}]
+  return [expr {round(rand()*$range)}]
 }
 
 # Copy file $from into $to
 #
 proc copy_file {from to} {
-  set f [open $from]
-  fconfigure $f -translation binary
-  set t [open $to w]
-  fconfigure $t -translation binary
-  puts -nonewline $t [read $f [file size $from]]
-  close $t
-  close $f
+  file copy -force $from $to
 }
 
 # Setup for the tests.  Make a backup copy of the good database in test.bu.
@@ -74,8 +65,22 @@ copy_file test.db test.bu
 sqlite3 db test.db
 set fsize [file size test.db]
 
+# Set a quasi-random random seed. 
+if {[info exists SOAKTEST]} {
+  # If we are doing SOAK tests, we want a different
+  # random seed for each run.  Ideally we would like 
+  # to use [clock clicks] or something like that here.
+  set qseed [file mtime test.db]
+} else {
+  # If we are not doing soak tests,
+  # make it repeatable.
+  set qseed 0
+}
+expr srand($qseed)
+
 #
-# first test some specific corruption tests found from earlier runs
+# First test some specific corruption tests found from earlier runs
+# with specific seeds.
 #
 
 # test that a corrupt content offset size is handled (seed 5577)
@@ -166,13 +171,98 @@ do_test corruptC-2.6 {
   catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
 } {1 {database disk image is malformed}}
 
+# corruption (seed 178692)
+do_test corruptC-2.7 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 3074 [format %02x 0xa0]
+
+  sqlite3 db test.db
+  catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+# corruption (seed 179069)
+do_test corruptC-2.8 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 1393 [format %02x 0x7d]
+  hexio_write test.db 84 [format %02x 0x19]
+  hexio_write test.db 3287 [format %02x 0x3b]
+  hexio_write test.db 2564 [format %02x 0xed]
+  hexio_write test.db 2139 [format %02x 0x55]
+
+  sqlite3 db test.db
+  catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+# corruption (seed 170434)
+do_test corruptC-2.9 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 2095 [format %02x 0xd6]
+
+  sqlite3 db test.db
+  catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+# corruption (seed 186504)
+do_test corruptC-2.10 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 3130 [format %02x 0x02]
+  
+  sqlite3 db test.db
+  catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+# corruption (seed 1589)
+do_test corruptC-2.11 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 55 [format %02x 0xa7]
+  
+  sqlite3 db test.db
+  catchsql {BEGIN; CREATE TABLE t3 AS SELECT x,3 as y FROM t2 WHERE rowid%5!=0; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+# corruption (seed 14166)
+do_test corruptC-2.12 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 974 [format %02x 0x2e]
+  
+  sqlite3 db test.db
+  catchsql {SELECT count(*) FROM sqlite_master;}
+} {1 {malformed database schema (t1i1) - corrupt database}}
+
+# corruption (seed 218803)
+do_test corruptC-2.13 {
+  db close
+  copy_file test.bu test.db
+
+  # insert corrupt byte(s)
+  hexio_write test.db 102 [format %02x 0x12]
+  
+  sqlite3 db test.db
+  catchsql {BEGIN; CREATE TABLE t3 AS SELECT x,3 as y FROM t2 WHERE rowid%5!=0; ROLLBACK;}
+} {1 {database disk image is malformed}}
+
+
 #
 # now test for a series of quasi-random seeds
-#
-for {set tn 0} {$tn<=1024} {incr tn 1} {
-
-  # Set a quasi-random random seed
-  expr srand($tn)
+for {set tn 0} {$tn<1024} {incr tn 1} {
 
   # setup for test
   db close
@@ -184,41 +274,63 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
   # the database engine can handle the corruption gracefully.
   #
   set last 0
-  for {set i 1} {$i<=1024 && !$last} {incr i 1} {
+  for {set i 1} {$i<=512 && !$last} {incr i 1} {
 
     # insert random byte at random location
     db close
-    hexio_write test.db [random $fsize] [format %02x [random 255]]
+    set roffset [random $fsize]
+    set rbyte [format %02x [random 255]]
+
+    # You can uncomment the following to have it trace
+    # exactly how it's corrupting the file.  This is 
+    # useful for generating the "seed specific" tests
+    # above.
+    # set rline "$roffset $rbyte"
+    # puts stdout $rline
+
+    hexio_write test.db $roffset $rbyte
     sqlite3 db test.db
 
     # do a few random operations to make sure that if 
     # they error, they error gracefully instead of crashing.
-    do_test corruptC-3.$tn.$i.1 {
+    do_test corruptC-3.$tn.($qseed).$i.1 {
       catchsql {SELECT count(*) FROM sqlite_master}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.2 {
+    do_test corruptC-3.$tn.($qseed).$i.2 {
       catchsql {SELECT count(*) FROM t1}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.3 {
+    do_test corruptC-3.$tn.($qseed).$i.3 {
       catchsql {SELECT count(*) FROM t1 WHERE x>13}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.4 {
+    do_test corruptC-3.$tn.($qseed).$i.4 {
       catchsql {SELECT count(*) FROM t2}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.5 {
+    do_test corruptC-3.$tn.($qseed).$i.5 {
       catchsql {SELECT count(*) FROM t2 WHERE x<13}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.6 {
+    do_test corruptC-3.$tn.($qseed).$i.6 {
       catchsql {BEGIN; UPDATE t1 SET y=1; ROLLBACK;}
       set x {}
     } {}
-    do_test corruptC-3.$tn.$i.7 {
+    do_test corruptC-3.$tn.($qseed).$i.7 {
       catchsql {BEGIN; UPDATE t2 SET y='abcdef-uvwxyz'; ROLLBACK;}
+      set x {}
+    } {}
+    do_test corruptC-3.$tn.($qseed).$i.8 {
+      catchsql {BEGIN; DELETE FROM t1 WHERE x>13; ROLLBACK;}
+      set x {}
+    } {}
+    do_test corruptC-3.$tn.($qseed).$i.9 {
+      catchsql {BEGIN; DELETE FROM t2 WHERE x<13; ROLLBACK;}
+      set x {}
+    } {}
+    do_test corruptC-3.$tn.($qseed).$i.10 {
+      catchsql {BEGIN; CREATE TABLE t3 AS SELECT x,3 as y FROM t2 WHERE rowid%5!=0; ROLLBACK;}
       set x {}
     } {}
 
@@ -243,7 +355,7 @@ for {set tn 0} {$tn<=1024} {incr tn 1} {
     # TBD:  need to figure out why this doesn't work
     # work with ROLLBACKs...
     if {0} {
-      do_test corruptC-3.$tn.$i.8 {
+      do_test corruptC-3.$tn.($qseed).$i.11 {
         set bt [btree_from_db db]
         db_enter db
         array set stats [btree_pager_stats $bt]

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.501 2008/11/11 18:28:59 drh Exp $
+** $Id: build.c,v 1.502 2008/11/13 18:29:51 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -670,7 +670,11 @@ int sqlite3TwoPartName(
   sqlite3 *db = pParse->db;
 
   if( pName2 && pName2->n>0 ){
-    assert( !db->init.busy );
+    if( db->init.busy ) {
+      sqlite3ErrorMsg(pParse, "corrupt database");
+      pParse->nErr++;
+      return -1;
+    }
     *pUnqual = pName2;
     iDb = sqlite3FindDb(db, pName1);
     if( iDb<0 ){
