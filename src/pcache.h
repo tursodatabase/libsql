@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.14 2008/10/17 18:51:53 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.15 2008/11/13 14:28:29 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -34,6 +34,7 @@ struct PgHdr {
   u32 pageHash;                  /* Hash of page content */
 #endif
   u16 flags;                     /* PGHDR flags defined below */
+
   /**********************************************************************
   ** Elements above are public.  All that follows is private to pcache.c
   ** and should not be accessed by other modules.
@@ -41,18 +42,11 @@ struct PgHdr {
   i16 nRef;                      /* Number of users of this page */
   PCache *pCache;                /* Cache that owns this page */
 
-  /**********************************************************************
-  ** Elements above are accessible at any time by the owner of the cache
-  ** without the need for a mutex.  The elements that follow can only be
-  ** accessed while holding the SQLITE_MUTEX_STATIC_LRU mutex.
-  */
-  PgHdr *pNextHash, *pPrevHash;  /* Hash collision chain for PgHdr.pgno */
-  PgHdr *pNext, *pPrev;          /* List of clean or dirty pages */
-  PgHdr *pNextLru, *pPrevLru;    /* Part of global LRU list */
+  PgHdr *pDirtyNext;             /* Next element in list of dirty pages */
+  PgHdr *pDirtyPrev;             /* Previous element in list of dirty pages */
 };
 
 /* Bit values for PgHdr.flags */
-#define PGHDR_IN_JOURNAL        0x001  /* Page is in rollback journal */
 #define PGHDR_DIRTY             0x002  /* Page has changed */
 #define PGHDR_NEED_SYNC         0x004  /* Fsync the rollback journal before
                                        ** writing this page to the database */
@@ -116,14 +110,7 @@ PgHdr *sqlite3PcacheDirtyList(PCache*);
 void sqlite3PcacheClose(PCache*);
 
 /* Clear flags from pages of the page cache */
-void sqlite3PcacheClearFlags(PCache*, int mask);
-
-/* Assert flags settings on all pages.  Debugging only */
-#ifndef NDEBUG
-  void sqlite3PcacheAssertFlags(PCache*, int trueMask, int falseMask);
-#else
-# define sqlite3PcacheAssertFlags(A,B,C)
-#endif
+void sqlite3PcacheClearSyncFlags(PCache *);
 
 /* Return true if the number of dirty pages is 0 or 1 */
 int sqlite3PcacheZeroOrOneDirtyPages(PCache*);
@@ -143,11 +130,11 @@ int sqlite3PcachePageRefcount(PgHdr*);
 int sqlite3PcachePagecount(PCache*);
 
 #ifdef SQLITE_CHECK_PAGES
-/* Iterate through all pages currently stored in the cache. This interface
-** is only available if SQLITE_CHECK_PAGES is defined when the library is 
-** built.
+/* Iterate through all dirty pages currently stored in the cache. This
+** interface is only available if SQLITE_CHECK_PAGES is defined when the 
+** library is built.
 */
-void sqlite3PcacheIterate(PCache *pCache, void (*xIter)(PgHdr *));
+void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHdr *));
 #endif
 
 /* Set and get the suggested cache-size for the specified pager-cache.
@@ -167,5 +154,7 @@ int sqlite3PcacheReleaseMemory(int);
 #ifdef SQLITE_TEST
 void sqlite3PcacheStats(int*,int*,int*,int*);
 #endif
+
+void sqlite3PCacheSetDefault(void);
 
 #endif /* _PCACHE_H_ */

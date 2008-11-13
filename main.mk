@@ -60,7 +60,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
-         pager.o parse.o pcache.o pragma.o prepare.o printf.o \
+         pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
          random.o resolve.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
@@ -122,6 +122,7 @@ SRC = \
   $(TOP)/src/parse.y \
   $(TOP)/src/pcache.c \
   $(TOP)/src/pcache.h \
+  $(TOP)/src/pcache1.c \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
@@ -242,7 +243,7 @@ TESTSRC2 = \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \
-  $(TOP)/src/select.c $(TOP)/src/tokenize.c                                    \
+  $(TOP)/src/pcache1.c $(TOP)/src/select.c $(TOP)/src/tokenize.c               \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
   $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_tokenizer.c 

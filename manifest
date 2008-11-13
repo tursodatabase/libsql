@@ -1,7 +1,7 @@
-C Avoid\ssome\sbuffer\soverreads\sdetected\sby\svalgrind\swhile\srunning\scorruptC.test.\s(CVS\s5898)
-D 2008-11-12T18:21:36
+C Add\san\sAPI\sto\ssupport\scustom\spage\scache\simplementations.\s(CVS\s5899)
+D 2008-11-13T14:28:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 48172b58e444a9725ec482e0c022a564749acab4
+F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 4eb06187e9b9f72fdf3ba27c407e24665d0bb513
@@ -79,7 +79,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 187bbff650073ffad5e8313795665ea64f36c0d5
+F main.mk 2da751f09754965bcbc8b3fde56c8c71e67ebdb5
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -99,7 +99,7 @@ F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 9e922b2577b7e46d8f95349bca6a52f7674d7582
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c 7c06d81faa3a44116968987a5189b4a2f6a37962
+F src/btree.c be3e0aa63755b094941f9c4298a987fe93df0f22
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
 F src/build.c 98a6884d47c3cc12faeb2e9a926018d3a7382133
@@ -118,7 +118,7 @@ F src/insert.c d61998cb8d934bd42b77bd362f94cc3368c5d5f7
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
-F src/main.c cdc0fa9b11254d7e9f15c67b22a3981cb5090119
+F src/main.c fd93666b883dbe976f8fb9a5b87784bde2eca43d
 F src/malloc.c a213fb461b8df08aed7606f6a1e1d3452e089000
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
@@ -138,11 +138,12 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 63be0987dbeb42e9b08c831863d2a315953b86e1
 F src/os_unix.c af390f03ebe339e63911aec2d4ccd1e53fde581e
 F src/os_win.c e208cbbceac63c1dd881d0909de5a4679a2c6992
-F src/pager.c 6b6f8eb4938d184d6612ea89631185dbace246b3
+F src/pager.c c3f46fcb60a9049dd2f3039dfcde60fbbb83b41b
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
-F src/pcache.c 3d547c392145113336d44b901e048b86ee6a4774
-F src/pcache.h 2caf2deb6cbaa75c423b8b96fc1411069ee77c75
+F src/pcache.c 439bcf164f10dd0595cbd63f7472881d46dcbb61
+F src/pcache.h b6feb183dea39ede8336bb47c5969403d26fa5c0
+F src/pcache1.c 7612a5d850ba48b4f0230a6937469f55a7cee43d
 F src/pragma.c 5d4333a27ef4f770fc69ca4f138419d3b462c554
 F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -150,9 +151,9 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c b03c6fe474ded7bd110ca7b551bf0236133c12da
 F src/shell.c 01835f435d2e42be95480f7d7cce48e9b255652e
-F src/sqlite.h.in b73e17f40b0dcfc4b17f5ef18ba90bca8d1e8bc5
+F src/sqlite.h.in 85e159e1d634c84ddbf87481293d5b1d26e2d27b
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h f2b50cd40d847ccf2d9baf5a622e744a05f136e3
+F src/sqliteInt.h 024f3e7722860905c50b59669127e1ac5e520b99
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -656,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 369f74983bb1b6a6426260148018cdc084fc2b49
-R 1f4429807d31bf0a13a5939ab83fd57a
+P faa6bd7b615837c920b5b3b027115caa2f56ec15
+R d0a03787d9cbd01ae9ab954f29497939
 U danielk1977
-Z ced029dc2e076de2b81cab7ea9f2d078
+Z 6ca197766dcdc265d028d54cbf94409d

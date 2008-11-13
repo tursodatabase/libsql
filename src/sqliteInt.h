@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.790 2008/11/11 18:29:00 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.791 2008/11/13 14:28:30 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1958,6 +1958,7 @@ struct Sqlite3Config {
   int nLookaside;                   /* Default lookaside buffer count */
   sqlite3_mem_methods m;            /* Low-level memory allocation interface */
   sqlite3_mutex_methods mutex;      /* Low-level mutex interface */
+  sqlite3_pcache_methods pcache;    /* Low-level page-cache interface */
   void *pHeap;                      /* Heap storage space */
   int nHeap;                        /* Size of pHeap[] */
   int mnReq, mxReq;                 /* Min and max heap requests sizes */
