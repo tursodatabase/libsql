@@ -99,6 +99,11 @@ COMPILATION
 
     gcc genfkey.c sqlite3.c -o genfkey
 
+  Or, to use an installed version of sqlite (the kind linux distributions
+  install as part of the sqlite3-dev package):
+
+    gcc genfkey.c -lsqlite3 -o genfkey
+
   If compiled/linked against an SQLite version earlier than 3.6.4, then
   all foreign key constraints are assumed to be "ON UPDATE RESTRICT" and
   "ON DELETE RESTRICT". If linked against 3.6.4 or newer, "CASCADE" and

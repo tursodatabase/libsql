@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\smemory\sleaks\sthat\smay\sfollow\smalloc\sfailures.\s(CVS\s5906)
-D 2008-11-13T19:12:35
+C Add\sa\sline\sto\sgenfkey.README\sshowing\show\sto\slink\sagainst\sa\sshared\slibrary.\sTicket\s#3502.\s(CVS\s5907)
+D 2008-11-15T04:54:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -631,7 +631,7 @@ F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
-F tool/genfkey.README d94b4423eef29e662898948f04a7dbe210c35e7a
+F tool/genfkey.README 080ca2269f727fcf14c8e76d52e85d157e3a8e9a
 F tool/genfkey.c e1b9c93da828db10c1109c7b4fa611aec8adc407
 F tool/genfkey.test 182829596fb15785b94b2493c5f735b847d91076
 F tool/lemon.c 6cb39632ef3bfec2cea8f81b4d7f63c09fe12802
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9b7a52e952c81e50611e04d2d79003b0ddc57ee5
-R 9afadf1257281112a0d556b8ebf732a9
+P 4cf8a8e1bf22e1d8f7166e64328a95fe36c75033
+R ad3701ab0df8353a4b2a94d6fd6900f9
 U danielk1977
-Z ab2599b32c704145312e4fab548c649c
+Z e7ffc798dc7931fd3d4c5d60b4b432d3
