@@ -1,5 +1,5 @@
-C Add\sa\sline\sto\sgenfkey.README\sshowing\show\sto\slink\sagainst\sa\sshared\slibrary.\sTicket\s#3502.\s(CVS\s5907)
-D 2008-11-15T04:54:32
+C Fix\scompiler\swarnings\sin\spcache1.c\srelated\sto\scomparison\sof\sunsigned\sand\ssigned\s\svalues.\s(CVS\s5908)
+D 2008-11-15T11:22:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
 F src/parse.y 2c4758b4c5ead6de8cf7112f5a7cce7561d313fe
 F src/pcache.c 439bcf164f10dd0595cbd63f7472881d46dcbb61
 F src/pcache.h b6feb183dea39ede8336bb47c5969403d26fa5c0
-F src/pcache1.c 7612a5d850ba48b4f0230a6937469f55a7cee43d
+F src/pcache1.c 0fa9cce1b5fbaa98bb8ab7dd35dfc4c3845ea4ec
 F src/pragma.c 5d4333a27ef4f770fc69ca4f138419d3b462c554
 F src/prepare.c ae49b8298eca79acdbc964679962e089b943ec94
 F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
@@ -657,7 +657,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4cf8a8e1bf22e1d8f7166e64328a95fe36c75033
-R ad3701ab0df8353a4b2a94d6fd6900f9
+P 800274b76945a41ca4ea72c455d220103a6b01dc
+R c90dc58e9b27c55002b15105a0ceedc9
 U danielk1977
-Z e7ffc798dc7931fd3d4c5d60b4b432d3
+Z 42b628886e890a552052bdb2d8cb6dbe

@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.1 2008/11/13 14:28:29 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.2 2008/11/15 11:22:45 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -36,16 +36,16 @@ struct PCache1 {
   */
   int szPage;                         /* Size of allocated pages in bytes */
   int bPurgeable;                     /* True if cache is purgeable */
-  int nMin;                           /* Minimum number of pages reserved */
-  int nMax;                           /* Configured "cache_size" value */
+  unsigned int nMin;                  /* Minimum number of pages reserved */
+  unsigned int nMax;                  /* Configured "cache_size" value */
 
   /* Hash table of all pages. The following variables may only be accessed
   ** when the accessor is holding the global mutex (see pcache1EnterMutex() 
   ** and pcache1LeaveMutex()).
   */
-  int nRecyclable;                    /* Number of pages in the LRU list */
-  int nPage;                          /* Total number of pages in apHash */
-  int nHash;                          /* Number of slots in apHash[] */
+  unsigned int nRecyclable;           /* Number of pages in the LRU list */
+  unsigned int nPage;                 /* Total number of pages in apHash */
+  unsigned int nHash;                 /* Number of slots in apHash[] */
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
 };
 
@@ -86,7 +86,7 @@ static SQLITE_WSD struct PCacheGlobal {
   int szSlot;                         /* Size of each free slot */
   void *pStart, *pEnd;                /* Bounds of pagecache malloc range */
   PgFreeslot *pFree;                  /* Free page blocks */
-} pcache1_g = {0};
+} pcache1_g;
 
 /*
 ** All code in this file should access the global structure above via the
@@ -252,7 +252,7 @@ void sqlite3PageFree(void *p){
 */
 static int pcache1ResizeHash(PCache1 *p){
   PgHdr1 **apNew;
-  int nNew;
+  unsigned int nNew;
   unsigned int i;
 
   assert( sqlite3_mutex_held(pcache1.mutex) );
@@ -489,7 +489,7 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 **   5. Otherwise, allocate and return a new page buffer.
 */
 static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
-  int nPinned;
+  unsigned int nPinned;
   PCache1 *pCache = (PCache1 *)p;
   PgHdr1 *pPage = 0;
 
