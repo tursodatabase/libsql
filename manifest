@@ -1,8 +1,9 @@
-C Modifications\sto\spager.c\sto\savoid\sthe\sunsigned/signed\swarnings.\s(CVS\s5909)
-D 2008-11-17T04:56:24
+C Added\ssupport\sfor\svxworks\s>=\s6.4;\sRTP\smode\stested,\skernel\smode\suntested.\s(CVS\s5910)
+D 2008-11-17T08:05:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
+F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 4eb06187e9b9f72fdf3ba27c407e24665d0bb513
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
@@ -130,13 +131,13 @@ F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
 F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
-F src/mutex_unix.c 29049a61755cccddb2ee53904e6906bb7674223c
+F src/mutex_unix.c 0c256ff11848a18443e6c99543c585c240fd9935
 F src/mutex_w32.c 017b522f63ef09b834fefc9daa876c9ec167e7b5
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 63be0987dbeb42e9b08c831863d2a315953b86e1
-F src/os_unix.c af390f03ebe339e63911aec2d4ccd1e53fde581e
+F src/os_unix.c a25bea30c5beb2e193d96e1d4f382152c7b11f84
 F src/os_win.c b1cd079217818e610d6a62c6c71f1e5366a70efe
 F src/pager.c d328fcea0bfb3abbc174dba6e6b1ca7c0e1ed7ba
 F src/pager.h 4a57b219c0765fe1870238064e3f46e4eb2cf5af
@@ -150,7 +151,7 @@ F src/printf.c 785f87120589c1db672e37c6eb1087c456e6f84d
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 266bb03d2b456fe68f5df2dd5687e7e88ff8088d
 F src/select.c b03c6fe474ded7bd110ca7b551bf0236133c12da
-F src/shell.c 01835f435d2e42be95480f7d7cce48e9b255652e
+F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in 85e159e1d634c84ddbf87481293d5b1d26e2d27b
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 338ab7f86950b00225c94efbc9be133e1bafcb2c
@@ -657,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ce77ea989ea0bf4b44d5b9d0e58d30fd956038d3
-R c97987ade6725f63c6dbc34968980cfe
-U danielk1977
-Z cde1be3bc330d9514fc94b6ec61dd3ed
+P cb6be84dfc5d6546d07359b32fe04555561325de
+R 6d3664ec5d51df109c0369b6f829fb45
+U chw
+Z 776091acde3bb0a16b853581fceacffc

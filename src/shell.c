@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.187 2008/11/11 18:55:04 drh Exp $
+** $Id: shell.c,v 1.188 2008/11/17 08:05:32 chw Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -24,7 +24,9 @@
 
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
 # include <signal.h>
-# include <pwd.h>
+# if !defined(__RTP__) && !defined(_WRS_KERNEL)
+#  include <pwd.h>
+# endif
 # include <unistd.h>
 # include <sys/types.h>
 #endif
@@ -60,7 +62,7 @@ extern int isatty();
 #define isatty(x) 1
 #endif
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
 
@@ -1773,7 +1775,7 @@ static int process_input(struct callback_data *p, FILE *in){
 static char *find_home_dir(void){
   char *home_dir = NULL;
 
-#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE)
+#if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(_WIN32_WCE) && !defined(__RTP__) && !defined(_WRS_KERNEL)
   struct passwd *pwent;
   uid_t uid = getuid();
   if( (pwent=getpwuid(uid)) != NULL) {
@@ -1843,7 +1845,9 @@ static void process_sqliterc(
   if (sqliterc == NULL) {
     home_dir = find_home_dir();
     if( home_dir==0 ){
+#if !defined(__RTP__) && !defined(_WRS_KERNEL)
       fprintf(stderr,"%s: cannot locate your home directory!\n", Argv0);
+#endif
       return;
     }
     nBuf = strlen(home_dir) + 16;
