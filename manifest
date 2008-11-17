@@ -1,5 +1,5 @@
-C Added\ssupport\sfor\svxworks\s>=\s6.4;\sRTP\smode\stested,\skernel\smode\suntested.\s(CVS\s5910)
-D 2008-11-17T08:05:32
+C Changes\sto\sbtree.c\sto\savoid\sthe\sunsigned/signed\scomparison\swarnings.\s(CVS\s5911)
+D 2008-11-17T14:20:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,9 +100,9 @@ F src/attach.c 208881c87160d9e2c73a46cf86116c5a6d66f9d7
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 9e922b2577b7e46d8f95349bca6a52f7674d7582
 F src/btmutex.c 3a90096c3080b9057dc570b8e16e46511e1c788a
-F src/btree.c 81c229650b57e1ca129279f4ca7f49a5111903e6
+F src/btree.c 661d322468f8fd5811a20f24bd85388709773cb0
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
-F src/btreeInt.h e38e9b2b285f40f5bc0a6664f630d4a141622f16
+F src/btreeInt.h f4ed02e58381190d5303edb83cff2cc997ba2fa2
 F src/build.c 7723123a571fcf9b0c3362dcfffeb1b64ec4f043
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -658,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cb6be84dfc5d6546d07359b32fe04555561325de
-R 6d3664ec5d51df109c0369b6f829fb45
-U chw
-Z 776091acde3bb0a16b853581fceacffc
+P f45a1493636a5ee474dd6c0b5d286be2249b05aa
+R 50f7eba21e52de2f9aa5b18b2d732bec
+U danielk1977
+Z 0d366bf019e2804c6db4be64911fab44

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.34 2008/09/30 17:18:17 drh Exp $
+** $Id: btreeInt.h,v 1.35 2008/11/17 14:20:56 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -502,7 +502,7 @@ struct BtCursor {
 #ifdef SQLITE_OMIT_DISKIO
 # define PENDING_BYTE_PAGE(pBt)  0x7fffffff
 #else
-# define PENDING_BYTE_PAGE(pBt) ((PENDING_BYTE/(pBt)->pageSize)+1)
+# define PENDING_BYTE_PAGE(pBt) ((Pgno)((PENDING_BYTE/(pBt)->pageSize)+1))
 #endif
 
 /*
@@ -609,7 +609,7 @@ typedef struct IntegrityCk IntegrityCk;
 struct IntegrityCk {
   BtShared *pBt;    /* The tree being checked out */
   Pager *pPager;    /* The associated pager.  Also accessible by pBt->pPager */
-  int nPage;        /* Number of pages in the database */
+  Pgno nPage;       /* Number of pages in the database */
   int *anRef;       /* Number of times each page is referenced */
   int mxErr;        /* Stop accumulating errors when this reaches zero */
   int nErr;         /* Number of messages written to zErrMsg so far */
