@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.157 2008/11/05 16:37:35 drh Exp $
+** $Id: vdbeInt.h,v 1.158 2008/11/17 15:31:48 danielk1977 Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -296,7 +296,7 @@ struct Vdbe {
   Mem *aVar;          /* Values for the OP_Variable opcode. */
   char **azVar;       /* Name of variables */
   int okVar;          /* True if azVar[] has been initialized */
-  int magic;              /* Magic number for sanity checking */
+  u32 magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   int nCallback;          /* Number of callbacks invoked so far */

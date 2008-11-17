@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.787 2008/11/13 18:29:51 shane Exp $
+** $Id: vdbe.c,v 1.788 2008/11/17 15:31:48 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -177,7 +177,7 @@ static const unsigned char opcodeProperty[] = OPFLG_INITIALIZER;
 ** specified by mask.
 */
 int sqlite3VdbeOpcodeHasProperty(int opcode, int mask){
-  assert( opcode>0 && opcode<sizeof(opcodeProperty) );
+  assert( opcode>0 && opcode<(int)sizeof(opcodeProperty) );
   return (opcodeProperty[opcode]&mask)!=0;
 }
 
@@ -551,7 +551,6 @@ int sqlite3VdbeExec(
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
   UnpackedRecord aTempRec[16]; /* Space to hold a transient UnpackedRecord */
-
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
   assert( db->magic==SQLITE_MAGIC_BUSY );
@@ -1964,7 +1963,7 @@ case OP_SetNumColumns: {
 ** the result.
 */
 case OP_Column: {
-  u32 payloadSize;   /* Number of bytes in the record */
+  int payloadSize;   /* Number of bytes in the record */
   int p1 = pOp->p1;  /* P1 value of the opcode */
   int p2 = pOp->p2;  /* column number to retrieve */
   VdbeCursor *pC = 0;/* The VDBE cursor */
@@ -1972,7 +1971,7 @@ case OP_Column: {
   BtCursor *pCrsr;   /* The BTree cursor */
   u32 *aType;        /* aType[i] holds the numeric type of the i-th column */
   u32 *aOffset;      /* aOffset[i] is offset to start of data for i-th column */
-  u32 nField;        /* number of fields in the record */
+  int nField;        /* number of fields in the record */
   int len;           /* The length of the serialized data for the column */
   int i;             /* Loop counter */
   char *zData;       /* Part of the record being decoded */
@@ -2020,7 +2019,7 @@ case OP_Column: {
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
       payloadSize = payloadSize64;
     }else{
-      sqlite3BtreeDataSize(pCrsr, &payloadSize);
+      sqlite3BtreeDataSize(pCrsr, (u32 *)&payloadSize);
     }
     nField = pC->nField;
   }else{
@@ -2054,7 +2053,7 @@ case OP_Column: {
   }else{
     u8 *zIdx;        /* Index into header */
     u8 *zEndHdr;     /* Pointer to first byte after the header */
-    u32 offset;      /* Offset into the data */
+    int offset;      /* Offset into the data */
     int szHdrSz;     /* Size of the header size field at start of record */
     int avail;       /* Number of bytes of available data */
 
@@ -2255,7 +2254,7 @@ case OP_MakeRecord: {
   Mem *pRec;             /* The new record */
   u64 nData = 0;         /* Number of bytes of data space */
   int nHdr = 0;          /* Number of bytes of header space */
-  u64 nByte = 0;         /* Data space required for this record */
+  i64 nByte = 0;         /* Data space required for this record */
   int nZero = 0;         /* Number of zero bytes at the end of the record */
   int nVarint;           /* Number of bytes in a varint */
   u32 serial_type;       /* Type field */
@@ -3328,7 +3327,7 @@ case OP_NewRowid: {           /* out2-prerelease */
     ** Others complain about 0x7ffffffffffffffffLL.  The following macro seems
     ** to provide the constant while making all compilers happy.
     */
-#   define MAX_ROWID  ( (((u64)0x7fffffff)<<32) | (u64)0xffffffff )
+#   define MAX_ROWID  (i64)( (((u64)0x7fffffff)<<32) | (u64)0xffffffff )
 #endif
 
     if( !pC->useRandomRowid ){
@@ -3634,7 +3633,7 @@ case OP_RowData: {
     n = n64;
   }else{
     sqlite3BtreeDataSize(pCrsr, &n);
-    if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    if( (int)n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
   }
