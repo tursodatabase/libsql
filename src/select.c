@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.484 2008/11/12 12:27:31 drh Exp $
+** $Id: select.c,v 1.485 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -144,14 +144,14 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   apAll[2] = pC;
   for(i=0; i<3 && apAll[i]; i++){
     p = apAll[i];
-    for(j=0; j<sizeof(keywords)/sizeof(keywords[0]); j++){
+    for(j=0; j<ArraySize(keywords); j++){
       if( p->n==keywords[j].nChar 
           && sqlite3StrNICmp((char*)p->z, keywords[j].zKeyword, p->n)==0 ){
         jointype |= keywords[j].code;
         break;
       }
     }
-    if( j>=sizeof(keywords)/sizeof(keywords[0]) ){
+    if( j>=ArraySize(keywords) ){
       jointype |= JT_ERROR;
       break;
     }

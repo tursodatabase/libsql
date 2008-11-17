@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.92 2008/10/13 15:35:09 drh Exp $
+** $Id: date.c,v 1.93 2008/11/17 19:18:55 danielk1977 Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -521,7 +521,7 @@ static int parseModifier(const char *zMod, DateTime *p){
   double r;
   char *z, zBuf[30];
   z = zBuf;
-  for(n=0; n<sizeof(zBuf)-1 && zMod[n]; n++){
+  for(n=0; n<ArraySize(zBuf)-1 && zMod[n]; n++){
     z[n] = tolower(zMod[n]);
   }
   z[n] = 0;
@@ -889,7 +889,7 @@ static void strftimeFunc(
   }
   if( n<sizeof(zBuf) ){
     z = zBuf;
-  }else if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+  }else if( n>(u64)db->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
     return;
   }else{

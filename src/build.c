@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.502 2008/11/13 18:29:51 shane Exp $
+** $Id: build.c,v 1.503 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -626,7 +626,7 @@ void sqlite3OpenMasterTable(Parse *p, int iDb){
 */
 int sqlite3FindDb(sqlite3 *db, Token *pName){
   int i = -1;    /* Database number */
-  int n;         /* Number of characters in the name */
+  size_t n;      /* Number of characters in the name */
   Db *pDb;       /* A database whose name space is being searched */
   char *zName;   /* Name we are searching for */
 
@@ -1396,7 +1396,7 @@ static char *createTableStmt(sqlite3 *db, Table *p, int isTemp){
     identPut(zStmt, &k, pCol->zName);
     if( (z = pCol->zType)!=0 ){
       zStmt[k++] = ' ';
-      assert( strlen(z)+k+1<=n );
+      assert( (int)(strlen(z)+k+1)<=n );
       sqlite3_snprintf(n-k, &zStmt[k], "%s", z);
       k += strlen(z);
     }

@@ -16,14 +16,9 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.329 2008/11/17 16:42:01 danielk1977 Exp $
+** $Id: where.c,v 1.330 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-
-/*
-** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
-*/
-#define BMS  ((int)(sizeof(Bitmask)*8))
 
 /*
 ** Trace output macros

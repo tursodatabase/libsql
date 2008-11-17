@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.193 2008/11/10 19:24:38 shane Exp $
+** $Id: pragma.c,v 1.194 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -41,7 +41,7 @@ static int getSafetyLevel(const char *z){
     return atoi(z);
   }
   n = strlen(z);
-  for(i=0; i<sizeof(iLength); i++){
+  for(i=0; i<ArraySize(iLength); i++){
     if( iLength[i]==n && sqlite3StrNICmp(&zText[iOffset[i]],z,n)==0 ){
       return iValue[i];
     }
@@ -191,7 +191,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
   };
   int i;
   const struct sPragmaType *p;
-  for(i=0, p=aPragma; i<sizeof(aPragma)/sizeof(aPragma[0]); i++, p++){
+  for(i=0, p=aPragma; i<ArraySize(aPragma); i++, p++){
     if( sqlite3StrICmp(zLeft, p->zName)==0 ){
       sqlite3 *db = pParse->db;
       Vdbe *v;

@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.10 2008/10/19 21:03:27 drh Exp $
+** $Id: resolve.c,v 1.11 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -349,9 +349,9 @@ static int lookupName(
   */
   if( pExpr->iColumn>=0 && pMatch!=0 ){
     int n = pExpr->iColumn;
-    testcase( n==sizeof(Bitmask)*8-1 );
-    if( n>=sizeof(Bitmask)*8 ){
-      n = sizeof(Bitmask)*8-1;
+    testcase( n==BMS-1 );
+    if( n>=BMS ){
+      n = BMS-1;
     }
     assert( pMatch->iCursor==pExpr->iTable );
     pMatch->colUsed |= ((Bitmask)1)<<n;

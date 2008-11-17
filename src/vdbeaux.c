@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.419 2008/11/13 18:00:15 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.420 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -100,21 +100,23 @@ void sqlite3VdbeTrace(Vdbe *p, FILE *trace){
 #endif
 
 /*
-** Resize the Vdbe.aOp array so that it contains at least N
-** elements.
+** Resize the Vdbe.aOp array so that it is at least one op larger than 
+** it was.
 **
-** If an out-of-memory error occurs while resizing the array,
-** Vdbe.aOp and Vdbe.nOpAlloc remain unchanged (this is so that
-** any opcodes already allocated can be correctly deallocated
-** along with the rest of the Vdbe).
+** If an out-of-memory error occurs while resizing the array, return
+** SQLITE_NOMEM. In this case Vdbe.aOp and Vdbe.nOpAlloc remain 
+** unchanged (this is so that any opcodes already allocated can be 
+** correctly deallocated along with the rest of the Vdbe).
 */
-static void resizeOpArray(Vdbe *p, int N){
+static int growOpArray(Vdbe *p){
   VdbeOp *pNew;
-  pNew = sqlite3DbRealloc(p->db, p->aOp, N*sizeof(Op));
+  int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
+  pNew = sqlite3DbRealloc(p->db, p->aOp, nNew*sizeof(Op));
   if( pNew ){
-    p->nOpAlloc = N;
+    p->nOpAlloc = nNew;
     p->aOp = pNew;
   }
+  return (pNew ? SQLITE_OK : SQLITE_NOMEM);
 }
 
 /*
@@ -140,8 +142,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   i = p->nOp;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->nOpAlloc<=i ){
-    resizeOpArray(p, p->nOpAlloc ? p->nOpAlloc*2 : 1024/sizeof(Op));
-    if( p->db->mallocFailed ){
+    if( growOpArray(p) ){
       return 0;
     }
   }
@@ -342,11 +343,7 @@ int sqlite3VdbeCurrentAddr(Vdbe *p){
 int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
   int addr;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( p->nOp + nOp > p->nOpAlloc ){
-    resizeOpArray(p, p->nOpAlloc ? p->nOpAlloc*2 : 1024/sizeof(Op));
-    assert( p->nOp+nOp<=p->nOpAlloc || p->db->mallocFailed );
-  }
-  if( p->db->mallocFailed ){
+  if( p->nOp + nOp > p->nOpAlloc && growOpArray(p) ){
     return 0;
   }
   addr = p->nOp;
@@ -731,7 +728,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   int mask;
   assert( i>=0 && i<p->db->nDb );
-  assert( i<sizeof(p->btreeMask)*8 );
+  assert( i<(int)sizeof(p->btreeMask)*8 );
   mask = 1<<i;
   if( (p->btreeMask & mask)==0 ){
     p->btreeMask |= mask;
@@ -1017,11 +1014,7 @@ void sqlite3VdbeMakeReady(
   */
   assert( p->nOp>0 );
 
-  /* Set the magic to VDBE_MAGIC_RUN sooner rather than later. This
-   * is because the call to resizeOpArray() below may shrink the
-   * p->aOp[] array to save memory if called when in VDBE_MAGIC_RUN 
-   * state.
-   */
+  /* Set the magic to VDBE_MAGIC_RUN sooner rather than later. */
   p->magic = VDBE_MAGIC_RUN;
 
   /* For each cursor required, also allocate a memory cell. Memory
@@ -1041,7 +1034,6 @@ void sqlite3VdbeMakeReady(
   if( p->aMem==0 ){
     int nArg;       /* Maximum number of args passed to a user function. */
     resolveP2Values(p, &nArg);
-    /*resizeOpArray(p, p->nOp);*/
     assert( nVar>=0 );
     if( isExplain && nMem<10 ){
       nMem = 10;
@@ -2215,8 +2207,8 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
 ){
   const unsigned char *aKey = (const unsigned char *)pKey;
   UnpackedRecord *p;
-  int nByte;
-  int idx, d;
+  int nByte, d;
+  u32 idx;
   u16 u;                 /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem;
@@ -2240,7 +2232,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   while( idx<szHdr && u<p->nField ){
     u32 serial_type;
 
-    idx += getVarint32( aKey+idx, serial_type);
+    idx += getVarint32(&aKey[idx], serial_type);
     if( d>=nKey && sqlite3VdbeSerialTypeLen(serial_type)>0 ) break;
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
@@ -2305,7 +2297,7 @@ int sqlite3VdbeRecordCompare(
   int nKey1, const void *pKey1, /* Left key */
   UnpackedRecord *pPKey2        /* Right key */
 ){
-  u32 d1;            /* Offset into aKey[] of next data element */
+  int d1;            /* Offset into aKey[] of next data element */
   u32 idx1;          /* Offset into aKey[] of next header element */
   u32 szHdr1;        /* Number of bytes in header */
   int i = 0;

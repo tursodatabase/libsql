@@ -12,7 +12,7 @@
 ** This file implements a FIFO queue of rowids used for processing
 ** UPDATE and DELETE statements.
 **
-** $Id: vdbefifo.c,v 1.8 2008/07/28 19:34:54 drh Exp $
+** $Id: vdbefifo.c,v 1.9 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -24,9 +24,9 @@
 */
 #define FIFOSIZE_FIRST (((128-sizeof(FifoPage))/8)+1)
 #ifdef SQLITE_MALLOC_SOFT_LIMIT
-# define FIFOSIZE_MAX   (((SQLITE_MALLOC_SOFT_LIMIT-sizeof(FifoPage))/8)+1)
+# define FIFOSIZE_MAX   (int)(((SQLITE_MALLOC_SOFT_LIMIT-sizeof(FifoPage))/8)+1)
 #else
-# define FIFOSIZE_MAX   (((262144-sizeof(FifoPage))/8)+1)
+# define FIFOSIZE_MAX   (int)(((262144-sizeof(FifoPage))/8)+1)
 #endif
 
 /*

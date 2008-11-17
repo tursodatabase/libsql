@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.98 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: prepare.c,v 1.99 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -244,7 +244,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   */
   if( rc==SQLITE_OK ){
     int i;
-    for(i=0; i<sizeof(meta)/sizeof(meta[0]); i++){
+    for(i=0; i<ArraySize(meta); i++){
       rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
       if( rc ){
         sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));

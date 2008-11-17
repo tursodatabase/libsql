@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.210 2008/11/17 08:05:32 chw Exp $
+** $Id: os_unix.c,v 1.211 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2956,7 +2956,7 @@ static int getTempname(int nBuf, char *zBuf){
   SimulateIOError( return SQLITE_IOERR );
 
   azDirs[0] = sqlite3_temp_directory;
-  for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
+  for(i=0; i<ArraySize(azDirs); i++){
     if( azDirs[i]==0 ) continue;
     if( stat(azDirs[i], &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
@@ -2968,7 +2968,7 @@ static int getTempname(int nBuf, char *zBuf){
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
   */
-  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
+  if( (strlen(zDir) + strlen(SQLITE_TEMP_FILE_PREFIX) + 17) >= (size_t)nBuf ){
     return SQLITE_ERROR;
   }
 
@@ -3311,7 +3311,7 @@ static void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
 */
 static int unixRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 
-  assert(nBuf>=(sizeof(time_t)+sizeof(int)));
+  assert((size_t)nBuf>=(sizeof(time_t)+sizeof(int)));
 
   /* We have to initialize zBuf to prevent valgrind from reporting
   ** errors.  The reports issued by valgrind are incorrect - we would
@@ -3336,7 +3336,7 @@ static int unixRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
       memcpy(zBuf, &t, sizeof(t));
       pid = getpid();
       memcpy(&zBuf[sizeof(t)], &pid, sizeof(pid));
-      assert( sizeof(t)+sizeof(pid)<=nBuf );
+      assert( sizeof(t)+sizeof(pid)<=(size_t)nBuf );
       nBuf = sizeof(t) + sizeof(pid);
     }else{
       nBuf = read(fd, zBuf, nBuf);

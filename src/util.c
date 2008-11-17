@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.241 2008/07/28 19:34:54 drh Exp $
+** $Id: util.c,v 1.242 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -57,7 +57,7 @@ int sqlite3IsNaN(double x){
 int sqlite3Strlen(sqlite3 *db, const char *z){
   const char *z2 = z;
   int len;
-  size_t x;
+  int x;
   while( *z2 ){ z2++; }
   x = z2 - z;
   len = 0x7fffffff & x;
@@ -934,7 +934,7 @@ int sqlite3SafetyOff(sqlite3 *db){
 ** used as an argument to sqlite3_errmsg() or sqlite3_close().
 */
 int sqlite3SafetyCheckOk(sqlite3 *db){
-  int magic;
+  u32 magic;
   if( db==0 ) return 0;
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_OPEN &&
@@ -942,7 +942,7 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
   return 1;
 }
 int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
-  int magic;
+  u32 magic;
   if( db==0 ) return 0;
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_SICK &&

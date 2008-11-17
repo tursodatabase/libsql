@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.16 2008/11/13 16:21:50 danielk1977 Exp $
+** $Id: mem5.c,v 1.17 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -208,7 +208,7 @@ static void *memsys5MallocUnsafe(int nByte){
 
   /* Keep track of the maximum allocation request.  Even unfulfilled
   ** requests are counted */
-  if( nByte>mem5.maxRequest ){
+  if( (u32)nByte>mem5.maxRequest ){
     mem5.maxRequest = nByte;
   }
 
@@ -264,12 +264,12 @@ static void memsys5FreeUnsafe(void *pOld){
 
   iLogsize = mem5.aCtrl[iBlock] & CTRL_LOGSIZE;
   size = 1<<iLogsize;
-  assert( iBlock+size-1<mem5.nBlock );
+  assert( iBlock+size-1<(u32)mem5.nBlock );
 
   mem5.aCtrl[iBlock] |= CTRL_FREE;
   mem5.aCtrl[iBlock+size-1] |= CTRL_FREE;
   assert( mem5.currentCount>0 );
-  assert( mem5.currentOut>=0 );
+  assert( mem5.currentOut>=(size*mem5.nAtom) );
   mem5.currentCount--;
   mem5.currentOut -= size*mem5.nAtom;
   assert( mem5.currentOut>0 || mem5.currentCount==0 );
@@ -385,7 +385,7 @@ static int memsys5Init(void *NotUsed){
 
   nMinLog = memsys5Log(sqlite3GlobalConfig.mnReq);
   mem5.nAtom = (1<<nMinLog);
-  while( sizeof(Mem5Link)>mem5.nAtom ){
+  while( (int)sizeof(Mem5Link)>mem5.nAtom ){
     mem5.nAtom = mem5.nAtom << 1;
   }
 

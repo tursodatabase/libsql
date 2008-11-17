@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.794 2008/11/17 16:42:01 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.795 2008/11/17 19:18:55 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1422,6 +1422,11 @@ struct IdList {
 ** of the library by 738 bytes on ix86.
 */
 typedef u64 Bitmask;
+
+/*
+** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
+*/
+#define BMS  ((int)(sizeof(Bitmask)*8))
 
 /*
 ** The following structure describes the FROM clause of a SELECT statement.
