@@ -16,14 +16,14 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.328 2008/11/03 09:06:06 danielk1977 Exp $
+** $Id: where.c,v 1.329 2008/11/17 16:42:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
 /*
 ** The number of bits in a Bitmask.  "BMS" means "BitMask Size".
 */
-#define BMS  (sizeof(Bitmask)*8)
+#define BMS  ((int)(sizeof(Bitmask)*8))
 
 /*
 ** Trace output macros
@@ -139,7 +139,7 @@ struct WhereClause {
 */
 struct ExprMaskSet {
   int n;                        /* Number of assigned cursor values */
-  int ix[sizeof(Bitmask)*8];    /* Cursor assigned to each bit */
+  int ix[BMS];                  /* Cursor assigned to each bit */
 };
 
 
@@ -2320,7 +2320,7 @@ WhereInfo *sqlite3WhereBegin(
     if( (pLevel->flags & WHERE_IDX_ONLY)==0 ){
       int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
-      if( !pWInfo->okOnePass && pTab->nCol<(sizeof(Bitmask)*8) ){
+      if( !pWInfo->okOnePass && pTab->nCol<BMS ){
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}

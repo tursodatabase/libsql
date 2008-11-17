@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.793 2008/11/17 15:31:48 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.794 2008/11/17 16:42:01 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -444,7 +444,7 @@ struct BusyHandler {
 ** A convenience macro that returns the number of elements in
 ** an array.
 */
-#define ArraySize(X)    (sizeof(X)/sizeof(X[0]))
+#define ArraySize(X)    ((int)(sizeof(X)/sizeof(X[0])))
 
 /*
 ** The following value as a destructor means to use sqlite3DbFree().

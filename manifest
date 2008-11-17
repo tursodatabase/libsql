@@ -1,5 +1,5 @@
-C Modifications\sto\savoid\ssigned/unsigned\swarnings\sin\svdbe.c.\s(CVS\s5912)
-D 2008-11-17T15:31:48
+C Modifications\sto\savoid\sunsigned/signed\scomparisons\sin\swhere.c.\s(CVS\s5913)
+D 2008-11-17T16:42:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/select.c b03c6fe474ded7bd110ca7b551bf0236133c12da
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in 85e159e1d634c84ddbf87481293d5b1d26e2d27b
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 4c6b4f79adee01ad300df2ad6a568d7d6778a171
+F src/sqliteInt.h 00d4dacfae38aaeb0c95faaab361e69ec007bb76
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -202,7 +202,7 @@ F src/vdbefifo.c 20fda2a7c4c0bcee1b90eb7e545fefcdbf2e1de7
 F src/vdbemem.c 223e03281855515e9474dbf66f157452093a77c2
 F src/vtab.c 02c51eac45dbff1a1d6e73f58febf92ecb563f7f
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c 171c9b2583944f66484c8552daa85373ce9e949f
+F src/where.c 40a5c31ce7caa1a74a1f9de36039592f2e7f45d6
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -658,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 24469dbace433ca89e22274f741f382052c5d17d
-R 86af6bd4f9efc8d3b9152888fbd7f659
+P 9939dd839ac13708f9b5b877c48729b1781eedf3
+R 6a7f6aa6aef43f251afd6a17aa16c7b7
 U danielk1977
-Z ae7d54eb840025efcb4da89e2a313806
+Z 422c90bc38e3d7bda709e1458bd66437
