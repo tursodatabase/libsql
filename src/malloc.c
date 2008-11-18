@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.46 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: malloc.c,v 1.47 2008/11/18 07:27:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -102,7 +102,7 @@ static SQLITE_WSD struct Mem0Global {
   */
   u32 *aScratchFree;
   u32 *aPageFree;
-} mem0 = { 62560955 };
+} mem0 = { 62560955, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
 

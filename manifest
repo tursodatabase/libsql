@@ -1,5 +1,5 @@
-C Modifications\sto\savoid\sunsigned/signed\scomparisons\sin\svarious\sfiles.\s(CVS\s5914)
-D 2008-11-17T19:18:55
+C Reduce\sthe\snumber\sof\s"missing\sinitializer"\swarnings.\s(CVS\s5915)
+D 2008-11-18T07:27:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -120,7 +120,7 @@ F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
 F src/main.c fd93666b883dbe976f8fb9a5b87784bde2eca43d
-F src/malloc.c 4a12eb37983abb2210360ac5e417e0c348b1b4fb
+F src/malloc.c 00532787dc7f0dbf4e2487aa823946e1d0524ef1
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
 F src/mem2.c 5d9968f576ba1babc787adbfb613cf428ab484ec
@@ -154,7 +154,7 @@ F src/select.c 18c6d96f4f8c6e43cb35201a1245ff02be8c9378
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in 85e159e1d634c84ddbf87481293d5b1d26e2d27b
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h be78bc4fd05602ef842d72077e3a3495f2dd5bf0
+F src/sqliteInt.h d48bb0ecc2d1c25d47ea144560d7a8e6864fbabe
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -658,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f35606d1d8cd6dba541a79dcb1307698b8831854
-R 35367fc2f48caed98fa7e0477f12a0ca
+P 8009220c36635dd9b6efea7dc13281ca9625c40a
+R 4f74c331c9f7344cfe41ff3e999a5aa5
 U danielk1977
-Z 12ae1838afc7465245bdcffb676575ba
+Z 5297fca5f2e96adf66d4f86dda3033ce
