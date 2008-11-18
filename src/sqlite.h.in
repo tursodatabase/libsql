@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.413 2008/11/13 14:28:29 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.414 2008/11/18 19:18:09 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1274,7 +1274,10 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_PAGECACHE</dt>
 ** <dd>This option specifies a static memory buffer that SQLite can use for
-** the database page cache.  There are three arguments: A pointer to the
+** the database page cache with the default page cache implemenation.  
+** This configuration should not be used if an application-define page
+** cache implementation is loaded using the SQLITE_CONFIG_PCACHE option.
+** There are three arguments to this option: A pointer to the
 ** memory, the size of each page buffer (sz), and the number of pages (N).
 ** The sz argument must be a power of two between 512 and 32768.  The first
 ** argument should point to an allocation of at least sz*N bytes of memory.
@@ -1318,6 +1321,17 @@ struct sqlite3_mem_methods {
 ** memory allcation lookaside optimization.  The first argument is the
 ** size of each lookaside buffer slot and the second is the number of
 ** slots allocated to each database connection.</dd>
+**
+** <dt>SQLITE_CONFIG_PCACHE</dt>
+** <dd>This option takes a single argument which is a pointer to
+** an [sqlite3_pcache_methods] object.  This object specifies the interface
+** to a custom page cache implementation.  SQLite makes a copy of the
+** object and uses it for page cache memory allocations.</dd>
+**
+** <dt>SQLITE_CONFIG_GETPCACHE</dt>
+** <dd>This option takes a single argument which is a pointer to an
+** [sqlite3_pcache_methods] object.  SQLite copies of the current
+** page cache implementation into that object.</dd>
 **
 ** </dl>
 */
@@ -6558,19 +6572,24 @@ SQLITE_EXPERIMENTAL int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 #define SQLITE_STMTSTATUS_SORT              2
 
 /*
+** CAPI3REF: Custom Page Cache Object
+** EXPERIMENTAL
+**
 ** The sqlite3_pcache type is opaque.  It is implemented by
 ** the pluggable module.  The SQLite core has no knowledge of
 ** its size or internal structure and never deals with the
 ** sqlite3_pcache object except by holding and passing pointers
 ** to the object.
+**
+** See [sqlite3_pcache_methods] for additional information.
 */
 typedef struct sqlite3_pcache sqlite3_pcache;
 
 /*
-** CAPI3REF: Custom Page Cache API.
+** CAPI3REF: Application Defined Page Cache.
 ** EXPERIMENTAL
 **
-** The sqlite3_config(SQLITE_CONFIG_SET_PCACHE, ...) interface can
+** The [sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
 ** register an alternative page cache implementation by passing in an 
 ** instance of the sqlite3_pcache_methods structure. The majority of the 
 ** heap memory used by sqlite is used by the page cache to cache data read 
@@ -6584,12 +6603,12 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** The contents of the structure are copied to an internal buffer by sqlite
 ** within the call to [sqlite3_config].
 **
-** The xInit() method is called once for each call to sqlite3_initialize()
+** The xInit() method is called once for each call to [sqlite3_initialize()]
 ** (usually only once during the lifetime of the process). It is passed
 ** a copy of the sqlite3_pcache_methods.pArg value. It can be used to set
 ** up global structures and mutexes required by the custom page cache 
 ** implementation. The xShutdown() method is called from within 
-** sqlite3_shutdown(), if the application invokes this API. It can be used
+** [sqlite3_shutdown()], if the application invokes this API. It can be used
 ** to clean up any outstanding resources before process shutdown, if required.
 **
 ** The xCreate() method is used to construct a new cache instance. The
@@ -6604,7 +6623,7 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** The xCachesize() method may be called at any time by SQLite to set the
 ** suggested maximum cache-size (number of pages stored by) the cache
 ** instance passed as the first argument. This is the value configured using
-** the SQLite "PRAGMA cache_size" command. As with the bPurgeable parameter,
+** the SQLite "[PRAGMA cache_size]" command. As with the bPurgeable parameter,
 ** the implementation is not required to do anything special with this
 ** value, it is advisory only.
 **
@@ -6675,7 +6694,7 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 **
 ** The xDestroy() method is used to delete a cache allocated by xCreate().
 ** All resources associated with the specified cache should be freed. After
-** calling the xDestroy() method, SQLite considers the sqlite3_pcache*
+** calling the xDestroy() method, SQLite considers the [sqlite3_pcache*]
 ** handle invalid, and will not use it with any other sqlite3_pcache_methods
 ** functions.
 */

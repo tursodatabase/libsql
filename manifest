@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\s"missing\sinitializer"\swarnings.\s(CVS\s5915)
-D 2008-11-18T07:27:24
+C Application-defined\spage\scache\sdocumentation\supdates.\s(CVS\s5916)
+D 2008-11-18T19:18:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 4af5391d2b4c1d6c583a6805ac6660181de4545b
 F src/select.c 18c6d96f4f8c6e43cb35201a1245ff02be8c9378
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
-F src/sqlite.h.in 85e159e1d634c84ddbf87481293d5b1d26e2d27b
+F src/sqlite.h.in 4d05b9195e9489dc62857d9dd3334b0139715101
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d48bb0ecc2d1c25d47ea144560d7a8e6864fbabe
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -658,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8009220c36635dd9b6efea7dc13281ca9625c40a
-R 4f74c331c9f7344cfe41ff3e999a5aa5
-U danielk1977
-Z 5297fca5f2e96adf66d4f86dda3033ce
+P d68e2795e72f1bfc0bf3b8e75cdec2e0b3d5bfcb
+R e674c380ec3d98c94fd560231dd11c92
+U drh
+Z 7fccbfebb63a85d4f415b73c1ae13548
