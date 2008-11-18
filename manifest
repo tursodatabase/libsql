@@ -1,5 +1,5 @@
-C Expose\sthe\sMBCS->UTF8\sconvert\sroutine\sin\sthe\sWin32\sbackend.\s(CVS\s5917)
-D 2008-11-18T19:18:52
+C Add\ssupport\sfor\sSQLITE_NO_SYNC\sfor\sOS/2,\stoo.\s(CVS\s5918)
+D 2008-11-18T23:03:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/mutex_w32.c 017b522f63ef09b834fefc9daa876c9ec167e7b5
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c 63be0987dbeb42e9b08c831863d2a315953b86e1
+F src/os_os2.c d12285d66df674c42f6f544a6f7c21bf1a954ee1
 F src/os_unix.c 16b0981836576ad7e0c96f094bd2f41a339d078f
 F src/os_win.c 08d0b059ac01f32e8813bb96fc573486592b83f5
 F src/pager.c d328fcea0bfb3abbc174dba6e6b1ca7c0e1ed7ba
@@ -658,7 +658,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P db0f1203591fcc4c554c47cdf28abe279cf7f1d5
-R 32b837ae630be87201430ff0ce6dd755
-U drh
-Z 1b9e339fcbcd4e1282090097fa631f9c
+P f4411f0c8075adc8a37002ac7ad958ff3158c0c0
+R d6955add2239a6f2f254f4336539162f
+U pweilbacher
+Z a712bebfcb26c6919d0c8a2c12bc726c
