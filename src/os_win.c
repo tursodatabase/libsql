@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.138 2008/11/13 18:20:43 shane Exp $
+** $Id: os_win.c,v 1.139 2008/11/18 19:18:52 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -252,7 +252,7 @@ static char *unicodeToMbcs(const WCHAR *zWideFilename){
 ** Convert multibyte character string to UTF-8.  Space to hold the
 ** returned string is obtained from malloc().
 */
-static char *mbcsToUtf8(const char *zFilename){
+char *sqlite3_win32_mbcs_to_utf8(const char *zFilename){
   char *zFilenameUtf8;
   WCHAR *zTmpWide;
 
@@ -1140,7 +1140,7 @@ static int getTempname(int nBuf, char *zBuf){
     char *zUtf8;
     char zMbcsPath[MAX_PATH];
     GetTempPathA(MAX_PATH-30, zMbcsPath);
-    zUtf8 = mbcsToUtf8(zMbcsPath);
+    zUtf8 = sqlite3_win32_mbcs_to_utf8(zMbcsPath);
     if( zUtf8 ){
       sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", zUtf8);
       free(zUtf8);
@@ -1481,7 +1481,7 @@ static int winFullPathname(
     }
     GetFullPathNameA((char*)zConverted, nByte, zTemp, 0);
     free(zConverted);
-    zOut = mbcsToUtf8(zTemp);
+    zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
     free(zTemp);
 #endif
   }
