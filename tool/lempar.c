@@ -266,6 +266,8 @@ void *ParseAlloc(void *(*mallocProc)(size_t)){
     pParser->yyidxMax = 0;
 #endif
 #if YYSTACKDEPTH<=0
+    pParser->yystack = NULL;
+    pParser->yystksz = 0;
     yyGrowStack(pParser);
 #endif
   }
