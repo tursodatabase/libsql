@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.148 2008/11/05 16:37:35 drh Exp $
+** $Id: vdbeapi.c,v 1.149 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -601,11 +601,12 @@ sqlite3 *sqlite3_context_db_handle(sqlite3_context *p){
 */
 void sqlite3InvalidFunction(
   sqlite3_context *context,  /* The function calling context */
-  int argc,                  /* Number of arguments to the function */
-  sqlite3_value **argv       /* Value of each argument */
+  int NotUsed,               /* Number of arguments to the function */
+  sqlite3_value **NotUsed2   /* Value of each argument */
 ){
   const char *zName = context->pFunc->zName;
   char *zErr;
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   zErr = sqlite3MPrintf(0,
       "unable to use function %s in the requested context", zName);
   sqlite3_result_error(context, zErr, -1);

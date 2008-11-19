@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.2 2008/11/15 11:22:45 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.3 2008/11/19 09:05:27 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -380,7 +380,8 @@ static void pcache1TruncateUnsafe(
 /*
 ** Implementation of the sqlite3_pcache.xInit method.
 */
-static int pcache1Init(void *pUnused){
+static int pcache1Init(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   memset(&pcache1, 0, sizeof(pcache1));
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
@@ -391,7 +392,8 @@ static int pcache1Init(void *pUnused){
 /*
 ** Implementation of the sqlite3_pcache.xShutdown method.
 */
-static void pcache1Shutdown(void *pUnused){
+static void pcache1Shutdown(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   /* no-op */
 }
 

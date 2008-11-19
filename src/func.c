@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.204 2008/10/28 17:52:39 danielk1977 Exp $
+** $Id: func.c,v 1.205 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -65,10 +65,11 @@ static void minmaxFunc(
 */
 static void typeofFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed,
   sqlite3_value **argv
 ){
   const char *z = 0;
+  UNUSED_PARAMETER(NotUsed);
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_NULL:    z = "null";    break;
     case SQLITE_INTEGER: z = "integer"; break;
@@ -324,10 +325,11 @@ static void ifnullFunc(
 */
 static void randomFunc(
   sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
   sqlite_int64 r;
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_randomness(sizeof(r), &r);
   if( (r<<1)==0 ) r = 0;  /* Prevent 0x8000.... as the result so that we */
                           /* can always do abs() of the result */
@@ -363,10 +365,11 @@ static void randomBlob(
 */
 static void last_insert_rowid(
   sqlite3_context *context, 
-  int arg, 
-  sqlite3_value **argv
+  int NotUsed, 
+  sqlite3_value **NotUsed2
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_result_int64(context, sqlite3_last_insert_rowid(db));
 }
 
@@ -376,10 +379,11 @@ static void last_insert_rowid(
 */
 static void changes(
   sqlite3_context *context,
-  int arg,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_result_int(context, sqlite3_changes(db));
 }
 
@@ -389,10 +393,11 @@ static void changes(
 */
 static void total_changes(
   sqlite3_context *context,
-  int arg,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_result_int(context, sqlite3_total_changes(db));
 }
 
@@ -637,10 +642,11 @@ static void likeFunc(
 */
 static void nullifFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed,
   sqlite3_value **argv
 ){
   CollSeq *pColl = sqlite3GetFuncCollSeq(context);
+  UNUSED_PARAMETER(NotUsed);
   if( sqlite3MemCompare(argv[0], argv[1], pColl)!=0 ){
     sqlite3_result_value(context, argv[0]);
   }
@@ -652,9 +658,10 @@ static void nullifFunc(
 */
 static void versionFunc(
   sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
 }
 
@@ -1115,9 +1122,14 @@ static void countFinalize(sqlite3_context *context){
 /*
 ** Routines to implement min() and max() aggregate functions.
 */
-static void minmaxStep(sqlite3_context *context, int argc, sqlite3_value **argv){
+static void minmaxStep(
+  sqlite3_context *context, 
+  int NotUsed, 
+  sqlite3_value **argv
+){
   Mem *pArg  = (Mem *)argv[0];
   Mem *pBest;
+  UNUSED_PARAMETER(NotUsed);
 
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pBest = (Mem *)sqlite3_aggregate_context(context, sizeof(*pBest));

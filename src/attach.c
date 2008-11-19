@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.79 2008/10/28 17:52:39 danielk1977 Exp $
+** $Id: attach.c,v 1.80 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -64,7 +64,7 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
 */
 static void attachFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed,
   sqlite3_value **argv
 ){
   int i;
@@ -75,6 +75,8 @@ static void attachFunc(
   Db *aNew;
   char *zErrDyn = 0;
   char zErr[128];
+
+  UNUSED_PARAMETER(NotUsed);
 
   zFile = (const char *)sqlite3_value_text(argv[0]);
   zName = (const char *)sqlite3_value_text(argv[1]);
@@ -232,7 +234,7 @@ attach_error:
 */
 static void detachFunc(
   sqlite3_context *context,
-  int argc,
+  int NotUsed,
   sqlite3_value **argv
 ){
   const char *zName = (const char *)sqlite3_value_text(argv[0]);
@@ -240,6 +242,8 @@ static void detachFunc(
   int i;
   Db *pDb = 0;
   char zErr[128];
+
+  UNUSED_PARAMETER(NotUsed);
 
   if( zName==0 ) zName = "";
   for(i=0; i<db->nDb; i++){

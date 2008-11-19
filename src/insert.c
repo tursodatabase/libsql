@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.252 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: insert.c,v 1.253 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -430,7 +430,7 @@ void sqlite3Insert(
   ** inserted into is a view
   */
 #ifndef SQLITE_OMIT_TRIGGER
-  triggers_exist = sqlite3TriggersExist(pParse, pTab, TK_INSERT, 0);
+  triggers_exist = sqlite3TriggersExist(pTab, TK_INSERT, 0);
   isView = pTab->pSelect!=0;
 #else
 # define triggers_exist 0
@@ -936,7 +936,6 @@ void sqlite3Insert(
           regIns,
           aRegIdx,
           0,
-          0,
           (triggers_exist & TRIGGER_AFTER)!=0 ? newIdx : -1,
           appendFlag
        );
@@ -1328,7 +1327,6 @@ void sqlite3CompleteInsertion(
   int baseCur,        /* Index of a read/write cursor pointing at pTab */
   int regRowid,       /* Range of content */
   int *aRegIdx,       /* Register used by each index.  0 for unused indices */
-  int rowidChng,      /* True if the record number will change */
   int isUpdate,       /* True for UPDATE, False for INSERT */
   int newIdx,         /* Index of NEW table for triggers.  -1 if none */
   int appendBias      /* True if this is likely to be an append */

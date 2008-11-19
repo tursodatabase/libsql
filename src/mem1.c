@@ -17,7 +17,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem1.c,v 1.27 2008/10/28 18:58:20 drh Exp $
+** $Id: mem1.c,v 1.28 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -110,6 +110,7 @@ static int sqlite3MemRoundup(int n){
 ** Initialize this module.
 */
 static int sqlite3MemInit(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   return SQLITE_OK;
 }
 
@@ -117,6 +118,7 @@ static int sqlite3MemInit(void *NotUsed){
 ** Deinitialize this module.
 */
 static void sqlite3MemShutdown(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   return;
 }
 

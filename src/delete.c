@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.186 2008/10/31 10:53:23 danielk1977 Exp $
+** $Id: delete.c,v 1.187 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -265,7 +265,7 @@ void sqlite3DeleteFrom(
   ** deleted from is a view
   */
 #ifndef SQLITE_OMIT_TRIGGER
-  triggers_exist = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0);
+  triggers_exist = sqlite3TriggersExist(pTab, TK_DELETE, 0);
   isView = pTab->pSelect!=0;
 #else
 # define triggers_exist 0

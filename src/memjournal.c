@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.3 2008/11/12 15:24:28 drh Exp $
+** @(#) $Id: memjournal.c,v 1.4 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -184,7 +184,8 @@ static int memjrnlClose(sqlite3_file *pJfd){
 /*
 ** Sync the file.
 */
-static int memjrnlSync(sqlite3_file *pJfd, int flags){
+static int memjrnlSync(sqlite3_file *NotUsed, int NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return SQLITE_OK;
 }
 

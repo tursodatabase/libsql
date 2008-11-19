@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.485 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: select.c,v 1.486 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2921,7 +2921,7 @@ static int flattenSubquery(
 **   2. There is a single expression in the result set, and it is
 **      either min(x) or max(x), where x is a column reference.
 */
-static int minMaxQuery(Parse *pParse, Select *p){
+static int minMaxQuery(Select *p){
   Expr *pExpr;
   ExprList *pEList = p->pEList;
 
@@ -3221,7 +3221,8 @@ static int selectExpander(Walker *pWalker, Select *p){
 ** Walker.xSelectCallback is set to do something useful for every 
 ** subquery in the parser tree.
 */
-static int exprWalkNoop(Walker *pWalker, Expr *pExpr){
+static int exprWalkNoop(Walker *NotUsed, Expr *NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return WRC_Continue;
 }
 
@@ -4012,7 +4013,7 @@ int sqlite3Select(
       **     satisfying the 'ORDER BY' clause than it does in other cases.
       **     Refer to code and comments in where.c for details.
       */
-      flag = minMaxQuery(pParse, p);
+      flag = minMaxQuery(p);
       if( flag ){
         pDel = pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
         if( pMinMax && !db->mallocFailed ){

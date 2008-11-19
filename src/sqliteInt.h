@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.796 2008/11/18 07:27:24 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.797 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -477,6 +477,9 @@ struct BusyHandler {
   #define GLOBAL(t,v) v
   #define sqlite3GlobalConfig sqlite3Config
 #endif
+
+#define UNUSED_PARAMETER(x) (void)(x)
+#define UNUSED_PARAMETER2(x,y) (void)(x),(void)(y)
 
 /*
 ** Forward references to structures
@@ -2223,7 +2226,7 @@ void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
                                      int*,int,int,int,int);
-void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*,int,int,int,int);
+void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*);
@@ -2259,7 +2262,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   void sqlite3FinishTrigger(Parse*, TriggerStep*, Token*);
   void sqlite3DropTrigger(Parse*, SrcList*, int);
   void sqlite3DropTriggerPtr(Parse*, Trigger*);
-  int sqlite3TriggersExist(Parse*, Table*, int, ExprList*);
+  int sqlite3TriggersExist(Table*, int, ExprList*);
   int sqlite3CodeRowTrigger(Parse*, int, ExprList*, int, Table *, int, int, 
                            int, int, u32*, u32*);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
@@ -2272,7 +2275,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
 #else
-# define sqlite3TriggersExist(A,B,C,D,E,F) 0
+# define sqlite3TriggersExist(B,C,D,E,F) 0
 # define sqlite3DeleteTrigger(A,B)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)

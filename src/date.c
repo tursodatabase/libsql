@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.93 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: date.c,v 1.94 2008/11/19 09:05:27 danielk1977 Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -968,9 +968,10 @@ static void strftimeFunc(
 */
 static void ctimeFunc(
   sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   timeFunc(context, 0, 0);
 }
 
@@ -981,9 +982,10 @@ static void ctimeFunc(
 */
 static void cdateFunc(
   sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   dateFunc(context, 0, 0);
 }
 
@@ -994,9 +996,10 @@ static void cdateFunc(
 */
 static void ctimestampFunc(
   sqlite3_context *context,
-  int argc,
-  sqlite3_value **argv
+  int NotUsed,
+  sqlite3_value **NotUsed2
 ){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   datetimeFunc(context, 0, 0);
 }
 #endif /* !defined(SQLITE_OMIT_DATETIME_FUNCS) */

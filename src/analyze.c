@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.44 2008/11/03 20:55:07 drh Exp $
+** @(#) $Id: analyze.c,v 1.45 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -356,12 +356,14 @@ struct analysisInfo {
 **     argv[0] = name of the index
 **     argv[1] = results of analysis - on integer for each column
 */
-static int analysisLoader(void *pData, int argc, char **argv, char **azNotUsed){
+static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   analysisInfo *pInfo = (analysisInfo*)pData;
   Index *pIndex;
   int i, c;
   unsigned int v;
   const char *z;
+
+  UNUSED_PARAMETER(NotUsed);
 
   assert( argc==2 );
   if( argv==0 || argv[0]==0 || argv[1]==0 ){

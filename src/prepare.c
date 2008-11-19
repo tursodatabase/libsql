@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.99 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: prepare.c,v 1.100 2008/11/19 09:05:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -52,11 +52,12 @@ static void corruptSchema(
 **     argv[2] = SQL text for the CREATE statement.
 **
 */
-int sqlite3InitCallback(void *pInit, int argc, char **argv, char **azColName){
+int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   InitData *pData = (InitData*)pInit;
   sqlite3 *db = pData->db;
   int iDb = pData->iDb;
 
+  UNUSED_PARAMETER(NotUsed);
   assert( sqlite3_mutex_held(db->mutex) );
   DbClearProperty(db, iDb, DB_Empty);
   if( db->mallocFailed ){

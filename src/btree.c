@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.537 2008/11/17 14:20:56 danielk1977 Exp $
+** $Id: btree.c,v 1.538 2008/11/19 09:05:27 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6238,7 +6238,6 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
 static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
   Pgno pgno,            /* Page number to clear */
-  MemPage *pParent,     /* Parent page.  NULL for the root */
   int freePageFlag,     /* Deallocate page if true */
   int *pnChange
 ){
@@ -6257,14 +6256,14 @@ static int clearDatabasePage(
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){
-      rc = clearDatabasePage(pBt, get4byte(pCell), pPage, 1, pnChange);
+      rc = clearDatabasePage(pBt, get4byte(pCell), 1, pnChange);
       if( rc ) goto cleardatabasepage_out;
     }
     rc = clearCell(pPage, pCell);
     if( rc ) goto cleardatabasepage_out;
   }
   if( !pPage->leaf ){
-    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), pPage, 1, pnChange);
+    rc = clearDatabasePage(pBt, get4byte(&pPage->aData[8]), 1, pnChange);
     if( rc ) goto cleardatabasepage_out;
   }else if( pnChange ){
     assert( pPage->intKey );
@@ -6306,7 +6305,7 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   }else if( SQLITE_OK!=(rc = saveAllCursors(pBt, iTable, 0)) ){
     /* nothing to do */
   }else{
-    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, 0, pnChange);
+    rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange);
   }
   sqlite3BtreeLeave(p);
   return rc;
@@ -6752,7 +6751,6 @@ static void checkList(
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
   int iPage,            /* Page number of the page to check */
-  MemPage *pParent,     /* Parent page */
   char *zParentContext  /* Parent context */
 ){
   MemPage *pPage;
@@ -6822,7 +6820,7 @@ static int checkTreePage(
         checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, zContext);
       }
 #endif
-      d2 = checkTreePage(pCheck,pgno,pPage,zContext);
+      d2 = checkTreePage(pCheck, pgno, zContext);
       if( i>0 && d2!=depth ){
         checkAppendMsg(pCheck, zContext, "Child page depth differs");
       }
@@ -6838,7 +6836,7 @@ static int checkTreePage(
       checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, 0);
     }
 #endif
-    checkTreePage(pCheck, pgno, pPage, zContext);
+    checkTreePage(pCheck, pgno, zContext);
   }
  
   /* Check for complete coverage of the page
@@ -6985,7 +6983,7 @@ char *sqlite3BtreeIntegrityCheck(
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0, 0);
     }
 #endif
-    checkTreePage(&sCheck, aRoot[i], 0, "List of tree roots: ");
+    checkTreePage(&sCheck, aRoot[i], "List of tree roots: ");
   }
 
   /* Make sure every page in the file is referenced
