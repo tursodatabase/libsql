@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.512 2008/11/13 14:28:29 danielk1977 Exp $
+** $Id: main.c,v 1.513 2008/11/19 01:20:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -312,6 +312,14 @@ int sqlite3_config(int op, ...){
     case SQLITE_CONFIG_PCACHE: {
       /* Specify an alternative malloc implementation */
       sqlite3GlobalConfig.pcache = *va_arg(ap, sqlite3_pcache_methods*);
+      break;
+    }
+
+    case SQLITE_CONFIG_GETPCACHE: {
+      if( sqlite3GlobalConfig.pcache.xInit==0 ){
+        sqlite3PCacheSetDefault();
+      }
+      *va_arg(ap, sqlite3_pcache_methods*) = sqlite3GlobalConfig.pcache;
       break;
     }
 

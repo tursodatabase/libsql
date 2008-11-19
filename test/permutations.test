@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.38 2008/11/13 16:21:50 danielk1977 Exp $
+# $Id: permutations.test,v 1.39 2008/11/19 01:20:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -604,6 +604,106 @@ run_tests "safe_append" -description {
 } -include [lsort [concat shared_err.test $ALLTESTS]] \
   -exclude async3.test
 
+# The set of tests to run on the alternative-pcache
+set perm-alt-pcache-testset {
+  async.test
+  attach.test
+  delete.test delete2.test
+  index.test
+  insert.test insert2.test
+  join.test join2.test
+  rollback.test
+  select1.test select2.test
+  trans.test
+  update.test
+}
+
+run_tests "pcache0" -description {
+  Alternative pcache implementation without random discard
+} -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 0 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_config_lookaside 100 500
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache10" -description {
+  Alternative pcache implementation without 10% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache50" -description {
+  Alternative pcache implementation without 50% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache90" -description {
+  Alternative pcache implementation without 90% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache100" -description {
+  Alternative pcache implementation that always discards when unpinning
+} -initialize {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 100 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_reset_auto_extension
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+} -include ${perm-alt-pcache-testset}
 
 # End of tests
 #############################################################################

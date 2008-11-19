@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.50 2008/11/10 18:05:36 shane Exp $
+** $Id: test_malloc.c,v 1.51 2008/11/19 01:20:26 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -946,6 +946,42 @@ static int test_config_pagecache(
 }
 
 /*
+** Usage:    sqlite3_config_alt_pcache INSTALL_FLAG DISCARD_CHANCE PRNG_SEED
+**
+** Set up the alternative test page cache.  Install if INSTALL_FLAG is
+** true and uninstall (reverting to the default page cache) if INSTALL_FLAG
+** is false.  DISCARD_CHANGE is an integer between 0 and 100 inclusive
+** which determines the chance of discarding a page when unpinned.  100
+** is certainty.  0 is never.  PRNG_SEED is the pseudo-random number generator
+** seed.
+*/
+static int test_alt_pcache(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int installFlag;
+  int discardChance;
+  int prngSeed;
+  extern void installTestPCache(int,unsigned,unsigned);
+  if( objc!=4 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "INSTALLFLAG DISCARDCHANCE PRNGSEEED");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIntFromObj(interp, objv[1], &installFlag) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[2], &discardChance) ) return TCL_ERROR;
+  if( Tcl_GetIntFromObj(interp, objv[3], &prngSeed) ) return TCL_ERROR;
+  if( discardChance<0 || discardChance>100 ){
+    Tcl_AppendResult(interp, "discard-chance should be between 0 and 100",
+                     (char*)0);
+    return TCL_ERROR;
+  }
+  installTestPCache(installFlag, (unsigned)discardChance, (unsigned)prngSeed);
+  return TCL_OK;
+}
+
+/*
 ** Usage:    sqlite3_config_memstatus BOOLEAN
 **
 ** Enable or disable memory status reporting using SQLITE_CONFIG_MEMSTATUS.
@@ -1312,6 +1348,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_memdebug_log",       test_memdebug_log             ,0 },
      { "sqlite3_config_scratch",     test_config_scratch           ,0 },
      { "sqlite3_config_pagecache",   test_config_pagecache         ,0 },
+     { "sqlite3_config_alt_pcache",  test_alt_pcache               ,0 },
      { "sqlite3_status",             test_status                   ,0 },
      { "sqlite3_db_status",          test_db_status                ,0 },
      { "install_malloc_faultsim",    test_install_malloc_faultsim  ,0 },
@@ -1321,7 +1358,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_config_error",       test_config_error             ,0 },
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
-     { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 }
+     { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

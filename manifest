@@ -1,7 +1,7 @@
-C Fix\sto\sthe\slemon\sparser\stemplate\swhen\sYYSTACKSIZE\sis\s0\s(dynamically\nallocated\sstack\sspace).\s(CVS\s5919)
-D 2008-11-18T23:25:55
+C Add\san\salternative\sapplication-defined\spcache\simplementation\sand\sadd\stest\ncases\sto\spermutations.test\sto\sinvoke\sit.\s\sAdded\sthe\sSQLITE_CONFIG_GETPCACHE\nmethod\sto\ssqlite3_config().\s(CVS\s5920)
+D 2008-11-19T01:20:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 6cbc7db84c23804c368bc7ffe51367412212d7b2
+F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -80,7 +80,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 2da751f09754965bcbc8b3fde56c8c71e67ebdb5
+F main.mk 87a73e91a3d0827dc796a249260866335e38a36e
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -119,7 +119,7 @@ F src/insert.c 47d2c27396724d5050a5f7d6a54ce44ec163e473
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 3872457afdf25bb174fd383cb4e3e0d2a9e60552
-F src/main.c fd93666b883dbe976f8fb9a5b87784bde2eca43d
+F src/main.c 3b99ff818efa18a772b4fceb8bc72081aa9b1517
 F src/malloc.c 00532787dc7f0dbf4e2487aa823946e1d0524ef1
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 2091081d1c6bcd4516738f37cd84d42e814cf9a2
@@ -152,7 +152,7 @@ F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 4af5391d2b4c1d6c583a6805ac6660181de4545b
 F src/select.c 18c6d96f4f8c6e43cb35201a1245ff02be8c9378
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
-F src/sqlite.h.in 4d05b9195e9489dc62857d9dd3334b0139715101
+F src/sqlite.h.in e9a0aa2502dfe01bf166956051528f28871474c3
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d48bb0ecc2d1c25d47ea144560d7a8e6864fbabe
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -176,11 +176,12 @@ F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c e2f6e6774308f531a3d12475dd2a5211dd31b7eb
+F src/test_malloc.c 5127337c9fb4c851a7f604c0170e0e5ca1fbfe33
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 66c4ab4e0396a440ddb17cd9b58a05305144f05d
 F src/test_onefile.c 243157b10275251c5dc2d6619aee2ff9ae22379c
 F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
+F src/test_pcache.c 0008968cc36558c8253585e5d321eccba44edb80
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
@@ -461,7 +462,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test 6f2952820e43568d7b869d54f4c7140bc695a5f0
+F test/permutations.test 5308a94878efc81a8e8ce133926dfb2c53d19133
 F test/pragma.test 165372b62391d233715cde82d99f34d306f9257f
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -658,7 +659,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2990b5b8e7bd8f91af24e5a606666077855ae283
-R d14041d00b154aef89232b6b6d2d34f2
+P 00ccc5967f8912961029a3513445c5e2ac713560
+R 073d299d61cca110cab93939ee191b26
 U drh
-Z 887cd197809b3ccb7d5ef687ab5d5c82
+Z 897c512f710f8b2c13194a810c1ac26d
