@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.4 2008/11/19 09:05:27 danielk1977 Exp $
+** @(#) $Id: memjournal.c,v 1.5 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -123,6 +123,7 @@ static int memjrnlWrite(
   ** access writes are not required by sqlite.
   */
   assert(iOfst==p->endpoint.iOffset);
+  UNUSED_PARAMETER(iOfst);
 
   while( nWrite>0 ){
     FileChunk *pChunk = p->endpoint.pChunk;
@@ -162,6 +163,7 @@ static int memjrnlTruncate(sqlite3_file *pJfd, sqlite_int64 size){
   MemJournal *p = (MemJournal *)pJfd;
   FileChunk *pChunk;
   assert(size==0);
+  UNUSED_PARAMETER(size);
   pChunk = p->pFirst;
   while( pChunk ){
     FileChunk *pTmp = pChunk;

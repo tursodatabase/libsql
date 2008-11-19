@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.205 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: func.c,v 1.206 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -92,6 +92,7 @@ static void lengthFunc(
   int len;
 
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_BLOB:
     case SQLITE_INTEGER:
@@ -122,6 +123,7 @@ static void lengthFunc(
 */
 static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_INTEGER: {
       i64 iVal = sqlite3_value_int64(argv[0]);
@@ -348,6 +350,7 @@ static void randomBlob(
   int n;
   unsigned char *p;
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   n = sqlite3_value_int(argv[0]);
   if( n<1 ){
     n = 1;
@@ -754,6 +757,7 @@ static void hexFunc(
   const unsigned char *pBlob;
   char *zHex, *z;
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   pBlob = sqlite3_value_blob(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   assert( pBlob==sqlite3_value_blob(argv[0]) );  /* No encoding change */
@@ -779,6 +783,7 @@ static void zeroblobFunc(
 ){
   i64 n;
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   n = sqlite3_value_int64(argv[0]);
   if( n>SQLITE_MAX_LENGTH ){
     sqlite3_result_error_toobig(context);
@@ -810,6 +815,7 @@ static void replaceFunc(
   int i, j;                /* Loop counters */
 
   assert( argc==3 );
+  UNUSED_PARAMETER(argc);
   zStr = sqlite3_value_text(argv[0]);
   if( zStr==0 ) return;
   nStr = sqlite3_value_bytes(argv[0]);
@@ -1047,6 +1053,7 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
   SumCtx *p;
   int type;
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   p = sqlite3_aggregate_context(context, sizeof(*p));
   type = sqlite3_value_numeric_type(argv[0]);
   if( p && type!=SQLITE_NULL ){

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.100 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: prepare.c,v 1.101 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -57,7 +57,8 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
   sqlite3 *db = pData->db;
   int iDb = pData->iDb;
 
-  UNUSED_PARAMETER(NotUsed);
+  assert( argc==3 );
+  UNUSED_PARAMETER2(NotUsed, argc);
   assert( sqlite3_mutex_held(db->mutex) );
   DbClearProperty(db, iDb, DB_Empty);
   if( db->mallocFailed ){
@@ -65,7 +66,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     return SQLITE_NOMEM;
   }
 
-  assert( argc==3 );
   assert( iDb>=0 && iDb<db->nDb );
   if( argv==0 ) return 0;   /* Might happen if EMPTY_RESULT_CALLBACKS are on */
   if( argv[1]==0 ){

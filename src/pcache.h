@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.15 2008/11/13 14:28:29 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.16 2008/11/19 16:52:44 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -62,8 +62,6 @@ void sqlite3PcacheShutdown(void);
 ** These routines implement SQLITE_CONFIG_PAGECACHE.
 */
 void sqlite3PCacheBufferSetup(void *, int sz, int n);
-void *sqlite3PCacheMalloc(int sz);
-void sqlite3PCacheFree(void*);
 
 /* Create a new pager cache.
 ** Under memory stress, invoke xStress to try to make pages clean.
@@ -112,9 +110,6 @@ void sqlite3PcacheClose(PCache*);
 /* Clear flags from pages of the page cache */
 void sqlite3PcacheClearSyncFlags(PCache *);
 
-/* Return true if the number of dirty pages is 0 or 1 */
-int sqlite3PcacheZeroOrOneDirtyPages(PCache*);
-
 /* Discard the contents of the cache */
 int sqlite3PcacheClear(PCache*);
 
@@ -143,8 +138,10 @@ void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHdr *));
 ** the total number of pages cached by purgeable pager-caches to the sum
 ** of the suggested cache-sizes.
 */
-int sqlite3PcacheGetCachesize(PCache *);
 void sqlite3PcacheSetCachesize(PCache *, int);
+#ifdef SQLITE_TEST
+int sqlite3PcacheGetCachesize(PCache *);
+#endif
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 /* Try to return memory used by the pcache module to the main memory heap */

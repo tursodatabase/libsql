@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.37 2008/11/13 14:28:29 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.38 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -546,12 +546,14 @@ int sqlite3PcachePagecount(PCache *pCache){
   return nPage;
 }
 
+#ifdef SQLITE_TEST
 /*
 ** Get the suggested cache-size value.
 */
 int sqlite3PcacheGetCachesize(PCache *pCache){
   return pCache->nMax;
 }
+#endif
 
 /*
 ** Set the suggested cache-size value.

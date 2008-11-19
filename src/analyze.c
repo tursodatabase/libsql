@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.45 2008/11/19 09:05:27 danielk1977 Exp $
+** @(#) $Id: analyze.c,v 1.46 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -363,9 +363,9 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
   unsigned int v;
   const char *z;
 
-  UNUSED_PARAMETER(NotUsed);
-
   assert( argc==2 );
+  UNUSED_PARAMETER2(NotUsed, argc);
+
   if( argv==0 || argv[0]==0 || argv[1]==0 ){
     return 0;
   }

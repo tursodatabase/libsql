@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.797 2008/11/19 09:05:27 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.798 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -478,8 +478,24 @@ struct BusyHandler {
   #define sqlite3GlobalConfig sqlite3Config
 #endif
 
+/*
+** The following macros are used to suppress compiler warnings and to
+** make it clear to human readers when a function parameter is deliberately 
+** left unused within the body of a function. This usually happens when
+** a function is called via a function pointer. For example the 
+** implementation of an SQL aggregate step callback may not use the
+** parameter indicating the number of arguments passed to the aggregate,
+** if it knows that this is enforced elsewhere.
+**
+** When a function parameter is not used at all within the body of a function,
+** it is generally named "NotUsed" or "NotUsed2" to make things even clearer.
+** However, these macros may also be used to suppress warnings related to
+** parameters that may or may not be used depending on compilation options.
+** For example those parameters only used in assert() statements. In these
+** cases the parameters are named as per the usual conventions.
+*/
 #define UNUSED_PARAMETER(x) (void)(x)
-#define UNUSED_PARAMETER2(x,y) (void)(x),(void)(y)
+#define UNUSED_PARAMETER2(x,y) UNUSED_PARAMETER(x),UNUSED_PARAMETER(y)
 
 /*
 ** Forward references to structures
@@ -2063,10 +2079,16 @@ void sqlite3ScratchFree(void*);
 void *sqlite3PageMalloc(int);
 void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
-const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
-const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
 int sqlite3MemoryAlarm(void (*)(void*, sqlite3_int64, int), void*, sqlite3_int64);
+
+#ifdef SQLITE_ENABLE_MEMSYS3
+const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
+#endif
+#ifdef SQLITE_ENABLE_MEMSYS5
+const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
+#endif
+
 
 #ifndef SQLITE_MUTEX_OMIT
   sqlite3_mutex_methods *sqlite3DefaultMutex(void);
@@ -2240,7 +2262,6 @@ FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);
 void sqlite3RegisterDateTimeFunctions(void);
 void sqlite3RegisterGlobalFunctions(void);
-int sqlite3GetBuiltinFunction(const char *, int, FuncDef **);
 #ifdef SQLITE_DEBUG
   int sqlite3SafetyOn(sqlite3*);
   int sqlite3SafetyOff(sqlite3*);

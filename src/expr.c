@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.403 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: expr.c,v 1.404 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1460,10 +1460,11 @@ static char *dup8bytes(Vdbe *v, const char *in){
 */
 static void codeReal(Vdbe *v, const char *z, int n, int negateFlag, int iMem){
   assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
+  assert( !z || !isdigit(z[n]) );
+  UNUSED_PARAMETER(n);
   if( z ){
     double value;
     char *zV;
-    assert( !isdigit(z[n]) );
     sqlite3AtoF(z, &value);
     if( sqlite3IsNaN(value) ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, iMem);

@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.24 2008/11/19 14:35:47 danielk1977 Exp $
+** $Id: mem3.c,v 1.25 2008/11/19 16:52:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -655,6 +655,8 @@ void sqlite3Memsys3Dump(const char *zFilename){
   }else{
     fclose(out);
   }
+#else
+  UNUSED_PARAMETER(zFilename);
 #endif
 }
 
