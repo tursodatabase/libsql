@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.213 2008/11/19 11:35:40 danielk1977 Exp $
+** $Id: os_unix.c,v 1.214 2008/11/19 13:52:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -82,15 +82,15 @@
 #include <errno.h>
 
 #if SQLITE_ENABLE_LOCKING_STYLE
-#include <sys/ioctl.h>
-#if defined(__RTP__) || defined(_WRS_KERNEL)
-#define lstat stat
-#include <semaphore.h>
-#include <limits.h>
-#else
-#include <sys/param.h>
-#include <sys/mount.h>
-#endif
+# include <sys/ioctl.h>
+# if IS_VXWORKS
+#  define lstat stat
+#  include <semaphore.h>
+#  include <limits.h>
+# else
+#  include <sys/param.h>
+#  include <sys/mount.h>
+# endif
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
@@ -140,7 +140,7 @@ struct unixFile {
   pthread_t tid;            /* The thread that "owns" this unixFile */
 #endif
   int lastErrno;            /* The unix errno from the last I/O error */
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   int isDelete;             /* Delete on close if true */
   char *zRealpath;
 #endif
@@ -322,7 +322,7 @@ struct unixFile {
 */
 struct lockKey {
   dev_t dev;       /* Device number */
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   void *rnam;      /* Realname since inode unusable */
 #else
   ino_t ino;       /* Inode number */
@@ -356,7 +356,7 @@ struct lockInfo {
 */
 struct openKey {
   dev_t dev;   /* Device number */
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   void *rnam;  /* Realname since inode unusable */
 #else
   ino_t ino;   /* Inode number */
@@ -376,7 +376,7 @@ struct openCnt {
   int nLock;            /* Number of outstanding locks */
   int nPending;         /* Number of pending close() operations */
   int *aPending;        /* Malloced space holding fd's awaiting a close() */
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   sem_t *pSem;          /* Named POSIX semaphore */
   char aSemName[MAX_PATHNAME+1];   /* Name of that semaphore */
 #endif
@@ -392,7 +392,7 @@ struct openCnt {
 static struct lockInfo *lockList = 0;
 static struct openCnt *openList = 0;
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
 /*
 ** This hash table is used to bind the canonical file name to a
 ** unixFile structure and use the hash key (= canonical name)
@@ -646,7 +646,7 @@ static void releaseOpenCnt(struct openCnt *pOpen){
   }
 }
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
 /*
 ** Implementation of a realpath() like function for vxWorks
 ** to determine canonical path name from given name. It does
@@ -759,13 +759,10 @@ static int testLockingStyle(int fd){
   }
   
   /* Testing for flock() can give false positives.  So if if the above 
-  ** test fails, then we fall back to using dot-file style locking.
+  ** test fails, then we fall back to using dot-file style locking (or
+  ** named-semaphore locking on vxworks).
   */
-#if defined(__RTP__) || defined(_WRS_KERNEL)  
-  return LOCKING_STYLE_NAMEDSEM;
-#else
-  return LOCKING_STYLE_DOTFILE;
-#endif
+  return (IS_VXWORKS ? LOCKING_STYLE_NAMEDSEM : LOCKING_STYLE_DOTFILE);
 }
 #endif
 
@@ -786,7 +783,7 @@ static int detectLockingStyle(
   const char *filePath, 
   int fd
 ){
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   if( !filePath ){
     return LOCKING_STYLE_NONE;
   }
@@ -836,7 +833,7 @@ static int detectLockingStyle(
 
   /* Default case. Handles, amongst others, "nfs". */
   return testLockingStyle(fd);  
-#endif /* if defined(__RTP__) || defined(_WRS_KERNEL) */
+#endif /* if IS_VXWORKS */
   return LOCKING_STYLE_POSIX;
 }
 #else
@@ -852,7 +849,7 @@ static int detectLockingStyle(
 */
 static int findLockInfo(
   int fd,                      /* The file descriptor used in the key */
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   void *rnam,                  /* vxWorks realname */
 #endif
   struct lockInfo **ppLock,    /* Return the lockInfo structure here */
@@ -892,7 +889,7 @@ static int findLockInfo(
 
   memset(&key1, 0, sizeof(key1));
   key1.dev = statbuf.st_dev;
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   key1.rnam = rnam;
 #else
   key1.ino = statbuf.st_ino;
@@ -905,7 +902,7 @@ static int findLockInfo(
 #endif
   memset(&key2, 0, sizeof(key2));
   key2.dev = statbuf.st_dev;
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   key2.rnam = rnam;
 #else
   key2.ino = statbuf.st_ino;
@@ -953,7 +950,7 @@ static int findLockInfo(
       pOpen->pPrev = 0;
       if( openList ) openList->pPrev = pOpen;
       openList = pOpen;
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
       pOpen->pSem = NULL;
       pOpen->aSemName[0] = '\0';
 #endif
@@ -1021,7 +1018,7 @@ static int transferOwnership(unixFile *pFile){
   pFile->tid = hSelf;
   if (pFile->pLock != NULL) {
     releaseLockInfo(pFile->pLock);
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
     rc = findLockInfo(pFile->h, pFile->zRealpath, &pFile->pLock, 0);
 #else
     rc = findLockInfo(pFile->h, &pFile->pLock, 0);
@@ -1841,7 +1838,7 @@ static int closeUnixFile(sqlite3_file *id){
     if( pFile->h>=0 ){
       close(pFile->h);
     }
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
     if( pFile->isDelete && pFile->zRealpath ){
       unlink(pFile->zRealpath);
     }
@@ -1904,7 +1901,7 @@ static int unixClose(sqlite3_file *id){
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
+#if !IS_VXWORKS
 #pragma mark AFP Support
 
 /*
@@ -2352,7 +2349,7 @@ static int flockClose(sqlite3_file *id) {
   return closeUnixFile(id);
 }
 
-#endif /* !defined(__RTP__) && !defined(_WRS_KERNEL) */
+#endif /* !IS_VXWORKS */
 
 #pragma mark Old-School .lock file based locking
 
@@ -2405,7 +2402,7 @@ static int dotlockLock(sqlite3_file *id, int locktype) {
   ** Just adjust level and punt on outta here. */
   if (pFile->locktype > NO_LOCK) {
     pFile->locktype = locktype;
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)    
+#if !IS_VXWORKS
     /* Always update the timestamp on the old file */
     utimes(zLockFile, NULL);
 #endif
@@ -2483,25 +2480,19 @@ static int dotlockUnlock(sqlite3_file *id, int locktype) {
  ** Close a file.
  */
 static int dotlockClose(sqlite3_file *id) {
-#if defined(__RTP__) || defined(_WRS_KERNEL)
   int rc;
-#endif
   if( id ){
     unixFile *pFile = (unixFile*)id;
     dotlockUnlock(id, NO_LOCK);
     sqlite3_free(pFile->lockingContext);
   }
-#if defined(__RTP__) || defined(_WRS_KERNEL)
-  enterMutex();
+  if( IS_VXWORKS ) enterMutex();
   rc = closeUnixFile(id);
-  leaveMutex();
+  if( IS_VXWORKS ) leaveMutex();
   return rc;
-#else
-  return closeUnixFile(id);
-#endif
 }
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
 
 #pragma mark POSIX/vxWorks named semaphore based locking
 
@@ -2624,7 +2615,7 @@ static int namedsemClose(sqlite3_file *id) {
   return SQLITE_OK;
 }
 
-#endif /* defined(__RTP__) || defined(_WRS_KERNEL) */
+#endif /* IS_VXWORKS */
 
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
@@ -2743,7 +2734,7 @@ static int fillInUnixFile(
    ,IOMETHODS(nolockClose, nolockLock, nolockUnlock, nolockCheckReservedLock)
 #if SQLITE_ENABLE_LOCKING_STYLE
    ,IOMETHODS(dotlockClose, dotlockLock, dotlockUnlock,dotlockCheckReservedLock)
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
    ,IOMETHODS(nolockClose, nolockLock, nolockUnlock, nolockCheckReservedLock)
    ,IOMETHODS(nolockClose, nolockLock, nolockUnlock, nolockCheckReservedLock)
    ,IOMETHODS(namedsemClose, namedsemLock, namedsemUnlock, namedsemCheckReservedLock)
@@ -2772,7 +2763,7 @@ static int fillInUnixFile(
   pNew->dirfd = dirfd;
   SET_THREADID(pNew);
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   {
     HashElem *pElem;
     char *zRealname = vxrealpath(zFilename, 1);
@@ -2818,7 +2809,7 @@ static int fillInUnixFile(
 
     case LOCKING_STYLE_POSIX: {
       enterMutex();
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
       rc = findLockInfo(h, pNew->zRealpath, &pNew->pLock, &pNew->pOpen);
 #else
       rc = findLockInfo(h, &pNew->pLock, &pNew->pOpen);
@@ -2829,7 +2820,7 @@ static int fillInUnixFile(
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
+#if !IS_VXWORKS
     case LOCKING_STYLE_AFP: {
       /* AFP locking uses the file path so it needs to be included in
       ** the afpLockingContext.
@@ -2866,7 +2857,7 @@ static int fillInUnixFile(
       break;
     }
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
     case LOCKING_STYLE_NAMEDSEM: {
       /* Named semaphore locking uses the file path so it needs to be
       ** included in the namedsemLockingContext
@@ -2890,7 +2881,7 @@ static int fillInUnixFile(
     }
 #endif
 
-#if !defined(__RTP__) && !defined(_WRS_KERNEL)
+#if !IS_VXWORKS
     case LOCKING_STYLE_FLOCK: 
 #endif
     case LOCKING_STYLE_NONE: 
@@ -2899,7 +2890,7 @@ static int fillInUnixFile(
   }
   
   pNew->lastErrno = 0;
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   if( rc!=SQLITE_OK ){
     unlink(zFilename);
     isDelete = 0;
@@ -3115,7 +3106,7 @@ static int unixOpen(
     return SQLITE_CANTOPEN;
   }
   if( isDelete ){
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
     zPath = zName;
 #else
     unlink(zName);
@@ -3156,7 +3147,7 @@ static int unixDelete(sqlite3_vfs *NotUsed, const char *zPath, int dirSync){
     int fd;
     rc = openDirectory(zPath, &fd);
     if( rc==SQLITE_OK ){
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
       if( fsync(fd)==-1 )
 #else
       if( fsync(fd) )
@@ -3234,7 +3225,7 @@ static int unixFullPathname(
 
   assert( pVfs->mxPathname==MAX_PATHNAME );
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   {
     char *zRealname = vxrealpath(zPath, 0);
     zOut[0] = '\0';
@@ -3382,7 +3373,7 @@ static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
 ** than the argument.
 */
 static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   struct timespec sp;
 
   sp.tv_sec = microseconds / 1000000;
@@ -3414,7 +3405,7 @@ int sqlite3_current_time = 0;
 ** return 0.  Return 1 if the time and date cannot be found.
 */
 static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   struct timespec sNow;
   clock_gettime(CLOCK_REALTIME, &sNow);
   *prNow = 2440587.5 + sNow.tv_sec/86400.0 + sNow.tv_nsec/86400000000000.0;
@@ -3489,7 +3480,7 @@ int sqlite3_os_init(void){
     sqlite3_vfs_register(&aVfs[i], 0);
   }
 #endif
-#if defined(__RTP__) || defined(_WRS_KERNEL)
+#if IS_VXWORKS
   sqlite3HashInit(&nameHash, 1);
 #endif
   sqlite3_vfs_register(&unixVfs, 1);
