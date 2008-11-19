@@ -1,5 +1,5 @@
-C Update\sthe\sSECURE_DELETE\scode\sto\strack\sthe\slatest\schanges\sin\sthe\spager.\s(CVS\s5928)
-D 2008-11-19T18:30:29
+C In\sbitvec.c:\sremoved\ssome\sof\sthe\srecursion,\sminor\soptimizations,\sadded\scomments,\simproved\sconsistency.\s(CVS\s5929)
+D 2008-11-19T18:30:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -659,7 +659,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d1abe8a1c9a990b02c71d6c249436381c9fde443
+P e058f509374e98e48eafeba2f1dadff9633d1190
 R 28c8816dfcd8d3fc398d31f18c45452f
-U drh
-Z e8976cc9cb4c6c0e128dc1d970073d42
+U shane
+Z d01884e813e27d111f129289dd78b7f4
