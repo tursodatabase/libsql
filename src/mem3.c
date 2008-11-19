@@ -23,7 +23,7 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS3 is defined.
 **
-** $Id: mem3.c,v 1.23 2008/09/02 17:52:52 danielk1977 Exp $
+** $Id: mem3.c,v 1.24 2008/11/19 14:35:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -251,7 +251,7 @@ static void memsys3OutOfMemory(int nByte){
 ** size parameters for check-out and return a pointer to the 
 ** user portion of the chunk.
 */
-static void *memsys3Checkout(u32 i, int nBlock){
+static void *memsys3Checkout(u32 i, u32 nBlock){
   u32 x;
   assert( sqlite3_mutex_held(mem3.mutex) );
   assert( i>=1 );
@@ -269,7 +269,7 @@ static void *memsys3Checkout(u32 i, int nBlock){
 ** Return a pointer to the new allocation.  Or, if the master chunk
 ** is not large enough, return 0.
 */
-static void *memsys3FromMaster(int nBlock){
+static void *memsys3FromMaster(u32 nBlock){
   assert( sqlite3_mutex_held(mem3.mutex) );
   assert( mem3.szMaster>=nBlock );
   if( nBlock>=mem3.szMaster-1 ){
@@ -355,8 +355,8 @@ static void memsys3Merge(u32 *pRoot){
 */
 static void *memsys3MallocUnsafe(int nByte){
   u32 i;
-  int nBlock;
-  int toFree;
+  u32 nBlock;
+  u32 toFree;
 
   assert( sqlite3_mutex_held(mem3.mutex) );
   assert( sizeof(Mem3Block)==8 );
@@ -552,6 +552,7 @@ void *memsys3Realloc(void *pPrior, int nBytes){
 ** Initialize this module.
 */
 static int memsys3Init(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   if( !sqlite3GlobalConfig.pHeap ){
     return SQLITE_ERROR;
   }
@@ -576,6 +577,7 @@ static int memsys3Init(void *NotUsed){
 ** Deinitialize this module.
 */
 static void memsys3Shutdown(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   return;
 }
 
@@ -588,7 +590,7 @@ static void memsys3Shutdown(void *NotUsed){
 void sqlite3Memsys3Dump(const char *zFilename){
 #ifdef SQLITE_DEBUG
   FILE *out;
-  int i, j;
+  u32 i, j;
   u32 size;
   if( zFilename==0 || zFilename[0]==0 ){
     out = stdout;

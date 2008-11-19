@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.214 2008/11/19 13:52:30 danielk1977 Exp $
+** $Id: os_unix.c,v 1.215 2008/11/19 14:35:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2758,6 +2758,13 @@ static int fillInUnixFile(
   assert( pNew->pLock==NULL );
   assert( pNew->pOpen==NULL );
 
+  /* Parameter isDelete is only used on vxworks. Parameter pVfs is only
+  ** used if ENABLE_LOCKING_STYLE is defined. Express this explicitly 
+  ** here to prevent compiler warnings about unused parameters.
+  */
+  if( IS_VXWORKS ) UNUSED_PARAMETER(isDelete);
+  if( SQLITE_ENABLE_LOCKING_STYLE ) UNUSED_PARAMETER(pVfs);
+
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
   pNew->h = h;
   pNew->dirfd = dirfd;
@@ -2881,9 +2888,7 @@ static int fillInUnixFile(
     }
 #endif
 
-#if !IS_VXWORKS
     case LOCKING_STYLE_FLOCK: 
-#endif
     case LOCKING_STYLE_NONE: 
       break;
 #endif

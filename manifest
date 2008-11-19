@@ -1,5 +1,5 @@
-C In\sos_unix.c,\suse\s"IS_VXWORKS"\sinstead\sof\s"defined(__RTP__)\s||\sdefined(_WRS_KERNEL)".\sPurely\sbecause\sit's\seasier\son\sthe\seyes.\s(CVS\s5925)
-D 2008-11-19T13:52:30
+C Fix\sa\sfew\smore\scompiler\swarnings.\s(CVS\s5926)
+D 2008-11-19T14:35:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,8 +124,8 @@ F src/malloc.c 4e7bf5a3fcfd848a09f7ce7abb00f7b358128161
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c bb8e26adde7d463270e961f045802c61dbabc8f1
 F src/mem2.c 5d9968f576ba1babc787adbfb613cf428ab484ec
-F src/mem3.c 1594f117fde4cf11a6c16521f3f30af8d04bbe68
-F src/mem5.c 528adcfaa78201d60fccdfddaf55b18b6fda9697
+F src/mem3.c 5644d8eb9a01bc20ee1498d9bbd160a4d4875ef5
+F src/mem5.c d0f785214a6a51deb222fb934101df7794d8563a
 F src/memjournal.c 9e1f3c19baa566dd3f18f8eab8b70061f2eb5a9f
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -137,7 +137,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c d12285d66df674c42f6f544a6f7c21bf1a954ee1
-F src/os_unix.c 88cfaa018b62a708bee91a984a48a59e56df2bc4
+F src/os_unix.c 975cdd3e1bc1de82053db8c0b948db530e778650
 F src/os_win.c 08d0b059ac01f32e8813bb96fc573486592b83f5
 F src/pager.c ae5da38b6415bdd88e56a2a484f29282c4ea09f5
 F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
@@ -659,7 +659,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8cc120fb3aed835a2cd081963317b7f1b1ac4b73
-R a60912d7c8bf8ef16c32d0eefce892ef
+P 92c91a6cd7bcbe79206bdf7708fe9049a7b7fdd6
+R becaca1ce8e489233fe07373da291409
 U danielk1977
-Z 773ef59016ee6ed7937cc42866024e39
+Z 28a506bcb2c5bad1b973ed3ce4c1ed0f
