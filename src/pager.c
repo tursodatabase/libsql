@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.505 2008/11/19 10:22:33 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.506 2008/11/19 18:30:29 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3488,7 +3488,8 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   }
 
 #ifdef SQLITE_SECURE_DELETE
-  if( (pPg->flags & PGHDR_IN_JOURNAL)!=0 || pPg->pgno>pPager->origDbSize ){
+  if( sqlite3BitvecTest(pPager->pInJournal, pPg->pgno)!=0
+   || pPg->pgno>pPager->origDbSize ){
     return;
   }
 #endif

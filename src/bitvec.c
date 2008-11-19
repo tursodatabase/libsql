@@ -34,21 +34,42 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.8 2008/11/11 15:48:48 drh Exp $
+** @(#) $Id: bitvec.c,v 1.9 2008/11/19 18:30:35 shane Exp $
 */
 #include "sqliteInt.h"
 
+/* Size of the Bitvec structure in bytes. */
 #define BITVEC_SZ        512
+
 /* Round the union size down to the nearest pointer boundary, since that's how 
 ** it will be aligned within the Bitvec struct. */
-#define BITVEC_USIZE     (((BITVEC_SZ-12)/sizeof(Bitvec*))*sizeof(Bitvec*))
-#define BITVEC_NCHAR     BITVEC_USIZE
-#define BITVEC_NBIT      (BITVEC_NCHAR*8)
-#define BITVEC_NINT      (BITVEC_USIZE/4)
+#define BITVEC_USIZE     (((BITVEC_SZ-(3*sizeof(u32)))/sizeof(Bitvec*))*sizeof(Bitvec*))
+
+/* Type of the array "element" for the bitmap representation. 
+** Should be a power of 2, and ideally, evenly divide into BITVEC_USIZE. 
+** Setting this to the "natural word" size of your CPU may improve
+** performance. */
+#define BITVEC_TELEM     u8
+/* Size, in bits, of the bitmap element. */
+#define BITVEC_SZELEM    8
+/* Number of elements in a bitmap array. */
+#define BITVEC_NELEM     (BITVEC_USIZE/sizeof(BITVEC_TELEM))
+/* Number of bits in the bitmap array. */
+#define BITVEC_NBIT      (BITVEC_NELEM*BITVEC_SZELEM)
+
+/* Number of u32 values in hash table. */
+#define BITVEC_NINT      (BITVEC_USIZE/sizeof(u32))
+/* Maximum number of entries in hash table before 
+** sub-dividing and re-hashing. */
 #define BITVEC_MXHASH    (BITVEC_NINT/2)
+/* Hashing function for the aHash representation.
+** Empirical testing showed that the *37 multiplier 
+** (an arbitrary prime)in the hash function provided 
+** no fewer collisions than the no-op *1. */
+#define BITVEC_HASH(X)   (((X)*1)%BITVEC_NINT)
+
 #define BITVEC_NPTR      (BITVEC_USIZE/sizeof(Bitvec *))
 
-#define BITVEC_HASH(X)   (((X)*37)%BITVEC_NINT)
 
 /*
 ** A bitmap is an instance of the following structure.
@@ -72,11 +93,15 @@
 ** to hold deal with values between 1 and iDivisor.
 */
 struct Bitvec {
-  u32 iSize;      /* Maximum bit index */
-  u32 nSet;       /* Number of bits that are set */
-  u32 iDivisor;   /* Number of bits handled by each apSub[] entry */
+  u32 iSize;      /* Maximum bit index.  Max iSize is 4,294,967,296. */
+  u32 nSet;       /* Number of bits that are set - only valid for aHash element */
+                  /* Max nSet is BITVEC_NINT.  For BITVEC_SZ of 512, this would be 125. */
+  u32 iDivisor;   /* Number of bits handled by each apSub[] entry. */
+                  /* Should >=0 for apSub element. */
+                  /* Max iDivisor is max(u32) / BITVEC_NPTR + 1.  */
+                  /* For a BITVEC_SZ of 512, this would be 34,359,739. */
   union {
-    u8 aBitmap[BITVEC_NCHAR];    /* Bitmap representation */
+    BITVEC_TELEM aBitmap[BITVEC_NELEM];    /* Bitmap representation */
     u32 aHash[BITVEC_NINT];      /* Hash table representation */
     Bitvec *apSub[BITVEC_NPTR];  /* Recursive representation */
   } u;
@@ -105,16 +130,19 @@ Bitvec *sqlite3BitvecCreate(u32 iSize){
 int sqlite3BitvecTest(Bitvec *p, u32 i){
   if( p==0 ) return 0;
   if( i>p->iSize || i==0 ) return 0;
-  if( p->iSize<=BITVEC_NBIT ){
-    i--;
-    return (p->u.aBitmap[i/8] & (1<<(i&7)))!=0;
+  i--;
+  while( p->iDivisor ){
+    u32 bin = i/p->iDivisor;
+    i = i%p->iDivisor;
+    p = p->u.apSub[bin];
+    if (!p) {
+      return 0;
+    }
   }
-  if( p->iDivisor>0 ){
-    u32 bin = (i-1)/p->iDivisor;
-    i = (i-1)%p->iDivisor + 1;
-    return sqlite3BitvecTest(p->u.apSub[bin], i);
-  }else{
-    u32 h = BITVEC_HASH(i);
+  if( p->iSize<=BITVEC_NBIT ){
+    return (p->u.aBitmap[i/BITVEC_SZELEM] & (1<<(i&(BITVEC_SZELEM-1))))!=0;
+  } else{
+    u32 h = BITVEC_HASH(i++);
     while( p->u.aHash[h] ){
       if( p->u.aHash[h]==i ) return 1;
       h++;
@@ -141,35 +169,50 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
   assert( p!=0 );
   assert( i>0 );
   assert( i<=p->iSize );
-  if( p->iSize<=BITVEC_NBIT ){
-    i--;
-    p->u.aBitmap[i/8] |= 1 << (i&7);
-    return SQLITE_OK;
-  }
-  if( p->iDivisor ){
-    u32 bin = (i-1)/p->iDivisor;
-    i = (i-1)%p->iDivisor + 1;
+  i--;
+  while((p->iSize > BITVEC_NBIT) && p->iDivisor) {
+    u32 bin = i/p->iDivisor;
+    i = i%p->iDivisor;
     if( p->u.apSub[bin]==0 ){
       sqlite3BeginBenignMalloc();
       p->u.apSub[bin] = sqlite3BitvecCreate( p->iDivisor );
       sqlite3EndBenignMalloc();
       if( p->u.apSub[bin]==0 ) return SQLITE_NOMEM;
     }
-    return sqlite3BitvecSet(p->u.apSub[bin], i);
+    p = p->u.apSub[bin];
   }
-  h = BITVEC_HASH(i);
-  while( p->u.aHash[h] ){
+  if( p->iSize<=BITVEC_NBIT ){
+    p->u.aBitmap[i/BITVEC_SZELEM] |= 1 << (i&(BITVEC_SZELEM-1));
+    return SQLITE_OK;
+  }
+  h = BITVEC_HASH(i++);
+  /* if there wasn't a hash collision, and this doesn't */
+  /* completely fill the hash, then just add it without */
+  /* worring about sub-dividing and re-hashing. */
+  if( !p->u.aHash[h] ){
+    if (p->nSet<(BITVEC_NINT-1)) {
+      goto bitvec_set_end;
+    } else {
+      goto bitvec_set_rehash;
+    }
+  }
+  /* there was a collision, check to see if it's already */
+  /* in hash, if not, try to find a spot for it */
+  do {
     if( p->u.aHash[h]==i ) return SQLITE_OK;
     h++;
-    if( h==BITVEC_NINT ) h = 0;
-  }
-  p->nSet++;
+    if( h>=BITVEC_NINT ) h = 0;
+  } while( p->u.aHash[h] );
+  /* we didn't find it in the hash.  h points to the first */
+  /* available free spot. check to see if this is going to */
+  /* make our hash too "full".  */
+bitvec_set_rehash:
   if( p->nSet>=BITVEC_MXHASH ){
     unsigned int j;
     int rc;
     u32 aiValues[BITVEC_NINT];
     memcpy(aiValues, p->u.aHash, sizeof(aiValues));
-    memset(p->u.apSub, 0, sizeof(p->u.apSub[0])*BITVEC_NPTR);
+    memset(p->u.apSub, 0, sizeof(aiValues));
     p->iDivisor = (p->iSize + BITVEC_NPTR - 1)/BITVEC_NPTR;
     rc = sqlite3BitvecSet(p, i);
     for(j=0; j<BITVEC_NINT; j++){
@@ -177,35 +220,44 @@ int sqlite3BitvecSet(Bitvec *p, u32 i){
     }
     return rc;
   }
+bitvec_set_end:
+  p->nSet++;
   p->u.aHash[h] = i;
   return SQLITE_OK;
 }
 
 /*
-** Clear the i-th bit.  Return 0 on success and an error code if
-** anything goes wrong.
+** Clear the i-th bit.
 */
 void sqlite3BitvecClear(Bitvec *p, u32 i){
   assert( p!=0 );
   assert( i>0 );
-  if( p->iSize<=BITVEC_NBIT ){
-    i--;
-    p->u.aBitmap[i/8] &= ~(1 << (i&7));
-  }else if( p->iDivisor ){
-    u32 bin = (i-1)/p->iDivisor;
-    i = (i-1)%p->iDivisor + 1;
-    if( p->u.apSub[bin] ){
-      sqlite3BitvecClear(p->u.apSub[bin], i);
+  i--;
+  while( p->iDivisor ){
+    u32 bin = i/p->iDivisor;
+    i = i%p->iDivisor;
+    p = p->u.apSub[bin];
+    if (!p) {
+      return;
     }
+  }
+  if( p->iSize<=BITVEC_NBIT ){
+    p->u.aBitmap[i/BITVEC_SZELEM] &= ~(1 << (i&(BITVEC_SZELEM-1)));
   }else{
     unsigned int j;
     u32 aiValues[BITVEC_NINT];
     memcpy(aiValues, p->u.aHash, sizeof(aiValues));
-    memset(p->u.aHash, 0, sizeof(p->u.aHash[0])*BITVEC_NINT);
+    memset(p->u.aHash, 0, sizeof(aiValues));
     p->nSet = 0;
     for(j=0; j<BITVEC_NINT; j++){
-      if( aiValues[j] && aiValues[j]!=i ){
-        sqlite3BitvecSet(p, aiValues[j]);
+      if( aiValues[j] && aiValues[j]!=(i+1) ){
+        u32 h = BITVEC_HASH(aiValues[j]-1);
+        p->nSet++;
+        while( p->u.aHash[h] ){
+          h++;
+          if( h>=BITVEC_NINT ) h = 0;
+        }
+        p->u.aHash[h] = aiValues[j];
       }
     }
   }
