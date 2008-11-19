@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.212 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: os_unix.c,v 1.213 2008/11/19 11:35:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -37,6 +37,16 @@
 #  else
 #    define SQLITE_ENABLE_LOCKING_STYLE 0
 #  endif
+#endif
+
+/*
+** Define the IS_VXWORKS pre-processor macro to 1 if building on 
+** vxworks, or 0 otherwise.
+*/
+#if defined(__RTP__) || defined(_WRS_KERNEL)
+#  define IS_VXWORKS 1
+#else
+#  define IS_VXWORKS 0
 #endif
 
 /*
@@ -1185,6 +1195,20 @@ int sqlite3_fullsync_count = 0;
 static int full_fsync(int fd, int fullSync, int dataOnly){
   int rc;
 
+  /* The following "ifdef/elif/else/" block has the same structure as
+  ** the one below. It is replicated here solely to avoid cluttering 
+  ** up the real code with the UNUSED_PARAMETER() macros.
+  */
+#ifdef SQLITE_NO_SYNC
+  UNUSED_PARAMETER(fd);
+  UNUSED_PARAMETER(fullSync);
+  UNUSED_PARAMETER(dataOnly);
+#elif HAVE_FULLFSYNC
+  UNUSED_PARAMETER(fullSync);
+#else
+  UNUSED_PARAMETER(dataOnly);
+#endif
+
   /* Record the number of times that we do a normal fsync() and 
   ** FULLSYNC.  This is used during testing to verify that this procedure
   ** gets called with the correct arguments.
@@ -1199,9 +1223,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   */
 #ifdef SQLITE_NO_SYNC
   rc = SQLITE_OK;
-#else
-
-#if HAVE_FULLFSYNC
+#elif HAVE_FULLFSYNC
   if( fullSync ){
     rc = fcntl(fd, F_FULLFSYNC, 0);
   }else{
@@ -1220,23 +1242,17 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #else 
   if( dataOnly ){
     rc = fdatasync(fd);
-#if defined(__RTP__) || defined(_WRS_KERNEL)
-    if( rc==-1 && errno==ENOTSUP ){
+    if( IS_VXWORKS && rc==-1 && errno==ENOTSUP ){
       rc = fsync(fd);
     }
-#endif
   }else{
     rc = fsync(fd);
   }
-#endif /* HAVE_FULLFSYNC */
-#endif /* defined(SQLITE_NO_SYNC) */
+#endif /* ifdef SQLITE_NO_SYNC elif HAVE_FULLFSYNC */
 
-#if defined(__RTP__) || defined(_WRS_KERNEL)
-  if( rc!= -1 ){
+  if( IS_VXWORKS && rc!= -1 ){
     rc = 0;
   }
-#endif
-
   return rc;
 }
 
@@ -2617,16 +2633,19 @@ static int namedsemClose(sqlite3_file *id) {
 */
 typedef void nolockLockingContext;
 
-static int nolockCheckReservedLock(sqlite3_file *id, int *pResOut) {
+static int nolockCheckReservedLock(sqlite3_file *NotUsed, int *pResOut){
+  UNUSED_PARAMETER(NotUsed);
   *pResOut = 0;
   return SQLITE_OK;
 }
 
-static int nolockLock(sqlite3_file *id, int locktype) {
+static int nolockLock(sqlite3_file *NotUsed, int NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return SQLITE_OK;
 }
 
-static int nolockUnlock(sqlite3_file *id, int locktype) {
+static int nolockUnlock(sqlite3_file *NotUsed, int NotUsed2){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return SQLITE_OK;
 }
 
@@ -2634,15 +2653,11 @@ static int nolockUnlock(sqlite3_file *id, int locktype) {
 ** Close a file.
 */
 static int nolockClose(sqlite3_file *id) {
-#if defined(__RTP__) || defined(_WRS_KERNEL)
   int rc;
-  enterMutex();
+  if( IS_VXWORKS ) enterMutex();
   rc = closeUnixFile(id);
-  leaveMutex();
+  if( IS_VXWORKS ) leaveMutex();
   return rc;
-#else
-  return closeUnixFile(id);
-#endif
 }
 
 
@@ -2669,14 +2684,16 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
 ** a database and its journal file) that the sector size will be the
 ** same for both.
 */
-static int unixSectorSize(sqlite3_file *id){
+static int unixSectorSize(sqlite3_file *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
 /*
-** Return the device characteristics for the file. This is always 0.
+** Return the device characteristics for the file. This is always 0 for unix.
 */
-static int unixDeviceCharacteristics(sqlite3_file *id){
+static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   return 0;
 }
 
@@ -3129,8 +3146,9 @@ static int unixOpen(
 ** Delete the file at zPath. If the dirSync argument is true, fsync()
 ** the directory after deleting the file.
 */
-static int unixDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
+static int unixDelete(sqlite3_vfs *NotUsed, const char *zPath, int dirSync){
   int rc = SQLITE_OK;
+  UNUSED_PARAMETER(NotUsed);
   SimulateIOError(return SQLITE_IOERR_DELETE);
   unlink(zPath);
 #ifndef SQLITE_DISABLE_DIRSYNC
@@ -3164,12 +3182,13 @@ static int unixDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
 ** Otherwise return 0.
 */
 static int unixAccess(
-  sqlite3_vfs *pVfs, 
+  sqlite3_vfs *NotUsed, 
   const char *zPath, 
   int flags, 
   int *pResOut
 ){
   int amode = 0;
+  UNUSED_PARAMETER(NotUsed);
   SimulateIOError( return SQLITE_IOERR_ACCESS; );
   switch( flags ){
     case SQLITE_ACCESS_EXISTS:
@@ -3275,7 +3294,8 @@ static int unixFullPathname(
 ** within the shared library, and closing the shared library.
 */
 #include <dlfcn.h>
-static void *unixDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
+static void *unixDlOpen(sqlite3_vfs *NotUsed, const char *zFilename){
+  UNUSED_PARAMETER(NotUsed);
   return dlopen(zFilename, RTLD_NOW | RTLD_GLOBAL);
 }
 
@@ -3286,8 +3306,9 @@ static void *unixDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
 ** is available, zBufOut is left unmodified and SQLite uses a default
 ** error message.
 */
-static void unixDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
+static void unixDlError(sqlite3_vfs *NotUsed, int nBuf, char *zBufOut){
   char *zErr;
+  UNUSED_PARAMETER(NotUsed);
   enterMutex();
   zErr = dlerror();
   if( zErr ){
@@ -3295,10 +3316,12 @@ static void unixDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   }
   leaveMutex();
 }
-static void *unixDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+static void *unixDlSym(sqlite3_vfs *NotUsed, void *pHandle, const char*zSymbol){
+  UNUSED_PARAMETER(NotUsed);
   return dlsym(pHandle, zSymbol);
 }
-static void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
+static void unixDlClose(sqlite3_vfs *NotUsed, void *pHandle){
+  UNUSED_PARAMETER(NotUsed);
   dlclose(pHandle);
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
@@ -3311,8 +3334,8 @@ static void unixDlClose(sqlite3_vfs *pVfs, void *pHandle){
 /*
 ** Write nBuf bytes of random data to the supplied buffer zBuf.
 */
-static int unixRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
-
+static int unixRandomness(sqlite3_vfs *NotUsed, int nBuf, char *zBuf){
+  UNUSED_PARAMETER(NotUsed);
   assert((size_t)nBuf>=(sizeof(time_t)+sizeof(int)));
 
   /* We have to initialize zBuf to prevent valgrind from reporting
@@ -3358,15 +3381,15 @@ static int unixRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 ** might be greater than or equal to the argument, but not less
 ** than the argument.
 */
-static int unixSleep(sqlite3_vfs *pVfs, int microseconds){
+static int unixSleep(sqlite3_vfs *NotUsed, int microseconds){
 #if defined(__RTP__) || defined(_WRS_KERNEL)
   struct timespec sp;
 
   sp.tv_sec = microseconds / 1000000;
   sp.tv_nsec = (microseconds % 1000000) * 1000;
   nanosleep(&sp, NULL);
-#else
-#if defined(HAVE_USLEEP) && HAVE_USLEEP
+  return microseconds;
+#elif defined(HAVE_USLEEP) && HAVE_USLEEP
   usleep(microseconds);
   return microseconds;
 #else
@@ -3374,7 +3397,7 @@ static int unixSleep(sqlite3_vfs *pVfs, int microseconds){
   sleep(seconds);
   return seconds*1000000;
 #endif
-#endif
+  UNUSED_PARAMETER(NotUsed);
 }
 
 /*
@@ -3390,13 +3413,12 @@ int sqlite3_current_time = 0;
 ** current time and date as a Julian Day number into *prNow and
 ** return 0.  Return 1 if the time and date cannot be found.
 */
-static int unixCurrentTime(sqlite3_vfs *pVfs, double *prNow){
+static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
 #if defined(__RTP__) || defined(_WRS_KERNEL)
   struct timespec sNow;
   clock_gettime(CLOCK_REALTIME, &sNow);
   *prNow = 2440587.5 + sNow.tv_sec/86400.0 + sNow.tv_nsec/86400000000000.0;
-#else
-#ifdef NO_GETTOD
+#elif defined(NO_GETTOD)
   time_t t;
   time(&t);
   *prNow = t/86400.0 + 2440587.5;
@@ -3405,16 +3427,20 @@ static int unixCurrentTime(sqlite3_vfs *pVfs, double *prNow){
   gettimeofday(&sNow, 0);
   *prNow = 2440587.5 + sNow.tv_sec/86400.0 + sNow.tv_usec/86400000000.0;
 #endif
-#endif
+
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
     *prNow = sqlite3_current_time/86400.0 + 2440587.5;
   }
 #endif
+  UNUSED_PARAMETER(NotUsed);
   return 0;
 }
 
-static int unixGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
+  UNUSED_PARAMETER(NotUsed);
+  UNUSED_PARAMETER(NotUsed2);
+  UNUSED_PARAMETER(NotUsed3);
   return 0;
 }
 
