@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.504 2008/11/17 04:56:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.505 2008/11/19 10:22:33 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -198,7 +198,8 @@ struct Pager {
   char *zDirectory;           /* Directory hold database and journal files */
   sqlite3_file *fd, *jfd;     /* File descriptors for database and journal */
   sqlite3_file *stfd;         /* File descriptor for the statement subjournal*/
-  BusyHandler *pBusyHandler;  /* Pointer to sqlite.busyHandler */
+  int (*xBusyHandler)(void*); /* Function to call when busy */
+  void *pBusyHandlerArg;      /* Context argument for xBusyHandler */
   i64 journalOff;             /* Current byte offset in the journal file */
   i64 journalHdr;             /* Byte offset to previous journal header */
   i64 stmtHdrOff;             /* First journal header written this statement */
@@ -1942,7 +1943,8 @@ int sqlite3PagerOpen(
   if( memDb ){
     pPager->journalMode = PAGER_JOURNALMODE_MEMORY;
   }
-  /* pPager->pBusyHandler = 0; */
+  /* pPager->xBusyHandler = 0; */
+  /* pPager->pBusyHandlerArg = 0; */
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   *ppPager = pPager;
   return SQLITE_OK;
@@ -1951,8 +1953,13 @@ int sqlite3PagerOpen(
 /*
 ** Set the busy handler function.
 */
-void sqlite3PagerSetBusyhandler(Pager *pPager, BusyHandler *pBusyHandler){
-  pPager->pBusyHandler = pBusyHandler;
+void sqlite3PagerSetBusyhandler(
+  Pager *pPager, 
+  int (*xBusyHandler)(void *),
+  void *pBusyHandlerArg
+){  
+  pPager->xBusyHandler = xBusyHandler;
+  pPager->pBusyHandlerArg = pBusyHandlerArg;
 }
 
 /*
@@ -2163,10 +2170,9 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
   if( pPager->state>=locktype ){
     rc = SQLITE_OK;
   }else{
-    if( pPager->pBusyHandler ) pPager->pBusyHandler->nBusy = 0;
     do {
       rc = sqlite3OsLock(pPager->fd, locktype);
-    }while( rc==SQLITE_BUSY && sqlite3InvokeBusyHandler(pPager->pBusyHandler) );
+    }while( rc==SQLITE_BUSY && pPager->xBusyHandler(pPager->pBusyHandlerArg) );
     if( rc==SQLITE_OK ){
       pPager->state = locktype;
       IOTRACE(("LOCK %p %d\n", pPager, locktype))

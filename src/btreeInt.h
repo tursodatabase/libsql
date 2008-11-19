@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.35 2008/11/17 14:20:56 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.36 2008/11/19 10:22:33 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -384,7 +384,6 @@ struct BtShared {
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */
   void (*xFreeSchema)(void*);  /* Destructor for BtShared.pSchema */
   sqlite3_mutex *mutex; /* Non-recursive mutex required to access this struct */
-  BusyHandler busyHdr;  /* The busy handler for this btree */
 #ifndef SQLITE_OMIT_SHARED_CACHE
   int nRef;             /* Number of references to this structure */
   BtShared *pNext;      /* Next on a list of sharable BtShared structs */

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.538 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: btree.c,v 1.539 2008/11/19 10:22:33 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1207,7 +1207,7 @@ static void pageReinit(DbPage *pData){
 /*
 ** Invoke the busy handler for a btree.
 */
-static int sqlite3BtreeInvokeBusyHandler(void *pArg, int n){
+static int btreeInvokeBusyHandler(void *pArg){
   BtShared *pBt = (BtShared*)pArg;
   assert( pBt->db );
   assert( sqlite3_mutex_held(pBt->db->mutex) );
@@ -1324,8 +1324,6 @@ int sqlite3BtreeOpen(
       rc = SQLITE_NOMEM;
       goto btree_open_out;
     }
-    pBt->busyHdr.xFunc = sqlite3BtreeInvokeBusyHandler;
-    pBt->busyHdr.pArg = pBt;
     rc = sqlite3PagerOpen(pVfs, &pBt->pPager, zFilename,
                           EXTRA_SIZE, flags, vfsFlags);
     if( rc==SQLITE_OK ){
@@ -1334,7 +1332,7 @@ int sqlite3BtreeOpen(
     if( rc!=SQLITE_OK ){
       goto btree_open_out;
     }
-    sqlite3PagerSetBusyhandler(pBt->pPager, &pBt->busyHdr);
+    sqlite3PagerSetBusyhandler(pBt->pPager, btreeInvokeBusyHandler, pBt);
     p->pBt = pBt;
   
     sqlite3PagerSetReiniter(pBt->pPager, pageReinit);
@@ -2032,7 +2030,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       unlockBtreeIfUnused(pBt);
     }
   }while( rc==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
-          sqlite3BtreeInvokeBusyHandler(pBt, 0) );
+          btreeInvokeBusyHandler(pBt) );
 
   if( rc==SQLITE_OK ){
     if( p->inTrans==TRANS_NONE ){
