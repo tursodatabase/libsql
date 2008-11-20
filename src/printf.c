@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.95 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: printf.c,v 1.96 2008/11/20 18:20:28 drh Exp $
 **
 **************************************************************************
 **
@@ -645,7 +645,10 @@ void sqlite3VXPrintf(
         n += i + 1 + needQuote*2;
         if( n>etBUFSIZE ){
           bufpt = zExtra = sqlite3Malloc( n );
-          if( bufpt==0 ) return;
+          if( bufpt==0 ){
+            pAccum->mallocFailed = 1;
+            return;
+          }
         }else{
           bufpt = buf;
         }
