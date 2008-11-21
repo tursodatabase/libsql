@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.69 2008/11/03 09:39:45 danielk1977 Exp $
+# $Id: malloc.test,v 1.70 2008/11/21 09:43:20 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -675,7 +675,9 @@ do_malloc_test 29 -sqlprep {
   CREATE TABLE t1(a TEXT, b TEXT);
 } -sqlbody {
   INSERT INTO t1 VALUES(1, -234);
+  INSERT INTO t1 SELECT * FROM t1 UNION ALL SELECT * FROM t1;
 }
+
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

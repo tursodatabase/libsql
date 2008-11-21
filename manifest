@@ -1,5 +1,5 @@
-C Fix\sthe\sproblems\sdemonstrated\sin\stkt35xx.test\sin\sa\sdifferent\sway\sto\s(5936).\s(CVS\s5938)
-D 2008-11-21T09:09:02
+C Fix\san\sassert()\sfailure\sthat\scan\soccur\safter\san\sOOM\serror.\s(CVS\s5939)
+D 2008-11-21T09:43:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/prepare.c fcadb25d2ad722d87103517333c825b56b79a770
 F src/printf.c ce86aed93a704938ca4d0344aaa763271842a4b0
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 4af5391d2b4c1d6c583a6805ac6660181de4545b
-F src/select.c e01537d4d8b8b81a6507e07ebb17fc232dacdda7
+F src/select.c 72318e824fb7b0a83af820ced6a8144ff245703e
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in b5d50f12fb9c7460a4ddfef8c1e799afaabefebf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -414,7 +414,7 @@ F test/lock5.test a6eaac62eb14bc125f9cc0c2d06a80009fc67587
 F test/lock6.test f4e9052b14da3bd6807a757d5aed15c17321031a
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
-F test/malloc.test 248fc5e0be632d8db1d771ed5413a93c47212c5a
+F test/malloc.test 6bfb1b95188b103b69536effa943ad195c7655d1
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test c8d0f7673337e8a29afa558735ae937a0d629751
@@ -661,7 +661,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 74c08b8dd9577d1997b4bc8147beed786150f22b
-R d32b9fdcd366712fa9f1d8e691bead1e
+P ddf980a50127a9de35edeca5549f4b51e3f733e6
+R cc23a79e476c52d9eef64d8c5ac9ae0c
 U danielk1977
-Z 008e0fa043edbf6a5b2344c70fdef398
+Z 3788fbaf14b14318e3f174125f3680cb
