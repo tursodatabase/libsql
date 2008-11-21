@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\sbe\scaused\sby\san\sINSTEAD\sOF\strigger\son\sa\sview\sthat\sincludes\san\sexpression\sof\sthe\sform\s"table.column"\sin\sthe\sselect\slist.\s(CVS\s5940)
-D 2008-11-21T16:22:18
+C Fix\sthe\sOOM\shandling\sfor\sexplain\sstatements\sso\sthat\sit\sis\sthe\ssame\sas\sfor\sregular\sstatements\sif\sthe\sOOM\serror\soccurs\sfrom\swithin\sa\scall\sto\ssqlite3_column_text()\sor\stext16().\s(CVS\s5941)
+D 2008-11-21T16:58:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -197,7 +197,7 @@ F src/vdbe.c c5270245fcb5368634a9301481ab94a22e7a21b2
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 6b1082480832d406c57a7f469a1c61f1a8759aca
 F src/vdbeapi.c 20722164e7701a0747eaea03cddbbe0de5cb37bf
-F src/vdbeaux.c 18dea7bbaf3657d77331b03a3ec34363348ea5b0
+F src/vdbeaux.c 250296ad13b368b9e1076c7b002b3435154ed31f
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbefifo.c e6326ad6d16ccd8c2ef659046e3a509c0ae4990a
 F src/vdbemem.c 223e03281855515e9474dbf66f157452093a77c2
@@ -661,7 +661,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4c765758c18d7aeffe6e1cf658d2847f9460a956
-R f92a258ca76381c6b9f47da7a64b4751
+P 88a09dbb4b54be4010aae767157a1e2002237909
+R 87dac6915a8ded2e06ed5db94193190c
 U danielk1977
-Z 599a76d6f9dbaf3568b24dbe2b6bb694
+Z 66c1bf4f8b16c3ed976a7eeb0f60bc1e

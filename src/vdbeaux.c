@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.420 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.421 2008/11/21 16:58:03 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -836,13 +836,20 @@ int sqlite3VdbeList(
   assert( p->explain );
   if( p->magic!=VDBE_MAGIC_RUN ) return SQLITE_MISUSE;
   assert( db->magic==SQLITE_MAGIC_BUSY );
-  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY );
+  assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || p->rc==SQLITE_NOMEM );
 
   /* Even though this opcode does not use dynamic strings for
   ** the result, result columns may become dynamic if the user calls
   ** sqlite3_column_text16(), causing a translation to UTF-16 encoding.
   */
   releaseMemArray(pMem, p->nMem);
+
+  if( p->rc==SQLITE_NOMEM ){
+    /* This happens if a malloc() inside a call to sqlite3_column_text() or
+    ** sqlite3_column_text16() failed.  */
+    db->mallocFailed = 1;
+    return SQLITE_ERROR;
+  }
 
   do{
     i = p->pc++;
