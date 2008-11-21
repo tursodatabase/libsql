@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.33 2006/08/16 16:42:48 drh Exp $
+# $Id: lock.test,v 1.34 2008/11/21 22:21:51 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -20,7 +20,10 @@ source $testdir/tester.tcl
 # Create an alternative connection to the database
 #
 do_test lock-1.0 {
-  sqlite3 db2 ./test.db
+  # Give a complex pathnme to stress the path simplification logic in
+  # the vxworks driver.
+  file mkdir tempdir/t1/t2
+  sqlite3 db2 ./tempdir/../tempdir/t1/.//t2/../../..//test.db
   set dummy {}
 } {}
 do_test lock-1.1 {

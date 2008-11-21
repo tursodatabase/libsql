@@ -13,7 +13,7 @@
 # DEFERRED, IMMEDIATE, and EXCLUSIVE keywords as modifiers to the
 # BEGIN command.
 #
-# $Id: lock3.test,v 1.1 2004/10/05 02:41:43 drh Exp $
+# $Id: lock3.test,v 1.2 2008/11/21 22:21:51 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -23,7 +23,8 @@ source $testdir/tester.tcl
 # sample data into the database.
 #
 do_test lock3-1.1 {
-  sqlite3 db2 test.db
+  file mkdir tempdir/t1/t2/t3
+  sqlite3 db2 ./tempdir/t1//t2/./t3//./../..//./../../tempdir/..//test.db//
   execsql {
     CREATE TABLE t1(a);
     INSERT INTO t1 VALUES(1);

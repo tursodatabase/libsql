@@ -1,5 +1,5 @@
-C Work\stoward\scleaning\sup\sand\srefactoring\sthe\sos_unix.c\sVFS\smodule.\nChange\sIS_VXWORKS\sto\sOS_VXWORKS.\s\sThe\sVxWorks\simplementation\scan\snow\nbe\sbuilt\sand\stested\son\sLinux\susing\s-DOS_VXWORKS=1\s-Dsem_t=int\s-DPATH_MAX=512\s-DNO_GETTOD=1.\s(CVS\s5942)
-D 2008-11-21T20:32:34
+C Factor\sout\sand\ssimplify\sthe\scanonical\spathname\slogic\sin\sthe\sVxWorks\sOS\ninterface.\s(CVS\s5943)
+D 2008-11-21T22:21:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c d12285d66df674c42f6f544a6f7c21bf1a954ee1
-F src/os_unix.c d3803e7c5f148782505fac493487669d836e8702
+F src/os_unix.c d6218ae6a616f4ac83b5f8bdeef2959a613bb016
 F src/os_win.c 3dff41670fb9798a869c636626bb7d6d8b6a45bb
 F src/pager.c e5d12e7adbab0dfcf11412f0492f4dfff9e1dc41
 F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
@@ -229,7 +229,7 @@ F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
-F test/bigfile.test 9a6a8346e4042d9c781ed6cb6553ac871ae30618
+F test/bigfile.test 6adfef13d24bbe0c504b4547f292b9a170184f25
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 1134441f1ea47abd1c740090435a6ecbe9ceb263
 F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
@@ -406,9 +406,9 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 18db29c081380fdedcfbd8c633847712059ae104
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test 6825aea0b5885578b1b63a3b178803842c4ee9f1
+F test/lock.test a280c87f86cfe25ac8899bd6cdfd23ffc5aca40a
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
-F test/lock3.test 615111293cf32aa2ed16d01c6611737651c96fb9
+F test/lock3.test 8adfbf438b96316267611214d494ebc1311b8cda
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
 F test/lock5.test a6eaac62eb14bc125f9cc0c2d06a80009fc67587
 F test/lock6.test f4e9052b14da3bd6807a757d5aed15c17321031a
@@ -661,7 +661,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 891b14e138c4d6cac0dfb234d8aedc5dabe376ab
-R 75455110bb63c1be5e5e4f72de2f0bd2
+P 30a0132a83ce95d45f106fce1439e7509fdc64d1
+R 727967b3ac4d95720606a532009fdaaa
 U drh
-Z 63b79a004165b8fa0de3a165caafd860
+Z f50fe49f2b42838f590774808a79b5a4

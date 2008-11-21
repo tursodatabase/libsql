@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.219 2008/11/21 20:32:34 drh Exp $
+** $Id: os_unix.c,v 1.220 2008/11/21 22:21:50 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -147,7 +147,7 @@ struct unixFile {
 #endif
 #if OS_VXWORKS
   int isDelete;                    /* Delete on close if true */
-  char *zVxworksPath;              /* Canonical pathname of the file */
+  struct vxworksFileId *pId;       /* Unique file ID */
 #endif
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -199,6 +199,16 @@ struct unixFile {
 #define threadid 0
 #endif
 
+
+/*
+** Helper functions to obtain and relinquish the global mutex.
+*/
+static void unixEnterMutex(void){
+  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
+static void unixLeaveMutex(void){
+  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
 
 /************************************************************************
 *********** Posix Advisory Locking And Thread Interaction ***************
@@ -334,11 +344,11 @@ struct unixFile {
 ** is the same as the unixLockKey except that the thread ID is omitted.
 */
 struct unixFileId {
-  dev_t dev;      /* Device number */
+  dev_t dev;                  /* Device number */
 #if OS_VXWORKS
-  void *pNameId;  /* Key of canonical filename entry in vxworksFilenameHash */
+  struct vxworksFileId *pId;  /* Unique file ID for vxworks. */
 #else
-  ino_t ino;      /* Inode number */
+  ino_t ino;                  /* Inode number */
 #endif
 };
 
@@ -656,10 +666,7 @@ static int findLockInfo(
   memset(&lockKey, 0, sizeof(lockKey));
   lockKey.fid.dev = statbuf.st_dev;
 #if OS_VXWORKS
-  /* The pFile->zVxworksPath name has been hashed into the vxworksFilenameHash
-  ** hash table at this point, so safe to using pointer comparison
-  ** to compare the names. */
-  lockKey.fid.pNameId = pFile->zVxworksPath;
+  lockKey.fid.pId = pFile->pId;
 #else
   lockKey.fid.ino = statbuf.st_ino;
 #endif
@@ -732,111 +739,150 @@ exit_findlockinfo:
 ******************** End of the posix lock work-around ********************
 **************************************************************************/
 
-#if OS_VXWORKS
-/*
-** This hash table is used to bind the canonical file name to a
-** unixFile structure and use the hash key (= canonical name)
-** instead of the Inode number of the file to find the matching
-** unixLockInfo and unixOpenCnt structures. It also helps to make the
-** name of the semaphore when LOCKING_STYLE_NAMEDSEM is used
-** for the file.
+/**************************************************************************
+**************** Begin Unique File ID Utility Used By VxWorks *************
+***************************************************************************
+**
+** The inode numbers of files are meaningless in VxWorks.  Inodes cannot
+** be used to find a unique identifier for a file.   A unique file id
+** must be based on the canonical filename.
+**
+** A pointer to an instance of the following structure can be used as a
+** unique file ID in VxWorks.  Each instance of this structure contains
+** a copy of the canonical filename.  There is also a reference count.  
+** The structure is reclaimed when the number of pointers to it drops to
+** zero.
+**
+** There are never very many files open at one time and lookups are not
+** a performance-critical path, so it is sufficient to put these
+** structures on a linked list.
 */
-static Hash vxworksFilenameHash;
+struct vxworksFileId {
+  struct vxworksFileId *pNext;  /* Next in a list of them all */
+  int nRef;                     /* Number of references to this one */
+  int nName;                    /* Length of the zCanonicalName[] string */
+  char *zCanonicalName;         /* Canonical filename */
+};
+
+#if OS_VXWORKS
+/* 
+** All unique filesname are held on a linked list headed by this
+** variable:
+*/
+static struct vxworksFileId *vxworksFileList = 0;
 #endif
 
 #if OS_VXWORKS
 /*
-** Implementation of a realpath() like function for vxWorks
-** to determine canonical path name from given name. It does
-** not support symlinks. Neither does it handle volume prefixes.
+** Simplify a filename into its canonical form
+** by making the following changes:
+**
+**  * removing any trailing and duplicate /
+**  * removing /./
+**  * removing /A/../
+**
+** Changes are made in-place.  Return the new name length.
+**
+** The original filename is in z[0..n-1].  Return the number of
+** characters in the simplified name.
 */
-char *
-vxrealpath(const char *pathname, int dostat)
-{
-  struct stat sbuf;
-  int len;
-  char *where, *ptr, *last;
-  char *result, *curpath, *workpath, *namebuf;
-
-  len = pathconf(pathname, _PC_PATH_MAX);
-  if( len<0 ){
-    len = PATH_MAX;
-  }
-  result = sqlite3_malloc(len * 4);
-  if( !result ){
-    return 0;
-  }
-  curpath = result + len;
-  workpath = curpath + len;
-  namebuf = workpath + len;
-  strcpy(curpath, pathname);
-  if( *pathname!='/' ){
-    if( !getcwd(workpath, len) ){
-      sqlite3_free(result);
-      return 0;
-    }
-  }else{
-    *workpath = '\0';
-  }
-  where = curpath;
-  while( *where ){
-    if( !strcmp(where, ".") ){
-      where++;
-      continue;
-    }
-    if( !strncmp(where, "./", 2) ){
-      where += 2;
-      continue;
-    }
-    if( !strncmp(where, "../", 3) ){
-      where += 3;
-      ptr = last = workpath;
-      while( *ptr ){
-        if( *ptr=='/' ){
-          last = ptr;
-        }
-        ptr++;
-      }
-      *last = '\0';
-      continue;
-    }
-    ptr = strchr(where, '/');
-    if( !ptr ){
-      ptr = where + strlen(where) - 1;
-    }else{
-      *ptr = '\0';
-    }
-    strcpy(namebuf, workpath);
-    for( last = namebuf; *last; last++ ){
-      continue;
-    }
-    if( *--last!='/' ){
-      strcat(namebuf, "/");
-    }
-    strcat(namebuf, where);
-    where = ++ptr;
-    if( dostat ){
-      if( stat(namebuf, &sbuf)==-1 ){
-        sqlite3_free(result);
-        return 0;
-      }
-      if( (sbuf.st_mode & S_IFDIR)==S_IFDIR ){
-        strcpy(workpath, namebuf);
+static int vxworksSimplifyName(char *z, int n){
+  int i, j;
+  while( n>1 && z[n-1]=='/' ){ n--; }
+  for(i=j=0; i<n; i++){
+    if( z[i]=='/' ){
+      if( z[i+1]=='/' ) continue;
+      if( z[i+1]=='.' && i+2<n && z[i+2]=='/' ){
+        i += 1;
         continue;
       }
-      if( *where ){
-        sqlite3_free(result);
-        return 0;
+      if( z[i+1]=='.' && i+3<n && z[i+2]=='.' && z[i+3]=='/' ){
+        while( j>0 && z[j-1]!='/' ){ j--; }
+        if( j>0 ){ j--; }
+        i += 2;
+        continue;
       }
     }
-    strcpy(workpath, namebuf);
+    z[j++] = z[i];
   }
-  strcpy(result, workpath);
-  return result;
+  z[j] = 0;
+  return j;
 }
-#endif
+#endif /* OS_VXWORKS */
 
+#if OS_VXWORKS
+/*
+** Find a unique file ID for the given absolute pathname.  Return
+** a pointer to the vxworksFileId object.  This pointer is the unique
+** file ID.
+**
+** The nRef field of the vxworksFileId object is incremented before
+** the object is returned.  A new vxworksFileId object is created
+** and added to the global list if necessary.
+**
+** If a memory allocation error occurs, return NULL.
+*/
+static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
+  struct vxworksFileId *pNew;         /* search key and new file ID */
+  struct vxworksFileId *pCandidate;   /* For looping over existing file IDs */
+  int n;                              /* Length of zAbsoluteName string */
 
+  assert( zAbsoluteName[0]=='/' );
+  n = strlen(zAbsoluteName);
+  pNew = sqlite3_malloc( sizeof(*pNew) + (n+1) );
+  if( pNew==0 ) return 0;
+  pNew->zCanonicalName = (char*)&pNew[1];
+  memcpy(pNew->zCanonicalName, zAbsoluteName, n+1);
+  n = vxworksSimplifyName(pNew->zCanonicalName, n);
+
+  /* Search for an existing entry that matching the canonical name.
+  ** If found, increment the reference count and return a pointer to
+  ** the existing file ID.
+  */
+  unixEnterMutex();
+  for(pCandidate=vxworksFileList; pCandidate; pCandidate=pCandidate->pNext){
+    if( pCandidate->nName==n 
+     && memcmp(pCandidate->zCanonicalName, pNew->zCanonicalName, n)==0
+    ){
+       sqlite3_free(pNew);
+       pCandidate->nRef++;
+       unixLeaveMutex();
+       return pCandidate;
+    }
+  }
+
+  /* No match was found.  We will make a new file ID */
+  pNew->nRef = 1;
+  pNew->nName = n;
+  pNew->pNext = vxworksFileList;
+  vxworksFileList = pNew;
+  unixLeaveMutex();
+  return pNew;
+}
+#endif /* OS_VXWORKS */
+
+#if OS_VXWORKS
+/*
+** Decrement the reference count on a vxworksFileId object.  Free
+** the object when the reference count reaches zero.
+*/
+static void vxworksReleaseFileId(struct vxworksFileId *pId){
+  unixEnterMutex();
+  assert( pId->nRef>0 );
+  pId->nRef--;
+  if( pId->nRef==0 ){
+    struct vxworksFileId **pp;
+    for(pp=&vxworksFileList; *pp && *pp!=pId; pp = &((*pp)->pNext)){}
+    assert( *pp==pId );
+    *pp = pId->pNext;
+    sqlite3_free(pId);
+  }
+  unixLeaveMutex();
+}
+#endif /* OS_VXWORKS */
+/**************************************************************************
+************** End of Unique File ID Utility Used By VxWorks **************
+**************************************************************************/
 
 #ifdef SQLITE_TEST
 /* simulate multiple hosts by creating unique hostid file paths */
@@ -881,16 +927,6 @@ int sqlite3_hostid_num = 0;
 ** a normal expected return code of SQLITE_BUSY or SQLITE_OK
 */
 #define IS_LOCK_ERROR(x)  ((x != SQLITE_OK) && (x != SQLITE_BUSY))
-
-/*
-** Helper functions to obtain and relinquish the global mutex.
-*/
-static void unixEnterMutex(void){
-  sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-}
-static void unixLeaveMutex(void){
-  sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
-}
 
 #ifdef SQLITE_LOCK_TRACE
 /*
@@ -1957,22 +1993,12 @@ static int closeUnixFile(sqlite3_file *id){
       }
     }
 #if OS_VXWORKS
-    if( pFile->isDelete && pFile->zVxworksPath ){
-      unlink(pFile->zVxworksPath);
-    }
-    if( pFile->zVxworksPath ){
-      HashElem *pElem;
-      int n = strlen(pFile->zVxworksPath) + 1;
-      pElem = sqlite3HashFindElem(&vxworksFilenameHash, pFile->zVxworksPath, n);
-      if( pElem ){
-        long cnt = (long)pElem->data;
-        cnt--;
-        if( cnt==0 ){
-          sqlite3HashInsert(&vxworksFilenameHash, pFile->zVxworksPath, n, 0);
-        }else{
-          pElem->data = (void*)cnt;
-        }
+    if( pFile->pId ){
+      if( pFile->isDelete ){
+         unlink(pFile->pId->zCanonicalName);
       }
+      vxworksReleaseFileId(pFile->pId);
+      pFile->pId = 0;
     }
 #endif
     OSTRACE2("CLOSE   %-3d\n", pFile->h);
@@ -3567,38 +3593,10 @@ static int fillInUnixFile(
   SET_THREADID(pNew);
 
 #if OS_VXWORKS
-  {
-    HashElem *pElem;
-    char *zRealname = vxrealpath(zFilename, 1);
-    int n;
-    pNew->zVxworksPath = 0;
-    if( !zRealname ){
-      rc = SQLITE_NOMEM;
-      eLockingStyle = LOCKING_STYLE_NONE;
-    }else{
-      n = strlen(zRealname) + 1;
-      unixEnterMutex();
-      pElem = sqlite3HashFindElem(&vxworksFilenameHash, zRealname, n);
-      if( pElem ){
-        long cnt = (long)pElem->data;
-        cnt++;
-        pNew->zVxworksPath = pElem->pKey;
-        pElem->data = (void*)cnt;
-      }else{
-        if( sqlite3HashInsert(&vxworksFilenameHash, zRealname, n,(void*)1)==0 ){
-          pElem = sqlite3HashFindElem(&vxworksFilenameHash, zRealname, n);
-          if( pElem ){
-            pNew->zVxworksPath = pElem->pKey;
-          }else{
-            sqlite3HashInsert(&vxworksFilenameHash, zRealname, n, 0);
-            rc = SQLITE_NOMEM;
-            eLockingStyle = LOCKING_STYLE_NONE;
-          }
-        }
-      }
-      unixLeaveMutex();
-      sqlite3_free(zRealname);
-    }
+  pNew->pId = vxworksFindFileId(zFilename);
+  if( pNew->pId==0 ){
+    noLock = 1;
+    rc = SQLITE_NOMEM;
   }
 #endif
 
@@ -3688,7 +3686,8 @@ static int fillInUnixFile(
       if( (rc==SQLITE_OK) && (pNew->pOpen->pSem==NULL) ){
         char *zSemName = pNew->pOpen->aSemName;
         int n;
-        sqlite3_snprintf(MAX_PATHNAME, zSemName, "%s.sem", pNew->zVxworksPath);
+        sqlite3_snprintf(MAX_PATHNAME, zSemName, "%s.sem",
+                         pNew->pId->zCanonicalName);
         for( n=0; zSemName[n]; n++ )
           if( zSemName[n]=='/' ) zSemName[n] = '_';
         pNew->pOpen->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
@@ -4112,18 +4111,6 @@ static int unixFullPathname(
   assert( pVfs->mxPathname==MAX_PATHNAME );
   UNUSED_PARAMETER(pVfs);
 
-#if OS_VXWORKS
-  {
-    char *zRealname = vxrealpath(zPath, 0);
-    zOut[0] = '\0';
-    if( !zRealname ){
-      return SQLITE_CANTOPEN;
-    }
-    sqlite3_snprintf(nOut, zOut, "%s", zRealname);
-    sqlite3_free(zRealname);
-    return SQLITE_OK;
-  }
-#else
   zOut[nOut-1] = '\0';
   if( zPath[0]=='/' ){
     sqlite3_snprintf(nOut, zOut, "%s", zPath);
@@ -4136,33 +4123,6 @@ static int unixFullPathname(
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
   }
   return SQLITE_OK;
-
-#if 0
-  /*
-  ** Remove "/./" path elements and convert "/A/./" path elements
-  ** to just "/".
-  */
-  if( zFull ){
-    int i, j;
-    for(i=j=0; zFull[i]; i++){
-      if( zFull[i]=='/' ){
-        if( zFull[i+1]=='/' ) continue;
-        if( zFull[i+1]=='.' && zFull[i+2]=='/' ){
-          i += 1;
-          continue;
-        }
-        if( zFull[i+1]=='.' && zFull[i+2]=='.' && zFull[i+3]=='/' ){
-          while( j>0 && zFull[j-1]!='/' ){ j--; }
-          i += 3;
-          continue;
-        }
-      }
-      zFull[j++] = zFull[i];
-    }
-    zFull[j] = 0;
-  }
-#endif
-#endif /* #if OS_VXWORKS */
 }
 
 
@@ -4367,9 +4327,6 @@ int sqlite3_os_init(void){
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
     sqlite3_vfs_register(&aVfs[i], 0);
   }
-#endif
-#if OS_VXWORKS
-  sqlite3HashInit(&vxworksFilenameHash, 1);
 #endif
   sqlite3_vfs_register(&unixVfs, 1);
   return SQLITE_OK; 
