@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sfailure\sthat\scan\soccur\safter\san\sOOM\serror.\s(CVS\s5939)
-D 2008-11-21T09:43:20
+C Fix\sa\ssegfault\sthat\scan\sbe\scaused\sby\san\sINSTEAD\sOF\strigger\son\sa\sview\sthat\sincludes\san\sexpression\sof\sthe\sform\s"table.column"\sin\sthe\sselect\slist.\s(CVS\s5940)
+D 2008-11-21T16:22:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/prepare.c fcadb25d2ad722d87103517333c825b56b79a770
 F src/printf.c ce86aed93a704938ca4d0344aaa763271842a4b0
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 4af5391d2b4c1d6c583a6805ac6660181de4545b
-F src/select.c 72318e824fb7b0a83af820ced6a8144ff245703e
+F src/select.c b296a7b53dd0b2c42ab8b67d969e2c924529008c
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in b5d50f12fb9c7460a4ddfef8c1e799afaabefebf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -588,7 +588,7 @@ F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
 F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
-F test/trigger2.test 33bf8ae9b788013be194efe5f66c04a202facbb4
+F test/trigger2.test 53cf2209f68eb5bbb0ea0a07d694007fa702f1ed
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
 F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
 F test/trigger5.test 619391a3e9fc194081d22cefd830d811e7badf83
@@ -661,7 +661,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ddf980a50127a9de35edeca5549f4b51e3f733e6
-R cc23a79e476c52d9eef64d8c5ac9ae0c
+P 4c765758c18d7aeffe6e1cf658d2847f9460a956
+R f92a258ca76381c6b9f47da7a64b4751
 U danielk1977
-Z 3788fbaf14b14318e3f174125f3680cb
+Z 599a76d6f9dbaf3568b24dbe2b6bb694

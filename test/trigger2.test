@@ -735,6 +735,18 @@ do_test trigger2-8.6 {
   }
 } {3 103 5 205 4 304 9 109 11 211 10 310}
 
+# At one point the following was causing a segfault.
+do_test trigger2-9.1 {
+  execsql {
+    CREATE TABLE t3(a TEXT, b TEXT);
+    CREATE VIEW v3 AS SELECT t3.a FROM t3;
+    CREATE TRIGGER trig1 INSTEAD OF DELETE ON v3 BEGIN
+      SELECT 1;
+    END;
+    DELETE FROM v3 WHERE a = 1;
+  }
+} {}
+
 } ;# ifcapable view
 
 integrity_check trigger2-9.9

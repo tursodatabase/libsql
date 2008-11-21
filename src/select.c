@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.487 2008/11/21 09:43:20 danielk1977 Exp $
+** $Id: select.c,v 1.488 2008/11/21 16:22:18 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1181,7 +1181,8 @@ static int selectColumnsFromExprList(
                  iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
       }else{
         /* Use the original text of the column expression as its name */
-        zName = sqlite3MPrintf(db, "%T", &pCol->span);
+        Token *pToken = (pCol->span.z?&pCol->span:&pCol->token);
+        zName = sqlite3MPrintf(db, "%T", pToken);
       }
     }
     if( db->mallocFailed ){
