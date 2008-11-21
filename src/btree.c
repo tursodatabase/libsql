@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.539 2008/11/19 10:22:33 danielk1977 Exp $
+** $Id: btree.c,v 1.540 2008/11/21 09:09:02 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4304,9 +4304,12 @@ static int allocateBtreePage(
 end_allocate_page:
   releasePage(pTrunk);
   releasePage(pPrevTrunk);
-  if( rc==SQLITE_OK && sqlite3PagerPageRefcount((*ppPage)->pDbPage)>1 ){
-    releasePage(*ppPage);
-    return SQLITE_CORRUPT_BKPT;
+  if( rc==SQLITE_OK ){
+    if( sqlite3PagerPageRefcount((*ppPage)->pDbPage)>1 ){
+      releasePage(*ppPage);
+      return SQLITE_CORRUPT_BKPT;
+    }
+    (*ppPage)->isInit = 0;
   }
   return rc;
 }

@@ -14,7 +14,7 @@
 # page cache which are not in the rollback journal are reinitialized
 # in the btree layer.
 #
-# $Id: tkt35xx.test,v 1.2 2008/11/21 08:50:50 danielk1977 Exp $
+# $Id: tkt35xx.test,v 1.3 2008/11/21 09:09:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -75,22 +75,20 @@ do_test tkt35xx-1.2.2 {
     INSERT INTO t3(a, b) SELECT c, d FROM t4;
   }
 } {1 {PRIMARY KEY must be unique}}
-
 do_test tkt35xx-1.2.3 {
   # Show that the transaction has not been rolled back.
   catchsql BEGIN
 } {1 {cannot start a transaction within a transaction}}
-
-# Before the bug was fixed, if SQLITE_DEBUG was defined an assert()
-# would fail during the following INSERT statement. If SQLITE_DEBUG
-# was not defined, then the statement would pass and the transaction
-# would be committed. But, the "SELECT count(*)" in tkt35xx-1.2.6 would
-# return 1, not 5. Data magically disappeared!
-#
 do_test tkt35xx-1.2.4 {
   execsql { SELECT count(*) FROM t3 }
 } {4}
 do_test tkt35xx-1.2.5 {
+  # Before the bug was fixed, if SQLITE_DEBUG was defined an assert()
+  # would fail during the following INSERT statement. If SQLITE_DEBUG
+  # was not defined, then the statement would pass and the transaction
+  # would be committed. But, the "SELECT count(*)" in tkt35xx-1.2.6 would
+  # return 1, not 5. Data magically disappeared!
+  #
   execsql { 
     INSERT INTO t3 VALUES(5, $big);
     COMMIT;
@@ -99,7 +97,6 @@ do_test tkt35xx-1.2.5 {
 do_test tkt35xx-1.2.6 {
   execsql { SELECT count(*) FROM t3 }
 } {5}
-
 integrity_check tkt35xx-1.2.7
 
 finish_test
