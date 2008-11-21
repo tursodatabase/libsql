@@ -1,5 +1,5 @@
-C Fix\sthe\sOOM\shandling\sfor\sexplain\sstatements\sso\sthat\sit\sis\sthe\ssame\sas\sfor\sregular\sstatements\sif\sthe\sOOM\serror\soccurs\sfrom\swithin\sa\scall\sto\ssqlite3_column_text()\sor\stext16().\s(CVS\s5941)
-D 2008-11-21T16:58:03
+C Work\stoward\scleaning\sup\sand\srefactoring\sthe\sos_unix.c\sVFS\smodule.\nChange\sIS_VXWORKS\sto\sOS_VXWORKS.\s\sThe\sVxWorks\simplementation\scan\snow\nbe\sbuilt\sand\stested\son\sLinux\susing\s-DOS_VXWORKS=1\s-Dsem_t=int\s-DPATH_MAX=512\s-DNO_GETTOD=1.\s(CVS\s5942)
+D 2008-11-21T20:32:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c d12285d66df674c42f6f544a6f7c21bf1a954ee1
-F src/os_unix.c 28cc4da7886c265c0a58f6975346b83180f03e5b
+F src/os_unix.c d3803e7c5f148782505fac493487669d836e8702
 F src/os_win.c 3dff41670fb9798a869c636626bb7d6d8b6a45bb
 F src/pager.c e5d12e7adbab0dfcf11412f0492f4dfff9e1dc41
 F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
@@ -661,7 +661,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 88a09dbb4b54be4010aae767157a1e2002237909
-R 87dac6915a8ded2e06ed5db94193190c
-U danielk1977
-Z 66c1bf4f8b16c3ed976a7eeb0f60bc1e
+P 891b14e138c4d6cac0dfb234d8aedc5dabe376ab
+R 75455110bb63c1be5e5e4f72de2f0bd2
+U drh
+Z 63b79a004165b8fa0de3a165caafd860
