@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.9 2008/09/24 14:03:43 danielk1977 Exp $
+# $Id: exclusive.test,v 1.10 2008/11/21 00:10:35 aswift Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -402,6 +402,17 @@ do_test exclusive-4.5 {
 db close
 sqlite db test.db
 
+# if we're using proxy locks, we use 3 filedescriptors for a db
+# that is open but NOT writing changes, normally
+# sqlite uses 1 (proxy locking adds the conch and the local lock)
+set using_proxy 0
+foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
+  set using_proxy $value
+}
+set extrafds 0
+if {$using_proxy!=0} {
+  set extrafds 2
+} 
 
 do_test exclusive-5.0 {
   execsql {
@@ -414,6 +425,7 @@ do_test exclusive-5.0 {
 do_test exclusive-5.1 {
   # Three files are open: The db, journal and statement-journal.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {3}
 do_test exclusive-5.2 {
   execsql {
@@ -421,6 +433,7 @@ do_test exclusive-5.2 {
   }
   # One file open: the db.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {1}
 do_test exclusive-5.3 {
   execsql {
@@ -430,6 +443,7 @@ do_test exclusive-5.3 {
   }
   # Two files open: the db and journal.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {2}
 do_test exclusive-5.4 {
   execsql {
@@ -437,6 +451,7 @@ do_test exclusive-5.4 {
   }
   # Three files are open: The db, journal and statement-journal.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {3}
 do_test exclusive-5.5 {
   execsql {
@@ -444,6 +459,7 @@ do_test exclusive-5.5 {
   }
   # Three files are still open: The db, journal and statement-journal.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {3}
 do_test exclusive-5.6 {
   execsql {
@@ -454,6 +470,7 @@ do_test exclusive-5.6 {
 do_test exclusive-5.7 {
   # Just the db open.
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds
 } {1}
 
 finish_test

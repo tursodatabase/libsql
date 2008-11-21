@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.69 2008/10/23 05:45:07 danielk1977 Exp $
+# $Id: pragma.test,v 1.70 2008/11/21 00:10:35 aswift Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,6 +34,7 @@ source $testdir/tester.tcl
 # pragma-14.*: Test the page_count pragma.
 # pragma-15.*: Test that the value set using the cache_size pragma is not
 #              reset when the schema is reloaded.
+# pragma-16.*: Test proxy locking
 #
 
 ifcapable !pragma {
@@ -1252,4 +1253,134 @@ sqlite3 dbX :memory:
 dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
+ifcapable lock_proxy_pragmas {
+  set sqlite_hostid_num 1
+
+  set using_proxy 0
+  foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
+    set using_proxy $value
+  }
+
+  # Test the lock_proxy_file pragmas.
+  #
+  db close
+  set env(SQLITE_FORCE_PROXY_LOCKING) "0"
+
+  sqlite3 db test.db
+  do_test pragma-16.1 {
+    execsql {
+      PRAGMA lock_proxy_file="mylittleproxy";
+      select * from sqlite_master;
+    }
+    execsql {
+      PRAGMA lock_proxy_file;
+    } 
+  } {mylittleproxy}
+
+  do_test pragma-16.2 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA lock_proxy_file="mylittleproxy";
+    } db2
+  } {}
+
+  db2 close
+  do_test pragma-16.2.1 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA lock_proxy_file=":auto:";
+      select * from sqlite_master;
+    } db2
+    execsql {
+      PRAGMA lock_proxy_file;
+    } db2
+  } {mylittleproxy}
+
+  db2 close
+  do_test pragma-16.3 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA lock_proxy_file="myotherproxy";
+    } db2
+    catchsql {
+      select * from sqlite_master;
+    } db2
+  } {1 {database is locked}}
+
+  do_test pragma-16.4 {
+    db2 close
+    db close
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA lock_proxy_file="myoriginalproxy";
+      PRAGMA lock_proxy_file="myotherproxy";
+      PRAGMA lock_proxy_file;
+    } db2
+  } {myotherproxy}
+
+  db2 close
+  set env(SQLITE_FORCE_PROXY_LOCKING) "1"
+  do_test pragma-16.5 {
+    sqlite3 db2 test.db
+    execsql {
+      PRAGMA lock_proxy_file=":auto:";
+      PRAGMA lock_proxy_file;
+    } db2
+  } {myotherproxy}
+  
+  do_test pragma-16.6 {
+    db2 close
+    sqlite3 db2 test2.db
+    set lockpath [execsql {
+      PRAGMA lock_proxy_file=":auto:";
+      PRAGMA lock_proxy_file;
+    } db2]
+    string match "*test2.db:auto:" $lockpath
+  } {1}
+  
+  set sqlite_hostid_num 2
+  do_test pragma-16.7 {
+    sqlite3 db test2.db
+    execsql {
+      PRAGMA lock_proxy_file=":auto:";
+    } 
+    catchsql {
+      select * from sqlite_master;
+    }
+  } {1 {database is locked}}
+  db close
+  
+  do_test pragma-16.8 {
+    sqlite3 db test2.db
+    catchsql {
+      select * from sqlite_master;
+    } 
+  } {1 {database is locked}}
+
+  db2 close
+  do_test pragma-16.8.1 {
+    execsql {
+      PRAGMA lock_proxy_file="yetanotherproxy";
+      PRAGMA lock_proxy_file;
+    } 
+  } {yetanotherproxy}
+  do_test pragma-16.8.2 {
+    execsql {
+      create table mine(x);
+    } 
+  } {}
+
+  db close
+  do_test pragma-16.9 {
+    sqlite3 db proxytest.db
+    set lockpath2 [execsql {
+      PRAGMA lock_proxy_file=":auto:";
+      PRAGMA lock_proxy_file;
+    } db]
+    string match "*proxytest.db:auto:" $lockpath2
+  } {1}
+
+  set env(SQLITE_FORCE_PROXY_LOCKING) $using_proxy
+  set sqlite_hostid_num 0
+}
 finish_test

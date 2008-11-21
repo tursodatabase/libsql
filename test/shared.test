@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.34 2008/07/12 14:52:20 drh Exp $
+# $Id: shared.test,v 1.35 2008/11/21 00:10:35 aswift Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -41,6 +41,20 @@ ifcapable autovacuum {
     break
   }
 }
+
+# if we're using proxy locks, we use 2 filedescriptors for a db
+# that is open but NOT yet locked, after a lock is taken we'll have 3, 
+# normally sqlite uses 1 (proxy locking adds the conch and the local lock)
+set using_proxy 0
+foreach {name value} [array get env SQLITE_FORCE_PROXY_LOCKING] {
+  set using_proxy $value
+}
+set extrafds_prelock 0
+set extrafds_postlock 0
+if {$using_proxy>0} {
+  set extrafds_prelock 1
+  set extrafds_postlock 2
+} 
 
 # $av is currently 0 if this loop iteration is to test with auto-vacuum turned
 # off, and 1 if it is turned on. Increment it so that (1 -> no auto-vacuum) 
@@ -74,6 +88,7 @@ do_test shared-$av.1.1 {
   # opened.
   sqlite3 db2 test.db
   set ::sqlite_open_file_count
+  expr $sqlite_open_file_count-$extrafds_postlock
 } {1}
 do_test shared-$av.1.2 {
   # Add a table and a single row of data via the first connection. 
@@ -154,6 +169,7 @@ do_test shared-$av.2.1 {
     sqlite3 db3 TEST.DB
   }
   set ::sqlite_open_file_count
+  expr $sqlite_open_file_count-($extrafds_prelock+$extrafds_postlock)
 } {2}
 do_test shared-$av.2.2 {
   # Start read transactions on db and db2 (the shared pager cache). Ensure
@@ -284,14 +300,17 @@ sqlite3 db  test.db
 sqlite3 db2 test2.db
 do_test shared-$av.4.1.1 {
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-($extrafds_prelock*2)
 } {2}
 do_test shared-$av.4.1.2 {
   execsql {ATTACH 'test2.db' AS test2}
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-($extrafds_postlock*2)
 } {2}
 do_test shared-$av.4.1.3 {
   execsql {ATTACH 'test.db' AS test} db2
   set sqlite_open_file_count
+  expr $sqlite_open_file_count-($extrafds_postlock*2)
 } {2}
 
 # Sanity check: Create a table in ./test.db via handle db, and test that handle

@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.42 2008/10/12 00:27:54 shane Exp $
+** $Id: test_config.c,v 1.43 2008/11/21 00:10:35 aswift Exp $
 */
 
 #include "sqliteLimit.h"
@@ -392,6 +392,13 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp, "sqlite_options", "schema_version", "1", TCL_GLOBAL_ONLY);
 #endif
 
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+    Tcl_SetVar2(interp, "sqlite_options", "lock_proxy_pragmas", "1", TCL_GLOBAL_ONLY);
+#else
+    Tcl_SetVar2(interp, "sqlite_options", "lock_proxy_pragmas", "0", TCL_GLOBAL_ONLY);
+#endif
+    
+    
 #ifdef SQLITE_OMIT_SHARED_CACHE
   Tcl_SetVar2(interp, "sqlite_options", "shared_cache", "0", TCL_GLOBAL_ONLY);
 #else

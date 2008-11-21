@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.134 2008/08/05 17:53:24 drh Exp $
+# $Id: tester.tcl,v 1.135 2008/11/21 00:10:35 aswift Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -659,6 +659,7 @@ proc do_ioerr_test {testname args} {
     do_test $testname.$n.1 {
       set ::sqlite_io_error_pending 0
       catch {db close}
+      catch {db2 close}
       catch {file delete -force test.db}
       catch {file delete -force test.db-journal}
       catch {file delete -force test2.db}

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.329 2008/10/30 15:03:16 drh Exp $
+** $Id: test1.c,v 1.330 2008/11/21 00:10:35 aswift Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4466,8 +4466,86 @@ static int file_control_test(
   assert( rc==SQLITE_ERROR );
   rc = sqlite3_file_control(db, "temp", -1, &iArg);
   assert( rc==SQLITE_ERROR );
+
+  return TCL_OK;
+}
+
+
+/*
+** tclcmd:   file_control_lasterrno_test DB
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_LAST_ERRNO verb.
+*/
+static int file_control_lasterrno_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int iArg = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+        Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  rc = sqlite3_file_control(db, NULL, SQLITE_LAST_ERRNO, &iArg);
+  if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+  if( iArg!=0 ) {
+    Tcl_AppendResult(interp, "Unexpected non-zero errno: ",
+                     Tcl_GetStringFromObj(Tcl_NewIntObj(iArg), 0), " ", 0);
+    return TCL_ERROR;
+  }
   return TCL_OK;  
 }
+
+/*
+** tclcmd:   file_control_lockproxy_test DB
+**
+** This TCL command runs the sqlite3_file_control interface and
+** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
+** SQLITE_SET_LOCKPROXYFILE verbs.
+*/
+static int file_control_lockproxy_test(
+  ClientData clientData, /* Pointer to sqlite3_enable_XXX function */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  int iArg = 0;
+  sqlite3 *db;
+  int rc;
+  
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"",
+                     Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
+  
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
+	{
+    char *proxyPath = "test.proxy";
+    char *testPath;
+		rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
+    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+    rc = sqlite3_file_control(db, NULL, SQLITE_GET_LOCKPROXYFILE, &testPath);
+    if( strncmp(proxyPath,testPath,11) ) {
+      Tcl_AppendResult(interp, "Lock proxy file did not match the previously assigned value", 0);
+      return TCL_ERROR;
+    }
+    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+		rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
+    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+  }
+#endif
+  return TCL_OK;  
+}
+
 
 /*
 ** tclcmd:   sqlite3_vfs_list
@@ -4640,6 +4718,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_open_file_count;
   extern int sqlite3_sort_count;
   extern int sqlite3_current_time;
+  extern int sqlite3_hostid_num;
   extern int sqlite3_max_blobsize;
   extern int sqlite3BtreeSharedCacheReport(void*,
                                           Tcl_Interp*,int,Tcl_Obj*CONST*);
@@ -4784,6 +4863,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "vfs_unregister_all",         vfs_unregister_all,  0   },
      { "vfs_reregister_all",         vfs_reregister_all,  0   },
      { "file_control_test",          file_control_test,   0   },
+     { "file_control_lasterrno_test", file_control_lasterrno_test,  0   },
+     { "file_control_lockproxy_test", file_control_lockproxy_test,  0   },
      { "sqlite3_vfs_list",           vfs_list,     0   },
 
      /* Functions from os.h */
@@ -4855,6 +4936,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_open_file_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_current_time", 
       (char*)&sqlite3_current_time, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_hostid_num", 
+      (char*)&sqlite3_hostid_num, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_xferopt_count",
       (char*)&sqlite3_xferopt_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_pager_readdb_count",
