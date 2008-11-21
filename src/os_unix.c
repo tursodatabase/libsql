@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.217 2008/11/21 00:10:35 aswift Exp $
+** $Id: os_unix.c,v 1.218 2008/11/21 00:24:42 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -402,6 +402,12 @@ struct openCnt {
 */
 static struct lockInfo *lockList = 0;
 static struct openCnt *openList = 0;
+
+#ifdef SQLITE_TEST
+/* simulate multiple hosts by creating unique hostid file paths */
+int sqlite3_hostid_num = 0;
+#endif
+
 
 #if IS_VXWORKS
 /*
@@ -1107,7 +1113,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   newOffset = lseek(id->h, offset, SEEK_SET);
   SimulateIOError( newOffset-- );
   if( newOffset!=offset ){
-    if( newOffet == -1 ){
+    if( newOffset == -1 ){
       ((unixFile*)id)->lastErrno = errno;
     }else{
       ((unixFile*)id)->lastErrno = 0;			
@@ -1169,7 +1175,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
 #else
   newOffset = lseek(id->h, offset, SEEK_SET);
   if( newOffset!=offset ){
-    if( newOffet == -1 ){
+    if( newOffset == -1 ){
       ((unixFile*)id)->lastErrno = errno;
     }else{
       ((unixFile*)id)->lastErrno = 0;			
@@ -2903,11 +2909,6 @@ static int genHostID(char *pHostID){
   return SQLITE_OK;
 }
 
-#ifdef SQLITE_TEST
-/* simulate multiple hosts by creating unique hostid file paths */
-int sqlite3_hostid_num = 0;
-#endif
-
 /* writes the host id path to path, path should be an pre-allocated buffer
 ** with enough space for a path */
 static int getHostIDPath(char *path, size_t len){
@@ -3412,7 +3413,7 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
         *(const char **)pArg = NULL;
       }
 #else
-      *(void*)pArg = NULL;
+      *(void**)pArg = NULL;
 #endif
       return SQLITE_OK;
     }
@@ -3791,7 +3792,7 @@ static int getTempname(int nBuf, char *zBuf){
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
-  int i, j;
+  unsigned int i, j;
   struct stat buf;
   const char *zDir = ".";
 
@@ -3951,9 +3952,12 @@ static int unixOpen(
 #else
     unlink(zName);
 #endif
-  }else{
-    ((unixFile *)pFile)->oflags = oflags;
   }
+#if SQLITE_ENABLE_LOCKING_STYLE
+  else{
+    ((unixFile*)pFile)->oflags = oflags;
+  }
+#endif
   if( pOutFlags ){
     *pOutFlags = flags;
   }
