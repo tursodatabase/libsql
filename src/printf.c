@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.96 2008/11/20 18:20:28 drh Exp $
+** $Id: printf.c,v 1.97 2008/11/22 18:28:51 drh Exp $
 **
 **************************************************************************
 **
@@ -725,7 +725,7 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
   if( N<0 ){
     N = strlen(z);
   }
-  if( N==0 ){
+  if( N==0 || z==0 ){
     return;
   }
   if( p->nChar+N >= p->nAlloc ){
