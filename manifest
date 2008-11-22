@@ -1,5 +1,5 @@
-C Make\ssure\sthe\serror\smessage\shandler\sis\sable\sto\sdeal\swith\sNULL\sexpression\r\nspans.\sTicket\s#3508.\s(CVS\s5949)
-D 2008-11-22T18:28:51
+C fix\sthe\scompile\swarnings\son\sOS/2\s(CVS\s5950)
+D 2008-11-22T19:50:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,13 +130,13 @@ F src/memjournal.c bd536c4d6d701b4fa7428545128c5684d2adf779
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c 0004efdbc2fd48d261d5b3416fe537e888c79a54
-F src/mutex_os2.c 9c5637aa4c307c552566d0f0b3bd206245b54a97
+F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
 F src/mutex_unix.c 3b1c895a044d45812ea1eae9019daeff8cfb27ce
 F src/mutex_w32.c 017b522f63ef09b834fefc9daa876c9ec167e7b5
 F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
-F src/os_os2.c d12285d66df674c42f6f544a6f7c21bf1a954ee1
+F src/os_os2.c cd44723f5a7db824ff24823cddd4269310dc0d29
 F src/os_unix.c d6218ae6a616f4ac83b5f8bdeef2959a613bb016
 F src/os_win.c 3dff41670fb9798a869c636626bb7d6d8b6a45bb
 F src/pager.c e5d12e7adbab0dfcf11412f0492f4dfff9e1dc41
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2ca8b82247277baf3b81b5111988305ad5f67701
-R fed990be391c6c93b3b644fa007e1c2c
-U drh
-Z b371c8bbfae57952930a76318664c6e9
+P ce36b6474a62f0a5b8d82968ca9a171f7143ae31
+R a9761d2ccf0f89e6d0cf549915efe398
+U pweilbacher
+Z 3da940b1506d2c21ca4dbd3a60e1fbd1

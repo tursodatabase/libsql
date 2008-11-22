@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.59 2008/11/18 23:03:40 pweilbacher Exp $
+** $Id: os_os2.c,v 1.60 2008/11/22 19:50:54 pweilbacher Exp $
 */
 
 #include "sqliteInt.h"
@@ -966,9 +966,9 @@ static void os2DlClose(sqlite3_vfs *pVfs, void *pHandle){
 ** Write up to nBuf bytes of randomness into zBuf.
 */
 static int os2Randomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf ){
-  ULONG sizeofULong = sizeof(ULONG);
+  int sizeofULong = sizeof(ULONG);
   int n = 0;
-  if( sizeof(DATETIME) <= nBuf - n ){
+  if( (int)sizeof(DATETIME) <= nBuf - n ){
     DATETIME x;
     DosGetDateTime(&x);
     memcpy(&zBuf[n], &x, sizeof(x));

@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
 **
-** $Id: mutex_os2.c,v 1.10 2008/06/23 22:13:28 pweilbacher Exp $
+** $Id: mutex_os2.c,v 1.11 2008/11/22 19:50:54 pweilbacher Exp $
 */
 #include "sqliteInt.h"
 
@@ -122,7 +122,7 @@ static sqlite3_mutex *os2MutexAlloc(int iType){
           mutex = 0;
           rc = DosCreateMutexSem( name, &mutex, 0, FALSE);
           if( rc == NO_ERROR ){
-            int i;
+            unsigned int i;
             if( !isInit ){
               for( i = 0; i < sizeof(staticMutexes)/sizeof(staticMutexes[0]); i++ ){
                 DosCreateMutexSem( 0, &staticMutexes[i].mutex, 0, FALSE );
