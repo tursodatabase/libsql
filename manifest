@@ -1,5 +1,5 @@
-C Port\sthe\scorruption\sbug\sfix\sof\scheck-in\s(5938)\sinto\sa\sbranch\soff\sof\nversion\s3.6.6.\s(CVS\s5947)
-D 2008-11-22T14:07:49
+C Version\s3.6.6.1\s(CVS\s5948)
+D 2008-11-22T15:51:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -659,7 +659,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P eebacbc9d7d0625dfbe6367046fa4a0ca9c04e74
+P 15d88edf7671822c57238c3f85adf0b40b13e3e2
 R d2ce2d5b91c1f6ae4cf2c6a18038f9fd
 U drh
-Z 5e4a581e0fb000be4cccce044d88796c
+Z d6e85c23f6cca1b4a3eb502f6411e7b2
