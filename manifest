@@ -1,5 +1,5 @@
-C Added\stest\scase\sto\sin4.test\sto\stry\sand\sduplicate\scrash\sreported\son\sthe\smailing\slist.\s(CVS\s5951)
-D 2008-11-24T15:32:00
+C Fixed\ssome\sspelling\serrors\sin\ssqliteInt.h.\s\sTicket\s#3509.\s(CVS\s5952)
+D 2008-11-24T20:01:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/select.c b296a7b53dd0b2c42ab8b67d969e2c924529008c
 F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
 F src/sqlite.h.in b5d50f12fb9c7460a4ddfef8c1e799afaabefebf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h beacd5768e55285097fbb419bcd741721b455003
+F src/sqliteInt.h 54d956e75ec8b8d174eb3d98de6f54db8507da5d
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b7d0ec838b806e7b2532bef1d59279c32fb206d3
-R 97c5428dfe1f286511e92a6f9dc34468
+P 8502fba37bb13c019252d0a65973a78982ec44aa
+R c7b13a46f15e8057cff1369cc33b7dfb
 U shane
-Z 609afe69e97376699d46d710a4ea4c34
+Z d4670883a93a1c5b520440ba970db22a

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.798 2008/11/19 16:52:44 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.799 2008/11/24 20:01:33 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -32,7 +32,7 @@
 #pragma warn -ccc /* Condition is always true or false */
 #pragma warn -aus /* Assigned value is never used */
 #pragma warn -csu /* Comparing signed and unsigned */
-#pragma warn -spa /* Suspicous pointer arithmetic */
+#pragma warn -spa /* Suspicious pointer arithmetic */
 #endif
 
 /* Needed for various definitions... */
@@ -117,7 +117,7 @@
 #define SQLITE_PTR_TO_INT(X)   ((int)(((char*)X)-(char*)0))
 
 /*
-** These #defines should enable >2GB file support on Posix if the
+** These #defines should enable >2GB file support on POSIX if the
 ** underlying operating system supports it.  If the OS lacks
 ** large file support, or if the OS is windows, these should be no-ops.
 **
@@ -127,13 +127,13 @@
 **
 ** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
 ** on the compiler command line.  This is necessary if you are compiling
-** on a recent machine (ex: RedHat 7.2) but you want your code to work
-** on an older machine (ex: RedHat 6.0).  If you compile on RedHat 7.2
+** on a recent machine (ex: Red Hat 7.2) but you want your code to work
+** on an older machine (ex: Red Hat 6.0).  If you compile on Red Hat 7.2
 ** without this option, LFS is enable.  But LFS does not exist in the kernel
-** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
+** in Red Hat 6.0, so the code won't work.  Hence, for maximum binary
 ** portability you should omit LFS.
 **
-** Similar is true for MacOS.  LFS is only supported on MacOS 9 and later.
+** Similar is true for Mac OS X.  LFS is only supported on Mac OS X 9 and later.
 */
 #ifndef SQLITE_DISABLE_LFS
 # define _LARGE_FILE       1
@@ -160,7 +160,7 @@
 /*
 ** The SQLITE_DEFAULT_MEMSTATUS macro must be defined as either 0 or 1.
 ** It determines whether or not the features related to 
-** SQLITE_CONFIG_MEMSTATUS are availabe by default or not. This value can
+** SQLITE_CONFIG_MEMSTATUS are available by default or not. This value can
 ** be overridden at runtime using the sqlite3_config() API.
 */
 #if !defined(SQLITE_DEFAULT_MEMSTATUS)
@@ -203,7 +203,7 @@
 
 /*
 ** We need to define _XOPEN_SOURCE as follows in order to enable
-** recursive mutexes on most unix systems.  But Mac OS X is different.
+** recursive mutexes on most Unix systems.  But Mac OS X is different.
 ** The _XOPEN_SOURCE define causes problems for Mac OS X we are told,
 ** so it is omitted there.  See ticket #2673.
 **
@@ -560,7 +560,7 @@ struct Db {
   char *zName;         /* Name of this database */
   Btree *pBt;          /* The B*Tree structure for this database file */
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
-  u8 safety_level;     /* How aggressive at synching data to disk */
+  u8 safety_level;     /* How aggressive at syncing data to disk */
   void *pAux;               /* Auxiliary data.  Usually NULL */
   void (*xFreeAux)(void*);  /* Routine to free pAux */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
@@ -624,7 +624,7 @@ struct Schema {
 
 /*
 ** Lookaside malloc is a set of fixed-size buffers that can be used
-** to satisify small transient memory allocation requests for objects
+** to satisfy small transient memory allocation requests for objects
 ** associated with a particular database connection.  The use of
 ** lookaside malloc provides a significant performance enhancement
 ** (approx 10%) by avoiding numerous malloc/free requests while parsing
@@ -689,7 +689,7 @@ struct sqlite3 {
   sqlite3_vfs *pVfs;            /* OS Interface */
   int nDb;                      /* Number of backends currently in use */
   Db *aDb;                      /* All backends */
-  int flags;                    /* Miscellanous flags. See below */
+  int flags;                    /* Miscellaneous flags. See below */
   int openFlags;                /* Flags passed to sqlite3_vfs.xOpen() */
   int errCode;                  /* Most recent error code (SQLITE_*) */
   int errMask;                  /* & result codes with this before returning */
@@ -715,9 +715,9 @@ struct sqlite3 {
     u8 busy;                    /* TRUE if currently initializing */
   } init;
   int nExtension;               /* Number of loaded extensions */
-  void **aExtension;            /* Array of shared libraray handles */
+  void **aExtension;            /* Array of shared library handles */
   struct Vdbe *pVdbe;           /* List of active virtual machines */
-  int activeVdbeCnt;            /* Number of vdbes currently executing */
+  int activeVdbeCnt;            /* Number of VDBEs currently executing */
   int writeVdbeCnt;             /* Number of active VDBEs that are writing */
   void (*xTrace)(void*,const char*);        /* Trace function */
   void *pTraceArg;                          /* Argument to the trace function */
@@ -828,7 +828,7 @@ struct FuncDef {
   FuncDef *pNext;      /* Next function with same name */
   void (*xFunc)(sqlite3_context*,int,sqlite3_value**); /* Regular function */
   void (*xStep)(sqlite3_context*,int,sqlite3_value**); /* Aggregate step */
-  void (*xFinalize)(sqlite3_context*);                /* Aggregate finializer */
+  void (*xFinalize)(sqlite3_context*);                /* Aggregate finalizer */
   char *zName;         /* SQL name of the function. */
   FuncDef *pHash;      /* Next with a different name but the same hash */
 };
@@ -838,7 +838,7 @@ struct FuncDef {
 */
 #define SQLITE_FUNC_LIKE     0x01 /* Candidate for the LIKE optimization */
 #define SQLITE_FUNC_CASE     0x02 /* Case-sensitive LIKE-type function */
-#define SQLITE_FUNC_EPHEM    0x04 /* Ephermeral.  Delete with VDBE */
+#define SQLITE_FUNC_EPHEM    0x04 /* Ephemeral.  Delete with VDBE */
 #define SQLITE_FUNC_NEEDCOLL 0x08 /* sqlite3GetFuncCollSeq() might be called */
 
 /*
@@ -910,7 +910,7 @@ struct Column {
 ** structure. Conceptually, a collating sequence consists of a name and
 ** a comparison routine that defines the order of that sequence.
 **
-** There may two seperate implementations of the collation function, one
+** There may two separate implementations of the collation function, one
 ** that processes text in UTF-8 encoding (CollSeq.xCmp) and another that
 ** processes text encoded in UTF-16 (CollSeq.xCmp16), using the machine
 ** native byte order. When a collation sequence is invoked, SQLite selects
@@ -1049,7 +1049,7 @@ struct Table {
 ** Allowed values for Tabe.tabFlags.
 */
 #define TF_Readonly        0x01    /* Read-only system table */
-#define TF_Ephemeral       0x02    /* An emphermal table */
+#define TF_Ephemeral       0x02    /* An ephemeral table */
 #define TF_HasPrimaryKey   0x04    /* Table has a primary key */
 #define TF_Autoincrement   0x08    /* Integer primary key is autoincrement */
 #define TF_Virtual         0x10    /* Is a virtual table */
@@ -1087,7 +1087,7 @@ struct Table {
 **
 ** Each REFERENCES clause generates an instance of the following structure
 ** which is attached to the from-table.  The to-table need not exist when
-** the from-table is created.  The existance of the to-table is not checked
+** the from-table is created.  The existence of the to-table is not checked
 ** until an attempt is made to insert data into the from-table.
 **
 ** The sqlite.aFKey hash table stores pointers to this structure
@@ -1096,7 +1096,7 @@ struct Table {
 ** field.
 */
 struct FKey {
-  Table *pFrom;     /* The table that constains the REFERENCES clause */
+  Table *pFrom;     /* The table that contains the REFERENCES clause */
   FKey *pNextFrom;  /* Next foreign key in pFrom */
   char *zTo;        /* Name of table that the key points to */
   FKey *pNextTo;    /* Next foreign key that points to zTo */
@@ -1172,11 +1172,11 @@ struct KeyInfo {
 ** A record is an object that contains one or more fields of data.
 ** Records are used to store the content of a table row and to store
 ** the key of an index.  A blob encoding of a record is created by
-** the OP_MakeRecord opcode of the VDBE and is disassemblied by the
+** the OP_MakeRecord opcode of the VDBE and is disassembled by the
 ** OP_Column opcode.
 **
 ** This structure holds a record that has already been disassembled
-** into its constitutent fields.
+** into its constituent fields.
 */
 struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
@@ -1241,7 +1241,7 @@ struct Index {
 ** this structure.  Tokens are also used as part of an expression.
 **
 ** Note if Token.z==0 then Token.dyn and Token.n are undefined and
-** may contain random values.  Do not make any assuptions about Token.dyn
+** may contain random values.  Do not make any assumptions about Token.dyn
 ** and Token.n when Token.z==0.
 */
 struct Token {
@@ -1288,7 +1288,7 @@ struct AggInfo {
     Expr *pExpr;             /* Expression encoding the function */
     FuncDef *pFunc;          /* The aggregate function implementation */
     int iMem;                /* Memory location that acts as accumulator */
-    int iDistinct;           /* Ephermeral table used to enforce DISTINCT */
+    int iDistinct;           /* Ephemeral table used to enforce DISTINCT */
   } *aFunc;
   int nFunc;              /* Number of entries in aFunc[] */
   int nFuncAlloc;         /* Number of slots allocated for aFunc[] */
@@ -1521,7 +1521,7 @@ struct WhereLevel {
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
   Index *pIdx;          /* Index used.  NULL if no index */
   int iTabCur;          /* The VDBE cursor used to access the table */
-  int iIdxCur;          /* The VDBE cursor used to acesss pIdx */
+  int iIdxCur;          /* The VDBE cursor used to access pIdx */
   int brk;              /* Jump here to break out of the loop */
   int nxt;              /* Jump here to start the next IN combination */
   int cont;             /* Jump here to continue with the next loop cycle */
@@ -1675,7 +1675,7 @@ struct Select {
 #define SRT_Coroutine   10  /* Generate a single row of result */
 
 /*
-** A structure used to customize the behaviour of sqlite3Select(). See
+** A structure used to customize the behavior of sqlite3Select(). See
 ** comments above sqlite3Select() for details.
 */
 typedef struct SelectDest SelectDest;
@@ -1815,7 +1815,7 @@ struct Trigger {
   char *table;            /* The table or view to which the trigger applies */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
-  Expr *pWhen;            /* The WHEN clause of the expresion (may be NULL) */
+  Expr *pWhen;            /* The WHEN clause of the expression (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
   Token nameToken;        /* Token containing zName. Use during parsing only */
@@ -1953,7 +1953,7 @@ struct StrAccum {
   int  nAlloc;         /* Amount of space allocated in zText */
   int  mxAlloc;        /* Maximum allowed string length */
   u8   mallocFailed;   /* Becomes true if any memory allocation fails */
-  u8   useMalloc;      /* True if zText is enlargable using realloc */
+  u8   useMalloc;      /* True if zText is enlargeable using realloc */
   u8   tooBig;         /* Becomes true if string size exceeds limits */
 };
 
