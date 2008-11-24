@@ -1,5 +1,5 @@
-C fix\sthe\scompile\swarnings\son\sOS/2\s(CVS\s5950)
-D 2008-11-22T19:50:54
+C Added\stest\scase\sto\sin4.test\sto\stry\sand\sduplicate\scrash\sreported\son\sthe\smailing\slist.\s(CVS\s5951)
+D 2008-11-24T15:32:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -368,7 +368,7 @@ F test/icu.test f51d0f4407ff8bb1e872f51a0e8b08fdc5a6897e
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
-F test/in4.test c043f75147295e9f6ad5040a5cda2c485736c2c8
+F test/in4.test 9bfd9226a82ac832046abc93acecf42627ebb45a
 F test/incrblob.test 4b9437bbb38724343dadbbcca6356bc2a9b435d1
 F test/incrblob2.test 5cca1c3cb29064c504b3b0cc3e2cd43e8053cfdf
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ce36b6474a62f0a5b8d82968ca9a171f7143ae31
-R a9761d2ccf0f89e6d0cf549915efe398
-U pweilbacher
-Z 3da940b1506d2c21ca4dbd3a60e1fbd1
+P b7d0ec838b806e7b2532bef1d59279c32fb206d3
+R 97c5428dfe1f286511e92a6f9dc34468
+U shane
+Z 609afe69e97376699d46d710a4ea4c34
