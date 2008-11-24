@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.3 2008/11/19 09:05:27 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.4 2008/11/24 20:05:39 shane Exp $
 */
 
 #include "sqliteInt.h"
@@ -108,7 +108,7 @@ static SQLITE_WSD struct PCacheGlobal {
 **   assert( PGHDR1_TO_PAGE(PAGE_TO_PGHDR1(X))==X );
 */
 #define PGHDR1_TO_PAGE(p) (void *)(&((unsigned char *)p)[sizeof(PgHdr1)])
-#define PAGE_TO_PGHDR1(p) (PgHdr1 *)(&((unsigned char *)p)[-1*sizeof(PgHdr1)])
+#define PAGE_TO_PGHDR1(p) (PgHdr1 *)(&((unsigned char *)p)[-1*(int)sizeof(PgHdr1)])
 
 /*
 ** Macros to enter and leave the global LRU mutex.
