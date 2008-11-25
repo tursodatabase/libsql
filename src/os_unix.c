@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to Unix systems.
 **
-** $Id: os_unix.c,v 1.220 2008/11/21 22:21:50 drh Exp $
+** $Id: os_unix.c,v 1.221 2008/11/25 12:07:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -513,57 +513,6 @@ static void testThreadLockingBehavior(int fd_orig){
 #endif /* SQLITE_THERADSAFE && defined(__linux__) */
 
 /*
-** If we are currently in a different thread than the thread that the
-** unixFile argument belongs to, then transfer ownership of the unixFile
-** over to the current thread.
-**
-** A unixFile is only owned by a thread on systems where one thread is
-** unable to override locks created by a different thread.  RedHat9 is
-** an example of such a system.
-**
-** Ownership transfer is only allowed if the unixFile is currently unlocked.
-** If the unixFile is locked and an ownership is wrong, then return
-** SQLITE_MISUSE.  SQLITE_OK is returned if everything works.
-*/
-#if SQLITE_THREADSAFE
-static int transferOwnership(unixFile *pFile){
-  int rc;
-  pthread_t hSelf;
-  if( threadsOverrideEachOthersLocks ){
-    /* Ownership transfers not needed on this system */
-    return SQLITE_OK;
-  }
-  hSelf = pthread_self();
-  if( pthread_equal(pFile->tid, hSelf) ){
-    /* We are still in the same thread */
-    OSTRACE1("No-transfer, same thread\n");
-    return SQLITE_OK;
-  }
-  if( pFile->locktype!=NO_LOCK ){
-    /* We cannot change ownership while we are holding a lock! */
-    return SQLITE_MISUSE;
-  }
-  OSTRACE4("Transfer ownership of %d from %d to %d\n",
-            pFile->h, pFile->tid, hSelf);
-  pFile->tid = hSelf;
-  if (pFile->pLock != NULL) {
-    releaseLockInfo(pFile->pLock);
-    rc = findLockInfo(pFile, &pFile->pLock, 0);
-    OSTRACE5("LOCK    %d is now %s(%s,%d)\n", pFile->h,
-           locktypeName(pFile->locktype),
-           locktypeName(pFile->pLock->locktype), pFile->pLock->cnt);
-    return rc;
-  } else {
-    return SQLITE_OK;
-  }
-}
-#else  /* if not SQLITE_THREADSAFE */
-  /* On single-threaded builds, ownership transfer is a no-op */
-# define transferOwnership(X) SQLITE_OK
-#endif /* SQLITE_THREADSAFE */
-
-
-/*
 ** Release a unixLockInfo structure previously allocated by findLockInfo().
 */
 static void releaseLockInfo(struct unixLockInfo *pLock){
@@ -585,6 +534,7 @@ static void releaseLockInfo(struct unixLockInfo *pLock){
     }
   }
 }
+
 
 /*
 ** Release a unixOpenCnt structure previously allocated by findLockInfo().
@@ -1131,6 +1081,57 @@ static const char *locktypeName(int locktype){
   return "ERROR";
 }
 #endif
+
+/*
+** If we are currently in a different thread than the thread that the
+** unixFile argument belongs to, then transfer ownership of the unixFile
+** over to the current thread.
+**
+** A unixFile is only owned by a thread on systems where one thread is
+** unable to override locks created by a different thread.  RedHat9 is
+** an example of such a system.
+**
+** Ownership transfer is only allowed if the unixFile is currently unlocked.
+** If the unixFile is locked and an ownership is wrong, then return
+** SQLITE_MISUSE.  SQLITE_OK is returned if everything works.
+*/
+#if SQLITE_THREADSAFE
+static int transferOwnership(unixFile *pFile){
+  int rc;
+  pthread_t hSelf;
+  if( threadsOverrideEachOthersLocks ){
+    /* Ownership transfers not needed on this system */
+    return SQLITE_OK;
+  }
+  hSelf = pthread_self();
+  if( pthread_equal(pFile->tid, hSelf) ){
+    /* We are still in the same thread */
+    OSTRACE1("No-transfer, same thread\n");
+    return SQLITE_OK;
+  }
+  if( pFile->locktype!=NO_LOCK ){
+    /* We cannot change ownership while we are holding a lock! */
+    return SQLITE_MISUSE;
+  }
+  OSTRACE4("Transfer ownership of %d from %d to %d\n",
+            pFile->h, pFile->tid, hSelf);
+  pFile->tid = hSelf;
+  if (pFile->pLock != NULL) {
+    releaseLockInfo(pFile->pLock);
+    rc = findLockInfo(pFile, &pFile->pLock, 0);
+    OSTRACE5("LOCK    %d is now %s(%s,%d)\n", pFile->h,
+           locktypeName(pFile->locktype),
+           locktypeName(pFile->pLock->locktype), pFile->pLock->cnt);
+    return rc;
+  } else {
+    return SQLITE_OK;
+  }
+}
+#else  /* if not SQLITE_THREADSAFE */
+  /* On single-threaded builds, ownership transfer is a no-op */
+# define transferOwnership(X) SQLITE_OK
+#endif /* SQLITE_THREADSAFE */
+
 
 /*
 ** Seek to the offset passed as the second argument, then read cnt 
