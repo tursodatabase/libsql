@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.506 2008/11/19 18:30:29 drh Exp $
+** @(#) $Id: pager.c,v 1.506.2.1 2008/11/26 14:55:02 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1061,9 +1061,6 @@ static u32 pager_cksum(Pager *pPager, const u8 *aData){
   return cksum;
 }
 
-/* Forward declaration */
-static void makeClean(PgHdr*);
-
 /*
 ** Read a single page from the journal file opened on file descriptor
 ** jfd.  Playback this one page.
@@ -1173,7 +1170,9 @@ static int pager_playback_one_page(
     if( pPager->xReiniter ){
       pPager->xReiniter(pPg);
     }
-    if( isMainJrnl ) makeClean(pPg);
+    if( isMainJrnl ){
+      sqlite3PcacheMakeClean(pPg);
+    }
 #ifdef SQLITE_CHECK_PAGES
     pPg->pageHash = pager_pagehash(pPg);
 #endif
@@ -3095,23 +3094,6 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
 }
 
 /*
-** Make a page dirty.  Set its dirty flag and add it to the dirty
-** page list.
-*/
-static void makeDirty(PgHdr *pPg){
-  sqlite3PcacheMakeDirty(pPg);
-}
-
-/*
-** Make a page clean.  Clear its dirty bit and remove it from the
-** dirty page list.
-*/
-static void makeClean(PgHdr *pPg){
-  sqlite3PcacheMakeClean(pPg);
-}
-
-
-/*
 ** Mark a data page as writeable.  The page is written into the journal 
 ** if it is not there already.  This routine must be called before making
 ** changes to a page.
@@ -3162,7 +3144,7 @@ static int pager_write(PgHdr *pPg){
   /* Mark the page as dirty.  If the page has already been written
   ** to the journal then we can return right away.
   */
-  makeDirty(pPg);
+  sqlite3PcacheMakeDirty(pPg);
   if( pageInJournal(pPg) && (pageInStatement(pPg) || pPager->stmtInUse==0) ){
     pPager->dirtyCache = 1;
     pPager->dbModified = 1;
@@ -4069,7 +4051,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   */
   if( (pPg->flags&PGHDR_NEED_SYNC) && !isCommit ){
     needSyncPgno = pPg->pgno;
-    assert( pageInJournal(pPg) || pgno>pPager->origDbSize );
+    assert( pageInJournal(pPg) || pPg->pgno>pPager->origDbSize );
     assert( pPg->flags&PGHDR_DIRTY );
     assert( pPager->needSync );
   }
@@ -4091,7 +4073,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     sqlite3PcacheDrop(pPgOld);
   }
 
-  makeDirty(pPg);
+  sqlite3PcacheMakeDirty(pPg);
   pPager->dirtyCache = 1;
   pPager->dbModified = 1;
 
@@ -4126,7 +4108,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     pPager->needSync = 1;
     assert( pPager->noSync==0 && !MEMDB );
     pPgHdr->flags |= PGHDR_NEED_SYNC;
-    makeDirty(pPgHdr);
+    sqlite3PcacheMakeDirty(pPgHdr);
     sqlite3PagerUnref(pPgHdr);
   }
 
