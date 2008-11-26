@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.540 2008/11/21 09:09:02 danielk1977 Exp $
+** $Id: btree.c,v 1.541 2008/11/26 07:25:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6058,7 +6058,9 @@ int sqlite3BtreeDelete(BtCursor *pCur){
         assert( leafCur.aiIdx[leafCur.iPage]==0 );
       }
 
-      if( rc==SQLITE_OK ){
+      if( SQLITE_OK==rc
+       && SQLITE_OK==(rc = sqlite3PagerWrite(pLeafPage->pDbPage)) 
+      ){
         dropCell(pLeafPage, 0, szNext);
         VVA_ONLY( leafCur.pagesShuffled = 0 );
         rc = balance(&leafCur, 0);
