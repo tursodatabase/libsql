@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr.test,v 1.41 2008/07/12 14:52:20 drh Exp $
+# $Id: ioerr.test,v 1.42 2008/11/26 07:40:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -403,5 +403,28 @@ do_ioerr_test ioerr-14 -ckrefcount true -erc 1 -sqlprep {
   INSERT INTO t1 VALUES(randomblob(100));
   COMMIT;
 }
+
+do_ioerr_test ioerr-15 -tclprep {
+  db eval {
+    BEGIN;
+    PRAGMA cache_size = 10;
+    CREATE TABLE t1(a);
+    CREATE INDEX i1 ON t1(a);
+    CREATE TABLE t2(a);
+  }
+  for {set ii 1} {$ii < 100} {incr ii} {
+    set v [string range [string repeat [format %.3d $ii] 200] 0 220]
+    db eval {INSERT INTO t1 VALUES($v)}
+  }
+  db eval {
+    DELETE FROM t1 WHERE oid > 85;
+    COMMIT;
+  }
+} -sqlbody {
+  BEGIN;
+  INSERT INTO t2 VALUES(randstr(22000,22000));
+  DELETE FROM t1 WHERE oid = 83;
+  COMMIT;
+} 
 
 finish_test

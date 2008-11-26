@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sassert()\sfailures\sprovoked\sby\srunning\swith\sa\ssmall\sdefault\scache-size\s(64\spages).\s(CVS\s5955)
-D 2008-11-26T07:25:52
+C Fix\san\sobscure\smemory\sleak\sthat\scan\sfollow\san\sIO\serror.\s(CVS\s5956)
+D 2008-11-26T07:40:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,7 +100,7 @@ F src/attach.c 85c6a3d0daf11965b47604190d7cf5597dc88382
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 950070c67fc0edbed21b5cfae12bcf977f8859f4
+F src/btree.c 615a2b9e6173cd0779d0b4c49d7d680acf761e5d
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
 F src/btreeInt.h 8d21590c97b6a2c00cce1f78ed5dc5756e835108
 F src/build.c a89e901ea24d8ec845286f9a1fbfd14572a7777e
@@ -387,7 +387,7 @@ F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test d80d0682be7c4ce2f0da1dfe0444a2ba563df949
-F test/ioerr.test b42f249c9181b5864e53fdae38ef75475d71c66f
+F test/ioerr.test 12f9000bb9024b4b1386320e60badd5223e75b16
 F test/ioerr2.test a8428580ce12ce67a6f16d85e2640fa6ce2da888
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 622cb59791ab9f61c2e5131cb6ece5e75cdc9fae
-R ccf164744ce5645c6babde1974c729ae
+P 1a66481a37dd9a21673c0ffb3df2be0614fe9f63
+R 0738b0a779bd8893bc38555e88feb4fd
 U danielk1977
-Z a1b3bbe62c207f2151555f5f0331091f
+Z 1fa6bfa3aaf0643fc7acabd1899b00a4

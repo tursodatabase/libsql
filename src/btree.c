@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.541 2008/11/26 07:25:52 danielk1977 Exp $
+** $Id: btree.c,v 1.542 2008/11/26 07:40:30 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2927,6 +2927,7 @@ void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur){
   for(i=0; i<=pTempCur->iPage; i++){
     sqlite3PagerRef(pTempCur->apPage[i]->pDbPage);
   }
+  assert( pTempCur->pKey==0 );
 }
 
 /*
@@ -2939,6 +2940,7 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
   for(i=0; i<=pCur->iPage; i++){
     sqlite3PagerUnref(pCur->apPage[i]->pDbPage);
   }
+  sqlite3_free(pCur->pKey);
 }
 
 /*
