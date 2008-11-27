@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: exclusive2.test,v 1.9 2008/08/22 00:25:53 aswift Exp $
+# $Id: exclusive2.test,v 1.10 2008/11/27 02:22:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,6 +179,7 @@ do_test exclusive2-1.11 {
 # to prevent memory-induced cache spills.
 #
 do_test exclusive2-2.1 {
+  execsql {PRAGMA cache_size=1000;}
   execsql {PRAGMA locking_mode = exclusive;}
   execsql {
     BEGIN;

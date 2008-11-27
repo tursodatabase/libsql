@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.542 2008/11/26 07:40:30 danielk1977 Exp $
+** $Id: btree.c,v 1.543 2008/11/27 02:22:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -754,6 +754,7 @@ static int defragmentPage(MemPage *pPage){
   data[hdr+7] = 0;
   addr = cellOffset+2*nCell;
   memset(&data[addr], 0, cbrk-addr);
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   if( cbrk-addr!=pPage->nFree ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -825,6 +826,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
   top -= nByte;
   assert( cellOffset + 2*nCell <= top );
   put2byte(&data[hdr+5], top);
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   return top;
 }
 
@@ -901,6 +903,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
     top = get2byte(&data[hdr+5]);
     put2byte(&data[hdr+5], top + get2byte(&data[pbegin+2]));
   }
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   return SQLITE_OK;
 }
 
@@ -2119,6 +2122,7 @@ set_child_ptrmaps_out:
 */
 static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   if( eType==PTRMAP_OVERFLOW2 ){
     /* The pointer is always the first 4 bytes of the page in this case.  */
     if( get4byte(pPage->aData)!=iFrom ){
@@ -4190,6 +4194,7 @@ static int allocateBtreePage(
           memcpy(&pNewTrunk->aData[8], &pTrunk->aData[12], (k-1)*4);
           releasePage(pNewTrunk);
           if( !pPrevTrunk ){
+            assert( sqlite3PagerIswriteable(pPage1->pDbPage) );
             put4byte(&pPage1->aData[32], iNewTrunk);
           }else{
             rc = sqlite3PagerWrite(pPrevTrunk->pDbPage);
@@ -4245,6 +4250,7 @@ static int allocateBtreePage(
             memcpy(&aData[8+closest*4], &aData[4+k*4], 4);
           }
           put4byte(&aData[4], k-1);
+          assert( sqlite3PagerIswriteable(pTrunk->pDbPage) );
           rc = sqlite3BtreeGetPage(pBt, *pPgno, ppPage, 1);
           if( rc==SQLITE_OK ){
             sqlite3PagerDontRollback((*ppPage)->pDbPage);
@@ -4480,6 +4486,11 @@ static int fillInCell(
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
 
+  /* pPage is not necessarily writeable since pCell might be auxiliary
+  ** buffer space that is separate from the pPage buffer area */
+  assert( pCell<pPage->aData || pCell>=&pPage->aData[pBt->pageSize]
+            || sqlite3PagerIswriteable(pPage->pDbPage) );
+
   /* Fill in the header. */
   nHeader = 0;
   if( !pPage->leaf ){
@@ -4552,6 +4563,16 @@ static int fillInCell(
         releasePage(pToRelease);
         return rc;
       }
+
+      /* If pToRelease is not zero than pPrior points into the data area
+      ** of pToRelease.  Make sure pToRelease is still writeable. */
+      assert( pToRelease==0 || sqlite3PagerIswriteable(pToRelease->pDbPage) );
+
+      /* If pPrior is part of the data area of pPage, then make sure pPage
+      ** is still writeable */
+      assert( pPrior<pPage->aData || pPrior>=&pPage->aData[pBt->pageSize]
+            || sqlite3PagerIswriteable(pPage->pDbPage) );
+
       put4byte(pPrior, pgnoOvfl);
       releasePage(pToRelease);
       pToRelease = pOvfl;
@@ -4562,6 +4583,16 @@ static int fillInCell(
     }
     n = nPayload;
     if( n>spaceLeft ) n = spaceLeft;
+
+    /* If pToRelease is not zero than pPayload points into the data area
+    ** of pToRelease.  Make sure pToRelease is still writeable. */
+    assert( pToRelease==0 || sqlite3PagerIswriteable(pToRelease->pDbPage) );
+
+    /* If pPayload is part of the data area of pPage, then make sure pPage
+    ** is still writeable */
+    assert( pPayload<pPage->aData || pPayload>=&pPage->aData[pBt->pageSize]
+            || sqlite3PagerIswriteable(pPage->pDbPage) );
+
     if( nSrc>0 ){
       if( n>nSrc ) n = nSrc;
       assert( pSrc );
@@ -4605,7 +4636,8 @@ static int dropCell(MemPage *pPage, int idx, int sz){
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
   pc = get2byte(ptr);
-  if ( (pc<pPage->hdrOffset+6+(pPage->leaf?0:4)) || (pc+sz>pPage->pBt->usableSize) ) {
+  if( (pc<pPage->hdrOffset+6+(pPage->leaf?0:4))
+     || (pc+sz>pPage->pBt->usableSize) ){
     return SQLITE_CORRUPT_BKPT;
   }
   rc = freeSpace(pPage, pc, sz);
@@ -4750,6 +4782,7 @@ static void assemblePage(
   }
   assert( totalSize+2*nCell<=pPage->nFree );
   assert( pPage->nCell==0 );
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   cellptr = pPage->cellOffset;
   data = pPage->aData;
   hdr = pPage->hdrOffset;
@@ -4829,6 +4862,7 @@ static int balance_quick(BtCursor *pCur){
   if( rc==SQLITE_OK ){
     pCell = pPage->aOvfl[0].pCell;
     szCell = cellSizePtr(pPage, pCell);
+    assert( sqlite3PagerIswriteable(pNew->pDbPage) );
     zeroPage(pNew, pPage->aData[0]);
     assemblePage(pNew, 1, &pCell, &szCell);
     pPage->nOverflow = 0;
@@ -5431,6 +5465,7 @@ static int balance_nonroot(BtCursor *pCur){
       assert( iSpace2<=pBt->pageSize );
       rc = insertCell(pParent, nxDiv, pCell, sz, pTemp, 4);
       if( rc!=SQLITE_OK ) goto balance_cleanup;
+      assert( sqlite3PagerIswriteable(pParent->pDbPage) );
       put4byte(findOverflowCell(pParent,nxDiv), pNew->pgno);
 
       /* If this is an auto-vacuum database, and not a leaf-data tree,
@@ -5468,6 +5503,7 @@ static int balance_nonroot(BtCursor *pCur){
       }
     }
   }
+  assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   if( nxDiv==pParent->nCell+pParent->nOverflow ){
     /* Right-most sibling is the right-most child of pParent */
     put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew[nNew-1]);
@@ -5571,6 +5607,7 @@ static int balance_shallower(BtCursor *pCur){
         }
         assemblePage(pPage, pChild->nCell, apCell, szCell);
         /* Copy the right-pointer of the child to the parent. */
+        assert( sqlite3PagerIswriteable(pPage->pDbPage) );
         put4byte(&pPage->aData[pPage->hdrOffset+8], 
             get4byte(&pChild->aData[pChild->hdrOffset+8]));
         freePage(pChild);
@@ -5631,6 +5668,7 @@ static int balance_deeper(BtCursor *pCur){
   pPage = pCur->apPage[0];
   pBt = pPage->pBt;
   assert( sqlite3_mutex_held(pBt->mutex) );
+  assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   rc = allocateBtreePage(pBt, &pChild, &pgnoChild, pPage->pgno, 0);
   if( rc ) return rc;
   assert( sqlite3PagerIswriteable(pChild->pDbPage) );
@@ -5652,6 +5690,7 @@ static int balance_deeper(BtCursor *pCur){
       pChild->nFree = 0;
     }
     assert( pChild->nCell==pPage->nCell );
+    assert( sqlite3PagerIswriteable(pPage->pDbPage) );
     zeroPage(pPage, pChild->aData[0] & ~PTF_LEAF);
     put4byte(&pPage->aData[pPage->hdrOffset+8], pgnoChild);
     TRACE(("BALANCE: copy root %d into %d\n", pPage->pgno, pChild->pgno));
@@ -6021,6 +6060,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
       }        
 
       if( rc==SQLITE_OK ){
+        assert( sqlite3PagerIswriteable(pPage->pDbPage) );
         put4byte(findOverflowCell(pPage, idx), pgnoChild);
         VVA_ONLY( pCur->pagesShuffled = 0 );
         rc = balance(pCur, 0);
