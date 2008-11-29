@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.332 2008/11/28 15:37:20 drh Exp $
+** $Id: test1.c,v 1.333 2008/11/29 00:56:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4527,20 +4527,29 @@ static int file_control_lockproxy_test(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
-	{
+#if defined(SQLITE_ENABLE_LOCKING_STYLE) && defined(__DARWIN__)
+  {
     char *proxyPath = "test.proxy";
     char *testPath;
-		rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
-    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+    rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
+    if( rc ){
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR;
+    }
     rc = sqlite3_file_control(db, NULL, SQLITE_GET_LOCKPROXYFILE, &testPath);
     if( strncmp(proxyPath,testPath,11) ) {
-      Tcl_AppendResult(interp, "Lock proxy file did not match the previously assigned value", 0);
+      Tcl_AppendResult(interp, "Lock proxy file did not match the "
+                               "previously assigned value", 0);
       return TCL_ERROR;
     }
-    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
-		rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
-    if( rc ) { Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); return TCL_ERROR; }
+    if( rc ){
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+      return TCL_ERROR;
+    }
+    rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
+    if( rc ){
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+      return TCL_ERROR;
+    }
   }
 #endif
   return TCL_OK;  

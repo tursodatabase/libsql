@@ -1,5 +1,5 @@
-C First\sstep\sin\srefactoring\sos_unix.c.\s\sThis\sis\swork\sin\sprogress.\s\sThe\scode\ncompiles\sand\sruns\son\sLinux\sand\sMacOSX\s(as\slong\sas\sSQLITE_ENABLE_LOCKING_STYLE\nis\sturned\soff),\sbut\sthere\sare\sa\sfew\stest\sfailures.\s(CVS\s5965)
-D 2008-11-28T15:37:20
+C Continuing\swork\son\sthe\sos_unix.c\srefactoring.\s\sRemoved\sall\sof\sthe\nLOCKING_STYLE_*\sconstants\sand\sinstead\spass\saround\spointers\sto\sthe\nunderlying\ssqlite3_io_method\sobjects.\s(CVS\s5966)
+D 2008-11-29T00:56:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 36196e71292a44bf2d393413cd8c86199694b8b4
-F src/os_unix.c 26f4b3dde5bac6ba8c8dc86a547a4053d5f9cfc3
+F src/os_unix.c 9c5269d610ec2d43a19733e964e89f3e61323b29
 F src/os_win.c 3dff41670fb9798a869c636626bb7d6d8b6a45bb
 F src/pager.c 2e9182e181bbd3d758436d9ccce2a3910400dd30
 F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
@@ -159,7 +159,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 96049bd454f1547abff0a57c45f0dfa57701e076
-F src/test1.c f407faafb17ad328057fe86800518a64046e2766
+F src/test1.c 737638299302ef85e34f6d04c40d8155db251736
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -171,7 +171,7 @@ F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c 45024094ed7cf780c5d5dccda645145f95cf78ef
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
-F src/test_config.c 47c66ced0faa6b18fbab72cbe77098ee04789722
+F src/test_config.c 4fcc391cbd5d2334c67cf3ec643c2c2bcc3025fa
 F src/test_devsym.c 802d10e65b4217208cb47059b84adf46318bcdf4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f9c7359065829b016d8cd04304c02509c254fe05
-R f18bbe219fdf4c9d3849fc41eab92317
+P 7825cd63e5cb390a9c2c05957ebc9b189612f04a
+R 2259cba8f622d2dabcb4ffff89e3fb5a
 U drh
-Z 31ecaef0fd8fa5ecc70a0ec198476cc9
+Z 276dfeea88fd39cbd9c4b8d08e052ab2
