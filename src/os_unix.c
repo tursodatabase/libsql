@@ -19,7 +19,7 @@
 ** use flock(), dot-files, various proprietary locking schemas, or simply
 ** skip locking all together.
 **
-** This source file is group into divisions where the logic for various
+** This source file is organized into divisions where the logic for various
 ** subfunctions is contained within the appropriate division.  PLEASE
 ** KEEP THE STRUCTURE OF THIS FILE INTACT.  New code should be placed
 ** in the correct division and should be clearly labeled.
@@ -36,11 +36,14 @@
 **      + for named semaphore locks (VxWorks only)
 **      + for AFP filesystem locks (MacOSX only)
 **      + for proxy locks (MacOSX only)
-**   *  The routine used to detect an appropriate locking style
-**   *  sqlite3_file methods not associated with locking
-**   *  Implementations of sqlite3_os_init() and sqlite3_os_end()
+**   *  sqlite3_file methods not associated with locking.
+**   *  Definitions of sqlite3_io_methods objects for all locking
+**      methods plus "finder" functions for each locking method.
+**   *  VFS method implementations.
+**   *  Definitions of sqlite3_vfs objects for all locking methods
+**      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.223 2008/11/29 00:56:53 drh Exp $
+** $Id: os_unix.c,v 1.224 2008/11/29 02:20:27 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -60,9 +63,6 @@
 ** is defined to 1.  The SQLITE_ENABLE_LOCKING_STYLE also enables automatic
 ** selection of the appropriate locking style based on the filesystem
 ** where the database is located.  
-**
-** SQLITE_ENABLE_LOCKING_STYLE only works on a Mac. It is turned on by
-** default on a Mac and disabled on all other posix platforms.
 */
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__DARWIN__)
@@ -96,6 +96,11 @@
 ** without this option, LFS is enable.  But LFS does not exist in the kernel
 ** in RedHat 6.0, so the code won't work.  Hence, for maximum binary
 ** portability you should omit LFS.
+**
+** The previous paragraph was written in 2005.  (This paragraph is written
+** on 2008-11-28.) These days, all Linux kernels support large files, so
+** you should probably leave LFS enabled.  But some embedded platforms might
+** lack LFS in which case the SQLITE_DISABLE_LFS macro might still be useful.
 */
 #ifndef SQLITE_DISABLE_LFS
 # define _LARGE_FILE       1
@@ -119,10 +124,10 @@
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
 # if OS_VXWORKS
-#  define lstat stat
 #  include <semaphore.h>
 #  include <limits.h>
 # else
+#  include <sys/file.h>
 #  include <sys/param.h>
 #  include <sys/mount.h>
 # endif
@@ -164,8 +169,8 @@
 
 
 /*
-** The unixFile structure is subclass of sqlite3_file specific for the unix
-** protability layer.
+** The unixFile structure is subclass of sqlite3_file specific to the unix
+** VFS implementations.
 */
 typedef struct unixFile unixFile;
 struct unixFile {
@@ -419,7 +424,7 @@ struct vxworksFileId {
 
 #if OS_VXWORKS
 /* 
-** All unique filesname are held on a linked list headed by this
+** All unique filenames are held on a linked list headed by this
 ** variable:
 */
 static struct vxworksFileId *vxworksFileList = 0;
@@ -429,8 +434,8 @@ static struct vxworksFileId *vxworksFileList = 0;
 ** by making the following changes:
 **
 **  * removing any trailing and duplicate /
-**  * removing /./
-**  * removing /A/../
+**  * convert /./ into just /
+**  * convert /A/../ where A is any simple name into just /
 **
 ** Changes are made in-place.  Return the new name length.
 **
@@ -534,7 +539,7 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 /******************************************************************************
 *************************** Posix Advisory Locking ****************************
 **
-** POSIX advisory locks broken by design.  ANSI STD 1003.1 (1996)
+** POSIX advisory locks are broken by design.  ANSI STD 1003.1 (1996)
 ** section 6.5.2.2 lines 483 through 490 specify that when a process
 ** sets or clears a lock, that operation overrides any prior locks set
 ** by the same process.  It does not explicitly say so, but this implies
@@ -567,6 +572,10 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** locks to see if another thread has previously set a lock on that same
 ** inode.
 **
+** (Aside: The use of inode numbers as unique IDs does not work on VxWorks.
+** For VxWorks, we have to use the alternative unique ID system based on
+** canonical filename and implemented in the previous division.)
+**
 ** The sqlite3_file structure for POSIX is no longer just an integer file
 ** descriptor.  It is now a structure that holds the integer file
 ** descriptor and a pointer to a structure that describes the internal
@@ -597,10 +606,10 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** be closed and that list is walked (and cleared) when the last lock
 ** clears.
 **
-** Yet another problem with posix locks and threads:
+** Yet another problem:  LinuxThreads do not play well with posix locks.
 **
-** Many older versions of linux us the LinuxThreads library which is
-** not posix compliant.  Under LinuxThreads, a lock created thread
+** Many older versions of linux use the LinuxThreads library which is
+** not posix compliant.  Under LinuxThreads, a lock created by thread
 ** A cannot be modified or overridden by a different thread B.
 ** Only thread A can modify the lock.  Locking behavior is correct
 ** if the appliation uses the newer Native Posix Thread Library (NPTL)
@@ -613,7 +622,7 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 **
 ** On systems where thread A is unable to modify locks created by
 ** thread B, we have to keep track of which thread created each
-** lock.  So there is an extra field in the key to the unixLockInfo
+** lock.  Hence there is an extra field in the key to the unixLockInfo
 ** structure to record this information.  And on those systems it
 ** is illegal to begin a transaction in one thread and finish it
 ** in another.  For this latter restriction, there is no work-around.
@@ -677,9 +686,8 @@ struct unixLockKey {
 
 /*
 ** An instance of the following structure is allocated for each open
-** inode on each thread with a different process ID.  (Threads have
-** different process IDs on some versions of linux, but not on most
-** other unixes.)
+** inode.  Or, on LinuxThreads, there is one of these structures for
+** each inode opened by each thread.
 **
 ** A single inode can have multiple file descriptors, so each unixFile
 ** structure contains a pointer to an instance of this object and this
@@ -700,6 +708,11 @@ struct unixLockInfo {
 ** inode.  If a close is attempted against an inode that is holding
 ** locks, the close is deferred until all locks clear by adding the
 ** file descriptor to be closed to the pending list.
+**
+** TODO:  Consider changing this so that there is only a single file
+** descriptor for each open file, even when it is opened multiple times.
+** The close() system call would only occur when the last database
+** using the file closes.
 */
 struct unixOpenCnt {
   struct unixFileId fileId;   /* The lookup key */
@@ -715,8 +728,8 @@ struct unixOpenCnt {
 };
 
 /*
-** List of all unixLockInfo and unixOpenCnt objects.  This used to be a hash
-** table.  But the number of objects is rarely more than a dozen and
+** Lists of all unixLockInfo and unixOpenCnt objects.  These used to be hash
+** tables.  But the number of objects is rarely more than a dozen and
 ** never exceeds a few thousand.  And lookup is not on a critical
 ** path so a simple linked list will suffice.
 */
@@ -724,11 +737,11 @@ static struct unixLockInfo *lockList = 0;
 static struct unixOpenCnt *openList = 0;
 
 /*
-** This variable records whether or not threads can override each others
+** This variable remembers whether or not threads can override each others
 ** locks.
 **
-**    0:  No.  Threads cannot override each others locks.
-**    1:  Yes.  Threads can override each others locks.
+**    0:  No.  Threads cannot override each others locks.  (LinuxThreads)
+**    1:  Yes.  Threads can override each others locks.  (Posix & NLPT)
 **   -1:  We don't know yet.
 **
 ** On some systems, we know at compile-time if threads can override each
@@ -866,7 +879,6 @@ static void releaseOpenCnt(struct unixOpenCnt *pOpen){
     }
   }
 }
-
 
 /*
 ** Given a file descriptor, locate unixLockInfo and unixOpenCnt structures that
@@ -1459,6 +1471,10 @@ end_unlock:
 ** common to all locking schemes. It closes the directory and file
 ** handles, if they are valid, and sets all fields of the unixFile
 ** structure to 0.
+**
+** It is *not* necessary to hold the mutex when this routine is called,
+** even on VxWorks.  A mutex will be acquired on VxWorks by the
+** vxworksReleaseFileId() routine.
 */
 static int closeUnixFile(sqlite3_file *id){
   unixFile *pFile = (unixFile*)id;
@@ -1482,7 +1498,7 @@ static int closeUnixFile(sqlite3_file *id){
 #if OS_VXWORKS
     if( pFile->pId ){
       if( pFile->isDelete ){
-         unlink(pFile->pId->zCanonicalName);
+        unlink(pFile->pId->zCanonicalName);
       }
       vxworksReleaseFileId(pFile->pId);
       pFile->pId = 0;
@@ -1550,36 +1566,25 @@ static int unixClose(sqlite3_file *id){
 ** time and one or more of those connections are writing.
 */
 
-/*
-** The nolockLockingContext is void
-*/
-typedef void nolockLockingContext;
-
 static int nolockCheckReservedLock(sqlite3_file *NotUsed, int *pResOut){
   UNUSED_PARAMETER(NotUsed);
   *pResOut = 0;
   return SQLITE_OK;
 }
-
 static int nolockLock(sqlite3_file *NotUsed, int NotUsed2){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return SQLITE_OK;
 }
-
 static int nolockUnlock(sqlite3_file *NotUsed, int NotUsed2){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   return SQLITE_OK;
 }
 
 /*
-** Close a file.
+** Close the file.
 */
 static int nolockClose(sqlite3_file *id) {
-  int rc;
-  if( OS_VXWORKS ) unixEnterMutex();
-  rc = closeUnixFile(id);
-  if( OS_VXWORKS ) unixLeaveMutex();
-  return rc;
+  return closeUnixFile(id);
 }
 
 /******************* End of the no-op lock implementation *********************
@@ -1766,7 +1771,7 @@ static int dotlockUnlock(sqlite3_file *id, int locktype) {
 }
 
 /*
-** Close a file.
+** Close a file.  Make sure the lock has been released before closing.
 */
 static int dotlockClose(sqlite3_file *id) {
   int rc;
@@ -1775,9 +1780,7 @@ static int dotlockClose(sqlite3_file *id) {
     dotlockUnlock(id, NO_LOCK);
     sqlite3_free(pFile->lockingContext);
   }
-  if( OS_VXWORKS ) unixEnterMutex();
   rc = closeUnixFile(id);
-  if( OS_VXWORKS ) unixLeaveMutex();
   return rc;
 }
 /****************** End of the dot-file lock implementation *******************
@@ -1792,12 +1795,6 @@ static int dotlockClose(sqlite3_file *id) {
 ** compiling for VXWORKS.
 */
 #if SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS
-#include <sys/file.h>
-
-/*
-** The flockLockingContext is not used
-*/
-typedef void flockLockingContext;
 
 /* flock-style reserved lock checking following the behavior of 
  ** unixCheckReservedLock, see the unixCheckReservedLock function comments */

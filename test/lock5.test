@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock5.test,v 1.4 2008/11/21 00:10:35 aswift Exp $
+# $Id: lock5.test,v 1.5 2008/11/29 02:20:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -24,6 +24,7 @@ if {[catch {sqlite3 db test.db -vfs unix-none} msg]} {
   return
 }
 db close
+file delete -force test.db.lock
 
 ifcapable lock_proxy_pragmas {
   set ::using_proxy 0
