@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.509 2008/11/26 07:25:52 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.510 2008/11/29 22:49:23 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -681,6 +681,15 @@ static int writeJournalHdr(Pager *pPager){
   put32bits(&zHeader[sizeof(aJournalMagic)+8], pPager->dbSize);
   /* The assumed sector size for this process */
   put32bits(&zHeader[sizeof(aJournalMagic)+12], pPager->sectorSize);
+
+  /* Initializing the tail of the buffer is not necessary.  Everything
+  ** works find if the following memset() is omitted.  But initializing
+  ** the memory prevents valgrind from complaining, so we are willing to
+  ** take the performance hit.
+  */
+  memset(&zHeader[sizeof(aJournalMagic)+16], 0,
+         nHeader-(sizeof(aJournalMagic)+16));
+
   if( pPager->journalHdr==0 ){
     /* The page size */
     put32bits(&zHeader[sizeof(aJournalMagic)+16], pPager->pageSize);
