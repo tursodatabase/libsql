@@ -1,5 +1,5 @@
-C Make\sos_unix\scompile\swith\sSQLITE_ENABLE_PROXY_LOCKING\s(CVS\s5970)
-D 2008-12-03T21:26:20
+C Reorganize\sthe\sproxy-locking\smethod\sin\sos_unix.c.\s\sAdditional\scleanup.\s(CVS\s5971)
+D 2008-12-03T22:32:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os.c 0b411644b87ad689d7250bbfd1834d99b81a3df4
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 36196e71292a44bf2d393413cd8c86199694b8b4
-F src/os_unix.c 199a3f3af7e0ba4562a4986282f89a1fa0bf15cc
+F src/os_unix.c 540aebcdfbaa2e4271a8f679f8ea3f617745cdc0
 F src/os_win.c 3dff41670fb9798a869c636626bb7d6d8b6a45bb
 F src/pager.c a193da9e271898077de815819e4c29fc2b6ece2a
 F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
@@ -159,7 +159,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
 F src/tclsqlite.c 96049bd454f1547abff0a57c45f0dfa57701e076
-F src/test1.c 27a78e2804caf3bc6477615a955ce2dab77b1aa3
+F src/test1.c 81063a634c0970a7dcb8ba8b58b7645be166a328
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -579,7 +579,7 @@ F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
 F test/tkt3442.test 33722a3fa4bdc0614448044eb5e28765aea28eb7
 F test/tkt3457.test e9ca2b90f0eb1fb8be73a30d29aacb2e3abedeb9
 F test/tkt3461.test 5a63e8d8ee5ce00f076b1e2f82aba5480a0f14ed
-F test/tkt3472.test e689a687631e59c7a47d9438148115fee23b16c3
+F test/tkt3472.test 98c7e54b8fef2b1266a552a66c8e5d88a6908d1d
 F test/tkt3493.test 8472b3464e49a27ff7271308eec46154209e667b
 F test/tkt3508.test d9e285ff91731247d4673f9252fe5934639d7f0d
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 215d36ea89078036fb66b5154f054613b735dab3
-R 80492df3979d1c7b94e5fa0d18310166
-U aswift
-Z d7e30b90b8fb23d4e09e4a51a9d3bb3d
+P 3efedac6aa4f544d40c2f782109d4e1795e449a0
+R afe9d5adf198ca462dbe77afee945c10
+U drh
+Z 2fd5c78cbc9007cc32a572d2667be6ae
