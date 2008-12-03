@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.227 2008/12/03 22:32:45 drh Exp $
+** $Id: os_unix.c,v 1.228 2008/12/03 22:48:33 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -3436,6 +3436,13 @@ static int getTempname(int nBuf, char *zBuf){
   }while( access(zBuf,0)==0 );
   return SQLITE_OK;
 }
+
+/*
+** Routine to transform a unixFile into a proxy-locking unixFile.
+** Implementation in the proxy-lock division, but used by unixOpen()
+** if SQLITE_PREFER_PROXY_LOCKING is defined.
+*/
+static int proxyTransformUnixFile(unixFile*, const char*);
 
 
 /*
