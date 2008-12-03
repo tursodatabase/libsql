@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.262 2008/10/23 05:45:07 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.263 2008/12/03 23:23:41 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -444,7 +444,7 @@ as(X) ::= .            {X.n = 0;}
 // A complete FROM clause.
 //
 from(A) ::= .                {A = sqlite3DbMallocZero(pParse->db, sizeof(*A));}
-from(A) ::= FROM seltablist(X).  {
+from(A) ::= FROM seltablist(X). {
   A = X;
   sqlite3SrcListShiftJoinType(A);
 }
@@ -462,22 +462,33 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) usi
   sqlite3SrcListIndexedBy(pParse, A, &I);
 }
 %ifndef SQLITE_OMIT_SUBQUERY
-  seltablist(A) ::= stl_prefix(X) LP seltablist_paren(S) RP
+  seltablist(A) ::= stl_prefix(X) LP select(S) RP
                     as(Z) on_opt(N) using_opt(U). {
     A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,S,N,U);
+  }
+  seltablist(A) ::= stl_prefix(X) LP seltablist(F) RP
+                    as(Z) on_opt(N) using_opt(U). {
+    if( X==0 && Z.n==0 && N==0 && U==0 ){
+      A = F;
+    }else{
+      Select *pSubquery;
+      sqlite3SrcListShiftJoinType(F);
+      pSubquery = sqlite3SelectNew(pParse,0,F,0,0,0,0,0,0,0);
+      A = sqlite3SrcListAppendFromTerm(pParse,X,0,0,&Z,pSubquery,N,U);
+    }
   }
   
   // A seltablist_paren nonterminal represents anything in a FROM that
   // is contained inside parentheses.  This can be either a subquery or
   // a grouping of table and subqueries.
   //
-  %type seltablist_paren {Select*}
-  %destructor seltablist_paren {sqlite3SelectDelete(pParse->db, $$);}
-  seltablist_paren(A) ::= select(S).      {A = S;}
-  seltablist_paren(A) ::= seltablist(F).  {
-     sqlite3SrcListShiftJoinType(F);
-     A = sqlite3SelectNew(pParse,0,F,0,0,0,0,0,0,0);
-  }
+//  %type seltablist_paren {Select*}
+//  %destructor seltablist_paren {sqlite3SelectDelete(pParse->db, $$);}
+//  seltablist_paren(A) ::= select(S).      {A = S;}
+//  seltablist_paren(A) ::= seltablist(F).  {
+//     sqlite3SrcListShiftJoinType(F);
+//     A = sqlite3SelectNew(pParse,0,F,0,0,0,0,0,0,0);
+//  }
 %endif  SQLITE_OMIT_SUBQUERY
 
 %type dbnm {Token}
