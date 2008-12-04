@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.790 2008/12/04 20:40:10 drh Exp $
+** $Id: vdbe.c,v 1.791 2008/12/04 22:17:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4302,6 +4302,7 @@ case OP_RowSetAdd: {       /* in2 */
   assert( (pVal->flags & MEM_Int)!=0 );
   if( (pIdx->flags & MEM_RowSet)==0 ){
     sqlite3VdbeMemSetRowSet(pIdx);
+    if( (pIdx->flags & MEM_RowSet)==0 ) goto no_mem;
   }
   sqlite3RowSetInsert(pIdx->u.pRowSet, pVal->u.i);
   break;
