@@ -1,5 +1,5 @@
-C Allow\sthe\sentire\sFROM\sclause\sof\sa\sSELECT\sstatement\sto\sbe\sin\sparentheses.\s(CVS\s5973)
-D 2008-12-03T23:23:41
+C Always\senable\sthe\sOP_Blob\sopcode\sin\sthe\sVDBE\seven\swhen\nSQLITE_OMIT_BLOB_LITERAL\sis\sdefined,\ssince\sthat\sopcode\sis\sused\sfor\sother\npurposes\sas\swell.\s\sTicket\s#3518.\s(CVS\s5974)
+D 2008-12-04T12:17:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/update.c 37d03659f4d2186ffb8d0ab1df9c3038273fb488
 F src/utf.c 86dc0f8076f606432a01f1498ae054c32de1f9d2
 F src/util.c b9a5d1c4c1a433e17d5828f9717fac763016a2cb
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c c5270245fcb5368634a9301481ab94a22e7a21b2
+F src/vdbe.c 3291fb0fe366634da2b92db4ca962b8d21427324
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 6b1082480832d406c57a7f469a1c61f1a8759aca
 F src/vdbeapi.c 20722164e7701a0747eaea03cddbbe0de5cb37bf
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 24235300b3f64f0396e1016afbe31aec9ea69b62
-R 5fe88680a50c27fc028c09bed38c5a36
+P 72ebc8cbe00f77f7864146de7c0954c4f1c59b8d
+R 102240660ceb1eea92f6e0aa296f3e33
 U drh
-Z c442561901c53c94d9f73bfff4583050
+Z 86041f4b465b02603dbd2c73e5c8c2b6

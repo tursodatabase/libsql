@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.788 2008/11/17 15:31:48 danielk1977 Exp $
+** $Id: vdbe.c,v 1.789 2008/12/04 12:17:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -932,7 +932,6 @@ case OP_Null: {           /* out2-prerelease */
 }
 
 
-#ifndef SQLITE_OMIT_BLOB_LITERAL
 /* Opcode: Blob P1 P2 * P4
 **
 ** P4 points to a blob of data P1 bytes long.  Store this
@@ -949,7 +948,6 @@ case OP_Blob: {                /* out2-prerelease */
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
-#endif /* SQLITE_OMIT_BLOB_LITERAL */
 
 /* Opcode: Variable P1 P2 * * *
 **
