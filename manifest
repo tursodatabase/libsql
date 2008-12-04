@@ -1,5 +1,5 @@
-C Always\senable\sthe\sOP_Blob\sopcode\sin\sthe\sVDBE\seven\swhen\nSQLITE_OMIT_BLOB_LITERAL\sis\sdefined,\ssince\sthat\sopcode\sis\sused\sfor\sother\npurposes\sas\swell.\s\sTicket\s#3518.\s(CVS\s5974)
-D 2008-12-04T12:17:30
+C Fix\sa\smemory\sleak\sin\sthe\sshell\sthat\soccurs\swhen\sa\s".import"\scommand\sfails.\nTicket\s#3517\s(CVS\s5975)
+D 2008-12-04T12:26:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0aa7bbe3be6acc4045706e3bb3fd0b8f38f4a3b5
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/printf.c e29d9475c63e1dbfae005b98da3a60e07b5c1ca5
 F src/random.c a87afbd598aa877e23ac676ee92fd8ee5c786a51
 F src/resolve.c 4af5391d2b4c1d6c583a6805ac6660181de4545b
 F src/select.c b296a7b53dd0b2c42ab8b67d969e2c924529008c
-F src/shell.c 650d1a87408682280d0e9d014d0d328c59c84b38
+F src/shell.c 838c745e7ac5c9fe17bc996224ed2f928d178bb2
 F src/sqlite.h.in b5d50f12fb9c7460a4ddfef8c1e799afaabefebf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 54d956e75ec8b8d174eb3d98de6f54db8507da5d
@@ -662,7 +662,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 72ebc8cbe00f77f7864146de7c0954c4f1c59b8d
-R 102240660ceb1eea92f6e0aa296f3e33
+P 760333de65328281137e02423904f860df572391
+R f66c7f94e3ea522559fc1bed997ef2a1
 U drh
-Z 86041f4b465b02603dbd2c73e5c8c2b6
+Z b17108c3e3cf5baaa544d8a39f01bf78
