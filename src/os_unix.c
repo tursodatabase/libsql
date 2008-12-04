@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.228 2008/12/03 22:48:33 drh Exp $
+** $Id: os_unix.c,v 1.229 2008/12/04 12:34:16 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2939,11 +2939,13 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   return SQLITE_OK;
 }
 
+#if SQLITE_ENABLE_LOCKING_MODE && defined(__DARWIN__)
 /*
 ** Handler for proxy-locking file-control verbs.  Defined below in the
 ** proxying locking division.
 */
 static int proxyFileControl(sqlite3_file*,int,void*);
+#endif
 
 
 /*
@@ -3285,7 +3287,6 @@ static int fillInUnixFile(
   }
 #endif
 
-#if SQLITE_ENABLE_LOCKING_STYLE
   else if( pLockingStyle == &dotlockIoMethods ){
     /* Dotfile locking uses the file path so it needs to be included in
     ** the dotlockLockingContext 
@@ -3301,7 +3302,6 @@ static int fillInUnixFile(
     }
     pNew->lockingContext = zLockFile;
   }
-#endif
 
 #if OS_VXWORKS
   else if( pLockingStyle == &semIoMethods ){
@@ -3437,12 +3437,14 @@ static int getTempname(int nBuf, char *zBuf){
   return SQLITE_OK;
 }
 
+#if SQLITE_ENABLE_LOCKING_MODE && defined(__DARWIN__)
 /*
 ** Routine to transform a unixFile into a proxy-locking unixFile.
 ** Implementation in the proxy-lock division, but used by unixOpen()
 ** if SQLITE_PREFER_PROXY_LOCKING is defined.
 */
 static int proxyTransformUnixFile(unixFile*, const char*);
+#endif
 
 
 /*

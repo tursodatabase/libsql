@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock5.test,v 1.5 2008/11/29 02:20:27 drh Exp $
+# $Id: lock5.test,v 1.6 2008/12/04 12:34:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -101,6 +101,10 @@ do_test lock5-dotfile.X {
 #####################################################################
 
 file delete -force test.db
+if {[catch {sqlite3 db test.db -vfs unix-flock} msg]} {
+  finish_test
+  return
+}
 
 do_test lock5-flock.1 {
   sqlite3 db test.db -vfs unix-flock
