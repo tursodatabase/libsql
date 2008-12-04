@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.789 2008/12/04 12:17:30 drh Exp $
+** $Id: vdbe.c,v 1.790 2008/12/04 20:40:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -189,7 +189,7 @@ static VdbeCursor *allocateCursor(
   Vdbe *p,              /* The virtual machine */
   int iCur,             /* Index of the new VdbeCursor */
   Op *pOp,              /* */
-  int iDb,              /* */
+  int iDb,              /* When database the cursor belongs to, or -1 */
   int isBtreeCursor     /* */
 ){
   /* Find the memory cell that will be used to store the blob of memory
@@ -804,7 +804,7 @@ case OP_Yield: {
 
 /* Opcode:  Halt P1 P2 * P4 *
 **
-** Exit immediately.  All open cursors, Fifos, etc are closed
+** Exit immediately.  All open cursors, etc are closed
 ** automatically.
 **
 ** P1 is the result code returned by sqlite3_exec(), sqlite3_reset(),
@@ -4285,35 +4285,55 @@ case OP_IntegrityCk: {
 }
 #endif /* SQLITE_OMIT_INTEGRITY_CHECK */
 
-/* Opcode: FifoWrite P1 * * * *
+/* Opcode: RowSetAdd P1 P2 * * *
 **
-** Write the integer from register P1 into the Fifo.
+** Insert the integer value held by register P2 into a boolean index
+** held in register P1.
+**
+** An assertion fails if P2 is not an integer.
 */
-case OP_FifoWrite: {        /* in1 */
-  p->sFifo.db = db;
-  if( sqlite3VdbeFifoPush(&p->sFifo, sqlite3VdbeIntValue(pIn1))==SQLITE_NOMEM ){
-    goto no_mem;
+case OP_RowSetAdd: {       /* in2 */
+  Mem *pIdx;
+  Mem *pVal;
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  pIdx = &p->aMem[pOp->p1];
+  assert( pOp->p2>0 && pOp->p2<=p->nMem );
+  pVal = &p->aMem[pOp->p2];
+  assert( (pVal->flags & MEM_Int)!=0 );
+  if( (pIdx->flags & MEM_RowSet)==0 ){
+    sqlite3VdbeMemSetRowSet(pIdx);
+  }
+  sqlite3RowSetInsert(pIdx->u.pRowSet, pVal->u.i);
+  break;
+}
+
+/* Opcode: RowSetRead P1 P2 P3 * *
+**
+** Extract the smallest value from boolean index P1 and put that value into
+** register P3.  Or, if boolean index P1 is initially empty, leave P3
+** unchanged and jump to instruction P2.
+*/
+case OP_RowSetRead: {       /* jump, out3 */
+  Mem *pIdx;
+  i64 val;
+  assert( pOp->p1>0 && pOp->p1<=p->nMem );
+  CHECK_FOR_INTERRUPT;
+  pIdx = &p->aMem[pOp->p1];
+  if( (pIdx->flags & MEM_RowSet)==0 
+   || sqlite3RowSetNext(pIdx->u.pRowSet, &val)==0
+  ){
+    /* The boolean index is empty */
+    sqlite3VdbeMemSetNull(pIdx);
+    pc = pOp->p2 - 1;
+  }else{
+    /* A value was pulled from the index */
+    assert( pOp->p3>0 && pOp->p3<=p->nMem );
+    pOut = &p->aMem[pOp->p3];
+    sqlite3VdbeMemSetInt64(pOut, val);
   }
   break;
 }
 
-/* Opcode: FifoRead P1 P2 * * *
-**
-** Attempt to read a single integer from the Fifo.  Store that
-** integer in register P1.
-** 
-** If the Fifo is empty jump to P2.
-*/
-case OP_FifoRead: {         /* jump */
-  CHECK_FOR_INTERRUPT;
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
-  pOut = &p->aMem[pOp->p1];
-  MemSetTypeFlag(pOut, MEM_Int);
-  if( sqlite3VdbeFifoPop(&p->sFifo, &pOut->u.i)==SQLITE_DONE ){
-    pc = pOp->p2 - 1;
-  }
-  break;
-}
 
 #ifndef SQLITE_OMIT_TRIGGER
 /* Opcode: ContextPush * * * 
@@ -4337,8 +4357,6 @@ case OP_ContextPush: {
   pContext = &p->contextStack[i];
   pContext->lastRowid = db->lastRowid;
   pContext->nChange = p->nChange;
-  pContext->sFifo = p->sFifo;
-  sqlite3VdbeFifoInit(&p->sFifo, db);
   break;
 }
 
@@ -4353,8 +4371,6 @@ case OP_ContextPop: {
   assert( p->contextStackTop>=0 );
   db->lastRowid = pContext->lastRowid;
   p->nChange = pContext->nChange;
-  sqlite3VdbeFifoClear(&p->sFifo);
-  p->sFifo = pContext->sFifo;
   break;
 }
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */

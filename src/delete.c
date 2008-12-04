@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.187 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: delete.c,v 1.188 2008/12/04 20:40:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -390,6 +390,7 @@ void sqlite3DeleteFrom(
   */
   {
     int iRowid = ++pParse->nMem;    /* Used for storing rowid values. */
+    int iRowSet = ++pParse->nMem;   /* Register for rowset of rows to delete */
 
     /* Begin the database scan
     */
@@ -399,7 +400,7 @@ void sqlite3DeleteFrom(
     /* Remember the rowid of every item to be deleted.
     */
     sqlite3VdbeAddOp2(v, IsVirtual(pTab) ? OP_VRowid : OP_Rowid, iCur, iRowid);
-    sqlite3VdbeAddOp1(v, OP_FifoWrite, iRowid);
+    sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, iRowid);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
     }
@@ -434,7 +435,7 @@ void sqlite3DeleteFrom(
     if( triggers_exist ){
       sqlite3VdbeResolveLabel(v, addr);
     }
-    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, iRowid, end);
+    addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, iRowSet, end, iRowid);
 
     if( triggers_exist ){
       int iData = ++pParse->nMem;   /* For storing row data of OLD table */

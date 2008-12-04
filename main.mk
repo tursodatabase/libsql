@@ -61,10 +61,10 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
          pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
-         random.o resolve.o rtree.o select.o status.o \
+         random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o \
          walker.o where.o utf.o vtab.o
 
 
@@ -128,6 +128,7 @@ SRC = \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/resolve.c \
+  $(TOP)/src/rowset.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
   $(TOP)/src/shell.c \
@@ -148,7 +149,6 @@ SRC = \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
-  $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \

@@ -236,12 +236,12 @@ foreach file {
    bitvec.c
    pcache.c
    pcache1.c
+   rowset.c
    pager.c
 
    btmutex.c
    btree.c
 
-   vdbefifo.c
    vdbemem.c
    vdbeaux.c
    vdbeapi.c

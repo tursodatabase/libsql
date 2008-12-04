@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.799 2008/11/24 20:01:33 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.800 2008/12/04 20:40:10 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -503,6 +503,7 @@ struct BusyHandler {
 typedef struct AggInfo AggInfo;
 typedef struct AuthContext AuthContext;
 typedef struct Bitvec Bitvec;
+typedef struct RowSet RowSet;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
 typedef struct Db Db;
@@ -2160,6 +2161,11 @@ int sqlite3BitvecSet(Bitvec*, u32);
 void sqlite3BitvecClear(Bitvec*, u32);
 void sqlite3BitvecDestroy(Bitvec*);
 int sqlite3BitvecBuiltinTest(int,int*);
+
+RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
+void sqlite3RowSetClear(RowSet*);
+void sqlite3RowSetInsert(RowSet*, i64);
+int sqlite3RowSetNext(RowSet*, i64*);
 
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 

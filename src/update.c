@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.187 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: update.c,v 1.188 2008/12/04 20:40:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -124,6 +124,7 @@ void sqlite3Update(
   int regOldRowid;       /* The old rowid */
   int regNewRowid;       /* The new rowid */
   int regData;           /* New data for the row */
+  int regRowSet;         /* Rowset of rows to be updated */
 
   sContext.pParse = 0;
   db = pParse->db;
@@ -352,7 +353,10 @@ void sqlite3Update(
   /* Remember the rowid of every item to be updated.
   */
   sqlite3VdbeAddOp2(v, IsVirtual(pTab)?OP_VRowid:OP_Rowid, iCur, regOldRowid);
-  if( !okOnePass ) sqlite3VdbeAddOp2(v, OP_FifoWrite, regOldRowid, 0);
+  if( !okOnePass ){
+    regRowSet = ++pParse->nMem;
+    sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, regOldRowid);
+  }
 
   /* End the database scan loop.
   */
@@ -405,7 +409,7 @@ void sqlite3Update(
     addr = sqlite3VdbeAddOp0(v, OP_Goto);
     sqlite3VdbeJumpHere(v, a1);
   }else{
-    addr = sqlite3VdbeAddOp2(v, OP_FifoRead, regOldRowid, 0);
+    addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, 0, regOldRowid);
   }
 
   if( triggers_exist ){

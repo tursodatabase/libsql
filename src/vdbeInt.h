@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.158 2008/11/17 15:31:48 danielk1977 Exp $
+** $Id: vdbeInt.h,v 1.159 2008/12/04 20:40:10 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -113,8 +113,9 @@ typedef struct VdbeCursor VdbeCursor;
 */
 struct Mem {
   union {
-    i64 i;              /* Integer value. Or FuncDef* when flags==MEM_Agg */
+    i64 i;              /* Integer value. */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
+    RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
   } u;
   double r;           /* Real value */
   sqlite3 *db;        /* The associated database connection */
@@ -147,26 +148,31 @@ struct Mem {
 #define MEM_Int       0x0004   /* Value is an integer */
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
-
-#define MemSetTypeFlag(p, f) \
-  ((p)->flags = ((p)->flags&~(MEM_Int|MEM_Real|MEM_Null|MEM_Blob|MEM_Str))|f)
+#define MEM_RowSet    0x0020   /* Value is a RowSet object */
+#define MEM_TypeMask  0x00ff   /* Mask of type bits */
 
 /* Whenever Mem contains a valid string or blob representation, one of
 ** the following flags must be set to determine the memory management
 ** policy for Mem.z.  The MEM_Term flag tells us whether or not the
 ** string is \000 or \u0000 terminated
 */
-#define MEM_Term      0x0020   /* String rep is nul terminated */
-#define MEM_Dyn       0x0040   /* Need to call sqliteFree() on Mem.z */
-#define MEM_Static    0x0080   /* Mem.z points to a static string */
-#define MEM_Ephem     0x0100   /* Mem.z points to an ephemeral string */
-#define MEM_Agg       0x0400   /* Mem.z points to an agg function context */
-#define MEM_Zero      0x0800   /* Mem.i contains count of 0s appended to blob */
+#define MEM_Term      0x0200   /* String rep is nul terminated */
+#define MEM_Dyn       0x0400   /* Need to call sqliteFree() on Mem.z */
+#define MEM_Static    0x0800   /* Mem.z points to a static string */
+#define MEM_Ephem     0x1000   /* Mem.z points to an ephemeral string */
+#define MEM_Agg       0x2000   /* Mem.z points to an agg function context */
+#define MEM_Zero      0x4000   /* Mem.i contains count of 0s appended to blob */
 
 #ifdef SQLITE_OMIT_INCRBLOB
   #undef MEM_Zero
   #define MEM_Zero 0x0000
 #endif
+
+
+/*
+** Clear any existing type flags from a Mem and replace them with f
+*/
+#define MemSetTypeFlag(p, f) ((p)->flags = ((p)->flags&~(MEM_TypeMask))|f)
 
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains
@@ -222,33 +228,6 @@ struct Set {
 };
 
 /*
-** A FifoPage structure holds a single page of valves.  Pages are arranged
-** in a list.
-*/
-typedef struct FifoPage FifoPage;
-struct FifoPage {
-  int nSlot;         /* Number of entries aSlot[] */
-  int iWrite;        /* Push the next value into this entry in aSlot[] */
-  int iRead;         /* Read the next value from this entry in aSlot[] */
-  FifoPage *pNext;   /* Next page in the fifo */
-  i64 aSlot[1];      /* One or more slots for rowid values */
-};
-
-/*
-** The Fifo structure is typedef-ed in vdbeInt.h.  But the implementation
-** of that structure is private to this file.
-**
-** The Fifo structure describes the entire fifo.  
-*/
-typedef struct Fifo Fifo;
-struct Fifo {
-  int nEntry;         /* Total number of entries */
-  sqlite3 *db;        /* The associated database connection */
-  FifoPage *pFirst;   /* First page on the list */
-  FifoPage *pLast;    /* Last page on the list */
-};
-
-/*
 ** A Context stores the last insert rowid, the last statement change count,
 ** and the current statement change count (i.e. changes since last statement).
 ** The current keylist is also stored in the context.
@@ -261,7 +240,6 @@ typedef struct Context Context;
 struct Context {
   i64 lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
   int nChange;      /* Statement changes (Vdbe.nChanges)     */
-  Fifo sFifo;       /* Records that will participate in a DELETE or UPDATE */
 };
 
 /*
@@ -301,7 +279,6 @@ struct Vdbe {
   Mem *aMem;              /* The memory locations */
   int nCallback;          /* Number of callbacks invoked so far */
   int cacheCtr;           /* VdbeCursor row cache generation counter */
-  Fifo sFifo;             /* A list of ROWIDs */
   int contextStackTop;    /* Index of top element in the context stack */
   int contextStackDepth;  /* The size of the "context" stack */
   Context *contextStack;  /* Stack used by opcodes ContextPush & ContextPop*/
@@ -383,6 +360,7 @@ void sqlite3VdbeMemSetInt64(Mem*, i64);
 void sqlite3VdbeMemSetDouble(Mem*, double);
 void sqlite3VdbeMemSetNull(Mem*);
 void sqlite3VdbeMemSetZeroBlob(Mem*,int);
+void sqlite3VdbeMemSetRowSet(Mem*);
 int sqlite3VdbeMemMakeWriteable(Mem*);
 int sqlite3VdbeMemStringify(Mem*, int);
 i64 sqlite3VdbeIntValue(Mem*);
@@ -411,10 +389,6 @@ int sqlite3VdbeMemTranslate(Mem*, u8);
   void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf);
 #endif
 int sqlite3VdbeMemHandleBom(Mem *pMem);
-void sqlite3VdbeFifoInit(Fifo*, sqlite3*);
-int sqlite3VdbeFifoPush(Fifo*, i64);
-int sqlite3VdbeFifoPop(Fifo*, i64*);
-void sqlite3VdbeFifoClear(Fifo*);
 
 #ifndef SQLITE_OMIT_INCRBLOB
   int sqlite3VdbeMemExpandBlob(Mem *);

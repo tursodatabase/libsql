@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.421 2008/11/21 16:58:03 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.422 2008/12/04 20:40:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -802,6 +802,9 @@ int sqlite3VdbeReleaseBuffers(Vdbe *p){
   assert( sqlite3_mutex_held(p->db->mutex) );
   for(ii=1; ii<=p->nMem; ii++){
     Mem *pMem = &p->aMem[ii];
+    if( pMem->flags & MEM_RowSet ){
+      sqlite3RowSetClear(pMem->u.pRowSet);
+    }
     if( pMem->z && pMem->flags&MEM_Dyn ){
       assert( !pMem->xDel );
       nFree += sqlite3DbMallocSize(pMem->db, pMem->z);
@@ -1156,16 +1159,16 @@ static void closeAllCursorsExceptActiveVtabs(Vdbe *p){
 static void Cleanup(Vdbe *p){
   int i;
   sqlite3 *db = p->db;
+  Mem *pMem;
   closeAllCursorsExceptActiveVtabs(p);
-  for(i=1; i<=p->nMem; i++){
-    MemSetTypeFlag(&p->aMem[i], MEM_Null);
+  for(pMem=&p->aMem[1], i=1; i<=p->nMem; i++, pMem++){
+    if( pMem->flags & MEM_RowSet ){
+      sqlite3RowSetClear(pMem->u.pRowSet);
+    }
+    MemSetTypeFlag(pMem, MEM_Null);
   }
   releaseMemArray(&p->aMem[1], p->nMem);
-  sqlite3VdbeFifoClear(&p->sFifo);
   if( p->contextStack ){
-    for(i=0; i<p->contextStackTop; i++){
-      sqlite3VdbeFifoClear(&p->contextStack[i].sFifo);
-    }
     sqlite3DbFree(db, p->contextStack);
   }
   p->contextStack = 0;

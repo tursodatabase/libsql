@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.38 2008/11/19 16:52:44 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.39 2008/12/04 20:40:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -578,4 +578,3 @@ void sqlite3PcacheIterateDirty(PCache *pCache, void (*xIter)(PgHdr *)){
   }
 }
 #endif
-
