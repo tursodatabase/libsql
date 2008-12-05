@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.543 2008/11/27 02:22:11 drh Exp $
+** $Id: btree.c,v 1.544 2008/12/05 20:01:43 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5537,6 +5537,7 @@ balance_cleanup:
   for(i=0; i<nNew; i++){
     releasePage(apNew[i]);
   }
+  pPage->nOverflow = 0;
 
   /* releasePage(pParent); */
   TRACE(("BALANCE: finished with %d: old=%d new=%d cells=%d\n",
@@ -5610,7 +5611,7 @@ static int balance_shallower(BtCursor *pCur){
         assert( sqlite3PagerIswriteable(pPage->pDbPage) );
         put4byte(&pPage->aData[pPage->hdrOffset+8], 
             get4byte(&pChild->aData[pChild->hdrOffset+8]));
-        freePage(pChild);
+        rc = freePage(pChild);
         TRACE(("BALANCE: child %d transfer to page 1\n", pChild->pgno));
       }else{
         /* The child has more information that will fit on the root.
@@ -5628,7 +5629,7 @@ static int balance_shallower(BtCursor *pCur){
     }
     assert( pPage->nOverflow==0 );
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( ISAUTOVACUUM ){
+    if( ISAUTOVACUUM && rc==SQLITE_OK ){
       rc = setChildPtrmaps(pPage);
     }
 #endif
@@ -5734,14 +5735,17 @@ static int balance(BtCursor *pCur, int isInsert){
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc==SQLITE_OK && pPage->nOverflow>0 ){
       rc = balance_deeper(pCur);
+      assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
     if( rc==SQLITE_OK && pPage->nCell==0 ){
       rc = balance_shallower(pCur);
+      assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
   }else{
     if( pPage->nOverflow>0 || 
         (!isInsert && pPage->nFree>pPage->pBt->usableSize*2/3) ){
       rc = balance_nonroot(pCur);
+      assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
   }
   return rc;
@@ -5910,8 +5914,15 @@ int sqlite3BtreeInsert(
     assert( pPage->leaf );
   }
   rc = insertCell(pPage, idx, newCell, szNew, 0, 0);
-  if( rc!=SQLITE_OK ) goto end_insert;
-  rc = balance(pCur, 1);
+  if( rc==SQLITE_OK ){
+    rc = balance(pCur, 1);
+  }
+
+  /* Must make sure nOverflow is reset to zero even if the balance()
+  ** fails.  Internal data structure corruption will result otherwise. */
+  assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
+  pPage->nOverflow = 0;
+
   if( rc==SQLITE_OK ){
     moveToRoot(pCur);
   }
