@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.422 2008/12/04 20:40:10 drh Exp $
+** $Id: vdbeaux.c,v 1.423 2008/12/05 15:24:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -213,9 +213,10 @@ int sqlite3VdbeMakeLabel(Vdbe *p){
   i = p->nLabel++;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( i>=p->nLabelAlloc ){
-    p->nLabelAlloc = p->nLabelAlloc*2 + 10;
+    int n = p->nLabelAlloc*2 + 5;
     p->aLabel = sqlite3DbReallocOrFree(p->db, p->aLabel,
-                                    p->nLabelAlloc*sizeof(p->aLabel[0]));
+                                       n*sizeof(p->aLabel[0]));
+    p->nLabelAlloc = sqlite3DbMallocSize(p->db, p->aLabel)/sizeof(p->aLabel[0]);
   }
   if( p->aLabel ){
     p->aLabel[i] = -1;

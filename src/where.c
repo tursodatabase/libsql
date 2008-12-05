@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.331 2008/12/05 02:36:34 drh Exp $
+** $Id: where.c,v 1.332 2008/12/05 15:24:17 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -40,7 +40,10 @@ typedef struct ExprMaskSet ExprMaskSet;
 /*
 ** The query generator uses an array of instances of this structure to
 ** help it analyze the subexpressions of the WHERE clause.  Each WHERE
-** clause subexpression is separated from the others by an AND operator.
+** clause subexpression is separated from the others by AND operators.
+** (Note: the same data structure is also reused to hold a group of terms
+** separated by OR operators.  But at the top-level, everything is AND
+** separated.)
 **
 ** All WhereTerms are collected into a single WhereClause structure.  
 ** The following identity holds:
@@ -69,6 +72,10 @@ typedef struct ExprMaskSet ExprMaskSet;
 ** beginning with 0 in order to make the best possible use of the available
 ** bits in the Bitmask.  So, in the example above, the cursor numbers
 ** would be mapped into integers 0 through 7.
+**
+** The number of terms in a join is limited by the number of bits
+** in prereqRight and prereqAll.  The default is 64 bits, hence SQLite
+** is only able to process joins with 64 or fewer tables.
 */
 typedef struct WhereTerm WhereTerm;
 struct WhereTerm {
@@ -213,11 +220,18 @@ static void whereClauseClear(WhereClause *pWC){
 }
 
 /*
-** Add a new entries to the WhereClause structure.  Increase the allocated
-** space as necessary.
+** Add a single new WhereTerm entry to the WhereClause object pWC.
+** The new WhereTerm object is constructed from Expr p and with wtFlags.
+** The index in pWC->a[] of the new WhereTerm is returned on success.
+** 0 is returned if the new WhereTerm could not be added due to a memory
+** allocation error.  The memory allocation failure will be recorded in
+** the db->mallocFailed flag so that higher-level functions can detect it.
+**
+** This routine will increase the size of the pWC->a[] array as necessary.
 **
 ** If the wtFlags argument includes TERM_DYNAMIC, then responsibility
-** for freeing the expression p is assumed by the WhereClause object.
+** for freeing the expression p is assumed by the WhereClause object pWC.
+** This is true even if this routine fails to allocate a new WhereTerm.
 **
 ** WARNING:  This routine might reallocate the space used to store
 ** WhereTerms.  All pointers to WhereTerms should be invalidated after
@@ -242,10 +256,9 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int wtFlags){
     if( pOld!=pWC->aStatic ){
       sqlite3DbFree(db, pOld);
     }
-    pWC->nSlot *= 2;
+    pWC->nSlot = sqlite3DbMallocSize(db, pWC->a)/sizeof(pWC->a[0]);
   }
-  pTerm = &pWC->a[idx = pWC->nTerm];
-  pWC->nTerm++;
+  pTerm = &pWC->a[idx = pWC->nTerm++];
   pTerm->pExpr = p;
   pTerm->wtFlags = wtFlags;
   pTerm->pWC = pWC;
@@ -818,6 +831,7 @@ static void exprAnalyze(
       pNewExpr = sqlite3Expr(db, ops[i], sqlite3ExprDup(db, pExpr->pLeft),
                              sqlite3ExprDup(db, pList->a[i].pExpr), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+      testcase( idxNew==0 );
       exprAnalyze(pSrc, pWC, idxNew);
       pTerm = &pWC->a[idxTerm];
       pWC->a[idxNew].iParent = idxTerm;
@@ -889,6 +903,7 @@ static void exprAnalyze(
         transferJoinMarkings(pNew, pExpr);
         pNew->pList = pList;
         idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+        testcase( idxNew==0 );
         exprAnalyze(pSrc, pWC, idxNew);
         pTerm = &pWC->a[idxTerm];
         pWC->a[idxNew].iParent = idxTerm;
@@ -941,9 +956,11 @@ or_not_possible:
     }
     pNewExpr1 = sqlite3PExpr(pParse, TK_GE, sqlite3ExprDup(db,pLeft), pStr1, 0);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
+    testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
     pNewExpr2 = sqlite3PExpr(pParse, TK_LT, sqlite3ExprDup(db,pLeft), pStr2, 0);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
+    testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);
     pTerm = &pWC->a[idxTerm];
     if( isComplete ){
@@ -975,6 +992,7 @@ or_not_possible:
       Expr *pNewExpr;
       pNewExpr = sqlite3Expr(db, TK_MATCH, 0, sqlite3ExprDup(db, pRight), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
+      testcase( idxNew==0 );
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = prereqExpr;
       pNewTerm->leftCursor = pLeft->iTable;

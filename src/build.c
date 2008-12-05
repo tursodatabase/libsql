@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.503 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: build.c,v 1.504 2008/12/05 15:24:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2929,7 +2929,7 @@ void *sqlite3ArrayAllocate(
       *pIdx = -1;
       return pArray;
     }
-    *pnAlloc = newSize;
+    *pnAlloc = sqlite3DbMallocSize(db, pNew)/szEntry;
     pArray = pNew;
   }
   z = (char*)pArray;
@@ -3034,6 +3034,7 @@ SrcList *sqlite3SrcListEnlarge(
   if( pSrc->nSrc+nExtra>pSrc->nAlloc ){
     SrcList *pNew;
     int nAlloc = pSrc->nSrc+nExtra;
+    int nGot;
     pNew = sqlite3DbRealloc(db, pSrc,
                sizeof(*pSrc) + (nAlloc-1)*sizeof(pSrc->a[0]) );
     if( pNew==0 ){
@@ -3041,7 +3042,8 @@ SrcList *sqlite3SrcListEnlarge(
       return pSrc;
     }
     pSrc = pNew;
-    pSrc->nAlloc = nAlloc;
+    nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
+    pSrc->nAlloc = nGot;
   }
 
   /* Move existing slots that come after the newly inserted slots
