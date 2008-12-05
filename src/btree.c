@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.544 2008/12/05 20:01:43 drh Exp $
+** $Id: btree.c,v 1.545 2008/12/05 22:40:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6702,6 +6702,7 @@ static void checkPtrmap(
 
   rc = ptrmapGet(pCheck->pBt, iChild, &ePtrmapType, &iPtrmapParent);
   if( rc!=SQLITE_OK ){
+    if( rc==SQLITE_NOMEM ) pCheck->mallocFailed = 1;
     checkAppendMsg(pCheck, zContext, "Failed to read ptrmap key=%d", iChild);
     return;
   }
@@ -6828,11 +6829,13 @@ static int checkTreePage(
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage, zParentContext) ) return 0;
   if( (rc = sqlite3BtreeGetPage(pBt, (Pgno)iPage, &pPage, 0))!=0 ){
+    if( rc==SQLITE_NOMEM ) pCheck->mallocFailed = 1;
     checkAppendMsg(pCheck, zContext,
        "unable to get the page. error code=%d", rc);
     return 0;
   }
   if( (rc = sqlite3BtreeInitPage(pPage))!=0 ){
+    if( rc==SQLITE_NOMEM ) pCheck->mallocFailed = 1;
     checkAppendMsg(pCheck, zContext, 
                    "sqlite3BtreeInitPage() returns error code %d", rc);
     releasePage(pPage);
@@ -6969,9 +6972,9 @@ check_page_abort:
 ** a table.  nRoot is the number of entries in aRoot.
 **
 ** Write the number of error seen in *pnErr.  Except for some memory
-** allocation errors,  nn error message is held in memory obtained from
+** allocation errors,  an error message held in memory obtained from
 ** malloc is returned if *pnErr is non-zero.  If *pnErr==0 then NULL is
-** returned.
+** returned.  If a memory allocation error occurs, NULL is returned.
 */
 char *sqlite3BtreeIntegrityCheck(
   Btree *p,     /* The btree to be checked */
