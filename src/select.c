@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.488 2008/11/21 16:22:18 danielk1977 Exp $
+** $Id: select.c,v 1.489 2008/12/05 00:00:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3152,7 +3152,7 @@ static int selectExpander(Walker *pWalker, Select *p){
               continue;
             }
 
-            if( i>0 ){
+            if( i>0 && zTName==0 ){
               struct SrcList_item *pLeft = &pTabList->a[i-1];
               if( (pLeft[1].jointype & JT_NATURAL)!=0 &&
                         columnIndex(pLeft->pTab, zName)>=0 ){
