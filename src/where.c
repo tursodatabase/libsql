@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.332 2008/12/05 15:24:17 drh Exp $
+** $Id: where.c,v 1.333 2008/12/05 17:17:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -280,7 +280,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, int wtFlags){
 ** does is make slot[] entries point to substructure within pExpr.
 **
 ** In the previous sentence and in the diagram, "slot[]" refers to
-** the WhereClause.a[] array.  This array grows as needed to contain
+** the WhereClause.a[] array.  The slot[] array grows as needed to contain
 ** all terms of the WHERE clause.
 */
 static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
@@ -391,7 +391,7 @@ static int allowedOp(int op){
 }
 
 /*
-** Swap two objects of type T.
+** Swap two objects of type TYPE.
 */
 #define SWAP(TYPE,A,B) {TYPE t=A; A=B; B=t;}
 

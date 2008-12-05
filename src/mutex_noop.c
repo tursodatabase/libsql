@@ -25,7 +25,7 @@
 ** that does error checking on mutexes to make sure they are being
 ** called correctly.
 **
-** $Id: mutex_noop.c,v 1.2 2008/10/15 19:03:03 drh Exp $
+** $Id: mutex_noop.c,v 1.3 2008/12/05 17:17:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -116,7 +116,7 @@ static sqlite3_mutex *debugMutexAlloc(int id){
     }
     default: {
       assert( id-2 >= 0 );
-      assert( id-2 < sizeof(aStatic)/sizeof(aStatic[0]) );
+      assert( id-2 < (int)(sizeof(aStatic)/sizeof(aStatic[0])) );
       pNew = &aStatic[id-2];
       pNew->id = id;
       break;

@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.40 2008/10/28 18:58:20 drh Exp $
+** $Id: mem2.c,v 1.41 2008/12/05 17:17:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -158,11 +158,11 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
 
   p = (struct MemBlockHdr*)pAllocation;
   p--;
-  assert( p->iForeGuard==FOREGUARD );
+  assert( p->iForeGuard==(int)FOREGUARD );
   nReserve = (p->iSize+7)&~7;
   pInt = (int*)pAllocation;
   pU8 = (u8*)pAllocation;
-  assert( pInt[nReserve/sizeof(int)]==REARGUARD );
+  assert( pInt[nReserve/sizeof(int)]==(int)REARGUARD );
   assert( (nReserve-0)<=p->iSize || pU8[nReserve-1]==0x65 );
   assert( (nReserve-1)<=p->iSize || pU8[nReserve-2]==0x65 );
   assert( (nReserve-2)<=p->iSize || pU8[nReserve-3]==0x65 );
@@ -185,6 +185,7 @@ static int sqlite3MemSize(void *p){
 ** Initialize the memory allocation subsystem.
 */
 static int sqlite3MemInit(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   if( !sqlite3GlobalConfig.bMemstat ){
     /* If memory status is enabled, then the malloc.c wrapper will already
     ** hold the STATIC_MEM mutex when the routines here are invoked. */
@@ -197,6 +198,7 @@ static int sqlite3MemInit(void *NotUsed){
 ** Deinitialize the memory allocation subsystem.
 */
 static void sqlite3MemShutdown(void *NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   mem.mutex = 0;
 }
 
@@ -361,7 +363,7 @@ void sqlite3MemdebugBacktraceCallback(void (*xBacktrace)(int, int, void **)){
 ** Set the title string for subsequent allocations.
 */
 void sqlite3MemdebugSettitle(const char *zTitle){
-  int n = strlen(zTitle) + 1;
+  unsigned int n = strlen(zTitle) + 1;
   sqlite3_mutex_enter(mem.mutex);
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
   memcpy(mem.zTitle, zTitle, n);

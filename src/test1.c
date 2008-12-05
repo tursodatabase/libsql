@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.335 2008/12/03 22:32:45 drh Exp $
+** $Id: test1.c,v 1.336 2008/12/05 17:17:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3915,7 +3915,7 @@ static int sqlite_set_magic(
     db->magic = SQLITE_MAGIC_BUSY;
   }else if( strcmp(argv[2], "SQLITE_MAGIC_ERROR")==0 ){
     db->magic = SQLITE_MAGIC_ERROR;
-  }else if( Tcl_GetInt(interp, argv[2], &db->magic) ){
+  }else if( Tcl_GetInt(interp, argv[2], (int*)&db->magic) ){
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -4516,9 +4516,7 @@ static int file_control_lockproxy_test(
   int objc,              /* Number of arguments */
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
-  int iArg = 0;
   sqlite3 *db;
-  int rc;
   
   if( objc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",

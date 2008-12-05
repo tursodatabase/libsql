@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.189 2008/12/04 12:26:01 drh Exp $
+** $Id: shell.c,v 1.190 2008/12/05 17:17:08 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -65,6 +65,12 @@ extern int isatty();
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
+
+/*
+** Used to prevent warnings about unused parameters
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
+
 
 /* Saved resource information for the beginning of an operation */
 static struct rusage sBegin;
@@ -216,6 +222,7 @@ static void shellstaticFunc(
 ){
   assert( 0==argc );
   assert( zShellStatic );
+  UNUSED_PARAMETER(argv);
   sqlite3_result_text(context, zShellStatic, -1, SQLITE_STATIC);
 }
 
@@ -355,7 +362,7 @@ static const char *modeDescr[] = {
 /*
 ** Number of elements in an array
 */
-#define ArraySize(X)  (sizeof(X)/sizeof(X[0]))
+#define ArraySize(X)  (int)(sizeof(X)/sizeof(X[0]))
 
 /*
 ** Output the given string as a quoted string using SQL quoting conventions.
@@ -502,6 +509,7 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
 ** This routine runs when the user presses Ctrl-C
 */
 static void interrupt_handler(int NotUsed){
+  UNUSED_PARAMETER(NotUsed);
   seenInterrupt = 1;
   if( db ) sqlite3_interrupt(db);
 }
@@ -574,7 +582,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         }else{
            w = 10;
         }
-        if( p->mode==MODE_Explain && azArg[i] && strlen(azArg[i])>w ){
+        if( p->mode==MODE_Explain && azArg[i] && strlen(azArg[i])>(unsigned)w ){
           w = strlen(azArg[i]);
         }
         fprintf(p->out,"%-*.*s%s",w,w,
@@ -793,6 +801,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   const char *zSql;
   struct callback_data *p = (struct callback_data *)pArg;
 
+  UNUSED_PARAMETER(azCol);
   if( nArg!=3 ) return 1;
   zTable = azArg[0];
   zType = azArg[1];

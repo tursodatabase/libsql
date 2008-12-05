@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.801 2008/12/05 02:36:34 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.802 2008/12/05 17:17:08 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1517,7 +1517,7 @@ struct SrcList {
 */
 struct WhereLevel {
   int iFrom;            /* Which entry in the FROM clause */
-  int wsFlags;          /* "Where-Scan Flags" associated with this level */
+  int wsFlags;          /* "Where-Scan" flags show the choosen scan strategy */
   int iMem;             /* First memory cell used by this level */
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
   Index *pIdx;          /* Index used.  NULL if no index */
