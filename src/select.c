@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.489 2008/12/05 00:00:07 drh Exp $
+** $Id: select.c,v 1.490 2008/12/06 16:10:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -758,6 +758,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
     pInfo->aSortOrder = (u8*)&pInfo->aColl[nExpr];
     pInfo->nField = nExpr;
     pInfo->enc = ENC(db);
+    pInfo->db = db;
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
       CollSeq *pColl;
       pColl = sqlite3ExprCollSeq(pParse, pItem->pExpr);
