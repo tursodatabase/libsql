@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sKeyInfo\sobject\sattached\sto\sa\stransient\stable\sused\sfor\nsorting\srecords\sthe\ssqlite3\sobject\sused\sfor\smemory\sallocation,\sso\sthat\nmemory\sallocation\sfailures\son\sUTF16\sto\sUTF8\sconversion\scan\sbe\srecorded.\s(CVS\s5987)
-D 2008-12-06T16:10:42
+C Make\ssure\sa\smemory\sallocation\serror\sdid\snot\sprevent\sUTF16\sto\sUTF8\sconversion\nprior\sto\sdoing\sa\sstring\scomparison.\s(CVS\s5988)
+D 2008-12-06T16:46:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -194,7 +194,7 @@ F src/update.c 7143ac31d26dee156277126e9a7c5be953b18347
 F src/utf.c 86dc0f8076f606432a01f1498ae054c32de1f9d2
 F src/util.c b9a5d1c4c1a433e17d5828f9717fac763016a2cb
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c 3e849f1cffda97280d36b88e0980bdbe8128be7e
+F src/vdbe.c c7da2727447ef5ebe9a25ed37796a493fd12d781
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 1df957ab0f6a129735513d528c930dddfb4b23ef
 F src/vdbeapi.c 20722164e7701a0747eaea03cddbbe0de5cb37bf
@@ -663,7 +663,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5c0fe63a6374abe98e45c11ada54c064c19bbab8
-R 86f2b188e8f504a14968d013240bf8e7
+P 76246d9f0d4e995f6be6fbd1fa2bcabc1b9566ae
+R 44bbf1bea4319f9b234d44baa1ddfaa7
 U drh
-Z 86dc228f8bf50a42638f9f90daeeb734
+Z 4c6e9127786c5b554c8b62926c58464b

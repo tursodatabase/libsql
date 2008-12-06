@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.791 2008/12/04 22:17:56 drh Exp $
+** $Id: vdbe.c,v 1.792 2008/12/06 16:46:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1687,6 +1687,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   if( affinity ){
     applyAffinity(pIn1, affinity, encoding);
     applyAffinity(pIn3, affinity, encoding);
+    if( db->mallocFailed ) goto no_mem;
   }
 
   assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
