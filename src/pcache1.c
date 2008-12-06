@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.4 2008/11/24 20:05:39 shane Exp $
+** @(#) $Id: pcache1.c,v 1.5 2008/12/06 14:34:34 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -263,7 +263,9 @@ static int pcache1ResizeHash(PCache1 *p){
   }
 
   pcache1LeaveMutex();
+  if( p->nHash ){ sqlite3BeginBenignMalloc(); }
   apNew = (PgHdr1 **)sqlite3_malloc(sizeof(PgHdr1 *)*nNew);
+  if( p->nHash ){ sqlite3EndBenignMalloc(); }
   pcache1EnterMutex();
   if( apNew ){
     memset(apNew, 0, sizeof(PgHdr1 *)*nNew);
