@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.416 2008/11/21 00:10:35 aswift Exp $
+** @(#) $Id: sqlite.h.in,v 1.417 2008/12/08 18:19:18 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -874,7 +874,7 @@ struct sqlite3_vfs {
   int (*xFullPathname)(sqlite3_vfs*, const char *zName, int nOut, char *zOut);
   void *(*xDlOpen)(sqlite3_vfs*, const char *zFilename);
   void (*xDlError)(sqlite3_vfs*, int nByte, char *zErrMsg);
-  void *(*xDlSym)(sqlite3_vfs*,void*, const char *zSymbol);
+  void (*(*xDlSym)(sqlite3_vfs*,void*, const char *zSymbol))(void);
   void (*xDlClose)(sqlite3_vfs*, void*);
   int (*xRandomness)(sqlite3_vfs*, int nByte, char *zOut);
   int (*xSleep)(sqlite3_vfs*, int microseconds);
@@ -5448,7 +5448,7 @@ int sqlite3_enable_load_extension(sqlite3 *db, int onoff);
 **
 ** {H12644} Automatic extensions apply across all threads.
 */
-int sqlite3_auto_extension(void *xEntryPoint);
+int sqlite3_auto_extension(void (*xEntryPoint)(void));
 
 /*
 ** CAPI3REF: Reset Automatic Extension Loading {H12660} <S20500>

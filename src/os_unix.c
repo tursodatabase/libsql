@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.229 2008/12/04 12:34:16 drh Exp $
+** $Id: os_unix.c,v 1.230 2008/12/08 18:19:18 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2217,9 +2217,6 @@ static int afpSetLock(
   pb.offset = offset;
   pb.length = length; 
   pb.fd = pFile->h;
-  //SimulateIOErrorBenign(1);
-  //SimulateIOError( pb.fd=(-1) )
-  //SimulateIOErrorBenign(0);
   
   OSTRACE6("AFPSETLOCK [%s] for %d%s in range %llx:%llx\n", 
     (setLockFlag?"ON":"OFF"), pFile->h, (pb.fd==-1?"[testval-1]":""),
@@ -3013,6 +3010,18 @@ static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
 ** looks at the filesystem type and tries to guess the best locking
 ** strategy from that.
 **
+** For finder-funtion F, two objects are created:
+**
+**    (1) The real finder-function named "FImpt()".
+**
+**    (2) A constant pointer to this functio named just "F".
+**
+**
+** A pointer to the F pointer is used as the pAppData value for VFS
+** objects.  We have to do this instead of letting pAppData point
+** directly at the finder-function since C90 rules prevent a void*
+** from be cast into a function pointer.
+**
 **
 ** Each instance of this macro generates two objects:
 **
@@ -3038,10 +3047,12 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics   /* xDeviceCapabilities */                     \
 };                                                                           \
-static const sqlite3_io_methods *FINDER(const char *z, int h){               \
+static const sqlite3_io_methods *FINDER##Impl(const char *z, int h){         \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(h);                                  \
   return &METHOD;                                                            \
-}
+}                                                                            \
+static const sqlite3_io_methods *(*const FINDER)(const char*,int)            \
+    = FINDER##Impl;
 
 /*
 ** Here are all of the sqlite3_io_methods objects for each of the
@@ -3055,7 +3066,7 @@ IOMETHODS(
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */
   unixCheckReservedLock     /* xCheckReservedLock method */
-);
+)
 IOMETHODS(
   nolockIoFinder,           /* Finder function name */
   nolockIoMethods,          /* sqlite3_io_methods object name */
@@ -3063,7 +3074,7 @@ IOMETHODS(
   nolockLock,               /* xLock method */
   nolockUnlock,             /* xUnlock method */
   nolockCheckReservedLock   /* xCheckReservedLock method */
-);
+)
 IOMETHODS(
   dotlockIoFinder,          /* Finder function name */
   dotlockIoMethods,         /* sqlite3_io_methods object name */
@@ -3071,7 +3082,7 @@ IOMETHODS(
   dotlockLock,              /* xLock method */
   dotlockUnlock,            /* xUnlock method */
   dotlockCheckReservedLock  /* xCheckReservedLock method */
-);
+)
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 IOMETHODS(
@@ -3081,7 +3092,7 @@ IOMETHODS(
   flockLock,                /* xLock method */
   flockUnlock,              /* xUnlock method */
   flockCheckReservedLock    /* xCheckReservedLock method */
-);
+)
 #endif
 
 #if OS_VXWORKS
@@ -3092,7 +3103,7 @@ IOMETHODS(
   semLock,                  /* xLock method */
   semUnlock,                /* xUnlock method */
   semCheckReservedLock      /* xCheckReservedLock method */
-);
+)
 #endif
 
 #if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
@@ -3103,7 +3114,7 @@ IOMETHODS(
   afpLock,                  /* xLock method */
   afpUnlock,                /* xUnlock method */
   afpCheckReservedLock      /* xCheckReservedLock method */
-);
+)
 #endif
 
 /*
@@ -3127,7 +3138,7 @@ IOMETHODS(
   proxyLock,                /* xLock method */
   proxyUnlock,              /* xUnlock method */
   proxyCheckReservedLock    /* xCheckReservedLock method */
-);
+)
 #endif
 
 
@@ -3139,7 +3150,7 @@ IOMETHODS(
 **
 ** This is for MacOSX only.
 */
-static const sqlite3_io_methods *autolockIoFinder(
+static const sqlite3_io_methods *autolockIoFinderImpl(
   const char *filePath,    /* name of the database file */
   int fd                   /* file descriptor open on the database file */
 ){
@@ -3192,6 +3203,9 @@ static const sqlite3_io_methods *autolockIoFinder(
     return &dotlockIoMethods;
   }
 }
+static const sqlite3_io_methods (*const autolockIoFinder)(const char*,int)
+        = autolockIoFinderImpl;
+
 #endif /* defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
@@ -3250,7 +3264,7 @@ static int fillInUnixFile(
   if( noLock ){
     pLockingStyle = &nolockIoMethods;
   }else{
-    pLockingStyle = (*(finder_type)pVfs->pAppData)(zFilename, h);
+    pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, h);
 #if SQLITE_ENABLE_LOCKING_STYLE
     /* Cache zFilename in the locking context (AFP and dotlock override) for
     ** proxyLock activation is possible (remote proxy is based on db name)
@@ -3764,9 +3778,28 @@ static void unixDlError(sqlite3_vfs *NotUsed, int nBuf, char *zBufOut){
   }
   unixLeaveMutex();
 }
-static void *unixDlSym(sqlite3_vfs *NotUsed, void *pHandle, const char*zSymbol){
+static void (*unixDlSym(sqlite3_vfs *NotUsed, void *p, const char*zSym))(void){
+  /* 
+  ** GCC with -pedantic-errors says that C90 does not allow a void* to be
+  ** cast into a pointer to a function.  And yet the library dlsym() routine
+  ** returns a void* which is really a pointer to a function.  So how do we
+  ** use dlsym() with -pedantic-errors?
+  **
+  ** Variable x below is defined to be a pointer to a function taking
+  ** parameters void* and const char* and returning a pointer to a function.
+  ** We initialize x by assigning it a pointer to the dlsym() function.
+  ** (That assignment requires a cast.)  Then we call the function that
+  ** x points to.  
+  **
+  ** This work-around is unlikely to work correctly on any system where
+  ** you really cannot cast a function pointer into void*.  But then, on the
+  ** other hand, dlsym() will not work on such a system either, so we have
+  ** not really lost anything.
+  */
+  void (*(*x)(void*,const char*))(void);
   UNUSED_PARAMETER(NotUsed);
-  return dlsym(pHandle, zSymbol);
+  x = (void(*(*)(void*,const char*))(void))dlsym;
+  return (*x)(p, zSym);
 }
 static void unixDlClose(sqlite3_vfs *NotUsed, void *pHandle){
   UNUSED_PARAMETER(NotUsed);
@@ -4283,7 +4316,7 @@ static int proxyCreateUnixFile(const char *path, unixFile **ppFile) {
   }
   memset(pNew, 0, sizeof(unixFile));
 
-  dummyVfs.pAppData = (void*)autolockIoFinder;  
+  dummyVfs.pAppData = (void*)&autolockIoFinder;
   rc = fillInUnixFile(&dummyVfs, fd, dirfd, (sqlite3_file*)pNew, path, 0, 0);
   if( rc==SQLITE_OK ){
     *ppFile = pNew;
@@ -4322,7 +4355,7 @@ static int proxyTakeConch(unixFile *pFile){
     rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, SHARED_LOCK);
     if( rc==SQLITE_OK ){
       int pError = 0;
-      memset(testValue, 0, CONCHLEN); // conch is fixed size
+      memset(testValue, 0, CONCHLEN); /* conch is fixed size */
       rc = proxyGetHostID(testValue, &pError);
       if( (rc&0xff)==SQLITE_IOERR ){
         pFile->lastErrno = pError;
@@ -4423,12 +4456,13 @@ end_takeconch:
       if( fd>=0 ){
         pFile->h = fd;
       }else{
-        rc=SQLITE_CANTOPEN; // SQLITE_BUSY? proxyTakeConch called during locking
+        rc=SQLITE_CANTOPEN; /* SQLITE_BUSY? proxyTakeConch called
+                               during locking */
       }
     }
     if( rc==SQLITE_OK && !pCtx->lockProxy ){
       char *path = tLockPath ? tLockPath : pCtx->lockProxyPath;
-      // ACS: Need to make a copy of path sometimes
+      /* ACS: Need to make a copy of path sometimes */
       rc = proxyCreateUnixFile(path, &pCtx->lockProxy);
     }
     if( rc==SQLITE_OK ){
@@ -4849,8 +4883,13 @@ static int proxyClose(sqlite3_file *id) {
 int sqlite3_os_init(void){ 
   /* 
   ** The following macro defines an initializer for an sqlite3_vfs object.
-  ** The name of the VFS is NAME.  The pAppData is a pointer to a "finder"
-  ** function.  The FINDER parameter to this macro is the name of the
+  ** The name of the VFS is NAME.  The pAppData is a pointer to a pointer
+  ** to the "finder" function.  (pAppData is a pointer to a pointer because
+  ** silly C90 rules prohibit a void* from being cast to a function pointer
+  ** and so we have to go through the intermediate pointer to avoid problems
+  ** when compiling with -pedantic-errors on GCC.)
+  **
+  ** The FINDER parameter to this macro is the name of the pointer to the
   ** finder-function.  The finder-function returns a pointer to the
   ** sqlite_io_methods object that implements the desired locking
   ** behaviors.  See the division above that contains the IOMETHODS
@@ -4868,7 +4907,7 @@ int sqlite3_os_init(void){
     MAX_PATHNAME,         /* mxPathname */                  \
     0,                    /* pNext */                       \
     VFSNAME,              /* zName */                       \
-    (void*)FINDER,        /* pAppData */                    \
+    (void*)&FINDER,       /* pAppData */                    \
     unixOpen,             /* xOpen */                       \
     unixDelete,           /* xDelete */                     \
     unixAccess,           /* xAccess */                     \

@@ -15,7 +15,7 @@
 ** Random numbers are used by some of the database backends in order
 ** to generate random integer keys for tables or random filenames.
 **
-** $Id: random.c,v 1.27 2008/10/07 15:25:48 drh Exp $
+** $Id: random.c,v 1.28 2008/12/08 18:19:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -27,7 +27,7 @@ static SQLITE_WSD struct sqlite3PrngType {
   unsigned char isInit;          /* True if initialized */
   unsigned char i, j;            /* State variables */
   unsigned char s[256];          /* State variables */
-} sqlite3Prng = { 0, };
+} sqlite3Prng;
 
 /*
 ** Get a single 8-bit random value from the RC4 PRNG.  The Mutex
@@ -126,7 +126,7 @@ void sqlite3_randomness(int N, void *pBuf){
 ** The sqlite3_test_control() interface calls these routines to
 ** control the PRNG.
 */
-static SQLITE_WSD struct sqlite3PrngType sqlite3SavedPrng = { 0, };
+static SQLITE_WSD struct sqlite3PrngType sqlite3SavedPrng;
 void sqlite3PrngSaveState(void){
   memcpy(
     &GLOBAL(struct sqlite3PrngType, sqlite3SavedPrng),

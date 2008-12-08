@@ -12,7 +12,7 @@
 **
 ** This file contains definitions of global variables and contants.
 **
-** $Id: global.c,v 1.8 2008/09/04 17:17:39 danielk1977 Exp $
+** $Id: global.c,v 1.9 2008/12/08 18:19:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -73,7 +73,26 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0x7ffffffe,                /* mxStrlen */
    100,                       /* szLookaside */
    500,                       /* nLookaside */
-   /* Other fields all default to zero */
+   {0,0,0,0,0,0,0,0},         /* m */
+   {0,0,0,0,0,0,0,0,0},       /* mutex */
+   {0,0,0,0,0,0,0,0,0,0,0},   /* pcache */
+   (void*)0,                  /* pHeap */
+   0,                         /* nHeap */
+   0, 0,                      /* mnHeap, mxHeap */
+   (void*)0,                  /* pScratch */
+   0,                         /* szScratch */
+   0,                         /* nScratch */
+   (void*)0,                  /* pPage */
+   0,                         /* szPage */
+   0,                         /* nPage */
+   0,                         /* mxParserStack */
+   0,                         /* sharedCacheEnabled */
+   /* All the rest need to always be zero */
+   0,                         /* isInit */
+   0,                         /* inProgress */
+   0,                         /* isMallocInit */
+   0,                         /* pInitMutex */
+   0,                         /* nRefInitMutex */
 };
 
 

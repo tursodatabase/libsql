@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.56 2008/10/12 00:27:53 shane Exp $
+** $Id: loadext.c,v 1.57 2008/12/08 18:19:18 drh Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -482,10 +482,10 @@ static const sqlite3_api_routines sqlite3Apis = { 0 };
 ** This list is shared across threads.  The SQLITE_MUTEX_STATIC_MASTER
 ** mutex must be held while accessing this list.
 */
-typedef struct sqlite3ExtType sqlite3ExtType;
-static SQLITE_WSD struct sqlite3ExtType {
-  int nExt;        /* Number of entries in aExt[] */          
-  void **aExt;     /* Pointers to the extension init functions */
+typedef struct sqlite3AutoExtList sqlite3AutoExtList;
+static SQLITE_WSD struct sqlite3AutoExtList {
+  int nExt;              /* Number of entries in aExt[] */          
+  void (**aExt)(void);   /* Pointers to the extension init functions */
 } sqlite3Autoext = { 0, 0 };
 
 /* The "wsdAutoext" macro will resolve to the autoextension
@@ -496,7 +496,7 @@ static SQLITE_WSD struct sqlite3ExtType {
 */
 #ifdef SQLITE_OMIT_WSD
 # define wsdAutoextInit \
-  sqlite3ExtType *x = &GLOBAL(sqlite3ExtType,sqlite3Autoext)
+  sqlite3AutoExtList *x = &GLOBAL(sqlite3AutoExtList,sqlite3Autoext)
 # define wsdAutoext x[0]
 #else
 # define wsdAutoextInit
@@ -508,7 +508,7 @@ static SQLITE_WSD struct sqlite3ExtType {
 ** Register a statically linked extension that is automatically
 ** loaded by every new database connection.
 */
-int sqlite3_auto_extension(void *xInit){
+int sqlite3_auto_extension(void (*xInit)(void)){
   int rc = SQLITE_OK;
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
@@ -528,7 +528,7 @@ int sqlite3_auto_extension(void *xInit){
     }
     if( i==wsdAutoext.nExt ){
       int nByte = (wsdAutoext.nExt+1)*sizeof(wsdAutoext.aExt[0]);
-      void **aNew;
+      void (**aNew)(void);
       aNew = sqlite3_realloc(wsdAutoext.aExt, nByte);
       if( aNew==0 ){
         rc = SQLITE_NOMEM;

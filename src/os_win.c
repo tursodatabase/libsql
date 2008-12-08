@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.140 2008/11/19 21:35:47 shane Exp $
+** $Id: os_win.c,v 1.141 2008/12/08 18:19:18 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1527,14 +1527,14 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
   getLastErrorMsg(nBuf, zBufOut);
 }
-void *winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+void (*winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol))(void){
 #if SQLITE_OS_WINCE
   /* The GetProcAddressA() routine is only available on wince. */
-  return GetProcAddressA((HANDLE)pHandle, zSymbol);
+  return (void(*)(void))GetProcAddressA((HANDLE)pHandle, zSymbol);
 #else
   /* All other windows platforms expect GetProcAddress() to take
   ** an Ansi string regardless of the _UNICODE setting */
-  return GetProcAddress((HANDLE)pHandle, zSymbol);
+  return (void(*)(void))GetProcAddress((HANDLE)pHandle, zSymbol);
 #endif
 }
 void winDlClose(sqlite3_vfs *pVfs, void *pHandle){

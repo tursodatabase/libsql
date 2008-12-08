@@ -17,7 +17,7 @@
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
 **
-** $Id: os.h,v 1.105 2008/06/26 10:41:19 danielk1977 Exp $
+** $Id: os.h,v 1.106 2008/12/08 18:19:18 drh Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
@@ -258,7 +258,7 @@ int sqlite3OsFullPathname(sqlite3_vfs *, const char *, int, char *);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 void *sqlite3OsDlOpen(sqlite3_vfs *, const char *);
 void sqlite3OsDlError(sqlite3_vfs *, int, char *);
-void *sqlite3OsDlSym(sqlite3_vfs *, void *, const char *);
+void (*sqlite3OsDlSym(sqlite3_vfs *, void *, const char *))(void);
 void sqlite3OsDlClose(sqlite3_vfs *, void *);
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 int sqlite3OsRandomness(sqlite3_vfs *, int, char *);
