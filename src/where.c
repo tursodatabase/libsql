@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.333 2008/12/05 17:17:08 drh Exp $
+** $Id: where.c,v 1.334 2008/12/08 21:37:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -238,7 +238,7 @@ static void whereClauseClear(WhereClause *pWC){
 ** calling this routine.  Such pointers may be reinitialized by referencing
 ** the pWC->a[] array.
 */
-static int whereClauseInsert(WhereClause *pWC, Expr *p, int wtFlags){
+static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
   WhereTerm *pTerm;
   int idx;
   if( pWC->nTerm>=pWC->nSlot ){
@@ -1841,7 +1841,7 @@ static int codeEqualityTerm(
     sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
     VdbeComment((v, "%.*s", pX->span.n, pX->span.z));
     if( pLevel->nIn==0 ){
-      pLevel->nxt = sqlite3VdbeMakeLabel(v);
+      pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
     }
     pLevel->nIn++;
     pLevel->aInLoop = sqlite3DbReallocOrFree(pParse->db, pLevel->aInLoop,
@@ -1851,9 +1851,9 @@ static int codeEqualityTerm(
       pIn += pLevel->nIn - 1;
       pIn->iCur = iTab;
       if( eType==IN_INDEX_ROWID ){
-        pIn->topAddr = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
+        pIn->addrInTop = sqlite3VdbeAddOp2(v, OP_Rowid, iTab, iReg);
       }else{
-        pIn->topAddr = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
+        pIn->addrInTop = sqlite3VdbeAddOp3(v, OP_Column, iTab, 0, iReg);
       }
       sqlite3VdbeAddOp1(v, OP_IsNull, iReg);
     }else{
@@ -1928,7 +1928,7 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->brk);
+      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
     }
   }
   return regBase;
@@ -2063,7 +2063,7 @@ WhereInfo *sqlite3WhereBegin(
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
-  int brk, cont = 0;         /* Addresses used during code generation */
+  int addrBrk, addrCont = 0; /* Addresses used during code generation */
   Bitmask notReady;          /* Cursors that are not yet positioned */
   WhereTerm *pTerm;          /* A single term in the WHERE clause */
   ExprMaskSet maskSet;       /* The expression mask set */
@@ -2371,7 +2371,7 @@ WhereInfo *sqlite3WhereBegin(
     int j, k;
     int iCur = pTabItem->iCursor;  /* The VDBE cursor for the table */
     Index *pIdx;       /* The index we will be using */
-    int nxt;           /* Where to jump to continue with the next IN case */
+    int addrNxt;           /* Where to jump to continue with the next IN case */
     int iIdxCur;       /* The VDBE cursor for the index */
     int omitTable;     /* True if we use the index only */
     int bRev;          /* True if we need to scan in reverse order */
@@ -2384,17 +2384,17 @@ WhereInfo *sqlite3WhereBegin(
     omitTable = (pLevel->wsFlags & WHERE_IDX_ONLY)!=0;
 
     /* Create labels for the "break" and "continue" instructions
-    ** for the current loop.  Jump to brk to break out of a loop.
+    ** for the current loop.  Jump to addrBrk to break out of a loop.
     ** Jump to cont to go immediately to the next iteration of the
     ** loop.
     **
-    ** When there is an IN operator, we also have a "nxt" label that
+    ** When there is an IN operator, we also have a "addrNxt" label that
     ** means to continue with the next IN value combination.  When
-    ** there are no IN operators in the constraints, the "nxt" label
-    ** is the same as "brk".
+    ** there are no IN operators in the constraints, the "addrNxt" label
+    ** is the same as "addrBrk".
     */
-    brk = pLevel->brk = pLevel->nxt = sqlite3VdbeMakeLabel(v);
-    cont = pLevel->cont = sqlite3VdbeMakeLabel(v);
+    addrBrk = pLevel->addrBrk = pLevel->addrNxt = sqlite3VdbeMakeLabel(v);
+    addrCont = pLevel->addrCont = sqlite3VdbeMakeLabel(v);
 
     /* If this is the right table of a LEFT OUTER JOIN, allocate and
     ** initialize a memory cell that records if this table matches any
@@ -2438,7 +2438,7 @@ WhereInfo *sqlite3WhereBegin(
       pParse->disableColCache--;
       sqlite3VdbeAddOp2(v, OP_Integer, pBestIdx->idxNum, iReg);
       sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
-      sqlite3VdbeAddOp4(v, OP_VFilter, iCur, brk, iReg, pBestIdx->idxStr,
+      sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrBrk, iReg, pBestIdx->idxStr,
                         pBestIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
       sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
       pBestIdx->needToFreeIdxStr = 0;
@@ -2468,9 +2468,9 @@ WhereInfo *sqlite3WhereBegin(
       assert( pTerm->leftCursor==iCur );
       assert( omitTable==0 );
       r1 = codeEqualityTerm(pParse, pTerm, pLevel, rtmp);
-      nxt = pLevel->nxt;
-      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, nxt);
-      sqlite3VdbeAddOp3(v, OP_NotExists, iCur, nxt, r1);
+      addrNxt = pLevel->addrNxt;
+      sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, addrNxt);
+      sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, r1);
       sqlite3ReleaseTempReg(pParse, rtmp);
       VdbeComment((v, "pk"));
       pLevel->op = OP_Noop;
@@ -2506,14 +2506,14 @@ WhereInfo *sqlite3WhereBegin(
         r1 = sqlite3GetTempReg(pParse);
         sqlite3ExprCode(pParse, pX->pRight, r1);
 
-        sqlite3VdbeAddOp3(v, OP_ForceInt, r1, brk, 
+        sqlite3VdbeAddOp3(v, OP_ForceInt, r1, addrBrk, 
                              pX->op==TK_LE || pX->op==TK_GT);
-        sqlite3VdbeAddOp3(v, bRev ? OP_MoveLt : OP_MoveGe, iCur, brk, r1);
+        sqlite3VdbeAddOp3(v, bRev ? OP_MoveLt : OP_MoveGe, iCur, addrBrk, r1);
         VdbeComment((v, "pk"));
         sqlite3ReleaseTempReg(pParse, r1);
         disableTerm(pLevel, pStart);
       }else{
-        sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, brk);
+        sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrBrk);
       }
       if( pEnd ){
         Expr *pX;
@@ -2537,7 +2537,7 @@ WhereInfo *sqlite3WhereBegin(
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
         /* sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0); */
-        sqlite3VdbeAddOp3(v, testOp, pLevel->iMem, brk, r1);
+        sqlite3VdbeAddOp3(v, testOp, pLevel->iMem, addrBrk, r1);
         sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -2606,7 +2606,7 @@ WhereInfo *sqlite3WhereBegin(
       ** starting at regBase.
       */
       regBase = codeAllEqualityTerms(pParse, pLevel, &wc, notReady, 2);
-      nxt = pLevel->nxt;
+      addrNxt = pLevel->addrNxt;
 
       /* If this loop satisfies a sort order (pOrderBy) request that 
       ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -2660,7 +2660,7 @@ WhereInfo *sqlite3WhereBegin(
         }
         sqlite3ExprCode(pParse, pRangeStart->pExpr->pRight, regBase+nEq);
         pParse->disableColCache = dcc;
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         nConstraint++;
       }else if( isMinQuery ){
         sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
@@ -2677,7 +2677,7 @@ WhereInfo *sqlite3WhereBegin(
       testcase( op==OP_MoveGe );
       testcase( op==OP_MoveLe );
       testcase( op==OP_MoveLt );
-      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase, 
+      sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase, 
                         SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
 
       /* Load the value for the inequality constraint at the end of the
@@ -2686,7 +2686,7 @@ WhereInfo *sqlite3WhereBegin(
       nConstraint = nEq;
       if( pRangeEnd ){
         sqlite3ExprCode(pParse, pRangeEnd->pExpr->pRight, regBase+nEq);
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, nxt);
+        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
         codeApplyAffinity(pParse, regBase, nEq+1, pIdx);
         nConstraint++;
       }
@@ -2699,7 +2699,7 @@ WhereInfo *sqlite3WhereBegin(
       testcase( op==OP_Noop );
       testcase( op==OP_IdxGE );
       testcase( op==OP_IdxLT );
-      sqlite3VdbeAddOp4(v, op, iIdxCur, nxt, regBase,
+      sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
                         SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
       sqlite3VdbeChangeP5(v, endEq!=bRev);
 
@@ -2712,7 +2712,7 @@ WhereInfo *sqlite3WhereBegin(
       testcase( pLevel->wsFlags & WHERE_TOP_LIMIT );
       if( pLevel->wsFlags & (WHERE_BTM_LIMIT|WHERE_TOP_LIMIT) ){
         sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, nEq, r1);
-        sqlite3VdbeAddOp2(v, OP_IsNull, r1, cont);
+        sqlite3VdbeAddOp2(v, OP_IsNull, r1, addrCont);
       }
 
       /* Seek the table cursor, if required */
@@ -2737,7 +2737,7 @@ WhereInfo *sqlite3WhereBegin(
       assert( bRev==0 );
       pLevel->op = OP_Next;
       pLevel->p1 = iCur;
-      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, OP_Rewind, iCur, brk);
+      pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addrBrk);
       pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
     }
     notReady &= ~getMask(&maskSet, iCur);
@@ -2758,7 +2758,7 @@ WhereInfo *sqlite3WhereBegin(
         continue;
       }
       pParse->disableColCache += k;
-      sqlite3ExprIfFalse(pParse, pE, cont, SQLITE_JUMPIFNULL);
+      sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
       pParse->disableColCache -= k;
       k = 1;
       pTerm->wtFlags |= TERM_CODED;
@@ -2768,7 +2768,7 @@ WhereInfo *sqlite3WhereBegin(
     ** at least one row of the right table has matched the left table.  
     */
     if( pLevel->iLeftJoin ){
-      pLevel->top = sqlite3VdbeCurrentAddr(v);
+      pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
       VdbeComment((v, "record LEFT JOIN hit"));
       sqlite3ExprClearColumnCache(pParse, pLevel->iTabCur);
@@ -2779,7 +2779,7 @@ WhereInfo *sqlite3WhereBegin(
         if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
         if( (pTerm->prereqAll & notReady)!=0 ) continue;
         assert( pTerm->pExpr );
-        sqlite3ExprIfFalse(pParse, pTerm->pExpr, cont, SQLITE_JUMPIFNULL);
+        sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
         pTerm->wtFlags |= TERM_CODED;
       }
     }
@@ -2837,7 +2837,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Record the continuation address in the WhereInfo structure.  Then
   ** clean up and return.
   */
-  pWInfo->iContinue = cont;
+  pWInfo->iContinue = addrCont;
   whereClauseClear(&wc);
   return pWInfo;
 
@@ -2865,7 +2865,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   sqlite3ExprClearColumnCache(pParse, -1);
   for(i=pTabList->nSrc-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
-    sqlite3VdbeResolveLabel(v, pLevel->cont);
+    sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
       sqlite3VdbeAddOp2(v, pLevel->op, pLevel->p1, pLevel->p2);
       sqlite3VdbeChangeP5(v, pLevel->p5);
@@ -2873,15 +2873,15 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->nIn ){
       struct InLoop *pIn;
       int j;
-      sqlite3VdbeResolveLabel(v, pLevel->nxt);
+      sqlite3VdbeResolveLabel(v, pLevel->addrNxt);
       for(j=pLevel->nIn, pIn=&pLevel->aInLoop[j-1]; j>0; j--, pIn--){
-        sqlite3VdbeJumpHere(v, pIn->topAddr+1);
-        sqlite3VdbeAddOp2(v, OP_Next, pIn->iCur, pIn->topAddr);
-        sqlite3VdbeJumpHere(v, pIn->topAddr-1);
+        sqlite3VdbeJumpHere(v, pIn->addrInTop+1);
+        sqlite3VdbeAddOp2(v, OP_Next, pIn->iCur, pIn->addrInTop);
+        sqlite3VdbeJumpHere(v, pIn->addrInTop-1);
       }
       sqlite3DbFree(db, pLevel->aInLoop);
     }
-    sqlite3VdbeResolveLabel(v, pLevel->brk);
+    sqlite3VdbeResolveLabel(v, pLevel->addrBrk);
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin);
@@ -2889,7 +2889,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( pLevel->iIdxCur>=0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->top);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrFirst);
       sqlite3VdbeJumpHere(v, addr);
     }
   }

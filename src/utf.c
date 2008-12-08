@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.66 2008/11/07 03:29:34 drh Exp $
+** $Id: utf.c,v 1.67 2008/12/08 21:37:15 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -39,11 +39,13 @@
 #include <assert.h>
 #include "vdbeInt.h"
 
+#ifndef SQLITE_AMALGAMATION
 /*
 ** The following constant value is used by the SQLITE_BIGENDIAN and
 ** SQLITE_LITTLEENDIAN macros.
 */
 const int sqlite3one = 1;
+#endif /* SQLITE_AMALGAMATION */
 
 /*
 ** This lookup table is used to help decode the first byte of

@@ -180,6 +180,9 @@ proc copy_file {filename} {
           regsub {^extern } $line {} line
           puts $out "SQLITE_PRIVATE $line"
         } else {
+          if {[regexp {const char sqlite3_version\[\];} $line]} {
+            set line {const char sqlite3_version[] = SQLITE_VERSION;}
+          }
           regsub {^SQLITE_EXTERN } $line {} line
           puts $out "SQLITE_API $line"
         }

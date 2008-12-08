@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.804 2008/12/08 18:19:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.805 2008/12/08 21:37:15 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -383,7 +383,7 @@ typedef INT8_TYPE i8;              /* 1-byte signed integer */
 ** evaluated at runtime.
 */
 #ifdef SQLITE_AMALGAMATION
-const int sqlite3one;
+const int sqlite3one = 1;
 #else
 extern const int sqlite3one;
 #endif
@@ -1523,16 +1523,16 @@ struct WhereLevel {
   Index *pIdx;          /* Index used.  NULL if no index */
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
-  int brk;              /* Jump here to break out of the loop */
-  int nxt;              /* Jump here to start the next IN combination */
-  int cont;             /* Jump here to continue with the next loop cycle */
-  int top;              /* First instruction of interior of the loop */
+  int addrBrk;          /* Jump here to break out of the loop */
+  int addrNxt;          /* Jump here to start the next IN combination */
+  int addrCont;         /* Jump here to continue with the next loop cycle */
+  int addrFirst;        /* First instruction of interior of the loop */
   int op, p1, p2, p5;   /* Opcode used to terminate the loop */
   int nEq;              /* Number of == or IN constraints on this loop */
   int nIn;              /* Number of IN operators constraining this loop */
   struct InLoop {
     int iCur;              /* The VDBE cursor used by this IN operator */
-    int topAddr;           /* Top of the IN loop */
+    int addrInTop;         /* Top of the IN loop */
   } *aInLoop;           /* Information about each nested IN operator */
   sqlite3_index_info *pBestIdx;  /* Index information for this level */
 
