@@ -1,5 +1,5 @@
-C Make\ssure\sa\smemory\sallocation\serror\sdid\snot\sprevent\sUTF16\sto\sUTF8\sconversion\nprior\sto\sdoing\sa\sstring\scomparison.\s(CVS\s5988)
-D 2008-12-06T16:46:14
+C Fix\sa\ssegfault\sassociated\swith\sthe\scolumn\scache\sthat\soccurs\son\snested\sVIEWs.\nTicket\s#3527.\s(CVS\s5989)
+D 2008-12-08T13:42:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 88898ae96a0d7f66711caffa40b2cf30e623a387
 F src/delete.c d60885716666e5ea0f177b8db73c22c67ccba2cb
-F src/expr.c 9ce4f2585325bf3550d24fe60883a87263e0f630
+F src/expr.c ee295129a9efa0466ae4ebdb03adc33cd5c2e184
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c b4570eb73d873041b8e68f5cdbb4556ff13a94c3
 F src/global.c 20a3fe46c8287a01ba3a7442558f0eb70c66b19a
@@ -155,7 +155,7 @@ F src/select.c 1d3616e4e48f6c15a0c69bf14bc5423f31624f87
 F src/shell.c be9eeb5811d1ad6ebbf6ae8b5aa04ae1368af033
 F src/sqlite.h.in b5d50f12fb9c7460a4ddfef8c1e799afaabefebf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 391992f5bd54560758c618f7b858c1c4ea060883
+F src/sqliteInt.h 93d6ef19eb949aced1ae32338f3262304596fee8
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 22744786199c9195720c15a7a42cb97b2e2728d8
@@ -583,6 +583,7 @@ F test/tkt3472.test 98c7e54b8fef2b1266a552a66c8e5d88a6908d1d
 F test/tkt3493.test 8472b3464e49a27ff7271308eec46154209e667b
 F test/tkt3508.test d9e285ff91731247d4673f9252fe5934639d7f0d
 F test/tkt3522.test 22ce2ebbcb04a6be56c0977d405c207967318fd6
+F test/tkt3527.test ee4af96183579565987e58873a7490bc04934ffb
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -663,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 76246d9f0d4e995f6be6fbd1fa2bcabc1b9566ae
-R 44bbf1bea4319f9b234d44baa1ddfaa7
+P 9d061e20d885bee7ac7875500a0e7c238b540a63
+R 0e9bcc610555d728a81eaf83a45e7f41
 U drh
-Z 4c6e9127786c5b554c8b62926c58464b
+Z 3a9348ac11f48ee17609e92ff5312be5
