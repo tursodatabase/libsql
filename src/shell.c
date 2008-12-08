@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.190 2008/12/05 17:17:08 drh Exp $
+** $Id: shell.c,v 1.191 2008/12/08 18:27:31 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -66,12 +66,6 @@ extern int isatty();
 #include <sys/time.h>
 #include <sys/resource.h>
 
-/*
-** Used to prevent warnings about unused parameters
-*/
-#define UNUSED_PARAMETER(x) (void)(x)
-
-
 /* Saved resource information for the beginning of an operation */
 static struct rusage sBegin;
 
@@ -114,6 +108,10 @@ static void endTimer(void){
 #define HAS_TIMER 0
 #endif
 
+/*
+** Used to prevent warnings about unused parameters
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
 
 /*
 ** If the following flag is set, then command execution stops
