@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.159 2008/12/04 20:40:10 drh Exp $
+** $Id: vdbeInt.h,v 1.160 2008/12/09 02:51:24 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -114,6 +114,7 @@ typedef struct VdbeCursor VdbeCursor;
 struct Mem {
   union {
     i64 i;              /* Integer value. */
+    int nZero;          /* Used when bit MEM_Zero is set in flags */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
   } u;

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.792 2008/12/06 16:46:14 drh Exp $
+** $Id: vdbe.c,v 1.793 2008/12/09 02:51:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -386,7 +386,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     sqlite3_snprintf(100, zCsr, "]%s", encnames[pMem->enc]);
     zCsr += strlen(zCsr);
     if( f & MEM_Zero ){
-      sqlite3_snprintf(100, zCsr,"+%lldz",pMem->u.i);
+      sqlite3_snprintf(100, zCsr,"+%dz",pMem->u.nZero);
       zCsr += strlen(zCsr);
     }
     *zCsr = '\0';
@@ -2290,7 +2290,7 @@ case OP_MakeRecord: {
     if( pRec->flags & MEM_Zero ){
       /* Only pure zero-filled BLOBs can be input to this Opcode.
       ** We do not allow blobs with a prefix and a zero-filled tail. */
-      nZero += pRec->u.i;
+      nZero += pRec->u.nZero;
     }else if( len ){
       nZero = 0;
     }
@@ -2334,7 +2334,7 @@ case OP_MakeRecord: {
   pOut->flags = MEM_Blob | MEM_Dyn;
   pOut->xDel = 0;
   if( nZero ){
-    pOut->u.i = nZero;
+    pOut->u.nZero = nZero;
     pOut->flags |= MEM_Zero;
   }
   pOut->enc = SQLITE_UTF8;  /* In case the blob is ever converted to text */
@@ -3485,7 +3485,7 @@ case OP_Insert: {
   }else{
     int nZero;
     if( pData->flags & MEM_Zero ){
-      nZero = pData->u.i;
+      nZero = pData->u.nZero;
     }else{
       nZero = 0;
     }
