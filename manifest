@@ -1,5 +1,5 @@
-C Get\srid\sof\smore\ssilly\scompiler\swarnings.\s(CVS\s5996)
-D 2008-12-09T03:55:14
+C Removed\ssome\sharmless\scompiler\swarnings\sand\sconverted\ssome\s"double"\sops\sto\s"int"\sin\sdate.c.\s(CVS\s5997)
+D 2008-12-09T04:59:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btreeInt.h 8d21590c97b6a2c00cce1f78ed5dc5756e835108
 F src/build.c ce642b06016d94b0dbc34d379bac82b597baf8d5
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 88898ae96a0d7f66711caffa40b2cf30e623a387
+F src/date.c 80b158ab6d14f07bc81df8415c5ab2c477947d42
 F src/delete.c d60885716666e5ea0f177b8db73c22c67ccba2cb
 F src/expr.c ee295129a9efa0466ae4ebdb03adc33cd5c2e184
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1522c2c6677b97edfa09dd64b4f9ed139aeb5bec
-R 3cf4ecb0531c6feadf1fa1dceb64dc9c
-U drh
-Z 29140f0489a65f9e7ba95c829363e23e
+P 59ae0020683766993c38e2b76a436d78d3e4bd63
+R 17936af34c3e654d021393afaa888743
+U shane
+Z 7b2c61a1e0b4dfcc6d4fa7adb8f20c33
