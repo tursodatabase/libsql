@@ -1,5 +1,5 @@
-C Finish\sincomplete\sedit\sof\sresolve.c\sfrom\scheck-in\s(5998).\s(CVS\s6000)
-D 2008-12-09T14:03:22
+C Return\san\sappropriate\sout-of-memory\smessage\swhen\ssqlite3_errmsg()\sis\scalled\nfollowing\san\sSQLITE_NOMEM\serror.\s(CVS\s6001)
+D 2008-12-09T14:46:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/insert.c 73c4b33767d9540f8ead5d903504ed93f48ad147
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 2f53996c693a347edc2d773e9217dde49d96ae64
-F src/main.c 951f0836d7f454f7bfc2855b6fc7a90debab10e4
+F src/main.c 331b2652e72ae64918d2347c7a96c5ed770b6f19
 F src/malloc.c 89c7c58fbec06b80101fdc6dcdf9ee849b7cd7ac
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c bb8e26adde7d463270e961f045802c61dbabc8f1
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4f10f19dd1e66cd29b0e1e26506154d670c3bc46
-R 4236110168ec16d57589408a5d31ff17
+P 0d7e150e8c6cb801e68273c9d0793ce31d1f31fd
+R e704a3e0fb9d6add87cfce887cca1970
 U drh
-Z 3c8f3bd0788523faf648732cd5785f4b
+Z 4f392a2c88e12853ebbbde0a7d00a0a2
