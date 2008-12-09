@@ -14,7 +14,7 @@
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
 **
-** $Id: test6.c,v 1.39 2008/06/06 11:11:26 danielk1977 Exp $
+** $Id: test6.c,v 1.40 2008/12/09 01:32:03 drh Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
@@ -606,9 +606,9 @@ static void cfDlError(sqlite3_vfs *pCfVfs, int nByte, char *zErrMsg){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   pVfs->xDlError(pVfs, nByte, zErrMsg);
 }
-static void *cfDlSym(sqlite3_vfs *pCfVfs, void *pHandle, const char *zSymbol){
+static void (*cfDlSym(sqlite3_vfs *pCfVfs, void *pH, const char *zSym))(void){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
-  return pVfs->xDlSym(pVfs, pHandle, zSymbol);
+  return pVfs->xDlSym(pVfs, pH, zSym);
 }
 static void cfDlClose(sqlite3_vfs *pCfVfs, void *pHandle){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;

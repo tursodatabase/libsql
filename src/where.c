@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.334 2008/12/08 21:37:16 drh Exp $
+** $Id: where.c,v 1.335 2008/12/09 01:32:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -80,9 +80,9 @@ typedef struct ExprMaskSet ExprMaskSet;
 typedef struct WhereTerm WhereTerm;
 struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression that is this term */
-  i16 iParent;            /* Disable pWC->a[iParent] when this term disabled */
-  i16 leftCursor;         /* Cursor number of X in "X <op> <expr>" */
-  i16 leftColumn;         /* Column number of X in "X <op> <expr>" */
+  int iParent;            /* Disable pWC->a[iParent] when this term disabled */
+  int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
+  int leftColumn;         /* Column number of X in "X <op> <expr>" */
   u16 eOperator;          /* A WO_xx value describing <op> */
   u8 wtFlags;             /* TERM_xxx bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
@@ -110,7 +110,7 @@ struct WhereClause {
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
-  WhereTerm aStatic[10];   /* Initial static space for a[] */
+  WhereTerm aStatic[4];    /* Initial static space for a[] */
 };
 
 /*
@@ -159,6 +159,8 @@ struct ExprMaskSet {
 #define WO_MATCH  0x040
 #define WO_ISNULL 0x080
 #define WO_OR     0x100
+
+#define WO_ALL    0xfff       /* Mask of all possible WO_* values */
 
 /*
 ** Value for wsFlags returned by bestIndex().  These flags determine which
@@ -238,7 +240,7 @@ static void whereClauseClear(WhereClause *pWC){
 ** calling this routine.  Such pointers may be reinitialized by referencing
 ** the pWC->a[] array.
 */
-static int whereClauseInsert(WhereClause *pWC, Expr *p, u16 wtFlags){
+static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   WhereTerm *pTerm;
   int idx;
   if( pWC->nTerm>=pWC->nSlot ){
@@ -430,8 +432,8 @@ static void exprCommute(Parse *pParse, Expr *pExpr){
 /*
 ** Translate from TK_xx operator to WO_xx bitmask.
 */
-static int operatorMask(int op){
-  int c;
+static u16 operatorMask(int op){
+  u16 c;
   assert( allowedOp(op) );
   if( op==TK_IN ){
     c = WO_IN;
@@ -440,7 +442,8 @@ static int operatorMask(int op){
   }else if( op==TK_OR ){
     c = WO_OR;
   }else{
-    c = WO_EQ<<(op-TK_EQ);
+    assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
+    c = (u16)(WO_EQ<<(op-TK_EQ));
   }
   assert( op!=TK_ISNULL || c==WO_ISNULL );
   assert( op!=TK_OR || c==WO_OR );
@@ -464,12 +467,13 @@ static WhereTerm *findTerm(
   int iCur,             /* Cursor number of LHS */
   int iColumn,          /* Column number of LHS */
   Bitmask notReady,     /* RHS must not overlap with this mask */
-  u16 op,               /* Mask of WO_xx values describing operator */
+  u32 op,               /* Mask of WO_xx values describing operator */
   Index *pIdx           /* Must be compatible with this index, if not NULL */
 ){
   WhereTerm *pTerm;
   int k;
   assert( iCur>=0 );
+  op &= WO_ALL;
   for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
     if( pTerm->leftCursor==iCur
        && (pTerm->prereqRight & notReady)==0
@@ -1297,7 +1301,6 @@ static double bestVirtualIndex(
   */
   pIdxInfo = *ppIdxInfo;
   if( pIdxInfo==0 ){
-    WhereTerm *pTerm;
     int nTerm;
     WHERETRACE(("Recomputing index info for %s...\n", pTab->zName));
 
@@ -1361,7 +1364,7 @@ static double bestVirtualIndex(
       if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
       pIdxCons[j].iColumn = pTerm->leftColumn;
       pIdxCons[j].iTermOffset = i;
-      pIdxCons[j].op = pTerm->eOperator;
+      pIdxCons[j].op = (u8)pTerm->eOperator;
       /* The direct assignment in the previous line is possible only because
       ** the WO_ and SQLITE_INDEX_CONSTRAINT_ codes are identical.  The
       ** following asserts verify this fact. */
@@ -1427,7 +1430,7 @@ static double bestVirtualIndex(
   for(i=0; i<pIdxInfo->nConstraint; i++, pIdxCons++){
     j = pIdxCons->iTermOffset;
     pTerm = &pWC->a[j];
-    pIdxCons->usable =  (pTerm->prereqRight & notReady)==0;
+    pIdxCons->usable =  (pTerm->prereqRight & notReady)==0 ?1:0;
   }
   memset(pUsage, 0, sizeof(pUsage[0])*pIdxInfo->nConstraint);
   if( pIdxInfo->needToFreeIdxStr ){
@@ -2411,7 +2414,6 @@ WhereInfo *sqlite3WhereBegin(
       /* Case 0:  The table is a virtual-table.  Use the VFilter and VNext
       **          to access the data.
       */
-      int j;
       int iReg;   /* P3 Value for OP_VFilter */
       sqlite3_index_info *pBestIdx = pLevel->pBestIdx;
       int nConstraint = pBestIdx->nConstraint;
@@ -2423,7 +2425,6 @@ WhereInfo *sqlite3WhereBegin(
       iReg = sqlite3GetTempRange(pParse, nConstraint+2);
       pParse->disableColCache++;
       for(j=1; j<=nConstraint; j++){
-        int k;
         for(k=0; k<nConstraint; k++){
           if( aUsage[k].argvIndex==j ){
             int iTerm = aConstraint[k].iTermOffset;
@@ -2597,9 +2598,10 @@ WhereInfo *sqlite3WhereBegin(
       int startEq;                 /* True if range start uses ==, >= or <= */
       int endEq;                   /* True if range end uses ==, >= or <= */
       int start_constraints;       /* Start of range is constrained */
-      int k = pIdx->aiColumn[nEq]; /* Column for inequality constraints */
       int nConstraint;             /* Number of constraint terms */
       int op;
+
+      k = pIdx->aiColumn[nEq];     /* Column for inequality constraints */
 
       /* Generate code to evaluate all constraint terms using == or IN
       ** and store the values of those terms in an array of registers
@@ -2701,7 +2703,7 @@ WhereInfo *sqlite3WhereBegin(
       testcase( op==OP_IdxLT );
       sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
                         SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
-      sqlite3VdbeChangeP5(v, endEq!=bRev);
+      sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
 
       /* If there are inequality constraints, check that the value
       ** of the table column that the inequality contrains is not NULL.

@@ -14,7 +14,7 @@
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
 **
-** $Id: test_devsym.c,v 1.8 2008/09/12 10:22:40 danielk1977 Exp $
+** $Id: test_devsym.c,v 1.9 2008/12/09 01:32:03 drh Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -63,7 +63,7 @@ static int devsymFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 static void *devsymDlOpen(sqlite3_vfs*, const char *zFilename);
 static void devsymDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
-static void *devsymDlSym(sqlite3_vfs*,void*, const char *zSymbol);
+static void (*devsymDlSym(sqlite3_vfs*,void*, const char *zSymbol))(void);
 static void devsymDlClose(sqlite3_vfs*, void*);
 #endif /* SQLITE_OMIT_LOAD_EXTENSION */
 static int devsymRandomness(sqlite3_vfs*, int nByte, char *zOut);
@@ -300,8 +300,8 @@ static void devsymDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
 /*
 ** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
 */
-static void *devsymDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
-  return sqlite3OsDlSym(g.pVfs, pHandle, zSymbol);
+static void (*devsymDlSym(sqlite3_vfs *pVfs, void *p, const char *zSym))(void){
+  return sqlite3OsDlSym(g.pVfs, p, zSym);
 }
 
 /*

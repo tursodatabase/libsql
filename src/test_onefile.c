@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_onefile.c,v 1.9 2008/06/26 10:54:12 danielk1977 Exp $
+** $Id: test_onefile.c,v 1.10 2008/12/09 01:32:03 drh Exp $
 **
 ** OVERVIEW:
 **
@@ -168,7 +168,7 @@ static int fsAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int fsFullPathname(sqlite3_vfs*, const char *zName, int nOut,char *zOut);
 static void *fsDlOpen(sqlite3_vfs*, const char *zFilename);
 static void fsDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
-static void *fsDlSym(sqlite3_vfs*,void*, const char *zSymbol);
+static void (*fsDlSym(sqlite3_vfs*,void*, const char *zSymbol))(void);
 static void fsDlClose(sqlite3_vfs*, void*);
 static int fsRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int fsSleep(sqlite3_vfs*, int microseconds);
@@ -765,9 +765,9 @@ static void fsDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
 /*
 ** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
 */
-static void *fsDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
+static void (*fsDlSym(sqlite3_vfs *pVfs, void *pH, const char *zSym))(void){
   sqlite3_vfs *pParent = ((fs_vfs_t *)pVfs)->pParent;
-  return pParent->xDlSym(pParent, pHandle, zSymbol);
+  return pParent->xDlSym(pParent, pH, zSym);
 }
 
 /*
