@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.242 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: util.c,v 1.243 2008/12/09 03:55:14 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -59,7 +59,7 @@ int sqlite3Strlen(sqlite3 *db, const char *z){
   int len;
   int x;
   while( *z2 ){ z2++; }
-  x = z2 - z;
+  x = (int)(z2 - z);
   len = 0x7fffffff & x;
   if( len!=x || len > db->aLimit[SQLITE_LIMIT_LENGTH] ){
     return db->aLimit[SQLITE_LIMIT_LENGTH];
@@ -155,7 +155,7 @@ void sqlite3ErrorClear(Parse *pParse){
 ** "a-b-c".
 */
 void sqlite3Dequote(char *z){
-  int quote;
+  char quote;
   int i, j;
   if( z==0 ) return;
   quote = z[0];
@@ -314,8 +314,8 @@ int sqlite3AtoF(const char *z, double *pResult){
       v1 *= scale;
     }
   }
-  *pResult = sign<0 ? -v1 : v1;
-  return z - zBegin;
+  *pResult = (double)(sign<0 ? -v1 : v1);
+  return (int)(z - zBegin);
 #else
   return sqlite3Atoi64(z, pResult);
 #endif /* SQLITE_OMIT_FLOATING_POINT */
@@ -501,17 +501,17 @@ int sqlite3PutVarint(unsigned char *p, u64 v){
   int i, j, n;
   u8 buf[10];
   if( v & (((u64)0xff000000)<<32) ){
-    p[8] = v;
+    p[8] = (u8)v;
     v >>= 8;
     for(i=7; i>=0; i--){
-      p[i] = (v & 0x7f) | 0x80;
+      p[i] = (u8)((v & 0x7f) | 0x80);
       v >>= 7;
     }
     return 9;
   }    
   n = 0;
   do{
-    buf[n++] = (v & 0x7f) | 0x80;
+    buf[n++] = (u8)((v & 0x7f) | 0x80);
     v >>= 7;
   }while( v!=0 );
   buf[0] &= 0x7f;
@@ -538,8 +538,8 @@ int sqlite3PutVarint32(unsigned char *p, u32 v){
   }
 #endif
   if( (v & ~0x3fff)==0 ){
-    p[0] = (v>>7) | 0x80;
-    p[1] = v & 0x7f;
+    p[0] = (u8)((v>>7) | 0x80);
+    p[1] = (u8)(v & 0x7f);
     return 2;
   }
   return sqlite3PutVarint(p, v);
@@ -811,10 +811,10 @@ u32 sqlite3Get4byte(const u8 *p){
   return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 }
 void sqlite3Put4byte(unsigned char *p, u32 v){
-  p[0] = v>>24;
-  p[1] = v>>16;
-  p[2] = v>>8;
-  p[3] = v;
+  p[0] = (u8)(v>>24);
+  p[1] = (u8)(v>>16);
+  p[2] = (u8)(v>>8);
+  p[3] = (u8)v;
 }
 
 
@@ -825,7 +825,7 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
 ** This routinen only works if h really is a valid hexadecimal
 ** character:  0..9a..fA..F
 */
-static int hexToInt(int h){
+static u8 hexToInt(int h){
   assert( (h>='0' && h<='9') ||  (h>='a' && h<='f') ||  (h>='A' && h<='F') );
 #ifdef SQLITE_ASCII
   h += 9*(1&(h>>6));
@@ -833,7 +833,7 @@ static int hexToInt(int h){
 #ifdef SQLITE_EBCDIC
   h += 9*(1&~(h>>4));
 #endif
-  return h & 0xf;
+  return (u8)(h & 0xf);
 }
 #endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC */
 

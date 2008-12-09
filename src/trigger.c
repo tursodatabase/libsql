@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.130 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: trigger.c,v 1.131 2008/12/09 03:55:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -64,6 +64,8 @@ void sqlite3BeginTrigger(
 
   assert( pName1!=0 );   /* pName1->z might be NULL, but not pName1 itself */
   assert( pName2!=0 );
+  assert( op==TK_INSERT || op==TK_UPDATE || op==TK_DELETE );
+  assert( op>0 && op<0xff );
   if( isTemp ){
     /* If TEMP was specified, then the trigger name may not be qualified. */
     if( pName2->n>0 ){
@@ -116,7 +118,8 @@ void sqlite3BeginTrigger(
   if( !zName || SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
     goto trigger_cleanup;
   }
-  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash), zName,strlen(zName)) ){
+  if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash),
+                      zName, (int)strlen(zName)) ){
     if( !noErr ){
       sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     }
@@ -177,7 +180,7 @@ void sqlite3BeginTrigger(
   pTrigger->table = sqlite3DbStrDup(db, pTableName->a[0].zName);
   pTrigger->pSchema = db->aDb[iDb].pSchema;
   pTrigger->pTabSchema = pTab->pSchema;
-  pTrigger->op = op;
+  pTrigger->op = (u8)op;
   pTrigger->tr_tm = tr_tm==TK_BEFORE ? TRIGGER_BEFORE : TRIGGER_AFTER;
   pTrigger->pWhen = sqlite3ExprDup(db, pWhen);
   pTrigger->pColumns = sqlite3IdListDup(db, pColumns);
@@ -253,13 +256,13 @@ void sqlite3FinishTrigger(
     Table *pTab;
     Trigger *pDel;
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
-                     pTrig->name, strlen(pTrig->name), pTrig);
+                     pTrig->name, (int)strlen(pTrig->name), pTrig);
     if( pDel ){
       assert( pDel==pTrig );
       db->mallocFailed = 1;
       goto triggerfinish_cleanup;
     }
-    n = strlen(pTrig->table) + 1;
+    n = (int)strlen(pTrig->table) + 1;
     pTab = sqlite3HashFind(&pTrig->pTabSchema->tblHash, pTrig->table, n);
     assert( pTab!=0 );
     pTrig->pNext = pTab->pTrigger;
@@ -486,7 +489,7 @@ drop_trigger_cleanup:
 ** is set on.
 */
 static Table *tableOfTrigger(Trigger *pTrigger){
-  int n = strlen(pTrigger->table) + 1;
+  int n = (int)strlen(pTrigger->table) + 1;
   return sqlite3HashFind(&pTrigger->pTabSchema->tblHash, pTrigger->table, n);
 }
 
@@ -551,7 +554,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 */
 void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
   Trigger *pTrigger;
-  int nName = strlen(zName);
+  int nName = (int)strlen(zName);
   pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash),
                                zName, nName, 0);
   if( pTrigger ){
@@ -642,7 +645,7 @@ static SrcList *targetSrcList(
   if( iDb==0 || iDb>=2 ){
     assert( iDb<pParse->db->nDb );
     sDb.z = (u8*)pParse->db->aDb[iDb].zName;
-    sDb.n = strlen((char*)sDb.z);
+    sDb.n = (int)strlen((char*)sDb.z);
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &sDb, &pStep->target);
   } else {
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &pStep->target, 0);
