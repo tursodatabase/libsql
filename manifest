@@ -1,5 +1,5 @@
-C A\ssubquery\sin\sthe\sresult\sset\sof\sa\sSELECT\sshould\sbe\sable\sto\slook\sinto\souter\nqueries\sto\sfind\svariable\sreferences.\s\sBut\sa\ssubquery\sin\sthe\sFROM\sclause\nshould\snot\sbe\sable\sto\sdo\sthis.\s\sTicket\s#3530.\s(CVS\s5998)
-D 2008-12-09T13:04:29
+C Additional\stest\scases\sfor\snested\ssubqueries\sin\sa\sWHERE\sclause.\s(CVS\s5999)
+D 2008-12-09T13:12:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -572,7 +572,7 @@ F test/tkt3201.test 607d433ad2c1f6a8cb1af55aaca427f63c83191b
 F test/tkt3292.test 962465a0984a3b8c757efe59c2c59144871ee1dd
 F test/tkt3298.test a735582095ca2e90a0c1391c7e781a90de6c1f34
 F test/tkt3334.test ea13a53cb176e90571a76c86605b14a09efe366d
-F test/tkt3346.test 6f405f1e102b616fc9f1ee4934995e9b45ff3934
+F test/tkt3346.test 6f67c3ed7db94dfc5df4f5f0b63809a1f611e01a
 F test/tkt3357.test b37a51a12ba5e143d6714778276438606f8f9e27
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 3171193ce340cff6b7ea81c03b8fa1cbc34ec36e
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5eb648a0b599c83504b892e2a5cefe6a837d6017
-R 3a3286fc2d40dc730943a62d4d30dc31
+P be03fa0543044dc46952695e963d9b82afed892b
+R 057a876e0e088f55d386cc2e6b809ed8
 U drh
-Z 7b793e8a0830b136a964fa8647b16f4c
+Z b90a9972d4a72f68d7f8576ec0ce01e7
