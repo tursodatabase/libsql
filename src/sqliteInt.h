@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.806 2008/12/09 01:32:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.807 2008/12/09 13:04:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2030,9 +2030,9 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 ** Return code from the parse-tree walking primitives and their
 ** callbacks.
 */
-#define WRC_Continue    0
-#define WRC_Prune       1
-#define WRC_Abort       2
+#define WRC_Continue    0   /* Continue down into children */
+#define WRC_Prune       1   /* Omit children but continue walking siblings */
+#define WRC_Abort       2   /* Abandon the tree walk */
 
 /*
 ** Assuming zIn points to the first byte of a UTF-8 character,
