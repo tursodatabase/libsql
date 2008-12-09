@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.12 2008/12/09 13:04:29 drh Exp $
+** $Id: resolve.c,v 1.13 2008/12/09 14:03:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -963,7 +963,7 @@ static int resolveSelectStep(Walker *pWalker, Select *p){
       if( pItem->pSelect ){
         const char *zSavedContext = pParse->zAuthContext;
         if( pItem->zName ) pParse->zAuthContext = pItem->zName;
-        sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC /*&sNC*/);
+        sqlite3ResolveSelectNames(pParse, pItem->pSelect, pOuterNC);
         pParse->zAuthContext = zSavedContext;
         if( pParse->nErr || db->mallocFailed ) return WRC_Abort;
       }
