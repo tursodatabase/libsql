@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.417 2008/12/08 18:19:18 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.418 2008/12/10 11:44:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -775,11 +775,11 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** The zName field holds the name of the VFS module.  The name must
 ** be unique across all VFS modules.
 **
-** {H11141} SQLite will guarantee that the zFilename parameter to xOpen
+** SQLite will guarantee that the zFilename parameter to xOpen
 ** is either a NULL pointer or string obtained
 ** from xFullPathname().  SQLite further guarantees that
 ** the string will be valid and unchanged until xClose() is
-** called. {END}  Because of the previous sentense,
+** called. Because of the previous sentense,
 ** the [sqlite3_file] can safely store a pointer to the
 ** filename if it needs to remember the filename for some reason.
 ** If the zFilename parameter is xOpen is a NULL pointer then xOpen
@@ -787,14 +787,14 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** xFilename parameter is NULL it will also be the case that the
 ** flags parameter will include [SQLITE_OPEN_DELETEONCLOSE].
 **
-** {H11142} The flags argument to xOpen() includes all bits set in
+** The flags argument to xOpen() includes all bits set in
 ** the flags argument to [sqlite3_open_v2()].  Or if [sqlite3_open()]
 ** or [sqlite3_open16()] is used, then flags includes at least
-** [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]. {END}
+** [SQLITE_OPEN_READWRITE] | [SQLITE_OPEN_CREATE]. 
 ** If xOpen() opens a file read-only then it sets *pOutFlags to
 ** include [SQLITE_OPEN_READONLY].  Other bits in *pOutFlags may be set.
 **
-** {H11143} SQLite will also add one of the following flags to the xOpen()
+** SQLite will also add one of the following flags to the xOpen()
 ** call, depending on the object being opened:
 **
 ** <ul>
@@ -805,7 +805,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** <li>  [SQLITE_OPEN_TRANSIENT_DB]
 ** <li>  [SQLITE_OPEN_SUBJOURNAL]
 ** <li>  [SQLITE_OPEN_MASTER_JOURNAL]
-** </ul> {END}
+** </ul>
 **
 ** The file I/O implementation can use the object type flags to
 ** change the way it deals with files.  For example, an application
@@ -823,28 +823,28 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** <li> [SQLITE_OPEN_EXCLUSIVE]
 ** </ul>
 **
-** {H11145} The [SQLITE_OPEN_DELETEONCLOSE] flag means the file should be
-** deleted when it is closed.  {H11146} The [SQLITE_OPEN_DELETEONCLOSE]
+** The [SQLITE_OPEN_DELETEONCLOSE] flag means the file should be
+** deleted when it is closed.  The [SQLITE_OPEN_DELETEONCLOSE]
 ** will be set for TEMP  databases, journals and for subjournals.
 **
-** {H11147} The [SQLITE_OPEN_EXCLUSIVE] flag means the file should be opened
+** The [SQLITE_OPEN_EXCLUSIVE] flag means the file should be opened
 ** for exclusive access.  This flag is set for all files except
 ** for the main database file.
 **
-** {H11148} At least szOsFile bytes of memory are allocated by SQLite
+** At least szOsFile bytes of memory are allocated by SQLite
 ** to hold the  [sqlite3_file] structure passed as the third
-** argument to xOpen. {END}  The xOpen method does not have to
+** argument to xOpen.  The xOpen method does not have to
 ** allocate the structure; it should just fill it in.
 **
-** {H11149} The flags argument to xAccess() may be [SQLITE_ACCESS_EXISTS]
+** The flags argument to xAccess() may be [SQLITE_ACCESS_EXISTS]
 ** to test for the existence of a file, or [SQLITE_ACCESS_READWRITE] to
 ** test whether a file is readable and writable, or [SQLITE_ACCESS_READ]
-** to test whether a file is at least readable. {END}  The file can be a
+** to test whether a file is at least readable.   The file can be a
 ** directory.
 **
-** {H11150} SQLite will always allocate at least mxPathname+1 bytes for the
-** output buffer xFullPathname. {H11151} The exact size of the output buffer
-** is also passed as a parameter to both  methods. {END}  If the output buffer
+** SQLite will always allocate at least mxPathname+1 bytes for the
+** output buffer xFullPathname.  The exact size of the output buffer
+** is also passed as a parameter to both  methods. If the output buffer
 ** is not large enough, [SQLITE_CANTOPEN] should be returned. Since this is
 ** handled as a fatal error by SQLite, vfs implementations should endeavor
 ** to prevent this by setting mxPathname to a sufficiently large value.
@@ -858,6 +858,7 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** The xSleep() method causes the calling thread to sleep for at
 ** least the number of microseconds given.  The xCurrentTime()
 ** method returns a Julian Day Number for the current date and time.
+**
 */
 typedef struct sqlite3_vfs sqlite3_vfs;
 struct sqlite3_vfs {
@@ -887,14 +888,14 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Flags for the xAccess VFS method {H11190} <H11140>
 **
-** {H11191} These integer constants can be used as the third parameter to
+** These integer constants can be used as the third parameter to
 ** the xAccess method of an [sqlite3_vfs] object. {END}  They determine
 ** what kind of permissions the xAccess method is looking for.
-** {H11192} With SQLITE_ACCESS_EXISTS, the xAccess method
+** With SQLITE_ACCESS_EXISTS, the xAccess method
 ** simply checks whether the file exists.
-** {H11193} With SQLITE_ACCESS_READWRITE, the xAccess method
+** With SQLITE_ACCESS_READWRITE, the xAccess method
 ** checks whether the file is both readable and writable.
-** {H11194} With SQLITE_ACCESS_READ, the xAccess method
+** With SQLITE_ACCESS_READ, the xAccess method
 ** checks whether the file is readable.
 */
 #define SQLITE_ACCESS_EXISTS    0

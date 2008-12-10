@@ -1,5 +1,5 @@
-C Return\san\sappropriate\sout-of-memory\smessage\swhen\ssqlite3_errmsg()\sis\scalled\nfollowing\san\sSQLITE_NOMEM\serror.\s(CVS\s6001)
-D 2008-12-09T14:46:10
+C Remove\ssome\sobsolete\smarkup\sfrom\ssqlite.h.in.\s(CVS\s6002)
+D 2008-12-10T11:44:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/resolve.c 6dd09880a8a9b74f5bc1aa2ae4247b1afe6acd65
 F src/rowset.c 2256fa4a928f750e2f3d6fc733523034beceb1d6
 F src/select.c 1d3616e4e48f6c15a0c69bf14bc5423f31624f87
 F src/shell.c 484bddeefac9314be18d4a60d401e93848274ee8
-F src/sqlite.h.in f13b2f27265b78226240cb0d2e07f165e2110bd9
+F src/sqlite.h.in 619a82b485fbf02276ecb8b1cc629f0c8bcda4ca
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h e61d837e04b03c75bf860f06cbb327224e320fba
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0d7e150e8c6cb801e68273c9d0793ce31d1f31fd
-R e704a3e0fb9d6add87cfce887cca1970
+P 228ebe4115cfb2deafd504a52a230bf646fcd8f1
+R 7c1a07b82dea099cdd5a50467294f97c
 U drh
-Z 4f392a2c88e12853ebbbde0a7d00a0a2
+Z e78d9ac45abf0ead5f64aa5a8530178b
