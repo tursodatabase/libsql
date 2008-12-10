@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.198 2008/12/10 22:15:00 drh Exp $
+** $Id: pragma.c,v 1.199 2008/12/10 23:04:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -38,7 +38,7 @@ static u8 getSafetyLevel(const char *z){
   static const u8 iValue[] =  {1, 0, 0, 0, 1, 1, 2};
   int i, n;
   if( isdigit(*z) ){
-    return atoi(z);
+    return (u8)atoi(z);
   }
   n = sqlite3Strlen30(z);
   for(i=0; i<ArraySize(iLength); i++){

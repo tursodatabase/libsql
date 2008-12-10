@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.518 2008/12/10 21:19:57 drh Exp $
+** $Id: main.c,v 1.519 2008/12/10 23:04:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -920,7 +920,7 @@ int sqlite3CreateFunc(
   ** is being overridden/deleted but there are no active VMs, allow the
   ** operation to continue but invalidate all precompiled statements.
   */
-  p = sqlite3FindFunction(db, zFunctionName, nName, (u16)nArg, enc, 0);
+  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 0);
   if( p && p->iPrefEnc==enc && p->nArg==nArg ){
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
@@ -932,7 +932,7 @@ int sqlite3CreateFunc(
     }
   }
 
-  p = sqlite3FindFunction(db, zFunctionName, nName, (u16)nArg, enc, 1);
+  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, (u8)enc, 1);
   assert(p || db->mallocFailed);
   if( !p ){
     return SQLITE_NOMEM;

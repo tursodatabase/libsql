@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.208 2008/12/10 21:19:57 drh Exp $
+** $Id: func.c,v 1.209 2008/12/10 23:04:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -915,7 +915,7 @@ static void trimFunc(
       for(z=zCharSet, nChar=0; *z; nChar++){
         azChar[nChar] = (unsigned char *)z;
         SQLITE_SKIP_UTF8(z);
-        aLen[nChar] = (int)(z - azChar[nChar]);
+        aLen[nChar] = (u8)(z - azChar[nChar]);
       }
     }
   }

@@ -1,5 +1,5 @@
-C Try\sto\sremove\scompiler\swarnings\sfrom\svdbe.c.\s(CVS\s6014)
-D 2008-12-10T22:32:56
+C More\scode\sobfuscation\sdesigned\sto\sthwart\scompiler\swarning\smessages.\s(CVS\s6015)
+D 2008-12-10T23:04:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,7 +110,7 @@ F src/date.c 3dbac3eac2848af416786b6e1e3150f7c740dac6
 F src/delete.c e2392b6808496fc0a7f54662af3ba677a3e8e44a
 F src/expr.c f13ad5563470481eaa1e8016bfa9ed1b4c996574
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 8b5f6807f05f50d88fc4efca5e9541bcf569f988
+F src/func.c b0e1c61301f33d67b72ab15d85c80ed76e7c98ac
 F src/global.c 91723e45a2ad03ae5bb97a0a0d2dbb1a0e69527b
 F src/hash.c 831e9c199d8de5976c698e5aca278e2de74ff93b
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -119,7 +119,7 @@ F src/insert.c f6db1e6f43aae337e64a755208abb6ff124edc19
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c 4f7410b29598d991628ca40b150aa089649f17d8
 F src/loadext.c 2f53996c693a347edc2d773e9217dde49d96ae64
-F src/main.c 1bb24c0720080e3258c7a9ed93d42c3da98c18d5
+F src/main.c 64857582ae00cc638973cbc47997d25fdbf26cf6
 F src/malloc.c 1e5eeb5a3074a6935bbe7b04bc058f630bfffd7e
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
@@ -145,7 +145,7 @@ F src/parse.y 3dfd941533cdc6ce0b09b905b25c4eb73858400b
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
 F src/pcache1.c 533b18aa2456b0f135e376289443e0a342e0c456
-F src/pragma.c c77ac9952d0a273de003e40cac0278af31e8d5f5
+F src/pragma.c d6dfc47979623cf593d0db926daff49d214a8eb3
 F src/prepare.c 51d11eb1eece7548038e7e33c33ee95dc7f82e2d
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -642,7 +642,7 @@ F tool/genfkey.README 080ca2269f727fcf14c8e76d52e85d157e3a8e9a
 F tool/genfkey.c e1b9c93da828db10c1109c7b4fa611aec8adc407
 F tool/genfkey.test 182829596fb15785b94b2493c5f735b847d91076
 F tool/lemon.c 9f21067ff5f0ba1780d39a069da65d54789ae15b
-F tool/lempar.c fece0da829c0e425f13e6da1671619bed43d0f70
+F tool/lempar.c 8b91df351eb612c1d30b6bbd1224c2153b5dd941
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 715dcd52c1372c62873cff5db97fdbdfce617808
-R 0f99e848da66cc92e6476870d8914a43
+P 50352950df5d5a8b7da8c18b6667b8242a359f7d
+R 08b81fae14acbda8dbae9057ab66ca39
 U drh
-Z 6df9968b324418ad895c6522dab08551
+Z fda37b4935fd54d9a340ba2d7b6cddb0
