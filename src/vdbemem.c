@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.131 2008/12/10 11:49:06 drh Exp $
+** $Id: vdbemem.c,v 1.132 2008/12/10 18:03:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -43,6 +43,8 @@
 int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   int rc;
   assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( desiredEnc==SQLITE_UTF8 || desiredEnc==SQLITE_UTF16LE
+           || desiredEnc==SQLITE_UTF16BE );
   if( !(pMem->flags&MEM_Str) || pMem->enc==desiredEnc ){
     return SQLITE_OK;
   }
@@ -54,7 +56,7 @@ int sqlite3VdbeChangeEncoding(Mem *pMem, int desiredEnc){
   /* MemTranslate() may return SQLITE_OK or SQLITE_NOMEM. If NOMEM is returned,
   ** then the encoding of the value may not have changed.
   */
-  rc = sqlite3VdbeMemTranslate(pMem, desiredEnc);
+  rc = sqlite3VdbeMemTranslate(pMem, (u8)desiredEnc);
   assert(rc==SQLITE_OK    || rc==SQLITE_NOMEM);
   assert(rc==SQLITE_OK    || pMem->enc!=desiredEnc);
   assert(rc==SQLITE_NOMEM || pMem->enc==desiredEnc);

@@ -385,7 +385,7 @@ static int yy_find_shift_action(
   if( i<0 || i>=YY_SZ_ACTTAB || yy_lookahead[i]!=iLookAhead ){
     if( iLookAhead>0 ){
 #ifdef YYFALLBACK
-      int iFallback;            /* Fallback token */
+      YYCODETYPE iFallback;            /* Fallback token */
       if( iLookAhead<sizeof(yyFallback)/sizeof(yyFallback[0])
              && (iFallback = yyFallback[iLookAhead])!=0 ){
 #ifndef NDEBUG
@@ -502,8 +502,8 @@ static void yy_shift(
   }
 #endif
   yytos = &yypParser->yystack[yypParser->yyidx];
-  yytos->stateno = yyNewState;
-  yytos->major = yyMajor;
+  yytos->stateno = (YYACTIONTYPE)yyNewState;
+  yytos->major = (YYCODETYPE)yyMajor;
   yytos->minor = *yypMinor;
 #ifndef NDEBUG
   if( yyTraceFILE && yypParser->yyidx>0 ){
@@ -769,7 +769,7 @@ void Parse(
              yyTracePrompt,yyTokenName[yymajor]);
         }
 #endif
-        yy_destructor(yypParser, yymajor,&yyminorunion);
+        yy_destructor(yypParser, (YYCODETYPE)yymajor,&yyminorunion);
         yymajor = YYNOCODE;
       }else{
          while(
@@ -782,7 +782,7 @@ void Parse(
           yy_pop_parser_stack(yypParser);
         }
         if( yypParser->yyidx < 0 || yymajor==0 ){
-          yy_destructor(yypParser,yymajor,&yyminorunion);
+          yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
           yy_parse_failed(yypParser);
           yymajor = YYNOCODE;
         }else if( yymx!=YYERRORSYMBOL ){
@@ -807,7 +807,7 @@ void Parse(
         yy_syntax_error(yypParser,yymajor,yyminorunion);
       }
       yypParser->yyerrcnt = 3;
-      yy_destructor(yypParser,yymajor,&yyminorunion);
+      yy_destructor(yypParser,(YYCODETYPE)yymajor,&yyminorunion);
       if( yyendofinput ){
         yy_parse_failed(yypParser);
       }

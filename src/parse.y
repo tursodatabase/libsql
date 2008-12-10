@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.264 2008/12/08 16:01:13 drh Exp $
+** @(#) $Id: parse.y,v 1.265 2008/12/10 18:03:46 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -149,7 +149,7 @@ columnlist ::= column.
 //
 column(A) ::= columnid(X) type carglist. {
   A.z = X.z;
-  A.n = (pParse->sLastToken.z-X.z) + pParse->sLastToken.n;
+  A.n = (int)(pParse->sLastToken.z-X.z) + pParse->sLastToken.n;
 }
 columnid(A) ::= nm(X). {
   sqlite3AddColumn(pParse,&X);
@@ -226,15 +226,15 @@ type ::= typetoken(X).                   {sqlite3AddColumnType(pParse,&X);}
 typetoken(A) ::= typename(X).   {A = X;}
 typetoken(A) ::= typename(X) LP signed RP(Y). {
   A.z = X.z;
-  A.n = &Y.z[Y.n] - X.z;
+  A.n = (int)(&Y.z[Y.n] - X.z);
 }
 typetoken(A) ::= typename(X) LP signed COMMA signed RP(Y). {
   A.z = X.z;
-  A.n = &Y.z[Y.n] - X.z;
+  A.n = (int)(&Y.z[Y.n] - X.z);
 }
 %type typename {Token}
 typename(A) ::= ids(X).             {A = X;}
-typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=Y.n+(Y.z-X.z);}
+typename(A) ::= typename(X) ids(Y). {A.z=X.z; A.n=Y.n+(int)(Y.z-X.z);}
 signed ::= plus_num.
 signed ::= minus_num.
 
@@ -377,7 +377,7 @@ select(A) ::= oneselect(X).                      {A = X;}
 %ifndef SQLITE_OMIT_COMPOUND_SELECT
 select(A) ::= select(X) multiselect_op(Y) oneselect(Z).  {
   if( Z ){
-    Z->op = Y;
+    Z->op = (u8)Y;
     Z->pPrior = X;
   }else{
     sqlite3SelectDelete(pParse->db, X);
@@ -456,7 +456,7 @@ from(A) ::= FROM seltablist(X). {
 //
 stl_prefix(A) ::= seltablist(X) joinop(Y).    {
    A = X;
-   if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = Y;
+   if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = (u8)Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
@@ -546,11 +546,11 @@ orderby_opt(A) ::= .                          {A = 0;}
 orderby_opt(A) ::= ORDER BY sortlist(X).      {A = X;}
 sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,X,Y,0);
-  if( A ) A->a[A->nExpr-1].sortOrder = Z;
+  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
 }
 sortlist(A) ::= sortitem(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,0,Y,0);
-  if( A && A->a ) A->a[0].sortOrder = Z;
+  if( A && A->a ) A->a[0].sortOrder = (u8)Z;
 }
 sortitem(A) ::= expr(X).   {A = X;}
 
@@ -950,7 +950,7 @@ idxlist(A) ::= idxlist(X) COMMA nm(Y) collate(C) sortorder(Z).  {
   }
   A = sqlite3ExprListAppend(pParse,X, p, &Y);
   sqlite3ExprListCheckLength(pParse, A, "index");
-  if( A ) A->a[A->nExpr-1].sortOrder = Z;
+  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
 }
 idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
   Expr *p = 0;
@@ -960,7 +960,7 @@ idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
   }
   A = sqlite3ExprListAppend(pParse,0, p, &Y);
   sqlite3ExprListCheckLength(pParse, A, "index");
-  if( A ) A->a[A->nExpr-1].sortOrder = Z;
+  if( A ) A->a[A->nExpr-1].sortOrder = (u8)Z;
 }
 
 %type collate {Token}
@@ -1010,7 +1010,7 @@ plus_opt ::= .
 cmd ::= CREATE trigger_decl(A) BEGIN trigger_cmd_list(S) END(Z). {
   Token all;
   all.z = A.z;
-  all.n = (Z.z - A.z) + Z.n;
+  all.n = (int)(Z.z - A.z) + Z.n;
   sqlite3FinishTrigger(pParse, S, &all);
 }
 

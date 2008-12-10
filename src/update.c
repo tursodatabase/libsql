@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.188 2008/12/04 20:40:10 drh Exp $
+** $Id: update.c,v 1.189 2008/12/10 18:03:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -109,10 +109,10 @@ void sqlite3Update(
   int isView;                  /* Trying to update a view */
   int triggers_exist = 0;      /* True if any row triggers exist */
 #endif
-  int iBeginAfterTrigger;      /* Address of after trigger program */
-  int iEndAfterTrigger;        /* Exit of after trigger program */
-  int iBeginBeforeTrigger;     /* Address of before trigger program */
-  int iEndBeforeTrigger;       /* Exit of before trigger program */
+  int iBeginAfterTrigger = 0;  /* Address of after trigger program */
+  int iEndAfterTrigger = 0;    /* Exit of after trigger program */
+  int iBeginBeforeTrigger = 0; /* Address of before trigger program */
+  int iEndBeforeTrigger = 0;   /* Exit of before trigger program */
   u32 old_col_mask = 0;        /* Mask of OLD.* columns in use */
   u32 new_col_mask = 0;        /* Mask of NEW.* columns in use */
 

@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.5 2008/12/06 14:34:34 drh Exp $
+** @(#) $Id: pcache1.c,v 1.6 2008/12/10 18:03:46 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -272,7 +272,7 @@ static int pcache1ResizeHash(PCache1 *p){
     for(i=0; i<p->nHash; i++){
       PgHdr1 *pPage;
       PgHdr1 *pNext = p->apHash[i];
-      while( (pPage = pNext) ){
+      while( (pPage = pNext)!=0 ){
         unsigned int h = pPage->iKey % nNew;
         pNext = pPage->pNext;
         pPage->pNext = apNew[h];
@@ -364,7 +364,7 @@ static void pcache1TruncateUnsafe(
   for(h=0; h<pCache->nHash; h++){
     PgHdr1 **pp = &pCache->apHash[h]; 
     PgHdr1 *pPage;
-    while( (pPage = *pp) ){
+    while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
         pcache1PinPage(pPage);
         *pp = pPage->pNext;

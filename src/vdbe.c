@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.793 2008/12/09 02:51:24 drh Exp $
+** $Id: vdbe.c,v 1.794 2008/12/10 18:03:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -538,8 +538,10 @@ int sqlite3VdbeExec(
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
   u8 encoding = ENC(db);     /* The database encoding */
-  Mem *pIn1, *pIn2, *pIn3;   /* Input operands */
-  Mem *pOut;                 /* Output operand */
+  Mem *pIn1 = 0;             /* 1st input operand */
+  Mem *pIn2 = 0;             /* 2nd input operand */
+  Mem *pIn3 = 0;             /* 3rd input operand */
+  Mem *pOut = 0;             /* Output operand */
   u8 opProperty;
   int iCompare = 0;          /* Result of last OP_Compare operation */
   int *aPermute = 0;         /* Permuation of columns for OP_Compare */
@@ -1977,9 +1979,7 @@ case OP_Column: {
   Mem *pDest;        /* Where to write the extracted value */
   Mem sMem;          /* For storing the record being decoded */
 
-  sMem.flags = 0;
-  sMem.db = 0;
-  sMem.zMalloc = 0;
+  memset(&sMem, 0, sizeof(sMem));
   assert( p1<p->nCursor );
   assert( pOp->p3>0 && pOp->p3<=p->nMem );
   pDest = &p->aMem[pOp->p3];
@@ -2054,7 +2054,7 @@ case OP_Column: {
     u8 *zEndHdr;     /* Pointer to first byte after the header */
     int offset;      /* Offset into the data */
     int szHdrSz;     /* Size of the header size field at start of record */
-    int avail;       /* Number of bytes of available data */
+    int avail = 0;   /* Number of bytes of available data */
 
     assert(aType);
     pC->aOffset = aOffset = &aType[nField];

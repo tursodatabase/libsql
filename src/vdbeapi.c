@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.149 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.150 2008/12/10 18:03:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -284,7 +284,7 @@ double sqlite3_value_double(sqlite3_value *pVal){
   return sqlite3VdbeRealValue((Mem*)pVal);
 }
 int sqlite3_value_int(sqlite3_value *pVal){
-  return sqlite3VdbeIntValue((Mem*)pVal);
+  return (int)sqlite3VdbeIntValue((Mem*)pVal);
 }
 sqlite_int64 sqlite3_value_int64(sqlite3_value *pVal){
   return sqlite3VdbeIntValue((Mem*)pVal);
@@ -463,7 +463,7 @@ static int sqlite3Step(Vdbe *p){
     if( db->xProfile && !db->init.busy ){
       double rNow;
       sqlite3OsCurrentTime(db->pVfs, &rNow);
-      p->startTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0;
+      p->startTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
     }
 #endif
 
@@ -494,7 +494,8 @@ static int sqlite3Step(Vdbe *p){
     u64 elapseTime;
 
     sqlite3OsCurrentTime(db->pVfs, &rNow);
-    elapseTime = (rNow - (int)rNow)*3600.0*24.0*1000000000.0 - p->startTime;
+    elapseTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
+    elapseTime -= p->startTime;
     db->xProfile(db->pProfileArg, p->aOp[0].p4.z, elapseTime);
   }
 #endif
@@ -1052,7 +1053,7 @@ static int bindText(
   const void *zData,     /* Pointer to the data to be bound */
   int nData,             /* Number of bytes of data to be bound */
   void (*xDel)(void*),   /* Destructor for the data */
-  int encoding           /* Encoding for the data */
+  u8 encoding            /* Encoding for the data */
 ){
   Vdbe *p = (Vdbe *)pStmt;
   Mem *pVar;

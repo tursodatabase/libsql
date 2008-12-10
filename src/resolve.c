@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.13 2008/12/09 14:03:22 drh Exp $
+** $Id: resolve.c,v 1.14 2008/12/10 18:03:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -219,7 +219,7 @@ static int lookupName(
     if( zDb==0 && zTab!=0 && cnt==0 && pParse->trigStack!=0 ){
       TriggerStack *pTriggerStack = pParse->trigStack;
       Table *pTab = 0;
-      u32 *piColMask;
+      u32 *piColMask = 0;
       if( pTriggerStack->newIdx != -1 && sqlite3StrICmp("new", zTab) == 0 ){
         pExpr->iTable = pTriggerStack->newIdx;
         assert( pTriggerStack->pTab );

@@ -1,5 +1,5 @@
-C Remove\sor\srename\slocal\svariables\sthat\sshadow\sother\svariables\sor\sparameters.\s(CVS\s6005)
-D 2008-12-10T17:20:00
+C More\sexplicit\stype\scasting\sto\ssilence\sVC++.\s(CVS\s6006)
+D 2008-12-10T18:03:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,17 +141,17 @@ F src/os_unix.c cec838fe55eaa53f1ff02ecb311cdd2188c4db95
 F src/os_win.c 79e55bbe2177c4824d24d365b1274703c710f504
 F src/pager.c e72e92d44365d75563d26957e6ba4a2ec0796da5
 F src/pager.h 37f5173612b7803f44656c16e80df3280234bb18
-F src/parse.y 1f4b7ad690864911919da0c76fa96fd72694185e
+F src/parse.y 3dfd941533cdc6ce0b09b905b25c4eb73858400b
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
-F src/pcache1.c fb6cf5b80996ed316842d25005f4981bef7ce548
+F src/pcache1.c 533b18aa2456b0f135e376289443e0a342e0c456
 F src/pragma.c 88050d5afa74fcae1bb260311fe05918f04bc8a5
 F src/prepare.c 26808c3d6ad2cd85a67969b14fd77bfbe92aaffb
-F src/printf.c e29d9475c63e1dbfae005b98da3a60e07b5c1ca5
+F src/printf.c b42e767ee0546587a831a5c0a1d7e8b8d80cbb40
 F src/random.c 67bf41b20f1983a0e481e7abb98d64704ee26884
-F src/resolve.c 6dd09880a8a9b74f5bc1aa2ae4247b1afe6acd65
+F src/resolve.c 83d668f2d622e2639f520fff00e129925bdc9d3b
 F src/rowset.c 2256fa4a928f750e2f3d6fc733523034beceb1d6
-F src/select.c e5b3b244e349cc42401fb62a6c14ea09ea46403c
+F src/select.c ea915ff233f1d7136ceaee1443d676ade95d4a08
 F src/shell.c 484bddeefac9314be18d4a60d401e93848274ee8
 F src/sqlite.h.in 619a82b485fbf02276ecb8b1cc629f0c8bcda4ca
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -190,18 +190,18 @@ F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
 F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
 F src/trigger.c 9244c483e5256982e6f32d6f430af6ec10344980
-F src/update.c 7143ac31d26dee156277126e9a7c5be953b18347
+F src/update.c 3e022c24e265b0975e51f2ec0348ef84eeaba311
 F src/utf.c 515ce4f1e039635197e7f0df46cf8a7ac659a571
 F src/util.c 6e997af379d3aa609bf084d7d10fdc1cf32cc72c
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c fce160c74aad54d14e2bdd8a30443fd78f7b26c5
+F src/vdbe.c b99af9ad1764b34831ce7e91975d1a7acf6121a7
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h e6e80a99ce634983b7cc2498843b4d2e5540900a
-F src/vdbeapi.c 20722164e7701a0747eaea03cddbbe0de5cb37bf
+F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
 F src/vdbeaux.c 2b7bfb736a9ad9f48b82149a47c8f430e5df730a
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
-F src/vdbemem.c 15dc139e0b9e328e63971e02a7552e8da73b16e8
-F src/vtab.c c4bd078008a7d031f2d88c8a5b67a60eb5966254
+F src/vdbemem.c 598741bc060400643b6110a3fe24891333df3d07
+F src/vtab.c 09df27d47ed9fef31ad94c79053fac02d5d2073a
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c c5a21be6d5705d1c2c6f5d56a97785e4752791d2
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
@@ -642,7 +642,7 @@ F tool/genfkey.README 080ca2269f727fcf14c8e76d52e85d157e3a8e9a
 F tool/genfkey.c e1b9c93da828db10c1109c7b4fa611aec8adc407
 F tool/genfkey.test 182829596fb15785b94b2493c5f735b847d91076
 F tool/lemon.c 6cb39632ef3bfec2cea8f81b4d7f63c09fe12802
-F tool/lempar.c 9ef6809804f9066fa94a0bdc02224ce015951843
+F tool/lempar.c fece0da829c0e425f13e6da1671619bed43d0f70
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P da1cbfa766f7f379c01f4ac9c1210462d8d7c590
-R a2d9934353d665c83ba1bf37542e5a35
+P e7e9fa4fa1b7fc0668f4e3a51873ee5d11893f42
+R 3fdd485d39b8ec78e53f9d12f6f15e2c
 U drh
-Z 8d8b858819df06179da86dc62696f90a
+Z 0329544b446f709fe3cdc363492e43f9

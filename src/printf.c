@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.97 2008/11/22 18:28:51 drh Exp $
+** $Id: printf.c,v 1.98 2008/12/10 18:03:46 drh Exp $
 **
 **************************************************************************
 **
@@ -245,7 +245,7 @@ void sqlite3VXPrintf(
   const et_info *infop;      /* Pointer to the appropriate info structure */
   char buf[etBUFSIZE];       /* Conversion buffer */
   char prefix;               /* Prefix character.  "+" or "-" or " " or '\0'. */
-  etByte xtype;              /* Conversion paradigm */
+  etByte xtype = 0;          /* Conversion paradigm */
   char *zExtra;              /* Extra memory used for etTCLESCAPE conversions */
 #ifndef SQLITE_OMIT_FLOATING_POINT
   int  exp, e2;              /* exponent of real numbers */
