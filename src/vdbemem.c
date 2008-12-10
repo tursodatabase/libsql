@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.130 2008/12/09 02:51:24 drh Exp $
+** $Id: vdbemem.c,v 1.131 2008/12/10 11:49:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -255,7 +255,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
     pFunc->xFinalize(&ctx);
     assert( 0==(pMem->flags&MEM_Dyn) && !pMem->xDel );
     sqlite3DbFree(pMem->db, pMem->zMalloc);
-    *pMem = ctx.s;
+    memcpy(pMem, &ctx.s, sizeof(ctx.s));
     rc = (ctx.isError?SQLITE_ERROR:SQLITE_OK);
   }
   return rc;
