@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.192 2008/12/10 19:26:24 drh Exp $
+** $Id: shell.c,v 1.193 2008/12/10 22:15:00 drh Exp $
 */
 #include <stdlib.h>
 #include <string.h>
@@ -366,7 +366,7 @@ static const char *modeDescr[] = {
 ** Compute a string length that is limited to what can be stored in
 ** lower 30 bits of a 32-bit signed integer.
 */
-int sqlite3Strlen30(const char *z){
+static int strlen30(const char *z){
   const char *z2 = z;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
@@ -487,7 +487,7 @@ static void output_csv(struct callback_data *p, const char *z, int bSep){
     fprintf(out,"%s",p->nullvalue);
   }else{
     int i;
-    int nSep = sqlite3Strlen30(p->separator);
+    int nSep = strlen30(p->separator);
     for(i=0; z[i]; i++){
       if( needCsvQuote[((unsigned char*)z)[i]] 
          || (z[i]==p->separator[0] && 
@@ -535,7 +535,7 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       int w = 5;
       if( azArg==0 ) break;
       for(i=0; i<nArg; i++){
-        int len = sqlite3Strlen30(azCol[i] ? azCol[i] : "");
+        int len = strlen30(azCol[i] ? azCol[i] : "");
         if( len>w ) w = len;
       }
       if( p->cnt++>0 ) fprintf(p->out,"\n");
@@ -556,9 +556,9 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
             w = 0;
           }
           if( w<=0 ){
-            w = sqlite3Strlen30(azCol[i] ? azCol[i] : "");
+            w = strlen30(azCol[i] ? azCol[i] : "");
             if( w<10 ) w = 10;
-            n = sqlite3Strlen30(azArg && azArg[i] ? azArg[i] : p->nullvalue);
+            n = strlen30(azArg && azArg[i] ? azArg[i] : p->nullvalue);
             if( w<n ) w = n;
           }
           if( i<ArraySize(p->actualWidth) ){
@@ -591,8 +591,8 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
            w = 10;
         }
         if( p->mode==MODE_Explain && azArg[i] && 
-           sqlite3Strlen30(azArg[i])>w ){
-          w = sqlite3Strlen30(azArg[i]);
+           strlen30(azArg[i])>w ){
+          w = strlen30(azArg[i]);
         }
         fprintf(p->out,"%-*.*s%s",w,w,
             azArg[i] ? azArg[i] : p->nullvalue, i==nArg-1 ? "\n": "  ");
@@ -739,8 +739,8 @@ static void set_table_name(struct callback_data *p, const char *zName){
 static char *appendText(char *zIn, char const *zAppend, char quote){
   int len;
   int i;
-  int nAppend = sqlite3Strlen30(zAppend);
-  int nIn = (zIn?sqlite3Strlen30(zIn):0);
+  int nAppend = strlen30(zAppend);
+  int nIn = (zIn?strlen30(zIn):0);
 
   len = nAppend+nIn+1;
   if( quote ){
@@ -907,7 +907,7 @@ static int run_schema_dump_query(
   rc = sqlite3_exec(p->db, zQuery, dump_callback, p, pzErrMsg);
   if( rc==SQLITE_CORRUPT ){
     char *zQ2;
-    int len = sqlite3Strlen30(zQuery);
+    int len = strlen30(zQuery);
     if( pzErrMsg ) sqlite3_free(*pzErrMsg);
     zQ2 = malloc( len+100 );
     if( zQ2==0 ) return rc;
@@ -1081,7 +1081,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   /* Process the input line.
   */
   if( nArg==0 ) return rc;
-  n = sqlite3Strlen30(azArg[0]);
+  n = strlen30(azArg[0]);
   c = azArg[0][0];
   if( c=='b' && n>1 && strncmp(azArg[0], "bail", n)==0 && nArg>1 ){
     bail_on_error = booleanValue(azArg[1]);
@@ -1219,14 +1219,14 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     int lineno = 0;             /* Line number of input file */
 
     open_db(p);
-    nSep = sqlite3Strlen30(p->separator);
+    nSep = strlen30(p->separator);
     if( nSep==0 ){
       fprintf(stderr, "non-null separator required for import\n");
       return 0;
     }
     zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
     if( zSql==0 ) return 0;
-    nByte = sqlite3Strlen30(zSql);
+    nByte = strlen30(zSql);
     rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
@@ -1241,7 +1241,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     zSql = malloc( nByte + 20 + nCol*2 );
     if( zSql==0 ) return 0;
     sqlite3_snprintf(nByte+20, zSql, "INSERT INTO '%q' VALUES(?", zTable);
-    j = sqlite3Strlen30(zSql);
+    j = strlen30(zSql);
     for(i=1; i<nCol; i++){
       zSql[j++] = ',';
       zSql[j++] = '?';
@@ -1374,7 +1374,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 #endif
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg>=2 ){
-    int n2 = sqlite3Strlen30(azArg[1]);
+    int n2 = strlen30(azArg[1]);
     if( strncmp(azArg[1],"line",n2)==0
         ||
         strncmp(azArg[1],"lines",n2)==0 ){
@@ -1532,7 +1532,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       output_c_string(p->out, p->nullvalue);
       fprintf(p->out, "\n");
     fprintf(p->out,"%9.9s: %s\n","output",
-            sqlite3Strlen30(p->outfile) ? p->outfile : "stdout");
+            strlen30(p->outfile) ? p->outfile : "stdout");
     fprintf(p->out,"%9.9s: ", "separator");
       output_c_string(p->out, p->separator);
       fprintf(p->out, "\n");
@@ -1581,7 +1581,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       int nPrintCol, nPrintRow;
       for(i=1; i<=nRow; i++){
         if( azResult[i]==0 ) continue;
-        len = sqlite3Strlen30(azResult[i]);
+        len = strlen30(azResult[i]);
         if( len>maxlen ) maxlen = len;
       }
       nPrintCol = 80/(maxlen+2);
@@ -1728,7 +1728,7 @@ static int process_input(struct callback_data *p, FILE *in){
       int i;
       for(i=0; zLine[i] && isspace((unsigned char)zLine[i]); i++){}
       if( zLine[i]!=0 ){
-        nSql = sqlite3Strlen30(zLine);
+        nSql = strlen30(zLine);
         zSql = malloc( nSql+1 );
         if( zSql==0 ){
           fprintf(stderr, "out of memory\n");
@@ -1738,7 +1738,7 @@ static int process_input(struct callback_data *p, FILE *in){
         startline = lineno;
       }
     }else{
-      int len = sqlite3Strlen30(zLine);
+      int len = strlen30(zLine);
       zSql = realloc( zSql, nSql + len + 2 );
       if( zSql==0 ){
         fprintf(stderr,"%s: out of memory!\n", Argv0);
@@ -1825,7 +1825,7 @@ static char *find_home_dir(void){
     zDrive = getenv("HOMEDRIVE");
     zPath = getenv("HOMEPATH");
     if( zDrive && zPath ){
-      n = sqlite3Strlen30(zDrive) + sqlite3Strlen30(zPath) + 1;
+      n = strlen30(zDrive) + strlen30(zPath) + 1;
       home_dir = malloc( n );
       if( home_dir==0 ) return 0;
       sqlite3_snprintf(n, home_dir, "%s%s", zDrive, zPath);
@@ -1838,7 +1838,7 @@ static char *find_home_dir(void){
 #endif /* !_WIN32_WCE */
 
   if( home_dir ){
-    int n = sqlite3Strlen30(home_dir) + 1;
+    int n = strlen30(home_dir) + 1;
     char *z = malloc( n );
     if( z ) memcpy(z, home_dir, n);
     home_dir = z;
@@ -1869,7 +1869,7 @@ static void process_sqliterc(
 #endif
       return;
     }
-    nBuf = sqlite3Strlen30(home_dir) + 16;
+    nBuf = strlen30(home_dir) + 16;
     zBuf = malloc( nBuf );
     if( zBuf==0 ){
       fprintf(stderr,"%s: out of memory!\n", Argv0);
@@ -2093,7 +2093,7 @@ int main(int argc, char **argv){
       );
       zHome = find_home_dir();
       if( zHome ){
-        nHistory = sqlite3Strlen30(zHome) + 20;
+        nHistory = strlen30(zHome) + 20;
         if( (zHistory = malloc(nHistory))!=0 ){
           sqlite3_snprintf(nHistory, zHistory,"%s/.sqlite_history", zHome);
         }

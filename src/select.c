@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.493 2008/12/10 19:26:24 drh Exp $
+** $Id: select.c,v 1.494 2008/12/10 22:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2922,7 +2922,7 @@ static int flattenSubquery(
 **   2. There is a single expression in the result set, and it is
 **      either min(x) or max(x), where x is a column reference.
 */
-static int minMaxQuery(Select *p){
+static u8 minMaxQuery(Select *p){
   Expr *pExpr;
   ExprList *pEList = p->pEList;
 

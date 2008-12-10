@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.197 2008/12/10 19:26:24 drh Exp $
+** $Id: pragma.c,v 1.198 2008/12/10 22:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -30,7 +30,7 @@
 ** to support legacy SQL code.  The safety level used to be boolean
 ** and older scripts may have used numbers 0 for OFF and 1 for ON.
 */
-static int getSafetyLevel(const char *z){
+static u8 getSafetyLevel(const char *z){
                              /* 123456789 123456789 */
   static const char zText[] = "onoffalseyestruefull";
   static const u8 iOffset[] = {0, 1, 2, 4, 9, 12, 16};
@@ -52,7 +52,7 @@ static int getSafetyLevel(const char *z){
 /*
 ** Interpret the given string as a boolean value.
 */
-static int getBoolean(const char *z){
+static u8 getBoolean(const char *z){
   return getSafetyLevel(z)&1;
 }
 
@@ -80,7 +80,7 @@ static int getAutoVacuum(const char *z){
   if( 0==sqlite3StrICmp(z, "full") ) return BTREE_AUTOVACUUM_FULL;
   if( 0==sqlite3StrICmp(z, "incremental") ) return BTREE_AUTOVACUUM_INCR;
   i = atoi(z);
-  return ((i>=0&&i<=2)?i:0);
+  return (u8)((i>=0&&i<=2)?i:0);
 }
 #endif /* ifndef SQLITE_OMIT_AUTOVACUUM */
 
@@ -137,7 +137,7 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
   if( invalidateTempStorage( pParse ) != SQLITE_OK ){
     return SQLITE_ERROR;
   }
-  db->temp_store = ts;
+  db->temp_store = (u8)ts;
   return SQLITE_OK;
 }
 #endif /* SQLITE_PAGER_PRAGMAS */
@@ -435,7 +435,7 @@ void sqlite3Pragma(
           pPager = sqlite3BtreePager(db->aDb[ii].pBt);
           sqlite3PagerLockingMode(pPager, eMode);
         }
-        db->dfltLockMode = eMode;
+        db->dfltLockMode = (u8)eMode;
       }
       pPager = sqlite3BtreePager(pDb->pBt);
       eMode = sqlite3PagerLockingMode(pPager, eMode);
@@ -495,7 +495,7 @@ void sqlite3Pragma(
             sqlite3PagerJournalMode(pPager, eMode);
           }
         }
-        db->dfltJournalMode = eMode;
+        db->dfltJournalMode = (u8)eMode;
       }
       pPager = sqlite3BtreePager(pDb->pBt);
       eMode = sqlite3PagerJournalMode(pPager, eMode);
@@ -552,7 +552,7 @@ void sqlite3Pragma(
       returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
     }else{
       int eAuto = getAutoVacuum(zRight);
-      db->nextAutovac = eAuto;
+      db->nextAutovac = (u8)eAuto;
       if( eAuto>=0 ){
         /* Call SetAutoVacuum() to set initialize the internal auto and
         ** incr-vacuum flags. This is required in case this connection
@@ -1063,7 +1063,7 @@ void sqlite3Pragma(
 
       /* Do the b-tree integrity checks */
       sqlite3VdbeAddOp3(v, OP_IntegrityCk, 2, cnt, 1);
-      sqlite3VdbeChangeP5(v, i);
+      sqlite3VdbeChangeP5(v, (u8)i);
       addr = sqlite3VdbeAddOp1(v, OP_IsNull, 2);
       sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
          sqlite3MPrintf(db, "*** in database %s ***\n", db->aDb[i].zName),

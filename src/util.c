@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.244 2008/12/10 21:19:57 drh Exp $
+** $Id: util.c,v 1.245 2008/12/10 22:15:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -48,6 +48,16 @@ int sqlite3IsNaN(double x){
   volatile double y = x;
   volatile double z = y;
   return y!=z;
+}
+
+/*
+** Compute a string length that is limited to what can be stored in
+** lower 30 bits of a 32-bit signed integer.
+*/
+int sqlite3Strlen30(const char *z){
+  const char *z2 = z;
+  while( *z2 ){ z2++; }
+  return 0x3fffffff & (int)(z2 - z);
 }
 
 /*
