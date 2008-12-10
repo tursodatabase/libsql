@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.253 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: insert.c,v 1.254 2008/12/10 17:20:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -572,24 +572,24 @@ void sqlite3Insert(
       **         goto L
       **      M: ...
       */
-      int regRec;      /* Register to hold packed record */
-      int regRowid;    /* Register to hold temp table ROWID */
-      int addrTop;     /* Label "L" */
-      int addrIf;      /* Address of jump to M */
+      int regRec;          /* Register to hold packed record */
+      int regTempRowid;    /* Register to hold temp table ROWID */
+      int addrTop;         /* Label "L" */
+      int addrIf;          /* Address of jump to M */
 
       srcTab = pParse->nTab++;
       regRec = sqlite3GetTempReg(pParse);
-      regRowid = sqlite3GetTempReg(pParse);
+      regTempRowid = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_OpenEphemeral, srcTab, nColumn);
       addrTop = sqlite3VdbeAddOp1(v, OP_Yield, dest.iParm);
       addrIf = sqlite3VdbeAddOp1(v, OP_If, regEof);
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regFromSelect, nColumn, regRec);
-      sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regRowid);
-      sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regRowid);
+      sqlite3VdbeAddOp2(v, OP_NewRowid, srcTab, regTempRowid);
+      sqlite3VdbeAddOp3(v, OP_Insert, srcTab, regRec, regTempRowid);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, addrTop);
       sqlite3VdbeJumpHere(v, addrIf);
       sqlite3ReleaseTempReg(pParse, regRec);
-      sqlite3ReleaseTempReg(pParse, regRowid);
+      sqlite3ReleaseTempReg(pParse, regTempRowid);
     }
   }else{
     /* This is the case if the data for the INSERT is coming from a VALUES
@@ -690,7 +690,6 @@ void sqlite3Insert(
   /* If this is not a view, open the table and and all indices */
   if( !isView ){
     int nIdx;
-    int i;
 
     baseCur = pParse->nTab;
     nIdx = sqlite3OpenTableAndIndices(pParse, pTab, baseCur, OP_OpenWrite);
@@ -746,7 +745,7 @@ void sqlite3Insert(
   */
   endOfLoop = sqlite3VdbeMakeLabel(v);
   if( triggers_exist & TRIGGER_BEFORE ){
-    int regRowid;
+    int regTrigRowid;
     int regCols;
     int regRec;
 
@@ -756,19 +755,19 @@ void sqlite3Insert(
     ** we do not know what the unique ID will be (because the insert has
     ** not happened yet) so we substitute a rowid of -1
     */
-    regRowid = sqlite3GetTempReg(pParse);
+    regTrigRowid = sqlite3GetTempReg(pParse);
     if( keyColumn<0 ){
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, regRowid);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
     }else if( useTempTable ){
-      sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regRowid);
+      sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regTrigRowid);
     }else{
       int j1;
       assert( pSelect==0 );  /* Otherwise useTempTable is true */
-      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regRowid);
-      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regRowid);
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, regRowid);
+      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regTrigRowid);
+      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regTrigRowid);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
       sqlite3VdbeJumpHere(v, j1);
-      sqlite3VdbeAddOp1(v, OP_MustBeInt, regRowid);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, regTrigRowid);
     }
 
     /* Cannot have triggers on a virtual table. If it were possible,
@@ -807,9 +806,9 @@ void sqlite3Insert(
     if( !isView ){
       sqlite3TableAffinityStr(v, pTab);
     }
-    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRec, regRowid);
+    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRec, regTrigRowid);
     sqlite3ReleaseTempReg(pParse, regRec);
-    sqlite3ReleaseTempReg(pParse, regRowid);
+    sqlite3ReleaseTempReg(pParse, regTrigRowid);
     sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
 
     /* Fire BEFORE or INSTEAD OF triggers */

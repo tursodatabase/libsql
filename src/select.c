@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.490 2008/12/06 16:10:42 drh Exp $
+** $Id: select.c,v 1.491 2008/12/10 17:20:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -786,8 +786,8 @@ static void generateSortTail(
   int nColumn,      /* Number of columns of data */
   SelectDest *pDest /* Write the sorted results here */
 ){
-  int brk = sqlite3VdbeMakeLabel(v);
-  int cont = sqlite3VdbeMakeLabel(v);
+  int addrBreak = sqlite3VdbeMakeLabel(v);     /* Jump here to exit loop */
+  int addrContinue = sqlite3VdbeMakeLabel(v);  /* Jump here for next cycle */
   int addr;
   int iTab;
   int pseudoTab = 0;
@@ -805,8 +805,8 @@ static void generateSortTail(
     sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, nColumn);
     sqlite3VdbeAddOp2(v, OP_OpenPseudo, pseudoTab, eDest==SRT_Output);
   }
-  addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, brk);
-  codeOffset(v, p, cont);
+  addr = 1 + sqlite3VdbeAddOp2(v, OP_Sort, iTab, addrBreak);
+  codeOffset(v, p, addrContinue);
   regRow = sqlite3GetTempReg(pParse);
   regRowid = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_Column, iTab, pOrderBy->nExpr + 1, regRow);
@@ -864,13 +864,12 @@ static void generateSortTail(
 
   /* The bottom of the loop
   */
-  sqlite3VdbeResolveLabel(v, cont);
+  sqlite3VdbeResolveLabel(v, addrContinue);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr);
-  sqlite3VdbeResolveLabel(v, brk);
+  sqlite3VdbeResolveLabel(v, addrBreak);
   if( eDest==SRT_Output || eDest==SRT_Coroutine ){
     sqlite3VdbeAddOp2(v, OP_Close, pseudoTab, 0);
   }
-
 }
 
 /*
@@ -1151,13 +1150,14 @@ static int selectColumnsFromExprList(
   int *pnCol,             /* Write the number of columns here */
   Column **paCol          /* Write the new column list here */
 ){
-  sqlite3 *db = pParse->db;
-  int i, j, cnt;
-  Column *aCol, *pCol;
-  int nCol;
-  Expr *p;
-  char *zName;
-  int nName;
+  sqlite3 *db = pParse->db;   /* Database connection */
+  int i, j;                   /* Loop counters */
+  int cnt;                    /* Index added to make the name unique */
+  Column *aCol, *pCol;        /* For looping over result columns */
+  int nCol;                   /* Number of columns in the result set */
+  Expr *p;                    /* Expression for a single result column */
+  char *zName;                /* Column name */
+  int nName;                  /* Size of name in zName[] */
 
   *pnCol = nCol = pEList->nExpr;
   aCol = *paCol = sqlite3DbMallocZero(db, sizeof(aCol[0])*nCol);
@@ -1171,18 +1171,18 @@ static int selectColumnsFromExprList(
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
       zName = sqlite3DbStrDup(db, zName);
     }else{
-      Expr *pCol = p;
-      Table *pTab;
-      while( pCol->op==TK_DOT ) pCol = pCol->pRight;
-      if( pCol->op==TK_COLUMN && (pTab = pCol->pTab)!=0 ){
+      Expr *pColExpr = p;  /* The expression that is the result column name */
+      Table *pTab;         /* Table associated with this expression */
+      while( pColExpr->op==TK_DOT ) pColExpr = pColExpr->pRight;
+      if( pColExpr->op==TK_COLUMN && (pTab = pColExpr->pTab)!=0 ){
         /* For columns use the column name name */
-        int iCol = pCol->iColumn;
+        int iCol = pColExpr->iColumn;
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = sqlite3MPrintf(db, "%s",
                  iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
       }else{
         /* Use the original text of the column expression as its name */
-        Token *pToken = (pCol->span.z?&pCol->span:&pCol->token);
+        Token *pToken = (pColExpr->span.z?&pColExpr->span:&pColExpr->token);
         zName = sqlite3MPrintf(db, "%T", pToken);
       }
     }
@@ -1210,7 +1210,6 @@ static int selectColumnsFromExprList(
     pCol->zName = zName;
   }
   if( db->mallocFailed ){
-    int j;
     for(j=0; j<i; j++){
       sqlite3DbFree(db, aCol[j].zName);
     }
@@ -3747,13 +3746,13 @@ int sqlite3Select(
     ** GROUP BY clause.
     */
     if( pGroupBy ){
-      int i;                        /* Loop counter */
+      int k;                        /* Loop counter */
       struct ExprList_item *pItem;  /* For looping over expression in a list */
 
-      for(i=p->pEList->nExpr, pItem=p->pEList->a; i>0; i--, pItem++){
+      for(k=p->pEList->nExpr, pItem=p->pEList->a; k>0; k--, pItem++){
         pItem->iAlias = 0;
       }
-      for(i=pGroupBy->nExpr, pItem=pGroupBy->a; i>0; i--, pItem++){
+      for(k=pGroupBy->nExpr, pItem=pGroupBy->a; k>0; k--, pItem++){
         pItem->iAlias = 0;
       }
     }

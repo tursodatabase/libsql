@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.424 2008/12/09 02:51:24 drh Exp $
+** $Id: vdbeaux.c,v 1.425 2008/12/10 17:20:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1333,10 +1333,10 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
     /* Select a master journal file name */
     do {
-      u32 random;
+      u32 iRandom;
       sqlite3DbFree(db, zMaster);
-      sqlite3_randomness(sizeof(random), &random);
-      zMaster = sqlite3MPrintf(db, "%s-mj%08X", zMainFile, random&0x7fffffff);
+      sqlite3_randomness(sizeof(iRandom), &iRandom);
+      zMaster = sqlite3MPrintf(db, "%s-mj%08X", zMainFile, iRandom&0x7fffffff);
       if( !zMaster ){
         return SQLITE_NOMEM;
       }

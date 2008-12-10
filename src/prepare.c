@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.101 2008/11/19 16:52:44 danielk1977 Exp $
+** $Id: prepare.c,v 1.102 2008/12/10 17:20:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -547,7 +547,6 @@ static int sqlite3Prepare(
   for(i=0; i<db->nDb; i++) {
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
-      int rc;
       rc = sqlite3BtreeSchemaLocked(pBt);
       if( rc ){
         const char *zDb = db->aDb[i].zName;
