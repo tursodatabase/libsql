@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.406 2008/12/08 13:42:36 drh Exp $
+** $Id: expr.c,v 1.407 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -190,7 +190,7 @@ int sqlite3IndexAffinityOk(Expr *pExpr, char idx_affinity){
 */
 static u8 binaryCompareP5(Expr *pExpr1, Expr *pExpr2, int jumpIfNull){
   u8 aff = (char)sqlite3ExprAffinity(pExpr2);
-  aff = sqlite3CompareAffinity(pExpr1, aff) | jumpIfNull;
+  aff = (u8)sqlite3CompareAffinity(pExpr1, aff) | (u8)jumpIfNull;
   return aff;
 }
 
@@ -272,7 +272,7 @@ static int codeCompare(
   p5 = binaryCompareP5(pLeft, pRight, jumpIfNull);
   addr = sqlite3VdbeAddOp4(pParse->pVdbe, opcode, in2, dest, in1,
                            (void*)p4, P4_COLLSEQ);
-  sqlite3VdbeChangeP5(pParse->pVdbe, p5);
+  sqlite3VdbeChangeP5(pParse->pVdbe, (u8)p5);
   if( (p5 & SQLITE_AFF_MASK)!=SQLITE_AFF_NONE ){
     sqlite3ExprCacheAffinityChange(pParse, in1, 1);
     sqlite3ExprCacheAffinityChange(pParse, in2, 1);
@@ -397,7 +397,7 @@ Expr *sqlite3Expr(
     sqlite3ExprDelete(db, pRight);
     return 0;
   }
-  pNew->op = op;
+  pNew->op = (u8)op;
   pNew->pLeft = pLeft;
   pNew->pRight = pRight;
   pNew->iAgg = -1;
@@ -569,7 +569,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     ** number as the prior appearance of the same name, or if the name
     ** has never appeared before, reuse the same variable number
     */
-    int i, n;
+    int i;
+    u32 n;
     n = pToken->n;
     for(i=0; i<pParse->nVarExpr; i++){
       Expr *pE;
@@ -1331,7 +1332,7 @@ void sqlite3CodeSubselect(
 
         assert( !isRowid );
         sqlite3SelectDestInit(&dest, SRT_Set, pExpr->iTable);
-        dest.affinity = (int)affinity;
+        dest.affinity = (u8)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         if( sqlite3Select(pParse, pExpr->pSelect, &dest) ){
           return;
@@ -2064,7 +2065,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       }
       sqlite3VdbeAddOp4(v, OP_Function, constMask, r1, target,
                         (char*)pDef, P4_FUNCDEF);
-      sqlite3VdbeChangeP5(v, nExpr);
+      sqlite3VdbeChangeP5(v, (u8)nExpr);
       if( nExpr ){
         sqlite3ReleaseTempRange(pParse, r1, nExpr);
       }
@@ -2243,7 +2244,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       Expr opCompare;                   /* The X==Ei expression */
       Expr cacheX;                      /* Cached expression X */
       Expr *pX;                         /* The X expression */
-      Expr *pTest;                      /* X==Ei (form A) or just Ei (form B) */
+      Expr *pTest = 0;                  /* X==Ei (form A) or just Ei (form B) */
 
       assert(pExpr->pList);
       assert((pExpr->pList->nExpr % 2) == 0);
@@ -2265,6 +2266,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       pParse->disableColCache++;
       for(i=0; i<nExpr; i=i+2){
         if( pX ){
+          assert( pTest!=0 );
           opCompare.pRight = aListelem[i].pExpr;
         }else{
           pTest = aListelem[i].pExpr;

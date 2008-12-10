@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.142 2008/12/10 19:26:24 drh Exp $
+** $Id: os_win.c,v 1.143 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -648,8 +648,8 @@ static int winRead(
   int amt,                   /* Number of bytes to read */
   sqlite3_int64 offset       /* Begin reading at this offset */
 ){
-  LONG upperBits = (offset>>32) & 0x7fffffff;
-  LONG lowerBits = offset & 0xffffffff;
+  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
+  LONG lowerBits = (LONG)(offset & 0xffffffff);
   DWORD rc;
   DWORD got;
   winFile *pFile = (winFile*)id;
@@ -682,8 +682,8 @@ static int winWrite(
   int amt,                  /* Number of bytes to write */
   sqlite3_int64 offset      /* Offset into the file to begin writing at */
 ){
-  LONG upperBits = (offset>>32) & 0x7fffffff;
-  LONG lowerBits = offset & 0xffffffff;
+  LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
+  LONG lowerBits = (LONG)(offset & 0xffffffff);
   DWORD rc;
   DWORD wrote = 0;
   winFile *pFile = (winFile*)id;
@@ -715,8 +715,8 @@ static int winWrite(
 */
 static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   DWORD rc;
-  LONG upperBits = (nByte>>32) & 0x7fffffff;
-  LONG lowerBits = nByte & 0xffffffff;
+  LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
+  LONG lowerBits = (LONG)(nByte & 0xffffffff);
   winFile *pFile = (winFile*)id;
   OSTRACE3("TRUNCATE %d %lld\n", pFile->h, nByte);
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
@@ -804,7 +804,7 @@ static int getReadLock(winFile *pFile){
   }else{
     int lk;
     sqlite3_randomness(sizeof(lk), &lk);
-    pFile->sharedLockByte = (lk & 0x7fffffff)%(SHARED_SIZE - 1);
+    pFile->sharedLockByte = (short)((lk & 0x7fffffff)%(SHARED_SIZE - 1));
     res = LockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
 #endif
   }
@@ -957,7 +957,7 @@ static int winLock(sqlite3_file *id, int locktype){
            locktype, newLocktype);
     rc = SQLITE_BUSY;
   }
-  pFile->locktype = newLocktype;
+  pFile->locktype = (u8)newLocktype;
   return rc;
 }
 
@@ -1022,7 +1022,7 @@ static int winUnlock(sqlite3_file *id, int locktype){
   if( type>=PENDING_LOCK ){
     UnlockFile(pFile->h, PENDING_BYTE, 0, 1, 0);
   }
-  pFile->locktype = locktype;
+  pFile->locktype = (u8)locktype;
   return rc;
 }
 
@@ -1437,7 +1437,7 @@ static int winFullPathname(
   int nFull,                    /* Size of output buffer in bytes */
   char *zFull                   /* Output buffer */
 ){
-
+  
 #if defined(__CYGWIN__)
   cygwin_conv_to_full_win32_path(zRelative, zFull);
   return SQLITE_OK;
@@ -1507,6 +1507,7 @@ static int winFullPathname(
 static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   HANDLE h;
   void *zConverted = convertUtf8Filename(zFilename);
+  UNUSED_PARAMETER(pVfs);
   if( zConverted==0 ){
     return 0;
   }
@@ -1525,9 +1526,11 @@ static void *winDlOpen(sqlite3_vfs *pVfs, const char *zFilename){
   return (void*)h;
 }
 static void winDlError(sqlite3_vfs *pVfs, int nBuf, char *zBufOut){
+  UNUSED_PARAMETER(pVfs);
   getLastErrorMsg(nBuf, zBufOut);
 }
 void (*winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol))(void){
+  UNUSED_PARAMETER(pVfs);
 #if SQLITE_OS_WINCE
   /* The GetProcAddressA() routine is only available on wince. */
   return (void(*)(void))GetProcAddressA((HANDLE)pHandle, zSymbol);
@@ -1538,6 +1541,7 @@ void (*winDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol))(void){
 #endif
 }
 void winDlClose(sqlite3_vfs *pVfs, void *pHandle){
+  UNUSED_PARAMETER(pVfs);
   FreeLibrary((HANDLE)pHandle);
 }
 #else /* if SQLITE_OMIT_LOAD_EXTENSION is defined: */
@@ -1590,6 +1594,7 @@ static int winRandomness(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
 */
 static int winSleep(sqlite3_vfs *pVfs, int microsec){
   Sleep((microsec+999)/1000);
+  UNUSED_PARAMETER(pVfs);
   return ((microsec+999)/1000)*1000;
 }
 
@@ -1622,6 +1627,7 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 #else
   GetSystemTimeAsFileTime( &ft );
 #endif
+  UNUSED_PARAMETER(pVfs);
   now = ((double)ft.dwHighDateTime) * 4294967296.0; 
   *prNow = (now + ft.dwLowDateTime)/864000000000.0 + 2305813.5;
 #ifdef SQLITE_TEST
@@ -1663,6 +1669,7 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 ** sqlite3_errmsg(), possibly making IO errors easier to debug.
 */
 static int winGetLastError(sqlite3_vfs *pVfs, int nBuf, char *zBuf){
+  UNUSED_PARAMETER(pVfs);
   return getLastErrorMsg(nBuf, zBuf);
 }
 

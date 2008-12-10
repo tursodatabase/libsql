@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.207 2008/12/10 19:26:24 drh Exp $
+** $Id: func.c,v 1.208 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -212,10 +212,10 @@ static void substrFunc(
     for(z2=z; *z2 && p2; p2--){
       SQLITE_SKIP_UTF8(z2);
     }
-    sqlite3_result_text(context, (char*)z, z2-z, SQLITE_TRANSIENT);
+    sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
   }else{
     if( p2<0 ) p2 = 0;
-    sqlite3_result_blob(context, (char*)&z[p1], p2, SQLITE_TRANSIENT);
+    sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
   }
 }
 
@@ -251,7 +251,7 @@ static void *contextMalloc(sqlite3_context *context, i64 nByte){
     sqlite3_result_error_toobig(context);
     z = 0;
   }else{
-    z = sqlite3Malloc(nByte);
+    z = sqlite3Malloc((int)nByte);
     if( !z && nByte>0 ){
       sqlite3_result_error_nomem(context);
     }
@@ -276,7 +276,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     if( z1 ){
       memcpy(z1, z2, n+1);
       for(i=0; z1[i]; i++){
-        z1[i] = toupper(z1[i]);
+        z1[i] = (char)toupper(z1[i]);
       }
       sqlite3_result_text(context, z1, -1, sqlite3_free);
     }
@@ -296,7 +296,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
     if( z1 ){
       memcpy(z1, z2, n+1);
       for(i=0; z1[i]; i++){
-        z1[i] = tolower(z1[i]);
+        z1[i] = (char)tolower(z1[i]);
       }
       sqlite3_result_text(context, z1, -1, sqlite3_free);
     }
@@ -788,7 +788,7 @@ static void zeroblobFunc(
   if( n>SQLITE_MAX_LENGTH ){
     sqlite3_result_error_toobig(context);
   }else{
-    sqlite3_result_zeroblob(context, n);
+    sqlite3_result_zeroblob(context, (int)n);
   }
 }
 
@@ -881,8 +881,8 @@ static void trimFunc(
   int nIn;                          /* Number of bytes in input */
   int flags;                        /* 1: trimleft  2: trimright  3: trim */
   int i;                            /* Loop counter */
-  unsigned char *aLen;              /* Length of each character in zCharSet */
-  unsigned char **azChar;           /* Individual characters in zCharSet */
+  unsigned char *aLen = 0;          /* Length of each character in zCharSet */
+  unsigned char **azChar = 0;       /* Individual characters in zCharSet */
   int nChar;                        /* Number of characters in zCharSet */
 
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ){
@@ -915,7 +915,7 @@ static void trimFunc(
       for(z=zCharSet, nChar=0; *z; nChar++){
         azChar[nChar] = (unsigned char *)z;
         SQLITE_SKIP_UTF8(z);
-        aLen[nChar] = z - azChar[nChar];
+        aLen[nChar] = (int)(z - azChar[nChar]);
       }
     }
   }
@@ -923,7 +923,7 @@ static void trimFunc(
     flags = SQLITE_PTR_TO_INT(sqlite3_user_data(context));
     if( flags & 1 ){
       while( nIn>0 ){
-        int len;
+        int len = 0;
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( memcmp(zIn, azChar[i], len)==0 ) break;
@@ -935,7 +935,7 @@ static void trimFunc(
     }
     if( flags & 2 ){
       while( nIn>0 ){
-        int len;
+        int len = 0;
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( len<=nIn && memcmp(&zIn[nIn-len],azChar[i],len)==0 ) break;
@@ -1063,10 +1063,10 @@ static void sumStep(sqlite3_context *context, int argc, sqlite3_value **argv){
       p->rSum += v;
       if( (p->approx|p->overflow)==0 ){
         i64 iNewSum = p->iSum + v;
-        int s1 = p->iSum >> (sizeof(i64)*8-1);
-        int s2 = v       >> (sizeof(i64)*8-1);
-        int s3 = iNewSum >> (sizeof(i64)*8-1);
-        p->overflow = (s1&s2&~s3) | (~s1&~s2&s3);
+        int s1 = (int)(p->iSum >> (sizeof(i64)*8-1));
+        int s2 = (int)(v       >> (sizeof(i64)*8-1));
+        int s3 = (int)(iNewSum >> (sizeof(i64)*8-1));
+        p->overflow = ((s1&s2&~s3) | (~s1&~s2&s3))?1:0;
         p->iSum = iNewSum;
       }
     }else{
@@ -1251,7 +1251,7 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 /*
 ** Set the LIKEOPT flag on the 2-argument function with the given name.
 */
-static void setLikeOptFlag(sqlite3 *db, const char *zName, int flagVal){
+static void setLikeOptFlag(sqlite3 *db, const char *zName, u8 flagVal){
   FuncDef *pDef;
   pDef = sqlite3FindFunction(db, zName, sqlite3Strlen30(zName),
                              2, SQLITE_UTF8, 0);

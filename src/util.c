@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.243 2008/12/09 03:55:14 drh Exp $
+** $Id: util.c,v 1.244 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -549,7 +549,7 @@ int sqlite3PutVarint32(unsigned char *p, u32 v){
 ** Read a 64-bit variable-length integer from memory starting at p[0].
 ** Return the number of bytes read.  The value is stored in *v.
 */
-int sqlite3GetVarint(const unsigned char *p, u64 *v){
+u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   u32 a,b,s;
 
   a = *p;
@@ -711,7 +711,7 @@ int sqlite3GetVarint(const unsigned char *p, u64 *v){
 ** single-byte case.  All code should use the MACRO version as 
 ** this function assumes the single-byte case has already been handled.
 */
-int sqlite3GetVarint32(const unsigned char *p, u32 *v){
+u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
   u32 a,b;
 
   a = *p;
@@ -780,7 +780,7 @@ int sqlite3GetVarint32(const unsigned char *p, u32 *v){
   ** value. */
   {
     u64 v64;
-    int n;
+    u8 n;
 
     p -= 4;
     n = sqlite3GetVarint(p, &v64);

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.506 2008/12/10 19:26:22 drh Exp $
+** $Id: build.c,v 1.507 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -32,7 +32,7 @@
 ** be parsed.  Initialize the pParse structure as needed.
 */
 void sqlite3BeginParse(Parse *pParse, int explainFlag){
-  pParse->explain = explainFlag;
+  pParse->explain = (u8)explainFlag;
   pParse->nVar = 0;
 }
 
@@ -187,7 +187,8 @@ void sqlite3FinishCoding(Parse *pParse){
       */
       VdbeOp *pOp = sqlite3VdbeGetOp(v, 0);
       if( pOp && pOp->opcode==OP_Trace ){
-        sqlite3VdbeChangeP4(v, 0, pParse->zSql, pParse->zTail-pParse->zSql);
+        sqlite3VdbeChangeP4(v, 0, pParse->zSql,
+                            (int)(pParse->zTail - pParse->zSql));
       }
     }
 #endif /* SQLITE_OMIT_TRACE */
@@ -628,7 +629,7 @@ void sqlite3OpenMasterTable(Parse *p, int iDb){
 */
 int sqlite3FindDb(sqlite3 *db, Token *pName){
   int i = -1;    /* Database number */
-  size_t n;      /* Number of characters in the name */
+  int n;         /* Number of characters in the name */
   Db *pDb;       /* A database whose name space is being searched */
   char *zName;   /* Name we are searching for */
 
@@ -995,7 +996,7 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
   int i;
   if( (p = pParse->pNewTable)==0 ) return;
   i = p->nCol-1;
-  if( i>=0 ) p->aCol[i].notNull = onError;
+  if( i>=0 ) p->aCol[i].notNull = (u8)onError;
 }
 
 /*
@@ -1174,7 +1175,7 @@ void sqlite3AddPrimaryKey(
   if( zType && sqlite3StrICmp(zType, "INTEGER")==0
         && sortOrder==SQLITE_SO_ASC ){
     pTab->iPKey = iCol;
-    pTab->keyConf = onError;
+    pTab->keyConf = (u8)onError;
     assert( autoInc==0 || autoInc==1 );
     pTab->tabFlags |= autoInc*TF_Autoincrement;
   }else if( autoInc ){
@@ -1554,7 +1555,7 @@ void sqlite3EndTable(
     if( pSelect ){
       zStmt = createTableStmt(db, p, p->pSchema==db->aDb[1].pSchema);
     }else{
-      n = pEnd->z - pParse->sNameToken.z + 1;
+      n = (int)(pEnd->z - pParse->sNameToken.z) + 1;
       zStmt = sqlite3MPrintf(db, 
           "CREATE %s %.*s", zType2, n, pParse->sNameToken.z
       );
@@ -1638,7 +1639,7 @@ void sqlite3EndTable(
       if( pCons->z==0 ){
         pCons = pEnd;
       }
-      nName = (const char *)pCons->z - zName;
+      nName = (int)((const char *)pCons->z - zName);
       p->addColOffset = 13 + sqlite3Utf8CharLen(zName, nName);
     }
 #endif
@@ -1709,7 +1710,7 @@ void sqlite3CreateView(
     sEnd.z += sEnd.n;
   }
   sEnd.n = 0;
-  n = sEnd.z - pBegin->z;
+  n = (int)(sEnd.z - pBegin->z);
   z = (const unsigned char*)pBegin->z;
   while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
   sEnd.z = &z[n-1];
@@ -2222,9 +2223,9 @@ void sqlite3CreateForeignKey(
     }
   }
   pFKey->isDeferred = 0;
-  pFKey->deleteConf = flags & 0xff;
-  pFKey->updateConf = (flags >> 8 ) & 0xff;
-  pFKey->insertConf = (flags >> 16 ) & 0xff;
+  pFKey->deleteConf = (u8)(flags & 0xff);
+  pFKey->updateConf = (u8)((flags >> 8 ) & 0xff);
+  pFKey->insertConf = (u8)((flags >> 16 ) & 0xff);
 
   /* Link the foreign key to the table as the last step.
   */
@@ -2250,7 +2251,8 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
   Table *pTab;
   FKey *pFKey;
   if( (pTab = pParse->pNewTable)==0 || (pFKey = pTab->pFKey)==0 ) return;
-  pFKey->isDeferred = isDeferred;
+  assert( isDeferred==0 || isDeferred==1 );
+  pFKey->isDeferred = (u8)isDeferred;
 #endif
 }
 
@@ -2503,7 +2505,7 @@ void sqlite3CreateIndex(
     nullId.n = sqlite3Strlen30((char*)nullId.z);
     pList = sqlite3ExprListAppend(pParse, 0, 0, &nullId);
     if( pList==0 ) goto exit_create_index;
-    pList->a[0].sortOrder = sortOrder;
+    pList->a[0].sortOrder = (u8)sortOrder;
   }
 
   /* Figure out how many bytes of space are required to store explicitly
@@ -2543,8 +2545,8 @@ void sqlite3CreateIndex(
   memcpy(pIndex->zName, zName, nName+1);
   pIndex->pTable = pTab;
   pIndex->nColumn = pList->nExpr;
-  pIndex->onError = onError;
-  pIndex->autoIndex = pName==0;
+  pIndex->onError = (u8)onError;
+  pIndex->autoIndex = (u8)(pName==0);
   pIndex->pSchema = db->aDb[iDb].pSchema;
 
   /* Check to see if we should honor DESC requests on index columns
@@ -2596,7 +2598,7 @@ void sqlite3CreateIndex(
     }
     pIndex->azColl[i] = zColl;
     requestedSortOrder = pListItem->sortOrder & sortOrderMask;
-    pIndex->aSortOrder[i] = requestedSortOrder;
+    pIndex->aSortOrder[i] = (u8)requestedSortOrder;
   }
   sqlite3DefaultRowEst(pIndex);
 
@@ -3046,7 +3048,7 @@ SrcList *sqlite3SrcListEnlarge(
     }
     pSrc = pNew;
     nGot = (sqlite3DbMallocSize(db, pNew) - sizeof(*pSrc))/sizeof(pSrc->a[0])+1;
-    pSrc->nAlloc = nGot;
+    pSrc->nAlloc = (u16)nGot;
   }
 
   /* Move existing slots that come after the newly inserted slots
@@ -3054,7 +3056,7 @@ SrcList *sqlite3SrcListEnlarge(
   for(i=pSrc->nSrc-1; i>=iStart; i--){
     pSrc->a[i+nExtra] = pSrc->a[i];
   }
-  pSrc->nSrc += nExtra;
+  pSrc->nSrc += (u16)nExtra;
 
   /* Zero the newly allocated slots */
   memset(&pSrc->a[iStart], 0, sizeof(pSrc->a[0])*nExtra);
@@ -3574,7 +3576,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
       pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl, -1);
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }
-    pKey->nField = nCol;
+    pKey->nField = (u16)nCol;
   }
 
   if( pParse->nErr ){

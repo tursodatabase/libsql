@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.517 2008/12/10 16:45:51 drh Exp $
+** $Id: main.c,v 1.518 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -403,8 +403,8 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   }
   db->lookaside.pStart = pStart;
   db->lookaside.pFree = 0;
-  db->lookaside.sz = sz;
-  db->lookaside.bMalloced = pBuf==0;
+  db->lookaside.sz = (u16)sz;
+  db->lookaside.bMalloced = pBuf==0 ?1:0;
   if( pStart ){
     int i;
     LookasideSlot *p;
@@ -920,7 +920,7 @@ int sqlite3CreateFunc(
   ** is being overridden/deleted but there are no active VMs, allow the
   ** operation to continue but invalidate all precompiled statements.
   */
-  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 0);
+  p = sqlite3FindFunction(db, zFunctionName, nName, (u16)nArg, enc, 0);
   if( p && p->iPrefEnc==enc && p->nArg==nArg ){
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
@@ -932,7 +932,7 @@ int sqlite3CreateFunc(
     }
   }
 
-  p = sqlite3FindFunction(db, zFunctionName, nName, nArg, enc, 1);
+  p = sqlite3FindFunction(db, zFunctionName, nName, (u16)nArg, enc, 1);
   assert(p || db->mallocFailed);
   if( !p ){
     return SQLITE_NOMEM;
@@ -942,7 +942,7 @@ int sqlite3CreateFunc(
   p->xStep = xStep;
   p->xFinalize = xFinal;
   p->pUserData = pUserData;
-  p->nArg = nArg;
+  p->nArg = (u16)nArg;
   return SQLITE_OK;
 }
 
@@ -1365,7 +1365,7 @@ static int createCollation(
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
     pColl->xDel = xDel;
-    pColl->enc = enc2 | (enc & SQLITE_UTF16_ALIGNED);
+    pColl->enc = (u8)(enc2 | (enc & SQLITE_UTF16_ALIGNED));
   }
   sqlite3Error(db, SQLITE_OK, 0);
   return SQLITE_OK;

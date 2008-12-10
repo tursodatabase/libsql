@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.189 2008/12/10 19:26:24 drh Exp $
+** $Id: delete.c,v 1.190 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -76,7 +76,7 @@ void sqlite3OpenTable(
   if( IsVirtual(pTab) ) return;
   v = sqlite3GetVdbe(p);
   assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
-  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite), pTab->zName);
+  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pTab->nCol);
   sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
   VdbeComment((v, "%s", pTab->zName));
@@ -240,10 +240,10 @@ void sqlite3DeleteFrom(
   int isView;                  /* True if attempting to delete from a view */
   int triggers_exist = 0;      /* True if any triggers exist */
 #endif
-  int iBeginAfterTrigger;      /* Address of after trigger program */
-  int iEndAfterTrigger;        /* Exit of after trigger program */
-  int iBeginBeforeTrigger;     /* Address of before trigger program */
-  int iEndBeforeTrigger;       /* Exit of before trigger program */
+  int iBeginAfterTrigger = 0;  /* Address of after trigger program */
+  int iEndAfterTrigger = 0;    /* Exit of after trigger program */
+  int iBeginBeforeTrigger = 0; /* Address of before trigger program */
+  int iEndBeforeTrigger = 0;   /* Exit of before trigger program */
   u32 old_col_mask = 0;        /* Mask of OLD.* columns in use */
 
   sContext.pParse = 0;

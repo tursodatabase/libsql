@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.546 2008/12/10 16:45:51 drh Exp $
+** $Id: btree.c,v 1.547 2008/12/10 21:19:57 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -590,7 +590,7 @@ void sqlite3BtreeParseCellPtr(
     }else{
       nPayload = 0;
     }
-    n += (u16)getVarint(&pCell[n], (u64*)&pInfo->nKey);
+    n += getVarint(&pCell[n], (u64*)&pInfo->nKey);
     pInfo->nData = nPayload;
   }else{
     pInfo->nData = 0;
@@ -610,7 +610,7 @@ void sqlite3BtreeParseCellPtr(
     if( (nSize & ~3)==0 ){
       nSize = 4;        /* Minimum cell size is 4 */
     }
-    pInfo->nSize = (int)nSize;
+    pInfo->nSize = (u16)nSize;
   }else{
     /* If the payload will not fit completely on the local page, we have
     ** to decide how much to store locally and how much to spill onto
@@ -995,7 +995,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     pc = get2byte(&data[hdr+1]);
     nFree = data[hdr+7] + top - (cellOffset + 2*pPage->nCell);
     while( pc>0 ){
-      int next, size;
+      u16 next, size;
       if( pc>usableSize-4 ){
         /* Free block is off the page */
         return SQLITE_CORRUPT_BKPT; 
@@ -1056,8 +1056,8 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
   /*memset(&data[hdr], 0, pBt->usableSize - hdr);*/
-  data[hdr] = flags;
-  first = hdr + 8 + 4*((flags&PTF_LEAF)==0);
+  data[hdr] = (char)flags;
+  first = hdr + 8 + 4*((flags&PTF_LEAF)==0 ?1:0);
   memset(&data[hdr+1], 0, 4);
   data[hdr+7] = 0;
   put2byte(&data[hdr+5], pBt->usableSize);
@@ -1651,7 +1651,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
         ((pageSize-1)&pageSize)==0 ){
     assert( (pageSize & 7)==0 );
     assert( !pBt->pPage1 && !pBt->pCursor );
-    pBt->pageSize = pageSize;
+    pBt->pageSize = (u16)pageSize;
     freeTempSpace(pBt);
     rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
   }
@@ -1807,8 +1807,8 @@ static int lockBtree(BtShared *pBt){
     if( usableSize<500 ){
       goto page1_init_failed;
     }
-    pBt->pageSize = pageSize;
-    pBt->usableSize = usableSize;
+    pBt->pageSize = (u16)pageSize;
+    pBt->usableSize = (u16)usableSize;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     pBt->autoVacuum = (get4byte(&page1[36 + 4*4])?1:0);
     pBt->incrVacuum = (get4byte(&page1[36 + 7*4])?1:0);
@@ -3077,7 +3077,7 @@ static int getOverflowPage(
   Pgno *pPgnoNext              /* OUT: Next overflow page number */
 ){
   Pgno next = 0;
-  int rc;
+  int rc = SQLITE_OK;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   /* One of these must not be NULL. Otherwise, why call this function? */
@@ -3639,7 +3639,7 @@ static int moveToLeftmost(BtCursor *pCur){
 static int moveToRightmost(BtCursor *pCur){
   Pgno pgno;
   int rc = SQLITE_OK;
-  MemPage *pPage;
+  MemPage *pPage = 0;
 
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState==CURSOR_VALID );
@@ -3822,7 +3822,7 @@ int sqlite3BtreeMovetoUnpacked(
             goto moveto_finish;
           }
           rc = sqlite3BtreeKey(pCur, 0, (int)nCellKey, (void*)pCellKey);
-          c = sqlite3VdbeRecordCompare(nCellKey, pCellKey, pIdxKey);
+          c = sqlite3VdbeRecordCompare((int)nCellKey, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
           if( rc ) goto moveto_finish;
         }
@@ -6009,7 +6009,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     ** to be a leaf so we can use it.
     */
     BtCursor leafCur;
-    MemPage *pLeafPage;
+    MemPage *pLeafPage = 0;
 
     unsigned char *pNext;
     int notUsed;
@@ -6524,7 +6524,7 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
 ** free pages is not visible.  So Cookie[0] is the same as Meta[1].
 */
 int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
-  DbPage *pDbPage;
+  DbPage *pDbPage = 0;
   int rc;
   unsigned char *pP1;
   BtShared *pBt = p->pBt;

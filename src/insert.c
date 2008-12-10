@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.255 2008/12/10 19:26:24 drh Exp $
+** $Id: insert.c,v 1.256 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -388,14 +388,14 @@ void sqlite3Insert(
   int appendFlag = 0;   /* True if the insert is likely to be an append */
 
   /* Register allocations */
-  int regFromSelect;    /* Base register for data coming from SELECT */
+  int regFromSelect = 0;/* Base register for data coming from SELECT */
   int regAutoinc = 0;   /* Register holding the AUTOINCREMENT counter */
   int regRowCount = 0;  /* Memory cell used for the row counter */
   int regIns;           /* Block of regs holding rowid+data being inserted */
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
   int regRecord;        /* Holds the assemblied row record */
-  int regEof;           /* Register recording end of SELECT data */
+  int regEof = 0;       /* Register recording end of SELECT data */
   int *aRegIdx = 0;     /* One register allocated to each index */
 
 
@@ -405,6 +405,7 @@ void sqlite3Insert(
 #endif
 
   db = pParse->db;
+  memset(&dest, 0, sizeof(dest));
   if( pParse->nErr || db->mallocFailed ){
     goto insert_cleanup;
   }
@@ -1093,7 +1094,8 @@ void sqlite3GenerateConstraintChecks(
   Vdbe *v;
   int nCol;
   int onError;
-  int j1, j2, j3;     /* Addresses of jump instructions */
+  int j1;             /* Addresss of jump instruction */
+  int j2 = 0, j3;     /* Addresses of jump instructions */
   int regData;        /* Register containing first data column */
   int iCur;
   Index *pIdx;
@@ -1334,7 +1336,7 @@ void sqlite3CompleteInsertion(
   Vdbe *v;
   int nIdx;
   Index *pIdx;
-  int pik_flags;
+  u8 pik_flags;
   int regData;
   int regRec;
 

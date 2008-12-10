@@ -17,7 +17,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem1.c,v 1.28 2008/11/19 09:05:27 danielk1977 Exp $
+** $Id: mem1.c,v 1.29 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -96,7 +96,7 @@ static int sqlite3MemSize(void *pPrior){
   if( pPrior==0 ) return 0;
   p = (sqlite3_int64*)pPrior;
   p--;
-  return p[0];
+  return (int)p[0];
 }
 
 /*

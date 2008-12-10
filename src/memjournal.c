@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.6 2008/12/10 19:26:24 drh Exp $
+** @(#) $Id: memjournal.c,v 1.7 2008/12/10 21:19:57 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -91,7 +91,7 @@ static int memjrnlRead(
     pChunk = p->readpoint.pChunk;
   }
 
-  iChunkOffset = (iOfst%JOURNAL_CHUNKSIZE);
+  iChunkOffset = (int)(iOfst%JOURNAL_CHUNKSIZE);
   do {
     int iSpace = JOURNAL_CHUNKSIZE - iChunkOffset;
     int nCopy = MIN(nRead, (JOURNAL_CHUNKSIZE - iChunkOffset));
@@ -127,7 +127,7 @@ static int memjrnlWrite(
 
   while( nWrite>0 ){
     FileChunk *pChunk = p->endpoint.pChunk;
-    int iChunkOffset = p->endpoint.iOffset%JOURNAL_CHUNKSIZE;
+    int iChunkOffset = (int)(p->endpoint.iOffset%JOURNAL_CHUNKSIZE);
     int iSpace = MIN(nWrite, JOURNAL_CHUNKSIZE - iChunkOffset);
 
     if( iChunkOffset==0 ){

@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.96 2008/12/10 19:26:22 drh Exp $
+** $Id: date.c,v 1.97 2008/12/10 21:19:57 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -522,7 +522,7 @@ static int parseModifier(const char *zMod, DateTime *p){
   char *z, zBuf[30];
   z = zBuf;
   for(n=0; n<ArraySize(zBuf)-1 && zMod[n]; n++){
-    z[n] = tolower(zMod[n]);
+    z[n] = (char)sqlite3UpperToLower[(u8)zMod[n]];
   }
   z[n] = 0;
   switch( z[0] ){
