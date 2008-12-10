@@ -1,5 +1,5 @@
-C Fix\san\sissue\swith\sthe\snew\ssqlite3Strlen30()\sintroduced\sby\ncheck-in\s(6007).\s\sAdditional\scasts\sfor\scompiler\swarnings.\s(CVS\s6011)
-D 2008-12-10T22:15:00
+C The\sstrlen30\sfunction\sin\stclsqlite.c\sshould\sbe\sdefined\sregardless\sof\swhether\nor\snot\sthe\samalgamation\sis\sused.\s(CVS\s6012)
+D 2008-12-10T22:18:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/sqliteInt.h a1478d1ec40bca0b511c06e2b4c93dc932aa3426
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
-F src/tclsqlite.c 6613acae9fe805a6d0fa666a254f90ff9da6e174
+F src/tclsqlite.c 23afb60549af943e135ded441a631f4745be6040
 F src/test1.c 30986773b10d75904f21bae5c3e8e8b9f20fa479
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ea01d43788a75e39c7f03c22681d1a338d52cf0e
-R fc82d5cdc1b4a29bb39788188873773b
+P 258722b6178f60eaccef1675aab3edc456d413a5
+R 9eceeaf01a9789d4fefaac049c754f93
 U drh
-Z 42ed0cd2a4ed59138c8dcec9deb5038f
+Z fb591fbf9381ed65d6920b1670846bff
