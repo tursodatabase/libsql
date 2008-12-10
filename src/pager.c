@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.510 2008/11/29 22:49:23 drh Exp $
+** @(#) $Id: pager.c,v 1.511 2008/12/10 16:45:51 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3825,7 +3825,7 @@ int sqlite3PagerRollback(Pager *pPager){
 ** Return TRUE if the database file is opened read-only.  Return FALSE
 ** if the database is (in theory) writable.
 */
-int sqlite3PagerIsreadonly(Pager *pPager){
+u8 sqlite3PagerIsreadonly(Pager *pPager){
   return pPager->readOnly;
 }
 

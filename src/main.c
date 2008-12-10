@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.516 2008/12/09 14:46:10 drh Exp $
+** $Id: main.c,v 1.517 2008/12/10 16:45:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1201,11 +1201,14 @@ int sqlite3BtreeFactory(
 */
 const char *sqlite3_errmsg(sqlite3 *db){
   const char *z;
-  if( !db || db->mallocFailed ){
+  if( !db ){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
     return sqlite3ErrStr(SQLITE_MISUSE);
+  }
+  if( db->mallocFailed ){
+    return sqlite3ErrStr(SQLITE_NOMEM);
   }
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );

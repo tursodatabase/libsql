@@ -1,5 +1,5 @@
-C Use\smemcpy()\srather\sthan\s"="\sto\scopy\sa\sstructure,\sin\sorder\sto\swork\saround\na\sbug\sin\sthe\sXLC\scompiler\son\sAIX.\s\sTicket\s#3344.\s(CVS\s6003)
-D 2008-12-10T11:49:06
+C Add\sexplicit\scasts\sto\ssilence\snuisance\swarnings\sfrom\sVC++.\s(CVS\s6004)
+D 2008-12-10T16:45:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,14 +95,14 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 0a00c184052b7fd20271e783f65fec4efec6fe30
-F src/analyze.c 301a1358f4f4d84d96608927d8ddcf471c53ad9a
-F src/attach.c 85c6a3d0daf11965b47604190d7cf5597dc88382
+F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
+F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 05fae412abe4f72aa52611f5a7180b73f2414d99
+F src/btree.c ba7baa987f9723882ef4655886327622e02a497f
 F src/btree.h 179c3ea813780df78a289a8f5130db18e6d4616e
-F src/btreeInt.h 8d21590c97b6a2c00cce1f78ed5dc5756e835108
+F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
 F src/build.c ce642b06016d94b0dbc34d379bac82b597baf8d5
 F src/callback.c e970e5beddbdb23f89a6d05cb1a6419d9f755624
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -119,7 +119,7 @@ F src/insert.c 73c4b33767d9540f8ead5d903504ed93f48ad147
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c 2f53996c693a347edc2d773e9217dde49d96ae64
-F src/main.c 331b2652e72ae64918d2347c7a96c5ed770b6f19
+F src/main.c 12b674019503ad90649cd8e6295425ef3078ce12
 F src/malloc.c 89c7c58fbec06b80101fdc6dcdf9ee849b7cd7ac
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c bb8e26adde7d463270e961f045802c61dbabc8f1
@@ -139,8 +139,8 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 36196e71292a44bf2d393413cd8c86199694b8b4
 F src/os_unix.c cec838fe55eaa53f1ff02ecb311cdd2188c4db95
 F src/os_win.c 79e55bbe2177c4824d24d365b1274703c710f504
-F src/pager.c a193da9e271898077de815819e4c29fc2b6ece2a
-F src/pager.h a02ef8e6cc7e78b54874166e5ce786c9d4c489bf
+F src/pager.c e72e92d44365d75563d26957e6ba4a2ec0796da5
+F src/pager.h 37f5173612b7803f44656c16e80df3280234bb18
 F src/parse.y 1f4b7ad690864911919da0c76fa96fd72694185e
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d1d05e2a8a6e474e4921742ba055200d7f4d21ce
-R 3cb1e54e772a65be57b4db65ef2876e3
+P 18bbcafc16bb985a7c74e07ffb9c4f28273a7cfd
+R 16b9d8cfa7d0b4c8f37a0a76a742de3d
 U drh
-Z 967f0ee55c615c78cea9e570be2fe2d2
+Z 23fbcb130f7b999f989b3af42a01d87f
