@@ -1,5 +1,5 @@
-C Added\soption\s(-l)\sto\slemon\sparser\sto\shave\sit\sskip\sprinting\sline\snumbers\s(#line\s...\s).\s(CVS\s6008)
-D 2008-12-10T20:10:05
+C Fixed\stypo\sin\scomment\sin\smkkeywordhash.c.\s(CVS\s6009)
+D 2008-12-10T20:11:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -646,7 +646,7 @@ F tool/lempar.c fece0da829c0e425f13e6da1671619bed43d0f70
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
-F tool/mkkeywordhash.c 7cd8f12dea17d26e4b2c6dee8be13515248da069
+F tool/mkkeywordhash.c b7f85b700627becf998304a0a98aa4f0dfe30269
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl c259bcf64ae8fce346e3ae302c3fd6db977f89a8
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c872d554930ecf221ac2be5f886d5d67bb35288c
-R 19abd022e9b6073876fd318824d614c3
+P ccb9393a7a10f0970419b860af293b0bdad7f894
+R e5cd4f999065b826204c96a1b5fe9334
 U shane
-Z 7652c32495d75461d5abb8d2cced321f
+Z 456bceda2dd3765ecca5d86a452706ff
