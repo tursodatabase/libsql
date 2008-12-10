@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.143 2008/12/10 21:19:57 drh Exp $
+** $Id: os_win.c,v 1.144 2008/12/10 22:30:25 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -743,7 +743,11 @@ int sqlite3_fullsync_count = 0;
 ** Make sure all writes to a particular file are committed to disk.
 */
 static int winSync(sqlite3_file *id, int flags){
+#ifndef SQLITE_NO_SYNC
   winFile *pFile = (winFile*)id;
+#else
+  UNUSED_PARAMETER(id);
+#endif
   OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
 #ifdef SQLITE_TEST
   if( flags & SQLITE_SYNC_FULL ){
@@ -1050,6 +1054,7 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
+  UNUSED_PARAMETER(id);
   return SQLITE_DEFAULT_SECTOR_SIZE;
 }
 
@@ -1057,6 +1062,7 @@ static int winSectorSize(sqlite3_file *id){
 ** Return a vector of device characteristics.
 */
 static int winDeviceCharacteristics(sqlite3_file *id){
+  UNUSED_PARAMETER(id);
   return 0;
 }
 
@@ -1217,6 +1223,8 @@ static int winOpen(
   const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
   char zTmpname[MAX_PATH+1];        /* Buffer used to create temp filename */
 
+  UNUSED_PARAMETER(pVfs);
+
   /* If the second argument to this function is NULL, generate a 
   ** temporary file name to use 
   */
@@ -1352,6 +1360,8 @@ static int winDelete(
   DWORD rc;
   DWORD error = 0;
   void *zConverted = convertUtf8Filename(zFilename);
+  UNUSED_PARAMETER(pVfs);
+  UNUSED_PARAMETER(syncDir);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
@@ -1395,6 +1405,7 @@ static int winAccess(
   DWORD attr;
   int rc = 0;
   void *zConverted = convertUtf8Filename(zFilename);
+  UNUSED_PARAMETER(pVfs);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
@@ -1439,11 +1450,13 @@ static int winFullPathname(
 ){
   
 #if defined(__CYGWIN__)
+  UNUSED_PARAMETER(nFull);
   cygwin_conv_to_full_win32_path(zRelative, zFull);
   return SQLITE_OK;
 #endif
 
 #if SQLITE_OS_WINCE
+  UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
   return SQLITE_OK;
@@ -1453,6 +1466,7 @@ static int winFullPathname(
   int nByte;
   void *zConverted;
   char *zOut;
+  UNUSED_PARAMETER(nFull);
   zConverted = convertUtf8Filename(zRelative);
   if( isNT() ){
     WCHAR *zTemp;

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.69 2008/12/10 19:26:24 drh Exp $
+** $Id: utf.c,v 1.70 2008/12/10 22:30:25 shane Exp $
 **
 ** Notes on UTF-8:
 **
@@ -51,7 +51,7 @@ const int sqlite3one = 1;
 ** This lookup table is used to help decode the first byte of
 ** a multi-byte UTF8 character.
 */
-static const unsigned char sqlite3UtfTrans1[] = {
+static const unsigned char sqlite3Utf8Trans1[] = {
   0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
   0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
   0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -159,7 +159,7 @@ static const unsigned char sqlite3UtfTrans1[] = {
 #define READ_UTF8(zIn, zTerm, c)                           \
   c = *(zIn++);                                            \
   if( c>=0xc0 ){                                           \
-    c = sqlite3UtfTrans1[c-0xc0];                          \
+    c = sqlite3Utf8Trans1[c-0xc0];                         \
     while( zIn!=zTerm && (*zIn & 0xc0)==0x80 ){            \
       c = (c<<6) + (0x3f & *(zIn++));                      \
     }                                                      \
@@ -495,7 +495,8 @@ void sqlite3UtfSelfTest(void){
   for(i=0; i<0x00110000; i++){
     z = zBuf;
     WRITE_UTF8(z, i);
-    n = z-zBuf;
+    n = (int)(z-zBuf);
+    assert( n>0 && n<=4 );
     z[0] = 0;
     zTerm = z;
     z = zBuf;
@@ -510,7 +511,8 @@ void sqlite3UtfSelfTest(void){
     if( i>=0xD800 && i<0xE000 ) continue;
     z = zBuf;
     WRITE_UTF16LE(z, i);
-    n = z-zBuf;
+    n = (int)(z-zBuf);
+    assert( n>0 && n<=4 );
     z[0] = 0;
     z = zBuf;
     READ_UTF16LE(z, c);
@@ -521,7 +523,8 @@ void sqlite3UtfSelfTest(void){
     if( i>=0xD800 && i<0xE000 ) continue;
     z = zBuf;
     WRITE_UTF16BE(z, i);
-    n = z-zBuf;
+    n = (int)(z-zBuf);
+    assert( n>0 && n<=4 );
     z[0] = 0;
     z = zBuf;
     READ_UTF16BE(z, c);

@@ -12,8 +12,13 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.193 2008/12/10 22:15:00 drh Exp $
+** $Id: shell.c,v 1.194 2008/12/10 22:30:25 shane Exp $
 */
+#if defined(_WIN32) || defined(WIN32)
+/* This needs to come before any includes for MSVC compiler */
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -48,6 +53,8 @@
 
 #if defined(_WIN32) || defined(WIN32)
 # include <io.h>
+#define isatty(h) _isatty(h)
+#define access(f,m) _access((f),(m))
 #else
 /* Make sure isatty() has a prototype.
 */

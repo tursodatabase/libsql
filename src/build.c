@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.507 2008/12/10 21:19:57 drh Exp $
+** $Id: build.c,v 1.508 2008/12/10 22:30:25 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3056,7 +3056,7 @@ SrcList *sqlite3SrcListEnlarge(
   for(i=pSrc->nSrc-1; i>=iStart; i--){
     pSrc->a[i+nExtra] = pSrc->a[i];
   }
-  pSrc->nSrc += (u16)nExtra;
+  pSrc->nSrc += (i16)nExtra;
 
   /* Zero the newly allocated slots */
   memset(&pSrc->a[iStart], 0, sizeof(pSrc->a[0])*nExtra);
