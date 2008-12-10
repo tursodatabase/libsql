@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.132 2008/12/10 18:03:47 drh Exp $
+** $Id: vdbemem.c,v 1.133 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -228,7 +228,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
     assert( fg & MEM_Real );
     sqlite3_snprintf(nByte, pMem->z, "%!.15g", pMem->r);
   }
-  pMem->n = (int)strlen(pMem->z);
+  pMem->n = sqlite3Strlen30(pMem->z);
   pMem->enc = SQLITE_UTF8;
   pMem->flags |= MEM_Str|MEM_Term;
   sqlite3VdbeChangeEncoding(pMem, enc);
@@ -898,11 +898,11 @@ void sqlite3VdbeMemSanity(Mem *pMem){
       /* If the string is UTF-8 encoded and nul terminated, then pMem->n
       ** must be the length of the string.  (Later:)  If the database file
       ** has been corrupted, '\000' characters might have been inserted
-      ** into the middle of the string.  In that case, the strlen() might
-      ** be less.
+      ** into the middle of the string.  In that case, the sqlite3Strlen30()
+      ** might be less.
       */
       if( pMem->enc==SQLITE_UTF8 && (flags & MEM_Term) ){ 
-        assert( strlen(pMem->z)<=pMem->n );
+        assert( sqlite3Strlen30(pMem->z)<=pMem->n );
         assert( pMem->z[pMem->n]==0 );
       }
     }

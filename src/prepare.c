@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.102 2008/12/10 17:20:01 drh Exp $
+** $Id: prepare.c,v 1.103 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -295,7 +295,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** file_format==3    Version 3.1.4.  // ditto but with non-NULL defaults
   ** file_format==4    Version 3.3.0.  // DESC indices.  Boolean constants
   */
-  pDb->pSchema->file_format = meta[1];
+  pDb->pSchema->file_format = (u8)meta[1];
   if( pDb->pSchema->file_format==0 ){
     pDb->pSchema->file_format = 1;
   }
@@ -623,7 +623,7 @@ static int sqlite3Prepare(
   }
 
   if( saveSqlFlag ){
-    sqlite3VdbeSetSql(sParse.pVdbe, zSql, sParse.zTail - zSql);
+    sqlite3VdbeSetSql(sParse.pVdbe, zSql, (int)(sParse.zTail - zSql));
   }
   if( rc!=SQLITE_OK || db->mallocFailed ){
     sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
@@ -766,7 +766,7 @@ static int sqlite3Prepare16(
     ** characters between zSql8 and zTail8, and then returning a pointer
     ** the same number of characters into the UTF-16 string.
     */
-    int chars_parsed = sqlite3Utf8CharLen(zSql8, zTail8-zSql8);
+    int chars_parsed = sqlite3Utf8CharLen(zSql8, (int)(zTail8-zSql8));
     *pzTail = (u8 *)zSql + sqlite3Utf16ByteLen(zSql, chars_parsed);
   }
   sqlite3DbFree(db, zSql8); 

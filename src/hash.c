@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.31 2008/10/10 17:41:29 drh Exp $
+** $Id: hash.c,v 1.32 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -63,7 +63,7 @@ void sqlite3HashClear(Hash *pH){
 static int strHash(const void *pKey, int nKey){
   const char *z = (const char *)pKey;
   int h = 0;
-  if( nKey<=0 ) nKey = strlen(z);
+  if( nKey<=0 ) nKey = sqlite3Strlen30(z);
   while( nKey > 0  ){
     h = (h<<3) ^ h ^ sqlite3UpperToLower[(unsigned char)*z++];
     nKey--;

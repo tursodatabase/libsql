@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.794 2008/12/10 18:03:47 drh Exp $
+** $Id: vdbe.c,v 1.795 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -370,12 +370,12 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }
 
     sqlite3_snprintf(100, zCsr, "%c", c);
-    zCsr += strlen(zCsr);
+    zCsr += sqlite3Strlen30(zCsr);
     sqlite3_snprintf(100, zCsr, "%d[", pMem->n);
-    zCsr += strlen(zCsr);
+    zCsr += sqlite3Strlen30(zCsr);
     for(i=0; i<16 && i<pMem->n; i++){
       sqlite3_snprintf(100, zCsr, "%02X", ((int)pMem->z[i] & 0xFF));
-      zCsr += strlen(zCsr);
+      zCsr += sqlite3Strlen30(zCsr);
     }
     for(i=0; i<16 && i<pMem->n; i++){
       char z = pMem->z[i];
@@ -384,10 +384,10 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }
 
     sqlite3_snprintf(100, zCsr, "]%s", encnames[pMem->enc]);
-    zCsr += strlen(zCsr);
+    zCsr += sqlite3Strlen30(zCsr);
     if( f & MEM_Zero ){
       sqlite3_snprintf(100, zCsr,"+%dz",pMem->u.nZero);
-      zCsr += strlen(zCsr);
+      zCsr += sqlite3Strlen30(zCsr);
     }
     *zCsr = '\0';
   }else if( f & MEM_Str ){
@@ -407,7 +407,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }
     k = 2;
     sqlite3_snprintf(100, &zBuf[k], "%d", pMem->n);
-    k += strlen(&zBuf[k]);
+    k += sqlite3Strlen30(&zBuf[k]);
     zBuf[k++] = '[';
     for(j=0; j<15 && j<pMem->n; j++){
       u8 c = pMem->z[j];
@@ -419,7 +419,7 @@ void sqlite3VdbeMemPrettyPrint(Mem *pMem, char *zBuf){
     }
     zBuf[k++] = ']';
     sqlite3_snprintf(100,&zBuf[k], encnames[pMem->enc]);
-    k += strlen(&zBuf[k]);
+    k += sqlite3Strlen30(&zBuf[k]);
     zBuf[k++] = 0;
   }
 }
@@ -882,7 +882,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
 case OP_String8: {         /* same as TK_STRING, out2-prerelease */
   assert( pOp->p4.z!=0 );
   pOp->opcode = OP_String;
-  pOp->p1 = strlen(pOp->p4.z);
+  pOp->p1 = sqlite3Strlen30(pOp->p4.z);
 
 #ifndef SQLITE_OMIT_UTF16
   if( encoding!=SQLITE_UTF8 ){

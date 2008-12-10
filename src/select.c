@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.492 2008/12/10 18:03:46 drh Exp $
+** $Id: select.c,v 1.493 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -37,7 +37,7 @@ static void clearSelect(sqlite3 *db, Select *p){
 ** Initialize a SelectDest structure.
 */
 void sqlite3SelectDestInit(SelectDest *pDest, int eDest, int iParm){
-  pDest->eDest = eDest;
+  pDest->eDest = (u8)eDest;
   pDest->iParm = iParm;
   pDest->affinity = 0;
   pDest->iMem = 0;
@@ -191,7 +191,7 @@ static int columnIndex(Table *pTab, const char *zCol){
 */
 static void setToken(Token *p, const char *z){
   p->z = (u8*)z;
-  p->n = z ? strlen(z) : 0;
+  p->n = z ? sqlite3Strlen30(z) : 0;
   p->dyn = 0;
 }
 
@@ -220,13 +220,13 @@ static void setQuotedToken(Parse *pParse, Token *p, const char *z){
     /* String contains " characters - copy and quote the string. */
     p->z = (u8 *)sqlite3MPrintf(pParse->db, "\"%w\"", z);
     if( p->z ){
-      p->n = strlen((char *)p->z);
+      p->n = sqlite3Strlen30((char *)p->z);
       p->dyn = 1;
     }
   }else{
     /* String contains no " characters - copy the pointer. */
     p->z = (u8*)z;
-    p->n = (z2 - z);
+    p->n = (int)(z2 - z);
     p->dyn = 0;
   }
 }
@@ -756,7 +756,7 @@ static KeyInfo *keyInfoFromExprList(Parse *pParse, ExprList *pList){
   pInfo = sqlite3DbMallocZero(db, sizeof(*pInfo) + nExpr*(sizeof(CollSeq*)+1) );
   if( pInfo ){
     pInfo->aSortOrder = (u8*)&pInfo->aColl[nExpr];
-    pInfo->nField = nExpr;
+    pInfo->nField = (u16)nExpr;
     pInfo->enc = ENC(db);
     pInfo->db = db;
     for(i=0, pItem=pList->a; i<nExpr; i++, pItem++){
@@ -1195,7 +1195,7 @@ static int selectColumnsFromExprList(
     /* Make sure the column name is unique.  If the name is not unique,
     ** append a integer to the name so that it becomes unique.
     */
-    nName = strlen(zName);
+    nName = sqlite3Strlen30(zName);
     for(j=cnt=0; j<i; j++){
       if( sqlite3StrICmp(aCol[j].zName, zName)==0 ){
         char *zNewName;
@@ -1538,7 +1538,7 @@ static int multiSelect(
     case TK_EXCEPT:
     case TK_UNION: {
       int unionTab;    /* Cursor number of the temporary table holding result */
-      int op = 0;      /* One of the SRT_ operations to apply to self */
+      u8 op = 0;       /* One of the SRT_ operations to apply to self */
       int priorOp;     /* The SRT_ operation to apply to prior selects */
       Expr *pLimit, *pOffset; /* Saved values of p->nLimit and p->nOffset */
       int addr;
@@ -1733,7 +1733,7 @@ static int multiSelect(
     }
 
     pKeyInfo->enc = ENC(db);
-    pKeyInfo->nField = nCol;
+    pKeyInfo->nField = (u16)nCol;
 
     for(i=0, apColl=pKeyInfo->aColl; i<nCol; i++, apColl++){
       *apColl = multiSelectCollSeq(pParse, p, i);
@@ -2091,7 +2091,7 @@ static int multiSelectOrderBy(
         pNew->flags |= EP_IntValue;
         pNew->iTable = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew, 0);
-        pOrderBy->a[nOrderBy++].iCol = i;
+        pOrderBy->a[nOrderBy++].iCol = (u16)i;
       }
     }
   }
@@ -2114,7 +2114,7 @@ static int multiSelectOrderBy(
       sqlite3DbMallocRaw(db, sizeof(*pKeyMerge)+nOrderBy*(sizeof(CollSeq*)+1));
     if( pKeyMerge ){
       pKeyMerge->aSortOrder = (u8*)&pKeyMerge->aColl[nOrderBy];
-      pKeyMerge->nField = nOrderBy;
+      pKeyMerge->nField = (u16)nOrderBy;
       pKeyMerge->enc = ENC(db);
       for(i=0; i<nOrderBy; i++){
         CollSeq *pColl;
@@ -2154,7 +2154,7 @@ static int multiSelectOrderBy(
                   sizeof(*pKeyDup) + nExpr*(sizeof(CollSeq*)+1) );
     if( pKeyDup ){
       pKeyDup->aSortOrder = (u8*)&pKeyDup->aColl[nExpr];
-      pKeyDup->nField = nExpr;
+      pKeyDup->nField = (u16)nExpr;
       pKeyDup->enc = ENC(db);
       for(i=0; i<nExpr; i++){
         pKeyDup->aColl[i] = multiSelectCollSeq(pParse, p, i);
@@ -2786,7 +2786,7 @@ static int flattenSubquery(
   */
   for(pParent=p; pParent; pParent=pParent->pPrior, pSub=pSub->pPrior){
     int nSubSrc;
-    int jointype = 0;
+    u8 jointype = 0;
     pSubSrc = pSub->pSrc;     /* FROM clause of subquery */
     nSubSrc = pSubSrc->nSrc;  /* Number of terms in subquery FROM clause */
     pSrc = pParent->pSrc;     /* FROM clause of the outer query */
@@ -3430,7 +3430,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     }
     sqlite3VdbeAddOp4(v, OP_AggStep, 0, regAgg, pF->iMem,
                       (void*)pF->pFunc, P4_FUNCDEF);
-    sqlite3VdbeChangeP5(v, nArg);
+    sqlite3VdbeChangeP5(v, (u8)nArg);
     sqlite3ReleaseTempRange(pParse, regAgg, nArg);
     sqlite3ExprCacheAffinityChange(pParse, regAgg, nArg);
     if( addrNext ){
@@ -4014,7 +4014,7 @@ int sqlite3Select(
       if( flag ){
         pDel = pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->pList);
         if( pMinMax && !db->mallocFailed ){
-          pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN;
+          pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
           pMinMax->a[0].pExpr->op = TK_COLUMN;
         }
       }

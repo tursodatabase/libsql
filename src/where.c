@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.335 2008/12/09 01:32:03 drh Exp $
+** $Id: where.c,v 1.336 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2801,7 +2801,7 @@ WhereInfo *sqlite3WhereBegin(
     pTabItem = &pTabList->a[pLevel->iFrom];
     z = pTabItem->zAlias;
     if( z==0 ) z = pTabItem->pTab->zName;
-    n = strlen(z);
+    n = sqlite3Strlen30(z);
     if( n+nQPlan < sizeof(sqlite3_query_plan)-10 ){
       if( pLevel->wsFlags & WHERE_IDX_ONLY ){
         memcpy(&sqlite3_query_plan[nQPlan], "{}", 2);
@@ -2821,7 +2821,7 @@ WhereInfo *sqlite3WhereBegin(
       memcpy(&sqlite3_query_plan[nQPlan], "{} ", 3);
       nQPlan += 3;
     }else{
-      n = strlen(pLevel->pIdx->zName);
+      n = sqlite3Strlen30(pLevel->pIdx->zName);
       if( n+nQPlan < sizeof(sqlite3_query_plan)-2 ){
         memcpy(&sqlite3_query_plan[nQPlan], pLevel->pIdx->zName, n);
         nQPlan += n;

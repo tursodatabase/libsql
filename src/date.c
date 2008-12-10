@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.95 2008/12/09 04:59:00 shane Exp $
+** $Id: date.c,v 1.96 2008/12/10 19:26:22 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -657,7 +657,7 @@ static int parseModifier(const char *zMod, DateTime *p){
       }
       z += n;
       while( isspace(*(u8*)z) ) z++;
-      n = (int)strlen(z);
+      n = sqlite3Strlen30(z);
       if( n>10 || n<3 ) break;
       if( z[n-1]=='s' ){ z[n-1] = 0; n--; }
       computeJD(p);
@@ -912,7 +912,7 @@ static void strftimeFunc(
           double s = x.s;
           if( s>59.999 ) s = 59.999;
           sqlite3_snprintf(7, &z[j],"%06.3f", s);
-          j += strlen(&z[j]);
+          j += sqlite3Strlen30(&z[j]);
           break;
         }
         case 'H':  sqlite3_snprintf(3, &z[j],"%02d",x.h); j+=2; break;
@@ -938,7 +938,7 @@ static void strftimeFunc(
         }
         case 'J': {
           sqlite3_snprintf(20, &z[j],"%.16g",x.iJD/86400000.0);
-          j+=strlen(&z[j]);
+          j+=sqlite3Strlen30(&z[j]);
           break;
         }
         case 'm':  sqlite3_snprintf(3, &z[j],"%02d",x.M); j+=2; break;
@@ -946,12 +946,18 @@ static void strftimeFunc(
         case 's': {
           sqlite3_snprintf(30,&z[j],"%d",
                            (int)(x.iJD/1000.0 - 210866760000.0));
-          j += strlen(&z[j]);
+          j += sqlite3Strlen30(&z[j]);
           break;
         }
         case 'S':  sqlite3_snprintf(3,&z[j],"%02d",(int)x.s); j+=2; break;
-        case 'w':  z[j++] = (char)(((x.iJD+129600000)/86400000) % 7) + '0'; break;
-        case 'Y':  sqlite3_snprintf(5,&z[j],"%04d",x.Y); j+=strlen(&z[j]);break;
+        case 'w': {
+          z[j++] = (char)(((x.iJD+129600000)/86400000) % 7) + '0';
+          break;
+        }
+        case 'Y': {
+          sqlite3_snprintf(5,&z[j],"%04d",x.Y); j+=sqlite3Strlen30(&z[j]);
+          break;
+        }
         default:   z[j++] = '%'; break;
       }
     }

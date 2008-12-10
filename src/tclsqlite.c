@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.228 2008/10/09 14:45:26 drh Exp $
+** $Id: tclsqlite.c,v 1.229 2008/12/10 19:26:24 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -128,6 +128,19 @@ struct IncrblobChannel {
   IncrblobChannel *pNext;   /* Linked list of all open incrblob channels */
   IncrblobChannel *pPrev;   /* Linked list of all open incrblob channels */
 };
+
+#ifndef SQLITE_AMALGAMATION
+/*
+** Compute a string length that is limited to what can be stored in
+** lower 30 bits of a 32-bit signed integer.
+*/
+int sqlite3Strlen30(const char *z){
+  const char *z2 = z;
+  while( *z2 ){ z2++; }
+  return 0x3fffffff & (int)(z2 - z);
+}
+#endif
+
 
 #ifndef SQLITE_OMIT_INCRBLOB
 /*
@@ -384,7 +397,7 @@ static int safeToUseEvalObjv(Tcl_Interp *interp, Tcl_Obj *pCmd){
 static SqlFunc *findSqlFunc(SqliteDb *pDb, const char *zName){
   SqlFunc *p, *pNew;
   int i;
-  pNew = (SqlFunc*)Tcl_Alloc( sizeof(*pNew) + strlen(zName) + 1 );
+  pNew = (SqlFunc*)Tcl_Alloc( sizeof(*pNew) + sqlite3Strlen30(zName) + 1 );
   pNew->zName = (char*)&pNew[1];
   for(i=0; zName[i]; i++){ pNew->zName[i] = tolower(zName[i]); }
   pNew->zName[i] = 0;
@@ -1339,8 +1352,8 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     zConflict = Tcl_GetStringFromObj(objv[2], 0);
     zTable = Tcl_GetStringFromObj(objv[3], 0);
     zFile = Tcl_GetStringFromObj(objv[4], 0);
-    nSep = strlen(zSep);
-    nNull = strlen(zNull);
+    nSep = sqlite3Strlen30(zSep);
+    nNull = sqlite3Strlen30(zNull);
     if( nSep==0 ){
       Tcl_AppendResult(interp,"Error: non-null separator required for copy",0);
       return TCL_ERROR;
@@ -1360,7 +1373,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       Tcl_AppendResult(interp, "Error: no such table: ", zTable, 0);
       return TCL_ERROR;
     }
-    nByte = strlen(zSql);
+    nByte = sqlite3Strlen30(zSql);
     rc = sqlite3_prepare(pDb->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
@@ -1380,7 +1393,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     }
     sqlite3_snprintf(nByte+50, zSql, "INSERT OR %q INTO '%q' VALUES(?",
          zConflict, zTable);
-    j = strlen(zSql);
+    j = sqlite3Strlen30(zSql);
     for(i=1; i<nCol; i++){
       zSql[j++] = ',';
       zSql[j++] = '?';
@@ -1425,7 +1438,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       if( i+1!=nCol ){
         char *zErr;
-        int nErr = strlen(zFile) + 200;
+        int nErr = sqlite3Strlen30(zFile) + 200;
         zErr = malloc(nErr);
         if( zErr ){
           sqlite3_snprintf(nErr, zErr,
@@ -1439,7 +1452,9 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
       for(i=0; i<nCol; i++){
         /* check for null data, if so, bind as null */
-        if ((nNull>0 && strcmp(azCol[i], zNull)==0) || strlen(azCol[i])==0) {
+        if( (nNull>0 && strcmp(azCol[i], zNull)==0)
+          || sqlite3Strlen30(azCol[i])==0 
+        ){
           sqlite3_bind_null(pStmt, i+1);
         }else{
           sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
@@ -1580,7 +1595,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       ** which matches the next sequence of SQL.
       */
       pStmt = 0;
-      len = strlen(zSql);
+      len = sqlite3Strlen30(zSql);
       for(pPreStmt = pDb->stmtList; pPreStmt; pPreStmt=pPreStmt->pNext){
         int n = pPreStmt->nSql;
         if( len>=n 
@@ -1833,7 +1848,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
           pPreStmt->pStmt = pStmt;
           pPreStmt->nSql = len;
           pPreStmt->zSql = sqlite3_sql(pStmt);
-          assert( strlen(pPreStmt->zSql)==len );
+          assert( sqlite3Strlen30(pPreStmt->zSql)==len );
           assert( 0==memcmp(pPreStmt->zSql, zSql, len) );
         }
 
@@ -1894,7 +1909,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     int nArg = -1;
     if( objc==6 ){
       const char *z = Tcl_GetString(objv[3]);
-      int n = strlen(z);
+      int n = sqlite3Strlen30(z);
       if( n>2 && strncmp(z, "-argcount",n)==0 ){
         if( Tcl_GetIntFromObj(interp, objv[4], &nArg) ) return TCL_ERROR;
         if( nArg<0 ){

@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.206 2008/11/19 16:52:44 danielk1977 Exp $
+** $Id: func.c,v 1.207 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1253,7 +1253,8 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
 */
 static void setLikeOptFlag(sqlite3 *db, const char *zName, int flagVal){
   FuncDef *pDef;
-  pDef = sqlite3FindFunction(db, zName, strlen(zName), 2, SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, zName, sqlite3Strlen30(zName),
+                             2, SQLITE_UTF8, 0);
   if( pDef ){
     pDef->flags = flagVal;
   }

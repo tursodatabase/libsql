@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.41 2008/12/05 17:17:08 drh Exp $
+** $Id: mem2.c,v 1.42 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -363,7 +363,7 @@ void sqlite3MemdebugBacktraceCallback(void (*xBacktrace)(int, int, void **)){
 ** Set the title string for subsequent allocations.
 */
 void sqlite3MemdebugSettitle(const char *zTitle){
-  unsigned int n = strlen(zTitle) + 1;
+  unsigned int n = sqlite3Strlen30(zTitle) + 1;
   sqlite3_mutex_enter(mem.mutex);
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
   memcpy(mem.zTitle, zTitle, n);

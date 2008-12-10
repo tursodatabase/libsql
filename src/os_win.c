@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.141 2008/12/08 18:19:18 drh Exp $
+** $Id: os_win.c,v 1.142 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -685,7 +685,7 @@ static int winWrite(
   LONG upperBits = (offset>>32) & 0x7fffffff;
   LONG lowerBits = offset & 0xffffffff;
   DWORD rc;
-  DWORD wrote;
+  DWORD wrote = 0;
   winFile *pFile = (winFile*)id;
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_WRITE);
@@ -1149,11 +1149,11 @@ static int getTempname(int nBuf, char *zBuf){
     }
 #endif
   }
-  for(i=strlen(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
+  for(i=sqlite3Strlen30(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
   sqlite3_snprintf(nBuf-30, zBuf,
                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
-  j = strlen(zBuf);
+  j = sqlite3Strlen30(zBuf);
   sqlite3_randomness(20, &zBuf[j]);
   for(i=0; i<20; i++, j++){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
@@ -1350,7 +1350,7 @@ static int winDelete(
 ){
   int cnt = 0;
   DWORD rc;
-  DWORD error;
+  DWORD error = 0;
   void *zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
@@ -1393,7 +1393,7 @@ static int winAccess(
   int *pResOut               /* OUT: Result */
 ){
   DWORD attr;
-  int rc;
+  int rc = 0;
   void *zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;

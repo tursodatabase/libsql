@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.5 2008/11/19 16:52:44 danielk1977 Exp $
+** @(#) $Id: memjournal.c,v 1.6 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -99,7 +99,7 @@ static int memjrnlRead(
     zOut += nCopy;
     nRead -= iSpace;
     iChunkOffset = 0;
-  } while( nRead>=0 && (pChunk=pChunk->pNext) && nRead>0 );
+  } while( nRead>=0 && (pChunk=pChunk->pNext)!=0 && nRead>0 );
   p->readpoint.iOffset = iOfst+iAmt;
   p->readpoint.pChunk = pChunk;
 

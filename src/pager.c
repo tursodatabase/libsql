@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.511 2008/12/10 16:45:51 drh Exp $
+** @(#) $Id: pager.c,v 1.512 2008/12/10 19:26:24 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -815,7 +815,7 @@ static int writeMasterJournal(Pager *pPager, const char *zMaster){
   if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY ) return SQLITE_OK;
   pPager->setMaster = 1;
 
-  len = strlen(zMaster);
+  len = sqlite3Strlen30(zMaster);
   for(i=0; i<len; i++){
     cksum += zMaster[i];
   }
@@ -1287,7 +1287,7 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
           goto delmaster_out;
         }
       }
-      zJournal += (strlen(zJournal)+1);
+      zJournal += (sqlite3Strlen30(zJournal)+1);
     }
   }
   
@@ -1795,7 +1795,7 @@ int sqlite3PagerOpen(
       sqlite3_free(zPathname);
       return rc;
     }
-    nPathname = strlen(zPathname);
+    nPathname = sqlite3Strlen30(zPathname);
   }
 
   /* Allocate memory for the pager structure */
@@ -1903,7 +1903,8 @@ int sqlite3PagerOpen(
 
   /* Fill in Pager.zDirectory[] */
   memcpy(pPager->zDirectory, pPager->zFilename, nPathname+1);
-  for(i=strlen(pPager->zDirectory); i>0 && pPager->zDirectory[i-1]!='/'; i--){}
+  for(i=sqlite3Strlen30(pPager->zDirectory); 
+      i>0 && pPager->zDirectory[i-1]!='/'; i--){}
   if( i>0 ) pPager->zDirectory[i-1] = 0;
 
   /* Fill in Pager.zJournal[] */
@@ -2504,8 +2505,8 @@ static int pagerStress(void *p, PgHdr *pPg){
 static int hasHotJournal(Pager *pPager, int *pExists){
   sqlite3_vfs *pVfs = pPager->pVfs;
   int rc = SQLITE_OK;
-  int exists;
-  int locked;
+  int exists = 0;
+  int locked = 0;
   assert( pPager!=0 );
   assert( pPager->useJournal );
   assert( pPager->fd->pMethods );

@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.230 2008/12/08 18:19:18 drh Exp $
+** $Id: os_unix.c,v 1.231 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -483,7 +483,7 @@ static struct vxworksFileId *vxworksFindFileId(const char *zAbsoluteName){
   int n;                              /* Length of zAbsoluteName string */
 
   assert( zAbsoluteName[0]=='/' );
-  n = strlen(zAbsoluteName);
+  n = (int)strlen(zAbsoluteName);
   pNew = sqlite3_malloc( sizeof(*pNew) + (n+1) );
   if( pNew==0 ) return 0;
   pNew->zCanonicalName = (char*)&pNew[1];
@@ -3307,7 +3307,7 @@ static int fillInUnixFile(
     */
     char *zLockFile;
     int nFilename;
-    nFilename = strlen(zFilename) + 6;
+    nFilename = (int)strlen(zFilename) + 6;
     zLockFile = (char *)sqlite3_malloc(nFilename);
     if( zLockFile==0 ){
       rc = SQLITE_NOMEM;
@@ -3375,7 +3375,7 @@ static int openDirectory(const char *zFilename, int *pFd){
   char zDirname[MAX_PATHNAME+1];
 
   sqlite3_snprintf(MAX_PATHNAME, zDirname, "%s", zFilename);
-  for(ii=strlen(zDirname); ii>=0 && zDirname[ii]!='/'; ii--);
+  for(ii=(int)strlen(zDirname); ii>=0 && zDirname[ii]!='/'; ii--);
   if( ii>0 ){
     zDirname[ii] = '\0';
     fd = open(zDirname, O_RDONLY|O_BINARY, 0);
@@ -3441,7 +3441,7 @@ static int getTempname(int nBuf, char *zBuf){
 
   do{
     sqlite3_snprintf(nBuf-17, zBuf, "%s/"SQLITE_TEMP_FILE_PREFIX, zDir);
-    j = strlen(zBuf);
+    j = (int)strlen(zBuf);
     sqlite3_randomness(15, &zBuf[j]);
     for(i=0; i<15; i++, j++){
       zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
@@ -3743,7 +3743,7 @@ static int unixFullPathname(
     if( getcwd(zOut, nOut-1)==0 ){
       return SQLITE_CANTOPEN;
     }
-    nCwd = strlen(zOut);
+    nCwd = (int)strlen(zOut);
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
   }
   return SQLITE_OK;
@@ -4280,7 +4280,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   }
   
   /* transform the db path to a unique cache name */
-  dbLen = strlen(dbPath);
+  dbLen = (int)strlen(dbPath);
   for( i=0; i<dbLen && (i+len+7)<maxLen; i++){
     char c = dbPath[i];
     lPath[i+len] = (c=='/')?'_':c;
@@ -4516,7 +4516,7 @@ static int proxyReleaseConch(unixFile *pFile){
 */
 static int proxyCreateConchPathname(char *dbPath, char **pConchPath){
   int i;                        /* Loop counter */
-  int len = strlen(dbPath);     /* Length of database filename - dbPath */
+  int len = (int)strlen(dbPath); /* Length of database filename - dbPath */
   char *conchPath;              /* buffer in which to construct conch name */
 
   /* Allocate space for the conch filename and initialize the name to
@@ -4542,7 +4542,7 @@ static int proxyCreateConchPathname(char *dbPath, char **pConchPath){
 
   /* append the "-conch" suffix to the file */
   memcpy(&conchPath[i+1], "-conch", 7);
-  assert( strlen(conchPath) == len+7 );
+  assert( (int)strlen(conchPath) == len+7 );
 
   return SQLITE_OK;
 }
@@ -4592,7 +4592,7 @@ static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath){
   if( pFile->pMethod == &afpIoMethods ){
     /* afp style keeps a reference to the db path in the filePath field 
     ** of the struct */
-    assert( strlen((char*)pFile->lockingContext)<=MAXPATHLEN );
+    assert( (int)strlen((char*)pFile->lockingContext)<=MAXPATHLEN );
     strcpy(dbPath, ((afpLockingContext *)pFile->lockingContext)->dbPath);
   }else
 #endif

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.425 2008/12/10 17:20:01 drh Exp $
+** $Id: vdbeaux.c,v 1.426 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -576,7 +576,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = (signed char)n;
   }else{
-    if( n==0 ) n = (int)strlen(zP4);
+    if( n==0 ) n = sqlite3Strlen30(zP4);
     pOp->p4.z = sqlite3DbStrNDup(p->db, zP4, n);
     pOp->p4type = P4_DYNAMIC;
   }
@@ -640,11 +640,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
       int i, j;
       KeyInfo *pKeyInfo = pOp->p4.pKeyInfo;
       sqlite3_snprintf(nTemp, zTemp, "keyinfo(%d", pKeyInfo->nField);
-      i = (int)strlen(zTemp);
+      i = sqlite3Strlen30(zTemp);
       for(j=0; j<pKeyInfo->nField; j++){
         CollSeq *pColl = pKeyInfo->aColl[j];
         if( pColl ){
-          int n = (int)strlen(pColl->zName);
+          int n = sqlite3Strlen30(pColl->zName);
           if( i+n>nTemp-6 ){
             memcpy(&zTemp[i],",...",4);
             break;
@@ -878,7 +878,7 @@ int sqlite3VdbeList(
       pMem->flags = MEM_Static|MEM_Str|MEM_Term;
       pMem->z = (char*)sqlite3OpcodeName(pOp->opcode);  /* Opcode */
       assert( pMem->z!=0 );
-      pMem->n = (int)strlen(pMem->z);
+      pMem->n = sqlite3Strlen30(pMem->z);
       pMem->type = SQLITE_TEXT;
       pMem->enc = SQLITE_UTF8;
       pMem++;
@@ -911,7 +911,7 @@ int sqlite3VdbeList(
       sqlite3VdbeMemSetStr(pMem, z, -1, SQLITE_UTF8, 0);
     }else{
       assert( pMem->z!=0 );
-      pMem->n = (int)strlen(pMem->z);
+      pMem->n = sqlite3Strlen30(pMem->z);
       pMem->enc = SQLITE_UTF8;
     }
     pMem->type = SQLITE_TEXT;
@@ -933,7 +933,7 @@ int sqlite3VdbeList(
       if( pOp->zComment ){
         pMem->flags = MEM_Str|MEM_Term;
         pMem->z = pOp->zComment;
-        pMem->n = (int)strlen(pMem->z);
+        pMem->n = sqlite3Strlen30(pMem->z);
         pMem->enc = SQLITE_UTF8;
         pMem->type = SQLITE_TEXT;
       }else
@@ -1293,7 +1293,9 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
   ** that case we do not support atomic multi-file commits, so use the 
   ** simple case then too.
   */
-  if( 0==strlen(sqlite3BtreeGetFilename(db->aDb[0].pBt)) || nTrans<=1 ){
+  if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(db->aDb[0].pBt))
+   || nTrans<=1
+  ){
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
       if( pBt ){
@@ -1369,8 +1371,8 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
           needSync = 1;
         }
-        rc = sqlite3OsWrite(pMaster, zFile, (int)strlen(zFile)+1, offset);
-        offset += strlen(zFile)+1;
+        rc = sqlite3OsWrite(pMaster, zFile, sqlite3Strlen30(zFile)+1, offset);
+        offset += sqlite3Strlen30(zFile)+1;
         if( rc!=SQLITE_OK ){
           sqlite3OsCloseFree(pMaster);
           sqlite3OsDelete(pVfs, zMaster, 0);

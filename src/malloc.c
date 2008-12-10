@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.49 2008/12/05 15:24:17 drh Exp $
+** $Id: malloc.c,v 1.50 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -724,7 +724,7 @@ char *sqlite3DbStrDup(sqlite3 *db, const char *z){
   if( z==0 ){
     return 0;
   }
-  n = strlen(z)+1;
+  n = (db ? sqlite3Strlen(db, z) : sqlite3Strlen30(z))+1;
   assert( (n&0x7fffffff)==n );
   zNew = sqlite3DbMallocRaw(db, (int)n);
   if( zNew ){

@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.131 2008/12/09 03:55:14 drh Exp $
+** $Id: trigger.c,v 1.132 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -119,7 +119,7 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
   if( sqlite3HashFind(&(db->aDb[iDb].pSchema->trigHash),
-                      zName, (int)strlen(zName)) ){
+                      zName, sqlite3Strlen30(zName)) ){
     if( !noErr ){
       sqlite3ErrorMsg(pParse, "trigger %T already exists", pName);
     }
@@ -256,13 +256,13 @@ void sqlite3FinishTrigger(
     Table *pTab;
     Trigger *pDel;
     pDel = sqlite3HashInsert(&db->aDb[iDb].pSchema->trigHash, 
-                     pTrig->name, (int)strlen(pTrig->name), pTrig);
+                     pTrig->name, sqlite3Strlen30(pTrig->name), pTrig);
     if( pDel ){
       assert( pDel==pTrig );
       db->mallocFailed = 1;
       goto triggerfinish_cleanup;
     }
-    n = (int)strlen(pTrig->table) + 1;
+    n = sqlite3Strlen30(pTrig->table) + 1;
     pTab = sqlite3HashFind(&pTrig->pTabSchema->tblHash, pTrig->table, n);
     assert( pTab!=0 );
     pTrig->pNext = pTab->pTrigger;
@@ -465,7 +465,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
   assert( pName->nSrc==1 );
   zDb = pName->a[0].zDatabase;
   zName = pName->a[0].zName;
-  nName = strlen(zName);
+  nName = sqlite3Strlen30(zName);
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     if( zDb && sqlite3StrICmp(db->aDb[j].zName, zDb) ) continue;
@@ -489,7 +489,7 @@ drop_trigger_cleanup:
 ** is set on.
 */
 static Table *tableOfTrigger(Trigger *pTrigger){
-  int n = (int)strlen(pTrigger->table) + 1;
+  int n = sqlite3Strlen30(pTrigger->table) + 1;
   return sqlite3HashFind(&pTrigger->pTabSchema->tblHash, pTrigger->table, n);
 }
 
@@ -554,7 +554,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
 */
 void sqlite3UnlinkAndDeleteTrigger(sqlite3 *db, int iDb, const char *zName){
   Trigger *pTrigger;
-  int nName = (int)strlen(zName);
+  int nName = sqlite3Strlen30(zName);
   pTrigger = sqlite3HashInsert(&(db->aDb[iDb].pSchema->trigHash),
                                zName, nName, 0);
   if( pTrigger ){
@@ -645,7 +645,7 @@ static SrcList *targetSrcList(
   if( iDb==0 || iDb>=2 ){
     assert( iDb<pParse->db->nDb );
     sDb.z = (u8*)pParse->db->aDb[iDb].zName;
-    sDb.n = (int)strlen((char*)sDb.z);
+    sDb.n = sqlite3Strlen30((char*)sDb.z);
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &sDb, &pStep->target);
   } else {
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &pStep->target, 0);

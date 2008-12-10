@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.80 2008/12/10 18:03:47 drh Exp $
+** $Id: vtab.c,v 1.81 2008/12/10 19:26:24 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -27,7 +27,7 @@ static int createModule(
   Module *pMod;
 
   sqlite3_mutex_enter(db->mutex);
-  nName = (int)strlen(zName);
+  nName = sqlite3Strlen30(zName);
   pMod = (Module *)sqlite3DbMallocRaw(db, sizeof(Module) + nName + 1);
   if( pMod ){
     Module *pDel;
@@ -241,7 +241,8 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
   db = pParse->db;
   if( pTab->nModuleArg<1 ) return;
   zModule = pTab->azModuleArg[0];
-  pMod = (Module*)sqlite3HashFind(&db->aModule, zModule, (int)strlen(zModule));
+  pMod = (Module*)sqlite3HashFind(&db->aModule, zModule,
+                                  sqlite3Strlen30(zModule));
   pTab->pMod = pMod;
   
   /* If the CREATE VIRTUAL TABLE statement is being entered for the
@@ -289,7 +290,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     zWhere = sqlite3MPrintf(db, "name='%q'", pTab->zName);
     sqlite3VdbeAddOp4(v, OP_ParseSchema, iDb, 1, 0, zWhere, P4_DYNAMIC);
     sqlite3VdbeAddOp4(v, OP_VCreate, iDb, 0, 0, 
-                         pTab->zName, (int)strlen(pTab->zName) + 1);
+                         pTab->zName, sqlite3Strlen30(pTab->zName) + 1);
   }
 
   /* If we are rereading the sqlite_master table create the in-memory
@@ -300,7 +301,7 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
     Table *pOld;
     Schema *pSchema = pTab->pSchema;
     const char *zName = pTab->zName;
-    int nName = (int)strlen(zName) + 1;
+    int nName = sqlite3Strlen30(zName) + 1;
     pOld = sqlite3HashInsert(&pSchema->tblHash, zName, nName, pTab);
     if( pOld ){
       db->mallocFailed = 1;
@@ -405,7 +406,7 @@ static int vtabCallConstructor(
       int nType;
       int i = 0;
       if( !zType ) continue;
-      nType = (int)strlen(zType);
+      nType = sqlite3Strlen30(zType);
       if( sqlite3StrNICmp("hidden", zType, 6) || (zType[6] && zType[6]!=' ') ){
         for(i=0; i<nType; i++){
           if( (0==sqlite3StrNICmp(" hidden", &zType[i], 7))
@@ -804,13 +805,14 @@ FuncDef *sqlite3VtabOverloadFunction(
 
   /* Create a new ephemeral function definition for the overloaded
   ** function */
-  pNew = sqlite3DbMallocZero(db, sizeof(*pNew) + (int)strlen(pDef->zName) );
+  pNew = sqlite3DbMallocZero(db, sizeof(*pNew)
+                             + sqlite3Strlen30(pDef->zName) );
   if( pNew==0 ){
     return pDef;
   }
   *pNew = *pDef;
   pNew->zName = (char *)&pNew[1];
-  memcpy(pNew->zName, pDef->zName, strlen(pDef->zName)+1);
+  memcpy(pNew->zName, pDef->zName, sqlite3Strlen30(pDef->zName)+1);
   pNew->xFunc = xFunc;
   pNew->pUserData = pArg;
   pNew->flags |= SQLITE_FUNC_EPHEM;

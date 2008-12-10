@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to OS/2.
 **
-** $Id: os_os2.c,v 1.62 2008/11/26 20:03:21 pweilbacher Exp $
+** $Id: os_os2.c,v 1.63 2008/12/10 19:26:24 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -694,7 +694,7 @@ static int getTempname(int nBuf, char *zBuf ){
   /* Strip off a trailing slashes or backslashes, otherwise we would get *
    * multiple (back)slashes which causes DosOpen() to fail.              *
    * Trailing spaces are not allowed, either.                            */
-  j = strlen(zTempPath);
+  j = sqlite3Strlen30(zTempPath);
   while( j > 0 && ( zTempPath[j-1] == '\\' || zTempPath[j-1] == '/'
                     || zTempPath[j-1] == ' ' ) ){
     j--;
@@ -709,7 +709,7 @@ static int getTempname(int nBuf, char *zBuf ){
     sqlite3_snprintf( nBuf-30, zBuf,
                       "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath );
   }
-  j = strlen( zBuf );
+  j = sqlite3Strlen30( zBuf );
   sqlite3_randomness( 20, &zBuf[j] );
   for( i = 0; i < 20; i++, j++ ){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];

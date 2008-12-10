@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.14 2008/12/10 18:03:46 drh Exp $
+** $Id: resolve.c,v 1.15 2008/12/10 19:26:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -69,7 +69,7 @@ static void resolveAlias(
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
     if( pEList->a[iCol].iAlias==0 ){
-      pEList->a[iCol].iAlias = ++pParse->nAlias;
+      pEList->a[iCol].iAlias = (u16)(++pParse->nAlias);
     }
     pDup->iTable = pEList->a[iCol].iAlias;
   }
@@ -483,7 +483,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       int nId;                    /* Number of characters in function name */
       const char *zId;            /* The function name. */
       FuncDef *pDef;              /* Information about the function */
-      int enc = ENC(pParse->db);  /* The database encoding */
+      u8 enc = ENC(pParse->db);   /* The database encoding */
 
       zId = (char*)pExpr->token.z;
       nId = pExpr->token.n;
@@ -756,7 +756,7 @@ static int resolveCompoundOrderBy(
         pE->pColl = pColl;
         pE->flags |= EP_IntValue | flags;
         pE->iTable = iCol;
-        pItem->iCol = iCol;
+        pItem->iCol = (u16)iCol;
         pItem->done = 1;
       }else{
         moreToDo = 1;
@@ -860,7 +860,7 @@ static int resolveOrderGroupBy(
       ** a copy of the iCol-th result-set column.  The subsequent call to
       ** sqlite3ResolveOrderGroupBy() will convert the expression to a
       ** copy of the iCol-th result-set expression. */
-      pItem->iCol = iCol;
+      pItem->iCol = (u16)iCol;
       continue;
     }
     if( sqlite3ExprIsInteger(pE, &iCol) ){
@@ -871,7 +871,7 @@ static int resolveOrderGroupBy(
         resolveOutOfRangeError(pParse, zType, i+1, nResult);
         return 1;
       }
-      pItem->iCol = iCol;
+      pItem->iCol = (u16)iCol;
       continue;
     }
 
