@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.800 2008/12/11 19:50:19 drh Exp $
+** $Id: vdbe.c,v 1.801 2008/12/11 20:03:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1466,9 +1466,7 @@ case OP_ForceInt: {            /* jump, in1 */
   }else{
     assert( pIn1->flags & MEM_Real );
     v = (sqlite3_int64)pIn1->r;
-    if( pIn1->r>(double)v ){
-      incrV = 1;
-    }
+    incrV = pIn1->r>(double)v ?1:0;
   }
   if( incrV ){
     if( v==LARGEST_INT64 ){
