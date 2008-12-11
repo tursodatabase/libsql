@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.194 2008/12/10 22:30:25 shane Exp $
+** $Id: shell.c,v 1.195 2008/12/11 02:58:27 shane Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1007,7 +1007,8 @@ static void open_db(struct callback_data *p){
 **    \\    -> backslash
 */
 static void resolve_backslashes(char *z){
-  int i, j, c;
+  int i, j;
+  char c;
   for(i=j=0; (c = z[i])!=0; i++, j++){
     if( c=='\\' ){
       c = z[++i];
@@ -1041,7 +1042,7 @@ static int booleanValue(char *zArg){
   int val = atoi(zArg);
   int j;
   for(j=0; zArg[j]; j++){
-    zArg[j] = tolower(zArg[j]);
+    zArg[j] = (char)tolower(zArg[j]);
   }
   if( strcmp(zArg,"on")==0 ){
     val = 1;
@@ -1470,7 +1471,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     data.mode = MODE_Semi;
     if( nArg>1 ){
       int i;
-      for(i=0; azArg[1][i]; i++) azArg[1][i] = tolower(azArg[1][i]);
+      for(i=0; azArg[1][i]; i++) azArg[1][i] = (char)tolower(azArg[1][i]);
       if( strcmp(azArg[1],"sqlite_master")==0 ){
         char *new_argv[2], *new_colv[2];
         new_argv[0] = "CREATE TABLE sqlite_master (\n"

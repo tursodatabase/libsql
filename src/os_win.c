@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.144 2008/12/10 22:30:25 shane Exp $
+** $Id: os_win.c,v 1.145 2008/12/11 02:58:27 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -749,7 +749,9 @@ static int winSync(sqlite3_file *id, int flags){
   UNUSED_PARAMETER(id);
 #endif
   OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
-#ifdef SQLITE_TEST
+#ifndef SQLITE_TEST
+  UNUSED_PARAMETER(flags);
+#else
   if( flags & SQLITE_SYNC_FULL ){
     sqlite3_fullsync_count++;
   }
