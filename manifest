@@ -1,5 +1,5 @@
-C More\scode\sobfuscation\sdesigned\sto\sthwart\scompiler\swarning\smessages.\s(CVS\s6015)
-D 2008-12-10T23:04:13
+C Initialize\sthe\syyzerominor\sconstant\sgenerated\sby\slemon.\s(CVS\s6016)
+D 2008-12-11T02:20:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -641,8 +641,8 @@ F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README 080ca2269f727fcf14c8e76d52e85d157e3a8e9a
 F tool/genfkey.c e1b9c93da828db10c1109c7b4fa611aec8adc407
 F tool/genfkey.test 182829596fb15785b94b2493c5f735b847d91076
-F tool/lemon.c 9f21067ff5f0ba1780d39a069da65d54789ae15b
-F tool/lempar.c 8b91df351eb612c1d30b6bbd1224c2153b5dd941
+F tool/lemon.c 0f65442d1c99a865525658a47ddf292f4ac2ec54
+F tool/lempar.c c9151d2a4adf418fd9c3970dbb923b7a188b37c2
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 50352950df5d5a8b7da8c18b6667b8242a359f7d
-R 08b81fae14acbda8dbae9057ab66ca39
+P 0a1888a7e6fb56e56d8078e7792379d908ba7a70
+R e2742c33458542496f07a4eaa7dd69d5
 U drh
-Z fda37b4935fd54d9a340ba2d7b6cddb0
+Z bde6538d569e22f0cd048e11da7ff49f

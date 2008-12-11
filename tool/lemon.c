@@ -3468,6 +3468,7 @@ int mhflag;                 /* True if generating makeheaders output */
     lemp->tokentype?lemp->tokentype:"void*");  lineno++;
   if( mhflag ){ fprintf(out,"#endif\n"); lineno++; }
   fprintf(out,"typedef union {\n"); lineno++;
+  fprintf(out,"  int yyinit;\n"); lineno++;
   fprintf(out,"  %sTOKENTYPE yy0;\n",name); lineno++;
   for(i=0; i<arraysize; i++){
     if( types[i]==0 ) continue;
