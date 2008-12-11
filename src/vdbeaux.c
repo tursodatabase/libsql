@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.426 2008/12/10 19:26:24 drh Exp $
+** $Id: vdbeaux.c,v 1.427 2008/12/11 16:17:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2384,6 +2384,9 @@ int sqlite3VdbeRecordCompare(
 ** pCur points at an index entry created using the OP_MakeRecord opcode.
 ** Read the rowid (the last field in the record) and store it in *rowid.
 ** Return SQLITE_OK if everything works, or an error code otherwise.
+**
+** pCur might be pointing to text obtained from a corrupt database file.
+** So the content cannot be trusted.  Do appropriate checks on the content.
 */
 int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   i64 nCellKey = 0;
@@ -2393,10 +2396,14 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   u32 lenRowid;     /* Size of the rowid */
   Mem m, v;
 
+  /* Get the size of the index entry.  Only indices entries of less
+  ** than 2GiB are support - anything large must be database corruption */
   sqlite3BtreeKeySize(pCur, &nCellKey);
-  if( nCellKey<=0 || nCellKey>0x7fffffff ){
+  if( unlikely(nCellKey<=0 || nCellKey>0x7fffffff) ){
     return SQLITE_CORRUPT_BKPT;
   }
+
+  /* Read in the complete content of the index entry */
   m.flags = 0;
   m.db = 0;
   m.zMalloc = 0;
@@ -2404,13 +2411,47 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   if( rc ){
     return rc;
   }
+
+  /* The index entry must begin with a header size */
   (void)getVarint32((u8*)m.z, szHdr);
+  testcase( szHdr==2 );
+  testcase( szHdr==m.n );
+  if( unlikely(szHdr<2 || szHdr>m.n) ){
+    goto idx_rowid_corruption;
+  }
+
+  /* The last field of the index should be an integer - the ROWID.
+  ** Verify that the last entry really is an integer. */
   (void)getVarint32((u8*)&m.z[szHdr-1], typeRowid);
+  testcase( typeRowid==1 );
+  testcase( typeRowid==2 );
+  testcase( typeRowid==3 );
+  testcase( typeRowid==4 );
+  testcase( typeRowid==5 );
+  testcase( typeRowid==6 );
+  testcase( typeRowid==8 );
+  testcase( typeRowid==9 );
+  if( unlikely(typeRowid<1 || typeRowid>9 || typeRowid==7) ){
+    goto idx_rowid_corruption;
+  }
   lenRowid = sqlite3VdbeSerialTypeLen(typeRowid);
+  testcase( m.n-lenRowid==szHdr );
+  if( unlikely(m.n-lenRowid<szHdr) ){
+    goto idx_rowid_corruption;
+  }
+
+  /* Fetch the integer off the end of the index record */
   sqlite3VdbeSerialGet((u8*)&m.z[m.n-lenRowid], typeRowid, &v);
   *rowid = v.u.i;
   sqlite3VdbeMemRelease(&m);
   return SQLITE_OK;
+
+  /* Jump here if database corruption is detected after m has been
+  ** allocated.  Free the m object and return SQLITE_CORRUPT. */
+idx_rowid_corruption:
+  testcase( m.zMalloc!=0 );
+  sqlite3VdbeMemRelease(&m);
+  return SQLITE_CORRUPT_BKPT;
 }
 
 /*

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.798 2008/12/11 13:05:00 drh Exp $
+** $Id: vdbe.c,v 1.799 2008/12/11 16:17:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4100,7 +4100,7 @@ case OP_Clear: {
 */
 case OP_CreateIndex:            /* out2-prerelease */
 case OP_CreateTable: {          /* out2-prerelease */
-  int pgno;
+  int pgno = 0;
   int flags;
   Db *pDb;
   assert( pOp->p1>=0 && pOp->p1<db->nDb );
@@ -4114,10 +4114,8 @@ case OP_CreateTable: {          /* out2-prerelease */
     flags = BTREE_ZERODATA;
   }
   rc = sqlite3BtreeCreateTable(pDb->pBt, &pgno, flags);
-  if( rc==SQLITE_OK ){
-    pOut->u.i = pgno;
-    MemSetTypeFlag(pOut, MEM_Int);
-  }
+  pOut->u.i = pgno;
+  MemSetTypeFlag(pOut, MEM_Int);
   break;
 }
 
