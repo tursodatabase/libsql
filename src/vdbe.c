@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.799 2008/12/11 16:17:04 drh Exp $
+** $Id: vdbe.c,v 1.800 2008/12/11 19:50:19 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1441,26 +1441,41 @@ case OP_AddImm: {            /* in1 */
 **
 ** Convert value in register P1 into an integer.  If the value 
 ** in P1 is not numeric (meaning that is is a NULL or a string that
-** does not look like an integer or floating point number) then
-** jump to P2.  If the value in P1 is numeric then
-** convert it into the least integer that is greater than or equal to its
-** current value if P3==0, or to the least integer that is strictly
-** greater than its current value if P3==1.
+** does not look like an integer) then jump to P2.
+**
+** If the value in P1 is numeric then convert it into the smallest
+** integer that is greater than or equal to its current value if P3==0, 
+** or to the smallest integer that is strictly greater than its current
+** value if P3==1.
+**
+** If the conversion described in the previous paragraph causes the
+** value to exceed the largest possible integer value 
+** (9223372036854775807), then jump to P2.
 */
 case OP_ForceInt: {            /* jump, in1 */
-  i64 v;
+  i64 v;                       /* The value to store in P1 */
+  int incrV = 0;               /* True to cause v to increment */
   applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
   if( (pIn1->flags & (MEM_Int|MEM_Real))==0 ){
     pc = pOp->p2 - 1;
     break;
   }
+  incrV = pOp->p3 ?1:0;
   if( pIn1->flags & MEM_Int ){
-    v = pIn1->u.i + (pOp->p3!=0);
+    v = pIn1->u.i;
   }else{
     assert( pIn1->flags & MEM_Real );
     v = (sqlite3_int64)pIn1->r;
-    if( pIn1->r>(double)v ) v++;
-    if( pOp->p3 && pIn1->r==(double)v ) v++;
+    if( pIn1->r>(double)v ){
+      incrV = 1;
+    }
+  }
+  if( incrV ){
+    if( v==LARGEST_INT64 ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+    v++;
   }
   pIn1->u.i = v;
   MemSetTypeFlag(pIn1, MEM_Int);

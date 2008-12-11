@@ -1,5 +1,5 @@
-C Guard\sagainst\sattacks\sfrom\sdeliberately\scorrupted\sdatabase\sfiles.\s(CVS\s6021)
-D 2008-12-11T16:17:04
+C Make\ssure\sthe\sOP_ForceInt\svdbe\sopcode\sdoes\snot\scause\sa\srowid\soverflow.\nTicket\s#3536.\s\sTests\sto\sverify\sthis\schange\swill\sbe\schecked\sin\sseparately.\s(CVS\s6022)
+D 2008-12-11T19:50:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -194,7 +194,7 @@ F src/update.c 080889d241e4dcd1c545c8051eb6de86f4939295
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c ea62608f66f33a7e8322de83024ae37c415c0c7f
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c 46eed1fc5f24500d551c6aac960f812c6145dcee
+F src/vdbe.c 78e24995434444af5e70954bc2a3c11b7df8ce09
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h e6e80a99ce634983b7cc2498843b4d2e5540900a
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7c367515f86c36b7ec8603754b20f1c7c4a0690a
-R 444a7244e9f7d54c88f06e95ece4e75e
+P da2ec96422b1f9de2e47d3b8c19ed20579742a9b
+R c7952d9cca38bcb28b7004a2d09f78ae
 U drh
-Z 5d08690a9b2d2b8626ebdbffda6c718a
+Z e33e580283d52f7544ecf69dc34e2327
