@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.231 2008/12/10 19:26:24 drh Exp $
+** $Id: os_unix.c,v 1.232 2008/12/11 02:56:07 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2936,7 +2936,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   return SQLITE_OK;
 }
 
-#if SQLITE_ENABLE_LOCKING_MODE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
 /*
 ** Handler for proxy-locking file-control verbs.  Defined below in the
 ** proxying locking division.
@@ -3451,7 +3451,7 @@ static int getTempname(int nBuf, char *zBuf){
   return SQLITE_OK;
 }
 
-#if SQLITE_ENABLE_LOCKING_MODE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
 /*
 ** Routine to transform a unixFile into a proxy-locking unixFile.
 ** Implementation in the proxy-lock division, but used by unixOpen()

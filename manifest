@@ -1,5 +1,5 @@
-C Initialize\sthe\syyzerominor\sconstant\sgenerated\sby\slemon.\s(CVS\s6016)
-D 2008-12-11T02:20:44
+C Fix\sthe\sTCL\stest\sharness\sso\sthat\sit\scompiles\sand\sruns\son\sOSX\swith\nSQLITE_ENABLE_LOCKING_STYLE.\s(CVS\s6017)
+D 2008-12-11T02:56:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h 4ee25a35c00e75a569cecb5080be299b0c3e208e
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 970e4a98a2d026cbeb2464694e4d13e079102b2f
+F src/os_unix.c 96b4a6e87335ba943455740f311b4dfb63f26756
 F src/os_win.c d42d591be8669de0ecf3a0433108d31a8eadcbb3
 F src/pager.c 7e8c2b7b7131031cfa88ab0fdbb2de047f5be934
 F src/pager.h 37f5173612b7803f44656c16e80df3280234bb18
@@ -160,7 +160,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 23afb60549af943e135ded441a631f4745be6040
-F src/test1.c 30986773b10d75904f21bae5c3e8e8b9f20fa479
+F src/test1.c 9c0502c3627162f969099e57932782057d9139b6
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -664,7 +664,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0a1888a7e6fb56e56d8078e7792379d908ba7a70
-R e2742c33458542496f07a4eaa7dd69d5
+P 76c8f6ba87f333f15444ba5444bc675ec4cfd89e
+R 531940807c37b4def476c14a49838111
 U drh
-Z bde6538d569e22f0cd048e11da7ff49f
+Z fa3c07b59ee479e86fa6ede14fabbca0
