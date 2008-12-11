@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.797 2008/12/11 02:58:27 shane Exp $
+** $Id: vdbe.c,v 1.798 2008/12/11 13:05:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3207,7 +3207,7 @@ case OP_NotExists: {        /* jump, in3 */
   assert( i>=0 && i<p->nCursor );
   assert( p->apCsr[i]!=0 );
   if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
-    int res;
+    int res = 0;
     u64 iKey;
     assert( pIn3->flags & MEM_Int );
     assert( p->apCsr[i]->isTable );
@@ -3217,11 +3217,6 @@ case OP_NotExists: {        /* jump, in3 */
     pC->rowidIsValid = res==0 ?1:0;
     pC->nullRow = 0;
     pC->cacheStatus = CACHE_STALE;
-    /* res might be uninitialized if rc!=SQLITE_OK.  But if rc!=SQLITE_OK
-    ** processing is about to abort so we really do not care whether or not
-    ** the following jump is taken.  (In other words, do not stress over
-    ** the error that valgrind sometimes shows on the next statement when
-    ** running ioerr.test and similar failure-recovery test scripts.) */
     if( res!=0 ){
       pc = pOp->p2 - 1;
       assert( pC->rowidIsValid==0 );
