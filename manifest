@@ -1,5 +1,5 @@
-C Rework\sthe\srowid\slookup\slogic\sin\sthe\squery\soptimizer\sto\sfix\svarious\r\nboundary\svalue\sproblems.\s\sTicket\s#3536.\s\sRenamed\sthe\sOP_MoveXX\sopcodes\r\nto\sOP_SeekXX.\s(CVS\s6024)
-D 2008-12-12T17:56:16
+C Add\smany\snew\sinteger\sboundary\svalue\stests.\s\sTicket\s#3536.\s(CVS\s6025)
+D 2008-12-12T19:19:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -235,7 +235,14 @@ F test/bind.test 1134441f1ea47abd1c740090435a6ecbe9ceb263
 F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
 F test/bitvec.test ecea9aa315f36991e56e326701279b7775cb2bef
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
+F test/boundary1.tcl c2994ba15eaae40e7366f87f3e1ca4098f21e41b
 F test/boundary1.test 7481c191f25082a2a25c9b01ee8d04139177cfc5
+F test/boundary2.tcl c19d4b17c65542af0a6d7717a342cc02f793dbdd
+F test/boundary2.test 49cc59ca36756f59197b52bb6dc1b4c39c13b785
+F test/boundary3.tcl 9563229bdceb62e54139ae1d7b2a1caaf7f78cd0
+F test/boundary3.test 092bb029aca7aeadd9540833cf6fde09897ca04c
+F test/boundary4.tcl 10ddfa976919d78bb37cb3fd076df26802086970
+F test/boundary4.test 6cc878c9f31852b5962b1ed4ecae3726a5ae681c
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 36f87803c811b5986dd31eb5492cb704552776b4
@@ -665,7 +672,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f6c50f357c302907a5398c551a5c596f7d305031
-R 5363a9d2ee8fa1a51a6491d7cbd42e82
+P e545490a2828f7f703172dda6d2b9f3342dc134a
+R 3eb6d62182624e9e9717b054edee6df9
 U drh
-Z 19a314fdfac85425d684fa034d87f9b6
+Z 72893cf0f7e07ad0497f5c9044dc6440
