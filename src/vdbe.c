@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.801 2008/12/11 20:03:22 drh Exp $
+** $Id: vdbe.c,v 1.802 2008/12/12 17:56:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -51,7 +51,7 @@
 
 /*
 ** The following global variable is incremented every time a cursor
-** moves, either by the OP_MoveXX, OP_Next, or OP_Prev opcodes.  The test
+** moves, either by the OP_SeekXX, OP_Next, or OP_Prev opcodes.  The test
 ** procedures use this information to make sure that indices are
 ** working correctly.  This variable has no function other than to
 ** help verify the correct operation of the library.
@@ -1434,49 +1434,6 @@ case OP_ShiftRight: {           /* same as TK_RSHIFT, in1, in2, out3 */
 case OP_AddImm: {            /* in1 */
   sqlite3VdbeMemIntegerify(pIn1);
   pIn1->u.i += pOp->p2;
-  break;
-}
-
-/* Opcode: ForceInt P1 P2 P3 * *
-**
-** Convert value in register P1 into an integer.  If the value 
-** in P1 is not numeric (meaning that is is a NULL or a string that
-** does not look like an integer) then jump to P2.
-**
-** If the value in P1 is numeric then convert it into the smallest
-** integer that is greater than or equal to its current value if P3==0, 
-** or to the smallest integer that is strictly greater than its current
-** value if P3==1.
-**
-** If the conversion described in the previous paragraph causes the
-** value to exceed the largest possible integer value 
-** (9223372036854775807), then jump to P2.
-*/
-case OP_ForceInt: {            /* jump, in1 */
-  i64 v;                       /* The value to store in P1 */
-  int incrV = 0;               /* True to cause v to increment */
-  applyAffinity(pIn1, SQLITE_AFF_NUMERIC, encoding);
-  if( (pIn1->flags & (MEM_Int|MEM_Real))==0 ){
-    pc = pOp->p2 - 1;
-    break;
-  }
-  incrV = pOp->p3 ?1:0;
-  if( pIn1->flags & MEM_Int ){
-    v = pIn1->u.i;
-  }else{
-    assert( pIn1->flags & MEM_Real );
-    v = (sqlite3_int64)pIn1->r;
-    incrV = pIn1->r>(double)v ?1:0;
-  }
-  if( incrV ){
-    if( v==LARGEST_INT64 ){
-      pc = pOp->p2 - 1;
-      break;
-    }
-    v++;
-  }
-  pIn1->u.i = v;
-  MemSetTypeFlag(pIn1, MEM_Int);
   break;
 }
 
@@ -2881,10 +2838,10 @@ case OP_Close: {
   break;
 }
 
-/* Opcode: MoveGe P1 P2 P3 P4 *
+/* Opcode: SeekGe P1 P2 P3 P4 *
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
-** use the integer value in register P3 as a key. If cursor P1 refers 
+** use the value in register P3 as the key.  If cursor P1 refers 
 ** to an SQL index, then P3 is the first in an array of P4 registers 
 ** that are used as an unpacked index key. 
 **
@@ -2892,19 +2849,12 @@ case OP_Close: {
 ** is greater than or equal to the key value. If there are no records 
 ** greater than or equal to the key and P2 is not zero, then jump to P2.
 **
-** A special feature of this opcode (and different from the
-** related OP_MoveGt, OP_MoveLt, and OP_MoveLe) is that if P2 is
-** zero and P1 is an SQL table (a b-tree with integer keys) then
-** the seek is deferred until it is actually needed.  It might be
-** the case that the cursor is never accessed.  By deferring the
-** seek, we avoid unnecessary seeks.
-**
-** See also: Found, NotFound, Distinct, MoveLt, MoveGt, MoveLe
+** See also: Found, NotFound, Distinct, SeekLt, SeekGt, SeekLe
 */
-/* Opcode: MoveGt P1 P2 P3 P4 *
+/* Opcode: SeekGt P1 P2 P3 P4 *
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
-** use the integer value in register P3 as a key. If cursor P1 refers 
+** use the value in register P3 as a key. If cursor P1 refers 
 ** to an SQL index, then P3 is the first in an array of P4 registers 
 ** that are used as an unpacked index key. 
 **
@@ -2912,12 +2862,12 @@ case OP_Close: {
 ** is greater than the key value. If there are no records greater than 
 ** the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, MoveLt, MoveGe, MoveLe
+** See also: Found, NotFound, Distinct, SeekLt, SeekGe, SeekLe
 */
-/* Opcode: MoveLt P1 P2 P3 P4 * 
+/* Opcode: SeekLt P1 P2 P3 P4 * 
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
-** use the integer value in register P3 as a key. If cursor P1 refers 
+** use the value in register P3 as a key. If cursor P1 refers 
 ** to an SQL index, then P3 is the first in an array of P4 registers 
 ** that are used as an unpacked index key. 
 **
@@ -2925,12 +2875,12 @@ case OP_Close: {
 ** is less than the key value. If there are no records less than 
 ** the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLe
+** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLe
 */
-/* Opcode: MoveLe P1 P2 P3 P4 *
+/* Opcode: SeekLe P1 P2 P3 P4 *
 **
 ** If cursor P1 refers to an SQL table (B-Tree that uses integer keys), 
-** use the integer value in register P3 as a key. If cursor P1 refers 
+** use the value in register P3 as a key. If cursor P1 refers 
 ** to an SQL index, then P3 is the first in an array of P4 registers 
 ** that are used as an unpacked index key. 
 **
@@ -2938,16 +2888,17 @@ case OP_Close: {
 ** is less than or equal to the key value. If there are no records 
 ** less than or equal to the key and P2 is not zero, then jump to P2.
 **
-** See also: Found, NotFound, Distinct, MoveGt, MoveGe, MoveLt
+** See also: Found, NotFound, Distinct, SeekGt, SeekGe, SeekLt
 */
-case OP_MoveLt:         /* jump, in3 */
-case OP_MoveLe:         /* jump, in3 */
-case OP_MoveGe:         /* jump, in3 */
-case OP_MoveGt: {       /* jump, in3 */
+case OP_SeekLt:         /* jump, in3 */
+case OP_SeekLe:         /* jump, in3 */
+case OP_SeekGe:         /* jump, in3 */
+case OP_SeekGt: {       /* jump, in3 */
   int i = pOp->p1;
   VdbeCursor *pC;
 
   assert( i>=0 && i<p->nCursor );
+  assert( pOp->p2!=0 );
   pC = p->apCsr[i];
   assert( pC!=0 );
   if( pC->pCursor!=0 ){
@@ -2955,20 +2906,64 @@ case OP_MoveGt: {       /* jump, in3 */
     oc = pOp->opcode;
     pC->nullRow = 0;
     if( pC->isTable ){
-      i64 iKey = sqlite3VdbeIntValue(pIn3);
-      if( pOp->p2==0 ){
-        assert( pOp->opcode==OP_MoveGe );
-        pC->movetoTarget = iKey;
-        pC->rowidIsValid = 0;
-        pC->deferredMoveto = 1;
-        break;
-      }
+      i64 iKey;      /* The rowid we are to seek to */
+
+      /* The input value in P3 might be of any type: integer, real, string,
+      ** blob, or NULL.  But it needs to be an integer before we can do
+      ** the seek, so covert it. */
+      applyNumericAffinity(pIn3);
+      iKey = sqlite3VdbeIntValue(pIn3);
+      pC->rowidIsValid = 0;
+
+      /* If the P3 value could not be converted into an integer without
+      ** loss of information, then special processing is required... */
+      if( (pIn3->flags & MEM_Int)==0 ){
+        if( (pIn3->flags & MEM_Real)==0 ){
+          /* If the P3 value cannot be converted into any kind of a number,
+          ** then the seek is not possible, so jump to P2 */
+          pc = pOp->p2 - 1;
+          break;
+        }
+        /* If we reach this point, then the P3 value must be a floating
+        ** point number. */
+        assert( (pIn3->flags & MEM_Real)!=0 );
+
+        if( iKey==SMALLEST_INT64 && (pIn3->r<(double)iKey || pIn3->r>0) ){
+          /* The P3 value is to large in magnitude to be expressed as an
+          ** integer. */
+          res = 1;
+          if( pIn3->r<0 ){
+            if( oc==OP_SeekGt || oc==OP_SeekGe ){
+              rc = sqlite3BtreeFirst(pC->pCursor, &res);
+              if( rc!=SQLITE_OK ) goto abort_due_to_error;
+            }
+          }else{
+            if( oc==OP_SeekLt || oc==OP_SeekLe ){
+              rc = sqlite3BtreeLast(pC->pCursor, &res);
+              if( rc!=SQLITE_OK ) goto abort_due_to_error;
+            }
+          }
+          if( res ){
+            pc = pOp->p2 - 1;
+          }
+          break;
+        }else if( oc==OP_SeekLt || oc==OP_SeekGe ){
+          /* Use the ceiling() function to convert real->int */
+          if( pIn3->r > (double)iKey ) iKey++;
+        }else{
+          /* Use the floor() function to convert real->int */
+          assert( oc==OP_SeekLe || oc==OP_SeekGt );
+          if( pIn3->r < (double)iKey ) iKey--;
+        }
+      } 
       rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, 0, (u64)iKey, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;
       }
-      pC->lastRowid = iKey;
-      pC->rowidIsValid = res==0 ?1:0;
+      if( res==0 ){
+        pC->rowidIsValid = 1;
+        pC->lastRowid = iKey;
+      }
     }else{
       UnpackedRecord r;
       int nField = pOp->p4.i;
@@ -2976,7 +2971,7 @@ case OP_MoveGt: {       /* jump, in3 */
       assert( nField>0 );
       r.pKeyInfo = pC->pKeyInfo;
       r.nField = (u16)nField;
-      if( oc==OP_MoveGt || oc==OP_MoveLe ){
+      if( oc==OP_SeekGt || oc==OP_SeekLe ){
         r.flags = UNPACKED_INCRKEY;
       }else{
         r.flags = 0;
@@ -2993,8 +2988,8 @@ case OP_MoveGt: {       /* jump, in3 */
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
-    if( oc==OP_MoveGe || oc==OP_MoveGt ){
-      if( res<0 ){
+    if( oc==OP_SeekGe || oc==OP_SeekGt ){
+      if( res<0 || (res==0 && oc==OP_SeekGt) ){
         rc = sqlite3BtreeNext(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->rowidIsValid = 0;
@@ -3002,8 +2997,8 @@ case OP_MoveGt: {       /* jump, in3 */
         res = 0;
       }
     }else{
-      assert( oc==OP_MoveLt || oc==OP_MoveLe );
-      if( res>=0 ){
+      assert( oc==OP_SeekLt || oc==OP_SeekLe );
+      if( res>0 || (res==0 && oc==OP_SeekLt) ){
         rc = sqlite3BtreePrevious(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
         pC->rowidIsValid = 0;
@@ -3027,6 +3022,33 @@ case OP_MoveGt: {       /* jump, in3 */
   }
   break;
 }
+
+/* Opcode: Seek P1 P2 * * *
+**
+** P1 is an open table cursor and P2 is a rowid integer.  Arrange
+** for P1 to move so that it points to the rowid given by P2.
+**
+** This is actually a deferred seek.  Nothing actually happens until
+** the cursor is used to read a record.  That way, if no reads
+** occur, no unnecessary I/O happens.
+*/
+case OP_Seek: {    /* in2 */
+  int i = pOp->p1;
+  VdbeCursor *pC;
+
+  assert( i>=0 && i<p->nCursor );
+  pC = p->apCsr[i];
+  assert( pC!=0 );
+  if( pC->pCursor!=0 ){
+    assert( pC->isTable );
+    pC->nullRow = 0;
+    pC->movetoTarget = sqlite3VdbeIntValue(pIn2);
+    pC->rowidIsValid = 0;
+    pC->deferredMoveto = 1;
+  }
+  break;
+}
+  
 
 /* Opcode: Found P1 P2 P3 * *
 **

@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.336 2008/12/10 19:26:24 drh Exp $
+** $Id: where.c,v 1.337 2008/12/12 17:56:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2491,27 +2491,30 @@ WhereInfo *sqlite3WhereBegin(
         pEnd = pTerm;
       }
       if( pStart ){
-        Expr *pX;
-        int r1;
+        Expr *pX;             /* The expression that defines the start bound */
+        int r1, rTemp;        /* Registers for holding the start boundary */
+
+        /* The following constant maps TK_xx codes into corresponding 
+        ** seek opcodes.  It depends on a particular ordering of TK_xx
+        */
+        const u8 aMoveOp[] = {
+             /* TK_GT */  OP_SeekGt,
+             /* TK_LE */  OP_SeekLe,
+             /* TK_LT */  OP_SeekLt,
+             /* TK_GE */  OP_SeekGe
+        };
+        assert( TK_LE==TK_GT+1 );      /* Make sure the ordering.. */
+        assert( TK_LT==TK_GT+2 );      /*  ... of the TK_xx values... */
+        assert( TK_GE==TK_GT+3 );      /*  ... is correcct. */
+
         pX = pStart->pExpr;
         assert( pX!=0 );
         assert( pStart->leftCursor==iCur );
-
-        /* The ForceInt instruction may modify the register that it operates
-        ** on. For example it may replace a real value with an integer one,
-        ** or if p3 is true it may increment the register value. For this
-        ** reason we need to make sure that register r1 is really a newly
-        ** allocated temporary register, and not part of the column-cache.
-        ** For this reason we cannot use sqlite3ExprCodeTemp() here.
-        */
-        r1 = sqlite3GetTempReg(pParse);
-        sqlite3ExprCode(pParse, pX->pRight, r1);
-
-        sqlite3VdbeAddOp3(v, OP_ForceInt, r1, addrBrk, 
-                             pX->op==TK_LE || pX->op==TK_GT);
-        sqlite3VdbeAddOp3(v, bRev ? OP_MoveLt : OP_MoveGe, iCur, addrBrk, r1);
+        r1 = sqlite3ExprCodeTemp(pParse, pX->pRight, &rTemp);
+        sqlite3VdbeAddOp3(v, aMoveOp[pX->op-TK_GT], iCur, addrBrk, r1);
         VdbeComment((v, "pk"));
-        sqlite3ReleaseTempReg(pParse, r1);
+        sqlite3ExprCacheAffinityChange(pParse, r1, 1);
+        sqlite3ReleaseTempReg(pParse, rTemp);
         disableTerm(pLevel, pStart);
       }else{
         sqlite3VdbeAddOp2(v, bRev ? OP_Last : OP_Rewind, iCur, addrBrk);
@@ -2579,10 +2582,10 @@ WhereInfo *sqlite3WhereBegin(
         0,
         OP_Rewind,           /* 2: (!start_constraints && startEq &&  !bRev) */
         OP_Last,             /* 3: (!start_constraints && startEq &&   bRev) */
-        OP_MoveGt,           /* 4: (start_constraints  && !startEq && !bRev) */
-        OP_MoveLt,           /* 5: (start_constraints  && !startEq &&  bRev) */
-        OP_MoveGe,           /* 6: (start_constraints  &&  startEq && !bRev) */
-        OP_MoveLe            /* 7: (start_constraints  &&  startEq &&  bRev) */
+        OP_SeekGt,           /* 4: (start_constraints  && !startEq && !bRev) */
+        OP_SeekLt,           /* 5: (start_constraints  && !startEq &&  bRev) */
+        OP_SeekGe,           /* 6: (start_constraints  &&  startEq && !bRev) */
+        OP_SeekLe            /* 7: (start_constraints  &&  startEq &&  bRev) */
       };
       int aEndOp[] = {
         OP_Noop,             /* 0: (!end_constraints) */
@@ -2675,10 +2678,10 @@ WhereInfo *sqlite3WhereBegin(
       assert( op!=0 );
       testcase( op==OP_Rewind );
       testcase( op==OP_Last );
-      testcase( op==OP_MoveGt );
-      testcase( op==OP_MoveGe );
-      testcase( op==OP_MoveLe );
-      testcase( op==OP_MoveLt );
+      testcase( op==OP_SeekGt );
+      testcase( op==OP_SeekGe );
+      testcase( op==OP_SeekLe );
+      testcase( op==OP_SeekLt );
       sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase, 
                         SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
 
@@ -2720,7 +2723,7 @@ WhereInfo *sqlite3WhereBegin(
       /* Seek the table cursor, if required */
       if( !omitTable ){
         sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, r1);
-        sqlite3VdbeAddOp3(v, OP_MoveGe, iCur, 0, r1);  /* Deferred seek */
+        sqlite3VdbeAddOp2(v, OP_Seek, iCur, r1);  /* Deferred seek */
       }
       sqlite3ReleaseTempReg(pParse, r1);
 
