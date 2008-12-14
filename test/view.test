@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing VIEW statements.
 #
-# $Id: view.test,v 1.38 2008/08/21 14:54:29 drh Exp $
+# $Id: view.test,v 1.39 2008/12/14 14:45:21 danielk1977 Exp $
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -565,5 +565,15 @@ do_test view-19.3 {
     SELECT * FROM v3308c
   }
 } {rowid 1 a 1 x 5 rowid 2 a 4 x 11}
+
+# Ticket #3539 had this crashing (see commit [5940]).
+do_test view-20.1 {
+  execsql {
+    DROP TABLE IF EXISTS t1;
+    DROP VIEW IF EXISTS v1;
+    CREATE TABLE t1(c1);
+    CREATE VIEW v1 AS SELECT c1 FROM (SELECT t1.c1 FROM t1);
+  }
+} {}
 
 finish_test
