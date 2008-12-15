@@ -1,5 +1,5 @@
-C Convert\sthe\s"~"\sand\s"NOT"\soperators\sto\sbe\stwo-address\sinstructions.\nTicket\s#3541.\s(CVS\s6028)
-D 2008-12-15T15:27:52
+C Add\stest\scases\sthat\sverify\sevaluation\sof\srandomly\sgenerated\sSQL\sexpressions.\s(CVS\s6029)
+D 2008-12-15T16:33:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -479,6 +479,8 @@ F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 5ef986df012628262ad4183cd8c28f0361911387
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
+F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
+F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
@@ -673,7 +675,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 84f8417c0794d3e5cec88f59ea71a7d557044409
-R af3b4538f82d88370566c291a9daf4a7
+P ea9b747efb22fd3f679c3ef86ed51986c5ad9436
+R 5f7646ba8d08fb9ea5607a971b9785a1
 U drh
-Z 98bd9dcbaef571a6a1bb6e3794861e9a
+Z ac565498eff9ad245eb8a748253648e8
