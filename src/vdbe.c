@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.802 2008/12/12 17:56:16 drh Exp $
+** $Id: vdbe.c,v 1.803 2008/12/15 15:27:52 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1810,31 +1810,35 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
   break;
 }
 
-/* Opcode: Not P1 * * * *
+/* Opcode: Not P1 P2 * * *
 **
-** Interpret the value in register P1 as a boolean value.  Replace it
-** with its complement.  If the value in register P1 is NULL its value
-** is unchanged.
+** Interpret the value in register P1 as a boolean value.  Store the
+** boolean complement in register P2.  If the value in register P1 is 
+** NULL, then a NULL is stored in P2.
 */
 case OP_Not: {                /* same as TK_NOT, in1 */
-  if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  sqlite3VdbeMemIntegerify(pIn1);
-  pIn1->u.i = !pIn1->u.i;
-  assert( pIn1->flags&MEM_Int );
+  pOut = &p->aMem[pOp->p2];
+  if( pIn1->flags & MEM_Null ){
+    sqlite3VdbeMemSetNull(pOut);
+  }else{
+    sqlite3VdbeMemSetInt64(pOut, !sqlite3VdbeIntValue(pIn1));
+  }
   break;
 }
 
-/* Opcode: BitNot P1 * * * *
+/* Opcode: BitNot P1 P2 * * *
 **
-** Interpret the content of register P1 as an integer.  Replace it
-** with its ones-complement.  If the value is originally NULL, leave
-** it unchanged.
+** Interpret the content of register P1 as an integer.  Store the
+** ones-complement of the P1 value into register P2.  If P1 holds
+** a NULL then store a NULL in P2.
 */
 case OP_BitNot: {             /* same as TK_BITNOT, in1 */
-  if( pIn1->flags & MEM_Null ) break;  /* Do nothing to NULLs */
-  sqlite3VdbeMemIntegerify(pIn1);
-  pIn1->u.i = ~pIn1->u.i;
-  assert( pIn1->flags&MEM_Int );
+  pOut = &p->aMem[pOp->p2];
+  if( pIn1->flags & MEM_Null ){
+    sqlite3VdbeMemSetNull(pOut);
+  }else{
+    sqlite3VdbeMemSetInt64(pOut, ~sqlite3VdbeIntValue(pIn1));
+  }
   break;
 }
 

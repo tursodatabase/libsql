@@ -1,5 +1,5 @@
-C Add\sthe\sexample\sfrom\s#3359\sto\sthe\stest\ssuite.\s(CVS\s6027)
-D 2008-12-14T14:45:21
+C Convert\sthe\s"~"\sand\s"NOT"\soperators\sto\sbe\stwo-address\sinstructions.\nTicket\s#3541.\s(CVS\s6028)
+D 2008-12-15T15:27:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 3dbac3eac2848af416786b6e1e3150f7c740dac6
 F src/delete.c e2392b6808496fc0a7f54662af3ba677a3e8e44a
-F src/expr.c f13ad5563470481eaa1e8016bfa9ed1b4c996574
+F src/expr.c a385202af56d622b11d05e8d386def256155152b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c b0e1c61301f33d67b72ab15d85c80ed76e7c98ac
 F src/global.c 91723e45a2ad03ae5bb97a0a0d2dbb1a0e69527b
@@ -194,7 +194,7 @@ F src/update.c 080889d241e4dcd1c545c8051eb6de86f4939295
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c ea62608f66f33a7e8322de83024ae37c415c0c7f
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c ee98938f76a3d9e513aca9696391c6e19fa2cafe
+F src/vdbe.c 3fd1fe6408598121213e19e1808e5de882c7b636
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h e6e80a99ce634983b7cc2498843b4d2e5540900a
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
@@ -592,6 +592,7 @@ F test/tkt3493.test 8472b3464e49a27ff7271308eec46154209e667b
 F test/tkt3508.test d9e285ff91731247d4673f9252fe5934639d7f0d
 F test/tkt3522.test 22ce2ebbcb04a6be56c0977d405c207967318fd6
 F test/tkt3527.test ee4af96183579565987e58873a7490bc04934ffb
+F test/tkt3541.test 5dc257bde9bc833ab9cc6844bf170b998dbb950a
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -672,7 +673,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P adba0f3c01ba2407466d0120c411c398218bdaeb
-R fad0d590913fe8f9e5e994000a8088be
-U danielk1977
-Z 4887ada2d24d472ddc8849201ce49da5
+P 84f8417c0794d3e5cec88f59ea71a7d557044409
+R af3b4538f82d88370566c291a9daf4a7
+U drh
+Z 98bd9dcbaef571a6a1bb6e3794861e9a
