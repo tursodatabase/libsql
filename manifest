@@ -1,5 +1,5 @@
-C Fix\sa\scompile\serror\sin\san\sassert()\sand\sa\swarning\swith\sMSVC\sbuilds.\s(CVS\s6032)
-D 2008-12-16T17:20:38
+C Version\s3.6.7\s(CVS\s6033)
+D 2008-12-16T18:15:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -675,7 +675,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 13b56b7ff97c3abc116dae934f6d1330bbb7762d
+P 8b8f6a6ab597e06e60557ab56c6ee7f8522ed570
 R a6ff965a91307b50874e830368f8fcd6
-U shane
-Z 14bafe5c87d4adcff35382b456920762
+U drh
+Z 76064440713dce47dc110c16fc71382b
