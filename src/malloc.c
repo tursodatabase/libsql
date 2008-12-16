@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.51 2008/12/10 21:19:57 drh Exp $
+** $Id: malloc.c,v 1.52 2008/12/16 13:46:30 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -122,7 +122,7 @@ int sqlite3MallocInit(void){
   if( sqlite3GlobalConfig.pScratch && sqlite3GlobalConfig.szScratch>=100
       && sqlite3GlobalConfig.nScratch>=0 ){
     int i;
-    sqlite3GlobalConfig.szScratch -= 4;
+    sqlite3GlobalConfig.szScratch = (sqlite3GlobalConfig.szScratch - 4) & ~7;
     mem0.aScratchFree = (u32*)&((char*)sqlite3GlobalConfig.pScratch)
                   [sqlite3GlobalConfig.szScratch*sqlite3GlobalConfig.nScratch];
     for(i=0; i<sqlite3GlobalConfig.nScratch; i++){ mem0.aScratchFree[i] = i; }
@@ -135,7 +135,7 @@ int sqlite3MallocInit(void){
       && sqlite3GlobalConfig.nPage>=1 ){
     int i;
     int overhead;
-    int sz = sqlite3GlobalConfig.szPage;
+    int sz = sqlite3GlobalConfig.szPage & ~7;
     int n = sqlite3GlobalConfig.nPage;
     overhead = (4*n + sz - 1)/sz;
     sqlite3GlobalConfig.nPage -= overhead;
@@ -335,6 +335,7 @@ void *sqlite3ScratchMalloc(int n){
       sqlite3StatusSet(SQLITE_STATUS_SCRATCH_SIZE, n);
       sqlite3_mutex_leave(mem0.mutex);
       p = (void*)&((char*)sqlite3GlobalConfig.pScratch)[i];
+      assert(  ((p - (void*)0) & 7)==0 );
     }
   }
 #if SQLITE_THREADSAFE==0 && !defined(NDEBUG)
