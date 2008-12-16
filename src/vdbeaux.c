@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.427 2008/12/11 16:17:04 drh Exp $
+** $Id: vdbeaux.c,v 1.428 2008/12/16 17:20:38 shane Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2416,7 +2416,7 @@ int sqlite3VdbeIdxRowid(BtCursor *pCur, i64 *rowid){
   (void)getVarint32((u8*)m.z, szHdr);
   testcase( szHdr==2 );
   testcase( szHdr==m.n );
-  if( unlikely(szHdr<2 || szHdr>m.n) ){
+  if( unlikely(szHdr<2 || (int)szHdr>m.n) ){
     goto idx_rowid_corruption;
   }
 
