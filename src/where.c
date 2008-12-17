@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.337 2008/12/12 17:56:16 drh Exp $
+** $Id: where.c,v 1.338 2008/12/17 19:22:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -36,6 +36,8 @@ int sqlite3WhereTrace = 0;
 */
 typedef struct WhereClause WhereClause;
 typedef struct ExprMaskSet ExprMaskSet;
+typedef struct WhereOrInfo WhereOrInfo;
+typedef struct WhereAndInfo WhereAndInfo;
 
 /*
 ** The query generator uses an array of instances of this structure to
@@ -55,13 +57,26 @@ typedef struct ExprMaskSet ExprMaskSet;
 **              X <op> <expr>
 **
 ** where X is a column name and <op> is one of certain operators,
-** then WhereTerm.leftCursor and WhereTerm.leftColumn record the
-** cursor number and column number for X.  WhereTerm.operator records
+** then WhereTerm.leftCursor and WhereTerm.u.leftColumn record the
+** cursor number and column number for X.  WhereTerm.eOperator records
 ** the <op> using a bitmask encoding defined by WO_xxx below.  The
 ** use of a bitmask encoding for the operator allows us to search
 ** quickly for terms that match any of several different operators.
 **
-** prereqRight and prereqAll record sets of cursor numbers,
+** A WhereTerm might also be two or more subterms connected by OR:
+**
+**         (t1.X <op> <expr>) OR (t1.Y <op> <expr>) OR ....
+**
+** In this second case, wtFlag as the TERM_ORINFO set and eOperator==WO_OR
+** and the WhereTerm.u.pOrInfo field points to auxiliary information that
+** is collected about the
+**
+** If a term in the WHERE clause does not match either of the two previous
+** categories, then eOperator==0.  The WhereTerm.pExpr field is still set
+** to the original subexpression content and wtFlags is set up appropriately
+** but no other fields in the WhereTerm object are meaningful.
+**
+** When eOperator!=0, prereqRight and prereqAll record sets of cursor numbers,
 ** but they do so indirectly.  A single ExprMaskSet structure translates
 ** cursor number into bits and the translated bit is stored in the prereq
 ** fields.  The translation is used in order to maximize the number of
@@ -82,7 +97,11 @@ struct WhereTerm {
   Expr *pExpr;            /* Pointer to the subexpression that is this term */
   int iParent;            /* Disable pWC->a[iParent] when this term disabled */
   int leftCursor;         /* Cursor number of X in "X <op> <expr>" */
-  int leftColumn;         /* Column number of X in "X <op> <expr>" */
+  union {
+    int leftColumn;         /* Column number of X in "X <op> <expr>" */
+    WhereOrInfo *pOrInfo;   /* Extra information if eOperator==WO_OR */
+    WhereAndInfo *pAndInfo; /* Extra information if eOperator==WO_AND */
+  } u;
   u16 eOperator;          /* A WO_xx value describing <op> */
   u8 wtFlags;             /* TERM_xxx bit flags.  See below */
   u8 nChild;              /* Number of children that must disable us */
@@ -98,7 +117,9 @@ struct WhereTerm {
 #define TERM_VIRTUAL    0x02   /* Added by the optimizer.  Do not code */
 #define TERM_CODED      0x04   /* This term is already coded */
 #define TERM_COPIED     0x08   /* Has a child */
-#define TERM_OR_OK      0x10   /* Used during OR-clause processing */
+#define TERM_ORINFO     0x10   /* Need to free the WhereTerm.u.pOrInfo object */
+#define TERM_ANDINFO    0x20   /* Need to free the WhereTerm.u.pAndInfo obj */
+#define TERM_OR_OK      0x40   /* Used during OR-clause processing */
 
 /*
 ** An instance of the following structure holds all information about a
@@ -111,6 +132,25 @@ struct WhereClause {
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
   WhereTerm aStatic[4];    /* Initial static space for a[] */
+};
+
+/*
+** A WhereTerm with eOperator==WO_OR has its u.pOrInfo pointer set to
+** a dynamically allocated instance of the following structure.
+*/
+struct WhereOrInfo {
+  WhereClause wc;          /* The OR subexpression broken out */
+  double cost;             /* Cost of evaluating this OR subexpression */
+};
+
+/*
+** A WhereTerm with eOperator==WO_AND has its u.pAndInfo pointer set to
+** a dynamically allocated instance of the following structure.
+*/
+struct WhereAndInfo {
+  WhereClause wc;          /* The OR subexpression broken out */
+  Index *pIdx;             /* Index to use */
+  double cost;             /* Cost of evaluating this OR subexpression */
 };
 
 /*
@@ -158,18 +198,20 @@ struct ExprMaskSet {
 #define WO_GE     (WO_EQ<<(TK_GE-TK_EQ))
 #define WO_MATCH  0x040
 #define WO_ISNULL 0x080
-#define WO_OR     0x100
+#define WO_OR     0x100       /* Two or more OR-connected terms */
+#define WO_AND    0x200       /* Two or more AND-connected terms */
 
 #define WO_ALL    0xfff       /* Mask of all possible WO_* values */
 
 /*
-** Value for wsFlags returned by bestIndex().  These flags determine which
-** search strategies are appropriate.
+** Value for wsFlags returned by bestIndex() and stored in
+** WhereLevel.wsFlags.  These flags determine which search
+** strategies are appropriate.
 **
 ** The least significant 12 bits is reserved as a mask for WO_ values above.
-** The WhereLevel.wtFlags field is usually set to WO_IN|WO_EQ|WO_ISNULL.
-** But if the table is the right table of a left join, WhereLevel.wtFlags
-** is set to WO_IN|WO_EQ.  The WhereLevel.wtFlags field can then be used as
+** The WhereLevel.wsFlags field is usually set to WO_IN|WO_EQ|WO_ISNULL.
+** But if the table is the right table of a left join, WhereLevel.wsFlags
+** is set to WO_IN|WO_EQ.  The WhereLevel.wsFlags field can then be used as
 ** the "op" parameter to findTerm when we are resolving equality constraints.
 ** ISNULL constraints will then not be used on the right table of a left
 ** join.  Tickets #2177 and #2189.
@@ -203,6 +245,27 @@ static void whereClauseInit(
   pWC->a = pWC->aStatic;
 }
 
+/* Forward reference */
+static void whereClauseClear(WhereClause*);
+
+/*
+** Deallocate all memory associated with a WhereOrInfo object.
+*/
+static void whereOrInfoDelete(sqlite3 *db, WhereOrInfo *p){
+  if( p ){
+    whereClauseClear(&p->wc);
+  }
+}
+
+/*
+** Deallocate all memory associated with a WhereAndInfo object.
+*/
+static void whereAndInfoDelete(sqlite3 *db, WhereAndInfo *p){
+  if( p ){
+    whereClauseClear(&p->wc);
+  }
+}
+
 /*
 ** Deallocate a WhereClause structure.  The WhereClause structure
 ** itself is not freed.  This routine is the inverse of whereClauseInit().
@@ -214,6 +277,11 @@ static void whereClauseClear(WhereClause *pWC){
   for(i=pWC->nTerm-1, a=pWC->a; i>=0; i--, a++){
     if( a->wtFlags & TERM_DYNAMIC ){
       sqlite3ExprDelete(db, a->pExpr);
+    }
+    if( a->wtFlags & TERM_ORINFO ){
+      whereOrInfoDelete(db, a->u.pOrInfo);
+    }else if( a->wtFlags & TERM_ANDINFO ){
+      whereAndInfoDelete(db, a->u.pAndInfo);
     }
   }
   if( pWC->a!=pWC->aStatic ){
@@ -477,7 +545,7 @@ static WhereTerm *findTerm(
   for(pTerm=pWC->a, k=pWC->nTerm; k; k--, pTerm++){
     if( pTerm->leftCursor==iCur
        && (pTerm->prereqRight & notReady)==0
-       && pTerm->leftColumn==iColumn
+       && pTerm->u.leftColumn==iColumn
        && (pTerm->eOperator & op)!=0
     ){
       if( pIdx && pTerm->eOperator!=WO_ISNULL ){
@@ -666,7 +734,7 @@ static int orTermIsOptCandidate(WhereTerm *pOrTerm, int iCursor, int iColumn){
   if( pOrTerm->leftCursor!=iCursor ){
     return 0;
   }
-  if( pOrTerm->leftColumn!=iColumn ){
+  if( pOrTerm->u.leftColumn!=iColumn ){
     return 0;
   }
   affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
@@ -785,7 +853,7 @@ static void exprAnalyze(
     Expr *pRight = pExpr->pRight;
     if( pLeft->op==TK_COLUMN ){
       pTerm->leftCursor = pLeft->iTable;
-      pTerm->leftColumn = pLeft->iColumn;
+      pTerm->u.leftColumn = pLeft->iColumn;
       pTerm->eOperator = operatorMask(op);
     }
     if( pRight && pRight->op==TK_COLUMN ){
@@ -812,7 +880,7 @@ static void exprAnalyze(
       exprCommute(pParse, pDup);
       pLeft = pDup->pLeft;
       pNew->leftCursor = pLeft->iTable;
-      pNew->leftColumn = pLeft->iColumn;
+      pNew->u.leftColumn = pLeft->iColumn;
       pNew->prereqRight = prereqLeft;
       pNew->prereqAll = prereqAll;
       pNew->eOperator = operatorMask(pDup->op);
@@ -873,7 +941,7 @@ static void exprAnalyze(
     if( db->mallocFailed ) goto or_not_possible;
     do{
       assert( j<sOr.nTerm );
-      iColumn = sOr.a[j].leftColumn;
+      iColumn = sOr.a[j].u.leftColumn;
       iCursor = sOr.a[j].leftCursor;
       ok = iCursor>=0;
       for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
@@ -1000,7 +1068,7 @@ or_not_possible:
       pNewTerm = &pWC->a[idxNew];
       pNewTerm->prereqRight = prereqExpr;
       pNewTerm->leftCursor = pLeft->iTable;
-      pNewTerm->leftColumn = pLeft->iColumn;
+      pNewTerm->u.leftColumn = pLeft->iColumn;
       pNewTerm->eOperator = WO_MATCH;
       pNewTerm->iParent = idxTerm;
       pTerm = &pWC->a[idxTerm];
@@ -1362,7 +1430,7 @@ static double bestVirtualIndex(
       testcase( pTerm->eOperator==WO_IN );
       testcase( pTerm->eOperator==WO_ISNULL );
       if( pTerm->eOperator & (WO_IN|WO_ISNULL) ) continue;
-      pIdxCons[j].iColumn = pTerm->leftColumn;
+      pIdxCons[j].iColumn = pTerm->u.leftColumn;
       pIdxCons[j].iTermOffset = i;
       pIdxCons[j].op = (u8)pTerm->eOperator;
       /* The direct assignment in the previous line is possible only because
@@ -1594,7 +1662,7 @@ static double bestIndex(
     if( pTerm ){
       if( findTerm(pWC, iCur, -1, notReady, WO_LT|WO_LE, 0) ){
         wsFlags |= WHERE_TOP_LIMIT;
-        cost /= 3;  /* Guess that rowid<EXPR eliminates two-thirds or rows */
+        cost /= 3;  /* Guess that rowid<EXPR eliminates two-thirds of rows */
       }
       if( findTerm(pWC, iCur, -1, notReady, WO_GT|WO_GE, 0) ){
         wsFlags |= WHERE_BTM_LIMIT;
@@ -1884,9 +1952,9 @@ static int codeEqualityTerm(
 ** of nEq including 0.  If nEq==0, this routine is nearly a no-op.
 ** The only thing it does is allocate the pLevel->iMem memory cell.
 **
-** This routine always allocates at least one memory cell and puts
-** the address of that memory cell in pLevel->iMem.  The code that
-** calls this routine will use pLevel->iMem to store the termination
+** This routine always allocates at least one memory cell and returns
+** the index of that memory cell. The code that
+** calls this routine will use that memory cell to store the termination
 ** key value of the loop.  If one or more IN operators appear, then
 ** this routine allocates an additional nEq memory cells for internal
 ** use.
@@ -1911,9 +1979,8 @@ static int codeAllEqualityTerms(
   ** value.  If there are IN operators we'll need one for each == or
   ** IN constraint.
   */
-  pLevel->iMem = pParse->nMem + 1;
-  regBase = pParse->nMem + 2;
-  pParse->nMem += pLevel->nEq + 2 + nExtraReg;
+  regBase = pParse->nMem + 1;
+  pParse->nMem += pLevel->nEq + 1 + nExtraReg;
 
   /* Evaluate the equality constraints
   */
@@ -2480,6 +2547,7 @@ WhereInfo *sqlite3WhereBegin(
       */
       int testOp = OP_Noop;
       int start;
+      int memEndValue = 0;
       WhereTerm *pStart, *pEnd;
 
       assert( omitTable==0 );
@@ -2524,8 +2592,8 @@ WhereInfo *sqlite3WhereBegin(
         pX = pEnd->pExpr;
         assert( pX!=0 );
         assert( pEnd->leftCursor==iCur );
-        pLevel->iMem = ++pParse->nMem;
-        sqlite3ExprCode(pParse, pX->pRight, pLevel->iMem);
+        memEndValue = ++pParse->nMem;
+        sqlite3ExprCode(pParse, pX->pRight, memEndValue);
         if( pX->op==TK_LT || pX->op==TK_GT ){
           testOp = bRev ? OP_Le : OP_Ge;
         }else{
@@ -2540,8 +2608,7 @@ WhereInfo *sqlite3WhereBegin(
       if( testOp!=OP_Noop ){
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
-        /* sqlite3VdbeAddOp2(v, OP_SCopy, pLevel->iMem, 0); */
-        sqlite3VdbeAddOp3(v, testOp, pLevel->iMem, addrBrk, r1);
+        sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, r1);
         sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
         sqlite3ReleaseTempReg(pParse, r1);
       }
@@ -2734,8 +2801,36 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->p1 = iIdxCur;
       disableTerm(pLevel, pRangeStart);
       disableTerm(pLevel, pRangeEnd);
+    }else if( pLevel->wsFlags & WHERE_MULTI_OR ){
+      /* Case 4:  Two or more separately indexed terms connected by OR
+      **
+      ** Example:
+      **
+      **   CREATE TABLE t1(a,b,c,d);
+      **   CREATE INDEX i1 ON t1(a);
+      **   CREATE INDEX i2 ON t1(b);
+      **   CREATE INDEX i3 ON t1(c);
+      **
+      **   SELECT * FROM t1 WHERE a=5 OR b=7 OR (c=11 AND d=13)
+      **
+      ** In the example, there are three indexed terms connected by OR.
+      ** The top of the loop is constructed by creating a RowSet object
+      ** and populating it.  Then looping over elements of the rowset.
+      **
+      **        Null 1
+      **        # fill RowSet 1 with entries where a=5 using i1
+      **        # fill Rowset 1 with entries where b=7 using i2
+      **        # fill Rowset 1 with entries where c=11 and d=13 i3 and t1
+      **     A: RowSetRead 1, B, 2
+      **        Seek       i, 2
+      **
+      ** The bottom of the loop looks like this:
+      **
+      **     C: Goto       0, A
+      **     B:
+      */
     }else{
-      /* Case 4:  There is no usable index.  We must do a complete
+      /* Case 5:  There is no usable index.  We must do a complete
       **          scan of the entire table.
       */
       assert( omitTable==0 );

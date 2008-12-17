@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.810 2008/12/17 17:30:26 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.811 2008/12/17 19:22:16 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1539,11 +1539,10 @@ struct SrcList {
 ** 
 */
 struct WhereLevel {
-  int iFrom;            /* Which entry in the FROM clause */
-  int wsFlags;          /* "Where-Scan" flags show the choosen scan strategy */
-  int iMem;             /* First memory cell used by this level */
+  u32 wsFlags;          /* "Where-Scan" flags show the choosen scan strategy */
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
   Index *pIdx;          /* Index used.  NULL if no index */
+  struct WhereTerm *pTerm; /* Where term containing OR clause */
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
   int addrBrk;          /* Jump here to break out of the loop */
@@ -1552,8 +1551,9 @@ struct WhereLevel {
   int addrFirst;        /* First instruction of interior of the loop */
   int op, p1, p2;       /* Opcode used to terminate the loop */
   u8 p5;                /* P5 operand of the opcode that terminates the loop */
-  int nEq;              /* Number of == or IN constraints on this loop */
-  int nIn;              /* Number of IN operators constraining this loop */
+  u8 iFrom;             /* Which entry in the FROM clause */
+  u16 nEq;              /* Number of == or IN constraints on this loop */
+  u16 nIn;              /* Number of IN operators constraining this loop */
   struct InLoop {
     int iCur;              /* The VDBE cursor used by this IN operator */
     int addrInTop;         /* Top of the IN loop */
