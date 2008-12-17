@@ -52,7 +52,7 @@ TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o expr.o fault.o \
-         fts3.o fts3_hash.o fts3_icu.o fts3_porter.o \
+         fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_tokenizer.o fts3_tokenizer1.o \
          func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
@@ -178,6 +178,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
@@ -247,7 +249,8 @@ TESTSRC2 = \
   $(TOP)/src/pcache1.c $(TOP)/src/select.c $(TOP)/src/tokenize.c               \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
-  $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_tokenizer.c 
+  $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_expr.c                           \
+  $(TOP)/ext/fts3/fts3_tokenizer.c 
 
 # Header files used by all library source files.
 #
@@ -283,6 +286,7 @@ EXTHDR += \
   $(TOP)/ext/fts2/fts2_tokenizer.h
 EXTHDR += \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
@@ -411,6 +415,9 @@ fts2_tokenizer1.o:	$(TOP)/ext/fts2/fts2_tokenizer1.c $(HDR) $(EXTHDR)
 
 fts3.o:	$(TOP)/ext/fts3/fts3.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3.c
+
+fts3_expr.o:	$(TOP)/ext/fts3/fts3_expr.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_expr.c
 
 fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_hash.c

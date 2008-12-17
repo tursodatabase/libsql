@@ -285,6 +285,7 @@
 #include <ctype.h>
 
 #include "fts3.h"
+#include "fts3_expr.h"
 #include "fts3_hash.h"
 #include "fts3_tokenizer.h"
 #ifndef SQLITE_CORE 
@@ -311,11 +312,6 @@
 #else
 # define FTSTRACE(A)
 #endif
-
-/*
-** Default span for NEAR operators.
-*/
-#define SQLITE_FTS3_DEFAULT_NEAR_PARAM 10
 
 /* It is not safe to call isspace(), tolower(), or isalnum() on
 ** hi-bit-set characters.  This is the same solution used in the
@@ -1788,90 +1784,6 @@ static int sql_prepare(sqlite3 *db, const char *zDb, const char *zName,
 /* Forward reference */
 typedef struct fulltext_vtab fulltext_vtab;
 
-/* A single term in a query is represented by an instances of
-** the following structure. Each word which may match against
-** document content is a term. Operators, like NEAR or OR, are
-** not terms. Query terms are organized as a flat list stored
-** in the Query.pTerms array.
-**
-** If the QueryTerm.nPhrase variable is non-zero, then the QueryTerm
-** is the first in a contiguous string of terms that are either part
-** of the same phrase, or connected by the NEAR operator.
-**
-** If the QueryTerm.nNear variable is non-zero, then the token is followed 
-** by a NEAR operator with span set to (nNear-1). For example, the 
-** following query:
-**
-** The QueryTerm.iPhrase variable stores the index of the token within
-** its phrase, indexed starting at 1, or 1 if the token is not part 
-** of any phrase.
-**
-** For example, the data structure used to represent the following query:
-**
-**     ... MATCH 'sqlite NEAR/5 google NEAR/2 "search engine"'
-**
-** is:
-**
-**     {nPhrase=4, iPhrase=1, nNear=6, pTerm="sqlite"},
-**     {nPhrase=0, iPhrase=1, nNear=3, pTerm="google"},
-**     {nPhrase=0, iPhrase=1, nNear=0, pTerm="search"},
-**     {nPhrase=0, iPhrase=2, nNear=0, pTerm="engine"},
-**
-** compiling the FTS3 syntax to Query structures is done by the parseQuery()
-** function.
-*/
-typedef struct QueryTerm {
-  short int nPhrase; /* How many following terms are part of the same phrase */
-  short int iPhrase; /* This is the i-th term of a phrase. */
-  short int iColumn; /* Column of the index that must match this term */
-  short int nNear;   /* term followed by a NEAR operator with span=(nNear-1) */
-  signed char isOr;  /* this term is preceded by "OR" */
-  signed char isNot; /* this term is preceded by "-" */
-  signed char isPrefix; /* this term is followed by "*" */
-  char *pTerm;       /* text of the term.  '\000' terminated.  malloced */
-  int nTerm;         /* Number of bytes in pTerm[] */
-} QueryTerm;
-
-
-/* A query string is parsed into a Query structure.
- *
- * We could, in theory, allow query strings to be complicated
- * nested expressions with precedence determined by parentheses.
- * But none of the major search engines do this.  (Perhaps the
- * feeling is that an parenthesized expression is two complex of
- * an idea for the average user to grasp.)  Taking our lead from
- * the major search engines, we will allow queries to be a list
- * of terms (with an implied AND operator) or phrases in double-quotes,
- * with a single optional "-" before each non-phrase term to designate
- * negation and an optional OR connector.
- *
- * OR binds more tightly than the implied AND, which is what the
- * major search engines seem to do.  So, for example:
- * 
- *    [one two OR three]     ==>    one AND (two OR three)
- *    [one OR two three]     ==>    (one OR two) AND three
- *
- * A "-" before a term matches all entries that lack that term.
- * The "-" must occur immediately before the term with in intervening
- * space.  This is how the search engines do it.
- *
- * A NOT term cannot be the right-hand operand of an OR.  If this
- * occurs in the query string, the NOT is ignored:
- *
- *    [one OR -two]          ==>    one OR two
- *
- */
-typedef struct Query {
-  fulltext_vtab *pFts;  /* The full text index */
-  int nTerms;           /* Number of terms in the query */
-  QueryTerm *pTerms;    /* Array of terms.  Space obtained from malloc() */
-  int nextIsOr;         /* Set the isOr flag on the next inserted term */
-  int nextIsNear;       /* Set the isOr flag on the next inserted term */
-  int nextColumn;       /* Next word parsed must be in this column */
-  int dfltColumn;       /* The default column */
-} Query;
-
-
 /*
 ** An instance of the following structure keeps track of generated
 ** matching-word offset information and snippets.
@@ -2022,14 +1934,14 @@ typedef struct fulltext_cursor {
   QueryType iCursorType;           /* Copy of sqlite3_index_info.idxNum */
   sqlite3_stmt *pStmt;             /* Prepared statement in use by the cursor */
   int eof;                         /* True if at End Of Results */
-  Query q;                         /* Parsed query string */
+  Fts3Expr *pExpr;                 /* Parsed MATCH query string */
   Snippet snippet;                 /* Cached snippet for the current row */
   int iColumn;                     /* Column being searched */
   DataBuffer result;               /* Doclist results from fulltextQuery */
   DLReader reader;                 /* Result reader if result not empty */
 } fulltext_cursor;
 
-static struct fulltext_vtab *cursor_vtab(fulltext_cursor *c){
+static fulltext_vtab *cursor_vtab(fulltext_cursor *c){
   return (fulltext_vtab *) c->base.pVtab;
 }
 
@@ -3177,18 +3089,6 @@ static int fulltextOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   }
 }
 
-
-/* Free all of the dynamically allocated memory held by *q
-*/
-static void queryClear(Query *q){
-  int i;
-  for(i = 0; i < q->nTerms; ++i){
-    sqlite3_free(q->pTerms[i].pTerm);
-  }
-  sqlite3_free(q->pTerms);
-  CLEAR(q);
-}
-
 /* Free all of the dynamically allocated memory held by the
 ** Snippet
 */
@@ -3198,6 +3098,7 @@ static void snippetClear(Snippet *p){
   sqlite3_free(p->zSnippet);
   CLEAR(p);
 }
+
 /*
 ** Append a single entry to the p->aMatch[] log.
 */
@@ -3234,11 +3135,50 @@ static void snippetAppendMatch(
 #define FTS3_ROTOR_MASK (FTS3_ROTOR_SZ-1)
 
 /*
+** Function to iterate through the tokens of a compiled expression.
+*/
+static int nextExprToken(Fts3Expr **ppExpr, int *piToken){
+  Fts3Expr *p = *ppExpr;
+  int iToken = *piToken;
+  if( iToken<0 ){
+    /* In this case the expression p is the root of an expression tree.
+    ** Move to the first token in the expression tree.
+    */
+    while( p->pLeft ){
+      p = p->pLeft;
+    }
+    iToken = 0;
+  }else{
+    assert(p && p->eType==FTSQUERY_PHRASE );
+    if( iToken<(p->pPhrase->nToken-1) ){
+      iToken++;
+    }else{
+      iToken = 0;
+      while( p->pParent && p->pParent->pLeft!=p ){
+        assert( p->pParent->pRight==p );
+        p = p->pParent;
+      }
+      p = p->pParent;
+      if( p ){
+        p = p->pRight;
+        while( p->pLeft ){
+          p = p->pLeft;
+        }
+      }
+    }
+  }
+
+  *ppExpr = p;
+  *piToken = iToken;
+  return p?1:0;
+}
+
+/*
 ** Add entries to pSnippet->aMatch[] for every match that occurs against
 ** document zDoc[0..nDoc-1] which is stored in column iColumn.
 */
 static void snippetOffsetsOfColumn(
-  Query *pQuery,
+  fulltext_cursor *pCur,
   Snippet *pSnippet,
   int iColumn,
   const char *zDoc,
@@ -3249,8 +3189,6 @@ static void snippetOffsetsOfColumn(
   sqlite3_tokenizer_cursor *pTCursor;        /* Tokenizer cursor */
   fulltext_vtab *pVtab;                /* The full text index */
   int nColumn;                         /* Number of columns in the index */
-  const QueryTerm *aTerm;              /* Query string terms */
-  int nTerm;                           /* Number of query string terms */  
   int i, j;                            /* Loop counters */
   int rc;                              /* Return code */
   unsigned int match, prevMatch;       /* Phrase search bitmasks */
@@ -3264,37 +3202,34 @@ static void snippetOffsetsOfColumn(
   int iRotorBegin[FTS3_ROTOR_SZ];      /* Beginning offset of token */
   int iRotorLen[FTS3_ROTOR_SZ];        /* Length of token */
 
-  pVtab = pQuery->pFts;
+  pVtab = cursor_vtab(pCur);
   nColumn = pVtab->nColumn;
   pTokenizer = pVtab->pTokenizer;
   pTModule = pTokenizer->pModule;
   rc = pTModule->xOpen(pTokenizer, zDoc, nDoc, &pTCursor);
   if( rc ) return;
   pTCursor->pTokenizer = pTokenizer;
-  aTerm = pQuery->pTerms;
-  nTerm = pQuery->nTerms;
-  if( nTerm>=FTS3_ROTOR_SZ ){
-    nTerm = FTS3_ROTOR_SZ - 1;
-  }
+
   prevMatch = 0;
-  while(1){
-    rc = pTModule->xNext(pTCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
-    if( rc ) break;
+  while( !pTModule->xNext(pTCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos) ){
+    Fts3Expr *pIter = pCur->pExpr;
+    int iIter = -1;
     iRotorBegin[iRotor&FTS3_ROTOR_MASK] = iBegin;
     iRotorLen[iRotor&FTS3_ROTOR_MASK] = iEnd-iBegin;
     match = 0;
-    for(i=0; i<nTerm; i++){
-      int iCol;
-      iCol = aTerm[i].iColumn;
+    for(i=0; i<(FTS3_ROTOR_SZ-1) && nextExprToken(&pIter, &iIter); i++){
+      int nPhrase = pIter->pPhrase->nToken;   /* Tokens in current phrase */
+      struct PhraseToken *pToken = &pIter->pPhrase->aToken[iIter];
+      int iCol = pIter->pPhrase->iColumn;
       if( iCol>=0 && iCol<nColumn && iCol!=iColumn ) continue;
-      if( aTerm[i].nTerm>nToken ) continue;
-      if( !aTerm[i].isPrefix && aTerm[i].nTerm<nToken ) continue;
-      assert( aTerm[i].nTerm<=nToken );
-      if( memcmp(aTerm[i].pTerm, zToken, aTerm[i].nTerm) ) continue;
-      if( aTerm[i].iPhrase>1 && (prevMatch & (1<<i))==0 ) continue;
+      if( pToken->n>nToken ) continue;
+      if( !pToken->isPrefix && pToken->n<nToken ) continue;
+      assert( pToken->n<=nToken );
+      if( memcmp(pToken->z, zToken, pToken->n) ) continue;
+      if( iIter>0 && (prevMatch & (1<<i))==0 ) continue;
       match |= 1<<i;
-      if( i==nTerm-1 || aTerm[i+1].iPhrase==1 ){
-        for(j=aTerm[i].iPhrase-1; j>=0; j--){
+      if( i==(FTS3_ROTOR_SZ-2) || nPhrase==iIter+1 ){
+        for(j=nPhrase-1; j>=0; j--){
           int k = (iRotor-j) & FTS3_ROTOR_MASK;
           snippetAppendMatch(pSnippet, iColumn, i-j, iPos-j,
                 iRotorBegin[k], iRotorLen[k]);
@@ -3324,86 +3259,113 @@ static void snippetOffsetsOfColumn(
 ** then when this function is called the Snippet contains token offsets
 ** 0, 4 and 5. This function removes the "0" entry (because the first A
 ** is not near enough to an E).
+**
+** When this function is called, the value pointed to by parameter piLeft is
+** the integer id of the left-most token in the expression tree headed by
+** pExpr. This function increments *piLeft by the total number of tokens
+** in the expression tree headed by pExpr.
 */
-static void trimSnippetOffsetsForNear(Query *pQuery, Snippet *pSnippet){
-  int ii;
-  int iDir = 1;
+static int trimSnippetOffsets(
+  Fts3Expr *pExpr, 
+  Snippet *pSnippet,
+  int *piLeft
+){
+  if( pExpr ){
+    if( trimSnippetOffsets(pExpr->pLeft, pSnippet, piLeft) ){
+      return 1;
+    }
 
-  while(iDir>-2) {
-    assert( iDir==1 || iDir==-1 );
-    for(ii=0; ii<pSnippet->nMatch; ii++){
-      int jj;
-      int nNear;
-      struct snippetMatch *pMatch = &pSnippet->aMatch[ii];
-      QueryTerm *pQueryTerm = &pQuery->pTerms[pMatch->iTerm];
+    switch( pExpr->eType ){
+      case FTSQUERY_PHRASE:
+        *piLeft += pExpr->pPhrase->nToken;
+        break;
+      case FTSQUERY_NEAR: {
+        /* The right-hand-side of a NEAR operator is always a phrase. The
+        ** left-hand-side is either a phrase or an expression tree that is 
+        ** itself headed by a NEAR operator. The following initializations
+        ** set local variable iLeft to the token number of the left-most
+        ** token in the right-hand phrase, and iRight to the right most
+        ** token in the same phrase. For example, if we had:
+        **
+        **     <col> MATCH '"abc def" NEAR/2 "ghi jkl"'
+        **
+        ** then iLeft will be set to 2 (token number of ghi) and nToken will
+        ** be set to 4.
+        */
+        Fts3Expr *pLeft = pExpr->pLeft;
+        Fts3Expr *pRight = pExpr->pRight;
+        int iLeft = *piLeft;
+        int nNear = pExpr->nNear;
+        int nToken = pRight->pPhrase->nToken;
+        int jj, ii;
+        if( pLeft->eType==FTSQUERY_NEAR ){
+          pLeft = pLeft->pRight;
+        }
+        assert( pRight->eType==FTSQUERY_PHRASE );
+        assert( pLeft->eType==FTSQUERY_PHRASE );
+        nToken += pLeft->pPhrase->nToken;
 
-      if( (pMatch->iTerm+iDir)<0 
-       || (pMatch->iTerm+iDir)>=pQuery->nTerms
-      ){
-        continue;
-      }
-     
-      nNear = pQueryTerm->nNear;
-      if( iDir<0 ){
-        nNear = pQueryTerm[-1].nNear;
-      }
-  
-      if( pMatch->iTerm>=0 && nNear ){
-        int isOk = 0;
-        int iNextTerm = pMatch->iTerm+iDir;
-        int iPrevTerm = iNextTerm;
-
-        int iEndToken;
-        int iStartToken;
-
-        if( iDir<0 ){
-          int nPhrase = 1;
-          iStartToken = pMatch->iToken;
-          while( (pMatch->iTerm+nPhrase)<pQuery->nTerms 
-              && pQuery->pTerms[pMatch->iTerm+nPhrase].iPhrase>1 
-          ){
-            nPhrase++;
+        for(ii=0; ii<pSnippet->nMatch; ii++){
+          struct snippetMatch *p = &pSnippet->aMatch[ii];
+          if( p->iTerm==iLeft ){
+            int isOk = 0;
+            /* Snippet ii is an occurence of query term iLeft in the document.
+            ** It occurs at position (p->iToken) of the document. We now
+            ** search for an instance of token (iLeft-1) somewhere in the 
+            ** range (p->iToken - nNear)...(p->iToken + nNear + nToken) within 
+            ** the set of snippetMatch structures. If one is found, proceed. 
+            ** If one cannot be found, then remove snippets ii..(ii+N-1) 
+            ** from the matching snippets, where N is the number of tokens 
+            ** in phrase pRight->pPhrase.
+            */
+            for(jj=0; isOk==0 && jj<pSnippet->nMatch; jj++){
+              struct snippetMatch *p2 = &pSnippet->aMatch[jj];
+              if( p2->iTerm==(iLeft-1) ){
+                if( p2->iToken>=(p->iToken-nNear-1) 
+                 && p2->iToken<(p->iToken+nNear+nToken) 
+                ){
+                  isOk = 1;
+                }
+              }
+            }
+            if( !isOk ){
+              int kk;
+              for(kk=0; kk<pRight->pPhrase->nToken; kk++){
+                pSnippet->aMatch[kk+ii].iTerm = -2;
+              }
+              return 1;
+            }
           }
-          iEndToken = iStartToken + nPhrase - 1;
-        }else{
-          iEndToken   = pMatch->iToken;
-          iStartToken = pMatch->iToken+1-pQueryTerm->iPhrase;
-        }
-
-        while( pQuery->pTerms[iNextTerm].iPhrase>1 ){
-          iNextTerm--;
-        }
-        while( (iPrevTerm+1)<pQuery->nTerms && 
-               pQuery->pTerms[iPrevTerm+1].iPhrase>1 
-        ){
-          iPrevTerm++;
-        }
-  
-        for(jj=0; isOk==0 && jj<pSnippet->nMatch; jj++){
-          struct snippetMatch *p = &pSnippet->aMatch[jj];
-          if( p->iCol==pMatch->iCol && ((
-               p->iTerm==iNextTerm && 
-               p->iToken>iEndToken && 
-               p->iToken<=iEndToken+nNear
-          ) || (
-               p->iTerm==iPrevTerm && 
-               p->iToken<iStartToken && 
-               p->iToken>=iStartToken-nNear
-          ))){
-            isOk = 1;
+          if( p->iTerm==(iLeft-1) ){
+            int isOk = 0;
+            for(jj=0; isOk==0 && jj<pSnippet->nMatch; jj++){
+              struct snippetMatch *p2 = &pSnippet->aMatch[jj];
+              if( p2->iTerm==iLeft ){
+                if( p2->iToken<=(p->iToken+nNear+1) 
+                 && p2->iToken>(p->iToken-nNear-nToken) 
+                ){
+                  isOk = 1;
+                }
+              }
+            }
+            if( !isOk ){
+              int kk;
+              for(kk=0; kk<pLeft->pPhrase->nToken; kk++){
+                pSnippet->aMatch[ii-kk].iTerm = -2;
+              }
+              return 1;
+            }
           }
         }
-        if( !isOk ){
-          for(jj=1-pQueryTerm->iPhrase; jj<=0; jj++){
-            pMatch[jj].iTerm = -1;
-          }
-          ii = -1;
-          iDir = 1;
-        }
+        break;
       }
     }
-    iDir -= 2;
+
+    if( trimSnippetOffsets(pExpr->pRight, pSnippet, piLeft) ){
+      return 1;
+    }
   }
+  return 0;
 }
 
 /*
@@ -3414,11 +3376,12 @@ static void snippetAllOffsets(fulltext_cursor *p){
   int nColumn;
   int iColumn, i;
   int iFirst, iLast;
-  fulltext_vtab *pFts;
+  int iTerm = 0;
+  fulltext_vtab *pFts = cursor_vtab(p);
 
-  if( p->snippet.nMatch ) return;
-  if( p->q.nTerms==0 ) return;
-  pFts = p->q.pFts;
+  if( p->snippet.nMatch || p->pExpr==0 ){
+    return;
+  }
   nColumn = pFts->nColumn;
   iColumn = (p->iCursorType - QUERY_FULLTEXT);
   if( iColumn<0 || iColumn>=nColumn ){
@@ -3433,15 +3396,18 @@ static void snippetAllOffsets(fulltext_cursor *p){
     int nDoc;
     zDoc = (const char*)sqlite3_column_text(p->pStmt, i+1);
     nDoc = sqlite3_column_bytes(p->pStmt, i+1);
-    snippetOffsetsOfColumn(&p->q, &p->snippet, i, zDoc, nDoc);
+    snippetOffsetsOfColumn(p, &p->snippet, i, zDoc, nDoc);
   }
 
-  trimSnippetOffsetsForNear(&p->q, &p->snippet);
+  while( trimSnippetOffsets(p->pExpr, &p->snippet, &iTerm) ){
+    iTerm = 0;
+  }
 }
 
 /*
 ** Convert the information in the aMatch[] array of the snippet
-** into the string zOffset[0..nOffset-1].
+** into the string zOffset[0..nOffset-1]. This string is used as
+** the return of the SQL offsets() function.
 */
 static void snippetOffsetText(Snippet *p){
   int i;
@@ -3556,7 +3522,7 @@ static void snippetText(
     aMatch[i].snStatus = SNIPPET_IGNORE;
   }
   nDesired = 0;
-  for(i=0; i<pCursor->q.nTerms; i++){
+  for(i=0; i<FTS3_ROTOR_SZ; i++){
     for(j=0; j<nMatch; j++){
       if( aMatch[j].iTerm==i ){
         aMatch[j].snStatus = SNIPPET_DESIRED;
@@ -3644,9 +3610,11 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   fulltext_cursor *c = (fulltext_cursor *) pCursor;
   FTSTRACE(("FTS3 Close %p\n", c));
   sqlite3_finalize(c->pStmt);
-  queryClear(&c->q);
+  sqlite3Fts3ExprFree(c->pExpr);
   snippetClear(&c->snippet);
-  if( c->result.nData!=0 ) dlrDestroy(&c->reader);
+  if( c->result.nData!=0 ){
+    dlrDestroy(&c->reader);
+  }
   dataBufferDestroy(&c->result);
   sqlite3_free(c);
   return SQLITE_OK;
@@ -3703,255 +3671,127 @@ static int termSelect(fulltext_vtab *v, int iColumn,
                       const char *pTerm, int nTerm, int isPrefix,
                       DocListType iType, DataBuffer *out);
 
-/* Return a DocList corresponding to the query term *pTerm.  If *pTerm
-** is the first term of a phrase query, go ahead and evaluate the phrase
-** query and return the doclist for the entire phrase query.
+/* 
+** Return a DocList corresponding to the phrase *pPhrase.
 **
 ** The resulting DL_DOCIDS doclist is stored in pResult, which is
 ** overwritten.
 */
-static int docListOfTerm(
-  fulltext_vtab *v,    /* The full text index */
-  int iColumn,         /* column to restrict to.  No restriction if >=nColumn */
-  QueryTerm *pQTerm,   /* Term we are looking for, or 1st term of a phrase */
-  DataBuffer *pResult  /* Write the result here */
+static int docListOfPhrase(
+  fulltext_vtab *pTab,   /* The full text index */
+  Fts3Phrase *pPhrase,   /* Phrase to return a doclist corresponding to */
+  DocListType eListType, /* Either DL_DOCIDS or DL_POSITIONS */
+  DataBuffer *pResult    /* Write the result here */
 ){
-  DataBuffer left, right, new;
-  int i, rc;
-
-  /* No phrase search if no position info. */
-  assert( pQTerm->nPhrase==0 || DL_DEFAULT!=DL_DOCIDS );
+  int ii;
+  int rc = SQLITE_OK;
+  int iCol = pPhrase->iColumn;
+  DocListType eType = eListType;
+  assert( eType==DL_POSITIONS || eType==DL_DOCIDS );
+  if( pPhrase->nToken>1 ){
+    eType = DL_POSITIONS;
+  }
 
   /* This code should never be called with buffered updates. */
-  assert( v->nPendingData<0 );
+  assert( pTab->nPendingData<0 );
 
-  dataBufferInit(&left, 0);
-  rc = termSelect(v, iColumn, pQTerm->pTerm, pQTerm->nTerm, pQTerm->isPrefix,
-                  (0<pQTerm->nPhrase ? DL_POSITIONS : DL_DOCIDS), &left);
-  if( rc ) return rc;
-  for(i=1; i<=pQTerm->nPhrase && left.nData>0; i++){
-    /* If this token is connected to the next by a NEAR operator, and
-    ** the next token is the start of a phrase, then set nPhraseRight
-    ** to the number of tokens in the phrase. Otherwise leave it at 1.
-    */
-    int nPhraseRight = 1;
-    while( (i+nPhraseRight)<=pQTerm->nPhrase 
-        && pQTerm[i+nPhraseRight].nNear==0 
-    ){
-      nPhraseRight++;
-    }
-
-    dataBufferInit(&right, 0);
-    rc = termSelect(v, iColumn, pQTerm[i].pTerm, pQTerm[i].nTerm,
-                    pQTerm[i].isPrefix, DL_POSITIONS, &right);
-    if( rc ){
-      dataBufferDestroy(&left);
-      return rc;
-    }
-    dataBufferInit(&new, 0);
-    docListPhraseMerge(left.pData, left.nData, right.pData, right.nData,
-                       pQTerm[i-1].nNear, pQTerm[i-1].iPhrase + nPhraseRight,
-                       ((i<pQTerm->nPhrase) ? DL_POSITIONS : DL_DOCIDS),
-                       &new);
-    dataBufferDestroy(&left);
-    dataBufferDestroy(&right);
-    left = new;
-  }
-  *pResult = left;
-  return SQLITE_OK;
-}
-
-/* Add a new term pTerm[0..nTerm-1] to the query *q.
-*/
-static void queryAdd(Query *q, const char *pTerm, int nTerm){
-  QueryTerm *t;
-  ++q->nTerms;
-  q->pTerms = sqlite3_realloc(q->pTerms, q->nTerms * sizeof(q->pTerms[0]));
-  if( q->pTerms==0 ){
-    q->nTerms = 0;
-    return;
-  }
-  t = &q->pTerms[q->nTerms - 1];
-  CLEAR(t);
-  t->pTerm = sqlite3_malloc(nTerm+1);
-  memcpy(t->pTerm, pTerm, nTerm);
-  t->pTerm[nTerm] = 0;
-  t->nTerm = nTerm;
-  t->isOr = q->nextIsOr;
-  t->isPrefix = 0;
-  q->nextIsOr = 0;
-  t->iColumn = q->nextColumn;
-  q->nextColumn = q->dfltColumn;
-}
-
-/*
-** Check to see if the string zToken[0...nToken-1] matches any
-** column name in the virtual table.   If it does,
-** return the zero-indexed column number.  If not, return -1.
-*/
-static int checkColumnSpecifier(
-  fulltext_vtab *pVtab,    /* The virtual table */
-  const char *zToken,      /* Text of the token */
-  int nToken               /* Number of characters in the token */
-){
-  int i;
-  for(i=0; i<pVtab->nColumn; i++){
-    if( memcmp(pVtab->azColumn[i], zToken, nToken)==0
-        && pVtab->azColumn[i][nToken]==0 ){
-      return i;
-    }
-  }
-  return -1;
-}
-
-/*
-** Parse the text at zSegment[0..nSegment-1].  Add additional terms
-** to the query being assemblied in pQuery.
-**
-** inPhrase is true if zSegment[0..nSegement-1] is contained within
-** double-quotes.  If inPhrase is true, then the first term
-** is marked with the number of terms in the phrase less one and
-** OR and "-" syntax is ignored.  If inPhrase is false, then every
-** term found is marked with nPhrase=0 and OR and "-" syntax is significant.
-*/
-static int tokenizeSegment(
-  sqlite3_tokenizer *pTokenizer,          /* The tokenizer to use */
-  const char *zSegment, int nSegment,     /* Query expression being parsed */
-  int inPhrase,                           /* True if within "..." */
-  Query *pQuery                           /* Append results here */
-){
-  const sqlite3_tokenizer_module *pModule = pTokenizer->pModule;
-  sqlite3_tokenizer_cursor *pCursor;
-  int firstIndex = pQuery->nTerms;
-  int iCol;
-  int nTerm = 1;
-  
-  int rc = pModule->xOpen(pTokenizer, zSegment, nSegment, &pCursor);
-  if( rc!=SQLITE_OK ) return rc;
-  pCursor->pTokenizer = pTokenizer;
-
-  while( 1 ){
-    const char *zToken;
-    int nToken, iBegin, iEnd, iPos;
-
-    rc = pModule->xNext(pCursor,
-                        &zToken, &nToken,
-                        &iBegin, &iEnd, &iPos);
-    if( rc!=SQLITE_OK ) break;
-    if( !inPhrase &&
-        zSegment[iEnd]==':' &&
-         (iCol = checkColumnSpecifier(pQuery->pFts, zToken, nToken))>=0 ){
-      pQuery->nextColumn = iCol;
-      continue;
-    }
-    if( !inPhrase && pQuery->nTerms>0 && nToken==2 
-     && zSegment[iBegin+0]=='O'
-     && zSegment[iBegin+1]=='R' 
-    ){
-      pQuery->nextIsOr = 1;
-      continue;
-    }
-    if( !inPhrase && pQuery->nTerms>0 && !pQuery->nextIsOr && nToken==4 
-      && memcmp(&zSegment[iBegin], "NEAR", 4)==0
-    ){
-      QueryTerm *pTerm = &pQuery->pTerms[pQuery->nTerms-1];
-      if( (iBegin+6)<nSegment 
-       && zSegment[iBegin+4] == '/'
-       && isdigit(zSegment[iBegin+5])
-      ){
-        int k;
-        pTerm->nNear = 0;
-        for(k=5; (iBegin+k)<=nSegment && isdigit(zSegment[iBegin+k]); k++){
-          pTerm->nNear = pTerm->nNear*10 + (zSegment[iBegin+k] - '0');
+  for(ii=0; rc==SQLITE_OK && ii<pPhrase->nToken; ii++){
+    DataBuffer tmp;
+    struct PhraseToken *p = &pPhrase->aToken[ii];
+    rc = termSelect(pTab, iCol, p->z, p->n, p->isPrefix, eType, &tmp);
+    if( rc==SQLITE_OK ){
+      if( ii==0 ){
+        *pResult = tmp;
+      }else{
+        DataBuffer res = *pResult;
+        dataBufferInit(pResult, 0);
+        if( ii==(pPhrase->nToken-1) ){
+          eType = eListType;
         }
-        pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
-      } else {
-        pTerm->nNear = SQLITE_FTS3_DEFAULT_NEAR_PARAM;
+        docListPhraseMerge(
+          res.pData, res.nData, tmp.pData, tmp.nData, 0, 0, eType, pResult
+        );
+        dataBufferDestroy(&res);
+        dataBufferDestroy(&tmp);
       }
-      pTerm->nNear++;
-      continue;
-    }
-
-    queryAdd(pQuery, zToken, nToken);
-    if( !inPhrase && iBegin>0 && zSegment[iBegin-1]=='-' ){
-      pQuery->pTerms[pQuery->nTerms-1].isNot = 1;
-    }
-    if( iEnd<nSegment && zSegment[iEnd]=='*' ){
-      pQuery->pTerms[pQuery->nTerms-1].isPrefix = 1;
-    }
-    pQuery->pTerms[pQuery->nTerms-1].iPhrase = nTerm;
-    if( inPhrase ){
-      nTerm++;
     }
   }
 
-  if( inPhrase && pQuery->nTerms>firstIndex ){
-    pQuery->pTerms[firstIndex].nPhrase = pQuery->nTerms - firstIndex - 1;
-  }
-
-  return pModule->xClose(pCursor);
+  return rc;
 }
 
-/* Parse a query string, yielding a Query object pQuery.
-**
-** The calling function will need to queryClear() to clean up
-** the dynamically allocated memory held by pQuery.
+/*
+** Evaluate the full-text expression pExpr against fts3 table pTab. Write
+** the results into pRes.
 */
-static int parseQuery(
-  fulltext_vtab *v,        /* The fulltext index */
-  const char *zInput,      /* Input text of the query string */
-  int nInput,              /* Size of the input text */
-  int dfltColumn,          /* Default column of the index to match against */
-  Query *pQuery            /* Write the parse results here. */
+static int evalFts3Expr(
+  fulltext_vtab *pTab,           /* Fts3 Virtual table object */
+  Fts3Expr *pExpr,               /* Parsed fts3 expression */
+  DataBuffer *pRes               /* OUT: Write results of the expression here */
 ){
-  int iInput, inPhrase = 0;
-  int ii;
-  QueryTerm *aTerm;
+  int rc = SQLITE_OK;
 
-  if( zInput==0 ) nInput = 0;
-  if( nInput<0 ) nInput = strlen(zInput);
-  pQuery->nTerms = 0;
-  pQuery->pTerms = NULL;
-  pQuery->nextIsOr = 0;
-  pQuery->nextColumn = dfltColumn;
-  pQuery->dfltColumn = dfltColumn;
-  pQuery->pFts = v;
-
-  for(iInput=0; iInput<nInput; ++iInput){
-    int i;
-    for(i=iInput; i<nInput && zInput[i]!='"'; ++i){}
-    if( i>iInput ){
-      tokenizeSegment(v->pTokenizer, zInput+iInput, i-iInput, inPhrase,
-                       pQuery);
-    }
-    iInput = i;
-    if( i<nInput ){
-      assert( zInput[i]=='"' );
-      inPhrase = !inPhrase;
-    }
-  }
-
-  if( inPhrase ){
-    /* unmatched quote */
-    queryClear(pQuery);
-    return SQLITE_ERROR;
-  }
-
-  /* Modify the values of the QueryTerm.nPhrase variables to account for
-  ** the NEAR operator. For the purposes of QueryTerm.nPhrase, phrases
-  ** and tokens connected by the NEAR operator are handled as a single
-  ** phrase. See comments above the QueryTerm structure for details.
+  /* Initialize the output buffer. If this is an empty query (pExpr==0), 
+  ** this is all that needs to be done. Empty queries produce empty 
+  ** result sets.
   */
-  aTerm = pQuery->pTerms;
-  for(ii=0; ii<pQuery->nTerms; ii++){
-    if( aTerm[ii].nNear || aTerm[ii].nPhrase ){
-      while (aTerm[ii+aTerm[ii].nPhrase].nNear) {
-        aTerm[ii].nPhrase += (1 + aTerm[ii+aTerm[ii].nPhrase+1].nPhrase);
+  dataBufferInit(pRes, 0);
+
+  if( pExpr ){
+    if( pExpr->eType==FTSQUERY_PHRASE ){
+      DocListType eType = DL_DOCIDS;
+      if( pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR ){
+        eType = DL_POSITIONS;
       }
+      rc = docListOfPhrase(pTab, pExpr->pPhrase, eType, pRes);
+    }else{
+      DataBuffer lhs;
+      DataBuffer rhs;
+
+      dataBufferInit(&rhs, 0);
+      if( SQLITE_OK==(rc = evalFts3Expr(pTab, pExpr->pLeft, &lhs)) 
+       && SQLITE_OK==(rc = evalFts3Expr(pTab, pExpr->pRight, &rhs)) 
+      ){
+        switch( pExpr->eType ){
+          case FTSQUERY_NEAR: {
+            int nToken;
+            Fts3Expr *pLeft;
+            DocListType eType = DL_DOCIDS;
+            if( pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR ){
+              eType = DL_POSITIONS;
+            }
+            pLeft = pExpr->pLeft;
+            while( pLeft->eType==FTSQUERY_NEAR ){ 
+              pLeft=pLeft->pRight;
+            }
+            assert( pExpr->pRight->eType==FTSQUERY_PHRASE );
+            assert( pLeft->eType==FTSQUERY_PHRASE );
+            nToken = pLeft->pPhrase->nToken + pExpr->pRight->pPhrase->nToken;
+            docListPhraseMerge(lhs.pData, lhs.nData, rhs.pData, rhs.nData, 
+                pExpr->nNear+1, nToken, eType, pRes
+            );
+            break;
+          }
+          case FTSQUERY_NOT: {
+            docListExceptMerge(lhs.pData, lhs.nData, rhs.pData, rhs.nData,pRes);
+            break;
+          }
+          case FTSQUERY_AND: {
+            docListAndMerge(lhs.pData, lhs.nData, rhs.pData, rhs.nData, pRes);
+            break;
+          }
+          case FTSQUERY_OR: {
+            docListOrMerge(lhs.pData, lhs.nData, rhs.pData, rhs.nData, pRes);
+            break;
+          }
+        }
+      }
+      dataBufferDestroy(&lhs);
+      dataBufferDestroy(&rhs);
     }
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 /* TODO(shess) Refactor the code to remove this forward decl. */
@@ -3970,12 +3810,9 @@ static int fulltextQuery(
   const char *zInput,    /* The query string */
   int nInput,            /* Number of bytes in zInput[] */
   DataBuffer *pResult,   /* Write the result doclist here */
-  Query *pQuery          /* Put parsed query string here */
+  Fts3Expr **ppExpr        /* Put parsed query string here */
 ){
-  int i, iNext, rc;
-  DataBuffer left, right, or, new;
-  int nNot = 0;
-  QueryTerm *aTerm;
+  int rc;
 
   /* TODO(shess) Instead of flushing pendingTerms, we could query for
   ** the relevant term and merge the doclist into what we receive from
@@ -3987,86 +3824,20 @@ static int fulltextQuery(
 
   /* Flush any buffered updates before executing the query. */
   rc = flushPendingTerms(v);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* TODO(shess) I think that the queryClear() calls below are not
-  ** necessary, because fulltextClose() already clears the query.
-  */
-  rc = parseQuery(v, zInput, nInput, iColumn, pQuery);
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* Empty or NULL queries return no results. */
-  if( pQuery->nTerms==0 ){
-    dataBufferInit(pResult, 0);
-    return SQLITE_OK;
+  if( rc!=SQLITE_OK ){
+    return rc;
   }
 
-  /* Merge AND terms. */
-  /* TODO(shess) I think we can early-exit if( i>nNot && left.nData==0 ). */
-  aTerm = pQuery->pTerms;
-  for(i = 0; i<pQuery->nTerms; i=iNext){
-    if( aTerm[i].isNot ){
-      /* Handle all NOT terms in a separate pass */
-      nNot++;
-      iNext = i + aTerm[i].nPhrase+1;
-      continue;
-    }
-    iNext = i + aTerm[i].nPhrase + 1;
-    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &right);
-    if( rc ){
-      if( i!=nNot ) dataBufferDestroy(&left);
-      queryClear(pQuery);
-      return rc;
-    }
-    while( iNext<pQuery->nTerms && aTerm[iNext].isOr ){
-      rc = docListOfTerm(v, aTerm[iNext].iColumn, &aTerm[iNext], &or);
-      iNext += aTerm[iNext].nPhrase + 1;
-      if( rc ){
-        if( i!=nNot ) dataBufferDestroy(&left);
-        dataBufferDestroy(&right);
-        queryClear(pQuery);
-        return rc;
-      }
-      dataBufferInit(&new, 0);
-      docListOrMerge(right.pData, right.nData, or.pData, or.nData, &new);
-      dataBufferDestroy(&right);
-      dataBufferDestroy(&or);
-      right = new;
-    }
-    if( i==nNot ){           /* first term processed. */
-      left = right;
-    }else{
-      dataBufferInit(&new, 0);
-      docListAndMerge(left.pData, left.nData, right.pData, right.nData, &new);
-      dataBufferDestroy(&right);
-      dataBufferDestroy(&left);
-      left = new;
-    }
+  /* Parse the query passed to the MATCH operator. */
+  rc = sqlite3Fts3ExprParse(v->pTokenizer, 
+      v->azColumn, v->nColumn, iColumn, zInput, nInput, ppExpr
+  );
+  if( rc!=SQLITE_OK ){
+    assert( 0==(*ppExpr) );
+    return rc;
   }
 
-  if( nNot==pQuery->nTerms ){
-    /* We do not yet know how to handle a query of only NOT terms */
-    return SQLITE_ERROR;
-  }
-
-  /* Do the EXCEPT terms */
-  for(i=0; i<pQuery->nTerms;  i += aTerm[i].nPhrase + 1){
-    if( !aTerm[i].isNot ) continue;
-    rc = docListOfTerm(v, aTerm[i].iColumn, &aTerm[i], &right);
-    if( rc ){
-      queryClear(pQuery);
-      dataBufferDestroy(&left);
-      return rc;
-    }
-    dataBufferInit(&new, 0);
-    docListExceptMerge(left.pData, left.nData, right.pData, right.nData, &new);
-    dataBufferDestroy(&right);
-    dataBufferDestroy(&left);
-    left = new;
-  }
-
-  *pResult = left;
-  return rc;
+  return evalFts3Expr(v, *ppExpr, pResult);
 }
 
 /*
@@ -4146,10 +3917,10 @@ static int fulltextFilter(
 
     default:   /* full-text search */
     {
+      int iCol = idxNum-QUERY_FULLTEXT;
       const char *zQuery = (const char *)sqlite3_value_text(argv[0]);
       assert( idxNum<=QUERY_FULLTEXT+v->nColumn);
       assert( argc==1 );
-      queryClear(&c->q);
       if( c->result.nData!=0 ){
         /* This case happens if the same cursor is used repeatedly. */
         dlrDestroy(&c->reader);
@@ -4157,7 +3928,7 @@ static int fulltextFilter(
       }else{
         dataBufferInit(&c->result, 0);
       }
-      rc = fulltextQuery(v, idxNum-QUERY_FULLTEXT, zQuery, -1, &c->result, &c->q);
+      rc = fulltextQuery(v, iCol, zQuery, -1, &c->result, &c->pExpr);
       if( rc!=SQLITE_OK ) return rc;
       if( c->result.nData!=0 ){
         dlrInit(&c->reader, DL_DOCIDS, c->result.pData, c->result.nData);
@@ -6041,9 +5812,14 @@ static int loadSegment(fulltext_vtab *v, const char *pData, int nData,
 /* Scan the database and merge together the posting lists for the term
 ** into *out.
 */
-static int termSelect(fulltext_vtab *v, int iColumn,
-                      const char *pTerm, int nTerm, int isPrefix,
-                      DocListType iType, DataBuffer *out){
+static int termSelect(
+  fulltext_vtab *v, 
+  int iColumn,
+  const char *pTerm, int nTerm,             /* Term to query for */
+  int isPrefix,                             /* True for a prefix search */
+  DocListType iType, 
+  DataBuffer *out                           /* Write results here */
+){
   DataBuffer doclist;
   sqlite3_stmt *s;
   int rc = sql_get_statement(v, SEGDIR_SELECT_ALL_STMT, &s);
@@ -6053,6 +5829,7 @@ static int termSelect(fulltext_vtab *v, int iColumn,
   assert( v->nPendingData<0 );
 
   dataBufferInit(&doclist, 0);
+  dataBufferInit(out, 0);
 
   /* Traverse the segments from oldest to newest so that newer doclist
   ** elements for given docids overwrite older elements.
@@ -7169,6 +6946,10 @@ int sqlite3Fts3Init(sqlite3 *db){
       rc = SQLITE_NOMEM;
     }
   }
+
+#ifdef SQLITE_TEST
+  sqlite3Fts3ExprInitTestInterface(db);
+#endif
 
   /* Create the virtual table wrapper around the hash-table and overload 
   ** the two scalar functions. If this is successful, register the

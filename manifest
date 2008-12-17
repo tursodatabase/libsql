@@ -1,5 +1,5 @@
-C Version\s3.6.7\s(CVS\s6033)
-D 2008-12-16T18:15:59
+C Modify\sfts3\sto\ssupport\sa\smore\scomplex\sexpression\ssyntax\sthat\sallows\sparenthesis.\sThe\snew\ssyntax\sis\snot\sentirely\sbackwards\scompatible,\sso\sis\sdisabled\sby\sdefault.\sUse\s-DSQLITE_ENABLE_FTS3_PARENTHESIS\sto\senable\sit.\s(CVS\s6034)
+D 2008-12-17T15:18:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -52,8 +52,10 @@ F ext/fts2/fts2_tokenizer1.c 8545ce12b41922004da46e91a7b023b92b76f94e
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e67453b6ac421b79e600385491ed7f038b3bb271
+F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
+F ext/fts3/fts3_expr.c b141145197cc749accb03d2b970813443b723edd
+F ext/fts3/fts3_expr.h 4dad4d87cf5d41ea924a815fe89a6f87dc76f277
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
@@ -80,7 +82,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 09fe5815427dc7d0abb188bbcdf0e34896577210
-F main.mk 5923e75b5ac4b265f322597c3953dda7175f4405
+F main.mk f6eb58a66f942bf672ab58e74e30e72cad39b93f
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -160,7 +162,7 @@ F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 23afb60549af943e135ded441a631f4745be6040
-F src/test1.c 9c0502c3627162f969099e57932782057d9139b6
+F src/test1.c b193b8b80617bdb8297b25a87d00ee8d5a125d0d
 F src/test2.c 897528183edf2839c2a3c991d415905db56f1240
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -364,6 +366,7 @@ F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
+F test/fts3expr.test 18143e61503845b940fd7caacce53bce4307426f
 F test/fts3near.test e8a9b4e16c63a795918b334b74d4aec14815bf8b
 F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -675,7 +678,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8b8f6a6ab597e06e60557ab56c6ee7f8522ed570
-R a6ff965a91307b50874e830368f8fcd6
-U drh
-Z 76064440713dce47dc110c16fc71382b
+P f4f40370fb83d677df3fbf2c51c4bb4a3e5ccc7a
+R 0170cc023fb1827148ff15e7bc02335a
+U danielk1977
+Z 3401f60bb1566cbc5da4c344a91c4fb9
