@@ -155,12 +155,12 @@ static int getNextToken(
   return rc;
 }
 
-void realloc_or_free(void **ppOrig, int nNew){
-  void *pRet = sqlite3_realloc(*ppOrig, nNew);
+void *realloc_or_free(void *pOrig, int nNew){
+  void *pRet = sqlite3_realloc(pOrig, nNew);
   if( !pRet ){
-    sqlite3_free(*ppOrig);
+    sqlite3_free(pOrig);
   }
-  *ppOrig = pRet;
+  return pRet;
 }
 
 /*
@@ -198,8 +198,8 @@ static int getNextString(
       rc = pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
       if( rc==SQLITE_OK ){
         int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-        realloc_or_free((void **)&p, nByte+ii*sizeof(struct PhraseToken));
-        realloc_or_free((void **)&zTemp, nTemp + nToken);
+        p = realloc_or_free(p, nByte+ii*sizeof(struct PhraseToken));
+        zTemp = realloc_or_free(zTemp, nTemp + nToken);
         if( !p || !zTemp ){
           goto no_mem;
         }
@@ -232,7 +232,7 @@ static int getNextString(
     int nNew = 0;
     int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
     nByte += (p->pPhrase->nToken-1) * sizeof(struct PhraseToken);
-    realloc_or_free((void **)&p, nByte + nTemp);
+    p = realloc_or_free(p, nByte + nTemp);
     if( !p ){
       goto no_mem;
     }
@@ -308,7 +308,7 @@ static int getNextNode(
   }
 
   /* See if we are dealing with a keyword. */
-  for(ii=0; ii<sizeof(aKeyword)/sizeof(struct Fts3Keyword); ii++){
+  for(ii=0; ii<(int)(sizeof(aKeyword)/sizeof(struct Fts3Keyword)); ii++){
     struct Fts3Keyword *pKey = &aKeyword[ii];
 
     if( (0==sqlite3_fts3_enable_parentheses)

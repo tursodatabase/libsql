@@ -1,5 +1,5 @@
-C Modify\sfts3\sto\ssupport\sa\smore\scomplex\sexpression\ssyntax\sthat\sallows\sparenthesis.\sThe\snew\ssyntax\sis\snot\sentirely\sbackwards\scompatible,\sso\sis\sdisabled\sby\sdefault.\sUse\s-DSQLITE_ENABLE_FTS3_PARENTHESIS\sto\senable\sit.\s(CVS\s6034)
-D 2008-12-17T15:18:18
+C Fix\ssome\sstrict-aliasing\sproblems\sin\sfts3_expr.c.\s(CVS\s6035)
+D 2008-12-17T15:49:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -54,7 +54,7 @@ F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c b141145197cc749accb03d2b970813443b723edd
+F ext/fts3/fts3_expr.c a20038d4ebbfbadc1947d33e21f4d58f20637253
 F ext/fts3/fts3_expr.h 4dad4d87cf5d41ea924a815fe89a6f87dc76f277
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -678,7 +678,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f4f40370fb83d677df3fbf2c51c4bb4a3e5ccc7a
-R 0170cc023fb1827148ff15e7bc02335a
+P 7389b9ecb80294569845c40a23e0c832d07f7a45
+R b5a5267b6551ee3859c69dff94406f49
 U danielk1977
-Z 3401f60bb1566cbc5da4c344a91c4fb9
+Z 6c8b8d45848acab7be1cd4bfcb7320ce
