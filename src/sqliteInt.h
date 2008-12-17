@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.809 2008/12/10 21:19:57 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.810 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -522,6 +522,7 @@ typedef struct LookasideSlot LookasideSlot;
 typedef struct Module Module;
 typedef struct NameContext NameContext;
 typedef struct Parse Parse;
+typedef struct Savepoint Savepoint;
 typedef struct Select Select;
 typedef struct SrcList SrcList;
 typedef struct StrAccum StrAccum;
@@ -765,6 +766,9 @@ struct sqlite3 {
 #ifdef SQLITE_SSE
   sqlite3_stmt *pFetch;         /* Used by SSE to fetch stored statements */
 #endif
+  Savepoint *pSavepoint;        /* List of active savepoints */
+  int nSavepoint;               /* Number of non-transaction savepoints */
+  u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
 };
 
 /*
@@ -875,6 +879,25 @@ struct FuncDef {
   {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
   {nArg, SQLITE_UTF8, nc*8, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0}
+
+/*
+** All current savepoints are stored in a linked list starting at
+** sqlite3.pSavepoint. The first element in the list is the most recently
+** opened savepoint. Savepoints are added to the list by the vdbe
+** OP_Savepoint instruction.
+*/
+struct Savepoint {
+  char *zName;                        /* Savepoint name (nul-terminated) */
+  Savepoint *pNext;                   /* Parent savepoint (if any) */
+};
+
+/*
+** The following are used as the second parameter to sqlite3Savepoint(),
+** and as the P1 argument to the OP_Savepoint instruction.
+*/
+#define SAVEPOINT_BEGIN      0
+#define SAVEPOINT_RELEASE    1
+#define SAVEPOINT_ROLLBACK   2
 
 
 /*
@@ -2249,6 +2272,8 @@ void sqlite3CodeVerifySchema(Parse*, int);
 void sqlite3BeginTransaction(Parse*, int);
 void sqlite3CommitTransaction(Parse*);
 void sqlite3RollbackTransaction(Parse*);
+void sqlite3Savepoint(Parse*, int, Token*);
+void sqlite3CloseSavepoints(sqlite3 *);
 int sqlite3ExprIsConstant(Expr*);
 int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*);

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.62 2008/09/29 11:49:48 danielk1977 Exp $
+** $Id: test2.c,v 1.63 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -197,7 +197,7 @@ static int pager_stmt_begin(
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerStmtBegin(pPager);
+  rc = sqlite3PagerOpenSavepoint(pPager, 1);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -224,7 +224,8 @@ static int pager_stmt_rollback(
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerStmtRollback(pPager);
+  rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, 0);
+  sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;
@@ -251,7 +252,7 @@ static int pager_stmt_commit(
     return TCL_ERROR;
   }
   pPager = sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerStmtCommit(pPager);
+  rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_RELEASE, 0);
   if( rc!=SQLITE_OK ){
     Tcl_AppendResult(interp, errorName(rc), 0);
     return TCL_ERROR;

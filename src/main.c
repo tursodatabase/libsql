@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.519 2008/12/10 23:04:13 drh Exp $
+** $Id: main.c,v 1.520 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -546,6 +546,21 @@ int sqlite3_total_changes(sqlite3 *db){
 }
 
 /*
+** Close all open savepoints. This function only manipulates fields of the
+** database handle object, it does not close any savepoints that may be open
+** at the b-tree/pager level.
+*/
+void sqlite3CloseSavepoints(sqlite3 *db){
+  while( db->pSavepoint ){
+    Savepoint *pTmp = db->pSavepoint;
+    db->pSavepoint = pTmp->pNext;
+    sqlite3DbFree(db, pTmp);
+  }
+  db->nSavepoint = 0;
+  db->isTransactionSavepoint = 0;
+}
+
+/*
 ** Close an existing SQLite database
 */
 int sqlite3_close(sqlite3 *db){
@@ -586,6 +601,9 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_BUSY;
   }
   assert( sqlite3SafetyCheckSickOrOk(db) );
+
+  /* Free any outstanding Savepoint structures. */
+  sqlite3CloseSavepoints(db);
 
   for(j=0; j<db->nDb; j++){
     struct Db *pDb = &db->aDb[j];

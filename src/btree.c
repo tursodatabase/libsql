@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.548 2008/12/16 13:46:30 drh Exp $
+** $Id: btree.c,v 1.549 2008/12/17 17:30:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2059,6 +2059,9 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 
 
 trans_begun:
+  if( rc==SQLITE_OK && wrflag ){
+    rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint);
+  }
   btreeIntegrity(p);
   sqlite3BtreeLeave(p);
   return rc;
@@ -2729,13 +2732,22 @@ int sqlite3BtreeBeginStmt(Btree *p){
     rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
   }else{
     assert( pBt->inTransaction==TRANS_WRITE );
-    rc = pBt->readOnly ? SQLITE_OK : sqlite3PagerStmtBegin(pBt->pPager);
+    if( pBt->readOnly ){
+      rc = SQLITE_OK;
+    }else{
+      /* At the pager level, a statement transaction is a savepoint with
+      ** an index greater than all savepoints created explicitly using
+      ** SQL statements. It is illegal to open, release or rollback any
+      ** such savepoints while the statement transaction savepoint is active.
+      */
+      int iStmtpoint = p->db->nSavepoint + 1;
+      rc = sqlite3PagerOpenSavepoint(pBt->pPager, iStmtpoint);
+    }
     pBt->inStmt = 1;
   }
   sqlite3BtreeLeave(p);
   return rc;
 }
-
 
 /*
 ** Commit the statment subtransaction currently in progress.  If no
@@ -2747,7 +2759,8 @@ int sqlite3BtreeCommitStmt(Btree *p){
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
   if( pBt->inStmt && !pBt->readOnly ){
-    rc = sqlite3PagerStmtCommit(pBt->pPager);
+    int iStmtpoint = p->db->nSavepoint;
+    rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
   }else{
     rc = SQLITE_OK;
   }
@@ -2770,10 +2783,35 @@ int sqlite3BtreeRollbackStmt(Btree *p){
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
   if( pBt->inStmt && !pBt->readOnly ){
-    rc = sqlite3PagerStmtRollback(pBt->pPager);
+    int iStmtpoint = p->db->nSavepoint;
+    rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_ROLLBACK, iStmtpoint);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
+    }
     pBt->inStmt = 0;
   }
   sqlite3BtreeLeave(p);
+  return rc;
+}
+
+/*
+** The second argument to this function, op, is always SAVEPOINT_ROLLBACK
+** or SAVEPOINT_RELEASE. This function either releases or rolls back the
+** savepoint identified by parameter iSavepoint, depending on the value of
+** op.
+*/
+int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
+  int rc = SQLITE_OK;
+  if( p && p->inTrans==TRANS_WRITE ){
+    BtShared *pBt = p->pBt;
+    assert( pBt->inStmt==0 );
+    assert( op==SAVEPOINT_RELEASE || op==SAVEPOINT_ROLLBACK );
+    assert( iSavepoint>=0 || (iSavepoint==-1 && op==SAVEPOINT_ROLLBACK) );
+    sqlite3BtreeEnter(p);
+    pBt->db = p->db;
+    rc = sqlite3PagerSavepoint(pBt->pPager, op, iSavepoint);
+    sqlite3BtreeLeave(p);
+  }
   return rc;
 }
 

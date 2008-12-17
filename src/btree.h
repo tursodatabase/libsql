@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.105 2008/10/27 13:59:34 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.106 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -101,6 +101,7 @@ int sqlite3BtreeIsInReadTrans(Btree*);
 void *sqlite3BtreeSchema(Btree *, int, void(*)(void *));
 int sqlite3BtreeSchemaLocked(Btree *);
 int sqlite3BtreeLockTable(Btree *, int, u8);
+int sqlite3BtreeSavepoint(Btree *, int, int);
 
 const char *sqlite3BtreeGetFilename(Btree *);
 const char *sqlite3BtreeGetDirname(Btree *);

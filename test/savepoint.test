@@ -1,0 +1,269 @@
+# 2008 December 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: savepoint.test,v 1.1 2008/12/17 17:30:26 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+
+#----------------------------------------------------------------------
+# The following tests - savepoint-1.* - test that the SAVEPOINT, RELEASE
+# and ROLLBACK TO comands are correctly parsed, and that the auto-commit
+# flag is correctly set and unset as a result.
+#
+do_test savepoint-1.1 {
+  execsql {
+    SAVEPOINT sp1;
+    RELEASE sp1;
+  }
+} {}
+do_test savepoint-1.2 {
+  execsql {
+    SAVEPOINT sp1;
+    ROLLBACK TO sp1;
+  }
+} {}
+do_test savepoint-1.3 {
+  execsql { SAVEPOINT sp1 }
+  db close
+} {}
+sqlite3 db test.db
+do_test savepoint-1.4.1 {
+  execsql {
+    SAVEPOINT sp1;
+    SAVEPOINT sp2;
+    RELEASE sp1;
+  }
+  sqlite3_get_autocommit db
+} {1}
+do_test savepoint-1.4.2 {
+  execsql {
+    SAVEPOINT sp1;
+    SAVEPOINT sp2;
+    RELEASE sp2;
+  }
+  sqlite3_get_autocommit db
+} {0}
+do_test savepoint-1.4.3 {
+  execsql { RELEASE sp1 }
+  sqlite3_get_autocommit db
+} {1}
+do_test savepoint-1.4.4 {
+  execsql {
+    SAVEPOINT sp1;
+    SAVEPOINT sp2;
+    ROLLBACK TO sp1;
+  }
+  sqlite3_get_autocommit db
+} {0}
+do_test savepoint-1.4.5 {
+  execsql { RELEASE SAVEPOINT sp1 }
+  sqlite3_get_autocommit db
+} {1}
+do_test savepoint-1.4.6 {
+  execsql {
+    SAVEPOINT sp1;
+    SAVEPOINT sp2;
+    SAVEPOINT sp3;
+    ROLLBACK TO SAVEPOINT sp3;
+    ROLLBACK TRANSACTION TO sp2;
+    ROLLBACK TRANSACTION TO SAVEPOINT sp1;
+  }
+  sqlite3_get_autocommit db
+} {0}
+do_test savepoint-1.4.7 {
+  execsql { RELEASE SAVEPOINT SP1 }
+  sqlite3_get_autocommit db
+} {1}
+do_test savepoint-1.5 {
+  execsql {
+    SAVEPOINT sp1;
+    ROLLBACK TO sp1;
+  }
+} {}
+do_test savepoint-1.6 {
+  execsql COMMIT
+} {}
+
+#------------------------------------------------------------------------
+# These tests - savepoint-2.* - test rollbacks and releases of savepoints
+# with a very simple data set.
+# 
+
+do_test savepoint-2.1 {
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    BEGIN;
+    INSERT INTO t1 VALUES(1, 2, 3);
+    SAVEPOINT one;
+    UPDATE t1 SET a = 2, b = 3, c = 4;
+  }
+  execsql { SELECT * FROM t1 }
+} {2 3 4}
+do_test savepoint-2.2 {
+  execsql {
+    ROLLBACK TO one;
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3}
+do_test savepoint-2.3 {
+  execsql {
+    INSERT INTO t1 VALUES(4, 5, 6);
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4 5 6}
+do_test savepoint-2.4 {
+  execsql {
+    ROLLBACK TO one;
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3}
+
+
+do_test savepoint-2.5 {
+  execsql {
+    INSERT INTO t1 VALUES(7, 8, 9);
+    SAVEPOINT two;
+    INSERT INTO t1 VALUES(10, 11, 12);
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 7 8 9 10 11 12}
+do_test savepoint-2.6 {
+  execsql {
+    ROLLBACK TO two;
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 7 8 9}
+do_test savepoint-2.7 {
+  execsql {
+    INSERT INTO t1 VALUES(10, 11, 12);
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 7 8 9 10 11 12}
+do_test savepoint-2.8 {
+  execsql {
+    ROLLBACK TO one;
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3}
+do_test savepoint-2.9 {
+  execsql {
+    INSERT INTO t1 VALUES('a', 'b', 'c');
+    SAVEPOINT two;
+    INSERT INTO t1 VALUES('d', 'e', 'f');
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 a b c d e f}
+do_test savepoint-2.10 {
+  execsql {
+    RELEASE two;
+  }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 a b c d e f}
+do_test savepoint-2.11 {
+  execsql {
+    ROLLBACK;
+  }
+  execsql { SELECT * FROM t1 }
+} {}
+
+#------------------------------------------------------------------------
+# This block of tests - savepoint-3.* - test that when a transaction
+# savepoint is rolled back, locks are not released from database files.
+# And that when a transaction savepoint is released, they are released.
+# 
+do_test savepoint-3.1 {
+  execsql { SAVEPOINT "transaction" }
+  execsql { PRAGMA lock_status }
+} {main unlocked temp closed}
+
+do_test savepoint-3.2 {
+  execsql { INSERT INTO t1 VALUES(1, 2, 3) }
+  execsql { PRAGMA lock_status }
+} {main reserved temp closed}
+
+do_test savepoint-3.3 {
+  execsql { ROLLBACK TO "transaction" }
+  execsql { PRAGMA lock_status }
+} {main reserved temp closed}
+
+do_test savepoint-3.4 {
+  execsql { INSERT INTO t1 VALUES(1, 2, 3) }
+  execsql { PRAGMA lock_status }
+} {main reserved temp closed}
+
+do_test savepoint-3.5 {
+  execsql { RELEASE "transaction" }
+  execsql { PRAGMA lock_status }
+} {main unlocked temp closed}
+
+#------------------------------------------------------------------------
+# Test that savepoints that include schema modifications are handled
+# correctly. Test cases savepoint-4.*.
+# 
+do_test savepoint-4.1 {
+  execsql {
+    CREATE TABLE t2(d, e, f);
+    SELECT sql FROM sqlite_master;
+  }
+} {{CREATE TABLE t1(a, b, c)} {CREATE TABLE t2(d, e, f)}}
+do_test savepoint-4.2 {
+  execsql {
+    BEGIN;
+    CREATE TABLE t3(g,h);
+    INSERT INTO t3 VALUES('I', 'II');
+    SAVEPOINT one;
+    DROP TABLE t3;
+  }
+} {}
+do_test savepoint-4.3 {
+  execsql {
+    CREATE TABLE t3(g, h, i);
+    INSERT INTO t3 VALUES('III', 'IV', 'V');
+  }
+  execsql {SELECT * FROM t3}
+} {III IV V}
+do_test savepoint-4.4 {
+  execsql { ROLLBACK TO one; }
+  execsql {SELECT * FROM t3}
+} {I II}
+do_test savepoint-4.5 {
+  execsql {
+    ROLLBACK;
+    SELECT sql FROM sqlite_master;
+  }
+} {{CREATE TABLE t1(a, b, c)} {CREATE TABLE t2(d, e, f)}}
+
+do_test savepoint-4.6 {
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES('o', 't', 't');
+    SAVEPOINT sp1;
+    CREATE TABLE t3(a, b, c);
+    INSERT INTO t3 VALUES('z', 'y', 'x');
+  }
+  execsql {SELECT * FROM t3}
+} {z y x}
+do_test savepoint-4.7 {
+  execsql {
+    ROLLBACK TO sp1;
+    CREATE TABLE t3(a);
+    INSERT INTO t3 VALUES('value');
+  }
+  execsql {SELECT * FROM t3}
+} {value}
+do_test savepoint-4.8 {
+  execsql COMMIT
+} {}
+
+finish_test
+

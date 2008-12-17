@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.265 2008/12/10 18:03:46 drh Exp $
+** @(#) $Id: parse.y,v 1.266 2008/12/17 17:30:26 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -117,6 +117,18 @@ transtype(A) ::= EXCLUSIVE(X). {A = @X;}
 cmd ::= COMMIT trans_opt.      {sqlite3CommitTransaction(pParse);}
 cmd ::= END trans_opt.         {sqlite3CommitTransaction(pParse);}
 cmd ::= ROLLBACK trans_opt.    {sqlite3RollbackTransaction(pParse);}
+
+savepoint_opt ::= SAVEPOINT.
+savepoint_opt ::= .
+cmd ::= SAVEPOINT nm(X). {
+  sqlite3Savepoint(pParse, SAVEPOINT_BEGIN, &X);
+}
+cmd ::= RELEASE savepoint_opt nm(X). {
+  sqlite3Savepoint(pParse, SAVEPOINT_RELEASE, &X);
+}
+cmd ::= ROLLBACK trans_opt TO savepoint_opt nm(X). {
+  sqlite3Savepoint(pParse, SAVEPOINT_ROLLBACK, &X);
+}
 
 ///////////////////// The CREATE TABLE statement ////////////////////////////
 //

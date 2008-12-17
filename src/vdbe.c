@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.803 2008/12/15 15:27:52 drh Exp $
+** $Id: vdbe.c,v 1.804 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -496,6 +496,26 @@ static int fileExists(sqlite3 *db, const char *zFile){
 #endif
     rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
   return (res && rc==SQLITE_OK);
+}
+#endif
+
+#ifndef NDEBUG
+/*
+** This function is only called from within an assert() expression. It
+** checks that the sqlite3.nTransaction variable is correctly set to
+** the number of non-transaction savepoints currently in the 
+** linked list starting at sqlite3.pSavepoint.
+** 
+** Usage:
+**
+**     assert( checkSavepointCount(db) );
+*/
+static int checkSavepointCount(sqlite3 *db){
+  int n = 0;
+  Savepoint *p;
+  for(p=db->pSavepoint; p; p=p->pNext) n++;
+  assert( n==(db->nSavepoint + db->isTransactionSavepoint) );
+  return 1;
 }
 #endif
 
@@ -2356,6 +2376,141 @@ case OP_Statement: {
   break;
 }
 
+/* Opcode: Savepoint P1 * * P4 *
+**
+** Open, release or rollback the savepoint named by parameter P4, depending
+** on the value of P1. To open a new savepoint, P1==0. To release (commit) an
+** existing savepoint, P1==1, or to rollback an existing savepoint P1==2.
+*/
+case OP_Savepoint: {
+  int p1 = pOp->p1;
+  char *zName = pOp->p4.z;         /* Name of savepoint */
+
+  /* Assert that the p1 parameter is valid. Also that if there is no open
+  ** transaction, then there cannot be any savepoints. 
+  */
+  assert( db->pSavepoint==0 || db->autoCommit==0 );
+  assert( p1==SAVEPOINT_BEGIN||p1==SAVEPOINT_RELEASE||p1==SAVEPOINT_ROLLBACK );
+  assert( db->pSavepoint || db->isTransactionSavepoint==0 );
+  assert( checkSavepointCount(db) );
+
+  if( p1==SAVEPOINT_BEGIN ){
+    if( db->writeVdbeCnt>1 ){
+      /* A new savepoint cannot be created if there are active write 
+      ** statements (i.e. open read/write incremental blob handles).
+      */
+      sqlite3SetString(&p->zErrMsg, db, "cannot open savepoint - "
+        "SQL statements in progress");
+      rc = SQLITE_BUSY;
+    }else{
+      int nName = sqlite3Strlen30(zName);
+      Savepoint *pNew;
+
+      /* Create a new savepoint structure. */
+      pNew = sqlite3DbMallocRaw(db, sizeof(Savepoint)+nName+1);
+      if( pNew ){
+        pNew->zName = (char *)&pNew[1];
+        memcpy(pNew->zName, zName, nName+1);
+    
+        /* If there is no open transaction, then mark this as a special
+        ** "transaction savepoint". */
+        if( db->autoCommit ){
+          db->autoCommit = 0;
+          db->isTransactionSavepoint = 1;
+        }else{
+          db->nSavepoint++;
+	}
+    
+        /* Link the new savepoint into the database handle's list. */
+        pNew->pNext = db->pSavepoint;
+        db->pSavepoint = pNew;
+      }
+    }
+  }else{
+    Savepoint *pSavepoint;
+    int iSavepoint = 0;
+
+    /* Find the named savepoint. If there is no such savepoint, then an
+    ** an error is returned to the user.  */
+    for(
+      pSavepoint=db->pSavepoint; 
+      pSavepoint && sqlite3StrICmp(pSavepoint->zName, zName);
+      pSavepoint=pSavepoint->pNext
+    ){
+      iSavepoint++;
+    }
+    if( !pSavepoint ){
+      sqlite3SetString(&p->zErrMsg, db, "no such savepoint: %s", zName);
+      rc = SQLITE_ERROR;
+    }else if( 
+        db->writeVdbeCnt>0 || (p1==SAVEPOINT_ROLLBACK && db->activeVdbeCnt>1) 
+    ){
+      /* It is not possible to release (commit) a savepoint if there are 
+      ** active write statements. It is not possible to rollback a savepoint
+      ** if there are any active statements at all.
+      */
+      sqlite3SetString(&p->zErrMsg, db, 
+        "cannot %s savepoint - SQL statements in progress",
+        (p1==SAVEPOINT_ROLLBACK ? "rollback": "release")
+      );
+      rc = SQLITE_BUSY;
+    }else{
+
+      /* Determine whether or not this is a transaction savepoint. If so,
+      ** operate on the currently open transaction. If this is a RELEASE 
+      ** command, then the transaction is committed. If it is a ROLLBACK 
+      ** command, then all changes made by the current transaction are 
+      ** reverted, but the transaction is not actually closed.
+      */
+      int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
+      if( isTransaction && p1==SAVEPOINT_RELEASE ){
+        db->isTransactionSavepoint = 0;
+        db->autoCommit = 1;
+        if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
+          p->pc = pc;
+          db->autoCommit = 0;
+          p->rc = rc = SQLITE_BUSY;
+          goto vdbe_return;
+        }
+      }else{
+        int ii;
+        iSavepoint = db->nSavepoint - iSavepoint - 1;
+        for(ii=0; ii<db->nDb; ii++){
+          rc = sqlite3BtreeSavepoint(db->aDb[ii].pBt, p1, iSavepoint);
+          if( rc!=SQLITE_OK ){
+            goto abort_due_to_error;
+	  }
+        }
+        if( p1==SAVEPOINT_ROLLBACK && db->flags&SQLITE_InternChanges ){
+          sqlite3ExpirePreparedStatements(db);
+          sqlite3ResetInternalSchema(db, 0);
+        }
+      }
+  
+      /* Regardless of whether this is a RELEASE or ROLLBACK, destroy all 
+      ** savepoints nested inside of the savepoint being operated on. */
+      while( db->pSavepoint!=pSavepoint ){
+        Savepoint *pTmp = db->pSavepoint;
+        db->pSavepoint = pTmp->pNext;
+        sqlite3DbFree(db, pTmp);
+        db->nSavepoint--;
+      }
+
+      /* If it is a RELEASE, then destroy the savepoint being operated on too */
+      if( p1==SAVEPOINT_RELEASE ){
+        assert( pSavepoint==db->pSavepoint );
+        db->pSavepoint = pSavepoint->pNext;
+        sqlite3DbFree(db, pSavepoint);
+        if( !isTransaction ){
+          db->nSavepoint--;
+        }
+      }
+    }
+  }
+
+  break;
+}
+
 /* Opcode: AutoCommit P1 P2 * * *
 **
 ** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
@@ -2390,7 +2545,7 @@ case OP_AutoCommit: {
         "SQL statements in progress");
     rc = SQLITE_BUSY;
   }else if( desiredAutoCommit!=db->autoCommit ){
-    if( pOp->p2 ){
+    if( rollback ){
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db);
       db->autoCommit = 1;
@@ -2403,6 +2558,7 @@ case OP_AutoCommit: {
         goto vdbe_return;
       }
     }
+    sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
     }else{

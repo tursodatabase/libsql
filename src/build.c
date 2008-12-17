@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.508 2008/12/10 22:30:25 shane Exp $
+** $Id: build.c,v 1.509 2008/12/17 17:30:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3308,6 +3308,23 @@ void sqlite3RollbackTransaction(Parse *pParse){
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, 1);
+  }
+}
+
+/*
+** This function is called by the parser when it parses a command to create,
+** release or rollback an SQL savepoint. 
+*/
+void sqlite3Savepoint(Parse *pParse, int op, Token *pName){
+  Vdbe *v;
+  if( pParse->nErr || pParse->db->mallocFailed ) return;
+
+  /* TODO: Invoke the authorization callback */
+
+  v = sqlite3GetVdbe(pParse);
+  if( v ){
+    const char *zName = (const char *)pName->z;
+    sqlite3VdbeAddOp4(v, OP_Savepoint, op, 0, 0, zName, pName->n);
   }
 }
 
