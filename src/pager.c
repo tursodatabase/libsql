@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.515 2008/12/17 17:30:26 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.516 2008/12/18 15:45:07 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1649,7 +1649,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     if( nJRec==0 ){
       nJRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
     }
-    for(ii=0; rc==SQLITE_OK && ii<nJRec; ii++){
+    for(ii=0; rc==SQLITE_OK && ii<nJRec && pPager->journalOff<szJ; ii++){
       rc = pager_playback_one_page(pPager, 1, pPager->journalOff, pDone);
       assert( rc!=SQLITE_DONE );
     }
@@ -2437,6 +2437,7 @@ static int pager_write_pagelist(PgHdr *pList){
     if( pList->pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
       i64 offset = (pList->pgno-1)*(i64)pPager->pageSize;
       char *pData = CODEC2(pPager, pList->pData, pList->pgno, 6);
+
       PAGERTRACE4("STORE %d page %d hash(%08x)\n",
                    PAGERID(pPager), pList->pgno, pager_pagehash(pList));
       IOTRACE(("PGOUT %p %d\n", pPager, pList->pgno));
@@ -3548,7 +3549,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirect){
 #ifndef SQLITE_ENABLE_ATOMIC_WRITE
   assert( isDirect==0 );  /* isDirect is only true for atomic writes */
 #endif
-  if( !pPager->changeCountDone ){
+  if( !pPager->changeCountDone && pPager->dbSize>0 ){
     /* Open page 1 of the file for writing. */
     rc = sqlite3PagerGet(pPager, 1, &pPgHdr);
     if( rc!=SQLITE_OK ) return rc;
@@ -3900,7 +3901,7 @@ int sqlite3PagerIsMemdb(Pager *pPager){
 int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
   int rc = SQLITE_OK;
 
-  if( nSavepoint>pPager->nSavepoint ){
+  if( nSavepoint>pPager->nSavepoint && pPager->useJournal ){
     int ii;
 
     /* Either the sub-journal is open or there are no active savepoints. */
@@ -3925,7 +3926,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 
     /* Populate the PagerSavepoint structures just allocated. */
     for(/* no-op */; ii<nSavepoint; ii++){
-      assert( pPager->dbSize>=0 );
+      assert( pPager->dbSizeValid );
       aNew[ii].nOrig = pPager->dbSize;
       aNew[ii].iOffset = (pPager->journalOpen ? pPager->journalOff : 0);
       aNew[ii].iSubRec = pPager->stmtNRec;
