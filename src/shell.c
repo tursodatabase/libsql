@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.195 2008/12/11 02:58:27 shane Exp $
+** $Id: shell.c,v 1.196 2008/12/18 22:25:14 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1677,12 +1677,28 @@ static int _all_whitespace(const char *z){
 */
 static int _is_command_terminator(const char *zLine){
   while( isspace(*(unsigned char*)zLine) ){ zLine++; };
-  if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ) return 1;  /* Oracle */
+  if( zLine[0]=='/' && _all_whitespace(&zLine[1]) ){
+    return 1;  /* Oracle */
+  }
   if( tolower(zLine[0])=='g' && tolower(zLine[1])=='o'
          && _all_whitespace(&zLine[2]) ){
     return 1;  /* SQL Server */
   }
   return 0;
+}
+
+/*
+** Return true if zSql is a complete SQL statement.  Return false if it
+** ends in the middle of a string literal or C-style comment.
+*/
+static int _is_complete(char *zSql, int nSql){
+  int rc;
+  if( zSql==0 ) return 1;
+  zSql[nSql] = ';';
+  zSql[nSql+1] = 0;
+  rc = sqlite3_complete(zSql);
+  zSql[nSql] = 0;
+  return rc;
 }
 
 /*
@@ -1728,7 +1744,7 @@ static int process_input(struct callback_data *p, FILE *in){
       }
       continue;
     }
-    if( _is_command_terminator(zLine) && sqlite3_complete(zSql) ){
+    if( _is_command_terminator(zLine) && _is_complete(zSql, nSql) ){
       memcpy(zLine,";",2);
     }
     nSqlPrior = nSql;
@@ -1737,7 +1753,7 @@ static int process_input(struct callback_data *p, FILE *in){
       for(i=0; zLine[i] && isspace((unsigned char)zLine[i]); i++){}
       if( zLine[i]!=0 ){
         nSql = strlen30(zLine);
-        zSql = malloc( nSql+1 );
+        zSql = malloc( nSql+3 );
         if( zSql==0 ){
           fprintf(stderr, "out of memory\n");
           exit(1);
@@ -1747,7 +1763,7 @@ static int process_input(struct callback_data *p, FILE *in){
       }
     }else{
       int len = strlen30(zLine);
-      zSql = realloc( zSql, nSql + len + 2 );
+      zSql = realloc( zSql, nSql + len + 4 );
       if( zSql==0 ){
         fprintf(stderr,"%s: out of memory!\n", Argv0);
         exit(1);
