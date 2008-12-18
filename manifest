@@ -1,5 +1,5 @@
-C Add\ssavepoint2.test,\sa\sfile\scontaining\ssavepoint\stests\ssimilar\sto\stests\sin\strans.test\sand\savtrans.test.\sAnd\sa\sfew\ssavepoint\sbug\sfixes.\s(CVS\s6039)
-D 2008-12-18T15:45:07
+C Increase\stest\scoverage\sof\snew\ssavepoint\scode.\s(CVS\s6040)
+D 2008-12-18T18:31:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 96b4a6e87335ba943455740f311b4dfb63f26756
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 9c1663c9406743f30cdad532c01c47f71bfac577
+F src/pager.c fa8a93afc5374ccb7345fc46cfd959d31fd2bde3
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -196,7 +196,7 @@ F src/update.c 080889d241e4dcd1c545c8051eb6de86f4939295
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c ea62608f66f33a7e8322de83024ae37c415c0c7f
 F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
-F src/vdbe.c 79d3ec97b28e2a95ad2c43ecf2d757de312cb989
+F src/vdbe.c e9a7825d25496343937852fa70b993ee217f924e
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h e6e80a99ce634983b7cc2498843b4d2e5540900a
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
@@ -490,8 +490,9 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test fdad3b61f4a00a96cd773ca0c758cf2f53918ae3
-F test/savepoint2.test dcaf442a9eea4e91c27fce339fd74c3eaa66577e
+F test/savepoint.test 24b7d67971c0b7a8d22ba1cabbfd846e72f21594
+F test/savepoint2.test 65fed3f179cff053e0a75864b1afc13e100fce1f
+F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -680,7 +681,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b9c722bd96b44e0fabd1564ddd982d2aabb7047c
-R e8991f966fc1a93805d33d53f39d5eb2
+P 98a53d91f6c0c2692d3b56687fdaba8eeab0959d
+R 62d8e49e78bd385c3c1bd94a9682f5e4
 U danielk1977
-Z 23f7ea8ae683063fc7d5590449b66501
+Z 22b6c1944a6bc7d00fc6f077bed85661

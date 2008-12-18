@@ -1,0 +1,63 @@
+# 2008 December 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: savepoint3.test,v 1.1 2008/12/18 18:31:39 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+source $testdir/malloc_common.tcl
+
+do_malloc_test savepoint3-1 -sqlprep {
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(1, 2, 3);
+} -sqlbody {
+  SAVEPOINT one;
+    INSERT INTO t1 VALUES(4, 5, 6);
+    SAVEPOINT two;
+      DELETE FROM t1;
+    ROLLBACK TO two;
+  RELEASE one;
+}
+
+do_malloc_test savepoint3-1 -sqlprep {
+  PRAGMA cache_size = 10;
+  CREATE TABLE t1(a, b, c);
+  INSERT INTO t1 VALUES(randstr(400,400), randstr(400,400), randstr(400,400));
+  INSERT INTO t1 SELECT 
+    randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+  INSERT INTO t1 
+    SELECT randstr(400,400), randstr(400,400), randstr(400,400) FROM t1;
+} -sqlbody {
+  PRAGMA cache_size = 10;
+  SAVEPOINT one;
+    DELETE FROM t1 WHERE rowid < 5;
+    SAVEPOINT two;
+      DELETE FROM t1 WHERE rowid > 10;
+    ROLLBACK TO two;
+  ROLLBACK TO one;
+  RELEASE one;
+}
+
+finish_test
+

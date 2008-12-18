@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint2.test,v 1.1 2008/12/18 15:45:07 danielk1977 Exp $
+# $Id: savepoint2.test,v 1.2 2008/12/18 18:31:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,15 +22,9 @@ proc signature {} {
   return [db eval {SELECT count(*), md5sum(x) FROM t3}]
 }
 
-
-
 do_test savepoint2-1 {
   execsql {
     PRAGMA cache_size=10;
-  }
-  db close
-  sqlite3 db test.db
-  execsql {
     BEGIN;
     CREATE TABLE t3(x TEXT);
     INSERT INTO t3 VALUES(randstr(10,400));

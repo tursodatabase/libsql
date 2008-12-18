@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.804 2008/12/17 17:30:26 danielk1977 Exp $
+** $Id: vdbe.c,v 1.805 2008/12/18 18:31:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2395,7 +2395,7 @@ case OP_Savepoint: {
   assert( checkSavepointCount(db) );
 
   if( p1==SAVEPOINT_BEGIN ){
-    if( db->writeVdbeCnt>1 ){
+    if( db->writeVdbeCnt>0 ){
       /* A new savepoint cannot be created if there are active write 
       ** statements (i.e. open read/write incremental blob handles).
       */
@@ -2457,14 +2457,11 @@ case OP_Savepoint: {
     }else{
 
       /* Determine whether or not this is a transaction savepoint. If so,
-      ** operate on the currently open transaction. If this is a RELEASE 
-      ** command, then the transaction is committed. If it is a ROLLBACK 
-      ** command, then all changes made by the current transaction are 
-      ** reverted, but the transaction is not actually closed.
+      ** and this is a RELEASE command, then the current transaction 
+      ** is committed. 
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
-        db->isTransactionSavepoint = 0;
         db->autoCommit = 1;
         if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
           p->pc = pc;
@@ -2472,6 +2469,8 @@ case OP_Savepoint: {
           p->rc = rc = SQLITE_BUSY;
           goto vdbe_return;
         }
+        db->isTransactionSavepoint = 0;
+        rc = p->rc;
       }else{
         int ii;
         iSavepoint = db->nSavepoint - iSavepoint - 1;
