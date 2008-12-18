@@ -1,5 +1,5 @@
-C Update\sthe\sWHERE\sclause\sprocessing\sinfrastructure\sin\spreparation\sfor\sadding\nmulti-index\sOR\sevaluation.\s(CVS\s6037)
-D 2008-12-17T19:22:16
+C Fix\sa\sbug\sin\sicuOpen()\sin\sfts2.\s(CVS\s6038)
+D 2008-12-18T05:30:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -44,7 +44,7 @@ F ext/fts2/fts2.c bc78da57642edfcf7ba2fb8a8771f97663449104
 F ext/fts2/fts2.h da5f76c65163301d1068a971fd32f4119e3c95fa
 F ext/fts2/fts2_hash.c 2689e42e1107ea67207f725cf69cf8972d00cf93
 F ext/fts2/fts2_hash.h 9a5b1be94664139f93217a0770d7144425cffb3a
-F ext/fts2/fts2_icu.c 53162e0dbe6d27a0cc24ad2c10cea8c48b7c839b
+F ext/fts2/fts2_icu.c 1ea9993a39c9783c2e2d7446d055e9d64411dda0
 F ext/fts2/fts2_porter.c 8a6369b0fae98c04db95e4fa95fac7c03d7182ec
 F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
@@ -679,7 +679,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 34b56600ec0c5cd7b5faab265750252bc9850e3e
-R f6c50ff68624e5438bfedc944eca4eae
-U drh
-Z 9d46e7b6dc85f65598c88f42e3cd2bc3
+P 78401b33febf678cfeec2a35514eb4172de420ab
+R 09419362acc9ec794afd36b3528f0694
+U danielk1977
+Z 152f2d9b602bfeed8b492ec878934f0b
