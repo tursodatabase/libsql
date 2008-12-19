@@ -1,5 +1,5 @@
-C Add\ssome\scrash-tests\sfor\ssavepoint.\sFix\sa\sbug\srevealed\sby\sthese\stests.\s(CVS\s6043)
-D 2008-12-19T16:31:11
+C Add\sextra\scrash\stest\scases\sthat\sstress\sthe\ssavepoint\smechanism\sto\ssavepoint4.test.\sCurrently,\sthese\stests\sare\scausing\sdatabase\scorruption\swhich\s(obviously)\sneeds\sto\sbe\sfixed.\s(CVS\s6044)
+D 2008-12-19T18:45:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -494,7 +494,7 @@ F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/savepoint.test 24b7d67971c0b7a8d22ba1cabbfd846e72f21594
 F test/savepoint2.test 65fed3f179cff053e0a75864b1afc13e100fce1f
 F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
-F test/savepoint4.test 327937672df4511d8a61fd20fd6f21661119a45b
+F test/savepoint4.test 1dfe4e6a089a44e50bdfaa5a723603d0973eb1a8
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -683,7 +683,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ed81ad5a5d22304a4d96e778e8e9094f74c461c0
-R 8635252259ed45c0604b104373f9fbca
+P 6f36c16678b6e3baa5a9d9ceba1a756a8034f3e1
+R 2a5a11863cbc6dc85f1a72ca45278583
 U danielk1977
-Z 13ba02f495748ab97267c0a69d578609
+Z f91b2e50bc859a782a332b4d8be666cb

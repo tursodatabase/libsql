@@ -9,15 +9,17 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint4.test,v 1.1 2008/12/19 16:31:12 danielk1977 Exp $
+# $Id: savepoint4.test,v 1.2 2008/12/19 18:45:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 
 proc signature {} {
-  return [db eval {SELECT count(*), md5sum(x) FROM t3}]
+  return [db eval {SELECT count(*), md5sum(x) FROM t1}]
 }
+
+set ITERATIONS 3
 
 expr srand(0)
 
@@ -25,53 +27,135 @@ do_test savepoint4-1 {
   execsql {
     PRAGMA cache_size=10;
     BEGIN;
-    CREATE TABLE t3(x TEXT);
-    INSERT INTO t3 VALUES(randstr(10,400));
-    INSERT INTO t3 VALUES(randstr(10,400));
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
-    INSERT INTO t3 SELECT randstr(10,400) FROM t3;
+    CREATE TABLE t1(x TEXT);
+    INSERT INTO t1 VALUES(randstr(10,400));
+    INSERT INTO t1 VALUES(randstr(10,400));
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
     COMMIT;
-    SELECT count(*) FROM t3;
+    SELECT count(*) FROM t1;
   }
 } {1024}
 
 
 unset -nocomplain ::sig
 
-for {set ii 1} {$ii<25} {incr ii} {
+for {set ii 1} {$ii<=$ITERATIONS} {incr ii} {
   set ::sig [signature]
 
-  set crashed 1
-  for {set iDelay 1} {$crashed} {incr iDelay} {
-    do_test savepoint4-$ii.1.$iDelay {
+  for {set iDelay 1 ; set crashed 1} {$crashed} {incr iDelay} {
+
+    do_test savepoint4-1.$ii.1.$iDelay {
       set ret [crashsql -delay $iDelay -file test.db-journal {
         PRAGMA cache_size = 20;
         SAVEPOINT one;
-          DELETE FROM t3 WHERE random()%2==0;
+          DELETE FROM t1 WHERE random()%2==0;
           SAVEPOINT two;
-            INSERT INTO t3 SELECT randstr(10,10)||x FROM t3;
+            INSERT INTO t1 SELECT randstr(10,10)||x FROM t1;
            ROLLBACK TO two;
-            UPDATE t3 SET x = randstr(10, 400) WHERE random()%10;
+            UPDATE t1 SET x = randstr(10, 400) WHERE random()%10;
           RELEASE two;
         ROLLBACK TO one;
+        RELEASE one;
       }]
       signature
     } $::sig
+
     set crashed [lindex $ret 0]
-    integrity_check savepoint4-$ii.1.$iDelay.integrity
+    integrity_check savepoint4-1.$ii.1.$iDelay.integrity
   }
 
-  do_test savepoint4-$ii.2 {
+  do_test savepoint4-1.$ii.2 {
     execsql {
-      DELETE FROM t3 WHERE random()%10==0;
-      INSERT INTO t3 SELECT randstr(10,10)||x FROM t3 WHERE random()%9==0;
+      DELETE FROM t1 WHERE random()%10==0;
+      INSERT INTO t1 SELECT randstr(10,10)||x FROM t1 WHERE random()%9==0;
+    }
+  } {}
+}
+
+do_test savepoint4-2 {
+  execsql {
+    PRAGMA cache_size=10;
+    DROP TABLE IF EXISTS t1;
+    BEGIN;
+    CREATE TABLE t1(x TEXT);
+    CREATE INDEX i1 ON t1(x);
+    INSERT INTO t1 VALUES(randstr(10,400));
+    INSERT INTO t1 VALUES(randstr(10,400));
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    INSERT INTO t1 SELECT randstr(10,400) FROM t1;
+    COMMIT;
+    SELECT count(*) FROM t1;
+  }
+} {256}
+
+for {set ii 1} {$ii<=$ITERATIONS} {incr ii} {
+  set ::sig [signature]
+  set file test.db-journal
+
+  for {set iDelay 1 ; set crashed 1} {$crashed} {incr iDelay} {
+
+    do_test savepoint4-2.$ii.1.$iDelay {
+
+      set ret [crashsql -delay $iDelay -file $file {
+        SAVEPOINT one;
+          INSERT INTO t1 SELECT * FROM t1 WHERE rowid<50;
+         ROLLBACK TO one;
+          INSERT INTO t1 SELECT * FROM t1 WHERE rowid<50;
+          SAVEPOINT two;
+            DELETE FROM t1 WHERE (random()%10)==0;
+            SAVEPOINT three;
+              DELETE FROM t1 WHERE (random()%10)==0;
+              SAVEPOINT four;
+                DELETE FROM t1 WHERE (random()%10)==0;
+          RELEASE two;
+
+          SAVEPOINT three;
+            UPDATE t1 SET x = x||x WHERE (rowid%12)==0;
+            SAVEPOINT four;
+              UPDATE t1 SET x = x||x WHERE (rowid%14)==0;
+           ROLLBACK TO three;
+            UPDATE t1 SET x = x||x WHERE (rowid%13)==0;
+          RELEASE three;
+
+        DELETE FROM t1 WHERE rowid > (SELECT rowid FROM t1 LIMIT 1 OFFSET 256);
+        RELEASE one;
+      }]
+
+      set crashed [lindex $ret 0]
+      if {$crashed} {
+        signature
+      } else {
+        set ::sig
+      }
+    } $::sig
+
+    integrity_check savepoint4-2.$ii.1.$iDelay.integrity
+
+    if {$crashed == 0 && $file == "test.db-journal"} {
+      set crashed 1
+      set iDelay 0
+      set file test.db
+      set ::sig [signature]
+    }
+  }
+
+  do_test savepoint4-2.$ii.2 {
+    execsql {
+      DELETE FROM t1 WHERE random()%10==0;
+      INSERT INTO t1 SELECT randstr(10,10)||x FROM t1 WHERE random()%9==0;
     }
   } {}
 }
