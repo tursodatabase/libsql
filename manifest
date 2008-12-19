@@ -1,5 +1,5 @@
-C Fix\sthe\sOracle\sand\sMS-Sql\scommand-line\sterminator\slogic\sin\sthe\sCLI.\nTicket\s#3544.\s(CVS\s6041)
-D 2008-12-18T22:25:14
+C Add\sthe\sfile\sext/fts3/README.syntax,\scontaining\sdocumentation\sdescribing\sthe\stwo\squery\ssyntaxes\snow\ssupported\sby\sfts3.\s(CVS\s6042)
+D 2008-12-19T11:37:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -50,6 +50,7 @@ F ext/fts2/fts2_tokenizer.c 5cec41326fabe65323945a46fa9495ee85c3d5fd
 F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
 F ext/fts2/fts2_tokenizer1.c 8545ce12b41922004da46e91a7b023b92b76f94e
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
+F ext/fts3/README.syntax 655caddf5319c0d3525c3e78f1b46d77feab3a44
 F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
@@ -681,7 +682,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d915718d0b346982d686d131a159b67e28fc02a8
-R 5310eca4075c4ebf704f216d6b1c02dc
-U drh
-Z 24e69d5ad73c2571e030bbcae477397b
+P dcc8935fa0ccf86648c22818823bf1daef8f3939
+R 2c8851f424af14764a8787efe4f3aaed
+U danielk1977
+Z 187a31047d8fbeda35b637c188a3f06e
