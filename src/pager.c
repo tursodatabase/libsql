@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.517 2008/12/18 18:31:39 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.518 2008/12/19 16:31:11 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1153,6 +1153,7 @@ static int pager_playback_one_page(
 
   /* The temp storage must be allocated at this point */
   assert( aData );
+  assert( isMainJrnl || pDone );
 
   rc = read32bits(jfd, offset, &pgno);
   if( rc!=SQLITE_OK ) return rc;
@@ -1240,7 +1241,25 @@ static int pager_playback_one_page(
     if( pPager->xReiniter ){
       pPager->xReiniter(pPg);
     }
-    if( isMainJrnl ){
+    if( isMainJrnl && (!pDone || pPager->journalOff<=pPager->journalHdr) ){
+      /* If the contents of this page were just restored from the main 
+      ** journal file, then its content must be as they were when the 
+      ** transaction was first opened. In this case we can mark the page
+      ** as clean, since there will be no need to write it out to the.
+      **
+      ** There is one exception to this rule. If the page is being rolled
+      ** back as part of a savepoint (or statement) rollback from an 
+      ** unsynced portion of the main journal file, then it is not safe
+      ** to mark the page as clean. This is because marking the page as
+      ** clean will clear the PGHDR_NEED_SYNC flag. Since the page is
+      ** already in the journal file (recorded in Pager.pInJournal) and
+      ** the PGHDR_NEED_SYNC flag is cleared, if the page is written to
+      ** again within this transaction, it will be marked as dirty but
+      ** the PGHDR_NEED_SYNC flag will not be set. It could then potentially
+      ** be written out into the database file before its journal file
+      ** segment is synced. If a crash occurs during or following this,
+      ** database corruption may ensue.
+      */
       sqlite3PcacheMakeClean(pPg);
     }
 #ifdef SQLITE_CHECK_PAGES

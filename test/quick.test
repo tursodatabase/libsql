@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.89 2008/12/12 17:56:16 drh Exp $
+# $Id: quick.test,v 1.90 2008/12/19 16:31:12 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -69,6 +69,7 @@ set EXCLUDE {
   onefile.test
   permutations.test
   quick.test
+  savepoint4.test
   select9.test
   soak.test
   speed1.test
