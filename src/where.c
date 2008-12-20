@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.338 2008/12/17 19:22:16 drh Exp $
+** $Id: where.c,v 1.339 2008/12/20 02:06:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -140,7 +140,7 @@ struct WhereClause {
 */
 struct WhereOrInfo {
   WhereClause wc;          /* The OR subexpression broken out */
-  double cost;             /* Cost of evaluating this OR subexpression */
+  Bitmask indexable;       /* Bitmask of all indexable tables in the clause */
 };
 
 /*
@@ -202,6 +202,7 @@ struct ExprMaskSet {
 #define WO_AND    0x200       /* Two or more AND-connected terms */
 
 #define WO_ALL    0xfff       /* Mask of all possible WO_* values */
+#define WO_SINGLE 0x0ff       /* Mask of all non-compound WO_* values */
 
 /*
 ** Value for wsFlags returned by bestIndex() and stored in
@@ -254,6 +255,7 @@ static void whereClauseClear(WhereClause*);
 static void whereOrInfoDelete(sqlite3 *db, WhereOrInfo *p){
   if( p ){
     whereClauseClear(&p->wc);
+    sqlite3DbFree(db, p);
   }
 }
 
@@ -263,6 +265,7 @@ static void whereOrInfoDelete(sqlite3 *db, WhereOrInfo *p){
 static void whereAndInfoDelete(sqlite3 *db, WhereAndInfo *p){
   if( p ){
     whereClauseClear(&p->wc);
+    sqlite3DbFree(db, p);
   }
 }
 
@@ -705,90 +708,248 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
 /*
-** Return TRUE if the given term of an OR clause can be converted
-** into an IN clause.  The iCursor and iColumn define the left-hand
-** side of the IN clause.
+** Analyze a term that consists of two or more OR-connected
+** subterms.  So in:
 **
-** The context is that we have multiple OR-connected equality terms
-** like this:
+**     ... WHERE  (a=5) AND (b=7 OR c=9 OR d=13) AND (d=13)
+**                          ^^^^^^^^^^^^^^^^^^^^
 **
-**           a=<expr1> OR  a=<expr2> OR b=<expr3>  OR ...
+** This routine analyzes terms such as the middle term in the above example.
+** A WhereOrTerm object is computed and attached to the term under
+** analysis, regardless of the outcome of the analysis.  Hence:
 **
-** The pOrTerm input to this routine corresponds to a single term of
-** this OR clause.  In order for the term to be a candidate for
-** conversion to an IN operator, the following must be true:
+**     WhereTerm.wtFlags   |=  TERM_ORINFO
+**     WhereTerm.u.pOrInfo  =  a dynamically allocated WhereOrTerm object
 **
-**     *  The left-hand side of the term must be the column which
-**        is identified by iCursor and iColumn.
+** The term being analyzed must have two or more of OR-connected subterms.
+** A single subterms might be a set of AND-connected sub-subterms.
+** Examples of terms under analysis:
 **
-**     *  If the right-hand side is also a column, then the affinities
-**        of both right and left sides must be such that no type
-**        conversions are required on the right.  (Ticket #2249)
+**     (A)     t1.x=t2.y OR t1.x=t2.z OR t1.y=15 OR t1.z=t3.a+5
+**     (B)     x=expr1 OR expr2=x OR x=expr3
+**     (C)     t1.x=t2.y OR (t1.x=t2.z AND t1.y=15)
+**     (D)     x=expr1 OR (y>11 AND y<22 AND z LIKE '*hello*')
+**     (E)     (p.a=1 AND q.b=2 AND r.c=3) OR (p.x=4 AND q.y=5 AND r.z=6)
 **
-** If both of these conditions are true, then return true.  Otherwise
-** return false.
+** CASE 1:
+**
+** If all subterms are of the form T.C=expr for some single column of C
+** a single table T (as shown in example B above) then create a new virtual
+** term that is an equivalent IN expression.  In other words, if the term
+** being analyzed is:
+**
+**      x = expr1  OR  expr2 = x  OR  x = expr3
+**
+** then create a new virtual term like this:
+**
+**      x IN (expr1,expr2,expr3)
+**
+** CASE 2:
+**
+** If all subterms are indexable by a single table T, then set
+**
+**     WhereTerm.eOperator              =  WO_OR
+**     WhereTerm.u.pOrInfo->indexable  |=  the cursor number for table T
+**
+** A subterm is "indexable" if it is of the form
+** "T.C <op> <expr>" where C is any column of table T and 
+** <op> is one of "=", "<", "<=", ">", ">=", "IS NULL", or "IN".
+** A subterm is also indexable if it is an AND of two or more
+** subsubterms at least one of which is indexable.  Indexable AND 
+** subterms have their eOperator set to WO_AND and they have
+** u.pAndInfo set to a dynamically allocated WhereAndTerm object.
+**
+** From another point of view, "indexable" means that the subterm could
+** potentially be used with an index if an appropriate index exists.
+** This analysis does not consider whether or not the index exists; that
+** is something the bestIndex() routine will determine.  This analysis
+** only looks at whether subterms appropriate for indexing exist.
+**
+** All examples A through E above all satisfy case 2.  But if a term
+** also statisfies case 1 (such as B) we know that the optimizer will
+** always prefer case 1, so in that case we pretend that case 2 is not
+** satisfied.
+**
+** It might be the case that multiple tables are indexable.  For example,
+** (E) above is indexable on tables P, Q, and R.
+**
+** Terms that satisfy case 2 are candidates for lookup by using
+** separate indices to find rowids for each subterm and composing
+** the union of all rowids using a RowSet object.  This is similar
+** to "bitmap indices" in other database engines.
+**
+** OTHERWISE:
+**
+** If neither case 1 nor case 2 apply, then leave the eOperator set to
+** zero.  This term is not useful for search.
 */
-static int orTermIsOptCandidate(WhereTerm *pOrTerm, int iCursor, int iColumn){
-  int affLeft, affRight;
-  assert( pOrTerm->eOperator==WO_EQ );
-  if( pOrTerm->leftCursor!=iCursor ){
-    return 0;
-  }
-  if( pOrTerm->u.leftColumn!=iColumn ){
-    return 0;
-  }
-  affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
-  if( affRight==0 ){
-    return 1;
-  }
-  affLeft = sqlite3ExprAffinity(pOrTerm->pExpr->pLeft);
-  if( affRight!=affLeft ){
-    return 0;
-  }
-  return 1;
-}
+static void exprAnalyzeOrTerm(
+  SrcList *pSrc,            /* the FROM clause */
+  WhereClause *pWC,         /* the complete WHERE clause */
+  int idxTerm               /* Index of the OR-term to be analyzed */
+){
+  Parse *pParse = pWC->pParse;            /* Parser context */
+  sqlite3 *db = pParse->db;               /* Database connection */
+  WhereTerm *pTerm = &pWC->a[idxTerm];    /* The term to be analyzed */
+  Expr *pExpr = pTerm->pExpr;             /* The expression of the term */
+  ExprMaskSet *pMaskSet = pWC->pMaskSet;  /* Table use masks */
+  int i;                                  /* Loop counters */
+  WhereClause *pOrWc;       /* Breakup of pTerm into subterms */
+  WhereTerm *pOrTerm;       /* A Sub-term within the pOrWc */
+  WhereOrInfo *pOrInfo;     /* Additional information associated with pTerm */
+  Bitmask chngToIN;         /* Tables that might satisfy case 1 */
+  Bitmask indexable;        /* Tables that are indexable, satisfying case 2 */
 
-/*
-** Return true if the given term of an OR clause can be ignored during
-** a check to make sure all OR terms are candidates for optimization.
-** In other words, return true if a call to the orTermIsOptCandidate()
-** above returned false but it is not necessary to disqualify the
-** optimization.
-**
-** Suppose the original OR phrase was this:
-**
-**           a=4  OR  a=11  OR  a=b
-**
-** During analysis, the third term gets flipped around and duplicate
-** so that we are left with this:
-**
-**           a=4  OR  a=11  OR  a=b  OR  b=a
-**
-** Since the last two terms are duplicates, only one of them
-** has to qualify in order for the whole phrase to qualify.  When
-** this routine is called, we know that pOrTerm did not qualify.
-** This routine merely checks to see if pOrTerm has a duplicate that
-** might qualify.  If there is a duplicate that has not yet been
-** disqualified, then return true.  If there are no duplicates, or
-** the duplicate has also been disqualified, return false.
-*/
-static int orTermHasOkDuplicate(WhereClause *pOr, WhereTerm *pOrTerm){
-  if( pOrTerm->wtFlags & TERM_COPIED ){
-    /* This is the original term.  The duplicate is to the left had
-    ** has not yet been analyzed and thus has not yet been disqualified. */
-    return 1;
+  /*
+  ** Break the OR clause into its separate subterms.  The subterms are
+  ** stored in a WhereClause structure containing within the WhereOrInfo
+  ** object that is attached to the original OR clause term.
+  */
+  assert( (pTerm->wtFlags & (TERM_DYNAMIC|TERM_ORINFO|TERM_ANDINFO))==0 );
+  assert( pExpr->op==TK_OR );
+  pTerm->u.pOrInfo = pOrInfo = sqlite3DbMallocRaw(db, sizeof(*pOrInfo));
+  if( pOrInfo==0 ) return;
+  pTerm->wtFlags |= TERM_ORINFO;
+  pOrWc = &pOrInfo->wc;
+  whereClauseInit(pOrWc, pWC->pParse, pMaskSet);
+  whereSplit(pOrWc, pExpr, TK_OR);
+  exprAnalyzeAll(pSrc, pOrWc);
+  if( db->mallocFailed ) return;
+  assert( pOrWc->nTerm>=2 );
+
+  /*
+  ** Compute the set of tables that might satisfy cases 1 or 2.
+  */
+  indexable = chngToIN = ~(Bitmask)0;
+  for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
+    if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
+      chngToIN = 0;
+      indexable = 0;   /***** FIX ME.  Some AND clauses are indexable. */
+    }else if( pOrTerm->wtFlags & TERM_COPIED ){
+      /* Skip this term for now.  We revisit it when we process the
+      ** corresponding TERM_VIRTUAL term */
+    }else{
+      Bitmask b;
+      b = getMask(pMaskSet, pOrTerm->leftCursor);
+      if( pOrTerm->wtFlags & TERM_VIRTUAL ){
+        WhereTerm *pOther = &pOrWc->a[pOrTerm->iParent];
+        b |= getMask(pMaskSet, pOther->leftCursor);
+      }
+      indexable &= b;
+      if( pOrTerm->eOperator!=WO_EQ ){
+        chngToIN = 0;
+      }else{
+        chngToIN &= b;
+      }
+    }
   }
-  if( (pOrTerm->wtFlags & TERM_VIRTUAL)!=0
-     && (pOr->a[pOrTerm->iParent].wtFlags & TERM_OR_OK)!=0 ){
-    /* This is a duplicate term.  The original qualified so this one
-    ** does not have to. */
-    return 1;
+
+  /*
+  ** Record the set of tables that satisfy case 2.  The set might be
+  ** empty, but that is OK.
+  */
+  pOrInfo->indexable = indexable;
+  pTerm->eOperator = WO_OR;
+
+  /*
+  ** chngToIN holds a set of tables that *might* satisfy case 1.  But
+  ** we have to do some additional checking to see if case 1 really
+  ** is satisfied.
+  */
+  if( chngToIN ){
+    int okToChngToIN = 0;     /* True if the conversion to IN is valid */
+    int iColumn = -1;         /* Column index on lhs of IN operator */
+    int iCursor;              /* Table cursor common to all terms */
+    int j = 0;                /* Loop counter */
+
+    /* Search for a table and column that appears on one side or the
+    ** other of the == operator in every subterm.  That table and column
+    ** will be recorded in iCursor and iColumn.  There might not be any
+    ** such table and column.  Set okToChngToIN if an appropriate table
+    ** and column is found but leave okToChngToIN false if not found.
+    */
+    for(j=0; j<2 && !okToChngToIN; j++){
+      pOrTerm = pOrWc->a;
+      for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
+        assert( pOrTerm->eOperator==WO_EQ );
+        pOrTerm->wtFlags &= ~TERM_OR_OK;
+        if( pOrTerm->leftCursor==iColumn ) continue;
+        if( (chngToIN & getMask(pMaskSet, pOrTerm->leftCursor))==0 ) continue;
+        iColumn = pOrTerm->u.leftColumn;
+        iCursor = pOrTerm->leftCursor;
+        break;
+      }
+      if( i<0 ){
+        assert( j==1 );
+        assert( (chngToIN&(chngToIN-1))==0 );
+        assert( chngToIN==getMask(pMaskSet, iColumn) );
+        break;
+      }
+      okToChngToIN = 1;
+      for(; i>=0 && okToChngToIN; i--, pOrTerm++){
+        assert( pOrTerm->eOperator==WO_EQ );
+        if( pOrTerm->leftCursor!=iCursor ){
+          pOrTerm->wtFlags &= ~TERM_OR_OK;
+        }else if( pOrTerm->u.leftColumn!=iColumn ){
+          okToChngToIN = 0;
+        }else{
+          int affLeft, affRight;
+          /* If the right-hand side is also a column, then the affinities
+          ** of both right and left sides must be such that no type
+          ** conversions are required on the right.  (Ticket #2249)
+          */
+          affRight = sqlite3ExprAffinity(pOrTerm->pExpr->pRight);
+          affLeft = sqlite3ExprAffinity(pOrTerm->pExpr->pLeft);
+          if( affRight!=0 && affRight!=affLeft ){
+            okToChngToIN = 0;
+          }else{
+            pOrTerm->wtFlags |= TERM_OR_OK;
+          }
+        }
+      }
+    }
+
+    /* At this point, okToChngToIN is true if original pTerm satisfies
+    ** case 1.  In that case, construct a new virtual term that is 
+    ** pTerm converted into an IN operator.
+    */
+    if( okToChngToIN ){
+      Expr *pDup;            /* A transient duplicate expression */
+      ExprList *pList = 0;   /* The RHS of the IN operator */
+      Expr *pLeft = 0;       /* The LHS of the IN operator */
+      Expr *pNew;            /* The complete IN operator */
+
+      for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0; i--, pOrTerm++){
+        if( (pOrTerm->wtFlags & TERM_OR_OK)==0 ) continue;
+        assert( pOrTerm->eOperator==WO_EQ );
+        assert( pOrTerm->leftCursor==iCursor );
+        assert( pOrTerm->u.leftColumn==iColumn );
+        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight);
+        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup, 0);
+        pLeft = pOrTerm->pExpr->pLeft;
+      }
+      assert( pLeft!=0 );
+      pDup = sqlite3ExprDup(db, pLeft);
+      pNew = sqlite3Expr(db, TK_IN, pDup, 0, 0);
+      if( pNew ){
+        int idxNew;
+        transferJoinMarkings(pNew, pExpr);
+        pNew->pList = pList;
+        idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
+        testcase( idxNew==0 );
+        exprAnalyze(pSrc, pWC, idxNew);
+        pTerm = &pWC->a[idxTerm];
+        pWC->a[idxNew].iParent = idxTerm;
+        pTerm->nChild = 1;
+      }else{
+        sqlite3ExprListDelete(db, pList);
+      }
+      pTerm->eOperator = 0;  /* case 1 trumps case 2 */
+    }
   }
-  /* This is either a singleton term or else it is a duplicate for
-  ** which the original did not qualify.  Either way we are done for. */
-  return 0;
 }
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
+
 
 /*
 ** The input to this routine is an WhereTerm structure with only the
@@ -797,28 +958,34 @@ static int orTermHasOkDuplicate(WhereClause *pOr, WhereTerm *pOrTerm){
 ** structure.
 **
 ** If the expression is of the form "<expr> <op> X" it gets commuted
-** to the standard form of "X <op> <expr>".  If the expression is of
-** the form "X <op> Y" where both X and Y are columns, then the original
-** expression is unchanged and a new virtual expression of the form
-** "Y <op> X" is added to the WHERE clause and analyzed separately.
+** to the standard form of "X <op> <expr>".
+**
+** If the expression is of the form "X <op> Y" where both X and Y are
+** columns, then the original expression is unchanged and a new virtual
+** term of the form "Y <op> X" is added to the WHERE clause and
+** analyzed separately.  The original term is marked with TERM_COPIED
+** and the new term is marked with TERM_DYNAMIC (because it's pExpr
+** needs to be freed with the WhereClause) and TERM_VIRTUAL (because it
+** is a commuted copy of a prior term.)  The original term has nChild=1
+** and the copy has idxParent set to the index of the original term.
 */
 static void exprAnalyze(
   SrcList *pSrc,            /* the FROM clause */
   WhereClause *pWC,         /* the WHERE clause */
   int idxTerm               /* Index of the term to be analyzed */
 ){
-  WhereTerm *pTerm;
-  ExprMaskSet *pMaskSet;
-  Expr *pExpr;
-  Bitmask prereqLeft;
-  Bitmask prereqAll;
+  WhereTerm *pTerm;                /* The term to be analyzed */
+  ExprMaskSet *pMaskSet;           /* Set of table index masks */
+  Expr *pExpr;                     /* The expression to be analyzed */
+  Bitmask prereqLeft;              /* Prerequesites of the pExpr->pLeft */
+  Bitmask prereqAll;               /* Prerequesites of pExpr */
   Bitmask extraRight = 0;
   int nPattern;
   int isComplete;
   int noCase;
-  int op;
-  Parse *pParse = pWC->pParse;
-  sqlite3 *db = pParse->db;
+  int op;                          /* Top-level operator.  pExpr->op */
+  Parse *pParse = pWC->pParse;     /* Parsing context */
+  sqlite3 *db = pParse->db;        /* Database connection */
 
   if( db->mallocFailed ){
     return;
@@ -889,7 +1056,19 @@ static void exprAnalyze(
 
 #ifndef SQLITE_OMIT_BETWEEN_OPTIMIZATION
   /* If a term is the BETWEEN operator, create two new virtual terms
-  ** that define the range that the BETWEEN implements.
+  ** that define the range that the BETWEEN implements.  For example:
+  **
+  **      a BETWEEN b AND c
+  **
+  ** is converted into:
+  **
+  **      (a BETWEEN b AND c) AND (a>=b) AND (a<=c)
+  **
+  ** The two new terms are added onto the end of the WhereClause object.
+  ** The new terms are "dynamic" and are children of the original BETWEEN
+  ** term.  That means that if the BETWEEN term is coded, the children are
+  ** skipped.  Or, if the children are satisfied by an index, the original
+  ** BETWEEN term is skipped.
   */
   else if( pExpr->op==TK_BETWEEN ){
     ExprList *pList = pExpr->pList;
@@ -913,79 +1092,11 @@ static void exprAnalyze(
 #endif /* SQLITE_OMIT_BETWEEN_OPTIMIZATION */
 
 #if !defined(SQLITE_OMIT_OR_OPTIMIZATION) && !defined(SQLITE_OMIT_SUBQUERY)
-  /* Attempt to convert OR-connected terms into an IN operator so that
-  ** they can make use of indices.  Example:
-  **
-  **      x = expr1  OR  expr2 = x  OR  x = expr3
-  **
-  ** is converted into
-  **
-  **      x IN (expr1,expr2,expr3)
-  **
-  ** This optimization must be omitted if OMIT_SUBQUERY is defined because
-  ** the compiler for the the IN operator is part of sub-queries.
+  /* Analyze a term that is composed of two or more subterms connected by
+  ** an OR operator.
   */
   else if( pExpr->op==TK_OR ){
-    int ok;
-    int i, j;
-    int iColumn, iCursor;
-    WhereClause sOr;
-    WhereTerm *pOrTerm;
-
-    assert( (pTerm->wtFlags & TERM_DYNAMIC)==0 );
-    whereClauseInit(&sOr, pWC->pParse, pMaskSet);
-    whereSplit(&sOr, pExpr, TK_OR);
-    exprAnalyzeAll(pSrc, &sOr);
-    assert( sOr.nTerm>=2 );
-    j = 0;
-    if( db->mallocFailed ) goto or_not_possible;
-    do{
-      assert( j<sOr.nTerm );
-      iColumn = sOr.a[j].u.leftColumn;
-      iCursor = sOr.a[j].leftCursor;
-      ok = iCursor>=0;
-      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0 && ok; i--, pOrTerm++){
-        if( pOrTerm->eOperator!=WO_EQ ){
-          goto or_not_possible;
-        }
-        if( orTermIsOptCandidate(pOrTerm, iCursor, iColumn) ){
-          pOrTerm->wtFlags |= TERM_OR_OK;
-        }else if( orTermHasOkDuplicate(&sOr, pOrTerm) ){
-          pOrTerm->wtFlags &= ~TERM_OR_OK;
-        }else{
-          ok = 0;
-        }
-      }
-    }while( !ok && (sOr.a[j++].wtFlags & TERM_COPIED)!=0 && j<2 );
-    if( ok ){
-      ExprList *pList = 0;
-      Expr *pNew, *pDup;
-      Expr *pLeft = 0;
-      for(i=sOr.nTerm-1, pOrTerm=sOr.a; i>=0; i--, pOrTerm++){
-        if( (pOrTerm->wtFlags & TERM_OR_OK)==0 ) continue;
-        pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight);
-        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup, 0);
-        pLeft = pOrTerm->pExpr->pLeft;
-      }
-      assert( pLeft!=0 );
-      pDup = sqlite3ExprDup(db, pLeft);
-      pNew = sqlite3Expr(db, TK_IN, pDup, 0, 0);
-      if( pNew ){
-        int idxNew;
-        transferJoinMarkings(pNew, pExpr);
-        pNew->pList = pList;
-        idxNew = whereClauseInsert(pWC, pNew, TERM_VIRTUAL|TERM_DYNAMIC);
-        testcase( idxNew==0 );
-        exprAnalyze(pSrc, pWC, idxNew);
-        pTerm = &pWC->a[idxTerm];
-        pWC->a[idxNew].iParent = idxTerm;
-        pTerm->nChild = 1;
-      }else{
-        sqlite3ExprListDelete(db, pList);
-      }
-    }
-or_not_possible:
-    whereClauseClear(&sOr);
+    exprAnalyzeOrTerm(pSrc, pWC, idxTerm);
   }
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
