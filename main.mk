@@ -225,6 +225,7 @@ TESTSRC = \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_hexio.c \
+  $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_md5.c \
   $(TOP)/src/test_mutex.c \

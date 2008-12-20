@@ -14,7 +14,7 @@
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
 **
-** $Id: test6.c,v 1.40 2008/12/09 01:32:03 drh Exp $
+** $Id: test6.c,v 1.41 2008/12/20 18:33:59 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
@@ -864,6 +864,64 @@ static int devSymObjCmd(
   return TCL_OK;
 }
 
+/*
+** tclcmd: register_jt_vfs ?-default? PARENT-VFS
+*/
+static int jtObjCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int jt_register(char *, int);
+  char *zParent = 0;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?-default? PARENT-VFS");
+    return TCL_ERROR;
+  }
+  zParent = Tcl_GetString(objv[1]);
+  if( objc==3 ){
+    if( strcmp(zParent, "-default") ){
+      Tcl_AppendResult(interp, 
+          "bad option \"", zParent, "\": must be -default", 0
+      );
+      return TCL_ERROR;
+    }
+    zParent = Tcl_GetString(objv[2]);
+  }
+
+  if( !(*zParent) ){
+    zParent = 0;
+  }
+  if( jt_register(zParent, objc==3) ){
+    Tcl_AppendResult(interp, "Error in jt_register", 0);
+    return TCL_ERROR;
+  }
+
+  return TCL_OK;
+}
+
+/*
+** tclcmd: unregister_jt_vfs
+*/
+static int jtUnregisterObjCmd(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  void jt_unregister(void);
+
+  if( objc!=1 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "");
+    return TCL_ERROR;
+  }
+
+  jt_unregister();
+  return TCL_OK;
+}
+
 #endif /* SQLITE_OMIT_DISKIO */
 
 /*
@@ -874,6 +932,8 @@ int Sqlitetest6_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_crash_enable", crashEnableCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_crashparams", crashParamsObjCmd, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlite3_simulate_device", devSymObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "register_jt_vfs", jtObjCmd, 0, 0);
+  Tcl_CreateObjCommand(interp, "unregister_jt_vfs", jtUnregisterObjCmd, 0, 0);
 #endif
   return TCL_OK;
 }
