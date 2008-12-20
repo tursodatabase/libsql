@@ -1,5 +1,5 @@
-C Fix\sthe\scrash-followed-by-corruption\sbug\srevealed\sby\ssavepoint4.test.\sThis\sis\sactually\sthe\ssame\sbug\sas\swas\sfixed\sby\s(6043).\sThe\sfix\swas\snot\sentirely\scorrect.\s(CVS\s6047)
-D 2008-12-20T08:39:57
+C Do\snot\suse\slong\slong\sconstants\sin\scode.\s\sTicket\s#3547.\s(CVS\s6048)
+D 2008-12-20T13:18:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
 F src/build.c f3e8377cbc0d007b01aab1e7d4fc1d5b296c422e
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 3dbac3eac2848af416786b6e1e3150f7c740dac6
+F src/date.c e010095d85c895761627bb1d0d61d021aea930a9
 F src/delete.c e2392b6808496fc0a7f54662af3ba677a3e8e44a
 F src/expr.c a385202af56d622b11d05e8d386def256155152b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -683,7 +683,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c2228bd14ae54b17450f64357bf835d08c447250
-R 28745131c68a85233646b348f37f710b
-U danielk1977
-Z 253416ea7a2eb467e71f6f982fcd03e8
+P 688336266f0aa5630f4f550ae3787a64f39f9cfa
+R c6607ded9f1ca70aef2682145ec9f3ad
+U drh
+Z 6d73f04848023c003aea708646f655a9
