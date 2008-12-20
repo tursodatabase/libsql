@@ -1,5 +1,5 @@
-C Enhanced\sanalysis\sof\sOR\sterms\sin\sa\sWHERE\sclause.\s\sAnother\sstep\stoward\sbeing\nable\sto\suse\sindices\swith\sOR-connected\sWHERE\sclause\sterms.\s(CVS\s6045)
-D 2008-12-20T02:06:14
+C Specify\stype\s"void"\sin\sthe\sparameter\slist\sof\sfunctions\sthat\stake\sno\sparameters.\nTickets\s#3545\sand\s#3546.\s(CVS\s6046)
+D 2008-12-20T02:14:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
 F src/mem2.c 4c53c0071d3c68b8f252fe85d1667bad59421396
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
 F src/mem5.c 838309b521c96a2a34507f74a5a739d28de4aac6
-F src/memjournal.c e3c9aa679be8eecc4d5636f4d07aeeb084f41cf3
+F src/memjournal.c 17e9281ea5d7981e3e7b0dd3274921ecba4f773c
 F src/mutex.c e9cb5fbe94afb4328869afaf3ac49bd1327559eb
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c f5a07671f25a1a9bd7c10ad7107bc2585446200f
@@ -158,7 +158,7 @@ F src/select.c a4316c5e8a417687e159b3d3ae689363d1dec5df
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 065a828e299960316aa34f05b9f0f10f33afe4c8
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h d7f8532c81038b1133d55c68f96afaf93ffb9138
+F src/sqliteInt.h dfe2dd15e55abbcd028d1582e01b599930bde631
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
@@ -683,7 +683,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e06a968aa5b17ce12ea179b36a99ad74d274fd2c
-R a6eb762ef1053032b1fe61a22a5c40ac
+P c3f7aa019c613e18457f090685725dd8a6a336b9
+R 16eef696dadb8073a93238b891b414de
 U drh
-Z a1e1b0e8f9ef51bafdd5164b7b2aaa33
+Z d9f46a7642ed6f6a261b7f5c413722a9

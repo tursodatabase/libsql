@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.811 2008/12/17 19:22:16 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.812 2008/12/20 02:14:40 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2572,7 +2572,7 @@ int sqlite3FindInIndex(Parse *, Expr *, int*);
 #endif
 
 void sqlite3MemJournalOpen(sqlite3_file *);
-int sqlite3MemJournalSize();
+int sqlite3MemJournalSize(void);
 int sqlite3IsMemJournal(sqlite3_file *);
 
 #if SQLITE_MAX_EXPR_DEPTH>0

@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.7 2008/12/10 21:19:57 drh Exp $
+** @(#) $Id: memjournal.c,v 1.8 2008/12/20 02:14:40 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -240,6 +240,6 @@ int sqlite3IsMemJournal(sqlite3_file *pJfd){
 ** Return the number of bytes required to store a MemJournal that uses vfs
 ** pVfs to create the underlying on-disk files.
 */
-int sqlite3MemJournalSize(){
+int sqlite3MemJournalSize(void){
   return sizeof(MemJournal);
 }
