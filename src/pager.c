@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.518 2008/12/19 16:31:11 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.519 2008/12/20 08:39:57 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1142,6 +1142,7 @@ static int pager_playback_one_page(
   Pager *pPager,                /* The pager being played back */
   int isMainJrnl,               /* 1 -> main journal. 0 -> sub-journal. */
   i64 offset,                   /* Offset of record to playback */
+  int isSavepnt,                /* True for a savepoint rollback */
   Bitvec *pDone                 /* Bitvec of pages already played back */
 ){
   int rc;
@@ -1154,6 +1155,7 @@ static int pager_playback_one_page(
   /* The temp storage must be allocated at this point */
   assert( aData );
   assert( isMainJrnl || pDone );
+  assert( isSavepnt || pDone==0 );
 
   rc = read32bits(jfd, offset, &pgno);
   if( rc!=SQLITE_OK ) return rc;
@@ -1176,7 +1178,7 @@ static int pager_playback_one_page(
     rc = read32bits(jfd, offset+pPager->pageSize+4, &cksum);
     if( rc ) return rc;
     pPager->journalOff += 4;
-    if( !pDone && pager_cksum(pPager, aData)!=cksum ){
+    if( !isSavepnt && pager_cksum(pPager, aData)!=cksum ){
       return SQLITE_DONE;
     }
   }
@@ -1219,8 +1221,10 @@ static int pager_playback_one_page(
   ** Do not attempt to write if database file has never been opened.
   */
   pPg = pager_lookup(pPager, pgno);
-  PAGERTRACE4("PLAYBACK %d page %d hash(%08x)\n",
-               PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, aData));
+  PAGERTRACE5("PLAYBACK %d page %d hash(%08x) %s\n",
+               PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, aData),
+               (isMainJrnl?"main-journal":"sub-journal")
+  );
   if( (pPager->state>=PAGER_EXCLUSIVE)
    && (pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
    && (pPager->fd->pMethods)
@@ -1241,7 +1245,7 @@ static int pager_playback_one_page(
     if( pPager->xReiniter ){
       pPager->xReiniter(pPg);
     }
-    if( isMainJrnl && (!pDone || pPager->journalOff<=pPager->journalHdr) ){
+    if( isMainJrnl && (!isSavepnt || pPager->journalOff<=pPager->journalHdr) ){
       /* If the contents of this page were just restored from the main 
       ** journal file, then its content must be as they were when the 
       ** transaction was first opened. In this case we can mark the page
@@ -1585,7 +1589,7 @@ static int pager_playback(Pager *pPager, int isHot){
     /* Copy original pages out of the journal and back into the database file.
     */
     for(u=0; u<nRec; u++){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 0);
+      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 0, 0);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){
           rc = SQLITE_OK;
@@ -1663,7 +1667,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     iHdrOff = pSavepoint->iHdrOffset ? pSavepoint->iHdrOffset : szJ;
     pPager->journalOff = pSavepoint->iOffset;
     while( rc==SQLITE_OK && pPager->journalOff<iHdrOff ){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, pDone);
+      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }else{
@@ -1678,7 +1682,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
       nJRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
     }
     for(ii=0; rc==SQLITE_OK && ii<nJRec && pPager->journalOff<szJ; ii++){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, pDone);
+      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }
@@ -1688,7 +1692,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   if( pSavepoint ){
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->stmtNRec; ii++){
       i64 offset = ii*(4+pPager->pageSize);
-      rc = pager_playback_one_page(pPager, 0, offset, pDone);
+      rc = pager_playback_one_page(pPager, 0, offset, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }

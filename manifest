@@ -1,5 +1,5 @@
-C Specify\stype\s"void"\sin\sthe\sparameter\slist\sof\sfunctions\sthat\stake\sno\sparameters.\nTickets\s#3545\sand\s#3546.\s(CVS\s6046)
-D 2008-12-20T02:14:40
+C Fix\sthe\scrash-followed-by-corruption\sbug\srevealed\sby\ssavepoint4.test.\sThis\sis\sactually\sthe\ssame\sbug\sas\swas\sfixed\sby\s(6043).\sThe\sfix\swas\snot\sentirely\scorrect.\s(CVS\s6047)
+D 2008-12-20T08:39:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 96b4a6e87335ba943455740f311b4dfb63f26756
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 7760272fb2c508ab5db63790f76e5a6be5e29932
+F src/pager.c 5c2b49c37db966bc312ff28d296767961fb894c3
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -494,7 +494,7 @@ F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/savepoint.test 24b7d67971c0b7a8d22ba1cabbfd846e72f21594
 F test/savepoint2.test 65fed3f179cff053e0a75864b1afc13e100fce1f
 F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
-F test/savepoint4.test 1dfe4e6a089a44e50bdfaa5a723603d0973eb1a8
+F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -683,7 +683,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c3f7aa019c613e18457f090685725dd8a6a336b9
-R 16eef696dadb8073a93238b891b414de
-U drh
-Z d9f46a7642ed6f6a261b7f5c413722a9
+P c2228bd14ae54b17450f64357bf835d08c447250
+R 28745131c68a85233646b348f37f710b
+U danielk1977
+Z 253416ea7a2eb467e71f6f982fcd03e8
