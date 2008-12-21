@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.812 2008/12/20 02:14:40 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.813 2008/12/21 03:51:16 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -534,6 +534,7 @@ typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
 typedef struct UnpackedRecord UnpackedRecord;
 typedef struct Walker Walker;
+typedef struct WherePlan WherePlan;
 typedef struct WhereInfo WhereInfo;
 typedef struct WhereLevel WhereLevel;
 
@@ -1519,50 +1520,74 @@ struct SrcList {
 #define JT_OUTER     0x0020    /* The "OUTER" keyword is present */
 #define JT_ERROR     0x0040    /* unknown or unsupported join type */
 
+
+/*
+** A WherePlan object holds information that describes a lookup
+** strategy.
+**
+** This object is intended to be opaque outside of the where.c module.
+** It is included here only so that that compiler will know how big it
+** is.  None of the fields in this object should be used outside of
+** the where.c module.
+**
+** Within the union, pIdx is only used when wsFlags&WHERE_INDEXED is true.
+** pTerm is only used when wsFlags&WHERE_MULTI_OR is true.  And pVtabIdx
+** is only used when wsFlags&WHERE_VIRTUALTABLE is true.  It is never the
+** case that more than one of these conditions is true.
+*/
+struct WherePlan {
+  u32 wsFlags;                   /* WHERE_* flags that describe the strategy */
+  u32 nEq;                       /* Number of == constraints */
+  union {
+    Index *pIdx;                   /* Index when WHERE_INDEXED is true */
+    struct WhereTerm *pTerm;       /* WHERE clause term for OR-search */
+    sqlite3_index_info *pVtabIdx;  /* Virtual table index to use */
+  } u;
+};
+
 /*
 ** For each nested loop in a WHERE clause implementation, the WhereInfo
 ** structure contains a single instance of this structure.  This structure
 ** is intended to be private the the where.c module and should not be
 ** access or modified by other modules.
 **
-** The pIdxInfo and pBestIdx fields are used to help pick the best
-** index on a virtual table.  The pIdxInfo pointer contains indexing
+** The pIdxInfo field is used to help pick the best index on a
+** virtual table.  The pIdxInfo pointer contains indexing
 ** information for the i-th table in the FROM clause before reordering.
 ** All the pIdxInfo pointers are freed by whereInfoFree() in where.c.
-** The pBestIdx pointer is a copy of pIdxInfo for the i-th table after
-** FROM clause ordering.  This is a little confusing so I will repeat
-** it in different words.  WhereInfo.a[i].pIdxInfo is index information 
-** for WhereInfo.pTabList.a[i].  WhereInfo.a[i].pBestInfo is the
-** index information for the i-th loop of the join.  pBestInfo is always
-** either NULL or a copy of some pIdxInfo.  So for cleanup it is 
-** sufficient to free all of the pIdxInfo pointers.
-** 
+** All other information in the i-th WhereLevel object for the i-th table
+** after FROM clause ordering.
 */
 struct WhereLevel {
-  u32 wsFlags;          /* "Where-Scan" flags show the choosen scan strategy */
+  WherePlan plan;       /* query plan for this element of the FROM clause */
   int iLeftJoin;        /* Memory cell used to implement LEFT OUTER JOIN */
-  Index *pIdx;          /* Index used.  NULL if no index */
-  struct WhereTerm *pTerm; /* Where term containing OR clause */
   int iTabCur;          /* The VDBE cursor used to access the table */
   int iIdxCur;          /* The VDBE cursor used to access pIdx */
   int addrBrk;          /* Jump here to break out of the loop */
   int addrNxt;          /* Jump here to start the next IN combination */
   int addrCont;         /* Jump here to continue with the next loop cycle */
   int addrFirst;        /* First instruction of interior of the loop */
-  int op, p1, p2;       /* Opcode used to terminate the loop */
-  u8 p5;                /* P5 operand of the opcode that terminates the loop */
   u8 iFrom;             /* Which entry in the FROM clause */
-  u16 nEq;              /* Number of == or IN constraints on this loop */
-  u16 nIn;              /* Number of IN operators constraining this loop */
-  struct InLoop {
-    int iCur;              /* The VDBE cursor used by this IN operator */
-    int addrInTop;         /* Top of the IN loop */
-  } *aInLoop;           /* Information about each nested IN operator */
-  sqlite3_index_info *pBestIdx;  /* Index information for this level */
+  u8 op, p5;            /* Opcode and P5 of the opcode that ends the loop */
+  int p1, p2;           /* Operands of the opcode used to ends the loop */
+  union {               /* Information that depends on plan.wsFlags */
+    struct {
+      int nIn;              /* Number of entries in aInLoop[] */
+      struct InLoop {
+        int iCur;              /* The VDBE cursor used by this IN operator */
+        int addrInTop;         /* Top of the IN loop */
+      } *aInLoop;           /* Information about each nested IN operator */
+    } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
+    struct {
+      WherePlan *aPlan;     /* Plans for each term of the WHERE clause */
+    } or;                 /* Used when plan.wsFlags&WHERE_MULTI_OR */
+  } u;
 
   /* The following field is really not part of the current level.  But
-  ** we need a place to cache index information for each table in the
-  ** FROM clause and the WhereLevel structure is a convenient place.
+  ** we need a place to cache virtual table index information for each
+  ** virtual table in the FROM clause and the WhereLevel structure is
+  ** a convenient place since there is one WhereLevel for each FROM clause
+  ** element.
   */
   sqlite3_index_info *pIdxInfo;  /* Index info for n-th source table */
 };
@@ -1585,13 +1610,14 @@ struct WhereLevel {
 struct WhereInfo {
   Parse *pParse;       /* Parsing and code generating context */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
-  SrcList *pTabList;   /* List of tables in the join */
-  int iTop;            /* The very beginning of the WHERE loop */
-  int iContinue;       /* Jump here to continue with next record */
-  int iBreak;          /* Jump here to break out of the loop */
-  int nLevel;          /* Number of nested loop */
-  sqlite3_index_info **apInfo;  /* Array of pointers to index info structures */
-  WhereLevel a[1];     /* Information about each nest loop in the WHERE */
+  SrcList *pTabList;             /* List of tables in the join */
+  int iTop;                      /* The very beginning of the WHERE loop */
+  int iContinue;                 /* Jump here to continue with next record */
+  int iBreak;                    /* Jump here to break out of the loop */
+  int nLevel;                    /* Number of nested loop */
+  struct WhereClause *pWC;       /* Decomposition of the WHERE clause */
+  sqlite3_index_info **apInfo;   /* Array of pointers to index info objects */
+  WhereLevel a[1];               /* Information about each nest loop in WHERE */
 };
 
 /*
