@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.520 2008/12/22 10:58:46 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.521 2008/12/22 11:43:36 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4008,7 +4008,7 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     }
     pPager->nSavepoint = nNew;
 
-    if( op==SAVEPOINT_ROLLBACK ){
+    if( op==SAVEPOINT_ROLLBACK && pPager->jfd->pMethods ){
       PagerSavepoint *pSavepoint = (nNew==0)?0:&pPager->aSavepoint[nNew-1];
       rc = pagerPlaybackSavepoint(pPager, pSavepoint);
       assert(rc!=SQLITE_DONE);

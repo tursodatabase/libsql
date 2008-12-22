@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.8 2008/11/10 19:24:38 shane Exp $
+# $Id: jrnlmode.test,v 1.9 2008/12/22 11:43:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,6 +19,18 @@ source $testdir/tester.tcl
 ifcapable {!pager_pragmas} {
   finish_test
   return
+}
+
+if {[info exists TEMP_STORE] && $TEMP_STORE>=2} {
+  set temp_persist memory
+  set temp_delete memory
+  set temp_truncate memory
+  set temp_off memory
+} else {
+  set temp_persist persist
+  set temp_delete delete
+  set temp_truncate truncate
+  set temp_off off
 }
 
 #----------------------------------------------------------------------
@@ -30,7 +42,7 @@ do_test jrnlmode-1.0 {
     PRAGMA main.journal_mode;
     PRAGMA temp.journal_mode;
   } 
-} [list delete delete delete]
+} [list delete delete $temp_delete]
 do_test jrnlmode-1.1 {
   execsql {
     PRAGMA journal_mode = persist;
@@ -42,7 +54,7 @@ do_test jrnlmode-1.2 {
     PRAGMA main.journal_mode;
     PRAGMA temp.journal_mode;
   } 
-} [list persist persist persist]
+} [list persist persist $temp_persist]
 do_test jrnlmode-1.4 {
   execsql {
     PRAGMA journal_mode = off;
@@ -54,7 +66,7 @@ do_test jrnlmode-1.5 {
     PRAGMA main.journal_mode;
     PRAGMA temp.journal_mode;
   } 
-} {off off off}
+} [list off off $temp_off]
 do_test jrnlmode-1.6 {
   execsql {
     PRAGMA journal_mode = delete;
@@ -66,7 +78,7 @@ do_test jrnlmode-1.7 {
     PRAGMA main.journal_mode;
     PRAGMA temp.journal_mode;
   } 
-} {delete delete delete}
+} [list delete delete $temp_delete]
 do_test jrnlmode-1.7.1 {
   execsql {
     PRAGMA journal_mode = truncate;
@@ -78,7 +90,7 @@ do_test jrnlmode-1.7.2 {
     PRAGMA main.journal_mode;
     PRAGMA temp.journal_mode;
   } 
-} {truncate truncate truncate}
+} [list truncate truncate $temp_truncate]
 do_test jrnlmode-1.8 {
   execsql {
     PRAGMA journal_mode = off;
@@ -105,7 +117,7 @@ ifcapable attach {
       PRAGMA temp.journal_mode;
       PRAGMA aux1.journal_mode;
     }
-  } {off persist memory}
+  } [list off $temp_persist memory]
   do_test jrnlmode-1.11 {
     execsql {
       PRAGMA journal_mode;
@@ -142,7 +154,7 @@ ifcapable attach {
       PRAGMA aux1.journal_mode;
       PRAGMA aux2.journal_mode;
     }
-  } {delete delete memory memory}
+  } [list delete $temp_delete memory memory]
   do_test jrnlmode-1.15 {
     execsql {
       ATTACH ':memory:' as aux3;
@@ -154,7 +166,7 @@ ifcapable attach {
       PRAGMA aux2.journal_mode;
       PRAGMA aux3.journal_mode;
     }
-  } {delete delete memory memory memory}
+  } [list delete $temp_delete memory memory memory]
   do_test jrnlmode-1.16 {
     execsql {
       PRAGMA journal_mode = TRUNCATE;
@@ -166,7 +178,7 @@ ifcapable attach {
       PRAGMA aux2.journal_mode;
       PRAGMA aux3.journal_mode;
     }
-  } {truncate truncate memory memory memory}
+  } [list truncate $temp_truncate memory memory memory]
 
   do_test jrnlmode-1.99 {
     execsql {

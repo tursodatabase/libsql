@@ -1,5 +1,5 @@
-C Add\sa\scase\sto\spermutations.test\sto\srun\stests\swith\sthe\stest_journal.c\sbackend\sinstalled.\sAlso\smany\sfixes\sto\stest_journal.c\sand\sone\squite\sobscure\sfix\sto\spager.c.\s(CVS\s6052)
-D 2008-12-22T10:58:46
+C Changes\sto\stest\sscripts\sso\sthat\sveryquick.test\sruns\swith\sSQLITE_TEMP_STORE=3\sdefined.\sAlso\sa\sfix\sto\sstop\sthe\ssame\sswitch\scausing\sa\scrash\sin\sthe\ssavepoint\scode.\s(CVS\s6053)
+D 2008-12-22T11:43:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 4fc24d29d699c00169a129fa6835a1ea31598873
+F src/pager.c 59b87841ac6ea5f6e5023f2321b69572b9883a8b
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -305,7 +305,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
-F test/exclusive.test ecc64c394f5086d02159d8c0a82520f11420cf6a
+F test/exclusive.test cb991e44aa7cf744976143afce18586920f6696a
 F test/exclusive2.test 6bdf254770a843c2933b54bee9ed239934f0a183
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 135ed46c049916688171e618c5c14312811618d4
@@ -411,7 +411,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test c4e4e40afdb6a128957e1f8ee404c8d670c4ce6f
+F test/jrnlmode.test 513b495624bfe54da24ae1208125421d8167953d
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d9595b961800a13c141bebdb8c0a67377f30efad
-R b5374e09d172c2ab41305c978396d82d
+P bb177e3072ab61d0af7af91660ebe4dafa487b42
+R 848b232f02845492e2937b3a6e6c7ff8
 U danielk1977
-Z 98d2c97eeee17c8939e3e7380b43abd8
+Z 297d4aaaf79becd658366040aca809fd
