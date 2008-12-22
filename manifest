@@ -1,5 +1,5 @@
-C Continue\srefactoring\swhere.c\sin\spreparation\sfor\sinstalling\sOR-clause\noptimizations.\s(CVS\s6050)
-D 2008-12-21T03:51:16
+C Fix\sa\svariable\stype\sto\sprevent\sa\swarning\sin\sthe\sproxy-locking\scode.\s(CVS\s6051)
+D 2008-12-22T03:37:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h 4ee25a35c00e75a569cecb5080be299b0c3e208e
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 96b4a6e87335ba943455740f311b4dfb63f26756
+F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
 F src/pager.c 5c2b49c37db966bc312ff28d296767961fb894c3
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 49172e487610268662c39fc4038032779a41c47f
-R 019fd4ad031eb96e8df6ba9c36e53615
-U drh
-Z 8c8a7b38e53711dc931521d447fa489c
+P 778e91ddb834f6084ecdf3909692b54bb7da8f6d
+R 24c69e7f21063e09d372b85b48a9e328
+U danielk1977
+Z a57801844c740a64a631ffb37d80b4cc

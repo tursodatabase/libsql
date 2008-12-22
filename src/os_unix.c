@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.232 2008/12/11 02:56:07 drh Exp $
+** $Id: os_unix.c,v 1.233 2008/12/22 03:37:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -3203,7 +3203,7 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
     return &dotlockIoMethods;
   }
 }
-static const sqlite3_io_methods (*const autolockIoFinder)(const char*,int)
+static const sqlite3_io_methods *(*const autolockIoFinder)(const char*,int)
         = autolockIoFinderImpl;
 
 #endif /* defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE */
