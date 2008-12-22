@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint2.test,v 1.3 2008/12/20 18:33:59 danielk1977 Exp $
+# $Id: savepoint2.test,v 1.4 2008/12/22 10:58:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -17,10 +17,6 @@ source $testdir/tester.tcl
 # Tests in this file are quite similar to those run by trans.test and
 # avtrans.test.
 #
-
-db close
-register_jt_vfs -default ""
-sqlite3 db test.db -vfs jt
 
 proc signature {} {
   return [db eval {SELECT count(*), md5sum(x) FROM t3}]
@@ -148,8 +144,6 @@ for {set ii 2} {$ii < ($iterations+2)} {incr ii} {
 
 unset -nocomplain ::sig
 unset -nocomplain SQL
-
-unregister_jt_vfs
 
 finish_test
 

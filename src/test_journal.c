@@ -19,7 +19,7 @@
 **   b) the page was not a free-list leaf page when the transaction was
 **      first opened.
 **
-** $Id: test_journal.c,v 1.1 2008/12/20 18:33:59 danielk1977 Exp $
+** $Id: test_journal.c,v 1.2 2008/12/22 10:58:46 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -134,6 +134,11 @@ struct JtGlobal {
 };
 static struct JtGlobal g = {0, 0};
 
+static void closeTransaction(jt_file *p){
+  sqlite3BitvecDestroy(p->pWritable);
+  p->pWritable = 0;
+}
+
 /*
 ** Close an jt-file.
 */
@@ -142,7 +147,7 @@ static int jtClose(sqlite3_file *pFile){
   jt_file *p = (jt_file *)pFile;
 
   if( p->zName ){
-    for(pp=&g.pList; *pp!=p; *pp=(*pp)->pNext);
+    for(pp=&g.pList; *pp!=p; pp=&(*pp)->pNext);
     *pp = p->pNext;
   }
 
@@ -183,23 +188,25 @@ static u32 decodeUint32(const unsigned char *z){
   return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3];
 }
 
-static void readFreelist(jt_file *pMain){
+static int readFreelist(jt_file *pMain){
+  int rc;
   sqlite3_file *p = pMain->pReal;
   sqlite3_int64 iSize;
 
-  sqlite3OsFileSize(p, &iSize);
-  if( iSize>=pMain->nPagesize ){
+  rc = sqlite3OsFileSize(p, &iSize);
+  if( rc==SQLITE_OK && iSize>=pMain->nPagesize ){
     unsigned char *zBuf = (unsigned char *)malloc(pMain->nPagesize);
     u32 iTrunk;
 
-    sqlite3OsRead(p, zBuf, pMain->nPagesize, 0);
+    rc = sqlite3OsRead(p, zBuf, pMain->nPagesize, 0);
     iTrunk = decodeUint32(&zBuf[32]);
-    while( iTrunk>0 ){
+    while( rc==SQLITE_OK && iTrunk>0 ){
       u32 nLeaf;
       u32 iLeaf;
-      sqlite3OsRead(p, zBuf, pMain->nPagesize, (iTrunk-1)*pMain->nPagesize);
+      sqlite3_int64 iOff = (iTrunk-1)*pMain->nPagesize;
+      rc = sqlite3OsRead(p, zBuf, pMain->nPagesize, iOff);
       nLeaf = decodeUint32(&zBuf[4]);
-      for(iLeaf=0; iLeaf<nLeaf; iLeaf++){
+      for(iLeaf=0; rc==SQLITE_OK && iLeaf<nLeaf; iLeaf++){
         u32 pgno = decodeUint32(&zBuf[8+4*iLeaf]);
         sqlite3BitvecSet(pMain->pWritable, pgno);
       }
@@ -208,6 +215,8 @@ static void readFreelist(jt_file *pMain){
 
     free(zBuf);
   }
+
+  return rc;
 }
 
 /*
@@ -249,20 +258,24 @@ static int jtWrite(
     if( decodeJournalHdr(zBuf, 0, &pMain->nPage, 0, &pMain->nPagesize) ){
       /* Zeroing the first journal-file header. This is the end of a
       ** transaction. */
-      sqlite3BitvecDestroy(pMain->pWritable);
-      pMain->pWritable = 0;
+      closeTransaction(pMain);
     }else{
       /* Writing the first journal header to a journal file. This happens
       ** when a transaction is first started.  */
+      int rc;
       pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
-      readFreelist(pMain);
+      if( !pMain->pWritable ){
+	return SQLITE_IOERR_NOMEM;
+      }
+      rc = readFreelist(pMain);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
     }
   }
 
-  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
-    u32 pgno;
-    assert( iAmt==p->nPagesize );
-    pgno = iOfst/p->nPagesize + 1;
+  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable && iAmt==p->nPagesize ){
+    u32 pgno = iOfst/p->nPagesize + 1;
     assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
   }
 
@@ -277,8 +290,7 @@ static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
   if( p->flags&SQLITE_OPEN_MAIN_JOURNAL && size==0 ){
     /* Truncating a journal file. This is the end of a transaction. */
     jt_file *pMain = locateDatabaseHandle(p->zName);
-    sqlite3BitvecDestroy(pMain->pWritable);
-    pMain->pWritable = 0;
+    closeTransaction(pMain);
   }
   return sqlite3OsTruncate(p->pReal, size);
 }
@@ -288,31 +300,41 @@ static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
 ** This function reads the journal file and adds the page number for each
 ** page in the journal to the Bitvec object passed as the second argument.
 */
-static void readJournalFile(jt_file *p, jt_file *pMain){
+static int readJournalFile(jt_file *p, jt_file *pMain){
+  int rc;
   unsigned char zBuf[28];
   sqlite3_file *pReal = p->pReal;
   sqlite3_int64 iOff = 0;
   sqlite3_int64 iSize = 0;
 
-  sqlite3OsFileSize(p->pReal, &iSize);
-  while( iOff<iSize ){
+  rc = sqlite3OsFileSize(p->pReal, &iSize);
+  while( rc==SQLITE_OK && iOff<iSize ){
     u32 nRec, nPage, nSector, nPagesize;
     u32 ii;
-    sqlite3OsRead(pReal, zBuf, 28, iOff);
-    if( decodeJournalHdr(zBuf, &nRec, &nPage, &nSector, &nPagesize) ){
-      return;
+    rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
+    if( rc!=SQLITE_OK 
+     || decodeJournalHdr(zBuf, &nRec, &nPage, &nSector, &nPagesize) 
+    ){
+      return rc;
     }
     iOff += nSector;
-    for(ii=0; ii<nRec && iOff<iSize; ii++){
+    if( nRec==0 ){
+      nRec = (iSize - iOff)/(pMain->nPagesize + 8);
+    }
+    for(ii=0; rc==SQLITE_OK && ii<nRec && iOff<iSize; ii++){
       u32 pgno;
-      sqlite3OsRead(pReal, zBuf, 4, iOff);
-      pgno = decodeUint32(zBuf);
-      iOff += (8 + pMain->nPagesize);
-      sqlite3BitvecSet(pMain->pWritable, pgno);
+      rc = sqlite3OsRead(pReal, zBuf, 4, iOff);
+      if( rc==SQLITE_OK ){
+        pgno = decodeUint32(zBuf);
+        iOff += (8 + pMain->nPagesize);
+        sqlite3BitvecSet(pMain->pWritable, pgno);
+      }
     }
 
     iOff = ((iOff + (nSector-1)) / nSector) * nSector;
   }
+
+  return rc;
 }
 
 /*
@@ -322,6 +344,7 @@ static int jtSync(sqlite3_file *pFile, int flags){
   jt_file *p = (jt_file *)pFile;
 
   if( p->flags&SQLITE_OPEN_MAIN_JOURNAL ){
+    int rc;
     jt_file *pMain;                   /* The associated database file */
 
     /* The journal file is being synced. At this point, we inspect the 
@@ -331,10 +354,14 @@ static int jtSync(sqlite3_file *pFile, int flags){
     */
     pMain = locateDatabaseHandle(p->zName);
     assert(pMain);
-    assert(pMain->pWritable);
 
     /* Set the bitvec values */
-    readJournalFile(p, pMain);
+    if( pMain->pWritable ){
+      rc = readJournalFile(p, pMain);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
+    }
   }
 
   return sqlite3OsSync(p->pReal, flags);
@@ -426,6 +453,7 @@ static int jtOpen(
     p->zName = zName;
     p->flags = flags;
     p->pNext = 0;
+    p->pWritable = 0;
     if( zName ){
       p->pNext = g.pList;
       g.pList = p;
@@ -444,8 +472,9 @@ static int jtDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   if( nPath>8 && 0==strcmp("-journal", &zPath[nPath-8]) ){
     /* Deleting a journal file. The end of a transaction. */
     jt_file *pMain = locateDatabaseHandle(zPath);
-    sqlite3BitvecDestroy(pMain->pWritable);
-    pMain->pWritable = 0;
+    if( pMain ){
+      closeTransaction(pMain);
+    }
   }
 
   return sqlite3OsDelete(g.pVfs, zPath, dirSync);

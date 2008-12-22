@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.39 2008/11/19 01:20:26 drh Exp $
+# $Id: permutations.test,v 1.40 2008/12/22 10:58:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,7 +39,7 @@ if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
   set ::perm::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
-    autovacuum_ioerr no_mutex_try fullmutex
+    autovacuum_ioerr no_mutex_try fullmutex journaltest
   }
 }
 if {$::perm::testmode eq "targets"} { 
@@ -704,6 +704,21 @@ run_tests "pcache100" -description {
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_initialize
 } -include ${perm-alt-pcache-testset}
+
+run_tests "journaltest" -description {
+  Check that pages are synced before being written (test_journal.c).
+} -initialize {
+  set ISQUICK 1
+  catch {db close}
+  register_jt_vfs -default ""
+} -shutdown {
+  unregister_jt_vfs
+} -exclude [concat $EXCLUDE {
+  incrvacuum.test
+  ioerr.test
+  corrupt4.test 
+  io.test 
+}]
 
 # End of tests
 #############################################################################

@@ -11,12 +11,11 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.38 2008/04/19 20:34:19 drh Exp $
+# $Id: trans.test,v 1.39 2008/12/22 10:58:46 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
 
 # Create several tables to work with.
 #

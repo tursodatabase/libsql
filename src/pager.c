@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.519 2008/12/20 08:39:57 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.520 2008/12/22 10:58:46 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3280,6 +3280,17 @@ static int pager_write(PgHdr *pPg){
              PAGERID(pPager), pPg->pgno, 
              ((pPg->flags&PGHDR_NEED_SYNC)?1:0), pager_pagehash(pPg));
 
+        /* Even if an IO or diskfull error occurred while journalling the
+        ** page in the block above, set the need-sync flag for the page.
+        ** Otherwise, when the transaction is rolled back, the logic in
+        ** playback_one_page() will think that the page needs to be restored
+        ** in the database file. And if an IO error occurs while doing so,
+        ** then corruption may follow.
+        */
+        if( !pPager->noSync ){
+          pPg->flags |= PGHDR_NEED_SYNC;
+        }
+
         /* An error has occured writing to the journal file. The 
         ** transaction will be rolled back by the layer above.
         */
@@ -3290,9 +3301,6 @@ static int pager_write(PgHdr *pPg){
         pPager->nRec++;
         assert( pPager->pInJournal!=0 );
         sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
-        if( !pPager->noSync ){
-          pPg->flags |= PGHDR_NEED_SYNC;
-        }
         addToSavepointBitvecs(pPager, pPg->pgno);
       }else{
         if( !pPager->journalStarted && !pPager->noSync ){
@@ -4001,11 +4009,11 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     pPager->nSavepoint = nNew;
 
     if( op==SAVEPOINT_ROLLBACK ){
-      PagerSavepoint *pSavepoint = (nNew==0) ? 0 : &pPager->aSavepoint[nNew-1];
+      PagerSavepoint *pSavepoint = (nNew==0)?0:&pPager->aSavepoint[nNew-1];
       rc = pagerPlaybackSavepoint(pPager, pSavepoint);
       assert(rc!=SQLITE_DONE);
     }
-
+  
     /* If this is a release of the outermost savepoint, truncate 
     ** the sub-journal. */
     if( nNew==0 && op==SAVEPOINT_RELEASE && pPager->sjfd->pMethods ){

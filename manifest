@@ -1,7 +1,7 @@
-C Fix\sa\svariable\stype\sto\sprevent\sa\swarning\sin\sthe\sproxy-locking\scode.\s(CVS\s6051)
-D 2008-12-22T03:37:00
+C Add\sa\scase\sto\spermutations.test\sto\srun\stests\swith\sthe\stest_journal.c\sbackend\sinstalled.\sAlso\smany\sfixes\sto\stest_journal.c\sand\sone\squite\sobscure\sfix\sto\spager.c.\s(CVS\s6052)
+D 2008-12-22T10:58:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in f7e4c81c347b04f7b0f1c1b081a168645d7b8af7
+F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 5c2b49c37db966bc312ff28d296767961fb894c3
+F src/pager.c 4fc24d29d699c00169a129fa6835a1ea31598873
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -179,7 +179,7 @@ F src/test_config.c 4f85387a52f3c7966c3ffab913e988a3830fe1af
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c 74b97d631841b0ebd55e54ba059f61299f537667
+F src/test_journal.c aec37656038150fa60f0418d54b1c535b5b33430
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 5127337c9fb4c851a7f604c0170e0e5ca1fbfe33
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
@@ -476,7 +476,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test 5308a94878efc81a8e8ce133926dfb2c53d19133
+F test/permutations.test 4fd4c7944c42201799c0e2855261f54e1bfda6d2
 F test/pragma.test 0f299601c3b15e8941eb48d2f7a43e6678e3f735
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -493,7 +493,7 @@ F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/savepoint.test 24b7d67971c0b7a8d22ba1cabbfd846e72f21594
-F test/savepoint2.test e1c29bd8341a0214903455971833603852254279
+F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
@@ -607,7 +607,7 @@ F test/tkt3541.test 5dc257bde9bc833ab9cc6844bf170b998dbb950a
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
-F test/trans.test 2fd24cd7aa0b879d49a224cbd647d698f1e7ac5c
+F test/trans.test b3f0c696ddf8c3f113fd2edf49318b2bf431c99a
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
 F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 778e91ddb834f6084ecdf3909692b54bb7da8f6d
-R 24c69e7f21063e09d372b85b48a9e328
+P d9595b961800a13c141bebdb8c0a67377f30efad
+R b5374e09d172c2ab41305c978396d82d
 U danielk1977
-Z a57801844c740a64a631ffb37d80b4cc
+Z 98d2c97eeee17c8939e3e7380b43abd8
