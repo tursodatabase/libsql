@@ -11,7 +11,7 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree1.test,v 1.5 2008/07/14 15:37:01 danielk1977 Exp $
+# $Id: rtree1.test,v 1.6 2008/12/22 15:04:32 danielk1977 Exp $
 #
 
 if {![info exists testdir]} {
@@ -360,5 +360,37 @@ do_test rtree-8.1.6 { execsql { SELECT ii FROM t6 WHERE x1<3 } } {}
 do_test rtree-8.1.7 { execsql { SELECT ii FROM t6 WHERE x1<4 } } {1}
 do_test rtree-8.1.8 { execsql { SELECT ii FROM t6 WHERE x1<5 } } {1 2}
 
+#----------------------------------------------------------------------------
+# Test cases rtree-9.*
+#
+# Test that ticket #3549 is fixed.
+do_test rtree-9.1 {
+  execsql {
+    CREATE TABLE foo (id INTEGER PRIMARY KEY);
+    CREATE VIRTUAL TABLE bar USING rtree (id, minX, maxX, minY, maxY);
+    INSERT INTO foo VALUES (null);
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    DELETE FROM foo WHERE id > 40;
+    INSERT INTO bar SELECT NULL, 0, 0, 0, 0 FROM foo;
+  }
+} {}
+
+# This used to crash.
+do_test rtree-9.2 {
+  execsql {
+    SELECT count(*) FROM bar b1, bar b2, foo s1 WHERE s1.id = b1.id;
+  }
+} {1600}
+do_test rtree-9.3 {
+  execsql {
+    SELECT count(*) FROM bar b1, bar b2, foo s1 
+    WHERE b1.minX <= b2.maxX AND s1.id = b1.id;
+  }
+} {1600}
 
 finish_test

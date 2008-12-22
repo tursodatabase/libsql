@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscripts\sso\sthat\sveryquick.test\sruns\swith\sSQLITE_TEMP_STORE=3\sdefined.\sAlso\sa\sfix\sto\sstop\sthe\ssame\sswitch\scausing\sa\scrash\sin\sthe\ssavepoint\scode.\s(CVS\s6053)
-D 2008-12-22T11:43:36
+C Fix\sa\sreference\scounting\sbug\sin\srtree.\sTicket\s#3549.\s(CVS\s6054)
+D 2008-12-22T15:04:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -69,9 +69,9 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 05d517734dad60165255581cc8dacea00c03b5c0
+F ext/rtree/rtree.c a1c43d0f58aaa6ba22eaf02875f8c55311f74a5d
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test 620223886bf1a319317e63235aac20790375c544
+F ext/rtree/rtree1.test ebcef111192a034c64e9f3b6bd42533a539c2062
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
 F ext/rtree/rtree3.test 877a09c1a0c2b87af0f94f3a286e7dd3b65adf22
 F ext/rtree/rtree4.test 11724f766a74f48710998cdd7552cec140c55bf9
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bb177e3072ab61d0af7af91660ebe4dafa487b42
-R 848b232f02845492e2937b3a6e6c7ff8
+P ee0e6eae9f984472e44d7ee8f195c6e5d33f2efd
+R 84a43cb77701b394bb942c42ab498d4d
 U danielk1977
-Z 297d4aaaf79becd658366040aca809fd
+Z a3c50f9a13d9f2d8f7a301ea5204d232

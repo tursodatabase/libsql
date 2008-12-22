@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.11 2008/11/12 15:24:27 drh Exp $
+** $Id: rtree.c,v 1.12 2008/12/22 15:04:32 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -400,7 +400,8 @@ nodeAcquire(
   */
   if( (pNode = nodeHashLookup(pRtree, iNode)) ){
     assert( !pParent || !pNode->pParent || pNode->pParent==pParent );
-    if( pParent ){
+    if( pParent && !pNode->pParent ){
+      nodeReference(pParent);
       pNode->pParent = pParent;
     }
     pNode->nRef++;
