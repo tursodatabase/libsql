@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.340 2008/12/21 03:51:16 drh Exp $
+** $Id: where.c,v 1.341 2008/12/23 13:35:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -142,7 +142,6 @@ struct WhereClause {
 struct WhereOrInfo {
   WhereClause wc;          /* Decomposition into subterms */
   Bitmask indexable;       /* Bitmask of all indexable tables in the clause */
-  WherePlan *aPlan;        /* Search plan for each subterm */
 };
 
 /*
@@ -268,7 +267,6 @@ static void whereClauseClear(WhereClause*);
 static void whereOrInfoDelete(sqlite3 *db, WhereOrInfo *p){
   if( p ){
     whereClauseClear(&p->wc);
-    sqlite3DbFree(db, p->aPlan);
     sqlite3DbFree(db, p);
   }
 }
@@ -826,7 +824,6 @@ static void exprAnalyzeOrTerm(
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
   whereClauseInit(pOrWc, pWC->pParse, pMaskSet);
-  pOrInfo->aPlan = 0;
   whereSplit(pOrWc, pExpr, TK_OR);
   exprAnalyzeAll(pSrc, pOrWc);
   if( db->mallocFailed ) return;
@@ -961,12 +958,6 @@ static void exprAnalyzeOrTerm(
       }
       pTerm->eOperator = 0;  /* case 1 trumps case 2 */
     }
-  }
-
-  /* If case 2 applies, allocate space for pOrInfo->aPlan
-  */
-  if( pTerm->eOperator==WO_OR ){
-    pOrInfo->aPlan = sqlite3DbMallocRaw(db, pOrWc->nTerm*sizeof(WherePlan));
   }
 }
 #endif /* !SQLITE_OMIT_OR_OPTIMIZATION && !SQLITE_OMIT_SUBQUERY */
@@ -1723,6 +1714,8 @@ static void bestIndex(
   int eqTermMask;             /* Mask of valid equality operators */
   double cost;                /* Cost of using pProbe */
   double nRow;                /* Estimated number of rows in result set */
+  int i;                      /* Loop counter */
+  Bitmask maskSrc;            /* Bitmask for the pSrc table */
 
   WHERETRACE(("bestIndex: tbl=%s notReady=%llx\n", pSrc->pTab->zName,notReady));
   pProbe = pSrc->pTab->pIndex;
@@ -1820,6 +1813,44 @@ static void bestIndex(
       pCost->plan.wsFlags = wsFlags;
     }
   }
+
+#if SQLITE_ENABLE_MULTI_OR
+  /* Search for an OR-clause that can be used to look up the table.
+  */
+  maskSrc = getMask(pWC->pMaskSet, iCur);
+  for(i=0, pTerm=pWC->a; i<pWC->nTerm; i++, pTerm++){
+    WhereClause tempWC;
+    tempWC = *pWC;
+    tempWC.nSlot = 1;
+    if( pTerm->eOperator==WO_OR 
+        && ((pTerm->prereqAll & ~maskSrc) & notReady)==0
+        && (pTerm->u.pOrInfo->indexable & maskSrc)!=0 ){
+      WhereClause *pOrWC = &pTerm->u.pOrInfo->wc;
+      WhereTerm *pOrTerm;
+      int j;
+      double rTotal = 0;
+      double nRow = 0;
+      for(j=0, pOrTerm=pOrWC->a; j<pOrWC->nTerm; j++, pOrTerm++){
+        WhereCost sTermCost;
+        if( pOrTerm->leftCursor!=iCur ) continue;
+        tempWC.a = pOrTerm;
+        bestIndex(pParse, &tempWC, pSrc, notReady, 0, &sTermCost);
+        if( sTermCost.plan.wsFlags==0 ){
+          rTotal = pCost->rCost;
+          break;
+        }
+        rTotal += sTermCost.rCost;
+        nRow += sTermCost.nRow;
+      }
+      if( rTotal<pCost->rCost ){
+        pCost->rCost = rTotal;
+        pCost->nRow = nRow;
+        pCost->plan.wsFlags = WHERE_MULTI_OR;
+        pCost->plan.u.pTerm = pTerm;
+      }
+    }
+  }
+#endif
 
   /* If the pSrc table is the right table of a LEFT JOIN then we may not
   ** use an index to satisfy IS NULL constraints on that table.  This is
@@ -2529,7 +2560,10 @@ static Bitmask codeOneLoopStart(
     pLevel->p1 = iIdxCur;
     disableTerm(pLevel, pRangeStart);
     disableTerm(pLevel, pRangeEnd);
-  }else if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
+  }else
+
+#if SQLITE_ENABLE_MULTI_OR
+  if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
     /* Case 4:  Two or more separately indexed terms connected by OR
     **
     ** Example:
@@ -2562,6 +2596,7 @@ static Bitmask codeOneLoopStart(
     WhereTerm *pTerm;      /* The complete OR-clause */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     WhereTerm *pOrTerm;    /* A single subterm within the OR-clause */
+    SrcList oneTab;        /* Shortened table list */
    
     pTerm = pLevel->plan.u.pTerm;
     assert( pTerm!=0 );
@@ -2570,12 +2605,22 @@ static Bitmask codeOneLoopStart(
     pOrWc = &pTerm->u.pOrInfo->wc;
     
     regRowset = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp1(v, OP_Null, regRowset);
-    for(j=0, pOrTerm=pOrWc->a; j<pOrWc->nTerm; j++, pOrTerm++){
-      if( pOrTerm->leftCursor!=iCur ) continue;
-      /* fillRowSetFromIdx(pParse, regRowset, pTabItem, pOrTerm); */
-    }
     regNextRowid = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+    oneTab.nSrc = 1;
+    oneTab.nAlloc = 1;
+    oneTab.a[0] = *pTabItem;
+    for(j=0, pOrTerm=pOrWc->a; j<pOrWc->nTerm; j++, pOrTerm++){
+      WhereInfo *pSubWInfo;
+      if( pOrTerm->leftCursor!=iCur ) continue;
+      pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0, 0);
+      if( pSubWInfo ){
+        sqlite3VdbeAddOp2(v, OP_Rowid, oneTab.a[0].iCursor, regNextRowid);
+        sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowset, regNextRowid);
+        pSubWInfo->a[0].plan.wsFlags |= WHERE_IDX_ONLY;
+        sqlite3WhereEnd(pSubWInfo);
+      }
+    }
     sqlite3VdbeResolveLabel(v, addrCont);
     addrCont = 
        sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowset, addrBrk, regNextRowid);
@@ -2583,7 +2628,10 @@ static Bitmask codeOneLoopStart(
     sqlite3ReleaseTempReg(pParse, regNextRowid);
     pLevel->op = OP_Goto;
     pLevel->p2 = addrCont;
-  }else{
+  }else
+#endif /* SQLITE_ENABLE_MULTI_OR */
+
+  {
     /* Case 5:  There is no usable index.  We must do a complete
     **          scan of the entire table.
     */

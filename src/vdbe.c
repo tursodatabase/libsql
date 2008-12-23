@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.805 2008/12/18 18:31:39 danielk1977 Exp $
+** $Id: vdbe.c,v 1.806 2008/12/23 13:35:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -4508,6 +4508,7 @@ case OP_RowSetRead: {       /* jump, out3 */
   assert( pOp->p1>0 && pOp->p1<=p->nMem );
   CHECK_FOR_INTERRUPT;
   pIdx = &p->aMem[pOp->p1];
+  pOut = &p->aMem[pOp->p3];
   if( (pIdx->flags & MEM_RowSet)==0 
    || sqlite3RowSetNext(pIdx->u.pRowSet, &val)==0
   ){
@@ -4517,7 +4518,6 @@ case OP_RowSetRead: {       /* jump, out3 */
   }else{
     /* A value was pulled from the index */
     assert( pOp->p3>0 && pOp->p3<=p->nMem );
-    pOut = &p->aMem[pOp->p3];
     sqlite3VdbeMemSetInt64(pOut, val);
   }
   break;
