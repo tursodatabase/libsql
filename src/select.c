@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.494 2008/12/10 22:15:00 drh Exp $
+** $Id: select.c,v 1.495 2008/12/23 23:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3705,7 +3705,7 @@ int sqlite3Select(
     /* This case is for non-aggregate queries
     ** Begin the database scan
     */
-    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, 0);
+    pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pOrderBy, 0, 0);
     if( pWInfo==0 ) goto select_end;
 
     /* If sorting index that was created by a prior OP_OpenEphemeral 
@@ -3826,7 +3826,7 @@ int sqlite3Select(
       ** in the right order to begin with.
       */
       sqlite3VdbeAddOp2(v, OP_Gosub, regReset, addrReset);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pGroupBy, 0, 0);
       if( pWInfo==0 ) goto select_end;
       if( pGroupBy==0 ){
         /* The optimizer is able to deliver rows in group by order so
@@ -4024,7 +4024,7 @@ int sqlite3Select(
       ** of output.
       */
       resetAccumulator(pParse, &sAggInfo);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag);
+      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag, 0);
       if( pWInfo==0 ){
         sqlite3ExprListDelete(db, pDel);
         goto select_end;

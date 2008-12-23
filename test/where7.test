@@ -1,0 +1,94 @@
+# 2008 December 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the multi-index OR clause optimizer.
+#
+# $Id: where7.test,v 1.1 2008/12/23 23:56:22 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !or_opt {
+  finish_test
+  return
+}
+
+# Evaluate SQL.  Return the result set followed by the
+# and the number of full-scan steps.
+#
+proc count_steps {sql} {
+  set r [db eval $sql]
+  lappend r scan [db status step]
+}
+
+# Build some test data
+#
+do_test where7-1.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY,b,c,d);
+    INSERT INTO t1 VALUES(1,2,3,4);
+    INSERT INTO t1 VALUES(2,3,4,5);
+    INSERT INTO t1 VALUES(3,4,6,8);
+    INSERT INTO t1 VALUES(4,5,10,15);
+    INSERT INTO t1 VALUES(5,10,100,1000);
+    CREATE INDEX t1b ON t1(b);
+    CREATE INDEX t1c ON t1(c);
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 2 3 4 5 3 4 6 8 4 5 10 15 5 10 100 1000}
+do_test where7-1.2 {
+  count_steps {
+    SELECT a FROM t1 WHERE b=3 OR c=6
+  }
+} {2 3 scan 0}
+do_test where7-1.3 {
+  count_steps {
+    SELECT a FROM t1 WHERE b=3 OR +c=6
+  }
+} {2 3 scan 4}
+do_test where7-1.4 {
+  count_steps {
+    SELECT a FROM t1 WHERE +b=3 OR c=6
+  }
+} {2 3 scan 4}
+do_test where7-1.5 {
+  count_steps {
+    SELECT a FROM t1 WHERE 3=b OR c=6
+  }
+} {2 3 scan 0}
+do_test where7-1.6 {
+  count_steps {
+    SELECT a FROM t1 WHERE (3=b OR c=6) AND +a>0
+  }
+} {2 3 scan 0}
+do_test where7-1.7 {
+  count_steps {
+    SELECT a FROM t1 WHERE (b=3 OR c>10)
+  }
+} {2 5 scan 0}
+do_test where7-1.8 {
+  count_steps {
+    SELECT a FROM t1 WHERE (b=3 OR c>=10)
+  }
+} {2 4 5 scan 0}
+do_test where7-1.9 {
+  count_steps {
+    SELECT a FROM t1 WHERE (b=3 OR c>=10 OR c=4)
+  }
+} {2 4 5 scan 0}
+do_test where7-1.10 {
+  count_steps {
+    SELECT a FROM t1 WHERE (b=3 OR c>=10 OR c=4 OR b>10)
+  }
+} {2 4 5 scan 0}
+
+
+finish_test

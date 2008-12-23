@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.342 2008/12/23 16:23:05 drh Exp $
+** $Id: where.c,v 1.343 2008/12/23 23:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1814,7 +1814,7 @@ static void bestIndex(
     }
   }
 
-#if SQLITE_ENABLE_MULTI_OR
+#ifndef SQLITE_OMIT_OR_OPTIMIZATION
   /* Search for an OR-clause that can be used to look up the table.
   */
   maskSrc = getMask(pWC->pMaskSet, iCur);
@@ -1850,7 +1850,7 @@ static void bestIndex(
       }
     }
   }
-#endif
+#endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
   /* If the pSrc table is the right table of a LEFT JOIN then we may not
   ** use an index to satisfy IS NULL constraints on that table.  This is
@@ -2175,6 +2175,25 @@ static int codeAllEqualityTerms(
 }
 
 /*
+** Return TRUE if the WhereClause pWC contains no terms that
+** are not virtual and which have not been coded.
+**
+** To put it another way, return TRUE if no additional WHERE clauses
+** tests are required in order to establish that the current row
+** should go to output and return FALSE if there are some terms of
+** the WHERE clause that need to be validated before outputing the row.
+*/
+static int whereRowReadyForOutput(WhereClause *pWC){
+  WhereTerm *pTerm;
+  int j;
+ 
+  for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
+    if( (pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED))==0 ) return 0;
+  }
+  return 1;
+}
+
+/*
 ** Generate code for the start of the iLevel-th loop in the WHERE clause
 ** implementation described by pWInfo.
 */
@@ -2195,8 +2214,10 @@ static Bitmask codeOneLoopStart(
   Parse *pParse;                  /* Parsing context */
   Vdbe *v;                        /* The prepared stmt under constructions */
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
-  int addrBrk;
-  int addrCont;
+  int addrBrk;                    /* Jump here to break out of the loop */
+  int addrCont;                   /* Jump here to continue with next cycle */
+  int regRowSet;       /* Write rowids to this RowSet if non-negative */
+  int codeRowSetEarly; /* True if index fully constrains the search */
   
 
   pParse = pWInfo->pParse;
@@ -2207,6 +2228,8 @@ static Bitmask codeOneLoopStart(
   iCur = pTabItem->iCursor;
   bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
   omitTable = (pLevel->plan.wsFlags & WHERE_IDX_ONLY)!=0;
+  regRowSet = pWInfo->regRowSet;
+  codeRowSetEarly = 0;
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -2263,7 +2286,6 @@ static Bitmask codeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrBrk, iReg, pVtabIdx->idxStr,
                       pVtabIdx->needToFreeIdxStr ? P4_MPRINTF : P4_STATIC);
-    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
     pVtabIdx->needToFreeIdxStr = 0;
     for(j=0; j<nConstraint; j++){
       if( aUsage[j].omit ){
@@ -2274,6 +2296,12 @@ static Bitmask codeOneLoopStart(
     pLevel->op = OP_VNext;
     pLevel->p1 = iCur;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
+    codeRowSetEarly = regRowSet>=0 ? whereRowReadyForOutput(pWC) : 0;
+    if( codeRowSetEarly ){
+      sqlite3VdbeAddOp2(v, OP_VRowid, iCur, iReg);
+      sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, iReg);
+    }
+    sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
   }else
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -2294,6 +2322,10 @@ static Bitmask codeOneLoopStart(
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, addrNxt);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, r1);
+    codeRowSetEarly = (pWC->nTerm==1 && regRowSet>=0) ?1:0;
+    if( codeRowSetEarly ){
+      sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, r1);
+    }
     sqlite3ReleaseTempReg(pParse, rtmp);
     VdbeComment((v, "pk"));
     pLevel->op = OP_Noop;
@@ -2360,11 +2392,17 @@ static Bitmask codeOneLoopStart(
     pLevel->op = bRev ? OP_Prev : OP_Next;
     pLevel->p1 = iCur;
     pLevel->p2 = start;
-    if( testOp!=OP_Noop ){
+    codeRowSetEarly = regRowSet>=0 ? whereRowReadyForOutput(pWC) : 0;
+    if( codeRowSetEarly || testOp!=OP_Noop ){
       int r1 = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
-      sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, r1);
-      sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
+      if( testOp!=OP_Noop ){
+        sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, r1);
+        sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
+      }
+      if( codeRowSetEarly ){
+        sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, r1);
+      }
       sqlite3ReleaseTempReg(pParse, r1);
     }
   }else if( pLevel->plan.wsFlags & (WHERE_COLUMN_RANGE|WHERE_COLUMN_EQ) ){
@@ -2547,9 +2585,16 @@ static Bitmask codeOneLoopStart(
     }
 
     /* Seek the table cursor, if required */
-    if( !omitTable ){
+    disableTerm(pLevel, pRangeStart);
+    disableTerm(pLevel, pRangeEnd);
+    codeRowSetEarly = regRowSet>=0 ? whereRowReadyForOutput(pWC) : 0;
+    if( !omitTable || codeRowSetEarly ){
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, r1);
-      sqlite3VdbeAddOp2(v, OP_Seek, iCur, r1);  /* Deferred seek */
+      if( codeRowSetEarly ){
+        sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, r1);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Seek, iCur, r1);  /* Deferred seek */
+      }
     }
     sqlite3ReleaseTempReg(pParse, r1);
 
@@ -2558,11 +2603,9 @@ static Bitmask codeOneLoopStart(
     */
     pLevel->op = bRev ? OP_Prev : OP_Next;
     pLevel->p1 = iIdxCur;
-    disableTerm(pLevel, pRangeStart);
-    disableTerm(pLevel, pRangeEnd);
   }else
 
-#if SQLITE_ENABLE_MULTI_OR
+#ifndef SQLITE_OMIT_OR_OPTIMIZATION
   if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
     /* Case 4:  Two or more separately indexed terms connected by OR
     **
@@ -2591,7 +2634,7 @@ static Bitmask codeOneLoopStart(
     **        Goto       0, A
     **     B:
     */
-    int regRowset;         /* Register holding the RowSet object */
+    int regOrRowset;       /* Register holding the RowSet object */
     int regNextRowid;      /* Register holding next rowid */
     WhereTerm *pTerm;      /* The complete OR-clause */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
@@ -2603,33 +2646,41 @@ static Bitmask codeOneLoopStart(
     assert( pTerm->eOperator==WO_OR );
     assert( (pTerm->wtFlags & TERM_ORINFO)!=0 );
     pOrWc = &pTerm->u.pOrInfo->wc;
-    
-    regRowset = sqlite3GetTempReg(pParse);
-    regNextRowid = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+    codeRowSetEarly = (regRowSet>=0 && pWC->nTerm==1) ?1:0;
+
+    if( codeRowSetEarly ){
+      regOrRowset = regRowSet;
+    }else{
+      regOrRowset = sqlite3GetTempReg(pParse);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regOrRowset);
+    }
     oneTab.nSrc = 1;
     oneTab.nAlloc = 1;
     oneTab.a[0] = *pTabItem;
     for(j=0, pOrTerm=pOrWc->a; j<pOrWc->nTerm; j++, pOrTerm++){
       WhereInfo *pSubWInfo;
       if( pOrTerm->leftCursor!=iCur ) continue;
-      pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0, 0);
+      pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
+                        WHERE_FILL_ROWSET, regOrRowset);
       if( pSubWInfo ){
-        sqlite3VdbeAddOp2(v, OP_Rowid, oneTab.a[0].iCursor, regNextRowid);
-        sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowset, regNextRowid);
         pSubWInfo->a[0].plan.wsFlags |= WHERE_IDX_ONLY;
         sqlite3WhereEnd(pSubWInfo);
       }
     }
     sqlite3VdbeResolveLabel(v, addrCont);
-    addrCont = 
-       sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowset, addrBrk, regNextRowid);
-    sqlite3VdbeAddOp2(v, OP_Seek, iCur, regNextRowid);
-    sqlite3ReleaseTempReg(pParse, regNextRowid);
-    pLevel->op = OP_Goto;
-    pLevel->p2 = addrCont;
+    if( !codeRowSetEarly ){
+      regNextRowid = sqlite3GetTempReg(pParse);
+      addrCont = 
+         sqlite3VdbeAddOp3(v, OP_RowSetRead, regOrRowset,addrBrk,regNextRowid);
+      sqlite3VdbeAddOp2(v, OP_Seek, iCur, regNextRowid);
+      sqlite3ReleaseTempReg(pParse, regNextRowid);
+      /* sqlite3ReleaseTempReg(pParse, regOrRowset); // Preserve the RowSet */
+      pLevel->op = OP_Goto;
+      pLevel->p2 = addrCont;
+    }
+    disableTerm(pLevel, pTerm);
   }else
-#endif /* SQLITE_ENABLE_MULTI_OR */
+#endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
   {
     /* Case 5:  There is no usable index.  We must do a complete
@@ -2641,6 +2692,7 @@ static Bitmask codeOneLoopStart(
     pLevel->p1 = iCur;
     pLevel->p2 = 1 + sqlite3VdbeAddOp2(v, OP_Rewind, iCur, addrBrk);
     pLevel->p5 = SQLITE_STMTSTATUS_FULLSCAN_STEP;
+    codeRowSetEarly = 0;
   }
   notReady &= ~getMask(pWC->pMaskSet, iCur);
 
@@ -2685,6 +2737,25 @@ static Bitmask codeOneLoopStart(
       pTerm->wtFlags |= TERM_CODED;
     }
   }
+
+  /*
+  ** If it was requested to store the results in a rowset and that has
+  ** not already been do, then do so now.
+  */
+  if( regRowSet>=0 && !codeRowSetEarly ){
+    int r1 = sqlite3GetTempReg(pParse);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+    if(  (pLevel->plan.wsFlags & WHERE_VIRTUALTABLE)!=0 ){
+      sqlite3VdbeAddOp2(v, OP_VRowid, iCur, r1);
+    }else
+#endif
+    {
+      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, r1);
+    }
+    sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, r1);
+    sqlite3ReleaseTempReg(pParse, r1);
+  }
+
   return notReady;
 }
 
@@ -2813,7 +2884,8 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
-  u8 wctrlFlags         /* One of the WHERE_* flags defined in sqliteInt.h */
+  u8 wctrlFlags,        /* One of the WHERE_* flags defined in sqliteInt.h */
+  int regRowSet         /* Register hold RowSet if WHERE_FILL_ROWSET is set */
 ){
   int i;                     /* Loop counter */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
@@ -2858,6 +2930,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
+  pWInfo->regRowSet = (wctrlFlags & WHERE_FILL_ROWSET) ? regRowSet : -1;
   pWInfo->pWC = pWC = (WhereClause*)&pWInfo->a[pWInfo->nLevel];
   pMaskSet = (WhereMaskSet*)&pWC[1];
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.190 2008/12/10 22:15:00 drh Exp $
+** $Id: update.c,v 1.191 2008/12/23 23:56:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -346,7 +346,7 @@ void sqlite3Update(
   */
   sqlite3VdbeAddOp2(v, OP_Null, 0, regOldRowid);
   pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, 0,
-                             WHERE_ONEPASS_DESIRED);
+                             WHERE_ONEPASS_DESIRED, 0);
   if( pWInfo==0 ) goto update_cleanup;
   okOnePass = pWInfo->okOnePass;
 
