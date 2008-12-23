@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.550 2008/12/18 15:45:07 danielk1977 Exp $
+** $Id: btree.c,v 1.551 2008/12/23 10:37:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4977,6 +4977,7 @@ static int balance_quick(BtCursor *pCur){
   */
   pPage->isInit = 0;
   sqlite3BtreeInitPage(pPage);
+  assert( pPage->nOverflow==0 );
 
   /* If everything else succeeded, balance the parent page, in 
   ** case the divider cell inserted caused it to become overfull.
@@ -5025,8 +5026,8 @@ static int balance_nonroot(BtCursor *pCur){
   BtShared *pBt;               /* The whole database */
   int nCell = 0;               /* Number of cells in apCell[] */
   int nMaxCells = 0;           /* Allocated size of apCell, szCell, aFrom. */
-  int nOld;                    /* Number of pages in apOld[] */
-  int nNew;                    /* Number of pages in apNew[] */
+  int nOld = 0;                /* Number of pages in apOld[] */
+  int nNew = 0;                /* Number of pages in apNew[] */
   int nDiv;                    /* Number of cells in apDiv[] */
   int i, j, k;                 /* Loop counters */
   int idx;                     /* Index of pPage in pParent->aCell[] */
@@ -5069,7 +5070,7 @@ static int balance_nonroot(BtCursor *pCur){
   pParent = pCur->apPage[pCur->iPage-1];
   assert( pParent );
   if( SQLITE_OK!=(rc = sqlite3PagerWrite(pParent->pDbPage)) ){
-    return rc;
+    goto balance_cleanup;
   }
 
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
@@ -5100,7 +5101,7 @@ static int balance_nonroot(BtCursor *pCur){
 #endif
 
   if( SQLITE_OK!=(rc = sqlite3PagerWrite(pPage->pDbPage)) ){
-    return rc;
+    goto balance_cleanup;
   }
 
   /*
@@ -5110,12 +5111,6 @@ static int balance_nonroot(BtCursor *pCur){
   */
   idx = pCur->aiIdx[pCur->iPage-1];
   assertParentIndex(pParent, idx, pPage->pgno);
-
-  /*
-  ** Initialize variables so that it will be safe to jump
-  ** directly to balance_cleanup at any moment.
-  */
-  nOld = nNew = 0;
 
   /*
   ** Find sibling pages to pPage and the cells in pParent that divide
@@ -5578,6 +5573,9 @@ static int balance_nonroot(BtCursor *pCur){
   assert( pParent->isInit );
   sqlite3ScratchFree(apCell);
   apCell = 0;
+  TRACE(("BALANCE: finished with %d: old=%d new=%d cells=%d\n",
+          pPage->pgno, nOld, nNew, nCell));
+  pPage->nOverflow = 0;
   releasePage(pPage);
   pCur->iPage--;
   rc = balance(pCur, 0);
@@ -5594,11 +5592,7 @@ balance_cleanup:
   for(i=0; i<nNew; i++){
     releasePage(apNew[i]);
   }
-  pPage->nOverflow = 0;
-
-  /* releasePage(pParent); */
-  TRACE(("BALANCE: finished with %d: old=%d new=%d cells=%d\n",
-          pPage->pgno, nOld, nNew, nCell));
+  pCur->apPage[pCur->iPage]->nOverflow = 0;
 
   return rc;
 }
@@ -5792,17 +5786,18 @@ static int balance(BtCursor *pCur, int isInsert){
     rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc==SQLITE_OK && pPage->nOverflow>0 ){
       rc = balance_deeper(pCur);
+      assert( pCur->apPage[0]==pPage );
       assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
     if( rc==SQLITE_OK && pPage->nCell==0 ){
       rc = balance_shallower(pCur);
+      assert( pCur->apPage[0]==pPage );
       assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
   }else{
     if( pPage->nOverflow>0 || 
         (!isInsert && pPage->nFree>pPage->pBt->usableSize*2/3) ){
       rc = balance_nonroot(pCur);
-      assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
     }
   }
   return rc;
@@ -5977,8 +5972,7 @@ int sqlite3BtreeInsert(
 
   /* Must make sure nOverflow is reset to zero even if the balance()
   ** fails.  Internal data structure corruption will result otherwise. */
-  assert( pPage->nOverflow==0 || rc!=SQLITE_OK );
-  pPage->nOverflow = 0;
+  pCur->apPage[pCur->iPage]->nOverflow = 0;
 
   if( rc==SQLITE_OK ){
     moveToRoot(pCur);

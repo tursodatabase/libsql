@@ -1,5 +1,5 @@
-C Fix\sa\sreference\scounting\sbug\sin\srtree.\sTicket\s#3549.\s(CVS\s6054)
-D 2008-12-22T15:04:32
+C Fix\sa\scouple\sof\sassert()\sfailures\sthat\scan\soccur\sin\sbtree.c\sand\spager.c.\s(CVS\s6055)
+D 2008-12-23T10:37:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c ad51b56b1a90e3c9ad39aabd9368325aba5a6730
+F src/btree.c 69983b4e6567321478f2fb40cd2b0c95807927fe
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
 F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
 F src/build.c f3e8377cbc0d007b01aab1e7d4fc1d5b296c422e
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 59b87841ac6ea5f6e5023f2321b69572b9883a8b
+F src/pager.c 5998dc0bfa382d43e1d8c1c498597d2600cc495b
 F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -394,7 +394,7 @@ F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
 F test/indexedby.test 03af52375e50d146e78f56442b6677d2932c4963
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
-F test/insert3.test 9a4ef3526fd3cca8b05278020ec3100448b4c677
+F test/insert3.test 7188f1da1126eb15f1b27cf34f4c2753c7d5fd27
 F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ee0e6eae9f984472e44d7ee8f195c6e5d33f2efd
-R 84a43cb77701b394bb942c42ab498d4d
+P bbdc0e9f2481f8d59e05ea282b615f97e09fb471
+R 9a4f367c203efd1d1b7375ea1b15ec85
 U danielk1977
-Z a3c50f9a13d9f2d8f7a301ea5204d232
+Z f234b11339d566d37e09d7218e4eacc3
