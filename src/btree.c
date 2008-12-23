@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.551 2008/12/23 10:37:47 danielk1977 Exp $
+** $Id: btree.c,v 1.552 2008/12/23 15:58:06 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1181,6 +1181,7 @@ static int getAndInitPage(
 */
 static void releasePage(MemPage *pPage){
   if( pPage ){
+    assert( pPage->nOverflow==0 || sqlite3PagerPageRefcount(pPage->pDbPage)>1 );
     assert( pPage->aData );
     assert( pPage->pBt );
     assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
@@ -5751,6 +5752,9 @@ static int balance_deeper(BtCursor *pCur){
 #ifndef SQLITE_OMIT_AUTOVACUUM
       if( rc==SQLITE_OK ){
         rc = setChildPtrmaps(pChild);
+      }
+      if( rc ){
+        pChild->nOverflow = 0;
       }
 #endif
     }

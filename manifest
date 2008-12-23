@@ -1,5 +1,5 @@
-C Multi-index\sOR-clause\soptimization\snow\sworks\sfor\ssimple\stests.\s\sThere\sare\nno\stest\sscripts\sfor\sit\syet,\sthough.\s\sAnd\sit\sis\sdisabled\sby\sdefault,\spending\nfurther\stesting\sand\soptimization.\s\sWe\sneed\sa\slot\sof\sboth.\s(CVS\s6058)
-D 2008-12-23T13:35:23
+C Make\ssure\snOverflow\sis\salways\scleared\swhen\sa\spage\sis\sreleased.\s(CVS\s6059)
+D 2008-12-23T15:58:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 69983b4e6567321478f2fb40cd2b0c95807927fe
+F src/btree.c f695109b39fc104bd2f904b1a2d483d44faf9c86
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
 F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
 F src/build.c 92335a6c6a7c119580be605c5dd1439602d6cf5d
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fc4f0621535e27eceb0b4b900a8c59dc06e84487
-R 89762139291a67475ddfc7f16b017b8d
+P d77a702358deddfa9987147999d06a235e730fa9
+R d2518415d28d52ef5fbe9e2da3c0e115
 U drh
-Z b28b3f967fddc56af8e4e065924a72f1
+Z 2111806a9f47235f3c6df6db59fb1319
