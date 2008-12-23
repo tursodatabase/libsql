@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.341 2008/12/23 13:35:23 drh Exp $
+** $Id: where.c,v 1.342 2008/12/23 16:23:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3020,6 +3020,7 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   WHERETRACE(("*** Optimizer Finished ***\n"));
+  if( db->mallocFailed ) goto whereBeginError;
 
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.
