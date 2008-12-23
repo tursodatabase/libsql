@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.509 2008/12/17 17:30:26 danielk1977 Exp $
+** $Id: build.c,v 1.510 2008/12/23 11:11:51 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -955,7 +955,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
     return;
   }
 #endif
-  z = sqlite3NameFromToken(pParse->db, pName);
+  z = sqlite3NameFromToken(db, pName);
   if( z==0 ) return;
   for(i=0; i<p->nCol; i++){
     if( STRICMP(z, p->aCol[i].zName) ){
@@ -966,7 +966,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   }
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
-    aNew = sqlite3DbRealloc(pParse->db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
+    aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
     if( aNew==0 ){
       sqlite3DbFree(db, z);
       return;

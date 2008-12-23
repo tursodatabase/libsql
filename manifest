@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sassert()\sfailures\sthat\scan\soccur\sin\sbtree.c\sand\spager.c.\s(CVS\s6055)
-D 2008-12-23T10:37:47
+C In\ssqlite3AddColumn(),\suse\slocal\svariable\s'db'\sinstead\sof\s'pParse->db'.\s(CVS\s6056)
+D 2008-12-23T11:11:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 69983b4e6567321478f2fb40cd2b0c95807927fe
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
 F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
-F src/build.c f3e8377cbc0d007b01aab1e7d4fc1d5b296c422e
+F src/build.c 92335a6c6a7c119580be605c5dd1439602d6cf5d
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e010095d85c895761627bb1d0d61d021aea930a9
@@ -684,7 +684,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bbdc0e9f2481f8d59e05ea282b615f97e09fb471
-R 9a4f367c203efd1d1b7375ea1b15ec85
+P ae44e7482476478c8eeacfb80b282f17894530e5
+R 9276baa80abf6b4b4dab95ac943c4f7a
 U danielk1977
-Z f234b11339d566d37e09d7218e4eacc3
+Z 329c40aff865495d69bd924d004c9e87
