@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.2 2008/12/18 18:31:39 danielk1977 Exp $
+# $Id: savepoint.test,v 1.3 2008/12/23 11:46:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -329,6 +329,52 @@ do_test savepoint-5.4.3 {
 do_test savepoint-5.4.4 {
   execsql { SELECT x FROM blobs WHERE rowid = 2 }
 } {{another blob}}
+
+#-------------------------------------------------------------------------
+# The following tests, savepoint-6.*, test an incr-vacuum inside of a
+# couple of nested savepoints.
+#
+ifcapable {autovacuum && pragma} {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+
+  do_test savepoint-6.1 {
+    execsql { 
+      PRAGMA auto_vacuum = incremental;
+      CREATE TABLE t1(a, b, c);
+      CREATE INDEX i1 ON t1(a, b);
+      BEGIN;
+      INSERT INTO t1 VALUES(randstr(10,400),randstr(10,400),randstr(10,400));
+    }
+    set r "randstr(10,400)"
+    for {set ii 0} {$ii < 10} {incr ii} {
+      execsql "INSERT INTO t1 SELECT $r, $r, $r FROM t1"
+    }
+    execsql { COMMIT }
+  } {}
+
+  integrity_check savepoint-6.2
+
+  do_test savepoint-6.3 {
+    execsql {
+      PRAGMA cache_size = 10;
+      BEGIN;
+        UPDATE t1 SET a = randstr(10,10) WHERE (rowid%4)==0;
+        SAVEPOINT one;
+          DELETE FROM t1 WHERE rowid%2;
+          PRAGMA incr_vacuum;
+          SAVEPOINT two;
+            INSERT INTO t1 SELECT randstr(10,400), randstr(10,400), c FROM t1;
+            DELETE FROM t1 WHERE rowid%2;
+            PRAGMA incr_vacuum;
+        ROLLBACK TO one;
+      COMMIT;
+    }
+  } {}
+
+  integrity_check savepoint-6.4
+}
 
 finish_test
 
