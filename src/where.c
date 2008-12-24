@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.343 2008/12/23 23:56:22 drh Exp $
+** $Id: where.c,v 1.344 2008/12/24 11:25:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2781,7 +2781,10 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
     for(i=0; i<pWInfo->nLevel; i++){
       sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
       if( pInfo ){
-        assert( pInfo->needToFreeIdxStr==0 );
+        assert( pInfo->needToFreeIdxStr==0 || db->mallocFailed );
+        if( pInfo->needToFreeIdxStr ){
+          sqlite3_free(pInfo->idxStr);
+	}
         sqlite3DbFree(db, pInfo);
       }
     }
@@ -3093,7 +3096,9 @@ WhereInfo *sqlite3WhereBegin(
     }
   }
   WHERETRACE(("*** Optimizer Finished ***\n"));
-  if( db->mallocFailed ) goto whereBeginError;
+  if( db->mallocFailed ){
+    goto whereBeginError;
+  }
 
   /* If the total query only selects a single row, then the ORDER BY
   ** clause is irrelevant.
