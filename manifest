@@ -1,5 +1,5 @@
-C Fix\sa\svirtual\stable\srelated\sassert()\sthat\scan\sfail\sfollowing\sa\smalloc\sfailure.\s(CVS\s6064)
-D 2008-12-24T11:25:40
+C Reset\sthe\scolumn\scache\sbefore\scoding\seach\sstep\sof\sa\strigger\sprogram.\sCandidate\sfix\sfor\s#3554.\s(CVS\s6065)
+D 2008-12-26T07:56:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -193,7 +193,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c d74fc445e0dba0e00806117eb449b307c0b146bf
 F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c aaa5fa6a4536a9dd7c855a3f66f32508f1612138
-F src/trigger.c 5a669d8fc9197db393ff85fa95ec882282162bb5
+F src/trigger.c ca6d78f7c1314053800386ca64361e487774fda3
 F src/update.c 8c4925f9ca664effc8a1faaad67449d2074567b1
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c ea62608f66f33a7e8322de83024ae37c415c0c7f
@@ -604,6 +604,7 @@ F test/tkt3508.test d9e285ff91731247d4673f9252fe5934639d7f0d
 F test/tkt3522.test 22ce2ebbcb04a6be56c0977d405c207967318fd6
 F test/tkt3527.test ee4af96183579565987e58873a7490bc04934ffb
 F test/tkt3541.test 5dc257bde9bc833ab9cc6844bf170b998dbb950a
+F test/tkt3554.test 0463fea3650ac18d3694a8f39e6e25cddc1ac1fc
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -685,7 +686,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 416c9efb49ba207a9a79d06d0b13854695a8876c
-R 9a2fdeee38c8141c5f23656702bf84f1
+P c6fd3b8f29927c0fc634f82885f144c78f0105d9
+R c25735f44357d80a804bf8dbd5007586
 U danielk1977
-Z 50d42c2e2360bf3c9b72e4e25ad13cf2
+Z e5dd7e980e4e7bfee46bc37a1c56ba2d
