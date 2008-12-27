@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.3 2008/12/23 11:46:28 danielk1977 Exp $
+# $Id: savepoint.test,v 1.4 2008/12/27 15:23:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -375,6 +375,99 @@ ifcapable {autovacuum && pragma} {
 
   integrity_check savepoint-6.4
 }
+
+#-------------------------------------------------------------------------
+# The following tests, savepoint-7.*, attempt to break the logic 
+# surrounding savepoints by growing and shrinking the database file.
+#
+db close
+file delete -force test.db
+sqlite3 db test.db
+
+do_test savepoint-7.1 {
+  execsql {
+    PRAGMA auto_vacuum = incremental;
+    PRAGMA cache_size = 10;
+    BEGIN;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+      INSERT INTO t1(a) VALUES('alligator');
+      INSERT INTO t1(a) VALUES('angelfish');
+      INSERT INTO t1(a) VALUES('ant');
+      INSERT INTO t1(a) VALUES('antelope');
+      INSERT INTO t1(a) VALUES('ape');
+      INSERT INTO t1(a) VALUES('baboon');
+      INSERT INTO t1(a) VALUES('badger');
+      INSERT INTO t1(a) VALUES('bear');
+      INSERT INTO t1(a) VALUES('beetle');
+      INSERT INTO t1(a) VALUES('bird');
+      INSERT INTO t1(a) VALUES('bison');
+      UPDATE t1 SET b =    randstr(1000,1000);
+      UPDATE t1 SET b = b||randstr(1000,1000);
+      UPDATE t1 SET b = b||randstr(1000,1000);
+      UPDATE t1 SET b = b||randstr(10,1000);
+    COMMIT;
+  }
+  expr ([execsql { PRAGMA page_count }] > 20)
+} {1}
+do_test savepoint-7.2.1 {
+  execsql {
+    BEGIN;
+      SAVEPOINT one;
+      CREATE TABLE t2(a, b);
+      INSERT INTO t2 SELECT a, b FROM t1;
+      ROLLBACK TO one;
+  }
+  execsql {
+    PRAGMA integrity_check;
+  }
+} {ok}
+do_test savepoint-7.2.2 {
+  execsql {
+    COMMIT;
+    PRAGMA integrity_check;
+  }
+} {ok}
+
+do_test savepoint-7.3.1 {
+  execsql {
+    CREATE TABLE t2(a, b);
+    INSERT INTO t2 SELECT a, b FROM t1;
+  }
+} {}
+do_test savepoint-7.3.2 {
+  execsql {
+    BEGIN;
+      SAVEPOINT one;
+        DELETE FROM t2;
+        PRAGMA incremental_vacuum;
+        SAVEPOINT two;
+          INSERT INTO t2 SELECT a, b FROM t1;
+        ROLLBACK TO two;
+    COMMIT;
+  }
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+do_test savepoint-7.4.1 {
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  execsql {
+    PRAGMA auto_vacuum = incremental;
+    CREATE TABLE t1(a, b, PRIMARY KEY(a, b));
+    INSERT INTO t1 VALUES(randstr(1000,1000), randstr(1000,1000));
+    BEGIN;
+      DELETE FROM t1;
+      SAVEPOINT one;
+      PRAGMA incremental_vacuum;
+      ROLLBACK TO one;
+    COMMIT;
+  }
+
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+
 
 finish_test
 

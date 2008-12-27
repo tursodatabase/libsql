@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.552 2008/12/23 15:58:06 drh Exp $
+** $Id: btree.c,v 1.553 2008/12/27 15:23:13 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2280,15 +2280,10 @@ static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 ** number of pages the database file will contain after this 
 ** process is complete.
 */
-static int incrVacuumStep(BtShared *pBt, Pgno nFin){
-  Pgno iLastPg;             /* Last page in the database */
+static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
   Pgno nFreeList;           /* Number of pages still on the free-list */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  iLastPg = pBt->nTrunc;
-  if( iLastPg==0 ){
-    iLastPg = pagerPagecount(pBt);
-  }
 
   if( !PTRMAP_ISPAGE(pBt, iLastPg) && iLastPg!=PENDING_BYTE_PAGE(pBt) ){
     int rc;
@@ -2362,9 +2357,12 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin){
     }
   }
 
-  pBt->nTrunc = iLastPg - 1;
-  while( pBt->nTrunc==PENDING_BYTE_PAGE(pBt)||PTRMAP_ISPAGE(pBt, pBt->nTrunc) ){
-    pBt->nTrunc--;
+  if( nFin==0 ){
+    iLastPg--;
+    while( iLastPg==PENDING_BYTE_PAGE(pBt)||PTRMAP_ISPAGE(pBt, iLastPg) ){
+      iLastPg--;
+    }
+    sqlite3PagerTruncateImage(pBt->pPager, iLastPg);
   }
   return SQLITE_OK;
 }
@@ -2388,7 +2386,7 @@ int sqlite3BtreeIncrVacuum(Btree *p){
     rc = SQLITE_DONE;
   }else{
     invalidateAllOverflowCache(pBt);
-    rc = incrVacuumStep(pBt, 0);
+    rc = incrVacuumStep(pBt, 0, sqlite3PagerImageSize(pBt->pPager));
   }
   sqlite3BtreeLeave(p);
   return rc;
@@ -2403,7 +2401,7 @@ int sqlite3BtreeIncrVacuum(Btree *p){
 ** i.e. the database has been reorganized so that only the first *pnTrunc
 ** pages are in use.
 */
-static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
+static int autoVacuumCommit(BtShared *pBt){
   int rc = SQLITE_OK;
   Pager *pPager = pBt->pPager;
   VVA_ONLY( int nRef = sqlite3PagerRefcount(pPager) );
@@ -2412,53 +2410,44 @@ static int autoVacuumCommit(BtShared *pBt, Pgno *pnTrunc){
   invalidateAllOverflowCache(pBt);
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
-    Pgno nFin = 0;
+    Pgno nFin;
+    Pgno nFree;
+    Pgno nPtrmap;
+    Pgno iFree;
+    const int pgsz = pBt->pageSize;
+    Pgno nOrig = pagerPagecount(pBt);
 
-    if( pBt->nTrunc==0 ){
-      Pgno nFree;
-      Pgno nPtrmap;
-      const int pgsz = pBt->pageSize;
-      Pgno nOrig = pagerPagecount(pBt);
-
-      if( PTRMAP_ISPAGE(pBt, nOrig) ){
-        return SQLITE_CORRUPT_BKPT;
-      }
-      if( nOrig==PENDING_BYTE_PAGE(pBt) ){
-        nOrig--;
-      }
-      nFree = get4byte(&pBt->pPage1->aData[36]);
-      nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+pgsz/5)/(pgsz/5);
-      nFin = nOrig - nFree - nPtrmap;
-      if( nOrig>PENDING_BYTE_PAGE(pBt) && nFin<=PENDING_BYTE_PAGE(pBt) ){
-        nFin--;
-      }
-      while( PTRMAP_ISPAGE(pBt, nFin) || nFin==PENDING_BYTE_PAGE(pBt) ){
-        nFin--;
-      }
+    if( PTRMAP_ISPAGE(pBt, nOrig) ){
+      return SQLITE_CORRUPT_BKPT;
+    }
+    if( nOrig==PENDING_BYTE_PAGE(pBt) ){
+      nOrig--;
+    }
+    nFree = get4byte(&pBt->pPage1->aData[36]);
+    nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+pgsz/5)/(pgsz/5);
+    nFin = nOrig - nFree - nPtrmap;
+    if( nOrig>PENDING_BYTE_PAGE(pBt) && nFin<=PENDING_BYTE_PAGE(pBt) ){
+      nFin--;
+    }
+    while( PTRMAP_ISPAGE(pBt, nFin) || nFin==PENDING_BYTE_PAGE(pBt) ){
+      nFin--;
     }
 
-    while( rc==SQLITE_OK ){
-      rc = incrVacuumStep(pBt, nFin);
+    for(iFree=nOrig; iFree>nFin && rc==SQLITE_OK; iFree--){
+      rc = incrVacuumStep(pBt, nFin, iFree);
     }
-    if( rc==SQLITE_DONE ){
-      assert(nFin==0 || pBt->nTrunc==0 || nFin<=pBt->nTrunc);
+    if( (rc==SQLITE_DONE || rc==SQLITE_OK) && nFree>0 ){
       rc = SQLITE_OK;
-      if( pBt->nTrunc && nFin ){
-        rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
-        put4byte(&pBt->pPage1->aData[32], 0);
-        put4byte(&pBt->pPage1->aData[36], 0);
-        pBt->nTrunc = nFin;
-      }
+      rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
+      put4byte(&pBt->pPage1->aData[32], 0);
+      put4byte(&pBt->pPage1->aData[36], 0);
+      sqlite3PagerTruncateImage(pBt->pPager, nFin);
     }
     if( rc!=SQLITE_OK ){
       sqlite3PagerRollback(pPager);
     }
   }
 
-  if( rc==SQLITE_OK ){
-    *pnTrunc = pBt->nTrunc;
-    pBt->nTrunc = 0;
-  }
   assert( nRef==sqlite3PagerRefcount(pPager) );
   return rc;
 }
@@ -2500,7 +2489,7 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
     pBt->db = p->db;
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      rc = autoVacuumCommit(pBt, &nTrunc); 
+      rc = autoVacuumCommit(pBt);
       if( rc!=SQLITE_OK ){
         sqlite3BtreeLeave(p);
         return rc;
@@ -2676,10 +2665,6 @@ int sqlite3BtreeRollback(Btree *p){
 
   if( p->inTrans==TRANS_WRITE ){
     int rc2;
-
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    pBt->nTrunc = 0;
-#endif
 
     assert( TRANS_WRITE==pBt->inTransaction );
     rc2 = sqlite3PagerRollback(pBt->pPager);
@@ -4329,16 +4314,6 @@ static int allocateBtreePage(
     *pPgno = nPage + 1;
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pBt->nTrunc ){
-      /* An incr-vacuum has already run within this transaction. So the
-      ** page to allocate is not from the physical end of the file, but
-      ** at pBt->nTrunc. 
-      */
-      *pPgno = pBt->nTrunc+1;
-      if( *pPgno==PENDING_BYTE_PAGE(pBt) ){
-        (*pPgno)++;
-      }
-    }
     if( pBt->autoVacuum && PTRMAP_ISPAGE(pBt, *pPgno) ){
       /* If *pPgno refers to a pointer-map page, allocate two new pages
       ** at the end of the file instead of one. The first allocated page
@@ -4348,9 +4323,6 @@ static int allocateBtreePage(
       assert( *pPgno!=PENDING_BYTE_PAGE(pBt) );
       (*pPgno)++;
       if( *pPgno==PENDING_BYTE_PAGE(pBt) ){ (*pPgno)++; }
-    }
-    if( pBt->nTrunc ){
-      pBt->nTrunc = *pPgno;
     }
 #endif
 
@@ -7059,11 +7031,6 @@ char *sqlite3BtreeIntegrityCheck(
   sCheck.nErr = 0;
   sCheck.mallocFailed = 0;
   *pnErr = 0;
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  if( pBt->nTrunc!=0 ){
-    sCheck.nPage = pBt->nTrunc;
-  }
-#endif
   if( sCheck.nPage==0 ){
     unlockBtreeIfUnused(pBt);
     sqlite3BtreeLeave(p);

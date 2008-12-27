@@ -1,5 +1,5 @@
-C Reset\sthe\scolumn\scache\sbefore\scoding\seach\sstep\sof\sa\strigger\sprogram.\sCandidate\sfix\sfor\s#3554.\s(CVS\s6065)
-D 2008-12-26T07:56:39
+C Fix\sa\sproblem\swith\ssavepoint\sand\sincremental-vacuum.\s(CVS\s6066)
+D 2008-12-27T15:23:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,9 +103,9 @@ F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c f695109b39fc104bd2f904b1a2d483d44faf9c86
+F src/btree.c 581fdccd7b6539a8e37e843f9b45e0557b3b272f
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
-F src/btreeInt.h 7ef2c872371d7508657f8d7a4efe651c741d6ee6
+F src/btreeInt.h 8fea5cd7021cb8848fc2183a3e909469659daa0a
 F src/build.c 92335a6c6a7c119580be605c5dd1439602d6cf5d
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -142,8 +142,8 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 67af495bcd0723a1574dcdefebeac8edc3fee492
-F src/pager.h 7191294438881eb4d13eedade97891e8dc993905
+F src/pager.c ec486337fae32dfcaac41f4471c70a0385fe8487
+F src/pager.h 0579740d4c18826b46124c82330467b41f407eb1
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
@@ -385,7 +385,7 @@ F test/in4.test 9bfd9226a82ac832046abc93acecf42627ebb45a
 F test/incrblob.test 4b9437bbb38724343dadbbcca6356bc2a9b435d1
 F test/incrblob2.test 5cca1c3cb29064c504b3b0cc3e2cd43e8053cfdf
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
-F test/incrvacuum.test 9a6346c56ffa141024054ae7ba6c8655edf2d137
+F test/incrvacuum.test 6ef5877f26d1e7bc9bc137ea8f8f069a260ff9c6
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
@@ -492,7 +492,7 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test 5d43369333ab373c4bde69f090a1659c8d2275de
+F test/savepoint.test d00fe3f82773266410799aad0080426a6a936170
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
@@ -686,7 +686,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c6fd3b8f29927c0fc634f82885f144c78f0105d9
-R c25735f44357d80a804bf8dbd5007586
+P a1b1f6cd7d2c060bd75ce39347e1220b872806ed
+R 1a9ec7089b4909b30df347c1e2ee32e6
 U danielk1977
-Z e5dd7e980e4e7bfee46bc37a1c56ba2d
+Z 75549ad37a08cbb85b58f7a2c8f6829a
