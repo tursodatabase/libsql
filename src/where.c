@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.345 2008/12/28 16:55:25 drh Exp $
+** $Id: where.c,v 1.346 2008/12/28 18:35:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -129,6 +129,7 @@ struct WhereTerm {
 struct WhereClause {
   Parse *pParse;           /* The parser context */
   WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
+  u8 op;                   /* Split operator.  TK_AND or TK_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
   WhereTerm *a;            /* Each a[] describes a term of the WHERE cluase */
@@ -149,9 +150,7 @@ struct WhereOrInfo {
 ** a dynamically allocated instance of the following structure.
 */
 struct WhereAndInfo {
-  WhereClause wc;          /* The OR subexpression broken out */
-  Index *pIdx;             /* Index to use */
-  double cost;             /* Cost of evaluating this OR subexpression */
+  WhereClause wc;          /* The subexpression broken out */
 };
 
 /*
@@ -369,6 +368,7 @@ static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
 ** all terms of the WHERE clause.
 */
 static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
+  pWC->op = (u8)op;
   if( pExpr==0 ) return;
   if( pExpr->op!=op ){
     whereClauseInsert(pWC, pExpr, 0);
@@ -835,8 +835,30 @@ static void exprAnalyzeOrTerm(
   indexable = chngToIN = ~(Bitmask)0;
   for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
     if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
+      WhereAndInfo *pAndInfo;
+      assert( pOrTerm->eOperator==0 );
+      assert( (pOrTerm->wtFlags & (TERM_ANDINFO|TERM_ORINFO))==0 );
       chngToIN = 0;
-      indexable = 0;   /***** FIX ME.  Some AND clauses are indexable. */
+      pAndInfo = sqlite3DbMallocRaw(db, sizeof(*pAndInfo));
+      if( pAndInfo ){
+        WhereClause *pAndWC;
+        WhereTerm *pAndTerm;
+        int j;
+        Bitmask b = 0;
+        pOrTerm->u.pAndInfo = pAndInfo;
+        pOrTerm->wtFlags |= TERM_ANDINFO;
+        pOrTerm->eOperator = WO_AND;
+        pAndWC = &pAndInfo->wc;
+        whereClauseInit(pAndWC, pWC->pParse, pMaskSet);
+        whereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
+        exprAnalyzeAll(pSrc, pAndWC);
+        for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
+          if( pAndTerm->pExpr && allowedOp(pAndTerm->pExpr->op) ){
+            b |= getMask(pMaskSet, pAndTerm->leftCursor);
+          }
+        }
+        indexable &= b;
+      }
     }else if( pOrTerm->wtFlags & TERM_COPIED ){
       /* Skip this term for now.  We revisit it when we process the
       ** corresponding TERM_VIRTUAL term */
@@ -1082,7 +1104,7 @@ static void exprAnalyze(
   ** skipped.  Or, if the children are satisfied by an index, the original
   ** BETWEEN term is skipped.
   */
-  else if( pExpr->op==TK_BETWEEN ){
+  else if( pExpr->op==TK_BETWEEN && pWC->op==TK_AND ){
     ExprList *pList = pExpr->pList;
     int i;
     static const u8 ops[] = {TK_GE, TK_LE};
@@ -1108,6 +1130,7 @@ static void exprAnalyze(
   ** an OR operator.
   */
   else if( pExpr->op==TK_OR ){
+    assert( pWC->op==TK_AND );
     exprAnalyzeOrTerm(pSrc, pWC, idxTerm);
   }
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
@@ -1123,7 +1146,8 @@ static void exprAnalyze(
   ** The last character of the prefix "abc" is incremented to form the
   ** termination condition "abd".
   */
-  if( isLikeOrGlob(pParse, pExpr, &nPattern, &isComplete, &noCase) ){
+  if( isLikeOrGlob(pParse, pExpr, &nPattern, &isComplete, &noCase)
+         && pWC->op==TK_AND ){
     Expr *pLeft, *pRight;
     Expr *pStr1, *pStr2;
     Expr *pNewExpr1, *pNewExpr2;
@@ -1832,9 +1856,15 @@ static void bestIndex(
       double nRow = 0;
       for(j=0, pOrTerm=pOrWC->a; j<pOrWC->nTerm; j++, pOrTerm++){
         WhereCost sTermCost;
-        if( pOrTerm->leftCursor!=iCur ) continue;
-        tempWC.a = pOrTerm;
-        bestIndex(pParse, &tempWC, pSrc, notReady, 0, &sTermCost);
+        if( pOrTerm->eOperator==WO_AND ){
+          WhereClause *pAndWC = &pOrTerm->u.pAndInfo->wc;
+          bestIndex(pParse, pAndWC, pSrc, notReady, 0, &sTermCost);
+        }else if( pOrTerm->leftCursor==iCur ){
+          tempWC.a = pOrTerm;
+          bestIndex(pParse, &tempWC, pSrc, notReady, 0, &sTermCost);
+        }else{
+          continue;
+        }
         if( sTermCost.plan.wsFlags==0 ){
           rTotal = pCost->rCost;
           break;
@@ -2670,7 +2700,7 @@ static Bitmask codeOneLoopStart(
     oneTab.a[0] = *pTabItem;
     for(j=0, pOrTerm=pOrWc->a; j<pOrWc->nTerm; j++, pOrTerm++){
       WhereInfo *pSubWInfo;
-      if( pOrTerm->leftCursor!=iCur ) continue;
+      if( pOrTerm->leftCursor!=iCur && pOrTerm->eOperator!=WO_AND ) continue;
       pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
                         WHERE_FILL_ROWSET | WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE,
                         regOrRowset);
