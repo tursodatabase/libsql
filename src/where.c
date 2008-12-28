@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.344 2008/12/24 11:25:40 danielk1977 Exp $
+** $Id: where.c,v 1.345 2008/12/28 16:55:25 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -26,7 +26,7 @@
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
 int sqlite3WhereTrace = 0;
 #endif
-#if 1
+#if 0
 # define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
 #else
 # define WHERETRACE(X)
@@ -2111,8 +2111,8 @@ static int codeEqualityTerm(
 ** The index has as many as three equality constraints, but in this
 ** example, the third "c" value is an inequality.  So only two 
 ** constraints are coded.  This routine will generate code to evaluate
-** a==5 and b IN (1,2,3).  The current values for a and b will be left
-** on the stack - a is the deepest and b the shallowest.
+** a==5 and b IN (1,2,3).  The current values for a and b will be stored
+** in consecutive registers and the index of the first register is returned.
 **
 ** In the example above nEq==2.  But this subroutine works for any value
 ** of nEq including 0.  If nEq==0, this routine is nearly a no-op.
@@ -2139,18 +2139,17 @@ static int codeAllEqualityTerms(
   WhereTerm *pTerm;             /* A single constraint term */
   int j;                        /* Loop counter */
   int regBase;                  /* Base register */
+  int nReg;                     /* Number of registers to allocate */
 
   /* This module is only called on query plans that use an index. */
   assert( pLevel->plan.wsFlags & WHERE_INDEXED );
   pIdx = pLevel->plan.u.pIdx;
 
   /* Figure out how many memory cells we will need then allocate them.
-  ** We always need at least one used to store the loop terminator
-  ** value.  If there are IN operators we'll need one for each == or
-  ** IN constraint.
   */
   regBase = pParse->nMem + 1;
-  pParse->nMem += pLevel->plan.nEq + 1 + nExtraReg;
+  nReg = pLevel->plan.nEq + nExtraReg;
+  pParse->nMem += nReg;
 
   /* Evaluate the equality constraints
   */
@@ -2163,7 +2162,12 @@ static int codeAllEqualityTerms(
     assert( (pTerm->wtFlags & TERM_CODED)==0 );
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
     if( r1!=regBase+j ){
-      sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
+      if( nReg==1 ){
+        sqlite3ReleaseTempReg(pParse, regBase);
+        regBase = r1;
+      }else{
+        sqlite3VdbeAddOp2(v, OP_SCopy, r1, regBase+j);
+      }
     }
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
@@ -2464,18 +2468,12 @@ static Bitmask codeOneLoopStart(
     int nConstraint;             /* Number of constraint terms */
     Index *pIdx;         /* The index we will be using */
     int iIdxCur;         /* The VDBE cursor for the index */
-    int op;
+    int nExtraReg = 0;   /* Number of extra registers needed */
+    int op;              /* Instruction opcode */
 
     pIdx = pLevel->plan.u.pIdx;
     iIdxCur = pLevel->iIdxCur;
     k = pIdx->aiColumn[nEq];     /* Column for inequality constraints */
-
-    /* Generate code to evaluate all constraint terms using == or IN
-    ** and store the values of those terms in an array of registers
-    ** starting at regBase.
-    */
-    regBase = codeAllEqualityTerms(pParse, pLevel, pWC, notReady, 2);
-    addrNxt = pLevel->addrNxt;
 
     /* If this loop satisfies a sort order (pOrderBy) request that 
     ** was passed to this function to implement a "SELECT min(x) ..." 
@@ -2492,6 +2490,7 @@ static Bitmask codeOneLoopStart(
       /* assert( pOrderBy->nExpr==1 ); */
       /* assert( pOrderBy->a[0].pExpr->iColumn==pIdx->aiColumn[nEq] ); */
       isMinQuery = 1;
+      nExtraReg = 1;
     }
 
     /* Find any inequality constraint terms for the start and end 
@@ -2499,10 +2498,20 @@ static Bitmask codeOneLoopStart(
     */
     if( pLevel->plan.wsFlags & WHERE_TOP_LIMIT ){
       pRangeEnd = findTerm(pWC, iCur, k, notReady, (WO_LT|WO_LE), pIdx);
+      nExtraReg = 1;
     }
     if( pLevel->plan.wsFlags & WHERE_BTM_LIMIT ){
       pRangeStart = findTerm(pWC, iCur, k, notReady, (WO_GT|WO_GE), pIdx);
+      nExtraReg = 1;
     }
+
+    /* Generate code to evaluate all constraint terms using == or IN
+    ** and store the values of those terms in an array of registers
+    ** starting at regBase.
+    */
+    regBase = codeAllEqualityTerms(pParse, pLevel, pWC, notReady, nExtraReg);
+    addrNxt = pLevel->addrNxt;
+
 
     /* If we are doing a reverse order scan on an ascending index, or
     ** a forward order scan on a descending index, interchange the 
@@ -2568,9 +2577,11 @@ static Bitmask codeOneLoopStart(
     testcase( op==OP_Noop );
     testcase( op==OP_IdxGE );
     testcase( op==OP_IdxLT );
-    sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
-                      SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
-    sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
+    if( op!=OP_Noop ){
+      sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
+                        SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
+      sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
+    }
 
     /* If there are inequality constraints, check that the value
     ** of the table column that the inequality contrains is not NULL.
@@ -2661,9 +2672,9 @@ static Bitmask codeOneLoopStart(
       WhereInfo *pSubWInfo;
       if( pOrTerm->leftCursor!=iCur ) continue;
       pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
-                        WHERE_FILL_ROWSET, regOrRowset);
+                        WHERE_FILL_ROWSET | WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE,
+                        regOrRowset);
       if( pSubWInfo ){
-        pSubWInfo->a[0].plan.wsFlags |= WHERE_IDX_ONLY;
         sqlite3WhereEnd(pSubWInfo);
       }
     }
@@ -2935,6 +2946,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
   pWInfo->regRowSet = (wctrlFlags & WHERE_FILL_ROWSET) ? regRowSet : -1;
   pWInfo->pWC = pWC = (WhereClause*)&pWInfo->a[pWInfo->nLevel];
+  pWInfo->wctrlFlags = wctrlFlags;
   pMaskSet = (WhereMaskSet*)&pWC[1];
 
   /* Split the WHERE clause into separate subexpressions where each
@@ -3164,7 +3176,8 @@ WhereInfo *sqlite3WhereBegin(
                         (const char*)pTab->pVtab, P4_VTAB);
     }else
 #endif
-    if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0 ){
+    if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
+         && (wctrlFlags & WHERE_OMIT_OPEN)==0 ){
       int op = pWInfo->okOnePass ? OP_OpenWrite : OP_OpenRead;
       sqlite3OpenTable(pParse, pTabItem->iCursor, iDb, pTab, op);
       if( !pWInfo->okOnePass && pTab->nCol<BMS ){
@@ -3321,11 +3334,13 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
-    if( !pWInfo->okOnePass && (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0 ){
-      sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
-    }
-    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
-      sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
+    if( (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0 ){
+      if( !pWInfo->okOnePass && (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0 ){
+        sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
+      }
+      if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+        sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
+      }
     }
 
     /* If this scan uses an index, make code substitutions to read data

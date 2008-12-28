@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.815 2008/12/23 23:56:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.816 2008/12/28 16:55:25 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1595,11 +1595,13 @@ struct WhereLevel {
 /*
 ** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin().
 */
-#define WHERE_ORDERBY_NORMAL    0x000  /* No-op */
-#define WHERE_ORDERBY_MIN       0x001  /* ORDER BY processing for min() func */
-#define WHERE_ORDERBY_MAX       0x002  /* ORDER BY processing for max() func */
-#define WHERE_ONEPASS_DESIRED   0x004  /* Want to do one-pass UPDATE/DELETE */
-#define WHERE_FILL_ROWSET       0x008  /* Save results in a RowSet object */
+#define WHERE_ORDERBY_NORMAL   0x0000 /* No-op */
+#define WHERE_ORDERBY_MIN      0x0001 /* ORDER BY processing for min() func */
+#define WHERE_ORDERBY_MAX      0x0002 /* ORDER BY processing for max() func */
+#define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
+#define WHERE_FILL_ROWSET      0x0008  /* Save results in a RowSet object */
+#define WHERE_OMIT_OPEN        0x0010  /* Table cursor are already open */
+#define WHERE_OMIT_CLOSE       0x0020  /* Omit close of table & index cursors */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -1610,6 +1612,7 @@ struct WhereLevel {
 */
 struct WhereInfo {
   Parse *pParse;       /* Parsing and code generating context */
+  u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
   int regRowSet;                 /* Store rowids in this rowset if >=0 */
   SrcList *pTabList;             /* List of tables in the join */
