@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.348 2008/12/29 14:51:06 danielk1977 Exp $
+** $Id: where.c,v 1.349 2008/12/29 18:33:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -734,7 +734,7 @@ static void transferJoinMarkings(Expr *pDerived, Expr *pBase){
 **     WhereTerm.u.pOrInfo  =  a dynamically allocated WhereOrTerm object
 **
 ** The term being analyzed must have two or more of OR-connected subterms.
-** A single subterms might be a set of AND-connected sub-subterms.
+** A single subterm might be a set of AND-connected sub-subterms.
 ** Examples of terms under analysis:
 **
 **     (A)     t1.x=t2.y OR t1.x=t2.z OR t1.y=15 OR t1.z=t3.a+5
