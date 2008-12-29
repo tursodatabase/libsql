@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.349 2008/12/29 18:33:33 danielk1977 Exp $
+** $Id: where.c,v 1.350 2008/12/29 23:45:07 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -819,7 +819,7 @@ static void exprAnalyzeOrTerm(
   */
   assert( (pTerm->wtFlags & (TERM_DYNAMIC|TERM_ORINFO|TERM_ANDINFO))==0 );
   assert( pExpr->op==TK_OR );
-  pTerm->u.pOrInfo = pOrInfo = sqlite3DbMallocRaw(db, sizeof(*pOrInfo));
+  pTerm->u.pOrInfo = pOrInfo = sqlite3DbMallocZero(db, sizeof(*pOrInfo));
   if( pOrInfo==0 ) return;
   pTerm->wtFlags |= TERM_ORINFO;
   pOrWc = &pOrInfo->wc;
