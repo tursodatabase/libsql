@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where7.test,v 1.4 2008/12/30 14:14:04 drh Exp $
+# $Id: where7.test,v 1.5 2008/12/30 14:40:07 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -95,19 +95,66 @@ do_test where7-1.11 {
   }
 } {2 5 scan 0 sort 0}
 do_test where7-1.12 {
-breakpoint
   count_steps {
     SELECT a FROM t1 WHERE (b BETWEEN 2 AND 4) OR c=100 ORDER BY a
   }
 } {1 2 3 5 scan 0 sort 0}
 do_test where7-1.13 {
-breakpoint
   count_steps {
     SELECT a FROM t1 WHERE (b BETWEEN 0 AND 2) OR (c BETWEEN 9 AND 999)
     ORDER BY a DESC
   }
 } {5 4 1 scan 0 sort 1}
 
+do_test where7-1.20 {
+  set sql "SELECT a FROM t1 WHERE a=11 OR b=11"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR a=$i OR b=$i"
+  }
+  append sql " ORDER BY a"
+  count_steps $sql
+} {scan 0 sort 0}
+do_test where7-1.21 {
+  set sql "SELECT a FROM t1 WHERE b=11 OR c=11"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR b=$i OR c=$i"
+  }
+  append sql " ORDER BY a"
+  count_steps $sql
+} {5 scan 0 sort 0}
+do_test where7-1.22 {
+  set sql "SELECT a FROM t1 WHERE (b=11 OR c=11"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR b=$i OR c=$i"
+  }
+  append sql ") AND d>=0 AND d<9999 ORDER BY a"
+  count_steps $sql
+} {5 scan 0 sort 0}
+do_test where7-1.23 {
+  set sql "SELECT a FROM t1 WHERE (b=11 OR c=11"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR (b=$i AND d!=0) OR (c=$i AND d IS NOT NULL)"
+  }
+  append sql ") AND d>=0 AND d<9999 ORDER BY a"
+  count_steps $sql
+} {5 scan 0 sort 0}
+
+do_test where7-1.31 {
+  set sql "SELECT a FROM t1 WHERE (a=11 AND b=11)"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR (a=$i AND b=$i)"
+  }
+  append sql " ORDER BY a"
+  count_steps $sql
+} {scan 0 sort 0}
+do_test where7-1.32 {
+  set sql "SELECT a FROM t1 WHERE (b=11 AND c=11)"
+  for {set i 12} {$i<400} {incr i} {
+    append sql " OR (b=$i AND c=$i)"
+  }
+  append sql " ORDER BY a"
+  count_steps $sql
+} {scan 0 sort 0}
 
 # Lots of randomly generated OR-clause processing tests.
 #
