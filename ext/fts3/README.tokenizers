@@ -3,11 +3,11 @@
 
   When creating a new full-text table, FTS3 allows the user to select
   the text tokenizer implementation to be used when indexing text
-  by specifying a "tokenizer" clause as part of the CREATE VIRTUAL TABLE
+  by specifying a "tokenize" clause as part of the CREATE VIRTUAL TABLE
   statement:
 
     CREATE VIRTUAL TABLE <table-name> USING fts3(
-      <columns ...> [, tokenizer <tokenizer-name> [<tokenizer-args>]]
+      <columns ...> [, tokenize <tokenizer-name> [<tokenizer-args>]]
     );
 
   The built-in tokenizers (valid values to pass as <tokenizer name>) are

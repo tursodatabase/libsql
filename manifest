@@ -1,5 +1,5 @@
-C Invoke\sthe\sauthorization\scallback\swhen\scompiling\sSAVEPOINT,\sROLLBACK\sTO\sand\sRELEASE\scommands.\s(CVS\s6074)
-D 2008-12-30T06:24:58
+C Fix\sa\sbug\sin\sREADME.tokenizers.\sTicket\s#3559.\s(CVS\s6075)
+D 2008-12-30T06:36:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -51,7 +51,7 @@ F ext/fts2/fts2_tokenizer.h a7e46462d935a314b2682287f12f27530a3ee08e
 F ext/fts2/fts2_tokenizer1.c 8545ce12b41922004da46e91a7b023b92b76f94e
 F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax 655caddf5319c0d3525c3e78f1b46d77feab3a44
-F ext/fts3/README.tokenizers 226644a0eab97724e8de83061912e8bb248461b6
+F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
@@ -687,7 +687,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7d0ae55d6b2d263382f034eb89bbc368fab6a9bc
-R 0029351649470f099a0d82a5898affa5
+P e49807b16f7f86d3f2290d6c1f7562f3db6330f9
+R 45eb8d1c87cec4e4583352d46a05ae31
 U danielk1977
-Z f7cc52010ee047c3a039ac822acff19b
+Z 92973555b0dc8dd6b677002c21a4cbbb
