@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.351 2008/12/30 09:45:46 danielk1977 Exp $
+** $Id: where.c,v 1.352 2008/12/30 12:00:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -522,14 +522,11 @@ static u16 operatorMask(int op){
     c = WO_IN;
   }else if( op==TK_ISNULL ){
     c = WO_ISNULL;
-  }else if( op==TK_OR ){
-    c = WO_OR;
   }else{
     assert( (WO_EQ<<(op-TK_EQ)) < 0x7fff );
     c = (u16)(WO_EQ<<(op-TK_EQ));
   }
   assert( op!=TK_ISNULL || c==WO_ISNULL );
-  assert( op!=TK_OR || c==WO_OR );
   assert( op!=TK_IN || c==WO_IN );
   assert( op!=TK_EQ || c==WO_EQ );
   assert( op!=TK_LT || c==WO_LT );

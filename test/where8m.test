@@ -1,0 +1,41 @@
+# 2008 December 23
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The focus
+# is testing of where.c. More specifically, the focus is the optimization
+# of WHERE clauses that feature the OR operator.
+#
+# $Id: where8m.test,v 1.1 2008/12/30 12:00:12 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+source $testdir/malloc_common.tcl
+
+do_malloc_test where8m-1 -sqlprep {
+  CREATE TABLE t1(a, b, c);
+  CREATE INDEX i1 ON t1(a);
+  CREATE INDEX i2 ON t1(b);
+} -sqlbody {
+  SELECT c FROM t1
+  WHERE 
+    a = 2 OR b = 'three' OR a = 4 OR b = 'five' OR a = 6 OR
+    b = 'seven' OR a = 8 OR b = 'nine' OR a = 10
+  ORDER BY rowid;
+
+  SELECT c FROM t1 WHERE
+    a = 1 OR a = 2 OR a = 3 OR a = 4 OR a = 5 OR a = 6;
+
+  SELECT c FROM t1 WHERE
+    a BETWEEN 1 AND 3  AND b < 5 AND b > 2 AND c = 4;
+}
+
+finish_test
+

@@ -12,7 +12,7 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.1 2008/12/29 18:33:33 danielk1977 Exp $
+# $Id: where8.test,v 1.2 2008/12/30 12:00:12 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -34,7 +34,6 @@ proc execsql_status {sql {db db}} {
 
 proc execsql_status2 {sql {db db}} {
   set ::sqlite_search_count 0
-breakpoint
   set result [uplevel [list execsql_status $sql $db]]
   concat $result $::sqlite_search_count
 }
@@ -114,6 +113,32 @@ do_test where8-1.12.2 {
     SELECT c FROM t1 WHERE +a IN(1, 2, 3) OR +a = 5
   }
 } {I II III V 9 0 9}
+
+do_test where8-1.13 {
+  execsql_status2 {
+    SELECT c FROM t1
+    WHERE a = 2 OR b = 'three' OR a = 4 OR b = 'five' OR a = 6
+    ORDER BY rowid
+  }
+} {II III IV V VI 0 0 15}
+do_test where8-1.14 {
+  execsql_status2 {
+    SELECT c FROM t1
+    WHERE 
+      a = 2 OR b = 'three' OR a = 4 OR b = 'five' OR a = 6 OR
+      b = 'seven' OR a = 8 OR b = 'nine' OR a = 10
+    ORDER BY rowid
+  }
+} {II III IV V VI VII VIII IX X 0 0 26}
+
+do_test where8-1.15 {
+  execsql_status2 {
+    SELECT c FROM t1 WHERE 
+      a BETWEEN 2 AND 4 OR b = 'nine'
+    ORDER BY rowid
+  }
+} {II III IV IX 0 0 10}
+
 
 
 #--------------------------------------------------------------------------
@@ -220,6 +245,7 @@ do_test where8-3.8 {
 } {2 2 2 4 3 3 3 4 0 0}
 
 do_test where8-3.9 {
+  # The "OR c = 'IX'" term forces a linear scan.
   execsql_status {
     SELECT a, d 
     FROM t1, t2 
@@ -227,6 +253,53 @@ do_test where8-3.9 {
     ORDER BY t1.rowid
   }
 } {2 2 2 4 3 3 3 4 9 4 9 9 9 0}
+
+do_test where8-3.10 {
+  execsql_status {
+    SELECT d FROM t2 WHERE e IS NULL OR e = 'four'
+  }
+} {1 2 3 5 10 0 0}
+
+do_test where8-3.11 {
+  execsql_status {
+    SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.12 {
+  execsql_status {
+    SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5 ORDER BY a
+  }
+} {1 1 2 2 3 3 4 2 4 4 0 0}
+do_test where8-3.13 {
+  execsql_status {
+    SELECT a, d FROM t1, t2 WHERE (a=d OR b=e) AND +a<5
+  }
+} {1 1 2 2 3 3 4 2 4 4 9 0}
+
+do_test where8-3.14 {
+  execsql_status {
+    SELECT c FROM t1 WHERE a > (SELECT d FROM t2 WHERE e = b) OR a = 5
+  }
+} {IV V 9 0}
+
+do_test where8-3.15 {
+  execsql_status {
+    SELECT c FROM t1, t2 WHERE a BETWEEN 1 AND 2 OR a = (
+      SELECT sum(e IS NULL) FROM t2 AS inner WHERE t2.d>inner.d
+    )
+  }
+} {I I I I I I I I I I II II II II II II II II II II III III III III III 99 0}
+
+#-----------------------------------------------------------------------
+# The following tests - where8-4.* - verify that adding or removing 
+# indexes does not change the results returned by various queries.
+#
+do_test where8-4.1 {
+  execsql {
+    CREATE TABLE t3(a INTEGER, b REAL, c TEXT);
+    CREATE TABLE t4(f INTEGER, g REAL, h TEXT);
+  }
+} {}
 
 finish_test
 
