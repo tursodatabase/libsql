@@ -1,5 +1,5 @@
-C Do\snot\srun\ssavepoint4.test\s(crash\ssimulation\stests)\sin\spermutations.test.\sIt\sslows\sthings\sdown\stoo\smuch.\s(CVS\s6078)
-D 2008-12-30T13:21:51
+C Add\smany\snew\stest\scases\sto\swhere7.test.\s(CVS\s6079)
+D 2008-12-30T14:14:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -655,7 +655,7 @@ F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
-F test/where7.test 3ed6a8cb7d3e1e8c289e5e21f460c7a4d3f129e2
+F test/where7.test 696b4849b246390541bbc7a72d6905477b6fae16
 F test/where8.test 81036f3f79054309da744fcffc9ce7ed97b5b4a9
 F test/where8m.test c1010d61826412ff66abd29bfb32e5d6b37d965c
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
@@ -688,7 +688,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 35c87585b81866e73a58adffe6af79ddcac57cf6
-R 90dd9b404da2ca1e7d3216b8ae2e1870
-U danielk1977
-Z 01d93bb67275f8699731624bade8c751
+P 2df02b543edd77282aabff08327c3ab102139a24
+R aab27821bbed8dbda55db72bfa23225c
+U drh
+Z b472d915834f5266f8a10ea615ae5e3a
