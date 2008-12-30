@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the callback-free C/C++ API.
 #
-# $Id: capi2.test,v 1.36 2008/09/01 15:52:11 drh Exp $
+# $Id: capi2.test,v 1.37 2008/12/30 17:55:00 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -722,7 +722,6 @@ ifcapable view&&subquery {
     check_origins {SELECT b, a FROM (SELECT col1 AS a, col2 AS b FROM view1)}
   } [list {main tab1 col2} {main tab1 col1}]
   do_test capi2-12.5 {
-breakpoint
     check_origins {SELECT (SELECT col2 FROM view1), (SELECT col1 FROM view1)}
   } [list {main tab1 col2} {main tab1 col1}]
   do_test capi2-12.6 {

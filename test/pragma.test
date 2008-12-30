@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.70 2008/11/21 00:10:35 aswift Exp $
+# $Id: pragma.test,v 1.71 2008/12/30 17:55:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -570,7 +570,6 @@ ifcapable tempdb {
   } {0 col_main {} 0 {} 0}
 }
 
-breakpoint
 do_test pragma-6.7 {
   execsql {
     CREATE TABLE test_table(

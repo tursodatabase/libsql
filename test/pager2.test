@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager2.test,v 1.8 2008/10/17 18:51:53 danielk1977 Exp $
+# $Id: pager2.test,v 1.9 2008/12/30 17:55:00 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -342,7 +342,6 @@ for {set i 1} {$i<20} {incr i} {
     }
     set res
   } {}
-breakpoint
   do_test pager2-4.5.$i.5 {
     page_write $g1 "Page-1 v$i"
     lrange [pager_stats $p1] 8 9

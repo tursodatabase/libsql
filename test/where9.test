@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.2 2008/12/30 16:35:53 drh Exp $
+# $Id: where9.test,v 1.3 2008/12/30 17:55:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,5 +337,119 @@ ifcapable explain {
     concat $a $b $c
   } {1 1 1}
 } 
+
+# Make sure that INDEXED BY and multi-index OR clauses play well with
+# one another.
+#
+do_test where9-4.1 {
+  count_steps {
+    SELECT a FROM t1
+     WHERE b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {92 93 97 scan 0 sort 1}
+do_test where9-4.2 {
+  count_steps {
+    SELECT a FROM t1
+     WHERE b>1000
+       AND (c=31031 OR +d IS NULL)
+     ORDER BY +a
+  }
+} {92 93 97 scan 0 sort 1}
+do_test where9-4.3 {
+  count_steps {
+    SELECT a FROM t1
+     WHERE +b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {92 93 97 scan 0 sort 1}
+do_test where9-4.4 {
+  count_steps {
+    SELECT a FROM t1 INDEXED BY t1b
+     WHERE b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {92 93 97 scan 0 sort 1}
+do_test where9-4.5 {
+  catchsql {
+    SELECT a FROM t1 INDEXED BY t1b
+     WHERE +b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {1 {cannot use index: t1b}}
+do_test where9-4.6 {
+  count_steps {
+    SELECT a FROM t1 NOT INDEXED
+     WHERE b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {92 93 97 scan 98 sort 1}
+do_test where9-4.7 {
+  catchsql {
+    SELECT a FROM t1 INDEXED BY t1c
+     WHERE b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {1 {cannot use index: t1c}}
+do_test where9-4.8 {
+  catchsql {
+    SELECT a FROM t1 INDEXED BY t1d
+     WHERE b>1000
+       AND (c=31031 OR d IS NULL)
+     ORDER BY +a
+  }
+} {1 {cannot use index: t1d}}
+
+ifcapable explain {
+  # The (c=31031 OR d IS NULL) clause is preferred over b>1000 because
+  # the former is an equality test which is expected to return fewer rows.
+  #
+  do_test where9-5.1 {
+    set r [db eval {
+      EXPLAIN QUERY PLAN
+      SELECT a FROM t1
+       WHERE b>1000
+         AND (c=31031 OR d IS NULL)
+    }]
+    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
+    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
+    concat $a $b
+  } {1 0}
+
+  # In contrast, b=1000 is preferred over any OR-clause.
+  #
+  do_test where9-5.2 {
+    set r [db eval {
+      EXPLAIN QUERY PLAN
+      SELECT a FROM t1
+       WHERE b=1000
+         AND (c=31031 OR d IS NULL)
+    }]
+    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
+    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
+    concat $a $b
+  } {0 1}
+
+  # Likewise, inequalities in an AND are preferred over inequalities in
+  # an OR.
+  #
+  do_test where9-5.3 {
+    set r [db eval {
+      EXPLAIN QUERY PLAN
+      SELECT a FROM t1
+       WHERE b>1000
+         AND (c>=31031 OR d IS NULL)
+    }]
+    set a [expr {[lsearch $r {TABLE t1 VIA MULTI-INDEX UNION}]>=0}]
+    set b [expr {[lsearch $r {TABLE t1 WITH INDEX t1b}]>=0}]
+    concat $a $b
+  } {0 1}
+}
 
 finish_test
