@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.352 2008/12/30 12:00:12 danielk1977 Exp $
+** $Id: where.c,v 1.353 2008/12/30 15:26:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -576,14 +576,12 @@ static WhereTerm *findTerm(
         */
         assert(pX->pLeft);
         pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-        if( !pColl ){
-          pColl = pParse->db->pDfltColl;
-        }
+        assert(pColl || pParse->nErr);
 
         for(j=0; pIdx->aiColumn[j]!=iColumn; j++){
           if( NEVER(j>=pIdx->nColumn) ) return 0;
         }
-        if( sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
+        if( pColl && sqlite3StrICmp(pColl->zName, pIdx->azColl[j]) ) continue;
       }
       return pTerm;
     }
