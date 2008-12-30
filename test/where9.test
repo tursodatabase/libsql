@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.1 2008/12/30 16:18:48 drh Exp $
+# $Id: where9.test,v 1.2 2008/12/30 16:35:53 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -148,6 +148,9 @@ do_test where9-1.1 {
     CREATE INDEX t2e ON t2(e,f,g);
     CREATE INDEX t2f ON t2(f,b,d,c);
     CREATE INDEX t2g ON t2(g,f);
+    CREATE TABLE t3(x,y);
+    INSERT INTO t3 VALUES(1,80);
+    INSERT INTO t3 VALUES(2,80);
   }
 } {}
 
@@ -270,6 +273,40 @@ do_test where9-2.4 {
     ORDER BY 1
   }
 } {9999 scan 0 sort 1}
+do_test where9-2.5 {
+  count_steps {
+    SELECT t1.a, coalesce(t2.a,9999)
+      FROM t1 LEFT JOIN t2 ON (t1.c=t2.c AND t1.d=t2.d) OR (t1.f)=t2.f
+     WHERE t1.a=80 OR t1.b=880 OR (t1.c=27027 AND round(t1.d)==80)
+    ORDER BY 1
+  }
+} {80 2 80 28 80 54 80 80 scan 0 sort 0}
+do_test where9-2.6 {
+  count_steps {
+    SELECT t1.a, coalesce(t2.a,9999)
+      FROM t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
+     WHERE t1.a=80 OR t1.b=880 OR (t1.c=27027 AND round(t1.d)==80)
+    ORDER BY 1
+  }
+} {80 9999 scan 0 sort 0}
+do_test where9-2.7 {
+  count_steps {
+    SELECT t3.x, t1.a, coalesce(t2.a,9999)
+      FROM t3 JOIN
+           t1 LEFT JOIN t2 ON (t1.c+1=t2.c AND t1.d=t2.d) OR (t1.f||'x')=t2.f
+     WHERE t1.a=t3.y OR t1.b=t3.y*11 OR (t1.c=27027 AND round(t1.d)==80)
+    ORDER BY 1, 2
+  }
+} {1 80 9999 2 80 9999 scan 1 sort 1}
+do_test where9-2.8 {
+  count_steps {
+    SELECT t3.x, t1.a, coalesce(t2.a,9999)
+      FROM t3 JOIN
+           t1 LEFT JOIN t2 ON (t1.c=t2.c AND t1.d=t2.d) OR (t1.f)=t2.f
+     WHERE t1.a=t3.y OR t1.b=t3.y*11 OR (t1.c=27027 AND round(t1.d)==80)
+    ORDER BY 1, 2
+  }
+} {1 80 2 1 80 28 1 80 54 1 80 80 2 80 2 2 80 28 2 80 54 2 80 80 scan 1 sort 1}
 
 
 ifcapable explain {
