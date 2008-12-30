@@ -1,5 +1,5 @@
-C Always\smake\ssure\sWhereClause\sobjects\sare\sinitialized\sto\szero\swhen\sthey\nare\sfirst\sallocated.\s(CVS\s6073)
-D 2008-12-29T23:45:07
+C Invoke\sthe\sauthorization\scallback\swhen\scompiling\sSAVEPOINT,\sROLLBACK\sTO\sand\sRELEASE\scommands.\s(CVS\s6074)
+D 2008-12-30T06:24:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 581fdccd7b6539a8e37e843f9b45e0557b3b272f
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
 F src/btreeInt.h 8fea5cd7021cb8848fc2183a3e909469659daa0a
-F src/build.c 92335a6c6a7c119580be605c5dd1439602d6cf5d
+F src/build.c 6eb9d20e99db8da8c7c6e7316096a6ff3d9acab9
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e010095d85c895761627bb1d0d61d021aea930a9
@@ -156,13 +156,13 @@ F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c 2256fa4a928f750e2f3d6fc733523034beceb1d6
 F src/select.c 6c2a5675c21bef11d8160f3dc97e1adfbf26bbb9
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
-F src/sqlite.h.in 065a828e299960316aa34f05b9f0f10f33afe4c8
+F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 85c72545ac3195bb7d9aefc8377f91123594c59c
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
-F src/tclsqlite.c 23afb60549af943e135ded441a631f4745be6040
+F src/tclsqlite.c 9368e617bf2fe08a7b6659695190ce844c77f251
 F src/test1.c b193b8b80617bdb8297b25a87d00ee8d5a125d0d
 F src/test2.c 4e0ea288e1cf237f8ff26c8817f177f45486f4a6
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
@@ -492,7 +492,7 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test d00fe3f82773266410799aad0080426a6a936170
+F test/savepoint.test 101110d042aa75adc03180a72657169a8130bd6f
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test b3c9aa5af3f777ccb8b9e15597c75c93eb5bc369
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
@@ -687,7 +687,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bff460ec2c3e250de034a6b34312b897bb2f3749
-R afbea31e7a0f278c532ea02b4a243218
-U drh
-Z 376ed48aa5f636301a1d1f6a2a793394
+P 7d0ae55d6b2d263382f034eb89bbc368fab6a9bc
+R 0029351649470f099a0d82a5898affa5
+U danielk1977
+Z f7cc52010ee047c3a039ac822acff19b

@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.231 2008/12/10 22:18:40 drh Exp $
+** $Id: tclsqlite.c,v 1.232 2008/12/30 06:24:58 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -809,6 +809,7 @@ static int auth_callback(
     case SQLITE_CREATE_VTABLE     : zCode="SQLITE_CREATE_VTABLE"; break;
     case SQLITE_DROP_VTABLE       : zCode="SQLITE_DROP_VTABLE"; break;
     case SQLITE_FUNCTION          : zCode="SQLITE_FUNCTION"; break;
+    case SQLITE_SAVEPOINT         : zCode="SQLITE_SAVEPOINT"; break;
     default                       : zCode="????"; break;
   }
   Tcl_DStringInit(&str);

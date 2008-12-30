@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.4 2008/12/27 15:23:13 danielk1977 Exp $
+# $Id: savepoint.test,v 1.5 2008/12/30 06:24:58 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -467,6 +467,65 @@ do_test savepoint-7.4.1 {
   execsql { PRAGMA integrity_check }
 } {ok}
 
+# Test oddly named and quoted savepoints.
+#
+do_test savepoint-8-1 {
+  execsql { SAVEPOINT "save1" }
+  execsql { RELEASE save1 }
+} {}
+do_test savepoint-8-2 {
+  execsql { SAVEPOINT "Including whitespace " }
+  execsql { RELEASE "including Whitespace " }
+} {}
+
+# Test that the authorization callback works.
+#
+ifcapable auth {
+  proc auth {args} {
+    eval lappend ::authdata $args
+    return SQLITE_OK
+  }
+  db auth auth
+
+  do_test savepoint-9.1 {
+    set ::authdata [list]
+    execsql { SAVEPOINT sp1 }
+    set ::authdata
+  } {SQLITE_SAVEPOINT BEGIN sp1 {} {}}
+  do_test savepoint-9.2 {
+    set ::authdata [list]
+    execsql { ROLLBACK TO sp1 }
+    set ::authdata
+  } {SQLITE_SAVEPOINT ROLLBACK sp1 {} {}}
+  do_test savepoint-9.3 {
+    set ::authdata [list]
+    execsql { RELEASE sp1 }
+    set ::authdata
+  } {SQLITE_SAVEPOINT RELEASE sp1 {} {}}
+
+  proc auth {args} {
+    eval lappend ::authdata $args
+    return SQLITE_DENY
+  }
+  db auth auth
+
+  do_test savepoint-9.4 {
+    set ::authdata [list]
+    set res [catchsql { SAVEPOINT sp1 }]
+    concat $::authdata $res
+  } {SQLITE_SAVEPOINT BEGIN sp1 {} {} 1 {not authorized}}
+  do_test savepoint-9.5 {
+    set ::authdata [list]
+    set res [catchsql { ROLLBACK TO sp1 }]
+    concat $::authdata $res
+  } {SQLITE_SAVEPOINT ROLLBACK sp1 {} {} 1 {not authorized}}
+  do_test savepoint-9.6 {
+    set ::authdata [list]
+    set res [catchsql { RELEASE sp1 }]
+    concat $::authdata $res
+  } {SQLITE_SAVEPOINT RELEASE sp1 {} {} 1 {not authorized}}
+
+}
 
 
 finish_test
