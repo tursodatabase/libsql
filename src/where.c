@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.353 2008/12/30 15:26:30 danielk1977 Exp $
+** $Id: where.c,v 1.354 2008/12/30 16:18:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3182,6 +3182,8 @@ WhereInfo *sqlite3WhereBegin(
       if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s WITH INDEX %s",
            zMsg, pLevel->plan.u.pIdx->zName);
+      }else if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
+        zMsg = sqlite3MAppendf(db, zMsg, "%s VIA MULTI-INDEX UNION", zMsg);
       }else if( pLevel->plan.wsFlags & (WHERE_ROWID_EQ|WHERE_ROWID_RANGE) ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s USING PRIMARY KEY", zMsg);
       }
