@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.40 2008/12/22 10:58:46 danielk1977 Exp $
+# $Id: permutations.test,v 1.41 2008/12/30 13:21:51 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -71,7 +71,7 @@ set EXCLUDE {
   fts3.test                 misc7.test                utf16.test
   fuzz_malloc.test          misuse.test               veryquick.test
   fuzz.test                 mutex2.test               vtab_err.test
-  lookaside.test            fuzz3.test
+  lookaside.test            fuzz3.test                savepoint4.test
 }
 set ALLTESTS [list]
 foreach filename [glob $testdir/*.test] {

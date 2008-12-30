@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\sextra\stests\sfor\sthe\s"WHERE\s...\sOR"\soptimization.\s(CVS\s6077)
-D 2008-12-30T12:00:12
+C Do\snot\srun\ssavepoint4.test\s(crash\ssimulation\stests)\sin\spermutations.test.\sIt\sslows\sthings\sdown\stoo\smuch.\s(CVS\s6078)
+D 2008-12-30T13:21:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -476,7 +476,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test 4fd4c7944c42201799c0e2855261f54e1bfda6d2
+F test/permutations.test 4d1546196eeb642611514f68d074c6e779466973
 F test/pragma.test 0f299601c3b15e8941eb48d2f7a43e6678e3f735
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -688,7 +688,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f8ff0212129ce602a1e1e9ad702c47b9302f2f21
-R 5140a353d45cc5ebc0461adb0016c60d
+P 35c87585b81866e73a58adffe6af79ddcac57cf6
+R 90dd9b404da2ca1e7d3216b8ae2e1870
 U danielk1977
-Z 8528f1006b3e76d7ecb271be0a1fddc3
+Z 01d93bb67275f8699731624bade8c751
