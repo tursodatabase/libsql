@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.350 2008/12/29 23:45:07 drh Exp $
+** $Id: where.c,v 1.351 2008/12/30 09:45:46 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3104,13 +3104,15 @@ WhereInfo *sqlite3WhereBegin(
         bestIndex(pParse, pWC, pTabItem, notReady,
                   (i==0 && ppOrderBy) ? *ppOrderBy : 0, &sCost);
       }
-      if( sCost.rCost<bestPlan.rCost ){
+      if( once==0 || sCost.rCost<bestPlan.rCost ){
         once = 1;
         bestPlan = sCost;
         bestJ = j;
       }
       if( doNotReorder ) break;
     }
+    assert( once );
+    assert( notReady & getMask(pMaskSet, pTabList->a[bestJ].iCursor) );
     WHERETRACE(("*** Optimizer selects table %d for loop %d\n", bestJ,
            pLevel-pWInfo->a));
     if( (bestPlan.plan.wsFlags & WHERE_ORDERBY)!=0 ){

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: indexedby.test,v 1.3 2008/10/06 16:18:40 danielk1977 Exp $
+# $Id: indexedby.test,v 1.4 2008/12/30 09:45:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -203,6 +203,27 @@ do_test indexedby-8.5 {
 do_test indexedby-8.6 {
   catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
 } {1 {cannot use index: i2}}
+
+# Test that bug #3560 is fixed.
+#
+do_test indexedby-9.1 {
+  execsql {
+    CREATE TABLE maintable( id integer);
+    CREATE TABLE joinme(id_int integer, id_text text);
+    CREATE INDEX joinme_id_text_idx on joinme(id_text);
+    CREATE INDEX joinme_id_int_idx on joinme(id_int);
+  }
+} {}
+do_test indexedby-9.2 {
+  catchsql {
+    select * from maintable as m inner join
+    joinme as j indexed by joinme_id_text_idx
+    on ( m.id  = j.id_int)
+  }
+} {1 {cannot use index: joinme_id_text_idx}}
+do_test indexedby-9.3 {
+  catchsql { select * from maintable, joinme INDEXED by joinme_id_text_idx }
+} {1 {cannot use index: joinme_id_text_idx}}
 
 finish_test
 
