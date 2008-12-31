@@ -82,7 +82,7 @@ struct ParseContext {
 ** any values that fall outside of the range of the unsigned char type (i.e.
 ** negative values).
 */
-static int safe_isspace(char c){
+static int safe_isspace_expr(char c){
   return (c&0x80)==0 ? isspace(c) : 0;
 }
 
@@ -302,7 +302,7 @@ static int getNextNode(
   /* Skip over any whitespace before checking for a keyword, an open or
   ** close bracket, or a quoted string. 
   */
-  while( nInput>0 && safe_isspace(*zInput) ){
+  while( nInput>0 && safe_isspace_expr(*zInput) ){
     nInput--;
     zInput++;
   }
@@ -338,7 +338,7 @@ static int getNextNode(
       ** bracket, a quote character, or EOF. 
       */
       cNext = zInput[nKey];
-      if( safe_isspace(cNext) 
+      if( safe_isspace_expr(cNext) 
        || cNext=='"' || cNext=='(' || cNext==')' || cNext==0
       ){
         pRet = (Fts3Expr *)sqlite3_malloc(sizeof(Fts3Expr));
