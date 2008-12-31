@@ -1,5 +1,5 @@
-C Fix\sthe\sFTS3\smodule\swith\sparenthesis\ssyntax\sso\sthat\sit\swill\swork\sin\nthe\samalgamation.\s(CVS\s6087)
-D 2008-12-31T16:01:05
+C Fix\sthe\sFTS3\sexpression\sparser\sso\sthat\sit\sworks\sin\sthe\samalgamation\swhen\nFTS3\sis\sdisabled.\s(CVS\s6088)
+D 2008-12-31T16:27:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -55,7 +55,7 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c e703bbd6320be30aa65a0aa8d73ecd96e2f2c5ab
+F ext/fts3/fts3_expr.c 6c9d7c991dd555cf6f1170206a935ca58718bf1c
 F ext/fts3/fts3_expr.h 4dad4d87cf5d41ea924a815fe89a6f87dc76f277
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -689,7 +689,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b090d5736d7eaec17a39d3133e1587b1d2a42acb
-R 4a221e4be139a10aa8342aaa4a5979da
+P c2b9891fc05ec05b270f108f61ab81b2df874e01
+R dbe8d51a0171805f528878c7717c0532
 U drh
-Z 06bc00def2a1cea32d664ed02699a783
+Z e4a04814ea9048204b2eff370e8f745c

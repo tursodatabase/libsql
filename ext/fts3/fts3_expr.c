@@ -16,6 +16,7 @@
 ** hand-coded. The public interface to this module is declared in source
 ** code file "fts3_expr.h".
 */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
 /*
 ** By default, this module parses the legacy syntax that has been 
@@ -862,3 +863,4 @@ void sqlite3Fts3ExprInitTestInterface(sqlite3* db){
 }
 
 #endif
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3) */
