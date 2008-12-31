@@ -22,9 +22,9 @@
   As of SQLite version 3.6.8, Fts3 supports two slightly different query 
   formats; the standard syntax, which is used by default, and the enhanced
   query syntax which can be selected by compiling with the pre-processor
-  symbol SQLITE_FTS3_ENABLE_PARENTHESIS defined.
+  symbol SQLITE_ENABLE_FTS3_PARENTHESIS defined.
 
-    -DSQLITE_FTS3_ENABLE_PARENTHESIS
+    -DSQLITE_ENABLE_FTS3_PARENTHESIS
 
 2. STANDARD QUERY SYNTAX
 
@@ -207,6 +207,3 @@
   Queries of this form must be re-written as:
 
     <col> MATCH 'sqlite NEAR fantastic OR sqlite NEAR impressive'
-  
-
-
