@@ -1,5 +1,5 @@
-C Fix\sthe\sname\sin\sthe\sdocumentation\sof\sthe\scompile-time\smacro\sfor\nenabling\sFTS3\sparenthesis\sprocessing.\s(CVS\s6089)
-D 2008-12-31T19:27:53
+C Avoid\ssurplus\sbytes\sat\sthe\send\sof\sthe\skeyword\sstring\stable.\nAdd\stestcase()\smacros\sto\smake\ssure\sall\skeywords\sare\sused\sduring\ntesting.\s(CVS\s6090)
+D 2008-12-31T21:52:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -671,7 +671,7 @@ F tool/lempar.c c9151d2a4adf418fd9c3970dbb923b7a188b37c2
 F tool/memleak.awk 4e7690a51bf3ed757e611273d43fe3f65b510133
 F tool/memleak2.awk 9cc20c8e8f3c675efac71ea0721ee6874a1566e8
 F tool/memleak3.tcl 7707006ee908cffff210c98158788d85bb3fcdbf
-F tool/mkkeywordhash.c 698ea044ca0b49bde8a9f3ce6429e8dc5a259d25
+F tool/mkkeywordhash.c 1583825e96c08491c288c190a569293d3d91686f
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl bc7c626adfca5aa022454a411a62e81e7204339e
@@ -689,7 +689,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7e238e8604b9a9f786d84a47d21c6b42f1585755
-R ea0c7656efc415f015d8861f520d7719
+P ac8258da6ecd3ea37f394dc3b48834eb57832cf4
+R d5d57135dc547a2e598a1cd9116c3393
 U drh
-Z 26fd3361c146d29a622a0e47839ead1e
+Z cca5bd2d5683c469a6e1e0daad05eadf
