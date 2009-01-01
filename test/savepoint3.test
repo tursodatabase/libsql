@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint3.test,v 1.1 2008/12/18 18:31:39 danielk1977 Exp $
+# $Id: savepoint3.test,v 1.2 2009/01/01 15:20:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -28,7 +28,7 @@ do_malloc_test savepoint3-1 -sqlprep {
   RELEASE one;
 }
 
-do_malloc_test savepoint3-1 -sqlprep {
+do_malloc_test savepoint3-2 -sqlprep {
   PRAGMA cache_size = 10;
   CREATE TABLE t1(a, b, c);
   INSERT INTO t1 VALUES(randstr(400,400), randstr(400,400), randstr(400,400));

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.524 2008/12/27 15:23:13 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.525 2009/01/01 15:20:37 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1696,7 +1696,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     pPager->journalOff = 0;
   }
   while( rc==SQLITE_OK && pPager->journalOff<szJ ){
-    u32 nJRec;         /* Number of Journal Records */
+    u32 nJRec = 0;     /* Number of Journal Records */
     u32 dummy;
     rc = readJournalHdr(pPager, szJ, &nJRec, &dummy);
     assert( rc!=SQLITE_DONE );
