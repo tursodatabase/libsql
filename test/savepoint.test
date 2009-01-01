@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.5 2008/12/30 06:24:58 danielk1977 Exp $
+# $Id: savepoint.test,v 1.6 2009/01/01 14:06:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -524,7 +524,6 @@ ifcapable auth {
     set res [catchsql { RELEASE sp1 }]
     concat $::authdata $res
   } {SQLITE_SAVEPOINT RELEASE sp1 {} {} 1 {not authorized}}
-
 }
 
 

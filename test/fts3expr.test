@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module.
 #
-# $Id: fts3expr.test,v 1.5 2009/01/01 12:34:46 drh Exp $
+# $Id: fts3expr.test,v 1.6 2009/01/01 14:06:13 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -336,6 +336,19 @@ do_test fts3expr-4.2.1 {
 } {1 {SQL logic error or missing database}}
 do_test fts3expr-4.2.2 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example AND (hello OR world' }
+} {1 {SQL logic error or missing database}}
+do_test fts3expr-4.2.3 {
+  catchsql { SELECT * FROM t1 WHERE t1 MATCH '(hello' }
+} {1 {SQL logic error or missing database}}
+do_test fts3expr-4.2.4 {
+  catchsql { SELECT * FROM t1 WHERE t1 MATCH '(' }
+} {1 {SQL logic error or missing database}}
+do_test fts3expr-4.2.5 {
+  catchsql { SELECT * FROM t1 WHERE t1 MATCH ')' }
+} {1 {SQL logic error or missing database}}
+
+do_test fts3expr-4.2.6 {
+  catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example (hello world' }
 } {1 {SQL logic error or missing database}}
 
 # Unterminated quotation marks:

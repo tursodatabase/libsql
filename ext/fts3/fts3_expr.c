@@ -288,9 +288,9 @@ static int getNextNode(
 ){
   static const struct Fts3Keyword {
     char z[4];                            /* Keyword text */
-    u8 n;                                 /* Length of the keyword */
-    u8 parenOnly;                         /* Only valid in paren mode */
-    u8 eType;                             /* Keyword code */
+    unsigned char n;                      /* Length of the keyword */
+    unsigned char parenOnly;              /* Only valid in paren mode */
+    unsigned char eType;                  /* Keyword code */
   } aKeyword[] = {
     { "OR" ,  2, 0, FTSQUERY_OR   },
     { "AND",  3, 1, FTSQUERY_AND  },
@@ -312,6 +312,9 @@ static int getNextNode(
   while( nInput>0 && fts3isspace(*zInput) ){
     nInput--;
     zInput++;
+  }
+  if( nInput==0 ){
+    return SQLITE_DONE;
   }
 
   /* See if we are dealing with a keyword. */
@@ -368,6 +371,9 @@ static int getNextNode(
       int rc;
       pParse->nNest++;
       rc = fts3ExprParse(pParse, &zInput[1], nInput-1, ppExpr, &nConsumed);
+      if( rc==SQLITE_OK && !*ppExpr ){
+        rc = SQLITE_DONE;
+      }
       *pnConsumed = (zInput - z) + 1 + nConsumed;
       return rc;
     }
@@ -509,7 +515,7 @@ static int fts3ExprParse(
 
   while( rc==SQLITE_OK ){
     Fts3Expr *p = 0;
-    int nByte;
+    int nByte = 0;
     rc = getNextNode(pParse, zIn, nIn, &p, &nByte);
     if( rc==SQLITE_OK ){
       int isPhrase;
@@ -597,6 +603,7 @@ static int fts3ExprParse(
       }
       assert( nByte>0 );
     }
+    assert( rc!=SQLITE_OK || (nByte>0 && nByte<=nIn) );
     nIn -= nByte;
     zIn += nByte;
     pPrev = p;
