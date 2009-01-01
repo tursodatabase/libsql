@@ -1,5 +1,5 @@
-C Add\spseudo-random\stests\sof\sthe\sfts3\sexpression\sparser.\sRevise\sthe\sfix\sin\s(6091).\s(CVS\s6092)
-D 2009-01-01T07:08:55
+C Add\sa\scouple\sof\sextra\stests\sfor\sthe\sfts3\sexpression\sparser\sto\simprove\smcdc\scoverage.\s(CVS\s6093)
+D 2009-01-01T07:42:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -368,7 +368,7 @@ F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 40a2fff17a2487e9389234f7304b174064155acc
+F test/fts3expr.test 895b3f49679aaf7a9b463a7edc8589722ec3bf47
 F test/fts3expr2.test 8501de895a4c0631e7226c9bac055cd49c9f6646
 F test/fts3near.test e8a9b4e16c63a795918b334b74d4aec14815bf8b
 F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
@@ -690,7 +690,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d1a6a2edd799d65ff88510df951e909919e35b6b
-R 7818503c72e44fd985399b599f4925a2
+P 11c2d4686197fb3f0d601651d5bbb3492af8f0dd
+R e1805dee74c86f472abd2ab7b7d394c8
 U danielk1977
-Z e4f3adbf5a486d51a8277e421fd369a1
+Z 720d3adfdda818abcd238892e17a9322
