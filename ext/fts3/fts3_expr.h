@@ -21,42 +21,52 @@
 ** generator. This module does not use actually lemon, it uses a
 ** custom parser.
 **
+**   query ::= andexpr (OR andexpr)*.
+**
+**   andexpr ::= notexpr (AND? notexpr)*.
+**
+**   notexpr ::= nearexpr (NOT nearexpr|-TOKEN)*.
+**   notexpr ::= LP query RP.
+**
+**   nearexpr ::= phrase (NEAR distance_opt nearexpr)*.
+**
+**   distance_opt ::= .
+**   distance_opt ::= / INTEGER.
+**
 **   phrase ::= TOKEN.
-**   phrase ::= TOKEN:COLUMN.
+**   phrase ::= COLUMN:TOKEN.
 **   phrase ::= "TOKEN TOKEN TOKEN...".
-**   phrase ::= phrase near phrase.
-**
-**   near ::= NEAR.
-**   near ::= NEAR / INTEGER.
-**
-**   query ::= -TOKEN.
-**   query ::= phrase.
-**   query ::= LP query RP.
-**   query ::= query NOT query.
-**   query ::= query OR query.
-**   query ::= query AND query.
 */
 
 typedef struct Fts3Expr Fts3Expr;
 typedef struct Fts3Phrase Fts3Phrase;
 
+/*
+** A "phrase" is a sequence of one or more tokens that must match in
+** sequence.  A single token is the base case and the most common case.
+** For a sequence of tokens contained in "...", nToken will be the number
+** of tokens in the string.
+*/
 struct Fts3Phrase {
-  int nToken;          /* Number of entries in aToken[] */
+  int nToken;          /* Number of tokens in the phrase */
   int iColumn;         /* Index of column this phrase must match */
   int isNot;           /* Phrase prefixed by unary not (-) operator */
   struct PhraseToken {
-    char *z;
-    int n;             /* Number of bytes in buffer pointed to by z */
-    int isPrefix;      /* True if token ends in with a "*" character */
-  } aToken[1];
+    char *z;              /* Text of the token */
+    int n;                /* Number of bytes in buffer pointed to by z */
+    int isPrefix;         /* True if token ends in with a "*" character */
+  } aToken[1];         /* One entry for each token in the phrase */
 };
 
+/*
+** A tree of these objects forms the RHS of a MATCH operator.
+*/
 struct Fts3Expr {
   int eType;                 /* One of the FTSQUERY_XXX values defined below */
   int nNear;                 /* Valid if eType==FTSQUERY_NEAR */
-  Fts3Expr *pParent;
-  Fts3Expr *pLeft;
-  Fts3Expr *pRight;
+  Fts3Expr *pParent;         /* pParent->pLeft==this or pParent->pRight==this */
+  Fts3Expr *pLeft;           /* Left operand */
+  Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
 };
 
@@ -84,4 +94,3 @@ void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
 void sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
 #endif
-

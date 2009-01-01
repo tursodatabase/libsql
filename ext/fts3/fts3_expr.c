@@ -83,7 +83,7 @@ struct ParseContext {
 ** any values that fall outside of the range of the unsigned char type (i.e.
 ** negative values).
 */
-static int safe_isspace_expr(char c){
+static int fts3isspace(char c){
   return (c&0x80)==0 ? isspace(c) : 0;
 }
 
@@ -156,7 +156,12 @@ static int getNextToken(
   return rc;
 }
 
-void *realloc_or_free(void *pOrig, int nNew){
+
+/*
+** Enlarge a memory allocation.  If an out-of-memory allocation occurs,
+** then free the old allocation.
+*/
+void *fts3ReallocOrFree(void *pOrig, int nNew){
   void *pRet = sqlite3_realloc(pOrig, nNew);
   if( !pRet ){
     sqlite3_free(pOrig);
@@ -199,8 +204,8 @@ static int getNextString(
       rc = pModule->xNext(pCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos);
       if( rc==SQLITE_OK ){
         int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-        p = realloc_or_free(p, nByte+ii*sizeof(struct PhraseToken));
-        zTemp = realloc_or_free(zTemp, nTemp + nToken);
+        p = fts3ReallocOrFree(p, nByte+ii*sizeof(struct PhraseToken));
+        zTemp = fts3ReallocOrFree(zTemp, nTemp + nToken);
         if( !p || !zTemp ){
           goto no_mem;
         }
@@ -233,7 +238,7 @@ static int getNextString(
     int nNew = 0;
     int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
     nByte += (p->pPhrase->nToken-1) * sizeof(struct PhraseToken);
-    p = realloc_or_free(p, nByte + nTemp);
+    p = fts3ReallocOrFree(p, nByte + nTemp);
     if( !p ){
       goto no_mem;
     }
@@ -281,15 +286,16 @@ static int getNextNode(
   Fts3Expr **ppExpr,                      /* OUT: expression */
   int *pnConsumed                         /* OUT: Number of bytes consumed */
 ){
-  struct Fts3Keyword {
-    char *z;
-    int n;
-    int eType;
+  static const struct Fts3Keyword {
+    char z[4];                            /* Keyword text */
+    u8 n;                                 /* Length of the keyword */
+    u8 parenOnly;                         /* Only valid in paren mode */
+    u8 eType;                             /* Keyword code */
   } aKeyword[] = {
-    { "OR" ,  2, FTSQUERY_OR   },
-    { "AND",  3, FTSQUERY_AND  },
-    { "NOT",  3, FTSQUERY_NOT  },
-    { "NEAR", 4, FTSQUERY_NEAR }
+    { "OR" ,  2, 0, FTSQUERY_OR   },
+    { "AND",  3, 1, FTSQUERY_AND  },
+    { "NOT",  3, 1, FTSQUERY_NOT  },
+    { "NEAR", 4, 0, FTSQUERY_NEAR }
   };
   int ii;
   int iCol;
@@ -303,18 +309,16 @@ static int getNextNode(
   /* Skip over any whitespace before checking for a keyword, an open or
   ** close bracket, or a quoted string. 
   */
-  while( nInput>0 && safe_isspace_expr(*zInput) ){
+  while( nInput>0 && fts3isspace(*zInput) ){
     nInput--;
     zInput++;
   }
 
   /* See if we are dealing with a keyword. */
   for(ii=0; ii<(int)(sizeof(aKeyword)/sizeof(struct Fts3Keyword)); ii++){
-    struct Fts3Keyword *pKey = &aKeyword[ii];
+    const struct Fts3Keyword *pKey = &aKeyword[ii];
 
-    if( (0==sqlite3_fts3_enable_parentheses)
-     && (pKey->eType==FTSQUERY_AND || pKey->eType==FTSQUERY_NOT) 
-    ){
+    if( (pKey->parenOnly & ~sqlite3_fts3_enable_parentheses)!=0 ){
       continue;
     }
 
@@ -336,10 +340,10 @@ static int getNextNode(
 
       /* At this point this is probably a keyword. But for that to be true,
       ** the next byte must contain either whitespace, an open or close
-      ** bracket, a quote character, or EOF. 
+      ** parenthesis, a quote character, or EOF. 
       */
       cNext = zInput[nKey];
-      if( safe_isspace_expr(cNext) 
+      if( fts3isspace(cNext) 
        || cNext=='"' || cNext=='(' || cNext==')' || cNext==0
       ){
         pRet = (Fts3Expr *)sqlite3_malloc(sizeof(Fts3Expr));
@@ -707,7 +711,7 @@ void sqlite3Fts3ExprFree(Fts3Expr *p){
 /*
 ** Function to query the hash-table of tokenizers (see README.tokenizers).
 */
-static int queryTokenizer(
+static int queryTestTokenizer(
   sqlite3 *db, 
   const char *zName,  
   const sqlite3_tokenizer_module **pp
@@ -796,7 +800,7 @@ static void fts3ExprTest(
   sqlite3_value **argv
 ){
   sqlite3_tokenizer_module const *pModule = 0;
-  sqlite3_tokenizer *pTokenizer;
+  sqlite3_tokenizer *pTokenizer = 0;
   int rc;
   char **azCol = 0;
   const char *zExpr;
@@ -813,7 +817,8 @@ static void fts3ExprTest(
     return;
   }
 
-  rc = queryTokenizer(db, (const char *)sqlite3_value_text(argv[0]), &pModule);
+  rc = queryTestTokenizer(db,
+                          (const char *)sqlite3_value_text(argv[0]), &pModule);
   if( rc==SQLITE_NOMEM ){
     sqlite3_result_error_nomem(context);
     goto exprtest_out;
@@ -858,7 +863,7 @@ static void fts3ExprTest(
   }
 
 exprtest_out:
-  if( pTokenizer ){
+  if( pModule && pTokenizer ){
     rc = pModule->xDestroy(pTokenizer);
   }
   sqlite3_free(azCol);

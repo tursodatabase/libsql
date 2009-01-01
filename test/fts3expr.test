@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module.
 #
-# $Id: fts3expr.test,v 1.4 2009/01/01 07:42:49 danielk1977 Exp $
+# $Id: fts3expr.test,v 1.5 2009/01/01 12:34:46 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -38,6 +38,9 @@ do_test fts3expr-1.1 {
 do_test fts3expr-1.2 {
   test_fts3expr "ab AND cd"
 } {AND {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.2.1 {
+  test_fts3expr "ab cd"
+} {AND {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
 do_test fts3expr-1.3 {
   test_fts3expr "ab OR cd"
 } {OR {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
@@ -47,19 +50,67 @@ do_test fts3expr-1.4 {
 do_test fts3expr-1.5 {
   test_fts3expr "ab NEAR cd"
 } {NEAR/10 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
-do_test fts3expr-1.6 {
+do_test fts3expr-1.6.1 {
   test_fts3expr "ab NEAR/5 cd"
 } {NEAR/5 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.2 {
+  test_fts3expr "ab NEAR/87654321 cd"
+} {NEAR/87654321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.3 {
+  test_fts3expr "ab NEAR/7654321 cd"
+} {NEAR/7654321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.4 {
+  test_fts3expr "ab NEAR/654321 cd"
+} {NEAR/654321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.5 {
+  test_fts3expr "ab NEAR/54321 cd"
+} {NEAR/54321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.6 {
+  test_fts3expr "ab NEAR/4321 cd"
+} {NEAR/4321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.7 {
+  test_fts3expr "ab NEAR/321 cd"
+} {NEAR/321 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
+do_test fts3expr-1.6.8 {
+  test_fts3expr "ab NEAR/21 cd"
+} {NEAR/21 {PHRASE 3 0 ab} {PHRASE 3 0 cd}}
 
 do_test fts3expr-1.7 {
   test_fts3expr {"one two three"}
 } {PHRASE 3 0 one two three}
-do_test fts3expr-1.8 {
+do_test fts3expr-1.8.1 {
   test_fts3expr {zero "one two three" four}
 } {AND {AND {PHRASE 3 0 zero} {PHRASE 3 0 one two three}} {PHRASE 3 0 four}}
-do_test fts3expr-1.9 {
+do_test fts3expr-1.8.2 {
+  test_fts3expr {zero AND "one two three" four}
+} {AND {AND {PHRASE 3 0 zero} {PHRASE 3 0 one two three}} {PHRASE 3 0 four}}
+do_test fts3expr-1.8.3 {
+  test_fts3expr {zero "one two three" AND four}
+} {AND {AND {PHRASE 3 0 zero} {PHRASE 3 0 one two three}} {PHRASE 3 0 four}}
+do_test fts3expr-1.8.4 {
+  test_fts3expr {zero AND "one two three" AND four}
+} {AND {AND {PHRASE 3 0 zero} {PHRASE 3 0 one two three}} {PHRASE 3 0 four}}
+do_test fts3expr-1.9.1 {
+  test_fts3expr {"one* two three"}
+} {PHRASE 3 0 one+ two three}
+do_test fts3expr-1.9.2 {
+  test_fts3expr {"one two* three"}
+} {PHRASE 3 0 one two+ three}
+do_test fts3expr-1.9.3 {
+  test_fts3expr {"one* two* three"}
+} {PHRASE 3 0 one+ two+ three}
+do_test fts3expr-1.9.4 {
+  test_fts3expr {"one two three*"}
+} {PHRASE 3 0 one two three+}
+do_test fts3expr-1.9.5 {
   test_fts3expr {"one* two three*"}
 } {PHRASE 3 0 one+ two three+}
+do_test fts3expr-1.9.6 {
+  test_fts3expr {"one two* three*"}
+} {PHRASE 3 0 one two+ three+}
+do_test fts3expr-1.9.7 {
+  test_fts3expr {"one* two* three*"}
+} {PHRASE 3 0 one+ two+ three+}
 
 do_test fts3expr-1.10 {
   test_fts3expr {one* two}
@@ -74,6 +125,109 @@ do_test fts3expr-1.14 {
 do_test fts3expr-1.15 {
   test_fts3expr {one b:two}
 } {AND {PHRASE 3 0 one} {PHRASE 1 0 two}}
+
+do_test fts3expr-1.16 {
+  test_fts3expr {one AND two AND three AND four AND five}
+} [list AND \
+        [list AND \
+              [list AND \
+                    [list AND {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+                    {PHRASE 3 0 three} \
+              ] \
+              {PHRASE 3 0 four} \
+        ] \
+        {PHRASE 3 0 five} \
+  ]
+do_test fts3expr-1.17 {
+  test_fts3expr {(one AND two) AND ((three AND four) AND five)}
+} [list AND \
+        [list AND {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list AND {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.18 {
+  test_fts3expr {(one AND two) OR ((three AND four) AND five)}
+} [list OR \
+        [list AND {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list AND {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.19 {
+  test_fts3expr {(one AND two) AND ((three AND four) OR five)}
+} [list AND \
+        [list AND {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list OR \
+              [list AND {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.20 {
+  test_fts3expr {(one OR two) AND ((three OR four) AND five)}
+} [list AND \
+        [list OR {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list OR {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.21 {
+  test_fts3expr {(one OR two) AND ((three NOT four) AND five)}
+} [list AND \
+        [list OR {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list NOT {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.22 {
+  test_fts3expr {(one OR two) NOT ((three OR four) AND five)}
+} [list NOT \
+        [list OR {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list OR {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.23 {
+  test_fts3expr {(((((one OR two))))) NOT (((((three OR four))) AND five))}
+} [list NOT \
+        [list OR {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list OR {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.24 {
+  test_fts3expr {one NEAR two}
+} [list NEAR/10 {PHRASE 3 0 one} {PHRASE 3 0 two}]
+do_test fts3expr-1.25 {
+  test_fts3expr {(one NEAR two)}
+} [list NEAR/10 {PHRASE 3 0 one} {PHRASE 3 0 two}]
+do_test fts3expr-1.26 {
+  test_fts3expr {((((((one NEAR two))))))}
+} [list NEAR/10 {PHRASE 3 0 one} {PHRASE 3 0 two}]
+do_test fts3expr-1.27 {
+  test_fts3expr {(one NEAR two) OR ((three OR four) AND five)}
+} [list OR \
+        [list NEAR/10 {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list OR {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
+do_test fts3expr-1.28 {
+  test_fts3expr {(one NEAR/321 two) OR ((three OR four) AND five)}
+} [list OR \
+        [list NEAR/321 {PHRASE 3 0 one} {PHRASE 3 0 two}] \
+        [list AND \
+              [list OR {PHRASE 3 0 three} {PHRASE 3 0 four}] \
+             {PHRASE 3 0 five} \
+        ] \
+  ]
 
 proc strip_phrase_data {L} {
   if {[lindex $L 0] eq "PHRASE"} {
@@ -303,4 +457,3 @@ foreach {id expr res} {
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
-

@@ -239,7 +239,7 @@ int registerTokenizer(
 }
 
 static
-int queryTokenizer(
+int queryFts2Tokenizer(
   sqlite3 *db, 
   char *zName,  
   const sqlite3_tokenizer_module **pp
@@ -272,7 +272,7 @@ void sqlite3Fts2SimpleTokenizerModule(sqlite3_tokenizer_module const**ppModule);
 ** build unless SQLITE_TEST is defined.
 **
 ** The purpose of this is to test that the fts2_tokenizer() function
-** can be used as designed by the C-code in the queryTokenizer and
+** can be used as designed by the C-code in the queryFts2Tokenizer and
 ** registerTokenizer() functions above. These two functions are repeated
 ** in the README.tokenizer file as an example, so it is important to
 ** test them.
@@ -296,10 +296,10 @@ static void intTestFunc(
 
   /* Test the query function */
   sqlite3Fts2SimpleTokenizerModule(&p1);
-  rc = queryTokenizer(db, "simple", &p2);
+  rc = queryFts2Tokenizer(db, "simple", &p2);
   assert( rc==SQLITE_OK );
   assert( p1==p2 );
-  rc = queryTokenizer(db, "nosuchtokenizer", &p2);
+  rc = queryFts2Tokenizer(db, "nosuchtokenizer", &p2);
   assert( rc==SQLITE_ERROR );
   assert( p2==0 );
   assert( 0==strcmp(sqlite3_errmsg(db), "unknown tokenizer: nosuchtokenizer") );
@@ -307,7 +307,7 @@ static void intTestFunc(
   /* Test the storage function */
   rc = registerTokenizer(db, "nosuchtokenizer", p1);
   assert( rc==SQLITE_OK );
-  rc = queryTokenizer(db, "nosuchtokenizer", &p2);
+  rc = queryFts2Tokenizer(db, "nosuchtokenizer", &p2);
   assert( rc==SQLITE_OK );
   assert( p2==p1 );
 
