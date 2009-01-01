@@ -1,5 +1,5 @@
-C Avoid\ssurplus\sbytes\sat\sthe\send\sof\sthe\skeyword\sstring\stable.\nAdd\stestcase()\smacros\sto\smake\ssure\sall\skeywords\sare\sused\sduring\ntesting.\s(CVS\s6090)
-D 2008-12-31T21:52:41
+C Fix\sa\sbug\sparsing\s"<expr>\sAND\s(abc\sNEAR\sdef)"\sin\sfts3_expr.c.\s(CVS\s6091)
+D 2009-01-01T04:19:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -55,7 +55,7 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 3aa6aef1eadc44606f6ed3c841062735a5210077
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c 6c9d7c991dd555cf6f1170206a935ca58718bf1c
+F ext/fts3/fts3_expr.c 4f00c773a3f7ebf2c7079b97c992f3f6ebb8cd6f
 F ext/fts3/fts3_expr.h 4dad4d87cf5d41ea924a815fe89a6f87dc76f277
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -368,7 +368,7 @@ F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 18143e61503845b940fd7caacce53bce4307426f
+F test/fts3expr.test fa7bd31721cb3520521d43d5e4df3fbb9faa6426
 F test/fts3near.test e8a9b4e16c63a795918b334b74d4aec14815bf8b
 F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
@@ -689,7 +689,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ac8258da6ecd3ea37f394dc3b48834eb57832cf4
-R d5d57135dc547a2e598a1cd9116c3393
-U drh
-Z cca5bd2d5683c469a6e1e0daad05eadf
+P 73958060aaf641d93bede3a42851e5b3451f5432
+R b18c53d48a15a59b2ef3ca97050c92ee
+U danielk1977
+Z ecd0fc691e306c5b472f9b36b016cb1f

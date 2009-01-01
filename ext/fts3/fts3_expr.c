@@ -529,8 +529,9 @@ static int fts3ExprParse(
         }
         pNotBranch = pNot;
       }else{
-        assert( p->eType!=FTSQUERY_PHRASE || !p->pPhrase->isNot );
-        isPhrase = (p->eType==FTSQUERY_PHRASE || p->pLeft);
+        int eType = p->eType;
+        assert( eType!=FTSQUERY_PHRASE || !p->pPhrase->isNot );
+        isPhrase = (eType==FTSQUERY_PHRASE || p->pLeft);
         if( !isPhrase && isRequirePhrase ){
           sqlite3Fts3ExprFree(p);
           rc = SQLITE_ERROR;
@@ -554,8 +555,8 @@ static int fts3ExprParse(
         }
 
         if( pPrev && (
-            (pPrev->eType==FTSQUERY_NEAR && p->eType!=FTSQUERY_PHRASE)
-         || (p->eType==FTSQUERY_NEAR && pPrev->eType!=FTSQUERY_PHRASE) 
+            (pPrev->eType==FTSQUERY_NEAR && eType!=FTSQUERY_PHRASE)
+         || (eType==FTSQUERY_NEAR && pPrev->eType!=FTSQUERY_PHRASE && !isPhrase)
         )){
           /* This is an attempt to do "phrase NEAR (bracketed expression)"
           ** or "(bracketed expression) NEAR phrase", both of which are
