@@ -532,6 +532,12 @@ static int fts3ExprParse(
         int eType = p->eType;
         assert( eType!=FTSQUERY_PHRASE || !p->pPhrase->isNot );
         isPhrase = (eType==FTSQUERY_PHRASE || p->pLeft);
+
+        /* The isRequirePhrase variable is set to true if a phrase or
+        ** an expression contained in parenthesis is required. If a
+        ** binary operator (AND, OR, NOT or NEAR) is encounted when
+        ** isRequirePhrase is set, this is a syntax error.
+        */
         if( !isPhrase && isRequirePhrase ){
           sqlite3Fts3ExprFree(p);
           rc = SQLITE_ERROR;
@@ -554,14 +560,19 @@ static int fts3ExprParse(
           pPrev = pAnd;
         }
 
+        /* This test catches attempts to make either operand of a NEAR
+        ** operator something other than a phrase. For example, either of
+        ** the following:
+        **
+        **    (bracketed expression) NEAR phrase
+        **    phrase NEAR (bracketed expression)
+        **
+        ** Return an error in either case.
+        */
         if( pPrev && (
-            (pPrev->eType==FTSQUERY_NEAR && eType!=FTSQUERY_PHRASE)
-         || (eType==FTSQUERY_NEAR && pPrev->eType!=FTSQUERY_PHRASE && !isPhrase)
+            (eType==FTSQUERY_NEAR && !isPhrase && pPrev->eType!=FTSQUERY_PHRASE)
+         || (eType!=FTSQUERY_PHRASE && isPhrase && pPrev->eType==FTSQUERY_NEAR)
         )){
-          /* This is an attempt to do "phrase NEAR (bracketed expression)"
-          ** or "(bracketed expression) NEAR phrase", both of which are
-          ** illegal. Return an error.
-          */
           sqlite3Fts3ExprFree(p);
           rc = SQLITE_ERROR;
           goto exprparse_out;
