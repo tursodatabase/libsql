@@ -3136,8 +3136,13 @@ static void snippetAppendMatch(
 
 /*
 ** Function to iterate through the tokens of a compiled expression.
+**
+** Except, skip all tokens on the right-hand side of a NOT operator.
+** This function is used to find tokens as part of snippet and offset
+** generation and we do nt want snippets and offsets to report matches
+** for tokens on the RHS of a NOT.
 */
-static int nextExprToken(Fts3Expr **ppExpr, int *piToken){
+static int fts3NextExprToken(Fts3Expr **ppExpr, int *piToken){
   Fts3Expr *p = *ppExpr;
   int iToken = *piToken;
   if( iToken<0 ){
@@ -3160,6 +3165,7 @@ static int nextExprToken(Fts3Expr **ppExpr, int *piToken){
       }
       p = p->pParent;
       if( p ){
+        assert( p->pRight!=0 );
         p = p->pRight;
         while( p->pLeft ){
           p = p->pLeft;
@@ -3174,15 +3180,31 @@ static int nextExprToken(Fts3Expr **ppExpr, int *piToken){
 }
 
 /*
+** Return TRUE if the expression node pExpr is located beneath the
+** RHS of a NOT operator.
+*/
+static int fts3ExprBeneathNot(Fts3Expr *p){
+  Fts3Expr *pParent;
+  while( p ){
+    pParent = p->pParent;
+    if( pParent && pParent->eType==FTSQUERY_NOT && pParent->pRight==p ){
+      return 1;
+    }
+    p = pParent;
+  }
+  return 0;
+}
+
+/*
 ** Add entries to pSnippet->aMatch[] for every match that occurs against
 ** document zDoc[0..nDoc-1] which is stored in column iColumn.
 */
 static void snippetOffsetsOfColumn(
-  fulltext_cursor *pCur,
-  Snippet *pSnippet,
-  int iColumn,
-  const char *zDoc,
-  int nDoc
+  fulltext_cursor *pCur,         /* The fulltest search cursor */
+  Snippet *pSnippet,             /* The Snippet object to be filled in */
+  int iColumn,                   /* Index of fulltext table column */
+  const char *zDoc,              /* Text of the fulltext table column */
+  int nDoc                       /* Length of zDoc in bytes */
 ){
   const sqlite3_tokenizer_module *pTModule;  /* The tokenizer module */
   sqlite3_tokenizer *pTokenizer;             /* The specific tokenizer */
@@ -3217,10 +3239,15 @@ static void snippetOffsetsOfColumn(
     iRotorBegin[iRotor&FTS3_ROTOR_MASK] = iBegin;
     iRotorLen[iRotor&FTS3_ROTOR_MASK] = iEnd-iBegin;
     match = 0;
-    for(i=0; i<(FTS3_ROTOR_SZ-1) && nextExprToken(&pIter, &iIter); i++){
-      int nPhrase = pIter->pPhrase->nToken;   /* Tokens in current phrase */
-      struct PhraseToken *pToken = &pIter->pPhrase->aToken[iIter];
-      int iCol = pIter->pPhrase->iColumn;
+    for(i=0; i<(FTS3_ROTOR_SZ-1) && fts3NextExprToken(&pIter, &iIter); i++){
+      int nPhrase;                    /* Number of tokens in current phrase */
+      struct PhraseToken *pToken;     /* Current token */
+      int iCol;                       /* Column index */
+
+      if( fts3ExprBeneathNot(pIter) ) continue;
+      nPhrase = pIter->pPhrase->nToken;
+      pToken = &pIter->pPhrase->aToken[iIter];
+      iCol = pIter->pPhrase->iColumn;
       if( iCol>=0 && iCol<nColumn && iCol!=iColumn ) continue;
       if( pToken->n>nToken ) continue;
       if( !pToken->isPrefix && pToken->n<nToken ) continue;
@@ -3264,11 +3291,13 @@ static void snippetOffsetsOfColumn(
 ** the integer id of the left-most token in the expression tree headed by
 ** pExpr. This function increments *piLeft by the total number of tokens
 ** in the expression tree headed by pExpr.
+**
+** Return 1 if any trimming occurs.  Return 0 if no trimming is required.
 */
 static int trimSnippetOffsets(
-  Fts3Expr *pExpr, 
-  Snippet *pSnippet,
-  int *piLeft
+  Fts3Expr *pExpr,      /* The search expression */
+  Snippet *pSnippet,    /* The set of snippet offsets to be trimmed */
+  int *piLeft           /* Index of left-most token in pExpr */
 ){
   if( pExpr ){
     if( trimSnippetOffsets(pExpr->pLeft, pSnippet, piLeft) ){
@@ -3385,9 +3414,11 @@ static void snippetAllOffsets(fulltext_cursor *p){
   nColumn = pFts->nColumn;
   iColumn = (p->iCursorType - QUERY_FULLTEXT);
   if( iColumn<0 || iColumn>=nColumn ){
+    /* Look for matches over all columns of the full-text index */
     iFirst = 0;
     iLast = nColumn-1;
   }else{
+    /* Look for matches in the iColumn-th column of the index only */
     iFirst = iColumn;
     iLast = iColumn;
   }
