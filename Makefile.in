@@ -304,6 +304,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
@@ -415,6 +417,7 @@ HDR += \
   $(TOP)/ext/fts2/fts2_tokenizer.h
 HDR += \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 HDR += \
