@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.527 2009/01/02 21:08:09 drh Exp $
+** @(#) $Id: pager.c,v 1.528 2009/01/02 21:39:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -960,15 +960,17 @@ static void releaseAllSavepoint(Pager *pPager){
 ** all open savepoints.
 */
 static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
-  int ii;
+  int ii;                   /* Loop counter */
+  int rc = SQLITE_OK;       /* Result code */
+
   for(ii=0; ii<pPager->nSavepoint; ii++){
     PagerSavepoint *p = &pPager->aSavepoint[ii];
     if( pgno<=p->nOrig ){
-      /* TODO: malloc() failure handling */
-      sqlite3BitvecSet(p->pInSavepoint, pgno);
+      rc |= sqlite3BitvecSet(p->pInSavepoint, pgno);
+      assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
     }
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -3360,8 +3362,14 @@ static int pager_write(PgHdr *pPg){
 
         pPager->nRec++;
         assert( pPager->pInJournal!=0 );
-        sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
-        addToSavepointBitvecs(pPager, pPg->pgno);
+        rc = sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
+        testcase( rc==SQLITE_NOMEM );
+        assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
+        rc |= addToSavepointBitvecs(pPager, pPg->pgno);
+        if( rc!=SQLITE_OK ){
+          assert( rc==SQLITE_NOMEM );
+          return rc;
+        }
       }else{
         if( !pPager->journalStarted && !pPager->noSync ){
           pPg->flags |= PGHDR_NEED_SYNC;
@@ -3392,7 +3400,11 @@ static int pager_write(PgHdr *pPg){
       }
       pPager->stmtNRec++;
       assert( pPager->nSavepoint>0 );
-      addToSavepointBitvecs(pPager, pPg->pgno);
+      rc = addToSavepointBitvecs(pPager, pPg->pgno);
+      if( rc!=SQLITE_OK ){
+        assert( rc==SQLITE_NOMEM );
+        return rc;
+      }
     }
   }
 
@@ -3594,6 +3606,7 @@ int sqlite3PagerDontWrite(DbPage *pDbPage){
 */
 void sqlite3PagerDontRollback(DbPage *pPg){
   Pager *pPager = pPg->pPager;
+  TESTONLY( int rc; )  /* Return value from sqlite3BitvecSet() */
 
   assert( pPager->state>=PAGER_RESERVED );
 
@@ -3628,9 +3641,22 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   /* assert( !pPg->inJournal && (int)pPg->pgno <= pPager->dbOrigSize ); */
 
   assert( pPager->pInJournal!=0 );
-  sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
   pPg->flags &= ~PGHDR_NEED_READ;
-  addToSavepointBitvecs(pPager, pPg->pgno);
+
+  /* Failure to set the bits in the InJournal bit-vectors is benign.
+  ** It merely means that we might do some extra work to journal a page
+  ** that does not need to be journal.  Nevertheless, be sure to test the
+  ** case where a malloc error occurs while trying to set a bit in a 
+  ** bit vector.
+  */
+  sqlite3BeginBenignMalloc();
+  TESTONLY( rc = ) sqlite3BitvecSet(pPager->pInJournal, pPg->pgno);
+  testcase( rc==SQLITE_NOMEM );
+  TESTONLY( rc = ) addToSavepointBitvecs(pPager, pPg->pgno);
+  testcase( rc==SQLITE_NOMEM );
+  sqlite3EndBenignMalloc();
+
+
   PAGERTRACE3("DONT_ROLLBACK page %d of %d\n", pPg->pgno, PAGERID(pPager));
   IOTRACE(("GARBAGE %p %d\n", pPager, pPg->pgno))
 }

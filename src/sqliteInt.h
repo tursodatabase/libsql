@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.817 2009/01/02 17:33:46 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.818 2009/01/02 21:39:39 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -60,8 +60,10 @@
 #ifdef SQLITE_COVERAGE_TEST
   void sqlite3Coverage(int);
 # define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
+# define TESTONLY(X)  X
 #else
 # define testcase(X)
+# define TESTONLY(X)
 #endif
 
 /*

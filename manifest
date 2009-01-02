@@ -1,5 +1,5 @@
-C Reinitialize\spage\s1\sof\sthe\sdatabase\sfile\sfollowing\sa\sROLLBACK\sTO\sof\sa\ntransactional\sSAVEPOINT\son\san\sinitially\sempty\sdatabase.\s(CVS\s6103)
-D 2009-01-02T21:08:09
+C Memory\sallocation\sfailure\sin\sBitvec\sare\sprobably\sall\sbenign.\s\sStill,\sadd\ncode\sto\scheck\sthis,\sjust\sto\sbe\ssure.\s(CVS\s6104)
+D 2009-01-02T21:39:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,7 +101,7 @@ F src/alter.c 7eee66a6de2605a4aa6a85be6b4688b89e0f48ff
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/bitvec.c 4300d311b17fb3c1476623fd895a8feac02a0b08
+F src/bitvec.c a97d315fc7c0ec54fabd8859a45bd4e8e0d16b0b
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c b0cf3e7273ba20fe280fc7c889f972419562076d
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 151cc07325103ac217cd483e2aa67cb128aae1eb
+F src/pager.c e82987578519a149e8bdf7f5c2a330d879914b4e
 F src/pager.h 75396879910768a0af03a4af8413e798d84c096f
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -158,7 +158,7 @@ F src/select.c 6c2a5675c21bef11d8160f3dc97e1adfbf26bbb9
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h db087faf9556d61a05baf6f935307b4ce4b8af11
+F src/sqliteInt.h e95ddac4bb83570191c3713dfa31796aeb47cd3a
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
@@ -691,7 +691,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 78dd7909da15a9b2cbcdb9cbe86798cfc24f3230
-R 43c17ab6466f886c67eb16e151d17eac
+P 3e9efb763875b20c856d748c19e449080a3ae97c
+R fbb0f228e00217f5f89f33568f0e8c54
 U drh
-Z 7692693fe330733d99a3256112d00dbb
+Z 9cf41e60e2f6cdb3d7a7b42a85a7af92
