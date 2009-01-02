@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.232 2008/12/30 06:24:58 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.233 2009/01/02 17:33:46 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -118,6 +118,7 @@ struct SqliteDb {
   int nStmt;                 /* Number of statements in stmtList */
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
   int nStep, nSort;          /* Statistics for most recent operation */
+  int nTransaction;          /* Number of nested [transaction] methods */
 };
 
 struct IncrblobChannel {
@@ -2261,16 +2262,17 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   ** 2005 O'Reilly Open Source Convention (OSCON).
   */
   case DB_TRANSACTION: {
-    int inTrans;
     Tcl_Obj *pScript;
-    const char *zBegin = "BEGIN";
+    const char *zBegin = "SAVEPOINT _tcl_transaction";
+    const char *zEnd;
     if( objc!=3 && objc!=4 ){
       Tcl_WrongNumArgs(interp, 2, objv, "[TYPE] SCRIPT");
       return TCL_ERROR;
     }
-    if( objc==3 ){
-      pScript = objv[2];
-    } else {
+
+    if( pDb->nTransaction ){
+      zBegin = "SAVEPOINT _tcl_transaction";
+    }else if( pDb->nTransaction==0 && objc==4 ){
       static const char *TTYPE_strs[] = {
         "deferred",   "exclusive",  "immediate", 0
       };
@@ -2287,28 +2289,55 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
         case TTYPE_EXCLUSIVE:   zBegin = "BEGIN EXCLUSIVE";  break;
         case TTYPE_IMMEDIATE:   zBegin = "BEGIN IMMEDIATE";  break;
       }
-      pScript = objv[3];
     }
-    inTrans = !sqlite3_get_autocommit(pDb->db);
-    if( !inTrans ){
-      pDb->disableAuth++;
-      (void)sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
-      pDb->disableAuth--;
+    pScript = objv[objc-1];
+
+    pDb->disableAuth++;
+    rc = sqlite3_exec(pDb->db, zBegin, 0, 0, 0);
+    pDb->disableAuth--;
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
+      return TCL_ERROR;
     }
+
+    pDb->nTransaction++;
     rc = Tcl_EvalObjEx(interp, pScript, 0);
-    if( !inTrans ){
-      const char *zEnd;
-      if( rc==TCL_ERROR ){
-        zEnd = "ROLLBACK";
-      } else {
+    pDb->nTransaction--;
+
+    if( rc!=TCL_ERROR ){
+      if( pDb->nTransaction ){
+        zEnd = "RELEASE _tcl_transaction";
+      }else{
         zEnd = "COMMIT";
       }
-      pDb->disableAuth++;
-      if( sqlite3_exec(pDb->db, zEnd, 0, 0, 0) ){
-        sqlite3_exec(pDb->db, "ROLLBACK", 0, 0, 0);
+    }else{
+      if( pDb->nTransaction ){
+        zEnd = "ROLLBACK TO _tcl_transaction ; RELEASE _tcl_transaction";
+      }else{
+        zEnd = "ROLLBACK";
       }
-      pDb->disableAuth--;
     }
+
+    pDb->disableAuth++;
+    if( sqlite3_exec(pDb->db, zEnd, 0, 0, 0) ){
+      /* This is a tricky scenario to handle. The most likely cause of an
+      ** error is that the exec() above was an attempt to commit the 
+      ** top-level transaction that returned SQLITE_BUSY. Or, less likely,
+      ** that an IO-error has occured. In either case, throw a Tcl exception
+      ** and try to rollback the transaction.
+      **
+      ** But it could also be that the user executed one or more BEGIN, 
+      ** COMMIT, SAVEPOINT, RELEASE or ROLLBACK commands that are confusing
+      ** this method's logic. Not clear how this would be best handled.
+      */
+      if( rc!=TCL_ERROR ){
+        Tcl_AppendResult(interp, sqlite3_errmsg(pDb->db), 0);
+        rc = TCL_ERROR;
+      }
+      sqlite3_exec(pDb->db, "ROLLBACK", 0, 0, 0);
+    }
+    pDb->disableAuth--;
+
     break;
   }
 

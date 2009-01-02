@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.816 2008/12/28 16:55:25 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.817 2009/01/02 17:33:46 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1503,7 +1503,7 @@ struct SrcList {
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
-    Bitmask colUsed;  /* Bit N (1<<N) set if column N or pTab is used */
+    Bitmask colUsed;  /* Bit N (1<<N) set if column N of pTab is used */
     char *zIndex;     /* Identifier from "INDEXED BY <zIndex>" clause */
     Index *pIndex;    /* Index structure corresponding to zIndex, if any */
   } a[1];             /* One entry for each identifier on the list */

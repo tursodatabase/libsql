@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.70 2008/10/09 14:45:26 drh Exp $
+# $Id: tclsqlite.test,v 1.71 2009/01/02 17:33:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -414,16 +414,17 @@ do_test tcl-10.9 {
     }
   }
   db eval {SELECT * FROM t4}
-} {1 2 3 4}
+} {1 2}
 do_test tcl-10.10 {
   for {set i 0} {$i<1} {incr i} {
     db transaction {
       db eval {INSERT INTO t4 VALUES(5)}
       continue
     }
+    error "This line should not be run"
   }
   db eval {SELECT * FROM t4}
-} {1 2 3 4 5}
+} {1 2 5}
 do_test tcl-10.11 {
   for {set i 0} {$i<10} {incr i} {
     db transaction {
@@ -432,7 +433,7 @@ do_test tcl-10.11 {
     }
   }
   db eval {SELECT * FROM t4}
-} {1 2 3 4 5 6}
+} {1 2 5 6}
 do_test tcl-10.12 {
   set rc [catch {
     for {set i 0} {$i<10} {incr i} {
@@ -445,13 +446,125 @@ do_test tcl-10.12 {
 } {2}
 do_test tcl-10.13 {
   db eval {SELECT * FROM t4}
-} {1 2 3 4 5 6 7}
+} {1 2 5 6 7}
+
+# Now test that [db transaction] commands may be nested with 
+# the expected results.
+#
+do_test tcl-10.14 {
+  db transaction {
+    db eval {
+      DELETE FROM t4;
+      INSERT INTO t4 VALUES('one');
+    }
+
+    catch { 
+      db transaction {
+        db eval { INSERT INTO t4 VALUES('two') }
+        db transaction {
+          db eval { INSERT INTO t4 VALUES('three') }
+          error "throw an error!"
+        }
+      }
+    }
+  }
+
+  db eval {SELECT * FROM t4}
+} {one}
+do_test tcl-10.15 {
+  # Make sure a transaction has not been left open.
+  db eval {BEGIN ; COMMIT}
+} {}
+do_test tcl-10.16 {
+  db transaction {
+    db eval { INSERT INTO t4 VALUES('two'); }
+    db transaction {
+      db eval { INSERT INTO t4 VALUES('three') }
+      db transaction {
+        db eval { INSERT INTO t4 VALUES('four') }
+      }
+    }
+  }
+  db eval {SELECT * FROM t4}
+} {one two three four}
+do_test tcl-10.17 {
+  catch {
+    db transaction {
+      db eval { INSERT INTO t4 VALUES('A'); }
+      db transaction {
+        db eval { INSERT INTO t4 VALUES('B') }
+        db transaction {
+          db eval { INSERT INTO t4 VALUES('C') }
+          error "throw an error!"
+        }
+      }
+    }
+  }
+  db eval {SELECT * FROM t4}
+} {one two three four}
+do_test tcl-10.18 {
+  # Make sure a transaction has not been left open.
+  db eval {BEGIN ; COMMIT}
+} {}
+
+# Mess up a [db transaction] command by locking the database using a
+# second connection when it tries to commit. Make sure the transaction
+# is not still open after the "database is locked" exception is thrown.
+#
+do_test tcl-10.18 {
+  sqlite3 db2 test.db
+  db2 eval {
+    BEGIN;
+    SELECT * FROM sqlite_master;
+  }
+
+  set rc [catch {
+    db transaction {
+      db eval {INSERT INTO t4 VALUES('five')}
+    }
+  } msg]
+  list $rc $msg
+} {1 {database is locked}}
+do_test tcl-10.19 {
+  db eval {BEGIN ; COMMIT}
+} {}
+
+# Thwart a [db transaction] command by locking the database using a
+# second connection with "BEGIN EXCLUSIVE". Make sure no transaction is 
+# open after the "database is locked" exception is thrown.
+#
+do_test tcl-10.20 {
+  db2 eval {
+    COMMIT;
+    BEGIN EXCLUSIVE;
+  }
+  set rc [catch {
+    db transaction {
+      db eval {INSERT INTO t4 VALUES('five')}
+    }
+  } msg]
+  list $rc $msg
+} {1 {database is locked}}
+do_test tcl-10.21 {
+  db2 close
+  db eval {BEGIN ; COMMIT}
+} {}
+do_test tcl-10.22 {
+  sqlite3 db2 test.db
+  db transaction exclusive {
+    catch { db2 eval {SELECT * FROM sqlite_master} } msg
+    set msg "db2: $msg"
+  }
+  set msg
+} {db2: database is locked}
+db2 close
 
 do_test tcl-11.1 {
-  db exists {SELECT x,x*2,x+x FROM t4 WHERE x==4}
+  db eval {INSERT INTO t4 VALUES(6)}
+  db exists {SELECT x,x*2,x+x FROM t4 WHERE x==6}
 } {1}
 do_test tcl-11.2 {
-  db exists {SELECT 0 FROM t4 WHERE x==4}
+  db exists {SELECT 0 FROM t4 WHERE x==6}
 } {1}
 do_test tcl-11.3 {
   db exists {SELECT 1 FROM t4 WHERE x==8}
