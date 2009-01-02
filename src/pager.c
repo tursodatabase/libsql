@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.526 2009/01/02 18:10:42 drh Exp $
+** @(#) $Id: pager.c,v 1.527 2009/01/02 21:08:09 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -246,9 +246,8 @@ struct Pager {
   char dbFileVers[16];        /* Changes whenever database file changes */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
   PCache *pPCache;            /* Pointer to page cache object */
-
-  PagerSavepoint *aSavepoint;
-  int nSavepoint;
+  PagerSavepoint *aSavepoint; /* Array of active savepoints */
+  int nSavepoint;             /* Number of elements in aSavepoint[] */
 };
 
 /*

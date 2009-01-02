@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.807 2008/12/29 10:39:54 danielk1977 Exp $
+** $Id: vdbe.c,v 1.808 2009/01/02 21:08:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -2471,7 +2471,7 @@ case OP_Savepoint: {
             goto abort_due_to_error;
 	  }
         }
-        if( p1==SAVEPOINT_ROLLBACK && db->flags&SQLITE_InternChanges ){
+        if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
           sqlite3ResetInternalSchema(db, 0);
         }
