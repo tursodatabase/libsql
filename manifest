@@ -1,5 +1,5 @@
-C Increment\sthe\sversion\snumber\sto\s3.6.8.\s(CVS\s6098)
-D 2009-01-02T12:35:03
+C Many\sof\sthe\sboundary\stests\sdepend\son\sa\sworking\s64-bit\simplementation\sof\sTCL,\sso\sskip\sthem\sif\sthis\sis\snot\savailable.\s(CVS\s6099)
+D 2009-01-02T15:45:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 77635d0909c2067cee03889a1e04ce910d8fb809
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -239,14 +239,14 @@ F test/bind.test 1134441f1ea47abd1c740090435a6ecbe9ceb263
 F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
 F test/bitvec.test ecea9aa315f36991e56e326701279b7775cb2bef
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
-F test/boundary1.tcl 159fe6976fedd7f5cfdd19e6792c54c728b74826
-F test/boundary1.test 7481c191f25082a2a25c9b01ee8d04139177cfc5
-F test/boundary2.tcl cc609055aa7c9a1ec9299d5e894e97f6793f7b3c
-F test/boundary2.test 49cc59ca36756f59197b52bb6dc1b4c39c13b785
-F test/boundary3.tcl fd1123e705c93e9423f9ecfd8c81eaab502e4043
-F test/boundary3.test 092bb029aca7aeadd9540833cf6fde09897ca04c
-F test/boundary4.tcl 66ca93ab8bbca9d75648dcd6c5cfaea1f629cd53
-F test/boundary4.test 6cc878c9f31852b5962b1ed4ecae3726a5ae681c
+F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
+F test/boundary1.test 66d7f4706ccdb42d58eafdb081de07b0eb42d77b
+F test/boundary2.tcl e34ef4e930cf1083150d4d2c603e146bd3b76bcb
+F test/boundary2.test 9ae758d7dab7e882c8b6cc4a6a10278385bff8fa
+F test/boundary3.tcl 8901d6a503d0bf64251dd81cc74e5ad3add4b119
+F test/boundary3.test 56ef82096b4329aca2be74fa1e2b0f762ea0eb45
+F test/boundary4.tcl bf068a95bed74cffd5829766b836479fcebeb18b
+F test/boundary4.test 940bd509e34ae93c14ae62aeb8cf9afcf178b863
 F test/busy.test 76b4887f8b9160ba903c1ac22e8ff406ad6ae2f0
 F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 172c717ed101e78e0798dd21b9896a22366f35b4
@@ -690,7 +690,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d44c84c0f77bd0fc4a9942177b6cae6d109b89b7
-R 27f0955e85d2aa981a034b44932144e0
-U drh
-Z 56a396e4546cd9985094017c1fd7ad87
+P 7509641a4c410b1eaaf1edba259fbe01cd60b108
+R ccc13642e0486fd272ae8ed5b609139e
+U shane
+Z 474fcb6f9818ae90cbec2e22e66e6549
