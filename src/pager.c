@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.525 2009/01/01 15:20:37 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.526 2009/01/02 18:10:42 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1712,7 +1712,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
 
   /* Now roll back pages from the sub-journal. */
   if( pSavepoint ){
-    for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->stmtNRec; ii++){
+    for(ii=pSavepoint->iSubRec; rc==SQLITE_OK&&ii<(u32)pPager->stmtNRec; ii++){
       i64 offset = ii*(4+pPager->pageSize);
       rc = pager_playback_one_page(pPager, 0, offset, 1, pDone);
       assert( rc!=SQLITE_DONE );
@@ -3709,9 +3709,6 @@ int sqlite3PagerSync(Pager *pPager){
 ** Note that if zMaster==NULL, this does not overwrite a previous value
 ** passed to an sqlite3PagerCommitPhaseOne() call.
 **
-** If parameter nTrunc is non-zero, then the pager file is truncated to
-** nTrunc pages (this is used by auto-vacuum databases).
-**
 ** If the final parameter - noSync - is true, then the database file itself
 ** is not synced. The caller must call sqlite3PagerSync() directly to
 ** sync the database file before calling CommitPhaseTwo() to delete the
@@ -3720,7 +3717,6 @@ int sqlite3PagerSync(Pager *pPager){
 int sqlite3PagerCommitPhaseOne(
   Pager *pPager, 
   const char *zMaster, 
-  Pgno nTrunc,
   int noSync
 ){
   int rc = SQLITE_OK;
@@ -4006,6 +4002,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 
   if( nSavepoint>pPager->nSavepoint && pPager->useJournal ){
     int ii;
+    PagerSavepoint *aNew;
 
     /* Either the sub-journal is open or there are no active savepoints. */
     assert( pPager->nSavepoint==0 || pPager->sjfd->pMethods );
@@ -4014,7 +4011,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     ** if the allocation fails. Otherwise, zero the new portion in case a 
     ** malloc failure occurs while populating it in the for(...) loop below.
     */
-    PagerSavepoint *aNew = (PagerSavepoint *)sqlite3Realloc(
+    aNew = (PagerSavepoint *)sqlite3Realloc(
         pPager->aSavepoint, sizeof(PagerSavepoint)*nSavepoint
     );
     if( !aNew ){
