@@ -1,5 +1,5 @@
-C Memory\sallocation\sfailure\sin\sBitvec\sare\sprobably\sall\sbenign.\s\sStill,\sadd\ncode\sto\scheck\sthis,\sjust\sto\sbe\ssure.\s(CVS\s6104)
-D 2009-01-02T21:39:39
+C Add\stest\sfile\ssavepoint6.test.\sContains\spseudo\srandom\stests\sof\ssavepoint\srelated\scommands.\s(CVS\s6105)
+D 2009-01-03T10:41:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -483,7 +483,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test a244cd60117c07afaba2223bb025fd482ca13290
+F test/quick.test 9ab91798b047684f0dd26ee698920dbb69a30a10
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -498,6 +498,7 @@ F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test 1a0b1c0f59c6ae4402bfbca7cec29d4b1b272ff0
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
+F test/savepoint6.test 4808a41d2426d96d2fd742573c374f1d3ba90c61
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -691,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3e9efb763875b20c856d748c19e449080a3ae97c
-R fbb0f228e00217f5f89f33568f0e8c54
-U drh
-Z 9cf41e60e2f6cdb3d7a7b42a85a7af92
+P 4688e1c8b1203c3538aa862421ed344888059fe2
+R 31d99a8d501205effd4ffc0b8feb8587
+U danielk1977
+Z fec136a2b1f38279973feea5622497f3
