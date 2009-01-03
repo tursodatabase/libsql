@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.819 2009/01/03 12:55:18 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.820 2009/01/03 14:04:39 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -810,6 +810,7 @@ struct sqlite3 {
 #define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 #define SQLITE_SharedCache    0x00080000  /* Cache sharing is enabled */
 #define SQLITE_Vtab           0x00100000  /* There exists a virtual table */
+#define SQLITE_CommitBusy     0x00200000  /* In the process of committing */
 
 /*
 ** Possible values for the sqlite.magic field.

@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.13 2008/01/19 20:11:26 drh Exp $
+# $Id: hook.test,v 1.14 2009/01/03 14:04:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -91,6 +91,27 @@ do_test hook-3.9 {
   }
   set ::commit_cnt
 } {}
+
+# Ticket #3564.
+#
+do_test hook-3.10 {
+  file delete -force test2.db test2.db-journal
+  sqlite3 db2 test2.db
+  proc commit_hook {} {
+    set y [db2 one {SELECT y FROM t3 WHERE y>10}]
+    return [expr {$y>10}]
+  }
+  db2 eval {CREATE TABLE t3(x,y)}
+  db2 commit_hook commit_hook
+  catchsql {INSERT INTO t3 VALUES(1,2)} db2
+  catchsql {INSERT INTO t3 VALUES(11,12)} db2
+  catchsql {INSERT INTO t3 VALUES(3,4)} db2
+  db2 eval {
+    SELECT * FROM t3 ORDER BY x;
+  }
+} {1 2 3 4}
+db2 close
+
 
 #----------------------------------------------------------------------------
 # Tests for the update-hook.
