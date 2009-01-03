@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.41 2008/12/30 13:21:51 danielk1977 Exp $
+# $Id: permutations.test,v 1.42 2009/01/03 15:06:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -72,6 +72,7 @@ set EXCLUDE {
   fuzz_malloc.test          misuse.test               veryquick.test
   fuzz.test                 mutex2.test               vtab_err.test
   lookaside.test            fuzz3.test                savepoint4.test
+  savepoint6.test
 }
 set ALLTESTS [list]
 foreach filename [glob $testdir/*.test] {
@@ -713,12 +714,13 @@ run_tests "journaltest" -description {
   register_jt_vfs -default ""
 } -shutdown {
   unregister_jt_vfs
-} -exclude [concat $EXCLUDE {
+} -include [concat $::ALLTESTS savepoint6.test
+] -exclude {
   incrvacuum.test
   ioerr.test
   corrupt4.test 
   io.test 
-}]
+}
 
 # End of tests
 #############################################################################
