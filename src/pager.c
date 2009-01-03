@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.528 2009/01/02 21:39:39 drh Exp $
+** @(#) $Id: pager.c,v 1.529 2009/01/03 12:55:18 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3645,7 +3645,7 @@ void sqlite3PagerDontRollback(DbPage *pPg){
 
   /* Failure to set the bits in the InJournal bit-vectors is benign.
   ** It merely means that we might do some extra work to journal a page
-  ** that does not need to be journal.  Nevertheless, be sure to test the
+  ** that does not need to be journaled.  Nevertheless, be sure to test the
   ** case where a malloc error occurs while trying to set a bit in a 
   ** bit vector.
   */

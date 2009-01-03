@@ -1,5 +1,5 @@
-C Add\stest\sfile\ssavepoint6.test.\sContains\spseudo\srandom\stests\sof\ssavepoint\srelated\scommands.\s(CVS\s6105)
-D 2009-01-03T10:41:29
+C Fix\sa\stypo\sin\sa\scomment.\s(CVS\s6106)
+D 2009-01-03T12:55:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c e82987578519a149e8bdf7f5c2a330d879914b4e
+F src/pager.c b12dbe7e6c561d1675ddcc9c50b997c0692212e0
 F src/pager.h 75396879910768a0af03a4af8413e798d84c096f
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -158,7 +158,7 @@ F src/select.c 6c2a5675c21bef11d8160f3dc97e1adfbf26bbb9
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h e95ddac4bb83570191c3713dfa31796aeb47cd3a
+F src/sqliteInt.h 9f8fa19d36c62bd52f4421058547957bec085f24
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4688e1c8b1203c3538aa862421ed344888059fe2
-R 31d99a8d501205effd4ffc0b8feb8587
-U danielk1977
-Z fec136a2b1f38279973feea5622497f3
+P 2946fbb7183d597b4db1db203eb5fd57c9762dc4
+R ccda20803e4cdd800ec83fb76606b129
+U drh
+Z 877aa6f9be566bb3a1b0cf9f2dffeecd
