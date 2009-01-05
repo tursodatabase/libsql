@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is page cache subsystem.
 #
-# $Id: pager.test,v 1.32 2008/10/17 18:51:53 danielk1977 Exp $
+# $Id: pager.test,v 1.33 2009/01/05 17:15:00 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -214,6 +214,7 @@ do_test pager-3.5 {
     page_write $gx "Page-$i"
     page_unref $gx
   }
+breakpoint
   pager_commit $::p1
   page_unref $::g(1)
 } {}
@@ -459,8 +460,14 @@ do_test pager-5.1 {
 # The following tests cover rolling back hot journal files. 
 # They can't be run on windows because the windows version of 
 # SQLite holds a mandatory exclusive lock on journal files it has open.
+# 
+# They cannot be run during the journaltest permutation because 
+# "PRAGMA synchronous = 0" is used.
 #
-if {$tcl_platform(platform)!="windows"} {
+if {$tcl_platform(platform)!="windows" && (
+      0 == [info exists ::permutations_test_prefix] 
+   || $::permutations_test_prefix ne "journaltest"
+)} {
 do_test pager-6.1 {
   file delete -force test2.db
   file delete -force test2.db-journal

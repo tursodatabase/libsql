@@ -1,5 +1,5 @@
-C Add\ssome\stests\swith\sattached\sdatabases\sto\ssavepoint.test.\sAlso\stests\sof\screating\sand\sdropping\stables\sin\sauto-vacuum\smode\sinside\sof\sa\ssavepoint.\s(CVS\s6108)
-D 2009-01-03T15:06:38
+C Fix\ssome\stest\scode\sproblems\sin\s"permutations.test\sjournaltest\spager.test".\s(CVS\s6109)
+D 2009-01-05T17:15:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/test_config.c 4f85387a52f3c7966c3ffab913e988a3830fe1af
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c 3e1ff6dc251afadde009a791f863132cf861bda6
+F src/test_journal.c 036ad7ab47ba262a812189ca16fe3e9033bdbdb3
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 5127337c9fb4c851a7f604c0170e0e5ca1fbfe33
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
@@ -470,7 +470,7 @@ F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
-F test/pager.test fd3f5009985728ef7bf0dfe32a1bbc112e6895c5
+F test/pager.test ef306077e282963664be71ac31832f4476e557ca
 F test/pager2.test d4b7f6b70ff018b9995e622a32526b275f515042
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 27ae406537c07073db46ecde40c65c78fbb73170
-R f1261b4aaf79058f39badb22de0f89d4
+P ca7f11d50d1a73443d18c79dfe4223c975c6e20b
+R ad21cedccb12837ed3f3ff34f42a0906
 U danielk1977
-Z 89a8f6d28c2f24e84f9c102fa36950dc
+Z 72c33f7e7d1fe921a91d58bf25243ee9

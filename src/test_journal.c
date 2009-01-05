@@ -19,7 +19,7 @@
 **   b) the page was not a free-list leaf page when the transaction was
 **      first opened.
 **
-** $Id: test_journal.c,v 1.3 2008/12/24 09:30:22 danielk1977 Exp $
+** $Id: test_journal.c,v 1.4 2009/01/05 17:15:00 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -315,10 +315,20 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
     if( rc!=SQLITE_OK 
      || decodeJournalHdr(zBuf, &nRec, &nPage, &nSector, &nPagesize) 
     ){
-      return rc;
+      goto finish_rjf;
     }
     iOff += nSector;
     if( nRec==0 ){
+      /* A trick. There might be another journal-header immediately 
+      ** following this one. In this case, 0 records means 0 records, 
+      ** not "read until the end of the file". See also ticket #2565.
+      */
+      if( iSize>=(nRec+nSector) ){
+        rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
+        if( rc!=SQLITE_OK || 0==decodeJournalHdr(zBuf, 0, 0, 0, 0) ){
+          continue;
+        }
+      }
       nRec = (iSize - iOff)/(pMain->nPagesize + 8);
     }
     for(ii=0; rc==SQLITE_OK && ii<nRec && iOff<iSize; ii++){
@@ -336,6 +346,10 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
     iOff = ((iOff + (nSector-1)) / nSector) * nSector;
   }
 
+finish_rjf:
+  if( rc==SQLITE_IOERR_SHORT_READ ){
+    rc = SQLITE_OK;
+  }
   return rc;
 }
 
