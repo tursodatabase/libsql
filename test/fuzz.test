@@ -19,7 +19,7 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.15 2009/01/05 19:36:30 drh Exp $
+# $Id: fuzz.test,v 1.16 2009/01/05 22:30:39 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -247,6 +247,23 @@ do_test fuzz-1.16.4 {
     DROP TABLE abc; DROP TABLE def; DROP TABLE ghi;
   }
 } {}
+
+do_test fuzz-1.17 {
+  catchsql {
+    SELECT 'hardware', 56.1 NOTNULL, random()&0
+    FROM (
+       SELECT ALL lower(~ EXISTS (
+           SELECT 1 NOT IN (SELECT ALL 1)
+       )), CAST(456 AS integer), -2147483647
+       FROM (
+         SELECT DISTINCT -456, CAST(1 AS integer) ISNULL
+         FROM (SELECT ALL 2147483647, typeof(2147483649))
+       )
+    )
+    GROUP BY CAST(CAST('experiments' AS blob) AS blob)
+    HAVING random()
+  }
+} {0 {hardware 1 0}}
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
