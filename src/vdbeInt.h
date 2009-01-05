@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.160 2008/12/09 02:51:24 drh Exp $
+** $Id: vdbeInt.h,v 1.161 2009/01/05 18:02:27 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -173,7 +173,8 @@ struct Mem {
 /*
 ** Clear any existing type flags from a Mem and replace them with f
 */
-#define MemSetTypeFlag(p, f) ((p)->flags = ((p)->flags&~(MEM_TypeMask))|f)
+#define MemSetTypeFlag(p, f) \
+   ((p)->flags = ((p)->flags&~(MEM_TypeMask|MEM_Zero))|f)
 
 
 /* A VdbeFunc is just a FuncDef (defined in sqliteInt.h) that contains

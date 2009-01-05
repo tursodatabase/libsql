@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.808 2009/01/02 21:08:09 drh Exp $
+** $Id: vdbe.c,v 1.809 2009/01/05 18:02:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1503,7 +1503,7 @@ case OP_ToText: {                  /* same as TK_TO_TEXT, in1 */
   applyAffinity(pIn1, SQLITE_AFF_TEXT, encoding);
   rc = ExpandBlob(pIn1);
   assert( pIn1->flags & MEM_Str || db->mallocFailed );
-  pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Blob);
+  pIn1->flags &= ~(MEM_Int|MEM_Real|MEM_Blob|MEM_Zero);
   UPDATE_MAX_BLOBSIZE(pIn1);
   break;
 }
