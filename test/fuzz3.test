@@ -13,7 +13,7 @@
 # the database file by changing the values of pseudo-randomly selected
 # bytes.
 #
-# $Id: fuzz3.test,v 1.2 2008/09/10 17:53:36 danielk1977 Exp $
+# $Id: fuzz3.test,v 1.3 2009/01/05 17:19:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -145,6 +145,7 @@ for {set ii 0} {$ii < 5000} {incr ii} {
     do_test fuzz3-$ii.$iNew.[incr iTest] {
       foreach {rc msg} [catchsql $sql] {}
       if {$rc == 0 
+       || $msg eq "database or disk is full"
        || $msg eq "database disk image is malformed"
        || $msg eq "file is encrypted or is not a database"
        || [string match "malformed database schema*" $msg]
@@ -166,4 +167,3 @@ for {set ii 0} {$ii < 5000} {incr ii} {
 }
 
 finish_test
-

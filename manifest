@@ -1,5 +1,5 @@
-C Fix\ssome\stest\scode\sproblems\sin\s"permutations.test\sjournaltest\spager.test".\s(CVS\s6109)
-D 2009-01-05T17:15:00
+C Include\sfuzz3.test\sin\sall.test.\s\sGet\sfuzz3.test\sworking\sagain.\s(CVS\s6110)
+D 2009-01-05T17:19:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -211,7 +211,7 @@ F src/where.c b25a7ecf75cfdd7de430934f62f9e17083b9b806
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
-F test/all.test 03cdd58d389e35bee8d57b7d24357b827aecc463
+F test/all.test ca6dd2c8474d3f393c499c7da45a8e6157f33a38
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
@@ -374,7 +374,7 @@ F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
 F test/fuzz.test 62fc19dd36a427777fd671b569df07166548628a
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
-F test/fuzz3.test 3856b9340b801671424ff0c581ef74342962aa7d
+F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl ff4bc2dfc465f6878f8e2d819620914365382731
 F test/fuzz_malloc.test 4eca9d345f06d5b0b0105f7a2ef9e7f22658827b
 F test/hook.test a9961ccfcf7271cd7fc72352de77aff822359e66
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ca7f11d50d1a73443d18c79dfe4223c975c6e20b
-R ad21cedccb12837ed3f3ff34f42a0906
-U danielk1977
-Z 72c33f7e7d1fe921a91d58bf25243ee9
+P cf627752c4537f709acae26a1e335731d55bddb2
+R 4b9de2d28fc2e8188a571158ea4e3416
+U drh
+Z 13bf1ffa0f51ae4cbd19f2d1eead623a
