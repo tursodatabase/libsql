@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.495 2008/12/23 23:56:22 drh Exp $
+** $Id: select.c,v 1.496 2009/01/05 19:36:30 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2406,6 +2406,8 @@ static void substExpr(
       sqlite3TokenCopy(db, &pExpr->span, &pNew->span);
       pExpr->pSelect = sqlite3SelectDup(db, pNew->pSelect);
       pExpr->flags = pNew->flags;
+      pExpr->pAggInfo = pNew->pAggInfo;
+      pNew->pAggInfo = 0;
     }
   }else{
     substExpr(db, pExpr->pLeft, iTable, pEList);

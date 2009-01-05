@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: fuzz_common.tcl,v 1.1 2007/05/30 10:36:47 danielk1977 Exp $
+# $Id: fuzz_common.tcl,v 1.2 2009/01/05 19:36:30 drh Exp $
 
 proc fuzz {TemplateList} {
   set n [llength $TemplateList]
@@ -374,7 +374,7 @@ proc do_fuzzy_test {testname args} {
       if {$rc} {
         set e 0
         foreach error $::fuzzyopts(-errorlist) {
-          if {0 == [string first $error $msg]} {
+          if {[string first $error $msg]>=0} {
             set e 1
             break
           }
@@ -389,4 +389,3 @@ proc do_fuzzy_test {testname args} {
     } {1}
   }
 }
-

@@ -19,7 +19,7 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.14 2007/05/30 10:36:47 danielk1977 Exp $
+# $Id: fuzz.test,v 1.15 2009/01/05 19:36:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,6 +32,7 @@ if {[info exists ::ISQUICK]} {
 }
 
 source $testdir/fuzz_common.tcl
+expr srand(0)
 
 #----------------------------------------------------------------
 # These tests caused errors that were first caught by the tests
@@ -170,6 +171,80 @@ do_test fuzz-1.14.1 {
 do_test fuzz-1.14.2 {
   execsql {
     DROP TABLE abc;
+  }
+} {}
+
+# Making sure previously discovered errors have been fixed.
+#
+do_test fuzz-1.15 {
+  execsql {
+    SELECT hex(CAST(zeroblob(1000) AS integer))
+  }
+} {30}
+
+do_test fuzz-1.16.1 {
+  execsql {
+    CREATE TABLE abc(a, b, c);
+    CREATE TABLE def(a, b, c);
+    CREATE TABLE ghi(a, b, c);
+  }
+} {}
+do_test fuzz-1.16.2 {
+breakpoint
+  catchsql {
+    SELECT DISTINCT EXISTS(
+       SELECT 1
+       FROM (
+         SELECT C FROM (SELECT 1)
+       )
+       WHERE (SELECT c)
+    )
+    FROM abc
+  }
+} {0 {}}
+do_test fuzz-1.16.3 {
+  catchsql {
+    SELECT DISTINCT substr(-456 ISNULL,zeroblob(1000), EXISTS(
+         SELECT DISTINCT EXISTS(
+           SELECT DISTINCT b FROM abc
+           ORDER BY EXISTS (
+             SELECT DISTINCT 2147483647 UNION ALL SELECT -2147483648
+           ) ASC
+         )
+         FROM (
+           SELECT c, c FROM (
+             SELECT 456, 'injection' ORDER BY 56.1 ASC, -56.1 DESC
+           )
+         )
+         GROUP BY (SELECT ALL (SELECT DISTINCT 'hardware')) 
+         HAVING (
+           SELECT DISTINCT c
+           FROM (
+             SELECT ALL -2147483648, 'experiments'
+             ORDER BY -56.1 ASC, -56.1 DESC
+           )
+           GROUP BY (SELECT DISTINCT 456) IN 
+                   (SELECT DISTINCT 'injection') NOT IN (SELECT ALL -456)
+           HAVING EXISTS (
+             SELECT ALL 'injection'
+           )
+         )
+         UNION ALL
+         SELECT a IN (
+           SELECT -2147483647
+           UNION ALL
+           SELECT ALL 'injection'
+         )
+         FROM sqlite_master
+       ) -- end EXISTS
+    ) /* end SUBSTR() */, c NOTNULL ISNULL
+    FROM abc
+    ORDER BY CAST(-56.1 AS blob) ASC
+  }
+} {0 {}}
+do_test fuzz-1.16.4 {
+  execsql {
+    DROP TABLE abc; DROP TABLE def; DROP TABLE ghi;
   }
 } {}
 
