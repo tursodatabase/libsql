@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.43 2009/01/06 13:40:08 danielk1977 Exp $
+# $Id: permutations.test,v 1.44 2009/01/06 14:50:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -234,21 +234,17 @@ run_tests "nolookaside" -description {
 run_tests "singlethread" -description {
   Tests run in SQLITE_CONFIG_SINGLETHREAD mode
 } -initialize {
-  do_test mutex2-singlethread.0 {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config singlethread
-  } SQLITE_OK
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config singlethread}
 } -include {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
   types2.test   types3.test
 } -shutdown {
-  do_test mutex2-X {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config serialized
-  } SQLITE_OK
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config serialized}
 }
 
 run_tests "nomutex" -description {
@@ -275,21 +271,17 @@ run_tests "nomutex" -description {
 run_tests "multithread" -description {
   Tests run in SQLITE_CONFIG_MULTITHREAD mode
 } -initialize {
-  do_test mutex2-multithread.0 {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config multithread
-  } SQLITE_OK
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config multithread}
 } -include {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
   types2.test   types3.test
 } -shutdown {
-  do_test mutex2-X {
-    catch {db close}
-    sqlite3_shutdown
-    sqlite3_config serialized
-  } SQLITE_OK
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config serialized}
 }
 
 # Run some tests in SQLITE_OPEN_FULLMUTEX mode.
