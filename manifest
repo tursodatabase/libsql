@@ -1,5 +1,5 @@
-C Fix\sa\srecently\sintroduced\sproblem\sin\s"permutations.test\sautovacuum_crash".\s(CVS\s6120)
-D 2009-01-06T15:20:58
+C The\sfix\sin\s(6120)\swasn't\squite\sright.\sThis\sfixes\sit.\s(CVS\s6121)
+D 2009-01-06T15:28:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 06f6e84895e1ce76eab29bd3e05b6d77cfbc46fb
+F src/pager.c 6825837db932f9e4ccb715bcb24d1a24cd22fe43
 F src/pager.h 0793c5e4faed6c278037eb22b2434b318687d615
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 301b57b7bac949dd77037ad3175ba87c41c8c843
-R 9c5a7129ba27247d5da0e5c859ad9f6c
+P 2cdbb468ed81d35a7e1a580683864de60e103083
+R 990c5e1ec7d21f8528fa930423283fdb
 U danielk1977
-Z 15de7c3b3d2cf4749596d9f77443a212
+Z 046628115eb5f07042a0f536f52e1976
