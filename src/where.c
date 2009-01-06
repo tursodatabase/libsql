@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.356 2009/01/06 00:08:02 drh Exp $
+** $Id: where.c,v 1.357 2009/01/06 14:19:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1847,7 +1847,7 @@ static void bestIndex(
       WhereTerm *pOrTerm;
       int j;
       double rTotal = 0;
-      double nRow = 0;
+      nRow = 0;
       for(j=0, pOrTerm=pOrWC->a; j<pOrWC->nTerm; j++, pOrTerm++){
         WhereCost sTermCost;
         WHERETRACE(("... Multi-index OR testing for term %d of %d....\n", j,i));
@@ -1903,7 +1903,6 @@ static void bestIndex(
     pProbe = pSrc->pIndex;
   }
   for(; pProbe; pProbe=(pSrc->pIndex ? 0 : pProbe->pNext)){
-    int i;                       /* Loop counter */
     double inMultiplier = 1;
 
     WHERETRACE(("... index %s:\n", pProbe->zName));
@@ -2682,7 +2681,6 @@ static Bitmask codeOneLoopStart(
     */
     int regOrRowset;       /* Register holding the RowSet object */
     int regNextRowid;      /* Register holding next rowid */
-    WhereTerm *pTerm;      /* The complete OR-clause */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     WhereTerm *pOrTerm;    /* A single subterm within the OR-clause */
     SrcList oneTab;        /* Shortened table list */
