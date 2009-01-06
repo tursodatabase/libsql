@@ -19,7 +19,7 @@
 **   b) the page was not a free-list leaf page when the transaction was
 **      first opened.
 **
-** $Id: test_journal.c,v 1.5 2009/01/06 14:34:35 danielk1977 Exp $
+** $Id: test_journal.c,v 1.6 2009/01/06 17:52:44 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -47,6 +47,10 @@ struct jt_file {
   u32 nPage;               /* Size of file in pages when transaction started */
   u32 nPagesize;           /* Page size when transaction started */
   Bitvec *pWritable;       /* Bitvec of pages that may be written to the file */
+  u32 *aCksum;             /* Checksum for first nPage pages */
+
+  /* Only used by journal file-handles */
+  sqlite3_int64 iMaxOff;   /* Maximum offset written to this transaction */
 
   jt_file *pNext;          /* All files are stored in a linked list */
   sqlite3_file *pReal;     /* The file handle for the underlying vfs */
@@ -136,7 +140,9 @@ static struct JtGlobal g = {0, 0};
 
 static void closeTransaction(jt_file *p){
   sqlite3BitvecDestroy(p->pWritable);
+  sqlite3_free(p->aCksum);
   p->pWritable = 0;
+  p->aCksum = 0;
 }
 
 /*
@@ -187,6 +193,28 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
 
 static u32 decodeUint32(const unsigned char *z){
   return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3];
+}
+
+static int calculateCksums(jt_file *pMain){
+  int rc = SQLITE_OK;
+  int ii, jj;
+  unsigned char *aData = sqlite3_malloc(pMain->nPagesize);
+  if( !aData ){
+    return SQLITE_IOERR_NOMEM;
+  }
+
+  for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
+    u32 cksum = 0;
+    sqlite_int64 iOff = (sqlite3_int64)(pMain->nPagesize) * (sqlite3_int64)ii;
+    rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
+    for(jj=0; jj<pMain->nPagesize; jj++){
+      cksum = cksum + aData[jj] + (cksum<<3);
+    }
+    pMain->aCksum[ii] = cksum;
+  }
+  sqlite3_free(aData);
+
+  return rc;
 }
 
 static int readFreelist(jt_file *pMain){
@@ -252,26 +280,37 @@ static int jtWrite(
   sqlite_int64 iOfst
 ){
   jt_file *p = (jt_file *)pFile;
-  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL && iOfst==0 ){
-    jt_file *pMain = locateDatabaseHandle(p->zName);
-    assert( pMain );
-
-    if( decodeJournalHdr(zBuf, 0, &pMain->nPage, 0, &pMain->nPagesize) ){
-      /* Zeroing the first journal-file header. This is the end of a
-      ** transaction. */
-      closeTransaction(pMain);
-    }else{
-      /* Writing the first journal header to a journal file. This happens
-      ** when a transaction is first started.  */
-      int rc;
-      pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
-      if( !pMain->pWritable ){
-	return SQLITE_IOERR_NOMEM;
+  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL ){
+    if( iOfst==0 ){
+      jt_file *pMain = locateDatabaseHandle(p->zName);
+      assert( pMain );
+  
+      if( decodeJournalHdr(zBuf, 0, &pMain->nPage, 0, &pMain->nPagesize) ){
+        /* Zeroing the first journal-file header. This is the end of a
+        ** transaction. */
+        closeTransaction(pMain);
+      }else{
+        /* Writing the first journal header to a journal file. This happens
+        ** when a transaction is first started.  */
+        int rc;
+        pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
+        pMain->aCksum = sqlite3_malloc(sizeof(u32) * (pMain->nPage + 1));
+        p->iMaxOff = 0;
+        if( !pMain->pWritable || !pMain->aCksum ){
+  	return SQLITE_IOERR_NOMEM;
+        }
+        rc = readFreelist(pMain);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = calculateCksums(pMain);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
       }
-      rc = readFreelist(pMain);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
+    }
+    if( p->iMaxOff<(iOfst + iAmt) ){
+      p->iMaxOff = iOfst + iAmt;
     }
   }
 
@@ -302,13 +341,19 @@ static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
 ** page in the journal to the Bitvec object passed as the second argument.
 */
 static int readJournalFile(jt_file *p, jt_file *pMain){
-  int rc;
+  int rc = SQLITE_OK;
   unsigned char zBuf[28];
   sqlite3_file *pReal = p->pReal;
   sqlite3_int64 iOff = 0;
   sqlite3_int64 iSize = 0;
+  unsigned char *aPage;
 
-  rc = sqlite3OsFileSize(p->pReal, &iSize);
+  aPage = sqlite3_malloc(pMain->nPagesize);
+  if( !aPage ){
+    return SQLITE_IOERR_NOMEM;
+  }
+  /* rc = sqlite3OsFileSize(p->pReal, &iSize); */
+  iSize = p->iMaxOff;
   while( rc==SQLITE_OK && iOff<iSize ){
     u32 nRec, nPage, nSector, nPagesize;
     u32 ii;
@@ -324,23 +369,34 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
       ** following this one. In this case, 0 records means 0 records, 
       ** not "read until the end of the file". See also ticket #2565.
       */
-      if( iSize>=(nRec+nSector) ){
+      if( iSize>=(iOff+nSector) ){
         rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
         if( rc!=SQLITE_OK || 0==decodeJournalHdr(zBuf, 0, 0, 0, 0) ){
           continue;
         }
       }
-      nRec = (iSize - iOff)/(pMain->nPagesize + 8);
+      nRec = (iSize-iOff) / (pMain->nPagesize+8);
     }
     for(ii=0; rc==SQLITE_OK && ii<nRec && iOff<iSize; ii++){
       u32 pgno;
       rc = sqlite3OsRead(pReal, zBuf, 4, iOff);
       if( rc==SQLITE_OK ){
         pgno = decodeUint32(zBuf);
-        iOff += (8 + pMain->nPagesize);
         if( pgno>0 && pgno<=pMain->nPage ){
+          if( 0==sqlite3BitvecTest(pMain->pWritable, pgno) ){
+            rc = sqlite3OsRead(pReal, aPage, pMain->nPagesize, iOff+4);
+            if( rc==SQLITE_OK ){
+              int jj;
+              u32 cksum = 0;
+              for(jj=0; jj<pMain->nPagesize; jj++){
+                cksum = cksum + aPage[jj] + (cksum<<3);
+              }
+              assert( cksum==pMain->aCksum[pgno-1] );
+            }
+          }
           sqlite3BitvecSet(pMain->pWritable, pgno);
         }
+        iOff += (8 + pMain->nPagesize);
       }
     }
 
@@ -348,6 +404,7 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
   }
 
 finish_rjf:
+  sqlite3_free(aPage);
   if( rc==SQLITE_IOERR_SHORT_READ ){
     rc = SQLITE_OK;
   }
@@ -473,6 +530,7 @@ static int jtOpen(
     p->flags = flags;
     p->pNext = 0;
     p->pWritable = 0;
+    p->aCksum = 0;
     if( zName ){
       p->pNext = g.pList;
       g.pList = p;
