@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.530 2009/01/06 13:40:08 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.531 2009/01/06 14:34:35 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1259,7 +1259,7 @@ static int pager_playback_one_page(
     ** current. 
     **
     ** There are a couple of different ways this can happen. All are quite
-    ** obscure. When not running in synchronous mode, this can only happen 
+    ** obscure. When running in synchronous mode, this can only happen 
     ** if the page is on the free-list at the start of the transaction, then
     ** populated, then moved using sqlite3PagerMovepage().
     **
@@ -1432,8 +1432,6 @@ delmaster_out:
 }
 
 
-static void pager_truncate_cache(Pager *pPager);
-
 /*
 ** Truncate the main file of the given pager to the number of pages
 ** indicated. Also truncate the cached representation of the file.
@@ -1466,7 +1464,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
   }
   if( rc==SQLITE_OK ){
     pPager->dbSize = nPage;
-    pager_truncate_cache(pPager);
+    sqlite3PcacheTruncate(pPager->pPCache, nPage);
   }
   return rc;
 }
@@ -2243,22 +2241,6 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
 ** Forward declaration
 */
 static int syncJournal(Pager*);
-
-/*
-** This routine is used to truncate the cache when a database
-** is truncated.  Drop from the cache all pages whose pgno is
-** larger than pPager->dbSize and is unreferenced.
-**
-** Referenced pages larger than pPager->dbSize are zeroed.
-**
-** Actually, at the point this routine is called, it would be
-** an error to have a referenced page.  But rather than delete
-** that page and guarantee a subsequent segfault, it seems better
-** to zero it and hope that we error out sanely.
-*/
-static void pager_truncate_cache(Pager *pPager){
-  sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
-}
 
 /*
 ** Try to obtain a lock on a file.  Invoke the busy callback if the lock

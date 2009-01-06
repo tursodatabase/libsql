@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings.\s(CVS\s6117)
-D 2009-01-06T14:19:37
+C Fix\sa\smemory\sleak\sin\stest_journal.c\s(test\scode).\sAlso\sremove\sfunction\spager_truncate_cache(),\sa\swrapper\saround\ssqlite3PCacheTruncate(),\sfrom\spager.c.\s(CVS\s6118)
+D 2009-01-06T14:34:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 9c9bc48765cb8d6c4445d3628bed52a0e0af762c
+F src/pager.c e93008f9326701087239c0300547e66d18ddb63c
 F src/pager.h 0793c5e4faed6c278037eb22b2434b318687d615
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -179,7 +179,7 @@ F src/test_config.c 4f85387a52f3c7966c3ffab913e988a3830fe1af
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c 036ad7ab47ba262a812189ca16fe3e9033bdbdb3
+F src/test_journal.c a70ac20fd599427114fc6a6a7d39b494a25a256d
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c 5127337c9fb4c851a7f604c0170e0e5ca1fbfe33
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8c62ea4fded2251e9daf16f2a050f94359299d76
-R d34da009576dbfa85fca59c19029124d
-U drh
-Z 0264d4c499d8f99603da773992f1f3bf
+P da770a8dff183b28aca287cafb9c8b82b98ea968
+R 2172b16d676a799e44e84c464b6413bf
+U danielk1977
+Z a44d18eb329206a7ca5cf0468ff0c42d

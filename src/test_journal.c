@@ -19,7 +19,7 @@
 **   b) the page was not a free-list leaf page when the transaction was
 **      first opened.
 **
-** $Id: test_journal.c,v 1.4 2009/01/05 17:15:00 danielk1977 Exp $
+** $Id: test_journal.c,v 1.5 2009/01/06 14:34:35 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -146,6 +146,7 @@ static int jtClose(sqlite3_file *pFile){
   jt_file **pp;
   jt_file *p = (jt_file *)pFile;
 
+  closeTransaction(p);
   if( p->zName ){
     for(pp=&g.pList; *pp!=p; pp=&(*pp)->pNext);
     *pp = p->pNext;
