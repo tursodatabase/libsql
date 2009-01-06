@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.61 2009/01/05 19:36:30 drh Exp $
+# $Id: all.test,v 1.62 2009/01/06 18:43:51 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,7 +23,7 @@ proc finish_test {} {
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
 } else {
-  set COUNT 3
+  set COUNT 1
 }
 
 if {[llength $argv]>0} {
@@ -75,11 +75,6 @@ set INCLUDE {
 }
 
 for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
-  if {$Counter%2} {
-    set ::SETUP_SQL {PRAGMA default_synchronous=off;}
-  } else {
-    catch {unset ::SETUP_SQL}
-  }
   foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     set tail [file tail $testfile]
     if {[lsearch -exact $EXCLUDE $tail]>=0} continue

@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\spaths\sin\sbtreeCopyFile().\s(CVS\s6124)
-D 2009-01-06T18:21:09
+C Now\sthat\swe\shave\spermutations.test,\sit\sis\sreally\sonly\snecessary\sto\srun\nall.test\sfor\sa\ssingle\scycle.\s\sSo\smake\sthat\sthe\sdefault.\s(CVS\s6125)
+D 2009-01-06T18:43:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -211,7 +211,7 @@ F src/where.c ad9d49f77b9c70adc38cf1b829c870f30a9afe04
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
-F test/all.test 57f7cc607c3afbb4596a7e9098cb099d93e86621
+F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0d258956f8971c0af7853b836a7d6e7f3a800c37
-R 05e05e438c10e4adf18b22c74b0a0660
-U danielk1977
-Z 41f6943cd36d80f336d0d71bac27acbf
+P df2c285cb99ac188c96dd1a4e6a30f689195a150
+R a39fd859c85b657ee3e38ef6b597e20a
+U drh
+Z 98b234923618e16ba8aaf958941758d3
