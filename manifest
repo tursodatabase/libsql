@@ -1,5 +1,5 @@
-C Remove\sleftover\s"breakpoint"\sfrom\sthe\sfuzz.test\sscript.\s(CVS\s6115)
-D 2009-01-06T00:11:26
+C Add\ssome\ssavepoint\srelated\stest\scases\sand\sfix\sa\sfew\sproblems.\s(CVS\s6116)
+D 2009-01-06T13:40:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c b12dbe7e6c561d1675ddcc9c50b997c0692212e0
+F src/pager.c 9c9bc48765cb8d6c4445d3628bed52a0e0af762c
 F src/pager.h 75396879910768a0af03a4af8413e798d84c096f
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -477,7 +477,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 515b4c26e9f57660357dfff5b6b697acac1abc5f
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test dccfc24254ab8d9cb9098e790c12fae52865f65f
+F test/permutations.test 9e667c6b027856fc9b1d3d82cb51f0744885d010
 F test/pragma.test 325aa0833d483b8e0c98e8196f1cc49fa5d8c336
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -493,12 +493,12 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test 154001ac2863714eadd9c79865fa07faeda3d3a4
+F test/savepoint.test 7c743ac26268b042f8e16797c755644240c724e5
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test 1a0b1c0f59c6ae4402bfbca7cec29d4b1b272ff0
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
-F test/savepoint6.test 4808a41d2426d96d2fd742573c374f1d3ba90c61
+F test/savepoint6.test 7d584a665cb6e4f0c24d7a8ae7f8985461c683b1
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a7015625610624be1645e918d0a62cf85bec86ce
-R f82e1e4aa3ea5aea66445267a01cdb30
-U drh
-Z b753d108e96492fb67c6923669f55766
+P c2482d8877a5f9e387b288377e410ae1b8267f3c
+R 99d979f1a5afc6b0e70e7af446024426
+U danielk1977
+Z 76e17593f6a27ee09beef4dfa4478a92

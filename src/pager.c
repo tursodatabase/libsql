@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.529 2009/01/03 12:55:18 drh Exp $
+** @(#) $Id: pager.c,v 1.530 2009/01/06 13:40:08 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -27,12 +27,13 @@
 ** Macros for troubleshooting.  Normally turned off
 */
 #if 0
+int sqlite3PagerTrace=1;  /* True to enable tracing */
 #define sqlite3DebugPrintf printf
-#define PAGERTRACE1(X)       sqlite3DebugPrintf(X)
-#define PAGERTRACE2(X,Y)     sqlite3DebugPrintf(X,Y)
-#define PAGERTRACE3(X,Y,Z)   sqlite3DebugPrintf(X,Y,Z)
-#define PAGERTRACE4(X,Y,Z,W) sqlite3DebugPrintf(X,Y,Z,W)
-#define PAGERTRACE5(X,Y,Z,W,V) sqlite3DebugPrintf(X,Y,Z,W,V)
+#define PAGERTRACE1(X)       if( sqlite3PagerTrace ) sqlite3DebugPrintf(X)
+#define PAGERTRACE2(X,Y)     if( sqlite3PagerTrace ) sqlite3DebugPrintf(X,Y)
+#define PAGERTRACE3(X,Y,Z)   if( sqlite3PagerTrace ) sqlite3DebugPrintf(X,Y,Z)
+#define PAGERTRACE4(X,Y,Z,W) if( sqlite3PagerTrace ) sqlite3DebugPrintf(X,Y,Z,W)
+#define PAGERTRACE5(X,Y,Z,W,V) if( sqlite3PagerTrace ) sqlite3DebugPrintf(X,Y,Z,W,V)
 #else
 #define PAGERTRACE1(X)
 #define PAGERTRACE2(X,Y)
@@ -1178,7 +1179,7 @@ static int pager_playback_one_page(
   if( rc!=SQLITE_OK ) return rc;
   rc = sqlite3OsRead(jfd, aData, pPager->pageSize, offset+4);
   if( rc!=SQLITE_OK ) return rc;
-  pPager->journalOff += pPager->pageSize + 4;
+  pPager->journalOff += pPager->pageSize + 4 + (isMainJrnl?4:0);
 
   /* Sanity checking on the page.  This is more important that I originally
   ** thought.  If a power failure occurs while the journal is being written,
@@ -1194,7 +1195,6 @@ static int pager_playback_one_page(
   if( isMainJrnl ){
     rc = read32bits(jfd, offset+pPager->pageSize+4, &cksum);
     if( rc ) return rc;
-    pPager->journalOff += 4;
     if( !isSavepnt && pager_cksum(pPager, aData)!=cksum ){
       return SQLITE_DONE;
     }
@@ -1251,6 +1251,29 @@ static int pager_playback_one_page(
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
+  }else if( !isMainJrnl && pPg==0 ){
+    /* If this is a rollback of a savepoint and data was not written to
+    ** the database and the page is not in-memory, there is a potential
+    ** problem. When the page is next fetched by the b-tree layer, it 
+    ** will be read from the database file, which may or may not be 
+    ** current. 
+    **
+    ** There are a couple of different ways this can happen. All are quite
+    ** obscure. When not running in synchronous mode, this can only happen 
+    ** if the page is on the free-list at the start of the transaction, then
+    ** populated, then moved using sqlite3PagerMovepage().
+    **
+    ** The solution is to add an in-memory page to the cache containing
+    ** the data just read from the sub-journal. Mark the page as dirty 
+    ** and if the pager requires a journal-sync, then mark the page as 
+    ** requiring a journal-sync before it is written.
+    */
+    assert( isSavepnt );
+    if( (rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1)) ){
+      return rc;
+    }
+    pPg->flags &= ~PGHDR_NEED_READ;
+    sqlite3PcacheMakeDirty(pPg);
   }
   if( pPg ){
     /* No page should ever be explicitly rolled back that is in use, except
@@ -1662,7 +1685,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   i64 szJ;                 /* Size of the full journal */
   i64 iHdrOff;             /* End of first segment of main-journal records */
   Pgno ii;                 /* Loop counter */
-  int rc;                  /* Return code */
+  int rc = SQLITE_OK;      /* Return code */
   Bitvec *pDone = 0;       /* Bitvec to ensure pages played back only once */
 
   /* Allocate a bitvec to use to store the set of pages rolled back */
@@ -1676,7 +1699,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   /* Truncate the database back to the size it was before the 
   ** savepoint being reverted was opened.
   */
-  rc = pager_truncate(pPager, pSavepoint?pSavepoint->nOrig:pPager->dbOrigSize);
+  pPager->dbSize = pSavepoint?pSavepoint->nOrig:pPager->dbOrigSize;
   assert( pPager->state>=PAGER_SHARED );
 
   /* Now roll back all main journal file records that occur after byte
@@ -2350,6 +2373,13 @@ int sqlite3PagerClose(Pager *pPager){
   pPager->exclusiveMode = 0;
   pager_reset(pPager);
   if( !MEMDB ){
+    /* Set Pager.journalHdr to -1 for the benefit of the pager_playback() 
+    ** call which may be made from within pagerUnlockAndRollback(). If it
+    ** is not -1, then the unsynced portion of an open journal file may
+    ** be played back into the database. If a power failure occurs while
+    ** this is happening, the database may become corrupt.
+    */
+    pPager->journalHdr = -1;
     pagerUnlockAndRollback(pPager);
   }
   enable_simulated_io_errors();
@@ -2557,6 +2587,34 @@ static int pager_write_pagelist(PgHdr *pList){
 }
 
 /*
+** Add the page to the sub-journal. It is the callers responsibility to
+** use subjRequiresPage() to check that it is really required before 
+** calling this function.
+*/
+static int subjournalPage(PgHdr *pPg){
+  int rc;
+  void *pData = pPg->pData;
+  Pager *pPager = pPg->pPager;
+  i64 offset = pPager->stmtNRec*(4+pPager->pageSize);
+  char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
+
+  PAGERTRACE3("STMT-JOURNAL %d page %d @ %d\n", PAGERID(pPager), pPg->pgno);
+
+  assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
+  rc = write32bits(pPager->sjfd, offset, pPg->pgno);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
+  }
+  if( rc==SQLITE_OK ){
+    pPager->stmtNRec++;
+    assert( pPager->nSavepoint>0 );
+    rc = addToSavepointBitvecs(pPager, pPg->pgno);
+  }
+  return rc;
+}
+
+
+/*
 ** This function is called by the pcache layer when it has reached some
 ** soft memory limit. The argument is a pointer to a purgeable Pager 
 ** object. This function attempts to make a single dirty page that has no
@@ -2585,7 +2643,12 @@ static int pagerStress(void *p, PgHdr *pPg){
     }
     if( rc==SQLITE_OK ){
       pPg->pDirty = 0;
-      rc = pager_write_pagelist(pPg);
+      if( pPg->pgno>pPager->dbSize && subjRequiresPage(pPg) ){
+        rc = subjournalPage(pPg);
+      }
+      if( rc==SQLITE_OK ){
+        rc = pager_write_pagelist(pPg);
+      }
     }
     if( rc!=SQLITE_OK ){
       pager_error(pPager, rc);
@@ -2593,6 +2656,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   }
 
   if( rc==SQLITE_OK ){
+    PAGERTRACE3("STRESS %d page %d\n", PAGERID(pPager), pPg->pgno);
     sqlite3PcacheMakeClean(pPg);
   }
   return rc;
@@ -3387,24 +3451,7 @@ static int pager_write(PgHdr *pPg){
     ** in that it omits the checksums and the header.
     */
     if( subjRequiresPage(pPg) ){
-      i64 offset = pPager->stmtNRec*(4+pPager->pageSize);
-      char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
-      assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
-      rc = write32bits(pPager->sjfd, offset, pPg->pgno);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
-      }
-      PAGERTRACE3("STMT-JOURNAL %d page %d @ %d\n", PAGERID(pPager), pPg->pgno);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      pPager->stmtNRec++;
-      assert( pPager->nSavepoint>0 );
-      rc = addToSavepointBitvecs(pPager, pPg->pgno);
-      if( rc!=SQLITE_OK ){
-        assert( rc==SQLITE_NOMEM );
-        return rc;
-      }
+      rc = subjournalPage(pPg);
     }
   }
 

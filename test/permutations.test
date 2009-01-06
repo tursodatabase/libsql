@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.42 2009/01/03 15:06:38 danielk1977 Exp $
+# $Id: permutations.test,v 1.43 2009/01/06 13:40:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -712,7 +712,9 @@ run_tests "journaltest" -description {
   set ISQUICK 1
   catch {db close}
   register_jt_vfs -default ""
+  #sqlite3_instvfs binarylog -default binarylog ostrace.bin
 } -shutdown {
+  #sqlite3_instvfs destroy binarylog
   unregister_jt_vfs
 } -include [concat $::ALLTESTS savepoint6.test
 ] -exclude {

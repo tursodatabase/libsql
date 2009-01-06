@@ -9,19 +9,22 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint6.test,v 1.1 2009/01/03 10:41:29 danielk1977 Exp $
+# $Id: savepoint6.test,v 1.2 2009/01/06 13:40:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test savepoint6-1.1 {
-  execsql {
+proc sql {zSql} {
+  uplevel db eval [list $zSql]
+  #puts stderr "$zSql ;"
+}
+
+set DATABASE_SCHEMA {
     PRAGMA auto_vacuum = incremental;
     CREATE TABLE t1(x, y);
     CREATE UNIQUE INDEX i1 ON t1(x);
     CREATE INDEX i2 ON t1(y);
-  }
-} {}
+}
 
 #--------------------------------------------------------------------------
 # In memory database state.
@@ -60,12 +63,12 @@ proc x_to_y {x} {
 #   delete_rows XVALUES
 #
 proc savepoint {zName} {
-  catch { db eval "SAVEPOINT $zName" }
+  catch { sql "SAVEPOINT $zName" }
   lappend ::lSavepoint [list $zName [array get ::aEntry]]
 }
 
 proc rollback {zName} {
-  catch { db eval "ROLLBACK TO $zName" }
+  catch { sql "ROLLBACK TO $zName" }
   for {set i [expr {[llength $::lSavepoint]-1}]} {$i>=0} {incr i -1} {
     set zSavepoint [lindex $::lSavepoint $i 0]
     if {$zSavepoint eq $zName} {
@@ -82,13 +85,17 @@ proc rollback {zName} {
 }
 
 proc release {zName} {
-  catch { db eval "RELEASE $zName" }
+  catch { sql "RELEASE $zName" }
   for {set i [expr {[llength $::lSavepoint]-1}]} {$i>=0} {incr i -1} {
     set zSavepoint [lindex $::lSavepoint $i 0]
     if {$zSavepoint eq $zName} {
       set ::lSavepoint [lreplace $::lSavepoint $i end]
       break
     }
+  }
+
+  if {[llength $::lSavepoint] == 0} {
+    #puts stderr "-- End of transaction!!!!!!!!!!!!!"
   }
 }
 
@@ -97,7 +104,7 @@ proc insert_rows {lX} {
     set y [x_to_y $x]
 
     # Update database [db]
-    db eval {INSERT OR REPLACE INTO t1 VALUES($x, $y)}
+    sql "INSERT OR REPLACE INTO t1 VALUES($x, '$y')"
 
     # Update the Tcl database.
     set ::aEntry($x) $y
@@ -107,7 +114,7 @@ proc insert_rows {lX} {
 proc delete_rows {lX} {
   foreach x $lX {
     # Update database [db]
-    db eval {DELETE FROM t1 WHERE x = $x}
+    sql "DELETE FROM t1 WHERE x = $x"
 
     # Update the Tcl database.
     unset -nocomplain ::aEntry($x)
@@ -153,9 +160,6 @@ proc random_integers {nRes nRange} {
 } 
 #-------------------------------------------------------------------------
 
-db eval { PRAGMA cache_size = 10 }
-expr srand(0)
-
 proc database_op {} {
   set i [expr int(rand()*2)] 
   if {$i==0} {
@@ -165,7 +169,7 @@ proc database_op {} {
     delete_rows [random_integers 100 1000]
     set i [expr int(rand()*3)] 
     if {$i==0} {
-      db eval {PRAGMA incremental_vacuum}
+      sql {PRAGMA incremental_vacuum}
     }
   }
 }
@@ -177,27 +181,82 @@ proc savepoint_op {} {
   set C [lindex $cmds [expr int(rand()*6)]]
   set N [lindex $names [expr int(rand()*5)]]
 
+  #puts stderr "   $C $N ;  "
+  #flush stderr
+
   $C $N
   return ok
 }
 
-do_test savepoint6-2.1 {
+expr srand(0)
+
+############################################################################
+############################################################################
+# Start of test cases.
+
+do_test savepoint6-1.1 {
+  sql $DATABASE_SCHEMA
+} {}
+do_test savepoint6-1.2 {
+  insert_rows {
+    497 166 230 355 779 588 394 317 290 475 362 193 805 851 564 
+    763 44 930 389 819 765 760 966 280 538 414 500 18 25 287 320 
+    30 382 751 87 283 981 429 630 974 421 270 810 405 
+  }
+
   savepoint one
-  insert_rows [random_integers 100 1000]
+  insert_rows 858
+  delete_rows 930
+  savepoint two
+    execsql {PRAGMA incremental_vacuum}
+    savepoint three
+      insert_rows 144
+     rollback three
+    rollback two
   release one
-  checkdb
-} {ok}
 
-for {set i 0} {$i < 1000} {incr i} {
-  do_test savepoint6-3.$i.1 {
-    savepoint_op
-  } {ok}
+  execsql {SELECT count(*) FROM t1}
+} {44}
 
-  do_test savepoint6-3.$i.2 {
-    database_op
-    database_op
+foreach zSetup [list {
+  set testname normal
+  sqlite3 db test.db
+} {
+  set testname tempdb
+  sqlite3 db ""
+} {
+  set testname smallcache
+  sqlite3 db test.db
+  sql { PRAGMA cache_size = 10 }
+}] {
+
+  unset -nocomplain ::lSavepoint
+  unset -nocomplain ::aEntry
+
+  db close
+  file delete -force test.db
+  eval $zSetup
+  sql $DATABASE_SCHEMA
+
+  do_test savepoint6-$testname.setup {
+    savepoint one
+    insert_rows [random_integers 100 1000]
+    release one
     checkdb
   } {ok}
+  
+  for {set i 0} {$i < 1000} {incr i} {
+    do_test savepoint6-$testname.$i.1 {
+      savepoint_op
+      checkdb
+    } {ok}
+  
+    do_test savepoint6-$testname.$i.2 {
+      database_op
+      database_op
+      checkdb
+    } {ok}
+  }
 }
 
 unset -nocomplain ::lSavepoint

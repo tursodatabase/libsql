@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.7 2009/01/03 15:06:38 danielk1977 Exp $
+# $Id: savepoint.test,v 1.8 2009/01/06 13:40:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -466,6 +466,35 @@ do_test savepoint-7.4.1 {
 
   execsql { PRAGMA integrity_check }
 } {ok}
+
+do_test savepoint-7.5.1 {
+  execsql {
+    PRAGMA incremental_vacuum;
+    CREATE TABLE t5(x, y);
+    INSERT INTO t5 VALUES(1, randstr(1000,1000));
+    INSERT INTO t5 VALUES(2, randstr(1000,1000));
+    INSERT INTO t5 VALUES(3, randstr(1000,1000));
+
+    BEGIN;
+      INSERT INTO t5 VALUES(4, randstr(1000,1000));
+      INSERT INTO t5 VALUES(5, randstr(1000,1000));
+      DELETE FROM t5 WHERE x=1 OR x=2;
+      SAVEPOINT one;
+        PRAGMA incremental_vacuum;
+        SAVEPOINT two;
+          INSERT INTO t5 VALUES(1, randstr(1000,1000));
+          INSERT INTO t5 VALUES(2, randstr(1000,1000));
+        ROLLBACK TO two;
+      ROLLBACK TO one;
+    COMMIT;
+    PRAGMA integrity_check;
+  }
+} {ok}
+do_test savepoint-7.5.2 {
+  execsql {
+    DROP TABLE t5;
+  }
+} {}
 
 # Test oddly named and quoted savepoints.
 #
