@@ -19,7 +19,7 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.17 2009/01/06 00:08:02 drh Exp $
+# $Id: fuzz.test,v 1.18 2009/01/06 00:11:26 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -265,7 +265,6 @@ do_test fuzz-1.17 {
 } {0 {hardware 1 0}}
 
 do_test fuzz-1.18 {
-breakpoint
   catchsql {
      SELECT -2147483649 << upper('fault' NOT IN (
         SELECT ALL (
