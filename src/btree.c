@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.555 2009/01/02 21:08:09 drh Exp $
+** $Id: btree.c,v 1.556 2009/01/06 18:21:09 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7290,76 +7290,70 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
   ** bytes and 9 pages, then the file needs to be truncated to 9KB.
   */
   if( rc==SQLITE_OK ){
-    if( nFromPageSize!=nToPageSize ){
-      sqlite3_file *pFile = sqlite3PagerFile(pBtTo->pPager);
-      i64 iSize = (i64)nFromPageSize * (i64)nFromPage;
-      i64 iNow = (i64)((nToPage>nNewPage)?nToPage:nNewPage) * (i64)nToPageSize; 
-      i64 iPending = ((i64)PENDING_BYTE_PAGE(pBtTo)-1) *(i64)nToPageSize;
-  
-      assert( iSize<=iNow );
-  
-      /* Commit phase one syncs the journal file associated with pTo 
-      ** containing the original data. It does not sync the database file
-      ** itself. After doing this it is safe to use OsTruncate() and other
-      ** file APIs on the database file directly.
-      */
-      pBtTo->db = pTo->db;
-      rc = sqlite3PagerCommitPhaseOne(pBtTo->pPager, 0, 1);
-      if( iSize<iNow && rc==SQLITE_OK ){
-        rc = sqlite3OsTruncate(pFile, iSize);
-      }
-  
-      /* The loop that copied data from database pFrom to pTo did not
-      ** populate the locking page of database pTo. If the page-size of
-      ** pFrom is smaller than that of pTo, this means some data will
-      ** not have been copied. 
-      **
-      ** This block copies the missing data from database pFrom to pTo 
-      ** using file APIs. This is safe because at this point we know that
-      ** all of the original data from pTo has been synced into the 
-      ** journal file. At this point it would be safe to do anything at
-      ** all to the database file except truncate it to zero bytes.
-      */
-      if( rc==SQLITE_OK && nFromPageSize<nToPageSize && iSize>iPending){
-        i64 iOff;
-        for(
-          iOff=iPending; 
-          rc==SQLITE_OK && iOff<(iPending+nToPageSize); 
-          iOff += nFromPageSize
-        ){
-          DbPage *pFromPage = 0;
-          Pgno iFrom = (Pgno)(iOff/nFromPageSize)+1;
-  
-          if( iFrom==PENDING_BYTE_PAGE(pBtFrom) || iFrom>nFromPage ){
-            continue;
-          }
-  
-          rc = sqlite3PagerGet(pBtFrom->pPager, iFrom, &pFromPage);
-          if( rc==SQLITE_OK ){
-            char *zFrom = sqlite3PagerGetData(pFromPage);
-            rc = sqlite3OsWrite(pFile, zFrom, nFromPageSize, iOff);
-            sqlite3PagerUnref(pFromPage);
-          }
+    sqlite3_file *pFile = sqlite3PagerFile(pBtTo->pPager);
+    i64 iSize = (i64)nFromPageSize * (i64)nFromPage;
+    i64 iNow = (i64)((nToPage>nNewPage)?nToPage:nNewPage) * (i64)nToPageSize; 
+    i64 iPending = ((i64)PENDING_BYTE_PAGE(pBtTo)-1) *(i64)nToPageSize;
+
+    assert( iSize<=iNow );
+
+    /* Commit phase one syncs the journal file associated with pTo 
+    ** containing the original data. It does not sync the database file
+    ** itself. After doing this it is safe to use OsTruncate() and other
+    ** file APIs on the database file directly.
+    */
+    pBtTo->db = pTo->db;
+    rc = sqlite3PagerCommitPhaseOne(pBtTo->pPager, 0, 1);
+    if( iSize<iNow && rc==SQLITE_OK ){
+      rc = sqlite3OsTruncate(pFile, iSize);
+    }
+
+    /* The loop that copied data from database pFrom to pTo did not
+    ** populate the locking page of database pTo. If the page-size of
+    ** pFrom is smaller than that of pTo, this means some data will
+    ** not have been copied. 
+    **
+    ** This block copies the missing data from database pFrom to pTo 
+    ** using file APIs. This is safe because at this point we know that
+    ** all of the original data from pTo has been synced into the 
+    ** journal file. At this point it would be safe to do anything at
+    ** all to the database file except truncate it to zero bytes.
+    */
+    if( rc==SQLITE_OK && nFromPageSize<nToPageSize && iSize>iPending){
+      i64 iOff;
+      for(
+        iOff=iPending; 
+        rc==SQLITE_OK && iOff<(iPending+nToPageSize); 
+        iOff += nFromPageSize
+      ){
+        DbPage *pFromPage = 0;
+        Pgno iFrom = (Pgno)(iOff/nFromPageSize)+1;
+
+        if( iFrom==PENDING_BYTE_PAGE(pBtFrom) || iFrom>nFromPage ){
+          continue;
+        }
+
+        rc = sqlite3PagerGet(pBtFrom->pPager, iFrom, &pFromPage);
+        if( rc==SQLITE_OK ){
+          char *zFrom = sqlite3PagerGetData(pFromPage);
+          rc = sqlite3OsWrite(pFile, zFrom, nFromPageSize, iOff);
+          sqlite3PagerUnref(pFromPage);
         }
       }
-  
-      /* Sync the database file */
-      if( rc==SQLITE_OK ){
-        rc = sqlite3PagerSync(pBtTo->pPager);
-      }
-    }else{
-      rc = sqlite3PagerTruncate(pBtTo->pPager, nNewPage);
-    }
-    if( rc==SQLITE_OK ){
-      pBtTo->pageSizeFixed = 0;
     }
   }
 
-  if( rc ){
+  /* Sync the database file */
+  if( rc==SQLITE_OK ){
+    rc = sqlite3PagerSync(pBtTo->pPager);
+  }
+  if( rc==SQLITE_OK ){
+    pBtTo->pageSizeFixed = 0;
+  }else{
     sqlite3BtreeRollback(pTo);
   }
 
-  return rc;  
+  return rc;
 }
 int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   int rc;
