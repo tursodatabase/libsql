@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.355 2008/12/30 17:55:00 drh Exp $
+** $Id: where.c,v 1.356 2009/01/06 00:08:02 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3251,8 +3251,8 @@ WhereInfo *sqlite3WhereBegin(
   notReady = ~(Bitmask)0;
   for(i=0; i<pTabList->nSrc; i++){
     notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
+    pWInfo->iContinue = pWInfo->a[i].addrCont;
   }
-  pWInfo->iContinue = pWInfo->a[i-1].addrCont;
 
 #ifdef SQLITE_TEST  /* For testing and debugging use only */
   /* Record in the query plan information about the current table

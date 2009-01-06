@@ -1,5 +1,5 @@
-C The\sfix\sin\s(6111)\swas\snot\squite\sright.\s\sThis\sversion\sworks\sbetter.\s(CVS\s6113)
-D 2009-01-05T22:30:39
+C Fix\sa\sproblem\sin\sthe\sWHERE\sclause\sgenerator\swhen\sthe\sFROM\sclause\sis\sempty.\s(CVS\s6114)
+D 2009-01-06T00:08:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -207,7 +207,7 @@ F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c 19f94b504d3da44b31aef200fa6c8e07862de2e8
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c b25a7ecf75cfdd7de430934f62f9e17083b9b806
+F src/where.c 0b2eb969d1f0b7baf02f0a789243ab1eb0d2a541
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -372,7 +372,7 @@ F test/fts3expr.test 000f05df771e203187ceac49ad21c303c720b783
 F test/fts3expr2.test 8501de895a4c0631e7226c9bac055cd49c9f6646
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test a50f0a4b69ac251debe1dce3ba29da7476dc8c52
-F test/fuzz.test d61b2331e96377e841933f6f7e09c19b98507358
+F test/fuzz.test 15fe97303e585319fde9e55581bdc33b02c26174
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e02323b3629545a3e7e7db0d4edc76807ae903aa
-R 6a1cebd9a416c70b164dcd586784c60c
+P 5f80140a2df48fd43a7cbc0990de0205004541b0
+R 26df553629ff2ebc58b780c610fc66ab
 U drh
-Z c2d25fe5d548e72eabbcd21f487ef164
+Z e5f1f9d9907d4faf9271e64fc3434f17
