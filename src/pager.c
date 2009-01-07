@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.534 2009/01/06 15:58:57 drh Exp $
+** @(#) $Id: pager.c,v 1.535 2009/01/07 02:03:35 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -734,8 +734,9 @@ static int writeJournalHdr(Pager *pPager){
 /*
 ** The journal file must be open when this is called. A journal header file
 ** (JOURNAL_HDR_SZ bytes) is read from the current location in the journal
-** file. See comments above function writeJournalHdr() for a description of
-** the journal header format.
+** file. The current location in the journal file is given by
+** pPager->journalOff.  See comments above function writeJournalHdr() for
+** a description of the journal header format.
 **
 ** If the header is read successfully, *nRec is set to the number of
 ** page records following this header and *dbSize is set to the size of the
@@ -744,7 +745,7 @@ static int writeJournalHdr(Pager *pPager){
 ** in this case.
 **
 ** If the journal header file appears to be corrupted, SQLITE_DONE is
-** returned and *nRec and *dbSize are not set.  If JOURNAL_HDR_SZ bytes
+** returned and *nRec and *dbSize are undefined.  If JOURNAL_HDR_SZ bytes
 ** cannot be read from the journal file an error code is returned.
 */
 static int readJournalHdr(
@@ -1124,17 +1125,25 @@ static u32 pager_cksum(Pager *pPager, const u8 *aData){
 }
 
 /*
-** Read a single page from the journal file opened on file descriptor
-** jfd.  Playback this one page.
+** Read a single page from either the journal file (if isMainJrnl==1) or
+** from the sub-journal (if isMainJrnl==0) and playback that page.
+** The page begins at offset *pOffset into the file.  The  *pOffset
+** value is increased to the start of the next page in the journal.
 **
 ** The isMainJrnl flag is true if this is the main rollback journal and
 ** false for the statement journal.  The main rollback journal uses
 ** checksums - the statement journal does not.
+**
+** If pDone is not NULL, then it is a record of pages that have already
+** been played back.  If the page at *pOffset has already been played back
+** (if the corresponding pDone bit is set) then skip the playback.
+** Make sure the pDone bit corresponding to the *pOffset page is set
+** prior to returning.
 */
 static int pager_playback_one_page(
   Pager *pPager,                /* The pager being played back */
   int isMainJrnl,               /* 1 -> main journal. 0 -> sub-journal. */
-  i64 offset,                   /* Offset of record to playback */
+  i64 *pOffset,                 /* Offset of record to playback */
   int isSavepnt,                /* True for a savepoint rollback */
   Bitvec *pDone                 /* Bitvec of pages already played back */
 ){
@@ -1142,19 +1151,24 @@ static int pager_playback_one_page(
   PgHdr *pPg;                   /* An existing page in the cache */
   Pgno pgno;                    /* The page number of a page in journal */
   u32 cksum;                    /* Checksum used for sanity checking */
-  u8 *aData = (u8 *)pPager->pTmpSpace;   /* Temp storage for a page */
-  sqlite3_file *jfd = (isMainJrnl ? pPager->jfd : pPager->sjfd);
+  u8 *aData;                    /* Temporary storage for the page */
+  sqlite3_file *jfd;            /* The file descriptor for the journal file */
 
-  /* The temp storage must be allocated at this point */
-  assert( aData );
-  assert( isMainJrnl || pDone );
-  assert( isSavepnt || pDone==0 );
+  assert( (isMainJrnl&~1)==0 );      /* isMainJrnl is 0 or 1 */
+  assert( (isSavepnt&~1)==0 );       /* isSavepnt is 0 or 1 */
+  assert( isMainJrnl || pDone );     /* pDone always used on sub-journals */
+  assert( isSavepnt || pDone==0 );   /* pDone never used on non-savepoint */
 
-  rc = read32bits(jfd, offset, &pgno);
+  aData = (u8*)pPager->pTmpSpace;
+  assert( aData );         /* Temp storage must have already been allocated */
+
+  jfd = isMainJrnl ? pPager->jfd : pPager->sjfd;
+
+  rc = read32bits(jfd, *pOffset, &pgno);
   if( rc!=SQLITE_OK ) return rc;
-  rc = sqlite3OsRead(jfd, aData, pPager->pageSize, offset+4);
+  rc = sqlite3OsRead(jfd, aData, pPager->pageSize, (*pOffset)+4);
   if( rc!=SQLITE_OK ) return rc;
-  pPager->journalOff += pPager->pageSize + 4 + (isMainJrnl?4:0);
+  *pOffset += pPager->pageSize + 4 + isMainJrnl*4;
 
   /* Sanity checking on the page.  This is more important that I originally
   ** thought.  If a power failure occurs while the journal is being written,
@@ -1168,7 +1182,7 @@ static int pager_playback_one_page(
     return SQLITE_OK;
   }
   if( isMainJrnl ){
-    rc = read32bits(jfd, offset+pPager->pageSize+4, &cksum);
+    rc = read32bits(jfd, (*pOffset)-4, &cksum);
     if( rc ) return rc;
     if( !isSavepnt && pager_cksum(pPager, aData)!=cksum ){
       return SQLITE_DONE;
@@ -1299,6 +1313,46 @@ static int pager_playback_one_page(
   }
   return rc;
 }
+
+#if /* !defined(NDEBUG) || */ defined(SQLITE_COVERAGE_TEST)
+/*
+** This routine looks ahead into the main journal file and determines
+** whether or not the next record (the record that begins at file
+** offset pPager->journalOff) is a well-formed page record consisting
+** of a valid page number, pPage->pageSize bytes of content, followed
+** by a valid checksum.
+**
+** The pager never needs to know this in order to do its job.   This
+** routine is only used from with assert() and testcase() macros.
+*/
+static int pagerNextJournalPageIsValid(Pager *pPager){
+  Pgno pgno;           /* The page number of the page */
+  u32 cksum;           /* The page checksum */
+  int rc;              /* Return code from read operations */
+  sqlite3_file *fd;    /* The file descriptor from which we are reading */
+  u8 *aData;           /* Content of the page */
+
+  /* Read the page number header */
+  fd = pPager->jfd;
+  rc = read32bits(fd, pPager->journalOff, &pgno);
+  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
+  if( pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){ return 0; }         /*NO_TEST*/
+  if( pgno>(Pgno)pPager->dbSize ){ return 0; }                      /*NO_TEST*/
+
+  /* Read the checksum */
+  rc = read32bits(fd, pPager->journalOff+pPager->pageSize+4, &cksum);
+  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
+
+  /* Read the data and verify the checksum */
+  aData = (u8*)pPager->pTmpSpace;
+  rc = sqlite3OsRead(fd, aData, pPager->pageSize, pPager->journalOff+4);
+  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
+  if( pager_cksum(pPager, aData)!=cksum ){ return 0; }              /*NO_TEST*/
+
+  /* Reach this point only if the page is valid */
+  return 1;
+}
+#endif /* !defined(NDEBUG) || defined(SQLITE_COVERAGE_TEST) */
 
 /*
 ** Parameter zMaster is the name of a master journal file. A single journal
@@ -1589,7 +1643,18 @@ static int pager_playback(Pager *pPager, int isHot){
     ** size of the file.
     **
     ** The third term of the test was added to fix ticket #2565.
+    ** When rolling back a hot journal, nRec==0 always means that the next
+    ** chunk of the journal contains zero pages to be rolled back.  But
+    ** when doing a ROLLBACK and the nRec==0 chunk is the last chunk in
+    ** the journal, it means that the journal might contain additional
+    ** pages that need to be rolled back and that the number of pages 
+    ** should be computed based on the journal file size.  
     */
+    testcase( nRec==0 && !isHot
+         && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
+         && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
+         && pagerNextJournalPageIsValid(pPager)
+    );
     if( nRec==0 && !isHot &&
         pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
       nRec = (int)((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager));
@@ -1608,7 +1673,7 @@ static int pager_playback(Pager *pPager, int isHot){
     /* Copy original pages out of the journal and back into the database file.
     */
     for(u=0; u<nRec; u++){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 0, 0);
+      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 0, 0);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){
           rc = SQLITE_OK;
@@ -1652,10 +1717,14 @@ end_playback:
 }
 
 /*
-** Playback a savepoint.
+** Playback savepoint pSavepoint.  Or, if pSavepoint==NULL, then playback
+** the entire master journal file.
+**
+** The case pSavepoint==NULL occurs when a ROLLBACK TO command is invoked
+** on a SAVEPOINT that is a transaction savepoint.
 */
 static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
-  i64 szJ;                 /* Size of the full journal */
+  i64 szJ;                 /* Effective size of the main journal */
   i64 iHdrOff;             /* End of first segment of main-journal records */
   Pgno ii;                 /* Loop counter */
   int rc = SQLITE_OK;      /* Return code */
@@ -1672,46 +1741,76 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   /* Truncate the database back to the size it was before the 
   ** savepoint being reverted was opened.
   */
-  pPager->dbSize = pSavepoint?pSavepoint->nOrig:pPager->dbOrigSize;
+  pPager->dbSize = pSavepoint ? pSavepoint->nOrig : pPager->dbOrigSize;
   assert( pPager->state>=PAGER_SHARED );
 
-  /* Now roll back all main journal file records that occur after byte
-  ** byte offset PagerSavepoint.iOffset that have a page number less than
-  ** or equal to PagerSavepoint.nOrig. As each record is played back,
-  ** the corresponding bit in bitvec PagerSavepoint.pInSavepoint is 
-  ** cleared.
+  /* Use pPager->journalOff as the effective size of the main rollback
+  ** journal.  The actual file might be larger than this in
+  ** PAGER_JOURNALMODE_TRUNCATE or PAGER_JOURNALMODE_PERSIST.  But anything
+  ** past pPager->journalOff is off-limits to us.
   */
   szJ = pPager->journalOff;
+
+  /* Begin by rolling back records from the main journal starting at
+  ** PagerSavepoint.iOffset and continuing to the next journal header.
+  ** There might be records in the main journal that have a page number
+  ** greater than the current database size (pPager->dbSize) but those
+  ** will be skipped automatically.  Pages are added to pDone as they
+  ** are played back.
+  */
   if( pSavepoint ){
     iHdrOff = pSavepoint->iHdrOffset ? pSavepoint->iHdrOffset : szJ;
     pPager->journalOff = pSavepoint->iOffset;
     while( rc==SQLITE_OK && pPager->journalOff<iHdrOff ){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 1, pDone);
+      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }else{
     pPager->journalOff = 0;
   }
+
+  /* Continue rolling back records out of the main journal starting at
+  ** the first journal header seen and continuing until the effective end
+  ** of the main journal file.  Continue to skip out-of-range pages and
+  ** continue adding pages rolled back to pDone.
+  */
   while( rc==SQLITE_OK && pPager->journalOff<szJ ){
     u32 nJRec = 0;     /* Number of Journal Records */
     u32 dummy;
     rc = readJournalHdr(pPager, szJ, &nJRec, &dummy);
     assert( rc!=SQLITE_DONE );
-    if( nJRec==0 ){
-      nJRec = (szJ - pPager->journalOff) / (pPager->pageSize+8);
+
+    /*
+    ** The "pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff"
+    ** test is related to ticket #2565.  See the discussion in the
+    ** pager_playback() function for additional information.
+    */
+    testcase( nJRec==0
+         && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
+         && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
+         && pagerNextJournalPageIsValid(pPager)
+    );
+    if( nJRec==0 
+     && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff
+    ){
+      nJRec = (szJ - pPager->journalOff)/JOURNAL_PG_SZ(pPager);
     }
     for(ii=0; rc==SQLITE_OK && ii<nJRec && pPager->journalOff<szJ; ii++){
-      rc = pager_playback_one_page(pPager, 1, pPager->journalOff, 1, pDone);
+      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }
   assert( rc!=SQLITE_OK || pPager->journalOff==szJ );
 
-  /* Now roll back pages from the sub-journal. */
+  /* Finally,  rollback pages from the sub-journal.  Page that were
+  ** previously rolled back out of the main journal (and are hence in pDone)
+  ** will be skipped.  Out-of-range pages are also skipped.
+  */
   if( pSavepoint ){
+    i64 offset = pSavepoint->iSubRec*(4+pPager->pageSize);
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK&&ii<(u32)pPager->stmtNRec; ii++){
-      i64 offset = ii*(4+pPager->pageSize);
-      rc = pager_playback_one_page(pPager, 0, offset, 1, pDone);
+      assert( offset == ii*(4+pPager->pageSize) );
+      rc = pager_playback_one_page(pPager, 0, &offset, 1, pDone);
       assert( rc!=SQLITE_DONE );
     }
   }
