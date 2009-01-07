@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.537 2009/01/07 10:52:56 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.538 2009/01/07 15:18:21 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1086,6 +1086,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   pPager->setMaster = 0;
   pPager->needSync = 0;
   /* lruListSetFirstSynced(pPager); */
+  sqlite3PcacheTruncate(pPager->pPCache, pPager->dbSize);
   if( !MEMDB ){
     pPager->dbSizeValid = 0;
   }
@@ -1462,10 +1463,11 @@ delmaster_out:
 
 
 /*
-** Truncate the main file of the given pager to the number of pages
-** indicated. Also truncate the cached representation of the file.
+** If the main database file is open and an exclusive lock is held, 
+** truncate the main file of the given pager to the specified number 
+** of pages.
 **
-** Might might be the case that the file on disk is smaller than nPage.
+** It might might be the case that the file on disk is smaller than nPage.
 ** This can happen, for example, if we are in the middle of a transaction
 ** which has extended the file size and the new pages are still all held
 ** in cache, then an INSERT or UPDATE does a statement rollback.  Some
@@ -1490,10 +1492,6 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
         pPager->dbFileSize = nPage;
       }
     }
-  }
-  if( rc==SQLITE_OK ){
-    pPager->dbSize = nPage;
-    sqlite3PcacheTruncate(pPager->pPCache, nPage);
   }
   return rc;
 }
@@ -1668,6 +1666,7 @@ static int pager_playback(Pager *pPager, int isHot){
       if( rc!=SQLITE_OK ){
         goto end_playback;
       }
+      pPager->dbSize = mxPg;
     }
 
     /* Copy original pages out of the journal and back into the database file.
@@ -2349,41 +2348,12 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
   return rc;
 }
 
-/*
-** Truncate the file to the number of pages specified. 
-**
-** Unless an IO error occurs, this function is guaranteed to modify the 
-** database file itself. If an exclusive lock is not held when this function
-** is called, one is obtained before truncating the file.
-*/
-int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
-  int rc = SQLITE_OK;
-  assert( pPager->state>=PAGER_SHARED );
-
-  sqlite3PagerPagecount(pPager, 0);
-  if( pPager->errCode ){
-    rc = pPager->errCode;
-  }else if( nPage<pPager->dbFileSize ){
-    rc = syncJournal(pPager);
-    if( rc==SQLITE_OK ){
-      /* Get an exclusive lock on the database before truncating. */
-      rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-    }
-    if( rc==SQLITE_OK ){
-      rc = pager_truncate(pPager, nPage);
-    }
-  }
-
-  return rc;
-}
-
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
-** Truncate the in-memory database file image to nPage pages. Unlike
-** sqlite3PagerTruncate(), this function does not actually modify the
-** database file on disk. It just sets the internal state of the pager
-** object so that the truncation will be done when the current 
-** transaction is committed.
+** Truncate the in-memory database file image to nPage pages. This 
+** function does not actually modify the database file on disk. It 
+** just sets the internal state of the pager object so that the 
+** truncation will be done when the current transaction is committed.
 */
 void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
   assert( pPager->dbSizeValid );
@@ -2606,7 +2576,7 @@ static int pager_write_pagelist(PgHdr *pList){
     }
 
     /* If there are dirty pages in the page cache with page numbers greater
-    ** than Pager.dbSize, this means sqlite3PagerTruncate() was called to
+    ** than Pager.dbSize, this means sqlite3PagerTruncateImage() was called to
     ** make the file smaller (presumably by auto-vacuum code). Do not write
     ** any such pages to the file.
     */
@@ -3963,13 +3933,6 @@ int sqlite3PagerCommitPhaseOne(
     }
     if( rc!=SQLITE_OK ) goto sync_exit;
 
-#ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pPager->dbSize<pPager->dbFileSize ){
-      rc = sqlite3PagerTruncate(pPager, pPager->dbSize);
-      if( rc!=SQLITE_OK ) goto sync_exit;
-    }
-#endif
-
     /* Write all dirty pages to the database file */
     pPg = sqlite3PcacheDirtyList(pPager->pPCache);
     rc = pager_write_pagelist(pPg);
@@ -3986,6 +3949,12 @@ int sqlite3PagerCommitPhaseOne(
     }
     sqlite3PcacheCleanAll(pPager->pPCache);
 
+    if( pPager->dbSize<pPager->dbFileSize ){
+      assert( pPager->state>=PAGER_EXCLUSIVE );
+      rc = pager_truncate(pPager, pPager->dbSize);
+      if( rc!=SQLITE_OK ) goto sync_exit;
+    }
+
     /* Sync the database file. */
     if( !pPager->noSync && !noSync ){
       rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
@@ -3993,8 +3962,6 @@ int sqlite3PagerCommitPhaseOne(
     IOTRACE(("DBSYNC %p\n", pPager))
 
     pPager->state = PAGER_SYNCED;
-  }else if( MEMDB && pPager->dbSize<pPager->dbFileSize ){
-    rc = sqlite3PagerTruncate(pPager, pPager->dbSize);
   }
 
 sync_exit:

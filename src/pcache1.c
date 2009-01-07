@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.6 2008/12/10 18:03:46 drh Exp $
+** @(#) $Id: pcache1.c,v 1.7 2009/01/07 15:18:21 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -47,6 +47,8 @@ struct PCache1 {
   unsigned int nPage;                 /* Total number of pages in apHash */
   unsigned int nHash;                 /* Number of slots in apHash[] */
   PgHdr1 **apHash;                    /* Hash table for fast lookup by key */
+
+  unsigned int iMaxKey;               /* Largest key seen since xTruncate() */
 };
 
 /*
@@ -557,6 +559,9 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   }
 
 fetch_out:
+  if( pPage && iKey>pCache->iMaxKey ){
+    pCache->iMaxKey = iKey;
+  }
   if( createFlag==1 ) sqlite3EndBenignMalloc();
   pcache1LeaveMutex();
   return (pPage ? PGHDR1_TO_PAGE(pPage) : 0);
@@ -632,6 +637,10 @@ static void pcache1Rekey(
   pPage->pNext = pCache->apHash[h];
   pCache->apHash[h] = pPage;
 
+  if( iNew>pCache->iMaxKey ){
+    pCache->iMaxKey = iNew;
+  }
+
   pcache1LeaveMutex();
 }
 
@@ -645,7 +654,10 @@ static void pcache1Rekey(
 static void pcache1Truncate(sqlite3_pcache *p, unsigned int iLimit){
   PCache1 *pCache = (PCache1 *)p;
   pcache1EnterMutex();
-  pcache1TruncateUnsafe(pCache, iLimit);
+  if( iLimit<=pCache->iMaxKey ){
+    pcache1TruncateUnsafe(pCache, iLimit);
+    pCache->iMaxKey = iLimit-1;
+  }
   pcache1LeaveMutex();
 }
 
