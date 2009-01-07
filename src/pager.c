@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.536 2009/01/07 10:35:19 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.537 2009/01/07 10:52:56 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3185,6 +3185,15 @@ int sqlite3PagerUnref(DbPage *pPg){
   return SQLITE_OK;
 }
 
+/*
+** If the main journal file has already been opened, ensure that the
+** sub-journal file is open too. If the main journal is not open,
+** this function is a no-op.
+**
+** SQLITE_OK is returned if everything goes according to plan. An 
+** SQLITE_IOERR_XXX error code is returned if the call to 
+** sqlite3OsOpen() fails.
+*/
 static int openSubJournal(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->journalOpen && !pPager->sjfd->pMethods ){
