@@ -1,5 +1,5 @@
-C For\sarchival\spurposes,\sadd\sthe\sTCL\sscript\sthat\swas\sused\sto\sgenerate\smany\nof\sthe\stest\scases\sfor\swhere7.test.\s(CVS\s6133)
-D 2009-01-07T15:52:55
+C Change\sSQLITE_MAX_FUNCTION_ARG\sfrom\s100\sto\s127\sto\smatch\sinvariant\sH16124.\sTicket\s#3567.\s(CVS\s6134)
+D 2009-01-07T16:15:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 8279b14cc8ed403efd7b902854be97a4f6c0f613
-F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
+F src/sqliteLimit.h 651a2757ba55aeba1da167786b6a8c3404433940
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 4415e1033bd3e92b05a6a9cde911ee4de3b82df9
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 15b5b5f90c2ffa79155cdc2dbc4fb5583cb72017
-R 4dcc277c9df1693948059e5f5c701096
-U drh
-Z 514d88051bd5ba44a89485825f5030f6
+P 0e01cdc8d283acd2757d69bf6d8e36bb1f47d460
+R 54e4211df9052ebc8d3d995a8388d134
+U danielk1977
+Z 4eac09db0f2e8b929530a4bedbe56e37
