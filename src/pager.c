@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.538 2009/01/07 15:18:21 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.539 2009/01/07 15:33:46 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1315,7 +1315,7 @@ static int pager_playback_one_page(
   return rc;
 }
 
-#if /* !defined(NDEBUG) || */ defined(SQLITE_COVERAGE_TEST)
+#if !defined(NDEBUG) || defined(SQLITE_COVERAGE_TEST)
 /*
 ** This routine looks ahead into the main journal file and determines
 ** whether or not the next record (the record that begins at file
@@ -1646,12 +1646,15 @@ static int pager_playback(Pager *pPager, int isHot){
     ** when doing a ROLLBACK and the nRec==0 chunk is the last chunk in
     ** the journal, it means that the journal might contain additional
     ** pages that need to be rolled back and that the number of pages 
-    ** should be computed based on the journal file size.  
+    ** should be computed based on the journal file size.
+    **
+    ** 2009-01-07:  We think #2565 is now unreachable due to changes
+    ** in the pcache.  The assert that follows will fire if we are wrong.
     */
-    testcase( nRec==0 && !isHot
+    assert( !(nRec==0 && !isHot
          && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
          && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
-         && pagerNextJournalPageIsValid(pPager)
+         && pagerNextJournalPageIsValid(pPager))
     );
     if( nRec==0 && !isHot &&
         pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
@@ -1784,10 +1787,10 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     ** test is related to ticket #2565.  See the discussion in the
     ** pager_playback() function for additional information.
     */
-    testcase( nJRec==0
+    assert( !(nJRec==0
          && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
          && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
-         && pagerNextJournalPageIsValid(pPager)
+         && pagerNextJournalPageIsValid(pPager))
     );
     if( nJRec==0 
      && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff
@@ -3574,18 +3577,27 @@ int sqlite3PagerWrite(DbPage *pDbPage){
       }
     }
 
-    /* If the PgHdr.needSync flag is set for any of the nPage pages 
+    /* If the PGHDR_NEED_SYNC flag is set for any of the nPage pages 
     ** starting at pg1, then it needs to be set for all of them. Because
     ** writing to any of these nPage pages may damage the others, the
     ** journal file must contain sync()ed copies of all of them
     ** before any of them can be written out to the database file.
+    **
+    ** 2009-01-07:  This block of code appears to be a no-op.  I do not
+    ** believe it is possible for any page on the sector to not have
+    ** the PGHDR_NEED_SYNC flag set.  The "pPage->flags |= PGHDR_NEED_SYNC"
+    ** line below does nothing, I think.  But it does no harm to leave
+    ** this code in place until we can definitively prove this is the case.
     */
     if( needSync ){
       assert( !MEMDB && pPager->noSync==0 );
       for(ii=0; ii<nPage && needSync; ii++){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);
-        if( pPage ) pPage->flags |= PGHDR_NEED_SYNC;
-        sqlite3PagerUnref(pPage);
+        if( pPage ){
+          assert( pPage->flags & PGHDR_NEED_SYNC ); /* 2009-01-07 conjecture */
+          pPage->flags |= PGHDR_NEED_SYNC;
+          sqlite3PagerUnref(pPage);
+        }
       }
       assert(pPager->needSync);
     }
