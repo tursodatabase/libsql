@@ -1,5 +1,5 @@
-C Change\sSQLITE_MAX_FUNCTION_ARG\sfrom\s100\sto\s127\sto\smatch\sinvariant\sH16124.\sTicket\s#3567.\s(CVS\s6134)
-D 2009-01-07T16:15:43
+C Add\sa\s"synchronous\s=\soff"\svariant\sto\ssavepoint6.test.\s(CVS\s6135)
+D 2009-01-07T17:06:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -499,7 +499,7 @@ F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test 0c6c6cf208a2865301d125bf962b8f8a12f58b70
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
-F test/savepoint6.test 7d584a665cb6e4f0c24d7a8ae7f8985461c683b1
+F test/savepoint6.test e28f7d8ab8a389d4e5bd1dc08bf2c3312754cc67
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0e01cdc8d283acd2757d69bf6d8e36bb1f47d460
-R 54e4211df9052ebc8d3d995a8388d134
+P 1fe79ffd772900bdca85ec6cf072677be53cd5ff
+R 87c27604ca2a8f994ba149dc1bd570fa
 U danielk1977
-Z 4eac09db0f2e8b929530a4bedbe56e37
+Z d97d5e645b9d94f84adc7e2da92df732

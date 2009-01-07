@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint6.test,v 1.2 2009/01/06 13:40:08 danielk1977 Exp $
+# $Id: savepoint6.test,v 1.3 2009/01/07 17:06:53 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -225,6 +225,13 @@ foreach zSetup [list {
   set testname tempdb
   sqlite3 db ""
 } {
+  if {[catch {set ::permutations_test_prefix} z] == 0 && $z eq "journaltest"} {
+    continue
+  }
+  set testname nosync
+  sqlite3 db test.db
+  sql { PRAGMA synchronous = off }
+} {
   set testname smallcache
   sqlite3 db test.db
   sql { PRAGMA cache_size = 10 }
@@ -233,7 +240,7 @@ foreach zSetup [list {
   unset -nocomplain ::lSavepoint
   unset -nocomplain ::aEntry
 
-  db close
+  catch { db close }
   file delete -force test.db
   eval $zSetup
   sql $DATABASE_SCHEMA
