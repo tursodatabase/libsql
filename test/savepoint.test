@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.8 2009/01/06 13:40:08 danielk1977 Exp $
+# $Id: savepoint.test,v 1.9 2009/01/07 08:12:16 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -744,6 +744,39 @@ do_test savepoint-11.6 {
   execsql { ROLLBACK }
   file size test.db
 } {8192}
+
+#-------------------------------------------------------------------------
+# The following tests - savepoint-12.* - test the interaction of 
+# savepoints and "ON CONFLICT ROLLBACK" clauses.
+# 
+do_test savepoint-12.1 {
+  execsql {
+    CREATE TABLE t4(a PRIMARY KEY, b);
+    INSERT INTO t4 VALUES(1, 'one');
+  }
+} {}
+do_test savepoint-12.2 {
+  # The final statement of the following SQL hits a constraint when the
+  # conflict handling mode is "OR ROLLBACK" and there are a couple of
+  # open savepoints. At one point this would fail to clear the internal
+  # record of the open savepoints, resulting in an assert() failure 
+  # later on.
+  # 
+  catchsql {
+    BEGIN;
+      INSERT INTO t4 VALUES(2, 'two');
+      SAVEPOINT sp1;
+        INSERT INTO t4 VALUES(3, 'three');
+        SAVEPOINT sp2;
+          INSERT OR ROLLBACK INTO t4 VALUES(1, 'one');
+  }
+} {1 {column a is not unique}}
+do_test savepoint-12.3 {
+  sqlite3_get_autocommit db
+} {1}
+do_test savepoint-12.4 {
+  execsql { SAVEPOINT one }
+} {}
 
 finish_test
 

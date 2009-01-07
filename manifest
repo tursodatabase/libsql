@@ -1,5 +1,5 @@
-C Add\sa\sHIGHSTRESS\sparameter\sto\sthe\ssqlite3_config_alt_pcache\sdebugging\ncommand\sin\sthe\stest\sharness\s-\sto\sforce\scalling\spagerStress()\smore\nfrequently.\s(CVS\s6127)
-D 2009-01-07T03:59:47
+C Fix\ssavepoint\srelated\sbugs.\sA\srollback\scaused\sby\san\sIO\serror\sor\s"OR\sROLLBACK"\sclause\swhile\sone\sor\smore\ssavepoints\swere\sopen\swas\sleaving\sthe\ssqlite3\sstructure\sin\san\sinvalid\sstate.\s(CVS\s6128)
+D 2009-01-07T08:12:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -202,7 +202,7 @@ F src/vdbe.c 4e9b83e758a43882a29fe5cde479acb1db04f7dd
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 5530e45fc64c1572f123aca384096e1b84cf834b
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
-F src/vdbeaux.c f8bf57ba0f7ec1fc1fe3997be1cb30d08553fa5c
+F src/vdbeaux.c 7f3e92977e4a09946934bd188379f34a8f1d5d3f
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c 19f94b504d3da44b31aef200fa6c8e07862de2e8
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
@@ -493,9 +493,9 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test 7c743ac26268b042f8e16797c755644240c724e5
+F test/savepoint.test b5ce04cc17d93b73065fec81eb795c131f168b42
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
-F test/savepoint3.test 1a0b1c0f59c6ae4402bfbca7cec29d4b1b272ff0
+F test/savepoint3.test 0c6c6cf208a2865301d125bf962b8f8a12f58b70
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test 7d584a665cb6e4f0c24d7a8ae7f8985461c683b1
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 15b9dac455b3f457bb177fc4985b45957647cbec
-R e14c51ceac93b713fc890634eddc1ae9
-U drh
-Z d1d04d55d5af4665fa8ebbfc334f2f8d
+P e426860b94f5b47e3a265549dbac64a421cae425
+R eefa8be568f0cc6f54700fdfc1171597
+U danielk1977
+Z 6c956af5da49349b5b9902fd748769e9

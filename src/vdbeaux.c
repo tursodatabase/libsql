@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.429 2009/01/03 14:04:39 drh Exp $
+** $Id: vdbeaux.c,v 1.430 2009/01/07 08:12:16 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -1583,6 +1583,7 @@ int sqlite3VdbeHalt(Vdbe *p){
           */
           invalidateCursorsOnModifiedBtrees(db);
           sqlite3RollbackAll(db);
+          sqlite3CloseSavepoints(db);
           db->autoCommit = 1;
         }
       }
@@ -1627,6 +1628,7 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else{
         invalidateCursorsOnModifiedBtrees(db);
         sqlite3RollbackAll(db);
+        sqlite3CloseSavepoints(db);
         db->autoCommit = 1;
       }
     }
