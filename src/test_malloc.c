@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.51 2008/11/19 01:20:26 drh Exp $
+** $Id: test_malloc.c,v 1.52 2009/01/07 03:59:47 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -962,22 +962,32 @@ static int test_alt_pcache(
   Tcl_Obj *CONST objv[]
 ){
   int installFlag;
-  int discardChance;
-  int prngSeed;
-  extern void installTestPCache(int,unsigned,unsigned);
-  if( objc!=4 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "INSTALLFLAG DISCARDCHANCE PRNGSEEED");
+  int discardChance = 0;
+  int prngSeed = 0;
+  int highStress = 0;
+  extern void installTestPCache(int,unsigned,unsigned,unsigned);
+  if( objc<2 || objc>5 ){
+    Tcl_WrongNumArgs(interp, 1, objv, 
+        "INSTALLFLAG DISCARDCHANCE PRNGSEEED HIGHSTRESS");
     return TCL_ERROR;
   }
   if( Tcl_GetIntFromObj(interp, objv[1], &installFlag) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[2], &discardChance) ) return TCL_ERROR;
-  if( Tcl_GetIntFromObj(interp, objv[3], &prngSeed) ) return TCL_ERROR;
+  if( objc>=3 && Tcl_GetIntFromObj(interp, objv[2], &discardChance) ){
+     return TCL_ERROR;
+  }
+  if( objc>=4 && Tcl_GetIntFromObj(interp, objv[3], &prngSeed) ){
+     return TCL_ERROR;
+  }
+  if( objc>=5 && Tcl_GetIntFromObj(interp, objv[4], &highStress) ){
+    return TCL_ERROR;
+  }
   if( discardChance<0 || discardChance>100 ){
     Tcl_AppendResult(interp, "discard-chance should be between 0 and 100",
                      (char*)0);
     return TCL_ERROR;
   }
-  installTestPCache(installFlag, (unsigned)discardChance, (unsigned)prngSeed);
+  installTestPCache(installFlag, (unsigned)discardChance, (unsigned)prngSeed,
+                    (unsigned)highStress);
   return TCL_OK;
 }
 

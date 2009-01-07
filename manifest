@@ -1,5 +1,5 @@
-C Pager\schanges\sattempting\sto\sverify\sthat\sticket\s#2565\scannot\srecur.\s(CVS\s6126)
-D 2009-01-07T02:03:35
+C Add\sa\sHIGHSTRESS\sparameter\sto\sthe\ssqlite3_config_alt_pcache\sdebugging\ncommand\sin\sthe\stest\sharness\s-\sto\sforce\scalling\spagerStress()\smore\nfrequently.\s(CVS\s6127)
+D 2009-01-07T03:59:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,12 +181,12 @@ F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c ce3da048786536f0264ca5135c9639e34d1fbe3f
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c 5127337c9fb4c851a7f604c0170e0e5ca1fbfe33
+F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 66c4ab4e0396a440ddb17cd9b58a05305144f05d
 F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
 F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
-F src/test_pcache.c 0008968cc36558c8253585e5d321eccba44edb80
+F src/test_pcache.c 29464896d9c67832e4eef916c0682b98d7283d00
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3c2f292fb7c79ba9be32fe8f19e52b35b9cadf6a
-R f3e8e771965b44cff3d40a2642cd89a1
+P 15b9dac455b3f457bb177fc4985b45957647cbec
+R e14c51ceac93b713fc890634eddc1ae9
 U drh
-Z 34c6a839f70d49e19d88996d013df310
+Z d1d04d55d5af4665fa8ebbfc334f2f8d

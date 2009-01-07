@@ -21,7 +21,7 @@
 ** This pagecache implementation is designed for simplicity
 ** not speed.  
 **
-** $Id: test_pcache.c,v 1.1 2008/11/19 01:20:26 drh Exp $
+** $Id: test_pcache.c,v 1.2 2009/01/07 03:59:47 drh Exp $
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -36,8 +36,9 @@ typedef struct testpcacheGlobalType testpcacheGlobalType;
 struct testpcacheGlobalType {
   void *pDummy;             /* Dummy allocation to simulate failures */
   int nInstance;            /* Number of current instances */
-  unsigned discardChance;   /* Chance of discarding on an unpin */
+  unsigned discardChance;   /* Chance of discarding on an unpin (0-100) */
   unsigned prngSeed;        /* Seed for the PRNG */
+  unsigned highStress;      /* Call xStress agressively */
 };
 static testpcacheGlobalType testpcacheGlobal;
 
@@ -207,6 +208,15 @@ static void *testpcacheFetch(
 
   /* Do not allocate the last TESTPCACHE_RESERVE pages unless createFlag is 2 */
   if( p->nPinned>=TESTPCACHE_NPAGE-TESTPCACHE_RESERVE && createFlag<2 ){
+    return 0;
+  }
+
+  /* Do not allocate if highStress is enabled and createFlag is not 2.  
+  **
+  ** The highStress setting causes pagerStress() to be called much more
+  ** often, which exercises the pager logic more intensely.
+  */
+  if( testpcacheGlobal.highStress && createFlag<2 ){
     return 0;
   }
 
@@ -401,7 +411,8 @@ static void testpcacheDestroy(sqlite3_pcache *pCache){
 void installTestPCache(
   int installFlag,            /* True to install.  False to uninstall. */
   unsigned discardChance,     /* 0-100.  Chance to discard on unpin */
-  unsigned prngSeed           /* Seed for the PRNG */
+  unsigned prngSeed,          /* Seed for the PRNG */
+  unsigned highStress         /* Call xStress agressively */
 ){
   static const sqlite3_pcache_methods testPcache = {
     (void*)&testpcacheGlobal,
@@ -424,6 +435,7 @@ void installTestPCache(
   assert( discardChance<=100 );
   testpcacheGlobal.discardChance = discardChance;
   testpcacheGlobal.prngSeed = prngSeed ^ (prngSeed<<16);
+  testpcacheGlobal.highStress = highStress;
   if( installFlag!=isInstalled ){
     if( installFlag ){
       sqlite3_config(SQLITE_CONFIG_GETPCACHE, &defaultPcache);
