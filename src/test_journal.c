@@ -19,7 +19,7 @@
 **   b) the page was not a free-list leaf page when the transaction was
 **      first opened.
 **
-** $Id: test_journal.c,v 1.6 2009/01/06 17:52:44 danielk1977 Exp $
+** $Id: test_journal.c,v 1.7 2009/01/07 18:08:49 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -332,6 +332,13 @@ static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
     jt_file *pMain = locateDatabaseHandle(p->zName);
     closeTransaction(pMain);
   }
+  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
+    u32 pgno;
+    u32 locking_page = (u32)(PENDING_BYTE/p->nPagesize+1);
+    for(pgno=size/p->nPagesize+1; pgno<=p->nPage; pgno++){
+      assert( pgno==locking_page || sqlite3BitvecTest(p->pWritable, pgno) );
+    }
+  }
   return sqlite3OsTruncate(p->pReal, size);
 }
 
@@ -372,6 +379,7 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
       if( iSize>=(iOff+nSector) ){
         rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
         if( rc!=SQLITE_OK || 0==decodeJournalHdr(zBuf, 0, 0, 0, 0) ){
+assert(rc!=SQLITE_OK);
           continue;
         }
       }

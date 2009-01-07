@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.539 2009/01/07 15:33:46 drh Exp $
+** @(#) $Id: pager.c,v 1.540 2009/01/07 18:08:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3926,7 +3926,7 @@ int sqlite3PagerCommitPhaseOne(
           Pgno iSkip = PAGER_MJ_PGNO(pPager);
           Pgno dbSize = pPager->dbSize;
           pPager->dbSize = pPager->dbOrigSize;
-          for( i=pPager->dbSize+1; i<=pPager->dbOrigSize; i++ ){
+          for( i=dbSize+1; i<=pPager->dbOrigSize; i++ ){
             if( !sqlite3BitvecTest(pPager->pInJournal, i) && i!=iSkip ){
               rc = sqlite3PagerGet(pPager, i, &pPg);
               if( rc!=SQLITE_OK ) goto sync_exit;
