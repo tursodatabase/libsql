@@ -1,5 +1,5 @@
-C Fix\ssavepoint\srelated\sbugs.\sA\srollback\scaused\sby\san\sIO\serror\sor\s"OR\sROLLBACK"\sclause\swhile\sone\sor\smore\ssavepoints\swere\sopen\swas\sleaving\sthe\ssqlite3\sstructure\sin\san\sinvalid\sstate.\s(CVS\s6128)
-D 2009-01-07T08:12:16
+C Fix\sa\sproblem\swith\sreverting\sa\s'DROP\sTABLE'\scommand\sexecuted\sinside\sof\sa\ssavepoint\son\san\sauto-vacuum\sdatabase.\s(CVS\s6129)
+D 2009-01-07T10:35:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c b2a42a1d06813daf423848d8245da00fc8de44d3
+F src/pager.c 59a70fae1d6594734c652ad33c97afd9ebc29268
 F src/pager.h 0793c5e4faed6c278037eb22b2434b318687d615
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -493,7 +493,7 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test b5ce04cc17d93b73065fec81eb795c131f168b42
+F test/savepoint.test 2ffa8b0526b5b4a857abc9cc57fe4d7d0474ded0
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test 0c6c6cf208a2865301d125bf962b8f8a12f58b70
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e426860b94f5b47e3a265549dbac64a421cae425
-R eefa8be568f0cc6f54700fdfc1171597
+P e5d42c69a3b325ca12f53184e33964230acbdd1f
+R a5a8625aaf9e409d433ca7b188e79539
 U danielk1977
-Z 6c956af5da49349b5b9902fd748769e9
+Z de63ae952f3922615c231e9860293c66

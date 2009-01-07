@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.535 2009/01/07 02:03:35 drh Exp $
+** @(#) $Id: pager.c,v 1.536 2009/01/07 10:35:19 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4303,8 +4303,30 @@ void sqlite3PagerSetCodec(
 int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   PgHdr *pPgOld;  /* The page being overwritten. */
   Pgno needSyncPgno = 0;
+  int rc;
 
   assert( pPg->nRef>0 );
+
+  /* If the page being moved is dirty and has not been saved by the latest
+  ** savepoint, then save the current contents of the page into the 
+  ** sub-journal now. This is required to handle the following scenario:
+  **
+  **   BEGIN;
+  **     <journal page X, then modify it in memory>
+  **     SAVEPOINT one;
+  **       <Move page X to location Y>
+  **     ROLLBACK TO one;
+  **
+  ** If page X were not written to the sub-journal here, it would not
+  ** be possible to restore its contents when the "ROLLBACK TO one"
+  ** statement were processed.
+  */
+  if( pPg->flags&PGHDR_DIRTY 
+   && subjRequiresPage(pPg)
+   && SQLITE_OK!=(rc = subjournalPage(pPg))
+  ){
+    return rc;
+  }
 
   PAGERTRACE(("MOVE %d page %d (needSync=%d) moves to %d\n", 
       PAGERID(pPager), pPg->pgno, (pPg->flags&PGHDR_NEED_SYNC)?1:0, pgno));
@@ -4365,7 +4387,6 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     ** The sqlite3PagerGet() call may cause the journal to sync. So make
     ** sure the Pager.needSync flag is set too.
     */
-    int rc;
     PgHdr *pPgHdr;
     assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
