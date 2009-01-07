@@ -1,5 +1,5 @@
-C Make\sthe\ssame\schange\sas\s(6121)\s(accidentally\sreverted).\sAlso\senhance\stest_journal.c\sto\scatch\sthis\skind\sof\sbug.\s(CVS\s6136)
-D 2009-01-07T18:08:49
+C Fix\sa\sbug\sin\sthe\sLIKE\squery\soptimization.\s\s(Found\sby\scoverage\stesting.)\s(CVS\s6137)
+D 2009-01-07T18:24:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/sqliteLimit.h 651a2757ba55aeba1da167786b6a8c3404433940
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 4415e1033bd3e92b05a6a9cde911ee4de3b82df9
-F src/test1.c b193b8b80617bdb8297b25a87d00ee8d5a125d0d
+F src/test1.c 058a52226e6c47e92b9df14654c5a1b41009e0fe
 F src/test2.c 724095fc69cb54b018aaa4463a56836c0b53a17a
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -207,7 +207,7 @@ F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c 19f94b504d3da44b31aef200fa6c8e07862de2e8
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c ad9d49f77b9c70adc38cf1b829c870f30a9afe04
+F src/where.c 9852acecfeee1f8650fdec46f20e2368e6c159a0
 F tclinstaller.tcl 4356d9d94d2b5ed5e68f9f0c80c4df3048dd7617
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -415,7 +415,7 @@ F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
 F test/jrnlmode.test 513b495624bfe54da24ae1208125421d8167953d
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
-F test/like.test fef924922828d5a2a5bff80b9bdd9ff57a1ca500
+F test/like.test e55cbbc21729f577b74ec333c753a2d6eda03f9f
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 18db29c081380fdedcfbd8c633847712059ae104
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0f57011e3b21fa5f6a819ce5a7fd8d44ea70679f
-R cebd5b9f713ddcff8e7a2c71139b4a4c
-U danielk1977
-Z 62d24e33d87117ee5ab38c9511e98dd8
+P ccc9c211a285fd4da68b69e15594f080371be522
+R 3780da89c170554b5cb3d38edab02288
+U drh
+Z 9ba15e241fcdcbb40439174ae087420f

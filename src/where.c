@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.357 2009/01/06 14:19:37 drh Exp $
+** $Id: where.c,v 1.358 2009/01/07 18:24:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -264,20 +264,16 @@ static void whereClauseClear(WhereClause*);
 ** Deallocate all memory associated with a WhereOrInfo object.
 */
 static void whereOrInfoDelete(sqlite3 *db, WhereOrInfo *p){
-  if( p ){
-    whereClauseClear(&p->wc);
-    sqlite3DbFree(db, p);
-  }
+  whereClauseClear(&p->wc);
+  sqlite3DbFree(db, p);
 }
 
 /*
 ** Deallocate all memory associated with a WhereAndInfo object.
 */
 static void whereAndInfoDelete(sqlite3 *db, WhereAndInfo *p){
-  if( p ){
-    whereClauseClear(&p->wc);
-    sqlite3DbFree(db, p);
-  }
+  whereClauseClear(&p->wc);
+  sqlite3DbFree(db, p);
 }
 
 /*
@@ -623,13 +619,14 @@ static int isLikeOrGlob(
   int *pisComplete, /* True if the only wildcard is % in the last character */
   int *pnoCase      /* True if uppercase is equivalent to lowercase */
 ){
-  const char *z;
-  Expr *pRight, *pLeft;
-  ExprList *pList;
-  int c, cnt;
-  char wc[3];
-  CollSeq *pColl;
-  sqlite3 *db = pParse->db;
+  const char *z;             /* String on RHS of LIKE operator */
+  Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
+  ExprList *pList;           /* List of operands to the LIKE operator */
+  int c;                     /* One character in z[] */
+  int cnt;                   /* Number of non-wildcard prefix characters */
+  char wc[3];                /* Wildcard characters */
+  CollSeq *pColl;            /* Collating sequence for LHS */
+  sqlite3 *db = pParse->db;  /* Database connection */
 
   if( !sqlite3IsLikeFunction(db, pExpr, pnoCase, wc) ){
     return 0;
@@ -639,8 +636,7 @@ static int isLikeOrGlob(
 #endif
   pList = pExpr->pList;
   pRight = pList->a[0].pExpr;
-  if( pRight->op!=TK_STRING
-   && (pRight->op!=TK_REGISTER || pRight->iColumn!=TK_STRING) ){
+  if( pRight->op!=TK_STRING ){
     return 0;
   }
   pLeft = pList->a[1].pExpr;
@@ -663,7 +659,7 @@ static int isLikeOrGlob(
   if( z ){
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){ cnt++; }
   }
-  if( cnt==0 || 255==(u8)z[cnt] ){
+  if( cnt==0 || 255==(u8)z[cnt-1] ){
     return 0;
   }
   *pisComplete = z[cnt]==wc[0] && z[cnt+1]==0;

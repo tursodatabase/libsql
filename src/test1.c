@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.338 2008/12/17 15:18:18 danielk1977 Exp $
+** $Id: test1.c,v 1.339 2009/01/07 18:24:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -324,6 +324,53 @@ static int test_exec_printf(
   zSql = sqlite3_mprintf(argv[2], argv[3]);
   rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
   sqlite3_free(zSql);
+  sprintf(zBuf, "%d", rc);
+  Tcl_AppendElement(interp, zBuf);
+  Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
+  Tcl_DStringFree(&str);
+  if( zErr ) sqlite3_free(zErr);
+  if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
+  return TCL_OK;
+}
+
+/*
+** Usage:  sqlite3_exec_hex  DB  HEX
+**
+** Invoke the sqlite3_exec() on a string that is obtained by translating
+** HEX into ASCII.  Most characters are translated as is.  %HH becomes
+** a hex character.
+*/
+static int test_exec_hex(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  char **argv            /* Text of each argument */
+){
+  sqlite3 *db;
+  Tcl_DString str;
+  int rc, i, j;
+  char *zErr = 0;
+  char *zHex;
+  char zSql[500];
+  char zBuf[30];
+  if( argc!=3 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0], 
+       " DB HEX", 0);
+    return TCL_ERROR;
+  }
+  if( getDbPointer(interp, argv[1], &db) ) return TCL_ERROR;
+  zHex = argv[2];
+  for(i=j=0; i<sizeof(zSql) && zHex[j]; i++, j++){
+    if( zHex[j]=='%' && zHex[j+2] && zHex[j+2] ){
+      zSql[i] = (testHexToInt(zHex[j+1])<<4) + testHexToInt(zHex[j+2]);
+      j += 2;
+    }else{
+      zSql[i] = zHex[j];
+    }
+  }
+  zSql[i] = 0;
+  Tcl_DStringInit(&str);
+  rc = sqlite3_exec(db, zSql, exec_printf_cb, &str, &zErr);
   sprintf(zBuf, "%d", rc);
   Tcl_AppendElement(interp, zBuf);
   Tcl_AppendElement(interp, rc==SQLITE_OK ? Tcl_DStringValue(&str) : zErr);
@@ -4758,6 +4805,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_snprintf_int",          (Tcl_CmdProc*)test_snprintf_int     },
      { "sqlite3_last_insert_rowid",     (Tcl_CmdProc*)test_last_rowid       },
      { "sqlite3_exec_printf",           (Tcl_CmdProc*)test_exec_printf      },
+     { "sqlite3_exec_hex",              (Tcl_CmdProc*)test_exec_hex         },
      { "sqlite3_exec",                  (Tcl_CmdProc*)test_exec             },
      { "sqlite3_exec_nr",               (Tcl_CmdProc*)test_exec_nr          },
 #ifndef SQLITE_OMIT_GET_TABLE

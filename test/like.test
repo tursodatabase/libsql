@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.10 2008/09/09 12:31:34 drh Exp $
+# $Id: like.test,v 1.11 2009/01/07 18:24:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -549,6 +549,74 @@ do_test like-8.4 {
     SELECT 2, x FROM t8 WHERE x LIKE '%h%' ESCAPE 'x';
   }
 } {1 abcdef 1 ghijkl 1 mnopqr 2 abcdef 2 ghijkl 2 mnopqr}
+
+
+ifcapable like_opt {
+  # Evaluate SQL.  Return the result set followed by the
+  # and the number of full-scan steps.
+  #
+  db close
+  sqlite3 db test.db
+  proc count_steps {sql} {
+    set r [db eval $sql]
+    lappend r scan [db status step] sort [db status sort]
+  }
+  do_test like-9.1 {
+    count_steps {
+       SELECT x FROM t2 WHERE x LIKE 'x%'
+    }
+  } {xyz scan 0 sort 0}
+  do_test like-9.2 {
+    count_steps {
+       SELECT x FROM t2 WHERE x LIKE '_y%'
+    }
+  } {xyz scan 19 sort 0}
+  do_test like-9.3.1 {
+    set res [sqlite3_exec_hex db {
+       SELECT x FROM t2 WHERE x LIKE '%78%25'
+    }]
+  } {0 {x xyz}}
+  ifcapable explain {
+    do_test like-9.3.2 {
+      set res [sqlite3_exec_hex db {
+         EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%78%25'
+      }]
+      regexp {INDEX i2} $res
+    } {1}
+  }
+  do_test like-9.4.1 {
+    sqlite3_exec_hex db {INSERT INTO t2 VALUES('%ffhello')}
+    set res [sqlite3_exec_hex db {
+       SELECT substr(x,2) AS x FROM t2 WHERE +x LIKE '%ff%25'
+    }]
+  } {0 {x hello}}
+  do_test like-9.4.2 {
+    set res [sqlite3_exec_hex db {
+       SELECT substr(x,2) AS x FROM t2 WHERE x LIKE '%ff%25'
+    }]
+  } {0 {x hello}}
+  ifcapable explain {
+    do_test like-9.4.3 {
+      set res [sqlite3_exec_hex db {
+         EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%ff%25'
+      }]
+      regexp {INDEX i2} $res
+    } {0}
+  }
+  do_test like-9.5.1 {
+    set res [sqlite3_exec_hex db {
+       SELECT x FROM t2 WHERE x LIKE '%fe%25'
+    }]
+  } {0 {}}
+  ifcapable explain {
+    do_test like-9.5.2 {
+      set res [sqlite3_exec_hex db {
+         EXPLAIN QUERY PLAN SELECT x FROM t2 WHERE x LIKE '%fe%25'
+      }]
+      regexp {INDEX i2} $res
+    } {1}
+  }
+}
 
 
 finish_test
