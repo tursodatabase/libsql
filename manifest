@@ -1,5 +1,5 @@
-C Conjecture:\sa\sjournal\sheader\swith\snRec==0\smust\sbe\sthe\slast\sheader\sin\sthe\njournal.\s\sAdd\sasserts\sto\smake\sthis\sconjecture\sexplicit.\s(CVS\s6132)
-D 2009-01-07T15:33:46
+C For\sarchival\spurposes,\sadd\sthe\sTCL\sscript\sthat\swas\sused\sto\sgenerate\smany\nof\sthe\stest\scases\sfor\swhere7.test.\s(CVS\s6133)
+D 2009-01-07T15:52:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -428,6 +428,7 @@ F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test f4e9052b14da3bd6807a757d5aed15c17321031a
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
+F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
 F test/malloc.test 6bfb1b95188b103b69536effa943ad195c7655d1
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
@@ -692,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 83d1eafbde556f56969c6f285b6767d2c658dbfc
-R e0c72c9528a9fa2ec3f8b366bc70534d
+P 15b5b5f90c2ffa79155cdc2dbc4fb5583cb72017
+R 4dcc277c9df1693948059e5f5c701096
 U drh
-Z 5a8b01afe6b4e3b34d058c12ce65dc71
+Z 514d88051bd5ba44a89485825f5030f6
