@@ -1,5 +1,5 @@
-C Allow\sdatabase\sfiles\sto\sbe\screated\sin\sthe\sroot\sdirectory\son\sunix.\nTicket\s#3570.\s(CVS\s6141)
-D 2009-01-08T14:36:20
+C Add\sa\stest\sscript\sfor\sticket\s#2565.\s\sChange\sthe\sassert()\sin\spager.c\sinto\na\stestcase()\smacro.\s(CVS\s6142)
+D 2009-01-08T15:24:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c a1f05f59c24e61186c981f2a7fea13986db620f1
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 76d62924b6547eeff64ce8b9ecec26f74c3dcf33
+F src/pager.c 2b35462d94ef080eb21902ba4747593ef261069f
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -577,6 +577,7 @@ F test/tkt2339.test 73bd17818924cd2ac442e5fd9916b58565739450
 F test/tkt2391.test ab7a11be7402da8b51a5be603425367aa0684567
 F test/tkt2409.test 464d55beb32e3b12ce2b4bbf9857d063c4c34297
 F test/tkt2450.test 77ed94863f2049c1420288ddfea2d41e5e0971d6
+F test/tkt2565.test de9673c9e3affbf9574c0727556c5140cb9c53a4
 F test/tkt2640.test 28134f5d1e05658ef182520cf0b680fa3de5211b
 F test/tkt2643.test 3f3ebb743da00d4fed4fcf6daed92a0e18e57813
 F test/tkt2686.test 08f0f584461bc4990376936daa0a9bd3e6e81671
@@ -694,7 +695,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5a28c7c7b45655dcfd0da4898e77d0240b511c5f
-R af7b2247b25a096c92d1790f9e29e088
+P 81014334ad57e380e21c47ad6eebe9f16b4ad24c
+R 1fb9e89475372962c965501bf1119839
 U drh
-Z 14218f1c72245c1a8f9babdc16f10aad
+Z f5bb78d1eaf6298f714991d532608b85

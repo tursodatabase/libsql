@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.540 2009/01/07 18:08:49 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.541 2009/01/08 15:24:02 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1647,14 +1647,11 @@ static int pager_playback(Pager *pPager, int isHot){
     ** the journal, it means that the journal might contain additional
     ** pages that need to be rolled back and that the number of pages 
     ** should be computed based on the journal file size.
-    **
-    ** 2009-01-07:  We think #2565 is now unreachable due to changes
-    ** in the pcache.  The assert that follows will fire if we are wrong.
     */
-    assert( !(nRec==0 && !isHot
+    testcase( nRec==0 && !isHot
          && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
          && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
-         && pagerNextJournalPageIsValid(pPager))
+         && pagerNextJournalPageIsValid(pPager)
     );
     if( nRec==0 && !isHot &&
         pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
