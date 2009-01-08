@@ -1,5 +1,5 @@
-C Add\sa\stest\sscript\sfor\sticket\s#2565.\s\sChange\sthe\sassert()\sin\spager.c\sinto\na\stestcase()\smacro.\s(CVS\s6142)
-D 2009-01-08T15:24:02
+C Fix\sa\scouple\sof\spotential\scorruption\sproblems\sin\spager.c.\s(CVS\s6143)
+D 2009-01-08T17:50:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c a1f05f59c24e61186c981f2a7fea13986db620f1
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 2b35462d94ef080eb21902ba4747593ef261069f
+F src/pager.c 35445d2172eb39c47ec146777c26e47e6d865538
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -288,6 +288,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
+F test/crash8.test 8a7134b3b51e6914054ecd47115a62d9be6726da
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -695,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 81014334ad57e380e21c47ad6eebe9f16b4ad24c
-R 1fb9e89475372962c965501bf1119839
-U drh
-Z f5bb78d1eaf6298f714991d532608b85
+P 1e53e382e5030de4d908098bf77af053dd81f0c5
+R 124292e0acdcfa03ab956f6d28184270
+U danielk1977
+Z 35376a8787a84eed4d896203061ddd89

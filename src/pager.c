@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.541 2009/01/08 15:24:02 drh Exp $
+** @(#) $Id: pager.c,v 1.542 2009/01/08 17:50:46 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -580,7 +580,7 @@ static int readMasterJournal(sqlite3_file *pJrnl, char *zMaster, u32 nMaster){
 ** 2000                      2048
 ** 
 */
-static void seekJournalHdr(Pager *pPager){
+static i64 journalHdrOffset(Pager *pPager){
   i64 offset = 0;
   i64 c = pPager->journalOff;
   if( c ){
@@ -589,7 +589,10 @@ static void seekJournalHdr(Pager *pPager){
   assert( offset%JOURNAL_HDR_SZ(pPager)==0 );
   assert( offset>=c );
   assert( (offset-c)<JOURNAL_HDR_SZ(pPager) );
-  pPager->journalOff = offset;
+  return offset;
+}
+static void seekJournalHdr(Pager *pPager){
+  pPager->journalOff = journalHdrOffset(pPager);
 }
 
 /*
@@ -2487,6 +2490,35 @@ static int syncJournal(Pager *pPager){
       assert( pPager->journalOpen );
 
       if( 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
+        i64 jrnlOff = journalHdrOffset(pPager);
+        u8 zMagic[8];
+
+        /* This block deals with an obscure problem. If the last connection
+        ** that wrote to this database was operating in persistent-journal
+        ** mode, then the journal file may at this point actually be larger
+        ** than Pager.journalOff bytes. If the next thing in the journal
+        ** file happens to be a journal-header (written as part of the
+        ** previous connections transaction), and a crash or power-failure 
+        ** occurs after nRec is updated but before this connection writes 
+        ** anything else to the journal file (or commits/rolls back its 
+        ** transaction), then SQLite may become confused when doing the 
+        ** hot-journal rollback following recovery. It may roll back all
+        ** of this connections data, then proceed to rolling back the old,
+        ** out-of-date data that follows it. Database corruption.
+        **
+        ** To work around this, if the journal file does appear to contain
+        ** a valid header following Pager.journalOff, then write a 0x00
+        ** byte to the start of it to prevent it from being recognized.
+        */
+        rc = sqlite3OsRead(pPager->jfd, zMagic, 8, jrnlOff);
+        if( rc==SQLITE_OK && 0==memcmp(zMagic, aJournalMagic, 8) ){
+          static const u8 zerobyte = 0;
+          rc = sqlite3OsWrite(pPager->jfd, &zerobyte, 1, jrnlOff);
+        }
+        if( rc!=SQLITE_OK && rc!=SQLITE_IOERR_SHORT_READ ){
+          return rc;
+        }
+
         /* Write the nRec value into the journal file header. If in
         ** full-synchronous mode, sync the journal first. This ensures that
         ** all data has really hit the disk before nRec is updated to mark
@@ -2498,7 +2530,6 @@ static int syncJournal(Pager *pPager){
         ** is populated with 0xFFFFFFFF when the journal header is written
         ** and never needs to be updated.
         */
-        i64 jrnlOff;
         if( pPager->fullSync && 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
           PAGERTRACE(("SYNC journal of %d\n", PAGERID(pPager)));
           IOTRACE(("JSYNC %p\n", pPager))
@@ -2879,8 +2910,10 @@ static int pagerSharedLock(Pager *pPager){
       pPager->journalHdr = 0;
  
       /* Playback and delete the journal.  Drop the database write
-      ** lock and reacquire the read lock.
+      ** lock and reacquire the read lock. Purge the cache before
+      ** playing back the hot-journal so that we don't end up with
       */
+      sqlite3PcacheClear(pPager->pPCache);
       rc = pager_playback(pPager, 1);
       if( rc!=SQLITE_OK ){
         rc = pager_error(pPager, rc);
