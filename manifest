@@ -1,5 +1,5 @@
-C Avoid\san\s'invalid\scast'\swarning\sin\stest_osinst.c.\s(CVS\s6144)
-D 2009-01-08T17:57:32
+C Fix\sa\scomment\sin\spager.c.\sNo\sactual\scode\schanges.\s(CVS\s6145)
+D 2009-01-08T18:04:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c a1f05f59c24e61186c981f2a7fea13986db620f1
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 35445d2172eb39c47ec146777c26e47e6d865538
+F src/pager.c 1c02b40777a8094ea73cb8098d5d7f2c0920bd6d
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5a39525ba3e65f1c6df3cf23fbfb57f6a0bf4b62
-R c3c4fd1b846df0556323aab7cdc9eb42
+P 931f3a21bd4b6c5760ed64c23e8210cf2c3e3ab5
+R c8725ae312af088a259f78aa014f9f98
 U danielk1977
-Z 0168d6c7e86fe88f62ba3e0eaa381f28
+Z 1626db2f414f98e49e072e67ca692185

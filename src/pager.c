@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.542 2009/01/08 17:50:46 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.543 2009/01/08 18:04:14 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2912,6 +2912,7 @@ static int pagerSharedLock(Pager *pPager){
       /* Playback and delete the journal.  Drop the database write
       ** lock and reacquire the read lock. Purge the cache before
       ** playing back the hot-journal so that we don't end up with
+      ** an inconsistent cache.
       */
       sqlite3PcacheClear(pPager->pPCache);
       rc = pager_playback(pPager, 1);
