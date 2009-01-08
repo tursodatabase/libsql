@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.359 2009/01/07 20:58:57 drh Exp $
+** $Id: where.c,v 1.360 2009/01/08 03:11:19 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2719,6 +2719,8 @@ static Bitmask codeOneLoopStart(
       /* sqlite3ReleaseTempReg(pParse, regOrRowset); // Preserve the RowSet */
       pLevel->op = OP_Goto;
       pLevel->p2 = addrCont;
+    }else{
+      pLevel->op = OP_Noop;
     }
     disableTerm(pLevel, pTerm);
   }else
@@ -3128,15 +3130,16 @@ WhereInfo *sqlite3WhereBegin(
     ** Return an error.
     */
     pIdx = pTabList->a[bestJ].pIndex;
-    assert( !pIdx
-           || (bestPlan.plan.wsFlags&WHERE_INDEXED)==0
-           || pIdx==bestPlan.plan.u.pIdx );
-    if( pIdx
-     && ((bestPlan.plan.wsFlags & WHERE_INDEXED)==0
-         || bestPlan.plan.u.pIdx!=pIdx)
-    ){
-      sqlite3ErrorMsg(pParse, "cannot use index: %s", pIdx->zName);
-      goto whereBeginError;
+    if( pIdx ){
+      if( (bestPlan.plan.wsFlags & WHERE_INDEXED)==0 ){
+        sqlite3ErrorMsg(pParse, "cannot use index: %s", pIdx->zName);
+        goto whereBeginError;
+      }else{
+        /* If an INDEXED BY clause is used, the bestIndex() function is
+        ** guaranteed to find the index specified in the INDEXED BY clause
+        ** if it find an index at all. */
+        assert( bestPlan.plan.u.pIdx==pIdx );
+      }
     }
   }
   WHERETRACE(("*** Optimizer Finished ***\n"));

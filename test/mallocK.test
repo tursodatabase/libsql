@@ -11,7 +11,7 @@
 #
 # This test script checks malloc failures in WHERE clause analysis.
 # 
-# $Id: mallocK.test,v 1.1 2009/01/07 20:58:57 drh Exp $
+# $Id: mallocK.test,v 1.2 2009/01/08 03:11:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -27,7 +27,7 @@ for {set x 1} {$x<5} {incr x} {
   }
 }
 
-set sql {SELECT * FROM t1 WHERE a LIKE 'abc%'}
+set sql {SELECT * FROM t1 WHERE a GLOB 'xyz*'}
 for {set x 1} {$x<5} {incr x} {
   append sql " AND b!=$x"
   do_malloc_test mallocK-2.$x -sqlbody $sql -sqlprep {
