@@ -1,5 +1,5 @@
-C Clean\sup\stest_journal.c\sto\smake\sit\seasier\sto\sfollow.\s(CVS\s6140)
-D 2009-01-08T12:05:56
+C Allow\sdatabase\sfiles\sto\sbe\screated\sin\sthe\sroot\sdirectory\son\sunix.\nTicket\s#3570.\s(CVS\s6141)
+D 2009-01-08T14:36:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h 4ee25a35c00e75a569cecb5080be299b0c3e208e
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c e6eacc7ec735ded605fefcbaf250058baa8feb12
+F src/os_unix.c a1f05f59c24e61186c981f2a7fea13986db620f1
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
 F src/pager.c 76d62924b6547eeff64ce8b9ecec26f74c3dcf33
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
@@ -694,7 +694,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4b2c08e8984befb12fa2173ca89d9f54cf764d22
-R e49cfd788f97b8e186b0843df709a344
-U danielk1977
-Z 2df54efa41091f55204e196619b7cf7c
+P 5a28c7c7b45655dcfd0da4898e77d0240b511c5f
+R af7b2247b25a096c92d1790f9e29e088
+U drh
+Z 14218f1c72245c1a8f9babdc16f10aad
