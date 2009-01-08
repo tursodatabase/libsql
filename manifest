@@ -1,5 +1,5 @@
-C Increase\stest\scoverage\sof\swhere.c.\s\sMake\ssure\sOR-optimization\sworks\son\nUPDATE\sand\sDELETE\sin\saddition\sto\sSELECT.\s\s(Bug\sfound\sby\scoverage\stests.)\s(CVS\s6139)
-D 2009-01-08T03:11:19
+C Clean\sup\stest_journal.c\sto\smake\sit\seasier\sto\sfollow.\s(CVS\s6140)
+D 2009-01-08T12:05:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/test_config.c 4f85387a52f3c7966c3ffab913e988a3830fe1af
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c 88a097a9123e52f9a6cc1ce66f53d43304582a03
+F src/test_journal.c f234c7351bb4dd4098a280f8cc3da98123038de4
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
@@ -694,7 +694,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2e1ab51f05447f9c1f291636b53b1ec584003841
-R 06029945ac0b9c710c414eee7029de66
-U drh
-Z 504800df346d734b8d5c389a111de334
+P 4b2c08e8984befb12fa2173ca89d9f54cf764d22
+R e49cfd788f97b8e186b0843df709a344
+U danielk1977
+Z 2df54efa41091f55204e196619b7cf7c

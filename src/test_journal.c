@@ -11,20 +11,96 @@
 ******************************************************************************
 **
 ** This file contains code for a VFS layer that acts as a wrapper around
-** an existing VFS. The code in this file attempts to detect a specific
-** bug in SQLite - writing data to a database file page when:
+** an existing VFS. The code in this file attempts to verify that SQLite
+** correctly populates and syncs a journal file before writing to a
+** corresponding database file.
 **
-**   a) the original page data is not stored in a synced portion of the
-**      journal file, and
-**   b) the page was not a free-list leaf page when the transaction was
-**      first opened.
-**
-** $Id: test_journal.c,v 1.7 2009/01/07 18:08:49 danielk1977 Exp $
+** $Id: test_journal.c,v 1.8 2009/01/08 12:05:56 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
 #include "sqlite3.h"
 #include "sqliteInt.h"
+
+/*
+** INTERFACE
+**
+**   The public interface to this wrapper VFS is two functions:
+**
+**     jt_register()
+**     jt_unregister()
+**
+**   See header comments associated with those two functions below for 
+**   details.
+**
+** LIMITATIONS
+**
+**   This wrapper will not work if "PRAGMA synchronous = off" is used.
+**
+** OPERATION
+**
+**  Starting a Transaction:
+**
+**   When a write-transaction is started, the contents of the database is
+**   inspected and the following data stored as part of the database file 
+**   handle (type struct jt_file):
+**
+**     a) The page-size of the database file.
+**     b) The number of pages that are in the database file.
+**     c) The set of page numbers corresponding to free-list leaf pages.
+**     d) A check-sum for every page in the database file.
+**
+**   The start of a write-transaction is deemed to have occured when a 
+**   28-byte journal header is written to byte offset 0 of the journal 
+**   file.
+**
+**  Syncing the Journal File:
+**
+**   Whenever the xSync method is invoked to sync a journal-file, the
+**   contents of the journal file are read. For each page written to
+**   the journal file, a check-sum is calculated and compared to the  
+**   check-sum calculated for the corresponding database page when the
+**   write-transaction was initialized. The success of the comparison
+**   is assert()ed. So if SQLite has written something other than the
+**   original content to the database file, an assert() will fail.
+**
+**   Additionally, the set of page numbers for which records exist in
+**   the journal file is added to (unioned with) the set of page numbers
+**   corresponding to free-list leaf pages collected when the 
+**   write-transaction was initialized. This set comprises the page-numbers 
+**   corresponding to those pages that SQLite may now safely modify.
+**
+**  Writing to the Database File:
+**
+**   When a block of data is written to a database file, the following
+**   invariants are asserted:
+**
+**     a) That the block of data is an aligned block of page-size bytes.
+**
+**     b) That if the page being written did not exist when the 
+**        transaction was started (i.e. the database file is growing), then
+**        the journal-file must have been synced at least once since
+**        the start of the transaction.
+**
+**     c) That if the page being written did exist when the transaction 
+**        was started, then the page must have either been a free-list
+**        leaf page at the start of the transaction, or else must have
+**        been stored in the journal file prior to the most recent sync.
+**
+**  Closing a Transaction:
+**
+**   When a transaction is closed, all data collected at the start of
+**   the transaction, or following an xSync of a journal-file, is 
+**   discarded. The end of a transaction is recognized when any one 
+**   of the following occur:
+**
+**     a) A block of zeroes (or anything else that is not a valid 
+**        journal-header) is written to the start of the journal file.
+**
+**     b) A journal file is truncated to zero bytes in size using xTruncate.
+**
+**     c) The journal file is deleted using xDelete.
+*/
 
 /*
 ** Maximum pathname length supported by the jt backend.
@@ -48,6 +124,7 @@ struct jt_file {
   u32 nPagesize;           /* Page size when transaction started */
   Bitvec *pWritable;       /* Bitvec of pages that may be written to the file */
   u32 *aCksum;             /* Checksum for first nPage pages */
+  int nSync;               /* Number of times journal file has been synced */
 
   /* Only used by journal file-handles */
   sqlite3_int64 iMaxOff;   /* Maximum offset written to this transaction */
@@ -79,12 +156,10 @@ static int jtOpen(sqlite3_vfs*, const char *, sqlite3_file*, int , int *);
 static int jtDelete(sqlite3_vfs*, const char *zName, int syncDir);
 static int jtAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int jtFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
 static void *jtDlOpen(sqlite3_vfs*, const char *zFilename);
 static void jtDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
 static void (*jtDlSym(sqlite3_vfs*,void*, const char *zSymbol))(void);
 static void jtDlClose(sqlite3_vfs*, void*);
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 static int jtRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int jtSleep(sqlite3_vfs*, int microseconds);
 static int jtCurrentTime(sqlite3_vfs*, double*);
@@ -100,17 +175,10 @@ static sqlite3_vfs jt_vfs = {
   jtDelete,                      /* xDelete */
   jtAccess,                      /* xAccess */
   jtFullPathname,                /* xFullPathname */
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
   jtDlOpen,                      /* xDlOpen */
   jtDlError,                     /* xDlError */
   jtDlSym,                       /* xDlSym */
   jtDlClose,                     /* xDlClose */
-#else
-  0,                             /* xDlOpen */
-  0,                             /* xDlError */
-  0,                             /* xDlSym */
-  0,                             /* xDlClose */
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
   jtRandomness,                  /* xRandomness */
   jtSleep,                       /* xSleep */
   jtCurrentTime                  /* xCurrentTime */
@@ -133,16 +201,22 @@ static sqlite3_io_methods jt_io_methods = {
 };
 
 struct JtGlobal {
-  sqlite3_vfs *pVfs;
-  jt_file *pList;
+  sqlite3_vfs *pVfs;             /* Parent VFS */
+  jt_file *pList;                /* List of all open files */
 };
 static struct JtGlobal g = {0, 0};
 
+/*
+** The jt_file pointed to by the argument may or may not be a file-handle
+** open on a main database file. If it is, and a transaction is currently
+** opened on the file, then discard all transaction related data.
+*/
 static void closeTransaction(jt_file *p){
   sqlite3BitvecDestroy(p->pWritable);
   sqlite3_free(p->aCksum);
   p->pWritable = 0;
   p->aCksum = 0;
+  p->nSync = 0;
 }
 
 /*
@@ -175,8 +249,22 @@ static int jtRead(
 }
 
 
+/*
+** Parameter zJournal is the name of a journal file that is currently 
+** open. This function locates and returns the handle opened on the
+** corresponding database file by the pager that currently has the
+** journal file opened. This file-handle is identified by the 
+** following properties:
+**
+**   a) SQLITE_OPEN_MAIN_DB was specified when the file was opened.
+**
+**   b) The file-name specified when the file was opened matches
+**      all but the final 8 characters of the journal file name.
+**
+**   c) There is currently a reserved lock on the file.
+**/
 static jt_file *locateDatabaseHandle(const char *zJournal){
-  jt_file *pMain;
+  jt_file *pMain = 0;
   for(pMain=g.pList; pMain; pMain=pMain->pNext){
     int nName = strlen(zJournal) - strlen("-journal");
     if( (pMain->flags&SQLITE_OPEN_MAIN_DB)
@@ -190,62 +278,26 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
   return pMain;
 }
 
-
+/*
+** Parameter z points to a buffer of 4 bytes in size containing a 
+** unsigned 32-bit integer stored in big-endian format. Decode the 
+** integer and return its value.
+*/
 static u32 decodeUint32(const unsigned char *z){
   return (z[0]<<24) + (z[1]<<16) + (z[2]<<8) + z[3];
 }
 
-static int calculateCksums(jt_file *pMain){
-  int rc = SQLITE_OK;
-  int ii, jj;
-  unsigned char *aData = sqlite3_malloc(pMain->nPagesize);
-  if( !aData ){
-    return SQLITE_IOERR_NOMEM;
+/*
+** Calculate a checksum from the buffer of length n bytes pointed to
+** by parameter z.
+*/
+static u32 genCksum(const unsigned char *z, int n){
+  int i;
+  u32 cksum = 0;
+  for(i=0; i<n; i++){
+    cksum = cksum + z[i] + (cksum<<3);
   }
-
-  for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
-    u32 cksum = 0;
-    sqlite_int64 iOff = (sqlite3_int64)(pMain->nPagesize) * (sqlite3_int64)ii;
-    rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
-    for(jj=0; jj<pMain->nPagesize; jj++){
-      cksum = cksum + aData[jj] + (cksum<<3);
-    }
-    pMain->aCksum[ii] = cksum;
-  }
-  sqlite3_free(aData);
-
-  return rc;
-}
-
-static int readFreelist(jt_file *pMain){
-  int rc;
-  sqlite3_file *p = pMain->pReal;
-  sqlite3_int64 iSize;
-
-  rc = sqlite3OsFileSize(p, &iSize);
-  if( rc==SQLITE_OK && iSize>=pMain->nPagesize ){
-    unsigned char *zBuf = (unsigned char *)malloc(pMain->nPagesize);
-    u32 iTrunk;
-
-    rc = sqlite3OsRead(p, zBuf, pMain->nPagesize, 0);
-    iTrunk = decodeUint32(&zBuf[32]);
-    while( rc==SQLITE_OK && iTrunk>0 ){
-      u32 nLeaf;
-      u32 iLeaf;
-      sqlite3_int64 iOff = (iTrunk-1)*pMain->nPagesize;
-      rc = sqlite3OsRead(p, zBuf, pMain->nPagesize, iOff);
-      nLeaf = decodeUint32(&zBuf[4]);
-      for(iLeaf=0; rc==SQLITE_OK && iLeaf<nLeaf; iLeaf++){
-        u32 pgno = decodeUint32(&zBuf[8+4*iLeaf]);
-        sqlite3BitvecSet(pMain->pWritable, pgno);
-      }
-      iTrunk = decodeUint32(zBuf);
-    }
-
-    free(zBuf);
-  }
-
-  return rc;
+  return cksum;
 }
 
 /*
@@ -253,6 +305,9 @@ static int readFreelist(jt_file *pMain){
 ** serialized journal header. This function deserializes four of the
 ** integer fields contained in the journal header and writes their
 ** values to the output variables.
+**
+** SQLITE_OK is returned if the journal-header is successfully 
+** decoded. Otherwise, SQLITE_ERROR.
 */
 static int decodeJournalHdr(
   const unsigned char *zBuf,         /* Input: 28 byte journal header */
@@ -262,12 +317,64 @@ static int decodeJournalHdr(
   u32 *pnPagesize                    /* Out: Page size in bytes */
 ){
   unsigned char aMagic[] = { 0xd9, 0xd5, 0x05, 0xf9, 0x20, 0xa1, 0x63, 0xd7 };
-  if( memcmp(aMagic, zBuf, 8) ) return 1;
+  if( memcmp(aMagic, zBuf, 8) ) return SQLITE_ERROR;
   if( pnRec ) *pnRec = decodeUint32(&zBuf[8]);
   if( pnPage ) *pnPage = decodeUint32(&zBuf[16]);
   if( pnSector ) *pnSector = decodeUint32(&zBuf[20]);
   if( pnPagesize ) *pnPagesize = decodeUint32(&zBuf[24]);
-  return 0;
+  return SQLITE_OK;
+}
+
+/*
+** This function is called when a new transaction is opened, just after
+** the first journal-header is written to the journal file.
+*/
+static int openTransaction(jt_file *pMain, jt_file *pJournal){
+  unsigned char *aData;
+  sqlite3_file *p = pMain->pReal;
+  int rc = SQLITE_OK;
+
+  aData = sqlite3_malloc(pMain->nPagesize);
+  pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
+  pMain->aCksum = sqlite3_malloc(sizeof(u32) * (pMain->nPage + 1));
+  pJournal->iMaxOff = 0;
+
+  if( !pMain->pWritable || !pMain->aCksum || !aData ){
+    rc = SQLITE_IOERR_NOMEM;
+  }else if( pMain->nPage>0 ){
+    u32 iTrunk;
+
+    /* Read the database free-list. Add the page-number for each free-list
+    ** leaf to the jt_file.pWritable bitvec.
+    */
+    rc = sqlite3OsRead(p, aData, pMain->nPagesize, 0);
+    iTrunk = decodeUint32(&aData[32]);
+    while( rc==SQLITE_OK && iTrunk>0 ){
+      u32 nLeaf;
+      u32 iLeaf;
+      sqlite3_int64 iOff = (iTrunk-1)*pMain->nPagesize;
+      rc = sqlite3OsRead(p, aData, pMain->nPagesize, iOff);
+      nLeaf = decodeUint32(&aData[4]);
+      for(iLeaf=0; rc==SQLITE_OK && iLeaf<nLeaf; iLeaf++){
+        u32 pgno = decodeUint32(&aData[8+4*iLeaf]);
+        sqlite3BitvecSet(pMain->pWritable, pgno);
+      }
+      iTrunk = decodeUint32(aData);
+    }
+
+    /* Calculate and store a checksum for each page in the database file. */
+    if( rc==SQLITE_OK ){
+      int ii;
+      for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
+        i64 iOff = (i64)(pMain->nPagesize) * (i64)ii;
+        rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
+        pMain->aCksum[ii] = genCksum(aData, pMain->nPagesize);
+      }
+    }
+  }
+
+  sqlite3_free(aData);
+  return rc;
 }
 
 /*
@@ -293,18 +400,7 @@ static int jtWrite(
         /* Writing the first journal header to a journal file. This happens
         ** when a transaction is first started.  */
         int rc;
-        pMain->pWritable = sqlite3BitvecCreate(pMain->nPage);
-        pMain->aCksum = sqlite3_malloc(sizeof(u32) * (pMain->nPage + 1));
-        p->iMaxOff = 0;
-        if( !pMain->pWritable || !pMain->aCksum ){
-  	return SQLITE_IOERR_NOMEM;
-        }
-        rc = readFreelist(pMain);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        rc = calculateCksums(pMain);
-        if( rc!=SQLITE_OK ){
+        if( SQLITE_OK!=(rc=openTransaction(pMain, p)) ){
           return rc;
         }
       }
@@ -314,8 +410,11 @@ static int jtWrite(
     }
   }
 
-  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable && iAmt==p->nPagesize ){
+  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
     u32 pgno = iOfst/p->nPagesize + 1;
+
+    assert( iAmt==p->nPagesize && (iOfst%p->nPagesize)==0 );
+    assert( pgno<=p->nPage || p->nSync>0 );
     assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
   }
 
@@ -352,18 +451,19 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
   unsigned char zBuf[28];
   sqlite3_file *pReal = p->pReal;
   sqlite3_int64 iOff = 0;
-  sqlite3_int64 iSize = 0;
+  sqlite3_int64 iSize = p->iMaxOff;
   unsigned char *aPage;
 
   aPage = sqlite3_malloc(pMain->nPagesize);
   if( !aPage ){
     return SQLITE_IOERR_NOMEM;
   }
-  /* rc = sqlite3OsFileSize(p->pReal, &iSize); */
-  iSize = p->iMaxOff;
+
   while( rc==SQLITE_OK && iOff<iSize ){
     u32 nRec, nPage, nSector, nPagesize;
     u32 ii;
+
+    /* Read and decode the next journal-header from the journal file. */
     rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
     if( rc!=SQLITE_OK 
      || decodeJournalHdr(zBuf, &nRec, &nPage, &nSector, &nPagesize) 
@@ -371,6 +471,7 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
       goto finish_rjf;
     }
     iOff += nSector;
+
     if( nRec==0 ){
       /* A trick. There might be another journal-header immediately 
       ** following this one. In this case, 0 records means 0 records, 
@@ -379,12 +480,13 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
       if( iSize>=(iOff+nSector) ){
         rc = sqlite3OsRead(pReal, zBuf, 28, iOff);
         if( rc!=SQLITE_OK || 0==decodeJournalHdr(zBuf, 0, 0, 0, 0) ){
-assert(rc!=SQLITE_OK);
           continue;
         }
       }
       nRec = (iSize-iOff) / (pMain->nPagesize+8);
     }
+
+    /* Read all the records that follow the journal-header just read. */
     for(ii=0; rc==SQLITE_OK && ii<nRec && iOff<iSize; ii++){
       u32 pgno;
       rc = sqlite3OsRead(pReal, zBuf, 4, iOff);
@@ -394,11 +496,7 @@ assert(rc!=SQLITE_OK);
           if( 0==sqlite3BitvecTest(pMain->pWritable, pgno) ){
             rc = sqlite3OsRead(pReal, aPage, pMain->nPagesize, iOff+4);
             if( rc==SQLITE_OK ){
-              int jj;
-              u32 cksum = 0;
-              for(jj=0; jj<pMain->nPagesize; jj++){
-                cksum = cksum + aPage[jj] + (cksum<<3);
-              }
+              u32 cksum = genCksum(aPage, pMain->nPagesize);
               assert( cksum==pMain->aCksum[pgno-1] );
             }
           }
@@ -439,6 +537,7 @@ static int jtSync(sqlite3_file *pFile, int flags){
 
     /* Set the bitvec values */
     if( pMain->pWritable ){
+      pMain->nSync++;
       rc = readJournalFile(p, pMain);
       if( rc!=SQLITE_OK ){
         return rc;
@@ -592,12 +691,11 @@ static int jtFullPathname(
   return sqlite3OsFullPathname(g.pVfs, zPath, nOut, zOut);
 }
 
-#ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*
 ** Open the dynamic library located at zPath and return a handle.
 */
 static void *jtDlOpen(sqlite3_vfs *pVfs, const char *zPath){
-  return sqlite3OsDlOpen(g.pVfs, zPath);
+  return g.pVfs->xDlOpen(g.pVfs, zPath);
 }
 
 /*
@@ -606,23 +704,22 @@ static void *jtDlOpen(sqlite3_vfs *pVfs, const char *zPath){
 ** with dynamic libraries.
 */
 static void jtDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
-  sqlite3OsDlError(g.pVfs, nByte, zErrMsg);
+  g.pVfs->xDlError(g.pVfs, nByte, zErrMsg);
 }
 
 /*
 ** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
 */
 static void (*jtDlSym(sqlite3_vfs *pVfs, void *p, const char *zSym))(void){
-  return sqlite3OsDlSym(g.pVfs, p, zSym);
+  return g.pVfs->xDlSym(g.pVfs, p, zSym);
 }
 
 /*
 ** Close the dynamic library handle pHandle.
 */
 static void jtDlClose(sqlite3_vfs *pVfs, void *pHandle){
-  sqlite3OsDlClose(g.pVfs, pHandle);
+  g.pVfs->xDlClose(g.pVfs, pHandle);
 }
-#endif /* SQLITE_OMIT_LOAD_EXTENSION */
 
 /*
 ** Populate the buffer pointed to by zBufOut with nByte bytes of 
@@ -647,16 +744,30 @@ static int jtCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return sqlite3OsCurrentTime(g.pVfs, pTimeOut);
 }
 
+/**************************************************************************
+** Start of public API.
+*/
+
+/*
+** Configure the jt VFS as a wrapper around the VFS named by parameter 
+** zWrap. If the isDefault parameter is true, then the jt VFS is installed
+** as the new default VFS for SQLite connections. If isDefault is not
+** true, then the jt VFS is installed as non-default. In this case it
+** is available via its name, "jt".
+*/
 int jt_register(char *zWrap, int isDefault){
   g.pVfs = sqlite3_vfs_find(zWrap);
   if( g.pVfs==0 ){
     return SQLITE_ERROR;
   }
-  jt_vfs.szOsFile += g.pVfs->szOsFile;
+  jt_vfs.szOsFile = sizeof(jt_file) + g.pVfs->szOsFile;
   sqlite3_vfs_register(&jt_vfs, isDefault);
   return SQLITE_OK;
 }
 
+/*
+** Uninstall the jt VFS, if it is installed.
+*/
 void jt_unregister(){
   sqlite3_vfs_unregister(&jt_vfs);
 }
