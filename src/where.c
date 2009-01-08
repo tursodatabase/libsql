@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.360 2009/01/08 03:11:19 drh Exp $
+** $Id: where.c,v 1.361 2009/01/08 21:00:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1859,12 +1859,9 @@ static void bestIndex(
         }else{
           continue;
         }
-        if( sTermCost.plan.wsFlags==0 ){
-          rTotal = pCost->rCost;
-          break;
-        }
         rTotal += sTermCost.rCost;
         nRow += sTermCost.nRow;
+        if( rTotal>=pCost->rCost ) break;
       }
       WHERETRACE(("... multi-index OR cost=%.9g nrow=%.9g\n",
                   rTotal, nRow));

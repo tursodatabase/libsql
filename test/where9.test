@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.4 2009/01/08 03:11:19 drh Exp $
+# $Id: where9.test,v 1.5 2009/01/08 21:00:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,6 +151,10 @@ do_test where9-1.1 {
     CREATE TABLE t3(x,y);
     INSERT INTO t3 VALUES(1,80);
     INSERT INTO t3 VALUES(2,80);
+    CREATE TABLE t4(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
+    INSERT INTO t4 SELECT * FROM t1;
+    CREATE INDEX t4b ON t4(b);
+    CREATE INDEX t4c ON t4(c);
   }
 } {}
 
@@ -190,7 +194,18 @@ do_test where9-1.2.4 {
     ORDER BY a
   }
 } {90 91 92 96 97 99 scan 98 sort 0}
-do_test where9-1.3 {
+do_test where9-1.2.5 {
+breakpoint
+  count_steps {
+    SELECT a FROM t4
+     WHERE b IS NULL
+        OR c IS NULL
+        OR d IS NULL
+    ORDER BY a
+  }
+} {90 91 92 96 97 99 scan 98 sort 0}
+
+do_test where9-1.3.1 {
   count_steps {
     SELECT a FROM t1
      WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
@@ -199,6 +214,34 @@ do_test where9-1.3 {
     ORDER BY a
   }
 } {90 91 92 97 scan 0 sort 0}
+do_test where9-1.3.2 {
+  count_steps {
+    SELECT a FROM t4
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+    ORDER BY a
+  }
+} {90 91 92 97 scan 98 sort 0}
+do_test where9-1.3.3 {
+  count_steps {
+    SELECT a FROM t4
+     WHERE (b NOT NULL AND c NOT NULL AND d IS NULL)
+        OR (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+    ORDER BY a
+  }
+} {90 91 92 97 scan 98 sort 0}
+do_test where9-1.3.4 {
+  count_steps {
+    SELECT a FROM t4
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+    ORDER BY a
+  }
+} {90 91 92 97 scan 98 sort 0}
+
 do_test where9-1.4 {
   count_steps {
     SELECT a FROM t1
@@ -674,5 +717,89 @@ do_test where9-6.5.4 {
   }
 } {99 105 131 157 182 183 184 185 186 187}
 
+do_test where9-6.6.1 {
+  count_steps {
+    BEGIN;
+    DELETE FROM t1
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND +c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {scan 98 sort 0}   ;# DELETEs rows 90 91 92 97
+do_test where9-6.6.2 {
+  db eval {
+    SELECT count(*) FROM t1 UNION ALL
+    SELECT a FROM t1 WHERE a BETWEEN 85 AND 100;
+    ROLLBACK;
+  }
+} {95 85 86 87 88 89 93 94 95 96 98 99}
+
+do_test where9-6.6.3 {
+  count_steps {
+    BEGIN;
+    UPDATE t1 SET a=a+100
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND +c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {scan 98 sort 0}   ;# Add 100 to rowids 90 91 92 97
+do_test where9-6.6.4 {
+  db eval {
+    SELECT count(*) FROM t1 UNION ALL
+    SELECT a FROM t1 WHERE a BETWEEN 85 AND 200;
+    ROLLBACK;
+  }
+} {99 85 86 87 88 89 93 94 95 96 98 99 190 191 192 197}
+
+do_test where9-6.7.1 {
+  count_steps {
+    BEGIN;
+    DELETE FROM t1 NOT INDEXED
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {scan 98 sort 0}   ;# DELETEs rows 90 91 92 97
+do_test where9-6.7.2 {
+  db eval {
+    SELECT count(*) FROM t1 UNION ALL
+    SELECT a FROM t1 WHERE a BETWEEN 85 AND 100;
+    ROLLBACK;
+  }
+} {95 85 86 87 88 89 93 94 95 96 98 99}
+
+do_test where9-6.7.3 {
+  count_steps {
+    BEGIN;
+    UPDATE t1 NOT INDEXED SET a=a+100
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {scan 98 sort 0}   ;# Add 100 to rowids 90 91 92 97
+do_test where9-6.7.4 {
+  db eval {
+    SELECT count(*) FROM t1 UNION ALL
+    SELECT a FROM t1 WHERE a BETWEEN 85 AND 200;
+    ROLLBACK;
+  }
+} {99 85 86 87 88 89 93 94 95 96 98 99 190 191 192 197}
+
+do_test where9-6.8.1 {
+  catchsql {
+    DELETE FROM t1 INDEXED BY t1b
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {1 {cannot use index: t1b}}
+do_test where9-6.8.2 {
+  catchsql {
+    UPDATE t1 INDEXED BY t1b SET a=a+100
+     WHERE (b IS NULL AND c NOT NULL AND d NOT NULL)
+        OR (b NOT NULL AND c IS NULL AND d NOT NULL)
+        OR (b NOT NULL AND c NOT NULL AND d IS NULL)
+  }
+} {1 {cannot use index: t1b}}
 
 finish_test
