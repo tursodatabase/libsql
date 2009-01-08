@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\spotential\scorruption\sproblems\sin\spager.c.\s(CVS\s6143)
-D 2009-01-08T17:50:46
+C Avoid\san\s'invalid\scast'\swarning\sin\stest_osinst.c.\s(CVS\s6144)
+D 2009-01-08T17:57:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -185,7 +185,7 @@ F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
 F src/test_mutex.c 66c4ab4e0396a440ddb17cd9b58a05305144f05d
 F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
-F src/test_osinst.c ae29e9c09485622a157849508302dd9ffe44f21f
+F src/test_osinst.c 9a70a61e127f9e72bcfca000b20368b1c5367873
 F src/test_pcache.c 29464896d9c67832e4eef916c0682b98d7283d00
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1e53e382e5030de4d908098bf77af053dd81f0c5
-R 124292e0acdcfa03ab956f6d28184270
+P 5a39525ba3e65f1c6df3cf23fbfb57f6a0bf4b62
+R c3c4fd1b846df0556323aab7cdc9eb42
 U danielk1977
-Z 35376a8787a84eed4d896203061ddd89
+Z 0168d6c7e86fe88f62ba3e0eaa381f28

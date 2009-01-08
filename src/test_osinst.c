@@ -14,7 +14,7 @@
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
 **
-** $Id: test_osinst.c,v 1.18 2008/07/25 13:32:45 drh Exp $
+** $Id: test_osinst.c,v 1.19 2009/01/08 17:57:32 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_INSTVFS
@@ -180,7 +180,7 @@ static int instAccess(sqlite3_vfs*, const char *zName, int flags, int *);
 static int instFullPathname(sqlite3_vfs*, const char *zName, int, char *zOut);
 static void *instDlOpen(sqlite3_vfs*, const char *zFilename);
 static void instDlError(sqlite3_vfs*, int nByte, char *zErrMsg);
-static void *instDlSym(sqlite3_vfs*,void*, const char *zSymbol);
+static void (*instDlSym(sqlite3_vfs *pVfs, void *p, const char*zSym))(void);
 static void instDlClose(sqlite3_vfs*, void*);
 static int instRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int instSleep(sqlite3_vfs*, int microseconds);
@@ -457,8 +457,8 @@ static void instDlError(sqlite3_vfs *pVfs, int nByte, char *zErrMsg){
 /*
 ** Return a pointer to the symbol zSymbol in the dynamic library pHandle.
 */
-static void *instDlSym(sqlite3_vfs *pVfs, void *pHandle, const char *zSymbol){
-  return REALVFS(pVfs)->xDlSym(REALVFS(pVfs), pHandle, zSymbol);
+static void (*instDlSym(sqlite3_vfs *pVfs, void *p, const char *zSym))(void){
+  return REALVFS(pVfs)->xDlSym(REALVFS(pVfs), p, zSym);
 }
 
 /*
