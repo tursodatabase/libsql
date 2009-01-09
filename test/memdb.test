@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.16 2009/01/07 15:18:21 danielk1977 Exp $
+# $Id: memdb.test,v 1.17 2009/01/09 14:29:35 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -425,9 +425,10 @@ do_test memdb-9.1 {
     INSERT INTO t1 VALUES(randstr(1000,1000));
   }
   set memused [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
+  set pgovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 1]
   execsql { DELETE FROM t1 }
   set memused2 [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-  expr {$memused2 + 2048 < $memused}
+  expr {($memused2 + 2048 < $memused) || $pgovfl==0}
 } {1}
 
 
