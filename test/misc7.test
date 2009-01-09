@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.25 2008/10/30 15:03:16 drh Exp $
+# $Id: misc7.test,v 1.26 2009/01/09 17:11:05 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -165,6 +165,22 @@ do_test misc7-7.2 {
   execsql {
     DETACH aux;
   }
+} {}
+do_test misc7-7.3 {
+  db close
+  sqlite3 db test.db -readonly 1
+  execsql {
+    PRAGMA omit_readlock = 1;
+    ATTACH 'test2.db' AS aux;
+    SELECT name FROM aux.sqlite_master;
+    SELECT name FROM aux.sqlite_master;
+  }
+} {hello hello}
+do_test misc7-7.3 {
+  db close
+  sqlite3 db test.db
+  set ::DB [sqlite3_connection_pointer db]
+  list
 } {}
 
 # Test the UTF-16 version of the "out of memory" message (used when
@@ -467,6 +483,14 @@ do_test misc7-19.2 {
 do_test misc7-20.1 {
   sqlite3_global_recover
 } {SQLITE_OK}
+
+# Try to open a really long file name.
+#
+do_test misc7-21.1 {
+  set zFile [file join [pwd] "[string repeat abcde 104].db"]
+  set rc [catch {sqlite3 db2 $zFile} msg]
+  list $rc $msg
+} {1 {unable to open database file}}
 
 
 db close

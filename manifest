@@ -1,5 +1,5 @@
-C Fix\stwo\sproblems\sin\stest\sinstrumentation\sthat\sshow\sup\son\ssome\sfulltests.\s(CVS\s6151)
-D 2009-01-09T14:29:35
+C Increase\spager.c\scoverage\sa\sbit.\sFix\san\sassert\sfailure\sthat\scan\soccur\sfollowing\sa\s"PRAGMA\somit_readlock"\scommand\son\sa\sread-only\sdatabase.\s(CVS\s6152)
+D 2009-01-09T17:11:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c a1f05f59c24e61186c981f2a7fea13986db620f1
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 1c02b40777a8094ea73cb8098d5d7f2c0920bd6d
+F src/pager.c 97bfbacae6131b8d228628803606e98dd763b474
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -465,7 +465,7 @@ F test/misc3.test 7212ed8dad01427e9acab9bd3e7e5e2c2e89be9e
 F test/misc4.test 91e8ed25c092c2bb4e0bb01864631e2930f8d7de
 F test/misc5.test 6a5c1e3217a95b0db05ff9a0f1ecb5ce9043ffef
 F test/misc6.test 953cc693924d88e6117aeba16f46f0bf5abede91
-F test/misc7.test edbbe77d48c7d70a60f8c33e2c7d182ca25f0181
+F test/misc7.test 065b4a32c44648f7dd79767a458916048744fb18
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test 1e5c196d5170bbe3a7d8370b1b905e8c86a9e07c
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
@@ -498,7 +498,7 @@ F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
 F test/savepoint.test 2ffa8b0526b5b4a857abc9cc57fe4d7d0474ded0
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
-F test/savepoint3.test 0c6c6cf208a2865301d125bf962b8f8a12f58b70
+F test/savepoint3.test 5b76f93ffcb5c53bd6ec68e9d57d3b535936c45e
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test e28f7d8ab8a389d4e5bd1dc08bf2c3312754cc67
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ac84f106d572e881136adc3434d00d70564f57cb
-R e68b60e2bd431620406ab7481f1836d4
-U drh
-Z 9f3b3855ff861aed9d86e2ee69b440b9
+P c917961743e9ab60a096801c8910c6cd8367ee2f
+R 84887d8478ad2a6db00d201594f1baf7
+U danielk1977
+Z 53b1598924155611310d0a2e9e4862da
