@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.339 2009/01/07 18:24:03 drh Exp $
+** $Id: test1.c,v 1.340 2009/01/09 02:49:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3245,7 +3245,7 @@ static int test_errmsg16(
 }
 
 /*
-** Usage: sqlite3_prepare DB sql bytes tailvar
+** Usage: sqlite3_prepare DB sql bytes ?tailvar?
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
 ** database handle <DB>. The parameter <tailval> is the name of a global
@@ -3266,18 +3266,18 @@ static int test_prepare(
   char zBuf[50];
   int rc;
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_prepare(db, zSql, bytes, &pStmt, &zTail);
+  rc = sqlite3_prepare(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-  if( zTail ){
+  if( zTail && objc>=5 ){
     if( bytes>=0 ){
       bytes = bytes - (zTail-zSql);
     }
@@ -3301,7 +3301,7 @@ static int test_prepare(
 }
 
 /*
-** Usage: sqlite3_prepare_v2 DB sql bytes tailvar
+** Usage: sqlite3_prepare_v2 DB sql bytes ?tailvar?
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
 ** database handle <DB>. The parameter <tailval> is the name of a global
@@ -3322,7 +3322,7 @@ static int test_prepare_v2(
   char zBuf[50];
   int rc;
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
        Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
     return TCL_ERROR;
@@ -3331,10 +3331,10 @@ static int test_prepare_v2(
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
+  rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
   assert(rc==SQLITE_OK || pStmt==0);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
-  if( zTail ){
+  if( zTail && objc>=5 ){
     if( bytes>=0 ){
       bytes = bytes - (zTail-zSql);
     }
@@ -3420,30 +3420,32 @@ static int test_prepare16(
   int bytes;                /* The integer specified as arg 3 */
   int objlen;               /* The byte-array length of arg 2 */
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zSql = Tcl_GetByteArrayFromObj(objv[2], &objlen);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_prepare16(db, zSql, bytes, &pStmt, &zTail);
+  rc = sqlite3_prepare16(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( rc ){
     return TCL_ERROR;
   }
 
-  if( zTail ){
-    objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
-  }else{
-    objlen = 0;
+  if( objc>=5 ){
+    if( zTail ){
+      objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
+    }else{
+      objlen = 0;
+    }
+    pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
+    Tcl_IncrRefCount(pTail);
+    Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
+    Tcl_DecrRefCount(pTail);
   }
-  pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
-  Tcl_IncrRefCount(pTail);
-  Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
-  Tcl_DecrRefCount(pTail);
 
   if( pStmt ){
     if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;
@@ -3454,7 +3456,7 @@ static int test_prepare16(
 }
 
 /*
-** Usage: sqlite3_prepare16_v2 DB sql bytes tailvar
+** Usage: sqlite3_prepare16_v2 DB sql bytes ?tailvar?
 **
 ** Compile up to <bytes> bytes of the supplied SQL string <sql> using
 ** database handle <DB>. The parameter <tailval> is the name of a global
@@ -3478,30 +3480,32 @@ static int test_prepare16_v2(
   int bytes;                /* The integer specified as arg 3 */
   int objlen;               /* The byte-array length of arg 2 */
 
-  if( objc!=5 ){
+  if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
-       Tcl_GetString(objv[0]), " DB sql bytes tailvar", 0);
+       Tcl_GetString(objv[0]), " DB sql bytes ?tailvar?", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zSql = Tcl_GetByteArrayFromObj(objv[2], &objlen);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_prepare16_v2(db, zSql, bytes, &pStmt, &zTail);
+  rc = sqlite3_prepare16_v2(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( rc ){
     return TCL_ERROR;
   }
 
-  if( zTail ){
-    objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
-  }else{
-    objlen = 0;
+  if( objc>=5 ){
+    if( zTail ){
+      objlen = objlen - ((u8 *)zTail-(u8 *)zSql);
+    }else{
+      objlen = 0;
+    }
+    pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
+    Tcl_IncrRefCount(pTail);
+    Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
+    Tcl_DecrRefCount(pTail);
   }
-  pTail = Tcl_NewByteArrayObj((u8 *)zTail, objlen);
-  Tcl_IncrRefCount(pTail);
-  Tcl_ObjSetVar2(interp, objv[4], 0, pTail, 0);
-  Tcl_DecrRefCount(pTail);
 
   if( pStmt ){
     if( sqlite3TestMakePointerStr(interp, zBuf, pStmt) ) return TCL_ERROR;

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.103 2008/12/10 19:26:24 drh Exp $
+** $Id: prepare.c,v 1.104 2009/01/09 02:49:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -501,18 +501,18 @@ int sqlite3SchemaToIndex(sqlite3 *db, Schema *pSchema){
   ** function should never be used.
   **
   ** We return -1000000 instead of the more usual -1 simply because using
-  ** -1000000 as incorrectly using -1000000 index into db->aDb[] is much 
+  ** -1000000 as the incorrect index into db->aDb[] is much 
   ** more likely to cause a segfault than -1 (of course there are assert()
   ** statements too, but it never hurts to play the odds).
   */
   assert( sqlite3_mutex_held(db->mutex) );
   if( pSchema ){
-    for(i=0; i<db->nDb; i++){
+    for(i=0; ALWAYS(i<db->nDb); i++){
       if( db->aDb[i].pSchema==pSchema ){
         break;
       }
     }
-    assert( i>=0 &&i>=0 &&  i<db->nDb );
+    assert( i>=0 && i<db->nDb );
   }
   return i;
 }
