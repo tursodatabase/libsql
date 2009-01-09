@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.556 2009/01/06 18:21:09 danielk1977 Exp $
+** $Id: btree.c,v 1.557 2009/01/09 14:11:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -32,20 +32,6 @@ int sqlite3BtreeTrace=0;  /* True to enable tracing */
 # define TRACE(X)  if(sqlite3BtreeTrace){printf X;fflush(stdout);}
 #else
 # define TRACE(X)
-#endif
-
-/*
-** Sometimes we need a small amount of code such as a variable initialization
-** to setup for a later assert() statement.  We do not want this code to
-** appear when assert() is disabled.  The following macro is therefore
-** used to contain that setup code.  The "VVA" acronym stands for
-** "Verification, Validation, and Accreditation".  In other words, the
-** code within VVA_ONLY() will only run during verification processes.
-*/
-#ifndef NDEBUG
-# define VVA_ONLY(X)  X
-#else
-# define VVA_ONLY(X)
 #endif
 
 
@@ -2718,20 +2704,19 @@ int sqlite3BtreeBeginStmt(Btree *p){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  if( (p->inTrans!=TRANS_WRITE) || pBt->inStmt ){
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
+  assert( p->inTrans==TRANS_WRITE );
+  assert( !pBt->inStmt );
+  assert( pBt->readOnly==0 );
+  if( NEVER(p->inTrans!=TRANS_WRITE || pBt->inStmt || pBt->readOnly) ){
+    rc = SQLITE_INTERNAL;
   }else{
     assert( pBt->inTransaction==TRANS_WRITE );
-    if( pBt->readOnly ){
-      rc = SQLITE_OK;
-    }else{
-      /* At the pager level, a statement transaction is a savepoint with
-      ** an index greater than all savepoints created explicitly using
-      ** SQL statements. It is illegal to open, release or rollback any
-      ** such savepoints while the statement transaction savepoint is active.
-      */
-      rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint+1);
-    }
+    /* At the pager level, a statement transaction is a savepoint with
+    ** an index greater than all savepoints created explicitly using
+    ** SQL statements. It is illegal to open, release or rollback any
+    ** such savepoints while the statement transaction savepoint is active.
+    */
+    rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint+1);
     pBt->inStmt = 1;
   }
   sqlite3BtreeLeave(p);
@@ -2747,7 +2732,8 @@ int sqlite3BtreeCommitStmt(Btree *p){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  if( pBt->inStmt && !pBt->readOnly ){
+  assert( pBt->readOnly==0 );
+  if( pBt->inStmt ){
     int iStmtpoint = p->db->nSavepoint;
     rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
   }else{
@@ -2771,7 +2757,8 @@ int sqlite3BtreeRollbackStmt(Btree *p){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  if( pBt->inStmt && !pBt->readOnly ){
+  assert( pBt->readOnly==0 );
+  if( pBt->inStmt ){
     int iStmtpoint = p->db->nSavepoint;
     rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_ROLLBACK, iStmtpoint);
     if( rc==SQLITE_OK ){
@@ -2857,7 +2844,8 @@ static int btreeCursor(
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( wrFlag==0 || wrFlag==1 );
   if( wrFlag ){
-    if( pBt->readOnly ){
+    assert( !pBt->readOnly );
+    if( NEVER(pBt->readOnly) ){
       return SQLITE_READONLY;
     }
     if( checkReadLocks(p, iTable, 0, 0) ){
@@ -2869,9 +2857,6 @@ static int btreeCursor(
     rc = lockBtreeWithRetry(p);
     if( rc!=SQLITE_OK ){
       return rc;
-    }
-    if( pBt->readOnly && wrFlag ){
-      return SQLITE_READONLY;
     }
   }
   pCur->pgnoRoot = (Pgno)iTable;
@@ -3753,19 +3738,20 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
 ** were present.  The cursor might point to an entry that comes
 ** before or after the key.
 **
-** The result of comparing the key with the entry to which the
-** cursor is written to *pRes if pRes!=NULL.  The meaning of
-** this value is as follows:
+** An integer is written into *pRes which is the result of
+** comparing the key with the entry to which the cursor is 
+** pointing.  The meaning of the integer written into
+** *pRes is as follows:
 **
 **     *pRes<0      The cursor is left pointing at an entry that
-**                  is smaller than pKey or if the table is empty
+**                  is smaller than intKey/pIdxKey or if the table is empty
 **                  and the cursor is therefore left point to nothing.
 **
 **     *pRes==0     The cursor is left pointing at an entry that
-**                  exactly matches pKey.
+**                  exactly matches intKey/pIdxKey.
 **
 **     *pRes>0      The cursor is left pointing at an entry that
-**                  is larger than pKey.
+**                  is larger than intKey/pIdxKey.
 **
 */
 int sqlite3BtreeMovetoUnpacked(
@@ -3814,7 +3800,7 @@ int sqlite3BtreeMovetoUnpacked(
     int c = -1;  /* pRes return if table is empty must be -1 */
     lwr = 0;
     upr = pPage->nCell-1;
-    if( !pPage->intKey && pIdxKey==0 ){
+    if( (!pPage->intKey && pIdxKey==0) || upr<0 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto moveto_finish;
     }
@@ -3823,7 +3809,7 @@ int sqlite3BtreeMovetoUnpacked(
     }else{
       pCur->aiIdx[pCur->iPage] = (u16)((upr+lwr)/2);
     }
-    if( lwr<=upr ) for(;;){
+    for(;;){
       void *pCellKey;
       i64 nCellKey;
       int idx = pCur->aiIdx[pCur->iPage];
@@ -3870,7 +3856,7 @@ int sqlite3BtreeMovetoUnpacked(
           upr = lwr - 1;
           break;
         }else{
-          if( pRes ) *pRes = 0;
+          *pRes = 0;
           rc = SQLITE_OK;
           goto moveto_finish;
         }
@@ -5877,15 +5863,9 @@ int sqlite3BtreeInsert(
   unsigned char *newCell = 0;
 
   assert( cursorHoldsMutex(pCur) );
-  if( pBt->inTransaction!=TRANS_WRITE ){
-    /* Must start a transaction before doing an insert */
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-    return rc;
-  }
+  assert( pBt->inTransaction==TRANS_WRITE );
   assert( !pBt->readOnly );
-  if( !pCur->wrFlag ){
-    return SQLITE_PERM;   /* Cursor not open for writing */
-  }
+  assert( pCur->wrFlag );
   if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur, nKey) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
@@ -5974,21 +5954,15 @@ int sqlite3BtreeDelete(BtCursor *pCur){
 
   assert( cursorHoldsMutex(pCur) );
   assert( pPage->isInit );
-  if( pBt->inTransaction!=TRANS_WRITE ){
-    /* Must start a transaction before doing a delete */
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-    return rc;
-  }
+  assert( pBt->inTransaction==TRANS_WRITE );
   assert( !pBt->readOnly );
   if( pCur->eState==CURSOR_FAULT ){
     return pCur->skip;
   }
-  if( pCur->aiIdx[pCur->iPage]>=pPage->nCell ){
+  if( NEVER(pCur->aiIdx[pCur->iPage]>=pPage->nCell) ){
     return SQLITE_ERROR;  /* The cursor is not pointing to anything */
   }
-  if( !pCur->wrFlag ){
-    return SQLITE_PERM;   /* Did not open this cursor for writing */
-  }
+  assert( pCur->wrFlag );
   if( checkReadLocks(pCur->pBtree, pCur->pgnoRoot, pCur, pCur->info.nKey) ){
     return SQLITE_LOCKED; /* The table pCur points to has a read lock */
   }
@@ -6183,11 +6157,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
   int rc;
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  if( pBt->inTransaction!=TRANS_WRITE ){
-    /* Must start a transaction first */
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-    return rc;
-  }
+  assert( pBt->inTransaction==TRANS_WRITE );
   assert( !pBt->readOnly );
 
 #ifdef SQLITE_OMIT_AUTOVACUUM
@@ -6383,9 +6353,8 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  if( p->inTrans!=TRANS_WRITE ){
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-  }else if( (rc = checkReadLocks(p, iTable, 0, 1))!=SQLITE_OK ){
+  assert( p->inTrans==TRANS_WRITE );
+  if( (rc = checkReadLocks(p, iTable, 0, 1))!=SQLITE_OK ){
     /* nothing to do */
   }else if( SQLITE_OK!=(rc = saveAllCursors(pBt, iTable, 0)) ){
     /* nothing to do */
@@ -6422,9 +6391,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   BtShared *pBt = p->pBt;
 
   assert( sqlite3BtreeHoldsMutex(p) );
-  if( p->inTrans!=TRANS_WRITE ){
-    return pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-  }
+  assert( p->inTrans==TRANS_WRITE );
 
   /* It is illegal to drop a table if any cursors are open on the
   ** database. This is because in auto-vacuum mode the backend may
@@ -6615,22 +6582,19 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   assert( idx>=1 && idx<=15 );
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  if( p->inTrans!=TRANS_WRITE ){
-    rc = pBt->readOnly ? SQLITE_READONLY : SQLITE_ERROR;
-  }else{
-    assert( pBt->pPage1!=0 );
-    pP1 = pBt->pPage1->aData;
-    rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
-    if( rc==SQLITE_OK ){
-      put4byte(&pP1[36 + idx*4], iMeta);
+  assert( p->inTrans==TRANS_WRITE );
+  assert( pBt->pPage1!=0 );
+  pP1 = pBt->pPage1->aData;
+  rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
+  if( rc==SQLITE_OK ){
+    put4byte(&pP1[36 + idx*4], iMeta);
 #ifndef SQLITE_OMIT_AUTOVACUUM
-      if( idx==7 ){
-        assert( pBt->autoVacuum || iMeta==0 );
-        assert( iMeta==0 || iMeta==1 );
-        pBt->incrVacuum = (u8)iMeta;
-      }
-#endif
+    if( idx==7 ){
+      assert( pBt->autoVacuum || iMeta==0 );
+      assert( iMeta==0 || iMeta==1 );
+      pBt->incrVacuum = (u8)iMeta;
     }
+#endif
   }
   sqlite3BtreeLeave(p);
   return rc;
@@ -6648,8 +6612,9 @@ int sqlite3BtreeFlags(BtCursor *pCur){
   restoreCursorPosition(pCur);
   pPage = pCur->apPage[pCur->iPage];
   assert( cursorHoldsMutex(pCur) );
+  assert( pPage!=0 );
   assert( pPage->pBt==pCur->pBt );
-  return pPage ? pPage->aData[pPage->hdrOffset] : 0;
+  return pPage->aData[pPage->hdrOffset];
 }
 
 
@@ -6864,7 +6829,7 @@ static int checkTreePage(
     return 0;
   }
   if( (rc = sqlite3BtreeInitPage(pPage))!=0 ){
-    if( rc==SQLITE_NOMEM ) pCheck->mallocFailed = 1;
+    assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
     checkAppendMsg(pCheck, zContext, 
                    "sqlite3BtreeInitPage() returns error code %d", rc);
     releasePage(pPage);
@@ -7091,10 +7056,12 @@ char *sqlite3BtreeIntegrityCheck(
 #endif
   }
 
-  /* Make sure this analysis did not leave any unref() pages
+  /* Make sure this analysis did not leave any unref() pages.
+  ** This is an internal consistency check; an integrity check
+  ** of the integrity check.
   */
   unlockBtreeIfUnused(pBt);
-  if( nRef != sqlite3PagerRefcount(pBt->pPager) ){
+  if( NEVER(nRef != sqlite3PagerRefcount(pBt->pPager)) ){
     checkAppendMsg(&sCheck, 0, 
       "Outstanding page count goes from %d to %d during this analysis",
       nRef, sqlite3PagerRefcount(pBt->pPager)
@@ -7183,10 +7150,9 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
   nToPageSize = pBtTo->pageSize;
   nFromPageSize = pBtFrom->pageSize;
 
-  if( pTo->inTrans!=TRANS_WRITE || pFrom->inTrans!=TRANS_WRITE ){
-    return SQLITE_ERROR;
-  }
-  if( pBtTo->pCursor ){
+  assert( pTo->inTrans==TRANS_WRITE );
+  assert( pFrom->inTrans==TRANS_WRITE );
+  if( NEVER(pBtTo->pCursor) ){
     return SQLITE_BUSY;
   }
 
@@ -7380,15 +7346,17 @@ int sqlite3BtreeIsInTrans(Btree *p){
 */
 int sqlite3BtreeIsInStmt(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  return (p->pBt && p->pBt->inStmt);
+  assert( p->pBt );
+  return ALWAYS(p->pBt) && p->pBt->inStmt;
 }
 
 /*
 ** Return non-zero if a read (or write) transaction is active.
 */
 int sqlite3BtreeIsInReadTrans(Btree *p){
+  assert( p );
   assert( sqlite3_mutex_held(p->db->mutex) );
-  return (p && (p->inTrans!=TRANS_NONE));
+  return p->inTrans!=TRANS_NONE;
 }
 
 /*

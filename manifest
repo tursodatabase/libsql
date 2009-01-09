@@ -1,5 +1,5 @@
-C Add\sa\scouple\sof\scoverage\stests.\s(CVS\s6149)
-D 2009-01-09T10:49:14
+C Simplifications\sto\sbtree.c\sto\simprove\stest\scoverage.\s(CVS\s6150)
+D 2009-01-09T14:11:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c a97d315fc7c0ec54fabd8859a45bd4e8e0d16b0b
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 8f5a2e9aae567ddf24976c708ac3cdb0b6e61b31
+F src/btree.c 6ece0e362ad902b86d153f4cb52194d30aa4d817
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
 F src/btreeInt.h 8fea5cd7021cb8848fc2183a3e909469659daa0a
 F src/build.c 6eb9d20e99db8da8c7c6e7316096a6ff3d9acab9
@@ -158,7 +158,7 @@ F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 8279b14cc8ed403efd7b902854be97a4f6c0f613
+F src/sqliteInt.h ab0419bbf296371f23404046924e6edd07c4af42
 F src/sqliteLimit.h 651a2757ba55aeba1da167786b6a8c3404433940
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6e171c0a64850013b26a223189d5bebcc0a01a8b
-R 89004f1f2d745e64659a2282676eb561
-U danielk1977
-Z 92cdcba9e0727e6498f46c2592efcecb
+P 6a64109d1f9b63ac8b29ea2c77da02506387b4a1
+R 01206d8a8f877e5e5315544fd44e2646
+U drh
+Z c33d0f1e685ef44c9631dd110d7b6903
