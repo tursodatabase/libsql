@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.135 2008/11/21 00:10:35 aswift Exp $
+# $Id: tester.tcl,v 1.136 2009/01/09 10:49:14 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -137,14 +137,18 @@ if {![info exists nTest]} {
     sqlite3_instvfs marker binarylog "$argv0 $argv"
   }
 }
-catch {db close}
-file delete -force test.db
-file delete -force test.db-journal
-sqlite3 db ./test.db
-set ::DB [sqlite3_connection_pointer db]
-if {[info exists ::SETUP_SQL]} {
-  db eval $::SETUP_SQL
+
+proc reset_db {} {
+  catch {db close}
+  file delete -force test.db
+  file delete -force test.db-journal
+  sqlite3 db ./test.db
+  set ::DB [sqlite3_connection_pointer db]
+  if {[info exists ::SETUP_SQL]} {
+    db eval $::SETUP_SQL
+  }
 }
+reset_db
 
 # Abort early if this script has been run before.
 #
