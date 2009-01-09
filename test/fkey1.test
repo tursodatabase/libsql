@@ -106,5 +106,16 @@ do_test fkey1-3.3 {
   {0 0 t5 d {} {SET NULL} CASCADE NONE} \
   {0 1 t5 e {} {SET NULL} CASCADE NONE} \
 ]
+do_test fkey1-3.4 {
+  execsql {
+    CREATE TABLE t9(d, e, f,
+      FOREIGN KEY (d, e) REFERENCES t5 ON DELETE CASCADE ON UPDATE SET DEFAULT
+    );
+    PRAGMA foreign_key_list(t9);
+  }
+} [concat                        \
+  {0 0 t5 d {} {SET DEFAULT} CASCADE NONE} \
+  {0 1 t5 e {} {SET DEFAULT} CASCADE NONE} \
+]
 
 finish_test

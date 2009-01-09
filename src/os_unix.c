@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.234 2009/01/08 14:36:20 drh Exp $
+** $Id: os_unix.c,v 1.235 2009/01/09 21:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -66,7 +66,7 @@
 ** where the database is located.  
 */
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
-#  if defined(__DARWIN__)
+#  if defined(__APPLE__)
 #    define SQLITE_ENABLE_LOCKING_STYLE 1
 #  else
 #    define SQLITE_ENABLE_LOCKING_STYLE 0
@@ -2174,7 +2174,7 @@ static int semClose(sqlite3_file *id) {
 ** only works on OSX.
 */
 
-#if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 /*
 ** The afpLockingContext structure contains all afp lock specific state
 */
@@ -2557,7 +2557,7 @@ static int afpClose(sqlite3_file *id) {
   return SQLITE_OK;
 }
 
-#endif /* defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE */
+#endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 /*
 ** The code above is the AFP lock implementation.  The code is specific
 ** to MacOSX and does not work on other unix platforms.  No alternative
@@ -2936,7 +2936,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   return SQLITE_OK;
 }
 
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
 /*
 ** Handler for proxy-locking file-control verbs.  Defined below in the
 ** proxying locking division.
@@ -2958,12 +2958,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = ((unixFile*)id)->lastErrno;
       return SQLITE_OK;
     }
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     case SQLITE_SET_LOCKPROXYFILE:
     case SQLITE_GET_LOCKPROXYFILE: {
       return proxyFileControl(id,op,pArg);
     }
-#endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__) */
+#endif /* SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__) */
   }
   return SQLITE_ERROR;
 }
@@ -3106,7 +3106,7 @@ IOMETHODS(
 )
 #endif
 
-#if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 IOMETHODS(
   afpIoFinder,              /* Finder function name */
   afpIoMethods,             /* sqlite3_io_methods object name */
@@ -3126,7 +3126,7 @@ IOMETHODS(
 ** to go ahead and define the sqlite3_io_methods and finder function
 ** for proxy locking here.  So we forward declare the I/O methods.
 */
-#if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 static int proxyClose(sqlite3_file*);
 static int proxyLock(sqlite3_file*, int);
 static int proxyUnlock(sqlite3_file*, int);
@@ -3142,7 +3142,7 @@ IOMETHODS(
 #endif
 
 
-#if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 /* 
 ** This "finder" function attempts to determine the best locking strategy 
 ** for the database file "filePath".  It then returns the sqlite3_io_methods
@@ -3206,7 +3206,7 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
 static const sqlite3_io_methods *(*const autolockIoFinder)(const char*,int)
         = autolockIoFinderImpl;
 
-#endif /* defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE */
+#endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
 ** An abstract type for a pointer to a IO method finder function:
@@ -3279,7 +3279,7 @@ static int fillInUnixFile(
     unixLeaveMutex();
   }
 
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
   else if( pLockingStyle == &afpIoMethods ){
     /* AFP locking uses the file path so it needs to be included in
     ** the afpLockingContext.
@@ -3451,7 +3451,7 @@ static int getTempname(int nBuf, char *zBuf){
   return SQLITE_OK;
 }
 
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
 /*
 ** Routine to transform a unixFile into a proxy-locking unixFile.
 ** Implementation in the proxy-lock division, but used by unixOpen()
@@ -4098,7 +4098,7 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 /*
 ** Proxy locking is only available on MacOSX 
 */
-#if defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 
 #ifdef SQLITE_TEST
 /* simulate multiple hosts by creating unique hostid file paths */
@@ -4588,7 +4588,7 @@ static int switchLockProxyPath(unixFile *pFile, const char *path) {
 ** int dbPath.
 */
 static int proxyGetDbPathForUnixFile(unixFile *pFile, char *dbPath){
-#if defined(__DARWIN__)
+#if defined(__APPLE__)
   if( pFile->pMethod == &afpIoMethods ){
     /* afp style keeps a reference to the db path in the filePath field 
     ** of the struct */
@@ -4857,7 +4857,7 @@ static int proxyClose(sqlite3_file *id) {
 
 
 
-#endif /* defined(__DARWIN__) && SQLITE_ENABLE_LOCKING_STYLE */
+#endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 /*
 ** The proxy locking style is intended for use with AFP filesystems.
 ** And since AFP is only supported on MacOSX, the proxy locking is also
@@ -4930,7 +4930,7 @@ int sqlite3_os_init(void){
   ** array cannot be const.
   */
   static sqlite3_vfs aVfs[] = {
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix",          autolockIoFinder ),
 #else
     UNIXVFS("unix",          posixIoFinder ),
@@ -4944,7 +4944,7 @@ int sqlite3_os_init(void){
     UNIXVFS("unix-posix",    posixIoFinder ),
     UNIXVFS("unix-flock",    flockIoFinder ),
 #endif
-#if SQLITE_ENABLE_LOCKING_STYLE && defined(__DARWIN__)
+#if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     UNIXVFS("unix-afp",      afpIoFinder ),
     UNIXVFS("unix-proxy",    proxyIoFinder ),
 #endif

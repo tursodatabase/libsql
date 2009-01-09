@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.199 2008/12/10 23:04:13 drh Exp $
+** $Id: pragma.c,v 1.200 2009/01/09 21:41:17 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -196,7 +196,8 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
       sqlite3 *db = pParse->db;
       Vdbe *v;
       v = sqlite3GetVdbe(pParse);
-      if( v ){
+      assert( v!=0 );  /* Already allocated by sqlite3Pragma() */
+      if( ALWAYS(v) ){
         if( zRight==0 ){
           returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
         }else{
@@ -221,14 +222,19 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 }
 #endif /* SQLITE_OMIT_FLAG_PRAGMAS */
 
+/*
+** Return a human-readable name for a constraint resolution action.
+*/
 static const char *actionName(u8 action){
+  const char *zName;
   switch( action ){
-    case OE_SetNull:  return "SET NULL";
-    case OE_SetDflt:  return "SET DEFAULT";
-    case OE_Restrict: return "RESTRICT";
-    case OE_Cascade:  return "CASCADE";
+    case OE_SetNull:  zName = "SET NULL";            break;
+    case OE_SetDflt:  zName = "SET DEFAULT";         break;
+    case OE_Cascade:  zName = "CASCADE";             break;
+    default:          zName = "RESTRICT";  
+                      assert( action==OE_Restrict ); break;
   }
-  return "";
+  return zName;
 }
 
 /*
@@ -285,7 +291,8 @@ void sqlite3Pragma(
     zRight = sqlite3NameFromToken(db, pValue);
   }
 
-  zDb = ((pId2 && pId2->n>0)?pDb->zName:0);
+  assert( pId2 );
+  zDb = pId2->n>0 ? pDb->zName : 0;
   if( sqlite3AuthCheck(pParse, SQLITE_PRAGMA, zLeft, zRight, zDb) ){
     goto pragma_out;
   }
@@ -353,8 +360,9 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"page_size")==0 ){
     Btree *pBt = pDb->pBt;
+    assert( pBt!=0 );
     if( !zRight ){
-      int size = pBt ? sqlite3BtreeGetPageSize(pBt) : 0;
+      int size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
       returnSingleInt(pParse, "page_size", size);
     }else{
       /* Malloc may fail when setting the page-size, as there is an internal
@@ -379,10 +387,11 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"max_page_count")==0 ){
     Btree *pBt = pDb->pBt;
     int newMax = 0;
+    assert( pBt!=0 );
     if( zRight ){
       newMax = atoi(zRight);
     }
-    if( pBt ){
+    if( ALWAYS(pBt) ){
       newMax = sqlite3BtreeMaxPageCount(pBt, newMax);
     }
     returnSingleInt(pParse, "max_page_count", newMax);
@@ -395,7 +404,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"page_count")==0 ){
     int iReg;
-    if( !v || sqlite3ReadSchema(pParse) ) goto pragma_out;
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3CodeVerifySchema(pParse, iDb);
     iReg = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Pagecount, iDb, iReg);
@@ -543,17 +552,23 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( sqlite3StrICmp(zLeft,"auto_vacuum")==0 ){
     Btree *pBt = pDb->pBt;
+    assert( pBt!=0 );
     if( sqlite3ReadSchema(pParse) ){
       goto pragma_out;
     }
     if( !zRight ){
-      int auto_vacuum = 
-          pBt ? sqlite3BtreeGetAutoVacuum(pBt) : SQLITE_DEFAULT_AUTOVACUUM;
+      int auto_vacuum;
+      if( ALWAYS(pBt) ){
+         auto_vacuum = sqlite3BtreeGetAutoVacuum(pBt);
+      }else{
+         auto_vacuum = SQLITE_DEFAULT_AUTOVACUUM;
+      }
       returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
     }else{
       int eAuto = getAutoVacuum(zRight);
+      assert( eAuto>=0 && eAuto<=2 );
       db->nextAutovac = (u8)eAuto;
-      if( eAuto>=0 ){
+      if( ALWAYS(eAuto>=0) ){
         /* Call SetAutoVacuum() to set initialize the internal auto and
         ** incr-vacuum flags. This is required in case this connection
         ** creates the database file. It is important that it is created
@@ -704,6 +719,14 @@ void sqlite3Pragma(
     }
   }else
 
+#if !defined(SQLITE_ENABLE_LOCKING_STYLE)
+#  if defined(__APPLE__)
+#    define SQLITE_ENABLE_LOCKING_STYLE 1
+#  else
+#    define SQLITE_ENABLE_LOCKING_STYLE 0
+#  endif
+#endif
+#if SQLITE_ENABLE_LOCKING_STYLE
   /*
    **   PRAGMA [database.]lock_proxy_file
    **   PRAGMA [database.]lock_proxy_file = ":auto:"|"lock_file_path"
@@ -744,7 +767,7 @@ void sqlite3Pragma(
       }
     }
   }else
-      
+#endif /* SQLITE_ENABLE_LOCKING_STYLE */      
     
   /*
   **   PRAGMA [database.]synchronous
@@ -818,7 +841,9 @@ void sqlite3Pragma(
         sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0,
            pCol->zType ? pCol->zType : "", 0);
         sqlite3VdbeAddOp2(v, OP_Integer, (pCol->notNull ? 1 : 0), 4);
-        if( pCol->pDflt && (pDflt = &pCol->pDflt->span)->z ){
+        if( pCol->pDflt ){
+          pDflt = &pCol->pDflt->span;
+          assert( pDflt->z );
           sqlite3VdbeAddOp4(v, OP_String8, 0, 5, 0, (char*)pDflt->z, pDflt->n);
         }else{
           sqlite3VdbeAddOp2(v, OP_Null, 0, 5);
@@ -1178,11 +1203,11 @@ void sqlite3Pragma(
       char *zName;
       u8 enc;
     } encnames[] = {
-      { "UTF-8",    SQLITE_UTF8        },
       { "UTF8",     SQLITE_UTF8        },
-      { "UTF-16le", SQLITE_UTF16LE     },
+      { "UTF-8",    SQLITE_UTF8        },  /* Must be element [1] */
+      { "UTF-16le", SQLITE_UTF16LE     },  /* Must be element [2] */
+      { "UTF-16be", SQLITE_UTF16BE     },  /* Must be element [3] */
       { "UTF16le",  SQLITE_UTF16LE     },
-      { "UTF-16be", SQLITE_UTF16BE     },
       { "UTF16be",  SQLITE_UTF16BE     },
       { "UTF-16",   0                  }, /* SQLITE_UTF16NATIVE */
       { "UTF16",    0                  }, /* SQLITE_UTF16NATIVE */
@@ -1194,12 +1219,10 @@ void sqlite3Pragma(
       sqlite3VdbeSetNumCols(v, 1);
       sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "encoding", SQLITE_STATIC);
       sqlite3VdbeAddOp2(v, OP_String8, 0, 1);
-      for(pEnc=&encnames[0]; pEnc->zName; pEnc++){
-        if( pEnc->enc==ENC(pParse->db) ){
-          sqlite3VdbeChangeP4(v, -1, pEnc->zName, P4_STATIC);
-          break;
-        }
-      }
+      assert( encnames[SQLITE_UTF8].enc==SQLITE_UTF8 );
+      assert( encnames[SQLITE_UTF16LE].enc==SQLITE_UTF16LE );
+      assert( encnames[SQLITE_UTF16BE].enc==SQLITE_UTF16BE );
+      sqlite3VdbeChangeP4(v, -1, encnames[ENC(pParse->db)].zName, P4_STATIC);
       sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
     }else{                        /* "PRAGMA encoding = XXX" */
       /* Only change the value of sqlite.enc if the database handle is not
@@ -1344,8 +1367,26 @@ void sqlite3Pragma(
 #endif
 
 #if SQLITE_HAS_CODEC
-  if( sqlite3StrICmp(zLeft, "key")==0 ){
+  if( sqlite3StrICmp(zLeft, "key")==0 && zRight ){
     sqlite3_key(db, zRight, sqlite3Strlen30(zRight));
+  }else
+  if( sqlite3StrICmp(zLeft, "rekey")==0 && zRight ){
+    sqlite3_rekey(db, zRight, sqlite3Strlen30(zRight));
+  }else
+  if( zRight && (sqlite3StrICmp(zLeft, "hexkey")==0 ||
+                 sqlite3StrICmp(zLeft, "hexrekey")==0) ){
+    int i, h1, h2;
+    char zKey[40];
+    for(i=0; (h1 = zRight[i])!=0 && (h2 = zRight[i+1])!=0; i+=2){
+      h1 += 9*(1&(h1>>6));
+      h2 += 9*(1&(h2>>6));
+      zKey[i/2] = (h2 & 0x0f) | ((h1 & 0xf)<<4);
+    }
+    if( (zLeft[3] & 0xf)==0xb ){
+      sqlite3_key(db, zKey, i/2);
+    }else{
+      sqlite3_rekey(db, zKey, i/2);
+    }
   }else
 #endif
 #if SQLITE_HAS_CODEC || defined(SQLITE_ENABLE_CEROD)
@@ -1362,29 +1403,28 @@ void sqlite3Pragma(
       sqlite3_activate_cerod(&zRight[6]);
     }
 #endif
-  }
+  }else
 #endif
 
-  {}
+ 
+  {/* Empty ELSE clause */}
 
-  if( v ){
-    /* Code an OP_Expire at the end of each PRAGMA program to cause
-    ** the VDBE implementing the pragma to expire. Most (all?) pragmas
-    ** are only valid for a single execution.
-    */
-    sqlite3VdbeAddOp2(v, OP_Expire, 1, 0);
+  /* Code an OP_Expire at the end of each PRAGMA program to cause
+  ** the VDBE implementing the pragma to expire. Most (all?) pragmas
+  ** are only valid for a single execution.
+  */
+  sqlite3VdbeAddOp2(v, OP_Expire, 1, 0);
 
-    /*
-    ** Reset the safety level, in case the fullfsync flag or synchronous
-    ** setting changed.
-    */
+  /*
+  ** Reset the safety level, in case the fullfsync flag or synchronous
+  ** setting changed.
+  */
 #ifndef SQLITE_OMIT_PAGER_PRAGMAS
-    if( db->autoCommit ){
-      sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
-                 (db->flags&SQLITE_FullFSync)!=0);
-    }
-#endif
+  if( db->autoCommit ){
+    sqlite3BtreeSetSafetyLevel(pDb->pBt, pDb->safety_level,
+               (db->flags&SQLITE_FullFSync)!=0);
   }
+#endif
 pragma_out:
   sqlite3DbFree(db, zLeft);
   sqlite3DbFree(db, zRight);
