@@ -73,25 +73,23 @@ struct RowSet {
 ** for any subsequent allocations that need to occur.
 ** Return a pointer to the new RowSet object.
 **
-** If N is not sufficient memory to make even a minimum RowSet,
-** then return NULL.  If N is larger than the minimum, use
-** the surplus as an initial allocation of entries available to
-** be filled.
+** It must be the case that N is sufficient to make a Rowset.  If not
+** an assertion fault occurs.
+** 
+** If N is larger than the minimum, use the surplus as an initial
+** allocation of entries available to be filled.
 */
 RowSet *sqlite3RowSetInit(sqlite3 *db, void *pSpace, unsigned int N){
   RowSet *p;
-  if( N<sizeof(*p) ){
-    p = 0;
-  }else{
-    p = pSpace;
-    p->pChunk = 0;
-    p->db = db;
-    p->pEntry = 0;
-    p->pLast = 0;
-    p->pFresh = (struct RowSetEntry*)&p[1];
-    p->nFresh = (u16)((N - sizeof(*p))/sizeof(struct RowSetEntry));
-    p->isSorted = 1;
-  }
+  assert( N >= sizeof(*p) );
+  p = pSpace;
+  p->pChunk = 0;
+  p->db = db;
+  p->pEntry = 0;
+  p->pLast = 0;
+  p->pFresh = (struct RowSetEntry*)&p[1];
+  p->nFresh = (u16)((N - sizeof(*p))/sizeof(struct RowSetEntry));
+  p->isSorted = 1;
   return p;
 }
 

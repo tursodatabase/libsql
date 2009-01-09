@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing correlated subqueries
 #
-# $Id: subquery.test,v 1.16 2008/07/10 00:32:42 drh Exp $
+# $Id: subquery.test,v 1.17 2009/01/09 01:12:28 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -267,6 +267,11 @@ ifcapable view {
       CREATE TABLE t2(p,q);
       INSERT INTO t2 VALUES(2,9);
       SELECT * FROM v1 WHERE EXISTS(SELECT * FROM t2 WHERE p=v1.b);
+    }
+  } {2}
+  do_test subquery-3.1.1 {
+    execsql {
+      SELECT * FROM v1 WHERE EXISTS(SELECT 1);
     }
   } {2}
 } else {

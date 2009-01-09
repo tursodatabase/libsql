@@ -1,5 +1,5 @@
-C Increased\stest\scoverage\sin\swhere.c.\s(CVS\s6146)
-D 2009-01-08T21:00:03
+C Increased\stest\scoverage.\s(CVS\s6147)
+D 2009-01-09T01:12:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/expr.c a385202af56d622b11d05e8d386def256155152b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c b0e1c61301f33d67b72ab15d85c80ed76e7c98ac
 F src/global.c 91723e45a2ad03ae5bb97a0a0d2dbb1a0e69527b
-F src/hash.c 831e9c199d8de5976c698e5aca278e2de74ff93b
+F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c f6db1e6f43aae337e64a755208abb6ff124edc19
@@ -153,8 +153,8 @@ F src/prepare.c 51d11eb1eece7548038e7e33c33ee95dc7f82e2d
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
-F src/rowset.c 2256fa4a928f750e2f3d6fc733523034beceb1d6
-F src/select.c 75d6404cc176a340746364ca246bcfc65ab63bb0
+F src/rowset.c 570f9ebc189542f57cb0a2ecc3c47b00ac71d803
+F src/select.c af86044ede0e71b89062d48dc657578e2a5e1f99
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -509,7 +509,7 @@ F test/select2.test 272a3d3e35b1d3a0760168ababf555e656357fc4
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test b64d5d248d008e1dc365f451c76090bde907e665
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
-F test/select6.test faad87c6e691bf69a822b69cd6808137a34d19e8
+F test/select6.test 2b5e8500d8ec3dd4c8e0c99eb1431b3d11fcc24c
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
 F test/select8.test 391de11bdd52339c30580dabbbbe97e3e9a3c79d
 F test/select9.test b4007b15396cb7ba2615cab31e1973b572e43210
@@ -536,7 +536,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test 2f7ca3c7e7cef39a9c499e941e98b7f1708c4780
-F test/subquery.test d78fe135ff01a3f91f0b62915740f90b35f7e951
+F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 44d3bfddf44b10b3744db6b41bc3f53c3903df5e
-R a3a710f488fb777e4d1b19573518f0a9
+P 1e5725c5179660277c2e8c321877d7ee3ca21808
+R 822112d08067bd99c5e05699604f3ce2
 U drh
-Z 97bbef0b1a294a8bf574a868d2fbe20c
+Z d13ebeeb8ba28d13e8317f5ef4baf253

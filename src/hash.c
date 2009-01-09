@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.32 2008/12/10 19:26:24 drh Exp $
+** $Id: hash.c,v 1.33 2009/01/09 01:12:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -48,7 +48,7 @@ void sqlite3HashClear(Hash *pH){
   pH->htsize = 0;
   while( elem ){
     HashElem *next_elem = elem->next;
-    if( pH->copyKey && elem->pKey ){
+    if( pH->copyKey ){
       sqlite3_free(elem->pKey);
     }
     sqlite3_free(elem);
