@@ -1,5 +1,5 @@
-C Add\sa\smalloc\sfailure\stest\scase\sthat\scovers\sa\sfew\spreviously\suntested\slines\sin\spager.c\s(CVS\s6154)
-D 2009-01-10T11:10:19
+C Fix\sa\sbug\sin\sthe\sprevious\scommit\s-\suse\sSQL\scomments\sinstead\sof\sTcl\scomments\sin\sSQL\sblocks.\s(CVS\s6155)
+D 2009-01-10T11:13:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -430,7 +430,7 @@ F test/lock6.test f4e9052b14da3bd6807a757d5aed15c17321031a
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test db0bed8b5510e6cb5393a007db5e5d64f812ffe5
+F test/malloc.test 86f378c52202b5b39b54a7fc560a4a75d77ce4f1
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 64c56226b91e57883c8059f65330318e53376b8a
-R 627a95057c81b1b036cca76929f6bd69
+P 000aedb0471b5f5a69e7b61f5e1d4b2644994f32
+R b9af50aa7f5d731abd3dea65ed538d84
 U danielk1977
-Z cec672afe18d5c5dc5f6dd5421434555
+Z eeac7b0df6e5be72914ec444096e70f6

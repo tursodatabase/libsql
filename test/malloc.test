@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.71 2009/01/10 11:10:19 danielk1977 Exp $
+# $Id: malloc.test,v 1.72 2009/01/10 11:13:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -700,11 +700,11 @@ do_malloc_test 29 -tclprep {
     ROLLBACK;
   }
 } -sqlbody {
-  # This statement requires the 'no-content' pages loaded by the DELETE
-  # statement above. When requesting the pages, the content is loaded
-  # from the database file. The point of this test case is to test handling
-  # of malloc errors (including SQLITE_IOERR_NOMEM errors) when loading
-  # the content.
+  -- This statement requires the 'no-content' pages loaded by the DELETE
+  -- statement above. When requesting the pages, the content is loaded
+  -- from the database file. The point of this test case is to test handling
+  -- of malloc errors (including SQLITE_IOERR_NOMEM errors) when loading
+  -- the content.
   SELECT * FROM t1 ORDER BY x;
 }
 
