@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.408 2008/12/15 15:27:52 drh Exp $
+** $Id: expr.c,v 1.409 2009/01/10 13:24:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -920,7 +920,6 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       /* Fall through */
     case TK_ID:
     case TK_COLUMN:
-    case TK_DOT:
     case TK_AGG_FUNCTION:
     case TK_AGG_COLUMN:
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -931,7 +930,6 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
 #endif
       testcase( pExpr->op==TK_ID );
       testcase( pExpr->op==TK_COLUMN );
-      testcase( pExpr->op==TK_DOT );
       testcase( pExpr->op==TK_AGG_FUNCTION );
       testcase( pExpr->op==TK_AGG_COLUMN );
       pWalker->u.i = 0;
@@ -1038,12 +1036,6 @@ int sqlite3IsRowid(const char *z){
   return 0;
 }
 
-#ifdef SQLITE_TEST
-  int sqlite3_enable_in_opt = 1;
-#else
-  #define sqlite3_enable_in_opt 1
-#endif
-
 /*
 ** Return true if the IN operator optimization is enabled and
 ** the SELECT statement p exists and is of the
@@ -1059,7 +1051,6 @@ static int isCandidateForInOpt(Select *p){
   SrcList *pSrc;
   ExprList *pEList;
   Table *pTab;
-  if( !sqlite3_enable_in_opt ) return 0; /* IN optimization must be enabled */
   if( p==0 ) return 0;                   /* right-hand side of IN is SELECT */
   if( p->pPrior ) return 0;              /* Not a compound SELECT */
   if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
@@ -1070,8 +1061,8 @@ static int isCandidateForInOpt(Select *p){
   if( p->pOffset ) return 0;
   if( p->pWhere ) return 0;              /* Has no WHERE clause */
   pSrc = p->pSrc;
-  if( pSrc==0 ) return 0;                /* A single table in the FROM clause */
-  if( pSrc->nSrc!=1 ) return 0;
+  assert( pSrc!=0 );
+  if( pSrc->nSrc!=1 ) return 0;          /* Single term in FROM clause */
   if( pSrc->a[0].pSelect ) return 0;     /* FROM clause is not a subquery */
   pTab = pSrc->a[0].pTab;
   if( pTab==0 ) return 0;
@@ -1658,33 +1649,22 @@ static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
 }
 
 /*
-** Theres is a value in register iCurrent.  We ultimately want
-** the value to be in register iTarget.  It might be that
-** iCurrent and iTarget are the same register.
+** There is a value in register iReg.
 **
 ** We are going to modify the value, so we need to make sure it
-** is not a cached register.  If iCurrent is a cached register,
-** then try to move the value over to iTarget.  If iTarget is a
-** cached register, then clear the corresponding cache line.
-**
-** Return the register that the value ends up in.
+** is not a cached register.  If iReg is a cached register,
+** then clear the corresponding cache line.
 */
-int sqlite3ExprWritableRegister(Parse *pParse, int iCurrent, int iTarget){
+void sqlite3ExprWritableRegister(Parse *pParse, int iReg){
   int i;
-  assert( pParse->pVdbe!=0 );
-  if( !usedAsColumnCache(pParse, iCurrent, iCurrent) ){
-    return iCurrent;
-  }
-  if( iCurrent!=iTarget ){
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_SCopy, iCurrent, iTarget);
-  }
-  for(i=0; i<pParse->nColCache; i++){
-    if( pParse->aColCache[i].iReg==iTarget ){
-      pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
-      pParse->iColCache = pParse->nColCache;
+  if( usedAsColumnCache(pParse, iReg, iReg) ){
+    for(i=0; i<pParse->nColCache; i++){
+      if( pParse->aColCache[i].iReg==iReg ){
+        pParse->aColCache[i] = pParse->aColCache[--pParse->nColCache];
+        pParse->iColCache = pParse->nColCache;
+      }
     }
   }
-  return iTarget;
 }
 
 /*
@@ -3077,7 +3057,7 @@ int sqlite3GetTempReg(Parse *pParse){
 }
 void sqlite3ReleaseTempReg(Parse *pParse, int iReg){
   if( iReg && pParse->nTempReg<ArraySize(pParse->aTempReg) ){
-    sqlite3ExprWritableRegister(pParse, iReg, iReg);
+    sqlite3ExprWritableRegister(pParse, iReg);
     pParse->aTempReg[pParse->nTempReg++] = iReg;
   }
 }

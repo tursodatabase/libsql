@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.341 2009/01/09 21:41:17 drh Exp $
+** $Id: test1.c,v 1.342 2009/01/10 13:24:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4979,7 +4979,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3VdbeAddopTrace;
 #endif
 #ifdef SQLITE_TEST
-  extern int sqlite3_enable_in_opt;
   extern char sqlite3_query_plan[];
   static char *query_plan = sqlite3_query_plan;
 #ifdef SQLITE_ENABLE_FTS3
@@ -5064,13 +5063,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_sync_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_fullsync_count",
       (char*)&sqlite3_fullsync_count, TCL_LINK_INT);
-#ifdef SQLITE_TEST
-  Tcl_LinkVar(interp, "sqlite_enable_in_opt",
-      (char*)&sqlite3_enable_in_opt, TCL_LINK_INT);
-#ifdef SQLITE_ENABLE_FTS3
+#if defined(SQLITE_ENABLE_FTS3) && defined(SQLITE_TEST)
   Tcl_LinkVar(interp, "sqlite_fts3_enable_parentheses",
       (char*)&sqlite3_fts3_enable_parentheses, TCL_LINK_INT);
-#endif
 #endif
   return TCL_OK;
 }
