@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.546 2009/01/10 17:02:03 drh Exp $
+** @(#) $Id: pager.c,v 1.547 2009/01/10 17:57:49 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -183,7 +183,6 @@ struct Pager {
   u8 readOnly;                /* True for a read-only database */
   u8 needSync;                /* True if an fsync() is needed on the journal */
   u8 dirtyCache;              /* True if cached pages have changed */
-  u8 alwaysRollback;          /* Disable DontRollback() for all pages */
   u8 memDb;                   /* True to inhibit all file I/O */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
@@ -3684,16 +3683,16 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 ** sqlite3PagerDontRollback() below, more than double the speed
 ** of large INSERT operations and quadruple the speed of large DELETEs.
 **
-** When this routine is called, set the alwaysRollback flag to true.
-** Subsequent calls to sqlite3PagerDontRollback() for the same page
-** will thereafter be ignored.  This is necessary to avoid a problem
-** where a page with data is added to the freelist during one part of
-** a transaction then removed from the freelist during a later part
-** of the same transaction and reused for some other purpose.  When it
-** is first added to the freelist, this routine is called.  When reused,
-** the sqlite3PagerDontRollback() routine is called.  But because the
-** page contains critical data, we still need to be sure it gets
-** rolled back in spite of the sqlite3PagerDontRollback() call.
+** When this routine is called, set the bit corresponding to pDbPage in
+** the Pager.pAlwaysRollback bitvec.  Subsequent calls to
+** sqlite3PagerDontRollback() for the same page will thereafter be ignored.
+** This is necessary to avoid a problem where a page with data is added to
+** the freelist during one part of a transaction then removed from the
+** freelist during a later part of the same transaction and reused for some
+** other purpose.  When it is first added to the freelist, this routine is
+** called.  When reused, the sqlite3PagerDontRollback() routine is called.
+** But because the page contains critical data, we still need to be sure it
+** gets rolled back in spite of the sqlite3PagerDontRollback() call.
 */
 int sqlite3PagerDontWrite(DbPage *pDbPage){
   PgHdr *pPg = pDbPage;
@@ -3753,7 +3752,7 @@ void sqlite3PagerDontRollback(DbPage *pPg){
   assert( pPager->state>=PAGER_RESERVED );
 
   /* If the journal file is not open, or DontWrite() has been called on
-  ** this page (DontWrite() sets the alwaysRollback flag), then this
+  ** this page (DontWrite() sets the Pager.pAlwaysRollback bit), then this
   ** function is a no-op.
   */
   if( pPager->journalOpen==0 
