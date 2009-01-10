@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.44 2009/01/06 14:50:11 drh Exp $
+# $Id: permutations.test,v 1.45 2009/01/10 18:51:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -714,6 +714,7 @@ run_tests "journaltest" -description {
   ioerr.test
   corrupt4.test 
   io.test 
+  crash8.test 
 }
 
 # End of tests

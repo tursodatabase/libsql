@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sPager.alwaysRollback\sflag.\sFix\sa\scouple\sof\scomments\sin\spager.c.\s(CVS\s6161)
-D 2009-01-10T17:57:49
+C Do\snot\srun\scrash8.test\sas\spart\sof\sthe\s"journaltest"\spermutation.\scrash8.test\suses\s"PRAGMA\ssynchronous=off",\swhich\sis\sincompatible\swith\sjournaltest.\s(CVS\s6162)
+D 2009-01-10T18:51:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -480,7 +480,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test ccd18b4d2b432f44319a82b0367ed843ee18cebd
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test af0962c17a32631de8b301c301c497adea9739f4
+F test/permutations.test 2e777ae1eeb11b777b31aad929c4351464758441
 F test/pragma.test 3fd4d3cc9f48aa5f2fb050d17234222ddac68ec6
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 495f017e03f32420e6a6a7685125a86929cef142
-R 48ee6c0b6318c6ef213b106655e056a3
+P 8f0672af8d7d46124d01e540eec7b43fc16dd552
+R 464cac85c504261cd53203c3d871603b
 U danielk1977
-Z d71addb3a72f5992b0a3fc17fb866408
+Z 8e097e9c18c8a260aec14cdae8ae2058
