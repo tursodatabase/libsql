@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.362 2009/01/09 02:49:32 drh Exp $
+** $Id: where.c,v 1.363 2009/01/10 15:34:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -844,10 +844,12 @@ static void exprAnalyzeOrTerm(
         whereSplit(pAndWC, pOrTerm->pExpr, TK_AND);
         exprAnalyzeAll(pSrc, pAndWC);
         testcase( db->mallocFailed );
-        for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
-          assert( pAndTerm->pExpr );
-          if( allowedOp(pAndTerm->pExpr->op) ){
-            b |= getMask(pMaskSet, pAndTerm->leftCursor);
+        if( !db->mallocFailed ){
+          for(j=0, pAndTerm=pAndWC->a; j<pAndWC->nTerm; j++, pAndTerm++){
+            assert( pAndTerm->pExpr );
+            if( allowedOp(pAndTerm->pExpr->op) ){
+              b |= getMask(pMaskSet, pAndTerm->leftCursor);
+            }
           }
         }
         indexable &= b;
