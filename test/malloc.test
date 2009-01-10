@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.72 2009/01/10 11:13:40 danielk1977 Exp $
+# $Id: malloc.test,v 1.73 2009/01/10 16:15:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -678,7 +678,7 @@ do_malloc_test 29 -sqlprep {
   INSERT INTO t1 SELECT * FROM t1 UNION ALL SELECT * FROM t1;
 }
 
-do_malloc_test 29 -tclprep {
+do_malloc_test 30 -tclprep {
   db eval {
     CREATE TABLE t1(x PRIMARY KEY);
     INSERT INTO t1 VALUES(randstr(500,500));
@@ -708,6 +708,18 @@ do_malloc_test 29 -tclprep {
   SELECT * FROM t1 ORDER BY x;
 }
 
+# After committing a transaction in persistent-journal mode, if a journal
+# size limit is configured SQLite may attempt to truncate the journal file.
+# This test verifies the libraries response to a malloc() failure during
+# this operation.
+#
+do_malloc_test 31 -sqlprep {
+  PRAGMA journal_mode = persist;
+  PRAGMA journal_size_limit = 1024;
+  CREATE TABLE t1(a PRIMARY KEY, b);
+} -sqlbody {
+  INSERT INTO t1 VALUES(1, 2);
+}
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

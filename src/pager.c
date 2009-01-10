@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.544 2009/01/09 17:11:05 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.545 2009/01/10 16:15:09 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -115,6 +115,14 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 # define CODEC1(P,D,N,X) /* NO-OP */
 # define CODEC2(P,D,N,X) ((char*)D)
 #endif
+
+/*
+** The maximum allowed sector size. 16MB. If the xSectorsize() method 
+** returns a value larger than this, then MAX_SECTOR_SIZE is used instead.
+** This could conceivably cause corruption following a power failure on
+** such a system. This is currently an undocumented limit.
+*/
+#define MAX_SECTOR_SIZE 0x0100000
 
 /*
 ** An instance of the following structure is allocated for each active
@@ -401,7 +409,7 @@ static int jrnlBufferSize(Pager *pPager){
 
   if( fd->pMethods ){
     dc = sqlite3OsDeviceCharacteristics(fd);
-    nSector = sqlite3OsSectorSize(fd);
+    nSector = pPager->sectorSize;
     szPage = pPager->pageSize;
   }
 
@@ -760,7 +768,8 @@ static int readJournalHdr(
   int rc;
   unsigned char aMagic[8]; /* A buffer to hold the magic header */
   i64 jrnlOff;
-  int iPageSize;
+  u32 iPageSize;
+  u32 iSectorSize;
 
   seekJournalHdr(pPager);
   if( pPager->journalOff+JOURNAL_HDR_SZ(pPager) > journalSize ){
@@ -785,28 +794,41 @@ static int readJournalHdr(
   rc = read32bits(pPager->jfd, jrnlOff+8, pDbSize);
   if( rc ) return rc;
 
-  rc = read32bits(pPager->jfd, jrnlOff+16, (u32 *)&iPageSize);
-  if( rc==SQLITE_OK 
-   && iPageSize>=512 
-   && iPageSize<=SQLITE_MAX_PAGE_SIZE 
-   && ((iPageSize-1)&iPageSize)==0 
-  ){
-    u16 pagesize = (u16)iPageSize;
-    rc = sqlite3PagerSetPagesize(pPager, &pagesize);
-  }
-  if( rc ) return rc;
+  if( pPager->journalOff==0 ){
+    rc = read32bits(pPager->jfd, jrnlOff+16, &iPageSize);
+    if( rc ) return rc;
 
-  /* Update the assumed sector-size to match the value used by 
-  ** the process that created this journal. If this journal was
-  ** created by a process other than this one, then this routine
-  ** is being called from within pager_playback(). The local value
-  ** of Pager.sectorSize is restored at the end of that routine.
-  */
-  rc = read32bits(pPager->jfd, jrnlOff+12, &pPager->sectorSize);
-  if( rc ) return rc;
-  if( (pPager->sectorSize & (pPager->sectorSize-1))!=0
-         || pPager->sectorSize>0x1000000 ){
-    return SQLITE_DONE;
+    if( iPageSize<512 
+     || iPageSize>SQLITE_MAX_PAGE_SIZE 
+     || ((iPageSize-1)&iPageSize)!=0 
+    ){
+      /* If the page-size in the journal-header is invalid, then the process
+      ** that wrote the journal-header must have crashed before the header
+      ** was synced. In this case stop reading the journal file here.
+      */
+      rc = SQLITE_DONE;
+    }else{
+      u16 pagesize = (u16)iPageSize;
+      rc = sqlite3PagerSetPagesize(pPager, &pagesize);
+      assert( rc!=SQLITE_OK || pagesize==(u16)iPageSize );
+    }
+    if( rc ) return rc;
+  
+    /* Update the assumed sector-size to match the value used by 
+    ** the process that created this journal. If this journal was
+    ** created by a process other than this one, then this routine
+    ** is being called from within pager_playback(). The local value
+    ** of Pager.sectorSize is restored at the end of that routine.
+    */
+    rc = read32bits(pPager->jfd, jrnlOff+12, &iSectorSize);
+    if( rc ) return rc;
+    if( (iSectorSize&(iSectorSize-1))
+      || iSectorSize<512
+      || iSectorSize>MAX_SECTOR_SIZE
+    ){
+      return SQLITE_DONE;
+    }
+    pPager->sectorSize = iSectorSize;
   }
 
   pPager->journalOff += JOURNAL_HDR_SZ(pPager);
@@ -1503,7 +1525,7 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
 ** Set the sectorSize for the given pager.
 **
 ** The sector size is at least as big as the sector size reported
-** by sqlite3OsSectorSize().  The minimum sector size is 512.
+** by sqlite3OsSectorSize(). The minimum sector size is 512.
 */
 static void setSectorSize(Pager *pPager){
   assert(pPager->fd->pMethods||pPager->tempFile);
@@ -1516,6 +1538,9 @@ static void setSectorSize(Pager *pPager){
   }
   if( pPager->sectorSize<512 ){
     pPager->sectorSize = 512;
+  }
+  if( pPager->sectorSize>MAX_SECTOR_SIZE ){
+    pPager->sectorSize = MAX_SECTOR_SIZE;
   }
 }
 
@@ -2022,9 +2047,9 @@ int sqlite3PagerOpen(
       **    + The largest page size that can be written atomically.
       */
       if( rc==SQLITE_OK && !readOnly ){
-        int iSectorSize = sqlite3OsSectorSize(pPager->fd);
-        if( szPageDflt<iSectorSize ){
-          szPageDflt = iSectorSize;
+        setSectorSize(pPager);
+        if( szPageDflt<pPager->sectorSize ){
+          szPageDflt = pPager->sectorSize;
         }
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
         {

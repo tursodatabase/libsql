@@ -12,7 +12,7 @@
 ** 
 ** This file defines various limits of what SQLite can process.
 **
-** @(#) $Id: sqliteLimit.h,v 1.9 2009/01/07 16:15:43 danielk1977 Exp $
+** @(#) $Id: sqliteLimit.h,v 1.10 2009/01/10 16:15:09 danielk1977 Exp $
 */
 
 /*
@@ -130,6 +130,13 @@
 /* Maximum page size.  The upper bound on this value is 32768.  This a limit
 ** imposed by the necessity of storing the value in a 2-byte unsigned integer
 ** and the fact that the page size must be a power of 2.
+**
+** If this limit is changed, then the compiled library is technically
+** incompatible with an SQLite library compiled with a different limit. If
+** a process operating on a database with a page-size of 65536 bytes 
+** crashes, then an instance of SQLite compiled with the default page-size 
+** limit will not be able to rollback the aborted transaction. This could
+** lead to database corruption.
 */
 #ifndef SQLITE_MAX_PAGE_SIZE
 # define SQLITE_MAX_PAGE_SIZE 32768

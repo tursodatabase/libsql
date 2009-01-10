@@ -15,7 +15,7 @@
 # Later: Also, some other specific scenarios required for coverage
 # testing that do not lead to corruption.
 #
-# $Id: crash8.test,v 1.2 2009/01/09 10:49:14 danielk1977 Exp $
+# $Id: crash8.test,v 1.3 2009/01/10 16:15:09 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -118,13 +118,27 @@ proc read_file {zFile} {
   close $fd
   return $zData
 }
+proc write_file {zFile zData} {
+  set fd [open $zFile w]
+  fconfigure $fd -translation binary 
+  puts -nonewline $fd $zData
+  close $fd
+}
 
 # The following tests check that SQLite will not roll back a hot-journal
 # file if the sector-size field in the first journal file header is
 # suspect. Definition of suspect:
 # 
+#    a) Not a power of 2, or                (crash8-3.5)
+#    b) Greater than 0x01000000 (16MB), or  (crash8-3.6)
+#    c) Less than 512.                      (crash8-3.7)
+#
+# Also test that SQLite will not rollback a hot-journal file with a
+# suspect page-size. In this case "suspect" means:
+# 
 #    a) Not a power of 2, or
-#    b) Greater than 0x1000000 (16MB).
+#    b) Less than 512, or
+#    c) Greater than SQLITE_MAX_PAGE_SIZE
 #
 do_test crash8-3.1 {
   list [file exists test.db-joural] [file exists test.db]
@@ -148,34 +162,61 @@ do_test crash8-3.4 {
   binary scan [string range $zJournal 20 23] I nSector
   set nSector
 } {512}
+
 do_test crash8-3.5 {
-  set zJournal2 [
-    string replace $zJournal 20 23 [binary format I 511]
-  ]
-  set fd [open test.db-journal w]
-  fconfigure $fd -translation binary 
-  puts -nonewline $fd $zJournal2
-  close $fd
-  
+  set zJournal2 [string replace $zJournal 20 23 [binary format I 513]]
+  write_file test.db-journal $zJournal2
+
   execsql { 
     SELECT count(*) FROM t1;
     PRAGMA integrity_check
   }
 } {0 ok}
 do_test crash8-3.6 {
-  set zJournal2 [
-    string replace $zJournal 20 23 [binary format I [expr 0x2000000]]
-  ]
-  set fd [open test.db-journal w]
-  fconfigure $fd -translation binary 
-  puts -nonewline $fd $zJournal2
-  close $fd
+  set zJournal2 [string replace $zJournal 20 23 [binary format I 0x2000000]]
+  write_file test.db-journal $zJournal2
   execsql { 
     SELECT count(*) FROM t1;
     PRAGMA integrity_check
   }
 } {0 ok}
 do_test crash8-3.7 {
+  set zJournal2 [string replace $zJournal 20 23 [binary format I 256]]
+  write_file test.db-journal $zJournal2
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check
+  }
+} {0 ok}
+
+do_test crash8-3.8 {
+  set zJournal2 [string replace $zJournal 24 27 [binary format I 513]]
+  write_file test.db-journal $zJournal2
+
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check
+  }
+} {0 ok}
+do_test crash8-3.9 {
+  set big [expr $SQLITE_MAX_PAGE_SIZE * 2]
+  set zJournal2 [string replace $zJournal 24 27 [binary format I $big]]
+  write_file test.db-journal $zJournal2
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check
+  }
+} {0 ok}
+do_test crash8-3.10 {
+  set zJournal2 [string replace $zJournal 24 27 [binary format I 256]]
+  write_file test.db-journal $zJournal2
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check
+  }
+} {0 ok}
+
+do_test crash8-3.11 {
   set fd [open test.db-journal w]
   fconfigure $fd -translation binary 
   puts -nonewline $fd $zJournal

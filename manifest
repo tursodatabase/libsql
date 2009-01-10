@@ -1,5 +1,5 @@
-C Fix\sa\sbug\scaused\sby\soverzealous\scode\stest\scoverage\ssimplifications.\nBug\sfound\sby\sTH3.\s(CVS\s6157)
-D 2009-01-10T15:34:12
+C Improve\scoverage\sof\spager.c.\s(CVS\s6158)
+D 2009-01-10T16:15:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 7825c6178597713382d74adbf8c8c00ffcdc42d4
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 97bfbacae6131b8d228628803606e98dd763b474
+F src/pager.c a1e23f2c55bda1303cb6236d4aca9666e58eb610
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -159,7 +159,7 @@ F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 4b2a8eb466c30daa90d25f9d3bb2e85b60ad47af
-F src/sqliteLimit.h 651a2757ba55aeba1da167786b6a8c3404433940
+F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 4415e1033bd3e92b05a6a9cde911ee4de3b82df9
@@ -288,7 +288,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test 2ee8ecfed37eea4b987148fe36d6b56175c7d049
+F test/crash8.test 5b0e499c1dfaa2025e8ab69e4be32f71d4d92b23
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -413,7 +413,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test e004a5ed138e06464d74dbd6bead01908f264c52
+F test/jrnlmode.test a77f95a7cbdc8373582fd274f24124ad0d3a8fb6
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
 F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 22f7857f9d7da7ff5061ded8806c43a6271109fc
@@ -430,7 +430,7 @@ F test/lock6.test f4e9052b14da3bd6807a757d5aed15c17321031a
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test 86f378c52202b5b39b54a7fc560a4a75d77ce4f1
+F test/malloc.test 95e94f8a3dd1169c8774788ec4148ea032ea20d8
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2cbea64fb00a1b5b8aa0e9c958b2a09256ae59bc
-R 7759d6bbe5785c316ce1fcb98ad155c6
-U drh
-Z 8f01cd8c083356c8b7a4a4354e84f698
+P 3da5578726cb22118dfca38a2098a1e378644387
+R 320ab8e7bd88e5e4d3a0d64f8789cffb
+U danielk1977
+Z 43f0761b39243fe434b2dca241a4ad9a

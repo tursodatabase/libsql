@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.10 2009/01/09 10:49:14 danielk1977 Exp $
+# $Id: jrnlmode.test,v 1.11 2009/01/10 16:15:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -419,6 +419,23 @@ ifcapable pragma {
     set sz [file size test.db-journal]
     expr {$sz>=$journalsize}
   } {1}
+
+  # Test a size-limit of 0.
+  #
+  do_test jrnlmode-5.20 {
+    execsql {
+      PRAGMA journal_size_limit = 0;
+      BEGIN;
+      UPDATE t1 SET a = randomblob(1000);
+    }
+  } {0}
+  do_test jrnlmode-5.21 {
+    expr {[file size test.db-journal] > 1024}
+  } {1}
+  do_test jrnlmode-5.22 {
+    execsql COMMIT
+    list [file exists test.db-journal] [file size test.db-journal]
+  } {1 0}
 }
 
 ifcapable pragma {
