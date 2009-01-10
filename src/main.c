@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.520 2008/12/17 17:30:26 danielk1977 Exp $
+** $Id: main.c,v 1.521 2009/01/10 16:15:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -453,16 +453,6 @@ int sqlite3_db_config(sqlite3 *db, int op, ...){
   va_end(ap);
   return rc;
 }
-
-/*
-** Routine needed to support the testcase() macro.
-*/
-#ifdef SQLITE_COVERAGE_TEST
-void sqlite3Coverage(int x){
-  static int dummy = 0;
-  dummy += x;
-}
-#endif
 
 
 /*

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.822 2009/01/10 13:24:51 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.823 2009/01/10 16:15:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -48,57 +48,6 @@
 #endif
 #ifdef HAVE_INTTYPES_H
 #include <inttypes.h>
-#endif
-
-/*
-** A macro used to aid in coverage testing.  When doing coverage
-** testing, the condition inside the argument must be evaluated 
-** both true and false in order to get full branch coverage.
-** This macro can be inserted to ensure adequate test coverage
-** in places where simple condition/decision coverage is inadequate.
-*/
-#ifdef SQLITE_COVERAGE_TEST
-  void sqlite3Coverage(int);
-# define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
-# define TESTONLY(X)  X
-#else
-# define testcase(X)
-# define TESTONLY(X)
-#endif
-
-/*
-** The ALWAYS and NEVER macros surround boolean expressions which 
-** are intended to always be true or false, respectively.  Such
-** expressions could be omitted from the code completely.  But they
-** are included in a few cases in order to enhance the resilience
-** of SQLite to unexpected behavior - to make the code "self-healing"
-** or "ductile" rather than being "brittle" and crashing at the first
-** hint of unplanned behavior.
-**
-** When doing coverage testing ALWAYS and NEVER are hard-coded to
-** be true and false so that the unreachable code then specify will
-** not be counted as untested code.
-*/
-#ifdef SQLITE_COVERAGE_TEST
-# define ALWAYS(X)      (1)
-# define NEVER(X)       (0)
-#else
-# define ALWAYS(X)      (X)
-# define NEVER(X)       (X)
-#endif
-
-/*
-** The macro unlikely() is a hint that surrounds a boolean
-** expression that is usually false.  Macro likely() surrounds
-** a boolean expression that is usually true.  GCC is able to
-** use these hints to generate better code, sometimes.
-*/
-#if defined(__GNUC__) && 0
-# define likely(X)    __builtin_expect((X),1)
-# define unlikely(X)  __builtin_expect((X),0)
-#else
-# define likely(X)    !!(X)
-# define unlikely(X)  !!(X)
 #endif
 
 /*
@@ -236,6 +185,73 @@
 */
 #if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
 # define NDEBUG 1
+#endif
+
+/*
+** The testcase() macro is used to aid in coverage testing.  When 
+** doing coverage testing, the condition inside the argument to
+** testcase() must be evaluated both true and false in order to
+** get full branch coverage.  The testcase() macro is inserted
+** to help ensure adequate test coverage in places where simple
+** condition/decision coverage is inadequate.  For example, testcase()
+** can be used to make sure boundary values are tested.  For
+** bitmask tests, testcase() can be used to make sure each bit
+** is significant and used at least once.  On switch statements
+** where multiple cases go to the same block of code, testcase()
+** can insure that all cases are evaluated.
+**
+** The TESTONLY macro is used to enclose variable declarations or
+** other bits of code that are needed to support the arguments
+** within testcase() macros.
+*/
+#ifdef SQLITE_COVERAGE_TEST
+  void sqlite3Coverage(int);
+# define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
+# define TESTONLY(X)  X
+#else
+# define testcase(X)
+# define TESTONLY(X)
+#endif
+
+/*
+** The ALWAYS and NEVER macros surround boolean expressions which 
+** are intended to always be true or false, respectively.  Such
+** expressions could be omitted from the code completely.  But they
+** are included in a few cases in order to enhance the resilience
+** of SQLite to unexpected behavior - to make the code "self-healing"
+** or "ductile" rather than being "brittle" and crashing at the first
+** hint of unplanned behavior.
+**
+** In other words, ALWAYS and NEVER are added for defensive code.
+**
+** When doing coverage testing ALWAYS and NEVER are hard-coded to
+** be true and false so that the unreachable code then specify will
+** not be counted as untested code.
+*/
+#if defined(SQLITE_COVERAGE_TEST)
+# define ALWAYS(X)      (1)
+# define NEVER(X)       (0)
+#elif !defined(NDEBUG)
+  int sqlite3Assert(void);
+# define ALWAYS(X)      ((X)?1:sqlite3Assert())
+# define NEVER(X)       ((X)?sqlite3Assert():0)
+#else
+# define ALWAYS(X)      (X)
+# define NEVER(X)       (X)
+#endif
+
+/*
+** The macro unlikely() is a hint that surrounds a boolean
+** expression that is usually false.  Macro likely() surrounds
+** a boolean expression that is usually true.  GCC is able to
+** use these hints to generate better code, sometimes.
+*/
+#if defined(__GNUC__) && 0
+# define likely(X)    __builtin_expect((X),1)
+# define unlikely(X)  __builtin_expect((X),0)
+#else
+# define likely(X)    !!(X)
+# define unlikely(X)  !!(X)
 #endif
 
 /*

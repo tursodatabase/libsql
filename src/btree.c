@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.557 2009/01/09 14:11:05 drh Exp $
+** $Id: btree.c,v 1.558 2009/01/10 16:15:21 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7346,7 +7346,6 @@ int sqlite3BtreeIsInTrans(Btree *p){
 */
 int sqlite3BtreeIsInStmt(Btree *p){
   assert( sqlite3BtreeHoldsMutex(p) );
-  assert( p->pBt );
   return ALWAYS(p->pBt) && p->pBt->inStmt;
 }
 

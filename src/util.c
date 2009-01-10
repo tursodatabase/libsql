@@ -14,12 +14,43 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.245 2008/12/10 22:15:00 drh Exp $
+** $Id: util.c,v 1.246 2009/01/10 16:15:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
 #include <ctype.h>
 
+
+/*
+** Routine needed to support the testcase() macro.
+*/
+#ifdef SQLITE_COVERAGE_TEST
+void sqlite3Coverage(int x){
+  static int dummy = 0;
+  dummy += x;
+}
+#endif
+
+/*
+** Routine needed to support the ALWAYS() and NEVER() macros.
+**
+** The argument to ALWAYS() should always be true and the argument
+** to NEVER() should always be false.  If either is not the case
+** then this routine is called in order to throw an error.
+**
+** This routine only exists if assert() is operational.  It always
+** throws an assert on its first invocation.  The variable has a long
+** name to help the assert() message be more readable.  The variable
+** is used to prevent a too-clever optimizer from optimizing out the
+** entire call.
+*/
+#ifndef NDEBUG
+int sqlite3Assert(void){
+  static volatile int ALWAYS_was_false_or_NEVER_was_true = 0;
+  assert( ALWAYS_was_false_or_NEVER_was_true );      /* Always fails */
+  return ALWAYS_was_false_or_NEVER_was_true++;       /* Not Reached */
+}
+#endif
 
 /*
 ** Return true if the floating point value is Not a Number (NaN).
