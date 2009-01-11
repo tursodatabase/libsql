@@ -1,5 +1,5 @@
-C In\sio.test,\sreset\sthe\sconnection\safter\smanually\sdeleting\sthe\sjournal\sfile,\nso\sthat\sthe\sconnection\sdoes\snot\scontinue\sto\suse\sthe\sold\sdeleted\sjournal\sfile.\s(CVS\s6164)
-D 2009-01-11T00:42:02
+C The\scrash8.test\sdepends\son\sauto_vacuum\sbeing\soff.\s\sMake\ssure\sthat\sis\sthe\ncase.\s(CVS\s6165)
+D 2009-01-11T00:44:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -288,7 +288,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test 5b0e499c1dfaa2025e8ab69e4be32f71d4d92b23
+F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3cb910f0ce116af3f291cb913b32abc89493bcc5
-R 694e57a08436389cc8b472bef8713ab8
+P 1e79f4f9e59469fb9e3e0007163de3e604dcf00f
+R 6f197d93d4204d4762b9c79ff2334ddc
 U drh
-Z d552e20d25d8897f7dfc0a0ed6030e19
+Z a344398c9dc28d3b08b3e0c830a9ef34
