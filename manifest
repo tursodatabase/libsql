@@ -1,5 +1,5 @@
-C Fix\san\sassert()\sso\sthat\sit\sworks\scorrectly\swith\sSQLITE_TEMP_STORE=3.\s(CVS\s6167)
-D 2009-01-11T17:00:02
+C Sometimes\sa\ssingle\sbyte\sis\swritten\sto\sthe\smain\sdatabase\sfile.\s\sMake\ssure\nthat\sjournaltest\sknows\sthis.\s(CVS\s6168)
+D 2009-01-11T18:24:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +179,7 @@ F src/test_config.c e568dc1062a79710e05e5ae79b168b7c64bf7e5d
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c f234c7351bb4dd4098a280f8cc3da98123038de4
+F src/test_journal.c 0f4b9a929fae2be5bee0230f29204227c3d76c71
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
 F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b47ddefc772ee59aa1509ab8d8f229a3d7c4ddaf
-R d5937cb2acc47d8139e1777588aaffe4
+P fd2bbcf8d8d03eecd4614636ae787331a8e99816
+R 58d0c56663f89806448d594972867594
 U drh
-Z 0588db20fee627d922c3ef65642c6bea
+Z 97134145a04bbdb0bbd12839d64c2ff0

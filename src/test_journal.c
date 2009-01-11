@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.8 2009/01/08 12:05:56 danielk1977 Exp $
+** $Id: test_journal.c,v 1.9 2009/01/11 18:24:27 drh Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -413,7 +413,7 @@ static int jtWrite(
   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
     u32 pgno = iOfst/p->nPagesize + 1;
 
-    assert( iAmt==p->nPagesize && (iOfst%p->nPagesize)==0 );
+    assert( (iAmt==1 || iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
     assert( pgno<=p->nPage || p->nSync>0 );
     assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
   }
