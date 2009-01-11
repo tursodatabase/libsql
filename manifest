@@ -1,5 +1,5 @@
-C Adjust\ssavepoint.test\sso\sthat\sit\scan\sdeal\swith\sSQLITE_TEMP_STORE=3.\s(CVS\s6163)
-D 2009-01-11T00:18:38
+C In\sio.test,\sreset\sthe\sconnection\safter\smanually\sdeleting\sthe\sjournal\sfile,\nso\sthat\sthe\sconnection\sdoes\snot\scontinue\sto\suse\sthe\sold\sdeleted\sjournal\sfile.\s(CVS\s6164)
+D 2009-01-11T00:42:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -401,7 +401,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test d80d0682be7c4ce2f0da1dfe0444a2ba563df949
+F test/io.test d0dfe567a05d2559b8508d115f1282c25967fee6
 F test/ioerr.test 12f9000bb9024b4b1386320e60badd5223e75b16
 F test/ioerr2.test a8428580ce12ce67a6f16d85e2640fa6ce2da888
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5f184da6758327e0d5fefe61ac3be06a79cc8269
-R a5cd680cf44d0a93c4a0ad4653aeef29
+P 3cb910f0ce116af3f291cb913b32abc89493bcc5
+R 694e57a08436389cc8b472bef8713ab8
 U drh
-Z d341f40917425c3ad1d99a7db67cd3c2
+Z d552e20d25d8897f7dfc0a0ed6030e19
