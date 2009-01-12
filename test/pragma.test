@@ -12,7 +12,7 @@
 #
 # This file implements tests for the PRAGMA command.
 #
-# $Id: pragma.test,v 1.72 2009/01/09 21:41:17 drh Exp $
+# $Id: pragma.test,v 1.73 2009/01/12 14:01:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1284,7 +1284,7 @@ sqlite3 dbX :memory:
 dbX eval {PRAGMA temp_store_directory = ""}
 dbX close
 
-ifcapable lock_proxy_pragmas {
+ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   set sqlite_hostid_num 1
 
   set using_proxy 0

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock6.test,v 1.1 2008/11/21 00:10:35 aswift Exp $
+# $Id: lock6.test,v 1.2 2009/01/12 14:01:45 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -78,7 +78,7 @@ puts $f {
 close $f
 
 
-ifcapable lock_proxy_pragmas {
+ifcapable lock_proxy_pragmas&&prefer_proxy_locking {
   set sqlite_hostid_num 1
 
   set using_proxy 0

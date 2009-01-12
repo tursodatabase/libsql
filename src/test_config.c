@@ -16,7 +16,7 @@
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
 **
-** $Id: test_config.c,v 1.46 2009/01/09 21:41:17 drh Exp $
+** $Id: test_config.c,v 1.47 2009/01/12 14:01:45 danielk1977 Exp $
 */
 
 #include "sqliteLimit.h"
@@ -403,6 +403,11 @@ Tcl_SetVar2(interp, "sqlite_options", "long_double",
   Tcl_SetVar2(interp,"sqlite_options","lock_proxy_pragmas","1",TCL_GLOBAL_ONLY);
 #else
   Tcl_SetVar2(interp,"sqlite_options","lock_proxy_pragmas","0",TCL_GLOBAL_ONLY);
+#endif
+#if defined(SQLITE_PREFER_PROXY_LOCKING) && defined(__APPLE__)
+  Tcl_SetVar2(interp,"sqlite_options","prefer_proxy_locking","1",TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp,"sqlite_options","prefer_proxy_locking","0",TCL_GLOBAL_ONLY);
 #endif
     
     
