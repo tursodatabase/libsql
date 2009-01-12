@@ -1,5 +1,5 @@
-C Only\srun\stests\sthat\sdepend\son\sSQLITE_PREFER_PROXY_LOCKING\sbuilds\swhen\ssaid\ssymbol\sis\sset.\s(CVS\s6169)
-D 2009-01-12T14:01:45
+C Version\s3.6.8\s(CVS\s6170)
+D 2009-01-12T15:46:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e0af5a43f3c6ae41042c74339e7404d3373fd6ce
+P 5d88f8be7342acd2a7ed6f269bec615cd03e59e2
 R 19b82c43a9e4fa6c4de3bc8b780a712d
-U danielk1977
-Z 6d683817d13d341eb8858c2edcdac0c3
+U drh
+Z 5604ec7056fdd3ecc5e892da9588c5ed
