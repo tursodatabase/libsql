@@ -24,6 +24,8 @@
 **
 ** Big chunks of rowid/next-ptr pairs are allocated at a time, to
 ** reduce the malloc overhead.
+**
+** $Id: rowset.c,v 1.3 2009/01/13 20:14:16 drh Exp $
 */
 #include "sqliteInt.h"
 

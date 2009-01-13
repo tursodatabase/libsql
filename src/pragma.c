@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.200 2009/01/09 21:41:17 drh Exp $
+** $Id: pragma.c,v 1.201 2009/01/13 20:14:16 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -525,7 +525,7 @@ void sqlite3Pragma(
   **  PRAGMA [database.]journal_size_limit
   **  PRAGMA [database.]journal_size_limit=N
   **
-  ** Get or set the (boolean) value of the database 'auto-vacuum' parameter.
+  ** Get or set the size limit on rollback journal files.
   */
   if( sqlite3StrICmp(zLeft,"journal_size_limit")==0 ){
     Pager *pPager = sqlite3BtreePager(pDb->pBt);
@@ -547,7 +547,8 @@ void sqlite3Pragma(
   **  PRAGMA [database.]auto_vacuum
   **  PRAGMA [database.]auto_vacuum=N
   **
-  ** Get or set the (boolean) value of the database 'auto-vacuum' parameter.
+  ** Get or set the value of the database 'auto-vacuum' parameter.
+  ** The value is one of:  0 NONE 1 FULL 2 INCREMENTAL
   */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   if( sqlite3StrICmp(zLeft,"auto_vacuum")==0 ){

@@ -1,5 +1,5 @@
-C If\sthe\sjournal\sfile\sis\sopen\swhen\sunlocking\sthe\sdatabase,\sclose\sit\sjust\sbefore\sunlocking\sthe\sdatabase\sfile\sinstead\sof\sjust\safter.\sThis\smay\sfix\s#3572.\s(CVS\s6171)
-D 2009-01-13T16:03:44
+C Updates\sto\scomments\sas\ssuggested\sby\stickets\s#3578\sand\s#3579.\s(CVS\s6172)
+D 2009-01-13T20:14:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,12 +148,12 @@ F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
 F src/pcache1.c c0aa84ff69ea759fa944dbee9167a2463ab7c322
-F src/pragma.c ec9470bc3ee91dd8933adad209a24311401ca78c
+F src/pragma.c 5b7ac60366b731b11cbc59352082aa5922439a98
 F src/prepare.c 2a11736383d0af2ea80aa62270f15ad80dd8b5cd
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
-F src/rowset.c 570f9ebc189542f57cb0a2ecc3c47b00ac71d803
+F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
 F src/shell.c 65d19f8996a160f288087e31810f24025439c62a
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
@@ -696,7 +696,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8ca0b7c13620c8e2acf73343ebfb13128dd4c3b1
-R dc332db4a66532171928abb97c3a9ae2
-U danielk1977
-Z bf8c7556242ec6811fbf508b077e2823
+P 36fe9a7a51b5279f1a3964139aa636e81f9c8b06
+R b541b7fe0404ff776b91c0f6aaf1ae26
+U drh
+Z 09eabc86e977812e7a4384766d6d56c9
