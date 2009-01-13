@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.548 2009/01/11 17:00:02 drh Exp $
+** @(#) $Id: pager.c,v 1.549 2009/01/13 16:03:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -985,10 +985,7 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 */
 static void pager_unlock(Pager *pPager){
   if( !pPager->exclusiveMode ){
-    int rc = osUnlock(pPager->fd, NO_LOCK);
-    if( rc ) pPager->errCode = rc;
-    pPager->dbSizeValid = 0;
-    IOTRACE(("UNLOCK %p\n", pPager))
+    int rc;
 
     /* Always close the journal file when dropping the database lock.
     ** Otherwise, another connection with journal_mode=delete might
@@ -1002,6 +999,11 @@ static void pager_unlock(Pager *pPager){
       sqlite3BitvecDestroy(pPager->pAlwaysRollback);
       pPager->pAlwaysRollback = 0;
     }
+
+    rc = osUnlock(pPager->fd, NO_LOCK);
+    if( rc ) pPager->errCode = rc;
+    pPager->dbSizeValid = 0;
+    IOTRACE(("UNLOCK %p\n", pPager))
 
     /* If Pager.errCode is set, the contents of the pager cache cannot be
     ** trusted. Now that the pager file is unlocked, the contents of the
