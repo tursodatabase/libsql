@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sOR-clause\soptimizer\stakes\sthe\scost\sof\ssorting\sinto\saccount.\nReset\sthe\srowid\scache\son\sthe\sOP_Rewind\sand\sOP_Last\sopcodes.\s\sBump\sthe\nversion\snumber\sso\sthat\swe\scan\sdo\san\semergency\srelease.\s\sTicket\s#3581.\s(CVS\s6173)
-D 2009-01-14T00:55:10
+C Here\sis\sthe\stest\scase\sto\sprove\sthat\sticket\s#3581\sis\sfixed.\s(CVS\s6174)
+D 2009-01-14T01:10:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -612,6 +612,7 @@ F test/tkt3522.test 22ce2ebbcb04a6be56c0977d405c207967318fd6
 F test/tkt3527.test ee4af96183579565987e58873a7490bc04934ffb
 F test/tkt3541.test 5dc257bde9bc833ab9cc6844bf170b998dbb950a
 F test/tkt3554.test 0463fea3650ac18d3694a8f39e6e25cddc1ac1fc
+F test/tkt3581.test 1966b7193f1e3f14951cce8c66907ae69454e9a3
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
@@ -696,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b5927213b6171e57018f1f265940c9bcc7a0ba04
-R 5756dc3cd885a7776d15af4f4a23753a
+P d28b58209bf5eb575d0cad8dc71ac043395c6471
+R 4f97314454171316749f2eb51c07be84
 U drh
-Z 63ab172d3002b8551771471f762541d8
+Z a8f97e0a527d1b34afa5bd9ec52ca7e8
