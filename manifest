@@ -1,5 +1,5 @@
-C Version\s3.6.9\s(CVS\s6175)
-D 2009-01-14T04:09:36
+C Fix\sa\sproblem\swith\scommitting\sa\stransaction\swhile\sthere\sare\sother\sactive\sstatements.\sSometimes,\sthe\sdatabase\schange\scounter\swas\snot\sbeing\supdated.\s(CVS\s6176)
+D 2009-01-14T17:45:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 7825c6178597713382d74adbf8c8c00ffcdc42d4
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 5a95868f4fe0efd2ec51f89efce470e9d63d6fed
+F src/pager.c add3461c2dedf56e56d8d18d3506b6cc322fa363
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
 F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
@@ -421,7 +421,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 18db29c081380fdedcfbd8c633847712059ae104
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test a280c87f86cfe25ac8899bd6cdfd23ffc5aca40a
+F test/lock.test 3f03827e056946c4b81b74006e62ffa2a3219ab3
 F test/lock2.test 018b846f6f3b3b695fad07e317b7988442b556f4
 F test/lock3.test 8adfbf438b96316267611214d494ebc1311b8cda
 F test/lock4.test 09d97d52cae18fadfe631552af9880dac6b3ae90
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f5f5ef646bef6de6a744b565e089219d4e47397d
-R 4f97314454171316749f2eb51c07be84
-U drh
-Z d65a6a30099596d50d6572a776a8f3b0
+P b6ce8199a9286eb2d0a590abc8ef080594d84f83
+R ca33b022189d9e81c917d579a0524de0
+U danielk1977
+Z 675d862fdbda95891d2940f72045246e

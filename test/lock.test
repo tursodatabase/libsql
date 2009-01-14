@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.34 2008/11/21 22:21:51 drh Exp $
+# $Id: lock.test,v 1.35 2009/01/14 17:45:58 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -349,6 +349,46 @@ ifcapable tempdb {
     }
   } {9}
 }
+
+do_test lock-6.1 {
+  execsql {
+    CREATE TABLE t4(a PRIMARY KEY, b);
+    INSERT INTO t4 VALUES(1, 'one');
+    INSERT INTO t4 VALUES(2, 'two');
+    INSERT INTO t4 VALUES(3, 'three');
+  }
+
+  set STMT [sqlite3_prepare $DB "SELECT * FROM sqlite_master" -1 TAIL]
+  sqlite3_step $STMT
+
+  execsql { DELETE FROM t4 }
+  execsql { SELECT * FROM sqlite_master } db2
+  execsql { SELECT * FROM t4 } db2
+} {}
+
+do_test lock-6.2 {
+  execsql { 
+    BEGIN;
+    INSERT INTO t4 VALUES(1, 'one');
+    INSERT INTO t4 VALUES(2, 'two');
+    INSERT INTO t4 VALUES(3, 'three');
+    COMMIT;
+  }
+
+  execsql { SELECT * FROM t4 } db2
+} {1 one 2 two 3 three}
+
+do_test lock-6.3 {
+  execsql { SELECT a FROM t4 ORDER BY a } db2
+} {1 2 3}
+
+do_test lock-6.4 {
+  execsql { PRAGMA integrity_check } db2
+} {ok}
+
+do_test lock-6.5 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
 
 do_test lock-999.1 {
   rename db2 {}
