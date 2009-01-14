@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.363 2009/01/10 15:34:12 drh Exp $
+** $Id: where.c,v 1.364 2009/01/14 00:55:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1846,6 +1846,7 @@ static void bestIndex(
       WhereClause *pOrWC = &pTerm->u.pOrInfo->wc;
       WhereTerm *pOrTerm;
       int j;
+      int sortable = 0;
       double rTotal = 0;
       nRow = 0;
       for(j=0, pOrTerm=pOrWC->a; j<pOrWC->nTerm; j++, pOrTerm++){
@@ -1865,6 +1866,14 @@ static void bestIndex(
         nRow += sTermCost.nRow;
         if( rTotal>=pCost->rCost ) break;
       }
+      if( pOrderBy!=0 ){
+        if( sortableByRowid(iCur, pOrderBy, pWC->pMaskSet, &rev) && !rev ){
+          sortable = 1;
+        }else{
+          rTotal += nRow*estLog(nRow);
+          WHERETRACE(("... sorting increases OR cost to %.9g\n", rTotal));
+        }
+      }
       WHERETRACE(("... multi-index OR cost=%.9g nrow=%.9g\n",
                   rTotal, nRow));
       if( rTotal<pCost->rCost ){
@@ -1872,10 +1881,7 @@ static void bestIndex(
         pCost->nRow = nRow;
         pCost->plan.wsFlags = WHERE_MULTI_OR;
         pCost->plan.u.pTerm = pTerm;
-        if( pOrderBy!=0
-         && sortableByRowid(iCur, pOrderBy, pWC->pMaskSet, &rev)
-         && !rev
-        ){
+        if( sortable ){
           pCost->plan.wsFlags = WHERE_ORDERBY|WHERE_MULTI_OR;
         }
       }

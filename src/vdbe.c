@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.810 2009/01/05 22:30:39 drh Exp $
+** $Id: vdbe.c,v 1.811 2009/01/14 00:55:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <ctype.h>
@@ -3908,6 +3908,7 @@ case OP_Last: {        /* jump */
   rc = sqlite3BtreeLast(pCrsr, &res);
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
+  pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
   if( res && pOp->p2>0 ){
     pc = pOp->p2 - 1;
@@ -3958,6 +3959,7 @@ case OP_Rewind: {        /* jump */
     pC->atFirst = res==0 ?1:0;
     pC->deferredMoveto = 0;
     pC->cacheStatus = CACHE_STALE;
+    pC->rowidIsValid = 0;
   }else{
     res = 1;
   }
