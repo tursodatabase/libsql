@@ -1,5 +1,5 @@
-C Here\sis\sthe\stest\scase\sto\sprove\sthat\sticket\s#3581\sis\sfixed.\s(CVS\s6174)
-D 2009-01-14T01:10:40
+C Version\s3.6.9\s(CVS\s6175)
+D 2009-01-14T04:09:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d28b58209bf5eb575d0cad8dc71ac043395c6471
+P f5f5ef646bef6de6a744b565e089219d4e47397d
 R 4f97314454171316749f2eb51c07be84
 U drh
-Z a8f97e0a527d1b34afa5bd9ec52ca7e8
+Z d65a6a30099596d50d6572a776a8f3b0
