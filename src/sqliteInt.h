@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.823 2009/01/10 16:15:22 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.824 2009/01/14 23:03:41 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -200,16 +200,22 @@
 ** where multiple cases go to the same block of code, testcase()
 ** can insure that all cases are evaluated.
 **
-** The TESTONLY macro is used to enclose variable declarations or
-** other bits of code that are needed to support the arguments
-** within testcase() macros.
 */
 #ifdef SQLITE_COVERAGE_TEST
   void sqlite3Coverage(int);
 # define testcase(X)  if( X ){ sqlite3Coverage(__LINE__); }
-# define TESTONLY(X)  X
 #else
 # define testcase(X)
+#endif
+
+/*
+** The TESTONLY macro is used to enclose variable declarations or
+** other bits of code that are needed to support the arguments
+** within testcase() and assert() macros.
+*/
+#if !defined(NDEBUG) || defined(SQLITE_COVERAGE_TEST)
+# define TESTONLY(X)  X
+#else
 # define TESTONLY(X)
 #endif
 

@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.235 2009/01/09 21:41:17 drh Exp $
+** $Id: os_unix.c,v 1.236 2009/01/14 23:03:41 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -190,6 +190,18 @@ struct unixFile {
 #if OS_VXWORKS
   int isDelete;                    /* Delete on close if true */
   struct vxworksFileId *pId;       /* Unique file ID */
+#endif
+#ifndef NDEBUG
+  /* The next group of variables are used to track whether or not the
+  ** transaction counter in bytes 24-27 of database files are updated
+  ** whenever any part of the database changes.  An assertion fault will
+  ** occur if a file is updated without also updating the transaction
+  ** counter.  This test is made to avoid new problems similar to the
+  ** one described by ticket #3584. 
+  */
+  unsigned char transCntrChng;   /* True if the transaction counter changed */
+  unsigned char dbUpdate;        /* True if any part of database file changed */
+  unsigned char inNormalWrite;   /* True if in a normal write operation */
 #endif
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -1318,6 +1330,24 @@ static int unixLock(sqlite3_file *id, int locktype){
     }
   }
   
+
+#ifndef NDEBUG
+  /* Set up the transaction-counter change checking flags when
+  ** transitioning from a SHARED to a RESERVED lock.  The change
+  ** from SHARED to RESERVED marks the beginning of a normal
+  ** write operation (not a hot journal rollback).
+  */
+  if( rc==SQLITE_OK
+   && pFile->locktype<=SHARED_LOCK
+   && locktype==RESERVED_LOCK
+  ){
+    pFile->transCntrChng = 0;
+    pFile->dbUpdate = 0;
+    pFile->inNormalWrite = 1;
+  }
+#endif
+
+
   if( rc==SQLITE_OK ){
     pFile->locktype = locktype;
     pLock->locktype = locktype;
@@ -1367,6 +1397,23 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     SimulateIOErrorBenign(1);
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
+
+#ifndef NDEBUG
+    /* When reducing a lock such that other processes can start
+    ** reading the database file again, make sure that the
+    ** transaction counter was updated if any part of the database
+    ** file changed.  If the transaction counter is not updated,
+    ** other connections to the same file might not realize that
+    ** the file has changed and hence might not know to flush their
+    ** cache.  The use of a stale cache can lead to database corruption.
+    */
+    assert( pFile->inNormalWrite==0
+         || pFile->dbUpdate==0
+         || pFile->transCntrChng==1 );
+    pFile->inNormalWrite = 0;
+#endif
+
+
     if( locktype==SHARED_LOCK ){
       lock.l_type = F_RDLCK;
       lock.l_whence = SEEK_SET;
@@ -2699,6 +2746,29 @@ static int unixWrite(
   int wrote = 0;
   assert( id );
   assert( amt>0 );
+
+#ifndef NDEBUG
+  /* If we are doing a normal write to a database file (as opposed to
+  ** doing a hot-journal rollback or a write to some file other than a
+  ** normal database file) then record the fact that the database
+  ** has changed.  If the transaction counter is modified, record that
+  ** fact too.
+  */
+  if( ((unixFile*)id)->inNormalWrite ){
+    unixFile *pFile = (unixFile*)id;
+    pFile->dbUpdate = 1;  /* The database has been modified */
+    if( offset<=24 && offset+amt>=27 ){
+      char oldCntr[4];
+      SimulateIOErrorBenign(1);
+      seekAndRead(pFile, 24, oldCntr, 4);
+      SimulateIOErrorBenign(0);
+      if( memcmp(oldCntr, &((char*)pBuf)[24-offset], 4)!=0 ){
+        pFile->transCntrChng = 1;  /* The transaction counter has changed */
+      }
+    }
+  }
+#endif
+
   while( amt>0 && (wrote = seekAndWrite((unixFile*)id, offset, pBuf, amt))>0 ){
     amt -= wrote;
     offset += wrote;
@@ -2958,6 +3028,17 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = ((unixFile*)id)->lastErrno;
       return SQLITE_OK;
     }
+#ifndef NDEBUG
+    /* The pager calls this method to signal that it has done
+    ** a rollback and that the database is therefore unchanged and
+    ** it hence it is OK for the transaction change counter to be
+    ** unchanged.
+    */
+    case SQLITE_FCNTL_DB_UNCHANGED: {
+      ((unixFile*)id)->dbUpdate = 0;
+      return SQLITE_OK;
+    }
+#endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
     case SQLITE_SET_LOCKPROXYFILE:
     case SQLITE_GET_LOCKPROXYFILE: {
