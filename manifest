@@ -1,11 +1,11 @@
-C Fix\sa\sproblem\swith\scommitting\sa\stransaction\swhile\sthere\sare\sother\sactive\sstatements.\sSometimes,\sthe\sdatabase\schange\scounter\swas\snot\sbeing\supdated.\s(CVS\s6176)
-D 2009-01-14T17:45:58
+C Increment\sthe\sversion\snumber\sin\spreparation\sfor\syet\sanother\srelease.\s(CVS\s6177)
+D 2009-01-14T18:59:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 081a767ef589d53640175c43d6d42b26a3a5a3f8
+F VERSION 824a42da8b58e58a03b35a3d537fc7d117073069
 F aclocal.m4 7d02b11fed45174e11156144227278deb6236eea
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b6ce8199a9286eb2d0a590abc8ef080594d84f83
-R ca33b022189d9e81c917d579a0524de0
-U danielk1977
-Z 675d862fdbda95891d2940f72045246e
+P b7d2a477aa2c3dbbb81d18fba1faa6835711b5c3
+R c2ce44e2afb461759d8bf0bdbc190c9f
+U drh
+Z d4f6569225c38acb501f2cb4c9970ada
