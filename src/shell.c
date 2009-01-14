@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.196 2008/12/18 22:25:14 drh Exp $
+** $Id: shell.c,v 1.197 2009/01/14 23:17:55 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1502,8 +1502,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         zShellStatic = azArg[1];
         sqlite3_exec(p->db,
           "SELECT sql FROM "
-          "  (SELECT * FROM sqlite_master UNION ALL"
-          "   SELECT * FROM sqlite_temp_master) "
+          "  (SELECT sql sql, type type, tbl_name tbl_name, name name"
+          "     FROM sqlite_master UNION ALL"
+          "   SELECT sql, type, tbl_name, name FROM sqlite_temp_master) "
           "WHERE tbl_name LIKE shellstatic() AND type!='meta' AND sql NOTNULL "
           "ORDER BY substr(type,2,1), name",
           callback, &data, &zErrMsg);
@@ -1512,8 +1513,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }else{
       sqlite3_exec(p->db,
          "SELECT sql FROM "
-         "  (SELECT * FROM sqlite_master UNION ALL"
-         "   SELECT * FROM sqlite_temp_master) "
+         "  (SELECT sql sql, type type, tbl_name tbl_name, name name"
+         "     FROM sqlite_master UNION ALL"
+         "   SELECT sql, type, tbl_name, name FROM sqlite_temp_master) "
          "WHERE type!='meta' AND sql NOTNULL AND name NOT LIKE 'sqlite_%'"
          "ORDER BY substr(type,2,1), name",
          callback, &data, &zErrMsg
