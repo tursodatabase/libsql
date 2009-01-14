@@ -458,7 +458,7 @@ libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite.lo \
 		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
                 -rpath "$(libdir)/sqlite" \
-		-version-info "8:6:8"
+		-module -avoid-version
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \

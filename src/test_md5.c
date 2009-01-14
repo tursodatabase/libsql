@@ -12,7 +12,7 @@
 ** two checksums are the same.  Such is the original use of this code.
 ** New uses may have been added since this comment was written.
 **
-** $Id: test_md5.c,v 1.8 2008/05/16 04:51:55 danielk1977 Exp $
+** $Id: test_md5.c,v 1.9 2009/01/14 23:38:03 drh Exp $
 */
 /*
  * This code implements the MD5 message-digest algorithm.
@@ -299,6 +299,7 @@ static void DigestToBase16(unsigned char *digest, char *zBuf){
 static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
   MD5Context ctx;
   unsigned char digest[16];
+  char zBuf[30];
 
   if( argc!=2 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0], 
@@ -308,7 +309,8 @@ static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
   MD5Init(&ctx);
   MD5Update(&ctx, (unsigned char*)argv[1], (unsigned)strlen(argv[1]));
   MD5Final(digest, &ctx);
-  DigestToBase16(digest, interp->result);
+  DigestToBase16(digest, zBuf);
+  Tcl_AppendResult(interp, zBuf, (char*)0);
   return TCL_OK;
 }
 
@@ -342,7 +344,8 @@ static int md5file_cmd(void*cd, Tcl_Interp*interp, int argc, const char **argv){
   }
   fclose(in);
   MD5Final(digest, &ctx);
-  DigestToBase16(digest, interp->result);
+  DigestToBase16(digest, zBuf);
+  Tcl_AppendResult(interp, zBuf, (char*)0);
   return TCL_OK;
 }
 

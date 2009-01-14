@@ -1,7 +1,7 @@
-C Fix\sthe\sshell\sso\sthat\sthe\s".schema"\scommand\sworks\sregardless\sof\sthe\npragma\ssettings.\s\sTicket\s#3585.\s(CVS\s6180)
-D 2009-01-14T23:17:55
+C Make\ssome\schanges\srequested\sby\sFedora.\s(CVS\s6181)
+D 2009-01-14T23:38:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
+F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -155,14 +155,14 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
-F src/shell.c fe2e3d4a83c9349058c75b28425c9ee052645d11
+F src/shell.c 0d801ef653fd73d17161afebaab898a58ec3524b
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 888bdcaccaa1fde592718357b7f98fccb9974c4a
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
-F src/tclsqlite.c 4415e1033bd3e92b05a6a9cde911ee4de3b82df9
+F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
 F src/test1.c 84221fbafc2f02e3a9285def0b3ed401f5cde258
 F src/test2.c 724095fc69cb54b018aaa4463a56836c0b53a17a
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
@@ -182,7 +182,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c 0f4b9a929fae2be5bee0230f29204227c3d76c71
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
-F src/test_md5.c 28209a4e2068711b5443c33104fe41f21d160071
+F src/test_md5.c 461a8ba9f4498f5f76dec8cb28322b3225dd070a
 F src/test_mutex.c 66c4ab4e0396a440ddb17cd9b58a05305144f05d
 F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
 F src/test_osinst.c 9a70a61e127f9e72bcfca000b20368b1c5367873
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b676ccfd9019e65b52251332d94de1b3018ec823
-R 87e10c21142ca2b48c4da6e88427f17b
+P 6f6b638e44a8cfc741594f02b0178fa98ed7e2c1
+R 66f3fd321b6c94be13d77a73488a675e
 U drh
-Z 88e0987e56a80709ba3e24d88d8bfe65
+Z 90f7c18bd79bf17f58ab154f3e677059

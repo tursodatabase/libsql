@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.233 2009/01/02 17:33:46 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.234 2009/01/14 23:38:03 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2705,7 +2705,7 @@ int TCLSH_MAIN(int argc, char **argv){
     }
     if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
-      if( zInfo==0 ) zInfo = interp->result;
+      if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
