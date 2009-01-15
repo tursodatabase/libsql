@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.236 2009/01/14 23:03:41 drh Exp $
+** $Id: os_unix.c,v 1.237 2009/01/15 04:30:03 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2878,9 +2878,11 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
 #else 
   if( dataOnly ){
     rc = fdatasync(fd);
-    if( OS_VXWORKS && rc==-1 && errno==ENOTSUP ){
+#if OS_VXWORKS
+    if( rc==-1 && errno==ENOTSUP ){
       rc = fsync(fd);
     }
+#endif
   }else{
     rc = fsync(fd);
   }
