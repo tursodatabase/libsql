@@ -1,5 +1,5 @@
-C Avoid\susing\sENOTSUP\son\ssystems\sthat\sdo\snot\sdefine\sthat\ssymbol.\nTicket\s#3512.\s(CVS\s6182)
-D 2009-01-15T04:30:03
+C Disable\stest\scase\sselect2-2.0.3.\s\sThis\swas\sa\stiming\stest\sthat\ssometimes\nfails\sdue\sto\sCPU\scontention\swith\sother\sprocesses\son\sthe\ssame\shost.\s(CVS\s6183)
+D 2009-01-15T15:23:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -505,7 +505,7 @@ F test/savepoint6.test e28f7d8ab8a389d4e5bd1dc08bf2c3312754cc67
 F test/schema.test a8b000723375fd42c68d310091bdbd744fde647c
 F test/schema2.test 35e1c9696443d6694c8980c411497c2b5190d32e
 F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
-F test/select2.test 272a3d3e35b1d3a0760168ababf555e656357fc4
+F test/select2.test 9735da20ccd41e42bf2b4c19fd939141b591adae
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test b64d5d248d008e1dc365f451c76090bde907e665
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7bc08bc719c2e9ca6d92d4709c0478e15fdfb131
-R 9393fef805e43ab0cdee2b93b6884dc8
+P fcb6c677124102558f7a7a22bc3569b664424a4c
+R aa03869ea3e337fd2ed48e1909e354b4
 U drh
-Z 26d16e6a805d735e57f9a625aa8f7be4
+Z 83d0014327a6a6a3f5dba713dc8c5def
