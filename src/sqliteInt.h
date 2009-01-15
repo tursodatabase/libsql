@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.824 2009/01/14 23:03:41 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.825 2009/01/15 17:40:43 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1618,9 +1618,6 @@ struct WhereLevel {
         int addrInTop;         /* Top of the IN loop */
       } *aInLoop;           /* Information about each nested IN operator */
     } in;                 /* Used when plan.wsFlags&WHERE_IN_ABLE */
-    struct {
-      WherePlan *aPlan;     /* Plans for each term of the WHERE clause */
-    } or;                 /* Used when plan.wsFlags&WHERE_MULTI_OR */
   } u;
 
   /* The following field is really not part of the current level.  But

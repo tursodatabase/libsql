@@ -1,5 +1,5 @@
-C Version\s3.6.10\s(CVS\s6184)
-D 2009-01-15T17:04:24
+C Treat\s"or"\sas\san\sANSI-C\skeyword,\seven\sthough\sit\sis\snot.\s\sTicket\s#3588.\s(CVS\s6185)
+D 2009-01-15T17:40:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
 F src/shell.c 0d801ef653fd73d17161afebaab898a58ec3524b
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 888bdcaccaa1fde592718357b7f98fccb9974c4a
+F src/sqliteInt.h 6e2b941ae830d80be76d0dadd65885d52bffd95f
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ffdf91fec93aed35cf3dde1edbe9d7f8a5d23ae8
-R aa03869ea3e337fd2ed48e1909e354b4
+P 21b720cc9b9f88b8262c85c58287dd01486c936e
+R 62ce02c3cbe1206d5ac36bf952ed3b31
 U drh
-Z 27ba6c09d775ec01ca04f10561a20766
+Z 080163f252499b2a02f57c5a783eb542
