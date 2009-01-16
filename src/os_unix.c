@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.237 2009/01/15 04:30:03 drh Exp $
+** $Id: os_unix.c,v 1.238 2009/01/16 23:47:42 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2758,11 +2758,12 @@ static int unixWrite(
     unixFile *pFile = (unixFile*)id;
     pFile->dbUpdate = 1;  /* The database has been modified */
     if( offset<=24 && offset+amt>=27 ){
+      int rc;
       char oldCntr[4];
       SimulateIOErrorBenign(1);
-      seekAndRead(pFile, 24, oldCntr, 4);
+      rc = seekAndRead(pFile, 24, oldCntr, 4);
       SimulateIOErrorBenign(0);
-      if( memcmp(oldCntr, &((char*)pBuf)[24-offset], 4)!=0 ){
+      if( rc!=4 || memcmp(oldCntr, &((char*)pBuf)[24-offset], 4)!=0 ){
         pFile->transCntrChng = 1;  /* The transaction counter has changed */
       }
     }

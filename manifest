@@ -1,5 +1,5 @@
-C Fix\sa\schange-counter\sbug\ssimilar\sto\s#3584.\sThis\sone\sis\smuch\smore\sobscure\sthough,\srequiring\sa\stransient\sIO\sor\smalloc\serror\sto\soccur\swhile\srunning\sin\sexclusive\smode.\s(CVS\s6189)
-D 2009-01-16T16:40:14
+C Remove\sa\sharmless\sUMR\sthat\soccurs\sinside\ssome\sdebugging\scode.\s(CVS\s6190)
+D 2009-01-16T23:47:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -140,7 +140,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h f996ab57d2035a20e63173419055608548a834c6
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c c0ebce13fac2db7900367e83a3ebbd112ea4e90e
+F src/os_unix.c c74255cc1fcddc38fc3cc1dcf70c2325d3c2948e
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
 F src/pager.c e8e2ae1ef6a20464a627d29fd4ba29461b7632a5
 F src/pager.h 3345547d4b5b4db323f50d855d91a01837c7f2de
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a353c1ab376b159c4d12532412365318cdbdcc60
-R 0bdccace0ceb1b72a77c9b992ad652ac
-U danielk1977
-Z 007bd5d387bc84161ee29cd1e4862ae7
+P 9f07d2d9226b73c4dc311fd142e0aaba4ffcb078
+R f8c34a8f9197300ef9f780845483fa89
+U drh
+Z c79b9232688b69f59441527d9f82f08a
