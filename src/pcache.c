@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.39 2008/12/04 20:40:10 drh Exp $
+** @(#) $Id: pcache.c,v 1.40 2009/01/16 15:21:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -431,9 +431,8 @@ void sqlite3PcacheClose(PCache *pCache){
 /* 
 ** Discard the contents of the cache.
 */
-int sqlite3PcacheClear(PCache *pCache){
+void sqlite3PcacheClear(PCache *pCache){
   sqlite3PcacheTruncate(pCache, 0);
-  return SQLITE_OK;
 }
 
 /*

@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.65 2009/01/07 15:18:21 danielk1977 Exp $
+** $Id: test2.c,v 1.66 2009/01/16 15:21:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -418,18 +418,13 @@ static int page_unref(
   const char **argv      /* Text of each argument */
 ){
   DbPage *pPage;
-  int rc;
   if( argc!=2 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
        " PAGE\"", 0);
     return TCL_ERROR;
   }
   pPage = (DbPage *)sqlite3TestTextToPtr(argv[1]);
-  rc = sqlite3PagerUnref(pPage);
-  if( rc!=SQLITE_OK ){
-    Tcl_AppendResult(interp, errorName(rc), 0);
-    return TCL_ERROR;
-  }
+  sqlite3PagerUnref(pPage);
   return TCL_OK;
 }
 
