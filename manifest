@@ -1,5 +1,5 @@
-C Treat\s"or"\sas\san\sANSI-C\skeyword,\seven\sthough\sit\sis\snot.\s\sTicket\s#3588.\s(CVS\s6185)
-D 2009-01-15T17:40:43
+C Allow\srecently\sadded\skeywords\s'savepoint'\sand\s'release'\sto\sbe\sused\sas\sdatabase\sobject\snames.\sJust\sas\sthey\scould\sbe\sprior\sto\s3.6.8.\sTicket\s#3590.\s(CVS\s6186)
+D 2009-01-16T11:04:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/os_unix.c c0ebce13fac2db7900367e83a3ebbd112ea4e90e
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
 F src/pager.c 46ab8721a9fda550a25b1afafa87c66492cf2226
 F src/pager.h 9870acb2d653848d90d765d7cbf163496d6c8111
-F src/parse.y 4d0e33a702dc3ea7b69d8ae1914b3fbd32e46057
+F src/parse.y b214295a91e985c42adb6bfd3ad1c56c47828e8d
 F src/pcache.c 16dc8da6e6ba6250f8dfd9ee46036db1cbceedc6
 F src/pcache.h f20c3e82dd6da622c3fe296170cb1801f9a2d75a
 F src/pcache1.c c0aa84ff69ea759fa944dbee9167a2463ab7c322
@@ -540,7 +540,7 @@ F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 4be572ac017143e59b4058dc75c91a0d0dc6d4e0
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
-F test/table.test 13b1c2e2fb4727b35ee1fb7641fc469214fd2455
+F test/table.test 0aac9468b69d2683e68ee2682cdae28d82a453ec
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test 30636c3151ccc2d553aa09020b885054141a1963
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 21b720cc9b9f88b8262c85c58287dd01486c936e
-R 62ce02c3cbe1206d5ac36bf952ed3b31
-U drh
-Z 080163f252499b2a02f57c5a783eb542
+P ed4e308caaa50c55aa01cd34079f1be5c8a93c71
+R b68b770f0aecb674bca85164c525670d
+U danielk1977
+Z b374d16521125730403c7bbc77f7dce6
