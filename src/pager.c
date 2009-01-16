@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.553 2009/01/16 16:23:38 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.554 2009/01/16 16:40:14 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1732,6 +1732,17 @@ end_playback:
     pPager->fd->pMethods==0 ||
     sqlite3OsFileControl(pPager->fd,SQLITE_FCNTL_DB_UNCHANGED,0)>=SQLITE_OK
   );
+
+  /* If this playback is happening automatically as a result of an IO or 
+  ** malloc error that occured after the change-counter was updated but 
+  ** before the transaction was committed, then the change-counter 
+  ** modification may just have been reverted. If this happens in exclusive 
+  ** mode, then subsequent transactions performed by the connection will not
+  ** update the change-counter at all. This may lead to cache inconsistency
+  ** problems for other processes at some point in the future. So, just
+  ** in case this has happened, clear the changeCountDone flag now.
+  */
+  pPager->changeCountDone = 0;
 
   if( rc==SQLITE_OK ){
     zMaster = pPager->pTmpSpace;

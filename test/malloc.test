@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.73 2009/01/10 16:15:09 danielk1977 Exp $
+# $Id: malloc.test,v 1.74 2009/01/16 16:40:14 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -719,6 +719,72 @@ do_malloc_test 31 -sqlprep {
   CREATE TABLE t1(a PRIMARY KEY, b);
 } -sqlbody {
   INSERT INTO t1 VALUES(1, 2);
+}
+
+# When written, this test provoked an obscure change-counter bug.
+# 
+# If, when running in exclusive mode, a malloc() failure occurs
+# after the database file change-counter has been written but
+# before the transaction has been committed, then the transaction
+# is automatically rolled back. However, internally the 
+# Pager.changeCounterDone flag was being left set. This means
+# that if the same connection attempts another transaction following
+# the malloc failure and rollback, the change counter will not
+# be updated. This could corrupt another processes cache.
+#
+do_malloc_test 32 -tclprep {
+  # Build a small database containing an indexed table.
+  #
+  db eval {
+    BEGIN;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+    COMMIT;
+    PRAGMA locking_mode = exclusive;
+  }
+
+  # Open a second database connection. Load the table (but not index)
+  # into the second connections pager cache.
+  #
+  sqlite3 db2 test.db
+  db2 eval { SELECT b FROM t1 }
+
+} -tclbody {
+  # Running in exclusive mode, perform a database transaction that 
+  # modifies both the database table and index. For iterations where
+  # the malloc failure occurs after updating the change counter but
+  # before committing the transaction, this should result in the
+  # transaction being rolled back but the changeCounterDone flag
+  # left set.
+  #
+  db eval { UPDATE t1 SET a = a + 3 }
+} -cleanup {
+
+  # Perform another transaction using the first connection. Unlock
+  # the database after doing so. If this is one of the right iterations,
+  # then this should result in the database contents being updated but
+  # the change-counter left as it is.
+  #
+  db eval { 
+    PRAGMA locking_mode = normal;
+    UPDATE t1 SET a = a + 3;
+  }
+
+  # Now do an integrity check with the second connection. The second
+  # connection still has the database table in its cache. If this is
+  # one of the magic iterations and the change counter was not modified,
+  # then it won't realize that the cached data is out of date. Since
+  # the cached data won't match the up to date index data read from
+  # the database file, the integrity check should fail.
+  #
+  set zRepeat "transient"
+  if {$::iRepeat} {set zRepeat "persistent"}
+  do_test malloc-32.$zRepeat.${::n}.integrity {
+    execsql {PRAGMA integrity_check} db2
+  } {ok}
+  db2 close
 }
 
 # Ensure that no file descriptors were leaked.

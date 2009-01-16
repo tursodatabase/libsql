@@ -1,5 +1,5 @@
-C Revert\s(6187).\s(CVS\s6188)
-D 2009-01-16T16:23:38
+C Fix\sa\schange-counter\sbug\ssimilar\sto\s#3584.\sThis\sone\sis\smuch\smore\sobscure\sthough,\srequiring\sa\stransient\sIO\sor\smalloc\serror\sto\soccur\swhile\srunning\sin\sexclusive\smode.\s(CVS\s6189)
+D 2009-01-16T16:40:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c c0ebce13fac2db7900367e83a3ebbd112ea4e90e
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c b99d1e9f9c971cf42f4c7ede17117f238e9b9c2b
+F src/pager.c e8e2ae1ef6a20464a627d29fd4ba29461b7632a5
 F src/pager.h 3345547d4b5b4db323f50d855d91a01837c7f2de
 F src/parse.y b214295a91e985c42adb6bfd3ad1c56c47828e8d
 F src/pcache.c a3c729f4bb3464fab27617ab7411916e0cded2bf
@@ -430,7 +430,7 @@ F test/lock6.test eafa70db6f50b6f6291f4f83b80e98834724a50d
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test 95e94f8a3dd1169c8774788ec4148ea032ea20d8
+F test/malloc.test 228840643d2a4bc536bc8f677375948db62dbe1f
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P aa67fd0cdb4f53a0c6e15c001d37554d15006718
-R c8509fb836bf1d76f87b59b07c81ef45
+P a353c1ab376b159c4d12532412365318cdbdcc60
+R 0bdccace0ceb1b72a77c9b992ad652ac
 U danielk1977
-Z 78ca002c1238dcdf491f58ff6219cf73
+Z 007bd5d387bc84161ee29cd1e4862ae7
