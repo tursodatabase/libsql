@@ -1,5 +1,5 @@
-C This\scommit\sis\san\serror.\sReverted\sby\s(6188).\s(CVS\s6187)
-D 2009-01-16T15:21:05
+C Revert\s(6187).\s(CVS\s6188)
+D 2009-01-16T16:23:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,11 +101,11 @@ F src/alter.c 7eee66a6de2605a4aa6a85be6b4688b89e0f48ff
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 1c35f95da3c62d19de75b44cfefd12c81c1791b3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/bitvec.c 8042927940263bc593e68d33ab10e3b76bde8097
+F src/bitvec.c 1da48f915129b476cae0cfd7a6ed0eb0d03a9bdb
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 3b446e24aa46fd7b3d2cdf0bc62baad52ebfda00
+F src/btree.c e183a4357e8f5081fd04c757e006ef6fdaaa79a1
 F src/btree.h 4f141cf748d2ee7c6d7fc175f64f87a45cd44113
-F src/btreeInt.h 638efe5806aeebbcbbe7e62ae461904124b89bd6
+F src/btreeInt.h 790482376263bbc5862ae7124354a26c70695369
 F src/build.c 6eb9d20e99db8da8c7c6e7316096a6ff3d9acab9
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
@@ -142,11 +142,11 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c c0ebce13fac2db7900367e83a3ebbd112ea4e90e
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 629e3c8628045e192fba3c2d2bdf2b3e068806f7
-F src/pager.h 61a5259af27ab1b2da6bb3ca296df41b814477c4
+F src/pager.c b99d1e9f9c971cf42f4c7ede17117f238e9b9c2b
+F src/pager.h 3345547d4b5b4db323f50d855d91a01837c7f2de
 F src/parse.y b214295a91e985c42adb6bfd3ad1c56c47828e8d
-F src/pcache.c 922872b2150db19debb2fea1183937cf86fcf7bf
-F src/pcache.h a56b8998f5bf71c31c3d7bcfe0149880a21c442a
+F src/pcache.c a3c729f4bb3464fab27617ab7411916e0cded2bf
+F src/pcache.h 00adba50e5b90414a40f2c63e5272c152c523373
 F src/pcache1.c c0aa84ff69ea759fa944dbee9167a2463ab7c322
 F src/pragma.c 5b7ac60366b731b11cbc59352082aa5922439a98
 F src/prepare.c 2a11736383d0af2ea80aa62270f15ad80dd8b5cd
@@ -158,13 +158,13 @@ F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
 F src/shell.c 0d801ef653fd73d17161afebaab898a58ec3524b
 F src/sqlite.h.in 6cd2489e40fe97ba58c60044a4ced377e08b6d09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h b6266915bba217bcbacc89ab2402cf0822aedc70
+F src/sqliteInt.h 65b7b15aac8579b7c889416735637f10a8463002
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
 F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
 F src/test1.c 84221fbafc2f02e3a9285def0b3ed401f5cde258
-F src/test2.c 4fd2d995888fb580e768711e517a1c3209d04e72
+F src/test2.c 87d2ee3aa13321f1bba55dc9c675b56d97dbc6b4
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
@@ -202,7 +202,7 @@ F src/vdbe.c b917020da4c14c3ea6032cc288462f4ba525ade7
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 5530e45fc64c1572f123aca384096e1b84cf834b
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
-F src/vdbeaux.c 2f6c3fcedaebff15f2a161750e0f4dbf7b2df8b9
+F src/vdbeaux.c a593c4ceaecc2508c443c6447738f74419225f0e
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c 19f94b504d3da44b31aef200fa6c8e07862de2e8
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 54ab8326a1ea574b183f84c8465315e989a23ca4
-R d956708750eec297164ae34e0e8a525f
+P aa67fd0cdb4f53a0c6e15c001d37554d15006718
+R c8509fb836bf1d76f87b59b07c81ef45
 U danielk1977
-Z 2079228925c670d6fce19286fd0ffd02
+Z 78ca002c1238dcdf491f58ff6219cf73

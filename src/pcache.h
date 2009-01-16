@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.17 2009/01/16 15:21:06 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.18 2009/01/16 16:23:38 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -111,7 +111,7 @@ void sqlite3PcacheClose(PCache*);
 void sqlite3PcacheClearSyncFlags(PCache *);
 
 /* Discard the contents of the cache */
-void sqlite3PcacheClear(PCache*);
+int sqlite3PcacheClear(PCache*);
 
 /* Return the total number of outstanding page references */
 int sqlite3PcacheRefCount(PCache*);
