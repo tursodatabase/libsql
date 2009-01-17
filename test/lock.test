@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.35 2009/01/14 17:45:58 danielk1977 Exp $
+# $Id: lock.test,v 1.36 2009/01/17 16:59:41 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -387,6 +387,33 @@ do_test lock-6.4 {
 } {ok}
 
 do_test lock-6.5 {
+  sqlite3_finalize $STMT
+} {SQLITE_OK}
+
+# At one point the following set of conditions would cause SQLite to 
+# retain a RESERVED or EXCLUSIVE lock after the transaction was committed:
+# 
+#   * The journal-mode is set to something other than 'delete', and
+#   * there exists one or more active read-only statements, and
+#   * a transaction that modified zero database pages is committed.
+# 
+do_test lock-7.1 {
+  set STMT [sqlite3_prepare $DB "SELECT * FROM sqlite_master" -1 TAIL]
+  sqlite3_step $STMT
+} {SQLITE_ROW}
+do_test lock-7.2 {
+  execsql { PRAGMA lock_status }
+} {main shared temp unlocked}
+do_test lock-7.3 {
+  execsql {
+    PRAGMA journal_mode = truncate;
+    BEGIN;
+    UPDATE t4 SET a = 10 WHERE 0;
+    COMMIT;
+  }
+  execsql { PRAGMA lock_status }
+} {main shared temp unlocked}
+do_test lock-7.4 {
   sqlite3_finalize $STMT
 } {SQLITE_OK}
 
