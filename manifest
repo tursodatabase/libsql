@@ -1,7 +1,7 @@
-C Remove\sa\sharmless\sUMR\sthat\soccurs\sinside\ssome\sdebugging\scode.\s(CVS\s6190)
-D 2009-01-16T23:47:42
+C Back\sout\sthe\sMakefile.in\schanges\sfrom\scheck-in\s(6181)\sbecause\sof\sreports\n(ticket\s#3594)\sthat\sthey\sdo\snot\swork\son\sNetBSD.\s\sSeparately,\sdocumentation\nis\supdated\sto\smake\sclear\sthat\sconfigure\sand\sMakefile.in\sare\sunsupported.\s(CVS\s6191)
+D 2009-01-17T15:53:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 8a00230c566c1a1cfc7ae53eedd458b32034da30
+F Makefile.in 05461a9b5803d5ad10c79f989801e9fd2cc3e592
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9f07d2d9226b73c4dc311fd142e0aaba4ffcb078
-R f8c34a8f9197300ef9f780845483fa89
+P 191c399fc6354b35477ec21f685377e2af26f49b
+R 9c5b87982663f6bf52088be86c758e02
 U drh
-Z c79b9232688b69f59441527d9f82f08a
+Z 32664470dd1402b7c5c5504f3951bf6a
