@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.12 2008/11/04 14:55:47 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.13 2009/01/19 17:40:12 drh Exp $
 */
 
 #include "tcl.h"
@@ -363,11 +363,11 @@ static sqlite3 *getDbPointer(Tcl_Interp *pInterp, Tcl_Obj *pObj){
   sqlite3 *db;
   Tcl_CmdInfo info;
   char *zCmd = Tcl_GetString(pObj);
-  if( 1!=Tcl_GetCommandInfo(pInterp, zCmd, &info) ){
-    Tcl_AppendResult(pInterp, "No such db-handle: \"", zCmd, "\"", 0);
-    return 0;
+  if( Tcl_GetCommandInfo(pInterp, zCmd, &info) ){
+    db = *((sqlite3 **)info.objClientData);
+  }else{
+    db = (sqlite3*)sqlite3TestTextToPtr(zCmd);
   }
-  db = *((sqlite3 **)info.objClientData);
   assert( db );
   return db;
 }

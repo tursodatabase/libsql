@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.342 2009/01/10 13:24:51 drh Exp $
+** $Id: test1.c,v 1.343 2009/01/19 17:40:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -180,7 +180,8 @@ const char *sqlite3TestErrorName(int rc){
 ** from sqlite3_errcode.
 */
 int sqlite3TestErrCode(Tcl_Interp *interp, sqlite3 *db, int rc){
-  if( rc!=SQLITE_MISUSE && rc!=SQLITE_OK && sqlite3_errcode(db)!=rc ){
+  if( sqlite3_threadsafe()==0 && rc!=SQLITE_MISUSE && rc!=SQLITE_OK
+   && sqlite3_errcode(db)!=rc ){
     char zBuf[200];
     int r2 = sqlite3_errcode(db);
     sprintf(zBuf, "error code %s (%d) does not match sqlite3_errcode %s (%d)",

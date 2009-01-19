@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: thread_common.tcl,v 1.2 2007/09/10 10:53:02 danielk1977 Exp $
+# $Id: thread_common.tcl,v 1.3 2009/01/19 17:40:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,6 +37,7 @@ set thread_procs {
         || $rc eq "SQLITE_SCHEMA"} {
       set res [list]
 
+      enter_db_mutex $::DB
       set err [catch {
         set ::STMT [sqlite3_prepare_v2 $::DB $sql -1 dummy_tail]
       } msg]
@@ -59,16 +60,21 @@ set thread_procs {
       if {[string first locked [sqlite3_errmsg $::DB]]>=0} {
         set rc SQLITE_LOCKED
       }
+      if {$rc ne "SQLITE_OK"} {
+        set errtxt "$rc - [sqlite3_errmsg $::DB] (debug1)"
+      }
+      leave_db_mutex $::DB
 
       if {$rc eq "SQLITE_LOCKED" || $rc eq "SQLITE_BUSY"} {
- #puts -nonewline "([sqlthread id] $rc)"
- #flush stdout
-        after 20
+        #sqlthread parent "puts \"thread [sqlthread id] is busy.  rc=$rc\""
+        after 200
+      } else {
+        #sqlthread parent "puts \"thread [sqlthread id] ran $sql\""
       }
     }
 
     if {$rc ne "SQLITE_OK"} {
-      error "$rc - [sqlite3_errmsg $::DB]"
+      error $errtxt
     }
     set res
   }

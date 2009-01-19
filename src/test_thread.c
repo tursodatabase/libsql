@@ -14,13 +14,13 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.8 2008/08/28 13:55:10 danielk1977 Exp $
+** $Id: test_thread.c,v 1.9 2009/01/19 17:40:12 drh Exp $
 */
 
 #include "sqliteInt.h"
 #include <tcl.h>
 
-#if SQLITE_THREADSAFE && defined(TCL_THREADS)
+#if SQLITE_THREADSAFE
 
 #include <errno.h>
 #include <unistd.h>
@@ -96,13 +96,14 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_Obj *pRes;
   Tcl_Obj *pList;
   int rc;
-
   SqlThread *p = (SqlThread *)pSqlThread;
+  extern int Sqlitetest_mutex_Init(Tcl_Interp*);
 
   interp = Tcl_CreateInterp();
   Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, pSqlThread, 0);
   Sqlitetest1_Init(interp);
+  Sqlitetest_mutex_Init(interp);
 
   rc = Tcl_Eval(interp, p->zScript);
   pRes = Tcl_GetObjResult(interp);
