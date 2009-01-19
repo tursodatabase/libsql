@@ -16,7 +16,7 @@
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
 **
-** $Id: table.c,v 1.38 2008/12/10 19:26:24 drh Exp $
+** $Id: table.c,v 1.39 2009/01/19 20:49:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -132,6 +132,7 @@ int sqlite3_get_table(
   *pazResult = 0;
   if( pnColumn ) *pnColumn = 0;
   if( pnRow ) *pnRow = 0;
+  if( pzErrMsg ) *pzErrMsg = 0;
   res.zErrMsg = 0;
   res.nResult = 0;
   res.nRow = 0;

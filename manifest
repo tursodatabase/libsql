@@ -1,5 +1,5 @@
-C Fix\sthe\s--enable-tempstore\soption\son\sthe\sconfigure\sscript.\s\sTicket\s#3599\s(CVS\s6194)
-D 2009-01-19T18:18:40
+C Make\ssure\sthe\s*pzErrMsg\sreturn\sfrom\ssqlite3_get_table()\sis\saways\szeroed.\nTicket\s#3598.\s(CVS\s6195)
+D 2009-01-19T20:49:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6619a1b72de7ada2bb7be97862913e27c6f5e339
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 65b7b15aac8579b7c889416735637f10a8463002
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
-F src/table.c 23db1e5f27c03160987c122a078b4bb51ef0b2f8
+F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
 F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
 F src/test1.c 58c0026d8764635efe8e7e7cea61e41faecef597
 F src/test2.c 87d2ee3aa13321f1bba55dc9c675b56d97dbc6b4
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6242f113eb40d472b78685c296fecf9f749a11cd
-R 78c5b8c7320f377b0f122ec8e03b8c42
+P c2eabb99fe852142e54f35f423f766411d7ba6c0
+R 1ba61171a3a984cb84660491522fd174
 U drh
-Z 535ef11b17683ab64ffd0c55a44c8c29
+Z 586cbadb7bfc023f291cf235f4552059
