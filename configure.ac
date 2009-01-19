@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.50 $
+# $Revision: 1.51 $
 
 #########
 # Programs needed
@@ -297,17 +297,17 @@ case "$enable_tempstore" in
     TEMP_STORE=1
     AC_MSG_RESULT([no])
   ;;
-  always ) 
-     TEMP_STORE=3
-    AC_MSG_RESULT([always])
-  ;;
   yes ) 
+     TEMP_STORE=2
+    AC_MSG_RESULT([yes])
+  ;;
+  always ) 
      TEMP_STORE=3
     AC_MSG_RESULT([always])
   ;;
   * ) 
     TEMP_STORE=1
-    AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([no])
   ;;
 esac
 
