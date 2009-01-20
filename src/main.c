@@ -14,10 +14,9 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.521 2009/01/10 16:15:22 drh Exp $
+** $Id: main.c,v 1.522 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"

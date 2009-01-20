@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.99 2008/12/20 13:18:50 drh Exp $
+** $Id: date.c,v 1.100 2009/01/20 16:53:40 danielk1977 Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -46,7 +46,6 @@
 **      Richmond, Virginia (USA)
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <time.h>
@@ -118,7 +117,7 @@ static int getDigits(const char *zDate, ...){
     pVal = va_arg(ap, int*);
     val = 0;
     while( N-- ){
-      if( !isdigit(*(u8*)zDate) ){
+      if( !sqlite3Isdigit(*zDate) ){
         goto end_getDigits;
       }
       val = val*10 + *zDate - '0';
@@ -162,7 +161,7 @@ static int parseTimezone(const char *zDate, DateTime *p){
   int sgn = 0;
   int nHr, nMn;
   int c;
-  while( isspace(*(u8*)zDate) ){ zDate++; }
+  while( sqlite3Isspace(*zDate) ){ zDate++; }
   p->tz = 0;
   c = *zDate;
   if( c=='-' ){
@@ -182,7 +181,7 @@ static int parseTimezone(const char *zDate, DateTime *p){
   zDate += 5;
   p->tz = sgn*(nMn + nHr*60);
 zulu_time:
-  while( isspace(*(u8*)zDate) ){ zDate++; }
+  while( sqlite3Isspace(*zDate) ){ zDate++; }
   return *zDate!=0;
 }
 
@@ -206,10 +205,10 @@ static int parseHhMmSs(const char *zDate, DateTime *p){
       return 1;
     }
     zDate += 2;
-    if( *zDate=='.' && isdigit((u8)zDate[1]) ){
+    if( *zDate=='.' && sqlite3Isdigit(zDate[1]) ){
       double rScale = 1.0;
       zDate++;
-      while( isdigit(*(u8*)zDate) ){
+      while( sqlite3Isdigit(*zDate) ){
         ms = ms*10.0 + *zDate - '0';
         rScale *= 10.0;
         zDate++;
@@ -294,7 +293,7 @@ static int parseYyyyMmDd(const char *zDate, DateTime *p){
     return 1;
   }
   zDate += 10;
-  while( isspace(*(u8*)zDate) || 'T'==*(u8*)zDate ){ zDate++; }
+  while( sqlite3Isspace(*zDate) || 'T'==*(u8*)zDate ){ zDate++; }
   if( parseHhMmSs(zDate, p)==0 ){
     /* We got the time */
   }else if( *zDate==0 ){
@@ -641,7 +640,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         const char *z2 = z;
         DateTime tx;
         sqlite3_int64 day;
-        if( !isdigit(*(u8*)z2) ) z2++;
+        if( !sqlite3Isdigit(*z2) ) z2++;
         memset(&tx, 0, sizeof(tx));
         if( parseHhMmSs(z2, &tx) ) break;
         computeJD(&tx);
@@ -656,7 +655,7 @@ static int parseModifier(const char *zMod, DateTime *p){
         break;
       }
       z += n;
-      while( isspace(*(u8*)z) ) z++;
+      while( sqlite3Isspace(*z) ) z++;
       n = sqlite3Strlen30(z);
       if( n>10 || n<3 ) break;
       if( z[n-1]=='s' ){ z[n-1] = 0; n--; }

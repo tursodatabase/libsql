@@ -12,7 +12,7 @@
 ** This file contains code used to dynamically load extensions into
 ** the SQLite library.
 **
-** $Id: loadext.c,v 1.57 2008/12/08 18:19:18 drh Exp $
+** $Id: loadext.c,v 1.58 2009/01/20 16:53:40 danielk1977 Exp $
 */
 
 #ifndef SQLITE_CORE
@@ -21,7 +21,6 @@
 #include "sqlite3ext.h"
 #include "sqliteInt.h"
 #include <string.h>
-#include <ctype.h>
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 

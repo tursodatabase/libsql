@@ -15,10 +15,9 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.152 2008/09/01 15:52:11 drh Exp $
+** $Id: tokenize.c,v 1.153 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 #include <stdlib.h>
 
 /*
@@ -124,7 +123,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
   int i, c;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
-      for(i=1; isspace(z[i]); i++){}
+      for(i=1; sqlite3Isspace(z[i]); i++){}
       *tokenType = TK_SPACE;
       return i;
     }
@@ -258,7 +257,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case '.': {
 #ifndef SQLITE_OMIT_FLOATING_POINT
-      if( !isdigit(z[1]) )
+      if( !sqlite3Isdigit(z[1]) )
 #endif
       {
         *tokenType = TK_DOT;
@@ -270,20 +269,20 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9': {
       *tokenType = TK_INTEGER;
-      for(i=0; isdigit(z[i]); i++){}
+      for(i=0; sqlite3Isdigit(z[i]); i++){}
 #ifndef SQLITE_OMIT_FLOATING_POINT
       if( z[i]=='.' ){
         i++;
-        while( isdigit(z[i]) ){ i++; }
+        while( sqlite3Isdigit(z[i]) ){ i++; }
         *tokenType = TK_FLOAT;
       }
       if( (z[i]=='e' || z[i]=='E') &&
-           ( isdigit(z[i+1]) 
-            || ((z[i+1]=='+' || z[i+1]=='-') && isdigit(z[i+2]))
+           ( sqlite3Isdigit(z[i+1]) 
+            || ((z[i+1]=='+' || z[i+1]=='-') && sqlite3Isdigit(z[i+2]))
            )
       ){
         i += 2;
-        while( isdigit(z[i]) ){ i++; }
+        while( sqlite3Isdigit(z[i]) ){ i++; }
         *tokenType = TK_FLOAT;
       }
 #endif
@@ -300,11 +299,11 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case '?': {
       *tokenType = TK_VARIABLE;
-      for(i=1; isdigit(z[i]); i++){}
+      for(i=1; sqlite3Isdigit(z[i]); i++){}
       return i;
     }
     case '#': {
-      for(i=1; isdigit(z[i]); i++){}
+      for(i=1; sqlite3Isdigit(z[i]); i++){}
       if( i>1 ){
         /* Parameters of the form #NNN (where NNN is a number) are used
         ** internally by sqlite3NestedParse.  */
@@ -328,7 +327,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         }else if( c=='(' && n>0 ){
           do{
             i++;
-          }while( (c=z[i])!=0 && !isspace(c) && c!=')' );
+          }while( (c=z[i])!=0 && !sqlite3Isspace(c) && c!=')' );
           if( c==')' ){
             i++;
           }else{
@@ -350,7 +349,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
         for(i=2; (c=z[i])!=0 && c!='\''; i++){
-          if( !isxdigit(c) ){
+          if( !sqlite3Isxdigit(c) ){
             *tokenType = TK_ILLEGAL;
           }
         }

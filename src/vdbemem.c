@@ -15,10 +15,9 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.134 2009/01/05 22:30:39 drh Exp $
+** $Id: vdbemem.c,v 1.135 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 #include "vdbeInt.h"
 
 /*

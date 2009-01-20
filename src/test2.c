@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.67 2009/01/16 16:23:38 danielk1977 Exp $
+** $Id: test2.c,v 1.68 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -584,10 +584,10 @@ static int testBitvecBuiltinTest(
   if( Tcl_GetInt(interp, argv[1], &sz) ) return TCL_ERROR;
   z = argv[2];
   while( nProg<99 && *z ){
-    while( *z && !isdigit(*z) ){ z++; }
+    while( *z && !sqlite3Isdigit(*z) ){ z++; }
     if( *z==0 ) break;
     aProg[nProg++] = atoi(z);
-    while( isdigit(*z) ){ z++; }
+    while( sqlite3Isdigit(*z) ){ z++; }
   }
   aProg[nProg] = 0;
   rc = sqlite3_test_control(SQLITE_TESTCTRL_BITVEC_TEST, sz, aProg);

@@ -13,10 +13,9 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.104 2009/01/09 02:49:32 drh Exp $
+** $Id: prepare.c,v 1.105 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 
 /*
 ** Fill the InitData structure with an error message that indicates

@@ -14,11 +14,10 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.246 2009/01/10 16:15:22 drh Exp $
+** $Id: util.c,v 1.247 2009/01/20 16:53:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
-#include <ctype.h>
 
 
 /*
@@ -256,23 +255,23 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
   int incr = (enc==SQLITE_UTF8?1:2);
   if( enc==SQLITE_UTF16BE ) z++;
   if( *z=='-' || *z=='+' ) z += incr;
-  if( !isdigit(*(u8*)z) ){
+  if( !sqlite3Isdigit(*z) ){
     return 0;
   }
   z += incr;
   if( realnum ) *realnum = 0;
-  while( isdigit(*(u8*)z) ){ z += incr; }
+  while( sqlite3Isdigit(*z) ){ z += incr; }
   if( *z=='.' ){
     z += incr;
-    if( !isdigit(*(u8*)z) ) return 0;
-    while( isdigit(*(u8*)z) ){ z += incr; }
+    if( !sqlite3Isdigit(*z) ) return 0;
+    while( sqlite3Isdigit(*z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   if( *z=='e' || *z=='E' ){
     z += incr;
     if( *z=='+' || *z=='-' ) z += incr;
-    if( !isdigit(*(u8*)z) ) return 0;
-    while( isdigit(*(u8*)z) ){ z += incr; }
+    if( !sqlite3Isdigit(*z) ) return 0;
+    while( sqlite3Isdigit(*z) ){ z += incr; }
     if( realnum ) *realnum = 1;
   }
   return *z==0;
@@ -296,7 +295,7 @@ int sqlite3AtoF(const char *z, double *pResult){
   const char *zBegin = z;
   LONGDOUBLE_TYPE v1 = 0.0;
   int nSignificant = 0;
-  while( isspace(*(u8*)z) ) z++;
+  while( sqlite3Isspace(*z) ) z++;
   if( *z=='-' ){
     sign = -1;
     z++;
@@ -306,7 +305,7 @@ int sqlite3AtoF(const char *z, double *pResult){
   while( z[0]=='0' ){
     z++;
   }
-  while( isdigit(*(u8*)z) ){
+  while( sqlite3Isdigit(*z) ){
     v1 = v1*10.0 + (*z - '0');
     z++;
     nSignificant++;
@@ -320,7 +319,7 @@ int sqlite3AtoF(const char *z, double *pResult){
         z++;
       }
     }
-    while( isdigit(*(u8*)z) ){
+    while( sqlite3Isdigit(*z) ){
       if( nSignificant<18 ){
         v1 = v1*10.0 + (*z - '0');
         divisor *= 10.0;
@@ -341,7 +340,7 @@ int sqlite3AtoF(const char *z, double *pResult){
     }else if( *z=='+' ){
       z++;
     }
-    while( isdigit(*(u8*)z) ){
+    while( sqlite3Isdigit(*z) ){
       eval = eval*10 + *z - '0';
       z++;
     }
@@ -400,7 +399,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum){
   int neg;
   int i, c;
   const char *zStart;
-  while( isspace(*(u8*)zNum) ) zNum++;
+  while( sqlite3Isspace(*zNum) ) zNum++;
   if( *zNum=='-' ){
     neg = 1;
     zNum++;

@@ -22,10 +22,9 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.511 2008/12/30 06:24:58 danielk1977 Exp $
+** $Id: build.c,v 1.512 2009/01/20 16:53:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
-#include <ctype.h>
 
 /*
 ** This routine is called when a new SQL statement is beginning to
@@ -1339,9 +1338,9 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent){
   int i, j, needQuote;
   i = *pIdx;
   for(j=0; zIdent[j]; j++){
-    if( !isalnum(zIdent[j]) && zIdent[j]!='_' ) break;
+    if( !sqlite3Isalnum(zIdent[j]) && zIdent[j]!='_' ) break;
   }
-  needQuote =  zIdent[j]!=0 || isdigit(zIdent[0])
+  needQuote =  zIdent[j]!=0 || sqlite3Isdigit(zIdent[0])
                   || sqlite3KeywordCode(zIdent, j)!=TK_ID;
   if( needQuote ) z[i++] = '"';
   for(j=0; zIdent[j]; j++){
@@ -1712,7 +1711,7 @@ void sqlite3CreateView(
   sEnd.n = 0;
   n = (int)(sEnd.z - pBegin->z);
   z = (const unsigned char*)pBegin->z;
-  while( n>0 && (z[n-1]==';' || isspace(z[n-1])) ){ n--; }
+  while( n>0 && (z[n-1]==';' || sqlite3Isspace(z[n-1])) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;
 
