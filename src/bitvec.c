@@ -34,7 +34,7 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.12 2009/01/16 16:23:38 danielk1977 Exp $
+** @(#) $Id: bitvec.c,v 1.13 2009/01/20 17:06:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -273,6 +273,14 @@ void sqlite3BitvecDestroy(Bitvec *p){
     }
   }
   sqlite3_free(p);
+}
+
+/*
+** Return the value of the iSize parameter specified when Bitvec *p
+** was created.
+*/
+u32 sqlite3BitvecSize(Bitvec *p){
+  return p->iSize;
 }
 
 #ifndef SQLITE_OMIT_BUILTIN_TEST
