@@ -113,7 +113,10 @@ struct sqlite3_tokenizer_module {
   ** stemming has been performed). *pnBytes should be set to the length
   ** of this buffer in bytes. The input text that generated the token is
   ** identified by the byte offsets returned in *piStartOffset and
-  ** *piEndOffset.
+  ** *piEndOffset. *piStartOffset should be set to the index of the first
+  ** byte of the token in the input buffer. *piEndOffset should be set
+  ** to the index of the first byte just past the end of the token in
+  ** the input buffer.
   **
   ** The buffer *ppToken is set to point at is managed by the tokenizer
   ** implementation. It is only required to be valid until the next call

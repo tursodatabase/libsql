@@ -145,8 +145,8 @@ static int getNextToken(
           pRet->pPhrase->isNot = 1;
         }
       }
+      nConsumed = iEnd;
     }
-    nConsumed = iEnd;
 
     pModule->xClose(pCursor);
   }

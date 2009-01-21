@@ -1,5 +1,5 @@
-C Big\schange\sto\smake\spager.c\seasier\sto\sfollow.\sUnused\svariables\sremoved,\scomments\simproved,\setc.\s(CVS\s6197)
-D 2009-01-20T17:06:27
+C Add\sa\scomment\sto\sfts3_tokenizer.h\sto\smake\sit\sclear\show\sthe\sxNext()\smethod\sis\ssupposed\sto\sset\sits\soutput\svariables.\sMake\ssure\sthe\soutput\svariables\sof\sxNext()\sare\sonly\sused\sif\sSQLITE_OK\sis\sreturned.\sTicket\s#3604.\s(CVS\s6198)
+D 2009-01-21T17:45:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6619a1b72de7ada2bb7be97862913e27c6f5e339
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -55,14 +55,14 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c da5420cab3ab50706046c313950b4092b8a735f9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c 98fe92f6888c306734ed9332a24383dde77c25aa
+F ext/fts3/fts3_expr.c a27333da8a68cf06efa2e5937a285ac9d6c9b3de
 F ext/fts3/fts3_expr.h b5412dcf565c6d90d6a8c22090ceb9ed8c745634
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
 F ext/fts3/fts3_tokenizer.c fcc8fdb5c161df7d61c77285ec2991da131f0181
-F ext/fts3/fts3_tokenizer.h 7eb79de4f991a77f43c517e209e5fae95dfa7369
+F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1041abd6784d283bebf646c54e93599522f7889d
-R 4bde501bdb15fe167fc73edd2c133657
+P 12f7346c13c180ed73d7a2e3b590be457360254a
+R 290417584aad244e9699793eda9de545
 U danielk1977
-Z e2751323f1f34d69687246315d80831a
+Z 1645d53c37c9ae6c2b29c97e17ea4799
