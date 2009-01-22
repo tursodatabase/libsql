@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.84 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: vacuum.c,v 1.85 2009/01/22 23:04:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -91,17 +91,17 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int isMemDb;            /* True is vacuuming a :memory: database */
   int nRes;
 
+  if( !db->autoCommit ){
+    sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
+    return SQLITE_ERROR;
+  }
+
   /* Save the current value of the write-schema flag before setting it. */
   saved_flags = db->flags;
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
-  if( !db->autoCommit ){
-    sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
-    rc = SQLITE_ERROR;
-    goto end_of_vacuum;
-  }
   pMain = db->aDb[0].pBt;
   pMainPager = sqlite3BtreePager(pMain);
   isMemDb = sqlite3PagerFile(pMainPager)->pMethods==0;

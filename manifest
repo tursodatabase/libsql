@@ -1,5 +1,5 @@
-C Silence\sa\sC++\sbuilder\swarning\sby\swriting\s"if(\s(rc\s=\sfunction())!=SQLITE_OK\s)"\sinstead\sof\s"if(\s(rc\s=\sfunction())\s)"\sin\stwo\splaces\sin\spager.c.\sTicket\s#3605.\s(CVS\s6199)
-D 2009-01-22T17:12:40
+C Fix\sthe\sVACUUM\scommand\sso\sthat\sit\sdoes\snot\scommit\sa\stransaction\swhen\sit\sis\nmistakenly\srun\swithin\sa\stransaction\s-\sit\sshould\sleave\sthe\stransaction\sopen.\s(CVS\s6200)
+D 2009-01-22T23:04:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6619a1b72de7ada2bb7be97862913e27c6f5e339
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -197,7 +197,7 @@ F src/trigger.c ca6d78f7c1314053800386ca64361e487774fda3
 F src/update.c 8c4925f9ca664effc8a1faaad67449d2074567b1
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c f1ac1bcd3ec5e3300982031504659b6f9435de33
-F src/vacuum.c 383d6297bddc011ab04a9eed110db6eaf523e8e9
+F src/vacuum.c b78c2bfdefc1b1d9aa5d82d57c333c5fde7be5a6
 F src/vdbe.c e14b330e7b9b27dd9eb1595f47aedea30acfd521
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 5530e45fc64c1572f123aca384096e1b84cf834b
@@ -636,7 +636,7 @@ F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
-F test/vacuum.test 0bc75ee74ab9c69322d6563aa2287375697e630b
+F test/vacuum.test 07eff517a871f08165251860438cf8bbd87d6ed4
 F test/vacuum2.test fd87eec0ed72c6cc0809f7867929e2895affed92
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5b3c075f96be9671d0bcffe928589b211559e835
-R e938b7b7fa3e36fc9a9f9f554a515468
-U danielk1977
-Z b95c8b01176e8428a4928755639de430
+P 78ae96def54026461c0d03a90394480f724ea584
+R b9c2aadad22cb62a07734ad4365fba0e
+U drh
+Z 23b2dc2d7661a21482fba1cdc855f298
