@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.556 2009/01/20 17:06:27 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.557 2009/01/22 17:12:40 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1461,7 +1461,7 @@ static int pager_playback_one_page(
     }
   }
 
-  if( pDone && (rc = sqlite3BitvecSet(pDone, pgno)) ){
+  if( pDone && (rc = sqlite3BitvecSet(pDone, pgno))!=SQLITE_OK ){
     return rc;
   }
 
@@ -1531,7 +1531,7 @@ static int pager_playback_one_page(
     ** requiring a journal-sync before it is written.
     */
     assert( isSavepnt );
-    if( (rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1)) ){
+    if( (rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1))!=SQLITE_OK ){
       return rc;
     }
     pPg->flags &= ~PGHDR_NEED_READ;

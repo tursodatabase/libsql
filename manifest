@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sfts3_tokenizer.h\sto\smake\sit\sclear\show\sthe\sxNext()\smethod\sis\ssupposed\sto\sset\sits\soutput\svariables.\sMake\ssure\sthe\soutput\svariables\sof\sxNext()\sare\sonly\sused\sif\sSQLITE_OK\sis\sreturned.\sTicket\s#3604.\s(CVS\s6198)
-D 2009-01-21T17:45:34
+C Silence\sa\sC++\sbuilder\swarning\sby\swriting\s"if(\s(rc\s=\sfunction())!=SQLITE_OK\s)"\sinstead\sof\s"if(\s(rc\s=\sfunction())\s)"\sin\stwo\splaces\sin\spager.c.\sTicket\s#3605.\s(CVS\s6199)
+D 2009-01-22T17:12:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 6619a1b72de7ada2bb7be97862913e27c6f5e339
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c c74255cc1fcddc38fc3cc1dcf70c2325d3c2948e
 F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
-F src/pager.c 52fdfe6d6326a646152a26f1db94f4563fd6db39
+F src/pager.c ce7118d56c653c71d6d283006453e49e5bff8b10
 F src/pager.h 95b9802f6a014cc55523006f2b893a37b2dc16e3
 F src/parse.y b214295a91e985c42adb6bfd3ad1c56c47828e8d
 F src/pcache.c 48fbfc2208a2734c578b3223fcd4fea7d84f442b
@@ -697,7 +697,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 12f7346c13c180ed73d7a2e3b590be457360254a
-R 290417584aad244e9699793eda9de545
+P 5b3c075f96be9671d0bcffe928589b211559e835
+R e938b7b7fa3e36fc9a9f9f554a515468
 U danielk1977
-Z 1645d53c37c9ae6c2b29c97e17ea4799
+Z b95c8b01176e8428a4928755639de430
