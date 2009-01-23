@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.7 2009/01/07 15:18:21 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.8 2009/01/23 16:45:01 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -201,7 +201,6 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
   int nByte = sizeof(PgHdr1) + pCache->szPage;
   PgHdr1 *p = (PgHdr1 *)pcache1Alloc(nByte);
   if( p ){
-    memset(p, 0, nByte);
     if( pCache->bPurgeable ){
       pcache1.nCurrentPage++;
     }
@@ -550,11 +549,13 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
 
   if( pPage ){
     unsigned int h = iKey % pCache->nHash;
-    memset(pPage, 0, pCache->szPage + sizeof(PgHdr1));
+    *(void **)(PGHDR1_TO_PAGE(pPage)) = 0;
     pCache->nPage++;
     pPage->iKey = iKey;
     pPage->pNext = pCache->apHash[h];
     pPage->pCache = pCache;
+    pPage->pLruPrev = 0;
+    pPage->pLruNext = 0;
     pCache->apHash[h] = pPage;
   }
 

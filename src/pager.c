@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.557 2009/01/22 17:12:40 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.558 2009/01/23 16:45:01 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3730,6 +3730,7 @@ int sqlite3PagerAcquire(
     return rc;
   }
   assert( pPg->pgno==pgno );
+  assert( pPg->pPager==pPager || pPg->pPager==0 );
   if( pPg->pPager==0 ){
     /* The pager cache has created a new page. Its content needs to 
     ** be initialized.
@@ -3737,7 +3738,6 @@ int sqlite3PagerAcquire(
     int nMax;
     PAGER_INCR(pPager->nMiss);
     pPg->pPager = pPager;
-    memset(pPg->pExtra, 0, pPager->nExtra);
 
     rc = sqlite3PagerPagecount(pPager, &nMax);
     if( rc!=SQLITE_OK ){
@@ -3750,7 +3750,6 @@ int sqlite3PagerAcquire(
         sqlite3PagerUnref(pPg);
         return SQLITE_FULL;
       }
-      memset(pPg->pData, 0, pPager->pageSize);
       if( noContent ){
         /* Failure to set the bits in the InJournal bit-vectors is benign.
         ** It merely means that we might do some extra work to journal a 
@@ -3766,6 +3765,8 @@ int sqlite3PagerAcquire(
         TESTONLY( rc = ) addToSavepointBitvecs(pPager, pgno);
         testcase( rc==SQLITE_NOMEM );
         sqlite3EndBenignMalloc();
+      }else{
+        memset(pPg->pData, 0, pPager->pageSize);
       }
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{

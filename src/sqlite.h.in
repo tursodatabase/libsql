@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.421 2008/12/30 06:24:58 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.422 2009/01/23 16:45:01 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6661,17 +6661,17 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 **                in which case SQLite will attempt to unpin one or more 
 **                pages before re-requesting the same page, or it can
 **                allocate a new page and return a pointer to it. If a new
-**                page is allocated, then it must be completely zeroed before 
-**                it is returned.
+**                page is allocated, then the first sizeof(void*) bytes of
+**                it (at least) must be zeroed before it is returned.
 **   <tr><td>2<td>If createFlag is set to 2, then SQLite is not holding any
 **                pinned pages associated with the specific cache passed
 **                as the first argument to xFetch() that can be unpinned. The
 **                cache implementation should attempt to allocate a new
-**                cache entry and return a pointer to it. Again, the new
-**                page should be zeroed before it is returned. If the xFetch()
-**                method returns NULL when createFlag==2, SQLite assumes that
-**                a memory allocation failed and returns SQLITE_NOMEM to the
-**                user.
+**                cache entry and return a pointer to it. Again, the first
+**                sizeof(void*) bytes of the page should be zeroed before 
+**                it is returned. If the xFetch() method returns NULL when 
+**                createFlag==2, SQLite assumes that a memory allocation 
+**                failed and returns SQLITE_NOMEM to the user.
 ** </table>
 **
 ** xUnpin() is called by SQLite with a pointer to a currently pinned page
