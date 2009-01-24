@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.558 2009/01/23 16:45:01 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.559 2009/01/24 11:30:43 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4328,6 +4328,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 #ifndef SQLITE_ENABLE_ATOMIC_WRITE
   const int isDirect = 0;
   assert( isDirectMode==0 );
+  UNUSED_PARAMETER(isDirectMode);
 #else
   const int isDirect = isDirectMode;
 #endif

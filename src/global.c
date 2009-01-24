@@ -12,7 +12,7 @@
 **
 ** This file contains definitions of global variables and contants.
 **
-** $Id: global.c,v 1.10 2009/01/20 16:53:40 danielk1977 Exp $
+** $Id: global.c,v 1.11 2009/01/24 11:30:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -67,13 +67,14 @@ const unsigned char sqlite3UpperToLower[] = {
 ** equivalents to the following standard library functions:
 **
 **   isspace()                        0x01
-**   isalnum()                        0x02
+**   isalpha()                        0x02
 **   isdigit()                        0x04
+**   isalnum()                        0x06
 **   isxdigit()                       0x08
 **   toupper()                        0x20
 **
 ** Bit 0x20 is set if the mapped character requires translation to upper
-** case. i.e. if the character is a lower-case ASCII character.character.
+** case. i.e. if the character is a lower-case ASCII character.
 ** If x is a lower-case ASCII character, then its upper-case equivalent
 ** is (x - 0x20). Therefore toupper() can be implemented as:
 **
@@ -93,8 +94,8 @@ const unsigned char sqlite3CtypeMap[256] = {
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 18..1f    ........ */
   0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 20..27     !"#$%&' */
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 28..2f    ()*+,-./ */
-  0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e, 0x0e,  /* 30..37    01234567 */
-  0x0e, 0x0e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 38..3f    89:;<=>? */
+  0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c, 0x0c,  /* 30..37    01234567 */
+  0x0c, 0x0c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  /* 38..3f    89:;<=>? */
 
   0x00, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x02,  /* 40..47    @ABCDEFG */
   0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02,  /* 48..4f    HIJKLMNO */
