@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.364 2009/01/14 00:55:10 drh Exp $
+** $Id: where.c,v 1.365 2009/01/24 09:56:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1924,7 +1924,7 @@ static void bestIndex(
         wsFlags |= WHERE_COLUMN_IN;
         if( pExpr->pSelect!=0 ){
           inMultiplier *= 25;
-        }else if( ALWAYS(pExpr->pList) ){
+        }else if( pExpr->pList ){
           inMultiplier *= pExpr->pList->nExpr + 1;
         }
       }
