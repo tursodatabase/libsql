@@ -25,7 +25,7 @@ close $fd
 #
 set in [open $LIBFILE]
 fconfigure $in -translation binary
-set out [open $LIB w]
+set out [open $LIB w 0755]
 fconfigure $out -translation binary
 puts -nonewline $out [read $in]
 close $in
