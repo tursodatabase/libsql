@@ -1,7 +1,7 @@
-C Remove\sobsolete\sfiles\sfrom\sthe\stools\ssubfolder.\s(CVS\s6204)
-D 2009-01-24T15:23:01
+C (#3583)\sadd\sa\srule\sfor\ssqlite3.pc\sin\scase\sthe\s.in\sfile\sis\supdated\s(CVS\s6205)
+D 2009-01-26T20:59:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 6619a1b72de7ada2bb7be97862913e27c6f5e339
+F Makefile.in 56e5fccf24f8369a812623abccbf99918d4bb0e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bfc71edca471221add6b32b867d0b15171974eaf
-R 2fa615f5990f452945f349c4562d3846
-U drh
-Z 28b8d898b1c936df2bb1d132f87e263b
+P d74560803e16eb2d28fc644b9aedb8c60eb224c6
+R 0a6131661c677b3e9850b32a9c922c24
+U vapier
+Z 7cbd863d62081dd7183466fecaf41b76

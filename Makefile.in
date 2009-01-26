@@ -443,6 +443,9 @@ all:	sqlite3.h libsqlite3.la sqlite3$(TEXE) $(HAVE_TCL:1=libtclsqlite3.la)
 Makefile: $(TOP)/Makefile.in
 	./config.status
 
+sqlite3.pc: $(TOP)/sqlite3.pc.in
+	./config.status
+
 # Generate the file "last_change" which contains the date of change
 # of the most recently modified source code file
 #
@@ -754,7 +757,7 @@ sqlite3_analyzer$(TEXE):	$(TESTFIXTURE_SRC) $(TOP)/tool/spaceanal.tcl
 		$(TEMP_STORE) -o $@ $(TESTFIXTURE_SRC) $(LIBTCL)
 
 
-install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h ${HAVE_TCL:1=tcl_install}
+install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_install}
 	$(INSTALL) -d $(DESTDIR)$(libdir)
 	$(LTINSTALL) libsqlite3.la $(DESTDIR)$(libdir)
 	$(INSTALL) -d $(DESTDIR)$(bindir)
