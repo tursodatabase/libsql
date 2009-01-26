@@ -92,7 +92,7 @@ AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.51 $
+# $Revision: 1.52 $
 
 #########
 # Programs needed
@@ -385,6 +385,18 @@ if test "${use_tcl}" = "yes" ; then
         AC_MSG_ERROR([${with_tclconfig} directory doesn't contain tclConfig.sh])
       fi
     fi
+
+    # Start autosearch by asking tclsh
+    if test x"$cross_compiling" = xno; then
+      for i in `echo 'puts stdout $auto_path' | ${TCLSH_CMD}`
+      do
+        if test -f "$i/tclConfig.sh" ; then
+          ac_cv_c_tclconfig="$i"
+          break
+        fi
+      done
+    fi
+
     # then check for a private Tcl installation
     if test x"${ac_cv_c_tclconfig}" = x ; then
       for i in \

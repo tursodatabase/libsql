@@ -1,5 +1,5 @@
-C (#1428)\sinstalled\sshared\slibs\swith\sexec\sperms\s(CVS\s6206)
-D 2009-01-26T21:25:58
+C (#3449)\ssearch\sfor\stclConfig.sh\sfirst\sby\sasking\stclsh\sitself\swhere\sit\sis\s(CVS\s6207)
+D 2009-01-26T21:39:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 56e5fccf24f8369a812623abccbf99918d4bb0e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -19,7 +19,7 @@ F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 3fda160d9a0ebbd6c22c0391354fa0036474680f
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
 F configure ba834380ddf76cd00c1e6b51a2a97ce671946b41 x
-F configure.ac 986409bcb9b49585bd971b54e8037afbf16b0b2f
+F configure.ac 67f7389d5930513b7a2c28a69d866413002bbd4f
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4d03b69317acde5c29f38ae88276c15abf05266a
-R f69004547862d573bd414625461b2493
+P 3f2a3414d008636e0d70f3ed8b728ffdd46ae9fc
+R dde2ab11fda27157326136c4737b5539
 U vapier
-Z 56b3efef59b67611b5d9694e5c91cf61
+Z 0ba855563f04867cecde4ec0bb8889fa
