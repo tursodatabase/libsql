@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.561 2009/01/20 17:06:27 danielk1977 Exp $
+** $Id: btree.c,v 1.562 2009/01/28 20:21:17 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4663,7 +4663,9 @@ static int fillInCell(
     nSrc = nData;
     nData = 0;
   }else{ 
-    /* TBD:  Perhaps raise SQLITE_CORRUPT if nKey is larger than 31 bits? */
+    if( nKey>0x7fffffff || pKey==0 ){
+      return SQLITE_CORRUPT;
+    }
     nPayload += (int)nKey;
     pSrc = pKey;
     nSrc = (int)nKey;
@@ -5585,7 +5587,10 @@ static int balance_nonroot(BtCursor *pCur){
         j--;
         sqlite3BtreeParseCellPtr(pNew, apCell[j], &info);
         pCell = pTemp;
-        fillInCell(pParent, pCell, 0, info.nKey, 0, 0, 0, &sz);
+        rc = fillInCell(pParent, pCell, 0, info.nKey, 0, 0, 0, &sz);
+        if( rc!=SQLITE_OK ){
+          goto balance_cleanup;
+        }
         pTemp = 0;
       }else{
         pCell -= 4;
