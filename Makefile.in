@@ -110,6 +110,10 @@ HAVE_TCL = @HAVE_TCL@
 #
 TCLSH_CMD = @TCLSH_CMD@
 
+# Where do we want to install the tcl plugin
+#
+TCLLIBDIR = @TCLLIBDIR@
+
 # The suffix used on shared libraries.  Ex:  ".dll", ".so", ".dylib"
 #
 SHLIB_SUFFIX = @TCL_SHLIB_SUFFIX@
@@ -460,8 +464,9 @@ libsqlite3.la:	$(LIBOBJ)
 libtclsqlite3.la:	tclsqlite.lo libsqlite3.la
 	$(LTLINK) -o $@ tclsqlite.lo \
 		libsqlite3.la @TCL_STUB_LIB_SPEC@ $(TLIBS) \
-                -rpath "$(libdir)/sqlite" \
-		-version-info "8:6:8"
+		-rpath "$(TCLLIBDIR)" \
+		-version-info "8:6:8" \
+		-avoid-version
 
 sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	$(LTLINK) $(READLINE_FLAGS) \
@@ -768,8 +773,13 @@ install:	sqlite3$(BEXE) libsqlite3.la sqlite3.h sqlite3.pc ${HAVE_TCL:1=tcl_inst
 	$(INSTALL) -d $(DESTDIR)$(pkgconfigdir)
 	$(INSTALL) -m 0644 sqlite3.pc $(DESTDIR)$(pkgconfigdir)
 
-tcl_install:	libtclsqlite3.la
-	$(TCLSH_CMD) $(TOP)/tclinstaller.tcl $(RELEASE)
+pkgIndex.tcl:
+	echo 'package ifneeded sqlite3 $(RELEASE) [list load $(TCLLIBDIR)/libtclsqlite3.so sqlite3]' > $@
+tcl_install:	libtclsqlite3.la pkgIndex.tcl
+	$(INSTALL) -d $(DESTDIR)$(TCLLIBDIR)
+	$(LTINSTALL) libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)
+	rm -f $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.la $(DESTDIR)$(TCLLIBDIR)/libtclsqlite3.a
+	$(INSTALL) -m 0644 pkgIndex.tcl $(DESTDIR)$(TCLLIBDIR)
 
 clean:	
 	rm -f *.lo *.la *.o sqlite3$(TEXE) libsqlite3.la
