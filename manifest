@@ -1,5 +1,5 @@
-C use\sAC_MSG_xxx\sfuncs\srather\sthan\s`echo`\s(CVS\s6208)
-D 2009-01-26T21:43:16
+C Add\stestcase()\smacros\sfor\scoverage\sin\sdate.c.\s(CVS\s6209)
+D 2009-01-28T02:55:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 56e5fccf24f8369a812623abccbf99918d4bb0e6
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btreeInt.h 44bcbfe387ba99a3a9f2527bd12fa1bb8bc574b3
 F src/build.c c8bf5dcef4d5889bc57eecdb8b3dba178e5e06a8
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 6fd7a113e88b229d08956c8bef7cafcc664cd01d
+F src/date.c b4db68e6cd7f3c7b437c440fca5863692b8cd026
 F src/delete.c 6249005bdd8f85db6ec5f31ddb5c07de023693cc
 F src/expr.c 76dc3dc83b56ab8db50a772714fac49def8bbf12
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ff2912dc1483bf934c94bd7866b4ec314a0d784f
-R 1f8f5d3c45ac41c5c7a79b531818f11d
-U vapier
-Z 719b7020c781dd70f6d55782c82d3031
+P ed08025ad2c5c9e52732ad91192e1c6d58272c87
+R fdd2f7ab99f4f73c1dd0919a10dc240f
+U drh
+Z 81178b096f92b1be5a731beb39f7c3b2

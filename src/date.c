@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.100 2009/01/20 16:53:40 danielk1977 Exp $
+** $Id: date.c,v 1.101 2009/01/28 02:55:29 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -886,6 +886,10 @@ static void strftimeFunc(
       i++;
     }
   }
+  testcase( n==sizeof(zBuf)-1 );
+  testcase( n==sizeof(zBuf) );
+  testcase( n==(u64)db->aLimit[SQLITE_LIMIT_LENGTH]+1 );
+  testcase( n==(u64)db->aLimit[SQLITE_LIMIT_LENGTH] );
   if( n<sizeof(zBuf) ){
     z = zBuf;
   }else if( n>(u64)db->aLimit[SQLITE_LIMIT_LENGTH] ){
