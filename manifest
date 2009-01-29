@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\swhen\sattempting\sto\sinsert\sinto\na\scorrupt\sdatabase\sfile.\s\sNeed\sa\stest\scase.\s(CVS\s6212)
-D 2009-01-28T20:21:17
+C add\sa\scvsignore\sfile\s(CVS\s6213)
+D 2009-01-29T02:54:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -692,7 +692,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 813a3c96863acc9dd6ccd41e7ac9f57d635bcc0d
+P 68957cf0c4bae0c6cf450b4de1d6bc1bc64b232c
 R 1d921b41466ddcb216497f4cc6d6fe23
-U drh
-Z c108c05ffdcb51b987aecb70b13d99f1
+U vapier
+Z 0bc88850dd2b3af5293ba63c76284b74
