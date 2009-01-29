@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.267 2009/01/16 11:04:58 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.268 2009/01/29 19:27:47 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -180,10 +180,10 @@ id(A) ::= ID(X).         {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID
-  ABORT AFTER ANALYZE ASC ATTACH BEFORE BEGIN CASCADE CAST CONFLICT
+  ABORT AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW CONFLICT
   DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
   IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH PLAN
-  QUERY KEY OF OFFSET PRAGMA RAISE RELEASE REPLACE RESTRICT ROW
+  QUERY KEY OF OFFSET PRAGMA RAISE RELEASE REPLACE RESTRICT ROW ROLLBACK
   SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
   EXCEPT INTERSECT UNION
