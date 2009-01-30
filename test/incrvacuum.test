@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.21 2008/12/27 15:23:13 danielk1977 Exp $
+# $Id: incrvacuum.test,v 1.22 2009/01/30 05:47:15 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -734,6 +734,7 @@ do_test incrvacuum-14.1 {
 
 do_test incrvacuum-15.1 {
   db close
+  db2 close
   file delete -force test.db
   sqlite3 db test.db
 
@@ -774,6 +775,5 @@ do_test incrvacuum-15.1 {
   }
 } {ok}
 
-db2 close
 db3 close
 finish_test
