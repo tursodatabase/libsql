@@ -1,5 +1,5 @@
-C Implemented\sthe\sSQLITE_LAST_ERRNO\sop\sin\sthe\sxFileControl()\smethod\sof\sos_win.c.\s\sTicket\s#3615.\s(CVS\s6217)
-D 2009-01-30T05:59:11
+C Changes\sto\ssetupLookaside()\sin\smain.c\sto\sbetter\shandle\slookaside\sbuffer\sconfigurations\sof\szero-size.\s\sTicket\s#3616.\s(CVS\s6218)
+D 2009-01-30T06:11:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/insert.c f6db1e6f43aae337e64a755208abb6ff124edc19
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c da5ff4dfbb59896af5f7b4afaef48d2fb7d08a7d
+F src/main.c d4d52cf35438c15c3f1b4607b7cd32a7b90bc37a
 F src/malloc.c bc408056b126db37b6fba00e170d578cc67be6b3
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e764a7c5d369e2ff736d662b1209b3d54d778caf
-R 7318ae3ef11b6ac082650c723e29b00f
+P 9ea871f3e8ce1ec5cffb72f13704c3002d3f5383
+R bda281c14bbdb7d7dba2a062068f24de
 U shane
-Z 2cd587a9902c283d8f25ced3dddc86fb
+Z 650ab35123eaec11247543bf155740af

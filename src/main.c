@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.522 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: main.c,v 1.523 2009/01/30 06:11:55 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -386,9 +386,22 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   if( db->lookaside.nOut ){
     return SQLITE_BUSY;
   }
-  if( sz<0 ) sz = 0;
+  /* Free any existing lookaside buffer for this handle before
+  ** allocating a new one so we don't have to have space for 
+  ** both at the same time.
+  */
+  if( db->lookaside.bMalloced ){
+    sqlite3_free(db->lookaside.pStart);
+  }
+  /* The size of a lookaside slot needs to be larger than a pointer
+  ** to be useful.
+  */
+  if( sz<=sizeof(LookasideSlot*) ) sz = 0;
   if( cnt<0 ) cnt = 0;
-  if( pBuf==0 ){
+  if( sz==0 || cnt==0 ){
+    sz = 0;
+    pStart = 0;
+  }else if( pBuf==0 ){
     sz = (sz + 7)&~7;
     sqlite3BeginBenignMalloc();
     pStart = sqlite3Malloc( sz*cnt );
@@ -397,16 +410,13 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     sz = sz&~7;
     pStart = pBuf;
   }
-  if( db->lookaside.bMalloced ){
-    sqlite3_free(db->lookaside.pStart);
-  }
   db->lookaside.pStart = pStart;
   db->lookaside.pFree = 0;
   db->lookaside.sz = (u16)sz;
-  db->lookaside.bMalloced = pBuf==0 ?1:0;
   if( pStart ){
     int i;
     LookasideSlot *p;
+    assert( sz > sizeof(LookasideSlot*) );
     p = (LookasideSlot*)pStart;
     for(i=cnt-1; i>=0; i--){
       p->pNext = db->lookaside.pFree;
@@ -415,9 +425,11 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
     }
     db->lookaside.pEnd = p;
     db->lookaside.bEnabled = 1;
+    db->lookaside.bMalloced = pBuf==0 ?1:0;
   }else{
     db->lookaside.pEnd = 0;
     db->lookaside.bEnabled = 0;
+    db->lookaside.bMalloced = 0;
   }
   return SQLITE_OK;
 }
