@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.365 2009/01/24 09:56:15 danielk1977 Exp $
+** $Id: where.c,v 1.366 2009/01/30 05:40:27 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -3127,7 +3127,7 @@ WhereInfo *sqlite3WhereBegin(
       pLevel->iIdxCur = -1;
     }
     notReady &= ~getMask(pMaskSet, pTabList->a[bestJ].iCursor);
-    pLevel->iFrom = bestJ;
+    pLevel->iFrom = (u8)bestJ;
 
     /* Check that if the table scanned by this loop iteration had an
     ** INDEXED BY clause attached to it, that the named index is being

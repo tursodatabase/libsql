@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.13 2008/12/08 18:19:18 drh Exp $
+** $Id: mutex_w32.c,v 1.14 2009/01/30 05:40:27 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -195,6 +195,7 @@ static void winMutexEnter(sqlite3_mutex *p){
 }
 static int winMutexTry(sqlite3_mutex *p){
   int rc = SQLITE_BUSY;
+  UNUSED_PARAMETER(p);
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld(p) );
   /*
   ** The sqlite3_mutex_try() routine is very rarely used, and when it

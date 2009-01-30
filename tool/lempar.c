@@ -591,8 +591,8 @@ static void yy_reduce(
     if( yysize ){
       yypParser->yyidx++;
       yymsp -= yysize-1;
-      yymsp->stateno = yyact;
-      yymsp->major = yygoto;
+      yymsp->stateno = (YYACTIONTYPE)yyact;
+      yymsp->major = (YYCODETYPE)yygoto;
       yymsp->minor = yygotominor;
     }else
 #endif

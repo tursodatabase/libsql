@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.198 2009/01/14 23:38:03 drh Exp $
+** $Id: shell.c,v 1.199 2009/01/30 05:40:27 shane Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -227,6 +227,7 @@ static void shellstaticFunc(
 ){
   assert( 0==argc );
   assert( zShellStatic );
+  UNUSED_PARAMETER(argc);
   UNUSED_PARAMETER(argv);
   sqlite3_result_text(context, zShellStatic, -1, SQLITE_STATIC);
 }
