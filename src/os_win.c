@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.145 2008/12/11 02:58:27 shane Exp $
+** $Id: os_win.c,v 1.146 2009/01/30 05:59:11 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -100,6 +100,7 @@ struct winFile {
   HANDLE h;               /* Handle for accessing the file */
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
+  DWORD lastErrno;        /* The Windows errno from the last I/O error */
 #if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
@@ -358,6 +359,7 @@ static BOOL winceCreateLock(const char *zFilename, winFile *pFile){
   /* Create/open the named mutex */
   pFile->hMutex = CreateMutexW(NULL, FALSE, zName);
   if (!pFile->hMutex){
+    pFile->lastErrno = GetLastError();
     free(zName);
     return FALSE;
   }
@@ -388,6 +390,7 @@ static BOOL winceCreateLock(const char *zFilename, winFile *pFile){
              FILE_MAP_READ|FILE_MAP_WRITE, 0, 0, sizeof(winceLock));
     /* If mapping failed, close the shared memory handle and erase it */
     if (!pFile->shared){
+      pFile->lastErrno = GetLastError();
       CloseHandle(pFile->hShared);
       pFile->hShared = NULL;
     }
@@ -653,14 +656,17 @@ static int winRead(
   DWORD rc;
   DWORD got;
   winFile *pFile = (winFile*)id;
+  DWORD error;
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE3("READ %d lock=%d\n", pFile->h, pFile->locktype);
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){
+  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
+    pFile->lastErrno = error;
     return SQLITE_FULL;
   }
   if( !ReadFile(pFile->h, pBuf, amt, &got, 0) ){
+    pFile->lastErrno = GetLastError();
     return SQLITE_IOERR_READ;
   }
   if( got==(DWORD)amt ){
@@ -687,12 +693,14 @@ static int winWrite(
   DWORD rc;
   DWORD wrote = 0;
   winFile *pFile = (winFile*)id;
+  DWORD error;
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
   OSTRACE3("WRITE %d lock=%d\n", pFile->h, pFile->locktype);
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( rc==INVALID_SET_FILE_POINTER && GetLastError()!=NO_ERROR ){
+  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
+    pFile->lastErrno = error;
     return SQLITE_FULL;
   }
   assert( amt>0 );
@@ -705,6 +713,7 @@ static int winWrite(
     pBuf = &((char*)pBuf)[wrote];
   }
   if( !rc || amt>(int)wrote ){
+    pFile->lastErrno = GetLastError();
     return SQLITE_FULL;
   }
   return SQLITE_OK;
@@ -727,6 +736,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
       return SQLITE_OK;
     }
   }
+  pFile->lastErrno = GetLastError();
   return SQLITE_IOERR_TRUNCATE;
 }
 
@@ -766,6 +776,7 @@ static int winSync(sqlite3_file *id, int flags){
   if( FlushFileBuffers(pFile->h) ){
     return SQLITE_OK;
   }else{
+    pFile->lastErrno = GetLastError();
     return SQLITE_IOERR;
   }
 #endif
@@ -777,8 +788,15 @@ static int winSync(sqlite3_file *id, int flags){
 static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
   winFile *pFile = (winFile*)id;
   DWORD upperBits, lowerBits;
+  DWORD error;
   SimulateIOError(return SQLITE_IOERR_FSTAT);
   lowerBits = GetFileSize(pFile->h, &upperBits);
+  if(   (lowerBits == INVALID_FILE_SIZE)
+     && ((error = GetLastError()) != NO_ERROR) )
+  {
+    pFile->lastErrno = error;
+    return SQLITE_IOERR_FSTAT;
+  }
   *pSize = (((sqlite3_int64)upperBits)<<32) + lowerBits;
   return SQLITE_OK;
 }
@@ -814,6 +832,9 @@ static int getReadLock(winFile *pFile){
     res = LockFile(pFile->h, SHARED_FIRST+pFile->sharedLockByte, 0, 1, 0);
 #endif
   }
+  if( res == 0 ){
+    pFile->lastErrno = GetLastError();
+  }
   return res;
 }
 
@@ -830,6 +851,9 @@ static int unlockReadLock(winFile *pFile){
   }else{
     res = UnlockFile(pFile->h, SHARED_FIRST + pFile->sharedLockByte, 0, 1, 0);
 #endif
+  }
+  if( res == 0 ){
+    pFile->lastErrno = GetLastError();
   }
   return res;
 }
@@ -866,6 +890,7 @@ static int winLock(sqlite3_file *id, int locktype){
   int newLocktype;       /* Set pFile->locktype to this value before exiting */
   int gotPendingLock = 0;/* True if we acquired a PENDING lock this time */
   winFile *pFile = (winFile*)id;
+  DWORD error = NO_ERROR;
 
   assert( pFile!=0 );
   OSTRACE5("LOCK %d %d was %d(%d)\n",
@@ -890,8 +915,9 @@ static int winLock(sqlite3_file *id, int locktype){
   ** the PENDING_LOCK byte is temporary.
   */
   newLocktype = pFile->locktype;
-  if( pFile->locktype==NO_LOCK
-   || (locktype==EXCLUSIVE_LOCK && pFile->locktype==RESERVED_LOCK)
+  if(   (pFile->locktype==NO_LOCK)
+     || (   (locktype==EXCLUSIVE_LOCK)
+         && (pFile->locktype==RESERVED_LOCK))
   ){
     int cnt = 3;
     while( cnt-->0 && (res = LockFile(pFile->h, PENDING_BYTE, 0, 1, 0))==0 ){
@@ -902,6 +928,9 @@ static int winLock(sqlite3_file *id, int locktype){
       Sleep(1);
     }
     gotPendingLock = res;
+    if( !res ){
+      error = GetLastError();
+    }
   }
 
   /* Acquire a shared lock
@@ -911,6 +940,8 @@ static int winLock(sqlite3_file *id, int locktype){
     res = getReadLock(pFile);
     if( res ){
       newLocktype = SHARED_LOCK;
+    }else{
+      error = GetLastError();
     }
   }
 
@@ -921,6 +952,8 @@ static int winLock(sqlite3_file *id, int locktype){
     res = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( res ){
       newLocktype = RESERVED_LOCK;
+    }else{
+      error = GetLastError();
     }
   }
 
@@ -941,7 +974,8 @@ static int winLock(sqlite3_file *id, int locktype){
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
-      OSTRACE2("error-code = %d\n", GetLastError());
+      error = GetLastError();
+      OSTRACE2("error-code = %d\n", error);
       getReadLock(pFile);
     }
   }
@@ -961,6 +995,7 @@ static int winLock(sqlite3_file *id, int locktype){
   }else{
     OSTRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
            locktype, newLocktype);
+    pFile->lastErrno = error;
     rc = SQLITE_BUSY;
   }
   pFile->locktype = (u8)newLocktype;
@@ -1039,6 +1074,10 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
       *(int*)pArg = ((winFile*)id)->locktype;
+      return SQLITE_OK;
+    }
+    case SQLITE_LAST_ERRNO: {
+      *(int*)pArg = (int)((winFile*)id)->lastErrno;
       return SQLITE_OK;
     }
   }
@@ -1320,6 +1359,7 @@ static int winOpen(
   memset(pFile, 0, sizeof(*pFile));
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
+  pFile->lastErrno = NO_ERROR;
 #if SQLITE_OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
                (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)

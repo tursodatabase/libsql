@@ -1,5 +1,5 @@
-C In\stest\scase\sincrvacuum-15.1\sclose\sboth\sdb\shandles\s(db\sand\sdb2)\sbefore\sattempting\sto\sdelete\stest.db.\sTicket\s#3614.\s(CVS\s6216)
-D 2009-01-30T05:47:15
+C Implemented\sthe\sSQLITE_LAST_ERRNO\sop\sin\sthe\sxFileControl()\smethod\sof\sos_win.c.\s\sTicket\s#3615.\s(CVS\s6217)
+D 2009-01-30T05:59:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os.h f996ab57d2035a20e63173419055608548a834c6
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c c74255cc1fcddc38fc3cc1dcf70c2325d3c2948e
-F src/os_win.c 496e3ceb499aedc63622a89ef76f7af2dd902709
+F src/os_win.c ec133f2a3c0da786995ea09ba67056af8f18cc2e
 F src/pager.c 3a36360acb9caa54d4fdd6439454348eab3b4b5a
 F src/pager.h 59e3b500a0f6a8d17ec61976535007b0de39b9a4
 F src/parse.y 4f4d16aee0d11f69fec2adb77dac88878043ed8d
@@ -163,7 +163,7 @@ F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
 F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
-F src/test1.c 58c0026d8764635efe8e7e7cea61e41faecef597
+F src/test1.c 4a06b801c6167f18b8b2108de8f2754f2a6de116
 F src/test2.c 9689e7d3b7791da8c03f9acd1ea801802cb83c17
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c74c78e4eb7f6d674b7564b33387db996fbe5725
-R bd514c1147976bc40b8b0f95aec439c1
+P e764a7c5d369e2ff736d662b1209b3d54d778caf
+R 7318ae3ef11b6ac082650c723e29b00f
 U shane
-Z 7d969085719e2b9de7da3842fea43e26
+Z 2cd587a9902c283d8f25ced3dddc86fb
