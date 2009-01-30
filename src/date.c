@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.101 2009/01/28 02:55:29 drh Exp $
+** $Id: date.c,v 1.102 2009/01/30 17:27:44 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -629,6 +629,7 @@ static int parseModifier(const char *zMod, DateTime *p){
     case '7':
     case '8':
     case '9': {
+      double rRounder;
       n = getValue(z, &r);
       assert( n>=1 );
       if( z[n]==':' ){
@@ -661,14 +662,15 @@ static int parseModifier(const char *zMod, DateTime *p){
       if( z[n-1]=='s' ){ z[n-1] = 0; n--; }
       computeJD(p);
       rc = 0;
+      rRounder = r<0 ? -0.5 : +0.5;
       if( n==3 && strcmp(z,"day")==0 ){
-        p->iJD += (sqlite3_int64)(r*86400000.0 + 0.5);
+        p->iJD += (sqlite3_int64)(r*86400000.0 + rRounder);
       }else if( n==4 && strcmp(z,"hour")==0 ){
-        p->iJD += (sqlite3_int64)(r*(86400000.0/24.0) + 0.5);
+        p->iJD += (sqlite3_int64)(r*(86400000.0/24.0) + rRounder);
       }else if( n==6 && strcmp(z,"minute")==0 ){
-        p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0)) + 0.5);
+        p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0)) + rRounder);
       }else if( n==6 && strcmp(z,"second")==0 ){
-        p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0*60.0)) + 0.5);
+        p->iJD += (sqlite3_int64)(r*(86400000.0/(24.0*60.0*60.0)) + rRounder);
       }else if( n==5 && strcmp(z,"month")==0 ){
         int x, y;
         computeYMD_HMS(p);
@@ -680,13 +682,17 @@ static int parseModifier(const char *zMod, DateTime *p){
         computeJD(p);
         y = (int)r;
         if( y!=r ){
-          p->iJD += (sqlite3_int64)((r - y)*30.0*86400000.0 + 0.5);
+          p->iJD += (sqlite3_int64)((r - y)*30.0*86400000.0 + rRounder);
         }
       }else if( n==4 && strcmp(z,"year")==0 ){
+        int y = (int)r;
         computeYMD_HMS(p);
-        p->Y += (int)r;
+        p->Y += y;
         p->validJD = 0;
         computeJD(p);
+        if( y!=r ){
+          p->iJD += (sqlite3_int64)((r - y)*365.0*86400000.0 + rRounder);
+        }
       }else{
         rc = 1;
       }

@@ -1,5 +1,5 @@
-C Made\scode\sto\sremove\sunused\sparameter\swarning\spart\sof\sthe\sconditional.\s\sTicket\s#3610.\s(CVS\s6219)
-D 2009-01-30T16:09:23
+C Fix\sa\sround-off\serror\swhen\smoving\sdates\sby\snegative\smodifier\samounts.\nTicket\s#3618.\s\sEnhance\sthe\s"NNN\syears"\smodifier\sto\saccept\sfractional\nyears.\s(CVS\s6220)
+D 2009-01-30T17:27:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btreeInt.h 44bcbfe387ba99a3a9f2527bd12fa1bb8bc574b3
 F src/build.c c8bf5dcef4d5889bc57eecdb8b3dba178e5e06a8
 F src/callback.c bee8949d619b1b7b1e4dfac8a19c5116ae1dd12a
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c b4db68e6cd7f3c7b437c440fca5863692b8cd026
+F src/date.c 870770dde3fb56772ab247dfb6a6eda44d16cfbc
 F src/delete.c 6249005bdd8f85db6ec5f31ddb5c07de023693cc
 F src/expr.c 76dc3dc83b56ab8db50a772714fac49def8bbf12
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -291,7 +291,7 @@ F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/date.test 4ea54e26feea7c24dfc7fad1b2b87da21ff12380
+F test/date.test bb2cc648333c04d09e8e23cfc0cddc398c334a92
 F test/default.test 252298e42a680146b1dd64f563b95bdf088d94fb
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0a2c7f740397c5c6373434c75d73c2714f14dd32
-R 649046167725b542f7b218aebaf5f5d8
-U shane
-Z 487e1bd5693e1aade7bfd1bf63c7b518
+P c5dca1146de72071ed2e5fdf6890f41682272587
+R 6a74041552de27456797035382a955bb
+U drh
+Z 4f589fc1347644d84b8da190a4ca5065
