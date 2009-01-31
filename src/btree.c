@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.562 2009/01/28 20:21:17 drh Exp $
+** $Id: btree.c,v 1.563 2009/01/31 14:54:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7390,6 +7390,10 @@ static int btreeCopyFile(Btree *pTo, Btree *pFrom){
     ** file APIs on the database file directly.
     */
     pBtTo->db = pTo->db;
+    if( nFromPageSize==nToPageSize ){
+      sqlite3PagerTruncateImage(pBtTo->pPager, nFromPage);
+      iNow = iSize;
+    }
     rc = sqlite3PagerCommitPhaseOne(pBtTo->pPager, 0, 1);
     if( iSize<iNow && rc==SQLITE_OK ){
       rc = sqlite3OsTruncate(pFile, iSize);

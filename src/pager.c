@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.560 2009/01/30 05:40:27 shane Exp $
+** @(#) $Id: pager.c,v 1.561 2009/01/31 14:54:07 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2575,7 +2575,6 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
   return rc;
 }
 
-#ifndef SQLITE_OMIT_AUTOVACUUM
 /*
 ** Truncate the in-memory database file image to nPage pages. This 
 ** function does not actually modify the database file on disk. It 
@@ -2588,7 +2587,6 @@ void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
   assert( pPager->state>=PAGER_RESERVED );
   pPager->dbSize = nPage;
 }
-#endif  /* ifndef SQLITE_OMIT_AUTOVACUUM */
 
 /*
 ** Shutdown the page cache.  Free all memory and close all files.

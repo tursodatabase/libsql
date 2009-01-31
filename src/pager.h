@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.98 2009/01/24 11:30:43 drh Exp $
+** @(#) $Id: pager.h,v 1.99 2009/01/31 14:54:07 danielk1977 Exp $
 */
 
 #ifndef _PAGER_H_
@@ -136,10 +136,8 @@ const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
 void *sqlite3PagerTempSpace(Pager*);
 
-/* Functions used in auto-vacuum mode to truncate the database file. */
-#ifndef SQLITE_OMIT_AUTOVACUUM
-  void sqlite3PagerTruncateImage(Pager*,Pgno);
-#endif
+/* Functions used to truncate the database file. */
+void sqlite3PagerTruncateImage(Pager*,Pgno);
 
 /* Used by encryption extensions. */
 #ifdef SQLITE_HAS_CODEC
