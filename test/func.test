@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.87 2008/10/12 00:27:54 shane Exp $
+# $Id: func.test,v 1.88 2009/01/31 22:28:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1030,5 +1030,15 @@ do_test func-26.6 {
      SELECT nullx_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789a(0);
   "
 } {1 {no such function: nullx_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789_123456789a}}
+
+do_test func-27.1 {
+  catchsql {SELECT coalesce()}
+} {1 {wrong number of arguments to function coalesce()}}
+do_test func-27.2 {
+  catchsql {SELECT coalesce(1)}
+} {1 {wrong number of arguments to function coalesce()}}
+do_test func-27.3 {
+  catchsql {SELECT coalesce(1,2)}
+} {0 1}
 
 finish_test
