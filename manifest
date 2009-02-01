@@ -1,5 +1,5 @@
-C Make\sthe\sTO\skeyword\savailable\seven\sif\sSQLITE_OMIT_ALTERTABLE\sis\sdefined.\r\nTicket\s#3622.\s(CVS\s6223)
-D 2009-02-01T00:00:46
+C Add\sa\snew\stest\scommand,\ssqlite3_mprintf_long,\sfor\stesting\sthe\sbehavior\nof\s"long\sinteger"\sprintf\sformatting.\s\sTicket\s#3621.\s(CVS\s6224)
+D 2009-02-01T00:21:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
 F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
-F src/test1.c 4a06b801c6167f18b8b2108de8f2754f2a6de116
+F src/test1.c 72ed8f7cabea905401691a836d578b8317b4d76e
 F src/test2.c 9689e7d3b7791da8c03f9acd1ea801802cb83c17
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -483,7 +483,7 @@ F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
 F test/permutations.test 2e777ae1eeb11b777b31aad929c4351464758441
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
-F test/printf.test 262a5acd3158f788e9bdf7f18d718f3af32ff6ef
+F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test 9ab91798b047684f0dd26ee698920dbb69a30a10
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9cd43c82a3c123829806aa7bf14efdd29f4424d8
-R c837b874eda97feb44e3ddcebddfe5a4
+P 3890985ca6750584876596fd0a124f47ee032075
+R 01401eed13c10e23eb0e903de34beac8
 U drh
-Z 7f87a792868ba843d85460fd8f16ca72
+Z cd9d69a9bd245a1f043eb0c9f0fc7010

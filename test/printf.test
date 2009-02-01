@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite_*_printf() interface.
 #
-# $Id: printf.test,v 1.30 2008/07/09 16:51:52 drh Exp $
+# $Id: printf.test,v 1.31 2009/02/01 00:21:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -3540,7 +3540,7 @@ do_test printf-8.1 {
   sqlite3_mprintf_int {%u %u %u} 0x7fffffff 0x80000000 0xffffffff
 } {2147483647 2147483648 4294967295}
 do_test printf-8.2 {
-  sqlite3_mprintf_int {%lu %lu %lu} 0x7fffffff 0x80000000 0xffffffff
+  sqlite3_mprintf_long {%lu %lu %lu} 0x7fffffff 0x80000000 0xffffffff
 } {2147483647 2147483648 4294967295}
 do_test printf-8.3 {
   sqlite3_mprintf_int64 {%llu %llu %llu} 2147483647 2147483648 4294967296
