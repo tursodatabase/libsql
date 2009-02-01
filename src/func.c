@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.212 2009/02/01 18:08:41 drh Exp $
+** $Id: func.c,v 1.213 2009/02/01 19:23:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -199,6 +199,14 @@ static void substrFunc(
     }
   }else if( p1>0 ){
     p1--;
+  }
+  if( p2<0 ){
+    p1 += p2;
+    p2 = -p2;
+    if( p1<0 ){
+      p2 += p1;
+      p1 = 0;
+    }
   }
   if( p1+p2>len ){
     p2 = len-p1;
