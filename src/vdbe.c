@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.812 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: vdbe.c,v 1.813 2009/02/01 00:29:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -4024,7 +4024,7 @@ case OP_Next: {        /* jump */
 /* Opcode: IdxInsert P1 P2 P3 * *
 **
 ** Register P2 holds a SQL index key made using the
-** MakeIdxRec instructions.  This opcode writes that key
+** MakeRecord instructions.  This opcode writes that key
 ** into the index P1.  Data for the entry is nil.
 **
 ** P3 is a flag that provides a hint to the b-tree layer that this
@@ -4091,7 +4091,7 @@ case OP_IdxDelete: {
 ** the end of the index key pointed to by cursor P1.  This integer should be
 ** the rowid of the table entry to which this index entry points.
 **
-** See also: Rowid, MakeIdxRec.
+** See also: Rowid, MakeRecord.
 */
 case OP_IdxRowid: {              /* out2-prerelease */
   int i = pOp->p1;
