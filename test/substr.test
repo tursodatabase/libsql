@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the built-in SUBSTR() functions.
 #
-# $Id: substr.test,v 1.4 2009/02/01 19:23:32 drh Exp $
+# $Id: substr.test,v 1.5 2009/02/01 19:42:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,6 +78,24 @@ substr-test 1.13 abcdefg 5 -5 abcd
 substr-test 1.14 abcdefg -5 -1 b
 substr-test 1.15 abcdefg -5 -2 ab
 substr-test 1.16 abcdefg -5 -3 ab
+
+# Make sure NULL is returned if any parameter is NULL
+#
+do_test substr-1.90 {
+  db eval {SELECT ifnull(substr(NULL,1,1),'nil')}
+} nil
+do_test substr-1.91 {
+  db eval {SELECT ifnull(substr(NULL,1),'nil')}
+} nil
+do_test substr-1.92 {
+  db eval {SELECT ifnull(substr('abcdefg',NULL,1),'nil')}
+} nil
+do_test substr-1.93 {
+  db eval {SELECT ifnull(substr('abcdefg',NULL),'nil')}
+} nil
+do_test substr-1.94 {
+  db eval {SELECT ifnull(substr('abcdefg',1,NULL),'nil')}
+} nil
 
 # Make sure everything works with long unicode characters
 #
