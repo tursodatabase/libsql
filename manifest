@@ -1,5 +1,5 @@
-C Better\serror\smessage\swhen\scoalesce()\shas\stoo\sfew\sarguments.\s\sTicket\s#3623.\s(CVS\s6222)
-D 2009-01-31T22:28:49
+C Make\sthe\sTO\skeyword\savailable\seven\sif\sSQLITE_OMIT_ALTERTABLE\sis\sdefined.\r\nTicket\s#3622.\s(CVS\s6223)
+D 2009-02-01T00:00:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -676,7 +676,7 @@ F tool/genfkey.c e1b9c93da828db10c1109c7b4fa611aec8adc407
 F tool/genfkey.test 182829596fb15785b94b2493c5f735b847d91076
 F tool/lemon.c 0f65442d1c99a865525658a47ddf292f4ac2ec54
 F tool/lempar.c aeba88b8566ff66f8a67c96b3eb2dd95e7d8908d
-F tool/mkkeywordhash.c 1583825e96c08491c288c190a569293d3d91686f
+F tool/mkkeywordhash.c 8e57fbe8c4fe2f1800f9190fd361231cb8558407
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl bc7c626adfca5aa022454a411a62e81e7204339e
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 407830c6839a81fa0a1010940740df3011713a88
-R c3945ec4bae662615ea149b764aed5c3
+P 9cd43c82a3c123829806aa7bf14efdd29f4424d8
+R c837b874eda97feb44e3ddcebddfe5a4
 U drh
-Z 5e40bffc92d9593bf4b2389c15a0c92c
+Z 7f87a792868ba843d85460fd8f16ca72
