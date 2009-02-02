@@ -12,7 +12,7 @@
 # focus of this file is testing the use of indices in WHERE clauses
 # based on recent changes to the optimizer.
 #
-# $Id: where2.test,v 1.14 2008/10/07 23:46:39 drh Exp $
+# $Id: where2.test,v 1.15 2009/02/02 01:50:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -97,17 +97,17 @@ do_test where2-1.3 {
 #
 do_test where2-2.1 {
   queryplan {
-    SELECT * FROM t1 WHERE w=85 ORDER BY random(5);
+    SELECT * FROM t1 WHERE w=85 ORDER BY random();
   }
 } {85 6 7396 7402 nosort t1 i1w}
 do_test where2-2.2 {
   queryplan {
-    SELECT * FROM t1 WHERE x=6 AND y=7396 ORDER BY random(5);
+    SELECT * FROM t1 WHERE x=6 AND y=7396 ORDER BY random();
   }
 } {85 6 7396 7402 sort t1 i1xy}
 do_test where2-2.3 {
   queryplan {
-    SELECT * FROM t1 WHERE rowid=85 AND x=6 AND y=7396 ORDER BY random(5);
+    SELECT * FROM t1 WHERE rowid=85 AND x=6 AND y=7396 ORDER BY random();
   }
 } {85 6 7396 7402 nosort t1 *}
 
