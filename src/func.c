@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.215 2009/02/02 01:50:40 drh Exp $
+** $Id: func.c,v 1.216 2009/02/02 16:32:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -43,7 +43,7 @@ static void minmaxFunc(
   int iBest;
   CollSeq *pColl;
 
-  if( argc==0 ) return;
+  assert( argc>1 );
   mask = sqlite3_user_data(context)==0 ? 0 : -1;
   pColl = sqlite3GetFuncCollSeq(context);
   assert( pColl );
@@ -53,6 +53,7 @@ static void minmaxFunc(
   for(i=1; i<argc; i++){
     if( sqlite3_value_type(argv[i])==SQLITE_NULL ) return;
     if( (sqlite3MemCompare(argv[iBest], argv[i], pColl)^mask)>=0 ){
+      testcase( mask==0 );
       iBest = i;
     }
   }
@@ -70,11 +71,11 @@ static void typeofFunc(
   const char *z = 0;
   UNUSED_PARAMETER(NotUsed);
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL:    z = "null";    break;
     case SQLITE_INTEGER: z = "integer"; break;
     case SQLITE_TEXT:    z = "text";    break;
     case SQLITE_FLOAT:   z = "real";    break;
     case SQLITE_BLOB:    z = "blob";    break;
+    default:             z = "null";    break;
   }
   sqlite3_result_text(context, z, -1, SQLITE_STATIC);
 }
@@ -169,6 +170,7 @@ static void substrFunc(
   int len;
   int p0type;
   i64 p1, p2;
+  int negP2 = 0;
 
   assert( argc==3 || argc==2 );
   if( sqlite3_value_type(argv[1])==SQLITE_NULL
@@ -193,6 +195,10 @@ static void substrFunc(
   p1 = sqlite3_value_int(argv[1]);
   if( argc==3 ){
     p2 = sqlite3_value_int(argv[2]);
+    if( p2<0 ){
+      p2 = -p2;
+      negP2 = 1;
+    }
   }else{
     p2 = sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH];
   }
@@ -200,19 +206,22 @@ static void substrFunc(
     p1 += len;
     if( p1<0 ){
       p2 += p1;
+      if( p2<0 ) p2 = 0;
       p1 = 0;
     }
   }else if( p1>0 ){
     p1--;
+  }else if( p2>0 ){
+    p2--;
   }
-  if( p2<0 ){
-    p1 += p2;
-    p2 = -p2;
+  if( negP2 ){
+    p1 -= p2;
     if( p1<0 ){
       p2 += p1;
       p1 = 0;
     }
   }
+  assert( p1>=0 && p2>=0 );
   if( p1+p2>len ){
     p2 = len-p1;
   }
@@ -226,7 +235,6 @@ static void substrFunc(
     }
     sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
   }else{
-    if( p2<0 ) p2 = 0;
     sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
   }
 }
