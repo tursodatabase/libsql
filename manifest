@@ -1,5 +1,5 @@
-C Update\sthe\sSUBSTR\sfunction\sso\sthat\sworks\sconsistently\swhen\sthe\n2nd\sparameter\sis\s0.\s\sTicket\s#3628.\s(CVS\s6230)
-D 2009-02-02T16:32:55
+C Minor\ssimplifications\sto\sSQL\sfunction\simplementations.\s(CVS\s6231)
+D 2009-02-02T17:30:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c 870770dde3fb56772ab247dfb6a6eda44d16cfbc
 F src/delete.c 6249005bdd8f85db6ec5f31ddb5c07de023693cc
 F src/expr.c 76dc3dc83b56ab8db50a772714fac49def8bbf12
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c f58648e196e86a1c7dfced3f1c82a7fbc714ebd0
+F src/func.c 4a837d75d6f46a9543bb2dd15cbf2ff32634415a
 F src/global.c ab003581ea4ff193cfe17a00e1303bc51db619a5
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -693,7 +693,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b8b546b6ed799dc1621ef7b06273249af1042fb2
-R b631440e88a8d4df13cea097fdad8929
+P 5fc125d362df4b8525c7e1ab34a14f505756af24
+R b7f789dd91f22c5545aa187a43c65833
 U drh
-Z bb04b6d0ebe7bcb9aeeb21b9182eef4e
+Z 4951ab79196ed7bd6ab94577ec125524

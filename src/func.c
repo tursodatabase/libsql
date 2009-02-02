@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.216 2009/02/02 16:32:55 drh Exp $
+** $Id: func.c,v 1.217 2009/02/02 17:30:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -286,7 +286,6 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z1;
   const char *z2;
   int i, n;
-  if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z2 = (char*)sqlite3_value_text(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
@@ -306,7 +305,6 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   u8 *z1;
   const char *z2;
   int i, n;
-  if( argc<1 || SQLITE_NULL==sqlite3_value_type(argv[0]) ) return;
   z2 = (char*)sqlite3_value_text(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
@@ -707,12 +705,8 @@ static const char hexdigits[] = {
 ** single-quote escapes.
 */
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
-  if( argc<1 ) return;
+  assert( argc==1 );
   switch( sqlite3_value_type(argv[0]) ){
-    case SQLITE_NULL: {
-      sqlite3_result_text(context, "NULL", 4, SQLITE_STATIC);
-      break;
-    }
     case SQLITE_INTEGER:
     case SQLITE_FLOAT: {
       sqlite3_result_value(context, argv[0]);
@@ -760,6 +754,12 @@ static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
         z[j] = 0;
         sqlite3_result_text(context, z, j, sqlite3_free);
       }
+      break;
+    }
+    default: {
+      assert( sqlite3_value_type(argv[0])==SQLITE_NULL );
+      sqlite3_result_text(context, "NULL", 4, SQLITE_STATIC);
+      break;
     }
   }
 }
