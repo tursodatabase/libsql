@@ -1,5 +1,5 @@
-C Minor\ssimplifications\sto\sSQL\sfunction\simplementations.\s(CVS\s6231)
-D 2009-02-02T17:30:00
+C Omit\sthe\sTEMP\skeyword\sfrom\sthe\sschema\sof\sTEMP\stables\screated\susing\nCREATE\sTEMP\sTABLE\sAS\sSELECT\s.....\s\sTicket\s#3630.\s(CVS\s6232)
+D 2009-02-02T18:03:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c dfbbfc396fdd8cbc29754864a97c4df484b78870
 F src/btree.h 07359623fa24748709dd61212a32364a6adc6b56
 F src/btreeInt.h 44bcbfe387ba99a3a9f2527bd12fa1bb8bc574b3
-F src/build.c c8bf5dcef4d5889bc57eecdb8b3dba178e5e06a8
+F src/build.c 691354249a4a56ff09e370a13092e70ac1160f3c
 F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 870770dde3fb56772ab247dfb6a6eda44d16cfbc
@@ -214,6 +214,7 @@ F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
 F test/alter.test 6353aae6839e486c9b7d8f73b1f4a1e98e57332c
 F test/alter2.test dd55146e812622c8fc51fd2216bcd8dca8880752
 F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
+F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test 0ed384c12d556ce38a4fe21fd41cda7e6dbf55be
@@ -614,6 +615,7 @@ F test/tkt3541.test 5dc257bde9bc833ab9cc6844bf170b998dbb950a
 F test/tkt3554.test 0463fea3650ac18d3694a8f39e6e25cddc1ac1fc
 F test/tkt3581.test 1966b7193f1e3f14951cce8c66907ae69454e9a3
 F test/tkt35xx.test 53bca895091e968126a858ee7da186f59f328994
+F test/tkt3630.test 929f64852103054125200bc825c316d5f75d42f7
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
 F test/trans.test b3f0c696ddf8c3f113fd2edf49318b2bf431c99a
@@ -693,7 +695,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5fc125d362df4b8525c7e1ab34a14f505756af24
-R b7f789dd91f22c5545aa187a43c65833
+P 92e5c27f20f150c1777c1b91d35207ade961319d
+R ea477193cacfc00fd0ed1607f173f41d
 U drh
-Z 4951ab79196ed7bd6ab94577ec125524
+Z d6cd04b7b570fe870dc266c2d4bae7bf
