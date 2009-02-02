@@ -1,5 +1,5 @@
-C Omit\sthe\sTEMP\skeyword\sfrom\sthe\sschema\sof\sTEMP\stables\screated\susing\nCREATE\sTEMP\sTABLE\sAS\sSELECT\s.....\s\sTicket\s#3630.\s(CVS\s6232)
-D 2009-02-02T18:03:22
+C Make\sgroup_concat()\sa\s1-\sor\s2-value\sfunction,\sas\sthe\sdocumentation\ssays\sit\nshould\sbe.\s\sUse\sthe\smd5sum()\sfunction\sto\sverify\sticket\s#3179,\snot\ngroup_concat().\s\sThis\sundoes\sthe\sill-advised\sgroup_concat()\schange\sof\ncheck-in\s(5233).\s(CVS\s6233)
+D 2009-02-02T21:57:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c 870770dde3fb56772ab247dfb6a6eda44d16cfbc
 F src/delete.c 6249005bdd8f85db6ec5f31ddb5c07de023693cc
 F src/expr.c 76dc3dc83b56ab8db50a772714fac49def8bbf12
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 4a837d75d6f46a9543bb2dd15cbf2ff32634415a
+F src/func.c b4fe7d6b815044b0c1e8bcff15fa75da4a71b985
 F src/global.c ab003581ea4ff193cfe17a00e1303bc51db619a5
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -372,7 +372,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 000f05df771e203187ceac49ad21c303c720b783
 F test/fts3expr2.test 8501de895a4c0631e7226c9bac055cd49c9f6646
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/func.test c98d620d6ecd10957896960da334540542a240fe
+F test/func.test e40978f08973f5956cfd32a7f87ef427e39cf9d3
 F test/fuzz.test 8bad3b9b09bad47c50f3433f9598707a70247ce1
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
@@ -695,7 +695,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 92e5c27f20f150c1777c1b91d35207ade961319d
-R ea477193cacfc00fd0ed1607f173f41d
+P 3b0a25548c4c15c86aadcd9a6c3af0adafb85c17
+R 3185b236f21f6eee6b41aaeb070f332d
 U drh
-Z d6cd04b7b570fe870dc266c2d4bae7bf
+Z 44f9b42ab38c7b10fb63da33c391c0f2

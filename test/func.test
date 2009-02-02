@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.89 2009/02/01 18:08:41 drh Exp $
+# $Id: func.test,v 1.90 2009/02/02 21:57:05 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -959,17 +959,22 @@ do_test func-24.6 {
     SELECT 'BEGIN-'||group_concat(t1) FROM tbl1
   }
 } {BEGIN-this,program,is,free,software}
+
+# Ticket #3179:  Make sure aggregate functions can take many arguments.
+# None of the built-in aggregates do this, so use the md5sum() from the
+# test extensions.
+#
 unset -nocomplain midargs
 set midargs {}
 unset -nocomplain midres
 set midres {}
 unset -nocomplain result
-for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]-1} {incr i} {
+for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]} {incr i} {
   append midargs ,'/$i'
   append midres /$i
-  set result \
-     "this$midres:program$midres:is$midres:free$midres:software$midres"
-  set sql "SELECT group_concat(t1$midargs,':') FROM tbl1"
+  set result [md5 \
+     "this${midres}program${midres}is${midres}free${midres}software${midres}"]
+  set sql "SELECT md5sum(t1$midargs) FROM tbl1"
   do_test func-24.7.$i {
      db eval $::sql
   } $result

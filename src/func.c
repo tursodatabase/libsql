@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.217 2009/02/02 17:30:00 drh Exp $
+** $Id: func.c,v 1.218 2009/02/02 21:57:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1213,8 +1213,9 @@ static void groupConcatStep(
   const char *zVal;
   StrAccum *pAccum;
   const char *zSep;
-  int nVal, nSep, i;
-  if( argc==0 || sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
+  int nVal, nSep;
+  assert( argc==1 || argc==2 );
+  if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   pAccum = (StrAccum*)sqlite3_aggregate_context(context, sizeof(*pAccum));
 
   if( pAccum ){
@@ -1222,22 +1223,18 @@ static void groupConcatStep(
     pAccum->useMalloc = 1;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
     if( pAccum->nChar ){
-      if( argc>1 ){
-        zSep = (char*)sqlite3_value_text(argv[argc-1]);
-        nSep = sqlite3_value_bytes(argv[argc-1]);
+      if( argc==2 ){
+        zSep = (char*)sqlite3_value_text(argv[1]);
+        nSep = sqlite3_value_bytes(argv[1]);
       }else{
         zSep = ",";
         nSep = 1;
       }
       sqlite3StrAccumAppend(pAccum, zSep, nSep);
     }
-    i = 0;
-    do{
-      zVal = (char*)sqlite3_value_text(argv[i]);
-      nVal = sqlite3_value_bytes(argv[i]);
-      sqlite3StrAccumAppend(pAccum, zVal, nVal);
-      i++;
-    }while( i<argc-1 );
+    zVal = (char*)sqlite3_value_text(argv[0]);
+    nVal = sqlite3_value_bytes(argv[0]);
+    sqlite3StrAccumAppend(pAccum, zVal, nVal);
   }
 }
 static void groupConcatFinalize(sqlite3_context *context){
@@ -1407,7 +1404,8 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
     AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ),
     AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
-    AGGREGATE(group_concat,     -1, 0, 0, groupConcatStep, groupConcatFinalize),
+    AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
+    AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),
   
     LIKEFUNC(glob, 2, &globInfo, SQLITE_FUNC_LIKE|SQLITE_FUNC_CASE),
   #ifdef SQLITE_CASE_SENSITIVE_LIKE
