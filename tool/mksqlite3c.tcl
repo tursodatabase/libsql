@@ -190,6 +190,8 @@ proc copy_file {filename} {
       } elseif {[regexp {^(SQLITE_EXTERN )?void \(\*sqlite3IoTrace\)} $line]} {
         regsub {^SQLITE_EXTERN } $line {} line
         puts $out "SQLITE_PRIVATE $line"
+      } elseif {[regexp {^void \(\*sqlite3Os} $line]} {
+        puts $out "SQLITE_PRIVATE $line"
       } else {
         puts $out $line
       }
