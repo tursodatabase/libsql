@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.523 2009/01/30 06:11:55 shane Exp $
+** $Id: main.c,v 1.524 2009/02/03 15:50:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -396,7 +396,7 @@ static int setupLookaside(sqlite3 *db, void *pBuf, int sz, int cnt){
   /* The size of a lookaside slot needs to be larger than a pointer
   ** to be useful.
   */
-  if( sz<=sizeof(LookasideSlot*) ) sz = 0;
+  if( sz<=(int)sizeof(LookasideSlot*) ) sz = 0;
   if( cnt<0 ) cnt = 0;
   if( sz==0 || cnt==0 ){
     sz = 0;

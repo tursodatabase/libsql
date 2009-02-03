@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.513 2009/02/02 18:03:22 drh Exp $
+** $Id: build.c,v 1.514 2009/02/03 15:50:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1357,7 +1357,7 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent){
 ** table.  Memory to hold the text of the statement is obtained
 ** from sqliteMalloc() and must be freed by the calling function.
 */
-static char *createTableStmt(sqlite3 *db, Table *p, int isTemp){
+static char *createTableStmt(sqlite3 *db, Table *p){
   int i, k, n;
   char *zStmt;
   char *zSep, *zSep2, *zEnd, *z;
@@ -1551,7 +1551,7 @@ void sqlite3EndTable(
 
     /* Compute the complete text of the CREATE statement */
     if( pSelect ){
-      zStmt = createTableStmt(db, p, p->pSchema==db->aDb[1].pSchema);
+      zStmt = createTableStmt(db, p);
     }else{
       n = (int)(pEnd->z - pParse->sNameToken.z) + 1;
       zStmt = sqlite3MPrintf(db, 

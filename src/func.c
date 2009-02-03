@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.220 2009/02/03 13:19:12 drh Exp $
+** $Id: func.c,v 1.221 2009/02/03 15:50:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -287,6 +287,7 @@ static void upperFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   char *z1;
   const char *z2;
   int i, n;
+  UNUSED_PARAMETER(argc);
   z2 = (char*)sqlite3_value_text(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
@@ -306,6 +307,7 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   u8 *z1;
   const char *z2;
   int i, n;
+  UNUSED_PARAMETER(argc);
   z2 = (char*)sqlite3_value_text(argv[0]);
   n = sqlite3_value_bytes(argv[0]);
   /* Verify that the call to _bytes() does not invalidate the _text() pointer */
@@ -707,6 +709,7 @@ static const char hexdigits[] = {
 */
 static void quoteFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
+  UNUSED_PARAMETER(argc);
   switch( sqlite3_value_type(argv[0]) ){
     case SQLITE_INTEGER:
     case SQLITE_FLOAT: {
