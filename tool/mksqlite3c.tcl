@@ -247,6 +247,7 @@ foreach file {
 
    btmutex.c
    btree.c
+   backup.c
 
    vdbemem.c
    vdbeaux.c

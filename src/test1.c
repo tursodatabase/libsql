@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.346 2009/02/03 16:25:48 drh Exp $
+** $Id: test1.c,v 1.347 2009/02/03 16:51:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3217,7 +3217,7 @@ static int test_errcode(
 }
 
 /*
-** Usage:   test_errmsg DB
+** Usage:   sqlite3_errmsg DB
 **
 ** Returns the UTF-8 representation of the error message string for the
 ** most recent sqlite3_* API call.

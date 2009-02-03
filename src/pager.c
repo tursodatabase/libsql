@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.561 2009/01/31 14:54:07 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.562 2009/02/03 16:51:25 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -306,6 +306,7 @@ struct Pager {
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
   PCache *pPCache;            /* Pointer to page cache object */
+  sqlite3_backup *pBackup;    /* Pointer to list of ongoing backup processes */
 };
 
 /*
@@ -1039,9 +1040,12 @@ static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
 /*
 ** Unless the pager is in error-state, discard all in-memory pages. If
 ** the pager is in error-state, then this call is a no-op.
+**
+** TODO: Why can we not reset the pager while in error state?
 */
 static void pager_reset(Pager *pPager){
   if( SQLITE_OK==pPager->errCode ){
+    sqlite3BackupRestart(pPager->pBackup);
     sqlite3PcacheClear(pPager->pPCache);
   }
 }
@@ -1513,6 +1517,7 @@ static int pager_playback_one_page(
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
+    sqlite3BackupUpdate(pPager->pBackup, pgno, aData);
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
     ** the database and the page is not in-memory, there is a potential
@@ -2875,6 +2880,9 @@ static int pager_write_pagelist(PgHdr *pList){
         pPager->dbFileSize = pgno;
       }
 
+      /* Update any backup objects copying the contents of this pager. */
+      sqlite3BackupUpdate(pPager->pBackup, pgno, (u8 *)pData);
+
       PAGERTRACE(("STORE %d page %d hash(%08x)\n",
                    PAGERID(pPager), pgno, pager_pagehash(pList)));
       IOTRACE(("PGOUT %p %d\n", pPager, pgno));
@@ -3549,7 +3557,7 @@ static int pagerSharedLock(Pager *pPager){
       ** playing back the hot-journal so that we don't end up with
       ** an inconsistent cache.
       */
-      sqlite3PcacheClear(pPager->pPCache);
+      pager_reset(pPager);
       rc = pager_playback(pPager, 1);
       if( rc!=SQLITE_OK ){
         rc = pager_error(pPager, rc);
@@ -4436,7 +4444,9 @@ int sqlite3PagerCommitPhaseOne(
   /* If this is an in-memory db, or no pages have been written to, or this
   ** function has already been called, it is a no-op.
   */
-  if( pPager->state!=PAGER_SYNCED && !MEMDB && pPager->dbModified ){
+  if( MEMDB && pPager->dbModified ){
+    sqlite3BackupRestart(pPager->pBackup);
+  }else if( pPager->state!=PAGER_SYNCED && pPager->dbModified ){
 
     /* The following block updates the change-counter. Exactly how it
     ** does this depends on whether or not the atomic-update optimization
@@ -4747,10 +4757,14 @@ int *sqlite3PagerStats(Pager *pPager){
   a[10] = pPager->nWrite;
   return a;
 }
+#endif
+
+/*
+** Return true if this is an in-memory pager.
+*/
 int sqlite3PagerIsMemdb(Pager *pPager){
   return MEMDB;
 }
-#endif
 
 /*
 ** Check that there are at least nSavepoint savepoints open. If there are
@@ -5150,6 +5164,16 @@ i64 sqlite3PagerJournalSizeLimit(Pager *pPager, i64 iLimit){
     pPager->journalSizeLimit = iLimit;
   }
   return pPager->journalSizeLimit;
+}
+
+/*
+** Return a pointer to the pPager->pBackup variable. The backup module
+** in backup.c maintains the content of this variable. This module
+** uses it opaquely as an argument to sqlite3BackupRestart() and
+** sqlite3BackupUpdate() only.
+*/
+sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
+  return &pPager->pBackup;
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

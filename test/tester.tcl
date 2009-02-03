@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.136 2009/01/09 10:49:14 danielk1977 Exp $
+# $Id: tester.tcl,v 1.137 2009/02/03 16:51:25 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -485,11 +485,9 @@ proc forcedelete {filename} {
 
 # Do an integrity check of the entire database
 #
-proc integrity_check {name} {
+proc integrity_check {name {db db}} {
   ifcapable integrityck {
-    do_test $name {
-      execsql {PRAGMA integrity_check}
-    } {ok}
+    do_test $name [list execsql {PRAGMA integrity_check} $db] {ok}
   }
 }
 

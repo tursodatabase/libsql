@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.563 2009/01/31 14:54:07 danielk1977 Exp $
+** $Id: btree.c,v 1.564 2009/02/03 16:51:25 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7239,225 +7239,6 @@ const char *sqlite3BtreeGetJournalname(Btree *p){
   return sqlite3PagerJournalname(p->pBt->pPager);
 }
 
-#ifndef SQLITE_OMIT_VACUUM
-/*
-** Copy the complete content of pBtFrom into pBtTo.  A transaction
-** must be active for both files.
-**
-** The size of file pTo may be reduced by this operation.
-** If anything goes wrong, the transaction on pTo is rolled back. 
-**
-** If successful, CommitPhaseOne() may be called on pTo before returning. 
-** The caller should finish committing the transaction on pTo by calling
-** sqlite3BtreeCommit().
-*/
-static int btreeCopyFile(Btree *pTo, Btree *pFrom){
-  int rc = SQLITE_OK;
-  Pgno i;
-
-  Pgno nFromPage;     /* Number of pages in pFrom */
-  Pgno nToPage;       /* Number of pages in pTo */
-  Pgno nNewPage;      /* Number of pages in pTo after the copy */
-
-  Pgno iSkip;         /* Pending byte page in pTo */
-  int nToPageSize;    /* Page size of pTo in bytes */
-  int nFromPageSize;  /* Page size of pFrom in bytes */
-
-  BtShared *pBtTo = pTo->pBt;
-  BtShared *pBtFrom = pFrom->pBt;
-  pBtTo->db = pTo->db;
-  pBtFrom->db = pFrom->db;
-
-  nToPageSize = pBtTo->pageSize;
-  nFromPageSize = pBtFrom->pageSize;
-
-  assert( pTo->inTrans==TRANS_WRITE );
-  assert( pFrom->inTrans==TRANS_WRITE );
-  if( NEVER(pBtTo->pCursor) ){
-    return SQLITE_BUSY;
-  }
-
-  nToPage = pagerPagecount(pBtTo);
-  nFromPage = pagerPagecount(pBtFrom);
-  iSkip = PENDING_BYTE_PAGE(pBtTo);
-
-  /* Variable nNewPage is the number of pages required to store the
-  ** contents of pFrom using the current page-size of pTo.
-  */
-  nNewPage = (Pgno)
-     (((i64)nFromPage*(i64)nFromPageSize+(i64)nToPageSize-1)/(i64)nToPageSize);
-
-  for(i=1; rc==SQLITE_OK && (i<=nToPage || i<=nNewPage); i++){
-
-    /* Journal the original page.
-    **
-    ** iSkip is the page number of the locking page (PENDING_BYTE_PAGE)
-    ** in database *pTo (before the copy). This page is never written 
-    ** into the journal file. Unless i==iSkip or the page was not
-    ** present in pTo before the copy operation, journal page i from pTo.
-    */
-    if( i!=iSkip && i<=nToPage ){
-      DbPage *pDbPage = 0;
-      rc = sqlite3PagerGet(pBtTo->pPager, i, &pDbPage);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3PagerWrite(pDbPage);
-        if( rc==SQLITE_OK && i>nFromPage ){
-          /* Yeah.  It seems wierd to call DontWrite() right after Write(). But
-          ** that is because the names of those procedures do not exactly 
-          ** represent what they do.  Write() really means "put this page in the
-          ** rollback journal and mark it as dirty so that it will be written
-          ** to the database file later."  DontWrite() undoes the second part of
-          ** that and prevents the page from being written to the database. The
-          ** page is still on the rollback journal, though.  And that is the 
-          ** whole point of this block: to put pages on the rollback journal. 
-          */
-          sqlite3PagerDontWrite(pDbPage);
-        }
-        sqlite3PagerUnref(pDbPage);
-      }
-    }
-
-    /* Overwrite the data in page i of the target database */
-    if( rc==SQLITE_OK && i!=iSkip && i<=nNewPage ){
-
-      DbPage *pToPage = 0;
-      sqlite3_int64 iOff;
-
-      rc = sqlite3PagerGet(pBtTo->pPager, i, &pToPage);
-      if( rc==SQLITE_OK ){
-        rc = sqlite3PagerWrite(pToPage);
-      }
-
-      for(
-        iOff=(i-1)*nToPageSize; 
-        rc==SQLITE_OK && iOff<i*nToPageSize; 
-        iOff += nFromPageSize
-      ){
-        DbPage *pFromPage = 0;
-        Pgno iFrom = (Pgno)(iOff/nFromPageSize)+1;
-
-        if( iFrom==PENDING_BYTE_PAGE(pBtFrom) ){
-          continue;
-        }
-
-        rc = sqlite3PagerGet(pBtFrom->pPager, iFrom, &pFromPage);
-        if( rc==SQLITE_OK ){
-          char *zTo = sqlite3PagerGetData(pToPage);
-          char *zFrom = sqlite3PagerGetData(pFromPage);
-          int nCopy;
-
-          if( nFromPageSize>=nToPageSize ){
-            zFrom += ((i-1)*nToPageSize - ((iFrom-1)*nFromPageSize));
-            nCopy = nToPageSize;
-          }else{
-            zTo += (((iFrom-1)*nFromPageSize) - (i-1)*nToPageSize);
-            nCopy = nFromPageSize;
-          }
-
-          memcpy(zTo, zFrom, nCopy);
-          sqlite3PagerUnref(pFromPage);
-        }
-      }
-
-      if( pToPage ){
-        MemPage *p = (MemPage *)sqlite3PagerGetExtra(pToPage);
-        p->isInit = 0;
-        sqlite3PagerUnref(pToPage);
-      }
-    }
-  }
-
-  /* If things have worked so far, the database file may need to be 
-  ** truncated. The complex part is that it may need to be truncated to
-  ** a size that is not an integer multiple of nToPageSize - the current
-  ** page size used by the pager associated with B-Tree pTo.
-  **
-  ** For example, say the page-size of pTo is 2048 bytes and the original 
-  ** number of pages is 5 (10 KB file). If pFrom has a page size of 1024 
-  ** bytes and 9 pages, then the file needs to be truncated to 9KB.
-  */
-  if( rc==SQLITE_OK ){
-    sqlite3_file *pFile = sqlite3PagerFile(pBtTo->pPager);
-    i64 iSize = (i64)nFromPageSize * (i64)nFromPage;
-    i64 iNow = (i64)((nToPage>nNewPage)?nToPage:nNewPage) * (i64)nToPageSize; 
-    i64 iPending = ((i64)PENDING_BYTE_PAGE(pBtTo)-1) *(i64)nToPageSize;
-
-    assert( iSize<=iNow );
-
-    /* Commit phase one syncs the journal file associated with pTo 
-    ** containing the original data. It does not sync the database file
-    ** itself. After doing this it is safe to use OsTruncate() and other
-    ** file APIs on the database file directly.
-    */
-    pBtTo->db = pTo->db;
-    if( nFromPageSize==nToPageSize ){
-      sqlite3PagerTruncateImage(pBtTo->pPager, nFromPage);
-      iNow = iSize;
-    }
-    rc = sqlite3PagerCommitPhaseOne(pBtTo->pPager, 0, 1);
-    if( iSize<iNow && rc==SQLITE_OK ){
-      rc = sqlite3OsTruncate(pFile, iSize);
-    }
-
-    /* The loop that copied data from database pFrom to pTo did not
-    ** populate the locking page of database pTo. If the page-size of
-    ** pFrom is smaller than that of pTo, this means some data will
-    ** not have been copied. 
-    **
-    ** This block copies the missing data from database pFrom to pTo 
-    ** using file APIs. This is safe because at this point we know that
-    ** all of the original data from pTo has been synced into the 
-    ** journal file. At this point it would be safe to do anything at
-    ** all to the database file except truncate it to zero bytes.
-    */
-    if( rc==SQLITE_OK && nFromPageSize<nToPageSize && iSize>iPending){
-      i64 iOff;
-      for(
-        iOff=iPending; 
-        rc==SQLITE_OK && iOff<(iPending+nToPageSize); 
-        iOff += nFromPageSize
-      ){
-        DbPage *pFromPage = 0;
-        Pgno iFrom = (Pgno)(iOff/nFromPageSize)+1;
-
-        if( iFrom==PENDING_BYTE_PAGE(pBtFrom) || iFrom>nFromPage ){
-          continue;
-        }
-
-        rc = sqlite3PagerGet(pBtFrom->pPager, iFrom, &pFromPage);
-        if( rc==SQLITE_OK ){
-          char *zFrom = sqlite3PagerGetData(pFromPage);
-          rc = sqlite3OsWrite(pFile, zFrom, nFromPageSize, iOff);
-          sqlite3PagerUnref(pFromPage);
-        }
-      }
-    }
-  }
-
-  /* Sync the database file */
-  if( rc==SQLITE_OK ){
-    rc = sqlite3PagerSync(pBtTo->pPager);
-  }
-  if( rc==SQLITE_OK ){
-    pBtTo->pageSizeFixed = 0;
-  }else{
-    sqlite3BtreeRollback(pTo);
-  }
-
-  return rc;
-}
-int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
-  int rc;
-  sqlite3BtreeEnter(pTo);
-  sqlite3BtreeEnter(pFrom);
-  rc = btreeCopyFile(pTo, pFrom);
-  sqlite3BtreeLeave(pFrom);
-  sqlite3BtreeLeave(pTo);
-  return rc;
-}
-
-#endif /* SQLITE_OMIT_VACUUM */
-
 /*
 ** Return non-zero if a transaction is active.
 */
@@ -7481,6 +7262,12 @@ int sqlite3BtreeIsInReadTrans(Btree *p){
   assert( p );
   assert( sqlite3_mutex_held(p->db->mutex) );
   return p->inTrans!=TRANS_NONE;
+}
+
+int sqlite3BtreeIsInBackup(Btree *p){
+  assert( p );
+  assert( sqlite3_mutex_held(p->db->mutex) );
+  return p->nBackup!=0;
 }
 
 /*

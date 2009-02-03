@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.234 2009/01/14 23:38:03 drh Exp $
+** $Id: tclsqlite.c,v 1.235 2009/02/03 16:51:25 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2663,6 +2663,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int SqlitetestThread_Init(Tcl_Interp*);
     extern int SqlitetestOnefile_Init();
     extern int SqlitetestOsinst_Init(Tcl_Interp*);
+    extern int Sqlitetestbackup_Init(Tcl_Interp*);
 
     Md5_Init(interp);
     Sqliteconfig_Init(interp);
@@ -2686,6 +2687,7 @@ int TCLSH_MAIN(int argc, char **argv){
     SqlitetestThread_Init(interp);
     SqlitetestOnefile_Init(interp);
     SqlitetestOsinst_Init(interp);
+    Sqlitetestbackup_Init(interp);
 
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);

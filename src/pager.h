@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.99 2009/01/31 14:54:07 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.100 2009/02/03 16:51:25 danielk1977 Exp $
 */
 
 #ifndef _PAGER_H_
@@ -100,6 +100,7 @@ void sqlite3PagerSetSafetyLevel(Pager*,int,int);
 int sqlite3PagerLockingMode(Pager *, int);
 int sqlite3PagerJournalMode(Pager *, int);
 i64 sqlite3PagerJournalSizeLimit(Pager *, i64);
+sqlite3_backup **sqlite3PagerBackupPtr(Pager*);
 
 /* Functions used to obtain and release page references. */ 
 int sqlite3PagerAcquire(Pager *pPager, Pgno pgno, DbPage **ppPage, int clrFlag);
@@ -135,6 +136,7 @@ sqlite3_file *sqlite3PagerFile(Pager*);
 const char *sqlite3PagerJournalname(Pager*);
 int sqlite3PagerNosync(Pager*);
 void *sqlite3PagerTempSpace(Pager*);
+int sqlite3PagerIsMemdb(Pager*);
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
@@ -152,7 +154,6 @@ void sqlite3PagerTruncateImage(Pager*,Pgno);
 #ifdef SQLITE_TEST
   int *sqlite3PagerStats(Pager*);
   void sqlite3PagerRefdump(Pager*);
-  int sqlite3PagerIsMemdb(Pager*);
   void disable_simulated_io_errors(void);
   void enable_simulated_io_errors(void);
 #else

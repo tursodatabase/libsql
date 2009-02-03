@@ -50,7 +50,7 @@ TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
 # Object files for the SQLite library.
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
-         bitvec.o btmutex.o btree.o build.o \
+         backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o expr.o fault.o \
          fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_tokenizer.o fts3_tokenizer1.o \
@@ -76,6 +76,7 @@ SRC = \
   $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
+  $(TOP)/src/backup.c \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
@@ -220,6 +221,7 @@ TESTSRC = \
   $(TOP)/src/test9.c \
   $(TOP)/src/test_autoext.c \
   $(TOP)/src/test_async.c \
+  $(TOP)/src/test_backup.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
   $(TOP)/src/test_devsym.c \
@@ -242,7 +244,8 @@ TESTSRC = \
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
 
 TESTSRC2 = \
-  $(TOP)/src/attach.c $(TOP)/src/btree.c $(TOP)/src/build.c $(TOP)/src/date.c  \
+  $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
+  $(TOP)/src/build.c $(TOP)/src/date.c                                         \
   $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \

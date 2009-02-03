@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.514 2009/02/03 15:50:34 drh Exp $
+** $Id: build.c,v 1.515 2009/02/03 16:51:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -621,28 +621,38 @@ void sqlite3OpenMasterTable(Parse *p, int iDb){
 }
 
 /*
-** The token *pName contains the name of a database (either "main" or
-** "temp" or the name of an attached db). This routine returns the
-** index of the named database in db->aDb[], or -1 if the named db 
-** does not exist.
+** Parameter zName points to a nul-terminated buffer containing the name
+** of a database ("main", "temp" or the name of an attached db). This
+** function returns the index of the named database in db->aDb[], or
+** -1 if the named db cannot be found.
 */
-int sqlite3FindDb(sqlite3 *db, Token *pName){
-  int i = -1;    /* Database number */
-  int n;         /* Number of characters in the name */
-  Db *pDb;       /* A database whose name space is being searched */
-  char *zName;   /* Name we are searching for */
-
-  zName = sqlite3NameFromToken(db, pName);
+int sqlite3FindDbName(sqlite3 *db, const char *zName){
+  int i = -1;         /* Database number */
   if( zName ){
-    n = sqlite3Strlen30(zName);
+    Db *pDb;
+    int n = sqlite3Strlen30(zName);
     for(i=(db->nDb-1), pDb=&db->aDb[i]; i>=0; i--, pDb--){
       if( (!OMIT_TEMPDB || i!=1 ) && n==sqlite3Strlen30(pDb->zName) && 
           0==sqlite3StrICmp(pDb->zName, zName) ){
         break;
       }
     }
-    sqlite3DbFree(db, zName);
   }
+  return i;
+}
+
+/*
+** The token *pName contains the name of a database (either "main" or
+** "temp" or the name of an attached db). This routine returns the
+** index of the named database in db->aDb[], or -1 if the named db 
+** does not exist.
+*/
+int sqlite3FindDb(sqlite3 *db, Token *pName){
+  int i;                               /* Database number */
+  char *zName;                         /* Name we are searching for */
+  zName = sqlite3NameFromToken(db, pName);
+  i = sqlite3FindDbName(db, zName);
+  sqlite3DbFree(db, zName);
   return i;
 }
 
