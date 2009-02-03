@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.424 2009/02/03 18:25:13 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.425 2009/02/03 18:47:23 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4977,8 +4977,8 @@ int sqlite3_get_autocommit(sqlite3*);
 ** CAPI3REF: Find The Database Handle Of A Prepared Statement {H13120} <S60600>
 **
 ** The sqlite3_db_handle interface returns the [database connection] handle
-** to which a [prepared statement] belongs.  The database handle returned by
-** sqlite3_db_handle is the same database handle that was the first argument
+** to which a [prepared statement] belongs.  The [database connection]
+** returned by sqlite3_db_handle is the same [database connection] that was the first argument
 ** to the [sqlite3_prepare_v2()] call (or its variants) that was used to
 ** create the statement in the first place.
 **
@@ -6750,10 +6750,11 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** 
 ** To perform a backup operation: 
 **   <ol>
-**     <li>[sqlite3_backup_init()] is called once to initialize the backup, 
-**     <li>[sqlite3_backup_step()] is called one or more times to transfer 
+**     <li><b>sqlite3_backup_init()</b> is called once to initialize the
+**         backup, 
+**     <li><b>sqlite3_backup_step()</b> is called one or more times to transfer 
 **         the data between the two databases, and finally
-**     <li>[sqlite3_backup_finish()] is called to release all resources 
+**     <li><b>sqlite3_backup_finish()</b> is called to release all resources 
 **         associated with the backup operation. 
 **   </ol>
 ** There should be exactly one call to sqlite3_backup_finish() for each
@@ -6765,16 +6766,17 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** handle associated with the destination database and the database name 
 ** used to attach the destination database to the handle. The database name
 ** is "main" for the main database, "temp" for the temporary database, or
-** the name specified as part of the ATTACH statement if the destination is
+** the name specified as part of the [ATTACH] statement if the destination is
 ** an attached database. The third and fourth arguments passed to 
-** sqlite3_backup_init() identify the database handle and database name used
+** sqlite3_backup_init() identify the [database connection]
+** and database name used
 ** to access the source database. The values passed for the source and 
-** destination database handle parameters must not be the same.
+** destination [database connection] parameters must not be the same.
 **
 ** If an error occurs within sqlite3_backup_init(), then NULL is returned
-** and an error code and error message written into the database handle 
+** and an error code and error message written into the [database connection] 
 ** passed as the first argument. They may be retrieved using the
-** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16() functions.
+** [sqlite3_errcode()], [sqlite3_errmsg()], and [sqlite3_errmsg16()] functions.
 ** Otherwise, if successful, a pointer to an [sqlite3_backup] object is
 ** returned. This pointer may be used with the sqlite3_backup_step() and
 ** sqlite3_backup_finish() functions to perform the specified backup 
@@ -6786,26 +6788,30 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** the source and destination databases, where nPage is the value of the 
 ** second parameter passed to sqlite3_backup_step(). If nPage pages are 
 ** succesfully copied, but there are still more pages to copy before the 
-** backup is complete, it returns SQLITE_OK. If no error occured and there 
-** are no more pages to copy, then SQLITE_DONE is returned. If an error 
-** occurs, then an SQLite error code is returned. As well as SQLITE_OK and
-** SQLITE_DONE, a call to sqlite3_backup_step() may return SQLITE_READONLY,
-** SQLITE_NOMEM, SQLITE_BUSY, SQLITE_LOCKED or an SQLITE_IOERR_XXX error code.
+** backup is complete, it returns [SQLITE_OK]. If no error occured and there 
+** are no more pages to copy, then [SQLITE_DONE] is returned. If an error 
+** occurs, then an SQLite error code is returned. As well as [SQLITE_OK] and
+** [SQLITE_DONE], a call to sqlite3_backup_step() may return [SQLITE_READONLY],
+** [SQLITE_NOMEM], [SQLITE_BUSY], [SQLITE_LOCKED], or an
+** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] extended error code.
 **
 ** As well as the case where the destination database file was opened for
-** read-only access, sqlite3_backup_step() may return SQLITE_READONLY if
+** read-only access, sqlite3_backup_step() may return [SQLITE_READONLY] if
 ** the destination is an in-memory database with a different page size
 ** from the source database.
 **
 ** If sqlite3_backup_step() cannot obtain a required file-system lock, then
-** the busy-handler function is invoked (if one is specified). If the 
+** the [sqlite3_busy_handler | busy-handler function]
+** is invoked (if one is specified). If the 
 ** busy-handler returns non-zero before the lock is available, then 
-** SQLITE_BUSY is returned to the caller. In this case the call to
-** sqlite3_backup_step() can be retried later. If the source database handle
+** [SQLITE_BUSY] is returned to the caller. In this case the call to
+** sqlite3_backup_step() can be retried later. If the source
+** [database connection]
 ** is being used to write to the source database when sqlite3_backup_step()
-** is called, then SQLITE_LOCKED is returned immediately. Again, in this
+** is called, then [SQLITE_LOCKED] is returned immediately. Again, in this
 ** case the call to sqlite3_backup_step() can be retried later on. If
-** SQLITE_IOERR_XXX, SQLITE_NOMEM or SQLITE_READONLY is returned, then 
+** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX], [SQLITE_NOMEM], or
+** [SQLITE_READONLY] is returned, then 
 ** there is no point in retrying the call to sqlite3_backup_step(). These 
 ** errors are considered fatal. At this point the application must accept 
 ** that the backup operation has failed and pass the backup operation handle 
@@ -6814,8 +6820,8 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** Following the first call to sqlite3_backup_step(), an exclusive lock is
 ** obtained on the destination file. It is not released until either 
 ** sqlite3_backup_finish() is called or the backup operation is complete 
-** and sqlite3_backup_step() returns SQLITE_DONE. Additionally, each time 
-** a call to sqlite3_backup_step() is made a shared lock is obtained on
+** and sqlite3_backup_step() returns [SQLITE_DONE]. Additionally, each time 
+** a call to sqlite3_backup_step() is made a [shared lock] is obtained on
 ** the source database file. This lock is released before the
 ** sqlite3_backup_step() call returns. Because the source database is not
 ** locked between calls to sqlite3_backup_step(), it may be modified mid-way
@@ -6829,24 +6835,25 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** <b>sqlite3_backup_finish()</b>
 **
-** Once sqlite3_backup_step() has returned SQLITE_DONE, or when the 
+** Once sqlite3_backup_step() has returned [SQLITE_DONE], or when the 
 ** application wishes to abandon the backup operation, the [sqlite3_backup]
 ** object should be passed to sqlite3_backup_finish(). This releases all
 ** resources associated with the backup operation. If sqlite3_backup_step()
-** has not yet returned SQLITE_DONE, then any active write-transaction on the
+** has not yet returned [SQLITE_DONE], then any active write-transaction on the
 ** destination database is rolled back. The [sqlite3_backup] object is invalid
 ** and may not be used following a call to sqlite3_backup_finish().
 **
-** The value returned by sqlite3_backup_finish is SQLITE_OK if no error
-** occured, regardless or whether or not sqlite3_backup_step() was called
+** The value returned by sqlite3_backup_finish is [SQLITE_OK] if no error
+** occurred, regardless or whether or not sqlite3_backup_step() was called
 ** a sufficient number of times to complete the backup operation. Or, if
 ** an out-of-memory condition or IO error occured during a call to
-** sqlite3_backup_step() then SQLITE_NOMEM or an SQLITE_IOERR_XXX error code
+** sqlite3_backup_step() then [SQLITE_NOMEM] or an
+** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] error code
 ** is returned. In this case the error code and an error message are
-** written to the destination database handle.
+** written to the destination [database connection].
 **
-** A return of SQLITE_BUSY or SQLITE_LOCKED from sqlite3_backup_step() is
-** not considered an error and does not affect the return value of
+** A return of [SQLITE_BUSY] or [SQLITE_LOCKED] from sqlite3_backup_step() is
+** not a permanent error and does not affect the return value of
 ** sqlite3_backup_finish().
 **
 ** <b>sqlite3_backup_remaining(), sqlite3_backup_pagecount()</b>
@@ -6865,7 +6872,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** <b>Concurrent Usage of Database Handles</b>
 **
-** The source database handle may be used by the application for other
+** The source [database connection] may be used by the application for other
 ** purposes while a backup operation is underway or being initialized.
 ** If SQLite is compiled and configured to support threadsafe database
 ** connections, then the source database connection may be used concurrently
@@ -6875,11 +6882,11 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** connection handle is not passed to any other API (by any thread) after 
 ** sqlite3_backup_init() is called and before the corresponding call to
 ** sqlite3_backup_finish(). Unfortunately SQLite does not currently check
-** for this, if the application does use the destination database handle
+** for this, if the application does use the destination [database connection]
 ** for some other purpose during a backup operation, things may appear to
 ** work correctly but in fact be subtly malfunctioning.
 **
-** Furthermore, if running in shared cache mode, the application must
+** Furthermore, if running in [shared cache mode], the application must
 ** guarantee that the shared cache used by the destination database
 ** is not accessed while the backup is running. In practice this means
 ** that the application must guarantee that the file-system file being 
