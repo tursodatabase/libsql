@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.9 2009/01/19 17:40:12 drh Exp $
+** $Id: test_thread.c,v 1.10 2009/02/03 19:55:20 shane Exp $
 */
 
 #include "sqliteInt.h"
@@ -23,7 +23,10 @@
 #if SQLITE_THREADSAFE
 
 #include <errno.h>
+
+#if !defined(_MSC_VER)
 #include <unistd.h>
+#endif
 
 /*
 ** One of these is allocated for each thread created by [sqlthread spawn].
@@ -64,6 +67,7 @@ static int tclScriptEvent(Tcl_Event *evPtr, int flags){
   if( rc!=TCL_OK ){
     Tcl_BackgroundError(p->interp);
   }
+  UNUSED_PARAMETER(flags);
   return 1;
 }
 
@@ -128,7 +132,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_DecrRefCount(pList);
   Tcl_DecrRefCount(pRes);
   Tcl_DeleteInterp(interp);
-  return;
+  TCL_THREAD_CREATE_RETURN;
 }
 
 /*
@@ -159,6 +163,8 @@ static int sqlthread_spawn(
   const int flags = TCL_THREAD_NOFLAGS;
 
   assert(objc==4);
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(objc);
 
   zVarname = Tcl_GetStringFromObj(objv[2], &nVarname);
   zScript = Tcl_GetStringFromObj(objv[3], &nScript);
@@ -204,6 +210,8 @@ static int sqlthread_parent(
   SqlThread *p = (SqlThread *)clientData;
 
   assert(objc==3);
+  UNUSED_PARAMETER(objc);
+
   if( p==0 ){
     Tcl_AppendResult(interp, "no parent thread", 0);
     return TCL_ERROR;
@@ -223,6 +231,8 @@ static int sqlthread_parent(
 }
 
 static int xBusy(void *pArg, int nBusy){
+  UNUSED_PARAMETER(pArg);
+  UNUSED_PARAMETER(nBusy);
   sqlite3_sleep(50);
   return 1;             /* Try again... */
 }
@@ -246,6 +256,9 @@ static int sqlthread_open(
   int rc;
   char zBuf[100];
   extern void Md5_Register(sqlite3*);
+
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(objc);
 
   zFilename = Tcl_GetString(objv[2]);
   rc = sqlite3_open(zFilename, &db);
@@ -273,6 +286,9 @@ static int sqlthread_id(
 ){
   Tcl_ThreadId id = Tcl_GetCurrentThread();
   Tcl_SetObjResult(interp, Tcl_NewIntObj((int)id));
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(objc);
+  UNUSED_PARAMETER(objv);
   return TCL_OK;
 }
 
@@ -337,6 +353,9 @@ static int clock_seconds_proc(
   Tcl_Time now;
   Tcl_GetTime(&now);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(now.sec));
+  UNUSED_PARAMETER(clientData);
+  UNUSED_PARAMETER(objc);
+  UNUSED_PARAMETER(objv);
   return TCL_OK;
 }
 
