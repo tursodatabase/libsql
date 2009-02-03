@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.3 2009/02/03 22:17:42 drh Exp $
+** $Id: backup.c,v 1.4 2009/02/03 22:51:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -251,7 +251,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
-  sqlite3_mutex_enter(p->pDestDb->mutex);
+  if( p->pDestDb ){
+    sqlite3_mutex_enter(p->pDestDb->mutex);
+  }
 
   rc = p->rc;
   if( rc==SQLITE_OK ){
@@ -324,7 +326,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       ** same schema version.
       */
       sqlite3BtreeUpdateMeta(p->pDest, 1, p->iDestSchema+1);
-      sqlite3ResetInternalSchema(p->pDestDb, 0);
+      if( p->pDestDb ){
+        sqlite3ResetInternalSchema(p->pDestDb, 0);
+      }
 
       /* Set nDestTruncate to the final number of pages in the destination
       ** database. The complication here is that the destination page
@@ -408,7 +412,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       p->rc = rc;
     }
   }
-  sqlite3_mutex_leave(p->pDestDb->mutex);
+  if( p->pDestDb ){
+    sqlite3_mutex_leave(p->pDestDb->mutex);
+  }
   sqlite3BtreeLeave(p->pSrc);
   sqlite3_mutex_leave(p->pSrcDb->mutex);
   return rc;
@@ -426,7 +432,9 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
   mutex = p->pSrcDb->mutex;
-  sqlite3_mutex_enter(p->pDestDb->mutex);
+  if( p->pDestDb ){
+    sqlite3_mutex_enter(p->pDestDb->mutex);
+  }
 
   /* Detach this backup from the source pager. */
   if( p->pDestDb ){
@@ -446,7 +454,9 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   sqlite3Error(p->pDestDb, rc, 0);
 
   /* Exit the mutexes and free the backup context structure. */
-  sqlite3_mutex_leave(p->pDestDb->mutex);
+  if( p->pDestDb ){
+    sqlite3_mutex_leave(p->pDestDb->mutex);
+  }
   sqlite3BtreeLeave(p->pSrc);
   if( p->pDestDb ){
     sqlite3_free(p);

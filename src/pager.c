@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.562 2009/02/03 16:51:25 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.563 2009/02/03 22:51:06 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1895,6 +1895,13 @@ static void setSectorSize(Pager *pPager){
 **
 ** If an I/O or malloc() error occurs, the journal-file is not deleted
 ** and an error code is returned.
+**
+** The isHot parameter indicates that we are trying to rollback a journal
+** that might be a hot journal.  Or, it could be that the journal is 
+** preserved because of JOURNALMODE_PERSIST or JOURNALMODE_TRUNCATE.
+** If the journal really is hot, reset the pager cache prior rolling
+** back any content.  If the journal is merely persistent, no reset is
+** needed.
 */
 static int pager_playback(Pager *pPager, int isHot){
   sqlite3_vfs *pVfs = pPager->pVfs;
@@ -1905,6 +1912,7 @@ static int pager_playback(Pager *pPager, int isHot){
   int rc;                  /* Result code of a subroutine */
   int res = 1;             /* Value returned by sqlite3OsAccess() */
   char *zMaster = 0;       /* Name of master journal file if any */
+  int needPagerReset;      /* True to reset page prior to first page rollback */
 
   /* Figure out how many records are in the journal.  Abort early if
   ** the journal is empty.
@@ -1936,6 +1944,7 @@ static int pager_playback(Pager *pPager, int isHot){
     goto end_playback;
   }
   pPager->journalOff = 0;
+  needPagerReset = isHot;
 
   /* This loop terminates either when a readJournalHdr() or 
   ** pager_playback_one_page() call returns SQLITE_DONE or an IO error 
@@ -2005,6 +2014,10 @@ static int pager_playback(Pager *pPager, int isHot){
     ** database file and/or page cache.
     */
     for(u=0; u<nRec; u++){
+      if( needPagerReset ){
+        pager_reset(pPager);
+        needPagerReset = 0;
+      }
       rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 0, 0);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){
@@ -3557,7 +3570,6 @@ static int pagerSharedLock(Pager *pPager){
       ** playing back the hot-journal so that we don't end up with
       ** an inconsistent cache.
       */
-      pager_reset(pPager);
       rc = pager_playback(pPager, 1);
       if( rc!=SQLITE_OK ){
         rc = pager_error(pPager, rc);
