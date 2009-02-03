@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.161 2009/01/05 18:02:27 drh Exp $
+** $Id: vdbeInt.h,v 1.162 2009/02/03 15:39:01 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -382,9 +382,6 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeReleaseBuffers(Vdbe *p);
 #endif
 
-#ifndef NDEBUG
-  void sqlite3VdbeMemSanity(Mem*);
-#endif
 int sqlite3VdbeMemTranslate(Mem*, u8);
 #ifdef SQLITE_DEBUG
   void sqlite3VdbePrintSql(Vdbe*);

@@ -1,5 +1,5 @@
-C Check\sat\sthe\swrite()\scall\sto\swork\saround\sthe\smsdos\sbug\sin\sOSX\sactually\nsucceeds\sand\sthrow\san\serror\sif\sit\sdoes\snot.\s\s#ifdef\sout\sthe\swork-around\nfor\sall\splatforms\sother\sthan\sOSX.\s\sTicket\s#3633.\s(CVS\s6237)
-D 2009-02-03T15:27:02
+C Remove\sthe\stext\sof\sthe\ssqlite3VdbeMemSanity()\sroutine,\swhich\swas\salready\ncommented\sout.\s(CVS\s6238)
+D 2009-02-03T15:39:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -200,11 +200,11 @@ F src/util.c f1ac1bcd3ec5e3300982031504659b6f9435de33
 F src/vacuum.c b78c2bfdefc1b1d9aa5d82d57c333c5fde7be5a6
 F src/vdbe.c 81120d5a5ba2d93eb7d7f66e814bbc811305daa2
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
-F src/vdbeInt.h 5530e45fc64c1572f123aca384096e1b84cf834b
+F src/vdbeInt.h 13cb4868ea579b5a8f6b6b5098caa99cd5a14078
 F src/vdbeapi.c 85c33cfbfa56249cbe627831610afafba754477d
 F src/vdbeaux.c 30c1bbc1d2876c5bbe84d52dab9980ed032bca98
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
-F src/vdbemem.c 06311d5c46fd703fe95ff81bd0a1b72ba0341311
+F src/vdbemem.c c6127c335f802ba159c6fec4e3284ba82a070602
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
 F src/where.c ac21a2bcfda6f2051b1cbaad361924295ec52771
@@ -695,7 +695,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 876f874c6e2e6e7763083e6761eedc10a4522ec9
-R 03f24e95410db9478f89a6a5008336d8
+P b054b569172c53f4e185e4a64f41d08784aa0f8b
+R 457b1a0aeb8d87e7c5afc57610b99229
 U drh
-Z b153f89d67dc071f437e82912b395cd3
+Z 4acf5301e63e1e219eaefae473c300d6

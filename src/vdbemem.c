@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.135 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.136 2009/02/03 15:39:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -868,55 +868,6 @@ int sqlite3VdbeMemFromBtree(
 
   return rc;
 }
-
-#if 0
-/*
-** Perform various checks on the memory cell pMem. An assert() will
-** fail if pMem is internally inconsistent.
-*/
-void sqlite3VdbeMemSanity(Mem *pMem){
-  int flags = pMem->flags;
-  assert( flags!=0 );  /* Must define some type */
-  if( flags & (MEM_Str|MEM_Blob) ){
-    int x = flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short);
-    assert( x!=0 );            /* Strings must define a string subtype */
-    assert( (x & (x-1))==0 );  /* Only one string subtype can be defined */
-    assert( pMem->z!=0 );      /* Strings must have a value */
-    /* Mem.z points to Mem.zShort iff the subtype is MEM_Short */
-    assert( (x & MEM_Short)==0 || pMem->z==pMem->zShort );
-    assert( (x & MEM_Short)!=0 || pMem->z!=pMem->zShort );
-    /* No destructor unless there is MEM_Dyn */
-    assert( pMem->xDel==0 || (pMem->flags & MEM_Dyn)!=0 );
-
-    if( (flags & MEM_Str) ){
-      assert( pMem->enc==SQLITE_UTF8 || 
-              pMem->enc==SQLITE_UTF16BE ||
-              pMem->enc==SQLITE_UTF16LE 
-      );
-      /* If the string is UTF-8 encoded and nul terminated, then pMem->n
-      ** must be the length of the string.  (Later:)  If the database file
-      ** has been corrupted, '\000' characters might have been inserted
-      ** into the middle of the string.  In that case, the sqlite3Strlen30()
-      ** might be less.
-      */
-      if( pMem->enc==SQLITE_UTF8 && (flags & MEM_Term) ){ 
-        assert( sqlite3Strlen30(pMem->z)<=pMem->n );
-        assert( pMem->z[pMem->n]==0 );
-      }
-    }
-  }else{
-    /* Cannot define a string subtype for non-string objects */
-    assert( (pMem->flags & (MEM_Static|MEM_Dyn|MEM_Ephem|MEM_Short))==0 );
-    assert( pMem->xDel==0 );
-  }
-  /* MEM_Null excludes all other types */
-  assert( (pMem->flags&(MEM_Str|MEM_Int|MEM_Real|MEM_Blob))==0
-          || (pMem->flags&MEM_Null)==0 );
-  /* If the MEM is both real and integer, the values are equal */
-  assert( (pMem->flags & (MEM_Int|MEM_Real))!=(MEM_Int|MEM_Real) 
-          || pMem->r==pMem->u.i );
-}
-#endif
 
 /* This function is only available internally, it is not part of the
 ** external API. It works in a similar way to sqlite3_value_text(),
