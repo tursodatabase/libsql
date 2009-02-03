@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the built-in SUBSTR() functions.
 #
-# $Id: substr.test,v 1.6 2009/02/02 16:32:55 drh Exp $
+# $Id: substr.test,v 1.7 2009/02/03 13:10:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -78,6 +78,8 @@ substr-test 1.13 abcdefg 5 -5 abcd
 substr-test 1.14 abcdefg -5 -1 b
 substr-test 1.15 abcdefg -5 -2 ab
 substr-test 1.16 abcdefg -5 -3 ab
+substr-test 1.17 abcdefg 100 200 {}
+substr-test 1.18 abcdefg 200 100 {}
 
 # Make sure NULL is returned if any parameter is NULL
 #
@@ -118,6 +120,8 @@ subblob-test 3.7 61626364656667 -1 10 67
 subblob-test 3.8 61626364656667 -5 3 636465
 subblob-test 3.9 61626364656667 -7 3 616263
 subblob-test 3.10 61626364656667 -100 98 6162636465
+subblob-test 3.11 61626364656667 100 200 {}
+subblob-test 3.12 61626364656667 200 100 {}
 
 # If these blobs were strings, then they would contain multi-byte
 # characters.  But since they are blobs, the substr indices refer
