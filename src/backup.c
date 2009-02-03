@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.1 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: backup.c,v 1.2 2009/02/03 21:13:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -126,9 +126,12 @@ sqlite3_backup *sqlite3_backup_init(
   sqlite3_backup *p;                    /* Value to return */
 
   /* Lock the source database handle. The destination database
-  ** handle is not locked. The user is required to ensure that no
+  ** handle is not locked in this routine, but it is locked in
+  ** sqlite3_backup_step(). The user is required to ensure that no
   ** other thread accesses the destination handle for the duration
-  ** of the backup operation.
+  ** of the backup operation.  Any attempt to use the destination
+  ** database connection while a backup is in progress may cause
+  ** a malfunction or a deadlock.
   */
   sqlite3_mutex_enter(pSrcDb->mutex);
 
@@ -248,6 +251,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
+  sqlite3_mutex_enter(p->pDestDb->mutex);
 
   rc = p->rc;
   if( rc==SQLITE_OK ){
@@ -403,6 +407,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       p->rc = rc;
     }
   }
+  sqlite3_mutex_leave(p->pDestDb->mutex);
   sqlite3BtreeLeave(p->pSrc);
   sqlite3_mutex_leave(p->pSrcDb->mutex);
   return rc;
@@ -420,6 +425,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
   mutex = p->pSrcDb->mutex;
+  sqlite3_mutex_enter(p->pDestDb->mutex);
 
   /* Detach this backup from the source pager. */
   if( p->pDestDb ){
@@ -439,6 +445,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   sqlite3Error(p->pDestDb, rc, 0);
 
   /* Exit the mutexes and free the backup context structure. */
+  sqlite3_mutex_leave(p->pDestDb->mutex);
   sqlite3BtreeLeave(p->pSrc);
   if( p->pDestDb ){
     sqlite3_free(p);
@@ -556,4 +563,3 @@ int sqlite3BtreeCopyFile(Btree *pTo, Btree *pFrom){
   return rc;
 }
 #endif /* SQLITE_OMIT_VACUUM */
-

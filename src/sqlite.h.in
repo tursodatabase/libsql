@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.425 2009/02/03 18:47:23 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.426 2009/02/03 21:13:08 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6884,7 +6884,9 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** sqlite3_backup_finish(). Unfortunately SQLite does not currently check
 ** for this, if the application does use the destination [database connection]
 ** for some other purpose during a backup operation, things may appear to
-** work correctly but in fact be subtly malfunctioning.
+** work correctly but in fact be subtly malfunctioning.  Use of the
+** destination database connection while a backup is in progress might
+** also cause a mutex deadlock.
 **
 ** Furthermore, if running in [shared cache mode], the application must
 ** guarantee that the shared cache used by the destination database
