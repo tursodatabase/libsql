@@ -1,5 +1,5 @@
-C Must\shold\smutex\son\sthe\sdestination\sduring\sbackups.\s\sAdd\sdocumentation\sto\nwarn\sprogrammers\sthat\sattempting\sto\suse\sthe\sdestination\sconnection\sduring\na\sbackup\scan\slead\sto\sdeadlock.\s(CVS\s6246)
-D 2009-02-03T21:13:08
+C A\sbackup\smust\sclear\sthe\sinternal\sschema\sof\sthe\sdestination\sdatabase\sso\nthat\sthe\sschema\swill\sbe\sreloaded\sfor\sthe\snext\ssqlite3_prepare()\s(CVS\s6247)
+D 2009-02-03T22:17:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,13 +101,13 @@ F src/alter.c 0ec29744c36c6e976596ce38c16289ebc5dc94db
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 81d37d1948f409146a7b22b96998fd90649d1fd3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/backup.c cc6c8a1cead94c06a3a6cf55559cc28db0cdd0ac
+F src/backup.c 0491573a4ce3bb8cfb5c6da32f0d42d04b79407a
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 800a065686c49a0cdefc933779a750a7c3c0509f
 F src/btree.h 4eab72af6adf95f0b08b61a72ef9781bdb0bf63f
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
-F src/build.c ed7a59fa45823464b7d5fdca7712a5fb3433f757
+F src/build.c 6f3d5f74e262d561d77f0210c6063b7122f16c98
 F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 870770dde3fb56772ab247dfb6a6eda44d16cfbc
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e9475abaf87c0ae2f2bbcbaf0f7ba704f9f50c5f
-R 4da491343e240dc914db6eeb9d9174f9
+P 5f6c06b974f26532264467ace603b6f1f830fba9
+R 56f7689073a568269b1239d4961d1fb6
 U drh
-Z 7058c074c4ac7048a37cd4334c8f24d7
+Z b3307c22d24e3af571a952d745c2e4d1
