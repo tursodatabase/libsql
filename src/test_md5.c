@@ -12,7 +12,7 @@
 ** two checksums are the same.  Such is the original use of this code.
 ** New uses may have been added since this comment was written.
 **
-** $Id: test_md5.c,v 1.9 2009/01/14 23:38:03 drh Exp $
+** $Id: test_md5.c,v 1.10 2009/02/03 19:52:59 shane Exp $
 */
 /*
  * This code implements the MD5 message-digest algorithm.
@@ -299,7 +299,7 @@ static void DigestToBase16(unsigned char *digest, char *zBuf){
 static int md5_cmd(void*cd, Tcl_Interp *interp, int argc, const char **argv){
   MD5Context ctx;
   unsigned char digest[16];
-  char zBuf[30];
+  char zBuf[33];
 
   if( argc!=2 ){
     Tcl_AppendResult(interp,"wrong # args: should be \"", argv[0], 

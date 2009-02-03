@@ -1,5 +1,5 @@
-C More\sadjustments\sto\sthe\sbackup\sAPI\sdocumentation.\s\sNo\schanges\sto\scode.\s(CVS\s6243)
-D 2009-02-03T18:47:23
+C Fix\sbuffer\ssize\sin\smd5_cmd()\sin\stest_md5.c.\s\sTest\sharness\schange\sonly.\s(CVS\s6244)
+D 2009-02-03T19:52:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -184,7 +184,7 @@ F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c 0f4b9a929fae2be5bee0230f29204227c3d76c71
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
-F src/test_md5.c 461a8ba9f4498f5f76dec8cb28322b3225dd070a
+F src/test_md5.c 032ae2bb6f81da350d2404e81fa8d560c8268026
 F src/test_mutex.c 5f772b1b9952e1e559e3d54e63bc7ec6f98fecd0
 F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
 F src/test_osinst.c 9a70a61e127f9e72bcfca000b20368b1c5367873
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6298bcca14bc0dd447198430af4147a3673963fc
-R 3f8edaab74d99aab99750110855db399
-U drh
-Z 149ce33b1a3f39cb3f6bea8245a1d563
+P ca650879d3168d4475a33430300a0e8ac806facf
+R 5de21d2a7e94b14f3c4a1de6111d46a7
+U shane
+Z 0304ad448d15567c96c499477c70b57e
