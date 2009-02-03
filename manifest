@@ -1,5 +1,5 @@
-C Remove\sseveral\scompiler\swarnings.\s(CVS\s6239)
-D 2009-02-03T15:50:34
+C Fix\sthe\ssqlite3_mprintf_long\stest\scommand\s(added\sby\scheck-in\s(6224)\sin\sorder\nto\saddress\sticket\s#3621)\sso\sthat\sit\sworks\son\ssystems\swith\ssizeof(int)==4\sand\nsizeof(long)==8.\s(CVS\s6240)
+D 2009-02-03T16:25:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3871d308188cefcb7c5ab20da4c7b6aad023bc52
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
 F src/tclsqlite.c 7d77c3899d0244804d2773c9157e783788627762
-F src/test1.c 72ed8f7cabea905401691a836d578b8317b4d76e
+F src/test1.c 461b793df7db8a8d48bf261a813b2a7ef2417e6d
 F src/test2.c 9689e7d3b7791da8c03f9acd1ea801802cb83c17
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -695,7 +695,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a3c260772bda68007b73feee6612495a704c84f5
-R 4be53e85f4eb56c390ea2bfdacd4afab
+P 85e9196d79ef8500300abb215a31e0519b2e8d02
+R 8b6fc22195ba110d87608f7198abea10
 U drh
-Z d2b8ff82a6936c4ddba64fc501a7998e
+Z b41cee41042712f485446405aaaaa49c
