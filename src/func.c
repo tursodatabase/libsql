@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.219 2009/02/03 13:10:54 drh Exp $
+** $Id: func.c,v 1.220 2009/02/03 13:19:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -843,7 +843,8 @@ static void replaceFunc(
   assert( zStr==sqlite3_value_text(argv[0]) );  /* No encoding change */
   zPattern = sqlite3_value_text(argv[1]);
   if( zPattern==0 ){
-    assert( sqlite3_value_type(argv[1])==SQLITE_NULL );
+    assert( sqlite3_value_type(argv[1])==SQLITE_NULL
+            || sqlite3_context_db_handle(context)->mallocFailed );
     return;
   }
   if( zPattern[0]==0 ){
