@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.423 2009/02/03 16:51:25 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.424 2009/02/03 18:25:13 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6723,6 +6723,17 @@ struct sqlite3_pcache_methods {
 };
 
 /*
+** CAPI3REF: Online Backup Object
+** EXPERIMENTAL
+**
+** The sqlite3_backup object records state information about an ongoing
+** online backup operation.  The sqlite3_backup object is created by
+** a call to [sqlite3_backup_init()] and is destroyed by a call to
+** [sqlite3_backup_finish()].
+*/
+typedef struct sqlite3_backup sqlite3_backup;
+
+/*
 ** CAPI3REF: Online Backup API.
 ** EXPERIMENTAL
 **
@@ -6764,8 +6775,8 @@ struct sqlite3_pcache_methods {
 ** and an error code and error message written into the database handle 
 ** passed as the first argument. They may be retrieved using the
 ** sqlite3_errcode(), sqlite3_errmsg() and sqlite3_errmsg16() functions.
-** Otherwise, if successful, an opaque handle of type sqlite3_backup* is
-** returned. This handle may be used with the sqlite3_backup_step() and
+** Otherwise, if successful, a pointer to an [sqlite3_backup] object is
+** returned. This pointer may be used with the sqlite3_backup_step() and
 ** sqlite3_backup_finish() functions to perform the specified backup 
 ** operation.
 **
@@ -6819,11 +6830,11 @@ struct sqlite3_pcache_methods {
 ** <b>sqlite3_backup_finish()</b>
 **
 ** Once sqlite3_backup_step() has returned SQLITE_DONE, or when the 
-** application wishes to abandon the backup operation, the sqlite3_backup*
-** handle should be passed to sqlite3_backup_finish(). This releases all
+** application wishes to abandon the backup operation, the [sqlite3_backup]
+** object should be passed to sqlite3_backup_finish(). This releases all
 ** resources associated with the backup operation. If sqlite3_backup_step()
 ** has not yet returned SQLITE_DONE, then any active write-transaction on the
-** destination database is rolled back. The sqlite3_backup* handle is invalid
+** destination database is rolled back. The [sqlite3_backup] object is invalid
 ** and may not be used following a call to sqlite3_backup_finish().
 **
 ** The value returned by sqlite3_backup_finish is SQLITE_OK if no error
@@ -6841,7 +6852,7 @@ struct sqlite3_pcache_methods {
 ** <b>sqlite3_backup_remaining(), sqlite3_backup_pagecount()</b>
 **
 ** Each call to sqlite3_backup_step() sets two values stored internally
-** by an sqlite3_backup* handle. The number of pages still to be backed
+** by an [sqlite3_backup] object. The number of pages still to be backed
 ** up, which may be queried by sqlite3_backup_remaining(), and the total
 ** number of pages in the source database file, which may be queried by
 ** sqlite3_backup_pagecount().
@@ -6875,14 +6886,13 @@ struct sqlite3_pcache_methods {
 ** backed up to is not accessed by any connection within the process,
 ** not just the specific connection that was passed to sqlite3_backup_init().
 **
-** The sqlite3_backup handle itself is partially threadsafe. Multiple 
+** The [sqlite3_backup] object itself is partially threadsafe. Multiple 
 ** threads may safely make multiple concurrent calls to sqlite3_backup_step().
 ** However, the sqlite3_backup_remaining() and sqlite3_backup_pagecount()
 ** APIs are not strictly speaking threadsafe. If they are invoked at the
 ** same time as another thread is invoking sqlite3_backup_step() it is
 ** possible that they return invalid values.
 */
-typedef struct sqlite3_backup sqlite3_backup;
 sqlite3_backup *sqlite3_backup_init(
   sqlite3 *pDest,                        /* Destination database handle */
   const char *zDestName,                 /* Destination database name */
