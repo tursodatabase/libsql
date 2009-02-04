@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.199 2009/01/30 05:40:27 shane Exp $
+** $Id: shell.c,v 1.200 2009/02/04 20:55:58 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -930,6 +930,7 @@ static int run_schema_dump_query(
 ** Text of a help message
 */
 static char zHelp[] =
+  ".backup ?DB? FILE      Backup DB (default \"main\") to FILE\n"
   ".bail ON|OFF           Stop after hitting an error.  Default OFF\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
@@ -961,6 +962,7 @@ static char zHelp[] =
   ".prompt MAIN CONTINUE  Replace the standard prompts\n"
   ".quit                  Exit this program\n"
   ".read FILENAME         Execute SQL in FILENAME\n"
+  ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
   ".separator STRING      Change separator used by output mode and .import\n"
   ".show                  Show the current values for various settings\n"
@@ -1092,7 +1094,42 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( nArg==0 ) return rc;
   n = strlen30(azArg[0]);
   c = azArg[0][0];
-  if( c=='b' && n>1 && strncmp(azArg[0], "bail", n)==0 && nArg>1 ){
+  if( c=='b' && n>=3 && strncmp(azArg[0], "backup", n)==0 && nArg>1 ){
+    const char *zDestFile;
+    const char *zDb;
+    sqlite3 *pDest;
+    sqlite3_backup *pBackup;
+    int rc;
+    if( nArg==2 ){
+      zDestFile = azArg[1];
+      zDb = "main";
+    }else{
+      zDestFile = azArg[2];
+      zDb = azArg[1];
+    }
+    rc = sqlite3_open(zDestFile, &pDest);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "Error: cannot open %s\n", zDestFile);
+      sqlite3_close(pDest);
+      return 1;
+    }
+    pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
+    if( pBackup==0 ){
+      fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
+      sqlite3_close(pDest);
+      return 1;
+    }
+    while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
+    sqlite3_backup_finish(pBackup);
+    if( rc==SQLITE_DONE ){
+      rc = SQLITE_OK;
+    }else{
+      fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
+    }
+    sqlite3_close(pDest);
+  }else
+
+  if( c=='b' && n>=3 && strncmp(azArg[0], "bail", n)==0 && nArg>1 ){
     bail_on_error = booleanValue(azArg[1]);
   }else
 
@@ -1453,7 +1490,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     rc = 2;
   }else
 
-  if( c=='r' && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
+  if( c=='r' && n>=3 && strncmp(azArg[0], "read", n)==0 && nArg==2 ){
     FILE *alt = fopen(azArg[1], "rb");
     if( alt==0 ){
       fprintf(stderr,"can't open \"%s\"\n", azArg[1]);
@@ -1461,6 +1498,45 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       process_input(p, alt);
       fclose(alt);
     }
+  }else
+
+  if( c=='r' && n>=3 && strncmp(azArg[0], "restore", n)==0 && nArg>1 ){
+    const char *zSrcFile;
+    const char *zDb;
+    sqlite3 *pSrc;
+    sqlite3_backup *pBackup;
+    int rc;
+    if( nArg==2 ){
+      zSrcFile = azArg[1];
+      zDb = "main";
+    }else{
+      zSrcFile = azArg[2];
+      zDb = azArg[1];
+    }
+    rc = sqlite3_open(zSrcFile, &pSrc);
+    if( rc!=SQLITE_OK ){
+      fprintf(stderr, "Error: cannot open %s\n", zSrcFile);
+      sqlite3_close(pSrc);
+      return 1;
+    }
+    pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
+    if( pBackup==0 ){
+      fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+      sqlite3_close(pSrc);
+      return 1;
+    }
+    while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){
+      if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
+        sqlite3_sleep(10);
+      }
+    }
+    sqlite3_backup_finish(pBackup);
+    if( rc==SQLITE_DONE ){
+      rc = SQLITE_OK;
+    }else{
+      fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
+    }
+    sqlite3_close(pSrc);
   }else
 
   if( c=='s' && strncmp(azArg[0], "schema", n)==0 ){

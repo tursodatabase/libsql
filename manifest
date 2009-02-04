@@ -1,5 +1,5 @@
-C Increase\sthe\sversion\snumber\sto\s3.6.11.\s(CVS\s6258)
-D 2009-02-04T20:08:26
+C Add\s".backup"\sand\s".restore"\scommands\sto\sthe\sCLI\s-\simplemented\susing\sthe\nnew\sbackup\sAPI.\s(CVS\s6259)
+D 2009-02-04T20:55:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
-F src/shell.c 8965cf0cd7a7dac39d586a43c97adb00930e025d
+F src/shell.c 6c674a4a4cc56c70ecfb26b07d486d43740b475f
 F src/sqlite.h.in 31fa12602f784adea9be66424a2e8b052116736f
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 73c1d4f9716fe21f202f9d05c4fd9e6281f2636f
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d4af60e52a12262ad0194908e68a386c719fe177
-R f6bc70a4dbe805a45f380940b0bdb3b4
+P 0882a028c8cee868bb79728499fb1fa7c0630fa6
+R 6acad12f687e13cb8812850fc6ee53f0
 U drh
-Z ebc074439167f9596ca44285def5f13d
+Z 7b9fc40e749f6a4e8493cccb068ac51f
