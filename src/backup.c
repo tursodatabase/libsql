@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.6 2009/02/04 16:56:19 drh Exp $
+** $Id: backup.c,v 1.7 2009/02/04 17:40:58 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -138,7 +138,7 @@ sqlite3_backup *sqlite3_backup_init(
 
   if( pSrcDb==pDestDb ){
     sqlite3Error(
-        pDestDb, SQLITE_ERROR, "Source and destination handles must be distinct"
+        pDestDb, SQLITE_ERROR, "source and destination must be distinct"
     );
     p = 0;
   }else {

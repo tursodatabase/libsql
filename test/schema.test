@@ -13,7 +13,7 @@
 # This file tests the various conditions under which an SQLITE_SCHEMA
 # error should be returned.
 #
-# $Id: schema.test,v 1.8 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: schema.test,v 1.9 2009/02/04 17:40:58 drh Exp $
 
 #---------------------------------------------------------------------
 # When any of the following types of SQL statements or actions are 
@@ -313,7 +313,7 @@ do_test schema-11.3 {
     db function tstfunc {}
   } msg]
   list $rc $msg
-} {1 {Unable to delete/modify user-function due to active statements}}
+} {1 {unable to delete/modify user-function due to active statements}}
 do_test schema-11.4 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
@@ -331,7 +331,7 @@ do_test schema-11.7 {
     db collate tstcollate {}
   } msg]
   list $rc $msg
-} {1 {Unable to delete/modify collation sequence due to active statements}}
+} {1 {unable to delete/modify collation sequence due to active statements}}
 do_test schema-11.8 {
   sqlite3_finalize $::STMT
 } {SQLITE_OK}
