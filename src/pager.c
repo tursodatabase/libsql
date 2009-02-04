@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.564 2009/02/04 01:49:30 shane Exp $
+** @(#) $Id: pager.c,v 1.565 2009/02/04 10:09:04 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2927,18 +2927,20 @@ static int pager_write_pagelist(PgHdr *pList){
 ** bitvec.
 */
 static int subjournalPage(PgHdr *pPg){
-  int rc;
-  void *pData = pPg->pData;
+  int rc = SQLITE_OK;
   Pager *pPager = pPg->pPager;
-  i64 offset = pPager->nSubRec*(4+pPager->pageSize);
-  char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
-
-  PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
-
-  assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
-  rc = write32bits(pPager->sjfd, offset, pPg->pgno);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
+  if( isOpen(pPager->sjfd) ){
+    void *pData = pPg->pData;
+    i64 offset = pPager->nSubRec*(4+pPager->pageSize);
+    char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
+  
+    PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
+  
+    assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
+    rc = write32bits(pPager->sjfd, offset, pPg->pgno);
+    if( rc==SQLITE_OK ){
+      rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
+    }
   }
   if( rc==SQLITE_OK ){
     pPager->nSubRec++;

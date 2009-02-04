@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.11 2009/01/11 00:18:38 drh Exp $
+# $Id: savepoint.test,v 1.12 2009/02/04 10:09:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -813,5 +813,50 @@ do_test savepoint-12.3 {
 do_test savepoint-12.4 {
   execsql { SAVEPOINT one }
 } {}
+
+#-------------------------------------------------------------------------
+# The following tests - savepoint-13.* - test the interaction of 
+# savepoints and "journal_mode = off".
+# 
+do_test savepoint-13.1 {
+  db close
+  catch {file delete -force test.db}
+  sqlite3 db test.db
+  execsql {
+    BEGIN;
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(1, 2);
+    COMMIT;
+    PRAGMA journal_mode = off;
+  }
+} {off}
+do_test savepoint-13.2 {
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 4);
+    INSERT INTO t1 SELECT a+4,b+4  FROM t1;
+    COMMIT;
+  }
+} {}
+do_test savepoint-13.3 {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES(9, 10);
+      SAVEPOINT s1;
+        INSERT INTO t1 VALUES(11, 12);
+    COMMIT;
+  }
+} {}
+do_test savepoint-13.4 {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES(13, 14);
+      SAVEPOINT s1;
+        INSERT INTO t1 VALUES(15, 16);
+      ROLLBACK TO s1;
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
 
 finish_test

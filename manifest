@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\smalloc.test\scausing\sthe\sexclusive\spermutation\sto\sfail.\sChanges\sto\stest\scode\sonly.\s(CVS\s6251)
-D 2009-02-04T08:17:57
+C Do\snot\sattempt\sto\suse\sthe\ssub-journal\sfile\sdescriptor\sif\sit\sis\snot\sopened\s(as\sin\sjournal_mode=off\smode).\sTicket\s#3636.\s(CVS\s6252)
+D 2009-02-04T10:09:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c f0fce3042011d462b8ae633564a5668260bd3636
 F src/os_win.c b83b57c24ec5bca07cb0eca6f620e796209e952f
-F src/pager.c 1181eac160b1bc58108deb013624437ed695d15f
+F src/pager.c ce4a0a0f10ebfd8b2f70a5edf5af30d233ab8ce7
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y 4f4d16aee0d11f69fec2adb77dac88878043ed8d
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
@@ -502,7 +502,7 @@ F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test 19b4027d78e04dd6936498bd85a0a71a39b32e6e
+F test/savepoint.test 4fc56354c7cd9c6be40d6f18e06ee90d92be0cd9
 F test/savepoint2.test 18f6c75d5c133b93838019df8988b8cdf379d3de
 F test/savepoint3.test 5b76f93ffcb5c53bd6ec68e9d57d3b535936c45e
 F test/savepoint4.test fd8850063e3c40565545f5c291e7f79a30591670
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5cef400023205b55152b91441acc78f9cd8d58a9
-R 8a047b5321fafe0b6dd980b42ce1d91f
+P 72745bde90a9b4ffae1496f1668e4bb0678bd400
+R ba0b4ba1dc1a735a483dbc0860550e91
 U danielk1977
-Z bae95d6f7b65009f90955deca10a86e3
+Z ed7dbdace1bc5288c3b2fdab4664488f
