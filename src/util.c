@@ -14,11 +14,10 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.247 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: util.c,v 1.248 2009/02/04 03:59:25 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
-
 
 /*
 ** Routine needed to support the testcase() macro.

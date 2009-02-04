@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.90 2009/02/02 21:57:05 drh Exp $
+# $Id: func.test,v 1.91 2009/02/04 03:59:25 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -149,24 +149,49 @@ do_test func-3.99 {
 
 # Test the abs() and round() functions.
 #
-do_test func-4.1 {
-  execsql {
-    CREATE TABLE t1(a,b,c);
-    INSERT INTO t1 VALUES(1,2,3);
-    INSERT INTO t1 VALUES(2,1.2345678901234,-12345.67890);
-    INSERT INTO t1 VALUES(3,-2,-5);
-  }
-  catchsql {SELECT abs(a,b) FROM t1}
-} {1 {wrong number of arguments to function abs()}}
+ifcapable !floatingpoint {
+  do_test func-4.1 {
+    execsql {
+      CREATE TABLE t1(a,b,c);
+      INSERT INTO t1 VALUES(1,2,3);
+      INSERT INTO t1 VALUES(2,12345678901234,-1234567890);
+      INSERT INTO t1 VALUES(3,-2,-5);
+    }
+    catchsql {SELECT abs(a,b) FROM t1}
+  } {1 {wrong number of arguments to function abs()}}
+}
+ifcapable floatingpoint {
+  do_test func-4.1 {
+    execsql {
+      CREATE TABLE t1(a,b,c);
+      INSERT INTO t1 VALUES(1,2,3);
+      INSERT INTO t1 VALUES(2,1.2345678901234,-12345.67890);
+      INSERT INTO t1 VALUES(3,-2,-5);
+    }
+    catchsql {SELECT abs(a,b) FROM t1}
+  } {1 {wrong number of arguments to function abs()}}
+}
 do_test func-4.2 {
   catchsql {SELECT abs() FROM t1}
 } {1 {wrong number of arguments to function abs()}}
-do_test func-4.3 {
-  catchsql {SELECT abs(b) FROM t1 ORDER BY a}
-} {0 {2 1.2345678901234 2}}
-do_test func-4.4 {
-  catchsql {SELECT abs(c) FROM t1 ORDER BY a}
-} {0 {3 12345.6789 5}}
+ifcapable floatingpoint {
+  do_test func-4.3 {
+    catchsql {SELECT abs(b) FROM t1 ORDER BY a}
+  } {0 {2 1.2345678901234 2}}
+  do_test func-4.4 {
+    catchsql {SELECT abs(c) FROM t1 ORDER BY a}
+  } {0 {3 12345.6789 5}}
+}
+ifcapable !floatingpoint {
+  if {[working_64bit_int]} {
+    do_test func-4.3 {
+      catchsql {SELECT abs(b) FROM t1 ORDER BY a}
+    } {0 {2 12345678901234 2}}
+  }
+  do_test func-4.4 {
+    catchsql {SELECT abs(c) FROM t1 ORDER BY a}
+  } {0 {3 1234567890 5}}
+}
 do_test func-4.4.1 {
   execsql {SELECT abs(a) FROM t2}
 } {1 {} 345 {} 67890}
@@ -174,40 +199,44 @@ do_test func-4.4.2 {
   execsql {SELECT abs(t1) FROM tbl1}
 } {0.0 0.0 0.0 0.0 0.0}
 
-do_test func-4.5 {
-  catchsql {SELECT round(a,b,c) FROM t1}
-} {1 {wrong number of arguments to function round()}}
-do_test func-4.6 {
-  catchsql {SELECT round(b,2) FROM t1 ORDER BY b}
-} {0 {-2.0 1.23 2.0}}
-do_test func-4.7 {
-  catchsql {SELECT round(b,0) FROM t1 ORDER BY a}
-} {0 {2.0 1.0 -2.0}}
-do_test func-4.8 {
-  catchsql {SELECT round(c) FROM t1 ORDER BY a}
-} {0 {3.0 -12346.0 -5.0}}
-do_test func-4.9 {
-  catchsql {SELECT round(c,a) FROM t1 ORDER BY a}
-} {0 {3.0 -12345.68 -5.0}}
-do_test func-4.10 {
-  catchsql {SELECT 'x' || round(c,a) || 'y' FROM t1 ORDER BY a}
-} {0 {x3.0y x-12345.68y x-5.0y}}
-do_test func-4.11 {
-  catchsql {SELECT round() FROM t1 ORDER BY a}
-} {1 {wrong number of arguments to function round()}}
-do_test func-4.12 {
-  execsql {SELECT coalesce(round(a,2),'nil') FROM t2}
-} {1.0 nil 345.0 nil 67890.0}
-do_test func-4.13 {
-  execsql {SELECT round(t1,2) FROM tbl1}
-} {0.0 0.0 0.0 0.0 0.0}
-do_test func-4.14 {
-  execsql {SELECT typeof(round(5.1,1));}
-} {real}
-do_test func-4.15 {
-  execsql {SELECT typeof(round(5.1));}
-} {real}
-
+ifcapable floatingpoint {
+  do_test func-4.5 {
+    catchsql {SELECT round(a,b,c) FROM t1}
+  } {1 {wrong number of arguments to function round()}}
+  do_test func-4.6 {
+    catchsql {SELECT round(b,2) FROM t1 ORDER BY b}
+  } {0 {-2.0 1.23 2.0}}
+  do_test func-4.7 {
+    catchsql {SELECT round(b,0) FROM t1 ORDER BY a}
+  } {0 {2.0 1.0 -2.0}}
+  do_test func-4.8 {
+    catchsql {SELECT round(c) FROM t1 ORDER BY a}
+  } {0 {3.0 -12346.0 -5.0}}
+  do_test func-4.9 {
+    catchsql {SELECT round(c,a) FROM t1 ORDER BY a}
+  } {0 {3.0 -12345.68 -5.0}}
+  do_test func-4.10 {
+    catchsql {SELECT 'x' || round(c,a) || 'y' FROM t1 ORDER BY a}
+  } {0 {x3.0y x-12345.68y x-5.0y}}
+  do_test func-4.11 {
+    catchsql {SELECT round() FROM t1 ORDER BY a}
+  } {1 {wrong number of arguments to function round()}}
+  do_test func-4.12 {
+    execsql {SELECT coalesce(round(a,2),'nil') FROM t2}
+  } {1.0 nil 345.0 nil 67890.0}
+  do_test func-4.13 {
+    execsql {SELECT round(t1,2) FROM tbl1}
+  } {0.0 0.0 0.0 0.0 0.0}
+  do_test func-4.14 {
+    execsql {SELECT typeof(round(5.1,1));}
+  } {real}
+  do_test func-4.15 {
+    execsql {SELECT typeof(round(5.1));}
+  } {real}
+  do_test func-4.16 {
+    catchsql {SELECT round(b,2.0) FROM t1 ORDER BY b}
+  } {0 {-2.0 1.23 2.0}}
+}
 
 # Test the upper() and lower() functions
 #
@@ -256,14 +285,26 @@ do_test func-7.1 {
 
 # Tests for aggregate functions and how they handle NULLs.
 #
-do_test func-8.1 {
-  ifcapable explain {
-    execsql {EXPLAIN SELECT sum(a) FROM t2;}
-  }
-  execsql {
-    SELECT sum(a), count(a), round(avg(a),2), min(a), max(a), count(*) FROM t2;
-  }
-} {68236 3 22745.33 1 67890 5}
+ifcapable floatingpoint {
+  do_test func-8.1 {
+    ifcapable explain {
+      execsql {EXPLAIN SELECT sum(a) FROM t2;}
+    }
+    execsql {
+      SELECT sum(a), count(a), round(avg(a),2), min(a), max(a), count(*) FROM t2;
+    }
+  } {68236 3 22745.33 1 67890 5}
+}
+ifcapable !floatingpoint {
+  do_test func-8.1 {
+    ifcapable explain {
+      execsql {EXPLAIN SELECT sum(a) FROM t2;}
+    }
+    execsql {
+      SELECT sum(a), count(a), avg(a), min(a), max(a), count(*) FROM t2;
+    }
+  } {68236 3 22745.0 1 67890 5}
+}
 do_test func-8.2 {
   execsql {
     SELECT max('z+'||a||'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOP') FROM t2;
@@ -309,12 +350,22 @@ ifcapable compound {
                           UNION ALL SELECT -9223372036854775807)
     }
   } {real}
+ifcapable floatingpoint {
   do_test func-8.8 {
     execsql {
       SELECT sum(x)>0.0 FROM (SELECT '9223372036' || '854775808' AS x
                           UNION ALL SELECT -9223372036850000000)
     }
   } {1}
+}
+ifcapable !floatingpoint {
+  do_test func-8.8 {
+    execsql {
+      SELECT sum(x)>0 FROM (SELECT '9223372036' || '854775808' AS x
+                          UNION ALL SELECT -9223372036850000000)
+    }
+  } {1}
+}
 }
 
 # How do you test the random() function in a meaningful, deterministic way?
@@ -406,32 +457,35 @@ do_test func-10.3 {
     );
   }
 } {{}}
-do_test func-10.4 {
-  execsql {
-    SELECT testfunc(
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'double', 1.234
-    );
-  }
-} {1.234}
-do_test func-10.5 {
-  execsql {
-    SELECT testfunc(
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'int', 1234,
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'string', NULL,
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'double', 1.234,
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'int', 1234,
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'string', NULL,
-     'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-     'double', 1.234
-    );
-  }
-} {1.234}
+
+ifcapable floatingpoint {
+  do_test func-10.4 {
+    execsql {
+      SELECT testfunc(
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'double', 1.234
+      );
+    }
+  } {1.234}
+  do_test func-10.5 {
+    execsql {
+      SELECT testfunc(
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'int', 1234,
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'string', NULL,
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'double', 1.234,
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'int', 1234,
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'string', NULL,
+       'string', 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+       'double', 1.234
+      );
+    }
+  } {1.234}
+}
 
 # Test the built-in sqlite_version(*) SQL function.
 #
@@ -610,12 +664,14 @@ do_test func-18.1 {
     SELECT sum(x) FROM t5;
   }
 } {9902}
-do_test func-18.2 {
-  execsql {
-    INSERT INTO t5 VALUES(0.0);
-    SELECT sum(x) FROM t5;
-  }
-} {9902.0}
+ifcapable floatingpoint {
+  do_test func-18.2 {
+    execsql {
+      INSERT INTO t5 VALUES(0.0);
+      SELECT sum(x) FROM t5;
+    }
+  } {9902.0}
+}
 
 # The sum of nothing is NULL.  But the sum of all NULLs is NULL.
 #
@@ -663,23 +719,39 @@ do_test func-18.11 {
     SELECT typeof(sum(x)) FROM t6
   }
 } integer
-do_test func-18.12 {
-  catchsql {
-    INSERT INTO t6 VALUES(1<<62);
-    SELECT sum(x) - ((1<<62)*2.0+1) from t6;
-  }
-} {1 {integer overflow}}
-do_test func-18.13 {
-  execsql {
-    SELECT total(x) - ((1<<62)*2.0+1) FROM t6
-  }
-} 0.0
-do_test func-18.14 {
-  execsql {
-    SELECT sum(-9223372036854775805);
-  }
-} -9223372036854775805
-
+ifcapable floatingpoint {
+  do_test func-18.12 {
+    catchsql {
+      INSERT INTO t6 VALUES(1<<62);
+      SELECT sum(x) - ((1<<62)*2.0+1) from t6;
+    }
+  } {1 {integer overflow}}
+  do_test func-18.13 {
+    execsql {
+      SELECT total(x) - ((1<<62)*2.0+1) FROM t6
+    }
+  } 0.0
+}
+ifcapable !floatingpoint {
+  do_test func-18.12 {
+    catchsql {
+      INSERT INTO t6 VALUES(1<<62);
+      SELECT sum(x) - ((1<<62)*2+1) from t6;
+    }
+  } {1 {integer overflow}}
+  do_test func-18.13 {
+    execsql {
+      SELECT total(x) - ((1<<62)*2+1) FROM t6
+    }
+  } 0.0
+}
+if {[working_64bit_int]} {
+  do_test func-18.14 {
+    execsql {
+      SELECT sum(-9223372036854775805);
+    }
+  } -9223372036854775805
+}
 ifcapable compound&&subquery {
 
 do_test func-18.15 {
@@ -689,20 +761,22 @@ do_test func-18.15 {
         SELECT 10 AS x);
   }
 } {1 {integer overflow}}
-do_test func-18.16 {
-  catchsql {
-    SELECT sum(x) FROM 
-       (SELECT 9223372036854775807 AS x UNION ALL
-        SELECT -10 AS x);
-  }
-} {0 9223372036854775797}
-do_test func-18.17 {
-  catchsql {
-    SELECT sum(x) FROM 
-       (SELECT -9223372036854775807 AS x UNION ALL
-        SELECT 10 AS x);
-  }
-} {0 -9223372036854775797}
+if {[working_64bit_int]} {
+  do_test func-18.16 {
+    catchsql {
+      SELECT sum(x) FROM 
+         (SELECT 9223372036854775807 AS x UNION ALL
+          SELECT -10 AS x);
+    }
+  } {0 9223372036854775797}
+  do_test func-18.17 {
+    catchsql {
+      SELECT sum(x) FROM 
+         (SELECT -9223372036854775807 AS x UNION ALL
+          SELECT 10 AS x);
+    }
+  } {0 -9223372036854775797}
+}
 do_test func-18.18 {
   catchsql {
     SELECT sum(x) FROM 
@@ -735,11 +809,13 @@ do_test func-18.22 {
 
 # Integer overflow on abs()
 #
-do_test func-18.31 {
-  catchsql {
-    SELECT abs(-9223372036854775807);
-  }
-} {0 9223372036854775807}
+if {[working_64bit_int]} {
+  do_test func-18.31 {
+    catchsql {
+      SELECT abs(-9223372036854775807);
+    }
+  } {0 9223372036854775807}
+}
 do_test func-18.32 {
   catchsql {
     SELECT abs(-9223372036854775807-1);

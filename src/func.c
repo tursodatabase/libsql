@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.221 2009/02/03 15:50:34 drh Exp $
+** $Id: func.c,v 1.222 2009/02/04 03:59:25 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -243,6 +243,7 @@ static void substrFunc(
 /*
 ** Implementation of the round() function
 */
+#ifndef SQLITE_OMIT_FLOATING_POINT
 static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   int n = 0;
   double r;
@@ -260,6 +261,7 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   sqlite3AtoF(zBuf, &r);
   sqlite3_result_double(context, r);
 }
+#endif
 
 /*
 ** Allocate nByte bytes of space using sqlite3_malloc(). If the
@@ -1131,7 +1133,8 @@ static void avgFinalize(sqlite3_context *context){
 static void totalFinalize(sqlite3_context *context){
   SumCtx *p;
   p = sqlite3_aggregate_context(context, 0);
-  sqlite3_result_double(context, p ? p->rSum : 0.0);
+  /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+  sqlite3_result_double(context, p ? p->rSum : (double)0);
 }
 
 /*
@@ -1378,8 +1381,10 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(substr,             2, 0, 0, substrFunc       ),
     FUNCTION(substr,             3, 0, 0, substrFunc       ),
     FUNCTION(abs,                1, 0, 0, absFunc          ),
+#ifndef SQLITE_OMIT_FLOATING_POINT
     FUNCTION(round,              1, 0, 0, roundFunc        ),
     FUNCTION(round,              2, 0, 0, roundFunc        ),
+#endif
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(coalesce,           1, 0, 0, 0                ),

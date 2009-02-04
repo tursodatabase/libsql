@@ -11,15 +11,22 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing expressions.
 #
-# $Id: expr.test,v 1.66 2008/12/30 17:55:00 drh Exp $
+# $Id: expr.test,v 1.67 2009/02/04 03:59:25 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Create a table to work with.
 #
-execsql {CREATE TABLE test1(i1 int, i2 int, r1 real, r2 real, t1 text, t2 text)}
-execsql {INSERT INTO test1 VALUES(1,2,1.1,2.2,'hello','world')}
+ifcapable floatingpoint {
+  execsql {CREATE TABLE test1(i1 int, i2 int, r1 real, r2 real, t1 text, t2 text)}
+  execsql {INSERT INTO test1 VALUES(1,2,1.1,2.2,'hello','world')}
+}
+ifcapable !floatingpoint {
+  execsql {CREATE TABLE test1(i1 int, i2 int, t1 text, t2 text)}
+  execsql {INSERT INTO test1 VALUES(1,2,'hello','world')}
+}
+
 proc test_expr {name settings expr result} {
   do_test $name [format {
     execsql {BEGIN; UPDATE test1 SET %s; SELECT %s FROM test1; ROLLBACK;}
@@ -47,8 +54,10 @@ test_expr expr-1.18 {i1=20, i2=20} {i2!=i1} 0
 test_expr expr-1.19 {i1=20, i2=20} {i2=i1} 1
 test_expr expr-1.20 {i1=20, i2=20} {i2<>i1} 0
 test_expr expr-1.21 {i1=20, i2=20} {i2==i1} 1
-test_expr expr-1.22 {i1=1, i2=2, r1=3.0} {i1+i2*r1} {7.0}
-test_expr expr-1.23 {i1=1, i2=2, r1=3.0} {(i1+i2)*r1} {9.0}
+ifcapable floatingpoint {
+  test_expr expr-1.22 {i1=1, i2=2, r1=3.0} {i1+i2*r1} {7.0}
+  test_expr expr-1.23 {i1=1, i2=2, r1=3.0} {(i1+i2)*r1} {9.0}
+}
 test_expr expr-1.24 {i1=1, i2=2} {min(i1,i2,i1+i2,i1-i2)} {-1}
 test_expr expr-1.25 {i1=1, i2=2} {max(i1,i2,i1+i2,i1-i2)} {3}
 test_expr expr-1.26 {i1=1, i2=2} {max(i1,i2,i1+i2,i1-i2)} {3}
@@ -134,48 +143,62 @@ test_expr expr-1.101 {i1=0, i2=''} {i1=i2} 0
 
 # Check for proper handling of 64-bit integer values.
 #
-test_expr expr-1.102 {i1=40, i2=1} {i2<<i1} 1099511627776
+if {[working_64bit_int]} {
+  test_expr expr-1.102 {i1=40, i2=1} {i2<<i1} 1099511627776
+}
 
-test_expr expr-1.103 {i1=0} {(-2147483648.0 % -1)} 0.0
-test_expr expr-1.104 {i1=0} {(-9223372036854775808.0 % -1)} 0.0
-test_expr expr-1.105 {i1=0} {(-9223372036854775808.0 / -1)>1} 1
+ifcapable floatingpoint {
+  test_expr expr-1.103 {i1=0} {(-2147483648.0 % -1)} 0.0
+  test_expr expr-1.104 {i1=0} {(-9223372036854775808.0 % -1)} 0.0
+  test_expr expr-1.105 {i1=0} {(-9223372036854775808.0 / -1)>1} 1
+}
 
-test_expr expr-1.106 {i1=0} {(1<<63)/-1} -9223372036854775808
+if {[working_64bit_int]} {
+  test_expr expr-1.106 {i1=0} {(1<<63)/-1} -9223372036854775808
+}
+
 test_expr expr-1.107 {i1=0} {(1<<63)%-1} 0
 test_expr expr-1.108 {i1=0} {1%0} {{}}
 test_expr expr-1.109 {i1=0} {1/0} {{}}
-test_expr expr-1.110 {i1=0} {-9223372036854775807/-1} 9223372036854775807
 
-test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
-test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
-test_expr expr-2.3 {r1=1.23, r2=2.34} {r1*r2} 2.8782
+if {[working_64bit_int]} {
+  test_expr expr-1.110 {i1=0} {-9223372036854775807/-1} 9223372036854775807
+}
+
+ifcapable floatingpoint {
+  test_expr expr-2.1 {r1=1.23, r2=2.34} {r1+r2} 3.57
+  test_expr expr-2.2 {r1=1.23, r2=2.34} {r1-r2} -1.11
+  test_expr expr-2.3 {r1=1.23, r2=2.34} {r1*r2} 2.8782
+}
 set tcl_precision 15
-test_expr expr-2.4 {r1=1.23, r2=2.34} {r1/r2} 0.525641025641026
-test_expr expr-2.5 {r1=1.23, r2=2.34} {r2/r1} 1.90243902439024
-test_expr expr-2.6 {r1=1.23, r2=2.34} {r2<r1} 0
-test_expr expr-2.7 {r1=1.23, r2=2.34} {r2<=r1} 0
-test_expr expr-2.8 {r1=1.23, r2=2.34} {r2>r1} 1
-test_expr expr-2.9 {r1=1.23, r2=2.34} {r2>=r1} 1
-test_expr expr-2.10 {r1=1.23, r2=2.34} {r2!=r1} 1
-test_expr expr-2.11 {r1=1.23, r2=2.34} {r2=r1} 0
-test_expr expr-2.12 {r1=1.23, r2=2.34} {r2<>r1} 1
-test_expr expr-2.13 {r1=1.23, r2=2.34} {r2==r1} 0
-test_expr expr-2.14 {r1=2.34, r2=2.34} {r2<r1} 0
-test_expr expr-2.15 {r1=2.34, r2=2.34} {r2<=r1} 1
-test_expr expr-2.16 {r1=2.34, r2=2.34} {r2>r1} 0
-test_expr expr-2.17 {r1=2.34, r2=2.34} {r2>=r1} 1
-test_expr expr-2.18 {r1=2.34, r2=2.34} {r2!=r1} 0
-test_expr expr-2.19 {r1=2.34, r2=2.34} {r2=r1} 1
-test_expr expr-2.20 {r1=2.34, r2=2.34} {r2<>r1} 0
-test_expr expr-2.21 {r1=2.34, r2=2.34} {r2==r1} 1
-test_expr expr-2.22 {r1=1.23, r2=2.34} {min(r1,r2,r1+r2,r1-r2)} {-1.11}
-test_expr expr-2.23 {r1=1.23, r2=2.34} {max(r1,r2,r1+r2,r1-r2)} {3.57}
-test_expr expr-2.24 {r1=25.0, r2=11.0} {r1%r2} 3.0
-test_expr expr-2.25 {r1=1.23, r2=NULL} {coalesce(r1+r2,99.0)} 99.0
-test_expr expr-2.26 {r1=1e300, r2=1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
-test_expr expr-2.26b {r1=1e300, r2=-1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
-test_expr expr-2.27 {r1=1.1, r2=0.0} {r1/r2} {{}}
-test_expr expr-2.28 {r1=1.1, r2=0.0} {r1%r2} {{}}
+ifcapable floatingpoint {
+  test_expr expr-2.4 {r1=1.23, r2=2.34} {r1/r2} 0.525641025641026
+  test_expr expr-2.5 {r1=1.23, r2=2.34} {r2/r1} 1.90243902439024
+  test_expr expr-2.6 {r1=1.23, r2=2.34} {r2<r1} 0
+  test_expr expr-2.7 {r1=1.23, r2=2.34} {r2<=r1} 0
+  test_expr expr-2.8 {r1=1.23, r2=2.34} {r2>r1} 1
+  test_expr expr-2.9 {r1=1.23, r2=2.34} {r2>=r1} 1
+  test_expr expr-2.10 {r1=1.23, r2=2.34} {r2!=r1} 1
+  test_expr expr-2.11 {r1=1.23, r2=2.34} {r2=r1} 0
+  test_expr expr-2.12 {r1=1.23, r2=2.34} {r2<>r1} 1
+  test_expr expr-2.13 {r1=1.23, r2=2.34} {r2==r1} 0
+  test_expr expr-2.14 {r1=2.34, r2=2.34} {r2<r1} 0
+  test_expr expr-2.15 {r1=2.34, r2=2.34} {r2<=r1} 1
+  test_expr expr-2.16 {r1=2.34, r2=2.34} {r2>r1} 0
+  test_expr expr-2.17 {r1=2.34, r2=2.34} {r2>=r1} 1
+  test_expr expr-2.18 {r1=2.34, r2=2.34} {r2!=r1} 0
+  test_expr expr-2.19 {r1=2.34, r2=2.34} {r2=r1} 1
+  test_expr expr-2.20 {r1=2.34, r2=2.34} {r2<>r1} 0
+  test_expr expr-2.21 {r1=2.34, r2=2.34} {r2==r1} 1
+  test_expr expr-2.22 {r1=1.23, r2=2.34} {min(r1,r2,r1+r2,r1-r2)} {-1.11}
+  test_expr expr-2.23 {r1=1.23, r2=2.34} {max(r1,r2,r1+r2,r1-r2)} {3.57}
+  test_expr expr-2.24 {r1=25.0, r2=11.0} {r1%r2} 3.0
+  test_expr expr-2.25 {r1=1.23, r2=NULL} {coalesce(r1+r2,99.0)} 99.0
+  test_expr expr-2.26 {r1=1e300, r2=1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
+  test_expr expr-2.26b {r1=1e300, r2=-1e300} {coalesce((r1*r2)*0.0,99.0)} 99.0
+  test_expr expr-2.27 {r1=1.1, r2=0.0} {r1/r2} {{}}
+  test_expr expr-2.28 {r1=1.1, r2=0.0} {r1%r2} {{}}
+}
 
 test_expr expr-3.1 {t1='abc', t2='xyz'} {t1<t2} 1
 test_expr expr-3.2 {t1='xyz', t2='abc'} {t1<t2} 0
@@ -233,17 +256,20 @@ test_expr expr-4.6 {t1='0.000', t2='0.0'} {t1==t2} 0
 test_expr expr-4.7 {t1=' 0.000', t2=' 0.0'} {t1==t2} 0
 test_expr expr-4.8 {t1='0.0', t2='abc'} {t1<t2} 1
 test_expr expr-4.9 {t1='0.0', t2='abc'} {t1==t2} 0
-test_expr expr-4.10 {r1='0.0', r2='abc'} {r1>r2} 0
-test_expr expr-4.11 {r1='abc', r2='Abc'} {r1<r2} 0
-test_expr expr-4.12 {r1='abc', r2='Abc'} {r1>r2} 1
-test_expr expr-4.13 {r1='abc', r2='Bbc'} {r1<r2} 0
-test_expr expr-4.14 {r1='abc', r2='Bbc'} {r1>r2} 1
-test_expr expr-4.15 {r1='0', r2='0.0'} {r1==r2} 1
-test_expr expr-4.16 {r1='0.000', r2='0.0'} {r1==r2} 1
-test_expr expr-4.17 {r1=' 0.000', r2=' 0.0'} {r1==r2} 0
-test_expr expr-4.18 {r1='0.0', r2='abc'} {r1<r2} 1
-test_expr expr-4.19 {r1='0.0', r2='abc'} {r1==r2} 0
-test_expr expr-4.20 {r1='0.0', r2='abc'} {r1>r2} 0
+
+ifcapable floatingpoint {
+  test_expr expr-4.10 {r1='0.0', r2='abc'} {r1>r2} 0
+  test_expr expr-4.11 {r1='abc', r2='Abc'} {r1<r2} 0
+  test_expr expr-4.12 {r1='abc', r2='Abc'} {r1>r2} 1
+  test_expr expr-4.13 {r1='abc', r2='Bbc'} {r1<r2} 0
+  test_expr expr-4.14 {r1='abc', r2='Bbc'} {r1>r2} 1
+  test_expr expr-4.15 {r1='0', r2='0.0'} {r1==r2} 1
+  test_expr expr-4.16 {r1='0.000', r2='0.0'} {r1==r2} 1
+  test_expr expr-4.17 {r1=' 0.000', r2=' 0.0'} {r1==r2} 0
+  test_expr expr-4.18 {r1='0.0', r2='abc'} {r1<r2} 1
+  test_expr expr-4.19 {r1='0.0', r2='abc'} {r1==r2} 0
+  test_expr expr-4.20 {r1='0.0', r2='abc'} {r1>r2} 0
+}
 
 # CSL is true if LIKE is case sensitive and false if not.
 # NCSL is the opposite.  Use these variables as the result
@@ -575,7 +601,9 @@ test_expr2 expr-7.36 {a<2 OR (a<0 OR b=0)} {{} 1}
 test_expr2 expr-7.37 {a<2 OR (b=0 OR a<0)} {{} 1}
 test_expr2 expr-7.38 {a<2 OR (a<0 AND b=0)} {1}
 test_expr2 expr-7.39 {a<2 OR (b=0 AND a<0)} {1}
-test_expr2 expr-7.40 {((a<2 OR a IS NULL) AND b<3) OR b>1e10} {{} 1}
+ifcapable floatingpoint {
+  test_expr2 expr-7.40 {((a<2 OR a IS NULL) AND b<3) OR b>1e10} {{} 1}
+}
 test_expr2 expr-7.41 {a BETWEEN -1 AND 1} {1}
 test_expr2 expr-7.42 {a NOT BETWEEN 2 AND 100} {1}
 test_expr2 expr-7.43 {(b+1234)||'this is a string that is at least 32 characters long' BETWEEN 1 AND 2} {}
@@ -614,23 +642,28 @@ test_expr2 expr-7.68 {b = abs(+-++-2)}                {1}
 test_expr2 expr-7.69 {b = abs(++++-2)}                {1}
 test_expr2 expr-7.70 {b = 5 - abs(+3)}                {1}
 test_expr2 expr-7.71 {b = 5 - abs(-3)}                {1}
-test_expr2 expr-7.72 {b = abs(-2.0)}                  {1}
+ifcapable floatingpoint {
+  test_expr2 expr-7.72 {b = abs(-2.0)}                  {1}
+}
 test_expr2 expr-7.73 {b = 6 - abs(-a)}                {2}
-test_expr2 expr-7.74 {b = abs(8.0)}                   {3}
-
+ifcapable floatingpoint {
+  test_expr2 expr-7.74 {b = abs(8.0)}                   {3}
+}
 
 # Test the CURRENT_TIME, CURRENT_DATE, and CURRENT_TIMESTAMP expressions.
 #
-set sqlite_current_time 1157124849
-do_test expr-8.1 {
-  execsql {SELECT CURRENT_TIME}
-} {15:34:09}
-do_test expr-8.2 {
-  execsql {SELECT CURRENT_DATE}
-} {2006-09-01}
-do_test expr-8.3 {
-  execsql {SELECT CURRENT_TIMESTAMP}
-} {{2006-09-01 15:34:09}}
+ifcapable {floatingpoint} {
+  set sqlite_current_time 1157124849
+  do_test expr-8.1 {
+    execsql {SELECT CURRENT_TIME}
+  } {15:34:09}
+  do_test expr-8.2 {
+    execsql {SELECT CURRENT_DATE}
+  } {2006-09-01}
+  do_test expr-8.3 {
+    execsql {SELECT CURRENT_TIMESTAMP}
+  } {{2006-09-01 15:34:09}}
+}
 ifcapable datetime {
   do_test expr-8.4 {
     execsql {SELECT CURRENT_TIME==time('now');}
@@ -644,9 +677,11 @@ ifcapable datetime {
 }
 set sqlite_current_time 0
 
-do_test expr-9.1 {
-  execsql {SELECT round(-('-'||'123'))}
-} 123.0
+ifcapable floatingpoint {
+  do_test expr-9.1 {
+    execsql {SELECT round(-('-'||'123'))}
+  } 123.0
+}
 
 # Test an error message that can be generated by the LIKE expression
 do_test expr-10.1 {
@@ -689,12 +724,14 @@ do_test expr-11.11 {
 do_test expr-11.12 {
   execsql {SELECT typeof(-00000009223372036854775808)}
 } {integer}
-do_test expr-11.13 {
-  execsql {SELECT typeof(-9223372036854775809)}
-} {real}
-do_test expr-11.14 {
-  execsql {SELECT typeof(-00000009223372036854775809)}
-} {real}
+ifcapable floatingpoint {
+  do_test expr-11.13 {
+    execsql {SELECT typeof(-9223372036854775809)}
+  } {real}
+  do_test expr-11.14 {
+    execsql {SELECT typeof(-00000009223372036854775809)}
+  } {real}
+}
 
 # These two statements used to leak memory (because of missing %destructor
 # directives in parse.y).
@@ -709,37 +746,43 @@ do_test expr-12.2 {
   }
 } {1 {near ")": syntax error}}
 
-do_test expr-13.1 {
-  execsql {
-    SELECT 12345678901234567890;
-  }
-} {1.23456789012346e+19}
+ifcapable floatingpoint {
+  do_test expr-13.1 {
+    execsql {
+      SELECT 12345678901234567890;
+    }
+  } {1.23456789012346e+19}
+}
 
 # Implicit String->Integer conversion is used when possible.
 #
-do_test expr-13.2 {
-  execsql {
-    SELECT 0+'9223372036854775807'
-  }
-} {9223372036854775807}
-do_test expr-13.3 {
-  execsql {
-    SELECT '9223372036854775807'+0
-  }
-} {9223372036854775807}
+if {[working_64bit_int]} {
+  do_test expr-13.2 {
+    execsql {
+      SELECT 0+'9223372036854775807'
+    }
+  } {9223372036854775807}
+  do_test expr-13.3 {
+    execsql {
+      SELECT '9223372036854775807'+0
+    }
+  } {9223372036854775807}
+}
 
 # If the value is too large, use String->Float conversion.
 #
-do_test expr-13.4 {
-  execsql {
-    SELECT 0+'9223372036854775808'
-  }
-} {9.22337203685478e+18}
-do_test expr-13.5 {
-  execsql {
-    SELECT '9223372036854775808'+0
-  }
-} {9.22337203685478e+18}
+ifcapable floatingpoint {
+  do_test expr-13.4 {
+    execsql {
+      SELECT 0+'9223372036854775808'
+    }
+  } {9.22337203685478e+18}
+  do_test expr-13.5 {
+    execsql {
+      SELECT '9223372036854775808'+0
+    }
+  } {9.22337203685478e+18}
+}
 
 # Use String->float conversion if the value is explicitly a floating
 # point value.

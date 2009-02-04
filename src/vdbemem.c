@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.136 2009/02/03 15:39:01 drh Exp $
+** $Id: vdbemem.c,v 1.137 2009/02/04 03:59:25 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -373,17 +373,20 @@ double sqlite3VdbeRealValue(Mem *pMem){
   }else if( pMem->flags & MEM_Int ){
     return (double)pMem->u.i;
   }else if( pMem->flags & (MEM_Str|MEM_Blob) ){
-    double val = 0.0;
+    /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+    double val = (double)0;
     pMem->flags |= MEM_Str;
     if( sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8)
        || sqlite3VdbeMemNulTerminate(pMem) ){
-      return 0.0;
+      /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+      return (double)0;
     }
     assert( pMem->z );
     sqlite3AtoF(pMem->z, &val);
     return val;
   }else{
-    return 0.0;
+    /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+    return (double)0;
   }
 }
 
@@ -969,7 +972,8 @@ int sqlite3ValueFromExpr(
   }else if( op==TK_UMINUS ) {
     if( SQLITE_OK==sqlite3ValueFromExpr(db,pExpr->pLeft,enc,affinity,&pVal) ){
       pVal->u.i = -1 * pVal->u.i;
-      pVal->r = -1.0 * pVal->r;
+      /* (double)-1 In case of SQLITE_OMIT_FLOATING_POINT... */
+      pVal->r = (double)-1 * pVal->r;
     }
   }
 #ifndef SQLITE_OMIT_BLOB_LITERAL

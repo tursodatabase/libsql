@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.367 2009/02/04 01:49:30 shane Exp $
+** $Id: where.c,v 1.368 2009/02/04 03:59:25 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -1547,7 +1547,8 @@ static double bestVirtualIndex(
                              + sizeof(*pIdxOrderBy)*nOrderBy );
     if( pIdxInfo==0 ){
       sqlite3ErrorMsg(pParse, "out of memory");
-      return 0.0;
+      /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+      return (double)0;
     }
     *ppIdxInfo = pIdxInfo;
 
@@ -1650,7 +1651,8 @@ static double bestVirtualIndex(
   pIdxInfo->idxNum = 0;
   pIdxInfo->needToFreeIdxStr = 0;
   pIdxInfo->orderByConsumed = 0;
-  pIdxInfo->estimatedCost = SQLITE_BIG_DBL / 2.0;
+  /* ((double)2) In case of SQLITE_OMIT_FLOATING_POINT... */
+  pIdxInfo->estimatedCost = SQLITE_BIG_DBL / ((double)2);
   nOrderBy = pIdxInfo->nOrderBy;
   if( pIdxInfo->nOrderBy && !orderByUsable ){
     *(int*)&pIdxInfo->nOrderBy = 0;
@@ -1679,7 +1681,8 @@ static double bestVirtualIndex(
     if( !pIdxInfo->aConstraint[i].usable && pUsage[i].argvIndex>0 ){
       sqlite3ErrorMsg(pParse, 
           "table %s: xBestIndex returned an invalid plan", pTab->zName);
-      return 0.0;
+      /* (double)0 In case of SQLITE_OMIT_FLOATING_POINT... */
+      return (double)0;
     }
   }
 
@@ -3092,12 +3095,14 @@ WhereInfo *sqlite3WhereBegin(
           sCost.plan.wsFlags = WHERE_VIRTUALTABLE | WHERE_ORDERBY;
         }
         sCost.plan.nEq = 0;
-        if( (SQLITE_BIG_DBL/2.0)<sCost.rCost ){
+        /* (double)2 In case of SQLITE_OMIT_FLOATING_POINT... */
+        if( (SQLITE_BIG_DBL/((double)2))<sCost.rCost ){
           /* The cost is not allowed to be larger than SQLITE_BIG_DBL (the
           ** inital value of lowestCost in this loop. If it is, then
           ** the (cost<lowestCost) test below will never be true.
           */ 
-          sCost.rCost = (SQLITE_BIG_DBL/2.0);
+          /* (double)2 In case of SQLITE_OMIT_FLOATING_POINT... */
+          sCost.rCost = (SQLITE_BIG_DBL/((double)2));
         }
       }else 
 #endif
