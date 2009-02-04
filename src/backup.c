@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.4 2009/02/03 22:51:06 drh Exp $
+** $Id: backup.c,v 1.5 2009/02/04 01:49:30 shane Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -260,7 +260,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     Pager * const pSrcPager = sqlite3BtreePager(p->pSrc);     /* Source pager */
     Pager * const pDestPager = sqlite3BtreePager(p->pDest);   /* Dest pager */
     int ii;                            /* Iterator variable */
-    int nSrcPage;                      /* Size of source db in pages */
+    int nSrcPage = -1;                 /* Size of source db in pages */
     int bCloseTrans = 0;               /* True if src db requires unlocking */
 
     /* If the source pager is currently in a write-transaction, return
@@ -293,7 +293,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerPagecount(pSrcPager, &nSrcPage);
     }
-    for(ii=0; ii<nPage && p->iNext<=nSrcPage && rc==SQLITE_OK; ii++){
+    for(ii=0; ii<nPage && p->iNext<=(Pgno)nSrcPage && rc==SQLITE_OK; ii++){
       const Pgno iSrcPg = p->iNext;                 /* Source page number */
       if( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) ){
         DbPage *pSrcPg;                             /* Source page object */
@@ -308,7 +308,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     if( rc==SQLITE_OK ){
       p->nPagecount = nSrcPage;
       p->nRemaining = nSrcPage+1-p->iNext;
-      if( p->iNext>nSrcPage ){
+      if( p->iNext>(Pgno)nSrcPage ){
         rc = SQLITE_DONE;
       }
     }
@@ -375,7 +375,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
             iOff+=nSrcPagesize
           ){
             PgHdr *pSrcPg = 0;
-            const Pgno iSrcPg = (iOff/nSrcPagesize)+1;
+            const Pgno iSrcPg = (Pgno)((iOff/nSrcPagesize)+1);
             rc = sqlite3PagerGet(pSrcPager, iSrcPg, &pSrcPg);
             if( rc==SQLITE_OK ){
               u8 *zData = sqlite3PagerGetData(pSrcPg);

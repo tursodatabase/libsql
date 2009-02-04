@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.366 2009/01/30 05:40:27 shane Exp $
+** $Id: where.c,v 1.367 2009/02/04 01:49:30 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -888,7 +888,7 @@ static void exprAnalyzeOrTerm(
   if( chngToIN ){
     int okToChngToIN = 0;     /* True if the conversion to IN is valid */
     int iColumn = -1;         /* Column index on lhs of IN operator */
-    int iCursor;              /* Table cursor common to all terms */
+    int iCursor = -1;         /* Table cursor common to all terms */
     int j = 0;                /* Loop counter */
 
     /* Search for a table and column that appears on one side or the

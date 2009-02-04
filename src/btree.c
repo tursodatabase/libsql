@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.564 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: btree.c,v 1.565 2009/02/04 01:49:30 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4538,8 +4538,8 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   ** first trunk in the free-list is full. Either way, the page being freed
   ** will become the new first trunk page in the free-list.
   */
-  if( (!pPage && (rc = sqlite3BtreeGetPage(pBt, iPage, &pPage, 0)))
-   ||            (rc = sqlite3PagerWrite(pPage->pDbPage))
+  if(   ((!pPage) && (0 != (rc = sqlite3BtreeGetPage(pBt, iPage, &pPage, 0))))
+     || (0 != (rc = sqlite3PagerWrite(pPage->pDbPage)))
   ){
     goto freepage_out;
   }
@@ -4569,7 +4569,7 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
   Pgno ovflPgno;
   int rc;
   int nOvfl;
-  int ovflPageSize;
+  u16 ovflPageSize;
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   sqlite3BtreeParseCellPtr(pPage, pCell, &info);
@@ -4577,11 +4577,12 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
     return SQLITE_OK;  /* No overflow pages. Return without doing anything */
   }
   ovflPgno = get4byte(&pCell[info.iOverflow]);
+  assert( pBt->usableSize > 4 );
   ovflPageSize = pBt->usableSize - 4;
   nOvfl = (info.nPayload - info.nLocal + ovflPageSize - 1)/ovflPageSize;
   assert( ovflPgno==0 || nOvfl>0 );
   while( nOvfl-- ){
-    Pgno iNext;
+    Pgno iNext = 0;
     MemPage *pOvfl = 0;
     if( ovflPgno==0 || ovflPgno>pagerPagecount(pBt) ){
       return SQLITE_CORRUPT_BKPT;

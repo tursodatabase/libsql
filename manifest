@@ -1,5 +1,5 @@
-C Correction\sto\scheck-ins\s(6246)\sand\s(6247):\s\sThe\sbackup\sobject\smight\snot\nhold\sa\svalid\sdestination\sconnection\spointer.\s\sAlso,\sdo\snot\sreset\sthe\npage\scache\swhen\sestablishing\sa\sread-lock\swhile\sthere\sis\sa\spersistent\nor\struncated\sjournal,\sonly\sif\sthere\sis\sa\sjournal\sthat\sreally\sneeds\sto\nrollback.\s\sOtherwise\sbackups\salways\sreset\swhenever\sthe\ssource\sdatabase\nfile\sis\sread.\s(CVS\s6248)
-D 2009-02-03T22:51:06
+C Remove\scompiler\swarnings\sunder\sMSVC.\s(CVS\s6249)
+D 2009-02-04T01:49:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,10 +101,10 @@ F src/alter.c 0ec29744c36c6e976596ce38c16289ebc5dc94db
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 81d37d1948f409146a7b22b96998fd90649d1fd3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/backup.c ddae8526793b0e2fab7d9e686b63c766218dfabe
+F src/backup.c 1cfa5ed161dc3adede5cf7bb5baa0d03c9d7488c
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 800a065686c49a0cdefc933779a750a7c3c0509f
+F src/btree.c 71f30e74389aa7ae51421592dfaf69511152677c
 F src/btree.h 4eab72af6adf95f0b08b61a72ef9781bdb0bf63f
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
 F src/build.c 6f3d5f74e262d561d77f0210c6063b7122f16c98
@@ -143,7 +143,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c f0fce3042011d462b8ae633564a5668260bd3636
 F src/os_win.c ec133f2a3c0da786995ea09ba67056af8f18cc2e
-F src/pager.c b8f4ae64cb179618da4bc08989c7bd5a50a5e12a
+F src/pager.c 1181eac160b1bc58108deb013624437ed695d15f
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y 4f4d16aee0d11f69fec2adb77dac88878043ed8d
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
@@ -209,7 +209,7 @@ F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c c6127c335f802ba159c6fec4e3284ba82a070602
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 488c2660e13224ff70c0c82761118efb547f8f0d
-F src/where.c ac21a2bcfda6f2051b1cbaad361924295ec52771
+F src/where.c fb89dfb2d9f99ed75c8bff6148fdae07791d7a91
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 76f23a4394574e31f237e55c641bc70534f44d97
-R 5bdad9729a46d9221b6bdee25bf60220
-U drh
-Z a3b0a3e20a12c71211622ecafa1dae99
+P 7f827ba9d7af2dfe44aed386b4407716c85daf5e
+R 64bfcfe14f6ed5f9fc8ac6244bf9afce
+U shane
+Z 3dacbef726dfade40da5a8d7ccd5cff0
