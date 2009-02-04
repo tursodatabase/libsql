@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.52 2009/01/07 03:59:47 drh Exp $
+** $Id: test_malloc.c,v 1.53 2009/02/04 15:27:40 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -132,6 +132,15 @@ static void faultsimConfig(int nDelay, int nRepeat){
   memfault.nBenign = 0;
   memfault.nFail = 0;
   memfault.enable = nDelay>=0;
+
+  /* Sometimes, when running multi-threaded tests, the isBenignMode 
+  ** variable is not properly incremented/decremented so that it is
+  ** 0 when not inside a benign malloc block. This doesn't affect
+  ** the multi-threaded tests, as they do not use this system. But
+  ** it does affect OOM tests run later in the same process. So
+  ** zero the variable here, just to be sure.
+  */
+  memfault.isBenignMode = 0;
 }
 
 /*

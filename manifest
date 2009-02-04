@@ -1,5 +1,5 @@
-C Ensure\sthat\sthread001.test\sand\sthread002.test\sreset\sthe\sglobal\sshared-cache-enabled\ssetting\sbefore\sthey\sfinish.\s(CVS\s6253)
-D 2009-02-04T11:57:46
+C Fix\sa\sbug\sin\stest_malloc.c\swhereby\srunning\smulti-threaded\stest\scases\scould\scause\ssubsequent\sOOM\stests\sto\sfail.\s(CVS\s6254)
+D 2009-02-04T15:27:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -183,7 +183,7 @@ F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c 0f4b9a929fae2be5bee0230f29204227c3d76c71
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c cf348d78704340f72f8ab9f9327a6d4a0d71d351
+F src/test_malloc.c d23050c7631ec9ee0369c7ca905e6c9233968e11
 F src/test_md5.c 032ae2bb6f81da350d2404e81fa8d560c8268026
 F src/test_mutex.c 5f772b1b9952e1e559e3d54e63bc7ec6f98fecd0
 F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 20bd76055463c85f62a450e368f4bcf7d2215f94
-R 5cd73377bcb5ebdb093e3e59f4a7e629
+P 416288a9fa39c7c4d9d414de18edc0423ed83794
+R b4c0076c1c9c96f3ecf8e9deb80bef88
 U danielk1977
-Z a6a4dc91660a1953af2eb63cac4a4c46
+Z f3257774a634c8bfc5bc989d5c869af8
