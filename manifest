@@ -1,5 +1,5 @@
-C Simplify\swording\sof\sbackup\sAPI\serror\smessage.\s\sDecapitalize\ssome\sother\nerror\smessages.\s(CVS\s6256)
-D 2009-02-04T17:40:58
+C If\sthe\struncate\soperation\sfails\sin\sjournalmode=TRUNCATE,\sdo\snot\sfall\sback\nto\soverwriting\sthe\sjournal\sheader\swith\szeros.\s\sSimply\sfail\sthe\soperation.\s(CVS\s6257)
+D 2009-02-04T19:16:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c f0fce3042011d462b8ae633564a5668260bd3636
 F src/os_win.c b83b57c24ec5bca07cb0eca6f620e796209e952f
-F src/pager.c ce4a0a0f10ebfd8b2f70a5edf5af30d233ab8ce7
+F src/pager.c 8c946cca1c1e64bd2d4b15aa431481c96233c826
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y 4f4d16aee0d11f69fec2adb77dac88878043ed8d
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 572378d3a29c7d55fa4a15df14800c26d6c563a1
-R 0f34db2e5d0b116ed8002ee3600103a1
+P f92405afb649b698b735b423cd9195d4f8f137c9
+R c020d9bb7d6d6907a7c4a48e44d783aa
 U drh
-Z 549e649197447ad11fb6af43a27190a2
+Z 1ecadd6a03a8fc4b63b8359ff18261df
