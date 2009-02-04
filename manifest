@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\stest_malloc.c\swhereby\srunning\smulti-threaded\stest\scases\scould\scause\ssubsequent\sOOM\stests\sto\sfail.\s(CVS\s6254)
-D 2009-02-04T15:27:40
+C The\ssqlite3_backup_init()\sinterface\smust\slock\sthe\sdestination\sin\scase\sit\nneeds\sto\schange\sthe\serror\smessage.\s(CVS\s6255)
+D 2009-02-04T16:56:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,7 +101,7 @@ F src/alter.c 0ec29744c36c6e976596ce38c16289ebc5dc94db
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 81d37d1948f409146a7b22b96998fd90649d1fd3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/backup.c 1cfa5ed161dc3adede5cf7bb5baa0d03c9d7488c
+F src/backup.c 2419ac3abf57714fbdd5e3cfaaf278ae727d1ced
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 71f30e74389aa7ae51421592dfaf69511152677c
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 416288a9fa39c7c4d9d414de18edc0423ed83794
-R b4c0076c1c9c96f3ecf8e9deb80bef88
-U danielk1977
-Z f3257774a634c8bfc5bc989d5c869af8
+P 03ea9e591337a3c442080ee7cd01cc4ee85c1357
+R 81020b5e1a4ee3bdeda98e63cca69bd3
+U drh
+Z d9fd2e5280186fa7e77fcf315dea28ee
