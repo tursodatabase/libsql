@@ -1,4 +1,4 @@
-# 2008 January 30
+# 2009 January 30
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -12,7 +12,7 @@
 # focus of this file is testing the handling of OOM errors by the
 # sqlite3_backup_XXX APIs.
 #
-# $Id: backup_malloc.test,v 1.1 2009/02/03 16:51:25 danielk1977 Exp $
+# $Id: backup_malloc.test,v 1.2 2009/02/04 22:46:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl

@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.235 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: tclsqlite.c,v 1.236 2009/02/04 22:46:47 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -983,30 +983,31 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   int choice;
   int rc = TCL_OK;
   static const char *DB_strs[] = {
-    "authorizer",         "busy",              "cache",
-    "changes",            "close",             "collate",
-    "collation_needed",   "commit_hook",       "complete",
-    "copy",               "enable_load_extension","errorcode",
-    "eval",               "exists",            "function",
-    "incrblob",           "interrupt",         "last_insert_rowid",
-    "nullvalue",          "onecolumn",         "profile",
-    "progress",           "rekey",             "rollback_hook",
-    "status",             "timeout",           "total_changes",
-    "trace",              "transaction",       "update_hook",
-    "version",            0                    
+    "authorizer",         "backup",            "busy",
+    "cache",              "changes",           "close",
+    "collate",            "collation_needed",  "commit_hook",
+    "complete",           "copy",              "enable_load_extension",
+    "errorcode",          "eval",              "exists",
+    "function",           "incrblob",          "interrupt",
+    "last_insert_rowid",  "nullvalue",         "onecolumn",
+    "profile",            "progress",          "rekey",
+    "restore",            "rollback_hook",     "status",
+    "timeout",            "total_changes",     "trace",
+    "transaction",        "update_hook",       "version",
+    0                    
   };
   enum DB_enum {
-    DB_AUTHORIZER,        DB_BUSY,             DB_CACHE,
-    DB_CHANGES,           DB_CLOSE,            DB_COLLATE,
-    DB_COLLATION_NEEDED,  DB_COMMIT_HOOK,      DB_COMPLETE,
-    DB_COPY,              DB_ENABLE_LOAD_EXTENSION,DB_ERRORCODE,
-    DB_EVAL,              DB_EXISTS,           DB_FUNCTION,
-    DB_INCRBLOB,          DB_INTERRUPT,        DB_LAST_INSERT_ROWID,
-    DB_NULLVALUE,         DB_ONECOLUMN,        DB_PROFILE,
-    DB_PROGRESS,          DB_REKEY,            DB_ROLLBACK_HOOK,
-    DB_STATUS,            DB_TIMEOUT,          DB_TOTAL_CHANGES,
-    DB_TRACE,             DB_TRANSACTION,      DB_UPDATE_HOOK, 
-    DB_VERSION
+    DB_AUTHORIZER,        DB_BACKUP,           DB_BUSY,
+    DB_CACHE,             DB_CHANGES,          DB_CLOSE,
+    DB_COLLATE,           DB_COLLATION_NEEDED, DB_COMMIT_HOOK,
+    DB_COMPLETE,          DB_COPY,             DB_ENABLE_LOAD_EXTENSION,
+    DB_ERRORCODE,         DB_EVAL,             DB_EXISTS,
+    DB_FUNCTION,          DB_INCRBLOB,         DB_INTERRUPT,
+    DB_LAST_INSERT_ROWID, DB_NULLVALUE,        DB_ONECOLUMN,
+    DB_PROFILE,           DB_PROGRESS,         DB_REKEY,
+    DB_RESTORE,           DB_ROLLBACK_HOOK,    DB_STATUS,
+    DB_TIMEOUT,           DB_TOTAL_CHANGES,    DB_TRACE,
+    DB_TRANSACTION,       DB_UPDATE_HOOK,      DB_VERSION,
   };
   /* don't leave trailing commas on DB_enum, it confuses the AIX xlc compiler */
 
@@ -1071,6 +1072,55 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       }
     }
 #endif
+    break;
+  }
+
+  /*    $db backup ?DATABASE? FILENAME
+  **
+  ** Open or create a database file named FILENAME.  Transfer the
+  ** content of local database DATABASE (default: "main") into the
+  ** FILENAME database.
+  */
+  case DB_BACKUP: {
+    const char *zDestFile;
+    const char *zSrcDb;
+    sqlite3 *pDest;
+    sqlite3_backup *pBackup;
+
+    if( objc==3 ){
+      zSrcDb = "main";
+      zDestFile = Tcl_GetString(objv[2]);
+    }else if( objc==4 ){
+      zSrcDb = Tcl_GetString(objv[2]);
+      zDestFile = Tcl_GetString(objv[3]);
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
+      return TCL_ERROR;
+    }
+    rc = sqlite3_open(zDestFile, &pDest);
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, "cannot open target database: ",
+           sqlite3_errmsg(pDest), (char*)0);
+      sqlite3_close(pDest);
+      return TCL_ERROR;
+    }
+    pBackup = sqlite3_backup_init(pDest, "main", pDb->db, zSrcDb);
+    if( pBackup==0 ){
+      Tcl_AppendResult(interp, "backup failed: ",
+           sqlite3_errmsg(pDest), (char*)0);
+      sqlite3_close(pDest);
+      return TCL_ERROR;
+    }
+    while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){}
+    sqlite3_backup_finish(pBackup);
+    if( rc==SQLITE_DONE ){
+      rc = TCL_OK;
+    }else{
+      Tcl_AppendResult(interp, "backup failed: ",
+           sqlite3_errmsg(pDest), (char*)0);
+      rc = TCL_ERROR;
+    }
+    sqlite3_close(pDest);
     break;
   }
 
@@ -2148,6 +2198,65 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       rc = TCL_ERROR;
     }
 #endif
+    break;
+  }
+
+  /*    $db restore ?DATABASE? FILENAME
+  **
+  ** Open a database file named FILENAME.  Transfer the content 
+  ** of FILENAME into the local database DATABASE (default: "main").
+  */
+  case DB_RESTORE: {
+    const char *zSrcFile;
+    const char *zDestDb;
+    sqlite3 *pSrc;
+    sqlite3_backup *pBackup;
+    int nTimeout = 0;
+
+    if( objc==3 ){
+      zDestDb = "main";
+      zSrcFile = Tcl_GetString(objv[2]);
+    }else if( objc==4 ){
+      zDestDb = Tcl_GetString(objv[2]);
+      zSrcFile = Tcl_GetString(objv[3]);
+    }else{
+      Tcl_WrongNumArgs(interp, 2, objv, "?DATABASE? FILENAME");
+      return TCL_ERROR;
+    }
+    rc = sqlite3_open_v2(zSrcFile, &pSrc, SQLITE_OPEN_READONLY, 0);
+    if( rc!=SQLITE_OK ){
+      Tcl_AppendResult(interp, "cannot open source database: ",
+           sqlite3_errmsg(pSrc), (char*)0);
+      sqlite3_close(pSrc);
+      return TCL_ERROR;
+    }
+    pBackup = sqlite3_backup_init(pDb->db, zDestDb, pSrc, "main");
+    if( pBackup==0 ){
+      Tcl_AppendResult(interp, "restore failed: ",
+           sqlite3_errmsg(pDb->db), (char*)0);
+      sqlite3_close(pSrc);
+      return TCL_ERROR;
+    }
+    while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
+              || rc==SQLITE_BUSY ){
+      if( rc==SQLITE_BUSY ){
+        if( nTimeout++ >= 3 ) break;
+        sqlite3_sleep(100);
+      }
+    }
+    sqlite3_backup_finish(pBackup);
+    if( rc==SQLITE_DONE ){
+      rc = TCL_OK;
+    }else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
+      Tcl_AppendResult(interp, "restore failed: source database busy",
+                       (char*)0);
+      rc = TCL_ERROR;
+    }else{
+      Tcl_AppendResult(interp, "restore failed: ",
+           sqlite3_errmsg(pDb->db), (char*)0);
+      rc = TCL_ERROR;
+    }
+    sqlite3_close(pSrc);
     break;
   }
 

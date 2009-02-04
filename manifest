@@ -1,5 +1,5 @@
-C Add\s".backup"\sand\s".restore"\scommands\sto\sthe\sCLI\s-\simplemented\susing\sthe\nnew\sbackup\sAPI.\s(CVS\s6259)
-D 2009-02-04T20:55:58
+C Add\s"backup"\sand\s"restore"\smethods\sto\sthe\sTCL\sinterfaces\sand\stest\scases\nto\sexercise\sthose\smethods.\s(CVS\s6260)
+D 2009-02-04T22:46:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,14 +156,14 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
-F src/shell.c 6c674a4a4cc56c70ecfb26b07d486d43740b475f
+F src/shell.c f109ebbb50132926ebbc173a6c2d8838d5d78527
 F src/sqlite.h.in 31fa12602f784adea9be66424a2e8b052116736f
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 73c1d4f9716fe21f202f9d05c4fd9e6281f2636f
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
-F src/tclsqlite.c 7b3e7fc4856e8280939c9ca0c3a6e49bd2c4bb46
+F src/tclsqlite.c 524c1f49ccf9b6a5e3917591cf3b6c4f4204e607
 F src/test1.c f88b447699786d58a0136a3a48b12990abc72c8a
 F src/test2.c 9689e7d3b7791da8c03f9acd1ea801802cb83c17
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
@@ -233,9 +233,10 @@ F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
 F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
-F test/backup.test 3683d4d3d04e4db6ebba6a4dc9b9d882c3d03bff
-F test/backup_ioerr.test 2edd5e347e263733cae8c08f41bf3dbd7277b33d
-F test/backup_malloc.test 471fb098dae228ca840d4d51e41481901ac03578
+F test/backup.test f3592c6759de90fa7a7dcd4bce380aed97115c88
+F test/backup2.test 392318e059b83e87e5e4175f08be181a6ddce468
+F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
+F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 6adfef13d24bbe0c504b4547f292b9a170184f25
@@ -548,10 +549,10 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 0aac9468b69d2683e68ee2682cdae28d82a453ec
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
-F test/tclsqlite.test 30636c3151ccc2d553aa09020b885054141a1963
+F test/tclsqlite.test 413a8a887d89ea8fa7055e8d118ffb03b0a4c91a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 19b851b9e3e64d91e9867619b2a3f5fffee6e125
-F test/tester.tcl 3d11a8c1d05535400880ac4f8c5402b8dee14b7f
+F test/tester.tcl 94dc2fe5f8d9179e58ebfe1c7ce2618bdb44799d
 F test/thread001.test 7595e58213eda498794860f608e0ea7e499d18d0
 F test/thread002.test 0258a50c55f2371de2e4c7e02bec2576c1eef359
 F test/thread003.test e17754799649c2b732c295620dca041c32f01e16
@@ -700,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0882a028c8cee868bb79728499fb1fa7c0630fa6
-R 6acad12f687e13cb8812850fc6ee53f0
+P 003e1d62189e9e37f901d86a696cfccd22bd3b38
+R 007c4ac680893970254b4f79c5bdeaaf
 U drh
-Z 7b9fc40e749f6a4e8493cccb068ac51f
+Z b11130f7853d25d09c92b1b009dfc517

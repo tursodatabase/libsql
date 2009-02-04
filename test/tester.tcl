@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.137 2009/02/03 16:51:25 danielk1977 Exp $
+# $Id: tester.tcl,v 1.138 2009/02/04 22:46:47 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -866,6 +866,24 @@ proc allcksum {{db db}} {
     append txt $prag-[$db eval "PRAGMA $prag"]\n
   }
   # puts txt=$txt
+  return [md5 $txt]
+}
+
+# Generate a checksum based on the contents of a single database with
+# a database connection.  The name of the database is $dbname.  
+# Examples of $dbname are "temp" or "main".
+#
+proc dbcksum {db dbname} {
+  if {$dbname=="temp"} {
+    set master sqlite_temp_master
+  } else {
+    set master $dbname.sqlite_master
+  }
+  set alltab [$db eval "SELECT name FROM $master WHERE type='table'"]
+  set txt [$db eval "SELECT * FROM $master"]\n
+  foreach tab $alltab {
+    append txt [$db eval "SELECT * FROM $dbname.$tab"]\n
+  }
   return [md5 $txt]
 }
 

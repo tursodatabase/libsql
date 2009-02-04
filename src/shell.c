@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.200 2009/02/04 20:55:58 drh Exp $
+** $Id: shell.c,v 1.201 2009/02/04 22:46:47 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1113,6 +1113,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       sqlite3_close(pDest);
       return 1;
     }
+    open_db(p);
     pBackup = sqlite3_backup_init(pDest, "main", p->db, zDb);
     if( pBackup==0 ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(pDest));
@@ -1506,6 +1507,8 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3 *pSrc;
     sqlite3_backup *pBackup;
     int rc;
+    int nTimeout = 0;
+
     if( nArg==2 ){
       zSrcFile = azArg[1];
       zDb = "main";
@@ -1519,20 +1522,25 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       sqlite3_close(pSrc);
       return 1;
     }
+    open_db(p);
     pBackup = sqlite3_backup_init(p->db, zDb, pSrc, "main");
     if( pBackup==0 ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
       sqlite3_close(pSrc);
       return 1;
     }
-    while(  (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK ){
-      if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
-        sqlite3_sleep(10);
+    while( (rc = sqlite3_backup_step(pBackup,100))==SQLITE_OK
+          || rc==SQLITE_BUSY  ){
+      if( rc==SQLITE_BUSY ){
+        if( nTimeout++ >= 3 ) break;
+        sqlite3_sleep(100);
       }
     }
     sqlite3_backup_finish(pBackup);
     if( rc==SQLITE_DONE ){
       rc = SQLITE_OK;
+    }else if( rc==SQLITE_BUSY || rc==SQLITE_LOCKED ){
+      fprintf(stderr, "source database is busy\n");
     }else{
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(p->db));
     }
