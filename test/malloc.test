@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.74 2009/01/16 16:40:14 danielk1977 Exp $
+# $Id: malloc.test,v 1.75 2009/02/04 08:17:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -736,6 +736,7 @@ do_malloc_test 32 -tclprep {
   # Build a small database containing an indexed table.
   #
   db eval {
+    PRAGMA locking_mode = normal;
     BEGIN;
     CREATE TABLE t1(a PRIMARY KEY, b);
     INSERT INTO t1 VALUES(1, 'one');
@@ -749,7 +750,10 @@ do_malloc_test 32 -tclprep {
   # into the second connections pager cache.
   #
   sqlite3 db2 test.db
-  db2 eval { SELECT b FROM t1 }
+  db2 eval { 
+    PRAGMA locking_mode = normal;
+    SELECT b FROM t1;
+  }
 
 } -tclbody {
   # Running in exclusive mode, perform a database transaction that 

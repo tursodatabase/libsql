@@ -1,5 +1,5 @@
-C Changes\sto\scompletely\sremove\sall\sfloating\spoint\sops\sif\sSQLITE_OMIT_FLOATING_POINT\sdefined.\s\sNote\sthat\sw/o\sfp,\sdate/time,\sround,\snan,\setc.\sare\sall\sgone\sor\slimited\sin\sfunctionality.\s\s\sUpdated\ssome\sof\sthe\stest\sscripts\sto\ssupport\smissing\sfp\sand\s64-bit\sfunctionality.\s\s\sTicket\s#3029.\s(CVS\s6250)
-D 2009-02-04T03:59:25
+C Fix\sa\sbug\sin\smalloc.test\scausing\sthe\sexclusive\spermutation\sto\sfail.\sChanges\sto\stest\scode\sonly.\s(CVS\s6251)
+D 2009-02-04T08:17:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -436,7 +436,7 @@ F test/lock6.test eafa70db6f50b6f6291f4f83b80e98834724a50d
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test 228840643d2a4bc536bc8f677375948db62dbe1f
+F test/malloc.test 8e3ad667ef1c55147dcf9190b5edd3bf808ab147
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -700,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6301f08a2b32289a49c4af994f2770318c444b49
-R 1e107d374c57a504206ef2bd99db8710
-U shane
-Z a11c50747a0f4d959a770fa2e57dbba2
+P 5cef400023205b55152b91441acc78f9cd8d58a9
+R 8a047b5321fafe0b6dd980b42ce1d91f
+U danielk1977
+Z bae95d6f7b65009f90955deca10a86e3
