@@ -1,5 +1,5 @@
-C Fix\sthe\sdeclaration\sof\ssqlite3PendingByte\sso\sthat\sit\sworks\swith\sthe\namalgamation.\s(CVS\s6264)
-D 2009-02-05T16:53:43
+C Fix\sa\stest\scase\sthat\swas\sstill\susing\sthe\sold\spending_byte\smechanism.\s(CVS\s6265)
+D 2009-02-05T17:00:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -573,7 +573,7 @@ F test/tkt1536.test 83ff7a7b6e248016f8d682d4f7a4ae114070d466
 F test/tkt1537.test e3a14332de9770be8ff14bd15c19a49cbec10808
 F test/tkt1567.test 18023cc3626a365f0118e17b66decedec93b1a6f
 F test/tkt1644.test 80b6a2bb17885f3cf1cb886d97cdad13232bb869
-F test/tkt1667.test 0985dfcf8608f35e145feb6e7ad4e233f2bcb54b
+F test/tkt1667.test c5e5a9f6c71634b5edd1c54eeb84008771526562
 F test/tkt1873.test 255a002b9afdcf8b0fa3188984e2c964202340e9
 F test/tkt2141.test f543d96f50d5a5dc0bc744f7db74ea166720ce46
 F test/tkt2192.test ff40157e5f42e65f844255d220fc6b290470942f
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e8f192e2a93350a136d86bd9caceff65f52f3513
-R 6fdd4d4a128eec1805786ef3b8e11469
+P 193c871f3d16ce982040334c543610d330117bd5
+R d5652a2a1df1206bcb9247c6e46b26d9
 U drh
-Z 3ac24047ffee5278884ef0ae6103021c
+Z 566a5233b34049b2c94643d8e525a629

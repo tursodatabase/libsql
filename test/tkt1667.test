@@ -14,7 +14,7 @@
 # fixed.  
 #
 #
-# $Id: tkt1667.test,v 1.3 2008/07/12 14:52:20 drh Exp $
+# $Id: tkt1667.test,v 1.4 2009/02/05 17:00:54 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -32,7 +32,7 @@ file delete -force test.db test.db-journal
 # size of 1024).
 
 set first_ptrmap_page   [expr 1024/5 + 3]
-set sqlite_pending_byte [expr 1024 * ($first_ptrmap_page-1)]
+sqlite3_test_control_pending_byte [expr 1024 * ($first_ptrmap_page-1)]
 
 sqlite db test.db
 
