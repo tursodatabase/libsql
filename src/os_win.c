@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.147 2009/02/04 03:59:25 shane Exp $
+** $Id: os_win.c,v 1.148 2009/02/05 03:16:21 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -727,16 +727,21 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
   LONG lowerBits = (LONG)(nByte & 0xffffffff);
   winFile *pFile = (winFile*)id;
+  DWORD error = NO_ERROR;
   OSTRACE3("TRUNCATE %d %lld\n", pFile->h, nByte);
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( INVALID_SET_FILE_POINTER != rc ){
+  if( INVALID_SET_FILE_POINTER == rc ){
+    error = GetLastError();
+  }
+  if( error == NO_ERROR ){
     /* SetEndOfFile will fail if nByte is negative */
     if( SetEndOfFile(pFile->h) ){
       return SQLITE_OK;
     }
+    error = GetLastError();
   }
-  pFile->lastErrno = GetLastError();
+  pFile->lastErrno = error;
   return SQLITE_IOERR_TRUNCATE;
 }
 
