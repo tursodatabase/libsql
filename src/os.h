@@ -17,7 +17,7 @@
 ** This header file is #include-ed by sqliteInt.h and thus ends up
 ** being included by every source file.
 **
-** $Id: os.h,v 1.107 2009/01/14 23:03:41 drh Exp $
+** $Id: os.h,v 1.108 2009/02/05 16:31:46 drh Exp $
 */
 #ifndef _SQLITE_OS_H_
 #define _SQLITE_OS_H_
@@ -195,9 +195,7 @@
 ** a random byte is selected for a shared lock.  The pool of bytes for
 ** shared locks begins at SHARED_FIRST. 
 **
-** These #defines are available in sqlite_aux.h so that adaptors for
-** connecting SQLite to other operating systems can use the same byte
-** ranges for locking.  In particular, the same locking strategy and
+** The same locking strategy and
 ** byte ranges are used for Unix.  This leaves open the possiblity of having
 ** clients on win95, winNT, and unix all talking to the same shared file
 ** and all locking correctly.  To do so would require that samba (or whatever
@@ -221,13 +219,7 @@
 ** 1GB boundary.
 **
 */
-#ifndef SQLITE_TEST
-#define PENDING_BYTE      0x40000000  /* First byte past the 1GB boundary */
-#else
-extern unsigned int sqlite3_pending_byte;
-#define PENDING_BYTE sqlite3_pending_byte
-#endif
-
+#define PENDING_BYTE      sqlite3PendingByte
 #define RESERVED_BYTE     (PENDING_BYTE+1)
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510

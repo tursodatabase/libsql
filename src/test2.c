@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test2.c,v 1.69 2009/01/20 17:06:27 danielk1977 Exp $
+** $Id: test2.c,v 1.70 2009/02/05 16:31:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -557,6 +557,29 @@ static int fake_big_file(
 
 
 /*
+** test_control_pending_byte  PENDING_BYTE
+**
+** Set the PENDING_BYTE using the sqlite3_test_control() interface.
+*/
+static int testPendingByte(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int pbyte;
+  int rc;
+  if( argc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+                     " PENDING-BYTE\"", (void*)0);
+  }
+  if( Tcl_GetInt(interp, argv[1], &pbyte) ) return TCL_ERROR;
+  rc = sqlite3_test_control(SQLITE_TESTCTRL_PENDING_BYTE, pbyte);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(rc));
+  return TCL_OK;
+}  
+
+/*
 ** sqlite3BitvecBuiltinTest SIZE PROGRAM
 **
 ** Invoke the SQLITE_TESTCTRL_BITVEC_TEST operator on test_control.
@@ -624,7 +647,8 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_DISKIO
     { "fake_big_file",           (Tcl_CmdProc*)fake_big_file       },
 #endif
-    { "sqlite3BitvecBuiltinTest",(Tcl_CmdProc*)testBitvecBuiltinTest},
+    { "sqlite3BitvecBuiltinTest",(Tcl_CmdProc*)testBitvecBuiltinTest     },
+    { "sqlite3_test_control_pending_byte", (Tcl_CmdProc*)testPendingByte },
   };
   int i;
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
@@ -643,7 +667,7 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
   Tcl_LinkVar(interp, "sqlite_diskfull",
      (char*)&sqlite3_diskfull, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_pending_byte",
-     (char*)&sqlite3_pending_byte, TCL_LINK_INT);
+     (char*)&sqlite3PendingByte, TCL_LINK_INT | TCL_LINK_READ_ONLY);
   Tcl_LinkVar(interp, "sqlite_pager_n_sort_bucket",
      (char*)&sqlite3_pager_n_sort_bucket, TCL_LINK_INT);
   return TCL_OK;

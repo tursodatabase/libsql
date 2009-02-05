@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.831 2009/02/03 16:51:25 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.832 2009/02/05 16:31:46 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -510,10 +510,12 @@ struct BusyHandler {
   #define sqlite3GlobalConfig GLOBAL(struct Sqlite3Config, sqlite3Config)
   int sqlite3_wsd_init(int N, int J);
   void *sqlite3_wsd_find(void *K, int L);
+  int sqlite3PendingByte;
 #else
   #define SQLITE_WSD 
   #define GLOBAL(t,v) v
   #define sqlite3GlobalConfig sqlite3Config
+  int sqlite3PendingByte;
 #endif
 
 /*

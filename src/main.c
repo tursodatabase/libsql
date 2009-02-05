@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.527 2009/02/04 17:40:58 drh Exp $
+** $Id: main.c,v 1.528 2009/02/05 16:31:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2148,6 +2148,25 @@ int sqlite3_test_control(int op, ...){
       xBenignBegin = va_arg(ap, void_function);
       xBenignEnd = va_arg(ap, void_function);
       sqlite3BenignMallocHooks(xBenignBegin, xBenignEnd);
+      break;
+    }
+
+    /*
+    **  sqlite3_test_control(PENDING_BYTE, unsigned int X)
+    **
+    ** Set the PENDING byte to the value in the argument, if X>0.
+    ** Make no changes if X==0.  Return the value of the pending byte
+    ** as it existing before this routine was called.
+    **
+    ** IMPORTANT:  Changing the PENDING byte from 0x40000000 results in
+    ** an incompatible database file format.  Changing the PENDING byte
+    ** while any database connection is open results in undefined and
+    ** dileterious behavior.
+    */
+    case SQLITE_TESTCTRL_PENDING_BYTE: {
+      unsigned int newVal = va_arg(ap, unsigned int);
+      rc = sqlite3PendingByte;
+      if( newVal ) sqlite3PendingByte = newVal;
       break;
     }
   }

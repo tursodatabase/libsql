@@ -12,7 +12,7 @@
 **
 ** This file contains definitions of global variables and contants.
 **
-** $Id: global.c,v 1.11 2009/01/24 11:30:43 drh Exp $
+** $Id: global.c,v 1.12 2009/02/05 16:31:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -168,3 +168,23 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 ** read-only.
 */
 SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
+
+/*
+** The value of the "pending" byte must be 0x40000000 (1 byte past the
+** 1-gibabyte boundary) in a compatible database.  SQLite never uses
+** the database page that contains the pending byte.  It never attempts
+** to read or write that page.  The pending byte page is set assign
+** for use by the VFS layers as space for managing file locks.
+**
+** During testing, it is often desirable to move the pending byte to
+** a different position in the file.  This allows code that has to
+** deal with the pending byte to run on files that are much smaller
+** than 1 GiB.  The sqlite3_test_control() interface can be used to
+** move the pending byte.
+**
+** IMPORTANT:  Changing the pending byte to any value other than
+** 0x40000000 results in an incompatible database file format!
+** Changing the pending byte during operating results in undefined
+** and dileterious behavior.
+*/
+int sqlite3PendingByte = 0x40000000;

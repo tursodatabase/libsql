@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.26 2009/01/09 17:11:05 danielk1977 Exp $
+# $Id: misc7.test,v 1.27 2009/02/05 16:31:46 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -426,7 +426,7 @@ if {$tcl_platform(platform)!="windows" && $tcl_platform(platform)!="os2"} {
       }
     } {0 32}
     
-    set ::pending_byte_page [expr ($::sqlite_pending_byte / 1024) + 1]
+    sqlite3_test_control_pending_page [expr ($::sqlite_pending_byte / 1024) + 1]
     do_test misc7-17.3 {
       db eval {
         pragma writable_schema = true;

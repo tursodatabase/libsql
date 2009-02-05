@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock4.test,v 1.8 2008/03/14 08:57:42 danielk1977 Exp $
+# $Id: lock4.test,v 1.9 2009/02/05 16:31:46 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -53,7 +53,7 @@ do_test lock4-1.2 {
   # Create a script for the second process to run.
   #
   set out [open test2-script.tcl w]
-  puts $out "set sqlite_pending_byte [set sqlite_pending_byte]"
+  puts $out "sqlite3_test_control_pending_byte [set sqlite_pending_byte]"
   puts $out {
      sqlite3 db2 test2.db
      db2 eval {
