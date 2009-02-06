@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.7 2009/02/04 17:40:58 drh Exp $
+** $Id: backup.c,v 1.8 2009/02/06 05:59:44 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -188,6 +188,15 @@ sqlite3_backup *sqlite3_backup_init(
 }
 
 /*
+** Argument rc is an SQLite error code. Return true if this error is 
+** considered fatal if encountered during a backup operation. All errors
+** are considered fatal except for SQLITE_BUSY and SQLITE_LOCKED.
+*/
+static int isFatalError(int rc){
+  return (rc!=SQLITE_OK && rc!=SQLITE_BUSY && rc!=SQLITE_LOCKED);
+}
+
+/*
 ** Parameter zSrcData points to a buffer containing the data for 
 ** page iSrcPg from the source database. Copy this data into the 
 ** destination database.
@@ -203,7 +212,7 @@ static int backupOnePage(sqlite3_backup *p, Pgno iSrcPg, const u8 *zSrcData){
   i64 iOff;
 
   assert( p->bDestLocked );
-  assert( p->rc==SQLITE_OK );
+  assert( !isFatalError(p->rc) );
   assert( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) );
   assert( zSrcData );
 
@@ -258,7 +267,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
   }
 
   rc = p->rc;
-  if( rc==SQLITE_OK ){
+  if( !isFatalError(rc) ){
     Pager * const pSrcPager = sqlite3BtreePager(p->pSrc);     /* Source pager */
     Pager * const pDestPager = sqlite3BtreePager(p->pDest);   /* Dest pager */
     int ii;                            /* Iterator variable */
@@ -270,6 +279,8 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     */
     if( p->pDestDb && p->pSrc->pBt->inTransaction==TRANS_WRITE ){
       rc = SQLITE_LOCKED;
+    }else{
+      rc = SQLITE_OK;
     }
 
     /* Lock the destination database, if it is not locked already. */
@@ -295,7 +306,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerPagecount(pSrcPager, &nSrcPage);
     }
-    for(ii=0; ii<nPage && p->iNext<=(Pgno)nSrcPage && rc==SQLITE_OK; ii++){
+    for(ii=0; (nPage<0 || ii<nPage) && p->iNext<=(Pgno)nSrcPage && !rc; ii++){
       const Pgno iSrcPg = p->iNext;                 /* Source page number */
       if( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) ){
         DbPage *pSrcPg;                             /* Source page object */
@@ -410,9 +421,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       assert( rc2==SQLITE_OK );
     }
   
-    if( rc!=SQLITE_LOCKED && rc!=SQLITE_BUSY ){
-      p->rc = rc;
-    }
+    p->rc = rc;
   }
   if( p->pDestDb ){
     sqlite3_mutex_leave(p->pDestDb->mutex);
@@ -499,12 +508,13 @@ void sqlite3BackupUpdate(sqlite3_backup *pBackup, Pgno iPage, const u8 *aData){
   sqlite3_backup *p;                   /* Iterator variable */
   for(p=pBackup; p; p=p->pNext){
     assert( sqlite3_mutex_held(p->pSrc->pBt->mutex) );
-    if( p->rc==SQLITE_OK && iPage<p->iNext ){
+    if( !isFatalError(p->rc) && iPage<p->iNext ){
       /* The backup process p has already copied page iPage. But now it
       ** has been modified by a transaction on the source pager. Copy
       ** the new data into the backup.
       */
       int rc = backupOnePage(p, iPage, aData);
+      assert( rc!=SQLITE_BUSY && rc!=SQLITE_LOCKED );
       if( rc!=SQLITE_OK ){
         p->rc = rc;
       }

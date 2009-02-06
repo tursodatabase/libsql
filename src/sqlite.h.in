@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.427 2009/02/05 16:31:46 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.428 2009/02/06 05:59:44 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6787,7 +6787,8 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** Function [sqlite3_backup_step()] is used to copy up to nPage pages between 
 ** the source and destination databases, where nPage is the value of the 
-** second parameter passed to sqlite3_backup_step(). If nPage pages are 
+** second parameter passed to sqlite3_backup_step(). If nPage is a negative
+** value, all remaining source pages are copied. If the required pages are 
 ** succesfully copied, but there are still more pages to copy before the 
 ** backup is complete, it returns [SQLITE_OK]. If no error occured and there 
 ** are no more pages to copy, then [SQLITE_DONE] is returned. If an error 
