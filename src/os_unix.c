@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.240 2009/02/09 05:32:32 danielk1977 Exp $
+** $Id: os_unix.c,v 1.241 2009/02/09 17:34:07 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -183,7 +183,9 @@ struct unixFile {
   unsigned char locktype;          /* The type of lock held on this fd */
   int lastErrno;                   /* The unix errno from the last I/O error */
   void *lockingContext;            /* Locking style specific state */
-  int openFlags;                   /* The flags specified at open */
+#if SQLITE_ENABLE_LOCKING_STYLE
+  int openFlags;                   /* The flags specified at open() */
+#endif
 #if SQLITE_THREADSAFE && defined(__linux__)
   pthread_t tid;                   /* The thread that "owns" this unixFile */
 #endif
@@ -202,6 +204,11 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
+
+  /* If true, that means we are dealing with a database file that has
+  ** a range of locking bytes from PENDING_BYTE through PENDING_BYTE+511
+  ** which should never be read or written.  Asserts() will verify this */
+  unsigned char isLockable;      /* True if file might be locked */
 #endif
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -2689,6 +2696,12 @@ static int unixRead(
 ){
   int got;
   assert( id );
+
+  /* Never read or write any of the bytes in the locking range */
+  assert( ((unixFile*)id)->isLockable==0
+          || offset>=PENDING_BYTE+512
+          || offset+amt<=PENDING_BYTE );
+
   got = seekAndRead((unixFile*)id, offset, pBuf, amt);
   if( got==amt ){
     return SQLITE_OK;
@@ -2753,6 +2766,11 @@ static int unixWrite(
   int wrote = 0;
   assert( id );
   assert( amt>0 );
+
+  /* Never read or write any of the bytes in the locking range */
+  assert( ((unixFile*)id)->isLockable==0
+          || offset>=PENDING_BYTE+512
+          || offset+amt<=PENDING_BYTE );
 
 #ifndef NDEBUG
   /* If we are doing a normal write to a database file (as opposed to
@@ -3677,6 +3695,12 @@ static int unixOpen(
   if( pOutFlags ){
     *pOutFlags = flags;
   }
+
+#ifndef NDEBUG
+  if( (flags & SQLITE_OPEN_MAIN_DB)!=0 ){
+    ((unixFile*)pFile)->isLockable = 1;
+  }
+#endif
 
   assert(fd!=0);
   if( isOpenDirectory ){

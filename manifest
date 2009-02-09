@@ -1,5 +1,5 @@
-C Better\serror\smessage\swhen\sDISTINCT\sis\sused\son\san\saggregate\sfunction\sthat\ntakes\stwo\sor\smore\sarguments.\s\sTicket\s#3641.\s(CVS\s6269)
-D 2009-02-09T13:19:28
+C Add\sassert()\sstatements\sto\sos_unix.c\swhich\sfire\sif\sthere\sis\sa\sread\sor\nwrite\sfor\sthe\slocking\sregion\sof\sa\sdatabase\sfile.\s(CVS\s6270)
+D 2009-02-09T17:34:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 9f89f98c0782b89a73af08b8acc8bb5d3de5883d
+F src/os_unix.c 4e916cafbf5ec0166213ac62d680ebbe12b8c5a7
 F src/os_win.c 45cb430884da7e9360a55a0fcd5c2c44c22dd79d
 F src/pager.c 8c946cca1c1e64bd2d4b15aa431481c96233c826
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8227af3463ded1c52d0a16c63b8dbc516eab57f0
-R 9a4d5504a51006e95998fd3982eea1ce
+P e20bf384668bcde7c2f2152ca88e28cf65a02679
+R 3a3cb4e439892d819d6a33e750f5e099
 U drh
-Z 1fde4cf0408e6164f6078718fa7ec068
+Z 7b54fb55986a7fded747f515afad0223
