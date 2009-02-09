@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.45 2008/10/03 09:10:46 danielk1977 Exp $
+# $Id: bind.test,v 1.46 2009/02/09 05:18:33 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -656,5 +656,31 @@ do_test bind-13.4 {
                [sqlite3_column_type $VM 2]
 } {NULL NULL NULL}
 sqlite3_finalize $VM
+
+#--------------------------------------------------------------------
+# These tests attempt to reproduce bug #3463.
+#
+proc param_names {db zSql} {
+  set ret [list]
+  set VM [sqlite3_prepare db $zSql -1 TAIL]
+  for {set ii 1} {$ii <= [sqlite3_bind_parameter_count $VM]} {incr ii} {
+    lappend ret [sqlite3_bind_parameter_name $VM $ii]
+  }
+  sqlite3_finalize $VM
+  set ret
+}
+
+do_test bind-14.1 {
+  param_names db { SELECT @a, @b }
+} {@a @b}
+do_test bind-14.2 {
+  param_names db { SELECT NULL FROM (SELECT NULL) WHERE @a = @b }
+} {@a @b}
+do_test bind-14.3 {
+  param_names db { SELECT @a FROM (SELECT NULL) WHERE 1 = @b }
+} {@a @b}
+do_test bind-14.4 {
+  param_names db { SELECT @a, @b FROM (SELECT NULL) }
+} {@a @b}
 
 finish_test
