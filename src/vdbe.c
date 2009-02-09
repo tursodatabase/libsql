@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.814 2009/02/04 03:59:25 shane Exp $
+** $Id: vdbe.c,v 1.815 2009/02/09 13:19:28 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -482,6 +482,9 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
    if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 
 #ifdef SQLITE_DEBUG
+# define fileExists(A,B) 0
+#endif
+#if 0
 static int fileExists(sqlite3 *db, const char *zFile){
   int res = 0;
   int rc = SQLITE_OK;

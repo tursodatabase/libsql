@@ -1,5 +1,5 @@
-C Ignore\sthe\sreturn\sstructure\sof\sand\sF_GETLK\sfcntl()\scall\son\sdjgpp.\sFix\sfor\s#3642.\s(CVS\s6268)
-D 2009-02-09T05:32:32
+C Better\serror\smessage\swhen\sDISTINCT\sis\sused\son\san\saggregate\sfunction\sthat\ntakes\stwo\sor\smore\sarguments.\s\sTicket\s#3641.\s(CVS\s6269)
+D 2009-02-09T13:19:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
-F src/select.c ae72b604e47092521c4d9ae54e1b1cbeb872a747
+F src/select.c 164934bd8a9fae29e4d21530688dbac53b420da6
 F src/shell.c f109ebbb50132926ebbc173a6c2d8838d5d78527
 F src/sqlite.h.in f44c38b1e16d60de73ad3f49bffab05c00e8370c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -200,7 +200,7 @@ F src/update.c 8c4925f9ca664effc8a1faaad67449d2074567b1
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c 1363f64351f3b544790f3c523439354c02f8c4e9
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
-F src/vdbe.c c719017876405d32c9f342e39dc5b10dceff5811
+F src/vdbe.c 0be895a0c3e9c241c14c6de60806509b3eff6e2d
 F src/vdbe.h 03516f28bf5aca00a53c4dccd6c313f96adb94f6
 F src/vdbeInt.h 13cb4868ea579b5a8f6b6b5098caa99cd5a14078
 F src/vdbeapi.c b23c4b1686f150a0ddc36459c8e3876be62638e1
@@ -307,7 +307,7 @@ F test/descidx1.test a13d443571e045b61b1b2b759df8dcffa092c968
 F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
-F test/distinctagg.test 2b89d1c5220d966a30ba4b40430338669301188b
+F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8f2f98d247b04ae6bda34621e9ccdba904f34ad7
-R 0f06921c0632b40086153d35031273c0
-U danielk1977
-Z b82cb16c7d4a63bad217eabb0a69a201
+P 8227af3463ded1c52d0a16c63b8dbc516eab57f0
+R 9a4d5504a51006e95998fd3982eea1ce
+U drh
+Z 1fde4cf0408e6164f6078718fa7ec068

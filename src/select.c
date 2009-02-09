@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.498 2009/01/09 02:49:32 drh Exp $
+** $Id: select.c,v 1.499 2009/02/09 13:19:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3365,8 +3365,8 @@ static void resetAccumulator(Parse *pParse, AggInfo *pAggInfo){
     if( pFunc->iDistinct>=0 ){
       Expr *pE = pFunc->pExpr;
       if( pE->pList==0 || pE->pList->nExpr!=1 ){
-        sqlite3ErrorMsg(pParse, "DISTINCT in aggregate must be followed "
-           "by an expression");
+        sqlite3ErrorMsg(pParse, "DISTINCT aggregates must have exactly one "
+           "argument");
         pFunc->iDistinct = -1;
       }else{
         KeyInfo *pKeyInfo = keyInfoFromExprList(pParse, pE->pList);
