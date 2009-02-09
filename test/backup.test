@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.4 2009/02/06 05:59:45 danielk1977 Exp $
+# $Id: backup.test,v 1.5 2009/02/09 18:55:46 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -263,7 +263,7 @@ foreach nPagePerStep {1 200} {
 #   * Target database page-size is smaller than the source.
 #
 set iTest 1
-foreach nSrcRow {10 100} {
+foreach nSrcPg {10 64 65 66 100} {
 foreach nDestRow {10 100} {
 foreach nDestPgsz {512 1024 2048 4096} {
 
@@ -274,18 +274,24 @@ foreach nDestPgsz {512 1024 2048 4096} {
 
   # Set up the content of the two databases.
   #
-  foreach {db nRow} [list db $nSrcRow db2 $nDestRow] {
+  execsql { PRAGMA page_size = 1024 }
+  execsql "PRAGMA page_size = $nDestPgsz" db2
+  foreach db {db db2} {
     execsql {
       BEGIN; 
       CREATE TABLE t1(a, b);
       CREATE INDEX i1 ON t1(a, b);
+      COMMIT;
     } $db
-    for {set ii 0} {$ii < $nSrcRow} {incr ii} {
-      execsql { INSERT INTO t1 VALUES($ii, randstr(1000,1000)) } $db
-    }
-    execsql COMMIT $db
   }
-    
+  while {[file size test.db]/1024 < $nSrcPg} {
+    execsql { INSERT INTO t1 VALUES($ii, randstr(200,200)) }
+  }
+
+  for {set ii 0} {$ii < $nDestRow} {incr ii} {
+    execsql { INSERT INTO t1 VALUES($ii, randstr(1000,1000)) } db2
+  }
+
   # Backup the source database.
   do_test backup-3.$iTest.1 {
     sqlite3_backup B db main db2 main

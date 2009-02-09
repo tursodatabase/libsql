@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.8 2009/02/06 05:59:44 danielk1977 Exp $
+** $Id: backup.c,v 1.9 2009/02/09 18:55:46 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -255,6 +255,23 @@ static int backupOnePage(sqlite3_backup *p, Pgno iSrcPg, const u8 *zSrcData){
 }
 
 /*
+** If pFile is currently larger than iSize bytes, then truncate it to
+** exactly iSize bytes. If pFile is not larger than iSize bytes, then
+** this function is a no-op.
+**
+** Return SQLITE_OK if everything is successful, or an SQLite error 
+** code if an error occurs.
+*/
+static int backupTruncateFile(sqlite3_file *pFile, i64 iSize){
+  i64 iCurrent;
+  int rc = sqlite3OsFileSize(pFile, &iCurrent);
+  if( rc==SQLITE_OK && iCurrent>iSize ){
+    rc = sqlite3OsTruncate(pFile, iSize);
+  }
+  return rc;
+}
+
+/*
 ** Copy nPage pages from the source b-tree to the destination.
 */
 int sqlite3_backup_step(sqlite3_backup *p, int nPage){
@@ -330,8 +347,6 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       const int nSrcPagesize = sqlite3BtreeGetPageSize(p->pSrc);
       const int nDestPagesize = sqlite3BtreeGetPageSize(p->pDest);
       int nDestTruncate;
-      sqlite3_file *pFile = 0;
-      i64 iSize;
   
       /* Update the schema version field in the destination database. This
       ** is to make sure that the schema-version really does change in
@@ -373,11 +388,13 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
         **     pending-byte page in the source database may need to be
         **     copied into the destination database.
         */
-        iSize = (i64)nSrcPagesize * (i64)nSrcPage;
-        pFile = sqlite3PagerFile(pDestPager);
+        const i64 iSize = (i64)nSrcPagesize * (i64)nSrcPage;
+        sqlite3_file * const pFile = sqlite3PagerFile(pDestPager);
+
         assert( pFile );
+        assert( (i64)nDestTruncate*(i64)nDestPagesize >= iSize );
         if( SQLITE_OK==(rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1))
-         && SQLITE_OK==(rc = sqlite3OsTruncate(pFile, iSize))
+         && SQLITE_OK==(rc = backupTruncateFile(pFile, iSize))
          && SQLITE_OK==(rc = sqlite3PagerSync(pDestPager))
         ){
           i64 iOff;

@@ -1,5 +1,5 @@
-C Add\sassert()\sstatements\sto\sos_unix.c\swhich\sfire\sif\sthere\sis\sa\sread\sor\nwrite\sfor\sthe\slocking\sregion\sof\sa\sdatabase\sfile.\s(CVS\s6270)
-D 2009-02-09T17:34:07
+C Fix\sa\sproblem\sin\sbackup.c\scausing\sOsTruncate()\sto\sbe\scalled\swith\san\sargument\slarger\sthan\sthe\scurrent\sfile-size.\s(CVS\s6271)
+D 2009-02-09T18:55:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,7 +101,7 @@ F src/alter.c 0ec29744c36c6e976596ce38c16289ebc5dc94db
 F src/analyze.c c86fd6a1425b22b3a46ce72ad403e4280026364f
 F src/attach.c 81d37d1948f409146a7b22b96998fd90649d1fd3
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
-F src/backup.c 9563f47385f491579135fd7924d70c76c2eba740
+F src/backup.c 7aff2b795c4a001716c40fff7e3928750e2f6b8f
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 71f30e74389aa7ae51421592dfaf69511152677c
@@ -233,7 +233,7 @@ F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
 F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
-F test/backup.test 12d7ad0545f47175e27445267d0810a277679ef2
+F test/backup.test e1ccee089c190f480afe32f7795690399c644dea
 F test/backup2.test 392318e059b83e87e5e4175f08be181a6ddce468
 F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e20bf384668bcde7c2f2152ca88e28cf65a02679
-R 3a3cb4e439892d819d6a33e750f5e099
-U drh
-Z 7b54fb55986a7fded747f515afad0223
+P 93e792ffa88ba2e8422d041f36b70d9b2e220da2
+R f4d030cfc7856238ca71232918484f1a
+U danielk1977
+Z e7286071c615582b1903f957fbdb0fad
