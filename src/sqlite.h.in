@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.428 2009/02/06 05:59:44 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.429 2009/02/10 13:41:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -6731,6 +6731,8 @@ struct sqlite3_pcache_methods {
 ** online backup operation.  The sqlite3_backup object is created by
 ** a call to [sqlite3_backup_init()] and is destroyed by a call to
 ** [sqlite3_backup_finish()].
+**
+** See Also: [Using the SQLite Online Backup API]
 */
 typedef struct sqlite3_backup sqlite3_backup;
 
@@ -6741,6 +6743,8 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** This API is used to overwrite the contents of one database with that
 ** of another. It is useful either for creating backups of databases or
 ** for copying in-memory databases to or from persistent files. 
+**
+** See Also: [Using the SQLite Online Backup API]
 **
 ** Exclusive access is required to the destination database for the 
 ** duration of the operation. However the source database is only
