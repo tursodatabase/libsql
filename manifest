@@ -1,5 +1,5 @@
-C Reduce\sthe\snumber\sof\siterations\sin\sone\sof\sthe\ssavepoint4.test\scrash\stests.\s(CVS\s6277)
-D 2009-02-10T14:45:13
+C For\sthe\s"onefile"\sdemo,\spass\sSQLITE_OPEN_TEMP_DB\sinstead\sof\sMAIN_DB\sto\sthe\sOS\slayer\swhen\sopening\sthe\ssingle\sfile.\sThis\sis\sto\swork\saround\sthe\sassert()\sin\sos_unix.c\sthat\stests\sthat\sthe\slocking\sregion\sis\snot\swritten\sto.\s(CVS\s6278)
+D 2009-02-10T18:54:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c d23050c7631ec9ee0369c7ca905e6c9233968e11
 F src/test_md5.c 032ae2bb6f81da350d2404e81fa8d560c8268026
 F src/test_mutex.c 5f772b1b9952e1e559e3d54e63bc7ec6f98fecd0
-F src/test_onefile.c fad2e1b589a840002b8f967ae24397c3ec4a090b
+F src/test_onefile.c 1efd91e63ce3d92e8331bfed83854e2b4dcd2e72
 F src/test_osinst.c 9a70a61e127f9e72bcfca000b20368b1c5367873
 F src/test_pcache.c 29464896d9c67832e4eef916c0682b98d7283d00
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2a6a43169220fab5a15a786e2a464b90cb893179
-R 1bb7214f528ac243a46eb16d38026a31
+P fafb07b83721d67f6c6f3126c8de94b9b7efa519
+R dccc9b0ed133be6dc34d807e0da6e75f
 U danielk1977
-Z 6cc00556abfe8cfe9e9cf5d776d87c56
+Z a57c36962611913657436cc3cf209f37
