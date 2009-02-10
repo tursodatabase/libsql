@@ -12,7 +12,7 @@
 #
 # This file implements tests for temporary tables and indices.
 #
-# $Id: temptable.test,v 1.19 2007/10/09 08:29:33 danielk1977 Exp $
+# $Id: temptable.test,v 1.20 2009/02/10 11:17:43 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -418,5 +418,23 @@ ifcapable attach {
 # (required before the next test file can be executed) will fail.
 #
 catch {file attributes test.db -readonly 0}
+
+do_test temptable-8.0 {
+  db close
+  catch {file delete -force test.db}
+  sqlite3 db test.db
+} {}
+do_test temptable-8.1 {
+  execsql { CREATE TEMP TABLE tbl2(a, b); }
+  execsql {
+    CREATE TABLE tbl(a, b);
+    INSERT INTO tbl VALUES(1, 2);
+  }
+  execsql {SELECT * FROM tbl}
+} {1 2}
+do_test temptable-8.2 {
+  execsql { CREATE TEMP TABLE tbl(a, b); }
+  execsql {SELECT * FROM tbl}
+} {}
 
 finish_test
