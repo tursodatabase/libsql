@@ -14,7 +14,7 @@
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
 **
-** $Id: test6.c,v 1.41 2008/12/20 18:33:59 danielk1977 Exp $
+** $Id: test6.c,v 1.42 2009/02/10 14:28:57 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"
@@ -564,8 +564,23 @@ static int cfOpen(
     pWrapper->nData = (4096 + pWrapper->iSize);
     pWrapper->zData = crash_malloc(pWrapper->nData);
     if( pWrapper->zData ){
+      /* os_unix.c contains an assert() that fails if the caller attempts
+      ** to read data from the 512-byte locking region of a file opened
+      ** with the SQLITE_OPEN_MAIN_DB flag. This region of a database file
+      ** never contains valid data anyhow. So avoid doing such a read here.
+      */
+      const int isDb = (flags&SQLITE_OPEN_MAIN_DB);
+      i64 iChunk = pWrapper->iSize;
+      if( iChunk>PENDING_BYTE && isDb ){
+        iChunk = PENDING_BYTE;
+      }
       memset(pWrapper->zData, 0, pWrapper->nData);
-      rc = sqlite3OsRead(pReal, pWrapper->zData, pWrapper->iSize, 0); 
+      rc = sqlite3OsRead(pReal, pWrapper->zData, iChunk, 0); 
+      if( SQLITE_OK==rc && pWrapper->iSize>(PENDING_BYTE+512) && isDb ){
+        i64 iOff = PENDING_BYTE+512;
+        iChunk = pWrapper->iSize - iOff;
+        rc = sqlite3OsRead(pReal, &pWrapper->zData[iOff], iChunk, iOff);
+      }
     }else{
       rc = SQLITE_NOMEM;
     }
