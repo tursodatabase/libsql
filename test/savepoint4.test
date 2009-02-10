@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint4.test,v 1.3 2008/12/20 08:39:57 danielk1977 Exp $
+# $Id: savepoint4.test,v 1.4 2009/02/10 14:45:13 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -19,7 +19,8 @@ proc signature {} {
   return [db eval {SELECT count(*), md5sum(x) FROM t1}]
 }
 
-set ITERATIONS 25
+set ITERATIONS 25                   ;# Number of iterations for savepoint4-1
+set ITERATIONS2 13                  ;# Number of iterations for savepoint4-2
 expr srand(0)
 
 do_test savepoint4-1 {
@@ -100,7 +101,7 @@ do_test savepoint4-2 {
   }
 } {256}
 
-for {set ii 1} {$ii<=$ITERATIONS} {incr ii} {
+for {set ii 1} {$ii<=$ITERATIONS2} {incr ii} {
   set ::sig [signature]
   set file test.db-journal
 
