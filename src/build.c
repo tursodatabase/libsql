@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.516 2009/02/03 22:17:42 drh Exp $
+** $Id: build.c,v 1.517 2009/02/10 10:44:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3430,11 +3430,6 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** rollback the whole transaction.  For operations where all constraints
 ** can be checked before any changes are made to the database, it is never
 ** necessary to undo a write and the checkpoint should not be set.
-**
-** Only database iDb and the temp database are made writable by this call.
-** If iDb==0, then the main and temp databases are made writable.   If
-** iDb==1 then only the temp database is made writable.  If iDb>1 then the
-** specified auxiliary database and the temp database are made writable.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
@@ -3443,9 +3438,6 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   pParse->writeMask |= 1<<iDb;
   if( setStatement && pParse->nested==0 ){
     sqlite3VdbeAddOp1(v, OP_Statement, iDb);
-  }
-  if( (OMIT_TEMPDB || iDb!=1) && pParse->db->aDb[1].pBt!=0 ){
-    sqlite3BeginWriteOperation(pParse, setStatement, 1);
   }
 }
 

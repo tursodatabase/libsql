@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\stest\sfile\smisc7.test.\sNo\scode\schanges.\s(CVS\s6272)
-D 2009-02-10T05:45:42
+C Do\snot\salways\sopen\sa\stransaction\son\sthe\stemp\sdatabase\swhen\swriting\sto\sthe\smain\sor\sanother\sattached\sdatabase.\s(CVS\s6273)
+D 2009-02-10T10:44:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +107,7 @@ F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c 71f30e74389aa7ae51421592dfaf69511152677c
 F src/btree.h 4eab72af6adf95f0b08b61a72ef9781bdb0bf63f
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
-F src/build.c 6f3d5f74e262d561d77f0210c6063b7122f16c98
+F src/build.c 909c43d7f283ba7fb186d144ccb2a479f3707d13
 F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b34bde80c7e2028baf7ba2ff26e587a63a170f3d
-R f63fbacb63d328df2aceb5d4e22e08b6
+P d919d2a14c8cbbda3fbd6fb2ddae174fa709177b
+R 705f428cee859d1582e789ec2f8b6f2f
 U danielk1977
-Z c673dd36b0389529265f9e7c71352540
+Z 80406d66de40997e19175586c6bca0ee
