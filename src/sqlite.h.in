@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.430 2009/02/11 15:04:40 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.431 2009/02/11 15:23:35 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2800,7 +2800,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** Run time limits are intended for use in applications that manage
 ** both their own internal database and also databases that are controlled
 ** by untrusted external sources.  An example application might be a
-** webbrowser that has its own databases for storing history and
+** web browser that has its own databases for storing history and
 ** separate databases controlled by JavaScript applications downloaded
 ** off the Internet.  The internal databases can be given the
 ** large, default limits.  Databases managed by external sources can
@@ -2832,9 +2832,10 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** CAPI3REF: Run-Time Limit Categories {H12790} <H12760>
 ** KEYWORDS: {limit category} {limit categories}
 **
-** These constants define various aspects of a [database connection]
-** that can be limited in size by calls to [sqlite3_limit()].
-** The meanings of the various limits are as follows:
+** These constants define various performance limits
+** that can be lowered at run-time using [sqlite3_limit()].
+** The synopsis of the meanings of the various limits is shown below.
+** Additional information is available at [limits | Limits in SQLite].
 **
 ** <dl>
 ** <dt>SQLITE_LIMIT_LENGTH</dt>
@@ -2845,7 +2846,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 **
 ** <dt>SQLITE_LIMIT_COLUMN</dt>
 ** <dd>The maximum number of columns in a table definition or in the
-** result set of a SELECT or the maximum number of columns in an index
+** result set of a [SELECT] or the maximum number of columns in an index
 ** or in an ORDER BY or GROUP BY clause.</dd>
 **
 ** <dt>SQLITE_LIMIT_EXPR_DEPTH</dt>
@@ -2862,11 +2863,11 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum number of arguments on a function.</dd>
 **
 ** <dt>SQLITE_LIMIT_ATTACHED</dt>
-** <dd>The maximum number of attached databases.</dd>
+** <dd>The maximum number of [ATTACH | attached databases].</dd>
 **
 ** <dt>SQLITE_LIMIT_LIKE_PATTERN_LENGTH</dt>
-** <dd>The maximum length of the pattern argument to the LIKE or
-** GLOB operators.</dd>
+** <dd>The maximum length of the pattern argument to the [LIKE] or
+** [GLOB] operators.</dd>
 **
 ** <dt>SQLITE_LIMIT_VARIABLE_NUMBER</dt>
 ** <dd>The maximum number of variables in an SQL statement that can
