@@ -1,5 +1,5 @@
-C Add\shyperlinks\sfrom\ssqlite3_limit()\sdocumention\sto\sthe\slimits.html\spage.\nComment\schanges\sonly\s-\sno\schanges\sto\scode.\s(CVS\s6282)
-D 2009-02-11T15:04:40
+C Fix\sthe\sbackup.test\sscript\sso\sthat\sit\sworks\sregardless\sof\sthe\svalue\sof\sSQLITE_TEMP_STORE\sand\sthe\sinitial\scontents\sof\sthe\sfile-system.\s(CVS\s6283)
+D 2009-02-11T15:11:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -233,7 +233,7 @@ F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
 F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
-F test/backup.test e1ccee089c190f480afe32f7795690399c644dea
+F test/backup.test 60c71bdc5ff5a80a23737c5ba906c93c0219c8d5
 F test/backup2.test 392318e059b83e87e5e4175f08be181a6ddce468
 F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b7fd4615cd41179484bd44d2f4bd7aef04977911
-R 78729c6c6e3944e15e2ae6c81472b55b
-U drh
-Z f369e1b3f4b218d3df0b1f5cb026d275
+P f0189ec8c9b5d1dfe1f5d93746cc7b5703a80de5
+R 1a4ed233023747675b1dbcfb693e3414
+U danielk1977
+Z 1bb50696aab59a113e32a5c0dd25c8e7

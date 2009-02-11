@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.5 2009/02/09 18:55:46 danielk1977 Exp $
+# $Id: backup.test,v 1.6 2009/02/11 15:11:00 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -168,8 +168,15 @@ foreach nPagePerStep {1 200} {
   catch { file delete test2.db }
   eval $zOpenScript
 
-  if {$zDestFile ne ":memory:" || $pgsz_dest == 1024 } {
+  # Set to true if copying to an in-memory destination. Copying to an 
+  # in-memory destination is only possible if the initial destination
+  # page size is the same as the source page size (in this case 1024 bytes).
+  #
+  set isMemDest [expr {
+    $zDestFile eq ":memory:" || $file_dest eq "temp" && $TEMP_STORE==3
+  }]
 
+  if { $isMemDest==0 || $pgsz_dest == 1024 } {
     if 0 {
       puts -nonewline "Test $iTest: src=$zSrcFile dest=$zDestFile"
       puts -nonewline " (as $db_dest.$file_dest)"
@@ -179,6 +186,7 @@ foreach nPagePerStep {1 200} {
 
     # Set up the content of the source database.
     execsql {
+      PRAGMA page_size = 1024;
       BEGIN;
       CREATE TABLE t1(a, b);
       CREATE INDEX i1 ON t1(a, b);
@@ -351,14 +359,23 @@ do_test backup-4.1.4 {
 } {unknown database aux}
 
 do_test backup-4.2.1 {
-  execsql { ATTACH 'test3.db' AS aux1 }
-  execsql { ATTACH 'test4.db' AS aux2 } db2
+  catch { file delete -force test3.db }
+  catch { file delete -force test4.db }
+  execsql { 
+    ATTACH 'test3.db' AS aux1;
+    CREATE TABLE aux1.t1(a, b);
+  }
+  execsql { 
+    ATTACH 'test4.db' AS aux2;
+    CREATE TABLE aux2.t2(a, b);
+  } db2
   sqlite3_backup B db aux1 db2 aux2
 } {B}
 do_test backup-4.2.2 {
   catchsql { DETACH aux2 } db2
 } {1 {database aux2 is locked}}
 do_test backup-4.2.3 {
+breakpoint
   B step 50
 } {SQLITE_DONE}
 do_test backup-4.2.4 {
