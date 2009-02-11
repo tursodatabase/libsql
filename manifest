@@ -1,5 +1,5 @@
-C Modify\sthe\stest_journal.c\scode\sto\s(1)\saccount\sfor\sthe\sbackup\scode\swriting\sto\sparts\sof\sthe\spending-byte\spage\swhen\schanging\sa\sdatabases\spage-size,\sand\s(2)\sto\savoid\sreading\sfrom\sthe\spending-byte\spage\sand\striggering\sthe\sassert\sin\sos_unix.c.\sChanges\sto\stest\scode\sonly.\s(CVS\s6280)
-D 2009-02-11T07:38:12
+C Fix\sthe\scrashtest\sinfrastructure\sso\sthat\sit\sdoesn't\strigger\sthe\s"don't\swrite\sto\sthe\slocking\sregion"\sassert\sin\sos_unix.c.\s(CVS\s6281)
+D 2009-02-11T14:27:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/test2.c 71c22e2974f8094fe0fd1eba8f27872dde9b2a39
 F src/test3.c 88a246b56b824275300e6c899634fbac1dc94b14
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
-F src/test6.c 86d7918ccc2ff92ceb71cb59c6a078105f8885d2
+F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8b318b9385d0542ca56750b901c0c6b7d05ca634
-R 9a8fca6b31553509b67660a185c0a0d1
+P 4879621658c2c785ab7b12dbae780901496d3a78
+R a8af020a2a79f4fed6aeaceed6fc2c93
 U danielk1977
-Z 710356677aa5921b82da35e3db1360ce
+Z 998a7073c0859344b08ca02f400fe38c
