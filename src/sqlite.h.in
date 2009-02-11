@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.429 2009/02/10 13:41:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.430 2009/02/11 15:04:40 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2789,8 +2789,10 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** new limit for that construct.  The function returns the old limit.
 **
 ** If the new limit is a negative number, the limit is unchanged.
-** For the limit category of SQLITE_LIMIT_XYZ there is a hard upper
-** bound set by a compile-time C preprocessor macro named SQLITE_MAX_XYZ.
+** For the limit category of SQLITE_LIMIT_XYZ there is a 
+** [limits | hard upper bound]
+** set by a compile-time C preprocessor macro named 
+** [limits | SQLITE_MAX_XYZ].
 ** (The "_LIMIT_" in the name is changed to "_MAX_".)
 ** Attempts to increase a limit above its hard upper bound are
 ** silently truncated to the hard upper limit.
