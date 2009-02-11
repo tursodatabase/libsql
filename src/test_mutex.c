@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.13 2009/01/19 17:40:12 drh Exp $
+** $Id: test_mutex.c,v 1.14 2009/02/11 05:18:07 danielk1977 Exp $
 */
 
 #include "tcl.h"
@@ -38,7 +38,7 @@ static struct test_mutex_globals {
   sqlite3_mutex_methods m;      /* Interface to "real" mutex system */
   int aCounter[8];              /* Number of grabs of each type of mutex */
   sqlite3_mutex aStatic[6];     /* The six static mutexes */
-} g;
+} g = {0};
 
 /* Return true if the countable mutex is currently held */
 static int counterMutexHeld(sqlite3_mutex *p){
@@ -431,7 +431,6 @@ int Sqlitetest_mutex_Init(Tcl_Interp *interp){
   for(i=0; i<sizeof(aCmd)/sizeof(aCmd[0]); i++){
     Tcl_CreateObjCommand(interp, aCmd[i].zName, aCmd[i].xProc, 0, 0);
   }
-  memset(&g, 0, sizeof(g));
 
   Tcl_LinkVar(interp, "disable_mutex_init", 
               (char*)&g.disableInit, TCL_LINK_INT);
