@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.9 2009/01/11 18:24:27 drh Exp $
+** $Id: test_journal.c,v 1.10 2009/02/11 07:38:12 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -367,6 +367,7 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
       int ii;
       for(ii=0; rc==SQLITE_OK && ii<pMain->nPage; ii++){
         i64 iOff = (i64)(pMain->nPagesize) * (i64)ii;
+        if( iOff==PENDING_BYTE ) continue;
         rc = sqlite3OsRead(pMain->pReal, aData, pMain->nPagesize, iOff);
         pMain->aCksum[ii] = genCksum(aData, pMain->nPagesize);
       }
@@ -411,11 +412,22 @@ static int jtWrite(
   }
 
   if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
-    u32 pgno = iOfst/p->nPagesize + 1;
-
-    assert( (iAmt==1 || iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
-    assert( pgno<=p->nPage || p->nSync>0 );
-    assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
+    if( iAmt<p->nPagesize 
+     && p->nPagesize%iAmt==0 
+     && iOfst>=(PENDING_BYTE+512) 
+     && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
+    ){
+      /* No-op. This special case is hit when the backup code is copying a
+      ** to a database with a larger page-size than the source database and
+      ** it needs to fill in the non-locking-region part of the original
+      ** pending-byte page.
+      */
+    }else{
+      u32 pgno = iOfst/p->nPagesize + 1;
+      assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
+      assert( pgno<=p->nPage || p->nSync>0 );
+      assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
+    }
   }
 
   return sqlite3OsWrite(p->pReal, zBuf, iAmt, iOfst);
