@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.6 2009/02/11 15:11:00 danielk1977 Exp $
+# $Id: backup.test,v 1.7 2009/02/11 16:06:19 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -561,6 +561,9 @@ foreach {writer file} {db test.db db3 test.db db :memory:} {
   integrity_check backup-5.$iTest.4.5 db2
   test_contents backup-5.$iTest.4.6 db main db2 main
 
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
   catch { file delete bak.db }
   sqlite3 db2 bak.db
   catch { file delete $file }
@@ -596,10 +599,10 @@ foreach {writer file} {db test.db db3 test.db db :memory:} {
   } {SQLITE_OK} 
   integrity_check backup-5.$iTest.5.5 db2
   test_contents backup-5.$iTest.5.6 db main db2 main
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
 }
-catch {db close}
-catch {db2 close}
-catch {db3 close}
 #
 # End of backup-5.* tests.
 #---------------------------------------------------------------------
@@ -649,7 +652,8 @@ do_test backup-6.X {
   B finish
 } {SQLITE_OK}
 
-
+catch {db close}
+catch {db2 close}
 
 #---------------------------------------------------------------------
 # Test cases backup-7.* test that SQLITE_BUSY and SQLITE_LOCKED errors

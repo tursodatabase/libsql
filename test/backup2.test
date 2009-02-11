@@ -13,7 +13,7 @@
 # of the TCL interface - methods which are based on the
 # sqlite3_backup_XXX API.
 #
-# $Id: backup2.test,v 1.1 2009/02/04 22:46:47 drh Exp $
+# $Id: backup2.test,v 1.2 2009/02/11 16:06:19 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -137,12 +137,22 @@ do_test backup2-9 {
 
 # Try to restore from an unreadable file.
 #
-do_test backup2-10 {
-  file delete -force bu3.db
-  file mkdir bu3.db
-  set rc [catch {db restore temp bu3.db} res]
-  lappend rc $res
-} {1 {cannot open source database: disk I/O error}}
+if {$tcl_platform(platform)=="windows"} {
+  do_test backup2-10 {
+    file delete -force bu3.db
+    file mkdir bu3.db
+    set rc [catch {db restore temp bu3.db} res]
+    lappend rc $res
+  } {1 {cannot open source database: unable to open database file}}
+}
+if {$tcl_platform(platform)!="windows"} {
+  do_test backup2-10 {
+    file delete -force bu3.db
+    file mkdir bu3.db
+    set rc [catch {db restore temp bu3.db} res]
+    lappend rc $res
+  } {1 {cannot open source database: disk I/O error}}
+}
 
 # Try to restore from something that is not a database file.
 #
