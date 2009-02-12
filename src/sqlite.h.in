@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.431 2009/02/11 15:23:35 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.432 2009/02/12 17:07:35 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3102,7 +3102,7 @@ typedef struct sqlite3_context sqlite3_context;
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
 ** In the SQL strings input to [sqlite3_prepare_v2()] and its variants,
-** literals may be replaced by a parameter in one of these forms:
+** literals may be replaced by a [parameter] in one of these forms:
 **
 ** <ul>
 ** <li>  ?
@@ -5186,7 +5186,7 @@ void *sqlite3_update_hook(
 ** to the same database. Sharing is enabled if the argument is true
 ** and disabled if the argument is false.
 **
-** Cache sharing is enabled and disabled for an entire process. {END}
+** Cache sharing is enabled and disabled for an entire process.
 ** This is a change as of SQLite version 3.5.0. In prior versions of SQLite,
 ** sharing was enabled or disabled for each thread separately.
 **
@@ -5205,6 +5205,8 @@ void *sqlite3_update_hook(
 ** Shared cache is disabled by default. But this might change in
 ** future releases of SQLite.  Applications that care about shared
 ** cache setting should set it explicitly.
+**
+** See Also:  [SQLite Shared-Cache Mode]
 **
 ** INVARIANTS:
 **
