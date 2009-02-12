@@ -1,5 +1,5 @@
-C Fix\ssome\sedge\scases\swith\sbacking\sup\sdatabases\sthat\sare\sexactly\sPENDING_BYTE\sbytes\sin\ssize,\sor\sjust\sslightly\slarger.\s(CVS\s6288)
-D 2009-02-12T17:01:50
+C Update\sthread\stests\sto\sclear\sthe\ssqlite_open_file_count\scounter\sat\sthe\nend.\s\sThis\scounter\sis\snot\sthreadsafe\sand\scan\send\sup\swith\san\sinvalid\svalue\nat\sthe\send\sof\sthe\sthread\stests.\s(CVS\s6289)
+D 2009-02-12T17:06:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -553,9 +553,9 @@ F test/tclsqlite.test 413a8a887d89ea8fa7055e8d118ffb03b0a4c91a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 5d8ca46be28cc06c887c5a77df650843b7edbae1
 F test/tester.tcl b28d5eb97e95b19eacdb5afb38db2c8558f398b0
-F test/thread001.test 7595e58213eda498794860f608e0ea7e499d18d0
-F test/thread002.test 0258a50c55f2371de2e4c7e02bec2576c1eef359
-F test/thread003.test e17754799649c2b732c295620dca041c32f01e16
+F test/thread001.test 06c45ed9597d478e7bbdc2a8937e1ebea2a20a32
+F test/thread002.test 3c03900f03fd2fe8e2fbb1bbdef7fa8206fdb7ad
+F test/thread003.test 6d360c15afe7f6ef6186801d2cb8407bccbe3aa3
 F test/thread1.test 862dd006d189e8b0946935db17399dcac2f8ef91
 F test/thread2.test 91f105374f18a66e73a3254c28fe7c77af69bdea
 F test/thread_common.tcl 047f80288b5e1e86bed181097d67e640f1a54a74
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9a6e558ba6fe0b38376a85a6c1e2cea5570ea283
-R c29b76c7d0882570dd5d4b31c9bb2e6f
-U danielk1977
-Z a3d6d2ad2218627e8108430b2434ce04
+P 2fc450e8e60248d6111d0b0d2b8f2344f5b89bca
+R 1ec65da20ad4eb6fcba7aaeef585ffb3
+U drh
+Z 425f528858755190dcb043c332a7460a

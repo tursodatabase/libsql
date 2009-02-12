@@ -12,7 +12,7 @@
 #   This file contains tests that attempt to break the pcache module
 #   by bombarding it with simultaneous requests from multiple threads.
 #     
-# $Id: thread003.test,v 1.5 2008/10/07 15:25:49 drh Exp $
+# $Id: thread003.test,v 1.6 2009/02/12 17:06:41 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -193,4 +193,5 @@ do_test thread003.4 {
   expr 0
 } {0}
 
+set sqlite_open_file_count 0
 finish_test

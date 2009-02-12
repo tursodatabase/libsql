@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.8 2009/02/04 11:57:46 danielk1977 Exp $
+# $Id: thread001.test,v 1.9 2009/02/12 17:06:41 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -147,4 +147,5 @@ foreach {tn same_db shared_cache} [list \
 }
 
 sqlite3_enable_shared_cache $::enable_shared_cache
+set sqlite_open_file_count 0
 finish_test

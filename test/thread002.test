@@ -12,7 +12,7 @@
 #   This test attempts to deadlock SQLite in shared-cache mode.
 #     
 #
-# $Id: thread002.test,v 1.5 2009/02/04 11:57:46 danielk1977 Exp $
+# $Id: thread002.test,v 1.6 2009/02/12 17:06:41 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -107,4 +107,5 @@ for {set ii 0} {$ii < 3} {incr ii} {
 }
 
 sqlite3_enable_shared_cache $::enable_shared_cache
+set sqlite_open_file_count 0
 finish_test
