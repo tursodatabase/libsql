@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.566 2009/02/04 19:16:23 drh Exp $
+** @(#) $Id: pager.c,v 1.567 2009/02/12 09:11:56 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1416,6 +1416,7 @@ static u32 pager_cksum(Pager *pPager, const u8 *aData){
 static int pager_playback_one_page(
   Pager *pPager,                /* The pager being played back */
   int isMainJrnl,               /* 1 -> main journal. 0 -> sub-journal. */
+  int isUnsync,                 /* True if reading from unsynced main journal */
   i64 *pOffset,                 /* Offset of record to playback */
   int isSavepnt,                /* True for a savepoint rollback */
   Bitvec *pDone                 /* Bitvec of pages already played back */
@@ -1511,6 +1512,7 @@ static int pager_playback_one_page(
   if( (pPager->state>=PAGER_EXCLUSIVE)
    && (pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
    && isOpen(pPager->fd)
+   && !isUnsync
   ){
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
     rc = sqlite3OsWrite(pPager->fd, aData, pPager->pageSize, ofst);
@@ -1951,6 +1953,7 @@ static int pager_playback(Pager *pPager, int isHot){
   ** occurs. 
   */
   while( 1 ){
+    int isUnsync = 0;
 
     /* Read the next journal header from the journal file.  If there are
     ** not enough bytes left in the journal file for a complete header, or
@@ -1997,6 +2000,7 @@ static int pager_playback(Pager *pPager, int isHot){
     if( nRec==0 && !isHot &&
         pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
       nRec = (int)((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager));
+      isUnsync = 1;
     }
 
     /* If this is the first header read from the journal, truncate the
@@ -2018,7 +2022,7 @@ static int pager_playback(Pager *pPager, int isHot){
         pager_reset(pPager);
         needPagerReset = 0;
       }
-      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 0, 0);
+      rc = pager_playback_one_page(pPager,1,isUnsync,&pPager->journalOff,0,0);
       if( rc!=SQLITE_OK ){
         if( rc==SQLITE_DONE ){
           rc = SQLITE_OK;
@@ -2160,7 +2164,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     iHdrOff = pSavepoint->iHdrOffset ? pSavepoint->iHdrOffset : szJ;
     pPager->journalOff = pSavepoint->iOffset;
     while( rc==SQLITE_OK && pPager->journalOff<iHdrOff ){
-      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 1, pDone);
+      rc = pager_playback_one_page(pPager, 1, 0, &pPager->journalOff, 1, pDone);
     }
     assert( rc!=SQLITE_DONE );
   }else{
@@ -2195,7 +2199,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
       nJRec = (u32)((szJ - pPager->journalOff)/JOURNAL_PG_SZ(pPager));
     }
     for(ii=0; rc==SQLITE_OK && ii<nJRec && pPager->journalOff<szJ; ii++){
-      rc = pager_playback_one_page(pPager, 1, &pPager->journalOff, 1, pDone);
+      rc = pager_playback_one_page(pPager, 1, 0, &pPager->journalOff, 1, pDone);
     }
     assert( rc!=SQLITE_DONE );
   }
@@ -2210,7 +2214,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     i64 offset = pSavepoint->iSubRec*(4+pPager->pageSize);
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->nSubRec; ii++){
       assert( offset==ii*(4+pPager->pageSize) );
-      rc = pager_playback_one_page(pPager, 0, &offset, 1, pDone);
+      rc = pager_playback_one_page(pPager, 0, 0, &offset, 1, pDone);
     }
     assert( rc!=SQLITE_DONE );
   }
