@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.567 2009/02/12 09:11:56 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.568 2009/02/12 17:01:50 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4176,9 +4176,6 @@ static int pager_write(PgHdr *pPg){
   assert( pPager->state>=PAGER_SHARED );
   if( pPager->dbSize<pPg->pgno ){
     pPager->dbSize = pPg->pgno;
-    if( pPager->dbSize==(PAGER_MJ_PGNO(pPager)-1) ){
-      pPager->dbSize++;
-    }
   }
   return rc;
 }
