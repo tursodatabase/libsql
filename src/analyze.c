@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code associated with the ANALYZE command.
 **
-** @(#) $Id: analyze.c,v 1.47 2008/12/10 16:45:51 drh Exp $
+** @(#) $Id: analyze.c,v 1.48 2009/02/13 16:59:53 drh Exp $
 */
 #ifndef SQLITE_OMIT_ANALYZE
 #include "sqliteInt.h"
@@ -416,10 +416,15 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   /* Load new statistics out of the sqlite_stat1 table */
   zSql = sqlite3MPrintf(db, "SELECT idx, stat FROM %Q.sqlite_stat1",
                         sInfo.zDatabase);
-  (void)sqlite3SafetyOff(db);
-  rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
-  (void)sqlite3SafetyOn(db);
-  sqlite3DbFree(db, zSql);
+  if( zSql==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    (void)sqlite3SafetyOff(db);
+    rc = sqlite3_exec(db, zSql, analysisLoader, &sInfo, 0);
+    (void)sqlite3SafetyOn(db);
+    sqlite3DbFree(db, zSql);
+    if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  }
   return rc;
 }
 
