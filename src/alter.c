@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.52 2009/01/20 16:53:40 danielk1977 Exp $
+** $Id: alter.c,v 1.53 2009/02/13 03:43:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -453,7 +453,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   assert( sqlite3BtreeHoldsAllMutexes(db) );
   iDb = sqlite3SchemaToIndex(db, pNew->pSchema);
   zDb = db->aDb[iDb].zName;
-  zTab = pNew->zName;
+  zTab = &pNew->zName[16];  /* Skip the "sqlite_altertab_" prefix on the name */
   pCol = &pNew->aCol[pNew->nCol-1];
   pDflt = pCol->pDflt;
   pTab = sqlite3FindTable(db, zTab, zDb);
@@ -583,7 +583,11 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
 
   /* Put a copy of the Table struct in Parse.pNewTable for the
-  ** sqlite3AddColumn() function and friends to modify.
+  ** sqlite3AddColumn() function and friends to modify.  But modify
+  ** the name by adding an "sqlite_altertab_" prefix.  By adding this
+  ** prefix, we insure that the name will not collide with an existing
+  ** table because user table are not allowed to have the "sqlite_"
+  ** prefix on their name.
   */
   pNew = (Table*)sqlite3DbMallocZero(db, sizeof(Table));
   if( !pNew ) goto exit_begin_add_column;
@@ -595,7 +599,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
   nAlloc = (((pNew->nCol-1)/8)*8)+8;
   assert( nAlloc>=pNew->nCol && nAlloc%8==0 && nAlloc-pNew->nCol<8 );
   pNew->aCol = (Column*)sqlite3DbMallocZero(db, sizeof(Column)*nAlloc);
-  pNew->zName = sqlite3DbStrDup(db, pTab->zName);
+  pNew->zName = sqlite3MPrintf(db, "sqlite_altertab_%s", pTab->zName);
   if( !pNew->aCol || !pNew->zName ){
     db->mallocFailed = 1;
     goto exit_begin_add_column;

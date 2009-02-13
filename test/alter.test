@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.30 2008/05/09 14:17:52 drh Exp $
+# $Id: alter.test,v 1.31 2009/02/13 03:43:32 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -810,5 +810,19 @@ do_test alter-13.3 {
     SELECT name FROM sqlite_master WHERE name LIKE 't3102%' ORDER BY 1;
   }
 } {t3102a_rename t3102b_rename t3102c}
+
+# Ticket #3651
+do_test alter-14.1 {
+  catchsql {
+    CREATE TABLE t3651(a UNIQUE);
+    ALTER TABLE t3651 ADD COLUMN b UNIQUE;
+  }
+} {1 {Cannot add a UNIQUE column}}
+do_test alter-14.2 {
+  catchsql {
+    ALTER TABLE t3651 ADD COLUMN b PRIMARY KEY;
+  }
+} {1 {Cannot add a PRIMARY KEY column}}
+
 
 finish_test

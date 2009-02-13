@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.517 2009/02/10 10:44:42 danielk1977 Exp $
+** $Id: build.c,v 1.518 2009/02/13 03:43:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -365,7 +365,7 @@ static void freeIndex(Index *p){
 ** it is not unlinked from the Table that it indexes.
 ** Unlinking from the Table must be done by the calling function.
 */
-static void sqliteDeleteIndex(Index *p){
+static void sqlite3DeleteIndex(Index *p){
   Index *pOld;
   const char *zName = p->zName;
 
@@ -525,7 +525,7 @@ void sqlite3DeleteTable(Table *pTable){
   for(pIndex = pTable->pIndex; pIndex; pIndex=pNext){
     pNext = pIndex->pNext;
     assert( pIndex->pSchema==pTable->pSchema );
-    sqliteDeleteIndex(pIndex);
+    sqlite3DeleteIndex(pIndex);
   }
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
@@ -2428,7 +2428,8 @@ void sqlite3CreateIndex(
   pDb = &db->aDb[iDb];
 
   if( pTab==0 || pParse->nErr ) goto exit_create_index;
-  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 ){
+  if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
+       && memcmp(&pTab->zName[7],"altertab_",9)!=0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
     goto exit_create_index;
   }
