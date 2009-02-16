@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.10 2009/02/12 17:01:50 danielk1977 Exp $
+** $Id: backup.c,v 1.11 2009/02/16 16:23:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -373,7 +373,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       if( nSrcPagesize<nDestPagesize ){
         int ratio = nDestPagesize/nSrcPagesize;
         nDestTruncate = (nSrcPage+ratio-1)/ratio;
-        if( nDestTruncate==PENDING_BYTE_PAGE(p->pDest->pBt) ){
+        if( nDestTruncate==(int)PENDING_BYTE_PAGE(p->pDest->pBt) ){
           nDestTruncate--;
         }
       }else{
