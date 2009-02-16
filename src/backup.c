@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.11 2009/02/16 16:23:09 drh Exp $
+** $Id: backup.c,v 1.12 2009/02/16 17:55:47 shane Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -396,7 +396,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
 
         assert( pFile );
         assert( (i64)nDestTruncate*(i64)nDestPagesize >= iSize || (
-              nDestTruncate==(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
+              nDestTruncate==(int)(PENDING_BYTE_PAGE(p->pDest->pBt)-1)
            && iSize>=PENDING_BYTE && iSize<=PENDING_BYTE+nDestPagesize
         ));
         if( SQLITE_OK==(rc = sqlite3PagerCommitPhaseOne(pDestPager, 0, 1))
