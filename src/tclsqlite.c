@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.236 2009/02/04 22:46:47 drh Exp $
+** $Id: tclsqlite.c,v 1.237 2009/02/17 16:29:11 danielk1977 Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -2744,6 +2744,12 @@ static char zMainloop[] =
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
+  
+  /* Call sqlite3_shutdown() once before doing anything else. This is to
+  ** test that sqlite3_shutdown() can be safely called by a process before
+  ** sqlite3_initialize() is. */
+  sqlite3_shutdown();
+
   Tcl_FindExecutable(argv[0]);
   interp = Tcl_CreateInterp();
   Sqlite3_Init(interp);

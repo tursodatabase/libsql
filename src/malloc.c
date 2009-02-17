@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.54 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: malloc.c,v 1.55 2009/02/17 16:29:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -153,7 +153,9 @@ int sqlite3MallocInit(void){
 ** Deinitialize the memory allocation subsystem.
 */
 void sqlite3MallocEnd(void){
-  sqlite3GlobalConfig.m.xShutdown(sqlite3GlobalConfig.m.pAppData);
+  if( sqlite3GlobalConfig.m.xShutdown ){
+    sqlite3GlobalConfig.m.xShutdown(sqlite3GlobalConfig.m.pAppData);
+  }
   memset(&mem0, 0, sizeof(mem0));
 }
 

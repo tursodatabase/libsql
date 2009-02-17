@@ -14,7 +14,7 @@
 ** This file contains code that is common across all mutex implementations.
 
 **
-** $Id: mutex.c,v 1.29 2008/10/07 15:25:48 drh Exp $
+** $Id: mutex.c,v 1.30 2009/02/17 16:29:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -67,7 +67,9 @@ int sqlite3MutexInit(void){
 */
 int sqlite3MutexEnd(void){
   int rc = SQLITE_OK;
-  rc = sqlite3GlobalConfig.mutex.xMutexEnd();
+  if( sqlite3GlobalConfig.mutex.xMutexEnd ){
+    rc = sqlite3GlobalConfig.mutex.xMutexEnd();
+  }
   return rc;
 }
 
