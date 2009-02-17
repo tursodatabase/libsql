@@ -1,5 +1,5 @@
-C Allow\ssqlite3_shutdown()\sto\sbe\scalled\sby\sa\sprocess\sbefore\ssqlite3_initialize()\sis.\sPrior\sto\sthis\scommit\ssuch\sa\scall\scould\ssegfault.\s(CVS\s6296)
-D 2009-02-17T16:29:11
+C Initialize\san\suninitialized\sbuffer\sto\ssilence\sa\svalgrind\swarning\sduring\sa\sVACUUM\soperation.\s(CVS\s6297)
+D 2009-02-17T17:56:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 4e916cafbf5ec0166213ac62d680ebbe12b8c5a7
 F src/os_win.c 45cb430884da7e9360a55a0fcd5c2c44c22dd79d
-F src/pager.c eede73b78da4ecce58476d25cc9404910724d2ae
+F src/pager.c d62fd62f7c0ad257019c21158b597fdbb0182529
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y 4f4d16aee0d11f69fec2adb77dac88878043ed8d
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 59a4755185f0e51699cd020ae67d279bee45de1c
-R c00d45d1c8c16889bdb28d67afb51798
+P 79431c58d964d6057c7f42f7c1df74f3df4493eb
+R d18eb83f62823b052c9f91def439d0bf
 U danielk1977
-Z 4e995aca588943513f3969ac24dc04b4
+Z 202aeb49d99b1391c07f283d43f19e14

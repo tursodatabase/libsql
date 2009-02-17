@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.569 2009/02/17 16:17:02 drh Exp $
+** @(#) $Id: pager.c,v 1.570 2009/02/17 17:56:30 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3412,6 +3412,7 @@ static int readDbPage(PgHdr *pPg){
 
   if( !isOpen(pPager->fd) ){
     assert( pPager->tempFile );
+    memset(pPg->pData, 0, pPager->pageSize);
     return SQLITE_IOERR_SHORT_READ;
   }
   iOffset = (pgno-1)*(i64)pPager->pageSize;
