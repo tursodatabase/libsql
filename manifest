@@ -1,5 +1,5 @@
-C Initialize\san\suninitialized\sbuffer\sto\ssilence\sa\svalgrind\swarning\sduring\sa\sVACUUM\soperation.\s(CVS\s6297)
-D 2009-02-17T17:56:30
+C Add\stests\sto\sdouble-check\sthat\snothing\swithin\sSQLite\sever\stries\sto\sallocate\namounts\sof\smemory\sthat\sare\sclose\sto\sthe\smaximum\ssigned\sinteger,\sleading\sto\nan\sinteger\soverflow\swithin\smalloc().\s\sThis\sis\snot\scurrently\sa\sproblem.\nThe\sextra\stests\sjust\sinsure\sit\snever\sbecomes\sa\sproblem.\s(CVS\s6298)
+D 2009-02-17T18:37:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
 F src/main.c 4912460dab29e4d37e4ba1d78320c6a77bb95ad8
-F src/malloc.c 836bc7ead9b255a61d56d5589b24e1dad6704604
+F src/malloc.c 552d993ee414ead65cafcaa636e22c84085999cb
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
 F src/mem2.c 6f46eef2c2cce452ae38f5b98c2632712e858bc9
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 79431c58d964d6057c7f42f7c1df74f3df4493eb
-R d18eb83f62823b052c9f91def439d0bf
-U danielk1977
-Z 202aeb49d99b1391c07f283d43f19e14
+P 8c61968b33dd753618589cb3f859984223161d64
+R 793a2b2b9355549182d95e51bb87d221
+U drh
+Z f91927cefb8ab6069f07082e6447fa2b
