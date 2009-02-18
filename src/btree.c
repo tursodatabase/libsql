@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.565 2009/02/04 01:49:30 shane Exp $
+** $Id: btree.c,v 1.566 2009/02/18 20:31:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1774,13 +1774,14 @@ int sqlite3BtreeSetAutoVacuum(Btree *p, int autoVacuum){
 #else
   BtShared *pBt = p->pBt;
   int rc = SQLITE_OK;
-  u8 av = autoVacuum ?1:0;
+  u8 av = (u8)autoVacuum;
 
   sqlite3BtreeEnter(p);
-  if( pBt->pageSizeFixed && av!=pBt->autoVacuum ){
+  if( pBt->pageSizeFixed && (av ?1:0)!=pBt->autoVacuum ){
     rc = SQLITE_READONLY;
   }else{
-    pBt->autoVacuum = av;
+    pBt->autoVacuum = av ?1:0;
+    pBt->incrVacuum = av==2 ?1:0;
   }
   sqlite3BtreeLeave(p);
   return rc;

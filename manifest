@@ -1,5 +1,5 @@
-C Move\sthe\stext\sof\sC-API\srequirements\sout\sof\sthe\ssqlite.h.in\ssource\sfile\sand\ninto\sseparate\sfiles\sin\sthe\s"docsrc"\sCM\ssystem.\s\sComment\schanges\sonly\s-\sno\nchanges\sto\scode.\s(CVS\s6303)
-D 2009-02-18T18:37:59
+C Make\ssure\sthe\sauto_vacuum=INCREMENTAL\ssetting\sis\spreserved\sacross\sa\sVACUUM.\nTicket\s#3663.\s(CVS\s6304)
+D 2009-02-18T20:31:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 2d3f31148d7b086c5c72d9edcd04fc2751b0aa6e
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 71f30e74389aa7ae51421592dfaf69511152677c
+F src/btree.c 086fdb4505aa00275d6873829aeb51bf57da8d16
 F src/btree.h 4eab72af6adf95f0b08b61a72ef9781bdb0bf63f
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
 F src/build.c a394b2511c5c768f14a9d7c1c31606b9fa569f1b
@@ -393,7 +393,7 @@ F test/in4.test f795d65cbcb402d3e5c016ada8f9521d6119eca8
 F test/incrblob.test 4b9437bbb38724343dadbbcca6356bc2a9b435d1
 F test/incrblob2.test 5cca1c3cb29064c504b3b0cc3e2cd43e8053cfdf
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
-F test/incrvacuum.test 39518fb7afbccc435be5d99f0b786d2396d7335c
+F test/incrvacuum.test d0fb6ef6d747ef5c5ebe878aafa72dd3e178856b
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
 F test/incrvacuum_ioerr.test 57d2f5777ab13fa03b87b262a4ea1bad5cfc0291
 F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
@@ -645,7 +645,7 @@ F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 68e39b2228b4b772166debef4a82accf6ddd32f3
-F test/vacuum2.test fd87eec0ed72c6cc0809f7867929e2895affed92
+F test/vacuum2.test ec57f21d394b7b72249b11f8e4b5d487bab56539
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fb281950c51ef81797f93d797113d328d66a7cb0
-R 0effd0f4f2c789818b4f05af2f9c8611
+P 419eb48b6b4238526850091eef28af503b6c4579
+R 379eb6edfb0135905a7c816f1113ae71
 U drh
-Z bc5849ca8532d7fbaa4a8dd8511ed496
+Z bfca2c680cc89c0b0c6a5ad192f03b32

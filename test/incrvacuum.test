@@ -14,7 +14,7 @@
 # Note: There are also some tests for incremental vacuum and IO 
 # errors in incrvacuum_ioerr.test.
 #
-# $Id: incrvacuum.test,v 1.22 2009/01/30 05:47:15 shane Exp $
+# $Id: incrvacuum.test,v 1.23 2009/02/18 20:31:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -673,9 +673,14 @@ do_test incrvacuum-12.2 {
 do_test incrvacuum-12.3 {
   execsql { ROLLBACK; } db2
   execsql { PRAGMA auto_vacuum }
-} {1}
+} {2}   ;# Still 2 because PRAGMA auto_vacuum setting held in case of vacuum
+do_test incrvacuum-12.4 {
+  db close
+  sqlite3 db test.db
+  execsql { PRAGMA auto_vacuum }
+} {1}   ;# Revert to 1 because the database file did not change
 
-do_test incrvacuum-12.3 {
+do_test incrvacuum-12.5 {
   execsql { SELECT * FROM sqlite_master }
   execsql { PRAGMA auto_vacuum }
 } {1}
