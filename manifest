@@ -1,5 +1,5 @@
-C Fix\sthe\samalgamation\sbuilder\sto\smark\ssqlite3PagerBackupPtr\sas\sprivate.\nTicket\s#3662.\s(CVS\s6302)
-D 2009-02-18T12:25:28
+C Move\sthe\stext\sof\sC-API\srequirements\sout\sof\sthe\ssqlite.h.in\ssource\sfile\sand\ninto\sseparate\sfiles\sin\sthe\s"docsrc"\sCM\ssystem.\s\sComment\schanges\sonly\s-\sno\nchanges\sto\scode.\s(CVS\s6303)
+D 2009-02-18T18:37:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/resolve.c 18dc9f0df1d60048e012ce6632251063e0dd356a
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c 164934bd8a9fae29e4d21530688dbac53b420da6
 F src/shell.c f109ebbb50132926ebbc173a6c2d8838d5d78527
-F src/sqlite.h.in cf04cdc709a5f07b6e6eba5f5a5000bd9114606b
+F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 55cc7e45a7fcc166be62b984168dd69159d877eb
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P edbb3586e92d675d621e23126581e9c3072e32b9
-R 82b9fb3c50c52962f0ffbc3a044fbec7
+P fb281950c51ef81797f93d797113d328d66a7cb0
+R 0effd0f4f2c789818b4f05af2f9c8611
 U drh
-Z 4fe0b142c58881dd7863f9d589b1ed7e
+Z bc5849ca8532d7fbaa4a8dd8511ed496
