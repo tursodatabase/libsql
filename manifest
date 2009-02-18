@@ -1,7 +1,7 @@
-C Version\s3.6.11\s(CVS\s6299)
-D 2009-02-18T00:00:04
+C break\slibsqlite3.la\sinstall\sstep\sout\sso\sthe\stcl\sinstall\sstep\scan\sdepend\son\sit\sas\swell\s(CVS\s6300)
+D 2009-02-18T04:34:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in c7a5a30fb6852bd7839b1024e1661da8549878ee
+F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f6ba7bb9152cffc9f67dfa7de12e36a3244b7e03
-R 793a2b2b9355549182d95e51bb87d221
-U drh
-Z a0db0161154f15266372e6c70dcfd92d
+P 6abd630c8703ed09af27776096677c2f35da6b85
+R 770219ddbeb117054e96a3477a2b509b
+U vapier
+Z 39748390a6ccf74ec32657857f96fd21
