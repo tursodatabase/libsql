@@ -1,5 +1,5 @@
-C break\slibsqlite3.la\sinstall\sstep\sout\sso\sthe\stcl\sinstall\sstep\scan\sdepend\son\sit\sas\swell\s(CVS\s6300)
-D 2009-02-18T04:34:00
+C run\sautoconf\sso\sthe\supdated\sversion\sis\sin\sthe\sconfigure\sscript\s(CVS\s6301)
+D 2009-02-18T04:35:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bb4f3cf3d3d4297300e903d4119142816b3656cf x
+F configure be45fcf9991e82d44576ba862a88f5ee01721430 x
 F configure.ac 2c06a767c7be70560317754f3eea4c84887da9ca
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6abd630c8703ed09af27776096677c2f35da6b85
-R 770219ddbeb117054e96a3477a2b509b
+P 0998c55467a777783e4d451b3c82d769bef84d0b
+R 324bca9f632e3a701ff21f201cec095e
 U vapier
-Z 39748390a6ccf74ec32657857f96fd21
+Z 441bb84c715f5a4a459cc9c30a3e2805
