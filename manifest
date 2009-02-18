@@ -1,5 +1,5 @@
-C run\sautoconf\sso\sthe\supdated\sversion\sis\sin\sthe\sconfigure\sscript\s(CVS\s6301)
-D 2009-02-18T04:35:13
+C Fix\sthe\samalgamation\sbuilder\sto\smark\ssqlite3PagerBackupPtr\sas\sprivate.\nTicket\s#3662.\s(CVS\s6302)
+D 2009-02-18T12:25:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -687,7 +687,7 @@ F tool/lempar.c aeba88b8566ff66f8a67c96b3eb2dd95e7d8908d
 F tool/mkkeywordhash.c 8e57fbe8c4fe2f1800f9190fd361231cb8558407
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl b3dcc7a9610baf36545dab6acf19605505016409
+F tool/mksqlite3c.tcl a416823e4c06e8d8e18e141e69a8a0e8e12ad861
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0998c55467a777783e4d451b3c82d769bef84d0b
-R 324bca9f632e3a701ff21f201cec095e
-U vapier
-Z 441bb84c715f5a4a459cc9c30a3e2805
+P edbb3586e92d675d621e23126581e9c3072e32b9
+R 82b9fb3c50c52962f0ffbc3a044fbec7
+U drh
+Z 4fe0b142c58881dd7863f9d589b1ed7e
