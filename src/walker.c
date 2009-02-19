@@ -12,7 +12,7 @@
 ** This file contains routines used for walking the parser tree for
 ** an SQL statement.
 **
-** $Id: walker.c,v 1.1 2008/08/20 16:35:10 drh Exp $
+** $Id: walker.c,v 1.2 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -45,9 +45,10 @@ int sqlite3WalkExpr(Walker *pWalker, Expr *pExpr){
   if( rc==WRC_Continue ){
     if( sqlite3WalkExpr(pWalker, pExpr->pLeft) ) return WRC_Abort;
     if( sqlite3WalkExpr(pWalker, pExpr->pRight) ) return WRC_Abort;
-    if( sqlite3WalkExprList(pWalker, pExpr->pList) ) return WRC_Abort;
-    if( sqlite3WalkSelect(pWalker, pExpr->pSelect) ){
-      return WRC_Abort;
+    if( ExprHasProperty(pExpr, EP_xIsSelect) ){
+      if( sqlite3WalkSelect(pWalker, pExpr->x.pSelect) ) return WRC_Abort;
+    }else{
+      if( sqlite3WalkExprList(pWalker, pExpr->x.pList) ) return WRC_Abort;
     }
   }
   return rc & WRC_Abort;

@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.518 2009/02/13 03:43:32 drh Exp $
+** $Id: build.c,v 1.519 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -178,19 +178,6 @@ void sqlite3FinishCoding(Parse *pParse){
       codeTableLocks(pParse);
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pParse->cookieGoto);
     }
-
-#ifndef SQLITE_OMIT_TRACE
-    if( !db->init.busy ){
-      /* Change the P4 argument of the first opcode (which will always be
-      ** an OP_Trace) to be the complete text of the current SQL statement.
-      */
-      VdbeOp *pOp = sqlite3VdbeGetOp(v, 0);
-      if( pOp && pOp->opcode==OP_Trace ){
-        sqlite3VdbeChangeP4(v, 0, pParse->zSql,
-                            (int)(pParse->zTail - pParse->zSql));
-      }
-    }
-#endif /* SQLITE_OMIT_TRACE */
   }
 
 
@@ -202,8 +189,8 @@ void sqlite3FinishCoding(Parse *pParse){
     sqlite3VdbeTrace(v, trace);
 #endif
     assert( pParse->disableColCache==0 );  /* Disables and re-enables match */
-    sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem+3,
-                         pParse->nTab+3, pParse->explain);
+    sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
+                         pParse->nTab, pParse->explain);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
@@ -618,6 +605,9 @@ void sqlite3OpenMasterTable(Parse *p, int iDb){
   sqlite3TableLock(p, iDb, MASTER_ROOT, 1, SCHEMA_TABLE(iDb));
   sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, 5);/* sqlite_master has 5 columns */
   sqlite3VdbeAddOp3(v, OP_OpenWrite, 0, MASTER_ROOT, iDb);
+  if( p->nTab==0 ){
+    p->nTab = 1;
+  }
 }
 
 /*
@@ -1116,12 +1106,12 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
-      Expr *pCopy;
+      /* A copy of pExpr is used instead of the original, as pExpr contains
+      ** tokens that point to volatile memory. The 'span' of the expression
+      ** is required by pragma table_info.
+      */
       sqlite3ExprDelete(db, pCol->pDflt);
-      pCol->pDflt = pCopy = sqlite3ExprDup(db, pExpr);
-      if( pCopy ){
-        sqlite3TokenCopy(db, &pCopy->span, &pExpr->span);
-      }
+      pCol->pDflt = sqlite3ExprDup(db, pExpr, EXPRDUP_REDUCE|EXPRDUP_SPAN);
     }
   }
   sqlite3ExprDelete(db, pExpr);
@@ -1217,7 +1207,7 @@ void sqlite3AddCheckConstraint(
     ** to malloced space and not the (ephemeral) text of the CREATE TABLE
     ** statement */
     pTab->pCheck = sqlite3ExprAnd(db, pTab->pCheck, 
-                                  sqlite3ExprDup(db, pCheckExpr));
+                                  sqlite3ExprDup(db, pCheckExpr, 0));
   }
 #endif
   sqlite3ExprDelete(db, pCheckExpr);
@@ -1540,7 +1530,7 @@ void sqlite3EndTable(
       SelectDest dest;
       Table *pSelTab;
 
-      assert(pParse->nTab==0);
+      assert(pParse->nTab==1);
       sqlite3VdbeAddOp3(v, OP_OpenWrite, 1, pParse->regRoot, iDb);
       sqlite3VdbeChangeP5(v, 1);
       pParse->nTab = 2;
@@ -1701,7 +1691,7 @@ void sqlite3CreateView(
   ** allocated rather than point to the input string - which means that
   ** they will persist after the current sqlite3_exec() call returns.
   */
-  p->pSelect = sqlite3SelectDup(db, pSelect);
+  p->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
   sqlite3SelectDelete(db, pSelect);
   if( db->mallocFailed ){
     return;
@@ -1783,7 +1773,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   ** statement that defines the view.
   */
   assert( pTable->pSelect );
-  pSel = sqlite3SelectDup(db, pTable->pSelect);
+  pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
@@ -2277,8 +2267,8 @@ void sqlite3DeferForeignKey(Parse *pParse, int isDeferred){
 */
 static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   Table *pTab = pIndex->pTable;  /* The table that is indexed */
-  int iTab = pParse->nTab;       /* Btree cursor used for pTab */
-  int iIdx = pParse->nTab+1;     /* Btree cursor used for pIndex */
+  int iTab = pParse->nTab++;     /* Btree cursor used for pTab */
+  int iIdx = pParse->nTab++;     /* Btree cursor used for pIndex */
   int addr1;                     /* Address of top of loop */
   int tnum;                      /* Root page of index */
   Vdbe *v;                       /* Generate code into this virtual machine */

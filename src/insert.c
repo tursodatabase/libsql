@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.256 2008/12/10 21:19:57 drh Exp $
+** $Id: insert.c,v 1.257 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -168,7 +168,7 @@ static int autoIncBegin(
   if( pTab->tabFlags & TF_Autoincrement ){
     Vdbe *v = pParse->pVdbe;
     Db *pDb = &pParse->db->aDb[iDb];
-    int iCur = pParse->nTab;
+    int iCur = pParse->nTab++;
     int addr;               /* Address of the top of the loop */
     assert( v );
     pParse->nMem++;         /* Holds name of table */
@@ -217,7 +217,7 @@ static void autoIncEnd(
   int memId          /* Memory cell holding the maximum rowid */
 ){
   if( pTab->tabFlags & TF_Autoincrement ){
-    int iCur = pParse->nTab;
+    int iCur = pParse->nTab++;
     Vdbe *v = pParse->pVdbe;
     Db *pDb = &pParse->db->aDb[iDb];
     int j1;

@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.151 2009/02/04 03:59:25 shane Exp $
+** $Id: vdbeapi.c,v 1.152 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -488,15 +488,14 @@ static int sqlite3Step(Vdbe *p){
 #ifndef SQLITE_OMIT_TRACE
   /* Invoke the profile callback if there is one
   */
-  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->nOp>0
-           && p->aOp[0].opcode==OP_Trace && p->aOp[0].p4.z!=0 ){
+  if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->zSql ){
     double rNow;
     u64 elapseTime;
 
     sqlite3OsCurrentTime(db->pVfs, &rNow);
     elapseTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
     elapseTime -= p->startTime;
-    db->xProfile(db->pProfileArg, p->aOp[0].p4.z, elapseTime);
+    db->xProfile(db->pProfileArg, p->zSql, elapseTime);
   }
 #endif
 
@@ -505,7 +504,7 @@ static int sqlite3Step(Vdbe *p){
   p->rc = sqlite3ApiExit(p->db, p->rc);
 end_of_step:
   assert( (rc&0xff)==rc );
-  if( p->zSql && (rc&0xff)<SQLITE_ROW ){
+  if( p->isPrepareV2 && (rc&0xff)<SQLITE_ROW ){
     /* This behavior occurs if sqlite3_prepare_v2() was used to build
     ** the prepared statement.  Return error codes directly */
     p->db->errCode = p->rc;
@@ -549,7 +548,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
       sqlite3_reset(pStmt);
       v->expired = 0;
     }
-    if( rc==SQLITE_SCHEMA && v->zSql && db->pErr ){
+    if( rc==SQLITE_SCHEMA && v->isPrepareV2 && db->pErr ){
       /* This case occurs after failing to recompile an sql statement. 
       ** The error message from the SQL compiler has already been loaded 
       ** into the database handle. This block copies the error message 

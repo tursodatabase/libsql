@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.833 2009/02/05 16:53:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.834 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1363,19 +1363,27 @@ struct AggInfo {
 ** Each node of an expression in the parse tree is an instance
 ** of this structure.
 **
-** Expr.op is the opcode.  The integer parser token codes are reused
-** as opcodes here.  For example, the parser defines TK_GE to be an integer
-** code representing the ">=" operator.  This same integer code is reused
+** Expr.op is the opcode. The integer parser token codes are reused
+** as opcodes here. For example, the parser defines TK_GE to be an integer
+** code representing the ">=" operator. This same integer code is reused
 ** to represent the greater-than-or-equal-to operator in the expression
 ** tree.
 **
-** Expr.pRight and Expr.pLeft are subexpressions.  Expr.pList is a list
-** of argument if the expression is a function.
+** If the expression is an SQL literal (TK_INTEGER, TK_FLOAT, TK_BLOB, 
+** or TK_STRING), then Expr.token contains the text of the SQL literal. If
+** the expression is a variable (TK_VARIABLE), then Expr.token contains the 
+** variable name. Finally, if the expression is an SQL function (TK_FUNCTION),
+** then Expr.token contains the name of the function.
 **
-** Expr.token is the operator token for this node.  For some expressions
-** that have subexpressions, Expr.token can be the complete text that gave
-** rise to the Expr.  In the latter case, the token is marked as being
-** a compound token.
+** Expr.pRight and Expr.pLeft are the left and right subexpressions of a
+** binary operator. Either or both may be NULL.
+**
+** Expr.x.pList is a list of arguments if the expression is an SQL function,
+** a CASE expression or an IN expression of the form "<lhs> IN (<y>, <z>...)".
+** Expr.x.pSelect is used if the expression is a sub-select or an expression of
+** the form "<lhs> IN (SELECT ...)". If the EP_xIsSelect bit is set in the
+** Expr.flags mask, then Expr.x.pSelect is valid. Otherwise, Expr.x.pList is 
+** valid.
 **
 ** An expression of the form ID or ID.ID refers to a column in a table.
 ** For such expressions, Expr.op is set to TK_COLUMN and Expr.iTable is
@@ -1385,10 +1393,9 @@ struct AggInfo {
 ** value is also stored in the Expr.iAgg column in the aggregate so that
 ** it can be accessed after all aggregates are computed.
 **
-** If the expression is a function, the Expr.iTable is an integer code
-** representing which function.  If the expression is an unbound variable
-** marker (a question mark character '?' in the original SQL) then the
-** Expr.iTable holds the index number for that variable.
+** If the expression is an unbound variable marker (a question mark 
+** character '?' in the original SQL) then the Expr.iTable holds the index 
+** number for that variable.
 **
 ** If the expression is a subquery then Expr.iColumn holds an integer
 ** register number containing the result of the subquery.  If the
@@ -1396,32 +1403,62 @@ struct AggInfo {
 ** gives a different answer at different times during statement processing
 ** then iTable is the address of a subroutine that computes the subquery.
 **
-** The Expr.pSelect field points to a SELECT statement.  The SELECT might
-** be the right operand of an IN operator.  Or, if a scalar SELECT appears
-** in an expression the opcode is TK_SELECT and Expr.pSelect is the only
-** operand.
-**
 ** If the Expr is of type OP_Column, and the table it is selecting from
 ** is a disk table or the "old.*" pseudo-table, then pTab points to the
 ** corresponding table definition.
+**
+** ALLOCATION NOTES:
+**
+** Expr structures may be stored as part of the in-memory database schema,
+** for example as part of trigger, view or table definitions. In this case,
+** the amount of memory consumed by complex expressions may be significant.
+** For this reason, less than sizeof(Expr) bytes may be allocated for some 
+** Expr structs stored as part of the in-memory database schema.
+**
+** If the EP_Reduced flag is set in Expr.flags, then only EXPR_REDUCEDSIZE
+** bytes of space are allocated for the expression structure. This is enough
+** space to store all fields up to and including the "Token span;" field.
+**
+** If the EP_TokenOnly flag is set in Expr.flags, then only EXPR_TOKENONLYSIZE
+** bytes of space are allocated for the expression structure. This is enough
+** space to store all fields up to and including the "Token token;" field.
 */
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
   u16 flags;             /* Various flags.  See below */
-  CollSeq *pColl;        /* The collation type of the column or 0 */
-  Expr *pLeft, *pRight;  /* Left and right subnodes */
-  ExprList *pList;       /* A list of expressions used as function arguments
-                         ** or in "<expr> IN (<expr-list)" */
   Token token;           /* An operand token */
+
+  /* If the EP_TokenOnly flag is set in the Expr.flags mask, then no
+  ** space is allocated for the fields below this point. An attempt to
+  ** access them will result in a segfault or malfunction. 
+  *********************************************************************/
+
   Token span;            /* Complete text of the expression */
+
+  /* If the EP_SpanOnly flag is set in the Expr.flags mask, then no
+  ** space is allocated for the fields below this point. An attempt to
+  ** access them will result in a segfault or malfunction. 
+  *********************************************************************/
+
+  Expr *pLeft;           /* Left subnode */
+  Expr *pRight;          /* Right subnode */
+  union {
+    ExprList *pList;     /* Function arguments or in "<expr> IN (<expr-list)" */
+    Select *pSelect;     /* Used for sub-selects and "<expr> IN (<select>)" */
+  } x;
+  CollSeq *pColl;        /* The collation type of the column or 0 */
+
+  /* If the EP_Reduced flag is set in the Expr.flags mask, then no
+  ** space is allocated for the fields below this point. An attempt to
+  ** access them will result in a segfault or malfunction.
+  *********************************************************************/
+
   int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
                          ** iColumn-th field of the iTable-th table. */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   int iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
-  Select *pSelect;       /* When the expression is a sub-select.  Also the
-                         ** right side of "<expr> IN (<select>)" */
   Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
@@ -1443,6 +1480,12 @@ struct Expr {
 #define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
 #define EP_FixedDest  0x0400  /* Result needed in a specific register */
 #define EP_IntValue   0x0800  /* Integer value contained in iTable */
+#define EP_xIsSelect  0x1000  /* x.pSelect is valid (otherwise x.pList is) */
+
+#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
+#define EP_SpanOnly   0x8000  /* Expr struct is EXPR_SPANONLYSIZE bytes only */
+
 /*
 ** These macros can be used to test, set, or clear bits in the 
 ** Expr.flags field.
@@ -1451,6 +1494,23 @@ struct Expr {
 #define ExprHasAnyProperty(E,P)  (((E)->flags&(P))!=0)
 #define ExprSetProperty(E,P)     (E)->flags|=(P)
 #define ExprClearProperty(E,P)   (E)->flags&=~(P)
+
+/*
+** Macros to determine the number of bytes required by a normal Expr 
+** struct, an Expr struct with the EP_Reduced flag set in Expr.flags 
+** and an Expr struct with the EP_TokenOnly flag set.
+*/
+#define EXPR_FULLSIZE           sizeof(Expr)
+#define EXPR_REDUCEDSIZE        ((int)(&((Expr*)(0))->iTable))
+#define EXPR_TOKENONLYSIZE      ((int)(&((Expr*)(0))->span))
+#define EXPR_SPANONLYSIZE       ((int)(&((Expr*)(0))->pLeft))
+
+/*
+** Flags passed to the sqlite3ExprDup() function. See the header comment 
+** above sqlite3ExprDup() for details.
+*/
+#define EXPRDUP_REDUCE 0x0001
+#define EXPRDUP_SPAN   0x0002
 
 /*
 ** A list of expressions.  Each expression may optionally have a
@@ -2379,12 +2439,12 @@ void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
-Expr *sqlite3ExprDup(sqlite3*,Expr*);
+Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
 void sqlite3TokenCopy(sqlite3*,Token*, Token*);
-ExprList *sqlite3ExprListDup(sqlite3*,ExprList*);
-SrcList *sqlite3SrcListDup(sqlite3*,SrcList*);
+ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
+SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
-Select *sqlite3SelectDup(sqlite3*,Select*);
+Select *sqlite3SelectDup(sqlite3*,Select*,int);
 void sqlite3FuncDefInsert(FuncDefHash*, FuncDef*);
 FuncDef *sqlite3FindFunction(sqlite3*,const char*,int,int,u8,int);
 void sqlite3RegisterBuiltinFunctions(sqlite3*);

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.435 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.436 2009/02/19 14:39:25 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -52,17 +52,22 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
 /*
 ** Remember the SQL string for a prepared statement.
 */
-void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n){
+void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
   if( p==0 ) return;
+#ifdef SQLITE_OMIT_TRACE
+  if( !isPrepareV2 ) return;
+#endif
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
+  p->isPrepareV2 = isPrepareV2;
 }
 
 /*
 ** Return the SQL associated with a prepared statement
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt){
-  return ((Vdbe *)pStmt)->zSql;
+  Vdbe *p = (Vdbe *)pStmt;
+  return (p->isPrepareV2 ? p->zSql : 0);
 }
 
 /*
@@ -71,7 +76,6 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt){
 void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   Vdbe tmp, *pTmp;
   char *zTmp;
-  int nTmp;
   tmp = *pA;
   *pA = *pB;
   *pB = tmp;
@@ -84,9 +88,7 @@ void sqlite3VdbeSwap(Vdbe *pA, Vdbe *pB){
   zTmp = pA->zSql;
   pA->zSql = pB->zSql;
   pB->zSql = zTmp;
-  nTmp = pA->nSql;
-  pA->nSql = pB->nSql;
-  pB->nSql = nTmp;
+  pB->isPrepareV2 = pA->isPrepareV2;
 }
 
 #ifdef SQLITE_DEBUG
@@ -1007,6 +1009,14 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 **
 ** This is the only way to move a VDBE from VDBE_MAGIC_INIT to
 ** VDBE_MAGIC_RUN.
+**
+** This function may be called more than once on a single virtual machine.
+** The first call is made while compiling the SQL statement. Subsequent
+** calls are made as part of the process of resetting a statement to be
+** re-executed (from a call to sqlite3_reset()). The nVar, nMem, nCursor 
+** and isExplain parameters are only passed correct values the first time
+** the function is called. On subsequent calls, from sqlite3_reset(), nVar
+** is passed -1 and nMem, nCursor and isExplain are all passed zero.
 */
 void sqlite3VdbeMakeReady(
   Vdbe *p,                       /* The VDBE */
@@ -1039,23 +1049,26 @@ void sqlite3VdbeMakeReady(
   */
   nMem += nCursor;
 
-  /*
-  ** Allocation space for registers.
+  /* Allocate space for memory registers, SQL variables, VDBE cursors and 
+  ** an array to marshal SQL function arguments in. This is only done the
+  ** first time this function is called for a given VDBE, not when it is
+  ** being called from sqlite3_reset() to reset the virtual machine.
   */
-  if( p->aMem==0 ){
+  if( nVar>=0 ){
+    int nByte;
     int nArg;       /* Maximum number of args passed to a user function. */
     resolveP2Values(p, &nArg);
-    assert( nVar>=0 );
     if( isExplain && nMem<10 ){
       nMem = 10;
     }
-    p->aMem = sqlite3DbMallocZero(db,
-        nMem*sizeof(Mem)               /* aMem */
-      + nVar*sizeof(Mem)               /* aVar */
-      + nArg*sizeof(Mem*)              /* apArg */
-      + nVar*sizeof(char*)             /* azVar */
-      + nCursor*sizeof(VdbeCursor*)+1  /* apCsr */
-    );
+    nByte = nMem*sizeof(Mem)               /* aMem */
+          + nVar*sizeof(Mem)               /* aVar */
+          + nArg*sizeof(Mem*)              /* apArg */
+          + nVar*sizeof(char*)             /* azVar */
+          + nCursor*sizeof(VdbeCursor*);   /* apCsr */
+    if( nByte ){
+      p->aMem = sqlite3DbMallocZero(db, nByte);
+    }
     if( !db->mallocFailed ){
       p->aMem--;             /* aMem[] goes from 1..nMem */
       p->nMem = nMem;        /*       not from 0..nMem-1 */
@@ -1084,7 +1097,6 @@ void sqlite3VdbeMakeReady(
 
   p->pc = -1;
   p->rc = SQLITE_OK;
-  p->uniqueCnt = 0;
   p->errorAction = OE_Abort;
   p->explain |= isExplain;
   p->magic = VDBE_MAGIC_RUN;

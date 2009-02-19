@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.268 2009/01/29 19:27:47 drh Exp $
+** @(#) $Id: parse.y,v 1.269 2009/02/19 14:39:25 danielk1977 Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -824,7 +824,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   pList = sqlite3ExprListAppend(pParse,pList, Y, 0);
   A = sqlite3PExpr(pParse, TK_BETWEEN, W, 0, 0);
   if( A ){
-    A->pList = pList;
+    A->x.pList = pList;
   }else{
     sqlite3ExprListDelete(pParse->db, pList);
   } 
@@ -838,7 +838,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
     A = sqlite3PExpr(pParse, TK_IN, X, 0, 0);
     if( A ){
-      A->pList = Y;
+      A->x.pList = Y;
       sqlite3ExprSetHeight(pParse, A);
     }else{
       sqlite3ExprListDelete(pParse->db, Y);
@@ -849,7 +849,8 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= LP(B) select(X) RP(E). {
     A = sqlite3PExpr(pParse, TK_SELECT, 0, 0, 0);
     if( A ){
-      A->pSelect = X;
+      A->x.pSelect = X;
+      ExprSetProperty(A, EP_xIsSelect);
       sqlite3ExprSetHeight(pParse, A);
     }else{
       sqlite3SelectDelete(pParse->db, X);
@@ -859,7 +860,8 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= expr(X) in_op(N) LP select(Y) RP(E).  [IN] {
     A = sqlite3PExpr(pParse, TK_IN, X, 0, 0);
     if( A ){
-      A->pSelect = Y;
+      A->x.pSelect = Y;
+      ExprSetProperty(A, EP_xIsSelect);
       sqlite3ExprSetHeight(pParse, A);
     }else{
       sqlite3SelectDelete(pParse->db, Y);
@@ -871,7 +873,8 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
     SrcList *pSrc = sqlite3SrcListAppend(pParse->db, 0,&Y,&Z);
     A = sqlite3PExpr(pParse, TK_IN, X, 0, 0);
     if( A ){
-      A->pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
+      A->x.pSelect = sqlite3SelectNew(pParse, 0,pSrc,0,0,0,0,0,0,0);
+      ExprSetProperty(A, EP_xIsSelect);
       sqlite3ExprSetHeight(pParse, A);
     }else{
       sqlite3SrcListDelete(pParse->db, pSrc);
@@ -882,7 +885,8 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   expr(A) ::= EXISTS(B) LP select(Y) RP(E). {
     Expr *p = A = sqlite3PExpr(pParse, TK_EXISTS, 0, 0, 0);
     if( p ){
-      p->pSelect = Y;
+      p->x.pSelect = Y;
+      ExprSetProperty(A, EP_xIsSelect);
       sqlite3ExprSpan(p,&B,&E);
       sqlite3ExprSetHeight(pParse, A);
     }else{
@@ -895,7 +899,7 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
 expr(A) ::= CASE(C) case_operand(X) case_exprlist(Y) case_else(Z) END(E). {
   A = sqlite3PExpr(pParse, TK_CASE, X, Z, 0);
   if( A ){
-    A->pList = Y;
+    A->x.pList = Y;
     sqlite3ExprSetHeight(pParse, A);
   }else{
     sqlite3ExprListDelete(pParse->db, Y);
@@ -1100,14 +1104,14 @@ trigger_cmd(A) ::= select(X).  {A = sqlite3TriggerSelectStep(pParse->db, X); }
 expr(A) ::= RAISE(X) LP IGNORE RP(Y).  {
   A = sqlite3PExpr(pParse, TK_RAISE, 0, 0, 0); 
   if( A ){
-    A->iColumn = OE_Ignore;
+    A->affinity = OE_Ignore;
     sqlite3ExprSpan(A, &X, &Y);
   }
 }
 expr(A) ::= RAISE(X) LP raisetype(T) COMMA nm(Z) RP(Y).  {
   A = sqlite3PExpr(pParse, TK_RAISE, 0, 0, &Z); 
   if( A ) {
-    A->iColumn = T;
+    A->affinity = T;
     sqlite3ExprSpan(A, &X, &Y);
   }
 }
