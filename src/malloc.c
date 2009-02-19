@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.56 2009/02/17 18:37:29 drh Exp $
+** $Id: malloc.c,v 1.57 2009/02/19 20:50:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -406,95 +406,6 @@ void sqlite3ScratchFree(void *p){
     }
   }
 }
-
-/*
-** Allocate memory to be used by the page cache.  Make use of the
-** memory buffer provided by SQLITE_CONFIG_PAGECACHE if there is one
-** and that memory is of the right size and is not completely
-** consumed.  Otherwise, failover to sqlite3Malloc().
-*/
-#if 0
-void *sqlite3PageMalloc(int n){
-  void *p;
-  assert( n>0 );
-  assert( (n & (n-1))==0 );
-  assert( n>=512 && n<=32768 );
-
-  if( sqlite3GlobalConfig.szPage<n ){
-    goto page_overflow;
-  }else{  
-    sqlite3_mutex_enter(mem0.mutex);
-    if( mem0.nPageFree==0 ){
-      sqlite3_mutex_leave(mem0.mutex);
-      goto page_overflow;
-    }else{
-      int i;
-      i = mem0.aPageFree[--mem0.nPageFree];
-      sqlite3_mutex_leave(mem0.mutex);
-      i *= sqlite3GlobalConfig.szPage;
-      sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, n);
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, 1);
-      p = (void*)&((char*)sqlite3GlobalConfig.pPage)[i];
-    }
-  }
-  return p;
-
-page_overflow:
-  if( sqlite3GlobalConfig.bMemstat ){
-    sqlite3_mutex_enter(mem0.mutex);
-    sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, n);
-    n = mallocWithAlarm(n, &p);
-    if( p ) sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, n);
-    sqlite3_mutex_leave(mem0.mutex);
-  }else{
-    p = sqlite3GlobalConfig.m.xMalloc(n);
-  }
-  return p;    
-}
-void sqlite3PageFree(void *p){
-  if( p ){
-    if( sqlite3GlobalConfig.pPage==0
-           || p<sqlite3GlobalConfig.pPage
-           || p>=(void*)mem0.aPageFree ){
-      /* In this case, the page allocation was obtained from a regular 
-      ** call to sqlite3_mem_methods.xMalloc() (a page-cache-memory 
-      ** "overflow"). Free the block with sqlite3_mem_methods.xFree().
-      */
-      if( sqlite3GlobalConfig.bMemstat ){
-        int iSize = sqlite3MallocSize(p);
-        sqlite3_mutex_enter(mem0.mutex);
-        sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_OVERFLOW, -iSize);
-        sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, -iSize);
-        sqlite3GlobalConfig.m.xFree(p);
-        sqlite3_mutex_leave(mem0.mutex);
-      }else{
-        sqlite3GlobalConfig.m.xFree(p);
-      }
-    }else{
-      /* The page allocation was allocated from the sqlite3GlobalConfig.pPage
-      ** buffer. In this case all that is add the index of the page in
-      ** the sqlite3GlobalConfig.pPage array to the set of free indexes stored
-      ** in the mem0.aPageFree[] array.
-      */
-      int i;
-      i = (u8 *)p - (u8 *)sqlite3GlobalConfig.pPage;
-      i /= sqlite3GlobalConfig.szPage;
-      assert( i>=0 && i<sqlite3GlobalConfig.nPage );
-      sqlite3_mutex_enter(mem0.mutex);
-      assert( mem0.nPageFree<sqlite3GlobalConfig.nPage );
-      mem0.aPageFree[mem0.nPageFree++] = i;
-      sqlite3StatusAdd(SQLITE_STATUS_PAGECACHE_USED, -1);
-      sqlite3_mutex_leave(mem0.mutex);
-#if !defined(NDEBUG) && 0
-      /* Assert that a duplicate was not just inserted into aPageFree[]. */
-      for(i=0; i<mem0.nPageFree-1; i++){
-        assert( mem0.aPageFree[i]!=mem0.aPageFree[mem0.nPageFree-1] );
-      }
-#endif
-    }
-  }
-}
-#endif
 
 /*
 ** TRUE if p is a lookaside memory allocation from db
