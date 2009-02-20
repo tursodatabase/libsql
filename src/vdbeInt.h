@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.163 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: vdbeInt.h,v 1.164 2009/02/20 01:28:59 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -304,6 +304,7 @@ struct Vdbe {
   BtreeMutexArray aMutex; /* An array of Btree used here and needing locks */
   int aCounter[2];        /* Counters used by sqlite3_stmt_status() */
   char *zSql;           /* Text of the SQL statement that generated this */
+  void *pFree;            /* Free this when deleting the vdbe */
 #ifdef SQLITE_DEBUG
   FILE *trace;          /* Write an execution trace here, if not NULL */
 #endif

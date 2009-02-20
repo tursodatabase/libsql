@@ -1,5 +1,5 @@
-C Remove\scode\sin\smalloc.c\sthat\swas\salready\scommented\sout\susing\s#if\s0.\s(CVS\s6306)
-D 2009-02-19T20:50:15
+C Reuse\sspace\sleft-over\sopcode\sspace\sat\sthe\send\sof\sthe\sVDBE\sopcode\sarray\sto\nstore\smemory\scells,\sVDBE\scursors,\sand\sother\scontent\sneeded\sby\sthe\sVDBE.\nThis\sreduces\sthe\smemory\srequired\sby\sa\sprepared\sstatement.\s(CVS\s6307)
+D 2009-02-20T01:28:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -202,9 +202,9 @@ F src/util.c 1363f64351f3b544790f3c523439354c02f8c4e9
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
 F src/vdbe.c d7b996a5b75753ade4471fbe0452a684dc047d72
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
-F src/vdbeInt.h 9dd984cf80ef4f2970266b05f1dbb5622ac3817b
+F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
 F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
-F src/vdbeaux.c f636fd01adbab85675167a25cf194eddd58b13dd
+F src/vdbeaux.c dd5fc23bae4647d40b00ac308acd85f5c862f01e
 F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d9f6ffbc5ea090ba0daac571fc9a6c68b9c864e4
-R 71113436f434e40594eca0b6cc7e07b2
+P e1ad757ec0abead25265f9251c954d2497bccc06
+R 0a182bd5291018e602b666bb6aa5e2e4
 U drh
-Z 7f8f808d7025e6cd7278ce47c4e4464a
+Z 9760075414da00e3d0c2807d9c7bc689

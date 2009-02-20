@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.436 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.437 2009/02/20 01:28:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -114,7 +114,7 @@ static int growOpArray(Vdbe *p){
   int nNew = (p->nOpAlloc ? p->nOpAlloc*2 : (int)(1024/sizeof(Op)));
   pNew = sqlite3DbRealloc(p->db, p->aOp, nNew*sizeof(Op));
   if( pNew ){
-    p->nOpAlloc = nNew;
+    p->nOpAlloc = sqlite3MallocSize(pNew)/sizeof(Op);
     p->aOp = pNew;
   }
   return (pNew ? SQLITE_OK : SQLITE_NOMEM);
@@ -1000,6 +1000,39 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 }
 #endif /* !SQLITE_OMIT_TRACE && SQLITE_ENABLE_IOTRACE */
 
+/*
+** Allocate space from a fixed size buffer.  Make *pp point to the
+** allocated space.  (Note:  pp is a char* rather than a void** to
+** work around the pointer aliasing rules of C.)  *pp should initially
+** be zero.  If *pp is not zero, that means that the space has already
+** been allocated and this routine is a noop.
+**
+** nByte is the number of bytes of space needed.
+**
+** *ppFrom point to available space and pEnd points to the end of the
+** available space.
+**
+** *pnByte is a counter of the number of bytes of space that have failed
+** to allocate.  If there is insufficient space in *ppFrom to satisfy the
+** request, then increate *pnByte by the amount of the request.
+*/
+static void allocSpace(
+  char *pp,            /* IN/OUT: Set *pp to point to allocated buffer */
+  int nByte,           /* Number of bytes to allocate */
+  u8 **ppFrom,         /* IN/OUT: Allocate from *ppFrom */
+  u8 *pEnd,            /* Pointer to 1 byte passed end of *ppFrom buffer */
+  int *pnByte          /* If allocation cannot be made, increment *pnByte */
+){
+  if( (*(void**)pp)==0 ){
+    nByte = (nByte+7)&~7;
+    if( (pEnd - *ppFrom)>=nByte ){
+      *(void**)pp = (void *)*ppFrom;
+      *ppFrom += nByte;
+    }else{
+      *pnByte += nByte;
+    }
+  }
+}
 
 /*
 ** Prepare a virtual machine for execution.  This involves things such
@@ -1054,35 +1087,44 @@ void sqlite3VdbeMakeReady(
   ** first time this function is called for a given VDBE, not when it is
   ** being called from sqlite3_reset() to reset the virtual machine.
   */
-  if( nVar>=0 ){
+  if( nVar>=0 && !db->mallocFailed ){
+    u8 *zCsr = (u8 *)&p->aOp[p->nOp];
+    u8 *zEnd = (u8 *)&p->aOp[p->nOpAlloc];
     int nByte;
     int nArg;       /* Maximum number of args passed to a user function. */
     resolveP2Values(p, &nArg);
     if( isExplain && nMem<10 ){
       nMem = 10;
     }
-    nByte = nMem*sizeof(Mem)               /* aMem */
-          + nVar*sizeof(Mem)               /* aVar */
-          + nArg*sizeof(Mem*)              /* apArg */
-          + nVar*sizeof(char*)             /* azVar */
-          + nCursor*sizeof(VdbeCursor*);   /* apCsr */
-    if( nByte ){
-      p->aMem = sqlite3DbMallocZero(db, nByte);
-    }
-    if( !db->mallocFailed ){
-      p->aMem--;             /* aMem[] goes from 1..nMem */
-      p->nMem = nMem;        /*       not from 0..nMem-1 */
-      p->aVar = &p->aMem[nMem+1];
+
+    do {
+      memset(zCsr, 0, zEnd-zCsr);
+      nByte = 0;
+      allocSpace((char*)&p->aMem, nMem*sizeof(Mem), &zCsr, zEnd, &nByte);
+      allocSpace((char*)&p->aVar, nVar*sizeof(Mem), &zCsr, zEnd, &nByte);
+      allocSpace((char*)&p->apArg, nArg*sizeof(Mem*), &zCsr, zEnd, &nByte);
+      allocSpace((char*)&p->azVar, nVar*sizeof(char*), &zCsr, zEnd, &nByte);
+      allocSpace((char*)&p->apCsr, 
+                 nCursor*sizeof(VdbeCursor*), &zCsr, zEnd, &nByte
+      );
+      if( nByte ){
+        p->pFree = sqlite3DbMallocRaw(db, nByte);
+      }
+      zCsr = p->pFree;
+      zEnd = &zCsr[nByte];
+    }while( nByte && !db->mallocFailed );
+
+    p->nCursor = nCursor;
+    if( p->aVar ){
       p->nVar = nVar;
-      p->okVar = 0;
-      p->apArg = (Mem**)&p->aVar[nVar];
-      p->azVar = (char**)&p->apArg[nArg];
-      p->apCsr = (VdbeCursor**)&p->azVar[nVar];
-      p->nCursor = nCursor;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
         p->aVar[n].db = db;
       }
+    }
+    if( p->aMem ){
+      p->aMem--;                      /* aMem[] goes from 1..nMem */
+      p->nMem = nMem;                 /*       not from 0..nMem-1 */
       for(n=1; n<=nMem; n++){
         p->aMem[n].flags = MEM_Null;
         p->aMem[n].db = db;
@@ -1859,17 +1901,15 @@ void sqlite3VdbeDelete(Vdbe *p){
       sqlite3DbFree(db, pOp->zComment);
 #endif     
     }
-    sqlite3DbFree(db, p->aOp);
   }
   releaseMemArray(p->aVar, p->nVar);
   sqlite3DbFree(db, p->aLabel);
-  if( p->aMem ){
-    sqlite3DbFree(db, &p->aMem[1]);
-  }
   releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
   sqlite3DbFree(db, p->aColName);
   sqlite3DbFree(db, p->zSql);
   p->magic = VDBE_MAGIC_DEAD;
+  sqlite3DbFree(db, p->aOp);
+  sqlite3DbFree(db, p->pFree);
   sqlite3DbFree(db, p);
 }
 
