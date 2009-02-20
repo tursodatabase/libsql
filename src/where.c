@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.369 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: where.c,v 1.370 2009/02/20 10:58:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -3240,7 +3240,7 @@ WhereInfo *sqlite3WhereBegin(
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
-        sqlite3VdbeChangeP2(v, sqlite3VdbeCurrentAddr(v)-2, n);
+        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, (char*)n, P4_INT32);
         assert( n<=pTab->nCol );
       }
     }else{
@@ -3253,7 +3253,6 @@ WhereInfo *sqlite3WhereBegin(
       int iIdxCur = pLevel->iIdxCur;
       assert( pIx->pSchema==pTab->pSchema );
       assert( iIdxCur>=0 );
-      sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pIx->nColumn+1);
       sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIx->tnum, iDb,
                         (char*)pKey, P4_KEYINFO_HANDOFF);
       VdbeComment((v, "%s", pIx->zName));

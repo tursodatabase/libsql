@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.258 2009/02/20 03:02:24 drh Exp $
+** $Id: insert.c,v 1.259 2009/02/20 10:58:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -677,8 +677,7 @@ void sqlite3Insert(
   /* Open the temp table for FOR EACH ROW triggers
   */
   if( triggers_exist ){
-    sqlite3VdbeAddOp2(v, OP_SetNumColumns, 0, pTab->nCol);
-    sqlite3VdbeAddOp2(v, OP_OpenPseudo, newIdx, 0);
+    sqlite3VdbeAddOp3(v, OP_OpenPseudo, newIdx, 0, pTab->nCol);
   }
     
   /* Initialize the count of rows to be inserted

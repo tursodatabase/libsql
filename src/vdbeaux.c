@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.437 2009/02/20 01:28:59 drh Exp $
+** $Id: vdbeaux.c,v 1.438 2009/02/20 10:58:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1014,13 +1014,13 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 **
 ** *pnByte is a counter of the number of bytes of space that have failed
 ** to allocate.  If there is insufficient space in *ppFrom to satisfy the
-** request, then increate *pnByte by the amount of the request.
+** request, then increment *pnByte by the amount of the request.
 */
 static void allocSpace(
   char *pp,            /* IN/OUT: Set *pp to point to allocated buffer */
   int nByte,           /* Number of bytes to allocate */
   u8 **ppFrom,         /* IN/OUT: Allocate from *ppFrom */
-  u8 *pEnd,            /* Pointer to 1 byte passed end of *ppFrom buffer */
+  u8 *pEnd,            /* Pointer to 1 byte past the end of *ppFrom buffer */
   int *pnByte          /* If allocation cannot be made, increment *pnByte */
 ){
   if( (*(void**)pp)==0 ){

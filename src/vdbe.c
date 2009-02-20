@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.820 2009/02/20 03:55:05 drh Exp $
+** $Id: vdbe.c,v 1.821 2009/02/20 10:58:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -187,7 +187,7 @@ int sqlite3VdbeOpcodeHasProperty(int opcode, int mask){
 static VdbeCursor *allocateCursor(
   Vdbe *p,              /* The virtual machine */
   int iCur,             /* Index of the new VdbeCursor */
-  Op *pOp,              /* */
+  int nField,           /* Number of fields in the table or index */
   int iDb,              /* When database the cursor belongs to, or -1 */
   int isBtreeCursor     /* */
 ){
@@ -213,15 +213,6 @@ static VdbeCursor *allocateCursor(
 
   int nByte;
   VdbeCursor *pCx = 0;
-  /* If the opcode of pOp is OP_SetNumColumns, then pOp->p2 contains
-  ** the number of fields in the records contained in the table or
-  ** index being opened. Use this to reserve space for the 
-  ** VdbeCursor.aType[] array.
-  */
-  int nField = 0;
-  if( pOp->opcode==OP_SetNumColumns || pOp->opcode==OP_OpenEphemeral ){
-    nField = pOp->p2;
-  }
   nByte = 
       sizeof(VdbeCursor) + 
       (isBtreeCursor?sqlite3BtreeCursorSize():0) + 
@@ -1948,9 +1939,11 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
 ** this opcode must be present immediately before the opcode that
 ** opens the cursor.
 */
+#if 0
 case OP_SetNumColumns: {
   break;
 }
+#endif
 
 /* Opcode: Column P1 P2 P3 P4 *
 **
@@ -2783,9 +2776,11 @@ case OP_VerifyCookie: {
 ** to get a read lock but fails, the script terminates with an
 ** SQLITE_BUSY error code.
 **
-** The P4 value is a pointer to a KeyInfo structure that defines the
-** content and collating sequence of indices.  P4 is NULL for cursors
-** that are not pointing to indices.
+** The P4 value may be either an integer (P4_INT32) or a pointer to
+** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo 
+** structure, then said structure defines the content and collating 
+** sequence of the index being opened. Otherwise, if P4 is an integer 
+** value, it is set to the number of columns in the table.
 **
 ** See also OpenWrite.
 */
@@ -2795,9 +2790,11 @@ case OP_VerifyCookie: {
 ** page is P2.  Or if P5!=0 use the content of register P2 to find the
 ** root page.
 **
-** The P4 value is a pointer to a KeyInfo structure that defines the
-** content and collating sequence of indices.  P4 is NULL for cursors
-** that are not pointing to indices.
+** The P4 value may be either an integer (P4_INT32) or a pointer to
+** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo 
+** structure, then said structure defines the content and collating 
+** sequence of the index being opened. Otherwise, if P4 is an integer 
+** value, it is set to the number of columns in the table.
 **
 ** This instruction works just like OpenRead except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only
@@ -2807,6 +2804,8 @@ case OP_VerifyCookie: {
 */
 case OP_OpenRead:
 case OP_OpenWrite: {
+  int nField = 0;
+  KeyInfo *pKeyInfo = 0;
   int i = pOp->p1;
   int p2 = pOp->p2;
   int iDb = pOp->p3;
@@ -2840,16 +2839,19 @@ case OP_OpenWrite: {
     }
   }
   assert( i>=0 );
-  pCur = allocateCursor(p, i, &pOp[-1], iDb, 1);
+  if( pOp->p4type==P4_KEYINFO ){
+    pKeyInfo = pOp->p4.pKeyInfo;
+    pKeyInfo->enc = ENC(p->db);
+    nField = pKeyInfo->nField+1;
+  }else if( pOp->p4type==P4_INT32 ){
+    nField = pOp->p4.i;
+  }
+  pCur = allocateCursor(p, i, nField, iDb, 1);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
-  rc = sqlite3BtreeCursor(pX, p2, wrFlag, pOp->p4.p, pCur->pCursor);
-  if( pOp->p4type==P4_KEYINFO ){
-    pCur->pKeyInfo = pOp->p4.pKeyInfo;
-    pCur->pKeyInfo->enc = ENC(p->db);
-  }else{
-    pCur->pKeyInfo = 0;
-  }
+  rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
+  pCur->pKeyInfo = pKeyInfo;
+
   switch( rc ){
     case SQLITE_BUSY: {
       p->pc = pc;
@@ -2924,7 +2926,7 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_TRANSIENT_DB;
 
   assert( i>=0 );
-  pCx = allocateCursor(p, i, pOp, -1, 1);
+  pCx = allocateCursor(p, i, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, SQLITE_DEFAULT_TEMP_CACHE_SIZE, openFlags,
@@ -2959,7 +2961,7 @@ case OP_OpenEphemeral: {
   break;
 }
 
-/* Opcode: OpenPseudo P1 P2 * * *
+/* Opcode: OpenPseudo P1 P2 P3 * *
 **
 ** Open a new cursor that points to a fake table that contains a single
 ** row of data.  Any attempt to write a second row of data causes the
@@ -2978,12 +2980,15 @@ case OP_OpenEphemeral: {
 ** is stored. In this case, the vdbe program must ensure that the 
 ** memory cell containing the row data is not overwritten until the
 ** pseudo table is closed (or a new row is inserted into it).
+**
+** P3 is the number of fields in the records that will be stored by
+** the pseudo-table.
 */
 case OP_OpenPseudo: {
   int i = pOp->p1;
   VdbeCursor *pCx;
   assert( i>=0 );
-  pCx = allocateCursor(p, i, &pOp[-1], -1, 0);
+  pCx = allocateCursor(p, i, pOp->p3, -1, 0);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
@@ -4879,7 +4884,7 @@ case OP_VOpen: {
     pVtabCursor->pVtab = pVtab;
 
     /* Initialise vdbe cursor object */
-    pCur = allocateCursor(p, pOp->p1, &pOp[-1], -1, 0);
+    pCur = allocateCursor(p, pOp->p1, 0, -1, 0);
     if( pCur ){
       pCur->pVtabCursor = pVtabCursor;
       pCur->pModule = pVtabCursor->pVtab->pModule;
