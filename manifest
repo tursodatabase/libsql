@@ -1,7 +1,7 @@
-C Instead\sof\susing\sSetNumColumns,\sspecify\sthe\snumber\sof\scolumns\sin\sa\stable\sor\sindex\susing\sthe\sP4\sargument.\s(CVS\s6310)
-D 2009-02-20T10:58:42
+C unbreak\sAutoconf-based\sbuild\sprocedure\sby\sadded\smissing\sbackup.lo\sto\sthe\slist\sof\slibrary\sobjects\s(CVS\s6311)
+D 2009-02-20T22:27:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
+F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 48b77b04935d8942eb22f0c061f3bc5e99bbd7db
-R 4c403b09f1c594ba83784cce4e18ce5c
-U danielk1977
-Z 9dff27e2f1181213fee54cb9306cdb15
+P e43ed649630cbc49a6f2a25a26a4a6b5fce84c48
+R e486160f23b4c226581e840cc8e8e13e
+U rse
+Z a4649831254beff21cbabaa5c4b43a7b
