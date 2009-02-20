@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.257 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: insert.c,v 1.258 2009/02/20 03:02:24 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1125,7 +1125,6 @@ void sqlite3GenerateConstraintChecks(
     if( onError==OE_Replace && pTab->aCol[i].pDflt==0 ){
       onError = OE_Abort;
     }
-    j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regData+i);
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
     switch( onError ){
@@ -1133,22 +1132,24 @@ void sqlite3GenerateConstraintChecks(
       case OE_Abort:
       case OE_Fail: {
         char *zMsg;
-        sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_CONSTRAINT, onError);
+        j1 = sqlite3VdbeAddOp3(v, OP_HaltIfNull,
+                                  SQLITE_CONSTRAINT, onError, regData+i);
         zMsg = sqlite3MPrintf(pParse->db, "%s.%s may not be NULL",
                               pTab->zName, pTab->aCol[i].zName);
         sqlite3VdbeChangeP4(v, -1, zMsg, P4_DYNAMIC);
         break;
       }
       case OE_Ignore: {
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
+        sqlite3VdbeAddOp2(v, OP_IsNull, regData+i, ignoreDest);
         break;
       }
       case OE_Replace: {
+        j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regData+i);
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regData+i);
+        sqlite3VdbeJumpHere(v, j1);
         break;
       }
     }
-    sqlite3VdbeJumpHere(v, j1);
   }
 
   /* Test all CHECK constraints

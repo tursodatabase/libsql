@@ -1,5 +1,5 @@
-C Reuse\sspace\sleft-over\sopcode\sspace\sat\sthe\send\sof\sthe\sVDBE\sopcode\sarray\sto\nstore\smemory\scells,\sVDBE\scursors,\sand\sother\scontent\sneeded\sby\sthe\sVDBE.\nThis\sreduces\sthe\smemory\srequired\sby\sa\sprepared\sstatement.\s(CVS\s6307)
-D 2009-02-20T01:28:59
+C Add\sthe\sOP_HaltIfNull\sopcode\sand\suse\sit\sto\ssimplify\sprepared\sstatements\nfor\sINSERTs\sand\sUPDATEs\sof\stables\swith\sNOT\sNULL\scolumns.\s(CVS\s6308)
+D 2009-02-20T03:02:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 6bd2464ec48ddcb1d9c6fbfd294de91b5dd47075
+F src/insert.c 69764f4982675863ea04d5c5232d9b3d03e28a85
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
@@ -200,7 +200,7 @@ F src/update.c 9edb83cc4322fb2dc5b7a0087cdb8fa00391f402
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c 1363f64351f3b544790f3c523439354c02f8c4e9
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
-F src/vdbe.c d7b996a5b75753ade4471fbe0452a684dc047d72
+F src/vdbe.c 4533be29b997c609c6fbafeeb6985f3ec9070d8c
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
 F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e1ad757ec0abead25265f9251c954d2497bccc06
-R 0a182bd5291018e602b666bb6aa5e2e4
+P 58a1809257ccfb7d9112a35f79ca2f82b3daa878
+R 0d19680e8f7c0d8be240916afd3b0973
 U drh
-Z 9760075414da00e3d0c2807d9c7bc689
+Z d22ccd96d684ea638dc65d902b36ccb1

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.818 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: vdbe.c,v 1.819 2009/02/20 03:02:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -819,6 +819,16 @@ case OP_Yield: {            /* in1 */
   break;
 }
 
+/* Opcode:  HaltIfNull  P1 P2 P3 P4 *
+**
+** Check the value in register P3.  If is is NULL then Halt using
+** parameter P1, P2, and P4 as if this were a Halt instruction.  If the
+** value in register P3 is not NULL, then this routine is a no-op.
+*/
+case OP_HaltIfNull: {      /* in3 */
+  if( (pIn3->flags & MEM_Null)==0 ) break;
+  /* Fall through into OP_Halt */
+}
 
 /* Opcode:  Halt P1 P2 * P4 *
 **
