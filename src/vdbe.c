@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.819 2009/02/20 03:02:25 drh Exp $
+** $Id: vdbe.c,v 1.820 2009/02/20 03:55:05 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -977,26 +977,34 @@ case OP_Blob: {                /* out2-prerelease */
   break;
 }
 
-/* Opcode: Variable P1 P2 * * *
+/* Opcode: Variable P1 P2 P3 P4 *
 **
-** The value of variable P1 is written into register P2. A variable is
-** an unknown in the original SQL string as handed to sqlite3_compile().
-** Any occurrence of the '?' character in the original SQL is considered
-** a variable.  Variables in the SQL string are number from left to
-** right beginning with 1.  The values of variables are set using the
-** sqlite3_bind() API.
+** Transfer the values of bound parameters P1..P1+P3-1 into registers
+** P2..P2+P3-1.
+**
+** If the parameter is named, then its name appears in P4 and P3==1.
+** The P4 value is used by sqlite3_bind_parameter_name().
 */
-case OP_Variable: {           /* out2-prerelease */
+case OP_Variable: {
   int j = pOp->p1 - 1;
+  int k = pOp->p2;
   Mem *pVar;
-  assert( j>=0 && j<p->nVar );
+  int n = pOp->p3;
+  assert( j>=0 && j+n<=p->nVar );
+  assert( k>=1 && k+n-1<=p->nMem );
+  assert( pOp->p4.z==0 || pOp->p3==1 );
 
-  pVar = &p->aVar[j];
-  if( sqlite3VdbeMemTooBig(pVar) ){
-    goto too_big;
+  while( n-- > 0 ){
+    pVar = &p->aVar[j++];
+    if( sqlite3VdbeMemTooBig(pVar) ){
+      goto too_big;
+    }
+    pOut = &p->aMem[k++];
+    sqlite3VdbeMemReleaseExternal(pOut);
+    pOut->flags = MEM_Null;
+    sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
+    UPDATE_MAX_BLOBSIZE(pOut);
   }
-  sqlite3VdbeMemShallowCopy(pOut, &p->aVar[j], MEM_Static);
-  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 

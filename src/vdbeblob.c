@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.26 2008/10/02 14:49:02 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.27 2009/02/20 03:55:05 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -75,7 +75,7 @@ int sqlite3_blob_open(
     {OP_SetNumColumns, 0, 0, 0},   /* 4: Num cols for cursor */
     {OP_OpenWrite, 0, 0, 0},       /* 5: Open cursor 0 for read/write */
 
-    {OP_Variable, 1, 1, 0},        /* 6: Push the rowid to the stack */
+    {OP_Variable, 1, 1, 1},        /* 6: Push the rowid to the stack */
     {OP_NotExists, 0, 10, 1},      /* 7: Seek the cursor */
     {OP_Column, 0, 0, 1},          /* 8  */
     {OP_ResultRow, 1, 0, 0},       /* 9  */

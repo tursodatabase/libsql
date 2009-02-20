@@ -1,5 +1,5 @@
-C Add\sthe\sOP_HaltIfNull\sopcode\sand\suse\sit\sto\ssimplify\sprepared\sstatements\nfor\sINSERTs\sand\sUPDATEs\sof\stables\swith\sNOT\sNULL\scolumns.\s(CVS\s6308)
-D 2009-02-20T03:02:24
+C Add\sa\scount\sparameter\sto\sthe\sOP_Variable\sopcode\sand\suse\sit\sto\ssimplify\nprepared\sstatements\sthat\scopy\sconsecutive\sunnamed\sparameters\sinto\nconsecutive\sregisters\s(a\scommon\scase).\s(CVS\s6309)
+D 2009-02-20T03:55:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 1d83fa2b1fd326b9e121012bd1ff9740537e12b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,7 +112,7 @@ F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
 F src/delete.c 8d2fb05b32b5dea65277a574fedb0ebaa5dd877c
-F src/expr.c 2e62c2621c0375125cacb93ad6686bb2911b629e
+F src/expr.c 92e6dfcd55bdffbed8c66627700d1b5c5f9889d3
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 2fb36cd7cc24e16845db203187d1e52811b0fa9c
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -200,12 +200,12 @@ F src/update.c 9edb83cc4322fb2dc5b7a0087cdb8fa00391f402
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c 1363f64351f3b544790f3c523439354c02f8c4e9
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
-F src/vdbe.c 4533be29b997c609c6fbafeeb6985f3ec9070d8c
+F src/vdbe.c 3bd3acffddf8a284d3e8c1df0e286389aaf09e1a
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
 F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
 F src/vdbeaux.c dd5fc23bae4647d40b00ac308acd85f5c862f01e
-F src/vdbeblob.c b0dcebfafedcf9c0addc7901ad98f6f986c08935
+F src/vdbeblob.c b06daa322e220f30dec55032c4e60e00346e153b
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
@@ -241,7 +241,7 @@ F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test 6adfef13d24bbe0c504b4547f292b9a170184f25
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
-F test/bind.test 3d719310b548c18d979af495ee7d80b2d9a974b0
+F test/bind.test 455f7e8322a215e245414625eede3ab0e1429c14
 F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
 F test/bitvec.test ecea9aa315f36991e56e326701279b7775cb2bef
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 58a1809257ccfb7d9112a35f79ca2f82b3daa878
-R 0d19680e8f7c0d8be240916afd3b0973
+P feccad8d0d05925ce67856d40ffe1bc7054168a0
+R 45f3343e100f8675023b5adecf1a6bda
 U drh
-Z d22ccd96d684ea638dc65d902b36ccb1
+Z 9ee82f1e63cdb67ae7cf41ec0375cf20

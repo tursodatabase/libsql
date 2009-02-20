@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.46 2009/02/09 05:18:33 danielk1977 Exp $
+# $Id: bind.test,v 1.47 2009/02/20 03:55:05 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -682,5 +682,77 @@ do_test bind-14.3 {
 do_test bind-14.4 {
   param_names db { SELECT @a, @b FROM (SELECT NULL) }
 } {@a @b}
+
+#--------------------------------------------------------------------------
+# Tests of the OP_Variable opcode where P3>1
+#
+do_test bind-15.1 {
+  db eval {CREATE TABLE t4(a,b,c,d,e,f,g,h);}
+  set VM [sqlite3_prepare db {
+       INSERT INTO t4(a,b,c,d,f,g,h,e) VALUES(?,?,?,?,?,?,?,?)
+  } -1 TAIL]
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_bind_int $VM 4 4
+  sqlite3_bind_int $VM 5 5
+  sqlite3_bind_int $VM 6 6
+  sqlite3_bind_int $VM 7 7
+  sqlite3_bind_int $VM 8 8
+  sqlite3_step $VM
+  sqlite3_finalize $VM
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 8 5 6 7}
+do_test bind-15.2 {
+  db eval {DELETE FROM t4}
+  set VM [sqlite3_prepare db {
+       INSERT INTO t4(a,b,c,d,e,f,g,h) VALUES(?,?,?,?,?,?,?,?)
+  } -1 TAIL]
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_bind_int $VM 4 4
+  sqlite3_bind_int $VM 5 5
+  sqlite3_bind_int $VM 6 6
+  sqlite3_bind_int $VM 7 7
+  sqlite3_bind_int $VM 8 8
+  sqlite3_step $VM
+  sqlite3_finalize $VM
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 5 6 7 8}
+do_test bind-15.3 {
+  db eval {DELETE FROM t4}
+  set VM [sqlite3_prepare db {
+       INSERT INTO t4(h,g,f,e,d,c,b,a) VALUES(?,?,?,?,?,?,?,?)
+  } -1 TAIL]
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_bind_int $VM 4 4
+  sqlite3_bind_int $VM 5 5
+  sqlite3_bind_int $VM 6 6
+  sqlite3_bind_int $VM 7 7
+  sqlite3_bind_int $VM 8 8
+  sqlite3_step $VM
+  sqlite3_finalize $VM
+  db eval {SELECT * FROM t4}
+} {8 7 6 5 4 3 2 1}
+do_test bind-15.4 {
+  db eval {DELETE FROM t4}
+  set VM [sqlite3_prepare db {
+       INSERT INTO t4(a,b,c,d,e,f,g,h) VALUES(?,?,?,?4,?,?6,?,?)
+  } -1 TAIL]
+  sqlite3_bind_int $VM 1 1
+  sqlite3_bind_int $VM 2 2
+  sqlite3_bind_int $VM 3 3
+  sqlite3_bind_int $VM 4 4
+  sqlite3_bind_int $VM 5 5
+  sqlite3_bind_int $VM 6 6
+  sqlite3_bind_int $VM 7 7
+  sqlite3_bind_int $VM 8 8
+  sqlite3_step $VM
+  sqlite3_finalize $VM
+  db eval {SELECT * FROM t4}
+} {1 2 3 4 5 6 7 8}
 
 finish_test
