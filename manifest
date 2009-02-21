@@ -1,5 +1,5 @@
-C unbreak\sAutoconf-based\sbuild\sprocedure\sby\sadded\smissing\sbackup.lo\sto\sthe\slist\sof\slibrary\sobjects\s(CVS\s6311)
-D 2009-02-20T22:27:42
+C The\ssqlite3.def\sfile\sis\sautomatically\sgenerated\sand\sis\snot\ssuppose\sto\sbe\npart\sof\sthe\ssource\scode\srepository.\s\sSo\sit\sis\shereby\sremoved.\nTicket\s#3671.\s(CVS\s6312)
+D 2009-02-21T22:38:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -95,7 +95,6 @@ F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
-F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c f93d13aae63ea1a5ee604d76041be354311d08a5
 F src/analyze.c 9fc52fed9da8b9c7bd5e39c8781e07ab2fb018ba
@@ -701,7 +700,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e43ed649630cbc49a6f2a25a26a4a6b5fce84c48
-R e486160f23b4c226581e840cc8e8e13e
-U rse
-Z a4649831254beff21cbabaa5c4b43a7b
+P 94945801973c0e659de3f429c98a7d95a8c693f6
+R 010b383a7514e14bc8dec8e8cec1ad23
+U drh
+Z 4f428b9ed3dc2e183bed46afde954bf5
