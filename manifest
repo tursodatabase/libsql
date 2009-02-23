@@ -1,5 +1,5 @@
-C Ensure\sthe\sreturn\svalue\sof\ssqlite3_errmsg16()\sis\saligned\son\sa\s2-byte\sboundary.\sTicket\s#3665.\s(CVS\s6313)
-D 2009-02-23T14:42:53
+C Add\sthe\sreverse_unordered_selects\spragma.\s(CVS\s6314)
+D 2009-02-23T16:52:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/parse.y 5202dc712407fd6723f6639b88b86ddf8b33aef5
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c dabb8ab14827e090321f17150ce96fda172974e8
-F src/pragma.c 9ed2acb94efee8059efcc52c2e2140b43170831e
+F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
 F src/prepare.c d0bbb4b1a8b9c1db6d13788929839bb63764680e
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -158,7 +158,7 @@ F src/select.c aa7328a23c0abe019f98bb7e1f4f63d62e20ba98
 F src/shell.c f109ebbb50132926ebbc173a6c2d8838d5d78527
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 8bd8f5bb583832df68034525c1d763a35cd0365f
+F src/sqliteInt.h c682534d78d7af014c81b30d2c9e75661f4ef990
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -208,7 +208,7 @@ F src/vdbeblob.c 08d6bac666c1f6a5d67452f5fbf808cf1311d2c9
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
-F src/where.c de92174234ff56240df2b10bebe45466676ce7c3
+F src/where.c 72980baae14e7e71dc70c671b6cf34c4063dbd58
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -674,6 +674,7 @@ F test/where7.test 2487cda68faabf5edeb524289913f00f8d64e223
 F test/where8.test 1b9152a086408ee789166d0a954abc597372f868
 F test/where8m.test c1010d61826412ff66abd29bfb32e5d6b37d965c
 F test/where9.test a46d394037a40b56e7855d29cce951f91108c353
+F test/whereA.test ef8d699d87934bd747119c75fbb4711b584a8b60
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -700,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5dcda154090e55a22b4d19f9def42beba8733f50
-R 995f5a3ef19f5c195500de164454e1d4
-U danielk1977
-Z a29e2652178988b1757076cd7ae15c3a
+P 9b8acf8319ec760713773407a4d5a33dea8d75e8
+R 41bbb1216086db2d528bb92c681c2add
+U drh
+Z 08cd8c8feaad5119cbc7d91cd8c2e6b1

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.834 2009/02/19 14:39:25 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.835 2009/02/23 16:52:08 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -847,6 +847,7 @@ struct sqlite3 {
 #define SQLITE_SharedCache    0x00080000  /* Cache sharing is enabled */
 #define SQLITE_Vtab           0x00100000  /* There exists a virtual table */
 #define SQLITE_CommitBusy     0x00200000  /* In the process of committing */
+#define SQLITE_ReverseOrder   0x00400000  /* Reverse unordered SELECTs */
 
 /*
 ** Possible values for the sqlite.magic field.
