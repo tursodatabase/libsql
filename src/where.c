@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.371 2009/02/23 16:52:08 drh Exp $
+** $Id: where.c,v 1.372 2009/02/23 17:33:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1715,15 +1715,15 @@ static double bestVirtualIndex(
 **    *  Whether or not there must be separate lookups in the
 **       index and in the main table.
 **
-** If there was an INDEXED BY clause attached to the table in the SELECT
-** statement, then this function only considers plans using the 
+** If there was an INDEXED BY clause (pSrc->pIndex) attached to the table in
+** the SQL statement, then this function only considers plans using the 
 ** named index. If one cannot be found, then the returned cost is
 ** SQLITE_BIG_DBL. If a plan can be found that uses the named index, 
 ** then the cost is calculated in the usual way.
 **
-** If a NOT INDEXED clause was attached to the table in the SELECT 
-** statement, then no indexes are considered. However, the selected 
-** plan may still take advantage of the tables built-in rowid
+** If a NOT INDEXED clause (pSrc->notIndexed!=0) was attached to the table 
+** in the SELECT statement, then no indexes are considered. However, the 
+** selected plan may still take advantage of the tables built-in rowid
 ** index.
 */
 static void bestIndex(
@@ -2032,6 +2032,21 @@ static void bestIndex(
       pCost->plan.nEq = nEq;
       assert( pCost->plan.wsFlags & WHERE_INDEXED );
       pCost->plan.u.pIdx = pProbe;
+    }
+  }
+
+  if( pCost->plan.wsFlags==0 && pSrc->colUsed==0 && pSrc->usesRowid==0 ){
+    Index *pSmallest = 0;
+    assert( pSrc->pIndex==0 );
+    for(pProbe=pSrc->pTab->pIndex; pProbe; pProbe=pProbe->pNext){
+      if( !pSmallest || pProbe->nColumn<pSmallest->nColumn ){
+        pSmallest = pProbe;
+      }
+    }
+    if( pSmallest && pSmallest->nColumn<pSrc->pTab->nCol ){
+      assert( pCost->plan.nEq==0 );
+      pCost->plan.u.pIdx = pSmallest;
+      pCost->plan.wsFlags = WHERE_COLUMN_RANGE|WHERE_IDX_ONLY;
     }
   }
 

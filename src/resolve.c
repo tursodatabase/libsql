@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.16 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: resolve.c,v 1.17 2009/02/23 17:33:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -347,14 +347,18 @@ static int lookupName(
   ** column number is greater than the number of bits in the bitmask
   ** then set the high-order bit of the bitmask.
   */
-  if( pExpr->iColumn>=0 && pMatch!=0 ){
-    int n = pExpr->iColumn;
-    testcase( n==BMS-1 );
-    if( n>=BMS ){
-      n = BMS-1;
+  if( pMatch ){
+    if( pExpr->iColumn>=0 ){
+      int n = pExpr->iColumn;
+      testcase( n==BMS-1 );
+      if( n>=BMS ){
+        n = BMS-1;
+      }
+      assert( pMatch->iCursor==pExpr->iTable );
+      pMatch->colUsed |= ((Bitmask)1)<<n;
+    }else{
+      pMatch->usesRowid = 1;
     }
-    assert( pMatch->iCursor==pExpr->iTable );
-    pMatch->colUsed |= ((Bitmask)1)<<n;
   }
 
 lookupname_end:

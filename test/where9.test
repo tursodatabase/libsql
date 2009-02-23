@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.5 2009/01/08 21:00:03 drh Exp $
+# $Id: where9.test,v 1.6 2009/02/23 17:33:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -801,5 +801,31 @@ do_test where9-6.8.2 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
   }
 } {1 {cannot use index: t1b}}
+
+do_test where9-7.1 {
+  execsql {
+    CREATE TABLE t5(a, b, c);
+    EXPLAIN QUERY PLAN SELECT count(*) FROM t5;
+  }
+} {0 0 {TABLE t5}}
+do_test where9-7.2 {
+  execsql {
+    CREATE INDEX t5i1 ON t5(a, b);
+    EXPLAIN QUERY PLAN SELECT count(*) FROM t5;
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i1}}
+do_test where9-7.3 {
+  execsql {
+    CREATE INDEX t5i2 ON t5(b);
+    EXPLAIN QUERY PLAN SELECT count(*) FROM t5;
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i2}}
+do_test where9-7.4 {
+  execsql {
+    CREATE TABLE t6(a, b, c);
+    CREATE INDEX t6i1 ON t6(a, b, c);
+    EXPLAIN QUERY PLAN SELECT count(*) FROM t6;
+  }
+} {0 0 {TABLE t6}}
 
 finish_test

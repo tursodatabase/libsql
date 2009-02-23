@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.835 2009/02/23 16:52:08 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.836 2009/02/23 17:33:50 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1601,6 +1601,7 @@ struct SrcList {
     u8 isPopulated;   /* Temporary table associated with SELECT is populated */
     u8 jointype;      /* Type of join between this able and the previous */
     u8 notIndexed;    /* True if there is a NOT INDEXED clause */
+    u8 usesRowid;     /* True if the rowid field is read */
     int iCursor;      /* The VDBE cursor number used to access this table */
     Expr *pOn;        /* The ON clause of a join */
     IdList *pUsing;   /* The USING clause of a join */
