@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.822 2009/02/24 10:01:52 danielk1977 Exp $
+** $Id: vdbe.c,v 1.823 2009/02/24 18:57:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2532,7 +2532,8 @@ case OP_Savepoint: {
 **
 ** Set the database auto-commit flag to P1 (1 or 0). If P2 is true, roll
 ** back any currently active btree transactions. If there are any active
-** VMs (apart from this one), then the COMMIT or ROLLBACK statement fails.
+** VMs (apart from this one), then a ROLLBACK fails.  A COMMIT fails if
+** there are active writing VMs or active VMs that use shared cache.
 **
 ** This instruction causes the VM to halt.
 */

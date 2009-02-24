@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.568 2009/02/24 16:18:05 drh Exp $
+** $Id: btree.c,v 1.569 2009/02/24 18:57:32 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -73,26 +73,27 @@ static int checkReadLocks(Btree*, Pgno, BtCursor*, i64);
 
 #ifdef SQLITE_OMIT_SHARED_CACHE
   /*
-  ** The functions queryTableLock(), lockTable() and unlockAllTables()
+  ** The functions querySharedCacheTableLock(), setSharedCacheTableLock(),
+  ** and clearAllSharedCacheTableLocks()
   ** manipulate entries in the BtShared.pLock linked list used to store
   ** shared-cache table level locks. If the library is compiled with the
   ** shared-cache feature disabled, then there is only ever one user
   ** of each BtShared structure and so this locking is not necessary. 
   ** So define the lock related functions as no-ops.
   */
-  #define queryTableLock(a,b,c) SQLITE_OK
-  #define lockTable(a,b,c) SQLITE_OK
-  #define unlockAllTables(a)
+  #define querySharedCacheTableLock(a,b,c) SQLITE_OK
+  #define setSharedCacheTableLock(a,b,c) SQLITE_OK
+  #define clearAllSharedCacheTableLocks(a)
 #endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** Query to see if btree handle p may obtain a lock of type eLock 
 ** (READ_LOCK or WRITE_LOCK) on the table with root-page iTab. Return
-** SQLITE_OK if the lock may be obtained (by calling lockTable()), or
-** SQLITE_LOCKED if not.
+** SQLITE_OK if the lock may be obtained (by calling
+** setSharedCacheTableLock()), or SQLITE_LOCKED if not.
 */
-static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
+static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   BtShared *pBt = p->pBt;
   BtLock *pIter;
 
@@ -112,14 +113,15 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
     return SQLITE_LOCKED;
   }
 
-  /* This (along with lockTable()) is where the ReadUncommitted flag is
-  ** dealt with. If the caller is querying for a read-lock on any table
+  /* This (along with setSharedCacheTableLock()) is where
+  ** the ReadUncommitted flag is dealt with.
+  ** If the caller is querying for a read-lock on any table
   ** other than the sqlite_master table (table 1) and if the ReadUncommitted
   ** flag is set, then the lock granted even if there are write-locks
   ** on the table. If a write-lock is requested, the ReadUncommitted flag
   ** is not considered.
   **
-  ** In function lockTable(), if a read-lock is demanded and the 
+  ** In function setSharedCacheTableLock(), if a read-lock is demanded and the 
   ** ReadUncommitted flag is set, no entry is added to the locks list 
   ** (BtShared.pLock).
   **
@@ -152,7 +154,7 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
 ** SQLITE_OK is returned if the lock is added successfully. SQLITE_BUSY and
 ** SQLITE_NOMEM may also be returned.
 */
-static int lockTable(Btree *p, Pgno iTable, u8 eLock){
+static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   BtShared *pBt = p->pBt;
   BtLock *pLock = 0;
   BtLock *pIter;
@@ -166,13 +168,13 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
     return SQLITE_OK;
   }
 
-  assert( SQLITE_OK==queryTableLock(p, iTable, eLock) );
+  assert( SQLITE_OK==querySharedCacheTableLock(p, iTable, eLock) );
 
   /* If the read-uncommitted flag is set and a read-lock is requested on
   ** a non-schema table, then the lock is always granted.  Return early
   ** without adding an entry to the BtShared.pLock list. See
-  ** comment in function queryTableLock() for more info on handling 
-  ** the ReadUncommitted flag.
+  ** comment in function querySharedCacheTableLock() for more info
+  ** on handling the ReadUncommitted flag.
   */
   if( 
     (p->db->flags&SQLITE_ReadUncommitted) && 
@@ -219,10 +221,10 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
-** Release all the table locks (locks obtained via calls to the lockTable()
-** procedure) held by Btree handle p.
+** Release all the table locks (locks obtained via calls to
+** the setSharedCacheTableLock() procedure) held by Btree handle p.
 */
-static void unlockAllTables(Btree *p){
+static void clearAllSharedCacheTableLocks(Btree *p){
   BtShared *pBt = p->pBt;
   BtLock **ppIter = &pBt->pLock;
 
@@ -2613,7 +2615,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
     pBt->inTransaction = TRANS_READ;
     pBt->inStmt = 0;
   }
-  unlockAllTables(p);
+  clearAllSharedCacheTableLocks(p);
 
   /* If the handle has any kind of transaction open, decrement the transaction
   ** count of the shared btree. If the transaction count reaches 0, set
@@ -2737,7 +2739,7 @@ int sqlite3BtreeRollback(Btree *p){
   }
 #endif
   btreeIntegrity(p);
-  unlockAllTables(p);
+  clearAllSharedCacheTableLocks(p);
 
   if( p->inTrans==TRANS_WRITE ){
     int rc2;
@@ -6658,9 +6660,10 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   /* Reading a meta-data value requires a read-lock on page 1 (and hence
   ** the sqlite_master table. We grab this lock regardless of whether or
   ** not the SQLITE_ReadUncommitted flag is set (the table rooted at page
-  ** 1 is treated as a special case by queryTableLock() and lockTable()).
+  ** 1 is treated as a special case by querySharedCacheTableLock()
+  ** and setSharedCacheTableLock()).
   */
-  rc = queryTableLock(p, 1, READ_LOCK);
+  rc = querySharedCacheTableLock(p, 1, READ_LOCK);
   if( rc!=SQLITE_OK ){
     sqlite3BtreeLeave(p);
     return rc;
@@ -6702,7 +6705,7 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
 #endif
 
   /* Grab the read-lock on page 1. */
-  rc = lockTable(p, 1, READ_LOCK);
+  rc = setSharedCacheTableLock(p, 1, READ_LOCK);
   sqlite3BtreeLeave(p);
   return rc;
 }
@@ -7382,7 +7385,7 @@ int sqlite3BtreeSchemaLocked(Btree *p){
   int rc;
   assert( sqlite3_mutex_held(p->db->mutex) );
   sqlite3BtreeEnter(p);
-  rc = (queryTableLock(p, MASTER_ROOT, READ_LOCK)!=SQLITE_OK);
+  rc = (querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK)!=SQLITE_OK);
   sqlite3BtreeLeave(p);
   return rc;
 }
@@ -7401,9 +7404,9 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
     assert( READ_LOCK+1==WRITE_LOCK );
     assert( isWriteLock==0 || isWriteLock==1 );
     sqlite3BtreeEnter(p);
-    rc = queryTableLock(p, iTab, lockType);
+    rc = querySharedCacheTableLock(p, iTab, lockType);
     if( rc==SQLITE_OK ){
-      rc = lockTable(p, iTab, lockType);
+      rc = setSharedCacheTableLock(p, iTab, lockType);
     }
     sqlite3BtreeLeave(p);
   }
