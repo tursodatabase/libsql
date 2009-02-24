@@ -17,7 +17,7 @@
 ** This file should be #included by the os_*.c files only.  It is not a
 ** general purpose header file.
 **
-** $Id: os_common.h,v 1.37 2008/05/29 20:22:37 shane Exp $
+** $Id: os_common.h,v 1.38 2009/02/24 18:40:50 danielk1977 Exp $
 */
 #ifndef _OS_COMMON_H_
 #define _OS_COMMON_H_
@@ -29,15 +29,6 @@
 */
 #ifdef MEMORY_DEBUG
 # error "The MEMORY_DEBUG macro is obsolete.  Use SQLITE_DEBUG instead."
-#endif
-
-
-/*
- * When testing, this global variable stores the location of the
- * pending-byte in the database file.
- */
-#ifdef SQLITE_TEST
-unsigned int sqlite3_pending_byte = 0x40000000;
 #endif
 
 #ifdef SQLITE_DEBUG
