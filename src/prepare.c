@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.106 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: prepare.c,v 1.107 2009/02/24 16:18:05 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -540,17 +540,39 @@ static int sqlite3Prepare(
   assert( !db->mallocFailed );
   assert( sqlite3_mutex_held(db->mutex) );
 
-  /* If any attached database schemas are locked, do not proceed with
-  ** compilation. Instead return SQLITE_LOCKED immediately.
+  /* Check to verify that it is possible to get a read lock on all
+  ** database schemas.  The inability to get a read lock indicates that
+  ** some other database connection is holding a write-lock, which in
+  ** turn means that the other connection has made uncommitted changes
+  ** to the schema.
+  **
+  ** Were we to proceed and prepare the statement against the uncommitted
+  ** schema changes and if those schema changes are subsequently rolled
+  ** back and different changes are made in their place, then when this
+  ** prepared statement goes to run the schema cookie would fail to detect
+  ** the schema change.  Disaster would follow.
+  **
+  ** This thread is currently holding mutexes on all Btrees (because
+  ** of the sqlite3BtreeEnterAll() in sqlite3LockAndPrepare()) so it
+  ** is not possible for another thread to start a new schema change
+  ** while this routine is running.  Hence, we do not need to hold 
+  ** locks on the schema, we just need to make sure nobody else is 
+  ** holding them.
+  **
+  ** Note that setting READ_UNCOMMITTED overrides most lock detection,
+  ** but it does *not* override schema lock detection, so this all still
+  ** works even if READ_UNCOMMITTED is set.
   */
   for(i=0; i<db->nDb; i++) {
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
+      assert( sqlite3BtreeHoldsMutex(pBt) );
       rc = sqlite3BtreeSchemaLocked(pBt);
       if( rc ){
         const char *zDb = db->aDb[i].zName;
         sqlite3Error(db, SQLITE_LOCKED, "database schema is locked: %s", zDb);
         (void)sqlite3SafetyOff(db);
+        testcase( db->flags & SQLITE_ReadUncommitted );
         return sqlite3ApiExit(db, SQLITE_LOCKED);
       }
     }

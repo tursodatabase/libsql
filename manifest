@@ -1,5 +1,5 @@
-C Add\stest\sfile\stest/count.test\sfor\stesting\s"SELECT\scount(*)"\sstatements.\sIt\sis\snot\sproperly\spopulated\syet.\s(CVS\s6318)
-D 2009-02-24T10:48:28
+C Enhanced\scomments\son\stable\slocking\slogic\sas\sit\srelates\sto\spreparing\snew\nstatements.\s\sAdded\sassert()\sand\stestcase()\sbut\sno\sother\schanges\sto\scode.\s(CVS\s6319)
+D 2009-02-24T16:18:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 2d3f31148d7b086c5c72d9edcd04fc2751b0aa6e
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c e0178d6fb69c8f332f3fba96cfc0b08275ad5e76
+F src/btree.c 8b8697ab5e8ca9aad12221bb9abfee1aed7a5cd1
 F src/btree.h 96a019c9f28da38e79940512d7800e419cd8c702
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
 F src/build.c a1db48aec62c95049d783f231195812ff97ae268
@@ -149,7 +149,7 @@ F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c dabb8ab14827e090321f17150ce96fda172974e8
 F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
-F src/prepare.c d0bbb4b1a8b9c1db6d13788929839bb63764680e
+F src/prepare.c 1ede93a00f1835a10b3d3aad968e8f8ecd2c98dd
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c dea005135845acbbfae1f2968c0deb6b2e3d580c
@@ -702,7 +702,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0e7c369c23a8767b4d3e5cdd47c14716992fb71a
-R 71f287412eb030dfd9b14d26e52b17fb
-U danielk1977
-Z e2d5b34166a5d213f9445c572c8e416e
+P a195d74ff9ce836447dba4da7edcc6f1cdae5574
+R 7311b1fa9b7b5c3d12ba433576f5510b
+U drh
+Z 99368cf9c56a6d99659a698dff53e252

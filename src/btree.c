@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.567 2009/02/24 10:01:52 danielk1977 Exp $
+** $Id: btree.c,v 1.568 2009/02/24 16:18:05 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -113,8 +113,9 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   }
 
   /* This (along with lockTable()) is where the ReadUncommitted flag is
-  ** dealt with. If the caller is querying for a read-lock and the flag is
-  ** set, it is unconditionally granted - even if there are write-locks
+  ** dealt with. If the caller is querying for a read-lock on any table
+  ** other than the sqlite_master table (table 1) and if the ReadUncommitted
+  ** flag is set, then the lock granted even if there are write-locks
   ** on the table. If a write-lock is requested, the ReadUncommitted flag
   ** is not considered.
   **
@@ -122,9 +123,9 @@ static int queryTableLock(Btree *p, Pgno iTab, u8 eLock){
   ** ReadUncommitted flag is set, no entry is added to the locks list 
   ** (BtShared.pLock).
   **
-  ** To summarize: If the ReadUncommitted flag is set, then read cursors do
-  ** not create or respect table locks. The locking procedure for a 
-  ** write-cursor does not change.
+  ** To summarize: If the ReadUncommitted flag is set, then read cursors
+  ** on non-schema tables do not create or respect table locks. The locking
+  ** procedure for a write-cursor does not change.
   */
   if( 
     0==(p->db->flags&SQLITE_ReadUncommitted) || 
@@ -167,8 +168,9 @@ static int lockTable(Btree *p, Pgno iTable, u8 eLock){
 
   assert( SQLITE_OK==queryTableLock(p, iTable, eLock) );
 
-  /* If the read-uncommitted flag is set and a read-lock is requested,
-  ** return early without adding an entry to the BtShared.pLock list. See
+  /* If the read-uncommitted flag is set and a read-lock is requested on
+  ** a non-schema table, then the lock is always granted.  Return early
+  ** without adding an entry to the BtShared.pLock list. See
   ** comment in function queryTableLock() for more info on handling 
   ** the ReadUncommitted flag.
   */
