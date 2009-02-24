@@ -1,5 +1,5 @@
-C Changes\sto\scomments\sand\sfunctions/procedure\snames\sfor\sclarification.\s\sNo\nchanges\sto\slogic.\s(CVS\s6322)
-D 2009-02-24T18:57:32
+C Additional\scommands\sand\sanother\sprocedure\sname\schanges\sfor\sclarity\sof\npresentation.\sNo\slogic\schanges.\s(CVS\s6323)
+D 2009-02-24T19:21:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 2d3f31148d7b086c5c72d9edcd04fc2751b0aa6e
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
-F src/btree.c 10c415effaf89b047a7c4178d10b5ee93a480106
+F src/btree.c c219cd5d46fc39540c44e15bf7e9e36c06496f51
 F src/btree.h 96a019c9f28da38e79940512d7800e419cd8c702
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
 F src/build.c a1db48aec62c95049d783f231195812ff97ae268
@@ -702,7 +702,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 44f0162ebb760dd6926ee5691752b6798e3aacb9
-R 94eaff1a860808fd91188cf96085c1fc
+P b99c1815fe270decf1ac3d714acc7e945d1e728a
+R 52f851adc25a6b49b81feac1c5feb754
 U drh
-Z b49eeab63aacbd5e3c0381ee3e34c6a7
+Z 7a0daf7b4a8f562b34bdae9981a338a7
