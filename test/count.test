@@ -11,10 +11,21 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing "SELECT count(*)" statements.
 #
-# $Id: count.test,v 1.1 2009/02/24 10:48:28 danielk1977 Exp $
+# $Id: count.test,v 1.2 2009/02/24 18:33:15 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+# Test plan:
+#
+#  count-1.*: Test that the OP_Count instruction appears to work on both
+#             tables and indexes. Test both when they contain 0 entries,
+#             when all entries are on the root page, and when the b-tree
+#             forms a structure 2 and 3 levels deep.
+#            
+#  count-2.*: Test that 
+#
+#
 
 set iTest 0
 foreach zIndex [list {
@@ -29,14 +40,18 @@ foreach zIndex [list {
       CREATE TABLE t1(a, b);
     }
     execsql $zIndex
+    execsql { SELECT count(*) FROM t1 }
+  } {0}
+  
+  do_test count-1.$iTest.2 {
     execsql {
       INSERT INTO t1 VALUES(1, 2);
       INSERT INTO t1 VALUES(3, 4);
       SELECT count(*) FROM t1;
     }
   } {2}
-  
-  do_test count-1.$iTest.2 {
+
+  do_test count-1.$iTest.3 {
     execsql {
       INSERT INTO t1 SELECT * FROM t1;          --   4
       INSERT INTO t1 SELECT * FROM t1;          --   8
@@ -49,7 +64,7 @@ foreach zIndex [list {
     }
   } {256}
   
-  do_test count-1.$iTest.3 {
+  do_test count-1.$iTest.4 {
     execsql {
       INSERT INTO t1 SELECT * FROM t1;          --  512
       INSERT INTO t1 SELECT * FROM t1;          -- 1024
@@ -59,7 +74,7 @@ foreach zIndex [list {
     }
   } {4096}
   
-  do_test count-1.$iTest.4 {
+  do_test count-1.$iTest.5 {
     execsql {
       BEGIN;
       INSERT INTO t1 SELECT * FROM t1;          --  8192
@@ -71,6 +86,69 @@ foreach zIndex [list {
     }
   } {65536}
 }
+
+proc uses_op_count {sql} {
+  if {[lsearch [execsql "EXPLAIN $sql"] Count]>=0} {
+    return 1;
+  }
+  return 0
+}
+
+do_test count-2.1 {
+  execsql {
+    CREATE TABLE t2(a, b);
+  }
+  uses_op_count {SELECT count(*) FROM t2}
+} {1}
+do_test count-2.2 {
+  catchsql {SELECT count(DISTINCT *) FROM t2}
+} {1 {near "*": syntax error}}
+do_test count-2.3 {
+  uses_op_count {SELECT count(DISTINCT a) FROM t2}
+} {0}
+do_test count-2.4 {
+  uses_op_count {SELECT count(a) FROM t2}
+} {0}
+do_test count-2.5 {
+  uses_op_count {SELECT count() FROM t2}
+} {1}
+do_test count-2.6 {
+  catchsql {SELECT count(DISTINCT) FROM t2}
+} {1 {DISTINCT aggregates must have exactly one argument}}
+do_test count-2.7 {
+  uses_op_count {SELECT count(*)+1 FROM t2}
+} {0}
+do_test count-2.8 {
+  uses_op_count {SELECT count(*) FROM t2 WHERE a IS NOT NULL}
+} {0}
+do_test count-2.9 {
+  catchsql {SELECT count(*) FROM t2 HAVING count(*)>1}
+} {1 {a GROUP BY clause is required before HAVING}}
+do_test count-2.10 {
+  uses_op_count {SELECT count(*) FROM (SELECT 1)}
+} {0}
+do_test count-2.11 {
+  execsql { CREATE VIEW v1 AS SELECT 1 AS a }
+  uses_op_count {SELECT count(*) FROM v1}
+} {0}
+do_test count-2.12 {
+  uses_op_count {SELECT count(*), max(a) FROM t2}
+} {0}
+do_test count-2.13 {
+  uses_op_count {SELECT count(*) FROM t1, t2}
+} {0}
+
+do_test count-3.1 {
+  execsql {
+    CREATE TABLE t3(a, b);
+    SELECT a FROM (SELECT count(*) AS a FROM t3) WHERE a==0;
+  }
+} {0}
+do_test count-3.2 {
+  execsql {
+    SELECT a FROM (SELECT count(*) AS a FROM t3) WHERE a==1;
+  }
+} {}
 
 finish_test
 

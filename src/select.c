@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.502 2009/02/24 10:01:52 danielk1977 Exp $
+** $Id: select.c,v 1.503 2009/02/24 18:33:15 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2970,7 +2970,7 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
 
   assert( !p->pGroupBy );
 
-  if( p->pWhere || p->pHaving || p->pEList->nExpr!=1
+  if( p->pWhere || p->pEList->nExpr!=1 
    || p->pSrc->nSrc!=1 || p->pSrc->a[0].pSelect
   ){
     return 0;
@@ -4144,12 +4144,12 @@ int sqlite3Select(
         }
         sqlite3WhereEnd(pWInfo);
         finalizeAggFunctions(pParse, &sAggInfo);
-        pOrderBy = 0;
-        if( pHaving ){
-          sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
-        }
       }
 
+      pOrderBy = 0;
+      if( pHaving ){
+        sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
+      }
       selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, -1, 
                       pDest, addrEnd, addrEnd);
       sqlite3ExprListDelete(db, pDel);
