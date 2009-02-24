@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.821 2009/02/20 10:58:42 danielk1977 Exp $
+** $Id: vdbe.c,v 1.822 2009/02/24 10:01:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2338,6 +2338,22 @@ case OP_MakeRecord: {
   UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
+
+/* Opcode: Count P1 P2 * * *
+**
+** Store the number of entries (an integer value) in the table or index 
+** opened by cursor P1 in register P2
+*/
+#ifndef SQLITE_OMIT_BTREECOUNT
+case OP_Count: {         /* out2-prerelease */
+  i64 nEntry;
+  BtCursor *pCrsr = p->apCsr[pOp->p1]->pCursor;
+  rc = sqlite3BtreeCount(pCrsr, &nEntry);
+  pOut->flags = MEM_Int;
+  pOut->u.i = nEntry;
+  break;
+}
+#endif
 
 /* Opcode: Statement P1 * * * *
 **

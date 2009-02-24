@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.223 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: func.c,v 1.224 2009/02/24 10:01:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1413,7 +1413,8 @@ void sqlite3RegisterGlobalFunctions(void){
     AGGREGATE(sum,               1, 0, 0, sumStep,         sumFinalize    ),
     AGGREGATE(total,             1, 0, 0, sumStep,         totalFinalize    ),
     AGGREGATE(avg,               1, 0, 0, sumStep,         avgFinalize    ),
-    AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ),
+ /* AGGREGATE(count,             0, 0, 0, countStep,       countFinalize  ), */
+    {0,SQLITE_UTF8,SQLITE_FUNC_COUNT,0,0,0,countStep,countFinalize,"count",0},
     AGGREGATE(count,             1, 0, 0, countStep,       countFinalize  ),
     AGGREGATE(group_concat,      1, 0, 0, groupConcatStep, groupConcatFinalize),
     AGGREGATE(group_concat,      2, 0, 0, groupConcatStep, groupConcatFinalize),

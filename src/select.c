@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.501 2009/02/20 10:58:42 danielk1977 Exp $
+** $Id: select.c,v 1.502 2009/02/24 10:01:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2954,6 +2954,39 @@ static u8 minMaxQuery(Select *p){
 }
 
 /*
+** The select statement passed as the first argument is an aggregate query.
+** The second argment is the associated aggregate-info object. This 
+** function tests if the SELECT is of the form:
+**
+**   SELECT count(*) FROM <tbl>
+**
+** where table is a database table, not a sub-select or view. If the query
+** does match this pattern, then a pointer to the Table object representing
+** <tbl> is returned. Otherwise, 0 is returned.
+*/
+static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
+  Table *pTab;
+  Expr *pExpr;
+
+  assert( !p->pGroupBy );
+
+  if( p->pWhere || p->pHaving || p->pEList->nExpr!=1
+   || p->pSrc->nSrc!=1 || p->pSrc->a[0].pSelect
+  ){
+    return 0;
+  }
+
+  pTab = p->pSrc->a[0].pTab;
+  pExpr = p->pEList->a[0].pExpr;
+  if( !pTab || pTab->pSelect || IsVirtual(pTab) ) return 0;
+  if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
+  if( (pAggInfo->aFunc[0].pFunc->flags&SQLITE_FUNC_COUNT)==0 ) return 0;
+  if( pExpr->flags&EP_Distinct ) return 0;
+
+  return pTab;
+}
+
+/*
 ** If the source-list item passed as an argument was augmented with an
 ** INDEXED BY clause, then try to locate the specified index. If there
 ** was such a clause and the named index cannot be found, return 
@@ -3998,70 +4031,127 @@ int sqlite3Select(
      
     } /* endif pGroupBy */
     else {
-      ExprList *pMinMax = 0;
       ExprList *pDel = 0;
-      u8 flag;
+#ifndef SQLITE_OMIT_BTREECOUNT
+      Table *pTab;
+      if( (pTab = isSimpleCount(p, &sAggInfo))!=0 ){
+        /* If isSimpleCount() returns a pointer to a Table structure, then
+        ** the SQL statement is of the form:
+        **
+        **   SELECT count(*) FROM <tbl>
+        **
+        ** where the Table structure returned represents table <tbl>.
+        **
+        ** This statement is so common that it is optimized specially. The
+        ** OP_Count instruction is executed either on the intkey table that
+        ** contains the data for table <tbl> or on one of its indexes. It
+        ** is better to execute the op on an index, as indexes are almost
+        ** always spread across less pages than their corresponding tables.
+        */
+        const int iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+        const int iCsr = pParse->nTab++;     /* Cursor to scan b-tree */
+        Index *pIdx;                         /* Iterator variable */
+        KeyInfo *pKeyInfo = 0;               /* Keyinfo for scanned index */
+        Index *pBest = 0;                    /* Best index found so far */
+        int iRoot = pTab->tnum;              /* Root page of scanned b-tree */
 
-      /* Check if the query is of one of the following forms:
-      **
-      **   SELECT min(x) FROM ...
-      **   SELECT max(x) FROM ...
-      **
-      ** If it is, then ask the code in where.c to attempt to sort results
-      ** as if there was an "ORDER ON x" or "ORDER ON x DESC" clause. 
-      ** If where.c is able to produce results sorted in this order, then
-      ** add vdbe code to break out of the processing loop after the 
-      ** first iteration (since the first iteration of the loop is 
-      ** guaranteed to operate on the row with the minimum or maximum 
-      ** value of x, the only row required).
-      **
-      ** A special flag must be passed to sqlite3WhereBegin() to slightly
-      ** modify behaviour as follows:
-      **
-      **   + If the query is a "SELECT min(x)", then the loop coded by
-      **     where.c should not iterate over any values with a NULL value
-      **     for x.
-      **
-      **   + The optimizer code in where.c (the thing that decides which
-      **     index or indices to use) should place a different priority on 
-      **     satisfying the 'ORDER BY' clause than it does in other cases.
-      **     Refer to code and comments in where.c for details.
-      */
-      flag = minMaxQuery(p);
-      if( flag ){
-        assert( !ExprHasProperty(p->pEList->a[0].pExpr, EP_xIsSelect) );
-        pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->x.pList,0);
-        pDel = pMinMax;
-        if( pMinMax && !db->mallocFailed ){
-          pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
-          pMinMax->a[0].pExpr->op = TK_COLUMN;
+        sqlite3CodeVerifySchema(pParse, iDb);
+        sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
+
+        /* Search for the index that has the least amount of columns. If
+        ** there is such an index, and it has less columns than the table
+        ** does, then we can assume that it consumes less space on disk and
+        ** will therefore be cheaper to scan to determine the query result.
+        ** In this case set iRoot to the root page number of the index b-tree
+        ** and pKeyInfo to the KeyInfo structure required to navigate the
+        ** index.
+        **
+        ** In practice the KeyInfo structure will not be used. It is only 
+        ** passed to keep OP_OpenRead happy.
+        */
+        for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+          if( !pBest || pIdx->nColumn<pBest->nColumn ){
+            pBest = pIdx;
+          }
+        }
+        if( pBest && pBest->nColumn<pTab->nCol ){
+          iRoot = pBest->tnum;
+          pKeyInfo = sqlite3IndexKeyinfo(pParse, pBest);
+        }
+
+        /* Open a read-only cursor, execute the OP_Count, close the cursor. */
+        sqlite3VdbeAddOp3(v, OP_OpenRead, iCsr, iRoot, iDb);
+        if( pKeyInfo ){
+          sqlite3VdbeChangeP4(v, -1, (char *)pKeyInfo, P4_KEYINFO_HANDOFF);
+        }
+        sqlite3VdbeAddOp2(v, OP_Count, iCsr, sAggInfo.aFunc[0].iMem);
+        sqlite3VdbeAddOp1(v, OP_Close, iCsr);
+      }else
+#endif /* SQLITE_OMIT_BTREECOUNT */
+      {
+        /* Check if the query is of one of the following forms:
+        **
+        **   SELECT min(x) FROM ...
+        **   SELECT max(x) FROM ...
+        **
+        ** If it is, then ask the code in where.c to attempt to sort results
+        ** as if there was an "ORDER ON x" or "ORDER ON x DESC" clause. 
+        ** If where.c is able to produce results sorted in this order, then
+        ** add vdbe code to break out of the processing loop after the 
+        ** first iteration (since the first iteration of the loop is 
+        ** guaranteed to operate on the row with the minimum or maximum 
+        ** value of x, the only row required).
+        **
+        ** A special flag must be passed to sqlite3WhereBegin() to slightly
+        ** modify behaviour as follows:
+        **
+        **   + If the query is a "SELECT min(x)", then the loop coded by
+        **     where.c should not iterate over any values with a NULL value
+        **     for x.
+        **
+        **   + The optimizer code in where.c (the thing that decides which
+        **     index or indices to use) should place a different priority on 
+        **     satisfying the 'ORDER BY' clause than it does in other cases.
+        **     Refer to code and comments in where.c for details.
+        */
+        ExprList *pMinMax = 0;
+        u8 flag = minMaxQuery(p);
+        if( flag ){
+          assert( !ExprHasProperty(p->pEList->a[0].pExpr, EP_xIsSelect) );
+          pMinMax = sqlite3ExprListDup(db, p->pEList->a[0].pExpr->x.pList,0);
+          pDel = pMinMax;
+          if( pMinMax && !db->mallocFailed ){
+            pMinMax->a[0].sortOrder = flag!=WHERE_ORDERBY_MIN ?1:0;
+            pMinMax->a[0].pExpr->op = TK_COLUMN;
+          }
+        }
+  
+        /* This case runs if the aggregate has no GROUP BY clause.  The
+        ** processing is much simpler since there is only a single row
+        ** of output.
+        */
+        resetAccumulator(pParse, &sAggInfo);
+        pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag, 0);
+        if( pWInfo==0 ){
+          sqlite3ExprListDelete(db, pDel);
+          goto select_end;
+        }
+        updateAccumulator(pParse, &sAggInfo);
+        if( !pMinMax && flag ){
+          sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
+          VdbeComment((v, "%s() by index",
+                (flag==WHERE_ORDERBY_MIN?"min":"max")));
+        }
+        sqlite3WhereEnd(pWInfo);
+        finalizeAggFunctions(pParse, &sAggInfo);
+        pOrderBy = 0;
+        if( pHaving ){
+          sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
         }
       }
 
-      /* This case runs if the aggregate has no GROUP BY clause.  The
-      ** processing is much simpler since there is only a single row
-      ** of output.
-      */
-      resetAccumulator(pParse, &sAggInfo);
-      pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere, &pMinMax, flag, 0);
-      if( pWInfo==0 ){
-        sqlite3ExprListDelete(db, pDel);
-        goto select_end;
-      }
-      updateAccumulator(pParse, &sAggInfo);
-      if( !pMinMax && flag ){
-        sqlite3VdbeAddOp2(v, OP_Goto, 0, pWInfo->iBreak);
-        VdbeComment((v, "%s() by index",(flag==WHERE_ORDERBY_MIN?"min":"max")));
-      }
-      sqlite3WhereEnd(pWInfo);
-      finalizeAggFunctions(pParse, &sAggInfo);
-      pOrderBy = 0;
-      if( pHaving ){
-        sqlite3ExprIfFalse(pParse, pHaving, addrEnd, SQLITE_JUMPIFNULL);
-      }
       selectInnerLoop(pParse, p, p->pEList, 0, 0, 0, -1, 
                       pDest, addrEnd, addrEnd);
-
       sqlite3ExprListDelete(db, pDel);
     }
     sqlite3VdbeResolveLabel(v, addrEnd);
