@@ -36,7 +36,7 @@ do_test genfkey-1.1 {
   }
 } {}
 do_test genfkey-1.2 {
-  execsql [exec ./genfkey test.db]
+  execsql [exec ./sqlite3 test.db .genfkey]
 } {}
 do_test genfkey-1.3 {
   catchsql { INSERT INTO t2 VALUES(1, 2) }
@@ -129,7 +129,7 @@ do_test genfkey-2.1 {
   }
 } {}
 do_test genfkey-2.2 {
-  execsql [exec ./genfkey test.db]
+  execsql [exec ./sqlite3 test.db .genfkey]
 } {}
 do_test genfkey-2.3 {
   execsql {
@@ -186,7 +186,7 @@ do_test genfkey-3.1 {
   }
 } {}
 do_test genfkey-3.2 {
-  execsql [exec ./genfkey test.db]
+  execsql [exec ./sqlite3 test.db .genfkey]
 } {}
 do_test genfkey-3.3 {
   execsql {
@@ -249,7 +249,7 @@ do_test genfkey-4.1 {
 } {}
 
 do_test genfkey-4.X {
-  set rc [catch {exec ./genfkey test.db} msg]
+  set rc [catch {exec ./sqlite3 test.db .genfkey} msg]
   list $rc $msg
 } "1 {[string trim {
 Error in table t5: foreign key columns do not exist
