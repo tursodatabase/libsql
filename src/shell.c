@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.203 2009/02/25 15:43:57 danielk1977 Exp $
+** $Id: shell.c,v 1.204 2009/02/25 19:07:25 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -72,6 +72,48 @@ extern int isatty();
 #if !defined(_WIN32) && !defined(WIN32) && !defined(__OS2__) && !defined(__RTP__) && !defined(_WRS_KERNEL)
 #include <sys/time.h>
 #include <sys/resource.h>
+
+/* Saved resource information for the beginning of an operation */
+static struct rusage sBegin;
+
+/* True if the timer is enabled */
+static int enableTimer = 0;
+
+/*
+** Begin timing an operation
+*/
+static void beginTimer(void){
+  if( enableTimer ){
+    getrusage(RUSAGE_SELF, &sBegin);
+  }
+}
+
+/* Return the difference of two time_structs in seconds */
+static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
+  return (pEnd->tv_usec - pStart->tv_usec)*0.000001 + 
+         (double)(pEnd->tv_sec - pStart->tv_sec);
+}
+
+/*
+** Print the timing results.
+*/
+static void endTimer(void){
+  if( enableTimer ){
+    struct rusage sEnd;
+    getrusage(RUSAGE_SELF, &sEnd);
+    printf("CPU Time: user %f sys %f\n",
+       timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
+       timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
+  }
+}
+#define BEGIN_TIMER beginTimer()
+#define END_TIMER endTimer()
+#define HAS_TIMER 1
+#else
+#define BEGIN_TIMER 
+#define END_TIMER
+#define HAS_TIMER 0
+#endif
 
 
 /**************************************************************************
@@ -912,48 +954,6 @@ genfkey_exit:
 /* End genfkey logic. */
 /*************************************************************************/
 /*************************************************************************/
-
-/* Saved resource information for the beginning of an operation */
-static struct rusage sBegin;
-
-/* True if the timer is enabled */
-static int enableTimer = 0;
-
-/*
-** Begin timing an operation
-*/
-static void beginTimer(void){
-  if( enableTimer ){
-    getrusage(RUSAGE_SELF, &sBegin);
-  }
-}
-
-/* Return the difference of two time_structs in seconds */
-static double timeDiff(struct timeval *pStart, struct timeval *pEnd){
-  return (pEnd->tv_usec - pStart->tv_usec)*0.000001 + 
-         (double)(pEnd->tv_sec - pStart->tv_sec);
-}
-
-/*
-** Print the timing results.
-*/
-static void endTimer(void){
-  if( enableTimer ){
-    struct rusage sEnd;
-    getrusage(RUSAGE_SELF, &sEnd);
-    printf("CPU Time: user %f sys %f\n",
-       timeDiff(&sBegin.ru_utime, &sEnd.ru_utime),
-       timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
-  }
-}
-#define BEGIN_TIMER beginTimer()
-#define END_TIMER endTimer()
-#define HAS_TIMER 1
-#else
-#define BEGIN_TIMER 
-#define END_TIMER
-#define HAS_TIMER 0
-#endif
 
 /*
 ** Used to prevent warnings about unused parameters

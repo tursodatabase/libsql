@@ -1,5 +1,5 @@
-C Remove\sgenfkey.c.\sChange\sgenfkey.README\sto\stalk\sabout\sthe\snew\sshell\sdot-command,\snot\sthe\sold\sstandalone\sgenfkey\sprogram.\s(CVS\s6326)
-D 2009-02-25T15:43:57
+C Move\sthe\snew\sgenfkey\sshell\scommand\sout\sfrom\swithin\s#ifdef\s_WIN32_\s(CVS\s6327)
+D 2009-02-25T19:07:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c dea005135845acbbfae1f2968c0deb6b2e3d580c
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
-F src/shell.c 6ffbdb812a75f736fc5cd0fc9ec4fd82663f196c
+F src/shell.c 0cada72035b819ed2bede27e254efcfbb88167f7
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h e717d30828600865b8f74456fd461e6a52ead6df
@@ -701,7 +701,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0a59fb28b46e5d85c850d1dfa1385a4656e4dda5
-R 3c98ede20378321f5af46ceb07590363
-U danielk1977
-Z e2cf6f9602002a2636a92e6c95e07c27
+P 36d699660bc328e65170d72be715338e82dbbb50
+R 7f42e226ab2b746ac50fedc5f267f111
+U drh
+Z 46bbb2602043845ae8e84b264be6c003
