@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.75 2009/02/04 08:17:57 danielk1977 Exp $
+# $Id: malloc.test,v 1.76 2009/02/25 08:56:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -789,6 +789,32 @@ do_malloc_test 32 -tclprep {
     execsql {PRAGMA integrity_check} db2
   } {ok}
   db2 close
+}
+
+# The following two OOM tests verify that OOM handling works in the
+# code used to optimize "SELECT count(*) FROM <tbl>".
+#
+do_malloc_test 33 -tclprep {
+  db eval { PRAGMA cache_size = 10 }
+  db transaction {
+    db eval { CREATE TABLE abc(a, b) }
+    for {set i 0} {$i<500} {incr i} {
+      db eval {INSERT INTO abc VALUES(randstr(100,100), randstr(1000,1000))}
+    }
+  }
+} -sqlbody {
+  SELECT count(*) FROM abc;
+}
+do_malloc_test 34 -tclprep {
+  db eval { PRAGMA cache_size = 10 }
+  db transaction {
+    db eval { CREATE TABLE abc(a PRIMARY KEY, b) }
+    for {set i 0} {$i<500} {incr i} {
+      db eval {INSERT INTO abc VALUES(randstr(100,100), randstr(1000,1000))}
+    }
+  }
+} -sqlbody {
+  SELECT count(*) FROM abc;
 }
 
 # Ensure that no file descriptors were leaked.

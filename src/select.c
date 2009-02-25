@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.503 2009/02/24 18:33:15 danielk1977 Exp $
+** $Id: select.c,v 1.504 2009/02/25 08:56:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2975,10 +2975,11 @@ static Table *isSimpleCount(Select *p, AggInfo *pAggInfo){
   ){
     return 0;
   }
-
   pTab = p->pSrc->a[0].pTab;
   pExpr = p->pEList->a[0].pExpr;
-  if( !pTab || pTab->pSelect || IsVirtual(pTab) ) return 0;
+  assert( pTab && !pTab->pSelect && pExpr );
+
+  if( IsVirtual(pTab) ) return 0;
   if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
   if( (pAggInfo->aFunc[0].pFunc->flags&SQLITE_FUNC_COUNT)==0 ) return 0;
   if( pExpr->flags&EP_Distinct ) return 0;

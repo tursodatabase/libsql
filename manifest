@@ -1,5 +1,5 @@
-C Additional\scommands\sand\sanother\sprocedure\sname\schanges\sfor\sclarity\sof\npresentation.\sNo\slogic\schanges.\s(CVS\s6323)
-D 2009-02-24T19:21:41
+C Minor\schanges\sand\scoverge\stests\sfor\s"SELECT\scount(*)"\soptimization.\s(CVS\s6324)
+D 2009-02-25T08:56:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c dea005135845acbbfae1f2968c0deb6b2e3d580c
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
-F src/select.c 757eb43f9344f8f68e5b9e41830547407ff0d9a9
+F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c f109ebbb50132926ebbc173a6c2d8838d5d78527
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -286,7 +286,7 @@ F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 505331779fe7a96fe38ecbb817f19c63bc27d171
 F test/corruptC.test c798aa395a8d052fba88bd1be8e1945309e3f94a
-F test/count.test 27293d5708d199493cd5af8d1f4aa13bff3615cf
+F test/count.test 89df9e4cf33caa060be12607462caaf47df6c435
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
 F test/crash3.test 776f9363554c029fcce71d9e6600fa0ba6359ce7
@@ -437,7 +437,7 @@ F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test 8e3ad667ef1c55147dcf9190b5edd3bf808ab147
+F test/malloc.test 8180b651cc7e6b6be933c335db590ff1c33d8884
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -702,7 +702,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b99c1815fe270decf1ac3d714acc7e945d1e728a
-R 52f851adc25a6b49b81feac1c5feb754
-U drh
-Z 7a0daf7b4a8f562b34bdae9981a338a7
+P 91d9d51e03657e7492dd7b93e66c82b152abec3b
+R c65d7c9d041d481539ec6e65a8bbfcc4
+U danielk1977
+Z f03589b6049282aa23f55a52edc62f1d
