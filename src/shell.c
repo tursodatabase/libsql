@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.202 2009/02/25 15:22:03 danielk1977 Exp $
+** $Id: shell.c,v 1.203 2009/02/25 15:43:57 danielk1977 Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1839,7 +1839,8 @@ static char zHelp[] =
   "                         --no-drop: Do not drop old fkey triggers.\n"
   "                         --ignore-errors: Ignore tables with fkey errors\n"
   "                         --exec: Execute generated SQL immediately\n"
-  "                         --help: Print help message for .genfkey\n"
+  "                       See file tool/genfkey.README in the source \n"
+  "                       distribution for further information.\n"
 #endif
   ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
