@@ -1,5 +1,5 @@
-C Move\sthe\snew\sgenfkey\sshell\scommand\sout\sfrom\swithin\s#ifdef\s_WIN32_\s(CVS\s6327)
-D 2009-02-25T19:07:25
+C In\ssqlite3_table_column_metadata(),\shold\sthe\smutex\son\sall\sattached\sBtShared\sobjects\swhile\saccessing\sschema\sobjects.\sFix\sfor\s#3679.\s(CVS\s6328)
+D 2009-02-26T07:15:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/insert.c 529a1b9889fe3c2eb093cc02c3053b04c65daa7e
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c f7f7c2fcbda632bfb7995c77636660a019a172c7
+F src/main.c fd98b89bcc80d27e303c913c8facab9ee939ef15
 F src/malloc.c 072ddad9b7e908e9b9a2a494d4758dadeced61ae
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
@@ -493,7 +493,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test 4a09b89a44be46b3ee5a5dbe25b72cb1e5c3ead8
+F test/quick.test b7acd5b3df583391979d9f9edf98aa85fc95a3f6
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -556,6 +556,7 @@ F test/tester.tcl 66546f6766029384360b24cacb3896376c5f5f69
 F test/thread001.test 06c45ed9597d478e7bbdc2a8937e1ebea2a20a32
 F test/thread002.test 3c03900f03fd2fe8e2fbb1bbdef7fa8206fdb7ad
 F test/thread003.test 6d360c15afe7f6ef6186801d2cb8407bccbe3aa3
+F test/thread004.test 9d8ea6a9b0d62d35ad0b967e010d723ed99f614a
 F test/thread1.test 862dd006d189e8b0946935db17399dcac2f8ef91
 F test/thread2.test 91f105374f18a66e73a3254c28fe7c77af69bdea
 F test/thread_common.tcl 047f80288b5e1e86bed181097d67e640f1a54a74
@@ -701,7 +702,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 36d699660bc328e65170d72be715338e82dbbb50
-R 7f42e226ab2b746ac50fedc5f267f111
-U drh
-Z 46bbb2602043845ae8e84b264be6c003
+P 48ee0e47e2d9669cc7425104e6b04ce49caf2e56
+R 42441caf74da644bc7eebc8b71116801
+U danielk1977
+Z 25037733e5d25d45bee1e03b1015374a
