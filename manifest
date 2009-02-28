@@ -1,5 +1,5 @@
-C In\ssqlite3_table_column_metadata(),\shold\sthe\smutex\son\sall\sattached\sBtShared\sobjects\swhile\saccessing\sschema\sobjects.\sFix\sfor\s#3679.\s(CVS\s6328)
-D 2009-02-26T07:15:59
+C Instead\sof\slinking\stemporary\striggers\son\snon-temporary\stables\sinto\sthe\sTable.pTrigger\slist,\ssearch\sthe\stemp\sschema\sfor\sthem\son\sdemand.\sFix\sfor\s#3688.\s(CVS\s6329)
+D 2009-02-28T10:47:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,8 +96,8 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c f93d13aae63ea1a5ee604d76041be354311d08a5
-F src/analyze.c 9fc52fed9da8b9c7bd5e39c8781e07ab2fb018ba
+F src/alter.c b95815ccc92477b1b5874fb0fe20f65c867e9cc8
+F src/analyze.c 3585d1a4c480ee85b65cf0a676e05d2c29eb6bdb
 F src/attach.c d34589d5c85d81e755e4a8fc946d313915a6fa6d
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 2d3f31148d7b086c5c72d9edcd04fc2751b0aa6e
@@ -106,11 +106,11 @@ F src/btmutex.c 63c5cc4ad5715690767ffcb741e185d7bc35ec1a
 F src/btree.c c219cd5d46fc39540c44e15bf7e9e36c06496f51
 F src/btree.h 96a019c9f28da38e79940512d7800e419cd8c702
 F src/btreeInt.h 0a4884e6152d7cae9c741e91b830064c19fd2c05
-F src/build.c a1db48aec62c95049d783f231195812ff97ae268
+F src/build.c 741240c8d6a54201fa8757db1ee6efba71be59a2
 F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
-F src/delete.c 61179b19751ecc5deeecd3f758ed1ae6d8f3362e
+F src/delete.c 506ff477a11ffaaa7493536fecc25e75130214fd
 F src/expr.c 46e24f9a71e7bdd2573a790ba2f98b7c3f617d04
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c de2eed7d96365210faecda877c5a12cf440bdf42
@@ -118,7 +118,7 @@ F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 529a1b9889fe3c2eb093cc02c3053b04c65daa7e
+F src/insert.c 71286d081a919a27ef22eaeccbe2718f93dc6aa9
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
@@ -158,7 +158,7 @@ F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c 0cada72035b819ed2bede27e254efcfbb88167f7
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h e717d30828600865b8f74456fd461e6a52ead6df
+F src/sqliteInt.h 796ed3ac9306deb383932a10e1707259fd2933ef
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -194,8 +194,8 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c adb9175c466e1f487295b5b957603fc0a88ea293
 F src/test_wsd.c c297d7d6b8a990239e1bd25935e81d612d8ae31d
 F src/tokenize.c 6987fb7f0d6a87ac53499aee568cabb05eb4bea8
-F src/trigger.c 9957e16e5445478f2cc60e26ac1bc836bb18d21a
-F src/update.c 87158a2308173487f9f7e19ef877edc860def462
+F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
+F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 1da9c832dba0fa8f865b5b902d93f420a1ee4245
 F src/util.c 1363f64351f3b544790f3c523439354c02f8c4e9
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
@@ -552,6 +552,7 @@ F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test 413a8a887d89ea8fa7055e8d118ffb03b0a4c91a
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 5d8ca46be28cc06c887c5a77df650843b7edbae1
+F test/temptrigger.test 03093be9967942623232dfdf2a63b832d4e0e4fa
 F test/tester.tcl 66546f6766029384360b24cacb3896376c5f5f69
 F test/thread001.test 06c45ed9597d478e7bbdc2a8937e1ebea2a20a32
 F test/thread002.test 3c03900f03fd2fe8e2fbb1bbdef7fa8206fdb7ad
@@ -702,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 48ee0e47e2d9669cc7425104e6b04ce49caf2e56
-R 42441caf74da644bc7eebc8b71116801
+P d197afd658eecfc0e24913e5a779c8f1e2a138a6
+R f67c89b865e0fb84ad0c7d14159e7dbb
 U danielk1977
-Z 25037733e5d25d45bee1e03b1015374a
+Z b48592b814203de9f6ac5d918ac043e2

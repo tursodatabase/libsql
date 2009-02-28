@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.259 2009/02/20 10:58:42 danielk1977 Exp $
+** $Id: insert.c,v 1.260 2009/02/28 10:47:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -401,7 +401,8 @@ void sqlite3Insert(
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                 /* True if attempting to insert into a view */
-  int triggers_exist = 0;     /* True if there are FOR EACH ROW triggers */
+  Trigger *pTrigger;          /* List of triggers on pTab, if required */
+  int tmask;                  /* Mask of trigger times */
 #endif
 
   db = pParse->db;
@@ -431,22 +432,24 @@ void sqlite3Insert(
   ** inserted into is a view
   */
 #ifndef SQLITE_OMIT_TRIGGER
-  triggers_exist = sqlite3TriggersExist(pTab, TK_INSERT, 0);
+  pTrigger = sqlite3TriggersExist(pParse, pTab, TK_INSERT, 0, &tmask);
   isView = pTab->pSelect!=0;
 #else
-# define triggers_exist 0
+# define pTrigger 0
+# define tmask 0
 # define isView 0
 #endif
 #ifdef SQLITE_OMIT_VIEW
 # undef isView
 # define isView 0
 #endif
+  assert( (pTrigger && tmask) || (pTrigger==0 && tmask==0) );
 
   /* Ensure that:
   *  (a) the table is not read-only, 
   *  (b) that if it is a view then ON INSERT triggers exist
   */
-  if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
+  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
     goto insert_cleanup;
   }
   assert( pTab!=0 );
@@ -464,10 +467,10 @@ void sqlite3Insert(
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) goto insert_cleanup;
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
-  sqlite3BeginWriteOperation(pParse, pSelect || triggers_exist, iDb);
+  sqlite3BeginWriteOperation(pParse, pSelect || pTrigger, iDb);
 
   /* if there are row triggers, allocate a temp table for new.* references. */
-  if( triggers_exist ){
+  if( pTrigger ){
     newIdx = pParse->nTab++;
   }
 
@@ -482,7 +485,7 @@ void sqlite3Insert(
   ** This is the 2nd template.
   */
   if( pColumn==0 && xferOptimization(pParse, pTab, pSelect, onError, iDb) ){
-    assert( !triggers_exist );
+    assert( !pTrigger );
     assert( pList==0 );
     goto insert_cleanup;
   }
@@ -557,7 +560,7 @@ void sqlite3Insert(
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( triggers_exist || readsTable(v, addrSelect, iDb, pTab) ){
+    if( pTrigger || readsTable(v, addrSelect, iDb, pTab) ){
       useTempTable = 1;
     }
 
@@ -676,7 +679,7 @@ void sqlite3Insert(
 
   /* Open the temp table for FOR EACH ROW triggers
   */
-  if( triggers_exist ){
+  if( pTrigger ){
     sqlite3VdbeAddOp3(v, OP_OpenPseudo, newIdx, 0, pTab->nCol);
   }
     
@@ -744,7 +747,7 @@ void sqlite3Insert(
   /* Run the BEFORE and INSTEAD OF triggers, if there are any
   */
   endOfLoop = sqlite3VdbeMakeLabel(v);
-  if( triggers_exist & TRIGGER_BEFORE ){
+  if( tmask & TRIGGER_BEFORE ){
     int regTrigRowid;
     int regCols;
     int regRec;
@@ -812,8 +815,8 @@ void sqlite3Insert(
     sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
 
     /* Fire BEFORE or INSTEAD OF triggers */
-    if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_BEFORE, pTab, 
-        newIdx, -1, onError, endOfLoop, 0, 0) ){
+    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
+        pTab, newIdx, -1, onError, endOfLoop, 0, 0) ){
       goto insert_cleanup;
     }
   }
@@ -935,7 +938,7 @@ void sqlite3Insert(
           regIns,
           aRegIdx,
           0,
-          (triggers_exist & TRIGGER_AFTER)!=0 ? newIdx : -1,
+          (tmask&TRIGGER_AFTER) ? newIdx : -1,
           appendFlag
        );
     }
@@ -947,10 +950,10 @@ void sqlite3Insert(
     sqlite3VdbeAddOp2(v, OP_AddImm, regRowCount, 1);
   }
 
-  if( triggers_exist ){
+  if( pTrigger ){
     /* Code AFTER triggers */
-    if( sqlite3CodeRowTrigger(pParse, TK_INSERT, 0, TRIGGER_AFTER, pTab,
-          newIdx, -1, onError, endOfLoop, 0, 0) ){
+    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
+          pTab, newIdx, -1, onError, endOfLoop, 0, 0) ){
       goto insert_cleanup;
     }
   }
@@ -1530,7 +1533,7 @@ static int xferOptimization(
   if( pSelect==0 ){
     return 0;   /* Must be of the form  INSERT INTO ... SELECT ... */
   }
-  if( pDest->pTrigger ){
+  if( sqlite3TriggerList(pParse, pDest) ){
     return 0;   /* tab1 must not have triggers */
   }
 #ifndef SQLITE_OMIT_VIRTUALTABLE

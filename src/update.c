@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.195 2009/02/24 10:14:40 danielk1977 Exp $
+** $Id: update.c,v 1.196 2009/02/28 10:47:42 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -107,7 +107,7 @@ void sqlite3Update(
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
-  int triggers_exist = 0;      /* True if any row triggers exist */
+  Trigger *pTrigger;           /* List of triggers on pTab, if required */
 #endif
   int iBeginAfterTrigger = 0;  /* Address of after trigger program */
   int iEndAfterTrigger = 0;    /* Exit of after trigger program */
@@ -143,10 +143,10 @@ void sqlite3Update(
   ** updated is a view
   */
 #ifndef SQLITE_OMIT_TRIGGER
-  triggers_exist = sqlite3TriggersExist(pTab, TK_UPDATE, pChanges);
+  pTrigger = sqlite3TriggersExist(pParse, pTab, TK_UPDATE, pChanges, 0);
   isView = pTab->pSelect!=0;
 #else
-# define triggers_exist 0
+# define pTrigger 0
 # define isView 0
 #endif
 #ifdef SQLITE_OMIT_VIEW
@@ -154,7 +154,7 @@ void sqlite3Update(
 # define isView 0
 #endif
 
-  if( sqlite3IsReadOnly(pParse, pTab, triggers_exist) ){
+  if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
     goto update_cleanup;
   }
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
@@ -167,7 +167,7 @@ void sqlite3Update(
   /* If there are FOR EACH ROW triggers, allocate cursors for the
   ** special OLD and NEW tables
   */
-  if( triggers_exist ){
+  if( pTrigger ){
     newIdx = pParse->nTab++;
     oldIdx = pParse->nTab++;
   }
@@ -299,7 +299,7 @@ void sqlite3Update(
 
   /* Generate the code for triggers.
   */
-  if( triggers_exist ){
+  if( pTrigger ){
     int iGoto;
 
     /* Create pseudo-tables for NEW and OLD
@@ -310,14 +310,16 @@ void sqlite3Update(
     iGoto = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     addr = sqlite3VdbeMakeLabel(v);
     iBeginBeforeTrigger = sqlite3VdbeCurrentAddr(v);
-    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_BEFORE, pTab,
-          newIdx, oldIdx, onError, addr, &old_col_mask, &new_col_mask) ){
+    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
+          TRIGGER_BEFORE, pTab, newIdx, oldIdx, onError, addr, 
+          &old_col_mask, &new_col_mask) ){
       goto update_cleanup;
     }
     iEndBeforeTrigger = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
     iBeginAfterTrigger = sqlite3VdbeCurrentAddr(v);
-    if( sqlite3CodeRowTrigger(pParse, TK_UPDATE, pChanges, TRIGGER_AFTER, pTab, 
-          newIdx, oldIdx, onError, addr, &old_col_mask, &new_col_mask) ){
+    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
+          TRIGGER_AFTER, pTab, newIdx, oldIdx, onError, addr, 
+          &old_col_mask, &new_col_mask) ){
       goto update_cleanup;
     }
     iEndAfterTrigger = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0);
@@ -397,7 +399,7 @@ void sqlite3Update(
   }
   
   /* Jump back to this point if a trigger encounters an IGNORE constraint. */
-  if( triggers_exist ){
+  if( pTrigger ){
     sqlite3VdbeResolveLabel(v, addr);
   }
 
@@ -410,7 +412,7 @@ void sqlite3Update(
     addr = sqlite3VdbeAddOp3(v, OP_RowSetRead, regRowSet, 0, regOldRowid);
   }
 
-  if( triggers_exist ){
+  if( pTrigger ){
     int regRowid;
     int regRow;
     int regCols;
@@ -539,7 +541,7 @@ void sqlite3Update(
   /* If there are triggers, close all the cursors after each iteration
   ** through the loop.  The fire the after triggers.
   */
-  if( triggers_exist ){
+  if( pTrigger ){
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iBeginAfterTrigger);
     sqlite3VdbeJumpHere(v, iEndAfterTrigger);
   }
@@ -557,7 +559,7 @@ void sqlite3Update(
     }
   }
   sqlite3VdbeAddOp2(v, OP_Close, iCur, 0);
-  if( triggers_exist ){
+  if( pTrigger ){
     sqlite3VdbeAddOp2(v, OP_Close, newIdx, 0);
     sqlite3VdbeAddOp2(v, OP_Close, oldIdx, 0);
   }
