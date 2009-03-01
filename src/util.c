@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.248 2009/02/04 03:59:25 shane Exp $
+** $Id: util.c,v 1.249 2009/03/01 22:29:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -694,7 +694,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   /* a: p2<<28 | p4<<14 | p6 (unmasked) */
   if (!(a&0x80))
   {
-    a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
+    a &= (0x1f<<28)|(0x7f<<14)|(0x7f);
     b &= (0x7f<<14)|(0x7f);
     b = b<<7;
     a |= b;
@@ -711,7 +711,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   /* b: p3<<28 | p5<<14 | p7 (unmasked) */
   if (!(b&0x80))
   {
-    b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
+    b &= (0x1f<<28)|(0x7f<<14)|(0x7f);
     /* moved CSE2 up */
     /* a &= (0x7f<<14)|(0x7f); */
     a = a<<7;
@@ -806,8 +806,8 @@ u8 sqlite3GetVarint32(const unsigned char *p, u32 *v){
   /* a: p0<<28 | p2<<14 | p4 (unmasked) */
   if (!(a&0x80))
   {
-    a &= (0x7f<<28)|(0x7f<<14)|(0x7f);
-    b &= (0x7f<<28)|(0x7f<<14)|(0x7f);
+    a &= (0x1f<<28)|(0x7f<<14)|(0x7f);
+    b &= (0x1f<<28)|(0x7f<<14)|(0x7f);
     b = b<<7;
     *v = a | b;
     return 5;
