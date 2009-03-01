@@ -1,5 +1,5 @@
-C Instead\sof\slinking\stemporary\striggers\son\snon-temporary\stables\sinto\sthe\sTable.pTrigger\slist,\ssearch\sthe\stemp\sschema\sfor\sthem\son\sdemand.\sFix\sfor\s#3688.\s(CVS\s6329)
-D 2009-02-28T10:47:42
+C Fix\sa\scritical\sbug\sin\sthe\sVDBE\sopcode\sarray\sresizer\sintroduced\sby\ncheck-in\s(6307).\s\sBug\sdetected\sby\sregression\stesting.\s(CVS\s6330)
+D 2009-03-01T19:42:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/vdbe.c e03512022ed2dd57bf2ea9ebe4f54cbc091adb0b
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
 F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
-F src/vdbeaux.c 88160f4e8d3d75d42f295aa838cf70c87fb4ce77
+F src/vdbeaux.c f6a312a222c63fe09d36e05284c7982cafdb5bc6
 F src/vdbeblob.c 08d6bac666c1f6a5d67452f5fbf808cf1311d2c9
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d197afd658eecfc0e24913e5a779c8f1e2a138a6
-R f67c89b865e0fb84ad0c7d14159e7dbb
-U danielk1977
-Z b48592b814203de9f6ac5d918ac043e2
+P 3befe1ef7e6ebddedfa69579553a1b85b411ee98
+R a65db1ef203e4eca12f2cc229afd0499
+U drh
+Z fcfdee8dd50a10684f80adfbab26dab6
