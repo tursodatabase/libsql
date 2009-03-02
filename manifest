@@ -1,5 +1,5 @@
-C Fix\sthe\sSQLITE_ENABLE_UPDATE_DELETE_LIMIT\soption\sfor\sthe\snew\sExpr\scompression\nlogic\sof\scheck-in\s(6305).\s\sBug\sdiscovered\sduring\sregression\stesting.\s(CVS\s6333)
-D 2009-03-02T14:24:21
+C Converted\sEXPR_*SIZE\smacros\sto\suse\soffsetof()\sto\savoid\sMSVC\scompiler\swarnings.\s(CVS\s6334)
+D 2009-03-02T17:18:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c 0cada72035b819ed2bede27e254efcfbb88167f7
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 796ed3ac9306deb383932a10e1707259fd2933ef
+F src/sqliteInt.h ae2dc2e2a063edfae3043e725981e69855bd3c9c
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fa0008502ec4f891bfed4a11f01650d274f95c44
-R 2c5d637ae25f70e2979b8bbfbc66302e
-U drh
-Z d4099cbbbd53062fe6677a5f23729bc8
+P 91969edac737adf087e35e10aa0a732b3303afd5
+R 045e3e601a7c56c3070476218766f737
+U shane
+Z f3aa3267b0a3bb6445600f3d4be903ff

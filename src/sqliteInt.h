@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.839 2009/02/28 10:47:42 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.840 2009/03/02 17:18:48 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1503,9 +1503,9 @@ struct Expr {
 ** and an Expr struct with the EP_TokenOnly flag set.
 */
 #define EXPR_FULLSIZE           sizeof(Expr)
-#define EXPR_REDUCEDSIZE        ((int)(&((Expr*)(0))->iTable))
-#define EXPR_TOKENONLYSIZE      ((int)(&((Expr*)(0))->span))
-#define EXPR_SPANONLYSIZE       ((int)(&((Expr*)(0))->pLeft))
+#define EXPR_REDUCEDSIZE        offsetof(Expr,iTable)
+#define EXPR_TOKENONLYSIZE      offsetof(Expr,span)
+#define EXPR_SPANONLYSIZE       offsetof(Expr,pLeft)
 
 /*
 ** Flags passed to the sqlite3ExprDup() function. See the header comment 
