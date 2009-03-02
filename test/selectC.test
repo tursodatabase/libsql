@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectC.test,v 1.3 2008/09/17 00:13:12 drh Exp $
+# $Id: selectC.test,v 1.4 2009/03/02 01:22:40 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -102,14 +102,23 @@ do_test selectC-1.11 {
      GROUP BY x, y
   }
 } {1 aaabbb}
-do_test selectC-1.12 {
+proc longname_toupper x {return [string toupper $x]}
+db function uppercaseconversionfunctionwithaverylongname longname_toupper
+do_test selectC-1.12.1 {
   execsql {
     SELECT DISTINCT upper(b) AS x
       FROM t1
      ORDER BY x
   }
 } {AAA CCC}
-do_test selectC-1.13 {
+do_test selectC-1.12.2 {
+  execsql {
+    SELECT DISTINCT uppercaseconversionfunctionwithaverylongname(b) AS x
+      FROM t1
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.13.1 {
   execsql {
     SELECT upper(b) AS x
       FROM t1
@@ -117,9 +126,24 @@ do_test selectC-1.13 {
      ORDER BY x
   }
 } {AAA CCC}
-do_test selectC-1.14 {
+do_test selectC-1.13.2 {
+  execsql {
+    SELECT uppercaseconversionfunctionwithaverylongname(b) AS x
+      FROM t1
+     GROUP BY x
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.14.1 {
   execsql {
     SELECT upper(b) AS x
+      FROM t1
+     ORDER BY x DESC
+  }
+} {CCC AAA AAA}
+do_test selectC-1.14.2 {
+  execsql {
+    SELECT uppercaseconversionfunctionwithaverylongname(b) AS x
       FROM t1
      ORDER BY x DESC
   }
