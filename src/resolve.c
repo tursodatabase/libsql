@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.19 2009/03/02 01:22:40 drh Exp $
+** $Id: resolve.c,v 1.20 2009/03/05 04:23:47 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -130,6 +130,7 @@ static int lookupName(
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
 
+  assert( pNC ); /* the name context cannot be NULL. */
   assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
 
   /* Dequote and zero-terminate the names */

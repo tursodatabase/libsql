@@ -1,5 +1,5 @@
-C Corrected\stypos\sand\smisspellings.\sTicket\s#3702.\s(CVS\s6336)
-D 2009-03-05T04:20:32
+C Added\ssome\sasserts\sand\sa\scheck\sfor\sa\snull\spointer\sdereference.\s(CVS\s6337)
+D 2009-03-05T04:23:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
 F src/prepare.c 1a2d40c0c5fb9f244cf5e3aacc33abcc1e7b095a
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c ac4f914b32f9d76fd7ad29c4686105216e8d7995
+F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c 0e2ebb9fa51ff56c9f0f19b80c3df7114d887c15
@@ -202,7 +202,7 @@ F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
 F src/vdbe.c a193ab2ce10ccb70825615870c5b4413dc3be636
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
-F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
+F src/vdbeapi.c ffd5d8b493590da6e09fd54b1bea1a9d38247f11
 F src/vdbeaux.c cf84955182b48cd8c65c52c143e150bb4a71f2da
 F src/vdbeblob.c 2852bae14c87129835938db58a77c3121e3ae962
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5477833ec7f707ea9937d3fd6a6d8ab49f2016f1
-R 6145932767ad25fba32edb32ce6c351d
+P 6404afa0c515a6536fc2e878d4fb451e4dc06942
+R cb451a376a875ee944efaf55ae11f3de
 U shane
-Z 5a32f5f03ed8b8936f6180f10e07dd81
+Z d69fdde0ff0618397c68c7c25c50fbef
