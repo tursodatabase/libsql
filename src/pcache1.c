@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.8 2009/01/23 16:45:01 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.9 2009/03/05 14:59:40 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -516,7 +516,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   nPinned = pCache->nPage - pCache->nRecyclable;
   if( createFlag==1 && pCache->bPurgeable && (
         nPinned>=(pcache1.nMaxPage+pCache->nMin-pcache1.nMinPage)
-     || nPinned>=(pCache->nMax)
+     || nPinned>=(pCache->nMax * 9 / 10)
   )){
     goto fetch_out;
   }

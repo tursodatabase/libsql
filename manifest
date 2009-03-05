@@ -1,5 +1,5 @@
-C Comment\sout\sa\srecently\sadded\sassert\sstatement\sthat\sis\sfailing.\s(CVS\s6340)
-D 2009-03-05T14:53:18
+C Begin\spurging\sdirty\spages\sfrom\sthe\scache\sonce\s90%\sof\sthe\scache\sis\sdirty\s(insteadof\swaiting\suntil\sit\sis\s100%\sdirty).\sThis\simproves\sperformance\sin\ssome\scircumstances\sby\seffectively\sreserving\s10%\sof\sthe\sconfigured\spage-cache\sfor\sfrequently\sreused\sread-only\spages.\s(CVS\s6341)
+D 2009-03-05T14:59:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y c315b6f9bf6c7e7ec985481f81b6a45dba6c26d0
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
-F src/pcache1.c dabb8ab14827e090321f17150ce96fda172974e8
+F src/pcache1.c f12518540ba776df3051215c4244e9cdc06b09cd
 F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
 F src/prepare.c 1a2d40c0c5fb9f244cf5e3aacc33abcc1e7b095a
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
@@ -485,7 +485,7 @@ F test/pager2.test d4b7f6b70ff018b9995e622a32526b275f515042
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
-F test/pcache.test ccd18b4d2b432f44319a82b0367ed843ee18cebd
+F test/pcache.test 70ad1d65cf73f6a0a7501e0236312eb214d93a55
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
 F test/permutations.test 2e777ae1eeb11b777b31aad929c4351464758441
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 68abcb278ced40c0d97af724dbd1b751a3becdc2
-R 0b19691adcd1739892b0541fe5daf832
+P d0b2015f1caf2fc60ec82bd8e760f7b61befa3b4
+R 039bb14c767370b62d0edeb68de61ac0
 U danielk1977
-Z e314e181dfce2d061b5e2a985f7bf325
+Z 7a03629d714ccf300df7a819fca83b05
