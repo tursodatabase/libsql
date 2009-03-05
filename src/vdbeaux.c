@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.439 2009/03/01 19:42:11 drh Exp $
+** $Id: vdbeaux.c,v 1.440 2009/03/05 03:48:07 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -59,7 +59,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 #endif
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
-  p->isPrepareV2 = isPrepareV2;
+  p->isPrepareV2 = isPrepareV2 ? 1 : 0;
 }
 
 /*

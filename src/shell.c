@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.204 2009/02/25 19:07:25 drh Exp $
+** $Id: shell.c,v 1.205 2009/03/05 03:48:07 shane Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -114,6 +114,11 @@ static void endTimer(void){
 #define END_TIMER
 #define HAS_TIMER 0
 #endif
+
+/*
+** Used to prevent warnings about unused parameters
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
 
 
 /**************************************************************************
@@ -247,6 +252,8 @@ static int schemaCreate(
   schema_vtab *pVtab;
   SchemaTable *pType = &aSchemaTable[0];
 
+  UNUSED_PARAMETER(pzErr);
+
   if( argc>3 ){
     int i;
     pType = 0;
@@ -277,6 +284,7 @@ static int schemaCreate(
 static int schemaOpen(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCursor){
   int rc = SQLITE_NOMEM;
   schema_cursor *pCur;
+  UNUSED_PARAMETER(pVTab);
   pCur = sqlite3_malloc(sizeof(schema_cursor));
   if( pCur ){
     memset(pCur, 0, sizeof(schema_cursor));
@@ -439,6 +447,10 @@ static int schemaFilter(
   int rc;
   schema_vtab *pVtab = (schema_vtab *)(pVtabCursor->pVtab);
   schema_cursor *pCur = (schema_cursor *)pVtabCursor;
+  UNUSED_PARAMETER(idxNum);
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
   pCur->rowid = 0;
   finalize(&pCur->pTableList);
   finalize(&pCur->pColumnList);
@@ -451,6 +463,8 @@ static int schemaFilter(
 ** Analyse the WHERE condition.
 */
 static int schemaBestIndex(sqlite3_vtab *tab, sqlite3_index_info *pIdxInfo){
+  UNUSED_PARAMETER(tab);
+  UNUSED_PARAMETER(pIdxInfo);
   return SQLITE_OK;
 }
 
@@ -528,6 +542,7 @@ static void joinStep(
   sqlite3_value **argv
 ){
   StrBuffer *p;
+  UNUSED_PARAMETER(argc);
   p = (StrBuffer *)sqlite3_aggregate_context(context, sizeof(StrBuffer));
   if( p->zBuf==0 ){
     p->zBuf = sqlite3_mprintf("%s", sqlite3_value_text(argv[0]));
@@ -560,6 +575,8 @@ static void doublequote(
   char *zCsr;
   const char *zIn = (const char *)sqlite3_value_text(argv[0]);
   int nIn = sqlite3_value_bytes(argv[0]);
+
+  UNUSED_PARAMETER(argc);
 
   zOut = sqlite3_malloc(nIn*2+3);
   zCsr = zOut;
@@ -626,6 +643,8 @@ static void multireplace(
 */
 static int invokeCallback(void *p, int nArg, char **azArg, char **azCol){
   GenfkeyCb *pCb = (GenfkeyCb *)p;
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(azCol);
   return pCb->xData(pCb->pCtx, pCb->eType, azArg[0]);
 }
 
@@ -908,6 +927,8 @@ static int genfkey_create_triggers(
   cb.xData = xData;
   cb.pCtx = pCtx;
 
+  UNUSED_PARAMETER(zDb);
+
   /* Open the working database handle. */
   rc = sqlite3_open(":memory:", &db);
   if( rc!=SQLITE_OK ) goto genfkey_exit;
@@ -954,11 +975,6 @@ genfkey_exit:
 /* End genfkey logic. */
 /*************************************************************************/
 /*************************************************************************/
-
-/*
-** Used to prevent warnings about unused parameters
-*/
-#define UNUSED_PARAMETER(x) (void)(x)
 
 /*
 ** If the following flag is set, then command execution stops
@@ -1783,7 +1799,7 @@ static int genfkeyParseArgs(GenfkeyCmd *p, char **azArg, int nArg){
   memset(p, 0, sizeof(GenfkeyCmd));
 
   for(ii=0; ii<nArg; ii++){
-    int n = strlen(azArg[ii]);
+    size_t n = strlen(azArg[ii]);
 
     if( n>2 && n<10 && 0==strncmp(azArg[ii], "--no-drop", n) ){
       p->isNoDrop = 1;

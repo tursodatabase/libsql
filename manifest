@@ -1,5 +1,5 @@
-C Converted\sEXPR_*SIZE\smacros\sto\suse\soffsetof()\sto\savoid\sMSVC\scompiler\swarnings.\s(CVS\s6334)
-D 2009-03-02T17:18:48
+C Removed\scompiler\swarnings\sfrom\sMSVC\sbuilds.\s\sTicket\s#3701.\s(CVS\s6335)
+D 2009-03-05T03:48:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,8 +110,8 @@ F src/build.c 741240c8d6a54201fa8757db1ee6efba71be59a2
 F src/callback.c 5f10bca853e59a2c272bbfd5b720303f8b69e520
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
-F src/delete.c 179db8e47c7bed95675d9021eb1bbf4618c1b0d7
-F src/expr.c 46e24f9a71e7bdd2573a790ba2f98b7c3f617d04
+F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
+F src/expr.c b9273cdd529886dd8982eadeff3bb6aa33acfe53
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c de2eed7d96365210faecda877c5a12cf440bdf42
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -144,7 +144,7 @@ F src/os_unix.c 52352674c19688026a72cd0e8620e6a29bacba4a
 F src/os_win.c 45cb430884da7e9360a55a0fcd5c2c44c22dd79d
 F src/pager.c d62fd62f7c0ad257019c21158b597fdbb0182529
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
-F src/parse.y 5202dc712407fd6723f6639b88b86ddf8b33aef5
+F src/parse.y c315b6f9bf6c7e7ec985481f81b6a45dba6c26d0
 F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c dabb8ab14827e090321f17150ce96fda172974e8
@@ -155,7 +155,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c ac4f914b32f9d76fd7ad29c4686105216e8d7995
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
-F src/shell.c 0cada72035b819ed2bede27e254efcfbb88167f7
+F src/shell.c 0e2ebb9fa51ff56c9f0f19b80c3df7114d887c15
 F src/sqlite.h.in 14f4d065bafed8500ea558a75a8e2be89c784d61
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h ae2dc2e2a063edfae3043e725981e69855bd3c9c
@@ -203,12 +203,12 @@ F src/vdbe.c e03512022ed2dd57bf2ea9ebe4f54cbc091adb0b
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h d12bc259b34d3d610ebf05d648eb6346d48478c3
 F src/vdbeapi.c f94fe2eb6f48687e918f0df7eed1409cff9dcf58
-F src/vdbeaux.c f6a312a222c63fe09d36e05284c7982cafdb5bc6
-F src/vdbeblob.c 08d6bac666c1f6a5d67452f5fbf808cf1311d2c9
+F src/vdbeaux.c 5b7be22daa71fbe13cd2536a1b5447b3073b4b39
+F src/vdbeblob.c 2852bae14c87129835938db58a77c3121e3ae962
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
 F src/vtab.c e39e011d7443a8d574b1b9cde207a35522e6df43
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
-F src/where.c ddc9074b1605fa7a8c1a0309872750e6c4b85e0c
+F src/where.c ac555c8f6ef71a80944b31dcb212f7127c9ae30c
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 91969edac737adf087e35e10aa0a732b3303afd5
-R 045e3e601a7c56c3070476218766f737
+P 5e8e16f7d505a4b21272f1d300f366ee0e211e56
+R 7c802b7e29f1bc562ab57e3e44428206
 U shane
-Z f3aa3267b0a3bb6445600f3d4be903ff
+Z 29098afc87db9fff33ef02258d015c09
