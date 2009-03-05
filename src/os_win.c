@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.149 2009/03/05 04:20:32 shane Exp $
+** $Id: os_win.c,v 1.150 2009/03/05 05:54:55 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -75,6 +75,7 @@
 */
 #if SQLITE_OS_WINCE
 # define AreFileApisANSI() 1
+# define GetDiskFreeSpaceW() 0
 #endif
 
 /*
@@ -101,6 +102,7 @@ struct winFile {
   unsigned char locktype; /* Type of lock currently held on this file */
   short sharedLockByte;   /* Randomly chosen byte used as a shared lock */
   DWORD lastErrno;        /* The Windows errno from the last I/O error */
+  DWORD sectorSize;       /* Sector size of the device file is on */
 #if SQLITE_OS_WINCE
   WCHAR *zDeleteOnClose;  /* Name of file to delete when closing */
   HANDLE hMutex;          /* Mutex used to control access to shared lock */  
@@ -110,6 +112,13 @@ struct winFile {
 #endif
 };
 
+/*
+** Forward prototypes.
+*/
+static int getSectorSize(
+    sqlite3_vfs *pVfs,
+    const char *zRelative     /* UTF-8 file name */
+);
 
 /*
 ** The following variable is (normally) set once and never changes
@@ -135,7 +144,7 @@ static int sqlite3_os_type = 0;
 **
 ** Here is an interesting observation:  Win95, Win98, and WinME lack
 ** the LockFileEx() API.  But we can still statically link against that
-** API as long as we don't call it win running Win95/98/ME.  A call to
+** API as long as we don't call it when running Win95/98/ME.  A call to
 ** this routine is used to determine if the host is Win95/98/ME or
 ** WinNT/2K/XP so that we will know whether or not we can safely call
 ** the LockFileEx() API.
@@ -610,6 +619,8 @@ static BOOL winceLockFileEx(
 static int winClose(sqlite3_file *id){
   int rc, cnt = 0;
   winFile *pFile = (winFile*)id;
+
+  assert( id!=0 );
   OSTRACE2("CLOSE %d\n", pFile->h);
   do{
     rc = CloseHandle(pFile->h);
@@ -654,9 +665,10 @@ static int winRead(
   LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
   LONG lowerBits = (LONG)(offset & 0xffffffff);
   DWORD rc;
-  DWORD got;
   winFile *pFile = (winFile*)id;
   DWORD error;
+  DWORD got;
+
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
   OSTRACE3("READ %d lock=%d\n", pFile->h, pFile->locktype);
@@ -691,9 +703,10 @@ static int winWrite(
   LONG upperBits = (LONG)((offset>>32) & 0x7fffffff);
   LONG lowerBits = (LONG)(offset & 0xffffffff);
   DWORD rc;
-  DWORD wrote = 0;
   winFile *pFile = (winFile*)id;
   DWORD error;
+  DWORD wrote = 0;
+
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
@@ -723,26 +736,26 @@ static int winWrite(
 ** Truncate an open file to a specified size
 */
 static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
-  DWORD rc;
   LONG upperBits = (LONG)((nByte>>32) & 0x7fffffff);
   LONG lowerBits = (LONG)(nByte & 0xffffffff);
+  DWORD rc;
   winFile *pFile = (winFile*)id;
-  DWORD error = NO_ERROR;
+  DWORD error;
+
+  assert( id!=0 );
   OSTRACE3("TRUNCATE %d %lld\n", pFile->h, nByte);
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
-  if( INVALID_SET_FILE_POINTER == rc ){
-    error = GetLastError();
+  if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
+    pFile->lastErrno = error;
+    return SQLITE_IOERR_TRUNCATE;
   }
-  if( error == NO_ERROR ){
-    /* SetEndOfFile will fail if nByte is negative */
-    if( SetEndOfFile(pFile->h) ){
-      return SQLITE_OK;
-    }
-    error = GetLastError();
+  /* SetEndOfFile will fail if nByte is negative */
+  if( !SetEndOfFile(pFile->h) ){
+    pFile->lastErrno = GetLastError();
+    return SQLITE_IOERR_TRUNCATE;
   }
-  pFile->lastErrno = error;
-  return SQLITE_IOERR_TRUNCATE;
+  return SQLITE_OK;
 }
 
 #ifdef SQLITE_TEST
@@ -760,6 +773,8 @@ int sqlite3_fullsync_count = 0;
 static int winSync(sqlite3_file *id, int flags){
 #ifndef SQLITE_NO_SYNC
   winFile *pFile = (winFile*)id;
+
+  assert( id!=0 );
   OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
 #else
   UNUSED_PARAMETER(id);
@@ -791,9 +806,12 @@ static int winSync(sqlite3_file *id, int flags){
 ** Determine the current size of a file in bytes
 */
 static int winFileSize(sqlite3_file *id, sqlite3_int64 *pSize){
+  DWORD upperBits;
+  DWORD lowerBits;
   winFile *pFile = (winFile*)id;
-  DWORD upperBits, lowerBits;
   DWORD error;
+
+  assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_FSTAT);
   lowerBits = GetFileSize(pFile->h, &upperBits);
   if(   (lowerBits == INVALID_FILE_SIZE)
@@ -897,7 +915,7 @@ static int winLock(sqlite3_file *id, int locktype){
   winFile *pFile = (winFile*)id;
   DWORD error = NO_ERROR;
 
-  assert( pFile!=0 );
+  assert( id!=0 );
   OSTRACE5("LOCK %d %d was %d(%d)\n",
           pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
 
@@ -1015,7 +1033,8 @@ static int winLock(sqlite3_file *id, int locktype){
 static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   int rc;
   winFile *pFile = (winFile*)id;
-  assert( pFile!=0 );
+
+  assert( id!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
     OSTRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
@@ -1100,8 +1119,8 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
 ** same for both.
 */
 static int winSectorSize(sqlite3_file *id){
-  UNUSED_PARAMETER(id);
-  return SQLITE_DEFAULT_SECTOR_SIZE;
+  assert( id!=0 );
+  return (int)(((winFile*)id)->sectorSize);
 }
 
 /*
@@ -1245,7 +1264,6 @@ static int getLastErrorMsg(int nBuf, char *zBuf){
   return 0;
 }
 
-
 /*
 ** Open a file.
 */
@@ -1269,6 +1287,7 @@ static int winOpen(
   const char *zUtf8Name = zName;    /* Filename in UTF-8 encoding */
   char zTmpname[MAX_PATH+1];        /* Buffer used to create temp filename */
 
+  assert( id!=0 );
   UNUSED_PARAMETER(pVfs);
 
   /* If the second argument to this function is NULL, generate a 
@@ -1365,6 +1384,7 @@ static int winOpen(
   pFile->pMethod = &winIoMethod;
   pFile->h = h;
   pFile->lastErrno = NO_ERROR;
+  pFile->sectorSize = getSectorSize(pVfs, zUtf8Name);
 #if SQLITE_OS_WINCE
   if( (flags & (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)) ==
                (SQLITE_OPEN_READWRITE|SQLITE_OPEN_MAIN_DB)
@@ -1554,6 +1574,73 @@ static int winFullPathname(
     return SQLITE_NOMEM;
   }
 #endif
+}
+
+/*
+** Get the sector size of the device used to store
+** file.
+*/
+static int getSectorSize(
+    sqlite3_vfs *pVfs,
+    const char *zRelative     /* UTF-8 file name */
+){
+  DWORD bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
+  char zFullpath[MAX_PATH+1];
+  int rc;
+  DWORD dwRet = 0;
+
+  /*
+  ** We need to get the full path name of the file
+  ** to get the drive letter to look up the sector
+  ** size.
+  */
+  rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
+  if( rc == SQLITE_OK )
+  {
+    void *zConverted = convertUtf8Filename(zFullpath);
+    if( zConverted ){
+      if( isNT() ){
+        int i;
+        /* trim path to just drive reference */
+        WCHAR *p = zConverted;
+        for(i=0;i<MAX_PATH;i++){
+          if( p[i] == '\\' ){
+            i++;
+            p[i] = '\0';
+            break;
+          }
+        }
+        dwRet = GetDiskFreeSpaceW((WCHAR*)zConverted,
+                                  NULL,
+                                  &bytesPerSector,
+                                  NULL,
+                                  NULL);
+#if SQLITE_OS_WINCE==0
+      }else{
+        int i;
+        /* trim path to just drive reference */
+        CHAR *p = (CHAR *)zConverted;
+        for(i=0;i<MAX_PATH;i++){
+          if( p[i] == '\\' ){
+            i++;
+            p[i] = '\0';
+            break;
+          }
+        }
+        dwRet = GetDiskFreeSpaceA((CHAR*)zConverted,
+                                  NULL,
+                                  &bytesPerSector,
+                                  NULL,
+                                  NULL);
+#endif
+      }
+      free(zConverted);
+    }
+    if( !dwRet ){
+      bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
+    }
+  }
+  return (int) bytesPerSector; 
 }
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
