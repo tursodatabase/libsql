@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.570 2009/02/17 17:56:30 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.571 2009/03/05 04:20:32 shane Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -762,7 +762,7 @@ static int writeJournalHdr(Pager *pPager){
   ** A faster alternative is to write 0xFFFFFFFF to the nRec field. When
   ** reading the journal this value tells SQLite to assume that the
   ** rest of the journal file contains valid page records. This assumption
-  ** is dangerous, as if a failure occured whilst writing to the journal
+  ** is dangerous, as if a failure occurred whilst writing to the journal
   ** file it may contain some garbage data. There are two scenarios
   ** where this risk can be ignored:
   **
@@ -1143,7 +1143,7 @@ static void pager_unlock(Pager *pPager){
 
 /*
 ** This function should be called when an IOERR, CORRUPT or FULL error
-** may have occured. The first argument is a pointer to the pager 
+** may have occurred. The first argument is a pointer to the pager 
 ** structure, the second the error-code about to be returned by a pager 
 ** API function. The value returned is a copy of the second argument 
 ** to this function. 
@@ -1156,7 +1156,7 @@ static void pager_unlock(Pager *pPager){
 ** A persistent error indicates that the contents of the pager-cache 
 ** cannot be trusted. This state can be cleared by completely discarding 
 ** the contents of the pager-cache. If a transaction was active when
-** the persistent error occured, then the rollback journal may need
+** the persistent error occurred, then the rollback journal may need
 ** to be replayed to restore the contents of the database file (as if
 ** it were a hot-journal).
 */
@@ -2054,7 +2054,7 @@ end_playback:
   );
 
   /* If this playback is happening automatically as a result of an IO or 
-  ** malloc error that occured after the change-counter was updated but 
+  ** malloc error that occurred after the change-counter was updated but 
   ** before the transaction was committed, then the change-counter 
   ** modification may just have been reverted. If this happens in exclusive 
   ** mode, then subsequent transactions performed by the connection will not
@@ -3268,7 +3268,7 @@ int sqlite3PagerOpen(
     testcase( rc!=SQLITE_OK );
   }
 
-  /* If an error occured in either of the blocks above, free the 
+  /* If an error occurred in either of the blocks above, free the 
   ** Pager structure and close the file.
   */
   if( rc!=SQLITE_OK ){
@@ -4135,7 +4135,7 @@ static int pager_write(PgHdr *pPg){
           pPager->needSync = 1;
         }
 
-        /* An error has occured writing to the journal file. The 
+        /* An error has occurred writing to the journal file. The 
         ** transaction will be rolled back by the layer above.
         */
         if( rc!=SQLITE_OK ){
@@ -4851,7 +4851,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 ** Parameter op is always either SAVEPOINT_ROLLBACK or SAVEPOINT_RELEASE.
 ** If it is SAVEPOINT_RELEASE, then release and destroy the savepoint with
 ** index iSavepoint. If it is SAVEPOINT_ROLLBACK, then rollback all changes
-** that have occured since the specified savepoint was created.
+** that have occurred since the specified savepoint was created.
 **
 ** The savepoint to rollback or release is identified by parameter 
 ** iSavepoint. A value of 0 means to operate on the outermost savepoint

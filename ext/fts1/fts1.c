@@ -1214,7 +1214,7 @@ static int sql_step_statement(fulltext_vtab *v, fulltext_statement iStmt,
     if( rc==SQLITE_BUSY ) continue;
     if( rc!=SQLITE_ERROR ) return rc;
 
-    /* If an SQLITE_SCHEMA error has occured, then finalizing this
+    /* If an SQLITE_SCHEMA error has occurred, then finalizing this
      * statement is going to delete the fulltext_vtab structure. If
      * the statement just executed is in the pFulltextStatements[]
      * array, it will be finalized twice. So remove it before

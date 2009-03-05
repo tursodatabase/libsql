@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.11 2009/02/12 09:11:56 danielk1977 Exp $
+** $Id: test_journal.c,v 1.12 2009/03/05 04:20:32 shane Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -50,7 +50,7 @@
 **     c) The set of page numbers corresponding to free-list leaf pages.
 **     d) A check-sum for every page in the database file.
 **
-**   The start of a write-transaction is deemed to have occured when a 
+**   The start of a write-transaction is deemed to have occurred when a 
 **   28-byte journal header is written to byte offset 0 of the journal 
 **   file.
 **

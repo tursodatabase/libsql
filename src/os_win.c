@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.148 2009/02/05 03:16:21 shane Exp $
+** $Id: os_win.c,v 1.149 2009/03/05 04:20:32 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1723,7 +1723,7 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
 ** function, SQLite calls this function with zBuf pointing to
 ** a buffer of nBuf bytes. The OS layer should populate the
 ** buffer with a nul-terminated UTF-8 encoded error message
-** describing the last IO error to have occured within the calling
+** describing the last IO error to have occurred within the calling
 ** thread.
 **
 ** If the error message is too large for the supplied buffer,

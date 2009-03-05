@@ -6410,7 +6410,7 @@ static void optimizeFunc(sqlite3_context *pContext,
       i++;
     }
 
-    /* If we managed to succesfully read them all, optimize them. */
+    /* If we managed to successfully read them all, optimize them. */
     if( rc==SQLITE_DONE ){
       assert( i==nReaders );
       rc = optimizeInternal(v, readers, nReaders, &writer);
@@ -7001,7 +7001,7 @@ int sqlite3Fts3Init(sqlite3 *db){
     );
   }
 
-  /* An error has occured. Delete the hash table and return the error code. */
+  /* An error has occurred. Delete the hash table and return the error code. */
   assert( rc!=SQLITE_OK );
   if( pHash ){
     sqlite3Fts3HashClear(pHash);

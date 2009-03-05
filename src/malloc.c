@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.57 2009/02/19 20:50:15 drh Exp $
+** $Id: malloc.c,v 1.58 2009/03/05 04:20:32 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -691,10 +691,10 @@ void sqlite3SetString(char **pz, sqlite3 *db, const char *zFormat, ...){
 ** sqlite3_realloc.
 **
 ** The returned value is normally a copy of the second argument to this
-** function. However, if a malloc() failure has occured since the previous
+** function. However, if a malloc() failure has occurred since the previous
 ** invocation SQLITE_NOMEM is returned instead. 
 **
-** If the first argument, db, is not NULL and a malloc() error has occured,
+** If the first argument, db, is not NULL and a malloc() error has occurred,
 ** then the connection error-code (the value returned by sqlite3_errcode())
 ** is set to SQLITE_NOMEM.
 */

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.48 2008/09/26 20:02:50 drh Exp $
+** $Id: test_async.c,v 1.49 2009/03/05 04:20:32 shane Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -280,7 +280,7 @@ static struct TestAsyncStaticData {
   volatile int ioDelay;             /* Extra delay between write operations */
   volatile int writerHaltWhenIdle;  /* Writer thread halts when queue empty */
   volatile int writerHaltNow;       /* Writer thread halts after next op */
-  int ioError;                 /* True if an IO error has occured */
+  int ioError;                 /* True if an IO error has occurred */
   int nFile;                   /* Number of open files (from sqlite pov) */
 } async = {
   PTHREAD_MUTEX_INITIALIZER,
@@ -1564,12 +1564,12 @@ static void *asyncWriterThread(void *pIsStarted){
     }
     assert( holdingMutex );
 
-    /* An IO error has occured. We cannot report the error back to the
+    /* An IO error has occurred. We cannot report the error back to the
     ** connection that requested the I/O since the error happened 
     ** asynchronously.  The connection has already moved on.  There 
     ** really is nobody to report the error to.
     **
-    ** The file for which the error occured may have been a database or
+    ** The file for which the error occurred may have been a database or
     ** journal file. Regardless, none of the currently queued operations
     ** associated with the same database should now be performed. Nor should
     ** any subsequently requested IO on either a database or journal file 

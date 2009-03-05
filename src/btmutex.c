@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.12 2008/11/17 19:18:55 danielk1977 Exp $
+** $Id: btmutex.c,v 1.13 2009/03/05 04:20:32 shane Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -113,7 +113,7 @@ void sqlite3BtreeLeave(Btree *p){
 /*
 ** Return true if the BtShared mutex is held on the btree.  
 **
-** This routine makes no determination one why or another if the
+** This routine makes no determination one way or another if the
 ** database connection mutex is held.
 **
 ** This routine is used only from within assert() statements.

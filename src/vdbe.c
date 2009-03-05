@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.823 2009/02/24 18:57:32 drh Exp $
+** $Id: vdbe.c,v 1.824 2009/03/05 04:20:32 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -554,7 +554,7 @@ int sqlite3VdbeExec(
   Mem *pOut = 0;             /* Output operand */
   u8 opProperty;
   int iCompare = 0;          /* Result of last OP_Compare operation */
-  int *aPermute = 0;         /* Permuation of columns for OP_Compare */
+  int *aPermute = 0;         /* Permutation of columns for OP_Compare */
 #ifdef VDBE_PROFILE
   u64 start;                 /* CPU clock count at start of opcode */
   int origPc;                /* Program counter at start of opcode */
@@ -1708,7 +1708,7 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
 
 /* Opcode: Permutation * * * P4 *
 **
-** Set the permuation used by the OP_Compare operator to be the array
+** Set the permutation used by the OP_Compare operator to be the array
 ** of integers in P4.
 **
 ** The permutation is only valid until the next OP_Permutation, OP_Compare,
@@ -4280,7 +4280,7 @@ case OP_Destroy: {     /* out2-prerelease */
 ** P2==1 then the table to be clear is in the auxiliary database file
 ** that is used to store tables create using CREATE TEMPORARY TABLE.
 **
-** If the P3 value is non-zero, then the table refered to must be an
+** If the P3 value is non-zero, then the table referred to must be an
 ** intkey table (an SQL table, not an index). In this case the row change 
 ** count is incremented by the number of rows in the table being cleared. 
 ** If P3 is greater than zero, then the value stored in register P3 is
@@ -5061,7 +5061,7 @@ case OP_VColumn: {
   pVtab->zErrMsg = 0;
 
   /* Copy the result of the function to the P3 register. We
-  ** do this regardless of whether or not an error occured to ensure any
+  ** do this regardless of whether or not an error occurred to ensure any
   ** dynamic allocation in sContext.s (a Mem struct) is  released.
   */
   sqlite3VdbeChangeEncoding(&sContext.s, encoding);

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.440 2009/03/05 03:48:07 shane Exp $
+** $Id: vdbeaux.c,v 1.441 2009/03/05 04:20:32 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1459,7 +1459,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     ** sqlite3BtreeCommitPhaseOne(), then there is a chance that the
     ** master journal file will be orphaned. But we cannot delete it,
     ** in case the master journal file name was written into the journal
-    ** file before the failure occured.
+    ** file before the failure occurred.
     */
     for(i=0; rc==SQLITE_OK && i<db->nDb; i++){ 
       Btree *pBt = db->aDb[i].pBt;
