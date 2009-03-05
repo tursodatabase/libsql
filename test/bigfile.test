@@ -12,7 +12,7 @@
 # focus of this script testing the ability of SQLite to handle database
 # files larger than 4GB.
 #
-# $Id: bigfile.test,v 1.11 2008/11/21 22:21:51 drh Exp $
+# $Id: bigfile.test,v 1.12 2009/03/05 04:27:08 shane Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -66,7 +66,6 @@ do_test bigfile-1.1 {
 db close
 if {[catch {fake_big_file 4096 [pwd]/test.db} msg]} {
   puts "**** Unable to create a file larger than 4096 MB. *****"
-  puts "$msg"
   finish_test
   return
 }
@@ -83,7 +82,11 @@ do_test bigfile-1.2 {
 # tests.  We will know the above test failed because the "db" command
 # does not exist.
 #
-if {[llength [info command db]]>0} {
+if {[llength [info command db]]<=0} {
+  puts "**** Large file support appears to be broken. *****"
+  finish_test
+  return
+}
 
 do_test bigfile-1.3 {
   execsql {
@@ -98,11 +101,6 @@ do_test bigfile-1.4 {
     SELECT md5sum(x) FROM t1;
   }
 } $::MAGIC_SUM
-do_test bigfile-1.5 {
-  execsql {
-    SELECT md5sum(x) FROM t2;
-  }
-} $::MAGIC_SUM
 
 db close
 if {[catch {fake_big_file 8192 [pwd]/test.db}]} {
@@ -111,10 +109,16 @@ if {[catch {fake_big_file 8192 [pwd]/test.db}]} {
   return
 }
 
-do_test bigfile-1.6 {
+do_test bigfile-1.5 {
   sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
+  }
+} $::MAGIC_SUM
+do_test bigfile-1.6 {
+  sqlite3 db test.db
+  execsql {
+    SELECT md5sum(x) FROM t2;
   }
 } $::MAGIC_SUM
 do_test bigfile-1.7 {
@@ -135,11 +139,6 @@ do_test bigfile-1.9 {
     SELECT md5sum(x) FROM t2;
   }
 } $::MAGIC_SUM
-do_test bigfile-1.10 {
-  execsql {
-    SELECT md5sum(x) FROM t3;
-  }
-} $::MAGIC_SUM
 
 db close
 if {[catch {fake_big_file 16384 [pwd]/test.db}]} {
@@ -148,33 +147,40 @@ if {[catch {fake_big_file 16384 [pwd]/test.db}]} {
   return
 }
 
-do_test bigfile-1.11 {
+do_test bigfile-1.10 {
   sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
 } $::MAGIC_SUM
+do_test bigfile-1.11 {
+  sqlite3 db test.db
+  execsql {
+    SELECT md5sum(x) FROM t2;
+  }
+} $::MAGIC_SUM
 do_test bigfile-1.12 {
+  sqlite3 db test.db
+  execsql {
+    SELECT md5sum(x) FROM t3;
+  }
+} $::MAGIC_SUM
+do_test bigfile-1.13 {
   execsql {
     CREATE TABLE t4 AS SELECT * FROM t1;
     SELECT md5sum(x) FROM t4;
   }
 } $::MAGIC_SUM
-do_test bigfile-1.13 {
+do_test bigfile-1.14 {
   db close
   sqlite3 db test.db
   execsql {
     SELECT md5sum(x) FROM t1;
   }
 } $::MAGIC_SUM
-do_test bigfile-1.14 {
-  execsql {
-    SELECT md5sum(x) FROM t2;
-  }
-} $::MAGIC_SUM
 do_test bigfile-1.15 {
   execsql {
-    SELECT md5sum(x) FROM t3;
+    SELECT md5sum(x) FROM t2;
   }
 } $::MAGIC_SUM
 do_test bigfile-1.16 {
@@ -182,12 +188,5 @@ do_test bigfile-1.16 {
     SELECT md5sum(x) FROM t3;
   }
 } $::MAGIC_SUM
-do_test bigfile-1.17 {
-  execsql {
-    SELECT md5sum(x) FROM t4;
-  }
-} $::MAGIC_SUM
-
-} ;# End of the "if( db command exists )"
 
 finish_test

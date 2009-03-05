@@ -1,5 +1,5 @@
-C Added\ssome\sasserts\sand\sa\scheck\sfor\sa\snull\spointer\sdereference.\s(CVS\s6337)
-D 2009-03-05T04:23:47
+C Changes\sto\scleanup\sand\simprove\sthe\sconsistency\sof\stests\sfor\slarge\sfile\ssupport\sin\sbigfile.test.\s(CVS\s6338)
+D 2009-03-05T04:27:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -238,7 +238,7 @@ F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
-F test/bigfile.test 6adfef13d24bbe0c504b4547f292b9a170184f25
+F test/bigfile.test b746a34ce0e2039994b45fea8b7fbfa78f594cdf
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 455f7e8322a215e245414625eede3ab0e1429c14
 F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
@@ -703,7 +703,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6404afa0c515a6536fc2e878d4fb451e4dc06942
-R cb451a376a875ee944efaf55ae11f3de
+P 6b0cabd017ed25530b2d918d2c069fcbdd60a3f6
+R fee3d718417bd5cb78c4e8b1c7f65105
 U shane
-Z d69fdde0ff0618397c68c7c25c50fbef
+Z 736b679812172868a9aa6eb0fad79522
