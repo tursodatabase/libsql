@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module.
 #
-# $Id: fts3expr.test,v 1.6 2009/01/01 14:06:13 danielk1977 Exp $
+# $Id: fts3expr.test,v 1.7 2009/03/12 15:43:48 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -467,6 +467,14 @@ foreach {id expr res} {
     execsql { SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid }
   } $res
 }
+
+do_test fts3expr-7.1 {
+  execsql {
+    CREATE VIRTUAL TABLE test USING fts3 (keyword);
+    INSERT INTO test VALUES ('abc');
+    SELECT * FROM test WHERE keyword MATCH '""';
+  }
+} {}
 
 set sqlite_fts3_enable_parentheses 0
 finish_test

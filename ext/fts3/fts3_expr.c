@@ -212,8 +212,6 @@ static int getNextString(
         if( ii==0 ){
           memset(p, 0, nByte);
           p->pPhrase = (Fts3Phrase *)&p[1];
-          p->eType = FTSQUERY_PHRASE;
-          p->pPhrase->iColumn = pParse->iDefaultCol;
         }
         p->pPhrase = (Fts3Phrase *)&p[1];
         p->pPhrase->nToken = ii+1;
@@ -237,19 +235,25 @@ static int getNextString(
     char *zNew;
     int nNew = 0;
     int nByte = sizeof(Fts3Expr) + sizeof(Fts3Phrase);
-    nByte += (p->pPhrase->nToken-1) * sizeof(struct PhraseToken);
+    nByte += (p?(p->pPhrase->nToken-1):0) * sizeof(struct PhraseToken);
     p = fts3ReallocOrFree(p, nByte + nTemp);
     if( !p ){
       goto no_mem;
     }
+    if( zTemp ){
+      zNew = &(((char *)p)[nByte]);
+      memcpy(zNew, zTemp, nTemp);
+    }else{
+      memset(p, 0, nByte+nTemp);
+    }
     p->pPhrase = (Fts3Phrase *)&p[1];
-    zNew = &(((char *)p)[nByte]);
-    memcpy(zNew, zTemp, nTemp);
     for(jj=0; jj<p->pPhrase->nToken; jj++){
       p->pPhrase->aToken[jj].z = &zNew[nNew];
       nNew += p->pPhrase->aToken[jj].n;
     }
     sqlite3_free(zTemp);
+    p->eType = FTSQUERY_PHRASE;
+    p->pPhrase->iColumn = pParse->iDefaultCol;
     rc = SQLITE_OK;
   }
 
