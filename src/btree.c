@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.571 2009/03/05 04:20:32 shane Exp $
+** $Id: btree.c,v 1.572 2009/03/12 14:43:28 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2822,18 +2822,16 @@ int sqlite3BtreeBeginStmt(Btree *p){
 ** subtransaction is active, this is a no-op.
 */
 int sqlite3BtreeCommitStmt(Btree *p){
-  int rc;
+  int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  assert( pBt->readOnly==0 );
-  if( pBt->inStmt ){
+  if( p->inTrans==TRANS_WRITE && pBt->inStmt ){
     int iStmtpoint = p->db->nSavepoint;
+    assert( pBt->readOnly==0 );
     rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
-  }else{
-    rc = SQLITE_OK;
+    pBt->inStmt = 0;
   }
-  pBt->inStmt = 0;
   sqlite3BtreeLeave(p);
   return rc;
 }
@@ -2851,9 +2849,9 @@ int sqlite3BtreeRollbackStmt(Btree *p){
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
-  assert( pBt->readOnly==0 );
-  if( pBt->inStmt ){
+  if( p->inTrans==TRANS_WRITE && pBt->inStmt ){
     int iStmtpoint = p->db->nSavepoint;
+    assert( pBt->readOnly==0 );
     rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_ROLLBACK, iStmtpoint);
     if( rc==SQLITE_OK ){
       rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);

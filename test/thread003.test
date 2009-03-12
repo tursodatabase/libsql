@@ -12,7 +12,7 @@
 #   This file contains tests that attempt to break the pcache module
 #   by bombarding it with simultaneous requests from multiple threads.
 #     
-# $Id: thread003.test,v 1.6 2009/02/12 17:06:41 drh Exp $
+# $Id: thread003.test,v 1.7 2009/03/12 14:43:28 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
@@ -158,7 +158,7 @@ do_test thread003.3 {
 # sqlite3_release_memory() over and over again.
 #
 set nSecond 30
-puts "Starting thread003.3 (should run for ~$nSecond seconds)"
+puts "Starting thread003.4 (should run for ~$nSecond seconds)"
 unset -nocomplain finished(1)
 unset -nocomplain finished(2)
 do_test thread003.4 {

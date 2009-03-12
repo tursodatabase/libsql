@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.93 2009/02/26 07:15:59 danielk1977 Exp $
+# $Id: quick.test,v 1.94 2009/03/12 14:43:28 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -86,6 +86,7 @@ set EXCLUDE {
   thread002.test
   thread003.test
   thread004.test
+  thread005.test
   trans2.test
   vacuum3.test
 
