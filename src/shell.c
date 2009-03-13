@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.205 2009/03/05 03:48:07 shane Exp $
+** $Id: shell.c,v 1.206 2009/03/13 15:32:53 danielk1977 Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -625,9 +625,10 @@ static void multireplace(
       }
     }
     if( (nOut+nCopy)>nMalloc ){
-      nMalloc += (nMalloc + 16);
+      nMalloc = 16 + (nOut+nCopy)*2;
       zOut = (char *)sqlite3_realloc(zOut, nMalloc);
     }
+    assert( nMalloc>=(nOut+nCopy) );
     memcpy(&zOut[nOut], zCopy, nCopy);
     i += nReplace;
     nOut += nCopy;
