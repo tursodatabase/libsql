@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.521 2009/02/28 10:47:42 danielk1977 Exp $
+** $Id: build.c,v 1.522 2009/03/14 08:37:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1330,18 +1330,100 @@ static int identLength(const char *z){
 }
 
 /*
-** Write an identifier onto the end of the given string.  Add
-** quote characters as needed.
+** This function is a wrapper around sqlite3GetToken() used by 
+** isValidDimension(). This function differs from sqlite3GetToken() in
+** that:
+**
+**   * Whitespace is ignored, and
+**   * The output variable *peToken is set to 0 if the end of the
+**     nul-terminated input string is reached.
 */
-static void identPut(char *z, int *pIdx, char *zSignedIdent){
+static int getTokenNoSpace(unsigned char *z, int *peToken){
+  int n = 0;
+  while( sqlite3Isspace(z[n]) ) n++;
+  if( !z[n] ){
+    *peToken = 0;
+    return 0;
+  }
+  return n + sqlite3GetToken(&z[n], peToken);
+}
+
+/*
+** Parameter z points to a nul-terminated string. Return true if, when
+** whitespace is ignored, the contents of this string matches one of 
+** the following patterns:
+**
+**     ""
+**     "(number)"
+**     "(number,number)"
+*/
+static int isValidDimension(unsigned char *z){
+  int eToken;
+  int n = 0;
+  n += getTokenNoSpace(&z[n], &eToken);
+  if( eToken ){
+    if( eToken!=TK_LP ) return 0;
+    n += getTokenNoSpace(&z[n], &eToken);
+    if( eToken==TK_PLUS || eToken==TK_MINUS ){
+      n += getTokenNoSpace(&z[n], &eToken);
+    }
+    if( eToken!=TK_INTEGER && eToken!=TK_FLOAT ) return 0;
+    n += getTokenNoSpace(&z[n], &eToken);
+    if( eToken==TK_COMMA ){
+      n += getTokenNoSpace(&z[n], &eToken);
+      if( eToken==TK_PLUS || eToken==TK_MINUS ){
+        n += getTokenNoSpace(&z[n], &eToken);
+      }
+      if( eToken!=TK_INTEGER && eToken!=TK_FLOAT ) return 0;
+      n += getTokenNoSpace(&z[n], &eToken);
+    }
+    if( eToken!=TK_RP ) return 0;
+    getTokenNoSpace(&z[n], &eToken);
+  }
+  if( eToken ) return 0;
+  return 1;
+}
+
+/*
+** The first parameter is a pointer to an output buffer. The second 
+** parameter is a pointer to an integer that contains the offset at
+** which to write into the output buffer. This function copies the
+** nul-terminated string pointed to by the third parameter, zSignedIdent,
+** to the specified offset in the buffer and updates *pIdx to refer
+** to the first byte after the last byte written before returning.
+** 
+** If the string zSignedIdent consists entirely of alpha-numeric
+** characters, does not begin with a digit and is not an SQL keyword,
+** then it is copied to the output buffer exactly as it is. Otherwise,
+** it is quoted using double-quotes.
+*/
+static void identPut(char *z, int *pIdx, char *zSignedIdent, int isTypename){
   unsigned char *zIdent = (unsigned char*)zSignedIdent;
   int i, j, needQuote;
   i = *pIdx;
+
   for(j=0; zIdent[j]; j++){
     if( !sqlite3Isalnum(zIdent[j]) && zIdent[j]!='_' ) break;
   }
-  needQuote =  zIdent[j]!=0 || sqlite3Isdigit(zIdent[0])
-                  || sqlite3KeywordCode(zIdent, j)!=TK_ID;
+  needQuote = sqlite3Isdigit(zIdent[0]) || sqlite3KeywordCode(zIdent, j)!=TK_ID;
+  if( !needQuote ){
+    if( isTypename ){
+      /* If this is a type-name, allow a little more flexibility. In SQLite,
+      ** a type-name is specified as:
+      **
+      **   ids [ids] [(number [, number])]
+      **
+      ** where "ids" is either a quoted string or a simple identifier (in the
+      ** above notation, [] means optional). It is a bit tricky to check
+      ** for all cases, but it is good to avoid unnecessarily quoting common
+      ** typenames like VARCHAR(10).
+      */
+      needQuote = !isValidDimension(&zIdent[j]);
+    }else{
+      needQuote = zIdent[j];
+    }
+  }
+
   if( needQuote ) z[i++] = '"';
   for(j=0; zIdent[j]; j++){
     z[i++] = zIdent[j];
@@ -1367,7 +1449,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     n += identLength(pCol->zName);
     z = pCol->zType;
     if( z ){
-      n += (sqlite3Strlen30(z) + 1);
+      n += identLength(z);
     }
   }
   n += identLength(p->zName);
@@ -1388,18 +1470,17 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   }
   sqlite3_snprintf(n, zStmt, "CREATE TABLE ");
   k = sqlite3Strlen30(zStmt);
-  identPut(zStmt, &k, p->zName);
+  identPut(zStmt, &k, p->zName, 0);
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
     sqlite3_snprintf(n-k, &zStmt[k], zSep);
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
-    identPut(zStmt, &k, pCol->zName);
+    identPut(zStmt, &k, pCol->zName, 0);
     if( (z = pCol->zType)!=0 ){
       zStmt[k++] = ' ';
       assert( (int)(sqlite3Strlen30(z)+k+1)<=n );
-      sqlite3_snprintf(n-k, &zStmt[k], "%s", z);
-      k += sqlite3Strlen30(z);
+      identPut(zStmt, &k, z, 1);
     }
   }
   sqlite3_snprintf(n-k, &zStmt[k], "%s", zEnd);

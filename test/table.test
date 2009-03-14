@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.49 2009/01/16 11:04:58 danielk1977 Exp $
+# $Id: table.test,v 1.50 2009/03/14 08:37:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -398,6 +398,37 @@ do_test table-8.8 {
     CREATE TABLE t5 AS SELECT * FROM no_such_table;
   }
 } {1 {no such table: no_such_table}}
+
+do_test table-8.9 {
+  execsql {
+    CREATE TABLE t10("col.1" [char.3]);
+    CREATE TABLE t11 AS SELECT * FROM t10;
+    SELECT sql FROM sqlite_master WHERE name = 't11';
+  }
+} {{CREATE TABLE t11("col.1" "char.3")}}
+do_test table-8.10 {
+  execsql {
+    CREATE TABLE t12(
+      a INTEGER,
+      b VARCHAR(10),
+      c VARCHAR(1,10),
+      d VARCHAR(+1,-10),
+      e VARCHAR (+1,-10),
+      f "VARCHAR (+1,-10, 5)",
+      g BIG INTEGER
+    );
+    CREATE TABLE t13 AS SELECT * FROM t12;
+    SELECT sql FROM sqlite_master WHERE name = 't13';
+  }
+} {{CREATE TABLE t13(
+  a INTEGER,
+  b VARCHAR(10),
+  c VARCHAR(1,10),
+  d VARCHAR(+1,-10),
+  e VARCHAR (+1,-10),
+  f "VARCHAR (+1,-10, 5)",
+  g "BIG INTEGER"
+)}}
 
 # Make sure we cannot have duplicate column names within a table.
 #
