@@ -287,6 +287,7 @@ foreach file {
    complete.c
 
    main.c
+   notify.c
 
    fts3.c
    fts3_expr.c

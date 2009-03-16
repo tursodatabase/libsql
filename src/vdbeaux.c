@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.441 2009/03/05 04:20:32 shane Exp $
+** $Id: vdbeaux.c,v 1.442 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1742,6 +1742,14 @@ int sqlite3VdbeHalt(Vdbe *p){
   checkActiveVdbeCnt(db);
   if( p->db->mallocFailed ){
     p->rc = SQLITE_NOMEM;
+  }
+
+  /* If the auto-commit flag is set to true, then any locks that were held
+  ** by connection db have now been released. Call sqlite3ConnectionUnlocked() 
+  ** to invoke any required unlock-notify callbacks.
+  */
+  if( db->autoCommit ){
+    sqlite3ConnectionUnlocked(db);
   }
 
   return SQLITE_OK;

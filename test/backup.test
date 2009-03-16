@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.8 2009/02/12 17:01:50 danielk1977 Exp $
+# $Id: backup.test,v 1.9 2009/03/16 13:19:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -736,7 +736,7 @@ do_test backup-7.2.1 {
 } {}
 do_test backup-7.2.2 {
   B step 5000
-} {SQLITE_LOCKED}
+} {SQLITE_BUSY}
 do_test backup-7.2.3 {
   execsql { ROLLBACK }
   B step 5000

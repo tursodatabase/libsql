@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.840 2009/03/02 17:18:48 shane Exp $
+** @(#) $Id: sqliteInt.h,v 1.841 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -808,6 +808,17 @@ struct sqlite3 {
   Savepoint *pSavepoint;        /* List of active savepoints */
   int nSavepoint;               /* Number of non-transaction savepoints */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
+
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
+  /* The following variables are all protected by the STATIC_MASTER 
+  ** mutex, not by sqlite3.mutex. They are used by code in notify.c. 
+  */
+  sqlite3 *pBlockingConnection; /* Connection that caused SQLITE_LOCKED */
+  sqlite3 *pUnlockConnection;           /* Connection to watch for unlock */
+  void *pUnlockArg;                     /* Argument to xUnlockNotify */
+  void (*xUnlockNotify)(void **, int);  /* Unlock notify callback */
+  sqlite3 *pNextBlocked;        /* Next in list of all blocked connections */
+#endif
 };
 
 /*
@@ -2748,6 +2759,17 @@ int sqlite3IsMemJournal(sqlite3_file *);
 
 u32 sqlite3Get4byte(const u8*);
 void sqlite3Put4byte(u8*, u32);
+
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
+  void sqlite3ConnectionBlocked(sqlite3 *, sqlite3 *);
+  void sqlite3ConnectionUnlocked(sqlite3 *db);
+  void sqlite3ConnectionClosed(sqlite3 *db);
+#else
+  #define sqlite3ConnectionBlocked(x,y)
+  #define sqlite3ConnectionUnlocked(x)
+  #define sqlite3ConnectionClosed(x)
+#endif
+
 
 #ifdef SQLITE_SSE
 #include "sseInt.h"

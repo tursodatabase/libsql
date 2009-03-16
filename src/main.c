@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.530 2009/02/26 07:15:59 danielk1977 Exp $
+** $Id: main.c,v 1.531 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -629,6 +629,12 @@ int sqlite3_close(sqlite3 *db){
     }
   }
   sqlite3ResetInternalSchema(db, 0);
+
+  /* Tell the code in notify.c that the connection no longer holds any
+  ** locks and does not require any further unlock-notify callbacks.
+  */
+  sqlite3ConnectionClosed(db);
+
   assert( db->nDb<=2 );
   assert( db->aDb==db->aDbStatic );
   for(j=0; j<ArraySize(db->aFunc.a); j++){

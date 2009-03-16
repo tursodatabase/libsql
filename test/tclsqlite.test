@@ -15,7 +15,7 @@
 # interface is pretty well tested.  This file contains some addition
 # tests for fringe issues that the main test suite does not cover.
 #
-# $Id: tclsqlite.test,v 1.72 2009/02/04 22:46:47 drh Exp $
+# $Id: tclsqlite.test,v 1.73 2009/03/16 13:19:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -35,7 +35,7 @@ do_test tcl-1.1 {
 do_test tcl-1.2 {
   set v [catch {db bogus} msg]
   lappend v $msg
-} {1 {bad option "bogus": must be authorizer, backup, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, restore, rollback_hook, status, timeout, total_changes, trace, transaction, update_hook, or version}}
+} {1 {bad option "bogus": must be authorizer, backup, busy, cache, changes, close, collate, collation_needed, commit_hook, complete, copy, enable_load_extension, errorcode, eval, exists, function, incrblob, interrupt, last_insert_rowid, nullvalue, onecolumn, profile, progress, rekey, restore, rollback_hook, status, timeout, total_changes, trace, transaction, unlock_notify, update_hook, or version}}
 do_test tcl-1.2.1 {
   set v [catch {db cache bogus} msg]
   lappend v $msg

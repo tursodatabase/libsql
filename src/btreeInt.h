@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.42 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.43 2009/03/16 13:19:36 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -356,6 +356,24 @@ struct Btree {
 ** may not be modified once it is initially set as long as nRef>0.
 ** The pSchema field may be set once under BtShared.mutex and
 ** thereafter is unchanged as long as nRef>0.
+**
+** isPending:
+**
+**   If a BtShared client fails to obtain a write-lock on a database
+**   table (because there exists one or more read-locks on the table),
+**   the shared-cache enters 'pending-lock' state and isPending is
+**   set to true.
+**
+**   The shared-cache leaves the 'pending lock' state when either of
+**   the following occur:
+**
+**     1) The current writer (BtShared.pWriter) concludes its transaction, OR
+**     2) The number of locks held by other connections drops to zero.
+**
+**   while in the 'pending-lock' state, no connection may start a new
+**   transaction.
+**
+**   This feature is included to help prevent writer-starvation.
 */
 struct BtShared {
   Pager *pPager;        /* The page cache */
@@ -385,7 +403,9 @@ struct BtShared {
   int nRef;             /* Number of references to this structure */
   BtShared *pNext;      /* Next on a list of sharable BtShared structs */
   BtLock *pLock;        /* List of locks held on this shared-btree struct */
-  Btree *pExclusive;    /* Btree with an EXCLUSIVE lock on the whole db */
+  Btree *pWriter;       /* Btree with currently open write transaction */
+  u8 isExclusive;       /* True if pWriter has an EXCLUSIVE lock on the db */
+  u8 isPending;         /* If waiting for read-locks to clear */
 #endif
   u8 *pTmpSpace;        /* BtShared.pageSize bytes of space for tmp use */
 };

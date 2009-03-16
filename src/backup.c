@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.12 2009/02/16 17:55:47 shane Exp $
+** $Id: backup.c,v 1.13 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -292,10 +292,10 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     int bCloseTrans = 0;               /* True if src db requires unlocking */
 
     /* If the source pager is currently in a write-transaction, return
-    ** SQLITE_LOCKED immediately.
+    ** SQLITE_BUSY immediately.
     */
     if( p->pDestDb && p->pSrc->pBt->inTransaction==TRANS_WRITE ){
-      rc = SQLITE_LOCKED;
+      rc = SQLITE_BUSY;
     }else{
       rc = SQLITE_OK;
     }

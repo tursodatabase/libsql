@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.108 2009/03/05 04:20:32 shane Exp $
+** $Id: prepare.c,v 1.109 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -570,10 +570,10 @@ static int sqlite3Prepare(
       rc = sqlite3BtreeSchemaLocked(pBt);
       if( rc ){
         const char *zDb = db->aDb[i].zName;
-        sqlite3Error(db, SQLITE_LOCKED, "database schema is locked: %s", zDb);
+        sqlite3Error(db, rc, "database schema is locked: %s", zDb);
         (void)sqlite3SafetyOff(db);
         testcase( db->flags & SQLITE_ReadUncommitted );
-        return sqlite3ApiExit(db, SQLITE_LOCKED);
+        return sqlite3ApiExit(db, rc);
       }
     }
   }

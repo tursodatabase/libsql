@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.347 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: test1.c,v 1.348 2009/03/16 13:19:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -125,6 +125,7 @@ const char *sqlite3TestErrorName(int rc){
     case SQLITE_ABORT:               zName = "SQLITE_ABORT";             break;
     case SQLITE_BUSY:                zName = "SQLITE_BUSY";              break;
     case SQLITE_LOCKED:              zName = "SQLITE_LOCKED";            break;
+    case SQLITE_LOCKED_SHAREDCACHE:  zName = "SQLITE_LOCKED_SHAREDCACHE";break;
     case SQLITE_NOMEM:               zName = "SQLITE_NOMEM";             break;
     case SQLITE_READONLY:            zName = "SQLITE_READONLY";          break;
     case SQLITE_INTERRUPT:           zName = "SQLITE_INTERRUPT";         break;
@@ -3661,6 +3662,24 @@ static int test_step(
   return TCL_OK;
 }
 
+static int test_sql(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "STMT");
+    return TCL_ERROR;
+  }
+
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  Tcl_SetResult(interp, (char *)sqlite3_sql(pStmt), TCL_VOLATILE);
+  return TCL_OK;
+}
+
 /*
 ** Usage: sqlite3_column_count STMT 
 **
@@ -4816,6 +4835,40 @@ static int test_pcache_stats(
   return TCL_OK;
 }
 
+static void test_unlock_notify_cb(void **aArg, int nArg){
+  int ii;
+  for(ii=0; ii<nArg; ii++){
+    Tcl_EvalEx((Tcl_Interp *)aArg[ii], "unlock_notify", -1, TCL_EVAL_GLOBAL);
+  }
+}
+
+/*
+** tclcmd:  sqlite3_unlock_notify db
+*/
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
+static int test_unlock_notify(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  rc = sqlite3_unlock_notify(db, test_unlock_notify_cb, (void *)interp);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+#endif
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -4916,6 +4969,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_transfer_bindings",     test_transfer_bind ,0 },
      { "sqlite3_changes",               test_changes       ,0 },
      { "sqlite3_step",                  test_step          ,0 },
+     { "sqlite3_sql",                   test_sql           ,0 },
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
 
      { "sqlite3_release_memory",        test_release_memory,     0},
@@ -5000,6 +5054,9 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_blob_write", test_blob_write, 0  },
 #endif
      { "pcache_stats",       test_pcache_stats, 0  },
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
+     { "sqlite3_unlock_notify", test_unlock_notify, 0  },
+#endif
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

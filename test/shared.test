@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared.test,v 1.35 2008/11/21 00:10:35 aswift Exp $
+# $Id: shared.test,v 1.36 2009/03/16 13:19:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -875,7 +875,7 @@ do_test shared-$av.11.4 {
 } {0 {}}
 do_test shared-$av.11.5 {
   catchsql {INSERT INTO abc2 VALUES(1, 2, 3);} db2
-} {1 {database is locked}}
+} {1 {database table is locked}}
 do_test shared-$av.11.6 {
   catchsql {SELECT * FROM abc2}
 } {0 {}}

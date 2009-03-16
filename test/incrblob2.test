@@ -12,7 +12,7 @@
 # Test that it is possible to have two open blob handles on a single
 # blob object.
 #
-# $Id: incrblob2.test,v 1.9 2008/10/03 08:44:54 danielk1977 Exp $
+# $Id: incrblob2.test,v 1.10 2009/03/16 13:19:36 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -265,7 +265,7 @@ ifcapable shared_cache {
   do_test incrblob2-5.3 {
     set blob [db incrblob t1 data 1]
     catchsql { INSERT INTO t1 VALUES(3, 'klmno') } db2
-  } {1 {database is locked}}
+  } {1 {database table is locked}}
 
   do_test incrblob2-5.4 {
     close $blob
