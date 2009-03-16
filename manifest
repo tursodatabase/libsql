@@ -1,7 +1,7 @@
-C Additional\shyperlinks\sin\sthe\ssqlite3_unlock_notify()\sdocumentation.\s(CVS\s6349)
-D 2009-03-16T13:37:02
+C Modify\squick.test\sto\ssupport\sthe\sQUICKTEST_INCLUDE\senvironment\svariable,\swhich\scan\sbe\sused\sto\soverride\sthe\sbuilt-in\sEXCLUDE\slist.\s(CVS\s6350)
+D 2009-03-16T14:48:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
+F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
@@ -496,7 +496,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test d93ab4f1eee87b89fddbe938e2f093ce33e7b46a
+F test/quick.test f6eb3a98643b5856626ad38933334762270db129
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -707,7 +707,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b649a6cc5bfefddd6a04b1183647d2923e0a0daa
-R 5e4afca6d8529f70b5f09892d581c5b8
-U drh
-Z b7cc1162146a7aa78d69888842159f5d
+P 4dae5f6ed1662ca1c5c26d57049f7d349299468c
+R 2067a145cc50e0af662e0badf6001fed
+U danielk1977
+Z 047100a34f8b19dcfeccb468b80faa0c

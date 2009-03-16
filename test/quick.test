@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.94 2009/03/12 14:43:28 danielk1977 Exp $
+# $Id: quick.test,v 1.95 2009/03/16 14:48:19 danielk1977 Exp $
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -67,6 +67,7 @@ set EXCLUDE {
   misc7.test
   misuse.test
   mutex2.test
+  notify2.test
   onefile.test
   permutations.test
   quick.test
@@ -111,17 +112,26 @@ if {[sqlite3 -has-codec]} {
 set INCLUDE {
 }
 
-foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
-  # If this is "veryquick.test", do not run any of the malloc or 
-  # IO error simulations.
-  if {[info exists ISVERYQUICK] && (
-    [string match *malloc* $testfile] || [string match *ioerr* $testfile]
-  ) } {
-    continue
-  }
+# If the QUICKTEST_INCLUDE environment variable is set, then interpret
+# it as a list of test files. Always run these files, even if they
+# begin with "malloc*" or "ioerr*" or are part of the EXCLUDE list
+# defined above.
+#
+set QUICKTEST_INCLUDE {}
+catch { set QUICKTEST_INCLUDE $env(QUICKTEST_INCLUDE) }
 
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
-  if {[lsearch -exact $EXCLUDE $tail]>=0} continue
+  if { [lsearch $QUICKTEST_INCLUDE $tail]<0 } {
+    # If this is "veryquick.test", do not run any of the malloc or 
+    # IO error simulations.
+    if {[info exists ISVERYQUICK] && (
+      [string match *malloc* $testfile] || [string match *ioerr* $testfile]
+    ) } {
+      continue
+    }
+    if {[lsearch -exact $EXCLUDE $tail]>=0} continue
+  }
   if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
   if {[info exists STARTAT] && [string match $STARTAT $tail]} {unset STARTAT}
   if {[info exists STARTAT]} continue
