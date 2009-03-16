@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.434 2009/03/16 13:19:36 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.435 2009/03/16 13:37:02 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5356,13 +5356,13 @@ int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** EXPERIMENTAL
 **
 ** When running in shared-cache mode, a database operation may fail with
-** an SQLITE_LOCKED error if the required locks on the shared-cache or
+** an [SQLITE_LOCKED] error if the required locks on the shared-cache or
 ** individual tables within the shared-cache cannot be obtained. See
 ** [SQLite Shared-Cache Mode] for a description of shared-cache locking. 
 ** This API may be used to register a callback that SQLite will invoke 
 ** when the connection currently holding the required lock relinquishes it.
 ** This API is only available if the library was compiled with the
-** SQLITE_ENABLE_UNLOCK_NOTIFY C-preprocessor symbol defined.
+** [SQLITE_ENABLE_UNLOCK_NOTIFY] C-preprocessor symbol defined.
 **
 ** See Also: [Using the SQLite Unlock Notification Feature].
 **

@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_unlock_notify()\sAPI.\s(CVS\s6348)
-D 2009-03-16T13:19:36
+C Additional\shyperlinks\sin\sthe\ssqlite3_unlock_notify()\sdocumentation.\s(CVS\s6349)
+D 2009-03-16T13:37:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d64baddbf55cdf33ff030e14da837324711a4ef7
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c ba9375f37053d422dd76965a9c370a13b6e1aac4
 F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in 5efbb12037347fc1341ca996a5e629734ea1212e
+F src/sqlite.h.in 0f756e9e8db9d491d0f17ea9c07952974975e43d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 22332127b67d6eabb4bd09cca4ca74fd17f65238
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -707,7 +707,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2fcccca3e56e2e3a95bdedeb01ab7da1b24b7ac2
-R 5be2b218449f212c10c446da99e1fb31
-U danielk1977
-Z 7d9c2a290b69196df9bf164217432ca4
+P b649a6cc5bfefddd6a04b1183647d2923e0a0daa
+R 5e4afca6d8529f70b5f09892d581c5b8
+U drh
+Z b7cc1162146a7aa78d69888842159f5d
