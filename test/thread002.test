@@ -12,7 +12,7 @@
 #   This test attempts to deadlock SQLite in shared-cache mode.
 #     
 #
-# $Id: thread002.test,v 1.6 2009/02/12 17:06:41 drh Exp $
+# $Id: thread002.test,v 1.7 2009/03/16 17:07:57 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -88,7 +88,7 @@ for {set i 0} {$i < $::NTHREAD} {incr i} {
   if {![info exists finished($i)]} {
     vwait finished($i)
   }
-  do_test thread001.2.$i {
+  do_test thread002.2.$i {
     set ::finished($i)
   } OK
 }
