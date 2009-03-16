@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.206 2009/03/13 15:32:53 danielk1977 Exp $
+** $Id: shell.c,v 1.207 2009/03/16 10:59:44 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -253,7 +253,6 @@ static int schemaCreate(
   SchemaTable *pType = &aSchemaTable[0];
 
   UNUSED_PARAMETER(pzErr);
-
   if( argc>3 ){
     int i;
     pType = 0;
@@ -577,7 +576,6 @@ static void doublequote(
   int nIn = sqlite3_value_bytes(argv[0]);
 
   UNUSED_PARAMETER(argc);
-
   zOut = sqlite3_malloc(nIn*2+3);
   zCsr = zOut;
   *zCsr++ = '"';
@@ -1783,7 +1781,6 @@ static int run_schema_dump_query(
   return rc;
 }
 
-
 #if !defined(SQLITE_OMIT_VIRTUALTABLE) && !defined(SQLITE_OMIT_SUBQUERY)
 struct GenfkeyCmd {
   sqlite3 *db;                   /* Database handle */
@@ -1800,7 +1797,7 @@ static int genfkeyParseArgs(GenfkeyCmd *p, char **azArg, int nArg){
   memset(p, 0, sizeof(GenfkeyCmd));
 
   for(ii=0; ii<nArg; ii++){
-    size_t n = strlen(azArg[ii]);
+    int n = strlen30(azArg[ii]);
 
     if( n>2 && n<10 && 0==strncmp(azArg[ii], "--no-drop", n) ){
       p->isNoDrop = 1;
