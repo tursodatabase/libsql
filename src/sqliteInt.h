@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.841 2009/03/16 13:19:36 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.842 2009/03/17 17:49:00 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1522,8 +1522,9 @@ struct Expr {
 ** Flags passed to the sqlite3ExprDup() function. See the header comment 
 ** above sqlite3ExprDup() for details.
 */
-#define EXPRDUP_REDUCE 0x0001
-#define EXPRDUP_SPAN   0x0002
+#define EXPRDUP_REDUCE         0x0001
+#define EXPRDUP_SPAN           0x0002
+#define EXPRDUP_DISTINCTSPAN   0x0004
 
 /*
 ** A list of expressions.  Each expression may optionally have a

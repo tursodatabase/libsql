@@ -1,5 +1,5 @@
-C Fix\stest\sscript\sbugs\sin\sthe\sthread002.test\sand\sthread_common.tcl.\s(CVS\s6352)
-D 2009-03-17T15:39:31
+C Fix\sa\sproblem\sthat\scould\scause\sa\scrash\swhen\sa\sshared-cache\sschema\scontains\scolumn\sdefault\svalues.\s(CVS\s6353)
+D 2009-03-17T17:49:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,12 +106,12 @@ F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
 F src/btree.c 7d1c7e15ef8f5b139a9267c3f053d10f8885759b
 F src/btree.h 96a019c9f28da38e79940512d7800e419cd8c702
 F src/btreeInt.h 2f1fe3c5f48800de8b542e05a746796cfdda13bd
-F src/build.c 7e5e93011bab2f142cb03faa72bb64ff30e321fc
+F src/build.c 5f050f06ee4219689e211fa47fd3cc8a817ede57
 F src/callback.c 09c6fedc77a45db99ba25a75d61382830314b357
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
-F src/expr.c 09a3a1d6490d95d3185e43e1c772e074bdb31b6f
+F src/expr.c cd95e2dd8892a1632647a8641e8753e3c1995928
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c de2eed7d96365210faecda877c5a12cf440bdf42
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -159,7 +159,7 @@ F src/select.c 4d0b77fd76ff80f09a798ee98953e344c9de8fbb
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 0f756e9e8db9d491d0f17ea9c07952974975e43d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 22332127b67d6eabb4bd09cca4ca74fd17f65238
+F src/sqliteInt.h a48dc31146b89d5ed73fba50101030fd3c56ec4e
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -528,7 +528,7 @@ F test/selectB.test 31e81ac9af7d224850e0706350f070ecb92fcbc7
 F test/selectC.test ae49d258c875bc1712898f1632062bc5c01a7470
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
-F test/shared2.test 0ee9de8964d70e451936a48c41cb161d9134ccf4
+F test/shared2.test 421c86b795925f1a23269287f9347fac737d36ce
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
@@ -707,7 +707,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ddadc25d550efd56e319bf5508c27d66e346be1b
-R 1f9714beff163e3047ffb3c5d25b0e69
-U drh
-Z fb29d211fd04d1cc5ee32d676ae94379
+P d137e841ce90be92f4c18218f35d22e3a06b0f14
+R 6b134cd3537c64ea60668297de172f94
+U danielk1977
+Z fe79ce498897fec0bf8c493bbec253f1

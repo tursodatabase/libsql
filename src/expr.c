@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.418 2009/03/05 14:53:18 danielk1977 Exp $
+** $Id: expr.c,v 1.419 2009/03/17 17:49:00 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -649,7 +649,9 @@ void sqlite3DequoteExpr(sqlite3 *db, Expr *p){
     return;
   }
   ExprSetProperty(p, EP_Dequoted);
-  if( p->token.dyn==0 && !ExprHasProperty(p, EP_Reduced) ){
+  if( p->token.dyn==0
+   && !ExprHasAnyProperty(p, EP_Reduced|EP_TokenOnly|EP_SpanOnly) 
+  ){
     sqlite3TokenCopy(db, &p->token, &p->token);
   }
   sqlite3Dequote((char*)p->token.z);
@@ -679,7 +681,7 @@ static int dupedExprStructSize(Expr *p, int flags){
     nSize = EXPR_FULLSIZE;
   }else if( p->pLeft || p->pRight || p->pColl || p->x.pList ){
     nSize = EXPR_REDUCEDSIZE;
-  }else if( flags&EXPRDUP_SPAN ){
+  }else if( flags&(EXPRDUP_SPAN|EXPRDUP_DISTINCTSPAN) ){
     nSize = EXPR_SPANONLYSIZE;
   }else{
     nSize = EXPR_TOKENONLYSIZE;
@@ -696,7 +698,9 @@ static int dupedExprStructSize(Expr *p, int flags){
 */
 static int dupedExprNodeSize(Expr *p, int flags){
   int nByte = dupedExprStructSize(p, flags) + (p->token.z ? p->token.n + 1 : 0);
-  if( flags&EXPRDUP_SPAN && (p->token.z!=p->span.z || p->token.n!=p->span.n) ){
+  if( (flags&EXPRDUP_DISTINCTSPAN)
+   || (flags&EXPRDUP_SPAN && (p->token.z!=p->span.z || p->token.n!=p->span.n)) 
+  ){
     nByte += p->span.n;
   }
   return (nByte+7)&~7;
@@ -722,7 +726,7 @@ static int dupedExprSize(Expr *p, int flags){
   if( p ){
     nByte = dupedExprNodeSize(p, flags);
     if( flags&EXPRDUP_REDUCE ){
-      int f = flags&(~EXPRDUP_SPAN);
+      int f = flags&(~(EXPRDUP_SPAN|EXPRDUP_DISTINCTSPAN));
       nByte += dupedExprSize(p->pLeft, f) + dupedExprSize(p->pRight, f);
     }
   }
@@ -740,7 +744,8 @@ static int dupedExprSize(Expr *p, int flags){
 static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
   Expr *pNew = 0;                      /* Value to return */
   if( p ){
-    const int isRequireSpan = (flags&EXPRDUP_SPAN);
+    const int isRequireDistinctSpan = (flags&EXPRDUP_DISTINCTSPAN);
+    const int isRequireSpan = (flags&(EXPRDUP_SPAN|EXPRDUP_DISTINCTSPAN));
     const int isReduced = (flags&EXPRDUP_REDUCE);
     u8 *zAlloc;
 
@@ -791,7 +796,9 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
       if( 0==((p->flags|pNew->flags) & EP_TokenOnly) ){
         /* Fill in the pNew->span token, if required. */
         if( isRequireSpan ){
-          if( p->token.z!=p->span.z || p->token.n!=p->span.n ){
+          if( isRequireDistinctSpan 
+           || p->token.z!=p->span.z || p->token.n!=p->span.n
+          ){
             pNew->span.z = &zAlloc[nNewSize+nToken];
             memcpy((char *)pNew->span.z, p->span.z, p->span.n);
             pNew->span.dyn = 0;
