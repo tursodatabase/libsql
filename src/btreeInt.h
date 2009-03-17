@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.43 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.44 2009/03/17 22:33:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -458,6 +458,7 @@ struct BtCursor {
   BtCursor *pNext, *pPrev;  /* Forms a linked list of all cursors */
   struct KeyInfo *pKeyInfo; /* Argument passed to comparison function */
   Pgno pgnoRoot;            /* The root page of this tree */
+  sqlite3_int64 cachedRowid; /* Next rowid cache.  0 means not valid */
   CellInfo info;            /* A parse of the cell we are pointing at */
   u8 wrFlag;                /* True if writable */
   u8 atLast;                /* Cursor pointing to the last entry */

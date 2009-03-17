@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.573 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: btree.c,v 1.574 2009/03/17 22:33:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1764,6 +1764,12 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
 int sqlite3BtreeGetPageSize(Btree *p){
   return p->pBt->pageSize;
 }
+
+/*
+** Return the number of bytes of space at the end of every page that
+** are intentually left unused.  This is the "reserved" space that is
+** sometimes used by extensions.
+*/
 int sqlite3BtreeGetReserve(Btree *p){
   int n;
   sqlite3BtreeEnter(p);
@@ -3005,6 +3011,7 @@ static int btreeCursor(
   }
   pBt->pCursor = pCur;
   pCur->eState = CURSOR_INVALID;
+  pCur->cachedRowid = 0;
 
   return SQLITE_OK;
 
@@ -3027,11 +3034,48 @@ int sqlite3BtreeCursor(
   sqlite3BtreeLeave(p);
   return rc;
 }
-int sqlite3BtreeCursorSize(){
+
+/*
+** Return the size of a BtCursor object in bytes.
+**
+** This interfaces is needed so that users of cursors can preallocate
+** sufficient storage to hold a cursor.  The BtCursor object is opaque
+** to users so they cannot do the sizeof() themselves - they must call
+** this routine.
+*/
+int sqlite3BtreeCursorSize(void){
   return sizeof(BtCursor);
 }
 
+/*
+** Set the cached rowid value of every cursor in the same database file
+** as pCur and having the same root page number as pCur.  The value is
+** set to iRowid.
+**
+** Only positive rowid values are considered valid for this cache.
+** The cache is initialized to zero, indicating an invalid cache.
+** A btree will work fine with zero or negative rowids.  We just cannot
+** cache zero or negative rowids, which means tables that use zero or
+** negative rowids might run a little slower.  But in practice, zero
+** or negative rowids are very uncommon so this should not be a problem.
+*/
+void sqlite3BtreeSetCachedRowid(BtCursor *pCur, sqlite3_int64 iRowid){
+  BtCursor *p;
+  for(p=pCur->pBt->pCursor; p; p=p->pNext){
+    if( p->pgnoRoot==pCur->pgnoRoot ) p->cachedRowid = iRowid;
+  }
+  assert( pCur->cachedRowid==iRowid );
+}
 
+/*
+** Return the cached rowid for the given cursor.  A negative or zero
+** return value indicates that the rowid cache is invalid and should be
+** ignored.  If the rowid cache has never before been set, then a
+** zero is returned.
+*/
+sqlite3_int64 sqlite3BtreeGetCachedRowid(BtCursor *pCur){
+  return pCur->cachedRowid;
+}
 
 /*
 ** Close a cursor.  The read lock on the database file is released
@@ -3092,6 +3136,8 @@ void sqlite3BtreeReleaseTempCursor(BtCursor *pCur){
   }
   sqlite3_free(pCur->pKey);
 }
+
+
 
 /*
 ** Make sure the BtCursor* given in the argument has a valid
@@ -3530,7 +3576,7 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
 ** and data to fit on the local page and for there to be no overflow
 ** pages.  When that is so, this routine can be used to access the
 ** key and data without making a copy.  If the key and/or data spills
-** onto overflow pages, then accessPayload() must be used to reassembly
+** onto overflow pages, then accessPayload() must be used to reassemble
 ** the key/data and copy it into a preallocated buffer.
 **
 ** The pointer returned by this routine looks directly into the cached

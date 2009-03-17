@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.825 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: vdbe.c,v 1.826 2009/03/17 22:33:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -3550,9 +3550,8 @@ case OP_NewRowid: {           /* out2-prerelease */
 #endif
 
     if( !pC->useRandomRowid ){
-      if( pC->nextRowidValid ){
-        v = pC->nextRowid;
-      }else{
+      v = sqlite3BtreeGetCachedRowid(pC->pCursor);
+      if( v==0 ){
         rc = sqlite3BtreeLast(pC->pCursor, &res);
         if( rc!=SQLITE_OK ){
           goto abort_due_to_error;
@@ -3589,12 +3588,7 @@ case OP_NewRowid: {           /* out2-prerelease */
       }
 #endif
 
-      if( v<MAX_ROWID ){
-        pC->nextRowidValid = 1;
-        pC->nextRowid = v+1;
-      }else{
-        pC->nextRowidValid = 0;
-      }
+      sqlite3BtreeSetCachedRowid(pC->pCursor, v<MAX_ROWID ? v+1 : 0);
     }
     if( pC->useRandomRowid ){
       assert( pOp->p3==0 );  /* SQLITE_FULL must have occurred prior to this */
@@ -3672,9 +3666,6 @@ case OP_Insert: {
   iKey = intToKey(pKey->u.i);
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
   if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = pKey->u.i;
-  if( pC->nextRowidValid && pKey->u.i>=pC->nextRowid ){
-    pC->nextRowidValid = 0;
-  }
   if( pData->flags & MEM_Null ){
     pData->z = 0;
     pData->n = 0;
@@ -3709,6 +3700,7 @@ case OP_Insert: {
     }else{
       nZero = 0;
     }
+    sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
     rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
                             pData->z, pData->n, nZero,
                             pOp->p5 & OPFLAG_APPEND);
@@ -3771,8 +3763,8 @@ case OP_Delete: {
 
   rc = sqlite3VdbeCursorMoveto(pC);
   if( rc ) goto abort_due_to_error;
+  sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeDelete(pC->pCursor);
-  pC->nextRowidValid = 0;
   pC->cacheStatus = CACHE_STALE;
 
   /* Invoke the update-hook if required. */

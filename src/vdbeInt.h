@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.164 2009/02/20 01:28:59 drh Exp $
+** $Id: vdbeInt.h,v 1.165 2009/03/17 22:33:01 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -59,13 +59,11 @@ struct VdbeCursor {
   BtCursor *pCursor;    /* The cursor structure of the backend */
   int iDb;              /* Index of cursor database in db->aDb[] (or -1) */
   i64 lastRowid;        /* Last rowid from a Next or NextIdx operation */
-  i64 nextRowid;        /* Next rowid returned by OP_NewRowid */
   Bool zeroed;          /* True if zeroed out and ready for reuse */
   Bool rowidIsValid;    /* True if lastRowid is valid */
   Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
-  Bool nextRowidValid;  /* True if the nextRowid field is valid */
   Bool pseudoTable;     /* This is a NEW or OLD pseudo-tables of a trigger */
   Bool ephemPseudoTable;
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
