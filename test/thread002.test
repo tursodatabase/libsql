@@ -12,7 +12,7 @@
 #   This test attempts to deadlock SQLite in shared-cache mode.
 #     
 #
-# $Id: thread002.test,v 1.7 2009/03/16 17:07:57 drh Exp $
+# $Id: thread002.test,v 1.8 2009/03/17 15:39:31 drh Exp $
 
 set testdir [file dirname $argv0]
 
@@ -63,8 +63,8 @@ set thread_program {
     execsql { SELECT * FROM aux3.t1 }
     execsql { INSERT INTO aux3.t1(v) SELECT sum(v) FROM aux1.t1 }
 
-    execsql { CREATE TABLE aux1.t2(a,b) }
-    execsql { DROP TABLE aux1.t2 }
+    execsql { CREATE TABLE IF NOT EXISTS aux1.t2(a,b) }
+    execsql { DROP TABLE IF EXISTS aux1.t2 }
 
     # if {($ii%10)==0} {puts -nonewline . ; flush stdout}
     puts -nonewline . ; flush stdout

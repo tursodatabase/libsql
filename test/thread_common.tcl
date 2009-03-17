@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: thread_common.tcl,v 1.3 2009/01/19 17:40:12 drh Exp $
+# $Id: thread_common.tcl,v 1.4 2009/03/17 15:39:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -50,7 +50,7 @@ set thread_procs {
         }
         set rc [sqlite3_finalize $::STMT]
       } else {
-        if {[string first (6) $msg]} {
+        if {[lindex $msg 0]=="(6)"} {
           set rc SQLITE_LOCKED
         } else {
           set rc SQLITE_ERROR
