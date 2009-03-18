@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.523 2009/03/17 17:49:00 danielk1977 Exp $
+** $Id: build.c,v 1.524 2009/03/18 18:43:36 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2846,7 +2846,8 @@ void sqlite3CreateIndex(
   /* Clean up before exiting */
 exit_create_index:
   if( pIndex ){
-    freeIndex(pIndex);
+    sqlite3_free(pIndex->zColAff);
+    sqlite3DbFree(db, pIndex);
   }
   sqlite3ExprListDelete(db, pList);
   sqlite3SrcListDelete(db, pTblName);

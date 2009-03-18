@@ -1,5 +1,5 @@
-C Modify\stest\sscript\sbackup2.test\sso\sthat\sit\sworks\son\sOSX.\s(CVS\s6357)
-D 2009-03-18T13:55:30
+C Fix\sa\scrash\sthat\scould\soccur\swhen\screating\san\sindex\sin\sshared-cache\smode\swith\slookaside\senabled.\s(CVS\s6358)
+D 2009-03-18T18:43:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
 F src/btree.c 081e1aac3ce4c79c5ed628a1fec533857d175eea
 F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
 F src/btreeInt.h 17697718bb5281b12da5c65ecb0bffc45f2c0125
-F src/build.c 5f050f06ee4219689e211fa47fd3cc8a817ede57
+F src/build.c c816377c118047418fda81edb8866b9c7a4e4031
 F src/callback.c 09c6fedc77a45db99ba25a75d61382830314b357
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
@@ -528,7 +528,7 @@ F test/selectB.test 31e81ac9af7d224850e0706350f070ecb92fcbc7
 F test/selectC.test ae49d258c875bc1712898f1632062bc5c01a7470
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
 F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
-F test/shared2.test 421c86b795925f1a23269287f9347fac737d36ce
+F test/shared2.test 8973e41e008acbbd8d1b191b91a23cd472f058e8
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 05d8607d44cd3ff262c07cc1192f4471f3192b09
-R 5e64b9cae459fd0bc9673784f870554b
+P d82e8cd43f46dda15fd15b567901a7dbb2276287
+R c8deeec50bc2cb39d7ab6042bd53185b
 U danielk1977
-Z f96ba7f6eea0c8a655977a33a6e3f78f
+Z b4dedc49427fc75b7d301c2f3f28656d

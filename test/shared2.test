@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: shared2.test,v 1.6 2009/03/17 17:49:00 danielk1977 Exp $
+# $Id: shared2.test,v 1.7 2009/03/18 18:43:36 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -150,6 +150,21 @@ do_test shared2-4.3 {
   db2 close
   db close
 } {}
+
+# At one point, this was causing a crash.
+#
+do_test shared2-5.1 {
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql { CREATE TABLE t2(a, b, c) }
+  
+  # The following statement would crash when attempting to sqlite3_free()
+  # a pointer allocated from a lookaside buffer.
+  execsql { CREATE INDEX i1 ON t2(a) } db2
+} {}
+
+db close
+db2 close
 
 sqlite3_enable_shared_cache $::enable_shared_cache
 finish_test
