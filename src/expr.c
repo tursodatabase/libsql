@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.419 2009/03/17 17:49:00 danielk1977 Exp $
+** $Id: expr.c,v 1.420 2009/03/18 10:36:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -649,11 +649,22 @@ void sqlite3DequoteExpr(sqlite3 *db, Expr *p){
     return;
   }
   ExprSetProperty(p, EP_Dequoted);
+
+  /* If p->token.dyn==0 and none of EP_Reduced, EP_TokenOnly, or
+  ** EP_SpanOnly are set, that means that the p->token.z string points
+  ** back to the original SQL statement text.  In that case, we need
+  ** to make a copy before modifying the string, otherwise we would
+  ** corrupt the original SQL statement text.
+  */
+  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_Reduced) );
+  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_TokenOnly) );
+  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_SpanOnly) );
   if( p->token.dyn==0
    && !ExprHasAnyProperty(p, EP_Reduced|EP_TokenOnly|EP_SpanOnly) 
   ){
     sqlite3TokenCopy(db, &p->token, &p->token);
   }
+
   sqlite3Dequote((char*)p->token.z);
 }
 
