@@ -13,7 +13,7 @@
 # of the TCL interface - methods which are based on the
 # sqlite3_backup_XXX API.
 #
-# $Id: backup2.test,v 1.2 2009/02/11 16:06:19 shane Exp $
+# $Id: backup2.test,v 1.3 2009/03/18 13:55:30 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -111,8 +111,8 @@ do_test backup2-6 {
 # Try to backup to something that is not a database file.
 #
 do_test backup2-7 {
-  catch {file attributes bu2.db -permissions rw-------}
   catch {file attributes bu2.db -readonly 0}
+  catch {file attributes bu2.db -permissions rw-------}
   set out [open bu2.db w]
   puts $out "This is not a valid database file"
   close $out

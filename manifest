@@ -1,5 +1,5 @@
-C Add\scomments\sand\stestcase()\smacros\sto\sthe\sfix\sfor\sshared-cache\sschema\sdefault\nvalue\sproblem\sof\scheck-in\s(6353).\s(CVS\s6356)
-D 2009-03-18T10:36:13
+C Modify\stest\sscript\sbackup2.test\sso\sthat\sit\sworks\son\sOSX.\s(CVS\s6357)
+D 2009-03-18T13:55:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -234,7 +234,7 @@ F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
 F test/backup.test 5e487ec8dad73e9d249e9bb9ca5346a03b601b07
-F test/backup2.test 04b84c97b4b5d63b6756592c6d7afe578b52c3cf
+F test/backup2.test 107e6e9adeb7f40e77ef46022c01b98a26b3bfef
 F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a60f4191791dd7bb49d5c95b350a9924845b59a8
-R 2f36eda6e161e6a080cb184f285eac84
-U drh
-Z 23cf2226d7483135ac96d763abb548ba
+P 05d8607d44cd3ff262c07cc1192f4471f3192b09
+R 5e64b9cae459fd0bc9673784f870554b
+U danielk1977
+Z f96ba7f6eea0c8a655977a33a6e3f78f
