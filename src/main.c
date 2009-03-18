@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.531 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: main.c,v 1.532 2009/03/18 10:33:01 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -560,6 +560,7 @@ void sqlite3CloseSavepoints(sqlite3 *db){
     sqlite3DbFree(db, pTmp);
   }
   db->nSavepoint = 0;
+  db->nStatement = 0;
   db->isTransactionSavepoint = 0;
 }
 

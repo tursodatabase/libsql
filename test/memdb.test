@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.17 2009/01/09 14:29:35 drh Exp $
+# $Id: memdb.test,v 1.18 2009/03/18 10:33:02 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -244,7 +244,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
   do_test memdb-5.$i {
     if {$conf1!=""} {set conf1 "ON CONFLICT $conf1"}
     if {$conf2!=""} {set conf2 "ON CONFLICT $conf2"}
-    set r0 [catch {execsql [subst {
+    set r0 [catch {execsql "
       DROP TABLE t1;
       CREATE TABLE t1(a,b,c, UNIQUE(a) $conf1);
       INSERT INTO t1 SELECT * FROM t2;
@@ -253,7 +253,7 @@ foreach {i conf1 conf2 cmd t0 t1 t2} {
       $cmd t3 SET x=1;
       $cmd t1 SET b=b*2;
       $cmd t1 SET a=c+5;
-    }]} r1]
+    "} r1]
     catch {execsql {COMMIT}}
     if {!$r0} {set r1 [execsql {SELECT a FROM t1 ORDER BY b}]}
     set r2 [execsql {SELECT x FROM t3}]

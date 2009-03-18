@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.442 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.443 2009/03/18 10:33:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1145,7 +1145,7 @@ void sqlite3VdbeMakeReady(
   p->nChange = 0;
   p->cacheCtr = 1;
   p->minWriteFileFormat = 255;
-  p->openedStatement = 0;
+  p->iStatement = 0;
 #ifdef VDBE_PROFILE
   {
     int i;
@@ -1565,6 +1565,48 @@ static void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
 }
 
 /*
+** If the Vdbe passed as the first argument opened a statement-transaction,
+** close it now. Argument eOp must be either SAVEPOINT_ROLLBACK or
+** SAVEPOINT_RELEASE. If it is SAVEPOINT_ROLLBACK, then the statement
+** transaction is rolled back. If eOp is SAVEPOINT_RELEASE, then the 
+** statement transaction is commtted.
+**
+** If an IO error occurs, an SQLITE_IOERR_XXX error code is returned. 
+** Otherwise SQLITE_OK.
+*/
+int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+  int rc = SQLITE_OK;
+  if( p->iStatement ){
+    int i;
+    const int iSavepoint = p->iStatement-1;
+    sqlite3 *const db = p->db;
+
+    assert( eOp==SAVEPOINT_ROLLBACK || eOp==SAVEPOINT_RELEASE);
+    assert( db->nStatement>0 );
+    assert( p->iStatement==(db->nStatement+db->nSavepoint) );
+
+    for(i=0; i<db->nDb; i++){ 
+      int rc2 = SQLITE_OK;
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        if( eOp==SAVEPOINT_ROLLBACK ){
+          rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_ROLLBACK, iSavepoint);
+        }
+        if( rc2==SQLITE_OK ){
+          rc2 = sqlite3BtreeSavepoint(pBt, SAVEPOINT_RELEASE, iSavepoint);
+        }
+        if( rc==SQLITE_OK ){
+          rc = rc2;
+        }
+      }
+    }
+    db->nStatement--;
+    p->iStatement = 0;
+  }
+  return rc;
+}
+
+/*
 ** This routine is called the when a VDBE tries to halt.  If the VDBE
 ** has made changes and is in autocommit mode, then commit those
 ** changes.  If a rollback is needed, then do the rollback.
@@ -1578,10 +1620,8 @@ static void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
 ** means the close did not happen and needs to be repeated.
 */
 int sqlite3VdbeHalt(Vdbe *p){
+  int rc;                         /* Used to store transient return codes */
   sqlite3 *db = p->db;
-  int i;
-  int (*xFunc)(Btree *pBt) = 0;  /* Function to call on each btree backend */
-  int isSpecialError;            /* Set to true if SQLITE_NOMEM or IOERR */
 
   /* This function contains the logic that determines if a statement or
   ** transaction will be committed or rolled back as a result of the
@@ -1611,6 +1651,8 @@ int sqlite3VdbeHalt(Vdbe *p){
   /* No commit or rollback needed if the program never started */
   if( p->pc>=0 ){
     int mrc;   /* Primary error code from p->rc */
+    int eStatementOp = 0;
+    int isSpecialError;            /* Set to true if a 'special' error */
 
     /* Lock all btrees used by the statement */
     sqlite3BtreeMutexArrayEnter(&p->aMutex);
@@ -1625,11 +1667,11 @@ int sqlite3VdbeHalt(Vdbe *p){
       */
       if( !p->readOnly || mrc!=SQLITE_INTERRUPT ){
         if( p->rc==SQLITE_IOERR_BLOCKED && p->usesStmtJournal ){
-          xFunc = sqlite3BtreeRollbackStmt;
+          eStatementOp = SAVEPOINT_ROLLBACK;
           p->rc = SQLITE_BUSY;
         }else if( (mrc==SQLITE_NOMEM || mrc==SQLITE_FULL)
                    && p->usesStmtJournal ){
-          xFunc = sqlite3BtreeRollbackStmt;
+          eStatementOp = SAVEPOINT_ROLLBACK;
         }else{
           /* We are forced to roll back the active transaction. Before doing
           ** so, abort any other statements this handle currently has active.
@@ -1642,8 +1684,8 @@ int sqlite3VdbeHalt(Vdbe *p){
       }
     }
   
-    /* If the auto-commit flag is set and this is the only active vdbe, then
-    ** we do either a commit or rollback of the current transaction. 
+    /* If the auto-commit flag is set and this is the only active writer 
+    ** VM, then we do either a commit or rollback of the current transaction. 
     **
     ** Note: This block also runs if one of the special errors handled 
     ** above has occurred. 
@@ -1658,7 +1700,7 @@ int sqlite3VdbeHalt(Vdbe *p){
         ** successful or hit an 'OR FAIL' constraint. This means a commit 
         ** is required.
         */
-        int rc = vdbeCommit(db, p);
+        rc = vdbeCommit(db, p);
         if( rc==SQLITE_BUSY ){
           sqlite3BtreeMutexArrayLeave(&p->aMutex);
           return SQLITE_BUSY;
@@ -1671,13 +1713,12 @@ int sqlite3VdbeHalt(Vdbe *p){
       }else{
         sqlite3RollbackAll(db);
       }
-    }else if( !xFunc ){
+      db->nStatement = 0;
+    }else if( eStatementOp==0 ){
       if( p->rc==SQLITE_OK || p->errorAction==OE_Fail ){
-        if( p->openedStatement ){
-          xFunc = sqlite3BtreeCommitStmt;
-        } 
+        eStatementOp = SAVEPOINT_RELEASE;
       }else if( p->errorAction==OE_Abort ){
-        xFunc = sqlite3BtreeRollbackStmt;
+        eStatementOp = SAVEPOINT_ROLLBACK;
       }else{
         invalidateCursorsOnModifiedBtrees(db);
         sqlite3RollbackAll(db);
@@ -1686,33 +1727,26 @@ int sqlite3VdbeHalt(Vdbe *p){
       }
     }
   
-    /* If xFunc is not NULL, then it is one of sqlite3BtreeRollbackStmt or
-    ** sqlite3BtreeCommitStmt. Call it once on each backend. If an error occurs
-    ** and the return code is still SQLITE_OK, set the return code to the new
-    ** error value.
+    /* If eStatementOp is non-zero, then a statement transaction needs to
+    ** be committed or rolled back. Call sqlite3VdbeCloseStatement() to
+    ** do so. If this operation returns an error, and the current statement
+    ** error code is SQLITE_OK or SQLITE_CONSTRAINT, then set the error
+    ** code to the new value.
     */
-    assert(!xFunc ||
-      xFunc==sqlite3BtreeCommitStmt ||
-      xFunc==sqlite3BtreeRollbackStmt
-    );
-    for(i=0; xFunc && i<db->nDb; i++){ 
-      int rc;
-      Btree *pBt = db->aDb[i].pBt;
-      if( pBt ){
-        rc = xFunc(pBt);
-        if( rc && (p->rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT) ){
-          p->rc = rc;
-          sqlite3DbFree(db, p->zErrMsg);
-          p->zErrMsg = 0;
-        }
+    if( eStatementOp ){
+      rc = sqlite3VdbeCloseStatement(p, eStatementOp);
+      if( rc && (p->rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT) ){
+        p->rc = rc;
+        sqlite3DbFree(db, p->zErrMsg);
+        p->zErrMsg = 0;
       }
     }
   
-    /* If this was an INSERT, UPDATE or DELETE and the statement was committed, 
-    ** set the change counter. 
+    /* If this was an INSERT, UPDATE or DELETE and no statement transaction
+    ** has been rolled back, update the database connection change-counter. 
     */
     if( p->changeCntOn && p->pc>=0 ){
-      if( !xFunc || xFunc==sqlite3BtreeCommitStmt ){
+      if( eStatementOp!=SAVEPOINT_ROLLBACK ){
         sqlite3VdbeSetChanges(db, p->nChange);
       }else{
         sqlite3VdbeSetChanges(db, 0);
@@ -1752,6 +1786,7 @@ int sqlite3VdbeHalt(Vdbe *p){
     sqlite3ConnectionUnlocked(db);
   }
 
+  assert( db->activeVdbeCnt>0 || db->autoCommit==0 || db->nStatement==0 );
   return SQLITE_OK;
 }
 

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.842 2009/03/17 17:49:00 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.843 2009/03/18 10:33:01 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -807,6 +807,7 @@ struct sqlite3 {
 #endif
   Savepoint *pSavepoint;        /* List of active savepoints */
   int nSavepoint;               /* Number of non-transaction savepoints */
+  int nStatement;               /* Number of nested statement-transactions  */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY

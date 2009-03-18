@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.574 2009/03/17 22:33:01 drh Exp $
+** $Id: btree.c,v 1.575 2009/03/18 10:33:01 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1996,7 +1996,6 @@ static void unlockBtreeIfUnused(BtShared *pBt){
       releasePage(pBt->pPage1);
     }
     pBt->pPage1 = 0;
-    pBt->inStmt = 0;
   }
 }
 
@@ -2141,9 +2140,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
       }
     }
   
-    if( rc==SQLITE_OK ){
-      if( wrflag ) pBt->inStmt = 0;
-    }else{
+    if( rc!=SQLITE_OK ){
       unlockBtreeIfUnused(pBt);
     }
   }while( rc==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
@@ -2643,7 +2640,6 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
       return rc;
     }
     pBt->inTransaction = TRANS_READ;
-    pBt->inStmt = 0;
   }
   clearAllSharedCacheTableLocks(p);
 
@@ -2800,7 +2796,6 @@ int sqlite3BtreeRollback(Btree *p){
 
   btreeClearHasContent(pBt);
   p->inTrans = TRANS_NONE;
-  pBt->inStmt = 0;
   unlockBtreeIfUnused(pBt);
 
   btreeIntegrity(p);
@@ -2809,29 +2804,33 @@ int sqlite3BtreeRollback(Btree *p){
 }
 
 /*
-** Start a statement subtransaction.  The subtransaction can
-** can be rolled back independently of the main transaction.
-** You must start a transaction before starting a subtransaction.
-** The subtransaction is ended automatically if the main transaction
-** commits or rolls back.
-**
-** Only one subtransaction may be active at a time.  It is an error to try
-** to start a new subtransaction if another subtransaction is already active.
+** Start a statement subtransaction. The subtransaction can can be rolled
+** back independently of the main transaction. You must start a transaction 
+** before starting a subtransaction. The subtransaction is ended automatically 
+** if the main transaction commits or rolls back.
 **
 ** Statement subtransactions are used around individual SQL statements
 ** that are contained within a BEGIN...COMMIT block.  If a constraint
 ** error occurs within the statement, the effect of that one statement
 ** can be rolled back without having to rollback the entire transaction.
+**
+** A statement sub-transaction is implemented as an anonymous savepoint. The
+** value passed as the second parameter is the total number of savepoints,
+** including the new anonymous savepoint, open on the B-Tree. i.e. if there
+** are no active savepoints and no other statement-transactions open,
+** iStatement is 1. This anonymous savepoint can be released or rolled back
+** using the sqlite3BtreeSavepoint() function.
 */
-int sqlite3BtreeBeginStmt(Btree *p){
+int sqlite3BtreeBeginStmt(Btree *p, int iStatement){
   int rc;
   BtShared *pBt = p->pBt;
   sqlite3BtreeEnter(p);
   pBt->db = p->db;
   assert( p->inTrans==TRANS_WRITE );
-  assert( !pBt->inStmt );
   assert( pBt->readOnly==0 );
-  if( NEVER(p->inTrans!=TRANS_WRITE || pBt->inStmt || pBt->readOnly) ){
+  assert( iStatement>0 );
+  assert( iStatement>p->db->nSavepoint );
+  if( NEVER(p->inTrans!=TRANS_WRITE || pBt->readOnly) ){
     rc = SQLITE_INTERNAL;
   }else{
     assert( pBt->inTransaction==TRANS_WRITE );
@@ -2840,53 +2839,7 @@ int sqlite3BtreeBeginStmt(Btree *p){
     ** SQL statements. It is illegal to open, release or rollback any
     ** such savepoints while the statement transaction savepoint is active.
     */
-    rc = sqlite3PagerOpenSavepoint(pBt->pPager, p->db->nSavepoint+1);
-    pBt->inStmt = 1;
-  }
-  sqlite3BtreeLeave(p);
-  return rc;
-}
-
-/*
-** Commit the statment subtransaction currently in progress.  If no
-** subtransaction is active, this is a no-op.
-*/
-int sqlite3BtreeCommitStmt(Btree *p){
-  int rc = SQLITE_OK;
-  BtShared *pBt = p->pBt;
-  sqlite3BtreeEnter(p);
-  pBt->db = p->db;
-  if( p->inTrans==TRANS_WRITE && pBt->inStmt ){
-    int iStmtpoint = p->db->nSavepoint;
-    assert( pBt->readOnly==0 );
-    rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
-    pBt->inStmt = 0;
-  }
-  sqlite3BtreeLeave(p);
-  return rc;
-}
-
-/*
-** Rollback the active statement subtransaction.  If no subtransaction
-** is active this routine is a no-op.
-**
-** All cursors will be invalidated by this operation.  Any attempt
-** to use a cursor that was open at the beginning of this operation
-** will result in an error.
-*/
-int sqlite3BtreeRollbackStmt(Btree *p){
-  int rc = SQLITE_OK;
-  BtShared *pBt = p->pBt;
-  sqlite3BtreeEnter(p);
-  pBt->db = p->db;
-  if( p->inTrans==TRANS_WRITE && pBt->inStmt ){
-    int iStmtpoint = p->db->nSavepoint;
-    assert( pBt->readOnly==0 );
-    rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_ROLLBACK, iStmtpoint);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3PagerSavepoint(pBt->pPager, SAVEPOINT_RELEASE, iStmtpoint);
-    }
-    pBt->inStmt = 0;
+    rc = sqlite3PagerOpenSavepoint(pBt->pPager, iStatement);
   }
   sqlite3BtreeLeave(p);
   return rc;
@@ -2908,7 +2861,6 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
   int rc = SQLITE_OK;
   if( p && p->inTrans==TRANS_WRITE ){
     BtShared *pBt = p->pBt;
-    assert( pBt->inStmt==0 );
     assert( op==SAVEPOINT_RELEASE || op==SAVEPOINT_ROLLBACK );
     assert( iSavepoint>=0 || (iSavepoint==-1 && op==SAVEPOINT_ROLLBACK) );
     sqlite3BtreeEnter(p);
@@ -7399,14 +7351,6 @@ const char *sqlite3BtreeGetJournalname(Btree *p){
 int sqlite3BtreeIsInTrans(Btree *p){
   assert( p==0 || sqlite3_mutex_held(p->db->mutex) );
   return (p && (p->inTrans==TRANS_WRITE));
-}
-
-/*
-** Return non-zero if a statement transaction is active.
-*/
-int sqlite3BtreeIsInStmt(Btree *p){
-  assert( sqlite3BtreeHoldsMutex(p) );
-  return ALWAYS(p->pBt) && p->pBt->inStmt;
 }
 
 /*

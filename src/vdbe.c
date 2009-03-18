@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.826 2009/03/17 22:33:01 drh Exp $
+** $Id: vdbe.c,v 1.827 2009/03/18 10:33:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1085,6 +1085,23 @@ case OP_ResultRow: {
   assert( p->nResColumn==pOp->p2 );
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=p->nMem+1 );
+
+  /* If the SQLITE_CountRows flag is set in sqlite3.flags mask, then 
+  ** DML statements invoke this opcode to return the number of rows 
+  ** modified to the user. This is the only way that a VM that
+  ** opens a statement transaction may invoke this opcode.
+  **
+  ** In case this is such a statement, close any statement transaction
+  ** opened by this VM before returning control to the user. This is to
+  ** ensure that statement-transactions are always nested, not overlapping.
+  ** If the open statement-transaction is not closed here, then the user
+  ** may step another VM that opens its own statement transaction. This
+  ** may lead to overlapping statement transactions.
+  */
+  assert( p->iStatement==0 || db->flags&SQLITE_CountRows );
+  if( SQLITE_OK!=(rc = sqlite3VdbeCloseStatement(p, SAVEPOINT_RELEASE)) ){
+    break;
+  }
 
   /* Invalidate all ephemeral cursor row caches */
   p->cacheCtr = (p->cacheCtr + 2)|1;
@@ -2386,10 +2403,12 @@ case OP_Statement: {
     pBt = db->aDb[i].pBt;
     assert( sqlite3BtreeIsInTrans(pBt) );
     assert( (p->btreeMask & (1<<i))!=0 );
-    if( !sqlite3BtreeIsInStmt(pBt) ){
-      rc = sqlite3BtreeBeginStmt(pBt);
-      p->openedStatement = 1;
+    if( p->iStatement==0 ){
+      assert( db->nStatement>=0 && db->nSavepoint>=0 );
+      db->nStatement++; 
+      p->iStatement = db->nSavepoint + db->nStatement;
     }
+    rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
   }
   break;
 }
@@ -2496,7 +2515,7 @@ case OP_Savepoint: {
           rc = sqlite3BtreeSavepoint(db->aDb[ii].pBt, p1, iSavepoint);
           if( rc!=SQLITE_OK ){
             goto abort_due_to_error;
-	  }
+          }
         }
         if( p1==SAVEPOINT_ROLLBACK && (db->flags&SQLITE_InternChanges)!=0 ){
           sqlite3ExpirePreparedStatements(db);
@@ -2576,6 +2595,7 @@ case OP_AutoCommit: {
         goto vdbe_return;
       }
     }
+    assert( db->nStatement==0 );
     sqlite3CloseSavepoints(db);
     if( p->rc==SQLITE_OK ){
       rc = SQLITE_DONE;
