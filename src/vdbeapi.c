@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.153 2009/03/05 04:23:47 shane Exp $
+** $Id: vdbeapi.c,v 1.154 2009/03/19 07:58:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -544,7 +544,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     sqlite3_mutex_enter(db->mutex);
     while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
            && cnt++ < 5
-           && vdbeReprepare(v) ){
+           && (rc = vdbeReprepare(v))==SQLITE_OK ){
       sqlite3_reset(pStmt);
       v->expired = 0;
     }

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.109 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: prepare.c,v 1.110 2009/03/19 07:58:31 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -688,8 +688,11 @@ static int sqlite3LockAndPrepare(
 
 /*
 ** Rerun the compilation of a statement after a schema change.
-** Return true if the statement was recompiled successfully.
-** Return false if there is an error of some kind.
+**
+** If the statement is successfully recompiled, return SQLITE_OK. Otherwise,
+** if the statement cannot be recompiled because another connection has
+** locked the sqlite3_master table, return SQLITE_LOCKED. If any other error
+** occurs, return SQLITE_SCHEMA.
 */
 int sqlite3Reprepare(Vdbe *p){
   int rc;
@@ -708,7 +711,7 @@ int sqlite3Reprepare(Vdbe *p){
       db->mallocFailed = 1;
     }
     assert( pNew==0 );
-    return 0;
+    return (rc==SQLITE_LOCKED) ? SQLITE_LOCKED : SQLITE_SCHEMA;
   }else{
     assert( pNew!=0 );
   }
@@ -716,7 +719,7 @@ int sqlite3Reprepare(Vdbe *p){
   sqlite3TransferBindings(pNew, (sqlite3_stmt*)p);
   sqlite3VdbeResetStepResult((Vdbe*)pNew);
   sqlite3VdbeFinalize((Vdbe*)pNew);
-  return 1;
+  return SQLITE_OK;
 }
 
 

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: notify2.test,v 1.1 2009/03/16 13:19:36 danielk1977 Exp $
+# $Id: notify2.test,v 1.2 2009/03/19 07:58:31 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,7 +63,7 @@ set ThreadProgram {
     set rc SQLITE_OK
 
     while {$rc=="SQLITE_OK" && $zSql ne ""} {
-      set STMT [sqlite3_prepare_v2 $db $zSql -1 zSql]
+      set STMT [$::xPrepare $db $zSql -1 zSql]
       while {[set rc [$::xStep $STMT]] eq "SQLITE_ROW"} {
         for {set i 0} {$i < [sqlite3_column_count $STMT]} {incr i} {
           lappend lRes [sqlite3_column_text $STMT 0]
@@ -99,14 +99,22 @@ set ThreadProgram {
     # each operation.
     #
     for {set ii 1} {$ii <= 3} {incr ii} {
-      set SQL($ii) [string map [list xxx [select_one t1 t2 t3]] [select_one {
+      foreach {tbl database} [select_one {t1 main} {t2 aux2} {t3 aux3}] {}
+
+      set SQL($ii) [string map [list xxx $tbl yyy $database] [select_one {
             SELECT 
               (SELECT b FROM xxx WHERE a=(SELECT max(a) FROM xxx))==total(a) 
               FROM xxx WHERE a!=(SELECT max(a) FROM xxx);
       } {
             DELETE FROM xxx WHERE a<(SELECT max(a)-100 FROM xxx);
             INSERT INTO xxx SELECT NULL, total(a) FROM xxx;
-      }]]
+      } 
+#      {
+#            CREATE INDEX IF NOT EXISTS yyy.xxx_i ON xxx(b);
+#      } {
+#            DROP INDEX IF EXISTS yyy.xxx_i;
+#      }
+      ]]
     }
 
     # Execute the SQL transaction.
@@ -140,10 +148,13 @@ set ThreadProgram {
   expr 0
 }
 
-foreach {iTest xStep} {1 sqlite3_blocking_step 2 sqlite3_step} {
+foreach {iTest xStep xPrepare} {
+  1 sqlite3_blocking_step sqlite3_blocking_prepare_v2
+  2 sqlite3_step          sqlite3_prepare_v2
+} {
   file delete -force test.db test2.db test3.db
 
-  set ThreadSetup "set xStep $xStep ; set nSecond $nSecond"
+  set ThreadSetup "set xStep $xStep;set xPrepare $xPrepare;set nSecond $nSecond"
 
   # Set up the database schema used by this test. Each thread opens file
   # test.db as the main database, then attaches files test2.db and test3.db
