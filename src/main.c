@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.532 2009/03/18 10:33:01 danielk1977 Exp $
+** $Id: main.c,v 1.533 2009/03/19 18:51:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1245,15 +1245,15 @@ const char *sqlite3_errmsg(sqlite3 *db){
   if( !sqlite3SafetyCheckSickOrOk(db) ){
     return sqlite3ErrStr(SQLITE_MISUSE);
   }
-  if( db->mallocFailed ){
-    return sqlite3ErrStr(SQLITE_NOMEM);
-  }
   sqlite3_mutex_enter(db->mutex);
-  assert( !db->mallocFailed );
-  z = (char*)sqlite3_value_text(db->pErr);
-  assert( !db->mallocFailed );
-  if( z==0 ){
-    z = sqlite3ErrStr(db->errCode);
+  if( db->mallocFailed ){
+    z = sqlite3ErrStr(SQLITE_NOMEM);
+  }else{
+    z = (char*)sqlite3_value_text(db->pErr);
+    assert( !db->mallocFailed );
+    if( z==0 ){
+      z = sqlite3ErrStr(db->errCode);
+    }
   }
   sqlite3_mutex_leave(db->mutex);
   return z;
@@ -1285,19 +1285,22 @@ const void *sqlite3_errmsg16(sqlite3 *db){
     return (void *)misuse;
   }
   sqlite3_mutex_enter(db->mutex);
-  assert( !db->mallocFailed );
-  z = sqlite3_value_text16(db->pErr);
-  if( z==0 ){
-    sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
-         SQLITE_UTF8, SQLITE_STATIC);
+  if( db->mallocFailed ){
+    z = (void *)outOfMem;
+  }else{
     z = sqlite3_value_text16(db->pErr);
+    if( z==0 ){
+      sqlite3ValueSetStr(db->pErr, -1, sqlite3ErrStr(db->errCode),
+           SQLITE_UTF8, SQLITE_STATIC);
+      z = sqlite3_value_text16(db->pErr);
+    }
+    /* A malloc() may have failed within the call to sqlite3_value_text16()
+    ** above. If this is the case, then the db->mallocFailed flag needs to
+    ** be cleared before returning. Do this directly, instead of via
+    ** sqlite3ApiExit(), to avoid setting the database handle error message.
+    */
+    db->mallocFailed = 0;
   }
-  /* A malloc() may have failed within the call to sqlite3_value_text16()
-  ** above. If this is the case, then the db->mallocFailed flag needs to
-  ** be cleared before returning. Do this directly, instead of via
-  ** sqlite3ApiExit(), to avoid setting the database handle error message.
-  */
-  db->mallocFailed = 0;
   sqlite3_mutex_leave(db->mutex);
   return z;
 }

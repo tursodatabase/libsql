@@ -12,7 +12,7 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
 **
-** $Id: test_func.c,v 1.13 2008/08/28 02:26:07 drh Exp $
+** $Id: test_func.c,v 1.14 2009/03/19 18:51:07 danielk1977 Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"
@@ -144,6 +144,25 @@ static void test_destructor_count(
   sqlite3_value **argv
 ){
   sqlite3_result_int(pCtx, test_destructor_count_var);
+}
+
+/*
+** The following aggregate function, test_agg_errmsg16(), takes zero 
+** arguments. It returns the text value returned by the sqlite3_errmsg16()
+** API function.
+*/
+void sqlite3BeginBenignMalloc(void);
+void sqlite3EndBenignMalloc(void);
+static void test_agg_errmsg16_step(sqlite3_context *a, int b,sqlite3_value **c){
+}
+static void test_agg_errmsg16_final(sqlite3_context *ctx){
+  const void *z;
+  sqlite3 * db = sqlite3_context_db_handle(ctx);
+  sqlite3_aggregate_context(ctx, 2048);
+  sqlite3BeginBenignMalloc();
+  z = sqlite3_errmsg16(db);
+  sqlite3EndBenignMalloc();
+  sqlite3_result_text16(ctx, z, -1, SQLITE_TRANSIENT);
 }
 
 /*
@@ -318,6 +337,10 @@ static int registerTestFunctions(sqlite3 *db){
     sqlite3_create_function(db, aFuncs[i].zName, aFuncs[i].nArg,
         aFuncs[i].eTextRep, 0, aFuncs[i].xFunc, 0, 0);
   }
+
+  sqlite3_create_function(db, "test_agg_errmsg16", 0, SQLITE_ANY, 0, 0, 
+      test_agg_errmsg16_step, test_agg_errmsg16_final);
+      
   return SQLITE_OK;
 }
 

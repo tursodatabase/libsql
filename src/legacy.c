@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.31 2009/01/20 16:53:40 danielk1977 Exp $
+** $Id: legacy.c,v 1.32 2009/03/19 18:51:07 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -101,7 +101,7 @@ int sqlite3_exec(
         }
         if( xCallback(pArg, nCol, azVals, azCols) ){
           rc = SQLITE_ABORT;
-          sqlite3_finalize(pStmt);
+          sqlite3VdbeFinalize((Vdbe *)pStmt);
           pStmt = 0;
           sqlite3Error(db, SQLITE_ABORT, 0);
           goto exec_out;
@@ -109,7 +109,7 @@ int sqlite3_exec(
       }
 
       if( rc!=SQLITE_ROW ){
-        rc = sqlite3_finalize(pStmt);
+        rc = sqlite3VdbeFinalize((Vdbe *)pStmt);
         pStmt = 0;
         if( rc!=SQLITE_SCHEMA ){
           nRetry = 0;
@@ -125,7 +125,7 @@ int sqlite3_exec(
   }
 
 exec_out:
-  if( pStmt ) sqlite3_finalize(pStmt);
+  if( pStmt ) sqlite3VdbeFinalize((Vdbe *)pStmt);
   sqlite3DbFree(db, azCols);
 
   rc = sqlite3ApiExit(db, rc);

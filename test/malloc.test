@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.76 2009/02/25 08:56:47 danielk1977 Exp $
+# $Id: malloc.test,v 1.77 2009/03/19 18:51:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -815,6 +815,28 @@ do_malloc_test 34 -tclprep {
   }
 } -sqlbody {
   SELECT count(*) FROM abc;
+}
+
+proc f {args} { error "Quite a long error!" }
+do_malloc_test 35 -tclprep {
+  db func f f
+  set ::STMT [sqlite3_prepare db "SELECT f()" -1 DUMMY]
+  sqlite3_step $::STMT
+} -tclbody {
+  sqlite3_finalize $::STMT
+} -cleanup {
+  # At one point an assert( !db->mallocFailed ) could fail in the following
+  # call to sqlite3_errmsg(). Because sqlite3_finalize() had failed to clear
+  # the flag before returning.
+  sqlite3_errmsg16 db
+}
+
+do_malloc_test 36 -sqlprep {
+  CREATE TABLE t1(a, b);
+  INSERT INTO t1 VALUES(1, 2);
+  INSERT INTO t1 VALUES(3, 4);
+} -sqlbody {
+  SELECT test_agg_errmsg16(), group_concat(a) FROM t1
 }
 
 # Ensure that no file descriptors were leaked.

@@ -1,5 +1,5 @@
-C Change\ssqlite3_step()\sto\sreturn\sSQLITE_LOCKED\sif\sa\sstatement\scannot\sbe\sre-compiled\sdue\sto\slocks\son\sthe\sshared-cache\sschema.\sAlso\sadd\sa\sblocking\swrapper\sof\ssqlite3_prepare_v2()\sto\sthe\stest\scode.\s(CVS\s6359)
-D 2009-03-19T07:58:31
+C Fix\sa\scouple\sof\sfairly\sobscure\scases\swhere\san\sassert()\scould\sfail\sfollowing\sa\smalloc\sfailure.\s(CVS\s6360)
+D 2009-03-19T18:51:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -120,9 +120,9 @@ F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 71286d081a919a27ef22eaeccbe2718f93dc6aa9
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
-F src/legacy.c 8b3b95d48d202614946d7ce7256e7ba898905c3b
+F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c 76f953dabeed1096ae605a1a4c31aae0bbc426a1
+F src/main.c cb5ce39624f312888a9058d6fcacb54a9f6e5e85
 F src/malloc.c b9c59b33539af74641362a7496ecc3efd6477f6d
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c 3bfb39e4f60b0179713a7c087b2d4f0dc205735f
@@ -150,7 +150,7 @@ F src/pcache.c fcf7738c83c4d3e9d45836b2334c8a368cc41274
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c f12518540ba776df3051215c4244e9cdc06b09cd
 F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
-F src/prepare.c 8c6ef35c30aa6b59a39b975efa4f90a66a5afb81
+F src/prepare.c 14e61702b09a325e50000e5f5f3156cd20c4afe1
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
@@ -179,7 +179,7 @@ F src/test_backup.c 5b41518c5499dafe65177b0813b71ac356ee9df1
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
 F src/test_config.c a05378089b6773ba36b85727dedf9ec0a16424ce
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
-F src/test_func.c a55c4d5479ff2eb5c0a22d4d88e9528ab59c953b
+F src/test_func.c dd7bcaafb4e149702b506ede125ef6a4d4f6c471
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c 632011e420a581614343e78bc2fe77bd409a1706
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
@@ -203,11 +203,11 @@ F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
 F src/vdbe.c f8164c2830f82714a77b1f2a97c2e9c4efbcb3bb
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
-F src/vdbeapi.c e50f5f6dbd0c5354da25ee52fa5fa4bc0758ba40
+F src/vdbeapi.c 025d83f51f5e0a6e0fb55d603103d24825577967
 F src/vdbeaux.c e9b76cf2ca8f78b692be984381cc4b27defc902a
-F src/vdbeblob.c 2852bae14c87129835938db58a77c3121e3ae962
+F src/vdbeblob.c 3408f5e1ab62627300b9c9c3168cff1de65e1658
 F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
-F src/vtab.c bf409d2dc068e1bb82beeb9eef120ccfff541afb
+F src/vtab.c 18d671f0a45d0159088070bc6b219a3105034c87
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
 F src/where.c ac555c8f6ef71a80944b31dcb212f7127c9ae30c
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -438,7 +438,7 @@ F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lookaside.test e69f822f13745f1d5c445c6e30e30f059f30c8e5
 F test/main.test 187a9a1b5248ed74a83838c581c15ec6023b555b
 F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
-F test/malloc.test 8180b651cc7e6b6be933c335db590ff1c33d8884
+F test/malloc.test 7388109bccc42888ad4e2cb01b2169eb98d4d283
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 097737e3689b9a7e32815fe9c6fc6eed796ae53c
-R 32a96214111535313729ca99d5be6662
+P e8be1af922098e298902820730f8b28603bd6fae
+R a5b48358dfad70bb132127a0cacc5d78
 U danielk1977
-Z 02acbb631daf9f43302bd19b0b92f600
+Z ab897999fdfbec1ae24894bf472e0325

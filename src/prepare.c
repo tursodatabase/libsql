@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.110 2009/03/19 07:58:31 danielk1977 Exp $
+** $Id: prepare.c,v 1.111 2009/03/19 18:51:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -648,8 +648,8 @@ static int sqlite3Prepare(
     Vdbe *pVdbe = sParse.pVdbe;
     sqlite3VdbeSetSql(pVdbe, zSql, (int)(sParse.zTail-zSql), saveSqlFlag);
   }
-  if( rc!=SQLITE_OK || db->mallocFailed ){
-    sqlite3_finalize((sqlite3_stmt*)sParse.pVdbe);
+  if( sParse.pVdbe && (rc!=SQLITE_OK || db->mallocFailed) ){
+    sqlite3VdbeFinalize(sParse.pVdbe);
     assert(!(*ppStmt));
   }else{
     *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
