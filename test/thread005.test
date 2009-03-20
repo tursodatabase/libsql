@@ -11,7 +11,7 @@
 #
 # Test a race-condition that shows up in shared-cache mode.
 #
-# $Id: thread005.test,v 1.3 2009/03/20 10:24:04 danielk1977 Exp $
+# $Id: thread005.test,v 1.4 2009/03/20 15:16:06 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
@@ -23,6 +23,55 @@ source $testdir/thread_common.tcl
 if {[info commands sqlthread] eq ""} {
   return
 }
+db close
+
+# Use shared-cache mode for these tests.
+# 
+set ::enable_shared_cache [sqlite3_enable_shared_cache]
+sqlite3_enable_shared_cache 1
+
+#-------------------------------------------------------------------------
+# This test attempts to hit the race condition fixed by commit [6363].
+#
+proc runsql {zSql {db {}}} {
+  set rc SQLITE_OK
+  while {$rc=="SQLITE_OK" && $zSql ne ""} {
+    set STMT [sqlite3_prepare_v2 $db $zSql -1 zSql]
+    while {[set rc [sqlite3_step $STMT]] eq "SQLITE_ROW"} { }
+    set rc [sqlite3_finalize $STMT]
+  }
+  return $rc
+}
+do_test thread005-1.1 {
+  sqlite3 db test.db
+  db eval { CREATE TABLE t1(a, b) }
+  db close
+} {}
+for {set ii 2} {$ii < 500} {incr ii} {
+  unset -nocomplain finished
+  thread_spawn finished(0) {sqlite3_open test.db}
+  thread_spawn finished(1) {sqlite3_open test.db}
+  if {![info exists finished(0)]} { vwait finished(0) }
+  if {![info exists finished(1)]} { vwait finished(1) }
+
+  do_test thread005-1.$ii {
+    runsql { BEGIN }                       $finished(0)
+    runsql { INSERT INTO t1 VALUES(1, 2) } $finished(0)
+
+    # If the race-condition was hit, then $finished(0 and $finished(1)
+    # will not use the same pager cache. In this case the next statement
+    # can be executed succesfully. However, if the race-condition is not
+    # hit, then $finished(1) will be blocked by the write-lock held by 
+    # $finished(0) on the shared-cache table t1 and the statement will
+    # return SQLITE_LOCKED.
+    #
+    runsql { SELECT * FROM t1 }            $finished(1)
+  } {SQLITE_LOCKED}
+
+  sqlite3_close $finished(0)
+  sqlite3_close $finished(1)
+}
+
 
 #-------------------------------------------------------------------------
 # This test tries to exercise a race-condition that existed in shared-cache
@@ -73,16 +122,10 @@ if {[info commands sqlthread] eq ""} {
 # switch or something...
 #
 
-# Use shared-cache mode for this test.
-# 
-db close
-set ::enable_shared_cache [sqlite3_enable_shared_cache]
-sqlite3_enable_shared_cache 1
-
 file delete -force test.db test2.db
 unset -nocomplain finished
 
-do_test thread005-1.1 {
+do_test thread005-2.1 {
   sqlite3 db test.db
   execsql { ATTACH 'test2.db' AS aux }
   execsql {
@@ -182,11 +225,11 @@ if {![info exists finished(1)]} { vwait finished(1) }
 catch { db close }
 catch { db2 close }
 
-do_test thread005-1.2 {
+do_test thread005-2.2 {
   list $finished(0) $finished(1)
 } {ok ok}
 
-do_test thread005-1.3 {
+do_test thread005-2.3 {
   sqlite3 db test.db
   execsql { ATTACH 'test2.db' AS aux }
   execsql { SELECT count(*) FROM t1 WHERE b IS NULL }
