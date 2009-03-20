@@ -11,7 +11,7 @@
 #
 # Test a race-condition that shows up in shared-cache mode.
 #
-# $Id: thread005.test,v 1.2 2009/03/16 17:07:57 drh Exp $
+# $Id: thread005.test,v 1.3 2009/03/20 10:24:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
@@ -93,6 +93,7 @@ do_test thread005-1.1 {
   db close
 } {}
 
+
 set ThreadProgram {
   proc execsql {zSql {db {}}} {
     if {$db eq ""} {set db $::DB}
@@ -143,6 +144,7 @@ set ThreadProgram {
       if {[string match "SQLITE_LOCKED*" $msg]} {
         catch { execsql ROLLBACK }
       } else {
+        sqlite3_close $::DB
         error $msg
       }
     } elseif {$msg ne "0"} {
@@ -154,11 +156,31 @@ set ThreadProgram {
   set result
 }
 
+# There is a race-condition in btree.c that means that if two threads
+# attempt to open the same database at roughly the same time, and there
+# does not already exist a shared-cache corresponding to that database,
+# then two shared-caches can be created instead of one. Things still more
+# or less work, but the two database connections do not use the same
+# shared-cache.
+#
+# If the threads run by this test hit this race-condition, the tests
+# fail (because SQLITE_BUSY may be unexpectedly returned instead of
+# SQLITE_LOCKED). To prevent this from happening, open a couple of
+# connections to test.db and test2.db now to make sure that there are
+# already shared-caches in memory for all databases opened by the
+# test threads.
+#
+sqlite3 db test.db
+sqlite3 db test2.db
+
 puts "Running thread-tests for ~20 seconds"
 thread_spawn finished(0) {set isWriter 0} $ThreadProgram
 thread_spawn finished(1) {set isWriter 1} $ThreadProgram
 if {![info exists finished(0)]} { vwait finished(0) }
 if {![info exists finished(1)]} { vwait finished(1) }
+
+catch { db close }
+catch { db2 close }
 
 do_test thread005-1.2 {
   list $finished(0) $finished(1)
