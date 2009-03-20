@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.45 2009/03/18 10:33:01 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.46 2009/03/20 14:18:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -204,11 +204,6 @@
 **      *     zero or more pages numbers of leaves
 */
 #include "sqliteInt.h"
-
-/* Round up a number to the next larger multiple of 8.  This is used
-** to force 8-byte alignment on 64-bit architectures.
-*/
-#define ROUND8(x)   ((x+7)&~7)
 
 
 /* The following value is the maximum cell size assuming a maximum page

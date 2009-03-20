@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.374 2009/03/05 03:48:07 shane Exp $
+** $Id: where.c,v 1.375 2009/03/20 14:18:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2861,7 +2861,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
         assert( pInfo->needToFreeIdxStr==0 || db->mallocFailed );
         if( pInfo->needToFreeIdxStr ){
           sqlite3_free(pInfo->idxStr);
-	}
+        }
         sqlite3DbFree(db, pInfo);
       }
     }
@@ -2968,6 +2968,7 @@ WhereInfo *sqlite3WhereBegin(
   int regRowSet         /* Register hold RowSet if WHERE_FILL_ROWSET is set */
 ){
   int i;                     /* Loop counter */
+  int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   Bitmask notReady;          /* Cursors that are not yet positioned */
@@ -2993,15 +2994,19 @@ WhereInfo *sqlite3WhereBegin(
   }
 
   /* Allocate and initialize the WhereInfo structure that will become the
-  ** return value.
+  ** return value. A single allocation is used to store the WhereInfo
+  ** struct, the contents of WhereInfo.a[], the WhereClause structure
+  ** and the WhereMaskSet structure. Since WhereClause contains an 8-byte
+  ** field (type Bitmask) it must be aligned on an 8-byte boundary on
+  ** some architectures. Hence the ROUND8() below.
   */
   db = pParse->db;
-  pWInfo = sqlite3DbMallocZero(db,  
-                      sizeof(WhereInfo)
-                      + (pTabList->nSrc-1)*sizeof(WhereLevel)
-                      + sizeof(WhereClause)
-                      + sizeof(WhereMaskSet)
-           );
+  nByteWInfo = ROUND8(sizeof(WhereInfo)+(pTabList->nSrc-1)*sizeof(WhereLevel));
+  pWInfo = sqlite3DbMallocZero(db, 
+      nByteWInfo + 
+      sizeof(WhereClause) +
+      sizeof(WhereMaskSet)
+  );
   if( db->mallocFailed ){
     goto whereBeginError;
   }
@@ -3010,7 +3015,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pTabList = pTabList;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
   pWInfo->regRowSet = (wctrlFlags & WHERE_FILL_ROWSET) ? regRowSet : -1;
-  pWInfo->pWC = pWC = (WhereClause*)&pWInfo->a[pWInfo->nLevel];
+  pWInfo->pWC = pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
   pWInfo->wctrlFlags = wctrlFlags;
   pMaskSet = (WhereMaskSet*)&pWC[1];
 

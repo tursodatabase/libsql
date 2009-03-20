@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.843 2009/03/18 10:33:01 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.844 2009/03/20 14:18:52 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -443,6 +443,12 @@ extern const int sqlite3one;
 */
 #define LARGEST_INT64  (0xffffffff|(((i64)0x7fffffff)<<32))
 #define SMALLEST_INT64 (((i64)-1) - LARGEST_INT64)
+
+/* 
+** Round up a number to the next larger multiple of 8.  This is used
+** to force 8-byte alignment on 64-bit architectures.
+*/
+#define ROUND8(x)    ((x+7)&~7)
 
 /*
 ** An instance of the following structure is used to store the busy-handler
