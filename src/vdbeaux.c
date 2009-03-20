@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.443 2009/03/18 10:33:02 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.444 2009/03/20 14:42:11 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1575,11 +1575,11 @@ static void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
 ** Otherwise SQLITE_OK.
 */
 int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
+  sqlite3 *const db = p->db;
   int rc = SQLITE_OK;
-  if( p->iStatement ){
+  if( p->iStatement && db->nStatement ){
     int i;
     const int iSavepoint = p->iStatement-1;
-    sqlite3 *const db = p->db;
 
     assert( eOp==SAVEPOINT_ROLLBACK || eOp==SAVEPOINT_RELEASE);
     assert( db->nStatement>0 );
