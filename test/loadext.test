@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is extension loading.
 #
-# $Id: loadext.test,v 1.16 2008/10/13 17:09:11 drh Exp $
+# $Id: loadext.test,v 1.17 2009/03/20 09:09:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,8 +62,7 @@ set dlerror_nosymbol   {%s: undefined symbol: %s}
 
 if {$::tcl_platform(os) eq "Darwin"} {
   set dlerror_nosuchfile {dlopen(%s, 10): image not found}
-  set dlerror_notadll    {dlopen(%1$s, 10): no suitable image found.  Did find:
-	%1$s: file to short}
+  set dlerror_notadll    {dlopen(%1$s, 10): no suitable image found.*}
   set dlerror_nosymbol   {dlsym(XXX, %2$s): symbol not found}
 }
 
@@ -74,9 +73,11 @@ if {$::tcl_platform(os) eq "Darwin"} {
 if {![file exists $testextension]} {
   set srcdir [file dir $testdir]/src
   set testextsrc $srcdir/test_loadext.c
-  if {[catch {
-    exec gcc {*}[set gcc_shared] -Wall -I$srcdir -I. -g $testextsrc -o $testextension
-  } msg]} {
+
+  set cmdline [concat exec gcc $gcc_shared]
+  lappend cmdline -Wall -I$srcdir -I. -g $testextsrc -o $testextension
+  
+  if {[catch $cmdline msg]} {
     puts "Skipping loadext tests: Test extension not built..."
     puts $msg
     finish_test
@@ -149,8 +150,9 @@ do_test loadext-2.2 {
   set rc [catch {
     sqlite3_load_extension db "${testextension}xx"
   } msg]
-  list $rc $msg
-} [list 1 [format $dlerror_notadll ${testextension}xx]]
+  set expected_error_pattern [format $dlerror_notadll ${testextension}xx]
+  list $rc [string match $expected_error_pattern $msg]
+} [list 1 1]
 
 # Try to load an extension for which the file is present but the
 # entry point is not.

@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sfairly\sobscure\scases\swhere\san\sassert()\scould\sfail\sfollowing\sa\smalloc\sfailure.\s(CVS\s6360)
-D 2009-03-19T18:51:07
+C Fix\sa\sproblem\sin\sloadext.test\scausing\san\serror\son\sOSX.\sThis\sis\snot\sa\sreal\sproblem,\sjust\sa\scase\sof\sthe\stest\sscript\sexpecting\sa\sslightly\sdifferent\serror\smessage\sthan\sthe\sone\sreturned.\s(CVS\s6361)
+D 2009-03-20T09:09:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -427,7 +427,7 @@ F test/laststmtchanges.test ae613f53819206b3222771828d024154d51db200
 F test/like.test 22f7857f9d7da7ff5061ded8806c43a6271109fc
 F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
-F test/loadext.test 18db29c081380fdedcfbd8c633847712059ae104
+F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 9c06ddc3a094a78ed7e49d15165b3fc458bcbfc7
 F test/lock2.test d4f941d1f659e5fc782b4912b1a872d77d4b5470
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e8be1af922098e298902820730f8b28603bd6fae
-R a5b48358dfad70bb132127a0cacc5d78
+P cc0d925669ddeb55048e88aa5b4f658be60b0962
+R c2b4f8dc2ed503f7f98d2a8993a8e276
 U danielk1977
-Z ab897999fdfbec1ae24894bf472e0325
+Z 17fd67756579ad71d085631289576f09
