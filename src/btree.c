@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.575 2009/03/18 10:33:01 danielk1977 Exp $
+** $Id: btree.c,v 1.576 2009/03/20 13:15:30 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -42,6 +42,8 @@ int sqlite3BtreeTrace=0;  /* True to enable tracing */
 ** in shared cache.  This variable has file scope during normal builds,
 ** but the test harness needs to access it so we make it global for 
 ** test builds.
+**
+** Access to this variable is protected by SQLITE_MUTEX_STATIC_MASTER.
 */
 #ifdef SQLITE_TEST
 BtShared *SQLITE_WSD sqlite3SharedCacheList = 0;
@@ -1334,12 +1336,13 @@ int sqlite3BtreeOpen(
   int flags,              /* Options */
   int vfsFlags            /* Flags passed through to sqlite3_vfs.xOpen() */
 ){
-  sqlite3_vfs *pVfs;      /* The VFS to use for this btree */
-  BtShared *pBt = 0;      /* Shared part of btree structure */
-  Btree *p;               /* Handle to return */
-  int rc = SQLITE_OK;
-  u8 nReserve;
-  unsigned char zDbHeader[100];
+  sqlite3_vfs *pVfs;             /* The VFS to use for this btree */
+  BtShared *pBt = 0;             /* Shared part of btree structure */
+  Btree *p;                      /* Handle to return */
+  sqlite3_mutex *mutexOpen = 0;  /* Prevents a race condition. Ticket #3537 */
+  int rc = SQLITE_OK;            /* Result code from this function */
+  u8 nReserve;                   /* Byte of unused space on each page */
+  unsigned char zDbHeader[100];  /* Database header content */
 
   /* Set the variable isMemdb to true for an in-memory database, or 
   ** false for a file-based database. This symbol is only required if
@@ -1385,6 +1388,8 @@ int sqlite3BtreeOpen(
         return SQLITE_NOMEM;
       }
       sqlite3OsFullPathname(pVfs, zFilename, nFullPathname, zFullPathname);
+      mutexOpen = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_OPEN);
+      sqlite3_mutex_enter(mutexOpen);
       mutexShared = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
       sqlite3_mutex_enter(mutexShared);
       for(pBt=GLOBAL(BtShared*,sqlite3SharedCacheList); pBt; pBt=pBt->pNext){
@@ -1537,6 +1542,10 @@ btree_open_out:
     sqlite3_free(pBt);
     sqlite3_free(p);
     *ppBtree = 0;
+  }
+  if( mutexOpen ){
+    assert( sqlite3_mutex_held(mutexOpen) );
+    sqlite3_mutex_leave(mutexOpen);
   }
   return rc;
 }

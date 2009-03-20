@@ -10,7 +10,7 @@
 **
 *************************************************************************
 ** 
-** $Id: test_mutex.c,v 1.14 2009/02/11 05:18:07 danielk1977 Exp $
+** $Id: test_mutex.c,v 1.15 2009/03/20 13:15:30 drh Exp $
 */
 
 #include "tcl.h"
@@ -248,7 +248,7 @@ static int test_read_mutex_counters(
   int ii;
   char *aName[8] = {
     "fast",        "recursive",   "static_master", "static_mem", 
-    "static_mem2", "static_prng", "static_lru",    "static_lru2"
+    "static_open", "static_prng", "static_lru",    "static_lru2"
   };
 
   if( objc!=1 ){

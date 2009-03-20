@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.435 2009/03/16 13:37:02 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.436 2009/03/20 13:15:30 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4726,7 +4726,8 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 #define SQLITE_MUTEX_RECURSIVE        1
 #define SQLITE_MUTEX_STATIC_MASTER    2
 #define SQLITE_MUTEX_STATIC_MEM       3  /* sqlite3_malloc() */
-#define SQLITE_MUTEX_STATIC_MEM2      4  /* sqlite3_release_memory() */
+#define SQLITE_MUTEX_STATIC_MEM2      4  /* NOT USED */
+#define SQLITE_MUTEX_STATIC_OPEN      4  /* sqlite3BtreeOpen() */
 #define SQLITE_MUTEX_STATIC_PRNG      5  /* sqlite3_random() */
 #define SQLITE_MUTEX_STATIC_LRU       6  /* lru page list */
 #define SQLITE_MUTEX_STATIC_LRU2      7  /* lru page list */

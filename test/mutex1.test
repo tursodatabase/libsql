@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.17 2009/01/09 14:29:35 drh Exp $
+# $Id: mutex1.test,v 1.18 2009/03/20 13:15:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -101,8 +101,8 @@ set enable_shared_cache [sqlite3_enable_shared_cache 1]
 ifcapable threadsafe {
   foreach {mode mutexes} {
     singlethread {}
-    multithread  {fast static_lru static_master static_mem static_prng }
-    serialized  {fast recursive static_lru static_master static_mem static_prng}
+    multithread  {fast static_lru static_master static_mem static_open static_prng }
+    serialized  {fast recursive static_lru static_master static_mem static_open static_prng}
   } {
 
     do_test mutex1.2.$mode.1 {
