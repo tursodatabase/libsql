@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.242 2009/03/01 22:29:20 drh Exp $
+** $Id: os_unix.c,v 1.243 2009/03/21 14:41:04 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2853,6 +2853,19 @@ int sqlite3_fullsync_count = 0;
 ** You are strongly advised *not* to deploy with SQLITE_NO_SYNC
 ** enabled, however, since with SQLITE_NO_SYNC enabled, an OS crash
 ** or power failure will likely corrupt the database file.
+**
+** SQLite sets the dataOnly flag if the size of the file is unchanged.
+** The idea behind dataOnly is that it should only write the file content
+** to disk, not the inode.  We only set dataOnly if the file size is 
+** unchanged since the file size is part of the inode.  However, 
+** Ted Ts'o tells us that fdatasync() will also write the inode if the
+** file size has changed.  The only real difference between fdatasync()
+** and fsync(), Ted tells us, is that fdatasync() will not flush the
+** inode if the mtime or owner or other inode attributes have changed.
+** We only care about the file size, not the other file attributes, so
+** as far as SQLite is concerned, an fdatasync() is always adequate.
+** So, we always use fdatasync() if it is available, regardless of
+** the value of the dataOnly flag.
 */
 static int full_fsync(int fd, int fullSync, int dataOnly){
   int rc;
@@ -2869,6 +2882,7 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   UNUSED_PARAMETER(dataOnly);
 #else
   UNUSED_PARAMETER(fullSync);
+  UNUSED_PARAMETER(dataOnly);
 #endif
 
   /* Record the number of times that we do a normal fsync() and 
@@ -2902,16 +2916,12 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   if( rc ) rc = fsync(fd);
 
 #else 
-  if( dataOnly ){
-    rc = fdatasync(fd);
+  rc = fdatasync(fd);
 #if OS_VXWORKS
-    if( rc==-1 && errno==ENOTSUP ){
-      rc = fsync(fd);
-    }
-#endif
-  }else{
+  if( rc==-1 && errno==ENOTSUP ){
     rc = fsync(fd);
   }
+#endif /* OS_VXWORKS */
 #endif /* ifdef SQLITE_NO_SYNC elif HAVE_FULLFSYNC */
 
   if( OS_VXWORKS && rc!= -1 ){

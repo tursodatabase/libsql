@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\stry\sto\shit\sthe\srace-condition\sfixed\sby\s(6363).\s(CVS\s6366)
-D 2009-03-20T15:16:06
+C On\sunix,\salways\suse\sfdatasync()\sinstead\sof\sfsync()\swhen\savailable,\seven\sif\nthe\sfile\ssize\schanges,\ssince\s(we\sare\stold)\sfdatasync()\swill\sautomatically\nflush\sthe\sinode\swhen\sthe\sfile\ssize\schanges.\s(CVS\s6367)
+D 2009-03-21T14:41:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 52352674c19688026a72cd0e8620e6a29bacba4a
+F src/os_unix.c 8f6ffa95c8dc79b94565b517bc37abb426f09a23
 F src/os_win.c 40636702058ed4dcd35d68151bfab56d4997cdc1
 F src/pager.c 01e3facb2f7c5f307e36a0f4ed9343cf3761711a
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a08324d16d1e9a4e7c1b294bc71fc939d173f826
-R 87fff081bb6bfc825b1acb6eabea142e
-U danielk1977
-Z 5f0bd3312fbc59ec4534315ac49a7c31
+P 4310411f5027dba18e017023e21cb09982e26752
+R da4300d409cda801b0b75c2eee2c6174
+U drh
+Z 669efac6174bfcb881ee9f0e80879f8c
