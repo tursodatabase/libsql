@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.243 2009/03/21 14:41:04 drh Exp $
+** $Id: os_unix.c,v 1.244 2009/03/21 14:56:52 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -2824,10 +2824,10 @@ int sqlite3_fullsync_count = 0;
 #endif
 
 /*
-** Use the fdatasync() API only if the HAVE_FDATASYNC macro is defined.
-** Otherwise use fsync() in its place.
+** We assume that most systems these days support fdatasync().  Those
+** machines that do not can define -Dfdatasync=fsync.
 */
-#ifndef HAVE_FDATASYNC
+#if 0
 # define fdatasync fsync
 #endif
 
