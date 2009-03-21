@@ -1,5 +1,5 @@
-C Rig\sthe\sunix\sbackend\sto\suse\sfdatasync()\sby\sdefault,\swithout\shaving\sto\sset\sthe\nHAVE_FDATASYNC\smacro.\s\sSystems\sthat\sdo\snot\ssupport\sfdatasync()\scan\sbe\scompiled\nusing\s-Dfdatasync=fsync.\s(CVS\s6368)
-D 2009-03-21T14:56:52
+C Update\scomments\sin\sbuild.c\sto\sconform\sto\sthe\slatest\simplementation.\s(CVS\s6369)
+D 2009-03-21T16:19:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
 F src/btree.c 4fbb5f26f450bee7356ec63cb664c8d733e28d89
 F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c c816377c118047418fda81edb8866b9c7a4e4031
+F src/build.c f217f9ce2528c5b968f77a11998948466ea81bc9
 F src/callback.c 09c6fedc77a45db99ba25a75d61382830314b357
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0d6b11bcf67f86e5554806869d32338e5831833e
-R 0bec67d81685c3152a1b50fee4db509f
+P a331562727be465874a66c2c1d15ee070f96f7e0
+R 4402ba006efc4583ed7d0cf413c713f4
 U drh
-Z 7a8c6e147dafb29b1784fb5910b3e5cf
+Z 38186ef5f341ca0ce183f01a326c1493

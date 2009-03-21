@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.524 2009/03/18 18:43:36 danielk1977 Exp $
+** $Id: build.c,v 1.525 2009/03/21 16:19:26 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -891,9 +891,10 @@ void sqlite3StartTable(
     ** The record created does not contain anything yet.  It will be replaced
     ** by the real entry in code generated at sqlite3EndTable().
     **
-    ** The rowid for the new entry is left on the top of the stack.
-    ** The rowid value is needed by the code that sqlite3EndTable will
-    ** generate.
+    ** The rowid for the new entry is left in register pParse->regRowid.
+    ** The root page number of the new table is left in reg pParse->regRoot.
+    ** The rowid and root page number values are needed by the code that
+    ** sqlite3EndTable will generate.
     */
 #if !defined(SQLITE_OMIT_VIEW) || !defined(SQLITE_OMIT_VIRTUALTABLE)
     if( isView || isVirtual ){
@@ -1562,8 +1563,7 @@ void sqlite3EndTable(
   }
 
   /* If not initializing, then create a record for the new table
-  ** in the SQLITE_MASTER table of the database.  The record number
-  ** for the new table entry should already be on the stack.
+  ** in the SQLITE_MASTER table of the database.
   **
   ** If this is a TEMPORARY table, write the entry into the auxiliary
   ** file instead of into the main database file.
@@ -1580,9 +1580,8 @@ void sqlite3EndTable(
 
     sqlite3VdbeAddOp1(v, OP_Close, 0);
 
-    /* Create the rootpage for the new table and push it onto the stack.
-    ** A view has no rootpage, so just push a zero onto the stack for
-    ** views.  Initialize zType at the same time.
+    /* 
+    ** Initialize zType for the new view or table.
     */
     if( p->pSelect==0 ){
       /* A regular table */
@@ -1598,7 +1597,7 @@ void sqlite3EndTable(
 
     /* If this is a CREATE TABLE xx AS SELECT ..., execute the SELECT
     ** statement to populate the new table. The root-page number for the
-    ** new table is on the top of the vdbe stack.
+    ** new table is in register pParse->regRoot.
     **
     ** Once the SELECT has been coded by sqlite3Select(), it is in a
     ** suitable state to query for the column names and types to be used
@@ -1644,9 +1643,7 @@ void sqlite3EndTable(
 
     /* A slot for the record has already been allocated in the 
     ** SQLITE_MASTER table.  We just need to update that slot with all
-    ** the information we've collected.  The rowid for the preallocated
-    ** slot is the 2nd item on the stack.  The top of the stack is the
-    ** root page for the new table (or a 0 if this is a view).
+    ** the information we've collected.
     */
     sqlite3NestedParse(pParse,
       "UPDATE %Q.%s "
@@ -1965,8 +1962,8 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** location iTable. The following code modifies the sqlite_master table to
   ** reflect this.
   **
-  ** The "#%d" in the SQL is a special constant that means whatever value
-  ** is on the top of the stack.  See sqlite3RegisterExpr().
+  ** The "#NNN" in the SQL is a special constant that means whatever value
+  ** is in register NNN.  See sqlite3RegisterExpr().
   */
   sqlite3NestedParse(pParse, 
      "UPDATE %Q.%s SET rootpage=%d WHERE #%d AND rootpage=#%d",
