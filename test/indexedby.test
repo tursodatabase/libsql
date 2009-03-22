@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: indexedby.test,v 1.4 2008/12/30 09:45:46 danielk1977 Exp $
+# $Id: indexedby.test,v 1.5 2009/03/22 20:36:19 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -225,5 +225,30 @@ do_test indexedby-9.3 {
   catchsql { select * from maintable, joinme INDEXED by joinme_id_text_idx }
 } {1 {cannot use index: joinme_id_text_idx}}
 
-finish_test
+# Make sure we can still create tables, indices, and columns whose name
+# is "indexed".
+#
+do_test indexedby-10.1 {
+  execsql {
+    CREATE TABLE indexed(x,y);
+    INSERT INTO indexed VALUES(1,2);
+    SELECT * FROM indexed;
+  }
+} {1 2}
+do_test indexedby-10.2 {
+  execsql {
+    CREATE INDEX i10 ON indexed(x);
+    SELECT * FROM indexed indexed by i10 where x>0;
+  }
+} {1 2}
+do_test indexedby-10.3 {
+  execsql {
+    DROP TABLE indexed;
+    CREATE TABLE t10(indexed INTEGER);
+    INSERT INTO t10 VALUES(1);
+    CREATE INDEX indexed ON t10(indexed);
+    SELECT * FROM t10 indexed by indexed WHERE indexed>0
+  }
+} {1}
 
+finish_test
