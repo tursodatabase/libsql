@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.12 2009/03/19 07:58:31 danielk1977 Exp $
+** $Id: test_thread.c,v 1.13 2009/03/23 17:11:27 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -117,8 +117,10 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_CreateObjCommand(interp, "sqlthread", sqlthread_proc, pSqlThread, 0);
 #if defined(OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
   Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
-  Tcl_CreateObjCommand(
-      interp, "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc,0,0);
+  Tcl_CreateObjCommand(interp, 
+      "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
+  Tcl_CreateObjCommand(interp, 
+      "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
 #endif
   Sqlitetest1_Init(interp);
   Sqlitetest_mutex_Init(interp);
@@ -544,6 +546,7 @@ static int blocking_step_proc(
 
 /*
 ** Usage: sqlite3_blocking_prepare_v2 DB sql bytes ?tailvar?
+** Usage: sqlite3_nonblocking_prepare_v2 DB sql bytes ?tailvar?
 */
 static int blocking_prepare_v2_proc(
   void * clientData,
@@ -558,6 +561,7 @@ static int blocking_prepare_v2_proc(
   sqlite3_stmt *pStmt = 0;
   char zBuf[50];
   int rc;
+  int isBlocking = !(clientData==0);
 
   if( objc!=5 && objc!=4 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"", 
@@ -568,7 +572,12 @@ static int blocking_prepare_v2_proc(
   zSql = Tcl_GetString(objv[2]);
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
-  rc = sqlite3_blocking_prepare_v2(db, zSql, bytes, &pStmt, objc>=5?&zTail : 0);
+  if( isBlocking ){
+    rc = sqlite3_blocking_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
+  }else{
+    rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, &zTail);
+  }
+
   assert(rc==SQLITE_OK || pStmt==0);
   if( zTail && objc>=5 ){
     if( bytes>=0 ){
@@ -603,8 +612,10 @@ int SqlitetestThread_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "clock_seconds", clock_seconds_proc, 0, 0);
 #if defined(OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
   Tcl_CreateObjCommand(interp, "sqlite3_blocking_step", blocking_step_proc,0,0);
-  Tcl_CreateObjCommand(
-      interp, "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc,0,0);
+  Tcl_CreateObjCommand(interp, 
+      "sqlite3_blocking_prepare_v2", blocking_prepare_v2_proc, (void *)1, 0);
+  Tcl_CreateObjCommand(interp, 
+      "sqlite3_nonblocking_prepare_v2", blocking_prepare_v2_proc, 0, 0);
 #endif
   return TCL_OK;
 }

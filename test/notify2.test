@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: notify2.test,v 1.2 2009/03/19 07:58:31 danielk1977 Exp $
+# $Id: notify2.test,v 1.3 2009/03/23 17:11:27 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,6 +62,8 @@ set ThreadProgram {
     set lRes [list]
     set rc SQLITE_OK
 
+set sql $zSql
+
     while {$rc=="SQLITE_OK" && $zSql ne ""} {
       set STMT [$::xPrepare $db $zSql -1 zSql]
       while {[set rc [$::xStep $STMT]] eq "SQLITE_ROW"} {
@@ -72,8 +74,15 @@ set ThreadProgram {
       set rc [sqlite3_finalize $STMT]
     }
 
-    if {$rc != "SQLITE_OK"} { error "$rc [sqlite3_errmsg $db]" }
+    if {$rc != "SQLITE_OK"} { error "$rc $sql [sqlite3_errmsg $db]" }
     return $lRes
+  }
+
+  proc execsql_retry {db sql} { 
+    set msg "SQLITE_LOCKED blah..."
+    while { [string match SQLITE_LOCKED* $msg] } {
+      catch { execsql_blocking $db $sql } msg
+    }
   }
 
   proc select_one {args} {
@@ -81,12 +90,16 @@ set ThreadProgram {
     lindex $args [expr int($n*rand())]
   }
 
-  # Open a database connection. Attach the two auxillary databases.
-  set ::DB [sqlite3_open test.db]
-  execsql_blocking $::DB {
-    ATTACH 'test2.db' AS aux2;
-    ATTACH 'test3.db' AS aux3;
+  proc opendb {} {
+    # Open a database connection. Attach the two auxillary databases.
+    set ::DB [sqlite3_open test.db]
+    execsql_retry $::DB { ATTACH 'test2.db' AS aux2; }
+    execsql_retry $::DB { ATTACH 'test3.db' AS aux3; }
   }
+
+  opendb
+
+  #after 2000
 
   # This loop runs for ~20 seconds.
   #
@@ -108,12 +121,11 @@ set ThreadProgram {
       } {
             DELETE FROM xxx WHERE a<(SELECT max(a)-100 FROM xxx);
             INSERT INTO xxx SELECT NULL, total(a) FROM xxx;
-      } 
-#      {
-#            CREATE INDEX IF NOT EXISTS yyy.xxx_i ON xxx(b);
-#      } {
-#            DROP INDEX IF EXISTS yyy.xxx_i;
-#      }
+      } {
+            CREATE INDEX IF NOT EXISTS yyy.xxx_i ON xxx(b);
+      } {
+            DROP INDEX IF EXISTS yyy.xxx_i;
+      }
       ]]
     }
 
@@ -128,9 +140,15 @@ set ThreadProgram {
       "
     } msg]
 
-    if {$rc && [string match "SQLITE_LOCKED*" $msg]} {
+    if {$rc && [string match "SQLITE_LOCKED*" $msg]
+            || [string match "SQLITE_SCHEMA*" $msg]
+    } {
       # Hit an SQLITE_LOCKED error. Rollback the current transaction.
-      execsql_blocking $::DB ROLLBACK
+      set rc [catch { execsql_blocking $::DB ROLLBACK } msg]
+      if {$rc && [string match "SQLITE_LOCKED*" $msg]} {
+        sqlite3_close $::DB
+        opendb
+      } 
     } elseif {$rc} {
       # Hit some other kind of error. This is a malfunction.
       error $msg
@@ -150,7 +168,7 @@ set ThreadProgram {
 
 foreach {iTest xStep xPrepare} {
   1 sqlite3_blocking_step sqlite3_blocking_prepare_v2
-  2 sqlite3_step          sqlite3_prepare_v2
+  2 sqlite3_step          sqlite3_nonblocking_prepare_v2
 } {
   file delete -force test.db test2.db test3.db
 
