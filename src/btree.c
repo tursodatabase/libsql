@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.576 2009/03/20 13:15:30 drh Exp $
+** $Id: btree.c,v 1.577 2009/03/23 02:34:32 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2167,7 +2167,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     if( wrflag ){
       assert( !pBt->pWriter );
       pBt->pWriter = p;
-      pBt->isExclusive = (wrflag>1);
+      pBt->isExclusive = (u8)(wrflag>1);
     }
 #endif
   }
