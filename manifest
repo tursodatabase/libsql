@@ -1,5 +1,5 @@
-C Fix\san\sobscure\srace\scondition\sthat\scan\soccur\swhen\smultiple\sthreads,\sshared\scache\sand\sDDL\sstatements\sare\scombined.\sEnhance\snotify2.test\sto\stest\sthis\sscenario.\s(CVS\s6373)
-D 2009-03-23T17:11:27
+C Add\sasserts\sto\smake\ssure\sthat\sdatabase\sconnection\slocks\sare\sheld\swhen\naccessing\sthe\slookaside\smemory\sallocation\sbuffers.\s\sNo\sdefects\swere\sfound.\s(CVS\s6374)
+D 2009-03-23T17:49:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -123,7 +123,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
 F src/main.c 95e13cd23b7a88e33c1acfe233c748fd9dd7e467
-F src/malloc.c 1a52c55bc06e5645543c90bdbeb43d26b2a97314
+F src/malloc.c 1d862da7eb382d4b79b55436b04278fedec288e7
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P db1d4d2f5083adf5438c7f387b115180800e7bd9
-R 7eb80d4e0dc8a8ee68d4260f71752688
-U danielk1977
-Z f6209142c4d9c04d943d837539d0d12b
+P 92ec5975123284aff3a69ee16c397d9e2a844c0b
+R b9d42817e8a95625684d85979bf11516
+U drh
+Z dc2ad38653436885495b13fa9182c804

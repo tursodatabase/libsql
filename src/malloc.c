@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.59 2009/03/23 04:33:33 danielk1977 Exp $
+** $Id: malloc.c,v 1.60 2009/03/23 17:49:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -426,6 +426,7 @@ int sqlite3MallocSize(void *p){
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
+  assert( db==0 || sqlite3_mutex_held(db->mutex) );
   if( p==0 ){
     return 0;
   }else if( isLookaside(db, p) ){
@@ -455,6 +456,7 @@ void sqlite3_free(void *p){
 ** connection.
 */
 void sqlite3DbFree(sqlite3 *db, void *p){
+  assert( db==0 || sqlite3_mutex_held(db->mutex) );
   if( isLookaside(db, p) ){
     LookasideSlot *pBuf = (LookasideSlot*)p;
     pBuf->pNext = db->lookaside.pFree;
@@ -566,6 +568,7 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
 #ifndef SQLITE_OMIT_LOOKASIDE
   if( db ){
     LookasideSlot *pBuf;
+    assert( sqlite3_mutex_held(db->mutex) );
     if( db->mallocFailed ){
       return 0;
     }
@@ -597,6 +600,7 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
 */
 void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
   void *pNew = 0;
+  assert( sqlite3_mutex_held(db->mutex) );
   if( db->mallocFailed==0 ){
     if( p==0 ){
       return sqlite3DbMallocRaw(db, n);
