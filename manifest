@@ -1,5 +1,5 @@
-C Add\sasserts\sto\smake\ssure\sthat\sdatabase\sconnection\slocks\sare\sheld\swhen\naccessing\sthe\slookaside\smemory\sallocation\sbuffers.\s\sNo\sdefects\swere\sfound.\s(CVS\s6374)
-D 2009-03-23T17:49:15
+C Clarify\sthe\smeaning\sof\sa\scomment.\s\sNo\schanges\sto\scode.\s(CVS\s6375)
+D 2009-03-23T21:37:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -206,7 +206,7 @@ F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
 F src/vdbeapi.c 025d83f51f5e0a6e0fb55d603103d24825577967
 F src/vdbeaux.c be958dfe3a476ccb58dbc0d5786d58717f40f4b0
 F src/vdbeblob.c 3408f5e1ab62627300b9c9c3168cff1de65e1658
-F src/vdbemem.c 543a79d722734d2f8b7ad70f08218c30bcc5bbf5
+F src/vdbemem.c 38615b5d4b1b3b5a1221a5623578e5e3864e4888
 F src/vtab.c 18d671f0a45d0159088070bc6b219a3105034c87
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
 F src/where.c 55b13048fd0f82b330511e37766208b96fd764df
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 92ec5975123284aff3a69ee16c397d9e2a844c0b
-R b9d42817e8a95625684d85979bf11516
+P 8a9f3e66069146ad1b1bc2686567882dc87603a9
+R 17883624947124ab6b43fc9ee555bc00
 U drh
-Z dc2ad38653436885495b13fa9182c804
+Z a1267e6bacfc9823586c154e140a6edf
