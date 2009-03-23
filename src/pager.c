@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.571 2009/03/05 04:20:32 shane Exp $
+** @(#) $Id: pager.c,v 1.572 2009/03/23 04:33:33 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -98,12 +98,6 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 #define PAGER_RESERVED    2   /* same as RESERVED_LOCK */
 #define PAGER_EXCLUSIVE   4   /* same as EXCLUSIVE_LOCK */
 #define PAGER_SYNCED      5
-
-/*
-** This macro rounds values up so that if the value is an address it
-** is guaranteed to be an address that is aligned to an 8-byte boundary.
-*/
-#define FORCE_ALIGNMENT(X)   (((X)+7)&~7)
 
 /*
 ** A macro used for invoking the codec if there is one
@@ -3279,7 +3273,7 @@ int sqlite3PagerOpen(
   }
 
   /* Initialize the PCache object. */
-  nExtra = FORCE_ALIGNMENT(nExtra);
+  nExtra = ROUND8(nExtra);
   sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
                     !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
 

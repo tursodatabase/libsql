@@ -19,7 +19,7 @@
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
 **
-** $Id: mem2.c,v 1.44 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: mem2.c,v 1.45 2009/03/23 04:33:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -128,7 +128,7 @@ static struct {
 ** Adjust memory usage statistics
 */
 static void adjustStats(int iSize, int increment){
-  int i = ((iSize+7)&~7)/8;
+  int i = ROUND8(iSize)/8;
   if( i>NCSIZE-1 ){
     i = NCSIZE - 1;
   }
@@ -159,7 +159,7 @@ static struct MemBlockHdr *sqlite3MemsysGetHeader(void *pAllocation){
   p = (struct MemBlockHdr*)pAllocation;
   p--;
   assert( p->iForeGuard==(int)FOREGUARD );
-  nReserve = (p->iSize+7)&~7;
+  nReserve = ROUND8(p->iSize);
   pInt = (int*)pAllocation;
   pU8 = (u8*)pAllocation;
   assert( pInt[nReserve/sizeof(int)]==(int)REARGUARD );
@@ -209,7 +209,7 @@ static void sqlite3MemShutdown(void *NotUsed){
 ** Round up a request size to the next valid allocation size.
 */
 static int sqlite3MemRoundup(int n){
-  return (n+7) & ~7;
+  return ROUND8(n);
 }
 
 /*
@@ -225,7 +225,7 @@ static void *sqlite3MemMalloc(int nByte){
   int nReserve;
   sqlite3_mutex_enter(mem.mutex);
   assert( mem.disallow==0 );
-  nReserve = (nByte+7)&~7;
+  nReserve = ROUND8(nByte);
   totalSize = nReserve + sizeof(*pHdr) + sizeof(int) +
                mem.nBacktrace*sizeof(void*) + mem.nTitle;
   p = malloc(totalSize);
@@ -372,7 +372,7 @@ void sqlite3MemdebugSettitle(const char *zTitle){
   if( n>=sizeof(mem.zTitle) ) n = sizeof(mem.zTitle)-1;
   memcpy(mem.zTitle, zTitle, n);
   mem.zTitle[n] = 0;
-  mem.nTitle = (n+7)&~7;
+  mem.nTitle = ROUND8(n);
   sqlite3_mutex_leave(mem.mutex);
 }
 

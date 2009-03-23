@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.420 2009/03/18 10:36:13 drh Exp $
+** $Id: expr.c,v 1.421 2009/03/23 04:33:32 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -714,7 +714,7 @@ static int dupedExprNodeSize(Expr *p, int flags){
   ){
     nByte += p->span.n;
   }
-  return (nByte+7)&~7;
+  return ROUND8(nByte);
 }
 
 /*

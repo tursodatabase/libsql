@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.444 2009/03/20 14:42:11 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.445 2009/03/23 04:33:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1024,7 +1024,7 @@ static void allocSpace(
   int *pnByte          /* If allocation cannot be made, increment *pnByte */
 ){
   if( (*(void**)pp)==0 ){
-    nByte = (nByte+7)&~7;
+    nByte = ROUND8(nByte);
     if( (pEnd - *ppFrom)>=nByte ){
       *(void**)pp = (void *)*ppFrom;
       *ppFrom += nByte;
