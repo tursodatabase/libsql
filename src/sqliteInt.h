@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.846 2009/03/24 15:08:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.847 2009/03/24 15:31:28 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1458,7 +1458,8 @@ struct AggInfo {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  u16 flags;             /* Various flags.  See below */
+  VVA_ONLY(u8 vvaFlags;) /* Flags used for VV&A only.  EVVA_* below. */
+  u16 flags;             /* Various flags.  EP_* See below */
   Token token;           /* An operand token */
 
   /* If the EP_TokenOnly flag is set in the Expr.flags mask, then no
@@ -1517,6 +1518,15 @@ struct Expr {
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
 #define EP_SpanOnly   0x8000  /* Expr struct is EXPR_SPANONLYSIZE bytes only */
+
+/*
+** The following are the meanings of bits in the Expr.vvaFlags field.
+** This information is only used when SQLite is compiled with
+** SQLITE_DEBUG defined.
+*/
+#ifndef NDEBUG
+#define EVVA_ReadOnlyToken  0x01  /* Expr.token.z is read-only */
+#endif
 
 /*
 ** These macros can be used to test, set, or clear bits in the 

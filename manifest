@@ -1,5 +1,5 @@
-C Changes\sto\sinsure\sthat\slookaside\smemory\sallocations\sare\snever\sused\sto\shold\r\nschema\scontent.\r\nTicket\s#3743.\s(CVS\s6377)
-D 2009-03-24T15:08:10
+C New\sassert()s\sadded\sto\sverify\sthat\sthe\sExpr.token\svalue\sis\sused\scorrectly.\s\sTicket\s#3743.\s(CVS\s6378)
+D 2009-03-24T15:31:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
-F src/expr.c 614a60615fd4bd186459c0c1fa87fdefedb76c26
+F src/expr.c f30a43302c4c9c513dc8013426f26f6f7925d2e5
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c de2eed7d96365210faecda877c5a12cf440bdf42
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -159,7 +159,7 @@ F src/select.c 607e5b2d3be379781e5be3ac0854f5c237152d26
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 0db1e59d89aeacb8fe64a19fd14c13a796060ccb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h ddaadadd35b07e468b0a07a5575c796a71e89dc1
+F src/sqliteInt.h 5ed5b45d9f23f2fa57c957cce76086552bcaa002
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8ca6a665650c9683a202f3ced17b14f7c85624bf
-R 8c93b31b69e1e1ff0ee86ef0261f4c0c
+P ea74d8dc62f5784089aa8ef098e97c505a79b176
+R ab87e9de54efb8f849d3abff807164cc
 U drh
-Z 226c5008143d3b67d9a3ebdf1903227a
+Z f9ee8e93eecc28dfc86631eac2acdccf
