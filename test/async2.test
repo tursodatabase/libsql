@@ -5,7 +5,7 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.9 2007/11/05 17:01:08 danielk1977 Exp $
+# $Id: async2.test,v 1.10 2009/03/24 17:43:57 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -47,7 +47,7 @@ set sql_script {
 db close
 
 foreach err [list ioerr malloc-transient malloc-persistent] {
-  set ::go 1
+  set ::go 10
   for {set n 1} {$::go} {incr n} {
     set ::sqlite_io_error_pending 0
     sqlite3_memdebug_fail -1
@@ -58,6 +58,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
   
     sqlite3async_enable 1
     sqlite3 db test.db
+    sqlite3_db_config_lookaside db 0 0 0
   
     switch -- $err {
       ioerr             { set ::sqlite_io_error_pending $n }
@@ -78,7 +79,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
     sqlite3_memdebug_fail -1
 
     sqlite3 db test.db
-    set c [db eval {SELECT c FROM counter LIMIT 1}]
+    set c [db one {SELECT c FROM counter LIMIT 1}]
     switch -- $c {
       1 {
         do_test async-$err-1.1.$n {
@@ -112,7 +113,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
         } {klmnopqrst and seven}
       }
       FIN {
-        set ::go 0
+        incr ::go -1
       }
     }
   

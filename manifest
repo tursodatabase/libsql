@@ -1,5 +1,5 @@
-C Adjust\sthe\slock.test\sand\slock3.test\sscripts\sso\sthat\sthey\swork\swith\sthe\nasynchronous\sVFS.\s(CVS\s6380)
-D 2009-03-24T16:55:44
+C Get\sthe\sOOM\stester\sin\sasync2.test\sworking\sagain.\s(CVS\s6381)
+D 2009-03-24T17:43:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -220,7 +220,7 @@ F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test ec30ff44dd42ec38853d6a380d0cc9461bde8f6e
-F test/async2.test 8998e089b0fbb3d84cdd51c25a78833486d721af
+F test/async2.test d3f23363553c2c02f15da98ae8bbc43420efd04c
 F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 29b0d6a3fe519c71a92e2436d7c5860f3f0178ef
-R a687033ff2e34e54d678cbf874804a31
+P 40df926b4606b3abe8c797bf17163f996bd03ad5
+R dc5fd31931ec261a95010f75735b4f20
 U drh
-Z bac221ec8f3d86c7195bfa8c938a90ca
+Z fd241091e276e0cd221c93f64b4eaff8
