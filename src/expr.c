@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.421 2009/03/23 04:33:32 danielk1977 Exp $
+** $Id: expr.c,v 1.422 2009/03/24 15:08:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -404,8 +404,22 @@ Expr *sqlite3Expr(
   pNew->iAgg = -1;
   pNew->span.z = (u8*)"";
   if( pToken ){
+    int c;
     assert( pToken->dyn==0 );
-    pNew->span = pNew->token = *pToken;
+    pNew->span = *pToken;
+ 
+    /* The pToken->z value is constant and must not change.  But
+    ** this expression might be passed to sqlite3DequoteExpr() which
+    ** will attempt to modify pNew->token.z.  Hence, if the token
+    ** is quoted, make a copy now so that DequoteExpr() will change
+    ** the copy rather than the original (read-only) text.
+    */
+    if( pToken->n>=2 
+         && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
+      sqlite3TokenCopy(db, &pNew->token, pToken);
+    }else{
+      pNew->token = *pToken;
+    }
   }else if( pLeft ){
     if( pRight ){
       if( pRight->span.dyn==0 && pLeft->span.dyn==0 ){
@@ -511,16 +525,15 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
   assert( pToken );
   pNew = sqlite3DbMallocZero(db, sizeof(Expr) );
   if( pNew==0 ){
-    sqlite3ExprListDelete(db, pList); /* Avoid leaking memory when malloc fails */
+    sqlite3ExprListDelete(db, pList); /* Avoid memory leak when malloc fails */
     return 0;
   }
   pNew->op = TK_FUNCTION;
   pNew->x.pList = pList;
   assert( !ExprHasProperty(pNew, EP_xIsSelect) );
   assert( pToken->dyn==0 );
-  pNew->token = *pToken;
-  pNew->span = pNew->token;
-
+  pNew->span = *pToken;
+  sqlite3TokenCopy(db, &pNew->token, pToken);
   sqlite3ExprSetHeight(pParse, pNew);
   return pNew;
 }
@@ -645,27 +658,10 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
 ** If so, remove the quotation marks.
 */
 void sqlite3DequoteExpr(sqlite3 *db, Expr *p){
-  if( ExprHasAnyProperty(p, EP_Dequoted) ){
-    return;
+  if( !ExprHasAnyProperty(p, EP_Dequoted) ){
+    ExprSetProperty(p, EP_Dequoted);
+    sqlite3Dequote((char*)p->token.z);
   }
-  ExprSetProperty(p, EP_Dequoted);
-
-  /* If p->token.dyn==0 and none of EP_Reduced, EP_TokenOnly, or
-  ** EP_SpanOnly are set, that means that the p->token.z string points
-  ** back to the original SQL statement text.  In that case, we need
-  ** to make a copy before modifying the string, otherwise we would
-  ** corrupt the original SQL statement text.
-  */
-  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_Reduced) );
-  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_TokenOnly) );
-  testcase( p->token.dyn==0 && ExprHasProperty(p, EP_SpanOnly) );
-  if( p->token.dyn==0
-   && !ExprHasAnyProperty(p, EP_Reduced|EP_TokenOnly|EP_SpanOnly) 
-  ){
-    sqlite3TokenCopy(db, &p->token, &p->token);
-  }
-
-  sqlite3Dequote((char*)p->token.z);
 }
 
 /*
@@ -876,7 +872,7 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
 Expr *sqlite3ExprDup(sqlite3 *db, Expr *p, int flags){
   return exprDup(db, p, flags, 0);
 }
-void sqlite3TokenCopy(sqlite3 *db, Token *pTo, Token *pFrom){
+void sqlite3TokenCopy(sqlite3 *db, Token *pTo, const Token *pFrom){
   if( pTo->dyn ) sqlite3DbFree(db, (char*)pTo->z);
   if( pFrom->z ){
     pTo->n = pFrom->n;

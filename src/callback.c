@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.36 2009/03/05 04:20:32 shane Exp $
+** $Id: callback.c,v 1.37 2009/03/24 15:08:10 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -423,6 +423,7 @@ void sqlite3SchemaFree(void *p){
   sqlite3HashInit(&pSchema->tblHash, 0);
   for(pElem=sqliteHashFirst(&temp1); pElem; pElem=sqliteHashNext(pElem)){
     Table *pTab = sqliteHashData(pElem);
+    assert( pTab->dbMem==0 );
     sqlite3DeleteTable(pTab);
   }
   sqlite3HashClear(&temp1);

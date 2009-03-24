@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: mutex1.test,v 1.18 2009/03/20 13:15:31 drh Exp $
+# $Id: mutex1.test,v 1.19 2009/03/24 15:08:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,7 +114,7 @@ ifcapable threadsafe {
     do_test mutex1.2.$mode.2 {
       sqlite3_initialize
       clear_mutex_counters
-      sqlite3 db test.db -nomutex 0
+      sqlite3 db test.db -nomutex 0 -fullmutex 0
       catchsql { CREATE TABLE abc(a, b, c) }
       db eval {
         INSERT INTO abc VALUES(1, 2, 3);

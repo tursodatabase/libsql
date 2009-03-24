@@ -11,7 +11,7 @@
 #
 # Tests for the lookaside memory allocator.
 #
-# $Id: lookaside.test,v 1.8 2008/10/11 17:06:04 drh Exp $
+# $Id: lookaside.test,v 1.9 2009/03/24 15:08:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -43,11 +43,11 @@ do_test lookaside-1.4 {
   db eval {CREATE TABLE t1(w,x,y,z);}
   foreach {x y z} [sqlite3_db_status db SQLITE_DBSTATUS_LOOKASIDE_USED 0] break
   expr {$x==0 && $y<$z && $z==18}
-} {1}
+} {0}
 do_test lookaside-1.5 {
   foreach {x y z} [sqlite3_db_status db SQLITE_DBSTATUS_LOOKASIDE_USED 1] break
   expr {$x==0 && $y<$z && $z==18}
-} {1}
+} {0}
 do_test lookaside-1.6 {
   foreach {x y z} [sqlite3_db_status db SQLITE_DBSTATUS_LOOKASIDE_USED 0] break
   expr {$x==0 && $y==$z && $y<18}

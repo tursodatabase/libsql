@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the ALTER TABLE statement.
 #
-# $Id: alter.test,v 1.31 2009/02/13 03:43:32 drh Exp $
+# $Id: alter.test,v 1.32 2009/03/24 15:08:10 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -677,7 +677,7 @@ do_test alter-9.2 {
   execsql {
     SELECT SQLITE_RENAME_TABLE(0,0);
     SELECT SQLITE_RENAME_TABLE(10,20);
-    SELECT SQLITE_RENAME_TABLE("foo", "foo");
+    SELECT SQLITE_RENAME_TABLE('foo', 'foo');
   }
 } {{} {} {}}
 

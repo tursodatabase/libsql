@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing CHECK constraints
 #
-# $Id: check.test,v 1.11 2007/07/23 19:39:47 drh Exp $
+# $Id: check.test,v 1.12 2009/03/24 15:08:10 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -115,11 +115,12 @@ do_test check-1.17 {
 } {4 11.0}
 
 do_test check-2.1 {
+breakpoint
   execsql {
     CREATE TABLE t2(
       x INTEGER CHECK( typeof(coalesce(x,0))=="integer" ),
-      y REAL CHECK( typeof(coalesce(y,0.1))=="real" ),
-      z TEXT CHECK( typeof(coalesce(z,''))=="text" )
+      y REAL CHECK( typeof(coalesce(y,0.1))=='real' ),
+      z TEXT CHECK( typeof(coalesce(z,''))=='text' )
     );
   }
 } {}
@@ -129,6 +130,8 @@ do_test check-2.2 {
     SELECT * FROM t2;
   }
 } {1 2.2 three}
+db close
+sqlite3 db test.db
 do_test check-2.3 {
   execsql {
     INSERT INTO t2 VALUES(NULL, NULL, NULL);

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.845 2009/03/23 04:33:33 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.846 2009/03/24 15:08:10 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -686,10 +686,17 @@ struct Schema {
 ** lookaside malloc subsystem.  Each available memory allocation in
 ** the lookaside subsystem is stored on a linked list of LookasideSlot
 ** objects.
+**
+** Lookaside allocations are only allowed for objects that are associated
+** with a particular database connection.  Hence, schema information cannot
+** be stored in lookaside because in shared cache mode the schema information
+** is shared by multiple database connections.  Therefore, while parsing
+** schema information, the Lookaside.bEnabled flag is cleared so that
+** lookaside allocations are not used to construct the schema objects.
 */
 struct Lookaside {
   u16 sz;                 /* Size of each buffer in bytes */
-  u8 bEnabled;            /* True if use lookaside.  False to ignore it */
+  u8 bEnabled;            /* False to disable new lookaside allocations */
   u8 bMalloced;           /* True if pStart obtained from sqlite3_malloc() */
   int nOut;               /* Number of buffers currently checked out */
   int mxOut;              /* Highwater mark for nOut */
@@ -1105,7 +1112,7 @@ struct CollSeq {
 ** of a SELECT statement.
 */
 struct Table {
-  sqlite3 *db;         /* Associated database connection.  Might be NULL. */
+  sqlite3 *dbMem;      /* DB connection used for lookaside allocations. */
   char *zName;         /* Name of the table or view */
   int iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   int nCol;            /* Number of columns in this table */
@@ -2466,7 +2473,7 @@ void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
-void sqlite3TokenCopy(sqlite3*,Token*, Token*);
+void sqlite3TokenCopy(sqlite3*,Token*,const Token*);
 ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);

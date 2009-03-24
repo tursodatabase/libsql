@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.153 2009/01/20 16:53:41 danielk1977 Exp $
+** $Id: tokenize.c,v 1.154 2009/03/24 15:08:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -381,14 +381,17 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 ** error message.
 */
 int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
-  int nErr = 0;
-  int i;
-  void *pEngine;
-  int tokenType;
-  int lastTokenParsed = -1;
-  sqlite3 *db = pParse->db;
-  int mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
+  int nErr = 0;                   /* Number of errors encountered */
+  int i;                          /* Loop counter */
+  void *pEngine;                  /* The LEMON-generated LALR(1) parser */
+  int tokenType;                  /* type of the next token */
+  int lastTokenParsed = -1;       /* type of the previous token */
+  int enableLookaside;            /* Saved value of db->lookaside.bEnabled */
+  sqlite3 *db = pParse->db;       /* The database connection */
+  int mxSqlLen;                   /* Max length of an SQL string */
 
+
+  mxSqlLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
   if( db->activeVdbeCnt==0 ){
     db->u1.isInterrupted = 0;
   }
@@ -408,6 +411,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   assert( pParse->nVarExpr==0 );
   assert( pParse->nVarExprAlloc==0 );
   assert( pParse->apVarExpr==0 );
+  enableLookaside = db->lookaside.bEnabled;
+  if( db->lookaside.pStart ) db->lookaside.bEnabled = 1;
   while( !db->mallocFailed && zSql[i]!=0 ){
     assert( i>=0 );
     pParse->sLastToken.z = (u8*)&zSql[i];
@@ -462,6 +467,7 @@ abort_parse:
   );
 #endif /* YYDEBUG */
   sqlite3ParserFree(pEngine, sqlite3_free);
+  db->lookaside.bEnabled = enableLookaside;
   if( db->mallocFailed ){
     pParse->rc = SQLITE_NOMEM;
   }

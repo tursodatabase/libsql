@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.525 2009/03/21 16:19:26 drh Exp $
+** $Id: build.c,v 1.526 2009/03/24 15:08:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -339,7 +339,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 ** Reclaim the memory used by an index
 */
 static void freeIndex(Index *p){
-  sqlite3 *db = p->pTable->db;
+  sqlite3 *db = p->pTable->dbMem;
   sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }
@@ -467,7 +467,7 @@ void sqlite3CommitInternalChanges(sqlite3 *db){
 static void sqliteResetColumnNames(Table *pTable){
   int i;
   Column *pCol;
-  sqlite3 *db = pTable->db;
+  sqlite3 *db = pTable->dbMem;
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
@@ -498,7 +498,7 @@ void sqlite3DeleteTable(Table *pTable){
   sqlite3 *db;
 
   if( pTable==0 ) return;
-  db = pTable->db;
+  db = pTable->dbMem;
 
   /* Do not delete the table until the reference count reaches zero. */
   pTable->nRef--;
@@ -836,7 +836,7 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
-  pTable->db = db;
+  pTable->dbMem = db->lookaside.bEnabled ? db : 0;
   if( pParse->pNewTable ) sqlite3DeleteTable(pParse->pNewTable);
   pParse->pNewTable = pTable;
 
@@ -1855,9 +1855,11 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
+    int enableLookaside = db->lookaside.bEnabled;
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;
+    db->lookaside.bEnabled = 0;
 #ifndef SQLITE_OMIT_AUTHORIZATION
     xAuth = db->xAuth;
     db->xAuth = 0;
@@ -1866,6 +1868,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
 #else
     pSelTab = sqlite3ResultSetOfSelect(pParse, pSel);
 #endif
+    db->lookaside.bEnabled = enableLookaside;
     pParse->nTab = n;
     if( pSelTab ){
       assert( pTable->aCol==0 );

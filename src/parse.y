@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.271 2009/03/22 20:36:19 drh Exp $
+** @(#) $Id: parse.y,v 1.272 2009/03/24 15:08:10 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -133,8 +133,12 @@ cmd ::= ROLLBACK trans_opt TO savepoint_opt nm(X). {
 ///////////////////// The CREATE TABLE statement ////////////////////////////
 //
 cmd ::= create_table create_table_args.
-create_table ::= CREATE temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
+create_table ::= createkw temp(T) TABLE ifnotexists(E) nm(Y) dbnm(Z). {
    sqlite3StartTable(pParse,&Y,&Z,T,0,0,E);
+}
+createkw(A) ::= CREATE(X).  {
+  pParse->db->lookaside.bEnabled = 0;
+  A = X;
 }
 %type ifnotexists {int}
 ifnotexists(A) ::= .              {A = 0;}
@@ -365,7 +369,7 @@ ifexists(A) ::= .            {A = 0;}
 ///////////////////// The CREATE VIEW statement /////////////////////////////
 //
 %ifndef SQLITE_OMIT_VIEW
-cmd ::= CREATE(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) AS select(S). {
+cmd ::= createkw(X) temp(T) VIEW ifnotexists(E) nm(Y) dbnm(Z) AS select(S). {
   sqlite3CreateView(pParse, &X, &Y, &Z, S, T, E);
 }
 cmd ::= DROP VIEW ifexists(E) fullname(X). {
@@ -941,7 +945,7 @@ nexprlist(A) ::= expr(Y).
 
 ///////////////////////////// The CREATE INDEX command ///////////////////////
 //
-cmd ::= CREATE(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
+cmd ::= createkw(S) uniqueflag(U) INDEX ifnotexists(NE) nm(X) dbnm(D)
         ON nm(Y) LP idxlist(Z) RP(E). {
   sqlite3CreateIndex(pParse, &X, &D, 
                      sqlite3SrcListAppend(pParse->db,0,&Y,0), Z, U,
@@ -1024,7 +1028,7 @@ plus_opt ::= .
 
 %ifndef SQLITE_OMIT_TRIGGER
 
-cmd ::= CREATE trigger_decl(A) BEGIN trigger_cmd_list(S) END(Z). {
+cmd ::= createkw trigger_decl(A) BEGIN trigger_cmd_list(S) END(Z). {
   Token all;
   all.z = A.z;
   all.n = (int)(Z.z - A.z) + Z.n;
@@ -1170,6 +1174,7 @@ cmd ::= ALTER TABLE add_column_fullname ADD kwcolumn_opt column(Y). {
   sqlite3AlterFinishAddColumn(pParse, &Y);
 }
 add_column_fullname ::= fullname(X). {
+  pParse->db->lookaside.bEnabled = 0;
   sqlite3AlterBeginAddColumn(pParse, X);
 }
 kwcolumn_opt ::= .
@@ -1180,7 +1185,7 @@ kwcolumn_opt ::= COLUMNKW.
 %ifndef SQLITE_OMIT_VIRTUALTABLE
 cmd ::= create_vtab.                       {sqlite3VtabFinishParse(pParse,0);}
 cmd ::= create_vtab LP vtabarglist RP(X).  {sqlite3VtabFinishParse(pParse,&X);}
-create_vtab ::= CREATE VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z). {
+create_vtab ::= createkw VIRTUAL TABLE nm(X) dbnm(Y) USING nm(Z). {
     sqlite3VtabBeginParse(pParse, &X, &Y, &Z);
 }
 vtabarglist ::= vtabarg.
