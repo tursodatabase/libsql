@@ -1,5 +1,5 @@
-C Get\sthe\sOOM\stester\sin\sasync2.test\sworking\sagain.\s(CVS\s6381)
-D 2009-03-24T17:43:57
+C Change\sOS_UNIX\sto\sSQLITE_OS_UNIX\sin\stest_thread.c.\s\sModify\snotify2.test\sto\nprint\sout\sits\stimings\sin\saddition\sto\sreporting\ssuccess\sor\sfailure.\s(CVS\s6382)
+D 2009-03-24T18:42:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -192,7 +192,7 @@ F src/test_pcache.c 29464896d9c67832e4eef916c0682b98d7283d00
 F src/test_schema.c 4b4bf7bb329326458c491b0e6facd4c8c4c5b479
 F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
-F src/test_thread.c 1c7a895dbc469d87d22c1b36f269a6f799fc47a8
+F src/test_thread.c 7b409dc9f8058e20b6697f97a6382ac75b16da5d
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c fff72a9bc0af326583e5966daecebeb5ed9b9614
 F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
@@ -479,7 +479,7 @@ F test/mutex1.test ebd54720401fafe854799dc86b7bf60b75631935
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notify1.test 9a985a94f34de1b24daf25fd86b6d5033ba532d0
-F test/notify2.test 997b6caed0c4e2f9549a30eb5df240d0df298eba
+F test/notify2.test f189304492fd9596a9465cfdfb7c8664fabb9643
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 40df926b4606b3abe8c797bf17163f996bd03ad5
-R dc5fd31931ec261a95010f75735b4f20
+P f398a2d1b0a731bbb600d0bb70ab79f1334ceda9
+R e985bb02f394f55006cd15c1b29cea14
 U drh
-Z fd241091e276e0cd221c93f64b4eaff8
+Z cd8d35f0858a96c51f531491feb53bc1
