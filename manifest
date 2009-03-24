@@ -1,5 +1,5 @@
-C New\sassert()s\sadded\sto\sverify\sthat\sthe\sExpr.token\svalue\sis\sused\scorrectly.\s\sTicket\s#3743.\s(CVS\s6378)
-D 2009-03-24T15:31:28
+C Include\ssqliteInt.h\sin\stest_async.c\sso\sthat\sthe\sasynchronous\sVFS\stests\nwill\srun\seven\sif\sSQLITE_OS_UNIX\sis\snot\sexplicitly\sdefined.\s(CVS\s6379)
+D 2009-03-24T16:27:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c 75771172f91735f55ebbd2cbfe4b9804bd030206
+F src/test_async.c ae0b7528cdf425ef47f5c2c7c7f9b2fa777e792e
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 5b41518c5499dafe65177b0813b71ac356ee9df1
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ea74d8dc62f5784089aa8ef098e97c505a79b176
-R ab87e9de54efb8f849d3abff807164cc
+P cf3d84ab73b7f519921a984f88bdad81996a3a82
+R 3babc062071622fffbead417268ee594
 U drh
-Z f9ee8e93eecc28dfc86631eac2acdccf
+Z 76fc2a6a943c899e7cc68cdab3af136f

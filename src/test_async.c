@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.49 2009/03/05 04:20:32 shane Exp $
+** $Id: test_async.c,v 1.50 2009/03/24 16:27:09 drh Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -109,7 +109,7 @@
 #define ENABLE_FILE_LOCKING
 
 #ifndef SQLITE_AMALGAMATION
-# include "sqlite3.h"
+# include "sqliteInt.h"
 # include <assert.h>
 # include <string.h>
 #endif
