@@ -1,5 +1,5 @@
-C Include\ssqliteInt.h\sin\stest_async.c\sso\sthat\sthe\sasynchronous\sVFS\stests\nwill\srun\seven\sif\sSQLITE_OS_UNIX\sis\snot\sexplicitly\sdefined.\s(CVS\s6379)
-D 2009-03-24T16:27:09
+C Adjust\sthe\slock.test\sand\slock3.test\sscripts\sso\sthat\sthey\swork\swith\sthe\nasynchronous\sVFS.\s(CVS\s6380)
+D 2009-03-24T16:55:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +219,7 @@ F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
-F test/async.test 0ed384c12d556ce38a4fe21fd41cda7e6dbf55be
+F test/async.test ec30ff44dd42ec38853d6a380d0cc9461bde8f6e
 F test/async2.test 8998e089b0fbb3d84cdd51c25a78833486d721af
 F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
@@ -429,9 +429,9 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test 9c06ddc3a094a78ed7e49d15165b3fc458bcbfc7
+F test/lock.test 18cbb77cd9261554d3f78a4e993951b9d8e88f73
 F test/lock2.test d4f941d1f659e5fc782b4912b1a872d77d4b5470
-F test/lock3.test 8adfbf438b96316267611214d494ebc1311b8cda
+F test/lock3.test cfe91ac74038cd9931164885b8d98fbc70ec43fc
 F test/lock4.test 991b57669a868bbfd39fe0c0df0d493985829105
 F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cf3d84ab73b7f519921a984f88bdad81996a3a82
-R 3babc062071622fffbead417268ee594
+P 29b0d6a3fe519c71a92e2436d7c5860f3f0178ef
+R a687033ff2e34e54d678cbf874804a31
 U drh
-Z 76fc2a6a943c899e7cc68cdab3af136f
+Z bac221ec8f3d86c7195bfa8c938a90ca
