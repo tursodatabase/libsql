@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.112 2009/03/23 17:11:27 danielk1977 Exp $
+** $Id: prepare.c,v 1.113 2009/03/24 04:46:08 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -74,6 +74,21 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** But because db->init.busy is set to 1, no VDBE code is generated
     ** or executed.  All the parser does is build the internal data
     ** structures that describe the table, index, or view.
+    **
+    ** While the CREATE XXX statement is being processed, the lookaside 
+    ** buffer is disabled. One reason for this is that when running in
+    ** shared cache mode, the objects allocated for the in-memory schema
+    ** might be freed from within a call made on a different database
+    ** connection to db (e.g. if the second connection executes a DROP
+    ** TABLE statement). If the objects that make up the Table structure
+    ** are allocated from within db's lookaside buffer, then db->mutex
+    ** would have to be obtained before they could be freed. This would
+    ** open the door to deadlock in a multi-threaded application.
+    **
+    ** Another reason to disable the lookaside buffer is that lookaside
+    ** gives the greatest performance boost when it is used to allocate
+    ** and free small transient objects. The schema objects, which tend
+    ** to have long lifetimes, are better allocated from the heap.
     */
     char *zErr;
     int rc;
