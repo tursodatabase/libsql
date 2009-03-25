@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.155 2009/03/19 18:51:07 danielk1977 Exp $
+** $Id: vdbeapi.c,v 1.156 2009/03/25 15:43:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -503,21 +503,29 @@ static int sqlite3Step(Vdbe *p){
 #endif
 
   db->errCode = rc;
-  /*sqlite3Error(p->db, rc, 0);*/
-  p->rc = sqlite3ApiExit(p->db, p->rc);
-end_of_step:
-  assert( (rc&0xff)==rc );
-  if( p->isPrepareV2 && (rc&0xff)<SQLITE_ROW ){
-    /* This behavior occurs if sqlite3_prepare_v2() was used to build
-    ** the prepared statement.  Return error codes directly */
-    p->db->errCode = p->rc;
-    /* sqlite3Error(p->db, p->rc, 0); */
-    return p->rc;
-  }else{
-    /* This is for legacy sqlite3_prepare() builds and when the code
-    ** is SQLITE_ROW or SQLITE_DONE */
-    return rc;
+  if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){
+    p->rc = SQLITE_NOMEM;
   }
+end_of_step:
+  /* At this point local variable rc holds the value that should be 
+  ** returned if this statement was compiled using the legacy 
+  ** sqlite3_prepare() interface. According to the docs, this can only
+  ** be one of the values in the first assert() below. Variable p->rc 
+  ** contains the value that would be returned if sqlite3_finalize() 
+  ** were called on statement p.
+  */
+  assert( rc==SQLITE_ROW  || rc==SQLITE_DONE   || rc==SQLITE_ERROR 
+       || rc==SQLITE_BUSY || rc==SQLITE_MISUSE
+  );
+  assert( p->rc!=SQLITE_ROW && p->rc!=SQLITE_DONE );
+  if( p->isPrepareV2 && rc!=SQLITE_ROW && rc!=SQLITE_DONE ){
+    /* If this statement was prepared using sqlite3_prepare_v2(), and an
+    ** error has occured, then return the error code in p->rc to the
+    ** caller. Set the error code in the database handle to the same value.
+    */ 
+    rc = db->errCode = p->rc;
+  }
+  return (rc&db->errMask);
 }
 
 /*

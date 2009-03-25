@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.577 2009/03/23 02:34:32 shane Exp $
+** $Id: btree.c,v 1.578 2009/03/25 15:43:09 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -856,7 +856,7 @@ static int defragmentPage(MemPage *pPage){
 **
 ** If the page contains nBytes of free space but does not contain
 ** nBytes of contiguous free space, then this routine automatically
-** calls defragementPage() to consolidate all free space before 
+** calls defragmentPage() to consolidate all free space before 
 ** allocating the new chunk.
 */
 static int allocateSpace(MemPage *pPage, int nByte){
