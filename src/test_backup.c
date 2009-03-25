@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_backup.c,v 1.1 2009/02/03 16:51:25 danielk1977 Exp $
+** $Id: test_backup.c,v 1.2 2009/03/25 16:51:43 drh Exp $
 */
 
 #include "tcl.h"
@@ -145,4 +145,3 @@ int Sqlitetestbackup_Init(Tcl_Interp *interp){
   Tcl_CreateObjCommand(interp, "sqlite3_backup", backupTestInit, 0, 0);
   return TCL_OK;
 }
-

@@ -13,7 +13,7 @@
 ** This file contains the implementation of the sqlite3_unlock_notify()
 ** API method and its associated functionality.
 **
-** $Id: notify.c,v 1.1 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: notify.c,v 1.2 2009/03/25 16:51:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -230,9 +230,9 @@ void sqlite3ConnectionUnlocked(sqlite3 *db){
 
       sqlite3BeginBenignMalloc();
       assert( aArg==aDyn || (aDyn==0 && aArg==aStatic) );
-      assert( nArg<=ArraySize(aStatic) || aArg==aDyn );
-      if( (!aDyn && nArg==ArraySize(aStatic))
-       || (aDyn && nArg==(sqlite3DbMallocSize(db, aDyn)/sizeof(void*)))
+      assert( nArg<=(int)ArraySize(aStatic) || aArg==aDyn );
+      if( (!aDyn && nArg==(int)ArraySize(aStatic))
+       || (aDyn && nArg==(int)(sqlite3DbMallocSize(db, aDyn)/sizeof(void*)))
       ){
         /* The aArg[] array needs to grow. */
         void **pNew = (void **)sqlite3Malloc(nArg*sizeof(void *)*2);
@@ -307,4 +307,3 @@ void sqlite3ConnectionClosed(sqlite3 *db){
   leaveMutex();
 }
 #endif
-

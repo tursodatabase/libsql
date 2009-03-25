@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.423 2009/03/24 15:31:28 drh Exp $
+** $Id: expr.c,v 1.424 2009/03/25 16:51:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -659,7 +659,7 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
 ** The Expr.token field might be a string literal that is quoted.
 ** If so, remove the quotation marks.
 */
-void sqlite3DequoteExpr(sqlite3 *db, Expr *p){
+void sqlite3DequoteExpr(Expr *p){
   if( !ExprHasAnyProperty(p, EP_Dequoted) ){
     ExprSetProperty(p, EP_Dequoted);
     assert( (p->vvaFlags & EVVA_ReadOnlyToken)==0 );
@@ -1995,7 +1995,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_STRING: {
-      sqlite3DequoteExpr(db, pExpr);
+      sqlite3DequoteExpr(pExpr);
       sqlite3VdbeAddOp4(v,OP_String8, 0, target, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       break;
@@ -2497,7 +2497,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
          assert( pExpr->affinity==OE_Rollback ||
                  pExpr->affinity == OE_Abort ||
                  pExpr->affinity == OE_Fail );
-         sqlite3DequoteExpr(db, pExpr);
+         sqlite3DequoteExpr(pExpr);
          sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->affinity, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       } else {
