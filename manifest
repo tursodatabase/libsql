@@ -1,5 +1,5 @@
-C Use\sfdatasync()\sonly\son\slinux,\sunless\s-Dfdatasync=fdatasync\sis\sset\sat\ncompilation\stime.\s(CVS\s6383)
-D 2009-03-25T01:06:02
+C When\sa\sVFS.xOpen\sfails,\smake\ssure\sthe\spMethods\spointer\sis\szeroed\son\sthe\r\nsqlite3_file\sobject\sso\sthat\ssubsequent\sxClose()\soperations\sagainst\sthat\r\nsame\sfile\shandler\sare\sno-ops.\s\sBug\sin\sthe\stest_async.c\smodule\sonly\s-\snot\r\nin\sthe\score\slibrary.\s\sTicket\s#3744.\s(CVS\s6384)
+D 2009-03-25T14:24:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -137,7 +137,7 @@ F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
 F src/mutex_unix.c 2f936339dfef1a4c142db290d575a3509b77315f
 F src/mutex_w32.c f4b6a4a48f1dfff7f0089cba9b5a371691f17b8b
 F src/notify.c 5787adee6f119c7d36fd8937d31d680467e01ca5
-F src/os.c ed93a6b46132a602c4fd7a58142e2981c829c79d
+F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
@@ -173,7 +173,7 @@ F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c ae0b7528cdf425ef47f5c2c7c7f9b2fa777e792e
+F src/test_async.c 65f8d6e4e325291fd2fbb08be0133f20a6beffed
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 5b41518c5499dafe65177b0813b71ac356ee9df1
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 940d72d2bae95ddd1aea9b63424179735f440296
-R b19c5ed41e19ad8042490824f83b5b77
+P cbf2ca4cc41f1f710635b863db6e98074bd5e8bc
+R d7777eac8c1fbcbb9552d8027fab8eac
 U drh
-Z 6e13e4e2fd0eec7485fb0fffc49dff79
+Z 2c5cb94f5158d7c6913d1e9d91b2e660

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.50 2009/03/24 16:27:09 drh Exp $
+** $Id: test_async.c,v 1.51 2009/03/25 14:24:42 drh Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -419,7 +419,7 @@ struct AsyncFileData {
   sqlite3_file *pBaseWrite;  /* Write handle to the underlying Os file */
   AsyncFileLock lock;        /* Lock state for this handle */
   AsyncLock *pLock;          /* AsyncLock object for this file system entry */
-  AsyncWrite close;
+  AsyncWrite closeOp;        /* Preallocated close operation */
 };
 
 /*
@@ -701,7 +701,7 @@ static int asyncClose(sqlite3_file *pFile){
   p->lock.eLock = 0;
   pthread_mutex_unlock(&async.lockMutex);
 
-  addAsyncWrite(&p->close);
+  addAsyncWrite(&p->closeOp);
   return SQLITE_OK;
 }
 
@@ -1097,8 +1097,8 @@ static int asyncOpen(
   pData->pBaseRead = (sqlite3_file*)z;
   z += pVfs->szOsFile;
   pData->pBaseWrite = (sqlite3_file*)z;
-  pData->close.pFileData = pData;
-  pData->close.op = ASYNC_CLOSE;
+  pData->closeOp.pFileData = pData;
+  pData->closeOp.op = ASYNC_CLOSE;
 
   if( zName ){
     z += pVfs->szOsFile;
@@ -1185,6 +1185,9 @@ static int asyncOpen(
       pthread_mutex_unlock(&async.lockMutex);
       sqlite3_free(pData);
     }
+  }
+  if( rc!=SQLITE_OK ){
+    p->pMethod = 0;
   }
   return rc;
 }

@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.125 2008/12/08 18:19:18 drh Exp $
+** $Id: os.c,v 1.126 2009/03/25 14:24:42 drh Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -112,8 +112,11 @@ int sqlite3OsOpen(
   int flags, 
   int *pFlagsOut
 ){
+  int rc;
   DO_OS_MALLOC_TEST;
-  return pVfs->xOpen(pVfs, zPath, pFile, flags, pFlagsOut);
+  rc = pVfs->xOpen(pVfs, zPath, pFile, flags, pFlagsOut);
+  assert( rc==SQLITE_OK || pFile->pMethods==0 );
+  return rc;
 }
 int sqlite3OsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return pVfs->xDelete(pVfs, zPath, dirSync);
