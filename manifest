@@ -1,5 +1,5 @@
-C Ensure\sthat\sthe\stest\svfs\sin\stest_journal.c\szeroes\ssqlite3_file.pMethods\sif\san\sxOpen()\scall\sfails.\sSimilar\sproblem\sto\sthat\sfixed\sby\s#6384.\sThis\swas\sa\sproblem\swith\stest\scode,\snot\sSQLite\sitself.\s(CVS\s6387)
-D 2009-03-26T11:49:11
+C Added\snew\stests\sof\sthe\sscratch\smemory\sallocator\sfor\sincreased\stest\scoverage.\s(CVS\s6388)
+D 2009-03-26T12:20:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -462,7 +462,7 @@ F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 09240c19e95b063e193b95d6e3eb99f528fbc2dd
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test bdc24a38d198679d777ca4efcc089fd3948567a6
+F test/memsubsys1.test 9ce051c7b8311e7bc1cf4a66b519a6dddc639fa5
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -709,7 +709,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8589b0fcc51a32188386e442655fd91f421ca7f8
-R d3bafa860788dd3cbdc932b740db01e6
-U danielk1977
-Z 37170d0fa4349c466fb7ae22908082e4
+P 45ae830d5631afa5d994361f5122c2f0b6fbab4c
+R 8521a21fe65240700eb1d33418df1449
+U drh
+Z 4dc7df9ab0325fa37fcacdb293c3bd9a

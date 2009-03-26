@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.13 2008/10/01 13:55:51 drh Exp $
+# $Id: memsubsys1.test,v 1.14 2009/03/26 12:20:33 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -253,8 +253,54 @@ do_test memsubsys1-7.7 {
   set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
 } 0
 
+# Test 8:  Disable PAGECACHE.  Make available SCRATCH zero.  Verify that
+# the SCRATCH overflow logic works.
+#
 db close
 sqlite3_shutdown
+sqlite3_config_pagecache 0 0
+sqlite3_config_scratch 25000 0
+sqlite3_initialize
+reset_highwater_marks
+do_test memsubsys1-8.1 {
+  set pg_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
+} 0
+do_test memsubsys1-8.2 {
+  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
+} 0
+do_test memsubsys1-8.3 {
+  sqlite3 db :memory:
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(zeroblob(400));
+    INSERT INTO t1 VALUES(zeroblob(400));
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+  }
+  expr {[lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]>0}
+} 1
+db close
+sqlite3_shutdown
+sqlite3_config_memstatus 0
+sqlite3_initialize
+do_test memsubsys1-8.4 {
+  sqlite3 db :memory:
+  db eval {
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(zeroblob(400));
+    INSERT INTO t1 VALUES(zeroblob(400));
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 SELECT * FROM t1;
+    SELECT rowid FROM t1;
+  }
+} {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
+
+
+db close
+sqlite3_shutdown
+sqlite3_config_memstatus 1
 sqlite3_config_pagecache 0 0
 sqlite3_config_scratch 0 0
 sqlite3_config_lookaside 100 500
