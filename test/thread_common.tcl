@@ -9,18 +9,10 @@
 #
 #***********************************************************************
 #
-# $Id: thread_common.tcl,v 1.4 2009/03/17 15:39:31 drh Exp $
+# $Id: thread_common.tcl,v 1.5 2009/03/26 14:48:07 danielk1977 Exp $
 
-set testdir [file dirname $argv0]
-source $testdir/tester.tcl
-
-if {[info commands sqlthread] eq ""} {
-  puts -nonewline "Skipping thread-safety tests - "
-  puts            " not running a threadsafe sqlite/tcl build"
-  puts -nonewline "Both SQLITE_THREADSAFE and TCL_THREADS must be defined when"
-  puts            " building testfixture"
-  finish_test
-  return
+if {[info exists ::thread_procs]} {
+  return 0
 }
 
 # The following script is sourced by every thread spawned using 
@@ -91,4 +83,31 @@ proc thread_spawn {varname args} {
   sqlthread spawn $varname [join $args ;]
 }
 
+# Return true if this build can run the multi-threaded tests.
+#
+proc run_thread_tests {{print_warning 0}} {
+  ifcapable !mutex { 
+    set zProblem "SQLite build is not threadsafe"
+  }
+  if {[info commands sqlthread] eq ""} {
+    set zProblem "SQLite build is not threadsafe"
+  }
+  if {![info exists ::tcl_platform(threaded)]} {
+    set zProblem "Linked against a non-threadsafe Tcl build"
+  }
+  if {[info exists zProblem]} {
+    if {$print_warning} {
+      if {[info exists ::run_thread_tests_failed]} {
+        puts "WARNING: Multi-threaded tests skipped: $zProblem"
+      }
+    } else {
+      puts "Skipping thread tests: $zProblem"
+      set ::run_thread_tests_failed 1
+    }
+    return 0
+  }
+  return 1;
+}
+
 return 0
+

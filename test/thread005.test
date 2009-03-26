@@ -11,18 +11,17 @@
 #
 # Test a race-condition that shows up in shared-cache mode.
 #
-# $Id: thread005.test,v 1.4 2009/03/20 15:16:06 danielk1977 Exp $
+# $Id: thread005.test,v 1.5 2009/03/26 14:48:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
 source $testdir/tester.tcl
-ifcapable !mutex||!shared_cache {
+if {[run_thread_tests]==0} { finish_test ; return }
+ifcapable !shared_cache {
+  finish_test
   return
 }
-source $testdir/thread_common.tcl
-if {[info commands sqlthread] eq ""} {
-  return
-}
+
 db close
 
 # Use shared-cache mode for these tests.

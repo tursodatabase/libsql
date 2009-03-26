@@ -9,18 +9,12 @@
 #
 #***********************************************************************
 #
-# $Id: thread001.test,v 1.9 2009/02/12 17:06:41 drh Exp $
+# $Id: thread001.test,v 1.10 2009/03/26 14:48:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 
 source $testdir/tester.tcl
-ifcapable !mutex {
-  return
-}
-source $testdir/thread_common.tcl
-if {[info commands sqlthread] eq ""} {
-  return
-}
+if {[run_thread_tests]==0} { finish_test ; return }
 
 set ::enable_shared_cache [sqlite3_enable_shared_cache]
 

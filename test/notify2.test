@@ -9,10 +9,11 @@
 #
 #***********************************************************************
 #
-# $Id: notify2.test,v 1.4 2009/03/24 18:42:16 drh Exp $
+# $Id: notify2.test,v 1.5 2009/03/26 14:48:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+if {[run_thread_tests]==0} { finish_test ; return }
 
 # The tests in this file test the sqlite3_blocking_step() function in
 # test_thread.c. sqlite3_blocking_step() is not an SQLite API function,
@@ -39,13 +40,8 @@ source $testdir/tester.tcl
 #   that sqlite3_blocking_step() resulted in higher transaction throughput.
 #
 
-if {[info commands sqlite3_blocking_step] eq ""} {
-  finish_test
-  return
-}
 db close
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
-source $testdir/thread_common.tcl
 
 # Number of threads to run simultaneously.
 #
