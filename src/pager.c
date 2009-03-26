@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.572 2009/03/23 04:33:33 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.573 2009/03/26 17:13:06 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3329,11 +3329,12 @@ int sqlite3PagerOpen(
 ** PAGER_SHARED state. It tests if there is a hot journal present in
 ** the file-system for the given pager. A hot journal is one that 
 ** needs to be played back. According to this function, a hot-journal
-** file exists if the following three criteria are met:
+** file exists if the following criteria are met:
 **
 **   * The journal file exists in the file system, and
 **   * No process holds a RESERVED or greater lock on the database file, and
-**   * The database file itself is greater than 0 bytes in size.
+**   * The database file itself is greater than 0 bytes in size, and
+**   * The first byte of the journal file exists and is not 0x00.
 **
 ** If the current size of the database file is 0 but a journal file
 ** exists, that is probably an old journal left over from a prior
@@ -3341,14 +3342,12 @@ int sqlite3PagerOpen(
 ** just deleted using OsDelete, *pExists is set to 0 and SQLITE_OK
 ** is returned.
 **
-** This routine does not open the journal file to examine its
-** content.  Hence, the journal might contain the name of a master
-** journal file that has been deleted, and hence not be hot.  Or
-** the header of the journal might be zeroed out.  This routine
-** does not discover these cases of a non-hot journal - if the
-** journal file exists and is not empty this routine assumes it
-** is hot.  The pager_playback() routine will discover that the
-** journal file is not really hot and will no-op.
+** This routine does not check if there is a master journal filename
+** at the end of the file. If there is, and that master journal file
+** does not exist, then the journal file is not really hot. In this
+** case this routine will return a false-positive. The pager_playback()
+** routine will discover that the journal file is not really hot and 
+** will not roll it back. 
 **
 ** If a hot-journal file is found to exist, *pExists is set to 1 and 
 ** SQLITE_OK returned. If no hot-journal file is present, *pExists is
@@ -3359,29 +3358,52 @@ int sqlite3PagerOpen(
 static int hasHotJournal(Pager *pPager, int *pExists){
   sqlite3_vfs * const pVfs = pPager->pVfs;
   int rc;                       /* Return code */
-  int exists = 0;               /* True if a journal file is present */
-  int locked = 0;               /* True if some process holds a RESERVED lock */
+  int exists;                   /* True if a journal file is present */
 
   assert( pPager!=0 );
   assert( pPager->useJournal );
   assert( isOpen(pPager->fd) );
+  assert( !isOpen(pPager->jfd) );
 
   *pExists = 0;
   rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
   if( rc==SQLITE_OK && exists ){
+    int locked;                 /* True if some process holds a RESERVED lock */
     rc = sqlite3OsCheckReservedLock(pPager->fd, &locked);
     if( rc==SQLITE_OK && !locked ){
       int nPage;
+
+      /* Check the size of the database file. If it consists of 0 pages,
+      ** then delete the journal file. See the header comment above for 
+      ** the reasoning here.
+      */
       rc = sqlite3PagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
-       if( nPage==0 ){
-          sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+        if( nPage==0 ){
+          rc = sqlite3OsDelete(pVfs, pPager->zJournal, 0);
         }else{
-          *pExists = 1;
+          /* The journal file exists and no other connection has a reserved
+          ** or greater lock on the database file. Now check that there is
+          ** at least one non-zero bytes at the start of the journal file.
+          ** If there is, then we consider this journal to be hot. If not, 
+          ** it can be ignored.
+          */
+          int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
+          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &f);
+          if( rc==SQLITE_OK ){
+            u8 first = 0;
+            rc = sqlite3OsRead(pPager->jfd, (void *)&first, 1, 0);
+            if( rc==SQLITE_IOERR_SHORT_READ ){
+              rc = SQLITE_OK;
+            }
+            sqlite3OsClose(pPager->jfd);
+            *pExists = (first!=0);
+          }
         }
       }
     }
   }
+
   return rc;
 }
 
@@ -3927,7 +3949,7 @@ static int pager_open_journal(Pager *pPager){
       sqlite3MemJournalOpen(pPager->jfd);
     }else{
       const int flags =                   /* VFS flags to open journal file */
-        SQLITE_OPEN_READWRITE|SQLITE_OPEN_EXCLUSIVE|SQLITE_OPEN_CREATE|
+        SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|
         (pPager->tempFile ? 
           (SQLITE_OPEN_DELETEONCLOSE|SQLITE_OPEN_TEMP_JOURNAL):
           (SQLITE_OPEN_MAIN_JOURNAL)
