@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.12 2009/03/05 04:20:32 shane Exp $
+** $Id: test_journal.c,v 1.13 2009/03/26 11:49:11 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -656,6 +656,7 @@ static int jtOpen(
 ){
   int rc;
   jt_file *p = (jt_file *)pFile;
+  pFile->pMethods = 0;
   p->pReal = (sqlite3_file *)&p[1];
   p->pReal->pMethods = 0;
   rc = sqlite3OsOpen(g.pVfs, zName, p->pReal, flags, pOutFlags);
