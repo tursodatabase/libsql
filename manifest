@@ -1,5 +1,5 @@
-C Fix\ssome\scompiler\swarnings\sin\stest\scode.\s(CVS\s6392)
-D 2009-03-27T12:32:55
+C Fix\sanother\scompiler\swarning\sin\sthe\stest\slogic\sof\stclsqlite.c.\s(CVS\s6393)
+D 2009-03-27T12:44:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/sqliteInt.h 7fe33227434a3e54e3056cbe95800bd09a636fbe
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
-F src/tclsqlite.c 37d34e4131845584940d04729a18fc8441a7d35d
+F src/tclsqlite.c d3195e0738c101a155404ecdb1cd9532a2fd34f2
 F src/test1.c fc09299ecf3e7d1235293ba43dcc7ea003240a54
 F src/test2.c 71c22e2974f8094fe0fd1eba8f27872dde9b2a39
 F src/test3.c d3115b301c6ee761b102f315fe24125f3d6c3a4d
@@ -710,7 +710,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6762625d29d5e0053afdad033fe54e2d9121046a
-R b604a9da188edcf7941d8804ba52fd05
+P a43ecc9cb91ea8693e0fcce12c1bb5c5e4baf434
+R e60e82e5515f1b7218767f55150bf743
 U drh
-Z 602f07abcb75475a1190577a6bb558d7
+Z 551dbae88da7e0915e39aab6d2459b60
