@@ -12,7 +12,7 @@
 ** A TCL Interface to SQLite.  Append this file to sqlite3.c and
 ** compile the whole thing to build a TCL-enabled version of SQLite.
 **
-** $Id: tclsqlite.c,v 1.239 2009/03/24 15:08:10 drh Exp $
+** $Id: tclsqlite.c,v 1.240 2009/03/27 12:32:55 drh Exp $
 */
 #include "tcl.h"
 #include <errno.h>
@@ -587,6 +587,7 @@ static void setTestUnlockNotifyVars(Tcl_Interp *interp, int iArg, int nArg){
   #define setTestUnlockNotifyVars(x,y,z)
 #endif
 
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
 static void DbUnlockNotify(void **apArg, int nArg){
   int i;
   for(i=0; i<nArg; i++){
@@ -599,6 +600,7 @@ static void DbUnlockNotify(void **apArg, int nArg){
     pDb->pUnlockNotify = 0;
   }
 }
+#endif
 
 static void DbUpdateHandler(
   void *p, 

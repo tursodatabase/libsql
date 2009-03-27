@@ -14,7 +14,7 @@
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
 **
-** $Id: test_thread.c,v 1.14 2009/03/24 18:42:16 drh Exp $
+** $Id: test_thread.c,v 1.15 2009/03/27 12:32:56 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -55,8 +55,10 @@ struct EvalEvent {
 
 static Tcl_ObjCmdProc sqlthread_proc;
 static Tcl_ObjCmdProc clock_seconds_proc;
+#if defined(SQLITE_OS_UNIX) && defined(SQLITE_ENABLE_UNLOCK_NOTIFY)
 static Tcl_ObjCmdProc blocking_step_proc;
 static Tcl_ObjCmdProc blocking_prepare_v2_proc;
+#endif
 int Sqlitetest1_Init(Tcl_Interp *);
 
 /* Functions from test1.c */
@@ -599,7 +601,7 @@ static int blocking_prepare_v2_proc(
   return TCL_OK;
 }
 
-#endif
+#endif /* SQLITE_OS_UNIX && SQLITE_ENABLE_UNLOCK_NOTIFY */
 /*
 ** End of implementation of [sqlite3_blocking_step].
 ************************************************************************/

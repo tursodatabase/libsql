@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.348 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: test1.c,v 1.349 2009/03/27 12:32:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -4835,12 +4835,14 @@ static int test_pcache_stats(
   return TCL_OK;
 }
 
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
 static void test_unlock_notify_cb(void **aArg, int nArg){
   int ii;
   for(ii=0; ii<nArg; ii++){
     Tcl_EvalEx((Tcl_Interp *)aArg[ii], "unlock_notify", -1, TCL_EVAL_GLOBAL);
   }
 }
+#endif /* SQLITE_ENABLE_UNLOCK_NOTIFY */
 
 /*
 ** tclcmd:  sqlite3_unlock_notify db
