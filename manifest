@@ -1,5 +1,5 @@
-C Check\sthat\sthe\sfirst\sbyte\sof\sa\spotentially\shot\sjournal\sfile\sis\snon-zero\sbefore\sbeginning\shot-journal\srollback.\sFix\sfor\s#3751\sand\s#3745.\s(CVS\s6390)
-D 2009-03-26T17:13:06
+C Fix\san\sincompatibility\sbetween\sthe\stest_async.c\sbackend\sand\schange\s(6390).\s(CVS\s6391)
+D 2009-03-27T09:10:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c 3ff664df7d07b6cf65946161f494c47468ddc318
+F src/test_async.c 3e25752ff42bd14b45ff8de3e6cd69aa385323c4
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 79ac8daa03f0b3d360ff1eb56b23c7df0c14ecd1
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
@@ -633,7 +633,7 @@ F test/tkt3718.test 3ee5e25702f3f5a31340b2766d7a7fac2b5ce99c
 F test/tkt3731.test 8a6e3732f5a8a24eb875a6faf287ef77bb8c0579
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 951cd0f5f571e7f36bf7bfe04be70f90fb16fb00
-F test/trans.test b3f0c696ddf8c3f113fd2edf49318b2bf431c99a
+F test/trans.test 8b79967a7e085289ec64890c6fdf9d089e1b4a5f
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
 F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
@@ -710,7 +710,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a22e7c818b2227a4c80ad84b299d11f365e3b17d
-R 4ee0c36ed6c98bbdc0cb2efb14dfd44e
+P 80241a050296067937d0b0529fdf0c347358f86c
+R f73bd2ee7d954b8f8bc826b395ab6f00
 U danielk1977
-Z 9399bffef7da619c63a0329f4e82af23
+Z 3409c9edf374b9bb740dc4afc4beb7ff

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.52 2009/03/25 16:51:43 drh Exp $
+** $Id: test_async.c,v 1.53 2009/03/27 09:10:12 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -1042,6 +1042,25 @@ static int unlinkAsyncFile(AsyncFileData *pData){
 }
 
 /*
+** The parameter passed to this function is a copy of a 'flags' parameter
+** passed to this modules xOpen() method. This function returns true
+** if the file should be opened asynchronously, or false if it should
+** be opened immediately.
+**
+** If the file is to be opened asynchronously, then asyncOpen() will add
+** an entry to the event queue and the file will not actually be opened
+** until the event is processed. Otherwise, the file is opened directly
+** by the caller.
+*/
+static int doAsynchronousOpen(int flags){
+  return (flags&SQLITE_OPEN_CREATE) && (
+      (flags&SQLITE_OPEN_MAIN_JOURNAL) ||
+      (flags&SQLITE_OPEN_TEMP_JOURNAL) ||
+      (flags&SQLITE_OPEN_DELETEONCLOSE)
+  );
+}
+
+/*
 ** Open a file.
 */
 static int asyncOpen(
@@ -1075,7 +1094,7 @@ static int asyncOpen(
   AsyncFileData *pData;
   AsyncLock *pLock = 0;
   char *z;
-  int isExclusive = (flags&SQLITE_OPEN_EXCLUSIVE);
+  int isAsyncOpen = doAsynchronousOpen(flags);
 
   /* If zName is NULL, then the upper layer is requesting an anonymous file */
   if( zName ){
@@ -1107,10 +1126,14 @@ static int asyncOpen(
     memcpy(pData->zName, zName, nName);
   }
 
-  if( !isExclusive ){
-    rc = pVfs->xOpen(pVfs, zName, pData->pBaseRead, flags, pOutFlags);
-    if( rc==SQLITE_OK && ((*pOutFlags)&SQLITE_OPEN_READWRITE) ){
+  if( !isAsyncOpen ){
+    int flagsout;
+    rc = pVfs->xOpen(pVfs, zName, pData->pBaseRead, flags, &flagsout);
+    if( rc==SQLITE_OK && (flagsout&SQLITE_OPEN_READWRITE) ){
       rc = pVfs->xOpen(pVfs, zName, pData->pBaseWrite, flags, 0);
+    }
+    if( pOutFlags ){
+      *pOutFlags = flagsout;
     }
   }
 
@@ -1175,7 +1198,7 @@ static int asyncOpen(
     pData->pLock = pLock;
   }
 
-  if( rc==SQLITE_OK && isExclusive ){
+  if( rc==SQLITE_OK && isAsyncOpen ){
     rc = addNewAsyncWrite(pData, ASYNC_OPENEXCLUSIVE, (sqlite3_int64)flags,0,0);
     if( rc==SQLITE_OK ){
       if( pOutFlags ) *pOutFlags = flags;
