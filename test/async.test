@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.15 2009/03/24 16:55:44 drh Exp $
+# $Id: async.test,v 1.16 2009/03/28 15:04:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -54,9 +54,7 @@ proc do_test {name args} {
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
   if {[lsearch -exact $INCLUDE $tail]<0} continue
-  set ::ASYNC 1
   source $testfile
-  unset ::ASYNC
 
   # Make sure everything is flushed through. This is because [source]ing 
   # the next test file will delete the database file on disk (using
