@@ -1,5 +1,5 @@
-C Fix\sthread\srelated\sproblems\sin\stest\smodules\stest_async.c\sand\stest_journal.c.\s(CVS\s6399)
-D 2009-03-28T17:21:52
+C The\stest_async.c\smodule\smust\spass\san\sunchanging\sfilename\sto\sthe\sunderlying\sVFS.\s(CVS\s6400)
+D 2009-03-28T18:56:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
-F src/test_async.c fd2344c394ad27e76274aa60b74a1ad5ff27533e
+F src/test_async.c da1402a61a99d9707f9d65df063cb8e7d0df605a
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 79ac8daa03f0b3d360ff1eb56b23c7df0c14ecd1
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
@@ -221,7 +221,7 @@ F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test e7e6c5ef30c67531aad5c961e224bac91b88de16
 F test/async2.test d3f23363553c2c02f15da98ae8bbc43420efd04c
-F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
+F test/async3.test e72255549dde94ef89e9779884001527b44c5389
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
@@ -710,7 +710,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 767a7f7b55456df404a7f8966a0c48318ddac120
-R 4d38ca30ee6ed6fda0e3455931bed136
-U danielk1977
-Z e66cb9677f3d8d7ca66409e784f05095
+P 45df27a22d283871ed1de334fe3b74b0121d57a6
+R b2c300e5a67a0d35085f0d7b6bcaa3a8
+U drh
+Z b72fefd8125b338ab724065aa07e2cdb
