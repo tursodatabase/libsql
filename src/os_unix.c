@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.245 2009/03/25 01:06:02 drh Exp $
+** $Id: os_unix.c,v 1.246 2009/03/28 23:23:03 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -1454,7 +1454,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
       if( IS_LOCK_ERROR(rc) ){
         pFile->lastErrno = tErrno;
       }
-			goto end_unlock;
+      goto end_unlock;
     }
   }
   if( locktype==NO_LOCK ){
@@ -1481,7 +1481,8 @@ static int unixUnlock(sqlite3_file *id, int locktype){
           pFile->lastErrno = tErrno;
         }
         pLock->cnt = 1;
-				goto end_unlock;
+        pLock->locktype = locktype;
+        goto end_unlock;
       }
     }
 
