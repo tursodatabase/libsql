@@ -1,5 +1,5 @@
-C Fix\sreadDbPage()\sso\sthat\sif\san\sSQLITE_IOERR_SHORT_READ\sis\sencountered,\sthe\spage\scontent\sis\szeroed.\sTicket\s#3756.\s(CVS\s6395)
-D 2009-03-28T06:59:41
+C Fix\sa\scouple\sof\stest\sscript\sbugs.\sNo\schanges\sto\sSQLite\scode.\s(CVS\s6396)
+D 2009-03-28T07:03:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -408,7 +408,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test d0dfe567a05d2559b8508d115f1282c25967fee6
+F test/io.test ea9ac797949980c0f44cfa4591d7ca7377421c6a
 F test/ioerr.test 12f9000bb9024b4b1386320e60badd5223e75b16
 F test/ioerr2.test 021bdc16a9803de34a5ab6ddf211815cad1a4c9f
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -480,7 +480,7 @@ F test/mutex1.test ebd54720401fafe854799dc86b7bf60b75631935
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notify1.test 099191b6f450a7cc3208bdf826532572bdd9a204
-F test/notify2.test 7fc4a2ec7dc2d5a04eead01c7e11e6659808cfb9
+F test/notify2.test f28e2f039499a116338b043c068ad47f3ac55b74
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
@@ -710,7 +710,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1c6521e53b846eec2e046b1e9c04c60658b8e0e8
-R da48fdac6a4a2b2b9c15821945f51306
+P 647e3b156e32e37debd60b0079fc5a52bdc9b8c8
+R 59f8434b3153cd9708c0b0c22d7981e9
 U danielk1977
-Z dda6d9cc6d12af5a3d60408416c6d5d6
+Z 8e990619e4d3491c0996afb496a3e021

@@ -9,11 +9,12 @@
 #
 #***********************************************************************
 #
-# $Id: notify2.test,v 1.5 2009/03/26 14:48:07 danielk1977 Exp $
+# $Id: notify2.test,v 1.6 2009/03/28 07:03:42 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
+ifcapable !unlock_notify||!shared_cache { finish_test ; return }
 
 # The tests in this file test the sqlite3_blocking_step() function in
 # test_thread.c. sqlite3_blocking_step() is not an SQLite API function,
