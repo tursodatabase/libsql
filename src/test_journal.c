@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.13 2009/03/26 11:49:11 danielk1977 Exp $
+** $Id: test_journal.c,v 1.14 2009/03/28 17:21:52 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -206,6 +206,17 @@ struct JtGlobal {
 };
 static struct JtGlobal g = {0, 0};
 
+/*
+** Functions to obtain and relinquish a mutex to protect g.pList. The
+** STATIC_PRNG mutex is reused, purely for the sake of convenience.
+*/
+static void enterJtMutex(void){
+  sqlite3_mutex_enter(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PRNG));
+}
+static void leaveJtMutex(void){
+  sqlite3_mutex_leave(sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_PRNG));
+}
+
 extern int sqlite3_io_error_pending;
 static void stop_ioerr_simulation(int *piSave){
   *piSave = sqlite3_io_error_pending;
@@ -236,11 +247,12 @@ static int jtClose(sqlite3_file *pFile){
   jt_file *p = (jt_file *)pFile;
 
   closeTransaction(p);
+  enterJtMutex();
   if( p->zName ){
     for(pp=&g.pList; *pp!=p; pp=&(*pp)->pNext);
     *pp = p->pNext;
   }
-
+  leaveJtMutex();
   return sqlite3OsClose(p->pReal);
 }
 
@@ -256,7 +268,6 @@ static int jtRead(
   jt_file *p = (jt_file *)pFile;
   return sqlite3OsRead(p->pReal, zBuf, iAmt, iOfst);
 }
-
 
 /*
 ** Parameter zJournal is the name of a journal file that is currently 
@@ -274,6 +285,7 @@ static int jtRead(
 **/
 static jt_file *locateDatabaseHandle(const char *zJournal){
   jt_file *pMain = 0;
+  enterJtMutex();
   for(pMain=g.pList; pMain; pMain=pMain->pNext){
     int nName = strlen(zJournal) - strlen("-journal");
     if( (pMain->flags&SQLITE_OPEN_MAIN_DB)
@@ -284,6 +296,7 @@ static jt_file *locateDatabaseHandle(const char *zJournal){
       break;
     }
   }
+  leaveJtMutex();
   return pMain;
 }
 
@@ -669,10 +682,12 @@ static int jtOpen(
     p->pNext = 0;
     p->pWritable = 0;
     p->aCksum = 0;
+    enterJtMutex();
     if( zName ){
       p->pNext = g.pList;
       g.pList = p;
     }
+    leaveJtMutex();
   }
   return rc;
 }

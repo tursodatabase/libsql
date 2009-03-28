@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.54 2009/03/28 15:04:24 drh Exp $
+** $Id: test_async.c,v 1.55 2009/03/28 17:21:52 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -483,7 +483,6 @@ static int async_mutex_lock(pthread_mutex_t *pMutex){
   assert(&(aHolder[2])==&asyncdebug.writerMutexHolder);
 
   assert( pthread_self()!=0 );
-
   for(iIdx=0; iIdx<3; iIdx++){
     if( pMutex==&aMutex[iIdx] ) break;
 
@@ -610,7 +609,9 @@ static void assert_mutex_is_held(pthread_mutex_t *pMutex){
 */
 static void addAsyncWrite(AsyncWrite *pWrite){
   /* We must hold the queue mutex in order to modify the queue pointers */
-  pthread_mutex_lock(&async.queueMutex);
+  if( pWrite->op!=ASYNC_UNLOCK ){
+    pthread_mutex_lock(&async.queueMutex);
+  }
 
   /* Add the record to the end of the write-op queue */
   assert( !pWrite->pNext );
@@ -629,7 +630,9 @@ static void addAsyncWrite(AsyncWrite *pWrite){
   }
 
   /* Drop the queue mutex */
-  pthread_mutex_unlock(&async.queueMutex);
+  if( pWrite->op!=ASYNC_UNLOCK ){
+    pthread_mutex_unlock(&async.queueMutex);
+  }
 
   /* The writer thread might have been idle because there was nothing
   ** on the write-op queue for it to do.  So wake it up. */
@@ -956,10 +959,12 @@ static int asyncUnlock(sqlite3_file *pFile, int eLock){
   AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   if( p->zName ){
     AsyncFileLock *pLock = &p->lock;
+    pthread_mutex_lock(&async.queueMutex);
     pthread_mutex_lock(&async.lockMutex);
     pLock->eLock = MIN(pLock->eLock, eLock);
-    pthread_mutex_unlock(&async.lockMutex);
     rc = addNewAsyncWrite(p, ASYNC_UNLOCK, 0, eLock, 0);
+    pthread_mutex_unlock(&async.lockMutex);
+    pthread_mutex_unlock(&async.queueMutex);
   }
   return rc;
 }
@@ -1526,15 +1531,54 @@ static void *asyncWriterThread(void *pIsStarted){
       }
 
       case ASYNC_UNLOCK: {
+        AsyncWrite *pIter;
         AsyncFileData *pData = p->pFileData;
         int eLock = p->nByte;
-        pthread_mutex_lock(&async.lockMutex);
-        pData->lock.eAsyncLock = MIN(
-            pData->lock.eAsyncLock, MAX(pData->lock.eLock, eLock)
-        );
-        assert(pData->lock.eAsyncLock>=pData->lock.eLock);
-        rc = getFileLock(pData->pLock);
-        pthread_mutex_unlock(&async.lockMutex);
+
+        /* When a file is locked by SQLite using the async backend, it is 
+        ** locked within the 'real' file-system synchronously. When it is
+        ** unlocked, an ASYNC_UNLOCK event is added to the write-queue to
+        ** unlock the file asynchronously. The design of the async backend
+        ** requires that the 'real' file-system file be locked from the
+        ** time that SQLite first locks it (and probably reads from it)
+        ** until all asynchronous write events that were scheduled before
+        ** SQLite unlocked the file have been processed.
+        **
+        ** This is more complex if SQLite locks and unlocks the file multiple
+        ** times in quick succession. For example, if SQLite does: 
+        ** 
+        **   lock, write, unlock, lock, write, unlock
+        **
+        ** Each "lock" operation locks the file immediately. Each "write" 
+        ** and "unlock" operation adds an event to the event queue. If the
+        ** second "lock" operation is performed before the first "unlock"
+        ** operation has been processed asynchronously, then the first
+        ** "unlock" cannot be safely processed as is, since this would mean
+        ** the file was unlocked when the second "write" operation is
+        ** processed. To work around this, when processing an ASYNC_UNLOCK
+        ** operation, SQLite:
+        **
+        **   1) Unlocks the file to the minimum of the argument passed to
+        **      the xUnlock() call and the current lock from SQLite's point
+        **      of view, and
+        **
+        **   2) Only unlocks the file at all if this event is the last
+        **      ASYNC_UNLOCK event on this file in the write-queue.
+        */ 
+        assert( holdingMutex==1 );
+        assert( async.pQueueFirst==p );
+        for(pIter=async.pQueueFirst->pNext; pIter; pIter=pIter->pNext){
+          if( pIter->pFileData==pData && pIter->op==ASYNC_UNLOCK ) break;
+        }
+        if( !pIter ){
+          pthread_mutex_lock(&async.lockMutex);
+          pData->lock.eAsyncLock = MIN(
+              pData->lock.eAsyncLock, MAX(pData->lock.eLock, eLock)
+          );
+          assert(pData->lock.eAsyncLock>=pData->lock.eLock);
+          rc = getFileLock(pData->pLock);
+          pthread_mutex_unlock(&async.lockMutex);
+        }
         break;
       }
 
