@@ -1,5 +1,5 @@
-C In\sthe\sunix-backend,\swhen\ssimulating\san\sI/O\serror\son\san\sunlock\soperation,\nstill\smark\sthe\sconnection\sas\sunlocked\sto\savoid\sa\sfuture\sassert().\s(CVS\s6401)
-D 2009-03-28T23:23:03
+C Previous\scommit\s((6401))\sdid\snot\squite\sfix\sthe\sproblem.\s\sThis\sshould\swork\nbetter.\s(CVS\s6402)
+D 2009-03-28T23:47:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 344fb50f9a4b28bd484a3e3fa99eb153a604754a
+F src/os_unix.c b62e660f82f4aa37d68ff4ffb11673ee4c75e1c9
 F src/os_win.c 40636702058ed4dcd35d68151bfab56d4997cdc1
 F src/pager.c 7a2b4b118708de09e580de66d46e51c1b655f76a
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
@@ -710,7 +710,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d1eeee21677a3dffdb4ee1182322007bf24ef03a
-R 8eaf718d3cdf3ef51537232a8fdcbe0f
+P fb35cff855e17771caee2a992e7b2b4105b94862
+R 6c5a32ed1dbda923c028324f6e381112
 U drh
-Z 0e4c9bc244abba3ef5692d84d4fc0bf2
+Z f8f9e15c31b81a3e0355740fc1bcee00
