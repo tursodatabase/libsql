@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.138 2009/03/23 21:37:04 drh Exp $
+** $Id: vdbemem.c,v 1.139 2009/03/29 15:12:10 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -321,6 +321,10 @@ static i64 doubleToInt64(double r){
   if( r<(double)minInt ){
     return minInt;
   }else if( r>(double)maxInt ){
+    /* minInt is correct here - not maxInt.  It turns out that assigning
+    ** a very large positive number to an integer results in a very large
+    ** negative integer.  This makes no sense, but it is what x86 hardware
+    ** does so for compatibility we will do the same in software. */
     return minInt;
   }else{
     return (i64)r;

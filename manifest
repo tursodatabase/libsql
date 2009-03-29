@@ -1,5 +1,5 @@
-C Turn\soff\sthe\sdebugging\smacros\sin\swhere.c\s-\sleft\son\sby\smistake\sin\sthe\nprevious\scheck-in.\s(CVS\s6404)
-D 2009-03-29T00:15:54
+C Add\sa\scomment\sto\sthe\sdoubleToInt64()\sroutine\sthat\sexplains\swhy\sreturning\nminInt\sis\sin\sfact\scorrect\swhen\sit\sseems\slike\smaxInt\sshould\sbe\sreturned.\s(CVS\s6405)
+D 2009-03-29T15:12:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -206,7 +206,7 @@ F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
 F src/vdbeapi.c 950986b0f765b5b91aab1acb2b405d9450b749d1
 F src/vdbeaux.c 521187e184f642b3978c0ec00a0e165a45518ea6
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
-F src/vdbemem.c 38615b5d4b1b3b5a1221a5623578e5e3864e4888
+F src/vdbemem.c 53ab1c07800340d2ae100cb99537775a25b2efff
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
 F src/where.c 5a421d7265c79dc21c010e3218fd3abd448ec297
@@ -711,7 +711,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0c438e813c411e8f9e92d6c7405fccb7a36e110a
-R 3dffa6b92b193d1bfe88a15490bd2da5
+P b601a57582051184baa37b807b1e18db93313e13
+R b24c431aeaa41c90ffe92c8a76f50df3
 U drh
-Z b97ea69454df145d98480d67357072fb
+Z a18eb87f581c8e08f864572471035b43
