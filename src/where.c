@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.377 2009/03/25 16:51:43 drh Exp $
+** $Id: where.c,v 1.378 2009/03/29 00:13:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -26,7 +26,7 @@
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
 int sqlite3WhereTrace = 0;
 #endif
-#if 0
+#if 1
 # define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
 #else
 # define WHERETRACE(X)
@@ -1926,12 +1926,18 @@ static void bestIndex(
     pProbe = pSrc->pIndex;
   }
   for(; pProbe; pProbe=(pSrc->pIndex ? 0 : pProbe->pNext)){
-    double inMultiplier = 1;
+    double inMultiplier = 1;  /* Number of equality look-ups needed */
+    int inMultIsEst = 0;      /* True if inMultiplier is an estimate */
 
     WHERETRACE(("... index %s:\n", pProbe->zName));
 
     /* Count the number of columns in the index that are satisfied
-    ** by x=EXPR constraints or x IN (...) constraints.
+    ** by x=EXPR constraints or x IN (...) constraints.  For a term
+    ** of the form x=EXPR we only have to do a single binary search.
+    ** But for x IN (...) we have to do a number of binary searched
+    ** equal to the number of entries on the RHS of the IN operator.
+    ** The inMultipler variable with try to estimate the number of
+    ** binary searches needed.
     */
     wsFlags = 0;
     for(i=0; i<pProbe->nColumn; i++){
@@ -1944,21 +1950,31 @@ static void bestIndex(
         wsFlags |= WHERE_COLUMN_IN;
         if( ExprHasProperty(pExpr, EP_xIsSelect) ){
           inMultiplier *= 25;
+          inMultIsEst = 1;
         }else if( pExpr->x.pList ){
           inMultiplier *= pExpr->x.pList->nExpr + 1;
         }
       }
     }
     nRow = pProbe->aiRowEst[i] * inMultiplier;
-    cost = nRow * estLog(inMultiplier);
+    /* If inMultiplier is an estimate and that estimate results in an
+    ** nRow it that is more than half number of rows in the table,
+    ** then reduce inMultipler */
+    if( inMultIsEst && nRow*2 > pProbe->aiRowEst[0] ){
+      nRow = pProbe->aiRowEst[0]/2;
+      inMultiplier = nRow/pProbe->aiRowEst[i];
+    }
+    cost = nRow + inMultiplier*estLog(pProbe->aiRowEst[0]);
     nEq = i;
     if( pProbe->onError!=OE_None && (wsFlags & WHERE_COLUMN_IN)==0
          && nEq==pProbe->nColumn ){
       wsFlags |= WHERE_UNIQUE;
     }
-    WHERETRACE(("...... nEq=%d inMult=%.9g cost=%.9g\n",nEq,inMultiplier,cost));
+    WHERETRACE(("...... nEq=%d inMult=%.9g nRow=%.9g cost=%.9g\n",
+                nEq, inMultiplier, nRow, cost));
 
-    /* Look for range constraints
+    /* Look for range constraints.  Assume that each range constraint
+    ** makes the search space 1/3rd smaller.
     */
     if( nEq<pProbe->nColumn ){
       int j = pProbe->aiColumn[nEq];
@@ -1975,7 +1991,8 @@ static void bestIndex(
           cost /= 3;
           nRow /= 3;
         }
-        WHERETRACE(("...... range reduces cost to %.9g\n", cost));
+        WHERETRACE(("...... range reduces nRow to %.9g and cost to %.9g\n",
+                    nRow, cost));
       }
     }
 
