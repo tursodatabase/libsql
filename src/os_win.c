@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.150 2009/03/05 05:54:55 shane Exp $
+** $Id: os_win.c,v 1.151 2009/03/30 12:42:45 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1764,7 +1764,18 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
   /* FILETIME structure is a 64-bit value representing the number of 
      100-nanosecond intervals since January 1, 1601 (= JD 2305813.5). 
   */
-  sqlite3_int64 timeW, timeF;
+  sqlite3_int64 timeW;   /* Whole days */
+  sqlite3_int64 timeF;   /* Fractional Days */
+
+  /* Number of 100-nanosecond intervals in a single day */
+  static const sqlite3_int64 ntuPerDay = 
+      10000000*(sqlite3_int64)86400;
+
+  /* Number of 100-nanosecond intervals in half of a day */
+  static const sqlite3_int64 ntuPerHalfDay = 
+      10000000*(sqlite3_int64)43200;
+
+
 #if SQLITE_OS_WINCE
   SYSTEMTIME time;
   GetSystemTime(&time);
@@ -1776,25 +1787,14 @@ int winCurrentTime(sqlite3_vfs *pVfs, double *prNow){
   GetSystemTimeAsFileTime( &ft );
 #endif
   UNUSED_PARAMETER(pVfs);
-#if defined(_MSC_VER)
   timeW = (((sqlite3_int64)ft.dwHighDateTime)*4294967296) + ft.dwLowDateTime;
-  timeF = timeW % 864000000000;           /* fractional days (100-nanoseconds) */
-  timeW = timeW / 864000000000;           /* whole days */
-  timeW = timeW + 2305813;                /* add whole days (from 2305813.5) */
-  timeF = timeF + 432000000000;           /* add half a day (from 2305813.5) */
-  timeW = timeW + (timeF / 864000000000); /* add whole day if half day made one */
-  timeF = timeF % 864000000000;           /* compute new fractional days */
-  *prNow = (double)timeW + ((double)timeF / (double)864000000000);
-#else
-  timeW = (((sqlite3_int64)ft.dwHighDateTime)*4294967296LL) + ft.dwLowDateTime;
-  timeF = timeW % 864000000000LL;           /* fractional days (100-nanoseconds) */
-  timeW = timeW / 864000000000LL;           /* whole days */
-  timeW = timeW + 2305813;                  /* add whole days (from 2305813.5) */
-  timeF = timeF + 432000000000LL;           /* add half a day (from 2305813.5) */
-  timeW = timeW + (timeF / 864000000000LL); /* add whole day if half day made one */
-  timeF = timeF % 864000000000LL;           /* compute new fractional days */
-  *prNow = (double)timeW + ((double)timeF / (double)864000000000LL);
-#endif
+  timeF = timeW % ntuPerDay;          /* fractional days (100-nanoseconds) */
+  timeW = timeW / ntuPerDay;          /* whole days */
+  timeW = timeW + 2305813;            /* add whole days (from 2305813.5) */
+  timeF = timeF + ntuPerHalfDay;      /* add half a day (from 2305813.5) */
+  timeW = timeW + (timeF/ntuPerDay);  /* add whole day if half day made one */
+  timeF = timeF % ntuPerDay;          /* compute new fractional days */
+  *prNow = (double)timeW + ((double)timeF / (double)ntuPerDay);
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
     *prNow = ((double)sqlite3_current_time + (double)43200) / (double)86400 + (double)2440587;
