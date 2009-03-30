@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.581 2009/03/30 17:19:48 drh Exp $
+** $Id: btree.c,v 1.582 2009/03/30 18:50:05 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2480,6 +2480,18 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
   if( nFin==0 ){
     iLastPg--;
     while( iLastPg==PENDING_BYTE_PAGE(pBt)||PTRMAP_ISPAGE(pBt, iLastPg) ){
+      if( PTRMAP_ISPAGE(pBt, iLastPg) ){
+        MemPage *pPg;
+        int rc = sqlite3BtreeGetPage(pBt, iLastPg, &pPg, 0);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        rc = sqlite3PagerWrite(pPg->pDbPage);
+        releasePage(pPg);
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+      }
       iLastPg--;
     }
     sqlite3PagerTruncateImage(pBt->pPager, iLastPg);
