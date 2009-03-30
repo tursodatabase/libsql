@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.247 2009/03/28 23:47:11 drh Exp $
+** $Id: os_unix.c,v 1.248 2009/03/30 07:39:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -1459,6 +1459,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
   }
   if( locktype==NO_LOCK ){
     struct unixOpenCnt *pOpen;
+    int rc2 = SQLITE_OK;
 
     /* Decrement the shared lock counter.  Release the lock using an
     ** OS call only when all threads in this same process have released
@@ -1480,10 +1481,8 @@ static int unixUnlock(sqlite3_file *id, int locktype){
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
         }
-        pLock->cnt = 1;
         pLock->locktype = NO_LOCK;
         pFile->locktype = NO_LOCK;
-        goto end_unlock;
       }
     }
 
@@ -1491,30 +1490,31 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     ** count reaches zero, close any other file descriptors whose close
     ** was deferred because of outstanding locks.
     */
-    if( rc==SQLITE_OK ){
-      pOpen = pFile->pOpen;
-      pOpen->nLock--;
-      assert( pOpen->nLock>=0 );
-      if( pOpen->nLock==0 && pOpen->nPending>0 ){
-        int i;
-        for(i=0; i<pOpen->nPending; i++){
-          /* close pending fds, but if closing fails don't free the array
-          ** assign -1 to the successfully closed descriptors and record the
-          ** error.  The next attempt to unlock will try again. */
-          if( pOpen->aPending[i] < 0 ) continue;
-          if( close(pOpen->aPending[i]) ){
-            pFile->lastErrno = errno;
-            rc = SQLITE_IOERR_CLOSE;
-          }else{
-            pOpen->aPending[i] = -1;
-          }
-        }
-        if( rc==SQLITE_OK ){
-          sqlite3_free(pOpen->aPending);
-          pOpen->nPending = 0;
-          pOpen->aPending = 0;
+    pOpen = pFile->pOpen;
+    pOpen->nLock--;
+    assert( pOpen->nLock>=0 );
+    if( pOpen->nLock==0 && pOpen->nPending>0 ){
+      int i;
+      for(i=0; i<pOpen->nPending; i++){
+        /* close pending fds, but if closing fails don't free the array
+        ** assign -1 to the successfully closed descriptors and record the
+        ** error.  The next attempt to unlock will try again. */
+        if( pOpen->aPending[i] < 0 ) continue;
+        if( close(pOpen->aPending[i]) ){
+          pFile->lastErrno = errno;
+          rc2 = SQLITE_IOERR_CLOSE;
+        }else{
+          pOpen->aPending[i] = -1;
         }
       }
+      if( rc2==SQLITE_OK ){
+        sqlite3_free(pOpen->aPending);
+        pOpen->nPending = 0;
+        pOpen->aPending = 0;
+      }
+    }
+    if( rc==SQLITE_OK ){
+      rc = rc2;
     }
   }
 	
