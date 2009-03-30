@@ -1,5 +1,5 @@
-C Avoid\sall\suse\sof\sthe\s"LL"\ssuffix\sfor\slong-long\sinteger\sliterals.\nTicket\s#3759.\s(CVS\s6408)
-D 2009-03-30T12:42:45
+C Avoid\scalls\sto\snewer\sTCL\sinterfaces\sin\sthe\stest\slogic.\s\sThis\shelps\sthe\nTCL\stest\sharness\scompile\swithout\swarnings\sand\slink\swhen\susing\solder\sversions\nof\sthe\sTCL\slibrary.\s(CVS\s6409)
+D 2009-03-30T12:56:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -175,7 +175,7 @@ F src/test8.c 3637439424d0d21ff2dcf9b015c30fcc1e7bcb24
 F src/test9.c 904ebe0ed1472d6bad17a81e2ecbfc20017dc237
 F src/test_async.c da1402a61a99d9707f9d65df063cb8e7d0df605a
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
-F src/test_backup.c 79ac8daa03f0b3d360ff1eb56b23c7df0c14ecd1
+F src/test_backup.c 1384a18985a5a2d275c2662e48473bf1542ebd08
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
 F src/test_config.c a05378089b6773ba36b85727dedf9ec0a16424ce
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
@@ -711,7 +711,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ab7c718dec56859c51bfb0b1c1d70a7c84feffd1
-R 2e61a49062eb7ec1ad9d521cf4e6d0e2
+P 7ef36935424013a1b211906620954a97ffe08de7
+R f703e8f75622421dc3ccfa13f62a6d08
 U drh
-Z d713a25fda34f520ce2e7bb6f817ef52
+Z c4a4bafdb37c9cdde7ef439605929a91
