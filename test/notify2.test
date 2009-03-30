@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: notify2.test,v 1.6 2009/03/28 07:03:42 danielk1977 Exp $
+# $Id: notify2.test,v 1.7 2009/03/30 11:59:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -230,6 +230,9 @@ foreach {iTest xStep xPrepare} {
 # chance, step() will be faster on a single core, in which case the
 # following test will fail.
 #
+puts "The following test seeks to demonstrate that the sqlite3_unlock_notify()"
+puts "interface helps multi-core systems to run faster.  This test sometimes"
+puts "fails on single-core machines."
 puts [array get anWrite]
 do_test notify2-3 {
   expr {$anWrite(sqlite3_blocking_step) > $anWrite(sqlite3_step)}

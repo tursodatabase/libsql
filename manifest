@@ -1,5 +1,5 @@
-C Another\schange\srelated\sto\s(6401)\sand\s(6402):\sWhen\san\sattempt\sto\sunlock\sa\sfile\sfails\sin\sos_unix.c,\sclose\sall\sfiles\sheld\sopen\swaiting\sfor\sthe\sunlock\sevent\sanyway.\n\sThis\sprevents\sa\sfile-descriptor\sleak\swhen\stesting\sIO\serrors.\s(CVS\s6406)
-D 2009-03-30T07:39:35
+C Display\sa\swarning\sthat\sthe\snotify2-3\stest\ssometimes\sfails\son\ssingle-core\nmachines.\s(CVS\s6407)
+D 2009-03-30T11:59:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -480,7 +480,7 @@ F test/mutex1.test ebd54720401fafe854799dc86b7bf60b75631935
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
 F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
 F test/notify1.test 099191b6f450a7cc3208bdf826532572bdd9a204
-F test/notify2.test f28e2f039499a116338b043c068ad47f3ac55b74
+F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
@@ -711,7 +711,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7f3be3608542bbc6ac7916e5c3a5436e5f0a552e
-R a9bdb3adde6598714edefb4405572e3f
-U danielk1977
-Z d546563cba82beaa0b71a6d7a5a8a700
+P 50fbcdea045f7d4266d9afa721616c720564aa93
+R bcce255946acb766df25717e23479ac7
+U drh
+Z fdfb821831a77fcb2483bd1613327cdd
