@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.579 2009/03/28 10:54:23 danielk1977 Exp $
+** $Id: btree.c,v 1.580 2009/03/30 13:53:43 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7107,7 +7107,9 @@ static int checkTreePage(
     sz = info.nData;
     if( !pPage->intKey ) sz += (int)info.nKey;
     assert( sz==info.nPayload );
-    if( sz>info.nLocal ){
+    if( (sz>info.nLocal) 
+     && (&pCell[info.iOverflow]<=&pPage->aData[pBt->usableSize])
+    ){
       int nPage = (sz - info.nLocal + usableSize - 5)/(usableSize - 4);
       Pgno pgnoOvfl = get4byte(&pCell[info.iOverflow]);
 #ifndef SQLITE_OMIT_AUTOVACUUM

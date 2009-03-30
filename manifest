@@ -1,5 +1,5 @@
-C Make\ssure\srecursive\scalls\sto\swinOpen()\spreserve\sthe\spVfs\spointer.\nFault\sfound\swhile\stesting\sa\smingw\sbuild\sin\sVMWare.\s(CVS\s6410)
-D 2009-03-30T13:04:18
+C Modify\sintegrity-check\sto\sprevent\sa\sbuffer\soverread\swhen\sdealing\swith\sa\scorrupted\sdatabase.\s(CVS\s6411)
+D 2009-03-30T13:53:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c 3aef6704823573386039c608642c9aa78a37bb4e
+F src/btree.c 5f99af1adb683c4bea6f84e32b7946f3df748bda
 F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c be2bdaf2a3f6b24ef08dc14b9fd33aa84c689908
@@ -711,7 +711,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1ad176375746d680225d7ecddca54bc281b1556d
-R 58fd324f9c74a646af859265a6406860
-U drh
-Z 9cb7d0847214ae5af48c579246effaeb
+P 18b44f0df3d75689fb5cee20120eb3c6ae5882b3
+R 19a418b68e502c278b55debcd479fd8e
+U danielk1977
+Z 32feefd9ba4cee6cc7bd15aa8b32502a
