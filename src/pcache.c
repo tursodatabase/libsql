@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.43 2009/01/23 16:45:01 danielk1977 Exp $
+** @(#) $Id: pcache.c,v 1.44 2009/03/31 01:32:18 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -336,11 +336,9 @@ void sqlite3PcacheDrop(PgHdr *p){
 ** make it so.
 */
 void sqlite3PcacheMakeDirty(PgHdr *p){
-  PCache *pCache;
   p->flags &= ~PGHDR_DONT_WRITE;
   assert( p->nRef>0 );
   if( 0==(p->flags & PGHDR_DIRTY) ){
-    pCache = p->pCache;
     p->flags |= PGHDR_DIRTY;
     pcacheAddToDirtyList( p);
   }
