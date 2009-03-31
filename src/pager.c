@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.575 2009/03/28 10:54:23 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.576 2009/03/31 02:54:40 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1499,6 +1499,7 @@ static int pager_playback_one_page(
   ** Do not attempt to write if database file has never been opened.
   */
   pPg = pager_lookup(pPager, pgno);
+  assert( pPg || !MEMDB );
   PAGERTRACE(("PLAYBACK %d page %d hash(%08x) %s\n",
                PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, aData),
                (isMainJrnl?"main-journal":"sub-journal")
@@ -5016,6 +5017,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   PgHdr *pPgOld;               /* The page being overwritten. */
   Pgno needSyncPgno = 0;       /* Old value of pPg->pgno, if sync is required */
   int rc;                      /* Return code */
+  Pgno origPgno;               /* The original page number */
 
   assert( pPg->nRef>0 );
 
@@ -5074,6 +5076,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
   }
 
+  origPgno = pPg->pgno;
   sqlite3PcacheMove(pPg, pgno);
   if( pPgOld ){
     sqlite3PcacheDrop(pPgOld);
@@ -5114,6 +5117,19 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     pPgHdr->flags |= PGHDR_NEED_SYNC;
     sqlite3PcacheMakeDirty(pPgHdr);
     sqlite3PagerUnref(pPgHdr);
+  }
+
+  /*
+  ** For an in-memory database, make sure the original page continues
+  ** to exist, in case the transaction needs to roll back.  We allocate
+  ** the page now, instead of at rollback, because we can better deal
+  ** with an out-of-memory error now.  Ticket #3761.
+  */
+  if( MEMDB ){
+    DbPage *pNew;
+    rc = sqlite3PagerAcquire(pPager, origPgno, &pNew, 1);
+    if( rc!=SQLITE_OK ) return rc;
+    sqlite3PagerUnref(pNew);
   }
 
   return SQLITE_OK;
