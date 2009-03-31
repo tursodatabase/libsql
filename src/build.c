@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.526 2009/03/24 15:08:10 drh Exp $
+** $Id: build.c,v 1.527 2009/03/31 03:41:57 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -1855,7 +1855,7 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   assert( pTable->pSelect );
   pSel = sqlite3SelectDup(db, pTable->pSelect, 0);
   if( pSel ){
-    int enableLookaside = db->lookaside.bEnabled;
+    u8 enableLookaside = db->lookaside.bEnabled;
     n = pParse->nTab;
     sqlite3SrcListAssignCursors(pParse, pSel->pSrc);
     pTable->nCol = -1;

@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.70 2008/12/10 22:30:25 shane Exp $
+** $Id: utf.c,v 1.71 2009/03/31 03:41:57 shane Exp $
 **
 ** Notes on UTF-8:
 **
@@ -417,7 +417,7 @@ int sqlite3Utf8To8(unsigned char *zIn){
     }
   }
   *zOut = 0;
-  return zOut - zStart;
+  return (int)(zOut - zStart);
 }
 #endif
 

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.505 2009/03/24 15:08:10 drh Exp $
+** $Id: select.c,v 1.506 2009/03/31 03:41:57 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -1229,7 +1229,7 @@ static int selectColumnsFromExprList(
 ** The column list has only names, not types or collations.  This
 ** routine goes through and adds the types and collations.
 **
-** This routine requires that all indentifiers in the SELECT
+** This routine requires that all identifiers in the SELECT
 ** statement be resolved.
 */
 static void selectAddColumnTypeAndCollation(

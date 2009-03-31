@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.154 2009/03/24 15:08:10 drh Exp $
+** $Id: tokenize.c,v 1.155 2009/03/31 03:41:57 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -386,7 +386,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
   void *pEngine;                  /* The LEMON-generated LALR(1) parser */
   int tokenType;                  /* type of the next token */
   int lastTokenParsed = -1;       /* type of the previous token */
-  int enableLookaside;            /* Saved value of db->lookaside.bEnabled */
+  u8 enableLookaside;             /* Saved value of db->lookaside.bEnabled */
   sqlite3 *db = pParse->db;       /* The database connection */
   int mxSqlLen;                   /* Max length of an SQL string */
 
