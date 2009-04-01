@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.71 2009/03/31 03:41:57 shane Exp $
+** $Id: utf.c,v 1.72 2009/04/01 16:33:38 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -110,22 +110,20 @@ static const unsigned char sqlite3Utf8Trans1[] = {
 #define READ_UTF16LE(zIn, c){                                         \
   c = (*zIn++);                                                       \
   c += ((*zIn++)<<8);                                                 \
-  if( c>=0xD800 && c<0xE000 ){                                       \
+  if( c>=0xD800 && c<0xE000 ){                                        \
     int c2 = (*zIn++);                                                \
     c2 += ((*zIn++)<<8);                                              \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
-    if( (c & 0xFFFF0000)==0 ) c = 0xFFFD;                             \
   }                                                                   \
 }
 
 #define READ_UTF16BE(zIn, c){                                         \
   c = ((*zIn++)<<8);                                                  \
   c += (*zIn++);                                                      \
-  if( c>=0xD800 && c<0xE000 ){                                       \
+  if( c>=0xD800 && c<0xE000 ){                                        \
     int c2 = ((*zIn++)<<8);                                           \
     c2 += (*zIn++);                                                   \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
-    if( (c & 0xFFFF0000)==0 ) c = 0xFFFD;                             \
   }                                                                   \
 }
 
@@ -168,13 +166,25 @@ static const unsigned char sqlite3Utf8Trans1[] = {
         || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }        \
   }
 int sqlite3Utf8Read(
-  const unsigned char *z,         /* First byte of UTF-8 character */
-  const unsigned char *zTerm,     /* Pretend this byte is 0x00 */
+  const unsigned char *zIn,       /* First byte of UTF-8 character */
   const unsigned char **pzNext    /* Write first byte past UTF-8 char here */
 ){
   int c;
-  READ_UTF8(z, zTerm, c);
-  *pzNext = z;
+
+  /* Same as READ_UTF8() above but without the zTerm parameter.
+  ** For this routine, we assume the UTF8 string is always zero-terminated.
+  */
+  c = *(zIn++);
+  if( c>=0xc0 ){
+    c = sqlite3Utf8Trans1[c-0xc0];
+    while( (*zIn & 0xc0)==0x80 ){
+      c = (c<<6) + (0x3f & *(zIn++));
+    }
+    if( c<0x80
+        || (c&0xFFFFF800)==0xD800
+        || (c&0xFFFFFFFE)==0xFFFE ){  c = 0xFFFD; }
+  }
+  *pzNext = zIn;
   return c;
 }
 
@@ -341,7 +351,8 @@ int sqlite3VdbeMemHandleBom(Mem *pMem){
   int rc = SQLITE_OK;
   u8 bom = 0;
 
-  if( pMem->n<0 || pMem->n>1 ){
+  assert( pMem->n>=0 );
+  if( pMem->n>1 ){
     u8 b1 = *(u8 *)pMem->z;
     u8 b2 = *(((u8 *)pMem->z) + 1);
     if( b1==0xFE && b2==0xFF ){
@@ -407,11 +418,10 @@ int sqlite3Utf8CharLen(const char *zIn, int nByte){
 int sqlite3Utf8To8(unsigned char *zIn){
   unsigned char *zOut = zIn;
   unsigned char *zStart = zIn;
-  unsigned char *zTerm = &zIn[sqlite3Strlen30((char *)zIn)];
   u32 c;
 
   while( zIn[0] ){
-    c = sqlite3Utf8Read(zIn, zTerm, (const u8**)&zIn);
+    c = sqlite3Utf8Read(zIn, (const u8**)&zIn);
     if( c!=0xfffd ){
       WRITE_UTF8(zOut, c);
     }
@@ -488,7 +498,6 @@ void sqlite3UtfSelfTest(void){
   unsigned int i, t;
   unsigned char zBuf[20];
   unsigned char *z;
-  unsigned char *zTerm;
   int n;
   unsigned int c;
 
@@ -498,9 +507,8 @@ void sqlite3UtfSelfTest(void){
     n = (int)(z-zBuf);
     assert( n>0 && n<=4 );
     z[0] = 0;
-    zTerm = z;
     z = zBuf;
-    c = sqlite3Utf8Read(z, zTerm, (const u8**)&z);
+    c = sqlite3Utf8Read(z, (const u8**)&z);
     t = i;
     if( i>=0xD800 && i<=0xDFFF ) t = 0xFFFD;
     if( (i&0xFFFFFFFE)==0xFFFE ) t = 0xFFFD;

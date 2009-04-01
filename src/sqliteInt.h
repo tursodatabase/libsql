@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.848 2009/03/25 16:51:43 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.849 2009/04/01 16:33:38 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2564,7 +2564,7 @@ int sqlite3GetInt32(const char *, int*);
 int sqlite3FitsIn64Bits(const char *, int);
 int sqlite3Utf16ByteLen(const void *pData, int nChar);
 int sqlite3Utf8CharLen(const char *pData, int nByte);
-int sqlite3Utf8Read(const u8*, const u8*, const u8**);
+int sqlite3Utf8Read(const u8*, const u8**);
 
 /*
 ** Routines to read and write variable-length integers.  These used to

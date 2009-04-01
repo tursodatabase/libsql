@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.225 2009/03/27 15:26:03 danielk1977 Exp $
+** $Id: func.c,v 1.226 2009/04/01 16:33:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -444,7 +444,7 @@ struct compareInfo {
 ** whereas only characters less than 0x80 do in ASCII.
 */
 #if defined(SQLITE_EBCDIC)
-# define sqlite3Utf8Read(A,B,C)  (*(A++))
+# define sqlite3Utf8Read(A,C)    (*(A++))
 # define GlogUpperToLower(A)     A = sqlite3UpperToLower[A]
 #else
 # define GlogUpperToLower(A)     if( A<0x80 ){ A = sqlite3UpperToLower[A]; }
@@ -501,18 +501,18 @@ static int patternCompare(
   u8 noCase = pInfo->noCase; 
   int prevEscape = 0;     /* True if the previous character was 'escape' */
 
-  while( (c = sqlite3Utf8Read(zPattern,0,&zPattern))!=0 ){
+  while( (c = sqlite3Utf8Read(zPattern,&zPattern))!=0 ){
     if( !prevEscape && c==matchAll ){
-      while( (c=sqlite3Utf8Read(zPattern,0,&zPattern)) == matchAll
+      while( (c=sqlite3Utf8Read(zPattern,&zPattern)) == matchAll
                || c == matchOne ){
-        if( c==matchOne && sqlite3Utf8Read(zString, 0, &zString)==0 ){
+        if( c==matchOne && sqlite3Utf8Read(zString, &zString)==0 ){
           return 0;
         }
       }
       if( c==0 ){
         return 1;
       }else if( c==esc ){
-        c = sqlite3Utf8Read(zPattern, 0, &zPattern);
+        c = sqlite3Utf8Read(zPattern, &zPattern);
         if( c==0 ){
           return 0;
         }
@@ -524,17 +524,17 @@ static int patternCompare(
         }
         return *zString!=0;
       }
-      while( (c2 = sqlite3Utf8Read(zString,0,&zString))!=0 ){
+      while( (c2 = sqlite3Utf8Read(zString,&zString))!=0 ){
         if( noCase ){
           GlogUpperToLower(c2);
           GlogUpperToLower(c);
           while( c2 != 0 && c2 != c ){
-            c2 = sqlite3Utf8Read(zString, 0, &zString);
+            c2 = sqlite3Utf8Read(zString, &zString);
             GlogUpperToLower(c2);
           }
         }else{
           while( c2 != 0 && c2 != c ){
-            c2 = sqlite3Utf8Read(zString, 0, &zString);
+            c2 = sqlite3Utf8Read(zString, &zString);
           }
         }
         if( c2==0 ) return 0;
@@ -542,7 +542,7 @@ static int patternCompare(
       }
       return 0;
     }else if( !prevEscape && c==matchOne ){
-      if( sqlite3Utf8Read(zString, 0, &zString)==0 ){
+      if( sqlite3Utf8Read(zString, &zString)==0 ){
         return 0;
       }
     }else if( c==matchSet ){
@@ -550,20 +550,20 @@ static int patternCompare(
       assert( esc==0 );    /* This only occurs for GLOB, not LIKE */
       seen = 0;
       invert = 0;
-      c = sqlite3Utf8Read(zString, 0, &zString);
+      c = sqlite3Utf8Read(zString, &zString);
       if( c==0 ) return 0;
-      c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+      c2 = sqlite3Utf8Read(zPattern, &zPattern);
       if( c2=='^' ){
         invert = 1;
-        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+        c2 = sqlite3Utf8Read(zPattern, &zPattern);
       }
       if( c2==']' ){
         if( c==']' ) seen = 1;
-        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+        c2 = sqlite3Utf8Read(zPattern, &zPattern);
       }
       while( c2 && c2!=']' ){
         if( c2=='-' && zPattern[0]!=']' && zPattern[0]!=0 && prior_c>0 ){
-          c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+          c2 = sqlite3Utf8Read(zPattern, &zPattern);
           if( c>=prior_c && c<=c2 ) seen = 1;
           prior_c = 0;
         }else{
@@ -572,7 +572,7 @@ static int patternCompare(
           }
           prior_c = c2;
         }
-        c2 = sqlite3Utf8Read(zPattern, 0, &zPattern);
+        c2 = sqlite3Utf8Read(zPattern, &zPattern);
       }
       if( c2==0 || (seen ^ invert)==0 ){
         return 0;
@@ -580,7 +580,7 @@ static int patternCompare(
     }else if( esc==c && !prevEscape ){
       prevEscape = 1;
     }else{
-      c2 = sqlite3Utf8Read(zString, 0, &zString);
+      c2 = sqlite3Utf8Read(zString, &zString);
       if( noCase ){
         GlogUpperToLower(c);
         GlogUpperToLower(c2);
@@ -649,7 +649,7 @@ static void likeFunc(
           "ESCAPE expression must be a single character", -1);
       return;
     }
-    escape = sqlite3Utf8Read(zEsc, 0, &zEsc);
+    escape = sqlite3Utf8Read(zEsc, &zEsc);
   }
   if( zA && zB ){
     struct compareInfo *pInfo = sqlite3_user_data(context);

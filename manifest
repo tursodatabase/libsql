@@ -1,5 +1,5 @@
-C Remove\san\sunreachable\sbranch\sfrom\sallocateSpace()\sin\sbtree.c.\sAdd\scomments\sand\sasserts\sto\sthe\ssame\sfunction.\s(CVS\s6422)
-D 2009-04-01T16:25:33
+C Remove\sdead\scode\sfrom\sthe\sUTF\sconversion\sroutines.\s\sFix\sa\sbug\sin\nsqlite3_prepare16_v2()\sin\swhich\san\sout-of-memory\serror\sfails\sto\nset\sthe\sstatement\sreturn\spointer\sto\sNULL.\s(CVS\s6423)
+D 2009-04-01T16:33:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c 14853cd56107292de6af664a24c6255111a4257d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 42d12d31d350defcabb8f3f476cdaeedfc9e9615
+F src/func.c 1d6a8689443b15a3845e805a6ad97317b37af3fb
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -150,7 +150,7 @@ F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c f587565f4ba0fd1772067eaa96814dce761b7a4c
 F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
-F src/prepare.c 157a7528ba686964ab0e0687749ca30adb9ab614
+F src/prepare.c aa3e7dc01a011269b9152e5103fad2eea2c96e7a
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
@@ -159,7 +159,7 @@ F src/select.c bd494b68a54a51de3df94ecdd6d24fa7598929d1
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 0db1e59d89aeacb8fe64a19fd14c13a796060ccb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 7fe33227434a3e54e3056cbe95800bd09a636fbe
+F src/sqliteInt.h afc93df0ddc3661b9b31b51edf43635b8df4e4de
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -197,7 +197,7 @@ F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c 7bd3b6dd56566604ad24ed4aa017e6618166b500
 F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
 F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
-F src/utf.c f9ed1ca795933e82675865ef15ed4852e0b19db3
+F src/utf.c 7bec2eeae2b26f28b8a8ede529705ccf531cd21b
 F src/util.c 469d74f5bf09ed6398702c7da2ef8a34e979a1c1
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
 F src/vdbe.c 624922027b8b5fe203bd89e204aaed447e8b7ce7
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3e3b5e861aeff2e4ef568c422236fdf7fa22bed3
-R 3682da7f79f43466521202126b407df7
-U danielk1977
-Z 15174c0778c01e00d98a68566fd435b4
+P f8e15a542df67fd9dc1c91c7d9e1c4df59acb82b
+R 0f32d6c1480412f4597b43816b3f4d1f
+U drh
+Z 65f1d97cdae9710553c2d01cde604d65
