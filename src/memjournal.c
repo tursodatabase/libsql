@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.8 2008/12/20 02:14:40 drh Exp $
+** @(#) $Id: memjournal.c,v 1.9 2009/04/01 23:09:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -25,8 +25,13 @@ typedef struct FileChunk FileChunk;
 
 /* Space to hold the rollback journal is allocated in increments of
 ** this many bytes.
+**
+** The size chosen is a little less than a power of two.  That way,
+** the FileChunk object will have a size that almost exactly fills
+** a power-of-two allocation.  This mimimizes wasted space in power-of-two
+** memory allocators.
 */
-#define JOURNAL_CHUNKSIZE 1024
+#define JOURNAL_CHUNKSIZE (1024-sizeof(FileChunk*))
 
 /* Macro to find the minimum of two numeric values.
 */
@@ -63,7 +68,8 @@ struct MemJournal {
 };
 
 /*
-** Read data from the file.
+** Read data from the in-memory journal file.  This is the implementation
+** of the sqlite3_vfs.xRead method.
 */
 static int memjrnlRead(
   sqlite3_file *pJfd,    /* The journal file from which to read */
@@ -77,12 +83,13 @@ static int memjrnlRead(
   int iChunkOffset;
   FileChunk *pChunk;
 
+  /* SQLite never tries to read past the end of a rollback journal file */
   assert( iOfst+iAmt<=p->endpoint.iOffset );
 
   if( p->readpoint.iOffset!=iOfst || iOfst==0 ){
     sqlite3_int64 iOff = 0;
     for(pChunk=p->pFirst; 
-        pChunk && (iOff+JOURNAL_CHUNKSIZE)<=iOfst;
+        ALWAYS(pChunk) && (iOff+JOURNAL_CHUNKSIZE)<=iOfst;
         pChunk=pChunk->pNext
     ){
       iOff += JOURNAL_CHUNKSIZE;
@@ -185,11 +192,17 @@ static int memjrnlClose(sqlite3_file *pJfd){
 
 /*
 ** Sync the file.
+**
+** Syncing an in-memory journal is a no-op.  And, in fact, this routine
+** is never called in a working implementation.  This implementation
+** exists purely as a contingency, in case some malfunction in some other
+** part of SQLite causes Sync to be called by mistake.
 */
-static int memjrnlSync(sqlite3_file *NotUsed, int NotUsed2){
-  UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  return SQLITE_OK;
-}
+static int memjrnlSync(sqlite3_file *NotUsed, int NotUsed2){   /*NO_TEST*/
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);                        /*NO_TEST*/
+  assert( 0 );                                                 /*NO_TEST*/
+  return SQLITE_OK;                                            /*NO_TEST*/
+}                                                              /*NO_TEST*/
 
 /*
 ** Query the size of the file in bytes.

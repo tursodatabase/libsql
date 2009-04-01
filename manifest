@@ -1,5 +1,5 @@
-C Fix\sthe\sstrftime()\sfunction\sso\sthat\sthe\s%s\sformat\scan\shandle\sdates\soutside\nof\sthe\srange\sof\s1901\sto\s2038.\s\sTicket\s#3769.\s(CVS\s6430)
-D 2009-04-01T20:44:14
+C Mark\suntestable\sbranches\sof\smemjournal.c\sas\ssuch.\s\sReduce\sthe\ssize\sof\sa\nsingle\sblock\sallocation\sto\sa\spower\sof\stwo.\s\sReenable\sthe\sinmemory_journal\npermutation\stest.\s(CVS\s6431)
+D 2009-04-01T23:09:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +129,7 @@ F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
 F src/mem5.c 838309b521c96a2a34507f74a5a739d28de4aac6
-F src/memjournal.c 17e9281ea5d7981e3e7b0dd3274921ecba4f773c
+F src/memjournal.c 2fc78ced7b47ba54efbf15a129f09e0733f6adbd
 F src/mutex.c 5e2ea0e0490a3567dc08a014bcee748c0cea727f
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c f5a07671f25a1a9bd7c10ad7107bc2585446200f
@@ -491,7 +491,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test 70ad1d65cf73f6a0a7501e0236312eb214d93a55
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test 2e777ae1eeb11b777b31aad929c4351464758441
+F test/permutations.test 7129bc5d215dfe1da527b784b95b041a5a2be397
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 36115e4073528f03253dd94fadf3954522c0dfb9
-R 00a8b22d9cb1f0d232f45571019310a5
+P a95b843a9251ca9f9a23e8b67c2126f4c297a534
+R ba76a4ea435a4c583deb3a28012fe1b7
 U drh
-Z 410f6e88d081a33d059402dd6e5bba76
+Z 248166af0729a14ff40d76e777b3eb92

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.45 2009/01/10 18:51:40 danielk1977 Exp $
+# $Id: permutations.test,v 1.46 2009/04/01 23:09:44 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -39,7 +39,7 @@ if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
   set ::perm::testmode {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
-    autovacuum_ioerr no_mutex_try fullmutex journaltest
+    autovacuum_ioerr no_mutex_try fullmutex journaltest inmemory_journal
   }
 }
 if {$::perm::testmode eq "targets"} { 
@@ -451,12 +451,12 @@ run_tests "inmemory_journal" -description {
   # Exclude all tests that simulate IO errors.
   autovacuum_ioerr2.test incrvacuum_ioerr.test ioerr.test
   ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
-  vacuum3.test incrblob_err.test diskfull.test 
+  vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
 
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
-  journal1.test conflict.test
+  journal1.test conflict.test crash8.test tkt3457.test
 }
 
 ifcapable mem3 {
