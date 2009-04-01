@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.586 2009/04/01 18:03:01 danielk1977 Exp $
+** $Id: btree.c,v 1.587 2009/04/01 19:07:04 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1886,7 +1886,7 @@ static int lockBtree(BtShared *pBt){
   int nPage;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  if( pBt->pPage1 ) return SQLITE_OK;
+  assert( pBt->pPage1==0 );
   rc = sqlite3BtreeGetPage(pBt, 1, &pPage1, 0);
   if( rc!=SQLITE_OK ) return rc;
 
@@ -2155,11 +2155,14 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
 #endif
 
   do {
-    if( pBt->pPage1==0 ){
-      do{
-        rc = lockBtree(pBt);
-      }while( pBt->pPage1==0 && rc==SQLITE_OK );
-    }
+    /* Call lockBtree() until either pBt->pPage1 is populated or
+    ** lockBtree() returns something other than SQLITE_OK. lockBtree()
+    ** may return SQLITE_OK but leave pBt->pPage1 set to 0 if after
+    ** reading page 1 it discovers that the page-size of the database 
+    ** file is not pBt->pageSize. In this case lockBtree() will update
+    ** pBt->pageSize to the page-size of the file on disk.
+    */
+    while( pBt->pPage1==0 && SQLITE_OK==(rc = lockBtree(pBt)) );
 
     if( rc==SQLITE_OK && wrflag ){
       if( pBt->readOnly ){
