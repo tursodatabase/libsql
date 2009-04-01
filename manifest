@@ -1,5 +1,5 @@
-C Change\san\sunreachable\serror\scondition\stest\sto\san\sassert()\sin\srowset.c.\s(CVS\s6429)
-D 2009-04-01T19:35:55
+C Fix\sthe\sstrftime()\sfunction\sso\sthat\sthe\s%s\sformat\scan\shandle\sdates\soutside\nof\sthe\srange\sof\s1901\sto\s2038.\s\sTicket\s#3769.\s(CVS\s6430)
+D 2009-04-01T20:44:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
 F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
-F src/date.c 0d804df3bbda46329946a01ff5c75c3f4f135218
+F src/date.c e6263ed8950642f593cb1a2cc8a73dd726cc7888
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c 14853cd56107292de6af664a24c6255111a4257d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -299,7 +299,7 @@ F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/date.test bb2cc648333c04d09e8e23cfc0cddc398c334a92
+F test/date.test 95a5611a677f639742db4d7c13af99c2ff56e299
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 859792958b4d4a3623d68526ff773f778bdf3f0d
-R ee5893a284b1dfffd70d7e1715a343a4
+P 36115e4073528f03253dd94fadf3954522c0dfb9
+R 00a8b22d9cb1f0d232f45571019310a5
 U drh
-Z 76cdfb7f19847a2c25df1f69a8945188
+Z 410f6e88d081a33d059402dd6e5bba76
