@@ -1,5 +1,5 @@
-C Remove\sthe\sunused\sSQLITE_Vtab\sflag.\s(CVS\s6425)
-D 2009-04-01T18:03:01
+C Test\sthat\stwo\sdatabase\sconnections\sthat\suse\sdifferent\sVFS\simplementations\smay\snot\sshare\sa\scache.\s(CVS\s6426)
+D 2009-04-01T18:25:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -532,7 +532,7 @@ F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
 F test/shared2.test 8973e41e008acbbd8d1b191b91a23cd472f058e8
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
-F test/shared6.test 9c155088d28bcaa5d87c52b6406ef5d0e7086e8e
+F test/shared6.test d3e0db3cbfb0d64933d8a9016f7eaa40f15a60ac
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0c5a7d1117cfb322d1c89da89e8887b0bb091602
-R f26d04d59d851cd92941bca4f5f8b7ce
+P fdd78962fcb988edfb4147394045fc5d3944c620
+R a659db632b7a8a1ae5444e52a2d0dea6
 U danielk1977
-Z fe1f6bbbe7362bf487c77efb4897a843
+Z c2cd1ad66ce2a9347f9799395978b43a
