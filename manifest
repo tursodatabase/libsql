@@ -1,5 +1,5 @@
-C update\sconfigure\sscript\sso\sit\shas\sproper\sVERSION\sin\sit\s(CVS\s6419)
-D 2009-03-31T23:29:16
+C add\sa\ssanity\scheck\sto\smake\ssure\sthe\sconfigure\sscript\sand\sVERSION\sfile\sare\salways\sin\ssync\s(CVS\s6420)
+D 2009-04-01T07:38:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,8 +18,8 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure fa0de5d77b3bd03a4e1245f869dd02a9b80b7d98 x
-F configure.ac 2c06a767c7be70560317754f3eea4c84887da9ca
+F configure 005a4f8af148931f19dac00ab1e2d6cc81e817d8 x
+F configure.ac 660b4e3e930cdd469e6ac5c1f3d9ba9cec2c8be0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
 F doc/report1.txt a031aaf37b185e4fa540223cb516d3bccec7eeac
@@ -713,7 +713,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0db862a23aa4aae949d5cd90ad395a7f073d7fb8
-R fe5d2d4d4f0fa031c218a53f0a73b50f
+P ce683cbd329eab45abb6f97f677f560b0fd1cdb6
+R 2718bfb20c645bac2c120cb851c22c61
 U vapier
-Z 5290eb2237b7c6bbb06559f91e0eb5a1
+Z ee7f3525d69da1abde020f897f014028
