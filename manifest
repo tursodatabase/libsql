@@ -1,5 +1,5 @@
-C Add\ssome\sassert()\sstatements\sto\squerySharedCacheTableLock().\s(CVS\s6421)
-D 2009-04-01T09:41:54
+C Remove\san\sunreachable\sbranch\sfrom\sallocateSpace()\sin\sbtree.c.\sAdd\scomments\sand\sasserts\sto\sthe\ssame\sfunction.\s(CVS\s6422)
+D 2009-04-01T16:25:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c 44f7059ac1f874d364b34af31b9617e52223ba75
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c afb15be98c01b07528072dd6e18b7f644859ada0
+F src/btree.c cfa70f8e31c01e2278478740896620bf32ffd837
 F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 1b9da6d73f603e66d078463c3571dda86ceedfb3
-R 14b12ad716bad78f9281344d4310ecc6
+P 3e3b5e861aeff2e4ef568c422236fdf7fa22bed3
+R 3682da7f79f43466521202126b407df7
 U danielk1977
-Z 50c3252197be65f8aa74e6bb679653bc
+Z 15174c0778c01e00d98a68566fd435b4
