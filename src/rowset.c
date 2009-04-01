@@ -25,7 +25,7 @@
 ** Big chunks of rowid/next-ptr pairs are allocated at a time, to
 ** reduce the malloc overhead.
 **
-** $Id: rowset.c,v 1.3 2009/01/13 20:14:16 drh Exp $
+** $Id: rowset.c,v 1.4 2009/04/01 19:35:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -120,7 +120,7 @@ void sqlite3RowSetClear(RowSet *p){
 void sqlite3RowSetInsert(RowSet *p, i64 rowid){
   struct RowSetEntry *pEntry;
   struct RowSetEntry *pLast;
-  if( p==0 ) return;  /* Must have been a malloc failure */
+  assert( p!=0 );
   if( p->nFresh==0 ){
     struct RowSetChunk *pNew;
     pNew = sqlite3DbMallocRaw(p->db, sizeof(*pNew));
