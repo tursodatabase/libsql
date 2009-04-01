@@ -1,5 +1,5 @@
-C Test\sthat\stwo\sdatabase\sconnections\sthat\suse\sdifferent\sVFS\simplementations\smay\snot\sshare\sa\scache.\s(CVS\s6426)
-D 2009-04-01T18:25:54
+C Fix\sa\sbug\sin\sthe\ssqlite3Utf16ByteLen()\sfunction\sso\sthat\sit\scomputes\sthe\ncorrect\slength\seven\sfor\sstrings\sthat\scontain\ssurrogate\spairs.\nTicket\s#3766.\s(CVS\s6427)
+D 2009-04-01T18:40:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +164,7 @@ F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
 F src/tclsqlite.c d3195e0738c101a155404ecdb1cd9532a2fd34f2
-F src/test1.c fc09299ecf3e7d1235293ba43dcc7ea003240a54
+F src/test1.c eaac64fe5415e14d8268dd925b10ca39251e0120
 F src/test2.c 71c22e2974f8094fe0fd1eba8f27872dde9b2a39
 F src/test3.c d3115b301c6ee761b102f315fe24125f3d6c3a4d
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -197,7 +197,7 @@ F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c 7bd3b6dd56566604ad24ed4aa017e6618166b500
 F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
 F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
-F src/utf.c 7bec2eeae2b26f28b8a8ede529705ccf531cd21b
+F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 469d74f5bf09ed6398702c7da2ef8a34e979a1c1
 F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
 F src/vdbe.c 624922027b8b5fe203bd89e204aaed447e8b7ce7
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fdd78962fcb988edfb4147394045fc5d3944c620
-R a659db632b7a8a1ae5444e52a2d0dea6
-U danielk1977
-Z c2cd1ad66ce2a9347f9799395978b43a
+P 3a92c95644ead7c4728ffec1ec70676663518188
+R a8645e4c19e0d7546ed7b3fc51d85afa
+U drh
+Z f7ca868d3c85446b0badce3658c2c808

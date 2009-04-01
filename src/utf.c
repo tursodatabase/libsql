@@ -12,7 +12,7 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.72 2009/04/01 16:33:38 drh Exp $
+** $Id: utf.c,v 1.73 2009/04/01 18:40:32 drh Exp $
 **
 ** Notes on UTF-8:
 **
@@ -455,15 +455,13 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte){
 }
 
 /*
-** pZ is a UTF-16 encoded unicode string. If nChar is less than zero,
-** return the number of bytes up to (but not including), the first pair
-** of consecutive 0x00 bytes in pZ. If nChar is not less than zero,
-** then return the number of bytes in the first nChar unicode characters
-** in pZ (or up until the first pair of 0x00 bytes, whichever comes first).
+** pZ is a UTF-16 encoded unicode string at least nChar characters long.
+** Return the number of bytes in the first nChar unicode characters
+** in pZ.  nChar must be non-negative.
 */
 int sqlite3Utf16ByteLen(const void *zIn, int nChar){
-  unsigned int c = 1;
-  char const *z = zIn;
+  int c;
+  unsigned char const *z = zIn;
   int n = 0;
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16BE ){
     /* Using an "if (SQLITE_UTF16NATIVE==SQLITE_UTF16BE)" construct here
@@ -475,17 +473,17 @@ int sqlite3Utf16ByteLen(const void *zIn, int nChar){
     ** which branch will be followed. It is therefore assumed that no runtime
     ** penalty is paid for this "if" statement.
     */
-    while( c && ((nChar<0) || n<nChar) ){
+    while( n<nChar ){
       READ_UTF16BE(z, c);
       n++;
     }
   }else{
-    while( c && ((nChar<0) || n<nChar) ){
+    while( n<nChar ){
       READ_UTF16LE(z, c);
       n++;
     }
   }
-  return (int)(z-(char const *)zIn)-((c==0)?2:0);
+  return (int)(z-(unsigned char const *)zIn);
 }
 
 #if defined(SQLITE_TEST)

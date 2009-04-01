@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.349 2009/03/27 12:32:55 drh Exp $
+** $Id: test1.c,v 1.350 2009/04/01 18:40:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -3261,6 +3261,7 @@ static int test_errmsg16(
 #ifndef SQLITE_OMIT_UTF16
   sqlite3 *db;
   const void *zErr;
+  const char *z;
   int bytes = 0;
 
   if( objc!=2 ){
@@ -3272,7 +3273,8 @@ static int test_errmsg16(
 
   zErr = sqlite3_errmsg16(db);
   if( zErr ){
-    bytes = sqlite3Utf16ByteLen(zErr, -1);
+    z = zErr;
+    for(bytes=0; z[bytes] || z[bytes+1]; bytes+=2){}
   }
   Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(zErr, bytes));
 #endif /* SQLITE_OMIT_UTF16 */
@@ -3953,7 +3955,10 @@ static int test_stmt_utf16(
 
   zName16 = xFunc(pStmt, col);
   if( zName16 ){
-    pRet = Tcl_NewByteArrayObj(zName16, sqlite3Utf16ByteLen(zName16, -1)+2);
+    int n;
+    const char *z = zName16;
+    for(n=0; z[n] || z[n+1]; n+=2){}
+    pRet = Tcl_NewByteArrayObj(zName16, n+2);
     Tcl_SetObjResult(interp, pRet);
   }
 #endif /* SQLITE_OMIT_UTF16 */
