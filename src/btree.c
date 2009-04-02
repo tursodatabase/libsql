@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.588 2009/04/02 18:28:08 danielk1977 Exp $
+** $Id: btree.c,v 1.589 2009/04/02 20:16:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1757,6 +1757,8 @@ int sqlite3BtreeSyncDisabled(Btree *p){
 #if !defined(SQLITE_OMIT_PAGER_PRAGMAS) || !defined(SQLITE_OMIT_VACUUM)
 /*
 ** Change the default pages size and the number of reserved bytes per page.
+** Or, if the page size has already been fixed, return SQLITE_READONLY 
+** without changing anything.
 **
 ** The page size must be a power of 2 between 512 and 65536.  If the page
 ** size supplied does not meet this constraint then the page size is not
@@ -1769,8 +1771,11 @@ int sqlite3BtreeSyncDisabled(Btree *p){
 **
 ** If parameter nReserve is less than zero, then the number of reserved
 ** bytes per page is left unchanged.
+**
+** If the iFix!=0 then the pageSizeFixed flag is set so that the page size
+** and autovacuum mode can no longer be changed.
 */
-int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
+int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve, int iFix){
   int rc = SQLITE_OK;
   BtShared *pBt = p->pBt;
   assert( nReserve>=-1 && nReserve<=255 );
@@ -1792,6 +1797,7 @@ int sqlite3BtreeSetPageSize(Btree *p, int pageSize, int nReserve){
     rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
   }
   pBt->usableSize = pBt->pageSize - (u16)nReserve;
+  if( iFix ) pBt->pageSizeFixed = 1;
   sqlite3BtreeLeave(p);
   return rc;
 }

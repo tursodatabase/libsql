@@ -1,5 +1,5 @@
-C Fix\sthe\ssqlite3_prepare()\sfamily\sof\sinterfaces\sso\sthat\sthey\szero\sthe\s*ppStmt\nvalue\seven\son\san\sSQLITE_MISUSE\sreturn.\s\sMake\sit\sclear\sin\sthe\sdocumentation\nthat\sthe\sppStmt\sparameter\scannot\sbe\szero.\s(CVS\s6441)
-D 2009-04-02T18:32:27
+C Make\ssure\sthe\sVACUUM\sstatement\slocks\sdown\sthe\spage_size\sand\sauto_vacuum\nmodes\safter\sit\sruns.\s\sOtherwise,\spragmas\smight\schange\sthese\ssettings\son\na\spopulated\sdatabase,\sresulting\sin\sproblems.\s(CVS\s6442)
+D 2009-04-02T20:16:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,8 +103,8 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c 7d51b2ef5c09ebc05bce9a1a1f2f5b9e1b93d9e0
-F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
+F src/btree.c f4fdf5359f910dd9ac8d7bd92a67dae072b75f81
+F src/btree.h 8007018c1753944790c39610280894ab280210b8
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
 F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
@@ -149,7 +149,7 @@ F src/parse.y b9ba0946a13e9f32a96044e64a3e8780269b08b0
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c f587565f4ba0fd1772067eaa96814dce761b7a4c
-F src/pragma.c 22ed04836aab8ce134c53be1ca896f3ad20fabdb
+F src/pragma.c 32a967b5fc314ffed08a7778945592d536b64826
 F src/prepare.c 0ad1ba3290e0626aa4e7589ed6ab6af2572875b0
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -199,7 +199,7 @@ F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
 F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 469d74f5bf09ed6398702c7da2ef8a34e979a1c1
-F src/vacuum.c 4929a585ef0fb1dfaf46302f8a9c4aa30c2d9cf5
+F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
 F src/vdbe.c 624922027b8b5fe203bd89e204aaed447e8b7ce7
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 8f1423445b29a5f52ed907de6db82128a96ebfe2
-R d66b51a142fefca07584ceedbb6d0a07
+P 23bf9f266559603e37b2703715eaf8ef5af6bb17
+R e0d218115c45629c5885d4b4b4658168
 U drh
-Z 86a6d740a23a4566ad36f5b8a9a6d901
+Z 1702788136b089e50c945192dcad3cc4
