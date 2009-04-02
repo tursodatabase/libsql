@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sharmless\snuisance\swarnings.\s(CVS\s6438)
-D 2009-04-02T17:22:42
+C Ensure\sthe\srequired\sVerifyCookie/Transaction/TableLock\sopcodes\sare\sadded\sfor\s"x\nIN\s(SELECT\sc\sFROM\st)"\sexpressions.\sTicket\s#3771.\s(CVS\s6439)
+D 2009-04-02T17:23:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c e6263ed8950642f593cb1a2cc8a73dd726cc7888
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
-F src/expr.c 14853cd56107292de6af664a24c6255111a4257d
+F src/expr.c b7ce173d17b80e937473147604bfde4bb339a8a0
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 99ae90d46154952e08282fcdfe72d08e9601e174
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -515,7 +515,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test e28f7d8ab8a389d4e5bd1dc08bf2c3312754cc67
 F test/schema.test deafe5472099ab5bc65748059dc5182fc8ebad74
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
-F test/select1.test d0a4cad954fd41c030ec16ffbd2d08a4c0548742
+F test/select1.test fff339661707c5bfa0f2bd4974ceabe9b5d7f774
 F test/select2.test 9735da20ccd41e42bf2b4c19fd939141b591adae
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test b64d5d248d008e1dc365f451c76090bde907e665
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 23f90d50737a36ebd17152dd4667948ce7049967
-R a1a1a4239b62dbb22521cfb4e8b651fc
-U drh
-Z fa40ccceb3f1316325395133ac351b79
+P 53dac0a455b9a822f710c257711e8d319060cf84
+R 4a174564884f326a4622b10ba400e069
+U danielk1977
+Z 805670f748f6b920a00761168c563c97
