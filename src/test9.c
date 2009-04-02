@@ -14,7 +14,7 @@
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
 **
-** $Id: test9.c,v 1.6 2008/07/11 13:53:55 drh Exp $
+** $Id: test9.c,v 1.7 2009/04/02 18:32:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -114,6 +114,7 @@ static int c_misuse_test(
 ){
   const char *zErrFunction = "N/A";
   sqlite3 *db = 0;
+  sqlite3_stmt *pStmt;
   int rc;
 
   if( objc!=1 ){
@@ -138,29 +139,37 @@ static int c_misuse_test(
     goto error_out;
   }
 
-  rc = sqlite3_prepare(db, 0, 0, 0, 0);
+  pStmt = (sqlite3_stmt*)1234;
+  rc = sqlite3_prepare(db, 0, 0, &pStmt, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_prepare";
     goto error_out;
   }
+  assert( pStmt==0 ); /* Verify that pStmt is zeroed even on a MISUSE error */
 
-  rc = sqlite3_prepare_v2(db, 0, 0, 0, 0);
+  pStmt = (sqlite3_stmt*)1234;
+  rc = sqlite3_prepare_v2(db, 0, 0, &pStmt, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_prepare_v2";
     goto error_out;
   }
+  assert( pStmt==0 );
 
 #ifndef SQLITE_OMIT_UTF16
-  rc = sqlite3_prepare16(db, 0, 0, 0, 0);
+  pStmt = (sqlite3_stmt*)1234;
+  rc = sqlite3_prepare16(db, 0, 0, &pStmt, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_prepare16";
     goto error_out;
   }
-  rc = sqlite3_prepare16_v2(db, 0, 0, 0, 0);
+  assert( pStmt==0 );
+  pStmt = (sqlite3_stmt*)1234;
+  rc = sqlite3_prepare16_v2(db, 0, 0, &pStmt, 0);
   if( rc!=SQLITE_MISUSE ){
     zErrFunction = "sqlite3_prepare16_v2";
     goto error_out;
   }
+  assert( pStmt==0 );
 #endif
 
   return TCL_OK;

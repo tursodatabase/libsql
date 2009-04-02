@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.436 2009/03/20 13:15:30 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.437 2009/04/02 18:32:27 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -2229,7 +2229,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** program using one of these routines.
 **
 ** The first argument, "db", is a [database connection] obtained from a
-** prior call to [sqlite3_open()], [sqlite3_open_v2()] or [sqlite3_open16()].
+** prior successful call to [sqlite3_open()], [sqlite3_open_v2()] or
+** [sqlite3_open16()].  The database connection must not have been closed.
 **
 ** The second argument, "zSql", is the statement to be compiled, encoded
 ** as either UTF-8 or UTF-16.  The sqlite3_prepare() and sqlite3_prepare_v2()
@@ -2246,17 +2247,18 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** is equal to the number of bytes in the input string <i>including</i>
 ** the nul-terminator bytes.
 **
-** *pzTail is made to point to the first byte past the end of the
-** first SQL statement in zSql.  These routines only compile the first
-** statement in zSql, so *pzTail is left pointing to what remains
-** uncompiled.
+** If pzTail is not NULL then *pzTail is made to point to the first byte
+** past the end of the first SQL statement in zSql.  These routines only
+** compile the first statement in zSql, so *pzTail is left pointing to
+** what remains uncompiled.
 **
 ** *ppStmt is left pointing to a compiled [prepared statement] that can be
 ** executed using [sqlite3_step()].  If there is an error, *ppStmt is set
 ** to NULL.  If the input text contains no SQL (if the input is an empty
 ** string or a comment) then *ppStmt is set to NULL.
-** {A13018} The calling procedure is responsible for deleting the compiled
+** The calling procedure is responsible for deleting the compiled
 ** SQL statement using [sqlite3_finalize()] after it has finished with it.
+** ppStmt may not be NULL.
 **
 ** On success, [SQLITE_OK] is returned, otherwise an [error code] is returned.
 **
