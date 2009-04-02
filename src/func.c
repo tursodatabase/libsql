@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.226 2009/04/01 16:33:38 drh Exp $
+** $Id: func.c,v 1.227 2009/04/02 09:07:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -270,12 +270,13 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 */
 static void *contextMalloc(sqlite3_context *context, i64 nByte){
   char *z;
+  assert( nByte>0 );
   if( nByte>sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
     z = 0;
   }else{
     z = sqlite3Malloc((int)nByte);
-    if( !z && nByte>0 ){
+    if( !z ){
       sqlite3_result_error_nomem(context);
     }
   }
@@ -811,7 +812,7 @@ static void zeroblobFunc(
   assert( argc==1 );
   UNUSED_PARAMETER(argc);
   n = sqlite3_value_int64(argv[0]);
-  if( n>SQLITE_MAX_LENGTH ){
+  if( n>sqlite3_context_db_handle(context)->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
   }else{
     sqlite3_result_zeroblob(context, (int)n);
