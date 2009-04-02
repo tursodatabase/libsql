@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.587 2009/04/01 19:07:04 danielk1977 Exp $
+** $Id: btree.c,v 1.588 2009/04/02 18:28:08 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -248,6 +248,10 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
 /*
 ** Release all the table locks (locks obtained via calls to
 ** the setSharedCacheTableLock() procedure) held by Btree handle p.
+**
+** This function assumes that handle p has an open read or write 
+** transaction. If it does not, then the BtShared.isPending variable
+** may be incorrectly cleared.
 */
 static void clearAllSharedCacheTableLocks(Btree *p){
   BtShared *pBt = p->pBt;
@@ -255,10 +259,12 @@ static void clearAllSharedCacheTableLocks(Btree *p){
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( p->sharable || 0==*ppIter );
+  assert( p->inTrans>0 );
 
   while( *ppIter ){
     BtLock *pLock = *ppIter;
     assert( pBt->isExclusive==0 || pBt->pWriter==pLock->pBtree );
+    assert( pLock->pBtree->inTrans>=pLock->eLock );
     if( pLock->pBtree==p ){
       *ppIter = pLock->pNext;
       sqlite3_free(pLock);
@@ -2261,7 +2267,7 @@ set_child_ptrmaps_out:
 }
 
 /*
-** Somewhere on pPage, which is guarenteed to be a btree page, not an overflow
+** Somewhere on pPage, which is guaranteed to be a btree page, not an overflow
 ** page, is a pointer to page iFrom. Modify this pointer so that it points to
 ** iTo. Parameter eType describes the type of pointer to be modified, as 
 ** follows:
@@ -2424,6 +2430,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
   Pgno nFreeList;           /* Number of pages still on the free-list */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
+  assert( iLastPg>nFin );
 
   if( !PTRMAP_ISPAGE(pBt, iLastPg) && iLastPg!=PENDING_BYTE_PAGE(pBt) ){
     int rc;
@@ -2431,7 +2438,7 @@ static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
     Pgno iPtrPage;
 
     nFreeList = get4byte(&pBt->pPage1->aData[36]);
-    if( nFreeList==0 || nFin==iLastPg ){
+    if( nFreeList==0 ){
       return SQLITE_DONE;
     }
 
@@ -2688,7 +2695,6 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
     }
     pBt->inTransaction = TRANS_READ;
   }
-  clearAllSharedCacheTableLocks(p);
 
   /* If the handle has any kind of transaction open, decrement the transaction
   ** count of the shared btree. If the transaction count reaches 0, set
@@ -2696,6 +2702,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
   ** will unlock the pager.
   */
   if( p->inTrans!=TRANS_NONE ){
+    clearAllSharedCacheTableLocks(p);
     pBt->nTransaction--;
     if( 0==pBt->nTransaction ){
       pBt->inTransaction = TRANS_NONE;
@@ -2812,7 +2819,6 @@ int sqlite3BtreeRollback(Btree *p){
   }
 #endif
   btreeIntegrity(p);
-  clearAllSharedCacheTableLocks(p);
 
   if( p->inTrans==TRANS_WRITE ){
     int rc2;
@@ -2834,6 +2840,7 @@ int sqlite3BtreeRollback(Btree *p){
   }
 
   if( p->inTrans!=TRANS_NONE ){
+    clearAllSharedCacheTableLocks(p);
     assert( pBt->nTransaction>0 );
     pBt->nTransaction--;
     if( 0==pBt->nTransaction ){
@@ -6788,8 +6795,14 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
 #endif
 
-  /* Grab the read-lock on page 1. */
-  rc = setSharedCacheTableLock(p, 1, READ_LOCK);
+  /* If there is currently an open transaction, grab a read-lock 
+  ** on page 1 of the database file. This is done to make sure that
+  ** no other connection can modify the meta value just read from
+  ** the database until the transaction is concluded.
+  */
+  if( p->inTrans>0 ){
+    rc = setSharedCacheTableLock(p, 1, READ_LOCK);
+  }
   sqlite3BtreeLeave(p);
   return rc;
 }

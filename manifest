@@ -1,5 +1,5 @@
-C Ensure\sthe\srequired\sVerifyCookie/Transaction/TableLock\sopcodes\sare\sadded\sfor\s"x\nIN\s(SELECT\sc\sFROM\st)"\sexpressions.\sTicket\s#3771.\s(CVS\s6439)
-D 2009-04-02T17:23:33
+C Fix\sa\sproblem\scausing\sthe\sBtShared.isPending\sflag\sto\sbe\scleared\sto\searly.\sAlso\scoverage\simprovements\sfor\sbtree.c.\s(CVS\s6440)
+D 2009-04-02T18:28:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c dcf8157bd4b28a6125d2900f3031a034c1f57720
+F src/btree.c 7d51b2ef5c09ebc05bce9a1a1f2f5b9e1b93d9e0
 F src/btree.h e302c5747494067cd4f5763000fbe7bca767d816
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
@@ -276,7 +276,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 69fea30632d55862a012d3786c7d5fd1329f78db
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test b83f690753525ddac4a9c96e6ba11886ddaf24ea
+F test/corrupt2.test 465786cf3fb286b6b674c6342388dfff988f950b
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -532,7 +532,7 @@ F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
 F test/shared2.test 8973e41e008acbbd8d1b191b91a23cd472f058e8
 F test/shared3.test 9c880afc081d797da514ef64bccf36f3fce2f09c
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
-F test/shared6.test d3e0db3cbfb0d64933d8a9016f7eaa40f15a60ac
+F test/shared6.test db3906045175debea4a0d57cb94c6ffe2d85413d
 F test/shared_err.test 91e26ec4f3fbe07951967955585137e2f18993de
 F test/shortread1.test bb591ef20f0fd9ed26d0d12e80eee6d7ac8897a3
 F test/sidedelete.test f0ad71abe6233e3b153100f3b8d679b19a488329
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 53dac0a455b9a822f710c257711e8d319060cf84
-R 4a174564884f326a4622b10ba400e069
+P 058a2f20930d7707c03c3c27db8e761d5657ee46
+R 3a4050ae67f1e8a6ec248bda7bba7d51
 U danielk1977
-Z 805670f748f6b920a00761168c563c97
+Z dc4c28528723be8812cc90fabf0cbd80
