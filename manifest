@@ -1,5 +1,5 @@
-C Use\sALWAYS\sand\sNEVER\smacros\son\sunchangeable\sconditions\swithin\sfunc.c.\s(CVS\s6435)
-D 2009-04-02T13:36:37
+C Change\sthe\sway\sthat\sthe\srandom()\sSQL\sfunction\sprevents\sthe\smaximum\nnegative\sinteger\sso\sthat\sit\sis\stestable.\s(CVS\s6436)
+D 2009-04-02T14:05:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c e6263ed8950642f593cb1a2cc8a73dd726cc7888
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c 14853cd56107292de6af664a24c6255111a4257d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 25edae19b56f7355ce7f25490ce61877b499633f
+F src/func.c 99ae90d46154952e08282fcdfe72d08e9601e174
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 868a487f5fd7c795e04a08de36a85ba1e06bc8c6
-R 80e3c0460455c327fb300729860153c0
+P eb65e64e7ed5edbe506365971d4d81ea037098d3
+R 8df4d225606e2ef05ef65f87475b71e8
 U drh
-Z 3dc25af9134f67a49baddf7ad8bedd6e
+Z 5cdbeb238444c4b2ca5bad90a2a75082

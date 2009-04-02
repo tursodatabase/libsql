@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.229 2009/04/02 13:36:37 drh Exp $
+** $Id: func.c,v 1.230 2009/04/02 14:05:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -362,8 +362,17 @@ static void randomFunc(
   sqlite_int64 r;
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_randomness(sizeof(r), &r);
-  if( (r<<1)==0 ) r = 0;  /* Prevent 0x8000.... as the result so that we */
-                          /* can always do abs() of the result */
+  if( r<0 ){
+    /* We need to prevent a random number of 0x8000000000000000 
+    ** (or -9223372036854775808) since when you do abs() of that
+    ** number of you get the same value back again.  To do this
+    ** in a way that is testable, mask the sign bit off of negative
+    ** values, resulting in a positive value.  Then take the 
+    ** 2s complement of that positive value.  The end result can
+    ** therefore be no less than -9223372036854775807.
+    */
+    r = -(r ^ (((sqlite3_int64)1)<<63));
+  }
   sqlite3_result_int64(context, r);
 }
 
