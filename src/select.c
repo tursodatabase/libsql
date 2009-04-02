@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.506 2009/03/31 03:41:57 shane Exp $
+** $Id: select.c,v 1.507 2009/04/02 16:59:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2555,6 +2555,12 @@ static void substSelect(
 **  (19)  The subquery does not use LIMIT or the outer query does not
 **        have a WHERE clause.
 **
+**  (20)  If the sub-query is a compound select, then it must not use
+**        an ORDER BY clause.  Ticket #3773.  We could relax this constraint
+**        somewhat by saying that the terms of the ORDER BY clause must
+**        appear as unmodified result columns in the outer query.  But
+**        have other optimizations in mind to deal with that case.
+**
 ** In this routine, the "p" parameter is a pointer to the outer query.
 ** The subquery is p->pSrc->a[iFrom].  isAgg is true if the outer query
 ** uses aggregates and subqueryIsAgg is true if the subquery uses aggregates.
@@ -2665,6 +2671,9 @@ static int flattenSubquery(
   ** queries.
   */
   if( pSub->pPrior ){
+    if( pSub->pOrderBy ){
+      return 0;  /* Restriction 20 */
+    }
     if( isAgg || (p->selFlags & SF_Distinct)!=0 || pSrc->nSrc!=1 ){
       return 0;
     }

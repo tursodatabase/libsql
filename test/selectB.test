@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectB.test,v 1.9 2008/08/04 03:51:24 danielk1977 Exp $
+# $Id: selectB.test,v 1.10 2009/04/02 16:59:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -122,7 +122,7 @@ for {set ii 1} {$ii <= 2} {incr ii} {
   } {
     SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 LIMIT 2 OFFSET 3
   } {12 14}
-  
+
   test_transform selectB-$ii.9 {
     SELECT * FROM (
       SELECT a FROM t1 UNION ALL SELECT d FROM t2 UNION ALL SELECT c FROM t1
@@ -156,33 +156,35 @@ for {set ii 1} {$ii <= 2} {incr ii} {
     SELECT a FROM t1 UNION ALL SELECT d FROM t2 LIMIT 2
   } {2 8}
 
-  test_transform selectB-$ii.13 {
-    SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a ASC)
-  } {
-    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 ASC
-  } {2 3 8 12 14 21}
-
-  test_transform selectB-$ii.14 {
-    SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC)
-  } {
-    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC
-  } {21 14 12 8 3 2}
-
-  test_transform selectB-$ii.14 {
-    SELECT * FROM (
-      SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC
-    ) LIMIT 2 OFFSET 2
-  } {
-    SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC LIMIT 2 OFFSET 2
-  } {12 8}
-
-  test_transform selectB-$ii.15 {
-    SELECT * FROM (
-      SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
-    )
-  } {
-    SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
-  } {2 4 3 6 8 10 12 15 14 16 21 24}
+  # An ORDER BY in a compound subqueries defeats flattening.  Ticket #3773
+  # test_transform selectB-$ii.13 {
+  #   SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a ASC)
+  # } {
+  #   SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 ASC
+  # } {2 3 8 12 14 21}
+  # 
+  # test_transform selectB-$ii.14 {
+  #  SELECT * FROM (SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC)
+  # } {
+  #  SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC
+  # } {21 14 12 8 3 2}
+  #
+  # test_transform selectB-$ii.14 {
+  #   SELECT * FROM (
+  #     SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY a DESC
+  #   ) LIMIT 2 OFFSET 2
+  # } {
+  #   SELECT a FROM t1 UNION ALL SELECT d FROM t2 ORDER BY 1 DESC
+  #    LIMIT 2 OFFSET 2
+  # } {12 8}
+  #
+  # test_transform selectB-$ii.15 {
+  #   SELECT * FROM (
+  #     SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
+  #  )
+  # } {
+  #   SELECT a, b FROM t1 UNION ALL SELECT d, e FROM t2 ORDER BY a ASC, e DESC
+  # } {2 4 3 6 8 10 12 15 14 16 21 24}
 }
 
 do_test selectB-3.0 {
