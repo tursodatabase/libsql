@@ -1,5 +1,5 @@
-C Enforce\sthe\srun-time\ssqlite3_limit()\slength\slimit\son\szeroblob(),\snot\sjust\nthe\scompile-time\sSQLITE_MAX_LENGTH\slimit.\s(CVS\s6433)
-D 2009-04-02T09:07:13
+C In\sthe\sbuilt-in\sSQL\sfunction\simplementations,\simprove\ssome\scomments,\sfix\nan\soff-by-one\serror\sin\sdetecting\sover-size\sstrings,\sand\sadd\stestcase()\nmacros\sto\sverify\sthat\sboundary\svalues\shave\sbeen\stested.\s(CVS\s6434)
+D 2009-04-02T10:16:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c e6263ed8950642f593cb1a2cc8a73dd726cc7888
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c 14853cd56107292de6af664a24c6255111a4257d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c ac81b4ff36e4e52327097dfcf6a1ba90d9cb63f7
+F src/func.c 13b7a7ecf4f3426a368e751d0c3fbdcf567baf69
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -714,7 +714,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ca3aa3ba7d751be1c2bcd100a203cd9c794a6cef
-R f0264cae48013af5fa04e1ada66682c2
+P a04f9e7959325da18f66a1aa4ead1c50993807cb
+R c982e3384ed11aa8534165a34216b1da
 U drh
-Z 3903933557343f546c355318654d5fcd
+Z 1b80b4935022b19a2dfaa3a1e5ddbc5f
