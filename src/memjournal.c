@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.9 2009/04/01 23:09:44 drh Exp $
+** @(#) $Id: memjournal.c,v 1.10 2009/04/02 17:22:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -31,7 +31,7 @@ typedef struct FileChunk FileChunk;
 ** a power-of-two allocation.  This mimimizes wasted space in power-of-two
 ** memory allocators.
 */
-#define JOURNAL_CHUNKSIZE (1024-sizeof(FileChunk*))
+#define JOURNAL_CHUNKSIZE ((int)(1024-sizeof(FileChunk*)))
 
 /* Macro to find the minimum of two numeric values.
 */
