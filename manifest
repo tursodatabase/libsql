@@ -1,5 +1,5 @@
-C Make\ssure\scount(*)\sworks\son\sthe\ssqlite_master\stable\sof\san\sempty\sdatabase.\nTicket\s#3774.\s(CVS\s6443)
-D 2009-04-02T20:27:28
+C Fix\sthe\sPRAGMA\sparser\sso\sthat\sit\scan\saccept\snegative\snumbers\sin\sparentheses,\nlike\sthe\ssyntax\sdiagrams\ssay\sit\sshould\sbe\sable\sto.\s(CVS\s6444)
+D 2009-04-03T01:43:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +145,7 @@ F src/os_unix.c 5d667f24615043c937a138faaed5f3e93b8619b0
 F src/os_win.c 524fe4c31c469531191857e8036ef59bfb52d684
 F src/pager.c 34aeb87dc8177901d49dd02207828a2121064c25
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
-F src/parse.y b9ba0946a13e9f32a96044e64a3e8780269b08b0
+F src/parse.y 070215cf461ab917c23253a9cbf0903f2b0d8f19
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c f587565f4ba0fd1772067eaa96814dce761b7a4c
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 85e6a4740d6db731c8c35a331031c346e9189c27
-R bd78ffb4482bff31a318e650753900a9
+P e0c1a780f5a356c48b2a4cc66fab988fe441722f
+R 296c5be54eca157c79928abcd498e13b
 U drh
-Z 65e49db46664fd71c4cc25be1e95b592
+Z 399a97baf64ccdeed33e787dae76324d
