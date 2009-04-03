@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.437 2009/04/02 18:32:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.438 2009/04/03 12:12:59 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -382,7 +382,6 @@ int sqlite3_exec(
 #define SQLITE_IOERR_LOCK              (SQLITE_IOERR | (15<<8))
 #define SQLITE_IOERR_CLOSE             (SQLITE_IOERR | (16<<8))
 #define SQLITE_IOERR_DIR_CLOSE         (SQLITE_IOERR | (17<<8))
-
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED | (1<<8) )
 
 /*
