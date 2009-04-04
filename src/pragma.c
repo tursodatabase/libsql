@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.205 2009/04/02 20:16:59 drh Exp $
+** $Id: pragma.c,v 1.206 2009/04/04 16:02:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -144,10 +144,14 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 /*
 ** Generate code to return a single integer value.
 */
-static void returnSingleInt(Parse *pParse, const char *zLabel, int value){
+static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int mem = ++pParse->nMem;
-  sqlite3VdbeAddOp2(v, OP_Integer, value, mem);
+  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
+  if( pI64 ){
+    memcpy(pI64, &value, sizeof(value));
+  }
+  sqlite3VdbeAddOp4(v, OP_Int64, 0, mem, 0, (char*)pI64, P4_INT64);
   if( pParse->explain==0 ){
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, SQLITE_STATIC);
@@ -531,14 +535,11 @@ void sqlite3Pragma(
     Pager *pPager = sqlite3BtreePager(pDb->pBt);
     i64 iLimit = -2;
     if( zRight ){
-      int iLimit32 = atoi(zRight);
-      if( iLimit32<-1 ){
-        iLimit32 = -1;
-      }
-      iLimit = iLimit32;
+      sqlite3Atoi64(zRight, &iLimit);
+      if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
-    returnSingleInt(pParse, "journal_size_limit", (int)iLimit);
+    returnSingleInt(pParse, "journal_size_limit", iLimit);
   }else
 
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
