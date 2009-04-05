@@ -1,5 +1,5 @@
-C Allow\sthe\sjournal_size_limit\sto\sbe\slarger\sthan\s2147483647\sbytes.\s(CVS\s6449)
-D 2009-04-04T16:02:32
+C Additional\scode\sto\smake\ssure\sand\sto\sassert\sthat\smemory\sallocations\shave\n8-byte\salignment.\s\sTicket\s#3777.\s(CVS\s6450)
+D 2009-04-05T12:22:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c f4fdf5359f910dd9ac8d7bd92a67dae072b75f81
+F src/btree.c 457a71a1ebf490d5079ebe36d0213a8025d621a8
 F src/btree.h 8007018c1753944790c39610280894ab280210b8
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
@@ -129,7 +129,7 @@ F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
 F src/mem5.c 838309b521c96a2a34507f74a5a739d28de4aac6
-F src/memjournal.c d6f5cc35cdba795fc3d39812c5669cc012b5ed6f
+F src/memjournal.c 1a987d078e7446a44417a1a6a01f80b48cf65b93
 F src/mutex.c 5e2ea0e0490a3567dc08a014bcee748c0cea727f
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c f5a07671f25a1a9bd7c10ad7107bc2585446200f
@@ -143,7 +143,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 5d667f24615043c937a138faaed5f3e93b8619b0
 F src/os_win.c 524fe4c31c469531191857e8036ef59bfb52d684
-F src/pager.c a8b53f7e4a821d5bc2e01477a5f10c9348ce1d7b
+F src/pager.c 1df277b7c78f780df119c9e2ddea6690979489c5
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y 070215cf461ab917c23253a9cbf0903f2b0d8f19
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -159,7 +159,7 @@ F src/select.c 462d9671e91accd983110fa38674be0d2a3daa66
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 59905c98fd40b3eb3c9a939a113858c75009b7b6
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 22114af78e17ab06b4ccd3b3f7db8ab14b5f2bb9
+F src/sqliteInt.h d1239060599bc45ed9e4668cb7759e6c433dd5ab
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -204,9 +204,9 @@ F src/vdbe.c bddddefc5c7ec1c9cd3e4f9220eb813b43668605
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
 F src/vdbeapi.c 950986b0f765b5b91aab1acb2b405d9450b749d1
-F src/vdbeaux.c 521187e184f642b3978c0ec00a0e165a45518ea6
+F src/vdbeaux.c d335ae5da63cd3b3a0f122e63d0e79e34a4e4fb1
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
-F src/vdbemem.c 53ab1c07800340d2ae100cb99537775a25b2efff
+F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
 F src/where.c 5a421d7265c79dc21c010e3218fd3abd448ec297
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 11c77f4c2c2beee5267ea6e2f1a4bb845531b42c
-R 6fa763bbfd08cb93ca1062548d8a5a81
+P 81931259611ef10de731ea0e38cee92eb8629733
+R d1ec9689e8427e115f63f6ba1a6ce699
 U drh
-Z 3ec086d0c80add1adc32688c8dbd85a1
+Z d2872fc10d5a41a2536ecb51dcae9785

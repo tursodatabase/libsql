@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.139 2009/03/29 15:12:10 drh Exp $
+** $Id: vdbemem.c,v 1.140 2009/04/05 12:22:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -209,6 +209,7 @@ int sqlite3VdbeMemStringify(Mem *pMem, int enc){
   assert( !(fg&(MEM_Str|MEM_Blob)) );
   assert( fg&(MEM_Int|MEM_Real) );
   assert( (pMem->flags&MEM_RowSet)==0 );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
 
   if( sqlite3VdbeMemGrow(pMem, nByte, 0) ){
@@ -345,6 +346,7 @@ static i64 doubleToInt64(double r){
 i64 sqlite3VdbeIntValue(Mem *pMem){
   int flags;
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   flags = pMem->flags;
   if( flags & MEM_Int ){
     return pMem->u.i;
@@ -373,6 +375,7 @@ i64 sqlite3VdbeIntValue(Mem *pMem){
 */
 double sqlite3VdbeRealValue(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   if( pMem->flags & MEM_Real ){
     return pMem->r;
   }else if( pMem->flags & MEM_Int ){
@@ -403,6 +406,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   assert( pMem->flags & MEM_Real );
   assert( (pMem->flags & MEM_RowSet)==0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
   pMem->u.i = doubleToInt64(pMem->r);
   if( pMem->r==(double)pMem->u.i ){
@@ -416,6 +420,8 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
 int sqlite3VdbeMemIntegerify(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
   assert( (pMem->flags & MEM_RowSet)==0 );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
+
   pMem->u.i = sqlite3VdbeIntValue(pMem);
   MemSetTypeFlag(pMem, MEM_Int);
   return SQLITE_OK;
@@ -427,6 +433,8 @@ int sqlite3VdbeMemIntegerify(Mem *pMem){
 */
 int sqlite3VdbeMemRealify(Mem *pMem){
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
+
   pMem->r = sqlite3VdbeRealValue(pMem);
   MemSetTypeFlag(pMem, MEM_Real);
   return SQLITE_OK;

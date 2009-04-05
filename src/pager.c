@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.577 2009/04/04 15:53:48 drh Exp $
+** @(#) $Id: pager.c,v 1.578 2009/04/05 12:22:09 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3114,9 +3114,9 @@ int sqlite3PagerOpen(
   ** source file journal.c).
   */
   if( sqlite3JournalSize(pVfs)>sqlite3MemJournalSize() ){
-    journalFileSize = sqlite3JournalSize(pVfs);
+    journalFileSize = ROUND8(sqlite3JournalSize(pVfs));
   }else{
-    journalFileSize = sqlite3MemJournalSize();
+    journalFileSize = ROUND8(sqlite3MemJournalSize());
   }
 
   /* Set the output variable to NULL in case an error occurs. */
@@ -3172,23 +3172,25 @@ int sqlite3PagerOpen(
   **     Journal file name               (nPathname+8+1 bytes)
   */
   pPtr = (u8 *)sqlite3MallocZero(
-    sizeof(*pPager) +           /* Pager structure */
-    pcacheSize      +           /* PCache object */
-    pVfs->szOsFile  +           /* The main db file */
-    journalFileSize * 2 +       /* The two journal files */ 
-    nPathname + 1 +             /* zFilename */
-    nPathname + 8 + 1           /* zJournal */
+    ROUND8(sizeof(*pPager)) +      /* Pager structure */
+    ROUND8(pcacheSize) +           /* PCache object */
+    ROUND8(pVfs->szOsFile) +       /* The main db file */
+    journalFileSize * 2 +          /* The two journal files */ 
+    nPathname + 1 +                /* zFilename */
+    nPathname + 8 + 1              /* zJournal */
   );
+  assert( EIGHT_BYTE_ALIGNMENT(journalFileSize) );
   if( !pPtr ){
     sqlite3_free(zPathname);
     return SQLITE_NOMEM;
   }
   pPager =              (Pager*)(pPtr);
-  pPager->pPCache =    (PCache*)(pPtr += sizeof(*pPager));
-  pPager->fd =   (sqlite3_file*)(pPtr += pcacheSize);
-  pPager->sjfd = (sqlite3_file*)(pPtr += pVfs->szOsFile);
+  pPager->pPCache =    (PCache*)(pPtr += ROUND8(sizeof(*pPager)));
+  pPager->fd =   (sqlite3_file*)(pPtr += ROUND8(pcacheSize));
+  pPager->sjfd = (sqlite3_file*)(pPtr += ROUND8(pVfs->szOsFile));
   pPager->jfd =  (sqlite3_file*)(pPtr += journalFileSize);
   pPager->zFilename =    (char*)(pPtr += journalFileSize);
+  assert( EIGHT_BYTE_ALIGNMENT(pPager->jfd) );
 
   /* Fill in the Pager.zFilename and Pager.zJournal buffers, if required. */
   if( zPathname ){

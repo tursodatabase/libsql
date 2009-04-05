@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.446 2009/03/25 15:43:09 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.447 2009/04/05 12:22:09 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1023,6 +1023,7 @@ static void allocSpace(
   u8 *pEnd,            /* Pointer to 1 byte past the end of *ppFrom buffer */
   int *pnByte          /* If allocation cannot be made, increment *pnByte */
 ){
+  assert( EIGHT_BYTE_ALIGNMENT(*ppFrom) );
   if( (*(void**)pp)==0 ){
     nByte = ROUND8(nByte);
     if( (pEnd - *ppFrom)>=nByte ){
@@ -1096,6 +1097,8 @@ void sqlite3VdbeMakeReady(
     if( isExplain && nMem<10 ){
       nMem = 10;
     }
+    zCsr += (zCsr - (u8*)0)&7;
+    assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
 
     do {
       memset(zCsr, 0, zEnd-zCsr);

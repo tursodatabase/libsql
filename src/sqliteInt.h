@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.850 2009/04/01 18:03:01 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.851 2009/04/05 12:22:09 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -454,6 +454,11 @@ extern const int sqlite3one;
 ** Round down to the nearest multiple of 8
 */
 #define ROUNDDOWN8(x) ((x)&~7)
+
+/*
+** Assert that the pointer X is aligned to an 8-byte boundary.
+*/
+#define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&7)==0)
 
 /*
 ** An instance of the following structure is used to store the busy-handler
