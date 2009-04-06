@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sin\sLemon\sthat\soccurs\sif\sthe\sinput\sgrammar\sdoes\snot\sdefine\na\stype\sfor\stokens.\s\sThis\sdoes\snot\seffect\sSQLite\ssince\sthe\sSQLite\sgrammar\ndoes\sdefine\sa\stype\sfor\stokens.\s(CVS\s6451)
-D 2009-04-05T15:18:03
+C Check-in\s(6450)\sintroduced\sthe\spossibility\sof\scalling\smemset()\swith\sa\nnegative\s3rd\sargument.\s\sThis\sfixes\sthat\sbug.\s\sTicket\s#3777.\s(CVS\s6452)
+D 2009-04-06T11:11:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,7 +204,7 @@ F src/vdbe.c bddddefc5c7ec1c9cd3e4f9220eb813b43668605
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
 F src/vdbeapi.c 950986b0f765b5b91aab1acb2b405d9450b749d1
-F src/vdbeaux.c d335ae5da63cd3b3a0f122e63d0e79e34a4e4fb1
+F src/vdbeaux.c 570aaa5e15ae141115194d22443c73c8beb5032b
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 208382e032134d9c78fe1cfcb98ce9defb4e3e26
-R d910c4e9dfa053622705d5efbf2ba5ee
+P 4424aee958b2e764a61141b5c66c063e36ed5aae
+R 43e6aecc78e9f6e0e77380914acd3bdb
 U drh
-Z 6862243e084bcfb065a1296a49f3c98a
+Z 14516626e5d5c461983ced4b758a4b3b

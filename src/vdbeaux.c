@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.447 2009/04/05 12:22:09 drh Exp $
+** $Id: vdbeaux.c,v 1.448 2009/04/06 11:11:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1099,6 +1099,7 @@ void sqlite3VdbeMakeReady(
     }
     zCsr += (zCsr - (u8*)0)&7;
     assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
+    if( zEnd<zCsr ) zEnd = zCsr;
 
     do {
       memset(zCsr, 0, zEnd-zCsr);
