@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: autovacuum.test,v 1.28 2008/09/10 10:57:28 danielk1977 Exp $
+# $Id: autovacuum.test,v 1.29 2009/04/06 17:50:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -660,6 +660,37 @@ do_test autovacuum-8.2 {
 } {1 {database is locked}}
 catch {db2 close}
 catch {db eval {COMMIT}}
-    
+
+do_test autovacuum-9.1 {
+  execsql {
+    DROP TABLE t1;
+    DROP TABLE t2;
+    DROP TABLE t3;
+    DROP TABLE t4;
+    DROP TABLE t5;
+    PRAGMA page_count;
+  }
+} {1}
+do_test autovacuum-9.2 {
+  file size test.db
+} 1024
+do_test autovacuum-9.3 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(NULL, randstr(50,50));
+  }
+  for {set ii 0} {$ii < 10} {incr ii} {
+    db eval { INSERT INTO t1 SELECT NULL, randstr(50,50) FROM t1 }
+  }
+  file size test.db
+} $::sqlite_pending_byte
+do_test autovacuum-9.4 {
+  execsql { INSERT INTO t1 SELECT NULL, randstr(50,50) FROM t1 }
+} {}
+do_test autovacuum-9.5 {
+  execsql { DELETE FROM t1 WHERE rowid > (SELECT max(a)/2 FROM t1) }
+  file size test.db
+} $::sqlite_pending_byte
+ 
 
 finish_test

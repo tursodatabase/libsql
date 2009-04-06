@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.141 2009/03/26 17:13:06 danielk1977 Exp $
+# $Id: tester.tcl,v 1.142 2009/04/06 17:50:03 danielk1977 Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -644,7 +644,7 @@ proc do_ioerr_test {testname args} {
   set ::go 1
   #reset_prng_state
   save_prng_state
-  for {set n $::ioerropts(-start)} {$::go && $n<200} {incr n} {
+  for {set n $::ioerropts(-start)} {$::go} {incr n} {
     set ::TN $n
     incr ::ioerropts(-count) -1
     if {$::ioerropts(-count)<0} break

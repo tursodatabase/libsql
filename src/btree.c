@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.590 2009/04/05 12:22:09 drh Exp $
+** $Id: btree.c,v 1.591 2009/04/06 17:50:03 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2582,16 +2582,18 @@ static int autoVacuumCommit(BtShared *pBt){
     const int pgsz = pBt->pageSize;
     Pgno nOrig = pagerPagecount(pBt);
 
-    if( PTRMAP_ISPAGE(pBt, nOrig) ){
+    if( PTRMAP_ISPAGE(pBt, nOrig) || nOrig==PENDING_BYTE_PAGE(pBt) ){
+      /* It is not possible to create a database for which the final page
+      ** is either a pointer-map page or the pending-byte page. If one
+      ** is encountered, this indicates corruption.
+      */
       return SQLITE_CORRUPT_BKPT;
     }
-    if( nOrig==PENDING_BYTE_PAGE(pBt) ){
-      nOrig--;
-    }
+
     nFree = get4byte(&pBt->pPage1->aData[36]);
     nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+pgsz/5)/(pgsz/5);
     nFin = nOrig - nFree - nPtrmap;
-    if( nOrig>PENDING_BYTE_PAGE(pBt) && nFin<=PENDING_BYTE_PAGE(pBt) ){
+    if( nOrig>PENDING_BYTE_PAGE(pBt) && nFin<PENDING_BYTE_PAGE(pBt) ){
       nFin--;
     }
     while( PTRMAP_ISPAGE(pBt, nFin) || nFin==PENDING_BYTE_PAGE(pBt) ){

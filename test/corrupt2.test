@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt2.test,v 1.19 2009/04/02 18:28:08 danielk1977 Exp $
+# $Id: corrupt2.test,v 1.20 2009/04/06 17:50:03 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -233,6 +233,8 @@ db2 close
 
 proc corruption_test {args} {
   set A(-corrupt) {}
+  set A(-sqlprep) {}
+  set A(-tclprep) {}
   array set A $args
 
   catch {db close}
@@ -240,6 +242,7 @@ proc corruption_test {args} {
   file delete -force corrupt.db-journal
 
   sqlite3 db corrupt.db 
+  eval $A(-tclprep)
   db eval $A(-sqlprep)
   db close
 
@@ -476,7 +479,6 @@ corruption_test -sqlprep {
     catchsql { PRAGMA incremental_vacuum }
   } {1 {database disk image is malformed}}
 }
-
 corruption_test -sqlprep {
   PRAGMA auto_vacuum = incremental;
   CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
@@ -497,6 +499,37 @@ corruption_test -sqlprep {
   do_test corrupt2-12.1 {
     catchsql { PRAGMA incremental_vacuum }
   } {1 {database disk image is malformed}}
+}
+
+ifcapable autovacuum {
+  # It is not possible for the last page in a database file to be the
+  # pending-byte page (AKA the locking page). This test verifies that if
+  # an attempt is made to commit a transaction to such an auto-vacuum 
+  # database SQLITE_CORRUPT is returned.
+  #
+  corruption_test -tclprep {
+    db eval { 
+      PRAGMA auto_vacuum = full;
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+      INSERT INTO t1 VALUES(NULL, randstr(50,50));
+    }
+    for {set ii 0} {$ii < 10} {incr ii} {
+      db eval { INSERT INTO t1 SELECT NULL, randstr(50,50) FROM t1 }
+    }
+  } -corrupt {
+    do_test corrupt2-13.1 {
+      file size corrupt.db
+    } $::sqlite_pending_byte
+    hexio_write corrupt.db [expr $::sqlite_pending_byte+1023] 00
+  } -test {
+    do_test corrupt2-13.2 {
+      file size corrupt.db
+    } [expr $::sqlite_pending_byte + 1024]
+    do_test corrupt2-13.3 {
+      catchsql { DELETE FROM t1 WHERE rowid < 30; }
+    } {1 {database disk image is malformed}}
+  }
 }
 
 finish_test

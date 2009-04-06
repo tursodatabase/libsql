@@ -1,5 +1,5 @@
-C Updates\sand\sclarification\sto\sthe\sdocumentation\sof\sthe\ssqlite3_temp_directory\nglobal\svariable.\s\sNo\schanges\sto\scode.\s(CVS\s6455)
-D 2009-04-06T15:55:04
+C Test\scases\sand\sminor\scode\schanges\sto\sincrease\scoverage\sof\sbtree.c.\s(CVS\s6456)
+D 2009-04-06T17:50:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
-F src/btree.c 457a71a1ebf490d5079ebe36d0213a8025d621a8
+F src/btree.c effd3b709121baae988cb3762894bfb047f3d4e5
 F src/btree.h 8007018c1753944790c39610280894ab280210b8
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
@@ -230,7 +230,7 @@ F test/auth.test 0e901aeb399f766fd58f5e19b8b9a09e2df9a341
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/auth3.test b3308950d3839a45193cdcd0473432e33fe38b61
 F test/autoinc.test ab549b48b389cabd92967b86c379ec8b31fa6c16
-F test/autovacuum.test 61260e25744189ff766f61ca3df23c1eeec0060e
+F test/autovacuum.test 25f891bc343a8bf5d9229e2e9ddab9f31a9ab5ec
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
 F test/backup.test 5e487ec8dad73e9d249e9bb9ca5346a03b601b07
@@ -276,7 +276,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 69fea30632d55862a012d3786c7d5fd1329f78db
 F test/conflict.test bb29b052c60a1f7eb6382be77902061d1f305318
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
-F test/corrupt2.test 465786cf3fb286b6b674c6342388dfff988f950b
+F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test 7796d5bdfe155ed824cee9dff371f49da237cfe0
@@ -301,7 +301,7 @@ F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/date.test 95a5611a677f639742db4d7c13af99c2ff56e299
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
-F test/delete.test f171c1011395a8dd63169438fe1d8cc625eb7442
+F test/delete.test 6a872ca2ceed9f4e2a434b730e67ae68653e4aac
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test a13d443571e045b61b1b2b759df8dcffa092c968
@@ -409,7 +409,7 @@ F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test ea9ac797949980c0f44cfa4591d7ca7377421c6a
-F test/ioerr.test 12f9000bb9024b4b1386320e60badd5223e75b16
+F test/ioerr.test 390785ec65f10aa58a82b048ee12e9052d783fa8
 F test/ioerr2.test 021bdc16a9803de34a5ab6ddf211815cad1a4c9f
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
@@ -558,7 +558,7 @@ F test/tclsqlite.test 8b1150d0486c4848c70d96422513a91c5342be0e
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
 F test/temptable.test 5d8ca46be28cc06c887c5a77df650843b7edbae1
 F test/temptrigger.test 03093be9967942623232dfdf2a63b832d4e0e4fa
-F test/tester.tcl ebaa00336761e1b97f56a8376178289097db43ab
+F test/tester.tcl 9bdc35fac11b0a75cae3f91e527098ba879dbfc2
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ed99d2d97f11784dda0f61f8e7d0eb5ca1bca371
-R abf940847e30d1ebd3eb1d24a60369a0
-U drh
-Z ee47436cb2cfecd95ac973d740f1311c
+P aea99c572a69a00b709f0de816ea16488d899375
+R 7bc7fd3a531ebb9367938d84424724ab
+U danielk1977
+Z fda09d8876bea1757fca4f0d05a68a01
