@@ -1,5 +1,5 @@
-C Allow\s"default"\sto\sbe\sa\skeyword\sused\sby\sPRAGMA\sstatements.\s(CVS\s6454)
-D 2009-04-06T14:16:43
+C Updates\sand\sclarification\sto\sthe\sdocumentation\sof\sthe\ssqlite3_temp_directory\nglobal\svariable.\s\sNo\schanges\sto\scode.\s(CVS\s6455)
+D 2009-04-06T15:55:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c badb9f36b3a2ced9ee9551f4ce730f5fab442791
 F src/select.c 462d9671e91accd983110fa38674be0d2a3daa66
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in 59905c98fd40b3eb3c9a939a113858c75009b7b6
+F src/sqlite.h.in 718a026b4cf3c766fc7ac5ff582faa60324b116c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d1239060599bc45ed9e4668cb7759e6c433dd5ab
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P d8c6b28a734fccbbbd567d98ffa7e6557280f737
-R f0ce57456aa8766d0b9754cda1292c32
+P ed99d2d97f11784dda0f61f8e7d0eb5ca1bca371
+R abf940847e30d1ebd3eb1d24a60369a0
 U drh
-Z 60fbf9a0bf63c5f97922a6d6d1f7b8d9
+Z ee47436cb2cfecd95ac973d740f1311c

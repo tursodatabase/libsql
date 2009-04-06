@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.439 2009/04/04 14:04:58 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.440 2009/04/06 15:55:04 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3632,10 +3632,24 @@ int sqlite3_sleep(int);
 ** is a NULL pointer, then SQLite performs a search for an appropriate
 ** temporary file directory.
 **
-** It is not safe to modify this variable once a [database connection]
-** has been opened.  It is intended that this variable be set once
+** It is not safe to read or modify this variable in more than one
+** thread at a time.  It is not safe to read or modify this variable
+** if a [database connection] is being used at the same time in a separate
+** thread.
+** It is intended that this variable be set once
 ** as part of process initialization and before any SQLite interface
-** routines have been call and remain unchanged thereafter.
+** routines have been called and that this variable remain unchanged
+** thereafter.
+**
+** The [temp_store_directory pragma] may modify this variable and cause
+** it to point to memory obtained from [sqlite3_malloc].  Furthermore,
+** the [temp_store_directory pragma] always assumes that any string
+** that this variable points to is held in memory obtained from 
+** [sqlite3_malloc] and the pragma may attempt to free that memory
+** using [sqlite3_free].
+** Hence, if this variable is modified directly, either it should be
+** made NULL or made to point to memory obtained from [sqlite3_malloc]
+** or else the use of the [temp_store_directory pragma] should be avoided.
 */
 SQLITE_EXTERN char *sqlite3_temp_directory;
 
