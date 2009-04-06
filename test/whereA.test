@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The
 # focus of this file is testing the reverse_select_order pragma.
 #
-# $Id: whereA.test,v 1.1 2009/02/23 16:52:08 drh Exp $
+# $Id: whereA.test,v 1.2 2009/04/06 12:26:58 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -77,5 +77,15 @@ do_test whereA-3.3 {
     SELECT * FROM t1 WHERE b>0 ORDER BY b;
   }
 } {1 2 3 3 4.53 {} 2 hello world}
+
+do_test whereA-4.1 {
+  db eval {
+    CREATE TABLE t2(x);
+    INSERT INTO t2 VALUES(1);
+    INSERT INTO t2 VALUES(2);
+    SELECT x FROM t2;
+  }
+} {2 1}
+
 
 finish_test
