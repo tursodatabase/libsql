@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.273 2009/04/03 01:43:57 drh Exp $
+** @(#) $Id: parse.y,v 1.274 2009/04/06 14:16:43 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -1018,6 +1018,7 @@ nmnum(A) ::= plus_num(X).             {A = X;}
 nmnum(A) ::= nm(X).                   {A = X;}
 nmnum(A) ::= ON(X).                   {A = X;}
 nmnum(A) ::= DELETE(X).               {A = X;}
+nmnum(A) ::= DEFAULT(X).              {A = X;}
 %endif SQLITE_OMIT_PRAGMA
 %endif SQLITE_OMIT_PARSER
 plus_num(A) ::= plus_opt number(X).   {A = X;}
