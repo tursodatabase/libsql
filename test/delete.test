@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.24 2009/04/06 17:50:03 danielk1977 Exp $
+# $Id: delete.test,v 1.25 2009/04/07 09:16:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -319,6 +319,13 @@ catch {file attributes test.db -readonly 0}
 db close
 file delete -force test.db test.db-journal
 
+# The following tests verify that SQLite correctly handles the case
+# where an index B-Tree is being scanned, the rowid column being read
+# from each index entry and another statement deletes some rows from
+# the index B-Tree. At one point this (obscure) scenario was causing 
+# SQLite to return spurious SQLITE_CORRUPT errors and arguably incorrect
+# query results. 
+#
 do_test delete-9.1 {
   sqlite3 db test.db
   execsql {
@@ -329,13 +336,59 @@ do_test delete-9.1 {
     INSERT INTO t5 VALUES(5, 6);
     INSERT INTO t6 VALUES('a', 'b');
     INSERT INTO t6 VALUES('c', 'd');
-    INSERT INTO t6 VALUES('e', 'f');
     CREATE INDEX i5 ON t5(a);
+    CREATE INDEX i6 ON t6(c);
   }
 } {}
 do_test delete-9.2 {
-  explain { SELECT a, c, d FROM t5, t6 ORDER BY a } 
-} {}
+  set res [list]
+  db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
+    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 } }
+    lappend res $r $c $d
+  }
+  set res
+} {1 a b 1 c d 2 a b {} c d}
+do_test delete-9.3 {
+  execsql {
+    INSERT INTO t5 VALUES(1, 2);
+    INSERT INTO t5 VALUES(3, 4);
+    INSERT INTO t5 VALUES(5, 6);
+  }
+  set res [list]
+  db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
+    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 2 } }
+    lappend res $r $c $d
+  }
+  set res
+} {1 a b 1 c d 2 a b {} c d 3 a b 3 c d}
+do_test delete-9.4 {
+  execsql {
+    DELETE FROM t5;
+    INSERT INTO t5 VALUES(1, 2);
+    INSERT INTO t5 VALUES(3, 4);
+    INSERT INTO t5 VALUES(5, 6);
+  }
+  set res [list]
+  db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
+    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 1 } }
+    lappend res $r $c $d
+  }
+  set res
+} {1 a b 1 c d 2 a b 2 c d 3 a b 3 c d}
+do_test delete-9.5 {
+  execsql {
+    DELETE FROM t5;
+    INSERT INTO t5 VALUES(1, 2);
+    INSERT INTO t5 VALUES(3, 4);
+    INSERT INTO t5 VALUES(5, 6);
+  }
+  set res [list]
+  db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
+    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 3 } }
+    lappend res $r $c $d
+  }
+  set res
+} {1 a b 1 c d 2 a b 2 c d}
 
 
 finish_test

@@ -1,5 +1,5 @@
-C Compile\sfixes\sand\simprovements\sfor\svxwork:\sfixed\sdeadlock\sin\ssemClose,\ndetect\sif\sfcntl\sis\susable,\sfall\sback\sto\snamed\ssemaphores\sif\snot.\s(CVS\s6460)
-D 2009-04-07T05:35:04
+C Have\sOP_IdxRowid\shandle\sthe\scase\swhere\sthe\sindex\sentry\sit\sis\sreading\sfrom\sis\sdeleted.\s(CVS\s6461)
+D 2009-04-07T09:16:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -200,7 +200,7 @@ F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 469d74f5bf09ed6398702c7da2ef8a34e979a1c1
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
-F src/vdbe.c bddddefc5c7ec1c9cd3e4f9220eb813b43668605
+F src/vdbe.c 3d252f70666a80fea2fb794b6fe154a282d11573
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
 F src/vdbeapi.c 950986b0f765b5b91aab1acb2b405d9450b749d1
@@ -301,7 +301,7 @@ F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
 F test/date.test 95a5611a677f639742db4d7c13af99c2ff56e299
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
-F test/delete.test 6a872ca2ceed9f4e2a434b730e67ae68653e4aac
+F test/delete.test 2b33a092350ab09f38e04522675ad761ce069358
 F test/delete2.test 3a03f2cca1f9a67ec469915cb8babd6485db43fa
 F test/delete3.test 555e84a00a99230b7d049d477a324a631126a6ab
 F test/descidx1.test a13d443571e045b61b1b2b759df8dcffa092c968
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 909683b3428784ce91d222ccf887033d86250bd5
-R 1644d97c76c8c923de903afaae7ff2f3
-U chw
-Z 32650e63af9e81b186aac6c919550d61
+P efd0682b7e78acc4242cf257fc246350fc29b5c8
+R ea88e0d47e3bbba6a9be95b56b9b242f
+U danielk1977
+Z 1ad6ecec88b87bbba4f3244dc8c2e08e
