@@ -1,5 +1,5 @@
-C Always\senable\sWHERE-tracing\son\sa\stest\sbuild.\r\nOops\s-\saccidentally\sincluded\sa\sdebugging\schange\sto\spragma.c\sin\s\r\nthis\scheck-in.\s\sThe\sreal\sfix\sfor\sthe\spragma\sproblem\sis\sin\sthe\r\nfollowing\schecking.\s(CVS\s6458)
-D 2009-04-07T00:43:28
+C Remove\san\sunused\stest\sfor\sEXPLAIN-mode\sin\sthe\sPRAGMA\sprocessing.\s(CVS\s6459)
+D 2009-04-07T00:49:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/parse.y b7e4341b21736a90b952aa6bb663ec98529b778e
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c f587565f4ba0fd1772067eaa96814dce761b7a4c
-F src/pragma.c a89252bf022ca7e3291f205b4f2b730a3833c065
+F src/pragma.c e48136fdf442bcd3143d82f4a4e08bf9b185f16c
 F src/prepare.c 0ad1ba3290e0626aa4e7589ed6ab6af2572875b0
 F src/printf.c 9866a9a9c4a90f6d4147407f373df3fd5d5f9b6f
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 47aa7eb0e047e30bbf09cb08c1e48c61f8d9861c
-R e81d098097e2f707a36a937b786de0fc
+P 567cf90b038a37da93d02954ef8f9f435dcc9a38
+R 9fccbb587b2c9a284607fd3746a1335c
 U drh
-Z 75554d1084ff92052371925ee3610eb2
+Z aac902d0bf43c86a2936f0bc5216ba03

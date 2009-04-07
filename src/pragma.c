@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.207 2009/04/07 00:43:28 drh Exp $
+** $Id: pragma.c,v 1.208 2009/04/07 00:49:16 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -152,10 +152,8 @@ static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
     memcpy(pI64, &value, sizeof(value));
   }
   sqlite3VdbeAddOp4(v, OP_Int64, 0, mem, 0, (char*)pI64, P4_INT64);
-  if( /*pParse->explain==0*/ 1 ){
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, SQLITE_STATIC);
-  }
+  sqlite3VdbeSetNumCols(v, 1);
+  sqlite3VdbeSetColName(v, 0, COLNAME_NAME, zLabel, SQLITE_STATIC);
   sqlite3VdbeAddOp2(v, OP_ResultRow, mem, 1);
 }
 
