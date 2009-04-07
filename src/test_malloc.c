@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.53 2009/02/04 15:27:40 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.54 2009/04/07 11:21:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -49,7 +49,7 @@ static void sqlite3Fault(void){
 ** Check to see if a fault should be simulated.  Return true to simulate
 ** the fault.  Return false if the fault should not be simulated.
 */
-static int faultsimStep(){
+static int faultsimStep(void){
   if( likely(!memfault.enable) ){
     return 0;
   }
@@ -771,7 +771,7 @@ static void test_memdebug_callback(int nByte, int nFrame, void **aFrame){
 }
 #endif /* SQLITE_MEMDEBUG */
 
-static void test_memdebug_log_clear(){
+static void test_memdebug_log_clear(void){
   Tcl_HashSearch search;
   Tcl_HashEntry *pEntry;
   for(

@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.56 2009/03/28 18:56:14 drh Exp $
+** $Id: test_async.c,v 1.57 2009/04/07 11:21:29 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -642,7 +642,7 @@ static void addAsyncWrite(AsyncWrite *pWrite){
 /*
 ** Increment async.nFile in a thread-safe manner.
 */
-static void incrOpenFileCount(){
+static void incrOpenFileCount(void){
   /* We must hold the queue mutex in order to modify async.nFile */
   pthread_mutex_lock(&async.queueMutex);
   if( async.nFile==0 ){

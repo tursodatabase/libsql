@@ -13,7 +13,7 @@
 ** This file contains the implementation of the sqlite3_unlock_notify()
 ** API method and its associated functionality.
 **
-** $Id: notify.c,v 1.2 2009/03/25 16:51:43 drh Exp $
+** $Id: notify.c,v 1.3 2009/04/07 11:21:29 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -112,7 +112,7 @@ static void addToBlockedList(sqlite3 *db){
 /*
 ** Obtain the STATIC_MASTER mutex.
 */
-static void enterMutex(){
+static void enterMutex(void){
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
   checkListProperties(0);
 }
@@ -120,7 +120,7 @@ static void enterMutex(){
 /*
 ** Release the STATIC_MASTER mutex.
 */
-static void leaveMutex(){
+static void leaveMutex(void){
   assertMutexHeld();
   checkListProperties(0);
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));

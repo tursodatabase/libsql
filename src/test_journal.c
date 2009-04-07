@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.14 2009/03/28 17:21:52 danielk1977 Exp $
+** $Id: test_journal.c,v 1.15 2009/04/07 11:21:29 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -814,7 +814,7 @@ int jt_register(char *zWrap, int isDefault){
 /*
 ** Uninstall the jt VFS, if it is installed.
 */
-void jt_unregister(){
+void jt_unregister(void){
   sqlite3_vfs_unregister(&jt_vfs);
 }
 
