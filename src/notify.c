@@ -13,7 +13,7 @@
 ** This file contains the implementation of the sqlite3_unlock_notify()
 ** API method and its associated functionality.
 **
-** $Id: notify.c,v 1.3 2009/04/07 11:21:29 danielk1977 Exp $
+** $Id: notify.c,v 1.4 2009/04/07 22:06:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -128,6 +128,24 @@ static void leaveMutex(void){
 
 /*
 ** Register an unlock-notify callback.
+**
+** This is called after connection "db" has attempted some operation
+** but has received an SQLITE_LOCKED error because another connection
+** (call it pOther) in the same process was busy using the same shared
+** cache.  pOther is found by looking at db->pBlockingConnection.
+**
+** If there is no blocking connection, the callback is invoked immediately,
+** before this routine returns.
+**
+** If pOther is already blocked on db, then report SQLITE_LOCKED, to indicate
+** a deadlock.
+**
+** Otherwise, make arrangements to invoke xNotify when pOther drops
+** its locks.
+**
+** Each call to this routine overrides any prior callbacks registered
+** on the same "db".  If xNotify==0 then any prior callbacks are immediately
+** cancelled.
 */
 int sqlite3_unlock_notify(
   sqlite3 *db,
@@ -139,7 +157,12 @@ int sqlite3_unlock_notify(
   sqlite3_mutex_enter(db->mutex);
   enterMutex();
 
-  if( 0==db->pBlockingConnection ){
+  if( xNotify==0 ){
+    removeFromBlockedList(db);
+    db->pUnlockConnection = 0;
+    db->xUnlockNotify = 0;
+    db->pUnlockArg = 0;
+  }else if( 0==db->pBlockingConnection ){
     /* The blocking transaction has been concluded. Or there never was a 
     ** blocking transaction. In either case, invoke the notify callback
     ** immediately. 
@@ -148,7 +171,7 @@ int sqlite3_unlock_notify(
   }else{
     sqlite3 *p;
 
-    for(p=db->pBlockingConnection; p && p!=db; p=p->pUnlockConnection);
+    for(p=db->pBlockingConnection; p && p!=db; p=p->pUnlockConnection){}
     if( p ){
       rc = SQLITE_LOCKED;              /* Deadlock detected. */
     }else{
@@ -183,7 +206,8 @@ void sqlite3ConnectionBlocked(sqlite3 *db, sqlite3 *pBlocker){
 }
 
 /*
-** The transaction opened by database db has just finished. Locks held 
+** This function is called when
+** the transaction opened by database db has just finished. Locks held 
 ** by database connection db have been released.
 **
 ** This function loops through each entry in the blocked connections
@@ -204,11 +228,11 @@ void sqlite3ConnectionUnlocked(sqlite3 *db){
   void (*xUnlockNotify)(void **, int) = 0; /* Unlock-notify cb to invoke */
   int nArg = 0;                            /* Number of entries in aArg[] */
   sqlite3 **pp;                            /* Iterator variable */
+  void **aArg;               /* Arguments to the unlock callback */
+  void **aDyn = 0;           /* Dynamically allocated space for aArg[] */
+  void *aStatic[16];         /* Starter space for aArg[].  No malloc required */
 
-  void *aStatic[16];
-  void **aArg = aStatic;
-  void **aDyn = 0;
-
+  aArg = aStatic;
   enterMutex();         /* Enter STATIC_MASTER mutex */
 
   /* This loop runs once for each entry in the blocked-connections list. */
