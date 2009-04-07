@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.381 2009/04/07 00:43:28 drh Exp $
+** $Id: where.c,v 1.382 2009/04/07 13:48:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -26,7 +26,7 @@
 #if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
 int sqlite3WhereTrace = 0;
 #endif
-#if defined(SQLITE_TEST)
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 # define WHERETRACE(X)  if(sqlite3WhereTrace) sqlite3DebugPrintf X
 #else
 # define WHERETRACE(X)

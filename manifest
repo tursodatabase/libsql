@@ -1,5 +1,5 @@
-C Change\s"...\smyfunction()\s{\s...\s}"\sto\s"...\smyfunction(void)\s{\s...\s}"\sin\sa\sfew\spla\nces.\sTicket\s#3783.\s(CVS\s6462)
-D 2009-04-07T11:21:29
+C Only\senable\sWHERE-tracing\swhen\sboth\sTEST\sand\sDEBUG\sare\senabled.\s(CVS\s6463)
+D 2009-04-07T13:48:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +209,7 @@ F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
 F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
-F src/where.c 70199494db2c13d047e9cf0d4779c70d876fb267
+F src/where.c ddf26069d03f9e0c6ef14d537422df02e0c593f0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -715,7 +715,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cdad29b582ca832f6a717d8a6e3f3bca424e84a4
-R d0fd726e5ff243281a73297aa23cdae6
-U danielk1977
-Z c128ae39aeba6f928c4bb66d9b83018b
+P 6f79e6ae0d30948db4ba26bb5b448c15c470464f
+R b86f85689a47c05a3e942ac3182e5355
+U drh
+Z cf27c4815f0d4b057a9dd07cd290f024
