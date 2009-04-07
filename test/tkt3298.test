@@ -12,10 +12,12 @@
 # This file tests changes to the name resolution logic that occurred
 # in august of 2008 and where associated with tickets #3298 and #3301
 #
-# $Id: tkt3298.test,v 1.2 2008/08/22 12:46:46 drh Exp $
+# $Id: tkt3298.test,v 1.3 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !trigger { finish_test ; return }
 
 do_test tkt3298-1.1 {
   execsql {

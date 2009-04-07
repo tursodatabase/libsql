@@ -13,7 +13,7 @@
 # file format change that may be used in the future to implement
 # "ALTER TABLE ... ADD COLUMN".
 #
-# $Id: alter2.test,v 1.13 2008/03/19 00:21:31 drh Exp $
+# $Id: alter2.test,v 1.14 2009/04/07 14:14:22 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -220,6 +220,8 @@ ifcapable trigger {
       SELECT * FROM clog;
     }
   } {{} 2 {} 6 {} 10}
+} else {
+  execsql { CREATE TABLE abc3(a, b); }
 }
 
 #---------------------------------------------------------------------
@@ -276,9 +278,7 @@ ifcapable vacuum {
     get_file_format
   } {2}
   do_test alter2-5.2 {
-    execsql {    
-      VACUUM;
-    }
+    execsql { VACUUM }
   } {}
   do_test alter2-5.3 {
     get_file_format

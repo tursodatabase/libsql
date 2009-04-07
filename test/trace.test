@@ -12,7 +12,7 @@
 #
 # This file implements tests for the "sqlite3_trace()" API.
 #
-# $Id: trace.test,v 1.7 2008/01/12 21:35:57 drh Exp $
+# $Id: trace.test,v 1.8 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -147,23 +147,25 @@ catch {sqlite3_finalize $STMT}
 
 # Trigger tracing.
 #
-do_test trace-5.1 {
-  db eval {
-    CREATE TRIGGER r1t1 AFTER UPDATE ON t1 BEGIN
-      UPDATE t2 SET a=new.a WHERE rowid=new.rowid;
-    END;
-    CREATE TRIGGER r1t2 AFTER UPDATE ON t2 BEGIN
-      SELECT 'hello';
-    END;
-  }
-  set TRACE_OUT {}
-  proc trace_proc cmd {
-    lappend ::TRACE_OUT [string trim $cmd]
-  }
-  db eval {
-    UPDATE t1 SET a=a+1;
-  }
-  set TRACE_OUT
-} {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
+ifcapable trigger {
+  do_test trace-5.1 {
+    db eval {
+      CREATE TRIGGER r1t1 AFTER UPDATE ON t1 BEGIN
+        UPDATE t2 SET a=new.a WHERE rowid=new.rowid;
+      END;
+      CREATE TRIGGER r1t2 AFTER UPDATE ON t2 BEGIN
+        SELECT 'hello';
+      END;
+    }
+    set TRACE_OUT {}
+    proc trace_proc cmd {
+      lappend ::TRACE_OUT [string trim $cmd]
+    }
+    db eval {
+      UPDATE t1 SET a=a+1;
+    }
+    set TRACE_OUT
+  } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
+}
 
 finish_test

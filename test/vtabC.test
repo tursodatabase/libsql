@@ -13,7 +13,7 @@
 # and xRollback methods are only invoked after an xBegin or xCreate.
 # Ticket #3083.
 #
-# $Id: vtabC.test,v 1.1 2008/04/28 20:27:54 drh Exp $
+# $Id: vtabC.test,v 1.2 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -22,6 +22,8 @@ ifcapable !vtab {
   finish_test
   return
 }
+
+ifcapable !trigger { finish_test ; return }
 
 
 # N will be the number of virtual tables we have defined.

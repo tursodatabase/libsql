@@ -17,7 +17,7 @@
 #      sqlite_update_hook    (tests hook-4-*)
 #      sqlite_rollback_hook  (tests hook-5.*)
 #
-# $Id: hook.test,v 1.14 2009/01/03 14:04:39 drh Exp $
+# $Id: hook.test,v 1.15 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -158,26 +158,25 @@ do_test hook-4.1.2 {
     DELETE main t1 4 \
 ]
 
-# Update hook is not invoked for changes to sqlite_master
-#
-do_test hook-4.1.3 {
-  set ::update_hook {}
-  execsql {
-    CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT RAISE(IGNORE); END;
-  }
-  set ::update_hook
-} {}
-do_test hook-4.1.4 {
-  set ::update_hook {}
-  execsql {
-    DROP TRIGGER r1;
-  }
-  set ::update_hook
-} {}
-
-
-set ::update_hook {}
 ifcapable trigger {
+  # Update hook is not invoked for changes to sqlite_master
+  #
+  do_test hook-4.1.3 {
+    set ::update_hook {}
+    execsql {
+      CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT RAISE(IGNORE); END;
+    }
+    set ::update_hook
+  } {}
+  do_test hook-4.1.4 {
+    set ::update_hook {}
+    execsql {
+      DROP TRIGGER r1;
+    }
+    set ::update_hook
+  } {}
+  
+  set ::update_hook {}
   do_test hook-4.2.1 {
     catchsql {
       DROP TABLE t2;

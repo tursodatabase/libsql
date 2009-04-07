@@ -13,10 +13,12 @@
 # of the TCL interface - methods which are based on the
 # sqlite3_backup_XXX API.
 #
-# $Id: backup2.test,v 1.3 2009/03/18 13:55:30 danielk1977 Exp $
+# $Id: backup2.test,v 1.4 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !trigger||!view { finish_test ; return }
 
 # Fill a database with test data.
 #

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.851 2009/04/05 12:22:09 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.852 2009/04/07 14:14:22 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2537,6 +2537,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J,K,L) 0
+# define sqlite3TriggerList(X, Y) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

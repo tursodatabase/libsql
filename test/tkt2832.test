@@ -11,11 +11,13 @@
 #
 # This file is to test that ticket #2832 has been fixed.
 #
-# $Id: tkt2832.test,v 1.4 2008/07/12 14:52:21 drh Exp $
+# $Id: tkt2832.test,v 1.5 2009/04/07 14:14:23 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !trigger { finish_test ; return }
 
 do_test tkt2832-1.1 {
   execsql {

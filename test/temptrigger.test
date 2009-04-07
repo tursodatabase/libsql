@@ -9,10 +9,12 @@
 #
 #***********************************************************************
 #
-# $Id: temptrigger.test,v 1.1 2009/02/28 10:47:42 danielk1977 Exp $
+# $Id: temptrigger.test,v 1.2 2009/04/07 14:14:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+
+ifcapable !trigger { finish_test ; return }
 
 # Test cases:
 #
