@@ -1,5 +1,5 @@
-C Add\sa\scomment\sto\sprintf.c\s-\sno\schanges\sto\scode.\s(CVS\s6468)
-D 2009-04-08T11:49:42
+C Do\snot\sattempt\sto\swalk\sa\sTokenOnly\sor\sSpanOnly\sexpression\stree\snode.\nTicket\s#3791.\s(CVS\s6469)
+D 2009-04-08T12:21:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -208,7 +208,7 @@ F src/vdbeaux.c 570aaa5e15ae141115194d22443c73c8beb5032b
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
-F src/walker.c 42bd3f00ca2ef5ae842304ec0d59903ef051412d
+F src/walker.c b32028f411cd4faa4e9e75da6f192f3e6e3dc7af
 F src/where.c ddf26069d03f9e0c6ef14d537422df02e0c593f0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -636,6 +636,7 @@ F test/tkt3757.test 8f2208930655bbd4f92c14e19e72303a43e098ef
 F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
 F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
 F test/tkt3773.test 430b06567ce40285dfd2c4834a2a61816403efeb
+F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test 8b79967a7e085289ec64890c6fdf9d089e1b4a5f
@@ -715,7 +716,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9ccfcb760745df28b04e746355b1b6dec49a93de
-R 37fa3e94f746b0927c8dd6dd1a9acda5
+P ee5a4a0e595a7b916db7d55d30ddfda0a8d40d90
+R 17434378e2db6c8fd2ad9ea648250d41
 U drh
-Z 91ff06ee50236ed490b9e338af17d2f4
+Z 66c9263486f4e7d1bb93c05e15462035
