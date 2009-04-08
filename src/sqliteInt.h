@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.853 2009/04/07 22:06:57 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.854 2009/04/08 13:51:51 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1452,19 +1452,18 @@ struct AggInfo {
 **
 ** ALLOCATION NOTES:
 **
-** Expr structures may be stored as part of the in-memory database schema,
-** for example as part of trigger, view or table definitions. In this case,
-** the amount of memory consumed by complex expressions may be significant.
-** For this reason, less than sizeof(Expr) bytes may be allocated for some 
-** Expr structs stored as part of the in-memory database schema.
+** Expr objects can use a lot of memory space in database schema.  To
+** help reduce memory requirements, sometimes an Expr object will be
+** truncated.  And to reduce the number of memory allocations, sometimes
+** two or more Expr objects will be stored in a single memory allocation,
+** together with Expr.token and/or Expr.span strings.
 **
-** If the EP_Reduced flag is set in Expr.flags, then only EXPR_REDUCEDSIZE
-** bytes of space are allocated for the expression structure. This is enough
-** space to store all fields up to and including the "Token span;" field.
-**
-** If the EP_TokenOnly flag is set in Expr.flags, then only EXPR_TOKENONLYSIZE
-** bytes of space are allocated for the expression structure. This is enough
-** space to store all fields up to and including the "Token token;" field.
+** If the EP_Reduced, EP_SpanToken, and EP_TokenOnly flags are set when
+** an Expr object is truncated.  When EP_Reduced is set, then all
+** the child Expr objects in the Expr.pLeft and Expr.pRight subtrees
+** are contained within the same memory allocation.  Note, however, that
+** the subtrees in Expr.x.pList or Expr.x.pSelect are always separately
+** allocated, regardless of whether or not EP_Reduced is set.
 */
 struct Expr {
   u8 op;                 /* Operation performed by this node */
@@ -1480,7 +1479,7 @@ struct Expr {
 
   Token span;            /* Complete text of the expression */
 
-  /* If the EP_SpanOnly flag is set in the Expr.flags mask, then no
+  /* If the EP_SpanToken flag is set in the Expr.flags mask, then no
   ** space is allocated for the fields below this point. An attempt to
   ** access them will result in a segfault or malfunction. 
   *********************************************************************/
@@ -1528,7 +1527,7 @@ struct Expr {
 
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_SpanOnly   0x8000  /* Expr struct is EXPR_SPANONLYSIZE bytes only */
+#define EP_SpanToken  0x8000  /* Expr size is EXPR_SPANTOKENSIZE bytes */
 
 /*
 ** The following are the meanings of bits in the Expr.vvaFlags field.
@@ -1553,18 +1552,17 @@ struct Expr {
 ** struct, an Expr struct with the EP_Reduced flag set in Expr.flags 
 ** and an Expr struct with the EP_TokenOnly flag set.
 */
-#define EXPR_FULLSIZE           sizeof(Expr)
-#define EXPR_REDUCEDSIZE        offsetof(Expr,iTable)
-#define EXPR_TOKENONLYSIZE      offsetof(Expr,span)
-#define EXPR_SPANONLYSIZE       offsetof(Expr,pLeft)
+#define EXPR_FULLSIZE           sizeof(Expr)           /* Full size */
+#define EXPR_REDUCEDSIZE        offsetof(Expr,iTable)  /* Common features */
+#define EXPR_SPANTOKENSIZE      offsetof(Expr,pLeft)   /* Fewer features */
+#define EXPR_TOKENONLYSIZE      offsetof(Expr,span)    /* Smallest possible */
 
 /*
 ** Flags passed to the sqlite3ExprDup() function. See the header comment 
 ** above sqlite3ExprDup() for details.
 */
-#define EXPRDUP_REDUCE         0x0001
-#define EXPRDUP_SPAN           0x0002
-#define EXPRDUP_DISTINCTSPAN   0x0004
+#define EXPRDUP_REDUCE         0x0001  /* Used reduced-size Expr nodes */
+#define EXPRDUP_SPAN           0x0002  /* Make a copy of Expr.span */
 
 /*
 ** A list of expressions.  Each expression may optionally have a

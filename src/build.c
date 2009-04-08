@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.527 2009/03/31 03:41:57 shane Exp $
+** $Id: build.c,v 1.528 2009/04/08 13:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1112,9 +1112,7 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
       ** is required by pragma table_info.
       */
       sqlite3ExprDelete(db, pCol->pDflt);
-      pCol->pDflt = sqlite3ExprDup(
-          db, pExpr, EXPRDUP_REDUCE|EXPRDUP_DISTINCTSPAN
-      );
+      pCol->pDflt = sqlite3ExprDup(db, pExpr, EXPRDUP_REDUCE|EXPRDUP_SPAN);
     }
   }
   sqlite3ExprDelete(db, pExpr);

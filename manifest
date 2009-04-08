@@ -1,5 +1,5 @@
-C Do\snot\sattempt\sto\swalk\sa\sTokenOnly\sor\sSpanOnly\sexpression\stree\snode.\nTicket\s#3791.\s(CVS\s6469)
-D 2009-04-08T12:21:31
+C Minor\srefactoring\sof\sthe\sexpression-compaction\slogic\sfor\sclarity\sof\npresentation.\s\sNew\scomments\sadded.\s\sThe\sEXPRDUP_DISTINCTSPAN\sflag\sis\nremoved\sas\sobsolete.\s(CVS\s6470)
+D 2009-04-08T13:51:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -98,7 +98,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 472c0a4733de40f1d997ff4fd746042b707faf7b
 F src/analyze.c 3585d1a4c480ee85b65cf0a676e05d2c29eb6bdb
-F src/attach.c d34589d5c85d81e755e4a8fc946d313915a6fa6d
+F src/attach.c af80fa85d391ad302c148c4e2524a2cebec64cb2
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
@@ -106,12 +106,12 @@ F src/btmutex.c 341502bc496dc0840dcb00cde65680fb0e85c3ab
 F src/btree.c 0d02176d76c6e202cff0788929e8eee71bf60e88
 F src/btree.h 8007018c1753944790c39610280894ab280210b8
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c 72357fd75ef036d0afbf1756edab6d62c56fcf4b
+F src/build.c 2882f22078db1c3f887b1aca77ff460cf9461c62
 F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 3e5c554b2f4f2d798761597c08147d7b15f35bea
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
-F src/expr.c b7ce173d17b80e937473147604bfde4bb339a8a0
+F src/expr.c ccc5b5fa3bac249a9ab6e5e10629d77ff293c9f8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 99ae90d46154952e08282fcdfe72d08e9601e174
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -159,7 +159,7 @@ F src/select.c 462d9671e91accd983110fa38674be0d2a3daa66
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 718a026b4cf3c766fc7ac5ff582faa60324b116c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 7b341ab7d570b271e8566e7e7ed6993453f84964
+F src/sqliteInt.h fcdad0896da9c8b6372db974131e33b7a06606ce
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c 332ab0ea691e63862e2a8bdfe2c0617ee61062a3
@@ -208,7 +208,7 @@ F src/vdbeaux.c 570aaa5e15ae141115194d22443c73c8beb5032b
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
-F src/walker.c b32028f411cd4faa4e9e75da6f192f3e6e3dc7af
+F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
 F src/where.c ddf26069d03f9e0c6ef14d537422df02e0c593f0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
@@ -716,7 +716,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ee5a4a0e595a7b916db7d55d30ddfda0a8d40d90
-R 17434378e2db6c8fd2ad9ea648250d41
+P 8362d883248f00a8ec7294bf027fd19758aec5f2
+R 4b30b803e3cfb8e04c48c3d2b8d2124a
 U drh
-Z 66c9263486f4e7d1bb93c05e15462035
+Z 869480ece5a998deade5da75d4798c3b

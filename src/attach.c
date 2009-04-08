@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.83 2009/02/19 14:39:25 danielk1977 Exp $
+** $Id: attach.c,v 1.84 2009/04/08 13:51:51 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -488,7 +488,7 @@ int sqlite3FixExpr(
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
   while( pExpr ){
-    if( ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_SpanOnly) ) break;
+    if( ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_SpanToken) ) break;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
     }else{
