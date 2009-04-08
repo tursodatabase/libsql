@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.99 2008/12/10 19:26:24 drh Exp $
+** $Id: printf.c,v 1.100 2009/04/08 11:49:42 drh Exp $
 **
 **************************************************************************
 **
@@ -133,6 +133,9 @@ static const et_info fmtinfo[] = {
   {  'n',  0, 0, etSIZE,       0,  0 },
   {  '%',  0, 0, etPERCENT,    0,  0 },
   {  'p', 16, 0, etPOINTER,    0,  1 },
+
+/* All the rest have the FLAG_INTERN bit set and are thus for internal
+** use only */
   {  'T',  0, 2, etTOKEN,      0,  0 },
   {  'S',  0, 2, etSRCLIST,    0,  0 },
   {  'r', 10, 3, etORDINAL,    0,  0 },
