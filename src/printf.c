@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.100 2009/04/08 11:49:42 drh Exp $
+** $Id: printf.c,v 1.101 2009/04/08 15:45:32 drh Exp $
 **
 **************************************************************************
 **
@@ -724,13 +724,16 @@ void sqlite3VXPrintf(
 ** Append N bytes of text from z to the StrAccum object.
 */
 void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
+  assert( z!=0 || N==0 );
   if( p->tooBig | p->mallocFailed ){
+    testcase(p->tooBig);
+    testcase(p->mallocFailed);
     return;
   }
   if( N<0 ){
     N = sqlite3Strlen30(z);
   }
-  if( N==0 || z==0 ){
+  if( N==0 || NEVER(z==0) ){
     return;
   }
   if( p->nChar+N >= p->nAlloc ){
@@ -819,12 +822,13 @@ char *sqlite3VMPrintf(sqlite3 *db, const char *zFormat, va_list ap){
   char *z;
   char zBase[SQLITE_PRINT_BUF_SIZE];
   StrAccum acc;
+  assert( db!=0 );
   sqlite3StrAccumInit(&acc, zBase, sizeof(zBase),
-                      db ? db->aLimit[SQLITE_LIMIT_LENGTH] : SQLITE_MAX_LENGTH);
+                      db->aLimit[SQLITE_LIMIT_LENGTH]);
   acc.db = db;
   sqlite3VXPrintf(&acc, 1, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
-  if( acc.mallocFailed && db ){
+  if( acc.mallocFailed ){
     db->mallocFailed = 1;
   }
   return z;

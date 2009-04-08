@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.350 2009/04/01 18:40:32 drh Exp $
+** $Id: test1.c,v 1.351 2009/04/08 15:45:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -496,7 +496,7 @@ static int test_exec_nr(
 /*
 ** Usage:  sqlite3_mprintf_z_test  SEPARATOR  ARG0  ARG1 ...
 **
-** Test the %z format of sqliteMPrintf().  Use multiple mprintf() calls to 
+** Test the %z format of sqlite_mprintf().  Use multiple mprintf() calls to 
 ** concatenate arg0 through argn using separator as the separator.
 ** Return the result.
 */
@@ -510,7 +510,7 @@ static int test_mprintf_z(
   int i;
 
   for(i=2; i<argc && (i==2 || zResult); i++){
-    zResult = sqlite3MPrintf(0, "%z%s%s", zResult, argv[1], argv[i]);
+    zResult = sqlite3_mprintf("%z%s%s", zResult, argv[1], argv[i]);
   }
   Tcl_AppendResult(interp, zResult, 0);
   sqlite3_free(zResult);
@@ -520,7 +520,7 @@ static int test_mprintf_z(
 /*
 ** Usage:  sqlite3_mprintf_n_test  STRING
 **
-** Test the %n format of sqliteMPrintf().  Return the length of the
+** Test the %n format of sqlite_mprintf().  Return the length of the
 ** input string.
 */
 static int test_mprintf_n(
@@ -531,7 +531,7 @@ static int test_mprintf_n(
 ){
   char *zStr;
   int n = 0;
-  zStr = sqlite3MPrintf(0, "%s%n", argv[1], &n);
+  zStr = sqlite3_mprintf("%s%n", argv[1], &n);
   sqlite3_free(zStr);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(n));
   return TCL_OK;
