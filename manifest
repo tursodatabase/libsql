@@ -1,5 +1,5 @@
-C Reconfigure\sthe\sdefault\scase\sfor\sthe\sprintf\sswitch\sin\sorder\sto\simprove\nbranch\scoverage.\s(CVS\s6472)
-D 2009-04-08T16:10:04
+C Add\san\sassert()\sto\sthe\simplementation\sof\scount(*)\sthat\schecks\sthe\ncorrect\soperation\sof\sthe\ssqlite3_aggregate_count()\sfunction.\s(CVS\s6473)
+D 2009-04-08T23:04:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c 3e5c554b2f4f2d798761597c08147d7b15f35bea
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c ccc5b5fa3bac249a9ab6e5e10629d77ff293c9f8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 99ae90d46154952e08282fcdfe72d08e9601e174
+F src/func.c 7d30fc856932dafc6cc94f8ad7c2b96d6a1cc02f
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -716,7 +716,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6fe8b5d70247d9c6b70dd482db3990986be97e69
-R 1217eb61b95942982b0af25be8e3d84f
+P 3cc79162dbdbce9d08bb28942128780277101e0d
+R cad719d14d320e9183126e9bc8c80627
 U drh
-Z 52886030af0cdafae5902b187d1061f2
+Z f5295c7f28f949611e9fc538864887c4
