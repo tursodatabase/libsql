@@ -15,7 +15,7 @@
 # that contain headers with nRec==0 that are followed by additional
 # valid headers.
 #
-# $Id: tkt2565.test,v 1.1 2009/01/08 15:24:02 drh Exp $
+# $Id: tkt2565.test,v 1.2 2009/04/09 01:23:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -86,5 +86,7 @@ do_test tkt2565-1.X {
 #
 sqlite3_shutdown
 sqlite3_config_alt_pcache 0
+sqlite3_initialize
+autoinstall_test_functions
 
 finish_test

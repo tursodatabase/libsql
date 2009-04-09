@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.46 2009/04/01 23:09:44 drh Exp $
+# $Id: permutations.test,v 1.47 2009/04/09 01:23:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -179,12 +179,14 @@ run_tests "memsubsys1" -description {
   sqlite3_config_pagecache 4096 24
   sqlite3_config_scratch 25000 1
   sqlite3_initialize
+  autoinstall_test_functions
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
   sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 }
 
 # Run some tests using pre-allocated page and scratch blocks. This time
@@ -205,12 +207,14 @@ run_tests "memsubsys2" -description {
   sqlite3_config_pagecache 512 5
   sqlite3_config_scratch 1000 1
   sqlite3_initialize
+  autoinstall_test_functions
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
   sqlite3_config_pagecache 0 0
   sqlite3_config_scratch 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 }
 
 # Run all tests with the lookaside allocator disabled.
@@ -222,11 +226,13 @@ run_tests "nolookaside" -description {
   sqlite3_shutdown
   sqlite3_config_lookaside 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 } -shutdown {
   catch {db close}
   sqlite3_shutdown
   sqlite3_config_lookaside 100 500
   sqlite3_initialize
+  autoinstall_test_functions
 }
 
 # Run some tests in SQLITE_CONFIG_SINGLETHREAD mode.
@@ -237,6 +243,8 @@ run_tests "singlethread" -description {
   catch {db close}
   sqlite3_shutdown
   catch {sqlite3_config singlethread}
+  sqlite3_initialize
+  autoinstall_test_functions
 } -include {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
@@ -245,6 +253,8 @@ run_tests "singlethread" -description {
   catch {db close}
   sqlite3_shutdown
   catch {sqlite3_config serialized}
+  sqlite3_initialize
+  autoinstall_test_functions
 }
 
 run_tests "nomutex" -description {
@@ -274,6 +284,8 @@ run_tests "multithread" -description {
   catch {db close}
   sqlite3_shutdown
   catch {sqlite3_config multithread}
+  sqlite3_initialize
+  autoinstall_test_functions
 } -include {
   delete.test   delete2.test  insert.test  rollback.test  select1.test
   select2.test  trans.test    update.test  vacuum.test    types.test
@@ -282,6 +294,8 @@ run_tests "multithread" -description {
   catch {db close}
   sqlite3_shutdown
   catch {sqlite3_config serialized}
+  sqlite3_initialize
+  autoinstall_test_functions
 }
 
 # Run some tests in SQLITE_OPEN_FULLMUTEX mode.
@@ -480,12 +494,12 @@ ifcapable mem3 {
     autoinstall_test_functions
   } -shutdown {
     catch {db close}
-    sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
     sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
+    autoinstall_test_functions
   }
 }
 
@@ -501,7 +515,6 @@ ifcapable mem5 {
     collate5.test             limit.test                zeroblob.test
   } -initialize {
     catch {db close}
-    sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 25000000 64
     sqlite3_config_lookaside 0 0
@@ -510,12 +523,12 @@ ifcapable mem5 {
     autoinstall_test_functions
   } -shutdown {
     catch {db close}
-    sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
     sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
+    autoinstall_test_functions
   }
 
   run_tests "memsys5-2" -description {
@@ -524,7 +537,6 @@ ifcapable mem5 {
     select1.test 
   } -initialize {
     catch {db close}
-    sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 40000000 16
     sqlite3_config_lookaside 0 0
@@ -533,12 +545,12 @@ ifcapable mem5 {
     autoinstall_test_functions
   } -shutdown {
     catch {db close}
-    sqlite3_reset_auto_extension
     sqlite3_shutdown
     sqlite3_config_heap 0 0
     sqlite3_config_lookaside 100 500
     install_malloc_faultsim 1 
     sqlite3_initialize
+    autoinstall_test_functions
   }
 }
 
@@ -551,10 +563,14 @@ ifcapable threadsafe {
     sqlite3_shutdown
     install_mutex_counters 1
     set ::disable_mutex_try 1
+    sqlite3_initialize
+    autoinstall_test_functions
   } -shutdown {
     catch {db close}
     sqlite3_shutdown
     install_mutex_counters 0
+    sqlite3_initialize
+    autoinstall_test_functions
   }
 }
 
@@ -615,87 +631,82 @@ run_tests "pcache0" -description {
   Alternative pcache implementation without random discard
 } -initialize {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 1 0 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_config_lookaside 100 500
   install_malloc_faultsim 1 
   sqlite3_initialize
+  autoinstall_test_functions
 } -include ${perm-alt-pcache-testset}
 
 run_tests "pcache10" -description {
   Alternative pcache implementation without 10% random discard
 } -initialize {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 1 50 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 } -include ${perm-alt-pcache-testset}
 
 run_tests "pcache50" -description {
   Alternative pcache implementation without 50% random discard
 } -initialize {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 1 50 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 } -include ${perm-alt-pcache-testset}
 
 run_tests "pcache90" -description {
   Alternative pcache implementation without 90% random discard
 } -initialize {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 1 50 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 } -include ${perm-alt-pcache-testset}
 
 run_tests "pcache100" -description {
   Alternative pcache implementation that always discards when unpinning
 } -initialize {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 1 100 1
   sqlite3_initialize
   autoinstall_test_functions
 } -shutdown {
   catch {db close}
-  sqlite3_reset_auto_extension
   sqlite3_shutdown
   sqlite3_config_alt_pcache 0 0 0
   sqlite3_initialize
+  autoinstall_test_functions
 } -include ${perm-alt-pcache-testset}
 
 run_tests "journaltest" -description {

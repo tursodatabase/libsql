@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.77 2009/03/19 18:51:07 danielk1977 Exp $
+# $Id: malloc.test,v 1.78 2009/04/09 01:23:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -194,6 +194,7 @@ ifcapable vacuum {
   } 
 }
 
+autoinstall_test_functions
 do_malloc_test 7 -sqlprep {
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES(1, 2);
@@ -659,6 +660,7 @@ do_malloc_test 27 -tclprep {
     error "out of memory"
   }
 }
+autoinstall_test_functions
 
 # Test that malloc failures that occur while processing INDEXED BY
 # clauses are handled correctly.

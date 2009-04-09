@@ -11,7 +11,7 @@
 #
 # Tests for the lookaside memory allocator.
 #
-# $Id: lookaside.test,v 1.9 2009/03/24 15:08:10 drh Exp $
+# $Id: lookaside.test,v 1.10 2009/04/09 01:23:49 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -26,6 +26,7 @@ sqlite3_shutdown
 sqlite3_config_pagecache 0 0
 sqlite3_config_scratch 0 0
 sqlite3_initialize
+autoinstall_test_functions
 sqlite3 db test.db
 
 # Make sure sqlite3_db_config() and sqlite3_db_status are working.
@@ -104,5 +105,6 @@ do_test lookaside-4.1 {
   catch sqlite3_config_error
 } {0}
 sqlite3_initialize
+autoinstall_test_functions
 
 finish_test

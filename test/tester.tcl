@@ -11,7 +11,7 @@
 # This file implements some common TCL routines used for regression
 # testing the SQLite library
 #
-# $Id: tester.tcl,v 1.142 2009/04/06 17:50:03 danielk1977 Exp $
+# $Id: tester.tcl,v 1.143 2009/04/09 01:23:49 drh Exp $
 
 #
 # What for user input before continuing.  This gives an opportunity
@@ -132,6 +132,7 @@ if {![info exists nTest]} {
   sqlite3_shutdown 
   install_malloc_faultsim 1 
   sqlite3_initialize
+  autoinstall_test_functions
   if {[info exists tester_do_binarylog]} {
     sqlite3_instvfs binarylog -default binarylog ostrace.bin
     sqlite3_instvfs marker binarylog "$argv0 $argv"
