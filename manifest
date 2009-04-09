@@ -1,5 +1,5 @@
-C Enhance\ssqlite3_shutdown()\sso\sthat\sit\sautomatically\sinvokes\nsqlite3_reset_auto_extension().\s\sThis\sis\sa\sharmless\sno-op\sif\sapplications\nare\salready\scalling\ssqlite3_reset_auto_extension()\sprior\sto\ssqlite3_shutdown().\nAnd\sit\sprevents\spossible\smemory\scorruption\sif\sthey\sdo\snot.\s\sSo\sit\sworks\neither\sway.\s\sMost\sof\sthe\schanges\sare\sto\sthe\stest\scases.\s(CVS\s6475)
-D 2009-04-09T01:23:49
+C Remove\smisuse\sdetection\sfrom\sthe\sdeprecated\ssqlite3_transfer_bindings()\ninterface.\s\sThe\scode\swas\shard\sto\stest\sand\swas\ssimply\staking\sup\sspace.\s(CVS\s6476)
+D 2009-04-09T14:02:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
 F src/vdbe.c 3d252f70666a80fea2fb794b6fe154a282d11573
 F src/vdbe.h d70a68bee196ab228914a3902c79dbd24342a0f2
 F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
-F src/vdbeapi.c adf0e8f104a831936d966888c427b70565087aed
+F src/vdbeapi.c d3c6f28dbf462187f3fd696f2357e0d23940abac
 F src/vdbeaux.c 570aaa5e15ae141115194d22443c73c8beb5032b
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
@@ -242,7 +242,7 @@ F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test b746a34ce0e2039994b45fea8b7fbfa78f594cdf
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 455f7e8322a215e245414625eede3ab0e1429c14
-F test/bindxfer.test d4f573750e06c34ef2309acb95ad57da1d3c983f
+F test/bindxfer.test 7623b509240d8a3d4e26602bebfe4bbfbdc08895
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
@@ -716,7 +716,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0628f5864f8cc035b41bbe644bd8ec8fb43c70ce
-R 0cf963266eec9b2fca0ecf33410b18cd
+P 0c41f7cff4f6ffb9321f6f6b6ef3e431b750d41a
+R 59e3d78266a19aec5181c6f03b28fa03
 U drh
-Z c7192b6903fa3facf78f58d5b0aaedc3
+Z f358b0439d22ea82c6fffdf3f3cfcb17

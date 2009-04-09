@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.158 2009/04/08 23:05:29 drh Exp $
+** $Id: vdbeapi.c,v 1.159 2009/04/09 14:02:44 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1164,8 +1164,8 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       rc = sqlite3VdbeChangeEncoding(&p->aVar[i-1], ENC(p->db));
     }
     sqlite3_mutex_leave(p->db->mutex);
+    rc = sqlite3ApiExit(p->db, rc);
   }
-  rc = sqlite3ApiExit(p->db, rc);
   return rc;
 }
 int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
@@ -1195,18 +1195,21 @@ int sqlite3_bind_parameter_count(sqlite3_stmt *pStmt){
 */
 static void createVarMap(Vdbe *p){
   if( !p->okVar ){
+    int j;
+    Op *pOp;
     sqlite3_mutex_enter(p->db->mutex);
-    if( !p->okVar ){
-      int j;
-      Op *pOp;
-      for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
-        if( pOp->opcode==OP_Variable ){
-          assert( pOp->p1>0 && pOp->p1<=p->nVar );
-          p->azVar[pOp->p1-1] = pOp->p4.z;
-        }
+    /* The race condition here is harmless.  If two threads call this
+    ** routine on the same Vdbe at the same time, they both might end
+    ** up initializing the Vdbe.azVar[] array.  That is a little extra
+    ** work but it results in the same answer.
+    */
+    for(j=0, pOp=p->aOp; j<p->nOp; j++, pOp++){
+      if( pOp->opcode==OP_Variable ){
+        assert( pOp->p1>0 && pOp->p1<=p->nVar );
+        p->azVar[pOp->p1-1] = pOp->p4.z;
       }
-      p->okVar = 1;
     }
+    p->okVar = 1;
     sqlite3_mutex_leave(p->db->mutex);
   }
 }
@@ -1251,36 +1254,40 @@ int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
 
 /*
 ** Transfer all bindings from the first statement over to the second.
-** If the two statements contain a different number of bindings, then
-** an SQLITE_ERROR is returned.
 */
 int sqlite3TransferBindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   Vdbe *pFrom = (Vdbe*)pFromStmt;
   Vdbe *pTo = (Vdbe*)pToStmt;
-  int i, rc = SQLITE_OK;
-  if( (pFrom->magic!=VDBE_MAGIC_RUN && pFrom->magic!=VDBE_MAGIC_HALT)
-    || (pTo->magic!=VDBE_MAGIC_RUN && pTo->magic!=VDBE_MAGIC_HALT)
-    || pTo->db!=pFrom->db ){
-    return SQLITE_MISUSE;
-  }
-  if( pFrom->nVar!=pTo->nVar ){
-    return SQLITE_ERROR;
-  }
+  int i;
+  assert( pTo->db==pFrom->db );
+  assert( pTo->nVar==pFrom->nVar );
   sqlite3_mutex_enter(pTo->db->mutex);
-  for(i=0; rc==SQLITE_OK && i<pFrom->nVar; i++){
+  for(i=0; i<pFrom->nVar; i++){
     sqlite3VdbeMemMove(&pTo->aVar[i], &pFrom->aVar[i]);
   }
   sqlite3_mutex_leave(pTo->db->mutex);
-  assert( rc==SQLITE_OK || rc==SQLITE_NOMEM );
-  return rc;
+  return SQLITE_OK;
 }
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** Deprecated external interface.  Internal/core SQLite code
 ** should call sqlite3TransferBindings.
+**
+** Is is misuse to call this routine with statements from different
+** database connections.  But as this is a deprecated interface, we
+** will not bother to check for that condition.
+**
+** If the two statements contain a different number of bindings, then
+** an SQLITE_ERROR is returned.  Nothing else can go wrong, so otherwise
+** SQLITE_OK is returned.
 */
 int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
+  Vdbe *pFrom = (Vdbe*)pFromStmt;
+  Vdbe *pTo = (Vdbe*)pToStmt;
+  if( pFrom->nVar!=pTo->nVar ){
+    return SQLITE_ERROR;
+  }
   return sqlite3TransferBindings(pFromStmt, pToStmt);
 }
 #endif
