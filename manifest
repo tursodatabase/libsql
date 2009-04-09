@@ -1,11 +1,11 @@
-C Provide\sdummy\sDWORD\sarguments\sto\soutput\sparameters\sof\sGetDiskFreeSpace(A|W),\nNULL\scauses\saccess\sviolations\son\sWindows\sNT\s4.0\s(CVS\s6477)
-D 2009-04-09T14:27:07
+C Increase\sthe\sversion\snumber\sto\s3.6.13\sin\spreparation\sfor\sthe\snext\srelease.\s(CVS\s6478)
+D 2009-04-09T21:02:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxwSH4 d53b4be86491060d498b22148951b6d765884cab
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION c1863336bc58b532d5a797cbae00de605e9b95b5
+F VERSION 052bafc3a4e485aa1c340c5a27d643894625581d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -716,7 +716,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4cd829107cc9e94b092490aa821574492292b425
-R de2c128074d32bc574b137f4ee9c3ca3
-U chw
-Z 77e6894f7086b25d7b8865e2fe513fb6
+P 5350a6586cd6504a0724631e4ef46245832435f9
+R 2ec114dc3d2165f8f5d965ab5f8ee1df
+U drh
+Z a0ccacb7742bd9172bd277d93321f496
