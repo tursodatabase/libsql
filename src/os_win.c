@@ -12,7 +12,7 @@
 **
 ** This file contains code that is specific to windows.
 **
-** $Id: os_win.c,v 1.153 2009/03/31 03:41:57 shane Exp $
+** $Id: os_win.c,v 1.154 2009/04/09 14:27:07 chw Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1587,7 +1587,7 @@ static int getSectorSize(
   DWORD bytesPerSector = SQLITE_DEFAULT_SECTOR_SIZE;
   char zFullpath[MAX_PATH+1];
   int rc;
-  DWORD dwRet = 0;
+  DWORD dwRet = 0, dwDummy;
 
   /*
   ** We need to get the full path name of the file
@@ -1611,10 +1611,10 @@ static int getSectorSize(
           }
         }
         dwRet = GetDiskFreeSpaceW((WCHAR*)zConverted,
-                                  NULL,
+                                  &dwDummy,
                                   &bytesPerSector,
-                                  NULL,
-                                  NULL);
+                                  &dwDummy,
+                                  &dwDummy);
 #if SQLITE_OS_WINCE==0
       }else{
         int i;
@@ -1628,10 +1628,10 @@ static int getSectorSize(
           }
         }
         dwRet = GetDiskFreeSpaceA((CHAR*)zConverted,
-                                  NULL,
+                                  &dwDummy,
                                   &bytesPerSector,
-                                  NULL,
-                                  NULL);
+                                  &dwDummy,
+                                  &dwDummy);
 #endif
       }
       free(zConverted);
