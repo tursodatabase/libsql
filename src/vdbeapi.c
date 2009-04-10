@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.160 2009/04/10 20:32:00 drh Exp $
+** $Id: vdbeapi.c,v 1.161 2009/04/10 23:11:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -443,7 +443,7 @@ static int sqlite3Step(Vdbe *p){
   }
 
   if( p->pc<=0 && p->expired ){
-    if( p->rc==SQLITE_OK ){
+    if( ALWAYS(p->rc==SQLITE_OK) ){
       p->rc = SQLITE_SCHEMA;
     }
     rc = SQLITE_ERROR;
@@ -559,7 +559,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
       sqlite3_reset(pStmt);
       v->expired = 0;
     }
-    if( rc==SQLITE_SCHEMA && v->isPrepareV2 && db->pErr ){
+    if( rc==SQLITE_SCHEMA && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
       /* This case occurs after failing to recompile an sql statement. 
       ** The error message from the SQL compiler has already been loaded 
       ** into the database handle. This block copies the error message 

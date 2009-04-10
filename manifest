@@ -1,5 +1,5 @@
-C In\sthe\sasync\stest,\smake\ssure\sprocedures\sdo\snot\sget\srenamed\sover\stop\sof\sone\nanother.\s(CVS\s6490)
-D 2009-04-10T20:55:14
+C Remove\smore\sunused\sbranches\sfrom\svdbeapi.c.\s(CVS\s6491)
+D 2009-04-10T23:11:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
 F src/vdbe.c 88bc70921ccdcff8bfdf574f3e2285d17ab97103
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h df5c5a1c739c98af2c83440dde3fc361240f3a25
-F src/vdbeapi.c 6cb5f22a7c79bc454cd88a53a33cb2f0b7467d46
+F src/vdbeapi.c 0d4138c79db48e88a497b09d257c384911a24047
 F src/vdbeaux.c 5ecb4c7a041b8926a8927b1a27bcbb8ff74ae5c4
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7ae0fc7ea55dc5b5fbeef20f476a00f619bd3c5c
-R aae29c72cce49a4b546414d3ba4cdcfd
+P b6430cc4297c426f89e68f180a2c50b9b1ecd8e3
+R d3915f0690022a08e9feea21e5884e5e
 U drh
-Z 878dbaef069122d49b369a1a4be93f79
+Z b2891a8ec3dd2a68ab84b3a782edab60
