@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.448 2009/04/06 11:11:43 drh Exp $
+** $Id: vdbeaux.c,v 1.449 2009/04/10 00:56:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2320,30 +2320,35 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   KeyInfo *pKeyInfo,     /* Information about the record format */
   int nKey,              /* Size of the binary record */
   const void *pKey,      /* The binary record */
-  UnpackedRecord *pSpace,/* Space available to hold resulting object */
+  char *pSpace,          /* Unaligned space available to hold the object */
   int szSpace            /* Size of pSpace[] in bytes */
 ){
   const unsigned char *aKey = (const unsigned char *)pKey;
-  UnpackedRecord *p;
-  int nByte, d;
+  UnpackedRecord *p;  /* The unpacked record that we will return */
+  int nByte;          /* Memory space needed to hold p, in bytes */
+  int d;
   u32 idx;
-  u16 u;                 /* Unsigned loop counter */
+  u16 u;              /* Unsigned loop counter */
   u32 szHdr;
   Mem *pMem;
+  int nOff;           /* Increase pSpace by this much to 8-byte align it */
   
-  assert( sizeof(Mem)>sizeof(*p) );
-  nByte = sizeof(Mem)*(pKeyInfo->nField+2);
+  nOff = (8 - ((pSpace - (char*)0)&7)) & 7;
+  pSpace += nOff;
+  szSpace -= nOff;
+  nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
   if( nByte>szSpace ){
     p = sqlite3DbMallocRaw(pKeyInfo->db, nByte);
     if( p==0 ) return 0;
     p->flags = UNPACKED_NEED_FREE | UNPACKED_NEED_DESTROY;
   }else{
-    p = pSpace;
+    p = (UnpackedRecord*)pSpace;
     p->flags = UNPACKED_NEED_DESTROY;
   }
   p->pKeyInfo = pKeyInfo;
   p->nField = pKeyInfo->nField + 1;
-  p->aMem = pMem = &((Mem*)p)[1];
+  p->aMem = pMem = (Mem*)&((char*)p)[ROUND8(sizeof(UnpackedRecord))];
+  assert( EIGHT_BYTE_ALIGNMENT(pMem) );
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
   u = 0;

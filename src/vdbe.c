@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.830 2009/04/07 09:16:57 danielk1977 Exp $
+** $Id: vdbe.c,v 1.831 2009/04/10 00:56:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -562,7 +562,9 @@ int sqlite3VdbeExec(
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
-  UnpackedRecord aTempRec[16]; /* Space to hold a transient UnpackedRecord */
+
+  /* Temporary space into which to unpack a record. */
+  char aTempRec[ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*3 + 7];
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
   assert( db->magic==SQLITE_MAGIC_BUSY );

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.592 2009/04/07 14:38:58 danielk1977 Exp $
+** $Id: btree.c,v 1.593 2009/04/10 00:56:28 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4079,7 +4079,8 @@ int sqlite3BtreeMoveto(
 ){
   int rc;                    /* Status code */
   UnpackedRecord *pIdxKey;   /* Unpacked index key */
-  UnpackedRecord aSpace[16]; /* Temp space for pIdxKey - to avoid a malloc */
+  char aSpace[150];          /* Temp space for pIdxKey - to avoid a malloc */
+
 
   if( pKey ){
     assert( nKey==(i64)(int)nKey );
