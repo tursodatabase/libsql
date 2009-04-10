@@ -1,5 +1,5 @@
-C Simplifications\sand\sadditional\scomments\son\sthe\ssqlite3_get_table()\nimplementation.\s\sChanges\sto\sfacilitate\sfull\sbranch\stest\scoverage.\s(CVS\s6482)
-D 2009-04-10T14:28:00
+C Changes\sto\sjrnlmode.test\sto\saccount\sfor\sin-memory\stemp\sdatabases.\s(CVS\s6483)
+D 2009-04-10T15:02:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -420,7 +420,7 @@ F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/jrnlmode.test 887daf941f3b03f8a19b4bf8fc603c51c1ea37ff
+F test/jrnlmode.test 05e1e187c5b64022e832761674ee2395f3267d01
 F test/jrnlmode2.test bd846e10d463c0b6f8bded674cb07f94a0277097
 F test/keyword1.test a2400977a2e4fde43bf33754c2929fda34dbca05
 F test/lastinsert.test 474d519c68cb79d07ecae56a763aa7f322c72f51
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 683e4bd74783e6e3f6cf75f9582008c7b7e02a01
-R 65240198d5802c3e7624e2bd2d3785c6
-U drh
-Z e03e042fa6bf5790b1eb4d8b0880d63a
+P 57e3e6b3cb54e6626bee41a084c927ee264b6d03
+R 128b04f123dcbb16ad4c13e86f0b3e91
+U danielk1977
+Z 11aa570c8f3f375f7871c54c56c05b7d
