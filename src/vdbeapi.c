@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.159 2009/04/09 14:02:44 drh Exp $
+** $Id: vdbeapi.c,v 1.160 2009/04/10 20:32:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -764,7 +764,7 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
   }else{
     /* ((double)0) In case of SQLITE_OMIT_FLOATING_POINT... */
     static const Mem nullMem = {{0}, (double)0, 0, "", 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
-    if( pVm && pVm->db ){
+    if( pVm && ALWAYS(pVm->db) ){
       sqlite3_mutex_enter(pVm->db->mutex);
       sqlite3Error(pVm->db, SQLITE_RANGE, 0);
     }
@@ -906,25 +906,21 @@ static const void *columnName(
   int n;
   sqlite3 *db = p->db;
   
-
-  if( p!=0 ){
-    assert( db!=0 );
-    n = sqlite3_column_count(pStmt);
-    if( N<n && N>=0 ){
-      N += useType*n;
-      sqlite3_mutex_enter(db->mutex);
-      assert( db->mallocFailed==0 );
-      ret = xFunc(&p->aColName[N]);
-
-      /* A malloc may have failed inside of the xFunc() call. If this
-      ** is the case, clear the mallocFailed flag and return NULL.
-      */
-      if( db->mallocFailed ){
-        db->mallocFailed = 0;
-        ret = 0;
-      }
-      sqlite3_mutex_leave(db->mutex);
+  assert( db!=0 );
+  n = sqlite3_column_count(pStmt);
+  if( N<n && N>=0 ){
+    N += useType*n;
+    sqlite3_mutex_enter(db->mutex);
+    assert( db->mallocFailed==0 );
+    ret = xFunc(&p->aColName[N]);
+     /* A malloc may have failed inside of the xFunc() call. If this
+    ** is the case, clear the mallocFailed flag and return NULL.
+    */
+    if( db->mallocFailed ){
+      db->mallocFailed = 0;
+      ret = 0;
     }
+    sqlite3_mutex_leave(db->mutex);
   }
   return ret;
 }
