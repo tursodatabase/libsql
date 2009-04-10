@@ -1,5 +1,5 @@
-C Always\sset\sBtShared.db\swhen\sentering\sthe\sBtShared\smutex.\sTicket\s#3793.\s(CVS\s6480)
-D 2009-04-10T09:47:07
+C Changes\sto\sensure\sthat\swhen\srunning\sin\sshared-cache\smode\swith\sa\snon-threadsafe\sbuild,\sthe\scorrect\sbusy-handler\scallback\sis\salways\sinvoked.\s(CVS\s6481)
+D 2009-04-10T12:55:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,9 +102,9 @@ F src/attach.c af80fa85d391ad302c148c4e2524a2cebec64cb2
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
-F src/btmutex.c 527b63e275d132564710dec47ddab52a0f2d7f4e
+F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 8331febf3769cdac2e0cde463be4ed901406b783
-F src/btree.h 8007018c1753944790c39610280894ab280210b8
+F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 2882f22078db1c3f887b1aca77ff460cf9461c62
 F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
@@ -200,11 +200,11 @@ F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 469d74f5bf09ed6398702c7da2ef8a34e979a1c1
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
-F src/vdbe.c 146b72ae0783281b39049593c422a9a1527e82d3
+F src/vdbe.c 88bc70921ccdcff8bfdf574f3e2285d17ab97103
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
-F src/vdbeInt.h 53a2f4696871712646c77351904576cca6ad9752
+F src/vdbeInt.h df5c5a1c739c98af2c83440dde3fc361240f3a25
 F src/vdbeapi.c d3c6f28dbf462187f3fd696f2357e0d23940abac
-F src/vdbeaux.c e1aa4cd6f4972f2420e38e195df4297349f109aa
+F src/vdbeaux.c b48b0af5acd527ffe31a6da4f61971f7bd0bec0b
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
 F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2cc68272b1f70701268075cfa82fa64bb2a8179d
-R 0f5ed1cbc4ec520cfd83afb78d3917f3
+P ed6620ba589ddbb6ca86f42a7652e3b019195647
+R 59f76bf89532711f903241145d0b77ea
 U danielk1977
-Z 46ae6a8835e1cba4786ac026de3d9fbb
+Z ac75d7099ed4abde9c5f40681fcfbea3

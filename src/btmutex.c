@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.14 2009/04/10 09:47:07 danielk1977 Exp $
+** $Id: btmutex.c,v 1.15 2009/04/10 12:55:17 danielk1977 Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -18,7 +18,8 @@
 ** a good breakout.
 */
 #include "btreeInt.h"
-#if SQLITE_THREADSAFE && !defined(SQLITE_OMIT_SHARED_CACHE)
+#ifndef SQLITE_OMIT_SHARED_CACHE
+#if SQLITE_THREADSAFE
 
 /*
 ** Obtain the BtShared mutex associated with B-Tree handle p. Also,
@@ -336,5 +337,18 @@ void sqlite3BtreeMutexArrayLeave(BtreeMutexArray *pArray){
   }
 }
 
-
-#endif  /* SQLITE_THREADSAFE && !SQLITE_OMIT_SHARED_CACHE */
+#else
+void sqlite3BtreeEnter(Btree *p){
+  p->pBt->db = p->db;
+}
+void sqlite3BtreeEnterAll(sqlite3 *db){
+  int i;
+  for(i=0; i<db->nDb; i++){
+    Btree *p = db->aDb[i].pBt;
+    if( p ){
+      p->pBt->db = p->db;
+    }
+  }
+}
+#endif /* if SQLITE_THREADSAFE */
+#endif /* ifndef SQLITE_OMIT_SHARED_CACHE */
