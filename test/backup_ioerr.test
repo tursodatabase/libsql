@@ -12,7 +12,7 @@
 # focus of this file is testing the handling of IO errors by the
 # sqlite3_backup_XXX APIs.
 #
-# $Id: backup_ioerr.test,v 1.2 2009/02/04 22:46:47 drh Exp $
+# $Id: backup_ioerr.test,v 1.3 2009/04/10 18:41:01 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -53,7 +53,7 @@ proc populate_database {db {xtra_large 0}} {
 do_test backup_ioerr-1.1 {
   populate_database db
   set nPage [expr {[file size test.db] / 1024}]
-  expr {$nPage>140 && $nPage<150}
+  expr {$nPage>130 && $nPage<160}
 } {1}
 do_test backup_ioerr-1.2 {
   expr {[file size test.db] > $sqlite_pending_byte}

@@ -1,5 +1,5 @@
-C Do\snot\srun\sio.test\sas\spart\sof\sthe\sinmemory_journal\spermutation.\sio.test\suses\sthe\stcl\sAPI\sto\stest\sfor\sjournal\sfiles\sin\sthe\sfile-system\s(which\sof\scourse\snever\sexist\swhen\srunning\swith\sin-memory\sjournals).\s(CVS\s6487)
-D 2009-04-10T18:32:29
+C Increase\sthe\serror\stolerance\swhen\sverifying\sthe\sapproximate\ssize\sof\sa\spseudo-random\sdatabase\sin\sbackup_ioerr.test.\sOtherwise\sthe\stest\scould\sfail\sdepending\son\sthe\sPRNG\sseed.\s(CVS\s6488)
+D 2009-04-10T18:41:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -235,7 +235,7 @@ F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
 F test/backup.test 5e487ec8dad73e9d249e9bb9ca5346a03b601b07
 F test/backup2.test 159419073d9769fdb1780ed7e5b391a046f898d5
-F test/backup_ioerr.test a9b8084e488154341719833783ac9db321e14284
+F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 310192cc0fb56f8ffaa8e742f5600f16956212e7
-R 8fcacb99272e8f0dced5914a6918f787
+P 493f03bd73a15de994f69f23e9df8bb3ee4d20dc
+R 9edeb6e31420e3ec6ea70937ba904948
 U danielk1977
-Z 371e78743a2a3f870ad37aa2dd30f446
+Z b2ba47a1084766334184ad298146c828
