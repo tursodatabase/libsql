@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.48 2009/04/10 18:21:29 drh Exp $
+# $Id: permutations.test,v 1.49 2009/04/10 18:32:29 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -471,7 +471,7 @@ run_tests "inmemory_journal" -description {
   # Exclude test scripts that use tcl IO to access journal files or count
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
-  journal1.test conflict.test crash8.test tkt3457.test
+  journal1.test conflict.test crash8.test tkt3457.test io.test
 }
 
 ifcapable mem3 {
