@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.450 2009/04/10 12:55:17 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.451 2009/04/10 15:42:36 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2360,7 +2360,12 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   Mem *pMem;
   int nOff;           /* Increase pSpace by this much to 8-byte align it */
   
-  nOff = (8 - ((pSpace - (char*)0)&7)) & 7;
+  /*
+  ** We want to shift the pointer pSpace up such that it is 8-byte aligned.
+  ** Thus, we need to calculate a value, nOff, between 0 and 7, to shift 
+  ** it by.  If pSpace is already 8-byte aligned, nOff should be zero.
+  */
+  nOff = (8 - (SQLITE_PTR_TO_INT(pSpace) & 7)) & 7;
   pSpace += nOff;
   szSpace -= nOff;
   nByte = ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*(pKeyInfo->nField+1);
