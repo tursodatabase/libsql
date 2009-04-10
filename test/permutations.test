@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.47 2009/04/09 01:23:49 drh Exp $
+# $Id: permutations.test,v 1.48 2009/04/10 18:21:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,6 +40,7 @@ if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
     memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
     persistent_journal persistent_journal_error no_journal no_journal_error
     autovacuum_ioerr no_mutex_try fullmutex journaltest inmemory_journal
+    pcache0 pcache10 pcache50 pcache90 pcache100
   }
 }
 if {$::perm::testmode eq "targets"} { 

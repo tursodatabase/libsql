@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.16 2009/03/28 15:04:24 drh Exp $
+# $Id: async.test,v 1.17 2009/04/10 18:21:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -42,9 +42,9 @@ set INCLUDE {
 # Enable asynchronous IO.
 sqlite3async_enable 1
 
-rename do_test really_do_test
+rename do_test async_really_do_test
 proc do_test {name args} {
-  uplevel really_do_test async_io-$name $args
+  uplevel async_really_do_test async_io-$name $args
   sqlite3async_start
   sqlite3async_halt idle
   sqlite3async_wait
@@ -78,5 +78,7 @@ sqlite3async_enable 0
 set sqlite3async_trace 0
 
 really_finish_test
-rename really_do_test do_test
+rename do_test {}
+rename async_really_do_test do_test
+rename finish_test {}
 rename really_finish_test finish_test
