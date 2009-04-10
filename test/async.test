@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.17 2009/04/10 18:21:29 drh Exp $
+# $Id: async.test,v 1.18 2009/04/10 20:55:14 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -17,7 +17,7 @@ if {[catch {sqlite3async_enable}]} {
   return
 }
 
-rename finish_test really_finish_test
+rename finish_test async_really_finish_test
 proc finish_test {} {
   catch {db close}
   catch {db2 close}
@@ -81,4 +81,4 @@ really_finish_test
 rename do_test {}
 rename async_really_do_test do_test
 rename finish_test {}
-rename really_finish_test finish_test
+rename async_really_finish_test finish_test
