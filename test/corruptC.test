@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.10 2008/11/19 18:43:07 drh Exp $
+# $Id: corruptC.test,v 1.11 2009/04/11 16:06:15 danielk1977 Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -260,6 +260,19 @@ do_test corruptC-2.13 {
   catchsql {BEGIN; CREATE TABLE t3 AS SELECT x,3 as y FROM t2 WHERE rowid%5!=0; ROLLBACK;}
 } {1 {database disk image is malformed}}
 
+do_test corruptC-2.14 {
+  db close
+  copy_file test.bu test.db
+
+  sqlite3 db test.db
+  set blob [string repeat abcdefghij 10000]
+  execsql { INSERT INTO t1 VALUES (1, $blob) }
+
+  sqlite3 db test.db
+  set filesize [file size test.db]
+  hexio_write test.db [expr $filesize-2048] 00000001
+  catchsql {DELETE FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1)}
+} {1 {database disk image is malformed}}
 
 #
 # now test for a series of quasi-random seeds

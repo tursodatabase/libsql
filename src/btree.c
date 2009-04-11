@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.594 2009/04/10 09:47:07 danielk1977 Exp $
+** $Id: btree.c,v 1.595 2009/04/11 16:06:15 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4672,7 +4672,10 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
   while( nOvfl-- ){
     Pgno iNext = 0;
     MemPage *pOvfl = 0;
-    if( ovflPgno==0 || ovflPgno>pagerPagecount(pBt) ){
+    if( ovflPgno<2 || ovflPgno>pagerPagecount(pBt) ){
+      /* 0 is not a legal page number and page 1 cannot be an 
+      ** overflow page. Therefore if ovflPgno<2 or past the end of the 
+      ** file the database must be corrupt. */
       return SQLITE_CORRUPT_BKPT;
     }
     if( nOvfl ){
