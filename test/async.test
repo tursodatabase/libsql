@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.18 2009/04/10 20:55:14 drh Exp $
+# $Id: async.test,v 1.19 2009/04/11 10:25:04 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -23,9 +23,10 @@ proc finish_test {} {
   catch {db2 close}
   catch {db3 close}
 }
+if {[info exists ISQUICK]} { set ASYNC_SAVE_ISQUICK $ISQUICK }
 set ISQUICK 1
 
-set INCLUDE {
+set ASYNC_INCLUDE {
   insert.test
   insert2.test
   insert3.test
@@ -53,7 +54,7 @@ proc do_test {name args} {
 
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
-  if {[lsearch -exact $INCLUDE $tail]<0} continue
+  if {[lsearch -exact $ASYNC_INCLUDE $tail]<0} continue
   source $testfile
 
   # Make sure everything is flushed through. This is because [source]ing 
@@ -77,8 +78,11 @@ sqlite3async_halt never
 sqlite3async_enable 0
 set sqlite3async_trace 0
 
-really_finish_test
 rename do_test {}
 rename async_really_do_test do_test
 rename finish_test {}
 rename async_really_finish_test finish_test
+
+if {[info exists ASYNC_SAVE_ISQUICK]} { set ISQUICK $ASYNC_SAVE_ISQUICK }
+finish_test
+

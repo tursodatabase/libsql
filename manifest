@@ -1,5 +1,5 @@
-C In\ssqlite3PagerMovepage(),\savoid\sholding\sa\sreference\sto\spage\snumber\sX\swhen\scalling\ssqlite3PcacheRekey()\sto\smove\sanother\spage\sto\spage\snumber\sX.\s(CVS\s6492)
-D 2009-04-11T09:51:56
+C Replace\sinvocation\sof\s(really_finish_test)\sfrom\sasync.test\swith\s(finish_test).\sOtherwise\sa\stcl\sexception\smay\sbe\sthrown\swhen\srunning\spermutations.\s(CVS\s6493)
+D 2009-04-11T10:25:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +219,7 @@ F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
-F test/async.test a4868349ff65bab9b40c42f34a3eea4ecbbb5de7
+F test/async.test 44109d3ae82db2071e3c2b417f79258cc05f0f49
 F test/async2.test d3f23363553c2c02f15da98ae8bbc43420efd04c
 F test/async3.test e72255549dde94ef89e9779884001527b44c5389
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 447e959594970a225a9b189e7e420ba9c3eedbdb
-R 5ba573ee34e62cb250fad53bba444e86
+P 4447c94f45b8abd833eb82b67233029088fd1a54
+R 4bd554f3a722f52dd92651334aebb128
 U danielk1977
-Z cd3b1bf74701b4585c67fc5dedab461b
+Z 42a24e3c74bfe026f17c04d99d336776
