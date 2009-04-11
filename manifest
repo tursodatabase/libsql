@@ -1,5 +1,5 @@
-C Fix\sa\scase\swhere\sa\scorrupt\sdatabase\scould\scause\san\sassert()\sto\sfail.\s(CVS\s6496)
-D 2009-04-11T16:06:15
+C Add\sa\scomments\sand\san\sassert()\sto\sthe\svirtual\stable\simplementation.\nNo\sfunctional\schanges.\s(CVS\s6497)
+D 2009-04-11T16:27:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -207,7 +207,7 @@ F src/vdbeapi.c 0d4138c79db48e88a497b09d257c384911a24047
 F src/vdbeaux.c 5ecb4c7a041b8926a8927b1a27bcbb8ff74ae5c4
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
-F src/vtab.c f1aba5a6dc1f83b97a39fbbc58ff8cbc76311347
+F src/vtab.c 6118d71c5137e20a7ac51fb5d9beb0361fbedb89
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
 F src/where.c ddf26069d03f9e0c6ef14d537422df02e0c593f0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5484419294356b704c2c9064f36ed254875ca8c0
-R 2e96b765f3ae6df475f1d5f1c48e8aa8
-U danielk1977
-Z 8f3345f1abea5eb987e939cee8d0e3ce
+P 2c560e057e1da8a603efc36deea036f2392a4ab9
+R c933794e7ad3da191304723b50287bf2
+U drh
+Z 1604cbd2809b3455fe72d9ed10306c85
