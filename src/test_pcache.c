@@ -21,7 +21,7 @@
 ** This pagecache implementation is designed for simplicity
 ** not speed.  
 **
-** $Id: test_pcache.c,v 1.2 2009/01/07 03:59:47 drh Exp $
+** $Id: test_pcache.c,v 1.3 2009/04/11 11:38:54 drh Exp $
 */
 #include "sqlite3.h"
 #include <string.h>
@@ -75,9 +75,19 @@ static void testpcacheShutdown(void *pArg){
 }
 
 /*
-** Number of pages in a cache
+** Number of pages in a cache.
+**
+** The number of pages is a hard upper bound in this test module.
+** If more pages are requested, sqlite3PcacheFetch() returns NULL.
+**
+** If testing with in-memory temp tables, provide a larger pcache.
+** Some of the test cases need this.
 */
-#define TESTPCACHE_NPAGE    217
+#if defined(SQLITE_TEMP_STORE) && SQLITE_TEMP_STORE>=2
+# define TESTPCACHE_NPAGE    499
+#else
+# define TESTPCACHE_NPAGE    217
+#endif
 #define TESTPCACHE_RESERVE   17
 
 /*
