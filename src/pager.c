@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.579 2009/04/11 09:51:56 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.580 2009/04/11 16:27:50 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2024,11 +2024,11 @@ static int pager_playback(Pager *pPager, int isHot){
           pPager->journalOff = szJ;
           break;
         }else{
-          /* If we are unable to rollback, then the database is probably
-          ** going to end up being corrupt.  It is corrupt to us, anyhow.
-          ** Perhaps the next process to come along can fix it....
+          /* If we are unable to rollback, quit and return the error
+          ** code.  This will cause the pager to enter the error state
+          ** so that no further harm will be done.  Perhaps the next
+          ** process to come along will be able to rollback the database.
           */
-          rc = SQLITE_CORRUPT_BKPT;
           goto end_playback;
         }
       }

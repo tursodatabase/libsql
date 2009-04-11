@@ -12,7 +12,7 @@
 # This file tests aspects of the malloc failure while parsing
 # CREATE TABLE statements in auto_vacuum mode.
 #
-# $Id: mallocC.test,v 1.9 2008/02/18 22:24:58 drh Exp $
+# $Id: mallocC.test,v 1.10 2009/04/11 16:27:50 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -87,6 +87,22 @@ execsql {
   PRAGMA auto_vacuum=1;
   CREATE TABLE t0(a, b, c);
 }
+
+# The number of memory allocation failures is different on 64-bit
+# and 32-bit systems due to larger structures on 64-bit systems
+# overflowing the lookaside more often.  To debug problems, it is
+# sometimes helpful to reduce the size of the lookaside allocation
+# blocks.  But this is normally disabled.
+#
+if {0} {
+  db close
+  sqlite3_shutdown
+  sqlite3_config_lookaside 50 500
+  sqlite3_initialize
+  autoinstall_test_functions
+  sqlite3 db test.db
+}
+
 do_mallocC_test 1 -sql {
   BEGIN;
   -- Allocate 32 new root pages. This will exercise the 'extract specific 
