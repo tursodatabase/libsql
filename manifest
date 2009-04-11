@@ -1,5 +1,5 @@
-C Remove\smore\sunused\sbranches\sfrom\svdbeapi.c.\s(CVS\s6491)
-D 2009-04-10T23:11:31
+C In\ssqlite3PagerMovepage(),\savoid\sholding\sa\sreference\sto\spage\snumber\sX\swhen\scalling\ssqlite3PcacheRekey()\sto\smove\sanother\spage\sto\spage\snumber\sX.\s(CVS\s6492)
+D 2009-04-11T09:51:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +143,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
 F src/os_win.c 25092e59f1e5969779c393fd75bc945c2f375513
-F src/pager.c 1df277b7c78f780df119c9e2ddea6690979489c5
+F src/pager.c 9775c0db675e4d9f2f0e51a04c3ec90df84c4519
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y b7e4341b21736a90b952aa6bb663ec98529b778e
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b6430cc4297c426f89e68f180a2c50b9b1ecd8e3
-R d3915f0690022a08e9feea21e5884e5e
-U drh
-Z b2891a8ec3dd2a68ab84b3a782edab60
+P 447e959594970a225a9b189e7e420ba9c3eedbdb
+R 5ba573ee34e62cb250fad53bba444e86
+U danielk1977
+Z cd3b1bf74701b4585c67fc5dedab461b

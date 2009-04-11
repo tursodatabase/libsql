@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.578 2009/04/05 12:22:09 drh Exp $
+** @(#) $Id: pager.c,v 1.579 2009/04/11 09:51:56 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5076,14 +5076,11 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   assert( !pPgOld || pPgOld->nRef==1 );
   if( pPgOld ){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
+    sqlite3PcacheDrop(pPgOld);
   }
 
   origPgno = pPg->pgno;
   sqlite3PcacheMove(pPg, pgno);
-  if( pPgOld ){
-    sqlite3PcacheDrop(pPgOld);
-  }
-
   sqlite3PcacheMakeDirty(pPg);
   pPager->dbModified = 1;
 
