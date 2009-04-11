@@ -1,5 +1,5 @@
-C Fix\san\sobscure\sproblem\swith\srecovery\sfrom\sI/O\serrors\swhile\srolling\sback.\s(CVS\s6498)
-D 2009-04-11T16:27:50
+C Fix\smalloc5.test\sso\sit\swork\son\sboth\s64-bit\sand\s32-bit\ssystems.\s\sThe\n::tcl_platform(wordSize)\svariable\shas\sto\sbe\sused\sto\sadjust\ssome\smemory\nsizes.\s(CVS\s6499)
+D 2009-04-11T19:09:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -442,7 +442,7 @@ F test/make-where7.tcl 40bb740b37eead343eaf57b74ab72d2a5a304745
 F test/malloc.test cd2b9f515ba98beb5e335acdd94c3ad7a6f7fc4a
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
-F test/malloc5.test 20d1a0884b03edf811bfd7005faade028367e7c8
+F test/malloc5.test 4d16d1bb26d2deddd7c4f480deec341f9b2d0e22
 F test/malloc6.test 2f039d9821927eacae43e1831f815e157659a151
 F test/malloc7.test 7c68a32942858bc715284856c5507446bba88c3a
 F test/malloc8.test 9b7a3f8cb9cf0b12fff566e80a980b1767bd961d
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ac5d0c0aa1de687bde972fbf0db8f04508825205
-R db20b0e5c24f9161459a802e68304a17
+P 24ff486125b9ad62dd92314b62299093b55fe82b
+R e86f6859c90d597b3d4a24b866588e61
 U drh
-Z afe80c413e7ff05c545dbc4f3e72caef
+Z fa13966f764303f217f053b6716e8ac3
