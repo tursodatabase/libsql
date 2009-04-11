@@ -1,5 +1,5 @@
-C Increase\sthe\shard\supper\sbound\son\sthe\snumber\sof\spcache\spages\sin\stest_pcache\nwhen\sthe\stest\sharness\sis\scompiled\sfor\sin-memory\stemp\stables.\s\sSome\sof\sthe\ntest\scases\sneed\sto\sextra\smemory\sto\savoid\sunplanned\sout\sof\smemory\serrors.\s(CVS\s6494)
-D 2009-04-11T11:38:54
+C Allocate\sa\slittle\sextra\sscratch\sspace\sfor\sthe\smemsubsys1\stests.\s\sThe\nextra\sspace\sis\sneeded\sin\ssome\sconfigurations.\s(CVS\s6495)
+D 2009-04-11T14:46:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -463,7 +463,7 @@ F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 09240c19e95b063e193b95d6e3eb99f528fbc2dd
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test 9ce051c7b8311e7bc1cf4a66b519a6dddc639fa5
+F test/memsubsys1.test 66e90b4f16d8501ffd2e68ff2446c29ce66ecd84
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e6465e9da3d754833c21e0fb76c16a4efd047b91
-R 12b7e2f32706b065defda74b069075b3
+P 7f2d6a0bd510801e011eb075f494194d9ebf568b
+R 35a05d947ec7b23c1e90eab3b71fdf4b
 U drh
-Z bc5ee0b397d91a11927e825c3066199f
+Z b584bba8c08c1f53861bf5172c3ff0cb

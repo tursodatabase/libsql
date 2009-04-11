@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.14 2009/03/26 12:20:33 drh Exp $
+# $Id: memsubsys1.test,v 1.15 2009/04/11 14:46:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -200,7 +200,7 @@ do_test memsubsys1-5.6 {
 db close
 sqlite3_shutdown
 sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 25000 1
+sqlite3_config_scratch 25300 1
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-6 {PRAGMA page_size=4096}
@@ -226,7 +226,7 @@ do_test memsubsys1-6.6 {
 db close
 sqlite3_shutdown
 sqlite3_config_pagecache [expr 4096+$xtra_size] 24
-sqlite3_config_scratch 25000 1
+sqlite3_config_scratch 25300 1
 sqlite3_initialize
 reset_highwater_marks
 build_test_db memsubsys1-7 {
