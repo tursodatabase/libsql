@@ -1,5 +1,5 @@
-C updated\sMakefile.vxwSH4\sand\srenamed\sit\sto\sMakefile.vxworks,\nshould\snow\sbe\sable\sto\ssupport\sSH4\sand\sPPC\stargets.\s(CVS\s6500)
-D 2009-04-13T08:14:04
+C Rerun\sautoconf\sin\spreparation\sfor\s3.6.13.\s(CVS\s6501)
+D 2009-04-13T09:09:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 005a4f8af148931f19dac00ab1e2d6cc81e817d8 x
+F configure 487875e451ac922f10276ee41611e0967ea72af0 x
 F configure.ac 660b4e3e930cdd469e6ac5c1f3d9ba9cec2c8be0
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ea20f78edb50778c40ed7f03f894ab898f58d67c
-R b2b48373f211efc0059fb483ca63bf66
-U chw
-Z 74b49a81e829f336030a628842c211f4
+P e4a370c72dd3204be099a6706128507d5c06170c
+R b551cdf35777c9e9efa1b6dcf8129cde
+U drh
+Z d70dc4f258901561e8413fecf5a236d4
