@@ -13,7 +13,7 @@ include $(WIND_USR)/tool/gnu/make.$(FORCPU)
 #### The toplevel directory of the source tree.  This is the directory
 #    that contains this "Makefile.in" and the "configure.in" script.
 #
-TOP = ../sqlite-3.6.5
+TOP = .
 
 #### C Compiler and options for use in building executables that
 #    will run on the platform that is doing the build.
@@ -42,13 +42,14 @@ THREADLIB =
 
 #### Specify any extra libraries needed to access required functions.
 #
-#TLIBS = -lrt    # fdatasync on Solaris 8
-#for x86 vxWorks
-#TLIBS += TLIBS = $(LD_LINK_PATH_ATEND) $(LD_PARTIAL_LAST_FLAGS)
-#for SH4 shared library
-TLIBS_SHARED += -L$(WIND_USR)/lib/sh/SH32/commonle/PIC
-#TLIBS_SHARED += $(LD_LINK_PATH_ATEND) $(LD_PARTIAL_LAST_FLAGS)
-#for SH4 static
+ifeq ($(CPU),SH32) 
+  # for SH4 shared library
+  TLIBS_SHARED += -L$(WIND_USR)/lib/sh/SH32/commonle/PIC
+else 
+  # for all other CPUs shared library
+  TLIBS_SHARED += $(LD_LINK_PATH_ATEND) $(LD_PARTIAL_LAST_FLAGS)
+endif
+# for static library
 TLIBS += $(LD_LINK_PATH_ATEND) $(LD_PARTIAL_LAST_FLAGS)
 
 #### Leave SQLITE_DEBUG undefined for maximum speed.  Use SQLITE_DEBUG=1
@@ -193,18 +194,18 @@ TCCX_SHARED = $(TCC_SHARED) $(OPTS) -I. -I$(TOP)/src -I$(TOP) -I$(TOP)/ext/rtree
 # Object files for the SQLite library.
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
-         bitvec.o btmutex.o btree.o build.o \
+         backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o \
          expr.o fault.o func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o memjournal.o \
          mutex.o mutex_os2.o mutex_unix.o mutex_w32.o mutex_noop.o \
          opcodes.o os.o os_os2.o os_unix.o os_win.o \
-         pager.o parse.o pcache.o pragma.o prepare.o printf.o \
-         random.o resolve.o rtree.o select.o status.o \
+         pager.o parse.o pcache.o pcache1.o pragma.o prepare.o printf.o \
+         random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbefifo.o vdbemem.o \
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o \
          walker.o where.o utf.o vtab.o
 
 
@@ -215,6 +216,7 @@ SRC = \
   $(TOP)/src/analyze.c \
   $(TOP)/src/attach.c \
   $(TOP)/src/auth.c \
+  $(TOP)/src/backup.c \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btmutex.c \
   $(TOP)/src/btree.c \
@@ -260,12 +262,14 @@ SRC = \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
   $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache1.c \
   $(TOP)/src/pcache.h \
   $(TOP)/src/pragma.c \
   $(TOP)/src/prepare.c \
   $(TOP)/src/printf.c \
   $(TOP)/src/random.c \
   $(TOP)/src/resolve.c \
+  $(TOP)/src/rowset.c \
   $(TOP)/src/select.c \
   $(TOP)/src/status.c \
   $(TOP)/src/shell.c \
@@ -286,7 +290,6 @@ SRC = \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
-  $(TOP)/src/vdbefifo.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
@@ -316,6 +319,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
