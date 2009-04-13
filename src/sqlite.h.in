@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.440 2009/04/06 15:55:04 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.441 2009/04/13 14:43:41 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4066,15 +4066,20 @@ typedef struct sqlite3_module sqlite3_module;
 
 /*
 ** CAPI3REF: Virtual Table Object {H18000} <S20400>
-** KEYWORDS: sqlite3_module
+** KEYWORDS: sqlite3_module {virtual table module}
 ** EXPERIMENTAL
 **
-** A module is a class of virtual tables.  Each module is defined
-** by an instance of the following structure.  This structure consists
-** mostly of methods for the module.
+** This structure, sometimes called a a "virtual table module", 
+** defines the implementation of a [virtual tables].  
+** This structure consists mostly of methods for the module.
 **
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
+** A virtual table module is created by filling in a persistent
+** instance of this structure and passing a pointer to that instance
+** to [sqlite3_create_module()] or [sqlite3_create_module_v2()].
+** The registration remains valid until it is replaced by a different
+** module or until the [database connection] closes.  The content
+** of this structure must not change while it is registered with
+** any database connection.
 */
 struct sqlite3_module {
   int iVersion;
@@ -4112,8 +4117,8 @@ struct sqlite3_module {
 ** EXPERIMENTAL
 **
 ** The sqlite3_index_info structure and its substructures is used to
-** pass information into and receive the reply from the xBestIndex
-** method of an sqlite3_module.  The fields under **Inputs** are the
+** pass information into and receive the reply from the [xBestIndex]
+** method of a [virtual table module].  The fields under **Inputs** are the
 ** inputs to xBestIndex and are read-only.  xBestIndex inserts its
 ** results into the **Outputs** fields.
 **
@@ -4136,17 +4141,19 @@ struct sqlite3_module {
 ** Information about the ORDER BY clause is stored in aOrderBy[].
 ** Each term of aOrderBy records a column of the ORDER BY clause.
 **
-** The xBestIndex method must fill aConstraintUsage[] with information
+** The [xBestIndex] method must fill aConstraintUsage[] with information
 ** about what parameters to pass to xFilter.  If argvIndex>0 then
 ** the right-hand side of the corresponding aConstraint[] is evaluated
 ** and becomes the argvIndex-th entry in argv.  If aConstraintUsage[].omit
 ** is true, then the constraint is assumed to be fully handled by the
 ** virtual table and is not checked again by SQLite.
 **
-** The idxNum and idxPtr values are recorded and passed into xFilter.
-** sqlite3_free() is used to free idxPtr if needToFreeIdxPtr is true.
+** The idxNum and idxPtr values are recorded and passed into the
+** [xFilter] method.
+** [sqlite3_free()] is used to free idxPtr if and only iff
+** needToFreeIdxPtr is true.
 **
-** The orderByConsumed means that output from xFilter will occur in
+** The orderByConsumed means that output from [xFilter]/[xNext] will occur in
 ** the correct order to satisfy the ORDER BY clause so that no separate
 ** sorting step is required.
 **
@@ -4154,9 +4161,6 @@ struct sqlite3_module {
 ** particular lookup.  A full scan of a table with N entries should have
 ** a cost of N.  A binary search of a table of N entries should have a
 ** cost of approximately log(N).
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 */
 struct sqlite3_index_info {
   /* Inputs */
@@ -4194,34 +4198,44 @@ struct sqlite3_index_info {
 ** CAPI3REF: Register A Virtual Table Implementation {H18200} <S20400>
 ** EXPERIMENTAL
 **
-** This routine is used to register a new module name with a
-** [database connection].  Module names must be registered before
-** creating new virtual tables on the module, or before using
-** preexisting virtual tables of the module.
+** This routine is used to register a new [virtual table module] name.
+** Module names must be registered before
+** creating a new [virtual table] using the module, or before using a
+** preexisting [virtual table] for the module.
 **
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
+** The module name is registered on the [database connection] specified
+** by the first parameter.  The name of the module is given by the 
+** second parameter.  The third parameter is a pointer to
+** the implementation of the [virtual table module].   The fourth
+** parameter is an arbitrary client data pointer that is passed through
+** into the [xCreate] and [xConnect] methods of the virtual table module
+** when a new virtual table is be being created or reinitialized.
+**
+** This interface has exactly the same effect as calling
+** [sqlite3_create_module_v2()] with a NULL client data destructor.
 */
 SQLITE_EXPERIMENTAL int sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
-  const sqlite3_module *,    /* Methods for the module */
-  void *                     /* Client data for xCreate/xConnect */
+  const sqlite3_module *p,   /* Methods for the module */
+  void *pClientData          /* Client data for xCreate/xConnect */
 );
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation {H18210} <S20400>
 ** EXPERIMENTAL
 **
-** This routine is identical to the [sqlite3_create_module()] method above,
-** except that it allows a destructor function to be specified. It is
-** even more experimental than the rest of the virtual tables API.
+** This routine is identical to the [sqlite3_create_module()] method,
+** except that it has an extra parameter to specify 
+** a destructor function for the client data pointer.  SQLite will
+** invoke the destructor function (if it is not NULL) when SQLite
+** no longer needs the pClientData pointer.  
 */
 SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
-  const sqlite3_module *,    /* Methods for the module */
-  void *,                    /* Client data for xCreate/xConnect */
+  const sqlite3_module *p,   /* Methods for the module */
+  void *pClientData,         /* Client data for xCreate/xConnect */
   void(*xDestroy)(void*)     /* Module destructor function */
 );
 
@@ -4230,8 +4244,9 @@ SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
 ** KEYWORDS: sqlite3_vtab
 ** EXPERIMENTAL
 **
-** Every module implementation uses a subclass of the following structure
-** to describe a particular instance of the module.  Each subclass will
+** Every [virtual table module] implementation uses a subclass
+** of the following structure to describe a particular instance
+** of the [virtual table].  Each subclass will
 ** be tailored to the specific needs of the module implementation.
 ** The purpose of this superclass is to define certain fields that are
 ** common to all module implementations.
@@ -4241,13 +4256,7 @@ SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
 ** take care that any prior string is freed by a call to [sqlite3_free()]
 ** prior to assigning a new string to zErrMsg.  After the error message
 ** is delivered up to the client application, the string will be automatically
-** freed by sqlite3_free() and the zErrMsg field will be zeroed.  Note
-** that sqlite3_mprintf() and sqlite3_free() are used on the zErrMsg field
-** since virtual tables are commonly implemented in loadable extensions which
-** do not have access to sqlite3MPrintf() or sqlite3Free().
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
+** freed by sqlite3_free() and the zErrMsg field will be zeroed.
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
@@ -4258,20 +4267,21 @@ struct sqlite3_vtab {
 
 /*
 ** CAPI3REF: Virtual Table Cursor Object  {H18020} <S20400>
-** KEYWORDS: sqlite3_vtab_cursor
+** KEYWORDS: sqlite3_vtab_cursor {virtual table cursor}
 ** EXPERIMENTAL
 **
-** Every module implementation uses a subclass of the following structure
-** to describe cursors that point into the virtual table and are used
+** Every [virtual table module] implementation uses a subclass of the
+** following structure to describe cursors that point into the
+** [virtual table] and are used
 ** to loop through the virtual table.  Cursors are created using the
-** xOpen method of the module.  Each module implementation will define
+** [sqlite3_module.xOpen | xOpen] method of the module and are destroyed
+** by the [sqlite3_module.xClose | xClose] method.  Cussors are used
+** by the [xFilter], [xNext], [xEof], [xColumn], and [xRowid] methods
+** of the module.  Each module implementation will define
 ** the content of a cursor structure to suit its own needs.
 **
 ** This superclass exists in order to define fields of the cursor that
 ** are common to all implementations.
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 */
 struct sqlite3_vtab_cursor {
   sqlite3_vtab *pVtab;      /* Virtual table of this cursor */
@@ -4282,21 +4292,20 @@ struct sqlite3_vtab_cursor {
 ** CAPI3REF: Declare The Schema Of A Virtual Table {H18280} <S20400>
 ** EXPERIMENTAL
 **
-** The xCreate and xConnect methods of a module use the following API
+** The [xCreate] and [xConnect] methods of a
+** [virtual table module] call this interface
 ** to declare the format (the names and datatypes of the columns) of
 ** the virtual tables they implement.
-**
-** This interface is experimental and is subject to change or
-** removal in future releases of SQLite.
 */
-SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable);
+SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table {H18300} <S20400>
 ** EXPERIMENTAL
 **
 ** Virtual tables can provide alternative implementations of functions
-** using the xFindFunction method.  But global versions of those functions
+** using the [xFindFunction] method of the [virtual table module].  
+** But global versions of those functions
 ** must exist in order to be overloaded.
 **
 ** This API makes sure a global version of a function with a particular
@@ -4305,10 +4314,7 @@ SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zCreateTable)
 ** of the new function always causes an exception to be thrown.  So
 ** the new function is not good for anything by itself.  Its only
 ** purpose is to be a placeholder function that can be overloaded
-** by virtual tables.
-**
-** This API should be considered part of the virtual table interface,
-** which is experimental and subject to change.
+** by a [virtual table].
 */
 SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
