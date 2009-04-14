@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.161 2009/04/10 23:11:31 drh Exp $
+** $Id: vdbeapi.c,v 1.162 2009/04/14 12:43:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1152,15 +1152,31 @@ int sqlite3_bind_text16(
 #endif /* SQLITE_OMIT_UTF16 */
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   int rc;
-  Vdbe *p = (Vdbe *)pStmt;
-  rc = vdbeUnbind(p, i);
-  if( rc==SQLITE_OK ){
-    rc = sqlite3VdbeMemCopy(&p->aVar[i-1], pValue);
-    if( rc==SQLITE_OK ){
-      rc = sqlite3VdbeChangeEncoding(&p->aVar[i-1], ENC(p->db));
+  switch( pValue->type ){
+    case SQLITE_NULL: {
+      rc = sqlite3_bind_null(pStmt, i);
+      break;
     }
-    sqlite3_mutex_leave(p->db->mutex);
-    rc = sqlite3ApiExit(p->db, rc);
+    case SQLITE_INTEGER: {
+      rc = sqlite3_bind_int64(pStmt, i, pValue->u.i);
+      break;
+    }
+    case SQLITE_FLOAT: {
+      rc = sqlite3_bind_double(pStmt, i, pValue->r);
+      break;
+    }
+    case SQLITE_BLOB: {
+      if( pValue->flags & MEM_Zero ){
+        rc = sqlite3_bind_zeroblob(pStmt, i, pValue->u.nZero);
+      }else{
+        rc = sqlite3_bind_blob(pStmt, i, pValue->z, pValue->n,SQLITE_TRANSIENT);
+      }
+      break;
+    }
+    case SQLITE_TEXT: {
+      rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT, pValue->enc);
+      break;
+    }
   }
   return rc;
 }

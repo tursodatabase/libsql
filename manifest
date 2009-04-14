@@ -1,5 +1,5 @@
-C Enhancements\sto\svirtual\stable\sdocumentation.\s\sComment\schanges\sonly.\sNo\schanges\sto\r\ncode.\s(CVS\s6503)
-D 2009-04-13T14:43:41
+C Reimplement\sthe\ssqlite3_bind_value()\sinterface\sso\sthat\sit\sworks\swhen\sthe\nvalue\sbeing\sbound\scomes\sfrom\sa\sdifferent\sdatabase\sconnection.\s(CVS\s6504)
+D 2009-04-14T12:43:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
 F src/vdbe.c 88bc70921ccdcff8bfdf574f3e2285d17ab97103
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h df5c5a1c739c98af2c83440dde3fc361240f3a25
-F src/vdbeapi.c 0d4138c79db48e88a497b09d257c384911a24047
+F src/vdbeapi.c 3783c3416206e66749abf5d15c0e8500acef8e0e
 F src/vdbeaux.c 5ecb4c7a041b8926a8927b1a27bcbb8ff74ae5c4
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 9798905787baae83d0b53b62030e32ecf7a0586f
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 982cc7f4e7e2d8abfc2025dfbec7c1ce8f95383b
-R 152c3a29ac908f853ec59e9b3e4485ba
+P b0b2b2831cc84d57e90bf587ebed600fa72926e9
+R e950f079c16a2cf0cbd9a746b0c47391
 U drh
-Z 548cecff79bc228781a0812d3831eb8f
+Z b6c79b5e1dc82c0024406556d80ccdad
