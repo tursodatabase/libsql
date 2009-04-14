@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.10 2009/03/23 04:33:33 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.11 2009/04/14 18:44:39 aswift Exp $
 */
 
 #include "sqliteInt.h"
@@ -527,7 +527,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
 
   /* Step 4. Try to recycle a page buffer if appropriate. */
   if( pCache->bPurgeable && pcache1.pLruTail && (
-      pCache->nPage>=pCache->nMax-1 || pcache1.nCurrentPage>=pcache1.nMaxPage
+     (pCache->nPage+1>=pCache->nMax) || pcache1.nCurrentPage>=pcache1.nMaxPage
   )){
     pPage = pcache1.pLruTail;
     pcache1RemoveFromHash(pPage);
