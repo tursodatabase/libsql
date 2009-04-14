@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.162 2009/04/14 12:43:34 drh Exp $
+** $Id: vdbeapi.c,v 1.163 2009/04/14 12:58:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1153,10 +1153,6 @@ int sqlite3_bind_text16(
 int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
   int rc;
   switch( pValue->type ){
-    case SQLITE_NULL: {
-      rc = sqlite3_bind_null(pStmt, i);
-      break;
-    }
     case SQLITE_INTEGER: {
       rc = sqlite3_bind_int64(pStmt, i, pValue->u.i);
       break;
@@ -1174,7 +1170,12 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_TEXT: {
-      rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT, pValue->enc);
+      rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT,
+                              pValue->enc);
+      break;
+    }
+    default: {
+      rc = sqlite3_bind_null(pStmt, i);
       break;
     }
   }
