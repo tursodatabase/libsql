@@ -1,5 +1,5 @@
-C Disable\sthe\stemptrigger.test\stest\sscript\swhen\sshared\scache\sis\sdisabled.\nTicket\s#3801.\s(CVS\s6507)
-D 2009-04-15T13:07:19
+C Mark\san\sbranch\sin\salter.c\sas\salways\sfalse.\s\sOnly\srun\sthe\sassert()\son\nthe\ssqlite3_aggregate_count()\sfunction\sin\sfunc.c\sif\sthe\nSQLITE_OMIT_DEPRECATED\scompile-time\soption\sis\soff.\s(CVS\s6508)
+D 2009-04-15T13:39:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 472c0a4733de40f1d997ff4fd746042b707faf7b
+F src/alter.c cf3d0583b09e4c3dafd0abb5f3fd3ad754b12ae2
 F src/analyze.c 3585d1a4c480ee85b65cf0a676e05d2c29eb6bdb
 F src/attach.c af80fa85d391ad302c148c4e2524a2cebec64cb2
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -113,7 +113,7 @@ F src/date.c 3e5c554b2f4f2d798761597c08147d7b15f35bea
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c ccc5b5fa3bac249a9ab6e5e10629d77ff293c9f8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 7d30fc856932dafc6cc94f8ad7c2b96d6a1cc02f
+F src/func.c 4ebe8c365401f6b4a28bc597a420a9a42e50af61
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a117d82dad82bc372bc1e3f1adb9540c1accf851
-R dbf3719f4902511d7b1456904a62a380
+P feedbce8f149820d082ecde4437109cc6b6ea0e3
+R 996897d9496945bd4a4b3d80106ea2a6
 U drh
-Z 2b53246a210d9f0ce8529724a14ad264
+Z 3662b839267d2fefe47e3e71275917c8
