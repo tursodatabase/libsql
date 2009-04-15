@@ -1,5 +1,5 @@
-C Mark\san\sbranch\sin\salter.c\sas\salways\sfalse.\s\sOnly\srun\sthe\sassert()\son\nthe\ssqlite3_aggregate_count()\sfunction\sin\sfunc.c\sif\sthe\nSQLITE_OMIT_DEPRECATED\scompile-time\soption\sis\soff.\s(CVS\s6508)
-D 2009-04-15T13:39:48
+C Fix\saccess\sviolation\son\sWinCE\splatforms.\s\sTicket\s#3804.\s(CVS\s6509)
+D 2009-04-15T14:36:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -142,7 +142,7 @@ F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
-F src/os_win.c 25092e59f1e5969779c393fd75bc945c2f375513
+F src/os_win.c c3d0354b9a7ae75e3e993e6c17f5deb061acbc36
 F src/pager.c e8d2bb957f01f1d030798b8ee039327bb3000d65
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y b7e4341b21736a90b952aa6bb663ec98529b778e
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P feedbce8f149820d082ecde4437109cc6b6ea0e3
-R 996897d9496945bd4a4b3d80106ea2a6
-U drh
-Z 3662b839267d2fefe47e3e71275917c8
+P c0bba77ae619e709f3fb068526073a4a83cf33b6
+R 60499e56429b76b866740226d762ff74
+U shane
+Z be286a2bb7817f683580514326b970f8
