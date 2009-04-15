@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.232 2009/04/15 13:39:48 drh Exp $
+** $Id: func.c,v 1.233 2009/04/15 15:16:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1262,7 +1262,7 @@ static void groupConcatStep(
     sqlite3 *db = sqlite3_context_db_handle(context);
     pAccum->useMalloc = 1;
     pAccum->mxAlloc = db->aLimit[SQLITE_LIMIT_LENGTH];
-    if( pAccum->nChar ){
+    if( sqlite3_aggregate_count(context)>1 ){
       if( argc==2 ){
         zSep = (char*)sqlite3_value_text(argv[1]);
         nSep = sqlite3_value_bytes(argv[1]);

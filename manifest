@@ -1,5 +1,5 @@
-C Fix\saccess\sviolation\son\sWinCE\splatforms.\s\sTicket\s#3804.\s(CVS\s6509)
-D 2009-04-15T14:36:26
+C Fix\sthe\sgroup_concat()\sfunction\sso\sthat\sit\sinserts\sthe\sseparator\sstring\neven\sif\sthe\sinitial\scontent\sstrings\sare\sempty.\s\sTicket\s#3806.\s(CVS\s6510)
+D 2009-04-15T15:16:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/date.c 3e5c554b2f4f2d798761597c08147d7b15f35bea
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
 F src/expr.c ccc5b5fa3bac249a9ab6e5e10629d77ff293c9f8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 4ebe8c365401f6b4a28bc597a420a9a42e50af61
+F src/func.c ac12ea20d1087b99b8806d380914fd0cbb985c06
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 5824e6ff7ba78cd34c8d6cd724367713583e5b55
 F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
@@ -379,7 +379,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 9764961c3f4ac818dacda01ed35d8bfcef42338b
 F test/fts3expr2.test 8501de895a4c0631e7226c9bac055cd49c9f6646
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/func.test 70ea3d5b10d40cbc87a19b0819d2842dbcdb31f2
+F test/func.test d4a8590511cdc68a136afd00bd989c2584454932
 F test/fuzz.test 8bad3b9b09bad47c50f3433f9598707a70247ce1
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c0bba77ae619e709f3fb068526073a4a83cf33b6
-R 60499e56429b76b866740226d762ff74
-U shane
-Z be286a2bb7817f683580514326b970f8
+P e203ad400dd61431b3e6b8219eb5357b6ca06561
+R 08374e872e7a2a83a20b5c0b0a651c1a
+U drh
+Z a006ab98ab05ae9fc2b427cfcf96e911
