@@ -12,7 +12,7 @@
 # focus of this file is testing UNION, INTERSECT and EXCEPT operators
 # in SELECT statements.
 #
-# $Id: select4.test,v 1.29 2008/08/04 03:51:24 danielk1977 Exp $
+# $Id: select4.test,v 1.30 2009/04/16 00:24:24 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -374,6 +374,11 @@ do_test select4-5.3 {
   }} msg]
   lappend v $msg
 } {1 {SELECTs to the left and right of UNION ALL do not have the same number of result columns}}
+do_test select4-5.3-3807-1 {
+  catchsql {
+    SELECT 1 UNION SELECT 2, 3 UNION SELECT 4, 5 ORDER BY 1;
+  }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
 do_test select4-5.4 {
   set v [catch {execsql {
     SELECT log FROM t1 WHERE n=2
@@ -789,6 +794,13 @@ do_test select4-11.15 {
     EXCEPT
     SELECT x FROM t2
   }
+} {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
+
+do_test select4-12.1 {
+  sqlite3 db2 :memory:
+  catchsql {
+    SELECT 1 UNION SELECT 2,3 UNION SELECT 4,5 ORDER BY 1;
+  } db2
 } {1 {SELECTs to the left and right of UNION do not have the same number of result columns}}
 
 } ;# ifcapable compound

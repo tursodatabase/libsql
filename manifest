@@ -1,5 +1,5 @@
-C Fix\sthe\sgroup_concat()\sfunction\sso\sthat\sit\sinserts\sthe\sseparator\sstring\neven\sif\sthe\sinitial\scontent\sstrings\sare\sempty.\s\sTicket\s#3806.\s(CVS\s6510)
-D 2009-04-15T15:16:53
+C In\sa\s3-fold\scompound\sSELECT\smake\ssure\searly\scode\sgeneration\sof\sthe\sSELECTs\nto\sthe\sright\sdo\snot\sdereference\snon-existant\scolumns\sin\sSELECTs\son\sthe\sleft.\s(CVS\s6511)
+D 2009-04-16T00:24:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/printf.c ea2d76000cc5f4579d7e9cb2f5460433eec0d384
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c badb9f36b3a2ced9ee9551f4ce730f5fab442791
-F src/select.c 462d9671e91accd983110fa38674be0d2a3daa66
+F src/select.c 35225756c247484f473678e5bd191d70a6e4dba0
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 1537d33b86d022f53a97009e2a0e2229badc23cf
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -518,7 +518,7 @@ F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/select1.test 7de2cabb417c142c40e5b8005855b8bd4eedc9e7
 F test/select2.test 9735da20ccd41e42bf2b4c19fd939141b591adae
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
-F test/select4.test b64d5d248d008e1dc365f451c76090bde907e665
+F test/select4.test 44aa6e7110592e18110b0b9cf5c024d37d23be17
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
 F test/select6.test 2b5e8500d8ec3dd4c8e0c99eb1431b3d11fcc24c
 F test/select7.test 7906735805cfbee4dddc0bed4c14e68d7f5f9c5f
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e203ad400dd61431b3e6b8219eb5357b6ca06561
-R 08374e872e7a2a83a20b5c0b0a651c1a
+P b83fbf15a3920755ed77dc9c91b4f00a86ddb9ac
+R 1b07912c8c6ff40738cf08bdcff2243f
 U drh
-Z a006ab98ab05ae9fc2b427cfcf96e911
+Z 5dd358d6f1180bed564e211b297b0523
