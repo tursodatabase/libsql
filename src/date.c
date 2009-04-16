@@ -16,7 +16,7 @@
 ** sqlite3RegisterDateTimeFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: date.c,v 1.105 2009/04/03 12:04:37 drh Exp $
+** $Id: date.c,v 1.106 2009/04/16 12:58:03 drh Exp $
 **
 ** SQLite processes all times and dates as Julian Day numbers.  The
 ** dates and times are stored as the number of days since noon
@@ -549,7 +549,7 @@ static int parseModifier(const char *zMod, DateTime *p){
       ** seconds since 1970.  Convert to a real julian day number.
       */
       if( strcmp(z, "unixepoch")==0 && p->validJD ){
-        p->iJD = p->iJD/86400 + 21086676*(i64)10000000;
+        p->iJD = (p->iJD + 43200)/86400 + 21086676*(i64)10000000;
         clearYMD_HMS_TZ(p);
         rc = 0;
       }
