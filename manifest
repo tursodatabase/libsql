@@ -1,5 +1,5 @@
-C Make\ssure\sthe\s'unixepoch'\sconverter\sin\sthe\sdate\sand\stime\sfunctions\srounds\nto\sthe\snearest\smillisecond\srather\sthan\struncating\sdownward\sto\sthe\snext\nsmaller\smillisecond.\s\sTicket\s#3808.\s(CVS\s6512)
-D 2009-04-16T12:58:03
+C Changes\sto\salter.c\sto\senable\sfull\sbranch\scoverage\stesting.\s(CVS\s6513)
+D 2009-04-16T16:30:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -96,7 +96,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c cf3d0583b09e4c3dafd0abb5f3fd3ad754b12ae2
+F src/alter.c 8ab5824bde0a03dae5829f61557ab7c72757000a
 F src/analyze.c 3585d1a4c480ee85b65cf0a676e05d2c29eb6bdb
 F src/attach.c af80fa85d391ad302c148c4e2524a2cebec64cb2
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 414f340809c487901fa913026a342b19a2956c0a
-R 36b9ab0b0c871b31105f30d21ff665d4
+P e6e036b345b130c207716c4b81719b5b7c884a11
+R fa11097c3c4a07ce3b0737d0cb0b33ca
 U drh
-Z 2bce441c175c79c6663221930da841a4
+Z 991c53216d69c9da31b9a7a09a11e6cb
