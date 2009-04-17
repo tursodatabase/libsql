@@ -1,5 +1,5 @@
-C Add\sthe\sSQLITE_HAVE_ISNAN\scompile-time\soption\swhich,\sif\spresent,\scauses\nSQLite\sto\suse\sthe\smath\slibrary\sisnan()\sfunction\srather\sthan\sits\sown\shomebrew\nimplementation\sof\sisnan().\s(CVS\s6517)
-D 2009-04-17T11:57:22
+C Get\sthe\sbehavior\sof\sSQLITE_HAVE_ISNAN\sright.\s\sIt\swas\sreversed\nin\scheck-in\s(6517).\s\sTicket\s#3809.\s(CVS\s6518)
+D 2009-04-17T15:18:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -198,7 +198,7 @@ F src/tokenize.c 7bd3b6dd56566604ad24ed4aa017e6618166b500
 F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
 F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
-F src/util.c 3990f949a4a0fbdd62552ee34b4d22aec7910305
+F src/util.c 828c552a22a1d5b650b8a5ea0009546715c45d93
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
 F src/vdbe.c 88bc70921ccdcff8bfdf574f3e2285d17ab97103
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c29b37ea36fe6a360807e66dffc467c66be00d38
-R 247ae40bc2309c99608c794edcff5bc4
+P 54d23521c37938b9d98f41f5547975c469c0c8f0
+R 59a301e0a3a304f652c1f0f944903fdf
 U drh
-Z da2ba0741571881997e395a38a2e00f8
+Z bb753a5ea99f3a9d6427c22a7056a49b
