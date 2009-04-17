@@ -14,10 +14,11 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.249 2009/03/01 22:29:20 drh Exp $
+** $Id: util.c,v 1.250 2009/04/17 11:57:22 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
+#include <math.h>
 
 /*
 ** Routine needed to support the testcase() macro.
@@ -52,9 +53,19 @@ int sqlite3Assert(void){
 
 /*
 ** Return true if the floating point value is Not a Number (NaN).
+**
+** Use the math library isnan() function if compiled with SQLITE_HAVE_ISNAN.
+** Otherwise, we have our own implementation that works on most systems.
 */
 int sqlite3IsNaN(double x){
-  /* This NaN test sometimes fails if compiled on GCC with -ffast-math.
+#if defined(SQLITE_HAVE_ISNAN)
+  /*
+  ** Systems that support the isnan() library function should probably
+  ** make use of it by compiling with -DSQLITE_HAVE_ISNAN.  But we have
+  ** found that many systems do not have a working isnan() function so
+  ** this implementation is provided as an alternative.
+  **
+  ** This NaN test sometimes fails if compiled on GCC with -ffast-math.
   ** On the other hand, the use of -ffast-math comes with the following
   ** warning:
   **
@@ -77,6 +88,9 @@ int sqlite3IsNaN(double x){
   volatile double y = x;
   volatile double z = y;
   return y!=z;
+#else  /* if defined(SQLITE_HAVE_ISNAN) */
+  return isnan(x);
+#endif /* SQLITE_HAVE_ISNAN */
 }
 
 /*
