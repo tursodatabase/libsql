@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_transfer_bindings() API.
 #
-# $Id: bindxfer.test,v 1.8 2009/04/16 16:32:21 drh Exp $
+# $Id: bindxfer.test,v 1.9 2009/04/17 11:56:28 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -68,8 +68,6 @@ ifcapable deprecated {
   do_test bindxfer-1.8 {
     set VALUES
   } {one two {}}
-  catch {sqlite3_finalize $VM1}
-  catch {sqlite3_finalize $VM2}
 }
 catch {sqlite3_finalize $VM1}
 catch {sqlite3_finalize $VM2}

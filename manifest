@@ -1,5 +1,5 @@
-C Add\sNEVER\sand\sALWAYS\stags\sto\sconditionals\sin\sanalyze.c\sthat\salways\sfalse\sor\ntrue.\s(CVS\s6515)
-D 2009-04-16T17:45:48
+C Check-in\s(6514)\sdid\snot\scompletely\sremove\sthe\sobsolete\stest,\sresulting\sin\sa\nsegfault.\s\sThis\scheck-in\sfinishes\sthe\sjob.\s\sTicket\s#3802.\s(CVS\s6516)
+D 2009-04-17T11:56:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test b746a34ce0e2039994b45fea8b7fbfa78f594cdf
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 455f7e8322a215e245414625eede3ab0e1429c14
-F test/bindxfer.test 0249d98f4ffdb7b990852bd9035025dd78fae77d
+F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
 F test/bitvec.test 75894a880520164d73b1305c1c3f96882615e142
 F test/blob.test 2a38d867bdf08f9ce081776acec1ac8d4bca66be
 F test/boundary1.tcl 6421b2d920d8b09539503a8673339d32f7609eb1
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b1b096171812f77082b0b63e7ab0908c82d1d8bb
-R 0952d1f4e5927f390e5460b95c743282
+P fbbc80eaf3bb3726b053d1050104b4ec602eb0c1
+R c8bde6c6b0390f10634d507d904faa5d
 U drh
-Z b510a4cc06b31598c0e3daf6f1c39efe
+Z 8e3db78cb71447734b970da6417db69a
