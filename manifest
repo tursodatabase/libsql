@@ -1,5 +1,5 @@
-C Get\sthe\sbehavior\sof\sSQLITE_HAVE_ISNAN\sright.\s\sIt\swas\sreversed\nin\scheck-in\s(6517).\s\sTicket\s#3809.\s(CVS\s6518)
-D 2009-04-17T15:18:48
+C Revise\sthe\simplementation\sof\ssqlite3_initialize()\sslightly\sin\sorder\sto\smake\nit\smore\seasily\stestable.\s\sThe\sfunctionality\sshould\sbe\sunchanged.\s(CVS\s6519)
+D 2009-04-17T16:54:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/insert.c 71286d081a919a27ef22eaeccbe2718f93dc6aa9
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c 96636e2ae86e1c36c61189b7760d89f01d35f1e2
+F src/main.c b1eac85b643cae84217874e78a73d1ccf0718b00
 F src/malloc.c a1f0f8ae110abb8eb546e259ab0eaea7e0f9b588
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 54d23521c37938b9d98f41f5547975c469c0c8f0
-R 59a301e0a3a304f652c1f0f944903fdf
+P 97c6ea2368556b2a9a914ba2322085e312598b15
+R 41ba3a8408b6d435c1e0e58bca724f55
 U drh
-Z bb753a5ea99f3a9d6427c22a7056a49b
+Z d98b7bef780e2d16aa5f1f8b742918e9
