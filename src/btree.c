@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.595 2009/04/11 16:06:15 danielk1977 Exp $
+** $Id: btree.c,v 1.596 2009/04/19 20:51:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2029,14 +2029,6 @@ static void unlockBtreeIfUnused(BtShared *pBt){
   if( pBt->inTransaction==TRANS_NONE && pBt->pCursor==0 && pBt->pPage1!=0 ){
     if( sqlite3PagerRefcount(pBt->pPager)>=1 ){
       assert( pBt->pPage1->aData );
-#if 0
-      if( pBt->pPage1->aData==0 ){
-        MemPage *pPage = pBt->pPage1;
-        pPage->aData = sqlite3PagerGetData(pPage->pDbPage);
-        pPage->pBt = pBt;
-        pPage->pgno = 1;
-      }
-#endif
       releasePage(pBt->pPage1);
     }
     pBt->pPage1 = 0;
@@ -2629,7 +2621,7 @@ static int autoVacuumCommit(BtShared *pBt){
 ** database are written into the database file and flushed to oxide.
 ** At the end of this call, the rollback journal still exists on the
 ** disk and we are still holding all locks, so the transaction has not
-** committed.  See sqlite3BtreeCommit() for the second phase of the
+** committed.  See sqlite3BtreeCommitPhaseTwo() for the second phase of the
 ** commit process.
 **
 ** This call is a no-op if no write-transaction is currently active on pBt.
@@ -2669,12 +2661,13 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
 ** Commit the transaction currently in progress.
 **
 ** This routine implements the second phase of a 2-phase commit.  The
-** sqlite3BtreeSync() routine does the first phase and should be invoked
-** prior to calling this routine.  The sqlite3BtreeSync() routine did
-** all the work of writing information out to disk and flushing the
+** sqlite3BtreeCommitPhaseOne() routine does the first phase and should
+** be invoked prior to calling this routine.  The sqlite3BtreeCommitPhaseOne()
+** routine did all the work of writing information out to disk and flushing the
 ** contents so that they are written onto the disk platter.  All this
-** routine has to do is delete or truncate the rollback journal
-** (which causes the transaction to commit) and drop locks.
+** routine has to do is delete or truncate or zero the header in the
+** the rollback journal (which causes the transaction to commit) and
+** drop locks.
 **
 ** This will release the write lock on the database file.  If there
 ** are no active cursors, it also releases the read lock.
@@ -2713,7 +2706,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
     }
   }
 
-  /* Set the handles current transaction state to TRANS_NONE and unlock
+  /* Set the current transaction state to TRANS_NONE and unlock
   ** the pager if this call closed the only read or write transaction.
   */
   btreeClearHasContent(pBt);

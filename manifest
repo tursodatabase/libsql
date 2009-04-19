@@ -1,5 +1,5 @@
-C Make\sextra\scalls\sto\ssqlite3_shutdown()\sbe\sharmless\sno-ops.\s(CVS\s6520)
-D 2009-04-19T12:23:58
+C Update\scomments\sand\sremove\sunused\scode\sin\sbtree.c.\s\sNo\sfunctional\schanges.\s(CVS\s6521)
+D 2009-04-19T20:51:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -103,7 +103,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 103858ade0ad7d3320aadae936557e48b84bf3c2
+F src/btree.c b4ec46b3adc3e2d82704c949d4b654b031a64ad6
 F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 2882f22078db1c3f887b1aca77ff460cf9461c62
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bb1a390a3d2f79b27e3ec2514ae00f5b22dbfb06
-R bfe81c34d0885c2bfee07a323015841e
+P d80822953c2d2f2fd7f6acdd3caa403c0decacc4
+R 1aeac7e626ad8c712d8be267be9624bb
 U drh
-Z b04415dd5b051642fb17a59a62ddd487
+Z e1e6fd3e9710fd0e165194b49bd9ea30
