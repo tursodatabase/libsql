@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.441 2009/04/13 14:43:41 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.442 2009/04/19 12:23:58 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -790,6 +790,11 @@ struct sqlite3_vfs {
 ** following a call to sqlite3_shutdown().  Only an effective call
 ** of sqlite3_initialize() does any initialization.  All other calls
 ** are harmless no-ops.
+**
+** A call to sqlite3_shutdown() is an "effective" call if it is the first
+** call to sqlite3_shutdown() since the last sqlite3_initialize().  Only
+** an effective call to sqlite3_shutdown() does any deinitialization.
+** All other calls to sqlite3_shutdown() are harmless no-ops.
 **
 ** Among other things, sqlite3_initialize() shall invoke
 ** sqlite3_os_init().  Similarly, sqlite3_shutdown()
