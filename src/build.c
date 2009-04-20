@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.528 2009/04/08 13:51:51 drh Exp $
+** $Id: build.c,v 1.529 2009/04/20 17:43:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -158,7 +158,9 @@ void sqlite3FinishCoding(Parse *pParse){
         if( (mask & pParse->cookieMask)==0 ) continue;
         sqlite3VdbeUsesBtree(v, iDb);
         sqlite3VdbeAddOp2(v,OP_Transaction, iDb, (mask & pParse->writeMask)!=0);
-        sqlite3VdbeAddOp2(v,OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
+        if( db->init.busy==0 ){
+          sqlite3VdbeAddOp2(v,OP_VerifyCookie, iDb, pParse->cookieValue[iDb]);
+        }
       }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
       {

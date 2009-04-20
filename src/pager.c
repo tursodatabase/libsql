@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.581 2009/04/20 11:34:27 drh Exp $
+** @(#) $Id: pager.c,v 1.582 2009/04/20 17:43:03 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5195,11 +5195,14 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 **    PAGER_JOURNALMODE_OFF
 **    PAGER_JOURNALMODE_MEMORY
 **
-** If the parameter is not _QUERY, then the journal-mode is set to the
-** value specified.  Except, an in-memory database can only have its
-** journal mode set to _OFF or _MEMORY.  Attempts to change the journal
-** mode of an in-memory database to something other than _OFF or _MEMORY
-** are silently ignored.
+** If the parameter is not _QUERY, then the journal_mode is set to the
+** value specified if the change is allowed.  The change is disallowed
+** for the following reasons:
+**
+**   *  An in-memory database can only have its journal_mode set to _OFF
+**      or _MEMORY.
+**
+**   *  The journal mode may not be changed while a transaction is active.
 **
 ** The returned indicate the current (possibly updated) journal-mode.
 */
@@ -5211,8 +5214,14 @@ int sqlite3PagerJournalMode(Pager *pPager, int eMode){
             || eMode==PAGER_JOURNALMODE_OFF 
             || eMode==PAGER_JOURNALMODE_MEMORY );
   assert( PAGER_JOURNALMODE_QUERY<0 );
-  if( eMode>=0 && (!MEMDB || eMode==PAGER_JOURNALMODE_MEMORY 
-                          || eMode==PAGER_JOURNALMODE_OFF) ){
+  if( eMode>=0
+   && (!MEMDB || eMode==PAGER_JOURNALMODE_MEMORY 
+              || eMode==PAGER_JOURNALMODE_OFF)
+   && !pPager->dbModified
+  ){
+    if( isOpen(pPager->jfd) ){
+      sqlite3OsClose(pPager->jfd);
+    }
     pPager->journalMode = (u8)eMode;
   }
   return (int)pPager->journalMode;

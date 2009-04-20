@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.14 2009/04/10 15:02:44 danielk1977 Exp $
+# $Id: jrnlmode.test,v 1.15 2009/04/20 17:43:03 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -282,6 +282,7 @@ ifcapable autovacuum&&pragma {
   } {3}
 
   do_test jrnlmode-4.2 {
+breakpoint
     execsql { PRAGMA journal_mode = off }
   } {off}
 
@@ -464,7 +465,7 @@ ifcapable pragma {
           INSERT INTO t4 VALUES(1, 2);
           PRAGMA journal_mode = memory;
       }
-    } {truncate memory}
+    } {truncate truncate}
     do_test jrnlmode-6.2 {
       file exists test.db-journal
     } {1}
@@ -476,14 +477,15 @@ ifcapable pragma {
     } {1 2}
     do_test jrnlmode-6.4 {
       file exists test.db-journal
-    } {0}
+    } {1}
     do_test jrnlmode-6.5 {
       execsql {
+        PRAGMA journal_mode = MEMORY;
         BEGIN;
           INSERT INTO t4 VALUES(3, 4);
       }
       file exists test.db-journal
-    } {0}
+    } {1}
     do_test jrnlmode-6.7 {
       execsql {
         COMMIT;
@@ -491,6 +493,13 @@ ifcapable pragma {
       }
     } {1 2 3 4}
     do_test jrnlmode-6.8 {
+      file exists test.db-journal
+    } {1}
+    do_test jrnlmode-6.9 {
+      execsql {
+        PRAGMA journal_mode = DELETE;
+        BEGIN IMMEDIATE; COMMIT;
+      }
       file exists test.db-journal
     } {0}
   }
