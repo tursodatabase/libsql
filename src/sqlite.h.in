@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.442 2009/04/19 12:23:58 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.443 2009/04/20 12:31:46 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1329,8 +1329,16 @@ int sqlite3_total_changes(sqlite3*);
 ** that is inside an explicit transaction, then the entire transaction
 ** will be rolled back automatically.
 **
-** A call to sqlite3_interrupt() has no effect on SQL statements
-** that are started after sqlite3_interrupt() returns.
+** The sqlite3_interrupt(D) call is in effect until all currently running
+** SQL statements on [database connection] D complete.  Any new SQL statements
+** that are started after the sqlite3_interrupt() call and before the 
+** running statements reaches zero are interrupted as if they had been
+** running prior to the sqlite3_interrupt() call.  New SQL statements
+** that are started after the running statement count reaches zero are
+** not effected by the sqlite3_interrupt().
+** A call to sqlite3_interrupt(D) that occurs when there are no running
+** SQL statements is a no-op and has no effect on SQL statements
+** that are started after the sqlite3_interrupt() call returns.
 **
 ** Requirements:
 ** [H12271] [H12272]

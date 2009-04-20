@@ -1,5 +1,5 @@
-C Do\snot\suse\sdeprecated\sinterfaces\sinternally\swhen\scompiling\swith\nSQLITE_OMIT_DEPRECATED.\s\sTicket\s#3813.\s(CVS\s6523)
-D 2009-04-20T12:07:37
+C Clarify\sthe\sdocumentation\sto\smake\sit\sclear\sthat\ssqlite3_interrupt()\sdoes\snot\neffect\snew\sSQL\sstatements\sthat\sare\sstarted\safter\sthe\srunning\sstatement\ncount\sreaches\szero.\s\sTicket\s#3815.\s(CVS\s6524)
+D 2009-04-20T12:31:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c badb9f36b3a2ced9ee9551f4ce730f5fab442791
 F src/select.c 35225756c247484f473678e5bd191d70a6e4dba0
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in 4a12a7193d4dcceef4f2c6a42a4b8c51f6ccd412
+F src/sqlite.h.in 8e0e256079bac2319380bdfebf403fcbe630510f
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h fcdad0896da9c8b6372db974131e33b7a06606ce
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -717,7 +717,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5b7e3a411a6f2fe296675de9467783f6625cff3f
-R b93f23b1bc29eb1388ee55dd1eabaa8e
+P 7f17956dfbf3090fd5832378e77bd83a525fed9d
+R d1e1a18f11c4de466ad80d4a9f7793a2
 U drh
-Z 02de5aee0f87b72f80cd324f38725634
+Z 77d93c4b66bd2965475a96f202c117d9
