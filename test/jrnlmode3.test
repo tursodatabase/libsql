@@ -1,0 +1,70 @@
+# 2009 April 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: jrnlmode3.test,v 1.4 2009/04/20 13:32:33 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable {!pager_pragmas} {
+  finish_test
+  return
+}
+
+# Ticket #3811
+#
+# Verify that journal_mode=OFF works as long as it occurs before the first
+# transaction, even if locking_mode=EXCLUSIVE is enabled.  The behavior if
+# journal_mode is changed after the first transaction is undefined and hence
+# untested.
+#
+do_test jrnlmode3-1.1 {
+  db eval {
+    PRAGMA journal_mode=OFF;
+    PRAGMA locking_mode=EXCLUSIVE;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+    SELECT * FROM t1;
+  }
+} {off exclusive 1}
+do_test jrnlmode3-1.2 {
+  db eval {
+    BEGIN;
+    INSERT INTO t1 VALUES(2);
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {1 2}
+
+db close
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+
+do_test jrnlmode3-2.1 {
+  db eval {
+    PRAGMA locking_mode=EXCLUSIVE;
+    PRAGMA journal_mode=OFF;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(1);
+    SELECT * FROM t1;
+  }
+} {exclusive off 1}
+do_test jrnlmode3-2.2 {
+  db eval {
+    BEGIN;
+    INSERT INTO t1 VALUES(2);
+    ROLLBACK;
+    SELECT * FROM t1;
+  }
+} {1 2}
+
+
+finish_test
