@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.580 2009/04/11 16:27:50 drh Exp $
+** @(#) $Id: pager.c,v 1.581 2009/04/20 11:34:27 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1041,6 +1041,7 @@ static void pager_reset(Pager *pPager){
   if( SQLITE_OK==pPager->errCode ){
     sqlite3BackupRestart(pPager->pBackup);
     sqlite3PcacheClear(pPager->pPCache);
+    pPager->dbSizeValid = 0;
   }
 }
 
@@ -1290,7 +1291,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }else if( pPager->journalMode==PAGER_JOURNALMODE_TRUNCATE ){
-      rc = sqlite3OsTruncate(pPager->jfd, 0);
+      if( pPager->journalOff==0 ){
+        rc = SQLITE_OK;
+      }else{
+        rc = sqlite3OsTruncate(pPager->jfd, 0);
+      }
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else if( pPager->exclusiveMode 
@@ -3664,9 +3669,15 @@ static int pagerSharedLock(Pager *pPager){
 /*
 ** If the reference count has reached zero, rollback any active
 ** transaction and unlock the pager.
+**
+** Except, in locking_mode=EXCLUSIVE when there is nothing to in
+** the rollback journal, the unlock is not performed and there is
+** nothing to rollback, so this routine is a no-op.
 */ 
 static void pagerUnlockIfUnused(Pager *pPager){
-  if( sqlite3PcacheRefCount(pPager->pPCache)==0 ){
+  if( (sqlite3PcacheRefCount(pPager->pPCache)==0)
+   && (!pPager->exclusiveMode || pPager->journalOff>0) 
+  ){
     pagerUnlockAndRollback(pPager);
   }
 }
