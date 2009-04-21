@@ -10,20 +10,55 @@
 **
 *************************************************************************
 **
-** This file contains the implementation of the "row-hash" data structure.
+** This file contains the implementation of the RowHash data structure.
+** A RowHash has the following properties:
 **
-** $Id: rowhash.c,v 1.1 2009/04/21 09:02:47 danielk1977 Exp $
+**   *  A RowHash stores an unordered "bag" of 64-bit integer rowids.
+**      There is no other content.
+**
+**   *  Primative operations are CREATE, INSERT, TEST, and DESTROY.
+**      There is no way to remove individual elements from the RowHash
+**      once they are inserted.
+**
+**   *  INSERT operations are batched.  TEST operation will ignore
+**      elements in the current INSERT batch.  Only elements inserted
+**      in prior batches will be seen by a TEST.
+**
+** The insert batch number is a parameter to the TEST primitive.  The
+** hash table is rebuilt whenever the batch number increases.  TEST
+** operations only look for INSERTs that occurred in prior batches.
+**
+** The caller is responsible for insuring that there are no duplicate
+** INSERTs.
+**
+** $Id: rowhash.c,v 1.2 2009/04/21 15:05:19 drh Exp $
 */
 #include "sqliteInt.h"
 
-typedef struct RowHashElem RowHashElem;
-typedef struct RowHashBlock RowHashBlock;
-
 /*
-** Size of heap allocations made by this module. This limit is 
-** never exceeded.
+** An upper bound on the size of heap allocations made by this module.
+** Limiting the size of allocations helps to avoid memory fragmentation.
 */
 #define ROWHASH_ALLOCATION 1024
+
+/*
+** If there are less than this number of elements in the RowHash, do not
+** bother building a hash-table. Just do a linear search.
+*/
+#define ROWHASH_LINEAR_SEARCH_LIMIT 10
+
+/*
+** This value is what we want the average length of the collision hash
+** chain to be.
+*/
+#define ROWHASH_COLLISION_LENGTH 3
+
+
+/* Forward references to data structures. */
+typedef struct RowHashElem RowHashElem;
+typedef struct RowHashBlock RowHashBlock;
+typedef union RowHashPtr RowHashPtr;
+typedef struct RowHashPage RowHashPage;
 
 /*
 ** Number of elements in the RowHashBlock.aElem[] array. This array is
@@ -39,34 +74,61 @@ typedef struct RowHashBlock RowHashBlock;
 ** Number of pointers that fit into a single allocation of 
 ** ROWHASH_ALLOCATION bytes.
 */
-#define ROWHASH_POINTER_PER_PAGE (ROWHASH_ALLOCATION/sizeof(void *))
+#define ROWHASH_POINTER_PER_PAGE (ROWHASH_ALLOCATION/sizeof(RowHashPtr))
 
 /*
-** If there are less than this number of elements in the block-list, do not
-** bother building a hash-table. Just do a linear search of the list when
-** querying.
+** A page of pointers used to construct a hash table.
+**
+** The hash table is actually a tree composed of instances of this
+** object.  Leaves of the tree use the a[].pElem pointer to point
+** to RowHashElem entries.  Interior nodes of the tree use the
+** a[].pPage element to point to subpages.
+**
+** The hash table is split into a tree in order to avoid having
+** to make large memory allocations, since large allocations can
+** result in unwanted memory fragmentation.
 */
-#define ROWHASH_LINEAR_SEARCH_LIMIT 10
-
-/*
-** Element stored in the hash-table.
-*/
-struct RowHashElem {
-  i64 iVal;
-  RowHashElem *pNext;
+struct RowHashPage {
+  union RowHashPtr {
+    RowHashPage *pPage;   /* Used by interior nodes.  Pointer to subtree. */
+    RowHashElem *pElem;   /* Used by leaves.  Pointer to hash entry. */
+  } a[ROWHASH_POINTER_PER_PAGE];
 };
 
 /*
-** The following structure is either exactly ROWHASH_ALLOCATION bytes in
-** size or just slightly less. It stores up to ROWHASH_ELEM_PER_BLOCK 
-** RowHashElem structures.
+** Each 64-bit integer in a RowHash is stored as an instance of
+** this object.  
+**
+** Instances of this object are not allocated separately.  They are
+** allocated in large blocks using the RowHashBlock object as a container.
+*/
+struct RowHashElem {
+  i64 iVal;              /* The value being stored.  A rowid. */
+  RowHashElem *pNext;    /* Next element with the same hash */
+};
+
+/*
+** In order to avoid many small allocations of RowHashElem objects,
+** multiple RowHashElem objects are allocated at once, as an instance
+** of this object, and then used as needed.
+**
+** A single RowHash object will allocate one or more of these RowHashBlock
+** objects.  As many are allocated as are needed to store all of the
+** content.  All RowHashBlocks are kept on a linked list formed using
+** RowHashBlock.data.pNext so that they can be freed when the RowHash
+** is destroyed.
+**
+** The linked list of RowHashBlock objects also provides a way to sequentially
+** scan all elements in the RowHash.  This sequential scan is used when
+** rebuilding the hash table.  The hash table is rebuilt after every 
+** batch of inserts.
 */
 struct RowHashBlock {
   struct RowHashBlockData {
-    int nElem;
-    RowHashBlock *pNext;
+    int nUsed;                /* Num of aElem[] currently used in this block */
+    RowHashBlock *pNext;      /* Next RowHashBlock object in list of them all */
   } data;
-  RowHashElem aElem[ROWHASH_ELEM_PER_BLOCK];
+  RowHashElem aElem[ROWHASH_ELEM_PER_BLOCK]; /* Available RowHashElem objects */
 };
 
 /*
@@ -75,24 +137,23 @@ struct RowHashBlock {
 */
 struct RowHash {
   /* Variables populated by sqlite3RowhashInsert() */
-  int nEntry;               /* Total number of entries in block-list */
-  RowHashBlock *pBlock;     /* Linked list of entries */
+  int nEntry;               /* Number of used entries over all RowHashBlocks */
+  RowHashBlock *pBlock;     /* Linked list of RowHashBlocks */
 
   /* Variables populated by makeHashTable() */
-  int iSet;                 /* Most recent iSet parameter passed to Test() */
+  int iBatch;               /* The current insert batch number */
   int iMod;                 /* Number of buckets in hash table */
-  int nLeaf;                /* Number of leaf pages in hash table */
-  int nHeight;              /* Height of tree containing leaf pages */
-  void *pHash;              /* Pointer to root of tree */
+  int nHeight;              /* Height of tree of hash pages */
+  RowHashPage *pHash;       /* Pointer to root of hash table tree */
   int nLinearLimit;         /* Linear search limit (used if pHash==0) */
 };
 
 
 /*
-** Allocate a tree of height nHeight with *pnLeaf leaf pages. Set *pp to
-** point to the root of the tree. If the maximum number of leaf pages in a
-** tree of height nHeight is less than *pnLeaf, allocate a tree with the 
-** maximum possible number of leaves for height nHeight. 
+** Allocate a hash table tree of height nHeight with *pnLeaf leaf pages. 
+** Set *pp to point to the root of the tree.  If the maximum number of leaf 
+** pages in a tree of height nHeight is less than *pnLeaf, allocate only
+** that part of the tree that is necessary to account for all leaves.
 **
 ** Before returning, subtract the number of leaves in the tree allocated
 ** from *pnLeaf.
@@ -100,18 +161,18 @@ struct RowHash {
 ** This routine returns SQLITE_NOMEM if a malloc() fails, or SQLITE_OK
 ** otherwise.
 */
-static int allocTable(void **pp, int nHeight, int *pnLeaf){
-  void **ap = (void **)sqlite3MallocZero(ROWHASH_ALLOCATION);
-  if( !ap ){
+static int allocHashTable(RowHashPage **pp, int nHeight, int *pnLeaf){
+  RowHashPage *p = (RowHashPage *)sqlite3MallocZero(sizeof(*p));
+  if( !p ){
     return SQLITE_NOMEM;
   }
-  *pp = (void *)ap;
+  *pp = p;
   if( nHeight==0 ){
     (*pnLeaf)--;
   }else{
     int ii;
     for(ii=0; ii<ROWHASH_POINTER_PER_PAGE && *pnLeaf>0; ii++){
-      if( allocTable(&ap[ii], nHeight-1, pnLeaf) ){
+      if( allocHashTable(&p->a[ii].pPage, nHeight-1, pnLeaf) ){
         return SQLITE_NOMEM;
       }
     }
@@ -120,85 +181,76 @@ static int allocTable(void **pp, int nHeight, int *pnLeaf){
 }
 
 /*
-** Delete the tree of height nHeight passed as the first argument.
+** Delete the hash table tree of height nHeight passed as the first argument.
 */
-static void deleteTable(void **ap, int nHeight){
-  if( ap ){
+static void deleteHashTable(RowHashPage *p, int nHeight){
+  if( p ){
     if( nHeight>0 ){
       int ii;
       for(ii=0; ii<ROWHASH_POINTER_PER_PAGE; ii++){
-        deleteTable((void **)ap[ii], nHeight-1);
+        deleteHashTable(p->a[ii].pPage, nHeight-1);
       }
     }
-    sqlite3_free(ap);
+    sqlite3_free(p);
   }
 }
 
 /*
-** Delete the hash-table stored in p->pHash. The p->pHash pointer is
-** set to zero before returning. This function is the inverse of 
-** allocHashTable()
-*/
-static void deleteHashTable(RowHash *p){
-  deleteTable(p->pHash, p->nHeight);
-  p->pHash = 0;
-}
-
-/*
-** Allocate the hash table structure based on the current values of
-** p->nLeaf and p->nHeight.
-*/
-static int allocHashTable(RowHash *p){
-  int nLeaf = p->nLeaf;
-  assert( p->pHash==0 );
-  assert( p->nLeaf>0 );
-  return allocTable(&p->pHash, p->nHeight, &nLeaf);
-}
-
-/*
 ** Find the hash-bucket associated with value iVal. Return a pointer to it.
+**
+** By "hash-bucket", we mean the RowHashPage.a[].pElem pointer that
+** corresponds to a particular hash entry.
 */
-static void **findHashBucket(RowHash *p, i64 iVal){
+static RowHashElem **findHashBucket(RowHash *pRowHash, i64 iVal){
   int aOffset[16];
-  int n = p->nHeight;
-  void **ap = p->pHash;
-  int h = (((u64)iVal) % p->iMod);
-  for(n=0; n<p->nHeight; n++){
+  int n;
+  RowHashPage *pPage = pRowHash->pHash;
+  int h = (((u64)iVal) % pRowHash->iMod);
+
+  assert( pRowHash->nHeight < sizeof(aOffset)/sizeof(aOffset[0]) );
+  for(n=0; n<pRowHash->nHeight; n++){
     int h1 = h / ROWHASH_POINTER_PER_PAGE;
     aOffset[n] = h - (h1 * ROWHASH_POINTER_PER_PAGE);
     h = h1;
   }
   aOffset[n] = h;
-  for(n=p->nHeight; n>0; n--){
-    ap = (void **)ap[aOffset[n]];
+  for(n=pRowHash->nHeight; n>0; n--){
+    pPage = pPage->a[aOffset[n]].pPage;
   }
-  return &ap[aOffset[0]];
+  return &pPage->a[aOffset[0]].pElem;
 }
 
 /*
-** Build a hash table to query with sqlite3RowhashTest() based on the
-** set of values stored in the linked list of RowHashBlock structures.
+** Build a new hash table tree in p->pHash.  The new hash table should
+** contain all p->nEntry entries in the p->pBlock list.  If there
+** existed a prior tree, delete the old tree first before constructing
+** the new one.
+**
+** If the number of entries (p->nEntry) is less than
+** ROWHASH_LINEAR_SEARCH_LIMIT, then we are guessing that a linear
+** search is going to be faster than a lookup, so do not bother
+** building the hash table.
 */
-static int makeHashTable(RowHash *p, int iSet){
+static int makeHashTable(RowHash *p, int iBatch){
   RowHashBlock *pBlock;
   int iMod;
-  int nLeaf;
+  int nLeaf, n;
   
   /* Delete the old hash table. */
-  deleteHashTable(p);
-  assert( p->iSet!=iSet );
-  p->iSet = iSet;
+  deleteHashTable(p->pHash, p->nHeight);
+  assert( p->iBatch!=iBatch );
+  p->iBatch = iBatch;
 
+  /* Skip building the hash table if the number of elements is small */
   if( p->nEntry<ROWHASH_LINEAR_SEARCH_LIMIT ){
     p->nLinearLimit = p->nEntry;
+    p->pHash = 0;
     return SQLITE_OK;
   }
 
   /* Determine how many leaves the hash-table will comprise. */
-  nLeaf = 1 + (p->nEntry / ROWHASH_POINTER_PER_PAGE);
-  iMod = nLeaf*ROWHASH_POINTER_PER_PAGE;
-  p->nLeaf = nLeaf;
-  p->iMod = iMod;
+  nLeaf = 1 + (p->nEntry / (ROWHASH_POINTER_PER_PAGE*ROWHASH_COLLISION_LENGTH));
+  p->iMod = iMod = nLeaf*ROWHASH_POINTER_PER_PAGE;
 
   /* Set nHeight to the height of the tree that contains the leaf pages. If
   ** RowHash.nHeight is zero, then the whole hash-table fits on a single
@@ -207,22 +259,23 @@ static int makeHashTable(RowHash *p, int iSet){
   ** to arrays of pointers to leaf pages. And so on.
   */
   p->nHeight = 0;
-  while( nLeaf>1 ){
-    nLeaf = (nLeaf+ROWHASH_POINTER_PER_PAGE-1) / ROWHASH_POINTER_PER_PAGE;
+  n = nLeaf;
+  while( n>1 ){
+    n = (n+ROWHASH_POINTER_PER_PAGE-1) / ROWHASH_POINTER_PER_PAGE;
     p->nHeight++;
   }
 
   /* Allocate the hash-table. */
-  if( allocHashTable(p) ){
+  if( allocHashTable(&p->pHash, p->nHeight, &nLeaf) ){
     return SQLITE_NOMEM;
   }
 
   /* Insert all values into the hash-table. */
   for(pBlock=p->pBlock; pBlock; pBlock=pBlock->data.pNext){
-    RowHashElem * const pEnd = &pBlock->aElem[pBlock->data.nElem];
+    RowHashElem * const pEnd = &pBlock->aElem[pBlock->data.nUsed];
     RowHashElem *pIter;
     for(pIter=pBlock->aElem; pIter<pEnd; pIter++){
-      RowHashElem **ppElem = (RowHashElem **)findHashBucket(p, pIter->iVal);
+      RowHashElem **ppElem = findHashBucket(p, pIter->iVal);
       pIter->pNext = *ppElem;
       *ppElem = pIter;
     }
@@ -232,21 +285,35 @@ static int makeHashTable(RowHash *p, int iSet){
 }
 
 /*
-** Test if value iVal is in the hash table. If so, set *pExists to 1
-** before returning. If iVal is not in the hash table, set *pExists to 0.
+** Check to see if iVal has been inserted into the hash table "p"
+** in some batch prior to iBatch.  If so, set *pExists to 1.
+** If not, set *pExists to 0.
 **
-** Return SQLITE_OK if all goes as planned. If a malloc() fails, return
-** SQLITE_NOMEM.
+** The hash table is rebuilt whenever iBatch changes.  A hash table
+** rebuild might encounter an out-of-memory condition.  If that happens,
+** return SQLITE_NOMEM.  If there are no problems, return SQLITE_OK.
+**
+** The initial "batch" is 0.  So, if there were prior calls to
+** sqlite3RowhashInsert() and then this routine is invoked with iBatch==0,
+** because all prior inserts where in the same batch, none of the prior
+** inserts will be visible and this routine will indicate not found.
+** Hence, the first invocation of this routine should probably use
+** a batch number of 1.
 */
-int sqlite3RowhashTest(RowHash *p, int iSet, i64 iVal, int *pExists){
+int sqlite3RowhashTest(
+  RowHash *p,     /* The RowHash to search in */
+  int iBatch,     /* Look for values inserted in batches prior to this batch */
+  i64 iVal,       /* The rowid value we are looking for */
+  int *pExists    /* Store 0 or 1 hear to indicate not-found or found */
+){
   *pExists = 0;
   if( p ){
     assert( p->pBlock );
-    if( iSet!=p->iSet && makeHashTable(p, iSet) ){
+    if( iBatch!=p->iBatch && makeHashTable(p, iBatch) ){
       return SQLITE_NOMEM;
     }
     if( p->pHash ){
-      RowHashElem *pElem = *(RowHashElem **)findHashBucket(p, iVal);
+      RowHashElem *pElem = *findHashBucket(p, iVal);
       for(; pElem; pElem=pElem->pNext){
         if( pElem->iVal==iVal ){
           *pExists = 1;
@@ -268,7 +335,8 @@ int sqlite3RowhashTest(RowHash *p, int iSet, i64 iVal, int *pExists){
 }
 
 /*
-** Insert value iVal into the RowHash object.
+** Insert value iVal into the RowHash object.  Allocate a new RowHash
+** object if necessary.
 **
 ** Return SQLITE_OK if all goes as planned. If a malloc() fails, return
 ** SQLITE_NOMEM.
@@ -287,19 +355,19 @@ int sqlite3RowhashInsert(RowHash **pp, i64 iVal){
 
   /* If the current RowHashBlock is full, or if the first RowHashBlock has
   ** not yet been allocated, allocate one now. */ 
-  if( !p->pBlock || p->pBlock->data.nElem==ROWHASH_ELEM_PER_BLOCK ){
+  if( !p->pBlock || p->pBlock->data.nUsed==ROWHASH_ELEM_PER_BLOCK ){
     RowHashBlock *pBlock = (RowHashBlock*)sqlite3Malloc(sizeof(RowHashBlock));
     if( !pBlock ){
       return SQLITE_NOMEM;
     }
-    pBlock->data.nElem = 0;
+    pBlock->data.nUsed = 0;
     pBlock->data.pNext = p->pBlock;
     p->pBlock = pBlock;
   }
 
   /* Add iVal to the current RowHashBlock. */
-  p->pBlock->aElem[p->pBlock->data.nElem].iVal = iVal;
-  p->pBlock->data.nElem++;
+  p->pBlock->aElem[p->pBlock->data.nUsed].iVal = iVal;
+  p->pBlock->data.nUsed++;
   p->nEntry++;
   return SQLITE_OK;
 }
@@ -310,7 +378,7 @@ int sqlite3RowhashInsert(RowHash **pp, i64 iVal){
 void sqlite3RowhashDestroy(RowHash *p){
   if( p ){
     RowHashBlock *pBlock, *pNext;
-    deleteHashTable(p);
+    deleteHashTable(p->pHash, p->nHeight);
     for(pBlock=p->pBlock; pBlock; pBlock=pNext){
       pNext = pBlock->data.pNext;
       sqlite3_free(pBlock);
@@ -318,4 +386,3 @@ void sqlite3RowhashDestroy(RowHash *p){
     sqlite3_free(p);
   }
 }
-

@@ -1,5 +1,5 @@
-C Remove\sa\sredundant\stest\sfrom\ssqlite3_shutdown().\s(CVS\s6528)
-D 2009-04-21T12:02:56
+C New\scomments\sand\sminor\srefactoring\sof\srowhash.c.\s(CVS\s6529)
+D 2009-04-21T15:05:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in fa5998fe08bd8c0fdc7f9f66cea16c0279f39da8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/prepare.c 72d74e6d3b9c8eb0663b33ec6438aa718096ac79
 F src/printf.c ea2d76000cc5f4579d7e9cb2f5460433eec0d384
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
-F src/rowhash.c f1ebc89222c4095caf40d18176aed408669ddaa5
+F src/rowhash.c c4ab59c04edf7de128e08e27dcb54f72bfbea9bc
 F src/rowset.c badb9f36b3a2ced9ee9551f4ce730f5fab442791
 F src/select.c 35225756c247484f473678e5bd191d70a6e4dba0
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
@@ -201,7 +201,7 @@ F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 828c552a22a1d5b650b8a5ea0009546715c45d93
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
-F src/vdbe.c 60db222db8d0f04a7fd2c754e99754eb83d6ed24
+F src/vdbe.c 6df1766d2c2961cf8224d935db57c4a6ec948481
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h d3adfeccc750643ae7861f2d29f579d3dad28785
 F src/vdbeapi.c 015c9d0fb7047657a13a7bb6aa886f75e43db02d
@@ -721,7 +721,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f61e4cd93682fd98bea2a71d346f9eaa68454390
-R e41290121cd78e7346039a2f88271146
+P 6f481ceb503c7df74d9417a5a7f019ff56261ea8
+R a4e163b71977e7fa78f31b9c9adb7e88
 U drh
-Z feaa88976462a8a95a140c3c3f221904
+Z 8c403435bade6e8de78fced09d0d2883
