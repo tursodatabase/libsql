@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.7 2009/02/24 10:01:52 danielk1977 Exp $
+# $Id: where9.test,v 1.8 2009/04/21 09:02:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -166,7 +166,7 @@ do_test where9-1.2.1 {
         OR d IS NULL
     ORDER BY a
   }
-} {90 91 92 96 97 99 scan 0 sort 0}
+} {90 91 92 96 97 99 scan 0 sort 1}
 do_test where9-1.2.2 {
   count_steps {
     SELECT a FROM t1
@@ -213,7 +213,7 @@ do_test where9-1.3.1 {
         OR (b NOT NULL AND c NOT NULL AND d IS NULL)
     ORDER BY a
   }
-} {90 91 92 97 scan 0 sort 0}
+} {90 91 92 97 scan 0 sort 1}
 do_test where9-1.3.2 {
   count_steps {
     SELECT a FROM t4
@@ -248,20 +248,26 @@ do_test where9-1.4 {
      WHERE (b>=950 AND b<=1010) OR (b IS NULL AND c NOT NULL)
     ORDER BY a
   }
-} {87 88 89 90 91 scan 0 sort 0}
+} {87 88 89 90 91 scan 0 sort 1}
 do_test where9-1.5 {
+  # When this test was originally written, SQLite used a rowset object 
+  # to optimize the "ORDER BY a" clause. Now that it is using a rowhash,
+  # this is not possible. So we have to comment out one term of the OR
+  # expression in order to prevent SQLite from deeming a full-table
+  # scan to be a better strategy than using multiple indexes, which would
+  # defeat the point of the test.
   count_steps {
     SELECT a FROM t1
      WHERE a=83
         OR b=913
         OR c=28028
         OR (d>=82 AND d<83)
-        OR (e>2802 AND e<2803) 
+/*      OR (e>2802 AND e<2803)  */
         OR f='fghijklmn'
         OR g='hgfedcb'
     ORDER BY a
   }
-} {5 31 57 82 83 84 85 86 87 scan 0 sort 0}
+} {5 31 57 82 83 84 85 86 87 scan 0 sort 1}
 do_test where9-1.6 {
   count_steps {
     SELECT a FROM t1
@@ -323,7 +329,7 @@ do_test where9-2.5 {
      WHERE t1.a=80 OR t1.b=880 OR (t1.c=27027 AND round(t1.d)==80)
     ORDER BY 1
   }
-} {80 2 80 28 80 54 80 80 scan 0 sort 0}
+} {80 80 80 2 80 28 80 54 scan 0 sort 1}
 do_test where9-2.6 {
   count_steps {
     SELECT t1.a, coalesce(t2.a,9999)
@@ -331,7 +337,7 @@ do_test where9-2.6 {
      WHERE t1.a=80 OR t1.b=880 OR (t1.c=27027 AND round(t1.d)==80)
     ORDER BY 1
   }
-} {80 9999 scan 0 sort 0}
+} {80 9999 scan 0 sort 1}
 do_test where9-2.7 {
   count_steps {
     SELECT t3.x, t1.a, coalesce(t2.a,9999)
@@ -347,7 +353,7 @@ do_test where9-2.8 {
       FROM t3 JOIN
            t1 LEFT JOIN t2 ON (t1.c=t2.c AND t1.d=t2.d) OR (t1.f)=t2.f
      WHERE t1.a=t3.y OR t1.b=t3.y*11 OR (t1.c=27027 AND round(t1.d)==80)
-    ORDER BY 1, 2
+    ORDER BY 1, 2, 3
   }
 } {1 80 2 1 80 28 1 80 54 1 80 80 2 80 2 2 80 28 2 80 54 2 80 80 scan 1 sort 1}
 

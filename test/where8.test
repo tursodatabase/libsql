@@ -12,7 +12,7 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.5 2008/12/30 16:13:05 danielk1977 Exp $
+# $Id: where8.test,v 1.6 2009/04/21 09:02:47 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -63,19 +63,19 @@ do_test where8-1.2 {
 
 do_test where8-1.3 { 
   execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b = 'two' }
-} {II IX X 0 0 6}
+} {IX X II 0 0 6}
 
 do_test where8-1.4 { 
   execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 't*' }
-} {II III IX X 0 0 9}
+} {IX X III II 0 0 9}
 
 do_test where8-1.5 { 
   execsql_status2 { SELECT c FROM t1 WHERE a > 8 OR b GLOB 'f*' }
-} {IV V IX X 0 0 9}
+} {IX X V IV 0 0 9}
 
 do_test where8-1.6 { 
   execsql_status { SELECT c FROM t1 WHERE a = 1 OR b = 'three' ORDER BY rowid }
-} {I III 0 0}
+} {I III 0 1}
 
 do_test where8-1.7 { 
   execsql_status { SELECT c FROM t1 WHERE a = 1 OR b = 'three' ORDER BY a }
@@ -88,13 +88,13 @@ do_test where8-1.8 {
 
 do_test where8-1.9 {
   execsql_status2 { SELECT c FROM t1 WHERE a >= 9 OR b <= 'eight' }
-} {VIII IX X 0 0 6}
+} {IX X VIII 0 0 6}
 
 do_test where8-1.10 {
   execsql_status2 { 
     SELECT c FROM t1 WHERE (a >= 9 AND c != 'X') OR b <= 'eight' 
   }
-} {VIII IX 0 0 7}
+} {IX VIII 0 0 6}
 
 do_test where8-1.11 {
   execsql_status2 { 
@@ -120,7 +120,7 @@ do_test where8-1.13 {
     WHERE a = 2 OR b = 'three' OR a = 4 OR b = 'five' OR a = 6
     ORDER BY rowid
   }
-} {II III IV V VI 0 0 15}
+} {II III IV V VI 0 1 18}
 do_test where8-1.14 {
   execsql_status2 {
     SELECT c FROM t1
@@ -129,7 +129,7 @@ do_test where8-1.14 {
       b = 'seven' OR a = 8 OR b = 'nine' OR a = 10
     ORDER BY rowid
   }
-} {II III IV V VI VII VIII IX X 0 0 26}
+} {II III IV V VI VII VIII IX X 0 1 33}
 
 do_test where8-1.15 {
   execsql_status2 {
@@ -137,8 +137,7 @@ do_test where8-1.15 {
       a BETWEEN 2 AND 4 OR b = 'nine'
     ORDER BY rowid
   }
-} {II III IV IX 0 0 10}
-
+} {II III IV IX 0 1 12}
 
 
 #--------------------------------------------------------------------------
@@ -242,7 +241,7 @@ do_test where8-3.8 {
     WHERE (a = 2 OR b = 'three') AND (d = a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
-} {2 2 2 4 3 3 3 4 0 0}
+} {2 2 2 4 3 3 3 4 0 1}
 
 do_test where8-3.9 {
   # The "OR c = 'IX'" term forces a linear scan.
@@ -252,13 +251,13 @@ do_test where8-3.9 {
     WHERE (a = 2 OR b = 'three' OR c = 'IX') AND (d = a OR e = 'sixteen')
     ORDER BY t1.rowid
   }
-} {2 2 2 4 3 3 3 4 9 4 9 9 9 0}
+} {2 2 2 4 3 3 3 4 9 9 9 4 9 0}
 
 do_test where8-3.10 {
   execsql_status {
     SELECT d FROM t2 WHERE e IS NULL OR e = 'four'
   }
-} {1 2 3 5 10 0 0}
+} {1 3 5 10 2 0 0}
 
 do_test where8-3.11 {
   execsql_status {

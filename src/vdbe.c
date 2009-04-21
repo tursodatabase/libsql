@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.832 2009/04/10 12:55:17 danielk1977 Exp $
+** $Id: vdbe.c,v 1.833 2009/04/21 09:02:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -3468,6 +3468,7 @@ case OP_NotExists: {        /* jump, in3 */
     pC->rowidIsValid = res==0 ?1:0;
     pC->nullRow = 0;
     pC->cacheStatus = CACHE_STALE;
+    pC->deferredMoveto = 0;
     if( res!=0 ){
       pc = pOp->p2 - 1;
       assert( pC->rowidIsValid==0 );
@@ -4597,6 +4598,55 @@ case OP_RowSetRead: {       /* jump, out3 */
     /* A value was pulled from the index */
     assert( pOp->p3>0 && pOp->p3<=p->nMem );
     sqlite3VdbeMemSetInt64(pOut, val);
+  }
+  break;
+}
+
+/* Opcode: RowHash P1 P2 P3 P4
+**
+** Register P3 is assumed to hold an integer value. If register P1
+** contains a rowid-hash object and the rowid-hash object contains
+** the value held in P3, jump to register P2. Otherwise, insert the
+** integer in P3 into the rowid-hash container.
+**
+** The rowid-hash is optimized for the case where successive sets
+** of integers, where each set contains no duplicates. Each set
+** of values is identified by a unique P4 value. The first set
+** must have P4==0, the final set P4=-1.
+**
+** This allows optimizations: (a) when P4==0 there is no need to test
+** the row-hash object for P3, as it is guaranteed not to contain it,
+** (b) when P4==-1 there is no need to insert the value, as it will
+** never be tested for, and (c) when a value that is part of set X is
+** inserted, there is no need to search to see if the same value was
+** previously inserted as part of set X (only if it was previously
+** inserted as part of some other set).
+*/
+case OP_RowHash: {                     /* jump, in1, in3 */
+  int iSet = pOp->p4.i;
+  assert( pIn3->flags&MEM_Int );
+
+  /* If there is anything other than a row-hash object in memory cell P1,
+  ** delete it now and initialize P1 with an empty row-hash (a null pointer
+  ** is an acceptable representation of an empty row-hash).
+  */
+  if( (pIn1->flags & MEM_RowHash)==0 ){
+    sqlite3VdbeMemReleaseExternal(pIn1);
+    pIn1->u.pRowHash = 0;
+    pIn1->flags = MEM_RowHash;
+  }
+
+  assert( pOp->p4type==P4_INT32 );
+  if( iSet ){
+    int exists;
+    rc = sqlite3RowhashTest(pIn1->u.pRowHash, pOp->p4.i, pIn3->u.i, &exists);
+    if( exists ){
+      pc = pOp->p2 - 1;
+      break;
+    }
+  }
+  if( iSet>=0 ){
+    rc = sqlite3RowhashInsert(&pIn1->u.pRowHash, pIn3->u.i);
   }
   break;
 }

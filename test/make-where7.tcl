@@ -103,19 +103,17 @@ for {set i 2} {$i<=$NT+1} {incr i} {
   set seen($w) 1
   set result [lsort -int [array names r]]
   puts "do_test where7-2.$i.1 \173"
-  puts "  count_steps \173"
+  puts "  count_steps_sort \173"
   puts "     SELECT a FROM t2"
   set wc [join $w "\n         OR "]
   puts "      WHERE $wc"
-  puts "      ORDER BY a"
   puts "  \175"
   puts "\175 {$result scan 0 sort 0}"
   puts "do_test where7-2.$i.2 \173"
-  puts "  count_steps \173"
+  puts "  count_steps_sort \173"
   puts "     SELECT a FROM t3"
   set wc [join $w "\n         OR "]
   puts "      WHERE $wc"
-  puts "      ORDER BY a"
   puts "  \175"
   puts "\175 {$result scan 0 sort 0}"
 }

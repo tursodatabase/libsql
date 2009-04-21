@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.451 2009/04/10 15:42:36 shane Exp $
+** $Id: vdbeaux.c,v 1.452 2009/04/21 09:02:47 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1223,6 +1223,9 @@ static void Cleanup(Vdbe *p){
   for(pMem=&p->aMem[1], i=1; i<=p->nMem; i++, pMem++){
     if( pMem->flags & MEM_RowSet ){
       sqlite3RowSetClear(pMem->u.pRowSet);
+    }
+    if( pMem->flags & MEM_RowHash ){
+      sqlite3RowhashDestroy(pMem->u.pRowHash);
     }
     MemSetTypeFlag(pMem, MEM_Null);
   }
