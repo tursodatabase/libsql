@@ -31,7 +31,7 @@
 ** The caller is responsible for insuring that there are no duplicate
 ** INSERTs.
 **
-** $Id: rowhash.c,v 1.2 2009/04/21 15:05:19 drh Exp $
+** $Id: rowhash.c,v 1.3 2009/04/21 16:15:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -136,16 +136,14 @@ struct RowHashBlock {
 ** around and used as opaque handles by code in other modules.
 */
 struct RowHash {
-  /* Variables populated by sqlite3RowhashInsert() */
-  int nEntry;               /* Number of used entries over all RowHashBlocks */
-  RowHashBlock *pBlock;     /* Linked list of RowHashBlocks */
-
-  /* Variables populated by makeHashTable() */
-  int iBatch;               /* The current insert batch number */
-  int iMod;                 /* Number of buckets in hash table */
-  int nHeight;              /* Height of tree of hash pages */
-  RowHashPage *pHash;       /* Pointer to root of hash table tree */
-  int nLinearLimit;         /* Linear search limit (used if pHash==0) */
+  int nEntry;             /* Number of used entries over all RowHashBlocks */
+  int iBatch;             /* The current insert batch number */
+  u8 nHeight;             /* Height of tree of hash pages */
+  u8 nLinearLimit;        /* Linear search limit (used if pHash==0) */
+  int nBucket;            /* Number of buckets in hash table */
+  RowHashPage *pHash;     /* Pointer to root of hash table tree */
+  RowHashBlock *pBlock;   /* Linked list of RowHashBlocks */
+  sqlite3 *db;            /* Associated database connection */
 };
 
 
@@ -205,7 +203,7 @@ static RowHashElem **findHashBucket(RowHash *pRowHash, i64 iVal){
   int aOffset[16];
   int n;
   RowHashPage *pPage = pRowHash->pHash;
-  int h = (((u64)iVal) % pRowHash->iMod);
+  int h = (((u64)iVal) % pRowHash->nBucket);
 
   assert( pRowHash->nHeight < sizeof(aOffset)/sizeof(aOffset[0]) );
   for(n=0; n<pRowHash->nHeight; n++){
@@ -233,7 +231,7 @@ static RowHashElem **findHashBucket(RowHash *pRowHash, i64 iVal){
 */
 static int makeHashTable(RowHash *p, int iBatch){
   RowHashBlock *pBlock;
-  int iMod;
+  int nBucket;
   int nLeaf, n;
   
   /* Delete the old hash table. */
@@ -250,7 +248,7 @@ static int makeHashTable(RowHash *p, int iBatch){
 
   /* Determine how many leaves the hash-table will comprise. */
   nLeaf = 1 + (p->nEntry / (ROWHASH_POINTER_PER_PAGE*ROWHASH_COLLISION_LENGTH));
-  p->iMod = iMod = nLeaf*ROWHASH_POINTER_PER_PAGE;
+  p->nBucket = nBucket = nLeaf*ROWHASH_POINTER_PER_PAGE;
 
   /* Set nHeight to the height of the tree that contains the leaf pages. If
   ** RowHash.nHeight is zero, then the whole hash-table fits on a single
@@ -341,15 +339,16 @@ int sqlite3RowhashTest(
 ** Return SQLITE_OK if all goes as planned. If a malloc() fails, return
 ** SQLITE_NOMEM.
 */
-int sqlite3RowhashInsert(RowHash **pp, i64 iVal){
+int sqlite3RowhashInsert(sqlite3 *db, RowHash **pp, i64 iVal){
   RowHash *p = *pp;
   
   /* If the RowHash structure has not been allocated, allocate it now. */
   if( !p ){
-    p = (RowHash*)sqlite3MallocZero(sizeof(RowHash));
+    p = (RowHash*)sqlite3DbMallocZero(db, sizeof(RowHash));
     if( !p ){
       return SQLITE_NOMEM;
     }
+    p->db = db;
     *pp = p;
   }
 
@@ -383,6 +382,6 @@ void sqlite3RowhashDestroy(RowHash *p){
       pNext = pBlock->data.pNext;
       sqlite3_free(pBlock);
     }
-    sqlite3_free(p);
+    sqlite3DbFree(p->db, p);
   }
 }

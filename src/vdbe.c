@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.834 2009/04/21 15:05:19 drh Exp $
+** $Id: vdbe.c,v 1.835 2009/04/21 16:15:15 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -4647,7 +4647,7 @@ case OP_RowHash: {                     /* jump, in1, in3 */
     }
   }
   if( iSet>=0 ){
-    rc = sqlite3RowhashInsert(&pIn1->u.pRowHash, pIn3->u.i);
+    rc = sqlite3RowhashInsert(db, &pIn1->u.pRowHash, pIn3->u.i);
   }
   break;
 }
