@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\sfollowed\sa\smalloc\sfailure\sintroduced\sby\s(6527).\s(CVS\s6532)
-D 2009-04-21T17:23:05
+C Move\sRowHashBlock.nUsed\sto\sRowHash.nUsed.\sFix\sa\stypo\sin\sa\scomment\sin\stest_async.c.\s(CVS\s6533)
+D 2009-04-21T18:20:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in fa5998fe08bd8c0fdc7f9f66cea16c0279f39da8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/prepare.c 72d74e6d3b9c8eb0663b33ec6438aa718096ac79
 F src/printf.c ea2d76000cc5f4579d7e9cb2f5460433eec0d384
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
-F src/rowhash.c a62040abf905884c57d9a1e087287177d069b79a
+F src/rowhash.c d1c45cce6d915c3fc161d7ca4110b2605bad471b
 F src/rowset.c badb9f36b3a2ced9ee9551f4ce730f5fab442791
 F src/select.c 35225756c247484f473678e5bd191d70a6e4dba0
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
@@ -174,7 +174,7 @@ F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
 F src/test7.c b94e68c2236de76889d82b8d7d8e00ad6a4d80b1
 F src/test8.c b1061548f7ce3aeedea3cc4d649ee1487c2b4eaf
 F src/test9.c 963d380922f25c1c323712d05db01b19197ee6f7
-F src/test_async.c c820a2d21ef910cbef613ca55938fc8d7545c84a
+F src/test_async.c 636451da68b7ff4a6d19b266441b2f28790967db
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 1384a18985a5a2d275c2662e48473bf1542ebd08
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
@@ -721,7 +721,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 72e1680904a354811cd2956bd57769ee2482c8bb
-R 989dcd34a963ff2705fb442db350d830
+P 08e71b114087cfddd36c066265982172fcb41c9a
+R b77c29ef28868f89dd8f3d82b37ff6ef
 U danielk1977
-Z ceeb6f394d7e82b624a231b4a7205ad5
+Z ca07415a779404049319849fe8aa519d

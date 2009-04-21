@@ -31,7 +31,7 @@
 ** The caller is responsible for insuring that there are no duplicate
 ** INSERTs.
 **
-** $Id: rowhash.c,v 1.3 2009/04/21 16:15:15 drh Exp $
+** $Id: rowhash.c,v 1.4 2009/04/21 18:20:45 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -125,7 +125,6 @@ struct RowHashElem {
 */
 struct RowHashBlock {
   struct RowHashBlockData {
-    int nUsed;                /* Num of aElem[] currently used in this block */
     RowHashBlock *pNext;      /* Next RowHashBlock object in list of them all */
   } data;
   RowHashElem aElem[ROWHASH_ELEM_PER_BLOCK]; /* Available RowHashElem objects */
@@ -136,6 +135,7 @@ struct RowHashBlock {
 ** around and used as opaque handles by code in other modules.
 */
 struct RowHash {
+  int nUsed;              /* Number of used entries in first RowHashBlock */
   int nEntry;             /* Number of used entries over all RowHashBlocks */
   int iBatch;             /* The current insert batch number */
   u8 nHeight;             /* Height of tree of hash pages */
@@ -270,7 +270,9 @@ static int makeHashTable(RowHash *p, int iBatch){
 
   /* Insert all values into the hash-table. */
   for(pBlock=p->pBlock; pBlock; pBlock=pBlock->data.pNext){
-    RowHashElem * const pEnd = &pBlock->aElem[pBlock->data.nUsed];
+    RowHashElem * const pEnd = &pBlock->aElem[
+      pBlock==p->pBlock?p->nUsed:ROWHASH_ELEM_PER_BLOCK
+    ];
     RowHashElem *pIter;
     for(pIter=pBlock->aElem; pIter<pEnd; pIter++){
       RowHashElem **ppElem = findHashBucket(p, pIter->iVal);
@@ -354,19 +356,20 @@ int sqlite3RowhashInsert(sqlite3 *db, RowHash **pp, i64 iVal){
 
   /* If the current RowHashBlock is full, or if the first RowHashBlock has
   ** not yet been allocated, allocate one now. */ 
-  if( !p->pBlock || p->pBlock->data.nUsed==ROWHASH_ELEM_PER_BLOCK ){
+  if( !p->pBlock || p->nUsed==ROWHASH_ELEM_PER_BLOCK ){
     RowHashBlock *pBlock = (RowHashBlock*)sqlite3Malloc(sizeof(RowHashBlock));
     if( !pBlock ){
       return SQLITE_NOMEM;
     }
-    pBlock->data.nUsed = 0;
     pBlock->data.pNext = p->pBlock;
     p->pBlock = pBlock;
+    p->nUsed = 0;
   }
+  assert( p->nUsed==(p->nEntry % ROWHASH_ELEM_PER_BLOCK) );
 
   /* Add iVal to the current RowHashBlock. */
-  p->pBlock->aElem[p->pBlock->data.nUsed].iVal = iVal;
-  p->pBlock->data.nUsed++;
+  p->pBlock->aElem[p->nUsed].iVal = iVal;
+  p->nUsed++;
   p->nEntry++;
   return SQLITE_OK;
 }

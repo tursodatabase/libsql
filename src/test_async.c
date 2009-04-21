@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.57 2009/04/07 11:21:29 danielk1977 Exp $
+** $Id: test_async.c,v 1.58 2009/04/21 18:20:45 danielk1977 Exp $
 **
 ** This file contains an example implementation of an asynchronous IO 
 ** backend for SQLite.
@@ -73,7 +73,7 @@
 ** between the concurrency offered by "normal" SQLite and SQLite
 ** using the asynchronous backend.
 **
-** If connections from within multiple database files may access the
+** If connections from within multiple processes may access the
 ** database file, the ENABLE_FILE_LOCKING symbol (see below) must be
 ** defined. If it is not defined, then no locks are established on 
 ** the database file. In this case, if multiple processes access 
