@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.383 2009/04/21 09:02:47 danielk1977 Exp $
+** $Id: where.c,v 1.384 2009/04/21 17:23:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1754,6 +1754,9 @@ static void bestVirtualIndex(
   pIdxInfo = *ppIdxInfo;
   if( pIdxInfo==0 ){
     *ppIdxInfo = pIdxInfo = allocateIndexInfo(pParse, pWC, pSrc, pOrderBy);
+  }
+  if( pIdxInfo==0 ){
+    return;
   }
 
   /* At this point, the sqlite3_index_info structure that pIdxInfo points
