@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.538 2009/04/19 12:23:58 drh Exp $
+** $Id: main.c,v 1.539 2009/04/21 12:02:56 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -221,9 +221,7 @@ int sqlite3_shutdown(void){
   if( sqlite3GlobalConfig.isInit ){
     sqlite3GlobalConfig.isMallocInit = 0;
     sqlite3PcacheShutdown();
-    if( sqlite3GlobalConfig.isInit ){
-      sqlite3_os_end();
-    }
+    sqlite3_os_end();
     sqlite3_reset_auto_extension();
     sqlite3MallocEnd();
     sqlite3MutexEnd();
