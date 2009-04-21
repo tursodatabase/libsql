@@ -1,5 +1,5 @@
-C Allocate\sthe\sinitial\sRowHash\sobject\susing\slookaside.\s(CVS\s6530)
-D 2009-04-21T16:15:15
+C Adjust\sthe\srowhash.test\smodule\sso\sthat\sit\srecovers\sgracefully\sin\sthe\srare\nevent\sof\sa\srowid\scollision.\s(CVS\s6531)
+D 2009-04-21T17:13:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in fa5998fe08bd8c0fdc7f9f66cea16c0279f39da8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -506,7 +506,7 @@ F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
-F test/rowhash.test 60e82105d7a5d209a245177995f45eb172012971
+F test/rowhash.test 94beea2e7ea6ed339ea2831068756249d4e4c01b
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test b85fd4f0861a40ca366ac195e363be2528dcfadf
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
@@ -721,7 +721,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b8cb4f3e2473afaee7c147a6b3f0972f69391a9a
-R 4386ce646d77f4430a63e54c18635ea7
+P 9b30ab7199d8b51bdea8ec7f0410281527623673
+R 2145a02c40a21e7531ac4876da63949f
 U drh
-Z ea8a74f2d1ab01bae74e5378e495aca7
+Z 212ccb12e0b16a139af67ced1d4e45da

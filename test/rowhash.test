@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is the code in rowhash.c.
 #
-# $Id: rowhash.test,v 1.1 2009/04/21 09:02:47 danielk1977 Exp $
+# $Id: rowhash.test,v 1.2 2009/04/21 17:13:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -30,7 +30,7 @@ proc do_keyset_test {name lKey} {
   db transaction {
     execsql { DELETE FROM t1 }
     foreach key $lKey {
-      execsql { INSERT INTO t1 VALUES($key, 'a', 'b', 'c') }
+      execsql { INSERT OR IGNORE INTO t1 VALUES($key, 'a', 'b', 'c') }
     }
   }
   do_test $name {
@@ -43,6 +43,7 @@ proc do_keyset_test {name lKey} {
 do_keyset_test rowhash-2.1 {1 2 3}
 do_keyset_test rowhash-2.2 {0 1 2 3}
 do_keyset_test rowhash-2.3 {62 125 188}
+expr srand(1)
 for {set i 4} {$i < 10} {incr i} {
   for {set j 0} {$j < 5000} {incr j} {
     lappend L [expr int(rand()*10000000000)]
