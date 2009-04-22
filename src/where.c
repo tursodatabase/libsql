@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.385 2009/04/22 02:15:49 drh Exp $
+** $Id: where.c,v 1.386 2009/04/22 15:32:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -43,10 +43,8 @@ typedef struct WhereCost WhereCost;
 /*
 ** The query generator uses an array of instances of this structure to
 ** help it analyze the subexpressions of the WHERE clause.  Each WHERE
-** clause subexpression is separated from the others by AND operators.
-** (Note: the same data structure is also reused to hold a group of terms
-** separated by OR operators.  But at the top-level, everything is AND
-** separated.)
+** clause subexpression is separated from the others by AND operators,
+** usually, or sometimes subexpressions separated by OR.
 **
 ** All WhereTerms are collected into a single WhereClause structure.  
 ** The following identity holds:
@@ -375,7 +373,7 @@ static void whereSplit(WhereClause *pWC, Expr *pExpr, int op){
 }
 
 /*
-** Initialize an expression mask set
+** Initialize an expression mask set (a WhereMaskSet object)
 */
 #define initMaskSet(P)  memset(P, 0, sizeof(*P))
 
@@ -2406,25 +2404,22 @@ static Bitmask codeOneLoopStart(
   int addrBrk;                    /* Jump here to break out of the loop */
   int addrCont;                   /* Jump here to continue with next cycle */
   int regRowSet;       /* Write rowids to this RowSet if non-negative */
-  int codeRowSetEarly; /* True if index fully constrains the search */
 
   /* Sometimes, this function is required to generate code to do 
-  ** something with the rowid of each row scanned. Specifically:
-  **
-  **   1) If pWInfo->regRowSet is non-zero, then the rowid must be inserted
-  **      into the RowSet object stored in register pWInfo->regRowSet.
+  ** something with the rowid of each row scanned. Specifically,
+  ** If pWInfo->regRowSet is non-zero, then the rowid must be inserted
+  ** into the RowSet object stored in register pWInfo->regRowSet.
   **
   ** Extracting a rowid value from a VDBE cursor is not always a cheap
   ** operation, especially if the rowid is being extracted from an index
   ** cursor. If the rowid value is available as a by-product of the code
   ** generated to create the top of the scan loop, then it can be reused
-  ** without extracting
-  ** it from a cursor. The following two variables are used to communicate
-  ** the availability of the rowid value to the C-code at the end of this
-  ** function that generates the rowid-handling VDBE code.
+  ** without extracting it from a cursor. The following two variables are
+  ** used to communicate the availability of the rowid value to the C-code
+  ** at the end of this function that generates the rowid-handling VDBE code.
   */
-  int iRowidReg = 0;              /* Rowid is stored in this register */
-  int iReleaseReg = 0;            /* Temp register to free before returning */
+  int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
+  int iReleaseReg = 0;      /* Temp register to free before returning */
 
   pParse = pWInfo->pParse;
   v = pParse->pVdbe;
@@ -2436,7 +2431,6 @@ static Bitmask codeOneLoopStart(
   omitTable = (pLevel->plan.wsFlags & WHERE_IDX_ONLY)!=0 
            && (wctrlFlags & WHERE_FILL_ROWTEST)==0;
   regRowSet = pWInfo->regRowSet;
-  codeRowSetEarly = 0;
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -2877,7 +2871,6 @@ static Bitmask codeOneLoopStart(
     sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
-    /* iReleaseReg = iRowidReg = sqlite3GetTempReg(pParse); */
     for(ii=0; ii<pOrWc->nTerm; ii++){
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || pOrTerm->eOperator==WO_AND ){
@@ -2895,6 +2888,7 @@ static Bitmask codeOneLoopStart(
           ** loop is not executed.
           */
           int iRowSet = pSubWInfo->iRowidHandler;
+          assert( iRowSet>0 || pWInfo->pParse->db->mallocFailed );
           sqlite3VdbeChangeP2(v, iRowSet, sqlite3VdbeCurrentAddr(v) + 1);
           sqlite3VdbeChangeP4(v, iRowSet, (char *)iSet, P4_INT32);
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
@@ -2991,12 +2985,13 @@ static Bitmask codeOneLoopStart(
       }
     }
     
-    pWInfo->iRowidHandler = sqlite3VdbeCurrentAddr(v);
     if( pWInfo->wctrlFlags&WHERE_FILL_ROWSET ){
       sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, iRowidReg);
+      VVA_ONLY( pWInfo->iRowidHandler = 0; )
     }else{
       assert( pWInfo->wctrlFlags&WHERE_FILL_ROWTEST );
-      sqlite3VdbeAddOp3(v, OP_RowSetTest, regRowSet, 0, iRowidReg);
+      pWInfo->iRowidHandler = 
+        sqlite3VdbeAddOp3(v, OP_RowSetTest, regRowSet, 0, iRowidReg);
     }
   }
   sqlite3ReleaseTempReg(pParse, iReleaseReg);

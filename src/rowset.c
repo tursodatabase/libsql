@@ -60,7 +60,7 @@
 ** There is an added cost of O(N) when switching between TEST and
 ** SMALLEST primitives.
 **
-** $Id: rowset.c,v 1.5 2009/04/22 00:47:01 drh Exp $
+** $Id: rowset.c,v 1.6 2009/04/22 15:32:59 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -277,9 +277,7 @@ static void rowSetTreeToList(
   struct RowSetEntry **ppFirst,    /* Write head of the output list here */
   struct RowSetEntry **ppLast      /* Write tail of the output list here */
 ){
-  if( pIn==0 ){
-    *ppFirst = *ppLast = 0;
-  }
+  assert( pIn!=0 );
   if( pIn->pLeft ){
     struct RowSetEntry *p;
     rowSetTreeToList(pIn->pLeft, ppFirst, &p);
@@ -344,9 +342,7 @@ static struct RowSetEntry *rowSetListToTree(struct RowSetEntry *pList){
   struct RowSetEntry *p;       /* Current tree root */
   struct RowSetEntry *pLeft;   /* Left subtree */
 
-  if( pList==0 ){
-    return 0;
-  }
+  assert( pList!=0 );
   p = pList;
   pList = p->pRight;
   p->pLeft = p->pRight = 0;

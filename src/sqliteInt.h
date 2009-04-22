@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.858 2009/04/22 02:15:48 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.859 2009/04/22 15:32:59 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -220,6 +220,20 @@
 #endif
 
 /*
+** Sometimes we need a small amount of code such as a variable initialization
+** to setup for a later assert() statement.  We do not want this code to
+** appear when assert() is disabled.  The following macro is therefore
+** used to contain that setup code.  The "VVA" acronym stands for
+** "Verification, Validation, and Accreditation".  In other words, the
+** code within VVA_ONLY() will only run during verification processes.
+*/
+#ifndef NDEBUG
+# define VVA_ONLY(X)  X
+#else
+# define VVA_ONLY(X)
+#endif
+
+/*
 ** The ALWAYS and NEVER macros surround boolean expressions which 
 ** are intended to always be true or false, respectively.  Such
 ** expressions could be omitted from the code completely.  But they
@@ -258,20 +272,6 @@
 #else
 # define likely(X)    !!(X)
 # define unlikely(X)  !!(X)
-#endif
-
-/*
-** Sometimes we need a small amount of code such as a variable initialization
-** to setup for a later assert() statement.  We do not want this code to
-** appear when assert() is disabled.  The following macro is therefore
-** used to contain that setup code.  The "VVA" acronym stands for
-** "Verification, Validation, and Accreditation".  In other words, the
-** code within VVA_ONLY() will only run during verification processes.
-*/
-#ifndef NDEBUG
-# define VVA_ONLY(X)  X
-#else
-# define VVA_ONLY(X)
 #endif
 
 #include "sqlite3.h"

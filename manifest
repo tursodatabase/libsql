@@ -1,5 +1,5 @@
-C Remove\sthe\srowhash\sobject\sfrom\sthe\scode.\s\sRowset\snow\sfills\sits\srole.\s(CVS\s6535)
-D 2009-04-22T02:15:48
+C Change\sthe\sOP_Rowid\sopcode\sso\sthat\sa\sdeferred\sOP_Seek\sis\spending,\sit\ssimply\npulls\sthe\srowid\sfrom\sthe\sdeferred\sseek\starget\sand\sdoes\snot\sactually\smove\nthe\scursor\sor\sdo\sa\sseek.\s\sOther\swhere.c\scleanups.\s(CVS\s6536)
+D 2009-04-22T15:32:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,12 +154,12 @@ F src/prepare.c 72d74e6d3b9c8eb0663b33ec6438aa718096ac79
 F src/printf.c ea2d76000cc5f4579d7e9cb2f5460433eec0d384
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
-F src/rowset.c ee0f774f20bf3fd27470603d2d56d1767bbe1013
+F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 35225756c247484f473678e5bd191d70a6e4dba0
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 8e0e256079bac2319380bdfebf403fcbe630510f
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h dc64bc8198a2ad3532a996fcecda71ff89a578f0
+F src/sqliteInt.h b663bb04bc2d71d8f156f559ff267045de64787a
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -200,16 +200,16 @@ F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 828c552a22a1d5b650b8a5ea0009546715c45d93
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
-F src/vdbe.c 13f976672cd9d7fce04f9847d74da8c3b869a013
+F src/vdbe.c ff8870fd2a4a5a3f7f8d24e5d0f4e73c22402c4f
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 8726f7b4e3b55c8acf6d304a5b5f727ac1b6c5ab
 F src/vdbeapi.c 015c9d0fb7047657a13a7bb6aa886f75e43db02d
-F src/vdbeaux.c fdad66c73adb1c6ca6a0cd7a0f9517e5df758122
+F src/vdbeaux.c 34524d499fc6081e97771dcfdf6c2523d5877ef5
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 111d8193859d16aefd5d3cb57472808584ea5503
 F src/vtab.c 6118d71c5137e20a7ac51fb5d9beb0361fbedb89
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
-F src/where.c 48f711d293486b43bf87ab3d1eeeebae50cb6839
+F src/where.c 576a21f6e0bb6651f3354b5cee7ecc67b935b2a5
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -720,7 +720,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P b101cf70b75c9772aaf50e0eadd0cfa37c84d193
-R 4b293c104cb64e8cb94e481dce760f86
+P e963bed0fe3ce5fa32f04b930e5ed0956dc2aa47
+R 1585578003f3d07014cf9b3e3edcfb74
 U drh
-Z 77e80e656a1a39cdd643ee53416f4c84
+Z e0df7c75ae1c0bc5ef9879b2922e6098

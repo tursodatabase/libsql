@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.837 2009/04/22 02:15:48 drh Exp $
+** $Id: vdbe.c,v 1.838 2009/04/22 15:32:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -3905,19 +3905,23 @@ case OP_Rowid: {                 /* out2-prerelease */
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC!=0 );
-  rc = sqlite3VdbeCursorMoveto(pC);
-  if( rc ) goto abort_due_to_error;
-  if( pC->rowidIsValid ){
-    v = pC->lastRowid;
-  }else if( pC->pseudoTable ){
-    v = keyToInt(pC->iKey);
-  }else if( pC->nullRow ){
-    /* Leave the rowid set to a NULL */
-    break;
+  if( pC->deferredMoveto ){
+    v = pC->movetoTarget;
   }else{
-    assert( pC->pCursor!=0 );
-    sqlite3BtreeKeySize(pC->pCursor, &v);
-    v = keyToInt(v);
+    rc = sqlite3VdbeCursorMoveto(pC);
+    if( rc ) goto abort_due_to_error;
+    if( pC->rowidIsValid ){
+      v = pC->lastRowid;
+    }else if( pC->pseudoTable ){
+      v = keyToInt(pC->iKey);
+    }else if( pC->nullRow ){
+      /* Leave the rowid set to a NULL */
+      break;
+    }else{
+      assert( pC->pCursor!=0 );
+      sqlite3BtreeKeySize(pC->pCursor, &v);
+      v = keyToInt(v);
+    }
   }
   pOut->u.i = v;
   MemSetTypeFlag(pOut, MEM_Int);
