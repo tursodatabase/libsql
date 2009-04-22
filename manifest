@@ -1,5 +1,5 @@
-C Change\sthe\sOP_Rowid\sopcode\sso\sthat\sa\sdeferred\sOP_Seek\sis\spending,\sit\ssimply\npulls\sthe\srowid\sfrom\sthe\sdeferred\sseek\starget\sand\sdoes\snot\sactually\smove\nthe\scursor\sor\sdo\sa\sseek.\s\sOther\swhere.c\scleanups.\s(CVS\s6536)
-D 2009-04-22T15:32:59
+C Eliminate\sthe\sOP_VRowid\sopcode.\s\sThe\sregular\sOP_Rowid\snow\swork\sfor\sboth\nregular\sand\svirtual\stables.\s(CVS\s6537)
+D 2009-04-22T17:15:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c d327ec7bb2f64b08d32b1035de82b9ba8675de91
 F src/delete.c eb1066b2f35489fee46ad765d2b66386fc7d8adf
-F src/expr.c ccc5b5fa3bac249a9ab6e5e10629d77ff293c9f8
+F src/expr.c 51ec16f86855a0a6ba44ba9d219abb72f06fd1c8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -196,11 +196,11 @@ F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c 7bd3b6dd56566604ad24ed4aa017e6618166b500
 F src/trigger.c 21f39db410cdc32166a94900ac1b3df98ea560e6
-F src/update.c 8ededddcde6f7b6da981dd0429a5d34518a475b7
+F src/update.c 9617202877aa55c585b55937e0097bf050970c67
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 828c552a22a1d5b650b8a5ea0009546715c45d93
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
-F src/vdbe.c ff8870fd2a4a5a3f7f8d24e5d0f4e73c22402c4f
+F src/vdbe.c b7a27b4c3de1d2df80f3f9ee5a206c4af2abeb5a
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 8726f7b4e3b55c8acf6d304a5b5f727ac1b6c5ab
 F src/vdbeapi.c 015c9d0fb7047657a13a7bb6aa886f75e43db02d
@@ -209,7 +209,7 @@ F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c 111d8193859d16aefd5d3cb57472808584ea5503
 F src/vtab.c 6118d71c5137e20a7ac51fb5d9beb0361fbedb89
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
-F src/where.c 576a21f6e0bb6651f3354b5cee7ecc67b935b2a5
+F src/where.c 423ed1dab78a8a62bfc4f349e7d53756b31deeaa
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 597662c5d777a122f9a3df0047ea5c5bd383a911
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -720,7 +720,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e963bed0fe3ce5fa32f04b930e5ed0956dc2aa47
-R 1585578003f3d07014cf9b3e3edcfb74
+P 1c508a99822caa383e7e24b5d09a9bddd2ee3a00
+R 999e0378f327461c6dde395dd11ca7e1
 U drh
-Z e0df7c75ae1c0bc5ef9879b2922e6098
+Z 6d0b2cfca513b61db3f6e2221f153ea3

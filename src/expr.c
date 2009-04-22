@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.426 2009/04/08 13:51:51 drh Exp $
+** $Id: expr.c,v 1.427 2009/04/22 17:15:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1745,8 +1745,7 @@ int sqlite3ExprCodeGetColumn(
   }  
   assert( v!=0 );
   if( iColumn<0 ){
-    int op = (pTab && IsVirtual(pTab)) ? OP_VRowid : OP_Rowid;
-    sqlite3VdbeAddOp2(v, op, iTable, iReg);
+    sqlite3VdbeAddOp2(v, OP_Rowid, iTable, iReg);
   }else if( pTab==0 ){
     sqlite3VdbeAddOp3(v, OP_Column, iTable, iColumn, iReg);
   }else{

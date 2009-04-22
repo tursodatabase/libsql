@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.838 2009/04/22 15:32:59 drh Exp $
+** $Id: vdbe.c,v 1.839 2009/04/22 17:15:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -3896,6 +3896,10 @@ case OP_RowData: {
 **
 ** Store in register P2 an integer which is the key of the table entry that
 ** P1 is currently point to.
+**
+** P1 can be either an ordinary table or a virtual table.  There used to
+** be a separate OP_VRowid opcode for use with virtual tables, but this
+** one opcode now works for both table types.
 */
 case OP_Rowid: {                 /* out2-prerelease */
   int i = pOp->p1;
@@ -3905,18 +3909,32 @@ case OP_Rowid: {                 /* out2-prerelease */
   assert( i>=0 && i<p->nCursor );
   pC = p->apCsr[i];
   assert( pC!=0 );
-  if( pC->deferredMoveto ){
+  if( pC->nullRow ){
+    /* Do nothing so that reg[P2] remains NULL */
+    break;
+  }else if( pC->deferredMoveto ){
     v = pC->movetoTarget;
+  }else if( pC->pseudoTable ){
+    v = keyToInt(pC->iKey);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  }else if( pC->pVtabCursor ){
+    sqlite3_vtab *pVtab;
+    const sqlite3_module *pModule;
+    pVtab = pC->pVtabCursor->pVtab;
+    pModule = pVtab->pModule;
+    assert( pModule->xRowid );
+    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
+    rc = pModule->xRowid(pC->pVtabCursor, &v);
+    sqlite3DbFree(db, p->zErrMsg);
+    p->zErrMsg = pVtab->zErrMsg;
+    pVtab->zErrMsg = 0;
+    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
   }else{
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
     if( pC->rowidIsValid ){
       v = pC->lastRowid;
-    }else if( pC->pseudoTable ){
-      v = keyToInt(pC->iKey);
-    }else if( pC->nullRow ){
-      /* Leave the rowid set to a NULL */
-      break;
     }else{
       assert( pC->pCursor!=0 );
       sqlite3BtreeKeySize(pC->pCursor, &v);
@@ -5089,37 +5107,6 @@ case OP_VFilter: {   /* jump */
   }
   pCur->nullRow = 0;
 
-  break;
-}
-#endif /* SQLITE_OMIT_VIRTUALTABLE */
-
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-/* Opcode: VRowid P1 P2 * * *
-**
-** Store into register P2  the rowid of
-** the virtual-table that the P1 cursor is pointing to.
-*/
-case OP_VRowid: {             /* out2-prerelease */
-  sqlite3_vtab *pVtab;
-  const sqlite3_module *pModule;
-  sqlite_int64 iRow;
-  VdbeCursor *pCur = p->apCsr[pOp->p1];
-
-  assert( pCur->pVtabCursor );
-  if( pCur->nullRow ){
-    break;
-  }
-  pVtab = pCur->pVtabCursor->pVtab;
-  pModule = pVtab->pModule;
-  assert( pModule->xRowid );
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-  rc = pModule->xRowid(pCur->pVtabCursor, &iRow);
-  sqlite3DbFree(db, p->zErrMsg);
-  p->zErrMsg = pVtab->zErrMsg;
-  pVtab->zErrMsg = 0;
-  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
-  MemSetTypeFlag(pOut, MEM_Int);
-  pOut->u.i = iRow;
   break;
 }
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
