@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.835 2009/04/21 16:15:15 drh Exp $
+** $Id: vdbe.c,v 1.836 2009/04/22 00:47:01 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -428,6 +428,8 @@ static void memTracePrint(FILE *out, Mem *p){
     fprintf(out, " i:%lld", p->u.i);
   }else if( p->flags & MEM_Real ){
     fprintf(out, " r:%g", p->r);
+  }else if( p->flags & MEM_RowSet ){
+    fprintf(out, " (rowset)");
   }else{
     char zBuf[200];
     sqlite3VdbeMemPrettyPrint(p, zBuf);
@@ -4631,23 +4633,23 @@ case OP_RowHash: {                     /* jump, in1, in3 */
   ** delete it now and initialize P1 with an empty row-hash (a null pointer
   ** is an acceptable representation of an empty row-hash).
   */
-  if( (pIn1->flags & MEM_RowHash)==0 ){
-    sqlite3VdbeMemReleaseExternal(pIn1);
-    pIn1->u.pRowHash = 0;
-    pIn1->flags = MEM_RowHash;
+  if( (pIn1->flags & MEM_RowSet)==0 ){
+    sqlite3VdbeMemSetRowSet(pIn1);
+    if( (pIn1->flags & MEM_RowSet)==0 ) goto no_mem;
   }
 
   assert( pOp->p4type==P4_INT32 );
   if( iSet ){
     int exists;
-    rc = sqlite3RowhashTest(pIn1->u.pRowHash, pOp->p4.i, pIn3->u.i, &exists);
+    exists = sqlite3RowSetTest(pIn1->u.pRowSet, iSet>=0 ? iSet & 0xf : 0xff,
+                               pIn3->u.i);
     if( exists ){
       pc = pOp->p2 - 1;
       break;
     }
   }
   if( iSet>=0 ){
-    rc = sqlite3RowhashInsert(db, &pIn1->u.pRowHash, pIn3->u.i);
+    sqlite3RowSetInsert(pIn1->u.pRowSet, pIn3->u.i);
   }
   break;
 }

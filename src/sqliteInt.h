@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.856 2009/04/21 16:15:15 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.857 2009/04/22 00:47:01 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2400,6 +2400,7 @@ int sqlite3BitvecBuiltinTest(int,int*);
 RowSet *sqlite3RowSetInit(sqlite3*, void*, unsigned int);
 void sqlite3RowSetClear(RowSet*);
 void sqlite3RowSetInsert(RowSet*, i64);
+int sqlite3RowSetTest(RowSet*, u8 iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
 
 int sqlite3RowhashInsert(sqlite3*, RowHash **pp, i64 iVal);

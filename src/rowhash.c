@@ -31,7 +31,7 @@
 ** The caller is responsible for insuring that there are no duplicate
 ** INSERTs.
 **
-** $Id: rowhash.c,v 1.4 2009/04/21 18:20:45 danielk1977 Exp $
+** $Id: rowhash.c,v 1.5 2009/04/22 00:47:01 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -135,9 +135,9 @@ struct RowHashBlock {
 ** around and used as opaque handles by code in other modules.
 */
 struct RowHash {
-  int nUsed;              /* Number of used entries in first RowHashBlock */
-  int nEntry;             /* Number of used entries over all RowHashBlocks */
+  unsigned int nEntry;    /* Number of used entries over all RowHashBlocks */
   int iBatch;             /* The current insert batch number */
+  u16 nUsed;              /* Number of used entries in first RowHashBlock */
   u8 nHeight;             /* Height of tree of hash pages */
   u8 nLinearLimit;        /* Linear search limit (used if pHash==0) */
   int nBucket;            /* Number of buckets in hash table */
