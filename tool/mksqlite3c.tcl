@@ -239,7 +239,6 @@ foreach file {
    os_unix.c
    os_win.c
 
-   rowhash.c
    bitvec.c
    pcache.c
    pcache1.c

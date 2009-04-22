@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.141 2009/04/21 09:02:47 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.142 2009/04/22 02:15:49 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -270,7 +270,7 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 */
 void sqlite3VdbeMemReleaseExternal(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
-  if( p->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_RowHash) ){
+  if( p->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet) ){
     if( p->flags&MEM_Agg ){
       sqlite3VdbeMemFinalize(p, p->u.pDef);
       assert( (p->flags & MEM_Agg)==0 );
@@ -281,9 +281,6 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
       p->xDel = 0;
     }else if( p->flags&MEM_RowSet ){
       sqlite3RowSetClear(p->u.pRowSet);
-    }else if( p->flags&MEM_RowHash ){
-      sqlite3RowhashDestroy(p->u.pRowHash);
-      p->u.pRowHash = 0;
     }
   }
 }

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.857 2009/04/22 00:47:01 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.858 2009/04/22 02:15:48 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -557,7 +557,6 @@ struct BusyHandler {
 typedef struct AggInfo AggInfo;
 typedef struct AuthContext AuthContext;
 typedef struct Bitvec Bitvec;
-typedef struct RowHash RowHash;
 typedef struct RowSet RowSet;
 typedef struct CollSeq CollSeq;
 typedef struct Column Column;
@@ -1752,7 +1751,7 @@ struct WhereLevel {
 #define WHERE_FILL_ROWSET      0x0008  /* Save results in a RowSet object */
 #define WHERE_OMIT_OPEN        0x0010  /* Table cursor are already open */
 #define WHERE_OMIT_CLOSE       0x0020  /* Omit close of table & index cursors */
-#define WHERE_FILL_ROWHASH     0x0040  /* Save results in a RowHash object */
+#define WHERE_FILL_ROWTEST     0x0040  /* Save results using OP_RowSetTest */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -1765,8 +1764,8 @@ struct WhereInfo {
   Parse *pParse;       /* Parsing and code generating context */
   u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
-  int regRowSet;                 /* Store rowids in this rowset/rowhash */
-  int iRowidHandler;             /* Address of OP_RowSet or OP_RowHash */
+  int regRowSet;                 /* Store rowids in this rowset */
+  int iRowidHandler;             /* Address of OP_RowSet or OP_RowSetTest */
   SrcList *pTabList;             /* List of tables in the join */
   int iTop;                      /* The very beginning of the WHERE loop */
   int iContinue;                 /* Jump here to continue with next record */
@@ -2402,10 +2401,6 @@ void sqlite3RowSetClear(RowSet*);
 void sqlite3RowSetInsert(RowSet*, i64);
 int sqlite3RowSetTest(RowSet*, u8 iBatch, i64);
 int sqlite3RowSetNext(RowSet*, i64*);
-
-int sqlite3RowhashInsert(sqlite3*, RowHash **pp, i64 iVal);
-int sqlite3RowhashTest(RowHash *p, int iSet, i64 iVal, int *pExists);
-void sqlite3RowhashDestroy(RowHash *p);
 
 void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 
