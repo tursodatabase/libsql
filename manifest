@@ -1,5 +1,5 @@
-C Updated\smisc.\stest\sscripts\sfor\sWindows\stesting\swith\sgcc/cygwin;\s(CVS\s6541)
-D 2009-04-23T18:42:05
+C os_win.c,\swinOpen(),\schanged\sto\shandle\sthe\sSQLITE_OPEN_EXCLUSIVE\sflag\sand\ssharing\smodes\sin\sthe\ssame\smanner\sas\sos_unix.c.\sTicket\s#3821.\s(CVS\s6542)
+D 2009-04-23T19:08:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
-F src/os_win.c c3d0354b9a7ae75e3e993e6c17f5deb061acbc36
+F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c adfdf98f92bcab88246aaa5079df49f9441ebd81
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y b7e4341b21736a90b952aa6bb663ec98529b778e
@@ -722,7 +722,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 03af25b3ee001c1bf3e7a3218fad6ed311c7c259
-R 30700e10f6c34e71c71283b7d63f7a33
+P 1e2c71596e3f7a69afc5b745c20b2e4e81bffda5
+R 76d5774a4fbfd2590aa81cedc88a2f67
 U shane
-Z 3c397054349ec943746136fd831f258c
+Z ae8755c671bd4929f4c005dcef86f4c8
