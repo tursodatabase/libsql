@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.387 2009/04/22 17:15:03 drh Exp $
+** $Id: where.c,v 1.388 2009/04/23 13:22:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2469,20 +2469,16 @@ static Bitmask codeOneLoopStart(
                                                 pVtabIdx->aConstraint;
 
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
-    pParse->disableColCache++;
     for(j=1; j<=nConstraint; j++){
       for(k=0; k<nConstraint; k++){
         if( aUsage[k].argvIndex==j ){
           int iTerm = aConstraint[k].iTermOffset;
-          assert( pParse->disableColCache );
           sqlite3ExprCode(pParse, pWC->a[iTerm].pExpr->pRight, iReg+j+1);
           break;
         }
       }
       if( k==nConstraint ) break;
     }
-    assert( pParse->disableColCache );
-    pParse->disableColCache--;
     sqlite3VdbeAddOp2(v, OP_Integer, pVtabIdx->idxNum, iReg);
     sqlite3VdbeAddOp2(v, OP_Integer, j-1, iReg+1);
     sqlite3VdbeAddOp4(v, OP_VFilter, iCur, addrBrk, iReg, pVtabIdx->idxStr,
@@ -2517,6 +2513,7 @@ static Bitmask codeOneLoopStart(
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addrNxt, iRowidReg);
+    sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
     VdbeComment((v, "pk"));
     pLevel->op = OP_Noop;
   }else if( pLevel->plan.wsFlags & WHERE_ROWID_RANGE ){
@@ -2586,6 +2583,7 @@ static Bitmask codeOneLoopStart(
     if( testOp!=OP_Noop ){
       iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
+      sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp3(v, testOp, memEndValue, addrBrk, iRowidReg);
       sqlite3VdbeChangeP5(v, SQLITE_AFF_NUMERIC | SQLITE_JUMPIFNULL);
     }
@@ -2712,12 +2710,7 @@ static Bitmask codeOneLoopStart(
     /* Seek the index cursor to the start of the range. */
     nConstraint = nEq;
     if( pRangeStart ){
-      int dcc = pParse->disableColCache;
-      if( pRangeEnd ){
-        pParse->disableColCache++;
-      }
       sqlite3ExprCode(pParse, pRangeStart->pExpr->pRight, regBase+nEq);
-      pParse->disableColCache = dcc;
       sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
       nConstraint++;
     }else if( isMinQuery ){
@@ -2743,6 +2736,7 @@ static Bitmask codeOneLoopStart(
     */
     nConstraint = nEq;
     if( pRangeEnd ){
+      sqlite3ExprCacheRemove(pParse, regBase+nEq);
       sqlite3ExprCode(pParse, pRangeEnd->pExpr->pRight, regBase+nEq);
       sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
       codeApplyAffinity(pParse, regBase, nEq+1, pIdx);
@@ -2782,6 +2776,7 @@ static Bitmask codeOneLoopStart(
     if( !omitTable ){
       iRowidReg = iReleaseReg = sqlite3GetTempReg(pParse);
       sqlite3VdbeAddOp2(v, OP_IdxRowid, iIdxCur, iRowidReg);
+      sqlite3ExprCacheStore(pParse, iCur, -1, iRowidReg);
       sqlite3VdbeAddOp2(v, OP_Seek, iCur, iRowidReg);  /* Deferred seek */
     }
 
@@ -2939,9 +2934,7 @@ static Bitmask codeOneLoopStart(
     if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
       continue;
     }
-    pParse->disableColCache += k;
     sqlite3ExprIfFalse(pParse, pE, addrCont, SQLITE_JUMPIFNULL);
-    pParse->disableColCache -= k;
     k = 1;
     pTerm->wtFlags |= TERM_CODED;
   }
@@ -2953,8 +2946,7 @@ static Bitmask codeOneLoopStart(
     pLevel->addrFirst = sqlite3VdbeCurrentAddr(v);
     sqlite3VdbeAddOp2(v, OP_Integer, 1, pLevel->iLeftJoin);
     VdbeComment((v, "record LEFT JOIN hit"));
-    sqlite3ExprClearColumnCache(pParse, pLevel->iTabCur);
-    sqlite3ExprClearColumnCache(pParse, pLevel->iIdxCur);
+    sqlite3ExprCacheClear(pParse);
     for(pTerm=pWC->a, j=0; j<pWC->nTerm; j++, pTerm++){
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
@@ -3507,7 +3499,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Generate loop termination code.
   */
-  sqlite3ExprClearColumnCache(pParse, -1);
+  sqlite3ExprCacheClear(pParse);
   for(i=pTabList->nSrc-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);

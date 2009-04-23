@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.135 2009/02/28 10:47:42 danielk1977 Exp $
+** $Id: trigger.c,v 1.136 2009/04/23 13:22:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -689,7 +689,7 @@ static int codeTriggerProgram(
   sqlite3VdbeAddOp2(v, OP_ContextPush, 0, 0);
   VdbeComment((v, "begin trigger %s", pStepList->pTrig->name));
   while( pTriggerStep ){
-    sqlite3ExprClearColumnCache(pParse, -1);
+    sqlite3ExprCacheClear(pParse);
     orconf = (orconfin == OE_Default)?pTriggerStep->orconf:orconfin;
     pParse->trigStack->orconf = orconf;
     switch( pTriggerStep->op ){

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.859 2009/04/22 15:32:59 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.860 2009/04/23 13:22:44 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1894,6 +1894,13 @@ struct SelectDest {
 };
 
 /*
+** Size of the column cache
+*/
+#ifndef SQLITE_N_COLCACHE
+# define SQLITE_N_COLCACHE 10
+#endif
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -1929,15 +1936,19 @@ struct Parse {
   int nMem;            /* Number of memory cells used so far */
   int nSet;            /* Number of sets used so far */
   int ckBase;          /* Base register of data during check constraints */
-  int disableColCache; /* True to disable adding to column cache */
-  int nColCache;       /* Number of entries in the column cache */
-  int iColCache;       /* Next entry of the cache to replace */
+  int iCacheLevel;     /* ColCache valid when aColCache[].iLevel<=iCacheLevel */
+  int iCacheCnt;       /* Counter used to generate aColCache[].lru values */
+  u8 nColCache;        /* Number of entries in the column cache */
+  u8 iColCache;        /* Next entry of the cache to replace */
   struct yColCache {
     int iTable;           /* Table cursor number */
     int iColumn;          /* Table column number */
-    char affChange;       /* True if this register has had an affinity change */
-    int iReg;             /* Register holding value of this column */
-  } aColCache[10];     /* One for each valid column cache entry */
+    u8 affChange;         /* True if this register has had an affinity change */
+    u8 tempReg;           /* iReg is a temp register that needs to be freed */
+    int iLevel;           /* Nesting level */
+    int iReg;             /* Reg with value of this column. 0 means none. */
+    int lru;              /* Least recently used entry has the smallest value */
+  } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
   u32 writeMask;       /* Start a write transaction on these databases */
   u32 cookieMask;      /* Bitmask of schema verified databases */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
@@ -2446,9 +2457,12 @@ void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCodeCopy(Parse*, int, int, int);
-void sqlite3ExprClearColumnCache(Parse*, int);
+void sqlite3ExprCacheStore(Parse*, int, int, int);
+void sqlite3ExprCachePush(Parse*);
+void sqlite3ExprCachePop(Parse*, int);
+void sqlite3ExprCacheRemove(Parse*, int);
+void sqlite3ExprCacheClear(Parse*);
 void sqlite3ExprCacheAffinityChange(Parse*, int, int);
-void sqlite3ExprWritableRegister(Parse*,int);
 void sqlite3ExprHardCopy(Parse*,int,int);
 int sqlite3ExprCode(Parse*, Expr*, int);
 int sqlite3ExprCodeTemp(Parse*, Expr*, int*);

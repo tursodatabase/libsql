@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.508 2009/04/16 00:24:24 drh Exp $
+** $Id: select.c,v 1.509 2009/04/23 13:22:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -421,6 +421,7 @@ static void pushOntoSorter(
   int nExpr = pOrderBy->nExpr;
   int regBase = sqlite3GetTempRange(pParse, nExpr+2);
   int regRecord = sqlite3GetTempReg(pParse);
+  sqlite3ExprCacheClear(pParse);
   sqlite3ExprCodeExprList(pParse, pOrderBy, regBase, 0);
   sqlite3VdbeAddOp2(v, OP_Sequence, pOrderBy->iECursor, regBase+nExpr);
   sqlite3ExprCodeMove(pParse, regData, regBase+nExpr+1, 1);
@@ -573,6 +574,7 @@ static void selectInnerLoop(
     /* If the destination is an EXISTS(...) expression, the actual
     ** values returned by the SELECT are not required.
     */
+    sqlite3ExprCacheClear(pParse);
     sqlite3ExprCodeExprList(pParse, pEList, regResult, eDest==SRT_Output);
   }
   nColumn = nResultCol;
@@ -1346,6 +1348,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** The current implementation interprets "LIMIT 0" to mean
   ** no rows.
   */
+  sqlite3ExprCacheClear(pParse);
   if( p->pLimit ){
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
@@ -3456,6 +3459,7 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
   struct AggInfo_col *pC;
 
   pAggInfo->directMode = 1;
+  sqlite3ExprCacheClear(pParse);
   for(i=0, pF=pAggInfo->aFunc; i<pAggInfo->nFunc; i++, pF++){
     int nArg;
     int addrNext = 0;
@@ -3495,12 +3499,14 @@ static void updateAccumulator(Parse *pParse, AggInfo *pAggInfo){
     sqlite3ExprCacheAffinityChange(pParse, regAgg, nArg);
     if( addrNext ){
       sqlite3VdbeResolveLabel(v, addrNext);
+      sqlite3ExprCacheClear(pParse);
     }
   }
   for(i=0, pC=pAggInfo->aCol; i<pAggInfo->nAccumulator; i++, pC++){
     sqlite3ExprCode(pParse, pC->pExpr, pC->iMem);
   }
   pAggInfo->directMode = 0;
+  sqlite3ExprCacheClear(pParse);
 }
 
 /*
@@ -3918,6 +3924,7 @@ int sqlite3Select(
           }
         }
         regBase = sqlite3GetTempRange(pParse, nCol);
+        sqlite3ExprCacheClear(pParse);
         sqlite3ExprCodeExprList(pParse, pGroupBy, regBase, 0);
         sqlite3VdbeAddOp2(v, OP_Sequence, sAggInfo.sortingIdx,regBase+nGroupBy);
         j = nGroupBy+1;
@@ -3944,6 +3951,7 @@ int sqlite3Select(
         sqlite3VdbeAddOp2(v, OP_Sort, sAggInfo.sortingIdx, addrEnd);
         VdbeComment((v, "GROUP BY sort"));
         sAggInfo.useSortingIdx = 1;
+        sqlite3ExprCacheClear(pParse);
       }
 
       /* Evaluate the current GROUP BY terms and store in b0, b1, b2...
@@ -3952,6 +3960,7 @@ int sqlite3Select(
       ** from the previous row currently stored in a0, a1, a2...
       */
       addrTopOfLoop = sqlite3VdbeCurrentAddr(v);
+      sqlite3ExprCacheClear(pParse);
       for(j=0; j<pGroupBy->nExpr; j++){
         if( groupBySort ){
           sqlite3VdbeAddOp3(v, OP_Column, sAggInfo.sortingIdx, j, iBMem+j);
