@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the SELECT statement.
 #
-# $Id: select1.test,v 1.67 2009/04/10 15:38:43 drh Exp $
+# $Id: select1.test,v 1.68 2009/04/23 14:58:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1022,9 +1022,12 @@ ifcapable subquery {
   } {0}
 }
 
+foreach tab [db eval {SELECT name FROM sqlite_master WHERE type = 'table'}] {
+  db eval "DROP TABLE $tab"
+}
 db close
-file delete -force test.db
 sqlite3 db test.db
+
 do_test select1-14.1 {
   execsql { 
     SELECT * FROM sqlite_master WHERE rowid>10; 

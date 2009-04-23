@@ -46,6 +46,7 @@
 #
 TCCX =  $(TCC) $(OPTS) -I. -I$(TOP)/src -I$(TOP) 
 TCCX += -I$(TOP)/ext/rtree -I$(TOP)/ext/icu -I$(TOP)/ext/fts3
+TCCX += -I$(TOP)/ext/async
 
 # Object files for the SQLite library.
 #
@@ -255,7 +256,8 @@ TESTSRC2 = \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
   $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_expr.c                           \
-  $(TOP)/ext/fts3/fts3_tokenizer.c 
+  $(TOP)/ext/fts3/fts3_tokenizer.c                                             \
+  $(TOP)/ext/async/sqlite3async.c
 
 # Header files used by all library source files.
 #

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing corner cases of the INSERT statement.
 #
-# $Id: insert3.test,v 1.8 2008/12/23 10:37:47 danielk1977 Exp $
+# $Id: insert3.test,v 1.9 2009/04/23 14:58:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -166,9 +166,11 @@ ifcapable bloblit {
     }
   } {{} 4.3 hi}
 }
-db close
 
-file delete -force test.db
+foreach tab [db eval {SELECT name FROM sqlite_master WHERE type = 'table'}] {
+  db eval "DROP TABLE $tab"
+}
+db close
 sqlite3 db test.db
 
 #-------------------------------------------------------------------------
