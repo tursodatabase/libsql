@@ -9,11 +9,15 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint4.test,v 1.4 2009/02/10 14:45:13 danielk1977 Exp $
+# $Id: savepoint4.test,v 1.5 2009/04/23 18:42:05 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !crashtest {
+  finish_test
+  return
+}
 
 proc signature {} {
   return [db eval {SELECT count(*), md5sum(x) FROM t1}]

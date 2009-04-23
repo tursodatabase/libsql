@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtabD.test,v 1.1 2009/04/21 09:02:47 danielk1977 Exp $
+# $Id: vtabD.test,v 1.2 2009/04/23 18:42:05 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,9 +62,11 @@ do_test vtabD-1.7 {
   SELECT * FROM t1 WHERE b = 8100000000 AND NOT (a < 90000)
 }]
 
+if {[working_64bit_int]} {
 do_test vtabD-1.8 {
   execsql { SELECT * FROM tv1 WHERE a = 90001 OR b = 810000 }
 } {90001 8100180001 900 810000}
+}
 
 finish_test
 
