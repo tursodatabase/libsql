@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.388 2009/04/23 13:22:44 drh Exp $
+** $Id: where.c,v 1.389 2009/04/24 14:51:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -226,11 +226,12 @@ struct WhereCost {
 */
 #define WHERE_ROWID_EQ     0x00001000  /* rowid=EXPR or rowid IN (...) */
 #define WHERE_ROWID_RANGE  0x00002000  /* rowid<EXPR and/or rowid>EXPR */
-#define WHERE_COLUMN_EQ    0x00010000  /* x=EXPR or x IN (...) */
+#define WHERE_COLUMN_EQ    0x00010000  /* x=EXPR or x IN (...) or x IS NULL */
 #define WHERE_COLUMN_RANGE 0x00020000  /* x<EXPR and/or x>EXPR */
 #define WHERE_COLUMN_IN    0x00040000  /* x IN (...) */
-#define WHERE_INDEXED      0x00070000  /* Anything that uses an index */
-#define WHERE_IN_ABLE      0x00071000  /* Able to support an IN operator */
+#define WHERE_COLUMN_NULL  0x00080000  /* x IS NULL */
+#define WHERE_INDEXED      0x000f0000  /* Anything that uses an index */
+#define WHERE_IN_ABLE      0x000f1000  /* Able to support an IN operator */
 #define WHERE_TOP_LIMIT    0x00100000  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
 #define WHERE_IDX_ONLY     0x00800000  /* Use index only - omit table */
@@ -2030,9 +2031,10 @@ static void bestBtreeIndex(
     WHERETRACE(("... index %s:\n", pProbe->zName));
 
     /* Count the number of columns in the index that are satisfied
-    ** by x=EXPR constraints or x IN (...) constraints.  For a term
-    ** of the form x=EXPR we only have to do a single binary search.
-    ** But for x IN (...) we have to do a number of binary searched
+    ** by x=EXPR or x IS NULL constraints or x IN (...) constraints.
+    ** For a term of the form x=EXPR or x IS NULL we only have to do 
+    ** a single binary search.  But for x IN (...) we have to do a
+    ** number of binary searched
     ** equal to the number of entries on the RHS of the IN operator.
     ** The inMultipler variable with try to estimate the number of
     ** binary searches needed.
@@ -2052,6 +2054,8 @@ static void bestBtreeIndex(
         }else if( pExpr->x.pList ){
           inMultiplier *= pExpr->x.pList->nExpr + 1;
         }
+      }else if( pTerm->eOperator & WO_ISNULL ){
+        wsFlags |= WHERE_COLUMN_NULL;
       }
     }
     nRow = pProbe->aiRowEst[i] * inMultiplier;
@@ -2064,9 +2068,12 @@ static void bestBtreeIndex(
     }
     cost = nRow + inMultiplier*estLog(pProbe->aiRowEst[0]);
     nEq = i;
-    if( pProbe->onError!=OE_None && (wsFlags & WHERE_COLUMN_IN)==0
-         && nEq==pProbe->nColumn ){
-      wsFlags |= WHERE_UNIQUE;
+    if( pProbe->onError!=OE_None && nEq==pProbe->nColumn ){
+      testcase( wsFlags & WHERE_COLUMN_IN );
+      testcase( wsFlags & WHERE_COLUMN_NULL );
+      if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0 ){
+        wsFlags |= WHERE_UNIQUE;
+      }
     }
     WHERETRACE(("...... nEq=%d inMult=%.9g nRow=%.9g cost=%.9g\n",
                 nEq, inMultiplier, nRow, cost));
@@ -2097,8 +2104,9 @@ static void bestBtreeIndex(
     /* Add the additional cost of sorting if that is a factor.
     */
     if( pOrderBy ){
-      if( (wsFlags & WHERE_COLUMN_IN)==0 &&
-           isSortingIndex(pParse,pWC->pMaskSet,pProbe,iCur,pOrderBy,nEq,&rev) ){
+      if( (wsFlags & (WHERE_COLUMN_IN|WHERE_COLUMN_NULL))==0
+       && isSortingIndex(pParse,pWC->pMaskSet,pProbe,iCur,pOrderBy,nEq,&rev)
+      ){
         if( wsFlags==0 ){
           wsFlags = WHERE_COLUMN_RANGE;
         }
