@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.59 2009/04/23 14:58:40 danielk1977 Exp $
+** $Id: test_async.c,v 1.60 2009/04/24 10:13:06 danielk1977 Exp $
 **
 ** This file contains a binding of the asynchronous IO extension interface
 ** (defined in ext/async/sqlite3async.h) to Tcl.
@@ -160,13 +160,11 @@ static int testAsyncStart(
 
   rc = Tcl_CreateThread(&x, tclWriterThread, threadData, nStack, flags);
   if( rc!=TCL_OK ){
+    Tcl_AppendResult(interp, "Tcl_CreateThread() failed", 0);
     return TCL_ERROR;
   }
-  while( isStarted==0 ){
-#if 0
-    sched_yield();
-#endif
-  }
+
+  while( isStarted==0 ) { /* Busy loop */ }
   return TCL_OK;
 }
 

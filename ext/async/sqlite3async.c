@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.2 2009/04/24 09:27:16 danielk1977 Exp $
+** $Id: sqlite3async.c,v 1.3 2009/04/24 10:13:06 danielk1977 Exp $
 **
 ** This file contains the implementation of an asynchronous IO backend 
 ** for SQLite.
@@ -19,8 +19,10 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ASYNCIO)
 
 #include "sqlite3async.h"
-
-#define ENABLE_FILE_LOCKING
+#include "sqlite3.h"
+#include <stdarg.h>
+#include <string.h>
+#include <assert.h>
 
 /* Useful macros used in several places */
 #define MIN(x,y) ((x)<(y)?(x):(y))
@@ -34,6 +36,8 @@ typedef struct AsyncFileLock AsyncFileLock;
 typedef struct AsyncLock AsyncLock;
 
 /* Enable for debugging */
+#ifndef NDEBUG
+#include <stdio.h>
 static int sqlite3async_trace = 0;
 # define ASYNC_TRACE(X) if( sqlite3async_trace ) asyncTrace X
 static void asyncTrace(const char *zFormat, ...){
@@ -45,6 +49,7 @@ static void asyncTrace(const char *zFormat, ...){
   fprintf(stderr, "[%d] %s", 0 /* (int)pthread_self() */, z);
   sqlite3_free(z);
 }
+#endif
 
 /*
 ** THREAD SAFETY NOTES
@@ -374,9 +379,10 @@ static struct TestAsyncStaticData {
   AsyncLock *pLock;            /* Linked list of all AsyncLock structures */
   volatile int ioDelay;        /* Extra delay between write operations */
   volatile int eHalt;          /* One of the SQLITEASYNC_HALT_XXX values */
+  volatile int bLockFiles;     /* Current value of "lockfiles" parameter */
   int ioError;                 /* True if an IO error has occurred */
   int nFile;                   /* Number of open files (from sqlite pov) */
-} async = { 0,0,0,0,0,0,0 };
+} async = { 0,0,0,0,0,1,0,0 };
 
 /* Possible values of AsyncWrite.op */
 #define ASYNC_NOOP          0
@@ -456,11 +462,11 @@ struct AsyncWrite {
 ** structures, one for each handle currently open on the file.
 **
 ** If the opened file is not a main-database (the SQLITE_OPEN_MAIN_DB is
-** not passed to the sqlite3OsOpen() call), or if ENABLE_FILE_LOCKING is 
-** not defined at compile time, variables AsyncLock.pFile and 
-** AsyncLock.eLock are never used. Otherwise, pFile is a file handle
-** opened on the file in question and used to obtain the file-system 
-** locks required by database connections within this process.
+** not passed to the sqlite3OsOpen() call), or if async.bLockFiles is 
+** false, variables AsyncLock.pFile and AsyncLock.eLock are never used. 
+** Otherwise, pFile is a file handle opened on the file in question and 
+** used to obtain the file-system locks required by database connections 
+** within this process.
 **
 ** See comments above the asyncLock() function for more details on 
 ** the implementation of database locking used by this backend.
@@ -1064,8 +1070,7 @@ static int asyncOpen(
       pLock = (AsyncLock *)sqlite3_malloc(nByte);
       if( pLock ){
         memset(pLock, 0, nByte);
-#ifdef ENABLE_FILE_LOCKING
-        if( flags&SQLITE_OPEN_MAIN_DB ){
+        if( async.bLockFiles && (flags&SQLITE_OPEN_MAIN_DB) ){
           pLock->pFile = (sqlite3_file *)&pLock[1];
           rc = pVfs->xOpen(pVfs, pData->zName, pLock->pFile, flags, 0);
           if( rc!=SQLITE_OK ){
@@ -1073,7 +1078,6 @@ static int asyncOpen(
             pLock = 0;
           }
         }
-#endif
         if( pLock ){
           pLock->nFile = pData->nName;
           pLock->zFile = &((char *)(&pLock[1]))[pVfs->szOsFile];
@@ -1607,7 +1611,7 @@ int sqlite3async_control(int op, ...){
        && eWhen!=SQLITEASYNC_HALT_NOW
        && eWhen!=SQLITEASYNC_HALT_IDLE
       ){
-        return SQLITE_ERROR;
+        return SQLITE_MISUSE;
       }
       async.eHalt = eWhen;
       async_mutex_enter(ASYNC_MUTEX_QUEUE);
@@ -1618,7 +1622,22 @@ int sqlite3async_control(int op, ...){
 
     case SQLITEASYNC_DELAY: {
       int iDelay = va_arg(ap, int);
+      if( iDelay<0 ){
+        return SQLITE_MISUSE;
+      }
       async.ioDelay = iDelay;
+      break;
+    }
+
+    case SQLITEASYNC_LOCKFILES: {
+      int bLock = va_arg(ap, int);
+      async_mutex_enter(ASYNC_MUTEX_QUEUE);
+      if( async.nFile || async.pQueueFirst ){
+        async_mutex_leave(ASYNC_MUTEX_QUEUE);
+        return SQLITE_MISUSE;
+      }
+      async.bLockFiles = bLock;
+      async_mutex_leave(ASYNC_MUTEX_QUEUE);
       break;
     }
       
@@ -1630,6 +1649,11 @@ int sqlite3async_control(int op, ...){
     case SQLITEASYNC_GET_DELAY: {
       int *piDelay = va_arg(ap, int *);
       *piDelay = async.ioDelay;
+      break;
+    }
+    case SQLITEASYNC_GET_LOCKFILES: {
+      int *piDelay = va_arg(ap, int *);
+      *piDelay = async.bLockFiles;
       break;
     }
 
