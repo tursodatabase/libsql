@@ -15,7 +15,7 @@
 # is not necessarily UNIQUE.  Make sure the optimizer does not assume
 # uniqueness.
 #
-# $Id: tkt3824.test,v 1.1 2009/04/24 14:51:42 drh Exp $
+# $Id: tkt3824.test,v 1.2 2009/04/24 20:32:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -84,5 +84,16 @@ do_test tkt3824-3.1 {
     SELECT * FROM t3;
   }
 } {234 567}
+
+do_test tkt3824-4.1 {
+  db eval {
+    CREATE TABLE t4(x,y);
+    INSERT INTO t4 SELECT a, b FROM t1;
+    INSERT INTO t4 VALUES(234,567);
+    CREATE UNIQUE INDEX t4y ON t4(y);
+    UPDATE t4 SET rowid=rowid+100 WHERE y IS NULL;
+    SELECT rowid, x FROM t4 ORDER BY rowid;
+  }
+} {6 234 101 1 102 9 103 5 104 123 105 -10}
 
 finish_test
