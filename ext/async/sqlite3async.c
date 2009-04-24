@@ -10,101 +10,10 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.1 2009/04/23 14:58:40 danielk1977 Exp $
+** $Id: sqlite3async.c,v 1.2 2009/04/24 09:27:16 danielk1977 Exp $
 **
-** This file contains an example implementation of an asynchronous IO 
-** backend for SQLite.
-**
-** WHAT IS ASYNCHRONOUS I/O?
-**
-** With asynchronous I/O, write requests are handled by a separate thread
-** running in the background.  This means that the thread that initiates
-** a database write does not have to wait for (sometimes slow) disk I/O
-** to occur.  The write seems to happen very quickly, though in reality
-** it is happening at its usual slow pace in the background.
-**
-** Asynchronous I/O appears to give better responsiveness, but at a price.
-** You lose the Durable property.  With the default I/O backend of SQLite,
-** once a write completes, you know that the information you wrote is
-** safely on disk.  With the asynchronous I/O, this is not the case.  If
-** your program crashes or if a power loss occurs after the database
-** write but before the asynchronous write thread has completed, then the
-** database change might never make it to disk and the next user of the
-** database might not see your change.
-**
-** You lose Durability with asynchronous I/O, but you still retain the
-** other parts of ACID:  Atomic,  Consistent, and Isolated.  Many
-** appliations get along fine without the Durablity.
-**
-** HOW IT WORKS
-**
-** Asynchronous I/O works by creating a special SQLite "vfs" structure
-** and registering it with sqlite3_vfs_register(). When files opened via 
-** this vfs are written to (using sqlite3OsWrite()), the data is not 
-** written directly to disk, but is placed in the "write-queue" to be
-** handled by the background thread.
-**
-** When files opened with the asynchronous vfs are read from 
-** (using sqlite3OsRead()), the data is read from the file on 
-** disk and the write-queue, so that from the point of view of
-** the vfs reader the OsWrite() appears to have already completed.
-**
-** The special vfs is registered (and unregistered) by calls to 
-** function asyncEnable() (see below).
-**
-** LIMITATIONS
-**
-** This demonstration code is deliberately kept simple in order to keep
-** the main ideas clear and easy to understand.  Real applications that
-** want to do asynchronous I/O might want to add additional capabilities.
-** For example, in this demonstration if writes are happening at a steady
-** stream that exceeds the I/O capability of the background writer thread,
-** the queue of pending write operations will grow without bound until we
-** run out of memory.  Users of this technique may want to keep track of
-** the quantity of pending writes and stop accepting new write requests
-** when the buffer gets to be too big.
-**
-** LOCKING + CONCURRENCY
-**
-** Multiple connections from within a single process that use this
-** implementation of asynchronous IO may access a single database
-** file concurrently. From the point of view of the user, if all
-** connections are from within a single process, there is no difference
-** between the concurrency offered by "normal" SQLite and SQLite
-** using the asynchronous backend.
-**
-** If connections from within multiple processes may access the
-** database file, the ENABLE_FILE_LOCKING symbol (see below) must be
-** defined. If it is not defined, then no locks are established on 
-** the database file. In this case, if multiple processes access 
-** the database file, corruption will quickly result.
-**
-** If ENABLE_FILE_LOCKING is defined (the default), then connections 
-** from within multiple processes may access a single database file 
-** without risking corruption. However concurrency is reduced as
-** follows:
-**
-**   * When a connection using asynchronous IO begins a database
-**     transaction, the database is locked immediately. However the
-**     lock is not released until after all relevant operations
-**     in the write-queue have been flushed to disk. This means
-**     (for example) that the database may remain locked for some 
-**     time after a "COMMIT" or "ROLLBACK" is issued.
-**
-**   * If an application using asynchronous IO executes transactions
-**     in quick succession, other database users may be effectively
-**     locked out of the database. This is because when a BEGIN
-**     is executed, a database lock is established immediately. But
-**     when the corresponding COMMIT or ROLLBACK occurs, the lock
-**     is not released until the relevant part of the write-queue 
-**     has been flushed through. As a result, if a COMMIT is followed
-**     by a BEGIN before the write-queue is flushed through, the database 
-**     is never unlocked,preventing other processes from accessing 
-**     the database.
-**
-** Defining ENABLE_FILE_LOCKING when using an NFS or other remote 
-** file-system may slow things down, as synchronous round-trips to the 
-** server may be required to establish database file locks.
+** This file contains the implementation of an asynchronous IO backend 
+** for SQLite.
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ASYNCIO)
@@ -112,12 +21,6 @@
 #include "sqlite3async.h"
 
 #define ENABLE_FILE_LOCKING
-
-#ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
-# include <assert.h>
-# include <string.h>
-#endif
 
 /* Useful macros used in several places */
 #define MIN(x,y) ((x)<(y)?(x):(y))
@@ -255,6 +158,8 @@ static void asyncTrace(const char *zFormat, ...){
 #endif
 
 /*
+** PORTING FUNCTIONS
+**
 ** There are two definitions of the following functions. One for pthreads
 ** compatible systems and one for Win32. These functions isolate the OS
 ** specific code required by each platform.
