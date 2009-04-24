@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.389 2009/04/24 14:51:42 drh Exp $
+** $Id: where.c,v 1.390 2009/04/24 15:46:22 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2395,7 +2395,7 @@ static int codeAllEqualityTerms(
 static Bitmask codeOneLoopStart(
   WhereInfo *pWInfo,   /* Complete information about the WHERE clause */
   int iLevel,          /* Which level of pWInfo->a[] should be coded */
-  u8 wctrlFlags,       /* One of the WHERE_* flags defined in sqliteInt.h */
+  u16 wctrlFlags,      /* One of the WHERE_* flags defined in sqliteInt.h */
   Bitmask notReady     /* Which tables are currently available */
 ){
   int j, k;            /* Loop counters */
@@ -2411,21 +2411,6 @@ static Bitmask codeOneLoopStart(
   struct SrcList_item *pTabItem;  /* FROM clause term being coded */
   int addrBrk;                    /* Jump here to break out of the loop */
   int addrCont;                   /* Jump here to continue with next cycle */
-  int regRowSet;       /* Write rowids to this RowSet if non-negative */
-
-  /* Sometimes, this function is required to generate code to do 
-  ** something with the rowid of each row scanned. Specifically,
-  ** If pWInfo->regRowSet is non-zero, then the rowid must be inserted
-  ** into the RowSet object stored in register pWInfo->regRowSet.
-  **
-  ** Extracting a rowid value from a VDBE cursor is not always a cheap
-  ** operation, especially if the rowid is being extracted from an index
-  ** cursor. If the rowid value is available as a by-product of the code
-  ** generated to create the top of the scan loop, then it can be reused
-  ** without extracting it from a cursor. The following two variables are
-  ** used to communicate the availability of the rowid value to the C-code
-  ** at the end of this function that generates the rowid-handling VDBE code.
-  */
   int iRowidReg = 0;        /* Rowid is stored in this register, if not zero */
   int iReleaseReg = 0;      /* Temp register to free before returning */
 
@@ -2437,8 +2422,7 @@ static Bitmask codeOneLoopStart(
   iCur = pTabItem->iCursor;
   bRev = (pLevel->plan.wsFlags & WHERE_REVERSE)!=0;
   omitTable = (pLevel->plan.wsFlags & WHERE_IDX_ONLY)!=0 
-           && (wctrlFlags & WHERE_FILL_ROWTEST)==0;
-  regRowSet = pWInfo->regRowSet;
+           && (wctrlFlags & WHERE_FORCE_TABLE)==0;
 
   /* Create labels for the "break" and "continue" instructions
   ** for the current loop.  Jump to addrBrk to break out of a loop.
@@ -2836,14 +2820,13 @@ static Bitmask codeOneLoopStart(
     **       B: <after the loop>
     **
     */
-    const int f = WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE | WHERE_FILL_ROWTEST;
-
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     WhereTerm *pFinal;     /* Final subterm within the OR-clause. */
     SrcList oneTab;        /* Shortened table list */
 
     int regReturn = ++pParse->nMem;           /* Register used with OP_Gosub */
-    int regRowset = ++pParse->nMem;           /* Register for RowSet object */
+    int regRowset;                            /* Register for RowSet object */
+    int regRowid;                             /* Register holding rowid */
     int iLoopBody = sqlite3VdbeMakeLabel(v);  /* Start of loop body */
     int iRetInit;                             /* Address of regReturn init */
     int ii;
@@ -2871,7 +2854,11 @@ static Bitmask codeOneLoopStart(
     ** fall through to the next instruction, just as an OP_Next does if
     ** called on an uninitialized cursor.
     */
-    sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+    if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
+      regRowset = ++pParse->nMem;
+      regRowid = ++pParse->nMem;
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+    }
     iRetInit = sqlite3VdbeAddOp2(v, OP_Integer, 0, regReturn);
 
     for(ii=0; ii<pOrWc->nTerm; ii++){
@@ -2880,20 +2867,18 @@ static Bitmask codeOneLoopStart(
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
 
         /* Loop through table entries that match term pOrTerm. */
-        pSubWInfo = sqlite3WhereBegin(
-            pParse, &oneTab, pOrTerm->pExpr, 0, f, regRowset);
+        pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
+                        WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE | WHERE_FORCE_TABLE);
         if( pSubWInfo ){
-          int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
-          /* The call to sqlite3WhereBegin has coded an OP_RowSetTest
-          ** at instruction iRowSet. Set P2 (the jump target) of this
-          ** instruction to jump past the OP_Gosub coded below. This way,
-          ** if the rowid is already in the hash-table, the body of the
-          ** loop is not executed.
-          */
-          int iRowSet = pSubWInfo->iRowidHandler;
-          assert( iRowSet>0 || pWInfo->pParse->db->mallocFailed );
-          sqlite3VdbeChangeP2(v, iRowSet, sqlite3VdbeCurrentAddr(v) + 1);
-          sqlite3VdbeChangeP4(v, iRowSet, (char *)iSet, P4_INT32);
+          if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
+            int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
+            int r;
+            r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
+                                         regRowid, 0);
+            sqlite3VdbeAddOp4(v, OP_RowSetTest, regRowset, 
+                             sqlite3VdbeCurrentAddr(v)+2,
+                             r, (char*)iSet, P4_INT32);
+          }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
           /* Finish the loop through table entries that match term pOrTerm. */
@@ -2902,7 +2887,7 @@ static Bitmask codeOneLoopStart(
       }
     }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
-    sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset);
+    /* sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset); */
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
@@ -2963,28 +2948,6 @@ static Bitmask codeOneLoopStart(
       assert( pTerm->pExpr );
       sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       pTerm->wtFlags |= TERM_CODED;
-    }
-  }
-
-  /* Do the special rowid handling now. */
-  if( regRowSet ){
-    assert( regRowSet>0 );
-    if( iRowidReg==0 ){
-      /* The rowid was not available as a side-effect of the code 
-      ** genenerated above. So extract it from the cursor now.
-      */
-      assert( iReleaseReg==0 );
-      iReleaseReg = iRowidReg = sqlite3GetTempReg(pParse);
-      sqlite3VdbeAddOp2(v, OP_Rowid, iCur, iRowidReg);
-    }
-    
-    if( pWInfo->wctrlFlags&WHERE_FILL_ROWSET ){
-      sqlite3VdbeAddOp2(v, OP_RowSetAdd, regRowSet, iRowidReg);
-      VVA_ONLY( pWInfo->iRowidHandler = 0; )
-    }else{
-      assert( pWInfo->wctrlFlags&WHERE_FILL_ROWTEST );
-      pWInfo->iRowidHandler = 
-        sqlite3VdbeAddOp3(v, OP_RowSetTest, regRowSet, 0, iRowidReg);
     }
   }
   sqlite3ReleaseTempReg(pParse, iReleaseReg);
@@ -3120,8 +3083,7 @@ WhereInfo *sqlite3WhereBegin(
   SrcList *pTabList,    /* A list of all tables to be scanned */
   Expr *pWhere,         /* The WHERE clause */
   ExprList **ppOrderBy, /* An ORDER BY clause, or NULL */
-  u8 wctrlFlags,        /* One of the WHERE_* flags defined in sqliteInt.h */
-  int regRowSet         /* Register hold RowSet if WHERE_FILL_ROWSET is set */
+  u16 wctrlFlags        /* One of the WHERE_* flags defined in sqliteInt.h */
 ){
   int i;                     /* Loop counter */
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
@@ -3170,11 +3132,9 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
-  pWInfo->regRowSet = regRowSet;
   pWInfo->pWC = pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
   pWInfo->wctrlFlags = wctrlFlags;
   pMaskSet = (WhereMaskSet*)&pWC[1];
-  assert( regRowSet==0 || (wctrlFlags&(WHERE_FILL_ROWSET|WHERE_FILL_ROWTEST)) );
 
   /* Split the WHERE clause into separate subexpressions where each
   ** subexpression is separated by an AND operator.
@@ -3534,7 +3494,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( pLevel->iIdxCur>=0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
-      sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrFirst);
+      if( pLevel->op==OP_Return ){
+        sqlite3VdbeAddOp2(v, OP_Gosub, pLevel->p1, pLevel->addrFirst);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrFirst);
+      }
       sqlite3VdbeJumpHere(v, addr);
     }
   }

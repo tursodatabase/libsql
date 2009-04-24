@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.860 2009/04/23 13:22:44 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.861 2009/04/24 15:46:22 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1742,16 +1742,17 @@ struct WhereLevel {
 };
 
 /*
-** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin().
+** Flags appropriate for the wctrlFlags parameter of sqlite3WhereBegin()
+** and the WhereInfo.wctrlFlags member.
 */
 #define WHERE_ORDERBY_NORMAL   0x0000 /* No-op */
 #define WHERE_ORDERBY_MIN      0x0001 /* ORDER BY processing for min() func */
 #define WHERE_ORDERBY_MAX      0x0002 /* ORDER BY processing for max() func */
 #define WHERE_ONEPASS_DESIRED  0x0004 /* Want to do one-pass UPDATE/DELETE */
-#define WHERE_FILL_ROWSET      0x0008  /* Save results in a RowSet object */
-#define WHERE_OMIT_OPEN        0x0010  /* Table cursor are already open */
-#define WHERE_OMIT_CLOSE       0x0020  /* Omit close of table & index cursors */
-#define WHERE_FILL_ROWTEST     0x0040  /* Save results using OP_RowSetTest */
+#define WHERE_DUPLICATES_OK    0x0008 /* Ok to return a row more than once */
+#define WHERE_OMIT_OPEN        0x0010 /* Table cursor are already open */
+#define WHERE_OMIT_CLOSE       0x0020 /* Omit close of table & index cursors */
+#define WHERE_FORCE_TABLE      0x0040 /* Do not use an index-only search */
 
 /*
 ** The WHERE clause processing routine has two halves.  The
@@ -1764,8 +1765,6 @@ struct WhereInfo {
   Parse *pParse;       /* Parsing and code generating context */
   u16 wctrlFlags;      /* Flags originally passed to sqlite3WhereBegin() */
   u8 okOnePass;        /* Ok to use one-pass algorithm for UPDATE or DELETE */
-  int regRowSet;                 /* Store rowids in this rowset */
-  int iRowidHandler;             /* Address of OP_RowSet or OP_RowSetTest */
   SrcList *pTabList;             /* List of tables in the join */
   int iTop;                      /* The very beginning of the WHERE loop */
   int iContinue;                 /* Jump here to continue with next record */
@@ -2452,7 +2451,7 @@ Expr *sqlite3LimitWhere(Parse *, SrcList *, Expr *, ExprList *, Expr *, Expr *, 
 #endif
 void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
-WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u8, int);
+WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u16);
 void sqlite3WhereEnd(WhereInfo*);
 int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
