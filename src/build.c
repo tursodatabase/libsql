@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.530 2009/04/23 13:22:43 drh Exp $
+** $Id: build.c,v 1.531 2009/04/24 18:06:09 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2272,6 +2272,7 @@ void sqlite3CreateForeignKey(
   pFKey->zTo = z;
   memcpy(z, pTo->z, pTo->n);
   z[pTo->n] = 0;
+  sqlite3Dequote(z);
   z += pTo->n+1;
   pFKey->pNextTo = 0;
   pFKey->nCol = nCol;

@@ -261,3 +261,34 @@ Error in table t6: foreign key is not unique
 Error in table t7: foreign key is not unique
 }]}"
 
+# Test that ticket #3800 has been resolved.
+#
+do_test genfkey-5.1 {
+  execsql {
+    DROP TABLE t1; DROP TABLE t2; DROP TABLE t3;
+    DROP TABLE t4; DROP TABLE t5; DROP TABLE t6;
+    DROP TABLE t7; DROP TABLE t8;
+  }
+} {}
+do_test genfkey-5.2 {
+  execsql {
+    CREATE TABLE "t.3" (c1 PRIMARY KEY);
+    CREATE TABLE t13 (c1, foreign key(c1) references "t.3"(c1));
+  }
+} {}
+do_test genfkey-5.3 {
+  set rc [catch {exec ./sqlite3 test.db .genfkey} msg]
+} {0}
+do_test genfkey-5.4 {
+  db eval $msg
+} {}
+do_test genfkey-5.5 {
+  catchsql { INSERT INTO t13 VALUES(1) }
+} {1 {constraint failed}}
+do_test genfkey-5.5 {
+  catchsql { 
+    INSERT INTO "t.3" VALUES(1);
+    INSERT INTO t13 VALUES(1);
+  }
+} {0 {}}
+
