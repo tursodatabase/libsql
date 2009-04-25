@@ -90,7 +90,7 @@
 AC_INIT(sqlite, m4_esyscmd([cat VERSION | tr -d '\n']))
 
 dnl Make sure the local VERSION file matches this configure script
-sqlite_version_sanity_check=`cat VERSION | tr -d '\n'`
+sqlite_version_sanity_check=`cat $srcdir/VERSION | tr -d '\n'`
 if test "$PACKAGE_VERSION" != "$sqlite_version_sanity_check" ; then
 AC_MSG_ERROR([configure script is out of date:
  configure \$PACKAGE_VERSION = $PACKAGE_VERSION
@@ -101,7 +101,7 @@ fi
 dnl Put the RCS revision string after AC_INIT so that it will also
 dnl show in in configure.
 # The following RCS revision string applies to configure.in
-# $Revision: 1.55 $
+# $Revision: 1.56 $
 
 #########
 # Programs needed

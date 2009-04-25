@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.60 2009/04/24 10:13:06 danielk1977 Exp $
+** $Id: test_async.c,v 1.61 2009/04/25 08:39:15 danielk1977 Exp $
 **
 ** This file contains a binding of the asynchronous IO extension interface
 ** (defined in ext/async/sqlite3async.h) to Tcl.
@@ -25,6 +25,9 @@
 #include "sqlite3.h"
 #include <assert.h>
 
+/* From test1.c */
+const char *sqlite3TestErrorName(int);
+
 
 struct TestAsyncGlobal {
   int isInstalled;                     /* True when async VFS is installed */
@@ -33,101 +36,48 @@ struct TestAsyncGlobal {
 TCL_DECLARE_MUTEX(testasync_g_writerMutex);
 
 /*
-** sqlite3async_enable ?YES/NO?
-**
-** Enable or disable the asynchronous I/O backend.  This command is
-** not thread-safe.  Do not call it while any database connections
-** are open.
+** sqlite3async_initialize PARENT-VFS ISDEFAULT
 */
-static int testAsyncEnable(
+static int testAsyncInit(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  if( objc!=1 && objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?YES/NO?");
+  const char *zParent;
+  int isDefault;
+  int rc;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "PARENT-VFS ISDEFAULT");
     return TCL_ERROR;
   }
-  if( objc==1 ){
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(testasync_g.isInstalled));
-  }else{
-    int enable;
-    if( Tcl_GetBooleanFromObj(interp, objv[1], &enable) ) return TCL_ERROR;
-    if( enable ){
-      sqlite3async_initialize(0, 1);
-    }else{
-      sqlite3async_shutdown();
-    }
-    testasync_g.isInstalled = enable;
+  zParent = Tcl_GetString(objv[1]);
+  if( !*zParent ) {
+    zParent = 0;
+  }
+  if( Tcl_GetBooleanFromObj(interp, objv[2], &isDefault) ){
+    return TCL_ERROR;
+  }
+
+  rc = sqlite3async_initialize(zParent, isDefault);
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    return TCL_ERROR;
   }
   return TCL_OK;
 }
 
 /*
-** sqlite3async_halt  ?"now"|"idle"|"never"?
-**
-** Set the conditions at which the writer thread will halt.
+** sqlite3async_shutdown
 */
-static int testAsyncHalt(
+static int testAsyncShutdown(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-  int eWhen;
-  const char *azConstant[] = { "never", "now", "idle", 0 };
-
-  assert( SQLITEASYNC_HALT_NEVER==0 );
-  assert( SQLITEASYNC_HALT_NOW==1 );
-  assert( SQLITEASYNC_HALT_IDLE==2 );
-
-  if( objc!=1 && objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?OPTION?");
-    return TCL_ERROR;
-  }
-  if( objc==2 ){
-    if( Tcl_GetIndexFromObj(interp, objv[1], azConstant, "option", 0, &eWhen) ){
-      return TCL_ERROR;
-    }
-    sqlite3async_control(SQLITEASYNC_HALT, eWhen);
-  }
-
-  /* Always return the current value of the 'halt' option. */
-  sqlite3async_control(SQLITEASYNC_GET_HALT, &eWhen);
-  Tcl_SetObjResult(interp, Tcl_NewStringObj(azConstant[eWhen], -1));
-
-  return TCL_OK;
-}
-
-/*
-** sqlite3async_delay ?MS?
-**
-** Query or set the number of milliseconds of delay in the writer
-** thread after each write operation.  The default is 0.  By increasing
-** the memory delay we can simulate the effect of slow disk I/O.
-*/
-static int testAsyncDelay(
-  void * clientData,
-  Tcl_Interp *interp,
-  int objc,
-  Tcl_Obj *CONST objv[]
-){
-  int iMs;
-  if( objc!=1 && objc!=2 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "?MS?");
-    return TCL_ERROR;
-  }
-  if( objc==2 ){
-    if( Tcl_GetIntFromObj(interp, objv[1], &iMs) ){
-      return TCL_ERROR;
-    }
-    sqlite3async_control(SQLITEASYNC_DELAY, iMs);
-  }
-
-  /* Always return the current value of the 'delay' option. */
-  sqlite3async_control(SQLITEASYNC_GET_DELAY, &iMs);
-  Tcl_SetObjResult(interp, Tcl_NewIntObj(iMs));
+  sqlite3async_shutdown();
   return TCL_OK;
 }
 
@@ -199,6 +149,79 @@ static int testAsyncWait(
   return TCL_OK;
 }
 
+/*
+** sqlite3async_control OPTION ?VALUE?
+*/
+static int testAsyncControl(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc = SQLITE_OK;
+  int aeOpt[] = { SQLITEASYNC_HALT, SQLITEASYNC_DELAY, SQLITEASYNC_LOCKFILES };
+  const char *azOpt[] = { "halt", "delay", "lockfiles", 0 };
+  const char *az[] = { "never", "now", "idle", 0 };
+  int iVal;
+  int eOpt;
+
+  if( objc!=2 && objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "OPTION ?VALUE?");
+    return TCL_ERROR;
+  }
+  if( Tcl_GetIndexFromObj(interp, objv[1], azOpt, "option", 0, &eOpt) ){
+    return TCL_ERROR;
+  }
+  eOpt = aeOpt[eOpt];
+
+  if( objc==3 ){
+    switch( eOpt ){
+      case SQLITEASYNC_HALT: {
+        assert( SQLITEASYNC_HALT_NEVER==0 );
+        assert( SQLITEASYNC_HALT_NOW==1 );
+        assert( SQLITEASYNC_HALT_IDLE==2 );
+        if( Tcl_GetIndexFromObj(interp, objv[2], az, "value", 0, &iVal) ){
+          return TCL_ERROR;
+        }
+        break;
+      }
+      case SQLITEASYNC_DELAY:
+        if( Tcl_GetIntFromObj(interp, objv[2], &iVal) ){
+          return TCL_ERROR;
+        }
+        break;
+
+      case SQLITEASYNC_LOCKFILES:
+        if( Tcl_GetBooleanFromObj(interp, objv[2], &iVal) ){
+          return TCL_ERROR;
+        }
+        break;
+    }
+
+    rc = sqlite3async_control(eOpt, iVal);
+  }
+
+  if( rc==SQLITE_OK ){
+    rc = sqlite3async_control(
+        eOpt==SQLITEASYNC_HALT ? SQLITEASYNC_GET_HALT :
+        eOpt==SQLITEASYNC_DELAY ? SQLITEASYNC_GET_DELAY :
+        SQLITEASYNC_GET_LOCKFILES, &iVal);
+  }
+
+  if( rc!=SQLITE_OK ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(sqlite3TestErrorName(rc), -1));
+    return TCL_ERROR;
+  }
+
+  if( eOpt==SQLITEASYNC_HALT ){
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(az[iVal], -1));
+  }else{
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(iVal));
+  }
+
+  return TCL_OK;
+}
+
 #endif  /* SQLITE_ENABLE_ASYNCIO */
 
 /*
@@ -208,11 +231,12 @@ static int testAsyncWait(
 */
 int Sqlitetestasync_Init(Tcl_Interp *interp){
 #if SQLITE_ENABLE_ASYNCIO
-  Tcl_CreateObjCommand(interp,"sqlite3async_enable",testAsyncEnable,0,0);
-  Tcl_CreateObjCommand(interp,"sqlite3async_halt",testAsyncHalt,0,0);
-  Tcl_CreateObjCommand(interp,"sqlite3async_delay",testAsyncDelay,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_start",testAsyncStart,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
+
+  Tcl_CreateObjCommand(interp,"sqlite3async_control",testAsyncControl,0,0);
+  Tcl_CreateObjCommand(interp,"sqlite3async_initialize",testAsyncInit,0,0);
+  Tcl_CreateObjCommand(interp,"sqlite3async_shutdown",testAsyncShutdown,0,0);
 #endif  /* SQLITE_ENABLE_ASYNCIO */
   return TCL_OK;
 }

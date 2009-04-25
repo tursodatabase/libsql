@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.3 2009/04/24 10:13:06 danielk1977 Exp $
+** $Id: sqlite3async.c,v 1.4 2009/04/25 08:39:15 danielk1977 Exp $
 **
 ** This file contains the implementation of an asynchronous IO backend 
 ** for SQLite.
@@ -1550,7 +1550,7 @@ static void asyncWriterThread(void){
       async_mutex_leave(ASYNC_MUTEX_QUEUE);
       holdingMutex = 0;
       if( async.ioDelay>0 ){
-        pVfs->xSleep(pVfs, async.ioDelay);
+        pVfs->xSleep(pVfs, async.ioDelay*1000);
       }else{
         async_sched_yield();
       }

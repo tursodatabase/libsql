@@ -5,14 +5,14 @@
 #
 #***********************************************************************
 #
-# $Id: async2.test,v 1.11 2009/04/23 18:41:26 shane Exp $
+# $Id: async2.test,v 1.12 2009/04/25 08:39:15 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 if {
-  [info commands sqlite3async_enable]=="" ||
+  [info commands sqlite3async_initialize]=="" ||
   [info command sqlite3_memdebug_fail]==""
 } {
   # The async logic is not built into this system
@@ -56,7 +56,7 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
     execsql $::setup_script
     db close
   
-    sqlite3async_enable 1
+    sqlite3async_initialize "" 1
     sqlite3 db test.db
     sqlite3_db_config_lookaside db 0 0 0
   
@@ -69,11 +69,11 @@ foreach err [list ioerr malloc-transient malloc-persistent] {
     catchsql $::sql_script
     db close
 
-    sqlite3async_halt idle
+    sqlite3async_control halt idle
     sqlite3async_start
     sqlite3async_wait
-    sqlite3async_halt never
-    sqlite3async_enable 0
+    sqlite3async_control halt never
+    sqlite3async_shutdown
 
     set ::sqlite_io_error_pending 0
     sqlite3_memdebug_fail -1
