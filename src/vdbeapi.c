@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.163 2009/04/14 12:58:20 drh Exp $
+** $Id: vdbeapi.c,v 1.164 2009/04/27 18:46:06 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -400,6 +400,10 @@ void sqlite3_result_zeroblob(sqlite3_context *pCtx, int n){
 }
 void sqlite3_result_error_code(sqlite3_context *pCtx, int errCode){
   pCtx->isError = errCode;
+  if( pCtx->s.flags & MEM_Null ){
+    sqlite3VdbeMemSetStr(&pCtx->s, sqlite3ErrStr(errCode), -1, 
+                         SQLITE_UTF8, SQLITE_STATIC);
+  }
 }
 
 /* Force an SQLITE_TOOBIG error. */

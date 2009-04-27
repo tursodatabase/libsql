@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.539 2009/04/21 12:02:56 drh Exp $
+** $Id: main.c,v 1.540 2009/04/27 18:46:06 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -738,37 +738,41 @@ void sqlite3RollbackAll(sqlite3 *db){
 ** argument.
 */
 const char *sqlite3ErrStr(int rc){
-  const char *z;
-  switch( rc & 0xff ){
-    case SQLITE_ROW:
-    case SQLITE_DONE:
-    case SQLITE_OK:         z = "not an error";                          break;
-    case SQLITE_ERROR:      z = "SQL logic error or missing database";   break;
-    case SQLITE_PERM:       z = "access permission denied";              break;
-    case SQLITE_ABORT:      z = "callback requested query abort";        break;
-    case SQLITE_BUSY:       z = "database is locked";                    break;
-    case SQLITE_LOCKED:     z = "database table is locked";              break;
-    case SQLITE_NOMEM:      z = "out of memory";                         break;
-    case SQLITE_READONLY:   z = "attempt to write a readonly database";  break;
-    case SQLITE_INTERRUPT:  z = "interrupted";                           break;
-    case SQLITE_IOERR:      z = "disk I/O error";                        break;
-    case SQLITE_CORRUPT:    z = "database disk image is malformed";      break;
-    case SQLITE_FULL:       z = "database or disk is full";              break;
-    case SQLITE_CANTOPEN:   z = "unable to open database file";          break;
-    case SQLITE_EMPTY:      z = "table contains no data";                break;
-    case SQLITE_SCHEMA:     z = "database schema has changed";           break;
-    case SQLITE_TOOBIG:     z = "String or BLOB exceeded size limit";    break;
-    case SQLITE_CONSTRAINT: z = "constraint failed";                     break;
-    case SQLITE_MISMATCH:   z = "datatype mismatch";                     break;
-    case SQLITE_MISUSE:     z = "library routine called out of sequence";break;
-    case SQLITE_NOLFS:      z = "large file support is disabled";        break;
-    case SQLITE_AUTH:       z = "authorization denied";                  break;
-    case SQLITE_FORMAT:     z = "auxiliary database format error";       break;
-    case SQLITE_RANGE:      z = "bind or column index out of range";     break;
-    case SQLITE_NOTADB:     z = "file is encrypted or is not a database";break;
-    default:                z = "unknown error";                         break;
+  static const char* const aMsg[] = {
+    /* SQLITE_OK          */ "not an error",
+    /* SQLITE_ERROR       */ "SQL logic error or missing database",
+    /* SQLITE_INTERNAL    */ 0,
+    /* SQLITE_PERM        */ "access permission denied",
+    /* SQLITE_ABORT       */ "callback requested query abort",
+    /* SQLITE_BUSY        */ "database is locked",
+    /* SQLITE_LOCKED      */ "database table is locked",
+    /* SQLITE_NOMEM       */ "out of memory",
+    /* SQLITE_READONLY    */ "attempt to write a readonly database",
+    /* SQLITE_INTERRUPT   */ "interrupted",
+    /* SQLITE_IOERR       */ "disk I/O error",
+    /* SQLITE_CORRUPT     */ "database disk image is malformed",
+    /* SQLITE_NOTFOUND    */ 0,
+    /* SQLITE_FULL        */ "database or disk is full",
+    /* SQLITE_CANTOPEN    */ "unable to open database file",
+    /* SQLITE_PROTOCOL    */ 0,
+    /* SQLITE_EMPTY       */ "table contains no data",
+    /* SQLITE_SCHEMA      */ "database schema has changed",
+    /* SQLITE_TOOBIG      */ "String or BLOB exceeded size limit",
+    /* SQLITE_CONSTRAINT  */ "constraint failed",
+    /* SQLITE_MISMATCH    */ "datatype mismatch",
+    /* SQLITE_MISUSE      */ "library routine called out of sequence",
+    /* SQLITE_NOLFS       */ "large file support is disabled",
+    /* SQLITE_AUTH        */ "authorization denied",
+    /* SQLITE_FORMAT      */ "auxiliary database format error",
+    /* SQLITE_RANGE       */ "bind or column index out of range",
+    /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
+  };
+  rc &= 0xff;
+  if( ALWAYS(rc>=0) && rc<sizeof(aMsg)/sizeof(aMsg[0]) && aMsg[rc]!=0 ){
+    return aMsg[rc];
+  }else{
+    return "unknown error";
   }
-  return z;
 }
 
 /*
@@ -1356,11 +1360,13 @@ static int createCollation(
   ** to one of SQLITE_UTF16LE or SQLITE_UTF16BE using the
   ** SQLITE_UTF16NATIVE macro. SQLITE_UTF16 is not used internally.
   */
-  enc2 = enc & ~SQLITE_UTF16_ALIGNED;
-  if( enc2==SQLITE_UTF16 ){
+  enc2 = enc;
+  testcase( enc2 & SQLITE_UTF16 );
+  testcase( enc2 & SQLITE_UTF16_ALIGNED );
+  if( enc2 & (SQLITE_UTF16|SQLITE_UTF16_ALIGNED) ){
     enc2 = SQLITE_UTF16NATIVE;
   }
-  if( (enc2&~3)!=0 ){
+  if( enc2<SQLITE_UTF8 || enc2>SQLITE_UTF16BE ){
     return SQLITE_MISUSE;
   }
 
