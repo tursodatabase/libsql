@@ -16,7 +16,7 @@
 ** separating it out, the code will be automatically omitted from
 ** static links that do not use it.
 **
-** $Id: complete.c,v 1.7 2008/06/13 18:24:27 drh Exp $
+** $Id: complete.c,v 1.8 2009/04/28 04:46:42 drh Exp $
 */
 #include "sqliteInt.h"
 #ifndef SQLITE_OMIT_COMPLETE
@@ -112,7 +112,7 @@ int sqlite3_complete(const char *zSql){
      /* State:       **  SEMI  WS  OTHER EXPLAIN  CREATE  TEMP  TRIGGER  END  */
      /* 0   START: */ {    0,  0,     1,      2,      3,    1,       1,   1,  },
      /* 1  NORMAL: */ {    0,  1,     1,      1,      1,    1,       1,   1,  },
-     /* 2 EXPLAIN: */ {    0,  2,     1,      1,      3,    1,       1,   1,  },
+     /* 2 EXPLAIN: */ {    0,  2,     2,      1,      3,    1,       1,   1,  },
      /* 3  CREATE: */ {    0,  3,     1,      1,      1,    3,       4,   1,  },
      /* 4 TRIGGER: */ {    5,  4,     4,      4,      4,    4,       4,   4,  },
      /* 5    SEMI: */ {    5,  5,     4,      4,      4,    4,       4,   6,  },

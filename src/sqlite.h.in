@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.444 2009/04/27 18:46:06 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.445 2009/04/28 04:46:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1351,19 +1351,29 @@ void sqlite3_interrupt(sqlite3*);
 /*
 ** CAPI3REF: Determine If An SQL Statement Is Complete {H10510} <S70200>
 **
-** These routines are useful for command-line input to determine if the
-** currently entered text seems to form complete a SQL statement or
+** These routines are useful during command-line input to determine if the
+** currently entered text seems to form a complete SQL statement or
 ** if additional input is needed before sending the text into
-** SQLite for parsing.  These routines return true if the input string
+** SQLite for parsing.  These routines return 1 if the input string
 ** appears to be a complete SQL statement.  A statement is judged to be
-** complete if it ends with a semicolon token and is not a fragment of a
-** CREATE TRIGGER statement.  Semicolons that are embedded within
+** complete if it ends with a semicolon token and is not a prefix of a
+** well-formed CREATE TRIGGER statement.  Semicolons that are embedded within
 ** string literals or quoted identifier names or comments are not
 ** independent tokens (they are part of the token in which they are
-** embedded) and thus do not count as a statement terminator.
+** embedded) and thus do not count as a statement terminator.  Whitespace
+** and comments that follow the final semicolon are ignored.
+**
+** These routines return 0 if the statement is incomplete.  If a
+** memory allocation fails, then SQLITE_NOMEM is returned.
 **
 ** These routines do not parse the SQL statements thus
 ** will not detect syntactically incorrect SQL.
+**
+** If SQLite has not been initialized using [sqlite3_initialize()] prior 
+** to invoking sqlite3_complete16() then sqlite3_initialize() is invoked
+** automatically by sqlite3_complete16().  If that initialization fails,
+** then the return value from sqlite3_complete16() will be non-zero
+** regardless of whether or not the input SQL is complete.
 **
 ** Requirements: [H10511] [H10512]
 **

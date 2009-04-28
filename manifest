@@ -1,5 +1,5 @@
-C Bring\sthe\sdocumenation\sand\simplementation\sof\ssqlite3_collation_needed()\sinto\nagreement.\s\sUse\sa\smore\sefficient\simplementation\sof\ssqlite3ErrStr().\nsqlite3_result_error_code()\snow\scalls\ssqlite3ErrStr()\sif\sno\sprior\nerror\sstring\swas\sset.\s(CVS\s6550)
-D 2009-04-27T18:46:06
+C Enhance\ssqlite3_complete()\sso\sthat\sit\sunderstands\sEXPLAIN\sQUERY\sPLAN.\nTicket\s#3828.\s\sTesting\sis\sdone\sin\sTH3.\s(CVS\s6551)
+D 2009-04-28T04:46:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 2a50f5e65ab00fb2443af8df5a3130a2eb644b25
 F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
-F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
+F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c d327ec7bb2f64b08d32b1035de82b9ba8675de91
 F src/delete.c becfff86a6d1a3606b7215cd79e2e033e3a66225
 F src/expr.c 015bdfc73af9d867558761cd8dc8652aa6c8cc04
@@ -160,7 +160,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 40748e8044b79d41ba04ce1014ae45434ed452d3
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in e50559931ebd0c20728d765e9e31006544eb2738
+F src/sqlite.h.in 4028ba942fa43afa7f8ade88fa9acedaa024ddeb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d34f80cf38227ce8ed5c519e748375bd9b40d8f7
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 11b2564e7159168cd0815bb9bc93688586fad1e0
-R b88c3723887470271f990b426c83f42c
+P cb9af8293624da35c32077d0f46d5b0cf826dcf5
+R 29362f14accb0aefdfae56392667b017
 U drh
-Z 277ade239b059b3b8c0adf4c55726554
+Z f32762b49f5169b76aacbd00a2796275
