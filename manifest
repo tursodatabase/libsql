@@ -1,5 +1,5 @@
-C Further\sadjustment\sto\srowhash.test\sto\saccount\sfor\srowid\scollisions.\s(CVS\s6560)
-D 2009-04-28T15:48:09
+C Remove\san\sunused\sfunction\sdeclaration\sfrom\shash.h.\s(CVS\s6561)
+D 2009-04-28T16:35:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 407e5ca13cab32db529e2c364463a2512fb4d554
-F src/hash.h a63395d62fe898662cb9cdbedbcd2675f16c0410
+F src/hash.h 457e230c3b2bd3c56742824d43b16618ff30d7c0
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 71286d081a919a27ef22eaeccbe2718f93dc6aa9
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5c737835dec9e6038b304c198aa14337a6f23c1c
-R 7cc95a1e8ba75a5ff7795150f0cf1350
-U danielk1977
-Z 6d69720c2f2b9d087683d623da82df29
+P 94a23f993381412c7533878d44faa2f8e47e58ce
+R f7b29d548e549650e7140cb4aa5bde47
+U drh
+Z 1882308b19955f9a35131b67eb66eebb
