@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: trans.test,v 1.40 2009/03/27 09:10:12 danielk1977 Exp $
+# $Id: trans.test,v 1.41 2009/04/28 16:37:59 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -871,7 +871,14 @@ proc signature {} {
 # t3 a little larger, and thus takes a little longer, so doing 40 tests
 # is more than 2.0 times slower than doing 20 tests.  Considerably more.
 #
-if {[info exists ISQUICK]} {
+# Also, if temporary tables are stored in memory and the test pcache
+# is in use, only 20 iterations. Otherwise the test pcache runs out
+# of page slots and SQLite reports "out of memory".
+#
+if {[info exists ISQUICK] || (
+  $TEMP_STORE==3 && [catch {set ::permutations_test_prefix} val]==0 && 
+  [regexp {^pcache[[:digit:]]*$} $val]
+) } {
   set limit 20
 } elseif {[info exists SOAKTEST]} {
   set limit 100

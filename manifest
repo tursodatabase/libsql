@@ -1,5 +1,5 @@
-C Remove\san\sunused\sfunction\sdeclaration\sfrom\shash.h.\s(CVS\s6561)
-D 2009-04-28T16:35:43
+C When\stesting\swith\sTEMP_STORE=3\sand\sthe\stest\spcache,\sonly\srun\s20\siterations\sin\strans.test.\sOtherwise\sthe\stest\spcache\sruns\sout\sof\smemory.\s(CVS\s6562)
+D 2009-04-28T16:37:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -647,7 +647,7 @@ F test/tkt3793.test 3aa2efe55bc31fc9459618feea2016ea9a52b2af
 F test/tkt3824.test 3da2f5c81b057e3ff355f5dfc9aa0cf0a92e0206
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
-F test/trans.test 8b79967a7e085289ec64890c6fdf9d089e1b4a5f
+F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
 F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 94a23f993381412c7533878d44faa2f8e47e58ce
-R f7b29d548e549650e7140cb4aa5bde47
-U drh
-Z 1882308b19955f9a35131b67eb66eebb
+P fcf70bb8b8ab7682d46fa7e75338dfd8ecf472a3
+R f022dd20d2d20a410af92f00ba03cb0e
+U danielk1977
+Z 16e75750ddeb2e6afa65f477ae899bec
