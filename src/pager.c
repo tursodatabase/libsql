@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.582 2009/04/20 17:43:03 drh Exp $
+** @(#) $Id: pager.c,v 1.583 2009/04/28 05:27:20 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5218,6 +5218,7 @@ int sqlite3PagerJournalMode(Pager *pPager, int eMode){
    && (!MEMDB || eMode==PAGER_JOURNALMODE_MEMORY 
               || eMode==PAGER_JOURNALMODE_OFF)
    && !pPager->dbModified
+   && (!isOpen(pPager->jfd) || 0==pPager->journalOff)
   ){
     if( isOpen(pPager->jfd) ){
       sqlite3OsClose(pPager->jfd);

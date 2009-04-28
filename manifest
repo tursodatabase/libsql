@@ -1,5 +1,5 @@
-C Add\stest\scases\sfor\ssqlite3_complete\swith\san\sEXPLAIN\sQUERY\sPLAN\son\sa\nCREATE\sTRIGGER\sstatement.\s\sTicket\s#3828.\s(CVS\s6553)
-D 2009-04-28T04:51:29
+C Avoid\schanging\sthe\spager\sjournal-mode\sonce\sa\swrite-transaction\sis\sopen,\seven\sif\sno\sdatabase\spages\shave\sbeen\smodified.\s(CVS\s6554)
+D 2009-04-28T05:27:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c adfdf98f92bcab88246aaa5079df49f9441ebd81
+F src/pager.c 1c41ddee47a9f6c5e3431faac071ef705fb736f9
 F src/pager.h 0c9f3520c00d8a3b8e792ca56c9a11b6b02b4b0f
 F src/parse.y b7e4341b21736a90b952aa6bb663ec98529b778e
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 057c7d171397e19c8f3ac2362ea45f2b4a50530c
-R e9cf7dcfedeb1269850001610142cf1c
-U drh
-Z 6cc8d771e93fc6aa7c555d8857beb7c3
+P 6b86b40edadb9c9cbc0db5a43a8277434f9d7171
+R 36339aace1f1a9c46314399faf9cd941
+U danielk1977
+Z acedd3ee233aa3d3d3c2cd405310cc61
