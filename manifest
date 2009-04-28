@@ -1,5 +1,5 @@
-C Have\ssqlite3_create_collation()\sreturn\sMISUSE\sif\spassed\san\sencoding\svalue\sother\sthan\sSQLITE_UTF8,\sSQLITE_UTF16LE,\sSQLITE_UTF16BE,\sSQLITE_UTF16\sor\sSQLITE_UTF16_ALIGNED.\s(CVS\s6558)
-D 2009-04-28T15:35:39
+C Simplifications\sto\sthe\ssymbol\stable\simplementation\sin\shash.c.\s\sFor\svery\ssmall\nsymbol\stables\s(less\sthan\s10\sentries)\sa\ssimple\slinked\slist\sis\sused\sinstead\nof\sa\shash\stable.\s\sNumber\sof\shash\stable\sbuckets\sis\slimited\sto\sprevent\slarge\nallocations.\s(CVS\s6559)
+D 2009-04-28T15:43:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -118,8 +118,8 @@ F src/expr.c dd763d6dc8f8329e895440d436c28aa7b5b3595e
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
-F src/hash.c 15d39cbe87de9b9991054750bd3e0861888b7b06
-F src/hash.h 28f38ebb1006a5beedcb013bcdfe31befe7437ae
+F src/hash.c 407e5ca13cab32db529e2c364463a2512fb4d554
+F src/hash.h a63395d62fe898662cb9cdbedbcd2675f16c0410
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 71286d081a919a27ef22eaeccbe2718f93dc6aa9
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
@@ -162,7 +162,7 @@ F src/select.c 40748e8044b79d41ba04ce1014ae45434ed452d3
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 4028ba942fa43afa7f8ade88fa9acedaa024ddeb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h d34f80cf38227ce8ed5c519e748375bd9b40d8f7
+F src/sqliteInt.h 61be3597d7dce6b3d360a7185c760c3e4e968a59
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -558,7 +558,7 @@ F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
-F test/table.test bf1bc3d9634342a3470bdf64b6190e7445b6b8a6
+F test/table.test e47c9323396976389a15fa0cd22ce3a405433186
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test 8b1150d0486c4848c70d96422513a91c5342be0e
 F test/tempdb.test b88ac8a19823cf771d742bf61eef93ef337c06b1
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 23d67af39227aeade2ea0292e1b8844eea580993
-R fcd591943dcfa775dbae9e00324b29d3
-U danielk1977
-Z c812cbe48ecf60026f66cd5f41f509d1
+P 7975b6f2ec7736b3656a264c2f7e7e95ce7a78e4
+R 104f4e6ccdfa7d3d3e3f8da9a9d08fd5
+U drh
+Z b7cd4fee6ba60d43a3b23bd76deb0ece

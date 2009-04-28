@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.50 2009/03/14 08:37:24 danielk1977 Exp $
+# $Id: table.test,v 1.51 2009/04/28 15:43:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -112,15 +112,16 @@ do_test table-2.1e {
   catchsql {CREATE TABLE IF NOT EXISTS test2(x UNIQUE, y TEXT PRIMARY KEY)}
 } {0 {}}
 do_test table-2.1f {
+breakpoint
   execsql {DROP TABLE test2; SELECT name FROM sqlite_master WHERE type!='meta'}
 } {}
 
 # Verify that we cannot make a table with the same name as an index
 #
 do_test table-2.2a {
-  execsql {CREATE TABLE test2(one text); CREATE INDEX test3 ON test2(one)}
-  set v [catch {execsql {CREATE TABLE test3(two text)}} msg]
-  lappend v $msg
+  execsql {CREATE TABLE test2(one text)}
+  execsql {CREATE INDEX test3 ON test2(one)}
+  catchsql {CREATE TABLE test3(two text)}
 } {1 {there is already an index named test3}}
 do_test table-2.2b {
   db close

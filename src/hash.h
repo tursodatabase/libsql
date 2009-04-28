@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.12 2008/10/10 17:41:29 drh Exp $
+** $Id: hash.h,v 1.13 2009/04/28 15:43:45 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -25,12 +25,25 @@ typedef struct HashElem HashElem;
 ** The internals of this structure are intended to be opaque -- client
 ** code should not attempt to access or modify the fields of this structure
 ** directly.  Change this structure only by using the routines below.
-** However, many of the "procedures" and "functions" for modifying and
+** However, some of the "procedures" and "functions" for modifying and
 ** accessing this structure are really macros, so we can't really make
 ** this structure opaque.
+**
+** All elements of the hash table are on a single doubly-linked list.
+** Hash.first points to the head of this list.
+**
+** There are Hash.htsize buckets.  Each bucket points to a spot in
+** the global doubly-linked list.  The contents of the bucket are the
+** element pointed to plus the next _ht.count-1 elements in the list.
+**
+** Hash.htsize and Hash.ht may be zero.  In that case lookup is done
+** by a linear search of the global list.  For small tables, the 
+** Hash.ht table is never allocated because if there are few elements
+** in the table, it is faster to do a linear search than to manage
+** the hash table.
 */
 struct Hash {
-  unsigned int copyKey: 1;  /* True if copy of key made on insert */
+  unsigned int copyKey : 1; /* True if copy of key made on insert */
   unsigned int htsize : 31; /* Number of buckets in the hash table */
   unsigned int count;       /* Number of entries in this table */
   HashElem *first;          /* The first element of the array */
@@ -76,12 +89,12 @@ void sqlite3HashClear(Hash*);
 #define sqliteHashFirst(H)  ((H)->first)
 #define sqliteHashNext(E)   ((E)->next)
 #define sqliteHashData(E)   ((E)->data)
-#define sqliteHashKey(E)    ((E)->pKey)
-#define sqliteHashKeysize(E) ((E)->nKey)
+/* #define sqliteHashKey(E)    ((E)->pKey) // NOT USED */
+/* #define sqliteHashKeysize(E) ((E)->nKey)  // NOT USED */
 
 /*
 ** Number of entries in a hash table
 */
-#define sqliteHashCount(H)  ((H)->count)
+/* #define sqliteHashCount(H)  ((H)->count) // NOT USED */
 
 #endif /* _SQLITE_HASH_H_ */
