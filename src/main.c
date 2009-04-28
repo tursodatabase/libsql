@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.540 2009/04/27 18:46:06 drh Exp $
+** $Id: main.c,v 1.541 2009/04/28 04:47:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1511,6 +1511,7 @@ static int openDatabase(
   CollSeq *pColl;
   int isThreadsafe;
 
+  *ppDb = 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   rc = sqlite3_initialize();
   if( rc ) return rc;
