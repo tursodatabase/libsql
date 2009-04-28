@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: blob.test,v 1.7 2008/04/04 15:12:22 drh Exp $
+# $Id: blob.test,v 1.8 2009/04/28 18:00:27 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -137,7 +137,7 @@ do_test blob-3.1 {
   sqlite3_finalize $STMT
   db2 close
 } {}
-do_test blob-2.3 {
+do_test blob-3.2 {
   set blobs [execsql {SELECT * FROM t1}]
   set blobs2 [list]
   foreach b $blobs {lappend blobs2 [bin_to_hex $b]}
