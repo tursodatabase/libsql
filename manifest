@@ -1,5 +1,5 @@
-C Avoid\schanging\sthe\spager\sjournal-mode\sonce\sa\swrite-transaction\sis\sopen,\seven\sif\sno\sdatabase\spages\shave\sbeen\smodified.\s(CVS\s6554)
-D 2009-04-28T05:27:20
+C Fix\san\sassert\sthat\scould\sfail\safter\sa\sparse\serror\sin\sexpr.c.\s(CVS\s6555)
+D 2009-04-28T11:10:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c d327ec7bb2f64b08d32b1035de82b9ba8675de91
 F src/delete.c becfff86a6d1a3606b7215cd79e2e033e3a66225
-F src/expr.c 015bdfc73af9d867558761cd8dc8652aa6c8cc04
+F src/expr.c 1ff13874afa21690d3bba31e4ececcc07378ff8b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -384,7 +384,7 @@ F test/fts3expr.test 9764961c3f4ac818dacda01ed35d8bfcef42338b
 F test/fts3expr2.test 8501de895a4c0631e7226c9bac055cd49c9f6646
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test d4a8590511cdc68a136afd00bd989c2584454932
-F test/fuzz.test 8bad3b9b09bad47c50f3433f9598707a70247ce1
+F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6b86b40edadb9c9cbc0db5a43a8277434f9d7171
-R 36339aace1f1a9c46314399faf9cd941
+P ad8aba3eff90d42b936e3644f10cbbd431eebad8
+R d0bd11585aae09b980589cceea8b4094
 U danielk1977
-Z acedd3ee233aa3d3d3c2cd405310cc61
+Z 1e041abd0e0c493c63e582a484a0d5e4

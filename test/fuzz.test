@@ -19,7 +19,7 @@
 #
 # The most complicated trees are for SELECT statements.
 #
-# $Id: fuzz.test,v 1.18 2009/01/06 00:11:26 drh Exp $
+# $Id: fuzz.test,v 1.19 2009/04/28 11:10:39 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -286,6 +286,20 @@ do_test fuzz-1.18 {
      ))
   }
 } {0 -4294967298}
+
+# At one point the following INSERT statement caused an assert() to fail.
+# 
+do_test fuzz-1.19 {
+  execsql { CREATE TABLE t1(a) }
+  catchsql {
+    INSERT INTO t1 VALUES( 
+      CASE WHEN NULL THEN NULL ELSE ( SELECT 0 ORDER BY 456 ) END 
+    )
+  }
+} {1 {1st ORDER BY term out of range - should be between 1 and 1}}
+do_test fuzz-1.20 {
+  execsql { DROP TABLE t1 }
+} {}
 
 #----------------------------------------------------------------
 # Test some fuzzily generated expressions.
