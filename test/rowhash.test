@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is the code in rowhash.c.
 #
-# $Id: rowhash.test,v 1.3 2009/04/23 18:42:05 shane Exp $
+# $Id: rowhash.test,v 1.4 2009/04/28 15:48:09 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,7 +37,7 @@ proc do_keyset_test {name lKey} {
     lsort -integer [execsql {
       SELECT id FROM t1 WHERE a = 'a' OR b = 'b' OR c = 'c';
     }]
-  } [lsort -integer $lKey]
+  } [lsort -integer -unique $lKey]
 }
 
 do_keyset_test rowhash-2.1 {1 2 3}
