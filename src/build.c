@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.531 2009/04/24 18:06:09 danielk1977 Exp $
+** $Id: build.c,v 1.532 2009/04/28 13:01:09 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -261,7 +261,7 @@ Table *sqlite3FindTable(sqlite3 *db, const char *zName, const char *zDatabase){
   int i;
   int nName;
   assert( zName!=0 );
-  nName = sqlite3Strlen(db, zName) + 1;
+  nName = sqlite3Strlen(db, zName);
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;   /* Search TEMP before MAIN */
     if( zDatabase!=0 && sqlite3StrICmp(zDatabase, db->aDb[j].zName) ) continue;
@@ -323,7 +323,7 @@ Table *sqlite3LocateTable(
 Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   Index *p = 0;
   int i;
-  int nName = sqlite3Strlen(db, zName)+1;
+  int nName = sqlite3Strlen(db, zName);
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     Schema *pSchema = db->aDb[j].pSchema;
@@ -359,7 +359,7 @@ static void sqlite3DeleteIndex(Index *p){
   const char *zName = p->zName;
 
   pOld = sqlite3HashInsert(&p->pSchema->idxHash, zName,
-                           sqlite3Strlen30(zName)+1, 0);
+                           sqlite3Strlen30(zName), 0);
   assert( pOld==0 || pOld==p );
   freeIndex(p);
 }
@@ -376,7 +376,7 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
   Hash *pHash = &db->aDb[iDb].pSchema->idxHash;
 
   len = sqlite3Strlen(db, zIdxName);
-  pIndex = sqlite3HashInsert(pHash, zIdxName, len+1, 0);
+  pIndex = sqlite3HashInsert(pHash, zIdxName, len, 0);
   if( pIndex ){
     if( pIndex->pTable->pIndex==pIndex ){
       pIndex->pTable->pIndex = pIndex->pNext;
@@ -524,7 +524,7 @@ void sqlite3DeleteTable(Table *pTable){
   for(pFKey=pTable->pFKey; pFKey; pFKey=pNextFKey){
     pNextFKey = pFKey->pNextFrom;
     assert( sqlite3HashFind(&pTable->pSchema->aFKey,
-                           pFKey->zTo, sqlite3Strlen30(pFKey->zTo)+1)!=pFKey );
+                           pFKey->zTo, sqlite3Strlen30(pFKey->zTo))!=pFKey );
     sqlite3DbFree(db, pFKey);
   }
 #endif
@@ -556,11 +556,11 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   assert( zTabName && zTabName[0] );
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName,
-                        sqlite3Strlen30(zTabName)+1,0);
+                        sqlite3Strlen30(zTabName),0);
   if( p ){
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
-      int nTo = sqlite3Strlen30(pF1->zTo) + 1;
+      int nTo = sqlite3Strlen30(pF1->zTo);
       pF2 = sqlite3HashFind(&pDb->pSchema->aFKey, pF1->zTo, nTo);
       if( pF2==pF1 ){
         sqlite3HashInsert(&pDb->pSchema->aFKey, pF1->zTo, nTo, pF1->pNextTo);
@@ -1688,7 +1688,7 @@ void sqlite3EndTable(
     FKey *pFKey; 
     Schema *pSchema = p->pSchema;
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName,
-                             sqlite3Strlen30(p->zName)+1,p);
+                             sqlite3Strlen30(p->zName),p);
     if( pOld ){
       assert( p==pOld );  /* Malloc must have failed inside HashInsert() */
       db->mallocFailed = 1;
@@ -1697,7 +1697,7 @@ void sqlite3EndTable(
 #ifndef SQLITE_OMIT_FOREIGN_KEY
     for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
       void *data;
-      int nTo = sqlite3Strlen30(pFKey->zTo) + 1;
+      int nTo = sqlite3Strlen30(pFKey->zTo);
       pFKey->pNextTo = sqlite3HashFind(&pSchema->aFKey, pFKey->zTo, nTo);
       data = sqlite3HashInsert(&pSchema->aFKey, pFKey->zTo, nTo, pFKey);
       if( data==(void *)pFKey ){
@@ -2742,7 +2742,7 @@ void sqlite3CreateIndex(
   if( db->init.busy ){
     Index *p;
     p = sqlite3HashInsert(&pIndex->pSchema->idxHash, 
-                          pIndex->zName, sqlite3Strlen30(pIndex->zName)+1,
+                          pIndex->zName, sqlite3Strlen30(pIndex->zName),
                           pIndex);
     if( p ){
       assert( p==pIndex );  /* Malloc must have failed */

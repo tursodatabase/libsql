@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.61 2009/04/25 08:39:15 danielk1977 Exp $
+** $Id: test_async.c,v 1.62 2009/04/28 13:01:09 drh Exp $
 **
 ** This file contains a binding of the asynchronous IO extension interface
 ** (defined in ext/async/sqlite3async.h) to Tcl.
@@ -240,4 +240,3 @@ int Sqlitetestasync_Init(Tcl_Interp *interp){
 #endif  /* SQLITE_ENABLE_ASYNCIO */
   return TCL_OK;
 }
-
