@@ -1,5 +1,5 @@
-C Fix\san\sassert\sthat\scould\sfail\safter\sa\sparse\serror\sin\sexpr.c.\s(CVS\s6555)
-D 2009-04-28T11:10:39
+C Another\sfix\sto\sthe\ssame\sassert\sas\sin\s(6555).\sIt\scan\salso\sfail\safter\sa\smalloc\serror.\s(CVS\s6556)
+D 2009-04-28T12:08:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c 73016376d6848ba987709e8c9048d4f0e0776036
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c d327ec7bb2f64b08d32b1035de82b9ba8675de91
 F src/delete.c becfff86a6d1a3606b7215cd79e2e033e3a66225
-F src/expr.c 1ff13874afa21690d3bba31e4ececcc07378ff8b
+F src/expr.c dd763d6dc8f8329e895440d436c28aa7b5b3595e
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ad8aba3eff90d42b936e3644f10cbbd431eebad8
-R d0bd11585aae09b980589cceea8b4094
+P a37d1174eb80e9a09522b236afdb47283f312d06
+R f42d9cf54c9eec4f9aff568e256db111
 U danielk1977
-Z 1e041abd0e0c493c63e582a484a0d5e4
+Z 4597ce858abcbcdbae0b3edd7f439fd4
