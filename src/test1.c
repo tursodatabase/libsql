@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.351 2009/04/08 15:45:32 drh Exp $
+** $Id: test1.c,v 1.352 2009/04/28 15:35:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -2488,11 +2488,9 @@ static int add_alignment_test_collations(
   sqlite3 *db;
   if( objc>=2 ){
     if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
-    sqlite3_create_collation(db, "utf16_unaligned",
-        SQLITE_UTF16, 
+    sqlite3_create_collation(db, "utf16_unaligned", SQLITE_UTF16, 
         0, alignmentCollFunc);
-    sqlite3_create_collation(db, "utf16_aligned",
-        SQLITE_UTF16 | SQLITE_UTF16_ALIGNED, 
+    sqlite3_create_collation(db, "utf16_aligned", SQLITE_UTF16_ALIGNED, 
         0, alignmentCollFunc);
   }
   return SQLITE_OK;
