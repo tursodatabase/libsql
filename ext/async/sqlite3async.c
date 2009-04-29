@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.4 2009/04/25 08:39:15 danielk1977 Exp $
+** $Id: sqlite3async.c,v 1.5 2009/04/29 18:12:00 shane Exp $
 **
 ** This file contains the implementation of an asynchronous IO backend 
 ** for SQLite.
@@ -19,7 +19,7 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ASYNCIO)
 
 #include "sqlite3async.h"
-#include "sqlite3.h"
+#include "sqliteInt.h"
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
@@ -49,6 +49,8 @@ static void asyncTrace(const char *zFormat, ...){
   fprintf(stderr, "[%d] %s", 0 /* (int)pthread_self() */, z);
   sqlite3_free(z);
 }
+#else
+# define ASYNC_TRACE(X)
 #endif
 
 /*
@@ -301,6 +303,7 @@ static void async_cond_signal(int eCond){
 }
 static void async_sched_yield(void){
   /* Todo: Find out if win32 offers anything like sched_yield() */
+  Sleep(0);
 }
 #else
 
@@ -678,7 +681,7 @@ static int asyncRead(
     if( rc!=SQLITE_OK ){
       goto asyncread_out;
     }
-    nRead = MIN(filesize - iOffset, iAmt);
+    nRead = (int)MIN(filesize - iOffset, iAmt);
     if( nRead>0 ){
       rc = pBase->pMethods->xRead(pBase, zOut, nRead, iOffset);
       ASYNC_TRACE(("READ %s %d bytes at %d\n", p->zName, nRead, iOffset));
@@ -694,8 +697,8 @@ static int asyncRead(
         (pWrite->pFileData==p) ||
         (zName && pWrite->pFileData->zName==zName)
       )){
-        int iBeginOut = (pWrite->iOffset-iOffset);
-        int iBeginIn = -iBeginOut;
+        sqlite3_int64 iBeginOut = (pWrite->iOffset-iOffset);
+        sqlite3_int64 iBeginIn = -iBeginOut;
         int nCopy;
 
         if( iBeginIn<0 ) iBeginIn = 0;
@@ -901,6 +904,7 @@ static int asyncCheckReservedLock(sqlite3_file *pFile, int *pResOut){
   for(pIter=p->pLock->pList; pIter; pIter=pIter->pNext){
     if( pIter->eLock>=SQLITE_LOCK_RESERVED ){
       ret = 1;
+      break;
     }
   }
   async_mutex_leave(ASYNC_MUTEX_LOCK);
@@ -927,13 +931,15 @@ static int asyncFileControl(sqlite3_file *id, int op, void *pArg){
 
 /* 
 ** Return the device characteristics and sector-size of the device. It
-** is not tricky to implement these correctly, as this backend might 
+** is tricky to implement these correctly, as this backend might 
 ** not have an open file handle at this point.
 */
 static int asyncSectorSize(sqlite3_file *pFile){
+  UNUSED_PARAMETER(pFile);
   return 512;
 }
 static int asyncDeviceCharacteristics(sqlite3_file *pFile){
+  UNUSED_PARAMETER(pFile);
   return 0;
 }
 
@@ -1022,7 +1028,7 @@ static int asyncOpen(
 
   /* If zName is NULL, then the upper layer is requesting an anonymous file */
   if( zName ){
-    nName = strlen(zName)+1;
+    nName = (int)strlen(zName)+1;
   }
 
   nByte = (
@@ -1142,7 +1148,8 @@ static int asyncOpen(
 ** write-op queue to perform the delete.
 */
 static int asyncDelete(sqlite3_vfs *pAsyncVfs, const char *z, int syncDir){
-  return addNewAsyncWrite(0, ASYNC_DELETE, syncDir, strlen(z)+1, z);
+  UNUSED_PARAMETER(pAsyncVfs);
+  return addNewAsyncWrite(0, ASYNC_DELETE, syncDir, (int)strlen(z)+1, z);
 }
 
 /*
