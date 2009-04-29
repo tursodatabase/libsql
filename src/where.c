@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.390 2009/04/24 15:46:22 drh Exp $
+** $Id: where.c,v 1.391 2009/04/29 11:50:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1747,6 +1747,12 @@ static void bestVirtualIndex(
   int i, j;
   int nOrderBy;
 
+  /* Make sure wsFlags is initialized to some sane value. Otherwise, if the 
+  ** malloc in allocateIndexInfo() fails and this function returns leaving
+  ** wsFlags in an uninitialized state, the caller may behave unpredictably.
+  */
+  pCost->plan.wsFlags = WHERE_VIRTUALTABLE;
+
   /* If the sqlite3_index_info structure has not been previously
   ** allocated and initialized, then allocate and initialize it now.
   */
@@ -1830,7 +1836,6 @@ static void bestVirtualIndex(
   }else{
     pCost->rCost = pIdxInfo->estimatedCost;
   }
-  pCost->plan.wsFlags = WHERE_VIRTUALTABLE;
   pCost->plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo && pIdxInfo->orderByConsumed ){
     pCost->plan.wsFlags |= WHERE_ORDERBY;

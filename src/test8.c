@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test8.c,v 1.77 2009/04/21 09:02:47 danielk1977 Exp $
+** $Id: test8.c,v 1.78 2009/04/29 11:50:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -695,7 +695,7 @@ static int echoFilter(
   rc = sqlite3_prepare(db, idxStr, -1, &pCur->pStmt, 0);
   assert( pCur->pStmt || rc!=SQLITE_OK );
   for(i=0; rc==SQLITE_OK && i<argc; i++){
-    sqlite3_bind_value(pCur->pStmt, i+1, argv[i]);
+    rc = sqlite3_bind_value(pCur->pStmt, i+1, argv[i]);
   }
 
   /* If everything was successful, advance to the first row of the scan */
