@@ -1,5 +1,5 @@
-C Fix\san\sout-of-order\stest\snumber\sin\sblob.test.\s\sCosmetic\schange.\s\sNo\nchanges\sto\scode.\s\sTicket\s#3830.\s(CVS\s6564)
-D 2009-04-28T18:00:27
+C Simplify\sa\sconditional\sexpression\sin\sbtree.c.\s(CVS\s6565)
+D 2009-04-29T06:27:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c b4ec46b3adc3e2d82704c949d4b654b031a64ad6
+F src/btree.c 3dffdafe21bf727f0e3409436ac65e3d7b319673
 F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c dca0ad77c88cb00f6a11cc080a4f3285672cfa37
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fe9f00aa369051beee09ab3d1a2e046a1f679a40
-R e25cc59a8240c7fb1912dab4247badc2
-U drh
-Z bcec58becd248bda1d58c0e8ba3cbbcb
+P e855654283a23d903fd531162655a8c4fa01775b
+R 63c07503296c76f396fee3ac325064a0
+U danielk1977
+Z 5dbb9b5bf3757053f2c4aad47a67a72e
