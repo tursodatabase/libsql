@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.597 2009/04/29 06:27:57 danielk1977 Exp $
+** $Id: btree.c,v 1.598 2009/04/29 11:31:47 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -762,18 +762,59 @@ void sqlite3BtreeParseCell(
 ** data header and the local payload, but not any overflow page or
 ** the space used by the cell pointer.
 */
+static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
+  u8 *pIter = &pCell[pPage->childPtrSize];
+  u32 nSize;
+
+#ifdef SQLITE_DEBUG
+  /* The value returned by this function should always be the same as
+  ** the (CellInfo.nSize) value found by doing a full parse of the
+  ** cell. If SQLITE_DEBUG is defined, an assert() at the bottom of
+  ** this function verifies that this invariant is not violated. */
+  CellInfo debuginfo;
+  sqlite3BtreeParseCellPtr(pPage, pCell, &debuginfo);
+#endif
+
+  if( pPage->intKey ){
+    u8 *pEnd;
+    if( pPage->hasData ){
+      pIter += getVarint32(pIter, nSize);
+    }else{
+      nSize = 0;
+    }
+
+    /* pIter now points at the 64-bit integer key value, a variable length 
+    ** integer. The following block moves pIter to point at the first byte
+    ** past the end of the key value. */
+    pEnd = &pIter[9];
+    while( (*pIter++)&0x80 && pIter<pEnd );
+  }else{
+    pIter += getVarint32(pIter, nSize);
+  }
+
+  if( nSize>pPage->maxLocal ){
+    int minLocal = pPage->minLocal;
+    nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    if( nSize>pPage->maxLocal ){
+      nSize = minLocal;
+    }
+    nSize += 4;
+  }
+  nSize += (pIter - pCell);
+
+  /* The minimum size of any cell is 4 bytes. */
+  if( nSize<4 ){
+    nSize = 4;
+  }
+
+  assert( nSize==debuginfo.nSize );
+  return nSize;
+}
 #ifndef NDEBUG
 static u16 cellSize(MemPage *pPage, int iCell){
-  CellInfo info;
-  sqlite3BtreeParseCell(pPage, iCell, &info);
-  return info.nSize;
+  return cellSizePtr(pPage, findCell(pPage, iCell));
 }
 #endif
-static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
-  CellInfo info;
-  sqlite3BtreeParseCellPtr(pPage, pCell, &info);
-  return info.nSize;
-}
 
 #ifndef SQLITE_OMIT_AUTOVACUUM
 /*
