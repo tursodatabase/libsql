@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.598 2009/04/29 11:31:47 danielk1977 Exp $
+** $Id: btree.c,v 1.599 2009/04/29 17:49:59 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -961,13 +961,13 @@ static int allocateSpace(MemPage *pPage, int nByte){
       if( size>=nByte ){
         int x = size - nByte;
         if( x<4 ){
-	  /* Remove the slot from the free-list. Update the number of
-	  ** fragmented bytes within the page. */
+          /* Remove the slot from the free-list. Update the number of
+          ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
           data[hdr+7] = (u8)(nFrag + x);
         }else{
-	  /* The slot remains on the free-list. Reduce its size to account
-	  ** for the portion used by the new allocation. */
+          /* The slot remains on the free-list. Reduce its size to account
+          ** for the portion used by the new allocation. */
           put2byte(&data[pc+2], x);
         }
         return pc + x;
@@ -3912,7 +3912,6 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
       assert( pCur->eState==CURSOR_VALID );
       *pRes = 0;
       rc = moveToRightmost(pCur);
-      getCellInfo(pCur);
       pCur->atLast = rc==SQLITE_OK ?1:0;
     }
   }
@@ -5044,39 +5043,32 @@ static void assemblePage(
   u16 *aSize        /* Sizes of the cells */
 ){
   int i;            /* Loop counter */
-  int totalSize;    /* Total size of all cells */
-  int hdr;          /* Index of page header */
-  int cellptr;      /* Address of next cell pointer */
+  u8 *pCellptr;     /* Address of next cell pointer */
   int cellbody;     /* Address of next cell body */
-  u8 *data;         /* Data for the page */
+  u8 * const data = pPage->aData;             /* Pointer to data for pPage */
+  const int hdr = pPage->hdrOffset;           /* Offset of header on pPage */
+  const int nUsable = pPage->pBt->usableSize; /* Usable size of page */
 
   assert( pPage->nOverflow==0 );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( nCell>=0 && nCell<=MX_CELL(pPage->pBt) && MX_CELL(pPage->pBt)<=5460 );
-  totalSize = 0;
-  for(i=0; i<nCell; i++){
-    totalSize += aSize[i];
-  }
-  assert( totalSize+2*nCell<=pPage->nFree );
-  assert( pPage->nCell==0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  cellptr = pPage->cellOffset;
-  data = pPage->aData;
-  hdr = pPage->hdrOffset;
-  put2byte(&data[hdr+3], nCell);
-  if( nCell ){
-    cellbody = allocateSpace(pPage, totalSize);
-    assert( cellbody>0 );
-    assert( pPage->nFree >= 2*nCell );
-    pPage->nFree -= 2*nCell;
-    for(i=0; i<nCell; i++){
-      put2byte(&data[cellptr], cellbody);
-      memcpy(&data[cellbody], apCell[i], aSize[i]);
-      cellptr += 2;
-      cellbody += aSize[i];
-    }
-    assert( cellbody==pPage->pBt->usableSize );
+
+  /* Check that the page has just been zeroed by zeroPage() */
+  assert( pPage->nCell==0 );
+  assert( get2byte(&data[hdr+5])==nUsable );
+
+  pCellptr = &data[pPage->cellOffset + nCell*2];
+  cellbody = nUsable;
+  for(i=nCell-1; i>=0; i--){
+    pCellptr -= 2;
+    cellbody -= aSize[i];
+    put2byte(pCellptr, cellbody);
+    memcpy(&data[cellbody], apCell[i], aSize[i]);
   }
+  put2byte(&data[hdr+3], nCell);
+  put2byte(&data[hdr+5], cellbody);
+  pPage->nFree -= (nCell*2 + nUsable - cellbody);
   pPage->nCell = (u16)nCell;
 }
 
