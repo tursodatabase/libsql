@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.445 2009/04/28 04:46:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.446 2009/04/29 14:33:44 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1223,14 +1223,18 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** triggers are not counted. Use the [sqlite3_total_changes()] function
 ** to find the total number of changes including changes caused by triggers.
 **
+** Changes to a view that are simulated by an [INSTEAD OF trigger]
+** are not counted.  Only real table changes are counted.
+**
 ** A "row change" is a change to a single row of a single table
 ** caused by an INSERT, DELETE, or UPDATE statement.  Rows that
-** are changed as side effects of REPLACE constraint resolution,
-** rollback, ABORT processing, DROP TABLE, or by any other
+** are changed as side effects of [REPLACE] constraint resolution,
+** rollback, ABORT processing, [DROP TABLE], or by any other
 ** mechanisms do not count as direct row changes.
 **
 ** A "trigger context" is a scope of execution that begins and
-** ends with the script of a trigger.  Most SQL statements are
+** ends with the script of a [CREATE TRIGGER | trigger]. 
+** Most SQL statements are
 ** evaluated outside of any trigger.  This is the "top level"
 ** trigger context.  If a trigger fires from the top level, a
 ** new trigger context is entered for the duration of that one
@@ -1252,16 +1256,8 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** However, the number returned does not include changes
 ** caused by subtriggers since those have their own context.
 **
-** SQLite implements the command "DELETE FROM table" without a WHERE clause
-** by dropping and recreating the table.  Doing so is much faster than going
-** through and deleting individual elements from the table.  Because of this
-** optimization, the deletions in "DELETE FROM table" are not row changes and
-** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
-** functions, regardless of the number of elements that were originally
-** in the table.  To get an accurate count of the number of rows deleted, use
-** "DELETE FROM table WHERE 1" instead.  Or recompile using the
-** [SQLITE_OMIT_TRUNCATE_OPTIMIZATION] compile-time option to disable the
-** optimization on all queries.
+** See also the [sqlite3_total_changes()] interface and the
+** [count_changes pragma].
 **
 ** Requirements:
 ** [H12241] [H12243]
@@ -1275,27 +1271,21 @@ int sqlite3_changes(sqlite3*);
 /*
 ** CAPI3REF: Total Number Of Rows Modified {H12260} <S10600>
 **
-** This function returns the number of row changes caused by INSERT,
-** UPDATE or DELETE statements since the [database connection] was opened.
-** The count includes all changes from all trigger contexts.  However,
-** the count does not include changes used to implement REPLACE constraints,
-** do rollbacks or ABORT processing, or DROP table processing.
+** This function returns the number of row changes caused by [INSERT],
+** [UPDATE] or [DELETE] statements since the [database connection] was opened.
+** The count includes all changes from all 
+** [CREATE TRIGGER | trigger] contexts.  However,
+** the count does not include changes used to implement [REPLACE] constraints,
+** do rollbacks or ABORT processing, or [DROP TABLE] processing.  The
+** count does not rows of views that fire an [INSTEAD OF trigger], though if
+** the INSTEAD OF trigger makes changes of its own, those changes are
+** counted.
 ** The changes are counted as soon as the statement that makes them is
 ** completed (when the statement handle is passed to [sqlite3_reset()] or
 ** [sqlite3_finalize()]).
 **
-** SQLite implements the command "DELETE FROM table" without a WHERE clause
-** by dropping and recreating the table.  (This is much faster than going
-** through and deleting individual elements from the table.)  Because of this
-** optimization, the deletions in "DELETE FROM table" are not row changes and
-** will not be counted by the sqlite3_changes() or [sqlite3_total_changes()]
-** functions, regardless of the number of elements that were originally
-** in the table.  To get an accurate count of the number of rows deleted, use
-** "DELETE FROM table WHERE 1" instead.   Or recompile using the
-** [SQLITE_OMIT_TRUNCATE_OPTIMIZATION] compile-time option to disable the
-** optimization on all queries.
-**
-** See also the [sqlite3_changes()] interface.
+** See also the [sqlite3_changes()] interface and the
+** [count_changes pragma].
 **
 ** Requirements:
 ** [H12261] [H12263]

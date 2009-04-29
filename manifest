@@ -1,5 +1,5 @@
-C Fix\sa\scase\sin\swhere.c\swhere\sa\scrash\scan\sfollow\sa\smalloc\sfailure.\sAlso\smodify\stest\scode\sin\stest8.c\sto\scheck\sa\sreturn\scode\sthat\swas\sbeing\sdropped\s(causing\sa\stest\sin\svtab_err.test\sto\sfail).\s(CVS\s6567)
-D 2009-04-29T11:50:54
+C Update\sthe\sdocumentation\son\sthe\ssqlite3_changes()\sand\ssqlite3_total_changes()\nfunctions.\s(CVS\s6568)
+D 2009-04-29T14:33:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 40748e8044b79d41ba04ce1014ae45434ed452d3
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in 4028ba942fa43afa7f8ade88fa9acedaa024ddeb
+F src/sqlite.h.in 2b7667d7912abe14af4ab84e7c4ed022e734f7ba
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 61be3597d7dce6b3d360a7185c760c3e4e968a59
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e8f7f7b787fe941093edaea44db4d361fad1e002
-R 4de805b014550f062517076b8e0aa32b
-U danielk1977
-Z cc423cf5b9f2744841b886533297cfcf
+P 9664e2b6c69271a7ca55af7812a186773a7c6592
+R 8444b35afee909cdcb2c2ac18b099c09
+U drh
+Z b5d9513f3dd8602eb18f6166440d0146
