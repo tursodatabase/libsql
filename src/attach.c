@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.86 2009/04/30 05:19:04 drh Exp $
+** $Id: attach.c,v 1.87 2009/04/30 05:40:34 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -200,6 +200,7 @@ static void attachFunc(
     db->nDb = iDb;
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       db->mallocFailed = 1;
+      sqlite3DbFree(db, zErrDyn);
       zErrDyn = sqlite3MPrintf(db, "out of memory");
     }else if( zErrDyn==0 ){
       zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
