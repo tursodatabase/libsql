@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.199 2009/04/24 15:46:22 drh Exp $
+** $Id: delete.c,v 1.200 2009/04/30 00:11:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -60,26 +60,6 @@ int sqlite3IsReadOnly(Parse *pParse, Table *pTab, int viewOk){
   }
 #endif
   return 0;
-}
-
-/*
-** Generate code that will open a table for reading.
-*/
-void sqlite3OpenTable(
-  Parse *p,       /* Generate code into this VDBE */
-  int iCur,       /* The cursor number of the table */
-  int iDb,        /* The database index in sqlite3.aDb[] */
-  Table *pTab,    /* The table to be opened */
-  int opcode      /* OP_OpenRead or OP_OpenWrite */
-){
-  Vdbe *v;
-  if( IsVirtual(pTab) ) return;
-  v = sqlite3GetVdbe(p);
-  assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
-  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
-  sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
-  sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
-  VdbeComment((v, "%s", pTab->zName));
 }
 
 
@@ -377,10 +357,8 @@ void sqlite3DeleteFrom(
   */
   if( rcauth==SQLITE_OK && pWhere==0 && !pTrigger && !IsVirtual(pTab) ){
     assert( !isView );
-    sqlite3VdbeAddOp3(v, OP_Clear, pTab->tnum, iDb, memCnt);
-    if( !pParse->nested ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
-    }
+    sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
+                      pTab->zName, P4_STATIC);
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
       assert( pIdx->pSchema==pTab->pSchema );
       sqlite3VdbeAddOp2(v, OP_Clear, pIdx->tnum, iDb);

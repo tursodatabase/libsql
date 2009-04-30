@@ -12,9 +12,29 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.260 2009/02/28 10:47:42 danielk1977 Exp $
+** $Id: insert.c,v 1.261 2009/04/30 00:11:10 drh Exp $
 */
 #include "sqliteInt.h"
+
+/*
+** Generate code that will open a table for reading.
+*/
+void sqlite3OpenTable(
+  Parse *p,       /* Generate code into this VDBE */
+  int iCur,       /* The cursor number of the table */
+  int iDb,        /* The database index in sqlite3.aDb[] */
+  Table *pTab,    /* The table to be opened */
+  int opcode      /* OP_OpenRead or OP_OpenWrite */
+){
+  Vdbe *v;
+  if( IsVirtual(pTab) ) return;
+  v = sqlite3GetVdbe(p);
+  assert( opcode==OP_OpenWrite || opcode==OP_OpenRead );
+  sqlite3TableLock(p, iDb, pTab->tnum, (opcode==OP_OpenWrite)?1:0, pTab->zName);
+  sqlite3VdbeAddOp3(v, opcode, iCur, pTab->tnum, iDb);
+  sqlite3VdbeChangeP4(v, -1, SQLITE_INT_TO_PTR(pTab->nCol), P4_INT32);
+  VdbeComment((v, "%s", pTab->zName));
+}
 
 /*
 ** Set P4 of the most recently inserted opcode to a column affinity
