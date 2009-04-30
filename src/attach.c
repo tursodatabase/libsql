@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.84 2009/04/08 13:51:51 drh Exp $
+** $Id: attach.c,v 1.85 2009/04/30 01:22:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -103,7 +103,8 @@ static void attachFunc(
   }
   for(i=0; i<db->nDb; i++){
     char *z = db->aDb[i].zName;
-    if( z && zName && sqlite3StrICmp(z, zName)==0 ){
+    assert( z && zName );
+    if( sqlite3StrICmp(z, zName)==0 ){
       sqlite3_snprintf(sizeof(zErr), zErr, 
                        "database %s is already in use", zName);
       goto attach_error;

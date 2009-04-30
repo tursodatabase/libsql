@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.599 2009/04/29 17:49:59 danielk1977 Exp $
+** $Id: btree.c,v 1.600 2009/04/30 01:22:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1523,7 +1523,6 @@ int sqlite3BtreeOpen(
     if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
          || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
       pBt->pageSize = 0;
-      sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
 #ifndef SQLITE_OMIT_AUTOVACUUM
       /* If the magic name ":memory:" will create an in-memory database, then
       ** leave the autoVacuum mode at 0 (do not auto-vacuum), even if
@@ -1545,9 +1544,10 @@ int sqlite3BtreeOpen(
       pBt->incrVacuum = (get4byte(&zDbHeader[36 + 7*4])?1:0);
 #endif
     }
+    rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
+    if( rc ) goto btree_open_out;
     pBt->usableSize = pBt->pageSize - nReserve;
     assert( (pBt->pageSize & 7)==0 );  /* 8-byte alignment of pageSize */
-    sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
    
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
     /* Add the new BtShared object to the linked list sharable BtShareds.
@@ -1991,7 +1991,8 @@ static int lockBtree(BtShared *pBt){
       pBt->usableSize = (u16)usableSize;
       pBt->pageSize = (u16)pageSize;
       freeTempSpace(pBt);
-      sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
+      rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize);
+      if( rc ) goto page1_init_failed;
       return SQLITE_OK;
     }
     if( usableSize<500 ){
