@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.85 2009/04/30 01:22:41 drh Exp $
+** $Id: attach.c,v 1.86 2009/04/30 05:19:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -74,7 +74,6 @@ static void attachFunc(
   const char *zFile;
   Db *aNew;
   char *zErrDyn = 0;
-  char zErr[128];
 
   UNUSED_PARAMETER(NotUsed);
 
@@ -90,23 +89,20 @@ static void attachFunc(
   **     * Specified database name already being used.
   */
   if( db->nDb>=db->aLimit[SQLITE_LIMIT_ATTACHED]+2 ){
-    sqlite3_snprintf(
-      sizeof(zErr), zErr, "too many attached databases - max %d", 
+    zErrDyn = sqlite3MPrintf(db, "too many attached databases - max %d", 
       db->aLimit[SQLITE_LIMIT_ATTACHED]
     );
     goto attach_error;
   }
   if( !db->autoCommit ){
-    sqlite3_snprintf(sizeof(zErr), zErr,
-                     "cannot ATTACH database within transaction");
+    zErrDyn = sqlite3MPrintf(db, "cannot ATTACH database within transaction");
     goto attach_error;
   }
   for(i=0; i<db->nDb; i++){
     char *z = db->aDb[i].zName;
     assert( z && zName );
     if( sqlite3StrICmp(z, zName)==0 ){
-      sqlite3_snprintf(sizeof(zErr), zErr, 
-                       "database %s is already in use", zName);
+      zErrDyn = sqlite3MPrintf(db, "database %s is already in use", zName);
       goto attach_error;
     }
   }
@@ -139,9 +135,9 @@ static void attachFunc(
     if( !aNew->pSchema ){
       rc = SQLITE_NOMEM;
     }else if( aNew->pSchema->file_format && aNew->pSchema->enc!=ENC(db) ){
-      sqlite3_snprintf(sizeof(zErr), zErr, 
+      zErrDyn = sqlite3MPrintf(db, 
         "attached databases must use the same text encoding as main database");
-      goto attach_error;
+      rc = SQLITE_ERROR;
     }
     pPager = sqlite3BtreePager(aNew->pBt);
     sqlite3PagerLockingMode(pPager, db->dfltLockMode);
@@ -204,9 +200,9 @@ static void attachFunc(
     db->nDb = iDb;
     if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
       db->mallocFailed = 1;
-      sqlite3_snprintf(sizeof(zErr),zErr, "out of memory");
-    }else{
-      sqlite3_snprintf(sizeof(zErr),zErr, "unable to open database: %s", zFile);
+      zErrDyn = sqlite3MPrintf(db, "out of memory");
+    }else if( zErrDyn==0 ){
+      zErrDyn = sqlite3MPrintf(db, "unable to open database: %s", zFile);
     }
     goto attach_error;
   }
@@ -218,9 +214,6 @@ attach_error:
   if( zErrDyn ){
     sqlite3_result_error(context, zErrDyn, -1);
     sqlite3DbFree(db, zErrDyn);
-  }else{
-    zErr[sizeof(zErr)-1] = 0;
-    sqlite3_result_error(context, zErr, -1);
   }
   if( rc ) sqlite3_result_error_code(context, rc);
 }
@@ -412,7 +405,7 @@ int sqlite3FixInit(
 ){
   sqlite3 *db;
 
-  if( iDb<0 || iDb==1 ) return 0;
+  if( NEVER(iDb<0) || iDb==1 ) return 0;
   db = pParse->db;
   assert( db->nDb>iDb );
   pFix->pParse = pParse;
@@ -444,7 +437,7 @@ int sqlite3FixSrcList(
   const char *zDb;
   struct SrcList_item *pItem;
 
-  if( pList==0 ) return 0;
+  if( NEVER(pList==0) ) return 0;
   zDb = pFix->zDb;
   for(i=0, pItem=pList->a; i<pList->nSrc; i++, pItem++){
     if( pItem->zDatabase==0 ){
