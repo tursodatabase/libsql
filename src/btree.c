@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.601 2009/04/30 09:10:38 danielk1977 Exp $
+** $Id: btree.c,v 1.602 2009/04/30 13:30:33 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1401,6 +1401,12 @@ static int btreeInvokeBusyHandler(void *pArg){
 ** database file will be deleted when sqlite3BtreeClose() is called.
 ** If zFilename is ":memory:" then an in-memory database is created
 ** that is automatically destroyed when it is closed.
+**
+** If the database is already opened in the same database connection
+** and we are in shared cache mode, then the open will fail with an
+** SQLITE_CONSTRAINT error.  We cannot allow two or more BtShared
+** objects in the same database connection since doing so will lead
+** to problems with locking.
 */
 int sqlite3BtreeOpen(
   const char *zFilename,  /* Name of the file containing the BTree database */
@@ -1466,6 +1472,17 @@ int sqlite3BtreeOpen(
         assert( pBt->nRef>0 );
         if( 0==strcmp(zFullPathname, sqlite3PagerFilename(pBt->pPager))
                  && sqlite3PagerVfs(pBt->pPager)==pVfs ){
+          int iDb;
+          for(iDb=db->nDb-1; iDb>=0; iDb--){
+            Btree *pExisting = db->aDb[iDb].pBt;
+            if( pExisting && pExisting->pBt==pBt ){
+              sqlite3_mutex_leave(mutexShared);
+              sqlite3_mutex_leave(mutexOpen);
+              sqlite3_free(zFullPathname);
+              sqlite3_free(p);
+              return SQLITE_CONSTRAINT;
+            }
+          }
           p->pBt = pBt;
           pBt->nRef++;
           break;
