@@ -12,7 +12,7 @@
 # of these tests is exclusive access mode (i.e. the thing activated by 
 # "PRAGMA locking_mode = EXCLUSIVE").
 #
-# $Id: exclusive.test,v 1.12 2009/04/30 09:10:38 danielk1977 Exp $
+# $Id: exclusive.test,v 1.13 2009/04/30 12:25:59 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -435,7 +435,7 @@ do_test exclusive-5.3 {
   # Two files open: the db and journal.
   set sqlite_open_file_count
   expr $sqlite_open_file_count-$extrafds
-} [expr 3 - ($TEMP_STORE>=2)]
+} [expr 2 - ($TEMP_STORE>=2)]
 do_test exclusive-5.4 {
   execsql {
     INSERT INTO abc SELECT a+10, b+10, c+10 FROM abc;

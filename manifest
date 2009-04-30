@@ -1,5 +1,5 @@
-C Changes\ssqlite3TempInMemory()\sto\stake\sa\sconst\sparameter.\s(CVS\s6576)
-D 2009-04-30T12:25:10
+C Fix\sapparent\stypo\son\sexclusive.test\sin\sthe\s(6575)\scheck-in.\s(CVS\s6577)
+D 2009-04-30T12:25:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -317,7 +317,7 @@ F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
 F test/eval.test bc269c365ba877554948441e91ad5373f9f91be3
-F test/exclusive.test c5f55add88f172cee113801c5463e64d85a1fb28
+F test/exclusive.test ff298dccdcbb70d76db0216cab7074d8b4418fef
 F test/exclusive2.test 6bdf254770a843c2933b54bee9ed239934f0a183
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 80f3cf99f786ffbac19d2b0083673e7fc797030f
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 38f8c5a14cd221af9e115a0fea689f2ff39e30e5
-R 7eb08c4006c0ac1256e65f9f62e6a116
+P aa29a14ca040db25dadbca787aa75be3b7588415
+R e5ecfcd2438204c7aa2bbe68cbf44244
 U drh
-Z 7fcf3d3d79d026f933f6ba6abfb924d3
+Z 7902f9496a68bca062f4a84f7c5dfe66
