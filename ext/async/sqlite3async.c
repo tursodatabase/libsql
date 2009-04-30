@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.5 2009/04/29 18:12:00 shane Exp $
+** $Id: sqlite3async.c,v 1.6 2009/04/30 17:45:34 shane Exp $
 **
 ** This file contains the implementation of an asynchronous IO backend 
 ** for SQLite.
@@ -19,7 +19,7 @@
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_ASYNCIO)
 
 #include "sqlite3async.h"
-#include "sqliteInt.h"
+#include "sqlite3.h"
 #include <stdarg.h>
 #include <string.h>
 #include <assert.h>
@@ -27,6 +27,11 @@
 /* Useful macros used in several places */
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #define MAX(x,y) ((x)>(y)?(x):(y))
+
+#ifndef SQLITE_AMALGAMATION
+/* Macro to mark parameters as unused and silence compiler warnings. */
+#define UNUSED_PARAMETER(x) (void)(x)
+#endif
 
 /* Forward references */
 typedef struct AsyncWrite AsyncWrite;
@@ -242,6 +247,8 @@ static void async_os_shutdown(void);
 */
 #if SQLITE_OS_WIN || defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || defined(__BORLANDC__)
 
+#include <windows.h>
+
 /* The following block contains the win32 specific code. */
 
 #define mutex_held(X) (GetCurrentThreadId()==primitives.aHolder[X])
@@ -302,7 +309,6 @@ static void async_cond_signal(int eCond){
   SetEvent(primitives.aCond[eCond]);
 }
 static void async_sched_yield(void){
-  /* Todo: Find out if win32 offers anything like sched_yield() */
   Sleep(0);
 }
 #else
@@ -703,7 +709,7 @@ static int asyncRead(
 
         if( iBeginIn<0 ) iBeginIn = 0;
         if( iBeginOut<0 ) iBeginOut = 0;
-        nCopy = MIN(pWrite->nByte-iBeginIn, iAmt-iBeginOut);
+        nCopy = (int)MIN(pWrite->nByte-iBeginIn, iAmt-iBeginOut);
 
         if( nCopy>0 ){
           memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], nCopy);
@@ -751,7 +757,7 @@ int asyncFileSize(sqlite3_file *pFile, sqlite3_int64 *piSize){
 
   async_mutex_enter(ASYNC_MUTEX_QUEUE);
 
-  /* Read the filesystem size from the base file. If pBaseRead is NULL, this
+  /* Read the filesystem size from the base file. If pMethods is NULL, this
   ** means the file hasn't been opened yet. In this case all relevant data 
   ** must be in the write-op queue anyway, so we can omit reading from the
   ** file-system.
