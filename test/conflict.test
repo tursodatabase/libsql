@@ -13,7 +13,7 @@
 # This file implements tests for the conflict resolution extension
 # to SQLite.
 #
-# $Id: conflict.test,v 1.31 2008/01/21 16:22:46 drh Exp $
+# $Id: conflict.test,v 1.32 2009/04/30 09:10:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -308,7 +308,7 @@ foreach {i conf1 cmd t0 t1 t2 t3 t4} {
 } {
   if {$t0} {set t1 {column a is not unique}}
   if {[info exists TEMP_STORE] && $TEMP_STORE>=2} {
-    set t3 $t4
+    set t3 0
   } else {
     set t3 [expr {$t3+$t4}]
   }

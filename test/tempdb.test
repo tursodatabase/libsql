@@ -12,7 +12,7 @@
 # The focus of this file is in making sure that rolling back
 # a statement journal works correctly.
 #
-# $Id: tempdb.test,v 1.1 2008/04/15 00:02:00 drh Exp $
+# $Id: tempdb.test,v 1.2 2009/04/30 09:10:38 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -52,4 +52,35 @@ do_test tempdb-1.2 {
   }
 } {}
 
+do_test tempdb-2.1 {
+  set default_in_memory [expr {$TEMP_STORE == 3}]
+  db close
+  sqlite3 db test.db
+} {}
+do_test tempdb-2.2 {
+  execsql {
+    CREATE TABLE t1 (a PRIMARY KEY, b, c);
+    CREATE TABLE t2 (a, b, c);
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2, 3);
+      INSERT INTO t1 VALUES(4, 5, 6);
+      INSERT INTO t2 SELECT * FROM t1;
+  }
+  catchsql { INSERT INTO t1 SELECT * FROM t2 }
+  set sqlite_open_file_count
+} [expr 2 + (0==$default_in_memory)]
+do_test tempdb-2.3 {
+  execsql {
+    PRAGMA temp_store = 'memory';
+    ROLLBACK;
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2, 3);
+      INSERT INTO t1 VALUES(4, 5, 6);
+      INSERT INTO t2 SELECT * FROM t1;
+  }
+  catchsql { INSERT INTO t1 SELECT * FROM t2 }
+  set sqlite_open_file_count
+} {2}
+
 finish_test
+

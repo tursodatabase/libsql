@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.583 2009/04/28 05:27:20 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.584 2009/04/30 09:10:38 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -229,6 +229,12 @@ struct PagerSavepoint {
 **   TODO: It might be easier to set this variable in writeJournalHdr()
 **   and writeMasterJournal() only. Change its meaning to "unsynced data
 **   has been written to the journal".
+**
+** subjInMemory
+**
+**   This is a boolean variable. If true, then any required sub-journal
+**   is opened as an in-memory journal file. If false, then in-memory
+**   sub-journals are only used for in-memory pager files.
 */
 struct Pager {
   sqlite3_vfs *pVfs;          /* OS functions to use for IO */
@@ -262,6 +268,7 @@ struct Pager {
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
   u8 doNotSync;               /* Boolean. While true, do not spill the cache */
   u8 dbSizeValid;             /* Set when dbSize is correct */
+  u8 subjInMemory;            /* True to use in-memory sub-journals */
   Pgno dbSize;                /* Number of pages in the database */
   Pgno dbOrigSize;            /* dbSize before the current transaction */
   Pgno dbFileSize;            /* Number of pages in the database file */
@@ -3905,7 +3912,7 @@ void sqlite3PagerUnref(DbPage *pPg){
 static int openSubJournal(Pager *pPager){
   int rc = SQLITE_OK;
   if( isOpen(pPager->jfd) && !isOpen(pPager->sjfd) ){
-    if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY ){
+    if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY || pPager->subjInMemory ){
       sqlite3MemJournalOpen(pPager->sjfd);
     }else{
       rc = pagerOpentemp(pPager, pPager->sjfd, SQLITE_OPEN_SUBJOURNAL);
@@ -4024,10 +4031,19 @@ static int pager_open_journal(Pager *pPager){
 **
 ** If the journal file is opened (or if it is already open), then a
 ** journal-header is written to the start of it.
+**
+** If the subjInMemory argument is non-zero, then any sub-journal opened
+** within this transaction will be opened as an in-memory file. This
+** has no effect if the sub-journal is already opened (as it may be when
+** running in exclusive mode) or if the transaction does not require a
+** sub-journal. If the subjInMemory argument is zero, then any required
+** sub-journal is implemented in-memory if pPager is an in-memory database, 
+** or using a temporary file otherwise.
 */
-int sqlite3PagerBegin(Pager *pPager, int exFlag){
+int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
   assert( pPager->state!=PAGER_UNLOCK );
+  pPager->subjInMemory = subjInMemory;
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->pInJournal==0 );
     assert( !MEMDB && !pPager->tempFile );
@@ -4112,7 +4128,7 @@ static int pager_write(PgHdr *pPg){
     ** create it if it does not.
     */
     assert( pPager->state!=PAGER_UNLOCK );
-    rc = sqlite3PagerBegin(pPager, 0);
+    rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
     if( rc!=SQLITE_OK ){
       return rc;
     }

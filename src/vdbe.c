@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.839 2009/04/22 17:15:03 drh Exp $
+** $Id: vdbe.c,v 1.840 2009/04/30 09:10:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2464,7 +2464,7 @@ case OP_Savepoint: {
           db->isTransactionSavepoint = 1;
         }else{
           db->nSavepoint++;
-	}
+        }
     
         /* Link the new savepoint into the database handle's list. */
         pNew->pNext = db->pSavepoint;

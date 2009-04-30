@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.542 2009/04/28 15:35:39 danielk1977 Exp $
+** $Id: main.c,v 1.543 2009/04/30 09:10:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1166,6 +1166,38 @@ void *sqlite3_rollback_hook(
 }
 
 /*
+** This function returns true if main-memory should be used instead of
+** a temporary file for transient pager files and statement journals.
+** The value returned depends on the value of db->temp_store (runtime
+** parameter) and the compile time value of SQLITE_TEMP_STORE. The
+** following table describes the relationship between these two values
+** and this functions return value.
+**
+**   SQLITE_TEMP_STORE     db->temp_store     Location of temporary database
+**   -----------------     --------------     ------------------------------
+**   0                     any                file      (return 0)
+**   1                     1                  file      (return 0)
+**   1                     2                  memory    (return 1)
+**   1                     0                  file      (return 0)
+**   2                     1                  file      (return 0)
+**   2                     2                  memory    (return 1)
+**   2                     0                  memory    (return 1)
+**   3                     any                memory    (return 1)
+*/
+int sqlite3TempInMemory(sqlite3 *db){
+#if SQLITE_TEMP_STORE==1
+  return ( db->temp_store==2 );
+#endif
+#if SQLITE_TEMP_STORE==2
+  return ( db->temp_store!=1 );
+#endif
+#if SQLITE_TEMP_STORE==3
+  return 1;
+#endif
+  return 0;
+}
+
+/*
 ** This routine is called to create a connection to a database BTree
 ** driver.  If zFilename is the name of a file, then that file is
 ** opened and used.  If zFilename is the magic name ":memory:" then
@@ -1175,20 +1207,8 @@ void *sqlite3_rollback_hook(
 ** soon as the connection is closed.
 **
 ** A virtual database can be either a disk file (that is automatically
-** deleted when the file is closed) or it an be held entirely in memory,
-** depending on the values of the SQLITE_TEMP_STORE compile-time macro and the
-** db->temp_store variable, according to the following chart:
-**
-**   SQLITE_TEMP_STORE     db->temp_store     Location of temporary database
-**   -----------------     --------------     ------------------------------
-**   0                     any                file
-**   1                     1                  file
-**   1                     2                  memory
-**   1                     0                  file
-**   2                     1                  file
-**   2                     2                  memory
-**   2                     0                  memory
-**   3                     any                memory
+** deleted when the file is closed) or it an be held entirely in memory.
+** The sqlite3TempInMemory() function is used to determine which.
 */
 int sqlite3BtreeFactory(
   const sqlite3 *db,        /* Main database when opening aux otherwise 0 */
@@ -1209,22 +1229,11 @@ int sqlite3BtreeFactory(
   if( db->flags & SQLITE_NoReadlock ){
     btFlags |= BTREE_NO_READLOCK;
   }
-  if( zFilename==0 ){
-#if SQLITE_TEMP_STORE==0
-    /* Do nothing */
-#endif
 #ifndef SQLITE_OMIT_MEMORYDB
-#if SQLITE_TEMP_STORE==1
-    if( db->temp_store==2 ) zFilename = ":memory:";
-#endif
-#if SQLITE_TEMP_STORE==2
-    if( db->temp_store!=1 ) zFilename = ":memory:";
-#endif
-#if SQLITE_TEMP_STORE==3
+  if( zFilename==0 && sqlite3TempInMemory(db) ){
     zFilename = ":memory:";
-#endif
-#endif /* SQLITE_OMIT_MEMORYDB */
   }
+#endif
 
   if( (vfsFlags & SQLITE_OPEN_MAIN_DB)!=0 && (zFilename==0 || *zFilename==0) ){
     vfsFlags = (vfsFlags & ~SQLITE_OPEN_MAIN_DB) | SQLITE_OPEN_TEMP_DB;
