@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.863 2009/04/30 09:10:38 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.864 2009/04/30 12:25:10 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2765,7 +2765,7 @@ int sqlite3TransferBindings(sqlite3_stmt *, sqlite3_stmt *);
 int sqlite3Reprepare(Vdbe*);
 void sqlite3ExprListCheckLength(Parse*, ExprList*, const char*);
 CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
-int sqlite3TempInMemory(sqlite3 *);
+int sqlite3TempInMemory(const sqlite3*);
 
 
 

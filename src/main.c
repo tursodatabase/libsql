@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.543 2009/04/30 09:10:38 danielk1977 Exp $
+** $Id: main.c,v 1.544 2009/04/30 12:25:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1184,7 +1184,7 @@ void *sqlite3_rollback_hook(
 **   2                     0                  memory    (return 1)
 **   3                     any                memory    (return 1)
 */
-int sqlite3TempInMemory(sqlite3 *db){
+int sqlite3TempInMemory(const sqlite3 *db){
 #if SQLITE_TEMP_STORE==1
   return ( db->temp_store==2 );
 #endif

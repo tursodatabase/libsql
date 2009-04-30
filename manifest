@@ -1,5 +1,5 @@
-C When\sSQLite\sis\sconfigured\sto\suse\sin-memory\stemp\sfiles\s(either\sby\ssetting\sSQLITE_TEMP_STORE\sduring\scompilation\sor\susing\sthe\stemp_store\spragma\sat\srun\stime),\sstore\sstatement/savepoint\sjournals\sin\smemory\salso.\sTicket\s#3825.\s(CVS\s6575)
-D 2009-04-30T09:10:38
+C Changes\ssqlite3TempInMemory()\sto\stake\sa\sconst\sparameter.\s(CVS\s6576)
+D 2009-04-30T12:25:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c cdb0f64e53c3d84949b96d50090cc31646fc2857
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c 468258773bfcd01ca637d23743188e97ab28f77f
+F src/main.c 96da66bcc2639d9ed3b0d223853ba79e34da7025
 F src/malloc.c a1f0f8ae110abb8eb546e259ab0eaea7e0f9b588
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -162,7 +162,7 @@ F src/select.c 40748e8044b79d41ba04ce1014ae45434ed452d3
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 2b7667d7912abe14af4ab84e7c4ed022e734f7ba
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 004344b097e240b7c22a1755360b2c6ebd10c18c
+F src/sqliteInt.h 892933c96168a6606f931cf261eef2e0781a51e4
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -725,7 +725,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f082bf36051fef92ddda0339777a00cd1f0ba988
-R 18faf906fa9b82f640353267c330ca5b
-U danielk1977
-Z 5e9ac0bdebbeb1ca8a2fe56ff9ec8057
+P 38f8c5a14cd221af9e115a0fea689f2ff39e30e5
+R 7eb08c4006c0ac1256e65f9f62e6a116
+U drh
+Z 7fcf3d3d79d026f933f6ba6abfb924d3
