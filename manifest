@@ -1,5 +1,5 @@
-C Disallow\sattaching\sthe\ssame\sdatabase\smultiple\stimes\sto\sthe\ssame\sdb\sconnection\nin\sshared\scache\smode,\ssince\sdoing\sso\sleads\sto\sdeadlock.\s(CVS\s6578)
-D 2009-04-30T13:30:33
+C Documentation\supdates\sfor\ssqlite3_set_authorizer().\s\sNo\schanges\sto\scode.\s(CVS\s6579)
+D 2009-04-30T15:59:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/resolve.c 094e44450371fb27869eb8bf679aacbe51fdc56d
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 40748e8044b79d41ba04ce1014ae45434ed452d3
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in 2b7667d7912abe14af4ab84e7c4ed022e734f7ba
+F src/sqlite.h.in 926985a312747e284c21ab32a8e8231a3bed9bd1
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 892933c96168a6606f931cf261eef2e0781a51e4
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -726,7 +726,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 95d22405e096355ce815cdb0908c4ef04107b490
-R 8d3121c371bc6b3d2bb493dbba26f385
+P 715f14f1dcaf604d4794bf3e18e245d4f8c5d5a9
+R 9ff6d5fc60c668574c7837abdc1a2449
 U drh
-Z a41c8b6fc921420eb6f0176ff357b69b
+Z c4b3358b3d2850b6c0907aa2ba7de5e1
