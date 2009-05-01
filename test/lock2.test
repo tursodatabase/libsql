@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks between competing processes.
 #
-# $Id: lock2.test,v 1.10 2009/02/05 16:31:46 drh Exp $
+# $Id: lock2.test,v 1.11 2009/05/01 10:55:34 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -41,6 +41,9 @@ proc testfixture {chan cmd} {
     set line [gets $chan]
     if { $line == "OVER" } { 
       return $r
+    }
+    if {[eof $chan]} {
+      return "ERROR: Child process hung up"
     }
     append r $line
   }
