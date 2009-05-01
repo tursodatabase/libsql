@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.261 2009/04/30 00:11:10 drh Exp $
+** $Id: insert.c,v 1.262 2009/05/01 02:08:04 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -781,12 +781,14 @@ void sqlite3Insert(
     regTrigRowid = sqlite3GetTempReg(pParse);
     if( keyColumn<0 ){
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
-    }else if( useTempTable ){
-      sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regTrigRowid);
     }else{
       int j1;
-      assert( pSelect==0 );  /* Otherwise useTempTable is true */
-      sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regTrigRowid);
+      if( useTempTable ){
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regTrigRowid);
+      }else{
+        assert( pSelect==0 );  /* Otherwise useTempTable is true */
+        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regTrigRowid);
+      }
       j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regTrigRowid);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
       sqlite3VdbeJumpHere(v, j1);
