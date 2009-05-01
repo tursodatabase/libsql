@@ -1,5 +1,5 @@
-C Change\slock2.test\sso\sthat\sit\sdoes\snot\senter\sa\sbusy\sloop\sif\sthe\schild\sprocess\sexists\sunexpectedly.\s(CVS\s6586)
-D 2009-05-01T10:55:34
+C Update\sPRAGMA\sintegrity_check\sso\sthat\sit\streats\sSQLITE_IOERR_NOMEM\serrors\nfrom\sunderlying\scomponents\sthe\ssame\sas\sSQLITE_NOMEM\serrors.\s(CVS\s6587)
+D 2009-05-01T13:16:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 2165bfef1b4bb90a84565c63ae06cad2954d1d3c
+F src/btree.c 4bef945f2b711674608e8ffde709007ce29245cc
 F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c dca0ad77c88cb00f6a11cc080a4f3285672cfa37
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 514efc7312d725c3fe35741e8c000526f3bdb3a6
-R 43434d0b068bdcca53adc3212d1ca6a5
-U danielk1977
-Z d1c8ee1cbacb1e40cfb565e00a039418
+P 164a7f5a45c3e7f7a73899678c374535b270b130
+R e23bfab619e50432ac8644e3affdcb37
+U drh
+Z 060f20e2376b8c5048f6d47d76776f0c
