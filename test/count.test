@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing "SELECT count(*)" statements.
 #
-# $Id: count.test,v 1.4 2009/04/02 20:27:28 drh Exp $
+# $Id: count.test,v 1.5 2009/05/01 21:13:37 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -155,6 +155,7 @@ ifcapable vtab {
 }
 
 do_test count-3.1 {
+breakpoint
   execsql {
     CREATE TABLE t3(a, b);
     SELECT a FROM (SELECT count(*) AS a FROM t3) WHERE a==0;

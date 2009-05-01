@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.510 2009/04/24 15:46:22 drh Exp $
+** $Id: select.c,v 1.511 2009/05/01 21:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -193,42 +193,7 @@ static void setToken(Token *p, const char *z){
   p->z = (u8*)z;
   p->n = z ? sqlite3Strlen30(z) : 0;
   p->dyn = 0;
-}
-
-/*
-** Set the token to the double-quoted and escaped version of the string pointed
-** to by z. For example;
-**
-**    {a"bc}  ->  {"a""bc"}
-*/
-static void setQuotedToken(Parse *pParse, Token *p, const char *z){
-
-  /* Check if the string appears to be quoted using "..." or `...`
-  ** or [...] or '...' or if the string contains any " characters.  
-  ** If it does, then record a version of the string with the special
-  ** characters escaped.
-  */
-  const char *z2 = z;
-  if( *z2!='[' && *z2!='`' && *z2!='\'' ){
-    while( *z2 ){
-      if( *z2=='"' ) break;
-      z2++;
-    }
-  }
-
-  if( *z2 ){
-    /* String contains " characters - copy and quote the string. */
-    p->z = (u8 *)sqlite3MPrintf(pParse->db, "\"%w\"", z);
-    if( p->z ){
-      p->n = sqlite3Strlen30((char *)p->z);
-      p->dyn = 1;
-    }
-  }else{
-    /* String contains no " characters - copy the pointer. */
-    p->z = (u8*)z;
-    p->n = (int)(z2 - z);
-    p->dyn = 0;
-  }
+  p->quoted = 0;
 }
 
 /*
@@ -3228,12 +3193,12 @@ static int selectExpander(Walker *pWalker, Select *p){
             }
             pRight = sqlite3PExpr(pParse, TK_ID, 0, 0, 0);
             if( pRight==0 ) break;
-            setQuotedToken(pParse, &pRight->token, zName);
+            setToken(&pRight->token, zName);
             if( longNames || pTabList->nSrc>1 ){
               Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, 0);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
               if( pExpr==0 ) break;
-              setQuotedToken(pParse, &pLeft->token, zTabName);
+              setToken(&pLeft->token, zTabName);
               setToken(&pExpr->span, 
                   sqlite3MPrintf(db, "%s.%s", zTabName, zName));
               pExpr->span.dyn = 1;

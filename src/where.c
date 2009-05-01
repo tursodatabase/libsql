@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.391 2009/04/29 11:50:54 danielk1977 Exp $
+** $Id: where.c,v 1.392 2009/05/01 21:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -625,6 +625,7 @@ static int isLikeOrGlob(
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
   int c;                     /* One character in z[] */
+  int n;                     /* Length of string z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
   char wc[3];                /* Wildcard characters */
   CollSeq *pColl;            /* Collating sequence for LHS */
@@ -655,11 +656,13 @@ static int isLikeOrGlob(
       (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
     return 0;
   }
-  sqlite3DequoteExpr(pRight);
-  z = (char *)pRight->token.z;
+  z = (const char*)pRight->token.z;
   cnt = 0;
   if( z ){
-    while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){ cnt++; }
+    n = pRight->token.n;
+    while( cnt<n && (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
+      cnt++;
+    }
   }
   if( cnt==0 || 255==(u8)z[cnt-1] ){
     return 0;
@@ -1160,7 +1163,6 @@ static void exprAnalyze(
     if( pStr1 ){
       sqlite3TokenCopy(db, &pStr1->token, &pRight->token);
       pStr1->token.n = nPattern;
-      pStr1->flags = EP_Dequoted;
     }
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
     if( !db->mallocFailed ){

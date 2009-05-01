@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.864 2009/04/30 12:25:10 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.865 2009/05/01 21:13:37 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1354,8 +1354,9 @@ struct Index {
 */
 struct Token {
   const unsigned char *z; /* Text of the token.  Not NULL-terminated! */
-  unsigned dyn  : 1;      /* True for malloced memory, false for static */
-  unsigned n    : 31;     /* Number of characters in this token */
+  unsigned dyn    : 1;    /* True for malloced memory, false for static */
+  unsigned quoted : 1;    /* True if token still has its quotes */
+  unsigned n      : 30;   /* Number of characters in this token */
 };
 
 /*
@@ -1517,7 +1518,7 @@ struct Expr {
 #define EP_Error      0x0008  /* Expression contains one or more errors */
 #define EP_Distinct   0x0010  /* Aggregate function with DISTINCT keyword */
 #define EP_VarSelect  0x0020  /* pSelect is correlated, not constant */
-#define EP_Dequoted   0x0040  /* True if the string has been dequoted */
+#define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
 #define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
@@ -2360,8 +2361,7 @@ char *sqlite3MAppendf(sqlite3*,char*,const char*,...);
 void sqlite3SetString(char **, sqlite3*, const char*, ...);
 void sqlite3ErrorMsg(Parse*, const char*, ...);
 void sqlite3ErrorClear(Parse*);
-void sqlite3Dequote(char*);
-void sqlite3DequoteExpr(Expr*);
+int sqlite3Dequote(char*);
 int sqlite3KeywordCode(const unsigned char*, int);
 int sqlite3RunParser(Parse*, const char*, char **);
 void sqlite3FinishCoding(Parse*);

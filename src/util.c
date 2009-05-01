@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.251 2009/04/17 15:18:48 drh Exp $
+** $Id: util.c,v 1.252 2009/05/01 21:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -203,21 +203,28 @@ void sqlite3ErrorClear(Parse *pParse){
 ** input does not begin with a quote character, then this routine
 ** is a no-op.
 **
+** The input string must be zero-terminated.  A new zero-terminator
+** is added to the dequoted string.
+**
+** The return value is -1 if no dequoting occurs or the length of the
+** dequoted string, exclusive of the zero terminator, if dequoting does
+** occur.
+**
 ** 2002-Feb-14: This routine is extended to remove MS-Access style
 ** brackets from around identifers.  For example:  "[a-b-c]" becomes
 ** "a-b-c".
 */
-void sqlite3Dequote(char *z){
+int sqlite3Dequote(char *z){
   char quote;
   int i, j;
-  if( z==0 ) return;
+  if( z==0 ) return -1;
   quote = z[0];
   switch( quote ){
     case '\'':  break;
     case '"':   break;
     case '`':   break;                /* For MySQL compatibility */
     case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
-    default:    return;
+    default:    return -1;
   }
   for(i=1, j=0; z[i]; i++){
     if( z[i]==quote ){
@@ -225,13 +232,14 @@ void sqlite3Dequote(char *z){
         z[j++] = quote;
         i++;
       }else{
-        z[j++] = 0;
         break;
       }
     }else{
       z[j++] = z[i];
     }
   }
+  z[j] = 0;
+  return j;
 }
 
 /* Convenient short-hand */

@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.274 2009/04/06 14:16:43 drh Exp $
+** @(#) $Id: parse.y,v 1.275 2009/05/01 21:13:37 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -166,6 +166,8 @@ columnlist ::= column.
 column(A) ::= columnid(X) type carglist. {
   A.z = X.z;
   A.n = (int)(pParse->sLastToken.z-X.z) + pParse->sLastToken.n;
+  A.quoted = 0;
+  A.dyn = 0;
 }
 columnid(A) ::= nm(X). {
   sqlite3AddColumn(pParse,&X);

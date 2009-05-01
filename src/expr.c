@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.430 2009/04/28 12:08:15 danielk1977 Exp $
+** $Id: expr.c,v 1.431 2009/05/01 21:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -407,21 +407,18 @@ Expr *sqlite3Expr(
     int c;
     assert( pToken->dyn==0 );
     pNew->span = *pToken;
- 
-    /* The pToken->z value is read-only.  But the new expression
-    ** node created here might be passed to sqlite3DequoteExpr() which
-    ** will attempt to modify pNew->token.z.  Hence, if the token
-    ** is quoted, make a copy now so that DequoteExpr() will change
-    ** the copy rather than the original text.
-    */
     if( pToken->n>=2 
          && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
       sqlite3TokenCopy(db, &pNew->token, pToken);
+      if( pNew->token.z ){
+        pNew->token.n = sqlite3Dequote((char*)pNew->token.z);
+        assert( pNew->token.n==sqlite3Strlen30((char*)pNew->token.z) );
+      }
+      if( c=='"' ) pNew->flags |= EP_DblQuoted;
     }else{
       pNew->token = *pToken;
-      pNew->flags |= EP_Dequoted;
-      VVA_ONLY( pNew->vvaFlags |= EVVA_ReadOnlyToken; )
     }
+    pNew->token.quoted = 0;
   }else if( pLeft ){
     if( pRight ){
       if( pRight->span.dyn==0 && pLeft->span.dyn==0 ){
@@ -656,18 +653,6 @@ void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p==0 ) return;
   sqlite3ExprClear(db, p);
   sqlite3DbFree(db, p);
-}
-
-/*
-** The Expr.token field might be a string literal that is quoted.
-** If so, remove the quotation marks.
-*/
-void sqlite3DequoteExpr(Expr *p){
-  if( !ExprHasAnyProperty(p, EP_Dequoted) ){
-    ExprSetProperty(p, EP_Dequoted);
-    assert( (p->vvaFlags & EVVA_ReadOnlyToken)==0 );
-    sqlite3Dequote((char*)p->token.z);
-  }
 }
 
 /*
@@ -1595,7 +1580,7 @@ void sqlite3CodeSubselect(
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.
       */
-      static const Token one = { (u8*)"1", 0, 1 };
+      static const Token one = { (u8*)"1", 0, 0, 1 };
       Select *pSel;
       SelectDest dest;
 
@@ -2082,8 +2067,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_STRING: {
-      sqlite3DequoteExpr(pExpr);
-      sqlite3VdbeAddOp4(v,OP_String8, 0, target, 0,
+      sqlite3VdbeAddOp4(v, OP_String8, 0, target, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       break;
     }
@@ -2591,7 +2575,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
          assert( pExpr->affinity==OE_Rollback ||
                  pExpr->affinity == OE_Abort ||
                  pExpr->affinity == OE_Fail );
-         sqlite3DequoteExpr(pExpr);
          sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->affinity, 0,
                         (char*)pExpr->token.z, pExpr->token.n);
       } else {

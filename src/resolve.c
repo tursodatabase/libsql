@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.20 2009/03/05 04:23:47 shane Exp $
+** $Id: resolve.c,v 1.21 2009/05/01 21:13:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -319,7 +319,7 @@ static int lookupName(
   ** Because no reference was made to outer contexts, the pNC->nRef
   ** fields are not changed in any context.
   */
-  if( cnt==0 && zTab==0 && pColumnToken->z[0]=='"' ){
+  if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
     sqlite3DbFree(db, zCol);
     pExpr->op = TK_STRING;
     pExpr->pTab = 0;
