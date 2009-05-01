@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.262 2009/05/01 02:08:04 drh Exp $
+** $Id: insert.c,v 1.263 2009/05/01 15:17:48 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -643,7 +643,7 @@ void sqlite3Insert(
   if( pColumn==0 && nColumn && nColumn!=(pTab->nCol-nHidden) ){
     sqlite3ErrorMsg(pParse, 
        "table %S has %d columns but %d values were supplied",
-       pTabList, 0, pTab->nCol, nColumn);
+       pTabList, 0, pTab->nCol-nHidden, nColumn);
     goto insert_cleanup;
   }
   if( pColumn!=0 && nColumn!=pColumn->nId ){

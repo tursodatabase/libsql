@@ -1,5 +1,5 @@
-C Update\sPRAGMA\sintegrity_check\sso\sthat\sit\streats\sSQLITE_IOERR_NOMEM\serrors\nfrom\sunderlying\scomponents\sthe\ssame\sas\sSQLITE_NOMEM\serrors.\s(CVS\s6587)
-D 2009-05-01T13:16:55
+C Fix\san\serror\smessage\sthat\sis\sgenerated\sif\sthe\snumber\sof\scolumns\sdo\snot\nmatch\son\san\sINSERT\sinto\sa\svirtual\stable\swith\shidden\scolumns.\s(CVS\s6588)
+D 2009-05-01T15:17:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 0caea57f020226903cd8591125732e1e19f17f14
 F src/hash.h 457e230c3b2bd3c56742824d43b16618ff30d7c0
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 76667db0ca22b0c9f3a04625e5380612d9eb0ab5
+F src/insert.c bd12b428bf5d2ec9addb6fcac80ac64ed5b5830e
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 164a7f5a45c3e7f7a73899678c374535b270b130
-R e23bfab619e50432ac8644e3affdcb37
+P 26444f2a4426d2e51464ef69ed83d3c78be2c11f
+R a7b7da6fb08bfdf4e4ff65e830279077
 U drh
-Z 060f20e2376b8c5048f6d47d76776f0c
+Z 31a5607fdeaa1ad6f85e12d6d8547948
