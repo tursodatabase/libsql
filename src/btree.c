@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.603 2009/05/01 13:16:55 drh Exp $
+** $Id: btree.c,v 1.604 2009/05/02 07:36:50 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6150,8 +6150,17 @@ int sqlite3BtreeInsert(
     return pCur->skip;
   }
 
-  /* Save the positions of any other cursors open on this table */
-  sqlite3BtreeClearCursor(pCur);
+  /* Save the positions of any other cursors open on this table.
+  **
+  ** In some cases, the call to sqlite3BtreeMoveto() below is a no-op. For
+  ** example, when inserting data into a table with auto-generated integer
+  ** keys, the VDBE layer invokes sqlite3BtreeLast() to figure out the 
+  ** integer key to use. It then calls this function to actually insert the 
+  ** data into the intkey B-Tree. In this case sqlite3BtreeMoveto() recognizes
+  ** that the cursor is already where it needs to be and returns without
+  ** doing any work. To avoid thwarting these optimizations, it is important
+  ** not to clear the cursor here.
+  */
   if( 
     SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) ||
     SQLITE_OK!=(rc = sqlite3BtreeMoveto(pCur, pKey, nKey, appendBias, &loc))

@@ -1,5 +1,5 @@
-C When\schecking\sindices\sfor\sxfer\scompatibility,\scompare\scollating\ssequences\nby\sstring,\snot\sby\spointer.\s(CVS\s6590)
-D 2009-05-02T00:28:20
+C Do\snot\sreset\sthe\scursor\sbefore\sseeking\sit\sin\ssqlite3BtreeInsert().\sThis\sspeeds\sup\sINSERT\soperations\sthat\suse\sauto-generated\srowid\svalues.\s(CVS\s6591)
+D 2009-05-02T07:36:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 4bef945f2b711674608e8ffde709007ce29245cc
+F src/btree.c 1201cba9e4ccd029a2b88431d14e315c086af6ba
 F src/btree.h 99fcc7e8c4a1e35afe271bcb38de1a698dfc904e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c a079f965feea2d0b469b293e09cd0ac41be1272f
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 12bcb03d9b9e1a31c1a3c67cbb4263cc0af2f3d0
-R 8edf51cebaa75e1ff454593543001664
-U drh
-Z 2f79b9c87cb7ff06d995b9e724df5941
+P 7d2b80c7addc2d03d49647da9c6df9113f01349d
+R be37f24bb5752583479cd908d65ba960
+U danielk1977
+Z 771348bde250b0527ce1a0ce0c034f60
