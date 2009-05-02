@@ -1,5 +1,5 @@
-C Remove\sthe\saFKey\shash\stable,\swhich\swas\snot\sbeing\sused.\s\sSimplify\sthe\nFKey\sobject.\s\sSimplify\sthe\shash.c\smodule\ssince\sthe\scopyKey\sparameter\nformerly\sused\sonly\sby\saFKey\sis\snow\sno\slonger\srequired.\s(CVS\s6594)
-D 2009-05-02T13:29:38
+C Simplifications\sto\sthe\suniqueness\sconstraint\sfailure\serror\smessage\ngeneration\scode.\s(CVS\s6595)
+D 2009-05-02T15:46:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 7e90268f62662dc8ccb9da1e93090ea64481e4f8
 F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 0805018acaa97c5f5b83d4e058da821bc12fa0c6
+F src/insert.c a655cd5e3aeb36039cef9653f050c53e2d5502dc
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
@@ -666,7 +666,7 @@ F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/types.test 98e7a631bddf0806204358b452b02d0e319318a6
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
-F test/unique.test 0253c4227a5dc533e312202ce21ecfad18058d18
+F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
 F test/update.test 8bc86fd7ef1a00014f76dc6a6a7c974df4aef172
 F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 68e39b2228b4b772166debef4a82accf6ddd32f3
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 2229accef308db9feac4e1de16b57e7f680dbb1a
-R 7adc2aa8ad28fd5fae72c98955166e30
+P 80c43a355c6e482457abc2f9c3ad3a565cec55fb
+R 8c49dd8877751309177109310f9f6e17
 U drh
-Z de5878a9bc4d8c7d1245568e36e5b246
+Z 5db7a34baf28b41b86637568773d40b6

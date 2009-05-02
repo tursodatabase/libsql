@@ -12,7 +12,7 @@
 # focus of this file is testing the CREATE UNIQUE INDEX statement,
 # and primary keys, and the UNIQUE constraint on table columns
 #
-# $Id: unique.test,v 1.8 2005/06/24 03:53:06 drh Exp $
+# $Id: unique.test,v 1.9 2009/05/02 15:46:47 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -248,6 +248,6 @@ do_test unique-5.2 {
   catchsql {
     INSERT INTO t5 VALUES(1,2,3,4,5,6);
   }
-} {1 {columns first_column_with_long_name, second_column_with_long_name, third_column_with_long_name, fourth_column_with_long_name, fifth_column_with_long_name, ... are not unique}}
+} {1 {columns first_column_with_long_name, second_column_with_long_name, third_column_with_long_name, fourth_column_with_long_name, fifth_column_with_long_name, sixth_column_with_long_name are not unique}}
 
 finish_test

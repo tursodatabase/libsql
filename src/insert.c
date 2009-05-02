@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.264 2009/05/02 00:28:20 drh Exp $
+** $Id: insert.c,v 1.265 2009/05/02 15:46:47 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -435,7 +435,7 @@ void sqlite3Insert(
   */
   assert( pTabList->nSrc==1 );
   zTab = pTabList->a[0].zName;
-  if( zTab==0 ) goto insert_cleanup;
+  if( NEVER(zTab==0) ) goto insert_cleanup;
   pTab = sqlite3SrcListLookup(pParse, pTabList);
   if( pTab==0 ){
     goto insert_cleanup;
@@ -557,7 +557,8 @@ void sqlite3Insert(
 
     /* Resolve the expressions in the SELECT statement and execute it. */
     rc = sqlite3Select(pParse, pSelect, &dest);
-    if( rc || pParse->nErr || db->mallocFailed ){
+    assert( pParse->nErr==0 || rc );
+    if( rc || NEVER(pParse->nErr) || db->mallocFailed ){
       goto insert_cleanup;
     }
     sqlite3VdbeAddOp2(v, OP_Integer, 1, regEof);         /* EOF <- 1 */
@@ -1167,7 +1168,8 @@ void sqlite3GenerateConstraintChecks(
         sqlite3VdbeAddOp2(v, OP_IsNull, regData+i, ignoreDest);
         break;
       }
-      case OE_Replace: {
+      default: {
+        assert( onError==OE_Replace );
         j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regData+i);
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regData+i);
         sqlite3VdbeJumpHere(v, j1);
@@ -1295,30 +1297,25 @@ void sqlite3GenerateConstraintChecks(
       case OE_Rollback:
       case OE_Abort:
       case OE_Fail: {
-        int j, n1, n2;
-        char zErrMsg[200];
-        sqlite3_snprintf(ArraySize(zErrMsg), zErrMsg,
-                         pIdx->nColumn>1 ? "columns " : "column ");
-        n1 = sqlite3Strlen30(zErrMsg);
-        for(j=0; j<pIdx->nColumn && n1<ArraySize(zErrMsg)-30; j++){
+        int j;
+        StrAccum errMsg;
+        const char *zSep;
+        char *zErr;
+
+        sqlite3StrAccumInit(&errMsg, 0, 0, 200);
+        errMsg.db = pParse->db;
+        zSep = pIdx->nColumn>1 ? "columns " : "column ";
+        for(j=0; j<pIdx->nColumn; j++){
           char *zCol = pTab->aCol[pIdx->aiColumn[j]].zName;
-          n2 = sqlite3Strlen30(zCol);
-          if( j>0 ){
-            sqlite3_snprintf(ArraySize(zErrMsg)-n1, &zErrMsg[n1], ", ");
-            n1 += 2;
-          }
-          if( n1+n2>ArraySize(zErrMsg)-30 ){
-            sqlite3_snprintf(ArraySize(zErrMsg)-n1, &zErrMsg[n1], "...");
-            n1 += 3;
-            break;
-          }else{
-            sqlite3_snprintf(ArraySize(zErrMsg)-n1, &zErrMsg[n1], "%s", zCol);
-            n1 += n2;
-          }
+          sqlite3StrAccumAppend(&errMsg, zSep, -1);
+          zSep = ", ";
+          sqlite3StrAccumAppend(&errMsg, zCol, -1);
         }
-        sqlite3_snprintf(ArraySize(zErrMsg)-n1, &zErrMsg[n1], 
-            pIdx->nColumn>1 ? " are not unique" : " is not unique");
-        sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0, zErrMsg,0);
+        sqlite3StrAccumAppend(&errMsg,
+            pIdx->nColumn>1 ? " are not unique" : " is not unique", -1);
+        zErr = sqlite3StrAccumFinish(&errMsg);
+        sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0, zErr, 0);
+        sqlite3DbFree(errMsg.db, zErr);
         break;
       }
       case OE_Ignore: {
@@ -1326,7 +1323,8 @@ void sqlite3GenerateConstraintChecks(
         sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
         break;
       }
-      case OE_Replace: {
+      default: {
+        assert( onError==OE_Replace );
         sqlite3GenerateRowDelete(pParse, pTab, baseCur, regR, 0);
         seenReplace = 1;
         break;
