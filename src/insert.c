@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.263 2009/05/01 15:17:48 drh Exp $
+** $Id: insert.c,v 1.264 2009/05/02 00:28:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1489,7 +1489,7 @@ static int xferCompatibleIndex(Index *pDest, Index *pSrc){
     if( pSrc->aSortOrder[i]!=pDest->aSortOrder[i] ){
       return 0;   /* Different sort orders */
     }
-    if( pSrc->azColl[i]!=pDest->azColl[i] ){
+    if( !xferCompatibleCollation(pSrc->azColl[i],pDest->azColl[i]) ){
       return 0;   /* Different collating sequences */
     }
   }
