@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.604 2009/05/02 07:36:50 danielk1977 Exp $
+** $Id: btree.c,v 1.605 2009/05/02 10:03:09 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3921,6 +3921,22 @@ int sqlite3BtreeLast(BtCursor *pCur, int *pRes){
  
   assert( cursorHoldsMutex(pCur) );
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
+
+  /* If the cursor already points to the last entry, this is a no-op. */
+  if( CURSOR_VALID==pCur->eState && pCur->atLast ){
+#ifdef SQLITE_DEBUG
+    /* This block serves to assert() that the cursor really does point 
+    ** to the last entry in the b-tree. */
+    int ii;
+    for(ii=0; ii<pCur->iPage; ii++){
+      assert( pCur->aiIdx[ii]==pCur->apPage[ii]->nCell );
+    }
+    assert( pCur->aiIdx[pCur->iPage]==pCur->apPage[pCur->iPage]->nCell-1 );
+    assert( pCur->apPage[pCur->iPage]->leaf );
+#endif
+    return SQLITE_OK;
+  }
+
   rc = moveToRoot(pCur);
   if( rc==SQLITE_OK ){
     if( CURSOR_INVALID==pCur->eState ){
@@ -6210,17 +6226,42 @@ int sqlite3BtreeInsert(
     assert( pPage->leaf );
   }
   rc = insertCell(pPage, idx, newCell, szNew, 0, 0);
-  if( rc==SQLITE_OK ){
-    rc = balance(pCur, 1);
-  }
+  assert( rc!=SQLITE_OK || pPage->nCell>0 || pPage->nOverflow>0 );
 
+  /* If no error has occured, call balance() to deal with any overflow and
+  ** move the cursor to point at the root of the table (since balance may
+  ** have rearranged the table in such a way as to invalidate BtCursor.apPage[]
+  ** or BtCursor.aiIdx[]).
+  **
+  ** Except, if all of the following are true, do nothing:
+  **
+  **   * Inserting the new cell did not cause overflow,
+  **
+  **   * Before inserting the new cell the cursor was pointing at the 
+  **     largest key in an intkey B-Tree, and
+  **
+  **   * The key value associated with the new cell is now the largest 
+  **     in the B-Tree.
+  **
+  ** In this case the cursor can be safely left pointing at the (new) 
+  ** largest key value in the B-Tree. Doing so speeds up inserting a set
+  ** of entries with increasing integer key values via a single cursor
+  ** (comes up with "INSERT INTO ... SELECT ..." statements), as 
+  ** the next insert operation is not required to seek the cursor.
+  */
+  if( rc==SQLITE_OK 
+   && (pPage->nOverflow || !pCur->atLast || loc>=0 || !pCur->apPage[0]->intKey)
+  ){
+    rc = balance(pCur, 1);
+    if( rc==SQLITE_OK ){
+      moveToRoot(pCur);
+    }
+  }
+  
   /* Must make sure nOverflow is reset to zero even if the balance()
   ** fails.  Internal data structure corruption will result otherwise. */
   pCur->apPage[pCur->iPage]->nOverflow = 0;
 
-  if( rc==SQLITE_OK ){
-    moveToRoot(pCur);
-  }
 end_insert:
   return rc;
 }
