@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is the code in rowhash.c.
 #
-# $Id: rowhash.test,v 1.4 2009/04/28 15:48:09 danielk1977 Exp $
+# $Id: rowhash.test,v 1.5 2009/05/02 12:02:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -47,7 +47,7 @@ if {[working_64bit_int]} {
   expr srand(1)
   for {set i 4} {$i < 10} {incr i} {
     for {set j 0} {$j < 5000} {incr j} {
-        lappend L [expr int(rand()*10000000000)]
+        lappend L [expr int(rand()*1000000000)]
     }
     do_keyset_test rowhash-2.$i $L
   }
