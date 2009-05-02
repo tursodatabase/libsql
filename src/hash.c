@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.36 2009/04/28 17:33:16 drh Exp $
+** $Id: hash.c,v 1.37 2009/05/02 13:29:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -21,12 +21,9 @@
 ** fields of the Hash structure.
 **
 ** "pNew" is a pointer to the hash table that is to be initialized.
-** "copyKey" is true if the hash table should make its own private
-** copy of keys and false if it should just use the supplied pointer.
 */
-void sqlite3HashInit(Hash *pNew, int copyKey){
+void sqlite3HashInit(Hash *pNew){
   assert( pNew!=0 );
-  pNew->copyKey = copyKey!=0;
   pNew->first = 0;
   pNew->count = 0;
   pNew->htsize = 0;
@@ -48,9 +45,6 @@ void sqlite3HashClear(Hash *pH){
   pH->htsize = 0;
   while( elem ){
     HashElem *next_elem = elem->next;
-    if( pH->copyKey ){
-      sqlite3_free(elem->pKey);
-    }
     sqlite3_free(elem);
     elem = next_elem;
   }
@@ -58,10 +52,9 @@ void sqlite3HashClear(Hash *pH){
 }
 
 /*
-** Hash and comparison functions when the mode is SQLITE_HASH_STRING
+** The hashing function.
 */
-static unsigned int strHash(const void *pKey, int nKey){
-  const char *z = (const char *)pKey;
+static unsigned int strHash(const char *z, int nKey){
   int h = 0;
   assert( nKey>=0 );
   while( nKey > 0  ){
@@ -69,10 +62,6 @@ static unsigned int strHash(const void *pKey, int nKey){
     nKey--;
   }
   return h;
-}
-static int strCompare(const void *pKey1, int n1, const void *pKey2, int n2){
-  if( n1!=n2 ) return 1;
-  return sqlite3StrNICmp((const char*)pKey1,(const char*)pKey2,n1);
 }
 
 
@@ -151,7 +140,7 @@ static int rehash(Hash *pH, unsigned int new_size){
 */
 static HashElem *findElementGivenHash(
   const Hash *pH,     /* The pH to be searched */
-  const void *pKey,   /* The key we are searching for */
+  const char *pKey,   /* The key we are searching for */
   int nKey,           /* Bytes in key (not counting zero terminator) */
   unsigned int h      /* The hash for this key. */
 ){
@@ -167,7 +156,7 @@ static HashElem *findElementGivenHash(
     count = pH->count;
   }
   while( count-- && ALWAYS(elem) ){
-    if( strCompare(elem->pKey,elem->nKey,pKey,nKey)==0 ){ 
+    if( elem->nKey==nKey && sqlite3StrNICmp(elem->pKey,pKey,nKey)==0 ){ 
       return elem;
     }
     elem = elem->next;
@@ -200,9 +189,6 @@ static void removeElementGivenHash(
     pEntry->count--;
     assert( pEntry->count>=0 );
   }
-  if( pH->copyKey ){
-    sqlite3_free(elem->pKey);
-  }
   sqlite3_free( elem );
   pH->count--;
   if( pH->count<=0 ){
@@ -216,7 +202,7 @@ static void removeElementGivenHash(
 ** that matches pKey,nKey.  Return the data for this element if it is
 ** found, or NULL if there is no match.
 */
-void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
+void *sqlite3HashFind(const Hash *pH, const char *pKey, int nKey){
   HashElem *elem;    /* The element that matches key */
   unsigned int h;    /* A hash on key */
 
@@ -236,8 +222,7 @@ void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
 ** and the data is "data".
 **
 ** If no element exists with a matching key, then a new
-** element is created.  A copy of the key is made if the copyKey
-** flag is set.  NULL is returned.
+** element is created and NULL is returned.
 **
 ** If another element already exists with the same key, then the
 ** new data replaces the old data and the old data is returned.
@@ -247,7 +232,7 @@ void *sqlite3HashFind(const Hash *pH, const void *pKey, int nKey){
 ** If the "data" parameter to this function is NULL, then the
 ** element corresponding to "key" is removed from the hash table.
 */
-void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
+void *sqlite3HashInsert(Hash *pH, const char *pKey, int nKey, void *data){
   unsigned int h;       /* the hash of the key modulo hash table size */
   HashElem *elem;       /* Used to loop thru the element list */
   HashElem *new_elem;   /* New element added to the pH */
@@ -267,9 +252,7 @@ void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
       removeElementGivenHash(pH,elem,h);
     }else{
       elem->data = data;
-      if( !pH->copyKey ){
-        elem->pKey = (void *)pKey;
-      }
+      elem->pKey = pKey;
       assert(nKey==elem->nKey);
     }
     return old_data;
@@ -277,16 +260,7 @@ void *sqlite3HashInsert(Hash *pH, const void *pKey, int nKey, void *data){
   if( data==0 ) return 0;
   new_elem = (HashElem*)sqlite3Malloc( sizeof(HashElem) );
   if( new_elem==0 ) return data;
-  if( pH->copyKey ){
-    new_elem->pKey = sqlite3Malloc( nKey );
-    if( new_elem->pKey==0 ){
-      sqlite3_free(new_elem);
-      return data;
-    }
-    memcpy((void*)new_elem->pKey, pKey, nKey);
-  }else{
-    new_elem->pKey = (void*)pKey;
-  }
+  new_elem->pKey = pKey;
   new_elem->nKey = nKey;
   new_elem->data = data;
   pH->count++;

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.865 2009/05/01 21:13:37 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.866 2009/05/02 13:29:38 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -639,7 +639,6 @@ struct Schema {
   Hash tblHash;        /* All tables indexed by name */
   Hash idxHash;        /* All (named) indices indexed by name */
   Hash trigHash;       /* All triggers indexed by name */
-  Hash aFKey;          /* Foreign keys indexed by to-table */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   u8 file_format;      /* Schema format version for this file */
   u8 enc;              /* Text encoding used by this database */
@@ -1195,28 +1194,21 @@ struct Table {
 **
 ** Each REFERENCES clause generates an instance of the following structure
 ** which is attached to the from-table.  The to-table need not exist when
-** the from-table is created.  The existence of the to-table is not checked
-** until an attempt is made to insert data into the from-table.
-**
-** The sqlite.aFKey hash table stores pointers to this structure
-** given the name of a to-table.  For each to-table, all foreign keys
-** associated with that table are on a linked list using the FKey.pNextTo
-** field.
+** the from-table is created.  The existence of the to-table is not checked.
 */
 struct FKey {
   Table *pFrom;     /* The table that contains the REFERENCES clause */
   FKey *pNextFrom;  /* Next foreign key in pFrom */
   char *zTo;        /* Name of table that the key points to */
-  FKey *pNextTo;    /* Next foreign key that points to zTo */
   int nCol;         /* Number of columns in this key */
-  struct sColMap {  /* Mapping of columns in pFrom to columns in zTo */
-    int iFrom;         /* Index of column in pFrom */
-    char *zCol;        /* Name of column in zTo.  If 0 use PRIMARY KEY */
-  } *aCol;          /* One entry for each of nCol column s */
   u8 isDeferred;    /* True if constraint checking is deferred till COMMIT */
   u8 updateConf;    /* How to resolve conflicts that occur on UPDATE */
   u8 deleteConf;    /* How to resolve conflicts that occur on DELETE */
   u8 insertConf;    /* How to resolve conflicts that occur on INSERT */
+  struct sColMap {  /* Mapping of columns in pFrom to columns in zTo */
+    int iFrom;         /* Index of column in pFrom */
+    char *zCol;        /* Name of column in zTo.  If 0 use PRIMARY KEY */
+  } aCol[1];        /* One entry for each of nCol column s */
 };
 
 /*

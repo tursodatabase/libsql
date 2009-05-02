@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.533 2009/05/01 21:13:37 drh Exp $
+** $Id: build.c,v 1.534 2009/05/02 13:29:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -489,8 +489,7 @@ static void sqliteResetColumnNames(Table *pTable){
 ** Table.  No changes are made to disk by this routine.
 **
 ** This routine just deletes the data structure.  It does not unlink
-** the table data structure from the hash table.  Nor does it remove
-** foreign keys from the sqlite.aFKey hash table.  But it does destroy
+** the table data structure from the hash table.  But it does destroy
 ** memory structures of the indices and foreign keys associated with 
 ** the table.
 */
@@ -518,13 +517,9 @@ void sqlite3DeleteTable(Table *pTable){
   }
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  /* Delete all foreign keys associated with this table.  The keys
-  ** should have already been unlinked from the pSchema->aFKey hash table 
-  */
+  /* Delete all foreign keys associated with this table. */
   for(pFKey=pTable->pFKey; pFKey; pFKey=pNextFKey){
     pNextFKey = pFKey->pNextFrom;
-    assert( sqlite3HashFind(&pTable->pSchema->aFKey,
-                           pFKey->zTo, sqlite3Strlen30(pFKey->zTo))!=pFKey );
     sqlite3DbFree(db, pFKey);
   }
 #endif
@@ -548,7 +543,6 @@ void sqlite3DeleteTable(Table *pTable){
 */
 void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   Table *p;
-  FKey *pF1, *pF2;
   Db *pDb;
 
   assert( db!=0 );
@@ -557,23 +551,7 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName,
                         sqlite3Strlen30(zTabName),0);
-  if( p ){
-#ifndef SQLITE_OMIT_FOREIGN_KEY
-    for(pF1=p->pFKey; pF1; pF1=pF1->pNextFrom){
-      int nTo = sqlite3Strlen30(pF1->zTo);
-      pF2 = sqlite3HashFind(&pDb->pSchema->aFKey, pF1->zTo, nTo);
-      if( pF2==pF1 ){
-        sqlite3HashInsert(&pDb->pSchema->aFKey, pF1->zTo, nTo, pF1->pNextTo);
-      }else{
-        while( pF2 && pF2->pNextTo!=pF1 ){ pF2=pF2->pNextTo; }
-        if( pF2 ){
-          pF2->pNextTo = pF1->pNextTo;
-        }
-      }
-    }
-#endif
-    sqlite3DeleteTable(p);
-  }
+  sqlite3DeleteTable(p);
   db->flags |= SQLITE_InternChanges;
 }
 
@@ -1688,7 +1666,6 @@ void sqlite3EndTable(
   */
   if( db->init.busy && pParse->nErr==0 ){
     Table *pOld;
-    FKey *pFKey; 
     Schema *pSchema = p->pSchema;
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName,
                              sqlite3Strlen30(p->zName),p);
@@ -1697,17 +1674,6 @@ void sqlite3EndTable(
       db->mallocFailed = 1;
       return;
     }
-#ifndef SQLITE_OMIT_FOREIGN_KEY
-    for(pFKey=p->pFKey; pFKey; pFKey=pFKey->pNextFrom){
-      void *data;
-      int nTo = sqlite3Strlen30(pFKey->zTo);
-      pFKey->pNextTo = sqlite3HashFind(&pSchema->aFKey, pFKey->zTo, nTo);
-      data = sqlite3HashInsert(&pSchema->aFKey, pFKey->zTo, nTo, pFKey);
-      if( data==(void *)pFKey ){
-        db->mallocFailed = 1;
-      }
-    }
-#endif
     pParse->pNewTable = 0;
     db->nTable++;
     db->flags |= SQLITE_InternChanges;
@@ -2214,9 +2180,7 @@ exit_drop_table:
 ** in the ON DELETE, ON UPDATE and ON INSERT clauses.
 **
 ** An FKey structure is created and added to the table currently
-** under construction in the pParse->pNewTable field.  The new FKey
-** is not linked into db->aFKey at this point - that does not happen
-** until sqlite3EndTable().
+** under construction in the pParse->pNewTable field.
 **
 ** The foreign key is set for IMMEDIATE processing.  A subsequent call
 ** to sqlite3DeferForeignKey() might change this to DEFERRED.
@@ -2257,7 +2221,7 @@ void sqlite3CreateForeignKey(
   }else{
     nCol = pFromCol->nExpr;
   }
-  nByte = sizeof(*pFKey) + nCol*sizeof(pFKey->aCol[0]) + pTo->n + 1;
+  nByte = sizeof(*pFKey) + (nCol-1)*sizeof(pFKey->aCol[0]) + pTo->n + 1;
   if( pToCol ){
     for(i=0; i<pToCol->nExpr; i++){
       nByte += sqlite3Strlen30(pToCol->a[i].zName) + 1;
@@ -2269,15 +2233,12 @@ void sqlite3CreateForeignKey(
   }
   pFKey->pFrom = p;
   pFKey->pNextFrom = p->pFKey;
-  z = (char*)&pFKey[1];
-  pFKey->aCol = (struct sColMap*)z;
-  z += sizeof(struct sColMap)*nCol;
+  z = (char*)&pFKey->aCol[nCol];
   pFKey->zTo = z;
   memcpy(z, pTo->z, pTo->n);
   z[pTo->n] = 0;
   sqlite3Dequote(z);
   z += pTo->n+1;
-  pFKey->pNextTo = 0;
   pFKey->nCol = nCol;
   if( pFromCol==0 ){
     pFKey->aCol[0].iFrom = p->nCol-1;

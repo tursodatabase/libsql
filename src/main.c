@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.544 2009/04/30 12:25:10 drh Exp $
+** $Id: main.c,v 1.545 2009/05/02 13:29:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1580,9 +1580,9 @@ static int openDatabase(
                  | SQLITE_LoadExtension
 #endif
       ;
-  sqlite3HashInit(&db->aCollSeq, 0);
+  sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3HashInit(&db->aModule, 0);
+  sqlite3HashInit(&db->aModule);
 #endif
 
   db->pVfs = sqlite3_vfs_find(zVfs);

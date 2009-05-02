@@ -12,7 +12,7 @@
 ** This is the header file for the generic hash-table implemenation
 ** used in SQLite.
 **
-** $Id: hash.h,v 1.14 2009/04/28 16:35:43 drh Exp $
+** $Id: hash.h,v 1.15 2009/05/02 13:29:38 drh Exp $
 */
 #ifndef _SQLITE_HASH_H_
 #define _SQLITE_HASH_H_
@@ -43,8 +43,7 @@ typedef struct HashElem HashElem;
 ** the hash table.
 */
 struct Hash {
-  unsigned int copyKey : 1; /* True if copy of key made on insert */
-  unsigned int htsize : 31; /* Number of buckets in the hash table */
+  unsigned int htsize;      /* Number of buckets in the hash table */
   unsigned int count;       /* Number of entries in this table */
   HashElem *first;          /* The first element of the array */
   struct _ht {              /* the hash table */
@@ -60,17 +59,17 @@ struct Hash {
 ** be opaque because it is used by macros.
 */
 struct HashElem {
-  HashElem *next, *prev;   /* Next and previous elements in the table */
-  void *data;              /* Data associated with this element */
-  void *pKey; int nKey;    /* Key associated with this element */
+  HashElem *next, *prev;       /* Next and previous elements in the table */
+  void *data;                  /* Data associated with this element */
+  const char *pKey; int nKey;  /* Key associated with this element */
 };
 
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqlite3HashInit(Hash*, int copyKey);
-void *sqlite3HashInsert(Hash*, const void *pKey, int nKey, void *pData);
-void *sqlite3HashFind(const Hash*, const void *pKey, int nKey);
+void sqlite3HashInit(Hash*);
+void *sqlite3HashInsert(Hash*, const char *pKey, int nKey, void *pData);
+void *sqlite3HashFind(const Hash*, const char *pKey, int nKey);
 void sqlite3HashClear(Hash*);
 
 /*
