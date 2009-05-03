@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.265 2009/05/02 15:46:47 drh Exp $
+** $Id: insert.c,v 1.266 2009/05/03 01:01:00 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -863,7 +863,7 @@ void sqlite3Insert(
         VdbeOp *pOp;
         sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regRowid);
         pOp = sqlite3VdbeGetOp(v, sqlite3VdbeCurrentAddr(v) - 1);
-        if( pOp && pOp->opcode==OP_Null && !IsVirtual(pTab) ){
+        if( ALWAYS(pOp) && pOp->opcode==OP_Null && !IsVirtual(pTab) ){
           appendFlag = 1;
           pOp->opcode = OP_NewRowid;
           pOp->p1 = baseCur;
@@ -1115,16 +1115,16 @@ void sqlite3GenerateConstraintChecks(
   int overrideError,  /* Override onError to this if not OE_Default */
   int ignoreDest      /* Jump to this label on an OE_Ignore resolution */
 ){
-  int i;
-  Vdbe *v;
-  int nCol;
-  int onError;
+  int i;              /* loop counter */
+  Vdbe *v;            /* VDBE under constrution */
+  int nCol;           /* Number of columns */
+  int onError;        /* Conflict resolution strategy */
   int j1;             /* Addresss of jump instruction */
   int j2 = 0, j3;     /* Addresses of jump instructions */
   int regData;        /* Register containing first data column */
-  int iCur;
-  Index *pIdx;
-  int seenReplace = 0;
+  int iCur;           /* Table cursor number */
+  Index *pIdx;         /* Pointer to one of the indices */
+  int seenReplace = 0; /* True if REPLACE is used to resolve INT PK conflict */
   int hasTwoRowids = (isUpdate && rowidChng);
 
   v = sqlite3GetVdbe(pParse);
@@ -1427,7 +1427,7 @@ int sqlite3OpenTableAndIndices(
                       (char*)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
   }
-  if( pParse->nTab<=baseCur+i ){
+  if( pParse->nTab<baseCur+i ){
     pParse->nTab = baseCur+i;
   }
   return i-1;
@@ -1718,7 +1718,7 @@ static int xferOptimization(
   sqlite3VdbeAddOp2(v, OP_Next, iSrc, addr1);
   autoIncEnd(pParse, iDbDest, pDest, regAutoinc);
   for(pDestIdx=pDest->pIndex; pDestIdx; pDestIdx=pDestIdx->pNext){
-    for(pSrcIdx=pSrc->pIndex; pSrcIdx; pSrcIdx=pSrcIdx->pNext){
+    for(pSrcIdx=pSrc->pIndex; ALWAYS(pSrcIdx); pSrcIdx=pSrcIdx->pNext){
       if( xferCompatibleIndex(pDestIdx, pSrcIdx) ) break;
     }
     assert( pSrcIdx );

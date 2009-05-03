@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\suniqueness\sconstraint\sfailure\serror\smessage\ngeneration\scode.\s(CVS\s6595)
-D 2009-05-02T15:46:47
+C More\schanges\sto\sinsert.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6596)
+D 2009-05-03T01:01:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +121,7 @@ F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c 7e90268f62662dc8ccb9da1e93090ea64481e4f8
 F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c a655cd5e3aeb36039cef9653f050c53e2d5502dc
+F src/insert.c 35d73660090a3b93ee6aa92a54d9dad912ac0197
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 80c43a355c6e482457abc2f9c3ad3a565cec55fb
-R 8c49dd8877751309177109310f9f6e17
+P 8f3cac7682a0c992f95f7453aaf9a29b1fe35d6f
+R 5c167e348a2d5e3ff2fee4e24ebee7ea
 U drh
-Z 5db7a34baf28b41b86637568773d40b6
+Z 9f1931f4a62117e3d94c8c586b5f71f4
