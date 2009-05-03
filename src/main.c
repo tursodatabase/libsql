@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.545 2009/05/02 13:29:38 drh Exp $
+** $Id: main.c,v 1.546 2009/05/03 20:23:53 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -930,7 +930,7 @@ int sqlite3CreateFunc(
       (!xFunc && (xFinal && !xStep)) ||
       (!xFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
-      (255<(nName = sqlite3Strlen(db, zFunctionName))) ){
+      (255<(nName = sqlite3Strlen30( zFunctionName))) ){
     sqlite3Error(db, SQLITE_ERROR, "bad parameters");
     return SQLITE_ERROR;
   }
@@ -1056,7 +1056,7 @@ int sqlite3_overload_function(
   const char *zName,
   int nArg
 ){
-  int nName = sqlite3Strlen(db, zName);
+  int nName = sqlite3Strlen30(zName);
   int rc;
   sqlite3_mutex_enter(db->mutex);
   if( sqlite3FindFunction(db, zName, nName, nArg, SQLITE_UTF8, 0)==0 ){
@@ -1383,7 +1383,7 @@ static int createCollation(
   ** sequence. If so, and there are active VMs, return busy. If there
   ** are no active VMs, invalidate any pre-compiled statements.
   */
-  nName = sqlite3Strlen(db, zName);
+  nName = sqlite3Strlen30(zName);
   pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, nName, 0);
   if( pColl && pColl->xCmp ){
     if( db->activeVdbeCnt ){

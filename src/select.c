@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.511 2009/05/01 21:13:37 drh Exp $
+** $Id: select.c,v 1.512 2009/05/03 20:23:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1157,7 +1157,6 @@ static int selectColumnsFromExprList(
       sqlite3DbFree(db, zName);
       break;
     }
-    sqlite3Dequote(zName);
 
     /* Make sure the column name is unique.  If the name is not unique,
     ** append a integer to the name so that it becomes unique.

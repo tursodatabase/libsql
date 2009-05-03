@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.352 2009/04/28 15:35:39 danielk1977 Exp $
+** $Id: test1.c,v 1.353 2009/05/03 20:23:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1218,18 +1218,6 @@ static int sqlite3_mprintf_int(
 }
 
 /*
-** If zNum represents an integer that will fit in 64-bits, then set
-** *pValue to that integer and return true.  Otherwise return false.
-*/
-static int sqlite3GetInt64(const char *zNum, i64 *pValue){
-  if( sqlite3FitsIn64Bits(zNum, 0) ){
-    sqlite3Atoi64(zNum, pValue);
-    return 1;
-  }
-  return 0;
-}
-
-/*
 ** Usage:  sqlite3_mprintf_int64 FORMAT INTEGER INTEGER INTEGER
 **
 ** Call mprintf with three 64-bit integer arguments
@@ -1249,7 +1237,7 @@ static int sqlite3_mprintf_int64(
     return TCL_ERROR;
   }
   for(i=2; i<5; i++){
-    if( !sqlite3GetInt64(argv[i], &a[i-2]) ){
+    if( !sqlite3Atoi64(argv[i], &a[i-2]) ){
       Tcl_AppendResult(interp, "argument is not a valid 64-bit integer", 0);
       return TCL_ERROR;
     }
