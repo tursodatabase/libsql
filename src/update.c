@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.198 2009/04/24 15:46:22 drh Exp $
+** $Id: update.c,v 1.199 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -511,7 +511,7 @@ void sqlite3Update(
     */
     sqlite3GenerateConstraintChecks(pParse, pTab, iCur, regNewRowid,
                                     aRegIdx, chngRowid, 1,
-                                    onError, addr);
+                                    onError, addr, 0);
 
     /* Delete the old indices for the current record.
     */
@@ -528,7 +528,7 @@ void sqlite3Update(
     /* Create the new index entries and the new record.
     */
     sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, 
-                             aRegIdx, 1, -1, 0);
+                             aRegIdx, 1, -1, 0, 0);
   }
 
   /* Increment the row counter 

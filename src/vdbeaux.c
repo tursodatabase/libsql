@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.454 2009/04/22 15:32:59 drh Exp $
+** $Id: vdbeaux.c,v 1.455 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2495,6 +2495,18 @@ int sqlite3VdbeRecordCompare(
     i++;
   }
   if( mem1.zMalloc ) sqlite3VdbeMemRelease(&mem1);
+
+  /* If the PREFIX_SEARCH flag is set and all fields except the final
+  ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
+  ** pPKey2->rowid to the value of the rowid field in (pKey1, nKey1).
+  ** This is used by the OP_IsUnique opcode.
+  */
+  if( (pPKey2->flags & UNPACKED_PREFIX_SEARCH) && i==(pPKey2->nField-1) ){
+    assert( idx1==szHdr1 && rc );
+    assert( mem1.flags & MEM_Int );
+    pPKey2->flags &= ~UNPACKED_PREFIX_SEARCH;
+    pPKey2->rowid = mem1.u.i;
+  }
 
   if( rc==0 ){
     /* rc==0 here means that one of the keys ran out of fields and

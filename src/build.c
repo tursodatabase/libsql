@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.535 2009/05/03 20:23:53 drh Exp $
+** $Id: build.c,v 1.536 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2355,19 +2355,25 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
   regRecord = sqlite3GetTempReg(pParse);
   regIdxKey = sqlite3GenerateIndexKey(pParse, pIndex, iTab, regRecord, 1);
   if( pIndex->onError!=OE_None ){
-    int j1, j2;
-    int regRowid;
+    const int regRowid = regIdxKey + pIndex->nColumn;
+    const int j2 = sqlite3VdbeCurrentAddr(v) + 2;
+    void * const pRegKey = SQLITE_INT_TO_PTR(regIdxKey);
 
-    regRowid = regIdxKey + pIndex->nColumn;
-    j1 = sqlite3VdbeAddOp3(v, OP_IsNull, regIdxKey, 0, pIndex->nColumn);
-    j2 = sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx,
-                           0, regRowid, SQLITE_INT_TO_PTR(regRecord), P4_INT32);
+    /* The registers accessed by the OP_IsUnique opcode were allocated
+    ** using sqlite3GetTempRange() inside of the sqlite3GenerateIndexKey()
+    ** call above. Just before that function was freed they were released
+    ** (made available to the compiler for reuse) using 
+    ** sqlite3ReleaseTempRange(). So in some ways having the OP_IsUnique
+    ** opcode use the values stored within seems dangerous. However, since
+    ** we can be sure that no other temp registers have been allocated
+    ** since sqlite3ReleaseTempRange() was called, it is safe to do so.
+    */
+    sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx, j2, regRowid, pRegKey, P4_INT32);
     sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort, 0,
                     "indexed columns are not unique", P4_STATIC);
-    sqlite3VdbeJumpHere(v, j1);
-    sqlite3VdbeJumpHere(v, j2);
   }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
+  sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3ReleaseTempReg(pParse, regRecord);
   sqlite3VdbeAddOp2(v, OP_Next, iTab, addr1+1);
   sqlite3VdbeJumpHere(v, addr1);

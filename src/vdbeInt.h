@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.169 2009/04/22 02:15:48 drh Exp $
+** $Id: vdbeInt.h,v 1.170 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -79,6 +79,10 @@ struct VdbeCursor {
   i64 seqCount;         /* Sequence counter */
   sqlite3_vtab_cursor *pVtabCursor;  /* The cursor for a virtual table */
   const sqlite3_module *pModule;     /* Module for cursor pVtabCursor */
+
+  /* Result of last sqlite3BtreeMoveto() done by an OP_NotExists or 
+  ** OP_IsUnique opcode on this cursor. */
+  int seekResult;
 
   /* Cached information about the header for the data record that the
   ** cursor is currently pointing to.  Only valid if cacheValid is true.

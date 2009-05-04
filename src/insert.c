@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.266 2009/05/03 01:01:00 drh Exp $
+** $Id: insert.c,v 1.267 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -943,27 +943,14 @@ void sqlite3Insert(
     }else
 #endif
     {
-      sqlite3GenerateConstraintChecks(
-          pParse,
-          pTab,
-          baseCur,
-          regIns,
-          aRegIdx,
-          keyColumn>=0,
-          0,
-          onError,
-          endOfLoop
+      int isReplace;    /* Set to true if constraints may cause a replace */
+      sqlite3GenerateConstraintChecks(pParse, pTab, baseCur, regIns, aRegIdx,
+          keyColumn>=0, 0, onError, endOfLoop, &isReplace
       );
       sqlite3CompleteInsertion(
-          pParse,
-          pTab,
-          baseCur,
-          regIns,
-          aRegIdx,
-          0,
-          (tmask&TRIGGER_AFTER) ? newIdx : -1,
-          appendFlag
-       );
+          pParse, pTab, baseCur, regIns, aRegIdx, 0,
+          (tmask&TRIGGER_AFTER) ? newIdx : -1, appendFlag, isReplace==0
+      );
     }
   }
 
@@ -1113,7 +1100,8 @@ void sqlite3GenerateConstraintChecks(
   int rowidChng,      /* True if the rowid might collide with existing entry */
   int isUpdate,       /* True for UPDATE, False for INSERT */
   int overrideError,  /* Override onError to this if not OE_Default */
-  int ignoreDest      /* Jump to this label on an OE_Ignore resolution */
+  int ignoreDest,     /* Jump to this label on an OE_Ignore resolution */
+  int *pbMayReplace   /* OUT: Set to true if constraint may cause a replace */
 ){
   int i;              /* loop counter */
   Vdbe *v;            /* VDBE under constrution */
@@ -1266,11 +1254,13 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
     sqlite3IndexAffinityStr(v, pIdx);
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
-    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
 
     /* Find out what action to take in case there is an indexing conflict */
     onError = pIdx->onError;
-    if( onError==OE_None ) continue;  /* pIdx is not a UNIQUE index */
+    if( onError==OE_None ){ 
+      sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
+      continue;  /* pIdx is not a UNIQUE index */
+    }
     if( overrideError!=OE_Default ){
       onError = overrideError;
     }else if( onError==OE_Default ){
@@ -1283,12 +1273,12 @@ void sqlite3GenerateConstraintChecks(
     
 
     /* Check to see if the new index entry will be unique */
-    j2 = sqlite3VdbeAddOp3(v, OP_IsNull, regIdx, 0, pIdx->nColumn);
     regR = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp2(v, OP_SCopy, regRowid-hasTwoRowids, regR);
     j3 = sqlite3VdbeAddOp4(v, OP_IsUnique, baseCur+iCur+1, 0,
-                           regR, SQLITE_INT_TO_PTR(aRegIdx[iCur]),
+                           regR, SQLITE_INT_TO_PTR(regIdx),
                            P4_INT32);
+    sqlite3ReleaseTempRange(pParse, regIdx, pIdx->nColumn+1);
 
     /* Generate code that executes if the new index entry is not unique */
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
@@ -1330,9 +1320,12 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
     }
-    sqlite3VdbeJumpHere(v, j2);
     sqlite3VdbeJumpHere(v, j3);
     sqlite3ReleaseTempReg(pParse, regR);
+  }
+
+  if( pbMayReplace ){
+    *pbMayReplace = seenReplace;
   }
 }
 
@@ -1353,7 +1346,8 @@ void sqlite3CompleteInsertion(
   int *aRegIdx,       /* Register used by each index.  0 for unused indices */
   int isUpdate,       /* True for UPDATE, False for INSERT */
   int newIdx,         /* Index of NEW table for triggers.  -1 if none */
-  int appendBias      /* True if this is likely to be an append */
+  int appendBias,     /* True if this is likely to be an append */
+  int useSeekResult   /* True to set the USESEEKRESULT flag on OP_[Idx]Insert */
 ){
   int i;
   Vdbe *v;
@@ -1370,6 +1364,9 @@ void sqlite3CompleteInsertion(
   for(i=nIdx-1; i>=0; i--){
     if( aRegIdx[i]==0 ) continue;
     sqlite3VdbeAddOp2(v, OP_IdxInsert, baseCur+i+1, aRegIdx[i]);
+    if( useSeekResult ){
+      sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+    }
   }
   regData = regRowid + 1;
   regRec = sqlite3GetTempReg(pParse);
@@ -1389,6 +1386,9 @@ void sqlite3CompleteInsertion(
   }
   if( appendBias ){
     pik_flags |= OPFLAG_APPEND;
+  }
+  if( useSeekResult ){
+    pik_flags |= OPFLAG_USESEEKRESULT;
   }
   sqlite3VdbeAddOp3(v, OP_Insert, baseCur, regRec, regRowid);
   if( !pParse->nested ){

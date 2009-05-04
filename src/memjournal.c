@@ -14,7 +14,7 @@
 ** The in-memory rollback journal is used to journal transactions for
 ** ":memory:" databases and when the journal_mode=MEMORY pragma is used.
 **
-** @(#) $Id: memjournal.c,v 1.11 2009/04/05 12:22:09 drh Exp $
+** @(#) $Id: memjournal.c,v 1.12 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -129,7 +129,7 @@ static int memjrnlWrite(
   /* An in-memory journal file should only ever be appended to. Random
   ** access writes are not required by sqlite.
   */
-  assert(iOfst==p->endpoint.iOffset);
+  assert( iOfst==p->endpoint.iOffset );
   UNUSED_PARAMETER(iOfst);
 
   while( nWrite>0 ){

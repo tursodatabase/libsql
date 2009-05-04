@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.867 2009/05/03 20:23:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.868 2009/05/04 11:42:30 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1282,6 +1282,7 @@ struct UnpackedRecord {
   KeyInfo *pKeyInfo;  /* Collation and sort-order information */
   u16 nField;         /* Number of entries in apMem[] */
   u16 flags;          /* Boolean settings.  UNPACKED_... below */
+  i64 rowid;          /* Used by UNPACKED_PREFIX_SEARCH */
   Mem *aMem;          /* Values */
 };
 
@@ -1293,6 +1294,7 @@ struct UnpackedRecord {
 #define UNPACKED_IGNORE_ROWID  0x0004  /* Ignore trailing rowid on key1 */
 #define UNPACKED_INCRKEY       0x0008  /* Make this key an epsilon larger */
 #define UNPACKED_PREFIX_MATCH  0x0010  /* A prefix match is considered OK */
+#define UNPACKED_PREFIX_SEARCH 0x0020  /* A prefix match is considered OK */
 
 /*
 ** Each SQL index is represented in memory by an
@@ -1998,12 +2000,13 @@ struct AuthContext {
 };
 
 /*
-** Bitfield flags for P2 value in OP_Insert and OP_Delete
+** Bitfield flags for P5 value in OP_Insert and OP_Delete
 */
-#define OPFLAG_NCHANGE   1    /* Set to update db->nChange */
-#define OPFLAG_LASTROWID 2    /* Set to update db->lastRowid */
-#define OPFLAG_ISUPDATE  4    /* This OP_Insert is an sql UPDATE */
-#define OPFLAG_APPEND    8    /* This is likely to be an append */
+#define OPFLAG_NCHANGE    1    /* Set to update db->nChange */
+#define OPFLAG_LASTROWID  2    /* Set to update db->lastRowid */
+#define OPFLAG_ISUPDATE   4    /* This OP_Insert is an sql UPDATE */
+#define OPFLAG_APPEND     8    /* This is likely to be an append */
+#define OPFLAG_USESEEKRESULT 16    /* Try to avoid a seek in BtreeInsert() */
 
 /*
  * Each trigger present in the database schema is stored as an instance of
@@ -2494,8 +2497,8 @@ void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
-                                     int*,int,int,int,int);
-void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
+                                     int*,int,int,int,int,int*);
+void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
