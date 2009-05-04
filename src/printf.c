@@ -5,7 +5,7 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.102 2009/04/08 16:10:04 drh Exp $
+** $Id: printf.c,v 1.103 2009/05/04 20:20:16 drh Exp $
 **
 **************************************************************************
 **
@@ -391,9 +391,13 @@ void sqlite3VXPrintf(
       case etRADIX:
         if( infop->flags & FLAG_SIGNED ){
           i64 v;
-          if( flag_longlong )   v = va_arg(ap,i64);
-          else if( flag_long )  v = va_arg(ap,long int);
-          else                  v = va_arg(ap,int);
+          if( flag_longlong ){
+            v = va_arg(ap,i64);
+          }else if( flag_long ){
+            v = va_arg(ap,long int);
+          }else{
+            v = va_arg(ap,int);
+          }
           if( v<0 ){
             longvalue = -v;
             prefix = '-';
@@ -404,9 +408,13 @@ void sqlite3VXPrintf(
             else                       prefix = 0;
           }
         }else{
-          if( flag_longlong )   longvalue = va_arg(ap,u64);
-          else if( flag_long )  longvalue = va_arg(ap,unsigned long int);
-          else                  longvalue = va_arg(ap,unsigned int);
+          if( flag_longlong ){
+            longvalue = va_arg(ap,u64);
+          }else if( flag_long ){
+            longvalue = va_arg(ap,unsigned long int);
+          }else{
+            longvalue = va_arg(ap,unsigned int);
+          }
           prefix = 0;
         }
         if( longvalue==0 ) flag_alternateform = 0;
