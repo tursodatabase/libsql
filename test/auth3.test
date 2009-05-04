@@ -12,7 +12,7 @@
 # Test that the truncate optimization is disabled if the SQLITE_DELETE
 # authorization callback returns SQLITE_IGNORE.
 #
-# $Id: auth3.test,v 1.1 2008/10/27 15:34:33 danielk1977 Exp $
+# $Id: auth3.test,v 1.2 2009/05/04 01:58:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -57,7 +57,7 @@ do_test auth3.1.2 {
 do_test auth3.1.3 {
   set ::authcode SQLITE_INVALID
   catchsql { DELETE FROM t1 }
-} {1 {illegal return value (1) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+} {1 {authorizer malfunction}}
 do_test auth3.1.4 {
   execsql { SELECT * FROM t1 }
 } {1 2 3 4 5 6}

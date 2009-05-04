@@ -12,7 +12,7 @@
 # focus of this script is testing the sqlite3_set_authorizer() API
 # and related functionality.
 #
-# $Id: auth.test,v 1.44 2008/10/27 15:34:33 danielk1977 Exp $
+# $Id: auth.test,v 1.45 2009/05/04 01:58:31 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -2141,7 +2141,7 @@ do_test auth-2.9.1 {
     return SQLITE_OK
   }
   catchsql {SELECT ROWID,b,c FROM t2}
-} {1 {illegal return value (999) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+} {1 {authorizer malfunction}}
 do_test auth-2.9.2 {
   db errorcode
 } {1}
@@ -2153,7 +2153,7 @@ do_test auth-2.10 {
     return SQLITE_OK
   }
   catchsql {SELECT ROWID,b,c FROM t2}
-} {1 {illegal return value (1) from the authorization function - should be SQLITE_OK, SQLITE_IGNORE, or SQLITE_DENY}}
+} {1 {authorizer malfunction}}
 do_test auth-2.11.1 {
   proc auth {code arg1 arg2 arg3 arg4} {
     if {$code=="SQLITE_READ" && $arg2=="a"} {

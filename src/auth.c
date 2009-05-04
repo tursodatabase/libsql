@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.29 2007/09/18 15:55:07 drh Exp $
+** $Id: auth.c,v 1.30 2009/05/04 01:58:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,10 +86,8 @@ int sqlite3_set_authorizer(
 ** Write an error message into pParse->zErrMsg that explains that the
 ** user-supplied authorization function returned an illegal value.
 */
-static void sqliteAuthBadReturnCode(Parse *pParse, int rc){
-  sqlite3ErrorMsg(pParse, "illegal return value (%d) from the "
-    "authorization function - should be SQLITE_OK, SQLITE_IGNORE, "
-    "or SQLITE_DENY", rc);
+static void sqliteAuthBadReturnCode(Parse *pParse){
+  sqlite3ErrorMsg(pParse, "authorizer malfunction");
   pParse->rc = SQLITE_ERROR;
 }
 
@@ -118,7 +116,7 @@ void sqlite3AuthRead(
   int iDb;              /* The index of the database the expression refers to */
 
   if( db->xAuth==0 ) return;
-  if( pExpr->op!=TK_COLUMN ) return;
+  assert( pExpr->op==TK_COLUMN );
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
     /* An attempt to read a column out of a subquery or other
@@ -128,7 +126,7 @@ void sqlite3AuthRead(
   for(iSrc=0; pTabList && iSrc<pTabList->nSrc; iSrc++){
     if( pExpr->iTable==pTabList->a[iSrc].iCursor ) break;
   }
-  if( iSrc>=0 && pTabList && iSrc<pTabList->nSrc ){
+  if( pTabList && iSrc<pTabList->nSrc ){
     pTab = pTabList->a[iSrc].pTab;
   }else if( (pStack = pParse->trigStack)!=0 ){
     /* This must be an attempt to read the NEW or OLD pseudo-tables
@@ -162,7 +160,7 @@ void sqlite3AuthRead(
     }
     pParse->rc = SQLITE_AUTH;
   }else if( rc!=SQLITE_OK ){
-    sqliteAuthBadReturnCode(pParse, rc);
+    sqliteAuthBadReturnCode(pParse);
   }
 }
 
@@ -198,7 +196,7 @@ int sqlite3AuthCheck(
     pParse->rc = SQLITE_AUTH;
   }else if( rc!=SQLITE_OK && rc!=SQLITE_IGNORE ){
     rc = SQLITE_DENY;
-    sqliteAuthBadReturnCode(pParse, rc);
+    sqliteAuthBadReturnCode(pParse);
   }
   return rc;
 }
