@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.606 2009/05/04 11:42:30 danielk1977 Exp $
+** $Id: btree.c,v 1.607 2009/05/04 19:01:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4036,14 +4036,13 @@ int sqlite3BtreeMovetoUnpacked(
       pCur->aiIdx[pCur->iPage] = (u16)((upr+lwr)/2);
     }
     for(;;){
-      void *pCellKey;
-      i64 nCellKey;
-      int idx = pCur->aiIdx[pCur->iPage];
+      int idx = pCur->aiIdx[pCur->iPage]; /* Index of current cell in pPage */
+      u8 *pCell;                          /* Pointer to current cell in pPage */
+
       pCur->info.nSize = 0;
-      pCur->validNKey = 1;
+      pCell = findCell(pPage, idx) + pPage->childPtrSize;
       if( pPage->intKey ){
-        u8 *pCell;
-        pCell = findCell(pPage, idx) + pPage->childPtrSize;
+        i64 nCellKey;
         if( pPage->hasData ){
           u32 dummy;
           pCell += getVarint32(pCell, dummy);
@@ -4057,26 +4056,50 @@ int sqlite3BtreeMovetoUnpacked(
           assert( nCellKey>intKey );
           c = +1;
         }
+        pCur->validNKey = 1;
+        pCur->info.nKey = nCellKey;
       }else{
-        int available;
-        pCellKey = (void *)fetchPayload(pCur, &available, 0);
-        nCellKey = pCur->info.nKey;
-        if( available>=nCellKey ){
-          c = sqlite3VdbeRecordCompare((int)nCellKey, pCellKey, pIdxKey);
+        /* The maximum supported page-size is 32768 bytes. This means that
+        ** the maximum number of record bytes stored on an index B-Tree
+        ** page is at most 8198 bytes, which may be stored as a 2-byte
+        ** varint. This information is used to attempt to avoid parsing 
+        ** the entire cell by checking for the cases where the record is 
+        ** stored entirely within the b-tree page by inspecting the first 
+        ** 2 bytes of the cell.
+        */
+        int nCell = pCell[0];
+        if( !(nCell & 0x80) && nCell<=pPage->maxLocal ){
+          /* This branch runs if the record-size field of the cell is a
+          ** single byte varint and the record fits entirely on the main
+          ** b-tree page.  */
+          c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[1], pIdxKey);
+        }else if( !(pCell[1] & 0x80) 
+          && (nCell = ((nCell&0x7f)<<7) + pCell[1])<=pPage->maxLocal
+        ){
+          /* The record-size field is a 2 byte varint and the record 
+          ** fits entirely on the main b-tree page.  */
+          c = sqlite3VdbeRecordCompare(nCell, (void*)&pCell[2], pIdxKey);
         }else{
-          pCellKey = sqlite3Malloc( (int)nCellKey );
+          /* The record flows over onto one or more overflow pages. In
+          ** this case the whole cell needs to be parsed, a buffer allocated
+          ** and accessPayload() used to retrieve the record into the
+          ** buffer before VdbeRecordCompare() can be called. */
+          void *pCellKey;
+          u8 * const pCellBody = pCell - pPage->childPtrSize;
+          sqlite3BtreeParseCellPtr(pPage, pCellBody, &pCur->info);
+          nCell = pCur->info.nKey;
+          pCellKey = sqlite3Malloc( nCell );
           if( pCellKey==0 ){
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
-          rc = sqlite3BtreeKey(pCur, 0, (int)nCellKey, (void*)pCellKey);
-          c = sqlite3VdbeRecordCompare((int)nCellKey, pCellKey, pIdxKey);
+          rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0, 0);
+          c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
           if( rc ) goto moveto_finish;
         }
       }
       if( c==0 ){
-        pCur->info.nKey = nCellKey;
         if( pPage->intKey && !pPage->leaf ){
           lwr = idx;
           upr = lwr - 1;
@@ -4093,7 +4116,6 @@ int sqlite3BtreeMovetoUnpacked(
         upr = idx-1;
       }
       if( lwr>upr ){
-        pCur->info.nKey = nCellKey;
         break;
       }
       pCur->aiIdx[pCur->iPage] = (u16)((lwr+upr)/2);

@@ -1,5 +1,5 @@
-C Changes\sto\sauth.c\sto\spromote\sfull\scoverage\stesting.\s(CVS\s6600)
-D 2009-05-04T18:01:40
+C Avoid\sparsing\scells\sthat\sfit\sentirely\son\sthe\sb-tree\spage\swhen\ssearching\sa\sb-tree\sindex.\s(CVS\s6601)
+D 2009-05-04T19:01:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 62f3194f5ef2cb4c1622e9600bb6257635369d8d
+F src/btree.c a601a89bcf1fc614babbde0afedbfc83e18e3c02
 F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 8e83444d31975a732be9c393cdcbe51930a35638
@@ -727,7 +727,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P cac4f3d812f0a02ca5c1fa78d366f694403929a8
-R e9ee069731064c4aed8a67abd21e3dc7
-U drh
-Z f9a6939b6e933820d20808f0d4fed962
+P c7615b44583c4b3afa45b57c6047478c18c234e9
+R a1f1431e2f3be0df2e97e7004ec2ab35
+U danielk1977
+Z 615e89480489b234d20acace24b33a9c
