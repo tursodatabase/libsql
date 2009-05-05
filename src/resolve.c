@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.21 2009/05/01 21:13:37 drh Exp $
+** $Id: resolve.c,v 1.22 2009/05/05 15:46:43 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -248,7 +248,11 @@ static int lookupName(
             if( iCol>=0 ){
               testcase( iCol==31 );
               testcase( iCol==32 );
-              *piColMask |= ((u32)1<<iCol) | (iCol>=32?0xffffffff:0);
+              if( iCol>=32 ){
+                *piColMask = 0xffffffff;
+              }else{
+                *piColMask |= ((u32)1)<<iCol;
+              }
             }
             break;
           }
