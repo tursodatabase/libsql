@@ -1,5 +1,5 @@
-C Bump\sthe\sversion\snumber\sup\sto\s3.6.14.\s(CVS\s6607)
-D 2009-05-05T18:01:58
+C Minor\schanges\sto\sthe\ssqlite3_exec()\simplementation\sin\slegacy.c\nto\sfacility\sfull\scoverage\stesting.\s(CVS\s6608)
+D 2009-05-05T20:02:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -123,7 +123,7 @@ F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
-F src/legacy.c 2ad5b52df322d0f132f66817095e0e79c8942611
+F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
 F src/main.c a01115fda61971701695fe0d1487e2dfe46a8b1e
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 866284654c1f163af4164fe8c698d30af32e4eaa
-R 614438be85d436fff9d175dacce984a5
+P f4549904b22ff2340a5830cd67ed001d1c4730a1
+R a3b2a24770fbc08c02f4ac7fe2c7f8a9
 U drh
-Z c91b913e29555819c739c143bde87fdc
+Z cd9beca691f90a6e325ce8cd88b48d70
