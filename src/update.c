@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.199 2009/05/04 11:42:30 danielk1977 Exp $
+** $Id: update.c,v 1.200 2009/05/05 15:46:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -55,7 +55,8 @@ static void updateVirtualTable(
 ** sqlite3_value objects.
 */
 void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
-  if( pTab && !pTab->pSelect ){
+  assert( pTab!=0 );
+  if( !pTab->pSelect ){
     sqlite3_value *pValue;
     u8 enc = ENC(sqlite3VdbeDb(v));
     Column *pCol = &pTab->aCol[i];
@@ -368,7 +369,7 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regRowCount);
   }
 
-  if( !isView && !IsVirtual(pTab) ){
+  if( !isView ){
     /* 
     ** Open every index that needs updating.  Note that if any
     ** index could potentially invoke a REPLACE conflict resolution 
@@ -447,7 +448,7 @@ void sqlite3Update(
         continue;
       }
       j = aXRef[i];
-      if( new_col_mask&((u32)1<<i) || new_col_mask==0xffffffff ){
+      if( (i<32 && (new_col_mask&((u32)1<<i))!=0) || new_col_mask==0xffffffff ){
         if( j<0 ){
           sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regCols+i);
           sqlite3ColumnDefault(v, pTab, i);
@@ -473,7 +474,7 @@ void sqlite3Update(
     sqlite3VdbeJumpHere(v, iEndBeforeTrigger);
   }
 
-  if( !isView && !IsVirtual(pTab) ){
+  if( !isView ){
     /* Loop over every record that needs updating.  We have to load
     ** the old data for each record to be updated because some columns
     ** might not change and we will need to copy the old value.

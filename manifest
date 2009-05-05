@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sdefault\svalue\son\sa\scolumn\sadded\susing\sALTER\sTABLE\shas\sthe\ncorrect\sencoding.\s\sTicket\s#3838.\s(CVS\s6603)
-D 2009-05-05T12:54:50
+C Changes\sto\supdate.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6604)
+D 2009-05-05T15:46:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -199,7 +199,7 @@ F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c 286ce8a4bffe5ec81ad893e6243684d8f8846ed9
 F src/trigger.c 448615bec40efcd6b3a9362a060f2e7067f25be5
-F src/update.c e69ba30a62555cd34bca6e3f304d45fdbd98c11b
+F src/update.c deb930324dd67b7ad98234e1258a0ebcdd1ca0f9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 40fb962de1b00a310de4acc87c6800173e35c25f
 F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3543be6e34ebff48b1b0c1710ae6fec557b09b52
-R 2a49d02646852b7f205e84dabaf8596f
+P 7f89a860b7cd0993c36a8b0482c2bac950a875d6
+R c2c2d0ce88fa821168f2cfd971608d90
 U drh
-Z 842865b153ac4330b4a6ad542ce17574
+Z 75899e717d2cd58cbbfebd42323ed01c
