@@ -1,11 +1,11 @@
-C Changes\sto\svacuum.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6606)
-D 2009-05-05T17:37:23
+C Bump\sthe\sversion\snumber\sup\sto\s3.6.14.\s(CVS\s6607)
+D 2009-05-05T18:01:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 40c707b2589f61436b89788003b1ccf5679ec3e6
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 052bafc3a4e485aa1c340c5a27d643894625581d
+F VERSION 768db26884d4fad3631e6d435475edd072d4379c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 300da30178c46ab9f2ceb0c3e3ee3eac73d5d8e1
-R 1086c9680170d6c78c00ea06b9dddadb
+P 866284654c1f163af4164fe8c698d30af32e4eaa
+R 614438be85d436fff9d175dacce984a5
 U drh
-Z 1916cee41b899df3b7a6f4b10829cb7e
+Z c91b913e29555819c739c143bde87fdc
