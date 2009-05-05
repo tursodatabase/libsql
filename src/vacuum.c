@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.87 2009/04/02 20:16:59 drh Exp $
+** $Id: vacuum.c,v 1.88 2009/05/05 17:37:23 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -25,13 +25,15 @@
 */
 static int execSql(sqlite3 *db, const char *zSql){
   sqlite3_stmt *pStmt;
+  VVA_ONLY( int rc; )
   if( !zSql ){
     return SQLITE_NOMEM;
   }
   if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
     return sqlite3_errcode(db);
   }
-  while( SQLITE_ROW==sqlite3_step(pStmt) ){}
+  VVA_ONLY( rc = ) sqlite3_step(pStmt);
+  assert( rc!=SQLITE_ROW );
   return sqlite3_finalize(pStmt);
 }
 
@@ -142,7 +144,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 
   if( sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), nRes, 0)
    || (!isMemDb && sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes, 0))
-   || db->mallocFailed 
+   || NEVER(db->mallocFailed)
   ){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
@@ -230,7 +232,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** opened for writing. This way, the SQL transaction used to create the
   ** temporary database never needs to be committed.
   */
-  if( rc==SQLITE_OK ){
+  {
     u32 meta;
     int i;
 
@@ -252,10 +254,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 
     /* Copy Btree meta values */
     for(i=0; i<ArraySize(aCopy); i+=2){
+      /* GetMeta() and UpdateMeta() cannot fail in this context because
+      ** we already have page 1 loaded into cache and marked dirty. */
       rc = sqlite3BtreeGetMeta(pMain, aCopy[i], &meta);
-      if( rc!=SQLITE_OK ) goto end_of_vacuum;
+      if( NEVER(rc!=SQLITE_OK) ) goto end_of_vacuum;
       rc = sqlite3BtreeUpdateMeta(pTemp, aCopy[i], meta+aCopy[i+1]);
-      if( rc!=SQLITE_OK ) goto end_of_vacuum;
+      if( NEVER(rc!=SQLITE_OK) ) goto end_of_vacuum;
     }
 
     rc = sqlite3BtreeCopyFile(pMain, pTemp);
@@ -267,9 +271,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 #endif
   }
 
-  if( rc==SQLITE_OK ){
-    rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
-  }
+  assert( rc==SQLITE_OK );
+  rc = sqlite3BtreeSetPageSize(pMain, sqlite3BtreeGetPageSize(pTemp), nRes,1);
 
 end_of_vacuum:
   /* Restore the original value of db->flags */

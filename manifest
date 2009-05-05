@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sleft-shift\soperator\snever\soverflows.\s(CVS\s6605)
-D 2009-05-05T15:46:43
+C Changes\sto\svacuum.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6606)
+D 2009-05-05T17:37:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -202,7 +202,7 @@ F src/trigger.c 448615bec40efcd6b3a9362a060f2e7067f25be5
 F src/update.c deb930324dd67b7ad98234e1258a0ebcdd1ca0f9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 40fb962de1b00a310de4acc87c6800173e35c25f
-F src/vacuum.c 07121a727beeee88f27d704a00313ad6a7c9bef0
+F src/vacuum.c e8d178004377e97500c7ea87c8a3542976e3ea45
 F src/vdbe.c e7c3355a39dfa0bf0be69e123061a6c1503fb327
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 43183a2a18654fa570219ab65e53a608057c48ae
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 25a11b9ecae1befd3f58958d68f6346f1e1e47ad
-R effe924e1faf6db44318ac86798fb5da
+P 300da30178c46ab9f2ceb0c3e3ee3eac73d5d8e1
+R 1086c9680170d6c78c00ea06b9dddadb
 U drh
-Z 6a56d2949ddd86ce55cbcf7869e0cd21
+Z 1916cee41b899df3b7a6f4b10829cb7e
