@@ -1,9 +1,9 @@
-C Add\sa\sshort\spause\sto\sforce\sa\scontext\sswap\swhile\swaiting\sfor\sa\sseparate\sprocess\nto\sclear\sits\slock\sin\sthe\slock4.test\sscript.\s(CVS\s6610)
-D 2009-05-06T00:52:41
+C updated\svxworks\smakefile\sfor\s3.6.14\srelease\s(CVS\s6611)
+D 2009-05-06T15:24:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
-F Makefile.vxworks 40c707b2589f61436b89788003b1ccf5679ec3e6
+F Makefile.vxworks 51698ac39a2d114c1586b7694838f2f321c43f64
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
 F VERSION 768db26884d4fad3631e6d435475edd072d4379c
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c1e739e39b1df205f3beb4088ce7760a0d56359f
-R 2672359e21ab734b97c78750b0209c2d
-U drh
-Z 59fab89a94744c99e14b75dd09367216
+P 4357e76d53f692cb7495fbde61b4b7580560f816
+R 7f6d232abc0e2ee18f7e13e4cb8b2a02
+U chw
+Z 380772f02108e949a1e4532819450406
