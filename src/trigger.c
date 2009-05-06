@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.137 2009/04/28 13:01:09 drh Exp $
+** $Id: trigger.c,v 1.138 2009/05/06 18:42:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -663,6 +663,7 @@ static SrcList *targetSrcList(
     assert( iDb<pParse->db->nDb );
     sDb.z = (u8*)pParse->db->aDb[iDb].zName;
     sDb.n = sqlite3Strlen30((char*)sDb.z);
+    sDb.quoted = 0;
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &sDb, &pStep->target);
   } else {
     pSrc = sqlite3SrcListAppend(pParse->db, 0, &pStep->target, 0);
