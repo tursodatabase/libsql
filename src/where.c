@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.395 2009/05/06 18:57:10 shane Exp $
+** $Id: where.c,v 1.396 2009/05/06 19:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3106,7 +3106,6 @@ WhereInfo *sqlite3WhereBegin(
   int iFrom;                      /* First unused FROM clause element */
   int andFlags;              /* AND-ed combination of all pWC->a[].wtFlags */
   sqlite3 *db;               /* Database connection */
-  ExprList *pOrderBy = 0;
 
   /* The number of tables in the FROM clause is limited by the number of
   ** bits in a Bitmask 
@@ -3114,10 +3113,6 @@ WhereInfo *sqlite3WhereBegin(
   if( pTabList->nSrc>BMS ){
     sqlite3ErrorMsg(pParse, "at most %d tables in a join", BMS);
     return 0;
-  }
-
-  if( ppOrderBy ){
-    pOrderBy = *ppOrderBy;
   }
 
   /* Allocate and initialize the WhereInfo structure that will become the

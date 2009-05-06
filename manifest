@@ -1,5 +1,5 @@
-C Changes\sto\ssilence\scompiler\swarnings\sunder\sMSVC.\s(CVS\s6613)
-D 2009-05-06T18:57:10
+C Fix\scompiler\swarning\sfound\swith\sgcc\s-Wextra.\s(CVS\s6614)
+D 2009-05-06T19:03:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c 437aaae59fa3a603f0f4ba4c54b253801c21f3fc
+F src/main.c 3f62ff8433aba8f46fc61ba4ae637633c5c5f26d
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -201,7 +201,7 @@ F src/tokenize.c 286ce8a4bffe5ec81ad893e6243684d8f8846ed9
 F src/trigger.c 5dcdcf5c719bfd1a58f98265d7c024b8c12e2dc1
 F src/update.c deb930324dd67b7ad98234e1258a0ebcdd1ca0f9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
-F src/util.c 40fb962de1b00a310de4acc87c6800173e35c25f
+F src/util.c 71c2d9d6befc0405377744585461246c30a4474b
 F src/vacuum.c e8d178004377e97500c7ea87c8a3542976e3ea45
 F src/vdbe.c 3cecc2bb87192a0a425623bd530d67cc1b368ce5
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
@@ -212,7 +212,7 @@ F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c d8b985eeb88214941380372466a30ca410043a93
 F src/vtab.c 53355aa2381ec3ef2eaad25672cfd5877a02fe45
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
-F src/where.c f8e2e564ead72831e54b0e5cef593fe6c49cb656
+F src/where.c c5fa4a7a58880aecc657ebce5f8df98c9b67eec0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 37428435978027f6baffa552306dd5dc29ce5cd5
-R d91c4867f19031ad7c30ca316bfc8c09
-U shane
-Z 87fc5db9653611b9e876de085d04b69d
+P df599237e1ca8b4f361477a712cf761aa1fac3df
+R 069e745868418be8cf275b6c2785a5b7
+U drh
+Z ed696d26149c5baa2726380e1806aaee

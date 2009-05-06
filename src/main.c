@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.547 2009/05/06 18:57:10 shane Exp $
+** $Id: main.c,v 1.548 2009/05/06 19:03:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -768,7 +768,7 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_NOTADB      */ "file is encrypted or is not a database",
   };
   rc &= 0xff;
-  if( ALWAYS(rc>=0) && rc<sizeof(aMsg)/sizeof(aMsg[0]) && aMsg[rc]!=0 ){
+  if( ALWAYS(rc>=0) && rc<(int)(sizeof(aMsg)/sizeof(aMsg[0])) && aMsg[rc]!=0 ){
     return aMsg[rc];
   }else{
     return "unknown error";
