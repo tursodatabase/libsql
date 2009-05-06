@@ -1,5 +1,5 @@
-C Fix\sthree\svariable\sinitialization\sproblems\sfound\sby\svalgrind.\s(CVS\s6612)
-D 2009-05-06T18:42:21
+C Changes\sto\ssilence\scompiler\swarnings\sunder\sMSVC.\s(CVS\s6613)
+D 2009-05-06T18:57:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c 0082d0e5a63f04e88faee0dff0a7d63d3e92a78d
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c a601a89bcf1fc614babbde0afedbfc83e18e3c02
+F src/btree.c 7c4b02afea7efb561361f20408414fec68df898c
 F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c a8320b5fe742dcae98c8f7315b59d61e8e642a4d
@@ -114,7 +114,7 @@ F src/callback.c c54a923b06a17a2f965e5c3a6f87a3a963209a4c
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c a0a0932eea77471ab243337026abbce444024c43
-F src/expr.c 40b35167137c53777d15d3247d93615b4eefec2d
+F src/expr.c 8426ef8b80c754691b6e83f97756eab5364b005b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -125,7 +125,7 @@ F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c a01115fda61971701695fe0d1487e2dfe46a8b1e
+F src/main.c 437aaae59fa3a603f0f4ba4c54b253801c21f3fc
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 059490959c4481eaaf8f9d868b655603e2c8830c
+F src/pager.c e7171336ffb0f8adc41e55b63dbb2bc5a616a1ae
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y a0e8b8e5d646a6352098fccc9d3325b4234a05b9
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -203,16 +203,16 @@ F src/update.c deb930324dd67b7ad98234e1258a0ebcdd1ca0f9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 40fb962de1b00a310de4acc87c6800173e35c25f
 F src/vacuum.c e8d178004377e97500c7ea87c8a3542976e3ea45
-F src/vdbe.c e7c3355a39dfa0bf0be69e123061a6c1503fb327
+F src/vdbe.c 3cecc2bb87192a0a425623bd530d67cc1b368ce5
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 43183a2a18654fa570219ab65e53a608057c48ae
 F src/vdbeapi.c 86aa27a5f3493aaffb8ac051782aa3b22670d7ed
-F src/vdbeaux.c 7ac5c358f777388795a7a294a97d639890d1f823
+F src/vdbeaux.c 1a07329bdf51cc3687f88d9f5b2bd3f1d47cc5a8
 F src/vdbeblob.c e67757450ae8581a8b354d9d7e467e41502dfe38
 F src/vdbemem.c d8b985eeb88214941380372466a30ca410043a93
 F src/vtab.c 53355aa2381ec3ef2eaad25672cfd5877a02fe45
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
-F src/where.c 31b1c577c2a413e3e0f621069e2404f55de1ec8b
+F src/where.c f8e2e564ead72831e54b0e5cef593fe6c49cb656
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5d4bffaabbf6a809938f115de266b382183a0a96
-R cdcea386222148f35a5a3909380cf435
-U drh
-Z f14917d9041dd6537364a4829aeb56f2
+P 37428435978027f6baffa552306dd5dc29ce5cd5
+R d91c4867f19031ad7c30ca316bfc8c09
+U shane
+Z 87fc5db9653611b9e876de085d04b69d

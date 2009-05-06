@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.585 2009/04/30 16:41:00 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.586 2009/05/06 18:57:10 shane Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3191,7 +3191,7 @@ int sqlite3PagerOpen(
     nPathname + 1 +                /* zFilename */
     nPathname + 8 + 1              /* zJournal */
   );
-  assert( EIGHT_BYTE_ALIGNMENT(journalFileSize) );
+  assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
     sqlite3_free(zPathname);
     return SQLITE_NOMEM;
@@ -4043,7 +4043,7 @@ static int pager_open_journal(Pager *pPager){
 int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
   assert( pPager->state!=PAGER_UNLOCK );
-  pPager->subjInMemory = subjInMemory;
+  pPager->subjInMemory = (u8)subjInMemory;
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->pInJournal==0 );
     assert( !MEMDB && !pPager->tempFile );

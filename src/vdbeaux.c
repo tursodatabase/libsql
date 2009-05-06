@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.456 2009/05/05 15:46:43 drh Exp $
+** $Id: vdbeaux.c,v 1.457 2009/05/06 18:57:10 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2466,6 +2466,7 @@ int sqlite3VdbeRecordCompare(
   mem1.enc = pKeyInfo->enc;
   mem1.db = pKeyInfo->db;
   mem1.flags = 0;
+  mem1.u.i = 0;  /* not needed, here to silence compiler warning */
   mem1.zMalloc = 0;
   
   idx1 = getVarint32(aKey1, szHdr1);

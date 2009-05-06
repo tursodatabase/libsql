@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.394 2009/05/06 18:42:21 drh Exp $
+** $Id: where.c,v 1.395 2009/05/06 18:57:10 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -2885,8 +2885,8 @@ static Bitmask codeOneLoopStart(
             r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
                                          regRowid, 0);
             sqlite3VdbeAddOp4(v, OP_RowSetTest, regRowset, 
-                             sqlite3VdbeCurrentAddr(v)+2,
-                             r, (char*)iSet, P4_INT32);
+                              sqlite3VdbeCurrentAddr(v)+2,
+                              r, SQLITE_INT_TO_PTR(iSet), P4_INT32);
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
