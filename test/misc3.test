@@ -13,7 +13,7 @@
 # This file implements tests for miscellanous features that were
 # left out of other test files.
 #
-# $Id: misc3.test,v 1.19 2008/06/25 02:47:57 drh Exp $
+# $Id: misc3.test,v 1.20 2009/05/06 00:49:01 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -272,16 +272,26 @@ ifcapable {explain} {
     }]
     regexp { IsUnique \d+ \d+ \d+ \d+ } $x
   } {1}
-  do_test misc3-6.11 {
-    set x [execsql {
-      EXPLAIN SELECT a+123456789012, b*4.5678, c FROM ex1 ORDER BY +a, b DESC
-    }]
-    set y [regexp { 123456789012 } $x]
-    lappend y [regexp { 4.5678 } $x]
-    lappend y [regexp { hello } $x]
-    lappend y [regexp {,-BINARY} $x]
-  } {1 1 1 1}
-
+  if {[regexp {16} [db one {PRAGMA encoding}]]} {
+    do_test misc3-6.11-utf16 {
+      set x [execsql {
+        EXPLAIN SELECT a+123456789012, b*4.5678, c FROM ex1 ORDER BY +a, b DESC
+      }]
+      set y [regexp { 123456789012 } $x]
+      lappend y [regexp { 4.5678 } $x]
+      lappend y [regexp {,-BINARY} $x]
+    } {1 1 1}
+  } else {
+    do_test misc3-6.11-utf8 {
+      set x [execsql {
+        EXPLAIN SELECT a+123456789012, b*4.5678, c FROM ex1 ORDER BY +a, b DESC
+      }]
+      set y [regexp { 123456789012 } $x]
+      lappend y [regexp { 4.5678 } $x]
+      lappend y [regexp { hello } $x]
+      lappend y [regexp {,-BINARY} $x]
+    } {1 1 1 1}
+  }
 }
 
 ifcapable {trigger} {
