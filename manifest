@@ -1,5 +1,5 @@
-C Make\ssure\sthe\siteration\scounter\son\saggregate\sfunctions\sis\sreset\seach\ntime\sthe\saggregate\sis\sused\sin\san\scorrelated\ssubquery.\s\sTicket\s#3841.\s(CVS\s6616)
-D 2009-05-07T12:17:34
+C Change\sthe\ssqlite3_create_function()\sfamily\sof\sroutines\sto\sreturn\nSQLITE_MISUSE\sinstead\sof\sSQLITE_ERROR\sif\stheir\sparameters\sare\sincorrect.\s(CVS\s6617)
+D 2009-05-07T13:43:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c 3f62ff8433aba8f46fc61ba4ae637633c5c5f26d
+F src/main.c c28ad5265f8f488f8e69e4ed67ce5ce3b7637d54
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -182,7 +182,7 @@ F src/test_backup.c 1384a18985a5a2d275c2662e48473bf1542ebd08
 F src/test_btree.c d7b8716544611c323860370ee364e897c861f1b0
 F src/test_config.c a05378089b6773ba36b85727dedf9ec0a16424ce
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
-F src/test_func.c dd7bcaafb4e149702b506ede125ef6a4d4f6c471
+F src/test_func.c b8140bc4ed0d290d5e22972eb2a3bfd40aa798dc
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c 28673a22c9cf5d258c153b788340fa1e1ec40b8b
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 469ad1ded35f5ff8ab2f6e8f776d73a9cea73527
-R 14d435ec45cde23b6f0971f656f78d43
+P 4a86de35d57a0c8720772c29431c86cd9be1fb9b
+R b61ac87edee6b8ff3347fa8f0c7bf800
 U drh
-Z a7e2bcfe217f4defe8fe1346f0212cfb
+Z 2f0cc6606171479d0e8b1fae806b15ae
