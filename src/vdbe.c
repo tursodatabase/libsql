@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.842 2009/05/06 18:57:10 shane Exp $
+** $Id: vdbe.c,v 1.843 2009/05/07 12:17:34 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -676,6 +676,7 @@ int sqlite3VdbeExec(
       pOut = &p->aMem[pOp->p2];
       sqlite3VdbeMemReleaseExternal(pOut);
       pOut->flags = MEM_Null;
+      pOut->n = 0;
     }else
  
     /* Do common setup for opcodes marked with one of the following
