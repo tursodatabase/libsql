@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.250 2009/04/07 05:35:04 chw Exp $
+** $Id: os_unix.c,v 1.251 2009/05/08 11:34:37 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -4427,8 +4427,8 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
     len = strlcat(lPath, "sqliteplocks", maxLen);
     if( mkdir(lPath, SQLITE_DEFAULT_PROXYDIR_PERMISSIONS) ){
       /* if mkdir fails, handle as lock file creation failure */
-      int err = errno;
 #  ifdef SQLITE_DEBUG
+      int err = errno;
       if( err!=EEXIST ){
         fprintf(stderr, "proxyGetLockPath: mkdir(%s,0%o) error %d %s\n", lPath,
                 SQLITE_DEFAULT_PROXYDIR_PERMISSIONS, err, strerror(err));

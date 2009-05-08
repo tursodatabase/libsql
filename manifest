@@ -1,5 +1,5 @@
-C Correctly\supdate\sthe\scache\spage-count\swhen\sdiscarding\spages\sin\sthe\sxTruncate()\smethod\sof\sthe\sdefault\spcache\simplementation.\sOtherwise\sthe\seffective\sconfigured\ssize\sof\sthe\scache\sshrinks\seach\stime\sxTruncate()\sis\scalled.\sFix\sfor\s#3844.\s(CVS\s6619)
-D 2009-05-08T06:52:48
+C Fix\sa\swarning\sin\sthe\sosx-specific\spart\sof\sos_unix.c.\sTicket\s#3847.\s(CVS\s6620)
+D 2009-05-08T11:34:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 9ad9f45049a3c9eb0b0713b162ff0d7024ff7259
+F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c e7171336ffb0f8adc41e55b63dbb2bc5a616a1ae
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 660108ef7a3c45f735789ba1039be2c37a8b0d0e
-R 151d465606fbfb5ab2c660c5eeee4883
+P 88211ceeec01ee0d3e55231512be26dd672db099
+R 1496f8e77346601ffa77288043e57397
 U danielk1977
-Z 93e23517281af2336719fae0462b8142
+Z 5271daa20456c0819a5a6b09124c54dd
