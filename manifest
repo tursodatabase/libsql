@@ -1,5 +1,5 @@
-C If\scompiling\sFTS3\sin\sthe\samalgamation,\sinclude\sthe\sctype.h\sheader\sfile.\r\nTicket\s#3843.\s(CVS\s6618)
-D 2009-05-07T14:11:52
+C Correctly\supdate\sthe\scache\spage-count\swhen\sdiscarding\spages\sin\sthe\sxTruncate()\smethod\sof\sthe\sdefault\spcache\simplementation.\sOtherwise\sthe\seffective\sconfigured\ssize\sof\sthe\scache\sshrinks\seach\stime\sxTruncate()\sis\scalled.\sFix\sfor\s#3844.\s(CVS\s6619)
+D 2009-05-08T06:52:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y a0e8b8e5d646a6352098fccc9d3325b4234a05b9
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
-F src/pcache1.c 35f8601c91c09a1e887a1914ebca07bb5afc7b89
+F src/pcache1.c a6138ee57da3259149ca5254e0156d9b624db850
 F src/pragma.c c26c16c49a80d03c8597f0e6c7daba53f283428f
 F src/prepare.c 72d74e6d3b9c8eb0663b33ec6438aa718096ac79
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
@@ -494,7 +494,7 @@ F test/pager2.test d4b7f6b70ff018b9995e622a32526b275f515042
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
-F test/pcache.test 70ad1d65cf73f6a0a7501e0236312eb214d93a55
+F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
 F test/permutations.test 386b8e6b8e8e6aec41f6ed59a37353e412bfb00a
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 866f13e28c6fdb98947e1c7a89b7855bb5bbdb96
-R ea5f1ddf9c87b3e0617c4519f441bd08
-U drh
-Z f7e6d912c673aa38e850b4f308f5d7fa
+P 660108ef7a3c45f735789ba1039be2c37a8b0d0e
+R 151d465606fbfb5ab2c660c5eeee4883
+U danielk1977
+Z 93e23517281af2336719fae0462b8142

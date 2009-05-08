@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.11 2009/04/14 18:44:39 aswift Exp $
+** @(#) $Id: pcache1.c,v 1.12 2009/05/08 06:52:48 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -360,6 +360,7 @@ static void pcache1TruncateUnsafe(
   PCache1 *pCache, 
   unsigned int iLimit 
 ){
+  TESTONLY( int nPage = 0; )      /* Used to assert pCache->nPage is correct */
   unsigned int h;
   assert( sqlite3_mutex_held(pcache1.mutex) );
   for(h=0; h<pCache->nHash; h++){
@@ -367,14 +368,17 @@ static void pcache1TruncateUnsafe(
     PgHdr1 *pPage;
     while( (pPage = *pp)!=0 ){
       if( pPage->iKey>=iLimit ){
-        pcache1PinPage(pPage);
+        pCache->nPage--;
         *pp = pPage->pNext;
+        pcache1PinPage(pPage);
         pcache1FreePage(pPage);
       }else{
         pp = &pPage->pNext;
+        TESTONLY( nPage++; )
       }
     }
   }
+  assert( pCache->nPage==nPage );
 }
 
 /******************************************************************************/

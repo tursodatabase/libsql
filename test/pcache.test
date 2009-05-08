@@ -11,7 +11,7 @@
 #
 # This file is focused on testing the pcache module.
 #
-# $Id: pcache.test,v 1.4 2009/03/05 14:59:40 danielk1977 Exp $
+# $Id: pcache.test,v 1.5 2009/05/08 06:52:48 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -144,5 +144,26 @@ do_test pcache-1.13 {
   execsql { PRAGMA cache_size = 15 }
   pcache_stats
 } {current 15 max 15 min 10 recyclable 15}
+
+do_test pcache-1.14 {
+  hexio_write test.db 24 [hexio_render_int32 1000]
+  execsql { SELECT * FROM sqlite_master }
+  pcache_stats
+} {current 2 max 15 min 10 recyclable 2}
+
+do_test pcache-1.15 {
+  execsql { 
+    SELECT * FROM t1 ORDER BY a; SELECT * FROM t1;
+    SELECT * FROM t2 ORDER BY a; SELECT * FROM t2;
+    SELECT * FROM t3 ORDER BY a; SELECT * FROM t3;
+    SELECT * FROM t4 ORDER BY a; SELECT * FROM t4;
+    SELECT * FROM t5 ORDER BY a; SELECT * FROM t5;
+    SELECT * FROM t6 ORDER BY a; SELECT * FROM t6;
+    SELECT * FROM t7 ORDER BY a; SELECT * FROM t7;
+    SELECT * FROM t8 ORDER BY a; SELECT * FROM t8;
+    SELECT * FROM t9 ORDER BY a; SELECT * FROM t9;
+  }
+  pcache_stats
+} {current 14 max 15 min 10 recyclable 14}
 
 finish_test
