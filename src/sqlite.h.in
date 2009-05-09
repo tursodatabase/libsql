@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.447 2009/04/30 15:59:56 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.448 2009/05/09 18:59:42 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4852,6 +4852,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_FAULT_INSTALL            9
 #define SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS     10
 #define SQLITE_TESTCTRL_PENDING_BYTE            11
+#define SQLITE_TESTCTRL_ASSERT                  12
+#define SQLITE_TESTCTRL_ALWAYS                  13
 
 /*
 ** CAPI3REF: SQLite Runtime Status {H17200} <S60200>

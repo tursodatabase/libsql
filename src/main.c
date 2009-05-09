@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.549 2009/05/07 13:43:49 drh Exp $
+** $Id: main.c,v 1.550 2009/05/09 18:59:42 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2176,7 +2176,7 @@ int sqlite3_test_control(int op, ...){
     }
 
     /*
-    **  sqlite3_test_control(PENDING_BYTE, unsigned int X)
+    **  sqlite3_test_control(SQLITE_TESTCTRL_PENDING_BYTE, unsigned int X)
     **
     ** Set the PENDING byte to the value in the argument, if X>0.
     ** Make no changes if X==0.  Return the value of the pending byte
@@ -2191,6 +2191,58 @@ int sqlite3_test_control(int op, ...){
       unsigned int newVal = va_arg(ap, unsigned int);
       rc = sqlite3PendingByte;
       if( newVal ) sqlite3PendingByte = newVal;
+      break;
+    }
+
+    /*
+    **  sqlite3_test_control(SQLITE_TESTCTRL_ASSERT, int X)
+    **
+    ** This action provides a run-time test to see whether or not
+    ** assert() was enabled at compile-time.  If X is true and assert()
+    ** is enabled, then the return value is true.  If X is true and
+    ** assert() is disabled, then the return value is zero.  If X is
+    ** false and assert() is enabled, then the assertion fires and the
+    ** process aborts.  If X is false and assert() is disabled, then the
+    ** return value is zero.
+    */
+    case SQLITE_TESTCTRL_ASSERT: {
+      volatile int x = 0;
+      assert( (x = va_arg(ap,int))!=0 );
+      rc = x;
+      break;
+    }
+
+
+    /*
+    **  sqlite3_test_control(SQLITE_TESTCTRL_ALWAYS, int X)
+    **
+    ** This action provides a run-time test to see how the ALWAYS and
+    ** NEVER macros were defined at compile-time.
+    **
+    ** The return value is ALWAYS(X).  
+    **
+    ** The recommended test is X==2.  If the return value is 2, that means
+    ** ALWAYS() and NEVER() are both no-op pass-through macros, which is the
+    ** default setting.  If the return value is 1, then ALWAYS() is either
+    ** hard-coded to true or else it asserts if its argument is false.
+    ** The first behavior (hard-coded to true) is the case if
+    ** SQLITE_TESTCTRL_ASSERT shows that assert() is disabled and the second
+    ** behavior (assert if the argument to ALWAYS() is false) is the case if
+    ** SQLITE_TESTCTRL_ASSERT shows that assert() is enabled.
+    **
+    ** The run-time test procedure might look something like this:
+    **
+    **    if( sqlite3_test_control(SQLITE_TESTCTRL_ALWAYS, 2)==2 ){
+    **      // ALWAYS() and NEVER() are no-op pass-through macros
+    **    }else if( sqlite3_test_control(SQLITE_TESTCTRL_ASSERT, 1) ){
+    **      // ALWAYS(x) asserts that x is true. NEVER(x) asserts x is false.
+    **    }else{
+    **      // ALWAYS(x) is a constant 1.  NEVER(x) is a constant 0.
+    **    }
+    */
+    case SQLITE_TESTCTRL_ALWAYS: {
+      int x = va_arg(ap,int);
+      rc = ALWAYS(x);
       break;
     }
   }
