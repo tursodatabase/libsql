@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.31 2009/03/24 15:08:10 drh Exp $
+** $Id: vdbeblob.c,v 1.32 2009/05/09 15:17:47 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -85,6 +85,7 @@ int sqlite3_blob_open(
   int rc = SQLITE_OK;
   char zErr[128];
 
+  *ppBlob = 0;
   zErr[0] = 0;
   sqlite3_mutex_enter(db->mutex);
   do {
@@ -176,9 +177,10 @@ int sqlite3_blob_open(
       /* Remove either the OP_OpenWrite or OpenRead. Set the P2 
       ** parameter of the other to pTab->tnum. 
       */
-      sqlite3VdbeChangeToNoop(v, (flags ? 2 : 3), 1);
-      sqlite3VdbeChangeP2(v, (flags ? 3 : 2), pTab->tnum);
-      sqlite3VdbeChangeP3(v, (flags ? 3 : 2), iDb);
+      flags = !!flags;
+      sqlite3VdbeChangeToNoop(v, 3 - flags, 1);
+      sqlite3VdbeChangeP2(v, 2 + flags, pTab->tnum);
+      sqlite3VdbeChangeP3(v, 2 + flags, iDb);
 
       /* Configure the number of columns. Configure the cursor to
       ** think that the table has one more column than it really
@@ -187,7 +189,7 @@ int sqlite3_blob_open(
       ** we can invoke OP_Column to fill in the vdbe cursors type 
       ** and offset cache without causing any IO.
       */
-      sqlite3VdbeChangeP4(v, flags ? 3 : 2, SQLITE_INT_TO_PTR(pTab->nCol+1), P4_INT32);
+      sqlite3VdbeChangeP4(v, 2+flags, SQLITE_INT_TO_PTR(pTab->nCol+1),P4_INT32);
       sqlite3VdbeChangeP2(v, 6, pTab->nCol);
       if( !db->mallocFailed ){
         sqlite3VdbeMakeReady(v, 1, 1, 1, 0);
@@ -196,7 +198,7 @@ int sqlite3_blob_open(
    
     sqlite3BtreeLeaveAll(db);
     rc = sqlite3SafetyOff(db);
-    if( rc!=SQLITE_OK || db->mallocFailed ){
+    if( NEVER(rc!=SQLITE_OK) || db->mallocFailed ){
       goto blob_open_out;
     }
 
@@ -266,11 +268,15 @@ int sqlite3_blob_close(sqlite3_blob *pBlob){
   int rc;
   sqlite3 *db;
 
-  db = p->db;
-  sqlite3_mutex_enter(db->mutex);
-  rc = sqlite3_finalize(p->pStmt);
-  sqlite3DbFree(db, p);
-  sqlite3_mutex_leave(db->mutex);
+  if( p ){
+    db = p->db;
+    sqlite3_mutex_enter(db->mutex);
+    rc = sqlite3_finalize(p->pStmt);
+    sqlite3DbFree(db, p);
+    sqlite3_mutex_leave(db->mutex);
+  }else{
+    rc = SQLITE_OK;
+  }
   return rc;
 }
 
@@ -287,8 +293,10 @@ static int blobReadWrite(
   int rc;
   Incrblob *p = (Incrblob *)pBlob;
   Vdbe *v;
-  sqlite3 *db = p->db;  
+  sqlite3 *db;
 
+  if( p==0 ) return SQLITE_MISUSE;
+  db = p->db;
   sqlite3_mutex_enter(db->mutex);
   v = (Vdbe*)p->pStmt;
 
@@ -344,7 +352,7 @@ int sqlite3_blob_write(sqlite3_blob *pBlob, const void *z, int n, int iOffset){
 */
 int sqlite3_blob_bytes(sqlite3_blob *pBlob){
   Incrblob *p = (Incrblob *)pBlob;
-  return p->nByte;
+  return p ? p->nByte : 0;
 }
 
 #endif /* #ifndef SQLITE_OMIT_INCRBLOB */
