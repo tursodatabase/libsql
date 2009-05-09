@@ -12,7 +12,7 @@
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
 **
-** $Id: hash.c,v 1.37 2009/05/02 13:29:38 drh Exp $
+** $Id: hash.c,v 1.38 2009/05/09 23:29:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>
@@ -265,7 +265,8 @@ void *sqlite3HashInsert(Hash *pH, const char *pKey, int nKey, void *data){
   new_elem->data = data;
   pH->count++;
   if( pH->count>=10 && pH->count > 2*pH->htsize ){
-    if( rehash(pH, pH->count*2) && pH->htsize ){
+    if( rehash(pH, pH->count*2) ){
+      assert( pH->htsize>0 );
       h = strHash(pKey, nKey) % pH->htsize;
     }
   }
