@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.275 2009/05/01 21:13:37 drh Exp $
+** @(#) $Id: parse.y,v 1.276 2009/05/11 18:22:31 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -1201,5 +1201,6 @@ vtabargtoken ::= ANY(X).            {sqlite3VtabArgExtend(pParse,&X);}
 vtabargtoken ::= lp anylist RP(X).  {sqlite3VtabArgExtend(pParse,&X);}
 lp ::= LP(X).                       {sqlite3VtabArgExtend(pParse,&X);}
 anylist ::= .
-anylist ::= anylist ANY(X).         {sqlite3VtabArgExtend(pParse,&X);}
+anylist ::= anylist LP anylist RP.
+anylist ::= anylist ANY.
 %endif  SQLITE_OMIT_VIRTUALTABLE
