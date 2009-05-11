@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.39 2009/05/03 20:23:53 drh Exp $
+** $Id: callback.c,v 1.40 2009/05/11 20:53:29 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -23,11 +23,10 @@
 ** in the database text encoding of name zName, length nName.
 ** If the collation sequence
 */
-static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
+static void callCollNeeded(sqlite3 *db, const char *zName){
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
-  if( nName<0 ) nName = sqlite3Strlen30(zName);
   if( db->xCollNeeded ){
-    char *zExternal = sqlite3DbStrNDup(db, zName, nName);
+    char *zExternal = sqlite3DbStrDup(db, zName);
     if( !zExternal ) return;
     db->xCollNeeded(db->pCollNeededArg, db, (int)ENC(db), zExternal);
     sqlite3DbFree(db, zExternal);
@@ -36,7 +35,7 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
   if( db->xCollNeeded16 ){
     char const *zExternal;
     sqlite3_value *pTmp = sqlite3ValueNew(db);
-    sqlite3ValueSetStr(pTmp, nName, zName, SQLITE_UTF8, SQLITE_STATIC);
+    sqlite3ValueSetStr(pTmp, -1, zName, SQLITE_UTF8, SQLITE_STATIC);
     zExternal = sqlite3ValueText(pTmp, SQLITE_UTF16NATIVE);
     if( zExternal ){
       db->xCollNeeded16(db->pCollNeededArg, db, (int)ENC(db), zExternal);
@@ -56,11 +55,10 @@ static void callCollNeeded(sqlite3 *db, const char *zName, int nName){
 static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
   CollSeq *pColl2;
   char *z = pColl->zName;
-  int n = sqlite3Strlen30(z);
   int i;
   static const u8 aEnc[] = { SQLITE_UTF16BE, SQLITE_UTF16LE, SQLITE_UTF8 };
   for(i=0; i<3; i++){
-    pColl2 = sqlite3FindCollSeq(db, aEnc[i], z, n, 0);
+    pColl2 = sqlite3FindCollSeq(db, aEnc[i], z, 0);
     if( pColl2->xCmp!=0 ){
       memcpy(pColl, pColl2, sizeof(CollSeq));
       pColl->xDel = 0;         /* Do not copy the destructor */
@@ -82,25 +80,26 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 ** The return value is either the collation sequence to be used in database
 ** db for collation type name zName, length nName, or NULL, if no collation
 ** sequence can be found.
+**
+** See also: sqlite3LocateCollSeq(), sqlite3FindCollSeq()
 */
 CollSeq *sqlite3GetCollSeq(
-  sqlite3* db, 
-  CollSeq *pColl, 
-  const char *zName, 
-  int nName
+  sqlite3* db,          /* The database connection */
+  CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
+  const char *zName     /* Collating sequence name */
 ){
   CollSeq *p;
 
   p = pColl;
   if( !p ){
-    p = sqlite3FindCollSeq(db, ENC(db), zName, nName, 0);
+    p = sqlite3FindCollSeq(db, ENC(db), zName, 0);
   }
   if( !p || !p->xCmp ){
     /* No collation sequence of this type for this encoding is registered.
     ** Call the collation factory to see if it can supply us with one.
     */
-    callCollNeeded(db, zName, nName);
-    p = sqlite3FindCollSeq(db, ENC(db), zName, nName, 0);
+    callCollNeeded(db, zName);
+    p = sqlite3FindCollSeq(db, ENC(db), zName, 0);
   }
   if( p && !p->xCmp && synthCollSeq(db, p) ){
     p = 0;
@@ -123,7 +122,7 @@ CollSeq *sqlite3GetCollSeq(
 int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
   if( pColl ){
     const char *zName = pColl->zName;
-    CollSeq *p = sqlite3GetCollSeq(pParse->db, pColl, zName, -1);
+    CollSeq *p = sqlite3GetCollSeq(pParse->db, pColl, zName);
     if( !p ){
       if( pParse->nErr==0 ){
         sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
@@ -152,13 +151,12 @@ int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
 ** each collation sequence structure.
 */
 static CollSeq *findCollSeqEntry(
-  sqlite3 *db,
-  const char *zName,
-  int nName,
-  int create
+  sqlite3 *db,          /* Database connection */
+  const char *zName,    /* Name of the collating sequence */
+  int create            /* Create a new entry if true */
 ){
   CollSeq *pColl;
-  if( nName<0 ) nName = sqlite3Strlen30(zName);
+  int nName = sqlite3Strlen30(zName);
   pColl = sqlite3HashFind(&db->aCollSeq, zName, nName);
 
   if( 0==pColl && create ){
@@ -202,17 +200,18 @@ static CollSeq *findCollSeqEntry(
 ** this routine.  sqlite3LocateCollSeq() invokes the collation factory
 ** if necessary and generates an error message if the collating sequence
 ** cannot be found.
+**
+** See also: sqlite3LocateCollSeq(), sqlite3GetCollSeq()
 */
 CollSeq *sqlite3FindCollSeq(
   sqlite3 *db,
   u8 enc,
   const char *zName,
-  int nName,
   int create
 ){
   CollSeq *pColl;
   if( zName ){
-    pColl = findCollSeqEntry(db, zName, nName, create);
+    pColl = findCollSeqEntry(db, zName, create);
   }else{
     pColl = db->pDfltColl;
   }

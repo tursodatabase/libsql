@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the CREATE TABLE statement.
 #
-# $Id: table.test,v 1.51 2009/04/28 15:43:45 drh Exp $
+# $Id: table.test,v 1.52 2009/05/11 20:53:29 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -337,13 +337,13 @@ do_test table-8.1.1 {
     SELECT sql FROM sqlite_master WHERE name='t2';
   }
 } {{CREATE TABLE t2(
-  "desc" text,
-  "asc" text,
-  "key" int,
-  "14_vac" boolean,
-  fuzzy_dog_12 varchar(10),
-  "begin" blob,
-  "end" clob
+  "desc" TEXT,
+  "asc" TEXT,
+  "key" INT,
+  "14_vac" NUM,
+  fuzzy_dog_12 TEXT,
+  "begin",
+  "end" TEXT
 )}}
 do_test table-8.2 {
   execsql {
@@ -406,7 +406,7 @@ do_test table-8.9 {
     CREATE TABLE t11 AS SELECT * FROM t10;
     SELECT sql FROM sqlite_master WHERE name = 't11';
   }
-} {{CREATE TABLE t11("col.1" "char.3")}}
+} {{CREATE TABLE t11("col.1" TEXT)}}
 do_test table-8.10 {
   execsql {
     CREATE TABLE t12(
@@ -422,13 +422,13 @@ do_test table-8.10 {
     SELECT sql FROM sqlite_master WHERE name = 't13';
   }
 } {{CREATE TABLE t13(
-  a INTEGER,
-  b VARCHAR(10),
-  c VARCHAR(1,10),
-  d VARCHAR(+1,-10),
-  e VARCHAR (+1,-10),
-  f "VARCHAR (+1,-10, 5)",
-  g "BIG INTEGER"
+  a INT,
+  b TEXT,
+  c TEXT,
+  d TEXT,
+  e TEXT,
+  f TEXT,
+  g INT
 )}}
 
 # Make sure we cannot have duplicate column names within a table.
@@ -585,7 +585,7 @@ do_test table-12.2 {
   execsql {
     SELECT sql FROM sqlite_master WHERE tbl_name = 't8'
   }
-} {{CREATE TABLE t8(b number(5,10),h,i integer,j BLOB)}}
+} {{CREATE TABLE t8(b NUM,h,i INT,j)}}
 
 #--------------------------------------------------------------------
 # Test cases table-13.*

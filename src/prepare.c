@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.117 2009/04/20 17:43:03 drh Exp $
+** $Id: prepare.c,v 1.118 2009/05/11 20:53:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -258,7 +258,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     if( iDb==0 ){
       /* If opening the main database, set ENC(db). */
       ENC(db) = (u8)meta[4];
-      db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0);
+      db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
       if( meta[4]!=ENC(db) ){

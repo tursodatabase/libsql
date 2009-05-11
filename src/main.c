@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.550 2009/05/09 18:59:42 drh Exp $
+** $Id: main.c,v 1.551 2009/05/11 20:53:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1361,7 +1361,7 @@ static int createCollation(
 ){
   CollSeq *pColl;
   int enc2;
-  int nName;
+  int nName = sqlite3Strlen30(zName);
   
   assert( sqlite3_mutex_held(db->mutex) );
 
@@ -1383,8 +1383,7 @@ static int createCollation(
   ** sequence. If so, and there are active VMs, return busy. If there
   ** are no active VMs, invalidate any pre-compiled statements.
   */
-  nName = sqlite3Strlen30(zName);
-  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, nName, 0);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 0);
   if( pColl && pColl->xCmp ){
     if( db->activeVdbeCnt ){
       sqlite3Error(db, SQLITE_BUSY, 
@@ -1414,7 +1413,7 @@ static int createCollation(
     }
   }
 
-  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, nName, 1);
+  pColl = sqlite3FindCollSeq(db, (u8)enc2, zName, 1);
   if( pColl ){
     pColl->xCmp = xCompare;
     pColl->pUser = pCtx;
@@ -1603,7 +1602,7 @@ static int openDatabase(
   if( db->mallocFailed ){
     goto opendb_out;
   }
-  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 6, 0);
+  db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
   assert( db->pDfltColl!=0 );
 
   /* Also add a UTF-8 case-insensitive collation sequence. */
@@ -1611,7 +1610,7 @@ static int openDatabase(
 
   /* Set flags on the built-in collating sequences */
   db->pDfltColl->type = SQLITE_COLL_BINARY;
-  pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "NOCASE", 6, 0);
+  pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "NOCASE", 0);
   if( pColl ){
     pColl->type = SQLITE_COLL_NOCASE;
   }

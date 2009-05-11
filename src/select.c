@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.512 2009/05/03 20:23:54 drh Exp $
+** $Id: select.c,v 1.513 2009/05/11 20:53:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1223,6 +1223,7 @@ static void selectAddColumnTypeAndCollation(
     p = a[i].pExpr;
     pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p, 0, 0, 0));
     pCol->affinity = sqlite3ExprAffinity(p);
+    if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);

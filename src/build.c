@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.537 2009/05/06 18:42:21 drh Exp $
+** $Id: build.c,v 1.538 2009/05/11 20:53:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -342,6 +342,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 */
 static void freeIndex(Index *p){
   sqlite3 *db = p->pTable->dbMem;
+  testcase( db==0 );
   sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }
@@ -470,6 +471,7 @@ static void sqliteResetColumnNames(Table *pTable){
   int i;
   Column *pCol;
   sqlite3 *db = pTable->dbMem;
+  testcase( db==0 );
   assert( pTable!=0 );
   if( (pCol = pTable->aCol)!=0 ){
     for(i=0; i<pTable->nCol; i++, pCol++){
@@ -500,6 +502,7 @@ void sqlite3DeleteTable(Table *pTable){
 
   if( pTable==0 ) return;
   db = pTable->dbMem;
+  testcase( db==0 );
 
   /* Do not delete the table until the reference count reaches zero. */
   pTable->nRef--;
@@ -654,7 +657,7 @@ int sqlite3TwoPartName(
   int iDb;                    /* Database holding the object */
   sqlite3 *db = pParse->db;
 
-  if( pName2 && pName2->n>0 ){
+  if( ALWAYS(pName2!=0) && pName2->n>0 ){
     if( db->init.busy ) {
       sqlite3ErrorMsg(pParse, "corrupt database");
       pParse->nErr++;
@@ -819,8 +822,8 @@ void sqlite3StartTable(
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
-  pTable->dbMem = db->lookaside.bEnabled ? db : 0;
-  if( pParse->pNewTable ) sqlite3DeleteTable(pParse->pNewTable);
+  pTable->dbMem = 0;
+  assert( pParse->pNewTable==0 );
   pParse->pNewTable = pTable;
 
   /* If this is the magic sqlite_sequence table used by autoincrement,
@@ -976,10 +979,9 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
 */
 void sqlite3AddNotNull(Parse *pParse, int onError){
   Table *p;
-  int i;
-  if( (p = pParse->pNewTable)==0 ) return;
-  i = p->nCol-1;
-  if( i>=0 ) p->aCol[i].notNull = (u8)onError;
+  p = pParse->pNewTable;
+  if( p==0 || NEVER(p->nCol<1) ) return;
+  p->aCol[p->nCol-1].notNull = (u8)onError;
 }
 
 /*
@@ -1056,17 +1058,13 @@ char sqlite3AffinityType(const Token *pType){
 */ 
 void sqlite3AddColumnType(Parse *pParse, Token *pType){
   Table *p;
-  int i;
   Column *pCol;
-  sqlite3 *db;
 
-  if( (p = pParse->pNewTable)==0 ) return;
-  i = p->nCol-1;
-  if( i<0 ) return;
-  pCol = &p->aCol[i];
-  db = pParse->db;
-  sqlite3DbFree(db, pCol->zType);
-  pCol->zType = sqlite3NameFromToken(db, pType);
+  p = pParse->pNewTable;
+  if( p==0 || NEVER(p->nCol<1) ) return;
+  pCol = &p->aCol[p->nCol-1];
+  assert( pCol->zType==0 );
+  pCol->zType = sqlite3NameFromToken(pParse->db, pType);
   pCol->affinity = sqlite3AffinityType(pType);
 }
 
@@ -1084,7 +1082,8 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
   Table *p;
   Column *pCol;
   sqlite3 *db = pParse->db;
-  if( (p = pParse->pNewTable)!=0 ){
+  p = pParse->pNewTable;
+  if( p!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
     if( !sqlite3ExprIsConstantOrFunction(pExpr) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
@@ -1213,7 +1212,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   zColl = sqlite3NameFromToken(db, pToken);
   if( !zColl ) return;
 
-  if( sqlite3LocateCollSeq(pParse, zColl, -1) ){
+  if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
     p->aCol[i].zColl = zColl;
   
@@ -1249,21 +1248,20 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
 ** This routine is a wrapper around sqlite3FindCollSeq().  This routine
 ** invokes the collation factory if the named collation cannot be found
 ** and generates an error message.
+**
+** See also: sqlite3FindCollSeq(), sqlite3GetCollSeq()
 */
-CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName, int nName){
+CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName){
   sqlite3 *db = pParse->db;
   u8 enc = ENC(db);
   u8 initbusy = db->init.busy;
   CollSeq *pColl;
 
-  pColl = sqlite3FindCollSeq(db, enc, zName, nName, initbusy);
+  pColl = sqlite3FindCollSeq(db, enc, zName, initbusy);
   if( !initbusy && (!pColl || !pColl->xCmp) ){
-    pColl = sqlite3GetCollSeq(db, pColl, zName, nName);
+    pColl = sqlite3GetCollSeq(db, pColl, zName);
     if( !pColl ){
-      if( nName<0 ){
-        nName = sqlite3Strlen30(zName);
-      }
-      sqlite3ErrorMsg(pParse, "no such collation sequence: %.*s", nName, zName);
+      sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
       pColl = 0;
     }
   }
@@ -1314,61 +1312,6 @@ static int identLength(const char *z){
 }
 
 /*
-** This function is a wrapper around sqlite3GetToken() used by 
-** isValidDimension(). This function differs from sqlite3GetToken() in
-** that:
-**
-**   * Whitespace is ignored, and
-**   * The output variable *peToken is set to 0 if the end of the
-**     nul-terminated input string is reached.
-*/
-static int getTokenNoSpace(unsigned char *z, int *peToken){
-  int n = 0;
-  while( sqlite3Isspace(z[n]) ) n++;
-  if( !z[n] ){
-    *peToken = 0;
-    return 0;
-  }
-  return n + sqlite3GetToken(&z[n], peToken);
-}
-
-/*
-** Parameter z points to a nul-terminated string. Return true if, when
-** whitespace is ignored, the contents of this string matches one of 
-** the following patterns:
-**
-**     ""
-**     "(number)"
-**     "(number,number)"
-*/
-static int isValidDimension(unsigned char *z){
-  int eToken;
-  int n = 0;
-  n += getTokenNoSpace(&z[n], &eToken);
-  if( eToken ){
-    if( eToken!=TK_LP ) return 0;
-    n += getTokenNoSpace(&z[n], &eToken);
-    if( eToken==TK_PLUS || eToken==TK_MINUS ){
-      n += getTokenNoSpace(&z[n], &eToken);
-    }
-    if( eToken!=TK_INTEGER && eToken!=TK_FLOAT ) return 0;
-    n += getTokenNoSpace(&z[n], &eToken);
-    if( eToken==TK_COMMA ){
-      n += getTokenNoSpace(&z[n], &eToken);
-      if( eToken==TK_PLUS || eToken==TK_MINUS ){
-        n += getTokenNoSpace(&z[n], &eToken);
-      }
-      if( eToken!=TK_INTEGER && eToken!=TK_FLOAT ) return 0;
-      n += getTokenNoSpace(&z[n], &eToken);
-    }
-    if( eToken!=TK_RP ) return 0;
-    getTokenNoSpace(&z[n], &eToken);
-  }
-  if( eToken ) return 0;
-  return 1;
-}
-
-/*
 ** The first parameter is a pointer to an output buffer. The second 
 ** parameter is a pointer to an integer that contains the offset at
 ** which to write into the output buffer. This function copies the
@@ -1381,7 +1324,7 @@ static int isValidDimension(unsigned char *z){
 ** then it is copied to the output buffer exactly as it is. Otherwise,
 ** it is quoted using double-quotes.
 */
-static void identPut(char *z, int *pIdx, char *zSignedIdent, int isTypename){
+static void identPut(char *z, int *pIdx, char *zSignedIdent){
   unsigned char *zIdent = (unsigned char*)zSignedIdent;
   int i, j, needQuote;
   i = *pIdx;
@@ -1391,21 +1334,7 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent, int isTypename){
   }
   needQuote = sqlite3Isdigit(zIdent[0]) || sqlite3KeywordCode(zIdent, j)!=TK_ID;
   if( !needQuote ){
-    if( isTypename ){
-      /* If this is a type-name, allow a little more flexibility. In SQLite,
-      ** a type-name is specified as:
-      **
-      **   ids [ids] [(number [, number])]
-      **
-      ** where "ids" is either a quoted string or a simple identifier (in the
-      ** above notation, [] means optional). It is a bit tricky to check
-      ** for all cases, but it is good to avoid unnecessarily quoting common
-      ** typenames like VARCHAR(10).
-      */
-      needQuote = !isValidDimension(&zIdent[j]);
-    }else{
-      needQuote = zIdent[j];
-    }
+    needQuote = zIdent[j];
   }
 
   if( needQuote ) z[i++] = '"';
@@ -1426,18 +1355,14 @@ static void identPut(char *z, int *pIdx, char *zSignedIdent, int isTypename){
 static char *createTableStmt(sqlite3 *db, Table *p){
   int i, k, n;
   char *zStmt;
-  char *zSep, *zSep2, *zEnd, *z;
+  char *zSep, *zSep2, *zEnd;
   Column *pCol;
   n = 0;
   for(pCol = p->aCol, i=0; i<p->nCol; i++, pCol++){
-    n += identLength(pCol->zName);
-    z = pCol->zType;
-    if( z ){
-      n += identLength(z);
-    }
+    n += identLength(pCol->zName) + 5;
   }
   n += identLength(p->zName);
-  if( n<50 ){
+  if( n<50 ){ 
     zSep = "";
     zSep2 = ",";
     zEnd = ")";
@@ -1454,18 +1379,44 @@ static char *createTableStmt(sqlite3 *db, Table *p){
   }
   sqlite3_snprintf(n, zStmt, "CREATE TABLE ");
   k = sqlite3Strlen30(zStmt);
-  identPut(zStmt, &k, p->zName, 0);
+  identPut(zStmt, &k, p->zName);
   zStmt[k++] = '(';
   for(pCol=p->aCol, i=0; i<p->nCol; i++, pCol++){
+    static const char * const azType[] = {
+        /* SQLITE_AFF_TEXT    */ " TEXT",
+        /* SQLITE_AFF_NONE    */ "",
+        /* SQLITE_AFF_NUMERIC */ " NUM",
+        /* SQLITE_AFF_INTEGER */ " INT",
+        /* SQLITE_AFF_REAL    */ " REAL"
+    };
+    int len;
+    const char *zType;
+
     sqlite3_snprintf(n-k, &zStmt[k], zSep);
     k += sqlite3Strlen30(&zStmt[k]);
     zSep = zSep2;
-    identPut(zStmt, &k, pCol->zName, 0);
-    if( (z = pCol->zType)!=0 ){
-      zStmt[k++] = ' ';
-      assert( (int)(sqlite3Strlen30(z)+k+1)<=n );
-      identPut(zStmt, &k, z, 1);
+    identPut(zStmt, &k, pCol->zName);
+    assert( pCol->affinity-SQLITE_AFF_TEXT >= 0 );
+    assert( pCol->affinity-SQLITE_AFF_TEXT < sizeof(azType)/sizeof(azType[0]) );
+    testcase( pCol->affinity==SQLITE_AFF_TEXT );
+    testcase( pCol->affinity==SQLITE_AFF_NONE );
+    testcase( pCol->affinity==SQLITE_AFF_NUMERIC );
+    testcase( pCol->affinity==SQLITE_AFF_INTEGER );
+    testcase( pCol->affinity==SQLITE_AFF_REAL );
+    
+    zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
+    len = sqlite3Strlen30(zType);
+#ifndef NDEBUG
+    if( pCol->affinity!=SQLITE_AFF_NONE ){
+       Token typeToken;
+       typeToken.z = (u8*)zType;
+       typeToken.n = len;
+       assert( pCol->affinity==sqlite3AffinityType(&typeToken) );
     }
+#endif
+    memcpy(&zStmt[k], zType, len);
+    k += len;
+    assert( k<=n );
   }
   sqlite3_snprintf(n-k, &zStmt[k], "%s", zEnd);
   return zStmt;
@@ -2647,7 +2598,7 @@ void sqlite3CreateIndex(
         zColl = db->pDfltColl->zName;
       }
     }
-    if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl, -1) ){
+    if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
@@ -3584,7 +3535,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     assert( pName1->z );
     zColl = sqlite3NameFromToken(pParse->db, pName1);
     if( !zColl ) return;
-    pColl = sqlite3FindCollSeq(db, ENC(db), zColl, -1, 0);
+    pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
     if( pColl ){
       if( zColl ){
         reindexDatabases(pParse, zColl);
@@ -3640,7 +3591,7 @@ KeyInfo *sqlite3IndexKeyinfo(Parse *pParse, Index *pIdx){
     for(i=0; i<nCol; i++){
       char *zColl = pIdx->azColl[i];
       assert( zColl );
-      pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl, -1);
+      pKey->aColl[i] = sqlite3LocateCollSeq(pParse, zColl);
       pKey->aSortOrder[i] = pIdx->aSortOrder[i];
     }
     pKey->nField = (u16)nCol;

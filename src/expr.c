@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.433 2009/05/09 00:18:38 drh Exp $
+** $Id: expr.c,v 1.434 2009/05/11 20:53:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -69,7 +69,7 @@ Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pCollName){
   sqlite3 *db = pParse->db;
   zColl = sqlite3NameFromToken(db, pCollName);
   if( pExpr && zColl ){
-    pColl = sqlite3LocateCollSeq(pParse, zColl, -1);
+    pColl = sqlite3LocateCollSeq(pParse, zColl);
     if( pColl ){
       pExpr->pColl = pColl;
       pExpr->flags |= EP_ExpCollate;
@@ -99,7 +99,7 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
       if( j>=0 ){
         sqlite3 *db = pParse->db;
         zColl = p->pTab->aCol[j].zColl;
-        pColl = sqlite3FindCollSeq(db, ENC(db), zColl, -1, 0);
+        pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
         pExpr->pColl = pColl;
       }
       break;
@@ -1377,7 +1377,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
         if( (pIdx->aiColumn[0]==iCol)
-         && (pReq==sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], -1, 0))
+         && (pReq==sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0))
          && (!mustBeUnique || (pIdx->nColumn==1 && pIdx->onError!=OE_None))
         ){
           int iMem = ++pParse->nMem;
