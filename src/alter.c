@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.57 2009/04/16 16:30:18 drh Exp $
+** $Id: alter.c,v 1.58 2009/05/12 17:46:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -425,6 +425,31 @@ exit_rename_table:
   sqlite3DbFree(db, zName);
 }
 
+
+/*
+** Generate code to make sure the file format number is at least minFormat.
+** The generated code will increase the file format number if necessary.
+*/
+void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
+  Vdbe *v;
+  v = sqlite3GetVdbe(pParse);
+  /* The VDBE should have been allocated before this routine is called.
+  ** If that allocation failed, we would have quit before reaching this
+  ** point */
+  if( ALWAYS(v) ){
+    int r1 = sqlite3GetTempReg(pParse);
+    int r2 = sqlite3GetTempReg(pParse);
+    int j1;
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, 1);
+    sqlite3VdbeUsesBtree(v, iDb);
+    sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
+    j1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, r2);
+    sqlite3VdbeJumpHere(v, j1);
+    sqlite3ReleaseTempReg(pParse, r1);
+    sqlite3ReleaseTempReg(pParse, r2);
+  }
+}
 
 /*
 ** This function is called after an "ALTER TABLE ... ADD" statement

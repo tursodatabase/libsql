@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.539 2009/05/12 00:40:13 drh Exp $
+** $Id: build.c,v 1.540 2009/05/12 17:46:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2156,10 +2156,10 @@ void sqlite3CreateForeignKey(
   char *z;
 
   assert( pTo!=0 );
-  if( p==0 || pParse->nErr || IN_DECLARE_VTAB ) goto fk_end;
+  if( p==0 || NEVER(pParse->nErr) || IN_DECLARE_VTAB ) goto fk_end;
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
-    if( iCol<0 ) goto fk_end;
+    if( NEVER(iCol<0) ) goto fk_end;
     if( pToCol && pToCol->nExpr!=1 ){
       sqlite3ErrorMsg(pParse, "foreign key on %s"
          " should reference only one column of table %T",
@@ -2376,7 +2376,11 @@ void sqlite3CreateIndex(
   int nExtra = 0;
   char *zExtra;
 
-  if( pParse->nErr || db->mallocFailed || IN_DECLARE_VTAB ){
+  assert( pStart==0 || pEnd!=0 ); /* pEnd must be non-NULL if pStart is */
+  if( NEVER(pParse->nErr>0) || db->mallocFailed || IN_DECLARE_VTAB ){
+    goto exit_create_index;
+  }
+  if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
     goto exit_create_index;
   }
 
@@ -2400,7 +2404,7 @@ void sqlite3CreateIndex(
     */
     if( !db->init.busy ){
       pTab = sqlite3SrcListLookup(pParse, pTblName);
-      if( pName2 && pName2->n==0 && pTab && pTab->pSchema==db->aDb[1].pSchema ){
+      if( pName2->n==0 && pTab && pTab->pSchema==db->aDb[1].pSchema ){
         iDb = 1;
       }
     }
@@ -2425,7 +2429,8 @@ void sqlite3CreateIndex(
   }
   pDb = &db->aDb[iDb];
 
-  if( pTab==0 || pParse->nErr ) goto exit_create_index;
+  assert( pTab!=0 );
+  assert( pParse->nErr==0 );
   if( sqlite3StrNICmp(pTab->zName, "sqlite_", 7)==0 
        && memcmp(&pTab->zName[7],"altertab_",9)!=0 ){
     sqlite3ErrorMsg(pParse, "table %s may not be indexed", pTab->zName);
@@ -2459,13 +2464,11 @@ void sqlite3CreateIndex(
   */
   if( pName ){
     zName = sqlite3NameFromToken(db, pName);
-    if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
     if( zName==0 ) goto exit_create_index;
     if( SQLITE_OK!=sqlite3CheckObjectName(pParse, zName) ){
       goto exit_create_index;
     }
     if( !db->init.busy ){
-      if( SQLITE_OK!=sqlite3ReadSchema(pParse) ) goto exit_create_index;
       if( sqlite3FindTable(db, zName, 0)!=0 ){
         sqlite3ErrorMsg(pParse, "there is already a table named %s", zName);
         goto exit_create_index;
@@ -2520,10 +2523,14 @@ void sqlite3CreateIndex(
   ** specified collation sequence names.
   */
   for(i=0; i<pList->nExpr; i++){
-    Expr *pExpr;
-    CollSeq *pColl;
-    if( (pExpr = pList->a[i].pExpr)!=0 && (pColl = pExpr->pColl)!=0 ){
-      nExtra += (1 + sqlite3Strlen30(pColl->zName));
+    Expr *pExpr = pList->a[i].pExpr;
+    if( pExpr ){
+      CollSeq *pColl = pExpr->pColl;
+      /* Either pColl!=0 or there was an OOM failure.  But if an OOM
+      ** failure we have quit before reaching this point. */
+      if( ALWAYS(pColl) ){
+        nExtra += (1 + sqlite3Strlen30(pColl->zName));
+      }
     }
   }
 
@@ -2568,6 +2575,12 @@ void sqlite3CreateIndex(
   /* Scan the names of the columns of the table to be indexed and
   ** load the column indices into the Index structure.  Report an error
   ** if any column is not found.
+  **
+  ** TODO:  Add a test to make sure that the same column is not named
+  ** more than once within the same index.  Only the first instance of
+  ** the column will ever be used by the optimizer.  Note that using the
+  ** same column more than once cannot be an error because that would 
+  ** break backwards compatibility - it needs to be a warning.
   */
   for(i=0, pListItem=pList->a; i<pList->nExpr; i++, pListItem++){
     const char *zColName = pListItem->zName;
@@ -2583,18 +2596,21 @@ void sqlite3CreateIndex(
         pTab->zName, zColName);
       goto exit_create_index;
     }
-    /* TODO:  Add a test to make sure that the same column is not named
-    ** more than once within the same index.  Only the first instance of
-    ** the column will ever be used by the optimizer.  Note that using the
-    ** same column more than once cannot be an error because that would 
-    ** break backwards compatibility - it needs to be a warning.
-    */
     pIndex->aiColumn[i] = j;
-    if( pListItem->pExpr && pListItem->pExpr->pColl ){
-      assert( pListItem->pExpr->pColl );
+    /* Justification of the ALWAYS(pListItem->pExpr->pColl):  Because of
+    ** the way the "idxlist" non-terminal is constructed by the parser,
+    ** if pListItem->pExpr is not null then either pListItem->pExpr->pColl
+    ** must exist or else there must have been an OOM error.  But if there
+    ** was an OOM error, we would never reach this point. */
+    if( pListItem->pExpr && ALWAYS(pListItem->pExpr->pColl) ){
+      int nColl;
+      zColl = pListItem->pExpr->pColl->zName;
+      nColl = sqlite3Strlen30(zColl) + 1;
+      assert( nExtra>=nColl );
+      memcpy(zExtra, zColl, nColl);
       zColl = zExtra;
-      sqlite3_snprintf(nExtra, zExtra, "%s", pListItem->pExpr->pColl->zName);
-      zExtra += (sqlite3Strlen30(zColl) + 1);
+      zExtra += nColl;
+      nExtra -= nColl;
     }else{
       zColl = pTab->aCol[j].zColl;
       if( !zColl ){
@@ -2623,6 +2639,14 @@ void sqlite3CreateIndex(
     ** so, don't bother creating this one. This only applies to
     ** automatically created indices. Users can do as they wish with
     ** explicit indices.
+    **
+    ** Two UNIQUE or PRIMARY KEY constraints are considered equivalent
+    ** (and thus suppressing the second one) even if they have different
+    ** sort orders.
+    **
+    ** If there are different collating sequences or if the columns of
+    ** the constraint occur in different orders, then the constraints are
+    ** considered distinct and both result in separate indices.
     */
     Index *pIdx;
     for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
@@ -2633,10 +2657,11 @@ void sqlite3CreateIndex(
 
       if( pIdx->nColumn!=pIndex->nColumn ) continue;
       for(k=0; k<pIdx->nColumn; k++){
-        const char *z1 = pIdx->azColl[k];
-        const char *z2 = pIndex->azColl[k];
+        const char *z1;
+        const char *z2;
         if( pIdx->aiColumn[k]!=pIndex->aiColumn[k] ) break;
-        if( pIdx->aSortOrder[k]!=pIndex->aSortOrder[k] ) break;
+        z1 = pIdx->azColl[k];
+        z2 = pIndex->azColl[k];
         if( z1!=z2 && sqlite3StrICmp(z1, z2) ) break;
       }
       if( k==pIdx->nColumn ){
@@ -2695,7 +2720,7 @@ void sqlite3CreateIndex(
   ** has just been created, it contains no data and the index initialization
   ** step can be skipped.
   */
-  else if( db->init.busy==0 ){
+  else{ /* if( db->init.busy==0 ) */
     Vdbe *v;
     char *zStmt;
     int iMem = ++pParse->nMem;
@@ -2712,7 +2737,8 @@ void sqlite3CreateIndex(
     /* Gather the complete text of the CREATE INDEX statement into
     ** the zStmt variable
     */
-    if( pStart && pEnd ){
+    if( pStart ){
+      assert( pEnd!=0 );
       /* A named index with an explicit CREATE INDEX statement */
       zStmt = sqlite3MPrintf(db, "CREATE%s INDEX %.*s",
         onError==OE_None ? "" : " UNIQUE",
@@ -2750,8 +2776,9 @@ void sqlite3CreateIndex(
 
   /* When adding an index to the list of indices for a table, make
   ** sure all indices labeled OE_Replace come after all those labeled
-  ** OE_Ignore.  This is necessary for the correct operation of UPDATE
-  ** and INSERT.
+  ** OE_Ignore.  This is necessary for the correct constraint check
+  ** processing (in sqlite3GenerateConstraintChecks()) as part of
+  ** UPDATE and INSERT statements.  
   */
   if( db->init.busy || pTblName==0 ){
     if( onError!=OE_Replace || pTab->pIndex==0
@@ -2779,28 +2806,6 @@ exit_create_index:
   sqlite3SrcListDelete(db, pTblName);
   sqlite3DbFree(db, zName);
   return;
-}
-
-/*
-** Generate code to make sure the file format number is at least minFormat.
-** The generated code will increase the file format number if necessary.
-*/
-void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
-  Vdbe *v;
-  v = sqlite3GetVdbe(pParse);
-  if( v ){
-    int r1 = sqlite3GetTempReg(pParse);
-    int r2 = sqlite3GetTempReg(pParse);
-    int j1;
-    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, 1);
-    sqlite3VdbeUsesBtree(v, iDb);
-    sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
-    j1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, r2);
-    sqlite3VdbeJumpHere(v, j1);
-    sqlite3ReleaseTempReg(pParse, r1);
-    sqlite3ReleaseTempReg(pParse, r2);
-  }
 }
 
 /*
@@ -2848,7 +2853,7 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( pParse->nErr || db->mallocFailed ){
+  if( NEVER(pParse->nErr>0) || db->mallocFailed ){
     goto exit_drop_index;
   }
   assert( pName->nSrc==1 );
@@ -3104,7 +3109,10 @@ SrcList *sqlite3SrcListEnlarge(
 **
 **         sqlite3SrcListAppend(D,A,B,C);
 **
-** Then C is the table name and B is the database name.
+** Then C is the table name and B is the database name.  If C is defined
+** then so is B.  In other words, we never have a case where:
+**
+**         sqlite3SrcListAppend(D,A,0,C);
 */
 SrcList *sqlite3SrcListAppend(
   sqlite3 *db,        /* Connection to notify of malloc failures */
@@ -3113,6 +3121,7 @@ SrcList *sqlite3SrcListAppend(
   Token *pDatabase    /* Database of the table */
 ){
   struct SrcList_item *pItem;
+  assert( pDatabase==0 || pTable!=0 );  /* Cannot have C without B */
   if( pList==0 ){
     pList = sqlite3DbMallocZero(db, sizeof(SrcList) );
     if( pList==0 ) return 0;
@@ -3127,7 +3136,7 @@ SrcList *sqlite3SrcListAppend(
   if( pDatabase && pDatabase->z==0 ){
     pDatabase = 0;
   }
-  if( pDatabase && pTable ){
+  if( pDatabase ){
     Token *pTemp = pDatabase;
     pDatabase = pTable;
     pTable = pTemp;
@@ -3271,10 +3280,14 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   Vdbe *v;
   int i;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || db->mallocFailed ) return;
-  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ) return;
-
+  assert( pParse!=0 );
+  db = pParse->db;
+  assert( db!=0 );
+  if( db->aDb[0].pBt==0 ) return;
+//  if( pParse->nErr || db->mallocFailed ) return;
+  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ){
+    return;
+  }
   v = sqlite3GetVdbe(pParse);
   if( !v ) return;
   if( type!=TK_DEFERRED ){
@@ -3293,10 +3306,14 @@ void sqlite3CommitTransaction(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || db->mallocFailed ) return;
-  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ) return;
-
+  assert( pParse!=0 );
+  db = pParse->db;
+  assert( db!=0 );
+  if( db->aDb[0].pBt==0 ) return;
+//  if( pParse->nErr || db->mallocFailed ) return;
+  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ){
+    return;
+  }
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, 0);
@@ -3310,10 +3327,14 @@ void sqlite3RollbackTransaction(Parse *pParse){
   sqlite3 *db;
   Vdbe *v;
 
-  if( pParse==0 || (db=pParse->db)==0 || db->aDb[0].pBt==0 ) return;
-  if( pParse->nErr || db->mallocFailed ) return;
-  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ) return;
-
+  assert( pParse!=0 );
+  db = pParse->db;
+  assert( db!=0 );
+  if( db->aDb[0].pBt==0 ) return;
+//  if( pParse->nErr || db->mallocFailed ) return;
+  if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ){
+    return;
+  }
   v = sqlite3GetVdbe(pParse);
   if( v ){
     sqlite3VdbeAddOp2(v, OP_AutoCommit, 1, 1);
@@ -3530,20 +3551,18 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     return;
   }
 
-  if( pName1==0 || pName1->z==0 ){
+  if( pName1==0 || NEVER(pName1->z==0) ){
     reindexDatabases(pParse, 0);
     return;
-  }else if( pName2==0 || pName2->z==0 ){
+  }else if( NEVER(pName2==0) || pName2->z==0 ){
     char *zColl;
     assert( pName1->z );
     zColl = sqlite3NameFromToken(pParse->db, pName1);
     if( !zColl ) return;
     pColl = sqlite3FindCollSeq(db, ENC(db), zColl, 0);
     if( pColl ){
-      if( zColl ){
-        reindexDatabases(pParse, zColl);
-        sqlite3DbFree(db, zColl);
-      }
+      reindexDatabases(pParse, zColl);
+      sqlite3DbFree(db, zColl);
       return;
     }
     sqlite3DbFree(db, zColl);
