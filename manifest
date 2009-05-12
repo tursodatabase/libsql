@@ -1,5 +1,5 @@
-C If\sa\svirtual\stable\sconstructor\sreturns\sSQLITE_NOMEM,\sset\sthe\smallocFailed\nflag\sin\sthe\scorresponding\sdatabase\sconnection\sto\sinsure\sthat\sthe\serror\nis\spropagated\sback\sto\sthe\stop\slayer.\s(CVS\s6627)
-D 2009-05-11T23:38:00
+C Tweaks\sto\sbuild.c\sto\sfacilitate\scoverage\stesting.\s(CVS\s6628)
+D 2009-05-12T00:40:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 7c4b02afea7efb561361f20408414fec68df898c
 F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c caece8163ad2cf6be278ad5405f25852c468d8d8
+F src/build.c 65caba758665cc1f511864329940aac19344e2db
 F src/callback.c bf295cfdc065b56cc49a5f6452126dc4ffe0ff5b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 33cf83591e6e13875ef6ada5b8ac8ab07619d8bc
-R 1e077e3ba746ae1ba5340b2bc353df44
+P 5635666f20358e854a76d244768198734afd4299
+R f9f1009ab66a2d75fd919e71db434f55
 U drh
-Z bd311d11dec0024101d1628d00e7c29b
+Z 612bf8c819ce488d831d79c1e2187441

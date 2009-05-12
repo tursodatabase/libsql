@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.538 2009/05/11 20:53:29 drh Exp $
+** $Id: build.c,v 1.539 2009/05/12 00:40:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1508,7 +1508,7 @@ void sqlite3EndTable(
     char *zStmt;    /* Text of the CREATE TABLE or CREATE VIEW statement */
 
     v = sqlite3GetVdbe(pParse);
-    if( v==0 ) return;
+    if( NEVER(v==0) ) return;
 
     sqlite3VdbeAddOp1(v, OP_Close, 0);
 
@@ -1615,7 +1615,7 @@ void sqlite3EndTable(
 
   /* Add the table to the in-memory representation of the database.
   */
-  if( db->init.busy && pParse->nErr==0 ){
+  if( db->init.busy && ALWAYS(pParse->nErr==0) ){
     Table *pOld;
     Schema *pSchema = p->pSchema;
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName,
@@ -1673,7 +1673,7 @@ void sqlite3CreateView(
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
-  if( p==0 || pParse->nErr ){
+  if( p==0 || NEVER(pParse->nErr>0) ){
     sqlite3SelectDelete(db, pSelect);
     return;
   }
@@ -1704,13 +1704,13 @@ void sqlite3CreateView(
   ** the end.
   */
   sEnd = pParse->sLastToken;
-  if( sEnd.z[0]!=0 && sEnd.z[0]!=';' ){
+  if( ALWAYS(sEnd.z[0]!=0) && sEnd.z[0]!=';' ){
     sEnd.z += sEnd.n;
   }
   sEnd.n = 0;
   n = (int)(sEnd.z - pBegin->z);
   z = (const unsigned char*)pBegin->z;
-  while( n>0 && (z[n-1]==';' || sqlite3Isspace(z[n-1])) ){ n--; }
+  while( ALWAYS(n>0) && sqlite3Isspace(z[n-1]) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;
 
@@ -1756,8 +1756,13 @@ int sqlite3ViewGetColumnNames(Parse *pParse, Table *pTable){
   **     CREATE VIEW one AS SELECT * FROM two;
   **     CREATE VIEW two AS SELECT * FROM one;
   **
-  ** Actually, this error is caught previously and so the following test
-  ** should always fail.  But we will leave it in place just to be safe.
+  ** Actually, the error above is now caught prior to reaching this point.
+  ** But the following test is still important as it does come up
+  ** in the following:
+  ** 
+  **     CREATE TABLE main.ex1(a);
+  **     CREATE TEMP VIEW ex1 AS SELECT a FROM ex1;
+  **     SELECT * FROM temp.ex1;
   */
   if( pTable->nCol<0 ){
     sqlite3ErrorMsg(pParse, "view %s is circularly defined", pTable->zName);
@@ -2051,9 +2056,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
-      if( v ){
-        sqlite3VdbeAddOp0(v, OP_VBegin);
-      }
+      sqlite3VdbeAddOp0(v, OP_VBegin);
     }
 #endif
 
