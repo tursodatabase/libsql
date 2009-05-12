@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.551 2009/05/11 20:53:29 drh Exp $
+** $Id: main.c,v 1.552 2009/05/12 13:35:12 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1535,8 +1535,16 @@ static int openDatabase(
     isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
 
-  /* Remove harmful bits from the flags parameter */
+  /* Remove harmful bits from the flags parameter
+  **
+  ** The SQLITE_OPEN_NOMUTEX and SQLITE_OPEN_FULLMUTEX flags were
+  ** dealt with in the previous code block.  Besides these, the only
+  ** valid input flags for sqlite3_open_v2() are SQLITE_OPEN_READONLY,
+  ** SQLITE_OPEN_READWRITE, and SQLITE_OPEN_CREATE.  Silently mask
+  ** off all other flags.
+  */
   flags &=  ~( SQLITE_OPEN_DELETEONCLOSE |
+               SQLITE_OPEN_EXCLUSIVE |
                SQLITE_OPEN_MAIN_DB |
                SQLITE_OPEN_TEMP_DB | 
                SQLITE_OPEN_TRANSIENT_DB | 

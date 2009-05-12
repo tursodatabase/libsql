@@ -1,5 +1,5 @@
-C Tweaks\sto\sbuild.c\sto\sfacilitate\scoverage\stesting.\s(CVS\s6628)
-D 2009-05-12T00:40:13
+C Make\ssure\sthe\sSQLITE_OPEN_EXCLUSIVE\sflag\sis\signored\sby\ssqlite3_open_v2().\nThat\sflag\sis\sto\sbe\sused\sby\sthe\sVFS\sinterface\sonly.\s\sTicket\s#3855.\s(CVS\s6629)
+D 2009-05-12T13:35:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 3f96631089fc4f3871a67f02f2e4fc7ea4d51edc
-F src/main.c e557fd8f721373b863c1a804aa8ea81839541d27
+F src/main.c 09fbadd5ea3d4f9052d37925a1427f9cb0ee75dc
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5635666f20358e854a76d244768198734afd4299
-R f9f1009ab66a2d75fd919e71db434f55
+P 6572b438a02cc44546174e132dfbdc1d141cd451
+R 666fd2a04f0518bbc32649a56bab9cef
 U drh
-Z 612bf8c819ce488d831d79c1e2187441
+Z e60d2b410985dcb25fdd3decf9513c5e
