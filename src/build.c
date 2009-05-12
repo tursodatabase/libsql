@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.540 2009/05/12 17:46:54 drh Exp $
+** $Id: build.c,v 1.541 2009/05/12 18:00:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3284,7 +3284,6 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   db = pParse->db;
   assert( db!=0 );
   if( db->aDb[0].pBt==0 ) return;
-//  if( pParse->nErr || db->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ){
     return;
   }
@@ -3310,7 +3309,6 @@ void sqlite3CommitTransaction(Parse *pParse){
   db = pParse->db;
   assert( db!=0 );
   if( db->aDb[0].pBt==0 ) return;
-//  if( pParse->nErr || db->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ){
     return;
   }
@@ -3331,7 +3329,6 @@ void sqlite3RollbackTransaction(Parse *pParse){
   db = pParse->db;
   assert( db!=0 );
   if( db->aDb[0].pBt==0 ) return;
-//  if( pParse->nErr || db->mallocFailed ) return;
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ){
     return;
   }

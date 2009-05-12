@@ -1,5 +1,5 @@
-C Move\sthe\ssqlite3MinimumFileFormat()\sroutine\sfrom\sbuild.c\sover\sto\salter.c\nsince\salter.c\sis\sthe\sonly\scode\sthat\suses\sit.\s\sAdditional\schanges\sand\ncleanup\sto\sbuild.c\sto\sfacility\scoverage\stesting.\s(CVS\s6630)
-D 2009-05-12T17:46:54
+C Remove\sdebugging\scomments\sleft\sin\sthe\sprior\scheck-in\sby\smistake.\s(CVS\s6631)
+D 2009-05-12T18:00:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 7c4b02afea7efb561361f20408414fec68df898c
 F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c f796caf373c56bfdfea82bbf2a986970be7086d6
+F src/build.c e8e2f7d6cf0905a3a5681afb5cad16c3237351e5
 F src/callback.c bf295cfdc065b56cc49a5f6452126dc4ffe0ff5b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c37f0279ebfaf76b4086e6d16b6e12633424c27d
-R 0b3cc9c4878bf4b27ccc7fb166bcea2d
+P 6fe3750a30ab432ed476c2ae6b58972187abc624
+R 2cb2b27a2df11b0173b7044701cc4d55
 U drh
-Z 77a2a07efa50be8c1aaf1350b336a029
+Z 5a7b4a2c6dbff0f1170dfdcac92eec35
