@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.543 2009/05/13 17:35:23 drh Exp $
+** $Id: build.c,v 1.544 2009/05/13 22:58:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,7 +68,7 @@ void sqlite3TableLock(
   int nBytes;
   TableLock *p;
 
-  if( NEVER(iDb<0) ) return;
+  assert( iDb>=0 );
   for(i=0; i<pParse->nTableLock; i++){
     p = &pParse->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
@@ -336,7 +336,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 */
 static void freeIndex(Index *p){
   sqlite3 *db = p->pTable->dbMem;
-  testcase( db==0 );
+  /* testcase( db==0 ); */
   sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }
@@ -1445,7 +1445,7 @@ void sqlite3EndTable(
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( (pEnd==0 && pSelect==0) || NEVER(pParse->nErr) || db->mallocFailed ) {
+  if( (pEnd==0 && pSelect==0) || db->mallocFailed ){
     return;
   }
   p = pParse->pNewTable;
@@ -1608,7 +1608,7 @@ void sqlite3EndTable(
 
   /* Add the table to the in-memory representation of the database.
   */
-  if( db->init.busy && ALWAYS(pParse->nErr==0) ){
+  if( db->init.busy ){
     Table *pOld;
     Schema *pSchema = p->pSchema;
     pOld = sqlite3HashInsert(&pSchema->tblHash, p->zName,
@@ -1666,10 +1666,12 @@ void sqlite3CreateView(
   }
   sqlite3StartTable(pParse, pName1, pName2, isTemp, 1, 0, noErr);
   p = pParse->pNewTable;
-  if( p==0 || NEVER(pParse->nErr>0) ){
+  if( p==0 ){
     sqlite3SelectDelete(db, pSelect);
     return;
   }
+  assert( pParse->nErr==0 ); /* If sqlite3StartTable return non-NULL then
+                             ** there could not have been an error */
   sqlite3TwoPartName(pParse, pName1, pName2, &pName);
   iDb = sqlite3SchemaToIndex(db, p->pSchema);
   if( sqlite3FixInit(&sFix, pParse, iDb, "view", pName)
@@ -1962,9 +1964,10 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( NEVER(pParse->nErr) || db->mallocFailed ){
+  if( db->mallocFailed ){
     goto exit_drop_table;
   }
+  assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
   pTab = sqlite3LocateTable(pParse, isView, 
                             pName->a[0].zName, pName->a[0].zDatabase);
@@ -2149,7 +2152,7 @@ void sqlite3CreateForeignKey(
   char *z;
 
   assert( pTo!=0 );
-  if( p==0 || NEVER(pParse->nErr) || IN_DECLARE_VTAB ) goto fk_end;
+  if( p==0 || IN_DECLARE_VTAB ) goto fk_end;
   if( pFromCol==0 ){
     int iCol = p->nCol-1;
     if( NEVER(iCol<0) ) goto fk_end;
@@ -2370,7 +2373,8 @@ void sqlite3CreateIndex(
   char *zExtra;
 
   assert( pStart==0 || pEnd!=0 ); /* pEnd must be non-NULL if pStart is */
-  if( NEVER(pParse->nErr>0) || db->mallocFailed || IN_DECLARE_VTAB ){
+  assert( pParse->nErr==0 );      /* Never called with prior errors */
+  if( db->mallocFailed || IN_DECLARE_VTAB ){
     goto exit_create_index;
   }
   if( SQLITE_OK!=sqlite3ReadSchema(pParse) ){
@@ -2846,7 +2850,8 @@ void sqlite3DropIndex(Parse *pParse, SrcList *pName, int ifExists){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( NEVER(pParse->nErr>0) || db->mallocFailed ){
+  assert( pParse->nErr==0 );   /* Never called with prior errors */
+  if( db->mallocFailed ){
     goto exit_drop_index;
   }
   assert( pName->nSrc==1 );
@@ -3037,10 +3042,8 @@ SrcList *sqlite3SrcListEnlarge(
   /* Sanity checking on calling parameters */
   assert( iStart>=0 );
   assert( nExtra>=1 );
-  if( pSrc==0 || iStart>pSrc->nSrc ){
-    assert( db->mallocFailed );
-    return pSrc;
-  }
+  assert( pSrc!=0 );
+  assert( iStart<=pSrc->nSrc );
 
   /* Allocate additional space if needed */
   if( pSrc->nSrc+nExtra>pSrc->nAlloc ){
@@ -3206,14 +3209,15 @@ SrcList *sqlite3SrcListAppendFromTerm(
   struct SrcList_item *pItem;
   sqlite3 *db = pParse->db;
   p = sqlite3SrcListAppend(db, p, pTable, pDatabase);
-  if( p==0 || p->nSrc==0 ){
+  if( p==0 || NEVER(p->nSrc==0) ){
     sqlite3ExprDelete(db, pOn);
     sqlite3IdListDelete(db, pUsing);
     sqlite3SelectDelete(db, pSubquery);
     return p;
   }
   pItem = &p->a[p->nSrc-1];
-  if( pAlias && pAlias->n ){
+  assert( pAlias!=0 );
+  if( pAlias->n ){
     pItem->zAlias = sqlite3NameFromToken(db, pAlias);
   }
   pItem->pSelect = pSubquery;
@@ -3227,7 +3231,8 @@ SrcList *sqlite3SrcListAppendFromTerm(
 ** element of the source-list passed as the second argument.
 */
 void sqlite3SrcListIndexedBy(Parse *pParse, SrcList *p, Token *pIndexedBy){
-  if( pIndexedBy && p && p->nSrc>0 ){
+  assert( pIndexedBy!=0 );
+  if( p && ALWAYS(p->nSrc>0) ){
     struct SrcList_item *pItem = &p->a[p->nSrc-1];
     assert( pItem->notIndexed==0 && pItem->zIndex==0 );
     if( pIndexedBy->n==1 && !pIndexedBy->z ){
@@ -3444,12 +3449,13 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** necessary to undo a write and the checkpoint should not be set.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
-  Vdbe *v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return;
   sqlite3CodeVerifySchema(pParse, iDb);
   pParse->writeMask |= 1<<iDb;
   if( setStatement && pParse->nested==0 ){
-    sqlite3VdbeAddOp1(v, OP_Statement, iDb);
+    /* Every place where this routine is called with setStatement!=0 has
+    ** already successfully created a VDBE. */
+    assert( pParse->pVdbe );
+    sqlite3VdbeAddOp1(pParse->pVdbe, OP_Statement, iDb);
   }
 }
 
@@ -3543,7 +3549,7 @@ void sqlite3Reindex(Parse *pParse, Token *pName1, Token *pName2){
     return;
   }
 
-  if( pName1==0 || NEVER(pName1->z==0) ){
+  if( pName1==0 ){
     reindexDatabases(pParse, 0);
     return;
   }else if( NEVER(pName2==0) || pName2->z==0 ){

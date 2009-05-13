@@ -1,5 +1,5 @@
-C Remove\sincorrect\sNEVER()\smacro\sin\sthe\sprevious\scheck-in\s(6634).\s(CVS\s6635)
-D 2009-05-13T17:35:23
+C Additional\ssimplifications\sto\sbuild.c\sin\ssupport\sfull\scoverage\stesting.\s(CVS\s6636)
+D 2009-05-13T22:58:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 7c4b02afea7efb561361f20408414fec68df898c
 F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c 6cf99a4e3235b5da7655281651a9f1076d6ae0e4
+F src/build.c 2b4cef0dccea8d5ceb34d30b69121590ad2d5314
 F src/callback.c bf295cfdc065b56cc49a5f6452126dc4ffe0ff5b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 264ace50bbaec3468de0e42b2b8cebf9ce1d6682
-R 843d02846a4c9c1e2f03264992adfe69
+P c684957991fe45cbcb188d2a419501c3f1fdc93f
+R b7d938cf0534e6a7525437136b322f35
 U drh
-Z 89e04f4f589e3ad4c80a45972c432ebb
+Z a945f0494911586b285a588e892ed85a
