@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.541 2009/05/12 18:00:38 drh Exp $
+** $Id: build.c,v 1.542 2009/05/13 17:21:14 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -68,10 +68,7 @@ void sqlite3TableLock(
   int nBytes;
   TableLock *p;
 
-  if( iDb<0 ){
-    return;
-  }
-
+  if( NEVER(iDb<0) ) return;
   for(i=0; i<pParse->nTableLock; i++){
     p = &pParse->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
@@ -103,9 +100,8 @@ static void codeTableLocks(Parse *pParse){
   int i;
   Vdbe *pVdbe; 
 
-  if( 0==(pVdbe = sqlite3GetVdbe(pParse)) ){
-    return;
-  }
+  pVdbe = sqlite3GetVdbe(pParse);
+  assert( pVdbe!=0 ); /* sqlite3GetVdbe cannot fail: VDBE already allocated */
 
   for(i=0; i<pParse->nTableLock; i++){
     TableLock *p = &pParse->aTableLock[i];
@@ -185,7 +181,7 @@ void sqlite3FinishCoding(Parse *pParse){
 
   /* Get the VDBE program ready for execution
   */
-  if( v && pParse->nErr==0 && !db->mallocFailed ){
+  if( v && ALWAYS(pParse->nErr==0) && !db->mallocFailed ){
 #ifdef SQLITE_DEBUG
     FILE *trace = (db->flags & SQLITE_VdbeTrace)!=0 ? stdout : 0;
     sqlite3VdbeTrace(v, trace);
@@ -327,11 +323,9 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
   for(i=OMIT_TEMPDB; i<db->nDb; i++){
     int j = (i<2) ? i^1 : i;  /* Search TEMP before MAIN */
     Schema *pSchema = db->aDb[j].pSchema;
+    assert( pSchema );
     if( zDb && sqlite3StrICmp(zDb, db->aDb[j].zName) ) continue;
-    assert( pSchema || (j==1 && !db->aDb[1].pBt) );
-    if( pSchema ){
-      p = sqlite3HashFind(&pSchema->idxHash, zName, nName);
-    }
+    p = sqlite3HashFind(&pSchema->idxHash, zName, nName);
     if( p ) break;
   }
   return p;
@@ -378,13 +372,19 @@ void sqlite3UnlinkAndDeleteIndex(sqlite3 *db, int iDb, const char *zIdxName){
 
   len = sqlite3Strlen30(zIdxName);
   pIndex = sqlite3HashInsert(pHash, zIdxName, len, 0);
-  if( pIndex ){
+  /* Justification of ALWAYS():  This routine is only called from the
+  ** OP_DropIndex opcode.  And there is no way that opcode will ever run
+  ** unless the corresponding index is in the symbol table. */
+  if( ALWAYS(pIndex) ){
     if( pIndex->pTable->pIndex==pIndex ){
       pIndex->pTable->pIndex = pIndex->pNext;
     }else{
       Index *p;
-      for(p=pIndex->pTable->pIndex; p && p->pNext!=pIndex; p=p->pNext){}
-      if( p && p->pNext==pIndex ){
+      /* Justification of ALWAYS();  The index must be on the list of
+      ** indices. */
+      p = pIndex->pTable->pIndex;
+      while( ALWAYS(p) && p->pNext!=pIndex ){ p = p->pNext; }
+      if( ALWAYS(p && p->pNext==pIndex) ){
         p->pNext = pIndex->pNext;
       }
     }
@@ -429,13 +429,6 @@ void sqlite3ResetInternalSchema(sqlite3 *db, int iDb){
   ** schema hash tables and therefore do not have to make any changes
   ** to any of those tables.
   */
-  for(i=0; i<db->nDb; i++){
-    struct Db *pDb = &db->aDb[i];
-    if( pDb->pBt==0 ){
-      if( pDb->pAux && pDb->xFreeAux ) pDb->xFreeAux(pDb->pAux);
-      pDb->pAux = 0;
-    }
-  }
   for(i=j=2; i<db->nDb; i++){
     struct Db *pDb = &db->aDb[i];
     if( pDb->pBt==0 ){
@@ -1452,7 +1445,7 @@ void sqlite3EndTable(
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( (pEnd==0 && pSelect==0) || pParse->nErr || db->mallocFailed ) {
+  if( (pEnd==0 && pSelect==0) || NEVER(pParse->nErr) || db->mallocFailed ) {
     return;
   }
   p = pParse->pNewTable;
@@ -1969,7 +1962,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   sqlite3 *db = pParse->db;
   int iDb;
 
-  if( pParse->nErr || db->mallocFailed ){
+  if( NEVER(pParse->nErr) || db->mallocFailed ){
     goto exit_drop_table;
   }
   assert( pName->nSrc==1 );
@@ -2617,7 +2610,7 @@ void sqlite3CreateIndex(
         zColl = db->pDfltColl->zName;
       }
     }
-    if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
+    if( NEVER(!db->init.busy && !sqlite3LocateCollSeq(pParse, zColl)) ){
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
@@ -3283,7 +3276,7 @@ void sqlite3BeginTransaction(Parse *pParse, int type){
   assert( pParse!=0 );
   db = pParse->db;
   assert( db!=0 );
-  if( db->aDb[0].pBt==0 ) return;
+/*  if( db->aDb[0].pBt==0 ) return; */
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "BEGIN", 0, 0) ){
     return;
   }
@@ -3308,7 +3301,7 @@ void sqlite3CommitTransaction(Parse *pParse){
   assert( pParse!=0 );
   db = pParse->db;
   assert( db!=0 );
-  if( db->aDb[0].pBt==0 ) return;
+/*  if( db->aDb[0].pBt==0 ) return; */
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "COMMIT", 0, 0) ){
     return;
   }
@@ -3328,7 +3321,7 @@ void sqlite3RollbackTransaction(Parse *pParse){
   assert( pParse!=0 );
   db = pParse->db;
   assert( db!=0 );
-  if( db->aDb[0].pBt==0 ) return;
+/*  if( db->aDb[0].pBt==0 ) return; */
   if( sqlite3AuthCheck(pParse, SQLITE_TRANSACTION, "ROLLBACK", 0, 0) ){
     return;
   }
@@ -3467,9 +3460,11 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
 #ifndef SQLITE_OMIT_REINDEX
 static int collationMatch(const char *zColl, Index *pIndex){
   int i;
+  assert( zColl!=0 );
   for(i=0; i<pIndex->nColumn; i++){
     const char *z = pIndex->azColl[i];
-    if( z==zColl || (z && zColl && 0==sqlite3StrICmp(z, zColl)) ){
+    assert( z!=0 );
+    if( 0==sqlite3StrICmp(z, zColl) ){
       return 1;
     }
   }
