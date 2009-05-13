@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.542 2009/05/13 17:21:14 drh Exp $
+** $Id: build.c,v 1.543 2009/05/13 17:35:23 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2610,7 +2610,7 @@ void sqlite3CreateIndex(
         zColl = db->pDfltColl->zName;
       }
     }
-    if( NEVER(!db->init.busy && !sqlite3LocateCollSeq(pParse, zColl)) ){
+    if( !db->init.busy && !sqlite3LocateCollSeq(pParse, zColl) ){
       goto exit_create_index;
     }
     pIndex->azColl[i] = zColl;
