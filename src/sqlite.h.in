@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.448 2009/05/09 18:59:42 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.449 2009/05/14 03:21:28 shane Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -392,20 +392,20 @@ int sqlite3_exec(
 ** in the 4th parameter to the xOpen method of the
 ** [sqlite3_vfs] object.
 */
-#define SQLITE_OPEN_READONLY         0x00000001
-#define SQLITE_OPEN_READWRITE        0x00000002
-#define SQLITE_OPEN_CREATE           0x00000004
-#define SQLITE_OPEN_DELETEONCLOSE    0x00000008
-#define SQLITE_OPEN_EXCLUSIVE        0x00000010
-#define SQLITE_OPEN_MAIN_DB          0x00000100
-#define SQLITE_OPEN_TEMP_DB          0x00000200
-#define SQLITE_OPEN_TRANSIENT_DB     0x00000400
-#define SQLITE_OPEN_MAIN_JOURNAL     0x00000800
-#define SQLITE_OPEN_TEMP_JOURNAL     0x00001000
-#define SQLITE_OPEN_SUBJOURNAL       0x00002000
-#define SQLITE_OPEN_MASTER_JOURNAL   0x00004000
-#define SQLITE_OPEN_NOMUTEX          0x00008000
-#define SQLITE_OPEN_FULLMUTEX        0x00010000
+#define SQLITE_OPEN_READONLY         0x00000001  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_READWRITE        0x00000002  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_CREATE           0x00000004  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_DELETEONCLOSE    0x00000008  /* VFS only */
+#define SQLITE_OPEN_EXCLUSIVE        0x00000010  /* VFS only */
+#define SQLITE_OPEN_MAIN_DB          0x00000100  /* VFS only */
+#define SQLITE_OPEN_TEMP_DB          0x00000200  /* VFS only */
+#define SQLITE_OPEN_TRANSIENT_DB     0x00000400  /* VFS only */
+#define SQLITE_OPEN_MAIN_JOURNAL     0x00000800  /* VFS only */
+#define SQLITE_OPEN_TEMP_JOURNAL     0x00001000  /* VFS only */
+#define SQLITE_OPEN_SUBJOURNAL       0x00002000  /* VFS only */
+#define SQLITE_OPEN_MASTER_JOURNAL   0x00004000  /* VFS only */
+#define SQLITE_OPEN_NOMUTEX          0x00008000  /* Ok for sqlite3_open_v2() */
+#define SQLITE_OPEN_FULLMUTEX        0x00010000  /* Ok for sqlite3_open_v2() */
 
 /*
 ** CAPI3REF: Device Characteristics {H10240} <H11120>
@@ -702,9 +702,14 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 ** deleted when it is closed.  The [SQLITE_OPEN_DELETEONCLOSE]
 ** will be set for TEMP  databases, journals and for subjournals.
 **
-** The [SQLITE_OPEN_EXCLUSIVE] flag means the file should be opened
-** for exclusive access.  This flag is set for all files except
-** for the main database file.
+** The [SQLITE_OPEN_EXCLUSIVE] flag is always used in conjunction
+** with the [SQLITE_OPEN_CREATE] flag, which are both directly
+** analogous to the O_EXCL and O_CREAT flags of the POSIX open()
+** API.  The SQLITE_OPEN_EXCLUSIVE flag, when paired with the 
+** SQLITE_OPEN_CREATE, is used to indicate that file should always
+** be created, and that it is an error if it already exists.
+** It is <i>not</i> used to indicate the file should be opened 
+** for exclusive access.
 **
 ** At least szOsFile bytes of memory are allocated by SQLite
 ** to hold the  [sqlite3_file] structure passed as the third

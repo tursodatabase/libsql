@@ -1,5 +1,5 @@
-C Additional\ssimplifications\sto\sbuild.c\sin\ssupport\sfull\scoverage\stesting.\s(CVS\s6636)
-D 2009-05-13T22:58:29
+C Documentation\supdates\sto\sbetter\sexplain\sthe\sSQLITE_OPEN_EXCLUSIVE\sflag.\s\sTicket\s#3855.\s(CVS\s6637)
+D 2009-05-14T03:21:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 2877098ffabd751c274aa5f993d515484d955896
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in d028ed6e0e991d730644f0b418964df1b51e6c53
+F src/sqlite.h.in f266dffc24aec00f1599bf935bcbee5e4a2a3e09
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d20ac97b4daf97621d641f52ac16e8ff26fb53fd
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P c684957991fe45cbcb188d2a419501c3f1fdc93f
-R b7d938cf0534e6a7525437136b322f35
-U drh
-Z a945f0494911586b285a588e892ed85a
+P 913d11149396d3dc797f1efeb4f7e60865483399
+R abb9e0125d369edd65ceec50369d192a
+U shane
+Z 0b4778e326f1addd073ef44654a5d985
