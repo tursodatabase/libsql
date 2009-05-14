@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.14 2009/05/13 07:52:06 danielk1977 Exp $
+** $Id: backup.c,v 1.15 2009/05/14 19:26:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -184,7 +184,7 @@ sqlite3_backup *sqlite3_backup_init(
 ** are considered fatal except for SQLITE_BUSY and SQLITE_LOCKED.
 */
 static int isFatalError(int rc){
-  return (rc!=SQLITE_OK && rc!=SQLITE_BUSY && rc!=SQLITE_LOCKED);
+  return (rc!=SQLITE_OK && rc!=SQLITE_BUSY && ALWAYS(rc!=SQLITE_LOCKED));
 }
 
 /*
@@ -469,6 +469,7 @@ int sqlite3_backup_finish(sqlite3_backup *p){
   int rc;                              /* Value to return */
 
   /* Enter the mutexes */
+  if( p==0 ) return SQLITE_OK;
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
   mutex = p->pSrcDb->mutex;
