@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.449 2009/05/14 03:21:28 shane Exp $
+** @(#) $Id: sqlite.h.in,v 1.450 2009/05/14 22:37:48 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3741,11 +3741,11 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** CAPI3REF: Commit And Rollback Notification Callbacks {H12950} <S60400>
 **
 ** The sqlite3_commit_hook() interface registers a callback
-** function to be invoked whenever a transaction is committed.
+** function to be invoked whenever a transaction is [COMMIT | committed].
 ** Any callback set by a previous call to sqlite3_commit_hook()
 ** for the same database connection is overridden.
 ** The sqlite3_rollback_hook() interface registers a callback
-** function to be invoked whenever a transaction is committed.
+** function to be invoked whenever a transaction is [ROLLBACK | rolled back].
 ** Any callback set by a previous call to sqlite3_commit_hook()
 ** for the same database connection is overridden.
 ** The pArg argument is passed through to the callback.
@@ -3765,6 +3765,12 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 **
 ** Registering a NULL function disables the callback.
 **
+** When the commit hook callback routine returns zero, the [COMMIT]
+** operation is allowed to continue normally.  If the commit hook
+** returns non-zero, then the [COMMIT] is converted into a [ROLLBACK].
+** The rollback hook is invoked on a rollback that results from a commit
+** hook returning non-zero, just as it would be with any other rollback.
+**
 ** For the purposes of this API, a transaction is said to have been
 ** rolled back if an explicit "ROLLBACK" statement is executed, or
 ** an error or constraint causes an implicit rollback to occur.
@@ -3773,6 +3779,8 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** The rollback callback is not invoked if a transaction is
 ** rolled back because a commit callback returned non-zero.
 ** <todo> Check on this </todo>
+**
+** See also the [sqlite3_update_hook()] interface.
 **
 ** Requirements:
 ** [H12951] [H12952] [H12953] [H12954] [H12955]
@@ -3805,6 +3813,13 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 ** The update hook is not invoked when internal system tables are
 ** modified (i.e. sqlite_master and sqlite_sequence).
 **
+** In the current implementation, the update hook
+** is not invoked when duplication rows are deleted because of an
+** [ON CONFLICT | ON CONFLICT REPLACE] clause.  Nor is the update hook
+** invoked when rows are deleted using the [truncate optimization].
+** The exceptions defined in this paragraph might change in a future
+** release of SQLite.
+**
 ** The update hook implementation must not do anything that will modify
 ** the database connection that invoked the update hook.  Any actions
 ** to modify the database connection must be deferred until after the
@@ -3814,6 +3829,9 @@ void *sqlite3_rollback_hook(sqlite3*, void(*)(void *), void*);
 **
 ** If another function was previously registered, its pArg value
 ** is returned.  Otherwise NULL is returned.
+**
+** See also the [sqlite3_commit_hook()] and [sqlite3_rollback_hook()]
+** interfaces.
 **
 ** Requirements:
 ** [H12971] [H12973] [H12975] [H12977] [H12979] [H12981] [H12983] [H12986]
@@ -4394,10 +4412,13 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** For TEMP tables, the database name is "temp".
 **
 ** On success, [SQLITE_OK] is returned and the new [BLOB handle] is written
-** to *ppBlob. Otherwise an [error code] is returned and any value written
-** to *ppBlob should not be used by the caller.
+** to *ppBlob. Otherwise an [error code] is returned and *ppBlob is set
+** to be a null pointer.
 ** This function sets the [database connection] error code and message
-** accessible via [sqlite3_errcode()] and [sqlite3_errmsg()].
+** accessible via [sqlite3_errcode()] and [sqlite3_errmsg()] and related
+** functions.  Note that the *ppBlob variable is always initialized in a
+** way that makes it safe to invoke [sqlite3_blob_close()] on *ppBlob
+** regardless of the success or failure of this routine.
 **
 ** If the row that a BLOB handle points to is modified by an
 ** [UPDATE], [DELETE], or by [ON CONFLICT] side-effects
@@ -4409,6 +4430,19 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** Changes written into a BLOB prior to the BLOB expiring are not
 ** rollback by the expiration of the BLOB.  Such changes will eventually
 ** commit if the transaction continues to completion.
+**
+** Use the [sqlite3_blob_bytes()] interface to determine the size of
+** the opened blob.  The size of a blob may not be changed by this
+** underface.  Use the [UPDATE] SQL command to change the size of a
+** blob.
+**
+** The [sqlite3_bind_zeroblob()] and [sqlite3_result_zeroblob()] interfaces
+** and the built-in [zeroblob] SQL function can be used, if desired,
+** to create an empty, zero-filled blob in which to read or write using
+** this interface.
+**
+** To avoid a resource leak, every open [BLOB handle] should eventually
+** be released by a call to [sqlite3_blob_close()].
 **
 ** Requirements:
 ** [H17813] [H17814] [H17816] [H17819] [H17821] [H17824]
@@ -4432,15 +4466,18 @@ int sqlite3_blob_open(
 ** if there are no other BLOBs, no pending prepared statements, and the
 ** database connection is in [autocommit mode].
 ** If any writes were made to the BLOB, they might be held in cache
-** until the close operation if they will fit. {END}
+** until the close operation if they will fit.
 **
 ** Closing the BLOB often forces the changes
 ** out to disk and so if any I/O errors occur, they will likely occur
-** at the time when the BLOB is closed.  {H17833} Any errors that occur during
+** at the time when the BLOB is closed.  Any errors that occur during
 ** closing are reported as a non-zero return value.
 **
 ** The BLOB is closed unconditionally.  Even if this routine returns
 ** an error code, the BLOB is still closed.
+**
+** Calling this routine with a null pointer (which as would be returned
+** by failed call to [sqlite3_blob_open()]) is a harmless no-op.
 **
 ** Requirements:
 ** [H17833] [H17836] [H17839]
@@ -4450,8 +4487,15 @@ int sqlite3_blob_close(sqlite3_blob *);
 /*
 ** CAPI3REF: Return The Size Of An Open BLOB {H17840} <S30230>
 **
-** Returns the size in bytes of the BLOB accessible via the open
-** []BLOB handle] in its only argument.
+** Returns the size in bytes of the BLOB accessible via the 
+** successfully opened [BLOB handle] in its only argument.  The
+** incremental blob I/O routines can only read or overwriting existing
+** blob content; they cannot change the size of a blob.
+**
+** This routine only works on a [BLOB handle] which has been created
+** by a prior successful call to [sqlite3_blob_open()] and which has not
+** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** to this routine results in undefined and probably undesirable behavior.
 **
 ** Requirements:
 ** [H17843]
@@ -4468,12 +4512,21 @@ int sqlite3_blob_bytes(sqlite3_blob *);
 ** If offset iOffset is less than N bytes from the end of the BLOB,
 ** [SQLITE_ERROR] is returned and no data is read.  If N or iOffset is
 ** less than zero, [SQLITE_ERROR] is returned and no data is read.
+** The size of the blob (and hence the maximum value of N+iOffset)
+** can be determined using the [sqlite3_blob_bytes()] interface.
 **
 ** An attempt to read from an expired [BLOB handle] fails with an
 ** error code of [SQLITE_ABORT].
 **
 ** On success, SQLITE_OK is returned.
 ** Otherwise, an [error code] or an [extended error code] is returned.
+**
+** This routine only works on a [BLOB handle] which has been created
+** by a prior successful call to [sqlite3_blob_open()] and which has not
+** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** to this routine results in undefined and probably undesirable behavior.
+**
+** See also: [sqlite3_blob_write()].
 **
 ** Requirements:
 ** [H17853] [H17856] [H17859] [H17862] [H17863] [H17865] [H17868]
@@ -4496,6 +4549,8 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 ** If offset iOffset is less than N bytes from the end of the BLOB,
 ** [SQLITE_ERROR] is returned and no data is written.  If N is
 ** less than zero [SQLITE_ERROR] is returned and no data is written.
+** The size of the BLOB (and hence the maximum value of N+iOffset)
+** can be determined using the [sqlite3_blob_bytes()] interface.
 **
 ** An attempt to write to an expired [BLOB handle] fails with an
 ** error code of [SQLITE_ABORT].  Writes to the BLOB that occurred
@@ -4506,6 +4561,13 @@ int sqlite3_blob_read(sqlite3_blob *, void *Z, int N, int iOffset);
 **
 ** On success, SQLITE_OK is returned.
 ** Otherwise, an  [error code] or an [extended error code] is returned.
+**
+** This routine only works on a [BLOB handle] which has been created
+** by a prior successful call to [sqlite3_blob_open()] and which has not
+** been closed by [sqlite3_blob_close()].  Passing any other pointer in
+** to this routine results in undefined and probably undesirable behavior.
+**
+** See also: [sqlite3_blob_read()].
 **
 ** Requirements:
 ** [H17873] [H17874] [H17875] [H17876] [H17877] [H17879] [H17882] [H17885]

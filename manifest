@@ -1,5 +1,5 @@
-C Change\sthe\ssqlite3_backup_finish()\sinterface\sso\sthat\scalling\sit\swith\na\sNULL\spointer\sis\sa\sharmless\sno-op.\s\sOne\sother\schange\sto\sbackup.c\sto\sfacilitate\nfull\scoverage\stesting.\s(CVS\s6638)
-D 2009-05-14T19:26:51
+C Documentation\senhancements\sfor\ssqlite3_update_hook(),\ssqlite3_commit_hook(),\nand\sthe\svarious\sincremental\sblob\sI/O\sroutines.\s\sNo\schanges\sto\scode.\s(CVS\s6639)
+D 2009-05-14T22:37:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 2877098ffabd751c274aa5f993d515484d955896
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
-F src/sqlite.h.in f266dffc24aec00f1599bf935bcbee5e4a2a3e09
+F src/sqlite.h.in 85c4398938ee2fd1382fee24bbedd5342a2bc2ed
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d20ac97b4daf97621d641f52ac16e8ff26fb53fd
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6bd44f36f46810eb9ce30c7780de6bcfe4aadf5f
-R 08294acfb06e382228ced064d7f97ab0
+P 06bc89177b3af20751d9567a68551d2d31c3fe8b
+R 1b9a26ff4158f2eb6f889d8edc9f18b3
 U drh
-Z f08fef6da3e6dfcb1865b029ed85932c
+Z 47b204e3bf114966c2f1ed27d3be3caa
