@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: async4.test,v 1.1 2009/04/25 08:39:15 danielk1977 Exp $
+# $Id: async4.test,v 1.2 2009/05/15 14:41:40 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -92,6 +92,9 @@ do_test async4.1.16 {
   sqlite3async_start
   sqlite3async_wait
 } {}
+do_test async4.1.17 {
+  sqlite3async_control lockfiles true
+} {1}
 
 do_test async4.2.1 {
   sqlite3async_control delay

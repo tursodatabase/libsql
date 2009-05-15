@@ -1,5 +1,5 @@
-C Documentation\senhancements\sfor\ssqlite3_update_hook(),\ssqlite3_commit_hook(),\nand\sthe\svarious\sincremental\sblob\sI/O\sroutines.\s\sNo\schanges\sto\scode.\s(CVS\s6639)
-D 2009-05-14T22:37:48
+C Re-enable\sfile\slocking\sin\sasync4.test.\s(CVS\s6640)
+D 2009-05-15T14:41:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -225,7 +225,7 @@ F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test c042ff6d2a29f65e05d498a52448229d25bb5d9d
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
-F test/async4.test 9e00a380c5cfce90177ed3d2a35d55fc5809a6e6
+F test/async4.test bdb997924394a2034ff3df1d839ff95b2e602ed4
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 06bc89177b3af20751d9567a68551d2d31c3fe8b
-R 1b9a26ff4158f2eb6f889d8edc9f18b3
-U drh
-Z 47b204e3bf114966c2f1ed27d3be3caa
+P e8ca932d8c7e1753c159041499355724d3e78b35
+R 4039bbedaa716152755b0bba07446db3
+U danielk1977
+Z 79003871abff44e9b110627807ec8d3b
