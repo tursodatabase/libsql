@@ -1,5 +1,5 @@
-C Re-enable\sfile\slocking\sin\sasync4.test.\s(CVS\s6640)
-D 2009-05-15T14:41:40
+C Attempt\sto\sprovide\sa\sversion\sof\sthe\sSQLITE_INT_TO_PTR\smacro\sthat\sworks\non\sboth\sllvm-gcc-4.2\sand\sMSVC.\s\sTicket\s#3860.\s(CVS\s6641)
+D 2009-05-16T17:38:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +162,7 @@ F src/select.c 2877098ffabd751c274aa5f993d515484d955896
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 85c4398938ee2fd1382fee24bbedd5342a2bc2ed
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h d20ac97b4daf97621d641f52ac16e8ff26fb53fd
+F src/sqliteInt.h f45e2a34e91803d1f10406dd73a2327bee894865
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e8ca932d8c7e1753c159041499355724d3e78b35
-R 4039bbedaa716152755b0bba07446db3
-U danielk1977
-Z 79003871abff44e9b110627807ec8d3b
+P f7098187280866a56563c7614513a40becd172e0
+R 7dde16074ccb85e393d78533a8d161b4
+U drh
+Z 8b4c2b5d43c85ad0807aa2ba5ab2e1e1
