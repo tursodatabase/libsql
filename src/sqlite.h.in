@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.450 2009/05/14 22:37:48 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.451 2009/05/17 12:07:48 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4402,7 +4402,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 **     SELECT zColumn FROM zDb.zTable WHERE [rowid] = iRow;
 ** </pre> {END}
 **
-** If the flags parameter is non-zero, the the BLOB is opened for read
+** If the flags parameter is non-zero, then the BLOB is opened for read
 ** and write access. If it is zero, the BLOB is opened for read access.
 **
 ** Note that the database name is not the filename that contains
