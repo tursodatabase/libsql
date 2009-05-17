@@ -1,5 +1,5 @@
-C Attempt\sto\sprovide\sa\sversion\sof\sthe\sSQLITE_INT_TO_PTR\smacro\sthat\sworks\non\sboth\sllvm-gcc-4.2\sand\sMSVC.\s\sTicket\s#3860.\s(CVS\s6641)
-D 2009-05-16T17:38:21
+C Tweaks\sand\ssimplifications\sto\sselect.c\sto\sfacility\sfull\scoverage\stesting.\s(CVS\s6642)
+D 2009-05-17T02:06:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
-F src/select.c 2877098ffabd751c274aa5f993d515484d955896
+F src/select.c 3adc1da3ba3ee024c9416fa61d5deae0ad833360
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 85c4398938ee2fd1382fee24bbedd5342a2bc2ed
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f7098187280866a56563c7614513a40becd172e0
-R 7dde16074ccb85e393d78533a8d161b4
+P ddee7ff23e9a396cab89d20ff9fc4cf3dfd4561c
+R bc03c1ce916b8e2da7409c5c51691207
 U drh
-Z 8b4c2b5d43c85ad0807aa2ba5ab2e1e1
+Z df66ed9bee07ae7413393e0224958ee2

@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.513 2009/05/11 20:53:29 drh Exp $
+** $Id: select.c,v 1.514 2009/05/17 02:06:15 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -83,6 +83,7 @@ Select *sqlite3SelectNew(
   pNew->op = TK_SELECT;
   pNew->pLimit = pLimit;
   pNew->pOffset = pOffset;
+  assert( pOffset==0 || pLimit!=0 );
   pNew->addrOpenEphm[0] = -1;
   pNew->addrOpenEphm[1] = -1;
   pNew->addrOpenEphm[2] = -1;
@@ -125,18 +126,20 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   int jointype = 0;
   Token *apAll[3];
   Token *p;
+                             /*   0123456789 123456789 123456789 123 */
+  static const char zKeyText[] = "naturaleftouterightfullinnercross";
   static const struct {
-    const char zKeyword[8];
-    u8 nChar;
-    u8 code;
-  } keywords[] = {
-    { "natural", 7, JT_NATURAL },
-    { "left",    4, JT_LEFT|JT_OUTER },
-    { "right",   5, JT_RIGHT|JT_OUTER },
-    { "full",    4, JT_LEFT|JT_RIGHT|JT_OUTER },
-    { "outer",   5, JT_OUTER },
-    { "inner",   5, JT_INNER },
-    { "cross",   5, JT_INNER|JT_CROSS },
+    u8 i;        /* Beginning of keyword text in zKeyText[] */
+    u8 nChar;    /* Length of the keyword in characters */
+    u8 code;     /* Join type mask */
+  } aKeyword[] = {
+    /* natural */ { 0,  7, JT_NATURAL                },
+    /* left    */ { 6,  4, JT_LEFT|JT_OUTER          },
+    /* outer   */ { 10, 5, JT_OUTER                  },
+    /* right   */ { 14, 5, JT_RIGHT|JT_OUTER         },
+    /* full    */ { 19, 4, JT_LEFT|JT_RIGHT|JT_OUTER },
+    /* inner   */ { 23, 5, JT_INNER                  },
+    /* cross   */ { 28, 5, JT_INNER|JT_CROSS         },
   };
   int i, j;
   apAll[0] = pA;
@@ -144,14 +147,15 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
   apAll[2] = pC;
   for(i=0; i<3 && apAll[i]; i++){
     p = apAll[i];
-    for(j=0; j<ArraySize(keywords); j++){
-      if( p->n==keywords[j].nChar 
-          && sqlite3StrNICmp((char*)p->z, keywords[j].zKeyword, p->n)==0 ){
-        jointype |= keywords[j].code;
+    for(j=0; j<ArraySize(aKeyword); j++){
+      if( p->n==aKeyword[j].nChar 
+          && sqlite3StrNICmp((char*)p->z, &zKeyText[aKeyword[j].i], p->n)==0 ){
+        jointype |= aKeyword[j].code;
         break;
       }
     }
-    if( j>=ArraySize(keywords) ){
+    testcase( j==0 || j==1 || j==2 || j==3 || j==4 || j==5 || j==6 );
+    if( j>=ArraySize(aKeyword) ){
       jointype |= JT_ERROR;
       break;
     }
@@ -166,7 +170,8 @@ int sqlite3JoinType(Parse *pParse, Token *pA, Token *pB, Token *pC){
     sqlite3ErrorMsg(pParse, "unknown or unsupported join type: "
        "%T %T%s%T", pA, pB, zSp, pC);
     jointype = JT_INNER;
-  }else if( jointype & JT_RIGHT ){
+  }else if( (jointype & JT_OUTER)!=0 
+         && (jointype & (JT_LEFT|JT_RIGHT))!=JT_LEFT ){
     sqlite3ErrorMsg(pParse, 
       "RIGHT and FULL OUTER JOINs are not currently supported");
     jointype = JT_INNER;
@@ -558,6 +563,8 @@ static void selectInnerLoop(
   }
 
   if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
+static int cnt = 0;
+cnt++;
     return;
   }
 
@@ -590,6 +597,8 @@ static void selectInnerLoop(
     case SRT_Table:
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
+      testcase( eDest==SRT_Table );
+      testcase( eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
       if( pOrderBy ){
         pushOntoSorter(pParse, pOrderBy, p, r1);
@@ -658,6 +667,8 @@ static void selectInnerLoop(
     */
     case SRT_Coroutine:
     case SRT_Output: {
+      testcase( eDest==SRT_Coroutine );
+      testcase( eDest==SRT_Output );
       if( pOrderBy ){
         int r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp3(v, OP_MakeRecord, regResult, nColumn, r1);
@@ -799,9 +810,9 @@ static void generateSortTail(
       break;
     }
 #endif
-    case SRT_Output:
-    case SRT_Coroutine: {
+    default: {
       int i;
+      assert( eDest==SRT_Output || eDest==SRT_Coroutine ); 
       testcase( eDest==SRT_Output );
       testcase( eDest==SRT_Coroutine );
       sqlite3VdbeAddOp2(v, OP_Integer, 1, regRowid);
@@ -816,10 +827,6 @@ static void generateSortTail(
       }else{
         sqlite3VdbeAddOp1(v, OP_Yield, pDest->iParm);
       }
-      break;
-    }
-    default: {
-      /* Do nothing */
       break;
     }
   }
@@ -870,7 +877,7 @@ static const char *columnType(
   char const *zOriginTab = 0;
   char const *zOriginCol = 0;
   int j;
-  if( pExpr==0 || pNC->pSrcList==0 ) return 0;
+  if( NEVER(pExpr==0) || pNC->pSrcList==0 ) return 0;
 
   switch( pExpr->op ){
     case TK_AGG_COLUMN:
@@ -882,6 +889,8 @@ static const char *columnType(
       Table *pTab = 0;            /* Table structure column is extracted from */
       Select *pS = 0;             /* Select the column is extracted from */
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
+      testcase( pExpr->op==TK_AGG_COLUMN );
+      testcase( pExpr->op==TK_COLUMN );
       while( pNC && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
@@ -1035,7 +1044,6 @@ static void generateColumnNames(
   }
 #endif
 
-  assert( v!=0 );
   if( pParse->colNamesSet || NEVER(v==0) || db->mallocFailed ) return;
   pParse->colNamesSet = 1;
   fullNames = (db->flags & SQLITE_FullColNames)!=0;
@@ -1044,7 +1052,7 @@ static void generateColumnNames(
   for(i=0; i<pEList->nExpr; i++){
     Expr *p;
     p = pEList->a[i].pExpr;
-    if( p==0 ) continue;
+    if( NEVER(p==0) ) continue;
     if( pEList->a[i].zName ){
       char *zName = pEList->a[i].zName;
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, zName, SQLITE_TRANSIENT);
@@ -1141,9 +1149,10 @@ static int selectColumnsFromExprList(
       Expr *pColExpr = p;  /* The expression that is the result column name */
       Table *pTab;         /* Table associated with this expression */
       while( pColExpr->op==TK_DOT ) pColExpr = pColExpr->pRight;
-      if( pColExpr->op==TK_COLUMN && (pTab = pColExpr->pTab)!=0 ){
+      if( pColExpr->op==TK_COLUMN && ALWAYS(pColExpr->pTab!=0) ){
         /* For columns use the column name name */
         int iCol = pColExpr->iColumn;
+        pTab = pColExpr->pTab;
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = sqlite3MPrintf(db, "%s",
                  iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
@@ -1251,7 +1260,10 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   if( pTab==0 ){
     return 0;
   }
-  pTab->dbMem = db->lookaside.bEnabled ? db : 0;
+  /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
+  ** is disabled, so we might as well hard-code pTab->dbMem to NULL. */
+  assert( db->lookaside.bEnabled==0 );
+  pTab->dbMem = 0;
   pTab->nRef = 1;
   pTab->zName = 0;
   selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
@@ -1314,29 +1326,24 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   ** no rows.
   */
   sqlite3ExprCacheClear(pParse);
+  assert( p->pOffset==0 || p->pLimit!=0 );
   if( p->pLimit ){
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
-    if( v==0 ) return;
+    if( NEVER(v==0) ) return;  /* VDBE should have already been allocated */
     sqlite3ExprCode(pParse, p->pLimit, iLimit);
     sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit);
     VdbeComment((v, "LIMIT counter"));
     sqlite3VdbeAddOp2(v, OP_IfZero, iLimit, iBreak);
-  }
-  if( p->pOffset ){
-    p->iOffset = iOffset = ++pParse->nMem;
-    if( p->pLimit ){
+    if( p->pOffset ){
+      p->iOffset = iOffset = ++pParse->nMem;
       pParse->nMem++;   /* Allocate an extra register for limit+offset */
-    }
-    v = sqlite3GetVdbe(pParse);
-    if( v==0 ) return;
-    sqlite3ExprCode(pParse, p->pOffset, iOffset);
-    sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset);
-    VdbeComment((v, "OFFSET counter"));
-    addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iOffset);
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, iOffset);
-    sqlite3VdbeJumpHere(v, addr1);
-    if( p->pLimit ){
+      sqlite3ExprCode(pParse, p->pOffset, iOffset);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, iOffset);
+      VdbeComment((v, "OFFSET counter"));
+      addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iOffset);
+      sqlite3VdbeAddOp2(v, OP_Integer, 0, iOffset);
+      sqlite3VdbeJumpHere(v, addr1);
       sqlite3VdbeAddOp3(v, OP_Add, iLimit, iOffset, iOffset+1);
       VdbeComment((v, "LIMIT+OFFSET"));
       addr1 = sqlite3VdbeAddOp1(v, OP_IfPos, iLimit);
@@ -1494,11 +1501,9 @@ static int multiSelect(
         VdbeComment((v, "Jump ahead if LIMIT reached"));
       }
       rc = sqlite3Select(pParse, p, &dest);
+      testcase( rc!=SQLITE_OK );
       pDelete = p->pPrior;
       p->pPrior = pPrior;
-      if( rc ){
-        goto multi_select_end;
-      }
       if( addr ){
         sqlite3VdbeJumpHere(v, addr);
       }
@@ -1513,6 +1518,8 @@ static int multiSelect(
       int addr;
       SelectDest uniondest;
 
+      testcase( p->op==TK_EXCEPT );
+      testcase( p->op==TK_UNION );
       priorOp = SRT_Union;
       if( dest.eDest==priorOp && ALWAYS(!p->pLimit &&!p->pOffset) ){
         /* We can reuse a temporary table generated by a SELECT to our
@@ -1560,6 +1567,7 @@ static int multiSelect(
       p->pOffset = 0;
       uniondest.eDest = op;
       rc = sqlite3Select(pParse, p, &uniondest);
+      testcase( rc!=SQLITE_OK );
       /* Query flattening in sqlite3Select() might refill p->pOrderBy.
       ** Be sure to delete p->pOrderBy, therefore, to avoid a memory leak. */
       sqlite3ExprListDelete(db, p->pOrderBy);
@@ -1571,15 +1579,12 @@ static int multiSelect(
       p->pOffset = pOffset;
       p->iLimit = 0;
       p->iOffset = 0;
-      if( rc ){
-        goto multi_select_end;
-      }
-
 
       /* Convert the data in the temporary table into whatever form
       ** it is that we currently need.
-      */      
-      if( dest.eDest!=priorOp || unionTab!=dest.iParm ){
+      */
+      assert( unionTab==dest.iParm || dest.eDest!=priorOp );
+      if( dest.eDest!=priorOp ){
         int iCont, iBreak, iStart;
         assert( p->pEList );
         if( dest.eDest==SRT_Output ){
@@ -1601,7 +1606,7 @@ static int multiSelect(
       }
       break;
     }
-    case TK_INTERSECT: {
+    default: assert( p->op==TK_INTERSECT ); {
       int tab1, tab2;
       int iCont, iBreak, iStart;
       Expr *pLimit, *pOffset;
@@ -1643,14 +1648,12 @@ static int multiSelect(
       p->pOffset = 0;
       intersectdest.iParm = tab2;
       rc = sqlite3Select(pParse, p, &intersectdest);
+      testcase( rc!=SQLITE_OK );
       pDelete = p->pPrior;
       p->pPrior = pPrior;
       sqlite3ExprDelete(db, p->pLimit);
       p->pLimit = pLimit;
       p->pOffset = pOffset;
-      if( rc ){
-        goto multi_select_end;
-      }
 
       /* Generate code to take the intersection of the two temporary
       ** tables.
@@ -1803,6 +1806,8 @@ static int generateOutputSubroutine(
     case SRT_EphemTab: {
       int r1 = sqlite3GetTempReg(pParse);
       int r2 = sqlite3GetTempReg(pParse);
+      testcase( pDest->eDest==SRT_Table );
+      testcase( pDest->eDest==SRT_EphemTab );
       sqlite3VdbeAddOp3(v, OP_MakeRecord, pIn->iMem, pIn->nMem, r1);
       sqlite3VdbeAddOp2(v, OP_NewRowid, pDest->iParm, r2);
       sqlite3VdbeAddOp3(v, OP_Insert, pDest->iParm, r1, r2);
