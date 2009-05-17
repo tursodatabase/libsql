@@ -1,5 +1,5 @@
-C Take\scare\sto\sfree\sthe\smemory\sfor\sthe\sORDER\sBY\sclause\son\sSELECT\sstatements\ncontaining\serrors\sand\scontained\swithin\striggers.\s\sTicket\s#3863.\s(CVS\s6644)
-D 2009-05-17T15:26:21
+C Remove\sdebugging\scode\saccidently\sleft\sin\scheck-in\s(6642).\s\sTicket\s#3862.\s(CVS\s6645)
+D 2009-05-17T15:29:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
-F src/select.c 1f95ac86aca8cf5490c89f563aea98b41f158300
+F src/select.c b51d7f64f345f90f10a1ee8df489c3eda29fa3ee
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 0c459a45c1047be24c6a58646e8be4d001a3a28a
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 92866482ef7cc91b5ac7bebec7e6edf900aa64c6
-R cb455d7944af8d54cd2c606fc118f81d
+P dd665eac8c04259e44a95827ebd1f037460fe1b2
+R 539d67b9b175e92898dfc3fe63e35fff
 U drh
-Z 53d20478e7a87c54ccd99a9df25932c8
+Z 6aa7c2d512b5df68db95e1157c71519c

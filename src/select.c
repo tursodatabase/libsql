@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.515 2009/05/17 15:26:21 drh Exp $
+** $Id: select.c,v 1.516 2009/05/17 15:29:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -563,8 +563,6 @@ static void selectInnerLoop(
   }
 
   if( checkForMultiColumnSelectError(pParse, pDest, pEList->nExpr) ){
-static int cnt = 0;
-cnt++;
     return;
   }
 
