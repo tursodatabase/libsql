@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: selectC.test,v 1.4 2009/03/02 01:22:40 drh Exp $
+# $Id: selectC.test,v 1.5 2009/05/17 15:26:21 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -148,5 +148,20 @@ do_test selectC-1.14.2 {
      ORDER BY x DESC
   }
 } {CCC AAA AAA}
+
+# The following query used to leak memory.  Verify that has been fixed.
+#
+do_test selectC-2.1 {
+  catchsql {
+    CREATE TABLE t21a(a,b);
+    INSERT INTO t21a VALUES(1,2);
+    CREATE TABLE t21b(n);
+    CREATE TRIGGER r21 AFTER INSERT ON t21b BEGIN
+      SELECT a FROM t21a WHERE a>new.x UNION ALL
+      SELECT b FROM t21a WHERE b>new.x ORDER BY 1 LIMIT 2;
+    END;
+    INSERT INTO t21b VALUES(6);
+  }
+} {1 {no such column: new.x}}
 
 finish_test

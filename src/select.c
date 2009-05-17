@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.514 2009/05/17 02:06:15 drh Exp $
+** $Id: select.c,v 1.515 2009/05/17 15:26:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -3575,12 +3575,12 @@ int sqlite3Select(
     p->selFlags &= ~SF_Distinct;
   }
   sqlite3SelectPrep(pParse, p, 0);
+  p->pOrderBy = pOrderBy;
   pTabList = p->pSrc;
   pEList = p->pEList;
   if( pParse->nErr || db->mallocFailed ){
     goto select_end;
   }
-  p->pOrderBy = pOrderBy;
   isAgg = (p->selFlags & SF_Aggregate)!=0;
   if( pEList==0 ) goto select_end;
 
