@@ -1,5 +1,5 @@
-C Port\spatches\sfrom\sthe\strunk\sinto\sthe\s3.6.14.1\sbranch:\nthe\sgroup_concat()\sfix\sof\scheck-in\s(6616),\sticket\s#3841\sand\sthe\npcache\sfix\sof\scheck-in\s(6619),\sticket\s#3844.\s(CVS\s6652)
-D 2009-05-18T16:14:25
+C Update\sthe\sconfigure\sscript\sfor\sthe\s3.6.14.1\srelease.\s(CVS\s6653)
+D 2009-05-18T16:22:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 487875e451ac922f10276ee41611e0967ea72af0 x
+F configure a5a92296f33c84689945a7ddf121fc6b2e56ea8d x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f06cae3b5e42e5a2c1a30cd91a7c594e6cd834d0
-R 1c1e6ac7cf542b0855883429017df0a3
+P 2a277c55b2f90d53208147423b409bc05e12ebd0
+R 0144b0601cd1455ba6c830cecdd1b041
 U drh
-Z cfce3ac25aea286dd8f950d6ba5467e3
+Z a7fc4029e9ddde54f7a2fb207d1382dc
