@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.872 2009/05/16 17:38:21 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.873 2009/05/18 13:34:38 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -66,7 +66,7 @@
 **
 ** Ticket #3860:  The llvm-gcc-4.2 compiler from Apple chokes on
 ** the ((void*)&((char*)0)[X]) construct.  But MSVC chokes on ((void*)(X)).
-** We we have to define the macros in different ways depending on the
+** So we have to define the macros in different ways depending on the
 ** compiler.
 */
 #if defined(__GNUC__)

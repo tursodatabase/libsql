@@ -1,5 +1,5 @@
-C Remove\sdebugging\scode\saccidently\sleft\sin\scheck-in\s(6642).\s\sTicket\s#3862.\s(CVS\s6645)
-D 2009-05-17T15:29:31
+C Fix\sa\stypo\son\sa\scomment\sassociated\swith\scheck-in\s(6641)\sand\sticket\s#3860.\s(CVS\s6646)
+D 2009-05-18T13:34:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +162,7 @@ F src/select.c b51d7f64f345f90f10a1ee8df489c3eda29fa3ee
 F src/shell.c 0a11f831603f17fea20ca97133c0f64e716af4a7
 F src/sqlite.h.in 0c459a45c1047be24c6a58646e8be4d001a3a28a
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h f45e2a34e91803d1f10406dd73a2327bee894865
+F src/sqliteInt.h 3de645e5f55fd460d470971b05cdc0aa79398f60
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P dd665eac8c04259e44a95827ebd1f037460fe1b2
-R 539d67b9b175e92898dfc3fe63e35fff
+P 0d974613473b9d2af71638248a57036f903ef387
+R 09df808b47e81fe931aacca7591d8277
 U drh
-Z 6aa7c2d512b5df68db95e1157c71519c
+Z eb3deca17c5edd805ee4a913a717f2fa
