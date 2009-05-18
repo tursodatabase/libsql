@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.516 2009/05/17 15:29:31 drh Exp $
+** $Id: select.c,v 1.517 2009/05/18 15:46:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1868,26 +1868,20 @@ static int generateOutputSubroutine(
       break;
     }
 
-    /* Results are stored in a sequence of registers.  Then the
-    ** OP_ResultRow opcode is used to cause sqlite3_step() to return
-    ** the next row of result.
+    /* If none of the above, then the result destination must be
+    ** SRT_Output.  This routine is never called with any other
+    ** destination other than the ones handled above or SRT_Output.
+    **
+    ** For SRT_Output, results are stored in a sequence of registers.  
+    ** Then the OP_ResultRow opcode is used to cause sqlite3_step() to
+    ** return the next row of result.
     */
-    case SRT_Output: {
+    default: {
+      assert( pDest->eDest==SRT_Output );
       sqlite3VdbeAddOp2(v, OP_ResultRow, pIn->iMem, pIn->nMem);
       sqlite3ExprCacheAffinityChange(pParse, pIn->iMem, pIn->nMem);
       break;
     }
-
-#if !defined(SQLITE_OMIT_TRIGGER)
-    /* Discard the results.  This is used for SELECT statements inside
-    ** the body of a TRIGGER.  The purpose of such selects is to call
-    ** user-defined functions that have side effects.  We do not care
-    ** about the actual results of the select.
-    */
-    default: {
-      break;
-    }
-#endif
   }
 
   /* Jump to the end of the loop if the LIMIT is reached.
@@ -2036,7 +2030,7 @@ static int multiSelectOrderBy(
   assert( pKeyDup==0 ); /* "Managed" code needs this.  Ticket #3382. */
   db = pParse->db;
   v = pParse->pVdbe;
-  if( v==0 ) return SQLITE_NOMEM;
+  assert( v!=0 );       /* Already thrown the error if VDBE alloc failed */
   labelEnd = sqlite3VdbeMakeLabel(v);
   labelCmpr = sqlite3VdbeMakeLabel(v);
 
@@ -2650,9 +2644,11 @@ static int flattenSubquery(
       return 0;
     }
     for(pSub1=pSub; pSub1; pSub1=pSub1->pPrior){
+      testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct );
+      testcase( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
       if( (pSub1->selFlags & (SF_Distinct|SF_Aggregate))!=0
        || (pSub1->pPrior && pSub1->op!=TK_ALL) 
-       || !pSub1->pSrc || pSub1->pSrc->nSrc!=1
+       || NEVER(pSub1->pSrc==0) || pSub1->pSrc->nSrc!=1
       ){
         return 0;
       }
@@ -2752,8 +2748,10 @@ static int flattenSubquery(
   ** subquery until code generation is
   ** complete, since there may still exist Expr.pTab entries that
   ** refer to the subquery even after flattening.  Ticket #3346.
+  **
+  ** pSubitem->pTab is always non-NULL by test restrictions and tests above.
   */
-  if( pSubitem->pTab!=0 ){
+  if( ALWAYS(pSubitem->pTab!=0) ){
     Table *pTabToDel = pSubitem->pTab;
     if( pTabToDel->nRef==1 ){
       pTabToDel->pNextZombie = pParse->pZombieTab;
@@ -2841,10 +2839,12 @@ static int flattenSubquery(
     */
     pList = pParent->pEList;
     for(i=0; i<pList->nExpr; i++){
-      Expr *pExpr;
-      if( pList->a[i].zName==0 && (pExpr = pList->a[i].pExpr)->span.z!=0 ){
-        pList->a[i].zName = 
+      if( pList->a[i].zName==0 ){
+        Expr *pExpr = pList->a[i].pExpr;
+        if( ALWAYS(pExpr->span.z!=0) ){
+          pList->a[i].zName = 
                sqlite3DbStrNDup(db, (char*)pExpr->span.z, pExpr->span.n);
+        }
       }
     }
     substExprList(db, pParent->pEList, iParent, pSub->pEList);
@@ -3561,19 +3561,17 @@ int sqlite3Select(
   if( sqlite3AuthCheck(pParse, SQLITE_SELECT, 0, 0, 0) ) return 1;
   memset(&sAggInfo, 0, sizeof(sAggInfo));
 
-  pOrderBy = p->pOrderBy;
   if( IgnorableOrderby(pDest) ){
-    p->pOrderBy = 0;
-
-    /* In these cases the DISTINCT operator makes no difference to the
-    ** results, so remove it if it were specified.
-    */
     assert(pDest->eDest==SRT_Exists || pDest->eDest==SRT_Union || 
            pDest->eDest==SRT_Except || pDest->eDest==SRT_Discard);
+    /* If ORDER BY makes no difference in the output then neither does
+    ** DISTINCT so it can be removed too. */
+    sqlite3ExprListDelete(db, p->pOrderBy);
+    p->pOrderBy = 0;
     p->selFlags &= ~SF_Distinct;
   }
   sqlite3SelectPrep(pParse, p, 0);
-  p->pOrderBy = pOrderBy;
+  pOrderBy = p->pOrderBy;
   pTabList = p->pSrc;
   pEList = p->pEList;
   if( pParse->nErr || db->mallocFailed ){
@@ -3587,12 +3585,6 @@ int sqlite3Select(
   ** errors before this routine starts.
   */
   if( pParse->nErr>0 ) goto select_end;
-
-  /* ORDER BY is ignored for some destinations.
-  */
-  if( IgnorableOrderby(pDest) ){
-    pOrderBy = 0;
-  }
 
   /* Begin generating code.
   */
