@@ -21,7 +21,7 @@
 # But with the addition of the group_concat() function, suddenly the
 # order does matter.
 #
-# $Id: tkt2942.test,v 1.1 2008/02/15 14:33:04 drh Exp $
+# $Id: tkt2942.test,v 1.1.4.1 2009/05/18 16:14:26 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -58,5 +58,27 @@ do_test tkt2942.4 {
   }
 } {4,3,1,2}
 
+do_test tkt2942-3841.1 {
+  execsql {
+    CREATE TABLE table2 (key TEXT, x TEXT);
+    CREATE TABLE list (key TEXT, value TEXT);
+  
+    INSERT INTO table2 VALUES ("a", "alist");
+    INSERT INTO table2 VALUES ("b", "blist");
+    INSERT INTO list VALUES ("a", 1);
+    INSERT INTO list VALUES ("a", 2);
+    INSERT INTO list VALUES ("a", 3);
+    INSERT INTO list VALUES ("b", 4);
+    INSERT INTO list VALUES ("b", 5);
+    INSERT INTO list VALUES ("b", 6);
+
+    SELECT
+      table2.x,
+      (SELECT group_concat(list.value)
+        FROM list
+        WHERE list.key = table2.key)
+    FROM table2;
+  }
+} {alist 1,2,3 blist 4,5,6}
 
 finish_test
