@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.586 2009/05/06 18:57:10 shane Exp $
+** @(#) $Id: pager.c,v 1.586.2.1 2009/05/18 17:11:31 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3622,7 +3622,7 @@ static int pagerSharedLock(Pager *pPager){
       );
     }
 
-    if( sqlite3PcachePagecount(pPager->pPCache)>0 ){
+    if( pPager->pBackup || sqlite3PcachePagecount(pPager->pPCache)>0 ){
       /* The shared-lock has just been acquired on the database file
       ** and there are already pages in the cache (from a previous
       ** read or write transaction).  Check to see if the database

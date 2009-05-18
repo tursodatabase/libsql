@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.13 2009/03/16 13:19:36 danielk1977 Exp $
+** $Id: backup.c,v 1.13.2.1 2009/05/18 17:11:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -44,6 +44,7 @@ struct sqlite3_backup {
   Pgno nRemaining;         /* Number of pages left to copy */
   Pgno nPagecount;         /* Total number of pages to copy */
 
+  int isAttached;          /* True once backup has been registered with pager */
   sqlite3_backup *pNext;   /* Next backup associated with source pager */
 };
 
@@ -157,6 +158,7 @@ sqlite3_backup *sqlite3_backup_init(
     p->pDestDb = pDestDb;
     p->pSrcDb = pSrcDb;
     p->iNext = 1;
+    p->isAttached = 0;
 
     if( 0==p->pSrc || 0==p->pDest ){
       /* One (or both) of the named databases did not exist. An error has
@@ -167,18 +169,7 @@ sqlite3_backup *sqlite3_backup_init(
       p = 0;
     }
   }
-
-  /* If everything has gone as planned, attach the backup object to the
-  ** source pager. The source pager calls BackupUpdate() and BackupRestart()
-  ** to notify this module if the source file is modified mid-backup.
-  */
   if( p ){
-    sqlite3_backup **pp;             /* Pointer to head of pagers backup list */
-    sqlite3BtreeEnter(p->pSrc);
-    pp = sqlite3PagerBackupPtr(sqlite3BtreePager(p->pSrc));
-    p->pNext = *pp;
-    *pp = p;
-    sqlite3BtreeLeave(p->pSrc);
     p->pSrc->nBackup++;
   }
 
@@ -272,6 +263,19 @@ static int backupTruncateFile(sqlite3_file *pFile, i64 iSize){
 }
 
 /*
+** Register this backup object with the associated source pager for
+** callbacks when pages are changed or the cache invalidated.
+*/
+static void attachBackupObject(sqlite3_backup *p){
+  sqlite3_backup **pp;
+  assert( sqlite3BtreeHoldsMutex(p->pSrc) );
+  pp = sqlite3PagerBackupPtr(sqlite3BtreePager(p->pSrc));
+  p->pNext = *pp;
+  *pp = p;
+  p->isAttached = 1;
+}
+
+/*
 ** Copy nPage pages from the source b-tree to the destination.
 */
 int sqlite3_backup_step(sqlite3_backup *p, int nPage){
@@ -340,6 +344,8 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       p->nRemaining = nSrcPage+1-p->iNext;
       if( p->iNext>(Pgno)nSrcPage ){
         rc = SQLITE_DONE;
+      }else if( !p->isAttached ){
+        attachBackupObject(p);
       }
     }
   
@@ -472,12 +478,14 @@ int sqlite3_backup_finish(sqlite3_backup *p){
 
   /* Detach this backup from the source pager. */
   if( p->pDestDb ){
+    p->pSrc->nBackup--;
+  }
+  if( p->isAttached ){
     pp = sqlite3PagerBackupPtr(sqlite3BtreePager(p->pSrc));
     while( *pp!=p ){
       pp = &(*pp)->pNext;
     }
     *pp = p->pNext;
-    p->pSrc->nBackup--;
   }
 
   /* If a transaction is still open on the Btree, roll it back. */

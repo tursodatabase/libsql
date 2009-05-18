@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.9 2009/03/16 13:19:36 danielk1977 Exp $
+# $Id: backup.test,v 1.9.2.1 2009/05/18 17:11:31 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -858,6 +858,52 @@ do_test backup-9.2.3 {
   B finish
 } {SQLITE_OK}
 catch {db2 close}
+
+ifcapable memorymanage {
+  db close
+  file delete -force test.db
+  file delete -force bak.db
+
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  sqlite3 db3 bak.db
+
+  do_test backup-10.1.1 {
+    execsql {
+      BEGIN;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, randstr(1000,1000));
+      INSERT INTO t1 VALUES(2, randstr(1000,1000));
+      INSERT INTO t1 VALUES(3, randstr(1000,1000));
+      INSERT INTO t1 VALUES(4, randstr(1000,1000));
+      INSERT INTO t1 VALUES(5, randstr(1000,1000));
+      CREATE INDEX i1 ON t1(a, b);
+      COMMIT;
+    }
+  } {}
+  do_test backup-10.1.2 {
+    sqlite3_backup B db3 main db2 main
+    B step 5
+  } {SQLITE_OK}
+  do_test backup-10.1.3 {
+    execsql {
+      UPDATE t1 SET b = randstr(500,500);
+    }
+  } {}
+  sqlite3_release_memory [expr 1024*1024]
+  do_test backup-10.1.3 {
+    B step 50
+  } {SQLITE_DONE}
+  do_test backup-10.1.4 {
+    B finish
+  } {SQLITE_OK}
+  do_test backup-10.1.5 {
+    execsql { PRAGMA integrity_check } db3
+  } {ok}
+
+  db2 close
+  db3 close
+}
 
 finish_test
 
