@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is in-memory database backend.
 #
-# $Id: memdb.test,v 1.18 2009/03/18 10:33:02 danielk1977 Exp $
+# $Id: memdb.test,v 1.19 2009/05/18 16:04:38 danielk1977 Exp $
 
 
 set testdir [file dirname $argv0]
@@ -413,24 +413,25 @@ do_test memdb-8.2 {
 
 # Test that auto-vacuum works with in-memory databases.
 # 
-do_test memdb-9.1 {
-  db close
-  sqlite3 db test.db
-  db cache size 0
-  execsql {
-    PRAGMA auto_vacuum = full;
-    CREATE TABLE t1(a);
-    INSERT INTO t1 VALUES(randstr(1000,1000));
-    INSERT INTO t1 VALUES(randstr(1000,1000));
-    INSERT INTO t1 VALUES(randstr(1000,1000));
-  }
-  set memused [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-  set pgovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 1]
-  execsql { DELETE FROM t1 }
-  set memused2 [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
-  expr {($memused2 + 2048 < $memused) || $pgovfl==0}
-} {1}
-
+ifcapable autovacuum {
+  do_test memdb-9.1 {
+    db close
+    sqlite3 db test.db
+    db cache size 0
+    execsql {
+      PRAGMA auto_vacuum = full;
+      CREATE TABLE t1(a);
+      INSERT INTO t1 VALUES(randstr(1000,1000));
+      INSERT INTO t1 VALUES(randstr(1000,1000));
+      INSERT INTO t1 VALUES(randstr(1000,1000));
+    }
+    set memused [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
+    set pgovfl [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_OVERFLOW 0] 1]
+    execsql { DELETE FROM t1 }
+    set memused2 [lindex [sqlite3_status SQLITE_STATUS_MEMORY_USED 0] 1]
+    expr {($memused2 + 2048 < $memused) || $pgovfl==0}
+  } {1}
+}
 
 } ;# ifcapable memorydb
 
