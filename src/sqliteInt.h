@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.873 2009/05/18 13:34:38 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.874 2009/05/19 14:21:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -70,8 +70,13 @@
 ** compiler.
 */
 #if defined(__GNUC__)
-# define SQLITE_INT_TO_PTR(X)  ((void*)(X))
-# define SQLITE_PTR_TO_INT(X)  ((int)(X))
+# if defined(HAVE_STDINT_H)
+#   define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
+#   define SQLITE_PTR_TO_INT(X)  ((int)(intptr_t)(X))
+# else
+#   define SQLITE_INT_TO_PTR(X)  ((void*)(X))
+#   define SQLITE_PTR_TO_INT(X)  ((int)(X))
+# endif
 #else
 # define SQLITE_INT_TO_PTR(X)   ((void*)&((char*)0)[X])
 # define SQLITE_PTR_TO_INT(X)   ((int)(((char*)X)-(char*)0))
