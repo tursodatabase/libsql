@@ -25,7 +25,7 @@ static print_page(int iPg){
   int i, j;
   aData = malloc(pagesize);
   if( aData==0 ) out_of_memory();
-  lseek(db, (iPg-1)*pagesize, SEEK_SET);
+  lseek(db, (iPg-1)*(long long int)pagesize, SEEK_SET);
   read(db, aData, pagesize);
   fprintf(stdout, "Page %d:\n", iPg);
   for(i=0; i<pagesize; i += perLine){
