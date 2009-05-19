@@ -1,5 +1,5 @@
-C Port\sthe\ssqlite3_backup\sfix\sof\scheck-in\s(6632),\sticket\s#3858\sonto\sthe\n3.6.14.1\sbranch.\s(CVS\s6654)
-D 2009-05-18T17:11:31
+C Version\s3.6.14.1\s(CVS\s6655)
+D 2009-05-19T00:01:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4ebb85018195d52d8eb0720284f7b2e480c24876
+P 0d3abee273c359b77649e6a08a9eaff09d3bde7b
 R c9ff2fe0e5d5bb93f15c93547bbd4db6
 U drh
-Z 81f489e8f604099cb5ff0ae3a4ddfb47
+Z 01a9f898f4336d9bfeeb8c47ad3917b5
