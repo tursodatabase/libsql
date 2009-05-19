@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.517 2009/05/18 15:46:08 drh Exp $
+** $Id: select.c,v 1.518 2009/05/19 19:04:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2921,9 +2921,10 @@ static u8 minMaxQuery(Select *p){
 
   if( pEList->nExpr!=1 ) return WHERE_ORDERBY_NORMAL;
   pExpr = pEList->a[0].pExpr;
-  if( ExprHasProperty(pExpr, EP_xIsSelect) ) return 0;
+  if( pExpr->op!=TK_AGG_FUNCTION ) return 0;
+  if( NEVER(ExprHasProperty(pExpr, EP_xIsSelect)) ) return 0;
   pEList = pExpr->x.pList;
-  if( pExpr->op!=TK_AGG_FUNCTION || pEList==0 || pEList->nExpr!=1 ) return 0;
+  if( pEList==0 || pEList->nExpr!=1 ) return 0;
   if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return WHERE_ORDERBY_NORMAL;
   if( pExpr->token.n!=3 ) return WHERE_ORDERBY_NORMAL;
   if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
@@ -3028,7 +3029,7 @@ static int selectExpander(Walker *pWalker, Select *p){
   if( db->mallocFailed  ){
     return WRC_Abort;
   }
-  if( p->pSrc==0 || (p->selFlags & SF_Expanded)!=0 ){
+  if( NEVER(p->pSrc==0) || (p->selFlags & SF_Expanded)!=0 ){
     return WRC_Prune;
   }
   p->selFlags |= SF_Expanded;
@@ -3080,16 +3081,9 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( pTab->pSelect || IsVirtual(pTab) ){
         /* We reach here if the named table is a really a view */
         if( sqlite3ViewGetColumnNames(pParse, pTab) ) return WRC_Abort;
-
-        /* If pFrom->pSelect!=0 it means we are dealing with a
-        ** view within a view.  The SELECT structure has already been
-        ** copied by the outer view so we can skip the copy step here
-        ** in the inner view.
-        */
-        if( pFrom->pSelect==0 ){
-          pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
-          sqlite3WalkSelect(pWalker, pFrom->pSelect);
-        }
+        assert( pFrom->pSelect==0 );
+        pFrom->pSelect = sqlite3SelectDup(db, pTab->pSelect, 0);
+        sqlite3WalkSelect(pWalker, pFrom->pSelect);
       }
 #endif
     }
@@ -3119,8 +3113,9 @@ static int selectExpander(Walker *pWalker, Select *p){
   for(k=0; k<pEList->nExpr; k++){
     Expr *pE = pEList->a[k].pExpr;
     if( pE->op==TK_ALL ) break;
-    if( pE->op==TK_DOT && pE->pRight && pE->pRight->op==TK_ALL
-         && pE->pLeft && pE->pLeft->op==TK_ID ) break;
+    assert( pE->op!=TK_DOT || pE->pRight!=0 );
+    assert( pE->op!=TK_DOT || (pE->pLeft!=0 && pE->pLeft->op==TK_ID) );
+    if( pE->op==TK_DOT && pE->pRight->op==TK_ALL ) break;
   }
   if( k<pEList->nExpr ){
     /*
@@ -3136,8 +3131,8 @@ static int selectExpander(Walker *pWalker, Select *p){
 
     for(k=0; k<pEList->nExpr; k++){
       Expr *pE = a[k].pExpr;
-      if( pE->op!=TK_ALL &&
-           (pE->op!=TK_DOT || pE->pRight==0 || pE->pRight->op!=TK_ALL) ){
+      assert( pE->op!=TK_DOT || pE->pRight!=0 );
+      if( pE->op!=TK_ALL && (pE->op!=TK_DOT || pE->pRight->op!=TK_ALL) ){
         /* This particular expression does not need to be expanded.
         */
         pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr, 0);
@@ -3151,7 +3146,8 @@ static int selectExpander(Walker *pWalker, Select *p){
         ** expanded. */
         int tableSeen = 0;      /* Set to 1 when TABLE matches */
         char *zTName;            /* text of name of TABLE */
-        if( pE->op==TK_DOT && pE->pLeft ){
+        if( pE->op==TK_DOT ){
+          assert( pE->pLeft!=0 );
           zTName = sqlite3NameFromToken(db, &pE->pLeft->token);
         }else{
           zTName = 0;
@@ -3159,7 +3155,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
           Table *pTab = pFrom->pTab;
           char *zTabName = pFrom->zAlias;
-          if( zTabName==0 || zTabName[0]==0 ){ 
+          if( zTabName==0 ){
             zTabName = pTab->zName;
           }
           if( db->mallocFailed ) break;
@@ -3298,19 +3294,18 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   struct SrcList_item *pFrom;
 
   assert( p->selFlags & SF_Resolved );
-  if( (p->selFlags & SF_HasTypeInfo)==0 ){
-    p->selFlags |= SF_HasTypeInfo;
-    pParse = pWalker->pParse;
-    pTabList = p->pSrc;
-    for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-      Table *pTab = pFrom->pTab;
-      if( pTab && (pTab->tabFlags & TF_Ephemeral)!=0 ){
-        /* A sub-query in the FROM clause of a SELECT */
-        Select *pSel = pFrom->pSelect;
-        assert( pSel );
-        while( pSel->pPrior ) pSel = pSel->pPrior;
-        selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
-      }
+  assert( (p->selFlags & SF_HasTypeInfo)==0 );
+  p->selFlags |= SF_HasTypeInfo;
+  pParse = pWalker->pParse;
+  pTabList = p->pSrc;
+  for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+    Table *pTab = pFrom->pTab;
+    if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
+      /* A sub-query in the FROM clause of a SELECT */
+      Select *pSel = pFrom->pSelect;
+      assert( pSel );
+      while( pSel->pPrior ) pSel = pSel->pPrior;
+      selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
     }
   }
   return WRC_Continue;
@@ -3354,10 +3349,9 @@ void sqlite3SelectPrep(
   NameContext *pOuterNC  /* Name context for container */
 ){
   sqlite3 *db;
-  if( p==0 ) return;
+  if( NEVER(p==0) ) return;
   db = pParse->db;
   if( p->selFlags & SF_HasTypeInfo ) return;
-  if( pParse->nErr || db->mallocFailed ) return;
   sqlite3SelectExpand(pParse, p);
   if( pParse->nErr || db->mallocFailed ) return;
   sqlite3ResolveSelectNames(pParse, p, pOuterNC);
@@ -3578,13 +3572,7 @@ int sqlite3Select(
     goto select_end;
   }
   isAgg = (p->selFlags & SF_Aggregate)!=0;
-  if( pEList==0 ) goto select_end;
-
-  /* 
-  ** Do not even attempt to generate any code if we have already seen
-  ** errors before this routine starts.
-  */
-  if( pParse->nErr>0 ) goto select_end;
+  assert( pEList!=0 );
 
   /* Begin generating code.
   */
@@ -3625,7 +3613,7 @@ int sqlite3Select(
       sqlite3Select(pParse, pSub, &dest);
       pItem->isPopulated = 1;
     }
-    if( pParse->nErr || db->mallocFailed ){
+    if( /*pParse->nErr ||*/ db->mallocFailed ){
       goto select_end;
     }
     pParse->nHeight -= sqlite3SelectExprHeight(p);
@@ -3676,7 +3664,8 @@ int sqlite3Select(
   /* If possible, rewrite the query to use GROUP BY instead of DISTINCT.
   ** GROUP BY might use an index, DISTINCT never does.
   */
-  if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct && !p->pGroupBy ){
+  assert( p->pGroupBy==0 || (p->selFlags & SF_Aggregate)!=0 );
+  if( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct ){
     p->pGroupBy = sqlite3ExprListDup(db, p->pEList, 0);
     pGroupBy = p->pGroupBy;
     p->selFlags &= ~SF_Distinct;
@@ -4009,7 +3998,7 @@ int sqlite3Select(
       resetAccumulator(pParse, &sAggInfo);
       sqlite3VdbeAddOp1(v, OP_Return, regReset);
      
-    } /* endif pGroupBy */
+    } /* endif pGroupBy.  Begin aggregate queries without GROUP BY: */
     else {
       ExprList *pDel = 0;
 #ifndef SQLITE_OMIT_BTREECOUNT
