@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.87 2009/05/11 23:38:00 drh Exp $
+** $Id: vtab.c,v 1.88 2009/05/20 16:22:02 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -803,11 +803,6 @@ FuncDef *sqlite3VtabOverloadFunction(
     }
     rc = pMod->xFindFunction(pVtab, nArg, zLowerName, &xFunc, &pArg);
     sqlite3DbFree(db, zLowerName);
-    if( pVtab->zErrMsg ){
-      sqlite3Error(db, rc, "%s", pVtab->zErrMsg);
-      sqlite3DbFree(db, pVtab->zErrMsg);
-      pVtab->zErrMsg = 0;
-    }
   }
   if( rc==0 ){
     return pDef;
