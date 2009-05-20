@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.552 2009/05/12 13:35:12 drh Exp $
+** $Id: main.c,v 1.553 2009/05/20 02:40:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1664,8 +1664,9 @@ static int openDatabase(
   /* Load automatic extensions - extensions that have been registered
   ** using the sqlite3_automatic_extension() API.
   */
-  (void)sqlite3AutoLoadExtensions(db);
-  if( sqlite3_errcode(db)!=SQLITE_OK ){
+  sqlite3AutoLoadExtensions(db);
+  rc = sqlite3_errcode(db);
+  if( rc!=SQLITE_OK ){
     goto opendb_out;
   }
 

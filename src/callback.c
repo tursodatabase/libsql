@@ -13,7 +13,7 @@
 ** This file contains functions used to access the internal hash tables
 ** of user defined functions and collation sequences.
 **
-** $Id: callback.c,v 1.40 2009/05/11 20:53:29 drh Exp $
+** $Id: callback.c,v 1.41 2009/05/20 02:40:46 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -294,6 +294,7 @@ void sqlite3FuncDefInsert(
   int h = (sqlite3UpperToLower[c1] + nName) % ArraySize(pHash->a);
   pOther = functionSearch(pHash, h, pDef->zName, nName);
   if( pOther ){
+    assert( pOther!=pDef && pOther->pNext!=pDef );
     pDef->pNext = pOther->pNext;
     pOther->pNext = pDef;
   }else{

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.874 2009/05/19 14:21:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.875 2009/05/20 02:40:46 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2733,7 +2733,7 @@ void sqlite3Parser(void*, int, Token, Parse*);
   int sqlite3ParserStackPeak(void*);
 #endif
 
-int sqlite3AutoLoadExtensions(sqlite3*);
+void sqlite3AutoLoadExtensions(sqlite3*);
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   void sqlite3CloseExtensions(sqlite3*);
 #else
