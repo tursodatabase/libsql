@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.88 2009/05/20 16:22:02 drh Exp $
+** $Id: vtab.c,v 1.89 2009/05/20 20:10:47 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -107,11 +107,14 @@ void sqlite3VtabUnlock(sqlite3 *db, sqlite3_vtab *pVtab){
   assert(db);
   assert( sqlite3SafetyCheckOk(db) );
   if( pVtab->nRef==0 ){
+#ifdef SQLITE_DEBUG
     if( db->magic==SQLITE_MAGIC_BUSY ){
       (void)sqlite3SafetyOff(db);
       pVtab->pModule->xDisconnect(pVtab);
       (void)sqlite3SafetyOn(db);
-    } else {
+    } else 
+#endif
+    {
       pVtab->pModule->xDisconnect(pVtab);
     }
   }
@@ -188,7 +191,7 @@ void sqlite3VtabBeginParse(
 
   sqlite3StartTable(pParse, pName1, pName2, 0, 0, 1, 0);
   pTable = pParse->pNewTable;
-  if( pTable==0 || pParse->nErr ) return;
+  if( pTable==0 ) return;
   assert( 0==pTable->pIndex );
 
   db = pParse->db;
@@ -221,7 +224,7 @@ void sqlite3VtabBeginParse(
 ** virtual table currently under construction in pParse->pTable.
 */
 static void addArgumentToVtab(Parse *pParse){
-  if( pParse->sArg.z && pParse->pNewTable ){
+  if( pParse->sArg.z && ALWAYS(pParse->pNewTable) ){
     const char *z = (const char*)pParse->sArg.z;
     int n = pParse->sArg.n;
     sqlite3 *db = pParse->db;
@@ -378,7 +381,9 @@ static int vtabCallConstructor(
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVtab, &zErr);
   rc2 = sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
-  if( rc==SQLITE_OK && pVtab ){
+  /* Justification of ALWAYS():  A correct vtab constructor must allocate
+  ** the sqlite3_vtab object if successful. */
+  if( rc==SQLITE_OK && ALWAYS(pVtab) ){
     pVtab->pModule = pMod->pModule;
     pVtab->nRef = 1;
     pTab->pVtab = pVtab;
@@ -453,7 +458,8 @@ int sqlite3VtabCallConnect(Parse *pParse, Table *pTab){
   Module *pMod;
   int rc = SQLITE_OK;
 
-  if( !pTab || (pTab->tabFlags & TF_Virtual)==0 || pTab->pVtab ){
+  assert( pTab );
+  if( (pTab->tabFlags & TF_Virtual)==0 || pTab->pVtab ){
     return SQLITE_OK;
   }
 
@@ -529,7 +535,9 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
     rc = vtabCallConstructor(db, pTab, pMod, pMod->pModule->xCreate, pzErr);
   }
 
-  if( rc==SQLITE_OK && pTab->pVtab ){
+  /* Justification of ALWAYS():  The xConstructor method is required to
+  ** create a valid sqlite3_vtab if it returns SQLITE_OK. */
+  if( rc==SQLITE_OK && ALWAYS(pTab->pVtab) ){
       rc = addToVTrans(db, pTab->pVtab);
   }
 
@@ -598,20 +606,16 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
 **
 ** This call is a no-op if zTab is not a virtual table.
 */
-int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
-{
+int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   int rc = SQLITE_OK;
   Table *pTab;
 
   pTab = sqlite3FindTable(db, zTab, db->aDb[iDb].zName);
-  assert(pTab);
-  if( pTab->pVtab ){
+  if( ALWAYS(pTab!=0 && pTab->pVtab!=0) ){
     int (*xDestroy)(sqlite3_vtab *pVTab) = pTab->pMod->pModule->xDestroy;
     rc = sqlite3SafetyOff(db);
     assert( rc==SQLITE_OK );
-    if( xDestroy ){
-      rc = xDestroy(pTab->pVtab);
-    }
+    rc = xDestroy(pTab->pVtab);
     (void)sqlite3SafetyOn(db);
     if( rc==SQLITE_OK ){
       int i;
@@ -639,9 +643,11 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab)
 static void callFinaliser(sqlite3 *db, int offset){
   int i;
   if( db->aVTrans ){
-    for(i=0; i<db->nVTrans && db->aVTrans[i]; i++){
+    for(i=0; i<db->nVTrans; i++){
       sqlite3_vtab *pVtab = db->aVTrans[i];
       int (*x)(sqlite3_vtab *);
+
+      assert( pVtab!=0 );
       x = *(int (**)(sqlite3_vtab *))((char *)pVtab->pModule + offset);
       if( x ) x(pVtab);
       sqlite3VtabUnlock(db, pVtab);
@@ -668,9 +674,10 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
 
   rc = sqlite3SafetyOff(db);
   db->aVTrans = 0;
-  for(i=0; rc==SQLITE_OK && i<db->nVTrans && aVTrans[i]; i++){
+  for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
     sqlite3_vtab *pVtab = aVTrans[i];
     int (*x)(sqlite3_vtab *);
+    assert( pVtab!=0 );
     x = pVtab->pModule->xSync;
     if( x ){
       rc = x(pVtab);
@@ -721,7 +728,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
   /* Special case: If db->aVTrans is NULL and db->nVTrans is greater
   ** than zero, then this function is being called from within a
   ** virtual module xSync() callback. It is illegal to write to 
-  ** virtual module tables in this case, so return SQLITE_MISUSE.
+  ** virtual module tables in this case, so return SQLITE_LOCKED.
   */
   if( sqlite3VtabInSync(db) ){
     return SQLITE_LOCKED;
@@ -736,7 +743,7 @@ int sqlite3VtabBegin(sqlite3 *db, sqlite3_vtab *pVtab){
 
 
     /* If pVtab is already in the aVTrans array, return early */
-    for(i=0; (i<db->nVTrans) && 0!=db->aVTrans[i]; i++){
+    for(i=0; i<db->nVTrans; i++){
       if( db->aVTrans[i]==pVtab ){
         return SQLITE_OK;
       }
@@ -782,10 +789,10 @@ FuncDef *sqlite3VtabOverloadFunction(
 
 
   /* Check to see the left operand is a column in a virtual table */
-  if( pExpr==0 ) return pDef;
+  if( NEVER(pExpr==0) ) return pDef;
   if( pExpr->op!=TK_COLUMN ) return pDef;
   pTab = pExpr->pTab;
-  if( pTab==0 ) return pDef;
+  if( NEVER(pTab==0) ) return pDef;
   if( (pTab->tabFlags & TF_Virtual)==0 ) return pDef;
   pVtab = pTab->pVtab;
   assert( pVtab!=0 );
@@ -832,13 +839,16 @@ FuncDef *sqlite3VtabOverloadFunction(
 */
 void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   int i, n;
+  Table **apVtabLock;
+
   assert( IsVirtual(pTab) );
   for(i=0; i<pParse->nVtabLock; i++){
     if( pTab==pParse->apVtabLock[i] ) return;
   }
   n = (pParse->nVtabLock+1)*sizeof(pParse->apVtabLock[0]);
-  pParse->apVtabLock = sqlite3_realloc(pParse->apVtabLock, n);
-  if( pParse->apVtabLock ){
+  apVtabLock = sqlite3_realloc(pParse->apVtabLock, n);
+  if( apVtabLock ){
+    pParse->apVtabLock = apVtabLock;
     pParse->apVtabLock[pParse->nVtabLock++] = pTab;
   }else{
     pParse->db->mallocFailed = 1;

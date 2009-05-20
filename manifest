@@ -1,5 +1,5 @@
-C Remove\sunused,\sundocumented,\sand\suntested\serror\sreporting\slogic\sfrom\sthe\nxFindFunction\sinterface\sin\svirtual\stables.\s(CVS\s6660)
-D 2009-05-20T16:22:02
+C Fix\sa\smemory\sleak\sthat\soccurs\swhen\san\sout-of-memory\serror\soccurs\swhile\npreparing\sa\sstatement\sthat\shas\smultiple\svirtual\stable\supdates\swithin\ntriggers.\s\sOther\svirtual\stable\schanges\sto\ssupport\sfull-coverage\stesting.\s(CVS\s6661)
+D 2009-05-20T20:10:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -210,7 +210,7 @@ F src/vdbeapi.c 86aa27a5f3493aaffb8ac051782aa3b22670d7ed
 F src/vdbeaux.c 1a07329bdf51cc3687f88d9f5b2bd3f1d47cc5a8
 F src/vdbeblob.c 5c5abe9af28316772e7829359f6f9cda2c737ebd
 F src/vdbemem.c d8b985eeb88214941380372466a30ca410043a93
-F src/vtab.c f998f539acbf0f1c5f8ee6bd0cdf6a641c802242
+F src/vtab.c b0216337ae7d27708dedd56d220e6f4fecda92f1
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
 F src/where.c c5fa4a7a58880aecc657ebce5f8df98c9b67eec0
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 929cfbc66f6e2ea6b44417305d0f4ae36567c9bf
-R cfd08e5b3a0fcc71899f8a11df4112dc
+P 55d6ced262f5281076e4a68097ed21e150a9c225
+R 746ae05c43433a273890f71e50932349
 U drh
-Z b7b7868ab892ecebd1d46c334eedc57e
+Z b6bf88ddaf7ac2f73c27614c2e34432b
