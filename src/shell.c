@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.208 2009/05/21 14:51:03 drh Exp $
+** $Id: shell.c,v 1.209 2009/05/21 15:15:01 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -1644,7 +1644,12 @@ static char *appendText(char *zIn, char const *zAppend, char quote){
 ** This is used, for example, to show the schema of the database by
 ** querying the SQLITE_MASTER table.
 */
-static int run_table_dump_query(FILE *out, sqlite3 *db, const char *zSelect){
+static int run_table_dump_query(
+  FILE *out,              /* Send output here */
+  sqlite3 *db,            /* Database to query */
+  const char *zSelect,    /* SELECT statement to extract content */
+  const char *zFirstRow   /* Print before first row, if not NULL */
+){
   sqlite3_stmt *pSelect;
   int rc;
   rc = sqlite3_prepare(db, zSelect, -1, &pSelect, 0);
@@ -1653,6 +1658,10 @@ static int run_table_dump_query(FILE *out, sqlite3 *db, const char *zSelect){
   }
   rc = sqlite3_step(pSelect);
   while( rc==SQLITE_ROW ){
+    if( zFirstRow ){
+      fprintf(out, "%s", zFirstRow);
+      zFirstRow = 0;
+    }
     fprintf(out, "%s;\n", sqlite3_column_text(pSelect, 0));
     rc = sqlite3_step(pSelect);
   }
@@ -1671,6 +1680,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   const char *zTable;
   const char *zType;
   const char *zSql;
+  const char *zPrepStmt = 0;
   struct callback_data *p = (struct callback_data *)pArg;
 
   UNUSED_PARAMETER(azCol);
@@ -1680,7 +1690,7 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
   zSql = azArg[2];
   
   if( strcmp(zTable, "sqlite_sequence")==0 ){
-    fprintf(p->out, "DELETE FROM sqlite_sequence;\n");
+    zPrepStmt = "DELETE FROM sqlite_sequence;\n";
   }else if( strcmp(zTable, "sqlite_stat1")==0 ){
     fprintf(p->out, "ANALYZE sqlite_master;\n");
   }else if( strncmp(zTable, "sqlite_", 7)==0 ){
@@ -1707,13 +1717,14 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
     char *zSelect = 0;
     char *zTableInfo = 0;
     char *zTmp = 0;
+    int nRow = 0;
    
     zTableInfo = appendText(zTableInfo, "PRAGMA table_info(", 0);
     zTableInfo = appendText(zTableInfo, zTable, '"');
     zTableInfo = appendText(zTableInfo, ");", 0);
 
     rc = sqlite3_prepare(p->db, zTableInfo, -1, &pTableInfo, 0);
-    if( zTableInfo ) free(zTableInfo);
+    free(zTableInfo);
     if( rc!=SQLITE_OK || !pTableInfo ){
       return 1;
     }
@@ -1735,19 +1746,20 @@ static int dump_callback(void *pArg, int nArg, char **azArg, char **azCol){
       }else{
         zSelect = appendText(zSelect, ") ", 0);
       }
+      nRow++;
     }
     rc = sqlite3_finalize(pTableInfo);
-    if( rc!=SQLITE_OK ){
-      if( zSelect ) free(zSelect);
+    if( rc!=SQLITE_OK || nRow==0 ){
+      free(zSelect);
       return 1;
     }
     zSelect = appendText(zSelect, "|| ')' FROM  ", 0);
     zSelect = appendText(zSelect, zTable, '"');
 
-    rc = run_table_dump_query(p->out, p->db, zSelect);
+    rc = run_table_dump_query(p->out, p->db, zSelect, zPrepStmt);
     if( rc==SQLITE_CORRUPT ){
       zSelect = appendText(zSelect, " ORDER BY rowid DESC", 0);
-      rc = run_table_dump_query(p->out, p->db, zSelect);
+      rc = run_table_dump_query(p->out, p->db, zSelect, 0);
     }
     if( zSelect ) free(zSelect);
   }
@@ -2088,7 +2100,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       );
       run_table_dump_query(p->out, p->db,
         "SELECT sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type IN ('index','trigger','view')"
+        "WHERE sql NOT NULL AND type IN ('index','trigger','view')", 0
       );
     }else{
       int i;
@@ -2102,7 +2114,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
           "SELECT sql FROM sqlite_master "
           "WHERE sql NOT NULL"
           "  AND type IN ('index','trigger','view')"
-          "  AND tbl_name LIKE shellstatic()"
+          "  AND tbl_name LIKE shellstatic()", 0
         );
         zShellStatic = 0;
       }

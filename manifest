@@ -1,5 +1,5 @@
-C In\sthe\sCLI,\salways\s"dump"\sthe\ssqlite_sequence\stable\slast.\s\sTicket\s#3867\s(CVS\s6663)
-D 2009-05-21T14:51:03
+C In\sthe\sCLI\sin\sthe\s".dump"\scommand,\sdo\snot\sattempt\sto\sclear\sthe\ssqlite_sequence\ntable\suntil\sthe\sfirst\srow\sof\scontent\sof\sthat\stable\sis\sseen.\s\sTicket\s#3867\s(CVS\s6664)
+D 2009-05-21T15:15:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c 14d12b5e81b5907b87d511f6f4219805f96a4b55
 F src/select.c 88e654ab5b183e4fdb084680b66b5bfa6f214dc5
-F src/shell.c 7d20ab57cac411a4798335ede7d8d292cb2d2d4c
+F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
 F src/sqlite.h.in 0c459a45c1047be24c6a58646e8be4d001a3a28a
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h b4cc76a99bc82894703528376067c743eb27184c
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P e4d1b117c90dca341bfa74291c7dfc2afca38cc6
-R 15bc7524b83192070e8332740e3dd7dd
+P a0028d4808275cb1d020d56344d90b2a04603f4d
+R a6c6ee687310ceffc123f04a82263b69
 U drh
-Z 80201cfb6f117152d032ea15d9f61e5f
+Z 3221b6689b30d8e2afed14ae03e93796
