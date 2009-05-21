@@ -12,7 +12,7 @@
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
 **
-** $Id: shell.c,v 1.207 2009/03/16 10:59:44 drh Exp $
+** $Id: shell.c,v 1.208 2009/05/21 14:51:03 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */
@@ -2080,7 +2080,11 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( nArg==1 ){
       run_schema_dump_query(p, 
         "SELECT name, type, sql FROM sqlite_master "
-        "WHERE sql NOT NULL AND type=='table'", 0
+        "WHERE sql NOT NULL AND type=='table' AND name!='sqlite_sequence'", 0
+      );
+      run_schema_dump_query(p, 
+        "SELECT name, type, sql FROM sqlite_master "
+        "WHERE name=='sqlite_sequence'", 0
       );
       run_table_dump_query(p->out, p->db,
         "SELECT sql FROM sqlite_master "
