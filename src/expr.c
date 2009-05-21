@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.434 2009/05/11 20:53:29 drh Exp $
+** $Id: expr.c,v 1.435 2009/05/21 20:41:32 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,7 +86,7 @@ Expr *sqlite3ExprSetColl(Parse *pParse, Expr *pExpr, Token *pCollName){
 CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
   CollSeq *pColl = 0;
   Expr *p = pExpr;
-  while( p ){
+  while( ALWAYS(p) ){
     int op;
     pColl = p->pColl;
     if( pColl ) break;
@@ -412,7 +412,7 @@ Expr *sqlite3Expr(
       sqlite3TokenCopy(db, &pNew->token, pToken);
       if( pNew->token.z ){
         pNew->token.n = sqlite3Dequote((char*)pNew->token.z);
-        assert( pNew->token.n==(unsigned)sqlite3Strlen30((char*)pNew->token.z) );
+        assert( pNew->token.n==(unsigned)sqlite3Strlen30((char*)pNew->token.z));
       }
       if( c=='"' ) pNew->flags |= EP_DblQuoted;
     }else{
@@ -468,13 +468,11 @@ Expr *sqlite3PExpr(
 ** that memory location as needed.
 */
 Expr *sqlite3RegisterExpr(Parse *pParse, Token *pToken){
-  Vdbe *v = pParse->pVdbe;
   Expr *p;
   if( pParse->nested==0 ){
     sqlite3ErrorMsg(pParse, "near \"%T\": syntax error", pToken);
     return sqlite3PExpr(pParse, TK_NULL, 0, 0, 0);
   }
-  if( v==0 ) return 0;
   p = sqlite3PExpr(pParse, TK_REGISTER, 0, 0, pToken);
   if( p==0 ){
     return 0;  /* Malloc failed */
@@ -548,7 +546,7 @@ Expr *sqlite3ExprFunction(Parse *pParse, ExprList *pList, Token *pToken){
 ** sure "nnn" is not too be to avoid a denial of service attack when
 ** the SQL statement comes from an external source.
 **
-** Wildcards of the form ":aaa" or "$aaa" are assigned the same number
+** Wildcards of the form ":aaa", "@aaa", or "$aaa" are assigned the same number
 ** as the previous instance of the same wildcard.  Or if this is the first
 ** instance of the wildcard, the next sequenial variable number is
 ** assigned.
@@ -582,7 +580,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       pParse->nVar = i;
     }
   }else{
-    /* Wildcards of the form ":aaa" or "$aaa".  Reuse the same variable
+    /* Wildcards like ":aaa", "$aaa" or "@aaa".  Reuse the same variable
     ** number as the prior appearance of the same name, or if the name
     ** has never appeared before, reuse the same variable number
     */
@@ -590,10 +588,9 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     u32 n;
     n = pToken->n;
     for(i=0; i<pParse->nVarExpr; i++){
-      Expr *pE;
-      if( (pE = pParse->apVarExpr[i])!=0
-          && pE->token.n==n
-          && memcmp(pE->token.z, pToken->z, n)==0 ){
+      Expr *pE = pParse->apVarExpr[i];
+      assert( pE!=0 );
+      if( pE->token.n==n && memcmp(pE->token.z, pToken->z, n)==0 ){
         pExpr->iTable = pE->iTable;
         break;
       }

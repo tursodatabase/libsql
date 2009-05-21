@@ -1,5 +1,5 @@
-C In\sthe\sCLI\sin\sthe\s".dump"\scommand,\sdo\snot\sattempt\sto\sclear\sthe\ssqlite_sequence\ntable\suntil\sthe\sfirst\srow\sof\scontent\sof\sthat\stable\sis\sseen.\s\sTicket\s#3867\s(CVS\s6664)
-D 2009-05-21T15:15:01
+C Simplifications\sto\sexpr.c\sin\ssupport\sof\sfull\scoverage\stesting.\s(CVS\s6665)
+D 2009-05-21T20:41:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c a0a0932eea77471ab243337026abbce444024c43
-F src/expr.c 79f1cb93526a5f64625b7979893e506012fe26d7
+F src/expr.c a6d3c715082d535f54960e19f17687a22567c6a7
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a0028d4808275cb1d020d56344d90b2a04603f4d
-R a6c6ee687310ceffc123f04a82263b69
+P bedd5ad1942021ef2b3defde3ff3e8aead86137e
+R c10e03fcec7219b961eadb057b40a247
 U drh
-Z 3221b6689b30d8e2afed14ae03e93796
+Z c4baf8d6263d95449794bc3f1691d7fd
