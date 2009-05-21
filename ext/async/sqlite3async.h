@@ -2,6 +2,13 @@
 #ifndef __SQLITEASYNC_H_
 #define __SQLITEASYNC_H_ 1
 
+/*
+** Make sure we can call this stuff from C++.
+*/
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SQLITEASYNC_VFSNAME "sqlite3async"
 
 /*
@@ -209,5 +216,8 @@ int sqlite3async_control(int op, ...);
 #define SQLITEASYNC_HALT_NOW   1       /* Halt as soon as possible */
 #define SQLITEASYNC_HALT_IDLE  2       /* Halt when write-queue is empty */
 
+#ifdef __cplusplus
+}  /* End of the 'extern "C"' block */
+#endif
 #endif        /* ifndef __SQLITEASYNC_H_ */
 
