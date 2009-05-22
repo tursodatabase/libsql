@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.451 2009/05/17 12:07:48 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.452 2009/05/22 01:02:27 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1282,9 +1282,9 @@ int sqlite3_changes(sqlite3*);
 ** [CREATE TRIGGER | trigger] contexts.  However,
 ** the count does not include changes used to implement [REPLACE] constraints,
 ** do rollbacks or ABORT processing, or [DROP TABLE] processing.  The
-** count does not rows of views that fire an [INSTEAD OF trigger], though if
-** the INSTEAD OF trigger makes changes of its own, those changes are
-** counted.
+** count does not include rows of views that fire an [INSTEAD OF trigger],
+** though if the INSTEAD OF trigger makes changes of its own, those changes 
+** are counted.
 ** The changes are counted as soon as the statement that makes them is
 ** completed (when the statement handle is passed to [sqlite3_reset()] or
 ** [sqlite3_finalize()]).
