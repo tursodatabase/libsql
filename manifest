@@ -1,5 +1,5 @@
-C Make\ssure\ssqlite3_shutdown()\scompletely\sdisables\sthe\sdefault\spager\scache\nmechanism\sin\spcache1.c.\s\sTicket\s#3872.\s\sAlso\sfix\ssome\scomments\sassociated\nwith\sconfiguring\sthe\spage\scache.\s(CVS\s6668)
-D 2009-05-22T10:53:29
+C Additional\schanges\sto\spcache1\sto\sprevent\sthe\spage\sbuffer\smemory\sfrom\sbeing\nconfigured\sif\spcache1\sis\snot\senabled.\s\sTicket\s#3872.\s(CVS\s6669)
+D 2009-05-22T11:10:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y ba2fa210be4b17001e0a16d5e73a8141939b1987
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
-F src/pcache1.c 88fbd238a696ac824a73518ab12adf1e6e59d137
+F src/pcache1.c 39a2c2fa8329585f1dbe5f2a1fe624b5d78305f2
 F src/pragma.c c26c16c49a80d03c8597f0e6c7daba53f283428f
 F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3f6fd16f92a16445891142b0a7dc9f6d6dc06546
-R 542f24e2d873610261152ae08f00777a
+P 6240992cef5cb867d7a638f1906d05aa8efd0652
+R d3ebf1458e7486057052246f1876becc
 U drh
-Z 9a903b1e10e5fb3cec1c5cae50a0c3c6
+Z 75d578e488ac3c2575cd2c0a0971e9ed

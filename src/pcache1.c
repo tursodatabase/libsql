@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.13 2009/05/22 10:53:29 drh Exp $
+** @(#) $Id: pcache1.c,v 1.14 2009/05/22 11:10:24 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -88,6 +88,7 @@ static SQLITE_WSD struct PCacheGlobal {
   int szSlot;                         /* Size of each free slot */
   void *pStart, *pEnd;                /* Bounds of pagecache malloc range */
   PgFreeslot *pFree;                  /* Free page blocks */
+  int isInit;                         /* True if initialized */
 } pcache1_g;
 
 /*
@@ -128,18 +129,20 @@ static SQLITE_WSD struct PCacheGlobal {
 ** enough to contain 'n' buffers of 'sz' bytes each.
 */
 void sqlite3PCacheBufferSetup(void *pBuf, int sz, int n){
-  PgFreeslot *p;
-  sz = ROUNDDOWN8(sz);
-  pcache1.szSlot = sz;
-  pcache1.pStart = pBuf;
-  pcache1.pFree = 0;
-  while( n-- ){
-    p = (PgFreeslot*)pBuf;
-    p->pNext = pcache1.pFree;
-    pcache1.pFree = p;
-    pBuf = (void*)&((char*)pBuf)[sz];
+  if( pcache1.isInit ){
+    PgFreeslot *p;
+    sz = ROUNDDOWN8(sz);
+    pcache1.szSlot = sz;
+    pcache1.pStart = pBuf;
+    pcache1.pFree = 0;
+    while( n-- ){
+      p = (PgFreeslot*)pBuf;
+      p->pNext = pcache1.pFree;
+      pcache1.pFree = p;
+      pBuf = (void*)&((char*)pBuf)[sz];
+    }
+    pcache1.pEnd = pBuf;
   }
-  pcache1.pEnd = pBuf;
 }
 
 /*
@@ -389,10 +392,12 @@ static void pcache1TruncateUnsafe(
 */
 static int pcache1Init(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
+  assert( pcache1.isInit==0 );
   memset(&pcache1, 0, sizeof(pcache1));
   if( sqlite3GlobalConfig.bCoreMutex ){
     pcache1.mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_LRU);
   }
+  pcache1.isInit = 1;
   return SQLITE_OK;
 }
 
@@ -401,6 +406,7 @@ static int pcache1Init(void *NotUsed){
 */
 static void pcache1Shutdown(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
+  assert( pcache1.isInit!=0 );
   memset(&pcache1, 0, sizeof(pcache1));
 }
 
