@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.14 2009/05/22 11:10:24 drh Exp $
+** @(#) $Id: pcache1.c,v 1.15 2009/05/22 11:12:23 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -155,6 +155,7 @@ static void *pcache1Alloc(int nByte){
   void *p;
   assert( sqlite3_mutex_held(pcache1.mutex) );
   if( nByte<=pcache1.szSlot && pcache1.pFree ){
+    assert( pcache1.isInit );
     p = (PgHdr1 *)pcache1.pFree;
     pcache1.pFree = pcache1.pFree->pNext;
     sqlite3StatusSet(SQLITE_STATUS_PAGECACHE_SIZE, nByte);
