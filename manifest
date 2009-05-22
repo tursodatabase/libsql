@@ -1,5 +1,5 @@
-C Add\somitted\sword\sin\sthe\sdocumentation\sfor\stotal_change_count().\nticket\s#3870.\s(CVS\s6667)
-D 2009-05-22T01:02:27
+C Make\ssure\ssqlite3_shutdown()\scompletely\sdisables\sthe\sdefault\spager\scache\nmechanism\sin\spcache1.c.\s\sTicket\s#3872.\s\sAlso\sfix\ssome\scomments\sassociated\nwith\sconfiguring\sthe\spage\scache.\s(CVS\s6668)
+D 2009-05-22T10:53:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 050536ea91c6cf74d87a2386b5da241141943c94
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c a281f9890ce4f8f2b68967a124322c6ae98f1245
-F src/main.c 7b7335c6260f08d9e534df68c0993c0a8c9abb49
+F src/main.c 2f0923eb41570fd33cdda686c486bc36a163bcc5
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -151,7 +151,7 @@ F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y ba2fa210be4b17001e0a16d5e73a8141939b1987
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
-F src/pcache1.c a6138ee57da3259149ca5254e0156d9b624db850
+F src/pcache1.c 88fbd238a696ac824a73518ab12adf1e6e59d137
 F src/pragma.c c26c16c49a80d03c8597f0e6c7daba53f283428f
 F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
@@ -729,7 +729,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P fc64f8509299a398ac1513e1778f271083e3eabc
-R 1ccd1dc5086992926054edb8f95c12c7
+P 3f6fd16f92a16445891142b0a7dc9f6d6dc06546
+R 542f24e2d873610261152ae08f00777a
 U drh
-Z 31df23dee33615106585895026c375fa
+Z 9a903b1e10e5fb3cec1c5cae50a0c3c6

@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.12 2009/05/08 06:52:48 danielk1977 Exp $
+** @(#) $Id: pcache1.c,v 1.13 2009/05/22 10:53:29 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -401,7 +401,7 @@ static int pcache1Init(void *NotUsed){
 */
 static void pcache1Shutdown(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
-  /* no-op */
+  memset(&pcache1, 0, sizeof(pcache1));
 }
 
 /*
