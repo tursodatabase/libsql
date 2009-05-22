@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.396 2009/05/06 19:03:14 drh Exp $
+** $Id: where.c,v 1.397 2009/05/22 15:43:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -127,6 +127,7 @@ struct WhereTerm {
 struct WhereClause {
   Parse *pParse;           /* The parser context */
   WhereMaskSet *pMaskSet;  /* Mapping of table cursor numbers to bitmasks */
+  Bitmask vmask;           /* Bitmask identifying virtual table cursors */
   u8 op;                   /* Split operator.  TK_AND or TK_OR */
   int nTerm;               /* Number of terms */
   int nSlot;               /* Number of entries in a[] */
@@ -254,6 +255,7 @@ static void whereClauseInit(
   pWC->nTerm = 0;
   pWC->nSlot = ArraySize(pWC->aStatic);
   pWC->a = pWC->aStatic;
+  pWC->vmask = 0;
 }
 
 /* Forward reference */
@@ -829,7 +831,8 @@ static void exprAnalyzeOrTerm(
   /*
   ** Compute the set of tables that might satisfy cases 1 or 2.
   */
-  indexable = chngToIN = ~(Bitmask)0;
+  indexable = ~(Bitmask)0;
+  chngToIN = ~(pWC->vmask);
   for(i=pOrWc->nTerm-1, pOrTerm=pOrWc->a; i>=0 && indexable; i--, pOrTerm++){
     if( (pOrTerm->eOperator & WO_SINGLE)==0 ){
       WhereAndInfo *pAndInfo;
@@ -3166,9 +3169,18 @@ WhereInfo *sqlite3WhereBegin(
   ** of the join.  Subtracting one from the right table bitmask gives a
   ** bitmask for all tables to the left of the join.  Knowing the bitmask
   ** for all tables to the left of a left join is important.  Ticket #3015.
+  **
+  ** Configure the WhereClause.vmask variable so that bits that correspond
+  ** to virtual table cursors are set. This is used to selectively disable 
+  ** the OR-to-IN transformation in exprAnalyzeOrTerm(). It is not helpful 
+  ** with virtual tables.
   */
+  assert( pWC->vmask==0 && pMaskSet->n==0 );
   for(i=0; i<pTabList->nSrc; i++){
     createMask(pMaskSet, pTabList->a[i].iCursor);
+    if( pTabList->a[i].pTab && IsVirtual(pTabList->a[i].pTab) ){
+      pWC->vmask |= ((Bitmask)1 << i);
+    }
   }
 #ifndef NDEBUG
   {

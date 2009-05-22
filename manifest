@@ -1,5 +1,5 @@
-C Add\san\sassert()\sto\spcache1.c\sto\sdouble-check\sthat\spage\scache\sbuffer\smemory\r\nis\snever\sallocated\sif\spcache1\sis\snot\senabled.\s\sTicket\s#3872\s(CVS\s6670)
-D 2009-05-22T11:12:23
+C Do\snot\stransform\sa\sWHERE\sclause\sof\sthe\sform\s"a\s=\s?\sOR\sa\s=\s?"\sto\s"a\sIN\s(?,\s?)"\sif\s"a"\sis\sa\scolumn\sof\sa\svirtual\stable.\sTicket\s#3871.\s(CVS\s6671)
+D 2009-05-22T15:43:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/vdbeblob.c 5c5abe9af28316772e7829359f6f9cda2c737ebd
 F src/vdbemem.c d8b985eeb88214941380372466a30ca410043a93
 F src/vtab.c b0216337ae7d27708dedd56d220e6f4fecda92f1
 F src/walker.c 7cdf63223c953d4343c6833e940f110281a378ee
-F src/where.c c5fa4a7a58880aecc657ebce5f8df98c9b67eec0
+F src/where.c d11b8a8c49c518384292d410738bd21da5c00bf4
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -649,6 +649,7 @@ F test/tkt3824.test 3da2f5c81b057e3ff355f5dfc9aa0cf0a92e0206
 F test/tkt3832.test 7ebd5ac82d1e430accd5eec9768044133a94c2aa
 F test/tkt3838.test 2a1525946bc9d3751e1d49ce95f3a2472f2b7408
 F test/tkt3841.test fe7451fb899bc31c5fbcee53362c621d0271e25f
+F test/tkt3871.test cd3af9007cf91ed5a2c1b36243979274bb3b2632
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -729,7 +730,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 5153ad19daf0f3b0334b2a06655142899203abbf
-R e695d5320ab4a5af1a8f88d9b5e01a90
-U drh
-Z 682d221724db391e2f96571715710eeb
+P 93369d91abe10975507ea9302c145e3ddd0c2c76
+R 031fba78b50558f4af4dcca1f55d016a
+U danielk1977
+Z 9bdd39326969f0ae9a78f00d0f047279
