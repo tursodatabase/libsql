@@ -1,5 +1,5 @@
-C In\sthe\sprevious,\sthe\supper\sbound\son\sthe\snumber\sof\sfunction\sarguments\sis\n127,\snot\s255.\s\sTicket\s#3876\s(CVS\s6673)
-D 2009-05-24T11:08:50
+C Additional\sclarification\sof\sthe\s3rd\sparameter\sto\ssqlite3_create_function().\nDocumentation\schange\sonly;\sno\schanges\sto\scode.\s\sTicket\s#3875.\s(CVS\s6674)
+D 2009-05-24T21:59:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/resolve.c 2ce8f8bc8a0c913cbaec3fb3da2be113ea1fa5af
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 88e654ab5b183e4fdb084680b66b5bfa6f214dc5
 F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
-F src/sqlite.h.in 51b7b83fcc7ad65487ec326c3cc94e8acfa19700
+F src/sqlite.h.in 79210c4d8905cfb4b038486dde5f36fabb796a86
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h b4cc76a99bc82894703528376067c743eb27184c
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -730,7 +730,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 6b7929ed36fa14291b6cb09de5808100945ad7a0
-R 85a0c825c8600dc0dc5d02dc377983f7
+P 4fe4c5fac51c0a5b50f839a3f43d786e1ff4a4e0
+R 10e213bd038eb44cac74337664dd82cd
 U drh
-Z 39c5a36b1b617f4e8d15ff8818beaa05
+Z a39fbf7e1cf81f82a252cb610a6a23cf

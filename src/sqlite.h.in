@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.454 2009/05/24 11:08:50 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.455 2009/05/24 21:59:28 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3077,7 +3077,8 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** aggregate takes. If this parameter is -1, then the SQL function or
 ** aggregate may take any number of arguments between 0 and the limit
 ** set by [sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
-** parameter must not be less than -1 or greater than 127.
+** parameter is less than -1 or greater than 127 then the behavior is
+** undefined.
 **
 ** The fourth parameter, eTextRep, specifies what
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
@@ -3128,7 +3129,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** statement in which the function is running.
 **
 ** Requirements:
-** [H16103] [H16106] [H16109] [H16112] [H16118] [H16121] [H16124] [H16127]
+** [H16103] [H16106] [H16109] [H16112] [H16118] [H16121] [H16127]
 ** [H16130] [H16133] [H16136] [H16139] [H16142]
 */
 int sqlite3_create_function(
