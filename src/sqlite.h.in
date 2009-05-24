@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.452 2009/05/22 01:02:27 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.453 2009/05/24 11:07:49 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -3074,8 +3074,10 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 **
 ** The third parameter (nArg)
 ** is the number of arguments that the SQL function or
-** aggregate takes. If this parameter is negative, then the SQL function or
-** aggregate may take any number of arguments.
+** aggregate takes. If this parameter is -1, then the SQL function or
+** aggregate may take any number of arguments between 0 and the limit
+** set by [sqlite3_limit]([SQLITE_LIMIT_FUNCTION_ARG]).  If the third
+** parameter must not be less than -1 or greater than 255.
 **
 ** The fourth parameter, eTextRep, specifies what
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
