@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.435 2009/05/21 20:41:32 drh Exp $
+** $Id: expr.c,v 1.436 2009/05/25 11:46:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1801,6 +1801,22 @@ void sqlite3ExprCachePop(Parse *pParse, int N){
 }
 
 /*
+** When a cached column is reused, make sure that its register is
+** no longer available as a temp register.  ticket #3879:  that same
+** register might be in the cache in multiple places, so be sure to
+** get them all.
+*/
+static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
+  int i;
+  struct yColCache *p;
+  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+    if( p->iReg==iReg ){
+      p->tempReg = 0;
+    }
+  }
+}
+
+/*
 ** Generate code that will extract the iColumn-th column from
 ** table pTab and store the column value in a register.  An effort
 ** is made to store the column value in register iReg, but this is
@@ -1835,7 +1851,7 @@ int sqlite3ExprCodeGetColumn(
       VdbeComment((v, "OPT: tab%d.col%d -> r%d", iTable, iColumn, p->iReg));
 #endif
       p->lru = pParse->iCacheCnt++;
-      p->tempReg = 0;  /* This pins the register, but also leaks it */
+      sqlite3ExprCachePinRegister(pParse, p->iReg);
       return p->iReg;
     }
   }  
