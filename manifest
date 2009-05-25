@@ -1,11 +1,11 @@
-C Version\s3.6.14.1\s(CVS\s6655)
-D 2009-05-19T00:01:25
+C Port\sthe\sfix\sfor\sticket\s#3879\s(check-in\s(6676))\sto\sthe\s3.6.14\sbranch.\s(CVS\s6677)
+D 2009-05-25T12:02:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 51698ac39a2d114c1586b7694838f2f321c43f64
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 6ed90f319c906d2d6fd3c153dc5714e1f1115f13
+F VERSION c42979b9186ea7c955d2578923c8071a0acd3cc7
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -114,7 +114,7 @@ F src/callback.c c54a923b06a17a2f965e5c3a6f87a3a963209a4c
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c a0a0932eea77471ab243337026abbce444024c43
-F src/expr.c 8426ef8b80c754691b6e83f97756eab5364b005b
+F src/expr.c 024b5689363859f34cb9e09cdb008e4e4ed75c62
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c f667fe886309707c7178542073bb0ced00a9fae7
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -728,7 +728,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 0d3abee273c359b77649e6a08a9eaff09d3bde7b
-R c9ff2fe0e5d5bb93f15c93547bbd4db6
+P e4267c87e523ff892a3f3e0673b6d689513a469f
+R 1e77af2ed0fcb7ce60f5671893eae3b0
 U drh
-Z 01a9f898f4336d9bfeeb8c47ad3917b5
+Z c7f05009a9824b50dc740f79cac4917e
