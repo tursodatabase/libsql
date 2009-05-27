@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.90 2009/05/01 06:19:21 danielk1977 Exp $
+** $Id: attach.c,v 1.91 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,7 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
     if( pExpr->op!=TK_ID ){
       rc = sqlite3ResolveExprNames(pName, pExpr);
       if( rc==SQLITE_OK && !sqlite3ExprIsConstant(pExpr) ){
-        sqlite3ErrorMsg(pName->pParse, "invalid name: \"%T\"", &pExpr->span);
+        sqlite3ErrorMsg(pName->pParse, "invalid name: \"%s\"", pExpr->zToken);
         return SQLITE_ERROR;
       }
     }else{
@@ -298,21 +298,6 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
-#ifndef SQLITE_OMIT_AUTHORIZATION
-  assert( db->mallocFailed || pAuthArg );
-  if( pAuthArg ){
-    char *zAuthArg = sqlite3NameFromToken(db, &pAuthArg->span);
-    if( !zAuthArg ){
-      goto attach_end;
-    }
-    rc = sqlite3AuthCheck(pParse, type, zAuthArg, 0, 0);
-    sqlite3DbFree(db, zAuthArg);
-    if(rc!=SQLITE_OK ){
-      goto attach_end;
-    }
-  }
-#endif /* SQLITE_OMIT_AUTHORIZATION */
-
   memset(&sName, 0, sizeof(NameContext));
   sName.pParse = pParse;
 
@@ -324,6 +309,20 @@ static void codeAttach(
     pParse->nErr++;
     goto attach_end;
   }
+
+#ifndef SQLITE_OMIT_AUTHORIZATION
+  if( pAuthArg ){
+    char *zAuthArg = pAuthArg->zToken;
+    if( zAuthArg==0 ){
+      goto attach_end;
+    }
+    rc = sqlite3AuthCheck(pParse, type, zAuthArg, 0, 0);
+    if(rc!=SQLITE_OK ){
+      goto attach_end;
+    }
+  }
+#endif /* SQLITE_OMIT_AUTHORIZATION */
+
 
   v = sqlite3GetVdbe(pParse);
   regArgs = sqlite3GetTempRange(pParse, 4);
@@ -487,7 +486,7 @@ int sqlite3FixExpr(
   Expr *pExpr        /* The expression to be fixed to one database */
 ){
   while( pExpr ){
-    if( ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_SpanToken) ) break;
+    if( ExprHasAnyProperty(pExpr, EP_TokenOnly) ) break;
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       if( sqlite3FixSelect(pFix, pExpr->x.pSelect) ) return 1;
     }else{

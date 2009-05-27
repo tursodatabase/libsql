@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.397 2009/05/22 15:43:27 danielk1977 Exp $
+** $Id: where.c,v 1.398 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -628,7 +628,6 @@ static int isLikeOrGlob(
   Expr *pRight, *pLeft;      /* Right and left size of LIKE operator */
   ExprList *pList;           /* List of operands to the LIKE operator */
   int c;                     /* One character in z[] */
-  int n;                     /* Length of string z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
   char wc[3];                /* Wildcard characters */
   CollSeq *pColl;            /* Collating sequence for LHS */
@@ -659,15 +658,14 @@ static int isLikeOrGlob(
       (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
     return 0;
   }
-  z = (const char*)pRight->token.z;
+  z = pRight->zToken;
   cnt = 0;
   if( z ){
-    n = pRight->token.n;
-    while( cnt<n && (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
+    while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
     }
   }
-  if( cnt==0 || 255==(u8)z[cnt-1] ){
+  if( cnt==0 || c==0 || 255==(u8)z[cnt-1] ){
     return 0;
   }
   *pisComplete = z[cnt]==wc[0] && z[cnt+1]==0;
@@ -693,8 +691,7 @@ static int isMatchOfColumn(
   if( pExpr->op!=TK_FUNCTION ){
     return 0;
   }
-  if( pExpr->token.n!=5 ||
-       sqlite3StrNICmp((const char*)pExpr->token.z,"match",5)!=0 ){
+  if( sqlite3StrICmp(pExpr->zToken,"match")!=0 ){
     return 0;
   }
   pList = pExpr->x.pList;
@@ -963,12 +960,12 @@ static void exprAnalyzeOrTerm(
         assert( pOrTerm->leftCursor==iCursor );
         assert( pOrTerm->u.leftColumn==iColumn );
         pDup = sqlite3ExprDup(db, pOrTerm->pExpr->pRight, 0);
-        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup, 0);
+        pList = sqlite3ExprListAppend(pWC->pParse, pList, pDup);
         pLeft = pOrTerm->pExpr->pLeft;
       }
       assert( pLeft!=0 );
       pDup = sqlite3ExprDup(db, pLeft, 0);
-      pNew = sqlite3Expr(db, TK_IN, pDup, 0, 0);
+      pNew = sqlite3PExpr(pParse, TK_IN, pDup, 0, 0);
       if( pNew ){
         int idxNew;
         transferJoinMarkings(pNew, pExpr);
@@ -1121,7 +1118,8 @@ static void exprAnalyze(
     for(i=0; i<2; i++){
       Expr *pNewExpr;
       int idxNew;
-      pNewExpr = sqlite3Expr(db, ops[i], sqlite3ExprDup(db, pExpr->pLeft, 0),
+      pNewExpr = sqlite3PExpr(pParse, ops[i], 
+                             sqlite3ExprDup(db, pExpr->pLeft, 0),
                              sqlite3ExprDup(db, pList->a[i].pExpr, 0), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
@@ -1163,16 +1161,12 @@ static void exprAnalyze(
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pRight = pExpr->x.pList->a[0].pExpr;
-    pStr1 = sqlite3PExpr(pParse, TK_STRING, 0, 0, 0);
-    if( pStr1 ){
-      sqlite3TokenCopy(db, &pStr1->token, &pRight->token);
-      pStr1->token.n = nPattern;
-    }
+    pStr1 = sqlite3Expr(db, TK_STRING, pRight->zToken);
+    if( pStr1 ) pStr1->zToken[nPattern] = 0;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
     if( !db->mallocFailed ){
       u8 c, *pC;
-      /* assert( pStr2->token.dyn ); */
-      pC = (u8*)&pStr2->token.z[nPattern-1];
+      pC = (u8*)&pStr2->zToken[nPattern-1];
       c = *pC;
       if( noCase ){
         if( c=='@' ) isComplete = 0;
@@ -1216,7 +1210,8 @@ static void exprAnalyze(
     prereqColumn = exprTableUsage(pMaskSet, pLeft);
     if( (prereqExpr & prereqColumn)==0 ){
       Expr *pNewExpr;
-      pNewExpr = sqlite3Expr(db, TK_MATCH, 0, sqlite3ExprDup(db, pRight, 0), 0);
+      pNewExpr = sqlite3PExpr(pParse, TK_MATCH, 
+                              0, sqlite3ExprDup(db, pRight, 0), 0);
       idxNew = whereClauseInsert(pWC, pNewExpr, TERM_VIRTUAL|TERM_DYNAMIC);
       testcase( idxNew==0 );
       pNewTerm = &pWC->a[idxNew];
@@ -2296,7 +2291,6 @@ static int codeEqualityTerm(
     eType = sqlite3FindInIndex(pParse, pX, 0);
     iTab = pX->iTable;
     sqlite3VdbeAddOp2(v, OP_Rewind, iTab, 0);
-    VdbeComment((v, "%.*s", pX->span.n, pX->span.z));
     assert( pLevel->plan.wsFlags & WHERE_IN_ABLE );
     if( pLevel->u.in.nIn==0 ){
       pLevel->addrNxt = sqlite3VdbeMakeLabel(v);

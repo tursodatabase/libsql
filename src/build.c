@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.544 2009/05/13 22:58:29 drh Exp $
+** $Id: build.c,v 1.545 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -470,6 +470,7 @@ static void sqliteResetColumnNames(Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
+      sqlite3DbFree(db, pCol->zDflt);
       sqlite3DbFree(db, pCol->zType);
       sqlite3DbFree(db, pCol->zColl);
     }
@@ -568,7 +569,7 @@ char *sqlite3NameFromToken(sqlite3 *db, Token *pName){
   char *zName;
   if( pName ){
     zName = sqlite3DbStrNDup(db, (char*)pName->z, pName->n);
-    if( pName->quoted ) sqlite3Dequote(zName);
+    sqlite3Dequote(zName);
   }else{
     zName = 0;
   }
@@ -1002,14 +1003,12 @@ void sqlite3AddNotNull(Parse *pParse, int onError){
 ** If none of the substrings in the above table are found,
 ** SQLITE_AFF_NUMERIC is returned.
 */
-char sqlite3AffinityType(const Token *pType){
+char sqlite3AffinityType(const char *zIn){
   u32 h = 0;
   char aff = SQLITE_AFF_NUMERIC;
-  const unsigned char *zIn = pType->z;
-  const unsigned char *zEnd = &pType->z[pType->n];
 
-  while( zIn!=zEnd ){
-    h = (h<<8) + sqlite3UpperToLower[*zIn];
+  if( zIn ) while( zIn[0] ){
+    h = (h<<8) + sqlite3UpperToLower[(*zIn)&0xff];
     zIn++;
     if( h==(('c'<<24)+('h'<<16)+('a'<<8)+'r') ){             /* CHAR */
       aff = SQLITE_AFF_TEXT; 
@@ -1058,7 +1057,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   pCol = &p->aCol[p->nCol-1];
   assert( pCol->zType==0 );
   pCol->zType = sqlite3NameFromToken(pParse->db, pType);
-  pCol->affinity = sqlite3AffinityType(pType);
+  pCol->affinity = sqlite3AffinityType(pCol->zType);
 }
 
 /*
@@ -1071,14 +1070,14 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
 ** This routine is called by the parser while in the middle of
 ** parsing a CREATE TABLE statement.
 */
-void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
+void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
   Table *p;
   Column *pCol;
   sqlite3 *db = pParse->db;
   p = pParse->pNewTable;
   if( p!=0 ){
     pCol = &(p->aCol[p->nCol-1]);
-    if( !sqlite3ExprIsConstantOrFunction(pExpr) ){
+    if( !sqlite3ExprIsConstantOrFunction(pSpan->pExpr) ){
       sqlite3ErrorMsg(pParse, "default value of column [%s] is not constant",
           pCol->zName);
     }else{
@@ -1087,10 +1086,13 @@ void sqlite3AddDefaultValue(Parse *pParse, Expr *pExpr){
       ** is required by pragma table_info.
       */
       sqlite3ExprDelete(db, pCol->pDflt);
-      pCol->pDflt = sqlite3ExprDup(db, pExpr, EXPRDUP_REDUCE|EXPRDUP_SPAN);
+      pCol->pDflt = sqlite3ExprDup(db, pSpan->pExpr, EXPRDUP_REDUCE);
+      sqlite3DbFree(db, pCol->zDflt);
+      pCol->zDflt = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
+                                     pSpan->zEnd - pSpan->zStart);
     }
   }
-  sqlite3ExprDelete(db, pExpr);
+  sqlite3ExprDelete(db, pSpan->pExpr);
 }
 
 /*
@@ -1399,14 +1401,8 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     
     zType = azType[pCol->affinity - SQLITE_AFF_TEXT];
     len = sqlite3Strlen30(zType);
-#ifndef NDEBUG
-    if( pCol->affinity!=SQLITE_AFF_NONE ){
-       Token typeToken;
-       typeToken.z = (u8*)zType;
-       typeToken.n = len;
-       assert( pCol->affinity==sqlite3AffinityType(&typeToken) );
-    }
-#endif
+    assert( pCol->affinity==SQLITE_AFF_NONE 
+            || pCol->affinity==sqlite3AffinityType(zType) );
     memcpy(&zStmt[k], zType, len);
     k += len;
     assert( k<=n );
@@ -1652,7 +1648,7 @@ void sqlite3CreateView(
 ){
   Table *p;
   int n;
-  const unsigned char *z;
+  const char *z;
   Token sEnd;
   DbFixer sFix;
   Token *pName;
@@ -1704,7 +1700,7 @@ void sqlite3CreateView(
   }
   sEnd.n = 0;
   n = (int)(sEnd.z - pBegin->z);
-  z = (const unsigned char*)pBegin->z;
+  z = pBegin->z;
   while( ALWAYS(n>0) && sqlite3Isspace(z[n-1]) ){ n--; }
   sEnd.z = &z[n-1];
   sEnd.n = 1;
@@ -2508,11 +2504,11 @@ void sqlite3CreateIndex(
   ** So create a fake list to simulate this.
   */
   if( pList==0 ){
-    nullId.z = (u8*)pTab->aCol[pTab->nCol-1].zName;
+    nullId.z = pTab->aCol[pTab->nCol-1].zName;
     nullId.n = sqlite3Strlen30((char*)nullId.z);
-    nullId.quoted = 0;
-    pList = sqlite3ExprListAppend(pParse, 0, 0, &nullId);
+    pList = sqlite3ExprListAppend(pParse, 0, 0);
     if( pList==0 ) goto exit_create_index;
+    sqlite3ExprListSetName(pParse, pList, &nullId, 0);
     pList->a[0].sortOrder = (u8)sortOrder;
   }
 
@@ -3081,7 +3077,7 @@ SrcList *sqlite3SrcListEnlarge(
 
 /*
 ** Append a new table name to the given SrcList.  Create a new SrcList if
-** need be.  A new entry is created in the SrcList even if pToken is NULL.
+** need be.  A new entry is created in the SrcList even if pTable is NULL.
 **
 ** A SrcList is returned, or NULL if there is an OOM error.  The returned
 ** SrcList might be the same as the SrcList that was input or it might be
@@ -3109,6 +3105,9 @@ SrcList *sqlite3SrcListEnlarge(
 ** then so is B.  In other words, we never have a case where:
 **
 **         sqlite3SrcListAppend(D,A,0,C);
+**
+** Both pTable and pDatabase are assumed to be quoted.  They are dequoted
+** before being added to the SrcList.
 */
 SrcList *sqlite3SrcListAppend(
   sqlite3 *db,        /* Connection to notify of malloc failures */

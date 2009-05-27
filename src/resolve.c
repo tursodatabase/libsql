@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.22 2009/05/05 15:46:43 drh Exp $
+** $Id: resolve.c,v 1.23 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -63,16 +63,25 @@ static void resolveAlias(
   assert( pOrig!=0 );
   assert( pOrig->flags & EP_Resolved );
   db = pParse->db;
-  pDup = sqlite3ExprDup(db, pOrig, 0);
-  if( pDup==0 ) return;
-  sqlite3TokenCopy(db, &pDup->token, &pOrig->token);
-  if( pDup->op!=TK_COLUMN && zType[0]!='G' ){
+  if( pOrig->op!=TK_COLUMN && zType[0]!='G' ){
+    pDup = sqlite3ExprDup(db, pOrig, 0);
     pDup = sqlite3PExpr(pParse, TK_AS, pDup, 0, 0);
     if( pDup==0 ) return;
     if( pEList->a[iCol].iAlias==0 ){
       pEList->a[iCol].iAlias = (u16)(++pParse->nAlias);
     }
     pDup->iTable = pEList->a[iCol].iAlias;
+  }else{
+    char *zToken = pOrig->zToken;
+    pOrig->zToken = 0;
+    pDup = sqlite3ExprDup(db, pOrig, 0);
+    pOrig->zToken = zToken;
+    if( pDup==0 ) return;
+    if( zToken ){
+      assert( (pDup->flags & (EP_Reduced|EP_TokenOnly))==0 );
+      pDup->flags2 |= EP2_FreeToken;
+      pDup->zToken = sqlite3DbStrDup(db, zToken);
+    }
   }
   if( pExpr->flags & EP_ExpCollate ){
     pDup->pColl = pExpr->pColl;
@@ -100,10 +109,10 @@ static void resolveAlias(
 **    pExpr->pLeft         Any expression this points to is deleted
 **    pExpr->pRight        Any expression this points to is deleted.
 **
-** The pDbToken is the name of the database (the "X").  This value may be
+** The zDb variable is the name of the database (the "X").  This value may be
 ** NULL meaning that name is of the form Y.Z or Z.  Any available database
-** can be used.  The pTableToken is the name of the table (the "Y").  This
-** value can be NULL if pDbToken is also NULL.  If pTableToken is NULL it
+** can be used.  The zTable variable is the name of the table (the "Y").  This
+** value can be NULL if zDb is also NULL.  If zTable is NULL it
 ** means that the form of the name is Z and that columns from any table
 ** can be used.
 **
@@ -112,15 +121,12 @@ static void resolveAlias(
 */
 static int lookupName(
   Parse *pParse,       /* The parsing context */
-  Token *pDbToken,     /* Name of the database containing table, or NULL */
-  Token *pTableToken,  /* Name of table containing column, or NULL */
-  Token *pColumnToken, /* Name of the column. */
+  const char *zDb,     /* Name of the database containing table, or NULL */
+  const char *zTab,    /* Name of table containing column, or NULL */
+  const char *zCol,    /* Name of the column. */
   NameContext *pNC,    /* The name context used to resolve the name */
   Expr *pExpr          /* Make this EXPR node point to the selected column */
 ){
-  char *zDb = 0;       /* Name of the database.  The "X" in X.Y.Z */
-  char *zTab = 0;      /* Name of the table.  The "Y" in X.Y.Z or Y.Z */
-  char *zCol = 0;      /* Name of the column.  The "Z" */
   int i, j;            /* Loop counters */
   int cnt = 0;                      /* Number of matching column names */
   int cntTab = 0;                   /* Number of matching table names */
@@ -130,16 +136,8 @@ static int lookupName(
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
 
-  assert( pNC ); /* the name context cannot be NULL. */
-  assert( pColumnToken && pColumnToken->z ); /* The Z in X.Y.Z cannot be NULL */
-
-  /* Dequote and zero-terminate the names */
-  zDb = sqlite3NameFromToken(db, pDbToken);
-  zTab = sqlite3NameFromToken(db, pTableToken);
-  zCol = sqlite3NameFromToken(db, pColumnToken);
-  if( db->mallocFailed ){
-    goto lookupname_end;
-  }
+  assert( pNC );     /* the name context cannot be NULL. */
+  assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
@@ -293,14 +291,13 @@ static int lookupName(
           pOrig = pEList->a[j].pExpr;
           if( !pNC->allowAgg && ExprHasProperty(pOrig, EP_Agg) ){
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
-            sqlite3DbFree(db, zCol);
             return 2;
           }
           resolveAlias(pParse, pEList, j, pExpr, "");
           cnt = 1;
           pMatch = 0;
           assert( zTab==0 && zDb==0 );
-          goto lookupname_end_2;
+          goto lookupname_end;
         }
       } 
     }
@@ -324,7 +321,6 @@ static int lookupName(
   ** fields are not changed in any context.
   */
   if( cnt==0 && zTab==0 && ExprHasProperty(pExpr,EP_DblQuoted) ){
-    sqlite3DbFree(db, zCol);
     pExpr->op = TK_STRING;
     pExpr->pTab = 0;
     return 0;
@@ -363,18 +359,14 @@ static int lookupName(
     pMatch->colUsed |= ((Bitmask)1)<<n;
   }
 
-lookupname_end:
   /* Clean up and return
   */
-  sqlite3DbFree(db, zDb);
-  sqlite3DbFree(db, zTab);
   sqlite3ExprDelete(db, pExpr->pLeft);
   pExpr->pLeft = 0;
   sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
   pExpr->op = TK_COLUMN;
-lookupname_end_2:
-  sqlite3DbFree(db, zCol);
+lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
     sqlite3AuthRead(pParse, pExpr, pSchema, pNC->pSrcList);
@@ -447,7 +439,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     /* A lone identifier is the name of a column.
     */
     case TK_ID: {
-      lookupName(pParse, 0, 0, &pExpr->token, pNC, pExpr);
+      lookupName(pParse, 0, 0, pExpr->zToken, pNC, pExpr);
       return WRC_Prune;
     }
   
@@ -455,24 +447,24 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     ** Or a database, table and column:  ID.ID.ID
     */
     case TK_DOT: {
-      Token *pColumn;
-      Token *pTable;
-      Token *pDb;
+      const char *zColumn;
+      const char *zTable;
+      const char *zDb;
       Expr *pRight;
 
       /* if( pSrcList==0 ) break; */
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
-        pDb = 0;
-        pTable = &pExpr->pLeft->token;
-        pColumn = &pRight->token;
+        zDb = 0;
+        zTable = pExpr->pLeft->zToken;
+        zColumn = pRight->zToken;
       }else{
         assert( pRight->op==TK_DOT );
-        pDb = &pExpr->pLeft->token;
-        pTable = &pRight->pLeft->token;
-        pColumn = &pRight->pRight->token;
+        zDb = pExpr->pLeft->zToken;
+        zTable = pRight->pLeft->zToken;
+        zColumn = pRight->pRight->zToken;
       }
-      lookupName(pParse, pDb, pTable, pColumn, pNC, pExpr);
+      lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
       return WRC_Prune;
     }
 
@@ -492,8 +484,8 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      zId = (char*)pExpr->token.z;
-      nId = pExpr->token.n;
+      zId = pExpr->zToken;
+      nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
         pDef = sqlite3FindFunction(pParse->db, zId, nId, -1, enc, 0);
@@ -594,20 +586,14 @@ static int resolveAsName(
 ){
   int i;             /* Loop counter */
 
-  if( pE->op==TK_ID || (pE->op==TK_STRING && pE->token.z[0]!='\'') ){
-    sqlite3 *db = pParse->db;
-    char *zCol = sqlite3NameFromToken(db, &pE->token);
-    if( zCol==0 ){
-      return -1;
-    }
+  if( pE->op==TK_ID || (pE->op==TK_STRING && pE->zToken[0]!='\'') ){
+    char *zCol = pE->zToken;
     for(i=0; i<pEList->nExpr; i++){
       char *zAs = pEList->a[i].zName;
       if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
-        sqlite3DbFree(db, zCol);
         return i+1;
       }
     }
-    sqlite3DbFree(db, zCol);
   }
   return 0;
 }
@@ -758,7 +744,7 @@ static int resolveCompoundOrderBy(
         CollSeq *pColl = pE->pColl;
         int flags = pE->flags & EP_ExpCollate;
         sqlite3ExprDelete(db, pE);
-        pItem->pExpr = pE = sqlite3Expr(db, TK_INTEGER, 0, 0, 0);
+        pItem->pExpr = pE = sqlite3Expr(db, TK_INTEGER, 0);
         if( pE==0 ) return 1;
         pE->pColl = pColl;
         pE->flags |= EP_IntValue | flags;

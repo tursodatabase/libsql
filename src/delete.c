@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.201 2009/05/01 21:13:37 drh Exp $
+** $Id: delete.c,v 1.202 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -82,13 +82,18 @@ void sqlite3MaterializeView(
   pDup = sqlite3SelectDup(db, pView->pSelect, 0);
   if( pWhere ){
     SrcList *pFrom;
-    Token viewName;
     
     pWhere = sqlite3ExprDup(db, pWhere, 0);
-    viewName.z = (u8*)pView->zName;
-    viewName.n = (unsigned int)sqlite3Strlen30((const char*)viewName.z);
-    viewName.quoted = 0;
-    pFrom = sqlite3SrcListAppendFromTerm(pParse, 0, 0, 0, &viewName, pDup, 0,0);
+    pFrom = sqlite3SrcListAppend(db, 0, 0, 0);
+    if( pFrom ){
+      assert( pFrom->nSrc==1 );
+      pFrom->a[0].zAlias = sqlite3DbStrDup(db, pView->zName);
+      pFrom->a[0].pSelect = pDup;
+      assert( pFrom->a[0].pOn==0 );
+      assert( pFrom->a[0].pUsing==0 );
+    }else{
+      sqlite3SelectDelete(db, pDup);
+    }
     pDup = sqlite3SelectNew(pParse, 0, pFrom, pWhere, 0, 0, 0, 0, 0, 0);
   }
   sqlite3SelectDestInit(&dest, SRT_EphemTab, iCur);
@@ -148,9 +153,9 @@ Expr *sqlite3LimitWhere(
   **   );
   */
 
-  pSelectRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
+  pSelectRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
   if( pSelectRowid == 0 ) goto limit_where_cleanup_2;
-  pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid, 0);
+  pEList = sqlite3ExprListAppend(pParse, 0, pSelectRowid);
   if( pEList == 0 ) goto limit_where_cleanup_2;
 
   /* duplicate the FROM clause as it is needed by both the DELETE/UPDATE tree
@@ -167,7 +172,7 @@ Expr *sqlite3LimitWhere(
   if( pSelect == 0 ) return 0;
 
   /* now generate the new WHERE rowid IN clause for the DELETE/UDPATE */
-  pWhereRowid = sqlite3Expr(pParse->db, TK_ROW, 0, 0, 0);
+  pWhereRowid = sqlite3PExpr(pParse, TK_ROW, 0, 0, 0);
   if( pWhereRowid == 0 ) goto limit_where_cleanup_1;
   pInClause = sqlite3PExpr(pParse, TK_IN, pWhereRowid, 0, 0);
   if( pInClause == 0 ) goto limit_where_cleanup_1;

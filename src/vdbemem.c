@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.144 2009/05/05 12:54:50 drh Exp $
+** $Id: vdbemem.c,v 1.145 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -974,7 +974,7 @@ int sqlite3ValueFromExpr(
   op = pExpr->op;
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    zVal = sqlite3DbStrNDup(db, (char*)pExpr->token.z, pExpr->token.n);
+    zVal = sqlite3DbStrDup(db, pExpr->zToken);
     pVal = sqlite3ValueNew(db);
     if( !zVal || !pVal ) goto no_mem;
     sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
@@ -996,14 +996,13 @@ int sqlite3ValueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
-    assert( pExpr->token.n>=3 );
-    assert( pExpr->token.z[0]=='x' || pExpr->token.z[0]=='X' );
-    assert( pExpr->token.z[1]=='\'' );
-    assert( pExpr->token.z[pExpr->token.n-1]=='\'' );
+    assert( pExpr->zToken[0]=='x' || pExpr->zToken[0]=='X' );
+    assert( pExpr->zToken[1]=='\'' );
     pVal = sqlite3ValueNew(db);
     if( !pVal ) goto no_mem;
-    nVal = pExpr->token.n - 3;
-    zVal = (char*)pExpr->token.z + 2;
+    zVal = &pExpr->zToken[2];
+    nVal = sqlite3Strlen30(zVal)-1;
+    assert( zVal[nVal]=='\'' );
     sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,
                          0, SQLITE_DYNAMIC);
   }

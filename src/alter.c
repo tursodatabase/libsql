@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.58 2009/05/12 17:46:54 drh Exp $
+** $Id: alter.c,v 1.59 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -66,7 +66,7 @@ static void renameTableFunc(
       }
 
       /* Store the token that zCsr points to in tname. */
-      tname.z = zCsr;
+      tname.z = (char*)zCsr;
       tname.n = len;
 
       /* Advance zCsr to the next token. Store that token type in 'token',
@@ -79,7 +79,7 @@ static void renameTableFunc(
       assert( len>0 );
     } while( token!=TK_LP && token!=TK_USING );
 
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
        zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
@@ -125,7 +125,7 @@ static void renameTriggerFunc(
       }
 
       /* Store the token that zCsr points to in tname. */
-      tname.z = zCsr;
+      tname.z = (char*)zCsr;
       tname.n = len;
 
       /* Advance zCsr to the next token. Store that token type in 'token',
@@ -155,7 +155,7 @@ static void renameTriggerFunc(
     /* Variable tname now contains the token that is the old table-name
     ** in the CREATE TRIGGER statement.
     */
-    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", tname.z - zSql, zSql, 
+    zRet = sqlite3MPrintf(db, "%.*s\"%w\"%s", ((u8*)tname.z) - zSql, zSql, 
        zTableName, tname.z+tname.n);
     sqlite3_result_text(context, zRet, -1, SQLITE_DYNAMIC);
   }
@@ -636,6 +636,7 @@ void sqlite3AlterBeginAddColumn(Parse *pParse, SrcList *pSrc){
     pCol->zColl = 0;
     pCol->zType = 0;
     pCol->pDflt = 0;
+    pCol->zDflt = 0;
   }
   pNew->pSchema = db->aDb[iDb].pSchema;
   pNew->addColOffset = pTab->addColOffset;

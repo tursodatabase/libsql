@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.875 2009/05/20 02:40:46 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.876 2009/05/27 10:31:29 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -579,6 +579,7 @@ typedef struct Db Db;
 typedef struct Schema Schema;
 typedef struct Expr Expr;
 typedef struct ExprList ExprList;
+typedef struct ExprSpan ExprSpan;
 typedef struct FKey FKey;
 typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
@@ -1015,6 +1016,7 @@ struct Module {
 struct Column {
   char *zName;     /* Name of this column */
   Expr *pDflt;     /* Default value of this column */
+  char *zDflt;     /* Original text of the default value */
   char *zType;     /* Data type for this column */
   char *zColl;     /* Collating sequence.  If NULL, use the default */
   u8 notNull;      /* True if there is a NOT NULL constraint */
@@ -1360,10 +1362,8 @@ struct Index {
 ** and Token.n when Token.z==0.
 */
 struct Token {
-  const unsigned char *z; /* Text of the token.  Not NULL-terminated! */
-  unsigned dyn    : 1;    /* True for malloced memory, false for static */
-  unsigned quoted : 1;    /* True if token still has its quotes */
-  unsigned n      : 30;   /* Number of characters in this token */
+  const char *z;     /* Text of the token.  Not NULL-terminated! */
+  unsigned int n;    /* Number of characters in this token */
 };
 
 /*
@@ -1464,9 +1464,9 @@ struct AggInfo {
 ** help reduce memory requirements, sometimes an Expr object will be
 ** truncated.  And to reduce the number of memory allocations, sometimes
 ** two or more Expr objects will be stored in a single memory allocation,
-** together with Expr.token and/or Expr.span strings.
+** together with Expr.token strings.
 **
-** If the EP_Reduced, EP_SpanToken, and EP_TokenOnly flags are set when
+** If the EP_Reduced and EP_TokenOnly flags are set when
 ** an Expr object is truncated.  When EP_Reduced is set, then all
 ** the child Expr objects in the Expr.pLeft and Expr.pRight subtrees
 ** are contained within the same memory allocation.  Note, however, that
@@ -1476,18 +1476,10 @@ struct AggInfo {
 struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
-  VVA_ONLY(u8 vvaFlags;) /* Flags used for VV&A only.  EVVA_* below. */
   u16 flags;             /* Various flags.  EP_* See below */
-  Token token;           /* An operand token */
+  char *zToken;          /* Token value. Zero terminated and dequoted */
 
   /* If the EP_TokenOnly flag is set in the Expr.flags mask, then no
-  ** space is allocated for the fields below this point. An attempt to
-  ** access them will result in a segfault or malfunction. 
-  *********************************************************************/
-
-  Token span;            /* Complete text of the expression */
-
-  /* If the EP_SpanToken flag is set in the Expr.flags mask, then no
   ** space is allocated for the fields below this point. An attempt to
   ** access them will result in a segfault or malfunction. 
   *********************************************************************/
@@ -1505,11 +1497,14 @@ struct Expr {
   ** access them will result in a segfault or malfunction.
   *********************************************************************/
 
-  int iTable, iColumn;   /* When op==TK_COLUMN, then this expr node means the
-                         ** iColumn-th field of the iTable-th table. */
+  int iTable;            /* TK_COLUMN: cursor number of table holding column
+                         ** TK_REGISTER: register number 
+                         ** EP_IntValue: integer value */
+  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
+  i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
+  i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
+  u16 flags2;            /* Second set of flags.  EP2_... */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
-  int iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
-  int iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0
   int nHeight;           /* Height of the tree headed by this node */
@@ -1535,16 +1530,12 @@ struct Expr {
 
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
 #define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_SpanToken  0x8000  /* Expr size is EXPR_SPANTOKENSIZE bytes */
+#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
 
 /*
-** The following are the meanings of bits in the Expr.vvaFlags field.
-** This information is only used when SQLite is compiled with
-** SQLITE_DEBUG defined.
+** The following are the meanings of bits in the Expr.flags2 field.
 */
-#ifndef NDEBUG
-#define EVVA_ReadOnlyToken  0x01  /* Expr.token.z is read-only */
-#endif
+#define EP2_FreeToken 0x0001  /* Need to call sqlite3DbFree() on Expr.zToken */
 
 /*
 ** These macros can be used to test, set, or clear bits in the 
@@ -1562,15 +1553,13 @@ struct Expr {
 */
 #define EXPR_FULLSIZE           sizeof(Expr)           /* Full size */
 #define EXPR_REDUCEDSIZE        offsetof(Expr,iTable)  /* Common features */
-#define EXPR_SPANTOKENSIZE      offsetof(Expr,pLeft)   /* Fewer features */
-#define EXPR_TOKENONLYSIZE      offsetof(Expr,span)    /* Smallest possible */
+#define EXPR_TOKENONLYSIZE      offsetof(Expr,pLeft)   /* Fewer features */
 
 /*
 ** Flags passed to the sqlite3ExprDup() function. See the header comment 
 ** above sqlite3ExprDup() for details.
 */
 #define EXPRDUP_REDUCE         0x0001  /* Used reduced-size Expr nodes */
-#define EXPRDUP_SPAN           0x0002  /* Make a copy of Expr.span */
 
 /*
 ** A list of expressions.  Each expression may optionally have a
@@ -1587,11 +1576,23 @@ struct ExprList {
   struct ExprList_item {
     Expr *pExpr;           /* The list of expressions */
     char *zName;           /* Token associated with this expression */
+    char *zSpan;           /* Original text of the expression */
     u8 sortOrder;          /* 1 for DESC or 0 for ASC */
     u8 done;               /* A flag to indicate when processing is finished */
     u16 iCol;              /* For ORDER BY, column number in result set */
     u16 iAlias;            /* Index into Parse.aAlias[] for zName */
   } *a;                  /* One entry for each expression */
+};
+
+/*
+** An instance of this structure is used by the parser to record both
+** the parse tree for an expression and the span of input text for an
+** expression.
+*/
+struct ExprSpan {
+  Expr *pExpr;          /* The expression parse tree */
+  const char *zStart;   /* First character of input text */
+  const char *zEnd;     /* One character past the end of input text */
 };
 
 /*
@@ -2044,7 +2045,6 @@ struct Trigger {
   Expr *pWhen;            /* The WHEN clause of the expression (may be NULL) */
   IdList *pColumns;       /* If this is an UPDATE OF <column-list> trigger,
                              the <column-list> is stored here */
-  Token nameToken;        /* Token containing zName. Use during parsing only */
   Schema *pSchema;        /* Schema containing the trigger */
   Schema *pTabSchema;     /* Schema containing the table */
   TriggerStep *step_list; /* Link list of trigger program steps             */
@@ -2078,7 +2078,7 @@ struct Trigger {
  * orconf    -> stores the ON CONFLICT algorithm
  * pSelect   -> If this is an INSERT INTO ... SELECT ... statement, then
  *              this stores a pointer to the SELECT statement. Otherwise NULL.
- * target    -> A token holding the name of the table to insert into.
+ * target    -> A token holding the quoted name of the table to insert into.
  * pExprList -> If this is an INSERT INTO ... VALUES ... statement, then
  *              this stores values to be inserted. Otherwise NULL.
  * pIdList   -> If this is an INSERT INTO ... (<column-names>) VALUES ... 
@@ -2086,12 +2086,12 @@ struct Trigger {
  *              inserted into.
  *
  * (op == TK_DELETE)
- * target    -> A token holding the name of the table to delete from.
+ * target    -> A token holding the quoted name of the table to delete from.
  * pWhere    -> The WHERE clause of the DELETE statement if one is specified.
  *              Otherwise NULL.
  * 
  * (op == TK_UPDATE)
- * target    -> A token holding the name of the table to update rows of.
+ * target    -> A token holding the quoted name of the table to update rows of.
  * pWhere    -> The WHERE clause of the UPDATE statement if one is specified.
  *              Otherwise NULL.
  * pExprList -> A list of the columns to update and the expressions to update
@@ -2106,7 +2106,7 @@ struct TriggerStep {
 
   Select *pSelect;     /* Valid for SELECT and sometimes 
                           INSERT steps (when pExprList == 0) */
-  Token target;        /* Valid for DELETE, UPDATE, INSERT steps */
+  Token target;        /* Target table for DELETE, UPDATE, INSERT.  Quoted */
   Expr *pWhere;        /* Valid for DELETE, UPDATE steps */
   ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
                            INSERT steps (when pSelect == 0)         */
@@ -2384,16 +2384,19 @@ int sqlite3GetTempReg(Parse*);
 void sqlite3ReleaseTempReg(Parse*,int);
 int sqlite3GetTempRange(Parse*,int);
 void sqlite3ReleaseTempRange(Parse*,int,int);
-Expr *sqlite3Expr(sqlite3*, int, Expr*, Expr*, const Token*);
+Expr *sqlite3ExprAlloc(sqlite3*,int,const Token*,int);
+Expr *sqlite3Expr(sqlite3*,int,const char*);
+void sqlite3ExprAttachSubtrees(sqlite3*,Expr*,Expr*,Expr*);
 Expr *sqlite3PExpr(Parse*, int, Expr*, Expr*, const Token*);
 Expr *sqlite3RegisterExpr(Parse*,Token*);
 Expr *sqlite3ExprAnd(sqlite3*,Expr*, Expr*);
-void sqlite3ExprSpan(Expr*,Token*,Token*);
 Expr *sqlite3ExprFunction(Parse*,ExprList*, Token*);
 void sqlite3ExprAssignVarNumber(Parse*, Expr*);
 void sqlite3ExprClear(sqlite3*, Expr*);
 void sqlite3ExprDelete(sqlite3*, Expr*);
-ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*,Token*);
+ExprList *sqlite3ExprListAppend(Parse*,ExprList*,Expr*);
+void sqlite3ExprListSetName(Parse*,ExprList*,Token*,int);
+void sqlite3ExprListSetSpan(Parse*,ExprList*,ExprSpan*);
 void sqlite3ExprListDelete(sqlite3*, ExprList*);
 int sqlite3Init(sqlite3*, char**);
 int sqlite3InitCallback(void*, int, char**, char**);
@@ -2409,7 +2412,7 @@ void sqlite3AddNotNull(Parse*, int);
 void sqlite3AddPrimaryKey(Parse*, ExprList*, int, int, int);
 void sqlite3AddCheckConstraint(Parse*, Expr*);
 void sqlite3AddColumnType(Parse*,Token*);
-void sqlite3AddDefaultValue(Parse*,Expr*);
+void sqlite3AddDefaultValue(Parse*,ExprSpan*);
 void sqlite3AddCollateType(Parse*, Token*);
 void sqlite3EndTable(Parse*,Token*,Token*,Select*);
 
@@ -2523,7 +2526,6 @@ void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int,int,int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
-void sqlite3TokenCopy(sqlite3*,Token*,const Token*);
 ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);
 IdList *sqlite3IdListDup(sqlite3*,IdList*);
@@ -2694,7 +2696,7 @@ void sqlite3ColumnDefault(Vdbe *, Table *, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char*);
-char sqlite3AffinityType(const Token*);
+char sqlite3AffinityType(const char*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);

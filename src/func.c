@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.234 2009/04/20 12:07:37 drh Exp $
+** $Id: func.c,v 1.235 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1368,8 +1368,8 @@ int sqlite3IsLikeFunction(sqlite3 *db, Expr *pExpr, int *pIsNocase, char *aWc){
     return 0;
   }
   assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-  pDef = sqlite3FindFunction(db, (char*)pExpr->token.z, pExpr->token.n, 2,
-                             SQLITE_UTF8, 0);
+  pDef = sqlite3FindFunction(db, pExpr->zToken, sqlite3Strlen30(pExpr->zToken),
+                             2, SQLITE_UTF8, 0);
   if( NEVER(pDef==0) || (pDef->flags & SQLITE_FUNC_LIKE)==0 ){
     return 0;
   }

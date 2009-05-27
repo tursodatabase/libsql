@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.254 2009/05/06 19:03:14 drh Exp $
+** $Id: util.c,v 1.255 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -108,6 +108,7 @@ int sqlite3IsNaN(double x){
 */
 int sqlite3Strlen30(const char *z){
   const char *z2 = z;
+  if( z==0 ) return 0;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
 }

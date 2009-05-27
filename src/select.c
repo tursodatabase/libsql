@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.518 2009/05/19 19:04:58 drh Exp $
+** $Id: select.c,v 1.519 2009/05/27 10:31:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -71,7 +71,7 @@ Select *sqlite3SelectNew(
     memset(pNew, 0, sizeof(*pNew));
   }
   if( pEList==0 ){
-    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ALL,0,0,0), 0);
+    pEList = sqlite3ExprListAppend(pParse, 0, sqlite3Expr(db,TK_ALL,0));
   }
   pNew->pEList = pEList;
   pNew->pSrc = pSrc;
@@ -192,22 +192,10 @@ static int columnIndex(Table *pTab, const char *zCol){
 }
 
 /*
-** Set the value of a token to a '\000'-terminated string.
-*/
-static void setToken(Token *p, const char *z){
-  p->z = (u8*)z;
-  p->n = z ? sqlite3Strlen30(z) : 0;
-  p->dyn = 0;
-  p->quoted = 0;
-}
-
-/*
 ** Create an expression node for an identifier with the name of zName
 */
 Expr *sqlite3CreateIdExpr(Parse *pParse, const char *zName){
-  Token dummy;
-  setToken(&dummy, zName);
-  return sqlite3PExpr(pParse, TK_ID, 0, 0, &dummy);
+  return sqlite3Expr(pParse->db, TK_ID, zName);
 }
 
 /*
@@ -1072,7 +1060,7 @@ static void generateColumnNames(
       }
       if( !shortNames && !fullNames ){
         sqlite3VdbeSetColName(v, i, COLNAME_NAME, 
-            sqlite3DbStrNDup(db, (char*)p->span.z, p->span.n), SQLITE_DYNAMIC);
+            sqlite3DbStrDup(db, pEList->a[i].zSpan), SQLITE_DYNAMIC);
       }else if( fullNames ){
         char *zName = 0;
         zName = sqlite3MPrintf(db, "%s.%s", pTab->zName, zCol);
@@ -1082,7 +1070,7 @@ static void generateColumnNames(
       }
     }else{
       sqlite3VdbeSetColName(v, i, COLNAME_NAME, 
-          sqlite3DbStrNDup(db, (char*)p->span.z, p->span.n), SQLITE_DYNAMIC);
+          sqlite3DbStrDup(db, pEList->a[i].zSpan), SQLITE_DYNAMIC);
     }
   }
   generateColumnTypes(pParse, pTabList, pEList);
@@ -1139,7 +1127,7 @@ static int selectColumnsFromExprList(
     /* Get an appropriate name for the column
     */
     p = pEList->a[i].pExpr;
-    assert( p->pRight==0 || p->pRight->token.z==0 || p->pRight->token.z[0]!=0 );
+    assert( p->pRight==0 || p->pRight->zToken==0 || p->pRight->zToken[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
       zName = sqlite3DbStrDup(db, zName);
@@ -1154,10 +1142,11 @@ static int selectColumnsFromExprList(
         if( iCol<0 ) iCol = pTab->iPKey;
         zName = sqlite3MPrintf(db, "%s",
                  iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
+      }else if( pColExpr->op==TK_ID ){
+        zName = sqlite3MPrintf(db, "%s", pColExpr->zToken);
       }else{
         /* Use the original text of the column expression as its name */
-        Token *pToken = (pColExpr->span.z?&pColExpr->span:&pColExpr->token);
-        zName = sqlite3MPrintf(db, "%T", pToken);
+        zName = sqlite3MPrintf(db, "%s", pEList->a[i].zSpan);
       }
     }
     if( db->mallocFailed ){
@@ -2056,11 +2045,11 @@ static int multiSelectOrderBy(
         if( pItem->iCol==i ) break;
       }
       if( j==nOrderBy ){
-        Expr *pNew = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, 0);
+        Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
         if( pNew==0 ) return SQLITE_NOMEM;
         pNew->flags |= EP_IntValue;
         pNew->iTable = i;
-        pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew, 0);
+        pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
         pOrderBy->a[nOrderBy++].iCol = (u16)i;
       }
     }
@@ -2345,13 +2334,13 @@ static void substSelect(sqlite3*, Select *, int, ExprList *);
 ** changes to pExpr so that it refers directly to the source table
 ** of the subquery rather the result set of the subquery.
 */
-static void substExpr(
+static Expr *substExpr(
   sqlite3 *db,        /* Report malloc errors to this connection */
   Expr *pExpr,        /* Expr in which substitution occurs */
   int iTable,         /* Table to be substituted */
   ExprList *pEList    /* Substitute expressions */
 ){
-  if( pExpr==0 ) return;
+  if( pExpr==0 ) return 0;
   if( pExpr->op==TK_COLUMN && pExpr->iTable==iTable ){
     if( pExpr->iColumn<0 ){
       pExpr->op = TK_NULL;
@@ -2359,38 +2348,20 @@ static void substExpr(
       Expr *pNew;
       assert( pEList!=0 && pExpr->iColumn<pEList->nExpr );
       assert( pExpr->pLeft==0 && pExpr->pRight==0 );
-      pNew = pEList->a[pExpr->iColumn].pExpr;
-      assert( pNew!=0 );
-      pExpr->op = pNew->op;
-      assert( pExpr->pLeft==0 );
-      pExpr->pLeft = sqlite3ExprDup(db, pNew->pLeft, 0);
-      assert( pExpr->pRight==0 );
-      pExpr->pRight = sqlite3ExprDup(db, pNew->pRight, 0);
-      pExpr->iTable = pNew->iTable;
-      pExpr->pTab = pNew->pTab;
-      pExpr->iColumn = pNew->iColumn;
-      pExpr->iAgg = pNew->iAgg;
-      sqlite3TokenCopy(db, &pExpr->token, &pNew->token);
-      sqlite3TokenCopy(db, &pExpr->span, &pNew->span);
-      assert( pExpr->x.pList==0 && pExpr->x.pSelect==0 );
-      if( ExprHasProperty(pNew, EP_xIsSelect) ){
-        pExpr->x.pSelect = sqlite3SelectDup(db, pNew->x.pSelect, 0);
-      }else{
-        pExpr->x.pList = sqlite3ExprListDup(db, pNew->x.pList, 0);
-      }
-      pExpr->flags = pNew->flags;
-      pExpr->pAggInfo = pNew->pAggInfo;
-      pNew->pAggInfo = 0;
+      pNew = sqlite3ExprDup(db, pEList->a[pExpr->iColumn].pExpr, 0);
+      sqlite3ExprDelete(db, pExpr);
+      pExpr = pNew;
     }
   }else{
-    substExpr(db, pExpr->pLeft, iTable, pEList);
-    substExpr(db, pExpr->pRight, iTable, pEList);
+    pExpr->pLeft = substExpr(db, pExpr->pLeft, iTable, pEList);
+    pExpr->pRight = substExpr(db, pExpr->pRight, iTable, pEList);
     if( ExprHasProperty(pExpr, EP_xIsSelect) ){
       substSelect(db, pExpr->x.pSelect, iTable, pEList);
     }else{
       substExprList(db, pExpr->x.pList, iTable, pEList);
     }
   }
+  return pExpr;
 }
 static void substExprList(
   sqlite3 *db,         /* Report malloc errors here */
@@ -2401,7 +2372,7 @@ static void substExprList(
   int i;
   if( pList==0 ) return;
   for(i=0; i<pList->nExpr; i++){
-    substExpr(db, pList->a[i].pExpr, iTable, pEList);
+    pList->a[i].pExpr = substExpr(db, pList->a[i].pExpr, iTable, pEList);
   }
 }
 static void substSelect(
@@ -2417,8 +2388,8 @@ static void substSelect(
   substExprList(db, p->pEList, iTable, pEList);
   substExprList(db, p->pGroupBy, iTable, pEList);
   substExprList(db, p->pOrderBy, iTable, pEList);
-  substExpr(db, p->pHaving, iTable, pEList);
-  substExpr(db, p->pWhere, iTable, pEList);
+  p->pHaving = substExpr(db, p->pHaving, iTable, pEList);
+  p->pWhere = substExpr(db, p->pWhere, iTable, pEList);
   substSelect(db, p->pPrior, iTable, pEList);
   pSrc = p->pSrc;
   assert( pSrc );  /* Even for (SELECT 1) we have: pSrc!=0 but pSrc->nSrc==0 */
@@ -2840,17 +2811,16 @@ static int flattenSubquery(
     pList = pParent->pEList;
     for(i=0; i<pList->nExpr; i++){
       if( pList->a[i].zName==0 ){
-        Expr *pExpr = pList->a[i].pExpr;
-        if( ALWAYS(pExpr->span.z!=0) ){
-          pList->a[i].zName = 
-               sqlite3DbStrNDup(db, (char*)pExpr->span.z, pExpr->span.n);
+        const char *zSpan = pList->a[i].zSpan;
+        if( zSpan ){
+          pList->a[i].zName = sqlite3DbStrDup(db, zSpan);
         }
       }
     }
     substExprList(db, pParent->pEList, iParent, pSub->pEList);
     if( isAgg ){
       substExprList(db, pParent->pGroupBy, iParent, pSub->pEList);
-      substExpr(db, pParent->pHaving, iParent, pSub->pEList);
+      pParent->pHaving = substExpr(db, pParent->pHaving, iParent, pSub->pEList);
     }
     if( pSub->pOrderBy ){
       assert( pParent->pOrderBy==0 );
@@ -2868,13 +2838,13 @@ static int flattenSubquery(
       assert( pParent->pHaving==0 );
       pParent->pHaving = pParent->pWhere;
       pParent->pWhere = pWhere;
-      substExpr(db, pParent->pHaving, iParent, pSub->pEList);
+      pParent->pHaving = substExpr(db, pParent->pHaving, iParent, pSub->pEList);
       pParent->pHaving = sqlite3ExprAnd(db, pParent->pHaving, 
                                   sqlite3ExprDup(db, pSub->pHaving, 0));
       assert( pParent->pGroupBy==0 );
       pParent->pGroupBy = sqlite3ExprListDup(db, pSub->pGroupBy, 0);
     }else{
-      substExpr(db, pParent->pWhere, iParent, pSub->pEList);
+      pParent->pWhere = substExpr(db, pParent->pWhere, iParent, pSub->pEList);
       pParent->pWhere = sqlite3ExprAnd(db, pParent->pWhere, pWhere);
     }
   
@@ -2926,10 +2896,9 @@ static u8 minMaxQuery(Select *p){
   pEList = pExpr->x.pList;
   if( pEList==0 || pEList->nExpr!=1 ) return 0;
   if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return WHERE_ORDERBY_NORMAL;
-  if( pExpr->token.n!=3 ) return WHERE_ORDERBY_NORMAL;
-  if( sqlite3StrNICmp((char*)pExpr->token.z,"min",3)==0 ){
+  if( sqlite3StrICmp(pExpr->zToken,"min")==0 ){
     return WHERE_ORDERBY_MIN;
-  }else if( sqlite3StrNICmp((char*)pExpr->token.z,"max",3)==0 ){
+  }else if( sqlite3StrICmp(pExpr->zToken,"max")==0 ){
     return WHERE_ORDERBY_MAX;
   }
   return WHERE_ORDERBY_NORMAL;
@@ -3135,12 +3104,14 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( pE->op!=TK_ALL && (pE->op!=TK_DOT || pE->pRight->op!=TK_ALL) ){
         /* This particular expression does not need to be expanded.
         */
-        pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr, 0);
+        pNew = sqlite3ExprListAppend(pParse, pNew, a[k].pExpr);
         if( pNew ){
           pNew->a[pNew->nExpr-1].zName = a[k].zName;
+          pNew->a[pNew->nExpr-1].zSpan = a[k].zSpan;
+          a[k].zName = 0;
+          a[k].zSpan = 0;
         }
         a[k].pExpr = 0;
-        a[k].zName = 0;
       }else{
         /* This expression is a "*" or a "TABLE.*" and needs to be
         ** expanded. */
@@ -3148,7 +3119,7 @@ static int selectExpander(Walker *pWalker, Select *p){
         char *zTName;            /* text of name of TABLE */
         if( pE->op==TK_DOT ){
           assert( pE->pLeft!=0 );
-          zTName = sqlite3NameFromToken(db, &pE->pLeft->token);
+          zTName = pE->pLeft->zToken;
         }else{
           zTName = 0;
         }
@@ -3166,6 +3137,9 @@ static int selectExpander(Walker *pWalker, Select *p){
           for(j=0; j<pTab->nCol; j++){
             Expr *pExpr, *pRight;
             char *zName = pTab->aCol[j].zName;
+            char *zColname;  /* The computed column name */
+            char *zToFree;   /* Malloced string that needs to be freed */
+            Token sColname;  /* Computed column name as a token */
 
             /* If a column is marked as 'hidden' (currently only possible
             ** for virtual tables), do not include it in the expanded
@@ -3190,30 +3164,25 @@ static int selectExpander(Walker *pWalker, Select *p){
                 continue;
               }
             }
-            pRight = sqlite3PExpr(pParse, TK_ID, 0, 0, 0);
-            if( pRight==0 ) break;
-            setToken(&pRight->token, zName);
+            pRight = sqlite3Expr(db, TK_ID, zName);
+            zColname = zName;
+            zToFree = 0;
             if( longNames || pTabList->nSrc>1 ){
-              Expr *pLeft = sqlite3PExpr(pParse, TK_ID, 0, 0, 0);
+              Expr *pLeft;
+              pLeft = sqlite3Expr(db, TK_ID, zTabName);
               pExpr = sqlite3PExpr(pParse, TK_DOT, pLeft, pRight, 0);
-              if( pExpr==0 ) break;
-              setToken(&pLeft->token, zTabName);
-              setToken(&pExpr->span, 
-                  sqlite3MPrintf(db, "%s.%s", zTabName, zName));
-              pExpr->span.dyn = 1;
-              pExpr->token.z = 0;
-              pExpr->token.n = 0;
-              pExpr->token.dyn = 0;
+              if( longNames ){
+                zColname = sqlite3MPrintf(db, "%s.%s", zTabName, zName);
+                zToFree = zColname;
+              }
             }else{
               pExpr = pRight;
-              pExpr->span = pExpr->token;
-              pExpr->span.dyn = 0;
             }
-            if( longNames ){
-              pNew = sqlite3ExprListAppend(pParse, pNew, pExpr, &pExpr->span);
-            }else{
-              pNew = sqlite3ExprListAppend(pParse, pNew, pExpr, &pRight->token);
-            }
+            pNew = sqlite3ExprListAppend(pParse, pNew, pExpr);
+            sColname.z = zColname;
+            sColname.n = sqlite3Strlen30(zColname);
+            sqlite3ExprListSetName(pParse, pNew, &sColname, 0);
+            sqlite3DbFree(db, zToFree);
           }
         }
         if( !tableSeen ){
@@ -3223,7 +3192,6 @@ static int selectExpander(Walker *pWalker, Select *p){
             sqlite3ErrorMsg(pParse, "no tables specified");
           }
         }
-        sqlite3DbFree(db, zTName);
       }
     }
     sqlite3ExprListDelete(db, pEList);
@@ -4175,8 +4143,8 @@ select_end:
 ** or from temporary "printf" statements inserted for debugging.
 */
 void sqlite3PrintExpr(Expr *p){
-  if( p->token.z && p->token.n>0 ){
-    sqlite3DebugPrintf("(%.*s", p->token.n, p->token.z);
+  if( p->zToken ){
+    sqlite3DebugPrintf("(%s", p->zToken);
   }else{
     sqlite3DebugPrintf("(%d", p->op);
   }

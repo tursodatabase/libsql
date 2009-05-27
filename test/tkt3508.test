@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library. 
 #
-# $Id: tkt3508.test,v 1.3 2008/11/26 20:09:15 pweilbacher Exp $
+# $Id: tkt3508.test,v 1.4 2009/05/27 10:31:30 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -33,6 +33,6 @@ do_test tkt3508-1.1 {
     select SUBSTRATE_HPRD_ID, count(substrate_refseq_id) as c
       from modificationsTmp where c > 1 group by SUBSTRATE_HPRD_ID;
   }
-} {1 {misuse of aggregate: }}
+} {1 {misuse of aggregate: count()}}
 
 finish_test
