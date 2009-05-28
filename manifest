@@ -1,5 +1,5 @@
-C Workaround\sthe\sneed\sfor\sinternal\sAPI\ssqlite3BtreeCursorDb().\sIt\swas\sonly\sbeing\sused\sfor\san\sassert()\sstatement,\swhich\scan\sbe\sdone\sdifferently.\s(CVS\s6683)
-D 2009-05-28T11:05:57
+C Make\ssure\sthe\scolumn\sname\sresolver\sdoes\snot\stry\sto\sduplicate\sExpr.u.zToken\nwhen\sthe\sExpr.u.iValue\sunion\smember\sis\sthe\selement\sbeing\sused.\s(CVS\s6684)
+D 2009-05-28T12:49:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/pragma.c d4a6fd74fd1dba0f22c8930791f7fbbe80d2ef26
 F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c 64e7ac825a887eb5e33262f0b355514734b24ccd
+F src/resolve.c 3e2df0a2f41a425c4260e7ca932ebdc6cf8ff6b2
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c fd1737a667bab296f50049a841b3aba5ec89418e
 F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4ac2bdfbb4230b6ceaae87e738fa61036bbe03cb
-R 1d2cfe85976ea7e6f0cff5f4581d1028
-U danielk1977
-Z 958dcf1176b8cee3abaf43be3cebcb59
+P 5904af6e6df3effdaaa30e7cf96ee316fc09b28d
+R 525bf44a2c83ebc207687f9de40c8b4c
+U drh
+Z 1bf7740e558a10c01f1b3c9c89c84c9a
