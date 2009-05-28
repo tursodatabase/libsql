@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.25 2009/05/28 12:49:53 drh Exp $
+** $Id: resolve.c,v 1.26 2009/05/28 14:34:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -73,6 +73,7 @@ static void resolveAlias(
     pDup->iTable = pEList->a[iCol].iAlias;
   }else if( ExprHasProperty(pOrig, EP_IntValue) || pOrig->u.zToken==0 ){
     pDup = sqlite3ExprDup(db, pOrig, 0);
+    if( pDup==0 ) return;
   }else{
     char *zToken = pOrig->u.zToken;
     pOrig->u.zToken = 0;
