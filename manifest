@@ -1,5 +1,5 @@
-C Additional\srefinements\sto\sExpr\shandling.\s\sRestore\scompression\sof\strigger\nexpressions.\s\sChange\sExpr.zToken\sto\sExpr.u.zToken\sand\sadded\sExpr.u.iValue.\nRemove\san\sunnecessary\sExprDup\sfrom\sCHECK\sconstraint\sprocessing.\s\sAnd\sso\sforth.\s(CVS\s6682)
-D 2009-05-28T01:00:55
+C Workaround\sthe\sneed\sfor\sinternal\sAPI\ssqlite3BtreeCursorDb().\sIt\swas\sonly\sbeing\sused\sfor\san\sassert()\sstatement,\swhich\scan\sbe\sdone\sdifferently.\s(CVS\s6683)
+D 2009-05-28T11:05:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,8 +106,8 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c 437efc2c3371b52bbb943b8c9dfabba774adcf86
 F src/bitvec.c ef370407e03440b0852d05024fb016b14a471d3d
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 7c4b02afea7efb561361f20408414fec68df898c
-F src/btree.h 58d876d3ed944a8f4f1fd0e67024b385243fc9dd
+F src/btree.c 41bee6e4699e61f9d33beabfcf13caba4467c20a
+F src/btree.h 3748683b382bc3022f23840c0a35d3231b24fc6e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 567574f5756e9e462cf50c5da1895dc43672bafe
 F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
@@ -209,7 +209,7 @@ F src/vdbeInt.h 43183a2a18654fa570219ab65e53a608057c48ae
 F src/vdbeapi.c 86aa27a5f3493aaffb8ac051782aa3b22670d7ed
 F src/vdbeaux.c 1a07329bdf51cc3687f88d9f5b2bd3f1d47cc5a8
 F src/vdbeblob.c 5c5abe9af28316772e7829359f6f9cda2c737ebd
-F src/vdbemem.c 9f4224911176f27b80d6e8f70f0e909aead5091b
+F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
 F src/vtab.c b0216337ae7d27708dedd56d220e6f4fecda92f1
 F src/walker.c ec4b9742a4077ef80346e2f9aaf0f44c2d95087a
 F src/where.c 1a21128db4905a29c287086acd7962cbba1c6f7b
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 7cb1c3ba0759539cb035978fdaff6316775986f3
-R fbcf886b0709cb6861bc0baa12580b58
-U drh
-Z 0ccb491a6522821e67071949c3a88c54
+P 4ac2bdfbb4230b6ceaae87e738fa61036bbe03cb
+R 1d2cfe85976ea7e6f0cff5f4581d1028
+U danielk1977
+Z 958dcf1176b8cee3abaf43be3cebcb59

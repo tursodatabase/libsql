@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.146 2009/05/28 01:00:55 drh Exp $
+** $Id: vdbemem.c,v 1.147 2009/05/28 11:05:57 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -848,13 +848,12 @@ int sqlite3VdbeMemFromBtree(
   int key,          /* If true, retrieve from the btree key, not data. */
   Mem *pMem         /* OUT: Return data in this Mem structure. */
 ){
-  char *zData;       /* Data from the btree layer */
-  int available = 0; /* Number of bytes available on the local btree page */
-  sqlite3 *db;       /* Database connection */
-  int rc = SQLITE_OK;
+  char *zData;        /* Data from the btree layer */
+  int available = 0;  /* Number of bytes available on the local btree page */
+  int rc = SQLITE_OK; /* Return code */
 
-  db = sqlite3BtreeCursorDb(pCur);
-  assert( sqlite3_mutex_held(db->mutex) );
+  /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
+  ** that both the BtShared and database handle mutexes are held. */
   assert( (pMem->flags & MEM_RowSet)==0 );
   if( key ){
     zData = (char *)sqlite3BtreeKeyFetch(pCur, &available);

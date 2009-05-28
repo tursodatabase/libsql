@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.608 2009/05/06 18:57:10 shane Exp $
+** $Id: btree.c,v 1.609 2009/05/28 11:05:57 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3692,6 +3692,7 @@ static const unsigned char *fetchPayload(
 ** in the common case where no overflow pages are used.
 */
 const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
   if( pCur->eState==CURSOR_VALID ){
     return (const void*)fetchPayload(pCur, pAmt, 0);
@@ -3699,6 +3700,7 @@ const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
   return 0;
 }
 const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
+  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
   if( pCur->eState==CURSOR_VALID ){
     return (const void*)fetchPayload(pCur, pAmt, 1);
@@ -4191,14 +4193,6 @@ int sqlite3BtreeEof(BtCursor *pCur){
   ** as well as the boolean result value.
   */
   return (CURSOR_VALID!=pCur->eState);
-}
-
-/*
-** Return the database connection handle for a cursor.
-*/
-sqlite3 *sqlite3BtreeCursorDb(const BtCursor *pCur){
-  assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
-  return pCur->pBtree->db;
 }
 
 /*
