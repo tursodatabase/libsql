@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.438 2009/05/28 01:00:55 drh Exp $
+** $Id: expr.c,v 1.439 2009/05/28 21:04:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1156,12 +1156,6 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
     case TK_COLUMN:
     case TK_AGG_FUNCTION:
     case TK_AGG_COLUMN:
-#ifndef SQLITE_OMIT_SUBQUERY
-    case TK_SELECT:
-    case TK_EXISTS:
-      testcase( pExpr->op==TK_SELECT );
-      testcase( pExpr->op==TK_EXISTS );
-#endif
       testcase( pExpr->op==TK_ID );
       testcase( pExpr->op==TK_COLUMN );
       testcase( pExpr->op==TK_AGG_FUNCTION );
@@ -1169,6 +1163,8 @@ static int exprNodeIsConstant(Walker *pWalker, Expr *pExpr){
       pWalker->u.i = 0;
       return WRC_Abort;
     default:
+      testcase( pExpr->op==TK_SELECT ); /* selectNodeIsConstant will disallow */
+      testcase( pExpr->op==TK_EXISTS ); /* selectNodeIsConstant will disallow */
       return WRC_Continue;
   }
 }
@@ -1274,14 +1270,16 @@ int sqlite3IsRowid(const char *z){
 }
 
 /*
-** Return true if the IN operator optimization is enabled and
-** the SELECT statement p exists and is of the
-** simple form:
+** Return true if we are able to the IN operator optimization on a
+** query of the form
 **
-**     SELECT <column> FROM <table>
+**       x IN (SELECT ...)
 **
-** If this is the case, it may be possible to use an existing table
-** or index instead of generating an epheremal table.
+** Where the SELECT... clause is as specified by the parameter to this
+** routine.
+**
+** The Select object passed in has already been preprocessed and no
+** errors have been found.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 static int isCandidateForInOpt(Select *p){
@@ -1291,19 +1289,21 @@ static int isCandidateForInOpt(Select *p){
   if( p==0 ) return 0;                   /* right-hand side of IN is SELECT */
   if( p->pPrior ) return 0;              /* Not a compound SELECT */
   if( p->selFlags & (SF_Distinct|SF_Aggregate) ){
-      return 0; /* No DISTINCT keyword and no aggregate functions */
+    testcase( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Distinct );
+    testcase( (p->selFlags & (SF_Distinct|SF_Aggregate))==SF_Aggregate );
+    return 0; /* No DISTINCT keyword and no aggregate functions */
   }
-  if( p->pGroupBy ) return 0;            /* Has no GROUP BY clause */
+  assert( p->pGroupBy==0 );              /* Has no GROUP BY clause */
   if( p->pLimit ) return 0;              /* Has no LIMIT clause */
-  if( p->pOffset ) return 0;
+  assert( p->pOffset==0 );               /* No LIMIT means no OFFSET */
   if( p->pWhere ) return 0;              /* Has no WHERE clause */
   pSrc = p->pSrc;
   assert( pSrc!=0 );
   if( pSrc->nSrc!=1 ) return 0;          /* Single term in FROM clause */
-  if( pSrc->a[0].pSelect ) return 0;     /* FROM clause is not a subquery */
+  if( pSrc->a[0].pSelect ) return 0;     /* FROM is not a subquery or view */
   pTab = pSrc->a[0].pTab;
-  if( pTab==0 ) return 0;
-  if( pTab->pSelect ) return 0;          /* FROM clause is not a view */
+  if( NEVER(pTab==0) ) return 0;
+  assert( pTab->pSelect==0 );            /* FROM clause is not a view */
   if( IsVirtual(pTab) ) return 0;        /* FROM clause not a virtual table */
   pEList = p->pEList;
   if( pEList->nExpr!=1 ) return 0;       /* One column in the result set */
@@ -1318,45 +1318,45 @@ static int isCandidateForInOpt(Select *p){
 ** either to test for membership of the (...) set or to iterate through
 ** its members, skipping duplicates.
 **
-** The cursor opened on the structure (database table, database index 
+** The index of the cursor opened on the b-tree (database table, database index 
 ** or ephermal table) is stored in pX->iTable before this function returns.
-** The returned value indicates the structure type, as follows:
+** The returned value of this function indicates the b-tree type, as follows:
 **
 **   IN_INDEX_ROWID - The cursor was opened on a database table.
 **   IN_INDEX_INDEX - The cursor was opened on a database index.
 **   IN_INDEX_EPH -   The cursor was opened on a specially created and
 **                    populated epheremal table.
 **
-** An existing structure may only be used if the SELECT is of the simple
+** An existing b-tree may only be used if the SELECT is of the simple
 ** form:
 **
 **     SELECT <column> FROM <table>
 **
-** If prNotFound parameter is 0, then the structure will be used to iterate
+** If the prNotFound parameter is 0, then the b-tree will be used to iterate
 ** through the set members, skipping any duplicates. In this case an
 ** epheremal table must be used unless the selected <column> is guaranteed
 ** to be unique - either because it is an INTEGER PRIMARY KEY or it
-** is unique by virtue of a constraint or implicit index.
+** has a UNIQUE constraint or UNIQUE index.
 **
-** If the prNotFound parameter is not 0, then the structure will be used 
+** If the prNotFound parameter is not 0, then the b-tree will be used 
 ** for fast set membership tests. In this case an epheremal table must 
 ** be used unless <column> is an INTEGER PRIMARY KEY or an index can 
 ** be found with <column> as its left-most column.
 **
-** When the structure is being used for set membership tests, the user
+** When the b-tree is being used for membership tests, the calling function
 ** needs to know whether or not the structure contains an SQL NULL 
 ** value in order to correctly evaluate expressions like "X IN (Y, Z)".
-** If there is a chance that the structure may contain a NULL value at
+** If there is a chance that the b-tree might contain a NULL value at
 ** runtime, then a register is allocated and the register number written
-** to *prNotFound. If there is no chance that the structure contains a
+** to *prNotFound. If there is no chance that the b-tree contains a
 ** NULL value, then *prNotFound is left unchanged.
 **
 ** If a register is allocated and its location stored in *prNotFound, then
-** its initial value is NULL. If the structure does not remain constant
-** for the duration of the query (i.e. the set is a correlated sub-select), 
-** the value of the allocated register is reset to NULL each time the 
-** structure is repopulated. This allows the caller to use vdbe code 
-** equivalent to the following:
+** its initial value is NULL. If the b-tree does not remain constant
+** for the duration of the query (i.e. the SELECT that generates the b-tree
+** is a correlated subquery) then the value of the allocated register is
+** reset to NULL each time the b-tree is repopulated. This allows the
+** caller to use vdbe code equivalent to the following:
 **
 **   if( register==NULL ){
 **     has_null = <test if data structure contains null>
@@ -1368,21 +1368,17 @@ static int isCandidateForInOpt(Select *p){
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
-  Select *p;
-  int eType = 0;
-  int iTab = pParse->nTab++;
-  int mustBeUnique = !prNotFound;
+  Select *p;                            /* SELECT to the right of IN operator */
+  int eType = 0;                        /* Type of RHS table. IN_INDEX_* */
+  int iTab = pParse->nTab++;            /* Cursor of the RHS table */
+  int mustBeUnique = (prNotFound==0);   /* True if RHS must be unique */
 
-  /* The follwing if(...) expression is true if the SELECT is of the 
-  ** simple form:
-  **
-  **     SELECT <column> FROM <table>
-  **
-  ** If this is the case, it may be possible to use an existing table
-  ** or index instead of generating an epheremal table.
+  /* Check to see if an existing table or index can be used to
+  ** satisfy the query.  This is preferable to generating a new 
+  ** ephemeral table.
   */
   p = (ExprHasProperty(pX, EP_xIsSelect) ? pX->x.pSelect : 0);
-  if( isCandidateForInOpt(p) ){
+  if( pParse->nErr==0 && isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;              /* Database connection */
     Expr *pExpr = p->pEList->a[0].pExpr;   /* Expression <column> */
     int iCol = pExpr->iColumn;             /* Index of column <column> */
@@ -1415,7 +1411,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     }else{
       Index *pIdx;                         /* Iterator variable */
 
-      /* The collation sequence used by the comparison. If an index is to 
+      /* The collation sequence used by the comparison. If an index is to
       ** be used in place of a temp-table, it must be ordered according
       ** to this collation sequence.  */
       CollSeq *pReq = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pExpr);
@@ -1429,7 +1425,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 
       for(pIdx=pTab->pIndex; pIdx && eType==0 && affinity_ok; pIdx=pIdx->pNext){
         if( (pIdx->aiColumn[0]==iCol)
-         && (pReq==sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0))
+         && sqlite3FindCollSeq(db, ENC(db), pIdx->azColl[0], 0)==pReq
          && (!mustBeUnique || (pIdx->nColumn==1 && pIdx->onError!=OE_None))
         ){
           int iMem = ++pParse->nMem;
@@ -1458,6 +1454,9 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   }
 
   if( eType==0 ){
+    /* Could not found an existing able or index to use as the RHS b-tree.
+    ** We will have to generate an ephemeral table to do the job.
+    */
     int rMayHaveNull = 0;
     eType = IN_INDEX_EPH;
     if( prNotFound ){

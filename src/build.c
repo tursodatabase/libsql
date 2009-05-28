@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.546 2009/05/28 01:00:55 drh Exp $
+** $Id: build.c,v 1.547 2009/05/28 21:04:38 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1880,7 +1880,8 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   ** reflect this.
   **
   ** The "#NNN" in the SQL is a special constant that means whatever value
-  ** is in register NNN.  See sqlite3RegisterExpr().
+  ** is in register NNN.  See grammar rules associated with the TK_REGISTER
+  ** token for additional information.
   */
   sqlite3NestedParse(pParse, 
      "UPDATE %Q.%s SET rootpage=%d WHERE #%d AND rootpage=#%d",
