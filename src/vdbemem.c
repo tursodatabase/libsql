@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.145 2009/05/27 10:31:29 drh Exp $
+** $Id: vdbemem.c,v 1.146 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -974,10 +974,15 @@ int sqlite3ValueFromExpr(
   op = pExpr->op;
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
-    zVal = sqlite3DbStrDup(db, pExpr->zToken);
     pVal = sqlite3ValueNew(db);
-    if( !zVal || !pVal ) goto no_mem;
-    sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+    if( pVal==0 ) goto no_mem;
+    if( ExprHasProperty(pExpr, EP_IntValue) ){
+      sqlite3VdbeMemSetInt64(pVal, (i64)pExpr->u.iValue);
+    }else{
+      zVal = sqlite3DbStrDup(db, pExpr->u.zToken);
+      if( zVal==0 ) goto no_mem;
+      sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+    }
     if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
     }else{
@@ -996,11 +1001,11 @@ int sqlite3ValueFromExpr(
 #ifndef SQLITE_OMIT_BLOB_LITERAL
   else if( op==TK_BLOB ){
     int nVal;
-    assert( pExpr->zToken[0]=='x' || pExpr->zToken[0]=='X' );
-    assert( pExpr->zToken[1]=='\'' );
+    assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
+    assert( pExpr->u.zToken[1]=='\'' );
     pVal = sqlite3ValueNew(db);
     if( !pVal ) goto no_mem;
-    zVal = &pExpr->zToken[2];
+    zVal = &pExpr->u.zToken[2];
     nVal = sqlite3Strlen30(zVal)-1;
     assert( zVal[nVal]=='\'' );
     sqlite3VdbeMemSetStr(pVal, sqlite3HexToBlob(db, zVal, nVal), nVal/2,

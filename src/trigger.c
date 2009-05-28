@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.140 2009/05/27 10:31:29 drh Exp $
+** $Id: trigger.c,v 1.141 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -375,15 +375,15 @@ TriggerStep *sqlite3TriggerInsertStep(
 
   pTriggerStep = triggerStepAllocate(db, TK_INSERT, pTableName);
   if( pTriggerStep ){
-    pTriggerStep->pSelect = pSelect;
+    pTriggerStep->pSelect = sqlite3SelectDup(db, pSelect, EXPRDUP_REDUCE);
     pTriggerStep->pIdList = pColumn;
-    pTriggerStep->pExprList = pEList;
+    pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
     pTriggerStep->orconf = orconf;
   }else{
     sqlite3IdListDelete(db, pColumn);
-    sqlite3ExprListDelete(db, pEList);
-    sqlite3SelectDelete(db, pSelect);
   }
+  sqlite3ExprListDelete(db, pEList);
+  sqlite3SelectDelete(db, pSelect);
 
   return pTriggerStep;
 }
@@ -403,14 +403,13 @@ TriggerStep *sqlite3TriggerUpdateStep(
   TriggerStep *pTriggerStep;
 
   pTriggerStep = triggerStepAllocate(db, TK_UPDATE, pTableName);
-  if( pTriggerStep==0 ){
-     sqlite3ExprListDelete(db, pEList);
-     sqlite3ExprDelete(db, pWhere);
-     return 0;
+  if( pTriggerStep ){
+    pTriggerStep->pExprList = sqlite3ExprListDup(db, pEList, EXPRDUP_REDUCE);
+    pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    pTriggerStep->orconf = orconf;
   }
-  pTriggerStep->pExprList = pEList;
-  pTriggerStep->pWhere = pWhere;
-  pTriggerStep->orconf = orconf;
+  sqlite3ExprListDelete(db, pEList);
+  sqlite3ExprDelete(db, pWhere);
   return pTriggerStep;
 }
 
@@ -427,13 +426,11 @@ TriggerStep *sqlite3TriggerDeleteStep(
   TriggerStep *pTriggerStep;
 
   pTriggerStep = triggerStepAllocate(db, TK_DELETE, pTableName);
-  if( pTriggerStep==0 ){
-    sqlite3ExprDelete(db, pWhere);
-    return 0;
+  if( pTriggerStep ){
+    pTriggerStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+    pTriggerStep->orconf = OE_Default;
   }
-  pTriggerStep->pWhere = pWhere;
-  pTriggerStep->orconf = OE_Default;
-
+  sqlite3ExprDelete(db, pWhere);
   return pTriggerStep;
 }
 
@@ -640,7 +637,6 @@ static SrcList *targetSrcList(
   Parse *pParse,       /* The parsing context */
   TriggerStep *pStep   /* The trigger containing the target token */
 ){
-  Token sDb;           /* Dummy database name token */
   int iDb;             /* Index of the database to use */
   SrcList *pSrc;       /* SrcList to be returned */
 

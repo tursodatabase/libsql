@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.876 2009/05/27 10:31:29 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.877 2009/05/28 01:00:55 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -1464,7 +1464,7 @@ struct AggInfo {
 ** help reduce memory requirements, sometimes an Expr object will be
 ** truncated.  And to reduce the number of memory allocations, sometimes
 ** two or more Expr objects will be stored in a single memory allocation,
-** together with Expr.token strings.
+** together with Expr.zToken strings.
 **
 ** If the EP_Reduced and EP_TokenOnly flags are set when
 ** an Expr object is truncated.  When EP_Reduced is set, then all
@@ -1477,7 +1477,10 @@ struct Expr {
   u8 op;                 /* Operation performed by this node */
   char affinity;         /* The affinity of the column or 0 if not a column */
   u16 flags;             /* Various flags.  EP_* See below */
-  char *zToken;          /* Token value. Zero terminated and dequoted */
+  union {
+    char *zToken;          /* Token value. Zero terminated and dequoted */
+    int iValue;            /* Integer value if EP_IntValue */
+  } u;
 
   /* If the EP_TokenOnly flag is set in the Expr.flags mask, then no
   ** space is allocated for the fields below this point. An attempt to
@@ -1498,8 +1501,7 @@ struct Expr {
   *********************************************************************/
 
   int iTable;            /* TK_COLUMN: cursor number of table holding column
-                         ** TK_REGISTER: register number 
-                         ** EP_IntValue: integer value */
+                         ** TK_REGISTER: register number */
   i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
@@ -1525,7 +1527,7 @@ struct Expr {
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
 #define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
 #define EP_FixedDest  0x0400  /* Result needed in a specific register */
-#define EP_IntValue   0x0800  /* Integer value contained in iTable */
+#define EP_IntValue   0x0800  /* Integer value contained in u.iValue */
 #define EP_xIsSelect  0x1000  /* x.pSelect is valid (otherwise x.pList is) */
 
 #define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
@@ -1535,7 +1537,20 @@ struct Expr {
 /*
 ** The following are the meanings of bits in the Expr.flags2 field.
 */
-#define EP2_FreeToken 0x0001  /* Need to call sqlite3DbFree() on Expr.zToken */
+#define EP2_MallocedToken  0x0001  /* Need to sqlite3DbFree() Expr.zToken */
+#define EP2_Irreducible    0x0002  /* Cannot EXPRDUP_REDUCE this Expr */
+
+/*
+** The pseudo-routine sqlite3ExprSetIrreducible sets the EP2_Irreducible
+** flag on an expression structure.  This flag is used for VV&A only.  The
+** routine is implemented as a macro that only works when in debugging mode,
+** so as not to burden production code.
+*/
+#ifdef SQLITE_DEBUG
+# define ExprSetIrreducible(X)  (X)->flags2 |= EP2_Irreducible
+#else
+# define ExprSetIrreducible(X)
+#endif
 
 /*
 ** These macros can be used to test, set, or clear bits in the 

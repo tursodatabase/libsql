@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.519 2009/05/27 10:31:29 drh Exp $
+** $Id: select.c,v 1.520 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -232,6 +232,8 @@ static void addWhereTerm(
   pE = sqlite3PExpr(pParse, TK_EQ, pE1c, pE2c, 0);
   if( pE && isOuterJoin ){
     ExprSetProperty(pE, EP_FromJoin);
+    assert( !ExprHasAnyProperty(pE, EP_TokenOnly|EP_Reduced) );
+    ExprSetIrreducible(pE);
     pE->iRightJoinTable = iRightJoinTable;
   }
   *ppExpr = sqlite3ExprAnd(pParse->db,*ppExpr, pE);
@@ -266,6 +268,8 @@ static void addWhereTerm(
 static void setJoinExpr(Expr *p, int iTable){
   while( p ){
     ExprSetProperty(p, EP_FromJoin);
+    assert( !ExprHasAnyProperty(p, EP_TokenOnly|EP_Reduced) );
+    ExprSetIrreducible(p);
     p->iRightJoinTable = iTable;
     setJoinExpr(p->pLeft, iTable);
     p = p->pRight;
@@ -1127,7 +1131,8 @@ static int selectColumnsFromExprList(
     /* Get an appropriate name for the column
     */
     p = pEList->a[i].pExpr;
-    assert( p->pRight==0 || p->pRight->zToken==0 || p->pRight->zToken[0]!=0 );
+    assert( p->pRight==0 || ExprHasProperty(p->pRight, EP_IntValue)
+               || p->pRight->u.zToken==0 || p->pRight->u.zToken[0]!=0 );
     if( (zName = pEList->a[i].zName)!=0 ){
       /* If the column contains an "AS <name>" phrase, use <name> as the name */
       zName = sqlite3DbStrDup(db, zName);
@@ -1143,7 +1148,8 @@ static int selectColumnsFromExprList(
         zName = sqlite3MPrintf(db, "%s",
                  iCol>=0 ? pTab->aCol[iCol].zName : "rowid");
       }else if( pColExpr->op==TK_ID ){
-        zName = sqlite3MPrintf(db, "%s", pColExpr->zToken);
+        assert( !ExprHasProperty(pColExpr, EP_IntValue) );
+        zName = sqlite3MPrintf(db, "%s", pColExpr->u.zToken);
       }else{
         /* Use the original text of the column expression as its name */
         zName = sqlite3MPrintf(db, "%s", pEList->a[i].zSpan);
@@ -2048,7 +2054,7 @@ static int multiSelectOrderBy(
         Expr *pNew = sqlite3Expr(db, TK_INTEGER, 0);
         if( pNew==0 ) return SQLITE_NOMEM;
         pNew->flags |= EP_IntValue;
-        pNew->iTable = i;
+        pNew->u.iValue = i;
         pOrderBy = sqlite3ExprListAppend(pParse, pOrderBy, pNew);
         pOrderBy->a[nOrderBy++].iCol = (u16)i;
       }
@@ -2896,9 +2902,10 @@ static u8 minMaxQuery(Select *p){
   pEList = pExpr->x.pList;
   if( pEList==0 || pEList->nExpr!=1 ) return 0;
   if( pEList->a[0].pExpr->op!=TK_AGG_COLUMN ) return WHERE_ORDERBY_NORMAL;
-  if( sqlite3StrICmp(pExpr->zToken,"min")==0 ){
+  assert( !ExprHasProperty(pExpr, EP_IntValue) );
+  if( sqlite3StrICmp(pExpr->u.zToken,"min")==0 ){
     return WHERE_ORDERBY_MIN;
-  }else if( sqlite3StrICmp(pExpr->zToken,"max")==0 ){
+  }else if( sqlite3StrICmp(pExpr->u.zToken,"max")==0 ){
     return WHERE_ORDERBY_MAX;
   }
   return WHERE_ORDERBY_NORMAL;
@@ -3119,7 +3126,8 @@ static int selectExpander(Walker *pWalker, Select *p){
         char *zTName;            /* text of name of TABLE */
         if( pE->op==TK_DOT ){
           assert( pE->pLeft!=0 );
-          zTName = pE->pLeft->zToken;
+          assert( !ExprHasProperty(pE->pLeft, EP_IntValue) );
+          zTName = pE->pLeft->u.zToken;
         }else{
           zTName = 0;
         }
@@ -4143,8 +4151,8 @@ select_end:
 ** or from temporary "printf" statements inserted for debugging.
 */
 void sqlite3PrintExpr(Expr *p){
-  if( p->zToken ){
-    sqlite3DebugPrintf("(%s", p->zToken);
+  if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+    sqlite3DebugPrintf("(%s", p->u.zToken);
   }else{
     sqlite3DebugPrintf("(%d", p->op);
   }

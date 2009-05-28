@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.23 2009/05/27 10:31:29 drh Exp $
+** $Id: resolve.c,v 1.24 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -72,15 +72,15 @@ static void resolveAlias(
     }
     pDup->iTable = pEList->a[iCol].iAlias;
   }else{
-    char *zToken = pOrig->zToken;
-    pOrig->zToken = 0;
+    char *zToken = pOrig->u.zToken;
+    pOrig->u.zToken = 0;
     pDup = sqlite3ExprDup(db, pOrig, 0);
-    pOrig->zToken = zToken;
+    pOrig->u.zToken = zToken;
     if( pDup==0 ) return;
     if( zToken ){
       assert( (pDup->flags & (EP_Reduced|EP_TokenOnly))==0 );
-      pDup->flags2 |= EP2_FreeToken;
-      pDup->zToken = sqlite3DbStrDup(db, zToken);
+      pDup->flags2 |= EP2_MallocedToken;
+      pDup->u.zToken = sqlite3DbStrDup(db, zToken);
     }
   }
   if( pExpr->flags & EP_ExpCollate ){
@@ -138,10 +138,12 @@ static int lookupName(
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
+  assert( ~ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
 
   /* Initialize the node to no-match */
   pExpr->iTable = -1;
   pExpr->pTab = 0;
+  ExprSetIrreducible(pExpr);
 
   /* Start at the inner-most context and move outward until a match is found */
   while( pNC && cnt==0 ){
@@ -439,7 +441,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     /* A lone identifier is the name of a column.
     */
     case TK_ID: {
-      lookupName(pParse, 0, 0, pExpr->zToken, pNC, pExpr);
+      lookupName(pParse, 0, 0, pExpr->u.zToken, pNC, pExpr);
       return WRC_Prune;
     }
   
@@ -456,13 +458,13 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       pRight = pExpr->pRight;
       if( pRight->op==TK_ID ){
         zDb = 0;
-        zTable = pExpr->pLeft->zToken;
-        zColumn = pRight->zToken;
+        zTable = pExpr->pLeft->u.zToken;
+        zColumn = pRight->u.zToken;
       }else{
         assert( pRight->op==TK_DOT );
-        zDb = pExpr->pLeft->zToken;
-        zTable = pRight->pLeft->zToken;
-        zColumn = pRight->pRight->zToken;
+        zDb = pExpr->pLeft->u.zToken;
+        zTable = pRight->pLeft->u.zToken;
+        zColumn = pRight->pRight->u.zToken;
       }
       lookupName(pParse, zDb, zTable, zColumn, pNC, pExpr);
       return WRC_Prune;
@@ -484,7 +486,7 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       u8 enc = ENC(pParse->db);   /* The database encoding */
 
       assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      zId = pExpr->zToken;
+      zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(pParse->db, zId, nId, n, enc, 0);
       if( pDef==0 ){
@@ -586,8 +588,8 @@ static int resolveAsName(
 ){
   int i;             /* Loop counter */
 
-  if( pE->op==TK_ID || (pE->op==TK_STRING && pE->zToken[0]!='\'') ){
-    char *zCol = pE->zToken;
+  if( pE->op==TK_ID || (pE->op==TK_STRING && pE->u.zToken[0]!='\'') ){
+    char *zCol = pE->u.zToken;
     for(i=0; i<pEList->nExpr; i++){
       char *zAs = pEList->a[i].zName;
       if( zAs!=0 && sqlite3StrICmp(zAs, zCol)==0 ){
@@ -748,7 +750,7 @@ static int resolveCompoundOrderBy(
         if( pE==0 ) return 1;
         pE->pColl = pColl;
         pE->flags |= EP_IntValue | flags;
-        pE->iTable = iCol;
+        pE->u.iValue = iCol;
         pItem->iCol = (u16)iCol;
         pItem->done = 1;
       }else{

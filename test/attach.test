@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.50 2009/05/27 10:31:30 drh Exp $
+# $Id: attach.test,v 1.51 2009/05/28 01:00:56 drh Exp $
 #
 
 set testdir [file dirname $argv0]

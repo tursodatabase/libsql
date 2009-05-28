@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.437 2009/05/27 10:31:29 drh Exp $
+** $Id: expr.c,v 1.438 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -40,7 +40,8 @@ char sqlite3ExprAffinity(Expr *pExpr){
   }
 #ifndef SQLITE_OMIT_CAST
   if( op==TK_CAST ){
-    return sqlite3AffinityType(pExpr->zToken);
+    assert( !ExprHasProperty(pExpr, EP_IntValue) );
+    return sqlite3AffinityType(pExpr->u.zToken);
   }
 #endif
   if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) 
@@ -388,6 +389,12 @@ int sqlite3SelectExprHeight(Select *p){
 ** parameter is ignored if pToken is NULL or if the token does not
 ** appear to be quoted.  If the quotes were of the form "..." (double-quotes)
 ** then the EP_DblQuoted flag is set on the expression node.
+**
+** Special case:  If op==TK_INTEGER and pToken points to a string that
+** can be translated into a 32-bit integer, then the token is not
+** stored in u.zToken.  Instead, the integer values is written
+** into u.iValue and the EP_IntValue flag is set.  No extra storage
+** is allocated to hold the integer text and the dequote flag is ignored.
 */
 Expr *sqlite3ExprAlloc(
   sqlite3 *db,            /* Handle for sqlite3DbMallocZero() (may be null) */
@@ -396,26 +403,33 @@ Expr *sqlite3ExprAlloc(
   int dequote             /* True to dequote */
 ){
   Expr *pNew;
-  int nExtra;
+  int nExtra = 0;
+  int iValue;
 
   if( pToken ){
-    nExtra = pToken->n+1;
-  }else{
-    nExtra = 0;
+    if( op!=TK_INTEGER || pToken->z==0
+          || sqlite3GetInt32(pToken->z, &iValue)==0 ){
+      nExtra = pToken->n+1;
+    }
   }
   pNew = sqlite3DbMallocZero(db, sizeof(Expr)+nExtra);
   if( pNew ){
     pNew->op = (u8)op;
     pNew->iAgg = -1;
     if( pToken ){
-      int c;
-      pNew->zToken = (char*)&pNew[1];
-      memcpy(pNew->zToken, pToken->z, pToken->n);
-      pNew->zToken[pToken->n] = 0;
-      if( dequote && nExtra>=3 
-           && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
-        sqlite3Dequote(pNew->zToken);
-        if( c=='"' ) pNew->flags |= EP_DblQuoted;
+      if( nExtra==0 ){
+        pNew->flags |= EP_IntValue;
+        pNew->u.iValue = iValue;
+      }else{
+        int c;
+        pNew->u.zToken = (char*)&pNew[1];
+        memcpy(pNew->u.zToken, pToken->z, pToken->n);
+        pNew->u.zToken[pToken->n] = 0;
+        if( dequote && nExtra>=3 
+             && ((c = pToken->z[0])=='\'' || c=='"' || c=='[' || c=='`') ){
+          sqlite3Dequote(pNew->u.zToken);
+          if( c=='"' ) pNew->flags |= EP_DblQuoted;
+        }
       }
     }
 #if SQLITE_MAX_EXPR_DEPTH>0
@@ -550,7 +564,8 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   const char *z;
 
   if( pExpr==0 ) return;
-  z = pExpr->zToken;
+  assert( !ExprHasAnyProperty(pExpr, EP_IntValue|EP_Reduced|EP_TokenOnly) );
+  z = pExpr->u.zToken;
   assert( z!=0 );
   assert( z[0]!=0 );
   if( z[1]==0 ){
@@ -584,7 +599,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
     for(i=0; i<pParse->nVarExpr; i++){
       Expr *pE = pParse->apVarExpr[i];
       assert( pE!=0 );
-      if( memcmp(pE->zToken, z, n)==0 && pE->zToken[n]==0 ){
+      if( memcmp(pE->u.zToken, z, n)==0 && pE->u.zToken[n]==0 ){
         pExpr->iTable = pE->iTable;
         break;
       }
@@ -616,19 +631,13 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
 ** Substructure is deleted.
 */
 void sqlite3ExprClear(sqlite3 *db, Expr *p){
+  assert( p!=0 );
   if( !ExprHasAnyProperty(p, EP_TokenOnly) ){
-    if( ExprHasProperty(p, EP_Reduced) ){
-      /* Subtrees are part of the same memory allocation when EP_Reduced set */
-      if( p->pLeft ) sqlite3ExprClear(db, p->pLeft);
-      if( p->pRight ) sqlite3ExprClear(db, p->pRight);
-    }else{
-      /* Subtrees are separate allocations when EP_Reduced is clear */
-      sqlite3ExprDelete(db, p->pLeft);
-      sqlite3ExprDelete(db, p->pRight);
-      /* Sometimes the zToken is allocated separately */
-      if( p->flags2 & EP2_FreeToken ) sqlite3DbFree(db, p->zToken);
+    sqlite3ExprDelete(db, p->pLeft);
+    sqlite3ExprDelete(db, p->pRight);
+    if( !ExprHasProperty(p, EP_Reduced) && (p->flags2 & EP2_MallocedToken)!=0 ){
+      sqlite3DbFree(db, p->u.zToken);
     }
-    /* x.pSelect and x.pList are always separately allocated */
     if( ExprHasProperty(p, EP_xIsSelect) ){
       sqlite3SelectDelete(db, p->x.pSelect);
     }else{
@@ -643,7 +652,9 @@ void sqlite3ExprClear(sqlite3 *db, Expr *p){
 void sqlite3ExprDelete(sqlite3 *db, Expr *p){
   if( p==0 ) return;
   sqlite3ExprClear(db, p);
-  sqlite3DbFree(db, p);
+  if( !ExprHasProperty(p, EP_Static) ){
+    sqlite3DbFree(db, p);
+  }
 }
 
 /*
@@ -658,34 +669,67 @@ static int exprStructSize(Expr *p){
 }
 
 /*
-** sqlite3ExprDup() has been called to create a copy of expression p with
-** the EXPRDUP_XXX flags passed as the second argument. This function 
-** returns the space required for the copy of the Expr structure only.
-** This is always one of EXPR_FULLSIZE, EXPR_REDUCEDSIZE or EXPR_TOKENONLYSIZE.
+** The dupedExpr*Size() routines each return the number of bytes required
+** to store a copy of an expression or expression tree.  They differ in
+** how much of the tree is measured.
+**
+**     dupedExprStructSize()     Size of only the Expr structure 
+**     dupedExprNodeSize()       Size of Expr + space for token
+**     dupedExprSize()           Expr + token + subtree components
+**
+***************************************************************************
+**
+** The dupedExprStructSize() function returns two values OR-ed together:  
+** (1) the space required for a copy of the Expr structure only and 
+** (2) the EP_xxx flags that indicate what the structure size should be.
+** The return values is always one of:
+**
+**      EXPR_FULLSIZE
+**      EXPR_REDUCEDSIZE   | EP_Reduced
+**      EXPR_TOKENONLYSIZE | EP_TokenOnly
+**
+** The size of the structure can be found by masking the return value
+** of this routine with 0xfff.  The flags can be found by masking the
+** return value with EP_Reduced|EP_TokenOnly.
+**
+** Note that with flags==EXPRDUP_REDUCE, this routines works on full-size
+** (unreduced) Expr objects as they or originally constructed by the parser.
+** During expression analysis, extra information is computed and moved into
+** later parts of teh Expr object and that extra information might get chopped
+** off if the expression is reduced.  Note also that it does not work to
+** make a EXPRDUP_REDUCE copy of a reduced expression.  It is only legal
+** to reduce a pristine expression tree from the parser.  The implementation
+** of dupedExprStructSize() contain multiple assert() statements that attempt
+** to enforce this constraint.
 */
 static int dupedExprStructSize(Expr *p, int flags){
   int nSize;
+  assert( flags==EXPRDUP_REDUCE || flags==0 ); /* Only one flag value allowed */
   if( 0==(flags&EXPRDUP_REDUCE) ){
     nSize = EXPR_FULLSIZE;
-  }else if( p->pLeft || p->pRight || p->pColl || p->x.pList ){
-    nSize = EXPR_REDUCEDSIZE;
   }else{
-    nSize = EXPR_TOKENONLYSIZE;
+    assert( !ExprHasAnyProperty(p, EP_TokenOnly|EP_Reduced) );
+    assert( !ExprHasProperty(p, EP_FromJoin) ); 
+    assert( (p->flags2 & EP2_MallocedToken)==0 );
+    assert( (p->flags2 & EP2_Irreducible)==0 );
+    if( p->pLeft || p->pRight || p->pColl || p->x.pList ){
+      nSize = EXPR_REDUCEDSIZE | EP_Reduced;
+    }else{
+      nSize = EXPR_TOKENONLYSIZE | EP_TokenOnly;
+    }
   }
   return nSize;
 }
 
 /*
-** sqlite3ExprDup() has been called to create a copy of expression p with
-** the EXPRDUP_XXX passed as the second argument. This function returns
-** the space in bytes required to store the copy of the Expr structure
-** and the copies of the Expr.zToken (if applicable)
-** string buffers.
+** This function returns the space in bytes required to store the copy 
+** of the Expr structure and a copy of the Expr.u.zToken string (if that
+** string is defined.)
 */
 static int dupedExprNodeSize(Expr *p, int flags){
-  int nByte = dupedExprStructSize(p, flags);
-  if( p->zToken ){
-    nByte += sqlite3Strlen30(p->zToken)+1;
+  int nByte = dupedExprStructSize(p, flags) & 0xfff;
+  if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+    nByte += sqlite3Strlen30(p->u.zToken)+1;
   }
   return ROUND8(nByte);
 }
@@ -696,7 +740,7 @@ static int dupedExprNodeSize(Expr *p, int flags){
 ** mask containing EXPRDUP_XXX flags.
 **
 ** The value returned includes space to create a copy of the Expr struct
-** itself and the buffer referred to by Expr.zToken, if any.
+** itself and the buffer referred to by Expr.u.zToken, if any.
 **
 ** If the EXPRDUP_REDUCE flag is set, then the return value includes 
 ** space to duplicate all Expr nodes in the tree formed by Expr.pLeft 
@@ -717,7 +761,7 @@ static int dupedExprSize(Expr *p, int flags){
 /*
 ** This function is similar to sqlite3ExprDup(), except that if pzBuffer 
 ** is not NULL then *pzBuffer is assumed to point to a buffer large enough 
-** to store the copy of expression p, the copies of p->zToken
+** to store the copy of expression p, the copies of p->u.zToken
 ** (if applicable), and the copies of the p->pLeft and p->pRight expressions,
 ** if any. Before returning, *pzBuffer is set to the first byte passed the
 ** portion of the buffer copied into by this function.
@@ -727,12 +771,14 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
   if( p ){
     const int isReduced = (flags&EXPRDUP_REDUCE);
     u8 *zAlloc;
+    u32 staticFlag = 0;
 
     assert( pzBuffer==0 || isReduced );
 
     /* Figure out where to write the new Expr structure. */
     if( pzBuffer ){
       zAlloc = *pzBuffer;
+      staticFlag = EP_Static;
     }else{
       zAlloc = sqlite3DbMallocRaw(db, dupedExprSize(p, flags));
     }
@@ -742,10 +788,16 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
       /* Set nNewSize to the size allocated for the structure pointed to
       ** by pNew. This is either EXPR_FULLSIZE, EXPR_REDUCEDSIZE or
       ** EXPR_TOKENONLYSIZE. nToken is set to the number of bytes consumed
-      ** by the copy of the p->zToken string (if any).
+      ** by the copy of the p->u.zToken string (if any).
       */
-      const int nNewSize = dupedExprStructSize(p, flags);
-      const int nToken = (p->zToken ? sqlite3Strlen30(p->zToken) + 1 : 0);
+      const unsigned nStructSize = dupedExprStructSize(p, flags);
+      const int nNewSize = nStructSize & 0xfff;
+      int nToken;
+      if( !ExprHasProperty(p, EP_IntValue) && p->u.zToken ){
+        nToken = sqlite3Strlen30(p->u.zToken) + 1;
+      }else{
+        nToken = 0;
+      }
       if( isReduced ){
         assert( ExprHasProperty(p, EP_Reduced)==0 );
         memcpy(zAlloc, p, nNewSize);
@@ -755,17 +807,15 @@ static Expr *exprDup(sqlite3 *db, Expr *p, int flags, u8 **pzBuffer){
         memset(&zAlloc[nSize], 0, EXPR_FULLSIZE-nSize);
       }
 
-      /* Set the EP_Reduced and EP_TokenOnly flags appropriately. */
-      pNew->flags &= ~(EP_Reduced|EP_TokenOnly);
-      switch( nNewSize ){
-        case EXPR_REDUCEDSIZE:   pNew->flags |= EP_Reduced; break;
-        case EXPR_TOKENONLYSIZE: pNew->flags |= EP_TokenOnly; break;
-      }
+      /* Set the EP_Reduced, EP_TokenOnly, and EP_Static flags appropriately. */
+      pNew->flags &= ~(EP_Reduced|EP_TokenOnly|EP_Static);
+      pNew->flags |= nStructSize & (EP_Reduced|EP_TokenOnly);
+      pNew->flags |= staticFlag;
 
-      /* Copy the p->zToken string, if any. */
+      /* Copy the p->u.zToken string, if any. */
       if( nToken ){
-        char *zToken = pNew->zToken = (char*)&zAlloc[nNewSize];
-        memcpy(zToken, p->zToken, nToken);
+        char *zToken = pNew->u.zToken = (char*)&zAlloc[nNewSize];
+        memcpy(zToken, p->u.zToken, nToken);
       }
 
       if( 0==((p->flags|pNew->flags) & EP_TokenOnly) ){
@@ -1180,12 +1230,13 @@ int sqlite3ExprIsConstantOrFunction(Expr *p){
 int sqlite3ExprIsInteger(Expr *p, int *pValue){
   int rc = 0;
   if( p->flags & EP_IntValue ){
-    *pValue = p->iTable;
+    *pValue = p->u.iValue;
     return 1;
   }
   switch( p->op ){
     case TK_INTEGER: {
-      rc = sqlite3GetInt32(p->zToken, pValue);
+      rc = sqlite3GetInt32(p->u.zToken, pValue);
+      assert( rc==0 );
       break;
     }
     case TK_UPLUS: {
@@ -1203,9 +1254,11 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
     default: break;
   }
   if( rc ){
+    assert( ExprHasAnyProperty(p, EP_Reduced|EP_TokenOnly)
+               || (p->flags2 & EP2_MallocedToken)==0 );
     p->op = TK_INTEGER;
     p->flags |= EP_IntValue;
-    p->iTable = *pValue;
+    p->u.iValue = *pValue;
   }
   return rc;
 }
@@ -1602,6 +1655,7 @@ void sqlite3CodeSubselect(
         return;
       }
       pExpr->iColumn = dest.iParm;
+      ExprSetIrreducible(pExpr);
       break;
     }
   }
@@ -1662,12 +1716,12 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
 static void codeInteger(Vdbe *v, Expr *pExpr, int negFlag, int iMem){
   const char *z;
   if( pExpr->flags & EP_IntValue ){
-    int i = pExpr->iTable;
+    int i = pExpr->u.iValue;
     if( negFlag ) i = -i;
     sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
-  }else if( (z = pExpr->zToken)!=0 ){
+  }else if( (z = pExpr->u.zToken)!=0 ){
     int i;
-    int n = sqlite3Strlen30(pExpr->zToken);
+    int n = sqlite3Strlen30(pExpr->u.zToken);
     assert( !sqlite3Isdigit(z[n]) );
     if( sqlite3GetInt32(z, &i) ){
       if( negFlag ) i = -i;
@@ -2078,11 +2132,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_FLOAT: {
-      codeReal(v, pExpr->zToken, 0, target);
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      codeReal(v, pExpr->u.zToken, 0, target);
       break;
     }
     case TK_STRING: {
-      sqlite3VdbeAddOp4(v, OP_String8, 0, target, 0, pExpr->zToken, 0);
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      sqlite3VdbeAddOp4(v, OP_String8, 0, target, 0, pExpr->u.zToken, 0);
       break;
     }
     case TK_NULL: {
@@ -2094,9 +2150,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       int n;
       const char *z;
       char *zBlob;
-      assert( pExpr->zToken[0]=='x' || pExpr->zToken[0]=='X' );
-      assert( pExpr->zToken[1]=='\'' );
-      z = &pExpr->zToken[2];
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( pExpr->u.zToken[0]=='x' || pExpr->u.zToken[0]=='X' );
+      assert( pExpr->u.zToken[1]=='\'' );
+      z = &pExpr->u.zToken[2];
       n = sqlite3Strlen30(z) - 1;
       assert( z[n]=='\'' );
       zBlob = sqlite3HexToBlob(sqlite3VdbeDb(v), z, n);
@@ -2107,9 +2164,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_VARIABLE: {
       int iPrior;
       VdbeOp *pOp;
-      assert( pExpr->zToken!=0 );
-      assert( pExpr->zToken[0]!=0 );
-      if( pExpr->zToken[1]==0
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      assert( pExpr->u.zToken!=0 );
+      assert( pExpr->u.zToken[0]!=0 );
+      if( pExpr->u.zToken[1]==0
          && (iPrior = sqlite3VdbeCurrentAddr(v)-1)>=0
          && (pOp = sqlite3VdbeGetOp(v, iPrior))->opcode==OP_Variable
          && pOp->p1+pOp->p3==pExpr->iTable
@@ -2124,8 +2182,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         pOp->p3++;
       }else{
         sqlite3VdbeAddOp3(v, OP_Variable, pExpr->iTable, target, 1);
-        if( pExpr->zToken[1]!=0 ){
-          sqlite3VdbeChangeP4(v, -1, pExpr->zToken, 0);
+        if( pExpr->u.zToken[1]!=0 ){
+          sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
         }
       }
       break;
@@ -2143,7 +2201,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       /* Expressions of the form:   CAST(pLeft AS token) */
       int aff, to_op;
       inReg = sqlite3ExprCodeTarget(pParse, pExpr->pLeft, target);
-      aff = sqlite3AffinityType(pExpr->zToken);
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      aff = sqlite3AffinityType(pExpr->u.zToken);
       to_op = aff - SQLITE_AFF_TEXT + OP_ToText;
       assert( to_op==OP_ToText    || aff!=SQLITE_AFF_TEXT    );
       assert( to_op==OP_ToBlob    || aff!=SQLITE_AFF_NONE    );
@@ -2236,7 +2295,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       Expr *pLeft = pExpr->pLeft;
       assert( pLeft );
       if( pLeft->op==TK_FLOAT ){
-        codeReal(v, pLeft->zToken, 1, target);
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        codeReal(v, pLeft->u.zToken, 1, target);
       }else if( pLeft->op==TK_INTEGER ){
         codeInteger(v, pLeft, 1, target);
       }else{
@@ -2279,7 +2339,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_AGG_FUNCTION: {
       AggInfo *pInfo = pExpr->pAggInfo;
       if( pInfo==0 ){
-        sqlite3ErrorMsg(pParse, "misuse of aggregate: %s()", pExpr->zToken);
+        assert( !ExprHasProperty(pExpr, EP_IntValue) );
+        sqlite3ErrorMsg(pParse, "misuse of aggregate: %s()", pExpr->u.zToken);
       }else{
         inReg = pInfo->aFunc[pExpr->iAgg].iMem;
       }
@@ -2306,7 +2367,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         pFarg = pExpr->x.pList;
       }
       nFarg = pFarg ? pFarg->nExpr : 0;
-      zId = pExpr->zToken;
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(db, zId, nId, nFarg, enc, 0);
       assert( pDef!=0 );
@@ -2589,8 +2651,9 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
          assert( pExpr->affinity==OE_Rollback ||
                  pExpr->affinity == OE_Abort ||
                  pExpr->affinity == OE_Fail );
+         assert( !ExprHasProperty(pExpr, EP_IntValue) );
          sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->affinity, 0,
-                           pExpr->zToken, 0);
+                           pExpr->u.zToken, 0);
       } else {
          assert( pExpr->affinity == OE_Ignore );
          sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0);
@@ -3115,6 +3178,8 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   if( pA==0||pB==0 ){
     return pB==pA;
   }
+  assert( !ExprHasAnyProperty(pA, EP_TokenOnly|EP_Reduced) );
+  assert( !ExprHasAnyProperty(pB, EP_TokenOnly|EP_Reduced) );
   if( ExprHasProperty(pA, EP_xIsSelect) || ExprHasProperty(pB, EP_xIsSelect) ){
     return 0;
   }
@@ -3135,9 +3200,13 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   }
 
   if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 0;
-  if( pA->op!=TK_COLUMN && pA->zToken ){
-    if( pB->zToken==0 ) return 0;
-    if( sqlite3StrICmp(pA->zToken,pB->zToken)!=0 ){
+  if( ExprHasProperty(pA, EP_IntValue) ){
+    if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
+      return 0;
+    }
+  }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
+    if( ExprHasProperty(pB, EP_IntValue) || pB->u.zToken==0 ) return 0;
+    if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 0;
     }
   }
@@ -3204,6 +3273,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         struct SrcList_item *pItem = pSrcList->a;
         for(i=0; i<pSrcList->nSrc; i++, pItem++){
           struct AggInfo_col *pCol;
+          assert( !ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
           if( pExpr->iTable==pItem->iCursor ){
             /* If we reach this point, it means that pExpr refers to a table
             ** that is in the FROM clause of the aggregate query.  
@@ -3252,6 +3322,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             ** Convert the pExpr to be a TK_AGG_COLUMN referring to that
             ** pAggInfo->aCol[] entry.
             */
+            ExprSetIrreducible(pExpr);
             pExpr->pAggInfo = pAggInfo;
             pExpr->op = TK_AGG_COLUMN;
             pExpr->iAgg = k;
@@ -3284,8 +3355,9 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             pItem = &pAggInfo->aFunc[i];
             pItem->pExpr = pExpr;
             pItem->iMem = ++pParse->nMem;
+            assert( !ExprHasProperty(pExpr, EP_IntValue) );
             pItem->pFunc = sqlite3FindFunction(pParse->db,
-                   pExpr->zToken, sqlite3Strlen30(pExpr->zToken),
+                   pExpr->u.zToken, sqlite3Strlen30(pExpr->u.zToken),
                    pExpr->x.pList ? pExpr->x.pList->nExpr : 0, enc, 0);
             if( pExpr->flags & EP_Distinct ){
               pItem->iDistinct = pParse->nTab++;
@@ -3296,6 +3368,8 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         }
         /* Make pExpr point to the appropriate pAggInfo->aFunc[] entry
         */
+        assert( !ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
+        ExprSetIrreducible(pExpr);
         pExpr->iAgg = i;
         pExpr->pAggInfo = pAggInfo;
         return WRC_Prune;

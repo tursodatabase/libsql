@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.91 2009/05/27 10:31:29 drh Exp $
+** $Id: attach.c,v 1.92 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -41,7 +41,7 @@ static int resolveAttachExpr(NameContext *pName, Expr *pExpr)
     if( pExpr->op!=TK_ID ){
       rc = sqlite3ResolveExprNames(pName, pExpr);
       if( rc==SQLITE_OK && !sqlite3ExprIsConstant(pExpr) ){
-        sqlite3ErrorMsg(pName->pParse, "invalid name: \"%s\"", pExpr->zToken);
+        sqlite3ErrorMsg(pName->pParse, "invalid name: \"%s\"", pExpr->u.zToken);
         return SQLITE_ERROR;
       }
     }else{
@@ -312,7 +312,7 @@ static void codeAttach(
 
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( pAuthArg ){
-    char *zAuthArg = pAuthArg->zToken;
+    char *zAuthArg = pAuthArg->u.zToken;
     if( zAuthArg==0 ){
       goto attach_end;
     }

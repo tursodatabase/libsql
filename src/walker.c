@@ -12,7 +12,7 @@
 ** This file contains routines used for walking the parser tree for
 ** an SQL statement.
 **
-** $Id: walker.c,v 1.5 2009/05/27 10:31:29 drh Exp $
+** $Id: walker.c,v 1.6 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

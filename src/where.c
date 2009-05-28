@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.398 2009/05/27 10:31:29 drh Exp $
+** $Id: where.c,v 1.399 2009/05/28 01:00:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -658,7 +658,7 @@ static int isLikeOrGlob(
       (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
     return 0;
   }
-  z = pRight->zToken;
+  z = pRight->u.zToken;
   cnt = 0;
   if( z ){
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
@@ -691,7 +691,7 @@ static int isMatchOfColumn(
   if( pExpr->op!=TK_FUNCTION ){
     return 0;
   }
-  if( sqlite3StrICmp(pExpr->zToken,"match")!=0 ){
+  if( sqlite3StrICmp(pExpr->u.zToken,"match")!=0 ){
     return 0;
   }
   pList = pExpr->x.pList;
@@ -1161,12 +1161,12 @@ static void exprAnalyze(
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pRight = pExpr->x.pList->a[0].pExpr;
-    pStr1 = sqlite3Expr(db, TK_STRING, pRight->zToken);
-    if( pStr1 ) pStr1->zToken[nPattern] = 0;
+    pStr1 = sqlite3Expr(db, TK_STRING, pRight->u.zToken);
+    if( pStr1 ) pStr1->u.zToken[nPattern] = 0;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
     if( !db->mallocFailed ){
       u8 c, *pC;
-      pC = (u8*)&pStr2->zToken[nPattern-1];
+      pC = (u8*)&pStr2->u.zToken[nPattern-1];
       c = *pC;
       if( noCase ){
         if( c=='@' ) isComplete = 0;
