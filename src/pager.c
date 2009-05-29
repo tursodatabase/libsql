@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.587 2009/05/13 07:52:06 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.588 2009/05/29 00:30:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3384,18 +3384,31 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
   if( rc==SQLITE_OK && exists ){
     int locked;                 /* True if some process holds a RESERVED lock */
+
+    /* Race condition here:  Another process might have been holding the
+    ** the RESERVED lock and have a journal open at the sqlite3OsAccess() 
+    ** call above, but then delete the journal and drop the lock before
+    ** we get to the following sqlite3OsCheckReservedLock() call.  If that
+    ** is the case, this routine might think there is a hot journal when
+    ** in fact there is none.  This results in a false-positive which will
+    ** be dealt with by the playback routine under.  Ticket #3883.
+    */
     rc = sqlite3OsCheckReservedLock(pPager->fd, &locked);
     if( rc==SQLITE_OK && !locked ){
       int nPage;
 
       /* Check the size of the database file. If it consists of 0 pages,
       ** then delete the journal file. See the header comment above for 
-      ** the reasoning here.
+      ** the reasoning here.  Delete the obsolete journal file under
+      ** a RESERVED lock to avoid race conditions.
       */
       rc = sqlite3PagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
-          rc = sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+          if( sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
+            sqlite3OsDelete(pVfs, pPager->zJournal, 0);
+            sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+          }
         }else{
           /* The journal file exists and no other connection has a reserved
           ** or greater lock on the database file. Now check that there is
@@ -3413,6 +3426,18 @@ static int hasHotJournal(Pager *pPager, int *pExists){
             }
             sqlite3OsClose(pPager->jfd);
             *pExists = (first!=0);
+          }else{
+            /* If we cannot open the rollback journal file in order to see if
+            ** its has a zero header, that might be due to an I/O error, or
+            ** it might be due to the race condition described above and in
+            ** ticket #3883.  Either way, assume that the journal is hot.
+            ** This might be a false positive.  But if it is, then the
+            ** automatic journal playback and recovery mechanism will deal
+            ** with it under an EXCLUSIVE lock where we do not need to
+            ** worry so much with race conditions.
+            */
+            *pExists = 1;
+            rc = SQLITE_OK;
           }
         }
       }

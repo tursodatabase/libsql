@@ -1,5 +1,5 @@
-C Remove\sreferences\sto\sdeleted\sfunction\ssqlite3ExprRegister().\s\sChanges\sto\nthe\sexpr.c\ssource\smodule\sto\spromote\sbetter\stesting.\s(CVS\s6686)
-D 2009-05-28T21:04:38
+C Modify\sthe\shasHotJournal()\sroutine\sto\sreturn\sa\sfalse-positive\sif\sit\sis\nunable\sto\sopen\sthe\sjournal\sfile\sto\scheck\sits\sheader\sdue\sto\sa\srace\ncondition.\s\sProcessing\sdownstream\sof\shasHotJournal()\salready\sknows\show\sto\ndeal\swith\sfalse-positives.\s\sTicket\s#3883.\s(CVS\s6687)
+D 2009-05-29T00:30:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 8bf62fefc7afefc065d37611ebfd1fe0e1c2eb39
+F src/pager.c 6c0fc1c078fcdeefe969a36a186fb147c459c600
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y 07690df997d50b3fdb5e5121e5a27f1a080db13d
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 3b46142532934d17aa136c2e56e58e7828df0f54
-R 6a3a4185326252490b36e399fe92cbcc
+P 6ae4ad6ebee4db88c411df97bb1de574708dd53c
+R 3928c5dff5e5480b3ec95781956d3c18
 U drh
-Z 2830ef720e4e0990284e68ba861f067a
+Z a92eea42d5738ee5a30dde1c2bfece9a
