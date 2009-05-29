@@ -12,7 +12,7 @@
 # focus of this script is testing the ATTACH and DETACH commands
 # and related functionality.
 #
-# $Id: attach.test,v 1.51 2009/05/28 01:00:56 drh Exp $
+# $Id: attach.test,v 1.52 2009/05/29 14:39:08 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -756,7 +756,7 @@ ifcapable subquery {
       DETACH RAISE ( IGNORE ) IN ( SELECT "AAAAAA" . * ORDER BY 
       REGISTER LIMIT "AAAAAA" . "AAAAAA" OFFSET RAISE ( IGNORE ) NOT NULL )
     }
-  } {1 {invalid name: ""}}
+  } {1 {no such table: AAAAAA}}
 }
 
 # Create a malformed file (a file that is not a valid database)

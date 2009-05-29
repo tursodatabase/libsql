@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.26 2009/05/28 14:34:50 drh Exp $
+** $Id: resolve.c,v 1.27 2009/05/29 14:39:08 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1127,7 +1127,7 @@ int sqlite3ResolveExprNames(
 #if SQLITE_MAX_EXPR_DEPTH>0
   pNC->pParse->nHeight -= pExpr->nHeight;
 #endif
-  if( pNC->nErr>0 ){
+  if( pNC->nErr>0 || w.pParse->nErr>0 ){
     ExprSetProperty(pExpr, EP_Error);
   }
   if( pNC->hasAgg ){

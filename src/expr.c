@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.439 2009/05/28 21:04:38 drh Exp $
+** $Id: expr.c,v 1.440 2009/05/29 14:39:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1378,7 +1378,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   ** ephemeral table.
   */
   p = (ExprHasProperty(pX, EP_xIsSelect) ? pX->x.pSelect : 0);
-  if( pParse->nErr==0 && isCandidateForInOpt(p) ){
+  if( ALWAYS(pParse->nErr==0) && isCandidateForInOpt(p) ){
     sqlite3 *db = pParse->db;              /* Database connection */
     Expr *pExpr = p->pEList->a[0].pExpr;   /* Expression <column> */
     int iCol = pExpr->iColumn;             /* Index of column <column> */
@@ -1489,17 +1489,29 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 ** to some integer key column of a table B-Tree. In this case, use an
 ** intkey B-Tree to store the set of IN(...) values instead of the usual
 ** (slower) variable length keys B-Tree.
+**
+** If rMayHaveNull is non-zero, that means that the operation is an IN
+** (not a SELECT or EXISTS) and that the RHS might contains NULLs.
+** Furthermore, the IN is in a WHERE clause and that we really want
+** to iterate over the RHS of the IN operator in order to quickly locate
+** all corresponding LHS elements.  All this routine does is initialize
+** the register given by rMayHaveNull to NULL.  Calling routines will take
+** care of changing this register value to non-NULL if the RHS is NULL-free.
+**
+** If rMayHaveNull is zero, that means that the subquery is being used
+** for membership testing only.  There is no need to initialize any
+** registers to indicate the presense or absence of NULLs on the RHS.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
 void sqlite3CodeSubselect(
-  Parse *pParse, 
-  Expr *pExpr, 
-  int rMayHaveNull,
-  int isRowid
+  Parse *pParse,          /* Parsing context */
+  Expr *pExpr,            /* The IN, SELECT, or EXISTS operator */
+  int rMayHaveNull,       /* Register that records whether NULLs exist in RHS */
+  int isRowid             /* If true, LHS of IN operator is a rowid */
 ){
   int testAddr = 0;                       /* One-time test address */
   Vdbe *v = sqlite3GetVdbe(pParse);
-  if( v==0 ) return;
+  if( NEVER(v==0) ) return;
   sqlite3ExprCachePush(pParse);
 
   /* This code must be run in its entirety every time it is encountered
@@ -1567,11 +1579,11 @@ void sqlite3CodeSubselect(
           return;
         }
         pEList = pExpr->x.pSelect->pEList;
-        if( pEList && pEList->nExpr>0 ){ 
+        if( ALWAYS(pEList!=0 && pEList->nExpr>0) ){ 
           keyInfo.aColl[0] = sqlite3BinaryCompareCollSeq(pParse, pExpr->pLeft,
               pEList->a[0].pExpr);
         }
-      }else if( pExpr->x.pList ){
+      }else if( pExpr->x.pList!=0 ){
         /* Case 2:     expr IN (exprlist)
         **
         ** For each expression, build an index key from the evaluation and
@@ -1627,14 +1639,20 @@ void sqlite3CodeSubselect(
     }
 
     case TK_EXISTS:
-    case TK_SELECT: {
-      /* This has to be a scalar SELECT.  Generate code to put the
+    case TK_SELECT:
+    default: {
+      testcase( pExpr->op==TK_EXISTS );
+      testcase( pExpr->op==TK_SELECT );
+      assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
+      /* If this has to be a scalar SELECT.  Generate code to put the
       ** value of this select in a memory cell and record the number
-      ** of the memory cell in iColumn.
+      ** of the memory cell in iColumn.  If this is an EXISTS, write
+      ** an integer 0 (not exists) or 1 (exists) into a memory cell
+      ** and record that memory cell in iColumn.
       */
-      static const Token one = { "1", 1 };
-      Select *pSel;
-      SelectDest dest;
+      static const Token one = { "1", 1 };  /* Token for literal value 1 */
+      Select *pSel;                         /* SELECT statement to encode */
+      SelectDest dest;                      /* How to deal with SELECt result */
 
       assert( ExprHasProperty(pExpr, EP_xIsSelect) );
       pSel = pExpr->x.pSelect;
@@ -1688,8 +1706,7 @@ static char *dup8bytes(Vdbe *v, const char *in){
 ** like the continuation of the number.
 */
 static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
-  assert( z || v==0 || sqlite3VdbeDb(v)->mallocFailed );
-  if( z ){
+  if( ALWAYS(z!=0) ){
     double value;
     char *zV;
     sqlite3AtoF(z, &value);
@@ -1713,19 +1730,14 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
 ** like the continuation of the number.
 */
 static void codeInteger(Vdbe *v, Expr *pExpr, int negFlag, int iMem){
-  const char *z;
   if( pExpr->flags & EP_IntValue ){
     int i = pExpr->u.iValue;
     if( negFlag ) i = -i;
     sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
-  }else if( (z = pExpr->u.zToken)!=0 ){
-    int i;
-    int n = sqlite3Strlen30(pExpr->u.zToken);
-    assert( !sqlite3Isdigit(z[n]) );
-    if( sqlite3GetInt32(z, &i) ){
-      if( negFlag ) i = -i;
-      sqlite3VdbeAddOp2(v, OP_Integer, i, iMem);
-    }else if( sqlite3FitsIn64Bits(z, negFlag) ){
+  }else{
+    const char *z = pExpr->u.zToken;
+    assert( z!=0 );
+    if( sqlite3FitsIn64Bits(z, negFlag) ){
       i64 value;
       char *zV;
       sqlite3Atoi64(z, &value);

@@ -1,5 +1,5 @@
-C Still\smore\srefinements\sto\sthe\shasHotJournal()\sfix\sof\sticket\s#3883.\s(CVS\s6689)
-D 2009-05-29T11:57:38
+C Refinements\sin\sexpression\shandling\slogic\sthat\shave\sresulted\sfrom\srecent\nstructural\stesting.\s(CVS\s6690)
+D 2009-05-29T14:39:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c cb791855c7948cecc96def9d97989879ca26f257
-F src/expr.c 9d25d7229719334dc87909f8094b10d033b994f1
+F src/expr.c ba5ba6a6332ec07d81cda97585dabf6c88bffbab
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9d7b47729c337c5e4b78d795922ed34eec4aef67
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -156,7 +156,7 @@ F src/pragma.c d4a6fd74fd1dba0f22c8930791f7fbbe80d2ef26
 F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c fc6fdd01305518fd1462e1621213e63bd011a115
+F src/resolve.c 42065c05d4dd56894d1ae232974668674435e468
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c fd1737a667bab296f50049a841b3aba5ec89418e
 F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
@@ -226,7 +226,7 @@ F test/async.test c042ff6d2a29f65e05d498a52448229d25bb5d9d
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
 F test/async4.test bdb997924394a2034ff3df1d839ff95b2e602ed4
-F test/attach.test e710d543769305942e9354cee5aba8cfcbe89577
+F test/attach.test 1d1be27b9e4c654f9bb14d011a4a87753c0b197a
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a2ba61d927a06c390a9a818a013328092b802222
-R df5faf03661654bce8e5953dac271838
+P 726b425e43e5d864e7e83853bdf134debc1ffb59
+R 7782c740d0e684d85e0d73fa4ed3175a
 U drh
-Z c67a8bef852bbf3b9d8397d68afe4414
+Z 3b276276ba95400e6569bffb7e01828d
