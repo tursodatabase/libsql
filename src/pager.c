@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.589 2009/05/29 10:55:30 drh Exp $
+** @(#) $Id: pager.c,v 1.590 2009/05/29 11:57:38 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3391,7 +3391,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
     ** we get to the following sqlite3OsCheckReservedLock() call.  If that
     ** is the case, this routine might think there is a hot journal when
     ** in fact there is none.  This results in a false-positive which will
-    ** be dealt with by the playback routine under.  Ticket #3883.
+    ** be dealt with by the playback routine.  Ticket #3883.
     */
     rc = sqlite3OsCheckReservedLock(pPager->fd, &locked);
     if( rc==SQLITE_OK && !locked ){
@@ -3400,16 +3400,18 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       /* Check the size of the database file. If it consists of 0 pages,
       ** then delete the journal file. See the header comment above for 
       ** the reasoning here.  Delete the obsolete journal file under
-      ** a RESERVED lock to avoid race conditions.
+      ** a RESERVED lock to avoid race conditions and to avoid violating
+      ** [H33020].
       */
       rc = sqlite3PagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
           sqlite3BeginBenignMalloc();
-          if( pPager->exclusiveMode
+          if( pPager->state>=PAGER_RESERVED
                  ||  sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-            if( !pPager->exclusiveMode ){
+            assert( pPager->state>=PAGER_SHARED );
+            if( pPager->state==PAGER_SHARED ){
               sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
             }
           }
