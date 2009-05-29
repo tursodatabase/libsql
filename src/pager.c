@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.588 2009/05/29 00:30:30 drh Exp $
+** @(#) $Id: pager.c,v 1.589 2009/05/29 10:55:30 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3405,10 +3405,15 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       rc = sqlite3PagerPagecount(pPager, &nPage);
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
-          if( sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
+          sqlite3BeginBenignMalloc();
+          if( pPager->exclusiveMode
+                 ||  sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-            sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+            if( !pPager->exclusiveMode ){
+              sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+            }
           }
+          sqlite3EndBenignMalloc();
         }else{
           /* The journal file exists and no other connection has a reserved
           ** or greater lock on the database file. Now check that there is
@@ -3426,7 +3431,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
             }
             sqlite3OsClose(pPager->jfd);
             *pExists = (first!=0);
-          }else{
+          }else if( rc==SQLITE_CANTOPEN ){
             /* If we cannot open the rollback journal file in order to see if
             ** its has a zero header, that might be due to an I/O error, or
             ** it might be due to the race condition described above and in
