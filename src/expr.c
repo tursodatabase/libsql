@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.440 2009/05/29 14:39:08 drh Exp $
+** $Id: expr.c,v 1.441 2009/05/29 19:00:13 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1773,6 +1773,9 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   int idxLru;
   struct yColCache *p;
 
+  assert( iReg>0 );  /* Register numbers are always positive */
+  assert( iCol>=-1 && iCol<32768 );  /* Finite column numbers */
+
   /* First replace any existing entry */
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     if( p->iReg && p->iTable==iTab && p->iColumn==iCol ){
@@ -1784,7 +1787,6 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
       return;
     }
   }
-  if( iReg<=0 ) return;
 
   /* Find an empty slot and replace it */
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
@@ -1809,7 +1811,7 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
       minLru = p->lru;
     }
   }
-  if( idxLru>=0 ){
+  if( ALWAYS(idxLru>=0) ){
     p = &pParse->aColCache[idxLru];
     p->iLevel = pParse->iCacheLevel;
     p->iTable = iTab;
@@ -1911,10 +1913,6 @@ int sqlite3ExprCodeGetColumn(
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     if( p->iReg>0 && p->iTable==iTable && p->iColumn==iColumn
            && (!p->affChange || allowAffChng) ){
-#if 0
-      sqlite3VdbeAddOp0(v, OP_Noop);
-      VdbeComment((v, "OPT: tab%d.col%d -> r%d", iTable, iColumn, p->iReg));
-#endif
       p->lru = pParse->iCacheCnt++;
       sqlite3ExprCachePinRegister(pParse, p->iReg);
       return p->iReg;
@@ -1923,9 +1921,7 @@ int sqlite3ExprCodeGetColumn(
   assert( v!=0 );
   if( iColumn<0 ){
     sqlite3VdbeAddOp2(v, OP_Rowid, iTable, iReg);
-  }else if( pTab==0 ){
-    sqlite3VdbeAddOp3(v, OP_Column, iTable, iColumn, iReg);
-  }else{
+  }else if( ALWAYS(pTab!=0) ){
     int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
     sqlite3VdbeAddOp3(v, op, iTable, iColumn, iReg);
     sqlite3ColumnDefault(v, pTab, iColumn);
@@ -1977,7 +1973,7 @@ void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
 void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
   int i;
   struct yColCache *p;
-  if( iFrom==iTo ) return;
+  if( NEVER(iFrom==iTo) ) return;
   sqlite3VdbeAddOp3(pParse->pVdbe, OP_Move, iFrom, iTo, nReg);
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     int x = p->iReg;
@@ -1993,7 +1989,7 @@ void sqlite3ExprCodeMove(Parse *pParse, int iFrom, int iTo, int nReg){
 */
 void sqlite3ExprCodeCopy(Parse *pParse, int iFrom, int iTo, int nReg){
   int i;
-  if( iFrom==iTo ) return;
+  if( NEVER(iFrom==iTo) ) return;
   for(i=0; i<nReg; i++){
     sqlite3VdbeAddOp2(pParse->pVdbe, OP_Copy, iFrom+i, iTo+i);
   }
@@ -2019,15 +2015,15 @@ static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
 ** convert the last instruction from OP_SCopy to OP_Copy.
 */
 void sqlite3ExprHardCopy(Parse *pParse, int iReg, int nReg){
-  int addr;
   VdbeOp *pOp;
   Vdbe *v;
 
+  assert( pParse->db->mallocFailed==0 );
   v = pParse->pVdbe;
-  addr = sqlite3VdbeCurrentAddr(v);
-  pOp = sqlite3VdbeGetOp(v, addr-1);
-  assert( pOp || pParse->db->mallocFailed );
-  if( pOp && pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
+  assert( v!=0 );
+  pOp = sqlite3VdbeGetOp(v, -1);
+  assert( pOp!=0 );
+  if( pOp->opcode==OP_SCopy && pOp->p1>=iReg && pOp->p1<iReg+nReg ){
     pOp->opcode = OP_Copy;
   }
 }
@@ -2098,12 +2094,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
   int regFree1 = 0;         /* If non-zero free this temporary register */
   int regFree2 = 0;         /* If non-zero free this temporary register */
   int r1, r2, r3, r4;       /* Various register numbers */
-  sqlite3 *db;
+  sqlite3 *db = pParse->db; /* The database connection */
 
-  db = pParse->db;
-  assert( v!=0 || db->mallocFailed );
   assert( target>0 && target<=pParse->nMem );
-  if( v==0 ) return 0;
+  if( v==0 ){
+    assert( pParse->db->mallocFailed );
+    return 0;
+  }
 
   if( pExpr==0 ){
     op = TK_NULL;
@@ -2173,14 +2170,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 #endif
     case TK_VARIABLE: {
-      int iPrior;
       VdbeOp *pOp;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       assert( pExpr->u.zToken!=0 );
       assert( pExpr->u.zToken[0]!=0 );
       if( pExpr->u.zToken[1]==0
-         && (iPrior = sqlite3VdbeCurrentAddr(v)-1)>=0
-         && (pOp = sqlite3VdbeGetOp(v, iPrior))->opcode==OP_Variable
+         && (pOp = sqlite3VdbeGetOp(v, -1))->opcode==OP_Variable
          && pOp->p1+pOp->p3==pExpr->iTable
          && pOp->p2+pOp->p3==target
          && pOp->p4.z==0
@@ -2888,7 +2883,7 @@ int sqlite3ExprCodeExprList(
     }else{
       sqlite3ExprCode(pParse, pItem->pExpr, target+i);
     }
-    if( doHardCopy ){
+    if( doHardCopy && !pParse->db->mallocFailed ){
       sqlite3ExprHardCopy(pParse, target, n);
     }
   }
