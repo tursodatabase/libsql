@@ -14,7 +14,7 @@
 ** Most of the code in this file may be omitted by defining the
 ** SQLITE_OMIT_VACUUM macro.
 **
-** $Id: vacuum.c,v 1.88 2009/05/05 17:37:23 drh Exp $
+** $Id: vacuum.c,v 1.89 2009/05/30 10:46:10 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -83,14 +83,13 @@ void sqlite3Vacuum(Parse *pParse){
 int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int rc = SQLITE_OK;     /* Return code from service routines */
   Btree *pMain;           /* The database being vacuumed */
-  Pager *pMainPager;      /* Pager for database being vacuumed */
   Btree *pTemp;           /* The temporary database we vacuum into */
   char *zSql = 0;         /* SQL statements */
   int saved_flags;        /* Saved value of the db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
-  int isMemDb;            /* True is vacuuming a :memory: database */
+  int isMemDb;            /* True if vacuuming a :memory: database */
   int nRes;
 
   if( !db->autoCommit ){
@@ -105,8 +104,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
 
   pMain = db->aDb[0].pBt;
-  pMainPager = sqlite3BtreePager(pMain);
-  isMemDb = sqlite3PagerFile(pMainPager)->pMethods==0;
+  isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));
 
   /* Attach the temporary database as 'vacuum_db'. The synchronous pragma
   ** can be set to 'off' for this file, as it is not recovered if a crash

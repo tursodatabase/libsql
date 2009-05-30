@@ -1,5 +1,5 @@
-C Enhance\sthe\ssqlite3VdbeGetOp()\sroutine\sso\sthat\sit\salways\sreturns\sa\spointer\nto\sVdbeOp,\seven\sfollowing\san\sOOM\sfault.\s\sThis\ssimplifies\serror\shandling\sin\ncallers.\s\sCleanup\sto\sthe\scolumn\scache\slogic\sand\sthe\sexpr.c\ssource\smodule.\s(CVS\s6691)
-D 2009-05-29T19:00:13
+C In\svacuum.c\suse\s"PagerIsMemdb(X)"\sinstead\sof\s"PagerFile(X)->pMethods==0".\s(CVS\s6692)
+D 2009-05-30T10:46:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -202,7 +202,7 @@ F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c bb2bdd6dd0b51d13301dfb5bfba7abf070aef1dd
-F src/vacuum.c e8d178004377e97500c7ea87c8a3542976e3ea45
+F src/vacuum.c 981686c910b2ff9fe3db814e01da31cf9dbd48c7
 F src/vdbe.c b859cb274024e5755aa03625251ff859e3e95158
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 43183a2a18654fa570219ab65e53a608057c48ae
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P bd89f2c29b00e6b473f30c2e929d2f626721ad92
-R 29b49f3922c1a42fc4c3255229bf7dca
-U drh
-Z 402c7be7f2f60e461e03a4ddcdf6f1bd
+P ede06dacdf7acab23cd9666a0a0d092a637bcb78
+R 954353c465f3c24b9164432f42f3e6d9
+U danielk1977
+Z e2e502fdb8f1f0ede9b0b596fa4ae5d2
