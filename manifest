@@ -1,5 +1,5 @@
-C In\svacuum.c\suse\s"PagerIsMemdb(X)"\sinstead\sof\s"PagerFile(X)->pMethods==0".\s(CVS\s6692)
-D 2009-05-30T10:46:10
+C Fix\sfor\sticket\s#3887.\s\sOther\sunrelated\sbits\sof\scode\scleanup\sin\sthe\sexpr.c\nsource\smodule.\s(CVS\s6693)
+D 2009-05-30T14:16:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c cb791855c7948cecc96def9d97989879ca26f257
-F src/expr.c b844f5f63bc46c160ce20ec7b76ca2fe4aa70323
+F src/expr.c 0851fab95daa554fee9c807f418661c9f76a159d
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9d7b47729c337c5e4b78d795922ed34eec4aef67
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -162,7 +162,7 @@ F src/select.c fd1737a667bab296f50049a841b3aba5ec89418e
 F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
 F src/sqlite.h.in 79210c4d8905cfb4b038486dde5f36fabb796a86
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 39fb1a85a71f9a86817ccc55b308335b4b43012a
+F src/sqliteInt.h 9d9e15a343bc56e8fc11217d5095f3c9f0508bed
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ede06dacdf7acab23cd9666a0a0d092a637bcb78
-R 954353c465f3c24b9164432f42f3e6d9
-U danielk1977
-Z e2e502fdb8f1f0ede9b0b596fa4ae5d2
+P 874295ce71380da3f4c9296df0e0ce5ece136220
+R 45b4a46b0ff2886bd9af43bbb9bddda9
+U drh
+Z 3b1ac411039a31c3d64698f887a60c7f

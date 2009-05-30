@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.878 2009/05/28 21:04:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.879 2009/05/30 14:16:32 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -952,7 +952,7 @@ struct FuncDef {
 **     implemented by C function xFunc that accepts nArg arguments. The
 **     value passed as iArg is cast to a (void*) and made available
 **     as the user-data (sqlite3_user_data()) for the function. If 
-**     argument bNC is true, then the FuncDef.needCollate flag is set.
+**     argument bNC is true, then the SQLITE_FUNC_NEEDCOLL flag is set.
 **
 **   AGGREGATE(zName, nArg, iArg, bNC, xStep, xFinal)
 **     Used to create an aggregate function definition implemented by
@@ -969,13 +969,16 @@ struct FuncDef {
 **     parameter.
 */
 #define FUNCTION(zName, nArg, iArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC*8, SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0}
+  {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
+   SQLITE_INT_TO_PTR(iArg), 0, xFunc, 0, 0, #zName, 0}
 #define STR_FUNCTION(zName, nArg, pArg, bNC, xFunc) \
-  {nArg, SQLITE_UTF8, bNC*8, pArg, 0, xFunc, 0, 0, #zName, 0}
+  {nArg, SQLITE_UTF8, bNC*SQLITE_FUNC_NEEDCOLL, \
+   pArg, 0, xFunc, 0, 0, #zName, 0}
 #define LIKEFUNC(zName, nArg, arg, flags) \
   {nArg, SQLITE_UTF8, flags, (void *)arg, 0, likeFunc, 0, 0, #zName, 0}
 #define AGGREGATE(zName, nArg, arg, nc, xStep, xFinal) \
-  {nArg, SQLITE_UTF8, nc*8, SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0}
+  {nArg, SQLITE_UTF8, nc*SQLITE_FUNC_NEEDCOLL, \
+   SQLITE_INT_TO_PTR(arg), 0, 0, xStep,xFinal,#zName,0}
 
 /*
 ** All current savepoints are stored in a linked list starting at
