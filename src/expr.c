@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.442 2009/05/30 14:16:32 drh Exp $
+** $Id: expr.c,v 1.443 2009/05/30 20:49:20 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2584,7 +2584,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     ** or if there is no matching Ei, the ELSE term Y, or if there is
     ** no ELSE term, NULL.
     */
-    case TK_CASE: {
+    default: assert( op==TK_CASE ); {
       int endLabel;                     /* GOTO label for end of CASE stmt */
       int nextCase;                     /* GOTO label for next WHEN clause */
       int nExpr;                        /* 2x number of WHEN terms */
@@ -2606,7 +2606,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       endLabel = sqlite3VdbeMakeLabel(v);
       if( (pX = pExpr->pLeft)!=0 ){
         cacheX = *pX;
-        testcase( pX->op==TK_COLUMN || pX->op==TK_REGISTER );
+        testcase( pX->op==TK_COLUMN );
+        testcase( pX->op==TK_REGISTER );
         cacheX.iTable = sqlite3ExprCodeTemp(pParse, pX, &regFree1);
         testcase( regFree1==0 );
         cacheX.op = TK_REGISTER;
@@ -2623,7 +2624,8 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
           pTest = aListelem[i].pExpr;
         }
         nextCase = sqlite3VdbeMakeLabel(v);
-        testcase( pTest->op==TK_COLUMN || pTest->op==TK_REGISTER );
+        testcase( pTest->op==TK_COLUMN );
+        testcase( pTest->op==TK_COLUMN );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
         testcase( aListelem[i+1].pExpr->op==TK_REGISTER );
@@ -2807,7 +2809,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
   switch( pExpr->op ){
     case TK_REGISTER: {
-      return 1;
+      return WRC_Prune;
     }
     case TK_FUNCTION:
     case TK_AGG_FUNCTION:
@@ -2822,7 +2824,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
         int i = pList->nExpr;
         struct ExprList_item *pItem = pList->a;
         for(; i>0; i--, pItem++){
-          if( pItem->pExpr ) pItem->pExpr->flags |= EP_FixedDest;
+          if( ALWAYS(pItem->pExpr) ) pItem->pExpr->flags |= EP_FixedDest;
         }
       }
       break;
@@ -2832,7 +2834,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
     int r1 = ++pParse->nMem;
     int r2;
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
-    if( r1!=r2 ) sqlite3ReleaseTempReg(pParse, r1);
+    if( NEVER(r1!=r2) ) sqlite3ReleaseTempReg(pParse, r1);
     pExpr->op = TK_REGISTER;
     pExpr->iTable = r2;
     return WRC_Prune;
@@ -2910,7 +2912,8 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   int r1, r2;
 
   assert( jumpIfNull==SQLITE_JUMPIFNULL || jumpIfNull==0 );
-  if( v==0 || pExpr==0 ) return;
+  if( NEVER(v==0) )     return;  /* Existance of VDBE checked by caller */
+  if( NEVER(pExpr==0) ) return;  /* No way this can happen */
   op = pExpr->op;
   switch( op ){
     case TK_AND: {
@@ -3034,7 +3037,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
   int r1, r2;
 
   assert( jumpIfNull==SQLITE_JUMPIFNULL || jumpIfNull==0 );
-  if( v==0 || pExpr==0 ) return;
+  if( NEVER(v==0) ) return; /* Existance of VDBE checked by caller */
+  if( pExpr==0 )    return;
 
   /* The value of pExpr->op and op are related as follows:
   **
