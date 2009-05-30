@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.443 2009/05/30 20:49:20 drh Exp $
+** $Id: expr.c,v 1.444 2009/05/30 23:35:43 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2625,7 +2625,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         }
         nextCase = sqlite3VdbeMakeLabel(v);
         testcase( pTest->op==TK_COLUMN );
-        testcase( pTest->op==TK_COLUMN );
         sqlite3ExprIfFalse(pParse, pTest, nextCase, SQLITE_JUMPIFNULL);
         testcase( aListelem[i+1].pExpr->op==TK_COLUMN );
         testcase( aListelem[i+1].pExpr->op==TK_REGISTER );
@@ -2730,7 +2729,13 @@ int sqlite3ExprCodeAndCache(Parse *pParse, Expr *pExpr, int target){
   int inReg;
   inReg = sqlite3ExprCode(pParse, pExpr, target);
   assert( target>0 );
-  if( pExpr->op!=TK_REGISTER ){  
+  /* This routine is called for terms to INSERT or UPDATE.  And the only
+  ** other place where expressions can be converted into TK_REGISTER is
+  ** in WHERE clause processing.  So as currently implemented, there is
+  ** no way for a TK_REGISTER to exist here.  But it seems prudent to
+  ** keep the ALWAYS() in case the conditions above change with future
+  ** modifications or enhancements. */
+  if( ALWAYS(pExpr->op!=TK_REGISTER) ){  
     int iMem;
     iMem = ++pParse->nMem;
     sqlite3VdbeAddOp2(v, OP_Copy, inReg, iMem);
@@ -2787,10 +2792,10 @@ static int isAppropriateForFactoring(Expr *p){
       return 0;
     }
     case TK_UMINUS: {
-       if( p->pLeft->op==TK_FLOAT || p->pLeft->op==TK_INTEGER ){
-         return 0;
-       }
-       break;
+      if( p->pLeft->op==TK_FLOAT || p->pLeft->op==TK_INTEGER ){
+        return 0;
+      }
+      break;
     }
     default: {
       break;
@@ -3213,7 +3218,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
       return 0;
     }
   }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
-    if( ExprHasProperty(pB, EP_IntValue) || pB->u.zToken==0 ) return 0;
+    if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 0;
     if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ){
       return 0;
     }
@@ -3277,7 +3282,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
       testcase( pExpr->op==TK_COLUMN );
       /* Check to see if the column is in one of the tables in the FROM
       ** clause of the aggregate query */
-      if( pSrcList ){
+      if( ALWAYS(pSrcList!=0) ){
         struct SrcList_item *pItem = pSrcList->a;
         for(i=0; i<pSrcList->nSrc; i++, pItem++){
           struct AggInfo_col *pCol;
@@ -3411,6 +3416,7 @@ void sqlite3ExprAnalyzeAggregates(NameContext *pNC, Expr *pExpr){
   w.xExprCallback = analyzeAggregate;
   w.xSelectCallback = analyzeAggregatesInSelect;
   w.u.pNC = pNC;
+  assert( pNC->pSrcList!=0 );
   sqlite3WalkExpr(&w, pExpr);
 }
 
