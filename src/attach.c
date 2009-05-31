@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
 **
-** $Id: attach.c,v 1.92 2009/05/28 01:00:55 drh Exp $
+** $Id: attach.c,v 1.93 2009/05/31 21:21:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -313,7 +313,7 @@ static void codeAttach(
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( pAuthArg ){
     char *zAuthArg = pAuthArg->u.zToken;
-    if( zAuthArg==0 ){
+    if( NEVER(zAuthArg==0) ){
       goto attach_end;
     }
     rc = sqlite3AuthCheck(pParse, type, zAuthArg, 0, 0);

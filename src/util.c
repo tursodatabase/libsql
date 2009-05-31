@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.256 2009/05/28 01:00:55 drh Exp $
+** $Id: util.c,v 1.257 2009/05/31 21:21:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -108,7 +108,7 @@ int sqlite3IsNaN(double x){
 */
 int sqlite3Strlen30(const char *z){
   const char *z2 = z;
-  if( z==0 ) return 0;
+  if( NEVER(z==0) ) return 0;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
 }
@@ -171,14 +171,11 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
   va_list ap;
   sqlite3 *db = pParse->db;
   pParse->nErr++;
-  testcase( pParse->zErrMsg!=0 );
   sqlite3DbFree(db, pParse->zErrMsg);
   va_start(ap, zFormat);
   pParse->zErrMsg = sqlite3VMPrintf(db, zFormat, ap);
   va_end(ap);
-  if( pParse->rc==SQLITE_OK ){
-    pParse->rc = SQLITE_ERROR;
-  }
+  pParse->rc = SQLITE_ERROR;
 }
 
 /*
@@ -450,9 +447,12 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum){
 }
 
 /*
-** The string zNum represents an unsigned integer.  There might be some other
-** information following the integer too, but that part is ignored.
-** If the integer that the prefix of zNum represents will fit in a
+** The string zNum represents an unsigned integer.  The zNum string
+** consists of one or more digit characters and is terminated by
+** a zero character.  Any stray characters in zNum result in undefined
+** behavior.
+**
+** If the unsigned integer that zNum represents will fit in a
 ** 64-bit signed integer, return TRUE.  Otherwise return FALSE.
 **
 ** If the negFlag parameter is true, that means that zNum really represents
@@ -464,7 +464,7 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum){
 ** Leading zeros are ignored.
 */
 int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
-  int i, c;
+  int i;
   int neg = 0;
 
   assert( zNum[0]>='0' && zNum[0]<='9' ); /* zNum is an unsigned number */
@@ -473,7 +473,7 @@ int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
   while( *zNum=='0' ){
     zNum++;   /* Skip leading zeros.  Ticket #2454 */
   }
-  for(i=0; (c=zNum[i])>='0' && c<='9'; i++){}
+  for(i=0; zNum[i]; i++){ assert( zNum[i]>='0' && zNum[i]<='9' ); }
   if( i<19 ){
     /* Guaranteed to fit if less than 19 digits */
     return 1;

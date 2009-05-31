@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.521 2009/05/30 20:49:20 drh Exp $
+** $Id: select.c,v 1.522 2009/05/31 21:21:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2818,7 +2818,7 @@ static int flattenSubquery(
     for(i=0; i<pList->nExpr; i++){
       if( pList->a[i].zName==0 ){
         const char *zSpan = pList->a[i].zSpan;
-        if( zSpan ){
+        if( ALWAYS(zSpan) ){
           pList->a[i].zName = sqlite3DbStrDup(db, zSpan);
         }
       }
