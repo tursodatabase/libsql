@@ -1,5 +1,5 @@
-C Fix\stypo\sreported\sby\sticket\s#3888.\s\sOther\sminor\sedits\sto\sfacilitate\ncoverage\stesting.\s(CVS\s6695)
-D 2009-05-30T23:35:43
+C Fix\sthe\s".genfkey"\scommand\sof\sthe\sCLI\sso\sthat\sit\sdoes\snot\sleak\smemory\nif\ssqlite3_realloc()\sfails.\s\sTicket\s#3891.\s(CVS\s6696)
+D 2009-05-31T17:16:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 42065c05d4dd56894d1ae232974668674435e468
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c a3d8a0185e437e10adf82b69cd41c987bb2e58bb
-F src/shell.c 7eacd0bdaa887931f5ff205c9defc3e8df95a2dd
+F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 79210c4d8905cfb4b038486dde5f36fabb796a86
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 9d9e15a343bc56e8fc11217d5095f3c9f0508bed
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P f760bb7a0372d11ac7e3287b8a56fc4261e6371c
-R 27b6ce0fb3260e877dc964dee964de13
+P 164adf261d2536f16c83e44f6482dfb3d04a45d5
+R a7d342339bf9c4576f32028873e7110a
 U drh
-Z 03718f2f6b19c22e54c0a99a910d7f35
+Z 32569af168e17e03e21cd2b706954073
