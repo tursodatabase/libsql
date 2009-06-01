@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.16 2009/06/01 17:06:08 shane Exp $
+** $Id: mutex_w32.c,v 1.17 2009/06/01 17:10:22 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -175,6 +175,7 @@ static sqlite3_mutex *winMutexAlloc(int iType){
       break;
     }
     default: {
+      assert( winMutex_isInit==1 );
       assert( iType-2 >= 0 );
       assert( iType-2 < sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]) );
       p = &winMutex_staticMutexes[iType-2];
