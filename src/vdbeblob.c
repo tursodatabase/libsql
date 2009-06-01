@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.32 2009/05/09 15:17:47 drh Exp $
+** $Id: vdbeblob.c,v 1.33 2009/06/01 19:53:31 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -83,40 +83,46 @@ int sqlite3_blob_open(
 
   Vdbe *v = 0;
   int rc = SQLITE_OK;
-  char zErr[128];
+  char *zErr = 0;
+  Table *pTab;
+  Parse *pParse;
 
   *ppBlob = 0;
-  zErr[0] = 0;
   sqlite3_mutex_enter(db->mutex);
+  pParse = sqlite3StackAllocRaw(db, sizeof(*pParse));
+  if( pParse==0 ){
+    rc = SQLITE_NOMEM;
+    goto blob_open_out;
+  }
   do {
-    Parse sParse;
-    Table *pTab;
-
-    memset(&sParse, 0, sizeof(Parse));
-    sParse.db = db;
+    memset(pParse, 0, sizeof(Parse));
+    pParse->db = db;
 
     if( sqlite3SafetyOn(db) ){
+      sqlite3DbFree(db, zErr);
+      sqlite3StackFree(db, pParse);
       sqlite3_mutex_leave(db->mutex);
       return SQLITE_MISUSE;
     }
 
     sqlite3BtreeEnterAll(db);
-    pTab = sqlite3LocateTable(&sParse, 0, zTable, zDb);
+    pTab = sqlite3LocateTable(pParse, 0, zTable, zDb);
     if( pTab && IsVirtual(pTab) ){
       pTab = 0;
-      sqlite3ErrorMsg(&sParse, "cannot open virtual table: %s", zTable);
+      sqlite3ErrorMsg(pParse, "cannot open virtual table: %s", zTable);
     }
 #ifndef SQLITE_OMIT_VIEW
     if( pTab && pTab->pSelect ){
       pTab = 0;
-      sqlite3ErrorMsg(&sParse, "cannot open view: %s", zTable);
+      sqlite3ErrorMsg(pParse, "cannot open view: %s", zTable);
     }
 #endif
     if( !pTab ){
-      if( sParse.zErrMsg ){
-        sqlite3_snprintf(sizeof(zErr), zErr, "%s", sParse.zErrMsg);
+      if( pParse->zErrMsg ){
+        sqlite3DbFree(db, zErr);
+        zErr = pParse->zErrMsg;
+        pParse->zErrMsg = 0;
       }
-      sqlite3DbFree(db, sParse.zErrMsg);
       rc = SQLITE_ERROR;
       (void)sqlite3SafetyOff(db);
       sqlite3BtreeLeaveAll(db);
@@ -130,7 +136,8 @@ int sqlite3_blob_open(
       }
     }
     if( iCol==pTab->nCol ){
-      sqlite3_snprintf(sizeof(zErr), zErr, "no such column: \"%s\"", zColumn);
+      sqlite3DbFree(db, zErr);
+      zErr = sqlite3MPrintf(db, "no such column: \"%s\"", zColumn);
       rc = SQLITE_ERROR;
       (void)sqlite3SafetyOff(db);
       sqlite3BtreeLeaveAll(db);
@@ -147,7 +154,8 @@ int sqlite3_blob_open(
         int j;
         for(j=0; j<pIdx->nColumn; j++){
           if( pIdx->aiColumn[j]==iCol ){
-            sqlite3_snprintf(sizeof(zErr), zErr,
+            sqlite3DbFree(db, zErr);
+            zErr = sqlite3MPrintf(db,
                              "cannot open indexed column for writing");
             rc = SQLITE_ERROR;
             (void)sqlite3SafetyOff(db);
@@ -207,7 +215,8 @@ int sqlite3_blob_open(
     if( rc!=SQLITE_ROW ){
       nAttempt++;
       rc = sqlite3_finalize((sqlite3_stmt *)v);
-      sqlite3_snprintf(sizeof(zErr), zErr, sqlite3_errmsg(db));
+      sqlite3DbFree(db, zErr);
+      zErr = sqlite3MPrintf(db, sqlite3_errmsg(db));
       v = 0;
     }
   } while( nAttempt<5 && rc==SQLITE_SCHEMA );
@@ -221,7 +230,8 @@ int sqlite3_blob_open(
     u32 type = v->apCsr[0]->aType[iCol];
 
     if( type<12 ){
-      sqlite3_snprintf(sizeof(zErr), zErr, "cannot open value of type %s",
+      sqlite3DbFree(db, zErr);
+      zErr = sqlite3MPrintf(db, "cannot open value of type %s",
           type==0?"null": type==7?"real": "integer"
       );
       rc = SQLITE_ERROR;
@@ -244,16 +254,18 @@ int sqlite3_blob_open(
     *ppBlob = (sqlite3_blob *)pBlob;
     rc = SQLITE_OK;
   }else if( rc==SQLITE_OK ){
-    sqlite3_snprintf(sizeof(zErr), zErr, "no such rowid: %lld", iRow);
+    sqlite3DbFree(db, zErr);
+    zErr = sqlite3MPrintf(db, "no such rowid: %lld", iRow);
     rc = SQLITE_ERROR;
   }
 
 blob_open_out:
-  zErr[sizeof(zErr)-1] = '\0';
   if( v && (rc!=SQLITE_OK || db->mallocFailed) ){
     sqlite3VdbeFinalize(v);
   }
-  sqlite3Error(db, rc, (rc==SQLITE_OK?0:zErr));
+  sqlite3Error(db, rc, zErr);
+  sqlite3DbFree(db, zErr);
+  sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
   return rc;
