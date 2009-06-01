@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.15 2009/01/30 16:09:23 shane Exp $
+** $Id: mutex_w32.c,v 1.16 2009/06/01 17:06:08 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -82,8 +82,45 @@ static int winMutexNotheld(sqlite3_mutex *p){
 /*
 ** Initialize and deinitialize the mutex subsystem.
 */
-static int winMutexInit(void){ return SQLITE_OK; }
-static int winMutexEnd(void){ return SQLITE_OK; }
+static sqlite3_mutex winMutex_staticMutexes[6];
+static int winMutex_isInit = 0;
+/* As winMutexInit() and winMutexEnd() are called as part
+** of the sqlite3_initialize and sqlite3_shutdown()
+** processing, the "interlocked" magic is probably not
+** strictly necessary.
+*/
+static long winMutex_lock = 0;
+
+static int winMutexInit(void){ 
+  /* The first to increment to 1 does actual initialization */
+  if( InterlockedIncrement(&winMutex_lock)==1 ){
+    int i;
+    for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
+      InitializeCriticalSection(&winMutex_staticMutexes[i].mutex);
+    }
+    winMutex_isInit = 1;
+  }else{
+    while( !winMutex_isInit ){
+      Sleep(1);
+    }
+  }
+  return SQLITE_OK; 
+}
+
+static int winMutexEnd(void){ 
+  /* The first to decrement to 0 does actual shutdown 
+  ** (which should be the last to shutdown.) */
+  if( InterlockedDecrement(&winMutex_lock)==0 ){
+    if( winMutex_isInit==1 ){
+      int i;
+      for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
+        DeleteCriticalSection(&winMutex_staticMutexes[i].mutex);
+      }
+      winMutex_isInit = 0;
+    }
+  }
+  return SQLITE_OK; 
+}
 
 /*
 ** The sqlite3_mutex_alloc() routine allocates a new
@@ -131,30 +168,16 @@ static sqlite3_mutex *winMutexAlloc(int iType){
     case SQLITE_MUTEX_FAST:
     case SQLITE_MUTEX_RECURSIVE: {
       p = sqlite3MallocZero( sizeof(*p) );
-      if( p ){
+      if( p ){  
         p->id = iType;
         InitializeCriticalSection(&p->mutex);
       }
       break;
     }
     default: {
-      static sqlite3_mutex staticMutexes[6];
-      static int isInit = 0;
-      while( !isInit ){
-        static long lock = 0;
-        if( InterlockedIncrement(&lock)==1 ){
-          int i;
-          for(i=0; i<sizeof(staticMutexes)/sizeof(staticMutexes[0]); i++){
-            InitializeCriticalSection(&staticMutexes[i].mutex);
-          }
-          isInit = 1;
-        }else{
-          Sleep(1);
-        }
-      }
       assert( iType-2 >= 0 );
-      assert( iType-2 < sizeof(staticMutexes)/sizeof(staticMutexes[0]) );
-      p = &staticMutexes[iType-2];
+      assert( iType-2 < sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]) );
+      p = &winMutex_staticMutexes[iType-2];
       p->id = iType;
       break;
     }
