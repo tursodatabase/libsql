@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.554 2009/05/22 10:53:29 drh Exp $
+** $Id: main.c,v 1.555 2009/06/01 16:53:10 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -1192,7 +1192,8 @@ int sqlite3TempInMemory(const sqlite3 *db){
 #endif
 #if SQLITE_TEMP_STORE==3
   return 1;
-#else
+#endif
+#if SQLITE_TEMP_STORE<1 || SQLITE_TEMP_STORE>3
   return 0;
 #endif
 }

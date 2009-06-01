@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.547 2009/05/28 21:04:38 drh Exp $
+** $Id: build.c,v 1.548 2009/06/01 16:53:10 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -1089,7 +1089,7 @@ void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
       pCol->pDflt = sqlite3ExprDup(db, pSpan->pExpr, EXPRDUP_REDUCE);
       sqlite3DbFree(db, pCol->zDflt);
       pCol->zDflt = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                     pSpan->zEnd - pSpan->zStart);
+                                     (int)(pSpan->zEnd - pSpan->zStart));
     }
   }
   sqlite3ExprDelete(db, pSpan->pExpr);

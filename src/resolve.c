@@ -14,7 +14,7 @@
 ** resolve all identifiers by associating them with a particular
 ** table and column.
 **
-** $Id: resolve.c,v 1.27 2009/05/29 14:39:08 drh Exp $
+** $Id: resolve.c,v 1.28 2009/06/01 16:53:10 shane Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -190,7 +190,7 @@ static int lookupName(
             pMatch = pItem;
             pSchema = pTab->pSchema;
             /* Substitute the rowid (column -1) for the INTEGER PRIMARY KEY */
-            pExpr->iColumn = j==pTab->iPKey ? -1 : j;
+            pExpr->iColumn = j==pTab->iPKey ? -1 : (i16)j;
             if( i<pSrcList->nSrc-1 ){
               if( pItem[1].jointype & JT_NATURAL ){
                 /* If this match occurred in the left table of a natural join,
@@ -246,7 +246,7 @@ static int lookupName(
         for(iCol=0; iCol < pTab->nCol; iCol++, pCol++) {
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
             cnt++;
-            pExpr->iColumn = iCol==pTab->iPKey ? -1 : iCol;
+            pExpr->iColumn = iCol==pTab->iPKey ? -1 : (i16)iCol;
             pExpr->pTab = pTab;
             if( iCol>=0 ){
               testcase( iCol==31 );
@@ -590,6 +590,8 @@ static int resolveAsName(
   Expr *pE           /* Expression we are trying to match */
 ){
   int i;             /* Loop counter */
+
+  UNUSED_PARAMETER(pParse);
 
   if( pE->op==TK_ID || (pE->op==TK_STRING && pE->u.zToken[0]!='\'') ){
     char *zCol = pE->u.zToken;

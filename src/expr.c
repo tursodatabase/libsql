@@ -12,7 +12,7 @@
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
 **
-** $Id: expr.c,v 1.444 2009/05/30 23:35:43 drh Exp $
+** $Id: expr.c,v 1.445 2009/06/01 16:53:10 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -404,7 +404,7 @@ Expr *sqlite3ExprAlloc(
 ){
   Expr *pNew;
   int nExtra = 0;
-  int iValue;
+  int iValue = 0;
 
   if( pToken ){
     if( op!=TK_INTEGER || pToken->z==0
@@ -1084,7 +1084,7 @@ void sqlite3ExprListSetSpan(
     assert( db->mallocFailed || pItem->pExpr==pSpan->pExpr );
     sqlite3DbFree(db, pItem->zSpan);
     pItem->zSpan = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
-                                    pSpan->zEnd - pSpan->zStart);
+                                    (int)(pSpan->zEnd - pSpan->zStart));
   }
 }
 
@@ -1641,9 +1641,6 @@ void sqlite3CodeSubselect(
     case TK_EXISTS:
     case TK_SELECT:
     default: {
-      testcase( pExpr->op==TK_EXISTS );
-      testcase( pExpr->op==TK_SELECT );
-      assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
       /* If this has to be a scalar SELECT.  Generate code to put the
       ** value of this select in a memory cell and record the number
       ** of the memory cell in iColumn.  If this is an EXISTS, write
@@ -1653,6 +1650,10 @@ void sqlite3CodeSubselect(
       static const Token one = { "1", 1 };  /* Token for literal value 1 */
       Select *pSel;                         /* SELECT statement to encode */
       SelectDest dest;                      /* How to deal with SELECt result */
+
+      testcase( pExpr->op==TK_EXISTS );
+      testcase( pExpr->op==TK_SELECT );
+      assert( pExpr->op==TK_EXISTS || pExpr->op==TK_SELECT );
 
       assert( ExprHasProperty(pExpr, EP_xIsSelect) );
       pSel = pExpr->x.pSelect;
@@ -1671,7 +1672,7 @@ void sqlite3CodeSubselect(
       if( sqlite3Select(pParse, pSel, &dest) ){
         return;
       }
-      pExpr->iColumn = dest.iParm;
+      pExpr->iColumn = (i16)dest.iParm;
       ExprSetIrreducible(pExpr);
       break;
     }
@@ -3338,7 +3339,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
             ExprSetIrreducible(pExpr);
             pExpr->pAggInfo = pAggInfo;
             pExpr->op = TK_AGG_COLUMN;
-            pExpr->iAgg = k;
+            pExpr->iAgg = (i16)k;
             break;
           } /* endif pExpr->iTable==pItem->iCursor */
         } /* end loop over pSrcList */
@@ -3383,7 +3384,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         assert( !ExprHasAnyProperty(pExpr, EP_TokenOnly|EP_Reduced) );
         ExprSetIrreducible(pExpr);
-        pExpr->iAgg = i;
+        pExpr->iAgg = (i16)i;
         pExpr->pAggInfo = pAggInfo;
         return WRC_Prune;
       }

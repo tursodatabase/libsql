@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sWindows\sonly\sissues\swith\stest\sscripts.\s(CVS\s6698)
-D 2009-06-01T16:42:18
+C Fix\scompiler\swarnings\swith\sMSVC\sbuild.\s(CVS\s6699)
+D 2009-06-01T16:53:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,12 +109,12 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 41bee6e4699e61f9d33beabfcf13caba4467c20a
 F src/btree.h 3748683b382bc3022f23840c0a35d3231b24fc6e
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c dedb5bcbd8261c182e831b4784a596c000c72958
+F src/build.c 6d5276345e4019441932501921e6d2b440f40563
 F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c cb791855c7948cecc96def9d97989879ca26f257
-F src/expr.c ac7ebc41433d177dfbc21780c9cce790bbdbecaf
+F src/expr.c 1d580a7b2e51092785cbbc1fb8d2ff84e93c76dc
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9d7b47729c337c5e4b78d795922ed34eec4aef67
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -125,7 +125,7 @@ F src/insert.c 69ef88ce30d1f65315b57aba63b2d4e9bdca1090
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c a281f9890ce4f8f2b68967a124322c6ae98f1245
-F src/main.c 2f0923eb41570fd33cdda686c486bc36a163bcc5
+F src/main.c 1845bc74375dcd6c0f5f840c319c84a1f0e4f759
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -156,9 +156,9 @@ F src/pragma.c d4a6fd74fd1dba0f22c8930791f7fbbe80d2ef26
 F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c 42065c05d4dd56894d1ae232974668674435e468
+F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c 66de3fa81a0f7188ce180f30268f5e440992e260
+F src/select.c 2d97084a176a63eabce2d043eb4fbb13c46d6e9f
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 79210c4d8905cfb4b038486dde5f36fabb796a86
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P ee9a144d448a76f29c3ca03851c1aeef539068e2
-R ff1c98281ec98397b2284496c4710678
+P 0f6bc5e1ba6937b36df08ed3b5903839389021bb
+R 16e1f2d594599a039f283a098ab59d1c
 U shane
-Z 4a1b6319c0d25c61ca237dc7c77fd364
+Z 5685cf42211f0e6a13fdf03ca05f0474

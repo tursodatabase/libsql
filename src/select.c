@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle SELECT statements in SQLite.
 **
-** $Id: select.c,v 1.522 2009/05/31 21:21:41 drh Exp $
+** $Id: select.c,v 1.523 2009/06/01 16:53:10 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -234,7 +234,7 @@ static void addWhereTerm(
     ExprSetProperty(pE, EP_FromJoin);
     assert( !ExprHasAnyProperty(pE, EP_TokenOnly|EP_Reduced) );
     ExprSetIrreducible(pE);
-    pE->iRightJoinTable = iRightJoinTable;
+    pE->iRightJoinTable = (i16)iRightJoinTable;
   }
   *ppExpr = sqlite3ExprAnd(pParse->db,*ppExpr, pE);
 }
@@ -270,7 +270,7 @@ static void setJoinExpr(Expr *p, int iTable){
     ExprSetProperty(p, EP_FromJoin);
     assert( !ExprHasAnyProperty(p, EP_TokenOnly|EP_Reduced) );
     ExprSetIrreducible(p);
-    p->iRightJoinTable = iTable;
+    p->iRightJoinTable = (i16)iTable;
     setJoinExpr(p->pLeft, iTable);
     p = p->pRight;
   } 
