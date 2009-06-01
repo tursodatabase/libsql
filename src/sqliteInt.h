@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.879 2009/05/30 14:16:32 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.880 2009/06/01 18:18:21 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -474,6 +474,7 @@ extern const int sqlite3one;
 ** Assert that the pointer X is aligned to an 8-byte boundary.
 */
 #define EIGHT_BYTE_ALIGNMENT(X)   ((((char*)(X) - (char*)0)&7)==0)
+
 
 /*
 ** An instance of the following structure is used to store the busy-handler
@@ -2359,6 +2360,24 @@ void sqlite3PageFree(void*);
 void sqlite3MemSetDefault(void);
 void sqlite3BenignMallocHooks(void (*)(void), void (*)(void));
 int sqlite3MemoryAlarm(void (*)(void*, sqlite3_int64, int), void*, sqlite3_int64);
+
+/*
+** On systems with ample stack space and that support alloca(), make
+** use of alloca() to obtain space for large automatic objects.  By default,
+** obtain space from malloc().
+**
+** The alloca() routine never returns NULL.  This will cause code paths
+** that deal with sqlite3StackAlloc() failures to be unreachable.
+*/
+#ifdef SQLITE_USE_ALLOCA
+# define sqlite3StackAllocRaw(D,N)   alloca(N)
+# define sqlite3StackAllocZero(D,N)  memset(alloca(N), 0, N)
+# define sqlite3StackFree(D,P)       
+#else
+# define sqlite3StackAllocRaw(D,N)   sqlite3DbMallocRaw(D,N)
+# define sqlite3StackAllocZero(D,N)  sqlite3DbMallocZero(D,N)
+# define sqlite3StackFree(D,P)       sqlite3DbFree(D,P)
+#endif
 
 #ifdef SQLITE_ENABLE_MEMSYS3
 const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);

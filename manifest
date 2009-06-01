@@ -1,5 +1,5 @@
-C Added\sassert\sto\sverify\swinMutex\ssystem\sis\sinited\sbefore\s"static"\smutexes\sare\sused.\s(CVS\s6701)
-D 2009-06-01T17:10:22
+C Malloc\sfor\sspace\sto\shold\sthe\sParse\sobject\sin\ssqlite3_prepare()\sand\sfriends.\nOr,\sif\scompiled\swith\sSQLITE_USE_ALLOCA,\sobtain\sspace\sfor\sthe\sobject\sfrom\nalloca().\s(CVS\s6702)
+D 2009-06-01T18:18:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c bed75f157283e7c666f323df0c874c6a2515f76e
 F src/pragma.c d4a6fd74fd1dba0f22c8930791f7fbbe80d2ef26
-F src/prepare.c f46d1a029760edee5447e27164fb3ae10e2a6839
+F src/prepare.c 706efe9fb08b2f01c14c8077dce8ab8450c47cfb
 F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
@@ -162,7 +162,7 @@ F src/select.c 2d97084a176a63eabce2d043eb4fbb13c46d6e9f
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 79210c4d8905cfb4b038486dde5f36fabb796a86
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 9d9e15a343bc56e8fc11217d5095f3c9f0508bed
+F src/sqliteInt.h 210280ec1b4ecc2627b37a6555943e253e615d65
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 4e75897ee177bd24145f9dbfccd41a03c108440f
-R c9b75933dd204df4863fe45c2a3da85c
-U shane
-Z 73868adefad3a7d624bd940507eb93ad
+P b126013b5a1d6526810139d19acbec7fd0ab8168
+R 5749ee12901dac70e7e5afa66675a445
+U drh
+Z d18ab08e2623638148c802e092f00e62

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.118 2009/05/11 20:53:29 drh Exp $
+** $Id: prepare.c,v 1.119 2009/06/01 18:18:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -520,12 +520,22 @@ static int sqlite3Prepare(
   sqlite3_stmt **ppStmt,    /* OUT: A pointer to the prepared statement */
   const char **pzTail       /* OUT: End of parsed string */
 ){
-  Parse sParse;
-  char *zErrMsg = 0;
-  int rc = SQLITE_OK;
-  int i;
+  Parse *pParse;            /* Parsing context */
+  char *zErrMsg = 0;        /* Error message */
+  int rc = SQLITE_OK;       /* Result code */
+  int i;                    /* Loop counter */
 
-  if( sqlite3SafetyOn(db) ) return SQLITE_MISUSE;
+  /* Allocate the parsing context */
+  pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
+  if( pParse==0 ){
+    rc = SQLITE_NOMEM;
+    goto end_prepare;
+  }
+
+  if( sqlite3SafetyOn(db) ){
+    rc = SQLITE_MISUSE;
+    goto end_prepare;
+  }
   assert( ppStmt && *ppStmt==0 );
   assert( !db->mallocFailed );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -563,68 +573,71 @@ static int sqlite3Prepare(
         sqlite3Error(db, rc, "database schema is locked: %s", zDb);
         (void)sqlite3SafetyOff(db);
         testcase( db->flags & SQLITE_ReadUncommitted );
-        return sqlite3ApiExit(db, rc);
+        goto end_prepare;
       }
     }
   }
-  
-  memset(&sParse, 0, sizeof(sParse));
-  sParse.db = db;
+
+
+  pParse->db = db;
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
     int mxLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
     if( nBytes>mxLen ){
       sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
       (void)sqlite3SafetyOff(db);
-      return sqlite3ApiExit(db, SQLITE_TOOBIG);
+      rc = sqlite3ApiExit(db, SQLITE_TOOBIG);
+      goto end_prepare;
     }
     zSqlCopy = sqlite3DbStrNDup(db, zSql, nBytes);
     if( zSqlCopy ){
-      sqlite3RunParser(&sParse, zSqlCopy, &zErrMsg);
+      sqlite3RunParser(pParse, zSqlCopy, &zErrMsg);
       sqlite3DbFree(db, zSqlCopy);
-      sParse.zTail = &zSql[sParse.zTail-zSqlCopy];
+      pParse->zTail = &zSql[pParse->zTail-zSqlCopy];
     }else{
-      sParse.zTail = &zSql[nBytes];
+      pParse->zTail = &zSql[nBytes];
     }
   }else{
-    sqlite3RunParser(&sParse, zSql, &zErrMsg);
+    sqlite3RunParser(pParse, zSql, &zErrMsg);
   }
 
   if( db->mallocFailed ){
-    sParse.rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM;
   }
-  if( sParse.rc==SQLITE_DONE ) sParse.rc = SQLITE_OK;
-  if( sParse.checkSchema && !schemaIsValid(db) ){
-    sParse.rc = SQLITE_SCHEMA;
+  if( pParse->rc==SQLITE_DONE ) pParse->rc = SQLITE_OK;
+  if( pParse->checkSchema && !schemaIsValid(db) ){
+    pParse->rc = SQLITE_SCHEMA;
   }
-  if( sParse.rc==SQLITE_SCHEMA ){
+  if( pParse->rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
   }
   if( db->mallocFailed ){
-    sParse.rc = SQLITE_NOMEM;
+    pParse->rc = SQLITE_NOMEM;
   }
   if( pzTail ){
-    *pzTail = sParse.zTail;
+    *pzTail = pParse->zTail;
   }
-  rc = sParse.rc;
+  rc = pParse->rc;
 
 #ifndef SQLITE_OMIT_EXPLAIN
-  if( rc==SQLITE_OK && sParse.pVdbe && sParse.explain ){
-    if( sParse.explain==2 ){
-      sqlite3VdbeSetNumCols(sParse.pVdbe, 3);
-      sqlite3VdbeSetColName(sParse.pVdbe, 0, COLNAME_NAME, "order", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 1, COLNAME_NAME, "from", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 2, COLNAME_NAME, "detail", SQLITE_STATIC);
+  if( rc==SQLITE_OK && pParse->pVdbe && pParse->explain ){
+    static const char * const azColName[] = {
+       "addr", "opcode", "p1", "p2", "p3", "p4", "p5", "comment",
+       "order", "from", "detail"
+    };
+    int iFirst, mx;
+    if( pParse->explain==2 ){
+      sqlite3VdbeSetNumCols(pParse->pVdbe, 3);
+      iFirst = 8;
+      mx = 11;
     }else{
-      sqlite3VdbeSetNumCols(sParse.pVdbe, 8);
-      sqlite3VdbeSetColName(sParse.pVdbe, 0, COLNAME_NAME, "addr", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 1, COLNAME_NAME, "opcode", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 2, COLNAME_NAME, "p1", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 3, COLNAME_NAME, "p2", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 4, COLNAME_NAME, "p3", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 5, COLNAME_NAME, "p4", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 6, COLNAME_NAME, "p5", SQLITE_STATIC);
-      sqlite3VdbeSetColName(sParse.pVdbe, 7, COLNAME_NAME, "comment", SQLITE_STATIC);
+      sqlite3VdbeSetNumCols(pParse->pVdbe, 8);
+      iFirst = 0;
+      mx = 8;
+    }
+    for(i=iFirst; i<mx; i++){
+      sqlite3VdbeSetColName(pParse->pVdbe, i-iFirst, COLNAME_NAME,
+                            azColName[i], SQLITE_STATIC);
     }
   }
 #endif
@@ -635,14 +648,14 @@ static int sqlite3Prepare(
 
   assert( db->init.busy==0 || saveSqlFlag==0 );
   if( db->init.busy==0 ){
-    Vdbe *pVdbe = sParse.pVdbe;
-    sqlite3VdbeSetSql(pVdbe, zSql, (int)(sParse.zTail-zSql), saveSqlFlag);
+    Vdbe *pVdbe = pParse->pVdbe;
+    sqlite3VdbeSetSql(pVdbe, zSql, (int)(pParse->zTail-zSql), saveSqlFlag);
   }
-  if( sParse.pVdbe && (rc!=SQLITE_OK || db->mallocFailed) ){
-    sqlite3VdbeFinalize(sParse.pVdbe);
+  if( pParse->pVdbe && (rc!=SQLITE_OK || db->mallocFailed) ){
+    sqlite3VdbeFinalize(pParse->pVdbe);
     assert(!(*ppStmt));
   }else{
-    *ppStmt = (sqlite3_stmt*)sParse.pVdbe;
+    *ppStmt = (sqlite3_stmt*)pParse->pVdbe;
   }
 
   if( zErrMsg ){
@@ -652,6 +665,9 @@ static int sqlite3Prepare(
     sqlite3Error(db, rc, 0);
   }
 
+end_prepare:
+
+  sqlite3StackFree(db, pParse);
   rc = sqlite3ApiExit(db, rc);
   assert( (rc&db->errMask)==rc );
   return rc;
