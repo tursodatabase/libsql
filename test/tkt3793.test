@@ -13,7 +13,7 @@
 # This file implements tests to verify that ticket #3793 has been
 # fixed.  
 #
-# $Id: tkt3793.test,v 1.1 2009/04/10 09:47:07 danielk1977 Exp $
+# $Id: tkt3793.test,v 1.2 2009/06/01 16:42:18 shane Exp $
 
 
 set testdir [file dirname $argv0]
@@ -26,8 +26,18 @@ ifcapable !shared_cache||!attach {
 set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
 
 do_test tkt3793-1.1 {
-  sqlite3 db1 test.db
-  sqlite3 db2 test.db
+  # This is taken from shared.test.  The Windows VFS expands 
+  # ./test.db (and test.db) to be the same thing so the path
+  # matches and they share a cache.  By changing the case 
+  # for Windows platform, we get around this and get a separate
+  # connection.
+  if {$::tcl_platform(platform)=="unix"} {
+    sqlite3 db1 test.db
+    sqlite3 db2 test.db
+  } else {
+    sqlite3 db1 TEST.DB
+    sqlite3 db2 TEST.DB
+  }
   execsql {
     BEGIN;
     CREATE TABLE t1(a, b);

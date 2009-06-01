@@ -1,5 +1,5 @@
-C Code\ssimplifications\sto\sfacilitate\scoverage\stesting\sfollowing\sthe\srecent\nchanges\sto\sthe\sExpr\sobject.\s(CVS\s6697)
-D 2009-05-31T21:21:41
+C Fix\sa\scouple\sof\sWindows\sonly\sissues\swith\stest\sscripts.\s(CVS\s6698)
+D 2009-06-01T16:42:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 583e87706abc3026960ed759aff6371faf84c211
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -225,7 +225,7 @@ F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/async.test c042ff6d2a29f65e05d498a52448229d25bb5d9d
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
-F test/async4.test bdb997924394a2034ff3df1d839ff95b2e602ed4
+F test/async4.test 75ee183905f1f89491d4fba319a84fd6628509d8
 F test/attach.test 1d1be27b9e4c654f9bb14d011a4a87753c0b197a
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
@@ -644,7 +644,7 @@ F test/tkt3761.test b95ea9c98f21cf91325f18a984887e62caceab33
 F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
 F test/tkt3773.test 430b06567ce40285dfd2c4834a2a61816403efeb
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
-F test/tkt3793.test 3aa2efe55bc31fc9459618feea2016ea9a52b2af
+F test/tkt3793.test 754b73f0e6a9349c70dc57e522cf3247272ecd5d
 F test/tkt3824.test 3da2f5c81b057e3ff355f5dfc9aa0cf0a92e0206
 F test/tkt3832.test 7ebd5ac82d1e430accd5eec9768044133a94c2aa
 F test/tkt3838.test 2a1525946bc9d3751e1d49ce95f3a2472f2b7408
@@ -731,7 +731,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a028d69c70ae961f418052a91aa1518e80a8ddf5
-R 577a8738dfa877f205c1813029ca8e55
-U drh
-Z f22ba38fbdb959a75c9eb1ef4191ba85
+P ee9a144d448a76f29c3ca03851c1aeef539068e2
+R ff1c98281ec98397b2284496c4710678
+U shane
+Z 4a1b6319c0d25c61ca237dc7c77fd364
