@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.89 2009/05/20 20:10:47 drh Exp $
+** $Id: vtab.c,v 1.90 2009/06/02 21:31:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -550,7 +550,7 @@ int sqlite3VtabCallCreate(sqlite3 *db, int iDb, const char *zTab, char **pzErr){
 ** virtual table module.
 */
 int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
-  Parse sParse;
+  Parse *pParse;
 
   int rc = SQLITE_OK;
   Table *pTab;
@@ -565,33 +565,37 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   }
   assert((pTab->tabFlags & TF_Virtual)!=0 && pTab->nCol==0 && pTab->aCol==0);
 
-  memset(&sParse, 0, sizeof(Parse));
-  sParse.declareVtab = 1;
-  sParse.db = db;
-
-  if( 
-      SQLITE_OK == sqlite3RunParser(&sParse, zCreateTable, &zErr) && 
-      sParse.pNewTable && 
-      !sParse.pNewTable->pSelect && 
-      (sParse.pNewTable->tabFlags & TF_Virtual)==0
-  ){
-    pTab->aCol = sParse.pNewTable->aCol;
-    pTab->nCol = sParse.pNewTable->nCol;
-    sParse.pNewTable->nCol = 0;
-    sParse.pNewTable->aCol = 0;
-    db->pVTab = 0;
-  } else {
-    sqlite3Error(db, SQLITE_ERROR, zErr);
-    sqlite3DbFree(db, zErr);
-    rc = SQLITE_ERROR;
+  pParse = sqlite3StackAllocZero(db, sizeof(*pParse));
+  if( pParse==0 ){
+    rc = SQLITE_NOMEM;
+  }else{
+    pParse->declareVtab = 1;
+    pParse->db = db;
+  
+    if( 
+        SQLITE_OK == sqlite3RunParser(pParse, zCreateTable, &zErr) && 
+        pParse->pNewTable && 
+        !pParse->pNewTable->pSelect && 
+        (pParse->pNewTable->tabFlags & TF_Virtual)==0
+    ){
+      pTab->aCol = pParse->pNewTable->aCol;
+      pTab->nCol = pParse->pNewTable->nCol;
+      pParse->pNewTable->nCol = 0;
+      pParse->pNewTable->aCol = 0;
+      db->pVTab = 0;
+    } else {
+      sqlite3Error(db, SQLITE_ERROR, zErr);
+      sqlite3DbFree(db, zErr);
+      rc = SQLITE_ERROR;
+    }
+    pParse->declareVtab = 0;
+  
+    if( pParse->pVdbe ){
+      sqlite3VdbeFinalize(pParse->pVdbe);
+    }
+    sqlite3DeleteTable(pParse->pNewTable);
+    sqlite3StackFree(db, pParse);
   }
-  sParse.declareVtab = 0;
-
-  if( sParse.pVdbe ){
-    sqlite3VdbeFinalize(sParse.pVdbe);
-  }
-  sqlite3DeleteTable(sParse.pNewTable);
-  sParse.pNewTable = 0;
 
   assert( (rc&0xff)==rc );
   rc = sqlite3ApiExit(db, rc);

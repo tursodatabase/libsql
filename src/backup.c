@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.15 2009/05/14 19:26:51 drh Exp $
+** $Id: backup.c,v 1.16 2009/06/02 21:31:39 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -91,15 +91,24 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
   int i = sqlite3FindDbName(pDb, zDb);
 
   if( i==1 ){
-    Parse sParse;
-    memset(&sParse, 0, sizeof(sParse));
-    sParse.db = pDb;
-    if( sqlite3OpenTempDatabase(&sParse) ){
-      sqlite3ErrorClear(&sParse);
-      sqlite3Error(pErrorDb, sParse.rc, "%s", sParse.zErrMsg);
+    Parse *pParse;
+    int rc = 0;
+    pParse = sqlite3StackAllocZero(pErrorDb, sizeof(*pParse));
+    if( pParse==0 ){
+      sqlite3Error(pErrorDb, SQLITE_NOMEM, "out of memory");
+      rc = SQLITE_NOMEM;
+    }else{
+      pParse->db = pDb;
+      if( sqlite3OpenTempDatabase(pParse) ){
+        sqlite3ErrorClear(pParse);
+        sqlite3Error(pErrorDb, pParse->rc, "%s", pParse->zErrMsg);
+        rc = SQLITE_ERROR;
+      }
+      sqlite3StackFree(pErrorDb, pParse);
+    }
+    if( rc ){
       return 0;
     }
-    assert( sParse.zErrMsg==0 );
   }
 
   if( i<0 ){
