@@ -323,11 +323,13 @@ objects: $(LIBOBJ_ORIG)
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC)
+target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
 	rm -rf tsrc
 	mkdir tsrc
 	cp -f $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
+	tclsh $(TOP)/tool/vdbe-compress.tcl <tsrc/vdbe.c >vdbe.new
+	mv vdbe.new tsrc/vdbe.c
 	touch target_source
 
 sqlite3.c:	target_source $(TOP)/tool/mksqlite3c.tcl

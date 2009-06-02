@@ -488,6 +488,8 @@ sqlite3$(TEXE):	$(TOP)/src/shell.c libsqlite3.la sqlite3.h
 	mkdir -p tsrc
 	cp $(SRC) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
+	$(TCLSH_CMD) $(TOP)/tool/vdbe-compress.tcl <tsrc/vdbe.c >vdbe.new
+	mv vdbe.new tsrc/vdbe.c
 	touch .target_source
 
 sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
