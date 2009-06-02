@@ -64,7 +64,7 @@ while {![eof stdin]} {
     set vlist {}
     while {![eof stdin]} {
       set line [gets stdin]
-      if {[regexp {^ +(const )?\w+ \*?(\w+)(\[.*\])?;} $line \
+      if {[regexp {^ +(const )?\w+ \**(\w+)(\[.*\])?;} $line \
            all constKeyword vname notused1]} {
         if {!$seenDecl} {
           set sname {}

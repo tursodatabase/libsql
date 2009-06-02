@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.844 2009/06/02 15:21:42 drh Exp $
+** $Id: vdbe.c,v 1.845 2009/06/02 16:06:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1940,7 +1940,9 @@ case OP_IfNot: {            /* jump, in1 */
 ** reg(P1+2), ..., reg(P1+P3-1).
 */
 case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
-  int n = pOp->p3;
+  int n;
+
+  n = pOp->p3;
   assert( pOp->p3==0 || pOp->p1>0 );
   do{
     if( (pIn1->flags & MEM_Null)!=0 ){
@@ -2398,7 +2400,9 @@ case OP_MakeRecord: {
 #ifndef SQLITE_OMIT_BTREECOUNT
 case OP_Count: {         /* out2-prerelease */
   i64 nEntry;
-  BtCursor *pCrsr = p->apCsr[pOp->p1]->pCursor;
+  BtCursor *pCrsr;
+
+  pCrsr = p->apCsr[pOp->p1]->pCursor;
   if( pCrsr ){
     rc = sqlite3BtreeCount(pCrsr, &nEntry);
   }else{
@@ -3100,7 +3104,8 @@ case OP_OpenPseudo: {
 ** currently open, this instruction is a no-op.
 */
 case OP_Close: {
-  int i = pOp->p1;
+  int i;
+  i = pOp->p1;
   assert( i>=0 && i<p->nCursor );
   sqlite3VdbeFreeCursor(p, p->apCsr[i]);
   p->apCsr[i] = 0;
@@ -4882,7 +4887,8 @@ case OP_IfZero: {        /* jump, in1 */
 case OP_AggStep: {
   int n;
   int i;
-  Mem *pMem, *pRec;
+  Mem *pMem;
+  Mem *pRec;
   sqlite3_context ctx;
   sqlite3_value **apVal;
 
@@ -5278,9 +5284,10 @@ case OP_VColumn: {
 case OP_VNext: {   /* jump */
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
-  int res = 0;
+  int res;
   VdbeCursor *pCur;
 
+  res = 0;
   pCur = p->apCsr[pOp->p1];
   assert( pCur->pVtabCursor );
   if( pCur->nullRow ){
