@@ -1,5 +1,5 @@
-C Add\sthe\svdbe-compress.tcl\sscript\swhich\sautomatically\srefactors\sthe\nsqlite3VdbeExec()\sroutine\sto\suse\sless\sstack\sspace.\s\sUse\sthis\sscript\nwhen\sconstructing\sthe\samalgamation.\s(CVS\s6704)
-D 2009-06-02T15:21:42
+C Add\sa\stest\scase\sfor\sticket\s#3893\sand\sticket\s#3894.\s(CVS\s6705)
+D 2009-06-02T15:47:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -277,7 +277,7 @@ F test/collate8.test df26649cfcbddf109c04122b340301616d3a88f6
 F test/collate9.test 3adcc799229545940df2f25308dd1ad65869145a
 F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
-F test/colname.test 69fea30632d55862a012d3786c7d5fd1329f78db
+F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0ed68b11f22721052d880ee80bd528a0e0828236
 F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
 F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
@@ -732,7 +732,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 383f4be3ceb8cec24f31f27480232fbb866fd83a
-P ea7dfde700fb57ed0ecb5000a55abbf45aa1e09d
-R f304b4ea19d83f978fafc25600629030
+P 7f43391831b03e53d967acee6ae02089740aaedb
+R b31694ba92374d717dd008daf81bde48
 U drh
-Z 613f8e55a41fae0a6bf73d1968f3449f
+Z 478edb6360b0cd2be154f1dd2a044a7c

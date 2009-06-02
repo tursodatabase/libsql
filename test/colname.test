@@ -13,7 +13,7 @@
 # The focus of this file is testing how SQLite generates the names
 # of columns in a result set.
 #
-# $Id: colname.test,v 1.6 2008/10/09 15:56:46 drh Exp $
+# $Id: colname.test,v 1.7 2009/06/02 15:47:38 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -315,5 +315,15 @@ do_test colname-7.1 {
   }
   execsql2 {SELECT rowid, * FROM t7}
 } {x 1 x 1 y 2}
+
+# Tickets #3893 and #3984.  (Same problem; independently reported)
+#
+do_test colname-8.1 {
+  db eval {
+    CREATE TABLE "t3893"("x");
+    INSERT INTO t3893 VALUES(123);
+    SELECT "y"."x" FROM (SELECT "x" FROM "t3893") AS "y";
+  }
+} {123}
 
 finish_test
