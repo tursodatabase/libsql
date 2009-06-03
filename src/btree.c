@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.610 2009/06/03 11:25:07 danielk1977 Exp $
+** $Id: btree.c,v 1.611 2009/06/03 17:26:18 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1145,7 +1145,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
   
     /* Compute the total free space on the page */
     pc = get2byte(&data[hdr+1]);
-    nFree = data[hdr+7] + top - (cellOffset + 2*pPage->nCell);
+    nFree = data[hdr+7] + top;
     while( pc>0 ){
       u16 next, size;
       if( pc>usableSize-4 ){
@@ -1161,11 +1161,18 @@ int sqlite3BtreeInitPage(MemPage *pPage){
       nFree += size;
       pc = next;
     }
-    pPage->nFree = (u16)nFree;
-    if( nFree>=usableSize ){
-      /* Free space cannot exceed total page size */
+
+    /* At this point, nFree contains the sum of the offset to the start
+    ** of the cell-content area plus the number of free bytes within
+    ** the cell-content area. If this is greater than the usable-size
+    ** of the page, then the page must be corrupted. This check also
+    ** serves to verify that the offset to the start of the cell-content
+    ** area, according to the page header, lies within the page.
+    */
+    if( nFree>usableSize ){
       return SQLITE_CORRUPT_BKPT; 
     }
+    pPage->nFree = nFree - (cellOffset + 2*pPage->nCell);
 
 #if 0
   /* Check that all the offsets in the cell offset array are within range. 

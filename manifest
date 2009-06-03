@@ -1,5 +1,5 @@
-C Define\sa\sset\sof\sconstants\sto\suse\sas\sthe\s"index"\sargument\sto\ssqlite3BtreeGetMeta\sand\sUpdateMeta.\sThis\smakes\ssome\sparts\sof\sthe\scode\seasier\sto\sfollow.\s(CVS\s6709)
-D 2009-06-03T11:25:07
+C Add\scorruptD.test,\sa\scontainer\sfor\stesting\sthe\s"cell\soverflow"\sproblem.\sAlso\sshuffle\sa\ssmall\samount\sof\scode\sin\sBtreeInitPage()\sto\scheck\sthat\sthe\spage\sheader\spointer\sto\sthe\sstart\sof\sthe\scell\soffset\sarray\sis\sset\sto\sa\ssane\svalue.\s(CVS\s6710)
+D 2009-06-03T17:26:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 5afa1b5b68217afc9dc96e18ab1ab2f888709139
+F src/btree.c b0ac995593edf809962b16b7bfa55455c2f31545
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
@@ -291,6 +291,7 @@ F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 505331779fe7a96fe38ecbb817f19c63bc27d171
 F test/corruptC.test 47d544f612b8a26a05900d65289abb1ae3b30837
+F test/corruptD.test b098214f314d4aa3aaba9b1219ee01ffe099c02a
 F test/count.test 99c78f584038fec8fe081447738307c9dc69e5e0
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -732,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P baea79fd0cfeb860973846c3f2776776c87f0ae3
-R 9dba26e86c2e22da89e4d07f10eb0cbe
+P 6dbf4eca00f845baa7200aba421d0bc158ba96aa
+R 082e50f4fb6f4bbdc7df5b4799b07891
 U danielk1977
-Z 4e60210e731fb6afe9c94533b62cf6ef
+Z f49134d2c7bfd4d13daac32bbf8ae5be
