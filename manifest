@@ -1,5 +1,5 @@
-C Further\sreductions\sin\sthe\samount\sof\sstack\sspace\srequired.\s(CVS\s6707)
-D 2009-06-02T21:31:39
+C Additional\schanges\sto\sreduce\sstack\susage.\s\sThe\sSQLITE_SMALL_STACK\scompile-time\noption\sis\snow\savailable.\s(CVS\s6708)
+D 2009-06-03T01:24:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c cb791855c7948cecc96def9d97989879ca26f257
 F src/expr.c 1d580a7b2e51092785cbbc1fb8d2ff84e93c76dc
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/func.c 9d7b47729c337c5e4b78d795922ed34eec4aef67
+F src/func.c 006875b8e94c5ee9a41915f197797703e3867365
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
 F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
@@ -124,7 +124,7 @@ F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 69ef88ce30d1f65315b57aba63b2d4e9bdca1090
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
-F src/loadext.c a281f9890ce4f8f2b68967a124322c6ae98f1245
+F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c 1845bc74375dcd6c0f5f840c319c84a1f0e4f759
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
@@ -154,7 +154,7 @@ F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c bed75f157283e7c666f323df0c874c6a2515f76e
 F src/pragma.c d4a6fd74fd1dba0f22c8930791f7fbbe80d2ef26
 F src/prepare.c 706efe9fb08b2f01c14c8077dce8ab8450c47cfb
-F src/printf.c 3f4dca207a88258d37af5a7a03e800a825fe6456
+F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
@@ -212,7 +212,7 @@ F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
 F src/vtab.c e2f4c92df7d06330b151448718c4724742ff444b
 F src/walker.c ec4b9742a4077ef80346e2f9aaf0f44c2d95087a
-F src/where.c 1a21128db4905a29c287086acd7962cbba1c6f7b
+F src/where.c 706e9f2fbb422f58bf6c6542b62eed2055794942
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -732,7 +732,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 6f2aab3f7be12710b703eda22b1d5c0e8f85f814
-R 5346d3235c7afe17cabab7c153640d73
+P 04bad9eb6dd8bf7cafc9f3918b676e95d5b1c984
+R 819b41a44ba4dfbb1c77a8f2c2ff7973
 U drh
-Z 6beea0badfe5d9c08fcc3df2f861a173
+Z 141e71b5f088c642002d589792c976a2
