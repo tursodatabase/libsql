@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.609 2009/05/28 11:05:57 danielk1977 Exp $
+** $Id: btree.c,v 1.610 2009/06/03 11:25:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6539,7 +6539,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
     ** root page of the new table should go. meta[3] is the largest root-page
     ** created so far, so the new root-page is (meta[3]+1).
     */
-    rc = sqlite3BtreeGetMeta(p, 4, &pgnoRoot);
+    rc = sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &pgnoRoot);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -6772,7 +6772,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
 #else
     if( pBt->autoVacuum ){
       Pgno maxRootPgno;
-      rc = sqlite3BtreeGetMeta(p, 4, &maxRootPgno);
+      rc = sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &maxRootPgno);
       if( rc!=SQLITE_OK ){
         releasePage(pPage);
         return rc;
@@ -6913,7 +6913,7 @@ int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   ** access an autovacuumed database, then make the database readonly. 
   */
 #ifdef SQLITE_OMIT_AUTOVACUUM
-  if( idx==4 && *pMeta>0 ) pBt->readOnly = 1;
+  if( idx==BTREE_LARGEST_ROOT_PAGE && *pMeta>0 ) pBt->readOnly = 1;
 #endif
 
   /* If there is currently an open transaction, grab a read-lock 
@@ -6945,7 +6945,7 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   if( rc==SQLITE_OK ){
     put4byte(&pP1[36 + idx*4], iMeta);
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( idx==7 ){
+    if( idx==BTREE_INCR_VACUUM ){
       assert( pBt->autoVacuum || iMeta==0 );
       assert( iMeta==0 || iMeta==1 );
       pBt->incrVacuum = (u8)iMeta;

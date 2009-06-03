@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.548 2009/06/01 16:53:10 shane Exp $
+** $Id: build.c,v 1.549 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -856,15 +856,15 @@ void sqlite3StartTable(
     reg1 = pParse->regRowid = ++pParse->nMem;
     reg2 = pParse->regRoot = ++pParse->nMem;
     reg3 = ++pParse->nMem;
-    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, reg3, 1);   /* file_format */
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, reg3, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
     j1 = sqlite3VdbeAddOp1(v, OP_If, reg3);
     fileFormat = (db->flags & SQLITE_LegacyFileFmt)!=0 ?
                   1 : SQLITE_MAX_FILE_FORMAT;
     sqlite3VdbeAddOp2(v, OP_Integer, fileFormat, reg3);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, reg3);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, reg3);
     sqlite3VdbeAddOp2(v, OP_Integer, ENC(db), reg3);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 4, reg3);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_TEXT_ENCODING, reg3);
     sqlite3VdbeJumpHere(v, j1);
 
     /* This just creates a place-holder record in the sqlite_master table.
@@ -1284,7 +1284,7 @@ void sqlite3ChangeCookie(Parse *pParse, int iDb){
   sqlite3 *db = pParse->db;
   Vdbe *v = pParse->pVdbe;
   sqlite3VdbeAddOp2(v, OP_Integer, db->aDb[iDb].pSchema->schema_cookie+1, r1);
-  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 0, r1);
+  sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_SCHEMA_VERSION, r1);
   sqlite3ReleaseTempReg(pParse, r1);
 }
 

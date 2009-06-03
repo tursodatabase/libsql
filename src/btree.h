@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.115 2009/05/28 11:05:57 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.116 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -58,7 +58,7 @@ struct BtreeMutexArray {
 int sqlite3BtreeOpen(
   const char *zFilename,   /* Name of database file to open */
   sqlite3 *db,             /* Associated database connection */
-  Btree **,                /* Return open Btree* here */
+  Btree **ppBtree,         /* Return open Btree* here */
   int flags,               /* Flags */
   int vfsFlags             /* Flags passed through to VFS open */
 );
@@ -80,7 +80,7 @@ int sqlite3BtreeClose(Btree*);
 int sqlite3BtreeSetCacheSize(Btree*,int);
 int sqlite3BtreeSetSafetyLevel(Btree*,int,int);
 int sqlite3BtreeSyncDisabled(Btree*);
-int sqlite3BtreeSetPageSize(Btree*,int,int,int);
+int sqlite3BtreeSetPageSize(Btree *p, int nPagesize, int nReserve, int eFix);
 int sqlite3BtreeGetPageSize(Btree*);
 int sqlite3BtreeMaxPageCount(Btree*,int);
 int sqlite3BtreeGetReserve(Btree*);
@@ -116,9 +116,31 @@ int sqlite3BtreeIncrVacuum(Btree *);
 
 int sqlite3BtreeDropTable(Btree*, int, int*);
 int sqlite3BtreeClearTable(Btree*, int, int*);
+void sqlite3BtreeTripAllCursors(Btree*, int);
+
 int sqlite3BtreeGetMeta(Btree*, int idx, u32 *pValue);
 int sqlite3BtreeUpdateMeta(Btree*, int idx, u32 value);
-void sqlite3BtreeTripAllCursors(Btree*, int);
+
+/*
+** The second parameter to sqlite3BtreeGetMeta or sqlite3BtreeUpdateMeta
+** should be one of the following values. The integer values are assigned 
+** to constants so that the offset of the corresponding field in an
+** SQLite database header may be found using the following formula:
+**
+**   offset = 36 + (idx * 4)
+**
+** For example, the free-page-count field is located at byte offset 36 of
+** the database file header. The incr-vacuum-flag field is located at
+** byte offset 64 (== 36+4*7).
+*/
+#define BTREE_FREE_PAGE_COUNT     0
+#define BTREE_SCHEMA_VERSION      1
+#define BTREE_FILE_FORMAT         2
+#define BTREE_DEFAULT_CACHE_SIZE  3
+#define BTREE_LARGEST_ROOT_PAGE   4
+#define BTREE_TEXT_ENCODING       5
+#define BTREE_USER_VERSION        6
+#define BTREE_INCR_VACUUM         7
 
 int sqlite3BtreeCursor(
   Btree*,                              /* BTree containing table to open */

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.845 2009/06/02 16:06:04 drh Exp $
+** $Id: vdbe.c,v 1.846 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2712,15 +2712,10 @@ case OP_Transaction: {
 /* Opcode: ReadCookie P1 P2 P3 * *
 **
 ** Read cookie number P3 from database P1 and write it into register P2.
-** P3==0 is the schema version.  P3==1 is the database format.
-** P3==2 is the recommended pager cache size, and so forth.  P1==0 is
+** P3==1 is the schema version.  P3==2 is the database format.
+** P3==3 is the recommended pager cache size, and so forth.  P1==0 is
 ** the main database file and P1==1 is the database file used to store
 ** temporary tables.
-**
-** If P1 is negative, then this is a request to read the size of a
-** databases free-list. P3 must be set to 1 in this case. The actual
-** database accessed is ((P1+1)*-1). For example, a P1 parameter of -1
-** corresponds to database 0 ("main"), a P1 of -2 is database 1 ("temp").
 **
 ** There must be a read-lock on the database (either a transaction
 ** must be started or there must be an open cursor) before
@@ -2734,21 +2729,11 @@ case OP_ReadCookie: {               /* out2-prerelease */
   iDb = pOp->p1;
   iCookie = pOp->p3;
   assert( pOp->p3<SQLITE_N_BTREE_META );
-  if( iDb<0 ){
-    iDb = (-1*(iDb+1));
-    iCookie *= -1;
-  }
   assert( iDb>=0 && iDb<db->nDb );
   assert( db->aDb[iDb].pBt!=0 );
   assert( (p->btreeMask & (1<<iDb))!=0 );
-  /* The indexing of meta values at the schema layer is off by one from
-  ** the indexing in the btree layer.  The btree considers meta[0] to
-  ** be the number of free pages in the database (a read-only value)
-  ** and meta[1] to be the schema cookie.  The schema layer considers
-  ** meta[1] to be the schema cookie.  So we have to shift the index
-  ** by one in the following statement.
-  */
-  rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, 1 + iCookie, (u32 *)&iMeta);
+
+  rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut->u.i = iMeta;
   MemSetTypeFlag(pOut, MEM_Int);
   break;
@@ -2757,11 +2742,10 @@ case OP_ReadCookie: {               /* out2-prerelease */
 /* Opcode: SetCookie P1 P2 P3 * *
 **
 ** Write the content of register P3 (interpreted as an integer)
-** into cookie number P2 of database P1.
-** P2==0 is the schema version.  P2==1 is the database format.
-** P2==2 is the recommended pager cache size, and so forth.  P1==0 is
-** the main database file and P1==1 is the database file used to store
-** temporary tables.
+** into cookie number P2 of database P1.  P2==1 is the schema version.  
+** P2==2 is the database format. P2==3 is the recommended pager cache 
+** size, and so forth.  P1==0 is the main database file and P1==1 is the 
+** database file used to store temporary tables.
 **
 ** A transaction must be started before executing this opcode.
 */
@@ -2774,12 +2758,12 @@ case OP_SetCookie: {       /* in3 */
   assert( pDb->pBt!=0 );
   sqlite3VdbeMemIntegerify(pIn3);
   /* See note about index shifting on OP_ReadCookie */
-  rc = sqlite3BtreeUpdateMeta(pDb->pBt, 1+pOp->p2, (int)pIn3->u.i);
-  if( pOp->p2==0 ){
+  rc = sqlite3BtreeUpdateMeta(pDb->pBt, pOp->p2, (int)pIn3->u.i);
+  if( pOp->p2==BTREE_SCHEMA_VERSION ){
     /* When the schema cookie changes, record the new cookie internally */
     pDb->pSchema->schema_cookie = (int)pIn3->u.i;
     db->flags |= SQLITE_InternChanges;
-  }else if( pOp->p2==1 ){
+  }else if( pOp->p2==BTREE_FILE_FORMAT ){
     /* Record changes in the file format */
     pDb->pSchema->file_format = (u8)pIn3->u.i;
   }
@@ -2814,7 +2798,7 @@ case OP_VerifyCookie: {
   assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
-    rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&iMeta);
+    rc = sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
   }else{
     rc = SQLITE_OK;
     iMeta = 0;

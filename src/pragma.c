@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to implement the PRAGMA command.
 **
-** $Id: pragma.c,v 1.211 2009/05/28 01:00:55 drh Exp $
+** $Id: pragma.c,v 1.212 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -318,7 +318,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static const VdbeOpList getCacheSize[] = {
-      { OP_ReadCookie,  0, 1,        2},  /* 0 */
+      { OP_ReadCookie,  0, 1,        BTREE_DEFAULT_CACHE_SIZE},  /* 0 */
       { OP_IfPos,       1, 6,        0},
       { OP_Integer,     0, 2,        0},
       { OP_Subtract,    1, 2,        1},
@@ -341,11 +341,11 @@ void sqlite3Pragma(
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3VdbeAddOp2(v, OP_Integer, size, 1);
-      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 2, 2);
+      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 2, BTREE_DEFAULT_CACHE_SIZE);
       addr = sqlite3VdbeAddOp2(v, OP_IfPos, 2, 0);
       sqlite3VdbeAddOp2(v, OP_Integer, -size, 1);
       sqlite3VdbeJumpHere(v, addr);
-      sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 2, 1);
+      sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_DEFAULT_CACHE_SIZE, 1);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);
     }
@@ -582,12 +582,12 @@ void sqlite3Pragma(
           ** that this really is an auto-vacuum capable database.
           */
           static const VdbeOpList setMeta6[] = {
-            { OP_Transaction,    0,               1,        0},    /* 0 */
-            { OP_ReadCookie,     0,               1,        3},    /* 1 */
-            { OP_If,             1,               0,        0},    /* 2 */
-            { OP_Halt,           SQLITE_OK,       OE_Abort, 0},    /* 3 */
-            { OP_Integer,        0,               1,        0},    /* 4 */
-            { OP_SetCookie,      0,               6,        1},    /* 5 */
+            { OP_Transaction,    0,         1,                 0},    /* 0 */
+            { OP_ReadCookie,     0,         1,         BTREE_LARGEST_ROOT_PAGE},
+            { OP_If,             1,         0,                 0},    /* 2 */
+            { OP_Halt,           SQLITE_OK, OE_Abort,          0},    /* 3 */
+            { OP_Integer,        0,         1,                 0},    /* 4 */
+            { OP_SetCookie,      0,         BTREE_INCR_VACUUM, 1},    /* 5 */
           };
           int iAddr;
           iAddr = sqlite3VdbeAddOpList(v, ArraySize(setMeta6), setMeta6);
@@ -1273,23 +1273,21 @@ void sqlite3Pragma(
    || sqlite3StrICmp(zLeft, "user_version")==0 
    || sqlite3StrICmp(zLeft, "freelist_count")==0 
   ){
-    int iCookie;   /* Cookie index. 0 for schema-cookie, 6 for user-cookie. */
+    int iCookie;   /* Cookie index. 1 for schema-cookie, 6 for user-cookie. */
     sqlite3VdbeUsesBtree(v, iDb);
     switch( zLeft[0] ){
-      case 's': case 'S':
-        iCookie = 0;
-        break;
       case 'f': case 'F':
-        iCookie = 1;
-        iDb = (-1*(iDb+1));
-        assert(iDb<=0);
+        iCookie = BTREE_FREE_PAGE_COUNT;
+        break;
+      case 's': case 'S':
+        iCookie = BTREE_SCHEMA_VERSION;
         break;
       default:
-        iCookie = 5;
+        iCookie = BTREE_USER_VERSION;
         break;
     }
 
-    if( zRight && iDb>=0 ){
+    if( zRight && iCookie!=BTREE_FREE_PAGE_COUNT ){
       /* Write the specified cookie value */
       static const VdbeOpList setCookie[] = {
         { OP_Transaction,    0,  1,  0},    /* 0 */

@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.60 2009/05/28 01:00:55 drh Exp $
+** $Id: alter.c,v 1.61 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -440,11 +440,11 @@ void sqlite3MinimumFileFormat(Parse *pParse, int iDb, int minFormat){
     int r1 = sqlite3GetTempReg(pParse);
     int r2 = sqlite3GetTempReg(pParse);
     int j1;
-    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, 1);
+    sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, r1, BTREE_FILE_FORMAT);
     sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp2(v, OP_Integer, minFormat, r2);
     j1 = sqlite3VdbeAddOp3(v, OP_Ge, r2, 0, r1);
-    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, 1, r2);
+    sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_FILE_FORMAT, r2);
     sqlite3VdbeJumpHere(v, j1);
     sqlite3ReleaseTempReg(pParse, r1);
     sqlite3ReleaseTempReg(pParse, r2);

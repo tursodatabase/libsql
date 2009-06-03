@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.119 2009/06/01 18:18:21 drh Exp $
+** $Id: prepare.c,v 1.120 2009/06/03 11:25:07 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -133,7 +133,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   Table *pTab;
   Db *pDb;
   char const *azArg[4];
-  int meta[10];
+  int meta[5];
   InitData initData;
   char const *zMasterSchema;
   char const *zMasterName = SCHEMA_TABLE(iDb);
@@ -218,10 +218,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   sqlite3BtreeEnter(pDb->pBt);
   rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, curMain);
   if( rc==SQLITE_EMPTY ) rc = SQLITE_OK;
-  if( rc!=SQLITE_OK ){
-    sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
-    goto initone_error_out;
-  }
 
   /* Get the database meta information.
   **
@@ -231,37 +227,32 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   **    meta[2]   Size of the page cache.
   **    meta[3]   Use freelist if 0.  Autovacuum if greater than zero.
   **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16LE 3:UTF-16BE
-  **    meta[5]   The user cookie. Used by the application.
-  **    meta[6]   Incremental-vacuum flag.
-  **    meta[7]
-  **    meta[8]
-  **    meta[9]
   **
   ** Note: The #defined SQLITE_UTF* symbols in sqliteInt.h correspond to
   ** the possible values of meta[4].
   */
-  for(i=0; i<ArraySize(meta); i++){
+  for(i=0; rc==SQLITE_OK && i<ArraySize(meta); i++){
     rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
-    if( rc ){
-      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
-      goto initone_error_out;
-    }
   }
-  pDb->pSchema->schema_cookie = meta[0];
+  if( rc ){
+    sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
+    goto initone_error_out;
+  }
+  pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
   /* If opening a non-empty database, check the text encoding. For the
   ** main database, set sqlite3.enc to the encoding of the main database.
   ** For an attached db, it is an error if the encoding is not the same
   ** as sqlite3.enc.
   */
-  if( meta[4] ){  /* text encoding */
+  if( meta[BTREE_TEXT_ENCODING-1] ){  /* text encoding */
     if( iDb==0 ){
       /* If opening the main database, set ENC(db). */
-      ENC(db) = (u8)meta[4];
+      ENC(db) = (u8)meta[BTREE_TEXT_ENCODING-1];
       db->pDfltColl = sqlite3FindCollSeq(db, SQLITE_UTF8, "BINARY", 0);
     }else{
       /* If opening an attached database, the encoding much match ENC(db) */
-      if( meta[4]!=ENC(db) ){
+      if( meta[BTREE_TEXT_ENCODING-1]!=ENC(db) ){
         sqlite3SetString(pzErrMsg, db, "attached databases must use the same"
             " text encoding as main database");
         rc = SQLITE_ERROR;
@@ -274,7 +265,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   pDb->pSchema->enc = ENC(db);
 
   if( pDb->pSchema->cache_size==0 ){
-    size = meta[2];
+    size = meta[BTREE_DEFAULT_CACHE_SIZE-1];
     if( size==0 ){ size = SQLITE_DEFAULT_CACHE_SIZE; }
     if( size<0 ) size = -size;
     pDb->pSchema->cache_size = size;
@@ -287,7 +278,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** file_format==3    Version 3.1.4.  // ditto but with non-NULL defaults
   ** file_format==4    Version 3.3.0.  // DESC indices.  Boolean constants
   */
-  pDb->pSchema->file_format = (u8)meta[1];
+  pDb->pSchema->file_format = (u8)meta[BTREE_FILE_FORMAT-1];
   if( pDb->pSchema->file_format==0 ){
     pDb->pSchema->file_format = 1;
   }
@@ -302,7 +293,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** not downgrade the database and thus invalidate any descending
   ** indices that the user might have created.
   */
-  if( iDb==0 && meta[1]>=4 ){
+  if( iDb==0 && meta[BTREE_FILE_FORMAT-1]>=4 ){
     db->flags &= ~SQLITE_LegacyFileFmt;
   }
 
@@ -458,7 +449,7 @@ static int schemaIsValid(sqlite3 *db){
       memset(curTemp, 0, sqlite3BtreeCursorSize());
       rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, curTemp);
       if( rc==SQLITE_OK ){
-        rc = sqlite3BtreeGetMeta(pBt, 1, (u32 *)&cookie);
+        rc = sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
         if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
           allOk = 0;
         }
