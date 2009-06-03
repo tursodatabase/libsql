@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.611 2009/06/03 17:26:18 danielk1977 Exp $
+** $Id: btree.c,v 1.612 2009/06/03 21:04:36 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1142,7 +1142,38 @@ int sqlite3BtreeInitPage(MemPage *pPage){
       /* To many cells for a single page.  The page must be corrupt */
       return SQLITE_CORRUPT_BKPT;
     }
-  
+
+    /* A malformed database page might cause use to read past the end
+    ** of page when parsing a cell.  
+    **
+    ** The following block of code checks early to see if a cell extends
+    ** past the end of a page boundary and causes SQLITE_CORRUPT to be 
+    ** returned if it does.
+    */
+#if defined(SQLITE_OVERREAD_CHECK) || 1
+    {
+      int iCellFirst;   /* First allowable cell index */
+      int iCellLast;    /* Last possible cell index */
+      int i;            /* Index into the cell pointer array */
+      int sz;           /* Size of a cell */
+
+      iCellFirst = cellOffset + 2*pPage->nCell;
+      iCellLast = usableSize - 4;
+      if( !pPage->leaf ) iCellLast--;
+      for(i=0; i<pPage->nCell; i++){
+        pc = get2byte(&data[cellOffset+i*2]);
+        if( pc<iCellFirst || pc>iCellLast ){
+          return SQLITE_CORRUPT_BKPT;
+        }
+        sz = cellSizePtr(pPage, &data[pc]);
+        if( pc+sz>usableSize ){
+          return SQLITE_CORRUPT_BKPT;
+        }
+      }
+    }  
+#endif
+
+
     /* Compute the total free space on the page */
     pc = get2byte(&data[hdr+1]);
     nFree = data[hdr+7] + top;
