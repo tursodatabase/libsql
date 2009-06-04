@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.613 2009/06/04 00:11:56 drh Exp $
+** $Id: btree.c,v 1.614 2009/06/04 14:46:08 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1172,7 +1172,6 @@ int sqlite3BtreeInitPage(MemPage *pPage){
       }
     }  
 #endif
-
 
     /* Compute the total free space on the page */
     pc = get2byte(&data[hdr+1]);
@@ -5198,55 +5197,61 @@ static int balance(BtCursor*, int);
 ** which is also the right-most entry on the page.
 */
 static int balance_quick(BtCursor *pCur){
-  int rc;
-  MemPage *pNew = 0;
-  Pgno pgnoNew;
-  u8 *pCell;
-  u16 szCell;
-  CellInfo info;
-  MemPage *pPage = pCur->apPage[pCur->iPage];
-  MemPage *pParent = pCur->apPage[pCur->iPage-1];
-  BtShared *pBt = pPage->pBt;
-  int parentIdx = pParent->nCell;   /* pParent new divider cell index */
-  int parentSize;                   /* Size of new divider cell */
-  u8 parentCell[64];                /* Space for the new divider cell */
+  MemPage *const pPage = pCur->apPage[pCur->iPage];
+  BtShared *const pBt = pCur->pBt;
+  MemPage *pNew = 0;                   /* Newly allocated page */
+  int rc;                              /* Return Code */
+  Pgno pgnoNew;                        /* Page number of pNew */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  assert( pPage->nCell>0 );
 
-  /* Allocate a new page. Insert the overflow cell from pPage
-  ** into it. Then remove the overflow cell from pPage.
-  */
+  /* Allocate a new page. This page will become the right-sibling of pPage */
   rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
+
   if( rc==SQLITE_OK ){
-    pCell = pPage->aOvfl[0].pCell;
-    szCell = cellSizePtr(pPage, pCell);
+    /* The parentCell buffer is used to store a temporary copy of the divider
+    ** cell that will be inserted into pParent. Such a cell consists of a 4
+    ** byte page number followed by a variable length integer. In other
+    ** words, at most 13 bytes. Hence the parentCell buffer must be at
+    ** least 13 bytes in size.
+    */
+    MemPage * const pParent = pCur->apPage[pCur->iPage-1];
+    u8 parentCell[13];
+    u8 *pOut = &parentCell[4];
+    u8 *pCell = pPage->aOvfl[0].pCell;
+    u16 szCell = cellSizePtr(pPage, pCell);
+    u8 *pStop;
+
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
     zeroPage(pNew, pPage->aData[0]);
     assemblePage(pNew, 1, &pCell, &szCell);
     pPage->nOverflow = 0;
   
-    /* pPage is currently the right-child of pParent. Change this
-    ** so that the right-child is the new page allocated above and
-    ** pPage is the next-to-right child. 
+    /* Create a divider cell to insert into pParent. The divider cell
+    ** consists of a 4-byte page number (the page number of pPage) and
+    ** a variable length key value (which must be the same value as the
+    ** largest key on pPage).
     **
-    ** Ignore the return value of the call to fillInCell(). fillInCell()
-    ** may only return other than SQLITE_OK if it is required to allocate
-    ** one or more overflow pages. Since an internal table B-Tree cell 
-    ** may never spill over onto an overflow page (it is a maximum of 
-    ** 13 bytes in size), it is not neccessary to check the return code.
-    **
-    ** Similarly, the insertCell() function cannot fail if the page
-    ** being inserted into is already writable and the cell does not 
-    ** contain an overflow pointer. So ignore this return code too.
+    ** To find the largest key value on pPage, first find the right-most 
+    ** cell on pPage. The first two fields of this cell are the 
+    ** record-length (a variable length integer at most 32-bits in size)
+    ** and the key value (a variable length integer, may have any value).
+    ** The first of the while(...) loops below skips over the record-length
+    ** field. The second while(...) loop copies the key value from the
+    ** cell on pPage into the parentCell buffer.
     */
-    assert( pPage->nCell>0 );
+    put4byte(parentCell, pPage->pgno);
     pCell = findCell(pPage, pPage->nCell-1);
-    sqlite3BtreeParseCellPtr(pPage, pCell, &info);
-    fillInCell(pParent, parentCell, 0, info.nKey, 0, 0, 0, &parentSize);
-    assert( parentSize<64 );
-    assert( sqlite3PagerIswriteable(pParent->pDbPage) );
-    insertCell(pParent, parentIdx, parentCell, parentSize, 0, 4);
-    put4byte(findOverflowCell(pParent,parentIdx), pPage->pgno);
+    pStop = &pCell[9];
+    while( (*(pCell++)&0x80) && pCell<pStop );
+    pStop = &pCell[9];
+    while( ((*(pOut++) = *(pCell++))&0x80) && pCell<pStop );
+
+    /* Insert the new divider cell into pParent */
+    insertCell(pParent, pParent->nCell, parentCell, pOut-parentCell, 0, 0);
+
+    /* Set the right-child pointer of pParent to point to the new page. */
     put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew);
   
     /* If this is an auto-vacuum database, update the pointer map
@@ -5642,7 +5647,7 @@ static int balance_nonroot(BtCursor *pCur){
     szNew[i-1] = szLeft;
   }
 
-  /* Either we found one or more cells (cntnew[0])>0) or we are the
+  /* Either we found one or more cells (cntnew[0])>0) or pPage is
   ** a virtual root page.  A virtual root page is when the real root
   ** page is page 1 and we are the only child of that page.
   */
