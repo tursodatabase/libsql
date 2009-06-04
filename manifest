@@ -1,5 +1,5 @@
-C If\sthe\sroot\spage\sof\sa\sbtree\sis\sempty\sand\sis\salso\snot\sa\sleaf\spage\sand\sthe\npage\sis\snot\spage\s1,\sthen\sreport\sdatabase\scorruption.\s(CVS\s6716)
-D 2009-06-04T16:14:34
+C Fix\san\sassertion\sfault\sin\sbalance_quick()\sthat\soccurs\swhen\san\sinterior\nbtree\snode\shas\szero\scells\sdue\sto\sdatabase\scorruption.\s\sAlso\supdate\sthe\ncorrupt7.test\sresult\svectors\sfor\sa\scouple\sof\scases\swhere\sthe\serror\sreport\non\sdatabase\scorruption\schanged\sdue\sto\searlier\sdetection.\s(CVS\s6717)
+D 2009-06-04T17:02:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c ca21e0b459fa7c2984261d87c29a12806c1c89cd
+F src/btree.c a55ea6bd9be8d3028e6608c35689c9530d05b331
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
@@ -285,7 +285,7 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test 7a3be79b93dba88ba8472d61b57cb6d7b66cb69e
+F test/corrupt7.test 2aa5790f7e67eddc9bc8d4521b857707326bb61b
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e7ad68e93b19b59cb16205c4b48fd9d6492dbb02
-R ce07ddc07e08f5208711e118c4311660
+P 52b02ca5f3e5fdf2f3e02e9d8e016028d0842818
+R 6c3f5ed82b6f0cfc3861b316c101e250
 U drh
-Z 7df8641aaacbdb0452de8e950570f156
+Z b07c4782c8d564fc8dd4dab980a2bcd9

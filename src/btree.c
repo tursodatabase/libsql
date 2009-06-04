@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.615 2009/06/04 16:14:34 drh Exp $
+** $Id: btree.c,v 1.616 2009/06/04 17:02:51 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5205,7 +5205,7 @@ static int balance_quick(BtCursor *pCur){
   Pgno pgnoNew;                        /* Page number of pNew */
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
-  assert( pPage->nCell>0 );
+  if( pPage->nCell<=0 ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of pPage */
   rc = allocateBtreePage(pBt, &pNew, &pgnoNew, 0, 0);
