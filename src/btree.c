@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.616 2009/06/04 17:02:51 drh Exp $
+** $Id: btree.c,v 1.617 2009/06/04 19:06:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4397,10 +4397,15 @@ static int allocateBtreePage(
   int k;     /* Number of leaves on the trunk of the freelist */
   MemPage *pTrunk = 0;
   MemPage *pPrevTrunk = 0;
+  Pgno mxPage;     /* Total size of the database file */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   pPage1 = pBt->pPage1;
+  mxPage = pagerPagecount(pBt);
   n = get4byte(&pPage1->aData[36]);
+  if( n>mxPage ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   if( n>0 ){
     /* There are pages on the freelist.  Reuse one of those pages. */
     Pgno iTrunk;
@@ -4411,7 +4416,7 @@ static int allocateBtreePage(
     ** the entire-list will be searched for that page.
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( exact && nearby<=pagerPagecount(pBt) ){
+    if( exact && nearby<=mxPage ){
       u8 eType;
       assert( nearby>0 );
       assert( pBt->autoVacuum );
@@ -4442,13 +4447,21 @@ static int allocateBtreePage(
       }else{
         iTrunk = get4byte(&pPage1->aData[32]);
       }
-      rc = sqlite3BtreeGetPage(pBt, iTrunk, &pTrunk, 0);
+      if( iTrunk>mxPage ){
+        rc = SQLITE_CORRUPT_BKPT;
+      }else{
+        rc = sqlite3BtreeGetPage(pBt, iTrunk, &pTrunk, 0);
+      }
       if( rc ){
         pTrunk = 0;
         goto end_allocate_page;
       }
 
       k = get4byte(&pTrunk->aData[4]);
+      if( k>mxPage ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto end_allocate_page;
+      }
       if( k==0 && !searchList ){
         /* The trunk has no leaves and the list is not being searched. 
         ** So extract the trunk page itself and use it as the newly 
@@ -4492,6 +4505,10 @@ static int allocateBtreePage(
           */
           MemPage *pNewTrunk;
           Pgno iNewTrunk = get4byte(&pTrunk->aData[8]);
+          if( iNewTrunk>mxPage ){ 
+            rc = SQLITE_CORRUPT_BKPT;
+            goto end_allocate_page;
+          }
           rc = sqlite3BtreeGetPage(pBt, iNewTrunk, &pNewTrunk, 0);
           if( rc!=SQLITE_OK ){
             goto end_allocate_page;
@@ -4546,6 +4563,10 @@ static int allocateBtreePage(
         }
 
         iPage = get4byte(&aData[8+closest*4]);
+        if( iPage>mxPage ){
+          rc = SQLITE_CORRUPT_BKPT;
+          goto end_allocate_page;
+        }
         if( !searchList || iPage==nearby ){
           int noContent;
           Pgno nPage;
