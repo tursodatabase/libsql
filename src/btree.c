@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.614 2009/06/04 14:46:08 danielk1977 Exp $
+** $Id: btree.c,v 1.615 2009/06/04 16:14:34 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3865,6 +3865,7 @@ static int moveToRoot(BtCursor *pCur){
 
   if( pRoot->nCell==0 && !pRoot->leaf ){
     Pgno subpage;
+    if( pRoot->pgno!=1 ) return SQLITE_CORRUPT_BKPT;
     assert( pRoot->pgno==1 );
     subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+8]);
     assert( subpage>0 );
