@@ -1,5 +1,5 @@
-C Fix\stwo\sinstances\swhere\sa\smalformed\sheader\sin\sa\sdatabase\sfile\s(in\sother\swords\na\scorrupt\sdatabase\sfile)\scan\slead\sto\san\sassertion\sfault.\s(CVS\s6712)
-D 2009-06-04T00:11:56
+C Minor\stweak\sto\stest\sscript\sto\sensure\severy\sbyte\sin\sfile\stouched\sat\sleast\sonce.\s(CVS\s6713)
+D 2009-06-04T02:46:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -290,7 +290,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 794d284109c65c8f10a2b275479045e02d163bae
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 505331779fe7a96fe38ecbb817f19c63bc27d171
-F test/corruptC.test 47d544f612b8a26a05900d65289abb1ae3b30837
+F test/corruptC.test 9b70fa2bfd33a58c32f6ce3a1b6d793b218c2955
 F test/corruptD.test b098214f314d4aa3aaba9b1219ee01ffe099c02a
 F test/count.test 99c78f584038fec8fe081447738307c9dc69e5e0
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P c54de1f54080de7e134d7b562498abb5337a0a46
-R 7496aea7018fc89b15559ae6cbed5102
-U drh
-Z 1fb96255d6fa155bab373917c29f3303
+P 4e92c7f20afa51849128aa1d784ab885b517a73d
+R 6c3f94297a246afd7faadc68772a84da
+U shane
+Z 0969cd8bf673070e19fdc7b97a370594

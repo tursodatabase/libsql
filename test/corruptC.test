@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.11 2009/04/11 16:06:15 danielk1977 Exp $
+# $Id: corruptC.test,v 1.12 2009/06/04 02:46:20 shane Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -275,8 +275,10 @@ do_test corruptC-2.14 {
 } {1 {database disk image is malformed}}
 
 #
-# now test for a series of quasi-random seeds
-for {set tn 0} {$tn<1024} {incr tn 1} {
+# Now test for a series of quasi-random seeds.
+# We loop over the entire file size and touch
+# each byte at least once.
+for {set tn 0} {$tn<$fsize} {incr tn 1} {
 
   # setup for test
   db close
@@ -290,9 +292,16 @@ for {set tn 0} {$tn<1024} {incr tn 1} {
   set last 0
   for {set i 1} {$i<=512 && !$last} {incr i 1} {
 
-    # insert random byte at random location
     db close
-    set roffset [random $fsize]
+    if {$i==1} {
+      # on the first corrupt value, use location $tn
+      # this ensures that we touch each location in the 
+      # file at least once.
+      set roffset $tn
+    } else { 
+      # insert random byte at random location
+      set roffset [random $fsize]
+    }
     set rbyte [format %02x [random 255]]
 
     # You can uncomment the following to have it trace
