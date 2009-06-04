@@ -11,9 +11,10 @@
 # This file implements regression tests for SQLite library.
 #
 # This file implements tests to make sure SQLite does not crash or
-# segfault if it sees a corrupt database file.
+# segfault if it sees a corrupt database file.  Checks for 
+# malformed schema.
 #
-# $Id: corrupt5.test,v 1.2 2008/03/19 13:03:34 drh Exp $
+# $Id: corrupt5.test,v 1.3 2009/06/04 02:47:04 shane Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
