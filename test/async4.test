@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: async4.test,v 1.3 2009/06/01 16:42:18 shane Exp $
+# $Id: async4.test,v 1.4 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -160,4 +160,3 @@ do_test async4.2.8 {
 } {}
 
 finish_test
-

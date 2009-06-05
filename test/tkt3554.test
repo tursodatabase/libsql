@@ -13,7 +13,7 @@
 # This file implements tests to verify that ticket #3554 has been
 # fixed.  
 #
-# $Id: tkt3554.test,v 1.1 2008/12/26 07:56:39 danielk1977 Exp $
+# $Id: tkt3554.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -65,4 +65,3 @@ do_test tkt3544-1.4 {
 } {a 9000 12000}
 
 finish_test
-

@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint2.test,v 1.4 2008/12/22 10:58:46 danielk1977 Exp $
+# $Id: savepoint2.test,v 1.5 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -146,4 +146,3 @@ unset -nocomplain ::sig
 unset -nocomplain SQL
 
 finish_test
-

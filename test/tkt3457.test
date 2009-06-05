@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: tkt3457.test,v 1.1 2008/10/29 07:01:57 danielk1977 Exp $
+# $Id: tkt3457.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -75,4 +75,3 @@ do_test tkt3457-1.5 {
 } {0 {1 2 3 4 5 6}}
 
 finish_test
-

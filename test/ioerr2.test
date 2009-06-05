@@ -15,7 +15,7 @@
 # The tests in this file use special facilities that are only
 # available in the SQLite test fixture.
 #
-# $Id: ioerr2.test,v 1.11 2009/02/12 09:11:56 danielk1977 Exp $
+# $Id: ioerr2.test,v 1.12 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -168,4 +168,3 @@ do_ioerr_test ioerr2-7 -persist 0 -sqlprep {
 }
 
 finish_test
-

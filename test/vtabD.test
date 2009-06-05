@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is creating and dropping virtual tables.
 #
-# $Id: vtabD.test,v 1.2 2009/04/23 18:42:05 shane Exp $
+# $Id: vtabD.test,v 1.3 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -69,4 +69,3 @@ do_test vtabD-1.8 {
 }
 
 finish_test
-

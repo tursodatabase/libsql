@@ -12,7 +12,7 @@
 # The focus of this file is in making sure that rolling back
 # a statement journal works correctly.
 #
-# $Id: tempdb.test,v 1.3 2009/05/01 05:23:18 danielk1977 Exp $
+# $Id: tempdb.test,v 1.4 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -93,4 +93,3 @@ do_test tempdb-2.3 {
 } [expr 1 + (0==$jrnl_in_memory)]
 
 finish_test
-

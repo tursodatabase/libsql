@@ -12,7 +12,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the fix for ticket #3357.
 #
-# $Id: tkt3357.test,v 1.1 2008/09/06 14:19:11 danielk1977 Exp $
+# $Id: tkt3357.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -62,4 +62,3 @@ do_test tkt3357-1.4 {
 } {1 1 Test 2 1 Test2 3 1 Test3}
 
 finish_test
-

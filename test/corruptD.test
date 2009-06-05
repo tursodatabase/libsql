@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: corruptD.test,v 1.1 2009/06/03 17:26:20 danielk1977 Exp $
+# $Id: corruptD.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -133,4 +133,3 @@ do_test corruptD-1.2.2 {
 #
 
 finish_test
-

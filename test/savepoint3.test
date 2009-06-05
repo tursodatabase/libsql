@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint3.test,v 1.4 2009/01/09 17:11:05 danielk1977 Exp $
+# $Id: savepoint3.test,v 1.5 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -134,4 +134,3 @@ do_malloc_test savepoint3-4 -start 7 -sqlprep {
 
 
 finish_test
-

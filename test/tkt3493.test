@@ -12,7 +12,7 @@
 # it tests that affinities and collation sequences are correctly applied
 # in aggregate queries.
 #
-# $Id: tkt3493.test,v 1.1 2008/11/12 08:07:12 danielk1977 Exp $
+# $Id: tkt3493.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -151,4 +151,3 @@ do_test tkt3493-3.3.4 {
 } {1}
 
 finish_test
-

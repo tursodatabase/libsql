@@ -14,7 +14,7 @@
 # fixed.  
 #
 #
-# $Id: tkt3442.test,v 1.1 2008/10/22 16:04:43 shane Exp $
+# $Id: tkt3442.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -70,4 +70,3 @@ do_test tkt3442-1.5 {
 } {1 {no such column: 5000}}
 
 finish_test
-

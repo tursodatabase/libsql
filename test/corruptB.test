@@ -20,7 +20,7 @@
 # contains a (corrupt) reference to a page greater than the configured
 # maximum page number.
 #
-# $Id: corruptB.test,v 1.2 2008/09/10 17:53:36 danielk1977 Exp $
+# $Id: corruptB.test,v 1.3 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -182,4 +182,3 @@ do_test corruptB-3.1.2 {
 } {1 {database disk image is malformed}}
 
 finish_test
-

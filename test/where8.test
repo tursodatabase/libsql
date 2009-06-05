@@ -12,7 +12,7 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.6 2009/04/21 09:02:47 danielk1977 Exp $
+# $Id: where8.test,v 1.7 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -659,4 +659,3 @@ catch {unset A}
 catch {unset B}
 
 finish_test
-

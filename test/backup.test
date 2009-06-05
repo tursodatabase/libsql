@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the sqlite3_backup_XXX API.
 #
-# $Id: backup.test,v 1.10 2009/05/13 07:52:08 danielk1977 Exp $
+# $Id: backup.test,v 1.11 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -404,7 +404,6 @@ do_test backup-4.2.2 {
   catchsql { DETACH aux2 } db2
 } {1 {database aux2 is locked}}
 do_test backup-4.2.3 {
-breakpoint
   B step 50
 } {SQLITE_DONE}
 do_test backup-4.2.4 {
@@ -906,4 +905,3 @@ ifcapable memorymanage {
 }
 
 finish_test
-

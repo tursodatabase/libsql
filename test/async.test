@@ -6,7 +6,7 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: async.test,v 1.20 2009/04/25 08:39:15 danielk1977 Exp $
+# $Id: async.test,v 1.21 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -85,4 +85,3 @@ rename async_really_finish_test finish_test
 
 if {[info exists ASYNC_SAVE_ISQUICK]} { set ISQUICK $ASYNC_SAVE_ISQUICK }
 finish_test
-

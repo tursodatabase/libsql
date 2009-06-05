@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint6.test,v 1.3 2009/01/07 17:06:53 danielk1977 Exp $
+# $Id: savepoint6.test,v 1.4 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -270,4 +270,3 @@ unset -nocomplain ::lSavepoint
 unset -nocomplain ::aEntry
 
 finish_test
-

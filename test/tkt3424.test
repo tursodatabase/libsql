@@ -10,7 +10,7 @@
 #***********************************************************************
 #
 #
-# $Id: tkt3424.test,v 1.1 2008/10/08 17:58:50 danielk1977 Exp $
+# $Id: tkt3424.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -51,4 +51,3 @@ do_test tkt3424-1.4 {
 } {1 E1 AAA AAA E1 2 {} BBB {} {}}
 
 finish_test
-

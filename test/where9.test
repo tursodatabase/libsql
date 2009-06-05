@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where9.test,v 1.8 2009/04/21 09:02:47 danielk1977 Exp $
+# $Id: where9.test,v 1.9 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -195,7 +195,6 @@ do_test where9-1.2.4 {
   }
 } {90 91 92 96 97 99 scan 98 sort 0}
 do_test where9-1.2.5 {
-breakpoint
   count_steps {
     SELECT a FROM t4
      WHERE b IS NULL

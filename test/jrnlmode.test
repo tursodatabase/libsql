@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library. The focus
 # of these tests is the journal mode pragma.
 #
-# $Id: jrnlmode.test,v 1.15 2009/04/20 17:43:03 drh Exp $
+# $Id: jrnlmode.test,v 1.16 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -282,7 +282,6 @@ ifcapable autovacuum&&pragma {
   } {3}
 
   do_test jrnlmode-4.2 {
-breakpoint
     execsql { PRAGMA journal_mode = off }
   } {off}
 

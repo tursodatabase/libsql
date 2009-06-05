@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module syntax parser.
 #
-# $Id: fts3expr2.test,v 1.1 2009/01/01 07:08:55 danielk1977 Exp $
+# $Id: fts3expr2.test,v 1.2 2009/06/05 17:09:12 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -164,4 +164,3 @@ for {set iTest 1} {$iTest<500} {incr iTest} {
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
-

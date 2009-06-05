@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the DELETE FROM statement.
 #
-# $Id: delete.test,v 1.25 2009/04/07 09:16:57 danielk1977 Exp $
+# $Id: delete.test,v 1.26 2009/06/05 17:09:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -343,7 +343,7 @@ do_test delete-9.1 {
 do_test delete-9.2 {
   set res [list]
   db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
-    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 } }
+    if {$r==2} { db eval { DELETE FROM t5 } }
     lappend res $r $c $d
   }
   set res
@@ -356,7 +356,7 @@ do_test delete-9.3 {
   }
   set res [list]
   db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
-    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 2 } }
+    if {$r==2} { db eval { DELETE FROM t5 WHERE rowid = 2 } }
     lappend res $r $c $d
   }
   set res
@@ -370,7 +370,7 @@ do_test delete-9.4 {
   }
   set res [list]
   db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
-    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 1 } }
+    if {$r==2} { db eval { DELETE FROM t5 WHERE rowid = 1 } }
     lappend res $r $c $d
   }
   set res
@@ -384,7 +384,7 @@ do_test delete-9.5 {
   }
   set res [list]
   db eval { SELECT t5.rowid AS r, c, d FROM t5, t6 ORDER BY a } {
-    if {$r==2} { breakpoint ; db eval { DELETE FROM t5 WHERE rowid = 3 } }
+    if {$r==2} { db eval { DELETE FROM t5 WHERE rowid = 3 } }
     lappend res $r $c $d
   }
   set res
