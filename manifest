@@ -1,5 +1,5 @@
-C Remove\sleftover\s"breakpoint"\scommands\sfrom\stest\sscripts.\s\sAlso\sremove\sblank\nlines\sat\sthe\send\sof\sscripts.\s(CVS\s6721)
-D 2009-06-05T17:09:12
+C Detect\swhen\sdatabase\scorruption\scauses\san\sattemp\sto\sset\sthe\spointer\smap\nvalue\sfor\sa\spointer\smap\spage\sand\sreport\sthe\scorruption.\s(CVS\s6722)
+D 2009-06-05T18:44:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 3a0e52943bf32aba524e3811f4bea0a2e59b078f
+F src/btree.c bb9dbeaf781544314e181ffe81275a7db31acb30
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 302ab855e62dfae8507800302dae479e0494b81a
-R 4568e1a1009bbdcd7607100a9fc9e1d9
+P 1fef16ec2b89981770cf44f606a420fbe031a7a4
+R 731fb18497d10f8868219b8baf21403e
 U drh
-Z ae8efcdbc0613ff6c4c5083b0d8de41f
+Z b3f6798c73dec5beaf284b9c4bf80ed6
