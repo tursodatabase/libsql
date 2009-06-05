@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.617 2009/06/04 19:06:10 drh Exp $
+** $Id: btree.c,v 1.618 2009/06/05 14:17:22 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4393,7 +4393,7 @@ static int allocateBtreePage(
 ){
   MemPage *pPage1;
   int rc;
-  int n;     /* Number of pages on the freelist */
+  u32 n;     /* Number of pages on the freelist */
   int k;     /* Number of leaves on the trunk of the freelist */
   MemPage *pTrunk = 0;
   MemPage *pPrevTrunk = 0;
@@ -4458,10 +4458,6 @@ static int allocateBtreePage(
       }
 
       k = get4byte(&pTrunk->aData[4]);
-      if( k>mxPage ){
-        rc = SQLITE_CORRUPT_BKPT;
-        goto end_allocate_page;
-      }
       if( k==0 && !searchList ){
         /* The trunk has no leaves and the list is not being searched. 
         ** So extract the trunk page itself and use it as the newly 

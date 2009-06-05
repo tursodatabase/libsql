@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.846 2009/06/03 11:25:07 danielk1977 Exp $
+** $Id: vdbe.c,v 1.847 2009/06/05 14:17:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2002,7 +2002,7 @@ case OP_SetNumColumns: {
 ** the result.
 */
 case OP_Column: {
-  int payloadSize;   /* Number of bytes in the record */
+  u32 payloadSize;   /* Number of bytes in the record */
   i64 payloadSize64; /* Number of bytes in the record */
   int p1;            /* P1 value of the opcode */
   int p2;            /* column number to retrieve */
@@ -2017,11 +2017,12 @@ case OP_Column: {
   char *zData;       /* Part of the record being decoded */
   Mem *pDest;        /* Where to write the extracted value */
   Mem sMem;          /* For storing the record being decoded */
-  u8 *zIdx;         /* Index into header */
-  u8 *zEndHdr;      /* Pointer to first byte after the header */
-  int offset;       /* Offset into the data */
-  int szHdrSz;      /* Size of the header size field at start of record */
-  int avail;        /* Number of bytes of available data */
+  u8 *zIdx;          /* Index into header */
+  u8 *zEndHdr;       /* Pointer to first byte after the header */
+  u32 offset;        /* Offset into the data */
+  u64 offset64;      /* 64-bit offset.  64 bits needed to catch overflow */
+  int szHdr;         /* Size of the header size field at start of record */
+  int avail;         /* Number of bytes of available data */
 
 
   p1 = pOp->p1;
@@ -2063,9 +2064,13 @@ case OP_Column: {
       zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
       sqlite3BtreeKeySize(pCrsr, &payloadSize64);
-      payloadSize = (int)payloadSize64;
+      if( (payloadSize64 & SQLITE_MAX_U32)!=(u64)payloadSize64 ){
+        rc = SQLITE_CORRUPT_BKPT;
+        goto abort_due_to_error;
+      }
+      payloadSize = (u32)payloadSize64;
     }else{
-      sqlite3BtreeDataSize(pCrsr, (u32 *)&payloadSize);
+      sqlite3BtreeDataSize(pCrsr, &payloadSize);
     }
     nField = pC->nField;
   }else{
@@ -2084,7 +2089,8 @@ case OP_Column: {
     assert( pDest->flags&MEM_Null );
     goto op_column_out;
   }
-  if( payloadSize>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+  assert( db->aLimit[SQLITE_LIMIT_LENGTH]>=0 );
+  if( payloadSize > (u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
     goto too_big;
   }
 
@@ -2117,7 +2123,8 @@ case OP_Column: {
       ** having to make additional calls to fetch the content portion of
       ** the record.
       */
-      if( avail>=payloadSize ){
+      assert( avail>=0 );
+      if( payloadSize <= (u32)avail ){
         zRec = zData;
         pC->aRow = (u8*)zData;
       }else{
@@ -2127,7 +2134,37 @@ case OP_Column: {
     /* The following assert is true in all cases accept when
     ** the database file has been corrupted externally.
     **    assert( zRec!=0 || avail>=payloadSize || avail>=9 ); */
-    szHdrSz = getVarint32((u8*)zData, offset);
+    szHdr = getVarint32((u8*)zData, offset);
+
+    /* Make sure a corrupt database has not given us an oversize header.
+    ** Do this now to avoid an oversize memory allocation.
+    **
+    ** Type entries can be between 1 and 5 bytes each.  But 4 and 5 byte
+    ** types use so much data space that there can only be 4096 and 32 of
+    ** them, respectively.  So the maximum header length results from a
+    ** 3-byte type for each of the maximum of 32768 columns plus three
+    ** extra bytes for the header length itself.  32768*3 + 3 = 98307.
+    */
+    if( offset > 98307 ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto op_column_out;
+    }
+
+    /* Compute in len the number of bytes of data we need to read in order
+    ** to get nField type values.  offset is an upper bound on this.  But
+    ** nField might be significantly less than the true number of columns
+    ** in the table, and in that case, 5*nField+3 might be smaller than offset.
+    ** We want to minimize len in order to limit the size of the memory
+    ** allocation, especially if a corrupt database file has caused offset
+    ** to be oversized. Offset is limited to 98307 above.  But 98307 might
+    ** still exceed Robson memory allocation limits on some configurations.
+    ** On systems that cannot tolerate large memory allocations, nField*5+3
+    ** will likely be much smaller since nField will likely be less than
+    ** 20 or so.  This insures that Robson memory allocation limits are
+    ** not exceeded even for corrupt database files.
+    */
+    len = nField*5 + 3;
+    if( len > offset ) len = offset;
 
     /* The KeyFetch() or DataFetch() above are fast and will get the entire
     ** record header in most cases.  But they will fail to get the complete
@@ -2135,28 +2172,29 @@ case OP_Column: {
     ** in the B-Tree.  When that happens, use sqlite3VdbeMemFromBtree() to
     ** acquire the complete header text.
     */
-    if( !zRec && avail<offset ){
+    if( !zRec && avail<len ){
       sMem.flags = 0;
       sMem.db = 0;
-      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, offset, pC->isIndex, &sMem);
+      rc = sqlite3VdbeMemFromBtree(pCrsr, 0, len, pC->isIndex, &sMem);
       if( rc!=SQLITE_OK ){
         goto op_column_out;
       }
       zData = sMem.z;
     }
-    zEndHdr = (u8 *)&zData[offset];
-    zIdx = (u8 *)&zData[szHdrSz];
+    zEndHdr = (u8 *)&zData[len];
+    zIdx = (u8 *)&zData[szHdr];
 
     /* Scan the header and use it to fill in the aType[] and aOffset[]
     ** arrays.  aType[i] will contain the type integer for the i-th
     ** column and aOffset[i] will contain the offset from the beginning
     ** of the record to the start of the data for the i-th column
     */
+    offset64 = offset;
     for(i=0; i<nField; i++){
       if( zIdx<zEndHdr ){
-        aOffset[i] = offset;
+        aOffset[i] = (u32)offset64;
         zIdx += getVarint32(zIdx, aType[i]);
-        offset += sqlite3VdbeSerialTypeLen(aType[i]);
+        offset64 += sqlite3VdbeSerialTypeLen(aType[i]);
       }else{
         /* If i is less that nField, then there are less fields in this
         ** record than SetNumColumns indicated there are columns in the
@@ -2176,8 +2214,8 @@ case OP_Column: {
     ** of the record (when all fields present), then we must be dealing 
     ** with a corrupt database.
     */
-    if( (zIdx > zEndHdr)|| (offset > payloadSize)
-     || (zIdx==zEndHdr && offset!=payloadSize) ){
+    if( (zIdx > zEndHdr)|| (offset64 > payloadSize)
+     || (zIdx==zEndHdr && offset64!=(u64)payloadSize) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }
@@ -2869,7 +2907,8 @@ case OP_VerifyCookie: {
 ** a KeyInfo structure (P4_KEYINFO). If it is a pointer to a KeyInfo 
 ** structure, then said structure defines the content and collating 
 ** sequence of the index being opened. Otherwise, if P4 is an integer 
-** value, it is set to the number of columns in the table.
+** value, it is set to the number of columns in the table, or to the
+** largest index of any column of the table that is actually used.
 **
 ** This instruction works just like OpenRead except that it opens the cursor
 ** in read/write mode.  For a given table, there can be one or more read-only

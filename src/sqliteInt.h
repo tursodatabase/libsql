@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.881 2009/06/02 21:31:39 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.882 2009/06/05 14:17:23 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -430,6 +430,14 @@ typedef UINT16_TYPE u16;           /* 2-byte unsigned integer */
 typedef INT16_TYPE i16;            /* 2-byte signed integer */
 typedef UINT8_TYPE u8;             /* 1-byte unsigned integer */
 typedef INT8_TYPE i8;              /* 1-byte signed integer */
+
+/*
+** SQLITE_MAX_U32 is a u64 constant that is the maximum u64 value
+** that can be stored in a u32 without loss of data.  The value
+** is 0x00000000ffffffff.  But because of quirks of some compilers, we
+** have to specify the value in the less intuitive manner shown:
+*/
+#define SQLITE_MAX_U32  ((((u64)1)<<32)-1)
 
 /*
 ** Macros to determine whether the machine is big or little endian,

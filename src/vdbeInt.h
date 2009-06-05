@@ -15,7 +15,7 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.170 2009/05/04 11:42:30 danielk1977 Exp $
+** $Id: vdbeInt.h,v 1.171 2009/06/05 14:17:25 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
@@ -338,10 +338,10 @@ int sqlite3VdbeCursorMoveto(VdbeCursor*);
 #if defined(SQLITE_DEBUG) || defined(VDBE_PROFILE)
 void sqlite3VdbePrintOp(FILE*, int, Op*);
 #endif
-int sqlite3VdbeSerialTypeLen(u32);
+u32 sqlite3VdbeSerialTypeLen(u32);
 u32 sqlite3VdbeSerialType(Mem*, int);
-int sqlite3VdbeSerialPut(unsigned char*, int, Mem*, int);
-int sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
+u32 sqlite3VdbeSerialPut(unsigned char*, int, Mem*, int);
+u32 sqlite3VdbeSerialGet(const unsigned char*, u32, Mem*);
 void sqlite3VdbeDeleteAuxData(VdbeFunc*, int);
 
 int sqlite2BtreeKeyCompare(BtCursor *, const void *, int, int, int *);

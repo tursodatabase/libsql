@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.458 2009/05/29 19:00:13 drh Exp $
+** $Id: vdbeaux.c,v 1.459 2009/06/05 14:17:25 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2120,7 +2120,7 @@ u32 sqlite3VdbeSerialType(Mem *pMem, int file_format){
 /*
 ** Return the length of the data corresponding to the supplied serial-type.
 */
-int sqlite3VdbeSerialTypeLen(u32 serial_type){
+u32 sqlite3VdbeSerialTypeLen(u32 serial_type){
   if( serial_type>=12 ){
     return (serial_type-12)/2;
   }else{
@@ -2200,14 +2200,14 @@ static u64 floatSwap(u64 in){
 ** of bytes in the zero-filled tail is included in the return value only
 ** if those bytes were zeroed in buf[].
 */ 
-int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
+u32 sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
   u32 serial_type = sqlite3VdbeSerialType(pMem, file_format);
-  int len;
+  u32 len;
 
   /* Integer and Real */
   if( serial_type<=7 && serial_type>0 ){
     u64 v;
-    int i;
+    u32 i;
     if( serial_type==7 ){
       assert( sizeof(v)==sizeof(pMem->r) );
       memcpy(&v, &pMem->r, sizeof(v));
@@ -2233,8 +2233,9 @@ int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
     memcpy(buf, pMem->z, len);
     if( pMem->flags & MEM_Zero ){
       len += pMem->u.nZero;
-      if( len>nBuf ){
-        len = nBuf;
+      assert( nBuf>=0 );
+      if( len > (u32)nBuf ){
+        len = (u32)nBuf;
       }
       memset(&buf[pMem->n], 0, len-pMem->n);
     }
@@ -2249,7 +2250,7 @@ int sqlite3VdbeSerialPut(u8 *buf, int nBuf, Mem *pMem, int file_format){
 ** Deserialize the data blob pointed to by buf as serial type serial_type
 ** and store the result in pMem.  Return the number of bytes read.
 */ 
-int sqlite3VdbeSerialGet(
+u32 sqlite3VdbeSerialGet(
   const unsigned char *buf,     /* Buffer to deserialize from */
   u32 serial_type,              /* Serial type to deserialize */
   Mem *pMem                     /* Memory cell to write value into */
@@ -2327,7 +2328,7 @@ int sqlite3VdbeSerialGet(
       return 0;
     }
     default: {
-      int len = (serial_type-12)/2;
+      u32 len = (serial_type-12)/2;
       pMem->z = (char *)buf;
       pMem->n = len;
       pMem->xDel = 0;
