@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.847 2009/06/05 14:17:24 drh Exp $
+** $Id: vdbe.c,v 1.848 2009/06/05 16:46:53 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -3959,10 +3959,10 @@ case OP_RowData: {
     if( n64>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
-    n = (int)n64;
+    n = (u32)n64;
   }else{
     sqlite3BtreeDataSize(pCrsr, &n);
-    if( (int)n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
+    if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
   }
