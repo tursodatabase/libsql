@@ -1,5 +1,5 @@
-C Fix\san\serror\sin\sthe\smalloc.test\stest\sscript\scausing\sa\ssmall\sbuffer\soverread.\s(CVS\s6725)
-D 2009-06-06T16:08:23
+C Update\sthe\serror\smessage\son\sone\sof\sthe\scorruption\stests\sto\saccount\sfor\sthe\sfact\nthat\swe\sare\sfinding\sthe\scorruption\ssooner.\s(CVS\s6726)
+D 2009-06-06T19:21:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -290,7 +290,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 267be7fbb7bdb89df40007178437ebdd0cd9c174
-F test/corruptC.test 9b70fa2bfd33a58c32f6ce3a1b6d793b218c2955
+F test/corruptC.test 4ee86485de5263ed050729c11650dd59ca288bd3
 F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 127b13981960a9690de09e8f9d0b38a4bd76015f
-R f21870f75d20b7f8e75a8d0c48e772bc
-U danielk1977
-Z 84816671ae9d277e110f802df30e0a1b
+P 4d129bee696f3a537f7ea5501a387012fc08c27e
+R 0886867af8335377b414a641e43ab0d1
+U drh
+Z 92acfcf11caa462c7de054705c7ddd22

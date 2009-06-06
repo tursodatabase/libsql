@@ -15,7 +15,7 @@
 # data base file, then tests that single byte corruptions in 
 # increasingly larger quantities are handled gracefully.
 #
-# $Id: corruptC.test,v 1.12 2009/06/04 02:46:20 shane Exp $
+# $Id: corruptC.test,v 1.13 2009/06/06 19:21:13 drh Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -94,8 +94,7 @@ do_test corruptC-2.1 {
 
   sqlite3 db test.db
   catchsql {PRAGMA integrity_check}
-} {0 {{*** in database main ***
-Corruption detected in header on page 3}}}
+} {1 {database disk image is malformed}}
 
 # test that a corrupt content offset size is handled (seed 5649)
 do_test corruptC-2.2 {
