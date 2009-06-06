@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.78 2009/04/09 01:23:49 drh Exp $
+# $Id: malloc.test,v 1.79 2009/06/06 16:08:23 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -230,7 +230,7 @@ ifcapable utf16 {
     } else {
       set ::bomstr "\xFE\xFF"
     }
-    append ::bomstr [encoding convertto unicode "123456789_123456789_12345678"]
+    append ::bomstr [encoding convertto unicode "123456789_123456789_123456789"]
   } -tclbody {
     sqlite3_column_text16 $::STMT 0
     sqlite3_column_int $::STMT 0

@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sresult\sof\ssqlite3VdbeGetOp()\sis\snot\sused\sas\san\sarray\sfollowing\nan\sOOM\serror,\ssince\safter\s(6691)\sit\smight\sbe\sa\ssingle-entry\sdummy\sopcode.\s(CVS\s6724)
-D 2009-06-06T15:17:28
+C Fix\san\serror\sin\sthe\smalloc.test\stest\sscript\scausing\sa\ssmall\sbuffer\soverread.\s(CVS\s6725)
+D 2009-06-06T16:08:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -445,7 +445,7 @@ F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
 F test/main.test 347ab987f16167858781383427476b33dc69fdb7
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test cd2b9f515ba98beb5e335acdd94c3ad7a6f7fc4a
+F test/malloc.test 3db0f384c4c5a3c62ecc35a482f8fb915e67025b
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 4d16d1bb26d2deddd7c4f480deec341f9b2d0e22
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3fd6c72da599347af70897b30b86a4ba641d4cd9
-R cb43d9b720bcd9297992edbfe1e179da
-U drh
-Z c27bf9ffa6ccdcf0d37dcb5ecf60c7c6
+P 127b13981960a9690de09e8f9d0b38a4bd76015f
+R f21870f75d20b7f8e75a8d0c48e772bc
+U danielk1977
+Z 84816671ae9d277e110f802df30e0a1b
