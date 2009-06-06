@@ -13,7 +13,7 @@
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
 **
-** $Id: vdbeapi.c,v 1.164 2009/04/27 18:46:06 drh Exp $
+** $Id: vdbeapi.c,v 1.165 2009/06/06 14:13:27 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -766,8 +766,23 @@ static Mem *columnMem(sqlite3_stmt *pStmt, int i){
     vals = sqlite3_data_count(pStmt);
     pOut = &pVm->pResultSet[i];
   }else{
-    /* ((double)0) In case of SQLITE_OMIT_FLOATING_POINT... */
-    static const Mem nullMem = {{0}, (double)0, 0, "", 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+    /* If the value passed as the second argument is out of range, return
+    ** a pointer to the following static Mem object which contains the
+    ** value SQL NULL. Even though the Mem structure contains an element
+    ** of type i64, on certain architecture (x86) with certain compiler
+    ** switches (-Os), gcc may align this Mem object on a 4-byte boundary
+    ** instead of an 8-byte one. This all works fine, except that when
+    ** running with SQLITE_DEBUG defined the SQLite code sometimes assert()s
+    ** that a Mem structure is located on an 8-byte boundary. To prevent
+    ** this assert() from failing, when building with SQLITE_DEBUG defined
+    ** using gcc, force nullMem to be 8-byte aligned using the magical
+    ** __attribute__((aligned(8))) macro.  */
+    static const Mem nullMem 
+#if defined(SQLITE_DEBUG) && defined(__GNUC__)
+      __attribute__((aligned(8))) 
+#endif
+      = {{0}, (double)0, 0, "", 0, MEM_Null, SQLITE_NULL, 0, 0, 0 };
+
     if( pVm && ALWAYS(pVm->db) ){
       sqlite3_mutex_enter(pVm->db->mutex);
       sqlite3Error(pVm->db, SQLITE_RANGE, 0);
