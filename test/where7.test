@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the multi-index OR clause optimizer.
 #
-# $Id: where7.test,v 1.8 2009/04/21 09:02:47 danielk1977 Exp $
+# $Id: where7.test,v 1.9 2009/06/07 23:45:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -181,7 +181,7 @@ do_test where7-1.32 {
 
 do_test where7-2.1 {
   db eval {
-    CREATE TABLE t2(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
+    CREATE TABLE t2(a INTEGER PRIMARY KEY,b,c,d,e,f TEXT,g);
     INSERT INTO t2 VALUES(1,11,1001,1.001,100.1,'bcdefghij','yxwvuts');
     INSERT INTO t2 VALUES(2,22,1001,2.002,100.1,'cdefghijk','yxwvuts');
     INSERT INTO t2 VALUES(3,33,1001,3.0029999999999997,100.1,'defghijkl','xwvutsr');
@@ -288,7 +288,7 @@ do_test where7-2.1 {
     CREATE INDEX t2e ON t2(e);
     CREATE INDEX t2f ON t2(f);
     CREATE INDEX t2g ON t2(g);
-    CREATE TABLE t3(a INTEGER PRIMARY KEY,b,c,d,e,f,g);
+    CREATE TABLE t3(a INTEGER PRIMARY KEY,b,c,d,e,f TEXT,g);
     INSERT INTO t3 SELECT * FROM t2;
     CREATE INDEX t3b ON t3(b,c);
     CREATE INDEX t3c ON t3(c,e);

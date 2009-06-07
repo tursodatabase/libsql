@@ -12,7 +12,7 @@
 # is testing of where.c. More specifically, the focus is the optimization
 # of WHERE clauses that feature the OR operator.
 #
-# $Id: where8.test,v 1.7 2009/06/05 17:09:12 drh Exp $
+# $Id: where8.test,v 1.8 2009/06/07 23:45:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -40,7 +40,7 @@ proc execsql_status2 {sql {db db}} {
 
 do_test where8-1.1 {
   execsql {
-    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t1(a, b TEXT, c);
     CREATE INDEX i1 ON t1(a);
     CREATE INDEX i2 ON t1(b);
 

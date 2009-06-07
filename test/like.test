@@ -13,7 +13,7 @@
 # in particular the optimizations that occur to help those operators
 # run faster.
 #
-# $Id: like.test,v 1.12 2009/01/09 21:41:17 drh Exp $
+# $Id: like.test,v 1.13 2009/06/07 23:45:11 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -357,7 +357,7 @@ do_test like-5.2 {
 } 12
 do_test like-5.3 {
   execsql {
-    CREATE TABLE t2(x COLLATE NOCASE);
+    CREATE TABLE t2(x TEXT COLLATE NOCASE);
     INSERT INTO t2 SELECT * FROM t1;
     CREATE INDEX i2 ON t2(x COLLATE NOCASE);
   }
@@ -476,7 +476,7 @@ do_test like-5.24 {
 do_test like-5.25 {
   queryplan {
     PRAGMA case_sensitive_like=on;
-    CREATE TABLE t3(x);
+    CREATE TABLE t3(x TEXT);
     CREATE INDEX i3 ON t3(x);
     INSERT INTO t3 VALUES('ZZ-upper-upper');
     INSERT INTO t3 VALUES('zZ-lower-upper');
@@ -519,9 +519,9 @@ do_test like-6.1 {
 
 do_test like-7.1 {
   execsql {
-    SELECT * FROM t1 WHERE rowid GLOB '1*';
+    SELECT rowid, * FROM t1 WHERE rowid GLOB '1*' ORDER BY rowid;
   }
-} {a}
+} {1 a 10 ABC 11 CDE 12 {ABC abc xyz}}
 
 # ticket #3345.
 #
@@ -629,6 +629,109 @@ ifcapable like_opt {
     } {1}
   }
 }
+
+# Do an SQL statement.  Append the search count to the end of the result.
+#
+proc count sql {
+  set ::sqlite_search_count 0
+  set ::sqlite_like_count 0
+  return [concat [execsql $sql] scan $::sqlite_search_count \
+           like $::sqlite_like_count]
+}
+
+# The LIKE and GLOB optimizations do not work on columns with
+# affinity other than TEXT.
+# Ticket #3901
+#
+do_test like-10.1 {
+  db close
+  sqlite3 db test.db
+  execsql {
+    CREATE TABLE t10(
+      a INTEGER PRIMARY KEY,
+      b INTEGER COLLATE nocase UNIQUE,
+      c NUMBER COLLATE nocase UNIQUE,
+      d BLOB COLLATE nocase UNIQUE,
+      e COLLATE nocase UNIQUE,
+      f TEXT COLLATE nocase UNIQUE
+    );
+    INSERT INTO t10 VALUES(1,1,1,1,1,1);
+    INSERT INTO t10 VALUES(12,12,12,12,12,12);
+    INSERT INTO t10 VALUES(123,123,123,123,123,123);
+    INSERT INTO t10 VALUES(234,234,234,234,234,234);
+    INSERT INTO t10 VALUES(345,345,345,345,345,345);
+    INSERT INTO t10 VALUES(45,45,45,45,45,45);
+  }
+  count {
+    SELECT a FROM t10 WHERE b LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.2 {
+  count {
+    SELECT a FROM t10 WHERE c LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.3 {
+  count {
+    SELECT a FROM t10 WHERE d LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.4 {
+  count {
+    SELECT a FROM t10 WHERE e LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.5 {
+  count {
+    SELECT a FROM t10 WHERE f LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 3 like 0}
+do_test like-10.6 {
+  count {
+    SELECT a FROM t10 WHERE a LIKE '12%' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.10 {
+  execsql {
+    CREATE TABLE t10b(
+      a INTEGER PRIMARY KEY,
+      b INTEGER UNIQUE,
+      c NUMBER UNIQUE,
+      d BLOB UNIQUE,
+      e UNIQUE,
+      f TEXT UNIQUE
+    );
+    INSERT INTO t10b SELECT * FROM t10;
+  }
+  count {
+    SELECT a FROM t10b WHERE b GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.11 {
+  count {
+    SELECT a FROM t10b WHERE c GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.12 {
+  count {
+    SELECT a FROM t10b WHERE d GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.13 {
+  count {
+    SELECT a FROM t10b WHERE e GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
+do_test like-10.14 {
+  count {
+    SELECT a FROM t10b WHERE f GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 3 like 0}
+do_test like-10.15 {
+  count {
+    SELECT a FROM t10b WHERE a GLOB '12*' ORDER BY a;
+  }
+} {12 123 scan 5 like 6}
 
 
 finish_test
