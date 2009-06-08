@@ -1,11 +1,11 @@
-C Disable\sthe\sLIKE\soptimization\sif\sthe\saffinity\sof\sthe\sLHS\scolumn\sis\nnot\sTEXT.\s\sTicket\s#3901.\s(CVS\s6727)
-D 2009-06-07T23:45:11
+C Increase\sthe\sversion\snumber\sto\s3.6.15\sin\spreparation\sfor\sthe\snext\srelease.\s(CVS\s6728)
+D 2009-06-08T12:52:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 51698ac39a2d114c1586b7694838f2f321c43f64
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 768db26884d4fad3631e6d435475edd072d4379c
+F VERSION ed554479eec8367263fc9a5035d3cc800f90b930
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P ba9848e7b89df1fb6bf6db2b9d66cd3ffce375df
-R 81cd2c4f24010387a42ab7914dcb3be9
+P a255c645c46ae03b65f862858fe57e462076e1fc
+R 8fb9b7e59a24bac8e4bf17a7db6d3e15
 U drh
-Z e83d06023b0c10acd9b2d2194fc4e200
+Z bb4a57ffdcc392156e0e6c8c5c319c52
