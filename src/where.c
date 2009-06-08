@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.403 2009/06/08 17:11:08 drh Exp $
+** $Id: where.c,v 1.404 2009/06/08 19:44:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1203,11 +1203,18 @@ static void exprAnalyze(
     if( pStr1 ) pStr1->u.zToken[nPattern] = 0;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
     if( !db->mallocFailed ){
-      u8 c, *pC;
+      u8 c, *pC;       /* Last character before the first wildcard */
       pC = (u8*)&pStr2->u.zToken[nPattern-1];
       c = *pC;
       if( noCase ){
-        if( c=='@' ) isComplete = 0;
+        /* The point is to increment the last character before the first
+        ** wildcard.  But if we increment '@', that will push it into the
+        ** alphabetic range where case conversions will mess up the 
+        ** inequality.  To avoid this, make sure to also run the full
+        ** LIKE on all candidate expressions by clearing the isComplete flag
+        */
+        if( c=='A'-1 ) isComplete = 0;
+
         c = sqlite3UpperToLower[c];
       }
       *pC = c + 1;
