@@ -1,5 +1,5 @@
-C Change\sthe\sbtree\sbalance\scode\sso\sthat\sit\sdoes\snot\scall\sbalance_nonroot()\srecursively.\s(CVS\s6729)
-D 2009-06-08T14:49:46
+C Clarification\sof\sthe\soperation\sof\sthe\sOR-term\soptimizer\sin\swhere.c.\s(CVS\s6730)
+D 2009-06-08T17:11:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
 F src/vtab.c e2f4c92df7d06330b151448718c4724742ff444b
 F src/walker.c ec4b9742a4077ef80346e2f9aaf0f44c2d95087a
-F src/where.c 01b8d4733f177f047014c0b391b4ecbcc867dfd8
+F src/where.c 21555aa8b48345f5a1c706cf8ca485012f2cea03
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 456ea541d67221a573b63e264c83f4448f2ed569
-R 7ada04c9a78d367df09e91faed8b31d8
-U danielk1977
-Z 47cd44a7ec9eea431d4519541126ee12
+P 7863db904d6fc36417c923e3d135eb2c145b9013
+R 6ef9e53cd5ad2b3cbcbea9afea1bc9a7
+U drh
+Z aebb118da6ff464bb9146e5d93538e1c

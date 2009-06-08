@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.402 2009/06/07 23:45:11 drh Exp $
+** $Id: where.c,v 1.403 2009/06/08 17:11:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -892,6 +892,22 @@ static void exprAnalyzeOrTerm(
   ** chngToIN holds a set of tables that *might* satisfy case 1.  But
   ** we have to do some additional checking to see if case 1 really
   ** is satisfied.
+  **
+  ** chngToIN will hold either 0, 1, or 2 bits.  The 0-bit case means
+  ** that there is no possibility of transforming the OR clause into an
+  ** IN operator because one or more terms in the OR clause contain
+  ** something other than == on a column in the single table.  The 1-bit
+  ** case means that every term of the OR clause is of the form
+  ** "table.column=expr" for some single table.  The one bit that is set
+  ** will correspond to the common table.  We still need to check to make
+  ** sure the same column is used on all terms.  The 2-bit case is when
+  ** the all terms are of the form "table1.column=table2.column".  It
+  ** might be possible to form an IN operator with either table1.column
+  ** or table2.column as the LHS if either is common to every term of
+  ** the OR clause.
+  **
+  ** Note that terms of the form "table.column1=table.column2" (the
+  ** same table on both sizes of the ==) cannot be optimized.
   */
   if( chngToIN ){
     int okToChngToIN = 0;     /* True if the conversion to IN is valid */
@@ -910,18 +926,38 @@ static void exprAnalyzeOrTerm(
       for(i=pOrWc->nTerm-1; i>=0; i--, pOrTerm++){
         assert( pOrTerm->eOperator==WO_EQ );
         pOrTerm->wtFlags &= ~TERM_OR_OK;
-        if( pOrTerm->leftCursor==iColumn ) continue;
-        if( (chngToIN & getMask(pMaskSet, pOrTerm->leftCursor))==0 ) continue;
+        if( pOrTerm->leftCursor==iCursor ){
+          /* This is the 2-bit case and we are on the second iteration and
+          ** current term is from the first iteration.  So skip this term. */
+          assert( j==1 );
+          continue;
+        }
+        if( (chngToIN & getMask(pMaskSet, pOrTerm->leftCursor))==0 ){
+          /* This term must be of the form t1.a==t2.b where t2 is in the
+          ** chngToIN set but t1 is not.  This term will be either preceeded
+          ** or follwed by an inverted copy (t2.b==t1.a).  Skip this term 
+          ** and use its inversion. */
+          testcase( pOrTerm->wtFlags & TERM_COPIED );
+          testcase( pOrTerm->wtFlags & TERM_VIRTUAL );
+          assert( pOrTerm->wtFlags & (TERM_COPIED|TERM_VIRTUAL) );
+          continue;
+        }
         iColumn = pOrTerm->u.leftColumn;
         iCursor = pOrTerm->leftCursor;
         break;
       }
       if( i<0 ){
+        /* No candidate table+column was found.  This can only occur
+        ** on the second iteration */
         assert( j==1 );
         assert( (chngToIN&(chngToIN-1))==0 );
-        assert( chngToIN==getMask(pMaskSet, iColumn) );
+        assert( chngToIN==getMask(pMaskSet, iCursor) );
         break;
       }
+      testcase( j==1 );
+
+      /* We have found a candidate table and column.  Check to see if that
+      ** table and column is common to every term in the OR clause */
       okToChngToIN = 1;
       for(; i>=0 && okToChngToIN; i--, pOrTerm++){
         assert( pOrTerm->eOperator==WO_EQ );
