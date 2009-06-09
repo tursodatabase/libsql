@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.158 2009/05/28 01:00:55 drh Exp $
+** $Id: tokenize.c,v 1.159 2009/06/09 18:01:38 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -123,6 +123,11 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
   int i, c;
   switch( *z ){
     case ' ': case '\t': case '\n': case '\f': case '\r': {
+      testcase( z[0]==' ' );
+      testcase( z[0]=='\t' );
+      testcase( z[0]=='\n' );
+      testcase( z[0]=='\f' );
+      testcase( z[0]=='\r' );
       for(i=1; sqlite3Isspace(z[i]); i++){}
       *tokenType = TK_SPACE;
       return i;
@@ -235,6 +240,9 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     case '\'':
     case '"': {
       int delim = z[0];
+      testcase( delim=='`' );
+      testcase( delim=='\'' );
+      testcase( delim=='"' );
       for(i=1; (c=z[i])!=0; i++){
         if( c==delim ){
           if( z[i+1]==delim ){
@@ -268,6 +276,10 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case '0': case '1': case '2': case '3': case '4':
     case '5': case '6': case '7': case '8': case '9': {
+      testcase( z[0]=='0' );  testcase( z[0]=='1' );  testcase( z[0]=='2' );
+      testcase( z[0]=='3' );  testcase( z[0]=='4' );  testcase( z[0]=='5' );
+      testcase( z[0]=='6' );  testcase( z[0]=='7' );  testcase( z[0]=='8' );
+      testcase( z[0]=='9' );
       *tokenType = TK_INTEGER;
       for(i=0; sqlite3Isdigit(z[i]); i++){}
 #ifndef SQLITE_OMIT_FLOATING_POINT
@@ -318,6 +330,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 #endif
     case '@':  /* For compatibility with MS SQL Server */
     case ':': {
+      testcase( z[0]=='$' );  testcase( z[0]=='@' );  testcase( z[0]==':' );
       int n = 0;
       *tokenType = TK_VARIABLE;
       for(i=1; (c=z[i])!=0; i++){
@@ -346,6 +359,7 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
 #ifndef SQLITE_OMIT_BLOB_LITERAL
     case 'x': case 'X': {
+      testcase( z[0]=='x' ); testcase( z[0]=='X' );
       if( z[1]=='\'' ){
         *tokenType = TK_BLOB;
         for(i=2; (c=z[i])!=0 && c!='\''; i++){
@@ -424,8 +438,8 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     switch( tokenType ){
       case TK_SPACE: {
         if( db->u1.isInterrupted ){
+          sqlite3ErrorMsg(pParse, "interrupt");
           pParse->rc = SQLITE_INTERRUPT;
-          sqlite3SetString(pzErrMsg, db, "interrupt");
           goto abort_parse;
         }
         break;
@@ -472,12 +486,9 @@ abort_parse:
   if( pParse->rc!=SQLITE_OK && pParse->rc!=SQLITE_DONE && pParse->zErrMsg==0 ){
     sqlite3SetString(&pParse->zErrMsg, db, "%s", sqlite3ErrStr(pParse->rc));
   }
+  assert( pzErrMsg!=0 );
   if( pParse->zErrMsg ){
-    if( *pzErrMsg==0 ){
-      *pzErrMsg = pParse->zErrMsg;
-    }else{
-      sqlite3DbFree(db, pParse->zErrMsg);
-    }
+    *pzErrMsg = pParse->zErrMsg;
     pParse->zErrMsg = 0;
     nErr++;
   }
