@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.848 2009/06/05 16:46:53 drh Exp $
+** $Id: vdbe.c,v 1.849 2009/06/09 18:14:18 shane Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2645,17 +2645,17 @@ case OP_Savepoint: {
 */
 case OP_AutoCommit: {
   int desiredAutoCommit;
-  int rollback;
+  int iRollback;
   int turnOnAC;
 
   desiredAutoCommit = pOp->p1;
-  rollback = pOp->p2;
+  iRollback = pOp->p2;
   turnOnAC = desiredAutoCommit && !db->autoCommit;
   assert( desiredAutoCommit==1 || desiredAutoCommit==0 );
-  assert( desiredAutoCommit==1 || rollback==0 );
+  assert( desiredAutoCommit==1 || iRollback==0 );
   assert( db->activeVdbeCnt>0 );  /* At least this one VM is active */
 
-  if( turnOnAC && rollback && db->activeVdbeCnt>1 ){
+  if( turnOnAC && iRollback && db->activeVdbeCnt>1 ){
     /* If this instruction implements a ROLLBACK and other VMs are
     ** still running, and a transaction is active, return an error indicating
     ** that the other VMs must complete first. 
@@ -2663,7 +2663,7 @@ case OP_AutoCommit: {
     sqlite3SetString(&p->zErrMsg, db, "cannot rollback transaction - "
         "SQL statements in progress");
     rc = SQLITE_BUSY;
-  }else if( turnOnAC && !rollback && db->writeVdbeCnt>1 ){
+  }else if( turnOnAC && !iRollback && db->writeVdbeCnt>1 ){
     /* If this instruction implements a COMMIT and other VMs are writing
     ** return an error indicating that the other VMs must complete first. 
     */
@@ -2671,7 +2671,7 @@ case OP_AutoCommit: {
         "SQL statements in progress");
     rc = SQLITE_BUSY;
   }else if( desiredAutoCommit!=db->autoCommit ){
-    if( rollback ){
+    if( iRollback ){
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db);
       db->autoCommit = 1;
@@ -2695,7 +2695,7 @@ case OP_AutoCommit: {
   }else{
     sqlite3SetString(&p->zErrMsg, db,
         (!desiredAutoCommit)?"cannot start a transaction within a transaction":(
-        (rollback)?"cannot rollback - no transaction is active":
+        (iRollback)?"cannot rollback - no transaction is active":
                    "cannot commit - no transaction is active"));
          
     rc = SQLITE_ERROR;

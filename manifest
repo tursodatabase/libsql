@@ -1,5 +1,5 @@
-C Require\sthat\sthe\sbuffer\sspecified\sby\sSQLITE_CONFIG_HEAP\sbe\s8-byte\saligned.\s(CVS\s6739)
-D 2009-06-09T18:02:10
+C Avoid\sa\sfalse\sfailure\sreport\sin\sthe\stest\sscripts\scaused\sby\sthe\svdbe\sstack\s"compression"\sscript.\s(CVS\s6740)
+D 2009-06-09T18:14:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 8ff385a6b474e840d4fa3621f5f7263028ac892c
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c 434e3803de90697cfa6cc53f0f6719a575cde107
+F src/vdbe.c 60ca5ae05f5ab4ec10336465817931fc1002768e
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 3727128255a93d116e454f67d4559700f7ae4d6f
 F src/vdbeapi.c 619992b16821b989050e8a12e259d795d30731a9
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 5e8c48cff7e96e6030b796dba409844f4c758a60
-R cd4064526d818accd8a7986c2bb8a4af
-U drh
-Z 7b1665741275b81f0c1d362ef376953e
+P 18b78068cc94de51f081824c93f7b14c7c35726d
+R fdd2a933c6c72fa79bbfccb46e96d6c4
+U shane
+Z 807e1768f9d656e19f7ada248b0bfe4c
