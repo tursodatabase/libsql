@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.624 2009/06/09 13:42:25 drh Exp $
+** $Id: btree.c,v 1.625 2009/06/09 18:58:53 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -803,7 +803,7 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     }
     nSize += 4;
   }
-  nSize += (pIter - pCell);
+  nSize += (u32)(pIter - pCell);
 
   /* The minimum size of any cell is 4 bytes. */
   if( nSize<4 ){
@@ -5273,7 +5273,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     while( ((*(pOut++) = *(pCell++))&0x80) && pCell<pStop );
 
     /* Insert the new divider cell into pParent */
-    insertCell(pParent, pParent->nCell, pSpace, pOut-pSpace, 0, 0);
+    insertCell(pParent, pParent->nCell, pSpace, (int)(pOut-pSpace), 0, 0);
 
     /* Set the right-child pointer of pParent to point to the new page. */
     put4byte(&pParent->aData[pParent->hdrOffset+8], pgnoNew);
@@ -6019,8 +6019,8 @@ static int balance(BtCursor *pCur){
   u8 aBalanceQuickSpace[13];
   u8 *pFree = 0;
 
-  TESTONLY( int balance_quick_called = 0; );
-  TESTONLY( int balance_deeper_called = 0; );
+  TESTONLY( int balance_quick_called = 0 );
+  TESTONLY( int balance_deeper_called = 0 );
 
   do {
     int iPage = pCur->iPage;

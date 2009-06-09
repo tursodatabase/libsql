@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.16 2009/06/03 21:04:36 drh Exp $
+** @(#) $Id: pcache1.c,v 1.17 2009/06/09 18:58:53 shane Exp $
 */
 
 #include "sqliteInt.h"
@@ -368,7 +368,7 @@ static void pcache1TruncateUnsafe(
   PCache1 *pCache, 
   unsigned int iLimit 
 ){
-  TESTONLY( int nPage = 0; )      /* Used to assert pCache->nPage is correct */
+  TESTONLY( unsigned int nPage = 0; )      /* Used to assert pCache->nPage is correct */
   unsigned int h;
   assert( sqlite3_mutex_held(pcache1.mutex) );
   for(h=0; h<pCache->nHash; h++){
