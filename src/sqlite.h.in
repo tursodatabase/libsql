@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.456 2009/06/09 18:02:10 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.457 2009/06/09 19:53:58 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1036,12 +1036,14 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_SCRATCH</dt>
 ** <dd>This option specifies a static memory buffer that SQLite can use for
-** scratch memory.  There are three arguments:  A pointer to the memory, the
-** size of each scratch buffer (sz), and the number of buffers (N).  The sz
+** scratch memory.  There are three arguments:  A pointer an 8-byte
+** aligned memory buffer from which the scrach allocations will be
+** drawn, the size of each scratch allocation (sz),
+** and the maximum number of scratch allocations (N).  The sz
 ** argument must be a multiple of 16. The sz parameter should be a few bytes
-** larger than the actual scratch space required due internal overhead.
-** The first
-** argument should point to an allocation of at least sz*N bytes of memory.
+** larger than the actual scratch space required due to internal overhead.
+** The first argument should pointer to an 8-byte aligned buffer
+** of at least sz*N bytes of memory.
 ** SQLite will use no more than one scratch buffer at once per thread, so
 ** N should be set to the expected maximum number of threads.  The sz
 ** parameter should be 6 times the size of the largest database page size.
@@ -1055,31 +1057,37 @@ struct sqlite3_mem_methods {
 ** the database page cache with the default page cache implemenation.  
 ** This configuration should not be used if an application-define page
 ** cache implementation is loaded using the SQLITE_CONFIG_PCACHE option.
-** There are three arguments to this option: A pointer to the
+** There are three arguments to this option: A pointer to 8-byte aligned
 ** memory, the size of each page buffer (sz), and the number of pages (N).
-** The sz argument must be a power of two between 512 and 32768.  The first
+** The sz argument should be the size of the largest database page
+** (a power of two between 512 and 32768) plus a little extra for each
+** page header.  The page header size is 20 to 40 bytes depending on
+** the host architecture.  It is harmless, apart from the wasted memory,
+** to make sz a little too large.  The first
 ** argument should point to an allocation of at least sz*N bytes of memory.
 ** SQLite will use the memory provided by the first argument to satisfy its
 ** memory needs for the first N pages that it adds to cache.  If additional
 ** page cache memory is needed beyond what is provided by this option, then
 ** SQLite goes to [sqlite3_malloc()] for the additional storage space.
 ** The implementation might use one or more of the N buffers to hold 
-** memory accounting information. </dd>
+** memory accounting information. The pointer in the first argument must
+** be aligned to an 8-byte boundary or subsequent behavior of SQLite
+** will be undefined.</dd>
 **
 ** <dt>SQLITE_CONFIG_HEAP</dt>
 ** <dd>This option specifies a static memory buffer that SQLite will use
 ** for all of its dynamic memory allocation needs beyond those provided
 ** for by [SQLITE_CONFIG_SCRATCH] and [SQLITE_CONFIG_PAGECACHE].
-** There are three arguments: A pointer to the memory, the number of
-** bytes in the memory buffer, and the minimum allocation size.  If
-** the first pointer (the memory pointer) is NULL, then SQLite reverts
+** There are three arguments: An 8-byte aligned pointer to the memory,
+** the number of bytes in the memory buffer, and the minimum allocation size.
+** If the first pointer (the memory pointer) is NULL, then SQLite reverts
 ** to using its default memory allocator (the system malloc() implementation),
 ** undoing any prior invocation of [SQLITE_CONFIG_MALLOC].  If the
 ** memory pointer is not NULL and either [SQLITE_ENABLE_MEMSYS3] or
 ** [SQLITE_ENABLE_MEMSYS5] are defined, then the alternative memory
 ** allocator is engaged to handle all of SQLites memory allocation needs.
 ** The first pointer (the memory pointer) must be aligned to an 8-byte
-** boundary or the behavior is undefined.</dd>
+** boundary or subsequent behavior of SQLite will be undefined.</dd>
 **
 ** <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
@@ -1150,9 +1158,9 @@ struct sqlite3_mem_methods {
 ** <dd>This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
 ** The first argument (the third parameter to [sqlite3_db_config()] is a
-** pointer to a memory buffer to use for lookaside memory.  The first
-** argument may be NULL in which case SQLite will allocate the lookaside
-** buffer itself using [sqlite3_malloc()].  The second argument is the
+** pointer to an 8-byte aligned memory buffer to use for lookaside memory.
+** The first argument may be NULL in which case SQLite will allocate the
+** lookaside buffer itself using [sqlite3_malloc()].  The second argument is the
 ** size of each lookaside buffer slot and the third argument is the number of
 ** slots.  The size of the buffer in the first argument must be greater than
 ** or equal to the product of the second and third arguments.</dd>

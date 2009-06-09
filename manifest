@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\swith\sMSVC\sbuild.\s(CVS\s6741)
-D 2009-06-09T18:58:53
+C Remove\sthe\sactual\schecks\sthat\sverify\sthat\smemory\spools\s(such\sas\sset\sup\nusing\sSQLITE_CONFIG_HEAP)\sare\s8-byte\saligned.\s\sBut\sdocument\sthat\s8-byte\nalignment\sis\srequired.\s(CVS\s6742)
+D 2009-06-09T19:53:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 69ef88ce30d1f65315b57aba63b2d4e9bdca1090
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 839ebfc7fa3b5a9f36223f536f6b5fef2a5ecf63
+F src/main.c a30a4a7faaefb3dbceee60f80caf985f2f38b3ea
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -160,7 +160,7 @@ F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 2d97084a176a63eabce2d043eb4fbb13c46d6e9f
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in e23556112022f04c9c49a4fc9871be16223250c3
+F src/sqlite.h.in 9fe53ec7a8310d7d18d482b85e46f5556abfd1de
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h f8d70341d527404c5f162dc7fcc0f005700d0b48
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9d3329891c2227a1a3ded1c636ac615864010ca7
-R 29a13eb275900e63ac826d07275d5f9d
-U shane
-Z a716d3bc3c26080c0aad9adc8101d4dd
+P 0bd84e7387802c58c820369ff27ef54adbdf2e96
+R 29fe22cf8f8068919f8b856eca0fa3af
+U drh
+Z 046c2b0883806c0e583e778b10e1f950

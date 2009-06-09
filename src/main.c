@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.556 2009/06/09 18:02:10 drh Exp $
+** $Id: main.c,v 1.557 2009/06/09 19:53:58 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -337,11 +337,6 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.pHeap = va_arg(ap, void*);
       sqlite3GlobalConfig.nHeap = va_arg(ap, int);
       sqlite3GlobalConfig.mnReq = va_arg(ap, int);
-
-      /* Must have 8-byte alignment */
-      if( ((sqlite3GlobalConfig.pHeap - (char*)0)&7)!=0 ){
-        return SQLITE_MISUSE;
-      }
 
       if( sqlite3GlobalConfig.pHeap==0 ){
         /* If the heap pointer is NULL, then restore the malloc implementation
