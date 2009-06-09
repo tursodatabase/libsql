@@ -1,5 +1,5 @@
-C Only\sdo\sthe\scell\soverread\schecks\sin\ssqlite3BtreeInitPage\sif\nSQLITE_OVERREAD_CHECK\sis\sdefined\sat\scompile-time.\s(CVS\s6733)
-D 2009-06-09T10:37:04
+C Avoid\scalling\sfillInCell()\sto\screate\san\sinternal\snode\sintkey\scell\sfrom\sbalance_nonroot().\sA\ssingle\sputVarint()\sdoes\sthe\ssame\sthing\smore\squickly.\s(CVS\s6734)
+D 2009-06-09T11:34:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 30bd9f07840eb40bb7e84718ef222e0d2dabb4a4
+F src/btree.c a5a8e678b06c71547cc6d2b431ada8deed4db82e
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 8f1c1f61f7bc5270212725cf0a056872df983f49
-R 23881bef89b48856953f16ab4fcdd93d
-U drh
-Z a11e1844a1e55425522b632316002079
+P 49f544ebae8dc3cf7cf6189536c56ebb7d258a86
+R 1f3d12c8cfd8481e0f0a6480315e417f
+U danielk1977
+Z 38c7ee33165ee3f31623c1541ad1c16a

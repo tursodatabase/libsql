@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.622 2009/06/09 10:37:04 drh Exp $
+** $Id: btree.c,v 1.623 2009/06/09 11:34:11 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5734,10 +5734,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aOvflSpace){
         j--;
         sqlite3BtreeParseCellPtr(pNew, apCell[j], &info);
         pCell = pTemp;
-        rc = fillInCell(pParent, pCell, 0, info.nKey, 0, 0, 0, &sz);
-        if( rc!=SQLITE_OK ){
-          goto balance_cleanup;
-        }
+	sz = 4 + putVarint(&pCell[4], info.nKey);
         pTemp = 0;
       }else{
         pCell -= 4;
