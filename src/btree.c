@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.623 2009/06/09 11:34:11 danielk1977 Exp $
+** $Id: btree.c,v 1.624 2009/06/09 13:42:25 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1153,7 +1153,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     ** past the end of a page boundary and causes SQLITE_CORRUPT to be 
     ** returned if it does.
     */
-#if defined(SQLITE_OVERREAD_CHECK)
+#if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
     {
       int iCellFirst;   /* First allowable cell index */
       int iCellLast;    /* Last possible cell index */
