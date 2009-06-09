@@ -1,5 +1,5 @@
-C Enable\scell\soverflow\schecking\sin\ssqlite3BtreeInitPage()\susing\sthe\ncompile-time\soption\sSQLITE_ENABLE_OVERSIZE_CELL_CHECK.\s\sChange\sthe\stests\nso\sthat\sthey\srecognize\sdifferent\serror\smessages\sdepending\son\sthe\ssetting\nof\sthis\smacro.\s(CVS\s6735)
-D 2009-06-09T13:42:25
+C Modify\smkkeywordhash.c\sso\sthat\sit\sputs\sthe\soriginal\stext\sof\seach\stoken\sin\na\scomment\sbeside\sthe\s"testcase()"\smacros.\s(CVS\s6736)
+D 2009-06-09T14:27:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -715,7 +715,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 405a43d54f1646bfaa7a84b03bb959aef62a3a49
 F tool/lemon.c 1a94e70103e59f20df8f81539a453629df2aa523
 F tool/lempar.c aeba88b8566ff66f8a67c96b3eb2dd95e7d8908d
-F tool/mkkeywordhash.c 8e57fbe8c4fe2f1800f9190fd361231cb8558407
+F tool/mkkeywordhash.c 511a848b2ac7a3d93f36adc1e1086b4c5741224b
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl 671833bd775e76ebd922b9e82c2508a344562511
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 2e5d42aeb40c3c6eea373a9ae3fbdf4e8087cd58
-R d62552c29f49213fae384fb6619feacc
+P 56bff6eb2fc5f0afbd96afc986671ec744bd40e1
+R b6c6cb0746f9cab11932586981b7f888
 U drh
-Z 5d776a071c01e71a57d59767f05a68ee
+Z f0c1b7aa48b811b9a2662ed5ac53ad57
