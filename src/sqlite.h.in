@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.455 2009/05/24 21:59:28 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.456 2009/06/09 18:02:10 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -1077,7 +1077,9 @@ struct sqlite3_mem_methods {
 ** undoing any prior invocation of [SQLITE_CONFIG_MALLOC].  If the
 ** memory pointer is not NULL and either [SQLITE_ENABLE_MEMSYS3] or
 ** [SQLITE_ENABLE_MEMSYS5] are defined, then the alternative memory
-** allocator is engaged to handle all of SQLites memory allocation needs.</dd>
+** allocator is engaged to handle all of SQLites memory allocation needs.
+** The first pointer (the memory pointer) must be aligned to an 8-byte
+** boundary or the behavior is undefined.</dd>
 **
 ** <dt>SQLITE_CONFIG_MUTEX</dt>
 ** <dd>This option takes a single argument which is a pointer to an
