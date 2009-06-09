@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint4.test,v 1.6 2009/06/05 17:09:12 drh Exp $
+# $Id: savepoint4.test,v 1.7 2009/06/09 15:25:33 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -127,14 +127,16 @@ for {set ii 1} {$ii<=$ITERATIONS2} {incr ii} {
           RELEASE two;
 
           SAVEPOINT three;
-            UPDATE t1 SET x = x||x WHERE (rowid%12)==0;
+            UPDATE t1 SET x = substr(x||x, 12, 100000) WHERE (rowid%12)==0;
             SAVEPOINT four;
-              UPDATE t1 SET x = x||x WHERE (rowid%14)==0;
+              UPDATE t1 SET x = substr(x||x, 14, 100000) WHERE (rowid%14)==0;
            ROLLBACK TO three;
-            UPDATE t1 SET x = x||x WHERE (rowid%13)==0;
+            UPDATE t1 SET x = substr(x||x, 13, 100000) WHERE (rowid%13)==0;
           RELEASE three;
 
-        DELETE FROM t1 WHERE rowid > (SELECT rowid FROM t1 LIMIT 1 OFFSET 256);
+        DELETE FROM t1 WHERE rowid > (
+          SELECT rowid FROM t1 ORDER BY rowid ASC LIMIT 1 OFFSET 256
+        );
         RELEASE one;
       }]
 
