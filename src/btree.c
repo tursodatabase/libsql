@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.620 2009/06/08 14:49:46 danielk1977 Exp $
+** $Id: btree.c,v 1.621 2009/06/09 09:41:00 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5089,7 +5089,6 @@ static int insertCell(
     assert( j<(int)(sizeof(pPage->aOvfl)/sizeof(pPage->aOvfl[0])) );
     pPage->aOvfl[j].pCell = pCell;
     pPage->aOvfl[j].idx = (u16)i;
-    pPage->nFree = 0;
   }else{
     int rc = sqlite3PagerWrite(pPage->pDbPage);
     if( rc!=SQLITE_OK ){
@@ -5292,23 +5291,6 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 
     /* Release the reference to the new page. */
     releasePage(pNew);
-
-    /* At this point the pPage->nFree variable is not set correctly with
-    ** respect to the content of the page (because it was set to 0 by 
-    ** insertCell). So call sqlite3BtreeInitPage() to make sure it is
-    ** correct.
-    **
-    ** This has to be done even if an error will be returned. Normally, if
-    ** an error occurs during tree balancing, the contents of MemPage are
-    ** not important, as they will be recalculated when the page is rolled
-    ** back. But here, in balance_quick(), it is possible that pPage has 
-    ** not yet been marked dirty or written into the journal file. Therefore
-    ** it will not be rolled back and so it is important to make sure that
-    ** the page data and contents of MemPage are consistent.
-    */
-    pPage->isInit = 0;
-    sqlite3BtreeInitPage(pPage);
-    assert( pPage->nOverflow==0 );
   }
 
   return rc;
@@ -5341,10 +5323,10 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 ** is called recursively on the parent.
 **
 ** If this routine fails for any reason, it might leave the database
-** in a corrupted state.  So if this routine fails, the database should
+** in a corrupted state. So if this routine fails, the database should
 ** be rolled back.
 */
-static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
+static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aOvflSpace){
   BtShared *pBt;               /* The whole database */
   int nCell = 0;               /* Number of cells in apCell[] */
   int nMaxCells = 0;           /* Allocated size of apCell, szCell, aFrom. */
@@ -5359,7 +5341,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
   int pageFlags;               /* Value of pPage->aData[0] */
   int subtotal;                /* Subtotal of bytes in cells on one page */
   int iSpace1 = 0;             /* First unused byte of aSpace1[] */
-  int iSpace2 = 0;             /* First unused byte of aSpace2[] */
+  int iOvflSpace = 0;          /* First unused byte of aOvflSpace[] */
   int szScratch;               /* Size of scratch memory requested */
   MemPage *apOld[NB];          /* pPage and up to two siblings */
   Pgno pgnoOld[NB];            /* Page numbers for each page in apOld[] */
@@ -5426,7 +5408,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
      + pBt->pageSize                               /* aSpace1 */
      + (ISAUTOVACUUM ? nMaxCells : 0);             /* aFrom */
   apCell = sqlite3ScratchMalloc( szScratch ); 
-  if( apCell==0 ){
+  if( apCell==0 || aOvflSpace==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
   }
@@ -5441,11 +5423,6 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
   assert( EIGHT_BYTE_ALIGNMENT(aSpace1) );
   if( ISAUTOVACUUM ){
     aFrom = &aSpace1[pBt->pageSize];
-  }
-  /* aSpace2 = sqlite3PageMalloc(pBt->pageSize); */
-  if( aSpace2==0 ){
-    rc = SQLITE_NOMEM;
-    goto balance_cleanup;
   }
   
   /*
@@ -5736,7 +5713,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
       assert( j<nMaxCells );
       pCell = apCell[j];
       sz = szCell[j] + leafCorrection;
-      pTemp = &aSpace2[iSpace2];
+      pTemp = &aOvflSpace[iOvflSpace];
       if( !pNew->leaf ){
         memcpy(&pNew->aData[8], pCell, 4);
         if( ISAUTOVACUUM 
@@ -5780,9 +5757,9 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aSpace2){
           sz = cellSizePtr(pParent, pCell);
         }
       }
-      iSpace2 += sz;
+      iOvflSpace += sz;
       assert( sz<=pBt->pageSize/4 );
-      assert( iSpace2<=pBt->pageSize );
+      assert( iOvflSpace<=pBt->pageSize );
       rc = insertCell(pParent, nxDiv, pCell, sz, pTemp, 4);
       if( rc!=SQLITE_OK ) goto balance_cleanup;
       assert( sqlite3PagerIswriteable(pParent->pDbPage) );
@@ -5915,7 +5892,6 @@ static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
 ** shallower by one level.
 */
 static int balance_shallower(MemPage *pRoot){
-
   /* The root page is empty but has one child.  Transfer the
   ** information from that one child into the root page if it 
   ** will fit.  This reduces the depth of the tree by one.
@@ -5944,7 +5920,7 @@ static int balance_shallower(MemPage *pRoot){
   if( rc==SQLITE_OK ){
     if( pChild->nFree>=hdr ){
       if( hdr ){
-            rc = defragmentPage(pChild);
+        rc = defragmentPage(pChild);
       }
       if( rc==SQLITE_OK ){
         rc = copyNodeContent(pChild, pRoot);
@@ -6015,7 +5991,6 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   /* Copy the overflow cells from pRoot to pChild */
   memcpy(pChild->aOvfl, pRoot->aOvfl, pRoot->nOverflow*sizeof(pRoot->aOvfl[0]));
   pChild->nOverflow = pRoot->nOverflow;
-  pChild->nFree = 0;
 
   /* Zero the contents of pRoot. Then install pChild as the right-child. */
   zeroPage(pRoot, pChild->aData[0] & ~PTF_LEAF);
