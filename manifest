@@ -1,5 +1,5 @@
-C Remove\sthe\sactual\schecks\sthat\sverify\sthat\smemory\spools\s(such\sas\sset\sup\nusing\sSQLITE_CONFIG_HEAP)\sare\s8-byte\saligned.\s\sBut\sdocument\sthat\s8-byte\nalignment\sis\srequired.\s(CVS\s6742)
-D 2009-06-09T19:53:58
+C Minor\stweak\sto\sbalance_quick()\sto\ssave\sa\sfew\sinstructions.\s(CVS\s6743)
+D 2009-06-10T09:11:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c e626616c3b7501d4d79e7ff2e48743c20255b3b8
+F src/btree.c b883af5a932982547989a23187ffae5283dfd804
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 0bd84e7387802c58c820369ff27ef54adbdf2e96
-R 29fe22cf8f8068919f8b856eca0fa3af
-U drh
-Z 046c2b0883806c0e583e778b10e1f950
+P e9b55ccc8b6d4f21c9c8f8e7ba053475833fc833
+R b6154da6dd88f79ffa10cad6e611f694
+U danielk1977
+Z daa8926ed5a868ea8b7803008aa6961f

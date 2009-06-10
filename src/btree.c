@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.625 2009/06/09 18:58:53 shane Exp $
+** $Id: btree.c,v 1.626 2009/06/10 09:11:06 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5232,6 +5232,8 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
 
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
+  assert( pPage->nOverflow==1 );
+
   if( pPage->nCell<=0 ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
@@ -5247,10 +5249,9 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
     u8 *pStop;
 
     assert( sqlite3PagerIswriteable(pNew->pDbPage) );
-
-    zeroPage(pNew, pPage->aData[0]);
+    assert( pPage->aData[0]==(PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF) );
+    zeroPage(pNew, PTF_INTKEY|PTF_LEAFDATA|PTF_LEAF);
     assemblePage(pNew, 1, &pCell, &szCell);
-    pPage->nOverflow = 0;
   
     /* Create a divider cell to insert into pParent. The divider cell
     ** consists of a 4-byte page number (the page number of pPage) and
