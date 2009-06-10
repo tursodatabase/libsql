@@ -1,5 +1,5 @@
-C Minor\stweak\sto\sbalance_quick()\sto\ssave\sa\sfew\sinstructions.\s(CVS\s6743)
-D 2009-06-10T09:11:06
+C Remove\sa\sNEVER()\sthat\scan\ssometimes\soccur\son\san\sOOM\serror.\s(CVS\s6744)
+D 2009-06-10T11:07:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -201,7 +201,7 @@ F src/tokenize.c d8c6b39a6056db2b47a212607689dd7ee8031c69
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
-F src/util.c 8ff385a6b474e840d4fa3621f5f7263028ac892c
+F src/util.c 44e9f8b4c1a37cbc739e8c5c4d1eae8308a37da5
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
 F src/vdbe.c 20cf0b0b388685b759077db32002eb0dd3770436
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e9b55ccc8b6d4f21c9c8f8e7ba053475833fc833
-R b6154da6dd88f79ffa10cad6e611f694
-U danielk1977
-Z daa8926ed5a868ea8b7803008aa6961f
+P 9ace995910c8b0b9e95dc20fd70be487199e37af
+R 2cecd4983d351cd4a46724b94b6d66c5
+U drh
+Z ab21f098e14a1ba35a0f308bb93f9a53
