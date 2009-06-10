@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.404 2009/06/08 19:44:37 drh Exp $
+** $Id: where.c,v 1.405 2009/06/10 19:33:29 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1884,7 +1884,7 @@ static void bestVirtualIndex(
     pCost->rCost = pIdxInfo->estimatedCost;
   }
   pCost->plan.u.pVtabIdx = pIdxInfo;
-  if( pIdxInfo && pIdxInfo->orderByConsumed ){
+  if( pIdxInfo->orderByConsumed ){
     pCost->plan.wsFlags |= WHERE_ORDERBY;
   }
   pCost->plan.nEq = 0;
@@ -2170,7 +2170,7 @@ static void bestBtreeIndex(
         cost += cost*estLog(cost);
         WHERETRACE(("...... orderby increases cost to %.9g\n", cost));
       }
-    }else if( pParse->db->flags & SQLITE_ReverseOrder ){
+    }else if( wsFlags!=0 && (pParse->db->flags & SQLITE_ReverseOrder)!=0 ){
       /* For application testing, randomly reverse the output order for
       ** SELECT statements that omit the ORDER BY clause.  This will help
       ** to find cases where

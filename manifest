@@ -1,5 +1,5 @@
-C Remove\sa\sNEVER()\sthat\scan\ssometimes\soccur\son\san\sOOM\serror.\s(CVS\s6744)
-D 2009-06-10T11:07:01
+C Do\snot\slet\sthe\sreverse_unordered_selects\spragma\sforce\sthe\suse\sof\san\sindex\sthat\r\nwould\snot\sotherwise\sbe\sused.\s\sTicket\s#3904.\r\nAlso:\sremove\san\stest\swhich\sis\salways\strue.\s(CVS\s6745)
+D 2009-06-10T19:33:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
 F src/vtab.c e2f4c92df7d06330b151448718c4724742ff444b
 F src/walker.c ec4b9742a4077ef80346e2f9aaf0f44c2d95087a
-F src/where.c 70440f8c14ca866c6980153d2460840a88a729d7
+F src/where.c cbf29fc2b8b8011500f11523ccaa2bd86f33d1ba
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -706,7 +706,7 @@ F test/where7.test b6e84b472a024e45c6dbdadc52bbcab3fcc8d0e1
 F test/where8.test 4839a0a1447e178a9a0725c5136fb963445e7708
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
-F test/whereA.test 522469ca013ff97c81b5367e730042290889a061
+F test/whereA.test 1d1674254614147c866ab9b59af6582f454a858c
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test 792124852ec61458a2eb527b5091791215e0be95
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9ace995910c8b0b9e95dc20fd70be487199e37af
-R 2cecd4983d351cd4a46724b94b6d66c5
+P c27f23bbafd2e4fa453c8e3b83667ea8173183a7
+R 77cbdb78ecef08356b37cf19f9a70883
 U drh
-Z ab21f098e14a1ba35a0f308bb93f9a53
+Z 1f50addb00094da913f2d4235a78d8cc
