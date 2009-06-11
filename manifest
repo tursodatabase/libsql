@@ -1,5 +1,5 @@
-C Do\snot\slet\sthe\sreverse_unordered_selects\spragma\sforce\sthe\suse\sof\san\sindex\sthat\r\nwould\snot\sotherwise\sbe\sused.\s\sTicket\s#3904.\r\nAlso:\sremove\san\stest\swhich\sis\salways\strue.\s(CVS\s6745)
-D 2009-06-10T19:33:29
+C Changes\sto\sreenable\scodec\soperation\sand\sto\shandle\smemory\sallocation\nfailures\swithin\sa\scodec.\s(CVS\s6746)
+D 2009-06-11T00:47:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c b883af5a932982547989a23187ffae5283dfd804
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
-F src/build.c 20e02fd72249159ff6829009f3029d16d59cdff5
+F src/build.c 6c7b96103cebc558710ae72e2ce99b91c8ccd961
 F src/callback.c 57359fa93de47c341b6b8ee504a88ff276397686
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 30aafb668c2b88a653d5232b2a61f59d3da32df2
+F src/pager.c 7bc85a618a8ae0d011675bb844c8a29a8a6632db
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y 07690df997d50b3fdb5e5121e5a27f1a080db13d
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -162,7 +162,7 @@ F src/select.c 2d97084a176a63eabce2d043eb4fbb13c46d6e9f
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 9fe53ec7a8310d7d18d482b85e46f5556abfd1de
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h f8d70341d527404c5f162dc7fcc0f005700d0b48
+F src/sqliteInt.h 3445ca4373dacae7fe87240d8916b5724624f8d4
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P c27f23bbafd2e4fa453c8e3b83667ea8173183a7
-R 77cbdb78ecef08356b37cf19f9a70883
+P 78a391dca05dbe3ad1d8124b80b31bc2ce75778f
+R 1e24699e08b9d5dc7b0fbd04e5c66fbb
 U drh
-Z 1f50addb00094da913f2d4235a78d8cc
+Z 1969b58a290b247f789d9bc333ab6e41

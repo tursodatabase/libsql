@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.882 2009/06/05 14:17:23 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.883 2009/06/11 00:47:21 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -644,6 +644,10 @@ struct Db {
   u8 inTrans;          /* 0: not writable.  1: Transaction.  2: Checkpoint */
   u8 safety_level;     /* How aggressive at syncing data to disk */
   Schema *pSchema;     /* Pointer to database schema (possibly shared) */
+#ifdef SQLITE_HAS_CODEC
+  void *pAux;               /* Auxiliary data.  Usually NULL */
+  void (*xFreeAux)(void*);  /* Routine to free pAux */
+#endif
 };
 
 /*

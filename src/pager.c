@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.591 2009/06/02 21:31:39 drh Exp $
+** @(#) $Id: pager.c,v 1.592 2009/06/11 00:47:21 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -103,11 +103,14 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 ** A macro used for invoking the codec if there is one
 */
 #ifdef SQLITE_HAS_CODEC
-# define CODEC1(P,D,N,X) if( P->xCodec!=0 ){ P->xCodec(P->pCodecArg,D,N,X); }
-# define CODEC2(P,D,N,X) ((char*)(P->xCodec!=0?P->xCodec(P->pCodecArg,D,N,X):D))
+# define CODEC1(P,D,N,X,E) \
+    if( P->xCodec && P->xCodec(P->pCodecArg,D,N,X)==0 ){ E; }
+# define CODEC2(P,D,N,X,E,O) \
+    if( P->xCodec==0 ){ O=(char*)D; }else \
+    if( (O=(char*)(P->xCodec(P->pCodecArg,D,N,X)))==0 ){ E; }
 #else
-# define CODEC1(P,D,N,X) /* NO-OP */
-# define CODEC2(P,D,N,X) ((char*)D)
+# define CODEC1(P,D,N,X,E)   /* NO-OP */
+# define CODEC2(P,D,N,X,E,O) O=(char*)D
 #endif
 
 /*
@@ -1595,7 +1598,7 @@ static int pager_playback_one_page(
     }
 
     /* Decode the page just read from disk */
-    CODEC1(pPager, pData, pPg->pgno, 3);
+    CODEC1(pPager, pData, pPg->pgno, 3, rc=SQLITE_NOMEM);
     sqlite3PcacheRelease(pPg);
   }
   return rc;
@@ -2887,8 +2890,11 @@ static int pager_write_pagelist(PgHdr *pList){
     ** set (set by sqlite3PagerDontWrite()).
     */
     if( pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
-      i64 offset = (pgno-1)*(i64)pPager->pageSize;         /* Offset to write */
-      char *pData = CODEC2(pPager, pList->pData, pgno, 6); /* Data to write */
+      i64 offset = (pgno-1)*(i64)pPager->pageSize;   /* Offset to write */
+      char *pData;                                   /* Data to write */    
+
+      /* Encode the database */
+      CODEC2(pPager, pList->pData, pgno, 6, return SQLITE_NOMEM, pData);
 
       /* Write out the page data. */
       rc = sqlite3OsWrite(pPager->fd, pData, pPager->pageSize, offset);
@@ -2943,8 +2949,9 @@ static int subjournalPage(PgHdr *pPg){
   if( isOpen(pPager->sjfd) ){
     void *pData = pPg->pData;
     i64 offset = pPager->nSubRec*(4+pPager->pageSize);
-    char *pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
-  
+    char *pData2;
+
+    CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
     PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
   
     assert( pageInJournal(pPg) || pPg->pgno>pPager->dbOrigSize );
@@ -3487,7 +3494,7 @@ static int readDbPage(PgHdr *pPg){
     u8 *dbFileVers = &((u8*)pPg->pData)[24];
     memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
   }
-  CODEC1(pPager, pPg->pData, pgno, 3);
+  CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
 
   PAGER_INCR(sqlite3_pager_readdb_count);
   PAGER_INCR(pPager->nRead);
@@ -4185,7 +4192,7 @@ static int pager_write(PgHdr *pPg){
         ** contains the database locks.  The following assert verifies
         ** that we do not. */
         assert( pPg->pgno!=PAGER_MJ_PGNO(pPager) );
-        pData2 = CODEC2(pPager, pData, pPg->pgno, 7);
+        CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
         cksum = pager_cksum(pPager, (u8*)pData2);
         rc = write32bits(pPager->jfd, pPager->journalOff, pPg->pgno);
         if( rc==SQLITE_OK ){
