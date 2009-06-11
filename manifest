@@ -1,5 +1,5 @@
-C Add\san\sALWAYS()\sto\sa\sconditional\sin\swhere.c.\s(CVS\s6747)
-D 2009-06-11T17:04:28
+C Honor\sthe\sSQLITE_OPEN_READONLY\sflag\seven\son\sa\s:memory:\sor\stemporary\sdatabase,\neven\sthough\ssuch\sa\sdatabase\sis\spointless.\s\sTicket\s#3908.\s(CVS\s6748)
+D 2009-06-11T17:32:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 7bc85a618a8ae0d011675bb844c8a29a8a6632db
+F src/pager.c efdd56a49622fe87d5cf4b6e69aeb62b45bcb9b0
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
 F src/parse.y 07690df997d50b3fdb5e5121e5a27f1a080db13d
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -489,7 +489,7 @@ F test/notify1.test 8433bc74bd952fb8a6e3f8d7a4c2b28dfd69e310
 F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
-F test/openv2.test f5dd6b23e4dce828eb211649b600763c42a668df
+F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager.test d04982df84334a9ed272ed2943b61985be5377ee
 F test/pager2.test d4b7f6b70ff018b9995e622a32526b275f515042
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
@@ -733,7 +733,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 43a6ca98b1a6aff1f0f674ecabdc929efb314db7
-R 6d67b8adfba5816dc2720bc14f90f5fb
+P 1fdb3e1e9af0672072f133dde06594fea2ef13c5
+R 823b08d915257a93dc411921f9d74d82
 U drh
-Z b652a86aae59849ab53a62caa306c6ab
+Z ad0e99c3cc9d6218240a0d7748e56426

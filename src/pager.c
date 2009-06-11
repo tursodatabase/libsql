@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.592 2009/06/11 00:47:21 drh Exp $
+** @(#) $Id: pager.c,v 1.593 2009/06/11 17:32:45 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3273,6 +3273,7 @@ int sqlite3PagerOpen(
     */ 
     tempFile = 1;
     pPager->state = PAGER_EXCLUSIVE;
+    readOnly = (vfsFlags&SQLITE_OPEN_READONLY);
   }
 
   /* The following call to PagerSetPagesize() serves to set the value of 

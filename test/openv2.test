@@ -11,7 +11,7 @@
 #
 # Tests on the sqlite3_open_v2() interface.
 #
-# $Id: openv2.test,v 1.1 2007/09/03 15:19:36 drh Exp $
+# $Id: openv2.test,v 1.2 2009/06/11 17:32:45 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -37,5 +37,19 @@ do_test openv2-1.4 {
     INSERT INTO t1 VALUES(123)
   }
 } {1 {attempt to write a readonly database}}
+
+# Ticket #3908
+# Honor SQLITE_OPEN_READONLY even on an in-memory database, even though
+# this is pointless.
+#
+do_test openv2-2.1 {
+  db close
+  sqlite3 db :memory: -readonly 1
+  db eval {SELECT * FROM sqlite_master}
+} {}
+do_test openv2-2.2 {
+  catchsql {CREATE TABLE t1(x)}
+} {1 {attempt to write a readonly database}}
+
 
 finish_test
