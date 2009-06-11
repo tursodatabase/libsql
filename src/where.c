@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.405 2009/06/10 19:33:29 drh Exp $
+** $Id: where.c,v 1.406 2009/06/11 17:04:28 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2916,7 +2916,6 @@ static Bitmask codeOneLoopStart(
       WhereTerm *pOrTerm = &pOrWc->a[ii];
       if( pOrTerm->leftCursor==iCur || pOrTerm->eOperator==WO_AND ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
-
         /* Loop through table entries that match term pOrTerm. */
         pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
                         WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE | WHERE_FORCE_TABLE);
@@ -3217,7 +3216,7 @@ WhereInfo *sqlite3WhereBegin(
   assert( pWC->vmask==0 && pMaskSet->n==0 );
   for(i=0; i<pTabList->nSrc; i++){
     createMask(pMaskSet, pTabList->a[i].iCursor);
-    if( pTabList->a[i].pTab && IsVirtual(pTabList->a[i].pTab) ){
+    if( ALWAYS(pTabList->a[i].pTab) && IsVirtual(pTabList->a[i].pTab) ){
       pWC->vmask |= ((Bitmask)1 << i);
     }
   }
