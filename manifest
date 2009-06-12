@@ -1,5 +1,5 @@
-C Remove\sa\sC++-ism\sfrom\sthe\scode.\s\sTicket\s#3912.\s(CVS\s6752)
-D 2009-06-12T11:42:12
+C Enable\sthe\sSQLITE_LIMIT_FUNCTION_ARG\slimiter.\s(CVS\s6753)
+D 2009-06-12T12:04:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c efdd56a49622fe87d5cf4b6e69aeb62b45bcb9b0
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
-F src/parse.y 90bcb72db462fe4557cf96aabf8b94c39aa887fa
+F src/parse.y d4bade53de7a0ed17d6a06f89b171492c844502e
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 97e7e8e6e34026fb43b47d08532b0c02e959c26c
@@ -555,7 +555,7 @@ F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/sqllimits1.test 2f7ca3c7e7cef39a9c499e941e98b7f1708c4780
+F test/sqllimits1.test 06c2c6cbdbfa03af15a1a61ba8cae675d9c8fe31
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 6197b492714e16396941ae6ba61f90f708d54728
-R 35a287ed30a5a4abe3f9902d086b75b9
+P bc729bc3e6f6e3570103e646080eb119311b0fa7
+R dcf2433cc76e84aaf0238602ef723d94
 U drh
-Z ccc38ec38f2ea3ed8385702ad4474d78
+Z c579fe02fd243a6ebb0b2fb7a4beda49

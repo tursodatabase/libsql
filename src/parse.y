@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.280 2009/06/12 03:47:37 drh Exp $
+** @(#) $Id: parse.y,v 1.281 2009/06/12 12:04:16 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -789,7 +789,7 @@ expr(A) ::= CAST(X) LP expr(E) AS typetoken(T) RP(Y). {
 }
 %endif  SQLITE_OMIT_CAST
 expr(A) ::= ID(X) LP distinct(D) exprlist(Y) RP(E). {
-  if( Y && Y->nExpr>SQLITE_MAX_FUNCTION_ARG ){
+  if( Y && Y->nExpr>pParse->db->aLimit[SQLITE_LIMIT_FUNCTION_ARG] ){
     sqlite3ErrorMsg(pParse, "too many arguments on function %T", &X);
   }
   A.pExpr = sqlite3ExprFunction(pParse, Y, &X);

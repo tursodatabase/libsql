@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.31 2008/07/15 00:27:35 drh Exp $
+# $Id: sqllimits1.test,v 1.32 2009/06/12 12:04:16 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -718,36 +718,35 @@ if 0 {
 # Test the SQLITE_LIMIT_FUNCTION_ARG limit works. Test case names
 # match the pattern "sqllimits1-11.*".
 #
-do_test sqllimits1-11.1 {
-  set max $::SQLITE_MAX_FUNCTION_ARG
-  set vals [list]
-  for {set i 0} {$i < $SQLITE_MAX_FUNCTION_ARG} {incr i} {
-    lappend vals $i
-  }
-  catchsql "SELECT max([join $vals ,])"
-} "0 [expr {$::SQLITE_MAX_FUNCTION_ARG - 1}]"
-do_test sqllimits1-11.2 {
-  set max $::SQLITE_MAX_FUNCTION_ARG
-  set vals [list]
-  for {set i 0} {$i <= $SQLITE_MAX_FUNCTION_ARG} {incr i} {
-    lappend vals $i
-  }
-  catchsql "SELECT max([join $vals ,])"
-} {1 {too many arguments on function max}}
+for {set max 5} {$max<=$SQLITE_MAX_FUNCTION_ARG} {incr max} {
+  do_test sqllimits1-11.$max.1 {
+    set vals [list]
+    sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG $::max
+    for {set i 0} {$i < $::max} {incr i} {
+      lappend vals $i
+    }
+    catchsql "SELECT max([join $vals ,])"
+  } "0 [expr {$::max - 1}]"
+  do_test sqllimits1-11.$max.2 {
+    set vals [list]
+    for {set i 0} {$i <= $::max} {incr i} {
+      lappend vals $i
+    }
+    catchsql "SELECT max([join $vals ,])"
+  } {1 {too many arguments on function max}}
 
-# Test that it is SQLite, and not the implementation of the
-# user function that is throwing the error.
-proc myfunc {args} {error "I don't like to be called!"}
-do_test sqllimits1-11.2 {
-  db function myfunc myfunc
-  set max $::SQLITE_MAX_FUNCTION_ARG
-  set vals [list]
-  for {set i 0} {$i <= $SQLITE_MAX_FUNCTION_ARG} {incr i} {
-    lappend vals $i
-  }
-  catchsql "SELECT myfunc([join $vals ,])"
-} {1 {too many arguments on function myfunc}}
-
+  # Test that it is SQLite, and not the implementation of the
+  # user function that is throwing the error.
+  proc myfunc {args} {error "I don't like to be called!"}
+  do_test sqllimits1-11.$max.2 {
+    db function myfunc myfunc
+    set vals [list]
+    for {set i 0} {$i <= $::max} {incr i} {
+      lappend vals $i
+    }
+    catchsql "SELECT myfunc([join $vals ,])"
+  } {1 {too many arguments on function myfunc}}
+}
 
 #--------------------------------------------------------------------
 # Test cases sqllimits1-12.*: Test the SQLITE_MAX_ATTACHED limit.
