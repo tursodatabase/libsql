@@ -1,5 +1,5 @@
-C Make\ssure\snested\squeries\swith\sUSING\sclauses\sdo\snot\sleak\smemory.\nPreliminary\sfix\sfor\sticket\s#3911.\s(CVS\s6750)
-D 2009-06-12T03:27:27
+C An\sadditional\smemory\sleak\sin\sthe\sparser\sfixed.\s\sTicket\s#3911.\s(CVS\s6751)
+D 2009-06-12T03:47:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c efdd56a49622fe87d5cf4b6e69aeb62b45bcb9b0
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
-F src/parse.y 5d6ab0304cdbe6f156e763adba9b95bac2800a10
+F src/parse.y 90bcb72db462fe4557cf96aabf8b94c39aa887fa
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 97e7e8e6e34026fb43b47d08532b0c02e959c26c
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 457e0b245b1833c0d297bc6f4ff9785e6a2cee02
-R f6009d8ca1e711139a713d350a8b59a4
+P bd341a103c25395b1189d05edebfe4af8a943941
+R cd135e548bd04e4130a04a18089f1ed0
 U drh
-Z dd5a9ef95d7a9c731fbe3fa8384cfe32
+Z 1b96a3fcbabb94cf9a879e6d3b453efa

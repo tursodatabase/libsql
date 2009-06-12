@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.279 2009/06/12 02:27:15 drh Exp $
+** @(#) $Id: parse.y,v 1.280 2009/06/12 03:47:37 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -499,7 +499,9 @@ seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) usi
   }
   seltablist(A) ::= stl_prefix(X) LP seltablist(F) RP
                     as(Z) on_opt(N) using_opt(U). {
-    if( X==0 && Z.n==0 && N==0 && U==0 ){
+    if( X==0 ){
+      sqlite3ExprDelete(pParse->db, N);
+      sqlite3IdListDelete(pParse->db, U);
       A = F;
     }else{
       Select *pSubquery;
