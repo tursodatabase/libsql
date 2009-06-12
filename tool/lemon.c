@@ -3599,7 +3599,7 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Generate the defines */
   fprintf(out,"#define YYCODETYPE %s\n",
-    minimum_size_type(0, lemp->nsymbol+5)); lineno++;
+    minimum_size_type(0, lemp->nsymbol+1)); lineno++;
   fprintf(out,"#define YYNOCODE %d\n",lemp->nsymbol+1);  lineno++;
   fprintf(out,"#define YYACTIONTYPE %s\n",
     minimum_size_type(0, lemp->nstate+lemp->nrule+5));  lineno++;
@@ -3864,8 +3864,8 @@ int mhflag;     /* Output in makeheaders format if true */
         fprintf(out, "      /* TERMINAL Destructor */\n"); lineno++;
         once = 0;
       }
-      fprintf(out,"    case %d: /* %s */\n",
-              sp->index, sp->name); lineno++;
+      fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
+              sp->index, sp->name, sp->index); lineno++;
     }
     for(i=0; i<lemp->nsymbol && lemp->symbols[i]->type!=TERMINAL; i++);
     if( i<lemp->nsymbol ){
@@ -3884,8 +3884,8 @@ int mhflag;     /* Output in makeheaders format if true */
         fprintf(out, "      /* Default NON-TERMINAL Destructor */\n"); lineno++;
         once = 0;
       }
-      fprintf(out,"    case %d: /* %s */\n",
-              sp->index, sp->name); lineno++;
+      fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
+              sp->index, sp->name, sp->index); lineno++;
       dflt_sp = sp;
     }
     if( dflt_sp!=0 ){
@@ -3896,8 +3896,8 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
-    fprintf(out,"    case %d: /* %s */\n",
-            sp->index, sp->name); lineno++;
+    fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
+            sp->index, sp->name, sp->index); lineno++;
 
     /* Combine duplicate destructors into a single case */
     for(j=i+1; j<lemp->nsymbol; j++){
@@ -3905,8 +3905,8 @@ int mhflag;     /* Output in makeheaders format if true */
       if( sp2 && sp2->type!=TERMINAL && sp2->destructor
           && sp2->dtnum==sp->dtnum
           && strcmp(sp->destructor,sp2->destructor)==0 ){
-         fprintf(out,"    case %d: /* %s */\n",
-                 sp2->index, sp2->name); lineno++;
+         fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
+                 sp2->index, sp2->name, sp2->index); lineno++;
          sp2->destructor = 0;
       }
     }
@@ -3944,7 +3944,7 @@ int mhflag;     /* Output in makeheaders format if true */
       if( rp2->code==rp->code ){
         fprintf(out,"      case %d: /* ", rp2->index);
         writeRuleText(out, rp2);
-        fprintf(out," */\n"); lineno++;
+        fprintf(out," */ yytestcase(yyruleno==%d);\n", rp2->index); lineno++;
         rp2->code = 0;
       }
     }
