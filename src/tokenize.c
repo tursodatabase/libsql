@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.159 2009/06/09 18:01:38 drh Exp $
+** $Id: tokenize.c,v 1.160 2009/06/12 11:42:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -330,8 +330,8 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
 #endif
     case '@':  /* For compatibility with MS SQL Server */
     case ':': {
-      testcase( z[0]=='$' );  testcase( z[0]=='@' );  testcase( z[0]==':' );
       int n = 0;
+      testcase( z[0]=='$' );  testcase( z[0]=='@' );  testcase( z[0]==':' );
       *tokenType = TK_VARIABLE;
       for(i=1; (c=z[i])!=0; i++){
         if( IdChar(c) ){

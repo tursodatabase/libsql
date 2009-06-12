@@ -1,5 +1,5 @@
-C An\sadditional\smemory\sleak\sin\sthe\sparser\sfixed.\s\sTicket\s#3911.\s(CVS\s6751)
-D 2009-06-12T03:47:37
+C Remove\sa\sC++-ism\sfrom\sthe\scode.\s\sTicket\s#3912.\s(CVS\s6752)
+D 2009-06-12T11:42:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -197,7 +197,7 @@ F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
-F src/tokenize.c d8c6b39a6056db2b47a212607689dd7ee8031c69
+F src/tokenize.c c0d3e8e9532fc771ff52ac99abcbdb127b14328d
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P bd341a103c25395b1189d05edebfe4af8a943941
-R cd135e548bd04e4130a04a18089f1ed0
+P 6197b492714e16396941ae6ba61f90f708d54728
+R 35a287ed30a5a4abe3f9902d086b75b9
 U drh
-Z 1b96a3fcbabb94cf9a879e6d3b453efa
+Z ccc38ec38f2ea3ed8385702ad4474d78
