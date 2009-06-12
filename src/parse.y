@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.278 2009/05/28 01:00:55 drh Exp $
+** @(#) $Id: parse.y,v 1.279 2009/06/12 02:27:15 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -52,6 +52,12 @@
 //
 %include {
 #include "sqliteInt.h"
+
+/*
+** Disable all error recovery processing in the parser push-down
+** automaton.
+*/
+#define YYNOERRORRECOVERY 1
 
 /*
 ** An instance of this structure holds information about the
@@ -479,7 +485,7 @@ from(A) ::= FROM seltablist(X). {
 //
 stl_prefix(A) ::= seltablist(X) joinop(Y).    {
    A = X;
-   if( A && A->nSrc>0 ) A->a[A->nSrc-1].jointype = (u8)Y;
+   if( ALWAYS(A && A->nSrc>0) ) A->a[A->nSrc-1].jointype = (u8)Y;
 }
 stl_prefix(A) ::= .                           {A = 0;}
 seltablist(A) ::= stl_prefix(X) nm(Y) dbnm(D) as(Z) indexed_opt(I) on_opt(N) using_opt(U). {
@@ -573,7 +579,7 @@ sortlist(A) ::= sortlist(X) COMMA sortitem(Y) sortorder(Z). {
 }
 sortlist(A) ::= sortitem(Y) sortorder(Z). {
   A = sqlite3ExprListAppend(pParse,0,Y);
-  if( A && A->a ) A->a[0].sortOrder = (u8)Z;
+  if( A && ALWAYS(A->a) ) A->a[0].sortOrder = (u8)Z;
 }
 sortitem(A) ::= expr(X).   {A = X.pExpr;}
 
