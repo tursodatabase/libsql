@@ -1,5 +1,5 @@
-C The\sprevious\scheck-in\s((6755))\sput\sin\smore\syytestcase()\smacros\sthan\sare\ncalled\sfor.\s\sThis\scheck-in\saddresses\sthat\sproblem.\s(CVS\s6756)
-D 2009-06-12T15:47:34
+C Change\slemon\sso\sthat\sit\sdoes\snot\sgenerate\syytestcase()\smacros\son\sdestructor\ncases\ssince\sdestructors\sare\scommonly\sunreachable\sin\sa\sreasonable\sgrammar.\nFor\sthe\sreduce-rule\sswitch,\sgather\sall\sno-ops\sinto\sthe\s"default:"\scase.\s(CVS\s6757)
+D 2009-06-12T17:46:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -714,7 +714,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 405a43d54f1646bfaa7a84b03bb959aef62a3a49
-F tool/lemon.c 890d999c32e5c3f98bad406133a6fab47f8bec06
+F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 511a848b2ac7a3d93f36adc1e1086b4c5741224b
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P fe9c9177340a3dc372ffa1b851030d005e0c46db
-R 471f9a46f36f6b04df4a508ac9988c8f
+P a5b182f93b9e57754c8b9507cf491a7bbf0fd127
+R 487e6d753f4accfc816b85167f6e8a2b
 U drh
-Z 08dd3a787d4f92b742186e9b39413caa
+Z 44d7634c369a18c617752b13ad1a8da2

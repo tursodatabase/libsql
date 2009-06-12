@@ -3862,12 +3862,9 @@ int mhflag;     /* Output in makeheaders format if true */
       if( sp==0 || sp->type!=TERMINAL ) continue;
       if( once ){
         fprintf(out, "      /* TERMINAL Destructor */\n"); lineno++;
-        fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
         once = 0;
-      }else{
-        fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d)\n",
-                sp->index, sp->name, sp->index); lineno++;
       }
+      fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
     }
     for(i=0; i<lemp->nsymbol && lemp->symbols[i]->type!=TERMINAL; i++);
     if( i<lemp->nsymbol ){
@@ -3884,13 +3881,9 @@ int mhflag;     /* Output in makeheaders format if true */
           sp->index<=0 || sp->destructor!=0 ) continue;
       if( once ){
         fprintf(out, "      /* Default NON-TERMINAL Destructor */\n"); lineno++;
-        fprintf(out,"    case %d: /* %s */\n",
-                sp->index, sp->name); lineno++;
         once = 0;
-      }else{
-        fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
-                sp->index, sp->name, sp->index); lineno++;
       }
+      fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
       dflt_sp = sp;
     }
     if( dflt_sp!=0 ){
@@ -3909,8 +3902,8 @@ int mhflag;     /* Output in makeheaders format if true */
       if( sp2 && sp2->type!=TERMINAL && sp2->destructor
           && sp2->dtnum==sp->dtnum
           && strcmp(sp->destructor,sp2->destructor)==0 ){
-         fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
-                 sp2->index, sp2->name, sp2->index); lineno++;
+         fprintf(out,"    case %d: /* %s */\n",
+                 sp2->index, sp2->name); lineno++;
          sp2->destructor = 0;
       }
     }
@@ -3938,9 +3931,11 @@ int mhflag;     /* Output in makeheaders format if true */
   for(rp=lemp->rule; rp; rp=rp->next){
     translate_code(lemp, rp);
   }
+  /* First output rules other than the default: rule */
   for(rp=lemp->rule; rp; rp=rp->next){
-    struct rule *rp2;
+    struct rule *rp2;               /* Other rules with the same action */
     if( rp->code==0 ) continue;
+    if( rp->code[0]=='\n' && rp->code[1]==0 ) continue; /* Will be default: */
     fprintf(out,"      case %d: /* ", rp->index);
     writeRuleText(out, rp);
     fprintf(out, " */\n"); lineno++;
@@ -3954,7 +3949,19 @@ int mhflag;     /* Output in makeheaders format if true */
     }
     emit_code(out,rp,lemp,&lineno);
     fprintf(out,"        break;\n"); lineno++;
+    rp->code = 0;
   }
+  /* Finally, output the default: rule.  We choose as the default: all
+  ** empty actions. */
+  fprintf(out,"      default:\n"); lineno++;
+  for(rp=lemp->rule; rp; rp=rp->next){
+    if( rp->code==0 ) continue;
+    assert( rp->code[0]=='\n' && rp->code[1]==0 );
+    fprintf(out,"      /* (%d) ", rp->index);
+    writeRuleText(out, rp);
+    fprintf(out, " */ yytestcase(yyruleno==%d);\n", rp->index); lineno++;
+  }
+  fprintf(out,"        break;\n"); lineno++;
   tplt_xfer(lemp->name,in,out,&lineno);
 
   /* Generate code which executes if a parse fails */
