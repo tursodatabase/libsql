@@ -3862,10 +3862,12 @@ int mhflag;     /* Output in makeheaders format if true */
       if( sp==0 || sp->type!=TERMINAL ) continue;
       if( once ){
         fprintf(out, "      /* TERMINAL Destructor */\n"); lineno++;
+        fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
         once = 0;
+      }else{
+        fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d)\n",
+                sp->index, sp->name, sp->index); lineno++;
       }
-      fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
-              sp->index, sp->name, sp->index); lineno++;
     }
     for(i=0; i<lemp->nsymbol && lemp->symbols[i]->type!=TERMINAL; i++);
     if( i<lemp->nsymbol ){
@@ -3882,10 +3884,13 @@ int mhflag;     /* Output in makeheaders format if true */
           sp->index<=0 || sp->destructor!=0 ) continue;
       if( once ){
         fprintf(out, "      /* Default NON-TERMINAL Destructor */\n"); lineno++;
+        fprintf(out,"    case %d: /* %s */\n",
+                sp->index, sp->name); lineno++;
         once = 0;
+      }else{
+        fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
+                sp->index, sp->name, sp->index); lineno++;
       }
-      fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
-              sp->index, sp->name, sp->index); lineno++;
       dflt_sp = sp;
     }
     if( dflt_sp!=0 ){
@@ -3896,8 +3901,7 @@ int mhflag;     /* Output in makeheaders format if true */
   for(i=0; i<lemp->nsymbol; i++){
     struct symbol *sp = lemp->symbols[i];
     if( sp==0 || sp->type==TERMINAL || sp->destructor==0 ) continue;
-    fprintf(out,"    case %d: /* %s */ yytestcase(yymajor==%d);\n",
-            sp->index, sp->name, sp->index); lineno++;
+    fprintf(out,"    case %d: /* %s */\n", sp->index, sp->name); lineno++;
 
     /* Combine duplicate destructors into a single case */
     for(j=i+1; j<lemp->nsymbol; j++){
