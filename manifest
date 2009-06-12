@@ -1,5 +1,5 @@
-C Modifications\sto\sthe\sparser\sto\seliminate\sunreachable\scode.\s(CVS\s6749)
-D 2009-06-12T02:27:15
+C Make\ssure\snested\squeries\swith\sUSING\sclauses\sdo\snot\sleak\smemory.\nPreliminary\sfix\sfor\sticket\s#3911.\s(CVS\s6750)
+D 2009-06-12T03:27:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c 2d97084a176a63eabce2d043eb4fbb13c46d6e9f
+F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 9fe53ec7a8310d7d18d482b85e46f5556abfd1de
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -652,6 +652,7 @@ F test/tkt3838.test 2a1525946bc9d3751e1d49ce95f3a2472f2b7408
 F test/tkt3841.test fe7451fb899bc31c5fbcee53362c621d0271e25f
 F test/tkt3871.test 43ecbc8d90dc83908e2a454aef345acc9d160c6f
 F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
+F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -733,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 73ba841ac1ed39fb09b3917bafe0ce349e88eb04
-R 75fd71147dd2bc566349956acaaf3bc9
+P 457e0b245b1833c0d297bc6f4ff9785e6a2cee02
+R f6009d8ca1e711139a713d350a8b59a4
 U drh
-Z c4d949dc1090f86c65a60e0c95668a95
+Z dd5a9ef95d7a9c731fbe3fa8384cfe32
