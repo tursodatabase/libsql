@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.626 2009/06/10 09:11:06 danielk1977 Exp $
+** $Id: btree.c,v 1.627 2009/06/14 12:47:11 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5546,6 +5546,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aOvflSpace){
       if( leafData ){ i--; }
       subtotal = 0;
       k++;
+      if( k>NB+1 ){ rc = SQLITE_CORRUPT; goto balance_cleanup; }
     }
   }
   szNew[k] = subtotal;
@@ -5592,7 +5593,10 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aOvflSpace){
   /*
   ** Allocate k new pages.  Reuse old pages where possible.
   */
-  assert( apOld[0]->pgno>1 );
+  if( apOld[0]->pgno<=1 ){
+    rc = SQLITE_CORRUPT;
+    goto balance_cleanup;
+  }
   pageFlags = apOld[0]->aData[0];
   for(i=0; i<k; i++){
     MemPage *pNew;
