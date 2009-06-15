@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains code used to help implement virtual tables.
 **
-** $Id: vtab.c,v 1.90 2009/06/02 21:31:39 drh Exp $
+** $Id: vtab.c,v 1.91 2009/06/15 16:27:08 shane Exp $
 */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 #include "sqliteInt.h"
@@ -102,6 +102,9 @@ void sqlite3VtabLock(sqlite3_vtab *pVtab){
 ** disconnect the virtual table.
 */
 void sqlite3VtabUnlock(sqlite3 *db, sqlite3_vtab *pVtab){
+#ifndef SQLITE_DEBUG
+  UNUSED_PARAMETER(db);
+#endif
   assert( pVtab->nRef>0 );
   pVtab->nRef--;
   assert(db);

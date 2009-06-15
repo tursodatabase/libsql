@@ -1,5 +1,5 @@
-C Version\s3.6.15\s(CVS\s6760)
-D 2009-06-15T03:28:58
+C Fix\scompiler\swarnings\swith\sMSVC\sbuild.\s(CVS\s6761)
+D 2009-06-15T16:27:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 9804315e03b017fdefabecbba7ac02f6b0fd38a9
+F src/btree.c 8363cf2ee0276cb6cee74aed3449816e19b1162d
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 6c7b96103cebc558710ae72e2ce99b91c8ccd961
@@ -210,9 +210,9 @@ F src/vdbeapi.c 619992b16821b989050e8a12e259d795d30731a9
 F src/vdbeaux.c 14e1c6065172530a14648292371ccd3c1ea0d490
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
-F src/vtab.c e2f4c92df7d06330b151448718c4724742ff444b
+F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c ec4b9742a4077ef80346e2f9aaf0f44c2d95087a
-F src/where.c 86fb1a3a8842256780c810601ce0dd01b7be86af
+F src/where.c 658d99d9a2be77ebea35bfaa581d5ec9b0a11af9
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 14df65dc04e1a944baf4fb7185a0df5a96059346
-R 6c24cc632a90c0f071b105c3575304c2
-U drh
-Z 96e323094d687db0a4d36d3789e99811
+P aff34826aa4667d24f0dbc8bea828dc0f84d2108
+R ab89da00143db50e3863f3ec2715823c
+U shane
+Z 49bb545d34c133193720edd93586168c

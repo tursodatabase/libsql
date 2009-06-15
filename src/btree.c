@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.627 2009/06/14 12:47:11 drh Exp $
+** $Id: btree.c,v 1.628 2009/06/15 16:27:08 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1191,7 +1191,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
         /* Free blocks must be in accending order */
         return SQLITE_CORRUPT_BKPT; 
       }
-      nFree += size;
+      nFree = nFree + size;
       pc = next;
     }
 
@@ -5335,7 +5335,7 @@ static int balance_nonroot(MemPage *pParent, int iParentIdx, u8 *aOvflSpace){
   int nNew = 0;                /* Number of pages in apNew[] */
   int i, j, k;                 /* Loop counters */
   int nxDiv;                   /* Next divider slot in pParent->aCell[] */
-  int rc;                      /* The return code */
+  int rc = SQLITE_OK;          /* The return code */
   int leafCorrection;          /* 4 if pPage is a leaf.  0 if not */
   int leafData;                /* True if pPage is a leaf of a LEAFDATA tree */
   int usableSpace;             /* Bytes in pPage beyond the header */
