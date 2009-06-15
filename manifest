@@ -1,5 +1,5 @@
-C Updates\sto\sresolve.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6762)
-D 2009-06-15T18:32:36
+C Changes\sto\sallow\sa\sclean\scompile\swith\sno\sfloating-point\sinstructions\ngenerated\swhen\sSQLITE_OMIT_FLOATING_POINT\sis\sused.\s(CVS\s6763)
+D 2009-06-15T20:45:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c e55d977c516ed880a2f83f0610b019efd9f8bc06
+F src/os_unix.c f00dbdc09d67b7e45f2aa0b1ff7111e36db4651e
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c efdd56a49622fe87d5cf4b6e69aeb62b45bcb9b0
 F src/pager.h 73f481a308a873ccd626d97331c081db3b53e2e5
@@ -162,7 +162,7 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 9fe53ec7a8310d7d18d482b85e46f5556abfd1de
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 3445ca4373dacae7fe87240d8916b5724624f8d4
+F src/sqliteInt.h d1e70cdb3a19c5e65735d1615b4ded7bff40f2cb
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -203,7 +203,7 @@ F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 44e9f8b4c1a37cbc739e8c5c4d1eae8308a37da5
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c 20cf0b0b388685b759077db32002eb0dd3770436
+F src/vdbe.c ba87db547187693cab47a1b78e7e14b02cae3686
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 3727128255a93d116e454f67d4559700f7ae4d6f
 F src/vdbeapi.c 619992b16821b989050e8a12e259d795d30731a9
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e1e6430752449a34671b6c89326b03ac36ea6d9a
-R 78938853ca46277a6aea6374dcd54eee
+P c50f0f28df1dfdccf1d159c983b616cd9b823955
+R db51201c6b75745e45f26c2051924884
 U drh
-Z 1ecdfcd773dc185e922d924dee4a6294
+Z 8eaaa61e108cd5d3c53358e0864b8d9c
