@@ -1,5 +1,5 @@
-C Detect\sdatabase\scorruption\sand\sabort\sbalance_nonroot()\sbefore\sthe\ncorruption\scauses\sproblems.\s(CVS\s6758)
-D 2009-06-14T12:47:11
+C Update\sthe\sconfiguration\sscript\sfor\sversion\s3.6.15.\s(CVS\s6759)
+D 2009-06-15T00:04:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 487875e451ac922f10276ee41611e0967ea72af0 x
+F configure aea294a71535df725022120d14189d77fb379134 x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P caebfe82cb1b1215a85ed48fe97360c5422c52e0
-R 588f8db63f5f28d8703158124d3cf94d
+P 3448b39dcd580880a9326414e7e4952c4fbc313d
+R 6c24cc632a90c0f071b105c3575304c2
 U drh
-Z abc3880a9e9a25c04c64068e2ef754ae
+Z efd6ae74015c84eebdd2767ef04311da
