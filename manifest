@@ -1,5 +1,5 @@
-C Fix\scompiler\swarnings\swith\sMSVC\sbuild.\s(CVS\s6761)
-D 2009-06-15T16:27:08
+C Updates\sto\sresolve.c\sto\sfacilitate\sfull\scoverage\stesting.\s(CVS\s6762)
+D 2009-06-15T18:32:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/pragma.c 06b3a4b93a5e587f1c04b4a40016eb360792cdf3
 F src/prepare.c 889208e3567a98bb3d345a30f63240beb9ac90f9
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c f86d3490cf93a12f8a451720defc622cbc79873a
+F src/resolve.c 34c5b59db6d5ae901558225facabc5833693f9b4
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P aff34826aa4667d24f0dbc8bea828dc0f84d2108
-R ab89da00143db50e3863f3ec2715823c
-U shane
-Z 49bb545d34c133193720edd93586168c
+P e1e6430752449a34671b6c89326b03ac36ea6d9a
+R 78938853ca46277a6aea6374dcd54eee
+U drh
+Z 1ecdfcd773dc185e922d924dee4a6294
