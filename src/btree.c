@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.628 2009/06/15 16:27:08 shane Exp $
+** $Id: btree.c,v 1.629 2009/06/16 04:31:49 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6286,7 +6286,6 @@ int sqlite3BtreeInsert(
   }
 
   pPage = pCur->apPage[pCur->iPage];
-  assert( pPage->intKey || nKey>=0 );
   assert( pPage->intKey || nKey>=0 );
   assert( pPage->leaf || !pPage->intKey );
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
