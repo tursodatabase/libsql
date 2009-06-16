@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.550 2009/06/11 00:47:21 drh Exp $
+** $Id: build.c,v 1.551 2009/06/16 04:35:39 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1264,7 +1264,6 @@ CollSeq *sqlite3LocateCollSeq(Parse *pParse, const char *zName){
     pColl = sqlite3GetCollSeq(db, pColl, zName);
     if( !pColl ){
       sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
-      pColl = 0;
     }
   }
 
