@@ -1,5 +1,5 @@
-C Leave\sout\sa\sredundant\sline\sin\sbuild.c.\sTicket\s#3916.\s(CVS\s6766)
-D 2009-06-16T04:35:39
+C Fix\sa\slink\serror\sand\swarning\sthat\scan\soccur\sin\swhere.c\swhen\scompiling\sunder\sMSVC\swith\sSQLITE_OMIT_VIRTUALTABLE\sdefined.\sTicket\s#3914.\s(CVS\s6767)
+D 2009-06-16T14:15:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 658d99d9a2be77ebea35bfaa581d5ec9b0a11af9
+F src/where.c cf0d091748c2fa6f7df96e5b08d2db26fd2eb437
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d89542cd8b2efaea7c6be6cd7787d183c55ae36a
-R 8bbc0f857fe07f0745566f5d0cea2bae
-U danielk1977
-Z 1c5942565154441f8725e1d57fc36f0e
+P d9f997aeb7a2195d0e16fe1555626918902b4f91
+R 15e0059c63bbf9a22956175d05da19fb
+U shane
+Z 9fcb2df9d2e1bd4baf449d06e64cdf0b
