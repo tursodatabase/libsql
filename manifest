@@ -1,5 +1,5 @@
-C Changes\sto\sbalance_nonroot()\sand\sBtreeDelete()\sto\ssimplify\sdelete\soperations\sand\sreduce\sstack/heap\susage\swhile\sbalancing\sb-tree\sstructures.\s(CVS\s6768)
-D 2009-06-16T16:50:22
+C Changes\ssqlite3_prepare_v2()\s(and\srelated\sroutines)\sso\sthat\sif\sit\sfails\sdue\r\nto\sa\smissing\stable\sand\sthe\sschema\sis\sout\sof\sdate,\sit\sretries\sonce\sbefore\r\nreturning\sSQLITE_SCHEMA.\s\sOther\schanges\sto\sprepare.c\sto\sfacilitate\scoverage\r\ntesting.\s(CVS\s6769)
+D 2009-06-16T17:49:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 97e7e8e6e34026fb43b47d08532b0c02e959c26c
 F src/pragma.c 06b3a4b93a5e587f1c04b4a40016eb360792cdf3
-F src/prepare.c 889208e3567a98bb3d345a30f63240beb9ac90f9
+F src/prepare.c cc0cc08be09bef8b435fa3d4a5cb83e5eaddc9c9
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
@@ -436,7 +436,7 @@ F test/like2.test 3b2ee13149ba4a8a60b59756f4e5d345573852da
 F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
-F test/lock.test edf5585398a33534db71a2a6108308d9e89c16d1
+F test/lock.test 842e80b6be816c79525a20b098cca066989feed7
 F test/lock2.test 7bb642551df59b3de135291d62ee82409420181e
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test f4f36271aa5ae1da449646bf43c7341f6b2b4c4e
@@ -564,7 +564,7 @@ F test/table.test bf102a5669c4db7a41330802f24a4a81a4204f83
 F test/tableapi.test 505031f15b18a750184d967d2c896cf88fcc969c
 F test/tclsqlite.test 8b1150d0486c4848c70d96422513a91c5342be0e
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
-F test/temptable.test 5d8ca46be28cc06c887c5a77df650843b7edbae1
+F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
 F test/tester.tcl b22f925f3c6eea6283e29a81a7379091ca89ab40
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 793c93be16af535e102dba147125384f6814cf5f
-R 1442776f9e8f0f6893a042c65b60b787
-U danielk1977
-Z 5d9498adf02b6707d99160646d666866
+P 092b276e7d89bbfa3d8637a90ee5d458935a12a9
+R b6fd3af60cc74167321a8d8b03927552
+U drh
+Z 9f245bb4702e4a85aca9a1d8b8f3ca18

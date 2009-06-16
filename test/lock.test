@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is database locks.
 #
-# $Id: lock.test,v 1.39 2009/03/28 15:04:24 drh Exp $
+# $Id: lock.test,v 1.40 2009/06/16 17:49:36 drh Exp $
 
 
 set testdir [file dirname $argv0]
@@ -80,7 +80,7 @@ do_test lock-1.13 {
 } {8 9}
 do_test lock-1.14.1 {
   catchsql {SELECT * FROM t2} db2
-} {1 {no such table: t2}}
+} {0 {8 9}}
 do_test lock-1.14.2 {
   catchsql {SELECT * FROM t1} db2
 } {0 {2 1}}
