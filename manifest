@@ -1,5 +1,5 @@
-C A\sminor\ssimplification\sto\sthe\stokenizer.\s(CVS\s6771)
-D 2009-06-17T01:17:13
+C Fix\sfor\s#3918.\sAlso,\sfix\sthe\sTRACE\smacros\sin\sbalance_nonroot().\s(CVS\s6772)
+D 2009-06-17T11:13:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 1edede2a80d466679754453794df2d9070bd14a8
+F src/btree.c 371458438e6436e02b50796edb124a8d0e51299f
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 75b57e3f4de1b34d4e1e49d350dc87febff48ba0
@@ -653,6 +653,7 @@ F test/tkt3841.test fe7451fb899bc31c5fbcee53362c621d0271e25f
 F test/tkt3871.test 43ecbc8d90dc83908e2a454aef345acc9d160c6f
 F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
 F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
+F test/tkt3918.test e6cdf6bfcfe9ba939d86a4238a9dc55d6eec5d42
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -734,7 +735,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 08cca219f16efab93cb00f04d2e2f8033893e5f1
-R 7849aa14ee9aea370d50947a30a5b469
-U drh
-Z 7a86c39b397e7cb764e22053087fdcff
+P 18f2076ac21dd0ab343a79461837f5591f9d4d87
+R e09f9b7c30f5fb6a040ae5f6d3595072
+U danielk1977
+Z fa0237a4a1ebff673136562f4d6dd1cb

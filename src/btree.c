@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.630 2009/06/16 16:50:22 danielk1977 Exp $
+** $Id: btree.c,v 1.631 2009/06/17 11:13:28 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4525,7 +4525,7 @@ static int allocateBtreePage(
         pTrunk = 0;
         TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
 #endif
-      }else{
+      }else if( k>0 ){
         /* Extract a leaf from the trunk */
         int closest;
         Pgno iPage;
@@ -5412,7 +5412,9 @@ static int balance_nonroot(
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
 
+#if 0
   TRACE(("BALANCE: begin page %d child of %d\n", pPage->pgno, pParent->pgno));
+#endif
 
   /* At this point pParent may have at most one overflow cell. And if
   ** this overflow cell is present, it must be the cell with 
@@ -5640,6 +5642,12 @@ static int balance_nonroot(
   */
   assert( cntNew[0]>0 || (pParent->pgno==1 && pParent->nCell==0) );
 
+  TRACE(("BALANCE: old: %d %d %d  ",
+    apOld[0]->pgno, 
+    nOld>=2 ? apOld[1]->pgno : 0,
+    nOld>=3 ? apOld[2]->pgno : 0
+  ));
+
   /*
   ** Allocate k new pages.  Reuse old pages where possible.
   */
@@ -5715,10 +5723,7 @@ static int balance_nonroot(
       apNew[minI] = pT;
     }
   }
-  TRACE(("BALANCE: old: %d %d %d  new: %d(%d) %d(%d) %d(%d) %d(%d) %d(%d)\n",
-    apOld[0]->pgno, 
-    nOld>=2 ? apOld[1]->pgno : 0,
-    nOld>=3 ? apOld[2]->pgno : 0,
+  TRACE(("new: %d(%d) %d(%d) %d(%d) %d(%d) %d(%d)\n",
     apNew[0]->pgno, szNew[0],
     nNew>=2 ? apNew[1]->pgno : 0, nNew>=2 ? szNew[1] : 0,
     nNew>=3 ? apNew[2]->pgno : 0, nNew>=3 ? szNew[2] : 0,
@@ -5914,8 +5919,8 @@ static int balance_nonroot(
   }
 
   assert( pParent->isInit );
-  TRACE(("BALANCE: finished with %d: old=%d new=%d cells=%d\n",
-          pPage->pgno, nOld, nNew, nCell));
+  TRACE(("BALANCE: finished: old=%d new=%d cells=%d\n",
+          nOld, nNew, nCell));
  
   /*
   ** Cleanup before returning.
