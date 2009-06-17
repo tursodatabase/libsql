@@ -36,7 +36,6 @@ do_test tkt3841.1 {
     INSERT INTO list VALUES ("b", 5);
     INSERT INTO list VALUES ("b", 6);
 
-pragma vdbe_listing=on; pragma vdbe_trace=on;  
     SELECT
       table2.x,
       (SELECT group_concat(list.value)
