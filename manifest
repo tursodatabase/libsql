@@ -1,5 +1,5 @@
-C Fix\sfor\s#3918.\sAlso,\sfix\sthe\sTRACE\smacros\sin\sbalance_nonroot().\s(CVS\s6772)
-D 2009-06-17T11:13:28
+C Fix\sa\sbug\saffecting\ssecure-delete\smode\sintroduced\sby\s(6768).\s(CVS\s6773)
+D 2009-06-17T11:49:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 371458438e6436e02b50796edb124a8d0e51299f
+F src/btree.c 9225e0726c5837425dab4f5888ea427f8fa69854
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h df64030d632f8c8ac217ed52e8b6b3eacacb33a5
 F src/build.c 75b57e3f4de1b34d4e1e49d350dc87febff48ba0
@@ -735,7 +735,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 18f2076ac21dd0ab343a79461837f5591f9d4d87
-R e09f9b7c30f5fb6a040ae5f6d3595072
+P 368e44ec2e648b04f3b817f82586ccd864e60c89
+R 444656ca6a3315a23012c708051029b1
 U danielk1977
-Z fa0237a4a1ebff673136562f4d6dd1cb
+Z d87ec3d960f446a07cb36cccdf89b502

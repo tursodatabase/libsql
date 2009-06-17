@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.631 2009/06/17 11:13:28 danielk1977 Exp $
+** $Id: btree.c,v 1.632 2009/06/17 11:49:53 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5423,6 +5423,10 @@ static int balance_nonroot(
   assert( pParent->nOverflow==0 || pParent->nOverflow==1 );
   assert( pParent->nOverflow==0 || pParent->aOvfl[0].idx==iParentIdx );
 
+  if( !aOvflSpace ){
+    return SQLITE_NOMEM;
+  }
+
   /* Find the sibling pages to balance. Also locate the cells in pParent 
   ** that divide the siblings. An attempt is made to find NN siblings on 
   ** either side of pPage. More siblings are taken from one side, however, 
@@ -5478,7 +5482,17 @@ static int balance_nonroot(
       ** This is safe because dropping a cell only overwrites the first
       ** four bytes of it, and this function does not need the first
       ** four bytes of the divider cell. So the pointer is safe to use
-      ** later on.  */
+      ** later on.  
+      **
+      ** Unless SQLite is compiled in secure-delete mode. In this case,
+      ** the dropCell() routine will overwrite the entire cell with zeroes.
+      ** In this case, temporarily copy the cell into the aOvflSpace[]
+      ** buffer. It will be copied out again as soon as the aSpace[] buffer
+      ** is allocated.  */
+#ifdef SQLITE_SECURE_DELETE
+      memcpy(&aOvflSpace[apDiv[i]-pParent->aData], apDiv[i], szNew[i]);
+      apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+#endif
       dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i]);
     }
   }
@@ -5497,7 +5511,7 @@ static int balance_nonroot(
      + pBt->pageSize                               /* aSpace1 */
      + k*nOld;                                     /* Page copies (apCopy) */
   apCell = sqlite3ScratchMalloc( szScratch ); 
-  if( apCell==0 || aOvflSpace==0 ){
+  if( apCell==0 ){
     rc = SQLITE_NOMEM;
     goto balance_cleanup;
   }
