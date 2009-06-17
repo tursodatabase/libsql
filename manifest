@@ -1,5 +1,5 @@
-C Fix\sa\spotential\ssegfault\sfollowing\sdatabase\scorruption.\s\sProblem\s\r\nmade\svisible\sby\scheck-in\s(6772).\s(CVS\s6775)
-D 2009-06-17T13:57:16
+C Use\scaution\sto\savoid\sinteger\soverflow\swhen\sdoing\sreal\sto\sinteger\saffinity\noperations.\s\sTicket\s#3922.\s(CVS\s6776)
+D 2009-06-17T16:20:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -201,15 +201,15 @@ F src/tokenize.c 3743be86c3e73081b5b162adc00e2492a94a3a99
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
-F src/util.c 44e9f8b4c1a37cbc739e8c5c4d1eae8308a37da5
+F src/util.c a7e981e032c3c9c0887d50d7e658a33cb355b43d
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c ba87db547187693cab47a1b78e7e14b02cae3686
+F src/vdbe.c a7b9ad4a1924fae36976391d3945b590066d8a9b
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 3727128255a93d116e454f67d4559700f7ae4d6f
 F src/vdbeapi.c 619992b16821b989050e8a12e259d795d30731a9
 F src/vdbeaux.c 14e1c6065172530a14648292371ccd3c1ea0d490
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
-F src/vdbemem.c 05183d46094aa99b8f8350e5761b9369dbef35a8
+F src/vdbemem.c ba39c0afa609595c7c23dfc2ac929d9414faa59f
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c cf0d091748c2fa6f7df96e5b08d2db26fd2eb437
@@ -654,6 +654,7 @@ F test/tkt3871.test 43ecbc8d90dc83908e2a454aef345acc9d160c6f
 F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
 F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
 F test/tkt3918.test e6cdf6bfcfe9ba939d86a4238a9dc55d6eec5d42
+F test/tkt3922.test 0b43815bff3b6ab889bf84a17668ee13ab046bfd
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -735,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 59ec937ce226bbf6c48c5e0466d3bab48873c9ea
-R 91b49222de2dd4961eeb67b115d749fb
+P 69eb0ff817cff6266c53b79047bcff5e5d54b618
+R 6181c593f1e99db7e423de696034df8f
 U drh
-Z 204c520d5c26a9b912018a390ab782e4
+Z 94cf86f58e243781b10d1003bc255540

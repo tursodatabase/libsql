@@ -14,7 +14,7 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.259 2009/06/10 11:07:01 drh Exp $
+** $Id: util.c,v 1.260 2009/06/17 16:20:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -392,7 +392,7 @@ int sqlite3AtoF(const char *z, double *pResult){
 */
 static int compare2pow63(const char *zNum){
   int c;
-  c = memcmp(zNum,"922337203685477580",18);
+  c = memcmp(zNum,"922337203685477580",18)*10;
   if( c==0 ){
     c = zNum[18] - '8';
   }

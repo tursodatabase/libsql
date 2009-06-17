@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.851 2009/06/15 20:45:35 drh Exp $
+** $Id: vdbe.c,v 1.852 2009/06/17 16:20:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -189,7 +189,7 @@ static VdbeCursor *allocateCursor(
   int iCur,             /* Index of the new VdbeCursor */
   int nField,           /* Number of fields in the table or index */
   int iDb,              /* When database the cursor belongs to, or -1 */
-  int isBtreeCursor     /* */
+  int isBtreeCursor     /* True for B-Tree vs. pseudo-table or vtab */
 ){
   /* Find the memory cell that will be used to store the blob of memory
   ** required for this VdbeCursor structure. It is convenient to use a 

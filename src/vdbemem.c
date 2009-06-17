@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.147 2009/05/28 11:05:57 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.148 2009/06/17 16:20:04 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -411,7 +411,18 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   assert( EIGHT_BYTE_ALIGNMENT(pMem) );
 
   pMem->u.i = doubleToInt64(pMem->r);
-  if( pMem->r==(double)pMem->u.i ){
+
+  /* Only mark the value as an integer if
+  **
+  **    (1) the round-trip conversion real->int->real is a no-op, and
+  **    (2) The integer is neither the largest nor the smallest
+  **        possible integer (ticket #3922)
+  **
+  ** The second term in the following conditional enforces the second
+  ** condition under the assumption that additional overflow causes
+  ** values to wrap around.
+  */
+  if( pMem->r==(double)pMem->u.i && (pMem->u.i-1) < (pMem->u.i+1) ){
     pMem->flags |= MEM_Int;
   }
 }
