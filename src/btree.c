@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.633 2009/06/17 13:09:39 drh Exp $
+** $Id: btree.c,v 1.634 2009/06/17 13:57:16 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4389,7 +4389,7 @@ static int allocateBtreePage(
   MemPage *pPage1;
   int rc;
   u32 n;     /* Number of pages on the freelist */
-  int k;     /* Number of leaves on the trunk of the freelist */
+  u32 k;     /* Number of leaves on the trunk of the freelist */
   MemPage *pTrunk = 0;
   MemPage *pPrevTrunk = 0;
   Pgno mxPage;     /* Total size of the database file */
@@ -4467,7 +4467,7 @@ static int allocateBtreePage(
         *ppPage = pTrunk;
         pTrunk = 0;
         TRACE(("ALLOCATE: %d trunk - %d free pages left\n", *pPgno, n-1));
-      }else if( k>pBt->usableSize/4 - 2 ){
+      }else if( k>(u32)(pBt->usableSize/4 - 2) ){
         /* Value of k is out of range.  Database corruption */
         rc = SQLITE_CORRUPT_BKPT;
         goto end_allocate_page;
@@ -4529,7 +4529,7 @@ static int allocateBtreePage(
 #endif
       }else if( k>0 ){
         /* Extract a leaf from the trunk */
-        int closest;
+        u32 closest;
         Pgno iPage;
         unsigned char *aData = pTrunk->aData;
         rc = sqlite3PagerWrite(pTrunk->pDbPage);
@@ -4537,7 +4537,8 @@ static int allocateBtreePage(
           goto end_allocate_page;
         }
         if( nearby>0 ){
-          int i, dist;
+          u32 i;
+          int dist;
           closest = 0;
           dist = get4byte(&aData[8]) - nearby;
           if( dist<0 ) dist = -dist;
