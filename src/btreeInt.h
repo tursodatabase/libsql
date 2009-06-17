@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.46 2009/03/20 14:18:52 danielk1977 Exp $
+** $Id: btreeInt.h,v 1.47 2009/06/17 13:09:39 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -636,6 +636,9 @@ int sqlite3BtreeInitPage(MemPage *pPage);
 void sqlite3BtreeParseCellPtr(MemPage*, u8*, CellInfo*);
 void sqlite3BtreeParseCell(MemPage*, int, CellInfo*);
 int sqlite3BtreeRestoreCursorPosition(BtCursor *pCur);
+void sqlite3BtreeMoveToParent(BtCursor *pCur);
+
+#ifdef SQLITE_TEST
 void sqlite3BtreeGetTempCursor(BtCursor *pCur, BtCursor *pTempCur);
 void sqlite3BtreeReleaseTempCursor(BtCursor *pCur);
-void sqlite3BtreeMoveToParent(BtCursor *pCur);
+#endif
