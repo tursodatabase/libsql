@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.122 2009/06/16 17:49:36 drh Exp $
+** $Id: prepare.c,v 1.123 2009/06/17 00:35:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -450,12 +450,13 @@ static int schemaIsValid(sqlite3 *db){
       rc = sqlite3BtreeCursor(pBt, MASTER_ROOT, 0, 0, curTemp);
       if( rc==SQLITE_OK ){
         rc = sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
-        if( rc==SQLITE_OK && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+        if( ALWAYS(rc==SQLITE_OK)
+                && cookie!=db->aDb[iDb].pSchema->schema_cookie ){
           allOk = 0;
         }
         sqlite3BtreeCloseCursor(curTemp);
       }
-      if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ){
+      if( NEVER(rc==SQLITE_NOMEM) || rc==SQLITE_IOERR_NOMEM ){
         db->mallocFailed = 1;
       }
     }
@@ -574,6 +575,8 @@ static int sqlite3Prepare(
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){
     char *zSqlCopy;
     int mxLen = db->aLimit[SQLITE_LIMIT_SQL_LENGTH];
+    testcase( nBytes==mxLen );
+    testcase( nBytes==mxLen+1 );
     if( nBytes>mxLen ){
       sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
       (void)sqlite3SafetyOff(db);
