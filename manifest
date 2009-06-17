@@ -1,5 +1,5 @@
-C Changes\sto\sprepare.c\sand\scallback.c\sto\spromote\sbetter\stest\scoverage.\s(CVS\s6770)
-D 2009-06-17T00:35:31
+C A\sminor\ssimplification\sto\sthe\stokenizer.\s(CVS\s6771)
+D 2009-06-17T01:17:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -197,7 +197,7 @@ F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
-F src/tokenize.c c0d3e8e9532fc771ff52ac99abcbdb127b14328d
+F src/tokenize.c 3743be86c3e73081b5b162adc00e2492a94a3a99
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
@@ -734,7 +734,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 256ec3c6af41c2324db82e4deb54edbba5b581e8
-R 90d0d60e7fa07ec7c8329901d91e782a
+P 08cca219f16efab93cb00f04d2e2f8033893e5f1
+R 7849aa14ee9aea370d50947a30a5b469
 U drh
-Z 8a31866b8d8ece00312850a3b9437909
+Z 7a86c39b397e7cb764e22053087fdcff

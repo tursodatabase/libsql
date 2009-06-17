@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.160 2009/06/12 11:42:12 drh Exp $
+** $Id: tokenize.c,v 1.161 2009/06/17 01:17:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -523,7 +523,7 @@ abort_parse:
     pParse->pZombieTab = p->pNextZombie;
     sqlite3DeleteTable(p);
   }
-  if( nErr>0 && (pParse->rc==SQLITE_OK || pParse->rc==SQLITE_DONE) ){
+  if( nErr>0 && pParse->rc==SQLITE_OK ){
     pParse->rc = SQLITE_ERROR;
   }
   return nErr;
