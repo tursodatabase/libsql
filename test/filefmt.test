@@ -12,7 +12,7 @@
 #
 # This file implements tests to verify database file format.
 #
-# $Id: filefmt.test,v 1.2 2007/04/06 21:42:22 drh Exp $
+# $Id: filefmt.test,v 1.3 2009/06/18 11:34:43 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -94,7 +94,7 @@ do_test filefmt-1.7 {
 } {1 {file is encrypted or is not a database}}
 
 # Usable space per page (page-size minus unused space per page)
-# must be at least 500 bytes
+# must be at least 480 bytes
 #
 ifcapable pager_pragmas {
   do_test filefmt-1.8 {
@@ -103,7 +103,7 @@ ifcapable pager_pragmas {
     sqlite3 db test.db
     db eval {PRAGMA page_size=512; CREATE TABLE t1(x)}
     db close
-    hexio_write test.db 20 10
+    hexio_write test.db 20 21
     sqlite3 db test.db
     catchsql {
        SELECT count(*) FROM sqlite_master

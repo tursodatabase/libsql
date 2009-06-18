@@ -1,5 +1,5 @@
-C Reduce\sthe\sminimum\susable\spage\sspace\sto\s480\sbyte\sfrom\s500\sbytes.\s(CVS\s6780)
-D 2009-06-18T11:29:21
+C Update\sthe\sfilefmt.test\stest\sscript\sto\sconform\sto\sthe\sprevious\scheck-in.\s(CVS\s6781)
+D 2009-06-18T11:34:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -323,7 +323,7 @@ F test/exclusive2.test 6bdf254770a843c2933b54bee9ed239934f0a183
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test 80f3cf99f786ffbac19d2b0083673e7fc797030f
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
-F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
+F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 78506fa55800d553d8fe1f3e7f73ce996fd2cef9
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 767ef1e4a1b31abef479368d9f960ecfd6fa08c6
-R 8744c9794ddcaab9cd3a95677140b542
+P db4fb835363c9c7e38c891e01188a6e2db88472d
+R 86cedc96e291a5a2447f0fcd24fed5e9
 U drh
-Z e3c683c6fe4544dec2a7e820e22e1cce
+Z 685bf1a411eee02fbcb3368900cae4e1
