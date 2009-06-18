@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.854 2009/06/17 22:50:42 drh Exp $
+** $Id: vdbe.c,v 1.855 2009/06/18 00:41:56 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1931,24 +1931,14 @@ case OP_IfNot: {            /* jump, in1 */
   break;
 }
 
-/* Opcode: IsNull P1 P2 P3 * *
+/* Opcode: IsNull P1 P2 * * *
 **
-** Jump to P2 if the value in register P1 is NULL.  If P3 is greater
-** than zero, then check all values reg(P1), reg(P1+1), 
-** reg(P1+2), ..., reg(P1+P3-1).
+** Jump to P2 if the value in register P1 is NULL.
 */
 case OP_IsNull: {            /* same as TK_ISNULL, jump, in1 */
-  int n;
-
-  n = pOp->p3;
-  assert( pOp->p3==0 || pOp->p1>0 );
-  do{
-    if( (pIn1->flags & MEM_Null)!=0 ){
-      pc = pOp->p2 - 1;
-      break;
-    }
-    pIn1++;
-  }while( --n > 0 );
+  if( (pIn1->flags & MEM_Null)!=0 ){
+    pc = pOp->p2 - 1;
+  }
   break;
 }
 
