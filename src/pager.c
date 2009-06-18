@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.594 2009/06/18 17:22:39 drh Exp $
+** @(#) $Id: pager.c,v 1.595 2009/06/18 20:52:47 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1532,7 +1532,11 @@ static int pager_playback_one_page(
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
-    sqlite3BackupUpdate(pPager->pBackup, pgno, aData);
+    if( pPager->pBackup ){
+      CODEC1(pPager, aData, pPg->pgno, 3, rc=SQLITE_NOMEM);
+      sqlite3BackupUpdate(pPager->pBackup, pgno, aData);
+      CODEC1(pPager, aData, pPg->pgno, 0, rc=SQLITE_NOMEM);
+    }
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
     ** the database and the page is not in-memory, there is a potential
@@ -2937,7 +2941,7 @@ static int pager_write_pagelist(PgHdr *pList){
       }
 
       /* Update any backup objects copying the contents of this pager. */
-      sqlite3BackupUpdate(pPager->pBackup, pgno, (u8 *)pData);
+      sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)pList->pData);
 
       PAGERTRACE(("STORE %d page %d hash(%08x)\n",
                    PAGERID(pPager), pgno, pager_pagehash(pList)));
