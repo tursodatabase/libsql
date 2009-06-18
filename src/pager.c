@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.593 2009/06/11 17:32:45 drh Exp $
+** @(#) $Id: pager.c,v 1.594 2009/06/18 17:22:39 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -104,10 +104,10 @@ int sqlite3PagerTrace=1;  /* True to enable tracing */
 */
 #ifdef SQLITE_HAS_CODEC
 # define CODEC1(P,D,N,X,E) \
-    if( P->xCodec && P->xCodec(P->pCodecArg,D,N,X)==0 ){ E; }
+    if( P->xCodec && P->xCodec(P->pCodec,D,N,X)==0 ){ E; }
 # define CODEC2(P,D,N,X,E,O) \
     if( P->xCodec==0 ){ O=(char*)D; }else \
-    if( (O=(char*)(P->xCodec(P->pCodecArg,D,N,X)))==0 ){ E; }
+    if( (O=(char*)(P->xCodec(P->pCodec,D,N,X)))==0 ){ E; }
 #else
 # define CODEC1(P,D,N,X,E)   /* NO-OP */
 # define CODEC2(P,D,N,X,E,O) O=(char*)D
@@ -290,7 +290,8 @@ struct Pager {
   char dbFileVers[16];        /* Changes whenever database file changes */
   u32 sectorSize;             /* Assumed sector size during rollback */
 
-  int nExtra;                 /* Add this many bytes to each in-memory page */
+  u16 nExtra;                 /* Add this many bytes to each in-memory page */
+  i16 nReserve;               /* Number of unused bytes at end of each page */
   u32 vfsFlags;               /* Flags for sqlite3_vfs.xOpen() */
   int pageSize;               /* Number of bytes in a page */
   Pgno mxPgno;                /* Maximum allowed size of the database */
@@ -305,7 +306,9 @@ struct Pager {
   void (*xReiniter)(DbPage*); /* Call this routine when reloading pages */
 #ifdef SQLITE_HAS_CODEC
   void *(*xCodec)(void*,void*,Pgno,int); /* Routine for en/decoding data */
-  void *pCodecArg;            /* First argument to xCodec() */
+  void (*xCodecSizeChng)(void*,int,int); /* Notify of page size changes */
+  void (*xCodecFree)(void*);             /* Destructor for the codec */
+  void *pCodec;               /* First argument to xCodec... methods */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   i64 journalSizeLimit;       /* Size limit for persistent journal files */
@@ -927,7 +930,7 @@ static int readJournalHdr(
     ** PagerSetPagesize() is tested.
     */
     iPageSize16 = (u16)iPageSize;
-    rc = sqlite3PagerSetPagesize(pPager, &iPageSize16);
+    rc = sqlite3PagerSetPagesize(pPager, &iPageSize16, -1);
     testcase( rc!=SQLITE_OK );
     assert( rc!=SQLITE_OK || iPageSize16==(u16)iPageSize );
 
@@ -2362,6 +2365,21 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*)){
 }
 
 /*
+** Report the current page size and number of reserved bytes back
+** to the codec.
+*/
+#ifdef SQLITE_HAS_CODEC
+static void pagerReportSize(Pager *pPager){
+  if( pPager->xCodecSizeChng ){
+    pPager->xCodecSizeChng(pPager->pCodec, pPager->pageSize,
+                           (int)pPager->nReserve);
+  }
+}
+#else
+# define pagerReportSize(X)     /* No-op if we do not support a codec */
+#endif
+
+/*
 ** Change the page size used by the Pager object. The new page size 
 ** is passed in *pPageSize.
 **
@@ -2391,7 +2409,7 @@ void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*)){
 ** function was called, or because the memory allocation attempt failed, 
 ** then *pPageSize is set to the old, retained page size before returning.
 */
-int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
+int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
   int rc = pPager->errCode;
   if( rc==SQLITE_OK ){
     u16 pageSize = *pPageSize;
@@ -2412,6 +2430,10 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize){
       }
     }
     *pPageSize = (u16)pPager->pageSize;
+    if( nReserve<0 ) nReserve = pPager->nReserve;
+    assert( nReserve>=0 && nReserve<1000 );
+    pPager->nReserve = (i16)nReserve;
+    pagerReportSize(pPager);
   }
   return rc;
 }
@@ -2659,6 +2681,10 @@ int sqlite3PagerClose(Pager *pPager){
   sqlite3OsClose(pPager->fd);
   sqlite3PageFree(pPager->pTmpSpace);
   sqlite3PcacheClose(pPager->pPCache);
+
+#ifdef SQLITE_HAS_CODEC
+  if( pPager->xCodecFree ) pPager->xCodecFree(pPager->pCodec);
+#endif
 
   assert( !pPager->aSavepoint && !pPager->pInJournal );
   assert( !isOpen(pPager->jfd) && !isOpen(pPager->sjfd) );
@@ -3281,7 +3307,7 @@ int sqlite3PagerOpen(
   */
   if( rc==SQLITE_OK ){
     assert( pPager->memDb==0 );
-    rc = sqlite3PagerSetPagesize(pPager, &szPageDflt);
+    rc = sqlite3PagerSetPagesize(pPager, &szPageDflt, -1);
     testcase( rc!=SQLITE_OK );
   }
 
@@ -3296,6 +3322,7 @@ int sqlite3PagerOpen(
   }
 
   /* Initialize the PCache object. */
+  assert( nExtra<1000 );
   nExtra = ROUND8(nExtra);
   sqlite3PcacheOpen(szPageDflt, nExtra, !memDb,
                     !memDb?pagerStress:0, (void *)pPager, pPager->pPCache);
@@ -3331,7 +3358,7 @@ int sqlite3PagerOpen(
   /* pPager->pFirst = 0; */
   /* pPager->pFirstSynced = 0; */
   /* pPager->pLast = 0; */
-  pPager->nExtra = nExtra;
+  pPager->nExtra = (u16)nExtra;
   pPager->journalSizeLimit = SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT;
   assert( isOpen(pPager->fd) || tempFile );
   setSectorSize(pPager);
@@ -5044,15 +5071,24 @@ int sqlite3PagerNosync(Pager *pPager){
 
 #ifdef SQLITE_HAS_CODEC
 /*
-** Set the codec for this pager
+** Set or retrieve the codec for this pager
 */
-void sqlite3PagerSetCodec(
+static void sqlite3PagerSetCodec(
   Pager *pPager,
   void *(*xCodec)(void*,void*,Pgno,int),
-  void *pCodecArg
+  void (*xCodecSizeChng)(void*,int,int),
+  void (*xCodecFree)(void*),
+  void *pCodec
 ){
+  if( pPager->xCodecFree ) pPager->xCodecFree(pPager->pCodec);
   pPager->xCodec = xCodec;
-  pPager->pCodecArg = pCodecArg;
+  pPager->xCodecSizeChng = xCodecSizeChng;
+  pPager->xCodecFree = xCodecFree;
+  pPager->pCodec = pCodec;
+  pagerReportSize(pPager);
+}
+static void *sqlite3PagerGetCodec(Pager *pPager){
+  return pPager->pCodec;
 }
 #endif
 

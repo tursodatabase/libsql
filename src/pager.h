@@ -13,7 +13,7 @@
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
 **
-** @(#) $Id: pager.h,v 1.101 2009/04/30 09:10:38 danielk1977 Exp $
+** @(#) $Id: pager.h,v 1.102 2009/06/18 17:22:39 drh Exp $
 */
 
 #ifndef _PAGER_H_
@@ -93,7 +93,7 @@ int sqlite3PagerReadFileheader(Pager*, int, unsigned char*);
 /* Functions used to configure a Pager object. */
 void sqlite3PagerSetBusyhandler(Pager*, int(*)(void *), void *);
 void sqlite3PagerSetReiniter(Pager*, void(*)(DbPage*));
-int sqlite3PagerSetPagesize(Pager*, u16*);
+int sqlite3PagerSetPagesize(Pager*, u16*, int);
 int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int);
@@ -140,11 +140,6 @@ int sqlite3PagerIsMemdb(Pager*);
 
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
-
-/* Used by encryption extensions. */
-#ifdef SQLITE_HAS_CODEC
-  void sqlite3PagerSetCodec(Pager*,void*(*)(void*,void*,Pgno,int),void*);
-#endif
 
 /* Functions to support testing and debugging. */
 #if !defined(NDEBUG) || defined(SQLITE_TEST)
