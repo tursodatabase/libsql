@@ -1,5 +1,5 @@
-C Remove\sthe\sP3\soperand\sfrom\sOP_IsNull\ssince\sit\swas\snot\sbeing\sused.\s(CVS\s6779)
-D 2009-06-18T00:41:56
+C Reduce\sthe\sminimum\susable\spage\sspace\sto\s480\sbyte\sfrom\s500\sbytes.\s(CVS\s6780)
+D 2009-06-18T11:29:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c c7fc867f52fbe5fc729aa56ce0a48c2645def82e
+F src/btree.c 067ad47d83912806c4ca6dff16eda544d3dc3952
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 122021a7d70633b389c447d9a05f9242f410809d
 F src/build.c 75b57e3f4de1b34d4e1e49d350dc87febff48ba0
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 0def0b76b9f4de9ee259ab1cbe71051fd58b73be
-R 1322e72b4dc9de9db623061ba46b85c0
+P 767ef1e4a1b31abef479368d9f960ecfd6fa08c6
+R 8744c9794ddcaab9cd3a95677140b542
 U drh
-Z 6c3325c9dd99964c6cb9177724f1f76f
+Z e3c683c6fe4544dec2a7e820e22e1cce
