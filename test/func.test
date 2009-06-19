@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.92 2009/04/15 15:16:53 drh Exp $
+# $Id: func.test,v 1.93 2009/06/19 16:44:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1057,7 +1057,7 @@ for {set i 1} {$i<[sqlite3_limit db SQLITE_LIMIT_FUNCTION_ARG -1]} {incr i} {
 }
 
 # Ticket #3806.  If the initial string in a group_concat is an empty
-# string, the separate that follows should still be present.
+# string, the separator that follows should still be present.
 #
 do_test func-24.8 {
   execsql {
@@ -1069,6 +1069,27 @@ do_test func-24.9 {
     SELECT group_concat(CASE WHEN t1!='software' THEN '' ELSE t1 END) FROM tbl1
   }
 } {,,,,software}
+
+# Ticket #3923.  Initial empty strings have a separator.  But initial
+# NULLs do not.
+#
+do_test func-24.10 {
+  execsql {
+    SELECT group_concat(CASE t1 WHEN 'this' THEN null ELSE t1 END) FROM tbl1
+  }
+} {program,is,free,software}
+do_test func-24.11 {
+  execsql {
+   SELECT group_concat(CASE WHEN t1!='software' THEN null ELSE t1 END) FROM tbl1
+  }
+} {software}
+do_test func-24.12 {
+  execsql {
+    SELECT group_concat(CASE t1 WHEN 'this' THEN ''
+                          WHEN 'program' THEN null ELSE t1 END) FROM tbl1
+  }
+} {,is,free,software}
+
 
 # Use the test_isolation function to make sure that type conversions
 # on function arguments do not effect subsequent arguments.
