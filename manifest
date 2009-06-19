@@ -1,5 +1,5 @@
-C If\sa\scall\sis\smade\sto\ssqlite3PagerAcquire\swhen\sthere\sare\sno\soutstanding\sreferences\sto\sany\spages\sand\sthe\spager\sis\sin\sthe\serror-state,\stry\sto\sexit\sthe\serror-state\sat\sthis\spoint.\sPreviously\sthis\swas\sonly\sattempted\sif\sthe\spager\swas\sconfigured\sto\suse\sexclusive\smode.\s(CVS\s6788)
-D 2009-06-19T17:50:02
+C Fix\sthe\scomment\son\sthe\ssqlite3PExpr()\ssubroutine.\s\sTicket\s#3924.\s(CVS\s6789)
+D 2009-06-19T18:32:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c cb791855c7948cecc96def9d97989879ca26f257
-F src/expr.c 1d580a7b2e51092785cbbc1fb8d2ff84e93c76dc
+F src/expr.c de80e2d6c2adc453e06f070837ca5b87d4373730
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9856373f5315f6b8690d7f07f7191aa9f279ca87
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 90c3b23ccac8a9e7fc1cc831e43888e4e43badc9
-R 2ea8e871fa42548824353bc0cdc9bb93
-U danielk1977
-Z e38b100b5bb053d12d25eddf5e50616c
+P 62db08bc0de936e4a418ae583a3bdbbf33d7787e
+R ac56c8a806f7dbc960ad044fa18040b8
+U drh
+Z d0d0a90f42959f30bda016cc31abe318
