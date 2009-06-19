@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.460 2009/06/09 18:58:53 shane Exp $
+** $Id: vdbeaux.c,v 1.461 2009/06/19 00:33:32 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -626,11 +626,24 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** is readable and writable, but it has no effect.  The return of a dummy
 ** opcode allows the call to continue functioning after a OOM fault without
 ** having to check to see if the return from this routine is a valid pointer.
+**
+** About the #ifdef SQLITE_OMIT_TRACE:  Normally, this routine is never called
+** unless p->nOp>0.  This is because in the absense of SQLITE_OMIT_TRACE,
+** an OP_Trace instruction is always inserted by sqlite3VdbeGet() as soon as
+** a new VDBE is created.  So we are free to set addr to p->nOp-1 without
+** having to double-check to make sure that the result is non-negative. But
+** if SQLITE_OMIT_TRACE is defined, the OP_Trace is omitted and we do need to
+** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
   static VdbeOp dummy;
   assert( p->magic==VDBE_MAGIC_INIT );
-  if( addr<0 ) addr = p->nOp - 1;
+  if( addr<0 ){
+#ifdef SQLITE_OMIT_TRACE
+    if( p->nOp==0 ) return &dummy;
+#endif
+    addr = p->nOp - 1;
+  }
   assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
   if( p->db->mallocFailed ){
     return &dummy;
