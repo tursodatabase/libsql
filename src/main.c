@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.557 2009/06/09 19:53:58 drh Exp $
+** $Id: main.c,v 1.558 2009/06/19 14:06:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -582,13 +582,6 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_MISUSE;
   }
   sqlite3_mutex_enter(db->mutex);
-
-#ifdef SQLITE_SSE
-  {
-    extern void sqlite3SseCleanup(sqlite3*);
-    sqlite3SseCleanup(db);
-  }
-#endif 
 
   sqlite3ResetInternalSchema(db, 0);
 

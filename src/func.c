@@ -16,7 +16,7 @@
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
 **
-** $Id: func.c,v 1.237 2009/06/03 01:24:54 drh Exp $
+** $Id: func.c,v 1.238 2009/06/19 14:06:03 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -1319,9 +1319,6 @@ void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
       db->mallocFailed = 1;
     }
   }
-#ifdef SQLITE_SSE
-  (void)sqlite3SseFunctions(db);
-#endif
 }
 
 /*
