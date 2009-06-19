@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.597 2009/06/19 02:25:49 drh Exp $
+** @(#) $Id: pager.c,v 1.598 2009/06/19 17:50:02 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3576,7 +3576,7 @@ static int pagerSharedLock(Pager *pPager){
   ** the error. Discard the contents of the pager-cache and treat any
   ** open journal file as a hot-journal.
   */
-  if( !MEMDB && pPager->exclusiveMode 
+  if( !MEMDB 
    && sqlite3PcacheRefCount(pPager->pPCache)==0 && pPager->errCode 
   ){
     if( isOpen(pPager->jfd) ){
