@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.598 2009/06/19 17:50:02 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.599 2009/06/20 11:54:39 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3571,17 +3571,13 @@ static int pagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;                /* Return code */
   int isErrorReset = 0;              /* True if recovering from error state */
 
-  /* If this database is opened for exclusive access, has no outstanding 
-  ** page references and is in an error-state, this is a chance to clear
-  ** the error. Discard the contents of the pager-cache and treat any
-  ** open journal file as a hot-journal.
+  /* If this database has no outstanding page references and is in an 
+  ** error-state, this is a chance to clear the error. Discard the 
+  ** contents of the pager-cache and rollback any hot journal in the
+  ** file-system.
   */
-  if( !MEMDB 
-   && sqlite3PcacheRefCount(pPager->pPCache)==0 && pPager->errCode 
-  ){
-    if( isOpen(pPager->jfd) ){
-      isErrorReset = 1;
-    }
+  if( !MEMDB && sqlite3PcacheRefCount(pPager->pPCache)==0 && pPager->errCode ){
+    isErrorReset = 1;
     pPager->errCode = SQLITE_OK;
     pager_reset(pPager);
   }
@@ -3662,9 +3658,12 @@ static int pagerSharedLock(Pager *pPager){
               sqlite3OsClose(pPager->jfd);
             }
           }else{
-            /* If the journal does not exist, that means some other process
-            ** has already rolled it back */
-            rc = SQLITE_BUSY;
+            /* If the journal does not exist, it usually means that some 
+            ** other connection managed to get in and roll it back before 
+            ** this connection obtained the exclusive lock above. Or, it 
+            ** may mean that the pager was in the error-state when this
+            ** function was called and the journal file does not exist.  */
+            rc = pager_end_transaction(pPager, 0);
           }
         }
       }
@@ -3683,10 +3682,12 @@ static int pagerSharedLock(Pager *pPager){
       ** playing back the hot-journal so that we don't end up with
       ** an inconsistent cache.
       */
-      rc = pager_playback(pPager, 1);
-      if( rc!=SQLITE_OK ){
-        rc = pager_error(pPager, rc);
-        goto failed;
+      if( isOpen(pPager->jfd) ){
+        rc = pager_playback(pPager, 1);
+        if( rc!=SQLITE_OK ){
+          rc = pager_error(pPager, rc);
+          goto failed;
+        }
       }
       assert( (pPager->state==PAGER_SHARED)
            || (pPager->exclusiveMode && pPager->state>PAGER_SHARED)
