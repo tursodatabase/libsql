@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.599 2009/06/20 11:54:39 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.600 2009/06/20 18:52:50 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3577,7 +3577,9 @@ static int pagerSharedLock(Pager *pPager){
   ** file-system.
   */
   if( !MEMDB && sqlite3PcacheRefCount(pPager->pPCache)==0 && pPager->errCode ){
-    isErrorReset = 1;
+    if( isOpen(pPager->jfd) || pPager->zJournal ){
+      isErrorReset = 1;
+    }
     pPager->errCode = SQLITE_OK;
     pager_reset(pPager);
   }

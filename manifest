@@ -1,5 +1,5 @@
-C If\safter\sobtaining\san\sexclusive\slock\sto\srollback\sa\shot-journal\sfile\sit\sis\sfound\sthat\sthe\sjournal\sfile\shas\sbeen\sdeleted,\sdo\snot\sreturn\san\sSQLITE_BUSY\serror.\sJust\sdowngrade\sthe\slock\sand\scontinue\swith\sthe\scurrent\soperation.\sThis\seliminates\sa\sspurious\sSQLITE_BUSY\serror\scaused\sby\sa\srace\scondition.\s(CVS\s6792)
-D 2009-06-20T11:54:39
+C When\srecovering\sfrom\sthe\serror-state\sin\spagerSharedLock(),\sdo\snot\ssearch\sfor\sa\shot-journal\sin\sthe\sfile-system\sif\sthe\spager\sis\sconfigured\sto\suse\san\sanonymous\stemp\sfile\sas\sthe\sjournal.\s(CVS\s6793)
+D 2009-06-20T18:52:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c b64129c296e480c2827606e206ea51bb30904626
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c f6d5aa971a4d414ef4a1fb3a82671b62a7289f2c
+F src/pager.c 2fc3693e83aff0864cd09c1e9e6f9825c372ff5b
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y b6e99f4208a34eb83c62f20dd67f8d9058e86768
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P f66fc7713ec5ff8cf92e875e904f079d724b0477
-R 40c7ff61e852d4cc9604ee6e6c9bbbd4
+P 9a0666003764774b0bf861687002f8db9fd314b1
+R 5dd91765f94027c048c1a58ba9ebd707
 U danielk1977
-Z 867454200d76158649fd516091f8285f
+Z 0386e8ad9294e91ace2c01f921b33dd2
