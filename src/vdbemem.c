@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.148 2009/06/17 16:20:04 drh Exp $
+** $Id: vdbemem.c,v 1.149 2009/06/22 19:05:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -637,6 +637,12 @@ void sqlite3VdbeMemMove(Mem *pTo, Mem *pFrom){
 ** string is copied into a (possibly existing) buffer managed by the 
 ** Mem structure. Otherwise, any existing buffer is freed and the
 ** pointer copied.
+**
+** If the string is too large (if it exceeds the SQLITE_LIMIT_LENGTH
+** size limit) then no memory allocation occurs.  If the string can be
+** stored without allocating memory, then it is.  If a memory allocation
+** is required to store the string, then value of pMem is unchanged.  In
+** either case, SQLITE_TOOBIG is returned.
 */
 int sqlite3VdbeMemSetStr(
   Mem *pMem,          /* Memory cell to set to string value */
@@ -700,9 +706,6 @@ int sqlite3VdbeMemSetStr(
     pMem->xDel = xDel;
     flags |= ((xDel==SQLITE_STATIC)?MEM_Static:MEM_Dyn);
   }
-  if( nByte>iLimit ){
-    return SQLITE_TOOBIG;
-  }
 
   pMem->n = nByte;
   pMem->flags = flags;
@@ -714,6 +717,10 @@ int sqlite3VdbeMemSetStr(
     return SQLITE_NOMEM;
   }
 #endif
+
+  if( nByte>iLimit ){
+    return SQLITE_TOOBIG;
+  }
 
   return SQLITE_OK;
 }

@@ -1,5 +1,5 @@
-C Remove\sa\scondition\sthat\sis\salways\strue\sfrom\sbtree.c.\s(CVS\s6798)
-D 2009-06-22T18:03:52
+C Simplifications\sto\svdbe.c\sand\sit\sservice\sroutines\sin\ssupport\sof\scoverage\ntesting.\s(CVS\s6799)
+D 2009-06-22T19:05:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,13 +203,13 @@ F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c a7e981e032c3c9c0887d50d7e658a33cb355b43d
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c e92e2f4136e33041145a87c056a5d09972add6de
+F src/vdbe.c c5a0a208432e4faf6590201ace57c7c873143089
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 7823eac611229163c6a5df0e9e0d54ffcda527e7
 F src/vdbeapi.c 73bd1d2c57b953bc688d1d8c84b24c2084c2aec7
-F src/vdbeaux.c 516b7e123ece051e93ab1aa96c2ff04578b3b465
+F src/vdbeaux.c 6f0e3680b7b235d7f012de84936f1b7c5320f0c3
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
-F src/vdbemem.c ba39c0afa609595c7c23dfc2ac929d9414faa59f
+F src/vdbemem.c d244e09b5ca8afc3e1cea3ccf0b1a3fa48926614
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c cf0d091748c2fa6f7df96e5b08d2db26fd2eb437
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P bda38f5e86db45234c2dbb0f8d1a81f6ff6d04e4
-R e49401abe650f38b382c2f4526e14814
-U danielk1977
-Z d013caf2ebacc662cceed0c56ce2e6b5
+P 3ec8b37a89fdb2436d312439715414fae2cd20a8
+R 64e6f4c2a51e80727de7b90d6d047386
+U drh
+Z e09666ff70680840d2021686d00144b7

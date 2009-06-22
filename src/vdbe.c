@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.860 2009/06/22 12:05:10 drh Exp $
+** $Id: vdbe.c,v 1.861 2009/06/22 19:05:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2065,8 +2065,7 @@ case OP_Column: {
       sqlite3BtreeDataSize(pCrsr, &payloadSize);
     }
     nField = pC->nField;
-  }else{
-    assert( pC->pseudoTable );
+  }else if( pC->pseudoTable ){
     /* The record is the sole entry of a pseudo-table */
     payloadSize = pC->nData;
     zRec = pC->pData;
@@ -2074,6 +2073,9 @@ case OP_Column: {
     assert( payloadSize==0 || zRec!=0 );
     nField = pC->nField;
     pCrsr = 0;
+  }else{
+    /* Consider the row to be NULL */
+    payloadSize = 0;
   }
 
   /* If payloadSize is 0, then just store a NULL */
@@ -2939,6 +2941,10 @@ case OP_OpenWrite: {
     pIn2 = &p->aMem[p2];
     sqlite3VdbeMemIntegerify(pIn2);
     p2 = (int)pIn2->u.i;
+    /* The p2 value always comes from a prior OP_CreateTable opcode and
+    ** that opcode will always set the p2 value to 2 or more or else fail.
+    ** If there were a failure, the prepared statement would have halted
+    ** before reaching this instruction. */
     if( NEVER(p2<2) ) {
       rc = SQLITE_CORRUPT_BKPT;
       goto abort_due_to_error;
@@ -3817,8 +3823,17 @@ case OP_Delete: {
     iKey = pC->lastRowid;
   }
 
+  /* The OP_Delete opcode always follows an OP_NotExists or OP_Last or
+  ** OP_Column on the same table without any intervening operations that
+  ** might move or invalidate the cursor.  Hence cursor pC is always pointing
+  ** to the row to be deleted and the sqlite3VdbeCursorMoveto() operation
+  ** below is always a no-op and cannot fail.  We will run it anyhow, though,
+  ** to guard against future changes to the code generator.
+  **/
+  assert( pC->deferredMoveto==0 );
   rc = sqlite3VdbeCursorMoveto(pC);
-  if( rc ) goto abort_due_to_error;
+  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+
   sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
   rc = sqlite3BtreeDelete(pC->pCursor);
   pC->cacheStatus = CACHE_STALE;
@@ -3888,8 +3903,16 @@ case OP_RowData: {
   assert( pC->pseudoTable==0 );
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
+
+  /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
+  ** OP_Rewind/Op_Next with no intervening instructions that might invalidate
+  ** the cursor.  Hence the following sqlite3VdbeCursorMoveto() call is always
+  ** a no-op and can never fail.  But we leave it in place as a safety.
+  */
+  assert( pC->deferredMoveto==0 );
   rc = sqlite3VdbeCursorMoveto(pC);
-  if( rc ) goto abort_due_to_error;
+  if( NEVER(rc!=SQLITE_OK) ) goto abort_due_to_error;
+
   if( pC->isIndex ){
     assert( !pC->isTable );
     sqlite3BtreeKeySize(pCrsr, &n64);
@@ -4007,13 +4030,16 @@ case OP_Last: {        /* jump */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
-  assert( pCrsr!=0 );
-  rc = sqlite3BtreeLast(pCrsr, &res);
+  if( pCrsr==0 ){
+    res = 1;
+  }else{
+    rc = sqlite3BtreeLast(pCrsr, &res);
+  }
   pC->nullRow = (u8)res;
   pC->deferredMoveto = 0;
   pC->rowidIsValid = 0;
   pC->cacheStatus = CACHE_STALE;
-  if( res && pOp->p2>0 ){
+  if( pOp->p2>0 && res ){
     pc = pOp->p2 - 1;
   }
   break;
@@ -4106,7 +4132,10 @@ case OP_Next: {        /* jump */
     break;  /* See ticket #2273 */
   }
   pCrsr = pC->pCursor;
-  assert( pCrsr );
+  if( pCrsr==0 ){
+    pC->nullRow = 1;
+    break;
+  }
   res = 1;
   assert( pC->deferredMoveto==0 );
   rc = pOp->opcode==OP_Next ? sqlite3BtreeNext(pCrsr, &res) :
@@ -4147,7 +4176,7 @@ case OP_IdxInsert: {        /* in2 */
   assert( pC!=0 );
   assert( pIn2->flags & MEM_Blob );
   pCrsr = pC->pCursor;
-  if( pCrsr!=0 ){
+  if( ALWAYS(pCrsr!=0) ){
     assert( pC->isTable==0 );
     rc = ExpandBlob(pIn2);
     if( rc==SQLITE_OK ){
@@ -4172,6 +4201,8 @@ case OP_IdxInsert: {        /* in2 */
 case OP_IdxDelete: {
   VdbeCursor *pC;
   BtCursor *pCrsr;
+  int res;
+  UnpackedRecord r;
 
   assert( pOp->p3>0 );
   assert( pOp->p2>0 && pOp->p2+pOp->p3<=p->nMem+1 );
@@ -4179,9 +4210,7 @@ case OP_IdxDelete: {
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
-  if( pCrsr!=0 ){
-    int res;
-    UnpackedRecord r;
+  if( ALWAYS(pCrsr!=0) ){
     r.pKeyInfo = pC->pKeyInfo;
     r.nField = (u16)pOp->p3;
     r.flags = 0;
@@ -4213,9 +4242,9 @@ case OP_IdxRowid: {              /* out2-prerelease */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
-  if( pCrsr!=0 ){
+  if( ALWAYS(pCrsr!=0) ){
     rc = sqlite3VdbeCursorMoveto(pC);
-    if( rc ) goto abort_due_to_error;
+    if( NEVER(rc) ) goto abort_due_to_error;
     assert( pC->deferredMoveto==0 );
     assert( pC->isTable==0 );
     if( !pC->nullRow ){
@@ -4265,7 +4294,7 @@ case OP_IdxGE: {        /* jump, in3 */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  if( pC->pCursor!=0 ){
+  if( ALWAYS(pC->pCursor!=0) ){
     assert( pC->deferredMoveto==0 );
     assert( pOp->p5==0 || pOp->p5==1 );
     assert( pOp->p4type==P4_INT32 );
@@ -4469,7 +4498,7 @@ case OP_ParseSchema: {
   */
   assert( sqlite3BtreeHoldsMutex(db->aDb[iDb].pBt) );
   sqlite3BtreeEnterAll(db);
-  if( pOp->p2 || DbHasProperty(db, iDb, DB_SchemaLoaded) ){
+  if( pOp->p2 || ALWAYS(DbHasProperty(db, iDb, DB_SchemaLoaded)) ){
     zMaster = SCHEMA_TABLE(iDb);
     initData.db = db;
     initData.iDb = pOp->p1;
