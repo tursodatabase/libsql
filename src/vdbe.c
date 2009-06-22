@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.858 2009/06/22 00:55:31 drh Exp $
+** $Id: vdbe.c,v 1.859 2009/06/22 11:10:48 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2467,15 +2467,13 @@ case OP_Count: {         /* out2-prerelease */
 ** has an index of 1.
 */
 case OP_Statement: {
-  int i;
   Btree *pBt;
   if( db->autoCommit==0 || db->activeVdbeCnt>1 ){
-    i = pOp->p1;
-    assert( i>=0 && i<db->nDb );
-    assert( db->aDb[i].pBt!=0 );
-    pBt = db->aDb[i].pBt;
+    assert( pOp->p1>=0 && pOp->p1<db->nDb );
+    assert( db->aDb[pOp->p1].pBt!=0 );
+    pBt = db->aDb[pOp->p1].pBt;
     assert( sqlite3BtreeIsInTrans(pBt) );
-    assert( (p->btreeMask & (1<<i))!=0 );
+    assert( (p->btreeMask & (1<<pOp->p1))!=0 );
     if( p->iStatement==0 ){
       assert( db->nStatement>=0 && db->nSavepoint>=0 );
       db->nStatement++; 
@@ -2717,13 +2715,11 @@ case OP_AutoCommit: {
 ** If P2 is zero, then a read-lock is obtained on the database file.
 */
 case OP_Transaction: {
-  int i;
   Btree *pBt;
 
-  i = pOp->p1;
-  assert( i>=0 && i<db->nDb );
-  assert( (p->btreeMask & (1<<i))!=0 );
-  pBt = db->aDb[i].pBt;
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  pBt = db->aDb[pOp->p1].pBt;
 
   if( pBt ){
     rc = sqlite3BtreeBeginTrans(pBt, pOp->p2);
@@ -2912,7 +2908,6 @@ case OP_OpenRead:
 case OP_OpenWrite: {
   int nField;
   KeyInfo *pKeyInfo;
-  int i;
   int p2;
   int iDb;
   int wrFlag;
@@ -2923,7 +2918,6 @@ case OP_OpenWrite: {
 
   nField = 0;
   pKeyInfo = 0;
-  i = pOp->p1;
   p2 = pOp->p2;
   iDb = pOp->p3;
   assert( iDb>=0 && iDb<db->nDb );
@@ -2945,12 +2939,11 @@ case OP_OpenWrite: {
     pIn2 = &p->aMem[p2];
     sqlite3VdbeMemIntegerify(pIn2);
     p2 = (int)pIn2->u.i;
-    if( NEVER(p2<2) ) {
+    if( p2<2 ) {
       rc = SQLITE_CORRUPT_BKPT;
       goto abort_due_to_error;
     }
   }
-  assert( i>=0 );
   if( pOp->p4type==P4_KEYINFO ){
     pKeyInfo = pOp->p4.pKeyInfo;
     pKeyInfo->enc = ENC(p->db);
@@ -2958,7 +2951,8 @@ case OP_OpenWrite: {
   }else if( pOp->p4type==P4_INT32 ){
     nField = pOp->p4.i;
   }
-  pCur = allocateCursor(p, i, nField, iDb, 1);
+  assert( pOp->p1>=0 );
+  pCur = allocateCursor(p, pOp->p1, nField, iDb, 1);
   if( pCur==0 ) goto no_mem;
   pCur->nullRow = 1;
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
@@ -3025,7 +3019,6 @@ case OP_OpenWrite: {
 ** that created confusion with the whole virtual-table idea.
 */
 case OP_OpenEphemeral: {
-  int i;
   VdbeCursor *pCx;
   static const int openFlags = 
       SQLITE_OPEN_READWRITE |
@@ -3034,9 +3027,8 @@ case OP_OpenEphemeral: {
       SQLITE_OPEN_DELETEONCLOSE |
       SQLITE_OPEN_TRANSIENT_DB;
 
-  i = pOp->p1;
-  assert( i>=0 );
-  pCx = allocateCursor(p, i, pOp->p2, -1, 1);
+  assert( pOp->p1>=0 );
+  pCx = allocateCursor(p, pOp->p1, pOp->p2, -1, 1);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   rc = sqlite3BtreeFactory(db, 0, 1, SQLITE_DEFAULT_TEMP_CACHE_SIZE, openFlags,
@@ -3095,12 +3087,10 @@ case OP_OpenEphemeral: {
 ** the pseudo-table.
 */
 case OP_OpenPseudo: {
-  int i;
   VdbeCursor *pCx;
 
-  i = pOp->p1;
-  assert( i>=0 );
-  pCx = allocateCursor(p, i, pOp->p3, -1, 0);
+  assert( pOp->p1>=0 );
+  pCx = allocateCursor(p, pOp->p1, pOp->p3, -1, 0);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
   pCx->pseudoTable = 1;
@@ -3116,11 +3106,9 @@ case OP_OpenPseudo: {
 ** currently open, this instruction is a no-op.
 */
 case OP_Close: {
-  int i;
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  sqlite3VdbeFreeCursor(p, p->apCsr[i]);
-  p->apCsr[i] = 0;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  sqlite3VdbeFreeCursor(p, p->apCsr[pOp->p1]);
+  p->apCsr[pOp->p1] = 0;
   break;
 }
 
@@ -3180,7 +3168,6 @@ case OP_SeekLt:         /* jump, in3 */
 case OP_SeekLe:         /* jump, in3 */
 case OP_SeekGe:         /* jump, in3 */
 case OP_SeekGt: {       /* jump, in3 */
-  int i;
   int res;
   int oc;
   VdbeCursor *pC;
@@ -3188,10 +3175,9 @@ case OP_SeekGt: {       /* jump, in3 */
   int nField;
   i64 iKey;      /* The rowid we are to seek to */
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   assert( pOp->p2!=0 );
-  pC = p->apCsr[i];
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   if( pC->pCursor!=0 ){
     oc = pOp->opcode;
@@ -3322,12 +3308,10 @@ case OP_SeekGt: {       /* jump, in3 */
 ** occur, no unnecessary I/O happens.
 */
 case OP_Seek: {    /* in2 */
-  int i;
   VdbeCursor *pC;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   if( ALWAYS(pC->pCursor!=0) ){
     assert( pC->isTable );
@@ -3554,10 +3538,9 @@ case OP_NotExists: {        /* jump, in3 */
 ** instruction.  
 */
 case OP_Sequence: {           /* out2-prerelease */
-  int i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
-  pOut->u.i = p->apCsr[i]->seqCount++;
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( p->apCsr[pOp->p1]!=0 );
+  pOut->u.i = p->apCsr[pOp->p1]->seqCount++;
   MemSetTypeFlag(pOut, MEM_Int);
   break;
 }
@@ -3717,7 +3700,6 @@ case OP_Insert: {
   Mem *pData;
   Mem *pKey;
   i64 iKey;   /* The integer ROWID or key for the record to be inserted */
-  int i;
   VdbeCursor *pC;
   int nZero;
   int seekResult;
@@ -3727,9 +3709,8 @@ case OP_Insert: {
 
   pData = &p->aMem[pOp->p2];
   pKey = &p->aMem[pOp->p3];
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 || pC->pseudoTable );
   assert( pKey->flags & MEM_Int );
@@ -3818,14 +3799,12 @@ case OP_Insert: {
 ** using OP_NotFound prior to invoking this opcode.
 */
 case OP_Delete: {
-  int i;
   i64 iKey;
   VdbeCursor *pC;
 
-  i = pOp->p1;
   iKey = 0;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );  /* Only valid for real tables, no pseudotables */
 
@@ -3892,18 +3871,16 @@ case OP_ResetCount: {
 */
 case OP_RowKey:
 case OP_RowData: {
-  int i;
   VdbeCursor *pC;
   BtCursor *pCrsr;
   u32 n;
   i64 n64;
 
-  i = pOp->p1;
   pOut = &p->aMem[pOp->p2];
 
   /* Note that RowKey and RowData are really exactly the same instruction */
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC->isTable || pOp->opcode==OP_RowKey );
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
@@ -3951,15 +3928,13 @@ case OP_RowData: {
 ** one opcode now works for both table types.
 */
 case OP_Rowid: {                 /* out2-prerelease */
-  int i;
   VdbeCursor *pC;
   i64 v;
   sqlite3_vtab *pVtab;
   const sqlite3_module *pModule;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   if( pC->nullRow ){
     /* Do nothing so that reg[P2] remains NULL */
@@ -4002,12 +3977,10 @@ case OP_Rowid: {                 /* out2-prerelease */
 ** write a NULL.
 */
 case OP_NullRow: {
-  int i;
   VdbeCursor *pC;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pC->nullRow = 1;
   pC->rowidIsValid = 0;
@@ -4026,14 +3999,12 @@ case OP_NullRow: {
 ** to the following instruction.
 */
 case OP_Last: {        /* jump */
-  int i;
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   pCrsr = pC->pCursor;
   assert( pCrsr!=0 );
@@ -4078,14 +4049,12 @@ case OP_Sort: {        /* jump */
 ** to the following instruction.
 */
 case OP_Rewind: {        /* jump */
-  int i;
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int res;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  pC = p->apCsr[i];
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   if( (pCrsr = pC->pCursor)!=0 ){
     rc = sqlite3BtreeFirst(pCrsr, &res);
@@ -4168,17 +4137,17 @@ case OP_Next: {        /* jump */
 ** for tables is OP_Insert.
 */
 case OP_IdxInsert: {        /* in2 */
-  int i;
   VdbeCursor *pC;
   BtCursor *pCrsr;
   int nKey;
   const char *zKey;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
   assert( pIn2->flags & MEM_Blob );
-  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
+  pCrsr = pC->pCursor;
+  if( pCrsr!=0 ){
     assert( pC->isTable==0 );
     rc = ExpandBlob(pIn2);
     if( rc==SQLITE_OK ){
@@ -4201,16 +4170,16 @@ case OP_IdxInsert: {        /* in2 */
 ** index opened by cursor P1.
 */
 case OP_IdxDelete: {
-  int i;
   VdbeCursor *pC;
   BtCursor *pCrsr;
 
-  i = pOp->p1;
   assert( pOp->p3>0 );
   assert( pOp->p2>0 && pOp->p2+pOp->p3<=p->nMem+1 );
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
-  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  pCrsr = pC->pCursor;
+  if( pCrsr!=0 ){
     int res;
     UnpackedRecord r;
     r.pKeyInfo = pC->pKeyInfo;
@@ -4236,15 +4205,15 @@ case OP_IdxDelete: {
 ** See also: Rowid, MakeRecord.
 */
 case OP_IdxRowid: {              /* out2-prerelease */
-  int i;
   BtCursor *pCrsr;
   VdbeCursor *pC;
   i64 rowid;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
-  if( (pCrsr = (pC = p->apCsr[i])->pCursor)!=0 ){
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  pCrsr = pC->pCursor;
+  if( pCrsr!=0 ){
     rc = sqlite3VdbeCursorMoveto(pC);
     if( rc ) goto abort_due_to_error;
     assert( pC->deferredMoveto==0 );
@@ -4289,15 +4258,14 @@ case OP_IdxRowid: {              /* out2-prerelease */
 */
 case OP_IdxLT:          /* jump, in3 */
 case OP_IdxGE: {        /* jump, in3 */
-  int i;
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
 
-  i = pOp->p1;
-  assert( i>=0 && i<p->nCursor );
-  assert( p->apCsr[i]!=0 );
-  if( (pC = p->apCsr[i])->pCursor!=0 ){
+  assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  pC = p->apCsr[pOp->p1];
+  assert( pC!=0 );
+  if( pC->pCursor!=0 ){
     assert( pC->deferredMoveto==0 );
     assert( pOp->p5==0 || pOp->p5==1 );
     assert( pOp->p4type==P4_INT32 );
