@@ -16,7 +16,7 @@
 # to see what happens in the library if a malloc were to really fail
 # due to an out-of-memory situation.
 #
-# $Id: malloc.test,v 1.79 2009/06/06 16:08:23 danielk1977 Exp $
+# $Id: malloc.test,v 1.80 2009/06/22 05:43:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -840,6 +840,29 @@ do_malloc_test 36 -sqlprep {
 } -sqlbody {
   SELECT test_agg_errmsg16(), group_concat(a) FROM t1
 }
+
+# At one point, if an OOM occured immediately after obtaining a shared lock
+# on the database file, the file remained locked. This test case ensures
+# that bug has been fixed.
+do_malloc_test 36 -tclprep {
+  sqlite3 db2 test.db
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  } db2
+} -sqlbody {
+  SELECT * FROM t1;
+} -cleanup {
+  # Try to write to the database using connection [db2]. If connection [db]
+  # has correctly released the shared lock, this write attempt should 
+  # succeed. If [db] has not released the lock, this should hit an 
+  # SQLITE_BUSY error.
+  do_test malloc-36.$zRepeat.${::n}.unlocked {
+    execsql {INSERT INTO t1 VALUES(3, 4)} db2
+  } {}
+  db2 close
+}
+catch { db2 close }
 
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.600 2009/06/20 18:52:50 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.601 2009/06/22 05:43:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3869,6 +3869,7 @@ int sqlite3PagerAcquire(
 
   rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, &pPg);
   if( rc!=SQLITE_OK ){
+    pagerUnlockIfUnused(pPager);
     return rc;
   }
   assert( pPg->pgno==pgno );
