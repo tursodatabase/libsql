@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.637 2009/06/22 12:05:10 drh Exp $
+** $Id: btree.c,v 1.638 2009/06/22 18:03:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6401,6 +6401,7 @@ int sqlite3BtreeInsert(
   )){
     return rc;
   }
+  assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 
   pPage = pCur->apPage[pCur->iPage];
   assert( pPage->intKey || nKey>=0 );
@@ -6417,7 +6418,7 @@ int sqlite3BtreeInsert(
   assert( szNew==cellSizePtr(pPage, newCell) );
   assert( szNew<=MX_CELL_SIZE(pBt) );
   idx = pCur->aiIdx[pCur->iPage];
-  if( loc==0 && CURSOR_VALID==pCur->eState ){
+  if( loc==0 ){
     u16 szOld;
     assert( idx<pPage->nCell );
     rc = sqlite3PagerWrite(pPage->pDbPage);
