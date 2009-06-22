@@ -15,18 +15,10 @@
 ** 6000 lines long) it was split up into several smaller files and
 ** this header information was factored out.
 **
-** $Id: vdbeInt.h,v 1.172 2009/06/19 14:06:03 drh Exp $
+** $Id: vdbeInt.h,v 1.173 2009/06/22 00:55:31 drh Exp $
 */
 #ifndef _VDBEINT_H_
 #define _VDBEINT_H_
-
-/*
-** intToKey() and keyToInt() used to transform the rowid.  But with
-** the latest versions of the design they are no-ops.
-*/
-#define keyToInt(X)   (X)
-#define intToKey(X)   (X)
-
 
 /*
 ** SQL is translated into a sequence of instructions to be

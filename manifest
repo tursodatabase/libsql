@@ -1,5 +1,5 @@
-C When\srecovering\sfrom\sthe\serror-state\sin\spagerSharedLock(),\sdo\snot\ssearch\sfor\sa\shot-journal\sin\sthe\sfile-system\sif\sthe\spager\sis\sconfigured\sto\suse\san\sanonymous\stemp\sfile\sas\sthe\sjournal.\s(CVS\s6793)
-D 2009-06-20T18:52:50
+C Simplifications\sto\svdbe.c\sin\ssupport\sof\scoverage\stesting.\s(CVS\s6794)
+D 2009-06-22T00:55:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,11 +203,11 @@ F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c a7e981e032c3c9c0887d50d7e658a33cb355b43d
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c 51b0d7394f70a114b11bf0263dfe7c59b802f932
+F src/vdbe.c 67ec344095e6d9d68292aec3be3d96295561b8d6
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
-F src/vdbeInt.h f5147efa8ead0ae78496487a83c7e87c54ffa405
+F src/vdbeInt.h 7823eac611229163c6a5df0e9e0d54ffcda527e7
 F src/vdbeapi.c 73bd1d2c57b953bc688d1d8c84b24c2084c2aec7
-F src/vdbeaux.c 77b6734303c58e36db65f6e63795425546905059
+F src/vdbeaux.c 516b7e123ece051e93ab1aa96c2ff04578b3b465
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c ba39c0afa609595c7c23dfc2ac929d9414faa59f
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9a0666003764774b0bf861687002f8db9fd314b1
-R 5dd91765f94027c048c1a58ba9ebd707
-U danielk1977
-Z 0386e8ad9294e91ace2c01f921b33dd2
+P 4b46805cbc9fe71f1febe9ea5f0f5634b65128e3
+R 9ec6304164ed6368f2b420838c219481
+U drh
+Z 85bde85d2f308c9e2ad6cd0b0c32a22d

@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.461 2009/06/19 00:33:32 drh Exp $
+** $Id: vdbeaux.c,v 1.462 2009/06/22 00:55:31 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2027,7 +2027,7 @@ int sqlite3VdbeCursorMoveto(VdbeCursor *p){
     assert( p->isTable );
     rc = sqlite3BtreeMovetoUnpacked(p->pCursor, 0, p->movetoTarget, 0, &res);
     if( rc ) return rc;
-    p->lastRowid = keyToInt(p->movetoTarget);
+    p->lastRowid = p->movetoTarget;
     p->rowidIsValid = ALWAYS(res==0) ?1:0;
     if( NEVER(res<0) ){
       rc = sqlite3BtreeNext(p->pCursor, &res);
