@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.123 2009/06/17 00:35:31 drh Exp $
+** $Id: prepare.c,v 1.124 2009/06/22 12:05:10 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -225,8 +225,13 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   **    meta[0]   Schema cookie.  Changes with each schema change.
   **    meta[1]   File format of schema layer.
   **    meta[2]   Size of the page cache.
-  **    meta[3]   Use freelist if 0.  Autovacuum if greater than zero.
+  **    meta[3]   Largest rootpage (auto/incr_vacuum mode)
   **    meta[4]   Db text encoding. 1:UTF-8 2:UTF-16LE 3:UTF-16BE
+  **    meta[5]   User version
+  **    meta[6]   Incremental vacuum mode
+  **    meta[7]   unused
+  **    meta[8]   unused
+  **    meta[9]   unused
   **
   ** Note: The #defined SQLITE_UTF* symbols in sqliteInt.h correspond to
   ** the possible values of meta[4].

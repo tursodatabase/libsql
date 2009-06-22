@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btreeInt.h,v 1.47 2009/06/17 13:09:39 drh Exp $
+** $Id: btreeInt.h,v 1.48 2009/06/22 12:05:10 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** For a detailed discussion of BTrees, refer to
@@ -70,6 +70,17 @@
 **     32       4     First freelist page
 **     36       4     Number of freelist pages in the file
 **     40      60     15 4-byte meta values passed to higher layers
+**
+**     40       4     Schema cookie
+**     44       4     File format of schema layer
+**     48       4     Size of page cache
+**     52       4     Largest root-page (auto/incr_vacuum)
+**     56       4     1=UTF-8 2=UTF16le 3=UTF16be
+**     60       4     User version
+**     64       4     Incremental vacuum mode
+**     68       4     unused
+**     72       4     unused
+**     76       4     unused
 **
 ** All of the integer values are big-endian (most significant byte first).
 **

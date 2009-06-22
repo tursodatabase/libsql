@@ -1,5 +1,5 @@
-C More\ssimplifications\sto\svdbe.c.\s\sRemove\sa\sNEVER()\sfrom\svdbe.c\sthat\sis\spossible\nafter\sall.\s(CVS\s6796)
-D 2009-06-22T11:10:48
+C Make\ssure\ssqlite3BtreeCreateTable()\sreturns\san\serror\scode\sif\sthe\slargest\nrootpage\sfield\sis\sinvalid\sin\sauto_vacuum\smode.\s\sUpdate\sfile-format\scomments\nto\sdescribe\sall\sof\sthe\s"meta"\svalues.\s(CVS\s6797)
+D 2009-06-22T12:05:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,9 +106,9 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 0fbea81d1efef20d440179d7092e594432153f60
+F src/btree.c e24cdcd3280a63ce06b169a9467f554db325257d
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
-F src/btreeInt.h 122021a7d70633b389c447d9a05f9242f410809d
+F src/btreeInt.h 7267e965e34314aa2bddbdde268b31e1034eda9c
 F src/build.c e98868af6a04c8d7191c39fd05c69da34a8d9c68
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
@@ -153,7 +153,7 @@ F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 97e7e8e6e34026fb43b47d08532b0c02e959c26c
 F src/pragma.c 1774ff8e2f167368225108489b1c9d123aa13257
-F src/prepare.c aba6954623ad10e94c3eb30e6c2db5d709852bfc
+F src/prepare.c 0cdca4d0361cd897aa7a3d6023b2d55432db6022
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
@@ -203,7 +203,7 @@ F src/update.c 6ae6c26adff8dc34532d578f66e6cfde04b5d177
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c a7e981e032c3c9c0887d50d7e658a33cb355b43d
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c 1507638139808e854fd58b9112d65221244040d6
+F src/vdbe.c e92e2f4136e33041145a87c056a5d09972add6de
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 7823eac611229163c6a5df0e9e0d54ffcda527e7
 F src/vdbeapi.c 73bd1d2c57b953bc688d1d8c84b24c2084c2aec7
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 971a9650f66f079630489c34e40003eee97d1683
-R 30c799203416212bb38dcdf20431687b
+P c8f009bd24cb4e4b5ce9fbfd8ab09921f19d41af
+R f45ee7668e1d79012c0ac1e6854fd45f
 U drh
-Z a2040a8c613ec65598b68da6e231fca8
+Z 1115270f9ad30d3543333759055c6623
