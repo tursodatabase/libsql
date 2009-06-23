@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.639 2009/06/23 11:22:29 danielk1977 Exp $
+** $Id: btree.c,v 1.640 2009/06/23 15:43:40 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5338,6 +5338,96 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
 }
 #endif
 
+/*
+** This function is used to copy the contents of the b-tree node stored 
+** on page pFrom to page pTo. If page pFrom was not a leaf page, then
+** the pointer-map entries for each child page are updated so that the
+** parent page stored in the pointer map is page pTo. If pFrom contained
+** any cells with overflow page pointers, then the corresponding pointer
+** map entries are also updated so that the parent page is page pTo.
+**
+** If pFrom is currently carrying any overflow cells (entries in the
+** MemPage.aOvfl[] array), they are not copied to pTo. 
+**
+** Before returning, page pTo is reinitialized using sqlite3BtreeInitPage().
+**
+** The performance of this function is not critical. It is only used by 
+** the balance_shallower() and balance_deeper() procedures, neither of
+** which are called often under normal circumstances.
+*/
+static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
+  BtShared * const pBt = pFrom->pBt;
+  u8 * const aFrom = pFrom->aData;
+  u8 * const aTo = pTo->aData;
+  int const iFromHdr = pFrom->hdrOffset;
+  int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
+  int rc = SQLITE_OK;
+  int iData;
+
+  assert( pFrom->isInit );
+  assert( pFrom->nFree>=iToHdr );
+  assert( get2byte(&aFrom[iFromHdr+5])<=pBt->usableSize );
+
+  /* Copy the b-tree node content from page pFrom to page pTo. */
+  iData = get2byte(&aFrom[iFromHdr+5]);
+  memcpy(&aTo[iData], &aFrom[iData], pBt->usableSize-iData);
+  memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
+
+  /* Reinitialize page pTo so that the contents of the MemPage structure
+  ** match the new data. The initialization of pTo "cannot" fail, as the
+  ** data copied from pFrom is known to be valid.  */
+  pTo->isInit = 0;
+  TESTONLY(rc = ) sqlite3BtreeInitPage(pTo);
+  assert( rc==SQLITE_OK );
+
+  /* If this is an auto-vacuum database, update the pointer-map entries
+  ** for any b-tree or overflow pages that pTo now contains the pointers to. */
+  if( ISAUTOVACUUM ){
+    rc = setChildPtrmaps(pTo);
+  }
+  return rc;
+}
+
+/*
+** This routine is called on the root page of a btree when the root
+** page contains no cells. This is an opportunity to make the tree
+** shallower by one level.
+*/
+static int balance_shallower(MemPage *pRoot, MemPage *pChild){
+  /* The root page is empty but has one child.  Transfer the
+  ** information from that one child into the root page if it 
+  ** will fit.  This reduces the depth of the tree by one.
+  **
+  ** If the root page is page 1, it has less space available than
+  ** its child (due to the 100 byte header that occurs at the beginning
+  ** of the database fle), so it might not be able to hold all of the 
+  ** information currently contained in the child.  If this is the 
+  ** case, then do not do the transfer.  Leave page 1 empty except
+  ** for the right-pointer to the child page.  The child page becomes
+  ** the virtual root of the tree.
+  */
+  int rc = SQLITE_OK;                        /* Return code */
+  int const hdr = pRoot->hdrOffset;          /* Offset of root page header */
+
+  assert( sqlite3_mutex_held(pRoot->pBt->mutex) );
+  assert( pRoot->nCell==0 );
+  assert( pChild->pgno==get4byte(&pRoot->aData[pRoot->hdrOffset+8]) );
+  assert( hdr==0 || pRoot->pgno==1 );
+
+  if( pChild->nFree>=hdr ){
+    if( hdr ){
+      rc = defragmentPage(pChild);
+    }
+    if( rc==SQLITE_OK ){
+      rc = copyNodeContent(pChild, pRoot);
+    }
+    if( rc==SQLITE_OK ){
+      rc = freePage(pChild);
+    }
+  }
+
+  return rc;
+}
 
 /*
 ** This routine redistributes cells on the iParentIdx'th child of pParent
@@ -5382,7 +5472,8 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
 static int balance_nonroot(
   MemPage *pParent,               /* Parent page of siblings being balanced */
   int iParentIdx,                 /* Index of "the page" in pParent */
-  u8 *aOvflSpace                  /* page-size bytes of space for parent ovfl */
+  u8 *aOvflSpace,                 /* page-size bytes of space for parent ovfl */
+  int isRoot                      /* True if pParent is a root-page */
 ){
   BtShared *pBt;               /* The whole database */
   int nCell = 0;               /* Number of cells in apCell[] */
@@ -5939,6 +6030,16 @@ static int balance_nonroot(
   assert( pParent->isInit );
   TRACE(("BALANCE: finished: old=%d new=%d cells=%d\n",
           nOld, nNew, nCell));
+
+  if( rc==SQLITE_OK && pParent->nCell==0 && isRoot ){
+    /* The root page of the b-tree now contains no cells. If the root-page 
+    ** is not also a leaf page, it will have a single child page. Call 
+    ** balance_shallower to attempt to copy the contents of the single
+    ** child-page into the root page (this may not be possible if the
+    ** root page is page 1).  */ 
+    assert( nNew==1 );
+    rc = balance_shallower(pParent, apNew[0]);
+  }
  
   /*
   ** Cleanup before returning.
@@ -5950,109 +6051,6 @@ balance_cleanup:
   }
   for(i=0; i<nNew; i++){
     releasePage(apNew[i]);
-  }
-
-  return rc;
-}
-
-/*
-** This function is used to copy the contents of the b-tree node stored 
-** on page pFrom to page pTo. If page pFrom was not a leaf page, then
-** the pointer-map entries for each child page are updated so that the
-** parent page stored in the pointer map is page pTo. If pFrom contained
-** any cells with overflow page pointers, then the corresponding pointer
-** map entries are also updated so that the parent page is page pTo.
-**
-** If pFrom is currently carrying any overflow cells (entries in the
-** MemPage.aOvfl[] array), they are not copied to pTo. 
-**
-** Before returning, page pTo is reinitialized using sqlite3BtreeInitPage().
-**
-** The performance of this function is not critical. It is only used by 
-** the balance_shallower() and balance_deeper() procedures, neither of
-** which are called often under normal circumstances.
-*/
-static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
-  BtShared * const pBt = pFrom->pBt;
-  u8 * const aFrom = pFrom->aData;
-  u8 * const aTo = pTo->aData;
-  int const iFromHdr = pFrom->hdrOffset;
-  int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
-  int rc = SQLITE_OK;
-  int iData;
-
-  assert( pFrom->isInit );
-  assert( pFrom->nFree>=iToHdr );
-  assert( get2byte(&aFrom[iFromHdr+5])<=pBt->usableSize );
-
-  /* Copy the b-tree node content from page pFrom to page pTo. */
-  iData = get2byte(&aFrom[iFromHdr+5]);
-  memcpy(&aTo[iData], &aFrom[iData], pBt->usableSize-iData);
-  memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
-
-  /* Reinitialize page pTo so that the contents of the MemPage structure
-  ** match the new data. The initialization of pTo "cannot" fail, as the
-  ** data copied from pFrom is known to be valid.  */
-  pTo->isInit = 0;
-  TESTONLY(rc = ) sqlite3BtreeInitPage(pTo);
-  assert( rc==SQLITE_OK );
-
-  /* If this is an auto-vacuum database, update the pointer-map entries
-  ** for any b-tree or overflow pages that pTo now contains the pointers to. */
-  if( ISAUTOVACUUM ){
-    rc = setChildPtrmaps(pTo);
-  }
-  return rc;
-}
-
-/*
-** This routine is called on the root page of a btree when the root
-** page contains no cells. This is an opportunity to make the tree
-** shallower by one level.
-*/
-static int balance_shallower(MemPage *pRoot){
-  /* The root page is empty but has one child.  Transfer the
-  ** information from that one child into the root page if it 
-  ** will fit.  This reduces the depth of the tree by one.
-  **
-  ** If the root page is page 1, it has less space available than
-  ** its child (due to the 100 byte header that occurs at the beginning
-  ** of the database fle), so it might not be able to hold all of the 
-  ** information currently contained in the child.  If this is the 
-  ** case, then do not do the transfer.  Leave page 1 empty except
-  ** for the right-pointer to the child page.  The child page becomes
-  ** the virtual root of the tree.
-  */
-  int rc = SQLITE_OK;                        /* Return code */
-  int const hdr = pRoot->hdrOffset;          /* Offset of root page header */
-  MemPage *pChild;                           /* Only child of pRoot */
-  Pgno const pgnoChild = get4byte(&pRoot->aData[pRoot->hdrOffset+8]);
-  
-  assert( pRoot->nCell==0 );
-  assert( sqlite3_mutex_held(pRoot->pBt->mutex) );
-  assert( !pRoot->leaf );
-  assert( pgnoChild>0 );
-  assert( pgnoChild<=pagerPagecount(pRoot->pBt) );
-  assert( hdr==0 || pRoot->pgno==1 );
-  
-  rc = sqlite3BtreeGetPage(pRoot->pBt, pgnoChild, &pChild, 0);
-  if( rc==SQLITE_OK ){
-    if( pChild->nFree>=hdr ){
-      if( hdr ){
-        rc = defragmentPage(pChild);
-      }
-      if( rc==SQLITE_OK ){
-        rc = copyNodeContent(pChild, pRoot);
-      }
-      if( rc==SQLITE_OK ){
-        rc = freePage(pChild);
-      }
-    }else{
-      /* The child has more information that will fit on the root.
-      ** The tree is already balanced.  Do nothing. */
-      TRACE(("BALANCE: child %d will not fit on page 1\n", pChild->pgno));
-    }
-    releasePage(pChild);
   }
 
   return rc;
@@ -6126,7 +6124,6 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
 ** routine. Balancing routines are:
 **
 **   balance_quick()
-**   balance_shallower()
 **   balance_deeper()
 **   balance_nonroot()
 **
@@ -6165,19 +6162,6 @@ static int balance(BtCursor *pCur){
         }
         VVA_ONLY( pCur->pagesShuffled = 1 );
       }else{
-        /* The root page of the b-tree is now empty. If the root-page is not
-        ** also a leaf page, it will have a single child page. Call 
-        ** balance_shallower to attempt to copy the contents of the single
-        ** child-page into the root page (this may not be possible if the
-        ** root page is page 1).
-        **
-        ** Whether or not this is possible , the tree is now balanced. 
-        ** Therefore is no next iteration of the do-loop.
-        */ 
-        if( pPage->nCell==0 && !pPage->leaf ){
-          rc = balance_shallower(pPage);
-          VVA_ONLY( pCur->pagesShuffled = 1 );
-        }
         break;
       }
     }else if( pPage->nOverflow==0 && pPage->nFree<=nMin ){
@@ -6231,7 +6215,7 @@ static int balance(BtCursor *pCur){
           ** pSpace buffer passed to the latter call to balance_nonroot().
           */
           u8 *pSpace = sqlite3PageMalloc(pCur->pBt->pageSize);
-          rc = balance_nonroot(pParent, iIdx, pSpace);
+          rc = balance_nonroot(pParent, iIdx, pSpace, iPage==1);
           if( pFree ){
             /* If pFree is not NULL, it points to the pSpace buffer used 
             ** by a previous call to balance_nonroot(). Its contents are
