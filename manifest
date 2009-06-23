@@ -1,5 +1,5 @@
-C Fix\sa\sfailing\sassert\sin\sbtree.c.\sThe\ssame\sbug\swas\scausing\sa\sspurious\sSQLITE_CORRUPT\sreturn\swhen\scompiled\swithout\sSQLITE_DEBUG.\s(CVS\s6800)
-D 2009-06-23T11:22:29
+C Add\sa\stest\sto\sverify\sthat\s#3929\sis\sfixed.\s(CVS\s6801)
+D 2009-06-23T11:53:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -655,6 +655,7 @@ F test/tkt3879.test 2ad5bef2c87e9991ce941e054c31abe26ef7fb90
 F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
 F test/tkt3918.test e6cdf6bfcfe9ba939d86a4238a9dc55d6eec5d42
 F test/tkt3922.test 0b43815bff3b6ab889bf84a17668ee13ab046bfd
+F test/tkt3929.test 6a4c3baefb4e75127356b7d675b5df42c35c00d1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -736,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 308f2e61520ac7440700d93ca5bab4a844f2dc17
-R 7eff69d5d72039b2344cb3f983e57232
+P 47ec8749470af7cab9f3ef15effce1a7ba79a654
+R a22ed399ab7c6f7eec8f95fb89f627c5
 U danielk1977
-Z 7b119a6733548bd536b90af0bcc1bc8a
+Z 77f7ae75a7f49b6f7f31cd38f6e68f1d
