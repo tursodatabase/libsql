@@ -1,5 +1,5 @@
-C Simplifications\sto\svdbe.c\sand\sit\sservice\sroutines\sin\ssupport\sof\scoverage\ntesting.\s(CVS\s6799)
-D 2009-06-22T19:05:41
+C Fix\sa\sfailing\sassert\sin\sbtree.c.\sThe\ssame\sbug\swas\scausing\sa\sspurious\sSQLITE_CORRUPT\sreturn\swhen\scompiled\swithout\sSQLITE_DEBUG.\s(CVS\s6800)
+D 2009-06-23T11:22:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 4796c27b387cd027d8f65f73132bba977829af64
+F src/btree.c 732191303402ec6ab0dd7062d07a4bb6a6c51c0c
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 7267e965e34314aa2bddbdde268b31e1034eda9c
 F src/build.c e98868af6a04c8d7191c39fd05c69da34a8d9c68
@@ -736,7 +736,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3ec8b37a89fdb2436d312439715414fae2cd20a8
-R 64e6f4c2a51e80727de7b90d6d047386
-U drh
-Z e09666ff70680840d2021686d00144b7
+P 308f2e61520ac7440700d93ca5bab4a844f2dc17
+R 7eff69d5d72039b2344cb3f983e57232
+U danielk1977
+Z 7b119a6733548bd536b90af0bcc1bc8a

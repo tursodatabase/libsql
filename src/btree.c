@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.638 2009/06/22 18:03:52 danielk1977 Exp $
+** $Id: btree.c,v 1.639 2009/06/23 11:22:29 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6452,8 +6452,9 @@ int sqlite3BtreeInsert(
   **
   ** Previous versions of SQLite called moveToRoot() to move the cursor
   ** back to the root page as balance() used to invalidate the contents
-  ** of BtCursor.apPage[] and BtCursor.aiIdx[]. This is no longer necessary,
-  ** as balance() always leaves the cursor pointing to a valid entry.
+  ** of BtCursor.apPage[] and BtCursor.aiIdx[]. Instead of doing that,
+  ** set the cursor state to "invalid". This makes common insert operations
+  ** slightly faster.
   **
   ** There is a subtle but important optimization here too. When inserting
   ** multiple records into an intkey b-tree using a single cursor (as can
@@ -6467,12 +6468,14 @@ int sqlite3BtreeInsert(
   pCur->info.nSize = 0;
   pCur->validNKey = 0;
   if( rc==SQLITE_OK && pPage->nOverflow ){
-    pCur->atLast = 0;
     rc = balance(pCur);
 
     /* Must make sure nOverflow is reset to zero even if the balance()
-    ** fails.  Internal data structure corruption will result otherwise. */
+    ** fails. Internal data structure corruption will result otherwise. 
+    ** Also, set the cursor state to invalid. This stops saveCursorPosition()
+    ** from trying to save the current position of the cursor.  */
     pCur->apPage[pCur->iPage]->nOverflow = 0;
+    pCur->eState = CURSOR_INVALID;
   }
   assert( pCur->apPage[pCur->iPage]->nOverflow==0 );
 
