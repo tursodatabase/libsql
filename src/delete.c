@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
 **
-** $Id: delete.c,v 1.203 2009/05/28 01:00:55 drh Exp $
+** $Id: delete.c,v 1.204 2009/06/23 20:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -473,6 +473,14 @@ void sqlite3DeleteFrom(
       }
       sqlite3VdbeAddOp1(v, OP_Close, iCur);
     }
+  }
+
+  /* Update the sqlite_sequence table by storing the content of the
+  ** maximum rowid counter values recorded while inserting into
+  ** autoincrement tables.
+  */
+  if( pParse->nested==0 && pParse->trigStack==0 ){
+    sqlite3AutoincrementEnd(pParse);
   }
 
   /*

@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the AUTOINCREMENT features.
 #
-# $Id: autoinc.test,v 1.13 2008/08/11 18:44:58 drh Exp $
+# $Id: autoinc.test,v 1.14 2009/06/23 20:28:54 drh Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -556,5 +556,82 @@ do_test autoinc-9.1 {
   }
 } {t3 0}
 
+# Ticket #3928.  Make sure that triggers to not make extra slots in
+# the SQLITE_SEQUENCE table.
+#
+do_test autoinc-3928.1 {
+  db eval {
+    CREATE TABLE t3928(a INTEGER PRIMARY KEY AUTOINCREMENT, b);
+    CREATE TRIGGER t3928r1 BEFORE INSERT ON t3928 BEGIN
+      INSERT INTO t3928(b) VALUES('before1');
+      INSERT INTO t3928(b) VALUES('before2');
+    END;
+    CREATE TRIGGER t3928r2 AFTER INSERT ON t3928 BEGIN
+      INSERT INTO t3928(b) VALUES('after1');
+      INSERT INTO t3928(b) VALUES('after2');
+    END;
+    INSERT INTO t3928(b) VALUES('test');
+    SELECT * FROM t3928 ORDER BY a;
+  }
+} {1 before1 2 after1 3 after2 4 before2 5 after1 6 after2 7 test 8 before1 9 before2 10 after1 11 before1 12 before2 13 after2}
+do_test autoinc-3928.2 {
+  db eval {
+    SELECT * FROM sqlite_sequence WHERE name='t3928'
+  }
+} {t3928 13}
+
+do_test autoinc-3928.3 {
+  db eval {
+    DROP TRIGGER t3928r1;
+    DROP TRIGGER t3928r2;
+    CREATE TRIGGER t3928r3 BEFORE UPDATE ON t3928 
+      WHEN typeof(new.b)=='integer' BEGIN
+         INSERT INTO t3928(b) VALUES('before-int-' || new.b);
+    END;
+    CREATE TRIGGER t3928r4 AFTER UPDATE ON t3928 
+      WHEN typeof(new.b)=='integer' BEGIN
+         INSERT INTO t3928(b) VALUES('after-int-' || new.b);
+    END;
+    DELETE FROM t3928 WHERE a!=1;
+    UPDATE t3928 SET b=456 WHERE a=1;
+    SELECT * FROM t3928 ORDER BY a;
+  }
+} {1 456 14 before-int-456 15 after-int-456}
+do_test autoinc-3928.4 {
+  db eval {
+    SELECT * FROM sqlite_sequence WHERE name='t3928'
+  }
+} {t3928 15}
+
+do_test autoinc-3928.5 {
+  db eval {
+    CREATE TABLE t3928b(x);
+    INSERT INTO t3928b VALUES(100);
+    INSERT INTO t3928b VALUES(200);
+    INSERT INTO t3928b VALUES(300);
+    DELETE FROM t3928;
+    CREATE TABLE t3928c(y INTEGER PRIMARY KEY AUTOINCREMENT, z);
+    CREATE TRIGGER t3928br1 BEFORE DELETE ON t3928b BEGIN
+      INSERT INTO t3928(b) VALUES('before-del-'||old.x);
+      INSERT INTO t3928c(z) VALUES('before-del-'||old.x);
+    END;
+    CREATE TRIGGER t3928br2 AFTER DELETE ON t3928b BEGIN
+      INSERT INTO t3928(b) VALUES('after-del-'||old.x);
+      INSERT INTO t3928c(z) VALUES('after-del-'||old.x);
+    END;
+    DELETE FROM t3928b;
+    SELECT * FROM t3928 ORDER BY a;
+  }
+} {16 before-del-100 17 after-del-100 18 before-del-200 19 after-del-200 20 before-del-300 21 after-del-300}
+do_test autoinc-3928.6 {
+  db eval {
+    SELECT * FROM t3928c ORDER BY y;
+  }
+} {1 before-del-100 2 after-del-100 3 before-del-200 4 after-del-200 5 before-del-300 6 after-del-300}
+do_test autoinc-3928.7 {
+  db eval {
+    SELECT * FROM sqlite_sequence WHERE name LIKE 't3928%' ORDER BY name;
+  }
+} {t3928 21 t3928c 6}
 
 finish_test

@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.886 2009/06/19 14:06:03 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.887 2009/06/23 20:28:54 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -581,6 +581,7 @@ struct BusyHandler {
 */
 typedef struct AggInfo AggInfo;
 typedef struct AuthContext AuthContext;
+typedef struct AutoincInfo AutoincInfo;
 typedef struct Bitvec Bitvec;
 typedef struct RowSet RowSet;
 typedef struct CollSeq CollSeq;
@@ -1927,6 +1928,22 @@ struct SelectDest {
 };
 
 /*
+** During code generation of statements that do inserts into AUTOINCREMENT 
+** tables, the following information is attached to the Table.u.autoInc.p
+** pointer of each autoincrement table to record some side information that
+** the code generator needs.  We have to keep per-table autoincrement
+** information in case inserts are down within triggers.  Triggers do not
+** normally coordinate their activities, but we do need to coordinate the
+** loading and saving of autoincrement information.
+*/
+struct AutoincInfo {
+  AutoincInfo *pNext;   /* Next info block in a list of them all */
+  Table *pTab;          /* Table this info block refers to */
+  int iDb;              /* Index in sqlite3.aDb[] of database holding pTab */
+  int regCtr;           /* Memory register holding the rowid counter */
+};
+
+/*
 ** Size of the column cache
 */
 #ifndef SQLITE_N_COLCACHE
@@ -1992,6 +2009,7 @@ struct Parse {
 #endif
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
+  AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -2482,6 +2500,13 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 
 void sqlite3DropTable(Parse*, SrcList*, int, int);
 void sqlite3DeleteTable(Table*);
+#ifndef SQLITE_OMIT_AUTOINCREMENT
+  void sqlite3AutoincrementBegin(Parse *pParse);
+  void sqlite3AutoincrementEnd(Parse *pParse);
+#else
+# define sqlite3AutoincrementBegin(X)
+# define sqlite3AutoincrementEnd(X)
+#endif
 void sqlite3Insert(Parse*, SrcList*, ExprList*, Select*, IdList*, int);
 void *sqlite3ArrayAllocate(sqlite3*,void*,int,int,int*,int*,int*);
 IdList *sqlite3IdListAppend(sqlite3*, IdList*, Token*);

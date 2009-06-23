@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.202 2009/05/28 01:00:55 drh Exp $
+** $Id: update.c,v 1.203 2009/06/23 20:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -562,6 +562,14 @@ void sqlite3Update(
   if( pTrigger ){
     sqlite3VdbeAddOp2(v, OP_Close, newIdx, 0);
     sqlite3VdbeAddOp2(v, OP_Close, oldIdx, 0);
+  }
+
+  /* Update the sqlite_sequence table by storing the content of the
+  ** maximum rowid counter values recorded while inserting into
+  ** autoincrement tables.
+  */
+  if( pParse->nested==0 && pParse->trigStack==0 ){
+    sqlite3AutoincrementEnd(pParse);
   }
 
   /*

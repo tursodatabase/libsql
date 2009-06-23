@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.161 2009/06/17 01:17:13 drh Exp $
+** $Id: tokenize.c,v 1.162 2009/06/23 20:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -518,6 +518,11 @@ abort_parse:
   sqlite3DeleteTrigger(db, pParse->pNewTrigger);
   sqlite3DbFree(db, pParse->apVarExpr);
   sqlite3DbFree(db, pParse->aAlias);
+  while( pParse->pAinc ){
+    AutoincInfo *p = pParse->pAinc;
+    pParse->pAinc = p->pNext;
+    sqlite3DbFree(db, p);
+  }
   while( pParse->pZombieTab ){
     Table *p = pParse->pZombieTab;
     pParse->pZombieTab = p->pNextZombie;

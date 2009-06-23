@@ -22,7 +22,7 @@
 **     COMMIT
 **     ROLLBACK
 **
-** $Id: build.c,v 1.552 2009/06/18 17:22:39 drh Exp $
+** $Id: build.c,v 1.553 2009/06/23 20:28:54 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -174,6 +174,12 @@ void sqlite3FinishCoding(Parse *pParse){
       ** shared-cache feature is enabled.
       */
       codeTableLocks(pParse);
+
+      /* Initialize any AUTOINCREMENT data structures required.
+      */
+      sqlite3AutoincrementBegin(pParse);
+
+      /* Finally, jump back to the beginning of the executable code. */
       sqlite3VdbeAddOp2(v, OP_Goto, 0, pParse->cookieGoto);
     }
   }
