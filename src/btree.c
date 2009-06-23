@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.640 2009/06/23 15:43:40 danielk1977 Exp $
+** $Id: btree.c,v 1.641 2009/06/23 16:40:18 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5861,7 +5861,8 @@ static int balance_nonroot(
     /* If the sibling page assembled above was not the right-most sibling,
     ** insert a divider cell into the parent page.
     */
-    if( i<nNew-1 && j<nCell ){
+    assert( i<nNew-1 || j==nCell );
+    if( j<nCell ){
       u8 *pCell;
       u8 *pTemp;
       int sz;

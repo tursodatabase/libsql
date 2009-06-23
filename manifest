@@ -1,5 +1,5 @@
-C Call\sbalance_shallower()\sfrom\sbalance_nonroot()\sinstead\sof\sfrom\sbalance().\sThis\ssimplifies\scoverage\stesting\sa\sbit.\s(CVS\s6805)
-D 2009-06-23T15:43:40
+C Remove\sa\scondition\sfrom\sbalance_nonroot()\sthat\sis\salways\strue.\s(CVS\s6806)
+D 2009-06-23T16:40:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 13e33e85103c19b114ce1cfdedd2d3e2647de290
+F src/btree.c 807e32c181e681ffd3468d114b5cb11c63984842
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 7267e965e34314aa2bddbdde268b31e1034eda9c
 F src/build.c e98868af6a04c8d7191c39fd05c69da34a8d9c68
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P b614e554f7ebaef9cb1718b617e020e532568bbb
-R 21b91543d4279dc39963961cdf36484b
+P da9893e23caf89090c8b6563cb5f88d7dbf7c260
+R 5253d044c7ec7582bf7c9fd280850376
 U danielk1977
-Z 3fbc90fe51d8a097f9b06b0d67881dff
+Z 1a116d3d2ab282f253ce6bf047ecc40c
