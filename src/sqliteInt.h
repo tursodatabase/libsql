@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.887 2009/06/23 20:28:54 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.888 2009/06/24 10:26:33 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -268,8 +268,8 @@
 # define NEVER(X)       (0)
 #elif !defined(NDEBUG)
   int sqlite3Assert(void);
-# define ALWAYS(X)      ((X)?1:sqlite3Assert())
-# define NEVER(X)       ((X)?sqlite3Assert():0)
+# define ALWAYS(X)      ((X)?1:(assert(0),0))
+# define NEVER(X)       ((X)?(assert(0),1):0)
 #else
 # define ALWAYS(X)      (X)
 # define NEVER(X)       (X)
