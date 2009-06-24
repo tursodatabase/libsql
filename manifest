@@ -1,5 +1,5 @@
-C Remove\sthe\ssqlite3Assert()\sfunction.\s\sThe\sALWAYS()\sand\sNEVER()\smacros\scall\nassert()\sdirectly\swhen\scompiled\swith\sSQLITE_DEBUG.\s(CVS\s6809)
-D 2009-06-24T10:26:33
+C Remove\sa\sdeclaration\sof\sthe\ssqlite3Assert()\sfunction\sthat\swas\sdeleted\sby\sthe\nprevious\scheck-in.\s(CVS\s6810)
+D 2009-06-24T11:08:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +162,7 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in ccc67f14d5661240d05eadb8ab308aa637b0630c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 85f4119ceb7aee69496412d1e03198bafb0beaaa
+F src/sqliteInt.h 47a5178da39774da8f452f1e90cff1edcd69dced
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 11750c6aee6aa05b2627ad9dfb2fbcdfe8944168
-R 1548a15900ea46850e3366c7b5ff922c
+P d8fc373fef22311e1c6b5bce6d3e601217a69940
+R 8205f31af8ce6a950c1c1bc8f8af19df
 U drh
-Z 58ce472ff48a66bea92a072960001021
+Z 9bdabd676d3ef6a8d58b110811cf5855
