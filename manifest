@@ -1,5 +1,5 @@
-C Enhance\sautoincrement\sso\sthat\sit\sworks\swith\striggers\sthat\salso\sdo\r\nautoincrement\sinserts,\seven\smultiple\sinserts\sinto\sthe\ssame\stable.\r\nTicket\s#3928\s(CVS\s6807)
-D 2009-06-23T20:28:54
+C Simplify\sthings\sby\srolling\sthe\sfunctionality\sof\sbalance_shallower()\sinto\sbalance_nonroot().\s(CVS\s6808)
+D 2009-06-24T05:40:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,9 +106,9 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 807e32c181e681ffd3468d114b5cb11c63984842
+F src/btree.c 699c333dd98db2498eb17ca43b2a5482c9dd098f
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
-F src/btreeInt.h 7267e965e34314aa2bddbdde268b31e1034eda9c
+F src/btreeInt.h 55346bc14b939ad41b297942e8b1b581e960fb99
 F src/build.c d930b3899aea564f01a581e0e9429d92fb5f98f0
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P c5dc80e6bdd18a5ada728c8d5c9403ac233f1c9a
-R 8916621e1801546a3d0feafac918adbe
-U drh
-Z cb8dc29a045e11a78c5fa19e64b5f95b
+P 1330993de8eae7baeec24100216158063c9bdc19
+R a93d21d5217aa847ca2406219efba4db
+U danielk1977
+Z ce9bb99781cb9e1be1b1a4518af4f1e5

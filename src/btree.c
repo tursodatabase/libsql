@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.641 2009/06/23 16:40:18 danielk1977 Exp $
+** $Id: btree.c,v 1.642 2009/06/24 05:40:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5389,47 +5389,6 @@ static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
 }
 
 /*
-** This routine is called on the root page of a btree when the root
-** page contains no cells. This is an opportunity to make the tree
-** shallower by one level.
-*/
-static int balance_shallower(MemPage *pRoot, MemPage *pChild){
-  /* The root page is empty but has one child.  Transfer the
-  ** information from that one child into the root page if it 
-  ** will fit.  This reduces the depth of the tree by one.
-  **
-  ** If the root page is page 1, it has less space available than
-  ** its child (due to the 100 byte header that occurs at the beginning
-  ** of the database fle), so it might not be able to hold all of the 
-  ** information currently contained in the child.  If this is the 
-  ** case, then do not do the transfer.  Leave page 1 empty except
-  ** for the right-pointer to the child page.  The child page becomes
-  ** the virtual root of the tree.
-  */
-  int rc = SQLITE_OK;                        /* Return code */
-  int const hdr = pRoot->hdrOffset;          /* Offset of root page header */
-
-  assert( sqlite3_mutex_held(pRoot->pBt->mutex) );
-  assert( pRoot->nCell==0 );
-  assert( pChild->pgno==get4byte(&pRoot->aData[pRoot->hdrOffset+8]) );
-  assert( hdr==0 || pRoot->pgno==1 );
-
-  if( pChild->nFree>=hdr ){
-    if( hdr ){
-      rc = defragmentPage(pChild);
-    }
-    if( rc==SQLITE_OK ){
-      rc = copyNodeContent(pChild, pRoot);
-    }
-    if( rc==SQLITE_OK ){
-      rc = freePage(pChild);
-    }
-  }
-
-  return rc;
-}
-
-/*
 ** This routine redistributes cells on the iParentIdx'th child of pParent
 ** (hereafter "the page") and up to 2 siblings so that all pages have about the
 ** same amount of free space. Usually a single sibling on either side of the
@@ -5922,38 +5881,60 @@ static int balance_nonroot(
     memcpy(&apNew[nNew-1]->aData[8], zChild, 4);
   }
 
-  /* Fix the pointer-map entries for all the cells that were shifted around. 
-  ** There are several different types of pointer-map entries that need to
-  ** be dealt with by this routine. Some of these have been set already, but
-  ** many have not. The following is a summary:
-  **
-  **   1) The entries associated with new sibling pages that were not
-  **      siblings when this function was called. These have already
-  **      been set. We don't need to worry about old siblings that were
-  **      moved to the free-list - the freePage() code has taken care
-  **      of those.
-  **
-  **   2) The pointer-map entries associated with the first overflow
-  **      page in any overflow chains used by new divider cells. These 
-  **      have also already been taken care of by the insertCell() code.
-  **
-  **   3) If the sibling pages are not leaves, then the child pages of
-  **      cells stored on the sibling pages may need to be updated.
-  **
-  **   4) If the sibling pages are not internal intkey nodes, then any
-  **      overflow pages used by these cells may need to be updated
-  **      (internal intkey nodes never contain pointers to overflow pages).
-  **
-  **   5) If the sibling pages are not leaves, then the pointer-map
-  **      entries for the right-child pages of each sibling may need
-  **      to be updated.
-  **
-  ** Cases 1 and 2 are dealt with above by other code. The following
-  ** block deals with cases 3 and 4. Since setting a pointer map entry
-  ** is a relatively expensive operation, this code only sets pointer
-  ** map entries for child or overflow pages that have actually moved
-  ** between pages.  */
-  if( ISAUTOVACUUM ){
+  if( isRoot && pParent->nCell==0 && pParent->hdrOffset<=apNew[0]->nFree ){
+    /* The root page of the b-tree now contains no cells. The only sibling
+    ** page is the right-child of the parent. Copy the contents of the
+    ** child page into the parent, decreasing the overall height of the
+    ** b-tree structure by one. This is described as the "balance-shallower"
+    ** sub-algorithm in some documentation.
+    **
+    ** If this is an auto-vacuum database, the call to copyNodeContent() 
+    ** sets all pointer-map entries corresponding to database image pages 
+    ** for which the pointer is stored within the content being copied.
+    **
+    ** The second assert below verifies that the child page is defragmented
+    ** (it must be, as it was just reconstructed using assemblePage()). This
+    ** is important if the parent page happens to be page 1 of the database
+    ** image.  */
+    assert( nNew==1 );
+    assert( apNew[0]->nFree == 
+        (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2) 
+    );
+    if( SQLITE_OK==(rc = copyNodeContent(apNew[0], pParent)) ){
+      rc = freePage(apNew[0]);
+    }
+  }else if( ISAUTOVACUUM ){
+    /* Fix the pointer-map entries for all the cells that were shifted around. 
+    ** There are several different types of pointer-map entries that need to
+    ** be dealt with by this routine. Some of these have been set already, but
+    ** many have not. The following is a summary:
+    **
+    **   1) The entries associated with new sibling pages that were not
+    **      siblings when this function was called. These have already
+    **      been set. We don't need to worry about old siblings that were
+    **      moved to the free-list - the freePage() code has taken care
+    **      of those.
+    **
+    **   2) The pointer-map entries associated with the first overflow
+    **      page in any overflow chains used by new divider cells. These 
+    **      have also already been taken care of by the insertCell() code.
+    **
+    **   3) If the sibling pages are not leaves, then the child pages of
+    **      cells stored on the sibling pages may need to be updated.
+    **
+    **   4) If the sibling pages are not internal intkey nodes, then any
+    **      overflow pages used by these cells may need to be updated
+    **      (internal intkey nodes never contain pointers to overflow pages).
+    **
+    **   5) If the sibling pages are not leaves, then the pointer-map
+    **      entries for the right-child pages of each sibling may need
+    **      to be updated.
+    **
+    ** Cases 1 and 2 are dealt with above by other code. The next
+    ** block deals with cases 3 and 4 and the one after that, case 5. Since
+    ** setting a pointer map entry is a relatively expensive operation, this
+    ** code only sets pointer map entries for child or overflow pages that have
+    ** actually moved between pages.  */
     MemPage *pNew = apNew[0];
     MemPage *pOld = apCopy[0];
     int nOverflow = pOld->nOverflow;
@@ -6032,16 +6013,6 @@ static int balance_nonroot(
   TRACE(("BALANCE: finished: old=%d new=%d cells=%d\n",
           nOld, nNew, nCell));
 
-  if( rc==SQLITE_OK && pParent->nCell==0 && isRoot ){
-    /* The root page of the b-tree now contains no cells. If the root-page 
-    ** is not also a leaf page, it will have a single child page. Call 
-    ** balance_shallower to attempt to copy the contents of the single
-    ** child-page into the root page (this may not be possible if the
-    ** root page is page 1).  */ 
-    assert( nNew==1 );
-    rc = balance_shallower(pParent, apNew[0]);
-  }
- 
   /*
   ** Cleanup before returning.
   */
@@ -6127,11 +6098,6 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
 **   balance_quick()
 **   balance_deeper()
 **   balance_nonroot()
-**
-** If built with SQLITE_DEBUG, pCur->pagesShuffled is set to true if 
-** balance_shallower(), balance_deeper() or balance_nonroot() is called.
-** If none of these functions are invoked, pCur->pagesShuffled is left
-** unmodified.
 */
 static int balance(BtCursor *pCur){
   int rc = SQLITE_OK;
@@ -6161,7 +6127,6 @@ static int balance(BtCursor *pCur){
           pCur->aiIdx[1] = 0;
           assert( pCur->apPage[1]->nOverflow );
         }
-        VVA_ONLY( pCur->pagesShuffled = 1 );
       }else{
         break;
       }
@@ -6229,7 +6194,6 @@ static int balance(BtCursor *pCur){
           ** balance_nonroot(), or just before this function returns, whichever
           ** comes first. */
           pFree = pSpace;
-          VVA_ONLY( pCur->pagesShuffled = 1 );
         }
       }
 
