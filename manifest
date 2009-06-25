@@ -1,5 +1,5 @@
-C Get\sthe\snotify2.test\srunning\sagain\sby\sremoving\san\sALWAYS()\sthat\swas\smistakenly\ninserted\sand\sby\staking\scare\snot\sto\sreport\scorruption\sfollowing\san\nSQLITE_LOCKED\sfailure\sduring\sschema\sparsing.\s(CVS\s6815)
-D 2009-06-25T11:50:21
+C Fix\sa\sproblem\swith\sa\sreturn\scode\sbeing\signored\sin\sinsertCell().\s(CVS\s6816)
+D 2009-06-25T16:11:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c d57b29353c855d99be435cf89378a5dad1b69c53
+F src/btree.c c049fb18101d9c70bbf35d51def0da588dee9773
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 55346bc14b939ad41b297942e8b1b581e960fb99
 F src/build.c 813f6bdab5e4fb5ff94a5340c199a4930da9d66e
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P daadbd9a8f0e35dd16c715cf2e9f99f52afa30dd
-R ab5d29a1c90a87e34a45905cc6c2c7e0
-U drh
-Z 8f658c75d8c1111804bc12d67ee4da94
+P 6e9140a729bd26dd102e603abf6ea16d67e8546e
+R 9a284a565af8f19e3d2c682d0105f4bb
+U danielk1977
+Z b70ba767168ad615a996157a1ab667b5

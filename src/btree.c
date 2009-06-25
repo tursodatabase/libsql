@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.643 2009/06/25 09:40:04 danielk1977 Exp $
+** $Id: btree.c,v 1.644 2009/06/25 16:11:05 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -937,7 +937,6 @@ static int allocateSpace(MemPage *pPage, int nByte){
       get2byte(&data[hdr+5])-(hdr+8+(pPage->leaf?0:4)+2*get2byte(&data[hdr+3]))
   ));
 
-  pPage->nFree -= (u16)nByte;
   nFrag = data[hdr+7];
   if( nFrag>=60 ){
     defragmentPage(pPage);
@@ -5113,7 +5112,7 @@ static int insertCell(
       return SQLITE_CORRUPT_BKPT;
     }
     pPage->nCell++;
-    pPage->nFree -= 2;
+    pPage->nFree -= (2 + sz);
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
     if( iChild ){
       put4byte(&data[idx], iChild);
@@ -5129,7 +5128,7 @@ static int insertCell(
       /* The cell may contain a pointer to an overflow page. If so, write
       ** the entry for the overflow page into the pointer map.
       */
-      rc = ptrmapPutOvflPtr(pPage, pCell);
+      return ptrmapPutOvflPtr(pPage, pCell);
     }
 #endif
   }
