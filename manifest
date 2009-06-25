@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS()\smacro\sfrom\svdbe.c\sthat\ssometimes\sfails\son\sthread\stests.\s(CVS\s6812)
-D 2009-06-24T13:16:04
+C Improved\shandling\sof\soversize\sstring\sand\sblob\serrors.\s\sOther\ssimplifications\nin\ssupport\sof\sfull\scoverage\stesting.\s(CVS\s6813)
+D 2009-06-25T01:47:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -125,7 +125,7 @@ F src/insert.c 94e51344e01aea6be43e95cd24e8baa014d8c3d6
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 120d65f0c2d011b0d7f373680a913b84819b2f92
+F src/main.c db6b0aeb37d345c5cd037e6b218bd726b8d76230
 F src/malloc.c 7b3b6423f5b355e5d649b91e16ef252d610bcf19
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -203,13 +203,13 @@ F src/update.c b58db45e40f11082281d6f94137cd3b5657771d9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c 5c4a595077338752245dc51d34ad6c3c47194d96
+F src/vdbe.c e7831536ddb11b14ce29f62a17e0e3860944d570
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
-F src/vdbeapi.c 73bd1d2c57b953bc688d1d8c84b24c2084c2aec7
+F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
 F src/vdbeaux.c 2801d0183c52e3739abae28b861b4415418e999a
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
-F src/vdbemem.c d244e09b5ca8afc3e1cea3ccf0b1a3fa48926614
+F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c cf0d091748c2fa6f7df96e5b08d2db26fd2eb437
@@ -555,7 +555,7 @@ F test/speed3.test e312d7e442a5047d730569fdae2ba99bc94e1a13
 F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
-F test/sqllimits1.test 06c2c6cbdbfa03af15a1a61ba8cae675d9c8fe31
+F test/sqllimits1.test e90a0ed94452076f6a10209d378e06b5f75ef0a0
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3b8f9dec24d06865455a75587bbfc199c19c6215
-R 420b3ba279f0ef4dc395350d7f56e7a5
+P 52eac078c7080519911599e19819cbec475de6d6
+R 6ae3c2ac4bc1cff164725bbb4ce26ae6
 U drh
-Z f0691dda6c10f296a0eff99d0e104f07
+Z bf5a48beb2bf6181503a39e1dcbe0d85

@@ -12,7 +12,7 @@
 # This file contains tests to verify that the limits defined in
 # sqlite source file limits.h are enforced.
 #
-# $Id: sqllimits1.test,v 1.32 2009/06/12 12:04:16 drh Exp $
+# $Id: sqllimits1.test,v 1.33 2009/06/25 01:47:12 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -404,7 +404,7 @@ do_test sqllimits1-6.1 {
   set N [expr {(50000 / [string length $tail])+1}]
   append sql [string repeat $tail $N]
   catchsql $sql
-} {1 {String or BLOB exceeded size limit}}
+} {1 {string or blob too big}}
 do_test sqllimits1-6.3 {
   sqlite3_limit db SQLITE_LIMIT_SQL_LENGTH 50000
   set sql "SELECT 1 WHERE 1==1"
