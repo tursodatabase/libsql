@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.124 2009/06/22 12:05:10 drh Exp $
+** $Id: prepare.c,v 1.125 2009/06/25 11:50:21 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -87,7 +87,7 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
       pData->rc = rc;
       if( rc==SQLITE_NOMEM ){
         db->mallocFailed = 1;
-      }else if( rc!=SQLITE_INTERRUPT ){
+      }else if( rc!=SQLITE_INTERRUPT && rc!=SQLITE_LOCKED ){
         corruptSchema(pData, argv[0], zErr);
       }
       sqlite3DbFree(db, zErr);
