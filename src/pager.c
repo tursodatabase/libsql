@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.602 2009/06/26 07:12:07 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.603 2009/06/26 12:15:23 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2764,14 +2764,6 @@ static int syncJournal(Pager *pPager){
       assert( isOpen(pPager->jfd) );
 
       if( 0==(iDc&SQLITE_IOCAP_SAFE_APPEND) ){
-        /* Variable iNRecOffset is set to the offset in the journal file
-        ** of the nRec field of the most recently written journal header.
-        ** This field will be updated following the xSync() operation
-        ** on the journal file. */
-	u8 zHeader[sizeof(aJournalMagic)+4];
-	memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
-	put32bits(&zHeader[sizeof(aJournalMagic)], pPager->nRec);
-
         /* This block deals with an obscure problem. If the last connection
         ** that wrote to this database was operating in persistent-journal
         ** mode, then the journal file may at this point actually be larger
@@ -2794,8 +2786,14 @@ static int syncJournal(Pager *pPager){
         ** as a temporary buffer to inspect the first couple of bytes of
         ** the potential journal header.
         */
-        i64 iNextHdrOffset = journalHdrOffset(pPager);
+        i64 iNextHdrOffset;
         u8 aMagic[8];
+	u8 zHeader[sizeof(aJournalMagic)+4];
+
+	memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
+	put32bits(&zHeader[sizeof(aJournalMagic)], pPager->nRec);
+
+        iNextHdrOffset = journalHdrOffset(pPager);
         rc = sqlite3OsRead(pPager->jfd, aMagic, 8, iNextHdrOffset);
         if( rc==SQLITE_OK && 0==memcmp(aMagic, aJournalMagic, 8) ){
           static const u8 zerobyte = 0;
@@ -2822,7 +2820,7 @@ static int syncJournal(Pager *pPager){
           rc = sqlite3OsSync(pPager->jfd, pPager->sync_flags);
           if( rc!=SQLITE_OK ) return rc;
         }
-        IOTRACE(("JHDR %p %lld %d\n", pPager, iNRecOffset, 4));
+        IOTRACE(("JHDR %p %lld\n", pPager, pPager->journalHdr));
         rc = sqlite3OsWrite(
             pPager->jfd, zHeader, sizeof(zHeader), pPager->journalHdr
 	);
