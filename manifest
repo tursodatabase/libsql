@@ -1,5 +1,5 @@
-C Update\stest_journal.c\sto\saccount\sfor\s(6817).\sChanges\sto\stest\scode\sonly.\s(CVS\s6818)
-D 2009-06-26T09:01:28
+C Another\schange\sto\stest_journal.c\sto\saccount\sfor\s(6817).\sAgain,\sonly\stest\scode\shas\schanged.\s(CVS\s6819)
+D 2009-06-26T10:39:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -184,7 +184,7 @@ F src/test_config.c 63d1b08809ca182ee75429573111b44735861c64
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c b8140bc4ed0d290d5e22972eb2a3bfd40aa798dc
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
-F src/test_journal.c de9b1c132fa7b81b40ddba1e1cc219cfa7f71593
+F src/test_journal.c dab49b7c47b53242f039c9563b18cafb67ebfe03
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c c3aabe4b48d1f4f1e78b6561ce92ca04b7495ee5
 F src/test_md5.c 032ae2bb6f81da350d2404e81fa8d560c8268026
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P a5ecffcf025da2fcb241e83c7bebc1095a3b51d6
-R c676cf0f55e46f711692cbb781213a1a
+P 542ee8cced2a37095808d8baf5002dc66f4a64d6
+R c84107e8653fbec4d656c36416c49db0
 U danielk1977
-Z afb621a0d984d29cdcb0c1a658c4dfbf
+Z 3ae5a098ab66146aa838154cfa456687

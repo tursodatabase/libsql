@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.16 2009/06/26 09:01:28 danielk1977 Exp $
+** $Id: test_journal.c,v 1.17 2009/06/26 10:39:36 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -218,12 +218,16 @@ static void leaveJtMutex(void){
 }
 
 extern int sqlite3_io_error_pending;
-static void stop_ioerr_simulation(int *piSave){
+extern int sqlite3_io_error_hit;
+static void stop_ioerr_simulation(int *piSave, int *piSave2){
   *piSave = sqlite3_io_error_pending;
+  *piSave2 = sqlite3_io_error_hit;
   sqlite3_io_error_pending = -1;
+  sqlite3_io_error_hit = 0;
 }
-static void start_ioerr_simulation(int iSave){
+static void start_ioerr_simulation(int iSave, int iSave2){
   sqlite3_io_error_pending = iSave;
+  sqlite3_io_error_hit = iSave2;
 }
 
 /*
@@ -366,8 +370,9 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
   }else if( pMain->nPage>0 ){
     u32 iTrunk;
     int iSave;
+    int iSave2;
 
-    stop_ioerr_simulation(&iSave);
+    stop_ioerr_simulation(&iSave, &iSave2);
 
     /* Read the database free-list. Add the page-number for each free-list
     ** leaf to the jt_file.pWritable bitvec.
@@ -398,89 +403,11 @@ static int openTransaction(jt_file *pMain, jt_file *pJournal){
       }
     }
 
-    start_ioerr_simulation(iSave);
+    start_ioerr_simulation(iSave, iSave2);
   }
 
   sqlite3_free(aData);
   return rc;
-}
-
-/*
-** Write data to an jt-file.
-*/
-static int jtWrite(
-  sqlite3_file *pFile, 
-  const void *zBuf, 
-  int iAmt, 
-  sqlite_int64 iOfst
-){
-  jt_file *p = (jt_file *)pFile;
-  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL ){
-    if( iOfst==0 ){
-      jt_file *pMain = locateDatabaseHandle(p->zName);
-      assert( pMain );
-  
-      if( iAmt==28 ){
-        /* Zeroing the first journal-file header. This is the end of a
-        ** transaction. */
-        closeTransaction(pMain);
-      }else if( iAmt!=12 ){
-        /* Writing the first journal header to a journal file. This happens
-        ** when a transaction is first started.  */
-        int rc;
-        u8 *z = (u8 *)zBuf;
-        pMain->nPage = decodeUint32(&z[16]);
-        pMain->nPagesize = decodeUint32(&z[24]);
-        if( SQLITE_OK!=(rc=openTransaction(pMain, p)) ){
-          return rc;
-        }
-      }
-    }
-    if( p->iMaxOff<(iOfst + iAmt) ){
-      p->iMaxOff = iOfst + iAmt;
-    }
-  }
-
-  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
-    if( iAmt<p->nPagesize 
-     && p->nPagesize%iAmt==0 
-     && iOfst>=(PENDING_BYTE+512) 
-     && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
-    ){
-      /* No-op. This special case is hit when the backup code is copying a
-      ** to a database with a larger page-size than the source database and
-      ** it needs to fill in the non-locking-region part of the original
-      ** pending-byte page.
-      */
-    }else{
-      u32 pgno = iOfst/p->nPagesize + 1;
-      assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
-      assert( pgno<=p->nPage || p->nSync>0 );
-      assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
-    }
-  }
-
-  return sqlite3OsWrite(p->pReal, zBuf, iAmt, iOfst);
-}
-
-/*
-** Truncate an jt-file.
-*/
-static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  jt_file *p = (jt_file *)pFile;
-  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL && size==0 ){
-    /* Truncating a journal file. This is the end of a transaction. */
-    jt_file *pMain = locateDatabaseHandle(p->zName);
-    closeTransaction(pMain);
-  }
-  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
-    u32 pgno;
-    u32 locking_page = (u32)(PENDING_BYTE/p->nPagesize+1);
-    for(pgno=size/p->nPagesize+1; pgno<=p->nPage; pgno++){
-      assert( pgno==locking_page || sqlite3BitvecTest(p->pWritable, pgno) );
-    }
-  }
-  return sqlite3OsTruncate(p->pReal, size);
 }
 
 /*
@@ -496,13 +423,14 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
   sqlite3_int64 iSize = p->iMaxOff;
   unsigned char *aPage;
   int iSave;
+  int iSave2;
 
   aPage = sqlite3_malloc(pMain->nPagesize);
   if( !aPage ){
     return SQLITE_IOERR_NOMEM;
   }
 
-  stop_ioerr_simulation(&iSave);
+  stop_ioerr_simulation(&iSave, &iSave2);
 
   while( rc==SQLITE_OK && iOff<iSize ){
     u32 nRec, nPage, nSector, nPagesize;
@@ -555,12 +483,97 @@ static int readJournalFile(jt_file *p, jt_file *pMain){
   }
 
 finish_rjf:
-  start_ioerr_simulation(iSave);
+  start_ioerr_simulation(iSave, iSave2);
   sqlite3_free(aPage);
   if( rc==SQLITE_IOERR_SHORT_READ ){
     rc = SQLITE_OK;
   }
   return rc;
+}
+
+
+/*
+** Write data to an jt-file.
+*/
+static int jtWrite(
+  sqlite3_file *pFile, 
+  const void *zBuf, 
+  int iAmt, 
+  sqlite_int64 iOfst
+){
+  int rc;
+  jt_file *p = (jt_file *)pFile;
+  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL ){
+    if( iOfst==0 ){
+      jt_file *pMain = locateDatabaseHandle(p->zName);
+      assert( pMain );
+  
+      if( iAmt==28 ){
+        /* Zeroing the first journal-file header. This is the end of a
+        ** transaction. */
+        closeTransaction(pMain);
+      }else if( iAmt!=12 ){
+        /* Writing the first journal header to a journal file. This happens
+        ** when a transaction is first started.  */
+        u8 *z = (u8 *)zBuf;
+        pMain->nPage = decodeUint32(&z[16]);
+        pMain->nPagesize = decodeUint32(&z[24]);
+        if( SQLITE_OK!=(rc=openTransaction(pMain, p)) ){
+          return rc;
+        }
+      }
+    }
+    if( p->iMaxOff<(iOfst + iAmt) ){
+      p->iMaxOff = iOfst + iAmt;
+    }
+  }
+
+  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
+    if( iAmt<p->nPagesize 
+     && p->nPagesize%iAmt==0 
+     && iOfst>=(PENDING_BYTE+512) 
+     && iOfst+iAmt<=PENDING_BYTE+p->nPagesize
+    ){
+      /* No-op. This special case is hit when the backup code is copying a
+      ** to a database with a larger page-size than the source database and
+      ** it needs to fill in the non-locking-region part of the original
+      ** pending-byte page.
+      */
+    }else{
+      u32 pgno = iOfst/p->nPagesize + 1;
+      assert( (iAmt==1||iAmt==p->nPagesize) && ((iOfst+iAmt)%p->nPagesize)==0 );
+      assert( pgno<=p->nPage || p->nSync>0 );
+      assert( pgno>p->nPage || sqlite3BitvecTest(p->pWritable, pgno) );
+    }
+  }
+
+  rc = sqlite3OsWrite(p->pReal, zBuf, iAmt, iOfst);
+  if( (p->flags&SQLITE_OPEN_MAIN_JOURNAL) && iAmt==12 ){
+    jt_file *pMain = locateDatabaseHandle(p->zName);
+    int rc2 = readJournalFile(p, pMain);
+    if( rc==SQLITE_OK ) rc = rc2;
+  }
+  return rc;
+}
+
+/*
+** Truncate an jt-file.
+*/
+static int jtTruncate(sqlite3_file *pFile, sqlite_int64 size){
+  jt_file *p = (jt_file *)pFile;
+  if( p->flags&SQLITE_OPEN_MAIN_JOURNAL && size==0 ){
+    /* Truncating a journal file. This is the end of a transaction. */
+    jt_file *pMain = locateDatabaseHandle(p->zName);
+    closeTransaction(pMain);
+  }
+  if( p->flags&SQLITE_OPEN_MAIN_DB && p->pWritable ){
+    u32 pgno;
+    u32 locking_page = (u32)(PENDING_BYTE/p->nPagesize+1);
+    for(pgno=size/p->nPagesize+1; pgno<=p->nPage; pgno++){
+      assert( pgno==locking_page || sqlite3BitvecTest(p->pWritable, pgno) );
+    }
+  }
+  return sqlite3OsTruncate(p->pReal, size);
 }
 
 /*
