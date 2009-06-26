@@ -13,7 +13,7 @@
 # caused by an ON CONFLICT ROLLBACK clause aborts any other pending
 # statements.
 #
-# $Id: rollback.test,v 1.10 2008/10/17 18:51:53 danielk1977 Exp $
+# $Id: rollback.test,v 1.11 2009/06/26 07:12:07 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -114,6 +114,13 @@ if {$tcl_platform(platform) == "unix"
   fconfigure $fd -encoding binary -translation binary
   seek $fd $iOffset
   puts -nonewline $fd $zAppend
+
+  # Also, fix the first journal-header in the journal-file. Because the
+  # journal file has not yet been synced, the 8-byte magic string at the
+  # start of the first journal-header has not been written by SQLite.
+  # So write it now.
+  seek $fd 0
+  puts -nonewline $fd "\xd9\xd5\x05\xf9\x20\xa1\x63\xd7"
   close $fd
 
   # Open a handle on testA.db and use it to query the database. At one

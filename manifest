@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sa\sreturn\scode\sbeing\signored\sin\sinsertCell().\s(CVS\s6816)
-D 2009-06-25T16:11:05
+C Avoid\swriting\sthe\s8-byte\sjournal-header\smagic\suntil\sthe\sjournal-header\sis\ssynced.\sIn\spersistent\sjournal-mode,\sthis\sprevents\sany\sold\scontent\sthat\sfollows\san\sunsynced\sjournal-header\sfrom\sbeing\sinterpreted\sas\spart\sof\sthe\srollback\sjournal.\s(CVS\s6817)
+D 2009-06-26T07:12:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c b64129c296e480c2827606e206ea51bb30904626
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 85cb38f0403881f827c30384c51a7a6e54c6d457
+F src/pager.c aff52317d450d0bdb93699f7213c09f51031c7e8
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y b6e99f4208a34eb83c62f20dd67f8d9058e86768
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -509,7 +509,7 @@ F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
 F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
-F test/rollback.test 1f70ab4301d8d105d41438a436cad1fc8897f5e5
+F test/rollback.test 73355ad4492ff9a3a31e61c7e5eb5e01a1de94ca
 F test/rowhash.test 97f56043ba11f0679920416c0cdbc72e5272267b
 F test/rowid.test 1c8fc43c60d273e6ea44dfb992db587f3164312c
 F test/rtree.test 55466a200af3591946c5da77ad5dbfbc1e5e05f9
@@ -626,7 +626,7 @@ F test/tkt3357.test 77c37c6482b526fe89941ce951c22d011f5922ed
 F test/tkt3419.test 1bbf36d7ea03b638c15804251287c2391f5c1f6b
 F test/tkt3424.test 61f831bd2b071bd128fa5d00fbda57e656ca5812
 F test/tkt3442.test 89d7b41a4ec4d9d9b40ab8575d648579fb13cb4f
-F test/tkt3457.test d311ecafbc9aaf876ac8e4a6a58ff2ee01739125
+F test/tkt3457.test edbf54b05cbe5165f00192becbd621038f1615e4
 F test/tkt3461.test 228ea328a5a21e8663f80ee3d212a6ad92549a19
 F test/tkt3472.test 98c7e54b8fef2b1266a552a66c8e5d88a6908d1d
 F test/tkt3493.test 1686cbde85f8721fc1bdc0ee72f2ef2f63139218
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 6e9140a729bd26dd102e603abf6ea16d67e8546e
-R 9a284a565af8f19e3d2c682d0105f4bb
+P bb5f1c01435dcc1ea056f0d149f750fa7812f652
+R 383a763ea1f6b28e78c47a340c8dfba5
 U danielk1977
-Z b70ba767168ad615a996157a1ab667b5
+Z f3d299840c7ab8a7d6b950df9de8e6fa

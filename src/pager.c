@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.601 2009/06/22 05:43:24 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.602 2009/06/26 07:12:07 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -757,7 +757,6 @@ static int writeJournalHdr(Pager *pPager){
   }
 
   pPager->journalHdr = pPager->journalOff = journalHdrOffset(pPager);
-  memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
 
   /* 
   ** Write the nRec Field - the number of page records that follow this
@@ -783,8 +782,10 @@ static int writeJournalHdr(Pager *pPager){
   if( (pPager->noSync) || (pPager->journalMode==PAGER_JOURNALMODE_MEMORY)
    || (sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND) 
   ){
+    memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
     put32bits(&zHeader[sizeof(aJournalMagic)], 0xffffffff);
   }else{
+    zHeader[0] = '\0';
     put32bits(&zHeader[sizeof(aJournalMagic)], 0);
   }
 
@@ -852,6 +853,7 @@ static int writeJournalHdr(Pager *pPager){
 */
 static int readJournalHdr(
   Pager *pPager,               /* Pager object */
+  int isHot,
   i64 journalSize,             /* Size of the open journal file in bytes */
   u32 *pNRec,                  /* OUT: Value read from the nRec field */
   u32 *pDbSize                 /* OUT: Value of original database size field */
@@ -877,12 +879,14 @@ static int readJournalHdr(
   ** SQLITE_DONE. If an IO error occurs, return an error code. Otherwise,
   ** proceed.
   */
-  rc = sqlite3OsRead(pPager->jfd, aMagic, sizeof(aMagic), iHdrOff);
-  if( rc ){
-    return rc;
-  }
-  if( memcmp(aMagic, aJournalMagic, sizeof(aMagic))!=0 ){
-    return SQLITE_DONE;
+  if( isHot || iHdrOff!=pPager->journalHdr ){
+    rc = sqlite3OsRead(pPager->jfd, aMagic, sizeof(aMagic), iHdrOff);
+    if( rc ){
+      return rc;
+    }
+    if( memcmp(aMagic, aJournalMagic, sizeof(aMagic))!=0 ){
+      return SQLITE_DONE;
+    }
   }
 
   /* Read the first three 32-bit fields of the journal header: The nRec
@@ -1977,7 +1981,7 @@ static int pager_playback(Pager *pPager, int isHot){
     ** it is corrupted, then a process must of failed while writing it.
     ** This indicates nothing more needs to be rolled back.
     */
-    rc = readJournalHdr(pPager, szJ, &nRec, &mxPg);
+    rc = readJournalHdr(pPager, isHot, szJ, &nRec, &mxPg);
     if( rc!=SQLITE_OK ){ 
       if( rc==SQLITE_DONE ){
         rc = SQLITE_OK;
@@ -2197,7 +2201,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     u32 ii;            /* Loop counter */
     u32 nJRec = 0;     /* Number of Journal Records */
     u32 dummy;
-    rc = readJournalHdr(pPager, szJ, &nJRec, &dummy);
+    rc = readJournalHdr(pPager, 0, szJ, &nJRec, &dummy);
     assert( rc!=SQLITE_DONE );
 
     /*
@@ -2764,7 +2768,9 @@ static int syncJournal(Pager *pPager){
         ** of the nRec field of the most recently written journal header.
         ** This field will be updated following the xSync() operation
         ** on the journal file. */
-        i64 iNRecOffset = pPager->journalHdr + sizeof(aJournalMagic);
+	u8 zHeader[sizeof(aJournalMagic)+4];
+	memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
+	put32bits(&zHeader[sizeof(aJournalMagic)], pPager->nRec);
 
         /* This block deals with an obscure problem. If the last connection
         ** that wrote to this database was operating in persistent-journal
@@ -2817,7 +2823,9 @@ static int syncJournal(Pager *pPager){
           if( rc!=SQLITE_OK ) return rc;
         }
         IOTRACE(("JHDR %p %lld %d\n", pPager, iNRecOffset, 4));
-        rc = write32bits(pPager->jfd, iNRecOffset, pPager->nRec);
+        rc = sqlite3OsWrite(
+            pPager->jfd, zHeader, sizeof(zHeader), pPager->journalHdr
+	);
         if( rc!=SQLITE_OK ) return rc;
       }
       if( 0==(iDc&SQLITE_IOCAP_SEQUENTIAL) ){
