@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.465 2009/06/26 12:15:23 drh Exp $
+** $Id: vdbeaux.c,v 1.466 2009/06/26 14:04:51 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -145,7 +145,7 @@ int sqlite3VdbeAddOp3(Vdbe *p, int op, int p1, int p2, int p3){
   assert( op>0 && op<0xff );
   if( p->nOpAlloc<=i ){
     if( growOpArray(p) ){
-      return 0;
+      return 1;
     }
   }
   p->nOp++;
