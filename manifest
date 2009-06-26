@@ -1,5 +1,5 @@
-C Remove\sthe\spriorNewRowid\sfield\sfrom\sthe\ssqlite3\sstructure.\s\sUse\sthe\nlast_insert_rowid\sas\sthe\sinitial\svalue\swhen\ssearching\sfor\sa\snew\srandom\nrowid\sin\sthe\sOP_NewRowid\sopcode.\s(CVS\s6824)
-D 2009-06-26T15:14:55
+C Removed\sa\sfew\scompiler\swarnings\sunder\sMSVC.\s(CVS\s6825)
+D 2009-06-26T16:32:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c c049fb18101d9c70bbf35d51def0da588dee9773
+F src/btree.c 617d674eb77060f7fd6a05d27d72946c901191c8
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 55346bc14b939ad41b297942e8b1b581e960fb99
 F src/build.c 813f6bdab5e4fb5ff94a5340c199a4930da9d66e
@@ -203,11 +203,11 @@ F src/update.c b58db45e40f11082281d6f94137cd3b5657771d9
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c e16028ce7912f9b4d9fc61de16aa79a40d156408
+F src/vdbe.c dfd508c9f6c183f0f39535dee51d9f0bc9420088
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 338d4b4323d9153d918d890e72b02f796ba20663
+F src/vdbeaux.c 3773217a73f93fb292d264b3b1da98c179a0f2f0
 F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d8c8145c9d28d014eb9218b3f1312b957ccc72b7
-R b613a9e2d1e2527d50aacbf4a4df984d
-U drh
-Z 0ac77250d84f1a18186fb1470ccac0a3
+P 96729b2d499f029bfaec6648a592e8ec697d9521
+R fc4b7c1a6225b0393bf8a20671e309c4
+U shane
+Z 4b1a0e3f6dd4fd54dd886da2d6eabcca

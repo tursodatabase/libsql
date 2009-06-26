@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.644 2009/06/25 16:11:05 danielk1977 Exp $
+** $Id: btree.c,v 1.645 2009/06/26 16:32:13 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1015,7 +1015,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
   put2byte(&data[addr], start);
   put2byte(&data[start], pbegin);
   put2byte(&data[start+2], size);
-  pPage->nFree += (u16)size;
+  pPage->nFree = pPage->nFree + (u16)size;
 
   /* Coalesce adjacent free blocks */
   addr = pPage->hdrOffset + 1;
@@ -5112,7 +5112,7 @@ static int insertCell(
       return SQLITE_CORRUPT_BKPT;
     }
     pPage->nCell++;
-    pPage->nFree -= (2 + sz);
+    pPage->nFree = pPage->nFree - (u16)(2 + sz);
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
     if( iChild ){
       put4byte(&data[idx], iChild);
@@ -5441,7 +5441,7 @@ static int balance_nonroot(
   int i, j, k;                 /* Loop counters */
   int nxDiv;                   /* Next divider slot in pParent->aCell[] */
   int rc = SQLITE_OK;          /* The return code */
-  int leafCorrection;          /* 4 if pPage is a leaf.  0 if not */
+  u16 leafCorrection;          /* 4 if pPage is a leaf.  0 if not */
   int leafData;                /* True if pPage is a leaf of a LEAFDATA tree */
   int usableSpace;             /* Bytes in pPage beyond the header */
   int pageFlags;               /* Value of pPage->aData[0] */
@@ -5610,7 +5610,7 @@ static int balance_nonroot(
       nCell++;
     }
     if( i<nOld-1 && !leafData){
-      u16 sz = szNew[i];
+      u16 sz = (u16)szNew[i];
       u8 *pTemp;
       assert( nCell<nMaxCells );
       szCell[nCell] = sz;
@@ -5621,7 +5621,7 @@ static int balance_nonroot(
       memcpy(pTemp, apDiv[i], sz);
       apCell[nCell] = pTemp+leafCorrection;
       assert( leafCorrection==0 || leafCorrection==4 );
-      szCell[nCell] -= (u16)leafCorrection;
+      szCell[nCell] = szCell[nCell] - leafCorrection;
       if( !pOld->leaf ){
         assert( leafCorrection==0 );
         assert( pOld->hdrOffset==0 );
