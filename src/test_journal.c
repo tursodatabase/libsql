@@ -15,7 +15,7 @@
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
 **
-** $Id: test_journal.c,v 1.15 2009/04/07 11:21:29 danielk1977 Exp $
+** $Id: test_journal.c,v 1.16 2009/06/26 09:01:28 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
@@ -420,14 +420,17 @@ static int jtWrite(
       jt_file *pMain = locateDatabaseHandle(p->zName);
       assert( pMain );
   
-      if( decodeJournalHdr(zBuf, 0, &pMain->nPage, 0, &pMain->nPagesize) ){
+      if( iAmt==28 ){
         /* Zeroing the first journal-file header. This is the end of a
         ** transaction. */
         closeTransaction(pMain);
-      }else{
+      }else if( iAmt!=12 ){
         /* Writing the first journal header to a journal file. This happens
         ** when a transaction is first started.  */
         int rc;
+        u8 *z = (u8 *)zBuf;
+        pMain->nPage = decodeUint32(&z[16]);
+        pMain->nPagesize = decodeUint32(&z[24]);
         if( SQLITE_OK!=(rc=openTransaction(pMain, p)) ){
           return rc;
         }
