@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.559 2009/06/25 01:47:12 drh Exp $
+** $Id: main.c,v 1.560 2009/06/26 15:14:55 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -1562,7 +1562,6 @@ static int openDatabase(
   }
   sqlite3_mutex_enter(db->mutex);
   db->errMask = 0xff;
-  db->priorNewRowid = 0;
   db->nDb = 2;
   db->magic = SQLITE_MAGIC_BUSY;
   db->aDb = db->aDbStatic;

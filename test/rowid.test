@@ -12,7 +12,7 @@
 # focus of this file is testing the magic ROWID column that is
 # found on all tables.
 #
-# $Id: rowid.test,v 1.20 2008/01/19 20:11:26 drh Exp $
+# $Id: rowid.test,v 1.21 2009/06/26 15:14:55 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -666,6 +666,7 @@ do_test rowid-11.4 {
 do_test rowid-12.1 {
   execsql {
     CREATE TABLE t7(x INTEGER PRIMARY KEY, y);
+    CREATE TABLE t7temp(a INTEGER PRIMARY KEY);
     INSERT INTO t7 VALUES(9223372036854775807,'a');
     SELECT y FROM t7;
   }
@@ -680,17 +681,18 @@ do_test rowid-12.2 {
   }
 } {1 b 9223372036854775807 a}
 execsql {INSERT INTO t7 VALUES(2,'y');}
-for {set i 1} {$i<=101} {incr i} {
+for {set i 1} {$i<100} {incr i} {
   do_test rowid-12.3.$i {
+    db eval {DELETE FROM t7temp; INSERT INTO t7temp VALUES(1);}
     restore_prng_state
     execsql {
       INSERT INTO t7 VALUES(NULL,'x');
-      INSERT OR IGNORE INTO t7 VALUES(last_insert_rowid()+1,'y');
       SELECT count(*) FROM t7 WHERE y=='x';
     }
   } $i
 }
 do_test rowid-12.4 {
+  db eval {DELETE FROM t7temp; INSERT INTO t7temp VALUES(1);}
   restore_prng_state
   catchsql {
     INSERT INTO t7 VALUES(NULL,'x');
