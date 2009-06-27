@@ -1,5 +1,5 @@
-C Remove\sincorrect\sNEVER()\smacros\sfrom\smalloc.c.\s\sThe\sallocations\scan\sbe\nexceeded\susing\ssqlite3_malloc()\sand\ssqlite3_realloc().\s(CVS\s6826)
-D 2009-06-26T18:35:17
+C Fix\sa\sbug\sin\ssqlite3_realloc()\s-\sif\scalled\swith\sa\ssize\sof\smore\sthan\n2147483392\sit\sreturns\s0\sbut\sit\salso\sreleases\sthe\sprior\sallocation.\s(CVS\s6827)
+D 2009-06-27T00:48:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +126,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 9a56cf126ceee332b56061bf16bd0fb4ff9e26c0
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c 9f6d91815233b517c1bdf16fd8fa838d10d2c015
-F src/malloc.c 55c4e997480b89833e693832298b5a7cfd9df9aa
+F src/malloc.c 16907f3b9d3f56e2c69d763ff18d9ee49e7433cd
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P f01a9fc375d77c67602a9f6be6a674beb516233f
-R 2e353673e103372172748404661066b9
+P 0d345e5923ff92a87195f6c04a29a56bf67ee43c
+R 169f7765871685a4332f4c1aefebde22
 U drh
-Z c395fb0e87a2bccde31a68bf5019fc25
+Z 92880a7456ebca89a25dc923023f5817
