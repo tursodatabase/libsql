@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\ssqlite3_realloc()\s-\sif\scalled\swith\sa\ssize\sof\smore\sthan\n2147483392\sit\sreturns\s0\sbut\sit\salso\sreleases\sthe\sprior\sallocation.\s(CVS\s6827)
-D 2009-06-27T00:48:33
+C Fix\san\sinstance\swhere\ssqlite3JumpHere()\smight\sbe\scalled\swith\sa\snegative\naddress\sfollowing\san\sOOM\sfault.\s(CVS\s6828)
+D 2009-06-27T11:17:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -199,7 +199,7 @@ F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c eadd396fa81e8031d4b4a65eefd661e9c675167f
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
-F src/update.c b58db45e40f11082281d6f94137cd3b5657771d9
+F src/update.c a1bbe774bce495d62dce3df3f42a5f04c1de173a
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 0d345e5923ff92a87195f6c04a29a56bf67ee43c
-R 169f7765871685a4332f4c1aefebde22
+P 653df0afcc58de82c8c1b5f6a7b2f4829ff69792
+R 081c6cf0e8f2499b8b69ecc027b9626f
 U drh
-Z 92880a7456ebca89a25dc923023f5817
+Z 2ef2a0908757252ee03ecce7509b94c2
