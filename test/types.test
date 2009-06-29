@@ -12,7 +12,7 @@
 # it tests that the different storage classes (integer, real, text etc.)
 # all work correctly.
 #
-# $Id: types.test,v 1.19 2006/06/27 12:51:13 drh Exp $
+# $Id: types.test,v 1.20 2009/06/29 06:00:37 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -136,6 +136,7 @@ execsql {
 # in the table, in the tables default scanning order.
 proc record_sizes {rootpage} {
   set bt [btree_open test.db 10 0]
+  btree_begin_transaction $bt
   set c [btree_cursor $bt $rootpage 0]
   btree_first $c
   while 1 {

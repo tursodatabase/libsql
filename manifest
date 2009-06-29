@@ -1,5 +1,5 @@
-C Version\s3.6.16\s(CVS\s6829)
-D 2009-06-27T14:10:30
+C Cause\sincremental-blob\sread/write\soperations\slock\sshared-cache\stables\sin\sthe\ssame\sway\sas\snormal\sSQL\sread/writes.\sAdd\scomplex\sassert\sstatements\sto\smake\ssure\stehe\scorrect\sshared-cache\slocks\sare\sheld\swhen\saccessing\sthe\sdatabase.\sEliminate\ssome\sredundant\schecks\sfrom\sbtree.c.\s(CVS\s6830)
+D 2009-06-29T06:00:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
 F src/backup.c ff50af53184a5fd7bdee4d620b5dabef74717c79
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 617d674eb77060f7fd6a05d27d72946c901191c8
+F src/btree.c 078eb41016d033707f8a94075cdde18249e48f75
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 55346bc14b939ad41b297942e8b1b581e960fb99
 F src/build.c 813f6bdab5e4fb5ff94a5340c199a4930da9d66e
@@ -169,7 +169,7 @@ F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c d3195e0738c101a155404ecdb1cd9532a2fd34f2
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
 F src/test2.c d73e4a490349245fb196b990b80684513e0ceaee
-F src/test3.c abd651f387a42696976dd5560c46b596e421cfb8
+F src/test3.c 1e1778ca7e0234c9eb329ac6a5729067b822f3d5
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
@@ -203,12 +203,12 @@ F src/update.c a1bbe774bce495d62dce3df3f42a5f04c1de173a
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 0e14f371ea3326c6b8cfba257286d798cd20db59
-F src/vdbe.c dfd508c9f6c183f0f39535dee51d9f0bc9420088
+F src/vdbe.c f2462fdb71b8dfd788e2be1228b1b6c1b702ea80
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
 F src/vdbeaux.c 3773217a73f93fb292d264b3b1da98c179a0f2f0
-F src/vdbeblob.c c25d7e7bc6d5917feeb17270bd275fa771f26e5c
+F src/vdbeblob.c f3d3151d8ddfe9fed288f9e2c98c96e12e914fbb
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 98fbffc5efe68d8107511dec0a650efc7daa9446
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
@@ -397,7 +397,7 @@ F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
 F test/incrblob.test c80087a8ec28b4a58b5299251074048e17754f8f
-F test/incrblob2.test 7ef4581745dd80155a451637aa779b49df90787d
+F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test d0fb6ef6d747ef5c5ebe878aafa72dd3e178856b
 F test/incrvacuum2.test 46ef65f377e3937cfd1ba66e818309dab46f590d
@@ -672,7 +672,7 @@ F test/trigger8.test 83d92c212f36442d26527d6f7701575905a52ae1
 F test/trigger9.test e6e8dbab673666b3c0a63f0fefcff2329fe6bba8
 F test/triggerA.test 208dbda4d2f7c918b02f8a0dfa3acd2a0fe00691
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/types.test 98e7a631bddf0806204358b452b02d0e319318a6
+F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
 F test/unique.test 083c7fff74695bcc27a71d75699deba3595bc9c2
@@ -737,7 +737,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 49f22e55d69d0b5a34400b36332a2eb861362eb2
-R 081c6cf0e8f2499b8b69ecc027b9626f
-U drh
-Z b0d3fc590df87bc7076fef537dbc78a6
+P ff691a6b2a302fe7978459cb8df9d56184892ee0
+R 78ed1dc8020260be15a9afc4441673c9
+U danielk1977
+Z d5676c92a64d0bdadc5400d03f5280e3
