@@ -12,7 +12,7 @@
 #
 # This file implements tests for joins, including outer joins.
 #
-# $Id: join.test,v 1.26 2008/12/05 00:00:07 drh Exp $
+# $Id: join.test,v 1.27 2009/07/01 16:12:08 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -309,10 +309,8 @@ do_test join-3.4.2 {
   }
 } {1 {cannot join using column d - column not present in both tables}}
 do_test join-3.5 {
-  catchsql {
-    SELECT * FROM t1 USING(a);
-  }
-} {0 {1 2 3 2 3 4 3 4 5}}
+  catchsql { SELECT * FROM t1 USING(a) }
+} {1 {a JOIN clause is required before USING}}
 do_test join-3.6 {
   catchsql {
     SELECT * FROM t1 JOIN t2 ON t3.a=t2.b;

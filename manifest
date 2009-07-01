@@ -1,5 +1,5 @@
-C Do\snot\signore\salias\s"a"\sin\sa\squery\sof\sthe\sform\s"SELECT\s...\sFROM\s(...)\sAS\sa"\sFix\sfor\s#3935.\sAlso\sexpand\supon\s(6751)\sto\sfix\ssome\ssimilar\sobscure\smemory\sleaks.\s(CVS\s6831)
-D 2009-07-01T14:56:40
+C Report\san\serror\sif\sa\sUSING\sor\sON\sclause\sis\sspecified\sfollowing\sa\sfrom-list\selement\sthat\sis\snot\sto\sthe\sright\sof\sa\sjoin\soperator.\sFix\sfor\s#3846.\s(CVS\s6832)
+D 2009-07-01T16:12:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
 F src/btree.c 078eb41016d033707f8a94075cdde18249e48f75
 F src/btree.h f70b694e8c163227369a66863b01fbff9009f323
 F src/btreeInt.h 55346bc14b939ad41b297942e8b1b581e960fb99
-F src/build.c 1906bb2856f7013c9ab5ff1e0eeab033ed1c00ba
+F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -419,7 +419,7 @@ F test/ioerr2.test 1b56cb80d5b0726ee3ba325ca175734541e32955
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
 F test/ioerr4.test fc6eddfec2efc2f1ed217b9eae4c1c1d3516ce86
 F test/ioerr5.test 89f69b09a6b5d4f5bbfe58d4231f28236d842dcb
-F test/join.test c5696c7e7efd8b3780c9308e4511742a937fe660
+F test/join.test a79084b09d862e7be924abb97d1b1342a0157209
 F test/join2.test f2171c265e57ee298a27e57e7051d22962f9f324
 F test/join3.test 6f0c774ff1ba0489e6c88a3e77b9d3528fb4fda0
 F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
@@ -656,7 +656,7 @@ F test/tkt3911.test 74cd324f3ba653040cc6d94cc4857b290d12d633
 F test/tkt3918.test e6cdf6bfcfe9ba939d86a4238a9dc55d6eec5d42
 F test/tkt3922.test 022ace32c049e3964f68492c12eb803e8e4856d8
 F test/tkt3929.test 6a4c3baefb4e75127356b7d675b5df42c35c00d1
-F test/tkt3935.test 209a67e511c15adb572d536689a4e02ea4fcbb00
+F test/tkt3935.test e15261fedb9e30a4305a311da614a5d8e693c767
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -690,7 +690,7 @@ F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
 F test/vtab5.test a0a84a89c622f4e2e816ebf39883dc319b4a1024
-F test/vtab6.test a56c947193fb28ddb453d38768cb8acc6f2eed79
+F test/vtab6.test 226b116d63ad77f9b084d556f772c45a0d28e9b5
 F test/vtab7.test a8c3c3cb3eb60be364991bd714e4927e26c4cd85
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -738,7 +738,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P f17ef37897da9bcaf20b5acdce6840522c0a0b16
-R 0a4b75c01f05a0efdc0d38590a4ebf72
+P 42f9d1e56483a59353bff57d75f09ed67e1d9c3c
+R 23d368ef27404e6adaeea4f513ad5353
 U danielk1977
-Z aee332d7efb75dc0b087c0e560dcdc1e
+Z 8f538dfbca52be8303d8e87518479b92
