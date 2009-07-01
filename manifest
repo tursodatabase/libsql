@@ -1,5 +1,5 @@
-C Fix\sa\s1-byte\sbuffer\soverwrite\sthat\scan\soccur\swhen\sa\svirtual\stable\soverloads\san\sSQL\sfunction.\s(CVS\s6833)
-D 2009-07-01T18:04:21
+C Change\sto\stest\scode\sand\sscripts\sallowing\smemsys3\sto\sbe\stested\susing\sa\sbuild\sthat\shas\sboth\smemsys3\sand\smemsys5\senabled.\s(CVS\s6834)
+D 2009-07-01T18:09:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -186,7 +186,7 @@ F src/test_func.c b8140bc4ed0d290d5e22972eb2a3bfd40aa798dc
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_journal.c dab49b7c47b53242f039c9563b18cafb67ebfe03
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
-F src/test_malloc.c c3aabe4b48d1f4f1e78b6561ce92ca04b7495ee5
+F src/test_malloc.c d054506b095d711e4e5575558dd576a2cbf035a2
 F src/test_md5.c 032ae2bb6f81da350d2404e81fa8d560c8268026
 F src/test_mutex.c 482d9d987c1c678199691efc23c8cd3464e01ff5
 F src/test_onefile.c d2c3126633592aeef14e8d268fc40c74449b69d8
@@ -497,7 +497,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
-F test/permutations.test 1e811e5598ca22cfa2482cf4699ddd069200c78e
+F test/permutations.test 1ce2874df8fec876d0b963c7a3ef61c4e9df8827
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
@@ -738,7 +738,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 29b48972b65a17dab343b063a620cf8d456a923c
-R 88ce6118d616e71c0f1f18756951eecb
+P bfe336a8993e06e70d3c32a929202fb015dcbb89
+R 0f03c3ef155d0847bfc480ff47fa3b16
 U danielk1977
-Z 258584205553a4e9af935a9ece340ce8
+Z 38cf89225507916cb0e9c0931bd7d0cf

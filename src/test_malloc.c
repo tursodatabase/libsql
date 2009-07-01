@@ -13,7 +13,7 @@
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
 **
-** $Id: test_malloc.c,v 1.54 2009/04/07 11:21:29 danielk1977 Exp $
+** $Id: test_malloc.c,v 1.55 2009/07/01 18:09:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1343,6 +1343,24 @@ static int test_install_malloc_faultsim(
 }
 
 /*
+** sqlite3_install_memsys3
+*/
+static int test_install_memsys3(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int rc = SQLITE_MISUSE;
+#ifdef SQLITE_ENABLE_MEMSYS3
+  const sqlite3_mem_methods *sqlite3MemGetMemsys3(void);
+  rc = sqlite3_config(SQLITE_CONFIG_MALLOC, sqlite3MemGetMemsys3());
+#endif
+  Tcl_SetResult(interp, (char *)sqlite3TestErrorName(rc), TCL_VOLATILE);
+  return TCL_OK;
+}
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest_malloc_Init(Tcl_Interp *interp){
@@ -1378,6 +1396,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_db_config_lookaside",test_db_config_lookaside      ,0 },
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },
+     { "sqlite3_install_memsys3",    test_install_memsys3          ,0 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
