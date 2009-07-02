@@ -1,0 +1,55 @@
+# 2009 July 2
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: sharedlock.test,v 1.1 2009/07/02 17:21:58 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+db close
+
+ifcapable !shared_cache {
+  finish_test
+  return
+}
+
+set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+sqlite3 db  test.db
+sqlite3 db2 test.db
+
+do_test sharedlock-1.1 {
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+  }
+} {}
+
+do_test sharedlock-1.2 {
+  set res [list]
+  db eval { SELECT * FROM t1 ORDER BY rowid } {
+    lappend res $a $b
+    if {$a == 1} { catch { db  eval "INSERT INTO t1 VALUES(3, 'three')" } }
+
+    # This should fail. Connection [db] has a read-lock on t1, which should
+    # prevent connection [db2] from obtaining the write-lock it needs to
+    # modify t1. At one point there was a bug causing the previous INSERT
+    # to drop the read-lock belonging to [db].
+    if {$a == 2} { catch { db2 eval "INSERT INTO t1 VALUES(4, 'four')"  } }
+  }
+  set res
+} {1 one 2 two 3 three}
+
+db close
+db2 close
+
+sqlite3_enable_shared_cache $::enable_shared_cache
+finish_test
+

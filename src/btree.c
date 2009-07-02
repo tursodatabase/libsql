@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.648 2009/07/02 07:47:33 danielk1977 Exp $
+** $Id: btree.c,v 1.649 2009/07/02 17:21:58 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -81,6 +81,7 @@ int sqlite3_enable_shared_cache(int enable){
   #define querySharedCacheTableLock(a,b,c) SQLITE_OK
   #define setSharedCacheTableLock(a,b,c) SQLITE_OK
   #define clearAllSharedCacheTableLocks(a)
+  #define downgradeAllSharedCacheTableLocks(a)
   #define hasSharedCacheTableLock(a,b,c,d) 1
   #define hasReadConflicts(a, b) 0
 #endif
@@ -393,6 +394,21 @@ static void clearAllSharedCacheTableLocks(Btree *p){
     pBt->isPending = 0;
   }
 }
+
+static void downgradeAllSharedCacheTableLocks(Btree *p){
+  BtShared *pBt = p->pBt;
+  if( pBt->pWriter==p ){
+    BtLock *pLock;
+    pBt->pWriter = 0;
+    pBt->isExclusive = 0;
+    pBt->isPending = 0;
+    for(pLock=pBt->pLock; pLock; pLock=pLock->pNext){
+      assert( pLock->eLock==READ_LOCK || pLock->pBtree==p );
+      pLock->eLock = READ_LOCK;
+    }
+  }
+}
+
 #endif /* SQLITE_OMIT_SHARED_CACHE */
 
 static void releasePage(MemPage *pPage);  /* Forward reference */
@@ -2902,6 +2918,48 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
 }
 
 /*
+** This function is called from both BtreeCommitPhaseTwo() and BtreeRollback()
+** at the conclusion of a transaction.
+*/
+static void btreeEndTransaction(Btree *p){
+  BtShared *pBt = p->pBt;
+  BtCursor *pCsr;
+  assert( sqlite3BtreeHoldsMutex(p) );
+
+  /* Search for a cursor held open by this b-tree connection. If one exists,
+  ** then the transaction will be downgraded to a read-only transaction
+  ** instead of actually concluded. A subsequent call to CommitPhaseTwo() 
+  ** or Rollback() will finish the transaction and unlock the database.  */
+  for(pCsr=pBt->pCursor; pCsr && pCsr->pBtree!=p; pCsr=pCsr->pNext);
+  assert( pCsr==0 || p->inTrans>TRANS_NONE );
+
+  btreeClearHasContent(pBt);
+  if( pCsr ){
+    downgradeAllSharedCacheTableLocks(p);
+    p->inTrans = TRANS_READ;
+  }else{
+    /* If the handle had any kind of transaction open, decrement the 
+    ** transaction count of the shared btree. If the transaction count 
+    ** reaches 0, set the shared state to TRANS_NONE. The unlockBtreeIfUnused()
+    ** call below will unlock the pager.  */
+    if( p->inTrans!=TRANS_NONE ){
+      clearAllSharedCacheTableLocks(p);
+      pBt->nTransaction--;
+      if( 0==pBt->nTransaction ){
+        pBt->inTransaction = TRANS_NONE;
+      }
+    }
+
+    /* Set the current transaction state to TRANS_NONE and unlock the 
+    ** pager if this call closed the only read or write transaction.  */
+    p->inTrans = TRANS_NONE;
+    unlockBtreeIfUnused(pBt);
+  }
+
+  btreeIntegrity(p);
+}
+
+/*
 ** Commit the transaction currently in progress.
 **
 ** This routine implements the second phase of a 2-phase commit.  The
@@ -2937,27 +2995,7 @@ int sqlite3BtreeCommitPhaseTwo(Btree *p){
     pBt->inTransaction = TRANS_READ;
   }
 
-  /* If the handle has any kind of transaction open, decrement the transaction
-  ** count of the shared btree. If the transaction count reaches 0, set
-  ** the shared state to TRANS_NONE. The unlockBtreeIfUnused() call below
-  ** will unlock the pager.
-  */
-  if( p->inTrans!=TRANS_NONE ){
-    clearAllSharedCacheTableLocks(p);
-    pBt->nTransaction--;
-    if( 0==pBt->nTransaction ){
-      pBt->inTransaction = TRANS_NONE;
-    }
-  }
-
-  /* Set the current transaction state to TRANS_NONE and unlock
-  ** the pager if this call closed the only read or write transaction.
-  */
-  btreeClearHasContent(pBt);
-  p->inTrans = TRANS_NONE;
-  unlockBtreeIfUnused(pBt);
-
-  btreeIntegrity(p);
+  btreeEndTransaction(p);
   sqlite3BtreeLeave(p);
   return SQLITE_OK;
 }
@@ -3079,20 +3117,7 @@ int sqlite3BtreeRollback(Btree *p){
     pBt->inTransaction = TRANS_READ;
   }
 
-  if( p->inTrans!=TRANS_NONE ){
-    clearAllSharedCacheTableLocks(p);
-    assert( pBt->nTransaction>0 );
-    pBt->nTransaction--;
-    if( 0==pBt->nTransaction ){
-      pBt->inTransaction = TRANS_NONE;
-    }
-  }
-
-  btreeClearHasContent(pBt);
-  p->inTrans = TRANS_NONE;
-  unlockBtreeIfUnused(pBt);
-
-  btreeIntegrity(p);
+  btreeEndTransaction(p);
   sqlite3BtreeLeave(p);
   return rc;
 }
