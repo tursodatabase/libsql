@@ -12,7 +12,7 @@
 **
 ** This file contains code used to implement incremental BLOB I/O.
 **
-** $Id: vdbeblob.c,v 1.34 2009/06/29 06:00:37 danielk1977 Exp $
+** $Id: vdbeblob.c,v 1.35 2009/07/02 07:47:33 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"

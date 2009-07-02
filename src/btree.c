@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.647 2009/07/02 05:23:26 danielk1977 Exp $
+** $Id: btree.c,v 1.648 2009/07/02 07:47:33 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -366,7 +366,10 @@ static void clearAllSharedCacheTableLocks(Btree *p){
     assert( pLock->pBtree->inTrans>=pLock->eLock );
     if( pLock->pBtree==p ){
       *ppIter = pLock->pNext;
-      sqlite3_free(pLock);
+      assert( pLock->iTable!=1 || pLock==&p->lock );
+      if( pLock->iTable!=1 ){
+        sqlite3_free(pLock);
+      }
     }else{
       ppIter = &pLock->pNext;
     }
@@ -1605,6 +1608,10 @@ int sqlite3BtreeOpen(
   }
   p->inTrans = TRANS_NONE;
   p->db = db;
+#ifndef SQLITE_OMIT_SHARED_CACHE
+  p->lock.pBtree = p;
+  p->lock.iTable = 1;
+#endif
 
 #if !defined(SQLITE_OMIT_SHARED_CACHE) && !defined(SQLITE_OMIT_DISKIO)
   /*
@@ -2376,6 +2383,13 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   }
 #endif
 
+  /* Any read-only or read-write transaction implies a read-lock on 
+  ** page 1. So if some other shared-cache client already has a write-lock 
+  ** on page 1, the transaction cannot be opened. */
+  if( SQLITE_OK!=(rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK)) ){
+    goto trans_begun;
+  }
+
   do {
     /* Call lockBtree() until either pBt->pPage1 is populated or
     ** lockBtree() returns something other than SQLITE_OK. lockBtree()
@@ -2406,6 +2420,14 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   if( rc==SQLITE_OK ){
     if( p->inTrans==TRANS_NONE ){
       pBt->nTransaction++;
+#ifndef SQLITE_OMIT_SHARED_CACHE
+      if( p->sharable ){
+	assert( p->lock.pBtree==p && p->lock.iTable==1 );
+        p->lock.eLock = READ_LOCK;
+        p->lock.pNext = pBt->pLock;
+        pBt->pLock = &p->lock;
+      }
+#endif
     }
     p->inTrans = (wrflag?TRANS_WRITE:TRANS_READ);
     if( p->inTrans>pBt->inTransaction ){
@@ -3188,17 +3210,11 @@ static int btreeCursor(
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( wrFlag==0 || wrFlag==1 );
 
-  /* The following assert statements verify that if this is a sharable b-tree
-  ** database, the connection is holding the required table locks, and that
-  ** no other connection has any open cursor that conflicts with this lock.
-  **
-  ** The exception to this is read-only cursors open on the schema table.
-  ** Such a cursor is opened without a lock while reading the database
-  ** schema. This is safe because BtShared.mutex is held for the entire
-  ** lifetime of this cursor.  */
-  assert( (iTable==1 && wrFlag==0) 
-       || hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, wrFlag+1) 
-  );
+  /* The following assert statements verify that if this is a sharable 
+  ** b-tree database, the connection is holding the required table locks, 
+  ** and that no other connection has any open cursor that conflicts with 
+  ** this lock.  */
+  assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, wrFlag+1) );
   assert( wrFlag==0 || !hasReadConflicts(p, iTable) );
 
   if( NEVER(wrFlag && pBt->readOnly) ){
@@ -6663,10 +6679,7 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
     ** root page of the new table should go. meta[3] is the largest root-page
     ** created so far, so the new root-page is (meta[3]+1).
     */
-    rc = sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &pgnoRoot);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
+    sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &pgnoRoot);
     pgnoRoot++;
 
     /* The new root-page may not be allocated on a pointer-map page, or the
@@ -6901,11 +6914,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
 #else
     if( pBt->autoVacuum ){
       Pgno maxRootPgno;
-      rc = sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &maxRootPgno);
-      if( rc!=SQLITE_OK ){
-        releasePage(pPage);
-        return rc;
-      }
+      sqlite3BtreeGetMeta(p, BTREE_LARGEST_ROOT_PAGE, &maxRootPgno);
 
       if( iTable==maxRootPgno ){
         /* If the table being dropped is the table with the largest root-page
@@ -6981,6 +6990,9 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
 
 
 /*
+** This function may only be called if the b-tree connection already
+** has a read or write transaction open on the database.
+**
 ** Read the meta-information out of a database file.  Meta[0]
 ** is the number of free pages currently in the database.  Meta[1]
 ** through meta[15] are available for use by higher layers.  Meta[0]
@@ -6990,71 +7002,24 @@ int sqlite3BtreeDropTable(Btree *p, int iTable, int *piMoved){
 ** layer (and the SetCookie and ReadCookie opcodes) the number of
 ** free pages is not visible.  So Cookie[0] is the same as Meta[1].
 */
-int sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
-  DbPage *pDbPage = 0;
-  int rc;
-  unsigned char *pP1;
+void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
   BtShared *pBt = p->pBt;
 
   sqlite3BtreeEnter(p);
-
-  /* Reading a meta-data value requires a read-lock on page 1 (and hence
-  ** the sqlite_master table. We grab this lock regardless of whether or
-  ** not the SQLITE_ReadUncommitted flag is set (the table rooted at page
-  ** 1 is treated as a special case by querySharedCacheTableLock()
-  ** and setSharedCacheTableLock()).
-  */
-  rc = querySharedCacheTableLock(p, 1, READ_LOCK);
-  if( rc!=SQLITE_OK ){
-    sqlite3BtreeLeave(p);
-    return rc;
-  }
-
+  assert( p->inTrans>TRANS_NONE );
+  assert( SQLITE_OK==querySharedCacheTableLock(p, 1, READ_LOCK) );
+  assert( pBt->pPage1 );
   assert( idx>=0 && idx<=15 );
-  if( pBt->pPage1 ){
-    /* The b-tree is already holding a reference to page 1 of the database
-    ** file. In this case the required meta-data value can be read directly
-    ** from the page data of this reference. This is slightly faster than
-    ** requesting a new reference from the pager layer.
-    */
-    pP1 = (unsigned char *)pBt->pPage1->aData;
-  }else{
-    /* The b-tree does not have a reference to page 1 of the database file.
-    ** Obtain one from the pager layer.
-    */
-    rc = sqlite3PagerGet(pBt->pPager, 1, &pDbPage);
-    if( rc ){
-      sqlite3BtreeLeave(p);
-      return rc;
-    }
-    pP1 = (unsigned char *)sqlite3PagerGetData(pDbPage);
-  }
-  *pMeta = get4byte(&pP1[36 + idx*4]);
 
-  /* If the b-tree is not holding a reference to page 1, then one was 
-  ** requested from the pager layer in the above block. Release it now.
-  */
-  if( !pBt->pPage1 ){
-    sqlite3PagerUnref(pDbPage);
-  }
+  *pMeta = get4byte(&pBt->pPage1->aData[36 + idx*4]);
 
-  /* If autovacuumed is disabled in this build but we are trying to 
-  ** access an autovacuumed database, then make the database readonly. 
-  */
+  /* If auto-vacuum is disabled in this build and this is an auto-vacuum
+  ** database, mark the database as read-only.  */
 #ifdef SQLITE_OMIT_AUTOVACUUM
   if( idx==BTREE_LARGEST_ROOT_PAGE && *pMeta>0 ) pBt->readOnly = 1;
 #endif
 
-  /* If there is currently an open transaction, grab a read-lock 
-  ** on page 1 of the database file. This is done to make sure that
-  ** no other connection can modify the meta value just read from
-  ** the database until the transaction is concluded.
-  */
-  if( p->inTrans>0 ){
-    rc = setSharedCacheTableLock(p, 1, READ_LOCK);
-  }
   sqlite3BtreeLeave(p);
-  return rc;
 }
 
 /*
@@ -7740,10 +7705,12 @@ int sqlite3BtreeSchemaLocked(Btree *p){
 */
 int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
   int rc = SQLITE_OK;
+  assert( p->inTrans!=TRANS_NONE );
   if( p->sharable ){
     u8 lockType = READ_LOCK + isWriteLock;
     assert( READ_LOCK+1==WRITE_LOCK );
     assert( isWriteLock==0 || isWriteLock==1 );
+
     sqlite3BtreeEnter(p);
     rc = querySharedCacheTableLock(p, iTab, lockType);
     if( rc==SQLITE_OK ){

@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.867 2009/06/29 06:00:37 danielk1977 Exp $
+** $Id: vdbe.c,v 1.868 2009/07/02 07:47:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2759,7 +2759,7 @@ case OP_ReadCookie: {               /* out2-prerelease */
   assert( db->aDb[iDb].pBt!=0 );
   assert( (p->btreeMask & (1<<iDb))!=0 );
 
-  rc = sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
+  sqlite3BtreeGetMeta(db->aDb[iDb].pBt, iCookie, (u32 *)&iMeta);
   pOut->u.i = iMeta;
   MemSetTypeFlag(pOut, MEM_Int);
   break;
@@ -2824,12 +2824,11 @@ case OP_VerifyCookie: {
   assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   if( pBt ){
-    rc = sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
+    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&iMeta);
   }else{
-    rc = SQLITE_OK;
     iMeta = 0;
   }
-  if( rc==SQLITE_OK && iMeta!=pOp->p2 ){
+  if( iMeta!=pOp->p2 ){
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = sqlite3DbStrDup(db, "database schema has changed");
     /* If the schema-cookie from the database file matches the cookie 

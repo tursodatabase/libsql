@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.125 2009/06/25 11:50:21 drh Exp $
+** $Id: prepare.c,v 1.126 2009/07/02 07:47:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -128,7 +128,6 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
 static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   int rc;
   int i;
-  BtCursor *curMain;
   int size;
   Table *pTab;
   Db *pDb;
@@ -137,6 +136,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   InitData initData;
   char const *zMasterSchema;
   char const *zMasterName = SCHEMA_TABLE(iDb);
+  int openedTransaction;
 
   /*
   ** The master database table has a structure like this
@@ -210,14 +210,21 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }
     return SQLITE_OK;
   }
-  curMain = sqlite3MallocZero(sqlite3BtreeCursorSize());
-  if( !curMain ){
-    rc = SQLITE_NOMEM;
-    goto error_out;
-  }
+
+  /* If there is not already a read-only (or read-write) transaction opened
+  ** on the b-tree database, open one now. If a transaction is opened, it 
+  ** will be closed before this function returns.  */
   sqlite3BtreeEnter(pDb->pBt);
-  rc = sqlite3BtreeCursor(pDb->pBt, MASTER_ROOT, 0, 0, curMain);
-  if( rc==SQLITE_EMPTY ) rc = SQLITE_OK;
+  if( !sqlite3BtreeIsInReadTrans(pDb->pBt) ){
+    rc = sqlite3BtreeBeginTrans(pDb->pBt, 0);
+    if( rc!=SQLITE_OK ){
+      sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
+      goto initone_error_out;
+    }
+    openedTransaction = 1;
+  }else{
+    openedTransaction = 0;
+  }
 
   /* Get the database meta information.
   **
@@ -236,12 +243,8 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** Note: The #defined SQLITE_UTF* symbols in sqliteInt.h correspond to
   ** the possible values of meta[4].
   */
-  for(i=0; rc==SQLITE_OK && i<ArraySize(meta); i++){
-    rc = sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
-  }
-  if( rc ){
-    sqlite3SetString(pzErrMsg, db, "%s", sqlite3ErrStr(rc));
-    goto initone_error_out;
+  for(i=0; i<ArraySize(meta); i++){
+    sqlite3BtreeGetMeta(pDb->pBt, i+1, (u32 *)&meta[i]);
   }
   pDb->pSchema->schema_cookie = meta[BTREE_SCHEMA_VERSION-1];
 
@@ -356,8 +359,9 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   ** before that point, jump to error_out.
   */
 initone_error_out:
-  sqlite3BtreeCloseCursor(curMain);
-  sqlite3_free(curMain);
+  if( openedTransaction ){
+    sqlite3BtreeCommit(pDb->pBt);
+  }
   sqlite3BtreeLeave(pDb->pBt);
 
 error_out:
@@ -437,13 +441,46 @@ int sqlite3ReadSchema(Parse *pParse){
 ** Check schema cookies in all databases.  If any cookie is out
 ** of date, return 0.  If all schema cookies are current, return 1.
 */
-static int schemaIsValid(sqlite3 *db){
+static void schemaIsValid(Parse *pParse){
+  sqlite3 *db = pParse->db;
   int iDb;
   int rc;
-  BtCursor *curTemp;
   int cookie;
-  int allOk = 1;
 
+  assert( pParse->checkSchema );
+  assert( sqlite3_mutex_held(db->mutex) );
+  for(iDb=0; iDb<db->nDb; iDb++){
+    int openedTransaction = 0;         /* True if a transaction is opened */
+    Btree *pBt = db->aDb[iDb].pBt;     /* Btree database to read cookie from */
+    if( pBt==0 ) continue;
+
+    /* If there is not already a read-only (or read-write) transaction opened
+    ** on the b-tree database, open one now. If a transaction is opened, it 
+    ** will be closed immediately after reading the meta-value. */
+    if( !sqlite3BtreeIsInReadTrans(pBt) ){
+      rc = sqlite3BtreeBeginTrans(pBt, 0);
+      if( NEVER(rc==SQLITE_NOMEM) || rc==SQLITE_IOERR_NOMEM ){
+        db->mallocFailed = 1;
+      }
+      if( rc!=SQLITE_OK ) return;
+      openedTransaction = 1;
+    }
+
+    /* Read the schema cookie from the database. If it does not match the 
+    ** value stored as part of the in the in-memory schema representation,
+    ** set Parse.rc to SQLITE_SCHEMA. */
+    sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
+    if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){
+      pParse->rc = SQLITE_SCHEMA;
+    }
+
+    /* Close the transaction, if one was opened. */
+    if( openedTransaction ){
+      sqlite3BtreeCommit(pBt);
+    }
+  }
+
+#if 0
   curTemp = (BtCursor *)sqlite3Malloc(sqlite3BtreeCursorSize());
   if( curTemp ){
     assert( sqlite3_mutex_held(db->mutex) );
@@ -470,8 +507,8 @@ static int schemaIsValid(sqlite3 *db){
     allOk = 0;
     db->mallocFailed = 1;
   }
-
   return allOk;
+#endif
 }
 
 /*
@@ -604,8 +641,8 @@ static int sqlite3Prepare(
     pParse->rc = SQLITE_NOMEM;
   }
   if( pParse->rc==SQLITE_DONE ) pParse->rc = SQLITE_OK;
-  if( pParse->checkSchema && !schemaIsValid(db) ){
-    pParse->rc = SQLITE_SCHEMA;
+  if( pParse->checkSchema ){
+    schemaIsValid(pParse);
   }
   if( pParse->rc==SQLITE_SCHEMA ){
     sqlite3ResetInternalSchema(db, 0);
