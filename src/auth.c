@@ -14,7 +14,7 @@
 ** systems that do not need this facility may omit it by recompiling
 ** the library with -DSQLITE_OMIT_AUTHORIZATION=1
 **
-** $Id: auth.c,v 1.31 2009/05/04 18:01:40 drh Exp $
+** $Id: auth.c,v 1.32 2009/07/02 18:40:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -112,7 +112,6 @@ void sqlite3AuthRead(
   const char *zCol;     /* Name of the column of the table */
   int iSrc;             /* Index in pTabList->a[] of table being read */
   const char *zDBase;   /* Name of database being accessed */
-  TriggerStack *pStack; /* The stack of current triggers */
   int iDb;              /* The index of the database the expression refers to */
 
   if( db->xAuth==0 ) return;
@@ -124,17 +123,18 @@ void sqlite3AuthRead(
     return;
   }
   if( pTabList ){
-    for(iSrc=0; ALWAYS(iSrc<pTabList->nSrc); iSrc++){
-      if( pExpr->iTable==pTabList->a[iSrc].iCursor ) break;
+    for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
+      if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
+        pTab = pTabList->a[iSrc].pTab;
+	break;
+      }
     }
-    assert( iSrc<pTabList->nSrc );
-    pTab = pTabList->a[iSrc].pTab;
-  }else{
-    pStack = pParse->trigStack;
+  }
+  if( !pTab ){
+    TriggerStack *pStack = pParse->trigStack;
     if( ALWAYS(pStack) ){
       /* This must be an attempt to read the NEW or OLD pseudo-tables
-      ** of a trigger.
-      */
+      ** of a trigger.  */
       assert( pExpr->iTable==pStack->newIdx || pExpr->iTable==pStack->oldIdx );
       pTab = pStack->pTab;
     }

@@ -1,5 +1,5 @@
-C When\sa\sb-tree\stransaction\sis\scommitted\swhen\sthere\sare\sopen\scursors,\sdowngrade\sshared-cache\swrite-locks\sto\sread-locks\sinstead\sof\srelinquishing\sall\slocks.\sFix\sfor\s#3942.\s(CVS\s6837)
-D 2009-07-02T17:21:58
+C Fix\sto\ssqlite3AuthRead\sto\saccommodate\s"new"\sor\s"old"\sreferences\sthat\sare\sused\sin\sa\scontext\swhere\sa\scolumn\sreference\smay\salso\sbe\sused\s(i.e.\s"SELECT\snew.<col>\sFROM\s<tble>").\sTicket\s#3944.\s(CVS\s6838)
+D 2009-07-02T18:40:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 95f41d957f56407aac6224041ca5b954042318d1
 F src/analyze.c e239496cfb5394ac8867f1c112905ddab8d01cd9
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
-F src/auth.c 98db07c2088455797678eb1031f42d4d94d18a71
+F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 97a3859d8585eb4fcb1e81a795cf4b3fdd82f30f
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
@@ -230,7 +230,7 @@ F test/attach.test 1d1be27b9e4c654f9bb14d011a4a87753c0b197a
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
-F test/auth.test b66c571142873cfbf9a141b807f78b93f5d11374
+F test/auth.test b2813abf4ae55f179fbd6db486ed8a6599de0b73
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 71bc5183c93ed5e2b8b3a71c218d777b55e4fffc
@@ -739,7 +739,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e3c055f167f895ae45858de9d9d8a264df2f36b6
-R acfaabd53533aef24e7f2e29a02278d4
+P 611e704fdf90a3d3932ca1cbab4be7e282bf1ddf
+R 84c71a1f5f147b569b218585dac737d6
 U danielk1977
-Z 764555e312eb1c1b4aebbcabfc132eb3
+Z e55e2e4c64cede8d5c20d6e857662305
