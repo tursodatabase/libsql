@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.646 2009/06/29 06:00:37 danielk1977 Exp $
+** $Id: btree.c,v 1.647 2009/07/02 05:23:26 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -769,6 +769,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 #else /* if defined SQLITE_OMIT_AUTOVACUUM */
   #define ptrmapPut(w,x,y,z) SQLITE_OK
   #define ptrmapGet(w,x,y,z) SQLITE_OK
+  #define ptrmapPutOvflPtr(x, y) SQLITE_OK
 #endif
 
 /*
