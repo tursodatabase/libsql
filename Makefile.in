@@ -497,9 +497,9 @@ sqlite3.c:	.target_source $(TOP)/tool/mksqlite3c.tcl
 
 # Rules to build the LEMON compiler generator
 #
-lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/tool/lempar.c
+lemon$(BEXE):	$(TOP)/tool/lemon.c $(TOP)/src/lempar.c
 	$(BCC) -o $@ $(TOP)/tool/lemon.c
-	cp $(TOP)/tool/lempar.c .
+	cp $(TOP)/src/lempar.c .
 
 
 # Rule to build the amalgamation
