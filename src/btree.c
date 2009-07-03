@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.649 2009/07/02 17:21:58 danielk1977 Exp $
+** $Id: btree.c,v 1.650 2009/07/03 16:25:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -202,6 +202,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
   assert( p->db!=0 );
+  assert( !(p->db->flags&SQLITE_ReadUncommitted)||eLock==WRITE_LOCK||iTab==1 );
   
   /* If requesting a write-lock, then the Btree must have an open write
   ** transaction on this file. And, obviously, for this to be so there 
@@ -223,47 +224,25 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
     return SQLITE_LOCKED_SHAREDCACHE;
   }
 
-  /* This (along with setSharedCacheTableLock()) is where
-  ** the ReadUncommitted flag is dealt with.
-  ** If the caller is querying for a read-lock on any table
-  ** other than the sqlite_master table (table 1) and if the ReadUncommitted
-  ** flag is set, then the lock granted even if there are write-locks
-  ** on the table. If a write-lock is requested, the ReadUncommitted flag
-  ** is not considered.
-  **
-  ** In function setSharedCacheTableLock(), if a read-lock is demanded and the 
-  ** ReadUncommitted flag is set, no entry is added to the locks list 
-  ** (BtShared.pLock).
-  **
-  ** To summarize: If the ReadUncommitted flag is set, then read cursors
-  ** on non-schema tables do not create or respect table locks. The locking
-  ** procedure for a write-cursor does not change.
-  */
-  if( 
-    0==(p->db->flags&SQLITE_ReadUncommitted) || 
-    eLock==WRITE_LOCK ||
-    iTab==MASTER_ROOT
-  ){
-    for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
-      /* The condition (pIter->eLock!=eLock) in the following if(...) 
-      ** statement is a simplification of:
-      **
-      **   (eLock==WRITE_LOCK || pIter->eLock==WRITE_LOCK)
-      **
-      ** since we know that if eLock==WRITE_LOCK, then no other connection
-      ** may hold a WRITE_LOCK on any table in this file (since there can
-      ** only be a single writer).
-      */
-      assert( pIter->eLock==READ_LOCK || pIter->eLock==WRITE_LOCK );
-      assert( eLock==READ_LOCK || pIter->pBtree==p || pIter->eLock==READ_LOCK);
-      if( pIter->pBtree!=p && pIter->iTable==iTab && pIter->eLock!=eLock ){
-        sqlite3ConnectionBlocked(p->db, pIter->pBtree->db);
-        if( eLock==WRITE_LOCK ){
-          assert( p==pBt->pWriter );
-          pBt->isPending = 1;
-        }
-        return SQLITE_LOCKED_SHAREDCACHE;
+  for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
+    /* The condition (pIter->eLock!=eLock) in the following if(...) 
+    ** statement is a simplification of:
+    **
+    **   (eLock==WRITE_LOCK || pIter->eLock==WRITE_LOCK)
+    **
+    ** since we know that if eLock==WRITE_LOCK, then no other connection
+    ** may hold a WRITE_LOCK on any table in this file (since there can
+    ** only be a single writer).
+    */
+    assert( pIter->eLock==READ_LOCK || pIter->eLock==WRITE_LOCK );
+    assert( eLock==READ_LOCK || pIter->pBtree==p || pIter->eLock==READ_LOCK);
+    if( pIter->pBtree!=p && pIter->iTable==iTab && pIter->eLock!=eLock ){
+      sqlite3ConnectionBlocked(p->db, pIter->pBtree->db);
+      if( eLock==WRITE_LOCK ){
+        assert( p==pBt->pWriter );
+        pBt->isPending = 1;
       }
+      return SQLITE_LOCKED_SHAREDCACHE;
     }
   }
   return SQLITE_OK;
@@ -288,26 +267,18 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   assert( eLock==READ_LOCK || eLock==WRITE_LOCK );
   assert( p->db!=0 );
 
+  /* A connection with the read-uncommitted flag set will never try to
+  ** obtain a read-lock using this function. The only read-lock obtained
+  ** by a connection in read-uncommitted mode is on the sqlite_master 
+  ** table, and that lock is obtained in BtreeBeginTrans().  */
+  assert( 0==(p->db->flags&SQLITE_ReadUncommitted) || eLock==WRITE_LOCK );
+
   /* This is a no-op if the shared-cache is not enabled */
   if( !p->sharable ){
     return SQLITE_OK;
   }
 
   assert( SQLITE_OK==querySharedCacheTableLock(p, iTable, eLock) );
-
-  /* If the read-uncommitted flag is set and a read-lock is requested on
-  ** a non-schema table, then the lock is always granted.  Return early
-  ** without adding an entry to the BtShared.pLock list. See
-  ** comment in function querySharedCacheTableLock() for more info
-  ** on handling the ReadUncommitted flag.
-  */
-  if( 
-    (p->db->flags&SQLITE_ReadUncommitted) && 
-    (eLock==READ_LOCK) &&
-    iTable!=MASTER_ROOT
-  ){
-    return SQLITE_OK;
-  }
 
   /* First search the list for an existing lock on this table. */
   for(pIter=pBt->pLock; pIter; pIter=pIter->pNext){
@@ -395,6 +366,9 @@ static void clearAllSharedCacheTableLocks(Btree *p){
   }
 }
 
+/*
+** This function changes all write-locks held by connection p to read-locks.
+*/
 static void downgradeAllSharedCacheTableLocks(Btree *p){
   BtShared *pBt = p->pBt;
   if( pBt->pWriter==p ){
@@ -7032,7 +7006,7 @@ void sqlite3BtreeGetMeta(Btree *p, int idx, u32 *pMeta){
 
   sqlite3BtreeEnter(p);
   assert( p->inTrans>TRANS_NONE );
-  assert( SQLITE_OK==querySharedCacheTableLock(p, 1, READ_LOCK) );
+  assert( SQLITE_OK==querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK) );
   assert( pBt->pPage1 );
   assert( idx>=0 && idx<=15 );
 
