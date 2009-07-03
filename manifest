@@ -1,5 +1,5 @@
-C Test\sthe\sresult\sof\spthread_create()\sand\sdo\snot\scall\spthread_join()\sif\sthe\nthread\screation\sfailed.\s\sTicket\s#3933.\s(CVS\s6839)
-D 2009-07-03T12:57:58
+C Make\sexplicit\sthe\srestrictions\son\sUPDATE,\sDELETE,\sand\sINSERT\sstatement\ssyntax\nwithin\striggers.\s\sTicket\s#3947.\s(CVS\s6840)
+D 2009-07-03T15:37:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +148,7 @@ F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c 04fdbede529dc9f933637301d789dc7354df6e49
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
-F src/parse.y c48ce2025d848bbd1995f811e74dced8ab30abe6
+F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 97e7e8e6e34026fb43b47d08532b0c02e959c26c
@@ -162,7 +162,7 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in ccc67f14d5661240d05eadb8ab308aa637b0630c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 7f6ab3d1c8aaedc64dc046dc413d9bbe187adf00
+F src/sqliteInt.h 8460c998fff4834f875c32233a2d63004163cee9
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -663,7 +663,7 @@ F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
-F test/trigger1.test 53342dfd582155a599518f1918fdc997e9413177
+F test/trigger1.test 4ecf469e6f46610e0864f52b29d0ea162a2767c1
 F test/trigger2.test 53cf2209f68eb5bbb0ea0a07d694007fa702f1ed
 F test/trigger3.test 501b8489eb6b9cb5b005f60b071583c01a3c3041
 F test/trigger4.test 8e90ee98cba940cd5f96493f82e55083806ab8a0
@@ -739,7 +739,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 45fd5419a7cde29eb6ab5d98141bd642af0d78fb
-R 091f332adcee32735e6b502032b7718f
+P 304c5110ad958b2cc1ddff30e68c8791109128b5
+R 23c00185520dd16e8ecfdeb38c15386d
 U drh
-Z 92c87878b82808eaaf54bc37c5295c2b
+Z eccd19ba4bfa8e991ddfacf0b5d84154

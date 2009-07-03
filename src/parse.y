@@ -14,7 +14,7 @@
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
 **
-** @(#) $Id: parse.y,v 1.284 2009/07/01 14:56:40 danielk1977 Exp $
+** @(#) $Id: parse.y,v 1.285 2009/07/03 15:37:28 drh Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -1179,22 +1179,54 @@ trigger_cmd_list(A) ::= trigger_cmd(X) SEMI. {
   A = X;
 }
 
+// Disallow qualified table names on INSERT, UPDATE, and DELETE statements
+// within a trigger.  The table to INSERT, UPDATE, or DELETE is always in 
+// the same database as the table that the trigger fires on.
+//
+%type trnm {Token}
+trnm(A) ::= nm(X).   {A = X;}
+trnm(A) ::= nm DOT nm(X). {
+  A = X;
+  sqlite3ErrorMsg(pParse, 
+        "qualified table names are not allowed on INSERT, UPDATE, and DELETE "
+        "statements within triggers");
+}
+
+// Disallow the INDEX BY and NOT INDEXED clauses on UPDATE and DELETE
+// statements within triggers.  We make a specific error message for this
+// since it is an exception to the default grammar rules.
+//
+tridxby ::= .
+tridxby ::= INDEXED BY nm. {
+  sqlite3ErrorMsg(pParse,
+        "the INDEXED BY clause is not allowed on UPDATE or DELETE statements "
+        "within triggers");
+}
+tridxby ::= NOT INDEXED. {
+  sqlite3ErrorMsg(pParse,
+        "the NOT INDEXED clause is not allowed on UPDATE or DELETE statements "
+        "within triggers");
+}
+
+
+
 %type trigger_cmd {TriggerStep*}
 %destructor trigger_cmd {sqlite3DeleteTriggerStep(pParse->db, $$);}
 // UPDATE 
-trigger_cmd(A) ::= UPDATE orconf(R) nm(X) SET setlist(Y) where_opt(Z).  
-               { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
+trigger_cmd(A) ::=
+   UPDATE orconf(R) trnm(X) tridxby SET setlist(Y) where_opt(Z).  
+   { A = sqlite3TriggerUpdateStep(pParse->db, &X, Y, Z, R); }
 
 // INSERT
-trigger_cmd(A) ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) 
-                   VALUES LP itemlist(Y) RP.  
-               {A = sqlite3TriggerInsertStep(pParse->db, &X, F, Y, 0, R);}
+trigger_cmd(A) ::=
+   insert_cmd(R) INTO trnm(X) inscollist_opt(F) VALUES LP itemlist(Y) RP.  
+   {A = sqlite3TriggerInsertStep(pParse->db, &X, F, Y, 0, R);}
 
-trigger_cmd(A) ::= insert_cmd(R) INTO nm(X) inscollist_opt(F) select(S).
+trigger_cmd(A) ::= insert_cmd(R) INTO trnm(X) inscollist_opt(F) select(S).
                {A = sqlite3TriggerInsertStep(pParse->db, &X, F, 0, S, R);}
 
 // DELETE
-trigger_cmd(A) ::= DELETE FROM nm(X) where_opt(Y).
+trigger_cmd(A) ::= DELETE FROM trnm(X) tridxby where_opt(Y).
                {A = sqlite3TriggerDeleteStep(pParse->db, &X, Y);}
 
 // SELECT

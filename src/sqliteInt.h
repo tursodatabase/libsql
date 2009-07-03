@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.890 2009/06/26 15:14:55 drh Exp $
+** @(#) $Id: sqliteInt.h,v 1.891 2009/07/03 15:37:28 drh Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2141,17 +2141,14 @@ struct Trigger {
  * 
  */
 struct TriggerStep {
-  int op;              /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
-  int orconf;          /* OE_Rollback etc. */
+  u8 op;               /* One of TK_DELETE, TK_UPDATE, TK_INSERT, TK_SELECT */
+  u8 orconf;           /* OE_Rollback etc. */
   Trigger *pTrig;      /* The trigger that this step is a part of */
-
-  Select *pSelect;     /* Valid for SELECT and sometimes 
-                          INSERT steps (when pExprList == 0) */
-  Token target;        /* Target table for DELETE, UPDATE, INSERT.  Quoted */
-  Expr *pWhere;        /* Valid for DELETE, UPDATE steps */
-  ExprList *pExprList; /* Valid for UPDATE statements and sometimes 
-                           INSERT steps (when pSelect == 0)         */
-  IdList *pIdList;     /* Valid for INSERT statements only */
+  Select *pSelect;     /* SELECT statment or RHS of INSERT INTO .. SELECT ... */
+  Token target;        /* Target table for DELETE, UPDATE, INSERT */
+  Expr *pWhere;        /* The WHERE clause for DELETE or UPDATE steps */
+  ExprList *pExprList; /* SET clause for UPDATE.  VALUES clause for INSERT */
+  IdList *pIdList;     /* Column names for INSERT */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
 };
