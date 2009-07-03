@@ -1,5 +1,5 @@
-C Fix\sto\ssqlite3AuthRead\sto\saccommodate\s"new"\sor\s"old"\sreferences\sthat\sare\sused\sin\sa\scontext\swhere\sa\scolumn\sreference\smay\salso\sbe\sused\s(i.e.\s"SELECT\snew.<col>\sFROM\s<tble>").\sTicket\s#3944.\s(CVS\s6838)
-D 2009-07-02T18:40:35
+C Test\sthe\sresult\sof\spthread_create()\sand\sdo\snot\scall\spthread_join()\sif\sthe\nthread\screation\sfailed.\s\sTicket\s#3933.\s(CVS\s6839)
+D 2009-07-03T12:57:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -144,7 +144,7 @@ F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c b64129c296e480c2827606e206ea51bb30904626
+F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c 04fdbede529dc9f933637301d789dc7354df6e49
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
@@ -739,7 +739,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 611e704fdf90a3d3932ca1cbab4be7e282bf1ddf
-R 84c71a1f5f147b569b218585dac737d6
-U danielk1977
-Z e55e2e4c64cede8d5c20d6e857662305
+P 45fd5419a7cde29eb6ab5d98141bd642af0d78fb
+R 091f332adcee32735e6b502032b7718f
+U drh
+Z 92c87878b82808eaaf54bc37c5295c2b

@@ -43,7 +43,7 @@
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
 **
-** $Id: os_unix.c,v 1.253 2009/06/17 13:09:39 drh Exp $
+** $Id: os_unix.c,v 1.254 2009/07/03 12:57:58 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -839,13 +839,14 @@ static void testThreadLockingBehavior(int fd_orig){
   d.fd = fd;
   d.lock = l;
   d.lock.l_type = F_WRLCK;
-  pthread_create(&t, 0, threadLockingTest, &d);
-  pthread_join(t, 0);
+  if( pthread_create(&t, 0, threadLockingTest, &d)==0 ){
+    pthread_join(t, 0);
+  }
   close(fd);
   if( d.result!=0 ) return;
   threadsOverrideEachOthersLocks = (d.lock.l_type==F_UNLCK);
 }
-#endif /* SQLITE_THERADSAFE && defined(__linux__) */
+#endif /* SQLITE_THREADSAFE && defined(__linux__) */
 
 /*
 ** Release a unixLockInfo structure previously allocated by findLockInfo().
