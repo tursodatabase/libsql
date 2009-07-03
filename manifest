@@ -1,5 +1,5 @@
-C Remove\sunused\scode\s(that\swas\scommented\sout)\sfrom\sprepare.c.\s\sRemove\san\nincorrect\sNEVER()\smacro.\s\sFix\sthe\scomment\son\sschemaIsValid()\sto\scorrectly\ndescribe\sits\sreturn\sbehavior.\s(CVS\s6845)
-D 2009-07-03T19:19:50
+C Remove\stwo\sunused\sfields\sfrom\sthe\sParse\sstructure.\s\sThe\sTCL\sinterface\snow\nremoves\sleading\swhitespace\sfrom\sSQL\sstatements\sbefore\sparsing\sthem.\s(CVS\s6846)
+D 2009-07-03T22:54:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,11 +163,11 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in ccc67f14d5661240d05eadb8ab308aa637b0630c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 8460c998fff4834f875c32233a2d63004163cee9
+F src/sqliteInt.h 336d10317b991fda9019d8dcc6f67e936fc55ae9
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c d3195e0738c101a155404ecdb1cd9532a2fd34f2
+F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
 F src/test2.c d73e4a490349245fb196b990b80684513e0ceaee
 F src/test3.c a06da9e41583fe8e4eb8c4dea323bb72bdbaaa1e
@@ -198,7 +198,7 @@ F src/test_server.c f0a403b5f699c09bd2b1236b6f69830fd6221f6b
 F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
-F src/tokenize.c eadd396fa81e8031d4b4a65eefd661e9c675167f
+F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c a1bbe774bce495d62dce3df3f42a5f04c1de173a
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e9849292ab741f4c86203b2629dbe116f9b527c8
-R 587ce2327c9513e978edc633162d7539
+P 90deb65835febc908f21bca89ef497d1048afe0a
+R 430f40c3b49dbd6d5c53832ea096a991
 U drh
-Z bd714fe85ba5b195da90521b32b83698
+Z 301b92e83560c1a5b1bd3c9e33371bc8

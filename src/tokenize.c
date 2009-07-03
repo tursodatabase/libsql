@@ -15,7 +15,7 @@
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
 **
-** $Id: tokenize.c,v 1.162 2009/06/23 20:28:54 drh Exp $
+** $Id: tokenize.c,v 1.163 2009/07/03 22:54:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -410,7 +410,7 @@ int sqlite3RunParser(Parse *pParse, const char *zSql, char **pzErrMsg){
     db->u1.isInterrupted = 0;
   }
   pParse->rc = SQLITE_OK;
-  pParse->zTail = pParse->zSql = zSql;
+  pParse->zTail = zSql;
   i = 0;
   assert( pzErrMsg!=0 );
   pEngine = sqlite3ParserAlloc((void*(*)(size_t))sqlite3Malloc);
