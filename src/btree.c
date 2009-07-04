@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.651 2009/07/04 15:41:03 danielk1977 Exp $
+** $Id: btree.c,v 1.652 2009/07/04 17:16:01 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3166,8 +3166,10 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
 
 /*
 ** Create a new cursor for the BTree whose root is on the page
-** iTable.  The act of acquiring a cursor gets a read lock on 
-** the database file.
+** iTable. If a read-only cursor is requested, it is assumed that
+** the caller already has at least a read-only transaction open
+** on the database already. If a write-cursor is requested, then
+** the caller is assumed to have an open write transaction.
 **
 ** If wrFlag==0, then the cursor can only be used for reading.
 ** If wrFlag==1, then the cursor can be used for reading or for
@@ -3201,9 +3203,8 @@ static int btreeCursor(
   struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
   BtCursor *pCur                         /* Space for new cursor */
 ){
-  int rc;
-  Pgno nPage;
-  BtShared *pBt = p->pBt;
+  int rc;                                /* Return code */
+  BtShared *pBt = p->pBt;                /* Shared b-tree handle */
 
   assert( sqlite3BtreeHoldsMutex(p) );
   assert( wrFlag==0 || wrFlag==1 );
@@ -3215,34 +3216,27 @@ static int btreeCursor(
   assert( hasSharedCacheTableLock(p, iTable, pKeyInfo!=0, wrFlag+1) );
   assert( wrFlag==0 || !hasReadConflicts(p, iTable) );
 
+  /* Assert that the caller has opened the required transaction. */
+  assert( p->inTrans>TRANS_NONE );
+  assert( wrFlag==0 || p->inTrans==TRANS_WRITE );
+  assert( pBt->pPage1 && pBt->pPage1->aData );
+
   if( NEVER(wrFlag && pBt->readOnly) ){
     return SQLITE_READONLY;
   }
+  if( iTable==1 && pagerPagecount(pBt)==0 ){
+    return SQLITE_EMPTY;
+  }
 
-  if( pBt->pPage1==0 ){
-    rc = lockBtreeWithRetry(p);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-  }
   pCur->pgnoRoot = (Pgno)iTable;
-  rc = sqlite3PagerPagecount(pBt->pPager, (int *)&nPage); 
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  if( iTable==1 && nPage==0 ){
-    rc = SQLITE_EMPTY;
-    goto create_cursor_exception;
-  }
   rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0]);
   if( rc!=SQLITE_OK ){
-    goto create_cursor_exception;
+    assert( pCur->apPage[0]==0 );
+    return rc;
   }
 
   /* Now that no other errors can occur, finish filling in the BtCursor
-  ** variables, link the cursor into the BtShared list and set *ppCur (the
-  ** output argument to this function).
-  */
+  ** variables and link the cursor into the BtShared list.  */
   pCur->pKeyInfo = pKeyInfo;
   pCur->pBtree = p;
   pCur->pBt = pBt;
@@ -3254,13 +3248,7 @@ static int btreeCursor(
   pBt->pCursor = pCur;
   pCur->eState = CURSOR_INVALID;
   pCur->cachedRowid = 0;
-
   return SQLITE_OK;
-
-create_cursor_exception:
-  releasePage(pCur->apPage[0]);
-  unlockBtreeIfUnused(pBt);
-  return rc;
 }
 int sqlite3BtreeCursor(
   Btree *p,                                   /* The btree */
