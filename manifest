@@ -1,5 +1,5 @@
-C Remove\stwo\sunused\sfields\sfrom\sthe\sParse\sstructure.\s\sThe\sTCL\sinterface\snow\nremoves\sleading\swhitespace\sfrom\sSQL\sstatements\sbefore\sparsing\sthem.\s(CVS\s6846)
-D 2009-07-03T22:54:37
+C Remove\sa\sredundant\sbranch\sfrom\sbtree.c.\s(CVS\s6847)
+D 2009-07-04T15:41:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 97a3859d8585eb4fcb1e81a795cf4b3fdd82f30f
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c b7f75130f8699903fe3b699d0591493dc26c4454
+F src/btree.c 464fbd75cfa198659088e424d5907aa025768628
 F src/btree.h 8cae6364735a5cb2d577ddb23fa6d0e655a4b931
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 90deb65835febc908f21bca89ef497d1048afe0a
-R 430f40c3b49dbd6d5c53832ea096a991
-U drh
-Z 301b92e83560c1a5b1bd3c9e33371bc8
+P 983cb6924b8a7d3057718b9228c0cb2fbe7f0dc4
+R 40c2a0bb68ce632cd8e5f2261811a36c
+U danielk1977
+Z b09eed1324988822c632e7993ab98935
