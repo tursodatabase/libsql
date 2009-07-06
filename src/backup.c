@@ -12,7 +12,7 @@
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
 **
-** $Id: backup.c,v 1.18 2009/07/02 07:47:33 danielk1977 Exp $
+** $Id: backup.c,v 1.19 2009/07/06 19:03:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -358,17 +358,18 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       }
     }
   
-    if( rc==SQLITE_DONE ){
+    /* Update the schema version field in the destination database. This
+    ** is to make sure that the schema-version really does change in
+    ** the case where the source and destination databases have the
+    ** same schema version.
+    */
+    if( rc==SQLITE_DONE 
+     && (rc = sqlite3BtreeUpdateMeta(p->pDest,1,p->iDestSchema+1))==SQLITE_OK
+    ){
       const int nSrcPagesize = sqlite3BtreeGetPageSize(p->pSrc);
       const int nDestPagesize = sqlite3BtreeGetPageSize(p->pDest);
       int nDestTruncate;
   
-      /* Update the schema version field in the destination database. This
-      ** is to make sure that the schema-version really does change in
-      ** the case where the source and destination databases have the
-      ** same schema version.
-      */
-      sqlite3BtreeUpdateMeta(p->pDest, 1, p->iDestSchema+1);
       if( p->pDestDb ){
         sqlite3ResetInternalSchema(p->pDestDb, 0);
       }
