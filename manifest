@@ -1,5 +1,5 @@
-C Simplifications\sand\scomment\scleanup\sin\svdbeaux.c.\s(CVS\s6849)
-D 2009-07-06T00:44:09
+C Make\sthe\ssqlite3BtreeMoveto\sfunction\sstatic,\ssince\sit\sis\sonly\sused\sfrom\swithin\sbtree.c.\sRemove\sunused\sfunction\slockBtreeWithRetry\sfrom\sbtree.c.\s(CVS\s6850)
+D 2009-07-06T18:56:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,8 +106,8 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 97a3859d8585eb4fcb1e81a795cf4b3fdd82f30f
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 1c12a097a14ea756696a8a0857e587a1fc5533de
-F src/btree.h 8cae6364735a5cb2d577ddb23fa6d0e655a4b931
+F src/btree.c 1a7caa2b0dfd76a7e28049e2333997e6f317c9f3
+F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
@@ -170,7 +170,7 @@ F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
 F src/test2.c d73e4a490349245fb196b990b80684513e0ceaee
-F src/test3.c a06da9e41583fe8e4eb8c4dea323bb72bdbaaa1e
+F src/test3.c ec1592b2660c0e0a353659fe3f7538fbbbce50ec
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P c76a366ed4dc63604ff695b3ee9c183e430a367e
-R ad4ffc2a251f0cb49d86125eb3a3f81a
-U drh
-Z 7f4c0366c55a62863a847bc059dca81a
+P 1636e7831a21d401a48aa74d884444a287f14f72
+R 7e38f383918ece6e29e3d7609123e090
+U danielk1977
+Z e5cf1d022d5f233619186bb620497925
