@@ -1,5 +1,5 @@
-C Remove\sunreachable\scode\sfrom\sfunction\sbtreeCursor()\sin\sbtree.c.\s(CVS\s6848)
-D 2009-07-04T17:16:01
+C Simplifications\sand\scomment\scleanup\sin\svdbeaux.c.\s(CVS\s6849)
+D 2009-07-06T00:44:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -208,7 +208,7 @@ F src/vdbe.c bdf25930bddbf57b18a0be7b1127b357306d2094
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 3773217a73f93fb292d264b3b1da98c179a0f2f0
+F src/vdbeaux.c f62c8c83e9f21e13df6acaace8851f1de17cadc0
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 00902f289521041712fb0293d0bf8688c7af8e48
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 133357d2f070ba303deddff59beead1ec8d10521
-R 59d54d3f3ef42572419a3b06be70cd73
-U danielk1977
-Z 270b59a313a8b2cb36f6d34f9f7ea02b
+P c76a366ed4dc63604ff695b3ee9c183e430a367e
+R ad4ffc2a251f0cb49d86125eb3a3f81a
+U drh
+Z 7f4c0366c55a62863a847bc059dca81a
