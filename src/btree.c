@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.656 2009/07/07 15:47:12 danielk1977 Exp $
+** $Id: btree.c,v 1.657 2009/07/07 17:38:39 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1005,7 +1005,6 @@ static int ptrmapPutOvflPtr(MemPage *pPage, u8 *pCell){
 static int defragmentPage(MemPage *pPage){
   int i;                     /* Loop counter */
   int pc;                    /* Address of a i-th cell */
-  int addr;                  /* Offset of first byte after cell pointer array */
   int hdr;                   /* Offset to the page header */
   int size;                  /* Size of a cell */
   int usableSize;            /* Number of usable bytes on a page */
@@ -1014,6 +1013,9 @@ static int defragmentPage(MemPage *pPage){
   int nCell;                 /* Number of cells on the page */
   unsigned char *data;       /* The page data */
   unsigned char *temp;       /* Temp area for cell content */
+  int iCellFirst;            /* First allowable cell index */
+  int iCellLast;             /* Last possible cell index */
+
 
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt!=0 );
@@ -1030,31 +1032,44 @@ static int defragmentPage(MemPage *pPage){
   cbrk = get2byte(&data[hdr+5]);
   memcpy(&temp[cbrk], &data[cbrk], usableSize - cbrk);
   cbrk = usableSize;
+  iCellFirst = cellOffset + 2*nCell;
+  iCellLast = usableSize - 4;
   for(i=0; i<nCell; i++){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
-    if( pc>=usableSize ){
+#if !defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
+    /* These conditions have already been verified in sqlite3BtreeInitPage()
+    ** if SQLITE_ENABLE_OVERSIZE_CELL_CHECK is defined 
+    */
+    if( pc<iCellFirst || pc>iCellLast ){
       return SQLITE_CORRUPT_BKPT;
     }
+#endif
+    assert( pc>=iCellFirst && pc<=iCellLast );
     size = cellSizePtr(pPage, &temp[pc]);
     cbrk -= size;
-    if( cbrk<cellOffset+2*nCell || pc+size>usableSize ){
+#if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
+    if( cbrk<iCellFirst ){
       return SQLITE_CORRUPT_BKPT;
     }
-    assert( cbrk+size<=usableSize && cbrk>=0 );
+#else
+    if( cbrk<iCellFirst || pc+size>usableSize ){
+      return SQLITE_CORRUPT_BKPT;
+    }
+#endif
+    assert( cbrk+size<=usableSize && cbrk>iCellFirst );
     memcpy(&data[cbrk], &temp[pc], size);
     put2byte(pAddr, cbrk);
   }
-  assert( cbrk>=cellOffset+2*nCell );
+  assert( cbrk>=iCellFirst );
   put2byte(&data[hdr+5], cbrk);
   data[hdr+1] = 0;
   data[hdr+2] = 0;
   data[hdr+7] = 0;
-  addr = cellOffset+2*nCell;
-  memset(&data[addr], 0, cbrk-addr);
+  memset(&data[iCellFirst], 0, cbrk-iCellFirst);
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  if( cbrk-addr!=pPage->nFree ){
+  if( cbrk-iCellFirst!=pPage->nFree ){
     return SQLITE_CORRUPT_BKPT;
   }
   return SQLITE_OK;
