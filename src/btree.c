@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.654 2009/07/07 02:44:07 drh Exp $
+** $Id: btree.c,v 1.655 2009/07/07 11:39:59 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -740,7 +740,8 @@ static int ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent){
   }
   offset = PTRMAP_PTROFFSET(iPtrmap, key);
   if( offset<0 ){
-    return SQLITE_CORRUPT_BKPT;
+    rc = SQLITE_CORRUPT_BKPT;
+    goto ptrmap_exit;
   }
   pPtrmap = (u8 *)sqlite3PagerGetData(pDbPage);
 
@@ -753,6 +754,7 @@ static int ptrmapPut(BtShared *pBt, Pgno key, u8 eType, Pgno parent){
     }
   }
 
+ptrmap_exit:
   sqlite3PagerUnref(pDbPage);
   return rc;
 }
