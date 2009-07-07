@@ -1,5 +1,5 @@
-C Fix\sa\sreference\scount\sproblem\sfollowing\sdatabase\scorruption\sdetection\sin\nthe\sptrmapPut()\sroutine\sof\sbtree.c.\s(CVS\s6854)
-D 2009-07-07T11:39:59
+C If\san\serror\soccurs\sin\sPagerBegin(),\scall\spager_end_transaction()\sto\sreset\sthe\sinternal\sstate\sof\sthe\spager\sobject.\s(CVS\s6855)
+D 2009-07-07T13:56:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 18b9bfe88c21873f7bc10600685c74dd23b1ed30
+F src/pager.c 164c5b0160203d7fd26ad27bd168dff90f0f122a
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P fc2a40a9db23285da16f40f5131613907fb80f02
-R 067e52bffc46b1e850298e3bb4524f93
-U drh
-Z fdbf1e48a2965ae7334046f98d17d69c
+P ec1e27e33b89e809a03e4140b351f6c8674c0233
+R e28c07bc21fb6fc8bda63e0e4a6adcc7
+U danielk1977
+Z 890ee77caf3f4dd632bdc59421b0f5cb

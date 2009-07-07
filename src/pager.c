@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.604 2009/07/06 21:54:41 drh Exp $
+** @(#) $Id: pager.c,v 1.605 2009/07/07 13:56:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4166,6 +4166,15 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
 
   PAGERTRACE(("TRANSACTION %d\n", PAGERID(pPager)));
   assert( !isOpen(pPager->jfd) || pPager->journalOff>0 || rc!=SQLITE_OK );
+  if( rc!=SQLITE_OK ){
+    assert( !pPager->dbModified );
+    /* Ignore any IO error that occurs within pager_end_transaction(). The
+    ** purpose of this call is to reset the internal state of the pager
+    ** sub-system. It doesn't matter if the journal-file is not properly
+    ** finalized at this point (since it is not a valid journal file anyway).
+    */
+    pager_end_transaction(pPager, 0);
+  }
   return rc;
 }
 
