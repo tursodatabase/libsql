@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.869 2009/07/03 16:25:07 danielk1977 Exp $
+** $Id: vdbe.c,v 1.870 2009/07/07 15:47:12 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2913,7 +2913,6 @@ case OP_OpenWrite: {
   Btree *pX;
   VdbeCursor *pCur;
   Db *pDb;
-  int flags;
 
   nField = 0;
   pKeyInfo = 0;
@@ -2961,45 +2960,22 @@ case OP_OpenWrite: {
   rc = sqlite3BtreeCursor(pX, p2, wrFlag, pKeyInfo, pCur->pCursor);
   pCur->pKeyInfo = pKeyInfo;
 
-  switch( rc ){
-    case SQLITE_OK: {
-      flags = sqlite3BtreeFlags(pCur->pCursor);
-
-      /* Sanity checking.  Only the lower four bits of the flags byte should
-      ** be used.  Bit 3 (mask 0x08) is unpredictable.  The lower 3 bits
-      ** (mask 0x07) should be either 5 (intkey+leafdata for tables) or
-      ** 2 (zerodata for indices).  If these conditions are not met it can
-      ** only mean that we are dealing with a corrupt database file.
-      ** Note:  All of the above is checked already in sqlite3BtreeCursor().
-      */
-      assert( (flags & 0xf0)==0 );
-      assert( (flags & 0x07)==5 || (flags & 0x07)==2 );
-
-      pCur->isTable = (flags & BTREE_INTKEY)!=0 ?1:0;
-      pCur->isIndex = (flags & BTREE_ZERODATA)!=0 ?1:0;
-      /* If P4==0 it means we are expected to open a table.  If P4!=0 then
-      ** we expect to be opening an index.  If this is not what happened,
-      ** then the database is corrupt
-      */
-      if( (pCur->isTable && pOp->p4type==P4_KEYINFO)
-       || (pCur->isIndex && pOp->p4type!=P4_KEYINFO) ){
-        rc = SQLITE_CORRUPT_BKPT;
-        goto abort_due_to_error;
-      }
-      break;
-    }
-    case SQLITE_EMPTY: {
-      pCur->isTable = pOp->p4type!=P4_KEYINFO;
-      pCur->isIndex = !pCur->isTable;
-      pCur->pCursor = 0;
-      rc = SQLITE_OK;
-      break;
-    }
-    default: {
-      assert( rc!=SQLITE_BUSY );  /* Busy conditions detected earlier */
-      goto abort_due_to_error;
-    }
+  /* Since it performs no memory allocation or IO, the only values that
+  ** sqlite3BtreeCursor() may return are SQLITE_EMPTY and SQLITE_OK. 
+  ** SQLITE_EMPTY is only returned when attempting to open the table
+  ** rooted at page 1 of a zero-byte database.  */
+  assert( rc==SQLITE_EMPTY || rc==SQLITE_OK );
+  if( rc==SQLITE_EMPTY ){
+    pCur->pCursor = 0;
+    rc = SQLITE_OK;
   }
+
+  /* Set the VdbeCursor.isTable and isIndex variables. Previous versions of
+  ** SQLite used to check if the root-page flags were sane at this point
+  ** and report database corruption if they were not, but this check has
+  ** since moved into the btree layer.  */  
+  pCur->isTable = pOp->p4type!=P4_KEYINFO;
+  pCur->isIndex = !pCur->isTable;
   break;
 }
 

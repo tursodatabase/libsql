@@ -1,5 +1,5 @@
-C If\san\serror\soccurs\sin\sPagerBegin(),\scall\spager_end_transaction()\sto\sreset\sthe\sinternal\sstate\sof\sthe\spager\sobject.\s(CVS\s6855)
-D 2009-07-07T13:56:24
+C Do\snot\sload\sthe\sroot-page\sof\sa\sb-tree\stable/index\swhen\sopening\sa\scursor.\sInstead,\sallow\sit\sto\sbe\sloaded\swhen\sthe\scursor\sis\sfirst\sused\s(in\sfunction\smoveToRoot()).\sAlso\smove\sthe\sroot-page\sflags\ssanity\schecks\sthat\swere\sa\spart\sof\sthe\sOP_OpenRead/OpenWrite\sopcodes\sinto\sthe\smoveToRoot()\sfunction.\s(CVS\s6856)
+D 2009-07-07T15:47:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 8f4c2ebdc9f0e0139f5878fac8ac96b12528b014
+F src/btree.c 0cc9c503015fa4970b41833c1a253410ad055ce5
 F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -204,7 +204,7 @@ F src/update.c a1bbe774bce495d62dce3df3f42a5f04c1de173a
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c bdf25930bddbf57b18a0be7b1127b357306d2094
+F src/vdbe.c 4f702761ce1829192e191de461671e214a778386
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P ec1e27e33b89e809a03e4140b351f6c8674c0233
-R e28c07bc21fb6fc8bda63e0e4a6adcc7
+P ea7ed16628da29cf4a127a25cbac8ae553e2ac1f
+R 6a1dd7b7ae30a801861a4c4d841bbfb1
 U danielk1977
-Z 890ee77caf3f4dd632bdc59421b0f5cb
+Z 0d744ad2ad4529f2f9b6cce7c155c49a
