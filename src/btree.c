@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.653 2009/07/06 18:56:13 danielk1977 Exp $
+** $Id: btree.c,v 1.654 2009/07/07 02:44:07 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3496,8 +3496,8 @@ int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
 ** *ppPage is set to zero.
 */
 static int getOverflowPage(
-  BtShared *pBt, 
-  Pgno ovfl,                   /* Overflow page */
+  BtShared *pBt,               /* The database file */
+  Pgno ovfl,                   /* Current overflow page number */
   MemPage **ppPage,            /* OUT: MemPage handle (may be NULL) */
   Pgno *pPgnoNext              /* OUT: Next overflow page number */
 ){
