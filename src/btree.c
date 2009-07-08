@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.664 2009/07/08 18:45:38 danielk1977 Exp $
+** $Id: btree.c,v 1.665 2009/07/08 18:50:55 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7047,7 +7047,7 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   return rc;
 }
 
-#ifndef SQLITE_TEST
+#ifdef SQLITE_TEST
 /*
 ** Return the flag byte at the beginning of the page that the cursor
 ** is currently pointing to.
