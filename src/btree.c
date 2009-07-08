@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.662 2009/07/08 16:54:40 drh Exp $
+** $Id: btree.c,v 1.663 2009/07/08 18:12:49 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1549,6 +1549,7 @@ static int getAndInitPage(
     rc = SQLITE_OK;
   }else{
     /* Page not in cache.  Acquire it. */
+    testcase( pgno==pagerPagecount(pBt) );
     if( pgno>pagerPagecount(pBt) ){
       return SQLITE_CORRUPT_BKPT; 
     }
@@ -2545,10 +2546,9 @@ set_child_ptrmaps_out:
 }
 
 /*
-** Somewhere on pPage, which is guaranteed to be a btree page, not an overflow
-** page, is a pointer to page iFrom. Modify this pointer so that it points to
-** iTo. Parameter eType describes the type of pointer to be modified, as 
-** follows:
+** Somewhere on pPage is a pointer to page iFrom.  Modify this pointer so
+** that it points to iTo. Parameter eType describes the type of pointer to
+** be modified, as  follows:
 **
 ** PTRMAP_BTREE:     pPage is a btree-page. The pointer points at a child 
 **                   page of pPage.
