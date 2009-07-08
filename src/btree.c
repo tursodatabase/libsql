@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.663 2009/07/08 18:12:49 drh Exp $
+** $Id: btree.c,v 1.664 2009/07/08 18:45:38 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7750,7 +7750,9 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   **   (d) there are no conflicting read-locks, and
   **   (e) the cursor points at a valid row of an intKey table.
   */
-  assert( pCsr->wrFlag );
+  if( !pCsr->wrFlag ){
+    return SQLITE_READONLY;
+  }
   assert( !pCsr->pBt->readOnly && pCsr->pBt->inTransaction==TRANS_WRITE );
   assert( hasSharedCacheTableLock(pCsr->pBtree, pCsr->pgnoRoot, 0, 2) );
   assert( !hasReadConflicts(pCsr->pBtree, pCsr->pgnoRoot) );
