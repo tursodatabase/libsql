@@ -1,5 +1,5 @@
-C Improvements\sto\scorrupt\sdatabase\sdetection\sin\sdefragmentPage().\s(CVS\s6857)
-D 2009-07-07T17:38:39
+C Simplifications\sto\ssqlite3BtreeInsert()\sand\sallocateSpace().\s\sAdded\smany\ntestcase()\smacros\sto\sverify\sboundary\sconditions\sin\sbtree.c.\s(CVS\s6858)
+D 2009-07-08T01:49:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 48ac9ac6058c76aefa47aabfc278917c13ae7038
+F src/btree.c e82f52ac28524492d64edd46ba7528880b00a3ca
 F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 06dcfe72a6ff3f63639eeb00ec5b5022d10fc55b
-R f9eea4246c9dbe036c2c64b098b9ef06
+P 87bbc8d6b68c089c8211c35c11c2f6ac4e46271c
+R 4486c3972991f8e77129a873f568657c
 U drh
-Z 144c60a0693475b4f7f9dc98f6a34efa
+Z e49326b8b8c075cd31ef436d9299eb4d

@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.657 2009/07/07 17:38:39 drh Exp $
+** $Id: btree.c,v 1.658 2009/07/08 01:49:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -810,7 +810,7 @@ static int ptrmapGet(BtShared *pBt, Pgno key, u8 *pEType, Pgno *pPgno){
 
 /*
 ** This a more complex version of findCell() that works for
-** pages that do contain overflow cells.  See insert
+** pages that do contain overflow cells.
 */
 static u8 *findOverflowCell(MemPage *pPage, int iCell){
   int i;
@@ -868,6 +868,8 @@ void sqlite3BtreeParseCellPtr(
   }
   pInfo->nPayload = nPayload;
   pInfo->nHeader = n;
+  testcase( nPayload==pPage->maxLocal );
+  testcase( nPayload==pPage->maxLocal+1 );
   if( likely(nPayload<=pPage->maxLocal) ){
     /* This is the (easy) common case where the entire payload fits
     ** on the local page.  No overflow is required.
@@ -897,6 +899,8 @@ void sqlite3BtreeParseCellPtr(
     minLocal = pPage->minLocal;
     maxLocal = pPage->maxLocal;
     surplus = minLocal + (nPayload - minLocal)%(pPage->pBt->usableSize - 4);
+    testcase( surplus==maxLocal );
+    testcase( surplus==maxLocal+1 );
     if( surplus <= maxLocal ){
       pInfo->nLocal = (u16)surplus;
     }else{
@@ -952,9 +956,13 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
     pIter += getVarint32(pIter, nSize);
   }
 
+  testcase( nSize==pPage->maxLocal );
+  testcase( nSize==pPage->maxLocal+1 );
   if( nSize>pPage->maxLocal ){
     int minLocal = pPage->minLocal;
     nSize = minLocal + (nSize - minLocal) % (pPage->pBt->usableSize - 4);
+    testcase( nSize==pPage->maxLocal );
+    testcase( nSize==pPage->maxLocal+1 );
     if( nSize>pPage->maxLocal ){
       nSize = minLocal;
     }
@@ -1038,6 +1046,8 @@ static int defragmentPage(MemPage *pPage){
     u8 *pAddr;     /* The i-th cell pointer */
     pAddr = &data[cellOffset + i*2];
     pc = get2byte(pAddr);
+    testcase( pc==iCellFirst );
+    testcase( pc==iCellLast );
 #if !defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
     /* These conditions have already been verified in sqlite3BtreeInitPage()
     ** if SQLITE_ENABLE_OVERSIZE_CELL_CHECK is defined 
@@ -1058,7 +1068,10 @@ static int defragmentPage(MemPage *pPage){
       return SQLITE_CORRUPT_BKPT;
     }
 #endif
-    assert( cbrk+size<=usableSize && cbrk>iCellFirst );
+    assert( cbrk+size<=usableSize && cbrk>=iCellFirst );
+    testcase( cbrk+size==usableSize );
+    testcase( cbrk==iCellFirst );
+    testcase( pc+size==usableSize );
     memcpy(&data[cbrk], &temp[pc], size);
     put2byte(pAddr, cbrk);
   }
@@ -1077,24 +1090,24 @@ static int defragmentPage(MemPage *pPage){
 
 /*
 ** Allocate nByte bytes of space from within the B-Tree page passed
-** as the first argument. Return the index into pPage->aData[] of the 
-** first byte of allocated space. 
+** as the first argument. Write into *pIdx the index into pPage->aData[]
+** of the first byte of allocated space. Return either SQLITE_OK or
+** an error code (usually SQLITE_CORRUPT).
 **
-** The caller guarantees that the space between the end of the cell-offset 
-** array and the start of the cell-content area is at least nByte bytes
-** in size. So this routine can never fail.
-**
-** If there are already 60 or more bytes of fragments within the page,
-** the page is defragmented before returning. If this were not done there
-** is a chance that the number of fragmented bytes could eventually 
-** overflow the single-byte field of the page-header in which this value
-** is stored.
+** The caller guarantees that there is sufficient space to make the
+** allocation.  This routine might need to defragment in order to bring
+** all the space together, however.  This routine will avoid using
+** the first two bytes past the cell pointer area since presumably this
+** allocation is being made in order to insert a new cell, so we will
+** also end up needing a new cell pointer.
 */
-static int allocateSpace(MemPage *pPage, int nByte){
+static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   const int hdr = pPage->hdrOffset;    /* Local cache of pPage->hdrOffset */
   u8 * const data = pPage->aData;      /* Local cache of pPage->aData */
   int nFrag;                           /* Number of fragmented bytes on pPage */
-  int top;
+  int top;                             /* First byte of cell content area */
+  int gap;        /* First byte of gap between cell pointers and cell content */
+  int rc;         /* Integer return code */
   
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt );
@@ -1103,17 +1116,21 @@ static int allocateSpace(MemPage *pPage, int nByte){
   assert( pPage->nFree>=nByte );
   assert( pPage->nOverflow==0 );
 
-  /* Assert that the space between the cell-offset array and the 
-  ** cell-content area is greater than nByte bytes.
-  */
-  assert( nByte <= (
-      get2byte(&data[hdr+5])-(hdr+8+(pPage->leaf?0:4)+2*get2byte(&data[hdr+3]))
-  ));
-
   nFrag = data[hdr+7];
+  assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
+  gap = pPage->cellOffset + 2*pPage->nCell;
+  top = get2byte(&data[hdr+5]);
+  assert( gap<=top );
+  testcase( gap+2==top );
+  testcase( gap+1==top );
+  testcase( gap==top );
+
   if( nFrag>=60 ){
-    defragmentPage(pPage);
-  }else{
+    /* Always defragment highly fragmented pages */
+    rc = defragmentPage(pPage);
+    if( rc ) return rc;
+    top = get2byte(&data[hdr+5]);
+  }else if( gap+2<=top ){
     /* Search the freelist looking for a free slot big enough to satisfy 
     ** the request. The allocation is made from the first free slot in 
     ** the list that is large enough to accomadate it.
@@ -1123,6 +1140,8 @@ static int allocateSpace(MemPage *pPage, int nByte){
       int size = get2byte(&data[pc+2]);     /* Size of free slot */
       if( size>=nByte ){
         int x = size - nByte;
+        testcase( x==4 );
+        testcase( x==3 );
         if( x<4 ){
           /* Remove the slot from the free-list. Update the number of
           ** fragmented bytes within the page. */
@@ -1133,17 +1152,31 @@ static int allocateSpace(MemPage *pPage, int nByte){
           ** for the portion used by the new allocation. */
           put2byte(&data[pc+2], x);
         }
-        return pc + x;
+        *pIdx = pc + x;
+        return SQLITE_OK;
       }
     }
   }
 
+  /* Check to make sure there is enough space in the gap to satisfy
+  ** the allocation.  If not, defragment.
+  */
+  testcase( gap+2+nByte==top );
+  if( gap+2+nByte>top ){
+    rc = defragmentPage(pPage);
+    if( rc ) return rc;
+    top = get2byte(&data[hdr+5]);
+    assert( gap+nByte<=top );
+  }
+
+
   /* Allocate memory from the gap in between the cell pointer array
   ** and the cell content area.
   */
-  top = get2byte(&data[hdr+5]) - nByte;
+  top -= nByte;
   put2byte(&data[hdr+5], top);
-  return top;
+  *pIdx = top;
+  return SQLITE_OK;
 }
 
 /*
@@ -1156,6 +1189,7 @@ static int allocateSpace(MemPage *pPage, int nByte){
 */
 static int freeSpace(MemPage *pPage, int start, int size){
   int addr, pbegin, hdr;
+  int iLast;                        /* Largest possible freeblock offset */
   unsigned char *data = pPage->aData;
 
   assert( pPage->pBt!=0 );
@@ -1171,17 +1205,23 @@ static int freeSpace(MemPage *pPage, int start, int size){
   memset(&data[start], 0, size);
 #endif
 
-  /* Add the space back into the linked list of freeblocks */
+  /* Add the space back into the linked list of freeblocks.  Note that
+  ** even though the freeblock list was checked by sqlite3BtreeInitPage(),
+  ** sqlite3BtreeInitPage() did not detect overlapping freeblocks or
+  ** freeblocks that overlapped cells.  If there was overlap then
+  ** subsequent insert operations might have corrupted the freelist.
+  ** So we do need to check for corruption while scanning the freelist.
+  */
   hdr = pPage->hdrOffset;
   addr = hdr + 1;
+  iLast = pPage->pBt->usableSize - 4;
   while( (pbegin = get2byte(&data[addr]))<start && pbegin>0 ){
-    assert( pbegin<=pPage->pBt->usableSize-4 );
-    if( pbegin<=addr ) {
+    if( pbegin>iLast || pbegin<addr+4 ){
       return SQLITE_CORRUPT_BKPT;
     }
     addr = pbegin;
   }
-  if ( pbegin>pPage->pBt->usableSize-4 ) {
+  if( pbegin>iLast ){
     return SQLITE_CORRUPT_BKPT;
   }
   assert( pbegin>addr || pbegin==0 );
@@ -1191,7 +1231,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
   pPage->nFree = pPage->nFree + (u16)size;
 
   /* Coalesce adjacent free blocks */
-  addr = pPage->hdrOffset + 1;
+  addr = hdr + 1;
   while( (pbegin = get2byte(&data[addr]))>0 ){
     int pnext, psize, x;
     assert( pbegin>addr );
@@ -1200,10 +1240,10 @@ static int freeSpace(MemPage *pPage, int start, int size){
     psize = get2byte(&data[pbegin+2]);
     if( pbegin + psize + 3 >= pnext && pnext>0 ){
       int frag = pnext - (pbegin+psize);
-      if( (frag<0) || (frag>(int)data[pPage->hdrOffset+7]) ){
+      if( (frag<0) || (frag>(int)data[hdr+7]) ){
         return SQLITE_CORRUPT_BKPT;
       }
-      data[pPage->hdrOffset+7] -= (u8)frag;
+      data[hdr+7] -= (u8)frag;
       x = get2byte(&data[pnext]);
       put2byte(&data[pbegin], x);
       x = pnext + get2byte(&data[pnext+2]) - pbegin;
@@ -1288,6 +1328,8 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     u16 cellOffset;    /* Offset from start of page to first cell pointer */
     u16 nFree;         /* Number of unused bytes on the page */
     u16 top;           /* First byte of the cell content area */
+    int iCellFirst;    /* First allowable cell or freeblock offset */
+    int iCellLast;     /* Last possible cell or freeblock offset */
 
     pBt = pPage->pBt;
 
@@ -1313,26 +1355,28 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     ** past the end of a page boundary and causes SQLITE_CORRUPT to be 
     ** returned if it does.
     */
+    iCellFirst = cellOffset + 2*pPage->nCell;
+    iCellLast = usableSize - 4;
 #if defined(SQLITE_ENABLE_OVERSIZE_CELL_CHECK)
     {
-      int iCellFirst;   /* First allowable cell index */
-      int iCellLast;    /* Last possible cell index */
       int i;            /* Index into the cell pointer array */
       int sz;           /* Size of a cell */
 
-      iCellFirst = cellOffset + 2*pPage->nCell;
-      iCellLast = usableSize - 4;
       if( !pPage->leaf ) iCellLast--;
       for(i=0; i<pPage->nCell; i++){
         pc = get2byte(&data[cellOffset+i*2]);
+        testcase( pc==iCellFirst );
+        testcase( pc==iCellLast );
         if( pc<iCellFirst || pc>iCellLast ){
           return SQLITE_CORRUPT_BKPT;
         }
         sz = cellSizePtr(pPage, &data[pc]);
+        testcase( pc+sz==usableSize );
         if( pc+sz>usableSize ){
           return SQLITE_CORRUPT_BKPT;
         }
       }
+      if( !pPage->leaf ) iCellLast++;
     }  
 #endif
 
@@ -1341,14 +1385,14 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     nFree = data[hdr+7] + top;
     while( pc>0 ){
       u16 next, size;
-      if( pc>usableSize-4 ){
+      if( pc<iCellFirst || pc>iCellLast ){
         /* Free block is off the page */
         return SQLITE_CORRUPT_BKPT; 
       }
       next = get2byte(&data[pc]);
       size = get2byte(&data[pc+2]);
       if( next>0 && next<=pc+size+3 ){
-        /* Free blocks must be in accending order */
+        /* Free blocks must be in ascending order */
         return SQLITE_CORRUPT_BKPT; 
       }
       nFree = nFree + size;
@@ -1365,28 +1409,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
     if( nFree>usableSize ){
       return SQLITE_CORRUPT_BKPT; 
     }
-    pPage->nFree = nFree - (cellOffset + 2*pPage->nCell);
-
-#if 0
-  /* Check that all the offsets in the cell offset array are within range. 
-  ** 
-  ** Omitting this consistency check and using the pPage->maskPage mask
-  ** to prevent overrunning the page buffer in findCell() results in a
-  ** 2.5% performance gain.
-  */
-  {
-    u8 *pOff;        /* Iterator used to check all cell offsets are in range */
-    u8 *pEnd;        /* Pointer to end of cell offset array */
-    u8 mask;         /* Mask of bits that must be zero in MSB of cell offsets */
-    mask = ~(((u8)(pBt->pageSize>>8))-1);
-    pEnd = &data[cellOffset + pPage->nCell*2];
-    for(pOff=&data[cellOffset]; pOff!=pEnd && !((*pOff)&mask); pOff+=2);
-    if( pOff!=pEnd ){
-      return SQLITE_CORRUPT_BKPT;
-    }
-  }
-#endif
-
+    pPage->nFree = nFree - iCellFirst;
     pPage->isInit = 1;
   }
   return SQLITE_OK;
@@ -3228,7 +3251,6 @@ static int btreeCursor(
   struct KeyInfo *pKeyInfo,              /* First arg to comparison function */
   BtCursor *pCur                         /* Space for new cursor */
 ){
-  int rc;                                /* Return code */
   BtShared *pBt = p->pBt;                /* Shared b-tree handle */
 
   assert( sqlite3BtreeHoldsMutex(p) );
@@ -5196,10 +5218,8 @@ static int insertCell(
 ){
   int idx;          /* Where to write new cell content in data[] */
   int j;            /* Loop counter */
-  int top;          /* First byte of content for any cell in data[] */
   int end;          /* First byte past the last cell pointer in data[] */
   int ins;          /* Index in data[] where new cell pointer is inserted */
-  int hdr;          /* Offset into data[] of the page header */
   int cellOffset;   /* Address of first cell pointer in data[] */
   u8 *data;         /* The content of the whole page */
   u8 *ptr;          /* Used for moving information around in data[] */
@@ -5230,37 +5250,27 @@ static int insertCell(
     }
     assert( sqlite3PagerIswriteable(pPage->pDbPage) );
     data = pPage->aData;
-    hdr = pPage->hdrOffset;
-    top = get2byte(&data[hdr+5]);
     cellOffset = pPage->cellOffset;
-    end = cellOffset + 2*pPage->nCell + 2;
+    end = cellOffset + 2*pPage->nCell;
     ins = cellOffset + 2*i;
-    if( end > top - sz ){
-      rc = defragmentPage(pPage);
-      if( rc!=SQLITE_OK ){
-        return rc;
-      }
-      top = get2byte(&data[hdr+5]);
-      assert( end + sz <= top );
-    }
-    idx = allocateSpace(pPage, sz);
-    assert( idx>0 );
-    assert( end <= get2byte(&data[hdr+5]) );
-    if (idx+sz > pPage->pBt->usableSize) {
+    rc = allocateSpace(pPage, sz, &idx);
+    if( rc ) return rc;
+    assert( idx>=end+2 );
+    if( idx+sz > pPage->pBt->usableSize ){
       return SQLITE_CORRUPT_BKPT;
     }
     pPage->nCell++;
-    pPage->nFree = pPage->nFree - (u16)(2 + sz);
+    pPage->nFree -= (u16)(2 + sz);
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
     if( iChild ){
       put4byte(&data[idx], iChild);
     }
-    for(j=end-2, ptr=&data[j]; j>ins; j-=2, ptr-=2){
+    for(j=end, ptr=&data[j]; j>ins; j-=2, ptr-=2){
       ptr[0] = ptr[-2];
       ptr[1] = ptr[-1];
     }
     put2byte(&data[ins], idx);
-    put2byte(&data[hdr+3], pPage->nCell);
+    put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pPage->pBt->autoVacuum ){
       /* The cell may contain a pointer to an overflow page. If so, write
