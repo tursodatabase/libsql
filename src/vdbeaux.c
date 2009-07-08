@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.469 2009/07/07 02:44:07 drh Exp $
+** $Id: vdbeaux.c,v 1.470 2009/07/08 08:05:35 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1616,7 +1616,12 @@ static void invalidateCursorsOnModifiedBtrees(sqlite3 *db){
 int sqlite3VdbeCloseStatement(Vdbe *p, int eOp){
   sqlite3 *const db = p->db;
   int rc = SQLITE_OK;
-  if( p->iStatement && ALWAYS(db->nStatement) ){
+
+  /* If p->iStatement is greater than zero, then this Vdbe opened a 
+  ** statement transaction that should be closed here. The only exception
+  ** is that an IO error may have occured, causing an emergency rollback.
+  ** In this case (db->nStatement==0), and there is nothing to do.  */
+  if( p->iStatement && db->nStatement ){
     int i;
     const int iSavepoint = p->iStatement-1;
 

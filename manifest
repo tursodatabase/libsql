@@ -1,5 +1,5 @@
-C Simplifications\sto\ssqlite3BtreeInsert()\sand\sallocateSpace().\s\sAdded\smany\ntestcase()\smacros\sto\sverify\sboundary\sconditions\sin\sbtree.c.\s(CVS\s6858)
-D 2009-07-08T01:49:12
+C Remove\san\sALWAYS\sclause\sthat\scould\sbe\sfalse\sif\san\sIO\serror\swithin\sa\sstatement\sexecuted\sby\sa\svirtual\stable\scaused\san\semergency\srollback.\s(CVS\s6859)
+D 2009-07-08T08:05:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c e82f52ac28524492d64edd46ba7528880b00a3ca
+F src/btree.c 2fd0b5cc756b845e5a031d505862eee80b272999
 F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -208,7 +208,7 @@ F src/vdbe.c 4f702761ce1829192e191de461671e214a778386
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 67fb11dbb83fb18bebc877c5a2e23fbe07a5df77
+F src/vdbeaux.c e70a9851d6c8d0a0f152925d3dc03eae656c14f2
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 00902f289521041712fb0293d0bf8688c7af8e48
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 87bbc8d6b68c089c8211c35c11c2f6ac4e46271c
-R 4486c3972991f8e77129a873f568657c
-U drh
-Z e49326b8b8c075cd31ef436d9299eb4d
+P aab82a229a984bdd37bda2d140cf4279ab54a741
+R 1fd66cc88fe52a3982261fa55b4a3040
+U danielk1977
+Z 2f4cd8c2f9ff3468dfd44c1b50f9ed4f

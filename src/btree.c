@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.658 2009/07/08 01:49:12 drh Exp $
+** $Id: btree.c,v 1.659 2009/07/08 08:05:35 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7717,8 +7717,11 @@ int sqlite3BtreeLockTable(Btree *p, int iTab, u8 isWriteLock){
 ** Argument pCsr must be a cursor opened for writing on an 
 ** INTKEY table currently pointing at a valid table entry. 
 ** This function modifies the data stored as part of that entry.
-** Only the data content may only be modified, it is not possible
-** to change the length of the data stored.
+**
+** Only the data content may only be modified, it is not possible to 
+** change the length of the data stored. If this function is called with
+** parameters that attempt to write past the end of the existing data,
+** no modifications are made and SQLITE_CORRUPT is returned.
 */
 int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   assert( cursorHoldsMutex(pCsr) );
