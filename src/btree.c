@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.661 2009/07/08 15:14:50 drh Exp $
+** $Id: btree.c,v 1.662 2009/07/08 16:54:40 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1206,10 +1206,12 @@ static int freeSpace(MemPage *pPage, int start, int size){
 
   /* Add the space back into the linked list of freeblocks.  Note that
   ** even though the freeblock list was checked by sqlite3BtreeInitPage(),
-  ** sqlite3BtreeInitPage() did not detect overlapping freeblocks or
-  ** freeblocks that overlapped cells.  If there was overlap then
-  ** subsequent insert operations might have corrupted the freelist.
-  ** So we do need to check for corruption while scanning the freelist.
+  ** sqlite3BtreeInitPage() did not detect overlapping cells or
+  ** freeblocks that overlapped cells.   Nor does it detect when the
+  ** cell content area exceeds the value in the page header.  If these
+  ** situations arise, then subsequent insert operations might corrupt
+  ** the freelist.  So we do need to check for corruption while scanning
+  ** the freelist.
   */
   hdr = pPage->hdrOffset;
   addr = hdr + 1;
@@ -1347,6 +1349,7 @@ int sqlite3BtreeInitPage(MemPage *pPage){
       /* To many cells for a single page.  The page must be corrupt */
       return SQLITE_CORRUPT_BKPT;
     }
+    testcase( pPage->nCell==MX_CELL(pBt) );
 
     /* A malformed database page might cause use to read past the end
     ** of page when parsing a cell.  

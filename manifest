@@ -1,5 +1,5 @@
-C Comment\sout\ssqlite3BtreeFlags()\swhen\snot\sin\sdebug\smode.\s\sTweaks\sto\ndatabase\scorruption\sdetection\slogic\sin\sfreeSpace().\s(CVS\s6861)
-D 2009-07-08T15:14:50
+C Improvements\sto\scomments\sin\sbtree.c:freeSpace().\s\sAdded\sa\stestcase()\smacro\nto\sverify\sa\sboundary\scase\sis\stested\sin\ssqlite3BtreeInitPage().\s(CVS\s6862)
+D 2009-07-08T16:54:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c e95997f1c9a54562b9f99d5cfa0e3acdd88fd514
+F src/btree.c 88efb67b8816b6e773cfc824916a4a1df1178715
 F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 86eba4f16fd9e97344ab6dfb9cb9a85cf14751dd
-R 77bdafcdba4dd2c5e2b38b3389f64b9d
+P 196cbf82290a308e78b13044d0fae993f2d5cb90
+R a273a9df3f7120ba57b67913a5610fd6
 U drh
-Z 8aa5344ef6ac6101e28f4ec787507ab1
+Z b118b571b45c65757687df0def85d091
