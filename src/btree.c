@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.667 2009/07/09 02:48:24 shane Exp $
+** $Id: btree.c,v 1.668 2009/07/09 03:20:46 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7012,25 +7012,6 @@ int sqlite3BtreeUpdateMeta(Btree *p, int idx, u32 iMeta){
   sqlite3BtreeLeave(p);
   return rc;
 }
-
-#ifdef SQLITE_TEST
-/*
-** Return the flag byte at the beginning of the page that the cursor
-** is currently pointing to.
-*/
-int sqlite3BtreeFlags(BtCursor *pCur){
-  /* TODO: What about CURSOR_REQUIRESEEK state? Probably need to call
-  ** restoreCursorPosition() here.
-  */
-  MemPage *pPage;
-  restoreCursorPosition(pCur);
-  pPage = pCur->apPage[pCur->iPage];
-  assert( cursorHoldsMutex(pCur) );
-  assert( pPage!=0 );
-  assert( pPage->pBt==pCur->pBt );
-  return pPage->aData[pPage->hdrOffset];
-}
-#endif
 
 #ifndef SQLITE_OMIT_BTREECOUNT
 /*

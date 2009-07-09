@@ -1,5 +1,5 @@
-C removed\sunused\sfunctions\sfrom\stest3.c\s(test\scode\sonly);\s(CVS\s6867)
-D 2009-07-09T02:48:24
+C removed\sthe\stest\sfunction\ssqlite3BtreeFlags()\s(test\scode\sonly);\s(CVS\s6868)
+D 2009-07-09T03:20:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c c9775946b5f4d974e6271621d7cc620d2c42027a
+F src/btree.c abceac00454d15097d4c959f076e2509526fe6d9
 F src/btree.h e761619e76a1125d2d82bd3613b5a7ac7d1ee6f7
 F src/btreeInt.h b31e5ac04181c7e2892c33ab06228c551df6233c
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -170,7 +170,7 @@ F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
 F src/test2.c d73e4a490349245fb196b990b80684513e0ceaee
-F src/test3.c 30db0ba4952e90f6a2df898ae76194f038baa35d
+F src/test3.c 66c2b2dfd6f17cf36b8e24aa1736e586a4c105a5
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
 F src/test6.c 1a0a7a1f179469044b065b4a88aab9faee114101
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 1b8c3a8246a5d8b8f5607014f68483735a403249
-R ccb8347dc72fa638b9b09275bc5d246a
+P 0eb69e8dda13e2d52a06f66a71480f59fd766271
+R 60bc7fb39c573542a08c981162f11f7e
 U shane
-Z 91fc93570d27b2dc2dec0d52c39bbb91
+Z 93332b04ae88c235a267a0437544d719

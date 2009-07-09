@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.109 2009/07/09 02:48:24 shane Exp $
+** $Id: test3.c,v 1.110 2009/07/09 03:20:46 shane Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -408,7 +408,8 @@ static int btree_payload_size(
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
   sqlite3BtreeEnter(pCur->pBtree);
-  if( sqlite3BtreeFlags(pCur) & BTREE_INTKEY ){
+  if (pCur->eState>=CURSOR_REQUIRESEEK) sqlite3BtreeRestoreCursorPosition(pCur);
+  if( pCur->apPage[pCur->iPage]->intKey ){
     n1 = 0;
   }else{
     sqlite3BtreeKeySize(pCur, (i64*)&n1);
