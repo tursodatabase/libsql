@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.665 2009/07/08 18:50:55 danielk1977 Exp $
+** $Id: btree.c,v 1.666 2009/07/09 02:24:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4561,7 +4561,8 @@ static int allocateBtreePage(
   pPage1 = pBt->pPage1;
   mxPage = pagerPagecount(pBt);
   n = get4byte(&pPage1->aData[36]);
-  if( n>mxPage ){
+  testcase( n==mxPage-1 );
+  if( n>=mxPage ){
     return SQLITE_CORRUPT_BKPT;
   }
   if( n>0 ){
@@ -4605,6 +4606,7 @@ static int allocateBtreePage(
       }else{
         iTrunk = get4byte(&pPage1->aData[32]);
       }
+      testcase( iTrunk==mxPage );
       if( iTrunk>mxPage ){
         rc = SQLITE_CORRUPT_BKPT;
       }else{
@@ -4616,6 +4618,7 @@ static int allocateBtreePage(
       }
 
       k = get4byte(&pTrunk->aData[4]);
+      testcase( k==(u32)(pBt->usableSize/4 - 2) );
       if( k==0 && !searchList ){
         /* The trunk has no leaves and the list is not being searched. 
         ** So extract the trunk page itself and use it as the newly 
@@ -4663,6 +4666,7 @@ static int allocateBtreePage(
             rc = SQLITE_CORRUPT_BKPT;
             goto end_allocate_page;
           }
+          testcase( iNewTrunk==mxPage );
           rc = sqlite3BtreeGetPage(pBt, iNewTrunk, &pNewTrunk, 0);
           if( rc!=SQLITE_OK ){
             goto end_allocate_page;
@@ -4718,20 +4722,15 @@ static int allocateBtreePage(
         }
 
         iPage = get4byte(&aData[8+closest*4]);
+        testcase( iPage==mxPage );
         if( iPage>mxPage ){
           rc = SQLITE_CORRUPT_BKPT;
           goto end_allocate_page;
         }
+        testcase( iPage==mxPage );
         if( !searchList || iPage==nearby ){
           int noContent;
-          Pgno nPage;
           *pPgno = iPage;
-          nPage = pagerPagecount(pBt);
-          if( iPage>nPage ){
-            /* Free page off the end of the file */
-            rc = SQLITE_CORRUPT_BKPT;
-            goto end_allocate_page;
-          }
           TRACE(("ALLOCATE: %d was leaf %d of %d on trunk %d"
                  ": %d more free pages\n",
                  *pPgno, closest+1, k, pTrunk->pgno, n-1));
