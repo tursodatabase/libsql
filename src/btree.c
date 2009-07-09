@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.669 2009/07/09 05:07:38 danielk1977 Exp $
+** $Id: btree.c,v 1.670 2009/07/09 08:27:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -255,8 +255,17 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
 ** by Btree handle p. Parameter eLock must be either READ_LOCK or 
 ** WRITE_LOCK.
 **
-** SQLITE_OK is returned if the lock is added successfully. SQLITE_BUSY and
-** SQLITE_NOMEM may also be returned.
+** This function assumes the following:
+**
+**   (a) The specified b-tree connection handle is connected to a sharable
+**       b-tree database (one with the BtShared.sharable) flag set, and
+**
+**   (b) No other b-tree connection handle holds a lock that conflicts
+**       with the requested lock (i.e. querySharedCacheTableLock() has
+**       already been called and returned SQLITE_OK).
+**
+** SQLITE_OK is returned if the lock is added successfully. SQLITE_NOMEM 
+** is returned if a malloc attempt fails.
 */
 static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   BtShared *pBt = p->pBt;
@@ -273,11 +282,9 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
   ** table, and that lock is obtained in BtreeBeginTrans().  */
   assert( 0==(p->db->flags&SQLITE_ReadUncommitted) || eLock==WRITE_LOCK );
 
-  /* This is a no-op if the shared-cache is not enabled */
-  if( !p->sharable ){
-    return SQLITE_OK;
-  }
-
+  /* This function should only be called on a sharable b-tree after it 
+  ** has been determined that no other b-tree holds a conflicting lock.  */
+  assert( p->sharable );
   assert( SQLITE_OK==querySharedCacheTableLock(p, iTable, eLock) );
 
   /* First search the list for an existing lock on this table. */
