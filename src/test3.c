@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test3.c,v 1.110 2009/07/09 03:20:46 shane Exp $
+** $Id: test3.c,v 1.111 2009/07/09 05:07:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"
@@ -408,13 +408,15 @@ static int btree_payload_size(
   }
   pCur = sqlite3TestTextToPtr(argv[1]);
   sqlite3BtreeEnter(pCur->pBtree);
-  if (pCur->eState>=CURSOR_REQUIRESEEK) sqlite3BtreeRestoreCursorPosition(pCur);
+
+  /* The cursor may be in "require-seek" state. If this is the case, the
+  ** call to BtreeDataSize() will fix it. */
+  sqlite3BtreeDataSize(pCur, (u32*)&n2);
   if( pCur->apPage[pCur->iPage]->intKey ){
     n1 = 0;
   }else{
     sqlite3BtreeKeySize(pCur, (i64*)&n1);
   }
-  sqlite3BtreeDataSize(pCur, (u32*)&n2);
   sqlite3BtreeLeave(pCur->pBtree);
   sqlite3_snprintf(sizeof(zBuf),zBuf, "%d", (int)(n1+n2));
   Tcl_AppendResult(interp, zBuf, 0);
@@ -578,6 +580,37 @@ static int btree_ismemdb(
   return SQLITE_OK;
 }
 
+/*
+** usage:   btree_set_cache_size ID NCACHE
+**
+** Set the size of the cache used by btree $ID.
+*/
+static int btree_set_cache_size(
+  void *NotUsed,
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int argc,              /* Number of arguments */
+  const char **argv      /* Text of each argument */
+){
+  int nCache;
+  Btree *pBt;
+  
+  if( argc!=3 ){
+    Tcl_AppendResult(
+        interp, "wrong # args: should be \"", argv[0], " BT NCACHE\"", 0);
+    return TCL_ERROR;
+  }
+  pBt = sqlite3TestTextToPtr(argv[1]);
+  if( Tcl_GetInt(interp, argv[2], &nCache) ) return TCL_ERROR;
+
+  sqlite3_mutex_enter(pBt->db->mutex);
+  sqlite3BtreeEnter(pBt);
+  sqlite3BtreeSetCacheSize(pBt, nCache);
+  sqlite3BtreeLeave(pBt);
+  sqlite3_mutex_leave(pBt->db->mutex);
+  return TCL_OK;
+}      
+
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -599,7 +632,8 @@ int Sqlitetest3_Init(Tcl_Interp *interp){
      { "btree_first",              (Tcl_CmdProc*)btree_first              },
      { "btree_varint_test",        (Tcl_CmdProc*)btree_varint_test        },
      { "btree_from_db",            (Tcl_CmdProc*)btree_from_db            },
-     { "btree_ismemdb",            (Tcl_CmdProc*)btree_ismemdb            }
+     { "btree_ismemdb",            (Tcl_CmdProc*)btree_ismemdb            },
+     { "btree_set_cache_size",     (Tcl_CmdProc*)btree_set_cache_size     }
   };
   int i;
 
