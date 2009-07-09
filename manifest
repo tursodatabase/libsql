@@ -1,5 +1,5 @@
-C In\sbtree.c,\shave\ssetSharedCacheLock()\sassume\sthat\sthe\sb-tree\sis\ssharable\sinstead\sof\schecking\sto\ssee\sif\sit\sis.\sThe\scaller\shas\salready\sperformed\sthis\scheck.\s(CVS\s6870)
-D 2009-07-09T08:27:14
+C Remove\san\sunused\sbranch\sfrom\sbtree.c.\s(CVS\s6871)
+D 2009-07-09T11:36:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 45595e89ac2babfc6317ef27cc1a930e7db1bb19
+F src/btree.c 58c2d32d82521bfb0975eb9de936751c5f060124
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h a568bf057aa249eb06fd31358b4393a5ac88c118
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 1d96ce8c76e007ca29e7971a6c72b6387fe0fb93
-R b4d836437dbb61ffda54759b119298cf
+P 3190eefd5f5285a5250d6f4729f109852fdb02ab
+R 26fa2e36001b4aeac1337702b829bda3
 U danielk1977
-Z 394ccb1806f19bc1b72ed270bf66ac3f
+Z e2462ad1ac863731e895fe504c00340e
