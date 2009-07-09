@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test_btree.c,v 1.8 2008/09/29 11:49:48 danielk1977 Exp $
+** $Id: test_btree.c,v 1.9 2009/07/09 02:48:24 shane Exp $
 */
 #include "btreeInt.h"
 #include <tcl.h>
@@ -61,82 +61,4 @@ void sqlite3BtreeCursorList(Btree *p){
     );
   }
 #endif
-}
-
-
-/*
-** Fill aResult[] with information about the entry and page that the
-** cursor is pointing to.
-** 
-**   aResult[0] =  The page number
-**   aResult[1] =  The entry number
-**   aResult[2] =  Total number of entries on this page
-**   aResult[3] =  Cell size (local payload + header)
-**   aResult[4] =  Number of free bytes on this page
-**   aResult[5] =  Number of free blocks on the page
-**   aResult[6] =  Total payload size (local + overflow)
-**   aResult[7] =  Header size in bytes
-**   aResult[8] =  Local payload size
-**   aResult[9] =  Parent page number
-**   aResult[10]=  Page number of the first overflow page
-**
-** This routine is used for testing and debugging only.
-*/
-int sqlite3BtreeCursorInfo(BtCursor *pCur, int *aResult, int upCnt){
-#if 0
-  int cnt, idx;
-  MemPage *pPage = pCur->apPage[pCur->iPage];
-  BtCursor tmpCur;
-  int rc;
-
-  if( pCur->eState==CURSOR_REQUIRESEEK ){
-    rc = sqlite3BtreeRestoreCursorPosition(pCur);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-  }
-
-  assert( pPage->isInit );
-  sqlite3BtreeGetTempCursor(pCur, &tmpCur);
-  while( upCnt-- ){
-    sqlite3BtreeMoveToParent(&tmpCur);
-  }
-  pPage = tmpCur.pPage;
-  aResult[0] = sqlite3PagerPagenumber(pPage->pDbPage);
-  assert( aResult[0]==pPage->pgno );
-  aResult[1] = tmpCur.idx;
-  aResult[2] = pPage->nCell;
-  if( tmpCur.idx>=0 && tmpCur.idx<pPage->nCell ){
-    sqlite3BtreeParseCell(tmpCur.pPage, tmpCur.idx, &tmpCur.info);
-    aResult[3] = tmpCur.info.nSize;
-    aResult[6] = tmpCur.info.nData;
-    aResult[7] = tmpCur.info.nHeader;
-    aResult[8] = tmpCur.info.nLocal;
-  }else{
-    aResult[3] = 0;
-    aResult[6] = 0;
-    aResult[7] = 0;
-    aResult[8] = 0;
-  }
-  aResult[4] = pPage->nFree;
-  cnt = 0;
-  idx = get2byte(&pPage->aData[pPage->hdrOffset+1]);
-  while( idx>0 && idx<pPage->pBt->usableSize ){
-    cnt++;
-    idx = get2byte(&pPage->aData[idx]);
-  }
-  aResult[5] = cnt;
-  if( pPage->pParent==0 || sqlite3BtreeIsRootPage(pPage) ){
-    aResult[9] = 0;
-  }else{
-    aResult[9] = pPage->pParent->pgno;
-  }
-  if( tmpCur.info.iOverflow ){
-    aResult[10] = get4byte(&tmpCur.info.pCell[tmpCur.info.iOverflow]);
-  }else{
-    aResult[10] = 0;
-  }
-  sqlite3BtreeReleaseTempCursor(&tmpCur);
-#endif
-  return SQLITE_OK;
 }
