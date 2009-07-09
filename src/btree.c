@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.671 2009/07/09 11:36:02 danielk1977 Exp $
+** $Id: btree.c,v 1.672 2009/07/09 13:25:32 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1075,7 +1075,7 @@ static int defragmentPage(MemPage *pPage){
       return SQLITE_CORRUPT_BKPT;
     }
 #endif
-    assert( cbrk+size<=usableSize && cbrk>iCellFirst );
+    assert( cbrk+size<=usableSize && cbrk>=iCellFirst );
     testcase( cbrk+size==usableSize );
     testcase( pc+size==usableSize );
     memcpy(&data[cbrk], &temp[pc], size);
@@ -1126,7 +1126,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
   gap = pPage->cellOffset + 2*pPage->nCell;
   top = get2byte(&data[hdr+5]);
-  assert( gap<=top );
+  if( gap>top ) return SQLITE_CORRUPT_BKPT;
   testcase( gap+2==top );
   testcase( gap+1==top );
   testcase( gap==top );
