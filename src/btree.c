@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.672 2009/07/09 13:25:32 drh Exp $
+** $Id: btree.c,v 1.673 2009/07/10 02:52:21 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7389,7 +7389,7 @@ static int checkTreePage(
       int pc = get2byte(&data[cellStart+i*2]);
       u16 size = 1024;
       int j;
-      if( pc<=usableSize ){
+      if( pc<=usableSize-4 ){
         size = cellSizePtr(pPage, &data[pc]);
       }
       if( (pc+size-1)>=usableSize || pc<0 ){
@@ -7399,17 +7399,17 @@ static int checkTreePage(
         for(j=pc+size-1; j>=pc; j--) hit[j]++;
       }
     }
-    for(cnt=0, i=get2byte(&data[hdr+1]); i>0 && i<usableSize && cnt<10000; 
-           cnt++){
-      int size = get2byte(&data[i+2]);
-      int j;
-      if( (i+size-1)>=usableSize || i<0 ){
-        checkAppendMsg(pCheck, 0,  
-            "Corruption detected in cell %d on page %d",i,iPage,0);
-      }else{
-        for(j=i+size-1; j>=i; j--) hit[j]++;
-      }
-      i = get2byte(&data[i]);
+    i = get2byte(&data[hdr+1]);
+    while( i>0 ){
+      int size, j;
+      assert( i<=usableSize-4 );     /* Enforced by btreeInitPage() */
+      size = get2byte(&data[i+2]);
+      assert( i+size<=usableSize );  /* Enforced by btreeInitPage() */
+      for(j=i+size-1; j>=i; j--) hit[j]++;
+      j = get2byte(&data[i]);
+      assert( j==0 || j>i+size );  /* Enforced by btreeInitPage() */
+      assert( j<=usableSize-4 );   /* Enforced by btreeInitPage() */
+      i = j;
     }
     for(i=cnt=0; i<usableSize; i++){
       if( hit[i]==0 ){
@@ -7422,13 +7422,12 @@ static int checkTreePage(
     }
     if( cnt!=data[hdr+7] ){
       checkAppendMsg(pCheck, 0, 
-          "Fragmented space is %d byte reported as %d on page %d",
+          "Fragmentation of %d bytes reported as %d on page %d",
           cnt, data[hdr+7], iPage);
     }
   }
 check_page_abort:
-  if (hit) sqlite3PageFree(hit);
-
+  sqlite3PageFree(hit);
   releasePage(pPage);
   return depth+1;
 }
