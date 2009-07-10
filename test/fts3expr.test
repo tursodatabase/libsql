@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module.
 #
-# $Id: fts3expr.test,v 1.7 2009/03/12 15:43:48 danielk1977 Exp $
+# $Id: fts3expr.test,v 1.8 2009/07/10 09:24:43 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -463,10 +463,25 @@ foreach {id expr res} {
   13 "((((((one two OR four five)))))) NOT three" {3 11 19 24 25 26 27}
 
 } {
-  do_test fts3expr-6.$id {
+  do_test fts3expr-6.1.$id {
     execsql { SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid }
   } $res
 }
+
+set sqlite_fts3_enable_parentheses 0
+foreach {id expr res} {
+  1 "one -two three"  {5 13 21 29}
+  2 "-two one three"  {5 13 21 29}
+  3 "one three -two"  {5 13 21 29}
+  4 "-one -two three" {4 12 20 28}
+  5 "three -one -two" {4 12 20 28}
+  6 "-one three -two" {4 12 20 28}
+} {
+  do_test fts3expr-6.2.$id {
+    execsql { SELECT rowid FROM t1 WHERE t1 MATCH $expr ORDER BY rowid }
+  } $res
+}
+set sqlite_fts3_enable_parentheses 1
 
 do_test fts3expr-7.1 {
   execsql {
@@ -475,6 +490,7 @@ do_test fts3expr-7.1 {
     SELECT * FROM test WHERE keyword MATCH '""';
   }
 } {}
+
 
 set sqlite_fts3_enable_parentheses 0
 finish_test
