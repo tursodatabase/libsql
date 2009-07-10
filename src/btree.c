@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.673 2009/07/10 02:52:21 drh Exp $
+** $Id: btree.c,v 1.674 2009/07/10 16:51:30 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2248,8 +2248,7 @@ static int lockBtree(BtShared *pBt){
       freeTempSpace(pBt);
       rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize,
                                    pageSize-usableSize);
-      if( rc ) goto page1_init_failed;
-      return SQLITE_OK;
+      return rc;
     }
     if( usableSize<480 ){
       goto page1_init_failed;
