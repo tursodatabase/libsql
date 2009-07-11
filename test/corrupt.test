@@ -13,7 +13,7 @@
 # This file implements tests to make sure SQLite does not crash or
 # segfault if it sees a corrupt database file.
 #
-# $Id: corrupt.test,v 1.10 2008/08/25 12:14:09 drh Exp $
+# $Id: corrupt.test,v 1.11 2009/07/11 17:39:42 danielk1977 Exp $
 
 catch {file delete -force test.db test.db-journal test.bu}
 
@@ -172,6 +172,38 @@ do_test corrupt-3.6 {
   catchsql {
     SELECT * FROM t1 WHERE x = 'abcde';
   }
+} {1 {database disk image is malformed}}
+
+do_test corrupt-4.1 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+  }
+  for {set i 0} {$i < 10} {incr i} {
+    set text [string repeat $i 220]
+    execsql { INSERT INTO t1 VALUES($i, $text) }
+  }
+  execsql { CREATE INDEX i1 ON t1(b) }
+} {}
+do_test corrupt-4.2 {
+  set iRoot [db one {SELECT rootpage FROM sqlite_master WHERE name = 'i1'}]
+  set iOffset [hexio_get_int [hexio_read test.db [expr 12+($iRoot-1)*1024] 2]]
+  set data [hexio_render_int32 [expr $iRoot - 1]]
+  hexio_write test.db [expr ($iRoot-1)*1024 + $iOffset] $data
+  db close
+  sqlite3 db test.db
+
+  # The following DELETE statement attempts to delete a cell stored on the
+  # root page of index i1. After this cell is deleted it must be replaced
+  # by a cell retrieved from the child page (a leaf) of the deleted cell.
+  # This will fail, as the block modified the database image so that the
+  # child page of the deleted cell is from a table (intkey) b-tree, not an
+  # index b-tree as expected. At one point this was causing an assert()
+  # to fail.
+  catchsql { DELETE FROM t1 WHERE rowid = 3 }
 } {1 {database disk image is malformed}}
 
 finish_test

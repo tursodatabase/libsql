@@ -1,5 +1,5 @@
-C Bug\sfix\sin\sthe\scomputation\sof\sthe\snumber\sof\spages\sto\sautovacuum\swhen\nnReserve\sis\sgreater\sthan\szero.\s(CVS\s6880)
-D 2009-07-11T17:04:09
+C Fix\sa\scase\swhere\sdeleting\sa\srow\sfrom\sa\scorrupt\sdatabase\scould\scause\san\sassert\sto\sfail.\s(CVS\s6881)
+D 2009-07-11T17:39:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 6a5d08b45a7850fde2deec76254ca6a3c1ad7ffc
+F src/btree.c 2604d94126c050559cd65eef2c8f257d9ca67358
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h a568bf057aa249eb06fd31358b4393a5ac88c118
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -280,7 +280,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0ed68b11f22721052d880ee80bd528a0e0828236
-F test/corrupt.test 5bcf7a986358123b8055dfa64b45fc2fb54dcaa9
+F test/corrupt.test e940096bcfac0399d09c5351c0d6ea610477c08a
 F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d99bde9ca61eeccfe6363ff0882fd4bcdb9a34dc
-R f20bebc61397821a68a2cae56e0278b2
-U drh
-Z 1fcddebe9a4cc8ca7d7de11a8e8fa230
+P 618a83d65f973183d21245721dc656a35ff594a4
+R eb96100d6844858ed92c59e456fef299
+U danielk1977
+Z da4642526cf31e5a9d82946419b45e5e

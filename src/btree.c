@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.679 2009/07/11 17:04:09 drh Exp $
+** $Id: btree.c,v 1.680 2009/07/11 17:39:42 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3927,7 +3927,7 @@ static int moveToChild(BtCursor *pCur, u32 newPgno){
 
   pCur->info.nSize = 0;
   pCur->validNKey = 0;
-  if( pNewPage->nCell<1 ){
+  if( pNewPage->nCell<1 || pNewPage->intKey!=pCur->apPage[i]->intKey ){
     return SQLITE_CORRUPT_BKPT;
   }
   return SQLITE_OK;
