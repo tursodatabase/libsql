@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.678 2009/07/11 13:13:12 drh Exp $
+** $Id: btree.c,v 1.679 2009/07/11 17:04:09 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2852,13 +2852,14 @@ static int autoVacuumCommit(BtShared *pBt){
   invalidateAllOverflowCache(pBt);
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
-    Pgno nFin;
-    Pgno nFree;
-    Pgno nPtrmap;
-    Pgno iFree;
-    const int pgsz = pBt->pageSize;
-    Pgno nOrig = pagerPagecount(pBt);
+    Pgno nFin;         /* Number of pages to be freed */
+    Pgno nFree;        /* Number of pages no the freelist */
+    Pgno nPtrmap;      /* Number of PtrMap pages to be freed */
+    Pgno iFree;        /* The next page to be freed */
+    int nEntry;        /* Number of entries on one ptrmap page */
+    Pgno nOrig;        /* Database size before freeing */
 
+    nOrig = pagerPagecount(pBt);
     if( PTRMAP_ISPAGE(pBt, nOrig) || nOrig==PENDING_BYTE_PAGE(pBt) ){
       /* It is not possible to create a database for which the final page
       ** is either a pointer-map page or the pending-byte page. If one
@@ -2868,7 +2869,8 @@ static int autoVacuumCommit(BtShared *pBt){
     }
 
     nFree = get4byte(&pBt->pPage1->aData[36]);
-    nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+pgsz/5)/(pgsz/5);
+    nEntry = pBt->usableSize/5;
+    nPtrmap = (nFree-nOrig+PTRMAP_PAGENO(pBt, nOrig)+nEntry)/nEntry;
     nFin = nOrig - nFree - nPtrmap;
     if( nOrig>PENDING_BYTE_PAGE(pBt) && nFin<PENDING_BYTE_PAGE(pBt) ){
       nFin--;
