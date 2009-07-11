@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.675 2009/07/11 05:06:52 danielk1977 Exp $
+** $Id: btree.c,v 1.676 2009/07/11 06:55:34 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7307,6 +7307,10 @@ static int checkTreePage(
        "unable to get the page. error code=%d", rc);
     return 0;
   }
+
+  /* Clear MemPage.isInit to make sure the corruption detection code in
+  ** btreeInitPage() is executed.  */
+  pPage->isInit = 0;
   if( (rc = btreeInitPage(pPage))!=0 ){
     assert( rc==SQLITE_CORRUPT );  /* The only possible error from InitPage */
     checkAppendMsg(pCheck, zContext, 

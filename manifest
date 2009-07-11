@@ -1,5 +1,5 @@
-C Remove\sunreachable\scondition\sfrom\sbtree.c.\s(CVS\s6876)
-D 2009-07-11T05:06:52
+C Modify\sthe\sintegrity-check\scode\sso\sthat\seach\sb-tree\spage\sinspected\sis\sreinitialized\swhile\sdoing\sso,\seven\sif\san\sinitialized\scopy\sexists\sin\sthe\scache.\sThis\sprevents\san\sassert\sfrom\sfailing\swhen\srunning\sintegrity_check\son\sa\scorrupt\sdatabase.\s(CVS\s6877)
+D 2009-07-11T06:55:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 563cda7bbb92ff33c0e5b2fda589e6b59f89d5ed
+F src/btree.c 829ff60149485219f4933ad63fb37705da4a3968
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h a568bf057aa249eb06fd31358b4393a5ac88c118
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -291,7 +291,7 @@ F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 267be7fbb7bdb89df40007178437ebdd0cd9c174
-F test/corruptC.test 4ee86485de5263ed050729c11650dd59ca288bd3
+F test/corruptC.test 691ed070baef5e1345939caadf270a52837a5064
 F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P c6dfc8bd3911b4c93969bfc13d9931965feed674
-R 1f4a85e569a3fef8a6b8dcd856752a00
+P 47b40fefa67f7c563ce2004509aaf8e203038be4
+R addfab017d3e22d0d5d5feaad8fb4028
 U danielk1977
-Z f0c4a06ecb3adf98288d0a45bb531f00
+Z 3a12aba07bf1ffdf9a56a2b90426bf7d
