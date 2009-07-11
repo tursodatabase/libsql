@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.674 2009/07/10 16:51:30 drh Exp $
+** $Id: btree.c,v 1.675 2009/07/11 05:06:52 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -4218,6 +4218,7 @@ int sqlite3BtreeMovetoUnpacked(
   }
   assert( pCur->apPage[pCur->iPage] );
   assert( pCur->apPage[pCur->iPage]->isInit );
+  assert( pCur->apPage[pCur->iPage]->nCell>0 || pCur->eState==CURSOR_INVALID );
   if( pCur->eState==CURSOR_INVALID ){
     *pRes = -1;
     assert( pCur->apPage[pCur->iPage]->nCell==0 );
@@ -4228,10 +4229,16 @@ int sqlite3BtreeMovetoUnpacked(
     int lwr, upr;
     Pgno chldPg;
     MemPage *pPage = pCur->apPage[pCur->iPage];
-    int c = -1;  /* pRes return if table is empty must be -1 */
+    int c;
+
+    /* pPage->nCell must be greater than zero. If this is the root-page
+    ** the cursor would have been INVALID above and this for(;;) loop
+    ** not run. If this is not the root-page, then the moveToChild() routine
+    ** would have already detected db corruption.  */
+    assert( pPage->nCell>0 );
     lwr = 0;
     upr = pPage->nCell-1;
-    if( (!pPage->intKey && pIdxKey==0) || upr<0 ){
+    if( (!pPage->intKey && pIdxKey==0) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto moveto_finish;
     }
