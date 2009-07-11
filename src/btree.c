@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.680 2009/07/11 17:39:42 danielk1977 Exp $
+** $Id: btree.c,v 1.681 2009/07/11 18:26:29 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3631,7 +3631,6 @@ static int accessPayload(
   u32 offset,          /* Begin reading this far into payload */
   u32 amt,             /* Read this many bytes */
   unsigned char *pBuf, /* Write the bytes into this buffer */ 
-  int skipKey,         /* offset begins at data if this is true */
   int eOp              /* zero to read. non-zero to write. */
 ){
   unsigned char *aPayload;
@@ -3650,9 +3649,6 @@ static int accessPayload(
   aPayload = pCur->info.pCell + pCur->info.nHeader;
   nKey = (pPage->intKey ? 0 : (int)pCur->info.nKey);
 
-  if( skipKey ){
-    offset += nKey;
-  }
   if( offset+amt > nKey+pCur->info.nData 
    || &aPayload[pCur->info.nLocal] > &pPage->aData[pBt->usableSize]
   ){
@@ -3781,7 +3777,7 @@ int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
       return SQLITE_CORRUPT_BKPT;
     }
     assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
-    rc = accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0, 0);
+    rc = accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
   }
   return rc;
 }
@@ -3810,7 +3806,7 @@ int sqlite3BtreeData(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
     assert( pCur->eState==CURSOR_VALID );
     assert( pCur->iPage>=0 && pCur->apPage[pCur->iPage] );
     assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
-    rc = accessPayload(pCur, offset, amt, pBuf, 1, 0);
+    rc = accessPayload(pCur, offset, amt, pBuf, 0);
   }
   return rc;
 }
@@ -4308,7 +4304,7 @@ int sqlite3BtreeMovetoUnpacked(
             rc = SQLITE_NOMEM;
             goto moveto_finish;
           }
-          rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0, 0);
+          rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0);
           c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
           if( rc ) goto moveto_finish;
@@ -7727,7 +7723,7 @@ int sqlite3BtreePutData(BtCursor *pCsr, u32 offset, u32 amt, void *z){
   assert( !hasReadConflicts(pCsr->pBtree, pCsr->pgnoRoot) );
   assert( pCsr->apPage[pCsr->iPage]->intKey );
 
-  return accessPayload(pCsr, offset, amt, (unsigned char *)z, 0, 1);
+  return accessPayload(pCsr, offset, amt, (unsigned char *)z, 1);
 }
 
 /* 
