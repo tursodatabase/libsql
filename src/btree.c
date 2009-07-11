@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.677 2009/07/11 11:45:23 danielk1977 Exp $
+** $Id: btree.c,v 1.678 2009/07/11 13:13:12 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6551,14 +6551,16 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   /* Save the positions of any other cursors open on this table before
   ** making any modifications. Make the page containing the entry to be 
   ** deleted writable. Then free any overflow pages associated with the 
-  ** entry and finally remove the cell itself from within the page.  */
-  if( SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur))
-   || SQLITE_OK!=(rc = sqlite3PagerWrite(pPage->pDbPage))
-   || SQLITE_OK!=(rc = clearCell(pPage, pCell))
-   || SQLITE_OK!=(rc = dropCell(pPage, iCellIdx, cellSizePtr(pPage, pCell)))
-  ){
-    return rc;
-  }
+  ** entry and finally remove the cell itself from within the page.  
+  */
+  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+  if( rc ) return rc;
+  rc = sqlite3PagerWrite(pPage->pDbPage);
+  if( rc ) return rc;
+  rc = clearCell(pPage, pCell);
+  if( rc ) return rc;
+  rc = dropCell(pPage, iCellIdx, cellSizePtr(pPage, pCell));
+  if( rc ) return rc;
 
   /* If the cell deleted was not located on a leaf page, then the cursor
   ** is currently pointing to the largest entry in the sub-tree headed
@@ -6578,12 +6580,12 @@ int sqlite3BtreeDelete(BtCursor *pCur){
     allocateTempSpace(pBt);
     pTmp = pBt->pTmpSpace;
 
-    if( SQLITE_OK!=(rc = sqlite3PagerWrite(pLeaf->pDbPage)) 
-     || SQLITE_OK!=(rc = insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n))
-     || SQLITE_OK!=(rc = dropCell(pLeaf, pLeaf->nCell-1, nCell))
-    ){
-      return rc;
-    }
+    rc = sqlite3PagerWrite(pLeaf->pDbPage);
+    if( rc ) return rc;
+    rc = insertCell(pPage, iCellIdx, pCell-4, nCell+4, pTmp, n);
+    if( rc ) return rc;
+    rc = dropCell(pLeaf, pLeaf->nCell-1, nCell);
+    if( rc ) return rc;
   }
 
   /* Balance the tree. If the entry deleted was located on a leaf page,
