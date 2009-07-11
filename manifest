@@ -1,5 +1,5 @@
-C Modify\sthe\sintegrity-check\scode\sso\sthat\seach\sb-tree\spage\sinspected\sis\sreinitialized\swhile\sdoing\sso,\seven\sif\san\sinitialized\scopy\sexists\sin\sthe\scache.\sThis\sprevents\san\sassert\sfrom\sfailing\swhen\srunning\sintegrity_check\son\sa\scorrupt\sdatabase.\s(CVS\s6877)
-D 2009-07-11T06:55:34
+C Remove\sanother\sunreachable\sbranch\sfrom\sbtree.c.\s(CVS\s6878)
+D 2009-07-11T11:45:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c 829ff60149485219f4933ad63fb37705da4a3968
+F src/btree.c 0fd74216129d46963569974e5f130f4d430bc0f3
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h a568bf057aa249eb06fd31358b4393a5ac88c118
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 47b40fefa67f7c563ce2004509aaf8e203038be4
-R addfab017d3e22d0d5d5feaad8fb4028
+P 709576c670f802bf4b6e5c0e8db2bbde2cc16a90
+R b051b6b029b2fee8203200a628dc9718
 U danielk1977
-Z 3a12aba07bf1ffdf9a56a2b90426bf7d
+Z 7c7dcb726643c689fb2026dd4d5cc411
