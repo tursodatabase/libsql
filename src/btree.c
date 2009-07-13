@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.683 2009/07/13 07:30:53 danielk1977 Exp $
+** $Id: btree.c,v 1.684 2009/07/13 09:41:45 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3974,7 +3974,25 @@ static void moveToParent(BtCursor *pCur){
 }
 
 /*
-** Move the cursor to the root page
+** Move the cursor to point to the root page of its b-tree structure.
+**
+** If the table has a virtual root page, then the cursor is moved to point
+** to the virtual root page instead of the actual root page. A table has a
+** virtual root page when the actual root page contains no cells and a 
+** single child page. This can only happen with the table rooted at page 1.
+**
+** If the b-tree structure is empty, the cursor state is set to 
+** CURSOR_INVALID. Otherwise, the cursor is set to point to the first
+** cell located on the root (or virtual root) page and the cursor state
+** is set to CURSOR_VALID.
+**
+** If this function returns successfully, it may be assumed that the
+** page-header flags indicate that the [virtual] root-page is the expected 
+** kind of b-tree page (i.e. if when opening the cursor the caller did not
+** specify a KeyInfo structure the flags byte is set to 0x05 or 0x0D,
+** indicating a table b-tree, or if the caller did specify a KeyInfo 
+** structure the flags byte is set to 0x02 or 0x0A, indicating an index
+** b-tree).
 */
 static int moveToRoot(BtCursor *pCur){
   MemPage *pRoot;
@@ -3988,6 +4006,7 @@ static int moveToRoot(BtCursor *pCur){
   assert( CURSOR_FAULT   > CURSOR_REQUIRESEEK );
   if( pCur->eState>=CURSOR_REQUIRESEEK ){
     if( pCur->eState==CURSOR_FAULT ){
+      assert( pCur->skip!=SQLITE_OK );
       return pCur->skip;
     }
     sqlite3BtreeClearCursor(pCur);
@@ -4018,8 +4037,16 @@ static int moveToRoot(BtCursor *pCur){
     }
   }
 
+  /* Assert that the root page is of the correct type. This must be the
+  ** case as the call to this function that loaded the root-page (either
+  ** this call or a previous invocation) would have detected corruption 
+  ** if the assumption were not true, and it is not possible for the flags 
+  ** byte to have been modified while this cursor is holding a reference
+  ** to the page.  */
   pRoot = pCur->apPage[0];
   assert( pRoot->pgno==pCur->pgnoRoot );
+  assert( pRoot->isInit && (pCur->pKeyInfo==0)==pRoot->intKey );
+
   pCur->aiIdx[0] = 0;
   pCur->info.nSize = 0;
   pCur->atLast = 0;
@@ -4028,9 +4055,7 @@ static int moveToRoot(BtCursor *pCur){
   if( pRoot->nCell==0 && !pRoot->leaf ){
     Pgno subpage;
     if( pRoot->pgno!=1 ) return SQLITE_CORRUPT_BKPT;
-    assert( pRoot->pgno==1 );
     subpage = get4byte(&pRoot->aData[pRoot->hdrOffset+8]);
-    assert( subpage>0 );
     pCur->eState = CURSOR_VALID;
     rc = moveToChild(pCur, subpage);
   }else{
@@ -6418,6 +6443,7 @@ int sqlite3BtreeInsert(
   pPage = pCur->apPage[pCur->iPage];
   assert( pPage->intKey || nKey>=0 );
   assert( pPage->leaf || !pPage->intKey );
+
   TRACE(("INSERT: table=%d nkey=%lld ndata=%d page=%d %s\n",
           pCur->pgnoRoot, nKey, nData, pPage->pgno,
           loc==0 ? "overwrite" : "new entry"));
