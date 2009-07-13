@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.606 2009/07/12 02:31:37 drh Exp $
+** @(#) $Id: pager.c,v 1.607 2009/07/13 11:22:10 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4404,7 +4404,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     ** journal file must contain sync()ed copies of all of them
     ** before any of them can be written out to the database file.
     */
-    if( needSync ){
+    if( rc==SQLITE_OK && needSync ){
       assert( !MEMDB && pPager->noSync==0 );
       for(ii=0; ii<nPage && needSync; ii++){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);

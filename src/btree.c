@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.684 2009/07/13 09:41:45 danielk1977 Exp $
+** $Id: btree.c,v 1.685 2009/07/13 11:22:10 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3902,6 +3902,11 @@ const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
 /*
 ** Move the cursor down to a new child page.  The newPgno argument is the
 ** page number of the child page to move to.
+**
+** This function returns SQLITE_CORRUPT if the page-header flags field of
+** the new child page does not match the flags field of the parent (i.e.
+** if an intkey page appears to be the parent of a non-intkey page, or
+** vice-versa).
 */
 static int moveToChild(BtCursor *pCur, u32 newPgno){
   int rc;
