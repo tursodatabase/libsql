@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.685 2009/07/13 11:22:10 danielk1977 Exp $
+** $Id: btree.c,v 1.686 2009/07/13 13:18:07 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5064,8 +5064,8 @@ static int fillInCell(
     nSrc = nData;
     nData = 0;
   }else{ 
-    if( nKey>0x7fffffff || pKey==0 ){
-      return SQLITE_CORRUPT;
+    if( NEVER(nKey>0x7fffffff || pKey==0) ){
+      return SQLITE_CORRUPT_BKPT;
     }
     nPayload += (int)nKey;
     pSrc = pKey;
@@ -6410,10 +6410,15 @@ int sqlite3BtreeInsert(
   unsigned char *newCell = 0;
 
   assert( cursorHoldsMutex(pCur) );
-  assert( pBt->inTransaction==TRANS_WRITE );
-  assert( !pBt->readOnly );
-  assert( pCur->wrFlag );
+  assert( pCur->wrFlag && pBt->inTransaction==TRANS_WRITE && !pBt->readOnly );
   assert( hasSharedCacheTableLock(p, pCur->pgnoRoot, pCur->pKeyInfo!=0, 2) );
+
+  /* Assert that the caller has been consistent. If this cursor was opened
+  ** expecting an index b-tree, then the caller should be inserting blob
+  ** keys with no associated data. If the cursor was opened expecting an
+  ** intkey table, the caller should be inserting integer keys with a
+  ** blob of associated data.  */
+  assert( (pKey==0)==(pCur->pKeyInfo==0) );
 
   /* If this is an insert into a table b-tree, invalidate any incrblob 
   ** cursors open on the row being replaced (assuming this is a replace
@@ -6423,6 +6428,7 @@ int sqlite3BtreeInsert(
   }
 
   if( pCur->eState==CURSOR_FAULT ){
+    assert( pCur->skip!=SQLITE_OK );
     return pCur->skip;
   }
 
