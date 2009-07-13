@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.607 2009/07/13 11:22:10 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.608 2009/07/13 15:52:38 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1624,7 +1624,7 @@ static int pager_playback_one_page(
 ** by a valid checksum.
 **
 ** The pager never needs to know this in order to do its job.   This
-** routine is only used from with assert() and testcase() macros.
+** routine is only used from within assert() and testcase() macros.
 */
 static int pagerNextJournalPageIsValid(Pager *pPager){
   Pgno pgno;           /* The page number of the page */

@@ -1,5 +1,5 @@
-C Change\san\sunreachable\scondition\sin\sbtree.c\sto\sa\sNEVER().\s(CVS\s6888)
-D 2009-07-13T13:18:07
+C Remove\sthe\sSQLITE_CommitBusy\sflag.\s\sThis\swas\san\sattempt\sto\sblock\srecursion\non\sthe\ssqlite3_commit_hook()\sinterface.\s\sBut\ssuch\srecursion\sis\sexplicitly\ndisallowed,\sso\sthe\sflag\sis\spointless.\s(CVS\s6889)
+D 2009-07-13T15:52:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 3bad5d2bfe5947b6accc3c47a97dce8ace90fa0c
+F src/pager.c 283d4e9c64d4a4555a9a15cf870180b4fc102f7e
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 395f752a13574120bd7513a400ba02a265aaa76d
@@ -163,7 +163,7 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in ccc67f14d5661240d05eadb8ab308aa637b0630c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 336d10317b991fda9019d8dcc6f67e936fc55ae9
+F src/sqliteInt.h c638fff6a05bb1c546f361e8527385fef0638917
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -208,7 +208,7 @@ F src/vdbe.c 4f702761ce1829192e191de461671e214a778386
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c e70a9851d6c8d0a0f152925d3dc03eae656c14f2
+F src/vdbeaux.c a032d0eceee52b6d8334eca50e7ad56740894ddd
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 00902f289521041712fb0293d0bf8688c7af8e48
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P b9be365d85fddedbfa93eebf3ee62a140cbaa426
-R f4d839ed396486ac6b8a446143ddd531
-U danielk1977
-Z 4c8b9a4f20989cfa0c1c1e32007e46e0
+P 9f800e11391a108d7aa57f5a96d9a58711129132
+R f8d0ae220937cd02626c27ace66322f8
+U drh
+Z fc143e85c113c8856af7ddc393d5518c
