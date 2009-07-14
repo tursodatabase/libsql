@@ -1,5 +1,5 @@
-C Simplifications\sto\sthe\sPRAGMA\sintegrity_check\slogic.\s\sRemove\sunreachable\scode.\s(CVS\s6892)
-D 2009-07-14T17:48:06
+C Add\scomments\sand\sassert()\sstatements\sto\sshow\sthat\sthe\sreturn\svalue\sfrom\nsqlite3BtreeKeySize()\sand\ssqlite3BtreeData()\susually\sdo\snot\smatter.\nTicket\s#3968.\s\sAlso\sremove\sa\sNEVER()\smacro\sthat\scan\ssometimes\sbe\strue\s-\ndiscovered\swhile\stesting\sthe\sprevious\schange.\s(CVS\s6893)
+D 2009-07-14T18:35:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,11 +204,11 @@ F src/update.c a1bbe774bce495d62dce3df3f42a5f04c1de173a
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c f76edc03ffef53ccbf9e38ecc73a65d29eb5b1bd
+F src/vdbe.c b6fadd91f509fbcb9108f1d1a5e0985735fb315d
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 5b3cacb685143ebe8ec8660a4dde08a8a45082ce
+F src/vdbeaux.c 1c3b0698073ddeab7bedc588b13e3fc441346b9e
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 00902f289521041712fb0293d0bf8688c7af8e48
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P fa49666fb913f0d82e84bdfa2af3a294be04e47c
-R c96e1acc2f48a31e75ce3ac536c3155e
+P 17749fa5480069cc4909acd992ab26d10afb279d
+R 35cb54a841da615cb5c38b8f0cb072f6
 U drh
-Z 197c424f91353d8f0b9f8ad4f802f46f
+Z 3ca0e11ecfb15e2cf3df9913240d628c

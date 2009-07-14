@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.871 2009/07/14 02:33:02 drh Exp $
+** $Id: vdbe.c,v 1.872 2009/07/14 18:35:45 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2055,14 +2055,16 @@ case OP_Column: {
       payloadSize = pC->payloadSize;
       zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
-      sqlite3BtreeKeySize(pCrsr, &payloadSize64);
+      rc = sqlite3BtreeKeySize(pCrsr, &payloadSize64);
+      assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
       /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
       ** payload size, so it is impossible for payloadSize64 to be
       ** larger than 32 bits. */
       assert( (payloadSize64 & SQLITE_MAX_U32)==(u64)payloadSize64 );
       payloadSize = (u32)payloadSize64;
     }else{
-      sqlite3BtreeDataSize(pCrsr, &payloadSize);
+      rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
+      assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
     }
   }else if( pC->pseudoTable ){
     /* The record is the sole entry of a pseudo-table */
@@ -3591,7 +3593,8 @@ case OP_NewRowid: {           /* out2-prerelease */
         if( res ){
           v = 1;
         }else{
-          sqlite3BtreeKeySize(pC->pCursor, &v);
+          rc = sqlite3BtreeKeySize(pC->pCursor, &v);
+          assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
           if( v==MAX_ROWID ){
             pC->useRandomRowid = 1;
           }else{
@@ -3888,13 +3891,15 @@ case OP_RowData: {
 
   if( pC->isIndex ){
     assert( !pC->isTable );
-    sqlite3BtreeKeySize(pCrsr, &n64);
+    rc = sqlite3BtreeKeySize(pCrsr, &n64);
+    assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
     if( n64>db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
     n = (u32)n64;
   }else{
-    sqlite3BtreeDataSize(pCrsr, &n);
+    rc = sqlite3BtreeDataSize(pCrsr, &n);
+    assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
     if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }
@@ -3958,7 +3963,8 @@ case OP_Rowid: {                 /* out2-prerelease */
     if( pC->rowidIsValid ){
       v = pC->lastRowid;
     }else{
-      sqlite3BtreeKeySize(pC->pCursor, &v);
+      rc = sqlite3BtreeKeySize(pC->pCursor, &v);
+      assert( rc==SQLITE_OK );  /* Always so because of CursorMoveto() above */
     }
   }
   pOut->u.i = v;

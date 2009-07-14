@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.473 2009/07/14 14:15:27 drh Exp $
+** $Id: vdbeaux.c,v 1.474 2009/07/14 18:35:46 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2593,8 +2593,10 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   /* Get the size of the index entry.  Only indices entries of less
   ** than 2GiB are support - anything large must be database corruption.
   ** Any corruption is detected in sqlite3BtreeParseCellPtr(), though, so
-  ** this code can safely assume that nCellKey is 32-bits  */
-  sqlite3BtreeKeySize(pCur, &nCellKey);
+  ** this code can safely assume that nCellKey is 32-bits  
+  */
+  rc = sqlite3BtreeKeySize(pCur, &nCellKey);
+  assert( rc==SQLITE_OK );     /* pCur is always valid so KeySize cannot fail */
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
   /* Read in the complete content of the index entry */
@@ -2669,10 +2671,11 @@ int sqlite3VdbeIdxKeyCompare(
   BtCursor *pCur = pC->pCursor;
   Mem m;
 
-  sqlite3BtreeKeySize(pCur, &nCellKey);
+  rc = sqlite3BtreeKeySize(pCur, &nCellKey);
+  assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
   /* nCellKey will always be between 0 and 0xffffffff because of the say
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
-  if( NEVER(nCellKey<=0) || nCellKey>0x7fffffff ){
+  if( nCellKey<=0 || nCellKey>0x7fffffff ){
     *res = 0;
     return SQLITE_CORRUPT;
   }
