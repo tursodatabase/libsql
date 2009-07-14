@@ -13,7 +13,7 @@
 # including the sqlite3_bind_zeroblob(), sqlite3_result_zeroblob(),
 # and the built-in zeroblob() SQL function.
 #
-# $Id: zeroblob.test,v 1.13 2008/06/13 18:24:28 drh Exp $
+# $Id: zeroblob.test,v 1.14 2009/07/14 02:33:02 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -225,6 +225,35 @@ do_test zeroblob-8.1 {
     SELECT 'hello' AS a, zeroblob(10) as b from t1 ORDER BY a, b;
   }]
 } {8}
+
+
+# Ticket #3965
+# zeroblobs on either size of an IN operator
+#
+do_test zeroblob-9.1 {
+  db eval {SELECT x'0000' IN (x'000000')}
+} {0}
+do_test zeroblob-9.2 {
+  db eval {SELECT x'0000' IN (x'0000')}
+} {1}
+do_test zeroblob-9.3 {
+  db eval {SELECT zeroblob(2) IN (x'000000')}
+} {0}
+do_test zeroblob-9.4 {
+  db eval {SELECT zeroblob(2) IN (x'0000')}
+} {1}
+do_test zeroblob-9.5 {
+  db eval {SELECT x'0000' IN (zeroblob(3))}
+} {0}
+do_test zeroblob-9.6 {
+  db eval {SELECT x'0000' IN (zeroblob(2))}
+} {1}
+do_test zeroblob-9.7 {
+  db eval {SELECT zeroblob(2) IN (zeroblob(3))}
+} {0}
+do_test zeroblob-9.8 {
+  db eval {SELECT zeroblob(2) IN (zeroblob(2))}
+} {1}
 
 
 finish_test
