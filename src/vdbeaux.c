@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.472 2009/07/14 02:33:02 drh Exp $
+** $Id: vdbeaux.c,v 1.473 2009/07/14 14:15:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2424,7 +2424,7 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
     u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
-    if( d>=nKey && sqlite3VdbeSerialTypeLen(serial_type)>0 ) break;
+    assert( d+sqlite3VdbeSerialTypeLen(serial_type) <= nKey );
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
@@ -2533,7 +2533,9 @@ int sqlite3VdbeRecordCompare(
     }
     i++;
   }
-  if( mem1.zMalloc ) sqlite3VdbeMemRelease(&mem1);
+
+  /* No memory allocation is ever used on mem1. */
+  if( NEVER(mem1.zMalloc) ) sqlite3VdbeMemRelease(&mem1);
 
   /* If the PREFIX_SEARCH flag is set and all fields except the final
   ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
@@ -2668,9 +2670,11 @@ int sqlite3VdbeIdxKeyCompare(
   Mem m;
 
   sqlite3BtreeKeySize(pCur, &nCellKey);
-  if( nCellKey<=0 || nCellKey>0x7fffffff ){
+  /* nCellKey will always be between 0 and 0xffffffff because of the say
+  ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
+  if( NEVER(nCellKey<=0) || nCellKey>0x7fffffff ){
     *res = 0;
-    return SQLITE_OK;
+    return SQLITE_CORRUPT;
   }
   m.db = 0;
   m.flags = 0;

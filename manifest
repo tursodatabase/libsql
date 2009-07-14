@@ -1,5 +1,5 @@
-C Make\ssure\sthe\sIN\soperator\sworks\swith\szeroblobs.\sTicket\s#3965.\nOther\ssimplifications\sassociated\swith\sstructural\stesting.\s(CVS\s6890)
-D 2009-07-14T02:33:02
+C Simplifications\sand\stweaks\sto\svdbeaux.c\sresulting\sfrom\sstructural\stesting.\s(CVS\s6891)
+D 2009-07-14T14:15:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -208,7 +208,7 @@ F src/vdbe.c f76edc03ffef53ccbf9e38ecc73a65d29eb5b1bd
 F src/vdbe.h 35a648bc3279a120da24f34d9a25213ec15daf8a
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 17b354bc801098c0c39d6bee6efe629447fa5d68
+F src/vdbeaux.c 5b3cacb685143ebe8ec8660a4dde08a8a45082ce
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c 1618f685d19b4bcc96e40b3c478487bafd2ae246
 F src/vtab.c 00902f289521041712fb0293d0bf8688c7af8e48
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 1c2bfc43a4fd5b779a3b5b5b8ca5b41cb7250b5a
-R 5b29579da257bf626ba86a77cdfd950e
+P 25dd342283046aaf66a679348ef1c7364c616402
+R f6226eddfcb83024fda164220a139368
 U drh
-Z f2dc33c5921003d4457094dd4509cc09
+Z 435b93aa97c763959298279012931682
