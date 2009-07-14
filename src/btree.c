@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.686 2009/07/13 13:18:07 danielk1977 Exp $
+** $Id: btree.c,v 1.687 2009/07/14 17:48:06 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -7340,7 +7340,6 @@ static int checkTreePage(
   if( iPage==0 ) return 0;
   if( checkRef(pCheck, iPage, zParentContext) ) return 0;
   if( (rc = btreeGetPage(pBt, (Pgno)iPage, &pPage, 0))!=0 ){
-    if( rc==SQLITE_NOMEM || rc==SQLITE_IOERR_NOMEM ) pCheck->mallocFailed = 1;
     checkAppendMsg(pCheck, zContext,
        "unable to get the page. error code=%d", rc);
     return 0;
@@ -7424,11 +7423,7 @@ static int checkTreePage(
     pCheck->mallocFailed = 1;
   }else{
     u16 contentOffset = get2byte(&data[hdr+5]);
-    if (contentOffset > usableSize) {
-      checkAppendMsg(pCheck, 0, 
-                     "Corruption detected in header on page %d",iPage,0);
-      goto check_page_abort;
-    }
+    assert( contentOffset<=usableSize );  /* Enforced by btreeInitPage() */
     memset(hit+contentOffset, 0, usableSize-contentOffset);
     memset(hit, 1, contentOffset);
     nCell = get2byte(&data[hdr+3]);
@@ -7440,7 +7435,7 @@ static int checkTreePage(
       if( pc<=usableSize-4 ){
         size = cellSizePtr(pPage, &data[pc]);
       }
-      if( (pc+size-1)>=usableSize || pc<0 ){
+      if( (pc+size-1)>=usableSize ){
         checkAppendMsg(pCheck, 0, 
             "Corruption detected in cell %d on page %d",i,iPage,0);
       }else{
@@ -7474,7 +7469,6 @@ static int checkTreePage(
           cnt, data[hdr+7], iPage);
     }
   }
-check_page_abort:
   sqlite3PageFree(hit);
   releasePage(pPage);
   return depth+1;
