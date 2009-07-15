@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.687 2009/07/14 17:48:06 drh Exp $
+** $Id: btree.c,v 1.688 2009/07/15 11:26:44 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1200,7 +1200,7 @@ static int freeSpace(MemPage *pPage, int start, int size){
 
   assert( pPage->pBt!=0 );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
-  assert( start>=pPage->hdrOffset+6+(pPage->leaf?0:4) );
+  assert( start>=pPage->hdrOffset+6+pPage->childPtrSize );
   assert( (start + size)<=pPage->pBt->usableSize );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( size>=0 );   /* Minimum cell size is 4 */
@@ -4885,7 +4885,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   ** is possible to add the page as a new free-list leaf.
   */
   if( nFree!=0 ){
-    int nLeaf;                /* Initial number of leaf cells on trunk page */
+    u32 nLeaf;                /* Initial number of leaf cells on trunk page */
 
     iTrunk = get4byte(&pPage1->aData[32]);
     rc = btreeGetPage(pBt, iTrunk, &pTrunk, 0);
@@ -4894,7 +4894,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     }
 
     nLeaf = get4byte(&pTrunk->aData[4]);
-    if( nLeaf<0 ){
+    if( nLeaf > pBt->usableSize/4 - 2 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto freepage_out;
     }
@@ -4908,7 +4908,7 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
       ** 3.6.0, databases with freelist trunk pages holding more than
       ** usableSize/4 - 8 entries will be reported as corrupt.  In order
       ** to maintain backwards compatibility with older versions of SQLite,
-      ** we will contain to restrict the number of entries to usableSize/4 - 8
+      ** we will continue to restrict the number of entries to usableSize/4 - 8
       ** for now.  At some point in the future (once everyone has upgraded
       ** to 3.6.0 or later) we should consider fixing the conditional above
       ** to read "usableSize/4-2" instead of "usableSize/4-8".
@@ -4935,9 +4935,11 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   ** first trunk in the free-list is full. Either way, the page being freed
   ** will become the new first trunk page in the free-list.
   */
-  if(   ((!pPage) && (0 != (rc = btreeGetPage(pBt, iPage, &pPage, 0))))
-     || (0 != (rc = sqlite3PagerWrite(pPage->pDbPage)))
-  ){
+  if( pPage==0 && SQLITE_OK!=(rc = btreeGetPage(pBt, iPage, &pPage, 0)) ){
+    goto freepage_out;
+  }
+  rc = sqlite3PagerWrite(pPage->pDbPage);
+  if( rc!=SQLITE_OK ){
     goto freepage_out;
   }
   put4byte(pPage->aData, iTrunk);
@@ -5185,7 +5187,7 @@ static int dropCell(MemPage *pPage, int idx, int sz){
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
   pc = get2byte(ptr);
-  if( (pc<pPage->hdrOffset+6+(pPage->leaf?0:4))
+  if( NEVER(pc<pPage->hdrOffset+6+pPage->childPtrSize)
      || (pc+sz>pPage->pBt->usableSize) ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -6866,7 +6868,8 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   ** a no-op).  */
   invalidateIncrblobCursors(p, iTable, 0, 1);
 
-  if( SQLITE_OK==(rc = saveAllCursors(pBt, (Pgno)iTable, 0)) ){
+  rc = saveAllCursors(pBt, (Pgno)iTable, 0);
+  if( SQLITE_OK==rc ){
     rc = clearDatabasePage(pBt, (Pgno)iTable, 0, pnChange);
   }
   sqlite3BtreeLeave(p);
@@ -6906,8 +6909,10 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
   ** need to move another root-page to fill a gap left by the deleted
   ** root page. If an open cursor was using this page a problem would 
   ** occur.
+  **
+  ** This error is caught long before control reaches this point.
   */
-  if( pBt->pCursor ){
+  if( NEVER(pBt->pCursor) ){
     sqlite3ConnectionBlocked(p->db, pBt->pCursor->pBtree->db);
     return SQLITE_LOCKED_SHAREDCACHE;
   }
@@ -6989,7 +6994,10 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
     }
 #endif
   }else{
-    /* If sqlite3BtreeDropTable was called on page 1. */
+    /* If sqlite3BtreeDropTable was called on page 1.
+    ** This really never should happen except in a corrupt
+    ** database. 
+    */
     zeroPage(pPage, PTF_INTKEY|PTF_LEAF );
     releasePage(pPage);
   }

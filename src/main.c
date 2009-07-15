@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: main.c,v 1.560 2009/06/26 15:14:55 drh Exp $
+** $Id: main.c,v 1.561 2009/07/15 11:26:44 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -2245,6 +2245,21 @@ int sqlite3_test_control(int op, ...){
       rc = ALWAYS(x);
       break;
     }
+
+    /*   sqlite3_test_control(SQLITE_TESTCTRL_RESERVE, sqlite3 *db, int N)
+    **
+    ** Set the nReserve size to N for the main database on the database
+    ** connection db.
+    */
+    case SQLITE_TESTCTRL_RESERVE: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int x = va_arg(ap,int);
+      sqlite3_mutex_enter(db->mutex);
+      sqlite3BtreeSetPageSize(db->aDb[0].pBt, 0, x, 0);
+      sqlite3_mutex_leave(db->mutex);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */
