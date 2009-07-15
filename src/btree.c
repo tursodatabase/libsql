@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.688 2009/07/15 11:26:44 drh Exp $
+** $Id: btree.c,v 1.689 2009/07/15 17:25:46 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -500,13 +500,13 @@ static void invalidateIncrblobCursors(
 static int btreeSetHasContent(BtShared *pBt, Pgno pgno){
   int rc = SQLITE_OK;
   if( !pBt->pHasContent ){
-    int nPage;
-    rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
-    if( rc==SQLITE_OK ){
-      pBt->pHasContent = sqlite3BitvecCreate((u32)nPage);
-      if( !pBt->pHasContent ){
-        rc = SQLITE_NOMEM;
-      }
+    int nPage = 100;
+    sqlite3PagerPagecount(pBt->pPager, &nPage);
+    /* If sqlite3PagerPagecount() fails there is no harm because the
+    ** nPage variable is unchanged from its default value of 100 */
+    pBt->pHasContent = sqlite3BitvecCreate((u32)nPage);
+    if( !pBt->pHasContent ){
+      rc = SQLITE_NOMEM;
     }
   }
   if( rc==SQLITE_OK && pgno<=sqlite3BitvecSize(pBt->pHasContent) ){
@@ -548,6 +548,7 @@ static int saveCursorPosition(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
 
   rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
+  assert( rc==SQLITE_OK );  /* Cannot fail since pCur->eState==VALID */
 
   /* If this is an intKey table, then the above call to BtreeKeySize()
   ** stores the integer key in pCur->nKey. In this case this value is
@@ -555,7 +556,7 @@ static int saveCursorPosition(BtCursor *pCur){
   ** table, then malloc space for and store the pCur->nKey bytes of key 
   ** data.
   */
-  if( rc==SQLITE_OK && 0==pCur->apPage[0]->intKey){
+  if( 0==pCur->apPage[0]->intKey ){
     void *pKey = sqlite3Malloc( (int)pCur->nKey );
     if( pKey ){
       rc = sqlite3BtreeKey(pCur, 0, (int)pCur->nKey, pKey);
@@ -658,10 +659,10 @@ static int btreeRestoreCursorPosition(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
   assert( pCur->eState>=CURSOR_REQUIRESEEK );
   if( pCur->eState==CURSOR_FAULT ){
-    return pCur->skip;
+    return pCur->skipNext;
   }
   pCur->eState = CURSOR_INVALID;
-  rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skip);
+  rc = btreeMoveto(pCur, pCur->pKey, pCur->nKey, 0, &pCur->skipNext);
   if( rc==SQLITE_OK ){
     sqlite3_free(pCur->pKey);
     pCur->pKey = 0;
@@ -691,7 +692,7 @@ int sqlite3BtreeCursorHasMoved(BtCursor *pCur, int *pHasMoved){
     *pHasMoved = 1;
     return rc;
   }
-  if( pCur->eState!=CURSOR_VALID || pCur->skip!=0 ){
+  if( pCur->eState!=CURSOR_VALID || pCur->skipNext!=0 ){
     *pHasMoved = 1;
   }else{
     *pHasMoved = 0;
@@ -2433,9 +2434,8 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   /* Any read-only or read-write transaction implies a read-lock on 
   ** page 1. So if some other shared-cache client already has a write-lock 
   ** on page 1, the transaction cannot be opened. */
-  if( SQLITE_OK!=(rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK)) ){
-    goto trans_begun;
-  }
+  rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK);
+  if( SQLITE_OK!=rc ) goto trans_begun;
 
   do {
     /* Call lockBtree() until either pBt->pPage1 is populated or
@@ -3091,7 +3091,7 @@ void sqlite3BtreeTripAllCursors(Btree *pBtree, int errCode){
     int i;
     sqlite3BtreeClearCursor(p);
     p->eState = CURSOR_FAULT;
-    p->skip = errCode;
+    p->skipNext = errCode;
     for(i=0; i<=p->iPage; i++){
       releasePage(p->apPage[i]);
       p->apPage[i] = 0;
@@ -4011,8 +4011,8 @@ static int moveToRoot(BtCursor *pCur){
   assert( CURSOR_FAULT   > CURSOR_REQUIRESEEK );
   if( pCur->eState>=CURSOR_REQUIRESEEK ){
     if( pCur->eState==CURSOR_FAULT ){
-      assert( pCur->skip!=SQLITE_OK );
-      return pCur->skip;
+      assert( pCur->skipNext!=SQLITE_OK );
+      return pCur->skipNext;
     }
     sqlite3BtreeClearCursor(pCur);
   }
@@ -4024,9 +4024,8 @@ static int moveToRoot(BtCursor *pCur){
     }
     pCur->iPage = 0;
   }else{
-    if( 
-      SQLITE_OK!=(rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0]))
-    ){
+    rc = getAndInitPage(pBt, pCur->pgnoRoot, &pCur->apPage[0]);
+    if( rc!=SQLITE_OK ){
       pCur->eState = CURSOR_INVALID;
       return rc;
     }
@@ -4423,12 +4422,12 @@ int sqlite3BtreeNext(BtCursor *pCur, int *pRes){
     *pRes = 1;
     return SQLITE_OK;
   }
-  if( pCur->skip>0 ){
-    pCur->skip = 0;
+  if( pCur->skipNext>0 ){
+    pCur->skipNext = 0;
     *pRes = 0;
     return SQLITE_OK;
   }
-  pCur->skip = 0;
+  pCur->skipNext = 0;
 
   pPage = pCur->apPage[pCur->iPage];
   idx = ++pCur->aiIdx[pCur->iPage];
@@ -4491,12 +4490,12 @@ int sqlite3BtreePrevious(BtCursor *pCur, int *pRes){
     *pRes = 1;
     return SQLITE_OK;
   }
-  if( pCur->skip<0 ){
-    pCur->skip = 0;
+  if( pCur->skipNext<0 ){
+    pCur->skipNext = 0;
     *pRes = 0;
     return SQLITE_OK;
   }
-  pCur->skip = 0;
+  pCur->skipNext = 0;
 
   pPage = pCur->apPage[pCur->iPage];
   assert( pPage->isInit );
@@ -4628,7 +4627,6 @@ static int allocateBtreePage(
       }
 
       k = get4byte(&pTrunk->aData[4]);
-      testcase( k==(u32)(pBt->usableSize/4 - 2) );
       if( k==0 && !searchList ){
         /* The trunk has no leaves and the list is not being searched. 
         ** So extract the trunk page itself and use it as the newly 
@@ -5187,7 +5185,7 @@ static int dropCell(MemPage *pPage, int idx, int sz){
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
   pc = get2byte(ptr);
-  if( NEVER(pc<pPage->hdrOffset+6+pPage->childPtrSize)
+  if( (pc<pPage->hdrOffset+6+pPage->childPtrSize)
      || (pc+sz>pPage->pBt->usableSize) ){
     return SQLITE_CORRUPT_BKPT;
   }
@@ -6430,8 +6428,8 @@ int sqlite3BtreeInsert(
   }
 
   if( pCur->eState==CURSOR_FAULT ){
-    assert( pCur->skip!=SQLITE_OK );
-    return pCur->skip;
+    assert( pCur->skipNext!=SQLITE_OK );
+    return pCur->skipNext;
   }
 
   /* Save the positions of any other cursors open on this table.
@@ -6445,11 +6443,11 @@ int sqlite3BtreeInsert(
   ** doing any work. To avoid thwarting these optimizations, it is important
   ** not to clear the cursor here.
   */
-  if(
-    SQLITE_OK!=(rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur)) || (!loc &&
-    SQLITE_OK!=(rc = btreeMoveto(pCur, pKey, nKey, appendBias, &loc))
-  )){
-    return rc;
+  rc = saveAllCursors(pBt, pCur->pgnoRoot, pCur);
+  if( rc ) return rc;
+  if( !loc ){
+    rc = btreeMoveto(pCur, pKey, nKey, appendBias, &loc);
+    if( rc ) return rc;
   }
   assert( pCur->eState==CURSOR_VALID || (pCur->eState==CURSOR_INVALID && loc) );
 
@@ -6580,9 +6578,8 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   ** balancing the tree following the delete operation easier.  */
   if( !pPage->leaf ){
     int notUsed;
-    if( SQLITE_OK!=(rc = sqlite3BtreePrevious(pCur, &notUsed)) ){
-      return rc;
-    }
+    rc = sqlite3BtreePrevious(pCur, &notUsed);
+    if( rc ) return rc;
   }
 
   /* Save the positions of any other cursors open on this table before
