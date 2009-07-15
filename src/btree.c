@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.689 2009/07/15 17:25:46 drh Exp $
+** $Id: btree.c,v 1.690 2009/07/15 18:15:23 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6976,10 +6976,8 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
       ** PENDING_BYTE_PAGE.
       */
       maxRootPgno--;
-      if( maxRootPgno==PENDING_BYTE_PAGE(pBt) ){
-        maxRootPgno--;
-      }
-      if( maxRootPgno==PTRMAP_PAGENO(pBt, maxRootPgno) ){
+      while( maxRootPgno==PENDING_BYTE_PAGE(pBt)
+             || PTRMAP_ISPAGE(pBt, maxRootPgno) ){
         maxRootPgno--;
       }
       assert( maxRootPgno!=PENDING_BYTE_PAGE(pBt) );

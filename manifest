@@ -1,5 +1,5 @@
-C Simplifications\sto\sbtree.c\sin\ssupport\sof\sstructural\stesting.\s\sRenamed\sthe\n"skip"\sfield\sof\sthe\sBtCursor\sobject\sto\s"skipNext"\sto\smake\sit\seasier\sto\nsearch\sfor\splaces\swhere\sit\sis\sused.\s(CVS\s6896)
-D 2009-07-15T17:25:46
+C Fix\sa\spotential\sdatabase\scorruption\sfollowing\sDROP\sTABLE\swhen\sthe\spending\nbyte\spage\scorresponds\sto\sa\sptrmap\spage.\s\sThis\ssituation\scannot\shappen\sin\na\sreal\sdeployment\s-\sbut\sit\sstill\sneeds\sto\sbe\sfixed.\s(CVS\s6897)
+D 2009-07-15T18:15:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
 F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
-F src/btree.c a1fda2c54edd21079c60c34ee6973e0522c4ece2
+F src/btree.c 7e2ecefda6cecffd8754e574410f633da7cb2da2
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P a42dc51e3bd258d5a357e557251fb2642708ceac
-R b79ce4fac444a551c4798dffd50747f8
+P d3897235d77e48ad09f7edb0a7641458afa0a282
+R 80b8046702f1ee7289f3a73e7f02bb09
 U drh
-Z d31e2bba272164e36061fcdc880b0bf2
+Z 1195c9548f33eeb834b8b14408f2ef0f
