@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.474 2009/07/14 18:35:46 drh Exp $
+** $Id: vdbeaux.c,v 1.475 2009/07/15 16:30:50 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2420,11 +2420,10 @@ UnpackedRecord *sqlite3VdbeRecordUnpack(
   idx = getVarint32(aKey, szHdr);
   d = szHdr;
   u = 0;
-  while( idx<szHdr && u<p->nField ){
+  while( idx<szHdr && u<p->nField && d<=nKey ){
     u32 serial_type;
 
     idx += getVarint32(&aKey[idx], serial_type);
-    assert( d+sqlite3VdbeSerialTypeLen(serial_type) <= nKey );
     pMem->enc = pKeyInfo->enc;
     pMem->db = pKeyInfo->db;
     pMem->flags = 0;
