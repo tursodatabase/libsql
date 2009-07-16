@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.690 2009/07/15 18:15:23 drh Exp $
+** $Id: btree.c,v 1.691 2009/07/16 18:21:18 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2618,6 +2618,11 @@ static int modifyPagePointer(MemPage *pPage, Pgno iFrom, Pgno iTo, u8 eType){
 /*
 ** Move the open database page pDbPage to location iFreePage in the 
 ** database. The pDbPage reference remains valid.
+**
+** The isCommit flag indicates that there is no need to remember that
+** the journal needs to be sync()ed before database page pDbPage->pgno 
+** can be written to. The caller has already promised not to write to that
+** page.
 */
 static int relocatePage(
   BtShared *pBt,           /* Btree */
@@ -2625,7 +2630,7 @@ static int relocatePage(
   u8 eType,                /* Pointer map 'type' entry for pDbPage */
   Pgno iPtrPage,           /* Pointer map 'page-no' entry for pDbPage */
   Pgno iFreePage,          /* The location to move pDbPage to */
-  int isCommit
+  int isCommit             /* isCommit flag passed to sqlite3PagerMovepage */
 ){
   MemPage *pPtrPage;   /* The page that contains a pointer to pDbPage */
   Pgno iDbPage = pDbPage->pgno;

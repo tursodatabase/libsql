@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.
 #
-# $Id: misc7.test,v 1.28 2009/02/10 05:45:42 danielk1977 Exp $
+# $Id: misc7.test,v 1.29 2009/07/16 18:21:18 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -365,16 +365,6 @@ do_test misc7-16.X {
     SELECT count(*) FROM t3;
   }
 } {32}
-
-set sqlite_pager_n_sort_bucket 4
-do_test misc7-17 {
-  execsql {
-    PRAGMA integrity_check;
-    VACUUM;
-    PRAGMA integrity_check;
-  }
-} {ok ok}
-set sqlite_pager_n_sort_bucket 0
 
 #----------------------------------------------------------------------
 # Test the situation where a hot-journal is discovered but write-access

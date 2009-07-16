@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.64 2009/06/27 00:48:33 drh Exp $
+** $Id: malloc.c,v 1.65 2009/07/16 18:21:18 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -88,13 +88,11 @@ static SQLITE_WSD struct Mem0Global {
   ** The alarm callback and its arguments.  The mem0.mutex lock will
   ** be held while the callback is running.  Recursive calls into
   ** the memory subsystem are allowed, but no new callbacks will be
-  ** issued.  The alarmBusy variable is set to prevent recursive
-  ** callbacks.
+  ** issued.
   */
   sqlite3_int64 alarmThreshold;
   void (*alarmCallback)(void*, sqlite3_int64,int);
   void *alarmArg;
-  int alarmBusy;
 
   /*
   ** Pointers to the end of sqlite3GlobalConfig.pScratch and
@@ -103,7 +101,7 @@ static SQLITE_WSD struct Mem0Global {
   */
   u32 *aScratchFree;
   u32 *aPageFree;
-} mem0 = { 62560955, 0, 0, 0, 0, 0, 0, 0, 0 };
+} mem0 = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define mem0 GLOBAL(struct Mem0Global, mem0)
 
@@ -220,15 +218,16 @@ static void sqlite3MallocAlarm(int nByte){
   void (*xCallback)(void*,sqlite3_int64,int);
   sqlite3_int64 nowUsed;
   void *pArg;
-  if( mem0.alarmCallback==0 || mem0.alarmBusy  ) return;
-  mem0.alarmBusy = 1;
+  if( mem0.alarmCallback==0 ) return;
   xCallback = mem0.alarmCallback;
   nowUsed = sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED);
   pArg = mem0.alarmArg;
+  mem0.alarmCallback = 0;
   sqlite3_mutex_leave(mem0.mutex);
   xCallback(pArg, nowUsed, nByte);
   sqlite3_mutex_enter(mem0.mutex);
-  mem0.alarmBusy = 0;
+  mem0.alarmCallback = xCallback;
+  mem0.alarmArg = pArg;
 }
 
 /*
