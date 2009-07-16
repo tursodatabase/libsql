@@ -1,5 +1,5 @@
-C Fix\sa\spotential\sdatabase\scorruption\sfollowing\sDROP\sTABLE\swhen\sthe\spending\nbyte\spage\scorresponds\sto\sa\sptrmap\spage.\s\sThis\ssituation\scannot\shappen\sin\na\sreal\sdeployment\s-\sbut\sit\sstill\sneeds\sto\sbe\sfixed.\s(CVS\s6897)
-D 2009-07-15T18:15:23
+C Remove\san\sunused\svariable\sfrom\ssqlite3ExprListDup().\s\sTicket\s#3973.\s(CVS\s6898)
+D 2009-07-16T12:41:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +114,7 @@ F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c fb05e577ab273cc8a63b44809aa5078f72f475c1
-F src/expr.c de80e2d6c2adc453e06f070837ca5b87d4373730
+F src/expr.c f6f21604c1367354b28d03c983a83279071a2948
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9856373f5315f6b8690d7f07f7191aa9f279ca87
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d3897235d77e48ad09f7edb0a7641458afa0a282
-R 80b8046702f1ee7289f3a73e7f02bb09
+P 6242db39f7f4ead5017bf684139d1f8312799f81
+R a3cf7fcfc25ee4fb5320c7c0dd02a2d0
 U drh
-Z 1195c9548f33eeb834b8b14408f2ef0f
+Z d63993f78c2605b7a463f91faa166797
