@@ -16,7 +16,7 @@
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
 **
-** @(#) $Id: pcache1.c,v 1.18 2009/07/16 18:21:18 drh Exp $
+** @(#) $Id: pcache1.c,v 1.19 2009/07/17 11:44:07 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -218,9 +218,13 @@ static PgHdr1 *pcache1AllocPage(PCache1 *pCache){
 
 /*
 ** Free a page object allocated by pcache1AllocPage().
+**
+** The pointer is allowed to be NULL, which is prudent.  But it turns out
+** that the current implementation happens to never call this routine
+** with a NULL pointer, so we mark the NULL test with ALWAYS().
 */
 static void pcache1FreePage(PgHdr1 *p){
-  if( p ){
+  if( ALWAYS(p) ){
     if( p->pCache->bPurgeable ){
       pcache1.nCurrentPage--;
     }
@@ -471,7 +475,14 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 ** Fetch a page by key value.
 **
 ** Whether or not a new page may be allocated by this function depends on
-** the value of the createFlag argument.
+** the value of the createFlag argument.  0 means do not allocate a new
+** page.  1 means allocate a new page if space is easily available.  2 
+** means to try really hard to allocate a new page.
+**
+** For a non-purgeable cache (a cache used as the storage for an in-memory
+** database) there is really no difference between createFlag 1 and 2.  So
+** the calling function (pcache.c) will never have a createFlag of 1 on
+** a non-purgable cache.
 **
 ** There are three different approaches to obtaining space for a page,
 ** depending on the value of parameter createFlag (which may be 0, 1 or 2).
@@ -482,9 +493,8 @@ static int pcache1Pagecount(sqlite3_pcache *p){
 **   2. If createFlag==0 and the page is not already in the cache, NULL is
 **      returned.
 **
-**   3. If createFlag is 1, the cache is marked as purgeable and the page is 
-**      not already in the cache, and if either of the following are true, 
-**      return NULL:
+**   3. If createFlag is 1, and the page is not already in the cache,
+**      and if either of the following are true, return NULL:
 **
 **       (a) the number of pages pinned by the cache is greater than
 **           PCache1.nMax, or
@@ -513,6 +523,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
   PCache1 *pCache = (PCache1 *)p;
   PgHdr1 *pPage = 0;
 
+  assert( pCache->bPurgeable || createFlag!=1 );
   pcache1EnterMutex();
   if( createFlag==1 ) sqlite3BeginBenignMalloc();
 
@@ -529,7 +540,7 @@ static void *pcache1Fetch(sqlite3_pcache *p, unsigned int iKey, int createFlag){
 
   /* Step 3 of header comment. */
   nPinned = pCache->nPage - pCache->nRecyclable;
-  if( createFlag==1 && pCache->bPurgeable && (
+  if( createFlag==1 && (
         nPinned>=(pcache1.nMaxPage+pCache->nMin-pcache1.nMinPage)
      || nPinned>=(pCache->nMax * 9 / 10)
   )){

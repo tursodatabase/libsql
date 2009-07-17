@@ -1,5 +1,5 @@
-C Code\ssimplifications\sand\scomment\simprovements\sin\ssupport\sof\sstructural\ncoverage\stesting.\s(CVS\s6899)
-D 2009-07-16T18:21:18
+C Code\ssimplifications\sin\ssupport\sof\sstructural\stesting.\s(CVS\s6900)
+D 2009-07-17T11:44:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,7 +105,7 @@ F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
-F src/btmutex.c 9b899c0d8df3bd68f527b0afe03088321b696d3c
+F src/btmutex.c f7b059a9b08e1af2dd222bf3cc5c45054af0bba6
 F src/btree.c 4d964398d7291fd536cd6361c70ccad9c8dc3b9a
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
@@ -127,7 +127,7 @@ F src/legacy.c 54a11649f27ae55f4fcd6e6b5ba836f839cb8704
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c 4e6d1c2418983cebed436be2996a067f9e1bfe5d
-F src/malloc.c 70d226282bc6e1eaccb7e2f6872c69ac31f14c94
+F src/malloc.c 561710bf4b84084e2d047584ab3e7c7094e22a56
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
@@ -152,7 +152,7 @@ F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 7d27635a4bd03c81ce848cb186fea6192706fa1a
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
-F src/pcache1.c daa2a58a42a3891a5fc1003fad0a704f465eb3b8
+F src/pcache1.c 6dc833c89feac405dd8b4858232c97e679f182ec
 F src/pragma.c 9eb44ac1d3dc1ac3ea4f444abe1a10ae8acaa16c
 F src/prepare.c 12e556fc9f72a6563db7099697f657d75d4bb91c
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 17c05aefd6c9e938a4cc5d3de348d8c8fdc9394d
-R eacf63252667dbb069131e999be4c4b5
+P 945251798144110787b197f9eb552a2dd4a25cb4
+R 1c8ff9295bcd8f6ec0b813abe7f11af7
 U drh
-Z 929c4cc923822b5a2b9ba3adb55fe10b
+Z a07afaca9e6c4c7b333f6347b1d75539

@@ -12,7 +12,7 @@
 **
 ** Memory allocation functions used throughout sqlite.
 **
-** $Id: malloc.c,v 1.65 2009/07/16 18:21:18 drh Exp $
+** $Id: malloc.c,v 1.66 2009/07/17 11:44:07 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -423,9 +423,7 @@ int sqlite3MallocSize(void *p){
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( p==0 ){
-    return 0;
-  }else if( isLookaside(db, p) ){
+  if( isLookaside(db, p) ){
     return db->lookaside.sz;
   }else{
     return sqlite3GlobalConfig.m.xSize(p);
