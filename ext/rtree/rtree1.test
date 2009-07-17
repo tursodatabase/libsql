@@ -11,7 +11,7 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree1.test,v 1.6 2008/12/22 15:04:32 danielk1977 Exp $
+# $Id: rtree1.test,v 1.7 2009/07/17 16:54:48 danielk1977 Exp $
 #
 
 if {![info exists testdir]} {
@@ -392,5 +392,13 @@ do_test rtree-9.3 {
     WHERE b1.minX <= b2.maxX AND s1.id = b1.id;
   }
 } {1600}
+
+#-------------------------------------------------------------------------
+# Ticket #3970: Check that the error message is meaningful when a 
+# keyword is used as a column name.
+#
+do_test rtree-10.1 {
+  catchsql { CREATE VIRTUAL TABLE t7 USING rtree(index, x1, y1, x2, y2) }
+} {1 {near "index": syntax error}}
 
 finish_test

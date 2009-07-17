@@ -1,5 +1,5 @@
-C Skip\sall\stests\sin\stableapi.test\sif\sSQLITE_OMIT_GET_TABLE\sdefined.\sTicket\s#3975.\s(CVS\s6901)
-D 2009-07-17T14:37:25
+C Return\sa\smeaningful\serror\smessage\sif\sa\skeyword\sis\sused\sas\san\srtree\stable\scolumn\sname.\sTicket\s#3970.\s(CVS\s6902)
+D 2009-07-17T16:54:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -72,9 +72,9 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c a1c43d0f58aaa6ba22eaf02875f8c55311f74a5d
+F ext/rtree/rtree.c 95eca5dd01f836539723b16e66b4c7a7d3537f6c
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
-F ext/rtree/rtree1.test ebcef111192a034c64e9f3b6bd42533a539c2062
+F ext/rtree/rtree1.test 207041aba07fdcdd93aa797a745839d305181857
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
 F ext/rtree/rtree3.test 877a09c1a0c2b87af0f94f3a286e7dd3b65adf22
 F ext/rtree/rtree4.test 11724f766a74f48710998cdd7552cec140c55bf9
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P fb1b955dda5105025ef199880afa871e44331d65
-R 22f557ecd5134692108b619209fa8416
-U shane
-Z 34c428efa05b8c1460f660c3dcea66fd
+P 0219a543367638013ccd06295eeb9efc822e2dd1
+R 644e39d982aefb64851bf1bd3db73970
+U danielk1977
+Z f3240366dc68a67dbf0f884ca2a0a471
