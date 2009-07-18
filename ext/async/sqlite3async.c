@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: sqlite3async.c,v 1.6 2009/04/30 17:45:34 shane Exp $
+** $Id: sqlite3async.c,v 1.7 2009/07/18 11:52:04 danielk1977 Exp $
 **
 ** This file contains the implementation of an asynchronous IO backend 
 ** for SQLite.
@@ -1065,7 +1065,10 @@ static int asyncOpen(
   if( !isAsyncOpen ){
     int flagsout;
     rc = pVfs->xOpen(pVfs, pData->zName, pData->pBaseRead, flags, &flagsout);
-    if( rc==SQLITE_OK && (flagsout&SQLITE_OPEN_READWRITE) ){
+    if( rc==SQLITE_OK 
+     && (flagsout&SQLITE_OPEN_READWRITE) 
+     && (flags&SQLITE_OPEN_EXCLUSIVE)==0
+    ){
       rc = pVfs->xOpen(pVfs, pData->zName, pData->pBaseWrite, flags, 0);
     }
     if( pOutFlags ){
