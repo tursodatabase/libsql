@@ -11,7 +11,7 @@
 #
 # This file contains tests of the memory allocation subsystem
 #
-# $Id: memsubsys1.test,v 1.16 2009/07/18 08:30:45 danielk1977 Exp $
+# $Id: memsubsys1.test,v 1.17 2009/07/18 14:36:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -270,9 +270,6 @@ do_test memsubsys1-8.2 {
 } 0
 do_test memsubsys1-8.3 {
   sqlite3 db :memory:
-  ifcapable !incrblob {
-    db function zeroblob [list string repeat [binary format c 0]]
-  }
   db eval {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(zeroblob(400));

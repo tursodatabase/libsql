@@ -11,7 +11,7 @@
 #
 # This file is focused on testing the pcache module.
 #
-# $Id: pcache2.test,v 1.4 2009/07/18 08:30:45 danielk1977 Exp $
+# $Id: pcache2.test,v 1.5 2009/07/18 14:36:24 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -46,9 +46,6 @@ do_test pcache2-1.3 {
   lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 1
 } {4}
 
-ifcapable !incrblob {
-  db function zeroblob [list string repeat [binary format c 0]]
-}
 
 # Make lots of changes on the first connection.  Verify that the
 # page cache usage does not grow to consume the page space set aside
