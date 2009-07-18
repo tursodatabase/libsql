@@ -9,7 +9,7 @@
 #
 #***********************************************************************
 #
-# $Id: savepoint.test,v 1.12 2009/02/04 10:09:04 danielk1977 Exp $
+# $Id: savepoint.test,v 1.13 2009/07/18 08:30:45 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -269,66 +269,68 @@ do_test savepoint-4.8 {
 # Test some logic errors to do with the savepoint feature.
 # 
 
-do_test savepoint-5.1.1 {
-  execsql {
-    CREATE TABLE blobs(x);
-    INSERT INTO blobs VALUES('a twentyeight character blob');
-  }
-  set fd [db incrblob blobs x 1]
-  puts -nonewline $fd "hello"
-  catchsql {SAVEPOINT abc}
-} {1 {cannot open savepoint - SQL statements in progress}}
-do_test savepoint-5.1.2 {
-  close $fd
-  catchsql {SAVEPOINT abc}
-} {0 {}}
-
-do_test savepoint-5.2 {
-  execsql  {RELEASE abc}
-  catchsql {RELEASE abc}
-} {1 {no such savepoint: abc}}
-
-do_test savepoint-5.3.1 {
-  execsql  {SAVEPOINT abc}
-  catchsql {ROLLBACK TO def}
-} {1 {no such savepoint: def}}
-do_test savepoint-5.3.2 {
-  execsql  {SAVEPOINT def}
-  set fd [db incrblob -readonly blobs x 1]
-  catchsql {ROLLBACK TO def}
-} {1 {cannot rollback savepoint - SQL statements in progress}}
-do_test savepoint-5.3.3 {
-  catchsql  {RELEASE def}
-} {0 {}}
-do_test savepoint-5.3.4 {
-  close $fd
-  execsql  {savepoint def}
-  set fd [db incrblob blobs x 1]
-  catchsql {release def}
-} {1 {cannot release savepoint - SQL statements in progress}}
-do_test savepoint-5.3.5 {
-  close $fd
-  execsql {release abc}
-} {}
-
-do_test savepoint-5.4.1 {
-  execsql {
-    SAVEPOINT main;
-    INSERT INTO blobs VALUES('another blob');
-  }
-} {}
-do_test savepoint-5.4.2 {
-  sqlite3 db2 test.db
-  execsql { BEGIN ; SELECT * FROM blobs } db2
-  catchsql { RELEASE main }
-} {1 {database is locked}}
-do_test savepoint-5.4.3 {
-  db2 close
-  catchsql { RELEASE main }
-} {0 {}}
-do_test savepoint-5.4.4 {
-  execsql { SELECT x FROM blobs WHERE rowid = 2 }
-} {{another blob}}
+ifcapable incrblob {
+  do_test savepoint-5.1.1 {
+    execsql {
+      CREATE TABLE blobs(x);
+      INSERT INTO blobs VALUES('a twentyeight character blob');
+    }
+    set fd [db incrblob blobs x 1]
+    puts -nonewline $fd "hello"
+    catchsql {SAVEPOINT abc}
+  } {1 {cannot open savepoint - SQL statements in progress}}
+  do_test savepoint-5.1.2 {
+    close $fd
+    catchsql {SAVEPOINT abc}
+  } {0 {}}
+  
+  do_test savepoint-5.2 {
+    execsql  {RELEASE abc}
+    catchsql {RELEASE abc}
+  } {1 {no such savepoint: abc}}
+  
+  do_test savepoint-5.3.1 {
+    execsql  {SAVEPOINT abc}
+    catchsql {ROLLBACK TO def}
+  } {1 {no such savepoint: def}}
+  do_test savepoint-5.3.2 {
+    execsql  {SAVEPOINT def}
+    set fd [db incrblob -readonly blobs x 1]
+    catchsql {ROLLBACK TO def}
+  } {1 {cannot rollback savepoint - SQL statements in progress}}
+  do_test savepoint-5.3.3 {
+    catchsql  {RELEASE def}
+  } {0 {}}
+  do_test savepoint-5.3.4 {
+    close $fd
+    execsql  {savepoint def}
+    set fd [db incrblob blobs x 1]
+    catchsql {release def}
+  } {1 {cannot release savepoint - SQL statements in progress}}
+  do_test savepoint-5.3.5 {
+    close $fd
+    execsql {release abc}
+  } {}
+  
+  do_test savepoint-5.4.1 {
+    execsql {
+      SAVEPOINT main;
+      INSERT INTO blobs VALUES('another blob');
+    }
+  } {}
+  do_test savepoint-5.4.2 {
+    sqlite3 db2 test.db
+    execsql { BEGIN ; SELECT * FROM blobs } db2
+    catchsql { RELEASE main }
+  } {1 {database is locked}}
+  do_test savepoint-5.4.3 {
+    db2 close
+    catchsql { RELEASE main }
+  } {0 {}}
+  do_test savepoint-5.4.4 {
+    execsql { SELECT x FROM blobs WHERE rowid = 2 }
+  } {{another blob}}
+}
 
 #-------------------------------------------------------------------------
 # The following tests, savepoint-6.*, test an incr-vacuum inside of a

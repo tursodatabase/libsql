@@ -1,5 +1,5 @@
-C Fix\sa\ssubtle\sproblem\sthat\scan\soccur\swhen\sa\stransaction\sis\sautomatically\srolled\sback,\sand\safterwards\sa\sVM\sthat\shad\sopened\sa\sstatement\stransaction\swithin\sthe\sabandoned\stransaction\sis\sfinalized.\sFixes\san\sassert()\sthat\swas\sfailing\sin\srtree3.test.\s(CVS\s6903)
-D 2009-07-17T17:25:43
+C Changes\sto\stest\sscripts\sso\sthat\s(make\stest)\sworks\swhen\sOMIT_INCRBLOB\sis\sdefined.\s(CVS\s6904)
+D 2009-07-18T08:30:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -470,7 +470,7 @@ F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
-F test/memsubsys1.test 66e90b4f16d8501ffd2e68ff2446c29ce66ecd84
+F test/memsubsys1.test 05bbe8fc2ea1db2444b00c3f42816aaeb899d40c
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
@@ -497,7 +497,7 @@ F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 0d9ff3fedfce6e5ffe8fa7aca9b6d3433a2e843b
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
-F test/pcache2.test 46efd980a89f737847b99327bda19e08fe11e402
+F test/pcache2.test 19a51b789e53878b4986e0b53746d004057455a4
 F test/permutations.test 1ce2874df8fec876d0b963c7a3ef61c4e9df8827
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
@@ -515,7 +515,7 @@ F test/rowhash.test 97f56043ba11f0679920416c0cdbc72e5272267b
 F test/rowid.test e58e0acef38b527ed1b0b70d3ada588f804af287
 F test/rtree.test 55466a200af3591946c5da77ad5dbfbc1e5e05f9
 F test/safety.test b69e2b2dd5d52a3f78e216967086884bbc1a09c6
-F test/savepoint.test 4fc56354c7cd9c6be40d6f18e06ee90d92be0cd9
+F test/savepoint.test f2ede4b643ad87ead36c041c72d774a1f5c8a564
 F test/savepoint2.test 427c8b20f43d3edf17a290c6788ae9e2703ac51c
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 046efe46b50fbe928f39a0cda1b1006d486ce9f5
-R 2588d6865f8cccb869a8209132f8a3f3
+P 910df46e0f570cbffa9ff9b50d75632c091838b6
+R 4cd50c4c4686040777c05866af87abd0
 U danielk1977
-Z 916dca7de1282056a17c7f9207c4274c
+Z b26db41ad205367b39a5d77856350b64
