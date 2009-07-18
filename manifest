@@ -1,5 +1,5 @@
-C Add\ssome\scode\sto\ssqlite3VdbeMemSetZeroBlob()\sso\sthat\sit\sworks\s(less\sefficiently)\seven\swhen\sOMIT_INCRBLOB\sis\sdefined.\sTicket\s#3977.\s(CVS\s6906)
-D 2009-07-18T14:36:24
+C Code\stweaks\sin\ssupport\sof\sfull-coverage\stesting.\s(CVS\s6907)
+D 2009-07-18T20:01:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F src/analyze.c e239496cfb5394ac8867f1c112905ddab8d01cd9
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
-F src/bitvec.c 0ef0651714728055d43de7a4cdd95e703fac0119
+F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c f7b059a9b08e1af2dd222bf3cc5c45054af0bba6
 F src/btree.c 4d964398d7291fd536cd6361c70ccad9c8dc3b9a
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 283d4e9c64d4a4555a9a15cf870180b4fc102f7e
+F src/pager.c ed7cdaac02878f7b74d4de01b36520e5505c9af6
 F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 7d27635a4bd03c81ce848cb186fea6192706fa1a
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 630e669b97a81f9125d4bdc18517738b74eecdec
-R be6a10c5cb1da4896236c9eaa54aec14
-U danielk1977
-Z de67b8120f72a62c9a57858baf4513bf
+P f5f7259d811ce8c2bf0bc64128256c4cd95f676a
+R 501910d99f038f7407ef489bd69f3aa4
+U drh
+Z 2bc811991280709656b34b94d784c295

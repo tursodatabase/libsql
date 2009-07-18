@@ -34,7 +34,7 @@
 ** start of a transaction, and is thus usually less than a few thousand,
 ** but can be as large as 2 billion for a really big database.
 **
-** @(#) $Id: bitvec.c,v 1.15 2009/06/02 21:31:39 drh Exp $
+** @(#) $Id: bitvec.c,v 1.16 2009/07/18 20:01:37 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -167,7 +167,7 @@ int sqlite3BitvecTest(Bitvec *p, u32 i){
 */
 int sqlite3BitvecSet(Bitvec *p, u32 i){
   u32 h;
-  assert( p!=0 );
+  if( p==0 ) return SQLITE_OK;
   assert( i>0 );
   assert( i<=p->iSize );
   i--;
@@ -237,7 +237,7 @@ bitvec_set_end:
 ** that BitvecClear can use to rebuilt its hash table.
 */
 void sqlite3BitvecClear(Bitvec *p, u32 i, void *pBuf){
-  assert( p!=0 );
+  if( p==0 ) return;
   assert( i>0 );
   i--;
   while( p->iDivisor ){
@@ -347,6 +347,10 @@ int sqlite3BitvecBuiltinTest(int sz, int *aOp){
   pTmpSpace = sqlite3_malloc(BITVEC_SZ);
   if( pBitvec==0 || pV==0 || pTmpSpace==0  ) goto bitvec_end;
   memset(pV, 0, (sz+7)/8 + 1);
+
+  /* NULL pBitvec tests */
+  sqlite3BitvecSet(0, 1);
+  sqlite3BitvecClear(0, 1, pTmpSpace);
 
   /* Run the program */
   pc = 0;

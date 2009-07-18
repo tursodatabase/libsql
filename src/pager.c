@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.608 2009/07/13 15:52:38 drh Exp $
+** @(#) $Id: pager.c,v 1.609 2009/07/18 20:01:37 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -5201,7 +5201,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   pPg->flags &= ~PGHDR_NEED_SYNC;
   pPgOld = pager_lookup(pPager, pgno);
   assert( !pPgOld || pPgOld->nRef==1 );
-  if( pPgOld ){
+  if( ALWAYS(pPgOld) ){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
     sqlite3PcacheDrop(pPgOld);
   }
@@ -5233,7 +5233,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
     assert( pPager->needSync );
     rc = sqlite3PagerGet(pPager, needSyncPgno, &pPgHdr);
     if( rc!=SQLITE_OK ){
-      if( pPager->pInJournal && needSyncPgno<=pPager->dbOrigSize ){
+      if( needSyncPgno<=pPager->dbOrigSize ){
         assert( pPager->pTmpSpace!=0 );
         sqlite3BitvecClear(pPager->pInJournal, needSyncPgno, pPager->pTmpSpace);
       }
@@ -5279,8 +5279,7 @@ void *sqlite3PagerGetData(DbPage *pPg){
 ** allocated along with the specified page.
 */
 void *sqlite3PagerGetExtra(DbPage *pPg){
-  Pager *pPager = pPg->pPager;
-  return (pPager?pPg->pExtra:0);
+  return pPg->pExtra;
 }
 
 /*
