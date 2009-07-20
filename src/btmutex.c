@@ -10,7 +10,7 @@
 **
 *************************************************************************
 **
-** $Id: btmutex.c,v 1.16 2009/07/17 11:44:07 drh Exp $
+** $Id: btmutex.c,v 1.17 2009/07/20 12:33:33 drh Exp $
 **
 ** This file contains code used to implement mutexes on Btree objects.
 ** This code really belongs in btree.c.  But btree.c is getting too
@@ -197,7 +197,9 @@ void sqlite3BtreeEnterAll(sqlite3 *db){
       if( !p->locked ){
         assert( p->wantToLock==1 );
         while( p->pPrev ) p = p->pPrev;
-        while( p->locked && p->pNext ) p = p->pNext;
+        /* Reason for ALWAYS:  There must be at least on unlocked Btree in
+        ** the chain.  Otherwise the !p->locked test above would have failed */
+        while( p->locked && ALWAYS(p->pNext) ) p = p->pNext;
         for(pLater = p->pNext; pLater; pLater=pLater->pNext){
           if( pLater->locked ){
             unlockBtreeMutex(pLater);
