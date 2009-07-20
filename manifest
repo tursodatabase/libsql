@@ -1,5 +1,5 @@
-C Code\stweaks\sin\ssupport\sof\sfull-coverage\stesting.\s(CVS\s6907)
-D 2009-07-18T20:01:37
+C Always\sprovide\sa\sname\sfor\sthe\sTEMP\sdatabase\seven\sif\sSQLite\sis\scompiled\susing\nSQLITE_OMIT_TEMPDB.\s(CVS\s6908)
+D 2009-07-20T11:32:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +126,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 54a11649f27ae55f4fcd6e6b5ba836f839cb8704
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 4e6d1c2418983cebed436be2996a067f9e1bfe5d
+F src/main.c a936f18fbb9cdf9ed9df93f58bb813876bd98590
 F src/malloc.c 561710bf4b84084e2d047584ab3e7c7094e22a56
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P f5f7259d811ce8c2bf0bc64128256c4cd95f676a
-R 501910d99f038f7407ef489bd69f3aa4
+P 22c6dbfdce965e32f3df9aec28e46e714620c362
+R 2c183c3fdd1c5601a0732392ed2fdcd5
 U drh
-Z 2bc811991280709656b34b94d784c295
+Z 51277bce9c4728720f91c82a6909c0f8
