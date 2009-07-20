@@ -22,9 +22,9 @@
 # The amalgamated SQLite code will be written into sqlite3.c
 #
 
-# Begin by reading the "sqlite3.h" header file.  Count the number of lines
-# in this file and extract the version number.  That information will be
-# needed in order to generate the header of the amalgamation.
+# Begin by reading the "sqlite3.h" header file.  Extract the version number
+# from in this file.  The versioon number is needed to generate the header
+# comment of the amalgamation.
 #
 if {[lsearch $argv --nostatic]>=0} {
   set addstatic 0
@@ -60,12 +60,12 @@ puts $out [subst \
 ** This file is all you need to compile SQLite.  To use SQLite in other
 ** programs, you need this file and the "sqlite3.h" header file that defines
 ** the programming interface to the SQLite library.  (If you do not have 
-** the "sqlite3.h" header file at hand, you will find a copy in the first
-** $cnt lines past this header comment.)  Additional code files may be
-** needed if you want a wrapper to interface SQLite with your choice of
-** programming language.  The code for the "sqlite3" command-line shell
-** is also in a separate file.  This file contains only code for the core
-** SQLite library.
+** the "sqlite3.h" header file at hand, you will find a copy embedded within
+** the text of this file.  Search for "Begin file sqlite3.h" to find the start
+** of the embedded sqlite3.h header file.) Additional code files may be needed
+** if you want a wrapper to interface SQLite with your choice of programming
+** language. The code for the "sqlite3" command-line shell is also in a
+** separate file. This file contains only code for the core SQLite library.
 **
 ** This amalgamation was generated on $today.
 */
