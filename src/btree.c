@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.692 2009/07/20 17:11:50 drh Exp $
+** $Id: btree.c,v 1.693 2009/07/20 19:30:01 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -5590,9 +5590,9 @@ static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
 ** be rolled back.
 **
 ** The third argument to this function, aOvflSpace, is a pointer to a
-** buffer page-size bytes in size. If, in inserting cells into the parent
-** page (pParent), the parent page becomes overfull, this buffer is
-** used to store the parents overflow cells. Because this function inserts
+** buffer big enough to hold one page. If while inserting cells into the parent
+** page (pParent) the parent page becomes overfull, this buffer is
+** used to store the parent's overflow cells. Because this function inserts
 ** a maximum of four divider cells into the parent page, and the maximum
 ** size of a cell stored within an internal node is always less than 1/4
 ** of the page-size, the aOvflSpace[] buffer is guaranteed to be large
@@ -5646,7 +5646,8 @@ static int balance_nonroot(
   /* At this point pParent may have at most one overflow cell. And if
   ** this overflow cell is present, it must be the cell with 
   ** index iParentIdx. This scenario comes about when this function
-  ** is called (indirectly) from sqlite3BtreeDelete(). */
+  ** is called (indirectly) from sqlite3BtreeDelete().
+  */
   assert( pParent->nOverflow==0 || pParent->nOverflow==1 );
   assert( pParent->nOverflow==0 || pParent->aOvfl[0].idx==iParentIdx );
 
@@ -5662,8 +5663,9 @@ static int balance_nonroot(
   **
   ** This loop also drops the divider cells from the parent page. This
   ** way, the remainder of the function does not have to deal with any
-  ** overflow cells in the parent page, as if one existed it has already
-  ** been removed.  */
+  ** overflow cells in the parent page, since if any existed they will
+  ** have already been removed.
+  */
   i = pParent->nOverflow + pParent->nCell;
   if( i<2 ){
     nxDiv = 0;
@@ -5694,7 +5696,7 @@ static int balance_nonroot(
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
     if( (i--)==0 ) break;
 
-    if( pParent->nOverflow && i+nxDiv==pParent->aOvfl[0].idx ){
+    if( i+nxDiv==pParent->aOvfl[0].idx && pParent->nOverflow ){
       apDiv[i] = pParent->aOvfl[0].pCell;
       pgno = get4byte(apDiv[i]);
       szNew[i] = cellSizePtr(pParent, apDiv[i]);
