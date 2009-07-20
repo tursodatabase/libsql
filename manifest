@@ -1,5 +1,5 @@
-C Use\san\sALWAYS()\son\sa\sconditional\sin\sbtmutex.c\sthat\sis\salways\strue.\s(CVS\s6910)
-D 2009-07-20T12:33:33
+C Modify\svarious\sroutines\sinside\sbtree.c\sto\stake\sa\spointer\sto\sthe\sreturn-code\nas\sa\sparameter\sand\sto\sno-op\sif\sthe\sreturn-code\sstorage\slocation\salready\ncontains\sa\snon-zero\scode.\s(CVS\s6911)
+D 2009-07-20T17:11:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c 4d964398d7291fd536cd6361c70ccad9c8dc3b9a
+F src/btree.c a597d1d9608c88d6ce06f89c396fb560d244f2bc
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 7572991bc2232f57d04c972d516a3e8f85f34f14
-R 9782ac6fe60ba619daf4a6a17cc11b51
+P 609022caff12c010575e704be550da6f52226d33
+R f0dac37b25de3361940901b7ede7713d
 U drh
-Z d571a5e8243db19d230ca1d0fe109d34
+Z 0886d43bf9f8d479825e913af0119cfa
