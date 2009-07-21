@@ -1,5 +1,5 @@
-C Reverse\sthe\sorder\sof\stwo\sconditionals\sin\sa\stest\sin\sorder\sto\sachieve\scoverage\nof\sthem\sboth.\s\sAlso:\sclarifications\sto\scomments\sin\sbtree.c.\s(CVS\s6912)
-D 2009-07-20T19:30:01
+C Changes\sto\sbtree.c\sin\ssupport\sof\scoverage\stesting.\s(CVS\s6913)
+D 2009-07-21T11:52:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c 123dd6ab71226ee9c41d6658fd11b2f7bed73f44
+F src/btree.c d5dde31b5743d90cee35071f4828ff38bdf90199
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 7dcf2a78727ce448d9d26bd6e2e23b553456ec54
-R ee81aff6c227cadf19a47a764a1a15d2
+P a159e9d24708dfe6c5a98d220e39f3b1b2a3d281
+R 1cd0f279a79b2344821cde6c251ba1a6
 U drh
-Z f9f7c95bd23663f1ba6a8b648cb1cde3
+Z b3b11d19f04a316773edec9a04d19c25

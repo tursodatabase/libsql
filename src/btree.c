@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.693 2009/07/20 19:30:01 drh Exp $
+** $Id: btree.c,v 1.694 2009/07/21 11:52:35 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1128,6 +1128,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   assert( nByte>=0 );  /* Minimum cell size is 4 */
   assert( pPage->nFree>=nByte );
   assert( pPage->nOverflow==0 );
+  assert( nByte<pPage->pBt->usableSize-8 );
 
   nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
@@ -1184,10 +1185,14 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
 
 
   /* Allocate memory from the gap in between the cell pointer array
-  ** and the cell content area.
+  ** and the cell content area.  The btreeInitPage() call has already
+  ** validated the freelist.  Given that the freelist is valid, there
+  ** is no way that the allocation can extend off the end of the page.
+  ** The assert() below verifies the previous sentence.
   */
   top -= nByte;
   put2byte(&data[hdr+5], top);
+  assert( top+nByte <= pPage->pBt->usableSize );
   *pIdx = top;
   return SQLITE_OK;
 }
@@ -4960,8 +4965,10 @@ freepage_out:
   releasePage(pTrunk);
   return rc;
 }
-static int freePage(MemPage *pPage){
-  return freePage2(pPage->pBt, pPage, pPage->pgno);
+static void freePage(MemPage *pPage, int *pRC){
+  if( (*pRC)==SQLITE_OK ){
+    *pRC = freePage2(pPage->pBt, pPage, pPage->pgno);
+  }
 }
 
 /*
@@ -5184,6 +5191,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   u8 *data;       /* pPage->aData */
   u8 *ptr;        /* Used to move bytes around within data[] */
   int rc;         /* The return code */
+  int hdr;        /* Beginning of the header.  0 most pages.  100 page 1 */
 
   if( *pRC ) return;
 
@@ -5194,8 +5202,10 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
   data = pPage->aData;
   ptr = &data[pPage->cellOffset + 2*idx];
   pc = get2byte(ptr);
-  if( (pc<pPage->hdrOffset+6+pPage->childPtrSize)
-     || (pc+sz>pPage->pBt->usableSize) ){
+  hdr = pPage->hdrOffset;
+  testcase( pc==get2byte(&data[hdr+5]) );
+  testcase( pc+sz==pPage->pBt->usableSize );
+  if( pc < get2byte(&data[hdr+5]) || pc+sz > pPage->pBt->usableSize ){
     *pRC = SQLITE_CORRUPT_BKPT;
     return;
   }
@@ -5209,7 +5219,7 @@ static void dropCell(MemPage *pPage, int idx, int sz, int *pRC){
     ptr[1] = ptr[3];
   }
   pPage->nCell--;
-  put2byte(&data[pPage->hdrOffset+3], pPage->nCell);
+  put2byte(&data[hdr+3], pPage->nCell);
   pPage->nFree += 2;
 }
 
@@ -5281,11 +5291,10 @@ static void insertCell(
     ins = cellOffset + 2*i;
     rc = allocateSpace(pPage, sz, &idx);
     if( rc ){ *pRC = rc; return; }
-    assert( idx>=end+2 );
-    if( idx+sz > pPage->pBt->usableSize ){
-      *pRC = SQLITE_CORRUPT_BKPT;
-      return;
-    }
+    /* The allocateSpace() routine guarantees the following two properties
+    ** if it returns success */
+    assert( idx >= end+2 );
+    assert( idx+sz <= pPage->pBt->usableSize );
     pPage->nCell++;
     pPage->nFree -= (u16)(2 + sz);
     memcpy(&data[idx+nSkip], pCell+nSkip, sz-nSkip);
@@ -5372,7 +5381,7 @@ static void assemblePage(
 ** tree, in other words, when the new entry will become the largest
 ** entry in the tree.
 **
-** Instead of trying balance the 3 right-most leaf pages, just add
+** Instead of trying to balance the 3 right-most leaf pages, just add
 ** a new page to the right-hand side and put the one new entry in
 ** that page.  This leaves the right side of the tree somewhat
 ** unbalanced.  But odds are that we will be inserting new entries
@@ -5399,7 +5408,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   assert( pPage->nOverflow==1 );
 
-  if( pPage->nCell<=0 ) return SQLITE_CORRUPT_BKPT;
+  if( NEVER(pPage->nCell<=0) ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
@@ -5528,37 +5537,40 @@ static int ptrmapCheckPages(MemPage **apPage, int nPage){
 ** the balance_shallower() and balance_deeper() procedures, neither of
 ** which are called often under normal circumstances.
 */
-static int copyNodeContent(MemPage *pFrom, MemPage *pTo){
-  BtShared * const pBt = pFrom->pBt;
-  u8 * const aFrom = pFrom->aData;
-  u8 * const aTo = pTo->aData;
-  int const iFromHdr = pFrom->hdrOffset;
-  int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
-  int rc = SQLITE_OK;
-  int iData;
-
-  assert( pFrom->isInit );
-  assert( pFrom->nFree>=iToHdr );
-  assert( get2byte(&aFrom[iFromHdr+5])<=pBt->usableSize );
-
-  /* Copy the b-tree node content from page pFrom to page pTo. */
-  iData = get2byte(&aFrom[iFromHdr+5]);
-  memcpy(&aTo[iData], &aFrom[iData], pBt->usableSize-iData);
-  memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
-
-  /* Reinitialize page pTo so that the contents of the MemPage structure
-  ** match the new data. The initialization of pTo "cannot" fail, as the
-  ** data copied from pFrom is known to be valid.  */
-  pTo->isInit = 0;
-  TESTONLY(rc = ) btreeInitPage(pTo);
-  assert( rc==SQLITE_OK );
-
-  /* If this is an auto-vacuum database, update the pointer-map entries
-  ** for any b-tree or overflow pages that pTo now contains the pointers to. */
-  if( ISAUTOVACUUM ){
-    rc = setChildPtrmaps(pTo);
+static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
+  if( (*pRC)==SQLITE_OK ){
+    BtShared * const pBt = pFrom->pBt;
+    u8 * const aFrom = pFrom->aData;
+    u8 * const aTo = pTo->aData;
+    int const iFromHdr = pFrom->hdrOffset;
+    int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
+    TESTONLY(int rc;)
+    int iData;
+  
+  
+    assert( pFrom->isInit );
+    assert( pFrom->nFree>=iToHdr );
+    assert( get2byte(&aFrom[iFromHdr+5])<=pBt->usableSize );
+  
+    /* Copy the b-tree node content from page pFrom to page pTo. */
+    iData = get2byte(&aFrom[iFromHdr+5]);
+    memcpy(&aTo[iData], &aFrom[iData], pBt->usableSize-iData);
+    memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
+  
+    /* Reinitialize page pTo so that the contents of the MemPage structure
+    ** match the new data. The initialization of pTo "cannot" fail, as the
+    ** data copied from pFrom is known to be valid.  */
+    pTo->isInit = 0;
+    TESTONLY(rc = ) btreeInitPage(pTo);
+    assert( rc==SQLITE_OK );
+  
+    /* If this is an auto-vacuum database, update the pointer-map entries
+    ** for any b-tree or overflow pages that pTo now contains the pointers to.
+    */
+    if( ISAUTOVACUUM ){
+      *pRC = setChildPtrmaps(pTo);
+    }
   }
-  return rc;
 }
 
 /*
@@ -5927,7 +5939,7 @@ static int balance_nonroot(
   /* Free any old pages that were not reused as new pages.
   */
   while( i<nOld ){
-    rc = freePage(apOld[i]);
+    freePage(apOld[i], &rc);
     if( rc ) goto balance_cleanup;
     releasePage(apOld[i]);
     apOld[i] = 0;
@@ -6075,9 +6087,8 @@ static int balance_nonroot(
     assert( apNew[0]->nFree == 
         (get2byte(&apNew[0]->aData[5])-apNew[0]->cellOffset-apNew[0]->nCell*2) 
     );
-    if( SQLITE_OK==(rc = copyNodeContent(apNew[0], pParent)) ){
-      rc = freePage(apNew[0]);
-    }
+    copyNodeContent(apNew[0], pParent, &rc);
+    freePage(apNew[0], &rc);
   }else if( ISAUTOVACUUM ){
     /* Fix the pointer-map entries for all the cells that were shifted around. 
     ** There are several different types of pointer-map entries that need to
@@ -6117,7 +6128,7 @@ static int balance_nonroot(
     int iOverflow = (nOverflow ? pOld->aOvfl[0].idx : -1);
     j = 0;                             /* Current 'old' sibling page */
     k = 0;                             /* Current 'new' sibling page */
-    for(i=0; i<nCell && rc==SQLITE_OK; i++){
+    for(i=0; i<nCell; i++){
       int isDivider = 0;
       while( i==iNextOld ){
         /* Cell i is the cell immediately following the last cell on old
@@ -6239,11 +6250,9 @@ static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   rc = sqlite3PagerWrite(pRoot->pDbPage);
   if( rc==SQLITE_OK ){
     rc = allocateBtreePage(pBt,&pChild,&pgnoChild,pRoot->pgno,0);
-    if( rc==SQLITE_OK ){
-      rc = copyNodeContent(pRoot, pChild);
-      if( ISAUTOVACUUM ){
-        ptrmapPut(pBt, pgnoChild, PTRMAP_BTREE, pRoot->pgno, &rc);
-      }
+    copyNodeContent(pRoot, pChild, &rc);
+    if( ISAUTOVACUUM ){
+      ptrmapPut(pBt, pgnoChild, PTRMAP_BTREE, pRoot->pgno, &rc);
     }
   }
   if( rc ){
@@ -6846,7 +6855,7 @@ static int clearDatabasePage(
     *pnChange += pPage->nCell;
   }
   if( freePageFlag ){
-    rc = freePage(pPage);
+    freePage(pPage, &rc);
   }else if( (rc = sqlite3PagerWrite(pPage->pDbPage))==0 ){
     zeroPage(pPage, pPage->aData[0] | PTF_LEAF);
   }
@@ -6941,7 +6950,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
 
   if( iTable>1 ){
 #ifdef SQLITE_OMIT_AUTOVACUUM
-    rc = freePage(pPage);
+    freePage(pPage, &rc);
     releasePage(pPage);
 #else
     if( pBt->autoVacuum ){
@@ -6952,7 +6961,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
         /* If the table being dropped is the table with the largest root-page
         ** number in the database, put the root page on the free list. 
         */
-        rc = freePage(pPage);
+        freePage(pPage, &rc);
         releasePage(pPage);
         if( rc!=SQLITE_OK ){
           return rc;
@@ -6974,10 +6983,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
           return rc;
         }
         rc = btreeGetPage(pBt, maxRootPgno, &pMove, 0);
-        if( rc!=SQLITE_OK ){
-          return rc;
-        }
-        rc = freePage(pMove);
+        freePage(pMove, &rc);
         releasePage(pMove);
         if( rc!=SQLITE_OK ){
           return rc;
@@ -6999,7 +7005,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
 
       rc = sqlite3BtreeUpdateMeta(p, 4, maxRootPgno);
     }else{
-      rc = freePage(pPage);
+      freePage(pPage, &rc);
       releasePage(pPage);
     }
 #endif
