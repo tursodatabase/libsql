@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.694 2009/07/21 11:52:35 drh Exp $
+** $Id: btree.c,v 1.695 2009/07/21 15:33:14 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6160,7 +6160,6 @@ static int balance_nonroot(
         pNew = apNew[++k];
         if( !leafData ) continue;
       }
-      assert( rc==SQLITE_OK );
       assert( j<nOld );
       assert( k<nNew );
 
