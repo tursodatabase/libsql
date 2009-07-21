@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.609 2009/07/18 20:01:37 drh Exp $
+** @(#) $Id: pager.c,v 1.610 2009/07/21 19:25:24 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1127,7 +1127,7 @@ static void pager_unlock(Pager *pPager){
     /* If the file is unlocked, somebody else might change it. The
     ** values stored in Pager.dbSize etc. might become invalid if
     ** this happens. TODO: Really, this doesn't need to be cleared
-    ** until the change-counter check fails in pagerSharedLock().
+    ** until the change-counter check fails in PagerSharedLock().
     */
     pPager->dbSizeValid = 0;
 
@@ -3545,10 +3545,12 @@ static int readDbPage(PgHdr *pPg){
 }
 
 /*
-** This function is called whenever the upper layer requests a database
-** page is requested, before the cache is checked for a suitable page
-** or any data is read from the database. It performs the following
-** two functions:
+** This function is called to obtain a shared lock on the database file.
+** It is illegal to call sqlite3PagerAcquire() until after this function
+** has been successfully called. If a shared-lock is already held when
+** this function is called, it is a no-op.
+**
+** The following operations are also performed by this function.
 **
 **   1) If the pager is currently in PAGER_UNLOCK state (no lock held
 **      on the database file), then an attempt is made to obtain a
@@ -3574,7 +3576,7 @@ static int readDbPage(PgHdr *pPg){
 ** IO error occurs while locking the database, checking for a hot-journal
 ** file or rolling back a journal file, the IO error code is returned.
 */
-static int pagerSharedLock(Pager *pPager){
+int sqlite3PagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;                /* Return code */
   int isErrorReset = 0;              /* True if recovering from error state */
 
@@ -3787,11 +3789,6 @@ static void pagerDropPage(DbPage *pPg){
 ** reference has type DbPage*). If the requested reference is 
 ** successfully obtained, it is copied to *ppPage and SQLITE_OK returned.
 **
-** This function calls pagerSharedLock() to obtain a SHARED lock on
-** the database file if such a lock or greater is not already held.
-** This may cause hot-journal rollback or a cache purge. See comments
-** above function pagerSharedLock() for details.
-**
 ** If the requested page is already in the cache, it is returned. 
 ** Otherwise, a new page object is allocated and populated with data
 ** read from the database file. In some cases, the pcache module may
@@ -3843,62 +3840,65 @@ int sqlite3PagerAcquire(
   DbPage **ppPage,    /* Write a pointer to the page here */
   int noContent       /* Do not bother reading content from disk if true */
 ){
-  PgHdr *pPg = 0;
   int rc;
+  PgHdr *pPg;
 
   assert( assert_pager_state(pPager) );
-  assert( pPager->state==PAGER_UNLOCK 
-       || sqlite3PcacheRefCount(pPager->pPCache)>0 
-       || pgno==1
-  );
+  assert( pPager->state>PAGER_UNLOCK );
 
-  /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
-  ** number greater than this, or zero, is requested.
-  */
-  if( pgno>PAGER_MAX_PGNO || pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){
+  if( pgno==0 ){
     return SQLITE_CORRUPT_BKPT;
   }
 
-  /* Make sure we have not hit any critical errors.
-  */ 
-  assert( pPager!=0 );
-  *ppPage = 0;
-
-  /* If this is the first page accessed, then get a SHARED lock
-  ** on the database file. pagerSharedLock() is a no-op if 
-  ** a database lock is already held.
-  */
-  rc = pagerSharedLock(pPager);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  /* If the pager is in the error state, return an error immediately. 
+  ** Otherwise, request the page from the PCache layer. */
+  if( pPager->errCode!=SQLITE_OK && pPager->errCode!=SQLITE_FULL ){
+    rc = pPager->errCode;
+  }else{
+    rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, ppPage);
   }
-  assert( pPager->state!=PAGER_UNLOCK );
 
-  rc = sqlite3PcacheFetch(pPager->pPCache, pgno, 1, &pPg);
   if( rc!=SQLITE_OK ){
-    pagerUnlockIfUnused(pPager);
-    return rc;
+    /* Either the call to sqlite3PcacheFetch() returned an error or the
+    ** pager was already in the error-state when this function was called.
+    ** Set pPg to 0 and jump to the exception handler.  */
+    pPg = 0;
+    goto pager_acquire_err;
   }
-  assert( pPg->pgno==pgno );
-  assert( pPg->pPager==pPager || pPg->pPager==0 );
-  if( pPg->pPager==0 ){
+  assert( (*ppPage)->pgno==pgno );
+  assert( (*ppPage)->pPager==pPager || (*ppPage)->pPager==0 );
+
+  if( (*ppPage)->pPager ){
+    /* In this case the pcache already contains an initialized copy of
+    ** the page. Return without further ado.  */
+    PAGER_INCR(pPager->nHit);
+    return SQLITE_OK;
+
+  }else{
     /* The pager cache has created a new page. Its content needs to 
-    ** be initialized.
-    */
+    ** be initialized.  */
     int nMax;
+
     PAGER_INCR(pPager->nMiss);
+    pPg = *ppPage;
     pPg->pPager = pPager;
+
+    /* The maximum page number is 2^31. Return SQLITE_CORRUPT if a page
+    ** number greater than this, or the unused locking-page, is requested. */
+    if( pgno>PAGER_MAX_PGNO || pgno==PAGER_MJ_PGNO(pPager) ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto pager_acquire_err;
+    }
 
     rc = sqlite3PagerPagecount(pPager, &nMax);
     if( rc!=SQLITE_OK ){
-      sqlite3PagerUnref(pPg);
-      return rc;
+      goto pager_acquire_err;
     }
 
     if( nMax<(int)pgno || MEMDB || noContent ){
       if( pgno>pPager->mxPgno ){
-        sqlite3PagerUnref(pPg);
-        return SQLITE_FULL;
+	rc = SQLITE_FULL;
+	goto pager_acquire_err;
       }
       if( noContent ){
         /* Failure to set the bits in the InJournal bit-vectors is benign.
@@ -3924,19 +3924,23 @@ int sqlite3PagerAcquire(
       rc = readDbPage(pPg);
       if( rc!=SQLITE_OK ){
         pagerDropPage(pPg);
-        return rc;
+	pPg = 0;
+        goto pager_acquire_err;
       }
     }
 #ifdef SQLITE_CHECK_PAGES
     pPg->pageHash = pager_pagehash(pPg);
 #endif
-  }else{
-    /* The requested page is in the page cache. */
-    PAGER_INCR(pPager->nHit);
   }
 
-  *ppPage = pPg;
   return SQLITE_OK;
+
+pager_acquire_err:
+  assert( rc!=SQLITE_OK );
+  sqlite3PagerUnref(pPg);
+  pagerUnlockIfUnused(pPager);
+  *ppPage = 0;
+  return rc;
 }
 
 /*

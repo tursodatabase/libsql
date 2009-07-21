@@ -1,5 +1,5 @@
-C Additional\ssimplifications\sto\sbtree.c\sin\ssupport\sof\scoverage\stesting.\s(CVS\s6915)
-D 2009-07-21T19:02:21
+C Change\sgetAndInitPage()\s(btree.c)\sto\suse\sonly\sPagerAcquire(),\snot\sPagerLookup()\sand\sPagerAcquire().\s(CVS\s6916)
+D 2009-07-21T19:25:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c abc2ccac9f9cf605888b48689e5886301c0f25c0
+F src/btree.c 710f95cf3816202c64a8639677a8d9691abefa83
 F src/btree.h e53a10fd31d16c60a86f03c9467a6f470aa3683b
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -147,10 +147,10 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c ed7cdaac02878f7b74d4de01b36520e5505c9af6
-F src/pager.h 5aec418bf99f568b92ae82816a1463400513726d
+F src/pager.c 9838393b4a5118eb935ac0939621177157a38bc1
+F src/pager.h 5bd96ed838e4156e0effa5ffe746bce4c0112c24
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
-F src/pcache.c 7d27635a4bd03c81ce848cb186fea6192706fa1a
+F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
 F src/pcache1.c 6dc833c89feac405dd8b4858232c97e679f182ec
 F src/pragma.c 9eb44ac1d3dc1ac3ea4f444abe1a10ae8acaa16c
@@ -169,7 +169,7 @@ F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
-F src/test2.c d7d7907cec3ed918b3b35e8e44fb3de3709d9509
+F src/test2.c ffb1649b7a33a0acd5bd1a98a376b9c104daa279
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
@@ -291,7 +291,7 @@ F test/corrupt7.test 8bfb08842642b1a598a915b52a7f51fbc0289b62
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
-F test/corruptB.test 267be7fbb7bdb89df40007178437ebdd0cd9c174
+F test/corruptB.test 66b4544104dd03d0f33ea69ddac3fa4a682cd3c2
 F test/corruptC.test 691ed070baef5e1345939caadf270a52837a5064
 F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 110998f18a7ad1ddaffab048cabef675d882cbb8
-R c2ae620b83a5c070a034b2845bc5bdf6
-U drh
-Z 3dae4d3e2687351a2da40f1b63712770
+P 716fccea58c4c217e68e04e0776e44ae39c11950
+R 1ee5a6818bfe745a7b3a3e753bd0011a
+U danielk1977
+Z 0104982a535ea93c433ad3cd1f268c89

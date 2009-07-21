@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file implements that page cache.
 **
-** @(#) $Id: pcache.c,v 1.45 2009/07/16 18:21:18 drh Exp $
+** @(#) $Id: pcache.c,v 1.46 2009/07/21 19:25:24 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -208,6 +208,7 @@ int sqlite3PcacheFetch(
   int eCreate;
 
   assert( pCache!=0 );
+  assert( createFlag==1 || createFlag==0 );
   assert( pgno>0 );
 
   /* If the pluggable cache (sqlite3_pcache*) has not been allocated,
@@ -225,10 +226,7 @@ int sqlite3PcacheFetch(
     pCache->pCache = p;
   }
 
-  eCreate = createFlag ? 1 : 0;
-  if( eCreate && (!pCache->bPurgeable || !pCache->pDirty) ){
-    eCreate = 2;
-  }
+  eCreate = createFlag * (1 + (!pCache->bPurgeable || !pCache->pDirty));
   if( pCache->pCache ){
     pPage = sqlite3GlobalConfig.pcache.xFetch(pCache->pCache, pgno, eCreate);
   }

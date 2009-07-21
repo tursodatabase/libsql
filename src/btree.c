@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.696 2009/07/21 19:02:21 drh Exp $
+** $Id: btree.c,v 1.697 2009/07/21 19:25:24 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -1540,9 +1540,12 @@ static Pgno pagerPagecount(BtShared *pBt){
 }
 
 /*
-** Get a page from the pager and initialize it.  This routine
-** is just a convenience wrapper around separate calls to
-** btreeGetPage() and btreeInitPage().
+** Get a page from the pager and initialize it.  This routine is just a
+** convenience wrapper around separate calls to btreeGetPage() and 
+** btreeInitPage().
+**
+** If an error occurs, then the value *ppPage is set to is undefined. It
+** may remain unchanged, or it may be set to an invalid value.
 */
 static int getAndInitPage(
   BtShared *pBt,          /* The database file */
@@ -1550,39 +1553,25 @@ static int getAndInitPage(
   MemPage **ppPage     /* Write the page pointer here */
 ){
   int rc;
-  MemPage *pPage;
-
+  TESTONLY( Pgno iLastPg = pagerPagecount(pBt); )
   assert( sqlite3_mutex_held(pBt->mutex) );
-  if( pgno==0 ){
-    return SQLITE_CORRUPT_BKPT; 
+
+  rc = btreeGetPage(pBt, pgno, ppPage, 0);
+  if( rc==SQLITE_OK ){
+    rc = btreeInitPage(*ppPage);
+    if( rc!=SQLITE_OK ){
+      releasePage(*ppPage);
+    }
   }
 
-  /* It is often the case that the page we want is already in cache.
-  ** If so, get it directly.  This saves us from having to call
-  ** pagerPagecount() to make sure pgno is within limits, which results
-  ** in a measureable performance improvements.
-  */
-  *ppPage = pPage = btreePageLookup(pBt, pgno);
-  if( pPage ){
-    /* Page is already in cache */
-    rc = SQLITE_OK;
-  }else{
-    /* Page not in cache.  Acquire it. */
-    testcase( pgno==pagerPagecount(pBt) );
-    if( pgno>pagerPagecount(pBt) ){
-      return SQLITE_CORRUPT_BKPT; 
-    }
-    rc = btreeGetPage(pBt, pgno, ppPage, 0);
-    if( rc ) return rc;
-    pPage = *ppPage;
-  }
-  if( !pPage->isInit ){
-    rc = btreeInitPage(pPage);
-  }
-  if( rc!=SQLITE_OK ){
-    releasePage(pPage);
-    *ppPage = 0;
-  }
+  /* If the requested page number was either 0 or greater than the page
+  ** number of the last page in the database, this function should return
+  ** SQLITE_CORRUPT or some other error (i.e. SQLITE_FULL). Check that this
+  ** is the case.  */
+  assert( (pgno>0 && pgno<=iLastPg) || rc!=SQLITE_OK );
+  testcase( pgno==0 );
+  testcase( pgno==iLastPg );
+
   return rc;
 }
 
@@ -2207,6 +2196,8 @@ static int lockBtree(BtShared *pBt){
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pBt->pPage1==0 );
+  rc = sqlite3PagerSharedLock(pBt->pPager);
+  if( rc!=SQLITE_OK ) return rc;
   rc = btreeGetPage(pBt, 1, &pPage1, 0);
   if( rc!=SQLITE_OK ) return rc;
 
@@ -5705,7 +5696,7 @@ static int balance_nonroot(
   while( 1 ){
     rc = getAndInitPage(pBt, pgno, &apOld[i]);
     if( rc ){
-      memset(apOld, 0, i*sizeof(MemPage*));
+      memset(apOld, 0, (i+1)*sizeof(MemPage*));
       goto balance_cleanup;
     }
     nMaxCells += 1+apOld[i]->nCell+apOld[i]->nOverflow;
