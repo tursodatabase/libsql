@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.695 2009/07/21 15:33:14 drh Exp $
+** $Id: btree.c,v 1.696 2009/07/21 19:02:21 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3857,7 +3857,10 @@ static const unsigned char *fetchPayload(
   assert( cursorHoldsMutex(pCur) );
   pPage = pCur->apPage[pCur->iPage];
   assert( pCur->aiIdx[pCur->iPage]<pPage->nCell );
-  getCellInfo(pCur);
+  if( NEVER(pCur->info.nSize==0) ){
+    btreeParseCell(pCur->apPage[pCur->iPage], pCur->aiIdx[pCur->iPage],
+                   &pCur->info);
+  }
   aPayload = pCur->info.pCell;
   aPayload += pCur->info.nHeader;
   if( pPage->intKey ){
@@ -3870,9 +3873,7 @@ static const unsigned char *fetchPayload(
     nLocal = pCur->info.nLocal - nKey;
   }else{
     nLocal = pCur->info.nLocal;
-    if( nLocal>nKey ){
-      nLocal = nKey;
-    }
+    assert( nLocal<=nKey );
   }
   *pAmt = nLocal;
   return aPayload;
@@ -3894,20 +3895,22 @@ static const unsigned char *fetchPayload(
 ** in the common case where no overflow pages are used.
 */
 const void *sqlite3BtreeKeyFetch(BtCursor *pCur, int *pAmt){
+  const void *p = 0;
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
-  if( pCur->eState==CURSOR_VALID ){
-    return (const void*)fetchPayload(pCur, pAmt, 0);
+  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
+    p = (const void*)fetchPayload(pCur, pAmt, 0);
   }
-  return 0;
+  return p;
 }
 const void *sqlite3BtreeDataFetch(BtCursor *pCur, int *pAmt){
+  const void *p = 0;
   assert( sqlite3_mutex_held(pCur->pBtree->db->mutex) );
   assert( cursorHoldsMutex(pCur) );
-  if( pCur->eState==CURSOR_VALID ){
-    return (const void*)fetchPayload(pCur, pAmt, 1);
+  if( ALWAYS(pCur->eState==CURSOR_VALID) ){
+    p = (const void*)fetchPayload(pCur, pAmt, 1);
   }
-  return 0;
+  return p;
 }
 
 
@@ -6981,6 +6984,7 @@ static int btreeDropTable(Btree *p, Pgno iTable, int *piMoved){
         if( rc!=SQLITE_OK ){
           return rc;
         }
+        pMove = 0;
         rc = btreeGetPage(pBt, maxRootPgno, &pMove, 0);
         freePage(pMove, &rc);
         releasePage(pMove);
