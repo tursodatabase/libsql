@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.611 2009/07/22 02:02:40 drh Exp $
+** @(#) $Id: pager.c,v 1.612 2009/07/22 13:19:20 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2883,7 +2883,7 @@ static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;                       /* Pager object */
   int rc;                              /* Return code */
 
-  if( pList==0 ) return SQLITE_OK;
+  if( NEVER(pList==0) ) return SQLITE_OK;
   pPager = pList->pPager;
 
   /* At this point there may be either a RESERVED or EXCLUSIVE lock on the
