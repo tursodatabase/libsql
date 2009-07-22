@@ -15,7 +15,7 @@
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
 **
-** $Id: vdbemem.c,v 1.151 2009/07/18 14:36:24 danielk1977 Exp $
+** $Id: vdbemem.c,v 1.152 2009/07/22 18:07:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -874,6 +874,8 @@ int sqlite3VdbeMemFromBtree(
   char *zData;        /* Data from the btree layer */
   int available = 0;  /* Number of bytes available on the local btree page */
   int rc = SQLITE_OK; /* Return code */
+
+  assert( sqlite3BtreeCursorIsValid(pCur) );
 
   /* Note: the calls to BtreeKeyFetch() and DataFetch() below assert() 
   ** that both the BtShared and database handle mutexes are held. */

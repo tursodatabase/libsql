@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.699 2009/07/22 14:08:14 danielk1977 Exp $
+** $Id: btree.c,v 1.700 2009/07/22 18:07:41 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -3775,25 +3775,19 @@ static int accessPayload(
 ** "amt" bytes will be transfered into pBuf[].  The transfer
 ** begins at "offset".
 **
+** The caller must ensure that pCur is pointing to a valid row
+** in the table.
+**
 ** Return SQLITE_OK on success or an error code if anything goes
 ** wrong.  An error is returned if "offset+amt" is larger than
 ** the available payload.
 */
 int sqlite3BtreeKey(BtCursor *pCur, u32 offset, u32 amt, void *pBuf){
-  int rc;
-
   assert( cursorHoldsMutex(pCur) );
-  rc = restoreCursorPosition(pCur);
-  if( rc==SQLITE_OK ){
-    assert( pCur->eState==CURSOR_VALID );
-    assert( pCur->iPage>=0 && pCur->apPage[pCur->iPage] );
-    if( pCur->apPage[0]->intKey ){
-      return SQLITE_CORRUPT_BKPT;
-    }
-    assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
-    rc = accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
-  }
-  return rc;
+  assert( pCur->eState==CURSOR_VALID );
+  assert( pCur->iPage>=0 && pCur->apPage[pCur->iPage] );
+  assert( pCur->aiIdx[pCur->iPage]<pCur->apPage[pCur->iPage]->nCell );
+  return accessPayload(pCur, offset, amt, (unsigned char*)pBuf, 0);
 }
 
 /*
@@ -5413,7 +5407,7 @@ static int balance_quick(MemPage *pParent, MemPage *pPage, u8 *pSpace){
   assert( sqlite3PagerIswriteable(pParent->pDbPage) );
   assert( pPage->nOverflow==1 );
 
-  if( NEVER(pPage->nCell<=0) ) return SQLITE_CORRUPT_BKPT;
+  if( pPage->nCell<=0 ) return SQLITE_CORRUPT_BKPT;
 
   /* Allocate a new page. This page will become the right-sibling of 
   ** pPage. Make the parent page writable, so that the new divider cell
