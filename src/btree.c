@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.698 2009/07/22 00:35:24 drh Exp $
+** $Id: btree.c,v 1.699 2009/07/22 14:08:14 danielk1977 Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -6830,7 +6830,7 @@ static int clearDatabasePage(
   int freePageFlag,     /* Deallocate page if true */
   int *pnChange
 ){
-  MemPage *pPage = 0;
+  MemPage *pPage;
   int rc;
   unsigned char *pCell;
   int i;
@@ -6841,7 +6841,7 @@ static int clearDatabasePage(
   }
 
   rc = getAndInitPage(pBt, pgno, &pPage);
-  if( rc ) goto cleardatabasepage_out;
+  if( rc ) return rc;
   for(i=0; i<pPage->nCell; i++){
     pCell = findCell(pPage, i);
     if( !pPage->leaf ){

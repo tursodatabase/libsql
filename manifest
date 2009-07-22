@@ -1,5 +1,5 @@
-C Add\sa\sNEVER()\smacro\saround\sa\spager.c\sconditional\sthat\smust\salways\sbe\sfalse\nin\sthe\scurrent\simplementation.\s(CVS\s6920)
-D 2009-07-22T13:19:20
+C Fix\sa\sdouble-free\sthat\scan\soccur\safter\sdatabase\scorruption\sis\sdetected.\s(CVS\s6921)
+D 2009-07-22T14:08:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c ece7e39b72fb42af1811c3388bbd0724fec4a664
+F src/btree.c 74655dc71c61130c7328e3cdee3c86b86ce8ce0f
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 867028ee9f63f7bc8eb8d4a720bb98cf9b9a12b4
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 7f3fc7f20f6dc205eedbe445e35f5071f1c01185
-R e3ef698fad4351a97409de00b6e0d6d6
-U drh
-Z 371d58c5e4ad95a5753bcee60ee41151
+P 1e510d7fc5cc47fe2714dbb1ed3ea7e90acbff7b
+R 4924080796614e12c97e50a70e0d2fae
+U danielk1977
+Z a8cabae79b26acd1023037532366e880
