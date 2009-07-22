@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.612 2009/07/22 13:19:20 drh Exp $
+** @(#) $Id: pager.c,v 1.613 2009/07/22 16:41:15 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3773,18 +3773,6 @@ static void pagerUnlockIfUnused(Pager *pPager){
 }
 
 /*
-** Drop a page from the cache using sqlite3PcacheDrop().
-**
-** If this means there are now no pages with references to them, a rollback
-** occurs and the lock on the database is removed.
-*/
-static void pagerDropPage(DbPage *pPg){
-  Pager *pPager = pPg->pPager;
-  sqlite3PcacheDrop(pPg);
-  pagerUnlockIfUnused(pPager);
-}
-
-/*
 ** Acquire a reference to page number pgno in pager pPager (a page
 ** reference has type DbPage*). If the requested reference is 
 ** successfully obtained, it is copied to *ppPage and SQLITE_OK returned.
@@ -3871,6 +3859,7 @@ int sqlite3PagerAcquire(
   if( (*ppPage)->pPager ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
+    assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
     PAGER_INCR(pPager->nHit);
     return SQLITE_OK;
 
@@ -3923,8 +3912,6 @@ int sqlite3PagerAcquire(
       assert( pPg->pPager==pPager );
       rc = readDbPage(pPg);
       if( rc!=SQLITE_OK ){
-        pagerDropPage(pPg);
-	pPg = 0;
         goto pager_acquire_err;
       }
     }
@@ -3937,8 +3924,11 @@ int sqlite3PagerAcquire(
 
 pager_acquire_err:
   assert( rc!=SQLITE_OK );
-  sqlite3PagerUnref(pPg);
+  if( pPg ){
+    sqlite3PcacheDrop(pPg);
+  }
   pagerUnlockIfUnused(pPager);
+
   *ppPage = 0;
   return rc;
 }

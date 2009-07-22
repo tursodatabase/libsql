@@ -1,5 +1,5 @@
-C Fix\sa\sdouble-free\sthat\scan\soccur\safter\sdatabase\scorruption\sis\sdetected.\s(CVS\s6921)
-D 2009-07-22T14:08:14
+C Avoid\sleaving\sa\ssuspect\spage\sin\sthe\spage-cache\sif\san\serror\soccurs\sduring\ssqlite3PagerAcquire().\s(CVS\s6922)
+D 2009-07-22T16:41:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c c1b13280e111d33625b94a8391eb0c3c94a8384d
+F src/pager.c 2149b8271e18aa687456ac4b71ca3b3ad3c26adb
 F src/pager.h 5bd96ed838e4156e0effa5ffe746bce4c0112c24
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 1e510d7fc5cc47fe2714dbb1ed3ea7e90acbff7b
-R 4924080796614e12c97e50a70e0d2fae
+P 5260e8b1048af2e00d49706466d9aded90c24ed2
+R 14853fced115ae521390a355c09db2d4
 U danielk1977
-Z a8cabae79b26acd1023037532366e880
+Z 0b5e9ddfa58a9d8ba46a6641e5839200
