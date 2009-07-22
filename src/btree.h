@@ -13,7 +13,7 @@
 ** subsystem.  See comments in the source code for a detailed description
 ** of what each interface routine does.
 **
-** @(#) $Id: btree.h,v 1.119 2009/07/09 05:07:38 danielk1977 Exp $
+** @(#) $Id: btree.h,v 1.120 2009/07/22 00:35:24 drh Exp $
 */
 #ifndef _BTREE_H_
 #define _BTREE_H_
@@ -184,6 +184,10 @@ struct Pager *sqlite3BtreePager(Btree*);
 int sqlite3BtreePutData(BtCursor*, u32 offset, u32 amt, void*);
 void sqlite3BtreeCacheOverflow(BtCursor *);
 void sqlite3BtreeClearCursor(BtCursor *);
+
+#ifndef NDEBUG
+int sqlite3BtreeCursorIsValid(BtCursor*);
+#endif
 
 #ifndef SQLITE_OMIT_BTREECOUNT
 int sqlite3BtreeCount(BtCursor *, i64 *);

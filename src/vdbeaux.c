@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.476 2009/07/17 17:25:43 danielk1977 Exp $
+** $Id: vdbeaux.c,v 1.477 2009/07/22 00:35:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2599,6 +2599,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   ** Any corruption is detected in sqlite3BtreeParseCellPtr(), though, so
   ** this code can safely assume that nCellKey is 32-bits  
   */
+  assert( sqlite3BtreeCursorIsValid(pCur) );
   rc = sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );     /* pCur is always valid so KeySize cannot fail */
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
@@ -2675,6 +2676,7 @@ int sqlite3VdbeIdxKeyCompare(
   BtCursor *pCur = pC->pCursor;
   Mem m;
 
+  assert( sqlite3BtreeCursorIsValid(pCur) );
   rc = sqlite3BtreeKeySize(pCur, &nCellKey);
   assert( rc==SQLITE_OK );    /* pCur is always valid so KeySize cannot fail */
   /* nCellKey will always be between 0 and 0xffffffff because of the say

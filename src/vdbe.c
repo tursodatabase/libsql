@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.872 2009/07/14 18:35:45 drh Exp $
+** $Id: vdbe.c,v 1.873 2009/07/22 00:35:24 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -2055,6 +2055,7 @@ case OP_Column: {
       payloadSize = pC->payloadSize;
       zRec = (char*)pC->aRow;
     }else if( pC->isIndex ){
+      assert( sqlite3BtreeCursorIsValid(pCrsr) );
       rc = sqlite3BtreeKeySize(pCrsr, &payloadSize64);
       assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
       /* sqlite3BtreeParseCellPtr() uses getVarint32() to extract the
@@ -2063,8 +2064,9 @@ case OP_Column: {
       assert( (payloadSize64 & SQLITE_MAX_U32)==(u64)payloadSize64 );
       payloadSize = (u32)payloadSize64;
     }else{
+      assert( sqlite3BtreeCursorIsValid(pCrsr) );
       rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
-      assert( rc==SQLITE_OK );   /* True because of CursorMoveto() call above */
+      assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
     }
   }else if( pC->pseudoTable ){
     /* The record is the sole entry of a pseudo-table */
@@ -3593,6 +3595,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         if( res ){
           v = 1;
         }else{
+          assert( sqlite3BtreeCursorIsValid(pC->pCursor) );
           rc = sqlite3BtreeKeySize(pC->pCursor, &v);
           assert( rc==SQLITE_OK );   /* Cannot fail following BtreeLast() */
           if( v==MAX_ROWID ){
@@ -3879,6 +3882,7 @@ case OP_RowData: {
   assert( pC->pseudoTable==0 );
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
+  assert( sqlite3BtreeCursorIsValid(pCrsr) );
 
   /* The OP_RowKey and OP_RowData opcodes always follow OP_NotExists or
   ** OP_Rewind/Op_Next with no intervening instructions that might invalidate
@@ -3899,7 +3903,7 @@ case OP_RowData: {
     n = (u32)n64;
   }else{
     rc = sqlite3BtreeDataSize(pCrsr, &n);
-    assert( rc==SQLITE_OK );    /* True because of CursorMoveto() call above */
+    assert( rc==SQLITE_OK );    /* DataSize() cannot fail */
     if( n>(u32)db->aLimit[SQLITE_LIMIT_LENGTH] ){
       goto too_big;
     }

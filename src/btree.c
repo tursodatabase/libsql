@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.697 2009/07/21 19:25:24 danielk1977 Exp $
+** $Id: btree.c,v 1.698 2009/07/22 00:35:24 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -539,6 +539,9 @@ static void btreeClearHasContent(BtShared *pBt){
 /*
 ** Save the current cursor position in the variables BtCursor.nKey 
 ** and BtCursor.pKey. The cursor's state is set to CURSOR_REQUIRESEEK.
+**
+** The caller must ensure that the cursor is valid (has eState==CURSOR_VALID)
+** prior to calling this routine.  
 */
 static int saveCursorPosition(BtCursor *pCur){
   int rc;
@@ -548,7 +551,7 @@ static int saveCursorPosition(BtCursor *pCur){
   assert( cursorHoldsMutex(pCur) );
 
   rc = sqlite3BtreeKeySize(pCur, &pCur->nKey);
-  assert( rc==SQLITE_OK );  /* Cannot fail since pCur->eState==VALID */
+  assert( rc==SQLITE_OK );  /* KeySize() cannot fail */
 
   /* If this is an intKey table, then the above call to BtreeKeySize()
   ** stores the integer key in pCur->nKey. In this case this value is
@@ -2707,11 +2710,14 @@ static int allocateBtreePage(BtShared *, MemPage **, Pgno *, Pgno, u8);
 ** database so that the last page of the file currently in use
 ** is no longer in use.
 **
-** If the nFin parameter is non-zero, the implementation assumes
+** If the nFin parameter is non-zero, this function assumes
 ** that the caller will keep calling incrVacuumStep() until
 ** it returns SQLITE_DONE or an error, and that nFin is the
 ** number of pages the database file will contain after this 
-** process is complete.
+** process is complete.  If nFin is zero, it is assumed that
+** incrVacuumStep() will be called a finite amount of times
+** which may or may not empty the freelist.  A full autovacuum
+** has nFin>0.  A "PRAGMA incremental_vacuum" has nFin==0.
 */
 static int incrVacuumStep(BtShared *pBt, Pgno nFin, Pgno iLastPg){
   Pgno nFreeList;           /* Number of pages still on the free-list */
@@ -2855,8 +2861,8 @@ static int autoVacuumCommit(BtShared *pBt){
   invalidateAllOverflowCache(pBt);
   assert(pBt->autoVacuum);
   if( !pBt->incrVacuum ){
-    Pgno nFin;         /* Number of pages to be freed */
-    Pgno nFree;        /* Number of pages no the freelist */
+    Pgno nFin;         /* Number of pages in database after autovacuuming */
+    Pgno nFree;        /* Number of pages on the freelist initially */
     Pgno nPtrmap;      /* Number of PtrMap pages to be freed */
     Pgno iFree;        /* The next page to be freed */
     int nEntry;        /* Number of entries on one ptrmap page */
@@ -3441,6 +3447,17 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
   }
 #endif /* _MSC_VER */
 
+#ifndef NDEBUG  /* The next routine used only within assert() statements */
+/*
+** Return true if the given BtCursor is valid.  A valid cursor is one
+** that is currently pointing to a row in a (non-empty) table.
+** This is a verification routine is used only within assert() statements.
+*/
+int sqlite3BtreeCursorIsValid(BtCursor *pCur){
+  return pCur && pCur->eState==CURSOR_VALID;
+}
+#endif /* NDEBUG */
+
 /*
 ** Set *pSize to the size of the buffer needed to hold the value of
 ** the key for the current entry.  If the cursor is not pointing
@@ -3448,47 +3465,41 @@ int sqlite3BtreeCloseCursor(BtCursor *pCur){
 **
 ** For a table with the INTKEY flag set, this routine returns the key
 ** itself, not the number of bytes in the key.
+**
+** The caller must position the cursor prior to invoking this routine.
+** 
+** This routine cannot fail.  It always returns SQLITE_OK.  
 */
 int sqlite3BtreeKeySize(BtCursor *pCur, i64 *pSize){
-  int rc;
-
   assert( cursorHoldsMutex(pCur) );
-  rc = restoreCursorPosition(pCur);
-  if( rc==SQLITE_OK ){
-    assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
-    if( pCur->eState==CURSOR_INVALID ){
-      *pSize = 0;
-    }else{
-      getCellInfo(pCur);
-      *pSize = pCur->info.nKey;
-    }
+  assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
+  if( pCur->eState!=CURSOR_VALID ){
+    *pSize = 0;
+  }else{
+    getCellInfo(pCur);
+    *pSize = pCur->info.nKey;
   }
-  return rc;
+  return SQLITE_OK;
 }
 
 /*
 ** Set *pSize to the number of bytes of data in the entry the
-** cursor currently points to.  Always return SQLITE_OK.
-** Failure is not possible.  If the cursor is not currently
-** pointing to an entry (which can happen, for example, if
-** the database is empty) then *pSize is set to 0.
+** cursor currently points to.
+**
+** The caller must guarantee that the cursor is pointing to a non-NULL
+** valid entry.  In other words, the calling procedure must guarantee
+** that the cursor has Cursor.eState==CURSOR_VALID.
+**
+** Failure is not possible.  This function always returns SQLITE_OK.
+** It might just as well be a procedure (returning void) but we continue
+** to return an integer result code for historical reasons.
 */
 int sqlite3BtreeDataSize(BtCursor *pCur, u32 *pSize){
-  int rc;
-
   assert( cursorHoldsMutex(pCur) );
-  rc = restoreCursorPosition(pCur);
-  if( rc==SQLITE_OK ){
-    assert( pCur->eState==CURSOR_INVALID || pCur->eState==CURSOR_VALID );
-    if( pCur->eState==CURSOR_INVALID ){
-      /* Not pointing at a valid entry - set *pSize to 0. */
-      *pSize = 0;
-    }else{
-      getCellInfo(pCur);
-      *pSize = pCur->info.nData;
-    }
-  }
-  return rc;
+  assert( pCur->eState==CURSOR_VALID );
+  getCellInfo(pCur);
+  *pSize = pCur->info.nData;
+  return SQLITE_OK;
 }
 
 /*
