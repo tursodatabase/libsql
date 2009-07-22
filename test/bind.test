@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script testing the sqlite_bind API.
 #
-# $Id: bind.test,v 1.47 2009/02/20 03:55:05 drh Exp $
+# $Id: bind.test,v 1.48 2009/07/22 07:27:57 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -291,7 +291,7 @@ do_test bind-6.4 {
   execsql {SELECT * FROM t1}
 } {hello hello hello}
 set enc [db eval {PRAGMA encoding}]
-if {$enc=="UTF-8"} {
+if {$enc=="UTF-8" || $enc==""} {
   do_test bind-6.5 {
     execsql {SELECT  hex(a), hex(b), hex(c) FROM t1}
   } {68656C6C6F00746865726500 68656C6C6F007468657265 68656C6C6F}

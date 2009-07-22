@@ -13,7 +13,7 @@
 # This is a copy of the capi3.test file that has been adapted to
 # test the new sqlite3_prepare_v2 interface.
 #
-# $Id: capi3c.test,v 1.22 2008/11/05 16:37:35 drh Exp $
+# $Id: capi3c.test,v 1.23 2009/07/22 07:27:57 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -1292,31 +1292,33 @@ sqlite3_finalize $STMT
 # conversion (or vice versa) on one column does not change the value of
 # the second.
 #
-do_test capi3c-23.1 {
-  set STMT [sqlite3_prepare_v2 db {SELECT b,b,b,b FROM t1} -1 TAIL]
-  sqlite3_step $STMT
-} {SQLITE_ROW}
-do_test capi3c-23.2 {
-  sqlite3_column_text16 $STMT 0
-  sqlite3_column_text $STMT 1
-} {one}
-do_test capi3c-23.3 {
-  sqlite3_column_text16 $STMT 2
-  sqlite3_column_text $STMT 3
-} {one}
-sqlite3_finalize $STMT
-do_test capi3c-23.4 {
-  set STMT [sqlite3_prepare_v2 db {SELECT b||'x',b,b,b FROM t1} -1 TAIL]
-  sqlite3_step $STMT
-} {SQLITE_ROW}
-do_test capi3c-23.5 {
-  sqlite3_column_text16 $STMT 0
-  sqlite3_column_text $STMT 1
-} {one}
-do_test capi3c-23.6 {
-  sqlite3_column_text16 $STMT 2
-  sqlite3_column_text $STMT 3
-} {one}
-sqlite3_finalize $STMT
+ifcapable utf16 {
+  do_test capi3c-23.1 {
+    set STMT [sqlite3_prepare_v2 db {SELECT b,b,b,b FROM t1} -1 TAIL]
+    sqlite3_step $STMT
+  } {SQLITE_ROW}
+  do_test capi3c-23.2 {
+    sqlite3_column_text16 $STMT 0
+    sqlite3_column_text $STMT 1
+  } {one}
+  do_test capi3c-23.3 {
+    sqlite3_column_text16 $STMT 2
+    sqlite3_column_text $STMT 3
+  } {one}
+  sqlite3_finalize $STMT
+  do_test capi3c-23.4 {
+    set STMT [sqlite3_prepare_v2 db {SELECT b||'x',b,b,b FROM t1} -1 TAIL]
+    sqlite3_step $STMT
+  } {SQLITE_ROW}
+  do_test capi3c-23.5 {
+    sqlite3_column_text16 $STMT 0
+    sqlite3_column_text $STMT 1
+  } {one}
+  do_test capi3c-23.6 {
+    sqlite3_column_text16 $STMT 2
+    sqlite3_column_text $STMT 3
+  } {one}
+  sqlite3_finalize $STMT
+}
 
 finish_test
