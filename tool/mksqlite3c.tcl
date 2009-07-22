@@ -304,3 +304,37 @@ foreach file {
 }
 
 close $out
+
+# This block overwrites the copy of sqlite3.h in the current directory.
+#
+# It copies tsrc/sqlite3.h to ./sqlite3.h, adding SQLITE_API in front of the
+# API functions and global variables as it goes. 
+#
+set fd_in [open tsrc/sqlite3.h r]
+set fd_out [open sqlite3.h w]
+while {![eof $fd_in]} {
+  set varpattern {^[a-zA-Z][a-zA-Z_0-9 *]+sqlite3_[_a-zA-Z0-9]+(\[|;| =)}
+  set declpattern {^ *[a-zA-Z][a-zA-Z_0-9 ]+ \**sqlite3_[_a-zA-Z0-9]+\(}
+
+  set line [gets $fd_in]
+  if {[regexp {define SQLITE_EXTERN extern} $line]} {
+    puts $fd_out $line
+    puts $fd_out [gets $fd_in]
+    puts $fd_out ""
+    puts $fd_out "#ifndef SQLITE_API"
+    puts $fd_out "# define SQLITE_API"
+    puts $fd_out "#endif"
+    set line ""
+  }
+
+  if {([regexp $varpattern $line] && ![regexp {^ *typedef} $line])
+   || ([regexp $declpattern $line])
+  } {
+    set line "SQLITE_API $line"
+  }
+  puts $fd_out $line
+}
+close $fd_out
+close $fd_in
+
+
