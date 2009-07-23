@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.700 2009/07/22 18:07:41 drh Exp $
+** $Id: btree.c,v 1.701 2009/07/23 01:44:00 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -2315,8 +2315,9 @@ static void unlockBtreeIfUnused(BtShared *pBt){
 }
 
 /*
-** Create a new database by initializing the first page of the
-** file.
+** If pBt points to an empty file then convert that empty file
+** into a new empty database by initializing the first page of
+** the database.
 */
 static int newDatabase(BtShared *pBt){
   MemPage *pP1;
@@ -2325,8 +2326,11 @@ static int newDatabase(BtShared *pBt){
   int nPage;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
+  /* The database size has already been measured and cached, so failure
+  ** is impossible here.  If the original size measurement failed, then
+  ** processing aborts before entering this routine. */
   rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
-  if( rc!=SQLITE_OK || nPage>0 ){
+  if( NEVER(rc!=SQLITE_OK) || nPage>0 ){
     return rc;
   }
   pP1 = pBt->pPage1;
