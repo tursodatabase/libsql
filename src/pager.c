@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.613 2009/07/22 16:41:15 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.614 2009/07/24 12:35:57 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -4400,7 +4400,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     */
     if( rc==SQLITE_OK && needSync ){
       assert( !MEMDB && pPager->noSync==0 );
-      for(ii=0; ii<nPage && needSync; ii++){
+      for(ii=0; ii<nPage; ii++){
         PgHdr *pPage = pager_lookup(pPager, pg1+ii);
         if( pPage ){
           pPage->flags |= PGHDR_NEED_SYNC;
@@ -4460,12 +4460,12 @@ void sqlite3PagerDontWrite(PgHdr *pPg){
 ** change-counter, stored as a 4-byte big-endian integer starting at 
 ** byte offset 24 of the pager file.
 **
-** If the isDirect flag is zero, then this is done by calling 
+** If the isDirectMode flag is zero, then this is done by calling 
 ** sqlite3PagerWrite() on page 1, then modifying the contents of the
 ** page data. In this case the file will be updated when the current
 ** transaction is committed.
 **
-** The isDirect flag may only be non-zero if the library was compiled
+** The isDirectMode flag may only be non-zero if the library was compiled
 ** with the SQLITE_ENABLE_ATOMIC_WRITE macro defined. In this case,
 ** if isDirect is non-zero, then the database file is updated directly
 ** by writing an updated version of page 1 using a call to the 
@@ -4485,11 +4485,11 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
   ** "if( isDirect )" condition.
   */
 #ifndef SQLITE_ENABLE_ATOMIC_WRITE
-  const int isDirect = 0;
+# define DIRECT_MODE 0
   assert( isDirectMode==0 );
   UNUSED_PARAMETER(isDirectMode);
 #else
-  const int isDirect = isDirectMode;
+# define DIRECT_MODE isDirectMode
 #endif
 
   assert( pPager->state>=PAGER_RESERVED );
@@ -4506,7 +4506,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
     /* If page one was fetched successfully, and this function is not
     ** operating in direct-mode, make page 1 writable.
     */
-    if( rc==SQLITE_OK && !isDirect ){
+    if( rc==SQLITE_OK && !DIRECT_MODE ){
       rc = sqlite3PagerWrite(pPgHdr);
     }
 
@@ -4517,14 +4517,14 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       put32bits(((char*)pPgHdr->pData)+24, change_counter);
 
       /* If running in direct mode, write the contents of page 1 to the file. */
-      if( isDirect ){
+      if( DIRECT_MODE ){
         const void *zBuf = pPgHdr->pData;
         assert( pPager->dbFileSize>0 );
         rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
-      }
-
-      /* If everything worked, set the changeCountDone flag. */
-      if( rc==SQLITE_OK ){
+        if( rc==SQLITE_OK ){
+          pPager->changeCountDone = 1;
+        }
+      }else{
         pPager->changeCountDone = 1;
       }
     }
@@ -4585,17 +4585,19 @@ int sqlite3PagerCommitPhaseOne(
 ){
   int rc = SQLITE_OK;             /* Return code */
 
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }
+  /* If a prior error occurred, this routine should not be called.  ROLLBACK
+  ** is the appropriate response to an error, not COMMIT.  Guard against
+  ** coding errors by repeating the prior error. */
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));
 
-  /* If this is an in-memory db, or no pages have been written to, or this
-  ** function has already been called, it is a no-op.
-  */
   if( MEMDB && pPager->dbModified ){
+    /* If this is an in-memory db, or no pages have been written to, or this
+    ** function has already been called, it is mostly a no-op.  However, any
+    ** backup in progress needs to be restarted.
+    */
     sqlite3BackupRestart(pPager->pBackup);
   }else if( pPager->state!=PAGER_SYNCED && pPager->dbModified ){
 
@@ -4722,14 +4724,6 @@ int sqlite3PagerCommitPhaseOne(
   }
 
 commit_phase_one_exit:
-  if( rc==SQLITE_IOERR_BLOCKED ){
-    /* pager_incr_changecounter() may attempt to obtain an exclusive
-    ** lock to spill the cache and return IOERR_BLOCKED. But since 
-    ** there is no chance the cache is inconsistent, it is
-    ** better to return SQLITE_BUSY.
-    **/
-    rc = SQLITE_BUSY;
-  }
   return rc;
 }
 
@@ -4752,18 +4746,16 @@ commit_phase_one_exit:
 int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   int rc = SQLITE_OK;                  /* Return code */
 
-  /* Do not proceed if the pager is already in the error state. */
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }
+  /* This routine should not be called if a prior error has occurred.
+  ** But if (due to a coding error elsewhere in the system) it does get
+  ** called, just return the same error code without doing anything. */
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   /* This function should not be called if the pager is not in at least
   ** PAGER_RESERVED state. And indeed SQLite never does this. But it is
-  ** nice to have this defensive block here anyway.
+  ** nice to have this defensive test here anyway.
   */
-  if( NEVER(pPager->state<PAGER_RESERVED) ){
-    return SQLITE_ERROR;
-  }
+  if( NEVER(pPager->state<PAGER_RESERVED) ) return SQLITE_ERROR;
 
   /* An optimization. If the database was not actually modified during
   ** this transaction, the pager is running in exclusive-mode and is
