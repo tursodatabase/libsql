@@ -12,7 +12,7 @@
 ** This file contains C code routines that used to generate VDBE code
 ** that implements the ALTER TABLE command.
 **
-** $Id: alter.c,v 1.61 2009/06/03 11:25:07 danielk1977 Exp $
+** $Id: alter.c,v 1.62 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -277,7 +277,7 @@ void sqlite3AlterRenameTable(
 #ifndef SQLITE_OMIT_TRIGGER
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
-  int isVirtualRename = 0;  /* True if this is a v-table with an xRename() */
+  VTable *pVTab = 0;        /* Non-zero if this is a v-tab with an xRename() */
   
   if( NEVER(db->mallocFailed) ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
@@ -332,8 +332,11 @@ void sqlite3AlterRenameTable(
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto exit_rename_table;
   }
-  if( IsVirtual(pTab) && pTab->pMod->pModule->xRename ){
-    isVirtualRename = 1;
+  if( IsVirtual(pTab) ){
+    pVTab = sqlite3GetVTable(db, pTab);
+    if( pVTab->pVtab->pModule->xRename==0 ){
+      pVTab = 0;
+    }
   }
 #endif
 
@@ -346,7 +349,7 @@ void sqlite3AlterRenameTable(
   if( v==0 ){
     goto exit_rename_table;
   }
-  sqlite3BeginWriteOperation(pParse, isVirtualRename, iDb);
+  sqlite3BeginWriteOperation(pParse, pVTab!=0, iDb);
   sqlite3ChangeCookie(pParse, iDb);
 
   /* If this is a virtual table, invoke the xRename() function if
@@ -355,10 +358,10 @@ void sqlite3AlterRenameTable(
   ** SQLite tables) that are identified by the name of the virtual table.
   */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  if( isVirtualRename ){
+  if( pVTab ){
     int i = ++pParse->nMem;
     sqlite3VdbeAddOp4(v, OP_String8, 0, i, 0, zName, 0);
-    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pTab->pVtab, P4_VTAB);
+    sqlite3VdbeAddOp4(v, OP_VRename, i, 0, 0,(const char*)pVTab, P4_VTAB);
   }
 #endif
 

@@ -13,7 +13,7 @@
 ** interface, and routines that contribute to loading the database schema
 ** from disk.
 **
-** $Id: prepare.c,v 1.128 2009/07/03 19:19:50 drh Exp $
+** $Id: prepare.c,v 1.129 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -581,6 +581,7 @@ static int sqlite3Prepare(
     }
   }
 
+  sqlite3VtabUnlockList(db);
 
   pParse->db = db;
   if( nBytes>=0 && (nBytes==0 || zSql[nBytes-1]!=0) ){

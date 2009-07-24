@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
 **
-** $Id: insert.c,v 1.269 2009/06/23 20:28:54 drh Exp $
+** $Id: insert.c,v 1.270 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -131,9 +131,14 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
 ** a statement of the form  "INSERT INTO <iDb, pTab> SELECT ..." can 
 ** run without using temporary table for the results of the SELECT. 
 */
-static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
+static int readsTable(Parse *p, int iStartAddr, int iDb, Table *pTab){
+  Vdbe *v = sqlite3GetVdbe(p);
   int i;
   int iEnd = sqlite3VdbeCurrentAddr(v);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  VTable *pVTab = IsVirtual(pTab) ? sqlite3GetVTable(p->db, pTab) : 0;
+#endif
+
   for(i=iStartAddr; i<iEnd; i++){
     VdbeOp *pOp = sqlite3VdbeGetOp(v, i);
     assert( pOp!=0 );
@@ -150,7 +155,7 @@ static int readsTable(Vdbe *v, int iStartAddr, int iDb, Table *pTab){
       }
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    if( pOp->opcode==OP_VOpen && pOp->p4.pVtab==pTab->pVtab ){
+    if( pOp->opcode==OP_VOpen && pOp->p4.pVtab==pVTab ){
       assert( pOp->p4.pVtab!=0 );
       assert( pOp->p4type==P4_VTAB );
       return 1;
@@ -504,20 +509,19 @@ void sqlite3Insert(
 #endif
   assert( (pTrigger && tmask) || (pTrigger==0 && tmask==0) );
 
-  /* Ensure that:
-  *  (a) the table is not read-only, 
-  *  (b) that if it is a view then ON INSERT triggers exist
-  */
-  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
-    goto insert_cleanup;
-  }
-  assert( pTab!=0 );
-
   /* If pTab is really a view, make sure it has been initialized.
   ** ViewGetColumnNames() is a no-op if pTab is not a view (or virtual 
   ** module table).
   */
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+    goto insert_cleanup;
+  }
+
+  /* Ensure that:
+  *  (a) the table is not read-only, 
+  *  (b) that if it is a view then ON INSERT triggers exist
+  */
+  if( sqlite3IsReadOnly(pParse, pTab, tmask) ){
     goto insert_cleanup;
   }
 
@@ -620,7 +624,7 @@ void sqlite3Insert(
     ** of the tables being read by the SELECT statement.  Also use a 
     ** temp table in the case of row triggers.
     */
-    if( pTrigger || readsTable(v, addrSelect, iDb, pTab) ){
+    if( pTrigger || readsTable(pParse, addrSelect, iDb, pTab) ){
       useTempTable = 1;
     }
 
@@ -976,9 +980,9 @@ void sqlite3Insert(
     */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( IsVirtual(pTab) ){
+      const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
-      sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns,
-                     (const char*)pTab->pVtab, P4_VTAB);
+      sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns, pVTab, P4_VTAB);
     }else
 #endif
     {

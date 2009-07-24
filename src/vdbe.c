@@ -43,7 +43,7 @@
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
 **
-** $Id: vdbe.c,v 1.873 2009/07/22 00:35:24 drh Exp $
+** $Id: vdbe.c,v 1.874 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -5017,13 +5017,13 @@ case OP_TableLock: {
 ** code will be set to SQLITE_LOCKED.
 */
 case OP_VBegin: {
-  sqlite3_vtab *pVtab;
-  pVtab = pOp->p4.pVtab;
-  rc = sqlite3VtabBegin(db, pVtab);
-  if( pVtab ){
+  VTable *pVTab;
+  pVTab = pOp->p4.pVtab;
+  rc = sqlite3VtabBegin(db, pVTab);
+  if( pVTab ){
     sqlite3DbFree(db, p->zErrMsg);
-    p->zErrMsg = pVtab->zErrMsg;
-    pVtab->zErrMsg = 0;
+    p->zErrMsg = pVTab->pVtab->zErrMsg;
+    pVTab->pVtab->zErrMsg = 0;
   }
   break;
 }
@@ -5070,7 +5070,7 @@ case OP_VOpen: {
 
   pCur = 0;
   pVtabCursor = 0;
-  pVtab = pOp->p4.pVtab;
+  pVtab = pOp->p4.pVtab->pVtab;
   pModule = (sqlite3_module *)pVtab->pModule;
   assert(pVtab && pModule);
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
@@ -5153,14 +5153,12 @@ case OP_VFilter: {   /* jump */
     }
 
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    sqlite3VtabLock(pVtab);
     p->inVtabMethod = 1;
     rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = pVtab->zErrMsg;
     pVtab->zErrMsg = 0;
-    sqlite3VtabUnlock(db, pVtab);
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pVtabCursor);
     }
@@ -5268,14 +5266,12 @@ case OP_VNext: {   /* jump */
   ** some other method is next invoked on the save virtual table cursor.
   */
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-  sqlite3VtabLock(pVtab);
   p->inVtabMethod = 1;
   rc = pModule->xNext(pCur->pVtabCursor);
   p->inVtabMethod = 0;
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
-  sqlite3VtabUnlock(db, pVtab);
   if( rc==SQLITE_OK ){
     res = pModule->xEof(pCur->pVtabCursor);
   }
@@ -5300,18 +5296,16 @@ case OP_VRename: {
   sqlite3_vtab *pVtab;
   Mem *pName;
 
-  pVtab = pOp->p4.pVtab;
+  pVtab = pOp->p4.pVtab->pVtab;
   pName = &p->aMem[pOp->p1];
   assert( pVtab->pModule->xRename );
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
   if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-  sqlite3VtabLock(pVtab);
   rc = pVtab->pModule->xRename(pVtab, pName->z);
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
-  sqlite3VtabUnlock(db, pVtab);
   if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
   break;
@@ -5351,7 +5345,7 @@ case OP_VUpdate: {
   Mem **apArg;
   Mem *pX;
 
-  pVtab = pOp->p4.pVtab;
+  pVtab = pOp->p4.pVtab->pVtab;
   pModule = (sqlite3_module *)pVtab->pModule;
   nArg = pOp->p2;
   assert( pOp->p4type==P4_VTAB );
@@ -5364,12 +5358,10 @@ case OP_VUpdate: {
       pX++;
     }
     if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-    sqlite3VtabLock(pVtab);
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = pVtab->zErrMsg;
     pVtab->zErrMsg = 0;
-    sqlite3VtabUnlock(db, pVtab);
     if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
     if( rc==SQLITE_OK && pOp->p1 ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );

@@ -15,7 +15,7 @@
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
 **
-** $Id: vdbe.h,v 1.141 2009/04/10 00:56:29 drh Exp $
+** $Id: vdbe.h,v 1.142 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -58,7 +58,7 @@ struct VdbeOp {
     VdbeFunc *pVdbeFunc;   /* Used when p4type is P4_VDBEFUNC */
     CollSeq *pColl;        /* Used when p4type is P4_COLLSEQ */
     Mem *pMem;             /* Used when p4type is P4_MEM */
-    sqlite3_vtab *pVtab;   /* Used when p4type is P4_VTAB */
+    VTable *pVtab;         /* Used when p4type is P4_VTAB */
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
     int *ai;               /* Used when p4type is P4_INTARRAY */
   } p4;

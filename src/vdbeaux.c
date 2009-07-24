@@ -14,7 +14,7 @@
 ** to version 2.8.7, all this code was combined into the vdbe.c source file.
 ** But that file was getting too big so this subroutines were split out.
 **
-** $Id: vdbeaux.c,v 1.477 2009/07/22 00:35:24 drh Exp $
+** $Id: vdbeaux.c,v 1.478 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -478,6 +478,10 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         sqlite3ValueFree((sqlite3_value*)p4);
         break;
       }
+      case P4_VTAB : {
+        sqlite3VtabUnlock((VTable *)p4);
+        break;
+      }
     }
   }
 }
@@ -531,7 +535,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   db = p->db;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( p->aOp==0 || db->mallocFailed ){
-    if (n != P4_KEYINFO) {
+    if ( n!=P4_KEYINFO && n!=P4_VTAB ) {
       freeP4(db, n, (void*)*(char**)&zP4);
     }
     return;
@@ -576,6 +580,11 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
   }else if( n==P4_KEYINFO_HANDOFF ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = P4_KEYINFO;
+  }else if( n==P4_VTAB ){
+    pOp->p4.p = (void*)zP4;
+    pOp->p4type = P4_VTAB;
+    sqlite3VtabLock((VTable *)zP4);
+    assert( ((VTable *)zP4)->db==p->db );
   }else if( n<0 ){
     pOp->p4.p = (void*)zP4;
     pOp->p4type = (signed char)n;
@@ -731,7 +740,7 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
     }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     case P4_VTAB: {
-      sqlite3_vtab *pVtab = pOp->p4.pVtab;
+      sqlite3_vtab *pVtab = pOp->p4.pVtab->pVtab;
       sqlite3_snprintf(nTemp, zTemp, "vtab:%p:%p", pVtab, pVtab->pModule);
       break;
     }

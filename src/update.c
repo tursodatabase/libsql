@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.204 2009/06/27 11:17:35 drh Exp $
+** $Id: update.c,v 1.205 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -155,10 +155,10 @@ void sqlite3Update(
 # define isView 0
 #endif
 
-  if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
+  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
   }
-  if( sqlite3ViewGetColumnNames(pParse, pTab) ){
+  if( sqlite3IsReadOnly(pParse, pTab, (pTrigger?1:0)) ){
     goto update_cleanup;
   }
   aXRef = sqlite3DbMallocRaw(db, sizeof(int) * pTab->nCol );
@@ -631,7 +631,7 @@ static void updateVirtualTable(
   int addr;                 /* Address of top of loop */
   int iReg;                 /* First register in set passed to OP_VUpdate */
   sqlite3 *db = pParse->db; /* Database connection */
-  const char *pVtab = (const char*)pTab->pVtab;
+  const char *pVTab = (const char*)sqlite3GetVTable(db, pTab);
   SelectDest dest;
 
   /* Construct the SELECT statement that will find the new values for
@@ -676,7 +676,7 @@ static void updateVirtualTable(
     sqlite3VdbeAddOp3(v, OP_Column, ephemTab, i+1+(pRowid!=0), iReg+2+i);
   }
   sqlite3VtabMakeWritable(pParse, pTab);
-  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVtab, P4_VTAB);
+  sqlite3VdbeAddOp4(v, OP_VUpdate, 0, pTab->nCol+2, iReg, pVTab, P4_VTAB);
   sqlite3VdbeAddOp2(v, OP_Next, ephemTab, addr+1);
   sqlite3VdbeJumpHere(v, addr);
   sqlite3VdbeAddOp2(v, OP_Close, ephemTab, 0);

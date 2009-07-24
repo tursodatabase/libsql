@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.459 2009/07/15 11:26:44 drh Exp $
+** @(#) $Id: sqlite.h.in,v 1.460 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -4331,7 +4331,7 @@ SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
 */
 struct sqlite3_vtab {
   const sqlite3_module *pModule;  /* The module for this virtual table */
-  int nRef;                       /* Used internally */
+  int nRef;                       /* NO LONGER USED */
   char *zErrMsg;                  /* Error message from sqlite3_mprintf() */
   /* Virtual table implementations will typically add additional fields */
 };
