@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.615 2009/07/24 16:32:01 drh Exp $
+** @(#) $Id: pager.c,v 1.616 2009/07/24 19:01:19 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1323,9 +1323,9 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
-      assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE || rc );
+      assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE );
       sqlite3OsClose(pPager->jfd);
-      if( rc==SQLITE_OK && !pPager->tempFile ){
+      if( !pPager->tempFile ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
       }
     }
@@ -1575,9 +1575,7 @@ static int pager_playback_one_page(
     void *pData;
     pData = pPg->pData;
     memcpy(pData, aData, pPager->pageSize);
-    if( pPager->xReiniter ){
-      pPager->xReiniter(pPg);
-    }
+    pPager->xReiniter(pPg);
     if( isMainJrnl && (!isSavepnt || *pOffset<=pPager->journalHdr) ){
       /* If the contents of this page were just restored from the main 
       ** journal file, then its content must be as they were when the 
@@ -2362,17 +2360,6 @@ void sqlite3PagerSetBusyhandler(
 }
 
 /*
-** Set the reinitializer for this pager. If not NULL, the reinitializer
-** is called when the content of a page in cache is modified (restored)
-** as part of a transaction or savepoint rollback. The callback gives 
-** higher-level code an opportunity to restore the EXTRA section to 
-** agree with the restored page data.
-*/
-void sqlite3PagerSetReiniter(Pager *pPager, void (*xReinit)(DbPage*)){
-  pPager->xReiniter = xReinit;
-}
-
-/*
 ** Report the current page size and number of reserved bytes back
 ** to the codec.
 */
@@ -3144,7 +3131,8 @@ int sqlite3PagerOpen(
   const char *zFilename,   /* Name of the database file to open */
   int nExtra,              /* Extra bytes append to each in-memory page */
   int flags,               /* flags controlling this file */
-  int vfsFlags             /* flags passed through to sqlite3_vfs.xOpen() */
+  int vfsFlags,            /* flags passed through to sqlite3_vfs.xOpen() */
+  void (*xReinit)(DbPage*) /* Function to reinitialize pages */
 ){
   u8 *pPtr;
   Pager *pPager = 0;       /* Pager object to allocate and return */
@@ -3363,7 +3351,8 @@ int sqlite3PagerOpen(
   pPager->memDb = (u8)memDb;
   pPager->readOnly = (u8)readOnly;
   /* pPager->needSync = 0; */
-  pPager->noSync = (pPager->tempFile || !useJournal) ?1:0;
+  assert( useJournal || pPager->tempFile );
+  pPager->noSync = pPager->tempFile;
   pPager->fullSync = pPager->noSync ?0:1;
   pPager->sync_flags = SQLITE_SYNC_NORMAL;
   /* pPager->pFirst = 0; */
@@ -3373,11 +3362,14 @@ int sqlite3PagerOpen(
   pPager->journalSizeLimit = SQLITE_DEFAULT_JOURNAL_SIZE_LIMIT;
   assert( isOpen(pPager->fd) || tempFile );
   setSectorSize(pPager);
-  if( memDb ){
+  if( !useJournal ){
+    pPager->journalMode = PAGER_JOURNALMODE_OFF;
+  }else if( memDb ){
     pPager->journalMode = PAGER_JOURNALMODE_MEMORY;
   }
   /* pPager->xBusyHandler = 0; */
   /* pPager->pBusyHandlerArg = 0; */
+  pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
   *ppPager = pPager;
   return SQLITE_OK;
@@ -3422,7 +3414,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   int exists;                   /* True if a journal file is present */
 
   assert( pPager!=0 );
-  assert( pPager->useJournal );
+  assert( useJournal );
   assert( isOpen(pPager->fd) );
   assert( !isOpen(pPager->jfd) );
 
@@ -3518,6 +3510,7 @@ static int readDbPage(PgHdr *pPg){
   i64 iOffset;                 /* Byte offset of file to read from */
 
   assert( pPager->state>=PAGER_SHARED && !MEMDB );
+  assert( isOpen(pPager->fd) );
 
   if( !isOpen(pPager->fd) ){
     assert( pPager->tempFile );
@@ -3897,7 +3890,7 @@ int sqlite3PagerAcquire(
         ** a bit in a bit vector.
         */
         sqlite3BeginBenignMalloc();
-        if( pgno<=pPager->dbOrigSize ){
+        if( ALWAYS(pgno<=pPager->dbOrigSize) ){
           TESTONLY( rc = ) sqlite3BitvecSet(pPager->pInJournal, pgno);
           testcase( rc==SQLITE_NOMEM );
         }
@@ -4021,6 +4014,7 @@ static int pager_open_journal(Pager *pPager){
 
   assert( pPager->state>=PAGER_RESERVED );
   assert( pPager->useJournal );
+  assert( pPager->journalMode!=PAGER_JOURNALMODE_OFF );
   assert( pPager->pInJournal==0 );
   
   /* If already in the error state, this function is a no-op.  But on
@@ -4115,6 +4109,7 @@ static int pager_open_journal(Pager *pPager){
 int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
   assert( pPager->state!=PAGER_UNLOCK );
+  assert( pPager->useJournal );
   pPager->subjInMemory = (u8)subjInMemory;
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->pInJournal==0 );
@@ -4136,9 +4131,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
     /* If the required locks were successfully obtained, open the journal
     ** file and write the first journal-header to it.
     */
-    if( rc==SQLITE_OK && pPager->useJournal
-     && pPager->journalMode!=PAGER_JOURNALMODE_OFF 
-    ){
+    if( rc==SQLITE_OK && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
       rc = pager_open_journal(pPager);
     }
   }else if( isOpen(pPager->jfd) && pPager->journalOff==0 ){
@@ -4214,8 +4207,8 @@ static int pager_write(PgHdr *pPg){
       return rc;
     }
     assert( pPager->state>=PAGER_RESERVED );
-    if( !isOpen(pPager->jfd) && pPager->useJournal
-          && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
+    if( !isOpen(pPager->jfd) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
+      assert( pPager->useJournal );
       rc = pager_open_journal(pPager);
       if( rc!=SQLITE_OK ) return rc;
     }
@@ -4489,7 +4482,7 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 #endif
 
   assert( pPager->state>=PAGER_RESERVED );
-  if( !pPager->changeCountDone && pPager->dbSize>0 ){
+  if( !pPager->changeCountDone && ALWAYS(pPager->dbSize>0) ){
     PgHdr *pPgHdr;                /* Reference to page 1 */
     u32 change_counter;           /* Initial value of change-counter field */
 

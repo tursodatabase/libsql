@@ -1,5 +1,5 @@
-C Allow\svirtual\stables\sto\sbe\sused\sin\sshared-cache\smode.\s(CVS\s6928)
-D 2009-07-24T17:58:53
+C Further\ssimplifications\sto\spager.c\sin\ssupport\sof\sstructural\scoverage\stesting.\s(CVS\s6929)
+D 2009-07-24T19:01:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -106,7 +106,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c cfbf6af5b0ababb4f06ed3e75c616dadaf47fcbd
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c c1d3d67007f2f49697b4204bf44f2a8f45f750df
+F src/btree.c 46f24d0b659583bae13b7f22534e5f529ebc0684
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c a15de7c5d020a778b641fca0b2510126843f4b30
@@ -147,8 +147,8 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 80910e68f6bde91dc96a3dcb5d8e5edf3505fa0d
-F src/pager.h 5bd96ed838e4156e0effa5ffe746bce4c0112c24
+F src/pager.c 1ad2dff309c92fbf0a7a2017ece5407d05b19937
+F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
 F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
@@ -169,7 +169,7 @@ F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
 F src/test1.c c8f9358879876660b721369f576bf6e4ac5b9210
-F src/test2.c ffb1649b7a33a0acd5bd1a98a376b9c104daa279
+F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
 F src/test5.c 162a1cea2105a2c460a3f39fa6919617b562a288
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 7222ad2667b95d6021d9ae47f548b76b224f46aa
-R 477ef377a502774f707ff161355dd337
-U danielk1977
-Z b547740a8551902f628dba2106d37250
+P 5d9e767a05e381235e064061043e30cc03a11a07
+R 22fe9f29fb6a7ee66218964085f3f2ec
+U drh
+Z 2136ce2091cca0331400af0c4f963123
