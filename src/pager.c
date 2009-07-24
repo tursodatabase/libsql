@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.614 2009/07/24 12:35:57 drh Exp $
+** @(#) $Id: pager.c,v 1.615 2009/07/24 16:32:01 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -3950,13 +3950,9 @@ DbPage *sqlite3PagerLookup(Pager *pPager, Pgno pgno){
   PgHdr *pPg = 0;
   assert( pPager!=0 );
   assert( pgno!=0 );
-
-  if( (pPager->state!=PAGER_UNLOCK)
-   && (pPager->errCode==SQLITE_OK || pPager->errCode==SQLITE_FULL)
-  ){
-    sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
-  }
-
+  assert( pPager->pPCache!=0 );
+  assert( pPager->state > PAGER_UNLOCK );
+  sqlite3PcacheFetch(pPager->pPCache, pgno, 0, &pPg);
   return pPg;
 }
 
@@ -4027,10 +4023,10 @@ static int pager_open_journal(Pager *pPager){
   assert( pPager->useJournal );
   assert( pPager->pInJournal==0 );
   
-  /* If already in the error state, this function is a no-op. */
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }
+  /* If already in the error state, this function is a no-op.  But on
+  ** the other hand, this routine is never called if we are already in
+  ** an error state. */
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   /* TODO: Is it really possible to get here with dbSizeValid==0? If not,
   ** the call to PagerPagecount() can be removed.
@@ -4184,14 +4180,14 @@ static int pager_write(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
 
-  /* Check for errors
+  /* If an error has been previously detected, we should not be
+  ** calling this routine.  Repeat the error for robustness.
   */
-  if( pPager->errCode ){ 
-    return pPager->errCode;
-  }
-  if( pPager->readOnly ){
-    return SQLITE_PERM;
-  }
+  if( NEVER(pPager->errCode) )  return pPager->errCode;
+
+  /* Higher-level routines never call this function if database is not
+  ** writable.  But check anyway, just for robustness. */
+  if( NEVER(pPager->readOnly) ) return SQLITE_PERM;
 
   assert( !pPager->setMaster );
 
@@ -4504,9 +4500,11 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
     assert( pPgHdr==0 || rc==SQLITE_OK );
 
     /* If page one was fetched successfully, and this function is not
-    ** operating in direct-mode, make page 1 writable.
+    ** operating in direct-mode, make page 1 writable.  When not in 
+    ** direct mode, page 1 is always held in cache and hence the PagerGet()
+    ** above is always successful - hence the ALWAYS on rc==SQLITE_OK.
     */
-    if( rc==SQLITE_OK && !DIRECT_MODE ){
+    if( !DIRECT_MODE && ALWAYS(rc==SQLITE_OK) ){
       rc = sqlite3PagerWrite(pPgHdr);
     }
 
@@ -4544,7 +4542,8 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 */
 int sqlite3PagerSync(Pager *pPager){
   int rc;                              /* Return code */
-  if( MEMDB || pPager->noSync ){
+  assert( !MEMDB );
+  if( pPager->noSync ){
     rc = SQLITE_OK;
   }else{
     rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
@@ -4584,6 +4583,9 @@ int sqlite3PagerCommitPhaseOne(
   int noSync                      /* True to omit the xSync on the db file */
 ){
   int rc = SQLITE_OK;             /* Return code */
+
+  /* The dbOrigSize is never set if journal_mode=OFF */
+  assert( pPager->journalMode!=PAGER_JOURNALMODE_OFF || pPager->dbOrigSize==0 );
 
   /* If a prior error occurred, this routine should not be called.  ROLLBACK
   ** is the appropriate response to an error, not COMMIT.  Guard against
@@ -4659,10 +4661,13 @@ int sqlite3PagerCommitPhaseOne(
     ** that it took at the start of the transaction. Otherwise, the
     ** calls to sqlite3PagerGet() return zeroed pages instead of 
     ** reading data from the database file.
+    **
+    ** When journal_mode==OFF the dbOrigSize is always zero, so this
+    ** block never runs if journal_mode=OFF.
     */
 #ifndef SQLITE_OMIT_AUTOVACUUM
-    if( pPager->dbSize<pPager->dbOrigSize
-     && pPager->journalMode!=PAGER_JOURNALMODE_OFF 
+    if( pPager->dbSize<pPager->dbOrigSize 
+     && ALWAYS(pPager->journalMode!=PAGER_JOURNALMODE_OFF)
     ){
       Pgno i;                                   /* Iterator variable */
       const Pgno iSkip = PAGER_MJ_PGNO(pPager); /* Pending lock page */

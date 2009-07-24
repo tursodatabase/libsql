@@ -1,5 +1,5 @@
-C Simplifications\sand\scomment\simprovements\sin\spager.c.\s(CVS\s6926)
-D 2009-07-24T12:35:57
+C Simplifications\sto\spager.c\sin\ssupport\sof\sstructural\scoverage\stesting.\s(CVS\s6927)
+D 2009-07-24T16:32:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c cc446ee38f0caf5fab47353f769711e02fda7a0d
+F src/pager.c 80910e68f6bde91dc96a3dcb5d8e5edf3505fa0d
 F src/pager.h 5bd96ed838e4156e0effa5ffe746bce4c0112c24
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
@@ -492,7 +492,7 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager.test d04982df84334a9ed272ed2943b61985be5377ee
+F test/pager.test 2d0abb66c8967ffac4558c0530b31c28706b5e64
 F test/pager2.test d4b7f6b70ff018b9995e622a32526b275f515042
 F test/pager3.test 2323bf27fd5bd887b580247e5bce500ceee994b4
 F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 5ba880dde8a219543ced6f792c7f9ecdcd8c1cbb
-R b8ba3e500c8750934aa1015f54324e22
+P 2d2f42ca0a24ed8b33f9ad560c76a6c1301c757b
+R d83586425c23d3015fdf0b2326ebc67f
 U drh
-Z bf3ffffd67cf82b5b648dccfa3279f49
+Z eeeb8d7f7200949823d967a49549fa65
