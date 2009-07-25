@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.620 2009/07/25 04:12:02 drh Exp $
+** @(#) $Id: pager.c,v 1.621 2009/07/25 11:40:08 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2626,6 +2626,40 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
 }
 
 /*
+** Function assertTruncateConstraint(pPager) checks that one of the 
+** following is true for all dirty pages currently in the page-cache:
+**
+**   a) The page number is less than or equal to the size of the 
+**      current database image, in pages, OR
+**
+**   b) if the page content were written at this time, it would not
+**      be necessary to write the current content out to the sub-journal
+**      (as determined by function subjRequiresPage()).
+**
+** If the condition asserted by this function were not true, and the
+** dirty page were to be discarded from the cache via the pagerStress()
+** routine, pagerStress() would not write the current page content to
+** the database file. If a savepoint transaction were rolled back after
+** this happened, the correct behaviour would be to restore the current
+** content of the page. However, since this content is not present in either
+** the database file or the portion of the rollback journal and 
+** sub-journal rolled back the content could not be restored and the
+** database image would become corrupt. It is therefore fortunate that 
+** this circumstance cannot arise.
+*/
+#if defined(SQLITE_DEBUG)
+static void assertTruncateConstraintCb(PgHdr *pPg){
+  assert( pPg->flags&PGHDR_DIRTY );
+  assert( !subjRequiresPage(pPg) || pPg->pgno<=pPg->pPager->dbSize );
+}
+static void assertTruncateConstraint(Pager *pPager){
+  sqlite3PcacheIterateDirty(pPager->pPCache, assertTruncateConstraintCb);
+}
+#else
+# define assertTruncateConstraint(pPager)
+#endif
+
+/*
 ** Truncate the in-memory database file image to nPage pages. This 
 ** function does not actually modify the database file on disk. It 
 ** just sets the internal state of the pager object so that the 
@@ -2636,6 +2670,7 @@ void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
   assert( pPager->dbSize>=nPage );
   assert( pPager->state>=PAGER_RESERVED );
   pPager->dbSize = nPage;
+  assertTruncateConstraint(pPager);
 }
 
 /*
@@ -4963,6 +4998,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 
     /* Open the sub-journal, if it is not already opened. */
     rc = openSubJournal(pPager);
+    assertTruncateConstraint(pPager);
   }
 
   return rc;
