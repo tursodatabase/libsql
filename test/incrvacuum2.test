@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the incremental vacuum feature.
 #
-# $Id: incrvacuum2.test,v 1.5 2008/05/07 07:13:16 danielk1977 Exp $
+# $Id: incrvacuum2.test,v 1.6 2009/07/25 13:42:50 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -21,16 +21,6 @@ source $testdir/tester.tcl
 ifcapable {!autovacuum || !pragma} {
   finish_test
   return
-}
-
-# If the OMIT_INCRBLOB symbol was defined at compile time, there
-# is no zeroblob() function available. So create a similar
-# function here using Tcl. It doesn't return a blob, but it returns
-# data of the required length, which is good enough for this
-# test file.
-ifcapable !incrblob {
-  proc zeroblob {n} { string repeat 0 $n }
-  db function zeroblob zeroblob
 }
 
 
