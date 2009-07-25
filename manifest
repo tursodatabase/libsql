@@ -1,5 +1,5 @@
-C Add\sa\scomplex\sassert()\sthat\schecks\sa\spager\sinvariant.\s(CVS\s6934)
-D 2009-07-25T11:40:08
+C Add\sfiles\sthat\sshould\shave\sgone\sin\swith\sthe\sprevious\scheckin.\s(CVS\s6935)
+D 2009-07-25T11:46:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,8 +150,8 @@ F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
 F src/pager.c 2ccb1152741996d3f6125232f14dfcf654bdd29f
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
-F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
-F src/pcache.h 9b927ccc5a538e31b4c3bc7eec4f976db42a1324
+F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
+F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
 F src/pcache1.c 6dc833c89feac405dd8b4858232c97e679f182ec
 F src/pragma.c 9eb44ac1d3dc1ac3ea4f444abe1a10ae8acaa16c
 F src/prepare.c 312ba96867ae9df6bd1a57cb84a9fd315e61cf8d
@@ -738,7 +738,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3b6d370ed68eaf9636b26c7240a8b3a43d2edd70
-R 6427dd1fa4bac8adebaeed3a85e8f4b9
+P 2e08ad7bf629485a79ccebcf4c413e9dcc0d3ccf
+R 538b80e40ca2c7a090fa9bcf0676dfb6
 U danielk1977
-Z ea5eb9c594b637c9c13eaf08f55c7f0a
+Z 6c9a0b4779aa816678e6e58c258feb6f

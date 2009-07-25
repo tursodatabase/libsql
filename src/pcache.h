@@ -12,7 +12,7 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem. 
 **
-** @(#) $Id: pcache.h,v 1.19 2009/01/20 17:06:27 danielk1977 Exp $
+** @(#) $Id: pcache.h,v 1.20 2009/07/25 11:46:49 danielk1977 Exp $
 */
 
 #ifndef _PCACHE_H_
@@ -124,7 +124,7 @@ int sqlite3PcachePageRefcount(PgHdr*);
 /* Return the total number of pages stored in the cache */
 int sqlite3PcachePagecount(PCache*);
 
-#ifdef SQLITE_CHECK_PAGES
+#if defined(SQLITE_CHECK_PAGES) || defined(SQLITE_DEBUG)
 /* Iterate through all dirty pages currently stored in the cache. This
 ** interface is only available if SQLITE_CHECK_PAGES is defined when the 
 ** library is built.
