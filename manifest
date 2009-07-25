@@ -1,5 +1,5 @@
-C Remove\sthe\s"proc\szeroblob"\simplementation\sfrom\sincrvacuum2.test.\sIt\sis\sno\slonger\srequired\sas\sof\s(6906)\sand,\sas\s#3988\spoints\sout,\sunreliable.\s(CVS\s6936)
-D 2009-07-25T13:42:50
+C Add\sa\sNEVER()\son\san\salways-false\sconditional\sin\spager.c.\nMake\ssure\sthe\stext\sof\sthe\smaster\sjournal\sfile\sis\szero-terminated\sbefore\ntrying\sto\sprocess\sit\s-\sto\sprevent\sa\sbuffer\soverrun\sin\sstrlen().\s(CVS\s6937)
+D 2009-07-25T14:18:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 2ccb1152741996d3f6125232f14dfcf654bdd29f
+F src/pager.c 23c9823d72b0213d7cbf3ca6e5aeb9735b467d5d
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
@@ -738,7 +738,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 64c7afc704e95e13fb3315be402525d277a0d8d8
-R 20f40ca3310104ddabf364141e8ccf5e
-U danielk1977
-Z 017be7b24b2900b43c5f14b11b4aa4e2
+P 03153831635342a744ee42f14cb041499cdece2a
+R 4106cc756a07d0d168a7b40655b87b37
+U drh
+Z 8238038a139f353098e7137beba5542a
