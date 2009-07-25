@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.624 2009/07/25 17:08:36 drh Exp $
+** @(#) $Id: pager.c,v 1.625 2009/07/25 17:39:14 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1174,6 +1174,7 @@ static void pager_unlock(Pager *pPager){
 */
 static int pager_error(Pager *pPager, int rc){
   int rc2 = rc & 0xff;
+  assert( rc==SQLITE_OK || !MEMDB );
   assert(
        pPager->errCode==SQLITE_FULL ||
        pPager->errCode==SQLITE_OK ||
@@ -3597,25 +3598,18 @@ int sqlite3PagerSharedLock(Pager *pPager){
   /* This routine is only called from b-tree and only when there are no
   ** outstanding pages */
   assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
+  if( NEVER(MEMDB && pPager->errCode) ){ return pPager->errCode; }
 
   /* If this database is in an error-state, now is a chance to clear
   ** the error. Discard the contents of the pager-cache and rollback
   ** any hot journal in the file-system.
   */
-  if( !MEMDB && pPager->errCode ){
+  if( pPager->errCode ){
     if( isOpen(pPager->jfd) || pPager->zJournal ){
       isErrorReset = 1;
     }
     pPager->errCode = SQLITE_OK;
     pager_reset(pPager);
-  }
-
-  /* If the pager is still in an error state, do not proceed. The error 
-  ** state will be cleared at some point in the future when all page 
-  ** references are dropped and the cache can be discarded.
-  */
-  if( pPager->errCode && pPager->errCode!=SQLITE_FULL ){
-    return pPager->errCode;
   }
 
   if( pPager->state==PAGER_UNLOCK || isErrorReset ){
