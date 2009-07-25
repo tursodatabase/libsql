@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.625 2009/07/25 17:39:14 danielk1977 Exp $
+** @(#) $Id: pager.c,v 1.626 2009/07/25 19:31:32 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1598,46 +1598,6 @@ static int pager_playback_one_page(
   return rc;
 }
 
-#if !defined(NDEBUG) || defined(SQLITE_COVERAGE_TEST)
-/*
-** This routine looks ahead into the main journal file and determines
-** whether or not the next record (the record that begins at file
-** offset pPager->journalOff) is a well-formed page record consisting
-** of a valid page number, pPage->pageSize bytes of content, followed
-** by a valid checksum.
-**
-** The pager never needs to know this in order to do its job.   This
-** routine is only used from within assert() and testcase() macros.
-*/
-static int pagerNextJournalPageIsValid(Pager *pPager){
-  Pgno pgno;           /* The page number of the page */
-  u32 cksum;           /* The page checksum */
-  int rc;              /* Return code from read operations */
-  sqlite3_file *fd;    /* The file descriptor from which we are reading */
-  u8 *aData;           /* Content of the page */
-
-  /* Read the page number header */
-  fd = pPager->jfd;
-  rc = read32bits(fd, pPager->journalOff, &pgno);
-  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
-  if( pgno==0 || pgno==PAGER_MJ_PGNO(pPager) ){ return 0; }         /*NO_TEST*/
-  if( pgno>(Pgno)pPager->dbSize ){ return 0; }                      /*NO_TEST*/
-
-  /* Read the checksum */
-  rc = read32bits(fd, pPager->journalOff+pPager->pageSize+4, &cksum);
-  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
-
-  /* Read the data and verify the checksum */
-  aData = (u8*)pPager->pTmpSpace;
-  rc = sqlite3OsRead(fd, aData, pPager->pageSize, pPager->journalOff+4);
-  if( rc!=SQLITE_OK ){ return 0; }                                  /*NO_TEST*/
-  if( pager_cksum(pPager, aData)!=cksum ){ return 0; }              /*NO_TEST*/
-
-  /* Reach this point only if the page is valid */
-  return 1;
-}
-#endif /* !defined(NDEBUG) || defined(SQLITE_COVERAGE_TEST) */
-
 /*
 ** Parameter zMaster is the name of a master journal file. A single journal
 ** file that referred to the master journal file has just been rolled back.
@@ -1997,11 +1957,6 @@ static int pager_playback(Pager *pPager, int isHot){
     ** pages that need to be rolled back and that the number of pages 
     ** should be computed based on the journal file size.
     */
-    testcase( nRec==0 && !isHot
-         && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
-         && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
-         && pagerNextJournalPageIsValid(pPager)
-    );
     if( nRec==0 && !isHot &&
         pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff ){
       nRec = (int)((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager));
@@ -2193,11 +2148,6 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     ** test is related to ticket #2565.  See the discussion in the
     ** pager_playback() function for additional information.
     */
-    assert( !(nJRec==0
-         && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)!=pPager->journalOff
-         && ((szJ - pPager->journalOff) / JOURNAL_PG_SZ(pPager))>0
-         && pagerNextJournalPageIsValid(pPager))
-    );
     if( nJRec==0 
      && pPager->journalHdr+JOURNAL_HDR_SZ(pPager)==pPager->journalOff
     ){
