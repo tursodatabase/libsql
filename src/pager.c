@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.622 2009/07/25 14:18:57 drh Exp $
+** @(#) $Id: pager.c,v 1.623 2009/07/25 15:24:14 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1302,11 +1302,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
 
     /* Finalize the journal file. */
     if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY ){
-      int isMemoryJournal = sqlite3IsMemJournal(pPager->jfd);
+      assert( sqlite3IsMemJournal(pPager->jfd) );
       sqlite3OsClose(pPager->jfd);
-      if( !isMemoryJournal ){
-        rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
-      }
     }else if( pPager->journalMode==PAGER_JOURNALMODE_TRUNCATE ){
       if( pPager->journalOff==0 ){
         rc = SQLITE_OK;
@@ -4211,6 +4208,11 @@ static int pager_write(PgHdr *pPg){
   Pager *pPager = pPg->pPager;
   int rc = SQLITE_OK;
 
+  /* This routine is not called unless a transaction has already been
+  ** started.
+  */
+  assert( pPager->state>=PAGER_RESERVED );
+
   /* If an error has been previously detected, we should not be
   ** calling this routine.  Repeat the error for robustness.
   */
@@ -4236,15 +4238,14 @@ static int pager_write(PgHdr *pPg){
     ** written to the transaction journal or the ckeckpoint journal
     ** or both.
     **
-    ** First check to see that the transaction journal exists and
-    ** create it if it does not.
+    ** Higher level routines should have already started a transaction,
+    ** which means they have acquired the necessary locks and opened
+    ** a rollback journal.  Double-check to makes sure this is the case.
     */
-    assert( pPager->state!=PAGER_UNLOCK );
     rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
-    if( rc!=SQLITE_OK ){
+    if( NEVER(rc!=SQLITE_OK) ){
       return rc;
     }
-    assert( pPager->state>=PAGER_RESERVED );
     if( !isOpen(pPager->jfd) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
       assert( pPager->useJournal );
       rc = pager_open_journal(pPager);
