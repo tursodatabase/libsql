@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.619 2009/07/25 00:13:59 drh Exp $
+** @(#) $Id: pager.c,v 1.620 2009/07/25 04:12:02 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2410,9 +2410,9 @@ int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
   if( rc==SQLITE_OK ){
     u16 pageSize = *pPageSize;
     assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );
-    if( pageSize && pageSize!=pPager->pageSize 
-     && (pPager->memDb==0 || pPager->dbSize==0)
+    if( (pPager->memDb==0 || pPager->dbSize==0)
      && sqlite3PcacheRefCount(pPager->pPCache)==0 
+     && pageSize && pageSize!=pPager->pageSize 
     ){
       char *pNew = (char *)sqlite3PageMalloc(pageSize);
       if( !pNew ){
@@ -2988,7 +2988,6 @@ static int subjournalPage(PgHdr *pPg){
     pPager->nSubRec++;
     assert( pPager->nSavepoint>0 );
     rc = addToSavepointBitvecs(pPager, pPg->pgno);
-    testcase( rc!=SQLITE_OK );
   }
   return rc;
 }
@@ -3077,6 +3076,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   ** executed.
   */
   if( rc==SQLITE_OK && pPg->pgno>pPager->dbSize && subjRequiresPage(pPg) ){
+assert(0);
     rc = subjournalPage(pPg);
   }
 
@@ -3418,6 +3418,7 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   assert( pPager->useJournal );
   assert( isOpen(pPager->fd) );
   assert( !isOpen(pPager->jfd) );
+  assert( pPager->state <= PAGER_SHARED );
 
   *pExists = 0;
   rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
@@ -3446,13 +3447,9 @@ static int hasHotJournal(Pager *pPager, int *pExists){
       if( rc==SQLITE_OK ){
         if( nPage==0 ){
           sqlite3BeginBenignMalloc();
-          if( pPager->state>=PAGER_RESERVED
-                 ||  sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
+          if( sqlite3OsLock(pPager->fd, RESERVED_LOCK)==SQLITE_OK ){
             sqlite3OsDelete(pVfs, pPager->zJournal, 0);
-            assert( pPager->state>=PAGER_SHARED );
-            if( pPager->state==PAGER_SHARED ){
-              sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
-            }
+            sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
           }
           sqlite3EndBenignMalloc();
         }else{
@@ -3574,12 +3571,15 @@ int sqlite3PagerSharedLock(Pager *pPager){
   int rc = SQLITE_OK;                /* Return code */
   int isErrorReset = 0;              /* True if recovering from error state */
 
-  /* If this database has no outstanding page references and is in an 
-  ** error-state, this is a chance to clear the error. Discard the 
-  ** contents of the pager-cache and rollback any hot journal in the
-  ** file-system.
+  /* This routine is only called from b-tree and only when there are no
+  ** outstanding pages */
+  assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
+
+  /* If this database is in an error-state, now is a chance to clear
+  ** the error. Discard the contents of the pager-cache and rollback
+  ** any hot journal in the file-system.
   */
-  if( !MEMDB && sqlite3PcacheRefCount(pPager->pPCache)==0 && pPager->errCode ){
+  if( !MEMDB && pPager->errCode ){
     if( isOpen(pPager->jfd) || pPager->zJournal ){
       isErrorReset = 1;
     }
@@ -3615,6 +3615,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
     ** database file, then it either needs to be played back or deleted.
     */
     if( !isErrorReset ){
+      assert( pPager->state <= PAGER_SHARED );
       rc = hasHotJournal(pPager, &isHotJournal);
       if( rc!=SQLITE_OK ){
         goto failed;
@@ -3891,7 +3892,7 @@ int sqlite3PagerAcquire(
         ** a bit in a bit vector.
         */
         sqlite3BeginBenignMalloc();
-        if( ALWAYS(pgno<=pPager->dbOrigSize) ){
+        if( pgno<=pPager->dbOrigSize ){
           TESTONLY( rc = ) sqlite3BitvecSet(pPager->pInJournal, pgno);
           testcase( rc==SQLITE_NOMEM );
         }
@@ -4948,7 +4949,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     for(ii=nCurrent; ii<nSavepoint; ii++){
       assert( pPager->dbSizeValid );
       aNew[ii].nOrig = pPager->dbSize;
-      if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
+      if( isOpen(pPager->jfd) && ALWAYS(pPager->journalOff>0) ){
         aNew[ii].iOffset = pPager->journalOff;
       }else{
         aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
