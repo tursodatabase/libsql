@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.618 2009/07/25 00:10:46 drh Exp $
+** @(#) $Id: pager.c,v 1.619 2009/07/25 00:13:59 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -2406,8 +2406,7 @@ static void pagerReportSize(Pager *pPager){
 */
 int sqlite3PagerSetPagesize(Pager *pPager, u16 *pPageSize, int nReserve){
   int rc = pPager->errCode;
-  assert( pPager->dbSize==0 );
-  assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
+
   if( rc==SQLITE_OK ){
     u16 pageSize = *pPageSize;
     assert( pageSize==0 || (pageSize>=512 && pageSize<=SQLITE_MAX_PAGE_SIZE) );

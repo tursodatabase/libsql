@@ -1,5 +1,5 @@
-C Remove\san\soverzealous\sassert()\sfrom\spager.c.\s(CVS\s6931)
-D 2009-07-25T00:10:46
+C Remove\stwo\smore\soverzealous\sassert()\sstatements.\s(CVS\s6932)
+D 2009-07-25T00:13:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 872b3807172f24d46413d9b765b9af6020da443a
+F src/pager.c c462bf6153c3c29da0ce723ac76c8fa76cbd6a9b
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c 1dae135b70a029f81ed66f6e9b5d0db91480d5d0
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e5165c80abfdba0ad74e1042e4c94fe00d4b3308
-R b4fdc5081eb8c32bbe893361356d85e8
+P 4a924b475aa0f7f2f69caed0adc2e60d29c47f21
+R 69d11ad1bb13603103594d88d70fe872
 U drh
-Z a3c81fe414979381903477f6ab6cc886
+Z e88cd7ec3be1e087035327e93db22707
