@@ -1,5 +1,5 @@
-C Do\snot\ssimulate\sOOM\sconditions\sin\sthe\ssqlite3OsXXX()\scalls\sif\sthe\sunderlying\sfile\sis\san\sin-memory\sjournal\sfile.\s(CVS\s6946)
-D 2009-07-27T11:41:21
+C If\sthere\sis\sa\shot-journal\sin\sthe\sfile-system,\sa\sconnection\swith\sjournal_mode=memory\sset\smay\shave\sto\sopen\sit\sto\seffect\srollback.\sAccount\sfor\sthis\sin\spager_end_transaction().\sThis\sprevents\san\sassert\sfrom\sfailing\sin\sthe\sin-memory\sjournal\spermutation\stest.\s(CVS\s6947)
+D 2009-07-27T14:15:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
 F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
-F src/pager.c 36a14ae25416f07a81b0ca391d1b877b6da2e8cf
+F src/pager.c 4aa16cc8bc8e4b0b457fb3ddb600970381b2be7d
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
@@ -739,7 +739,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3616766a6f5c8179cc55444c29ecf29cc69f88ce
-R 15dcf1e2e323ed2f20117bf58e184446
+P d486811715350f315374cc41f3d808a75d140afb
+R c5cf17c3dd0bcc2fee110e582ef5f716
 U danielk1977
-Z 83c16bc9609be7e94d58c26429e0fd97
+Z 6c83a38f6fa04f2929fbf170138a1885

@@ -18,7 +18,7 @@
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
 **
-** @(#) $Id: pager.c,v 1.627 2009/07/25 22:13:35 drh Exp $
+** @(#) $Id: pager.c,v 1.628 2009/07/27 14:15:44 danielk1977 Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"
@@ -1280,17 +1280,9 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   assert( isOpen(pPager->jfd) || pPager->pInJournal==0 );
   if( isOpen(pPager->jfd) ){
 
-    /* TODO: There's a problem here if a journal-file was opened in MEMORY
-    ** mode and then the journal-mode is changed to TRUNCATE or PERSIST
-    ** during the transaction. This code should be changed to assume
-    ** that the journal mode has not changed since the transaction was
-    ** started. And the sqlite3PagerJournalMode() function should be
-    ** changed to make sure that this is the case too.
-    */
-
     /* Finalize the journal file. */
-    if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY ){
-      assert( sqlite3IsMemJournal(pPager->jfd) );
+    if( sqlite3IsMemJournal(pPager->jfd) ){
+      assert( pPager->journalMode==PAGER_JOURNALMODE_MEMORY );
       sqlite3OsClose(pPager->jfd);
     }else if( pPager->journalMode==PAGER_JOURNALMODE_TRUNCATE ){
       if( pPager->journalOff==0 ){
@@ -1308,7 +1300,13 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
     }else{
-      assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE );
+      /* This branch may be executed with Pager.journalMode==MEMORY if
+      ** a hot-journal was just rolled back. In this case the journal
+      ** file should be closed and deleted. If this connection writes to
+      ** the database file, it will do so using an in-memory journal.  */
+      assert( pPager->journalMode==PAGER_JOURNALMODE_DELETE 
+           || pPager->journalMode==PAGER_JOURNALMODE_MEMORY 
+      );
       sqlite3OsClose(pPager->jfd);
       if( !pPager->tempFile ){
         rc = sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
