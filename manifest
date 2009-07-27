@@ -1,5 +1,5 @@
-C When\sextracting\svalues\sfrom\sa\srecord\sto\suse\sin\san\sUPDATEd\sversion\sof\sthat\srecord,\sapply\sOP_RealAffinity\sif\srequired.\sFix\sfor\s#3992.\s(CVS\s6945)
-D 2009-07-27T10:05:05
+C Do\snot\ssimulate\sOOM\sconditions\sin\sthe\ssqlite3OsXXX()\scalls\sif\sthe\sunderlying\sfile\sis\san\sin-memory\sjournal\sfile.\s(CVS\s6946)
+D 2009-07-27T11:41:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -141,7 +141,7 @@ F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
 F src/mutex_unix.c 2f936339dfef1a4c142db290d575a3509b77315f
 F src/mutex_w32.c cd611ebe0671a05e3d5b4e3f37032a45eb2ce612
 F src/notify.c 0127121816d8a861deb0dfd111b495346bf233db
-F src/os.c c2aa4a7d8bb845222e5c37f56cde377b20c3b087
+F src/os.c 5029ae6c88d1869ad9034008a9531658d53438e4
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
@@ -739,7 +739,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 886e665f6cf780464b280c286b03c9fb5c1a6b2a
-R 899fdca0f993aff7c16e3dca0f2bd4bf
+P 3616766a6f5c8179cc55444c29ecf29cc69f88ce
+R 15dcf1e2e323ed2f20117bf58e184446
 U danielk1977
-Z 8a5d8493499fa3d337872f4bdb3cfbf7
+Z 83c16bc9609be7e94d58c26429e0fd97

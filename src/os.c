@@ -13,7 +13,7 @@
 ** This file contains OS interface code that is common to all
 ** architectures.
 **
-** $Id: os.c,v 1.126 2009/03/25 14:24:42 drh Exp $
+** $Id: os.c,v 1.127 2009/07/27 11:41:21 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -37,13 +37,13 @@
 **
 */
 #if defined(SQLITE_TEST) && (SQLITE_OS_WIN==0)
-  #define DO_OS_MALLOC_TEST if (1) {            \
-    void *pTstAlloc = sqlite3Malloc(10);       \
-    if (!pTstAlloc) return SQLITE_IOERR_NOMEM;  \
-    sqlite3_free(pTstAlloc);                    \
+  #define DO_OS_MALLOC_TEST(x) if (!x || !sqlite3IsMemJournal(x)) {     \
+    void *pTstAlloc = sqlite3Malloc(10);                             \
+    if (!pTstAlloc) return SQLITE_IOERR_NOMEM;                       \
+    sqlite3_free(pTstAlloc);                                         \
   }
 #else
-  #define DO_OS_MALLOC_TEST
+  #define DO_OS_MALLOC_TEST(x)
 #endif
 
 /*
@@ -61,33 +61,33 @@ int sqlite3OsClose(sqlite3_file *pId){
   return rc;
 }
 int sqlite3OsRead(sqlite3_file *id, void *pBuf, int amt, i64 offset){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xRead(id, pBuf, amt, offset);
 }
 int sqlite3OsWrite(sqlite3_file *id, const void *pBuf, int amt, i64 offset){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xWrite(id, pBuf, amt, offset);
 }
 int sqlite3OsTruncate(sqlite3_file *id, i64 size){
   return id->pMethods->xTruncate(id, size);
 }
 int sqlite3OsSync(sqlite3_file *id, int flags){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xSync(id, flags);
 }
 int sqlite3OsFileSize(sqlite3_file *id, i64 *pSize){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xFileSize(id, pSize);
 }
 int sqlite3OsLock(sqlite3_file *id, int lockType){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xLock(id, lockType);
 }
 int sqlite3OsUnlock(sqlite3_file *id, int lockType){
   return id->pMethods->xUnlock(id, lockType);
 }
 int sqlite3OsCheckReservedLock(sqlite3_file *id, int *pResOut){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(id);
   return id->pMethods->xCheckReservedLock(id, pResOut);
 }
 int sqlite3OsFileControl(sqlite3_file *id, int op, void *pArg){
@@ -113,7 +113,7 @@ int sqlite3OsOpen(
   int *pFlagsOut
 ){
   int rc;
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(0);
   rc = pVfs->xOpen(pVfs, zPath, pFile, flags, pFlagsOut);
   assert( rc==SQLITE_OK || pFile->pMethods==0 );
   return rc;
@@ -127,7 +127,7 @@ int sqlite3OsAccess(
   int flags, 
   int *pResOut
 ){
-  DO_OS_MALLOC_TEST;
+  DO_OS_MALLOC_TEST(0);
   return pVfs->xAccess(pVfs, zPath, flags, pResOut);
 }
 int sqlite3OsFullPathname(
