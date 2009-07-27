@@ -12,7 +12,7 @@
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
 **
-** $Id: update.c,v 1.205 2009/07/24 17:58:53 danielk1977 Exp $
+** $Id: update.c,v 1.206 2009/07/27 10:05:06 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -53,8 +53,13 @@ static void updateVirtualTable(
 ** the column is a literal number, string or null. The sqlite3ValueFromExpr()
 ** function is capable of transforming these types of expressions into
 ** sqlite3_value objects.
+**
+** If parameter iReg is not negative, code an OP_RealAffinity instruction
+** on register iReg. This is used when an equivalent integer value is 
+** stored in place of an 8-byte floating point value in order to save 
+** space.
 */
-void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
+void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i, int iReg){
   assert( pTab!=0 );
   if( !pTab->pSelect ){
     sqlite3_value *pValue;
@@ -67,6 +72,11 @@ void sqlite3ColumnDefault(Vdbe *v, Table *pTab, int i){
     if( pValue ){
       sqlite3VdbeChangeP4(v, -1, (const char *)pValue, P4_MEM);
     }
+#ifndef SQLITE_OMIT_FLOATING_POINT
+    if( iReg>=0 && pTab->aCol[i].affinity==SQLITE_AFF_REAL ){
+      sqlite3VdbeAddOp1(v, OP_RealAffinity, iReg);
+    }
+#endif
   }
 }
 
@@ -451,7 +461,7 @@ void sqlite3Update(
       if( (i<32 && (new_col_mask&((u32)1<<i))!=0) || new_col_mask==0xffffffff ){
         if( j<0 ){
           sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regCols+i);
-          sqlite3ColumnDefault(v, pTab, i);
+          sqlite3ColumnDefault(v, pTab, i, -1);
         }else{
           sqlite3ExprCodeAndCache(pParse, pChanges->a[j].pExpr, regCols+i);
         }
@@ -502,7 +512,7 @@ void sqlite3Update(
       j = aXRef[i];
       if( j<0 ){
         sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regData+i);
-        sqlite3ColumnDefault(v, pTab, i);
+        sqlite3ColumnDefault(v, pTab, i, regData+i);
       }else{
         sqlite3ExprCode(pParse, pChanges->a[j].pExpr, regData+i);
       }

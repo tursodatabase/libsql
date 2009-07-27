@@ -11,7 +11,7 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.894 2009/07/24 17:58:53 danielk1977 Exp $
+** @(#) $Id: sqliteInt.h,v 1.895 2009/07/27 10:05:05 danielk1977 Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2801,7 +2801,7 @@ void sqlite3SelectPrep(Parse*, Select*, NameContext*);
 int sqlite3ResolveExprNames(NameContext*, Expr*);
 void sqlite3ResolveSelectNames(Parse*, Select*, NameContext*);
 int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
-void sqlite3ColumnDefault(Vdbe *, Table *, int);
+void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
 CollSeq *sqlite3GetCollSeq(sqlite3*, CollSeq *, const char*);
