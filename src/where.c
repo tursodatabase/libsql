@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.409 2009/07/24 17:58:53 danielk1977 Exp $
+** $Id: where.c,v 1.410 2009/07/28 08:43:09 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -2213,7 +2213,7 @@ static void bestBtreeIndex(
   /* Report the best result
   */
   pCost->plan.wsFlags |= eqTermMask;
-  WHERETRACE(("best index is %s, cost=%.9g, nrow=%.9g, wsFlags=%x, nEq=%d\n",
+  WHERETRACE(("best index is %s, nrow=%.9g, cost=%.9g, wsFlags=%x, nEq=%d\n",
         (pCost->plan.wsFlags & WHERE_INDEXED)!=0 ?
              pCost->plan.u.pIdx->zName : "(none)", pCost->nRow,
         pCost->rCost, pCost->plan.wsFlags, pCost->plan.nEq));
