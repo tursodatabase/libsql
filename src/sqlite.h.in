@@ -30,7 +30,7 @@
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
 **
-** @(#) $Id: sqlite.h.in,v 1.460 2009/07/24 17:58:53 danielk1977 Exp $
+** @(#) $Id: sqlite.h.in,v 1.461 2009/07/28 16:44:26 danielk1977 Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -5612,6 +5612,18 @@ int sqlite3_unlock_notify(
   void (*xNotify)(void **apArg, int nArg),    /* Callback function to invoke */
   void *pNotifyArg                            /* Argument to pass to xNotify */
 );
+
+
+/*
+** CAPI3REF: String Comparison
+** EXPERIMENTAL
+**
+** The [sqlite3_strnicmp()] API allows applications and extensions to
+** compare the contents of two buffers containing UTF-8 strings in a
+** case-indendent fashion, using the same definition of case independence 
+** that SQLite uses internally when comparing identifiers.
+*/
+int sqlite3_strnicmp(const char *, const char *, int);
 
 /*
 ** Undo the hack that converts floating point types to integer for

@@ -421,7 +421,9 @@ static int getNextNode(
   for(ii=0; ii<pParse->nCol; ii++){
     const char *zStr = pParse->azCol[ii];
     int nStr = strlen(zStr);
-    if( nInput>nStr && zInput[nStr]==':' && memcmp(zStr, zInput, nStr)==0 ){
+    if( nInput>nStr && zInput[nStr]==':' 
+     && sqlite3_strnicmp(zStr, zInput, nStr)==0 
+    ){
       iCol = ii;
       iColLen = ((zInput - z) + nStr + 1);
       break;

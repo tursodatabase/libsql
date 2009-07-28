@@ -11,7 +11,7 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this script is testing the FTS3 module.
 #
-# $Id: fts3expr.test,v 1.8 2009/07/10 09:24:43 danielk1977 Exp $
+# $Id: fts3expr.test,v 1.9 2009/07/28 16:44:26 danielk1977 Exp $
 #
 
 set testdir [file dirname $argv0]
@@ -122,8 +122,11 @@ do_test fts3expr-1.11 {
 do_test fts3expr-1.14 {
   test_fts3expr {a:one two}
 } {AND {PHRASE 0 0 one} {PHRASE 3 0 two}}
-do_test fts3expr-1.15 {
+do_test fts3expr-1.15.1 {
   test_fts3expr {one b:two}
+} {AND {PHRASE 3 0 one} {PHRASE 1 0 two}}
+do_test fts3expr-1.15.2 {
+  test_fts3expr {one B:two}
 } {AND {PHRASE 3 0 one} {PHRASE 1 0 two}}
 
 do_test fts3expr-1.16 {

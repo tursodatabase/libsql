@@ -1,5 +1,5 @@
-C When\sflattening\sa\sSELECT\squery,\sdo\snot\sdiscard\scollation\ssequences\sexplicitly\sattached\sto\sexpressions\sin\sthe\sparent\squery.\sFix\sfor\s#3997.\s(CVS\s6949)
-D 2009-07-28T13:30:31
+C Add\sthe\sexperimental\sAPI\ssqlite3_strnicmp().\sModify\sfts3\sso\sthat\sin\sterms\slike\s'column_name:token'\sthe\scolumn_name\sis\sinterpreted\sin\sa\scase-insenstive\sfashion.\sTicket\s#3996.\s(CVS\s6950)
+D 2009-07-28T16:44:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -58,7 +58,7 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 35bfa67d9cd659b799b8498895fe60b1e8bd3500
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c 25f8f5b73c6c62d8adc521a8324ae19ab6b899ca
+F ext/fts3/fts3_expr.c 0bfdae44d0d8ea2cb3ccad32bb6d6843d78d1a2d
 F ext/fts3/fts3_expr.h b5412dcf565c6d90d6a8c22090ceb9ed8c745634
 F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
 F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
@@ -161,9 +161,9 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 90bc99bfcf8faae5ebb8d8948366c7c2a1b4cc00
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in 5672d9a6e19f80c1c7f1276dbe10e7d51c8fd97b
+F src/sqlite.h.in 541159dfec7b9b67a31111d74b12441f3b55708d
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 1199395d32e77658835bf6e976208d59f792f7ed
+F src/sqliteInt.h 3de9749ac963f77327a014afebe2903240dff4f6
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -202,7 +202,7 @@ F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
 F src/update.c 245a652c0c1b1affd7ccf2a1970a465977e7bfa2
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
-F src/util.c 861d5b5c58be4921f0a254489ea94cb15f550ef8
+F src/util.c c2416f60ae704a8c4990e4909aa810f90cbffa07
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
 F src/vdbe.c 0ce57f8211899b59d1d6f1642f79e75fc212d6d0
 F src/vdbe.h 457b6c70f02885cec1f5225b5e6441d067b55d3f
@@ -383,7 +383,7 @@ F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
 F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
 F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
-F test/fts3expr.test 8e5b1a0632959e302ad8e31ba625279cfc8e9d67
+F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test 004caa157b91986bed8c85d7c7d0a86d6e10528d
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 614a8d83158eb59e3fbe78d62461635bfcc13525
-R 975e8b479e878820dd333965b8b9186b
+P b2784cf5d8b520fb714efdb2d2746b2c88b56edf
+R d53b81bfd45a9187519dc658946c858f
 U danielk1977
-Z 57f9d4273370bcb522584f6e1fe3cab8
+Z 56b1b1242603c21eed838511d98f15fa
