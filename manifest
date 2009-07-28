@@ -1,5 +1,5 @@
-C Fixed\sreversed\slabels\sin\sWHERETRACE()\sstatement.\s\sDebugging\scode\sonly.\s(CVS\s6948)
-D 2009-07-28T08:43:09
+C When\sflattening\sa\sSELECT\squery,\sdo\snot\sdiscard\scollation\ssequences\sexplicitly\sattached\sto\sexpressions\sin\sthe\sparent\squery.\sFix\sfor\s#3997.\s(CVS\s6949)
+D 2009-07-28T13:30:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
+F src/select.c 90bc99bfcf8faae5ebb8d8948366c7c2a1b4cc00
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 5672d9a6e19f80c1c7f1276dbe10e7d51c8fd97b
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -658,6 +658,7 @@ F test/tkt3922.test 022ace32c049e3964f68492c12eb803e8e4856d8
 F test/tkt3929.test 6a4c3baefb4e75127356b7d675b5df42c35c00d1
 F test/tkt3935.test e15261fedb9e30a4305a311da614a5d8e693c767
 F test/tkt3992.test c193b9643b1c25d020c503a986d5e4089e65c530
+F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 19ffbc09885c3321d56358a5738feae8587fb377
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
@@ -739,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 224bc69a04f4fe6d1004125847761b7842c2bfe0
-R 4ca3c5bfa0c281d0c8065c6aa9f9769d
-U shane
-Z dd29c0202db09ae4eaced40be14766c5
+P 614a8d83158eb59e3fbe78d62461635bfcc13525
+R 975e8b479e878820dd333965b8b9186b
+U danielk1977
+Z 57f9d4273370bcb522584f6e1fe3cab8
