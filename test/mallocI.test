@@ -11,7 +11,7 @@
 #
 # This test script checks malloc failures in various obscure operations.
 # 
-# $Id: mallocI.test,v 1.1 2008/08/02 03:50:39 drh Exp $
+# $Id: mallocI.test,v 1.2 2009/07/29 06:04:57 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -38,6 +38,25 @@ do_malloc_test mallocI-3 -sqlprep {
   CREATE TABLE t1(a,b,c);
 } -sqlbody {
   CREATE TABLE t2 AS SELECT b,c FROM t1;
+}
+
+# This tests that a malloc failure that occurs while passing the schema
+# does not result in a SHARED lock being left on the database file.
+#
+do_malloc_test mallocI-4 -tclprep {
+  sqlite3 db2 test.db
+  db2 eval {
+    CREATE TABLE t1(a, b, c);
+    CREATE TABLE t2(a, b, c);
+  }
+} -sqlbody {
+  SELECT * FROM t1
+} -cleanup {
+  do_test mallocI-4.$::n.2 {
+    # If this INSERT is possible then [db] does not hold a shared lock
+    # on the database file.
+    catchsql { INSERT INTO t1 VALUES(1, 2, 3) } db2
+  } {0 {}}
 }
 
 finish_test

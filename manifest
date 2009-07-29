@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\sAPI\ssqlite3_strnicmp().\sModify\sfts3\sso\sthat\sin\sterms\slike\s'column_name:token'\sthe\scolumn_name\sis\sinterpreted\sin\sa\scase-insenstive\sfashion.\sTicket\s#3996.\s(CVS\s6950)
-D 2009-07-28T16:44:26
+C Add\sa\stest\sto\smallocI.test\sto\sshow\sthat\sa\sshared\slock\sis\scorrectly\sreleased\sif\san\sOOM\scondition\soccurs\swhile\sparsing\sa\sdatabase\sschema.\s(CVS\s6951)
+D 2009-07-29T06:04:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -464,7 +464,7 @@ F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
-F test/mallocI.test 6e24fe6444bd2999ccc81f984977b44c0d6e5591
+F test/mallocI.test 356b8774c8e1a707827c18408d87804f1b3152d0
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P b2784cf5d8b520fb714efdb2d2746b2c88b56edf
-R d53b81bfd45a9187519dc658946c858f
+P 4571aa9e9142db465ae8250b0adf27e0a094331a
+R dcea50c6f35f0aec2ba3cb61a9fe65cb
 U danielk1977
-Z 56b1b1242603c21eed838511d98f15fa
+Z c8de658c5b21527a701e58d71776ac0b
