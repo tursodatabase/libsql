@@ -16,7 +16,7 @@
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
 **
-** $Id: where.c,v 1.410 2009/07/28 08:43:09 shane Exp $
+** $Id: where.c,v 1.411 2009/07/31 06:14:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -1176,6 +1176,7 @@ static void exprAnalyze(
   else if( pExpr->op==TK_OR ){
     assert( pWC->op==TK_AND );
     exprAnalyzeOrTerm(pSrc, pWC, idxTerm);
+    pTerm = &pWC->a[idxTerm];
   }
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
