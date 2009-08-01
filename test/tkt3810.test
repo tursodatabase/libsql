@@ -11,14 +11,14 @@
 #
 # Tests to make sure #3810 is fixed.
 #
-# $Id: tkt3810.test,v 1.1 2009/08/01 15:54:26 drh Exp $
+# $Id: tkt3810.test,v 1.2 2009/08/01 16:27:00 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 # Create a table using the first database connection.
 #
-do_test tkt3810-1 {
+do_test tkt3810-1.1 {
   execsql {
     CREATE TABLE t1(x);
     INSERT INTO t1 VALUES(123);
@@ -46,8 +46,10 @@ do_test tkt3810-3 {
      CREATE TEMP TRIGGER r1 AFTER INSERT ON t1 BEGIN
        INSERT INTO t1 VALUES(2345);
      END;
-     SELECT * FROM t1;
   }
-} {}
+  catchsql {
+    SELECT * FROM t1;
+  }
+} {1 {in r1: no such table: t1}}
 
 finish_test
