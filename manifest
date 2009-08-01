@@ -1,5 +1,5 @@
-C Return\sa\sbetter\serror\smessage\swhen\sproblems\sare\sencountered\sparsing\sa\nTEMP\strigger\sor\sTEMP\sview\sthat\sreferences\sobjects\sin\sother\sdatabases\sthat\nhave\sbeen\smodified\sor\sdropped.\s\sTicket\s#3810.\s(CVS\s6956)
-D 2009-08-01T16:27:00
+C Make\ssure\sall\sdatabase\sconnections\sare\sclosed\sat\sthe\send\sof\sthe\stest\scase\nfor\sticket\s#3810.\s(CVS\s6957)
+D 2009-08-01T18:22:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -646,7 +646,7 @@ F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
 F test/tkt3773.test 430b06567ce40285dfd2c4834a2a61816403efeb
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
 F test/tkt3793.test 754b73f0e6a9349c70dc57e522cf3247272ecd5d
-F test/tkt3810.test 9b666811c5cd504f23d07e29039b8df8cf906dba
+F test/tkt3810.test 1d19763ba1c6b04fce9f559a2992d39f2647aa76
 F test/tkt3824.test 3da2f5c81b057e3ff355f5dfc9aa0cf0a92e0206
 F test/tkt3832.test 7ebd5ac82d1e430accd5eec9768044133a94c2aa
 F test/tkt3838.test 2a1525946bc9d3751e1d49ce95f3a2472f2b7408
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 29972f7445cede64d99c2433742572120c92b393
-R ff18f397fd87c0e1701eae3715427eb1
+P 102785b9fbc5ab5dd740110243f080e3f3661e87
+R 825beaeb9e10803cd8d6f36b2d64db6f
 U drh
-Z a6872a7f6773f3439623a0342ef806df
+Z ed1a70920562fb1d1966a2a58ddd41b8
