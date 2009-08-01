@@ -1,11 +1,11 @@
-C Fix\sa\sbug\sin\swhere.c\sthat\scould\scause\sSQLite\sto\swrite\sto\sfreed\smemory\swhile\scompiling\sa\squery\swith\smany\sterms\sin\sthe\sWHERE\sclause.\s(CVS\s6952)
-D 2009-07-31T06:14:52
+C Increment\sthe\sversion\snumber\sin\spreparation\sfor\sthe\snext\srelease.\s(CVS\s6953)
+D 2009-08-01T15:04:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 10010ddbf52e2503c7c49c7c0b7c7a096f8638a6
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 14699c0113d89f30362c19669ec8dcf5ae5e2a58
+F VERSION 8fd162479ea9d3932d4492a889db80634742fe90
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure ee30bc980af8ed1b0792f7626836482be47fbaae x
+F configure 486c870218ec915bd8edfece7109b6c864e82a5a x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -740,7 +740,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 5a82620efa1298530760e69e4e34d446a30233b8
-R 5171f50e963fce31c959e66efb3a8d0a
-U danielk1977
-Z 77225468b9c3e046f4f8c47188f8bd03
+P 8161af840e8fd2b06457e75023f934e1b8fe5fd6
+R 8bf44bb569da9dde220803ced22e1b91
+U drh
+Z 987e6e34bece987c3a64e8bb89960736
