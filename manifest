@@ -1,5 +1,5 @@
-C Make\ssure\sall\sdatabase\sconnections\sare\sclosed\sat\sthe\send\sof\sthe\stest\scase\nfor\sticket\s#3810.\s(CVS\s6957)
-D 2009-08-01T18:22:30
+C Simplified\sconditional\sfor\sread-only\slock\sin\swinceLockFile()\sfunction.\s\sTicket\s#3991.\s(CVS\s6958)
+D 2009-08-05T04:08:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
-F src/os_win.c 725c38a524d168ce280446ad8761d731bc516405
+F src/os_win.c 79bb3c59d60bc6faadd379cf036c132fa545d7d6
 F src/pager.c 4aa16cc8bc8e4b0b457fb3ddb600970381b2be7d
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y bcd46d43fbd23a22b8c020a3eb1806b794794ed5
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 102785b9fbc5ab5dd740110243f080e3f3661e87
-R 825beaeb9e10803cd8d6f36b2d64db6f
-U drh
-Z ed1a70920562fb1d1966a2a58ddd41b8
+P 9bca5a0e8f22da6be41b0eda298fd2e19f64e8b6
+R 04856c776b0c29b7de6f8f3f7e40086c
+U shane
+Z 3da571aa1f183b7a1140799568169e44
