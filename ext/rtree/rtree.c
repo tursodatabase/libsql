@@ -12,7 +12,7 @@
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
 **
-** $Id: rtree.c,v 1.13 2009/07/17 16:54:48 danielk1977 Exp $
+** $Id: rtree.c,v 1.14 2009/08/06 18:36:47 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)
@@ -2342,7 +2342,7 @@ static int hashIsEmpty(Rtree *pRtree){
 /*
 ** The xUpdate method for rtree module virtual tables.
 */
-int rtreeUpdate(
+static int rtreeUpdate(
   sqlite3_vtab *pVtab, 
   int nData, 
   sqlite3_value **azData, 
