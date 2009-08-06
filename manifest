@@ -1,5 +1,5 @@
-C Change\sa\shyperlink\slabel\son\sshared\scache\smode\sdocumentation.\s\sNo\schanges\nto\scode.\s(CVS\s6959)
-D 2009-08-06T17:40:46
+C Alternative\sfix\sfor\sticket\s#3810.\s\sThis\sis\sa\sreplacement\sfor\scheck-in\s(6956).\s(CVS\s6960)
+D 2009-08-06T17:43:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
 F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
 F src/pcache1.c 6dc833c89feac405dd8b4858232c97e679f182ec
 F src/pragma.c 9eb44ac1d3dc1ac3ea4f444abe1a10ae8acaa16c
-F src/prepare.c 153f3eb168c3447ff770c445609bfec012daeba1
+F src/prepare.c 0b966d20979237121ec5fec449c9db45f6b9789a
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
@@ -163,7 +163,7 @@ F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in eb42257503a48f6f12ff0b23a81067ba9b5ac1eb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 3de9749ac963f77327a014afebe2903240dff4f6
+F src/sqliteInt.h 2f8dae0ff826acddcaab941dabb96acbcbf84ecf
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -199,7 +199,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
-F src/trigger.c c07c5157c58fcdb704f65d5f5e4775276e45bb8b
+F src/trigger.c f248851055abbb6fc583b1809b69a234a85a01b2
 F src/update.c 245a652c0c1b1affd7ccf2a1970a465977e7bfa2
 F src/utf.c 9541d28f40441812c0b40f00334372a0542c00ff
 F src/util.c c2416f60ae704a8c4990e4909aa810f90cbffa07
@@ -646,7 +646,7 @@ F test/tkt3762.test 2a9f3b03df44ec49ec0cfa8d5da6574c2a7853df
 F test/tkt3773.test 430b06567ce40285dfd2c4834a2a61816403efeb
 F test/tkt3791.test a6624b9a80b216a26cf473607f42f3e51898c267
 F test/tkt3793.test 754b73f0e6a9349c70dc57e522cf3247272ecd5d
-F test/tkt3810.test 1d19763ba1c6b04fce9f559a2992d39f2647aa76
+F test/tkt3810.test 616cfde9c93397dcb6aea079f6e00b4b35e5022c
 F test/tkt3824.test 3da2f5c81b057e3ff355f5dfc9aa0cf0a92e0206
 F test/tkt3832.test 7ebd5ac82d1e430accd5eec9768044133a94c2aa
 F test/tkt3838.test 2a1525946bc9d3751e1d49ce95f3a2472f2b7408
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P a1c184cd2ac5a7559d787e6c34b1d0ce034d10cf
-R 7c39bc4481f5dcf21ff41954bbcf32f0
+P 3d08ca0e54dd4c292b3db3a8364ab237713c5c43
+R b16b828bf8d4073d3a6b41a86bf881b8
 U drh
-Z 8b3beb0979c7513ef5a6160122ef1253
+Z 2ac22dbeee3a31e054e7b5b1178ce1e8

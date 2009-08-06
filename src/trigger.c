@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.141 2009/05/28 01:00:55 drh Exp $
+** $Id: trigger.c,v 1.142 2009/08/06 17:43:31 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -86,14 +86,14 @@ void sqlite3BeginTrigger(
   int isTemp,         /* True if the TEMPORARY keyword is present */
   int noErr           /* Suppress errors if the trigger already exists */
 ){
-  Trigger *pTrigger = 0;
-  Table *pTab;
+  Trigger *pTrigger = 0;  /* The new trigger */
+  Table *pTab;            /* Table that the trigger fires off of */
   char *zName = 0;        /* Name of the trigger */
-  sqlite3 *db = pParse->db;
+  sqlite3 *db = pParse->db;  /* The database connection */
   int iDb;                /* The database to store the trigger in */
   Token *pName;           /* The unqualified db name */
-  DbFixer sFix;
-  int iTabDb;
+  DbFixer sFix;           /* State vector for the DB fixer */
+  int iTabDb;             /* Index of the database holding pTab */
 
   assert( pName1!=0 );   /* pName1->z might be NULL, but not pName1 itself */
   assert( pName2!=0 );
@@ -138,6 +138,17 @@ void sqlite3BeginTrigger(
   pTab = sqlite3SrcListLookup(pParse, pTableName);
   if( !pTab ){
     /* The table does not exist. */
+    if( db->init.iDb==1 ){
+      /* Ticket #3810.
+      ** Normally, whenever a table is dropped, all associated triggers are
+      ** dropped too.  But if a TEMP trigger is created on a non-TEMP table
+      ** and the table is dropped by a different database connection, the
+      ** trigger is not visible to the database connection that does the
+      ** drop so the trigger cannot be dropped.  This results in an
+      ** "orphaned trigger" - a trigger whose associated table is missing.
+      */
+      db->init.orphanTrigger = 1;
+    }
     goto trigger_cleanup;
   }
   if( IsVirtual(pTab) ){
