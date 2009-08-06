@@ -1,5 +1,5 @@
-C Simplified\sconditional\sfor\sread-only\slock\sin\swinceLockFile()\sfunction.\s\sTicket\s#3991.\s(CVS\s6958)
-D 2009-08-05T04:08:30
+C Change\sa\shyperlink\slabel\son\sshared\scache\smode\sdocumentation.\s\sNo\schanges\nto\scode.\s(CVS\s6959)
+D 2009-08-06T17:40:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in 541159dfec7b9b67a31111d74b12441f3b55708d
+F src/sqlite.h.in eb42257503a48f6f12ff0b23a81067ba9b5ac1eb
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3de9749ac963f77327a014afebe2903240dff4f6
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9bca5a0e8f22da6be41b0eda298fd2e19f64e8b6
-R 04856c776b0c29b7de6f8f3f7e40086c
-U shane
-Z 3da571aa1f183b7a1140799568169e44
+P a1c184cd2ac5a7559d787e6c34b1d0ce034d10cf
+R 7c39bc4481f5dcf21ff41954bbcf32f0
+U drh
+Z 8b3beb0979c7513ef5a6160122ef1253
