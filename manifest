@@ -1,5 +1,5 @@
-C Mark\sthe\srtreeUpdate\sfunction\sas\sstatic.\s(CVS\s6961)
-D 2009-08-06T18:36:47
+C Enhancement\sto\s(6844).\sIf\ssqlite3_exec()\sis\sto\sreturn\sSQLITE_NOMEM\sbecause\sit\sfails\sto\sallocate\sspace\sfor\san\serror\smessage,\sset\sthe\sdatabase\serror-code\sto\sSQLITE_NOMEM\stoo.\s(CVS\s6962)
+D 2009-08-07T16:56:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -123,7 +123,7 @@ F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c a4bbd811a15f8b24a311753da947d61368685db1
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
-F src/legacy.c 54a11649f27ae55f4fcd6e6b5ba836f839cb8704
+F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c a936f18fbb9cdf9ed9df93f58bb813876bd98590
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P ba1afc040171810d0c996708d7b9cb11abcd99d8
-R 3b335a2fc38730928fba613b88cf8cd7
+P b6bdfdc69df4fc6cad669fd8b2cbaa9ecb95cb78
+R 279f0a5dbce20015c863e1c0261964b1
 U danielk1977
-Z b8a4ca96eb527d32190a17ce0212dc96
+Z 63484d3c2db8453d492823a329fc660c

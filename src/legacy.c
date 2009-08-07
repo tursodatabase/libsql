@@ -14,7 +14,7 @@
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
 **
-** $Id: legacy.c,v 1.34 2009/07/03 19:18:43 drh Exp $
+** $Id: legacy.c,v 1.35 2009/08/07 16:56:00 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"
@@ -134,6 +134,7 @@ exec_out:
       memcpy(*pzErrMsg, sqlite3_errmsg(db), nErrMsg);
     }else{
       rc = SQLITE_NOMEM;
+      sqlite3Error(db, SQLITE_NOMEM, 0);
     }
   }else if( pzErrMsg ){
     *pzErrMsg = 0;
