@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.703 2009/07/24 19:01:19 drh Exp $
+** $Id: btree.c,v 1.704 2009/08/08 18:01:08 drh Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -429,8 +429,7 @@ static void invalidateAllOverflowCache(BtShared *pBt){
 /*
 ** This function is called before modifying the contents of a table
 ** b-tree to invalidate any incrblob cursors that are open on the
-** row or one of the rows being modified. Argument pgnoRoot is the 
-** root-page of the table b-tree. 
+** row or one of the rows being modified.
 **
 ** If argument isClearTable is true, then the entire contents of the
 ** table is about to be deleted. In this case invalidate all incrblob
@@ -442,7 +441,6 @@ static void invalidateAllOverflowCache(BtShared *pBt){
 */
 static void invalidateIncrblobCursors(
   Btree *pBtree,          /* The database file to check */
-  Pgno pgnoRoot,          /* Look for read cursors on this btree */
   i64 iRow,               /* The rowid that might be changing */
   int isClearTable        /* True if all rows are being deleted */
 ){
@@ -459,7 +457,7 @@ static void invalidateIncrblobCursors(
 #else
   #define invalidateOverflowCache(x)
   #define invalidateAllOverflowCache(x)
-  #define invalidateIncrblobCursors(w,x,y,z)
+  #define invalidateIncrblobCursors(x,y,z)
 #endif
 
 /*
@@ -4905,11 +4903,12 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     }
 
     nLeaf = get4byte(&pTrunk->aData[4]);
-    if( nLeaf > pBt->usableSize/4 - 2 ){
+    assert( pBt->usableSize>32 );
+    if( nLeaf > (u32)pBt->usableSize/4 - 2 ){
       rc = SQLITE_CORRUPT_BKPT;
       goto freepage_out;
     }
-    if( nLeaf<pBt->usableSize/4 - 8 ){
+    if( nLeaf < (u32)pBt->usableSize/4 - 8 ){
       /* In this case there is room on the trunk page to insert the page
       ** being freed as a new leaf.
       **
@@ -6459,7 +6458,7 @@ int sqlite3BtreeInsert(
   ** cursors open on the row being replaced (assuming this is a replace
   ** operation - if it is not, the following is a no-op).  */
   if( pCur->pKeyInfo==0 ){
-    invalidateIncrblobCursors(p, pCur->pgnoRoot, nKey, 0);
+    invalidateIncrblobCursors(p, nKey, 0);
   }
 
   /* Save the positions of any other cursors open on this table.
@@ -6588,7 +6587,7 @@ int sqlite3BtreeDelete(BtCursor *pCur){
   /* If this is a delete operation to remove a row from a table b-tree,
   ** invalidate any incrblob cursors open on the row being deleted.  */
   if( pCur->pKeyInfo==0 ){
-    invalidateIncrblobCursors(p, pCur->pgnoRoot, pCur->info.nKey, 0);
+    invalidateIncrblobCursors(p, pCur->info.nKey, 0);
   }
 
   iCellDepth = pCur->iPage;
@@ -6745,8 +6744,8 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
       ** by extending the file), the current page at position pgnoMove
       ** is already journaled.
       */
-      u8 eType;
-      Pgno iPtrPage;
+      u8 eType = 0;
+      Pgno iPtrPage = 0;
 
       releasePage(pPageMove);
 
@@ -6887,7 +6886,7 @@ int sqlite3BtreeClearTable(Btree *p, int iTable, int *pnChange){
   /* Invalidate all incrblob cursors open on table iTable (assuming iTable
   ** is the root of a table b-tree - if it is not, the following call is
   ** a no-op).  */
-  invalidateIncrblobCursors(p, iTable, 0, 1);
+  invalidateIncrblobCursors(p, 0, 1);
 
   rc = saveAllCursors(pBt, (Pgno)iTable, 0);
   if( SQLITE_OK==rc ){
