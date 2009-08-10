@@ -11,7 +11,7 @@
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
 **
-** $Id: mutex_w32.c,v 1.17 2009/06/01 17:10:22 shane Exp $
+** $Id: mutex_w32.c,v 1.18 2009/08/10 03:23:21 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -93,13 +93,14 @@ static long winMutex_lock = 0;
 
 static int winMutexInit(void){ 
   /* The first to increment to 1 does actual initialization */
-  if( InterlockedIncrement(&winMutex_lock)==1 ){
+  if( InterlockedCompareExchange(&winMutex_lock, 1, 0)==0 ){
     int i;
     for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
       InitializeCriticalSection(&winMutex_staticMutexes[i].mutex);
     }
     winMutex_isInit = 1;
   }else{
+    /* Someone else is in the process of initing the static mutexes */
     while( !winMutex_isInit ){
       Sleep(1);
     }
@@ -110,7 +111,7 @@ static int winMutexInit(void){
 static int winMutexEnd(void){ 
   /* The first to decrement to 0 does actual shutdown 
   ** (which should be the last to shutdown.) */
-  if( InterlockedDecrement(&winMutex_lock)==0 ){
+  if( InterlockedCompareExchange(&winMutex_lock, 0, 1)==1 ){
     if( winMutex_isInit==1 ){
       int i;
       for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
