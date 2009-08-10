@@ -13,7 +13,7 @@
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
 **
-** $Id: test1.c,v 1.353 2009/05/03 20:23:54 drh Exp $
+** $Id: test1.c,v 1.354 2009/08/10 04:37:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -1099,6 +1099,7 @@ static void t1CountFinalize(sqlite3_context *context){
   }
 }
 
+#ifndef SQLITE_OMIT_DEPRECATED
 static void legacyCountStep(
   sqlite3_context *context,
   int argc,
@@ -1107,7 +1108,6 @@ static void legacyCountStep(
   /* no-op */
 }
 
-#ifndef SQLITE_OMIT_DEPRECATED
 static void legacyCountFinalize(sqlite3_context *context){
   sqlite3_result_int(context, sqlite3_aggregate_count(context));
 }
