@@ -1,5 +1,5 @@
-C Removed\ssome\swarnings\sfrom\sthe\sMSVC\scompile.\s(CVS\s6965)
-D 2009-08-10T03:57:58
+C Change\smallocI.test\sto\sclose\sa\sdatabase\sconnection\sthat\swas\sbeing\sleft\sopen.\s(CVS\s6966)
+D 2009-08-10T04:26:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df9359da7a726ccb67a45db905c5447d5c00c6ef
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -464,7 +464,7 @@ F test/mallocE.test db1ed69d7eded1b080952e2a7c37f364ad241b08
 F test/mallocF.test 2d5c590ebc2fc7f0dcebdf5aa8498b9aed69107e
 F test/mallocG.test 4584d0d8ddb8009f16ca0c8bab1fa37f6358efa2
 F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
-F test/mallocI.test 356b8774c8e1a707827c18408d87804f1b3152d0
+F test/mallocI.test e3ea401904d010cb7c1e4b2ee8803f4a9f5b999d
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
 F test/malloc_common.tcl 984baeb6c6b185e798827d1187d426acc2bc4962
@@ -741,7 +741,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 04cafb7ee3b67a68c0604d7f1143feaec44be610
-R 1419a22eb55c1ad98ad5f8d756f84cf9
-U shane
-Z 12e73935831a8b41af0afee706442c72
+P ee034cfc71425745dda8d5fee58ae95f937c86cd
+R fa37ac4298673916a7a1170de67d4d43
+U danielk1977
+Z 2c4f2c486224fc3bb2bc72e83ba5fd66
