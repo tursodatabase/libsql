@@ -10,7 +10,7 @@
 *************************************************************************
 **
 **
-** $Id: trigger.c,v 1.142 2009/08/06 17:43:31 drh Exp $
+** $Id: trigger.c,v 1.143 2009/08/10 03:57:58 shane Exp $
 */
 #include "sqliteInt.h"
 
@@ -348,7 +348,7 @@ TriggerStep *sqlite3TriggerSelectStep(sqlite3 *db, Select *pSelect){
 */
 static TriggerStep *triggerStepAllocate(
   sqlite3 *db,                /* Database connection */
-  int op,                     /* Trigger opcode */
+  u8 op,                      /* Trigger opcode */
   Token *pName                /* The target name */
 ){
   TriggerStep *pTriggerStep;
@@ -377,7 +377,7 @@ TriggerStep *sqlite3TriggerInsertStep(
   IdList *pColumn,    /* List of columns in pTableName to insert into */
   ExprList *pEList,   /* The VALUE clause: a list of values to be inserted */
   Select *pSelect,    /* A SELECT statement that supplies values */
-  int orconf          /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
+  u8 orconf           /* The conflict algorithm (OE_Abort, OE_Replace, etc.) */
 ){
   TriggerStep *pTriggerStep;
 
@@ -409,7 +409,7 @@ TriggerStep *sqlite3TriggerUpdateStep(
   Token *pTableName,   /* Name of the table to be updated */
   ExprList *pEList,    /* The SET clause: list of column and new values */
   Expr *pWhere,        /* The WHERE clause */
-  int orconf           /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
+  u8 orconf            /* The conflict algorithm. (OE_Abort, OE_Ignore, etc) */
 ){
   TriggerStep *pTriggerStep;
 

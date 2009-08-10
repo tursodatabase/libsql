@@ -9,7 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.704 2009/08/08 18:01:08 drh Exp $
+** $Id: btree.c,v 1.705 2009/08/10 03:57:58 shane Exp $
 **
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
@@ -141,8 +141,8 @@ static int hasSharedCacheTableLock(
     HashElem *p;
     for(p=sqliteHashFirst(&pSchema->idxHash); p; p=sqliteHashNext(p)){
       Index *pIdx = (Index *)sqliteHashData(p);
-      if( pIdx->tnum==iRoot ){
-	iTab = pIdx->pTable->tnum;
+      if( pIdx->tnum==(int)iRoot ){
+        iTab = pIdx->pTable->tnum;
       }
     }
   }else{
@@ -1371,7 +1371,7 @@ static int btreeInitPage(MemPage *pPage){
     }
     testcase( pPage->nCell==MX_CELL(pBt) );
 
-    /* A malformed database page might cause use to read past the end
+    /* A malformed database page might cause us to read past the end
     ** of page when parsing a cell.  
     **
     ** The following block of code checks early to see if a cell extends
@@ -1432,7 +1432,7 @@ static int btreeInitPage(MemPage *pPage){
     if( nFree>usableSize ){
       return SQLITE_CORRUPT_BKPT; 
     }
-    pPage->nFree = nFree - iCellFirst;
+    pPage->nFree = (u16)(nFree - iCellFirst);
     pPage->isInit = 1;
   }
   return SQLITE_OK;
@@ -6236,7 +6236,7 @@ balance_cleanup:
 static int balance_deeper(MemPage *pRoot, MemPage **ppChild){
   int rc;                        /* Return value from subprocedures */
   MemPage *pChild = 0;           /* Pointer to a new child page */
-  Pgno pgnoChild;                /* Page number of the new child page */
+  Pgno pgnoChild = 0;            /* Page number of the new child page */
   BtShared *pBt = pRoot->pBt;    /* The BTree */
 
   assert( pRoot->nOverflow>0 );
