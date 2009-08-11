@@ -683,8 +683,7 @@ status.lo:	$(TOP)/src/status.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/status.c
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
-	sed -e s/--VERS--/$(RELEASE)/ $(TOP)/src/sqlite.h.in | \
-	sed -e s/--VERSION-NUMBER--/$(VERSION_NUMBER)/ >sqlite3.h
+	cat $(TOP)/src/sqlite.h.in | tclsh $(TOP)/tool/mksqlite3h.tcl `cat ${TOP}/VERSION` > sqlite3.h
 
 table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c

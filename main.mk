@@ -389,9 +389,7 @@ parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in 
-	sed -e s/--VERS--/`cat ${TOP}/VERSION`/ \
-	    -e s/--VERSION-NUMBER--/`cat ${TOP}/VERSION | sed 's/[^0-9]/ /g' | $(NAWK) '{printf "%d%03d%03d",$$1,$$2,$$3}'`/ \
-                 $(TOP)/src/sqlite.h.in >sqlite3.h
+	cat $(TOP)/src/sqlite.h.in | tclsh $(TOP)/tool/mksqlite3h.tcl `cat ${TOP}/VERSION` > sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash $(OPTS) $(TOP)/tool/mkkeywordhash.c
