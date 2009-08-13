@@ -17,6 +17,33 @@
 #define _SQLITEINT_H_
 
 /*
+** These #defines should enable >2GB file support on POSIX if the
+** underlying operating system supports it.  If the OS lacks
+** large file support, or if the OS is windows, these should be no-ops.
+**
+** Ticket #2739:  The _LARGEFILE_SOURCE macro must appear before any
+** system #includes.  Hence, this block of code must be the very first
+** code in all source files.
+**
+** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
+** on the compiler command line.  This is necessary if you are compiling
+** on a recent machine (ex: Red Hat 7.2) but you want your code to work
+** on an older machine (ex: Red Hat 6.0).  If you compile on Red Hat 7.2
+** without this option, LFS is enable.  But LFS does not exist in the kernel
+** in Red Hat 6.0, so the code won't work.  Hence, for maximum binary
+** portability you should omit LFS.
+**
+** Similar is true for Mac OS X.  LFS is only supported on Mac OS X 9 and later.
+*/
+#ifndef SQLITE_DISABLE_LFS
+# define _LARGE_FILE       1
+# ifndef _FILE_OFFSET_BITS
+#   define _FILE_OFFSET_BITS 64
+# endif
+# define _LARGEFILE_SOURCE 1
+#endif
+
+/*
 ** Include the configuration header output by 'configure' if we're using the
 ** autoconf-based build
 */
@@ -80,33 +107,6 @@
 #else
 # define SQLITE_INT_TO_PTR(X)   ((void*)&((char*)0)[X])
 # define SQLITE_PTR_TO_INT(X)   ((int)(((char*)X)-(char*)0))
-#endif
-
-/*
-** These #defines should enable >2GB file support on POSIX if the
-** underlying operating system supports it.  If the OS lacks
-** large file support, or if the OS is windows, these should be no-ops.
-**
-** Ticket #2739:  The _LARGEFILE_SOURCE macro must appear before any
-** system #includes.  Hence, this block of code must be the very first
-** code in all source files.
-**
-** Large file support can be disabled using the -DSQLITE_DISABLE_LFS switch
-** on the compiler command line.  This is necessary if you are compiling
-** on a recent machine (ex: Red Hat 7.2) but you want your code to work
-** on an older machine (ex: Red Hat 6.0).  If you compile on Red Hat 7.2
-** without this option, LFS is enable.  But LFS does not exist in the kernel
-** in Red Hat 6.0, so the code won't work.  Hence, for maximum binary
-** portability you should omit LFS.
-**
-** Similar is true for Mac OS X.  LFS is only supported on Mac OS X 9 and later.
-*/
-#ifndef SQLITE_DISABLE_LFS
-# define _LARGE_FILE       1
-# ifndef _FILE_OFFSET_BITS
-#   define _FILE_OFFSET_BITS 64
-# endif
-# define _LARGEFILE_SOURCE 1
 #endif
 
 

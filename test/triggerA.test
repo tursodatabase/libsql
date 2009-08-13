@@ -79,7 +79,7 @@ do_test triggerA-1.6 {
      CREATE VIEW v5 AS SELECT x, b FROM t1, t2 WHERE y=c;
      SELECT * FROM v5;
   }
-} {1 103 2 203 3 305 4 404 5 504 6 603 7 705 8 805 9 904 10 1003}
+} {10 1003 9 904 8 805 7 705 6 603 5 504 4 404 3 305 2 203 1 103}
 
 # Create INSTEAD OF triggers on the views.  Run UPDATE and DELETE statements
 # using those triggers.  Verify correct operation.
