@@ -3475,10 +3475,11 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** or sqlite3_result_blob is a non-NULL pointer, then SQLite calls that
 ** function as the destructor on the text or BLOB result when it has
 ** finished using that result.
-** If the 4th parameter to the sqlite3_result_text* interfaces or
+** If the 4th parameter to the sqlite3_result_text* interfaces or to
 ** sqlite3_result_blob is the special constant SQLITE_STATIC, then SQLite
 ** assumes that the text or BLOB result is in constant space and does not
-** copy the it or call a destructor when it has finished using that result.
+** copy the content of the parameter nor call a destructor on the content
+** when it has finished using that result.
 ** If the 4th parameter to the sqlite3_result_text* interfaces
 ** or sqlite3_result_blob is the special constant SQLITE_TRANSIENT
 ** then SQLite makes a copy of the result into space obtained from
@@ -4457,7 +4458,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 **
 ** Use the [sqlite3_blob_bytes()] interface to determine the size of
 ** the opened blob.  The size of a blob may not be changed by this
-** underface.  Use the [UPDATE] SQL command to change the size of a
+** interface.  Use the [UPDATE] SQL command to change the size of a
 ** blob.
 **
 ** The [sqlite3_bind_zeroblob()] and [sqlite3_result_zeroblob()] interfaces

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Tweak\sto\sthe\snew\swhereB.test\sfile\sto\smake\sit\smore\sconsistent.
-D 2009-08-13T19:54:26
+C Fix\stypos\sin\scomments\sused\sto\sgenerate\sdocumentation.\nCVSTrac\stickets\s#4028\sand\s#4029.
+D 2009-08-13T20:15:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c606c9b502dfde3b9c3b2d23ed49f3737829693b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +164,7 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in eb42257503a48f6f12ff0b23a81067ba9b5ac1eb
+F src/sqlite.h.in 96feff9a06728854d010a9d5d297f61b9e1178d9
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 6a90791138ba3447572d184d0798c24f3cbbec98
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -746,14 +746,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P e72186f2d68d28c2e0c32894f9adb28c155b5f63
-R 377facb39ca07c9822015bb38587e08c
+P 06098505fca5c67b627a9e1102451f93e490e192
+R d4d0948e39fa9439b335fc4d02e99bd0
 U drh
-Z 790262cc14ea855f23bc65e5fce164b6
+Z 5aa73c2062675a6d05a5e133659c9885
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKhG91oxKgR168RlERAuSzAJ0a1rCGYfwoJ9dV+c9Zwd2taAavOgCfUsmX
-BBUK3s7ImIZPIJMhsKU71rs=
-=i8oq
+iD8DBQFKhHRkoxKgR168RlERAs56AJsEjxte6e2cU7ofRb/0kOzyY2ojEACdFXXe
+ayEtSSJyG8UpeTrDqlbpvlc=
+=0vKf
 -----END PGP SIGNATURE-----
