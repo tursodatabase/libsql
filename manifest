@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\stest\scase\sfor\sthe\saffinity\sproblem\sreported\sby\sticket\s[93fb9f89d6].
-D 2009-08-13T17:14:59
+C Enhancements\sto\sthe\swhereB.test\sto\scheck\smore\saffinity\scorner\scases.
+D 2009-08-13T18:14:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c606c9b502dfde3b9c3b2d23ed49f3737829693b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -718,7 +718,7 @@ F test/where8.test 8d3704d04a683e792d373005f2e4e13bfd7e2dd5
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
 F test/whereA.test 1d1674254614147c866ab9b59af6582f454a858c
-F test/whereB.test 2177e36b7c91ecfa2f93451baaa999f92920e4b9
+F test/whereB.test ea2fef0038214300509711ede09677af4f2afad6
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
@@ -746,14 +746,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 86a06dd0494c2fe83d4fde517557600956cedd9e
-R 0dee14fd47141ebb408793860d7adc78
+P 149ec24e61437fac2b0dd6239276d3aa543c56cb
+R 1ea36fc2c7e0c32d5b2483eec1ce1a06
 U drh
-Z 12818b10386eaf5266bfaceb670cd6e6
+Z cdd6f1e89b3618add099c3116553394a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKhEoWoxKgR168RlERApGFAJ4vhn79VZ+xTwID/EoYDATCU6CmYwCfWfLb
-UlueAOSuLnKpUnxIxdrIeU8=
-=Gh8W
+iD8DBQFKhFgLoxKgR168RlERAgjMAJ0e/xokwSjX2hsY3q8mvlUGu+555wCfZL+Z
+ThH1uVO4nfptbHxSFohZy1U=
+=PHPU
 -----END PGP SIGNATURE-----
