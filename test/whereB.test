@@ -1,0 +1,116 @@
+# 2009 August 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. The
+# focus of this file is testing WHERE clause conditions with
+# subtle affinity issues.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test whereB-1.1 {
+  db eval {
+    CREATE TABLE t1(x,y);    -- affinity of t1.y is NONE
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(2,7);
+
+    CREATE TABLE t2(a, b TEXT);  -- affinity of t2.b is TEXT
+    CREATE INDEX t2b ON t2(b);
+    INSERT INTO t2 VALUES(11,2);
+    INSERT INTO t2 VALUES(12,6);
+
+    SELECT x, a, y=b FROM t1, t2 ORDER BY +x, +a;
+  }
+} {1 11 0 1 12 0 2 11 0 2 12 0}
+do_test whereB-1.2 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE y=b ORDER BY +x, +a;
+  }
+} {}
+do_test whereB-1.3 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE b=y ORDER BY +x, +a;
+  }
+} {}
+do_test whereB-1.4 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE +y=+b ORDER BY +x, +a;
+  }
+} {}
+do_test whereB-1.100 {
+  db eval {
+    DROP INDEX t2b;
+    SELECT x, a, y=b FROM t1, t2 WHERE y=b ORDER BY +x, +a;
+  }
+} {}
+do_test whereB-1.101 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE b=y ORDER BY +x, +a;
+  }
+} {}
+do_test whereB-1.102 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE +y=+b ORDER BY +x, +a;
+  }
+} {}
+
+do_test whereB-2.1 {
+  db eval {
+    DROP TABLE t1;
+    DROP TABLE t2;
+
+    CREATE TABLE t1(x,y);    -- affinity of t1.y is NONE
+    INSERT INTO t1 VALUES(1,2);
+    INSERT INTO t1 VALUES(2,7);
+
+    CREATE TABLE t2(a, b UNKNOWN);  -- affinity of t2.b is NUMERIC
+    CREATE INDEX t2b ON t2(b);
+    INSERT INTO t2 VALUES(11,2);
+    INSERT INTO t2 VALUES(12,6);
+
+    SELECT x, a, y=b FROM t1, t2 ORDER BY +x, +a;
+  }
+} {1 11 1 1 12 0 2 11 0 2 12 0}
+do_test whereB-2.2 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE y=b ORDER BY +x, +a;
+  }
+} {1 11 1}
+do_test whereB-2.3 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE b=y ORDER BY +x, +a;
+  }
+} {1 11 1}
+do_test whereB-2.4 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE +y=+b ORDER BY +x, +a;
+  }
+} {1 11 1}
+do_test whereB-2.100 {
+  db eval {
+    DROP INDEX t2b;
+    SELECT x, a, y=b FROM t1, t2 WHERE y=b ORDER BY +x, +a;
+  }
+} {1 11 1}
+do_test whereB-2.101 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE b=y ORDER BY +x, +a;
+  }
+} {1 11 1}
+do_test whereB-2.102 {
+  db eval {
+    SELECT x, a, y=b FROM t1, t2 WHERE +y=+b ORDER BY +x, +a;
+  }
+} {1 11 1}
+
+
+
+finish_test
