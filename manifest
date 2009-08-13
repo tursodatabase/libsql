@@ -1,5 +1,8 @@
-C Instead\sof\sadding\sSQLITE_API\smacros\ssqlite3.h\swhile\screating\ssqlite3.c,\sadd\sthem\sas\spart\sof\sgenerating\sthe\ssqlite3.h\starget,\swhile\scopying\sfrom\ssqlite.h.in\sto\ssqlite3.h.\sThis\sfixes\sa\sbuild\sproblem\sthat\swas\scausing\smultiple\sSQLITE_API\smacros\sto\sbe\sadded\sto\sa\ssingle\sline\sof\ssqlite3.h,\sand\sthe\sproblem\scited\sby\s#4016.\s(CVS\s6971)
-D 2009-08-11T05:50:37
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\stypo\son\sa\scomment\sin\ssqlite3VdbeIntegerAffinity().
+D 2009-08-13T15:13:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c606c9b502dfde3b9c3b2d23ed49f3737829693b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -210,7 +213,7 @@ F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
 F src/vdbeaux.c 4956536a636468fd07284028c39aab65ea99777e
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
-F src/vdbemem.c bfc25f9ef4fa914b473303566459552bdb2e008a
+F src/vdbemem.c 364cfce843926224f917ab89ee476be958c864ed
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c 7e696d69a6d1b0fa277da2801ae4126dd4db0f8c
@@ -742,7 +745,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 8e1e0ba292150f8968e5295e8ba9cd7360b6a64b
-R 308a6bcce7db99c384df7b8b7a17f2b7
-U danielk1977
-Z 90e0bfaf3a9074b7bda5def71f339420
+P 7f4810747b0864981f27edbd504bfab2efea1e3c
+R 655d909830158c1e4c23bcea01aa6d6f
+U drh
+Z 17d73766b926eb2f8f7cfafceb82ffbd
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKhC20oxKgR168RlERAoiwAJ42KYNrKXAZVoTeDiGDP3EWje6GjACgji6w
+f06QEcTTR62jhYQgo4FrOOo=
+=xxUY
+-----END PGP SIGNATURE-----

@@ -419,7 +419,7 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   **        possible integer (ticket #3922)
   **
   ** The second term in the following conditional enforces the second
-  ** condition under the assumption that additional overflow causes
+  ** condition under the assumption that addition overflow causes
   ** values to wrap around.
   */
   if( pMem->r==(double)pMem->u.i && (pMem->u.i-1) < (pMem->u.i+1) ){
