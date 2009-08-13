@@ -37,9 +37,9 @@ void sqlite3OpenTable(
 }
 
 /*
-** Set P4 of the most recently inserted opcode to a column affinity
-** string for index pIdx. A column affinity string has one character
-** for each column in the table, according to the affinity of the column:
+** Return a pointer to the column affinity string associated with index
+** pIdx. A column affinity string has one character for each column in 
+** the table, according to the affinity of the column:
 **
 **  Character      Column affinity
 **  ------------------------------
@@ -51,8 +51,12 @@ void sqlite3OpenTable(
 **
 ** An extra 'b' is appended to the end of the string to cover the
 ** rowid that appears as the last column in every index.
+**
+** Memory for the buffer containing the column index affinity string
+** is managed along with the rest of the Index structure. It will be
+** released when sqlite3DeleteIndex() is called.
 */
-void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
+const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
   if( !pIdx->zColAff ){
     /* The first time a column affinity string for a particular index is
     ** required, it is allocated and populated here. It is then stored as
@@ -68,7 +72,7 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     pIdx->zColAff = (char *)sqlite3Malloc(pIdx->nColumn+2);
     if( !pIdx->zColAff ){
       db->mallocFailed = 1;
-      return;
+      return 0;
     }
     for(n=0; n<pIdx->nColumn; n++){
       pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
@@ -77,7 +81,7 @@ void sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     pIdx->zColAff[n] = 0;
   }
  
-  sqlite3VdbeChangeP4(v, -1, pIdx->zColAff, 0);
+  return pIdx->zColAff;
 }
 
 /*
@@ -1298,7 +1302,7 @@ void sqlite3GenerateConstraintChecks(
     }
     sqlite3VdbeAddOp2(v, OP_SCopy, regRowid, regIdx+i);
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regIdx, pIdx->nColumn+1, aRegIdx[iCur]);
-    sqlite3IndexAffinityStr(v, pIdx);
+    sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), 0);
     sqlite3ExprCacheAffinityChange(pParse, regIdx, pIdx->nColumn+1);
 
     /* Find out what action to take in case there is an indexing conflict */
