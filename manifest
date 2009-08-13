@@ -1,5 +1,5 @@
-C Fixed\ssome\scompiler\swarnings\sin\sWINCE\sonly\ssections\swhen\susing\sthe\sMSVC\scompiler.
-D 2009-08-12T15:34:03
+C Changes\sto\sthe\squery\splanner\sthat\simprove\sthe\sorder\sin\swhich\stables/indexes\sare\sscanned\sin\sjoin\squeries.
+D 2009-08-13T07:09:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c606c9b502dfde3b9c3b2d23ed49f3737829693b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -213,7 +213,7 @@ F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c bfc25f9ef4fa914b473303566459552bdb2e008a
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 7e696d69a6d1b0fa277da2801ae4126dd4db0f8c
+F src/where.c 53adef2c7b8bc888755cf41fb3449aedb36a429c
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -674,7 +674,7 @@ F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 72feaf8dbc52cea84de0c3e6ce7559ff19c479af
 F test/trigger8.test 83d92c212f36442d26527d6f7701575905a52ae1
 F test/trigger9.test e6e8dbab673666b3c0a63f0fefcff2329fe6bba8
-F test/triggerA.test 208dbda4d2f7c918b02f8a0dfa3acd2a0fe00691
+F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -693,7 +693,7 @@ F test/vtab2.test 7bcffc050da5c68f4f312e49e443063e2d391c0d
 F test/vtab3.test baad99fd27217f5d6db10660522e0b7192446de1
 F test/vtab4.test 942f8b8280b3ea8a41dae20e7822d065ca1cb275
 F test/vtab5.test a0a84a89c622f4e2e816ebf39883dc319b4a1024
-F test/vtab6.test 226b116d63ad77f9b084d556f772c45a0d28e9b5
+F test/vtab6.test c7f290d172609d636fbfc58166eadcb55d5c117c
 F test/vtab7.test a8c3c3cb3eb60be364991bd714e4927e26c4cd85
 F test/vtab8.test e19fa4a538fcd1bb66c22825fa8f71618fb13583
 F test/vtab9.test ea58d2b95d61955f87226381716b2d0b1d4e4f9b
@@ -711,7 +711,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
 F test/where7.test b6e84b472a024e45c6dbdadc52bbcab3fcc8d0e1
-F test/where8.test fb2ccd7f1fa33287fef25b6bad6849c868a6e331
+F test/where8.test 8d3704d04a683e792d373005f2e4e13bfd7e2dd5
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
 F test/whereA.test 1d1674254614147c866ab9b59af6582f454a858c
@@ -742,7 +742,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P b0848925babde5241aefe0a117ebb10299c94a15
-R 85d8bc88106b78c6b602120dcf0a8f49
-U shane
-Z 4619ac16a1c5a72371d086ffe5b2d550
+P 1f0a93e17d6291268da909699ce1a5a7619ae637
+R d962edbb5f58f48d082773e78b64bd00
+U dan
+Z 73a8cffe9b2f6a30befca6bd75c15499
