@@ -226,4 +226,32 @@ do_test corrupt-5.2 {
   catchsql { SELECT * FROM sqlite_master }
 } {1 {database disk image is malformed}}
 
+do_test corrupt-6.1 {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  execsql { 
+    PRAGMA page_size = 1024; CREATE TABLE t1(x);
+  }
+
+  # The root page of t1 is 1024 bytes in size. The header is 8 bytes, and
+  # each of the cells inserted by the following INSERT statements consume
+  # 16 bytes (including the 2 byte cell-offset array entry). So the page
+  # can contain up to 63 cells.
+  for {set i 0} {$i < 63} {incr i} {
+    execsql { INSERT INTO t1 VALUES( randomblob(10) ) }
+  }
+
+  # Free the cell stored right at the end of the page (at offset pgsz-14).
+  execsql { DELETE FROM t1 WHERE rowid=1 }
+  set rootpage [db one {SELECT rootpage FROM sqlite_master WHERE name = 't1'}]
+  db close
+
+  set offset [expr ($rootpage * 1024)-14+2]
+  hexio_write test.db $offset 00FF
+  sqlite3 db test.db 
+
+  catchsql { INSERT INTO t1 VALUES( randomblob(10) ) }
+} {}
+
 finish_test

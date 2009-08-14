@@ -1409,13 +1409,14 @@ static int btreeInitPage(MemPage *pPage){
     while( pc>0 ){
       u16 next, size;
       if( pc<iCellFirst || pc>iCellLast ){
-        /* Free block is off the page */
+        /* Start of free block is off the page */
         return SQLITE_CORRUPT_BKPT; 
       }
       next = get2byte(&data[pc]);
       size = get2byte(&data[pc+2]);
-      if( next>0 && next<=pc+size+3 ){
-        /* Free blocks must be in ascending order */
+      if( (next>0 && next<=pc+size+3) || pc+size>usableSize ){
+        /* Free blocks must be in ascending order. And the last byte of
+	** the free-block must lie on the database page.  */
         return SQLITE_CORRUPT_BKPT; 
       }
       nFree = nFree + size;
