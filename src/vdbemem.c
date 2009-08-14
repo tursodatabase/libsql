@@ -418,11 +418,14 @@ void sqlite3VdbeIntegerAffinity(Mem *pMem){
   **    (2) The integer is neither the largest nor the smallest
   **        possible integer (ticket #3922)
   **
-  ** The second term in the following conditional enforces the second
-  ** condition under the assumption that addition overflow causes
-  ** values to wrap around.
+  ** The second and third terms in the following conditional enforces
+  ** the second condition under the assumption that addition overflow causes
+  ** values to wrap around.  On x86 hardware, the third term is always
+  ** true and could be omitted.  But we leave it in because other
+  ** architectures might behave differently.
   */
-  if( pMem->r==(double)pMem->u.i && (pMem->u.i-1) < (pMem->u.i+1) ){
+  if( pMem->r==(double)pMem->u.i && pMem->u.i>SMALLEST_INT64
+      && ALWAYS(pMem->u.i<LARGEST_INT64) ){
     pMem->flags |= MEM_Int;
   }
 }

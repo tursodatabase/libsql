@@ -1,5 +1,8 @@
-C Fix\sa\scase\swhere\sSQLite\smay\swrite\spast\sthe\send\sof\sa\sbuffer\sas\sa\sresult\sof\sa\scorrupted\sdatabase\sfile.
-D 2009-08-14T17:01:22
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Work\saround\san\sover-zealous\soptimization\sin\sGCC\s4.3.3.\sSee\nCVSTrac\sticket\s#4027.
+D 2009-08-14T17:53:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -210,7 +213,7 @@ F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
 F src/vdbeaux.c 4956536a636468fd07284028c39aab65ea99777e
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
-F src/vdbemem.c 364cfce843926224f917ab89ee476be958c864ed
+F src/vdbemem.c ff40efaa2772e7aa66cf7501bf4142fd1a44bf51
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c 7573120c1f2fe6d4c246f138f1e30fbcda3db241
@@ -743,7 +746,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 34c21210eb03bd1230cde5d08039a8a656f35674
-R f46a5a69fe608d04233707dc2ffff1a9
-U dan
-Z baaa9683a6aa9b1a09c65002a4959fa5
+P 43321a556031942389ca11b033c1eae46ac6141b
+R eb2beaf54103dc01ac5b253ec6add39c
+U drh
+Z 9a01aa6fc3a050aa76e3a8e84bdd68fb
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKhaSnoxKgR168RlERAjFRAJ9mnEDWyq0jZnL+V4BV6BYX1aQUPgCcDqZL
+lQjS60b3gaHbvLqqZPVoylo=
+=S0NM
+-----END PGP SIGNATURE-----
