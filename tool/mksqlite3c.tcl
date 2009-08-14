@@ -166,6 +166,7 @@ proc copy_file {filename} {
     } elseif {[regexp {^#line} $line]} {
       # Skip #line directives.
     } elseif {$addstatic && ![regexp {^(static|typedef)} $line]} {
+      regsub {^SQLITE_API } $line {} line
       if {[regexp $declpattern $line all funcname]} {
         # Add the SQLITE_PRIVATE or SQLITE_API keyword before functions.
         # so that linkage can be modified at compile-time.
@@ -304,4 +305,3 @@ foreach file {
 }
 
 close $out
-
