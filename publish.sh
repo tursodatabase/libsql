@@ -94,8 +94,7 @@ ORIGIN=`pwd`
 cd $srcdir
 cd ..
 mv sqlite sqlite-$VERS
-EXCLUDE=`find sqlite-$VERS -print | egrep '(CVS|www/|art/|doc/|contrib/|_FOSSIL_|manifest)' | sed 's,^, --exclude ,'`
-echo "tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite-$VERS"
+echo "tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz --exclude _FOSSIL_ sqlite-$VERS"
 tar czf $ORIGIN/doc/sqlite-$VERS.tar.gz $EXCLUDE sqlite-$VERS
 mv sqlite-$VERS sqlite
 cd $ORIGIN

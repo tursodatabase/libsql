@@ -29,8 +29,6 @@
 ** The makefile makes some minor changes to this file (such as inserting
 ** the version number) and changes its name to "sqlite3.h" as
 ** part of the build process.
-**
-** @(#) $Id: sqlite.h.in,v 1.462 2009/08/06 17:40:46 drh Exp $
 */
 #ifndef _SQLITE3_H_
 #define _SQLITE3_H_
@@ -95,33 +93,44 @@ extern "C" {
 ** The Z value is the release number and is incremented with
 ** each release but resets back to 0 whenever Y is incremented.
 **
+** Since version 3.6.18, SQLite source code has been stored in the
+** "fossil" configuration management system.  The SQLITE_SOURCE_ID
+** macro is a string which identifies a particular check-in of SQLite
+** within its configuration management system.  The string contains the
+** date and time of the check-in (UTC) and an SHA1 hash of the entire
+** source tree.
+**
 ** See also: [sqlite3_libversion()] and [sqlite3_libversion_number()].
 **
 ** Requirements: [H10011] [H10014]
 */
-#define SQLITE_VERSION         "--VERS--"
-#define SQLITE_VERSION_NUMBER  --VERSION-NUMBER--
+#define SQLITE_VERSION        "--VERS--"
+#define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
+#define SQLITE_SOURCE_ID      "--SOURCE-ID--"
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers {H10020} <S60100>
 ** KEYWORDS: sqlite3_version
 **
-** These features provide the same information as the [SQLITE_VERSION]
-** and [SQLITE_VERSION_NUMBER] #defines in the header, but are associated
-** with the library instead of the header file.  Cautious programmers might
-** include a check in their application to verify that
+** These interfaces provide the same information as the [SQLITE_VERSION],
+** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] #defines in the header,
+** but are associated with the library instead of the header file.  Cautious
+** programmers might include a check in their application to verify that
 ** sqlite3_libversion_number() always returns the value
 ** [SQLITE_VERSION_NUMBER].
 **
 ** The sqlite3_libversion() function returns the same information as is
 ** in the sqlite3_version[] string constant.  The function is provided
 ** for use in DLLs since DLL users usually do not have direct access to string
-** constants within the DLL.
+** constants within the DLL.  Similarly, the sqlite3_sourceid() function
+** returns the same information as is in the [SQLITE_SOURCE_ID] #define of
+** the header file.
 **
 ** Requirements: [H10021] [H10022] [H10023]
 */
 SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
+const char *sqlite3_sourceid(void);
 int sqlite3_libversion_number(void);
 
 /*

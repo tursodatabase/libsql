@@ -15,8 +15,6 @@
 ** There is only one exported symbol in this file - the function
 ** sqliteRegisterBuildinFunctions() found at the bottom of the file.
 ** All other code has file scope.
-**
-** $Id: func.c,v 1.239 2009/06/19 16:44:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -702,7 +700,7 @@ static void nullifFunc(
 }
 
 /*
-** Implementation of the VERSION(*) function.  The result is the version
+** Implementation of the sqlite_version() function.  The result is the version
 ** of the SQLite library that is running.
 */
 static void versionFunc(
@@ -712,6 +710,20 @@ static void versionFunc(
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
   sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
+}
+
+/*
+** Implementation of the sqlite_source_id() function. The result is a string
+** that identifies the particular version of the source code used to build
+** SQLite.
+*/
+static void sourceidFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **NotUsed2
+){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  sqlite3_result_text(context, SQLITE_SOURCE_ID, -1, SQLITE_STATIC);
 }
 
 /* Array for converting from half-bytes (nybbles) into ASCII hex
@@ -1433,6 +1445,7 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(randomblob,         1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
+    FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),

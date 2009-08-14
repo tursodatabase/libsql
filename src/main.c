@@ -13,8 +13,6 @@
 ** implement the programmer interface to the library.  Routines in
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
-**
-** $Id: main.c,v 1.562 2009/07/20 11:32:03 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -35,6 +33,7 @@
 const char sqlite3_version[] = SQLITE_VERSION;
 #endif
 const char *sqlite3_libversion(void){ return sqlite3_version; }
+const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
 

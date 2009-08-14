@@ -388,8 +388,8 @@ parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	mv parse.h parse.h.temp
 	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in 
-	cat $(TOP)/src/sqlite.h.in | tclsh $(TOP)/tool/mksqlite3h.tcl `cat ${TOP}/VERSION` > sqlite3.h
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 keywordhash.h:	$(TOP)/tool/mkkeywordhash.c
 	$(BCC) -o mkkeywordhash $(OPTS) $(TOP)/tool/mkkeywordhash.c

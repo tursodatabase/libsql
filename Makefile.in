@@ -682,8 +682,8 @@ select.lo:	$(TOP)/src/select.c $(HDR)
 status.lo:	$(TOP)/src/status.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/status.c
 
-sqlite3.h:	$(TOP)/src/sqlite.h.in 
-	cat $(TOP)/src/sqlite.h.in | tclsh $(TOP)/tool/mksqlite3h.tcl `cat ${TOP}/VERSION` > sqlite3.h
+sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
+	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
 
 table.lo:	$(TOP)/src/table.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/table.c
