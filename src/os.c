@@ -197,7 +197,9 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 ** error in sqlite3_os_init() by the upper layers can be tested.
 */
 int sqlite3OsInit(void){
-  DO_OS_MALLOC_TEST(0);
+  void *p = sqlite3_malloc(10);
+  if( p==0 ) return SQLITE_NOMEM;
+  sqlite3_free(p);
   return sqlite3_os_init();
 }
 
