@@ -77,6 +77,9 @@
 #include <inttypes.h>
 #endif
 
+#define SQLITE_INDEX_SAMPLES 10
+#define SQLITE_INDEX_SAMPLE_COLS "s1,s2,s3,s4,s5,s6,s7,s8,s9,s10"
+
 /*
 ** This macro is used to "hide" some ugliness in casting an int
 ** value to a ptr value under the MSVC 64-bit compiler.   Casting
@@ -595,6 +598,7 @@ typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
 typedef struct IdList IdList;
 typedef struct Index Index;
+typedef struct IndexSample IndexSample;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
 typedef struct Lookaside Lookaside;
@@ -1410,6 +1414,20 @@ struct Index {
   Schema *pSchema; /* Schema containing this index */
   u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
   char **azColl;   /* Array of collation sequence names for index */
+  IndexSample *aSample;    /* Array of SQLITE_INDEX_SAMPLES samples */
+};
+
+/*
+** Each sample stored in the sqlite_stat2 table is represented in memory 
+** using a structure of this type.
+*/
+struct IndexSample {
+  union {
+    char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
+    double r;       /* Value if eType is SQLITE_FLOAT or SQLITE_INTEGER */
+  } u;
+  u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
+  u8 nByte;         /* Size in byte of text or blob. */
 };
 
 /*
@@ -2781,6 +2799,7 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 char *sqlite3Utf16to8(sqlite3 *, const void*, int);
+char *sqlite3Utf8to16(sqlite3 *, int, char *, int, int *);
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION

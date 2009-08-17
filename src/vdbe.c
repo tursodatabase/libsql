@@ -4974,6 +4974,49 @@ case OP_Expire: {
   break;
 }
 
+
+/* Opcode: Sample P1 P2 P3 * *
+**
+** Register P1 contains the total number of rows in the index being 
+** analyzed. Register P1+1 contains an integer between 0 and 9, the
+** index of the next sample required. Register P1+2 contains an index
+** between 1 and *P1, the number of the next sample required. Register
+** P1+3 contains the current row index.
+**
+** If the integer in register P1+3 is the same as the integer in register
+** P1+1, then the following takes place:
+**
+**   (a) the contents of register P1+1 is incremented.
+**
+**   (b) the contents of the register identified by parameter P2 is 
+**       copied to register number (P3 + X), where X is the newly
+**       incremented value of register P1+1.
+**
+**   (c) register P1+2 is set to the index of the next sample required.
+*/
+case OP_Sample: {
+  int p1 = pOp->p1;
+  i64 iReq = p->aMem[p1+2].u.i;
+  i64 iRow = p->aMem[p1+3].u.i;
+
+  while( iReq==iRow ){
+    i64 nRow = p->aMem[p1].u.i;
+    int iSample = ++p->aMem[p1+1].u.i;
+    Mem *pReg = &p->aMem[pOp->p3 + iSample - 1];
+
+    assert( pReg<&p->aMem[p->nMem] );
+    sqlite3VdbeMemShallowCopy(pReg, &p->aMem[pOp->p2], MEM_Ephem);
+    Deephemeralize(pReg);
+    if( iSample==SQLITE_INDEX_SAMPLES ){
+      iReq = 0;
+    }else{
+      iReq = iRow + (nRow-iRow)/(SQLITE_INDEX_SAMPLES - iSample);
+      p->aMem[p1+2].u.i = iReq;
+    }
+  }
+  break;
+}
+
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /* Opcode: TableLock P1 P2 P3 P4 *
 **

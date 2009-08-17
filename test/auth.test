@@ -2316,7 +2316,7 @@ ifcapable compound&&subquery {
       WHERE type='table'
       ORDER BY name
     }
-  } {sqlite_stat1 t1 t2 t3 t4}
+  } {sqlite_stat1 sqlite_stat2 t1 t2 t3 t4}
 }
 
 # Ticket #3944
