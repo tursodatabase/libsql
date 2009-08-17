@@ -153,7 +153,7 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
-   /* All the rest need to always be zero */
+   /* All the rest should always be initialized to zero */
    0,                         /* isInit */
    0,                         /* inProgress */
    0,                         /* isMallocInit */
