@@ -1,5 +1,5 @@
-C Add\stests\sto\scheck\sthat\ssqlite\srecovers\sfrom\san\serror\sin\ssqlite3_initialize()\scorrectly.
-D 2009-08-17T15:16:19
+C More\sdocumentation\sand\scomment\supdates\sfor\ssqlite3_initialize/shutdown\sinterface\schanges\sto\shandle\sfailures.
+D 2009-08-17T15:31:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,7 +18,7 @@ F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 486c870218ec915bd8edfece7109b6c864e82a5a x
+F configure 486c870218ec915bd8edfece7109b6c864e82a5a
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -84,7 +84,7 @@ F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk 3ae48161d5a76def45cd8fa253b28295f239dd69
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -138,8 +138,8 @@ F src/mutex.c 73899d158560117c02909b6e9ffe2bad2560a817
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
 F src/mutex_noop.c f5a07671f25a1a9bd7c10ad7107bc2585446200f
 F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
-F src/mutex_unix.c 2f936339dfef1a4c142db290d575a3509b77315f
-F src/mutex_w32.c a54086ca4af5356120e7e56efcdcee12602e3109
+F src/mutex_unix.c aff26c77f698b552becfedfa677ad1036c42d790
+F src/mutex_w32.c b2c1481ee93b0ac7a8fa5346570fd173b6763fdb
 F src/notify.c 0127121816d8a861deb0dfd111b495346bf233db
 F src/os.c 5029ae6c88d1869ad9034008a9531658d53438e4
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
@@ -152,7 +152,7 @@ F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y 6c42631e72a3d14cde2bee85e79409066066d3df
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
 F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
-F src/pcache1.c 6dc833c89feac405dd8b4858232c97e679f182ec
+F src/pcache1.c 211295a9ff6a5b30f1ca50516731a5cf3e9bf82c
 F src/pragma.c 9eb44ac1d3dc1ac3ea4f444abe1a10ae8acaa16c
 F src/prepare.c 0b966d20979237121ec5fec449c9db45f6b9789a
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
@@ -161,7 +161,7 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in b309f8f5ecc76fc2d56a32d6563b3636901befb1
+F src/sqlite.h.in 393349b50ab4a22ed740a9f8cc4237d17e81e7b4
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d675e20da30db2c28e7166deb1fc758fb5b29a9a
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -503,7 +503,7 @@ F test/permutations.test 1ce2874df8fec876d0b963c7a3ef61c4e9df8827
 F test/pragma.test a35b0be36542477183168cdb8b743f5c0d883c4d
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test f6eb3a98643b5856626ad38933334762270db129
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
@@ -728,7 +728,7 @@ F tool/genfkey.test 405a43d54f1646bfaa7a84b03bb959aef62a3a49
 F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 511a848b2ac7a3d93f36adc1e1086b4c5741224b
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl 9aea914126a7c938e92f1176d77b111c11c7a956
 F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
@@ -746,7 +746,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 98c49e6135ae6268a80de88f8b0284f88ef32e1d
-R 403bbd0c163020937b591c0dbd3d7490
-U dan
-Z d3982d3f3fe40cd70ed5dd9628e2f879
+P 904a371c6c9d3f20332b37767b06161fa0a78113
+R a9ed6e4e5323f07f7cab487d83cce5a4
+U shane
+Z f4248855d1755b89d2ad5c1a3e7e2a1a
