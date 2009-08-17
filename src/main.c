@@ -124,6 +124,7 @@ int sqlite3_initialize(void){
   */
   pMaster = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER);
   sqlite3_mutex_enter(pMaster);
+  sqlite3GlobalConfig.isMutexInit = 1;
   if( !sqlite3GlobalConfig.isMallocInit ){
     rc = sqlite3MallocInit();
   }
@@ -142,10 +143,9 @@ int sqlite3_initialize(void){
   }
   sqlite3_mutex_leave(pMaster);
 
-  /* If unable to initialize the malloc subsystem, then return early.
-  ** There is little hope of getting SQLite to run if the malloc
-  ** subsystem cannot be initialized.
-  */
+  /* If rc is not SQLITE_OK at this point, then either the malloc
+  ** subsystem could not be initialized or the system failed to allocate
+  ** the pInitMutex mutex. Return an error in either case.  */
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -162,8 +162,11 @@ int sqlite3_initialize(void){
     sqlite3GlobalConfig.inProgress = 1;
     memset(pHash, 0, sizeof(sqlite3GlobalFunctions));
     sqlite3RegisterGlobalFunctions();
-    rc = sqlite3PcacheInitialize();
+    if( sqlite3GlobalConfig.isPCacheInit==0 ){
+      rc = sqlite3PcacheInitialize();
+    }
     if( rc==SQLITE_OK ){
+      sqlite3GlobalConfig.isPCacheInit = 1;
       rc = sqlite3_os_init();
     }
     if( rc==SQLITE_OK ){
@@ -219,14 +222,23 @@ int sqlite3_initialize(void){
 */
 int sqlite3_shutdown(void){
   if( sqlite3GlobalConfig.isInit ){
-    sqlite3GlobalConfig.isMallocInit = 0;
-    sqlite3PcacheShutdown();
     sqlite3_os_end();
     sqlite3_reset_auto_extension();
-    sqlite3MallocEnd();
-    sqlite3MutexEnd();
     sqlite3GlobalConfig.isInit = 0;
   }
+  if( sqlite3GlobalConfig.isPCacheInit ){
+    sqlite3PcacheShutdown();
+    sqlite3GlobalConfig.isPCacheInit = 0;
+  }
+  if( sqlite3GlobalConfig.isMallocInit ){
+    sqlite3MallocEnd();
+    sqlite3GlobalConfig.isMallocInit = 0;
+  }
+  if( sqlite3GlobalConfig.isMutexInit ){
+    sqlite3MutexEnd();
+    sqlite3GlobalConfig.isMutexInit = 0;
+  }
+
   return SQLITE_OK;
 }
 

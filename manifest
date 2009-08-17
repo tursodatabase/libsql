@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Enhanced\sdocumentation\sand\sminor\scode\stweaks\sin\spreparation\sfor\shardening\nthe\ssqlite3_initialize/shutdown\sinterfaces\sagainst\sinitialization\sfailures.
-D 2009-08-17T13:42:30
+C Add\stests\sto\scheck\sthat\ssqlite\srecovers\sfrom\san\serror\sin\ssqlite3_initialize()\scorrectly.
+D 2009-08-17T15:16:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -89,7 +86,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 6272ba6c273b6390602b276dd2b1e4fe71d1049a
+F main.mk 3ae48161d5a76def45cd8fa253b28295f239dd69
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -120,7 +117,7 @@ F src/delete.c dcf07632d8ca3d4086df8b65ea907a47278e6382
 F src/expr.c d069ba1e060f296ea4f18fb85198fafefd00b22f
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
-F src/global.c 263dea92c89956eef9335fe2cf6af8e3fa34646b
+F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
 F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
@@ -129,7 +126,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 6873986c416ce78e8102b5189aef1179053be4e9
+F src/main.c cb283c9e98d50cb14b01d6b736c4336f7bf07189
 F src/malloc.c ae9fef00398ead775630cad97e228d527178eb3a
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -148,8 +145,8 @@ F src/os.c 5029ae6c88d1869ad9034008a9531658d53438e4
 F src/os.h fa3f4aa0119ff721a2da4b47ffd74406ac864c05
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c cdb2a08b9ce4aa13b3f7b91d4dd60fb48be9f56a
-F src/os_win.c 6de69d8f51d4bf35484e9be1588089a61569491f
+F src/os_unix.c aea2a5c1c07c47767b0961b670dc647aa4aefc4e
+F src/os_win.c a3e93d1b44a818ce9422e2e588984df1cb7e4819
 F src/pager.c a47be286477ed6c7b9a342dd53d4e4043f29d8c2
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y 6c42631e72a3d14cde2bee85e79409066066d3df
@@ -166,11 +163,11 @@ F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in b309f8f5ecc76fc2d56a32d6563b3636901befb1
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 6a90791138ba3447572d184d0798c24f3cbbec98
+F src/sqliteInt.h d675e20da30db2c28e7166deb1fc758fb5b29a9a
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c e18e5013dc6bca9f25e6022fbe17ba3ccb821f95
+F src/tclsqlite.c 5eea5025c370d3a91ce0415f9d46f96fdc7aef44
 F src/test1.c 0e882812c94cf35fce30fc25fbf952a33a86d70b
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
@@ -188,6 +185,7 @@ F src/test_config.c 63d1b08809ca182ee75429573111b44735861c64
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c 26ac62d8ed7a9f45a1e05baffb1c1e55fe2a06f2
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
+F src/test_init.c ff7c0e055fb786f5b048df83b6dfb1624851a88b
 F src/test_journal.c dab49b7c47b53242f039c9563b18cafb67ebfe03
 F src/test_loadext.c 97dc8800e46a46ed002c2968572656f37e9c0dd9
 F src/test_malloc.c d054506b095d711e4e5575558dd576a2cbf035a2
@@ -411,6 +409,7 @@ F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
 F test/indexedby.test 946ca2628a521f4ced0520421a0788345abaf3dc
+F test/init.test 5768d2cfeb25df627d42de675ab6201a65c167fe
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
@@ -747,14 +746,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 78dfe8321db9debfcd4a7f3daf4223d0cbf23ab9
-R 59b834c230f554631ea111aff633ae3d
-U drh
-Z 14a85d4458d8211ec1ee47b0a57f04f9
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKiV5JoxKgR168RlERAhxLAJ9VpGZymsNQGLlIzDsn3KQPM4CSYgCfR70O
-KCNsn02bCPSvHz/OQJ5kVZc=
-=CGmi
------END PGP SIGNATURE-----
+P 98c49e6135ae6268a80de88f8b0284f88ef32e1d
+R 403bbd0c163020937b591c0dbd3d7490
+U dan
+Z d3982d3f3fe40cd70ed5dd9628e2f879

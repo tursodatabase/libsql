@@ -42,8 +42,6 @@
 **   *  Locking primitives for the proxy uber-locking-method. (MacOSX only)
 **   *  Definitions of sqlite3_vfs objects for all locking methods
 **      plus implementations of sqlite3_os_init() and sqlite3_os_end().
-**
-** $Id: os_unix.c,v 1.254 2009/07/03 12:57:58 drh Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_UNIX              /* This file is used on unix only */
@@ -5127,6 +5125,13 @@ int sqlite3_os_init(void){
 #endif
   };
   unsigned int i;          /* Loop counter */
+
+#ifdef SQLITE_TEST
+  /* This block is used by test code only to simulate the effect on sqlite
+  ** of returning an error from within the sqlite3_os_init() function.  */
+  int sqlite3TestFailOsInit(void);
+  if( sqlite3TestFailOsInit() ){ return SQLITE_ERROR; }
+#endif
 
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
