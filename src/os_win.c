@@ -1883,13 +1883,6 @@ int sqlite3_os_init(void){
     winGetLastError    /* xGetLastError */
   };
 
-#ifdef SQLITE_TEST
-  /* This block is used by test code only to simulate the effect on sqlite
-  ** of returning an error from within the sqlite3_os_init() function.  */
-  int sqlite3TestFailOsInit(void);
-  if( sqlite3TestFailOsInit() ){ return SQLITE_ERROR; }
-#endif
-
   sqlite3_vfs_register(&winVfs, 1);
   return SQLITE_OK; 
 }

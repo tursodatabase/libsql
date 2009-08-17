@@ -167,7 +167,7 @@ int sqlite3_initialize(void){
     }
     if( rc==SQLITE_OK ){
       sqlite3GlobalConfig.isPCacheInit = 1;
-      rc = sqlite3_os_init();
+      rc = sqlite3OsInit();
     }
     if( rc==SQLITE_OK ){
       sqlite3PCacheBufferSetup( sqlite3GlobalConfig.pPage, 

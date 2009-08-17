@@ -5126,13 +5126,6 @@ int sqlite3_os_init(void){
   };
   unsigned int i;          /* Loop counter */
 
-#ifdef SQLITE_TEST
-  /* This block is used by test code only to simulate the effect on sqlite
-  ** of returning an error from within the sqlite3_os_init() function.  */
-  int sqlite3TestFailOsInit(void);
-  if( sqlite3TestFailOsInit() ){ return SQLITE_ERROR; }
-#endif
-
   /* Register all VFSes defined in the aVfs[] array */
   for(i=0; i<(sizeof(aVfs)/sizeof(sqlite3_vfs)); i++){
     sqlite3_vfs_register(&aVfs[i], i==0);

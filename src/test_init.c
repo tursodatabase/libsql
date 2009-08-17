@@ -40,7 +40,6 @@ static struct Wrapped {
   int mutex_fail;              /* True to fail mutex subsystem inialization */
   int pcache_init;             /* True if pcache subsystem is initalized */
   int pcache_fail;             /* True to fail pcache subsystem inialization */
-  int osinit_fail;             /* True to fail OS subsystem inialization */
 } wrapped;
 
 static int wrMemInit(void *pAppData){
@@ -196,8 +195,6 @@ static int init_wrapper_install(
       wrapped.mutex_fail = 1;
     }else if( strcmp(z, "pcache")==0 ){
       wrapped.pcache_fail = 1;
-    }else if( strcmp(z, "os")==0 ){
-      wrapped.osinit_fail = 1;
     }else{
       Tcl_AppendResult(interp, "Unknown argument: \"", z, "\"");
       return TCL_ERROR;
@@ -239,7 +236,6 @@ static int init_wrapper_clear(
   wrapped.mem_fail = 0;
   wrapped.mutex_fail = 0;
   wrapped.pcache_fail = 0;
-  wrapped.osinit_fail = 0;
   return TCL_OK;
 }
 
@@ -266,16 +262,9 @@ static int init_wrapper_query(
   if( wrapped.pcache_init ){
     Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("pcache", -1));
   }
-  if( sqlite3GlobalConfig.isInit ){
-    Tcl_ListObjAppendElement(interp, pRet, Tcl_NewStringObj("os", -1));
-  }
 
   Tcl_SetObjResult(interp, pRet);
   return TCL_OK;
-}
-
-int sqlite3TestFailOsInit(void){
-  return (wrapped.mem.xMalloc && wrapped.osinit_fail);
 }
 
 int Sqlitetest_init_Init(Tcl_Interp *interp){

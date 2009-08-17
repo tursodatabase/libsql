@@ -191,6 +191,17 @@ int sqlite3OsCloseFree(sqlite3_file *pFile){
 }
 
 /*
+** This function is a wrapper around the OS specific implementation of
+** sqlite3_os_init(). The purpose of the wrapper is to provide the
+** ability to simulate a malloc failure, so that the handling of an
+** error in sqlite3_os_init() by the upper layers can be tested.
+*/
+int sqlite3OsInit(void){
+  DO_OS_MALLOC_TEST(0);
+  return sqlite3_os_init();
+}
+
+/*
 ** The list of all registered VFS implementations.
 */
 static sqlite3_vfs * SQLITE_WSD vfsList = 0;

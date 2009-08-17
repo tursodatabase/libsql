@@ -224,6 +224,11 @@
 #define SHARED_FIRST      (PENDING_BYTE+2)
 #define SHARED_SIZE       510
 
+/*
+** Wrapper around OS specific sqlite3_os_init() function.
+*/
+int sqlite3OsInit(void);
+
 /* 
 ** Functions for accessing sqlite3_file methods 
 */
