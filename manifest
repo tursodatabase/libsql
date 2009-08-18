@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sobscure\sissues\swith\sthe\smemsys5\smemory\sallocator.\s\sArrange\sthat\sthe\nxRealloc()\sinterface\sto\smemory\sallocators\sis\sonly\scalled\swith\sa\svalue\nthat\shas\sbeen\sthrough\sxRoundup().
-D 2009-08-18T14:48:54
+C Move\sthe\sallocation\sof\sthe\smemsys5\smutex\sinto\sthe\sinitializer.
+D 2009-08-18T15:33:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
-F src/mem5.c c263389579a1c42b26514f55343733f8f700dfbe
+F src/mem5.c eb96124e6eb473bf3e17a678d07e46bae95f3c45
 F src/memjournal.c e68cb5f7e828b84d5bf2ea16c5d87f1ed7e9fe7f
 F src/mutex.c 73899d158560117c02909b6e9ffe2bad2560a817
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -749,14 +749,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d4e7e2d82321c12fe471ed49098828bc0ef78543
-R 0c7fa9d1f28b0b97b64e4538e0512b1d
+P 577bd6f15556b7f6d86ee5167353fdd535577bf6
+R 7a54c62e9fd97dfd56b8fffe44a0eb37
 U drh
-Z b14ff688d7f891db8caaf1f850a022d2
+Z 6c0284c62829374caa380ff879613eb8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKir9doxKgR168RlERAlOYAJ9UNgz1vVlKERcsvXhlDBGWph2YMACdGh8K
-8H/Czhc+mJBbqTPkHdrT+Ww=
-=v3bo
+iD8DBQFKisnboxKgR168RlERAte8AJ9s8UclPlH5WT13RZFRWzIyo6zclwCfSBfR
+YrNqMlhHVmQCc/np3MWIiWY=
+=G+W/
 -----END PGP SIGNATURE-----

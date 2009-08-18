@@ -188,9 +188,6 @@ static void memsys5Link(int i, int iLogsize){
 ** sqlite3GlobalConfig.bMemStat is true.
 */
 static void memsys5Enter(void){
-  if( sqlite3GlobalConfig.bMemstat==0 && mem5.mutex==0 ){
-    mem5.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
-  }
   sqlite3_mutex_enter(mem5.mutex);
 }
 static void memsys5Leave(void){
@@ -447,6 +444,9 @@ static int memsys5Log(int iValue){
 
 /*
 ** Initialize the memory allocator.
+**
+** This routine is not threadsafe.  The caller must be holding a mutex
+** to prevent multiple threads from entering at the same time.
 */
 static int memsys5Init(void *NotUsed){
   int ii;            /* Loop counter */
@@ -456,6 +456,9 @@ static int memsys5Init(void *NotUsed){
   int iOffset;       /* An offset into mem5.aCtrl[] */
 
   UNUSED_PARAMETER(NotUsed);
+
+  /* For the purposes of this routine, disable the mutex */
+  mem5.mutex = 0;
 
   /* The size of a Mem5Link object must be a power of two.  Verify that
   ** this is case.
@@ -489,6 +492,11 @@ static int memsys5Init(void *NotUsed){
       iOffset += nAlloc;
     }
     assert((iOffset+nAlloc)>mem5.nBlock);
+  }
+
+  /* If a mutex is required for normal operation, allocate one */
+  if( sqlite3GlobalConfig.bMemstat==0 && mem5.mutex==0 ){
+    mem5.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
 
   return SQLITE_OK;
