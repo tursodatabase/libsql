@@ -472,6 +472,7 @@ static int memsys5Init(void *NotUsed){
 */
 static void memsys5Shutdown(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
+  mem5.mutex = 0;
   return;
 }
 

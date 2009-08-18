@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\sbug\sin\smem5.c\swhich\swould\scause\san\sinfinite\sloop\son\san\sattempt\nto\sallocate\smore\sthan\s1073741824\sbytes\sof\scontiguous\smemory.\s\sAlso,\ssome\ncleanup\sof\smem5.c.\s\sMore\swork\sto\sdo\son\sthis.
-D 2009-08-18T01:54:19
+C When\sshutting\sdown\sthe\smemsys5\smemory\sallocator,\sbe\ssure\sto\sclear\sthe\smutex\npointer\sin\scase\sthe\snext\sstartup\sdoes\snot\suse\sa\smutex\sbecause\sit\sis\sconfigured\ndifferently.
+D 2009-08-18T12:16:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
-F src/mem5.c 51f22f4783c974e4470ed25df4eefb4cfe00be86
+F src/mem5.c 985413fcb066de2f1ec958f4a4ec753a7fdcdafa
 F src/memjournal.c e68cb5f7e828b84d5bf2ea16c5d87f1ed7e9fe7f
 F src/mutex.c 73899d158560117c02909b6e9ffe2bad2560a817
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -749,14 +749,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P b98a8706a61ad27c881b6820eee10d06bfb27417
-R 55b70508511043089513b3f1c6289087
+P 783b751a38f9f911c5ebdf738c255b7111978f76
+R a6b0c6db08939ff844e895f138661e73
 U drh
-Z 305dee8c9b3dcd54033772b896ca7e5f
+Z 9c3385b37c1b092f6192eca52ea5212d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKignOoxKgR168RlERAlG5AJ9phi2yeZEaFeweSkbDMgEHcJrKoACdGfdb
-YW3YUgjZLG6Xr9VGmvvZdPA=
-=CF4j
+iD8DBQFKipuGoxKgR168RlERAnCFAJ9eS1k3ejK5EJLZW9tvOa2a0sSfTwCcDjpv
+0E9TWvivmGjWW8ttg5j0P6I=
+=ia3d
 -----END PGP SIGNATURE-----
