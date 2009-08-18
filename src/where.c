@@ -1929,40 +1929,40 @@ static int whereRangeRegion(
       if( eType==SQLITE_BLOB ){
         z = (const u8 *)sqlite3_value_blob(pVal);
         pColl = db->pDfltColl;
-	assert( pColl->enc==SQLITE_UTF8 );
+        assert( pColl->enc==SQLITE_UTF8 );
       }else{
-	pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, *pIdx->azColl, 0);
-	if( sqlite3CheckCollSeq(pParse, pColl) ){
-	  return SQLITE_ERROR;
-	}
+        pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, *pIdx->azColl, 0);
+        if( sqlite3CheckCollSeq(pParse, pColl) ){
+          return SQLITE_ERROR;
+        }
         z = (const u8 *)sqlite3ValueText(pVal, pColl->enc);
-	if( !z ){
-	  return SQLITE_NOMEM;
-	}
+        if( !z ){
+          return SQLITE_NOMEM;
+        }
         assert( z && pColl && pColl->xCmp );
       }
       n = sqlite3ValueBytes(pVal, pColl->enc);
 
       for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
-	int r;
+        int r;
         int eSampletype = aSample[i].eType;
         if( eSampletype==SQLITE_NULL || eSampletype<eType ) continue;
         if( (eSampletype!=eType) ) break;
         if( pColl->enc==SQLITE_UTF8 ){
-	  r = pColl->xCmp(pColl->pUser, aSample[i].nByte, aSample[i].u.z, n, z);
+          r = pColl->xCmp(pColl->pUser, aSample[i].nByte, aSample[i].u.z, n, z);
         }else{
-	  int nSample;
-	  char *zSample = sqlite3Utf8to16(
+          int nSample;
+          char *zSample = sqlite3Utf8to16(
               db, pColl->enc, aSample[i].u.z, aSample[i].nByte, &nSample
           );
-	  if( !zSample ){
-	    assert( db->mallocFailed );
-	    return SQLITE_NOMEM;
-	  }
-	  r = pColl->xCmp(pColl->pUser, nSample, zSample, n, z);
-	  sqlite3DbFree(db, zSample);
+          if( !zSample ){
+            assert( db->mallocFailed );
+            return SQLITE_NOMEM;
+          }
+          r = pColl->xCmp(pColl->pUser, nSample, zSample, n, z);
+          sqlite3DbFree(db, zSample);
         }
-	if( r>0 ) break;
+        if( r>0 ) break;
       }
     }
 
@@ -2246,7 +2246,7 @@ static void bestBtreeIndex(
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
         WhereTerm *pBtm = findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pIdx);
-	whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &nBound);
+        whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &nBound);
         if( pTop ){
           wsFlags |= WHERE_TOP_LIMIT;
           used |= pTop->prereqRight;

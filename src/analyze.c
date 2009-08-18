@@ -32,7 +32,7 @@ static void openStatTable(
   const char *zWhere      /* Delete entries associated with this table */
 ){
   const char *aName[] = { "sqlite_stat1", "sqlite_stat2" };
-  const char *aCols[] = { "tbl,idx,stat", "tbl,idx," SQLITE_INDEX_SAMPLE_COLS };
+  const char *aCols[] = { "tbl,idx,stat", "tbl,idx,sampleno,sample" };
   int aRoot[] = {0, 0};
   int aCreateTbl[] = {0, 0};
 
@@ -94,13 +94,27 @@ static void analyzeOneTable(
 ){
   Index *pIdx;     /* An index to being analyzed */
   int iIdxCur;     /* Index of VdbeCursor for index being analyzed */
-  int nCol;        /* Number of columns in the index */
   Vdbe *v;         /* The virtual machine being built up */
   int i;           /* Loop counter */
   int topOfLoop;   /* The top of the loop */
   int endOfLoop;   /* The end of the loop */
   int addr;        /* The address of an instruction */
   int iDb;         /* Index of database containing pTab */
+
+
+  /* Assign the required registers. */
+  int regTabname = iMem++;     /* Register containing table name */
+  int regIdxname = iMem++;     /* Register containing index name */
+  int regSampleno = iMem++;    /* Register containing next sample number */
+  int regCol = iMem++;         /* Content of a column analyzed table */
+
+  int regSamplerecno = iMem++; /* Next sample index record number */
+  int regRecno = iMem++;       /* Register next index record number */
+  int regRec = iMem++;         /* Register holding completed record */
+  int regTemp = iMem++;        /* Temporary use register */
+  int regTemp2 = iMem++;        /* Temporary use register */
+  int regRowid = iMem++;       /* Rowid for the inserted record */
+  int regCount = iMem++;       /* Total number of records in table */
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) || pTab->pIndex==0 ){
@@ -120,39 +134,43 @@ static void analyzeOneTable(
   /* Establish a read-lock on the table at the shared-cache level. */
   sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
 
-  iMem += 3;
   iIdxCur = pParse->nTab++;
   for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
+    int nCol = pIdx->nColumn;
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
-    int regFields;    /* Register block for building records */
-    int regRec;       /* Register holding completed record */
-    int regTemp;      /* Temporary use register */
-    int regCol;       /* Content of a column from the table being analyzed */
-    int regRowid;     /* Rowid for the inserted record */
-    int regF2;
-    int regStat2;
 
-    /* Open a cursor to the index to be analyzed
-    */
+    if( iMem+1+(nCol*2)>pParse->nMem ){
+      pParse->nMem = iMem+1+(nCol*2);
+    }
+
+    /* Open a cursor to the index to be analyzed. */
     assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
-    nCol = pIdx->nColumn;
     sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb,
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
-    regStat2 = iMem+nCol*2+1;
-    regFields = regStat2+2+SQLITE_INDEX_SAMPLES;
-    regTemp = regRowid = regCol = regFields+3;
-    regRec = regCol+1;
-    if( regRec>pParse->nMem ){
-      pParse->nMem = regRec;
-    }
 
-    /* Fill in the register with the total number of rows. */
+    /* If this iteration of the loop is generating code to analyze the
+    ** first index in the pTab->pIndex list, then register regCount has
+    ** not been populated. In this case populate it now.  */
     if( pTab->pIndex==pIdx ){
-      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, iMem-3);
+      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regCount);
+      sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
     }
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, iMem-2);
-    sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem-1);
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
+
+    /* Zero the regSampleno and regRecno registers. */
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regSampleno);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regRecno);
+
+    /* If there are less than INDEX_SAMPLES records in the index, then
+    ** set the contents of regSampleRecno to integer value INDEX_SAMPLES.
+    ** Otherwise, set it to zero. This is to ensure that if there are 
+    ** less than the said number of entries in the index, no samples at
+    ** all are collected.  */
+    sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regSamplerecno);
+    sqlite3VdbeAddOp3(v, OP_Lt, regSamplerecno, sqlite3VdbeCurrentAddr(v)+2,
+        regCount);
+    sqlite3VdbeAddOp2(v, OP_Integer, 0, regSamplerecno);
 
     /* Memory cells are used as follows. All memory cell addresses are
     ** offset by iMem. That is, cell 0 below is actually cell iMem, cell
@@ -167,8 +185,6 @@ static void analyzeOneTable(
     **    nCol+1..2*nCol:  Previous value of indexed columns, from left to
     **                     right.
     **
-    **    2*nCol+1..2*nCol+10: 10 evenly spaced samples.
-    **
     ** Cells iMem through iMem+nCol are initialized to 0.  The others
     ** are initialized to NULL.
     */
@@ -179,7 +195,7 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp2(v, OP_Null, 0, iMem+nCol+i+1);
     }
 
-    /* Start the analysis loop. This loop runs through all the entries inof
+    /* Start the analysis loop. This loop runs through all the entries in
     ** the index b-tree.  */
     endOfLoop = sqlite3VdbeMakeLabel(v);
     sqlite3VdbeAddOp2(v, OP_Rewind, iIdxCur, endOfLoop);
@@ -189,15 +205,45 @@ static void analyzeOneTable(
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
       if( i==0 ){
-        sqlite3VdbeAddOp3(v, OP_Sample, iMem-3, regCol, regStat2+2);
+
+        /* Check if the record that cursor iIdxCur points to contains a
+        ** value that should be stored in the sqlite_stat2 table. If so,
+        ** store it.  */
+        int ne = sqlite3VdbeAddOp3(v, OP_Ne, regRecno, 0, regSamplerecno);
+        assert( regTabname+1==regIdxname 
+             && regTabname+2==regSampleno
+             && regTabname+3==regCol
+        );
+        sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 4, regRec, "aaab", 0);
+        sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regRowid);
+        sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regRowid);
+
+        /* Calculate new values for regSamplerecno and regSampleno.
+        **
+        **   sampleno = sampleno + 1
+        **   samplerecno = samplerecno+(remaining records)/(remaining samples)
+        */
+        sqlite3VdbeAddOp2(v, OP_AddImm, regSampleno, 1);
+        sqlite3VdbeAddOp3(v, OP_Subtract, regRecno, regCount, regTemp);
+        sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
+        sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regTemp2);
+        sqlite3VdbeAddOp3(v, OP_Subtract, regSampleno, regTemp2, regTemp2);
+        sqlite3VdbeAddOp3(v, OP_Divide, regTemp2, regTemp, regTemp);
+        sqlite3VdbeAddOp3(v, OP_Add, regSamplerecno, regTemp, regSamplerecno);
+
+        sqlite3VdbeJumpHere(v, ne);
+        sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
       }
+
+      assert( sqlite3VdbeCurrentAddr(v)==(topOfLoop+14+2*i) );
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
+
       /**** TODO:  add collating sequence *****/
       sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-      sqlite3VdbeJumpHere(v, topOfLoop + 1 + 2*(i + 1));
+      sqlite3VdbeJumpHere(v, topOfLoop+14+2*i);
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -226,33 +272,20 @@ static void analyzeOneTable(
     ** is never possible.
     */
     addr = sqlite3VdbeAddOp1(v, OP_IfNot, iMem);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regFields, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regFields+1, 0, pIdx->zName, 0);
-    regF2 = regFields+2;
-    sqlite3VdbeAddOp2(v, OP_SCopy, iMem, regF2);
+    sqlite3VdbeAddOp2(v, OP_SCopy, iMem, regSampleno);
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp4(v, OP_String8, 0, regTemp, 0, " ", 0);
-      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regF2, regF2);
+      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regSampleno, regSampleno);
       sqlite3VdbeAddOp3(v, OP_Add, iMem, iMem+i+1, regTemp);
       sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
       sqlite3VdbeAddOp3(v, OP_Divide, iMem+i+1, regTemp, regTemp);
       sqlite3VdbeAddOp1(v, OP_ToInt, regTemp);
-      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regF2, regF2);
+      sqlite3VdbeAddOp3(v, OP_Concat, regTemp, regSampleno, regSampleno);
     }
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, regFields, 3, regRec, "aaa", 0);
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 3, regRec, "aaa", 0);
     sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur, regRowid);
     sqlite3VdbeAddOp3(v, OP_Insert, iStatCur, regRec, regRowid);
     sqlite3VdbeChangeP5(v, OPFLAG_APPEND);
-
-    /* Store the results in sqlite_stat2. */
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regStat2, 0, pTab->zName, 0);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regStat2+1, 0, pIdx->zName, 0);
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, regStat2, SQLITE_INDEX_SAMPLES+2,
-	regRec, "aabbbbbbbbbb", 0
-    );
-    sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regRowid);
-    sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regRowid);
-
     sqlite3VdbeJumpHere(v, addr);
   }
 }
@@ -461,85 +494,80 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     sqlite3DbFree(db, zSql);
   }
 
-  /* Load the statistics from the sqlite_stat2 table */
+  /* Load the statistics from the sqlite_stat2 table. */
   if( rc==SQLITE_OK ){
+    sqlite3_stmt *pStmt = 0;
+
     zSql = sqlite3MPrintf(db, 
-	"SELECT idx," SQLITE_INDEX_SAMPLE_COLS " FROM %Q.sqlite_stat2",
-        sInfo.zDatabase
+        "SELECT idx,sampleno,sample FROM %Q.sqlite_stat2", sInfo.zDatabase
     );
-    if( zSql ){
-      sqlite3_stmt *pStmt = 0;
-      (void)sqlite3SafetyOff(db);
-      rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-      if( rc==SQLITE_OK ){
-	while( SQLITE_ROW==sqlite3_step(pStmt) ){
-	  char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
-	  Index *pIdx;
-          pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
-	  if( pIdx ){
-	    char *pSpace;
-	    IndexSample *pSample;
-	    int iCol;
-	    int nAlloc = SQLITE_INDEX_SAMPLES * sizeof(IndexSample);
-	    for(iCol=1; iCol<=SQLITE_INDEX_SAMPLES; iCol++){
-	      int eType = sqlite3_column_type(pStmt, iCol);
-	      if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
-	        nAlloc += sqlite3_column_bytes(pStmt, iCol);
-	      }
-	    }
-	    pSample = sqlite3DbMallocRaw(db, nAlloc);
-	    if( !pSample ){
-	      rc = SQLITE_NOMEM;
-	      break;
-	    }
-	    sqlite3DbFree(db, pIdx->aSample);
-	    pIdx->aSample = pSample;
-	    pSpace = (char *)&pSample[SQLITE_INDEX_SAMPLES];
-	    for(iCol=1; iCol<=SQLITE_INDEX_SAMPLES; iCol++){
-	      int eType = sqlite3_column_type(pStmt, iCol);
-	      pSample[iCol-1].eType = eType;
-	      switch( eType ){
-                case SQLITE_BLOB:
-                case SQLITE_TEXT: {
-                  const char *z = (const char *)(
-		      (eType==SQLITE_BLOB) ?
-                      sqlite3_column_blob(pStmt, iCol):
-                      sqlite3_column_text(pStmt, iCol)
-		  );
-                  int n = sqlite3_column_bytes(pStmt, iCol);
-		  if( n>24 ){
-		    n = 24;
-		  }
-		  pSample[iCol-1].nByte = n;
-		  pSample[iCol-1].u.z = pSpace;
-		  memcpy(pSpace, z, n);
-		  pSpace += n;
-		  break;
-                }
-                case SQLITE_INTEGER:
-                case SQLITE_FLOAT:
-		  pSample[iCol-1].u.r = sqlite3_column_double(pStmt, iCol);
-		  break;
-                case SQLITE_NULL:
-		  break;
-	      }
-	    }
-	  }
-	}
-	if( rc==SQLITE_NOMEM ){
-	  sqlite3_finalize(pStmt);
-	}else{
-	  rc = sqlite3_finalize(pStmt);
-	}
-      }
-      (void)sqlite3SafetyOn(db);
-      sqlite3DbFree(db, zSql);
-    }else{
-      rc = SQLITE_NOMEM;
+    if( !zSql ){
+      return SQLITE_NOMEM;
     }
+
+    (void)sqlite3SafetyOff(db);
+    rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+    assert( rc!=SQLITE_MISUSE );
+    (void)sqlite3SafetyOn(db);
+    sqlite3DbFree(db, zSql);
+    (void)sqlite3SafetyOff(db);
+
+    if( rc==SQLITE_OK ){
+      while( sqlite3_step(pStmt)==SQLITE_ROW ){
+        char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
+        Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
+        if( pIdx ){
+          int iSample = sqlite3_column_int(pStmt, 1);
+          if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
+            int eType = sqlite3_column_type(pStmt, 2);
+
+            if( pIdx->aSample==0 ){
+              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(db, 
+                  sizeof(IndexSample)*SQLITE_INDEX_SAMPLES
+              );
+	      if( pIdx->aSample==0 ){
+	       	break;
+	      }
+            }
+
+            if( pIdx->aSample ){
+              IndexSample *pSample = &pIdx->aSample[iSample];
+              if( pSample->eType==SQLITE_TEXT || pSample->eType==SQLITE_BLOB ){
+                sqlite3DbFree(db, pSample->u.z);
+              }
+	      pSample->eType = eType;
+	      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+                pSample->u.r = sqlite3_column_double(pStmt, 2);
+	      }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+                const char *z = (const char *)(
+                    (eType==SQLITE_BLOB) ?
+                    sqlite3_column_blob(pStmt, 2):
+                    sqlite3_column_text(pStmt, 2)
+                );
+                int n = sqlite3_column_bytes(pStmt, 2);
+                if( n>24 ){
+                  n = 24;
+                }
+                pSample->nByte = n;
+                pSample->u.z = sqlite3DbMallocRaw(db, n);
+                if( pSample->u.z ){
+                  memcpy(pSample->u.z, z, n);
+                }else{
+		  break;
+		}
+              }
+            }
+          }
+        }
+      }
+      rc = sqlite3_finalize(pStmt);
+    }
+    (void)sqlite3SafetyOn(db);
   }
 
-  if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
+  if( rc==SQLITE_NOMEM ){
+    db->mallocFailed = 1;
+  }
   return rc;
 }
 

@@ -78,7 +78,6 @@
 #endif
 
 #define SQLITE_INDEX_SAMPLES 10
-#define SQLITE_INDEX_SAMPLE_COLS "s1,s2,s3,s4,s5,s6,s7,s8,s9,s10"
 
 /*
 ** This macro is used to "hide" some ugliness in casting an int

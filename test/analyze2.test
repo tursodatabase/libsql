@@ -1,0 +1,247 @@
+# 2009 August 06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: analyze.test,v 1.9 2008/08/11 18:44:58 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+sqlite3_db_config_lookaside db 0 0 0
+
+do_test analyze2-0.1 {
+  execsql { CREATE TABLE t1(x PRIMARY KEY) }
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i) }
+  }
+  execsql { 
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} [list t1 sqlite_autoindex_t1_1 0 0   \
+        t1 sqlite_autoindex_t1_1 1 111 \
+        t1 sqlite_autoindex_t1_1 2 222 \
+        t1 sqlite_autoindex_t1_1 3 333 \
+        t1 sqlite_autoindex_t1_1 4 444 \
+        t1 sqlite_autoindex_t1_1 5 555 \
+        t1 sqlite_autoindex_t1_1 6 666 \
+        t1 sqlite_autoindex_t1_1 7 777 \
+        t1 sqlite_autoindex_t1_1 8 888 \
+        t1 sqlite_autoindex_t1_1 9 999 \
+]
+
+do_test analyze2-0.2 {
+  execsql {
+    DELETE FROM t1 WHERe x>9;
+    ANALYZE;
+    SELECT tbl, idx, group_concat(sample, ' ') FROM sqlite_stat2;
+  }
+} {t1 sqlite_autoindex_t1_1 {0 1 2 3 4 5 6 7 8 9}}
+
+do_test analyze2-0.3 {
+  execsql {
+    DELETE FROM t1 WHERE x>5;
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} {}
+
+do_test analyze2-0.4 {
+  execsql {
+    DELETE FROM t1;
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} {}
+
+proc eqp sql {
+  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"]
+}
+
+do_test analyze2-1.1 {
+  execsql { 
+    DROP TABLE t1;
+    CREATE TABLE t1(x, y);
+    CREATE INDEX t1_x ON t1(x);
+    CREATE INDEX t1_y ON t1(y);
+  }
+
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i, $i) }
+  }
+  execsql ANALYZE
+} {}
+do_test analyze2-1.2 {
+  execsql { EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE x>500 AND y>700 }
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+
+do_test analyze2-1.3 {
+  execsql { EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE x>700 AND y>500 }
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+
+do_test analyze2-1.3 {
+  execsql { EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE y>700 AND x>500 }
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-1.4 {
+  execsql { EXPLAIN QUERY PLAN SELECT * FROM t1 WHERE y>500 AND x>700 }
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+
+do_test analyze2-2.1 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 200 AND y BETWEEN 400 AND 700"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.2 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 400 AND 700"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-2.3 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN -400 AND -300 AND y BETWEEN 100 AND 300"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.4 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN -400 AND -300"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+
+do_test analyze2-3.1 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 500 AND 100 AND y BETWEEN 100 AND 300"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-3.2 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN 500 AND 100"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+
+do_test analyze2-4.1 {
+  set alphabet [list a b c d e f g h i j]
+  for {set i 0} {$i < 1000} {incr i} {
+    set str    [lindex $alphabet [expr ($i/100)%10]] 
+    append str [lindex $alphabet [expr ($i/ 10)%10]]
+    append str [lindex $alphabet [expr ($i/  1)%10]]
+    execsql { INSERT INTO t1 VALUES($str, $str) }
+  }
+  execsql ANALYZE
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't1_x' 
+    GROUP BY tbl,idx
+  }
+} {t1 t1_x {0 222 444 666 888 bba ddc ffe hhg jjj}}
+do_test analyze2-4.2 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't1_y' 
+    GROUP BY tbl,idx
+  }
+} {t1 t1_y {0 222 444 666 888 bba ddc ffe hhg jjj}}
+
+do_test analyze2-4.3 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 'a' AND 'b'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-4.4 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 400 AND y BETWEEN 'a' AND 'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-4.5 {
+  eqp "SELECT * FROM t1 WHERE x<'a' AND y>'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-4.6 {
+  eqp "SELECT * FROM t1 WHERE x<444 AND y>'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-4.7 {
+  eqp "SELECT * FROM t1 WHERE x<221 AND y>'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+
+do_test analyze2-5.1 {
+  execsql { CREATE TABLE t3(a COLLATE nocase, b) }
+  execsql { CREATE INDEX t3a ON t3(a) }
+  execsql { CREATE INDEX t3b ON t3(b) }
+  set alphabet [list A b C d E f G h I j]
+  for {set i 0} {$i < 1000} {incr i} {
+    set str    [lindex $alphabet [expr ($i/100)%10]] 
+    append str [lindex $alphabet [expr ($i/ 10)%10]]
+    append str [lindex $alphabet [expr ($i/  1)%10]]
+    execsql { INSERT INTO t3 VALUES($str, $str) }
+  }
+  execsql ANALYZE
+} {}
+do_test analyze2-5.2 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't3a' 
+    GROUP BY tbl,idx
+  }
+} {t3 t3a {AAA bbb CCC ddd EEE fff GGG hhh III jjj}}
+do_test analyze2-5.3 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't3b' 
+    GROUP BY tbl,idx
+  }
+} {t3 t3b {AAA CCC EEE GGG III bbb ddd fff hhh jjj}}
+
+do_test analyze2-5.4 {
+  eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'C' AND b > 'A' AND b < 'C'"
+} {0 0 {TABLE t3 WITH INDEX t3b}}
+do_test analyze2-5.5 {
+  eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'c' AND b > 'A' AND b < 'c'"
+} {0 0 {TABLE t3 WITH INDEX t3a}}
+
+proc test_collate {enc lhs rhs} {
+  # puts $enc
+  return [string compare $lhs $rhs]
+}
+
+do_test analyze2-6.1 {
+  add_test_collate db 0 0 1
+  execsql { CREATE TABLE t4(x COLLATE test_collate) }
+  execsql { CREATE INDEX t4x ON t4(x) }
+  set alphabet [list a b c d e f g h i j]
+  for {set i 0} {$i < 1000} {incr i} {
+    set str    [lindex $alphabet [expr ($i/100)%10]] 
+    append str [lindex $alphabet [expr ($i/ 10)%10]]
+    append str [lindex $alphabet [expr ($i/  1)%10]]
+    execsql { INSERT INTO t4 VALUES($str) }
+  }
+  execsql ANALYZE
+} {}
+do_test analyze2-6.2 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE tbl = 't4' 
+    GROUP BY tbl,idx
+  }
+} {t4 t4x {aaa bbb ccc ddd eee fff ggg hhh iii jjj}}
+do_test analyze2-6.3 {
+  eqp "SELECT * FROM t4 WHERE x>'ccc'"
+} {0 0 {TABLE t4 WITH INDEX t4x}}
+do_test analyze2-6.4 {
+  eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ccc' AND t42.x>'ggg'"
+} {0 1 {TABLE t4 AS t42 WITH INDEX t4x} 1 0 {TABLE t4 AS t41 WITH INDEX t4x}}
+do_test analyze2-6.5 {
+  eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'"
+} {0 0 {TABLE t4 AS t41 WITH INDEX t4x} 1 1 {TABLE t4 AS t42 WITH INDEX t4x}}
+
+ifcapable memdebug {
+  execsql { DELETE FROM t4 }
+  db close
+  source $testdir/malloc_common.tcl
+  file copy -force test.db bak.db
+
+  do_malloc_test analyze2-oom -tclprep {
+    db close
+    file copy -force bak.db test.db
+    sqlite3 db test.db
+    sqlite3_db_config_lookaside db 0 0 0
+    add_test_collate db 0 0 1
+  } -sqlbody {
+    SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'
+  }
+}
+
+finish_test

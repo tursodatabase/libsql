@@ -1,5 +1,5 @@
-C First\sversion\sof\ssqlite_stat2\s(schema\sforces\sexactly\s10\ssamples).
-D 2009-08-17T17:06:59
+C Change\sthe\ssqlite_stat2\sschema\sto\sbe\smore\sflexible.
+D 2009-08-18T16:24:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,7 +100,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 8b42cace4f8e312de596807ba2685179da64fec4
-F src/analyze.c c3f1ea347d5a2c90aec66a510e4c7b29d79fbca2
+F src/analyze.c 7f086e4da3db68c9fad2a4d61d90a62683084a57
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
@@ -109,7 +109,7 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 49212ddaee8d7d12b4f1e17b9de62f7ea91ca59d
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c 09389ab5d5a5997dbefa8f15fc4755f6c3243f4c
+F src/build.c 979b2aa9238531407ef7e64a56eed05d4c02b88d
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -163,7 +163,7 @@ F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in a6850e9034df1336e8139c4d6964d7d2f0f52337
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 21722d546c8a93bf079564d49e628d5e66d3244a
+F src/sqliteInt.h a11d40fc24390e5e0665cf8b1addbe162b9f76c3
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -204,7 +204,7 @@ F src/update.c 4da327f706c0d0dfedf4d92154b1b5688bdea0ac
 F src/utf.c 9b022ac1c1f306733d57daa0df0b8beb7c17e95e
 F src/util.c c2416f60ae704a8c4990e4909aa810f90cbffa07
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c f2c07c6440826f69fc6d39083ac7fe5ba98fe3be
+F src/vdbe.c 464e2e30b1287554a23cdaa0b6b010a9dcb5eb29
 F src/vdbe.h 457b6c70f02885cec1f5225b5e6441d067b55d3f
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
@@ -213,7 +213,7 @@ F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c afd6ce02945e659f65642f290a37ccf4a88c4dcb
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 33a3aa8bef9594002300b4bc9aa2a7b37c71345c
+F src/where.c 9d4c2f178f842c1ed18c068880f324479ea2cb38
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -223,6 +223,7 @@ F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
+F test/analyze2.test 30987f595f9e34b95bae81794e99b5ca2be7e46c
 F test/async.test 8c75d31b8330f8b70cf2571b014d4476a063efdb
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -743,7 +744,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 0d5b058717858c9cda8ca120a3d814453a94a0e6
-R 942eb5447bdff248ec9f0cbf9f54bb64
+P dd96bda2a85c1d94fb4a0bf5f27e2977f7f7e42e
+R 3ad6c851396bbe27ea036387da51f58c
 U dan
-Z d16a7c84025a55a7e2426c9a05cd868d
+Z ea071f69e4d6383649120789bd868cdf
