@@ -13,7 +13,7 @@
 ** allocation subsystem for use by SQLite. 
 **
 ** This version of the memory allocation subsystem omits all
-** use of malloc(). The SQLite user supplies a block of memory
+** use of malloc(). The application gives SQLite a block of memory
 ** before calling sqlite3_initialize() from which allocations
 ** are made and returned by the xMalloc() and xRealloc() 
 ** implementations. Once sqlite3_initialize() has been called,
@@ -23,7 +23,30 @@
 ** This version of the memory allocation subsystem is included
 ** in the build only if SQLITE_ENABLE_MEMSYS5 is defined.
 **
-** $Id: mem5.c,v 1.19 2008/11/19 16:52:44 danielk1977 Exp $
+** This memory allocator uses the following algorithm:
+**
+**   1.  All memory allocations sizes are rounded up to a power of 2.
+**
+**   2.  To adjacent and aligned free blocks are coalesced into a single
+**       block of the next larger size.
+**
+**   3.  New memory is allocated from the first available free block.
+**
+** This algorithm is described in: J. M. Robson. "Bounds for Some Functions
+** Concerning Dynamic Storage Allocation". Journal of the Association for
+** Computing Machinery, Volume 21, Number 8, July 1974, pages 491-499.
+** 
+** Let n be the size of the largest allocation divided by the minimum
+** allocation size (after rounding all sizes up to a power of 2.)  Let M
+** be the maximum amount of memory ever outstanding at one time.  Let
+** N be the total amount of memory available for allocation.  Robson
+** proved that this memory allocator will never breakdown due to 
+** fragmentation as long as the following constraint holds:
+**
+**      N >=  M*(1 + log2(n)/2) - n + 1
+**
+** The sqlite3_status() logic tracks the maximum values of n and M so
+** that an application can, at any time, verify this constraint.
 */
 #include "sqliteInt.h"
 
@@ -37,6 +60,9 @@
 ** A minimum allocation is an instance of the following structure.
 ** Larger allocations are an array of these structures where the
 ** size of the array is a power of 2.
+**
+** The size of this object must be a power of two.  That fact is
+** verified in memsys5Init().
 */
 typedef struct Mem5Link Mem5Link;
 struct Mem5Link {
@@ -46,8 +72,8 @@ struct Mem5Link {
 
 /*
 ** Maximum size of any allocation is ((1<<LOGMAX)*mem5.nAtom). Since
-** mem5.nAtom is always at least 8, this is not really a practical
-** limitation.
+** mem5.nAtom is always at least 8 and 32-bit integers are used,
+** it is not actually possible to reach this limit.
 */
 #define LOGMAX 30
 
@@ -69,7 +95,7 @@ static SQLITE_WSD struct Mem5Global {
   */
   int nAtom;       /* Smallest possible allocation in bytes */
   int nBlock;      /* Number of nAtom sized blocks in zPool */
-  u8 *zPool;
+  u8 *zPool;       /* Memory available to be allocated */
   
   /*
   ** Mutex to control access to the memory allocation subsystem.
@@ -99,10 +125,17 @@ static SQLITE_WSD struct Mem5Global {
   */
   u8 *aCtrl;
 
-} mem5 = { 19804167 };
+} mem5 = { 0 };
 
+/*
+** Access the static variable through a macro for SQLITE_OMIT_WSD
+*/
 #define mem5 GLOBAL(struct Mem5Global, mem5)
 
+/*
+** Assuming mem5.zPool is divided up into an array of Mem5Link
+** structures, return a pointer to the idx-th such lik.
+*/
 #define MEM5LINK(idx) ((Mem5Link *)(&mem5.zPool[(idx)*mem5.nAtom]))
 
 /*
@@ -198,7 +231,13 @@ static int memsys5UnlinkFirst(int iLogsize){
 
 /*
 ** Return a block of memory of at least nBytes in size.
-** Return NULL if unable.
+** Return NULL if unable.  Return NULL if nBytes==0.
+**
+** The caller guarantees that nByte positive.
+**
+** The caller has obtained a mutex prior to invoking this
+** routine so there is never any chance that two or more
+** threads can be in this routine at the same time.
 */
 static void *memsys5MallocUnsafe(int nByte){
   int i;           /* Index of a mem5.aPool[] slot */
@@ -206,10 +245,18 @@ static void *memsys5MallocUnsafe(int nByte){
   int iFullSz;     /* Size of allocation rounded up to power of 2 */
   int iLogsize;    /* Log2 of iFullSz/POW2_MIN */
 
+  /* nByte must be a positive */
+  assert( nByte>0 );
+
   /* Keep track of the maximum allocation request.  Even unfulfilled
   ** requests are counted */
   if( (u32)nByte>mem5.maxRequest ){
     mem5.maxRequest = nByte;
+  }
+
+  /* Abort if the size is too great */
+  if( nByte > 0x40000000 ){
+    return 0;
   }
 
   /* Round nByte up to the next valid power of two */
@@ -250,7 +297,7 @@ static void *memsys5MallocUnsafe(int nByte){
 */
 static void memsys5FreeUnsafe(void *pOld){
   u32 size, iLogsize;
-  int iBlock;             
+  int iBlock;
 
   /* Set iBlock to the index of the block pointed to by pOld in 
   ** the array of mem5.nAtom byte blocks pointed to by mem5.zPool.
@@ -316,26 +363,27 @@ static void *memsys5Malloc(int nBytes){
 
 /*
 ** Free memory.
+**
+** The outer layer memory allocator prevents this routine from
+** being called with pPrior==0.
 */
 static void memsys5Free(void *pPrior){
-  if( pPrior==0 ){
-assert(0);
-    return;
-  }
+  assert( pPrior!=0 );
   memsys5Enter();
   memsys5FreeUnsafe(pPrior);
   memsys5Leave();  
 }
 
 /*
-** Change the size of an existing memory allocation
+** Change the size of an existing memory allocation.
+**
+** The outer layer memory allocator prevents this routine from
+** being called with pPrior==0.
 */
 static void *memsys5Realloc(void *pPrior, int nBytes){
   int nOld;
   void *p;
-  if( pPrior==0 ){
-    return memsys5Malloc(nBytes);
-  }
+  assert( pPrior!=0 );
   if( nBytes<=0 ){
     memsys5Free(pPrior);
     return 0;
@@ -355,14 +403,20 @@ static void *memsys5Realloc(void *pPrior, int nBytes){
 }
 
 /*
-** Round up a request size to the next valid allocation size.
+** Round up a request size to the next valid allocation size.  If
+** the allocation is too large to be handled by this allocation system,
+** return 0.
 */
 static int memsys5Roundup(int n){
   int iFullSz;
+  if( n > 0x40000000 ) return 0;
   for(iFullSz=mem5.nAtom; iFullSz<n; iFullSz *= 2);
   return iFullSz;
 }
 
+/*
+** Return the logarithm base 2 of iValue.
+*/
 static int memsys5Log(int iValue){
   int iLog;
   for(iLog=0; (1<<iLog)<iValue; iLog++);
