@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Move\sthe\sallocation\sof\sthe\smemsys5\smutex\sinto\sthe\sinitializer.
-D 2009-08-18T15:33:44
+C Unknown\sfunctions\sin\sthe\sDEFAULT\sclause\sof\sa\stable\scause\san\serror\swhen\nthe\sDEFAULT\svalue\sis\sneeded.\s\sTicket\s[2d401a94287b5].
+D 2009-08-18T16:05:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,7 +117,7 @@ F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c dcf07632d8ca3d4086df8b65ea907a47278e6382
-F src/expr.c d069ba1e060f296ea4f18fb85198fafefd00b22f
+F src/expr.c 73b678023236b8c10078a0291b43ee642bc2c729
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
@@ -390,7 +390,7 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/func.test 004caa157b91986bed8c85d7c7d0a86d6e10528d
+F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
 F test/fuzz2.test ea38692ce2da99ad79fe0be5eb1a452c1c4d37bb
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
@@ -749,14 +749,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 577bd6f15556b7f6d86ee5167353fdd535577bf6
-R 7a54c62e9fd97dfd56b8fffe44a0eb37
+P 4e377a09c194e90581ef00fd3a213e936b4e648a
+R 106d1d9d8292feaff5d209c1b4f45eea
 U drh
-Z 6c0284c62829374caa380ff879613eb8
+Z b419ed2a8ad50212ba01b76deb05691b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKisnboxKgR168RlERAte8AJ9s8UclPlH5WT13RZFRWzIyo6zclwCfSBfR
-YrNqMlhHVmQCc/np3MWIiWY=
-=G+W/
+iD8DBQFKitFeoxKgR168RlERAoHVAJ4kYkqnImXF2E1lmnWXndOvcAnongCcDG/w
+uMdlFViYbHuGvwIqgTnxRjY=
+=T5a1
 -----END PGP SIGNATURE-----

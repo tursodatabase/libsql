@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains routines used for analyzing expressions and
 ** for generating VDBE code that evaluates expressions in SQLite.
-**
-** $Id: expr.c,v 1.448 2009/07/27 10:05:05 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2372,7 +2370,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       zId = pExpr->u.zToken;
       nId = sqlite3Strlen30(zId);
       pDef = sqlite3FindFunction(db, zId, nId, nFarg, enc, 0);
-      assert( pDef!=0 );
+      if( pDef==0 ){
+        sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
+        break;
+      }
       if( pFarg ){
         r1 = sqlite3GetTempRange(pParse, nFarg);
         sqlite3ExprCodeExprList(pParse, pFarg, r1, 1);
