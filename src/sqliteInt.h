@@ -11,7 +11,6 @@
 *************************************************************************
 ** Internal interface definitions for SQLite.
 **
-** @(#) $Id: sqliteInt.h,v 1.898 2009/08/10 03:57:58 shane Exp $
 */
 #ifndef _SQLITEINT_H_
 #define _SQLITEINT_H_
@@ -2328,7 +2327,9 @@ struct Sqlite3Config {
   ** initially be zero, however. */
   int isInit;                       /* True after initialization has finished */
   int inProgress;                   /* True while initialization in progress */
+  int isMutexInit;                  /* True after mutexes are initialized */
   int isMallocInit;                 /* True after malloc is initialized */
+  int isPCacheInit;                 /* True after malloc is initialized */
   sqlite3_mutex *pInitMutex;        /* Mutex used by sqlite3_initialize() */
   int nRefInitMutex;                /* Number of users of pInitMutex */
 };

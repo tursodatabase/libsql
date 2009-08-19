@@ -18,8 +18,8 @@
 ** Some of the definitions that are in this file are marked as
 ** "experimental".  Experimental interfaces are normally new
 ** features recently added to SQLite.  We do not anticipate changes
-** to experimental interfaces but reserve to make minor changes if
-** experience from use "in the wild" suggest such changes are prudent.
+** to experimental interfaces but reserve the right to make minor changes
+** if experience from use "in the wild" suggest such changes are prudent.
 **
 ** The official C-language API documentation for SQLite is derived
 ** from comments in this file.  This file is the authoritative source
@@ -52,7 +52,7 @@ extern "C" {
 /*
 ** These no-op macros are used in front of interfaces to mark those
 ** interfaces as either deprecated or experimental.  New applications
-** should not use deprecated intrfaces - they are support for backwards
+** should not use deprecated interfaces - they are support for backwards
 ** compatibility only.  Application writers should be aware that
 ** experimental interfaces are subject to change in point releases.
 **
@@ -859,7 +859,7 @@ struct sqlite3_vfs {
 ** interface is called automatically by sqlite3_initialize() and
 ** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
 ** implementations for sqlite3_os_init() and sqlite3_os_end()
-** are built into SQLite when it is compiled for unix, windows, or os/2.
+** are built into SQLite when it is compiled for Unix, Windows, or OS/2.
 ** When built for other platforms (using the [SQLITE_OS_OTHER=1] compile-time
 ** option) the application must supply a suitable implementation for
 ** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
@@ -973,6 +973,15 @@ SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** [sqlite3_shutdown()] and should deallocate any resources acquired
 ** by xInit.  The pAppData pointer is used as the only parameter to
 ** xInit and xShutdown.
+**
+** SQLite holds the [SQLITE_MUTEX_STATIC_MASTER] mutex when it invokes
+** the xInit method, so the xInit method need not be threadsafe.  The
+** xShutdown method is only called from [sqlite3_shutdown()] so it does
+** not need to be threadsafe either.  All other methods must be threadsafe
+** in multithreaded applications.
+**
+** SQLite will never invoke xInit() more than once without an intervening
+** call to xShutdown().
 */
 typedef struct sqlite3_mem_methods sqlite3_mem_methods;
 struct sqlite3_mem_methods {
@@ -1587,7 +1596,7 @@ void sqlite3_free_table(char **result);
 /*
 ** CAPI3REF: Formatted String Printing Functions {H17400} <S70000><S20000>
 **
-** These routines are workalikes of the "printf()" family of functions
+** These routines are work-alikes of the "printf()" family of functions
 ** from the standard C library.
 **
 ** The sqlite3_mprintf() and sqlite3_vmprintf() routines write their
@@ -1874,7 +1883,7 @@ void sqlite3_randomness(int N, void *P);
 ** database connections for the meaning of "modify" in this paragraph.
 **
 ** When [sqlite3_prepare_v2()] is used to prepare a statement, the
-** statement might be reprepared during [sqlite3_step()] due to a 
+** statement might be re-prepared during [sqlite3_step()] due to a 
 ** schema change.  Hence, the application should ensure that the
 ** correct authorizer callback remains in place during the [sqlite3_step()].
 **
@@ -4707,7 +4716,7 @@ int sqlite3_vfs_unregister(sqlite3_vfs*);
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
 ** {H17017} The other allowed parameters to sqlite3_mutex_alloc() each return
-** a pointer to a static preexisting mutex. {END}  Four static mutexes are
+** a pointer to a static preexisting mutex. {END}  Six static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
 ** may add additional static mutexes.  Static mutexes are for internal
 ** use by SQLite only.  Applications that use SQLite mutexes should
@@ -4813,6 +4822,21 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 ** of passing a NULL pointer instead of a valid mutex handle are undefined
 ** (i.e. it is acceptable to provide an implementation that segfaults if
 ** it is passed a NULL pointer).
+**
+** The xMutexInit() method must be threadsafe.  It must be harmless to
+** invoke xMutexInit() mutiple times within the same process and without
+** intervening calls to xMutexEnd().  Second and subsequent calls to
+** xMutexInit() must be no-ops.
+**
+** xMutexInit() must not use SQLite memory allocation ([sqlite3_malloc()]
+** and its associates).  Similarly, xMutexAlloc() must not use SQLite memory
+** allocation for a static mutex.  However xMutexAlloc() may use SQLite
+** memory allocation for a fast or recursive mutex.
+**
+** SQLite will invoke the xMutexEnd() method when [sqlite3_shutdown()] is
+** called, but only if the prior call to xMutexInit returned SQLITE_OK.
+** If xMutexInit fails in any way, it is expected to clean up after itself
+** prior to returning.
 */
 typedef struct sqlite3_mutex_methods sqlite3_mutex_methods;
 struct sqlite3_mutex_methods {
@@ -5184,24 +5208,35 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** The [sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
 ** register an alternative page cache implementation by passing in an 
 ** instance of the sqlite3_pcache_methods structure. The majority of the 
-** heap memory used by sqlite is used by the page cache to cache data read 
+** heap memory used by SQLite is used by the page cache to cache data read 
 ** from, or ready to be written to, the database file. By implementing a 
 ** custom page cache using this API, an application can control more 
-** precisely the amount of memory consumed by sqlite, the way in which 
+** precisely the amount of memory consumed by SQLite, the way in which 
 ** said memory is allocated and released, and the policies used to 
 ** determine exactly which parts of a database file are cached and for 
 ** how long.
 **
-** The contents of the structure are copied to an internal buffer by sqlite
+** The contents of the structure are copied to an internal buffer by SQLite
 ** within the call to [sqlite3_config].
 **
 ** The xInit() method is called once for each call to [sqlite3_initialize()]
 ** (usually only once during the lifetime of the process). It is passed
 ** a copy of the sqlite3_pcache_methods.pArg value. It can be used to set
 ** up global structures and mutexes required by the custom page cache 
-** implementation. The xShutdown() method is called from within 
-** [sqlite3_shutdown()], if the application invokes this API. It can be used
-** to clean up any outstanding resources before process shutdown, if required.
+** implementation. 
+**
+** The xShutdown() method is called from within [sqlite3_shutdown()], 
+** if the application invokes this API. It can be used to clean up 
+** any outstanding resources before process shutdown, if required.
+**
+** SQLite holds a [SQLITE_MUTEX_RECURSIVE] mutex when it invokes
+** the xInit method, so the xInit method need not be threadsafe.  The
+** xShutdown method is only called from [sqlite3_shutdown()] so it does
+** not need to be threadsafe either.  All other methods must be threadsafe
+** in multithreaded applications.
+**
+** SQLite will never invoke xInit() more than once without an intervening
+** call to xShutdown().
 **
 ** The xCreate() method is used to construct a new cache instance. The
 ** first parameter, szPage, is the size in bytes of the pages that must

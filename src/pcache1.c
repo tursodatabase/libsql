@@ -412,6 +412,8 @@ static int pcache1Init(void *NotUsed){
 
 /*
 ** Implementation of the sqlite3_pcache.xShutdown method.
+** Note that the static mutex allocated in xInit does 
+** not need to be freed.
 */
 static void pcache1Shutdown(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);

@@ -11,8 +11,6 @@
 *************************************************************************
 **
 ** This file contains definitions of global variables and contants.
-**
-** $Id: global.c,v 1.12 2009/02/05 16:31:46 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -153,10 +151,12 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
    0,                         /* nPage */
    0,                         /* mxParserStack */
    0,                         /* sharedCacheEnabled */
-   /* All the rest need to always be zero */
+   /* All the rest should always be initialized to zero */
    0,                         /* isInit */
    0,                         /* inProgress */
+   0,                         /* isMutexInit */
    0,                         /* isMallocInit */
+   0,                         /* isPCacheInit */
    0,                         /* pInitMutex */
    0,                         /* nRefInitMutex */
 };

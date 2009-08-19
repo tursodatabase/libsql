@@ -43,7 +43,9 @@ void sqlite3_soft_heap_limit(int n){
   }else{
     iLimit = n;
   }
+#ifndef SQLITE_OMIT_AUTOINIT
   sqlite3_initialize();
+#endif
   if( iLimit>0 ){
     sqlite3MemoryAlarm(softHeapLimitEnforcer, 0, iLimit);
   }else{
@@ -479,30 +481,28 @@ void *sqlite3Realloc(void *pOld, int nBytes){
     return 0;
   }
   nOld = sqlite3MallocSize(pOld);
-  if( sqlite3GlobalConfig.bMemstat ){
+  nNew = sqlite3GlobalConfig.m.xRoundup(nBytes);
+  if( nOld==nNew ){
+    pNew = pOld;
+  }else if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusSet(SQLITE_STATUS_MALLOC_SIZE, nBytes);
-    nNew = sqlite3GlobalConfig.m.xRoundup(nBytes);
-    if( nOld==nNew ){
-      pNew = pOld;
-    }else{
-      if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nNew-nOld >= 
-            mem0.alarmThreshold ){
-        sqlite3MallocAlarm(nNew-nOld);
-      }
+    if( sqlite3StatusValue(SQLITE_STATUS_MEMORY_USED)+nNew-nOld >= 
+          mem0.alarmThreshold ){
+      sqlite3MallocAlarm(nNew-nOld);
+    }
+    pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
+    if( pNew==0 && mem0.alarmCallback ){
+      sqlite3MallocAlarm(nBytes);
       pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
-      if( pNew==0 && mem0.alarmCallback ){
-        sqlite3MallocAlarm(nBytes);
-        pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
-      }
-      if( pNew ){
-        nNew = sqlite3MallocSize(pNew);
-        sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
-      }
+    }
+    if( pNew ){
+      nNew = sqlite3MallocSize(pNew);
+      sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nNew-nOld);
     }
     sqlite3_mutex_leave(mem0.mutex);
   }else{
-    pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nBytes);
+    pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
   }
   return pNew;
 }

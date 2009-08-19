@@ -11,7 +11,6 @@
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing built-in functions.
 #
-# $Id: func.test,v 1.93 2009/06/19 16:44:41 drh Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -1156,5 +1155,17 @@ do_test func-27.2 {
 do_test func-27.3 {
   catchsql {SELECT coalesce(1,2)}
 } {0 1}
+
+# Ticket 2d401a94287b5
+# Unknown function in a DEFAULT expression causes a segfault.
+#
+do_test func-28.1 {
+  db eval {
+    CREATE TABLE t28(x, y DEFAULT(nosuchfunc(1)));
+  }
+  catchsql {
+    INSERT INTO t28(x) VALUES(1);
+  }
+} {1 {unknown function: nosuchfunc()}}
 
 finish_test

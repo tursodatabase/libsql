@@ -95,7 +95,7 @@ static int winMutexInit(void){
   /* The first to increment to 1 does actual initialization */
   if( InterlockedCompareExchange(&winMutex_lock, 1, 0)==0 ){
     int i;
-    for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
+    for(i=0; i<ArraySize(winMutex_staticMutexes); i++){
       InitializeCriticalSection(&winMutex_staticMutexes[i].mutex);
     }
     winMutex_isInit = 1;
@@ -114,7 +114,7 @@ static int winMutexEnd(void){
   if( InterlockedCompareExchange(&winMutex_lock, 0, 1)==1 ){
     if( winMutex_isInit==1 ){
       int i;
-      for(i=0; i<sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]); i++){
+      for(i=0; i<ArraySize(winMutex_staticMutexes); i++){
         DeleteCriticalSection(&winMutex_staticMutexes[i].mutex);
       }
       winMutex_isInit = 0;
@@ -131,11 +131,14 @@ static int winMutexEnd(void){
 ** to sqlite3_mutex_alloc() is one of these integer constants:
 **
 ** <ul>
-** <li>  SQLITE_MUTEX_FAST               0
-** <li>  SQLITE_MUTEX_RECURSIVE          1
-** <li>  SQLITE_MUTEX_STATIC_MASTER      2
-** <li>  SQLITE_MUTEX_STATIC_MEM         3
-** <li>  SQLITE_MUTEX_STATIC_PRNG        4
+** <li>  SQLITE_MUTEX_FAST
+** <li>  SQLITE_MUTEX_RECURSIVE
+** <li>  SQLITE_MUTEX_STATIC_MASTER
+** <li>  SQLITE_MUTEX_STATIC_MEM
+** <li>  SQLITE_MUTEX_STATIC_MEM2
+** <li>  SQLITE_MUTEX_STATIC_PRNG
+** <li>  SQLITE_MUTEX_STATIC_LRU
+** <li>  SQLITE_MUTEX_STATIC_LRU2
 ** </ul>
 **
 ** The first two constants cause sqlite3_mutex_alloc() to create
@@ -149,7 +152,7 @@ static int winMutexEnd(void){
 ** might return such a mutex in response to SQLITE_MUTEX_FAST.
 **
 ** The other allowed parameters to sqlite3_mutex_alloc() each return
-** a pointer to a static preexisting mutex.  Three static mutexes are
+** a pointer to a static preexisting mutex.  Six static mutexes are
 ** used by the current version of SQLite.  Future versions of SQLite
 ** may add additional static mutexes.  Static mutexes are for internal
 ** use by SQLite only.  Applications that use SQLite mutexes should
@@ -178,7 +181,7 @@ static sqlite3_mutex *winMutexAlloc(int iType){
     default: {
       assert( winMutex_isInit==1 );
       assert( iType-2 >= 0 );
-      assert( iType-2 < sizeof(winMutex_staticMutexes)/sizeof(winMutex_staticMutexes[0]) );
+      assert( iType-2 < ArraySize(winMutex_staticMutexes) );
       p = &winMutex_staticMutexes[iType-2];
       p->id = iType;
       break;

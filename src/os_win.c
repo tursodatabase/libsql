@@ -11,8 +11,6 @@
 ******************************************************************************
 **
 ** This file contains code that is specific to windows.
-**
-** $Id: os_win.c,v 1.157 2009/08/05 04:08:30 shane Exp $
 */
 #include "sqliteInt.h"
 #if SQLITE_OS_WIN               /* This file is used for windows only */
@@ -1884,6 +1882,7 @@ int sqlite3_os_init(void){
     winCurrentTime,    /* xCurrentTime */
     winGetLastError    /* xGetLastError */
   };
+
   sqlite3_vfs_register(&winVfs, 1);
   return SQLITE_OK; 
 }
