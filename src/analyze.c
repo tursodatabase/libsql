@@ -108,6 +108,7 @@ static void analyzeOneTable(
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
   int iMem         /* Available memory locations begin here */
 ){
+  sqlite3 *db = pParse->db;    /* Database handle */
   Index *pIdx;                 /* An index to being analyzed */
   int iIdxCur;                 /* Cursor open on index being analyzed */
   Vdbe *v;                     /* The virtual machine being built up */
@@ -135,12 +136,12 @@ static void analyzeOneTable(
     /* Do no analysis for tables that have no indices */
     return;
   }
-  assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
-  iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
+  assert( sqlite3BtreeHoldsAllMutexes(db) );
+  iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
   assert( iDb>=0 );
 #ifndef SQLITE_OMIT_AUTHORIZATION
   if( sqlite3AuthCheck(pParse, SQLITE_ANALYZE, pTab->zName, 0,
-      pParse->db->aDb[iDb].zName ) ){
+      db->aDb[iDb].zName ) ){
     return;
   }
 #endif
@@ -158,7 +159,7 @@ static void analyzeOneTable(
     }
 
     /* Open a cursor to the index to be analyzed. */
-    assert( iDb==sqlite3SchemaToIndex(pParse->db, pIdx->pSchema) );
+    assert( iDb==sqlite3SchemaToIndex(db, pIdx->pSchema) );
     sqlite3VdbeAddOp4(v, OP_OpenRead, iIdxCur, pIdx->tnum, iDb,
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
@@ -259,6 +260,13 @@ static void analyzeOneTable(
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
       /**** TODO:  add collating sequence *****/
       sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
+    }
+    if( db->mallocFailed ){
+      /* If a malloc failure has occurred, then the result of the expression 
+      ** passed as the second argument to the call to sqlite3VdbeJumpHere() 
+      ** below may be negative. Which causes an assert() to fail (or an
+      ** out-of-bounds write if SQLITE_DEBUG is not defined).  */
+      return;
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
