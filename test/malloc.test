@@ -866,6 +866,33 @@ if {[db eval {PRAGMA locking_mode}]!="exclusive"} {
   catch { db2 close }
 }
 
+ifcapable stat2 {
+  do_malloc_test 38 -tclprep {
+    add_test_collate db 0 0 1
+    execsql {
+      ANALYZE;
+      CREATE TABLE t4(x COLLATE test_collate);
+      CREATE INDEX t4x ON t4(x);
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 0, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 1, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 2, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 3, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 4, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 5, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 6, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 7, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 8, 'aaa');
+      INSERT INTO sqlite_stat2 VALUES('t4', 't4x', 9, 'aaa');
+    }
+    db close
+    sqlite3 db test.db
+    sqlite3_db_config_lookaside db 0 0 0
+    add_test_collate db 0 0 1
+  } -sqlbody {
+    SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'
+  }
+}
+
 # Ensure that no file descriptors were leaked.
 do_test malloc-99.X {
   catch {db close}

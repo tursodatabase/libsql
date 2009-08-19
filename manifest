@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\sa\sbuffer\sallocated\sfrom\sa\slookaside\spool\swas\sbeing\sreleased\susing\sthe\ssystem\sfree().
-D 2009-08-19T09:09:38
+C Clean\sup\ssqlite_stat2\srelated\scode.\sAdd\stest\scases.
+D 2009-08-19T14:34:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -100,7 +100,7 @@ F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 8b42cace4f8e312de596807ba2685179da64fec4
-F src/analyze.c 3213d61ee5fbcf8a54ccfc6c07667c595316c559
+F src/analyze.c 985949131d55e3d9551cf00bff48409660a36a46
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
@@ -109,7 +109,7 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 49212ddaee8d7d12b4f1e17b9de62f7ea91ca59d
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c 979b2aa9238531407ef7e64a56eed05d4c02b88d
+F src/build.c ace6b5d99f724f102077ab6b0883ce1059c75271
 F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -163,7 +163,7 @@ F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in a6850e9034df1336e8139c4d6964d7d2f0f52337
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 4422daf1c74034094eee966cbce357232767b308
+F src/sqliteInt.h 6bf0a232dc66ef02c4f1bedacc63322282081757
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -223,7 +223,7 @@ F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
-F test/analyze2.test f58acc55f582996dc68ec9d28ede4ebb68afd11f
+F test/analyze2.test eb66cbd9486460a9a74876d2c6e0a49a08a44a87
 F test/async.test 8c75d31b8330f8b70cf2571b014d4476a063efdb
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -448,7 +448,7 @@ F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
 F test/main.test 347ab987f16167858781383427476b33dc69fdb7
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
-F test/malloc.test 7d7e1f04e6c2f338965e4220f2653f8b34ad3ee5
+F test/malloc.test d23580e15c33ee0353717129421b077541e910dc
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
 F test/malloc4.test 957337613002b7058a85116493a262f679f3a261
 F test/malloc5.test 4d16d1bb26d2deddd7c4f480deec341f9b2d0e22
@@ -744,7 +744,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 362665e89c21fd603d9f8ad6c0ead590e885af7c
-R 0f4157c0cca678abe78a1dd4148f5f03
+P 67207a15bd7302ffeb2f342532b57b4852838d83
+R fc67b3175e5d16a0dc57c70ae312c646
 U dan
-Z 51de1621e1a30aec3aaa94297a00c42c
+Z b80db5caa38d8f59e436115740e81d97

@@ -343,16 +343,7 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 static void freeIndex(Index *p){
   sqlite3 *db = p->pTable->dbMem;
   /* testcase( db==0 ); */
-  if( p->aSample ){
-    int i;
-    for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
-      int e = p->aSample[i].eType;
-      if( e==SQLITE_BLOB || e==SQLITE_TEXT ){
-        sqlite3DbFree(db, p->aSample[i].u.z);
-      }
-    }
-  }
-  sqlite3DbFree(db, p->aSample);
+  sqlite3DeleteIndexSamples(p);
   sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }

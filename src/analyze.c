@@ -116,16 +116,13 @@ static void analyzeOneTable(
   int endOfLoop;               /* The end of the loop */
   int addr;                    /* The address of an instruction */
   int iDb;                     /* Index of database containing pTab */
-
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
   int regSampleno = iMem++;    /* Register containing next sample number */
   int regCol = iMem++;         /* Content of a column analyzed table */
-
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
   int regRowid = iMem++;       /* Rowid for the inserted record */
-
 #ifdef SQLITE_ENABLE_STAT2
   int regTemp2 = iMem++;       /* Temporary use register */
   int regSamplerecno = iMem++; /* Next sample index record number */
@@ -195,21 +192,21 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regSamplerecno);
 #endif
 
-    /* Memory cells are used as follows. All memory cell addresses are
-    ** offset by iMem. That is, cell 0 below is actually cell iMem, cell
-    ** 1 is cell 1+iMem, etc.
+    /* The block of memory cells initialized here is used as follows.
     **
-    **    0:               The total number of rows in the table.
+    **    iMem:                
+    **        The total number of rows in the table.
     **
-    **    1..nCol:         Number of distinct entries in index considering the
-    **                     left-most N columns, where N is the same as the 
-    **                     memory cell number.
+    **    iMem+1 .. iMem+nCol: 
+    **        Number of distinct entries in index considering the 
+    **        left-most N columns only, where N is between 1 and nCol, 
+    **        inclusive.
     **
-    **    nCol+1..2*nCol:  Previous value of indexed columns, from left to
-    **                     right.
+    **    iMem+nCol+1 .. Mem+2*nCol:  
+    **        Previous value of indexed columns, from left to right.
     **
-    ** Cells iMem through iMem+nCol are initialized to 0.  The others
-    ** are initialized to NULL.
+    ** Cells iMem through iMem+nCol are initialized to 0. The others are 
+    ** initialized to contain an SQL NULL.
     */
     for(i=0; i<=nCol; i++){
       sqlite3VdbeAddOp2(v, OP_Integer, 0, iMem+i);
@@ -257,23 +254,15 @@ static void analyzeOneTable(
         sqlite3VdbeJumpHere(v, ne);
         sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
       }
-      assert( sqlite3VdbeCurrentAddr(v)==(topOfLoop+14+2*i) );
-#else
-      assert( sqlite3VdbeCurrentAddr(v)==(topOfLoop+2+2*i) );
 #endif
 
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
-
       /**** TODO:  add collating sequence *****/
       sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
-#ifdef SQLITE_ENABLE_STAT2
-      sqlite3VdbeJumpHere(v, topOfLoop+14+2*i);
-#else
-      sqlite3VdbeJumpHere(v, topOfLoop+2+2*i);
-#endif
+      sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-(nCol*2));
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -486,8 +475,45 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 }
 
 /*
-** Load the content of the sqlite_stat1 and sqlite_stat2 tables into the 
-** index hash tables.
+** If the Index.aSample variable is not NULL, delete the aSample[] array
+** and its contents.
+*/
+void sqlite3DeleteIndexSamples(Index *pIdx){
+#ifdef SQLITE_ENABLE_STAT2
+  if( pIdx->aSample ){
+    int j;
+    sqlite3 *dbMem = pIdx->pTable->dbMem;
+    for(j=0; j<SQLITE_INDEX_SAMPLES; j++){
+      IndexSample *p = &pIdx->aSample[j];
+      if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
+        sqlite3DbFree(pIdx->pTable->dbMem, p->u.z);
+      }
+    }
+    sqlite3DbFree(dbMem, pIdx->aSample);
+    pIdx->aSample = 0;
+  }
+#endif
+}
+
+/*
+** Load the content of the sqlite_stat1 and sqlite_stat2 tables. The
+** contents of sqlite_stat1 are used to populate the Index.aiRowEst[]
+** arrays. The contents of sqlite_stat2 are used to populate the
+** Index.aSample[] arrays.
+**
+** If the sqlite_stat1 table is not present in the database, SQLITE_ERROR
+** is returned. In this case, even if SQLITE_ENABLE_STAT2 was defined 
+** during compilation and the sqlite_stat2 table is present, no data is 
+** read from it.
+**
+** If SQLITE_ENABLE_STAT2 was defined during compilation and the 
+** sqlite_stat2 table is not present in the database, SQLITE_ERROR is
+** returned. However, in this case, data is read from the sqlite_stat1
+** table (if it is present) before returning.
+**
+** If an OOM error occurs, this function always sets db->mallocFailed.
+** This means if the caller does not care about other errors, the return
+** code may be ignored.
 */
 int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   analysisInfo sInfo;
@@ -503,18 +529,19 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     sqlite3DefaultRowEst(pIdx);
+    sqlite3DeleteIndexSamples(pIdx);
   }
 
-  /* Check to make sure the sqlite_stat1 table existss */
+  /* Check to make sure the sqlite_stat1 table exists */
   sInfo.db = db;
   sInfo.zDatabase = db->aDb[iDb].zName;
   if( sqlite3FindTable(db, "sqlite_stat1", sInfo.zDatabase)==0 ){
-     return SQLITE_ERROR;
+    return SQLITE_ERROR;
   }
 
   /* Load new statistics out of the sqlite_stat1 table */
-  zSql = sqlite3MPrintf(db, "SELECT idx, stat FROM %Q.sqlite_stat1",
-                        sInfo.zDatabase);
+  zSql = sqlite3MPrintf(db, 
+      "SELECT idx, stat FROM %Q.sqlite_stat1", sInfo.zDatabase);
   if( zSql==0 ){
     rc = SQLITE_NOMEM;
   }else{
@@ -524,33 +551,35 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     sqlite3DbFree(db, zSql);
   }
 
+
   /* Load the statistics from the sqlite_stat2 table. */
 #ifdef SQLITE_ENABLE_STAT2
+  if( rc==SQLITE_OK && !sqlite3FindTable(db, "sqlite_stat2", sInfo.zDatabase) ){
+    rc = SQLITE_ERROR;
+  }
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
 
     zSql = sqlite3MPrintf(db, 
-        "SELECT idx,sampleno,sample FROM %Q.sqlite_stat2", sInfo.zDatabase
-    );
+        "SELECT idx,sampleno,sample FROM %Q.sqlite_stat2", sInfo.zDatabase);
     if( !zSql ){
-      return SQLITE_NOMEM;
+      rc = SQLITE_NOMEM;
+    }else{
+      (void)sqlite3SafetyOff(db);
+      rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+      (void)sqlite3SafetyOn(db);
+      sqlite3DbFree(db, zSql);
     }
 
-    (void)sqlite3SafetyOff(db);
-    rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
-    assert( rc!=SQLITE_MISUSE );
-    (void)sqlite3SafetyOn(db);
-    sqlite3DbFree(db, zSql);
-    (void)sqlite3SafetyOff(db);
-
     if( rc==SQLITE_OK ){
+      (void)sqlite3SafetyOff(db);
       while( sqlite3_step(pStmt)==SQLITE_ROW ){
         char *zIndex = (char *)sqlite3_column_text(pStmt, 0);
         Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
           sqlite3 *dbMem = pIdx->pTable->dbMem;
-	  assert( dbMem==db || dbMem==0 );
+          assert( dbMem==db || dbMem==0 );
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
             int eType = sqlite3_column_type(pStmt, 2);
 
@@ -558,16 +587,13 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
               static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
               pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(dbMem, sz);
               if( pIdx->aSample==0 ){
-		db->mallocFailed = 1;
+                db->mallocFailed = 1;
                 break;
               }
             }
 
             if( pIdx->aSample ){
               IndexSample *pSample = &pIdx->aSample[iSample];
-              if( pSample->eType==SQLITE_TEXT || pSample->eType==SQLITE_BLOB ){
-                sqlite3DbFree(dbMem, pSample->u.z);
-              }
               pSample->eType = eType;
               if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
                 pSample->u.r = sqlite3_column_double(pStmt, 2);
@@ -586,7 +612,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( pSample->u.z ){
                   memcpy(pSample->u.z, z, n);
                 }else{
-		  db->mallocFailed = 1;
+                  db->mallocFailed = 1;
                   break;
                 }
               }
@@ -595,8 +621,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
         }
       }
       rc = sqlite3_finalize(pStmt);
+      (void)sqlite3SafetyOn(db);
     }
-    (void)sqlite3SafetyOn(db);
   }
 #endif
 
