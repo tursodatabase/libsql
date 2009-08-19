@@ -1577,11 +1577,11 @@ struct Expr {
 
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number */
-  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid
-                         ** TK_REGISTER: original value of Expr.op */
+  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
-  u16 flags2;            /* Second set of flags.  EP2_... */
+  u8 flags2;             /* Second set of flags.  EP2_... */
+  u8 op2;                /* If a TK_REGISTER, the original value of Expr.op */
   AggInfo *pAggInfo;     /* Used by TK_AGG_COLUMN and TK_AGG_FUNCTION */
   Table *pTab;           /* Table for TK_COLUMN expressions. */
 #if SQLITE_MAX_EXPR_DEPTH>0

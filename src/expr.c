@@ -2836,7 +2836,7 @@ static int evalConstExpr(Walker *pWalker, Expr *pExpr){
     int r2;
     r2 = sqlite3ExprCodeTarget(pParse, pExpr, r1);
     if( NEVER(r1!=r2) ) sqlite3ReleaseTempReg(pParse, r1);
-    pExpr->iColumn = pExpr->op;
+    pExpr->op2 = pExpr->op;
     pExpr->op = TK_REGISTER;
     pExpr->iTable = r2;
     return WRC_Prune;

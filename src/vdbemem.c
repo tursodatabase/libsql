@@ -1000,7 +1000,7 @@ int sqlite3ValueFromExpr(
   }
   op = pExpr->op;
   if( op==TK_REGISTER ){
-    op = pExpr->iColumn;
+    op = pExpr->op2;
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
