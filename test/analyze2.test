@@ -9,7 +9,10 @@
 #
 #***********************************************************************
 #
-# $Id: analyze.test,v 1.9 2008/08/11 18:44:58 drh Exp $
+# This file implements regression tests for SQLite library. This file 
+# implements tests for the extra functionality provided by the ANALYZE 
+# command when the library is compiled with SQLITE_ENABLE_STAT2 defined.
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -44,10 +47,14 @@ ifcapable !stat2 {
 #
 # analyze2-6.*: Check that the library behaves correctly when one of the
 #               sqlite_stat2 or sqlite_stat1 tables are missing.
+#
+# analyze2-7.*: Check that in a shared-schema situation, nothing goes
+#               wrong if sqlite_stat2 data is read by one connection,
+#               and freed by another.
 # 
 
-proc eqp {sql} {
-  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"]
+proc eqp {sql {db db}} {
+  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db
 }
 
 do_test analyze2-1.1 {
@@ -402,5 +409,95 @@ do_test analyze2-6.2.6 {
         t6.a>1
   }
 } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+#--------------------------------------------------------------------
+# These tests, analyze2-7.*, test that the sqlite_stat2 functionality
+# works in shared-cache mode. Note that these tests reuse the database
+# created for the analyze2-6.* tests.
+#
+ifcapable shared_cache {
+  db close
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+  proc incr_schema_cookie {zDb} {
+    foreach iOffset {24 40} {
+      set cookie [hexio_get_int [hexio_read $zDb $iOffset 4]]
+      incr cookie
+      hexio_write $zDb $iOffset [hexio_render_int32 $cookie]
+    }
+  }
+
+  do_test analyze2-7.1 {
+    sqlite3 db1 test.db
+    sqlite3 db2 test.db
+    db1 cache size 0
+    db2 cache size 0
+    execsql { SELECT count(*) FROM t5 } db1
+  } {20}
+  do_test analyze2-7.2 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db2
+  } {20}
+  do_test analyze2-7.3 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db1
+  } {20}
+  do_test analyze2-7.4 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db2
+  } {20}
+
+  do_test analyze2-7.5 {
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.6 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db2
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db2
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.7 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+  do_test analyze2-7.8 {
+    execsql { DELETE FROM sqlite_stat2 } db2
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.9 {
+    execsql { SELECT * FROM sqlite_master } db2
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db2
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+  do_test analyze2-7.10 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+
+  db1 close
+  db2 close
+  sqlite3_enable_shared_cache $::enable_shared_cache
+}
 
 finish_test
