@@ -1,5 +1,8 @@
-C Adjust\ssync\scount\sfor\sSQLITE_DISABLE_DIRSYNC\scompiler\soption.
-D 2009-08-19T04:24:48
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Documentation\simprovements\sin\ssqlite.h.in.\s\sNo\schanges\sto\scode.
+D 2009-08-19T15:57:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +164,7 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in 393349b50ab4a22ed740a9f8cc4237d17e81e7b4
+F src/sqlite.h.in 3ccf717d82101f19548d0b1243f0a6f4854d51ee
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h d675e20da30db2c28e7166deb1fc758fb5b29a9a
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -746,7 +749,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 093917d7fda442012dfd1a1b2f20f85d2eefa093
-R bd2ad6ef6f8298aaa392cef396e66c78
-U shane
-Z 8a5e7a3b12f153b47f147ba40f17579d
+P 709e16145e37940cb243eede75071fb15095d960
+R 826b929a3a8cf85b7d98d0f8ef95004e
+U drh
+Z 34436c77187f1f7c6f3ba769592974b4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKjCDXoxKgR168RlERAgBaAJ44m8/HPKZAOF1i7vTi2B+cf3uYnwCgjZp4
+FFl5KHEGM2pvi2W+2/k0MT0=
+=XAeg
+-----END PGP SIGNATURE-----

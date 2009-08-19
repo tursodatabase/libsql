@@ -93,14 +93,23 @@ extern "C" {
 ** The Z value is the release number and is incremented with
 ** each release but resets back to 0 whenever Y is incremented.
 **
+** The SQLITE_VERSION_NUMBER is an integer that is computed as
+** follows:
+**
+** <blockquote><pre>
+** SQLITE_VERSION_NUMBER = X*1000000 + Y*1000 + Z
+** </pre></blockquote>
+**
 ** Since version 3.6.18, SQLite source code has been stored in the
-** "fossil" configuration management system.  The SQLITE_SOURCE_ID
+** <a href="http://www.fossil-scm.org/">fossil configuration management
+** system</a>.  The SQLITE_SOURCE_ID
 ** macro is a string which identifies a particular check-in of SQLite
 ** within its configuration management system.  The string contains the
 ** date and time of the check-in (UTC) and an SHA1 hash of the entire
 ** source tree.
 **
-** See also: [sqlite3_libversion()] and [sqlite3_libversion_number()].
+** See also: [sqlite3_libversion()],
+** [sqlite3_libversion_number()], and [sqlite3_sourceid()].
 **
 ** Requirements: [H10011] [H10014]
 */
@@ -115,9 +124,14 @@ extern "C" {
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] #defines in the header,
 ** but are associated with the library instead of the header file.  Cautious
-** programmers might include a check in their application to verify that
+** programmers might include an assert in their application to verify that
 ** sqlite3_libversion_number() always returns the value
-** [SQLITE_VERSION_NUMBER].
+** [SQLITE_VERSION_NUMBER] and thus insure that the application is
+** compiled with matching library and header files.
+**
+** <blockquote><pre>
+** assert( sqlite3_libversion_number()==SQLITE_VERSION_NUMBER );
+** </pre></blockquote>
 **
 ** The sqlite3_libversion() function returns the same information as is
 ** in the sqlite3_version[] string constant.  The function is provided
@@ -137,7 +151,7 @@ int sqlite3_libversion_number(void);
 ** CAPI3REF: Test To See If The Library Is Threadsafe {H10100} <S60100>
 **
 ** SQLite can be compiled with or without mutexes.  When
-** the [SQLITE_THREADSAFE] C preprocessor macro 1 or 2, mutexes
+** the [SQLITE_THREADSAFE] C preprocessor macro is 1 or 2, mutexes
 ** are enabled and SQLite is threadsafe.  When the
 ** [SQLITE_THREADSAFE] macro is 0, 
 ** the mutexes are omitted.  Without the mutexes, it is not safe
@@ -148,7 +162,7 @@ int sqlite3_libversion_number(void);
 ** the mutexes.  But for maximum safety, mutexes should be enabled.
 ** The default behavior is for mutexes to be enabled.
 **
-** This interface can be used by a program to make sure that the
+** This interface can be used by an application to make sure that the
 ** version of SQLite that it is linking against was compiled with
 ** the desired setting of the [SQLITE_THREADSAFE] macro.
 **
@@ -482,8 +496,9 @@ int sqlite3_exec(
 /*
 ** CAPI3REF: OS Interface Open File Handle {H11110} <S20110>
 **
-** An [sqlite3_file] object represents an open file in the OS
-** interface layer.  Individual OS interface implementations will
+** An [sqlite3_file] object represents an open file in the 
+** [sqlite3_vfs | OS interface layer].  Individual OS interface
+** implementations will
 ** want to subclass this object by appending additional fields
 ** for their own use.  The pMethods entry is a pointer to an
 ** [sqlite3_io_methods] object that defines methods for performing
@@ -860,7 +875,8 @@ struct sqlite3_vfs {
 ** sqlite3_os_end() is called by sqlite3_shutdown().  Appropriate
 ** implementations for sqlite3_os_init() and sqlite3_os_end()
 ** are built into SQLite when it is compiled for Unix, Windows, or OS/2.
-** When built for other platforms (using the [SQLITE_OS_OTHER=1] compile-time
+** When [custom builds | built for other platforms]
+** (using the [SQLITE_OS_OTHER=1] compile-time
 ** option) the application must supply a suitable implementation for
 ** sqlite3_os_init() and sqlite3_os_end().  An application-supplied
 ** implementation of sqlite3_os_init() or sqlite3_os_end()
@@ -941,13 +957,15 @@ SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** This object is used in only one place in the SQLite interface.
 ** A pointer to an instance of this object is the argument to
 ** [sqlite3_config()] when the configuration option is
-** [SQLITE_CONFIG_MALLOC].  By creating an instance of this object
-** and passing it to [sqlite3_config()] during configuration, an
-** application can specify an alternative memory allocation subsystem
-** for SQLite to use for all of its dynamic memory needs.
+** [SQLITE_CONFIG_MALLOC] or [SQLITE_CONFIG_GETMALLOC].  
+** By creating an instance of this object
+** and passing it to [sqlite3_config]([SQLITE_CONFIG_MALLOC])
+** during configuration, an application can specify an alternative
+** memory allocation subsystem for SQLite to use for all of its
+** dynamic memory needs.
 **
-** Note that SQLite comes with a built-in memory allocator that is
-** perfectly adequate for the overwhelming majority of applications
+** Note that SQLite comes with several [built-in memory allocators]
+** that are perfectly adequate for the overwhelming majority of applications
 ** and that this object is only useful to a tiny minority of applications
 ** with specialized memory allocation requirements.  This object is
 ** also used during testing of SQLite in order to specify an alternative
@@ -955,8 +973,16 @@ SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** order to verify that SQLite recovers gracefully from such
 ** conditions.
 **
-** The xMalloc, xFree, and xRealloc methods must work like the
-** malloc(), free(), and realloc() functions from the standard library.
+** The xMalloc and xFree methods must work like the
+** malloc() and free() functions from the standard C library.
+** The xRealloc method must work like realloc() from the standard C library
+** with the exception that if the second argument to xRealloc is zero,
+** xRealloc must be a no-op - it must not perform any allocation or
+** deallocation.  SQLite guaranteeds that the second argument to
+** xRealloc is always a value returned by a prior call to xRoundup.
+** And so in cases where xRoundup always returns a positive number,
+** xRealloc can perform exactly as the standard library realloc() and
+** still be in compliance with this specification.
 **
 ** xSize should return the allocated size of a memory allocation
 ** previously obtained from xMalloc or xRealloc.  The allocated size
@@ -966,6 +992,9 @@ SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** a memory allocation given a particular requested size.  Most memory
 ** allocators round up memory allocations at least to the next multiple
 ** of 8.  Some allocators round up to a larger multiple or to a power of 2.
+** Every memory allocation request coming in through [sqlite3_malloc()]
+** or [sqlite3_realloc()] first calls xRoundup.  If xRoundup returns 0, 
+** that causes the corresponding memory allocation to fail.
 **
 ** The xInit method initializes the memory allocator.  (For example,
 ** it might allocate any require mutexes or initialize internal data
@@ -977,8 +1006,13 @@ SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 ** SQLite holds the [SQLITE_MUTEX_STATIC_MASTER] mutex when it invokes
 ** the xInit method, so the xInit method need not be threadsafe.  The
 ** xShutdown method is only called from [sqlite3_shutdown()] so it does
-** not need to be threadsafe either.  All other methods must be threadsafe
-** in multithreaded applications.
+** not need to be threadsafe either.  For all other methods, SQLite
+** holds the [SQLITE_MUTEX_STATIC_MEM] mutex as long as the
+** [SQLITE_CONFIG_MEMSTATUS] configuration option is turned on (which
+** it is by default) and so the methods are automatically serialized.
+** However, if [SQLITE_CONFIG_MEMSTATUS] is disabled, then the other
+** methods must be threadsafe or else make their own arrangements for
+** serialization.
 **
 ** SQLite will never invoke xInit() more than once without an intervening
 ** call to xShutdown().
@@ -1135,9 +1169,12 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_LOOKASIDE</dt>
 ** <dd>This option takes two arguments that determine the default
-** memory allcation lookaside optimization.  The first argument is the
+** memory allocation lookaside optimization.  The first argument is the
 ** size of each lookaside buffer slot and the second is the number of
-** slots allocated to each database connection.</dd>
+** slots allocated to each database connection.  This option sets the
+** <i>default</i> lookaside size.  The [SQLITE_DBCONFIG_LOOKASIDE]
+** verb to [sqlite3_db_config()] can be used to change the lookaside
+** configuration on individual connections.</dd>
 **
 ** <dt>SQLITE_CONFIG_PCACHE</dt>
 ** <dd>This option takes a single argument which is a pointer to
@@ -1187,12 +1224,15 @@ struct sqlite3_mem_methods {
 ** <dd>This option takes three additional arguments that determine the 
 ** [lookaside memory allocator] configuration for the [database connection].
 ** The first argument (the third parameter to [sqlite3_db_config()] is a
-** pointer to an 8-byte aligned memory buffer to use for lookaside memory.
+** pointer to an memory buffer to use for lookaside memory.
 ** The first argument may be NULL in which case SQLite will allocate the
 ** lookaside buffer itself using [sqlite3_malloc()].  The second argument is the
 ** size of each lookaside buffer slot and the third argument is the number of
 ** slots.  The size of the buffer in the first argument must be greater than
-** or equal to the product of the second and third arguments.</dd>
+** or equal to the product of the second and third arguments.  The buffer
+** must be aligned to an 8-byte boundary.  If the second argument is not
+** a multiple of 8, it is internally rounded down to the next smaller
+** multiple of 8.  See also: [SQLITE_CONFIG_LOOKASIDE]</dd>
 **
 ** </dl>
 */
@@ -3123,7 +3163,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** [SQLITE_UTF8 | text encoding] this SQL function prefers for
 ** its parameters.  Any SQL function implementation should be able to work
 ** work with UTF-8, UTF-16le, or UTF-16be.  But some implementations may be
-** more efficient with one encoding than another.  It is allowed to
+** more efficient with one encoding than another.  An application may
 ** invoke sqlite3_create_function() or sqlite3_create_function16() multiple
 ** times with the same function but with different values of eTextRep.
 ** When multiple implementations of the same function are available, SQLite
@@ -3145,7 +3185,7 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** It is permitted to register multiple implementations of the same
 ** functions with the same name but with either differing numbers of
 ** arguments or differing preferred text encodings.  SQLite will use
-** the implementation most closely matches the way in which the
+** the implementation that most closely matches the way in which the
 ** SQL function is used.  A function implementation with a non-negative
 ** nArg parameter is a better match than a function implementation with
 ** a negative nArg.  A function where the preferred text encoding
@@ -5002,7 +5042,7 @@ int sqlite3_test_control(int op, ...);
 ** This routine returns SQLITE_OK on success and a non-zero
 ** [error code] on failure.
 **
-** This routine is threadsafe but is not atomic.  This routine can
+** This routine is threadsafe but is not atomic.  This routine can be
 ** called while other threads are running the same or different SQLite
 ** interfaces.  However the values returned in *pCurrent and
 ** *pHighwater reflect the status of SQLite at different points in time
@@ -5125,7 +5165,14 @@ SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiw
 ** CAPI3REF: Status Parameters for database connections {H17520} <H17500>
 ** EXPERIMENTAL
 **
-** Status verbs for [sqlite3_db_status()].
+** These constants are the available integer "verbs" that can be passed as
+** the second argument to the [sqlite3_db_status()] interface.
+**
+** New verbs may be added in future releases of SQLite. Existing verbs
+** might be discontinued. Applications should check the return code from
+** [sqlite3_db_status()] to make sure that the call worked.
+** The [sqlite3_db_status()] interface will return a non-zero error code
+** if a discontinued or unsupported verb is invoked.
 **
 ** <dl>
 ** <dt>SQLITE_DBSTATUS_LOOKASIDE_USED</dt>
