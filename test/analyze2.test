@@ -14,9 +14,16 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-sqlite3_db_config_lookaside db 0 0 0
+ifcapable !stat2 {
+  finish_test
+  return
+}
 
-do_test analyze2-0.1 {
+proc eqp sql {
+  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"]
+}
+
+do_test analyze2-1.1 {
   execsql { CREATE TABLE t1(x PRIMARY KEY) }
   for {set i 0} {$i < 1000} {incr i} {
     execsql { INSERT INTO t1 VALUES($i) }
@@ -37,7 +44,7 @@ do_test analyze2-0.1 {
         t1 sqlite_autoindex_t1_1 9 999 \
 ]
 
-do_test analyze2-0.2 {
+do_test analyze2-1.2 {
   execsql {
     DELETE FROM t1 WHERe x>9;
     ANALYZE;
@@ -45,7 +52,7 @@ do_test analyze2-0.2 {
   }
 } {t1 sqlite_autoindex_t1_1 {0 1 2 3 4 5 6 7 8 9}}
 
-do_test analyze2-0.3 {
+do_test analyze2-1.3 {
   execsql {
     DELETE FROM t1 WHERE x>5;
     ANALYZE;
@@ -53,17 +60,13 @@ do_test analyze2-0.3 {
   }
 } {}
 
-do_test analyze2-0.4 {
+do_test analyze2-1.4 {
   execsql {
     DELETE FROM t1;
     ANALYZE;
     SELECT * FROM sqlite_stat2;
   }
 } {}
-
-proc eqp sql {
-  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"]
-}
 
 do_test analyze2-1.1 {
   execsql { 

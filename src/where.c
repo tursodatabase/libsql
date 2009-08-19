@@ -1904,6 +1904,7 @@ static void bestVirtualIndex(
 ** Or, if an OOM occurs while converting text values between encodings,
 ** SQLITE_NOMEM is returned.
 */
+#ifdef SQLITE_ENABLE_STAT2
 static int whereRangeRegion(
   Parse *pParse,              /* Database connection */
   Index *pIdx,                /* Index to consider domain of */
@@ -1970,6 +1971,7 @@ static int whereRangeRegion(
   }
   return SQLITE_OK;
 }
+#endif   /* #ifdef SQLITE_ENABLE_STAT2 */
 
 /*
 ** This function is used to estimate the number of rows that will be visited
@@ -2015,10 +2017,12 @@ static int whereRangeScanEst(
   WhereTerm *pUpper,
   int *piEst                      /* OUT: Return value */
 ){
+  int rc = SQLITE_OK;
+
+#ifdef SQLITE_ENABLE_STAT2
   sqlite3 *db = pParse->db;
   sqlite3_value *pLowerVal = 0;
   sqlite3_value *pUpperVal = 0;
-  int rc = SQLITE_OK;
 
   if( nEq==0 && p->aSample ){
     int iEst;
@@ -2053,8 +2057,8 @@ static int whereRangeScanEst(
     *piEst = iEst;
     return rc;
   }
-
 fallback:
+#endif
   assert( pLower || pUpper );
   *piEst = (SQLITE_INDEX_SAMPLES-1) / ((pLower&&pUpper)?9:3);
   return rc;

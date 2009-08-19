@@ -464,6 +464,7 @@ char *sqlite3Utf16to8(sqlite3 *db, const void *z, int nByte){
 ** If a malloc failure occurs, NULL is returned and the db.mallocFailed
 ** flag set.
 */
+#ifdef SQLITE_ENABLE_STAT2
 char *sqlite3Utf8to16(sqlite3 *db, int enc, char *z, int n, int *pnOut){
   Mem m;
   memset(&m, 0, sizeof(m));
@@ -477,6 +478,7 @@ char *sqlite3Utf8to16(sqlite3 *db, int enc, char *z, int n, int *pnOut){
   *pnOut = m.n;
   return m.z;
 }
+#endif
 
 /*
 ** pZ is a UTF-16 encoded unicode string at least nChar characters long.

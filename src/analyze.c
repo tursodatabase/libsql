@@ -18,12 +18,19 @@
 
 /*
 ** This routine generates code that opens the sqlite_stat1 table for
-** writing with cursor iStatCur. The sqlite_stat2 table is opened
-** for writing using cursor (iStatCur+1).
+** writing with cursor iStatCur. If the library was built with the
+** SQLITE_ENABLE_STAT2 macro defined, then the sqlite_stat2 table is
+** opened for writing using cursor (iStatCur+1)
 **
 ** If the sqlite_stat1 tables does not previously exist, it is created.
-** If it does previously exist, all entires associated with table zWhere
-** are removed.  If zWhere==0 then all entries are removed.
+** Similarly, if the sqlite_stat2 table does not exist and the library
+** is compiled with SQLITE_ENABLE_STAT2 defined, it is created. 
+**
+** Argument zWhere may be a pointer to a buffer containing a table name,
+** or it may be a NULL pointer. If it is not NULL, then all entries in
+** the sqlite_stat1 and (if applicable) sqlite_stat2 tables associated
+** with the named table are deleted. If zWhere==0, then code is generated
+** to delete all stat table entries.
 */
 static void openStatTable(
   Parse *pParse,          /* Parsing context */
@@ -31,8 +38,16 @@ static void openStatTable(
   int iStatCur,           /* Open the sqlite_stat1 table on this cursor */
   const char *zWhere      /* Delete entries associated with this table */
 ){
-  const char *aName[] = { "sqlite_stat1", "sqlite_stat2" };
-  const char *aCols[] = { "tbl,idx,stat", "tbl,idx,sampleno,sample" };
+  static struct {
+    const char *zName;
+    const char *zCols;
+  } aTable[] = {
+    { "sqlite_stat1", "tbl,idx,stat" },
+#ifdef SQLITE_ENABLE_STAT2
+    { "sqlite_stat2", "tbl,idx,sampleno,sample" },
+#endif
+  };
+
   int aRoot[] = {0, 0};
   int aCreateTbl[] = {0, 0};
 
@@ -45,15 +60,16 @@ static void openStatTable(
   assert( sqlite3VdbeDb(v)==db );
   pDb = &db->aDb[iDb];
 
-  for(i=0; i<ArraySize(aName); i++){
+  for(i=0; i<ArraySize(aTable); i++){
+    const char *zTab = aTable[i].zName;
     Table *pStat;
-    if( (pStat = sqlite3FindTable(db, aName[i], pDb->zName))==0 ){
+    if( (pStat = sqlite3FindTable(db, zTab, pDb->zName))==0 ){
       /* The sqlite_stat[12] table does not exist. Create it. Note that a 
       ** side-effect of the CREATE TABLE statement is to leave the rootpage 
       ** of the new table in register pParse->regRoot. This is important 
       ** because the OpenWrite opcode below will be needing it. */
       sqlite3NestedParse(pParse,
-          "CREATE TABLE %Q.%s(%s)", pDb->zName, aName[i], aCols[i]
+          "CREATE TABLE %Q.%s(%s)", pDb->zName, zTab, aTable[i].zCols
       );
       aRoot[i] = pParse->regRoot;
       aCreateTbl[i] = 1;
@@ -62,10 +78,10 @@ static void openStatTable(
       ** associated with the table zWhere. If zWhere is NULL, delete the
       ** entire contents of the table. */
       aRoot[i] = pStat->tnum;
-      sqlite3TableLock(pParse, iDb, aRoot[i], 1, aName[i]);
+      sqlite3TableLock(pParse, iDb, aRoot[i], 1, zTab);
       if( zWhere ){
         sqlite3NestedParse(pParse,
-           "DELETE FROM %Q.%s WHERE tbl=%Q", pDb->zName, aName[i], zWhere
+           "DELETE FROM %Q.%s WHERE tbl=%Q", pDb->zName, zTab, zWhere
         );
       }else{
         /* The sqlite_stat[12] table already exists.  Delete all rows. */
@@ -75,7 +91,7 @@ static void openStatTable(
   }
 
   /* Open the sqlite_stat[12] tables for writing. */
-  for(i=0; i<ArraySize(aName); i++){
+  for(i=0; i<ArraySize(aTable); i++){
     sqlite3VdbeAddOp3(v, OP_OpenWrite, iStatCur+i, aRoot[i], iDb);
     sqlite3VdbeChangeP4(v, -1, (char *)3, P4_INT32);
     sqlite3VdbeChangeP5(v, aCreateTbl[i]);
@@ -92,29 +108,30 @@ static void analyzeOneTable(
   int iStatCur,    /* Index of VdbeCursor that writes the sqlite_stat1 table */
   int iMem         /* Available memory locations begin here */
 ){
-  Index *pIdx;     /* An index to being analyzed */
-  int iIdxCur;     /* Index of VdbeCursor for index being analyzed */
-  Vdbe *v;         /* The virtual machine being built up */
-  int i;           /* Loop counter */
-  int topOfLoop;   /* The top of the loop */
-  int endOfLoop;   /* The end of the loop */
-  int addr;        /* The address of an instruction */
-  int iDb;         /* Index of database containing pTab */
+  Index *pIdx;                 /* An index to being analyzed */
+  int iIdxCur;                 /* Cursor open on index being analyzed */
+  Vdbe *v;                     /* The virtual machine being built up */
+  int i;                       /* Loop counter */
+  int topOfLoop;               /* The top of the loop */
+  int endOfLoop;               /* The end of the loop */
+  int addr;                    /* The address of an instruction */
+  int iDb;                     /* Index of database containing pTab */
 
-
-  /* Assign the required registers. */
   int regTabname = iMem++;     /* Register containing table name */
   int regIdxname = iMem++;     /* Register containing index name */
   int regSampleno = iMem++;    /* Register containing next sample number */
   int regCol = iMem++;         /* Content of a column analyzed table */
 
-  int regSamplerecno = iMem++; /* Next sample index record number */
-  int regRecno = iMem++;       /* Register next index record number */
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
-  int regTemp2 = iMem++;        /* Temporary use register */
   int regRowid = iMem++;       /* Rowid for the inserted record */
+
+#ifdef SQLITE_ENABLE_STAT2
+  int regTemp2 = iMem++;       /* Temporary use register */
+  int regSamplerecno = iMem++; /* Next sample index record number */
+  int regRecno = iMem++;       /* Register next index record number */
   int regCount = iMem++;       /* Total number of records in table */
+#endif
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 || NEVER(pTab==0) || pTab->pIndex==0 ){
@@ -149,14 +166,19 @@ static void analyzeOneTable(
         (char *)pKey, P4_KEYINFO_HANDOFF);
     VdbeComment((v, "%s", pIdx->zName));
 
+    /* Populate the registers containing the table and index names. */
+    if( pTab->pIndex==pIdx ){
+      sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
+    }
+    sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
+
+#ifdef SQLITE_ENABLE_STAT2
     /* If this iteration of the loop is generating code to analyze the
     ** first index in the pTab->pIndex list, then register regCount has
     ** not been populated. In this case populate it now.  */
     if( pTab->pIndex==pIdx ){
       sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regCount);
-      sqlite3VdbeAddOp4(v, OP_String8, 0, regTabname, 0, pTab->zName, 0);
     }
-    sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
 
     /* Zero the regSampleno and regRecno registers. */
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regSampleno);
@@ -171,6 +193,7 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp3(v, OP_Lt, regSamplerecno, sqlite3VdbeCurrentAddr(v)+2,
         regCount);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regSamplerecno);
+#endif
 
     /* Memory cells are used as follows. All memory cell addresses are
     ** offset by iMem. That is, cell 0 below is actually cell iMem, cell
@@ -204,8 +227,8 @@ static void analyzeOneTable(
 
     for(i=0; i<nCol; i++){
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, regCol);
+#ifdef SQLITE_ENABLE_STAT2
       if( i==0 ){
-
         /* Check if the record that cursor iIdxCur points to contains a
         ** value that should be stored in the sqlite_stat2 table. If so,
         ** store it.  */
@@ -234,8 +257,11 @@ static void analyzeOneTable(
         sqlite3VdbeJumpHere(v, ne);
         sqlite3VdbeAddOp2(v, OP_AddImm, regRecno, 1);
       }
-
       assert( sqlite3VdbeCurrentAddr(v)==(topOfLoop+14+2*i) );
+#else
+      assert( sqlite3VdbeCurrentAddr(v)==(topOfLoop+2+2*i) );
+#endif
+
       sqlite3VdbeAddOp3(v, OP_Ne, regCol, 0, iMem+nCol+i+1);
 
       /**** TODO:  add collating sequence *****/
@@ -243,7 +269,11 @@ static void analyzeOneTable(
     }
     sqlite3VdbeAddOp2(v, OP_Goto, 0, endOfLoop);
     for(i=0; i<nCol; i++){
+#ifdef SQLITE_ENABLE_STAT2
       sqlite3VdbeJumpHere(v, topOfLoop+14+2*i);
+#else
+      sqlite3VdbeJumpHere(v, topOfLoop+2+2*i);
+#endif
       sqlite3VdbeAddOp2(v, OP_AddImm, iMem+i+1, 1);
       sqlite3VdbeAddOp3(v, OP_Column, iIdxCur, i, iMem+nCol+i+1);
     }
@@ -495,6 +525,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   }
 
   /* Load the statistics from the sqlite_stat2 table. */
+#ifdef SQLITE_ENABLE_STAT2
   if( rc==SQLITE_OK ){
     sqlite3_stmt *pStmt = 0;
 
@@ -522,12 +553,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
             int eType = sqlite3_column_type(pStmt, 2);
 
             if( pIdx->aSample==0 ){
-              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(db, 
-                  sizeof(IndexSample)*SQLITE_INDEX_SAMPLES
-              );
-	      if( pIdx->aSample==0 ){
-	       	break;
-	      }
+              static const int nByte = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
+              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(db, nByte);
+              if( pIdx->aSample==0 ){
+                break;
+              }
             }
 
             if( pIdx->aSample ){
@@ -535,10 +565,10 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
               if( pSample->eType==SQLITE_TEXT || pSample->eType==SQLITE_BLOB ){
                 sqlite3DbFree(db, pSample->u.z);
               }
-	      pSample->eType = eType;
-	      if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+              pSample->eType = eType;
+              if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
                 pSample->u.r = sqlite3_column_double(pStmt, 2);
-	      }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+              }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
                 const char *z = (const char *)(
                     (eType==SQLITE_BLOB) ?
                     sqlite3_column_blob(pStmt, 2):
@@ -553,8 +583,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( pSample->u.z ){
                   memcpy(pSample->u.z, z, n);
                 }else{
-		  break;
-		}
+                  break;
+                }
               }
             }
           }
@@ -564,6 +594,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
     }
     (void)sqlite3SafetyOn(db);
   }
+#endif
 
   if( rc==SQLITE_NOMEM ){
     db->mallocFailed = 1;
