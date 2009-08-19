@@ -1012,6 +1012,7 @@ int sqlite3ValueFromExpr(
       zVal = sqlite3DbStrDup(db, pExpr->u.zToken);
       if( zVal==0 ) goto no_mem;
       sqlite3ValueSetStr(pVal, -1, zVal, SQLITE_UTF8, SQLITE_DYNAMIC);
+      if( op==TK_FLOAT ) pVal->type = SQLITE_FLOAT;
     }
     if( (op==TK_INTEGER || op==TK_FLOAT ) && affinity==SQLITE_AFF_NONE ){
       sqlite3ValueApplyAffinity(pVal, SQLITE_AFF_NUMERIC, SQLITE_UTF8);
