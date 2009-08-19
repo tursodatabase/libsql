@@ -2309,16 +2309,20 @@ static int test_collate_func(
       assert(0);
   }
 
+  sqlite3BeginBenignMalloc();
   pVal = sqlite3ValueNew(0);
-  sqlite3ValueSetStr(pVal, nA, zA, encin, SQLITE_STATIC);
-  n = sqlite3_value_bytes(pVal);
-  Tcl_ListObjAppendElement(i,pX,
-      Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
-  sqlite3ValueSetStr(pVal, nB, zB, encin, SQLITE_STATIC);
-  n = sqlite3_value_bytes(pVal);
-  Tcl_ListObjAppendElement(i,pX,
-      Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
-  sqlite3ValueFree(pVal);
+  if( pVal ){
+    sqlite3ValueSetStr(pVal, nA, zA, encin, SQLITE_STATIC);
+    n = sqlite3_value_bytes(pVal);
+    Tcl_ListObjAppendElement(i,pX,
+        Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
+    sqlite3ValueSetStr(pVal, nB, zB, encin, SQLITE_STATIC);
+    n = sqlite3_value_bytes(pVal);
+    Tcl_ListObjAppendElement(i,pX,
+        Tcl_NewStringObj((char*)sqlite3_value_text(pVal),n));
+    sqlite3ValueFree(pVal);
+  }
+  sqlite3EndBenignMalloc();
 
   Tcl_EvalObjEx(i, pX, 0);
   Tcl_DecrRefCount(pX);

@@ -999,6 +999,9 @@ int sqlite3ValueFromExpr(
     return SQLITE_OK;
   }
   op = pExpr->op;
+  if( op==TK_REGISTER ){
+    op = pExpr->iColumn;
+  }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
     pVal = sqlite3ValueNew(db);

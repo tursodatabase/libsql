@@ -76,6 +76,8 @@
 #include <inttypes.h>
 #endif
 
+#define SQLITE_INDEX_SAMPLES 10
+
 /*
 ** This macro is used to "hide" some ugliness in casting an int
 ** value to a ptr value under the MSVC 64-bit compiler.   Casting
@@ -594,6 +596,7 @@ typedef struct FuncDef FuncDef;
 typedef struct FuncDefHash FuncDefHash;
 typedef struct IdList IdList;
 typedef struct Index Index;
+typedef struct IndexSample IndexSample;
 typedef struct KeyClass KeyClass;
 typedef struct KeyInfo KeyInfo;
 typedef struct Lookaside Lookaside;
@@ -1409,6 +1412,20 @@ struct Index {
   Schema *pSchema; /* Schema containing this index */
   u8 *aSortOrder;  /* Array of size Index.nColumn. True==DESC, False==ASC */
   char **azColl;   /* Array of collation sequence names for index */
+  IndexSample *aSample;    /* Array of SQLITE_INDEX_SAMPLES samples */
+};
+
+/*
+** Each sample stored in the sqlite_stat2 table is represented in memory 
+** using a structure of this type.
+*/
+struct IndexSample {
+  union {
+    char *z;        /* Value if eType is SQLITE_TEXT or SQLITE_BLOB */
+    double r;       /* Value if eType is SQLITE_FLOAT or SQLITE_INTEGER */
+  } u;
+  u8 eType;         /* SQLITE_NULL, SQLITE_INTEGER ... etc. */
+  u8 nByte;         /* Size in byte of text or blob. */
 };
 
 /*
@@ -1560,7 +1577,8 @@ struct Expr {
 
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number */
-  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
+  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid
+                         ** TK_REGISTER: original value of Expr.op */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u16 flags2;            /* Second set of flags.  EP2_... */
@@ -2782,6 +2800,9 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 char *sqlite3Utf16to8(sqlite3 *, const void*, int);
+#ifdef SQLITE_ENABLE_STAT2
+char *sqlite3Utf8to16(sqlite3 *, int, char *, int, int *);
+#endif
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 #ifndef SQLITE_AMALGAMATION
@@ -2813,6 +2834,7 @@ int sqlite3InvokeBusyHandler(BusyHandler*);
 int sqlite3FindDb(sqlite3*, Token*);
 int sqlite3FindDbName(sqlite3 *, const char *);
 int sqlite3AnalysisLoad(sqlite3*,int iDB);
+void sqlite3DeleteIndexSamples(Index*);
 void sqlite3DefaultRowEst(Index*);
 void sqlite3RegisterLikeFunctions(sqlite3*, int);
 int sqlite3IsLikeFunction(sqlite3*,Expr*,int*,char*);

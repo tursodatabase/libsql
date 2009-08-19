@@ -1891,6 +1891,181 @@ static void bestVirtualIndex(
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /*
+** Argument pIdx is a pointer to an index structure that has an array of
+** SQLITE_INDEX_SAMPLES evenly spaced samples of the first indexed column
+** stored in Index.aSample. The domain of values stored in said column
+** may be thought of as divided into (SQLITE_INDEX_SAMPLES+1) regions.
+** Region 0 contains all values smaller than the first sample value. Region
+** 1 contains values larger than or equal to the value of the first sample,
+** but smaller than the value of the second. And so on.
+**
+** If successful, this function determines which of the regions value 
+** pVal lies in, sets *piRegion to the region index and returns SQLITE_OK.
+** Or, if an OOM occurs while converting text values between encodings,
+** SQLITE_NOMEM is returned.
+*/
+#ifdef SQLITE_ENABLE_STAT2
+static int whereRangeRegion(
+  Parse *pParse,              /* Database connection */
+  Index *pIdx,                /* Index to consider domain of */
+  sqlite3_value *pVal,        /* Value to consider */
+  int *piRegion               /* OUT: Region of domain in which value lies */
+){
+  if( pVal ){
+    IndexSample *aSample = pIdx->aSample;
+    int i = 0;
+    int eType = sqlite3_value_type(pVal);
+
+    if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
+      double r = sqlite3_value_double(pVal);
+      for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
+        if( aSample[i].eType==SQLITE_NULL ) continue;
+        if( aSample[i].eType>=SQLITE_TEXT || aSample[i].u.r>r ) break;
+      }
+    }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+      sqlite3 *db = pParse->db;
+      CollSeq *pColl;
+      const u8 *z;
+      int n;
+      if( eType==SQLITE_BLOB ){
+        z = (const u8 *)sqlite3_value_blob(pVal);
+        pColl = db->pDfltColl;
+        assert( pColl->enc==SQLITE_UTF8 );
+      }else{
+        pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, *pIdx->azColl, 0);
+        if( sqlite3CheckCollSeq(pParse, pColl) ){
+          return SQLITE_ERROR;
+        }
+        z = (const u8 *)sqlite3ValueText(pVal, pColl->enc);
+        if( !z ){
+          return SQLITE_NOMEM;
+        }
+        assert( z && pColl && pColl->xCmp );
+      }
+      n = sqlite3ValueBytes(pVal, pColl->enc);
+
+      for(i=0; i<SQLITE_INDEX_SAMPLES; i++){
+        int r;
+        int eSampletype = aSample[i].eType;
+        if( eSampletype==SQLITE_NULL || eSampletype<eType ) continue;
+        if( (eSampletype!=eType) ) break;
+        if( pColl->enc==SQLITE_UTF8 ){
+          r = pColl->xCmp(pColl->pUser, aSample[i].nByte, aSample[i].u.z, n, z);
+        }else{
+          int nSample;
+          char *zSample = sqlite3Utf8to16(
+              db, pColl->enc, aSample[i].u.z, aSample[i].nByte, &nSample
+          );
+          if( !zSample ){
+            assert( db->mallocFailed );
+            return SQLITE_NOMEM;
+          }
+          r = pColl->xCmp(pColl->pUser, nSample, zSample, n, z);
+          sqlite3DbFree(db, zSample);
+        }
+        if( r>0 ) break;
+      }
+    }
+
+    *piRegion = i;
+  }
+  return SQLITE_OK;
+}
+#endif   /* #ifdef SQLITE_ENABLE_STAT2 */
+
+/*
+** This function is used to estimate the number of rows that will be visited
+** by scanning an index for a range of values. The range may have an upper
+** bound, a lower bound, or both. The WHERE clause terms that set the upper
+** and lower bounds are represented by pLower and pUpper respectively. For
+** example, assuming that index p is on t1(a):
+**
+**   ... FROM t1 WHERE a > ? AND a < ? ...
+**                    |_____|   |_____|
+**                       |         |
+**                     pLower    pUpper
+**
+** If the upper or lower bound is not present, then NULL should be passed in
+** place of a WhereTerm.
+**
+** The nEq parameter is passed the index of the index column subject to the
+** range constraint. Or, equivalently, the number of equality constraints
+** optimized by the proposed index scan. For example, assuming index p is
+** on t1(a, b), and the SQL query is:
+**
+**   ... FROM t1 WHERE a = ? AND b > ? AND b < ? ...
+**
+** then nEq should be passed the value 1 (as the range restricted column,
+** b, is the second left-most column of the index). Or, if the query is:
+**
+**   ... FROM t1 WHERE a > ? AND a < ? ...
+**
+** then nEq should be passed 0.
+**
+** The returned value is an integer between 1 and 9, inclusive. A return
+** value of 1 indicates that the proposed range scan is expected to visit
+** approximately 1/9 (11%) of the rows selected by the nEq equality constraints
+** (if any). A return value of 9 indicates that it is expected that the
+** range scan will visit 9/9 (100%) of the rows selected by the equality
+** constraints.
+*/
+static int whereRangeScanEst(
+  Parse *pParse,
+  Index *p, 
+  int nEq, 
+  WhereTerm *pLower, 
+  WhereTerm *pUpper,
+  int *piEst                      /* OUT: Return value */
+){
+  int rc = SQLITE_OK;
+
+#ifdef SQLITE_ENABLE_STAT2
+  sqlite3 *db = pParse->db;
+  sqlite3_value *pLowerVal = 0;
+  sqlite3_value *pUpperVal = 0;
+
+  if( nEq==0 && p->aSample ){
+    int iEst;
+    int iUpper = SQLITE_INDEX_SAMPLES;
+    int iLower = 0;
+    u8 aff = p->pTable->aCol[0].affinity;
+    if( pLower ){
+      Expr *pExpr = pLower->pExpr->pRight;
+      rc = sqlite3ValueFromExpr(db, pExpr, SQLITE_UTF8, aff, &pLowerVal);
+      if( !pLowerVal ) goto fallback;
+    }
+    if( pUpper ){
+      Expr *pExpr = pUpper->pExpr->pRight;
+      rc = sqlite3ValueFromExpr(db, pExpr, SQLITE_UTF8, aff, &pUpperVal);
+      if( !pUpperVal ){
+        sqlite3ValueFree(pLowerVal);
+        goto fallback;
+      }
+    }
+
+    rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
+    if( rc==SQLITE_OK ){
+      rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
+    }
+
+    iEst = iUpper - iLower;
+    if( iEst>=SQLITE_INDEX_SAMPLES ) iEst = SQLITE_INDEX_SAMPLES-1;
+    else if( iEst<1 ) iEst = 1;
+
+    sqlite3ValueFree(pLowerVal);
+    sqlite3ValueFree(pUpperVal);
+    *piEst = iEst;
+    return rc;
+  }
+fallback:
+#endif
+  assert( pLower || pUpper );
+  *piEst = (SQLITE_INDEX_SAMPLES-1) / ((pLower&&pUpper)?9:3);
+  return rc;
+}
+
+
+/*
 ** Find the query plan for accessing a particular table.  Write the
 ** best query plan and its cost into the WhereCost object supplied as the
 ** last parameter.
@@ -2043,7 +2218,7 @@ static void bestBtreeIndex(
     int nEq;
     int bInEst = 0;
     int nInMul = 1;
-    int nBound = 1;
+    int nBound = 9;
     int bSort = 0;
     int bLookup = 0;
 
@@ -2075,14 +2250,13 @@ static void bestBtreeIndex(
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
         WhereTerm *pBtm = findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pIdx);
+        whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &nBound);
         if( pTop ){
           wsFlags |= WHERE_TOP_LIMIT;
-          nBound *= 3;
           used |= pTop->prereqRight;
         }
         if( pBtm ){
           wsFlags |= WHERE_BTM_LIMIT;
-          nBound *= 3;
           used |= pBtm->prereqRight;
         }
         wsFlags |= (WHERE_COLUMN_RANGE|WHERE_ROWID_RANGE);
@@ -2152,8 +2326,8 @@ static void bestBtreeIndex(
       nInMul = nRow / aiRowEst[nEq];
     }
     cost = nRow + nInMul*estLog(aiRowEst[0]);
-    nRow /= nBound;
-    cost /= nBound;
+    nRow = nRow * (double)nBound / 9.0;
+    cost = cost * (double)nBound / 9.0;
     if( bSort ){
       cost += cost*estLog(cost);
     }
