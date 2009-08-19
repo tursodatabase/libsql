@@ -1578,7 +1578,8 @@ struct Expr {
 
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number */
-  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
+  i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid
+                         ** TK_REGISTER: original value of Expr.op */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u16 flags2;            /* Second set of flags.  EP2_... */

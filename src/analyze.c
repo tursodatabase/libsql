@@ -549,13 +549,16 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
         Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
+          sqlite3 *dbMem = pIdx->pTable->dbMem;
+	  assert( dbMem==db || dbMem==0 );
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
             int eType = sqlite3_column_type(pStmt, 2);
 
             if( pIdx->aSample==0 ){
-              static const int nByte = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(db, nByte);
+              static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
+              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(dbMem, sz);
               if( pIdx->aSample==0 ){
+		db->mallocFailed = 1;
                 break;
               }
             }
@@ -563,7 +566,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
             if( pIdx->aSample ){
               IndexSample *pSample = &pIdx->aSample[iSample];
               if( pSample->eType==SQLITE_TEXT || pSample->eType==SQLITE_BLOB ){
-                sqlite3DbFree(db, pSample->u.z);
+                sqlite3DbFree(dbMem, pSample->u.z);
               }
               pSample->eType = eType;
               if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
@@ -579,10 +582,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                   n = 24;
                 }
                 pSample->nByte = n;
-                pSample->u.z = sqlite3DbMallocRaw(db, n);
+                pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
                 if( pSample->u.z ){
                   memcpy(pSample->u.z, z, n);
                 }else{
+		  db->mallocFailed = 1;
                   break;
                 }
               }
