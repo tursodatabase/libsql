@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Continuing\srefinements\sof\sthe\srange-scan\soptimizations\sin\swhere.c.\nThe\srange\sscores\sare\schanged\sfrom\san\sinteger\s1..9\sto\s0..100.
-D 2009-08-20T18:14:43
+C Simplifications\sto\sthe\srange-scan\slogic\sin\ssupport\sof\sstructural\stesting.
+D 2009-08-20T20:05:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,7 +135,7 @@ F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
-F src/mem5.c eb96124e6eb473bf3e17a678d07e46bae95f3c45
+F src/mem5.c 4837b795ebdecc0cfe1522cd0c8b2c5d84ea490d
 F src/memjournal.c e68cb5f7e828b84d5bf2ea16c5d87f1ed7e9fe7f
 F src/mutex.c 73899d158560117c02909b6e9ffe2bad2560a817
 F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
@@ -217,7 +217,7 @@ F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c c4a5188ff43692f2ca78d3539ad4877e14b70712
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 2d258a5698152e446f4bc4577b3bc7dd5ac67f79
+F src/where.c ccd88f21b65baa8da9d62a720ad9e59c5b3eabe7
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P cbfe6e9df39684607cbc9637e3fb3c5ee6af2515
-R 43a18a46bd05bd23f1d5442f4fb0bca8
+P f0c24b5fb86940f1a88adfb39cc4b9cbfcc66f8a
+R fba7b071d397254afdb7dd418afc24b1
 U drh
-Z 786f0f962425fe36a5d48fe3c8eb25c6
+Z a3493385ab2d90bfda4e2f3b5655326c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKjZKWoxKgR168RlERAhTBAJ9Ykk0kCcM2iERfod39WLJXi/CtswCcDNpn
-cSayfJiAGIFOSYysKjP59ko=
-=+imO
+iD8DBQFKjaymoxKgR168RlERAktxAJ9hWJcPeuX/v/aYSdLb6euNeahO3QCdEDFq
+iWZrIPg/Anzm5mxLXWy6Oqk=
+=1mHW
 -----END PGP SIGNATURE-----

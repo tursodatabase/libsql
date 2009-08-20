@@ -495,7 +495,7 @@ static int memsys5Init(void *NotUsed){
   }
 
   /* If a mutex is required for normal operation, allocate one */
-  if( sqlite3GlobalConfig.bMemstat==0 && mem5.mutex==0 ){
+  if( sqlite3GlobalConfig.bMemstat==0 ){
     mem5.mutex = sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MEM);
   }
 

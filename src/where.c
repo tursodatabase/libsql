@@ -1912,7 +1912,7 @@ static int whereRangeRegion(
   sqlite3_value *pVal,        /* Value to consider */
   int *piRegion               /* OUT: Region of domain in which value lies */
 ){
-  if( pVal ){
+  if( ALWAYS(pVal) ){
     IndexSample *aSample = pIdx->aSample;
     int i = 0;
     int eType = sqlite3_value_type(pVal);
