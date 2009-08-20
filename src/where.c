@@ -1922,11 +1922,15 @@ static int whereRangeRegion(
         if( aSample[i].eType==SQLITE_NULL ) continue;
         if( aSample[i].eType>=SQLITE_TEXT || aSample[i].u.r>r ) break;
       }
-    }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
+    }else{ 
       sqlite3 *db = pParse->db;
       CollSeq *pColl;
       const u8 *z;
       int n;
+
+      /* pVal comes from sqlite3ValueFromExpr() so the type cannot be NULL */
+      assert( eType==SQLITE_TEXT || eType==SQLITE_BLOB );
+
       if( eType==SQLITE_BLOB ){
         z = (const u8 *)sqlite3_value_blob(pVal);
         pColl = db->pDfltColl;
@@ -1988,7 +1992,7 @@ static int whereRangeRegion(
 **                     pLower    pUpper
 **
 ** If the upper or lower bound is not present, then NULL should be passed in
-** place of a WhereTerm.
+** place of the corresponding WhereTerm.
 **
 ** The nEq parameter is passed the index of the index column subject to the
 ** range constraint. Or, equivalently, the number of equality constraints
@@ -2012,12 +2016,12 @@ static int whereRangeRegion(
 ** constraints.
 */
 static int whereRangeScanEst(
-  Parse *pParse,
-  Index *p, 
-  int nEq, 
-  WhereTerm *pLower, 
-  WhereTerm *pUpper,
-  int *piEst                      /* OUT: Return value */
+  Parse *pParse,       /* Parsing & code generating context */
+  Index *p,            /* The index containing the range-compared column; "x" */
+  int nEq,             /* index into p->aCol[] of the range-compared column */
+  WhereTerm *pLower,   /* Lower bound on the range. ex: "x>123" Might be NULL */
+  WhereTerm *pUpper,   /* Upper bound on the range. ex: "x<455" Might be NULL */
+  int *piEst           /* OUT: Return value */
 ){
   int rc = SQLITE_OK;
 
@@ -2108,12 +2112,12 @@ static void bestBtreeIndex(
   Index *pIdx;                /* Copy of pProbe, or zero for IPK index */
   int eqTermMask;             /* Current mask of valid equality operators */
   int idxEqTermMask;          /* Index mask of valid equality operators */
+  Index sPk;                  /* A fake index object for the primary key */
+  unsigned int aiRowEstPk[2]; /* The aiRowEst[] value for the sPk index */
+  int aiColumnPk = -1;        /* The aColumn[] value for the sPk index */
+  int wsFlagMask;             /* Allowed flags in pCost->plan.wsFlag */
 
-  Index pk;
-  unsigned int pkint[2] = {1000000, 1};
-  int pkicol = -1;
-  int wsFlagMask;
-
+  /* Initialize the cost to a worst-case value */
   memset(pCost, 0, sizeof(*pCost));
   pCost->rCost = SQLITE_BIG_DBL;
 
@@ -2129,24 +2133,36 @@ static void bestBtreeIndex(
   }
 
   if( pSrc->pIndex ){
+    /* An INDEXED BY clause specifies a particular index to use */
     pIdx = pProbe = pSrc->pIndex;
     wsFlagMask = ~(WHERE_ROWID_EQ|WHERE_ROWID_RANGE);
     eqTermMask = idxEqTermMask;
   }else{
-    Index *pFirst = pSrc->pTab->pIndex;
-    memset(&pk, 0, sizeof(Index));
-    pk.nColumn = 1;
-    pk.aiColumn = &pkicol;
-    pk.aiRowEst = pkint;
-    pk.onError = OE_Replace;
-    pk.pTable = pSrc->pTab;
+    /* There is no INDEXED BY clause.  Create a fake Index object to
+    ** represent the primary key */
+    Index *pFirst;                /* Any other index on the table */
+    memset(&sPk, 0, sizeof(Index));
+    sPk.nColumn = 1;
+    sPk.aiColumn = &aiColumnPk;
+    sPk.aiRowEst = aiRowEstPk;
+    aiRowEstPk[1] = 1;
+    sPk.onError = OE_Replace;
+    sPk.pTable = pSrc->pTab;
+    pFirst = pSrc->pTab->pIndex;
     if( pSrc->notIndexed==0 ){
-      pk.pNext = pFirst;
+      sPk.pNext = pFirst;
     }
-    if( pFirst && pFirst->aiRowEst ){
-      pkint[0] = pFirst->aiRowEst[0];
+    /* The aiRowEstPk[0] is an estimate of the total number of rows in the
+    ** table.  Get this information from the ANALYZE information if it is
+    ** available.  If not available, assume the table 1 million rows in size.
+    */
+    if( pFirst ){
+      assert( pFirst->aiRowEst!=0 ); /* Allocated together with pFirst */
+      aiRowEstPk[0] = pFirst->aiRowEst[0];
+    }else{
+      aiRowEstPk[0] = 1000000;
     }
-    pProbe = &pk;
+    pProbe = &sPk;
     wsFlagMask = ~(
         WHERE_COLUMN_IN|WHERE_COLUMN_EQ|WHERE_COLUMN_NULL|WHERE_COLUMN_RANGE
     );
@@ -2154,7 +2170,8 @@ static void bestBtreeIndex(
     pIdx = 0;
   }
 
-
+  /* Loop over all indices looking for the best one to use
+  */
   for(; pProbe; pIdx=pProbe=pProbe->pNext){
     const unsigned int * const aiRowEst = pProbe->aiRowEst;
     double cost;                /* Cost of using pProbe */
@@ -2194,11 +2211,11 @@ static void bestBtreeIndex(
     **    Set to true if there was at least one "x IN (SELECT ...)" term used 
     **    in determining the value of nInMul.
     **
-    **  nBound:  
-    **    Set based on whether or not there is a range constraint on the 
-    **    (nEq+1)th column of the index. 1 if there is neither an upper or 
-    **    lower bound, 3 if there is an upper or lower bound, or 9 if there 
-    **    is both an upper and lower bound.
+    **  nBound:
+    **    An estimate on the amount of the table that must be searched due
+    **    to a range constraint.  The value is between 1 and 9 and indicates
+    **    9ths of the table.  1 means that about 1/9th of the is searched.
+    **    9 indicates that the entire table is searched.
     **
     **  bSort:   
     **    Boolean. True if there is an ORDER BY clause that will require an 
@@ -2307,36 +2324,43 @@ static void bestBtreeIndex(
       }
     }
 
-#if 0
-    if( bInEst && (nInMul*aiRowEst[nEq])>(aiRowEst[0]/2) ){
-      nInMul = aiRowEst[0] / (2 * aiRowEst[nEq]);
-    }
-    nRow = (double)(aiRowEst[nEq] * nInMul) / nBound;
-    cost = (nEq>0) * nInMul * estLog(aiRowEst[0])
-         + nRow
-         + bSort * nRow * estLog(nRow)
-         + bLookup * nRow * estLog(aiRowEst[0]);
-#else
-
-    /* The following block calculates nRow and cost for the index scan
-    ** in the same way as SQLite versions 3.6.17 and earlier. Some elements
-    ** of this calculation are difficult to justify. But using this strategy
-    ** works well in practice and causes the test suite to pass.  */
+    /**** Begin adding up the cost of using this index (Needs improvements)
+    **
+    ** Estimate the number of rows of output.  For an IN operator,
+    ** do not let the estimate exceed half the rows in the table.
+    */
     nRow = (double)(aiRowEst[nEq] * nInMul);
     if( bInEst && nRow*2>aiRowEst[0] ){
       nRow = aiRowEst[0]/2;
       nInMul = nRow / aiRowEst[nEq];
     }
+
+    /* Assume constant cost to access a row and logarithmic cost to
+    ** do a binary search.  Hence, the initial cost is the number of output
+    ** rows plus log2(table-size) times the number of binary searches.
+    */
     cost = nRow + nInMul*estLog(aiRowEst[0]);
-    nRow = nRow * (double)nBound / 9.0;
-    cost = cost * (double)nBound / 9.0;
+
+    /* Adjust the number of rows and the cost downward to reflect rows
+    ** that are excluded by range constraints.
+    */
+    nRow = nRow * (double)nBound / (double)9;
+    cost = cost * (double)nBound / (double)9;
+
+    /* Add in the estimated cost of sorting the result
+    */
     if( bSort ){
       cost += cost*estLog(cost);
     }
+
+    /* If all information can be taken directly from the index, we avoid
+    ** doing table lookups.  This reduces the cost by half.  (Not really -
+    ** this needs to be fixed.)
+    */
     if( pIdx && bLookup==0 ){
-      cost /= 2;
+      cost /= (double)2;
     }
-#endif
+    /**** Cost of using this index has now been computed ****/
 
     WHERETRACE((
       "tbl=%s idx=%s nEq=%d nInMul=%d nBound=%d bSort=%d bLookup=%d"
@@ -2345,6 +2369,9 @@ static void bestBtreeIndex(
       nEq, nInMul, nBound, bSort, bLookup, wsFlags, nRow, cost
     ));
 
+    /* If this index is the best we have seen so far, then record this
+    ** index and its cost in the pCost structure.
+    */
     if( (!pIdx || wsFlags) && cost<pCost->rCost ){
       pCost->rCost = cost;
       pCost->nRow = nRow;
@@ -2354,7 +2381,11 @@ static void bestBtreeIndex(
       pCost->plan.u.pIdx = pIdx;
     }
 
+    /* If there was an INDEXED BY clause, then only that one index is
+    ** considered. */
     if( pSrc->pIndex ) break;
+
+    /* Reset masks for the next index in the loop */
     wsFlagMask = ~(WHERE_ROWID_EQ|WHERE_ROWID_RANGE);
     eqTermMask = idxEqTermMask;
   }
