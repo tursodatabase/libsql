@@ -1932,8 +1932,10 @@ static int whereRangeRegion(
         pColl = db->pDfltColl;
         assert( pColl->enc==SQLITE_UTF8 );
       }else{
-        pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, *pIdx->azColl, 0);
-        if( sqlite3CheckCollSeq(pParse, pColl) ){
+        pColl = sqlite3GetCollSeq(db, SQLITE_UTF8, 0, *pIdx->azColl);
+        if( pColl==0 ){
+          sqlite3ErrorMsg(pParse, "no such collation sequence: %s",
+                          *pIdx->azColl);
           return SQLITE_ERROR;
         }
         z = (const u8 *)sqlite3ValueText(pVal, pColl->enc);

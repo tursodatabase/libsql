@@ -20,15 +20,14 @@
 
 /*
 ** Invoke the 'collation needed' callback to request a collation sequence
-** in the database text encoding of name zName, length nName.
-** If the collation sequence
+** in the encoding enc of name zName, length nName.
 */
-static void callCollNeeded(sqlite3 *db, const char *zName){
+static void callCollNeeded(sqlite3 *db, int enc, const char *zName){
   assert( !db->xCollNeeded || !db->xCollNeeded16 );
   if( db->xCollNeeded ){
     char *zExternal = sqlite3DbStrDup(db, zName);
     if( !zExternal ) return;
-    db->xCollNeeded(db->pCollNeededArg, db, (int)ENC(db), zExternal);
+    db->xCollNeeded(db->pCollNeededArg, db, enc, zExternal);
     sqlite3DbFree(db, zExternal);
   }
 #ifndef SQLITE_OMIT_UTF16
@@ -71,8 +70,7 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 /*
 ** This function is responsible for invoking the collation factory callback
 ** or substituting a collation sequence of a different encoding when the
-** requested collation sequence is not available in the database native
-** encoding.
+** requested collation sequence is not available in the desired encoding.
 ** 
 ** If it is not NULL, then pColl must point to the database native encoding 
 ** collation sequence with name zName, length nName.
@@ -85,6 +83,7 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 */
 CollSeq *sqlite3GetCollSeq(
   sqlite3* db,          /* The database connection */
+  int enc,              /* The desired encoding for the collating sequence */
   CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
   const char *zName     /* Collating sequence name */
 ){
@@ -92,14 +91,14 @@ CollSeq *sqlite3GetCollSeq(
 
   p = pColl;
   if( !p ){
-    p = sqlite3FindCollSeq(db, ENC(db), zName, 0);
+    p = sqlite3FindCollSeq(db, enc, zName, 0);
   }
   if( !p || !p->xCmp ){
     /* No collation sequence of this type for this encoding is registered.
     ** Call the collation factory to see if it can supply us with one.
     */
-    callCollNeeded(db, zName);
-    p = sqlite3FindCollSeq(db, ENC(db), zName, 0);
+    callCollNeeded(db, enc, zName);
+    p = sqlite3FindCollSeq(db, enc, zName, 0);
   }
   if( p && !p->xCmp && synthCollSeq(db, p) ){
     p = 0;
@@ -122,7 +121,8 @@ CollSeq *sqlite3GetCollSeq(
 int sqlite3CheckCollSeq(Parse *pParse, CollSeq *pColl){
   if( pColl ){
     const char *zName = pColl->zName;
-    CollSeq *p = sqlite3GetCollSeq(pParse->db, pColl, zName);
+    sqlite3 *db = pParse->db;
+    CollSeq *p = sqlite3GetCollSeq(db, ENC(db), pColl, zName);
     if( !p ){
       sqlite3ErrorMsg(pParse, "no such collation sequence: %s", zName);
       pParse->nErr++;
