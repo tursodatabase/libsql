@@ -606,7 +606,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
               }
             }
 
-            if( pIdx->aSample ){
+            assert( pIdx->aSample );
+            {
               IndexSample *pSample = &pIdx->aSample[iSample];
               pSample->eType = eType;
               if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
