@@ -124,11 +124,13 @@ static void analyzeOneTable(
   int regRec = iMem++;         /* Register holding completed record */
   int regTemp = iMem++;        /* Temporary use register */
   int regRowid = iMem++;       /* Rowid for the inserted record */
+
 #ifdef SQLITE_ENABLE_STAT2
   int regTemp2 = iMem++;       /* Temporary use register */
-  int regSamplerecno = iMem++; /* Next sample index record number */
-  int regRecno = iMem++;       /* Register next index record number */
-  int regCount = iMem++;       /* Total number of records in table */
+  int regSamplerecno = iMem++; /* Index of next sample to record */
+  int regRecno = iMem++;       /* Current sample index */
+  int regLast = iMem++;        /* Index of last sample to record */
+  int regFirst = iMem++;       /* Index of first sample to record */
 #endif
 
   v = sqlite3GetVdbe(pParse);
@@ -171,26 +173,29 @@ static void analyzeOneTable(
     sqlite3VdbeAddOp4(v, OP_String8, 0, regIdxname, 0, pIdx->zName, 0);
 
 #ifdef SQLITE_ENABLE_STAT2
+
     /* If this iteration of the loop is generating code to analyze the
-    ** first index in the pTab->pIndex list, then register regCount has
+    ** first index in the pTab->pIndex list, then register regLast has
     ** not been populated. In this case populate it now.  */
     if( pTab->pIndex==pIdx ){
-      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regCount);
+      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regSamplerecno);
+      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES*2-1, regTemp);
+      sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES*2, regTemp2);
+
+      sqlite3VdbeAddOp2(v, OP_Count, iIdxCur, regLast);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, regFirst);
+      addr = sqlite3VdbeAddOp3(v, OP_Lt, regSamplerecno, 0, regLast);
+      sqlite3VdbeAddOp3(v, OP_Divide, regTemp2, regLast, regFirst);
+      sqlite3VdbeAddOp3(v, OP_Multiply, regLast, regTemp, regLast);
+      sqlite3VdbeAddOp2(v, OP_AddImm, regLast, SQLITE_INDEX_SAMPLES*2-2);
+      sqlite3VdbeAddOp3(v, OP_Divide,  regTemp2, regLast, regLast);
+      sqlite3VdbeJumpHere(v, addr);
     }
 
     /* Zero the regSampleno and regRecno registers. */
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regSampleno);
     sqlite3VdbeAddOp2(v, OP_Integer, 0, regRecno);
-
-    /* If there are less than INDEX_SAMPLES records in the index, then
-    ** set the contents of regSampleRecno to integer value INDEX_SAMPLES.
-    ** Otherwise, set it to zero. This is to ensure that if there are 
-    ** less than the said number of entries in the index, no samples at
-    ** all are collected.  */
-    sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regSamplerecno);
-    sqlite3VdbeAddOp3(v, OP_Lt, regSamplerecno, sqlite3VdbeCurrentAddr(v)+2,
-        regCount);
-    sqlite3VdbeAddOp2(v, OP_Integer, 0, regSamplerecno);
+    sqlite3VdbeAddOp2(v, OP_Copy, regFirst, regSamplerecno);
 #endif
 
     /* The block of memory cells initialized here is used as follows.
@@ -235,6 +240,7 @@ static void analyzeOneTable(
              && regTabname+2==regSampleno
              && regTabname+3==regCol
         );
+        sqlite3VdbeChangeP5(v, SQLITE_JUMPIFNULL);
         sqlite3VdbeAddOp4(v, OP_MakeRecord, regTabname, 4, regRec, "aaab", 0);
         sqlite3VdbeAddOp2(v, OP_NewRowid, iStatCur+1, regRowid);
         sqlite3VdbeAddOp3(v, OP_Insert, iStatCur+1, regRec, regRowid);
@@ -245,7 +251,7 @@ static void analyzeOneTable(
         **   samplerecno = samplerecno+(remaining records)/(remaining samples)
         */
         sqlite3VdbeAddOp2(v, OP_AddImm, regSampleno, 1);
-        sqlite3VdbeAddOp3(v, OP_Subtract, regRecno, regCount, regTemp);
+        sqlite3VdbeAddOp3(v, OP_Subtract, regRecno, regLast, regTemp);
         sqlite3VdbeAddOp2(v, OP_AddImm, regTemp, -1);
         sqlite3VdbeAddOp2(v, OP_Integer, SQLITE_INDEX_SAMPLES, regTemp2);
         sqlite3VdbeAddOp3(v, OP_Subtract, regSampleno, regTemp2, regTemp2);

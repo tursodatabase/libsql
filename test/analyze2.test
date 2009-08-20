@@ -66,17 +66,18 @@ do_test analyze2-1.1 {
     ANALYZE;
     SELECT * FROM sqlite_stat2;
   }
-} [list t1 sqlite_autoindex_t1_1 0 0   \
-        t1 sqlite_autoindex_t1_1 1 111 \
-        t1 sqlite_autoindex_t1_1 2 222 \
-        t1 sqlite_autoindex_t1_1 3 333 \
-        t1 sqlite_autoindex_t1_1 4 444 \
-        t1 sqlite_autoindex_t1_1 5 555 \
-        t1 sqlite_autoindex_t1_1 6 666 \
-        t1 sqlite_autoindex_t1_1 7 777 \
-        t1 sqlite_autoindex_t1_1 8 888 \
-        t1 sqlite_autoindex_t1_1 9 999 \
+} [list t1 sqlite_autoindex_t1_1 0 50  \
+        t1 sqlite_autoindex_t1_1 1 149 \
+        t1 sqlite_autoindex_t1_1 2 249 \
+        t1 sqlite_autoindex_t1_1 3 349 \
+        t1 sqlite_autoindex_t1_1 4 449 \
+        t1 sqlite_autoindex_t1_1 5 549 \
+        t1 sqlite_autoindex_t1_1 6 649 \
+        t1 sqlite_autoindex_t1_1 7 749 \
+        t1 sqlite_autoindex_t1_1 8 849 \
+        t1 sqlite_autoindex_t1_1 9 949 \
 ]
+
 do_test analyze2-1.2 {
   execsql {
     DELETE FROM t1 WHERe x>9;
@@ -86,7 +87,7 @@ do_test analyze2-1.2 {
 } {t1 sqlite_autoindex_t1_1 {0 1 2 3 4 5 6 7 8 9}}
 do_test analyze2-1.3 {
   execsql {
-    DELETE FROM t1 WHERE x>5;
+    DELETE FROM t1 WHERE x>8;
     ANALYZE;
     SELECT * FROM sqlite_stat2;
   }
@@ -98,7 +99,6 @@ do_test analyze2-1.4 {
     SELECT * FROM sqlite_stat2;
   }
 } {}
-
 
 do_test analyze2-2.1 {
   execsql { 
@@ -162,7 +162,7 @@ do_test analyze2-3.1 {
     WHERE idx = 't1_x' 
     GROUP BY tbl,idx
   }
-} {t1 t1_x {0 222 444 666 888 bba ddc ffe hhg jjj}}
+} {t1 t1_x {100 299 499 699 899 ajj cjj ejj gjj ijj}}
 do_test analyze2-3.2 {
   execsql { 
     SELECT tbl,idx,group_concat(sample,' ') 
@@ -170,7 +170,7 @@ do_test analyze2-3.2 {
     WHERE idx = 't1_y' 
     GROUP BY tbl,idx
   }
-} {t1 t1_y {0 222 444 666 888 bba ddc ffe hhg jjj}}
+} {t1 t1_y {100 299 499 699 899 ajj cjj ejj gjj ijj}}
 
 do_test analyze2-3.3 {
   eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 'a' AND 'b'"
@@ -185,7 +185,7 @@ do_test analyze2-3.6 {
   eqp "SELECT * FROM t1 WHERE x<444 AND y>'h'"
 } {0 0 {TABLE t1 WITH INDEX t1_y}}
 do_test analyze2-3.7 {
-  eqp "SELECT * FROM t1 WHERE x<221 AND y>'h'"
+  eqp "SELECT * FROM t1 WHERE x<221 AND y>'g'"
 } {0 0 {TABLE t1 WITH INDEX t1_x}}
 
 do_test analyze2-4.1 {
@@ -210,7 +210,7 @@ do_test analyze2-4.2 {
     WHERE idx = 't3a' 
     GROUP BY tbl,idx
   }
-} {t3 t3a {AAA bbb CCC ddd EEE fff GGG hhh III jjj}}
+} {t3 t3a {AfA bEj CEj dEj EEj fEj GEj hEj IEj jEj}}
 do_test analyze2-4.3 {
   execsql { 
     SELECT tbl,idx,group_concat(sample,' ') 
@@ -218,7 +218,7 @@ do_test analyze2-4.3 {
     WHERE idx = 't3b' 
     GROUP BY tbl,idx
   }
-} {t3 t3b {AAA CCC EEE GGG III bbb ddd fff hhh jjj}}
+} {t3 t3b {AbA CIj EIj GIj IIj bIj dIj fIj hIj jIj}}
 
 do_test analyze2-4.4 {
   eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'C' AND b > 'A' AND b < 'C'"
@@ -253,7 +253,7 @@ do_test analyze2-5.2 {
     WHERE tbl = 't4' 
     GROUP BY tbl,idx
   }
-} {t4 t4x {aaa bbb ccc ddd eee fff ggg hhh iii jjj}}
+} {t4 t4x {afa bej cej dej eej fej gej hej iej jej}}
 do_test analyze2-5.3 {
   eqp "SELECT * FROM t4 WHERE x>'ccc'"
 } {0 0 {TABLE t4 WITH INDEX t4x}}
