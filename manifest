@@ -1,5 +1,8 @@
-C Change\sthe\scode\sthat\scollects\ssamples\sfor\ssqlite_stat2\sso\sthat\sthe\sfirst\ssample\staken\sis\sthe\s(nRow/(2*SQLITE_INDEX_SAMPLES))th\sentry\sin\sthe\sindex,\swhere\snRow\sis\sthe\stotal\snumber\sof\sindex\sentries.
-D 2009-08-20T09:11:06
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Continuing\srefinements\sof\sthe\srange-scan\soptimizations\sin\swhere.c.\nThe\srange\sscores\sare\schanged\sfrom\san\sinteger\s1..9\sto\s0..100.
+D 2009-08-20T18:14:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 0f7761c5d1c62ae7a841e3393ffaff1fa0f5c00a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -214,7 +217,7 @@ F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c c4a5188ff43692f2ca78d3539ad4877e14b70712
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 02f2bb999fa80df9399b5a906d2ce988b2e85541
+F src/where.c 2d258a5698152e446f4bc4577b3bc7dd5ac67f79
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -714,7 +717,7 @@ F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
-F test/where7.test b6e84b472a024e45c6dbdadc52bbcab3fcc8d0e1
+F test/where7.test fdd58ab9dec9f97679e65d4414bf5e07d725d79f
 F test/where8.test 8d3704d04a683e792d373005f2e4e13bfd7e2dd5
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
@@ -747,7 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 4a5d9550bdc08633535a7869d7748f56ac3e9a36
-R a06a46e0e6092a62dbfee6601412e863
-U dan
-Z 2c479b2a4ff638923d236b4fdc91cdb8
+P cbfe6e9df39684607cbc9637e3fb3c5ee6af2515
+R 43a18a46bd05bd23f1d5442f4fb0bca8
+U drh
+Z 786f0f962425fe36a5d48fe3c8eb25c6
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKjZKWoxKgR168RlERAhTBAJ9Ykk0kCcM2iERfod39WLJXi/CtswCcDNpn
+cSayfJiAGIFOSYysKjP59ko=
+=+imO
+-----END PGP SIGNATURE-----

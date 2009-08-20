@@ -90,10 +90,12 @@ do_test where7-1.9 {
   }
 } {2 4 5 scan 0 sort 0}
 do_test where7-1.10 {
+breakpoint
   count_steps {
     SELECT a FROM t1 WHERE (b=3 OR c>=10 OR c=4 OR b>10)
   }
 } {2 4 5 scan 0 sort 0}
+breakpoint
 do_test where7-1.11 {
   count_steps {
     SELECT a FROM t1 WHERE (d=5 AND b=3) OR c==100 ORDER BY a;
@@ -5412,7 +5414,7 @@ do_test where7-2.235.1 {
          OR (g='rqponml' AND f GLOB 'lmnop*')
          OR (f GLOB '?ijkl*' AND f GLOB 'hijk*')
   }
-} {7 14 18 31 33 37 40 51 53 59 66 85 92 94 98 100 scan 99 sort 0}
+} {7 14 18 31 33 37 40 51 53 59 66 85 92 94 98 100 scan 0 sort 0}
 do_test where7-2.235.2 {
   count_steps_sort {
      SELECT a FROM t3
@@ -5426,7 +5428,7 @@ do_test where7-2.235.2 {
          OR (g='rqponml' AND f GLOB 'lmnop*')
          OR (f GLOB '?ijkl*' AND f GLOB 'hijk*')
   }
-} {7 14 18 31 33 37 40 51 53 59 66 85 92 94 98 100 scan 99 sort 0}
+} {7 14 18 31 33 37 40 51 53 59 66 85 92 94 98 100 scan 0 sort 0}
 do_test where7-2.236.1 {
   count_steps_sort {
      SELECT a FROM t2
@@ -6854,7 +6856,7 @@ do_test where7-2.297.1 {
          OR (f GLOB '?ghij*' AND f GLOB 'fghi*')
          OR ((a BETWEEN 53 AND 55) AND a!=54)
   }
-} {5 7 18 20 23 25 31 33 37 39 45 53 54 55 56 57 58 59 72 74 83 85 95 scan 99 sort 0}
+} {5 7 18 20 23 25 31 33 37 39 45 53 54 55 56 57 58 59 72 74 83 85 95 scan 0 sort 0}
 do_test where7-2.297.2 {
   count_steps_sort {
      SELECT a FROM t3
@@ -8952,7 +8954,7 @@ do_test where7-2.385.1 {
          OR (d>=21.0 AND d<22.0 AND d NOT NULL)
          OR ((a BETWEEN 93 AND 95) AND a!=94)
   }
-} {1 11 13 21 22 24 26 27 32 34 39 41 53 61 74 76 79 93 95 scan 99 sort 0}
+} {1 11 13 21 22 24 26 27 32 34 39 41 53 61 74 76 79 93 95 scan 0 sort 0}
 do_test where7-2.385.2 {
   count_steps_sort {
      SELECT a FROM t3

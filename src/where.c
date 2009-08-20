@@ -1900,9 +1900,10 @@ static void bestVirtualIndex(
 ** but smaller than the value of the second. And so on.
 **
 ** If successful, this function determines which of the regions value 
-** pVal lies in, sets *piRegion to the region index and returns SQLITE_OK.
+** pVal lies in, sets *piRegion to the region index (a value between 0
+** and SQLITE_INDEX_SAMPLES+1, inclusive) and returns SQLITE_OK.
 ** Or, if an OOM occurs while converting text values between encodings,
-** SQLITE_NOMEM is returned.
+** SQLITE_NOMEM is returned and *piRegion is undefined.
 */
 #ifdef SQLITE_ENABLE_STAT2
 static int whereRangeRegion(
@@ -1991,7 +1992,7 @@ static int whereRangeRegion(
 **                       |         |
 **                     pLower    pUpper
 **
-** If the upper or lower bound is not present, then NULL should be passed in
+** If either of the upper or lower bound is not present, then NULL is passed in
 ** place of the corresponding WhereTerm.
 **
 ** The nEq parameter is passed the index of the index column subject to the
@@ -2008,12 +2009,17 @@ static int whereRangeRegion(
 **
 ** then nEq should be passed 0.
 **
-** The returned value is an integer between 1 and 9, inclusive. A return
+** The returned value is an integer between 1 and 100, inclusive. A return
 ** value of 1 indicates that the proposed range scan is expected to visit
-** approximately 1/9 (11%) of the rows selected by the nEq equality constraints
-** (if any). A return value of 9 indicates that it is expected that the
-** range scan will visit 9/9 (100%) of the rows selected by the equality
+** approximately 1/100th (1%) of the rows selected by the nEq equality
+** constraints (if any). A return value of 100 indicates that it is expected
+** that the range scan will visit every row (100%) selected by the equality
 ** constraints.
+**
+** In the absence of sqlite_stat2 ANALYZE data, each range inequality
+** reduces the search space by 2/3rds.  Hence a single constraint (x>?)
+** results in a return of 33 and a range constraint (x>? AND x<?) results
+** in a return of 11.
 */
 static int whereRangeScanEst(
   Parse *pParse,       /* Parsing & code generating context */
@@ -2032,41 +2038,59 @@ static int whereRangeScanEst(
 
   if( nEq==0 && p->aSample ){
     int iEst;
-    int iUpper = SQLITE_INDEX_SAMPLES;
-    int iLower = 0;
+    int iUpper;
+    int iLower;
     u8 aff = p->pTable->aCol[0].affinity;
+
     if( pLower ){
       Expr *pExpr = pLower->pExpr->pRight;
       rc = sqlite3ValueFromExpr(db, pExpr, SQLITE_UTF8, aff, &pLowerVal);
-      if( !pLowerVal ) goto fallback;
     }
-    if( pUpper ){
+    if( rc==SQLITE_OK && pUpper ){
       Expr *pExpr = pUpper->pExpr->pRight;
       rc = sqlite3ValueFromExpr(db, pExpr, SQLITE_UTF8, aff, &pUpperVal);
-      if( !pUpperVal ){
-        sqlite3ValueFree(pLowerVal);
-        goto fallback;
+    }
+
+    if( rc!=SQLITE_OK || (pLowerVal==0 && pUpperVal==0) ){
+      sqlite3ValueFree(pLowerVal);
+      sqlite3ValueFree(pUpperVal);
+      goto range_est_fallback;
+    }else if( pLowerVal==0 ){
+      rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
+      iLower = pLower ? iUpper/2 : 0;
+    }else if( pUpperVal==0 ){
+      rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
+      iUpper = pUpper ? (iLower + SQLITE_INDEX_SAMPLES + 1)/2 
+                      : SQLITE_INDEX_SAMPLES;
+    }else{
+      rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
+      if( rc==SQLITE_OK ){
+        rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
+      }else{
+        iLower = 0;
       }
     }
 
-    rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
-    if( rc==SQLITE_OK ){
-      rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
-    }
-
     iEst = iUpper - iLower;
-    if( iEst>=SQLITE_INDEX_SAMPLES ) iEst = SQLITE_INDEX_SAMPLES-1;
-    else if( iEst<1 ) iEst = 1;
+    if( iEst>SQLITE_INDEX_SAMPLES ){
+      iEst = SQLITE_INDEX_SAMPLES;
+    }else if( iEst<1 ){
+      iEst = 1;
+    }
 
     sqlite3ValueFree(pLowerVal);
     sqlite3ValueFree(pUpperVal);
-    *piEst = iEst;
+    *piEst = (iEst * 100)/SQLITE_INDEX_SAMPLES;
     return rc;
   }
-fallback:
+range_est_fallback:
 #endif
   assert( pLower || pUpper );
-  *piEst = (SQLITE_INDEX_SAMPLES-1) / ((pLower&&pUpper)?9:3);
+  if( pLower && pUpper ){
+    *piEst = 11;
+  }else{
+    *piEst = 33;
+  }
   return rc;
 }
 
@@ -2212,10 +2236,13 @@ static void bestBtreeIndex(
     **    in determining the value of nInMul.
     **
     **  nBound:
-    **    An estimate on the amount of the table that must be searched due
-    **    to a range constraint.  The value is between 1 and 9 and indicates
-    **    9ths of the table.  1 means that about 1/9th of the is searched.
-    **    9 indicates that the entire table is searched.
+    **    An estimate on the amount of the table that must be searched.  A
+    **    value of 100 means the entire table is searched.  Range constraints
+    **    might reduce this to a value less than 100 to indicate that only
+    **    a fraction of the table needs searching.  In the absence of
+    **    sqlite_stat2 ANALYZE data, a single inequality reduces the search
+    **    space to 1/3rd its original size.  So an x>? constraint reduces
+    **    nBound to 33.  Two constraints (x>? AND x<?) reduce nBound to 11.
     **
     **  bSort:   
     **    Boolean. True if there is an ORDER BY clause that will require an 
@@ -2237,7 +2264,7 @@ static void bestBtreeIndex(
     int nEq;
     int bInEst = 0;
     int nInMul = 1;
-    int nBound = 9;
+    int nBound = 100;
     int bSort = 0;
     int bLookup = 0;
 
@@ -2344,8 +2371,8 @@ static void bestBtreeIndex(
     /* Adjust the number of rows and the cost downward to reflect rows
     ** that are excluded by range constraints.
     */
-    nRow = nRow * (double)nBound / (double)9;
-    cost = cost * (double)nBound / (double)9;
+    nRow = (nRow * (double)nBound) / (double)100;
+    cost = (cost * (double)nBound) / (double)100;
 
     /* Add in the estimated cost of sorting the result
     */
