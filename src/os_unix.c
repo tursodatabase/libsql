@@ -181,6 +181,7 @@ struct unixFile {
   unsigned char locktype;          /* The type of lock held on this fd */
   int lastErrno;                   /* The unix errno from the last I/O error */
   void *lockingContext;            /* Locking style specific state */
+  int flags;                       /* Flags value returned by xOpen() */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                   /* The flags specified at open() */
 #endif
@@ -202,11 +203,6 @@ struct unixFile {
   unsigned char transCntrChng;   /* True if the transaction counter changed */
   unsigned char dbUpdate;        /* True if any part of database file changed */
   unsigned char inNormalWrite;   /* True if in a normal write operation */
-
-  /* If true, that means we are dealing with a database file that has
-  ** a range of locking bytes from PENDING_BYTE through PENDING_BYTE+511
-  ** which should never be read or written.  Asserts() will verify this */
-  unsigned char isLockable;      /* True if file might be locked */
 #endif
 #ifdef SQLITE_TEST
   /* In test mode, increase the size of this structure a bit so that 
@@ -753,7 +749,10 @@ struct unixOpenCnt {
   int nRef;                   /* Number of pointers to this structure */
   int nLock;                  /* Number of outstanding locks */
   int nPending;               /* Number of pending close() operations */
-  int *aPending;              /* Malloced space holding fds awaiting close() */
+  struct PendingClose {
+    int fd;                   /* File descriptor to close */
+    int flags;                /* Flags this file descriptor was opened with */
+  } *aPending;                /* Malloced space holding fds awaiting close() */
 #if OS_VXWORKS
   sem_t *pSem;                     /* Named POSIX semaphore */
   char aSemName[MAX_PATHNAME+1];   /* Name of that semaphore */
@@ -1406,6 +1405,60 @@ end_lock:
 }
 
 /*
+** Close all file descriptors accumuated in the p->aPending[] array. If
+** all such file descriptors are closed without error, the aPending[] 
+** array is deleted and SQLITE_OK returned.
+**
+** Otherwise, if an error occurs, then successfully closed file descriptor
+** entries in the aPending[] array are set to -1, the aPending[] array
+** not deleted and SQLITE_IOERR_CLOSE returned.
+*/ 
+static int closePendingFds(unixFile *pFile){
+  struct unixOpenCnt *pOpen = pFile->pOpen;
+  struct PendingClose *aPending = pOpen->aPending;
+  int i;
+  int rc = SQLITE_OK;
+  assert( unixMutexHeld() );
+  for(i=0; i<pOpen->nPending; i++){
+    if( aPending[i].fd>=0 ){
+      if( close(aPending[i].fd) ){
+        pFile->lastErrno = errno;
+        rc = SQLITE_IOERR_CLOSE;
+      }else{
+        aPending[i].fd = -1;
+      }
+    }
+  }
+  if( rc==SQLITE_OK ){
+    sqlite3_free(aPending);
+    pOpen->nPending = 0;
+    pOpen->aPending = 0;
+  }
+  return rc;
+}
+
+/*
+** Add the file descriptor used by file handle pFile to the corresponding
+** aPending[] array to be closed after some other connection releases
+** a lock.
+*/
+static void setPendingFd(unixFile *pFile){
+  struct PendingClose *aNew;
+  struct unixOpenCnt *pOpen = pFile->pOpen;
+  int nByte = (pOpen->nPending+1)*sizeof(pOpen->aPending[0]);
+  aNew = sqlite3_realloc(pOpen->aPending, nByte);
+  if( aNew==0 ){
+    /* If a malloc fails, just leak the file descriptor */
+  }else{
+    pOpen->aPending = aNew;
+    pOpen->aPending[pOpen->nPending].fd = pFile->h;
+    pOpen->aPending[pOpen->nPending].flags = pFile->flags;
+    pOpen->nPending++;
+    pFile->h = -1;
+  }
+}
+
+/*
 ** Lower the locking level on file descriptor pFile to locktype.  locktype
 ** must be either NO_LOCK or SHARED_LOCK.
 **
@@ -1487,7 +1540,6 @@ static int unixUnlock(sqlite3_file *id, int locktype){
   }
   if( locktype==NO_LOCK ){
     struct unixOpenCnt *pOpen;
-    int rc2 = SQLITE_OK;
 
     /* Decrement the shared lock counter.  Release the lock using an
     ** OS call only when all threads in this same process have released
@@ -1522,27 +1574,10 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     pOpen->nLock--;
     assert( pOpen->nLock>=0 );
     if( pOpen->nLock==0 && pOpen->nPending>0 ){
-      int i;
-      for(i=0; i<pOpen->nPending; i++){
-        /* close pending fds, but if closing fails don't free the array
-        ** assign -1 to the successfully closed descriptors and record the
-        ** error.  The next attempt to unlock will try again. */
-        if( pOpen->aPending[i] < 0 ) continue;
-        if( close(pOpen->aPending[i]) ){
-          pFile->lastErrno = errno;
-          rc2 = SQLITE_IOERR_CLOSE;
-        }else{
-          pOpen->aPending[i] = -1;
-        }
+      int rc2 = closePendingFds(pFile);
+      if( rc==SQLITE_OK ){
+        rc = rc2;
       }
-      if( rc2==SQLITE_OK ){
-        sqlite3_free(pOpen->aPending);
-        pOpen->nPending = 0;
-        pOpen->aPending = 0;
-      }
-    }
-    if( rc==SQLITE_OK ){
-      rc = rc2;
     }
   }
 	
@@ -1612,17 +1647,7 @@ static int unixClose(sqlite3_file *id){
       ** descriptor to pOpen->aPending.  It will be automatically closed when
       ** the last lock is cleared.
       */
-      int *aNew;
-      struct unixOpenCnt *pOpen = pFile->pOpen;
-      aNew = sqlite3_realloc(pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
-      if( aNew==0 ){
-        /* If a malloc fails, just leak the file descriptor */
-      }else{
-        pOpen->aPending = aNew;
-        pOpen->aPending[pOpen->nPending] = pFile->h;
-        pOpen->nPending++;
-        pFile->h = -1;
-      }
+      setPendingFd(pFile);
     }
     releaseLockInfo(pFile->pLock);
     releaseOpenCnt(pFile->pOpen);
@@ -2592,26 +2617,14 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
       pOpen->nLock--;
       assert( pOpen->nLock>=0 );
       if( pOpen->nLock==0 && pOpen->nPending>0 ){
-        int i;
-        for(i=0; i<pOpen->nPending; i++){
-          if( pOpen->aPending[i] < 0 ) continue;
-          if( close(pOpen->aPending[i]) ){
-            pFile->lastErrno = errno;
-            rc = SQLITE_IOERR_CLOSE;
-          }else{
-            pOpen->aPending[i] = -1;
-          }
-        }
-        if( rc==SQLITE_OK ){
-          sqlite3_free(pOpen->aPending);
-          pOpen->nPending = 0;
-          pOpen->aPending = 0;
-        }
+        rc = closePendingFds(pFile);
       }
     }
   }
   unixLeaveMutex();
-  if( rc==SQLITE_OK ) pFile->locktype = locktype;
+  if( rc==SQLITE_OK ){
+    pFile->locktype = locktype;
+  }
   return rc;
 }
 
@@ -2629,17 +2642,7 @@ static int afpClose(sqlite3_file *id) {
       ** descriptor to pOpen->aPending.  It will be automatically closed when
       ** the last lock is cleared.
       */
-      int *aNew;
-      struct unixOpenCnt *pOpen = pFile->pOpen;
-      aNew = sqlite3_realloc(pOpen->aPending, (pOpen->nPending+1)*sizeof(int) );
-      if( aNew==0 ){
-        /* If a malloc fails, just leak the file descriptor */
-      }else{
-        pOpen->aPending = aNew;
-        pOpen->aPending[pOpen->nPending] = pFile->h;
-        pOpen->nPending++;
-        pFile->h = -1;
-      }
+      setPendingFd(pFile);
     }
     releaseOpenCnt(pFile->pOpen);
     sqlite3_free(pFile->lockingContext);
@@ -2725,22 +2728,25 @@ static int unixRead(
   int amt,
   sqlite3_int64 offset
 ){
+  unixFile *pFile = (unixFile *)id;
   int got;
   assert( id );
 
-  /* Never read or write any of the bytes in the locking range */
-  assert( ((unixFile*)id)->isLockable==0
-          || offset>=PENDING_BYTE+512
-          || offset+amt<=PENDING_BYTE );
+  /* If this is a database file (not a journal, master-journal or temp
+  ** file), the bytes in the locking range should never be read or written. */
+  assert( (pFile->flags&SQLITE_OPEN_MAIN_DB)==0
+       || offset>=PENDING_BYTE+512
+       || offset+amt<=PENDING_BYTE 
+  );
 
-  got = seekAndRead((unixFile*)id, offset, pBuf, amt);
+  got = seekAndRead(pFile, offset, pBuf, amt);
   if( got==amt ){
     return SQLITE_OK;
   }else if( got<0 ){
     /* lastErrno set by seekAndRead */
     return SQLITE_IOERR_READ;
   }else{
-    ((unixFile*)id)->lastErrno = 0; /* not a system error */
+    pFile->lastErrno = 0; /* not a system error */
     /* Unread parts of the buffer must be zero-filled */
     memset(&((char*)pBuf)[got], 0, amt-got);
     return SQLITE_IOERR_SHORT_READ;
@@ -2794,14 +2800,17 @@ static int unixWrite(
   int amt,
   sqlite3_int64 offset 
 ){
+  unixFile *pFile = (unixFile*)id;
   int wrote = 0;
   assert( id );
   assert( amt>0 );
 
-  /* Never read or write any of the bytes in the locking range */
-  assert( ((unixFile*)id)->isLockable==0
-          || offset>=PENDING_BYTE+512
-          || offset+amt<=PENDING_BYTE );
+  /* If this is a database file (not a journal, master-journal or temp
+  ** file), the bytes in the locking range should never be read or written. */
+  assert( (pFile->flags&SQLITE_OPEN_MAIN_DB)==0
+       || offset>=PENDING_BYTE+512
+       || offset+amt<=PENDING_BYTE 
+  );
 
 #ifndef NDEBUG
   /* If we are doing a normal write to a database file (as opposed to
@@ -2810,8 +2819,7 @@ static int unixWrite(
   ** has changed.  If the transaction counter is modified, record that
   ** fact too.
   */
-  if( ((unixFile*)id)->inNormalWrite ){
-    unixFile *pFile = (unixFile*)id;
+  if( pFile->inNormalWrite ){
     pFile->dbUpdate = 1;  /* The database has been modified */
     if( offset<=24 && offset+amt>=27 ){
       int rc;
@@ -2826,7 +2834,7 @@ static int unixWrite(
   }
 #endif
 
-  while( amt>0 && (wrote = seekAndWrite((unixFile*)id, offset, pBuf, amt))>0 ){
+  while( amt>0 && (wrote = seekAndWrite(pFile, offset, pBuf, amt))>0 ){
     amt -= wrote;
     offset += wrote;
     pBuf = &((char*)pBuf)[wrote];
@@ -2838,7 +2846,7 @@ static int unixWrite(
       /* lastErrno set by seekAndWrite */
       return SQLITE_IOERR_WRITE;
     }else{
-      ((unixFile*)id)->lastErrno = 0; /* not a system error */
+      pFile->lastErrno = 0; /* not a system error */
       return SQLITE_FULL;
     }
   }
@@ -3650,6 +3658,58 @@ static int getTempname(int nBuf, char *zBuf){
 static int proxyTransformUnixFile(unixFile*, const char*);
 #endif
 
+/*
+** Search for an unused file descriptor that was opened on the database 
+** file (not a journal or master-journal file) identified by pathname
+** zPath with SQLITE_OPEN_XXX flags matching those passed as the second
+** argument to this function.
+**
+** Such a file descriptor may exist if a database connection was closed
+** but the associated file descriptor could not be closed because some
+** other file descriptor open on the same file is holding a file-lock.
+** Refer to comments in the unixClose() function and the lengthy comment
+** describing "Posix Advisory Locking" at the start of this file for 
+** further details. Also, ticket #4018.
+**
+** If a suitable file descriptor is found, then it is returned. If no
+** such file descriptor is located, -1 is returned.
+*/
+static int findReusableFd(const char *zPath, int flags){
+  int fd = -1;                         /* Return value */
+  struct stat sStat;                   /* Results of stat() call */
+
+  /* A stat() call may fail for various reasons. If this happens, it is
+  ** almost certain that an open() call on the same path will also fail.
+  ** For this reason, if an error occurs in the stat() call here, it is
+  ** ignored and -1 is returned. The caller will try to open a new file
+  ** descriptor on the same path, fail, and return an error to SQLite.
+  **
+  ** Even if a subsequent open() call does succeed, the consequences of
+  ** not searching for a resusable file descriptor are not dire.  */
+  if( 0==stat(zPath, &sStat) ){
+    struct unixOpenCnt *p;
+    struct unixFileId id;
+    id.dev = sStat.st_dev;
+    id.ino = sStat.st_ino;
+
+    unixEnterMutex();
+    for(p=openList; p&& memcmp(&id, &p->fileId, sizeof(id)); p=p->pNext);
+    if( p && p->aPending ){
+      int i;
+      struct PendingClose *aPending = p->aPending;
+      for(i=0; i<p->nPending; i++){
+        if( aPending[i].fd>=0 && flags==aPending[i].flags ){
+          fd = aPending[i].fd;
+          aPending[i].fd = -1;
+          break;
+        }
+      }
+    }
+    unixLeaveMutex();
+  }
+
+  return fd;
+}
 
 /*
 ** Open the file zPath.
@@ -3680,12 +3740,13 @@ static int unixOpen(
   int flags,                   /* Input flags to control the opening */
   int *pOutFlags               /* Output flags returned to SQLite core */
 ){
-  int fd = -1;                    /* File descriptor returned by open() */
+  unixFile *p = (unixFile *)pFile;
+  int fd = -1;                   /* File descriptor returned by open() */
   int dirfd = -1;                /* Directory file descriptor */
   int openFlags = 0;             /* Flags to pass to open() */
   int eType = flags&0xFFFFFF00;  /* Type of file to open */
   int noLock;                    /* True to omit locking primitives */
-  int rc = SQLITE_OK;
+  int rc = SQLITE_OK;            /* Function Return Code */
 
   int isExclusive  = (flags & SQLITE_OPEN_EXCLUSIVE);
   int isDelete     = (flags & SQLITE_OPEN_DELETEONCLOSE);
@@ -3720,11 +3781,10 @@ static int unixOpen(
   assert(isDelete==0 || isCreate);
 
   /* The main DB, main journal, and master journal are never automatically
-  ** deleted
-  */
-  assert( eType!=SQLITE_OPEN_MAIN_DB || !isDelete );
-  assert( eType!=SQLITE_OPEN_MAIN_JOURNAL || !isDelete );
-  assert( eType!=SQLITE_OPEN_MASTER_JOURNAL || !isDelete );
+  ** deleted. Nor are they ever temporary files.  */
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
@@ -3733,9 +3793,19 @@ static int unixOpen(
        || eType==SQLITE_OPEN_TRANSIENT_DB
   );
 
-  memset(pFile, 0, sizeof(unixFile));
+  memset(p, 0, sizeof(unixFile));
 
-  if( !zName ){
+  if( eType==SQLITE_OPEN_MAIN_DB ){
+    /* Try to find an unused file descriptor to reuse. This is not done
+    ** for vxworks. Not because vxworks would not benefit from the change
+    ** (it might, we're not sure), but because no way to test it is
+    ** currently available. It is better not to risk breaking vxworks for 
+    ** the sake of such an obscure feature.   */
+#if !OS_VXWORKS
+    fd = findReusableFd(zName, flags);
+#endif
+  }else if( !zName ){
+    /* If zName is NULL, the upper layer is requesting a temp file. */
     assert(isDelete && !isOpenDirectory);
     rc = getTempname(MAX_PATHNAME+1, zTmpname);
     if( rc!=SQLITE_OK ){
@@ -3744,23 +3814,35 @@ static int unixOpen(
     zName = zTmpname;
   }
 
+  /* Determine the value of the flags parameter passed to POSIX function
+  ** open(). These must be calculated even if open() is not called, as
+  ** they may be stored as part of the file handle and used by the 
+  ** 'conch file' locking functions later on.  */
   if( isReadonly )  openFlags |= O_RDONLY;
   if( isReadWrite ) openFlags |= O_RDWR;
   if( isCreate )    openFlags |= O_CREAT;
   if( isExclusive ) openFlags |= (O_EXCL|O_NOFOLLOW);
   openFlags |= (O_LARGEFILE|O_BINARY);
 
-  fd = open(zName, openFlags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
-  OSTRACE4("OPENX   %-3d %s 0%o\n", fd, zName, openFlags);
-  if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
-    /* Failed to open the file for read/write access. Try read-only. */
-    flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
-    flags |= SQLITE_OPEN_READONLY;
-    return unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
-  }
   if( fd<0 ){
-    return SQLITE_CANTOPEN;
+    fd = open(zName, openFlags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
+    OSTRACE4("OPENX   %-3d %s 0%o\n", fd, zName, openFlags);
+    if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
+      /* Failed to open the file for read/write access. Try read-only. */
+      flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+      flags |= SQLITE_OPEN_READONLY;
+      return unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
+    }
+    if( fd<0 ){
+      return SQLITE_CANTOPEN;
+    }
   }
+  assert( fd>=0 );
+  p->flags = flags;
+  if( pOutFlags ){
+    *pOutFlags = flags;
+  }
+
   if( isDelete ){
 #if OS_VXWORKS
     zPath = zName;
@@ -3770,24 +3852,19 @@ static int unixOpen(
   }
 #if SQLITE_ENABLE_LOCKING_STYLE
   else{
-    ((unixFile*)pFile)->openFlags = openFlags;
-  }
-#endif
-  if( pOutFlags ){
-    *pOutFlags = flags;
-  }
-
-#ifndef NDEBUG
-  if( (flags & SQLITE_OPEN_MAIN_DB)!=0 ){
-    ((unixFile*)pFile)->isLockable = 1;
+    p->openFlags = openFlags;
   }
 #endif
 
-  assert( fd>=0 );
   if( isOpenDirectory ){
     rc = openDirectory(zPath, &dirfd);
     if( rc!=SQLITE_OK ){
-      close(fd); /* silently leak if fail, already in error */
+      /* It is safe to close fd at this point, because it is guaranteed not
+      ** to be open on a database file. If it were open on a database file,
+      ** it would not be safe to close as this would cause any locks held
+      ** on the file by this process to be released.  */
+      assert( eType!=SQLITE_OPEN_MAIN_DB );
+      close(fd);             /* silently leak if fail, already in error */
       return rc;
     }
   }
@@ -3803,16 +3880,14 @@ static int unixOpen(
     char *envforce = getenv("SQLITE_FORCE_PROXY_LOCKING");
     int useProxy = 0;
 
-    /* SQLITE_FORCE_PROXY_LOCKING==1 means force always use proxy, 
-    ** 0 means never use proxy, NULL means use proxy for non-local files only
-    */
+    /* SQLITE_FORCE_PROXY_LOCKING==1 means force always use proxy, 0 means 
+    ** never use proxy, NULL means use proxy for non-local files only.  */
     if( envforce!=NULL ){
       useProxy = atoi(envforce)>0;
     }else{
       struct statfs fsInfo;
-
       if( statfs(zPath, &fsInfo) == -1 ){
-				((unixFile*)pFile)->lastErrno = errno;
+        ((unixFile*)pFile)->lastErrno = errno;
         if( dirfd>=0 ) close(dirfd); /* silently leak if fail, in error */
         close(fd); /* silently leak if fail, in error */
         return SQLITE_IOERR_ACCESS;
