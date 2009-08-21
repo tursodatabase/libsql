@@ -260,7 +260,18 @@ struct unixFile {
 
 
 /*
-** Helper functions to obtain and relinquish the global mutex.
+** Helper functions to obtain and relinquish the global mutex. The
+** global mutex is used to protect the unixOpenCnt, unixLockInfo and
+** vxworksFileId objects used by this file, all of which may be 
+** shared by multiple threads.
+**
+** Function unixMutexHeld() is used to assert() that the global mutex 
+** is held when required. This function is only used as part of assert() 
+** statements. e.g.
+**
+**   unixEnterMutex()
+**     assert( unixMutexHeld() );
+**   unixEnterLeave()
 */
 static void unixEnterMutex(void){
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
@@ -268,6 +279,11 @@ static void unixEnterMutex(void){
 static void unixLeaveMutex(void){
   sqlite3_mutex_leave(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
 }
+#ifdef SQLITE_DEBUG
+static int unixMutexHeld(void) {
+  return sqlite3_mutex_held(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
+}
+#endif
 
 
 #ifdef SQLITE_DEBUG
@@ -278,11 +294,11 @@ static void unixLeaveMutex(void){
 */
 static const char *locktypeName(int locktype){
   switch( locktype ){
-  case NO_LOCK: return "NONE";
-  case SHARED_LOCK: return "SHARED";
-  case RESERVED_LOCK: return "RESERVED";
-  case PENDING_LOCK: return "PENDING";
-  case EXCLUSIVE_LOCK: return "EXCLUSIVE";
+    case NO_LOCK: return "NONE";
+    case SHARED_LOCK: return "SHARED";
+    case RESERVED_LOCK: return "RESERVED";
+    case PENDING_LOCK: return "PENDING";
+    case EXCLUSIVE_LOCK: return "EXCLUSIVE";
   }
   return "ERROR";
 }
@@ -737,7 +753,7 @@ struct unixOpenCnt {
   int nRef;                   /* Number of pointers to this structure */
   int nLock;                  /* Number of outstanding locks */
   int nPending;               /* Number of pending close() operations */
-  int *aPending;            /* Malloced space holding fd's awaiting a close() */
+  int *aPending;              /* Malloced space holding fds awaiting close() */
 #if OS_VXWORKS
   sem_t *pSem;                     /* Named POSIX semaphore */
   char aSemName[MAX_PATHNAME+1];   /* Name of that semaphore */
@@ -848,8 +864,12 @@ static void testThreadLockingBehavior(int fd_orig){
 
 /*
 ** Release a unixLockInfo structure previously allocated by findLockInfo().
+**
+** The mutex entered using the unixEnterMutex() function must be held
+** when this function is called.
 */
 static void releaseLockInfo(struct unixLockInfo *pLock){
+  assert( unixMutexHeld() );
   if( pLock ){
     pLock->nRef--;
     if( pLock->nRef==0 ){
@@ -871,8 +891,12 @@ static void releaseLockInfo(struct unixLockInfo *pLock){
 
 /*
 ** Release a unixOpenCnt structure previously allocated by findLockInfo().
+**
+** The mutex entered using the unixEnterMutex() function must be held
+** when this function is called.
 */
 static void releaseOpenCnt(struct unixOpenCnt *pOpen){
+  assert( unixMutexHeld() );
   if( pOpen ){
     pOpen->nRef--;
     if( pOpen->nRef==0 ){
@@ -898,6 +922,9 @@ static void releaseOpenCnt(struct unixOpenCnt *pOpen){
 ** describes that file descriptor.  Create new ones if necessary.  The
 ** return values might be uninitialized if an error occurs.
 **
+** The mutex entered using the unixEnterMutex() function must be held
+** when this function is called.
+**
 ** Return an appropriate error code.
 */
 static int findLockInfo(
@@ -912,6 +939,8 @@ static int findLockInfo(
   struct stat statbuf;           /* Low-level file information */
   struct unixLockInfo *pLock = 0;/* Candidate unixLockInfo object */
   struct unixOpenCnt *pOpen;     /* Candidate unixOpenCnt object */
+
+  assert( unixMutexHeld() );
 
   /* Get low-level information about the file that we can used to
   ** create a unique name for the file.
