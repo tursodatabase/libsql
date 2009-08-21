@@ -14,7 +14,6 @@
 ** This file contains functions for allocating memory, comparing
 ** strings, and stuff like that.
 **
-** $Id: util.c,v 1.262 2009/07/28 16:44:26 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include <stdarg.h>
@@ -273,7 +272,7 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
 }
 
 /*
-** The string z[] is an ascii representation of a real number.
+** The string z[] is an ASCII representation of a real number.
 ** Convert this string to a double.
 **
 ** This routine assumes that z[] really is a valid number.  If it
@@ -286,70 +285,111 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
 */
 int sqlite3AtoF(const char *z, double *pResult){
 #ifndef SQLITE_OMIT_FLOATING_POINT
-  int sign = 1;
   const char *zBegin = z;
-  LONGDOUBLE_TYPE v1 = 0.0;
-  int nSignificant = 0;
+  /* sign * significand * (10 ^ (esign * exponent)) */
+  int sign = 1;   /* sign of significand */
+  i64 s = 0;      /* significand */
+  int d = 0;      /* adjust exponent for shifting decimal point */
+  int esign = 1;  /* sign of exponent */
+  int e = 0;      /* exponent */
+  double result;
+  int nDigits = 0;
+
+  /* skip leading spaces */
   while( sqlite3Isspace(*z) ) z++;
+  /* get sign of significand */
   if( *z=='-' ){
     sign = -1;
     z++;
   }else if( *z=='+' ){
     z++;
   }
-  while( z[0]=='0' ){
-    z++;
+  /* skip leading zeroes */
+  while( z[0]=='0' ) z++, nDigits++;
+
+  /* copy max significant digits to significand */
+  while( sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+    s = s*10 + (*z - '0');
+    z++, nDigits++;
   }
-  while( sqlite3Isdigit(*z) ){
-    v1 = v1*10.0 + (*z - '0');
-    z++;
-    nSignificant++;
-  }
+  /* skip non-significant significand digits
+  ** (increase exponent by d to shift decimal left) */
+  while( sqlite3Isdigit(*z) ) z++, nDigits++, d++;
+
+  /* if decimal point is present */
   if( *z=='.' ){
-    LONGDOUBLE_TYPE divisor = 1.0;
     z++;
-    if( nSignificant==0 ){
-      while( z[0]=='0' ){
-        divisor *= 10.0;
-        z++;
-      }
+    /* copy digits from after decimal to significand
+    ** (decrease exponent by d to shift decimal right) */
+    while( sqlite3Isdigit(*z) && s<((LARGEST_INT64-9)/10) ){
+      s = s*10 + (*z - '0');
+      z++, nDigits++, d--;
     }
-    while( sqlite3Isdigit(*z) ){
-      if( nSignificant<18 ){
-        v1 = v1*10.0 + (*z - '0');
-        divisor *= 10.0;
-        nSignificant++;
-      }
-      z++;
-    }
-    v1 /= divisor;
+    /* skip non-significant digits */
+    while( sqlite3Isdigit(*z) ) z++, nDigits++;
   }
+
+  /* if exponent is present */
   if( *z=='e' || *z=='E' ){
-    int esign = 1;
-    int eval = 0;
-    LONGDOUBLE_TYPE scale = 1.0;
     z++;
+    /* get sign of exponent */
     if( *z=='-' ){
       esign = -1;
       z++;
     }else if( *z=='+' ){
       z++;
     }
+    /* copy digits to exponent */
     while( sqlite3Isdigit(*z) ){
-      eval = eval*10 + *z - '0';
+      e = e*10 + (*z - '0');
       z++;
     }
-    while( eval>=64 ){ scale *= 1.0e+64; eval -= 64; }
-    while( eval>=16 ){ scale *= 1.0e+16; eval -= 16; }
-    while( eval>=4 ){ scale *= 1.0e+4; eval -= 4; }
-    while( eval>=1 ){ scale *= 1.0e+1; eval -= 1; }
-    if( esign<0 ){
-      v1 /= scale;
-    }else{
-      v1 *= scale;
+  }
+
+  /* adjust exponent by d, and update sign */
+  e = (e*esign) + d;
+  if( e<0 ) {
+    esign = -1;
+    e *= -1;
+  } else {
+    esign = 1;
+  }
+
+  /* if 0 significand */
+  if( !s ) {
+    /* In the IEEE 754 standard, zero is signed.
+    ** Add the sign if we've seen at least one digit */
+    result = (sign<0 && nDigits) ? -(double)0 : (double)0;
+  } else {
+    /* attempt to reduce exponent */
+    if( esign>0 ){
+      while( s<(LARGEST_INT64/10) && e>0 ) e--,s*=10;
+    }
+
+    /* adjust the sign of significand */
+    s = sign<0 ? -s : s;
+
+    /* if exponent, scale significand as appropriate
+    ** and store in result. */
+    if( e ){
+      double scale = 1.0;
+      while( e>=16 ){ scale *= 1.0e+16; e -= 16; }
+      while( e>=4 ){ scale *= 1.0e+4; e -= 4; }
+      while( e>=1 ){ scale *= 1.0e+1; e -= 1; }
+      if( esign<0 ){
+        result = s / scale;
+      }else{
+        result = s * scale;
+      }
+    } else {
+      result = (double)s;
     }
   }
-  *pResult = (double)(sign<0 ? -v1 : v1);
+
+  /* store the result */
+  *pResult = result;
+
+  /* return number of characters used */
   return (int)(z - zBegin);
 #else
   return sqlite3Atoi64(z, pResult);
@@ -904,7 +944,7 @@ void sqlite3Put4byte(unsigned char *p, u32 v){
 #if !defined(SQLITE_OMIT_BLOB_LITERAL) || defined(SQLITE_HAS_CODEC)
 /*
 ** Translate a single byte of Hex into an integer.
-** This routinen only works if h really is a valid hexadecimal
+** This routine only works if h really is a valid hexadecimal
 ** character:  0..9a..fA..F
 */
 static u8 hexToInt(int h){

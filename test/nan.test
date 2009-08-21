@@ -313,7 +313,7 @@ do_test nan-4.20 {
   set big [string repeat 9 10000].0e-9000
   db eval "INSERT INTO t1 VALUES($big)"
   db eval {SELECT x, typeof(x) FROM t1}
-} {{} null}
+} {inf real}
 
 
 

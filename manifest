@@ -1,5 +1,5 @@
-C Updates\sfor\stest_init.c\sfor\sconfigure\sand\sother\sconsistency\schanges.
-D 2009-08-21T02:07:09
+C Updated\ssqlite3AtoF()\sthat\sperforms\sslightly\sbetter\swith\sGCC,\sand\ssignificantly\sbetter\swith\sMSVC.
+D 2009-08-21T02:13:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 9bc5278d509d81ff0f9b52f0ce7239563d188e32
 F src/update.c 4da327f706c0d0dfedf4d92154b1b5688bdea0ac
 F src/utf.c 3ca2c9461b8e942c68da28bfccd448663f536a6f
-F src/util.c c2416f60ae704a8c4990e4909aa810f90cbffa07
+F src/util.c efb5f8e533d4beef545cf765cab5f7920b4c75f9
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
 F src/vdbe.c 464e2e30b1287554a23cdaa0b6b010a9dcb5eb29
 F src/vdbe.h 457b6c70f02885cec1f5225b5e6441d067b55d3f
@@ -490,7 +490,7 @@ F test/misc7.test c5f4e6a82e04e71820c0f9f64f6733f04c8ae0ae
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test 5b71777fc127509cd257910c8db799de557a02de
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
-F test/nan.test c627d79b3d36ea892563fd67584b3e8a18f0618a
+F test/nan.test cf555724e5a26aed2296a3f2637feee9f728cd81
 F test/notify1.test 8433bc74bd952fb8a6e3f8d7a4c2b28dfd69e310
 F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test 44d600f916b770def8b095a9962dbe3be5a70d82
@@ -747,7 +747,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d30ceeb8b303e2ebfab2855beb973da606a97fa9
-R b6c943de06895c49e2a370130875c453
+P 3ba316e9a32de406a4390fb3f52fccb48da4da30
+R bbc63800e202da4f72f0395afa840353
 U shane
-Z 2aa9a5ab5a904bd727c216c0a651a78e
+Z aada4480e610c2af2b7cf949ce420cab
