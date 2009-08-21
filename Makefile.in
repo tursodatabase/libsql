@@ -235,9 +235,9 @@ SRC = \
   $(TOP)/src/os.c \
   $(TOP)/src/os.h \
   $(TOP)/src/os_common.h \
+  $(TOP)/src/os_os2.c \
   $(TOP)/src/os_unix.c \
   $(TOP)/src/os_win.c \
-  $(TOP)/src/os_os2.c \
   $(TOP)/src/pager.c \
   $(TOP)/src/pager.h \
   $(TOP)/src/parse.y \
@@ -381,6 +381,7 @@ TESTSRC = \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_hexio.c \
+  $(TOP)/src/test_init.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_md5.c \
@@ -391,7 +392,8 @@ TESTSRC = \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
-  $(TOP)/src/test_thread.c
+  $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_wsd.c
 
 # Header files used by all library source files.
 #

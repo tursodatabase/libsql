@@ -192,7 +192,7 @@ SRC += \
   $(TOP)/ext/fts3/fts3_tokenizer1.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
-  $(TOP)/ext/icu/icu.c 
+  $(TOP)/ext/icu/icu.c
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
@@ -241,7 +241,7 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
-  $(TOP)/src/test_wsd.c \
+  $(TOP)/src/test_wsd.c
 
 #TESTSRC += $(TOP)/ext/fts2/fts2_tokenizer.c
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
