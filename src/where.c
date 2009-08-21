@@ -3558,7 +3558,9 @@ WhereInfo *sqlite3WhereBegin(
     ** FROM clause entry that permits the lowest-cost, "optimal" scan. In
     ** this context an optimal scan is one that uses the same strategy
     ** for the given FROM clause entry as would be selected if the entry
-    ** were used as the innermost nested loop.
+    ** were used as the innermost nested loop.  In other words, a table
+    ** is chosen such that the cost of running that table cannot be reduced
+    ** by waiting for other tables to run first.
     **
     ** The second iteration is only performed if no optimal scan strategies
     ** were found by the first. This iteration is used to search for the
