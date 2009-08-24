@@ -1428,7 +1428,6 @@ static int closePendingFds(unixFile *pFile){
       rc = SQLITE_IOERR_CLOSE;
       p->pNext = pError;
       pError = p;
-      assert(0);
     }else{
       sqlite3_free(p);
     }
@@ -2609,7 +2608,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
       struct unixOpenCnt *pOpen = pFile->pOpen;
       pOpen->nLock--;
       assert( pOpen->nLock>=0 );
-      if( pOpen->nLock==0 && pOpen->nPending>0 ){
+      if( pOpen->nLock==0 ){
         rc = closePendingFds(pFile);
       }
     }
@@ -3817,7 +3816,7 @@ static int unixOpen(
     if( pUnused ){
       fd = pUnused->fd;
     }else{
-      pUnused = sqlite3_malloc(sizeof(pUnused));
+      pUnused = sqlite3_malloc(sizeof(*pUnused));
       if( !pUnused ){
         return SQLITE_NOMEM;
       }
