@@ -2038,8 +2038,8 @@ static int whereRangeScanEst(
 
   if( nEq==0 && p->aSample ){
     int iEst;
-    int iUpper;
-    int iLower;
+    int iLower = 0;
+    int iUpper = SQLITE_INDEX_SAMPLES;
     u8 aff = p->pTable->aCol[0].affinity;
 
     if( pLower ){
@@ -2057,17 +2057,14 @@ static int whereRangeScanEst(
       goto range_est_fallback;
     }else if( pLowerVal==0 ){
       rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
-      iLower = pLower ? iUpper/2 : 0;
+      if( pLower ) iLower = iUpper/2;
     }else if( pUpperVal==0 ){
       rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
-      iUpper = pUpper ? (iLower + SQLITE_INDEX_SAMPLES + 1)/2 
-                      : SQLITE_INDEX_SAMPLES;
+      if( pUpper ) iUpper = (iLower + SQLITE_INDEX_SAMPLES + 1)/2;
     }else{
       rc = whereRangeRegion(pParse, p, pUpperVal, &iUpper);
       if( rc==SQLITE_OK ){
         rc = whereRangeRegion(pParse, p, pLowerVal, &iLower);
-      }else{
-        iLower = 0;
       }
     }
 
