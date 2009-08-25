@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\stogether\sthe\sos_unix.c\sfix\sof\s[aa6acfa8ca]\sand\sthe\strigger\sfix\sof\n[dee1b8eb40].
-D 2009-08-25T12:11:01
+C Fix\san\suninitialized\svariable\sin\ssqlite3VdbeIdxRowid().
+D 2009-08-25T13:10:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -211,7 +211,7 @@ F src/vdbe.c 464e2e30b1287554a23cdaa0b6b010a9dcb5eb29
 F src/vdbe.h 457b6c70f02885cec1f5225b5e6441d067b55d3f
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 974a02fb1719799863492702877d52779d9e6b05
+F src/vdbeaux.c 46c85b2cf1e9c7175aee3b40c9dc9e2bbda7107f
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c c4a5188ff43692f2ca78d3539ad4877e14b70712
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 2a5c9e1dbf7f5f4b2081c964450a9305a4516f5b c0ea4e9a7dcd66c079f917af47157f6ab7d79401
-R 831888fbe6ffc9eaba6547ee83986b1e
+P 1e2c6e134e04dd22795ad4839874ec0edd9b0970
+R 13fbbaba6c965af30dc9b700fce69449
 U drh
-Z 74516868f17d9ef70bc645467b0bcf5a
+Z caed388eb8a08b03ca62d76237b8b28e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKk9TYoxKgR168RlERAl5cAJsHJCCNuwJwIwnMauy0LjcUqDVyZgCfWuXx
-VSy4e4yPY24QsPxZpxOVRrY=
-=H33X
+iD8DBQFKk+LGoxKgR168RlERAowRAJkBTeCELBcU59XsuQvqk9JNNdBFOQCeLBep
+wbr+FOU0F0PCobaghDs2Qiw=
+=1IT0
 -----END PGP SIGNATURE-----
