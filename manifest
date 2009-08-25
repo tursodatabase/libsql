@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Initialize\svariables\sdifferently\sin\sthe\srange\sprocessing\slogic\sof\swhere.c\nin\sorder\sto\smake\ssure\svariables\sare\salways\sinitialized\seven\sfollowing\nan\sOOM\serror.
-D 2009-08-25T15:56:51
+C Remove\san\sunreachable\sbranch\sfrom\swhere.c\sin\sorder\sto\srestore\s100%\nbranch\stest\scoverage.\s\sAdd\sassert()\sand\stestcase()\smacros\sto\sverify\nthat\sthe\sbranch\sis\sunreachable.
+D 2009-08-25T16:28:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -216,7 +216,7 @@ F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c c4a5188ff43692f2ca78d3539ad4877e14b70712
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c fc8b33fb469d30c2d933188757ed4d71a775b08a
+F src/where.c a3218dfcf32e3d933270b76a72b97065f24b3f2c
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9389e6a7dad7ba70923282d6fe45fbccd22f681e
-R ba5f45894b6fc316b385ccdbc215e894
+P 3fb3686a4502140720dc3710a28a4f4128ab6554
+R dc2ce485398987f32fbd08b4b9b6e9a2
 U drh
-Z 903cfcbc615b7cc03024df17088e7120
+Z 0483859ddb44e8db8724d5ac5d7b3598
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKlAnGoxKgR168RlERAsoLAJ4nH/YFuFnXcU6+a92QUZwF2QQ4ZACeLbl5
-hSBe5ozIRkuFFcem6hDzev0=
-=C0Ud
+iD8DBQFKlBEhoxKgR168RlERAoNOAJwMp0k4JWVXC1dwpKqMRdWTaxDFOgCfQdCh
+DU43moi3lq58zHhTjn6ZCMk=
+=MsO6
 -----END PGP SIGNATURE-----

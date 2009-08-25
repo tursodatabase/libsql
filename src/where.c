@@ -1974,6 +1974,7 @@ static int whereRangeRegion(
       }
     }
 
+    assert( i>=0 && i<=SQLITE_INDEX_SAMPLES );
     *piRegion = i;
   }
   return SQLITE_OK;
@@ -2069,9 +2070,9 @@ static int whereRangeScanEst(
     }
 
     iEst = iUpper - iLower;
-    if( iEst>SQLITE_INDEX_SAMPLES ){
-      iEst = SQLITE_INDEX_SAMPLES;
-    }else if( iEst<1 ){
+    testcase( iEst==SQLITE_INDEX_SAMPLES );
+    assert( iEst<=SQLITE_INDEX_SAMPLES );
+    if( iEst<1 ){
       iEst = 1;
     }
 
