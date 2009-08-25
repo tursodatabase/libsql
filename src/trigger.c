@@ -856,7 +856,9 @@ int sqlite3CodeRowTrigger(
       sqlite3ExprIfFalse(pParse, whenExpr, endTrigger, SQLITE_JUMPIFNULL);
       sqlite3ExprDelete(db, whenExpr);
 
+      sqlite3ExprCachePush(pParse);
       codeTriggerProgram(pParse, p->step_list, orconf); 
+      sqlite3ExprCachePop(pParse, 1);
 
       /* Pop the entry off the trigger stack */
       pParse->trigStack = trigStackEntry.pNext;

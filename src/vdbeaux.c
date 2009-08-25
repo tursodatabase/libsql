@@ -2693,9 +2693,7 @@ int sqlite3VdbeIdxKeyCompare(
     *res = 0;
     return SQLITE_CORRUPT;
   }
-  m.db = 0;
-  m.flags = 0;
-  m.zMalloc = 0;
+  memset(&m, 0, sizeof(m));
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (int)nCellKey, 1, &m);
   if( rc ){
     return rc;
