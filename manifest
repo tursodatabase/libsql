@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\suninitialized\svariable\sin\ssqlite3VdbeIdxRowid().
-D 2009-08-25T13:10:27
+C Avoid\scalling\ssqite3VdbeRecordCompare()\swith\suninitialized\smemory\sfollowing\nan\sOOM.\s\sDoing\sso\sis\sharmless,\sbut\sit\sworries\svalgrind.
+D 2009-08-25T13:53:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +108,7 @@ F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c e08f6c1a9551b88081fc737916c6c3fd5029a6cf
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c 49212ddaee8d7d12b4f1e17b9de62f7ea91ca59d
+F src/btree.c 6b60ece56141bbe23aa6efca10f1612d34271c2f
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c a43c959c5953c25989207c929f99ef808d5336a6
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 1e2c6e134e04dd22795ad4839874ec0edd9b0970
-R 13fbbaba6c965af30dc9b700fce69449
+P 6e787e18fa87f5463bf62cd91a0c0855099693f0
+R c843ef8cfc197304ddaae69605d2f011
 U drh
-Z caed388eb8a08b03ca62d76237b8b28e
+Z 0f5a1e259f27670ef6cc161ed144225c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKk+LGoxKgR168RlERAowRAJkBTeCELBcU59XsuQvqk9JNNdBFOQCeLBep
-wbr+FOU0F0PCobaghDs2Qiw=
-=1IT0
+iD8DBQFKk+zxoxKgR168RlERAijqAJ43RxBJwQPCErARYKkGdi8MOrDuKgCaAvhq
+0IYbiI92zBuGHT7o+IzNKms=
+=uHeB
 -----END PGP SIGNATURE-----

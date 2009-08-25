@@ -4346,9 +4346,12 @@ int sqlite3BtreeMovetoUnpacked(
             goto moveto_finish;
           }
           rc = accessPayload(pCur, 0, nCell, (unsigned char*)pCellKey, 0);
+          if( rc ){
+            sqlite3_free(pCellKey);
+            goto moveto_finish;
+          }
           c = sqlite3VdbeRecordCompare(nCell, pCellKey, pIdxKey);
           sqlite3_free(pCellKey);
-          if( rc ) goto moveto_finish;
         }
       }
       if( c==0 ){
