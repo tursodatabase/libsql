@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Avoid\scalling\ssqite3VdbeRecordCompare()\swith\suninitialized\smemory\sfollowing\nan\sOOM.\s\sDoing\sso\sis\sharmless,\sbut\sit\sworries\svalgrind.
-D 2009-08-25T13:53:49
+C Make\ssure\sthat\sthe\soutput\sof\sEXPLAIN\sis\sright\swhen\sthe\sP4\sargument\sof\nan\sopcode\sis\sof\stype\sP4_MEM\swith\sthe\sMEM\shaving\stype\sMEM_Blob.
+D 2009-08-25T14:24:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -211,7 +211,7 @@ F src/vdbe.c 464e2e30b1287554a23cdaa0b6b010a9dcb5eb29
 F src/vdbe.h 457b6c70f02885cec1f5225b5e6441d067b55d3f
 F src/vdbeInt.h 831c254a6eef237ef4664c8381a0137586567007
 F src/vdbeapi.c 0ab8ada7260b32031ca97f338caecf0812460624
-F src/vdbeaux.c 46c85b2cf1e9c7175aee3b40c9dc9e2bbda7107f
+F src/vdbeaux.c 014a60435469fed0b1c2fdf5e4db6273d7632901
 F src/vdbeblob.c a3f3e0e877fc64ea50165eec2855f5ada4477611
 F src/vdbemem.c c4a5188ff43692f2ca78d3539ad4877e14b70712
 F src/vtab.c aedd76e8670d5a5379f93804398d3ba960125547
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 6e787e18fa87f5463bf62cd91a0c0855099693f0
-R c843ef8cfc197304ddaae69605d2f011
+P d33b9eb2567561ccfdc588c95604cce9b697d768
+R cdd07cee28aacf4af0f9d1f48ec5cddb
 U drh
-Z 0f5a1e259f27670ef6cc161ed144225c
+Z 2776bc99d23eafccf549c3762c7feeb6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKk+zxoxKgR168RlERAijqAJ43RxBJwQPCErARYKkGdi8MOrDuKgCaAvhq
-0IYbiI92zBuGHT7o+IzNKms=
-=uHeB
+iD8DBQFKk/QJoxKgR168RlERAmGHAKCNx7aq1aNIydegMpcEvJaomAhYeACfV0tQ
+BHRGLnUTCgB2GRZ9eNE+eVM=
+=B2Ti
 -----END PGP SIGNATURE-----

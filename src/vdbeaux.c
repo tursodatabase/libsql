@@ -735,6 +735,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
         sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->r);
+      }else{
+        assert( pMem->flags & MEM_Blob );
+        zP4 = "(blob)";
       }
       break;
     }
