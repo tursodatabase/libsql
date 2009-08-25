@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthat\sthe\soutput\sof\sEXPLAIN\sis\sright\swhen\sthe\sP4\sargument\sof\nan\sopcode\sis\sof\stype\sP4_MEM\swith\sthe\sMEM\shaving\stype\sMEM_Blob.
-D 2009-08-25T14:24:05
+C Attempt\sto\sclarify\sthe\smeaning\sof\sa\s"parameter"\sin\sthe\ssqlite3_bind()\sAPI\ndocumentation.
+D 2009-08-25T14:59:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/resolve.c 4a61d03e49b15440878096e6030863fc628828f0
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 67b0778c9585905c8aa75aaa469e76ef3c1d315a
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in 3ccf717d82101f19548d0b1243f0a6f4854d51ee
+F src/sqlite.h.in fdd4e3109e21431797a22e3696d082c271a454fc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 20ab1da1a9a652ea673e5bc586382143914381c0
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P d33b9eb2567561ccfdc588c95604cce9b697d768
-R cdd07cee28aacf4af0f9d1f48ec5cddb
+P 6a623e6cf0370456232497a84366d18fa180debb
+R fcbb968e51afd78ed3c075342c97e2d1
 U drh
-Z 2776bc99d23eafccf549c3762c7feeb6
+Z f375ffcba1ac2c7cffa691451e61067e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKk/QJoxKgR168RlERAmGHAKCNx7aq1aNIydegMpcEvJaomAhYeACfV0tQ
-BHRGLnUTCgB2GRZ9eNE+eVM=
-=B2Ti
+iD8DBQFKk/xjoxKgR168RlERAsnbAJ4wPmuxVLQB8GdAW14JVlkINUJ5QwCfYUBz
+gzYdveWl3zj0kWAvApoKFIs=
+=Gtjj
 -----END PGP SIGNATURE-----

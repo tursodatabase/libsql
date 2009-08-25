@@ -2500,7 +2500,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
 ** In the SQL strings input to [sqlite3_prepare_v2()] and its variants,
-** literals may be replaced by a [parameter] in one of these forms:
+** literals may be replaced by a [parameter] that matches one of following
+** templates:
 **
 ** <ul>
 ** <li>  ?
@@ -2510,8 +2511,8 @@ typedef struct sqlite3_context sqlite3_context;
 ** <li>  $VVV
 ** </ul>
 **
-** In the parameter forms shown above NNN is an integer literal,
-** and VVV is an alpha-numeric parameter name. The values of these
+** In the templates above, NNN represents an integer literal,
+** and VVV represents an alphanumeric identifer.  The values of these
 ** parameters (also called "host parameter names" or "SQL parameters")
 ** can be set using the sqlite3_bind_*() routines defined here.
 **
