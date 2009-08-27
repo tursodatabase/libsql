@@ -764,7 +764,7 @@ struct unixOpenCnt {
   UnixUnusedFd *pUnused;      /* Unused file descriptors to close */
 #if OS_VXWORKS
   sem_t *pSem;                     /* Named POSIX semaphore */
-  char aSemName[MAX_PATHNAME+1];   /* Name of that semaphore */
+  char aSemName[MAX_PATHNAME+2];   /* Name of that semaphore */
 #endif
   struct unixOpenCnt *pNext, *pPrev;   /* List of all unixOpenCnt objects */
 };
@@ -3536,9 +3536,9 @@ static int fillInUnixFile(
     if( (rc==SQLITE_OK) && (pNew->pOpen->pSem==NULL) ){
       char *zSemName = pNew->pOpen->aSemName;
       int n;
-      sqlite3_snprintf(MAX_PATHNAME, zSemName, "%s.sem",
+      sqlite3_snprintf(MAX_PATHNAME, zSemName, "/%s.sem",
                        pNew->pId->zCanonicalName);
-      for( n=0; zSemName[n]; n++ )
+      for( n=1; zSemName[n]; n++ )
         if( zSemName[n]=='/' ) zSemName[n] = '_';
       pNew->pOpen->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
       if( pNew->pOpen->pSem == SEM_FAILED ){

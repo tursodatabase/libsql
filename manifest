@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Updates\sto\sthe\spluggable\spage\scache\sdocumentation.
-D 2009-08-26T00:26:52
+C Patch\sto\sthe\snamed\ssemaphore\slocking\smechanism\sused\sby\sVxWorks.
+D 2009-08-27T17:56:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -147,7 +147,7 @@ F src/os.c 9fea283e336ee31caa4654d6cb05a129a1c42d2f
 F src/os.h 00a1334a4eecee7f7bef79ac606b88d325119f21
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c 96e2e409df8851a31fdb2d7430ad73fea7b0a104
+F src/os_unix.c f14ff07aec3c3c0796e1a743d1bdafddc15d1af1
 F src/os_win.c 58bb163f327e79726dd119344d908e4d98483c3f
 F src/pager.c a47be286477ed6c7b9a342dd53d4e4043f29d8c2
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
@@ -750,14 +750,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 58db7e7166ccefef77b237b77e17f47d31ff41e0
-R 9f12b5b75ef341ad213d2e64e3b8bf27
+P 3085ad7612e2c50a2d7906e82b2d057954d9c3f9
+R eb6cdaf2b41f45632e4ffa41607deedf
 U drh
-Z 1d42b9a29de3d8a356c2ced8b35a64c1
+Z 5b4ebf8fbae5e7723a0a2368612970c6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKlIFPoxKgR168RlERAk9bAJ0VKEBOAKWI3SN/4tpXs8KZIAdMzACgir+A
-32mtwR9OZj3gr61fgTQ88fE=
-=+tcK
+iD8DBQFKlsjJoxKgR168RlERAssgAJ92pcc54lz5EchnTROW+NqcjQPjwgCfQfd4
+nM1PY4vHFHDUwnaKpIG1j/A=
+=7GYl
 -----END PGP SIGNATURE-----
