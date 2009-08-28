@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Patch\sto\sthe\snamed\ssemaphore\slocking\smechanism\sused\sby\sVxWorks.
-D 2009-08-27T17:56:21
+C Add\sa\snew\ssource\scode\slogo\sgif.
+D 2009-08-28T00:49:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,6 +18,7 @@ F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
+F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
@@ -750,14 +751,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 3085ad7612e2c50a2d7906e82b2d057954d9c3f9
-R eb6cdaf2b41f45632e4ffa41607deedf
+P 609c5341bea16e4e8bcd15388b209c753ca9e0bb
+R 4434d9008bae80dc68b503672bd862e3
 U drh
-Z 5b4ebf8fbae5e7723a0a2368612970c6
+Z 358f98b5bae88b9d1480f5896ee873f8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKlsjJoxKgR168RlERAssgAJ92pcc54lz5EchnTROW+NqcjQPjwgCfQfd4
-nM1PY4vHFHDUwnaKpIG1j/A=
-=7GYl
+iD4DBQFKlymCoxKgR168RlERAhGbAJ9JSX+YW4zu0jqF+jN+dnKMOJu+5wCYo0Rg
+s49NcnJb22O8s2ToTSr09A==
+=D2dX
 -----END PGP SIGNATURE-----
