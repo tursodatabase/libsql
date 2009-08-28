@@ -25,6 +25,8 @@ ifcapable {!autoinc} {
   return
 }
 
+sqlite3_db_config_lookaside db 0 0 0
+
 # The database is initially empty.
 #
 do_test autoinc-1.1 {

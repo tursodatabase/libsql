@@ -2733,9 +2733,10 @@ static int flattenSubquery(
   */
   if( ALWAYS(pSubitem->pTab!=0) ){
     Table *pTabToDel = pSubitem->pTab;
+    Parse *pRoot = (pParse->pRoot ? pParse->pRoot : pParse);
     if( pTabToDel->nRef==1 ){
-      pTabToDel->pNextZombie = pParse->pZombieTab;
-      pParse->pZombieTab = pTabToDel;
+      pTabToDel->pNextZombie = pRoot->pZombieTab;
+      pRoot->pZombieTab = pTabToDel;
     }else{
       pTabToDel->nRef--;
     }

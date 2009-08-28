@@ -2015,6 +2015,16 @@ struct AutoincInfo {
 # define SQLITE_N_COLCACHE 10
 #endif
 
+typedef struct CodedTrigger CodedTrigger;
+struct CodedTrigger {
+  SubProgram *pProgram;
+  Trigger *pTrigger;
+  u32 oldmask;            /* Mask of old.* columns accessed */
+  u32 newmask;            /* Mask of new.* columns accessed */
+  int orconf;             /* Default ON CONFLICT policy */
+  CodedTrigger *pNext;
+};
+
 /*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
@@ -2076,6 +2086,15 @@ struct Parse {
   int regRoot;         /* Register holding root page number for new objects */
   AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
 
+  /* Information used while coding trigger programs. */
+  Parse *pRoot;        /* Root Parse structure */
+  Table *pTriggerTab;  /* Table triggers are being coded for */
+  u32 oldmask; 
+  u32 newmask; 
+  int triggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
+  int nArg;
+  int orconf;          /* Default ON CONFLICT policy for trigger steps */
+
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
 
@@ -2092,7 +2111,9 @@ struct Parse {
   const char *zTail;   /* All SQL text past the last semicolon parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
+#if 0
   TriggerStack *trigStack;  /* Trigger actions being coded */
+#endif
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Token sArg;                /* Complete text of a module argument */
@@ -2102,6 +2123,7 @@ struct Parse {
 #endif
   int nHeight;            /* Expression tree height of current sub-select */
   Table *pZombieTab;      /* List of Table objects to delete after code gen */
+  CodedTrigger *pCodedTrigger;    /* Linked list of coded triggers */
 };
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -2144,7 +2166,7 @@ struct AuthContext {
  * containing the SQL statements specified as the trigger program.
  */
 struct Trigger {
-  char *name;             /* The name of the trigger                        */
+  char *zName;            /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
@@ -2687,8 +2709,8 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   void sqlite3DropTriggerPtr(Parse*, Trigger*);
   Trigger *sqlite3TriggersExist(Parse *, Table*, int, ExprList*, int *pMask);
   Trigger *sqlite3TriggerList(Parse *, Table *);
-  int sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
-                            int, int, int, int, u32*, u32*);
+  void sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
+                            int, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
@@ -2698,12 +2720,13 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
+  void sqlite3TriggerUses(Parse*,Trigger*,int,ExprList*,Table*,int,u32*,u32*);
 #else
 # define sqlite3TriggersExist(B,C,D,E,F) 0
 # define sqlite3DeleteTrigger(A,B)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
-# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J,K,L) 0
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
 # define sqlite3TriggerList(X, Y) 0
 #endif
 

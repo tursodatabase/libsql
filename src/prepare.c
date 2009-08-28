@@ -676,6 +676,13 @@ static int sqlite3Prepare(
     sqlite3Error(db, rc, 0);
   }
 
+  while( pParse->pCodedTrigger ){
+    CodedTrigger *pT = pParse->pCodedTrigger;
+    pParse->pCodedTrigger = pT->pNext;
+    sqlite3VdbeProgramDelete(db, pT->pProgram, 0);
+    sqlite3DbFree(db, pT);
+  }
+
 end_prepare:
 
   sqlite3StackFree(db, pParse);

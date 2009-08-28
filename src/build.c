@@ -69,6 +69,10 @@ void sqlite3TableLock(
   TableLock *p;
 
   assert( iDb>=0 );
+
+  if( pParse->pRoot ){
+    pParse = pParse->pRoot;
+  }
   for(i=0; i<pParse->nTableLock; i++){
     p = &pParse->aTableLock[i];
     if( p->iDb==iDb && p->iTab==iTab ){
@@ -78,7 +82,7 @@ void sqlite3TableLock(
   }
 
   nBytes = sizeof(TableLock) * (pParse->nTableLock+1);
-  pParse->aTableLock = 
+  pParse->aTableLock =
       sqlite3DbReallocOrFree(pParse->db, pParse->aTableLock, nBytes);
   if( pParse->aTableLock ){
     p = &pParse->aTableLock[pParse->nTableLock++];
@@ -194,7 +198,7 @@ void sqlite3FinishCoding(Parse *pParse){
 #endif
     assert( pParse->iCacheLevel==0 );  /* Disables and re-enables match */
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
-                         pParse->nTab, pParse->explain);
+                         pParse->nTab, pParse->nArg, pParse->explain);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
@@ -3425,23 +3429,27 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
   sqlite3 *db;
   Vdbe *v;
   int mask;
+  Parse *pRoot = pParse->pRoot;        /* Root parse structure */
 
   v = sqlite3GetVdbe(pParse);
   if( v==0 ) return;  /* This only happens if there was a prior error */
   db = pParse->db;
-  if( pParse->cookieGoto==0 ){
+  if( pParse->cookieGoto==0 && pRoot==0 ){
     pParse->cookieGoto = sqlite3VdbeAddOp2(v, OP_Goto, 0, 0)+1;
   }
   if( iDb>=0 ){
+    if( pRoot==0 ){
+      pRoot = pParse;
+    }
     assert( iDb<db->nDb );
     assert( db->aDb[iDb].pBt!=0 || iDb==1 );
     assert( iDb<SQLITE_MAX_ATTACHED+2 );
     mask = 1<<iDb;
-    if( (pParse->cookieMask & mask)==0 ){
-      pParse->cookieMask |= mask;
-      pParse->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
+    if( (pRoot->cookieMask & mask)==0 ){
+      pRoot->cookieMask |= mask;
+      pRoot->cookieValue[iDb] = db->aDb[iDb].pSchema->schema_cookie;
       if( !OMIT_TEMPDB && iDb==1 ){
-        sqlite3OpenTempDatabase(pParse);
+        sqlite3OpenTempDatabase(pRoot);
       }
     }
   }
@@ -3461,9 +3469,13 @@ void sqlite3CodeVerifySchema(Parse *pParse, int iDb){
 ** necessary to undo a write and the checkpoint should not be set.
 */
 void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
+  Parse *pRoot = pParse->pRoot;
   sqlite3CodeVerifySchema(pParse, iDb);
-  pParse->writeMask |= 1<<iDb;
-  if( setStatement && pParse->nested==0 ){
+  if( pRoot==0 ){
+    pRoot = pParse;
+  }
+  pRoot->writeMask |= 1<<iDb;
+  if( setStatement && pParse->nested==0 && pParse->pRoot==0 ){
     /* Every place where this routine is called with setStatement!=0 has
     ** already successfully created a VDBE. */
     assert( pParse->pVdbe );

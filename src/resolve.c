@@ -137,6 +137,7 @@ static int lookupName(
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
+  int isTrigger = 0;                /* True if a new.* or old.* reference. */
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
@@ -222,33 +223,29 @@ static int lookupName(
     /* If we have not already resolved the name, then maybe 
     ** it is a new.* or old.* trigger argument reference
     */
-    if( zDb==0 && zTab!=0 && cnt==0 && pParse->trigStack!=0 ){
-      TriggerStack *pTriggerStack = pParse->trigStack;
+    if( zDb==0 && zTab!=0 && cnt==0 && pParse->pTriggerTab!=0 ){
       Table *pTab = 0;
       u32 *piColMask = 0;
-      if( pTriggerStack->newIdx != -1 && sqlite3StrICmp("new", zTab) == 0 ){
-        pExpr->iTable = pTriggerStack->newIdx;
-        assert( pTriggerStack->pTab );
-        pTab = pTriggerStack->pTab;
-        piColMask = &(pTriggerStack->newColMask);
-      }else if( pTriggerStack->oldIdx != -1 && sqlite3StrICmp("old", zTab)==0 ){
-        pExpr->iTable = pTriggerStack->oldIdx;
-        assert( pTriggerStack->pTab );
-        pTab = pTriggerStack->pTab;
-        piColMask = &(pTriggerStack->oldColMask);
+      if( pParse->triggerOp!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
+        pExpr->iTable = 1;
+        pTab = pParse->pTriggerTab;
+        piColMask = &(pParse->newmask);
+      }else if( pParse->triggerOp!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
+        pExpr->iTable = 0;
+        pTab = pParse->pTriggerTab;
+        piColMask = &(pParse->oldmask);
       }
 
       if( pTab ){ 
         int iCol;
-        Column *pCol = pTab->aCol;
-
         pSchema = pTab->pSchema;
         cntTab++;
-        for(iCol=0; iCol < pTab->nCol; iCol++, pCol++) {
+        isTrigger = 1;
+        for(iCol=0; iCol<pTab->nCol; iCol++){
+          Column *pCol = &pTab->aCol[iCol];
           if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
             cnt++;
             pExpr->iColumn = iCol==pTab->iPKey ? -1 : (i16)iCol;
-            pExpr->pTab = pTab;
             testcase( iCol==31 );
             testcase( iCol==32 );
             if( iCol>=32 ){
@@ -381,6 +378,10 @@ lookupname_end:
       pTopNC->nRef++;
       if( pTopNC==pNC ) break;
       pTopNC = pTopNC->pNext;
+    }
+    if( isTrigger ){
+      pExpr->pTab = pParse->pTriggerTab;
+      pExpr->op = TK_TRIGGER;
     }
     return WRC_Prune;
   } else {

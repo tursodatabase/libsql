@@ -317,6 +317,7 @@ do_test attach3-12.9 {
   db_list
 } {main temp {}}
 do_test attach3-12.10 {
+breakpoint
   execsql {
     DETACH ?
   }

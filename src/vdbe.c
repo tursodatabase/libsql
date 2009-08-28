@@ -846,9 +846,18 @@ case OP_HaltIfNull: {      /* in3 */
 ** is the same as executing Halt.
 */
 case OP_Halt: {
+  if( pOp->p1==SQLITE_OK && p->pFrame ){
+    VdbeFrame *pFrame = p->pFrame;
+    p->pFrame = pFrame->pParent;
+    p->nFrame--;
+    pc = sqlite3VdbeFrameRestore(pFrame);
+    if( pOp->p2==OE_Ignore ){
+    }
+    break;
+  }
   p->rc = pOp->p1;
-  p->pc = pc;
   p->errorAction = (u8)pOp->p2;
+  p->pc = pc;
   if( pOp->p4.z ){
     sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
   }
@@ -4770,6 +4779,137 @@ case OP_ContextPop: {
   p->nChange = pContext->nChange;
   break;
 }
+
+/* Opcode: Program P1 P2 P3 P4 *
+**
+** Execute a trigger program. P1 contains the address of the memory cell
+** that contains the left-most column of the old.* table (unless the trigger
+** program is firing as a result of an INSERT statement). P2 is the address 
+** of the corresponding column in the new.* table (unless the trigger 
+** program is being fired due to a DELETE).
+**
+** Register P3 contains the address of a memory cell in this (the parent)
+** VM that is used to allocate the memory required by the sub-vdbe at 
+** runtime.
+**
+** P4 is a pointer to the VM containing the trigger program.
+*/
+case OP_Program: {
+  VdbeFrame *pFrame;
+  SubProgram *pProgram = pOp->p4.pProgram;
+  Mem *pRt = &p->aMem[pOp->p3];        /* Register to allocate runtime space */
+  assert( pProgram->nOp>0 );
+  
+  /* If noRecTrigger is true, then recursive invocation of triggers is
+  ** disabled for backwards compatibility. 
+  ** 
+  ** It is recursive invocation of triggers, at the SQL level, that is 
+  ** disabled. In some cases a single trigger may generate more than one 
+  ** SubProgram (if the trigger may be executed with more than one different 
+  ** ON CONFLICT algorithm). SubProgram structures associated with a
+  ** single trigger all have the same value for the SubProgram.token 
+  ** variable.
+  */
+  if( 1 || p->noRecTrigger ){
+    void *t = pProgram->token;
+    for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
+    if( pFrame ) break;
+  }
+
+  /* TODO: This constant should be configurable. */
+  if( p->nFrame>1000 ){
+    rc = SQLITE_ERROR;
+    sqlite3SetString(&p->zErrMsg, db, "too many levels of trigger recursion");
+    break;
+  }
+
+  /* Register pRt is used to store the memory required to save the state
+  ** of the current program, and the memory required at runtime to execute
+  ** the trigger program. If this trigger has been fired before, then pRt 
+  ** is already allocated. Otherwise, it must be initialized.  */
+  if( (pRt->flags&MEM_Frame)==0 ){
+    Mem *pMem;
+    Mem *pEnd;
+
+    /* SubProgram.nMem is set to the number of memory cells used by the 
+    ** program stored in SubProgram.aOp. As well as these, one memory
+    ** cell is required for each cursor used by the program. Set local
+    ** variable nMem (and later, VdbeFrame.nChildMem) to this value.
+    */
+    int nMem = pProgram->nMem + pProgram->nCsr;
+    int nByte = ROUND8(sizeof(VdbeFrame))
+              + nMem * sizeof(Mem)
+              + pProgram->nCsr * sizeof(VdbeCursor *);
+    pFrame = sqlite3DbMallocZero(db, nByte);
+    if( !pFrame ){
+      goto no_mem;
+    }
+    sqlite3VdbeMemRelease(pRt);
+    pRt->flags = MEM_Frame;
+    pRt->u.pFrame = pFrame;
+
+    pFrame->v = p;
+    pFrame->nChildMem = nMem;
+    pFrame->nChildCsr = pProgram->nCsr;
+    pFrame->pc = pc;
+    pFrame->aMem = p->aMem;
+    pFrame->nMem = p->nMem;
+    pFrame->apCsr = p->apCsr;
+    pFrame->nCursor = p->nCursor;
+    pFrame->aOp = p->aOp;
+    pFrame->nOp = p->nOp;
+    pFrame->token = pProgram->token;
+
+    pEnd = &VdbeFrameMem(pFrame)[pFrame->nChildMem];
+    for(pMem=VdbeFrameMem(pFrame); pMem!=pEnd; pMem++){
+      pMem->flags = MEM_Null;
+      pMem->db = db;
+    }
+  }else{
+    pFrame = pRt->u.pFrame;
+    assert( pProgram->nMem+pProgram->nCsr==pFrame->nChildMem );
+    assert( pProgram->nCsr==pFrame->nChildCsr );
+    assert( pc==pFrame->pc );
+  }
+
+  p->nFrame++;
+  pFrame->pParent = p->pFrame;
+  p->pFrame = pFrame;
+  p->aMem = &VdbeFrameMem(pFrame)[-1];
+  p->nMem = pFrame->nChildMem;
+  p->nCursor = pFrame->nChildCsr;
+  p->apCsr = (VdbeCursor **)&p->aMem[p->nMem+1];
+  p->aOp = pProgram->aOp;
+  p->nOp = pProgram->nOp;
+  pc = -1;
+
+  break;
+}
+
+/* Opcode: TriggerVal P1 P2 P3 * *
+**
+** Copy a value currently stored in a memory cell of the parent VM to
+** a cell in this VMs address space. This is used by trigger programs
+** to access the new.* and old.* values.
+**
+** If parameter P3 is non-zero, then the value read is from the new.*
+** table. If P3 is zero, then the value is read from the old.* table.
+** Parameter P1 is the index of the required new.* or old.* column (or
+** -1 for rowid). 
+**
+** Parameter P2 is the index of the memory cell in this VM to copy the 
+** value to.
+*/
+case OP_TriggerVal: {           /* out2-prerelease */
+  VdbeFrame *pF = p->pFrame;
+  Mem *pIn;
+  int iFrom = pOp->p1;           /* Memory cell in parent frame */
+  iFrom += (pOp->p3 ? pF->aOp[pF->pc].p2 : pF->aOp[pF->pc].p1);
+  pIn = &pF->aMem[iFrom];
+  sqlite3VdbeMemShallowCopy(pOut, pIn, MEM_Ephem);
+  break;
+}
+
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT

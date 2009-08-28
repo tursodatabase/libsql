@@ -34,6 +34,7 @@ typedef struct Vdbe Vdbe;
 */
 typedef struct VdbeFunc VdbeFunc;
 typedef struct Mem Mem;
+typedef struct SubProgram SubProgram;
 
 /*
 ** A single instruction of the virtual machine has an opcode
@@ -48,7 +49,7 @@ struct VdbeOp {
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
   int p3;             /* The third parameter */
-  union {             /* forth parameter */
+  union {             /* fourth parameter */
     int i;                 /* Integer value if p4type==P4_INT32 */
     void *p;               /* Generic pointer */
     char *z;               /* Pointer to data for string (char array) types */
@@ -61,6 +62,7 @@ struct VdbeOp {
     VTable *pVtab;         /* Used when p4type is P4_VTAB */
     KeyInfo *pKeyInfo;     /* Used when p4type is P4_KEYINFO */
     int *ai;               /* Used when p4type is P4_INTARRAY */
+    SubProgram *pProgram;  /* Used when p4type is P4_SUBPROGRAM */
   } p4;
 #ifdef SQLITE_DEBUG
   char *zComment;          /* Comment to improve readability */
@@ -71,6 +73,19 @@ struct VdbeOp {
 #endif
 };
 typedef struct VdbeOp VdbeOp;
+
+
+/*
+** A sub-routine used to implement a trigger program.
+*/
+struct SubProgram {
+  VdbeOp *aOp;                  /* Array of opcodes for sub-program */
+  int nOp;                      /* Elements in aOp[] */
+  int nMem;                     /* Number of memory cells required */
+  int nCsr;                     /* Number of cursors required */
+  int nRef;                     /* Number of pointers to this structure */
+  void *token;                  /* id that may be used to recursive triggers */
+};
 
 /*
 ** A smaller version of VdbeOp used for the VdbeAddOpList() function because
@@ -85,7 +100,7 @@ struct VdbeOpList {
 typedef struct VdbeOpList VdbeOpList;
 
 /*
-** Allowed values of VdbeOp.p3type
+** Allowed values of VdbeOp.p4type
 */
 #define P4_NOTUSED    0   /* The P4 parameter is not used */
 #define P4_DYNAMIC  (-1)  /* Pointer to a string obtained from sqliteMalloc() */
@@ -102,6 +117,7 @@ typedef struct VdbeOpList VdbeOpList;
 #define P4_INT64    (-13) /* P4 is a 64-bit signed integer */
 #define P4_INT32    (-14) /* P4 is a 32-bit signed integer */
 #define P4_INTARRAY (-15) /* P4 is a vector of 32-bit integers */
+#define P4_SUBPROGRAM  (-18) /* P4 is a pointer to a SubProgram structure */
 
 /* When adding a P4 argument using P4_KEYINFO, a copy of the KeyInfo structure
 ** is made.  That copy is freed when the Vdbe is finalized.  But if the
@@ -168,7 +184,7 @@ void sqlite3VdbeUsesBtree(Vdbe*, int);
 VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
-void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int);
+void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
 int sqlite3VdbeCurrentAddr(Vdbe*);
@@ -183,6 +199,8 @@ void sqlite3VdbeCountChanges(Vdbe*);
 sqlite3 *sqlite3VdbeDb(Vdbe*);
 void sqlite3VdbeSetSql(Vdbe*, const char *z, int n, int);
 void sqlite3VdbeSwap(Vdbe*,Vdbe*);
+VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
+void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
 
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3VdbeReleaseMemory(int);

@@ -89,6 +89,24 @@ struct VdbeCursor {
 };
 typedef struct VdbeCursor VdbeCursor;
 
+typedef struct VdbeFrame VdbeFrame;
+struct VdbeFrame {
+  Vdbe *v;                /* VM this frame belongs to */
+  int pc;                 /* Program Counter */
+  Op *aOp;                /* Program instructions */
+  int nOp;                /* Size of aOp array */
+  Mem *aMem;              /* Array of memory cells */
+  int nMem;               /* Number of entries in aMem */
+  VdbeCursor **apCsr;     /* Element of Vdbe cursors */
+  u16 nCursor;            /* Number of entries in apCsr */
+  VdbeFrame *pParent;     /* Parent of this frame */
+  void *token;            /* Copy of SubProgram.token */
+  int nChildMem;          /* Number of memory cells for child frame */
+  int nChildCsr;          /* Number of cursors for child frame */
+};
+
+#define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
+
 /*
 ** A value for VdbeCursor.cacheValid that means the cache is always invalid.
 */
@@ -111,6 +129,7 @@ struct Mem {
     int nZero;          /* Used when bit MEM_Zero is set in flags */
     FuncDef *pDef;      /* Used only when flags==MEM_Agg */
     RowSet *pRowSet;    /* Used only when flags==MEM_RowSet */
+    VdbeFrame *pFrame;  /* Used when flags==MEM_Frame */
   } u;
   double r;           /* Real value */
   sqlite3 *db;        /* The associated database connection */
@@ -144,6 +163,7 @@ struct Mem {
 #define MEM_Real      0x0008   /* Value is a real number */
 #define MEM_Blob      0x0010   /* Value is a BLOB */
 #define MEM_RowSet    0x0020   /* Value is a RowSet object */
+#define MEM_Frame     0x0040   /* Value is a VdbeFrame object */
 #define MEM_TypeMask  0x00ff   /* Mask of type bits */
 
 /* Whenever Mem contains a valid string or blob representation, one of
@@ -302,6 +322,9 @@ struct Vdbe {
 #ifdef SQLITE_DEBUG
   FILE *trace;            /* Write an execution trace here, if not NULL */
 #endif
+  VdbeFrame *pFrame;      /* Parent frame */
+  int nFrame;             /* Number of frames in pFrame list */
+  u8 noRecTrigger;        /* True to disable recursive triggers */
 };
 
 /*
@@ -362,6 +385,8 @@ const char *sqlite3OpcodeName(int);
 int sqlite3VdbeOpcodeHasProperty(int, int);
 int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
+void sqlite3VdbeFrameDelete(VdbeFrame*);
+int sqlite3VdbeFrameRestore(VdbeFrame *);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3VdbeReleaseBuffers(Vdbe *p);
 #endif

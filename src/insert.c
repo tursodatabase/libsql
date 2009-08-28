@@ -536,11 +536,6 @@ void sqlite3Insert(
   if( pParse->nested==0 ) sqlite3VdbeCountChanges(v);
   sqlite3BeginWriteOperation(pParse, pSelect || pTrigger, iDb);
 
-  /* if there are row triggers, allocate a temp table for new.* references. */
-  if( pTrigger ){
-    newIdx = pParse->nTab++;
-  }
-
 #ifndef SQLITE_OMIT_XFER_OPT
   /* If the statement is of the form
   **
@@ -744,12 +739,6 @@ void sqlite3Insert(
   if( pColumn==0 && nColumn>0 ){
     keyColumn = pTab->iPKey;
   }
-
-  /* Open the temp table for FOR EACH ROW triggers
-  */
-  if( pTrigger ){
-    sqlite3VdbeAddOp3(v, OP_OpenPseudo, newIdx, 0, pTab->nCol);
-  }
     
   /* Initialize the count of rows to be inserted
   */
@@ -818,7 +807,6 @@ void sqlite3Insert(
   if( tmask & TRIGGER_BEFORE ){
     int regTrigRowid;
     int regCols;
-    int regRec;
 
     /* build the NEW.* reference row.  Note that if there is an INTEGER
     ** PRIMARY KEY into which a NULL is being inserted, that NULL will be
@@ -846,7 +834,7 @@ void sqlite3Insert(
     /* Cannot have triggers on a virtual table. If it were possible,
     ** this block would have to account for hidden column.
     */
-    assert(!IsVirtual(pTab));
+    assert( !IsVirtual(pTab) );
 
     /* Create the new column data
     */
@@ -868,8 +856,6 @@ void sqlite3Insert(
         sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i);
       }
     }
-    regRec = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regCols, pTab->nCol, regRec);
 
     /* If this is an INSERT on a view with an INSTEAD OF INSERT trigger,
     ** do not attempt any conversions before assembling the record.
@@ -877,18 +863,16 @@ void sqlite3Insert(
     ** table column affinities.
     */
     if( !isView ){
+      sqlite3VdbeAddOp2(v, OP_Affinity, regCols, pTab->nCol);
       sqlite3TableAffinityStr(v, pTab);
     }
-    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRec, regTrigRowid);
-    sqlite3ReleaseTempReg(pParse, regRec);
-    sqlite3ReleaseTempReg(pParse, regTrigRowid);
-    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
 
     /* Fire BEFORE or INSTEAD OF triggers */
-    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
-        pTab, newIdx, -1, onError, endOfLoop, 0, 0) ){
-      goto insert_cleanup;
-    }
+    sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
+        pTab, regCols, -1, onError, endOfLoop);
+
+    sqlite3ReleaseTempReg(pParse, regTrigRowid);
+    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
   }
 
   /* Push the record number for the new entry onto the stack.  The
@@ -1009,10 +993,8 @@ void sqlite3Insert(
 
   if( pTrigger ){
     /* Code AFTER triggers */
-    if( sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
-          pTab, newIdx, -1, onError, endOfLoop, 0, 0) ){
-      goto insert_cleanup;
-    }
+    sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
+          pTab, regData, -1, onError, endOfLoop);
   }
 
   /* The bottom of the main insertion loop, if the data source
@@ -1041,7 +1023,7 @@ insert_end:
   ** maximum rowid counter values recorded while inserting into
   ** autoincrement tables.
   */
-  if( pParse->nested==0 && pParse->trigStack==0 ){
+  if( pParse->nested==0 && pParse->pTriggerTab==0 ){
     sqlite3AutoincrementEnd(pParse);
   }
 
@@ -1050,7 +1032,7 @@ insert_end:
   ** generating code because of a call to sqlite3NestedParse(), do not
   ** invoke the callback function.
   */
-  if( db->flags & SQLITE_CountRows && pParse->nested==0 && !pParse->trigStack ){
+  if( (db->flags&SQLITE_CountRows) && !pParse->nested && !pParse->pTriggerTab ){
     sqlite3VdbeAddOp2(v, OP_ResultRow, regRowCount, 1);
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "rows inserted", SQLITE_STATIC);
@@ -1423,11 +1405,6 @@ void sqlite3CompleteInsertion(
   sqlite3VdbeAddOp3(v, OP_MakeRecord, regData, pTab->nCol, regRec);
   sqlite3TableAffinityStr(v, pTab);
   sqlite3ExprCacheAffinityChange(pParse, regData, pTab->nCol);
-#ifndef SQLITE_OMIT_TRIGGER
-  if( newIdx>=0 ){
-    sqlite3VdbeAddOp3(v, OP_Insert, newIdx, regRec, regRowid);
-  }
-#endif
   if( pParse->nested ){
     pik_flags = 0;
   }else{

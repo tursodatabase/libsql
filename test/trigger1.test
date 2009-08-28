@@ -63,84 +63,84 @@ do_test trigger1-1.1.3 {
   }
 } {1 {near "STATEMENT": syntax error}}
 execsql {
-	CREATE TRIGGER tr1 INSERT ON t1 BEGIN
-	  INSERT INTO t1 values(1);
- 	END;
+        CREATE TRIGGER tr1 INSERT ON t1 BEGIN
+          INSERT INTO t1 values(1);
+         END;
 }
 do_test trigger1-1.2.0 {
     catchsql {
-	CREATE TRIGGER IF NOT EXISTS tr1 DELETE ON t1 BEGIN
-	    SELECT * FROM sqlite_master;
- 	END
+        CREATE TRIGGER IF NOT EXISTS tr1 DELETE ON t1 BEGIN
+            SELECT * FROM sqlite_master;
+         END
      }
 } {0 {}}
 do_test trigger1-1.2.1 {
     catchsql {
-	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
-	    SELECT * FROM sqlite_master;
- 	END
+        CREATE TRIGGER tr1 DELETE ON t1 BEGIN
+            SELECT * FROM sqlite_master;
+         END
      }
 } {1 {trigger tr1 already exists}}
 do_test trigger1-1.2.2 {
     catchsql {
-	CREATE TRIGGER "tr1" DELETE ON t1 BEGIN
-	    SELECT * FROM sqlite_master;
- 	END
+        CREATE TRIGGER "tr1" DELETE ON t1 BEGIN
+            SELECT * FROM sqlite_master;
+         END
      }
 } {1 {trigger "tr1" already exists}}
 do_test trigger1-1.2.3 {
     catchsql {
-	CREATE TRIGGER [tr1] DELETE ON t1 BEGIN
-	    SELECT * FROM sqlite_master;
- 	END
+        CREATE TRIGGER [tr1] DELETE ON t1 BEGIN
+            SELECT * FROM sqlite_master;
+         END
      }
 } {1 {trigger [tr1] already exists}}
 
 do_test trigger1-1.3 {
     catchsql {
-	BEGIN;
-	CREATE TRIGGER tr2 INSERT ON t1 BEGIN
-	    SELECT * from sqlite_master; END;
+        BEGIN;
+        CREATE TRIGGER tr2 INSERT ON t1 BEGIN
+            SELECT * from sqlite_master; END;
         ROLLBACK;
-	CREATE TRIGGER tr2 INSERT ON t1 BEGIN
-	    SELECT * from sqlite_master; END;
+        CREATE TRIGGER tr2 INSERT ON t1 BEGIN
+            SELECT * from sqlite_master; END;
     }
 } {0 {}}
 
 do_test trigger1-1.4 {
     catchsql {
-	DROP TRIGGER IF EXISTS tr1;
-	CREATE TRIGGER tr1 DELETE ON t1 BEGIN
-	    SELECT * FROM sqlite_master;
-	END
+        DROP TRIGGER IF EXISTS tr1;
+        CREATE TRIGGER tr1 DELETE ON t1 BEGIN
+            SELECT * FROM sqlite_master;
+        END
     }
 } {0 {}}
 
 do_test trigger1-1.5 {
     execsql {
-	BEGIN;
-	DROP TRIGGER tr2;
-	ROLLBACK;
-	DROP TRIGGER tr2;
+        BEGIN;
+        DROP TRIGGER tr2;
+        ROLLBACK;
+        DROP TRIGGER tr2;
     }
 } {}
 
 do_test trigger1-1.6.1 {
     catchsql {
-	DROP TRIGGER IF EXISTS biggles;
+        DROP TRIGGER IF EXISTS biggles;
     }
 } {0 {}}
 
 do_test trigger1-1.6.2 {
     catchsql {
-	DROP TRIGGER biggles;
+        DROP TRIGGER biggles;
     }
 } {1 {no such trigger: biggles}}
 
 do_test trigger1-1.7 {
     catchsql {
-	DROP TABLE t1;
-	DROP TRIGGER tr1;
+        DROP TABLE t1;
+        DROP TRIGGER tr1;
     }
 } {1 {no such trigger: tr1}}
 
@@ -150,10 +150,10 @@ ifcapable tempdb {
   }
   do_test trigger1-1.8 {
     execsql {
-  	CREATE TRIGGER temp_trig UPDATE ON temp_table BEGIN
-  	    SELECT * from sqlite_master;
-  	END;
-  	SELECT count(*) FROM sqlite_master WHERE name = 'temp_trig';
+          CREATE TRIGGER temp_trig UPDATE ON temp_table BEGIN
+              SELECT * from sqlite_master;
+          END;
+          SELECT count(*) FROM sqlite_master WHERE name = 'temp_trig';
     } 
   } {0}
 }
@@ -403,14 +403,14 @@ do_test trigger1-6.1 {
 do_test trigger1-6.2 {
   execsql {
     CREATE TRIGGER t2 BEFORE DELETE ON t2 BEGIN
-      SELECT RAISE(ABORT,'deletes are not allows');
+      SELECT RAISE(ABORT,'deletes are not permitted');
     END;
     SELECT type, name FROM sqlite_master;
   }
 } [concat $view_v1 {table t2 trigger t2}]
 do_test trigger1-6.3 {
   catchsql {DELETE FROM t2}
-} {1 {deletes are not allows}}
+} {1 {deletes are not permitted}}
 do_test trigger1-6.4 {
   execsql {SELECT * FROM t2}
 } {3 4 7 8}

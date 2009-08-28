@@ -943,18 +943,19 @@ FuncDef *sqlite3VtabOverloadFunction(
 void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
   int i, n;
   Table **apVtabLock;
+  Parse *pRoot = (pParse->pRoot ? pParse->pRoot : pParse);
 
   assert( IsVirtual(pTab) );
-  for(i=0; i<pParse->nVtabLock; i++){
-    if( pTab==pParse->apVtabLock[i] ) return;
+  for(i=0; i<pRoot->nVtabLock; i++){
+    if( pTab==pRoot->apVtabLock[i] ) return;
   }
-  n = (pParse->nVtabLock+1)*sizeof(pParse->apVtabLock[0]);
-  apVtabLock = sqlite3_realloc(pParse->apVtabLock, n);
+  n = (pRoot->nVtabLock+1)*sizeof(pRoot->apVtabLock[0]);
+  apVtabLock = sqlite3_realloc(pRoot->apVtabLock, n);
   if( apVtabLock ){
-    pParse->apVtabLock = apVtabLock;
-    pParse->apVtabLock[pParse->nVtabLock++] = pTab;
+    pRoot->apVtabLock = apVtabLock;
+    pRoot->apVtabLock[pRoot->nVtabLock++] = pTab;
   }else{
-    pParse->db->mallocFailed = 1;
+    pRoot->db->mallocFailed = 1;
   }
 }
 
