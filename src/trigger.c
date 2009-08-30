@@ -698,6 +698,10 @@ static int codeTriggerProgram(
     */
     pParse->orconf = (orconfin==OE_Default)?pStep->orconf:orconfin;
 
+    if( pStep->op!=TK_SELECT ){
+      sqlite3VdbeAddOp1(v, OP_ResetCount, 0);
+    }
+
     switch( pStep->op ){
       case TK_UPDATE: {
         sqlite3Update(pParse, 
@@ -734,6 +738,9 @@ static int codeTriggerProgram(
         break;
       }
     } 
+    if( pStep->op!=TK_SELECT ){
+      sqlite3VdbeAddOp1(v, OP_ResetCount, 1);
+    }
     pStep = pStep->pNext;
   }
 /* sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0); */
@@ -818,13 +825,19 @@ static CodedTrigger *codeRowTrigger(
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
-    VdbeComment((v, "Trigger: %s (%s %s%s%s ON %s) (%s)", pTrigger->zName,
+    VdbeComment((v, "Start: %s.%s (%s %s%s%s ON %s)", 
+      pTrigger->zName, onErrorText(orconf),
       (pTrigger->tr_tm==TRIGGER_BEFORE ? "BEFORE" : "AFTER"),
         (op==TK_UPDATE ? "UPDATE" : ""),
         (op==TK_INSERT ? "INSERT" : ""),
         (op==TK_DELETE ? "DELETE" : ""),
-      pTab->zName, onErrorText(orconf)
+      pTab->zName
     ));
+#ifndef SQLITE_OMIT_TRACE
+    sqlite3VdbeChangeP4(v, -1, 
+      sqlite3MPrintf(db, "-- TRIGGER %s", pTrigger->zName), P4_DYNAMIC
+    );
+#endif
 
     if( pTrigger->pWhen ){
       /* Code the WHEN clause. If it evaluates to false (or NULL) the 
@@ -838,11 +851,13 @@ static CodedTrigger *codeRowTrigger(
     }
 
     /* Code the trigger program into the sub-vdbe. */
-    codeTriggerProgram(pSubParse, pTrigger->step_list, OE_Default);
+    codeTriggerProgram(pSubParse, pTrigger->step_list, orconf);
     if( iEndTrigger ){
       sqlite3VdbeResolveLabel(v, iEndTrigger);
     }
     sqlite3VdbeAddOp0(v, OP_Halt);
+    VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
+
     transferParseError(pParse, pSubParse);
     pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pParse->nArg);
     pProgram->nMem = pSubParse->nMem;
@@ -961,10 +976,10 @@ void sqlite3CodeRowTrigger(
       /* Code the OP_Program opcode in the parent VDBE. P4 of the OP_Program 
       ** is a pointer to the sub-vdbe containing the trigger program.  */
       if( pC ){
-        sqlite3VdbeAddOp3(v, OP_Program, oldIdx, newIdx, ++pParse->nMem);
+        sqlite3VdbeAddOp3(v, OP_Program, oldIdx, ignoreJump, ++pParse->nMem);
         pC->pProgram->nRef++;
         sqlite3VdbeChangeP4(v, -1, (const char *)pC->pProgram, P4_SUBPROGRAM);
-        VdbeComment((v, "Call trigger: %s (%s)", p->zName,onErrorText(orconf)));
+        VdbeComment((v, "Call: %s.%s", p->zName, onErrorText(orconf)));
       }
     }
   }

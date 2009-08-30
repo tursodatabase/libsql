@@ -29,6 +29,7 @@ do_test tkt3992-1.1 {
     INSERT INTO parameters2(mountcnt, version) VALUES(1, 1.0);
   }
 } {}
+puts [execsql { SELECT *,typeof(mountcnt),typeof(version) FROM parameters1 }]
 
 do_test tkt3992-1.2 {
   execsql {
@@ -38,8 +39,12 @@ do_test tkt3992-1.2 {
 } {2 1.0}
 
 do_test tkt3992-1.3 {
+    explain { UPDATE parameters2 SET mountcnt = mountcnt + 1 }
+breakpoint
   execsql {
+  pragma vdbe_trace = 1;
     UPDATE parameters2 SET mountcnt = mountcnt + 1;
+  pragma vdbe_trace = 0;
     SELECT * FROM parameters2;
   }
 } {2 1.0}
@@ -72,9 +77,6 @@ do_test tkt3992-2.3 {
   }
   set res
 } {real}
-explain {
-    UPDATE t2 SET a = 'I';
-}
 
 
 finish_test

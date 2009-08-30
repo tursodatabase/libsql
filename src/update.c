@@ -130,6 +130,7 @@ void sqlite3Update(
   int regNew;
   int regOld;
   int regRowSet = 0;     /* Rowset of rows to be updated */
+  int regRec;            /* Register used for new table record to insert */
 
   memset(&sContext, 0, sizeof(sContext));
   db = pParse->db;
@@ -145,7 +146,7 @@ void sqlite3Update(
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
 
   /* Figure out if we have any triggers and if the table being
-  ** updated is a view
+  ** updated is a view.
   */
 #ifndef SQLITE_OMIT_TRIGGER
   pTrigger = sqlite3TriggersExist(pParse, pTab, TK_UPDATE, pChanges, 0);
@@ -282,6 +283,7 @@ void sqlite3Update(
   }
   regNew = pParse->nMem + 1;
   pParse->nMem += pTab->nCol;
+  regRec = ++pParse->nMem;
 
   /* Start the view context. */
   if( isView ){
@@ -421,16 +423,29 @@ void sqlite3Update(
     }
   }
 
+  /* If this is not a view, create the record that will be inserted into
+  ** the table (assuming no constraint checks fail). A side effect of
+  ** creating the record is applying affinity transformations to the
+  ** array of registers populated by the block above. This needs to be
+  ** done before the BEFORE triggers are fired.  */
+#if 0
+  if( !isView ){
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNew, pTab->nCol, regRec);
+    sqlite3TableAffinityStr(v, pTab);
+    sqlite3ExprCacheAffinityChange(pParse, regNew, pTab->nCol);
+  }
+#endif
+
   /* Fire any BEFORE UPDATE triggers. This happens before constraints are
   ** verified. One could argue that this is wrong.  */
   sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-      TRIGGER_BEFORE, pTab, regNew, regOld, onError, addr);
+      TRIGGER_BEFORE, pTab, -1, regOldRowid, onError, addr);
 
   if( !isView ){
 
     /* Do constraint checks. */
     sqlite3GenerateConstraintChecks(pParse, pTab, iCur, regNewRowid,
-        aRegIdx, chngRowid, 1, onError, addr, 0);
+        aRegIdx, (chngRowid?regOldRowid:0), 1, onError, addr, 0);
 
     /* Delete the index entries associated with the current record.  */
     j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
@@ -442,8 +457,21 @@ void sqlite3Update(
     }
     sqlite3VdbeJumpHere(v, j1);
   
-    /* Create the new index entries and the new record.  */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx,1,-1,0,0);
+    /* Insert the new index entries and the new record. */
+    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, -1, 0, 0);
+
+#if 0
+    for(i=0; i<nIdx; i++){
+      if( aRegIdx[i] ){
+        sqlite3VdbeAddOp2(v, OP_IdxInsert, iCur+1+i, aRegIdx[i]);
+      }
+    }
+    sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, regNewRowid);
+    if( !pParse->nested ){
+      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
+      sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_ISUPDATE);
+    }
+#endif
   }
 
   /* Increment the row counter 
@@ -453,7 +481,7 @@ void sqlite3Update(
   }
 
   sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-      TRIGGER_AFTER, pTab, regNew, regOld, onError, addr);
+      TRIGGER_AFTER, pTab, -1, regOldRowid, onError, addr);
 
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.

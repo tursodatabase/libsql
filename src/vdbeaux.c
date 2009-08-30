@@ -295,7 +295,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     }else if( opcode==OP_Transaction && pOp->p2!=0 ){
       p->readOnly = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
+    }else if( opcode==OP_VUpdate || opcode==OP_VRename || opcode==OP_Program ){
       doesStatementRollback = 1;
     }else if( opcode==OP_VFilter ){
       int n;
@@ -1336,6 +1336,8 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   v->nMem = pFrame->nMem;
   v->apCsr = pFrame->apCsr;
   v->nCursor = pFrame->nCursor;
+  v->db->lastRowid = pFrame->lastRowid;
+  v->nChange = pFrame->nChange;
   return pFrame->pc;
 }
 
@@ -1387,12 +1389,6 @@ static void Cleanup(Vdbe *p){
   for(i=1; i<=p->nMem; i++){ assert( p->aMem[i].flags==MEM_Null ); }
 #endif
 
-  if( p->contextStack ){
-    sqlite3DbFree(db, p->contextStack);
-  }
-  p->contextStack = 0;
-  p->contextStackDepth = 0;
-  p->contextStackTop = 0;
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = 0;
   p->pResultSet = 0;

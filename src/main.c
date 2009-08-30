@@ -1591,6 +1591,9 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_LOAD_EXTENSION
                  | SQLITE_LoadExtension
 #endif
+#ifdef SQLITE_DISABLE_RECURSIVE_TRIGGERS
+                 | SQLITE_NoRecTriggers
+#endif
       ;
   sqlite3HashInit(&db->aCollSeq);
 #ifndef SQLITE_OMIT_VIRTUALTABLE

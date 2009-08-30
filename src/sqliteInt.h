@@ -911,6 +911,7 @@ struct sqlite3 {
 
 #define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 #define SQLITE_ReverseOrder   0x00100000  /* Reverse unordered SELECTs */
+#define SQLITE_NoRecTriggers  0x00200000  /* Disable recursive triggers */
 
 /*
 ** Possible values for the sqlite.magic field.

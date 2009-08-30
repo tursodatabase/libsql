@@ -852,6 +852,7 @@ case OP_Halt: {
     p->nFrame--;
     pc = sqlite3VdbeFrameRestore(pFrame);
     if( pOp->p2==OE_Ignore ){
+      pc = p->aOp[pc].p2-1;
     }
     break;
   }
@@ -3546,11 +3547,11 @@ case OP_Sequence: {           /* out2-prerelease */
 ** table that cursor P1 points to.  The new record number is written
 ** written to register P2.
 **
-** If P3>0 then P3 is a register that holds the largest previously
-** generated record number.  No new record numbers are allowed to be less
-** than this value.  When this value reaches its maximum, a SQLITE_FULL
-** error is generated.  The P3 register is updated with the generated
-** record number.  This P3 mechanism is used to help implement the
+** If P3>0 then P3 is a register in the root frame of this VDBE that holds 
+** the largest previously generated record number. No new record numbers are
+** allowed to be less than this value. When this value reaches its maximum, 
+** a SQLITE_FULL error is generated. The P3 register is updated with the '
+** generated record number. This P3 mechanism is used to help implement the
 ** AUTOINCREMENT feature.
 */
 case OP_NewRowid: {           /* out2-prerelease */
@@ -3559,6 +3560,7 @@ case OP_NewRowid: {           /* out2-prerelease */
   int res;               /* Result of an sqlite3BtreeLast() */
   int cnt;               /* Counter to limit the number of searches */
   Mem *pMem;             /* Register holding largest rowid for AUTOINCREMENT */
+  VdbeFrame *pFrame;     /* Root frame of VDBE */
 
   v = 0;
   res = 0;
@@ -3617,9 +3619,16 @@ case OP_NewRowid: {           /* out2-prerelease */
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
       if( pOp->p3 ){
-        assert( pOp->p3>0 && pOp->p3<=p->nMem ); /* P3 is a valid memory cell */
-        pMem = &p->aMem[pOp->p3];
-	REGISTER_TRACE(pOp->p3, pMem);
+        if( p->pFrame ){
+          for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
+          pMem = &pFrame->aMem[pOp->p3];
+        }else{
+          pMem = &p->aMem[pOp->p3];
+        }
+        /* Assert that P3 is a valid memory cell. */
+        assert( pOp->p3>0 && pOp->p3<=(p->pFrame ? pFrame->nMem : p->nMem) );
+
+        REGISTER_TRACE(pOp->p3, pMem);
         sqlite3VdbeMemIntegerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
         if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
@@ -4740,68 +4749,29 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 
 
 #ifndef SQLITE_OMIT_TRIGGER
-/* Opcode: ContextPush * * * 
-**
-** Save the current Vdbe context such that it can be restored by a ContextPop
-** opcode. The context stores the last insert row id, the last statement change
-** count, and the current statement change count.
-*/
-case OP_ContextPush: {
-  int i;
-  Context *pContext;
-
-  i = p->contextStackTop++;
-  assert( i>=0 );
-  /* FIX ME: This should be allocated as part of the vdbe at compile-time */
-  if( i>=p->contextStackDepth ){
-    p->contextStackDepth = i+1;
-    p->contextStack = sqlite3DbReallocOrFree(db, p->contextStack,
-                                          sizeof(Context)*(i+1));
-    if( p->contextStack==0 ) goto no_mem;
-  }
-  pContext = &p->contextStack[i];
-  pContext->lastRowid = db->lastRowid;
-  pContext->nChange = p->nChange;
-  break;
-}
-
-/* Opcode: ContextPop * * * 
-**
-** Restore the Vdbe context to the state it was in when contextPush was last
-** executed. The context stores the last insert row id, the last statement
-** change count, and the current statement change count.
-*/
-case OP_ContextPop: {
-  Context *pContext;
-  pContext = &p->contextStack[--p->contextStackTop];
-  assert( p->contextStackTop>=0 );
-  db->lastRowid = pContext->lastRowid;
-  p->nChange = pContext->nChange;
-  break;
-}
 
 /* Opcode: Program P1 P2 P3 P4 *
 **
-** Execute a trigger program. P1 contains the address of the memory cell
-** that contains the left-most column of the old.* table (unless the trigger
-** program is firing as a result of an INSERT statement). P2 is the address 
-** of the corresponding column in the new.* table (unless the trigger 
-** program is being fired due to a DELETE).
+** Execute the trigger program passed as P4 (type P4_SUBPROGRAM). 
 **
-** Register P3 contains the address of a memory cell in this (the parent)
-** VM that is used to allocate the memory required by the sub-vdbe at 
-** runtime.
+** P1 contains the address of the memory cell that contains the first memory 
+** cell in an array of values used as arguments to the sub-program. P2 
+** contains the address to jump to if the sub-program throws an IGNORE 
+** exception using the RAISE() function. Register P3 contains the address 
+** of a memory cell in this (the parent) VM that is used to allocate the 
+** memory required by the sub-vdbe at runtime.
 **
 ** P4 is a pointer to the VM containing the trigger program.
 */
-case OP_Program: {
+case OP_Program: {        /* jump */
   VdbeFrame *pFrame;
   SubProgram *pProgram = pOp->p4.pProgram;
   Mem *pRt = &p->aMem[pOp->p3];        /* Register to allocate runtime space */
   assert( pProgram->nOp>0 );
   
-  /* If noRecTrigger is true, then recursive invocation of triggers is
-  ** disabled for backwards compatibility. 
+  /* If the SQLITE_NoRecTriggers flag it set, then recursive invocation of
+  ** triggers is disabled for backwards compatibility (flag set/cleared by
+  ** the "PRAGMA disable_recursive_triggers" command). 
   ** 
   ** It is recursive invocation of triggers, at the SQL level, that is 
   ** disabled. In some cases a single trigger may generate more than one 
@@ -4810,7 +4780,7 @@ case OP_Program: {
   ** single trigger all have the same value for the SubProgram.token 
   ** variable.
   */
-  if( 1 || p->noRecTrigger ){
+  if( db->flags&SQLITE_NoRecTriggers ){
     void *t = pProgram->token;
     for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
     if( pFrame ) break;
@@ -4874,6 +4844,8 @@ case OP_Program: {
 
   p->nFrame++;
   pFrame->pParent = p->pFrame;
+  pFrame->lastRowid = db->lastRowid;
+  pFrame->nChange = p->nChange;
   p->pFrame = pFrame;
   p->aMem = &VdbeFrameMem(pFrame)[-1];
   p->nMem = pFrame->nChildMem;
@@ -4886,26 +4858,21 @@ case OP_Program: {
   break;
 }
 
-/* Opcode: TriggerVal P1 P2 P3 * *
+/* Opcode: Param P1 P2 * * *
 **
-** Copy a value currently stored in a memory cell of the parent VM to
-** a cell in this VMs address space. This is used by trigger programs
-** to access the new.* and old.* values.
+** This opcode is only ever present in sub-programs called via the 
+** OP_Program instruction. Copy a value currently stored in a memory 
+** cell of the calling (parent) frame to cell P2 in the current frames 
+** address space. This is used by trigger programs to access the new.* 
+** and old.* values.
 **
-** If parameter P3 is non-zero, then the value read is from the new.*
-** table. If P3 is zero, then the value is read from the old.* table.
-** Parameter P1 is the index of the required new.* or old.* column (or
-** -1 for rowid). 
-**
-** Parameter P2 is the index of the memory cell in this VM to copy the 
-** value to.
+** The address of the cell in the parent frame is determined by adding
+** the value of the P1 argument to the value of the P1 argument to the
+** calling OP_Program instruction.
 */
-case OP_TriggerVal: {           /* out2-prerelease */
-  VdbeFrame *pF = p->pFrame;
-  Mem *pIn;
-  int iFrom = pOp->p1;           /* Memory cell in parent frame */
-  iFrom += (pOp->p3 ? pF->aOp[pF->pc].p2 : pF->aOp[pF->pc].p1);
-  pIn = &pF->aMem[iFrom];
+case OP_Param: {           /* out2-prerelease */
+  VdbeFrame *pFrame = p->pFrame;
+  Mem *pIn = &pFrame->aMem[pOp->p1 + pFrame->aOp[pFrame->pc].p1];   
   sqlite3VdbeMemShallowCopy(pOut, pIn, MEM_Ephem);
   break;
 }
@@ -4915,13 +4882,23 @@ case OP_TriggerVal: {           /* out2-prerelease */
 #ifndef SQLITE_OMIT_AUTOINCREMENT
 /* Opcode: MemMax P1 P2 * * *
 **
-** Set the value of register P1 to the maximum of its current value
-** and the value in register P2.
+** P1 is a register in the root frame of this VM (the root frame is
+** different from the current frame if this instruction is being executed
+** within a sub-program). Set the value of register P1 to the maximum of 
+** its current value and the value in register P2.
 **
 ** This instruction throws an error if the memory cell is not initially
 ** an integer.
 */
-case OP_MemMax: {        /* in1, in2 */
+case OP_MemMax: {        /* in2 */
+  Mem *pIn1;
+  VdbeFrame *pFrame;
+  if( p->pFrame ){
+    for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
+    pIn1 = &pFrame->aMem[pOp->p1];
+  }else{
+    pIn1 = &p->aMem[pOp->p1];
+  }
   sqlite3VdbeMemIntegerify(pIn1);
   sqlite3VdbeMemIntegerify(pIn2);
   if( pIn1->u.i<pIn2->u.i){

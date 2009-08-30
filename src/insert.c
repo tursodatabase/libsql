@@ -197,20 +197,21 @@ static int autoIncBegin(
 ){
   int memId = 0;      /* Register holding maximum rowid */
   if( pTab->tabFlags & TF_Autoincrement ){
+    Parse *pRoot = (pParse->pRoot ? pParse->pRoot : pParse);
     AutoincInfo *pInfo;
 
-    pInfo = pParse->pAinc;
+    pInfo = pRoot->pAinc;
     while( pInfo && pInfo->pTab!=pTab ){ pInfo = pInfo->pNext; }
     if( pInfo==0 ){
       pInfo = sqlite3DbMallocRaw(pParse->db, sizeof(*pInfo));
       if( pInfo==0 ) return 0;
-      pInfo->pNext = pParse->pAinc;
-      pParse->pAinc = pInfo;
+      pInfo->pNext = pRoot->pAinc;
+      pRoot->pAinc = pInfo;
       pInfo->pTab = pTab;
       pInfo->iDb = iDb;
-      pParse->nMem++;                  /* Register to hold name of table */
-      pInfo->regCtr = ++pParse->nMem;  /* Max rowid register */
-      pParse->nMem++;                  /* Rowid in sqlite_sequence */
+      pRoot->nMem++;                  /* Register to hold name of table */
+      pInfo->regCtr = ++pRoot->nMem;  /* Max rowid register */
+      pRoot->nMem++;                  /* Rowid in sqlite_sequence */
     }
     memId = pInfo->regCtr;
   }
@@ -228,6 +229,9 @@ void sqlite3AutoincrementBegin(Parse *pParse){
   int memId;                 /* Register holding max rowid */
   int addr;                  /* A VDBE address */
   Vdbe *v = pParse->pVdbe;   /* VDBE under construction */
+
+  /* If currently generating a trigger program, this call is a no-op */
+  if( pParse->pTriggerTab ) return;
 
   assert( v );   /* We failed long ago if this is not so */
   for(p = pParse->pAinc; p; p = p->pNext){
@@ -805,8 +809,7 @@ void sqlite3Insert(
   */
   endOfLoop = sqlite3VdbeMakeLabel(v);
   if( tmask & TRIGGER_BEFORE ){
-    int regTrigRowid;
-    int regCols;
+    int regCols = sqlite3GetTempRange(pParse, pTab->nCol+1);
 
     /* build the NEW.* reference row.  Note that if there is an INTEGER
     ** PRIMARY KEY into which a NULL is being inserted, that NULL will be
@@ -814,21 +817,20 @@ void sqlite3Insert(
     ** we do not know what the unique ID will be (because the insert has
     ** not happened yet) so we substitute a rowid of -1
     */
-    regTrigRowid = sqlite3GetTempReg(pParse);
     if( keyColumn<0 ){
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
     }else{
       int j1;
       if( useTempTable ){
-        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regTrigRowid);
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, keyColumn, regCols);
       }else{
         assert( pSelect==0 );  /* Otherwise useTempTable is true */
-        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regTrigRowid);
+        sqlite3ExprCode(pParse, pList->a[keyColumn].pExpr, regCols);
       }
-      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regTrigRowid);
-      sqlite3VdbeAddOp2(v, OP_Integer, -1, regTrigRowid);
+      j1 = sqlite3VdbeAddOp1(v, OP_NotNull, regCols);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, regCols);
       sqlite3VdbeJumpHere(v, j1);
-      sqlite3VdbeAddOp1(v, OP_MustBeInt, regTrigRowid);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, regCols);
     }
 
     /* Cannot have triggers on a virtual table. If it were possible,
@@ -838,7 +840,6 @@ void sqlite3Insert(
 
     /* Create the new column data
     */
-    regCols = sqlite3GetTempRange(pParse, pTab->nCol);
     for(i=0; i<pTab->nCol; i++){
       if( pColumn==0 ){
         j = i;
@@ -848,12 +849,12 @@ void sqlite3Insert(
         }
       }
       if( pColumn && j>=pColumn->nId ){
-        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i);
+        sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i+1);
       }else if( useTempTable ){
-        sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i); 
+        sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i+1); 
       }else{
         assert( pSelect==0 ); /* Otherwise useTempTable is true */
-        sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i);
+        sqlite3ExprCodeAndCache(pParse, pList->a[j].pExpr, regCols+i+1);
       }
     }
 
@@ -863,16 +864,15 @@ void sqlite3Insert(
     ** table column affinities.
     */
     if( !isView ){
-      sqlite3VdbeAddOp2(v, OP_Affinity, regCols, pTab->nCol);
+      sqlite3VdbeAddOp2(v, OP_Affinity, regCols+1, pTab->nCol);
       sqlite3TableAffinityStr(v, pTab);
     }
 
     /* Fire BEFORE or INSTEAD OF triggers */
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
-        pTab, regCols, -1, onError, endOfLoop);
+        pTab, -1, regCols-pTab->nCol-1, onError, endOfLoop);
 
-    sqlite3ReleaseTempReg(pParse, regTrigRowid);
-    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol);
+    sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol+1);
   }
 
   /* Push the record number for the new entry onto the stack.  The
@@ -994,7 +994,7 @@ void sqlite3Insert(
   if( pTrigger ){
     /* Code AFTER triggers */
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
-          pTab, regData, -1, onError, endOfLoop);
+        pTab, -1, regData-2-pTab->nCol, onError, endOfLoop);
   }
 
   /* The bottom of the main insertion loop, if the data source
@@ -1153,7 +1153,6 @@ void sqlite3GenerateConstraintChecks(
   nCol = pTab->nCol;
   regData = regRowid + 1;
 
-
   /* Test all NOT NULL constraints.
   */
   for(i=0; i<nCol; i++){
@@ -1229,7 +1228,7 @@ void sqlite3GenerateConstraintChecks(
     
     if( onError!=OE_Replace || pTab->pIndex ){
       if( isUpdate ){
-        j2 = sqlite3VdbeAddOp3(v, OP_Eq, regRowid, 0, regRowid-1);
+        j2 = sqlite3VdbeAddOp3(v, OP_Eq, regRowid, 0, rowidChng);
       }
       j3 = sqlite3VdbeAddOp3(v, OP_NotExists, baseCur, 0, regRowid);
       switch( onError ){

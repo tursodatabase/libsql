@@ -408,11 +408,14 @@ void sqlite3DeleteFrom(
       for(i=0; i<pTab->nCol; i++){
         if( mask==0xffffffff || mask&(1<<i) ){
           sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regOld+i);
+          sqlite3ColumnDefault(v, pTab, i, regOld+i);
         }
       }
+      sqlite3VdbeAddOp2(v, OP_Affinity, regOld, pTab->nCol);
+      sqlite3TableAffinityStr(v, pTab);
 
       sqlite3CodeRowTrigger(pParse, pTrigger, 
-          TK_DELETE, 0, TRIGGER_BEFORE, pTab, -1, regOld, OE_Default, addr
+          TK_DELETE, 0, TRIGGER_BEFORE, pTab, -1, iRowid, OE_Default, addr
       );
     }
 
@@ -432,7 +435,7 @@ void sqlite3DeleteFrom(
 
     /* Code the AFTER triggers. This is a no-op if there are no triggers. */
     sqlite3CodeRowTrigger(pParse, 
-      pTrigger, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1, regOld, OE_Default, addr
+      pTrigger, TK_DELETE, 0, TRIGGER_AFTER, pTab, -1, iRowid, OE_Default, addr
     );
 
     /* End of the delete loop */

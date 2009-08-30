@@ -558,6 +558,8 @@ do_test autoinc-9.1 {
   }
 } {t3 0}
 
+catchsql { pragma disable_recursive_triggers = 1 } 
+
 # Ticket #3928.  Make sure that triggers to not make extra slots in
 # the SQLITE_SEQUENCE table.
 #

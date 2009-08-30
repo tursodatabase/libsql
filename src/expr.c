@@ -90,7 +90,9 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     pColl = p->pColl;
     if( pColl ) break;
     op = p->op;
-    if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) && p->pTab!=0 ){
+    if( p->pTab!=0 && (
+        op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER || op==TK_TRIGGER
+    )){
       /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       const char *zColl;
@@ -2557,11 +2559,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 
     case TK_TRIGGER: {
-      sqlite3VdbeAddOp3(v, OP_TriggerVal, pExpr->iColumn, target,pExpr->iTable);
-      assert( pExpr->pTab );
-      VdbeComment((v, "%s.%s", 
+      int iVal = pExpr->iTable * (pExpr->pTab->nCol+1) + 1 + pExpr->iColumn;
+      sqlite3VdbeAddOp2(v, OP_Param, iVal, target);
+      VdbeComment((v, "%s.%s -> $%d", 
         (pExpr->iTable ? "new" : "old"), 
-        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName)
+        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName),
+	target
       ));
       break;
     }

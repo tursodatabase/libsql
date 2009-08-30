@@ -103,6 +103,8 @@ struct VdbeFrame {
   void *token;            /* Copy of SubProgram.token */
   int nChildMem;          /* Number of memory cells for child frame */
   int nChildCsr;          /* Number of cursors for child frame */
+  i64 lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
+  int nChange;      /* Statement changes (Vdbe.nChanges)     */
 };
 
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
@@ -244,21 +246,6 @@ struct Set {
 };
 
 /*
-** A Context stores the last insert rowid, the last statement change count,
-** and the current statement change count (i.e. changes since last statement).
-** The current keylist is also stored in the context.
-** Elements of Context structure type make up the ContextStack, which is
-** updated by the ContextPush and ContextPop opcodes (used by triggers).
-** The context is pushed before executing a trigger a popped when the
-** trigger finishes.
-*/
-typedef struct Context Context;
-struct Context {
-  i64 lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
-  int nChange;      /* Statement changes (Vdbe.nChanges)     */
-};
-
-/*
 ** An instance of the virtual machine.  This structure contains the complete
 ** state of the virtual machine.
 **
@@ -297,9 +284,6 @@ struct Vdbe {
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
   int cacheCtr;           /* VdbeCursor row cache generation counter */
-  int contextStackTop;    /* Index of top element in the context stack */
-  int contextStackDepth;  /* The size of the "context" stack */
-  Context *contextStack;  /* Stack used by opcodes ContextPush & ContextPop*/
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
   char *zErrMsg;          /* Error message written here */
