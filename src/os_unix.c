@@ -168,6 +168,19 @@
 
 
 /*
+** Sometimes, after a file handle is closed by SQLite, the file descriptor
+** cannot be closed immediately. In these cases, instances of the following
+** structure are used to store the file descriptor while waiting for an
+** opportunity to either close or reuse it.
+*/
+typedef struct UnixUnusedFd UnixUnusedFd;
+struct UnixUnusedFd {
+  int fd;                   /* File descriptor to close */
+  int flags;                /* Flags this file descriptor was opened with */
+  UnixUnusedFd *pNext;      /* Next unused file descriptor on same file */
+};
+
+/*
 ** The unixFile structure is subclass of sqlite3_file specific to the unix
 ** VFS implementations.
 */
@@ -181,7 +194,7 @@ struct unixFile {
   unsigned char locktype;          /* The type of lock held on this fd */
   int lastErrno;                   /* The unix errno from the last I/O error */
   void *lockingContext;            /* Locking style specific state */
-  int flags;                       /* Flags value returned by xOpen() */
+  UnixUnusedFd *pUnused;           /* Pre-allocated UnixUnusedFd */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                   /* The flags specified at open() */
 #endif
@@ -748,14 +761,10 @@ struct unixOpenCnt {
   struct unixFileId fileId;   /* The lookup key */
   int nRef;                   /* Number of pointers to this structure */
   int nLock;                  /* Number of outstanding locks */
-  int nPending;               /* Number of pending close() operations */
-  struct PendingClose {
-    int fd;                   /* File descriptor to close */
-    int flags;                /* Flags this file descriptor was opened with */
-  } *aPending;                /* Malloced space holding fds awaiting close() */
+  UnixUnusedFd *pUnused;      /* Unused file descriptors to close */
 #if OS_VXWORKS
   sem_t *pSem;                     /* Named POSIX semaphore */
-  char aSemName[MAX_PATHNAME+1];   /* Name of that semaphore */
+  char aSemName[MAX_PATHNAME+2];   /* Name of that semaphore */
 #endif
   struct unixOpenCnt *pNext, *pPrev;   /* List of all unixOpenCnt objects */
 };
@@ -910,7 +919,7 @@ static void releaseOpenCnt(struct unixOpenCnt *pOpen){
         assert( pOpen->pNext->pPrev==pOpen );
         pOpen->pNext->pPrev = pOpen->pPrev;
       }
-      sqlite3_free(pOpen->aPending);
+      assert( !pOpen->pUnused );
       sqlite3_free(pOpen);
     }
   }
@@ -1028,19 +1037,12 @@ static int findLockInfo(
         rc = SQLITE_NOMEM;
         goto exit_findlockinfo;
       }
+      memset(pOpen, 0, sizeof(*pOpen));
       pOpen->fileId = fileId;
       pOpen->nRef = 1;
-      pOpen->nLock = 0;
-      pOpen->nPending = 0;
-      pOpen->aPending = 0;
       pOpen->pNext = openList;
-      pOpen->pPrev = 0;
       if( openList ) openList->pPrev = pOpen;
       openList = pOpen;
-#if OS_VXWORKS
-      pOpen->pSem = NULL;
-      pOpen->aSemName[0] = '\0';
-#endif
     }else{
       pOpen->nRef++;
     }
@@ -1405,57 +1407,46 @@ end_lock:
 }
 
 /*
-** Close all file descriptors accumuated in the p->aPending[] array. If
-** all such file descriptors are closed without error, the aPending[] 
-** array is deleted and SQLITE_OK returned.
+** Close all file descriptors accumuated in the unixOpenCnt->pUnused list.
+** If all such file descriptors are closed without error, the list is
+** cleared and SQLITE_OK returned.
 **
 ** Otherwise, if an error occurs, then successfully closed file descriptor
-** entries in the aPending[] array are set to -1, the aPending[] array
+** entries are removed from the list, and SQLITE_IOERR_CLOSE returned. 
 ** not deleted and SQLITE_IOERR_CLOSE returned.
 */ 
 static int closePendingFds(unixFile *pFile){
-  struct unixOpenCnt *pOpen = pFile->pOpen;
-  struct PendingClose *aPending = pOpen->aPending;
-  int i;
   int rc = SQLITE_OK;
-  assert( unixMutexHeld() );
-  for(i=0; i<pOpen->nPending; i++){
-    if( aPending[i].fd>=0 ){
-      if( close(aPending[i].fd) ){
-        pFile->lastErrno = errno;
-        rc = SQLITE_IOERR_CLOSE;
-      }else{
-        aPending[i].fd = -1;
-      }
+  struct unixOpenCnt *pOpen = pFile->pOpen;
+  UnixUnusedFd *pError = 0;
+  UnixUnusedFd *p;
+  UnixUnusedFd *pNext;
+  for(p=pOpen->pUnused; p; p=pNext){
+    pNext = p->pNext;
+    if( close(p->fd) ){
+      pFile->lastErrno = errno;
+      rc = SQLITE_IOERR_CLOSE;
+      p->pNext = pError;
+      pError = p;
+    }else{
+      sqlite3_free(p);
     }
   }
-  if( rc==SQLITE_OK ){
-    sqlite3_free(aPending);
-    pOpen->nPending = 0;
-    pOpen->aPending = 0;
-  }
+  pOpen->pUnused = pError;
   return rc;
 }
 
 /*
 ** Add the file descriptor used by file handle pFile to the corresponding
-** aPending[] array to be closed after some other connection releases
-** a lock.
+** pUnused list.
 */
 static void setPendingFd(unixFile *pFile){
-  struct PendingClose *aNew;
   struct unixOpenCnt *pOpen = pFile->pOpen;
-  int nByte = (pOpen->nPending+1)*sizeof(pOpen->aPending[0]);
-  aNew = sqlite3_realloc(pOpen->aPending, nByte);
-  if( aNew==0 ){
-    /* If a malloc fails, just leak the file descriptor */
-  }else{
-    pOpen->aPending = aNew;
-    pOpen->aPending[pOpen->nPending].fd = pFile->h;
-    pOpen->aPending[pOpen->nPending].flags = pFile->flags;
-    pOpen->nPending++;
-    pFile->h = -1;
-  }
+  UnixUnusedFd *p = pFile->pUnused;
+  p->pNext = pOpen->pUnused;
+  pOpen->pUnused = p;
+  pFile->h = -1;
+  pFile->pUnused = 0;
 }
 
 /*
@@ -1573,7 +1564,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     pOpen = pFile->pOpen;
     pOpen->nLock--;
     assert( pOpen->nLock>=0 );
-    if( pOpen->nLock==0 && pOpen->nPending>0 ){
+    if( pOpen->nLock==0 ){
       int rc2 = closePendingFds(pFile);
       if( rc==SQLITE_OK ){
         rc = rc2;
@@ -1627,6 +1618,7 @@ static int closeUnixFile(sqlite3_file *id){
 #endif
     OSTRACE2("CLOSE   %-3d\n", pFile->h);
     OpenCounter(-1);
+    sqlite3_free(pFile->pUnused);
     memset(pFile, 0, sizeof(unixFile));
   }
   return SQLITE_OK;
@@ -1644,8 +1636,8 @@ static int unixClose(sqlite3_file *id){
     if( pFile->pOpen && pFile->pOpen->nLock ){
       /* If there are outstanding locks, do not actually close the file just
       ** yet because that would clear those locks.  Instead, add the file
-      ** descriptor to pOpen->aPending.  It will be automatically closed when
-      ** the last lock is cleared.
+      ** descriptor to pOpen->pUnused list.  It will be automatically closed 
+      ** when the last lock is cleared.
       */
       setPendingFd(pFile);
     }
@@ -2616,7 +2608,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
       struct unixOpenCnt *pOpen = pFile->pOpen;
       pOpen->nLock--;
       assert( pOpen->nLock>=0 );
-      if( pOpen->nLock==0 && pOpen->nPending>0 ){
+      if( pOpen->nLock==0 ){
         rc = closePendingFds(pFile);
       }
     }
@@ -2734,7 +2726,7 @@ static int unixRead(
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
-  assert( (pFile->flags&SQLITE_OPEN_MAIN_DB)==0
+  assert( pFile->pUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -2807,7 +2799,7 @@ static int unixWrite(
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
-  assert( (pFile->flags&SQLITE_OPEN_MAIN_DB)==0
+  assert( pFile->pUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
@@ -3174,7 +3166,7 @@ static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
 **
 **    (1) The real finder-function named "FImpt()".
 **
-**    (2) A constant pointer to this functio named just "F".
+**    (2) A constant pointer to this function named just "F".
 **
 **
 ** A pointer to the F pointer is used as the pAppData value for VFS
@@ -3438,13 +3430,10 @@ static int fillInUnixFile(
   assert( pNew->pLock==NULL );
   assert( pNew->pOpen==NULL );
 
-  /* Parameter isDelete is only used on vxworks.
-  ** Express this explicitly here to prevent compiler warnings
-  ** about unused parameters.
+  /* Parameter isDelete is only used on vxworks. Express this explicitly 
+  ** here to prevent compiler warnings about unused parameters.
   */
-#if !OS_VXWORKS
   UNUSED_PARAMETER(isDelete);
-#endif
 
   OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
   pNew->h = h;
@@ -3474,6 +3463,28 @@ static int fillInUnixFile(
   if( pLockingStyle == &posixIoMethods ){
     unixEnterMutex();
     rc = findLockInfo(pNew, &pNew->pLock, &pNew->pOpen);
+    if( rc!=SQLITE_OK ){
+      /* If an error occured in findLockInfo(), close the file descriptor
+      ** immediately, before releasing the mutex. findLockInfo() may fail
+      ** in two scenarios:
+      **
+      **   (a) A call to fstat() failed.
+      **   (b) A malloc failed.
+      **
+      ** Scenario (b) may only occur if the process is holding no other
+      ** file descriptors open on the same file. If there were other file
+      ** descriptors on this file, then no malloc would be required by
+      ** findLockInfo(). If this is the case, it is quite safe to close
+      ** handle h - as it is guaranteed that no posix locks will be released
+      ** by doing so.
+      **
+      ** If scenario (a) caused the error then things are not so safe. The
+      ** implicit assumption here is that if fstat() fails, things are in
+      ** such bad shape that dropping a lock or two doesn't matter much.
+      */
+      close(h);
+      h = -1;
+    }
     unixLeaveMutex();
   }
 
@@ -3525,9 +3536,9 @@ static int fillInUnixFile(
     if( (rc==SQLITE_OK) && (pNew->pOpen->pSem==NULL) ){
       char *zSemName = pNew->pOpen->aSemName;
       int n;
-      sqlite3_snprintf(MAX_PATHNAME, zSemName, "%s.sem",
+      sqlite3_snprintf(MAX_PATHNAME, zSemName, "/%s.sem",
                        pNew->pId->zCanonicalName);
-      for( n=0; zSemName[n]; n++ )
+      for( n=1; zSemName[n]; n++ )
         if( zSemName[n]=='/' ) zSemName[n] = '_';
       pNew->pOpen->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
       if( pNew->pOpen->pSem == SEM_FAILED ){
@@ -3549,7 +3560,7 @@ static int fillInUnixFile(
 #endif
   if( rc!=SQLITE_OK ){
     if( dirfd>=0 ) close(dirfd); /* silent leak if fail, already in error */
-    close(h);
+    if( h>=0 ) close(h);
   }else{
     pNew->pMethod = pLockingStyle;
     OpenCounter(+1);
@@ -3674,8 +3685,15 @@ static int proxyTransformUnixFile(unixFile*, const char*);
 ** If a suitable file descriptor is found, then it is returned. If no
 ** such file descriptor is located, -1 is returned.
 */
-static int findReusableFd(const char *zPath, int flags){
-  int fd = -1;                         /* Return value */
+static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
+  UnixUnusedFd *pUnused = 0;
+
+  /* Do not search for an unused file descriptor on vxworks. Not because
+  ** vxworks would not benefit from the change (it might, we're not sure),
+  ** but because no way to test it is currently available. It is better 
+  ** not to risk breaking vxworks support for the sake of such an obscure 
+  ** feature.  */
+#if !OS_VXWORKS
   struct stat sStat;                   /* Results of stat() call */
 
   /* A stat() call may fail for various reasons. If this happens, it is
@@ -3687,28 +3705,25 @@ static int findReusableFd(const char *zPath, int flags){
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a resusable file descriptor are not dire.  */
   if( 0==stat(zPath, &sStat) ){
-    struct unixOpenCnt *p;
+    struct unixOpenCnt *pO;
     struct unixFileId id;
     id.dev = sStat.st_dev;
     id.ino = sStat.st_ino;
 
     unixEnterMutex();
-    for(p=openList; p&& memcmp(&id, &p->fileId, sizeof(id)); p=p->pNext);
-    if( p && p->aPending ){
-      int i;
-      struct PendingClose *aPending = p->aPending;
-      for(i=0; i<p->nPending; i++){
-        if( aPending[i].fd>=0 && flags==aPending[i].flags ){
-          fd = aPending[i].fd;
-          aPending[i].fd = -1;
-          break;
-        }
+    for(pO=openList; pO && memcmp(&id, &pO->fileId, sizeof(id)); pO=pO->pNext);
+    if( pO ){
+      UnixUnusedFd **pp;
+      for(pp=&pO->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
+      pUnused = *pp;
+      if( pUnused ){
+        *pp = pUnused->pNext;
       }
     }
     unixLeaveMutex();
   }
-
-  return fd;
+#endif    /* if !OS_VXWORKS */
+  return pUnused;
 }
 
 /*
@@ -3796,14 +3811,17 @@ static int unixOpen(
   memset(p, 0, sizeof(unixFile));
 
   if( eType==SQLITE_OPEN_MAIN_DB ){
-    /* Try to find an unused file descriptor to reuse. This is not done
-    ** for vxworks. Not because vxworks would not benefit from the change
-    ** (it might, we're not sure), but because no way to test it is
-    ** currently available. It is better not to risk breaking vxworks for 
-    ** the sake of such an obscure feature.   */
-#if !OS_VXWORKS
-    fd = findReusableFd(zName, flags);
-#endif
+    UnixUnusedFd *pUnused;
+    pUnused = findReusableFd(zName, flags);
+    if( pUnused ){
+      fd = pUnused->fd;
+    }else{
+      pUnused = sqlite3_malloc(sizeof(*pUnused));
+      if( !pUnused ){
+        return SQLITE_NOMEM;
+      }
+    }
+    p->pUnused = pUnused;
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
     assert(isDelete && !isOpenDirectory);
@@ -3825,22 +3843,30 @@ static int unixOpen(
   openFlags |= (O_LARGEFILE|O_BINARY);
 
   if( fd<0 ){
-    fd = open(zName, openFlags, isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
+    mode_t openMode = (isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
+    fd = open(zName, openFlags, openMode);
     OSTRACE4("OPENX   %-3d %s 0%o\n", fd, zName, openFlags);
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
       /* Failed to open the file for read/write access. Try read-only. */
       flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
+      openFlags &= ~(O_RDWR|O_CREAT);
       flags |= SQLITE_OPEN_READONLY;
-      return unixOpen(pVfs, zPath, pFile, flags, pOutFlags);
+      openFlags |= O_RDONLY;
+      fd = open(zName, openFlags, openMode);
     }
     if( fd<0 ){
-      return SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN;
+      goto open_finished;
     }
   }
   assert( fd>=0 );
-  p->flags = flags;
   if( pOutFlags ){
     *pOutFlags = flags;
+  }
+
+  if( p->pUnused ){
+    p->pUnused->fd = fd;
+    p->pUnused->flags = flags;
   }
 
   if( isDelete ){
@@ -3861,11 +3887,11 @@ static int unixOpen(
     if( rc!=SQLITE_OK ){
       /* It is safe to close fd at this point, because it is guaranteed not
       ** to be open on a database file. If it were open on a database file,
-      ** it would not be safe to close as this would cause any locks held
-      ** on the file by this process to be released.  */
+      ** it would not be safe to close as this would release any locks held
+      ** on the file by this process.  */
       assert( eType!=SQLITE_OPEN_MAIN_DB );
       close(fd);             /* silently leak if fail, already in error */
-      return rc;
+      goto open_finished;
     }
   }
 
@@ -3876,7 +3902,7 @@ static int unixOpen(
   noLock = eType!=SQLITE_OPEN_MAIN_DB;
 
 #if SQLITE_PREFER_PROXY_LOCKING
-  if( zPath!=NULL && !noLock ){
+  if( zPath!=NULL && !noLock && pVfs->xOpen ){
     char *envforce = getenv("SQLITE_FORCE_PROXY_LOCKING");
     int useProxy = 0;
 
@@ -3887,10 +3913,20 @@ static int unixOpen(
     }else{
       struct statfs fsInfo;
       if( statfs(zPath, &fsInfo) == -1 ){
-        ((unixFile*)pFile)->lastErrno = errno;
-        if( dirfd>=0 ) close(dirfd); /* silently leak if fail, in error */
+        /* In theory, the close(fd) call is sub-optimal. If the file opened
+        ** with fd is a database file, and there are other connections open
+        ** on that file that are currently holding advisory locks on it,
+        ** then the call to close() will cancel those locks. In practice,
+        ** we're assuming that statfs() doesn't fail very often. At least
+        ** not while other file descriptors opened by the same process on
+        ** the same file are working.  */
+        p->lastErrno = errno;
+        if( dirfd>=0 ){
+          close(dirfd); /* silently leak if fail, in error */
+        }
         close(fd); /* silently leak if fail, in error */
-        return SQLITE_IOERR_ACCESS;
+        rc = SQLITE_IOERR_ACCESS;
+        goto open_finished;
       }
       useProxy = !(fsInfo.f_flags&MNT_LOCAL);
     }
@@ -3899,13 +3935,19 @@ static int unixOpen(
       if( rc==SQLITE_OK ){
         rc = proxyTransformUnixFile((unixFile*)pFile, ":auto:");
       }
-      return rc;
+      goto open_finished;
     }
   }
 #endif
   
-  return fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock, isDelete);
+  rc = fillInUnixFile(pVfs, fd, dirfd, pFile, zPath, noLock, isDelete);
+open_finished:
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(p->pUnused);
+  }
+  return rc;
 }
+
 
 /*
 ** Delete the file at zPath. If the dirSync argument is true, fsync()
@@ -4575,33 +4617,43 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
 ** but also for freeing the memory associated with the file descriptor.
 */
 static int proxyCreateUnixFile(const char *path, unixFile **ppFile) {
-  int fd;
-  int dirfd = -1;
   unixFile *pNew;
+  int flags = SQLITE_OPEN_MAIN_DB|SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE;
   int rc = SQLITE_OK;
   sqlite3_vfs dummyVfs;
 
-  fd = open(path, O_RDWR | O_CREAT, SQLITE_DEFAULT_FILE_PERMISSIONS);
-  if( fd<0 ){
-    return SQLITE_CANTOPEN;
-  }
-  
   pNew = (unixFile *)sqlite3_malloc(sizeof(unixFile));
-  if( pNew==NULL ){
-    rc = SQLITE_NOMEM;
-    goto end_create_proxy;
+  if( !pNew ){
+    return SQLITE_NOMEM;
   }
   memset(pNew, 0, sizeof(unixFile));
 
+  /* Call unixOpen() to open the proxy file. The flags passed to unixOpen()
+  ** suggest that the file being opened is a "main database". This is
+  ** necessary as other file types do not necessarily support locking. It
+  ** is better to use unixOpen() instead of opening the file directly with
+  ** open(), as unixOpen() sets up the various mechanisms required to
+  ** make sure a call to close() does not cause the system to discard
+  ** POSIX locks prematurely.
+  **
+  ** It is important that the xOpen member of the VFS object passed to 
+  ** unixOpen() is NULL. This tells unixOpen() may try to open a proxy-file 
+  ** for the proxy-file (creating a potential infinite loop).
+  */
   dummyVfs.pAppData = (void*)&autolockIoFinder;
-  rc = fillInUnixFile(&dummyVfs, fd, dirfd, (sqlite3_file*)pNew, path, 0, 0);
-  if( rc==SQLITE_OK ){
-    *ppFile = pNew;
-    return SQLITE_OK;
+  dummyVfs.xOpen = 0;
+  rc = unixOpen(&dummyVfs, path, (sqlite3_file *)pNew, flags, &flags);
+  if( rc==SQLITE_OK && (flags&SQLITE_OPEN_READONLY) ){
+    pNew->pMethod->xClose((sqlite3_file *)pNew);
+    rc = SQLITE_CANTOPEN;
   }
-end_create_proxy:    
-  close(fd); /* silently leak fd if error, we're already in error */
-  sqlite3_free(pNew);
+
+  if( rc!=SQLITE_OK ){
+    sqlite3_free(pNew);
+    pNew = 0;
+  }
+
+  *ppFile = pNew;
   return rc;
 }
 

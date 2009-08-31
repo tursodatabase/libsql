@@ -43,7 +43,7 @@ do_test tkt4018-1.1 {
 } {}
 
 # The database is locked by connection [db]. Open and close a second
-# connection to test.db 20000 times. If file-descriptors are not being
+# connection to test.db 10000 times. If file-descriptors are not being
 # reused, then the process will quickly exceed its maximum number of
 # file descriptors (1024 by default on linux).
 do_test tkt4018-1.2 {

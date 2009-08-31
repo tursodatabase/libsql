@@ -779,6 +779,9 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
         sqlite3_snprintf(nTemp, zTemp, "%lld", pMem->u.i);
       }else if( pMem->flags & MEM_Real ){
         sqlite3_snprintf(nTemp, zTemp, "%.16g", pMem->r);
+      }else{
+        assert( pMem->flags & MEM_Blob );
+        zP4 = "(blob)";
       }
       break;
     }
@@ -1345,7 +1348,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
 }
 
 /*
-** Close all cursors. 
+** Close all cursors.
 **
 ** Also release any dynamic memory held by the VM in the Vdbe.aMem memory 
 ** cell array. This is necessary as the memory cell array may contain
@@ -2728,9 +2731,7 @@ int sqlite3VdbeIdxRowid(sqlite3 *db, BtCursor *pCur, i64 *rowid){
   assert( (nCellKey & SQLITE_MAX_U32)==(u64)nCellKey );
 
   /* Read in the complete content of the index entry */
-  m.flags = 0;
-  m.db = db;
-  m.zMalloc = 0;
+  memset(&m, 0, sizeof(m));
   rc = sqlite3VdbeMemFromBtree(pCur, 0, (int)nCellKey, 1, &m);
   if( rc ){
     return rc;
@@ -2808,9 +2809,7 @@ int sqlite3VdbeIdxKeyCompare(
     *res = 0;
     return SQLITE_CORRUPT;
   }
-  m.db = 0;
-  m.flags = 0;
-  m.zMalloc = 0;
+  memset(&m, 0, sizeof(m));
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (int)nCellKey, 1, &m);
   if( rc ){
     return rc;
