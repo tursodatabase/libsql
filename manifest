@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\snew\ssource\scode\slogo\sgif.
-D 2009-08-28T00:49:03
+C More\sthorough\sinitialization\sof\sa\sbuffer\swhen\swriting\sthe\srollback\sjournal\nheader,\sin\sorder\sto\sprevent\sa\sharmless\svalgrind\swarning.\nCVSTrac\sticket\s#4039
+D 2009-08-31T16:09:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c f14ff07aec3c3c0796e1a743d1bdafddc15d1af1
 F src/os_win.c 58bb163f327e79726dd119344d908e4d98483c3f
-F src/pager.c a47be286477ed6c7b9a342dd53d4e4043f29d8c2
+F src/pager.c ebd0a8f2421e8f0ad5b78201440004bf3e1c96d8
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y 6c42631e72a3d14cde2bee85e79409066066d3df
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
@@ -751,14 +751,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 609c5341bea16e4e8bcd15388b209c753ca9e0bb
-R 4434d9008bae80dc68b503672bd862e3
+P 6abcba1021b237452f542f1fbb69eb75d9f50f53
+R 3214f074a14462fb9e96d75b13564e70
 U drh
-Z 358f98b5bae88b9d1480f5896ee873f8
+Z 1d55cf71a62a55978d3163a870a9fc02
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFKlymCoxKgR168RlERAhGbAJ9JSX+YW4zu0jqF+jN+dnKMOJu+5wCYo0Rg
-s49NcnJb22O8s2ToTSr09A==
-=D2dX
+iD8DBQFKm/XboxKgR168RlERArBMAJ9T7O5vuB1uCdEihrXB/n4t3eJDtQCePxqX
+HHms1P8yqpZacj8LVysqzOY=
+=3H49
 -----END PGP SIGNATURE-----

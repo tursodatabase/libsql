@@ -785,8 +785,7 @@ static int writeJournalHdr(Pager *pPager){
     memcpy(zHeader, aJournalMagic, sizeof(aJournalMagic));
     put32bits(&zHeader[sizeof(aJournalMagic)], 0xffffffff);
   }else{
-    zHeader[0] = '\0';
-    put32bits(&zHeader[sizeof(aJournalMagic)], 0);
+    memset(zHeader, 0, sizeof(aJournalMagic)+4);
   }
 
   /* The random check-hash initialiser */ 
