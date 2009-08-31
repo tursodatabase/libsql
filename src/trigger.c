@@ -843,7 +843,9 @@ static CodedTrigger *codeRowTrigger(
       /* Code the WHEN clause. If it evaluates to false (or NULL) the 
       ** sub-vdbe is immediately halted.  */
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
-      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) ){
+      if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
+       && db->mallocFailed==0 
+      ){
         iEndTrigger = sqlite3VdbeMakeLabel(v);
         sqlite3ExprIfFalse(pSubParse, pWhen, iEndTrigger, SQLITE_JUMPIFNULL);
       }
@@ -859,7 +861,9 @@ static CodedTrigger *codeRowTrigger(
     VdbeComment((v, "End: %s.%s", pTrigger->zName, onErrorText(orconf)));
 
     transferParseError(pParse, pSubParse);
-    pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pParse->nArg);
+    if( db->mallocFailed==0 ){
+      pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pParse->nArg);
+    }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
     pProgram->token = (void *)pTrigger;

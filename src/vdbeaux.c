@@ -341,6 +341,7 @@ int sqlite3VdbeCurrentAddr(Vdbe *p){
 
 VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
   VdbeOp *aOp = p->aOp;
+  assert( aOp && !p->db->mallocFailed );
   resolveP2Values(p, pnMaxArg);
   *pnOp = p->nOp;
   p->aOp = 0;
@@ -512,16 +513,18 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
 }
 
 void sqlite3VdbeProgramDelete(sqlite3 *db, SubProgram *p, int freeop){
-  assert( p->nRef>0 );
-  if( freeop || p->nRef==1 ){
-    Op *aOp = p->aOp;
-    p->aOp = 0;
-    vdbeFreeOpArray(db, aOp, p->nOp);
-    p->nOp = 0;
-  }
-  p->nRef--;
-  if( p->nRef==0 ){
-    sqlite3DbFree(db, p);
+  if( p ){
+    assert( p->nRef>0 );
+    if( freeop || p->nRef==1 ){
+      Op *aOp = p->aOp;
+      p->aOp = 0;
+      vdbeFreeOpArray(db, aOp, p->nOp);
+      p->nOp = 0;
+    }
+    p->nRef--;
+    if( p->nRef==0 ){
+      sqlite3DbFree(db, p);
+    }
   }
 }
 
@@ -1350,9 +1353,6 @@ int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
 ** open cursors.
 */
 static void closeAllCursors(Vdbe *p){
-  int i;
-  /* if( p->apCsr==0 ) return; */
-
   if( p->pFrame ){
     VdbeFrame *pFrame = p->pFrame;
     for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
@@ -1361,14 +1361,19 @@ static void closeAllCursors(Vdbe *p){
   p->pFrame = 0;
   p->nFrame = 0;
 
-  for(i=0; i<p->nCursor; i++){
-    VdbeCursor *pC = p->apCsr[i];
-    if( pC ){
-      sqlite3VdbeFreeCursor(p, pC);
-      p->apCsr[i] = 0;
+  if( p->apCsr ){
+    int i;
+    for(i=0; i<p->nCursor; i++){
+      VdbeCursor *pC = p->apCsr[i];
+      if( pC ){
+        sqlite3VdbeFreeCursor(p, pC);
+        p->apCsr[i] = 0;
+      }
     }
   }
-  releaseMemArray(&p->aMem[1], p->nMem);
+  if( p->aMem ){
+    releaseMemArray(&p->aMem[1], p->nMem);
+  }
 }
 
 /*
@@ -1385,8 +1390,8 @@ static void Cleanup(Vdbe *p){
   /* Execute assert() statements to ensure that the Vdbe.apCsr[] and 
   ** Vdbe.aMem[] arrays have already been cleaned up.  */
   int i;
-  for(i=0; i<p->nCursor; i++){ assert( p->apCsr[i]==0 ); }
-  for(i=1; i<=p->nMem; i++){ assert( p->aMem[i].flags==MEM_Null ); }
+  for(i=0; i<p->nCursor; i++) assert( p->apCsr==0 || p->apCsr[i]==0 );
+  for(i=1; i<=p->nMem; i++) assert( p->aMem==0 || p->aMem[i].flags==MEM_Null );
 #endif
 
   sqlite3DbFree(db, p->zErrMsg);

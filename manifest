@@ -1,5 +1,5 @@
-C Fixes\sfor\snew\striggers\sscheme.
-D 2009-08-30T11:42:52
+C Fix\sanother\stest\sproblem\sand\ssome\sinstances\swhere\san\sOOM\smay\scause\sa\ssegfault.
+D 2009-08-31T05:23:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -199,7 +199,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
-F src/trigger.c 26e493efad371e521178d60d43fcf7878dbdd344
+F src/trigger.c 42c93d1c357395c10c0e3e864a639b20ef4082fb
 F src/update.c 574464e0049eb289ab863c583f84474b5b76cd39
 F src/utf.c 3ca2c9461b8e942c68da28bfccd448663f536a6f
 F src/util.c efb5f8e533d4beef545cf765cab5f7920b4c75f9
@@ -208,7 +208,7 @@ F src/vdbe.c 5e9d870ec390fbc329f11424b121681e8da5d75c
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
 F src/vdbeInt.h 1291908344bcbaa8cf47de86d7108cb92c3a71a3
 F src/vdbeapi.c 8d5013ab6104be757c208a70ffb191cc27d2b688
-F src/vdbeaux.c ea92afd36df2e7f3a47cff5ea41aa5489ea4c971
+F src/vdbeaux.c d8ca68164d20c5b65dfa713095febcb5d37d45b0
 F src/vdbeblob.c f93cb60ac388633ed3bde8a94ef161ad2dbfb689
 F src/vdbemem.c dc551981833756ea34a3e0b238f759479e7cf526
 F src/vtab.c 10df5c77cea34a49f2ad4e5de763f820d6223eb4
@@ -231,7 +231,7 @@ F test/async4.test aafa6328c559d3e4bb587de770cbdecfca06f0da
 F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
 F test/attach.test 1d1be27b9e4c654f9bb14d011a4a87753c0b197a
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
-F test/attach3.test 512521ba94372dfd0efb07d04b2cdefc8c929e66
+F test/attach3.test ab28cc309888e2ac25795b52b2eee2214920b360
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
 F test/auth.test 8e9a21d7321c9ad20d26f630acc02e15f2f2a3b6
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
@@ -747,7 +747,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 9b9c19211593d5ff7b39254a29c284560a8bcedb
-R 10a0aa3fda7c1b8d215a3d925d83afe3
+P 9eb91efda5241609ff18ff15ef5eaa0e86788eab
+R 63b174d38f0bc479f8becc3f97b1ed05
 U dan
-Z fc25ca89c2c8570dc6970eb3da5d927f
+Z 2a154fc741e40d1c8378264e43f74ea7
