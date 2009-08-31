@@ -2561,10 +2561,10 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_TRIGGER: {
       int iVal = pExpr->iTable * (pExpr->pTab->nCol+1) + 1 + pExpr->iColumn;
       sqlite3VdbeAddOp2(v, OP_Param, iVal, target);
-      VdbeComment((v, "%s.%s -> $%d", 
-        (pExpr->iTable ? "new" : "old"), 
+      VdbeComment((v, "%s.%s -> $%d",
+        (pExpr->iTable ? "new" : "old"),
         (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName),
-	target
+        target
       ));
       break;
     }

@@ -137,7 +137,7 @@ static int lookupName(
   struct SrcList_item *pMatch = 0;  /* The matching pSrcList item */
   NameContext *pTopNC = pNC;        /* First namecontext in the list */
   Schema *pSchema = 0;              /* Schema of the expression */
-  int isTrigger = 0;                /* True if a new.* or old.* reference. */
+  int isTrigger = 0;
 
   assert( pNC );     /* the name context cannot be NULL. */
   assert( zCol );    /* The Z in X.Y.Z cannot be NULL */
@@ -240,21 +240,34 @@ static int lookupName(
         int iCol;
         pSchema = pTab->pSchema;
         cntTab++;
-        isTrigger = 1;
-        for(iCol=0; iCol<pTab->nCol; iCol++){
-          Column *pCol = &pTab->aCol[iCol];
-          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-            cnt++;
-            pExpr->iColumn = iCol==pTab->iPKey ? -1 : (i16)iCol;
-            testcase( iCol==31 );
-            testcase( iCol==32 );
-            if( iCol>=32 ){
-              *piColMask = 0xffffffff;
-            }else{
-              *piColMask |= ((u32)1)<<iCol;
+        if( sqlite3IsRowid(zCol) ){
+          iCol = -1;
+        }else{
+          for(iCol=0; iCol<pTab->nCol; iCol++){
+            Column *pCol = &pTab->aCol[iCol];
+            if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+              testcase( iCol==31 );
+              testcase( iCol==32 );
+              if( iCol>=32 ){
+                *piColMask = 0xffffffff;
+              }else{
+                *piColMask |= ((u32)1)<<iCol;
+              }
+              if( iCol==pTab->iPKey ){
+                iCol = -1;
+              }
+              break;
             }
-            break;
           }
+        }
+        if( iCol<pTab->nCol ){
+          cnt++;
+          if( iCol<0 ){
+            pExpr->affinity = SQLITE_AFF_INTEGER;
+          }
+          pExpr->iColumn = iCol;
+          pExpr->pTab = pTab;
+          isTrigger = 1;
         }
       }
     }
@@ -366,7 +379,7 @@ static int lookupName(
   pExpr->pLeft = 0;
   sqlite3ExprDelete(db, pExpr->pRight);
   pExpr->pRight = 0;
-  pExpr->op = TK_COLUMN;
+  pExpr->op = (isTrigger ? TK_TRIGGER : TK_COLUMN);
 lookupname_end:
   if( cnt==1 ){
     assert( pNC!=0 );
@@ -378,10 +391,6 @@ lookupname_end:
       pTopNC->nRef++;
       if( pTopNC==pNC ) break;
       pTopNC = pTopNC->pNext;
-    }
-    if( isTrigger ){
-      pExpr->pTab = pParse->pTriggerTab;
-      pExpr->op = TK_TRIGGER;
     }
     return WRC_Prune;
   } else {

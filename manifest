@@ -1,5 +1,5 @@
-C Merge\swith\smain\sbranch.
-D 2009-08-31T05:39:59
+C Fix\ssome\sauthorization\scallback\sproblems.
+D 2009-08-31T08:22:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 55b601857d924e07c91cfa69e9b2cb5093498c93
 F src/analyze.c 4584556d374fe3ab791be9be32ada7713fdced52
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
-F src/auth.c 802a9439dfa0b8c208b10055cba400e82ef18025
+F src/auth.c 4cfb8fae12656cca2739176abebab84ed79dd8f6
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c e08f6c1a9551b88081fc737916c6c3fd5029a6cf
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
@@ -114,7 +114,7 @@ F src/callback.c 9bc0ae998f15207d3115224979331c0aafc9bcc3
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c 5b7c810b7e70e1c4abe1d2532f97003565b14b61
-F src/expr.c 09ef2a72664c51550dbe226c99782fab42cccf48
+F src/expr.c ac30c21eef64684b5709d01f06dc3fb72eee1fdc
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
@@ -157,7 +157,7 @@ F src/pragma.c 6b1fa9f180d88b3f905cebd593ef6aef9334be43
 F src/prepare.c 49739b385c4cd0667cfa9941c41bf6d4f8edc157
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
-F src/resolve.c 92ef8a85d53b305a7de9faef27d652b96c2b4db6
+F src/resolve.c 5909b3e2fb7e05fc2695cd250a4f672ea2dc1499
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 56ecb073e6f6696173ad80493aa14355225b6e53
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
@@ -200,7 +200,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
-F src/trigger.c 42c93d1c357395c10c0e3e864a639b20ef4082fb
+F src/trigger.c 2b0bdab4807cc0795afd8b7c88b503674994a43d
 F src/update.c 574464e0049eb289ab863c583f84474b5b76cd39
 F src/utf.c 3ca2c9461b8e942c68da28bfccd448663f536a6f
 F src/util.c efb5f8e533d4beef545cf765cab5f7920b4c75f9
@@ -234,7 +234,7 @@ F test/attach.test 1d1be27b9e4c654f9bb14d011a4a87753c0b197a
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test ab28cc309888e2ac25795b52b2eee2214920b360
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
-F test/auth.test 8e9a21d7321c9ad20d26f630acc02e15f2f2a3b6
+F test/auth.test 0f1237e10ab94108a0a4b3d463ddae3bddf31ed5
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 8242b84e5af8af6e00db4b5c5d48afdf304a12cb
@@ -748,7 +748,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 31199db0f77cf4b32d5589a29abd9535b155164b 6abcba1021b237452f542f1fbb69eb75d9f50f53
-R 31e80012e316e6ca372fbf461bf4b6ab
+P 6e09e28751a7071969ef9f3445f4092d2c28f358
+R 81cbde85639275506b291e783c709236
 U dan
-Z 33710f063b4132081e125750db8134c3
+Z 54e813eac61f6f88a2d6f341a5499c38

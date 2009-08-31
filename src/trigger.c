@@ -531,7 +531,7 @@ void sqlite3DropTriggerPtr(Parse *pParse, Trigger *pTrigger){
     const char *zDb = db->aDb[iDb].zName;
     const char *zTab = SCHEMA_TABLE(iDb);
     if( iDb==1 ) code = SQLITE_DROP_TEMP_TRIGGER;
-    if( sqlite3AuthCheck(pParse, code, pTrigger->name, pTable->zName, zDb) ||
+    if( sqlite3AuthCheck(pParse, code, pTrigger->zName, pTable->zName, zDb) ||
       sqlite3AuthCheck(pParse, SQLITE_DELETE, zTab, 0, zDb) ){
       return;
     }
@@ -819,9 +819,7 @@ static CodedTrigger *codeRowTrigger(
   pSubParse->db = db;
   pSubParse->pTriggerTab = pTab;
   pSubParse->pRoot = pRoot;
-
-  /* Push an entry on to the auth context stack */
-  sqlite3AuthContextPush(pParse, &sContext, pTrigger->name);
+  pSubParse->zAuthContext = pTrigger->zName;
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
@@ -879,8 +877,6 @@ static CodedTrigger *codeRowTrigger(
   }
   sqlite3StackFree(db, pSubParse);
 
-  /* Pop the entry off the authorization stack */
-  sqlite3AuthContextPop(&sContext);
   return pC;
 }
     

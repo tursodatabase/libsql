@@ -113,36 +113,34 @@ void sqlite3AuthRead(
   int iSrc;             /* Index in pTabList->a[] of table being read */
   const char *zDBase;   /* Name of database being accessed */
   int iDb;              /* The index of the database the expression refers to */
+  int iCol;             /* Index of column in table */
 
   if( db->xAuth==0 ) return;
-  assert( pExpr->op==TK_COLUMN );
   iDb = sqlite3SchemaToIndex(pParse->db, pSchema);
   if( iDb<0 ){
     /* An attempt to read a column out of a subquery or other
     ** temporary table. */
     return;
   }
-  if( pTabList ){
+
+  assert( pExpr->op==TK_COLUMN || pExpr->op==TK_TRIGGER );
+  if( pExpr->op==TK_TRIGGER ){
+    pTab = pParse->pTriggerTab;
+  }else{
+    assert( pTabList );
     for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
       if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
         pTab = pTabList->a[iSrc].pTab;
-	break;
+        break;
       }
     }
   }
-  if( !pTab ){
-    TriggerStack *pStack = pParse->trigStack;
-    if( ALWAYS(pStack) ){
-      /* This must be an attempt to read the NEW or OLD pseudo-tables
-      ** of a trigger.  */
-      assert( pExpr->iTable==pStack->newIdx || pExpr->iTable==pStack->oldIdx );
-      pTab = pStack->pTab;
-    }
-  }
+  iCol = pExpr->iColumn;
   if( NEVER(pTab==0) ) return;
-  if( pExpr->iColumn>=0 ){
-    assert( pExpr->iColumn<pTab->nCol );
-    zCol = pTab->aCol[pExpr->iColumn].zName;
+
+  if( iCol>=0 ){
+    assert( iCol<pTab->nCol );
+    zCol = pTab->aCol[iCol].zName;
   }else if( pTab->iPKey>=0 ){
     assert( pTab->iPKey<pTab->nCol );
     zCol = pTab->aCol[pTab->iPKey].zName;
