@@ -225,15 +225,12 @@ static int lookupName(
     */
     if( zDb==0 && zTab!=0 && cnt==0 && pParse->pTriggerTab!=0 ){
       Table *pTab = 0;
-      u32 *piColMask = 0;
       if( pParse->triggerOp!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
         pExpr->iTable = 1;
         pTab = pParse->pTriggerTab;
-        piColMask = &(pParse->newmask);
       }else if( pParse->triggerOp!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
         pExpr->iTable = 0;
         pTab = pParse->pTriggerTab;
-        piColMask = &(pParse->oldmask);
       }
 
       if( pTab ){ 
@@ -246,13 +243,6 @@ static int lookupName(
           for(iCol=0; iCol<pTab->nCol; iCol++){
             Column *pCol = &pTab->aCol[iCol];
             if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-              testcase( iCol==31 );
-              testcase( iCol==32 );
-              if( iCol>=32 ){
-                *piColMask = 0xffffffff;
-              }else{
-                *piColMask |= ((u32)1)<<iCol;
-              }
               if( iCol==pTab->iPKey ){
                 iCol = -1;
               }
@@ -264,6 +254,10 @@ static int lookupName(
           cnt++;
           if( iCol<0 ){
             pExpr->affinity = SQLITE_AFF_INTEGER;
+          }else if( pExpr->iTable==0 ){
+            testcase( iCol==31 );
+            testcase( iCol==32 );
+            pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
           }
           pExpr->iColumn = iCol;
           pExpr->pTab = pTab;

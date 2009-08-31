@@ -681,7 +681,6 @@ static int codeTriggerProgram(
   assert( pParse->pRoot );
   assert( pStep!=0 );
   assert( v!=0 );
-/* sqlite3VdbeAddOp2(v, OP_ContextPush, 0, 0); */
   while( pStep ){
     /* Figure out the ON CONFLICT policy that will be used for this step
     ** of the trigger program. If the statement that caused this trigger
@@ -697,10 +696,6 @@ static int codeTriggerProgram(
     **   INSERT OR IGNORE INTO t1 ... ;  -- insert into t2 uses IGNORE policy
     */
     pParse->orconf = (orconfin==OE_Default)?pStep->orconf:orconfin;
-
-    if( pStep->op!=TK_SELECT ){
-      sqlite3VdbeAddOp1(v, OP_ResetCount, 0);
-    }
 
     switch( pStep->op ){
       case TK_UPDATE: {
@@ -743,7 +738,6 @@ static int codeTriggerProgram(
     }
     pStep = pStep->pNext;
   }
-/* sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0); */
 
   return 0;
 }
@@ -782,7 +776,7 @@ static void transferParseError(Parse *pTo, Parse *pFrom){
   }
 }
 
-static CodedTrigger *codeRowTrigger(
+static TriggerPrg *codeRowTrigger(
   Parse *pRoot,        /* Root parse context */
   Parse *pParse,       /* Current parse context */
   Trigger *pTrigger,   /* Trigger to code */
@@ -791,28 +785,27 @@ static CodedTrigger *codeRowTrigger(
   int orconf
 ){
   sqlite3 *db = pParse->db;
-  CodedTrigger *pC;
+  TriggerPrg *pPrg;
   Expr *pWhen = 0;            /* Duplicate of trigger WHEN expression */
   Vdbe *v;                    /* Temporary VM */
-  AuthContext sContext;       /* Auth context for sub-vdbe */
   NameContext sNC;            /* Name context for sub-vdbe */
   SubProgram *pProgram = 0;   /* Sub-vdbe for trigger program */
   Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
 
-  pC = sqlite3DbMallocZero(db, sizeof(CodedTrigger));
-  if( !pC ) return 0;
-  pC->pNext = pRoot->pCodedTrigger;
-  pRoot->pCodedTrigger = pC;
-  pC->pProgram = pProgram = sqlite3DbMallocZero(db, sizeof(SubProgram));
+  pPrg = sqlite3DbMallocZero(db, sizeof(TriggerPrg));
+  if( !pPrg ) return 0;
+  pPrg->pNext = pRoot->pTriggerPrg;
+  pRoot->pTriggerPrg = pPrg;
+  pPrg->pProgram = pProgram = sqlite3DbMallocZero(db, sizeof(SubProgram));
   if( !pProgram ) return 0;
   pProgram->nRef = 1;
   pSubParse = sqlite3StackAllocZero(db, sizeof(Parse));
   if( !pSubParse ) return 0;
 
-  pC->pProgram = pProgram;
-  pC->pTrigger = pTrigger;
-  pC->orconf = orconf;
+  pPrg->pProgram = pProgram;
+  pPrg->pTrigger = pTrigger;
+  pPrg->orconf = orconf;
 
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pSubParse;
@@ -865,8 +858,7 @@ static CodedTrigger *codeRowTrigger(
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
     pProgram->token = (void *)pTrigger;
-    pC->oldmask = pSubParse->oldmask;
-    pC->newmask = pSubParse->newmask;
+    pPrg->oldmask = pSubParse->oldmask;
     sqlite3VdbeDelete(v);
 
     while( pSubParse->pAinc ){
@@ -877,36 +869,36 @@ static CodedTrigger *codeRowTrigger(
   }
   sqlite3StackFree(db, pSubParse);
 
-  return pC;
+  return pPrg;
 }
     
-static CodedTrigger *getRowTrigger(
+static TriggerPrg *getRowTrigger(
   Parse *pParse,
   Trigger *pTrigger,   /* Trigger to code */
   int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
   Table *pTab,         /* The table to code triggers from */
   int orconf
 ){
-  CodedTrigger *pC;
+  TriggerPrg *pPrg;
   Parse *pRoot = pParse;
 
   /* It may be that this trigger has already been coded (or is in the
   ** process of being coded). If this is the case, then an entry with
-  ** a matching CodedTrigger.pTrigger field will be present somewhere
-  ** in the Parse.pCodedTrigger list. Search for such an entry.  */
+  ** a matching TriggerPrg.pTrigger field will be present somewhere
+  ** in the Parse.pTriggerPrg list. Search for such an entry.  */
   if( pParse->pRoot ){
     pRoot = pParse->pRoot;
   }
-  for(pC=pRoot->pCodedTrigger; 
-      pC && (pC->pTrigger!=pTrigger || pC->orconf!=orconf); 
-      pC=pC->pNext
+  for(pPrg=pRoot->pTriggerPrg; 
+      pPrg && (pPrg->pTrigger!=pTrigger || pPrg->orconf!=orconf); 
+      pPrg=pPrg->pNext
   );
 
-  if( !pC ){
-    pC = codeRowTrigger(pRoot, pParse, pTrigger, op, pTab, orconf);
+  if( !pPrg ){
+    pPrg = codeRowTrigger(pRoot, pParse, pTrigger, op, pTab, orconf);
   }
 
-  return pC;
+  return pPrg;
 }
 
 /*
@@ -969,45 +961,64 @@ void sqlite3CodeRowTrigger(
      && checkColumnOverlap(p->pColumns,pChanges)
     ){
       Vdbe *v = sqlite3GetVdbe(pParse); /* Main VM */
-      CodedTrigger *pC;
-      pC = getRowTrigger(pParse, p, op, pTab, orconf);
-      assert( pC || pParse->nErr || pParse->db->mallocFailed );
+      TriggerPrg *pPrg;
+      pPrg = getRowTrigger(pParse, p, op, pTab, orconf);
+      assert( pPrg || pParse->nErr || pParse->db->mallocFailed );
 
       /* Code the OP_Program opcode in the parent VDBE. P4 of the OP_Program 
       ** is a pointer to the sub-vdbe containing the trigger program.  */
-      if( pC ){
+      if( pPrg ){
         sqlite3VdbeAddOp3(v, OP_Program, oldIdx, ignoreJump, ++pParse->nMem);
-        pC->pProgram->nRef++;
-        sqlite3VdbeChangeP4(v, -1, (const char *)pC->pProgram, P4_SUBPROGRAM);
+        pPrg->pProgram->nRef++;
+        sqlite3VdbeChangeP4(v, -1, (const char *)pPrg->pProgram, P4_SUBPROGRAM);
         VdbeComment((v, "Call: %s.%s", p->zName, onErrorText(orconf)));
       }
     }
   }
 }
 
-void sqlite3TriggerUses(
+/*
+** Triggers fired by UPDATE or DELETE statements may access values stored
+** in the old.* pseudo-table. This function returns a 32-bit bitmask
+** indicating which columns of the old.* table actually are used by
+** triggers. This information may be used by the caller to avoid having
+** to load the entire old.* record into memory when executing an UPDATE
+** or DELETE command.
+**
+** Bit 0 of the returned mask is set if the left-most column of the
+** table may be accessed using an old.<col> reference. Bit 1 is set if
+** the second leftmost column value is required, and so on. If there
+** are more than 32 columns in the table, and at least one of the columns
+** with an index greater than 32 may be accessed, 0xffffffff is returned.
+**
+** It is not possible to determine if the old.rowid column is accessed
+** by triggers. The caller must always assume that it is.
+**
+** There is no equivalent function for new.* references.
+*/
+u32 sqlite3TriggerOldmask(
   Parse *pParse,       /* Parse context */
   Trigger *pTrigger,   /* List of triggers on table pTab */
-  int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
+  int op,              /* Either TK_UPDATE or TK_DELETE */
   ExprList *pChanges,  /* Changes list for any UPDATE OF triggers */
   Table *pTab,         /* The table to code triggers from */
-  int orconf,          /* Default ON CONFLICT policy for trigger steps */
-  u32 *piOldColMask,   /* OUT: Mask of columns used from the OLD.* table */
-  u32 *piNewColMask    /* OUT: Mask of columns used from the NEW.* table */
+  int orconf           /* Default ON CONFLICT policy for trigger steps */
 ){
+  u32 mask = 0;
   Trigger *p;
-  assert(op==TK_UPDATE || op==TK_INSERT || op==TK_DELETE);
 
+  assert(op==TK_UPDATE || op==TK_DELETE);
   for(p=pTrigger; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns,pChanges) ){
-      CodedTrigger *pC;
-      pC = getRowTrigger(pParse, p, op, pTab, orconf);
-      if( pC ){
-        *piOldColMask |= pC->oldmask;
-        *piNewColMask |= pC->newmask;
+      TriggerPrg *pPrg;
+      pPrg = getRowTrigger(pParse, p, op, pTab, orconf);
+      if( pPrg ){
+        mask |= pPrg->oldmask;
       }
     }
   }
+
+  return mask;
 }
 
 #endif /* !defined(SQLITE_OMIT_TRIGGER) */

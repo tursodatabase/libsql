@@ -847,15 +847,23 @@ case OP_HaltIfNull: {      /* in3 */
 */
 case OP_Halt: {
   if( pOp->p1==SQLITE_OK && p->pFrame ){
+    /* Halt the sub-program. Return control to the parent frame. */
     VdbeFrame *pFrame = p->pFrame;
     p->pFrame = pFrame->pParent;
     p->nFrame--;
+    sqlite3VdbeSetChanges(db, p->nChange);
     pc = sqlite3VdbeFrameRestore(pFrame);
     if( pOp->p2==OE_Ignore ){
+      /* Instruction pc is the OP_Program that invoked the sub-program 
+      ** currently being halted. If the p2 instruction of this OP_Halt
+      ** instruction is set to OE_Ignore, then the sub-program is throwing
+      ** an IGNORE exception. In this case jump to the address specified
+      ** as the p2 of the calling OP_Program.  */
       pc = p->aOp[pc].p2-1;
     }
     break;
   }
+
   p->rc = pOp->p1;
   p->errorAction = (u8)pOp->p2;
   p->pc = pc;
@@ -4846,6 +4854,7 @@ case OP_Program: {        /* jump */
   pFrame->pParent = p->pFrame;
   pFrame->lastRowid = db->lastRowid;
   pFrame->nChange = p->nChange;
+  p->nChange = 0;
   p->pFrame = pFrame;
   p->aMem = &VdbeFrameMem(pFrame)[-1];
   p->nMem = pFrame->nChildMem;

@@ -979,8 +979,7 @@ void sqlite3Insert(
           keyColumn>=0, 0, onError, endOfLoop, &isReplace
       );
       sqlite3CompleteInsertion(
-          pParse, pTab, baseCur, regIns, aRegIdx, 0,
-          (tmask&TRIGGER_AFTER) ? newIdx : -1, appendFlag, isReplace==0
+          pParse, pTab, baseCur, regIns, aRegIdx, 0, appendFlag, isReplace==0
       );
     }
   }
@@ -1376,7 +1375,6 @@ void sqlite3CompleteInsertion(
   int regRowid,       /* Range of content */
   int *aRegIdx,       /* Register used by each index.  0 for unused indices */
   int isUpdate,       /* True for UPDATE, False for INSERT */
-  int newIdx,         /* Index of NEW table for triggers.  -1 if none */
   int appendBias,     /* True if this is likely to be an append */
   int useSeekResult   /* True to set the USESEEKRESULT flag on OP_[Idx]Insert */
 ){

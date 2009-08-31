@@ -391,12 +391,11 @@ void sqlite3DeleteFrom(
     ** data required by the old.* references in the trigger bodies.  */
     if( pTrigger ){
       u32 mask = 0;         /* Mask of OLD.* columns in use */
-      u32 dummy = 0;        /* Unused. Initialized to prevent valgrind error. */
       pParse->nMem += pTab->nCol;
 
       /* Open the pseudo-table used to store OLD if there are triggers. */
-      sqlite3TriggerUses(
-          pParse, pTrigger, TK_DELETE, 0, pTab, OE_Default, &mask, &dummy);
+      mask = sqlite3TriggerOldmask(
+          pParse, pTrigger, TK_DELETE, 0, pTab, OE_Default);
 
       /* If the record is no longer present in the table, jump to the
       ** next iteration of the loop through the contents of the fifo.

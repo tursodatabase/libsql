@@ -120,8 +120,7 @@ void sqlite3Update(
   int isView;                  /* Trying to update a view */
   Trigger *pTrigger;           /* List of triggers on pTab, if required */
 #endif
-  u32 old_col_mask = 0;        /* Mask of OLD.* columns in use */
-  u32 new_col_mask = 0;        /* Mask of NEW.* columns in use */
+  u32 oldmask = 0;        /* Mask of OLD.* columns in use */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -290,10 +289,9 @@ void sqlite3Update(
     sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
   }
 
-  /* If there are any triggers, set old_col_mask and new_col_mask. */
-  sqlite3TriggerUses(pParse, 
-      pTrigger, TK_UPDATE, pChanges, pTab, onError, &old_col_mask, &new_col_mask
-  );
+  /* If there are any triggers, set oldmask and new_col_mask. */
+  oldmask = sqlite3TriggerOldmask(
+      pParse, pTrigger, TK_UPDATE, pChanges, pTab, onError);
 
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
@@ -384,7 +382,7 @@ void sqlite3Update(
   ** with the required old.* column data.  */
   if( pTrigger ){
     for(i=0; i<pTab->nCol; i++){
-      if( aXRef[i]<0 || old_col_mask==0xffffffff || (old_col_mask & (1<<i)) ){
+      if( aXRef[i]<0 || oldmask==0xffffffff || (oldmask & (1<<i)) ){
         sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regOld+i);
         sqlite3ColumnDefault(v, pTab, i, regOld+i);
       }else{
@@ -423,23 +421,14 @@ void sqlite3Update(
     }
   }
 
-  /* If this is not a view, create the record that will be inserted into
-  ** the table (assuming no constraint checks fail). A side effect of
-  ** creating the record is applying affinity transformations to the
-  ** array of registers populated by the block above. This needs to be
-  ** done before the BEFORE triggers are fired.  */
-#if 0
-  if( !isView ){
-    sqlite3VdbeAddOp3(v, OP_MakeRecord, regNew, pTab->nCol, regRec);
-    sqlite3TableAffinityStr(v, pTab);
-    sqlite3ExprCacheAffinityChange(pParse, regNew, pTab->nCol);
-  }
-#endif
-
   /* Fire any BEFORE UPDATE triggers. This happens before constraints are
   ** verified. One could argue that this is wrong.  */
-  sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-      TRIGGER_BEFORE, pTab, -1, regOldRowid, onError, addr);
+  if( pTrigger ){
+    sqlite3VdbeAddOp2(v, OP_Affinity, regNew, pTab->nCol);
+    sqlite3TableAffinityStr(v, pTab);
+    sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
+        TRIGGER_BEFORE, pTab, -1, regOldRowid, onError, addr);
+  }
 
   if( !isView ){
 
@@ -458,20 +447,7 @@ void sqlite3Update(
     sqlite3VdbeJumpHere(v, j1);
   
     /* Insert the new index entries and the new record. */
-    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, -1, 0, 0);
-
-#if 0
-    for(i=0; i<nIdx; i++){
-      if( aRegIdx[i] ){
-        sqlite3VdbeAddOp2(v, OP_IdxInsert, iCur+1+i, aRegIdx[i]);
-      }
-    }
-    sqlite3VdbeAddOp3(v, OP_Insert, iCur, regRec, regNewRowid);
-    if( !pParse->nested ){
-      sqlite3VdbeChangeP4(v, -1, pTab->zName, P4_STATIC);
-      sqlite3VdbeChangeP5(v, OPFLAG_NCHANGE|OPFLAG_ISUPDATE);
-    }
-#endif
+    sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, 0, 0);
   }
 
   /* Increment the row counter 
