@@ -941,21 +941,21 @@ FuncDef *sqlite3VtabOverloadFunction(
 ** is a no-op.
 */
 void sqlite3VtabMakeWritable(Parse *pParse, Table *pTab){
+  Parse *pToplevel = sqlite3ParseToplevel(pParse);
   int i, n;
   Table **apVtabLock;
-  Parse *pRoot = (pParse->pRoot ? pParse->pRoot : pParse);
 
   assert( IsVirtual(pTab) );
-  for(i=0; i<pRoot->nVtabLock; i++){
-    if( pTab==pRoot->apVtabLock[i] ) return;
+  for(i=0; i<pToplevel->nVtabLock; i++){
+    if( pTab==pToplevel->apVtabLock[i] ) return;
   }
-  n = (pRoot->nVtabLock+1)*sizeof(pRoot->apVtabLock[0]);
-  apVtabLock = sqlite3_realloc(pRoot->apVtabLock, n);
+  n = (pToplevel->nVtabLock+1)*sizeof(pToplevel->apVtabLock[0]);
+  apVtabLock = sqlite3_realloc(pToplevel->apVtabLock, n);
   if( apVtabLock ){
-    pRoot->apVtabLock = apVtabLock;
-    pRoot->apVtabLock[pRoot->nVtabLock++] = pTab;
+    pToplevel->apVtabLock = apVtabLock;
+    pToplevel->apVtabLock[pToplevel->nVtabLock++] = pTab;
   }else{
-    pRoot->db->mallocFailed = 1;
+    pToplevel->db->mallocFailed = 1;
   }
 }
 

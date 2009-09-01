@@ -666,22 +666,22 @@ static SrcList *targetSrcList(
 }
 
 /*
-** Generate VDBE code for zero or more statements inside the body of a
-** trigger.  
+** Generate VDBE code for the statements inside the body of a single 
+** trigger.
 */
 static int codeTriggerProgram(
   Parse *pParse,            /* The parser context */
   TriggerStep *pStepList,   /* List of statements inside the trigger body */
-  int orconfin              /* Conflict algorithm. (OE_Abort, etc) */  
+  int orconf                /* Conflict algorithm. (OE_Abort, etc) */  
 ){
-  TriggerStep * pStep = pStepList;
+  TriggerStep *pStep;
   Vdbe *v = pParse->pVdbe;
   sqlite3 *db = pParse->db;
 
-  assert( pParse->pRoot );
-  assert( pStep!=0 );
+  assert( pParse->pTriggerTab && pParse->pToplevel );
+  assert( pStepList );
   assert( v!=0 );
-  while( pStep ){
+  for(pStep=pStepList; pStep; pStep=pStep->pNext){
     /* Figure out the ON CONFLICT policy that will be used for this step
     ** of the trigger program. If the statement that caused this trigger
     ** to fire had an explicit ON CONFLICT, then use it. Otherwise, use
@@ -695,7 +695,7 @@ static int codeTriggerProgram(
     **   INSERT INTO t1 ... ;            -- insert into t2 uses REPLACE policy
     **   INSERT OR IGNORE INTO t1 ... ;  -- insert into t2 uses IGNORE policy
     */
-    pParse->orconf = (orconfin==OE_Default)?pStep->orconf:orconfin;
+    pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:orconf;
 
     switch( pStep->op ){
       case TK_UPDATE: {
@@ -703,7 +703,7 @@ static int codeTriggerProgram(
           targetSrcList(pParse, pStep),
           sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3ExprDup(db, pStep->pWhere, 0), 
-          pParse->orconf
+          pParse->eOrconf
         );
         break;
       }
@@ -713,7 +713,7 @@ static int codeTriggerProgram(
           sqlite3ExprListDup(db, pStep->pExprList, 0), 
           sqlite3SelectDup(db, pStep->pSelect, 0), 
           sqlite3IdListDup(db, pStep->pIdList), 
-          pParse->orconf
+          pParse->eOrconf
         );
         break;
       }
@@ -736,7 +736,6 @@ static int codeTriggerProgram(
     if( pStep->op!=TK_SELECT ){
       sqlite3VdbeAddOp1(v, OP_ResetCount, 1);
     }
-    pStep = pStep->pNext;
   }
 
   return 0;
@@ -776,16 +775,19 @@ static void transferParseError(Parse *pTo, Parse *pFrom){
   }
 }
 
+/*
+** Create and populate a new TriggerPrg object with a sub-program 
+** implementing trigger pTrigger with ON CONFLICT policy orconf.
+*/
 static TriggerPrg *codeRowTrigger(
-  Parse *pRoot,        /* Root parse context */
   Parse *pParse,       /* Current parse context */
   Trigger *pTrigger,   /* Trigger to code */
-  int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
-  Table *pTab,         /* The table to code triggers from */
-  int orconf
+  Table *pTab,         /* The table pTrigger is attached to */
+  int orconf           /* ON CONFLICT policy to code trigger program with */
 ){
-  sqlite3 *db = pParse->db;
-  TriggerPrg *pPrg;
+  Parse *pTop = sqlite3ParseToplevel(pParse);
+  sqlite3 *db = pParse->db;   /* Database handle */
+  TriggerPrg *pPrg;           /* Value to return */
   Expr *pWhen = 0;            /* Duplicate of trigger WHEN expression */
   Vdbe *v;                    /* Temporary VM */
   NameContext sNC;            /* Name context for sub-vdbe */
@@ -793,35 +795,41 @@ static TriggerPrg *codeRowTrigger(
   Parse *pSubParse;           /* Parse context for sub-vdbe */
   int iEndTrigger = 0;        /* Label to jump to if WHEN is false */
 
+  assert( pTab==tableOfTrigger(pTrigger) );
+
+  /* Allocate the TriggerPrg and SubProgram objects. To ensure that they
+  ** are freed if an error occurs, link them into the Parse.pTriggerPrg 
+  ** list of the top-level Parse object sooner rather than later.  */
   pPrg = sqlite3DbMallocZero(db, sizeof(TriggerPrg));
   if( !pPrg ) return 0;
-  pPrg->pNext = pRoot->pTriggerPrg;
-  pRoot->pTriggerPrg = pPrg;
+  pPrg->pNext = pTop->pTriggerPrg;
+  pTop->pTriggerPrg = pPrg;
   pPrg->pProgram = pProgram = sqlite3DbMallocZero(db, sizeof(SubProgram));
   if( !pProgram ) return 0;
   pProgram->nRef = 1;
-  pSubParse = sqlite3StackAllocZero(db, sizeof(Parse));
-  if( !pSubParse ) return 0;
-
-  pPrg->pProgram = pProgram;
   pPrg->pTrigger = pTrigger;
   pPrg->orconf = orconf;
 
+  /* Allocate and populate a new Parse context to use for coding the 
+  ** trigger sub-program.  */
+  pSubParse = sqlite3StackAllocZero(db, sizeof(Parse));
+  if( !pSubParse ) return 0;
   memset(&sNC, 0, sizeof(sNC));
   sNC.pParse = pSubParse;
   pSubParse->db = db;
   pSubParse->pTriggerTab = pTab;
-  pSubParse->pRoot = pRoot;
+  pSubParse->pToplevel = pTop;
   pSubParse->zAuthContext = pTrigger->zName;
+  pSubParse->eTriggerOp = pTrigger->op;
 
   v = sqlite3GetVdbe(pSubParse);
   if( v ){
     VdbeComment((v, "Start: %s.%s (%s %s%s%s ON %s)", 
       pTrigger->zName, onErrorText(orconf),
       (pTrigger->tr_tm==TRIGGER_BEFORE ? "BEFORE" : "AFTER"),
-        (op==TK_UPDATE ? "UPDATE" : ""),
-        (op==TK_INSERT ? "INSERT" : ""),
-        (op==TK_DELETE ? "DELETE" : ""),
+        (pTrigger->op==TK_UPDATE ? "UPDATE" : ""),
+        (pTrigger->op==TK_INSERT ? "INSERT" : ""),
+        (pTrigger->op==TK_DELETE ? "DELETE" : ""),
       pTab->zName
     ));
 #ifndef SQLITE_OMIT_TRACE
@@ -830,9 +838,10 @@ static TriggerPrg *codeRowTrigger(
     );
 #endif
 
+    /* If one was specified, code the WHEN clause. If it evaluates to false
+    ** (or NULL) the sub-vdbe is immediately halted by jumping to the 
+    ** OP_Halt inserted at the end of the program.  */
     if( pTrigger->pWhen ){
-      /* Code the WHEN clause. If it evaluates to false (or NULL) the 
-      ** sub-vdbe is immediately halted.  */
       pWhen = sqlite3ExprDup(db, pTrigger->pWhen, 0);
       if( SQLITE_OK==sqlite3ResolveExprNames(&sNC, pWhen) 
        && db->mallocFailed==0 
@@ -845,6 +854,8 @@ static TriggerPrg *codeRowTrigger(
 
     /* Code the trigger program into the sub-vdbe. */
     codeTriggerProgram(pSubParse, pTrigger->step_list, orconf);
+
+    /* Insert an OP_Halt at the end of the sub-program. */
     if( iEndTrigger ){
       sqlite3VdbeResolveLabel(v, iEndTrigger);
     }
@@ -853,49 +864,51 @@ static TriggerPrg *codeRowTrigger(
 
     transferParseError(pParse, pSubParse);
     if( db->mallocFailed==0 ){
-      pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pParse->nArg);
+      pProgram->aOp = sqlite3VdbeTakeOpArray(v, &pProgram->nOp, &pTop->nMaxArg);
     }
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
     pProgram->token = (void *)pTrigger;
     pPrg->oldmask = pSubParse->oldmask;
     sqlite3VdbeDelete(v);
-
-    while( pSubParse->pAinc ){
-      AutoincInfo *p = pSubParse->pAinc;
-      pSubParse->pAinc = p->pNext;
-      sqlite3DbFree(db, p);
-    }
   }
+
+  assert( !pSubParse->pAinc       && !pSubParse->pZombieTab );
+  assert( !pSubParse->pTriggerPrg && !pSubParse->nMaxArg );
   sqlite3StackFree(db, pSubParse);
 
   return pPrg;
 }
     
+/*
+** Return a pointer to a TriggerPrg object containing the sub-program for
+** trigger pTrigger with default ON CONFLICT algorithm orconf. If no such
+** TriggerPrg object exists, a new object is allocated and populated before
+** being returned.
+*/
 static TriggerPrg *getRowTrigger(
-  Parse *pParse,
+  Parse *pParse,       /* Current parse context */
   Trigger *pTrigger,   /* Trigger to code */
-  int op,              /* One of TK_UPDATE, TK_INSERT, TK_DELETE */
-  Table *pTab,         /* The table to code triggers from */
-  int orconf
+  Table *pTab,         /* The table trigger pTrigger is attached to */
+  int orconf           /* ON CONFLICT algorithm. */
 ){
+  Parse *pRoot = sqlite3ParseToplevel(pParse);
   TriggerPrg *pPrg;
-  Parse *pRoot = pParse;
+
+  assert( pTab==tableOfTrigger(pTrigger) );
 
   /* It may be that this trigger has already been coded (or is in the
   ** process of being coded). If this is the case, then an entry with
   ** a matching TriggerPrg.pTrigger field will be present somewhere
   ** in the Parse.pTriggerPrg list. Search for such an entry.  */
-  if( pParse->pRoot ){
-    pRoot = pParse->pRoot;
-  }
   for(pPrg=pRoot->pTriggerPrg; 
       pPrg && (pPrg->pTrigger!=pTrigger || pPrg->orconf!=orconf); 
       pPrg=pPrg->pNext
   );
 
+  /* If an existing TriggerPrg could not be located, create a new one. */
   if( !pPrg ){
-    pPrg = codeRowTrigger(pRoot, pParse, pTrigger, op, pTab, orconf);
+    pPrg = codeRowTrigger(pParse, pTrigger, pTab, orconf);
   }
 
   return pPrg;
@@ -962,7 +975,7 @@ void sqlite3CodeRowTrigger(
     ){
       Vdbe *v = sqlite3GetVdbe(pParse); /* Main VM */
       TriggerPrg *pPrg;
-      pPrg = getRowTrigger(pParse, p, op, pTab, orconf);
+      pPrg = getRowTrigger(pParse, p, pTab, orconf);
       assert( pPrg || pParse->nErr || pParse->db->mallocFailed );
 
       /* Code the OP_Program opcode in the parent VDBE. P4 of the OP_Program 
@@ -1011,7 +1024,7 @@ u32 sqlite3TriggerOldmask(
   for(p=pTrigger; p; p=p->pNext){
     if( p->op==op && checkColumnOverlap(p->pColumns,pChanges) ){
       TriggerPrg *pPrg;
-      pPrg = getRowTrigger(pParse, p, op, pTab, orconf);
+      pPrg = getRowTrigger(pParse, p, pTab, orconf);
       if( pPrg ){
         mask |= pPrg->oldmask;
       }

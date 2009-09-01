@@ -89,6 +89,19 @@ struct VdbeCursor {
 };
 typedef struct VdbeCursor VdbeCursor;
 
+/*
+** When a sub-program is executed (OP_Program), a structure of this type
+** is allocated to store the current value of the program counter, as
+** well as the current memory cell array and various other frame specific
+** values stored in the Vdbe struct. When the sub-program is finished, 
+** these values are copied back to the Vdbe from the VdbeFrame structure,
+** restoring the state of the VM to as it was before the sub-program
+** began executing.
+**
+** Frames are stored in a linked list headed at Vdbe.pParent. Vdbe.pParent
+** is the parent of the current frame, or zero if the current frame
+** is the main Vdbe program.
+*/
 typedef struct VdbeFrame VdbeFrame;
 struct VdbeFrame {
   Vdbe *v;                /* VM this frame belongs to */
@@ -99,12 +112,12 @@ struct VdbeFrame {
   int nMem;               /* Number of entries in aMem */
   VdbeCursor **apCsr;     /* Element of Vdbe cursors */
   u16 nCursor;            /* Number of entries in apCsr */
-  VdbeFrame *pParent;     /* Parent of this frame */
   void *token;            /* Copy of SubProgram.token */
   int nChildMem;          /* Number of memory cells for child frame */
   int nChildCsr;          /* Number of cursors for child frame */
-  i64 lastRowid;    /* Last insert rowid (sqlite3.lastRowid) */
-  int nChange;      /* Statement changes (Vdbe.nChanges)     */
+  i64 lastRowid;          /* Last insert rowid (sqlite3.lastRowid) */
+  int nChange;            /* Statement changes (Vdbe.nChanges)     */
+  VdbeFrame *pParent;     /* Parent of this frame */
 };
 
 #define VdbeFrameMem(p) ((Mem *)&((u8 *)p)[ROUND8(sizeof(VdbeFrame))])
@@ -308,7 +321,6 @@ struct Vdbe {
 #endif
   VdbeFrame *pFrame;      /* Parent frame */
   int nFrame;             /* Number of frames in pFrame list */
-  u8 noRecTrigger;        /* True to disable recursive triggers */
 };
 
 /*

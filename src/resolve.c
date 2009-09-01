@@ -224,11 +224,13 @@ static int lookupName(
     ** it is a new.* or old.* trigger argument reference
     */
     if( zDb==0 && zTab!=0 && cnt==0 && pParse->pTriggerTab!=0 ){
+      int op = pParse->eTriggerOp;
       Table *pTab = 0;
-      if( pParse->triggerOp!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
+      assert( op==TK_DELETE || op==TK_UPDATE || op==TK_INSERT );
+      if( op!=TK_DELETE && sqlite3StrICmp("new",zTab) == 0 ){
         pExpr->iTable = 1;
         pTab = pParse->pTriggerTab;
-      }else if( pParse->triggerOp!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
+      }else if( op!=TK_INSERT && sqlite3StrICmp("old",zTab)==0 ){
         pExpr->iTable = 0;
         pTab = pParse->pTriggerTab;
       }

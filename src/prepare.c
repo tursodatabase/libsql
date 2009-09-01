@@ -676,6 +676,7 @@ static int sqlite3Prepare(
     sqlite3Error(db, rc, 0);
   }
 
+  /* Delete any TriggerPrg structures allocated while parsing this statement. */
   while( pParse->pTriggerPrg ){
     TriggerPrg *pT = pParse->pTriggerPrg;
     pParse->pTriggerPrg = pT->pNext;

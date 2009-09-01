@@ -339,9 +339,24 @@ int sqlite3VdbeCurrentAddr(Vdbe *p){
   return p->nOp;
 }
 
+/*
+** This function returns a pointer to the array of opcodes associated with
+** the Vdbe passed as the first argument. It is the callers responsibility
+** to arrange for the returned array to be eventually freed using the 
+** vdbeFreeOpArray() function.
+**
+** Before returning, *pnOp is set to the number of entries in the returned
+** array. Also, *pnMaxArg is set to the larger of its current value and 
+** the number of entries in the Vdbe.apArg[] array required to execute the 
+** returned program.
+*/
 VdbeOp *sqlite3VdbeTakeOpArray(Vdbe *p, int *pnOp, int *pnMaxArg){
   VdbeOp *aOp = p->aOp;
   assert( aOp && !p->db->mallocFailed );
+
+  /* Check that sqlite3VdbeUsesBtree() was not called on this VM */
+  assert( p->aMutex.nMutex==0 );
+
   resolveP2Values(p, pnMaxArg);
   *pnOp = p->nOp;
   p->aOp = 0;
@@ -499,6 +514,11 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
   }
 }
 
+/*
+** Free the space allocated for aOp and any p4 values allocated for the
+** opcodes contained within. If aOp is not NULL it is assumed to contain 
+** nOp entries. 
+*/
 static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
   if( aOp ){
     Op *pOp;
@@ -512,6 +532,19 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
   sqlite3DbFree(db, aOp);
 }
 
+/*
+** Decrement the ref-count on the SubProgram structure passed as the
+** second argument. If the ref-count reaches zero, free the structure.
+**
+** The array of VDBE opcodes stored as SubProgram.aOp is freed if
+** either the ref-count reaches zero or parameter freeop is non-zero.
+**
+** Since the array of opcodes pointed to by SubProgram.aOp may directly
+** or indirectly contain a reference to the SubProgram structure itself.
+** By passing a non-zero freeop parameter, the caller may ensure that all
+** SubProgram structures and their aOp arrays are freed, even when there
+** are such circular references.
+*/
 void sqlite3VdbeProgramDelete(sqlite3 *db, SubProgram *p, int freeop){
   if( p ){
     assert( p->nRef>0 );
@@ -815,7 +848,6 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
-**
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   int mask;
@@ -887,6 +919,10 @@ static void releaseMemArray(Mem *p, int N){
   }
 }
 
+/*
+** Delete a VdbeFrame object and its contents. VdbeFrame objects are
+** allocated by the OP_Program opcode in sqlite3VdbeExec().
+*/
 void sqlite3VdbeFrameDelete(VdbeFrame *p){
   int i;
   Mem *aMem = VdbeFrameMem(p);
@@ -1334,6 +1370,11 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
   }
 }
 
+/*
+** Copy the values stored in the VdbeFrame structure to its Vdbe. This
+** is used, for example, when a trigger sub-program is halted to restore
+** control to the main program.
+*/
 int sqlite3VdbeFrameRestore(VdbeFrame *pFrame){
   Vdbe *v = pFrame->v;
   v->aOp = pFrame->aOp;

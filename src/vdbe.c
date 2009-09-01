@@ -4772,9 +4772,17 @@ case OP_RowSetTest: {                     /* jump, in1, in3 */
 ** P4 is a pointer to the VM containing the trigger program.
 */
 case OP_Program: {        /* jump */
-  VdbeFrame *pFrame;
-  SubProgram *pProgram = pOp->p4.pProgram;
-  Mem *pRt = &p->aMem[pOp->p3];        /* Register to allocate runtime space */
+  int nMem;               /* Number of memory registers for sub-program */
+  int nByte;              /* Bytes of runtime space required for sub-program */
+  Mem *pRt;               /* Register to allocate runtime space */
+  Mem *pMem;              /* Used to iterate through memory cells */
+  Mem *pEnd;              /* Last memory cell in new array */
+  VdbeFrame *pFrame;      /* New vdbe frame to execute in */
+  SubProgram *pProgram;   /* Sub-program to execute */
+  void *t;                /* Token identifying trigger */
+
+  pProgram = pOp->p4.pProgram;
+  pRt = &p->aMem[pOp->p3];
   assert( pProgram->nOp>0 );
   
   /* If the SQLITE_NoRecTriggers flag it set, then recursive invocation of
@@ -4789,7 +4797,7 @@ case OP_Program: {        /* jump */
   ** variable.
   */
   if( db->flags&SQLITE_NoRecTriggers ){
-    void *t = pProgram->token;
+    t = pProgram->token;
     for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
     if( pFrame ) break;
   }
@@ -4806,16 +4814,13 @@ case OP_Program: {        /* jump */
   ** the trigger program. If this trigger has been fired before, then pRt 
   ** is already allocated. Otherwise, it must be initialized.  */
   if( (pRt->flags&MEM_Frame)==0 ){
-    Mem *pMem;
-    Mem *pEnd;
-
     /* SubProgram.nMem is set to the number of memory cells used by the 
     ** program stored in SubProgram.aOp. As well as these, one memory
     ** cell is required for each cursor used by the program. Set local
     ** variable nMem (and later, VdbeFrame.nChildMem) to this value.
     */
-    int nMem = pProgram->nMem + pProgram->nCsr;
-    int nByte = ROUND8(sizeof(VdbeFrame))
+    nMem = pProgram->nMem + pProgram->nCsr;
+    nByte = ROUND8(sizeof(VdbeFrame))
               + nMem * sizeof(Mem)
               + pProgram->nCsr * sizeof(VdbeCursor *);
     pFrame = sqlite3DbMallocZero(db, nByte);
@@ -4880,8 +4885,10 @@ case OP_Program: {        /* jump */
 ** calling OP_Program instruction.
 */
 case OP_Param: {           /* out2-prerelease */
-  VdbeFrame *pFrame = p->pFrame;
-  Mem *pIn = &pFrame->aMem[pOp->p1 + pFrame->aOp[pFrame->pc].p1];   
+  VdbeFrame *pFrame;
+  Mem *pIn;
+  pFrame = p->pFrame;
+  pIn = &pFrame->aMem[pOp->p1 + pFrame->aOp[pFrame->pc].p1];   
   sqlite3VdbeMemShallowCopy(pOut, pIn, MEM_Ephem);
   break;
 }

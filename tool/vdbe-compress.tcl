@@ -96,6 +96,7 @@ while {![eof stdin]} {
     append line " "
     foreach v $vlist {
       regsub -all "(\[^a-zA-Z0-9>.\])${v}(\\W)" $line "\\1u.$sname.$v\\2" line
+      regsub -all "(\[^a-zA-Z0-9>.\])${v}(\\W)" $line "\\1u.$sname.$v\\2" line
     }
     append afterUnion [string trimright $line]\n
   } elseif {$line=="" && [eof stdin]} {
