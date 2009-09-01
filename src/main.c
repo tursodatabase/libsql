@@ -1592,7 +1592,7 @@ static int openDatabase(
                  | SQLITE_LoadExtension
 #endif
 #if SQLITE_DEFAULT_RECURSIVE_TRIGGERS
-                 | SQLITE_NoRecTriggers
+                 | SQLITE_RecTriggers
 #endif
       ;
   sqlite3HashInit(&db->aCollSeq);
