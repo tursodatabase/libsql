@@ -1,5 +1,5 @@
-C More\sfixes\sand\scomment\supdates.
-D 2009-09-01T12:16:01
+C Add\snew\stest\sscript\striggerC.test.
+D 2009-09-01T16:19:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -681,6 +681,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
+F test/triggerC.test 3806d257b32e95ada0b230161ce9d36e4a7f335a
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -748,7 +749,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 85d9f23be1e8673dbda42e43b9b23332ada9225f
-R 95c6e7fce5f16ea2a0796830099d3492
+P 38a9327bad1a01e3d7a47fad44ece2f6c7e88643
+R 1df7bed4841ce53fcaba0907c0d2e83a
 U dan
-Z 4646825fb4a0fb39bbc35c33fbd7d7cc
+Z 25a88a87e4ee91c661bde2c4b892fd01
