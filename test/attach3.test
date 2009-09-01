@@ -26,7 +26,7 @@ ifcapable !attach {
 # The tests in this file were written before SQLite supported recursive
 # trigger invocation, and some tests depend on that to pass. So disable
 # recursive triggers for this file.
-catchsql { pragma disable_recursive_triggers = 1 } 
+catchsql { pragma recursive_triggers = off } 
 
 # Create tables t1 and t2 in the main database
 execsql {

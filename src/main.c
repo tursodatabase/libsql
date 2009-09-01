@@ -1591,7 +1591,7 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_LOAD_EXTENSION
                  | SQLITE_LoadExtension
 #endif
-#if 1 || defined(SQLITE_DISABLE_RECURSIVE_TRIGGERS)
+#if SQLITE_DEFAULT_RECURSIVE_TRIGGERS
                  | SQLITE_NoRecTriggers
 #endif
       ;

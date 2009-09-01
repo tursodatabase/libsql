@@ -21,7 +21,7 @@ ifcapable {!trigger} {
 # The tests in this file were written before SQLite supported recursive }
 # trigger invocation, and some tests depend on that to pass. So disable
 # recursive triggers for this file.
-catchsql { pragma disable_recursive_triggers = 1 } 
+catchsql { pragma recursive_triggers = off } 
 
 # Test that we can cause ROLLBACK, FAIL and ABORT correctly
 #

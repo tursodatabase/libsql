@@ -19,7 +19,7 @@ ifcapable {!trigger} {
 
 # Enable recursive triggers for this file.
 #
-execsql { PRAGMA disable_recursive_triggers = 0 }
+execsql { PRAGMA recursive_triggers = on }
 
 #sqlite3_db_config_lookaside db 0 0 0
 

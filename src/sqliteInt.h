@@ -353,6 +353,10 @@
 # define SQLITE_DEFAULT_FILE_FORMAT 1
 #endif
 
+#ifndef SQLITE_DEFAULT_RECURSIVE_TRIGGERS
+# define SQLITE_DEFAULT_RECURSIVE_TRIGGERS 0
+#endif
+
 /*
 ** Provide a default value for SQLITE_TEMP_STORE in case it is not specified
 ** on the command-line
@@ -911,7 +915,7 @@ struct sqlite3 {
 
 #define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 #define SQLITE_ReverseOrder   0x00100000  /* Reverse unordered SELECTs */
-#define SQLITE_NoRecTriggers  0x00200000  /* Disable recursive triggers */
+#define SQLITE_RecTriggers    0x00200000  /* Enable recursive triggers */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -2704,6 +2708,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
 # define sqlite3TriggerList(X, Y) 0
 # define sqlite3ParseToplevel(p) p
+# define sqlite3TriggerOldmask(A,B,C,D,E,F) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

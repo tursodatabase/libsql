@@ -4796,7 +4796,7 @@ case OP_Program: {        /* jump */
   ** single trigger all have the same value for the SubProgram.token 
   ** variable.
   */
-  if( db->flags&SQLITE_NoRecTriggers ){
+  if( 0==(db->flags&SQLITE_RecTriggers) ){
     t = pProgram->token;
     for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
     if( pFrame ) break;
