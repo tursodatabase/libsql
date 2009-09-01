@@ -2734,8 +2734,9 @@ static int flattenSubquery(
   if( ALWAYS(pSubitem->pTab!=0) ){
     Table *pTabToDel = pSubitem->pTab;
     if( pTabToDel->nRef==1 ){
-      pTabToDel->pNextZombie = pParse->pZombieTab;
-      pParse->pZombieTab = pTabToDel;
+      Parse *pToplevel = sqlite3ParseToplevel(pParse);
+      pTabToDel->pNextZombie = pToplevel->pZombieTab;
+      pToplevel->pZombieTab = pTabToDel;
     }else{
       pTabToDel->nRef--;
     }

@@ -196,10 +196,10 @@ static char *whereTempTriggers(Parse *pParse, Table *pTab){
     for(pTrig=sqlite3TriggerList(pParse, pTab); pTrig; pTrig=pTrig->pNext){
       if( pTrig->pSchema==pTempSchema ){
         if( !zWhere ){
-          zWhere = sqlite3MPrintf(db, "name=%Q", pTrig->name);
+          zWhere = sqlite3MPrintf(db, "name=%Q", pTrig->zName);
         }else{
           tmp = zWhere;
-          zWhere = sqlite3MPrintf(db, "%s OR name=%Q", zWhere, pTrig->name);
+          zWhere = sqlite3MPrintf(db, "%s OR name=%Q", zWhere, pTrig->zName);
           sqlite3DbFree(db, tmp);
         }
       }
@@ -235,7 +235,7 @@ static void reloadTableSchema(Parse *pParse, Table *pTab, const char *zName){
   for(pTrig=sqlite3TriggerList(pParse, pTab); pTrig; pTrig=pTrig->pNext){
     int iTrigDb = sqlite3SchemaToIndex(pParse->db, pTrig->pSchema);
     assert( iTrigDb==iDb || iTrigDb==1 );
-    sqlite3VdbeAddOp4(v, OP_DropTrigger, iTrigDb, 0, 0, pTrig->name, 0);
+    sqlite3VdbeAddOp4(v, OP_DropTrigger, iTrigDb, 0, 0, pTrig->zName, 0);
   }
 #endif
 

@@ -611,7 +611,7 @@ typedef struct StrAccum StrAccum;
 typedef struct Table Table;
 typedef struct TableLock TableLock;
 typedef struct Token Token;
-typedef struct TriggerStack TriggerStack;
+typedef struct TriggerPrg TriggerPrg;
 typedef struct TriggerStep TriggerStep;
 typedef struct Trigger Trigger;
 typedef struct UnpackedRecord UnpackedRecord;
@@ -911,6 +911,7 @@ struct sqlite3 {
 
 #define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 #define SQLITE_ReverseOrder   0x00100000  /* Reverse unordered SELECTs */
+#define SQLITE_NoRecTriggers  0x00200000  /* Disable recursive triggers */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -1576,7 +1577,8 @@ struct Expr {
   *********************************************************************/
 
   int iTable;            /* TK_COLUMN: cursor number of table holding column
-                         ** TK_REGISTER: register number */
+                         ** TK_REGISTER: register number
+                         ** TK_TRIGGER: 1 -> new, 0 -> old */
   i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid */
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
@@ -2016,6 +2018,31 @@ struct AutoincInfo {
 #endif
 
 /*
+** At least one instance of the following structure is created for each 
+** trigger that may be fired while parsing an INSERT, UPDATE or DELETE
+** statement. All such objects are stored in the linked list headed at
+** Parse.pTriggerPrg and deleted once statement compilation has been
+** completed.
+**
+** A Vdbe sub-program that implements the body and WHEN clause of trigger
+** TriggerPrg.pTrigger, assuming a default ON CONFLICT clause of
+** TriggerPrg.orconf, is stored in the TriggerPrg.pProgram variable.
+** The Parse.pTriggerPrg list never contains two entries with the same
+** values for both pTrigger and orconf.
+**
+** The TriggerPrg.oldmask variable is set to a mask of old.* columns
+** accessed (or set to 0 for triggers fired as a result of INSERT 
+** statements).
+*/
+struct TriggerPrg {
+  Trigger *pTrigger;      /* Trigger this program was coded from */
+  int orconf;             /* Default ON CONFLICT policy */
+  SubProgram *pProgram;   /* Program implementing pTrigger/orconf */
+  u32 oldmask;            /* Mask of old.* columns accessed */
+  TriggerPrg *pNext;      /* Next entry in Parse.pTriggerPrg list */
+};
+
+/*
 ** An SQL parser context.  A copy of this structure is passed through
 ** the parser and down into all the parser action routine in order to
 ** carry around information that is global to the entire parse.
@@ -2075,6 +2102,14 @@ struct Parse {
   int regRowid;        /* Register holding rowid of CREATE TABLE entry */
   int regRoot;         /* Register holding root page number for new objects */
   AutoincInfo *pAinc;  /* Information about AUTOINCREMENT counters */
+  int nMaxArg;         /* Max args passed to user function by sub-program */
+
+  /* Information used while coding trigger programs. */
+  Parse *pToplevel;    /* Parse structure for main program (or NULL) */
+  Table *pTriggerTab;  /* Table triggers are being coded for */
+  u32 oldmask;         /* Mask of old.* columns referenced */
+  u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
+  u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -2092,7 +2127,6 @@ struct Parse {
   const char *zTail;   /* All SQL text past the last semicolon parsed */
   Table *pNewTable;    /* A table being constructed by CREATE TABLE */
   Trigger *pNewTrigger;     /* Trigger under construct by a CREATE TRIGGER */
-  TriggerStack *trigStack;  /* Trigger actions being coded */
   const char *zAuthContext; /* The 6th parameter to db->xAuth callbacks */
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   Token sArg;                /* Complete text of a module argument */
@@ -2102,6 +2136,7 @@ struct Parse {
 #endif
   int nHeight;            /* Expression tree height of current sub-select */
   Table *pZombieTab;      /* List of Table objects to delete after code gen */
+  TriggerPrg *pTriggerPrg;    /* Linked list of coded triggers */
 };
 
 #ifdef SQLITE_OMIT_VIRTUALTABLE
@@ -2144,7 +2179,7 @@ struct AuthContext {
  * containing the SQL statements specified as the trigger program.
  */
 struct Trigger {
-  char *name;             /* The name of the trigger                        */
+  char *zName;            /* The name of the trigger                        */
   char *table;            /* The table or view to which the trigger applies */
   u8 op;                  /* One of TK_DELETE, TK_UPDATE, TK_INSERT         */
   u8 tr_tm;               /* One of TRIGGER_BEFORE, TRIGGER_AFTER */
@@ -2216,45 +2251,6 @@ struct TriggerStep {
   IdList *pIdList;     /* Column names for INSERT */
   TriggerStep *pNext;  /* Next in the link-list */
   TriggerStep *pLast;  /* Last element in link-list. Valid for 1st elem only */
-};
-
-/*
- * An instance of struct TriggerStack stores information required during code
- * generation of a single trigger program. While the trigger program is being
- * coded, its associated TriggerStack instance is pointed to by the
- * "pTriggerStack" member of the Parse structure.
- *
- * The pTab member points to the table that triggers are being coded on. The 
- * newIdx member contains the index of the vdbe cursor that points at the temp
- * table that stores the new.* references. If new.* references are not valid
- * for the trigger being coded (for example an ON DELETE trigger), then newIdx
- * is set to -1. The oldIdx member is analogous to newIdx, for old.* references.
- *
- * The ON CONFLICT policy to be used for the trigger program steps is stored 
- * as the orconf member. If this is OE_Default, then the ON CONFLICT clause 
- * specified for individual triggers steps is used.
- *
- * struct TriggerStack has a "pNext" member, to allow linked lists to be
- * constructed. When coding nested triggers (triggers fired by other triggers)
- * each nested trigger stores its parent trigger's TriggerStack as the "pNext" 
- * pointer. Once the nested trigger has been coded, the pNext value is restored
- * to the pTriggerStack member of the Parse stucture and coding of the parent
- * trigger continues.
- *
- * Before a nested trigger is coded, the linked list pointed to by the 
- * pTriggerStack is scanned to ensure that the trigger is not about to be coded
- * recursively. If this condition is detected, the nested trigger is not coded.
- */
-struct TriggerStack {
-  Table *pTab;         /* Table that triggers are currently being coded on */
-  int newIdx;          /* Index of vdbe cursor to "new" temp table */
-  int oldIdx;          /* Index of vdbe cursor to "old" temp table */
-  u32 newColMask;
-  u32 oldColMask;
-  int orconf;          /* Current orconf policy */
-  int ignoreJump;      /* where to jump to for a RAISE(IGNORE) */
-  Trigger *pTrigger;   /* The trigger currently being coded */
-  TriggerStack *pNext; /* Next trigger down on the trigger stack */
 };
 
 /*
@@ -2651,7 +2647,7 @@ void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
                                      int*,int,int,int,int,int*);
-void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int,int,int);
+void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
@@ -2687,8 +2683,8 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   void sqlite3DropTriggerPtr(Parse*, Trigger*);
   Trigger *sqlite3TriggersExist(Parse *, Table*, int, ExprList*, int *pMask);
   Trigger *sqlite3TriggerList(Parse *, Table *);
-  int sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
-                            int, int, int, int, u32*, u32*);
+  void sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
+                            int, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
@@ -2698,13 +2694,16 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
+  u32 sqlite3TriggerOldmask(Parse*,Trigger*,int,ExprList*,Table*,int);
+# define sqlite3ParseToplevel(p) ((p)->pToplevel ? (p)->pToplevel : (p))
 #else
 # define sqlite3TriggersExist(B,C,D,E,F) 0
 # define sqlite3DeleteTrigger(A,B)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
-# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J,K,L) 0
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
 # define sqlite3TriggerList(X, Y) 0
+# define sqlite3ParseToplevel(p) p
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);

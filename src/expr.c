@@ -90,7 +90,9 @@ CollSeq *sqlite3ExprCollSeq(Parse *pParse, Expr *pExpr){
     pColl = p->pColl;
     if( pColl ) break;
     op = p->op;
-    if( (op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER) && p->pTab!=0 ){
+    if( p->pTab!=0 && (
+        op==TK_AGG_COLUMN || op==TK_COLUMN || op==TK_REGISTER || op==TK_TRIGGER
+    )){
       /* op==TK_REGISTER && p->pTab!=0 happens when pExpr was originally
       ** a TK_COLUMN but was previously evaluated and cached in a register */
       const char *zColl;
@@ -1396,7 +1398,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
     if( iCol<0 ){
       int iMem = ++pParse->nMem;
       int iAddr;
-      sqlite3VdbeUsesBtree(v, iDb);
 
       iAddr = sqlite3VdbeAddOp1(v, OP_If, iMem);
       sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
@@ -1430,9 +1431,6 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
           char *pKey;
   
           pKey = (char *)sqlite3IndexKeyinfo(pParse, pIdx);
-          iDb = sqlite3SchemaToIndex(db, pIdx->pSchema);
-          sqlite3VdbeUsesBtree(v, iDb);
-
           iAddr = sqlite3VdbeAddOp1(v, OP_If, iMem);
           sqlite3VdbeAddOp2(v, OP_Integer, 1, iMem);
   
@@ -1521,7 +1519,7 @@ void sqlite3CodeSubselect(
   ** If all of the above are false, then we can run this code just once
   ** save the results, and reuse the same result on subsequent invocations.
   */
-  if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->trigStack ){
+  if( !ExprHasAnyProperty(pExpr, EP_VarSelect) && !pParse->pTriggerTab ){
     int mem = ++pParse->nMem;
     sqlite3VdbeAddOp1(v, OP_If, mem);
     testAddr = sqlite3VdbeAddOp2(v, OP_Integer, 1, mem);
@@ -2556,6 +2554,58 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
 
+    case TK_TRIGGER: {
+      /* If the opcode is TK_TRIGGER, then the expression is a reference
+      ** to a column in the new.* or old.* pseudo-tables available to
+      ** trigger programs. In this case Expr.iTable is set to 1 for the
+      ** new.* pseudo-table, or 0 for the old.* pseudo-table. Expr.iColumn
+      ** is set to the column of the pseudo-table to read, or to -1 to
+      ** read the rowid field.
+      **
+      ** The expression is implemented using an OP_Param opcode. The p1
+      ** parameter is set to 0 for an old.rowid reference, or to (i+1)
+      ** to reference another column of the old.* pseudo-table, where 
+      ** i is the index of the column. For a new.rowid reference, p1 is
+      ** set to (n+1), where n is the number of columns in each pseudo-table.
+      ** For a reference to any other column in the new.* pseudo-table, p1
+      ** is set to (n+2+i), where n and i are as defined previously. For
+      ** example, if the table on which triggers are being fired is
+      ** declared as:
+      **
+      **   CREATE TABLE t1(a, b);
+      **
+      ** Then p1 is interpreted as follows:
+      **
+      **   p1==0   ->    old.rowid     p1==3   ->    new.rowid
+      **   p1==1   ->    old.a         p1==4   ->    new.a
+      **   p1==2   ->    old.b         p1==5   ->    new.b       
+      */
+      Table *pTab = pExpr->pTab;
+      int p1 = pExpr->iTable * (pTab->nCol+1) + 1 + pExpr->iColumn;
+
+      assert( pExpr->iTable==0 || pExpr->iTable==1 );
+      assert( pExpr->iColumn>=-1 && pExpr->iColumn<pTab->nCol );
+      assert( pTab->iPKey<0 || pExpr->iColumn!=pTab->iPKey );
+      assert( p1>=0 && p1<(pTab->nCol*2+2) );
+
+      sqlite3VdbeAddOp2(v, OP_Param, p1, target);
+      VdbeComment((v, "%s.%s -> $%d",
+        (pExpr->iTable ? "new" : "old"),
+        (pExpr->iColumn<0 ? "rowid" : pExpr->pTab->aCol[pExpr->iColumn].zName),
+        target
+      ));
+
+      /* If the column has REAL affinity, it may currently be stored as an
+      ** integer. Use OP_RealAffinity to make sure it is really real.  */
+      if( pExpr->iColumn>=0 
+       && pTab->aCol[pExpr->iColumn].affinity==SQLITE_AFF_REAL
+      ){
+        sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
+      }
+      break;
+    }
+
+
     /*
     ** Form A:
     **   CASE x WHEN e1 THEN r1 WHEN e2 THEN r2 ... WHEN eN THEN rN ELSE y END
@@ -2640,24 +2690,20 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 #ifndef SQLITE_OMIT_TRIGGER
     case TK_RAISE: {
-      if( !pParse->trigStack ){
+      int vrc;
+      if( !pParse->pTriggerTab ){
         sqlite3ErrorMsg(pParse,
                        "RAISE() may only be used within a trigger-program");
         return 0;
       }
-      if( pExpr->affinity!=OE_Ignore ){
-         assert( pExpr->affinity==OE_Rollback ||
-                 pExpr->affinity == OE_Abort ||
-                 pExpr->affinity == OE_Fail );
-         assert( !ExprHasProperty(pExpr, EP_IntValue) );
-         sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, pExpr->affinity, 0,
-                           pExpr->u.zToken, 0);
-      } else {
-         assert( pExpr->affinity == OE_Ignore );
-         sqlite3VdbeAddOp2(v, OP_ContextPop, 0, 0);
-         sqlite3VdbeAddOp2(v, OP_Goto, 0, pParse->trigStack->ignoreJump);
-         VdbeComment((v, "raise(IGNORE)"));
-      }
+      assert( pExpr->affinity==OE_Rollback 
+           || pExpr->affinity==OE_Abort
+           || pExpr->affinity==OE_Fail
+           || pExpr->affinity==OE_Ignore
+      );
+      assert( !ExprHasProperty(pExpr, EP_IntValue) );
+      vrc = (pExpr->affinity==OE_Ignore ? SQLITE_OK : SQLITE_CONSTRAINT);
+      sqlite3VdbeAddOp4(v, OP_Halt, vrc, pExpr->affinity, 0, pExpr->u.zToken,0);
       break;
     }
 #endif

@@ -25,6 +25,8 @@ ifcapable {!autoinc} {
   return
 }
 
+sqlite3_db_config_lookaside db 0 0 0
+
 # The database is initially empty.
 #
 do_test autoinc-1.1 {
@@ -555,6 +557,8 @@ do_test autoinc-9.1 {
     SELECT * FROM sqlite_sequence WHERE name='t3';
   }
 } {t3 0}
+
+catchsql { pragma disable_recursive_triggers = 1 } 
 
 # Ticket #3928.  Make sure that triggers to not make extra slots in
 # the SQLITE_SEQUENCE table.

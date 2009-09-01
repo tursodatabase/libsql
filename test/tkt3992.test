@@ -72,9 +72,6 @@ do_test tkt3992-2.3 {
   }
   set res
 } {real}
-explain {
-    UPDATE t2 SET a = 'I';
-}
 
 
 finish_test
