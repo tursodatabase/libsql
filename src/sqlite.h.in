@@ -82,22 +82,22 @@ extern "C" {
 ** the sqlite3.h file specify the version of SQLite with which
 ** that header file is associated.
 **
-** The "version" of SQLite is a string of the form "X.Y.Z".
-** The phrase "alpha" or "beta" might be appended after the Z.
-** The X value is major version number always 3 in SQLite3.
-** The X value only changes when backwards compatibility is
+** The "version" of SQLite is a string of the form "W.X.Y" or "W.X.Y.Z".
+** The W value is major version number and is always 3 in SQLite3.
+** The W value only changes when backwards compatibility is
 ** broken and we intend to never break backwards compatibility.
-** The Y value is the minor version number and only changes when
+** The X value is the minor version number and only changes when
 ** there are major feature enhancements that are forwards compatible
 ** but not backwards compatible.
-** The Z value is the release number and is incremented with
-** each release but resets back to 0 whenever Y is incremented.
+** The Y value is the release number and is incremented with
+** each release but resets back to 0 whenever X is incremented.
+** The Z value only appears on branch releases.
 **
 ** The SQLITE_VERSION_NUMBER is an integer that is computed as
 ** follows:
 **
 ** <blockquote><pre>
-** SQLITE_VERSION_NUMBER = X*1000000 + Y*1000 + Z
+** SQLITE_VERSION_NUMBER = W*1000000 + X*1000 + Y
 ** </pre></blockquote>
 **
 ** Since version 3.6.18, SQLite source code has been stored in the
@@ -109,7 +109,8 @@ extern "C" {
 ** source tree.
 **
 ** See also: [sqlite3_libversion()],
-** [sqlite3_libversion_number()], and [sqlite3_sourceid()].
+** [sqlite3_libversion_number()], [sqlite3_sourceid()],
+** [sqlite_version()] and [sqlite_source_id()].
 **
 ** Requirements: [H10011] [H10014]
 */
@@ -124,13 +125,15 @@ extern "C" {
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] #defines in the header,
 ** but are associated with the library instead of the header file.  Cautious
-** programmers might include an assert in their application to verify that
-** sqlite3_libversion_number() always returns the value
-** [SQLITE_VERSION_NUMBER] and thus insure that the application is
+** programmers might include assert() statements in their application to
+** verify that values returned by these interfaces match the macros in
+** the header, and thus insure that the application is
 ** compiled with matching library and header files.
 **
 ** <blockquote><pre>
 ** assert( sqlite3_libversion_number()==SQLITE_VERSION_NUMBER );
+** assert( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)==0 );
+** assert( strcmp(sqlite3_libversion,SQLITE_VERSION)==0 );
 ** </pre></blockquote>
 **
 ** The sqlite3_libversion() function returns the same information as is
@@ -139,6 +142,8 @@ extern "C" {
 ** constants within the DLL.  Similarly, the sqlite3_sourceid() function
 ** returns the same information as is in the [SQLITE_SOURCE_ID] #define of
 ** the header file.
+**
+** See also: [sqlite_version()] and [sqlite_source_id()].
 **
 ** Requirements: [H10021] [H10022] [H10023]
 */
