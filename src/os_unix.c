@@ -195,6 +195,7 @@ struct unixFile {
   int lastErrno;                   /* The unix errno from the last I/O error */
   void *lockingContext;            /* Locking style specific state */
   UnixUnusedFd *pUnused;           /* Pre-allocated UnixUnusedFd */
+  int fileFlags;                   /* Miscellanous flags */
 #if SQLITE_ENABLE_LOCKING_STYLE
   int openFlags;                   /* The flags specified at open() */
 #endif
@@ -224,6 +225,11 @@ struct unixFile {
   char aPadding[32];
 #endif
 };
+
+/*
+** The following macros define bits in unixFile.fileFlags
+*/
+#define SQLITE_WHOLE_FILE_LOCKING  0x0001   /* Use whole-file locking */
 
 /*
 ** Include code that is common to all os_*.c files
@@ -1150,6 +1156,62 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 }
 
 /*
+** Perform a file locking operation on a range of bytes in a file.
+** The "op" parameter should be one of F_RDLCK, F_WRLCK, or F_UNLCK.
+** Return 0 on success or -1 for failure.  On failure, write the error
+** code into *pErrcode.
+**
+** If the SQLITE_WHOLE_FILE_LOCKING bit is clear, then only lock
+** the range of bytes on the locking page between SHARED_FIRST and
+** SHARED_SIZE.  If SQLITE_WHOLE_FILE_LOCKING is set, then lock all
+** bytes from 0 up to but not including PENDING_BYTE, and all bytes
+** that follow SHARED_FIRST.
+**
+** In other words, of SQLITE_WHOLE_FILE_LOCKING if false (the historical
+** default case) then only lock a small range of bytes from SHARED_FIRST
+** through SHARED_FIRST+SHARED_SIZE-1.  But if SQLITE_WHOLE_FILE_LOCKING is
+** true then lock every byte in the file except for PENDING_BYTE and
+** RESERVED_BYTE.
+**
+** SQLITE_WHOLE_FILE_LOCKING=true overlaps SQLITE_WHOLE_FILE_LOCKING=false
+** and so the locking schemes are compatible.  One type of lock will
+** effectively exclude the other type.  The reason for using the
+** SQLITE_WHOLE_FILE_LOCKING=true is that by indicating the full range
+** of bytes to be read or written, we give hints to NFS to help it
+** maintain cache coherency.  On the other hand, whole file locking
+** is slower, so we don't want to use it except for NFS.
+*/
+static int rangeLock(unixFile *pFile, int op, int *pErrcode){
+  struct flock lock;
+  int rc;
+  lock.l_type = op;
+  lock.l_start = SHARED_FIRST;
+  lock.l_whence = SEEK_SET;
+  if( (pFile->fileFlags & SQLITE_WHOLE_FILE_LOCKING)==0 ){
+    lock.l_len = SHARED_SIZE;
+    rc = fcntl(pFile->h, F_SETLK, &lock);
+    *pErrcode = errno;
+  }else{
+    lock.l_len = 0;
+    rc = fcntl(pFile->h, F_SETLK, &lock);
+    *pErrcode = errno;
+    if( NEVER(op==F_UNLCK) || rc!=(-1) ){
+      lock.l_start = 0;
+      lock.l_len = PENDING_BYTE;
+      rc = fcntl(pFile->h, F_SETLK, &lock);
+      if( ALWAYS(op!=F_UNLCK) && rc==(-1) ){
+        *pErrcode = errno;
+        lock.l_type = F_UNLCK;
+        lock.l_start = SHARED_FIRST;
+        lock.l_len = 0;
+        fcntl(pFile->h, F_SETLK, &lock);
+      }
+    }
+  }
+  return rc;
+}
+
+/*
 ** Lock the file with the lock specified by parameter locktype - one
 ** of the following:
 **
@@ -1217,6 +1279,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   struct unixLockInfo *pLock = pFile->pLock;
   struct flock lock;
   int s;
+  int tErrno;
 
   assert( pFile );
   OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d\n", pFile->h,
@@ -1233,7 +1296,10 @@ static int unixLock(sqlite3_file *id, int locktype){
     return SQLITE_OK;
   }
 
-  /* Make sure the locking sequence is correct
+  /* Make sure the locking sequence is correct.
+  **  (1) We never move from unlocked to anything higher than shared lock.
+  **  (2) SQLite never explicitly requests a pendig lock.
+  **  (3) A shared lock is always held when a reserve lock is requested.
   */
   assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );
   assert( locktype!=PENDING_LOCK );
@@ -1277,14 +1343,13 @@ static int unixLock(sqlite3_file *id, int locktype){
     goto end_lock;
   }
 
-  lock.l_len = 1L;
-
-  lock.l_whence = SEEK_SET;
 
   /* A PENDING lock is needed before acquiring a SHARED lock and before
   ** acquiring an EXCLUSIVE lock.  For the SHARED lock, the PENDING will
   ** be released.
   */
+  lock.l_len = 1L;
+  lock.l_whence = SEEK_SET;
   if( locktype==SHARED_LOCK 
       || (locktype==EXCLUSIVE_LOCK && pFile->locktype<PENDING_LOCK)
   ){
@@ -1292,7 +1357,7 @@ static int unixLock(sqlite3_file *id, int locktype){
     lock.l_start = PENDING_BYTE;
     s = fcntl(pFile->h, F_SETLK, &lock);
     if( s==(-1) ){
-      int tErrno = errno;
+      tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
       if( IS_LOCK_ERROR(rc) ){
         pFile->lastErrno = tErrno;
@@ -1306,16 +1371,12 @@ static int unixLock(sqlite3_file *id, int locktype){
   ** operating system calls for the specified lock.
   */
   if( locktype==SHARED_LOCK ){
-    int tErrno = 0;
     assert( pLock->cnt==0 );
     assert( pLock->locktype==0 );
 
     /* Now get the read-lock */
-    lock.l_start = SHARED_FIRST;
-    lock.l_len = SHARED_SIZE;
-    if( (s = fcntl(pFile->h, F_SETLK, &lock))==(-1) ){
-      tErrno = errno;
-    }
+    s = rangeLock(pFile, F_RDLCK, &tErrno);
+
     /* Drop the temporary PENDING lock */
     lock.l_start = PENDING_BYTE;
     lock.l_len = 1L;
@@ -1355,17 +1416,16 @@ static int unixLock(sqlite3_file *id, int locktype){
     switch( locktype ){
       case RESERVED_LOCK:
         lock.l_start = RESERVED_BYTE;
+        s = fcntl(pFile->h, F_SETLK, &lock);
+        tErrno = errno;
         break;
       case EXCLUSIVE_LOCK:
-        lock.l_start = SHARED_FIRST;
-        lock.l_len = SHARED_SIZE;
+        s = rangeLock(pFile, F_WRLCK, &tErrno);
         break;
       default:
         assert(0);
     }
-    s = fcntl(pFile->h, F_SETLK, &lock);
     if( s==(-1) ){
-      int tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_LOCK);
       if( IS_LOCK_ERROR(rc) ){
         pFile->lastErrno = tErrno;
@@ -1457,11 +1517,12 @@ static void setPendingFd(unixFile *pFile){
 ** the requested locking level, this routine is a no-op.
 */
 static int unixUnlock(sqlite3_file *id, int locktype){
-  struct unixLockInfo *pLock;
-  struct flock lock;
-  int rc = SQLITE_OK;
-  unixFile *pFile = (unixFile*)id;
-  int h;
+  unixFile *pFile = (unixFile*)id; /* The open file */
+  struct unixLockInfo *pLock;      /* Structure describing current lock state */
+  struct flock lock;               /* Information passed into fcntl() */
+  int rc = SQLITE_OK;              /* Return code from this interface */
+  int h;                           /* The underlying file descriptor */
+  int tErrno;                      /* Error code from system call errors */
 
   assert( pFile );
   OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d\n", pFile->h, locktype,
@@ -1501,12 +1562,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
 
 
     if( locktype==SHARED_LOCK ){
-      lock.l_type = F_RDLCK;
-      lock.l_whence = SEEK_SET;
-      lock.l_start = SHARED_FIRST;
-      lock.l_len = SHARED_SIZE;
-      if( fcntl(h, F_SETLK, &lock)==(-1) ){
-        int tErrno = errno;
+      if( rangeLock(pFile, F_RDLCK, &tErrno)==(-1) ){
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
@@ -1521,7 +1577,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     if( fcntl(h, F_SETLK, &lock)!=(-1) ){
       pLock->locktype = SHARED_LOCK;
     }else{
-      int tErrno = errno;
+      tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
       if( IS_LOCK_ERROR(rc) ){
         pFile->lastErrno = tErrno;
@@ -1547,7 +1603,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
       if( fcntl(h, F_SETLK, &lock)!=(-1) ){
         pLock->locktype = NO_LOCK;
       }else{
-        int tErrno = errno;
+        tErrno = errno;
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
@@ -1696,7 +1752,7 @@ static int nolockClose(sqlite3_file *id) {
 /******************************************************************************
 ************************* Begin dot-file Locking ******************************
 **
-** The dotfile locking implementation uses the existing of separate lock
+** The dotfile locking implementation uses the existance of separate lock
 ** files in order to control access to the database.  This works on just
 ** about every filesystem imaginable.  But there are serious downsides:
 **
@@ -3199,11 +3255,11 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics   /* xDeviceCapabilities */                     \
 };                                                                           \
-static const sqlite3_io_methods *FINDER##Impl(const char *z, int h){         \
-  UNUSED_PARAMETER(z); UNUSED_PARAMETER(h);                                  \
+static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
+  UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
   return &METHOD;                                                            \
 }                                                                            \
-static const sqlite3_io_methods *(*const FINDER)(const char*,int)            \
+static const sqlite3_io_methods *(*const FINDER)(const char*,unixFile *p)    \
     = FINDER##Impl;
 
 /*
@@ -3270,6 +3326,23 @@ IOMETHODS(
 #endif
 
 /*
+** The "Whole File Locking" finder returns the same set of methods as
+** the posix locking finder.  But it also sets the SQLITE_WHOLE_FILE_LOCKING
+** flag to force the posix advisory locks to cover the whole file instead
+** of just a small span of bytes near the 1GiB boundary.  Whole File Locking
+** is useful on NFS-mounted files since it helps NFS to maintain cache
+** coherency.  But it is a detriment to other filesystems since it runs
+** slower.
+*/
+static const sqlite3_io_methods *posixWflIoFinderImpl(const char*z, unixFile*p){
+  UNUSED_PARAMETER(z);
+  p->fileFlags = SQLITE_WHOLE_FILE_LOCKING;
+  return &posixIoMethods;
+}
+static const sqlite3_io_methods 
+  *(*const posixWflIoFinder)(const char*,unixFile *p) = posixWflIoFinderImpl;
+
+/*
 ** The proxy locking method is a "super-method" in the sense that it
 ** opens secondary file descriptors for the conch and lock files and
 ** it uses proxy, dot-file, AFP, and flock() locking methods on those
@@ -3304,7 +3377,7 @@ IOMETHODS(
 */
 static const sqlite3_io_methods *autolockIoFinderImpl(
   const char *filePath,    /* name of the database file */
-  int fd                   /* file descriptor open on the database file */
+  unixFile *pNew           /* open file object for the database file */
 ){
   static const struct Mapping {
     const char *zFilesystem;              /* Filesystem type name */
@@ -3349,14 +3422,15 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   lockInfo.l_start = 0;
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
-  if( fcntl(fd, F_GETLK, &lockInfo)!=-1 ) {
+  if( fcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
+    pNew->fileFlags = SQLITE_WHOLE_FILE_LOCKING;
     return &posixIoMethods;
   }else{
     return &dotlockIoMethods;
   }
 }
-static const sqlite3_io_methods *(*const autolockIoFinder)(const char*,int)
-        = autolockIoFinderImpl;
+static const sqlite3_io_methods 
+  *(*const autolockIoFinder)(const char*,unixFile*) = autolockIoFinderImpl;
 
 #endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
 
@@ -3370,7 +3444,7 @@ static const sqlite3_io_methods *(*const autolockIoFinder)(const char*,int)
 */
 static const sqlite3_io_methods *autolockIoFinderImpl(
   const char *filePath,    /* name of the database file */
-  int fd                   /* file descriptor open on the database file */
+  unixFile *pNew           /* the open file object */
 ){
   struct flock lockInfo;
 
@@ -3387,21 +3461,21 @@ static const sqlite3_io_methods *autolockIoFinderImpl(
   lockInfo.l_start = 0;
   lockInfo.l_whence = SEEK_SET;
   lockInfo.l_type = F_RDLCK;
-  if( fcntl(fd, F_GETLK, &lockInfo)!=-1 ) {
+  if( fcntl(pNew->h, F_GETLK, &lockInfo)!=-1 ) {
     return &posixIoMethods;
   }else{
     return &semIoMethods;
   }
 }
-static const sqlite3_io_methods *(*const autolockIoFinder)(const char*,int)
-        = autolockIoFinderImpl;
+static const sqlite3_io_methods 
+  *(*const autolockIoFinder)(const char*,unixFile*) = autolockIoFinderImpl;
 
 #endif /* OS_VXWORKS && SQLITE_ENABLE_LOCKING_STYLE */
 
 /*
 ** An abstract type for a pointer to a IO method finder function:
 */
-typedef const sqlite3_io_methods *(*finder_type)(const char*,int);
+typedef const sqlite3_io_methods *(*finder_type)(const char*,unixFile*);
 
 
 /****************************************************************************
@@ -3439,6 +3513,7 @@ static int fillInUnixFile(
   pNew->h = h;
   pNew->dirfd = dirfd;
   SET_THREADID(pNew);
+  pNew->fileFlags = 0;
 
 #if OS_VXWORKS
   pNew->pId = vxworksFindFileId(zFilename);
@@ -3451,7 +3526,7 @@ static int fillInUnixFile(
   if( noLock ){
     pLockingStyle = &nolockIoMethods;
   }else{
-    pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, h);
+    pLockingStyle = (**(finder_type*)pVfs->pAppData)(zFilename, pNew);
 #if SQLITE_ENABLE_LOCKING_STYLE
     /* Cache zFilename in the locking context (AFP and dotlock override) for
     ** proxyLock activation is possible (remote proxy is based on db name)
@@ -5266,6 +5341,7 @@ int sqlite3_os_init(void){
 #endif
     UNIXVFS("unix-none",     nolockIoFinder ),
     UNIXVFS("unix-dotfile",  dotlockIoFinder ),
+    UNIXVFS("unix-wfl",      posixWflIoFinder ),
 #if OS_VXWORKS
     UNIXVFS("unix-namedsem", semIoFinder ),
 #endif
