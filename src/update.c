@@ -90,6 +90,7 @@ void sqlite3Update(
   AuthContext sContext;  /* The authorization context */
   NameContext sNC;       /* The name-context to resolve expressions in */
   int iDb;               /* Database containing the table being updated */
+  int regRowid;          /* Memory holding rowid to be updated */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
@@ -306,7 +307,6 @@ void sqlite3Update(
 
     if( !isView ){
       sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
       /* Open a cursor and make it point to the record that is
       ** being updated.
       */
@@ -395,9 +395,11 @@ void sqlite3Update(
     */
     if( !triggers_exist ){
       addr = sqlite3VdbeAddOp(v, OP_FifoRead, 0, 0);
-      sqlite3VdbeAddOp(v, OP_Dup, 0, 0);
     }
+    regRowid = pParse->nMem++;
+    sqlite3VdbeAddOp(v, OP_MemStore, regRowid, 0);
     sqlite3VdbeAddOp(v, OP_NotExists, iCur, addr);
+    sqlite3VdbeAddOp(v, OP_MemLoad, regRowid, 0);
 
     /* If the record number will change, push the record number as it
     ** will be after the update. (The old record number is currently

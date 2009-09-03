@@ -1,5 +1,8 @@
-C Version\s3.3.6\s(CVS\s3206)
-D 2006-06-06T13:34:16
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\sVDBE\sstack\soverflow\sissue\swith\sthe\sUPDATE\sstatement.
+D 2009-09-03T19:43:49
 F Makefile.in 87b6d483513ab8a4e763775bc5b434d6b5c34963
 F Makefile.linux-gcc 74ba0eadf88748a9ce3fd03d2a3ede2e6715baec
 F README 9c4e2d6706bdcc3efdd773ce752a8cdab4f90028
@@ -87,7 +90,7 @@ F src/test_md5.c 6c42bc0a3c0b54be34623ff77a0eec32b2fa96e3
 F src/test_server.c a6460daed0b92ecbc2531b6dc73717470e7a648c
 F src/tokenize.c 91dc520980c0e2fb9265046adf8b7a86eff881dd
 F src/trigger.c 48bbb94c11954c8e132efcc04478efe8304c4196
-F src/update.c 34add66fcd3301b33b6e4c4c813f4e408f7ee4a0
+F src/update.c 7c8eaf12840a0bbe112150e21ad883fed4fb15dc
 F src/utf.c ab81ac59084ff1c07d421eb1a0a84ec809603b44
 F src/util.c ca6ee72772c0f5dc04d2e0ab1973fd3b6a9bf79d
 F src/vacuum.c 5b37d0f436f8e1ffacd17934e44720b38d2247f9
@@ -120,6 +123,7 @@ F test/autovacuum_crash.test 05a63b8805b20cfba7ace82856ce4ccdda075a31
 F test/autovacuum_ioerr.test c46a76869cb6eddbbb40b419b2b6c4c001766b1f
 F test/autovacuum_ioerr2.test 2f8a3fb31f833fd0ca86ad4ad98913c73e807572
 F test/avtrans.test b77740800de0d2cdcf394ef94d2d61225a1941d8
+F test/bb20090903.test 09b1a6cc0288a61b2380d0ac4f5eca2b6f94009a
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
 F test/bigfile.test ebc9ce9216e08bead63734ab816d0f27858f3b80
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
@@ -358,7 +362,18 @@ F www/tclsqlite.tcl bb0d1357328a42b1993d78573e587c6dcbc964b9
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl 97e2b5cd296f7d8057e11f44427dea8a4c2db513
-P b2e11e02902d6fa8fc2fb95cda4810e837d6861e
-R 505b982c1bdabcdfb694033eb3799e95
+P c11cb07e4b3f0b815a7099c8d201b3473869cba2
+R 1dd0ff98934a1fbb1355ae4c8644884f
+T *bgcolor * #7496fe
+T *branch * branch-3.3.6
+T *sym-branch-3.3.6 *
+T -sym-trunk *
 U drh
-Z 520f79fd80b6c51afb7f59475232b5c8
+Z c7fbac8b53d958c13ebf7779b5fc76a4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKoBx6oxKgR168RlERAh5sAJ9owaIBcuBNe7ASkXARNjYjHAREfgCdGjfj
+lVgY6QGiPYeI/cpXIHLzEWQ=
+=bfHa
+-----END PGP SIGNATURE-----
