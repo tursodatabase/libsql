@@ -290,12 +290,12 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     }else if( opcode==OP_Statement ){
       hasStatementBegin = 1;
       p->usesStmtJournal = 1;
-    }else if( opcode==OP_Destroy ){
+    }else if( opcode==OP_Destroy || opcode==OP_Program ){
       doesStatementRollback = 1;
     }else if( opcode==OP_Transaction && pOp->p2!=0 ){
       p->readOnly = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( opcode==OP_VUpdate || opcode==OP_VRename || opcode==OP_Program ){
+    }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
       doesStatementRollback = 1;
     }else if( opcode==OP_VFilter ){
       int n;

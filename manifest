@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Do\snot\sreuse\sfunction\sparameters\sin\ssubsequent\sexpressions\ssince\sthe\s\nfunction\scall\smight\shave\striggered\sa\stext\sencoding\schange.\nFix\sfor\sticket\s[2ea2425d34be].
-D 2009-09-03T01:18:01
+C Fix\sa\sbug\swhere\sa\scondition\swas\sincorrectly\sbeing\scompiled\sout\swhen\sSQLITE_OMIT_VIRTUALTABLE\swas\sdefined.
+D 2009-09-07T17:32:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +209,7 @@ F src/vdbe.c addf5f6fefe9b9c6ca8819efbf52cfce8bd68089
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
 F src/vdbeInt.h 6094e60f64d7a9d4352d4e6b90d1219dce947ad9
 F src/vdbeapi.c 8d5013ab6104be757c208a70ffb191cc27d2b688
-F src/vdbeaux.c a88ef864f13ed698a267bcec29af22fbcd727f82
+F src/vdbeaux.c d1d3fde69d4e359db382a122172669bba2a9bf3b
 F src/vdbeblob.c f93cb60ac388633ed3bde8a94ef161ad2dbfb689
 F src/vdbemem.c dc551981833756ea34a3e0b238f759479e7cf526
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -753,14 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 69055e9b4cb6346e9e10fd9dd65e6ea06b959e76
-R 7bf564b16edb1681dea7652f8bb4c7d7
-U drh
-Z 7cf4ebdc1da81063254cac877fefb993
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKnxlMoxKgR168RlERApcIAJ97EhKOwWFb+tWJWmzMa9COqA10WACfVx0d
-/MeR2s3kHlBnnVZggaFCIXs=
-=s4CU
------END PGP SIGNATURE-----
+P f22e388727f0ba0f187cdee51ff8ba17a5d50b8a
+R cfbd6994f627d4adc6716a138fa3eea3
+U dan
+Z d9d5b322d9a74ca8546783c342555838
