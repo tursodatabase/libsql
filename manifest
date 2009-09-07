@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sthe\s"unix-wfl"\sVFS\sthat\sdoes\swhole-file\slocking\sin\sorder\sto\shelp\sNFS\ndo\sbetter\scache\scoherency.
-D 2009-09-03T16:23:45
+C Changes\sto\sinternal\sAtoF\sto\simprove\s"accuracy"\swhen\smeasured\sagainst\sbuilt-in\sGCC\satof().
+D 2009-09-07T02:46:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -206,7 +203,7 @@ F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 8158237fc5fa4b51a126a294791729c64d27a0a9
 F src/update.c 12ffd68c2f241c730d5e051eb29b23e90682ff8a
 F src/utf.c 3ca2c9461b8e942c68da28bfccd448663f536a6f
-F src/util.c efb5f8e533d4beef545cf765cab5f7920b4c75f9
+F src/util.c 7404ac078125aafc0e274b2d1a918c3f15b50294
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
 F src/vdbe.c addf5f6fefe9b9c6ca8819efbf52cfce8bd68089
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
@@ -753,14 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f22e388727f0ba0f187cdee51ff8ba17a5d50b8a
-R 318d6752e52f7f4a033e61119f592643
-U drh
-Z 47965b78e770a8b1304310d0ee191e44
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKn+2UoxKgR168RlERAv/sAJ4sxtNY+4TxErcLxEqGtbpkH3VwnQCgi8kz
-7ozoBqiBdahO12HaBHgOl6c=
-=OZsT
------END PGP SIGNATURE-----
+P 2aeab80e5b84f5e94c5c99b4adeca805601c844b
+R 0b92cbb9074dfe690c0e4c14e6998bde
+U shane
+Z 82d0c356acbda85944f3ae28efe12d94
