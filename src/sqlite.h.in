@@ -2317,6 +2317,9 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dt>SQLITE_LIMIT_VARIABLE_NUMBER</dt>
 ** <dd>The maximum number of variables in an SQL statement that can
 ** be bound.</dd>
+**
+** <dt>SQLITE_LIMIT_TRIGGER_DEPTH</dt>
+** <dd>The maximum depth of recursion for triggers.</dd>
 ** </dl>
 */
 #define SQLITE_LIMIT_LENGTH                    0
@@ -2329,6 +2332,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_ATTACHED                  7
 #define SQLITE_LIMIT_LIKE_PATTERN_LENGTH       8
 #define SQLITE_LIMIT_VARIABLE_NUMBER           9
+#define SQLITE_LIMIT_TRIGGER_DEPTH            10
 
 /*
 ** CAPI3REF: Compiling An SQL Statement {H13010} <S10000>

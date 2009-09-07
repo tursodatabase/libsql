@@ -4802,8 +4802,7 @@ case OP_Program: {        /* jump */
     if( pFrame ) break;
   }
 
-  /* TODO: This constant should be configurable. */
-  if( p->nFrame>1000 ){
+  if( p->nFrame>db->aLimit[SQLITE_LIMIT_TRIGGER_DEPTH] ){
     rc = SQLITE_ERROR;
     sqlite3SetString(&p->zErrMsg, db, "too many levels of trigger recursion");
     break;

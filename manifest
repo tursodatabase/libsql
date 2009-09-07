@@ -1,5 +1,8 @@
-C Merge\s[/src/vinfo/1958db4493461b3a54217a6a45f2730287107860|1958db4493]\sand\s[/src/vinfo/26cd015c0ee1c18dd37f11b47ce35cfa320b3514|26cd015c0e].
-D 2009-09-07T17:41:48
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sthe\sSQLITE_LIMIT_TRIGGER_DEPTH\soption\sto\ssqlite3_limit().
+D 2009-09-07T18:14:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +129,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 6688d56c2437eed4a8bbbb2fd517c59ff927f337
+F src/main.c e33c4d17cc0a398847f5c9926ccdfe7e66605b87
 F src/malloc.c b1725183bcc4ce2e569f1b65da844dc3e4c7a643
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -159,16 +162,16 @@ F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c 8bc7347fe88cf16ac2cb1a37fb918d1417ab4142
+F src/select.c 95809555bf3614d0043d635c85948520fe21e741
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in 94052f827890de6fb7c913b95507076909261d9b
+F src/sqlite.h.in e5949b46f9a05aadde22848f92fae5c9ba87ee0e
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 0abbf6e260e19e41f1d57dbf02b1283f77cce81a
-F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
+F src/sqliteInt.h 13bb8c9abbdfe33c1fe685921b4a36e484a3d108
+F src/sqliteLimit.h be44f7f46c14bb4c21870074b1e6f1ac0abd6701
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c 5eea5025c370d3a91ce0415f9d46f96fdc7aef44
-F src/test1.c eacb3456a9419191f42a0f601e12ca8a424a6de1
+F src/test1.c 83a685fa2c96f005934ed09146b53522b1aa533e
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
 F src/test4.c f79ab52d27ff49b784b631a42e2ccd52cfd5c84c
@@ -205,7 +208,7 @@ F src/update.c 3e97974baa914f32d4ae690fa0cb7281aff8cd39
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c a158f0f3efbf2a66037dbfe4024398719cf61596
+F src/vdbe.c 4e3c6895475cf8a9930cb39f7e9855acb7019349
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
 F src/vdbeInt.h 6094e60f64d7a9d4352d4e6b90d1219dce947ad9
 F src/vdbeapi.c 8d5013ab6104be757c208a70ffb191cc27d2b688
@@ -682,7 +685,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 6ee1611c7ebd8ac892e67bd0e6e2ef7d9229dbc8
+F test/triggerC.test cc43b4a62f447a0b0ec76ce511758c460c049c83
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -750,7 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1958db4493461b3a54217a6a45f2730287107860 26cd015c0ee1c18dd37f11b47ce35cfa320b3514
-R c696e4c21d675d7ca4562a71667fb0c3
-U dan
-Z 7455be8358f8e7bf1ced5a136a1693ca
+P ecbe0832be77599c7cc66fb9968d0f419000d231
+R d34c486626a8ce5a53145ee9d825c061
+U drh
+Z c32d324c29421eb9787794c39572ee17
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKpU1toxKgR168RlERAiq6AJ9XuXc0u1hWnpGpmA/epzDAzopjbQCeJgNH
+Khw73UH7YVrOiFFOVF+gTAk=
+=8PSG
+-----END PGP SIGNATURE-----

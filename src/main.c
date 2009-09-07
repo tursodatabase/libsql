@@ -1448,6 +1448,7 @@ static const int aHardLimit[] = {
   SQLITE_MAX_ATTACHED,
   SQLITE_MAX_LIKE_PATTERN_LENGTH,
   SQLITE_MAX_VARIABLE_NUMBER,
+  SQLITE_MAX_TRIGGER_DEPTH,
 };
 
 /*
@@ -1482,6 +1483,9 @@ static const int aHardLimit[] = {
 #endif
 #if SQLITE_MAX_COLUMN>32767
 # error SQLITE_MAX_COLUMN must not exceed 32767
+#endif
+#if SQLITE_MAX_TRIGGER_DEPTH<1
+# error SQLITE_MAX_TRIGGER_DEPTH must be at least 1
 #endif
 
 

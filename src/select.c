@@ -881,7 +881,7 @@ static const char *columnType(
       int iCol = pExpr->iColumn;  /* Index of column in pTab */
       testcase( pExpr->op==TK_AGG_COLUMN );
       testcase( pExpr->op==TK_COLUMN );
-      while( pNC && !pTab ){
+      while( ALWAYS(pNC) && !pTab ){
         SrcList *pTabList = pNC->pSrcList;
         for(j=0;j<pTabList->nSrc && pTabList->a[j].iCursor!=pExpr->iTable;j++);
         if( j<pTabList->nSrc ){
@@ -892,16 +892,12 @@ static const char *columnType(
         }
       }
 
-      if( pTab==0 ){
-        /* FIX ME:
-        ** This can occurs if you have something like "SELECT new.x;" inside
-        ** a trigger.  In other words, if you reference the special "new"
-        ** table in the result set of a select.  We do not have a good way
-        ** to find the actual table type, so call it "TEXT".  This is really
-        ** something of a bug, but I do not know how to fix it.
-        **
-        ** This code does not produce the correct answer - it just prevents
-        ** a segfault.  See ticket #1229.
+      if( NEVER(pTab==0) ){
+        /* At one time, code such as "SELECT new.x" within a trigger would
+        ** cause this condition to run.  Since then, we have restructured how
+        ** trigger code is generated and so this condition is no longer 
+        ** possible.  But it seems prudent to keep the test in place in
+        ** case something else changes.
         */
         zType = "TEXT";
         break;

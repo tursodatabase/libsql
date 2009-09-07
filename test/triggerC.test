@@ -266,6 +266,82 @@ do_test triggerC-3.1.3 {
   execsql { SELECT * FROM t3 }
 } {}
 
+do_test triggerC-3.2.1 {
+  execsql {
+    CREATE TABLE t3b(x);
+    CREATE TRIGGER t3bi AFTER INSERT ON t3b WHEN new.x<2000 BEGIN
+      INSERT INTO t3b VALUES(new.x+1);
+    END;
+  }
+  catchsql {
+    INSERT INTO t3b VALUES(1);
+  }
+} {1 {too many levels of trigger recursion}}
+do_test triggerC-3.2.2 {
+  db eval {SELECT * FROM t3b}
+} {}
+
+do_test triggerC-3.3.1 {
+  catchsql {
+    INSERT INTO t3b VALUES(1000);
+  }
+} {0 {}}
+do_test triggerC-3.3.2 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {1001 2000 1000}
+
+do_test triggerC-3.4.1 {
+  catchsql {
+    DELETE FROM t3b;
+    INSERT INTO t3b VALUES(999);
+  }
+} {1 {too many levels of trigger recursion}}
+do_test triggerC-3.4.2 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {0 {} {}}
+
+do_test triggerC-3.5.1 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 100
+  catchsql {
+    INSERT INTO t3b VALUES(1900);
+  }
+} {0 {}}
+do_test triggerC-3.5.2 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {101 2000 1900}
+
+do_test triggerC-3.5.3 {
+  catchsql {
+    DELETE FROM t3b;
+    INSERT INTO t3b VALUES(1899);
+  }
+} {1 {too many levels of trigger recursion}}
+do_test triggerC-3.5.4 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {0 {} {}}
+
+do_test triggerC-3.6.1 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1
+  catchsql {
+    INSERT INTO t3b VALUES(1999);
+  }
+} {0 {}}
+do_test triggerC-3.6.2 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {2 2000 1999}
+
+do_test triggerC-3.6.3 {
+  catchsql {
+    DELETE FROM t3b;
+    INSERT INTO t3b VALUES(1998);
+  }
+} {1 {too many levels of trigger recursion}}
+do_test triggerC-3.6.4 {
+  db eval {SELECT count(*), max(x), min(x) FROM t3b}
+} {0 {} {}}
+sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000
+      
+
 #-----------------------------------------------------------------------
 # This next block of tests, triggerC-4.*, checks that affinity 
 # transformations and constraint processing is performed at the correct 
@@ -456,5 +532,3 @@ foreach {n insert log} {
 } 
 
 finish_test
-
-
