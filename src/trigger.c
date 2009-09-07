@@ -695,7 +695,7 @@ static int codeTriggerProgram(
     **   INSERT INTO t1 ... ;            -- insert into t2 uses REPLACE policy
     **   INSERT OR IGNORE INTO t1 ... ;  -- insert into t2 uses IGNORE policy
     */
-    pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:orconf;
+    pParse->eOrconf = (orconf==OE_Default)?pStep->orconf:(u8)orconf;
 
     switch( pStep->op ){
       case TK_UPDATE: {
@@ -954,6 +954,8 @@ void sqlite3CodeRowTrigger(
   int ignoreJump       /* Instruction to jump to for RAISE(IGNORE) */
 ){
   Trigger *p;
+
+  UNUSED_PARAMETER(newIdx);
 
   assert(op == TK_UPDATE || op == TK_INSERT || op == TK_DELETE);
   assert(tr_tm == TRIGGER_BEFORE || tr_tm == TRIGGER_AFTER );

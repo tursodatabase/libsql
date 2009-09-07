@@ -49,7 +49,7 @@ static void openStatTable(
   };
 
   int aRoot[] = {0, 0};
-  int aCreateTbl[] = {0, 0};
+  u8 aCreateTbl[] = {0, 0};
 
   int i;
   sqlite3 *db = pParse->db;
@@ -506,6 +506,8 @@ void sqlite3DeleteIndexSamples(Index *pIdx){
     sqlite3DbFree(dbMem, pIdx->aSample);
     pIdx->aSample = 0;
   }
+#else
+  UNUSED_PARAMETER(pIdx);
 #endif
 }
 
@@ -609,7 +611,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
             assert( pIdx->aSample );
             {
               IndexSample *pSample = &pIdx->aSample[iSample];
-              pSample->eType = eType;
+              pSample->eType = (u8)eType;
               if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
                 pSample->u.r = sqlite3_column_double(pStmt, 2);
               }else if( eType==SQLITE_TEXT || eType==SQLITE_BLOB ){
@@ -622,7 +624,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( n>24 ){
                   n = 24;
                 }
-                pSample->nByte = n;
+                pSample->nByte = (u8)n;
                 pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
                 if( pSample->u.z ){
                   memcpy(pSample->u.z, z, n);
