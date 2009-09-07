@@ -83,7 +83,7 @@ static int synthCollSeq(sqlite3 *db, CollSeq *pColl){
 */
 CollSeq *sqlite3GetCollSeq(
   sqlite3* db,          /* The database connection */
-  int enc,              /* The desired encoding for the collating sequence */
+  u8 enc,               /* The desired encoding for the collating sequence */
   CollSeq *pColl,       /* Collating sequence with native encoding, or NULL */
   const char *zName     /* Collating sequence name */
 ){

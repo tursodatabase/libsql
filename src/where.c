@@ -2357,7 +2357,7 @@ static void bestBtreeIndex(
     nRow = (double)(aiRowEst[nEq] * nInMul);
     if( bInEst && nRow*2>aiRowEst[0] ){
       nRow = aiRowEst[0]/2;
-      nInMul = nRow / aiRowEst[nEq];
+      nInMul = (int)(nRow / aiRowEst[nEq]);
     }
 
     /* Assume constant cost to access a row and logarithmic cost to

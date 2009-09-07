@@ -261,7 +261,7 @@ static int lookupName(
             testcase( iCol==32 );
             pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
           }
-          pExpr->iColumn = iCol;
+          pExpr->iColumn = (i16)iCol;
           pExpr->pTab = pTab;
           isTrigger = 1;
         }

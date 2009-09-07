@@ -127,7 +127,7 @@ void sqlite3Update(
   int regOldRowid;       /* The old rowid */
   int regNewRowid;       /* The new rowid */
   int regNew;
-  int regOld;
+  int regOld = 0;
   int regRowSet = 0;     /* Rowset of rows to be updated */
   int regRec;            /* Register used for new table record to insert */
 

@@ -4863,7 +4863,7 @@ case OP_Program: {        /* jump */
   p->pFrame = pFrame;
   p->aMem = &VdbeFrameMem(pFrame)[-1];
   p->nMem = pFrame->nChildMem;
-  p->nCursor = pFrame->nChildCsr;
+  p->nCursor = (u16)pFrame->nChildCsr;
   p->apCsr = (VdbeCursor **)&p->aMem[p->nMem+1];
   p->aOp = pProgram->aOp;
   p->nOp = pProgram->nOp;

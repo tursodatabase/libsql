@@ -2805,7 +2805,7 @@ void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
 char *sqlite3Utf16to8(sqlite3 *, const void*, int);
 #ifdef SQLITE_ENABLE_STAT2
-char *sqlite3Utf8to16(sqlite3 *, int, char *, int, int *);
+char *sqlite3Utf8to16(sqlite3 *, u8, char *, int, int *);
 #endif
 int sqlite3ValueFromExpr(sqlite3 *, Expr *, u8, u8, sqlite3_value **);
 void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
@@ -2831,7 +2831,7 @@ int sqlite3ResolveOrderGroupBy(Parse*, Select*, ExprList*, const char*);
 void sqlite3ColumnDefault(Vdbe *, Table *, int, int);
 void sqlite3AlterFinishAddColumn(Parse *, Token *);
 void sqlite3AlterBeginAddColumn(Parse *, SrcList *);
-CollSeq *sqlite3GetCollSeq(sqlite3*, int, CollSeq *, const char*);
+CollSeq *sqlite3GetCollSeq(sqlite3*, u8, CollSeq *, const char*);
 char sqlite3AffinityType(const char*);
 void sqlite3Analyze(Parse*, Token*, Token*);
 int sqlite3InvokeBusyHandler(BusyHandler*);

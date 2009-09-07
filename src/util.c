@@ -364,6 +364,8 @@ int sqlite3AtoF(const char *z, double *pResult){
     /* attempt to reduce exponent */
     if( esign>0 ){
       while( s<(LARGEST_INT64/10) && e>0 ) e--,s*=10;
+    }else{
+      while( !(s%10) && e>0 ) e--,s/=10;
     }
 
     /* adjust the sign of significand */
@@ -373,13 +375,26 @@ int sqlite3AtoF(const char *z, double *pResult){
     ** and store in result. */
     if( e ){
       double scale = 1.0;
-      while( e>=16 ){ scale *= 1.0e+16; e -= 16; }
-      while( e>=4 ){ scale *= 1.0e+4; e -= 4; }
-      while( e>=1 ){ scale *= 1.0e+1; e -= 1; }
-      if( esign<0 ){
-        result = s / scale;
+      /* attempt to handle extremely small/large numbers better */
+      if( e>307 && e<342 ){
+        while( e%308 ) { scale *= 1.0e+1; e -= 1; }
+        if( esign<0 ){
+          result = s / scale;
+          result /= 1.0e+308;
+        }else{
+          result = s * scale;
+          result *= 1.0e+308;
+        }
       }else{
-        result = s * scale;
+        /* 1.0e+22 is the largest power of 10 than can be 
+        ** represented exactly. */
+        while( e%22 ) { scale *= 1.0e+1; e -= 1; }
+        while( e>0 ) { scale *= 1.0e+22; e -= 22; }
+        if( esign<0 ){
+          result = s / scale;
+        }else{
+          result = s * scale;
+        }
       }
     } else {
       result = (double)s;
