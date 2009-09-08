@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Code\ssimplifications,\sespecially\sto\sthe\spseudo-table\slogic,\sand\scomment\nimprovements.
-D 2009-09-08T01:14:49
+C Further\ssimplifications\sto\sthe\sVDBE\s-\sremoving\sfunctionality\sthat\sis\sno\slonger\nused.
+D 2009-09-08T02:27:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,12 +203,12 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
-F src/trigger.c 55cdf9d595ded7f5843e5ac021722c19fe0451fa
+F src/trigger.c 054c08339b3471c785f1cf041ed878a425850e33
 F src/update.c 3e97974baa914f32d4ae690fa0cb7281aff8cd39
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c 3ead9f634776836a42dd3b959557faff96911194
+F src/vdbe.c 5dc91d9b7da2277b72721948134fd800918cca35
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
 F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c 8d5013ab6104be757c208a70ffb191cc27d2b688
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d7dc8b433691745b3842282569f1573d1e057963
-R 9e0da6af96f3821c9fbb99c40116f7d0
+P 52449a9569b7142095cc88ee208b31cc59a3cab4
+R 70ed5c4db2b466a473f539b4376c4de5
 U drh
-Z 49ac72c18b4c2aedd979564a1a2e66cc
+Z 1c9033f2b3acc52071f7550f08e29c55
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKpbAMoxKgR168RlERAh/DAJ4q07I078rtqsLLizRq8qQzLiSLlQCfUo1D
-jfuHFqkXs2sHSUl8rZ5owsY=
-=1zOu
+iD8DBQFKpcEyoxKgR168RlERAlSiAJ0WnXRYxzLIp2BXv1Jfr5O1NvTtcACfcOtd
+GJCQQ1LtgkqS/MBnZmt2PXw=
+=MZwN
 -----END PGP SIGNATURE-----

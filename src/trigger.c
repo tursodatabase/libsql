@@ -734,7 +734,7 @@ static int codeTriggerProgram(
       }
     } 
     if( pStep->op!=TK_SELECT ){
-      sqlite3VdbeAddOp1(v, OP_ResetCount, 1);
+      sqlite3VdbeAddOp0(v, OP_ResetCount);
     }
   }
 

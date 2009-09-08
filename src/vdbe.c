@@ -700,11 +700,12 @@ int sqlite3VdbeExec(
         assert( pOp->p2<=p->nMem );
         pIn2 = &p->aMem[pOp->p2];
         REGISTER_TRACE(pOp->p2, pIn2);
-        if( (opProperty & OPFLG_OUT3)!=0 ){
-          assert( pOp->p3>0 );
-          assert( pOp->p3<=p->nMem );
-          pOut = &p->aMem[pOp->p3];
-        }
+        /* As currently implemented, in2 implies out3.  There is no reason
+        ** why this has to be, it just worked out that way. */
+        assert( (opProperty & OPFLG_OUT3)!=0 );
+        assert( pOp->p3>0 );
+        assert( pOp->p3<=p->nMem );
+        pOut = &p->aMem[pOp->p3];
       }else if( (opProperty & OPFLG_IN3)!=0 ){
         assert( pOp->p3>0 );
         assert( pOp->p3<=p->nMem );
@@ -3818,18 +3819,15 @@ case OP_Delete: {
   if( pOp->p2 & OPFLAG_NCHANGE ) p->nChange++;
   break;
 }
-
-/* Opcode: ResetCount P1 * *
+/* Opcode: ResetCount * * * * *
 **
-** This opcode resets the VMs internal change counter to 0. If P1 is true,
-** then the value of the change counter is copied to the database handle
-** change counter (returned by subsequent calls to sqlite3_changes())
-** before it is reset. This is used by trigger programs.
+** The value of the change counter is copied to the database handle
+** change counter (returned by subsequent calls to sqlite3_changes()).
+** Then the VMs internal change counter resets to 0.
+** This is used by trigger programs.
 */
 case OP_ResetCount: {
-  if( pOp->p1 ){
-    sqlite3VdbeSetChanges(db, p->nChange);
-  }
+  sqlite3VdbeSetChanges(db, p->nChange);
   p->nChange = 0;
   break;
 }
