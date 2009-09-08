@@ -250,29 +250,13 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
 ** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
 ** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
 ** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
-**
-** This routine also does the following optimization:  It scans for
-** instructions that might cause a statement rollback.  Such instructions
-** are:
-**
-**   *  OP_Halt with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
-**   *  OP_Destroy
-**   *  OP_VUpdate
-**   *  OP_VRename
-**
-** If no such instruction is found, then every Statement instruction 
-** is changed to a Noop.  In this way, we avoid creating the statement 
-** journal file unnecessarily.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
   int nMaxArgs = *pMaxFuncArgs;
   Op *pOp;
   int *aLabel = p->aLabel;
-  int doesStatementRollback = 0;
-  int hasStatementBegin = 0;
   p->readOnly = 1;
-  p->usesStmtJournal = 0;
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
@@ -282,21 +266,9 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
     }else if( opcode==OP_VUpdate ){
       if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
 #endif
-    }
-    if( opcode==OP_Halt ){
-      if( pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort ){
-        doesStatementRollback = 1;
-      }
-    }else if( opcode==OP_Statement ){
-      hasStatementBegin = 1;
-      p->usesStmtJournal = 1;
-    }else if( opcode==OP_Destroy || opcode==OP_Program ){
-      doesStatementRollback = 1;
     }else if( opcode==OP_Transaction && pOp->p2!=0 ){
       p->readOnly = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( opcode==OP_VUpdate || opcode==OP_VRename ){
-      doesStatementRollback = 1;
     }else if( opcode==OP_VFilter ){
       int n;
       assert( p->nOp - i >= 3 );
@@ -315,20 +287,6 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   p->aLabel = 0;
 
   *pMaxFuncArgs = nMaxArgs;
-
-  /* If we never rollback a statement transaction, then statement
-  ** transactions are not needed.  So change every OP_Statement
-  ** opcode into an OP_Noop.  This avoid a call to sqlite3OsOpenExclusive()
-  ** which can be expensive on some platforms.
-  */
-  if( hasStatementBegin && !doesStatementRollback ){
-    p->usesStmtJournal = 0;
-    for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
-      if( pOp->opcode==OP_Statement ){
-        pOp->opcode = OP_Noop;
-      }
-    }
-  }
 }
 
 /*
@@ -1237,7 +1195,8 @@ void sqlite3VdbeMakeReady(
   int nMem,                      /* Number of memory cells to allocate */
   int nCursor,                   /* Number of cursors to allocate */
   int nArg,                      /* Maximum number of args in SubPrograms */
-  int isExplain                  /* True if the EXPLAIN keywords is present */
+  int isExplain,                 /* True if the EXPLAIN keywords is present */
+  int usesStmtJournal             /* True to set Vdbe.usesStmtJournal */
 ){
   int n;
   sqlite3 *db = p->db;
@@ -1273,6 +1232,7 @@ void sqlite3VdbeMakeReady(
     u8 *zEnd = (u8 *)&p->aOp[p->nOpAlloc];
     int nByte;
     resolveP2Values(p, &nArg);
+    p->usesStmtJournal = usesStmtJournal;
     if( isExplain && nMem<10 ){
       nMem = 10;
     }

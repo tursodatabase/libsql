@@ -971,6 +971,7 @@ void sqlite3Insert(
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
       sqlite3VtabMakeWritable(pParse, pTab);
       sqlite3VdbeAddOp4(v, OP_VUpdate, 1, pTab->nCol+2, regIns, pVTab, P4_VTAB);
+      sqlite3MayAbort(pParse);
     }else
 #endif
     {
@@ -1169,8 +1170,9 @@ void sqlite3GenerateConstraintChecks(
     assert( onError==OE_Rollback || onError==OE_Abort || onError==OE_Fail
         || onError==OE_Ignore || onError==OE_Replace );
     switch( onError ){
-      case OE_Rollback:
       case OE_Abort:
+        sqlite3MayAbort(pParse);
+      case OE_Rollback:
       case OE_Fail: {
         char *zMsg;
         j1 = sqlite3VdbeAddOp3(v, OP_HaltIfNull,
@@ -1205,7 +1207,7 @@ void sqlite3GenerateConstraintChecks(
     if( onError==OE_Ignore ){
       sqlite3VdbeAddOp2(v, OP_Goto, 0, ignoreDest);
     }else{
-      sqlite3VdbeAddOp2(v, OP_Halt, SQLITE_CONSTRAINT, onError);
+      sqlite3HaltConstraint(pParse, onError, 0, 0);
     }
     sqlite3VdbeResolveLabel(v, allOk);
   }
@@ -1236,8 +1238,8 @@ void sqlite3GenerateConstraintChecks(
         case OE_Rollback:
         case OE_Abort:
         case OE_Fail: {
-          sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0,
-                           "PRIMARY KEY must be unique", P4_STATIC);
+          sqlite3HaltConstraint(
+            pParse, onError, "PRIMARY KEY must be unique", P4_STATIC);
           break;
         }
         case OE_Replace: {
@@ -1350,7 +1352,7 @@ void sqlite3GenerateConstraintChecks(
         sqlite3StrAccumAppend(&errMsg,
             pIdx->nColumn>1 ? " are not unique" : " is not unique", -1);
         zErr = sqlite3StrAccumFinish(&errMsg);
-        sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0, zErr, 0);
+        sqlite3HaltConstraint(pParse, onError, zErr, 0);
         sqlite3DbFree(errMsg.db, zErr);
         break;
       }
@@ -1747,8 +1749,8 @@ static int xferOptimization(
   if( pDest->iPKey>=0 ){
     addr1 = sqlite3VdbeAddOp2(v, OP_Rowid, iSrc, regRowid);
     addr2 = sqlite3VdbeAddOp3(v, OP_NotExists, iDest, 0, regRowid);
-    sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0,
-                      "PRIMARY KEY must be unique", P4_STATIC);
+    sqlite3HaltConstraint(
+        pParse, onError, "PRIMARY KEY must be unique", P4_STATIC);
     sqlite3VdbeJumpHere(v, addr2);
     autoIncStep(pParse, regAutoinc, regRowid);
   }else if( pDest->pIndex==0 ){

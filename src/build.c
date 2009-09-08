@@ -195,7 +195,8 @@ void sqlite3FinishCoding(Parse *pParse){
 #endif
     assert( pParse->iCacheLevel==0 );  /* Disables and re-enables match */
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
-                         pParse->nTab, pParse->nMaxArg, pParse->explain);
+                         pParse->nTab, pParse->nMaxArg, pParse->explain,
+                         pParse->isMultiWrite && pParse->mayAbort);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
   }else if( pParse->rc==SQLITE_OK ){
@@ -1878,6 +1879,7 @@ static void destroyRootPage(Parse *pParse, int iTable, int iDb){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int r1 = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_Destroy, iTable, r1, iDb);
+  sqlite3MayAbort(pParse);
 #ifndef SQLITE_OMIT_AUTOVACUUM
   /* OP_Destroy stores an in integer r1. If this integer
   ** is non-zero, then it is the root page number of a table moved to
@@ -2319,8 +2321,8 @@ static void sqlite3RefillIndex(Parse *pParse, Index *pIndex, int memRootPage){
     ** since sqlite3ReleaseTempRange() was called, it is safe to do so.
     */
     sqlite3VdbeAddOp4(v, OP_IsUnique, iIdx, j2, regRowid, pRegKey, P4_INT32);
-    sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, OE_Abort, 0,
-                    "indexed columns are not unique", P4_STATIC);
+    sqlite3HaltConstraint(
+        pParse, OE_Abort, "indexed columns are not unique", P4_STATIC);
   }
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iIdx, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
@@ -3465,12 +3467,29 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);
   sqlite3CodeVerifySchema(pParse, iDb);
   pToplevel->writeMask |= 1<<iDb;
-  if( setStatement && pParse->nested==0 && pParse==pToplevel ){
-    /* Every place where this routine is called with setStatement!=0 has
-    ** already successfully created a VDBE. */
-    assert( pParse->pVdbe );
-    sqlite3VdbeAddOp1(pParse->pVdbe, OP_Statement, iDb);
+  pToplevel->isMultiWrite |= setStatement;
+}
+
+/* 
+** Set the "may throw abort exception" flag for the statement currently 
+** being coded.
+*/
+void sqlite3MayAbort(Parse *pParse){
+  Parse *pToplevel = sqlite3ParseToplevel(pParse);
+  pToplevel->mayAbort = 1;
+}
+
+/*
+** Code an OP_Halt that causes the vdbe to return an SQLITE_CONSTRAINT
+** error. The onError parameter determines which (if any) of the statement
+** and/or current transaction is rolled back.
+*/
+void sqlite3HaltConstraint(Parse *pParse, int onError, char *p4, int p4type){
+  Vdbe *v = sqlite3GetVdbe(pParse);
+  if( onError==OE_Abort ){
+    sqlite3MayAbort(pParse);
   }
+  sqlite3VdbeAddOp4(v, OP_Halt, SQLITE_CONSTRAINT, onError, 0, p4, p4type);
 }
 
 /*

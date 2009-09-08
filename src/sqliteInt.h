@@ -2097,6 +2097,8 @@ struct Parse {
   } aColCache[SQLITE_N_COLCACHE];  /* One for each column cache entry */
   u32 writeMask;       /* Start a write transaction on these databases */
   u32 cookieMask;      /* Bitmask of schema verified databases */
+  u8 isMultiWrite;     /* True if statement may affect/insert multiple rows */
+  u8 mayAbort;         /* True if statement may throw an ABORT exception */
   int cookieGoto;      /* Address of OP_Goto to cookie verifier subroutine */
   int cookieValue[SQLITE_MAX_ATTACHED+2];  /* Values of cookies to verify */
 #ifndef SQLITE_OMIT_SHARED_CACHE
@@ -2655,6 +2657,8 @@ void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
+void sqlite3MayAbort(Parse *);
+void sqlite3HaltConstraint(Parse*, int, char*, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
 ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);
 SrcList *sqlite3SrcListDup(sqlite3*,SrcList*,int);

@@ -2692,20 +2692,27 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 #ifndef SQLITE_OMIT_TRIGGER
     case TK_RAISE: {
-      int vrc;
-      if( !pParse->pTriggerTab ){
-        sqlite3ErrorMsg(pParse,
-                       "RAISE() may only be used within a trigger-program");
-        return 0;
-      }
       assert( pExpr->affinity==OE_Rollback 
            || pExpr->affinity==OE_Abort
            || pExpr->affinity==OE_Fail
            || pExpr->affinity==OE_Ignore
       );
+      if( !pParse->pTriggerTab ){
+        sqlite3ErrorMsg(pParse,
+                       "RAISE() may only be used within a trigger-program");
+        return 0;
+      }
+      if( pExpr->affinity==OE_Abort ){
+        sqlite3MayAbort(pParse);
+      }
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
-      vrc = (pExpr->affinity==OE_Ignore ? SQLITE_OK : SQLITE_CONSTRAINT);
-      sqlite3VdbeAddOp4(v, OP_Halt, vrc, pExpr->affinity, 0, pExpr->u.zToken,0);
+      if( pExpr->affinity==OE_Ignore ){
+        sqlite3VdbeAddOp4(
+            v, OP_Halt, SQLITE_OK, OE_Ignore, 0, pExpr->u.zToken,0);
+      }else{
+        sqlite3HaltConstraint(pParse, pExpr->affinity, pExpr->u.zToken, 0);
+      }
+
       break;
     }
 #endif

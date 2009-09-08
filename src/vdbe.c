@@ -2452,46 +2452,6 @@ case OP_Count: {         /* out2-prerelease */
 }
 #endif
 
-/* Opcode: Statement P1 * * * *
-**
-** Begin an individual statement transaction which is part of a larger
-** transaction.  This is needed so that the statement
-** can be rolled back after an error without having to roll back the
-** entire transaction.  The statement transaction will automatically
-** commit when the VDBE halts.
-**
-** If the database connection is currently in autocommit mode (that 
-** is to say, if it is in between BEGIN and COMMIT)
-** and if there are no other active statements on the same database
-** connection, then this operation is a no-op.  No statement transaction
-** is needed since any error can use the normal ROLLBACK process to
-** undo changes.
-**
-** If a statement transaction is started, then a statement journal file
-** will be allocated and initialized.
-**
-** The statement is begun on the database file with index P1.  The main
-** database file has an index of 0 and the file used for temporary tables
-** has an index of 1.
-*/
-case OP_Statement: {
-  Btree *pBt;
-  if( db->autoCommit==0 || db->activeVdbeCnt>1 ){
-    assert( pOp->p1>=0 && pOp->p1<db->nDb );
-    assert( db->aDb[pOp->p1].pBt!=0 );
-    pBt = db->aDb[pOp->p1].pBt;
-    assert( sqlite3BtreeIsInTrans(pBt) );
-    assert( (p->btreeMask & (1<<pOp->p1))!=0 );
-    if( p->iStatement==0 ){
-      assert( db->nStatement>=0 && db->nSavepoint>=0 );
-      db->nStatement++; 
-      p->iStatement = db->nSavepoint + db->nStatement;
-    }
-    rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
-  }
-  break;
-}
-
 /* Opcode: Savepoint P1 * * P4 *
 **
 ** Open, release or rollback the savepoint named by parameter P4, depending
@@ -2720,6 +2680,16 @@ case OP_AutoCommit: {
 ** database.  If P2 is 2 or greater then an EXCLUSIVE lock is also obtained
 ** on the file.
 **
+** If a write-transaction is started and the Vdbe.usesStmtJournal flag is
+** true (this flag is set if the Vdbe may modify more than one row and may
+** throw an ABORT exception), a statement transaction may also be opened.
+** More specifically, a statement transaction is opened iff the database
+** connection is currently not in autocommit mode, or if there are other
+** active statements. A statement transaction allows the affects of this
+** VDBE to be rolled back after an error without having to roll back the
+** entire transaction. If no error is encountered, the statement transaction
+** will automatically commit when the VDBE halts.
+**
 ** If P2 is zero, then a read-lock is obtained on the database file.
 */
 case OP_Transaction: {
@@ -2738,6 +2708,18 @@ case OP_Transaction: {
     }
     if( rc!=SQLITE_OK && rc!=SQLITE_READONLY /* && rc!=SQLITE_BUSY */ ){
       goto abort_due_to_error;
+    }
+
+    if( pOp->p2 && p->usesStmtJournal 
+     && (db->autoCommit==0 || db->activeVdbeCnt>1) 
+    ){
+      assert( sqlite3BtreeIsInTrans(pBt) );
+      if( p->iStatement==0 ){
+        assert( db->nStatement>=0 && db->nSavepoint>=0 );
+        db->nStatement++; 
+        p->iStatement = db->nSavepoint + db->nStatement;
+      }
+      rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
     }
   }
   break;

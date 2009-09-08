@@ -34,6 +34,9 @@ ifcapable {!trigger} {
 #               REPLACE conflict resolution. And that they are not fired
 #               if recursive triggers are not enabled.
 #
+# triggerC-6.*: Test that the recursive_triggers pragma returns correct
+#               results when invoked without an argument.
+#
 
 # Enable recursive triggers for this file.
 #
@@ -659,6 +662,12 @@ do_test triggerC-6.3 {
     PRAGMA recursive_triggers;
   }
 } {1}
+
+#-------------------------------------------------------------------------
+# Test some of the "undefined behaviour" associated with triggers. The
+# undefined behaviour occurs when a row being updated or deleted is 
+# manipulated by a BEFORE trigger.
+#
 
 
 finish_test
