@@ -230,8 +230,10 @@ void sqlite3AutoincrementBegin(Parse *pParse){
   int addr;                  /* A VDBE address */
   Vdbe *v = pParse->pVdbe;   /* VDBE under construction */
 
-  /* If currently generating a trigger program, this call is a no-op */
-  if( pParse->pTriggerTab ) return;
+  /* This routine is never called during trigger-generation.  It is
+  ** only called from the top-level */
+  assert( pParse->pTriggerTab==0 );
+  assert( pParse==sqlite3ParseToplevel(pParse) );
 
   assert( v );   /* We failed long ago if this is not so */
   for(p = pParse->pAinc; p; p = p->pNext){

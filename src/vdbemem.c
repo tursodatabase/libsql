@@ -270,6 +270,10 @@ int sqlite3VdbeMemFinalize(Mem *pMem, FuncDef *pFunc){
 */
 void sqlite3VdbeMemReleaseExternal(Mem *p){
   assert( p->db==0 || sqlite3_mutex_held(p->db->mutex) );
+  testcase( p->flags & MEM_Agg );
+  testcase( p->flags & MEM_Dyn );
+  testcase( p->flags & MEM_RowSet );
+  testcase( p->flags & MEM_Frame );
   if( p->flags&(MEM_Agg|MEM_Dyn|MEM_RowSet|MEM_Frame) ){
     if( p->flags&MEM_Agg ){
       sqlite3VdbeMemFinalize(p, p->u.pDef);
@@ -282,8 +286,7 @@ void sqlite3VdbeMemReleaseExternal(Mem *p){
     }else if( p->flags&MEM_RowSet ){
       sqlite3RowSetClear(p->u.pRowSet);
     }else if( p->flags&MEM_Frame ){
-      sqlite3VdbeFrameDelete(p->u.pFrame);
-      p->flags &= ~MEM_Frame;
+      sqlite3VdbeMemSetNull(p);
     }
   }
 }
