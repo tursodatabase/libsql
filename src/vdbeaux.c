@@ -1365,9 +1365,6 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
     p->inVtabMethod = 0;
   }
 #endif
-  if( !pCx->ephemPseudoTable ){
-    sqlite3DbFree(p->db, pCx->pData);
-  }
 }
 
 /*

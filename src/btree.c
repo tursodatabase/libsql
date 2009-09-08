@@ -6420,8 +6420,10 @@ static int balance(BtCursor *pCur){
 ** a positive value if pCur points at an etry that is larger than 
 ** (pKey, nKey)). 
 **
-** If the seekResult parameter is 0, then cursor pCur may point to any 
-** entry or to no entry at all. In this case this function has to seek
+** If the seekResult parameter is non-zero, then the caller guarantees that
+** cursor pCur is pointing at the existing copy of a row that is to be
+** overwritten.  If the seekResult parameter is 0, then cursor pCur may
+** point to any entry or to no entry at all and so this function has to seek
 ** the cursor before the new key can be inserted.
 */
 int sqlite3BtreeInsert(
@@ -6433,7 +6435,7 @@ int sqlite3BtreeInsert(
   int seekResult                 /* Result of prior MovetoUnpacked() call */
 ){
   int rc;
-  int loc = seekResult;
+  int loc = seekResult;          /* -1: before desired location  +1: after */
   int szNew;
   int idx;
   MemPage *pPage;

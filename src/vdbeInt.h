@@ -56,16 +56,12 @@ struct VdbeCursor {
   Bool atFirst;         /* True if pointing to first entry */
   Bool useRandomRowid;  /* Generate new record numbers semi-randomly */
   Bool nullRow;         /* True if pointing to a row with no data */
-  Bool pseudoTable;     /* This is a NEW or OLD pseudo-tables of a trigger */
-  Bool ephemPseudoTable;
   Bool deferredMoveto;  /* A call to sqlite3BtreeMoveto() is needed */
   Bool isTable;         /* True if a table requiring integer keys */
   Bool isIndex;         /* True if an index containing keys only - no data */
   i64 movetoTarget;     /* Argument to the deferred sqlite3BtreeMoveto() */
   Btree *pBt;           /* Separate file holding temporary table */
-  int nData;            /* Number of bytes in pData */
-  char *pData;          /* Data for a NEW or OLD pseudo-table */
-  i64 iKey;             /* Key for the NEW or OLD pseudo-table row */
+  int pseudoTableReg;   /* Register holding pseudotable content. */
   KeyInfo *pKeyInfo;    /* Info about index keys needed by index cursors */
   int nField;           /* Number of fields in the header */
   i64 seqCount;         /* Sequence counter */
@@ -77,11 +73,15 @@ struct VdbeCursor {
   int seekResult;
 
   /* Cached information about the header for the data record that the
-  ** cursor is currently pointing to.  Only valid if cacheValid is true.
+  ** cursor is currently pointing to.  Only valid if cacheStatus matches
+  ** Vdbe.cacheCtr.  Vdbe.cacheCtr will never take on the value of
+  ** CACHE_STALE and so setting cacheStatus=CACHE_STALE guarantees that
+  ** the cache is out of date.
+  **
   ** aRow might point to (ephemeral) data for the current row, or it might
   ** be NULL.
   */
-  int cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
+  u32 cacheStatus;      /* Cache is valid if this matches Vdbe.cacheCtr */
   int payloadSize;      /* Total number of bytes in the record */
   u32 *aType;           /* Type values for all entries in the record */
   u32 *aOffset;         /* Cached offsets to the start of each columns data */
@@ -296,7 +296,7 @@ struct Vdbe {
   u32 magic;              /* Magic number for sanity checking */
   int nMem;               /* Number of memory locations currently allocated */
   Mem *aMem;              /* The memory locations */
-  int cacheCtr;           /* VdbeCursor row cache generation counter */
+  u32 cacheCtr;           /* VdbeCursor row cache generation counter */
   int pc;                 /* The program counter */
   int rc;                 /* Value to return */
   char *zErrMsg;          /* Error message written here */

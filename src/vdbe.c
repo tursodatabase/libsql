@@ -189,7 +189,7 @@ static VdbeCursor *allocateCursor(
   int iCur,             /* Index of the new VdbeCursor */
   int nField,           /* Number of fields in the table or index */
   int iDb,              /* When database the cursor belongs to, or -1 */
-  int isBtreeCursor     /* True for B-Tree vs. pseudo-table or vtab */
+  int isBtreeCursor     /* True for B-Tree.  False for pseudo-table or vtab */
 ){
   /* Find the memory cell that will be used to store the blob of memory
   ** required for this VdbeCursor structure. It is convenient to use a 
@@ -1975,29 +1975,7 @@ case OP_NotNull: {            /* same as TK_NOTNULL, jump, in1 */
   break;
 }
 
-/* Opcode: SetNumColumns * P2 * * *
-**
-** This opcode sets the number of columns for the cursor opened by the
-** following instruction to P2.
-**
-** An OP_SetNumColumns is only useful if it occurs immediately before 
-** one of the following opcodes:
-**
-**     OpenRead
-**     OpenWrite
-**     OpenPseudo
-**
-** If the OP_Column opcode is to be executed on a cursor, then
-** this opcode must be present immediately before the opcode that
-** opens the cursor.
-*/
-#if 0
-case OP_SetNumColumns: {
-  break;
-}
-#endif
-
-/* Opcode: Column P1 P2 P3 P4 *
+/* Opcode: Column P1 P2 P3 P4 P5
 **
 ** Interpret the data that cursor P1 points to as a structure built using
 ** the MakeRecord instruction.  (See the MakeRecord opcode for additional
@@ -2010,6 +1988,11 @@ case OP_SetNumColumns: {
 ** If the column contains fewer than P2 fields, then extract a NULL.  Or,
 ** if the P4 argument is a P4_MEM use the value of the P4 argument as
 ** the result.
+**
+** If the OPFLAG_CLEARCACHE bit is set on P5 and P1 is a pseudo-table cursor,
+** then the cache of the cursor is reset prior to extracting the column.
+** The first OP_Column against a pseudo-table after the value of the content
+** register has changed should have this bit set.
 */
 case OP_Column: {
   u32 payloadSize;   /* Number of bytes in the record */
@@ -2033,6 +2016,7 @@ case OP_Column: {
   u64 offset64;      /* 64-bit offset.  64 bits needed to catch overflow */
   int szHdr;         /* Size of the header size field at start of record */
   int avail;         /* Number of bytes of available data */
+  Mem *pReg;         /* PseudoTable input register */
 
 
   p1 = pOp->p1;
@@ -2086,11 +2070,12 @@ case OP_Column: {
       rc = sqlite3BtreeDataSize(pCrsr, &payloadSize);
       assert( rc==SQLITE_OK );   /* DataSize() cannot fail */
     }
-  }else if( pC->pseudoTable ){
-    /* The record is the sole entry of a pseudo-table */
-    payloadSize = pC->nData;
-    zRec = pC->pData;
-    pC->cacheStatus = CACHE_STALE;
+  }else if( pC->pseudoTableReg>0 ){
+    pReg = &p->aMem[pC->pseudoTableReg];
+    assert( pReg->flags & MEM_Blob );
+    payloadSize = pReg->n;
+    zRec = pReg->z;
+    pC->cacheStatus = (pOp->p5&OPFLAG_CLEARCACHE) ? CACHE_STALE : p->cacheCtr;
     assert( payloadSize==0 || zRec!=0 );
   }else{
     /* Consider the row to be NULL */
@@ -3067,22 +3052,14 @@ case OP_OpenEphemeral: {
 /* Opcode: OpenPseudo P1 P2 P3 * *
 **
 ** Open a new cursor that points to a fake table that contains a single
-** row of data.  Any attempt to write a second row of data causes the
-** first row to be deleted.  All data is deleted when the cursor is
-** closed.
+** row of data.  The content of that one row in the content of memory
+** register P2.  In other words, cursor P1 becomes an alias for the 
+** MEM_Blob content contained in register P2.
 **
-** A pseudo-table created by this opcode is useful for holding the
-** NEW or OLD tables in a trigger.  Also used to hold the a single
+** A pseudo-table created by this opcode is used to hold the a single
 ** row output from the sorter so that the row can be decomposed into
-** individual columns using the OP_Column opcode.
-**
-** When OP_Insert is executed to insert a row in to the pseudo table,
-** the pseudo-table cursor may or may not make it's own copy of the
-** original row data. If P2 is 0, then the pseudo-table will copy the
-** original row data. Otherwise, a pointer to the original memory cell
-** is stored. In this case, the vdbe program must ensure that the 
-** memory cell containing the row data is not overwritten until the
-** pseudo table is closed (or a new row is inserted into it).
+** individual columns using the OP_Column opcode.  The OP_Column opcode
+** is the only cursor opcode that works with a pseudo-table.
 **
 ** P3 is the number of fields in the records that will be stored by
 ** the pseudo-table.
@@ -3094,8 +3071,7 @@ case OP_OpenPseudo: {
   pCx = allocateCursor(p, pOp->p1, pOp->p3, -1, 0);
   if( pCx==0 ) goto no_mem;
   pCx->nullRow = 1;
-  pCx->pseudoTable = 1;
-  pCx->ephemPseudoTable = (u8)pOp->p2;
+  pCx->pseudoTableReg = pOp->p2;
   pCx->isTable = 1;
   pCx->isIndex = 0;
   break;
@@ -3180,6 +3156,7 @@ case OP_SeekGt: {       /* jump, in3 */
   assert( pOp->p2!=0 );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->pseudoTableReg==0 );
   if( pC->pCursor!=0 ){
     oc = pOp->opcode;
     pC->nullRow = 0;
@@ -3293,7 +3270,6 @@ case OP_SeekGt: {       /* jump, in3 */
     ** for read access returns SQLITE_EMPTY. In this case always
     ** take the jump (since there are no records in the table).
     */
-    assert( pC->pseudoTable==0 );
     pc = pOp->p2 - 1;
   }
   break;
@@ -3504,6 +3480,7 @@ case OP_NotExists: {        /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->isTable );
+  assert( pC->pseudoTableReg==0 );
   pCrsr = pC->pCursor;
   if( pCrsr!=0 ){
     res = 0;
@@ -3523,8 +3500,6 @@ case OP_NotExists: {        /* jump, in3 */
     /* This happens when an attempt to open a read cursor on the 
     ** sqlite_master table returns SQLITE_EMPTY.
     */
-    assert( !pC->pseudoTable );
-    assert( pC->isTable );
     pc = pOp->p2 - 1;
     assert( pC->rowidIsValid==0 );
     pC->seekResult = 0;
@@ -3685,14 +3660,27 @@ case OP_NewRowid: {           /* out2-prerelease */
 **
 ** Write an entry into the table of cursor P1.  A new entry is
 ** created if it doesn't already exist or the data for an existing
-** entry is overwritten.  The data is the value stored register
+** entry is overwritten.  The data is the value MEM_Blob stored in register
 ** number P2. The key is stored in register P3. The key must
-** be an integer.
+** be a MEM_Int.
 **
 ** If the OPFLAG_NCHANGE flag of P5 is set, then the row change count is
 ** incremented (otherwise not).  If the OPFLAG_LASTROWID flag of P5 is set,
 ** then rowid is stored for subsequent return by the
 ** sqlite3_last_insert_rowid() function (otherwise it is unmodified).
+**
+** If the OPFLAG_USESEEKRESULT flag of P5 is set and if the result of
+** the last seek operation (OP_NotExists) was a success, then this
+** operation will not attempt to find the appropriate row before doing
+** the insert but will instead overwrite the row that the cursor is
+** currently pointing to.  Presumably, the prior OP_NotExists opcode
+** has already positioned the cursor correctly.  This is an optimization
+** that boosts performance by avoiding redundant seeks.
+**
+** If the OPFLAG_ISUPDATE flag is set, then this opcode is part of an
+** UPDATE operation.  Otherwise (if the flag is clear) then this opcode
+** is part of an INSERT operation.  The difference is only important to
+** the update hook.
 **
 ** Parameter P4 may point to a string containing the table-name, or
 ** may be NULL. If it is not NULL, then the update-hook 
@@ -3708,22 +3696,23 @@ case OP_NewRowid: {           /* out2-prerelease */
 ** for indices is OP_IdxInsert.
 */
 case OP_Insert: {
-  Mem *pData;
-  Mem *pKey;
-  i64 iKey;   /* The integer ROWID or key for the record to be inserted */
-  VdbeCursor *pC;
-  int nZero;
-  int seekResult;
-  const char *zDb;
-  const char *zTbl;
-  int op;
+  Mem *pData;       /* MEM cell holding data for the record to be inserted */
+  Mem *pKey;        /* MEM cell holding key  for the record */
+  i64 iKey;         /* The integer ROWID or key for the record to be inserted */
+  VdbeCursor *pC;   /* Cursor to table into which insert is written */
+  int nZero;        /* Number of zero-bytes to append */
+  int seekResult;   /* Result of prior seek or 0 if no USESEEKRESULT flag */
+  const char *zDb;  /* database name - used by the update hook */
+  const char *zTbl; /* Table name - used by the opdate hook */
+  int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
 
   pData = &p->aMem[pOp->p2];
   pKey = &p->aMem[pOp->p3];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
-  assert( pC->pCursor!=0 || pC->pseudoTable );
+  assert( pC->pCursor!=0 );
+  assert( pC->pseudoTableReg==0 );
   assert( pKey->flags & MEM_Int );
   assert( pC->isTable );
   REGISTER_TRACE(pOp->p2, pData);
@@ -3738,41 +3727,17 @@ case OP_Insert: {
   }else{
     assert( pData->flags & (MEM_Blob|MEM_Str) );
   }
-  if( pC->pseudoTable ){
-    if( !pC->ephemPseudoTable ){
-      sqlite3DbFree(db, pC->pData);
-    }
-    pC->iKey = iKey;
-    pC->nData = pData->n;
-    if( pC->ephemPseudoTable || pData->z==pData->zMalloc ){
-      pC->pData = pData->z;
-      if( !pC->ephemPseudoTable ){
-        pData->flags &= ~MEM_Dyn;
-        pData->flags |= MEM_Ephem;
-        pData->zMalloc = 0;
-      }
-    }else{
-      pC->pData = sqlite3Malloc( pC->nData+2 );
-      if( !pC->pData ) goto no_mem;
-      memcpy(pC->pData, pData->z, pC->nData);
-      pC->pData[pC->nData] = 0;
-      pC->pData[pC->nData+1] = 0;
-    }
-    pC->nullRow = 0;
+  seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
+  if( pData->flags & MEM_Zero ){
+    nZero = pData->u.nZero;
   }else{
-    seekResult = ((pOp->p5 & OPFLAG_USESEEKRESULT) ? pC->seekResult : 0);
-    if( pData->flags & MEM_Zero ){
-      nZero = pData->u.nZero;
-    }else{
-      nZero = 0;
-    }
-    sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
-    rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
-                            pData->z, pData->n, nZero,
-                            pOp->p5 & OPFLAG_APPEND, seekResult
-    );
+    nZero = 0;
   }
-  
+  sqlite3BtreeSetCachedRowid(pC->pCursor, 0);
+  rc = sqlite3BtreeInsert(pC->pCursor, 0, iKey,
+                          pData->z, pData->n, nZero,
+                          pOp->p5 & OPFLAG_APPEND, seekResult
+  );
   pC->rowidIsValid = 0;
   pC->deferredMoveto = 0;
   pC->cacheStatus = CACHE_STALE;
@@ -3905,7 +3870,7 @@ case OP_RowData: {
   assert( pC->isIndex || pOp->opcode==OP_RowData );
   assert( pC!=0 );
   assert( pC->nullRow==0 );
-  assert( pC->pseudoTable==0 );
+  assert( pC->pseudoTableReg==0 );
   assert( pC->pCursor!=0 );
   pCrsr = pC->pCursor;
   assert( sqlite3BtreeCursorIsValid(pCrsr) );
@@ -3967,13 +3932,12 @@ case OP_Rowid: {                 /* out2-prerelease */
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
+  assert( pC->pseudoTableReg==0 );
   if( pC->nullRow ){
     /* Do nothing so that reg[P2] remains NULL */
     break;
   }else if( pC->deferredMoveto ){
     v = pC->movetoTarget;
-  }else if( pC->pseudoTable ){
-    v = pC->iKey;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
   }else if( pC->pVtabCursor ){
     pVtab = pC->pVtabCursor->pVtab;

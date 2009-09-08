@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sSQLITE_LIMIT_TRIGGER_DEPTH\soption\sto\ssqlite3_limit().
-D 2009-09-07T18:14:02
+C Code\ssimplifications,\sespecially\sto\sthe\spseudo-table\slogic,\sand\scomment\nimprovements.
+D 2009-09-08T01:14:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -105,11 +105,11 @@ F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 55b601857d924e07c91cfa69e9b2cb5093498c93
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
-F src/auth.c 4cfb8fae12656cca2739176abebab84ed79dd8f6
+F src/auth.c d6a88bf8e81e6a079ccb8881002b327e42ec46b9
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c e08f6c1a9551b88081fc737916c6c3fd5029a6cf
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c 6b60ece56141bbe23aa6efca10f1612d34271c2f
+F src/btree.c 873a82706e07604a638e02e12617983df8e8070a
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c df8dfff696329c192240e3d532f9dad0ef5abace
@@ -162,11 +162,11 @@ F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c 95809555bf3614d0043d635c85948520fe21e741
+F src/select.c a7a075456d4e640ffd7d0a33202d306c69c88f72
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in e5949b46f9a05aadde22848f92fae5c9ba87ee0e
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 13bb8c9abbdfe33c1fe685921b4a36e484a3d108
+F src/sqliteInt.h 6c03c685f37c2403ae78c4eb34f9ee9082748270
 F src/sqliteLimit.h be44f7f46c14bb4c21870074b1e6f1ac0abd6701
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -208,11 +208,11 @@ F src/update.c 3e97974baa914f32d4ae690fa0cb7281aff8cd39
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c 4e3c6895475cf8a9930cb39f7e9855acb7019349
+F src/vdbe.c 3ead9f634776836a42dd3b959557faff96911194
 F src/vdbe.h 080fe6bc1264438becb8bf9b9f3c84074c336b78
-F src/vdbeInt.h 6094e60f64d7a9d4352d4e6b90d1219dce947ad9
+F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c 8d5013ab6104be757c208a70ffb191cc27d2b688
-F src/vdbeaux.c ea6d2f215a6a77a77882719ff23a757437e2cbcd
+F src/vdbeaux.c ec1545ece73dd739c9043f14963fb3f20d3880d6
 F src/vdbeblob.c f93cb60ac388633ed3bde8a94ef161ad2dbfb689
 F src/vdbemem.c dc551981833756ea34a3e0b238f759479e7cf526
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ecbe0832be77599c7cc66fb9968d0f419000d231
-R d34c486626a8ce5a53145ee9d825c061
+P d7dc8b433691745b3842282569f1573d1e057963
+R 9e0da6af96f3821c9fbb99c40116f7d0
 U drh
-Z c32d324c29421eb9787794c39572ee17
+Z 49ac72c18b4c2aedd979564a1a2e66cc
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKpU1toxKgR168RlERAiq6AJ9XuXc0u1hWnpGpmA/epzDAzopjbQCeJgNH
-Khw73UH7YVrOiFFOVF+gTAk=
-=8PSG
+iD8DBQFKpbAMoxKgR168RlERAh/DAJ4q07I078rtqsLLizRq8qQzLiSLlQCfUo1D
+jfuHFqkXs2sHSUl8rZ5owsY=
+=1zOu
 -----END PGP SIGNATURE-----

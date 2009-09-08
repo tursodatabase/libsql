@@ -128,7 +128,7 @@ void sqlite3AuthRead(
     pTab = pParse->pTriggerTab;
   }else{
     assert( pTabList );
-    for(iSrc=0; iSrc<pTabList->nSrc; iSrc++){
+    for(iSrc=0; ALWAYS(iSrc<pTabList->nSrc); iSrc++){
       if( pExpr->iTable==pTabList->a[iSrc].iCursor ){
         pTab = pTabList->a[iSrc].pTab;
         break;
