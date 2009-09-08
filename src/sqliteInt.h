@@ -2647,7 +2647,7 @@ int sqlite3ExprIsConstantNotJoin(Expr*);
 int sqlite3ExprIsConstantOrFunction(Expr*);
 int sqlite3ExprIsInteger(Expr*, int*);
 int sqlite3IsRowid(const char*);
-void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int);
+void sqlite3GenerateRowDelete(Parse*, Table*, int, int, int, Trigger *, int);
 void sqlite3GenerateRowIndexDelete(Parse*, Table*, int, int*);
 int sqlite3GenerateIndexKey(Parse*, Index*, int, int, int);
 void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,

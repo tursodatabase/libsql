@@ -17,6 +17,24 @@ ifcapable {!trigger} {
   return
 }
 
+#-------------------------------------------------------------------------
+# Test organization:
+#
+# triggerC-1.*: Haphazardly designed trigger related tests that were useful
+#               during an upgrade of the triggers sub-system.
+# 
+# triggerC-2.*:
+#
+# triggerC-3.*:
+#
+# triggerC-4.*:
+#
+# triggerC-5.*: Test that when recursive triggers are enabled DELETE 
+#               triggers are fired when rows are deleted as part of OR
+#               REPLACE conflict resolution. And that they are not fired
+#               if recursive triggers are not enabled.
+#
+
 # Enable recursive triggers for this file.
 #
 execsql { PRAGMA recursive_triggers = on }
@@ -530,5 +548,117 @@ foreach {n insert log} {
     "]
   } [join $log " "]
 } 
+
+#-------------------------------------------------------------------------
+# This block of tests, triggerC-5.*, test that DELETE triggers are fired
+# if a row is deleted as a result of OR REPLACE conflict resolution.
+#
+do_test triggerC-5.1.0 {
+  execsql {
+    DROP TABLE IF EXISTS t5;
+    CREATE TABLE t5(a INTEGER PRIMARY KEY, b);
+    CREATE UNIQUE INDEX t5i ON t5(b);
+    INSERT INTO t5 VALUES(1, 'a');
+    INSERT INTO t5 VALUES(2, 'b');
+    INSERT INTO t5 VALUES(3, 'c');
+
+    CREATE TABLE t5g(a, b, c);
+    CREATE TRIGGER t5t BEFORE DELETE ON t5 BEGIN
+      INSERT INTO t5g VALUES(old.a, old.b, (SELECT count(*) FROM t5));
+    END;
+  }
+} {}
+foreach {n dml t5g t5} {
+  1 "DELETE FROM t5 WHERE a=2"                        {2 b 3} {1 a 3 c}
+  2 "INSERT OR REPLACE INTO t5 VALUES(2, 'd')"        {2 b 3} {1 a 2 d 3 c}
+  3 "UPDATE OR REPLACE t5 SET a = 2 WHERE a = 3"      {2 b 3} {1 a 2 c}
+  4 "INSERT OR REPLACE INTO t5 VALUES(4, 'b')"        {2 b 3} {1 a 3 c 4 b}
+  5 "UPDATE OR REPLACE t5 SET b = 'b' WHERE b = 'c'"  {2 b 3} {1 a 3 b}
+  6 "INSERT OR REPLACE INTO t5 VALUES(2, 'c')"        {2 b 3 3 c 2} {1 a 2 c}
+  7 "UPDATE OR REPLACE t5 SET a=1, b='b' WHERE a = 3" {1 a 3 2 b 2} {1 b}
+} {
+  do_test triggerC-5.1.$n {
+    execsql "
+      BEGIN;
+        $dml ;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
+      ROLLBACK;
+    "
+  } [concat $t5g $t5]
+}
+do_test triggerC-5.2.0 {
+  execsql {
+    DROP TRIGGER t5t;
+    CREATE TRIGGER t5t AFTER DELETE ON t5 BEGIN
+      INSERT INTO t5g VALUES(old.a, old.b, (SELECT count(*) FROM t5));
+    END;
+  }
+} {}
+foreach {n dml t5g t5} {
+  1 "DELETE FROM t5 WHERE a=2"                        {2 b 2} {1 a 3 c}
+  2 "INSERT OR REPLACE INTO t5 VALUES(2, 'd')"        {2 b 2} {1 a 2 d 3 c}
+  3 "UPDATE OR REPLACE t5 SET a = 2 WHERE a = 3"      {2 b 2} {1 a 2 c}
+  4 "INSERT OR REPLACE INTO t5 VALUES(4, 'b')"        {2 b 2} {1 a 3 c 4 b}
+  5 "UPDATE OR REPLACE t5 SET b = 'b' WHERE b = 'c'"  {2 b 2} {1 a 3 b}
+  6 "INSERT OR REPLACE INTO t5 VALUES(2, 'c')"        {2 b 2 3 c 1} {1 a 2 c}
+  7 "UPDATE OR REPLACE t5 SET a=1, b='b' WHERE a = 3" {1 a 2 2 b 1} {1 b}
+} {
+  do_test triggerC-5.2.$n {
+    execsql "
+      BEGIN;
+        $dml ;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
+      ROLLBACK;
+    "
+  } [concat $t5g $t5]
+}
+do_test triggerC-5.3.0 {
+  execsql { PRAGMA recursive_triggers = off }
+} {}
+foreach {n dml t5g t5} {
+  1 "DELETE FROM t5 WHERE a=2"                        {2 b 2} {1 a 3 c}
+  2 "INSERT OR REPLACE INTO t5 VALUES(2, 'd')"        {} {1 a 2 d 3 c}
+  3 "UPDATE OR REPLACE t5 SET a = 2 WHERE a = 3"      {} {1 a 2 c}
+  4 "INSERT OR REPLACE INTO t5 VALUES(4, 'b')"        {} {1 a 3 c 4 b}
+  5 "UPDATE OR REPLACE t5 SET b = 'b' WHERE b = 'c'"  {} {1 a 3 b}
+  6 "INSERT OR REPLACE INTO t5 VALUES(2, 'c')"        {} {1 a 2 c}
+  7 "UPDATE OR REPLACE t5 SET a=1, b='b' WHERE a = 3" {} {1 b}
+} {
+  do_test triggerC-5.3.$n {
+    execsql "
+      BEGIN;
+        $dml ;
+        SELECT * FROM t5g;
+        SELECT * FROM t5;
+      ROLLBACK;
+    "
+  } [concat $t5g $t5]
+}
+do_test triggerC-5.3.8 {
+  execsql { PRAGMA recursive_triggers = on }
+} {}
+
+#-------------------------------------------------------------------------
+# This block of tests, triggerC-6.*, tests that "PRAGMA recursive_triggers"
+# statements return the current value of the recursive triggers flag.
+#
+do_test triggerC-6.1 {
+  execsql { PRAGMA recursive_triggers }
+} {1}
+do_test triggerC-6.2 {
+  execsql { 
+    PRAGMA recursive_triggers = off;
+    PRAGMA recursive_triggers;
+  }
+} {0}
+do_test triggerC-6.3 {
+  execsql { 
+    PRAGMA recursive_triggers = on;
+    PRAGMA recursive_triggers;
+  }
+} {1}
+
 
 finish_test

@@ -1241,7 +1241,26 @@ void sqlite3GenerateConstraintChecks(
           break;
         }
         case OE_Replace: {
-          sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
+          /* If there are DELETE triggers on this table and the
+          ** recursive-triggers flag is set, call GenerateRowDelete() to
+          ** remove the conflicting row from the the table. This will fire
+          ** the triggers and remove both the table and index b-tree entries.
+          **
+          ** Otherwise, if there are no triggers or the recursive-triggers
+          ** flag is not set, call GenerateRowIndexDelete(). This removes
+          ** the index b-tree entries only. The table b-tree entry will be 
+          ** replaced by the new entry when it is inserted.  */
+          Trigger *pTrigger = 0;
+          if( pParse->db->flags&SQLITE_RecTriggers ){
+            pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
+          }
+          if( pTrigger ){
+            sqlite3GenerateRowDelete(
+                pParse, pTab, baseCur, regRowid, 0, pTrigger, OE_Replace
+            );
+          }else{
+            sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
+          }
           seenReplace = 1;
           break;
         }
@@ -1299,7 +1318,6 @@ void sqlite3GenerateConstraintChecks(
       else if( onError==OE_Fail ) onError = OE_Abort;
     }
     
-
     /* Check to see if the new index entry will be unique */
     regR = sqlite3GetTempReg(pParse);
     sqlite3VdbeAddOp2(v, OP_SCopy, regOldRowid, regR);
@@ -1342,8 +1360,14 @@ void sqlite3GenerateConstraintChecks(
         break;
       }
       default: {
+        Trigger *pTrigger = 0;
         assert( onError==OE_Replace );
-        sqlite3GenerateRowDelete(pParse, pTab, baseCur, regR, 0);
+        if( pParse->db->flags&SQLITE_RecTriggers ){
+          pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
+        }
+        sqlite3GenerateRowDelete(
+            pParse, pTab, baseCur, regR, 0, pTrigger, OE_Replace
+        );
         seenReplace = 1;
         break;
       }
