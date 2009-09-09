@@ -189,6 +189,7 @@ int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);
 int sqlite3VdbeCurrentAddr(Vdbe*);
 #ifdef SQLITE_DEBUG
+  int sqlite3VdbeMayAbort(Vdbe*);
   void sqlite3VdbeTrace(Vdbe*,FILE*);
 #endif
 void sqlite3VdbeResetStepResult(Vdbe*);

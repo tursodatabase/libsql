@@ -240,6 +240,113 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   }
 }
 
+#ifdef SQLITE_DEBUG
+
+/*
+** The following type and function are used to iterate through all opcodes
+** in a Vdbe main program and each of the sub-programs (triggers) it may 
+** invoke directly or indirectly. It should be used as follows:
+**
+**   Op *pOp;
+**   VdbeOpIter sIter;
+**
+**   memset(&sIter, 0, sizeof(sIter));
+**   sIter.v = v;                            // v is of type Vdbe* 
+**   while( (pOp = opIterNext(&sIter)) ){
+**     // Do something with pOp
+**   }
+**   sqlite3DbFree(v->db, sIter.apSub);
+** 
+*/
+typedef struct VdbeOpIter VdbeOpIter;
+struct VdbeOpIter {
+  Vdbe *v;                   /* Vdbe to iterate through the opcodes of */
+  SubProgram **apSub;        /* Array of subprograms */
+  int nSub;                  /* Number of entries in apSub */
+  int iAddr;                 /* Address of next instruction to return */
+  int iSub;                  /* 0 = main program, 1 = first sub-program etc. */
+};
+static Op *opIterNext(VdbeOpIter *p){
+  Vdbe *v = p->v;
+  Op *pRet = 0;
+  Op *aOp;
+  int nOp;
+
+  if( p->iSub<=p->nSub ){
+
+    if( p->iSub==0 ){
+      aOp = v->aOp;
+      nOp = v->nOp;
+    }else{
+      aOp = p->apSub[p->iSub-1]->aOp;
+      nOp = p->apSub[p->iSub-1]->nOp;
+    }
+    assert( p->iAddr<nOp );
+
+    pRet = &aOp[p->iAddr];
+    p->iAddr++;
+    if( p->iAddr==nOp ){
+      p->iSub++;
+      p->iAddr = 0;
+    }
+  
+    if( pRet->p4type==P4_SUBPROGRAM ){
+      int nByte = (p->nSub+1)*sizeof(SubProgram*);
+      int j;
+      for(j=0; j<p->nSub; j++){
+        if( p->apSub[j]==pRet->p4.pProgram ) break;
+      }
+      if( j==p->nSub ){
+        p->apSub = sqlite3DbReallocOrFree(v->db, p->apSub, nByte);
+        if( !p->apSub ){
+          pRet = 0;
+        }else{
+          p->apSub[p->nSub++] = pRet->p4.pProgram;
+        }
+      }
+    }
+  }
+
+  return pRet;
+}
+
+/*
+** Return true if the program stored in the VM passed as an argument may
+** throw an ABORT exception (causing the statement, but not transaction
+** to be rolled back). This condition is true if the main program or any
+** sub-programs contains any of the following:
+**
+**   *  OP_Halt with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
+**   *  OP_HaltIfNull with P1=SQLITE_CONSTRAINT and P2=OE_Abort.
+**   *  OP_Destroy
+**   *  OP_VUpdate
+**   *  OP_VRename
+**
+** This function is only used as part of an assert() statement. 
+*/
+int sqlite3VdbeMayAbort(Vdbe *v){
+  int mayAbort = 0;
+  Op *pOp;
+  VdbeOpIter sIter;
+  memset(&sIter, 0, sizeof(sIter));
+  sIter.v = v;
+
+  while( (pOp = opIterNext(&sIter))!=0 ){
+    int opcode = pOp->opcode;
+    if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
+     || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
+      && (pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
+    ){
+      mayAbort = 1;
+      break;
+    }
+  }
+
+  sqlite3DbFree(v->db, sIter.apSub);
+  return mayAbort;
+}
+#endif
+
 /*
 ** Loop through the program looking for P2 values that are negative
 ** on jump instructions.  Each such value is a label.  Resolve the

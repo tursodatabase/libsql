@@ -1,5 +1,5 @@
-C Combine\sthe\sOP_Statement\sand\sOP_Transaction\sopcodes.
-D 2009-09-08T19:15:01
+C Add\sa\scomplicated\sassert()\sto\scheck\sthat\sstatement\stransactions\sare\sopened\swhen\srequired.
+D 2009-09-09T11:37:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -19,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bccfdabb9982b7e88a33470741f1d6ba14a6b684
+F configure bccfdabb9982b7e88a33470741f1d6ba14a6b684 x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -109,7 +109,7 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 873a82706e07604a638e02e12617983df8e8070a
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c 1a21d6dcb6a60b065f5407c6a5f2d021f946fa34
+F src/build.c 5269733241f459705189aa39f4eacf18b10d7661
 F src/callback.c f49c305dc94b78da948953c392963929c0e70f9b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -206,10 +206,10 @@ F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
 F src/vdbe.c aba680ec9cf68890f3600a4c0c1936b1d789d111
-F src/vdbe.h afd9c99544fd916c93c6de5b1d11490899e483ea
+F src/vdbe.h 13e00f573bccf0c03e95fd3d4759da4ea9b75e60
 F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c b7e5f34436e298e2b0168e71323b5d97f7e9b080
-F src/vdbeaux.c 75dff9148f3bcdb5772ca00be774f7194a4fce61
+F src/vdbeaux.c 257f9ab8631b3f31e69a937f1fd8aa3adf3f4209
 F src/vdbeblob.c 4d6b702ca714a2d52552eee72d3e3191f8444eab
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 85cb0c94a63eda5f059ebe40887c7af9b4869893
-R 6a11a24dc821178a3e61515331c83e2c
+P aec9dbd8d21c55c3945287a3dfa55d3ed168f977
+R a1841d0403c06c3b9b5f6e774b694b14
 U dan
-Z 33e8150d74d6f5afb30b73dad757212c
+Z 90b3c5c92554cb2f54c26452d6fcd827
