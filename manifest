@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Increase\sthe\ssize\sof\sbitvec\sobjects\sto\s1024\sbytes\son\s64-bit\ssystems.
-D 2009-09-09T12:41:18
+C Added\sSQLITE_OPEN_SHAREDCACHE\sand\sSQLITE_OPEN_PRIVATECACHE\sflags\sas\npossibilities\sto\ssqlite3_open_v2(),\sto\soverride\sthe\sglobal\sshared\ncache\smode\ssetting.\s\sTicket\s[9fd0bc36639c15]
+D 2009-09-09T14:17:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/auth.c d6a88bf8e81e6a079ccb8881002b327e42ec46b9
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
-F src/btree.c 873a82706e07604a638e02e12617983df8e8070a
+F src/btree.c 9c425425784c5d569bc0309c22251698ba906451
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 5269733241f459705189aa39f4eacf18b10d7661
@@ -129,7 +129,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c e33c4d17cc0a398847f5c9926ccdfe7e66605b87
+F src/main.c 482a5a4a6f22d04c03deefeeae5c49c2f06a5d15
 F src/malloc.c b1725183bcc4ce2e569f1b65da844dc3e4c7a643
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -144,7 +144,7 @@ F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
 F src/mutex_unix.c aff26c77f698b552becfedfa677ad1036c42d790
 F src/mutex_w32.c b2c1481ee93b0ac7a8fa5346570fd173b6763fdb
 F src/notify.c 0127121816d8a861deb0dfd111b495346bf233db
-F src/os.c 9fea283e336ee31caa4654d6cb05a129a1c42d2f
+F src/os.c 8d62d8d98ad7909cb0dd294c1e5f3835c887ccb6
 F src/os.h 00a1334a4eecee7f7bef79ac606b88d325119f21
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
@@ -164,7 +164,7 @@ F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c a7a075456d4e640ffd7d0a33202d306c69c88f72
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
-F src/sqlite.h.in e5949b46f9a05aadde22848f92fae5c9ba87ee0e
+F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 66914c7a4a8ad427dc3705e13df95763003ea8fb
 F src/sqliteLimit.h be44f7f46c14bb4c21870074b1e6f1ac0abd6701
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 135d656a20a2a450955ed9ec57d9637cf31493c6
-R f91172640a09b757977e441541b57ec0
+P f1272b90f6078d301ab05592593e9415f2b2b90b
+R 30f716aefa81fdbf0f2b201c3325eab7
 U drh
-Z 997645a8d3a88141379209cea73b2e0e
+Z 679e313c9aeecd41d844d799997842b6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKp6JxoxKgR168RlERAljzAJ9qUdcCxBF0PoRplZd+1q307qwxOQCgi1x0
-dP4jOO6AZZUJzlZM1fHDEUs=
-=rmmB
+iD8DBQFKp7kUoxKgR168RlERAqDGAKCNO6g4tKDZlhNsaEYURMls5+SB5gCgiROs
+0eW6S21fZd96/lHFcfmX7eE=
+=ebjX
 -----END PGP SIGNATURE-----

@@ -1544,6 +1544,11 @@ static int openDatabase(
   }else{
     isThreadsafe = sqlite3GlobalConfig.bFullMutex;
   }
+  if( flags & SQLITE_OPEN_PRIVATECACHE ){
+    flags &= SQLITE_OPEN_SHAREDCACHE;
+  }else if( sqlite3GlobalConfig.sharedCacheEnabled ){
+    flags |= SQLITE_OPEN_SHAREDCACHE;
+  }
 
   /* Remove harmful bits from the flags parameter
   **

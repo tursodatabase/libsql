@@ -1694,7 +1694,7 @@ int sqlite3BtreeOpen(
   ** existing BtShared object that we can share with
   */
   if( isMemdb==0 && zFilename && zFilename[0] ){
-    if( sqlite3GlobalConfig.sharedCacheEnabled ){
+    if( vfsFlags & SQLITE_OPEN_SHAREDCACHE ){
       int nFullPathname = pVfs->mxPathname+1;
       char *zFullPathname = sqlite3Malloc(nFullPathname);
       sqlite3_mutex *mutexShared;
