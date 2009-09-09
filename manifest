@@ -1,13 +1,13 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Added\sSQLITE_OPEN_SHAREDCACHE\sand\sSQLITE_OPEN_PRIVATECACHE\sflags\sas\npossibilities\sto\ssqlite3_open_v2(),\sto\soverride\sthe\sglobal\sshared\ncache\smode\ssetting.\s\sTicket\s[9fd0bc36639c15]
-D 2009-09-09T14:17:53
+C Update\sthe\sREADME\sfile\sto\sstate\sthat\sTCL\sis\srequired\sin\sorder\sto\srun\nthe\smakefiles\sfor\sSQLite.\s\sTicket\s[7d96113ff].
+D 2009-09-09T14:48:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 10010ddbf52e2503c7c49c7c0b7c7a096f8638a6
-F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
+F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
 F VERSION 7260e7baf934051dee42458206e915b75570f41d
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f1272b90f6078d301ab05592593e9415f2b2b90b
-R 30f716aefa81fdbf0f2b201c3325eab7
+P f509eb8b488bb39deda4ca88f66ed40c6784af02
+R da67957663dcbc2d53dc5652878fe664
 U drh
-Z 679e313c9aeecd41d844d799997842b6
+Z 777a74b9b9e0c4f6449961c8e129d00f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKp7kUoxKgR168RlERAqDGAKCNO6g4tKDZlhNsaEYURMls5+SB5gCgiROs
-0eW6S21fZd96/lHFcfmX7eE=
-=ebjX
+iD8DBQFKp8A5oxKgR168RlERAjt/AJ4gMrGikRwbSEyhUqLgxBxmA/wIJQCeKkVo
+Dy4rR7nKZ1aig9GbafKkLeA=
+=Bx64
 -----END PGP SIGNATURE-----
