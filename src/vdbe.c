@@ -4729,9 +4729,9 @@ case OP_Program: {        /* jump */
   pRt = &p->aMem[pOp->p3];
   assert( pProgram->nOp>0 );
   
-  /* If the SQLITE_NoRecTriggers flag it set, then recursive invocation of
+  /* If the SQLITE_RecTriggers flag is clear, then recursive invocation of
   ** triggers is disabled for backwards compatibility (flag set/cleared by
-  ** the "PRAGMA disable_recursive_triggers" command). 
+  ** the "PRAGMA recursive_triggers" command). 
   ** 
   ** It is recursive invocation of triggers, at the SQL level, that is 
   ** disabled. In some cases a single trigger may generate more than one 

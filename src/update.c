@@ -428,6 +428,13 @@ void sqlite3Update(
     sqlite3TableAffinityStr(v, pTab);
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
         TRIGGER_BEFORE, pTab, -1, regOldRowid, onError, addr);
+
+    /* The row-trigger may have deleted the row being updated. In this
+    ** case, jump to the next row. No updates or AFTER triggers are 
+    ** required. This behaviour - what happens when the row being updated
+    ** is deleted or renamed by a BEFORE trigger - is left undefined in the
+    ** documentation.  */
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, regOldRowid);
   }
 
   if( !isView ){

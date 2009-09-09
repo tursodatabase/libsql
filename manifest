@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sthe\sREADME\sfile\sto\sstate\sthat\sTCL\sis\srequired\sin\sorder\sto\srun\nthe\smakefiles\sfor\sSQLite.\s\sTicket\s[7d96113ff].
-D 2009-09-09T14:48:21
+C Add\ssome\stests\sthat\sinvolve\sBEFORE\sUPDATE\sor\sBEFORE\sDELETE\striggers\smessing\swith\sthe\srow\sbeing\supdated\sor\sdeleted.\sSQLite\sbehaviour\sin\sthis\sscenario\sis\sundefined,\sso\sthe\stests\sjust\scheck\sthat\sthe\sbehaviour\sis\srelatively\ssane\sand\sthere\sare\sno\scrashes.
+D 2009-09-09T15:06:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,11 +201,11 @@ F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 054c08339b3471c785f1cf041ed878a425850e33
-F src/update.c 7a2c0dad3badd60320ff12bb42ca1446c1f7da28
+F src/update.c e5f9f75aad9fd5c11a3f95a10e865df9a3fa9015
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c aba680ec9cf68890f3600a4c0c1936b1d789d111
+F src/vdbe.c 3c094e85665fee59a3329c2ed1d2af1156d97dda
 F src/vdbe.h 13e00f573bccf0c03e95fd3d4759da4ea9b75e60
 F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c b7e5f34436e298e2b0168e71323b5d97f7e9b080
@@ -685,7 +682,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 427f3036f0d1a8e65db99d3e98b9c34edf559104
+F test/triggerC.test 1ee7e3a78aec7b58eb040d0ae0a320e5bab35262
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -753,14 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f509eb8b488bb39deda4ca88f66ed40c6784af02
-R da67957663dcbc2d53dc5652878fe664
-U drh
-Z 777a74b9b9e0c4f6449961c8e129d00f
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKp8A5oxKgR168RlERAjt/AJ4gMrGikRwbSEyhUqLgxBxmA/wIJQCeKkVo
-Dy4rR7nKZ1aig9GbafKkLeA=
-=Bx64
------END PGP SIGNATURE-----
+P ba20091ae8146d276414f97527bf63e50fac8691
+R 4a5962d8497c5cdcdace65d61bc8bd95
+U dan
+Z 53c9ac18a32dd76d72b70838d180fa3b

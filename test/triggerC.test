@@ -667,7 +667,99 @@ do_test triggerC-6.3 {
 # Test some of the "undefined behaviour" associated with triggers. The
 # undefined behaviour occurs when a row being updated or deleted is 
 # manipulated by a BEFORE trigger.
-#
+# 
+do_test triggerC-7.1 {
+  execsql {
+    CREATE TABLE t8(x);
+    CREATE TABLE t7(a, b);
+    INSERT INTO t7 VALUES(1, 2);
+    INSERT INTO t7 VALUES(3, 4);
+    INSERT INTO t7 VALUES(5, 6);
+    CREATE TRIGGER t7t BEFORE UPDATE ON t7 BEGIN
+      DELETE FROM t7 WHERE a = 1;
+    END;
+    CREATE TRIGGER t7ta AFTER UPDATE ON t7 BEGIN
+      INSERT INTO t8 VALUES('after fired ' || old.rowid || '->' || new.rowid);
+    END;
+  }
+} {}
+do_test triggerC-7.2 {
+  execsql {
+    BEGIN;
+      UPDATE t7 SET b=7 WHERE a = 5;
+      SELECT * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {3 4 5 7 {after fired 3->3}}
+do_test triggerC-7.3 {
+  execsql {
+    BEGIN;
+      UPDATE t7 SET b=7 WHERE a = 1;
+      SELECT * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {3 4 5 6}
+
+do_test triggerC-7.4 {
+  execsql {
+    DROP TRIGGER t7t;
+    CREATE TRIGGER t7t BEFORE UPDATE ON t7 WHEN (old.rowid!=1 OR new.rowid!=8)
+    BEGIN
+      UPDATE t7 set rowid = 8 WHERE rowid=1;
+    END;
+  }
+} {}
+do_test triggerC-7.5 {
+  execsql {
+    BEGIN;
+      UPDATE t7 SET b=7 WHERE a = 5;
+      SELECT rowid, * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {2 3 4 3 5 7 8 1 2 {after fired 1->8} {after fired 3->3}}
+do_test triggerC-7.6 {
+  execsql {
+    BEGIN;
+      UPDATE t7 SET b=7 WHERE a = 1;
+      SELECT rowid, * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {2 3 4 3 5 6 8 1 2 {after fired 1->8}}
+
+do_test triggerC-7.7 {
+  execsql {
+    DROP TRIGGER t7t;
+    DROP TRIGGER t7ta;
+    CREATE TRIGGER t7t BEFORE DELETE ON t7 BEGIN
+      UPDATE t7 set rowid = 8 WHERE rowid=1;
+    END;
+    CREATE TRIGGER t7ta AFTER DELETE ON t7 BEGIN
+      INSERT INTO t8 VALUES('after fired ' || old.rowid);
+    END;
+  }
+} {}
+do_test triggerC-7.8 {
+  execsql {
+    BEGIN;
+      DELETE FROM t7 WHERE a = 3;
+      SELECT rowid, * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {3 5 6 8 1 2 {after fired 2}}
+do_test triggerC-7.9 {
+  execsql {
+    BEGIN;
+      DELETE FROM t7 WHERE a = 1;
+      SELECT rowid, * FROM t7;
+      SELECT * FROM t8;
+    ROLLBACK;
+  }
+} {2 3 4 3 5 6 8 1 2}
 
 
 finish_test
