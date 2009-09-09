@@ -925,7 +925,15 @@ static void releaseOpenCnt(struct unixOpenCnt *pOpen){
         assert( pOpen->pNext->pPrev==pOpen );
         pOpen->pNext->pPrev = pOpen->pPrev;
       }
-      assert( !pOpen->pUnused );
+      assert( !pOpen->pUnused || threadsOverrideEachOthersLocks==0 );
+
+      /* If pOpen->pUnused is not null, then memory and file-descriptors
+      ** are leaked.
+      **
+      ** This will only happen if, under Linuxthreads, the user has opened
+      ** a transaction in one thread, then attempts to close the database
+      ** handle from another thread (without first unlocking the db file).
+      ** This is a misuse.  */
       sqlite3_free(pOpen);
     }
   }
