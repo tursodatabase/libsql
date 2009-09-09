@@ -1278,7 +1278,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   unixFile *pFile = (unixFile*)id;
   struct unixLockInfo *pLock = pFile->pLock;
   struct flock lock;
-  int s;
+  int s = 0;
   int tErrno;
 
   assert( pFile );

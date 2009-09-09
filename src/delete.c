@@ -467,7 +467,7 @@ void sqlite3GenerateRowDelete(
   int onconf         /* Default ON CONFLICT policy for triggers */
 ){
   Vdbe *v = pParse->pVdbe;        /* Vdbe */
-  int iOld;                       /* First register in OLD.* array */
+  int iOld = 0;                   /* First register in OLD.* array */
   int iLabel;                     /* Label resolved to end of generated code */
 
   /* Vdbe is guaranteed to have been allocated by this stage. */

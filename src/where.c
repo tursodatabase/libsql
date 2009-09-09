@@ -2082,6 +2082,10 @@ static int whereRangeScanEst(
     return rc;
   }
 range_est_fallback:
+#else
+  UNUSED_PARAMETER(pParse);
+  UNUSED_PARAMETER(p);
+  UNUSED_PARAMETER(nEq);
 #endif
   assert( pLower || pUpper );
   if( pLower && pUpper ){
