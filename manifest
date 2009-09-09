@@ -1,5 +1,8 @@
-C Add\sa\stest\scase\sto\sshow\sthat\s[/info/29ab7be99f|29ab7be99f]\sis\sfixed.
-D 2009-09-09T11:43:44
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Increase\sthe\ssize\sof\sbitvec\sobjects\sto\s1024\sbytes\son\s64-bit\ssystems.
+D 2009-09-09T12:41:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +107,7 @@ F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c d6a88bf8e81e6a079ccb8881002b327e42ec46b9
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
-F src/bitvec.c e08f6c1a9551b88081fc737916c6c3fd5029a6cf
+F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 873a82706e07604a638e02e12617983df8e8070a
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
@@ -750,7 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 28aa1f4ea8dad56ffedb31d6c2bc27c1d6be2407
-R 80b7a1780d7cab9e4645936f99f809bd
-U dan
-Z c6e1174b9890309839b16375abf3927f
+P 135d656a20a2a450955ed9ec57d9637cf31493c6
+R f91172640a09b757977e441541b57ec0
+U drh
+Z 997645a8d3a88141379209cea73b2e0e
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFKp6JxoxKgR168RlERAljzAJ9qUdcCxBF0PoRplZd+1q307qwxOQCgi1x0
+dP4jOO6AZZUJzlZM1fHDEUs=
+=rmmB
+-----END PGP SIGNATURE-----
