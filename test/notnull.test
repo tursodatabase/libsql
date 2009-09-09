@@ -502,4 +502,38 @@ do_test notnull-4.10 {
   }
 } {1 {t1.e may not be NULL}}
 
+# Test that bug 29ab7be99f is fixed.
+#
+do_test notnull-5.1 {
+  execsql {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(a, b NOT NULL);
+    CREATE TABLE t2(c, d);
+    INSERT INTO t2 VALUES(3, 4);
+    INSERT INTO t2 VALUES(5, NULL);
+  }
+}  {}
+do_test notnull-5.2 {
+  catchsql {
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 SELECT * FROM t2;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-5.3 {
+  execsql { SELECT * FROM t1 }
+} {1 2}
+do_test notnull-5.4 {
+  catchsql {
+    DELETE FROM t1;
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2);
+      INSERT INTO t1 SELECT * FROM t2;
+    COMMIT;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-5.5 {
+  execsql { SELECT * FROM t1 }
+} {1 2}
+
 finish_test
+
