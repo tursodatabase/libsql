@@ -193,5 +193,9 @@
 ** Maximum depth of recursion for triggers.
 */
 #ifndef SQLITE_MAX_TRIGGER_DEPTH
+#if defined(SQLITE_SMALL_STACK)
+# define SQLITE_MAX_TRIGGER_DEPTH 10
+#else
 # define SQLITE_MAX_TRIGGER_DEPTH 1000
+#endif
 #endif

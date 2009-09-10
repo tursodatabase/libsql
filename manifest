@@ -1,5 +1,5 @@
-C Trying\sto\sopen\sa\stransaction\sin\sone\sthread\sand\sclose\sit\sin\sanother\sis\sa\smisuse\swith\sLinuxThreads.\sDoing\sso\smay\scause\smemory\sand\sfile-descriptors\sto\sbe\sleaked.\sUpdate\san\sassert()\sand\ssome\stest\scases\sto\saccount\sfor\sthis.
-D 2009-09-09T18:46:53
+C Reduce\sdefault\sSQLITE_MAX_TRIGGER_DEPTH\swhen\sSQLITE_SMALL_STACK\sis\sdefined.
+D 2009-09-10T02:54:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -19,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bccfdabb9982b7e88a33470741f1d6ba14a6b684 x
+F configure bccfdabb9982b7e88a33470741f1d6ba14a6b684
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -164,7 +164,7 @@ F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 66914c7a4a8ad427dc3705e13df95763003ea8fb
-F src/sqliteLimit.h be44f7f46c14bb4c21870074b1e6f1ac0abd6701
+F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c 5eea5025c370d3a91ce0415f9d46f96fdc7aef44
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f0c72a53c5d57d7487b48a06a40816153f47aaac
-R d486036c6384ca6df6f85368b01b5fb2
-U dan
-Z 4b9f16e8e4998457495bb5a33267dcee
+P ef99eb57c536d82e7c19fd3d990c17793cc64a3f
+R 767244a606af9968027fdbe6674a6b72
+U shane
+Z 2e97ef3fc800a5cf6d56a3a73bebbd68
