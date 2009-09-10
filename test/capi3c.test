@@ -1321,4 +1321,38 @@ ifcapable utf16 {
   sqlite3_finalize $STMT
 }
 
+# Test decltype on some SELECT statements that contain sub-selects.
+#
+proc decltype {zSql} {
+  set ret [list]
+  set STMT [sqlite3_prepare_v2 db $zSql -1 TAIL]
+  for {set i 0} {$i < [sqlite3_column_count $STMT]} {incr i} {
+    lappend ret [sqlite3_column_decltype $STMT $i]
+  }
+  sqlite3_finalize $STMT
+  return $ret
+}
+do_test capi3c-24.1 {
+  execsql { CREATE TABLE t5(a INTEGER, b STRING, c DATETIME) }
+  decltype {SELECT * FROM t5}
+} {INTEGER STRING DATETIME}
+do_test capi3c-24.2 {
+  decltype {SELECT (SELECT c) FROM t5}
+} {DATETIME}
+do_test capi3c-24.3 {
+  decltype {SELECT (SELECT * FROM (SELECT c)) FROM t5}
+} {DATETIME}
+do_test capi3c-24.4 {
+  decltype {SELECT * FROM (SELECT * FROM t5 ORDER BY c LIMIT 1) ORDER BY b}
+} {INTEGER STRING DATETIME}
+do_test capi3c-24.5 {
+  decltype {
+    SELECT (SELECT x FROM (SELECT c AS x)) 
+    FROM (SELECT * FROM t5 ORDER BY c LIMIT 1) ORDER BY b
+  }
+} {DATETIME}
+do_test capi3c-24.3 {
+  decltype {SELECT (SELECT x FROM (SELECT t5.a AS x)) FROM t5}
+} {INTEGER}
+
 finish_test

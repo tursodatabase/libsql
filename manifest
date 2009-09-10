@@ -1,5 +1,5 @@
-C Reduce\sdefault\sSQLITE_MAX_TRIGGER_DEPTH\swhen\sSQLITE_SMALL_STACK\sis\sdefined.
-D 2009-09-10T02:54:49
+C Remove\san\sALWAYS\smacro\saround\san\sexpression\sthat\sis\ssometimes\sfalse.
+D 2009-09-10T10:15:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
-F src/select.c a7a075456d4e640ffd7d0a33202d306c69c88f72
+F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
@@ -266,7 +266,7 @@ F test/cache.test 3ff445c445742a7b6b9ba6e1d62a25263f9424b9
 F test/capi2.test 172c717ed101e78e0798dd21b9896a22366f35b4
 F test/capi3.test 168e2cd66c58c510955b0f299750e4de73b8d952
 F test/capi3b.test 664eb55318132f292f2c436f90906f578cad6b97
-F test/capi3c.test 946a95fc028c967aa6d9c8f6f527d1d3a748b68a
+F test/capi3c.test d9d293ce8fd4dc2944ce2dae5718fc7a6184a567
 F test/capi3d.test 57d83b690d7364bde02cddbf8339a4b50d80ce23
 F test/cast.test 166951664a0b0a2e0f8fb5997a152490c6363932
 F test/check.test b897cd3cc839b34b31cdd073e9882ccd03da977b
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ef99eb57c536d82e7c19fd3d990c17793cc64a3f
-R 767244a606af9968027fdbe6674a6b72
-U shane
-Z 2e97ef3fc800a5cf6d56a3a73bebbd68
+P 913fb70ea85f05d94db5cf2e692a7c8b7489e3ba
+R 0fa996f8c14954d9063c15cdbb2d4607
+U dan
+Z 5388363c4cc3ec0e91ee2d40bcc75a97
