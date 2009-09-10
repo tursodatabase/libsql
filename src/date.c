@@ -448,7 +448,7 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
   x.tz = 0;
   x.validJD = 0;
   computeJD(&x);
-  t = x.iJD/1000 - 21086676*(i64)10000;
+  t = (time_t)(x.iJD/1000 - 21086676*(i64)10000);
 #ifdef HAVE_LOCALTIME_R
   {
     struct tm sLocal;
