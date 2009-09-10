@@ -18,6 +18,16 @@
 */
 #include "sqliteInt.h"
 
+#ifdef SQLITE_DEBUG
+/*
+** For debugging purposes, record when the mutex subsystem is initialized
+** and uninitialized so that we can assert() if there is an attempt to
+** allocate a mutex while the system is uninitialized.
+*/
+static SQLITE_WSD int mutexIsInit = 0;
+#endif /* SQLITE_DEBUG */
+
+
 #ifndef SQLITE_MUTEX_OMIT
 /*
 ** Initialize the mutex system.
@@ -42,6 +52,10 @@ int sqlite3MutexInit(void){
     rc = sqlite3GlobalConfig.mutex.xMutexInit();
   }
 
+#ifdef SQLITE_DEBUG
+  GLOBAL(int, mutexIsInit) = 1;
+#endif
+
   return rc;
 }
 
@@ -54,6 +68,11 @@ int sqlite3MutexEnd(void){
   if( sqlite3GlobalConfig.mutex.xMutexEnd ){
     rc = sqlite3GlobalConfig.mutex.xMutexEnd();
   }
+
+#ifdef SQLITE_DEBUG
+  GLOBAL(int, mutexIsInit) = 0;
+#endif
+
   return rc;
 }
 
@@ -71,6 +90,7 @@ sqlite3_mutex *sqlite3MutexAlloc(int id){
   if( !sqlite3GlobalConfig.bCoreMutex ){
     return 0;
   }
+  assert( GLOBAL(int, mutexIsInit) );
   return sqlite3GlobalConfig.mutex.xMutexAlloc(id);
 }
 
