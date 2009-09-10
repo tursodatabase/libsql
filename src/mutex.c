@@ -18,7 +18,7 @@
 */
 #include "sqliteInt.h"
 
-#ifdef SQLITE_DEBUG
+#if defined(SQLITE_DEBUG) && !defined(SQLITE_MUTEX_OMIT)
 /*
 ** For debugging purposes, record when the mutex subsystem is initialized
 ** and uninitialized so that we can assert() if there is an attempt to
