@@ -925,7 +925,9 @@ static void releaseOpenCnt(struct unixOpenCnt *pOpen){
         assert( pOpen->pNext->pPrev==pOpen );
         pOpen->pNext->pPrev = pOpen->pPrev;
       }
+#if SQLITE_THREADSAFE && defined(__linux__)
       assert( !pOpen->pUnused || threadsOverrideEachOthersLocks==0 );
+#endif
 
       /* If pOpen->pUnused is not null, then memory and file-descriptors
       ** are leaked.
