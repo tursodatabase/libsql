@@ -249,7 +249,8 @@ TESTSRC = \
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
   $(TOP)/src/build.c $(TOP)/src/date.c                                         \
-  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
+  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/mem5.c    \
+  $(TOP)/src/os.c                                                              \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \
