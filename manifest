@@ -1,5 +1,5 @@
-C Define\sSQLITE_TEST\swhen\scompiling\smem5.c\sfor\stestfixture.
-D 2009-09-10T18:17:10
+C Update\san\sr-tree\stest\sto\saccount\sfor\schanges\sin\sthe\squery\splanner.
+D 2009-09-10T18:26:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e360e1214027efbf62cf18ac80ec646d4081c272
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -79,7 +79,7 @@ F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
 F ext/rtree/rtree3.test 877a09c1a0c2b87af0f94f3a286e7dd3b65adf22
 F ext/rtree/rtree4.test 11724f766a74f48710998cdd7552cec140c55bf9
 F ext/rtree/rtree5.test 7d0643482829038f0263881ddf7e2d51bff1d60f
-F ext/rtree/rtree6.test fdfaf62bf026f1312c6eca658979800f3c0bc93f
+F ext/rtree/rtree6.test 119d991e8651fb1dbb1fa31af67ad280fbe4adf7
 F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dad2b74ad0a86ff07c77f0a60b26480fc0a2e54d
-R 00e41b67381a53d0ab1be8c3fdbff3bf
+P 6b16f3c9073e44a2d720a396078f0d71bda66df1
+R c32220aac934dd4cc540cc7227bac26e
 U dan
-Z c5d7481f76871570a1e1bbd020605c1d
+Z 1230e5bcf97268550d250b2174f25a9c

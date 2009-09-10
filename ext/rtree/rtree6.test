@@ -96,8 +96,8 @@ do_test rtree6.2.3 {
 do_test rtree6.2.4 {
   query_plan {SELECT * FROM t1,t2 WHERE v=10 and x1<10 and x2>10}
 } [list \
-  {TABLE t2}                              \
   {TABLE t1 VIRTUAL TABLE INDEX 2:CaEb}   \
+  {TABLE t2}                              \
 ]
 
 do_test rtree6.2.5 {
