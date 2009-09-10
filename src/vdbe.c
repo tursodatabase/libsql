@@ -3585,14 +3585,18 @@ case OP_NewRowid: {           /* out2-prerelease */
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
       if( pOp->p3 ){
+        /* Assert that P3 is a valid memory cell. */
+        assert( pOp->p3>0 );
         if( p->pFrame ){
           for(pFrame=p->pFrame; pFrame->pParent; pFrame=pFrame->pParent);
+          /* Assert that P3 is a valid memory cell. */
+          assert( pOp->p3<=pFrame->nMem );
           pMem = &pFrame->aMem[pOp->p3];
         }else{
+          /* Assert that P3 is a valid memory cell. */
+          assert( pOp->p3<=p->nMem );
           pMem = &p->aMem[pOp->p3];
         }
-        /* Assert that P3 is a valid memory cell. */
-        assert( pOp->p3>0 && pOp->p3<=(p->pFrame ? pFrame->nMem : p->nMem) );
 
         REGISTER_TRACE(pOp->p3, pMem);
         sqlite3VdbeMemIntegerify(pMem);

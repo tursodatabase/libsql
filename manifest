@@ -1,5 +1,5 @@
-C Update\san\sr-tree\stest\sto\saccount\sfor\schanges\sin\sthe\squery\splanner.
-D 2009-09-10T18:26:06
+C Cleanup\sof\swarnings\son\sMSVC\sbuild.
+D 2009-09-10T19:09:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e360e1214027efbf62cf18ac80ec646d4081c272
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -205,11 +205,11 @@ F src/update.c e5f9f75aad9fd5c11a3f95a10e865df9a3fa9015
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
-F src/vdbe.c 3c094e85665fee59a3329c2ed1d2af1156d97dda
+F src/vdbe.c 30bf8ff53174ae5db7d9f699a0f58c766fce5a66
 F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
 F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c b7e5f34436e298e2b0168e71323b5d97f7e9b080
-F src/vdbeaux.c c167e90225626870a91f5650658e85b6f7a33794
+F src/vdbeaux.c 99399b7f7248b96b5845c3b10bff0977102341bd
 F src/vdbeblob.c 4d6b702ca714a2d52552eee72d3e3191f8444eab
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6b16f3c9073e44a2d720a396078f0d71bda66df1
-R c32220aac934dd4cc540cc7227bac26e
-U dan
-Z 1230e5bcf97268550d250b2174f25a9c
+P e5ce66d40bd68dc014071f7830112fa3b1d72948
+R 04bd1b4b03b4435f6d9dfff4d4ada826
+U shane
+Z ff1718cbce465b271b7903830a0be3d6

@@ -1313,7 +1313,7 @@ void sqlite3VdbeMakeReady(
   int nCursor,                   /* Number of cursors to allocate */
   int nArg,                      /* Maximum number of args in SubPrograms */
   int isExplain,                 /* True if the EXPLAIN keywords is present */
-  int usesStmtJournal             /* True to set Vdbe.usesStmtJournal */
+  int usesStmtJournal            /* True to set Vdbe.usesStmtJournal */
 ){
   int n;
   sqlite3 *db = p->db;
@@ -1349,7 +1349,7 @@ void sqlite3VdbeMakeReady(
     u8 *zEnd = (u8 *)&p->aOp[p->nOpAlloc];
     int nByte;
     resolveP2Values(p, &nArg);
-    p->usesStmtJournal = usesStmtJournal;
+    p->usesStmtJournal = (u8)usesStmtJournal;
     if( isExplain && nMem<10 ){
       nMem = 10;
     }
