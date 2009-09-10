@@ -1,5 +1,5 @@
-C Remove\san\sALWAYS\smacro\saround\san\sexpression\sthat\sis\ssometimes\sfalse.
-D 2009-09-10T10:15:59
+C Fix\sa\sproblem\swith\sthe\ssqlite3VdbeMayAbort()\sassert\sfailing\sfollowing\san\sOOM.
+D 2009-09-10T16:14:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 73ddeec9dd10b85876c5c2ce1fdce627e1dcc7f8
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 9c425425784c5d569bc0309c22251698ba906451
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c 5269733241f459705189aa39f4eacf18b10d7661
+F src/build.c 7569d7e263927530a75751fabd3e8889392f104a
 F src/callback.c f49c305dc94b78da948953c392963929c0e70f9b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
@@ -206,10 +206,10 @@ F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 3fe0eebea6d2311c1c2ab2962887d11f7a4dcfb0
 F src/vdbe.c 3c094e85665fee59a3329c2ed1d2af1156d97dda
-F src/vdbe.h 13e00f573bccf0c03e95fd3d4759da4ea9b75e60
+F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
 F src/vdbeInt.h 004dbb28a9195b6c85fe3255c7cc300ffd8b9453
 F src/vdbeapi.c b7e5f34436e298e2b0168e71323b5d97f7e9b080
-F src/vdbeaux.c 257f9ab8631b3f31e69a937f1fd8aa3adf3f4209
+F src/vdbeaux.c c167e90225626870a91f5650658e85b6f7a33794
 F src/vdbeblob.c 4d6b702ca714a2d52552eee72d3e3191f8444eab
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -750,7 +750,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 913fb70ea85f05d94db5cf2e692a7c8b7489e3ba
-R 0fa996f8c14954d9063c15cdbb2d4607
+P f2a9ee722c568e73f2a08fb6a2886719850f2923
+R 0b14469668328c64842d4f0eb53973f8
 U dan
-Z 5388363c4cc3ec0e91ee2d40bcc75a97
+Z db4c68226e60cda5c9b94fd0b4485956

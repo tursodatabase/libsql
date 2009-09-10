@@ -311,7 +311,7 @@ static Op *opIterNext(VdbeOpIter *p){
 }
 
 /*
-** Return true if the program stored in the VM passed as an argument may
+** Check if the program stored in the VM associated with pParse may
 ** throw an ABORT exception (causing the statement, but not transaction
 ** to be rolled back). This condition is true if the main program or any
 ** sub-programs contains any of the following:
@@ -322,10 +322,15 @@ static Op *opIterNext(VdbeOpIter *p){
 **   *  OP_VUpdate
 **   *  OP_VRename
 **
-** This function is only used as part of an assert() statement. 
+** Then check that the value of Parse.mayAbort is true if an
+** ABORT may be thrown, or false otherwise. Return true if it does
+** match, or false otherwise. This function is intended to be used as
+** part of an assert statement in the compiler. Similar to:
+**
+**   assert( sqlite3VdbeAssertMayAbort(pParse->pVdbe, pParse->mayAbort) );
 */
-int sqlite3VdbeMayAbort(Vdbe *v){
-  int mayAbort = 0;
+int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
+  int hasAbort = 0;
   Op *pOp;
   VdbeOpIter sIter;
   memset(&sIter, 0, sizeof(sIter));
@@ -337,13 +342,18 @@ int sqlite3VdbeMayAbort(Vdbe *v){
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && (pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))
     ){
-      mayAbort = 1;
+      hasAbort = 1;
       break;
     }
   }
-
   sqlite3DbFree(v->db, sIter.apSub);
-  return mayAbort;
+
+  /* Return true if hasAbort==mayAbort. Or if a malloc failure occured.
+  ** If malloc failed, then the while() loop above may not have iterated
+  ** through all opcodes and hasAbort may be set incorrectly. Return
+  ** true for this case to prevent the assert() in the callers frame
+  ** from failing.  */
+  return ( v->db->mallocFailed || hasAbort==mayAbort );
 }
 #endif
 
