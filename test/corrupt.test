@@ -226,6 +226,9 @@ do_test corrupt-5.2 {
   catchsql { SELECT * FROM sqlite_master }
 } {1 {database disk image is malformed}}
 
+# At one point, the specific corruption caused by this test case was
+# causing a buffer overwrite. Although a crash was never demonstrated,
+# running this testcase under valgrind revealed the problem.
 do_test corrupt-6.1 {
   db close
   file delete -force test.db test.db-journal
@@ -252,6 +255,6 @@ do_test corrupt-6.1 {
   sqlite3 db test.db 
 
   catchsql { INSERT INTO t1 VALUES( randomblob(10) ) }
-} {}
+} {1 {database disk image is malformed}}
 
 finish_test
