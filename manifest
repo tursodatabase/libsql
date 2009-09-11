@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\san\s#ifndef\sso\sthat\sthe\sbuild\sworks\swith\sSQLITE_OMIT_ANALYZE\sagain.
-D 2009-09-11T14:05:07
+C Make\ssure\sthe\s(unsupported)\sconfigure\sscript\sin\sthe\ssource\stree\shas\nexecute\spermission\sprior\sto\sconstructing\sa\starball.\nTicket\s[65bbb65a47ce].
+D 2009-09-11T17:59:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e360e1214027efbf62cf18ac80ec646d4081c272
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure bccfdabb9982b7e88a33470741f1d6ba14a6b684
+F configure 1163c4a69c76777b60d3421c0f9d01274fd74699
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -96,7 +96,7 @@ F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 513946ce4429bf2723aef0d640eb4d2493deb68e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
-F publish.sh eaa7da7761f64b15ea5031bfdf893a659ee816cf
+F publish.sh c74b6c2b6b63435aa1b4b43b1396dfebfae84095
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3ea10434434d27a1300ba2b58e2c47c54909f4ff
-R 95c31677dc8d1c12479e36e634d801e1
+P b084828a771ec40be85f07c590ca99de4f6c24ee
+R 09f2797eec6c38dcf42883a44801dfe6
 U drh
-Z 7b513ccbcffd750f7a69cf7a6fd26e32
+Z 0401d563ccbe23b83cdef3c4b3ad23f0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKqlkXoxKgR168RlERArI2AJ9XBYwztmwaUuO/RYePR8pofGMuuACdHPzW
-fK5pOQuHlmeSj7hYiSdeyrU=
-=IU3N
+iD8DBQFKqpAgoxKgR168RlERAk2PAJ46S9pPS591tnmTt//OiykLeySjBACfTJsZ
+IV4v+lAmJqkYvkco+nbhsDo=
+=nHes
 -----END PGP SIGNATURE-----

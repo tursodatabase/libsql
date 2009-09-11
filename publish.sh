@@ -92,6 +92,7 @@ zip doc/sqlite-$VERSW.zip sqlite3.exe
 echo '***** BUILDING source archive'
 ORIGIN=`pwd`
 cd $srcdir
+chmod +x configure
 cd ..
 mv sqlite sqlite-$VERS
 EXCLUDE=`find sqlite-$VERS -print | egrep '(www/|art/|doc/|contrib/|_FOSSIL_)' | sed 's,^, --exclude ,'`
