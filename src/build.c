@@ -346,8 +346,9 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 */
 static void freeIndex(Index *p){
   sqlite3 *db = p->pTable->dbMem;
-  /* testcase( db==0 ); */
+#ifndef SQLITE_OMIT_ANALYZE
   sqlite3DeleteIndexSamples(p);
+#endif
   sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }
