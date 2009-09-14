@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Set\sthe\sexecute\spermission\sbit\son\s"configure".
-D 2009-09-11T18:28:53
+C Make\ssure\ssufficient\sspace\sis\sallocated\sfor\sat\sleast\sone\sVDBE\scursor\swhen\nautoincrement\sis\sused.\s\sTicket\s[a696379c1f088].
+D 2009-09-14T23:47:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e360e1214027efbf62cf18ac80ec646d4081c272
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,7 +112,7 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 9c425425784c5d569bc0309c22251698ba906451
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c f7da9f9a1df77d787965d0ff07d3de53c4ccade5
+F src/build.c 713f27807db7cda05a3e38fb12ad2297413901c8
 F src/callback.c f49c305dc94b78da948953c392963929c0e70f9b
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c 6d936393716d21e6dc0d4222b3443137a60ebe93
@@ -240,7 +240,7 @@ F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
 F test/auth.test 0f1237e10ab94108a0a4b3d463ddae3bddf31ed5
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
-F test/autoinc.test a5affdde12ed6c0430ac0bef02474cc21349ba9b
+F test/autoinc.test 381bba4bd610747564743f15a706a4b373c29817
 F test/autovacuum.test 25f891bc343a8bf5d9229e2e9ddab9f31a9ab5ec
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5e0e941f3adf09c5f315e27cefdc968c59aa574e
-R 09f2797eec6c38dcf42883a44801dfe6
+P f8c02b2b720e26a9ca7e35cb8015888fae538351
+R 350133137c3f0af4b0c84284f6d8572f
 U drh
-Z 4d73a53e048e4c6a3fc7a989adce0f3d
+Z b500a4abe8614a669e79470cf20f906b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKqpbpoxKgR168RlERAkqNAKCBPXXsOO7lGhd7TD8BQXyH7onFBQCfYHg7
-a2Oii3CV2NMkh6XCG1VK06w=
-=+NPL
+iD8DBQFKrtYRoxKgR168RlERAgrrAKCErouAmMYoH9zkzTR/jOkT6XOJDACfZKv+
+s9+4YOgaHtWs5h7ziUH6YfM=
+=Z6jj
 -----END PGP SIGNATURE-----

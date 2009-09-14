@@ -638,4 +638,29 @@ do_test autoinc-3928.7 {
   }
 } {t3928 21 t3928c 6}
 
+# Ticket [a696379c1f0886615541a48b35bd8181a80e88f8]
+do_test autoinc-a69637.1 {
+  db eval {
+    CREATE TABLE ta69637_1(x INTEGER PRIMARY KEY AUTOINCREMENT, y);
+    CREATE TABLE ta69637_2(z);
+    CREATE TRIGGER ra69637_1 AFTER INSERT ON ta69637_2 BEGIN
+      INSERT INTO ta69637_1(y) VALUES(new.z+1);
+    END;
+    INSERT INTO ta69637_2 VALUES(123);
+    SELECT * FROM ta69637_1;
+  }
+} {1 124}
+do_test autoinc-a69637.2 {
+  db eval {
+    CREATE VIEW va69637_2 AS SELECT * FROM ta69637_2;
+    CREATE TRIGGER ra69637_2 INSTEAD OF INSERT ON va69637_2 BEGIN
+      INSERT INTO ta69637_1(y) VALUES(new.z+10000);
+    END;
+    INSERT INTO va69637_2 VALUES(123);
+    SELECT * FROM ta69637_1;
+  }
+} {1 124 2 10123}
+
+
+
 finish_test

@@ -196,6 +196,9 @@ void sqlite3FinishCoding(Parse *pParse){
     sqlite3VdbeTrace(v, trace);
 #endif
     assert( pParse->iCacheLevel==0 );  /* Disables and re-enables match */
+    /* A minimum of one cursor is required if autoincrement is used
+    *  See ticket [a696379c1f08866] */
+    if( pParse->pAinc!=0 && pParse->nTab==0 ) pParse->nTab = 1;
     sqlite3VdbeMakeReady(v, pParse->nVar, pParse->nMem,
                          pParse->nTab, pParse->nMaxArg, pParse->explain,
                          pParse->isMultiWrite && pParse->mayAbort);
