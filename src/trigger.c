@@ -809,6 +809,7 @@ static TriggerPrg *codeRowTrigger(
   pProgram->nRef = 1;
   pPrg->pTrigger = pTrigger;
   pPrg->orconf = orconf;
+  pPrg->oldmask = 0xffffffff;
 
   /* Allocate and populate a new Parse context to use for coding the 
   ** trigger sub-program.  */

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\ssufficient\sspace\sis\sallocated\sfor\sat\sleast\sone\sVDBE\scursor\swhen\nautoincrement\sis\sused.\s\sTicket\s[a696379c1f088].
-D 2009-09-14T23:47:25
+C When\scoding\sa\strigger,\sassume\sthat\sthe\s"oldmask"\srequires\sall\scolumns\suntil\nwe\sknow\sotherwise.\s\sThat\spessimistic\sassumption\sassures\sthat\sall\snecessary\nparameters\sare\savailable\son\sa\scascading\sdelete\strigger.\nTicket\s[e25d9ea771f]
+D 2009-09-17T00:41:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in e360e1214027efbf62cf18ac80ec646d4081c272
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/test_tclvar.c 9e42fa59d3d2f064b7ab8628e7ab2dc8a9fe93d4
 F src/test_thread.c b8a1ab7ca1a632f18e8a361880d5d65eeea08eac
 F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
-F src/trigger.c 054c08339b3471c785f1cf041ed878a425850e33
+F src/trigger.c 45a2f8a80ea0bdf2b0c35c26c36024ccee3e4835
 F src/update.c e5f9f75aad9fd5c11a3f95a10e865df9a3fa9015
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
@@ -685,7 +685,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 1ee7e3a78aec7b58eb040d0ae0a320e5bab35262
+F test/triggerC.test 4b1c11936b717527f321a7509c562dee7a19a55f
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -753,14 +753,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f8c02b2b720e26a9ca7e35cb8015888fae538351
-R 350133137c3f0af4b0c84284f6d8572f
+P 2b2a1ef74e24857b8d18f6370894588fc2aa5ebb
+R 9a7876e95b7e3028c3294666c8d5f084
 U drh
-Z b500a4abe8614a669e79470cf20f906b
+Z a60c28ee99e48e9334fd675fa369d09c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKrtYRoxKgR168RlERAgrrAKCErouAmMYoH9zkzTR/jOkT6XOJDACfZKv+
-s9+4YOgaHtWs5h7ziUH6YfM=
-=Z6jj
+iD8DBQFKsYW1oxKgR168RlERAjObAJ4uhjAuQKCus/CBsGhTXVE95h0SiQCeNQRt
+3TI/iRBjobltvxwvLDAEUAs=
+=KUZ6
 -----END PGP SIGNATURE-----

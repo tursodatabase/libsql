@@ -761,5 +761,31 @@ do_test triggerC-7.9 {
   }
 } {2 3 4 3 5 6 8 1 2}
 
+# Ticket [e25d9ea771febc9c311928c1c01c3163dcb26643]
+# 
+do_test triggerC-9.1 {
+  execsql {
+    CREATE TABLE t9(a,b);
+    CREATE INDEX t9b ON t9(b);
+    INSERT INTO t9 VALUES(1,0);
+    INSERT INTO t9 VALUES(2,1);
+    INSERT INTO t9 VALUES(3,2);
+    INSERT INTO t9 SELECT a+3, a+2 FROM t9;
+    INSERT INTO t9 SELECT a+6, a+5 FROM t9;
+    SELECT a FROM t9 ORDER BY a;
+  }
+} {1 2 3 4 5 6 7 8 9 10 11 12}
+do_test triggerC-9.2 {
+  execsql {
+    CREATE TRIGGER t9r1 AFTER DELETE ON t9 BEGIN
+      DELETE FROM t9 WHERE b=old.a;
+    END;
+    DELETE FROM t9 WHERE b=4;
+    SELECT a FROM t9 ORDER BY a;
+  }
+} {1 2 3 4}
+ 
+
+
 
 finish_test
