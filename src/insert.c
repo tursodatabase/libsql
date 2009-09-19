@@ -979,6 +979,7 @@ void sqlite3Insert(
       sqlite3GenerateConstraintChecks(pParse, pTab, baseCur, regIns, aRegIdx,
           keyColumn>=0, 0, onError, endOfLoop, &isReplace
       );
+      sqlite3FkCheck(pParse, pTab, 0, 0, regIns);
       sqlite3CompleteInsertion(
           pParse, pTab, baseCur, regIns, aRegIdx, 0, appendFlag, isReplace==0
       );
@@ -1377,7 +1378,7 @@ void sqlite3GenerateConstraintChecks(
     sqlite3VdbeJumpHere(v, j3);
     sqlite3ReleaseTempReg(pParse, regR);
   }
-
+  
   if( pbMayReplace ){
     *pbMayReplace = seenReplace;
   }

@@ -28,27 +28,27 @@ catchsql { pragma recursive_triggers = off }
 catchsql { CREATE TABLE tbl(a, b ,c) }
 execsql {
     CREATE TRIGGER before_tbl_insert BEFORE INSERT ON tbl BEGIN SELECT CASE 
-	WHEN (new.a = 4) THEN RAISE(IGNORE) END;
+        WHEN (new.a = 4) THEN RAISE(IGNORE) END;
     END;
 
     CREATE TRIGGER after_tbl_insert AFTER INSERT ON tbl BEGIN SELECT CASE 
-	WHEN (new.a = 1) THEN RAISE(ABORT,    'Trigger abort') 
-	WHEN (new.a = 2) THEN RAISE(FAIL,     'Trigger fail') 
-	WHEN (new.a = 3) THEN RAISE(ROLLBACK, 'Trigger rollback') END;
+        WHEN (new.a = 1) THEN RAISE(ABORT,    'Trigger abort') 
+        WHEN (new.a = 2) THEN RAISE(FAIL,     'Trigger fail') 
+        WHEN (new.a = 3) THEN RAISE(ROLLBACK, 'Trigger rollback') END;
     END;
 }
 # ABORT
 do_test trigger3-1.1 {
     catchsql {
-	BEGIN;
+        BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (1, 5, 6);
     }
 } {1 {Trigger abort}}
 do_test trigger3-1.2 {
     execsql {
-	SELECT * FROM tbl;
-	ROLLBACK;
+        SELECT * FROM tbl;
+        ROLLBACK;
     }
 } {5 5 6}
 do_test trigger3-1.3 {
@@ -65,21 +65,21 @@ do_test trigger3-2.1 {
 } {1 {Trigger fail}}
 do_test trigger3-2.2 {
     execsql {
-	SELECT * FROM tbl;
-	ROLLBACK;
+        SELECT * FROM tbl;
+        ROLLBACK;
     }
 } {5 5 6 2 5 6}
 # ROLLBACK
 do_test trigger3-3.1 {
     catchsql {
-	BEGIN;
+        BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (3, 5, 6);
     }
 } {1 {Trigger rollback}}
 do_test trigger3-3.2 {
     execsql {
-	SELECT * FROM tbl;
+        SELECT * FROM tbl;
     }
 } {}
 
@@ -99,15 +99,15 @@ do_test trigger3-3.4 {
 # IGNORE
 do_test trigger3-4.1 {
     catchsql {
-	BEGIN;
+        BEGIN;
         INSERT INTO tbl VALUES (5, 5, 6);
         INSERT INTO tbl VALUES (4, 5, 6);
     }
 } {0 {}}
 do_test trigger3-4.2 {
     execsql {
-	SELECT * FROM tbl;
-	ROLLBACK;
+        SELECT * FROM tbl;
+        ROLLBACK;
     }
 } {5 5 6}
 
@@ -118,23 +118,23 @@ execsql {INSERT INTO tbl VALUES(1, 2, 3);}
 execsql {INSERT INTO tbl VALUES(4, 5, 6);}
 execsql {
     CREATE TRIGGER before_tbl_update BEFORE UPDATE ON tbl BEGIN
-	SELECT CASE WHEN (old.a = 1) THEN RAISE(IGNORE) END;
+        SELECT CASE WHEN (old.a = 1) THEN RAISE(IGNORE) END;
     END;
 
     CREATE TRIGGER before_tbl_delete BEFORE DELETE ON tbl BEGIN
-	SELECT CASE WHEN (old.a = 1) THEN RAISE(IGNORE) END;
+        SELECT CASE WHEN (old.a = 1) THEN RAISE(IGNORE) END;
     END;
 }
 do_test trigger3-5.1 {
     execsql {
-	UPDATE tbl SET c = 10;
-	SELECT * FROM tbl;
+        UPDATE tbl SET c = 10;
+        SELECT * FROM tbl;
     }
 } {1 2 3 4 5 10}
 do_test trigger3-5.2 {
     execsql {
-	DELETE FROM tbl;
-	SELECT * FROM tbl;
+        DELETE FROM tbl;
+        SELECT * FROM tbl;
     }
 } {1 2 3}
 
@@ -142,15 +142,15 @@ do_test trigger3-5.2 {
 execsql {CREATE TABLE tbl2(a, b, c)}
 execsql {
     CREATE TRIGGER after_tbl2_insert AFTER INSERT ON tbl2 BEGIN
-	UPDATE tbl SET c = 10;
+        UPDATE tbl SET c = 10;
         INSERT INTO tbl2 VALUES (new.a, new.b, new.c);
     END;
 }
 do_test trigger3-6 {
     execsql {
-	INSERT INTO tbl2 VALUES (1, 2, 3);
-	SELECT * FROM tbl2;
-	SELECT * FROM tbl;
+        INSERT INTO tbl2 VALUES (1, 2, 3);
+        SELECT * FROM tbl2;
+        SELECT * FROM tbl;
     }
 } {1 2 3 1 2 3 1 2 3}
 
@@ -161,25 +161,25 @@ ifcapable view {
 execsql {CREATE VIEW tbl_view AS SELECT * FROM tbl}
 execsql {
     CREATE TRIGGER tbl_view_insert INSTEAD OF INSERT ON tbl_view BEGIN
-	SELECT CASE WHEN (new.a = 1) THEN RAISE(ROLLBACK, 'View rollback')
-	            WHEN (new.a = 2) THEN RAISE(IGNORE) 
-	            WHEN (new.a = 3) THEN RAISE(ABORT, 'View abort') END;
+        SELECT CASE WHEN (new.a = 1) THEN RAISE(ROLLBACK, 'View rollback')
+                    WHEN (new.a = 2) THEN RAISE(IGNORE) 
+                    WHEN (new.a = 3) THEN RAISE(ABORT, 'View abort') END;
     END;
 }
 
 do_test trigger3-7.1 {
     catchsql {
-	INSERT INTO tbl_view VALUES(1, 2, 3);
+        INSERT INTO tbl_view VALUES(1, 2, 3);
     }
 } {1 {View rollback}}
 do_test trigger3-7.2 {
     catchsql {
-	INSERT INTO tbl_view VALUES(2, 2, 3);
+        INSERT INTO tbl_view VALUES(2, 2, 3);
     }
 } {0 {}}
 do_test trigger3-7.3 {
     catchsql {
-	INSERT INTO tbl_view VALUES(3, 2, 3);
+        INSERT INTO tbl_view VALUES(3, 2, 3);
     }
 } {1 {View abort}}
 

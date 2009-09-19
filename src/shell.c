@@ -851,7 +851,7 @@ static int genfkey_create_triggers(
       "  /delete_action/\n"
       "END;\n"
 
-      /* The "BEFORE DELETE ON <referenced>" trigger. This trigger's job 
+      /* The "AFTER UPDATE ON <referenced>" trigger. This trigger's job 
       ** is to detect when the key columns of a row in the referenced table 
       ** to which one or more rows in the referencing table correspond are
       ** updated. The action taken depends on the value of the 'ON UPDATE' 

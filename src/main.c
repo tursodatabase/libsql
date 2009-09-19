@@ -731,6 +731,9 @@ void sqlite3RollbackAll(sqlite3 *db){
     sqlite3ResetInternalSchema(db, 0);
   }
 
+  /* Any deferred constraint violations have now been resolved. */
+  db->nDeferredCons = 0;
+
   /* If one has been configured, invoke the rollback-hook callback */
   if( db->xRollbackCallback && (inTrans || !db->autoCommit) ){
     db->xRollbackCallback(db->pRollbackArg);

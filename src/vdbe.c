@@ -872,10 +872,12 @@ case OP_Halt: {
     sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
   }
   rc = sqlite3VdbeHalt(p);
-  assert( rc==SQLITE_BUSY || rc==SQLITE_OK );
+  assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
   if( rc==SQLITE_BUSY ){
     p->rc = rc = SQLITE_BUSY;
   }else{
+    assert( rc==SQLITE_OK || p->rc==SQLITE_CONSTRAINT );
+    assert( rc==SQLITE_OK || db->nDeferredCons>0 );
     rc = p->rc ? SQLITE_ERROR : SQLITE_DONE;
   }
   goto vdbe_return;
@@ -2507,6 +2509,7 @@ case OP_Savepoint: {
     
         /* Link the new savepoint into the database handle's list. */
         pNew->pNext = db->pSavepoint;
+        pNew->nDeferredCons = db->nDeferredCons;
         db->pSavepoint = pNew;
       }
     }
@@ -2545,6 +2548,9 @@ case OP_Savepoint: {
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
+        if( (rc = sqlite3VdbeCheckDeferred(p))!=SQLITE_OK ){
+          goto vdbe_return;
+        }
         db->autoCommit = 1;
         if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
           p->pc = pc;
@@ -2577,7 +2583,10 @@ case OP_Savepoint: {
         db->nSavepoint--;
       }
 
-      /* If it is a RELEASE, then destroy the savepoint being operated on too */
+      /* If it is a RELEASE, then destroy the savepoint being operated on 
+      ** too. If it is a ROLLBACK TO, then set the number of deferred 
+      ** constraint violations present in the database to the value stored
+      ** when the savepoint was created.  */
       if( p1==SAVEPOINT_RELEASE ){
         assert( pSavepoint==db->pSavepoint );
         db->pSavepoint = pSavepoint->pNext;
@@ -2585,6 +2594,8 @@ case OP_Savepoint: {
         if( !isTransaction ){
           db->nSavepoint--;
         }
+      }else{
+        db->nDeferredCons = pSavepoint->nDeferredCons;
       }
     }
   }
@@ -2633,6 +2644,8 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db);
       db->autoCommit = 1;
+    }else if( (rc = sqlite3VdbeCheckDeferred(p))!=SQLITE_OK ){
+      goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
       if( sqlite3VdbeHalt(p)==SQLITE_BUSY ){
@@ -2720,6 +2733,11 @@ case OP_Transaction: {
         p->iStatement = db->nSavepoint + db->nStatement;
       }
       rc = sqlite3BtreeBeginStmt(pBt, p->iStatement);
+
+      /* Store the current value of the database handles deferred constraint
+      ** counter. If the statement transaction needs to be rolled back,
+      ** the value of this counter needs to be restored too.  */
+      p->nStmtDefCons = db->nDeferredCons;
     }
   }
   break;
@@ -4733,18 +4751,18 @@ case OP_Program: {        /* jump */
   pRt = &p->aMem[pOp->p3];
   assert( pProgram->nOp>0 );
   
-  /* If the SQLITE_RecTriggers flag is clear, then recursive invocation of
-  ** triggers is disabled for backwards compatibility (flag set/cleared by
-  ** the "PRAGMA recursive_triggers" command). 
+  /* If the p5 flag is clear, then recursive invocation of triggers is 
+  ** disabled for backwards compatibility (p5 is set if this sub-program
+  ** is really a trigger, not a foreign key action, and the flag set
+  ** and cleared by the "PRAGMA recursive_triggers" command is clear).
   ** 
   ** It is recursive invocation of triggers, at the SQL level, that is 
   ** disabled. In some cases a single trigger may generate more than one 
   ** SubProgram (if the trigger may be executed with more than one different 
   ** ON CONFLICT algorithm). SubProgram structures associated with a
   ** single trigger all have the same value for the SubProgram.token 
-  ** variable.
-  */
-  if( 0==(db->flags&SQLITE_RecTriggers) ){
+  ** variable.  */
+  if( pOp->p5 ){
     t = pProgram->token;
     for(pFrame=p->pFrame; pFrame && pFrame->token!=t; pFrame=pFrame->pParent);
     if( pFrame ) break;
@@ -4841,6 +4859,18 @@ case OP_Param: {           /* out2-prerelease */
 }
 
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
+
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+/* Opcode: DeferredCons P1 * * * *
+**
+** Increment the database handles "deferred constraint violation" counter
+** by P1 (P1 may be negative or positive).
+*/
+case OP_DeferredCons: {
+  db->nDeferredCons += pOp->p1;
+  break;
+}
+#endif /* #ifndef SQLITE_OMIT_FOREIGN_KEY */
 
 #ifndef SQLITE_OMIT_AUTOINCREMENT
 /* Opcode: MemMax P1 P2 * * *

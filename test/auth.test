@@ -2248,15 +2248,16 @@ do_test auth-4.3 {
   set authargs
 } [list \
   SQLITE_UPDATE v1     x  main {} \
-  SQLITE_INSERT v1chng {} main r2 \
-  SQLITE_READ   v1     x  main r2 \
-  SQLITE_READ   v1     x  main r2 \
   SQLITE_SELECT {}     {} {}   v1 \
   SQLITE_READ   t2     a  main v1 \
   SQLITE_READ   t2     b  main v1 \
   SQLITE_SELECT {}     {} {}   {} \
   SQLITE_READ   v1     x  main v1 \
+  SQLITE_INSERT v1chng {} main r2 \
+  SQLITE_READ   v1     x  main r2 \
+  SQLITE_READ   v1     x  main r2 \
 ]
+
 do_test auth-4.4 {
   execsql {
     CREATE TRIGGER r3 INSTEAD OF DELETE ON v1 BEGIN

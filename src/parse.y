@@ -196,9 +196,9 @@ id(A) ::= INDEXED(X).    {A = X;}
 // This obviates the need for the "id" nonterminal.
 //
 %fallback ID
-  ABORT AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW CONFLICT
-  DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
-  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH PLAN
+  ABORT ACTION AFTER ANALYZE ASC ATTACH BEFORE BEGIN BY CASCADE CAST COLUMNKW
+  CONFLICT DATABASE DEFERRED DESC DETACH EACH END EXCLUSIVE EXPLAIN FAIL FOR
+  IGNORE IMMEDIATE INITIALLY INSTEAD LIKE_KW MATCH NO PLAN
   QUERY KEY OF OFFSET PRAGMA RAISE RELEASE REPLACE RESTRICT ROW ROLLBACK
   SAVEPOINT TEMP TRIGGER VACUUM VIEW VIRTUAL
 %ifdef SQLITE_OMIT_COMPOUND_SELECT
@@ -314,20 +314,20 @@ autoinc(X) ::= AUTOINCR.  {X = 1;}
 // check fails.
 //
 %type refargs {int}
-refargs(A) ::= .                     { A = OE_Restrict * 0x010101; }
+refargs(A) ::= .                     { A = OE_None * 0x010101; }
 refargs(A) ::= refargs(X) refarg(Y). { A = (X & ~Y.mask) | Y.value; }
 %type refarg {struct {int value; int mask;}}
 refarg(A) ::= MATCH nm.              { A.value = 0;     A.mask = 0x000000; }
 refarg(A) ::= ON DELETE refact(X).   { A.value = X;     A.mask = 0x0000ff; }
 refarg(A) ::= ON UPDATE refact(X).   { A.value = X<<8;  A.mask = 0x00ff00; }
-refarg(A) ::= ON INSERT refact(X).   { A.value = X<<16; A.mask = 0xff0000; }
 %type refact {int}
 refact(A) ::= SET NULL.              { A = OE_SetNull; }
 refact(A) ::= SET DEFAULT.           { A = OE_SetDflt; }
 refact(A) ::= CASCADE.               { A = OE_Cascade; }
 refact(A) ::= RESTRICT.              { A = OE_Restrict; }
+refact(A) ::= NO ACTION.             { A = OE_None; }
 %type defer_subclause {int}
-defer_subclause(A) ::= NOT DEFERRABLE init_deferred_pred_opt(X).  {A = X;}
+defer_subclause(A) ::= NOT DEFERRABLE init_deferred_pred_opt.     {A = 0;}
 defer_subclause(A) ::= DEFERRABLE init_deferred_pred_opt(X).      {A = X;}
 %type init_deferred_pred_opt {int}
 init_deferred_pred_opt(A) ::= .                       {A = 0;}

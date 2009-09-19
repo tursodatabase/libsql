@@ -423,6 +423,7 @@ void sqlite3SchemaFree(void *p){
     sqlite3DeleteTable(pTab);
   }
   sqlite3HashClear(&temp1);
+  sqlite3HashClear(&pSchema->fkeyHash);
   pSchema->pSeqTab = 0;
   pSchema->flags &= ~DB_SchemaLoaded;
 }
@@ -444,6 +445,7 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
     sqlite3HashInit(&p->tblHash);
     sqlite3HashInit(&p->idxHash);
     sqlite3HashInit(&p->trigHash);
+    sqlite3HashInit(&p->fkeyHash);
     p->enc = SQLITE_UTF8;
   }
   return p;

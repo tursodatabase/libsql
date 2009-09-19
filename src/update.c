@@ -115,12 +115,12 @@ void sqlite3Update(
   int iDb;               /* Database containing the table being updated */
   int j1;                /* Addresses of jump instructions */
   int okOnePass;         /* True for one-pass algorithm without the FIFO */
+  int hasFK;             /* True if foreign key processing is required */
 
 #ifndef SQLITE_OMIT_TRIGGER
   int isView;                  /* Trying to update a view */
   Trigger *pTrigger;           /* List of triggers on pTab, if required */
 #endif
-  u32 oldmask = 0;        /* Mask of OLD.* columns in use */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -158,6 +158,8 @@ void sqlite3Update(
 # undef isView
 # define isView 0
 #endif
+
+  hasFK = sqlite3FkRequired(pParse, pTab, pChanges);
 
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
@@ -273,11 +275,11 @@ void sqlite3Update(
 
   /* Allocate required registers. */
   regOldRowid = regNewRowid = ++pParse->nMem;
-  if( pTrigger ){
+  if( pTrigger || hasFK ){
     regOld = pParse->nMem + 1;
     pParse->nMem += pTab->nCol;
   }
-  if( chngRowid || pTrigger ){
+  if( chngRowid || pTrigger || hasFK ){
     regNewRowid = ++pParse->nMem;
   }
   regNew = pParse->nMem + 1;
@@ -288,10 +290,6 @@ void sqlite3Update(
   if( isView ){
     sqlite3AuthContextPush(pParse, &sContext, pTab->zName);
   }
-
-  /* If there are any triggers, set oldmask and new_col_mask. */
-  oldmask = sqlite3TriggerOldmask(
-      pParse, pTrigger, TK_UPDATE, pChanges, pTab, onError);
 
   /* If we are trying to update a view, realize that view into
   ** a ephemeral table.
@@ -378,9 +376,21 @@ void sqlite3Update(
   ** for example, then jump to the next iteration of the RowSet loop.  */
   sqlite3VdbeAddOp3(v, OP_NotExists, iCur, addr, regOldRowid);
 
+  /* If the record number will change, set register regNewRowid to
+  ** contain the new value. If the record number is not being modified,
+  ** then regNewRowid is the same register as regOldRowid, which is
+  ** already populated.  */
+  assert( chngRowid || pTrigger || hasFK || regOldRowid==regNewRowid );
+  if( chngRowid ){
+    sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
+    sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid);
+  }
+
   /* If there are triggers on this table, populate an array of registers 
   ** with the required old.* column data.  */
-  if( pTrigger ){
+  if( hasFK || pTrigger ){
+    u32 oldmask = sqlite3FkOldmask(pParse, pTab, pChanges);
+    oldmask |= sqlite3TriggerOldmask(pParse, pTrigger, pChanges, pTab, onError);
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]<0 || oldmask==0xffffffff || (oldmask & (1<<i)) ){
         sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regOld+i);
@@ -389,18 +399,9 @@ void sqlite3Update(
         sqlite3VdbeAddOp2(v, OP_Null, 0, regOld+i);
       }
     }
-  }
-
-  /* If the record number will change, set register regNewRowid to
-  ** contain the new value. If the record number is not being modified,
-  ** then regNewRowid is the same register as regOldRowid, which is
-  ** already populated.  */
-  assert( chngRowid || pTrigger || regOldRowid==regNewRowid );
-  if( chngRowid ){
-    sqlite3ExprCode(pParse, pRowidExpr, regNewRowid);
-    sqlite3VdbeAddOp1(v, OP_MustBeInt, regNewRowid);
-  }else if( pTrigger ){
-    sqlite3VdbeAddOp2(v, OP_Copy, regOldRowid, regNewRowid);
+    if( chngRowid==0 ){
+      sqlite3VdbeAddOp2(v, OP_Copy, regOldRowid, regNewRowid);
+    }
   }
 
   /* Populate the array of registers beginning at regNew with the new
@@ -443,6 +444,9 @@ void sqlite3Update(
     sqlite3GenerateConstraintChecks(pParse, pTab, iCur, regNewRowid,
         aRegIdx, (chngRowid?regOldRowid:0), 1, onError, addr, 0);
 
+    /* Do FK constraint checks. */
+    sqlite3FkCheck(pParse, pTab, pChanges, regOldRowid, regNewRowid);
+
     /* Delete the index entries associated with the current record.  */
     j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
     sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
@@ -455,6 +459,11 @@ void sqlite3Update(
   
     /* Insert the new index entries and the new record. */
     sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, 0, 0);
+
+    /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
+    ** handle rows (possibly in other tables) that refer via a foreign key
+    ** to the row just updated. */ 
+    sqlite3FkActions(pParse, pTab, pChanges, regOldRowid);
   }
 
   /* Increment the row counter 

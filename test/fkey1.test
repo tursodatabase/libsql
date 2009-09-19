@@ -46,7 +46,7 @@ do_test fkey1-1.1 {
 do_test fkey1-1.2 {
   execsql {
     CREATE TABLE t3(
-      a INTEGER REFERENCES t2 ON INSERT RESTRICT,
+      a INTEGER REFERENCES t2,
       b INTEGER REFERENCES t1,
       FOREIGN KEY (a,b) REFERENCES t2(x,y)
     );
@@ -80,9 +80,9 @@ do_test fkey1-3.1 {
     );
     PRAGMA foreign_key_list(t6);
   }
-} [concat            \
-  {0 0 t5 e c RESTRICT RESTRICT NONE}       \
-  {1 0 t5 d {} RESTRICT RESTRICT NONE}      \
+} [concat                                         \
+  {0 0 t5 e c {NO ACTION} {NO ACTION} NONE}       \
+  {1 0 t5 d {} {NO ACTION} {NO ACTION} NONE}      \
 ]
 do_test fkey1-3.2 {
   execsql {
@@ -91,9 +91,9 @@ do_test fkey1-3.2 {
     );
     PRAGMA foreign_key_list(t7);
   }
-} [concat                        \
-  {0 0 t5 d a RESTRICT RESTRICT NONE} \
-  {0 1 t5 e b RESTRICT RESTRICT NONE} \
+} [concat                                   \
+  {0 0 t5 d a {NO ACTION} {NO ACTION} NONE} \
+  {0 1 t5 e b {NO ACTION} {NO ACTION} NONE} \
 ]
 do_test fkey1-3.3 {
   execsql {

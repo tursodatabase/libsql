@@ -670,6 +670,7 @@ struct Schema {
   Hash tblHash;        /* All tables indexed by name */
   Hash idxHash;        /* All (named) indices indexed by name */
   Hash trigHash;       /* All triggers indexed by name */
+  Hash fkeyHash;       /* All foreign keys by referenced table name */
   Table *pSeqTab;      /* The sqlite_sequence table used by AUTOINCREMENT */
   u8 file_format;      /* Schema format version for this file */
   u8 enc;              /* Text encoding used by this database */
@@ -860,6 +861,9 @@ struct sqlite3 {
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+  i64 nDeferredCons;            /* Net deferred constraints this transaction. */
+#endif
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MASTER 
@@ -916,6 +920,7 @@ struct sqlite3 {
 #define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
 #define SQLITE_ReverseOrder   0x00100000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x00200000  /* Enable recursive triggers */
+#define SQLITE_ForeignKeys    0x00400000  /* Enforce foreign key constraints  */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -1002,6 +1007,7 @@ struct FuncDef {
 */
 struct Savepoint {
   char *zName;                        /* Savepoint name (nul-terminated) */
+  int nDeferredCons;                  /* Number of deferred fk violations */
   Savepoint *pNext;                   /* Parent savepoint (if any) */
 };
 
@@ -1281,11 +1287,15 @@ struct FKey {
   Table *pFrom;     /* The table that contains the REFERENCES clause */
   FKey *pNextFrom;  /* Next foreign key in pFrom */
   char *zTo;        /* Name of table that the key points to */
+  FKey *pNextTo;    /* Next foreign key on table named zTo */
+  FKey *pPrevTo;    /* Previous foreign key on table named zTo */
   int nCol;         /* Number of columns in this key */
   u8 isDeferred;    /* True if constraint checking is deferred till COMMIT */
   u8 updateConf;    /* How to resolve conflicts that occur on UPDATE */
   u8 deleteConf;    /* How to resolve conflicts that occur on DELETE */
   u8 insertConf;    /* How to resolve conflicts that occur on INSERT */
+  Trigger *pOnUpdate;  /* Trigger for AFTER UPDATE ON zTo */
+  Trigger *pOnDelete;  /* Trigger for AFTER DELETE ON zTo */
   struct sColMap {  /* Mapping of columns in pFrom to columns in zTo */
     int iFrom;         /* Index of column in pFrom */
     char *zCol;        /* Name of column in zTo.  If 0 use PRIMARY KEY */
@@ -2586,7 +2596,7 @@ void sqlite3SrcListShiftJoinType(SrcList*);
 void sqlite3SrcListAssignCursors(Parse*, SrcList*);
 void sqlite3IdListDelete(sqlite3*, IdList*);
 void sqlite3SrcListDelete(sqlite3*, SrcList*);
-void sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
+Index *sqlite3CreateIndex(Parse*,Token*,Token*,SrcList*,ExprList*,int,Token*,
                         Token*, int, int);
 void sqlite3DropIndex(Parse*, SrcList*, int);
 int sqlite3Select(Parse*, Select*, SelectDest*);
@@ -2694,6 +2704,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   Trigger *sqlite3TriggerList(Parse *, Table *);
   void sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
                             int, int, int, int);
+  void sqlite3CodeRowTriggerDirect(Parse *, Trigger *, Table *, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
   TriggerStep *sqlite3TriggerSelectStep(sqlite3*,Select*);
@@ -2703,7 +2714,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   TriggerStep *sqlite3TriggerDeleteStep(sqlite3*,Token*, Expr*);
   void sqlite3DeleteTrigger(sqlite3*, Trigger*);
   void sqlite3UnlinkAndDeleteTrigger(sqlite3*,int,const char*);
-  u32 sqlite3TriggerOldmask(Parse*,Trigger*,int,ExprList*,Table*,int);
+  u32 sqlite3TriggerOldmask(Parse*,Trigger*,ExprList*,Table*,int);
 # define sqlite3ParseToplevel(p) ((p)->pToplevel ? (p)->pToplevel : (p))
 #else
 # define sqlite3TriggersExist(B,C,D,E,F) 0
@@ -2713,7 +2724,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
 # define sqlite3TriggerList(X, Y) 0
 # define sqlite3ParseToplevel(p) p
-# define sqlite3TriggerOldmask(A,B,C,D,E,F) 0
+# define sqlite3TriggerOldmask(A,B,C,D,E) 0
 #endif
 
 int sqlite3JoinType(Parse*, Token*, Token*, Token*);
@@ -2931,7 +2942,19 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 int sqlite3TempInMemory(const sqlite3*);
 VTable *sqlite3GetVTable(sqlite3*, Table*);
 
-
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+  void sqlite3FkCheck(Parse*, Table*, ExprList*, int, int);
+  void sqlite3FkActions(Parse*, Table*, ExprList*, int);
+  void sqlite3FkDelete(Table*);
+  int sqlite3FkRequired(Parse*, Table*, ExprList*);
+  u32 sqlite3FkOldmask(Parse*, Table*, ExprList*);
+#else
+  #define sqlite3FkCheck(a,b,c,d,e)
+  #define sqlite3FkActions(a,b,c,d)
+  #define sqlite3FkDelete(a)
+  #define sqlite3FkRequired(a,b,c) 0
+  #define sqlite3FkOldmask(a,b,c)  0
+#endif
 
 /*
 ** Available fault injectors.  Should be numbered beginning with 0.

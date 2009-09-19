@@ -191,6 +191,9 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     ** flag if there are any active statements. */
     { "read_uncommitted",         SQLITE_ReadUncommitted },
     { "recursive_triggers",       SQLITE_RecTriggers },
+
+    /* TODO: Prevent this flag from being set if not in auto-commit mode? */
+    { "foreign_keys",             SQLITE_ForeignKeys },
   };
   int i;
   const struct sPragmaType *p;
@@ -231,11 +234,12 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 static const char *actionName(u8 action){
   const char *zName;
   switch( action ){
-    case OE_SetNull:  zName = "SET NULL";            break;
-    case OE_SetDflt:  zName = "SET DEFAULT";         break;
-    case OE_Cascade:  zName = "CASCADE";             break;
-    default:          zName = "RESTRICT";  
-                      assert( action==OE_Restrict ); break;
+    case OE_SetNull:  zName = "SET NULL";        break;
+    case OE_SetDflt:  zName = "SET DEFAULT";     break;
+    case OE_Cascade:  zName = "CASCADE";         break;
+    case OE_Restrict: zName = "RESTRICT";        break;
+    default:          zName = "NO ACTION";  
+                      assert( action==OE_None ); break;
   }
   return zName;
 }

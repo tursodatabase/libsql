@@ -1,0 +1,564 @@
+# 2009 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for foreign keys.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+#-------------------------------------------------------------------------
+# Test structure:
+#
+# fkey2-1.*: Simple tests to check that immediate and deferred foreign key 
+#            constraints work when not inside a transaction.
+#            
+# fkey2-2.*: Tests to verify that deferred foreign keys work inside
+#            explicit transactions (i.e that processing really is deferred).
+#
+# fkey2-3.*: Tests that a statement transaction is rolled back if an
+#            immediate foreign key constraint is violated.
+#
+# fkey2-4.*: Test that FK actions may recurse even when recursive triggers
+#            are disabled.
+#
+# fkey2-5.*: Check that if foreign-keys are enabled, it is not possible
+#            to write to an FK column using the incremental blob API.
+#
+# fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
+#            command. Recycled to test the built-in implementation.
+#
+
+
+proc drop_all_tables {{db db}} {
+  set tbls [execsql {SELECT name FROM sqlite_master WHERE type = 'table'}]
+  foreach t [execsql {
+    SELECT name FROM sqlite_master 
+    WHERE type = 'table' AND name NOT like 'sqlite_%'
+  }] {
+    execsql "DROP TABLE $t"
+  }
+}
+
+
+execsql { PRAGMA foreign_keys = on }
+
+set FkeySimpleSchema {
+  PRAGMA foreign_keys = on;
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  CREATE TABLE t2(c REFERENCES t1(a) /D/ , d);
+
+  CREATE TABLE t3(a PRIMARY KEY, b);
+  CREATE TABLE t4(c REFERENCES t3 /D/, d);
+
+  CREATE TABLE t5(a INTEGER PRIMARY KEY, b);
+  CREATE TABLE t6(c REFERENCES t5(oid) /D/, d);
+
+  CREATE TABLE t7(a, b INTEGER PRIMARY KEY);
+  CREATE TABLE t8(c REFERENCES t7 /D/, d);
+
+  CREATE TABLE t9(a REFERENCES nosuchtable, b);
+  CREATE TABLE t10(a REFERENCES t9(c) /D/, b);
+}
+set FkeySimpleTests {
+  1.1  "INSERT INTO t2 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  1.2  "INSERT INTO t1 VALUES(1, 2)"      {0 {}}
+  1.3  "INSERT INTO t2 VALUES(1, 3)"      {0 {}}
+  1.4  "INSERT INTO t2 VALUES(2, 4)"      {1 {foreign key constraint failed}}
+  1.5  "INSERT INTO t2 VALUES(NULL, 4)"   {0 {}}
+  1.6  "UPDATE t2 SET c=2 WHERE d=4"      {1 {foreign key constraint failed}}
+  1.7  "UPDATE t2 SET c=1 WHERE d=4"      {0 {}}
+  1.9  "UPDATE t2 SET c=1 WHERE d=4"      {0 {}}
+  1.10 "UPDATE t2 SET c=NULL WHERE d=4"   {0 {}}
+  1.11 "DELETE FROM t1 WHERE a=1"         {1 {foreign key constraint failed}}
+  1.12 "UPDATE t1 SET a = 2"              {1 {foreign key constraint failed}}
+  1.13 "UPDATE t1 SET a = 1"              {0 {}}
+
+  2.1  "INSERT INTO t4 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  2.2  "INSERT INTO t3 VALUES(1, 2)"      {0 {}}
+  2.3  "INSERT INTO t4 VALUES(1, 3)"      {0 {}}
+
+  3.1  "INSERT INTO t6 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  3.2  "INSERT INTO t5 VALUES(1, 2)"      {0 {}}
+  3.3  "INSERT INTO t6 VALUES(1, 3)"      {0 {}}
+
+  4.1  "INSERT INTO t8 VALUES(1, 3)"      {1 {foreign key constraint failed}}
+  4.2  "INSERT INTO t7 VALUES(2, 1)"      {0 {}}
+  4.3  "INSERT INTO t8 VALUES(1, 3)"      {0 {}}
+  4.4  "INSERT INTO t8 VALUES(2, 4)"      {1 {foreign key constraint failed}}
+  4.5  "INSERT INTO t8 VALUES(NULL, 4)"   {0 {}}
+  4.6  "UPDATE t8 SET c=2 WHERE d=4"      {1 {foreign key constraint failed}}
+  4.7  "UPDATE t8 SET c=1 WHERE d=4"      {0 {}}
+  4.9  "UPDATE t8 SET c=1 WHERE d=4"      {0 {}}
+  4.10 "UPDATE t8 SET c=NULL WHERE d=4"   {0 {}}
+  4.11 "DELETE FROM t7 WHERE b=1"         {1 {foreign key constraint failed}}
+  4.12 "UPDATE t7 SET b = 2"              {1 {foreign key constraint failed}}
+  4.13 "UPDATE t7 SET b = 1"              {0 {}}
+
+  5.1  "INSERT INTO t9 VALUES(1, 3)"      {1 {no such table: main.nosuchtable}}
+  5.2  "INSERT INTO t10 VALUES(1, 3)"     {1 {foreign key mismatch}}
+}
+
+do_test fkey2-1.1.0 {
+  execsql [string map {/D/ {}} $FkeySimpleSchema]
+} {}
+foreach {tn zSql res} $FkeySimpleTests {
+  do_test fkey2-1.1.$tn { catchsql $zSql } $res
+}
+drop_all_tables
+
+do_test fkey2-1.2.0 {
+  execsql [string map {/D/ {DEFERRABLE INITIALLY DEFERRED}} $FkeySimpleSchema
+  ]
+} {}
+foreach {tn zSql res} $FkeySimpleTests {
+  do_test fkey2-1.2.$tn { catchsql $zSql } $res
+}
+drop_all_tables
+
+#-------------------------------------------------------------------------
+# This section (test cases fkey2-2.*) contains tests to check that the
+# deferred foreign key constraint logic works.
+#
+proc fkey2-2-test {tn nocommit sql {res {}}} {
+  if {$res eq "FKV"} {
+    set expected {1 {foreign key constraint failed}}
+  } else {
+    set expected [list 0 $res]
+  }
+  do_test fkey2-2.$tn [list catchsql $sql] $expected
+  if {$nocommit} {
+    do_test fkey2-2.${tn}c {
+      catchsql COMMIT
+    } {1 {foreign key constraint failed}}
+  }
+}
+
+fkey2-2-test 1 0 {
+  CREATE TABLE node(
+    nodeid PRIMARY KEY,
+    parent REFERENCES node DEFERRABLE INITIALLY DEFERRED
+  );
+  CREATE TABLE leaf(
+    cellid PRIMARY KEY,
+    parent REFERENCES node DEFERRABLE INITIALLY DEFERRED
+  );
+}
+
+fkey2-2-test 1  0 "INSERT INTO node VALUES(1, 0)"       FKV
+fkey2-2-test 2  0 "BEGIN"
+fkey2-2-test 3  1   "INSERT INTO node VALUES(1, 0)"
+fkey2-2-test 4  0   "UPDATE node SET parent = NULL"
+fkey2-2-test 5  0 "COMMIT"
+fkey2-2-test 6  0 "SELECT * FROM node" {1 {}}
+
+fkey2-2-test 7  0 "BEGIN"
+fkey2-2-test 8  1   "INSERT INTO leaf VALUES('a', 2)"
+fkey2-2-test 9  1   "INSERT INTO node VALUES(2, 0)"
+fkey2-2-test 10 0   "UPDATE node SET parent = 1 WHERE nodeid = 2"
+fkey2-2-test 11 0 "COMMIT"
+fkey2-2-test 12 0 "SELECT * FROM node" {1 {} 2 1}
+fkey2-2-test 13 0 "SELECT * FROM leaf" {a 2}
+
+fkey2-2-test 14 0 "BEGIN"
+fkey2-2-test 15 1   "DELETE FROM node WHERE nodeid = 2"
+fkey2-2-test 16 0   "INSERT INTO node VALUES(2, NULL)"
+fkey2-2-test 17 0 "COMMIT"
+fkey2-2-test 18 0 "SELECT * FROM node" {1 {} 2 {}}
+fkey2-2-test 19 0 "SELECT * FROM leaf" {a 2}
+
+fkey2-2-test 20 0 "BEGIN"
+fkey2-2-test 21 0   "INSERT INTO leaf VALUES('b', 1)"
+fkey2-2-test 22 0   "SAVEPOINT save"
+fkey2-2-test 23 0     "DELETE FROM node WHERE nodeid = 1"
+fkey2-2-test 24 0   "ROLLBACK TO save"
+fkey2-2-test 25 0 "COMMIT"
+fkey2-2-test 26 0 "SELECT * FROM node" {1 {} 2 {}}
+fkey2-2-test 27 0 "SELECT * FROM leaf" {a 2 b 1}
+
+fkey2-2-test 28 0 "BEGIN"
+fkey2-2-test 29 0   "INSERT INTO leaf VALUES('c', 1)"
+fkey2-2-test 30 0   "SAVEPOINT save"
+fkey2-2-test 31 0     "DELETE FROM node WHERE nodeid = 1"
+fkey2-2-test 32 1   "RELEASE save"
+fkey2-2-test 33 1   "DELETE FROM leaf WHERE cellid = 'b'"
+fkey2-2-test 34 0   "DELETE FROM leaf WHERE cellid = 'c'"
+fkey2-2-test 35 0 "COMMIT"
+fkey2-2-test 36 0 "SELECT * FROM node" {2 {}} 
+fkey2-2-test 37 0 "SELECT * FROM leaf" {a 2}
+
+fkey2-2-test 38 0 "SAVEPOINT outer"
+fkey2-2-test 39 1   "INSERT INTO leaf VALUES('d', 3)"
+fkey2-2-test 40 1 "RELEASE outer"    FKV
+fkey2-2-test 41 1   "INSERT INTO leaf VALUES('e', 3)"
+fkey2-2-test 42 0   "INSERT INTO node VALUES(3, 2)"
+fkey2-2-test 43 0 "RELEASE outer"
+
+fkey2-2-test 44 0 "SAVEPOINT outer"
+fkey2-2-test 45 1   "DELETE FROM node WHERE nodeid=3"
+fkey2-2-test 47 0   "INSERT INTO node VALUES(3, 2)"
+fkey2-2-test 48 0 "ROLLBACK TO outer"
+fkey2-2-test 49 0 "RELEASE outer"
+
+fkey2-2-test 50 0 "SAVEPOINT outer"
+fkey2-2-test 51 1   "INSERT INTO leaf VALUES('f', 4)"
+fkey2-2-test 52 1   "SAVEPOINT inner"
+fkey2-2-test 53 1     "INSERT INTO leaf VALUES('g', 4)"
+fkey2-2-test 54 1  "RELEASE outer"   FKV
+fkey2-2-test 55 1   "ROLLBACK TO inner"
+fkey2-2-test 56 0  "COMMIT"          FKV
+fkey2-2-test 57 0   "INSERT INTO node VALUES(4, NULL)"
+fkey2-2-test 58 0 "RELEASE outer"
+fkey2-2-test 59 0 "SELECT * FROM node" {2 {} 3 2 4 {}}
+fkey2-2-test 60 0 "SELECT * FROM leaf" {a 2 d 3 e 3 f 4}
+
+# The following set of tests check that if a statement that affects 
+# multiple rows violates some foreign key constraints, then strikes a 
+# constraint that causes the statement-transaction to be rolled back, 
+# the deferred constraint counter is correctly reset to the value it 
+# had before the statement-transaction was opened.
+#
+fkey2-2-test 61 0 "BEGIN"
+fkey2-2-test 62 0   "DELETE FROM leaf"
+fkey2-2-test 63 0   "DELETE FROM node"
+fkey2-2-test 64 1   "INSERT INTO leaf VALUES('a', 1)"
+fkey2-2-test 65 1   "INSERT INTO leaf VALUES('b', 2)"
+fkey2-2-test 66 1   "INSERT INTO leaf VALUES('c', 1)"
+do_test fkey2-2-test-67 {
+  catchsql          "INSERT INTO node SELECT parent, 3 FROM leaf"
+} {1 {column nodeid is not unique}}
+fkey2-2-test 68 0 "COMMIT"           FKV
+fkey2-2-test 69 1   "INSERT INTO node VALUES(1, NULL)"
+fkey2-2-test 70 0   "INSERT INTO node VALUES(2, NULL)"
+fkey2-2-test 71 0 "COMMIT"
+
+fkey2-2-test 72 0 "BEGIN"
+fkey2-2-test 73 1   "DELETE FROM node"
+fkey2-2-test 74 0   "INSERT INTO node(nodeid) SELECT DISTINCT parent FROM leaf"
+fkey2-2-test 75 0 "COMMIT"
+
+#-------------------------------------------------------------------------
+# Test cases fkey2-3.* test that a program that executes foreign key
+# actions (CASCADE, SET DEFAULT, SET NULL etc.) or tests FK constraints
+# opens a statement transaction if required.
+#
+# fkey2-3.1.*: Test UPDATE statements.
+# fkey2-3.2.*: Test DELETE statements.
+#
+drop_all_tables
+do_test fkey2-3.1.1 {
+  execsql {
+    CREATE TABLE ab(a PRIMARY KEY, b);
+    CREATE TABLE cd(
+      c PRIMARY KEY REFERENCES ab ON UPDATE CASCADE ON DELETE CASCADE, 
+      d
+    );
+    CREATE TABLE ef(
+      e REFERENCES cd ON UPDATE CASCADE, 
+      f, CHECK (e!=5)
+    );
+  }
+} {}
+do_test fkey2-3.1.2 {
+  execsql {
+    INSERT INTO ab VALUES(1, 'b');
+    INSERT INTO cd VALUES(1, 'd');
+    INSERT INTO ef VALUES(1, 'e');
+  }
+} {}
+do_test fkey2-3.1.3 {
+  catchsql { UPDATE ab SET a = 5 }
+} {1 {constraint failed}}
+do_test fkey2-3.1.4 {
+  execsql { SELECT * FROM ab }
+} {1 b}
+do_test fkey2-3.1.4 {
+  execsql BEGIN;
+  catchsql { UPDATE ab SET a = 5 }
+} {1 {constraint failed}}
+do_test fkey2-3.1.5 {
+  execsql COMMIT;
+  execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }
+} {1 b 1 d 1 e}
+do_test fkey2-3.2.1 {
+  execsql BEGIN;
+  catchsql { DELETE FROM ab }
+} {1 {foreign key constraint failed}}
+do_test fkey2-3.2.2 {
+  execsql COMMIT
+  execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }
+} {1 b 1 d 1 e}
+
+#-------------------------------------------------------------------------
+# Test cases fkey2-4.* test that recursive foreign key actions 
+# (i.e. CASCADE) are allowed even if recursive triggers are disabled.
+#
+drop_all_tables
+do_test fkey2-4.1 {
+  execsql {
+    CREATE TABLE t1(
+      node PRIMARY KEY, 
+      parent REFERENCES t1 ON DELETE CASCADE
+    );
+    CREATE TABLE t2(node PRIMARY KEY, parent);
+    CREATE TRIGGER t2t AFTER DELETE ON t2 BEGIN
+      DELETE FROM t2 WHERE parent = old.node;
+    END;
+    INSERT INTO t1 VALUES(1, NULL);
+    INSERT INTO t1 VALUES(2, 1);
+    INSERT INTO t1 VALUES(3, 1);
+    INSERT INTO t1 VALUES(4, 2);
+    INSERT INTO t1 VALUES(5, 2);
+    INSERT INTO t1 VALUES(6, 3);
+    INSERT INTO t1 VALUES(7, 3);
+    INSERT INTO t2 SELECT * FROM t1;
+  }
+} {}
+do_test fkey2-4.2 {
+  execsql { PRAGMA recursive_triggers = off }
+  execsql { 
+    BEGIN;
+      DELETE FROM t1 WHERE node = 1;
+      SELECT node FROM t1;
+  }
+} {}
+do_test fkey2-4.3 {
+  execsql { 
+      DELETE FROM t2 WHERE node = 1;
+      SELECT node FROM t2;
+    ROLLBACK;
+  }
+} {4 5 6 7}
+do_test fkey2-4.4 {
+  execsql { PRAGMA recursive_triggers = on }
+  execsql { 
+    BEGIN;
+      DELETE FROM t1 WHERE node = 1;
+      SELECT node FROM t1;
+  }
+} {}
+do_test fkey2-4.3 {
+  execsql { 
+      DELETE FROM t2 WHERE node = 1;
+      SELECT node FROM t2;
+    ROLLBACK;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# Test cases fkey2-5.* verify that the incremental blob API may not
+# write to a foreign key column while foreign-keys are enabled.
+#
+drop_all_tables
+do_test fkey2-5.1 {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1(a));
+    INSERT INTO t1 VALUES('hello', 'world');
+    INSERT INTO t2 VALUES('key', 'hello');
+  }
+} {}
+do_test fkey2-5.2 {
+  set rc [catch { set fd [db incrblob t2 b 1] } msg]
+  list $rc $msg
+} {1 {cannot open foreign key column for writing}}
+do_test fkey2-5.3 {
+  set rc [catch { set fd [db incrblob -readonly t2 b 1] } msg]
+  close $fd
+  set rc
+} {0}
+do_test fkey2-5.4 {
+  execsql { PRAGMA foreign_keys = off }
+  set rc [catch { set fd [db incrblob t2 b 1] } msg]
+  close $fd
+  set rc
+} {0}
+do_test fkey2-5.5 {
+  execsql { PRAGMA foreign_keys = on }
+} {}
+
+#-------------------------------------------------------------------------
+# The following block of tests, those prefixed with "fkey2-genfkey.", are 
+# the same tests that were used to test the ".genfkey" command provided 
+# by the shell tool. So these tests show that the built-in foreign key 
+# implementation is more or less compatible with the triggers generated 
+# by genfkey.
+#
+drop_all_tables
+do_test fkey2-genfkey.1.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, UNIQUE(b, c));
+    CREATE TABLE t2(e REFERENCES t1, f);
+    CREATE TABLE t3(g, h, i, FOREIGN KEY (h, i) REFERENCES t1(b, c));
+  }
+} {}
+do_test fkey2-genfkey.1.2 {
+  catchsql { INSERT INTO t2 VALUES(1, 2) }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.3 {
+  execsql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t2 VALUES(1, 2);
+  }
+} {}
+do_test fkey2-genfkey.1.4 {
+  execsql { INSERT INTO t2 VALUES(NULL, 3) }
+} {}
+do_test fkey2-genfkey.1.5 {
+  catchsql { UPDATE t2 SET e = 5 WHERE e IS NULL }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.6 {
+  execsql { UPDATE t2 SET e = 1 WHERE e IS NULL }
+} {}
+do_test fkey2-genfkey.1.7 {
+  execsql { UPDATE t2 SET e = NULL WHERE f = 3 }
+} {}
+do_test fkey2-genfkey.1.8 {
+  catchsql { UPDATE t1 SET a = 10 }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.9 {
+  catchsql { UPDATE t1 SET a = NULL }
+} {1 {datatype mismatch}}
+do_test fkey2-genfkey.1.10 {
+  catchsql { DELETE FROM t1 }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.11 {
+  execsql { UPDATE t2 SET e = NULL }
+} {}
+do_test fkey2-genfkey.1.12 {
+  execsql { 
+    UPDATE t1 SET a = 10;
+    DELETE FROM t1;
+    DELETE FROM t2;
+  }
+} {}
+do_test fkey2-genfkey.1.13 {
+  execsql {
+    INSERT INTO t3 VALUES(1, NULL, NULL);
+    INSERT INTO t3 VALUES(1, 2, NULL);
+    INSERT INTO t3 VALUES(1, NULL, 3);
+  }
+} {}
+do_test fkey2-genfkey.1.14 {
+  catchsql { INSERT INTO t3 VALUES(3, 1, 4) }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.15 {
+  execsql { 
+    INSERT INTO t1 VALUES(1, 1, 4);
+    INSERT INTO t3 VALUES(3, 1, 4);
+  }
+} {}
+do_test fkey2-genfkey.1.16 {
+  catchsql { DELETE FROM t1 }
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.17 {
+  catchsql { UPDATE t1 SET b = 10}
+} {1 {foreign key constraint failed}}
+do_test fkey2-genfkey.1.18 {
+  execsql { UPDATE t1 SET a = 10}
+} {}
+do_test fkey2-genfkey.1.19 {
+  catchsql { UPDATE t3 SET h = 'hello' WHERE i = 3}
+} {1 {foreign key constraint failed}}
+
+drop_all_tables
+do_test fkey2-genfkey.2.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, UNIQUE(b, c));
+    CREATE TABLE t2(e REFERENCES t1 ON UPDATE CASCADE ON DELETE CASCADE, f);
+    CREATE TABLE t3(g, h, i, 
+        FOREIGN KEY (h, i) 
+        REFERENCES t1(b, c) ON UPDATE CASCADE ON DELETE CASCADE
+    );
+  }
+} {}
+do_test fkey2-genfkey.2.2 {
+  execsql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(4, 5, 6);
+    INSERT INTO t2 VALUES(1, 'one');
+    INSERT INTO t2 VALUES(4, 'four');
+  }
+} {}
+do_test fkey2-genfkey.2.3 {
+  execsql {
+    UPDATE t1 SET a = 2 WHERE a = 1;
+    SELECT * FROM t2;
+  }
+} {2 one 4 four}
+do_test fkey2-genfkey.2.4 {
+  execsql {
+    DELETE FROM t1 WHERE a = 4;
+    SELECT * FROM t2;
+  }
+} {2 one}
+do_test fkey2-genfkey.2.5 {
+  execsql {
+    INSERT INTO t3 VALUES('hello', 2, 3);
+    UPDATE t1 SET c = 2;
+    SELECT * FROM t3;
+  }
+} {hello 2 2}
+do_test fkey2-genfkey.2.6 {
+  execsql {
+    DELETE FROM t1;
+    SELECT * FROM t3;
+  }
+} {}
+
+drop_all_tables
+do_test fkey2-genfkey.3.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b, c, UNIQUE(c, b));
+    CREATE TABLE t2(e REFERENCES t1 ON UPDATE SET NULL ON DELETE SET NULL, f);
+    CREATE TABLE t3(g, h, i, 
+        FOREIGN KEY (h, i) 
+        REFERENCES t1(b, c) ON UPDATE SET NULL ON DELETE SET NULL
+    );
+  }
+} {}
+do_test fkey2-genfkey.3.2 {
+  execsql {
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(4, 5, 6);
+    INSERT INTO t2 VALUES(1, 'one');
+    INSERT INTO t2 VALUES(4, 'four');
+  }
+} {}
+do_test fkey2-genfkey.3.3 {
+  execsql {
+    UPDATE t1 SET a = 2 WHERE a = 1;
+    SELECT * FROM t2;
+  }
+} {{} one 4 four}
+do_test fkey2-genfkey.3.4 {
+  execsql {
+    DELETE FROM t1 WHERE a = 4;
+    SELECT * FROM t2;
+  }
+} {{} one {} four}
+do_test fkey2-genfkey.3.5 {
+  execsql {
+    INSERT INTO t3 VALUES('hello', 2, 3);
+    UPDATE t1 SET c = 2;
+    SELECT * FROM t3;
+  }
+} {hello {} {}}
+do_test fkey2-genfkey.3.6 {
+  execsql {
+    UPDATE t3 SET h = 2, i = 2;
+    DELETE FROM t1;
+    SELECT * FROM t3;
+  }
+} {hello {} {}}
+
+finish_test

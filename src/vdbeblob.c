@@ -144,24 +144,40 @@ int sqlite3_blob_open(
     }
 
     /* If the value is being opened for writing, check that the
-    ** column is not indexed. It is against the rules to open an
-    ** indexed column for writing.
-    */
+    ** column is not indexed, and that it is not part of a foreign key. 
+    ** It is against the rules to open a column to which either of these
+    ** descriptions applies for writing.  */
     if( flags ){
+      const char *zFault = 0;
       Index *pIdx;
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+      if( db->flags&SQLITE_ForeignKeys ){
+        FKey *pFKey;
+        for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
+          int j;
+          for(j=0; j<pFKey->nCol; j++){
+            if( pFKey->aCol[j].iFrom==iCol ){
+              zFault = "foreign key";
+            }
+          }
+        }
+      }
+#endif
       for(pIdx=pTab->pIndex; pIdx; pIdx=pIdx->pNext){
         int j;
         for(j=0; j<pIdx->nColumn; j++){
           if( pIdx->aiColumn[j]==iCol ){
-            sqlite3DbFree(db, zErr);
-            zErr = sqlite3MPrintf(db,
-                             "cannot open indexed column for writing");
-            rc = SQLITE_ERROR;
-            (void)sqlite3SafetyOff(db);
-            sqlite3BtreeLeaveAll(db);
-            goto blob_open_out;
+            zFault = "indexed";
           }
         }
+      }
+      if( zFault ){
+        sqlite3DbFree(db, zErr);
+        zErr = sqlite3MPrintf(db, "cannot open %s column for writing", zFault);
+        rc = SQLITE_ERROR;
+        (void)sqlite3SafetyOff(db);
+        sqlite3BtreeLeaveAll(db);
+        goto blob_open_out;
       }
     }
 

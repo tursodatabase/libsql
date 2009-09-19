@@ -52,7 +52,7 @@ TCCX += -I$(TOP)/ext/async
 #
 LIBOBJ+= alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
-         callback.o complete.o date.o delete.o expr.o fault.o \
+         callback.o complete.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_tokenizer.o fts3_tokenizer1.o \
          func.o global.o hash.o \

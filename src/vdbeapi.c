@@ -323,6 +323,8 @@ static int sqlite3Step(Vdbe *p){
       db->u1.isInterrupted = 0;
     }
 
+    assert( db->writeVdbeCnt>0 || db->autoCommit==0 || db->nDeferredCons==0 );
+
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
       double rNow;
