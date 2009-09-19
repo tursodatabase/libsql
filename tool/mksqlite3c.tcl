@@ -269,6 +269,7 @@ foreach file {
    callback.c
    delete.c
    func.c
+   fkey.c
    insert.c
    legacy.c
    loadext.c

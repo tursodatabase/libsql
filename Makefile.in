@@ -165,7 +165,7 @@ NAWK = @AWK@
 #
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo backup.lo bitvec.lo btmutex.lo \
         btree.lo build.lo callback.lo complete.lo date.lo \
-        delete.lo expr.lo fault.lo func.lo global.lo \
+        delete.lo expr.lo fault.lo fkey.lo func.lo global.lo \
         hash.lo journal.lo insert.lo legacy.lo loadext.lo \
         main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
         memjournal.lo \
@@ -208,6 +208,7 @@ SRC = \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
+  $(TOP)/src/fkey.c \
   $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
@@ -555,6 +556,9 @@ expr.lo:	$(TOP)/src/expr.c $(HDR)
 
 fault.lo:	$(TOP)/src/fault.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fault.c
+
+fkey.lo:	$(TOP)/src/fkey.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/fkey.c
 
 func.lo:	$(TOP)/src/func.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/func.c

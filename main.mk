@@ -90,6 +90,7 @@ SRC = \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/fault.c \
+  $(TOP)/src/fkey.c \
   $(TOP)/src/func.c \
   $(TOP)/src/global.c \
   $(TOP)/src/hash.c \
