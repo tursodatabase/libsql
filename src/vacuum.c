@@ -97,11 +97,14 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     return SQLITE_ERROR;
   }
 
-  /* Save the current value of the write-schema flag before setting it. */
+  /* Save the current value of the database flags so that it can be 
+  ** restored before returning. Then set the writable-schema flag, and
+  ** disable CHECK and foreign key constraints.  */
   saved_flags = db->flags;
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
+  db->flags &= ~SQLITE_ForeignKeys;
 
   pMain = db->aDb[0].pBt;
   isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));

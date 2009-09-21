@@ -14,6 +14,7 @@
 #include "sqliteInt.h"
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
+#ifndef SQLITE_OMIT_TRIGGER
 
 /*
 ** Deferred and Immediate FKs
@@ -387,6 +388,15 @@ static FKey *fkRefering(Table *pTab){
   return (FKey *)sqlite3HashFind(&pTab->pSchema->fkeyHash, pTab->zName, nName);
 }
 
+static void fkTriggerDelete(sqlite3 *dbMem, Trigger *p){
+  if( p ){
+    TriggerStep *pStep = p->step_list;
+    sqlite3ExprDelete(dbMem, pStep->pWhere);
+    sqlite3ExprListDelete(dbMem, pStep->pExprList);
+    sqlite3DbFree(dbMem, p);
+  }
+}
+
 void sqlite3FkCheck(
   Parse *pParse,                  /* Parse context */
   Table *pTab,                    /* Row is being deleted from this table */ 
@@ -714,15 +724,6 @@ static Trigger *fkActionTrigger(
   return pTrigger;
 }
 
-static void fkTriggerDelete(sqlite3 *dbMem, Trigger *p){
-  if( p ){
-    TriggerStep *pStep = p->step_list;
-    sqlite3ExprDelete(dbMem, pStep->pWhere);
-    sqlite3ExprListDelete(dbMem, pStep->pExprList);
-    sqlite3DbFree(dbMem, p);
-  }
-}
-
 /*
 ** This function is called when deleting or updating a row to implement
 ** any required CASCADE, SET NULL or SET DEFAULT actions.
@@ -748,6 +749,8 @@ void sqlite3FkActions(
   }
 }
 
+#endif /* ifndef SQLITE_OMIT_TRIGGER */
+
 /*
 ** Free all memory associated with foreign key definitions attached to
 ** table pTab. Remove the deleted foreign keys from the Schema.fkeyHash
@@ -772,13 +775,14 @@ void sqlite3FkDelete(Table *pTab){
     }
 
     /* Delete any triggers created to implement actions for this FK. */
+#ifndef SQLITE_OMIT_TRIGGER
     fkTriggerDelete(pTab->dbMem, pFKey->pOnDelete);
     fkTriggerDelete(pTab->dbMem, pFKey->pOnUpdate);
+#endif
 
     /* Delete the memory allocated for the FK structure. */
     pNext = pFKey->pNextFrom;
     sqlite3DbFree(pTab->dbMem, pFKey);
   }
 }
-
-#endif
+#endif /* ifndef SQLITE_OMIT_FOREIGN_KEY */

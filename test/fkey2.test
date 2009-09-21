@@ -16,6 +16,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable {!foreignkey||!trigger} {
+  finish_test
+  return
+}
+
 #-------------------------------------------------------------------------
 # Test structure:
 #
@@ -33,6 +38,9 @@ source $testdir/tester.tcl
 #
 # fkey2-5.*: Check that if foreign-keys are enabled, it is not possible
 #            to write to an FK column using the incremental blob API.
+#
+# fkey2-6.*: Test that FK processing is automatically disabled when 
+#            running VACUUM.
 #
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
@@ -359,32 +367,47 @@ do_test fkey2-4.3 {
 # write to a foreign key column while foreign-keys are enabled.
 #
 drop_all_tables
-do_test fkey2-5.1 {
-  execsql {
-    CREATE TABLE t1(a PRIMARY KEY, b);
-    CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1(a));
-    INSERT INTO t1 VALUES('hello', 'world');
-    INSERT INTO t2 VALUES('key', 'hello');
-  }
-} {}
-do_test fkey2-5.2 {
-  set rc [catch { set fd [db incrblob t2 b 1] } msg]
-  list $rc $msg
-} {1 {cannot open foreign key column for writing}}
-do_test fkey2-5.3 {
-  set rc [catch { set fd [db incrblob -readonly t2 b 1] } msg]
-  close $fd
-  set rc
-} {0}
-do_test fkey2-5.4 {
-  execsql { PRAGMA foreign_keys = off }
-  set rc [catch { set fd [db incrblob t2 b 1] } msg]
-  close $fd
-  set rc
-} {0}
-do_test fkey2-5.5 {
-  execsql { PRAGMA foreign_keys = on }
-} {}
+ifcapable incrblob {
+  do_test fkey2-5.1 {
+    execsql {
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1(a));
+      INSERT INTO t1 VALUES('hello', 'world');
+      INSERT INTO t2 VALUES('key', 'hello');
+    }
+  } {}
+  do_test fkey2-5.2 {
+    set rc [catch { set fd [db incrblob t2 b 1] } msg]
+    list $rc $msg
+  } {1 {cannot open foreign key column for writing}}
+  do_test fkey2-5.3 {
+    set rc [catch { set fd [db incrblob -readonly t2 b 1] } msg]
+    close $fd
+    set rc
+  } {0}
+  do_test fkey2-5.4 {
+    execsql { PRAGMA foreign_keys = off }
+    set rc [catch { set fd [db incrblob t2 b 1] } msg]
+    close $fd
+    set rc
+  } {0}
+  do_test fkey2-5.5 {
+    execsql { PRAGMA foreign_keys = on }
+  } {}
+}
+
+drop_all_tables
+ifcapable vacuum {
+  do_test fkey2-6.1 {
+    execsql {
+      CREATE TABLE t1(a REFERENCES t2(c), b);
+      CREATE TABLE t2(c UNIQUE, b);
+      INSERT INTO t2 VALUES(1, 2);
+      INSERT INTO t1 VALUES(1, 2);
+      VACUUM;
+    }
+  } {}
+}
 
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 

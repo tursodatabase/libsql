@@ -18,6 +18,10 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+ifcapable {!trigger} {
+  finish_test
+  return
+}
 
 
 do_test tkt3832-1.1 {

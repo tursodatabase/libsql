@@ -2722,6 +2722,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
 # define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
+# define sqlite3CodeRowTriggerDirect(A,B,C,D,E,F)
 # define sqlite3TriggerList(X, Y) 0
 # define sqlite3ParseToplevel(p) p
 # define sqlite3TriggerOldmask(A,B,C,D,E) 0
@@ -2942,19 +2943,30 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 int sqlite3TempInMemory(const sqlite3*);
 VTable *sqlite3GetVTable(sqlite3*, Table*);
 
-#ifndef SQLITE_OMIT_FOREIGN_KEY
+/* Declarations for functions in fkey.c. All of these are replaced by
+** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign
+** key functionality is available. If OMIT_TRIGGER is defined but
+** OMIT_FOREIGN_KEY is not, only some of the functions are no-oped. In
+** this case foreign keys are parsed, but no other functionality is 
+** provided (enforcement of FK constraints requires the triggers sub-system).
+*/
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   void sqlite3FkCheck(Parse*, Table*, ExprList*, int, int);
   void sqlite3FkActions(Parse*, Table*, ExprList*, int);
-  void sqlite3FkDelete(Table*);
   int sqlite3FkRequired(Parse*, Table*, ExprList*);
   u32 sqlite3FkOldmask(Parse*, Table*, ExprList*);
 #else
   #define sqlite3FkCheck(a,b,c,d,e)
   #define sqlite3FkActions(a,b,c,d)
-  #define sqlite3FkDelete(a)
   #define sqlite3FkRequired(a,b,c) 0
   #define sqlite3FkOldmask(a,b,c)  0
 #endif
+#ifndef SQLITE_OMIT_FOREIGN_KEY
+  void sqlite3FkDelete(Table*);
+#else
+  #define sqlite3FkDelete(a)
+#endif
+
 
 /*
 ** Available fault injectors.  Should be numbered beginning with 0.

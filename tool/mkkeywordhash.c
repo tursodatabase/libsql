@@ -144,6 +144,7 @@ struct Keyword {
 */
 static Keyword aKeywordTable[] = {
   { "ABORT",            "TK_ABORT",        CONFLICT|TRIGGER       },
+  { "ACTION",           "TK_ACTION",       FKEY                   },
   { "ADD",              "TK_ADD",          ALTER                  },
   { "AFTER",            "TK_AFTER",        TRIGGER                },
   { "ALL",              "TK_ALL",          ALWAYS                 },
@@ -218,6 +219,7 @@ static Keyword aKeywordTable[] = {
   { "LIMIT",            "TK_LIMIT",        ALWAYS                 },
   { "MATCH",            "TK_MATCH",        ALWAYS                 },
   { "NATURAL",          "TK_JOIN_KW",      ALWAYS                 },
+  { "NO",               "TK_NO",           FKEY                   },
   { "NOT",              "TK_NOT",          ALWAYS                 },
   { "NOTNULL",          "TK_NOTNULL",      ALWAYS                 },
   { "NULL",             "TK_NULL",         ALWAYS                 },
