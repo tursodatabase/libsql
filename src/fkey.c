@@ -258,7 +258,7 @@ static void fkCheckReference(
   ** NULL. If any are, then the constraint is satisfied. No need
   ** to search for a matching row in the referenced table.  */
   for(i=0; i<pFKey->nCol; i++){
-    int iReg = pFKey->aCol[i].iFrom + regData + 1;
+    int iReg = aiCol[i] + regData + 1;
     sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iOk);
   }
 
@@ -277,7 +277,7 @@ static void fkCheckReference(
     sqlite3VdbeAddOp3(v, OP_OpenRead, iCur, pIdx->tnum, iDb);
     sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
 
-    if( aiCol ){
+    if( pFKey->nCol>1 ){
       int nCol = pFKey->nCol;
       int regTemp = sqlite3GetTempRange(pParse, nCol);
       for(i=0; i<nCol; i++){ 
@@ -286,7 +286,7 @@ static void fkCheckReference(
       sqlite3VdbeAddOp3(v, OP_MakeRecord, regTemp, nCol, regRec);
       sqlite3ReleaseTempRange(pParse, regTemp, nCol);
     }else{
-      int iReg = pFKey->aCol[0].iFrom + regData + 1;
+      int iReg = aiCol[0] + regData + 1;
       sqlite3VdbeAddOp3(v, OP_MakeRecord, iReg, 1, regRec);
       sqlite3IndexAffinityStr(v, pIdx);
     }
@@ -426,7 +426,10 @@ void sqlite3FkCheck(
   for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
     Table *pTo;                   /* Table referenced by this FK */
     Index *pIdx = 0;              /* Index on key columns in pTo */
-    int *aiCol = 0;
+    int *aiFree = 0;
+    int *aiCol;
+    int iCol;
+    int i;
 
     if( pFKey->isDeferred==0 && regNew==0 ) continue;
 
@@ -435,12 +438,24 @@ void sqlite3FkCheck(
     ** If either of these things cannot be located, set an error in pParse
     ** and return early.  */
     pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
-    if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiCol) ) return;
-    assert( pFKey->nCol==1 || (aiCol && pIdx) );
+    if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ) return;
+    assert( pFKey->nCol==1 || (aiFree && pIdx) );
 
     /* If the key does not overlap with the pChanges list, skip this FK. */
     if( pChanges ){
       /* TODO */
+    }
+
+    if( aiFree ){
+      aiCol = aiFree;
+    }else{
+      iCol = pFKey->aCol[0].iFrom;
+      aiCol = &iCol;
+    }
+    for(i=0; i<pFKey->nCol; i++){
+      if( aiCol[i]==pTab->iPKey ){
+        aiCol[i] = -1;
+      }
     }
 
     /* Take a shared-cache advisory read-lock on the referenced table.
@@ -456,7 +471,7 @@ void sqlite3FkCheck(
       fkCheckReference(pParse, iDb, pTo, pIdx, pFKey, aiCol, regNew, +1);
     }
 
-    sqlite3DbFree(db, aiCol);
+    sqlite3DbFree(db, aiFree);
   }
 
   /* Loop through all the foreign key constraints that refer to this table */
