@@ -1,5 +1,5 @@
-C Fix\scompilation\swith\sOMIT_TRIGGER\sdefined.\sTicket\s[1ff6d29030e9757d052af0f394e56bea96b8b59b|1ff6d29030].
-D 2009-09-21T16:06:04
+C Fix\scompilation\swith\sboth\sOMIT_UTF16\sand\sENABLE_STAT2\sdefined.\sTicket\s[56928bd084ea530eb8a0b3ebe5d2d9033fb1de7f|56928bd084].
+D 2009-09-21T16:34:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -215,7 +215,7 @@ F src/vdbeblob.c 3ba0f7ba1b3afce2d37a18e4f437992d430f0eae
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 68db8ab9b465f595043d05ff697b953268485df4
+F src/where.c 53e2620985fc691b62e811cb25c46cd6f4dd7f77
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -225,7 +225,7 @@ F test/alter3.test 25b95a136708f22b87184fa6a4309eea03d65153
 F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
-F test/analyze2.test 297d3d63f2f50976c606227040fe36605745d9dd
+F test/analyze2.test a2ad7b0a4e13801ee3968fe70f22aff52326569c
 F test/async.test 8c75d31b8330f8b70cf2571b014d4476a063efdb
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -752,7 +752,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P aab7a4b3c91e0a149f6499660892d09c17b010e3
-R eef3003df0ef45e48c1734d43e99f3d8
+P fb6ceed388f6d75bdc2ac2f43e5c98da74e2a448
+R 899a06e4349a5ceabc5fe389e0c0c2ac
 U dan
-Z b8e6deab4beb9073bd74dfe36506533c
+Z 4dbd21536703b59a6c4c05ce1d53ee70

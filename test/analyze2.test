@@ -227,42 +227,44 @@ do_test analyze2-4.5 {
   eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'c' AND b > 'A' AND b < 'c'"
 } {0 0 {TABLE t3 WITH INDEX t3a}}
 
-proc test_collate {enc lhs rhs} {
-  # puts $enc
-  return [string compare $lhs $rhs]
+ifcapable utf16 {
+  proc test_collate {enc lhs rhs} {
+    # puts $enc
+    return [string compare $lhs $rhs]
+  }
+  do_test analyze2-5.1 {
+    add_test_collate db 0 0 1
+    execsql { CREATE TABLE t4(x COLLATE test_collate) }
+    execsql { CREATE INDEX t4x ON t4(x) }
+    set alphabet [list a b c d e f g h i j]
+    execsql BEGIN
+    for {set i 0} {$i < 1000} {incr i} {
+      set str    [lindex $alphabet [expr ($i/100)%10]] 
+      append str [lindex $alphabet [expr ($i/ 10)%10]]
+      append str [lindex $alphabet [expr ($i/  1)%10]]
+      execsql { INSERT INTO t4 VALUES($str) }
+    }
+    execsql COMMIT
+    execsql ANALYZE
+  } {}
+  do_test analyze2-5.2 {
+    execsql { 
+      SELECT tbl,idx,group_concat(sample,' ') 
+      FROM sqlite_stat2 
+      WHERE tbl = 't4' 
+      GROUP BY tbl,idx
+    }
+  } {t4 t4x {afa bej cej dej eej fej gej hej iej jej}}
+  do_test analyze2-5.3 {
+    eqp "SELECT * FROM t4 WHERE x>'ccc'"
+  } {0 0 {TABLE t4 WITH INDEX t4x}}
+  do_test analyze2-5.4 {
+    eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ccc' AND t42.x>'ggg'"
+  } {0 1 {TABLE t4 AS t42 WITH INDEX t4x} 1 0 {TABLE t4 AS t41 WITH INDEX t4x}}
+  do_test analyze2-5.5 {
+    eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'"
+  } {0 0 {TABLE t4 AS t41 WITH INDEX t4x} 1 1 {TABLE t4 AS t42 WITH INDEX t4x}}
 }
-do_test analyze2-5.1 {
-  add_test_collate db 0 0 1
-  execsql { CREATE TABLE t4(x COLLATE test_collate) }
-  execsql { CREATE INDEX t4x ON t4(x) }
-  set alphabet [list a b c d e f g h i j]
-  execsql BEGIN
-  for {set i 0} {$i < 1000} {incr i} {
-    set str    [lindex $alphabet [expr ($i/100)%10]] 
-    append str [lindex $alphabet [expr ($i/ 10)%10]]
-    append str [lindex $alphabet [expr ($i/  1)%10]]
-    execsql { INSERT INTO t4 VALUES($str) }
-  }
-  execsql COMMIT
-  execsql ANALYZE
-} {}
-do_test analyze2-5.2 {
-  execsql { 
-    SELECT tbl,idx,group_concat(sample,' ') 
-    FROM sqlite_stat2 
-    WHERE tbl = 't4' 
-    GROUP BY tbl,idx
-  }
-} {t4 t4x {afa bej cej dej eej fej gej hej iej jej}}
-do_test analyze2-5.3 {
-  eqp "SELECT * FROM t4 WHERE x>'ccc'"
-} {0 0 {TABLE t4 WITH INDEX t4x}}
-do_test analyze2-5.4 {
-  eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ccc' AND t42.x>'ggg'"
-} {0 1 {TABLE t4 AS t42 WITH INDEX t4x} 1 0 {TABLE t4 AS t41 WITH INDEX t4x}}
-do_test analyze2-5.5 {
-  eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'"
-} {0 0 {TABLE t4 AS t41 WITH INDEX t4x} 1 1 {TABLE t4 AS t42 WITH INDEX t4x}}
 
 #--------------------------------------------------------------------
 # These tests, analyze2-6.*, verify that the library behaves correctly
@@ -278,7 +280,7 @@ do_test analyze2-5.5 {
 #
 do_test analyze2-6.0 {
   execsql {
-    DROP TABLE t4;
+    DROP TABLE IF EXISTS t4;
     CREATE TABLE t5(a, b); CREATE INDEX t5i ON t5(a, b);
     CREATE TABLE t6(a, b); CREATE INDEX t6i ON t6(a, b);
   }
