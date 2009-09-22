@@ -683,7 +683,7 @@ static Trigger *fkActionTrigger(
             sqlite3PExpr(pParse, TK_ID, 0, 0, &tToCol)
           , 0);
         }else if( action==OE_SetDflt ){
-          Expr *pDflt = pIdx ? 0 : pTab->aCol[pIdx->aiColumn[i]].pDflt;
+          Expr *pDflt = pFKey->pFrom->aCol[iFromCol].pDflt;
           if( pDflt ){
             pNew = sqlite3ExprDup(db, pDflt, 0);
           }else{
