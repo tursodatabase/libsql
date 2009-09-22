@@ -1,5 +1,5 @@
-C Fix\scompilation\serrors\swhen\sOMIT_FOREIGN_KEY\sis\sdefined.
-D 2009-09-22T07:13:43
+C Allow\sspecific\sexclusion\sof\slocaltime_s()\susage\son\sWindows.
+D 2009-09-22T13:25:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -19,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1163c4a69c76777b60d3421c0f9d01274fd74699 x
+F configure 1163c4a69c76777b60d3421c0f9d01274fd74699
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -112,7 +112,7 @@ F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
 F src/build.c 6520093d962891dae01eea545836860fd72f8915
 F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
-F src/date.c 6d936393716d21e6dc0d4222b3443137a60ebe93
+F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 15499f5d10047d38e68ce991b3f88cbddb6e0931
 F src/expr.c 638b599adad562d41c3bf90f542f9419664aa7b8
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
@@ -506,7 +506,7 @@ F test/permutations.test 1ce2874df8fec876d0b963c7a3ef61c4e9df8827
 F test/pragma.test 5aeb48a442dba3c3e8e38773b121371814ab3b17
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 47e9e5bbec8509023479d54ceb71c9d05a95308a
-F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301 x
+F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
 F test/quick.test f6eb3a98643b5856626ad38933334762270db129
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
@@ -734,7 +734,7 @@ F tool/genfkey.test 405a43d54f1646bfaa7a84b03bb959aef62a3a49
 F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl 69dc8842a88d1f84c141e1a0bd2e42d8e859397f
 F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
@@ -752,7 +752,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 84129052623dc6a175c76db602ab07fa3e57f1eb
-R 7ae45017657956290a48337b2a2228fa
-U dan
-Z 76a2792cd8f084e7503c331b345a1fb4
+P c447cb37d6439090eb08028d54a91d7d06043744
+R ce32ee8113b8a1ba098839e3f7d1953e
+U shane
+Z 02da1bc6a93c7b5ffdf3fb63ab11c5fe

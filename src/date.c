@@ -460,7 +460,7 @@ static sqlite3_int64 localtimeOffset(DateTime *p){
     y.m = sLocal.tm_min;
     y.s = sLocal.tm_sec;
   }
-#elif defined(HAVE_LOCALTIME_S)
+#elif defined(HAVE_LOCALTIME_S) && HAVE_LOCALTIME_S
   {
     struct tm sLocal;
     localtime_s(&sLocal, &t);
