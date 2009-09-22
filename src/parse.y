@@ -325,7 +325,7 @@ refact(A) ::= SET NULL.              { A = OE_SetNull; }
 refact(A) ::= SET DEFAULT.           { A = OE_SetDflt; }
 refact(A) ::= CASCADE.               { A = OE_Cascade; }
 refact(A) ::= RESTRICT.              { A = OE_Restrict; }
-refact(A) ::= NO ACTION.             { A = OE_Restrict; }
+refact(A) ::= NO ACTION.             { A = OE_None; }
 %type defer_subclause {int}
 defer_subclause(A) ::= NOT DEFERRABLE init_deferred_pred_opt.     {A = 0;}
 defer_subclause(A) ::= DEFERRABLE init_deferred_pred_opt(X).      {A = X;}
