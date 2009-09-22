@@ -861,9 +861,7 @@ struct sqlite3 {
   int nSavepoint;               /* Number of non-transaction savepoints */
   int nStatement;               /* Number of nested statement-transactions  */
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
-#ifndef SQLITE_OMIT_FOREIGN_KEY
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
-#endif
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MASTER 

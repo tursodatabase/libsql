@@ -241,6 +241,7 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
 /*
 ** Return a human-readable name for a constraint resolution action.
 */
+#ifndef SQLITE_OMIT_FOREIGN_KEY
 static const char *actionName(u8 action){
   const char *zName;
   switch( action ){
@@ -253,6 +254,7 @@ static const char *actionName(u8 action){
   }
   return zName;
 }
+#endif
 
 /*
 ** Process a pragma statement.  

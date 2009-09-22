@@ -2509,8 +2509,8 @@ case OP_Savepoint: {
     
         /* Link the new savepoint into the database handle's list. */
         pNew->pNext = db->pSavepoint;
-        pNew->nDeferredCons = db->nDeferredCons;
         db->pSavepoint = pNew;
+        pNew->nDeferredCons = db->nDeferredCons;
       }
     }
   }else{

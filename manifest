@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sforeign\skey\sconstraints\sthat\smap\sfrom\sand\sIPK\scolumn.
-D 2009-09-21T18:56:24
+C Fix\scompilation\serrors\swhen\sOMIT_FOREIGN_KEY\sis\sdefined.
+D 2009-09-22T07:13:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/parse.y 030c85b2c5376951f81db48b9154c6938e22b5b5
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
 F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
 F src/pcache1.c 211295a9ff6a5b30f1ca50516731a5cf3e9bf82c
-F src/pragma.c c75db247922d241d7fd9046d73b5c7161d079500
+F src/pragma.c 031ab58adab8c9ecc5fec68301a8bd899265ec37
 F src/prepare.c 9803fc01f0db29ac4a17fa662902af285f37c06b
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -164,7 +164,7 @@ F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c d0171721c7402b368e257ddfc09ed54d0c74070c
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 1412bcdc13a5f13fafb9042ddc38388ba1f3953f
+F src/sqliteInt.h 6a949ccf79ae441ac37f0d3033204895aa2a9e6a
 F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -206,7 +206,7 @@ F src/update.c 4fac66ecaea13c9c13e7d3de8da66aae3cce90e2
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 869d08eaab64e2a4eaf4ef9ea34b851892b65a75
-F src/vdbe.c 93040bd3b366b0f9c4f47aa8011f456d1f0c08a9
+F src/vdbe.c 03857c07b8d159eb86ff559138d2eb5317cbfe32
 F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
 F src/vdbeInt.h 546ed25cad488c053819e19d09751d71d3ce3601
 F src/vdbeapi.c 524d79eb17bbcbe31c37c908b8e01edc5c684a90
@@ -752,7 +752,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cd850d49a12a2852258cbd7d5db56715132dff17
-R d5353831002e80af9b93981303b50742
+P 84129052623dc6a175c76db602ab07fa3e57f1eb
+R 7ae45017657956290a48337b2a2228fa
 U dan
-Z deb48eae30b76f10abf4df096870a1c2
+Z 76a2792cd8f084e7503c331b345a1fb4
