@@ -58,6 +58,7 @@ set EXCLUDE {
   crash7.test
   delete3.test
   fts3.test
+  fkey_malloc.test
   fuzz.test
   fuzz3.test
   fuzz_malloc.test

@@ -2233,7 +2233,10 @@ void sqlite3CreateForeignKey(
   pNextTo = (FKey *)sqlite3HashInsert(&p->pSchema->fkeyHash, 
       pFKey->zTo, sqlite3Strlen30(pFKey->zTo), (void *)pFKey
   );
-  if( pNextTo==pFKey ) goto fk_end;
+  if( pNextTo==pFKey ){
+    db->mallocFailed = 1;
+    goto fk_end;
+  }
   if( pNextTo ){
     assert( pNextTo->pPrevTo==0 );
     pFKey->pNextTo = pNextTo;

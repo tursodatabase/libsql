@@ -364,7 +364,9 @@ static void fkScanReferences(
       pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
     );
   }
-  sqlite3WhereEnd(pWInfo);
+  if( pWInfo ){
+    sqlite3WhereEnd(pWInfo);
+  }
 
   /* Clean up the WHERE clause constructed above. */
   sqlite3ExprDelete(db, pWhere);
@@ -510,49 +512,50 @@ void sqlite3FkCheck(
     ** the foreign key that refers to this table is attached to). This
     ** is required for the sqlite3WhereXXX() interface.  */
     pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
-    if( !pSrc ) return;
-    pSrc->a->pTab = pFKey->pFrom;
-    pSrc->a->pTab->nRef++;
-    pSrc->a->iCursor = pParse->nTab++;
-
-    /* If this is an UPDATE, and none of the columns associated with this
-    ** FK have been modified, do not scan the referencing table. Unlike
-    ** the compile-time test implemented above, this is not just an 
-    ** optimization. It is required so that immediate foreign keys do not 
-    ** throw exceptions when the user executes a statement like:
-    **
-    **     UPDATE refd_table SET refd_column = refd_column
-    */
-    if( pChanges ){
-      int i;
-      int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
-      for(i=0; i<pFKey->nCol; i++){
-        int iOff = (pIdx ? pIdx->aiColumn[i] : -1) + 1;
-        sqlite3VdbeAddOp3(v, OP_Ne, regOld+iOff, iJump, regNew+iOff);
+    if( pSrc ){
+      pSrc->a->pTab = pFKey->pFrom;
+      pSrc->a->pTab->nRef++;
+      pSrc->a->iCursor = pParse->nTab++;
+  
+      /* If this is an UPDATE, and none of the columns associated with this
+      ** FK have been modified, do not scan the referencing table. Unlike
+      ** the compile-time test implemented above, this is not just an 
+      ** optimization. It is required so that immediate foreign keys do not 
+      ** throw exceptions when the user executes a statement like:
+      **
+      **     UPDATE refd_table SET refd_column = refd_column
+      */
+      if( pChanges ){
+        int i;
+        int iJump = sqlite3VdbeCurrentAddr(v) + pFKey->nCol + 1;
+        for(i=0; i<pFKey->nCol; i++){
+          int iOff = (pIdx ? pIdx->aiColumn[i] : -1) + 1;
+          sqlite3VdbeAddOp3(v, OP_Ne, regOld+iOff, iJump, regNew+iOff);
+        }
+        iGoto = sqlite3VdbeAddOp0(v, OP_Goto);
       }
-      iGoto = sqlite3VdbeAddOp0(v, OP_Goto);
+  
+      if( regNew!=0 && pFKey->isDeferred ){
+        fkScanReferences(pParse, pSrc, pIdx, pFKey, aiCol, regNew, -1);
+      }
+      if( regOld!=0 ){
+        /* If there is a RESTRICT action configured for the current operation
+        ** on the referenced table of this FK, then throw an exception 
+        ** immediately if the FK constraint is violated, even if this is a
+        ** deferred trigger. That's what RESTRICT means. To defer checking
+        ** the constraint, the FK should specify NO ACTION (represented
+        ** using OE_None). NO ACTION is the default.  */
+        fkScanReferences(pParse, pSrc, pIdx, pFKey, aiCol, regOld, 
+            (pChanges!=0 && pFKey->updateConf!=OE_Restrict)
+         || (pChanges==0 && pFKey->deleteConf!=OE_Restrict)
+        );
+      }
+  
+      if( pChanges ){
+        sqlite3VdbeJumpHere(v, iGoto);
+      }
+      sqlite3SrcListDelete(db, pSrc);
     }
-
-    if( regNew!=0 && pFKey->isDeferred ){
-      fkScanReferences(pParse, pSrc, pIdx, pFKey, aiCol, regNew, -1);
-    }
-    if( regOld!=0 ){
-      /* If there is a RESTRICT action configured for the current operation
-      ** on the referenced table of this FK, then throw an exception 
-      ** immediately if the FK constraint is violated, even if this is a
-      ** deferred trigger. That's what RESTRICT means. To defer checking
-      ** the constraint, the FK should specify NO ACTION (represented
-      ** using OE_None). NO ACTION is the default.  */
-      fkScanReferences(pParse, pSrc, pIdx, pFKey, aiCol, regOld, 
-          (pChanges!=0 && pFKey->updateConf!=OE_Restrict)
-       || (pChanges==0 && pFKey->deleteConf!=OE_Restrict)
-      );
-    }
-
-    if( pChanges ){
-      sqlite3VdbeJumpHere(v, iGoto);
-    }
-    sqlite3SrcListDelete(db, pSrc);
     sqlite3DbFree(db, aiCol);
   }
 }
