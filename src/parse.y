@@ -230,7 +230,7 @@ id(A) ::= INDEXED(X).    {A = X;}
 %left STAR SLASH REM.
 %left CONCAT.
 %left COLLATE.
-%right UMINUS UPLUS BITNOT.
+%right BITNOT.
 
 // And "ids" is an identifer-or-string.
 //
@@ -909,9 +909,9 @@ expr(A) ::= expr(X) IS NOT NULL(E).
 
 expr(A) ::= NOT(B) expr(X).    {spanUnaryPrefix(&A,pParse,@B,&X,&B);}
 expr(A) ::= BITNOT(B) expr(X). {spanUnaryPrefix(&A,pParse,@B,&X,&B);}
-expr(A) ::= MINUS(B) expr(X). [UMINUS]
+expr(A) ::= MINUS(B) expr(X). [BITNOT]
                                {spanUnaryPrefix(&A,pParse,TK_UMINUS,&X,&B);}
-expr(A) ::= PLUS(B) expr(X). [UPLUS]
+expr(A) ::= PLUS(B) expr(X). [BITNOT]
                                {spanUnaryPrefix(&A,pParse,TK_UPLUS,&X,&B);}
 
 %type between_op {int}
