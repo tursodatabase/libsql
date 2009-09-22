@@ -622,8 +622,8 @@ static Trigger *fkActionTrigger(
   ExprList *pChanges              /* Change-list for UPDATE, NULL for DELETE */
 ){
   sqlite3 *db = pParse->db;       /* Database handle */
-  int action;
-  Trigger *pTrigger;
+  int action;                     /* One of OE_None, OE_Cascade etc. */
+  Trigger *pTrigger;              /* Trigger definition to return */
 
   if( pChanges ){
     action = pFKey->updateConf;
@@ -637,43 +637,26 @@ static Trigger *fkActionTrigger(
   assert( OE_Cascade>OE_Restrict && OE_None<OE_Restrict );
 
   if( action>OE_Restrict && !pTrigger ){
+    u8 enableLookaside;           /* Copy of db->lookaside.bEnabled */
     char const *zFrom;            /* Name of referencing table */
     int nFrom;                    /* Length in bytes of zFrom */
-    Index *pIdx = 0;
-    int *aiCol = 0;
-    TriggerStep *pStep;
-    sqlite3 *dbMem = pTab->dbMem;
-    Expr *pWhere = 0;
-    ExprList *pList = 0;
-    int i;
+    Index *pIdx = 0;              /* Parent key index for this FK */
+    int *aiCol = 0;               /* child table cols -> parent key cols */
+    TriggerStep *pStep;           /* First (only) step of trigger program */
+    Expr *pWhere = 0;             /* WHERE clause of trigger step */
+    ExprList *pList = 0;          /* Changes list if ON UPDATE CASCADE */
+    int i;                        /* Iterator variable */
 
     if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return 0;
     assert( aiCol || pFKey->nCol==1 );
 
-    assert( dbMem==0 || dbMem==pParse->db );
-    zFrom = pFKey->pFrom->zName;
-    nFrom = sqlite3Strlen30(zFrom);
-    pTrigger = (Trigger *)sqlite3DbMallocZero(dbMem, 
-        sizeof(Trigger) +         /* struct Trigger */
-        sizeof(TriggerStep) +     /* Single step in trigger program */
-        nFrom + 1                 /* Space for pStep->target.z */
-    );
-    if( !pTrigger ){
-      pParse->db->mallocFailed = 1;
-      return 0;
-    }
-    pStep = pTrigger->step_list = (TriggerStep *)&pTrigger[1];
-    pStep->target.z = (char *)&pStep[1];
-    pStep->target.n = nFrom;
-    memcpy((char *)pStep->target.z, zFrom, nFrom);
-
     for(i=0; i<pFKey->nCol; i++){
-      Expr *pEq;
-      int iFromCol;               /* Idx of column in referencing table */
-      Token tFromCol;             /* Name of column in referencing table */
-      Token tToCol;               /* Name of column in referenced table */
       Token tOld = { "old", 3 };  /* Literal "old" token */
       Token tNew = { "new", 3 };  /* Literal "new" token */
+      Token tFromCol;             /* Name of column in referencing table */
+      Token tToCol;               /* Name of column in referenced table */
+      int iFromCol;               /* Idx of column in referencing table */
+      Expr *pEq;                  /* tFromCol = OLD.tToCol */
 
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
       tToCol.z = pIdx ? pTab->aCol[pIdx->aiColumn[i]].zName : "oid";
@@ -690,7 +673,7 @@ static Trigger *fkActionTrigger(
             sqlite3PExpr(pParse, TK_ID, 0, 0, &tToCol)
           , 0)
       , 0);
-      pWhere = sqlite3ExprAnd(pParse->db, pWhere, pEq);
+      pWhere = sqlite3ExprAnd(db, pWhere, pEq);
 
       if( action!=OE_Cascade || pChanges ){
         Expr *pNew;
@@ -713,12 +696,42 @@ static Trigger *fkActionTrigger(
         sqlite3ExprListSetName(pParse, pList, &tFromCol, 0);
       }
     }
-    sqlite3DbFree(pParse->db, aiCol);
+    sqlite3DbFree(db, aiCol);
 
-    pStep->pWhere = sqlite3ExprDup(dbMem, pWhere, EXPRDUP_REDUCE);
-    pStep->pExprList = sqlite3ExprListDup(dbMem, pList, EXPRDUP_REDUCE);
+    /* If pTab->dbMem==0, then the table may be part of a shared-schema.
+    ** Disable the lookaside buffer before allocating space for the
+    ** trigger definition in this case.  */
+    enableLookaside = db->lookaside.bEnabled;
+    if( pTab->dbMem==0 ){
+      db->lookaside.bEnabled = 0;
+    }
+
+    zFrom = pFKey->pFrom->zName;
+    nFrom = sqlite3Strlen30(zFrom);
+    pTrigger = (Trigger *)sqlite3DbMallocZero(db, 
+        sizeof(Trigger) +         /* struct Trigger */
+        sizeof(TriggerStep) +     /* Single step in trigger program */
+        nFrom + 1                 /* Space for pStep->target.z */
+    );
+    if( pTrigger ){
+      pStep = pTrigger->step_list = (TriggerStep *)&pTrigger[1];
+      pStep->target.z = (char *)&pStep[1];
+      pStep->target.n = nFrom;
+      memcpy((char *)pStep->target.z, zFrom, nFrom);
+  
+      pStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
+      pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);
+    }
+
+    /* Re-enable the lookaside buffer, if it was disabled earlier. */
+    db->lookaside.bEnabled = enableLookaside;
+
     sqlite3ExprDelete(pParse->db, pWhere);
     sqlite3ExprListDelete(pParse->db, pList);
+    if( db->mallocFailed==1 ){
+      fkTriggerDelete(db, pTrigger);
+      return 0;
+    }
 
     pStep->op = (action!=OE_Cascade || pChanges) ? TK_UPDATE : TK_DELETE;
     pStep->pTrig = pTrigger;

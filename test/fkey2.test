@@ -44,6 +44,9 @@ ifcapable {!foreignkey||!trigger} {
 #
 # fkey2-7.*: Test using an IPK as the key in the child (referencing) table.
 #
+# fkey2-8.*: Test that enabling/disabling foreign key support while a 
+#            transaction is active is not possible.
+#
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
 #
@@ -414,6 +417,7 @@ ifcapable vacuum {
 #-------------------------------------------------------------------------
 # Test that it is possible to use an INTEGER PRIMARY KEY as the child key
 # of a foreign constraint.
+# 
 drop_all_tables
 do_test fkey2-7.1 {
   execsql {
@@ -446,6 +450,32 @@ do_test fkey2-7.7 {
 do_test fkey2-7.8 {
   catchsql { UPDATE t1 SET a = 3 }
 } {1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# Test that it is not possible to enable/disable FK support while a
+# transaction is open.
+# 
+drop_all_tables
+proc fkey2-8-test {tn zSql value} {
+  do_test fkey-2.8.$tn.1 [list execsql $zSql] {}
+  do_test fkey-2.8.$tn.2 { execsql "PRAGMA foreign_keys" } $value
+}
+fkey2-8-test  1 { PRAGMA foreign_keys = 0     } 0
+fkey2-8-test  2 { PRAGMA foreign_keys = 1     } 1
+fkey2-8-test  3 { BEGIN                       } 1
+fkey2-8-test  4 { PRAGMA foreign_keys = 0     } 1
+fkey2-8-test  5 { COMMIT                      } 1
+fkey2-8-test  6 { PRAGMA foreign_keys = 0     } 0
+fkey2-8-test  7 { BEGIN                       } 0
+fkey2-8-test  8 { PRAGMA foreign_keys = 1     } 0
+fkey2-8-test  9 { COMMIT                      } 0
+fkey2-8-test 10 { PRAGMA foreign_keys = 1     } 1
+fkey2-8-test 11 { PRAGMA foreign_keys = off   } 0
+fkey2-8-test 12 { PRAGMA foreign_keys = on    } 1
+fkey2-8-test 13 { PRAGMA foreign_keys = no    } 0
+fkey2-8-test 14 { PRAGMA foreign_keys = yes   } 1
+fkey2-8-test 15 { PRAGMA foreign_keys = false } 0
+fkey2-8-test 16 { PRAGMA foreign_keys = true  } 1
 
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 
