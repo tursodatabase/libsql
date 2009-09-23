@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swith\sFK\sconstraints\sthat\simplicitly\smap\sto\sa\scomposite\sprimary\skey.
-D 2009-09-23T18:07:22
+C More\sfkey\stests.
+D 2009-09-23T18:49:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -331,6 +331,7 @@ F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test d1d78b106da32c00e40b7a4228f591cc880147ac
+F test/fkey3.test 2183cac9075f3aae4875106eb9255bb73618444e
 F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -753,7 +754,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0ce1efa46080f379089b03706daeac96c4add0f9
-R c55088d555c926efecaa92adc93e4c6b
-U dan
-Z 26aaed3e9a02b590739916db40d12d2e
+P e0a48d53110130de75602603f524539e421a9dba
+R ff71547a957706a79706e81913a173d1
+U shane
+Z 95291c1566a042bd72f53d01f2664d90
