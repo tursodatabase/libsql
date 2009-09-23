@@ -19,6 +19,7 @@ END {
   printf "#define TK_%-29s %4d\n", "TO_NUMERIC",      ++max
   printf "#define TK_%-29s %4d\n", "TO_INT",          ++max
   printf "#define TK_%-29s %4d\n", "TO_REAL",         ++max
+  printf "#define TK_%-29s %4d\n", "ISNOT",           ++max
   printf "#define TK_%-29s %4d\n", "END_OF_FILE",     ++max
   printf "#define TK_%-29s %4d\n", "ILLEGAL",         ++max
   printf "#define TK_%-29s %4d\n", "SPACE",           ++max

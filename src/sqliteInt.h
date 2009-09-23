@@ -1126,6 +1126,7 @@ struct CollSeq {
 */
 #define SQLITE_JUMPIFNULL   0x08  /* jumps if either operand is NULL */
 #define SQLITE_STOREP2      0x10  /* Store result in reg[P2] rather than jump */
+#define SQLITE_NULLEQ       0x80  /* NULL=NULL */
 
 /*
 ** An object of this type is created for each virtual table present in

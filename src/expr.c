@@ -152,7 +152,7 @@ static char comparisonAffinity(Expr *pExpr){
   char aff;
   assert( pExpr->op==TK_EQ || pExpr->op==TK_IN || pExpr->op==TK_LT ||
           pExpr->op==TK_GT || pExpr->op==TK_GE || pExpr->op==TK_LE ||
-          pExpr->op==TK_NE );
+          pExpr->op==TK_NE || pExpr->op==TK_IS || pExpr->op==TK_ISNOT );
   assert( pExpr->pLeft );
   aff = sqlite3ExprAffinity(pExpr->pLeft);
   if( pExpr->pRight ){
@@ -2244,6 +2244,19 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       testcase( regFree2==0 );
       break;
     }
+    case TK_IS:
+    case TK_ISNOT: {
+      testcase( op==TK_IS );
+      testcase( op==TK_ISNOT );
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
+      op = (op==TK_IS) ? TK_EQ : TK_NE;
+      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+                  r1, r2, inReg, SQLITE_STOREP2 | SQLITE_NULLEQ);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
+      break;
+    }
     case TK_AND:
     case TK_OR:
     case TK_PLUS:
@@ -3018,6 +3031,19 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       testcase( regFree2==0 );
       break;
     }
+    case TK_IS:
+    case TK_ISNOT: {
+      testcase( op==TK_IS );
+      testcase( op==TK_ISNOT );
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
+      op = (op==TK_IS) ? TK_EQ : TK_NE;
+      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+                  r1, r2, dest, SQLITE_NULLEQ);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
+      break;
+    }
     case TK_ISNULL:
     case TK_NOTNULL: {
       assert( TK_ISNULL==OP_IsNull );
@@ -3163,6 +3189,19 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
                                   pExpr->pRight, &r2, &regFree2);
       codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
                   r1, r2, dest, jumpIfNull);
+      testcase( regFree1==0 );
+      testcase( regFree2==0 );
+      break;
+    }
+    case TK_IS:
+    case TK_ISNOT: {
+      testcase( op==TK_IS );
+      testcase( op==TK_ISNOT );
+      codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
+                                  pExpr->pRight, &r2, &regFree2);
+      op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
+      codeCompare(pParse, pExpr->pLeft, pExpr->pRight, op,
+                  r1, r2, dest, SQLITE_NULLEQ);
       testcase( regFree1==0 );
       testcase( regFree2==0 );
       break;

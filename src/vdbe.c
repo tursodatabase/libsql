@@ -1680,12 +1680,24 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are not equal.  See the Lt opcode for
 ** additional information.
+**
+** If SQLITE_NULLEQ is set in P5 then the result of comparison is always either
+** true or false and is never NULL.  If both operands are NULL then the result
+** of comparison is false.  If either operand is NULL then the result is true.
+** If neither operand is NULL the the result is the same as it would be if
+** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Eq P1 P2 P3 P4 P5
 **
 ** This works just like the Lt opcode except that the jump is taken if
 ** the operands in registers P1 and P3 are equal.
 ** See the Lt opcode for additional information.
+**
+** If SQLITE_NULLEQ is set in P5 then the result of comparison is always either
+** true or false and is never NULL.  If both operands are NULL then the result
+** of comparison is true.  If either operand is NULL then the result is false.
+** If neither operand is NULL the the result is the same as it would be if
+** the SQLITE_NULLEQ flag were omitted from P5.
 */
 /* Opcode: Le P1 P2 P3 P4 P5
 **
@@ -1711,37 +1723,46 @@ case OP_Lt:               /* same as TK_LT, jump, in1, in3 */
 case OP_Le:               /* same as TK_LE, jump, in1, in3 */
 case OP_Gt:               /* same as TK_GT, jump, in1, in3 */
 case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
-  int flags;
-  int res;
-  char affinity;
+  int res;            /* Result of the comparison of pIn1 against pIn3 */
+  char affinity;      /* Affinity to use for comparison */
 
-  flags = pIn1->flags|pIn3->flags;
-
-  if( flags&MEM_Null ){
-    /* If either operand is NULL then the result is always NULL.
-    ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
-    */
-    if( pOp->p5 & SQLITE_STOREP2 ){
-      pOut = &p->aMem[pOp->p2];
-      MemSetTypeFlag(pOut, MEM_Null);
-      REGISTER_TRACE(pOp->p2, pOut);
-    }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
-      pc = pOp->p2-1;
+  if( (pIn1->flags | pIn3->flags)&MEM_Null ){
+    /* One or both operands are NULL */
+    if( pOp->p5 & SQLITE_NULLEQ ){
+      /* If SQLITE_NULLEQ is set (which will only happen if the operator is
+      ** OP_Eq or OP_Ne) then take the jump or not depending on whether
+      ** or not both operands are null.
+      */
+      assert( pOp->opcode==OP_Eq || pOp->opcode==OP_Ne );
+      res = (pIn1->flags & pIn3->flags & MEM_Null)==0;
+    }else{
+      /* SQLITE_NULLEQ is clear and at least one operand is NULL,
+      ** then the result is always NULL.
+      ** The jump is taken if the SQLITE_JUMPIFNULL bit is set.
+      */
+      if( pOp->p5 & SQLITE_STOREP2 ){
+        pOut = &p->aMem[pOp->p2];
+        MemSetTypeFlag(pOut, MEM_Null);
+        REGISTER_TRACE(pOp->p2, pOut);
+      }else if( pOp->p5 & SQLITE_JUMPIFNULL ){
+        pc = pOp->p2-1;
+      }
+      break;
     }
-    break;
-  }
+  }else{
+    /* Neither operand is NULL.  Do a comparison. */
+    affinity = pOp->p5 & SQLITE_AFF_MASK;
+    if( affinity ){
+      applyAffinity(pIn1, affinity, encoding);
+      applyAffinity(pIn3, affinity, encoding);
+      if( db->mallocFailed ) goto no_mem;
+    }
 
-  affinity = pOp->p5 & SQLITE_AFF_MASK;
-  if( affinity ){
-    applyAffinity(pIn1, affinity, encoding);
-    applyAffinity(pIn3, affinity, encoding);
-    if( db->mallocFailed ) goto no_mem;
+    assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
+    ExpandBlob(pIn1);
+    ExpandBlob(pIn3);
+    res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   }
-
-  assert( pOp->p4type==P4_COLLSEQ || pOp->p4.pColl==0 );
-  ExpandBlob(pIn1);
-  ExpandBlob(pIn3);
-  res = sqlite3MemCompare(pIn3, pIn1, pOp->p4.pColl);
   switch( pOp->opcode ){
     case OP_Eq:    res = res==0;     break;
     case OP_Ne:    res = res!=0;     break;
@@ -1807,9 +1828,18 @@ case OP_Compare: {
   assert( n>0 );
   assert( pKeyInfo!=0 );
   p1 = pOp->p1;
-  assert( p1>0 && p1+n<=p->nMem+1 );
   p2 = pOp->p2;
-  assert( p2>0 && p2+n<=p->nMem+1 );
+#if SQLITE_DEBUG
+  if( aPermute ){
+    int k, mx = 0;
+    for(k=0; k<n; k++) if( aPermute[k]>mx ) mx = aPermute[k];
+    assert( p1>0 && p1+mx<=p->nMem+1 );
+    assert( p2>0 && p2+mx<=p->nMem+1 );
+  }else{
+    assert( p1>0 && p1+n<=p->nMem+1 );
+    assert( p2>0 && p2+n<=p->nMem+1 );
+  }
+#endif /* SQLITE_DEBUG */
   for(i=0; i<n; i++){
     idx = aPermute ? aPermute[i] : i;
     REGISTER_TRACE(p1+idx, &p->aMem[p1+idx]);

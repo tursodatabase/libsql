@@ -884,10 +884,26 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
 }
 
 expr(A) ::= expr(X) ISNULL|NOTNULL(E).   {spanUnaryPostfix(&A,pParse,@E,&X,&E);}
-expr(A) ::= expr(X) IS NULL(E).   {spanUnaryPostfix(&A,pParse,TK_ISNULL,&X,&E);}
 expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
-expr(A) ::= expr(X) IS NOT NULL(E).
-                                 {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
+
+//    expr1 IS expr2
+//    expr1 IS NOT expr2
+//
+// If expr2 is NULL then code as TK_ISNULL or TK_NOTNULL.  If expr2
+// is any other expression, code as TK_IS or TK_ISNOT.
+// 
+expr(A) ::= expr(X) IS expr(Y).     {
+  spanBinaryExpr(&A,pParse,TK_IS,&X,&Y);
+  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
+    A.pExpr->op = TK_ISNULL;
+  }
+}
+expr(A) ::= expr(X) IS NOT expr(Y). {
+  spanBinaryExpr(&A,pParse,TK_ISNOT,&X,&Y);
+  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
+    A.pExpr->op = TK_NOTNULL;
+  }
+}
 
 %include {
   /* Construct an expression node for a unary prefix operator
