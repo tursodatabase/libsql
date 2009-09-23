@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Do\snot\srun\sON\sUPDATE\sactions\sof\sa\sforeign\skey\sconstraint\sunless\sat\sleast\sone\ncolumn\svalue\sreally\sdoes\schange.
-D 2009-09-23T03:01:59
+C Add\smissing\scomments\sto\sfkey.c.\sAlso,\schange\sthe\sterminology\sused\sfor\scomments\sand\snames\sin\sfkey.c\sfrom\s"referenced/referencing"\sto\s"parent/child".\sThis\sis\sarguably\sless\scorrect,\sbut\sis\seasier\sto\sfollow.
+D 2009-09-23T08:43:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,14 +109,14 @@ F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 9c425425784c5d569bc0309c22251698ba906451
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
 F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
-F src/build.c b0aee84fe34138eda3b8b4ff2fc0766714139ed3
+F src/build.c a6bd2dd725847bb4870f1b3f87d64730773c92bb
 F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 15499f5d10047d38e68ce991b3f88cbddb6e0931
 F src/expr.c 8a663240f374a5326ee157df3d27751f58b7676a
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c de296942345984960792f12ea4236a6bef2f800b
+F src/fkey.c da1a63c1cb22f4b93ceb743ab471a54648466732
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -153,11 +150,11 @@ F src/os_unix.c 5369272992c14dd198c02ddfc2fd7a1516906c40
 F src/os_win.c 49a360be4f42d5a63d00be9aa44449ed4d6717e0
 F src/pager.c ebd0a8f2421e8f0ad5b78201440004bf3e1c96d8
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
-F src/parse.y 563ecc9e633bbb465383667380aff1646ecd96f7
+F src/parse.y 2b75a329a5b3cdcb188609d9a30bb339aecfeddd
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
 F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
 F src/pcache1.c 211295a9ff6a5b30f1ca50516731a5cf3e9bf82c
-F src/pragma.c 031ab58adab8c9ecc5fec68301a8bd899265ec37
+F src/pragma.c c25d0d15dd0bbc5ec34e9760629353358705a447
 F src/prepare.c 9803fc01f0db29ac4a17fa662902af285f37c06b
 F src/printf.c 508a1c59433353552b6553cba175eaa7331f8fc1
 F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
@@ -167,7 +164,7 @@ F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c d0171721c7402b368e257ddfc09ed54d0c74070c
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 35f0d4203924272b5ae849c88b7b857eda3bb272
+F src/sqliteInt.h 98ad725d6915a1f1c618ff317e7b09d79efffe57
 F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -756,14 +753,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 98853f6104076c50ea92175e17a3254bfbbd4619
-R 827ec94cc2eb4c57959ec45f4b3d8098
-U drh
-Z ec752338f3000365feb24aa823e5d734
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKuY+roxKgR168RlERAq1TAKCDsc87lQ7RxW/6hlefk/rm32wxUACdGuQz
-1VFw5lE97EA4c5Tiy8ftXks=
-=0G/k
------END PGP SIGNATURE-----
+P 71ac8e28e55ff0250ebe2fe239159ce2458d9165
+R 2ced32012b9c68891c37e1608fd90d15
+U dan
+Z 2fdc28dc4452275cfa2178c7993f269c

@@ -981,8 +981,8 @@ void sqlite3Pragma(
           int j;
           for(j=0; j<pFK->nCol; j++){
             char *zCol = pFK->aCol[j].zCol;
-            char *zOnUpdate = (char *)actionName(pFK->updateConf);
-            char *zOnDelete = (char *)actionName(pFK->deleteConf);
+            char *zOnDelete = (char *)actionName(pFK->aAction[0]);
+            char *zOnUpdate = (char *)actionName(pFK->aAction[1]);
             sqlite3VdbeAddOp2(v, OP_Integer, i, 1);
             sqlite3VdbeAddOp2(v, OP_Integer, j, 2);
             sqlite3VdbeAddOp4(v, OP_String8, 0, 3, 0, pFK->zTo, 0);
