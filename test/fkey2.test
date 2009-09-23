@@ -70,7 +70,6 @@ proc drop_all_tables {{db db}} {
   }
 }
 
-
 execsql { PRAGMA foreign_keys = on }
 
 set FkeySimpleSchema {
@@ -131,12 +130,22 @@ foreach {tn zSql res} $FkeySimpleTests {
 drop_all_tables
 
 do_test fkey2-1.2.0 {
-  execsql [string map {/D/ {DEFERRABLE INITIALLY DEFERRED}} $FkeySimpleSchema
-  ]
+  execsql [string map {/D/ {DEFERRABLE INITIALLY DEFERRED}} $FkeySimpleSchema]
 } {}
 foreach {tn zSql res} $FkeySimpleTests {
   do_test fkey2-1.2.$tn { catchsql $zSql } $res
 }
+drop_all_tables
+
+do_test fkey2-1.3.0 {
+  execsql [string map {/D/ {}} $FkeySimpleSchema]
+  execsql { PRAGMA count_changes = 1 }
+} {}
+foreach {tn zSql res} $FkeySimpleTests {
+  if {$res == "0 {}"} { set res {0 1} }
+  do_test fkey2-1.3.$tn { catchsql $zSql } $res
+}
+execsql { PRAGMA count_changes = 0 }
 drop_all_tables
 
 #-------------------------------------------------------------------------
@@ -744,6 +753,7 @@ do_test fkey2-genfkey.2.4 {
     SELECT * FROM t2;
   }
 } {2 one}
+
 do_test fkey2-genfkey.2.5 {
   execsql {
     INSERT INTO t3 VALUES('hello', 2, 3);

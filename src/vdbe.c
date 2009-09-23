@@ -1117,6 +1117,15 @@ case OP_ResultRow: {
   assert( pOp->p1>0 );
   assert( pOp->p1+pOp->p2<=p->nMem+1 );
 
+  /* If this statement has violated immediate foreign key constraints, do
+  ** not return the number of rows modified. And do not RELEASE the statement
+  ** transaction. It needs to be rolled back.  */
+  if( SQLITE_OK!=(rc = sqlite3VdbeCheckFk(p, 0)) ){
+    assert( db->flags&SQLITE_CountRows );
+    assert( p->usesStmtJournal );
+    break;
+  }
+
   /* If the SQLITE_CountRows flag is set in sqlite3.flags mask, then 
   ** DML statements invoke this opcode to return the number of rows 
   ** modified to the user. This is the only way that a VM that
@@ -2578,7 +2587,7 @@ case OP_Savepoint: {
       */
       int isTransaction = pSavepoint->pNext==0 && db->isTransactionSavepoint;
       if( isTransaction && p1==SAVEPOINT_RELEASE ){
-        if( (rc = sqlite3VdbeCheckDeferred(p))!=SQLITE_OK ){
+        if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
           goto vdbe_return;
         }
         db->autoCommit = 1;
@@ -2674,7 +2683,7 @@ case OP_AutoCommit: {
       assert( desiredAutoCommit==1 );
       sqlite3RollbackAll(db);
       db->autoCommit = 1;
-    }else if( (rc = sqlite3VdbeCheckDeferred(p))!=SQLITE_OK ){
+    }else if( (rc = sqlite3VdbeCheckFk(p, 1))!=SQLITE_OK ){
       goto vdbe_return;
     }else{
       db->autoCommit = (u8)desiredAutoCommit;
@@ -4891,13 +4900,19 @@ case OP_Param: {           /* out2-prerelease */
 #endif /* #ifndef SQLITE_OMIT_TRIGGER */
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-/* Opcode: DeferredCons P1 * * * *
+/* Opcode: FkCounter P1 P2 * * *
 **
-** Increment the database handles "deferred constraint violation" counter
-** by P1 (P1 may be negative or positive).
+** Increment a "constraint counter" by by P1 (P1 may be negative or positive).
+** If P2 is non-zero, the database constraint counter is incremented 
+** (deferred foreign key constraints). Otherwise, if P2 is zero, the 
+** statement counter is incremented (immediate foreign key constraints).
 */
-case OP_DeferredCons: {
-  db->nDeferredCons += pOp->p1;
+case OP_FkCounter: {
+  if( pOp->p2 ){
+    db->nDeferredCons += pOp->p1;
+  }else{
+    p->nFkConstraint += pOp->p1;
+  }
   break;
 }
 #endif /* #ifndef SQLITE_OMIT_FOREIGN_KEY */

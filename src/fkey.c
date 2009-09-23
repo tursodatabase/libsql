@@ -291,14 +291,12 @@ static void fkLookupParent(
   FKey *pFKey,          /* Foreign key constraint */
   int *aiCol,           /* Map from parent key columns to child table columns */
   int regData,          /* Address of array containing child table row */
-  int nIncr             /* If deferred FK, increment counter by this */
+  int nIncr             /* Increment constraint counter by this */
 ){
   int i;                                    /* Iterator variable */
   Vdbe *v = sqlite3GetVdbe(pParse);         /* Vdbe to add code to */
   int iCur = pParse->nTab - 1;              /* Cursor number to use */
   int iOk = sqlite3VdbeMakeLabel(v);        /* jump here if parent key found */
-
-  assert( pFKey->isDeferred || nIncr==1 );
 
   /* Check if any of the key columns in the child table row are
   ** NULL. If any are, then the constraint is satisfied. No need
@@ -341,13 +339,20 @@ static void fkLookupParent(
     sqlite3ReleaseTempReg(pParse, regRec);
   }
 
-  if( pFKey->isDeferred ){
-    assert( nIncr==1 || nIncr==-1 );
-    sqlite3VdbeAddOp1(v, OP_DeferredCons, nIncr);
-  }else{
+  if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+    /* Special case: If this is an INSERT statement that will insert exactly
+    ** one row into the table, raise a constraint immediately instead of
+    ** incrementing a counter. This is necessary as the VM code is being
+    ** generated for will not open a statement transaction.  */
+    assert( nIncr==1 );
     sqlite3HaltConstraint(
         pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
     );
+  }else{
+    if( nIncr>0 && pFKey->isDeferred==0 ){
+      sqlite3ParseToplevel(pParse)->mayAbort = 1;
+    }
+    sqlite3VdbeAddOp2(v, OP_FkCounter, nIncr, pFKey->isDeferred);
   }
 
   sqlite3VdbeResolveLabel(v, iOk);
@@ -423,14 +428,16 @@ static void fkScanChildren(
   ** each row found. Otherwise, for deferred constraints, increment the
   ** deferred constraint counter by nIncr for each row selected.  */
   pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0);
-  if( pFKey->isDeferred && nIncr ){
-    assert( nIncr==1 || nIncr==-1 );
-    sqlite3VdbeAddOp1(pParse->pVdbe, OP_DeferredCons, nIncr);
-  }else{
-    assert( nIncr==1 || nIncr==0 );
+  if( nIncr==0 ){
+    /* A RESTRICT Action. */
     sqlite3HaltConstraint(
       pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
     );
+  }else{
+    if( nIncr>0 && pFKey->isDeferred==0 ){
+      sqlite3ParseToplevel(pParse)->mayAbort = 1;
+    }
+    sqlite3VdbeAddOp2(pParse->pVdbe, OP_FkCounter, nIncr, pFKey->isDeferred);
   }
   if( pWInfo ){
     sqlite3WhereEnd(pWInfo);
@@ -535,11 +542,6 @@ void sqlite3FkCheck(
     int iCol;
     int i;
 
-    /* If this is a DELETE operation and the foreign key is not deferred,
-    ** nothing to do. A DELETE on the child table cannot cause the FK 
-    ** constraint to fail.  */
-    if( pFKey->isDeferred==0 && regNew==0 ) continue;
-
     /* Find the parent table of this foreign key. Also find a unique index 
     ** on the parent key columns in the parent table. If either of these 
     ** schema items cannot be located, set an error in pParse and return 
@@ -571,10 +573,15 @@ void sqlite3FkCheck(
     sqlite3TableLock(pParse, iDb, pTo->tnum, 0, pTo->zName);
     pParse->nTab++;
 
-    if( regOld!=0 && pFKey->isDeferred ){
+    if( regOld!=0 ){
+      /* A row is being removed from the child table. Search for the parent.
+      ** If the parent does not exist, removing the child row resolves an 
+      ** outstanding foreign key constraint violation. */
       fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regOld, -1);
     }
     if( regNew!=0 ){
+      /* A row is being added to the child table. If a parent row cannot
+      ** be found, adding the child row has violated the FK constraint. */ 
       fkLookupParent(pParse, iDb, pTo, pIdx, pFKey, aiCol, regNew, +1);
     }
 
@@ -588,18 +595,11 @@ void sqlite3FkCheck(
     SrcList *pSrc;
     int *aiCol = 0;
 
-    /* For immediate constraints, skip this scan if:
-    **
-    **   1) this is an INSERT operation, or
-    **   2) an UPDATE operation and the FK action is a trigger-action, or
-    **   3) a DELETE operation and the FK action is a trigger-action.
-    **
-    ** A "trigger-action" is one of CASCADE, SET DEFAULT or SET NULL.
-    */
-    if( pFKey->isDeferred==0 ){
-      if( regOld==0 ) continue;                                     /* 1 */
-      if( regNew!=0 && pFKey->aAction[1]>OE_Restrict ) continue;    /* 2 */
-      if( regNew==0 && pFKey->aAction[0]>OE_Restrict ) continue;    /* 3 */
+    if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
+      assert( regOld==0 && regNew!=0 );
+      /* Inserting a single row into a parent table cannot cause an immediate
+      ** foreign key violation. So do nothing in this case.  */
+      return;
     }
 
     if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return;
@@ -640,7 +640,7 @@ void sqlite3FkCheck(
         iGoto = sqlite3VdbeAddOp0(v, OP_Goto);
       }
   
-      if( regNew!=0 && pFKey->isDeferred ){
+      if( regNew!=0 ){
         fkScanChildren(pParse, pSrc, pIdx, pFKey, aiCol, regNew, -1);
       }
       if( regOld!=0 ){
@@ -682,9 +682,7 @@ u32 sqlite3FkOldmask(
     FKey *p;
     int i;
     for(p=pTab->pFKey; p; p=p->pNextFrom){
-      if( pChanges || p->isDeferred ){
-        for(i=0; i<p->nCol; i++) mask |= COLUMN_MASK(p->aCol[i].iFrom);
-      }
+      for(i=0; i<p->nCol; i++) mask |= COLUMN_MASK(p->aCol[i].iFrom);
     }
     for(p=fkRefering(pTab); p; p=p->pNextTo){
       Index *pIdx = 0;
@@ -713,11 +711,7 @@ int sqlite3FkRequired(
   ExprList *pChanges              /* Non-NULL for UPDATE operations */
 ){
   if( pParse->db->flags&SQLITE_ForeignKeys ){
-    FKey *p;
-    for(p=pTab->pFKey; p; p=p->pNextFrom){
-      if( pChanges || p->isDeferred ) return 1;
-    }
-    if( fkRefering(pTab) ) return 1;
+    if( fkRefering(pTab) || pTab->pFKey ) return 1;
   }
   return 0;
 }

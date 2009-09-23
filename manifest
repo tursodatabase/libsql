@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Modify\sthe\s".dump"\scommand\son\sthe\sCLI\sso\sthat\sit\salways\sissues\sa\nPRAGMA\sforeign_keys=OFF\sat\sthe\stop\sof\sthe\soutput.
-D 2009-09-23T15:51:36
+C Do\snot\scheck\simmediate\sforeign\skey\sconstraints\suntil\sthe\send\sof\sthe\sstatement.\sThis\smatches\sthe\spostgres\sbehaviour.
+D 2009-09-23T17:30:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 15499f5d10047d38e68ce991b3f88cbddb6e0931
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c 9a0afe076ce51552ce00ab0f730213798bf75720
+F src/fkey.c 89232758416a48783adbb3b48ab447432e817370
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -209,11 +206,11 @@ F src/update.c 4fac66ecaea13c9c13e7d3de8da66aae3cce90e2
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 869d08eaab64e2a4eaf4ef9ea34b851892b65a75
-F src/vdbe.c 4946e2ac1124b0cb0ee882ed7628d2d8b339b8ef
+F src/vdbe.c a5da14fe8d89f9ad2cd4911a9d7df79c74a6b84c
 F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
-F src/vdbeInt.h 546ed25cad488c053819e19d09751d71d3ce3601
+F src/vdbeInt.h 03336c0364c94267de615b9cd7768e7264f324ac
 F src/vdbeapi.c 524d79eb17bbcbe31c37c908b8e01edc5c684a90
-F src/vdbeaux.c 2dc9af9b797a1a038dc1bbe26d400fc042a30eaf
+F src/vdbeaux.c 32d77382469c20aa5a971a8794deb1eafa8d5cb6
 F src/vdbeblob.c 3ba0f7ba1b3afce2d37a18e4f437992d430f0eae
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -333,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 9f451a47695ee9c19772bd2107d9a3c788672b0f
+F test/fkey2.test d1d78b106da32c00e40b7a4228f591cc880147ac
 F test/fkey_malloc.test a18bdb482c6a7b9a61865616a516584d17f04a04
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -756,14 +753,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e3b73394bf9c0391e997079b160eace3589415ab
-R 852fa5de88ad9a2f042ab0c36dd79c2c
-U drh
-Z 43fdb088f0ddc98f38c08bf5dc74ca34
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKukQLoxKgR168RlERAuoxAJ4o9BqLqdDvJT/TgBK1g1ugRts8MwCcCirL
-iIV/srWIRfE5lVnX7rkbqzE=
-=sPIl
------END PGP SIGNATURE-----
+P 0755b9b697d32292f378a4b934ca1cf9f56225cd
+R eee597b91fa7a9feb4c2dc1ff64a49cd
+U dan
+Z d23c3e5d8434b673463e1d08f68374eb
