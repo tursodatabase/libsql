@@ -407,11 +407,8 @@ static void fkScanChildren(
       pLeft->iTable = (pIdx ? (regData+pIdx->aiColumn[i]+1) : regData);
     }
     iCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
-    if( iCol<0 ){
-      zCol = "rowid";
-    }else{
-      zCol = pFKey->pFrom->aCol[iCol].zName;
-    }
+    assert( iCol>=0 );
+    zCol = pFKey->pFrom->aCol[iCol].zName;
     pRight = sqlite3Expr(db, TK_ID, zCol);
     pEq = sqlite3PExpr(pParse, TK_EQ, pLeft, pRight, 0);
     pWhere = sqlite3ExprAnd(db, pWhere, pEq);
@@ -797,8 +794,9 @@ static Trigger *fkActionTrigger(
       Expr *pEq;                  /* tFromCol = OLD.tToCol */
 
       iFromCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
+      assert( iFromCol>=0 );
       tToCol.z = pIdx ? pTab->aCol[pIdx->aiColumn[i]].zName : "oid";
-      tFromCol.z = iFromCol<0 ? "oid" : pFKey->pFrom->aCol[iFromCol].zName;
+      tFromCol.z = pFKey->pFrom->aCol[iFromCol].zName;
 
       tToCol.n = sqlite3Strlen30(tToCol.z);
       tFromCol.n = sqlite3Strlen30(tFromCol.z);

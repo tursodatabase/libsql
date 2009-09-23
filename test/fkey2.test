@@ -49,6 +49,12 @@ ifcapable {!foreignkey||!trigger} {
 #
 # fkey2-9.*: Test SET DEFAULT actions.
 #
+# fkey2-10.*: Test errors.
+#
+# fkey2-11.*: Test CASCADE actions.
+#
+# fkey2-12.*: Test RESTRICT actions.
+#
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
 #
@@ -517,6 +523,100 @@ do_test fkey2-9.1.4 {
 do_test fkey2-9.1.5 {
   catchsql { DELETE FROM t1 }
 } {1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# The following tests, fkey2-10.*, test "foreign key mismatch" and 
+# other errors.
+#
+
+set tn 1
+foreach zSql [list {
+  CREATE TABLE p(a PRIMARY KEY, b);
+  CREATE TABLE c(x REFERENCES p(c));
+}] {
+  drop_all_tables
+
+  do_test fkey2-10.1.$tn {
+    execsql $zSql
+    catchsql { INSERT INTO c DEFAULT VALUES }
+  } {1 {foreign key mismatch}}
+}
+
+# "rowid" cannot be used as part of a child key definition unless it
+# happens to be the name of an explicitly declared column.
+#
+do_test fkey2-10.2.1 {
+  drop_all_tables
+  catchsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE t2(c, d, FOREIGN KEY(rowid) REFERENCES t1(a));
+  }
+} {1 {unknown column "rowid" in foreign key definition}}
+do_test fkey2-10.2.2 {
+  drop_all_tables
+  catchsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE t2(rowid, d, FOREIGN KEY(rowid) REFERENCES t1(a));
+  }
+} {0 {}}
+
+
+#-------------------------------------------------------------------------
+# The following tests, fkey2-11.*, test CASCADE actions.
+#
+drop_all_tables
+do_test fkey2-11.1.1 {
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    CREATE TABLE t2(c, d, FOREIGN KEY(c) REFERENCES t1(a) ON UPDATE CASCADE);
+
+    INSERT INTO t1 VALUES(10, 100);
+    INSERT INTO t2 VALUES(10, 100);
+    UPDATE t1 SET a = 15;
+    SELECT * FROM t2;
+  }
+} {15 100}
+
+#-------------------------------------------------------------------------
+# The following tests, fkey2-12.*, test RESTRICT actions.
+#
+drop_all_tables
+do_test fkey2-12.1.1 {
+  execsql {
+    CREATE TABLE t1(a, b PRIMARY KEY);
+    CREATE TABLE t2(
+      x REFERENCES t1 ON UPDATE RESTRICT DEFERRABLE INITIALLY DEFERRED 
+    );
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+  }
+} {}
+
+do_test fkey2-12.1.2 { 
+  execsql "BEGIN"
+  execsql "INSERT INTO t2 VALUES('two')"
+} {}
+do_test fkey2-12.1.3 { 
+  execsql "UPDATE t1 SET b = 'four' WHERE b = 'one'"
+} {}
+do_test fkey2-12.1.4 { 
+  catchsql "UPDATE t1 SET b = 'five' WHERE b = 'two'"
+} {1 {foreign key constraint failed}}
+do_test fkey2-12.1.5 { 
+  execsql "DELETE FROM t1 WHERE b = 'two'"
+} {}
+do_test fkey2-12.1.6 { 
+  catchsql "COMMIT"
+} {1 {foreign key constraint failed}}
+do_test fkey2-12.1.7 { 
+  execsql {
+    INSERT INTO t1 VALUES(2, 'two');
+    COMMIT;
+  }
+} {}
+
+
 
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 
