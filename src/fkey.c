@@ -197,13 +197,11 @@ static int locateFkeyIndex(
   if( nCol==1 ){
     /* The FK maps to the IPK if any of the following are true:
     **
-    **   1) The FK is explicitly mapped to "rowid", "oid" or "_rowid_", or
-    **   2) There is an explicit INTEGER PRIMARY KEY column and the FK is
-    **      implicitly mapped to the primary key of table pParent, or
-    **   3) The FK is explicitly mapped to a column declared as INTEGER
+    **   1) There is an INTEGER PRIMARY KEY column and the FK is implicitly 
+    **      mapped to the primary key of table pParent, or
+    **   2) The FK is explicitly mapped to a column declared as INTEGER
     **      PRIMARY KEY.
     */
-    if( zKey && sqlite3IsRowid(zKey) ) return 0;
     if( pParent->iPKey>=0 ){
       if( !zKey ) return 0;
       if( !sqlite3StrICmp(pParent->aCol[pParent->iPKey].zName, zKey) ) return 0;
