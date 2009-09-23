@@ -3195,8 +3195,8 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     case TK_IS:
     case TK_ISNOT: {
-      testcase( op==TK_IS );
-      testcase( op==TK_ISNOT );
+      testcase( pExpr->op==TK_IS );
+      testcase( pExpr->op==TK_ISNOT );
       codeCompareOperands(pParse, pExpr->pLeft, &r1, &regFree1,
                                   pExpr->pRight, &r2, &regFree2);
       op = (pExpr->op==TK_IS) ? TK_NE : TK_EQ;
