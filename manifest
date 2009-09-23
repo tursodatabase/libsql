@@ -1,5 +1,5 @@
-C Do\snot\scheck\simmediate\sforeign\skey\sconstraints\suntil\sthe\send\sof\sthe\sstatement.\sThis\smatches\sthe\spostgres\sbehaviour.
-D 2009-09-23T17:30:00
+C Fix\sa\sproblem\sin\sthe\sfkey_malloc.test\sscript.
+D 2009-09-23T17:31:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -331,7 +331,7 @@ F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
 F test/fkey2.test d1d78b106da32c00e40b7a4228f591cc880147ac
-F test/fkey_malloc.test a18bdb482c6a7b9a61865616a516584d17f04a04
+F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
@@ -753,7 +753,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0755b9b697d32292f378a4b934ca1cf9f56225cd
-R eee597b91fa7a9feb4c2dc1ff64a49cd
+P 1a32149cc3c722058f4ed4c81edadeb6ce5bc9e4
+R ceb76eab6b554987479ec64881a5bee7
 U dan
-Z d23c3e5d8434b673463e1d08f68374eb
+Z 43e72436acd6bfae46680c9ceeafa3ce
