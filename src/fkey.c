@@ -21,8 +21,8 @@
 ** --------------------------
 **
 ** Foreign keys in SQLite come in two flavours: deferred and immediate.
-** If an immediate foreign key constraint is violated, an OP_Halt is 
-** executed and the current statement transaction rolled back. If a 
+** If an immediate foreign key constraint is violated, SQLITE_CONSTRAINT
+** is returned and the current statement transaction rolled back. If a 
 ** deferred foreign key constraint is violated, no action is taken 
 ** immediately. However if the application attempts to commit the 
 ** transaction before fixing the constraint violation, the attempt fails.
@@ -49,26 +49,24 @@
 ** INSERT operations:
 **
 **   I.1) For each FK for which the table is the child table, search
-**        the parent table for a match. If none is found, throw an 
-**        exception for an immediate FK, or increment the counter for a
-**        deferred FK.
+**        the parent table for a match. If none is found increment the
+**        constraint counter.
 **
-**   I.2) For each deferred FK for which the table is the parent table, 
+**   I.2) For each FK for which the table is the parent table, 
 **        search the child table for rows that correspond to the new
 **        row in the parent table. Decrement the counter for each row
 **        found (as the constraint is now satisfied).
 **
 ** DELETE operations:
 **
-**   D.1) For each deferred FK for which the table is the child table, 
+**   D.1) For each FK for which the table is the child table, 
 **        search the parent table for a row that corresponds to the 
 **        deleted row in the child table. If such a row is not found, 
 **        decrement the counter.
 **
 **   D.2) For each FK for which the table is the parent table, search 
 **        the child table for rows that correspond to the deleted row 
-**        in the parent table. For each found, throw an exception for an
-**        immediate FK, or increment the counter for a deferred FK.
+**        in the parent table. For each found increment the counter.
 **
 ** UPDATE operations:
 **
@@ -224,7 +222,10 @@ static int locateFkeyIndex(
         ** the PRIMARY KEY of table pParent. The PRIMARY KEY index may be 
         ** identified by the test (Index.autoIndex==2).  */
         if( pIdx->autoIndex==2 ){
-          if( aiCol ) memcpy(aiCol, pIdx->aiColumn, sizeof(int)*nCol);
+          if( aiCol ){
+            int i;
+            for(i=0; i<nCol; i++) aiCol[i] = pFKey->aCol[i].iFrom;
+          }
           break;
         }
       }else{

@@ -390,9 +390,9 @@ int sqlite3VdbeReleaseBuffers(Vdbe *p);
 #endif
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-int sqlite3VdbeCheckDeferred(Vdbe *);
+int sqlite3VdbeCheckFk(Vdbe *, int);
 #else
-# define sqlite3VdbeCheckDeferred(p) 0
+# define sqlite3VdbeCheckFk(p,i) 0
 #endif
 
 #ifndef SQLITE_OMIT_SHARED_CACHE
