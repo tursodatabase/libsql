@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\sversion\snumber\sto\s3.6.19.\s\sFix\sa\scouple\sof\sincorrect\stestcase()\nmacros\sassociated\swith\sthe\snew\sIS\sand\sIS\sNOT\soperators\sin\sexpr.c.
-D 2009-09-23T14:45:06
+C Modify\sthe\s".dump"\scommand\son\sthe\sCLI\sso\sthat\sit\salways\sissues\sa\nPRAGMA\sforeign_keys=OFF\sat\sthe\stop\sof\sthe\soutput.
+D 2009-09-23T15:51:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +164,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
-F src/shell.c d0171721c7402b368e257ddfc09ed54d0c74070c
+F src/shell.c d6e64471aafb81f355262533393169a70529847a
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 98ad725d6915a1f1c618ff317e7b09d79efffe57
@@ -756,14 +756,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a5f7e71f424900071a3925e53e9128c9148ea2e8
-R 1cf160be224098f65d5a40f70510798c
+P e3b73394bf9c0391e997079b160eace3589415ab
+R 852fa5de88ad9a2f042ab0c36dd79c2c
 U drh
-Z ba0492734ae062ad6f96686c1eaa9cb5
+Z 43fdb088f0ddc98f38c08bf5dc74ca34
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKujR5oxKgR168RlERAiKLAKCM34z0rE9AqFSmh+8DaMHmm41TYwCfU4DR
-G2ZVc7tQFSK/VvZxNO4smJg=
-=RbX3
+iD8DBQFKukQLoxKgR168RlERAuoxAJ4o9BqLqdDvJT/TgBK1g1ugRts8MwCcCirL
+iIV/srWIRfE5lVnX7rkbqzE=
+=sPIl
 -----END PGP SIGNATURE-----

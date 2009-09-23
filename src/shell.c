@@ -2093,6 +2093,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='d' && strncmp(azArg[0], "dump", n)==0 ){
     char *zErrMsg = 0;
     open_db(p);
+    /* When playing back a "dump", the content might appear in an order
+    ** which causes immediate foreign key constraints to be violated.
+    ** So disable foreign-key constraint enforcement to prevent problems. */
+    fprintf(p->out, "PRAGMA foreign_keys=OFF;\n");
     fprintf(p->out, "BEGIN TRANSACTION;\n");
     p->writableSchema = 0;
     sqlite3_exec(p->db, "PRAGMA writable_schema=ON", 0, 0, 0);
