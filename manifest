@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Generalize\sthe\sIS\sand\sIS\sNOT\soperators\sso\sthat\stheir\sright-hand\sside\scan\sbe\nan\sarbitrary\sexpression\sand\snot\ssimple\sthe\sconstant\sNULL.\s\sThey\swork\slike\n=\sand\s<>\sexcept\sthat\sNULL\svalues\scompare\sequal\sto\sone\sanother\san\sunequal\sto\neverything\selse.
-D 2009-09-23T02:29:37
+C Do\snot\srun\sON\sUPDATE\sactions\sof\sa\sforeign\skey\sconstraint\sunless\sat\sleast\sone\ncolumn\svalue\sreally\sdoes\schange.
+D 2009-09-23T03:01:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 15499f5d10047d38e68ce991b3f88cbddb6e0931
 F src/expr.c 8a663240f374a5326ee157df3d27751f58b7676a
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c fa1ad144926a8536e23cbbf64c0e51b8f2fdd4bf
+F src/fkey.c de296942345984960792f12ea4236a6bef2f800b
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -756,14 +756,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3fc938c961fd7810594224b91a2d6e1ac9e48084
-R d99ab25244fa05bd56d10d71bb3bee44
+P 98853f6104076c50ea92175e17a3254bfbbd4619
+R 827ec94cc2eb4c57959ec45f4b3d8098
 U drh
-Z 4608482892179163853473e1fbf42a31
+Z ec752338f3000365feb24aa823e5d734
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKuYgUoxKgR168RlERApeHAJ48L4oeCXw8ZV6ov3G5+bjNMfQIewCfX/Rc
-qXj8iamFDJ6JXwF0VP/iAOI=
-=lSDQ
+iD8DBQFKuY+roxKgR168RlERAq1TAKCDsc87lQ7RxW/6hlefk/rm32wxUACdGuQz
+1VFw5lE97EA4c5Tiy8ftXks=
+=0G/k
 -----END PGP SIGNATURE-----

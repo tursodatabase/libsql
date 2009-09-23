@@ -395,6 +395,7 @@ static void fkTriggerDelete(sqlite3 *dbMem, Trigger *p){
     TriggerStep *pStep = p->step_list;
     sqlite3ExprDelete(dbMem, pStep->pWhere);
     sqlite3ExprListDelete(dbMem, pStep->pExprList);
+    sqlite3ExprDelete(dbMem, p->pWhen);
     sqlite3DbFree(dbMem, p);
   }
 }
@@ -649,6 +650,7 @@ static Trigger *fkActionTrigger(
     Expr *pWhere = 0;             /* WHERE clause of trigger step */
     ExprList *pList = 0;          /* Changes list if ON UPDATE CASCADE */
     int i;                        /* Iterator variable */
+    Expr *pWhen = 0;              /* WHEN clause for the trigger */
 
     if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return 0;
     assert( aiCol || pFKey->nCol==1 );
@@ -678,6 +680,25 @@ static Trigger *fkActionTrigger(
       , 0);
       pWhere = sqlite3ExprAnd(db, pWhere, pEq);
 
+      /* For ON UPDATE, construct the next term of the WHEN clause.
+      ** The final WHEN clause will be like this:
+      **
+      **    WHEN NOT(old.col1 IS new.col1 AND ... AND old.colN IS new.colN)
+      */
+      if( pChanges ){
+        pEq = sqlite3PExpr(pParse, TK_IS,
+            sqlite3PExpr(pParse, TK_DOT, 
+              sqlite3PExpr(pParse, TK_ID, 0, 0, &tOld),
+              sqlite3PExpr(pParse, TK_ID, 0, 0, &tToCol),
+              0),
+            sqlite3PExpr(pParse, TK_DOT, 
+              sqlite3PExpr(pParse, TK_ID, 0, 0, &tNew),
+              sqlite3PExpr(pParse, TK_ID, 0, 0, &tToCol),
+              0),
+            0);
+        pWhen = sqlite3ExprAnd(db, pWhen, pEq);
+      }
+  
       if( action!=OE_Cascade || pChanges ){
         Expr *pNew;
         if( action==OE_Cascade ){
@@ -724,13 +745,18 @@ static Trigger *fkActionTrigger(
   
       pStep->pWhere = sqlite3ExprDup(db, pWhere, EXPRDUP_REDUCE);
       pStep->pExprList = sqlite3ExprListDup(db, pList, EXPRDUP_REDUCE);
+      if( pWhen ){
+        pWhen = sqlite3PExpr(pParse, TK_NOT, pWhen, 0, 0);
+        pTrigger->pWhen = sqlite3ExprDup(db, pWhen, EXPRDUP_REDUCE);
+      }
     }
 
     /* Re-enable the lookaside buffer, if it was disabled earlier. */
     db->lookaside.bEnabled = enableLookaside;
 
-    sqlite3ExprDelete(pParse->db, pWhere);
-    sqlite3ExprListDelete(pParse->db, pList);
+    sqlite3ExprDelete(db, pWhere);
+    sqlite3ExprDelete(db, pWhen);
+    sqlite3ExprListDelete(db, pList);
     if( db->mallocFailed==1 ){
       fkTriggerDelete(db, pTrigger);
       return 0;
