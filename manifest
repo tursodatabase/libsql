@@ -1,5 +1,5 @@
-C Remove\sunused\sparameter\sfrom\ssqlite3CodeRowTrigger().\sFix\sheader\scomments\sfor\sthis\sfunction\sand\sCodeRowTriggerDirect().
-D 2009-09-24T09:05:50
+C Use\ssqlite3FkOldmask()\sin\sdelete.c\sinstead\sof\sassuming\sthat\sforeign\skey\sconstraints\salways\srequire\sall\scolumns\sof\sthe\sdeleted\srow\sto\sbe\sstored\sin\sregisters.
+D 2009-09-24T10:42:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/build.c c6c8d4ce8c0a464bb25d0c3bfdb27834ad16d902
 F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
-F src/delete.c bf701123de11d3fcd9a1a5051a989a2571e936f7
+F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/fkey.c a1c293cca23700bae7924396055c8d6a14f711c2
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f0c56fa90dc95aff6fe6764b5ab75a90199247b0
-R 3c7a8aab5d0340b30cd3467ee24fad54
+P 0443f7c9112ca91aa45c78a3d6287e5fcf5c3b73
+R e07c9a9cb837e7f36918e6bb0deed30f
 U dan
-Z 48453b478adafba355c75f89420399d3
+Z beebdfe4b57e96fc594592f7d6108da4

@@ -499,6 +499,7 @@ void sqlite3GenerateRowDelete(
     /* TODO: Could use temporary registers here. Also could attempt to
     ** avoid copying the contents of the rowid register.  */
     mask = sqlite3TriggerOldmask(pParse, pTrigger, 0, pTab, onconf);
+    mask |= sqlite3FkOldmask(pParse, pTab, 0);
     iOld = pParse->nMem+1;
     pParse->nMem += (1 + pTab->nCol);
 
@@ -506,7 +507,7 @@ void sqlite3GenerateRowDelete(
     ** used by any BEFORE and AFTER triggers that exist.  */
     sqlite3VdbeAddOp2(v, OP_Copy, iRowid, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
-      if( 1 || mask==0xffffffff || mask&(1<<iCol) ){
+      if( mask==0xffffffff || mask&(1<<iCol) ){
         int iTarget = iOld + iCol + 1;
         sqlite3VdbeAddOp3(v, OP_Column, iCur, iCol, iTarget);
         sqlite3ColumnDefault(v, pTab, iCol, iTarget);
