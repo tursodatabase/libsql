@@ -1283,9 +1283,9 @@ struct Table {
 ** the from-table is created.  The existence of the to-table is not checked.
 */
 struct FKey {
-  Table *pFrom;     /* The table that contains the REFERENCES clause */
+  Table *pFrom;     /* Table containing the REFERENCES clause (aka: Child) */
   FKey *pNextFrom;  /* Next foreign key in pFrom */
-  char *zTo;        /* Name of table that the key points to */
+  char *zTo;        /* Name of table that the key points to (aka: Parent) */
   FKey *pNextTo;    /* Next foreign key on table named zTo */
   FKey *pPrevTo;    /* Previous foreign key on table named zTo */
   int nCol;         /* Number of columns in this key */

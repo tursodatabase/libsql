@@ -846,11 +846,13 @@ static Trigger *fkActionTrigger(
     }
     sqlite3DbFree(db, aiCol);
 
-    /* If pTab->dbMem==0, then the table may be part of a shared-schema.
-    ** Disable the lookaside buffer before allocating space for the
-    ** trigger definition in this case.  */
+    /* In the current implementation, pTab->dbMem==0 for all tables except
+    ** for temporary tables used to describe subqueries.  And temporary
+    ** tables do not have foreign key constraints.  Hence, pTab->dbMem
+    ** should always be 0 there.
+    */
     enableLookaside = db->lookaside.bEnabled;
-    if( pTab->dbMem==0 ){
+    if( ALWAYS(pTab->dbMem==0) ){
       db->lookaside.bEnabled = 0;
     }
 
