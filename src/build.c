@@ -3493,9 +3493,33 @@ void sqlite3BeginWriteOperation(Parse *pParse, int setStatement, int iDb){
   pToplevel->isMultiWrite |= setStatement;
 }
 
+/*
+** Indicate that the statement currently under construction might write
+** more than one entry (example: deleting one row then inserting another,
+** inserting multiple rows in a table, or inserting a row and index entries.)
+** If an abort occurs after some of these writes have completed, then it will
+** be necessary to undo the completed writes.
+*/
+void sqlite3MultiWrite(Parse *pParse){
+  Parse *pToplevel = sqlite3ParseToplevel(pParse);
+  pToplevel->isMultiWrite = 1;
+}
+
 /* 
-** Set the "may throw abort exception" flag for the statement currently 
-** being coded.
+** The code generator calls this routine if is discovers that it is
+** possible to abort a statement prior to completion.  In order to 
+** perform this abort without corrupting the database, we need to make
+** sure that the statement is protected by a statement transaction.
+**
+** Technically, we only need to set the mayAbort flag if the
+** isMultiWrite flag was previously set.  There is a time dependency
+** such that the abort must occur after the multiwrite.  This makes
+** some statements involving the REPLACE conflict resolution algorithm
+** go a little faster.  But taking advantage of this time dependency
+** makes it more difficult to prove that the code is correct (in 
+** particular, it prevents us from writing an effective
+** implementation of sqlite3AssertMayAbort()) and so we have chosen
+** to take the safe route and skip the optimization.
 */
 void sqlite3MayAbort(Parse *pParse){
   Parse *pToplevel = sqlite3ParseToplevel(pParse);

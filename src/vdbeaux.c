@@ -240,7 +240,7 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   }
 }
 
-#ifdef SQLITE_DEBUG
+#ifdef SQLITE_DEBUG /* sqlite3AssertMayAbort() logic */
 
 /*
 ** The following type and function are used to iterate through all opcodes
@@ -312,7 +312,7 @@ static Op *opIterNext(VdbeOpIter *p){
 
 /*
 ** Check if the program stored in the VM associated with pParse may
-** throw an ABORT exception (causing the statement, but not transaction
+** throw an ABORT exception (causing the statement, but not entire transaction
 ** to be rolled back). This condition is true if the main program or any
 ** sub-programs contains any of the following:
 **
@@ -359,7 +359,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
   ** from failing.  */
   return ( v->db->mallocFailed || hasAbort==mayAbort );
 }
-#endif
+#endif /* SQLITE_DEBUG - the sqlite3AssertMayAbort() function */
 
 /*
 ** Loop through the program looking for P2 values that are negative

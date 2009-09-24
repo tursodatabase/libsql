@@ -2663,7 +2663,8 @@ void sqlite3GenerateConstraintChecks(Parse*,Table*,int,int,
 void sqlite3CompleteInsertion(Parse*, Table*, int, int, int*, int, int, int);
 int sqlite3OpenTableAndIndices(Parse*, Table*, int, int);
 void sqlite3BeginWriteOperation(Parse*, int, int);
-void sqlite3MayAbort(Parse *);
+void sqlite3MultiWrite(Parse*);
+void sqlite3MayAbort(Parse*);
 void sqlite3HaltConstraint(Parse*, int, char*, int);
 Expr *sqlite3ExprDup(sqlite3*,Expr*,int);
 ExprList *sqlite3ExprListDup(sqlite3*,ExprList*,int);

@@ -1278,6 +1278,7 @@ void sqlite3GenerateConstraintChecks(
           }else{
             sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
           }
+          sqlite3MultiWrite(pParse);
           seenReplace = 1;
           break;
         }
@@ -1385,6 +1386,7 @@ void sqlite3GenerateConstraintChecks(
         sqlite3GenerateRowDelete(
             pParse, pTab, baseCur, regR, 0, pTrigger, OE_Replace
         );
+        sqlite3MultiWrite(pParse);
         seenReplace = 1;
         break;
       }
