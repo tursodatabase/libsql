@@ -1271,14 +1271,14 @@ void sqlite3GenerateConstraintChecks(
           if( pParse->db->flags&SQLITE_RecTriggers ){
             pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
           }
-          if( pTrigger ){
+          sqlite3MultiWrite(pParse);
+          if( pTrigger || sqlite3FkRequired(pParse, pTab, 0) ){
             sqlite3GenerateRowDelete(
                 pParse, pTab, baseCur, regRowid, 0, pTrigger, OE_Replace
             );
           }else{
             sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
           }
-          sqlite3MultiWrite(pParse);
           seenReplace = 1;
           break;
         }
@@ -1380,13 +1380,13 @@ void sqlite3GenerateConstraintChecks(
       default: {
         Trigger *pTrigger = 0;
         assert( onError==OE_Replace );
+        sqlite3MultiWrite(pParse);
         if( pParse->db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
         sqlite3GenerateRowDelete(
             pParse, pTab, baseCur, regR, 0, pTrigger, OE_Replace
         );
-        sqlite3MultiWrite(pParse);
         seenReplace = 1;
         break;
       }
