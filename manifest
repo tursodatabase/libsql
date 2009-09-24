@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\sin\sfkey.c\swhen\sa\schild\skey\sis\sthe\sIPK\sof\sits\stable.
-D 2009-09-24T15:16:34
+C Fix\sa\sbug\sin\sthe\scode\sfor\sREPLACE\sconflict\shandling\son\sIPK\scolumns\swhen\sthere\sare\sno\sindexes\son\sthe\stable.\sTriggers\sand\sforeign\skey\sprocessing\swere\sbeing\sbypassed.
+D 2009-09-24T16:52:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
 F src/hash.h 35b216c13343d0b4f87d9f21969ac55ad72174e1
 F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
-F src/insert.c 1691e77263d075861bcb4f52f6a0e3d076e125ea
+F src/insert.c 719465bf5c46349550e3bda483b1b9f0b9b6aebf
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 36568963356e3919e8b862e7e40ded2eae7ce187
-R eeabc59dbfe67ff6c77f0bd0a709b511
+P 8a000a8aae4d356e68acf2bc1788d2c40279522c
+R 1cd4e9cb0400f55e65581cc0c3e21846
 U dan
-Z a9a341c42976f5c033715d32119fb245
+Z 294416087638c741514386eadd008bb9
