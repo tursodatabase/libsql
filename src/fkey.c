@@ -852,9 +852,7 @@ static Trigger *fkActionTrigger(
     ** should always be 0 there.
     */
     enableLookaside = db->lookaside.bEnabled;
-    if( ALWAYS(pTab->dbMem==0) ){
-      db->lookaside.bEnabled = 0;
-    }
+    db->lookaside.bEnabled = 0;
 
     zFrom = pFKey->pFrom->zName;
     nFrom = sqlite3Strlen30(zFrom);

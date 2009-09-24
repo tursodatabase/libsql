@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Comment\senhancements.\s\sAdd\san\sALWAYS\smacro\sin\sfkey.c\sto\sindicate\sa\sbranch\nthat\sis\salways\staken.
-D 2009-09-24T13:48:11
+C Remove\sthe\sALWAYS()\sadded\sby\sthe\sprevious\scheck-in.\s\sIt\sis\snot\sneeded.
+D 2009-09-24T14:27:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c 3a5f73fd9ace2dac8d2065a0cad2a92ee05ba60a
+F src/fkey.c ba7fa13d98ec93dac4d3e4dac005a01e4afbe373
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -758,14 +758,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3f40c142c8526c1572020bd4d945c03a72019135
-R 67c8b9d6b008d495735946c1acaf9ae4
+P d5b714cffffe588dd4dd10e0b82df8d99657be88
+R f832f56eba32c317bddff01fc0a5ee3c
 U drh
-Z b9bffb9f7e6d6e953a0359727f3b3542
+Z 79a07d4778ef51d7121e2e1ab05e1d21
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKu3ieoxKgR168RlERApcbAJ9a/doqUmhrdKrDyepBEgKa65oczgCfRhFY
-GJTvC+d7r7ag6Ty5TyeHfn8=
-=plF3
+iD8DBQFKu4HZoxKgR168RlERAsUXAJ0a98aqFv54gsWAAeW0nOAOAu0wXwCghXRF
+yzSx0CxFE4vkdccj6cNNj40=
+=h0tT
 -----END PGP SIGNATURE-----
