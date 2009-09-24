@@ -119,6 +119,7 @@ set FkeySimpleTests {
   4.11 "DELETE FROM t7 WHERE b=1"         {1 {foreign key constraint failed}}
   4.12 "UPDATE t7 SET b = 2"              {1 {foreign key constraint failed}}
   4.13 "UPDATE t7 SET b = 1"              {0 {}}
+  4.14 "INSERT INTO t8 VALUES('a', 'b')"  {1 {foreign key constraint failed}}
 
   5.1  "INSERT INTO t9 VALUES(1, 3)"      {1 {no such table: main.nosuchtable}}
   5.2  "INSERT INTO t10 VALUES(1, 3)"     {1 {foreign key mismatch}}
@@ -150,6 +151,50 @@ foreach {tn zSql res} $FkeySimpleTests {
 }
 execsql { PRAGMA count_changes = 0 }
 drop_all_tables
+
+# Special test: When the parent key is an IPK, make sure the affinity of
+# the IPK is not applied to the child key value before it is inserted
+# into the child table.
+do_test fkey2-1.4.1 {
+  execsql {
+    CREATE TABLE i(i INTEGER PRIMARY KEY);
+    CREATE TABLE j(j REFERENCES i);
+    INSERT INTO i VALUES(35);
+    INSERT INTO j VALUES('35.0');
+    SELECT j, typeof(j) FROM j;
+  }
+} {35.0 text}
+do_test fkey2-1.4.2 {
+  catchsql { DELETE FROM i }
+} {1 {foreign key constraint failed}}
+
+# Same test using a regular primary key with integer affinity.
+drop_all_tables
+do_test fkey2-1.5.1 {
+  execsql {
+    CREATE TABLE i(i INT UNIQUE);
+    CREATE TABLE j(j REFERENCES i(i));
+    INSERT INTO i VALUES('35.0');
+    INSERT INTO j VALUES('35.0');
+    SELECT j, typeof(j) FROM j;
+    SELECT i, typeof(i) FROM i;
+  }
+} {35.0 text 35 integer}
+do_test fkey2-1.5.2 {
+  catchsql { DELETE FROM i }
+} {1 {foreign key constraint failed}}
+
+# Use a collation sequence on the parent key.
+drop_all_tables
+do_test fkey2-1.5.1 {
+  execsql {
+    CREATE TABLE i(i TEXT COLLATE nocase PRIMARY KEY);
+    CREATE TABLE j(j TEXT COLLATE binary REFERENCES i(i));
+    INSERT INTO i VALUES('SQLite');
+    INSERT INTO j VALUES('sqlite');
+  }
+  catchsql { DELETE FROM i }
+} {1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
 # This section (test cases fkey2-2.*) contains tests to check that the

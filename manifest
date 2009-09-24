@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\scode\sfor\sREPLACE\sconflict\shandling\son\sIPK\scolumns\swhen\sthere\sare\sno\sindexes\son\sthe\stable.\sTriggers\sand\sforeign\skey\sprocessing\swere\sbeing\sbypassed.
-D 2009-09-24T16:52:28
+C Fixes\sand\stest\scases\sto\smake\ssure\sthe\saffinity\sand\scollation\ssequence\sassociated\swith\sthe\sparent\skey\sis\sused\swhen\scomparing\sit\swith\sa\schild\skey\svalue.
+D 2009-09-24T18:19:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c d5610f840b76e7b478d9700df9f3be0ab96ba1b8
+F src/fkey.c 5ec139b6d22a981a777fb195d9311068f5a8c75b
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 30dedac189b10da51c0cbdee84e334ed3119b8f0
+F test/fkey2.test c81035086cec3014838c0af60b3fc228c3875214
 F test/fkey3.test 2183cac9075f3aae4875106eb9255bb73618444e
 F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8a000a8aae4d356e68acf2bc1788d2c40279522c
-R 1cd4e9cb0400f55e65581cc0c3e21846
+P beb2094f94849c66d98bab5999ff474cd91eea11
+R b4aeb3f8101f131cf6580b25c102b171
 U dan
-Z 294416087638c741514386eadd008bb9
+Z be9e9a4e87b8676ab6aa8bb0309f6406

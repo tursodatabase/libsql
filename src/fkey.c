@@ -310,34 +310,40 @@ static void fkLookupParent(
   if( pIdx==0 ){
     /* If pIdx is NULL, then the parent key is the INTEGER PRIMARY KEY
     ** column of the parent table (table pTab).  */
-    int iReg = aiCol[0] + regData + 1;
+    int regTemp = sqlite3GetTempReg(pParse);
+
+    /* Invoke MustBeInt to coerce the child key value to an integer (i.e. 
+    ** apply the affinity of the parent key). If this fails, then there
+    ** is no matching parent key. Before using MustBeInt, make a copy of
+    ** the value. Otherwise, the value inserted into the child key column
+    ** will have INTEGER affinity applied to it, which may not be correct.  */
+    sqlite3VdbeAddOp2(v, OP_SCopy, aiCol[0]+1+regData, regTemp);
+    sqlite3VdbeAddOp2(v, OP_MustBeInt, regTemp, 0);
     sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
-    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iReg);
+    sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regTemp);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
     sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-2);
+    sqlite3VdbeJumpHere(v, sqlite3VdbeCurrentAddr(v)-4);
+    sqlite3ReleaseTempReg(pParse, regTemp);
+    assert( 
+      sqlite3VdbeGetOp(v, sqlite3VdbeCurrentAddr(v)-4)->opcode==OP_MustBeInt 
+    );
   }else{
+    int nCol = pFKey->nCol;
+    int regTemp = sqlite3GetTempRange(pParse, nCol);
     int regRec = sqlite3GetTempReg(pParse);
     KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIdx);
 
     sqlite3VdbeAddOp3(v, OP_OpenRead, iCur, pIdx->tnum, iDb);
     sqlite3VdbeChangeP4(v, -1, (char*)pKey, P4_KEYINFO_HANDOFF);
-
-    if( pFKey->nCol>1 ){
-      int nCol = pFKey->nCol;
-      int regTemp = sqlite3GetTempRange(pParse, nCol);
-      for(i=0; i<nCol; i++){ 
-        sqlite3VdbeAddOp2(v, OP_SCopy, aiCol[i]+1+regData, regTemp+i);
-      }
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, regTemp, nCol, regRec);
-      sqlite3ReleaseTempRange(pParse, regTemp, nCol);
-    }else{
-      int iReg = aiCol[0] + regData + 1;
-      sqlite3VdbeAddOp3(v, OP_MakeRecord, iReg, 1, regRec);
-      sqlite3IndexAffinityStr(v, pIdx);
+    for(i=0; i<nCol; i++){ 
+      sqlite3VdbeAddOp2(v, OP_SCopy, aiCol[i]+1+regData, regTemp+i);
     }
-
+    sqlite3VdbeAddOp3(v, OP_MakeRecord, regTemp, nCol, regRec);
+    sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), 0);
     sqlite3VdbeAddOp3(v, OP_Found, iCur, iOk, regRec);
     sqlite3ReleaseTempReg(pParse, regRec);
+    sqlite3ReleaseTempRange(pParse, regTemp, nCol);
   }
 
   if( !pFKey->isDeferred && !pParse->pToplevel && !pParse->isMultiWrite ){
@@ -408,7 +414,16 @@ static void fkScanChildren(
 
     pLeft = sqlite3Expr(db, TK_REGISTER, 0);
     if( pLeft ){
-      pLeft->iTable = (pIdx ? (regData+pIdx->aiColumn[i]+1) : regData);
+      if( pIdx ){
+        int iCol = pIdx->aiColumn[i];
+        Column *pCol = &pIdx->pTable->aCol[iCol];
+        pLeft->iTable = regData+iCol+1;
+        pLeft->affinity = pCol->affinity;
+        pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
+      }else{
+        pLeft->iTable = regData;
+        pLeft->affinity = SQLITE_AFF_INTEGER;
+      }
     }
     iCol = aiCol ? aiCol[i] : pFKey->aCol[0].iFrom;
     assert( iCol>=0 );
