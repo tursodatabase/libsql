@@ -2700,7 +2700,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
   Trigger *sqlite3TriggersExist(Parse *, Table*, int, ExprList*, int *pMask);
   Trigger *sqlite3TriggerList(Parse *, Table *);
   void sqlite3CodeRowTrigger(Parse*, Trigger *, int, ExprList*, int, Table *,
-                            int, int, int, int);
+                            int, int, int);
   void sqlite3CodeRowTriggerDirect(Parse *, Trigger *, Table *, int, int, int);
   void sqliteViewTriggers(Parse*, Table*, Expr*, int, ExprList*);
   void sqlite3DeleteTriggerStep(sqlite3*, TriggerStep*);
@@ -2718,7 +2718,7 @@ void sqlite3MaterializeView(Parse*, Table*, Expr*, int);
 # define sqlite3DeleteTrigger(A,B)
 # define sqlite3DropTriggerPtr(A,B)
 # define sqlite3UnlinkAndDeleteTrigger(A,B,C)
-# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I,J)
+# define sqlite3CodeRowTrigger(A,B,C,D,E,F,G,H,I)
 # define sqlite3CodeRowTriggerDirect(A,B,C,D,E,F)
 # define sqlite3TriggerList(X, Y) 0
 # define sqlite3ParseToplevel(p) p

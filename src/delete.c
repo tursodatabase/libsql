@@ -515,7 +515,7 @@ void sqlite3GenerateRowDelete(
 
     /* Invoke BEFORE DELETE trigger programs. */
     sqlite3CodeRowTrigger(pParse, pTrigger, 
-        TK_DELETE, 0, TRIGGER_BEFORE, pTab, -1, iOld, onconf, iLabel
+        TK_DELETE, 0, TRIGGER_BEFORE, pTab, iOld, onconf, iLabel
     );
 
     /* Seek the cursor to the row to be deleted again. It may be that
@@ -548,7 +548,7 @@ void sqlite3GenerateRowDelete(
 
   /* Invoke AFTER DELETE trigger programs. */
   sqlite3CodeRowTrigger(pParse, pTrigger, 
-      TK_DELETE, 0, TRIGGER_AFTER, pTab, -1, iOld, onconf, iLabel
+      TK_DELETE, 0, TRIGGER_AFTER, pTab, iOld, onconf, iLabel
   );
 
   /* Jump here if the row had already been deleted before any BEFORE

@@ -428,7 +428,7 @@ void sqlite3Update(
     sqlite3VdbeAddOp2(v, OP_Affinity, regNew, pTab->nCol);
     sqlite3TableAffinityStr(v, pTab);
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-        TRIGGER_BEFORE, pTab, -1, regOldRowid, onError, addr);
+        TRIGGER_BEFORE, pTab, regOldRowid, onError, addr);
 
     /* The row-trigger may have deleted the row being updated. In this
     ** case, jump to the next row. No updates or AFTER triggers are 
@@ -473,7 +473,7 @@ void sqlite3Update(
   }
 
   sqlite3CodeRowTrigger(pParse, pTrigger, TK_UPDATE, pChanges, 
-      TRIGGER_AFTER, pTab, -1, regOldRowid, onError, addr);
+      TRIGGER_AFTER, pTab, regOldRowid, onError, addr);
 
   /* Repeat the above with the next record to be updated, until
   ** all record selected by the WHERE clause have been updated.

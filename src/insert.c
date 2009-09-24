@@ -870,7 +870,7 @@ void sqlite3Insert(
 
     /* Fire BEFORE or INSTEAD OF triggers */
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_BEFORE, 
-        pTab, -1, regCols-pTab->nCol-1, onError, endOfLoop);
+        pTab, regCols-pTab->nCol-1, onError, endOfLoop);
 
     sqlite3ReleaseTempRange(pParse, regCols, pTab->nCol+1);
   }
@@ -995,7 +995,7 @@ void sqlite3Insert(
   if( pTrigger ){
     /* Code AFTER triggers */
     sqlite3CodeRowTrigger(pParse, pTrigger, TK_INSERT, 0, TRIGGER_AFTER, 
-        pTab, -1, regData-2-pTab->nCol, onError, endOfLoop);
+        pTab, regData-2-pTab->nCol, onError, endOfLoop);
   }
 
   /* The bottom of the main insertion loop, if the data source
