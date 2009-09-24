@@ -310,7 +310,7 @@ static void fkLookupParent(
   if( pIdx==0 ){
     /* If pIdx is NULL, then the parent key is the INTEGER PRIMARY KEY
     ** column of the parent table (table pTab).  */
-    int iReg = pFKey->aCol[0].iFrom + regData + 1;
+    int iReg = aiCol[0] + regData + 1;
     sqlite3OpenTable(pParse, iCur, iDb, pTab, OP_OpenRead);
     sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, iReg);
     sqlite3VdbeAddOp2(v, OP_Goto, 0, iOk);
