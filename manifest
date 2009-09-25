@@ -1,5 +1,5 @@
-C Fixes\sand\stest\scases\sto\smake\ssure\sthe\saffinity\sand\scollation\ssequence\sassociated\swith\sthe\sparent\skey\sis\sused\swhen\scomparing\sit\swith\sa\schild\skey\svalue.
-D 2009-09-24T18:19:42
+C Prevent\sALTER\sTABLE\sfrom\sbeing\sused\sto\sadd\sa\scolumn\swith\sa\sREFERENCES\sclause\sand\sa\snon-NULL\sdefault\svalue\swhile\sforeign\skey\ssupport\sis\senabled.
+D 2009-09-25T11:26:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 0bbc34296384ae85e0e5e857aa605614ca2d404c
+F src/alter.c e771528da07315e0416bf9788399fb3dc2fecb5e
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c d6a88bf8e81e6a079ccb8881002b327e42ec46b9
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test c81035086cec3014838c0af60b3fc228c3875214
+F test/fkey2.test ad58088fbc09231f125b6c7e9594720aa1374019
 F test/fkey3.test 2183cac9075f3aae4875106eb9255bb73618444e
 F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P beb2094f94849c66d98bab5999ff474cd91eea11
-R b4aeb3f8101f131cf6580b25c102b171
+P 76e8e74b49be4c80b9fb20d52e9b39db8001362e
+R 136d37129ec61260ba7a30de652f5973
 U dan
-Z be9e9a4e87b8676ab6aa8bb0309f6406
+Z 5dd61108ad33d708be4c046f1054dc1d

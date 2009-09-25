@@ -515,6 +515,11 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
     sqlite3ErrorMsg(pParse, "Cannot add a UNIQUE column");
     return;
   }
+  if( (db->flags&SQLITE_ForeignKeys) && pNew->pFKey && pDflt ){
+    sqlite3ErrorMsg(pParse, 
+        "Cannot add a REFERENCES column with non-NULL default value");
+    return;
+  }
   if( pCol->notNull && !pDflt ){
     sqlite3ErrorMsg(pParse, 
         "Cannot add a NOT NULL column with default value NULL");
