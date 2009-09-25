@@ -83,6 +83,16 @@
 ** is thrown, even if the FK constraint would be satisfied after the new 
 ** row is inserted.
 **
+** Immediate constraints are usually handled similarly. The only difference 
+** is that the counter used is stored as part of each individual statement
+** object (struct Vdbe). If, after the statement has run, its immediate
+** constraint counter is greater than zero, it returns SQLITE_CONSTRAINT
+** and the statement transaction is rolled back. An exception is an INSERT
+** statement that inserts a single row only (no triggers). In this case,
+** instead of using a counter, an exception is thrown immediately if the
+** INSERT violates a foreign key constraint. This is necessary as such
+** an INSERT does not open a statement transaction.
+**
 ** TODO: How should dropping a table be handled? How should renaming a 
 ** table be handled?
 **
@@ -259,10 +269,9 @@ static int locateFkeyIndex(
 }
 
 /*
-** This function is called when a row is inserted into the child table of 
-** foreign key constraint pFKey and, if pFKey is deferred, when a row is
-** deleted from the child table of pFKey. If an SQL UPDATE is executed on
-** the child table of pFKey, this function is invoked twice for each row
+** This function is called when a row is inserted into or deleted from the 
+** child table of foreign key constraint pFKey. If an SQL UPDATE is executed 
+** on the child table of pFKey, this function is invoked twice for each row
 ** affected - once to "delete" the old row, and then again to "insert" the
 ** new row.
 **
@@ -274,15 +283,16 @@ static int locateFkeyIndex(
 **
 **   Operation | FK type   | Action taken
 **   --------------------------------------------------------------------------
-**   INSERT      immediate   Throw a "foreign key constraint failed" exception.
+**   INSERT      immediate   Increment the "immediate constraint counter".
+**
+**   DELETE      immediate   Decrement the "immediate constraint counter".
 **
 **   INSERT      deferred    Increment the "deferred constraint counter".
 **
 **   DELETE      deferred    Decrement the "deferred constraint counter".
 **
-** This function is never called for a delete on the child table of an
-** immediate foreign key constraint. These operations are identified in
-** the comment at the top of this file (fkey.c) as "I.1" and "D.1".
+** These operations are identified in the comment at the top of this file 
+** (fkey.c) as "I.1" and "D.1".
 */
 static void fkLookupParent(
   Parse *pParse,        /* Parse context */
@@ -378,7 +388,11 @@ static void fkLookupParent(
 **
 **   Operation | FK type   | Action taken
 **   --------------------------------------------------------------------------
-**   DELETE      immediate   Throw a "foreign key constraint failed" exception.
+**   DELETE      immediate   Increment the "immediate constraint counter".
+**                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
+**                           throw a "foreign key constraint failed" exception.
+**
+**   INSERT      immediate   Decrement the "immediate constraint counter".
 **
 **   DELETE      deferred    Increment the "deferred constraint counter".
 **                           Or, if the ON (UPDATE|DELETE) action is RESTRICT,
@@ -386,9 +400,8 @@ static void fkLookupParent(
 **
 **   INSERT      deferred    Decrement the "deferred constraint counter".
 **
-** This function is never called for an INSERT operation on the parent table
-** of an immediate foreign key constraint. These operations are identified in
-** the comment at the top of this file (fkey.c) as "I.2" and "D.2".
+** These operations are identified in the comment at the top of this file 
+** (fkey.c) as "I.2" and "D.2".
 */
 static void fkScanChildren(
   Parse *pParse,                  /* Parse context */
@@ -405,6 +418,14 @@ static void fkScanChildren(
   NameContext sNameContext;       /* Context used to resolve WHERE clause */
   WhereInfo *pWInfo;              /* Context used by sqlite3WhereXXX() */
 
+  /* Create an Expr object representing an SQL expression like:
+  **
+  **   <parent-key1> = <child-key1> AND <parent-key2> = <child-key2> ...
+  **
+  ** The collation sequence used for the comparison should be that of
+  ** the parent key columns. The affinity of the parent key column should
+  ** be applied to each child key value before the comparison takes place.
+  */
   for(i=0; i<pFKey->nCol; i++){
     Expr *pLeft;                  /* Value from parent table row */
     Expr *pRight;                 /* Column ref to child table */
@@ -414,6 +435,8 @@ static void fkScanChildren(
 
     pLeft = sqlite3Expr(db, TK_REGISTER, 0);
     if( pLeft ){
+      /* Set the collation sequence and affinity of the LHS of each TK_EQ
+      ** expression to the parent key column defaults.  */
       if( pIdx ){
         int iCol = pIdx->aiColumn[i];
         Column *pCol = &pIdx->pTable->aCol[iCol];
@@ -445,7 +468,8 @@ static void fkScanChildren(
   ** deferred constraint counter by nIncr for each row selected.  */
   pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0);
   if( nIncr==0 ){
-    /* A RESTRICT Action. */
+    /* Special case: A RESTRICT Action. Throw an error immediately if one
+    ** of these is encountered.  */
     sqlite3HaltConstraint(
       pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
     );

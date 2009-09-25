@@ -188,7 +188,7 @@ do_test fkey2-1.5.2 {
 
 # Use a collation sequence on the parent key.
 drop_all_tables
-do_test fkey2-1.5.1 {
+do_test fkey2-1.6.1 {
   execsql {
     CREATE TABLE i(i TEXT COLLATE nocase PRIMARY KEY);
     CREATE TABLE j(j TEXT COLLATE binary REFERENCES i(i));
@@ -196,6 +196,26 @@ do_test fkey2-1.5.1 {
     INSERT INTO j VALUES('sqlite');
   }
   catchsql { DELETE FROM i }
+} {1 {foreign key constraint failed}}
+
+# Use the parent key collation even if it is default and the child key
+# has an explicit value.
+drop_all_tables
+do_test fkey2-1.6.2 {
+  execsql {
+    CREATE TABLE i(i TEXT PRIMARY KEY);        -- Colseq is "BINARY"
+    CREATE TABLE j(j TEXT COLLATE nocase REFERENCES i(i));
+    INSERT INTO i VALUES('SQLite');
+  }
+  catchsql { INSERT INTO j VALUES('sqlite') }
+} {1 {foreign key constraint failed}}
+do_test fkey2-1.6.3 {
+  execsql {
+    INSERT INTO i VALUES('sqlite');
+    INSERT INTO j VALUES('sqlite');
+    DELETE FROM i WHERE i = 'SQLite';
+  }
+  catchsql { DELETE FROM i WHERE i = 'sqlite' }
 } {1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
