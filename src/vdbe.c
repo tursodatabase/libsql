@@ -99,6 +99,17 @@ static void updateMaxBlobsize(Mem *p){
 #endif
 
 /*
+** The next global variable is incremented each type the OP_Found opcode
+** is executed. This is used to test whether or not the foreign key
+** operation implemented using OP_FkIsZero is working. This variable
+** has no function other than to help verify the correct operation of the
+** library.
+*/
+#ifdef SQLITE_TEST
+int sqlite3_found_count = 0;
+#endif
+
+/*
 ** Test a register to see if it exceeds the current maximum blob size.
 ** If it does, record the new maximum blob size.
 */
@@ -3379,6 +3390,10 @@ case OP_Found: {        /* jump, in3 */
   UnpackedRecord *pIdxKey;
   char aTempRec[ROUND8(sizeof(UnpackedRecord)) + sizeof(Mem)*3 + 7];
 
+#ifdef SQLITE_TEST
+  sqlite3_found_count++;
+#endif
+
   alreadyExists = 0;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
@@ -4902,16 +4917,36 @@ case OP_Param: {           /* out2-prerelease */
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 /* Opcode: FkCounter P1 P2 * * *
 **
-** Increment a "constraint counter" by by P1 (P1 may be negative or positive).
-** If P2 is non-zero, the database constraint counter is incremented 
-** (deferred foreign key constraints). Otherwise, if P2 is zero, the 
+** Increment a "constraint counter" by P2 (P2 may be negative or positive).
+** If P1 is non-zero, the database constraint counter is incremented 
+** (deferred foreign key constraints). Otherwise, if P1 is zero, the 
 ** statement counter is incremented (immediate foreign key constraints).
 */
 case OP_FkCounter: {
-  if( pOp->p2 ){
-    db->nDeferredCons += pOp->p1;
+  if( pOp->p1 ){
+    db->nDeferredCons += pOp->p2;
   }else{
-    p->nFkConstraint += pOp->p1;
+    p->nFkConstraint += pOp->p2;
+  }
+  break;
+}
+
+/* Opcode: FkIfZero P1 P2 * * *
+**
+** This opcode tests if a foreign key constraint-counter is currently zero.
+** If so, jump to instruction P2. Otherwise, fall through to the next 
+** instruction.
+**
+** If P1 is non-zero, then the jump is taken if the database constraint-counter
+** is zero (the one that counts deferred constraint violations). If P1 is
+** zero, the jump is taken if the statement constraint-counter is zero
+** (immediate foreign key constraint violations).
+*/
+case OP_FkIfZero: {         /* jump */
+  if( pOp->p1 ){
+    if( db->nDeferredCons==0 ) pc = pOp->p2-1;
+  }else{
+    if( p->nFkConstraint==0 ) pc = pOp->p2-1;
   }
   break;
 }

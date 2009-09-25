@@ -309,9 +309,16 @@ static void fkLookupParent(
   int iCur = pParse->nTab - 1;              /* Cursor number to use */
   int iOk = sqlite3VdbeMakeLabel(v);        /* jump here if parent key found */
 
-  /* Check if any of the key columns in the child table row are
-  ** NULL. If any are, then the constraint is satisfied. No need
-  ** to search for a matching row in the parent table.  */
+  /* If nIncr is less than zero, then check at runtime if there are any
+  ** outstanding constraints to resolve. If there are not, there is no need
+  ** to check if deleting this row resolves any outstanding violations.
+  **
+  ** Check if any of the key columns in the child table row are NULL. If 
+  ** any are, then the constraint is considered satisfied. No need to 
+  ** search for a matching row in the parent table.  */
+  if( nIncr<0 ){
+    sqlite3VdbeAddOp2(v, OP_FkIfZero, pFKey->isDeferred, iOk);
+  }
   for(i=0; i<pFKey->nCol; i++){
     int iReg = aiCol[i] + regData + 1;
     sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iOk);
@@ -369,7 +376,7 @@ static void fkLookupParent(
     if( nIncr>0 && pFKey->isDeferred==0 ){
       sqlite3ParseToplevel(pParse)->mayAbort = 1;
     }
-    sqlite3VdbeAddOp2(v, OP_FkCounter, nIncr, pFKey->isDeferred);
+    sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
   }
 
   sqlite3VdbeResolveLabel(v, iOk);
@@ -417,6 +424,12 @@ static void fkScanChildren(
   Expr *pWhere = 0;               /* WHERE clause to scan with */
   NameContext sNameContext;       /* Context used to resolve WHERE clause */
   WhereInfo *pWInfo;              /* Context used by sqlite3WhereXXX() */
+  int iFkIfZero = 0;              /* Address of OP_FkIfZero */
+  Vdbe *v = sqlite3GetVdbe(pParse);
+
+  if( nIncr<0 ){
+    iFkIfZero = sqlite3VdbeAddOp2(v, OP_FkIfZero, pFKey->isDeferred, 0);
+  }
 
   /* Create an Expr object representing an SQL expression like:
   **
@@ -477,7 +490,7 @@ static void fkScanChildren(
     if( nIncr>0 && pFKey->isDeferred==0 ){
       sqlite3ParseToplevel(pParse)->mayAbort = 1;
     }
-    sqlite3VdbeAddOp2(pParse->pVdbe, OP_FkCounter, nIncr, pFKey->isDeferred);
+    sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
   }
   if( pWInfo ){
     sqlite3WhereEnd(pWInfo);
@@ -485,6 +498,9 @@ static void fkScanChildren(
 
   /* Clean up the WHERE clause constructed above. */
   sqlite3ExprDelete(db, pWhere);
+  if( iFkIfZero ){
+    sqlite3VdbeJumpHere(v, iFkIfZero);
+  }
 }
 
 /*

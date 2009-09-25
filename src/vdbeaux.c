@@ -341,7 +341,7 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
     int opcode = pOp->opcode;
     if( opcode==OP_Destroy || opcode==OP_VUpdate || opcode==OP_VRename 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-     || (opcode==OP_FkCounter && pOp->p1==1 && pOp->p2==0) 
+     || (opcode==OP_FkCounter && pOp->p1==0 && pOp->p2==1) 
 #endif
      || ((opcode==OP_Halt || opcode==OP_HaltIfNull) 
       && (pOp->p1==SQLITE_CONSTRAINT && pOp->p2==OE_Abort))

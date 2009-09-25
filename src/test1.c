@@ -4873,6 +4873,7 @@ static int test_unlock_notify(
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_search_count;
+  extern int sqlite3_found_count;
   extern int sqlite3_interrupt_count;
   extern int sqlite3_open_file_count;
   extern int sqlite3_sort_count;
@@ -5093,6 +5094,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   }
   Tcl_LinkVar(interp, "sqlite_search_count", 
       (char*)&sqlite3_search_count, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_found_count", 
+      (char*)&sqlite3_found_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_sort_count", 
       (char*)&sqlite3_sort_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite3_max_blobsize", 
