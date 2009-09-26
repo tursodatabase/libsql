@@ -2952,6 +2952,7 @@ VTable *sqlite3GetVTable(sqlite3*, Table*);
   void sqlite3FkActions(Parse*, Table*, ExprList*, int);
   int sqlite3FkRequired(Parse*, Table*, ExprList*);
   u32 sqlite3FkOldmask(Parse*, Table*, ExprList*);
+  FKey *sqlite3FkReferences(Table *);
 #else
   #define sqlite3FkCheck(a,b,c,d,e)
   #define sqlite3FkActions(a,b,c,d)

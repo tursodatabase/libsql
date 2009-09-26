@@ -517,7 +517,7 @@ static void fkScanChildren(
 ** NULL pointer (as there are no FK constraints for which t2 is the parent
 ** table).
 */
-static FKey *fkRefering(Table *pTab){
+FKey *sqlite3FkReferences(Table *pTab){
   int nName = sqlite3Strlen30(pTab->zName);
   return (FKey *)sqlite3HashFind(&pTab->pSchema->fkeyHash, pTab->zName, nName);
 }
@@ -645,7 +645,7 @@ void sqlite3FkCheck(
   }
 
   /* Loop through all the foreign key constraints that refer to this table */
-  for(pFKey = fkRefering(pTab); pFKey; pFKey=pFKey->pNextTo){
+  for(pFKey = sqlite3FkReferences(pTab); pFKey; pFKey=pFKey->pNextTo){
     int iGoto;                    /* Address of OP_Goto instruction */
     Index *pIdx = 0;              /* Foreign key index for pFKey */
     SrcList *pSrc;
@@ -740,7 +740,7 @@ u32 sqlite3FkOldmask(
     for(p=pTab->pFKey; p; p=p->pNextFrom){
       for(i=0; i<p->nCol; i++) mask |= COLUMN_MASK(p->aCol[i].iFrom);
     }
-    for(p=fkRefering(pTab); p; p=p->pNextTo){
+    for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
       Index *pIdx = 0;
       locateFkeyIndex(0, pTab, p, &pIdx, 0);
       if( pIdx ){
@@ -767,7 +767,7 @@ int sqlite3FkRequired(
   ExprList *pChanges              /* Non-NULL for UPDATE operations */
 ){
   if( pParse->db->flags&SQLITE_ForeignKeys ){
-    if( fkRefering(pTab) || pTab->pFKey ) return 1;
+    if( sqlite3FkReferences(pTab) || pTab->pFKey ) return 1;
   }
   return 0;
 }
@@ -968,7 +968,7 @@ void sqlite3FkActions(
   ** trigger sub-program.  */
   if( pParse->db->flags&SQLITE_ForeignKeys ){
     FKey *pFKey;                  /* Iterator variable */
-    for(pFKey = fkRefering(pTab); pFKey; pFKey=pFKey->pNextTo){
+    for(pFKey = sqlite3FkReferences(pTab); pFKey; pFKey=pFKey->pNextTo){
       Trigger *pAction = fkActionTrigger(pParse, pTab, pFKey, pChanges);
       if( pAction ){
         sqlite3CodeRowTriggerDirect(pParse, pAction, pTab, regOld, OE_Abort, 0);
