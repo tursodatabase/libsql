@@ -2061,6 +2061,7 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
       sqlite3VdbeAddOp0(v, OP_VBegin);
     }
 #endif
+    sqlite3FkDropTable(pParse, pName, pTab);
 
     /* Drop all triggers associated with the table being dropped. Code
     ** is generated to remove entries from sqlite_master and/or

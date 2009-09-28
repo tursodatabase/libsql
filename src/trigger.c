@@ -50,6 +50,10 @@ Trigger *sqlite3TriggerList(Parse *pParse, Table *pTab){
   Schema * const pTmpSchema = pParse->db->aDb[1].pSchema;
   Trigger *pList = 0;                  /* List of triggers to return */
 
+  if( pParse->disableTriggers ){
+    return 0;
+  }
+
   if( pTmpSchema!=pTab->pSchema ){
     HashElem *p;
     for(p=sqliteHashFirst(&pTmpSchema->trigHash); p; p=sqliteHashNext(p)){

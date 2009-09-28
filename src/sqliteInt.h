@@ -2122,6 +2122,7 @@ struct Parse {
   u32 oldmask;         /* Mask of old.* columns referenced */
   u8 eTriggerOp;       /* TK_UPDATE, TK_INSERT or TK_DELETE */
   u8 eOrconf;          /* Default ON CONFLICT policy for trigger steps */
+  u8 disableTriggers;  /* True to disable triggers */
 
   /* Above is constant between recursions.  Below is reset before and after
   ** each recursion */
@@ -2949,15 +2950,17 @@ VTable *sqlite3GetVTable(sqlite3*, Table*);
 */
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   void sqlite3FkCheck(Parse*, Table*, ExprList*, int, int);
+  void sqlite3FkDropTable(Parse*, SrcList *, Table*);
   void sqlite3FkActions(Parse*, Table*, ExprList*, int);
   int sqlite3FkRequired(Parse*, Table*, ExprList*);
   u32 sqlite3FkOldmask(Parse*, Table*, ExprList*);
   FKey *sqlite3FkReferences(Table *);
 #else
-  #define sqlite3FkCheck(a,b,c,d,e)
   #define sqlite3FkActions(a,b,c,d)
-  #define sqlite3FkRequired(a,b,c) 0
+  #define sqlite3FkCheck(a,b,c,d,e)
+  #define sqlite3FkDropTable(a,b,c)
   #define sqlite3FkOldmask(a,b,c)  0
+  #define sqlite3FkRequired(a,b,c) 0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(Table*);

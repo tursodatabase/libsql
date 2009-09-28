@@ -588,6 +588,64 @@ static void fkTriggerDelete(sqlite3 *dbMem, Trigger *p){
 }
 
 /*
+** This function is called to generate code that runs when table pTab is
+** being dropped from the database. The SrcList passed as the second argument
+** to this function contains a single entry guaranteed to resolve to
+** table pTab.
+**
+** Normally, no code is required. However, if either
+**
+**   (a) The table is the parent table of a FK constraint, or
+**   (b) The table is the child table of a deferred FK constraint and it is
+**       determined at runtime that there are outstanding deferred FK 
+**       constraint violations in the database,
+**
+** then the equivalent of "DELETE FROM <tbl>" is executed before dropping
+** the table from the database. Triggers are disabled while running this
+** DELETE, but foreign key actions are not.
+*/
+void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
+  sqlite3 *db = pParse->db;
+  if( (db->flags&SQLITE_ForeignKeys) && !IsVirtual(pTab) && !pTab->pSelect ){
+    int iSkip = 0;
+    Vdbe *v = sqlite3GetVdbe(pParse);
+
+    assert( v );                  /* VDBE has already been allocated */
+    if( sqlite3FkReferences(pTab)==0 ){
+      /* Search for a deferred foreign key constraint for which this table
+      ** is the child table. If one cannot be found, return without 
+      ** generating any VDBE code. If one can be found, then jump over
+      ** the entire DELETE if there are no outstanding deferred constraints
+      ** when this statement is run.  */
+      FKey *p;
+      for(p=pTab->pFKey; p; p=p->pNextFrom){
+        if( p->isDeferred ) break;
+      }
+      if( !p ) return;
+      iSkip = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeAddOp2(v, OP_FkIfZero, 1, iSkip);
+    }
+
+    pParse->disableTriggers = 1;
+    sqlite3DeleteFrom(pParse, sqlite3SrcListDup(db, pName, 0), 0);
+    pParse->disableTriggers = 0;
+
+    /* If the DELETE has generated immediate foreign key constraint 
+    ** violations, halt the VDBE and return an error at this point, before
+    ** any modifications to the schema are made. This is because statement
+    ** transactions are not able to rollback schema changes.  */
+    sqlite3VdbeAddOp2(v, OP_FkIfZero, 0, sqlite3VdbeCurrentAddr(v)+2);
+    sqlite3HaltConstraint(
+        pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
+    );
+
+    if( iSkip ){
+      sqlite3VdbeResolveLabel(v, iSkip);
+    }
+  }
+}
+
+/*
 ** This function is called when inserting, deleting or updating a row of
 ** table pTab to generate VDBE code to perform foreign key constraint 
 ** processing for the operation.

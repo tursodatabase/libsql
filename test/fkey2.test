@@ -75,12 +75,14 @@ ifcapable {!foreignkey||!trigger} {
 
 proc drop_all_tables {{db db}} {
   set tbls [execsql {SELECT name FROM sqlite_master WHERE type = 'table'}]
+  execsql { PRAGMA foreign_keys = OFF }
   foreach t [execsql {
     SELECT name FROM sqlite_master 
     WHERE type = 'table' AND name NOT like 'sqlite_%'
   }] {
     execsql "DROP TABLE $t"
   }
+  execsql { PRAGMA foreign_keys = ON }
 }
 
 execsql { PRAGMA foreign_keys = on }
