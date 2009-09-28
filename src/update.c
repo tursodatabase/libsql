@@ -445,17 +445,19 @@ void sqlite3Update(
         aRegIdx, (chngRowid?regOldRowid:0), 1, onError, addr, 0);
 
     /* Do FK constraint checks. */
-    sqlite3FkCheck(pParse, pTab, pChanges, regOldRowid, regNewRowid);
+    sqlite3FkCheck(pParse, pTab, pChanges, regOldRowid, 0);
 
     /* Delete the index entries associated with the current record.  */
     j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
     sqlite3GenerateRowIndexDelete(pParse, pTab, iCur, aRegIdx);
   
     /* If changing the record number, delete the old record.  */
-    if( chngRowid ){
+    if( hasFK || chngRowid ){
       sqlite3VdbeAddOp2(v, OP_Delete, iCur, 0);
     }
     sqlite3VdbeJumpHere(v, j1);
+
+    sqlite3FkCheck(pParse, pTab, pChanges, 0, regNewRowid);
   
     /* Insert the new index entries and the new record. */
     sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, 0, 0);

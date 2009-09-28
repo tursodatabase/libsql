@@ -65,6 +65,9 @@ ifcapable {!foreignkey||!trigger} {
 #             table or deleting from a child table does not cause SQLite
 #             to check if this has repaired an outstanding violation.
 #
+# fkey2-16.*: Test that rows that refer to themselves may be inserted, 
+#             updated and deleted.
+#
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
 #
@@ -81,6 +84,18 @@ proc drop_all_tables {{db db}} {
 }
 
 execsql { PRAGMA foreign_keys = on }
+
+if 0 {
+execsql {
+  CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1);
+  INSERT INTO t1 VALUES('aaa', 'aaa');
+}
+puts XXX
+explain { UPDATE t1 SET a = 'bbb' }
+execsql { PRAGMA vdbe_trace = 1 }
+execsql { UPDATE t1 SET a = 'bbb' }
+exit
+}
 
 set FkeySimpleSchema {
   PRAGMA foreign_keys = on;
@@ -914,6 +929,48 @@ do_test fkey2-15.1.7 {
     ROLLBACK;
   }
 } {2}
+
+#-------------------------------------------------------------------------
+# This next block of tests, fkey2-16.*, test that rows that refer to
+# themselves may be inserted and deleted.
+#
+foreach {tn zSchema} {
+  1 { CREATE TABLE self(a INTEGER PRIMARY KEY, b REFERENCES self(a)) }
+  2 { CREATE TABLE self(a PRIMARY KEY, b REFERENCES self(a)) }
+  3 { CREATE TABLE self(a UNIQUE, b INTEGER PRIMARY KEY REFERENCES self(a)) }
+} {
+  drop_all_tables
+  do_test fkey2-16.1.$tn.1 {
+    execsql $zSchema
+    execsql { INSERT INTO self VALUES(13, 13) }
+  } {}
+  do_test fkey2-16.1.$tn.2 {
+    execsql { UPDATE self SET a = 14, b = 14 }
+  } {}
+
+  do_test fkey2-16.1.$tn.3 {
+    catchsql { UPDATE self SET b = 15 }
+  } {1 {foreign key constraint failed}}
+
+  do_test fkey2-16.1.$tn.4 {
+    catchsql { UPDATE self SET a = 15 }
+  } {1 {foreign key constraint failed}}
+
+  do_test fkey2-16.1.$tn.5 {
+    catchsql { UPDATE self SET a = 15, b = 16 }
+  } {1 {foreign key constraint failed}}
+
+  do_test fkey2-16.1.$tn.6 {
+    catchsql { UPDATE self SET a = 17, b = 17 }
+  } {0 {}}
+
+  do_test fkey2-16.1.$tn.7 {
+    execsql { DELETE FROM self }
+  } {}
+  do_test fkey2-16.1.$tn.8 {
+    catchsql { INSERT INTO self VALUES(20, 21) }
+  } {1 {foreign key constraint failed}}
+}
 
 
 #-------------------------------------------------------------------------
