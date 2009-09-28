@@ -87,18 +87,6 @@ proc drop_all_tables {{db db}} {
 
 execsql { PRAGMA foreign_keys = on }
 
-if 0 {
-execsql {
-  CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1);
-  INSERT INTO t1 VALUES('aaa', 'aaa');
-}
-puts XXX
-explain { UPDATE t1 SET a = 'bbb' }
-execsql { PRAGMA vdbe_trace = 1 }
-execsql { UPDATE t1 SET a = 'bbb' }
-exit
-}
-
 set FkeySimpleSchema {
   PRAGMA foreign_keys = on;
   CREATE TABLE t1(a PRIMARY KEY, b);
@@ -874,6 +862,60 @@ do_test fkey2-14.2.2.6 {
 } {0 {}}
 do_test fkey2-14.2.2.7 {
   execsql { INSERT INTO t3 VALUES(1, NULL, 1) }
+} {}
+
+do_test fkey-2.14.3.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE t1(a, b REFERENCES nosuchtable);
+    DROP TABLE t1;
+  }
+} {}
+do_test fkey-2.14.3.2 {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES('a', 1);
+    CREATE TABLE t2(x REFERENCES t1);
+    INSERT INTO t2 VALUES('a');
+  }
+} {}
+do_test fkey-2.14.3.3 {
+  catchsql { DROP TABLE t1 }
+} {1 {foreign key constraint failed}}
+do_test fkey-2.14.3.4 {
+  execsql {
+    DELETE FROM t2;
+    DROP TABLE t1;
+  }
+} {}
+do_test fkey-2.14.3.4 {
+  catchsql { INSERT INTO t2 VALUES('x') }
+} {1 {no such table: main.t1}}
+do_test fkey-2.14.3.5 {
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY);
+    INSERT INTO t1 VALUES('x');
+  }
+  execsql { INSERT INTO t2 VALUES('x') }
+} {}
+do_test fkey-2.14.3.6 {
+  catchsql { DROP TABLE t1 }
+} {1 {foreign key constraint failed}}
+do_test fkey-2.14.3.7 {
+  execsql {
+    DROP TABLE t2;
+    DROP TABLE t1;
+  }
+} {}
+do_test fkey-2.14.3.8 {
+  execsql {
+    CREATE TABLE pp(x, y, PRIMARY KEY(x, y));
+    CREATE TABLE cc(a, b, FOREIGN KEY(a, b) REFERENCES pp(x, z));
+  }
+  catchsql { INSERT INTO cc VALUES(1, 2) }
+} {1 {foreign key mismatch}}
+do_test fkey-2.14.3.9 {
+  execsql { DROP TABLE cc }
 } {}
 
 #-------------------------------------------------------------------------

@@ -259,7 +259,9 @@ static int locateFkeyIndex(
   }
 
   if( pParse && !pIdx ){
-    sqlite3ErrorMsg(pParse, "foreign key mismatch");
+    if( !pParse->disableTriggers ){
+      sqlite3ErrorMsg(pParse, "foreign key mismatch");
+    }
     sqlite3DbFree(pParse->db, aiCol);
     return 1;
   }
@@ -679,6 +681,7 @@ void sqlite3FkCheck(
   FKey *pFKey;                    /* Used to iterate through FKs */
   int iDb;                        /* Index of database containing pTab */
   const char *zDb;                /* Name of database containing pTab */
+  int isIgnoreErrors = pParse->disableTriggers;
 
   assert( ( pChanges &&  (regOld==0)!=(regNew==0))    /* UPDATE operation */
        || (!pChanges && !regOld &&  regNew)           /* INSERT operation */
@@ -706,8 +709,15 @@ void sqlite3FkCheck(
     ** on the parent key columns in the parent table. If either of these 
     ** schema items cannot be located, set an error in pParse and return 
     ** early.  */
-    pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
-    if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ) return;
+    if( pParse->disableTriggers ){
+      pTo = sqlite3FindTable(db, pFKey->zTo, zDb);
+    }else{
+      pTo = sqlite3LocateTable(pParse, 0, pFKey->zTo, zDb);
+    }
+    if( !pTo || locateFkeyIndex(pParse, pTo, pFKey, &pIdx, &aiFree) ){
+      if( !isIgnoreErrors || db->mallocFailed ) return;
+      continue;
+    }
     assert( pFKey->nCol==1 || (aiFree && pIdx) );
 
     /* If the key does not overlap with the pChanges list, skip this FK. */
@@ -759,10 +769,13 @@ void sqlite3FkCheck(
       assert( regOld==0 && regNew!=0 );
       /* Inserting a single row into a parent table cannot cause an immediate
       ** foreign key violation. So do nothing in this case.  */
-      return;
+      continue;
     }
 
-    if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ) return;
+    if( locateFkeyIndex(pParse, pTab, pFKey, &pIdx, &aiCol) ){
+      if( !isIgnoreErrors || db->mallocFailed ) return;
+      continue;
+    }
     assert( aiCol || pFKey->nCol==1 );
 
     /* Check if this update statement has modified any of the child key 
@@ -826,7 +839,7 @@ u32 sqlite3FkOldmask(
     }
     for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
       Index *pIdx = 0;
-      locateFkeyIndex(0, pTab, p, &pIdx, 0);
+      locateFkeyIndex(pParse, pTab, p, &pIdx, 0);
       if( pIdx ){
         for(i=0; i<pIdx->nColumn; i++) mask |= COLUMN_MASK(pIdx->aiColumn[i]);
       }

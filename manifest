@@ -1,5 +1,5 @@
-C Fix\sthe\sDROP\sTABLE\scommand\sso\sthat\sit\scannot\sbe\sused\sto\sbypass\sforeign\skey\sconstraints\s(if\sforeign\skey\ssupport\sis\senabled).
-D 2009-09-28T14:49:02
+C Ignore\sforeign\skey\smismatch\serrors\swhile\scompiling\sDROP\sTABLE\scommands.
+D 2009-09-28T18:52:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c 8c5deb1775c5051327ebe9fc2fc54ef57890c83d
+F src/fkey.c e31715c14bd9fbe398551aceb5c5454755bdfa52
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test d26f490838bb067d654f4daae3aa90a8a8c8b562
+F test/fkey2.test a041806ef603f8dbae139ad99e57ed1e6cadebf2
 F test/fkey3.test 4d8d87a72e0dee5b5411cf10dc05ad9edebbeac8
 F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9e503e2d0428c9e8df878c7c6594790232cca4e0
-R a460411e3ababe633f79d4b6b7ec5ee3
+P 8353808c9e70412fdee31bfda7810e948f1c7485
+R d0e9896e0ec532c989c7902d96591d81
 U dan
-Z e4a35317c102426902fe4c436cf5658b
+Z c982a4c0e50b77ad87726fbdb4e6d971
