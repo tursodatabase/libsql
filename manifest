@@ -1,5 +1,5 @@
-C Check\sthat\sa\sunique\sindex\suses\sthe\sdefault\scollation\ssequences\sfor\seach\scolumn\sbefore\susing\sit\sas\spart\sof\sa\sforeign\skey\sconstraint\soperation.
-D 2009-09-29T15:41:58
+C Use\sthe\saffinity\sand\scollation\ssequence\sassociated\swith\sthe\sparent\skey\swhen\sfinding\schild\stable\srows\sto\sapply\sa\sforeign\skey\saction\sto.
+D 2009-09-29T16:38:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c aed9dc4cb046a014f6ea1b6a88cfb440eb9e505d
+F src/fkey.c e1128e8d2309b91d65b8c6a92b69060da3901bd1
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test dbed32250f12630eba0c7f5753b00163b1894f98
+F test/fkey2.test df3c11ad1e2fb5410fc7321e24adaaff070d44d3
 F test/fkey3.test c17565b40c97a0dd5102610183c744611171b5ec
 F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 582bd7682831362cd0e2f91ac0dba5ab2b7e2983
-R 3ab2e65e80babb1c9a5df9ed1abb2dff
+P 64154174cf8a53bd9be818db53cb0e586c5d24cb
+R 106a7bccc4ebf5897fe5a8bdc17cd4b9
 U dan
-Z 01b8ddbb56d6c81de7ecc57f15cb5ec5
+Z 024ff679317ae3aeff7b2b65f53c42a0

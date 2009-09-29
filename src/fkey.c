@@ -952,13 +952,16 @@ static Trigger *fkActionTrigger(
       tToCol.n = sqlite3Strlen30(tToCol.z);
       tFromCol.n = sqlite3Strlen30(tFromCol.z);
 
-      /* Create the expression "zFromCol = OLD.zToCol" */
+      /* Create the expression "OLD.zToCol = zFromCol". It is important
+      ** that the "OLD.zToCol" term is on the LHS of the = operator, so
+      ** that the affinity and collation sequence associated with the
+      ** parent table are used for the comparison. */
       pEq = sqlite3PExpr(pParse, TK_EQ,
-          sqlite3PExpr(pParse, TK_ID, 0, 0, &tFromCol),
           sqlite3PExpr(pParse, TK_DOT, 
             sqlite3PExpr(pParse, TK_ID, 0, 0, &tOld),
             sqlite3PExpr(pParse, TK_ID, 0, 0, &tToCol)
-          , 0)
+          , 0),
+          sqlite3PExpr(pParse, TK_ID, 0, 0, &tFromCol)
       , 0);
       pWhere = sqlite3ExprAnd(db, pWhere, pEq);
 

@@ -656,7 +656,7 @@ do_test fkey2-9.2.3 {
 # The following tests, fkey2-10.*, test "foreign key mismatch" and 
 # other errors.
 #
-set tn 1
+set tn 0
 foreach zSql [list {
   CREATE TABLE p(a PRIMARY KEY, b);
   CREATE TABLE c(x REFERENCES p(c));
@@ -672,8 +672,7 @@ foreach zSql [list {
   CREATE TABLE c(x REFERENCES p(a));
 }] {
   drop_all_tables
-
-  do_test fkey2-10.1.$tn {
+  do_test fkey2-10.1.[incr tn] {
     execsql $zSql
     catchsql { INSERT INTO c DEFAULT VALUES }
   } {1 {foreign key mismatch}}
@@ -769,6 +768,48 @@ do_test fkey2-12.1.7 {
     COMMIT;
   }
 } {}
+
+drop_all_tables
+do_test fkey2-12.2.1 {
+  execsql {
+    CREATE TABLE t1(x COLLATE NOCASE PRIMARY KEY);
+    CREATE TRIGGER tt1 AFTER DELETE ON t1 
+      WHEN EXISTS ( SELECT 1 FROM t2 WHERE old.x = y )
+    BEGIN
+      INSERT INTO t1 VALUES(old.x);
+    END;
+    CREATE TABLE t2(y REFERENCES t1);
+    INSERT INTO t1 VALUES('A');
+    INSERT INTO t1 VALUES('B');
+    INSERT INTO t2 VALUES('a');
+    INSERT INTO t2 VALUES('b');
+
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {A B a b}
+do_test fkey2-12.2.2 {
+  execsql { DELETE FROM t1 }
+  execsql {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {A B a b}
+do_test fkey2-12.2.3 {
+  execsql {
+    DROP TABLE t2;
+    CREATE TABLE t2(y REFERENCES t1 ON DELETE RESTRICT);
+    INSERT INTO t2 VALUES('a');
+    INSERT INTO t2 VALUES('b');
+  }
+  catchsql { DELETE FROM t1 }
+} {1 {foreign key constraint failed}}
+do_test fkey2-12.2.4 {
+  execsql {
+    SELECT * FROM t1;
+    SELECT * FROM t2;
+  }
+} {A B a b}
 
 #-------------------------------------------------------------------------
 # The following tests, fkey2-13.*, test that FK processing is performed
