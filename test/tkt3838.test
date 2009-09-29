@@ -20,6 +20,10 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !altertable {
+  finish_test
+  return
+}
 
 do_test tkt3838-1.1 {
   db eval {

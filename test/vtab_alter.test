@@ -17,7 +17,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable !vtab {
+ifcapable !vtab||!altertable {
   finish_test
   return
 }

@@ -144,17 +144,19 @@ do_test vtab_shared-1.12.2 {
 
 # Try a rename or two.
 #
-do_test vtab_shared-1.13.1 {
-  execsql { ALTER TABLE t1 RENAME TO t4 }
-  execsql { SELECT * FROM t4 } db
-} {1 2 3 4 5 6}
-do_test vtab_shared-1.13.2 {
-  execsql { SELECT * FROM t4 } db2
-} {1 2 3 4 5 6}
-do_test vtab_shared-1.13.3 {
-  execsql { ALTER TABLE t2 RENAME TO t5 }
-  execsql { SELECT * FROM t4 } db2
-} {1 2 3 4 5 6}
+ifcapable altertable {
+  do_test vtab_shared-1.13.1 {
+    execsql { ALTER TABLE t1 RENAME TO t4 }
+    execsql { SELECT * FROM t4 } db
+  } {1 2 3 4 5 6}
+  do_test vtab_shared-1.13.2 {
+    execsql { SELECT * FROM t4 } db2
+  } {1 2 3 4 5 6}
+  do_test vtab_shared-1.13.3 {
+    execsql { ALTER TABLE t2 RENAME TO t5 }
+    execsql { SELECT * FROM t4 } db2
+  } {1 2 3 4 5 6}
+}
 
 # Try an UPDATE/INSERT/DELETE on a shared vtab as the first statement after a
 # schema is loaded.

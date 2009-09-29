@@ -20,6 +20,7 @@ source $testdir/tester.tcl
 
 # Many of the boundary tests depend on a working 64-bit implementation.
 if {![working_64bit_int]} { finish_test; return }
+ifcapable !altertable     { finish_test; return }
 }
 
 expr srand(0)

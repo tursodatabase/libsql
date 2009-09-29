@@ -1154,12 +1154,14 @@ foreach method [list \
   incr tn
 }
 
-do_test vtab1-16.$tn {
-  set echo_module_fail(xRename,t2) "the xRename method has failed"
-  catchsql { ALTER TABLE echo_t2 RENAME TO another_name }
-} "1 {echo-vtab-error: the xRename method has failed}"
-unset echo_module_fail(xRename,t2)
-incr tn
+ifcapable altertable {
+  do_test vtab1-16.$tn {
+    set echo_module_fail(xRename,t2) "the xRename method has failed"
+    catchsql { ALTER TABLE echo_t2 RENAME TO another_name }
+  } "1 {echo-vtab-error: the xRename method has failed}"
+  unset echo_module_fail(xRename,t2)
+  incr tn
+}
 
 unset -nocomplain echo_module_begin_fail
 finish_test

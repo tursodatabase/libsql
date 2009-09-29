@@ -16,7 +16,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-ifcapable {!foreignkey} {
+ifcapable {!foreignkey||!trigger} {
   finish_test
   return
 }

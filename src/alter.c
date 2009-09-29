@@ -266,6 +266,7 @@ static char *whereOrName(sqlite3 *db, char *zWhere, char *zConstant){
   return zNew;
 }
 
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
 /*
 ** Generate the text of a WHERE expression which can be used to select all
 ** tables that have foreign key constraints that refer to table pTab (i.e.
@@ -280,6 +281,7 @@ static char *whereForeignKeys(Parse *pParse, Table *pTab){
   }
   return zWhere;
 }
+#endif
 
 /*
 ** Generate the text of a WHERE expression which can be used to select all
@@ -470,7 +472,7 @@ void sqlite3AlterRenameTable(
   zTabName = pTab->zName;
   nTabName = sqlite3Utf8CharLen(zTabName, -1);
 
-#ifndef SQLITE_OMIT_FOREIGN_KEY
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   if( db->flags&SQLITE_ForeignKeys ){
     /* If foreign-key support is enabled, rewrite the CREATE TABLE 
     ** statements corresponding to all child tables of foreign key constraints
@@ -536,7 +538,7 @@ void sqlite3AlterRenameTable(
   }
 #endif
 
-#ifndef SQLITE_OMIT_FOREIGN_KEY
+#if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
   if( db->flags&SQLITE_ForeignKeys ){
     FKey *p;
     for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
