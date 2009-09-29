@@ -683,10 +683,8 @@ void sqlite3FkCheck(
   const char *zDb;                /* Name of database containing pTab */
   int isIgnoreErrors = pParse->disableTriggers;
 
-  assert( ( pChanges &&  (regOld==0)!=(regNew==0))    /* UPDATE operation */
-       || (!pChanges && !regOld &&  regNew)           /* INSERT operation */
-       || (!pChanges &&  regOld && !regNew)           /* DELETE operation */
-  );
+  /* Exactly one of regOld and regNew should be non-zero. */
+  assert( (regOld==0)!=(regNew==0) );
 
   /* If foreign-keys are disabled, this function is a no-op. */
   if( (db->flags&SQLITE_ForeignKeys)==0 ) return;
@@ -760,7 +758,6 @@ void sqlite3FkCheck(
 
   /* Loop through all the foreign key constraints that refer to this table */
   for(pFKey = sqlite3FkReferences(pTab); pFKey; pFKey=pFKey->pNextTo){
-    int iGoto;                    /* Address of OP_Goto instruction */
     Index *pIdx = 0;              /* Foreign key index for pFKey */
     SrcList *pSrc;
     int *aiCol = 0;
@@ -808,9 +805,6 @@ void sqlite3FkCheck(
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regOld, 1);
       }
   
-      if( pChanges ){
-        sqlite3VdbeJumpHere(v, iGoto);
-      }
       sqlite3SrcListDelete(db, pSrc);
     }
     sqlite3DbFree(db, aiCol);

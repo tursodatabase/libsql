@@ -612,11 +612,16 @@ do_test fkey2-9.1.5 {
 # The following tests, fkey2-10.*, test "foreign key mismatch" and 
 # other errors.
 #
-
 set tn 1
 foreach zSql [list {
   CREATE TABLE p(a PRIMARY KEY, b);
   CREATE TABLE c(x REFERENCES p(c));
+} {
+  CREATE TABLE c(x REFERENCES v(y));
+  CREATE VIEW v AS SELECT x AS y FROM c;
+} {
+  CREATE TABLE p(a, b, PRIMARY KEY(a, b));
+  CREATE TABLE c(x REFERENCES p);
 }] {
   drop_all_tables
 
