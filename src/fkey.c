@@ -241,10 +241,24 @@ static int locateFkeyIndex(
       }else{
         /* If zKey is non-NULL, then this foreign key was declared to
         ** map to an explicit list of columns in table pParent. Check if this
-        ** index matches those columns.  */
+        ** index matches those columns. Also, check that the index uses
+        ** the default collation sequences for each column. */
         int i, j;
         for(i=0; i<nCol; i++){
-          char *zIdxCol = pParent->aCol[pIdx->aiColumn[i]].zName;
+          int iCol = pIdx->aiColumn[i];     /* Index of column in parent tbl */
+          char *zDfltColl;                  /* Def. collation for column */
+          char *zIdxCol;                    /* Name of indexed column */
+
+          /* If the index uses a collation sequence that is different from
+          ** the default collation sequence for the column, this index is
+          ** unusable. Bail out early in this case.  */
+          zDfltColl = pParent->aCol[iCol].zColl;
+          if( !zDfltColl ){
+            zDfltColl = "BINARY";
+          }
+          if( sqlite3StrICmp(pIdx->azColl[i], zDfltColl) ) break;
+
+          zIdxCol = pParent->aCol[iCol].zName;
           for(j=0; j<nCol; j++){
             if( sqlite3StrICmp(pFKey->aCol[j].zCol, zIdxCol)==0 ){
               if( aiCol ) aiCol[i] = pFKey->aCol[j].iFrom;

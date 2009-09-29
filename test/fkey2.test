@@ -166,10 +166,23 @@ foreach {tn zSql res} $FkeySimpleTests {
 execsql { PRAGMA count_changes = 0 }
 drop_all_tables
 
+do_test fkey2-1.4.0 {
+  execsql [string map {/D/ {}} $FkeySimpleSchema]
+  execsql { PRAGMA count_changes = 1 }
+} {}
+foreach {tn zSql res} $FkeySimpleTests {
+  if {$res == "0 {}"} { set res {0 1} }
+  execsql BEGIN
+  do_test fkey2-1.4.$tn { catchsql $zSql } $res
+  execsql COMMIT
+}
+execsql { PRAGMA count_changes = 0 }
+drop_all_tables
+
 # Special test: When the parent key is an IPK, make sure the affinity of
 # the IPK is not applied to the child key value before it is inserted
 # into the child table.
-do_test fkey2-1.4.1 {
+do_test fkey2-1.5.1 {
   execsql {
     CREATE TABLE i(i INTEGER PRIMARY KEY);
     CREATE TABLE j(j REFERENCES i);
@@ -178,13 +191,13 @@ do_test fkey2-1.4.1 {
     SELECT j, typeof(j) FROM j;
   }
 } {35.0 text}
-do_test fkey2-1.4.2 {
+do_test fkey2-1.5.2 {
   catchsql { DELETE FROM i }
 } {1 {foreign key constraint failed}}
 
 # Same test using a regular primary key with integer affinity.
 drop_all_tables
-do_test fkey2-1.5.1 {
+do_test fkey2-1.6.1 {
   execsql {
     CREATE TABLE i(i INT UNIQUE);
     CREATE TABLE j(j REFERENCES i(i));
@@ -194,13 +207,13 @@ do_test fkey2-1.5.1 {
     SELECT i, typeof(i) FROM i;
   }
 } {35.0 text 35 integer}
-do_test fkey2-1.5.2 {
+do_test fkey2-1.6.2 {
   catchsql { DELETE FROM i }
 } {1 {foreign key constraint failed}}
 
 # Use a collation sequence on the parent key.
 drop_all_tables
-do_test fkey2-1.6.1 {
+do_test fkey2-1.7.1 {
   execsql {
     CREATE TABLE i(i TEXT COLLATE nocase PRIMARY KEY);
     CREATE TABLE j(j TEXT COLLATE binary REFERENCES i(i));
@@ -213,7 +226,7 @@ do_test fkey2-1.6.1 {
 # Use the parent key collation even if it is default and the child key
 # has an explicit value.
 drop_all_tables
-do_test fkey2-1.6.2 {
+do_test fkey2-1.7.2 {
   execsql {
     CREATE TABLE i(i TEXT PRIMARY KEY);        -- Colseq is "BINARY"
     CREATE TABLE j(j TEXT COLLATE nocase REFERENCES i(i));
@@ -221,7 +234,7 @@ do_test fkey2-1.6.2 {
   }
   catchsql { INSERT INTO j VALUES('sqlite') }
 } {1 {foreign key constraint failed}}
-do_test fkey2-1.6.3 {
+do_test fkey2-1.7.3 {
   execsql {
     INSERT INTO i VALUES('sqlite');
     INSERT INTO j VALUES('sqlite');
@@ -394,6 +407,7 @@ do_test fkey2-3.1.5 {
   execsql COMMIT;
   execsql { SELECT * FROM ab; SELECT * FROM cd; SELECT * FROM ef }
 } {1 b 1 d 1 e}
+
 do_test fkey2-3.2.1 {
   execsql BEGIN;
   catchsql { DELETE FROM ab }
@@ -608,6 +622,36 @@ do_test fkey2-9.1.5 {
   catchsql { DELETE FROM t1 }
 } {1 {foreign key constraint failed}}
 
+do_test fkey2-9.2.1 {
+  execsql {
+    CREATE TABLE pp(a, b, c, PRIMARY KEY(b, c));
+    CREATE TABLE cc(d DEFAULT 3, e DEFAULT 1, f DEFAULT 2,
+        FOREIGN KEY(f, d) REFERENCES pp 
+        ON UPDATE SET DEFAULT 
+        ON DELETE SET NULL
+    );
+    INSERT INTO pp VALUES(1, 2, 3);
+    INSERT INTO pp VALUES(4, 5, 6);
+    INSERT INTO pp VALUES(7, 8, 9);
+  }
+} {}
+do_test fkey2-9.2.2 {
+  execsql {
+    INSERT INTO cc VALUES(6, 'A', 5);
+    INSERT INTO cc VALUES(6, 'B', 5);
+    INSERT INTO cc VALUES(9, 'A', 8);
+    INSERT INTO cc VALUES(9, 'B', 8);
+    UPDATE pp SET b = 1 WHERE a = 7;
+    SELECT * FROM cc;
+  }
+} {6 A 5 6 B 5 3 A 2 3 B 2}
+do_test fkey2-9.2.3 {
+  execsql {
+    DELETE FROM pp WHERE a = 4;
+    SELECT * FROM cc;
+  }
+} {{} A {} {} B {} 3 A 2 3 B 2}
+
 #-------------------------------------------------------------------------
 # The following tests, fkey2-10.*, test "foreign key mismatch" and 
 # other errors.
@@ -622,6 +666,10 @@ foreach zSql [list {
 } {
   CREATE TABLE p(a, b, PRIMARY KEY(a, b));
   CREATE TABLE c(x REFERENCES p);
+} {
+  CREATE TABLE p(a COLLATE binary, b);
+  CREATE UNIQUE INDEX i ON p(a COLLATE nocase);
+  CREATE TABLE c(x REFERENCES p(a));
 }] {
   drop_all_tables
 
@@ -699,7 +747,6 @@ do_test fkey2-12.1.1 {
     INSERT INTO t1 VALUES(3, 'three');
   }
 } {}
-
 do_test fkey2-12.1.2 { 
   execsql "BEGIN"
   execsql "INSERT INTO t2 VALUES('two')"
