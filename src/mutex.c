@@ -150,4 +150,4 @@ int sqlite3_mutex_notheld(sqlite3_mutex *p){
 }
 #endif
 
-#endif /* SQLITE_OMIT_MUTEX */
+#endif /* SQLITE_MUTEX_OMIT */

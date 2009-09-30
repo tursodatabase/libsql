@@ -1,5 +1,5 @@
-C Use\sthe\saffinity\sand\scollation\ssequence\sassociated\swith\sthe\sparent\skey\swhen\sfinding\schild\stable\srows\sto\sapply\sa\sforeign\skey\saction\sto.
-D 2009-09-29T16:38:59
+C Change\sa\scouple\sof\scomments\sto\suse\s"SQLITE_MUTEX_OMIT"\sinstead\sof\sOMIT_MUTEX.
+D 2009-09-30T04:28:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,8 +135,8 @@ F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
 F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
 F src/mem5.c 4837b795ebdecc0cfe1522cd0c8b2c5d84ea490d
 F src/memjournal.c e68cb5f7e828b84d5bf2ea16c5d87f1ed7e9fe7f
-F src/mutex.c 525d60fc22922d7a5c44fae147914d64feffb7d0
-F src/mutex.h 9e686e83a88838dac8b9c51271c651e833060f1e
+F src/mutex.c 828a40bc7bf79f01ef95ccbf8db8b02857739449
+F src/mutex.h 32ddef38560ce0128d7e7b3eb063f5c6eff889a3
 F src/mutex_noop.c f5a07671f25a1a9bd7c10ad7107bc2585446200f
 F src/mutex_os2.c 6b5a74f812082a8483c3df05b47bbaac2424b9a0
 F src/mutex_unix.c aff26c77f698b552becfedfa677ad1036c42d790
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 64154174cf8a53bd9be818db53cb0e586c5d24cb
-R 106a7bccc4ebf5897fe5a8bdc17cd4b9
+P 9a4b7ec2928307e88783223903c842accaff7ccf
+R ed18c0f6e456a209dd60cbfd23f902b1
 U dan
-Z 024ff679317ae3aeff7b2b65f53c42a0
+Z e6780d1fc41ded3235a99fa871ec0a7c

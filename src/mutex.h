@@ -70,4 +70,4 @@
 #define sqlite3MutexAlloc(X)      ((sqlite3_mutex*)8)
 #define sqlite3MutexInit()        SQLITE_OK
 #define sqlite3MutexEnd()
-#endif /* defined(SQLITE_OMIT_MUTEX) */
+#endif /* defined(SQLITE_MUTEX_OMIT) */
