@@ -74,13 +74,12 @@ ifcapable {!foreignkey||!trigger} {
 
 
 proc drop_all_tables {{db db}} {
-  set tbls [execsql {SELECT name FROM sqlite_master WHERE type = 'table'}]
   execsql { PRAGMA foreign_keys = OFF }
-  foreach t [execsql {
-    SELECT name FROM sqlite_master 
-    WHERE type = 'table' AND name NOT like 'sqlite_%'
+  foreach {t type} [execsql {
+    SELECT name, type FROM sqlite_master 
+    WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
   }] {
-    execsql "DROP TABLE $t"
+    execsql "DROP $type $t"
   }
   execsql { PRAGMA foreign_keys = ON }
 }
@@ -811,6 +810,52 @@ do_test fkey2-12.2.4 {
   }
 } {A B a b}
 
+drop_all_tables
+do_test fkey2-12.3.1 {
+  execsql {
+    CREATE TABLE up(
+      c00, c01, c02, c03, c04, c05, c06, c07, c08, c09,
+      c10, c11, c12, c13, c14, c15, c16, c17, c18, c19,
+      c20, c21, c22, c23, c24, c25, c26, c27, c28, c29,
+      c30, c31, c32, c33, c34, c35, c36, c37, c38, c39,
+      PRIMARY KEY(c34, c35)
+    );
+    CREATE TABLE down(
+      c00, c01, c02, c03, c04, c05, c06, c07, c08, c09,
+      c10, c11, c12, c13, c14, c15, c16, c17, c18, c19,
+      c20, c21, c22, c23, c24, c25, c26, c27, c28, c29,
+      c30, c31, c32, c33, c34, c35, c36, c37, c38, c39,
+      FOREIGN KEY(c39, c38) REFERENCES up ON UPDATE CASCADE
+    );
+  }
+} {}
+do_test fkey2-12.3.2 {
+  execsql {
+    INSERT INTO up(c34, c35) VALUES('yes', 'no');
+    INSERT INTO down(c39, c38) VALUES('yes', 'no');
+    UPDATE up SET c34 = 'possibly';
+    SELECT c38, c39 FROM down;
+    DELETE FROM down;
+  }
+} {no possibly}
+do_test fkey2-12.3.3 {
+  catchsql { INSERT INTO down(c39, c38) VALUES('yes', 'no') }
+} {1 {foreign key constraint failed}}
+do_test fkey2-12.3.4 {
+  execsql { 
+    INSERT INTO up(c34, c35) VALUES('yes', 'no');
+    INSERT INTO down(c39, c38) VALUES('yes', 'no');
+  }
+  catchsql { DELETE FROM up WHERE c34 = 'yes' }
+} {1 {foreign key constraint failed}}
+do_test fkey2-12.3.5 {
+  execsql { 
+    DELETE FROM up WHERE c34 = 'possibly';
+    SELECT c34, c35 FROM up;
+    SELECT c39, c38 FROM down;
+  }
+} {yes no yes no}
+
 #-------------------------------------------------------------------------
 # The following tests, fkey2-13.*, test that FK processing is performed
 # when rows are REPLACEd.
@@ -1012,6 +1057,70 @@ do_test fkey-2.14.3.8 {
 do_test fkey-2.14.3.9 {
   execsql { DROP TABLE cc }
 } {}
+do_test fkey-2.14.3.10 {
+  execsql {
+    CREATE TABLE cc(a, b, 
+      FOREIGN KEY(a, b) REFERENCES pp DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+  execsql {
+    INSERT INTO pp VALUES('a', 'b');
+    INSERT INTO cc VALUES('a', 'b');
+    BEGIN;
+      DROP TABLE pp;
+      CREATE TABLE pp(a, b, c, PRIMARY KEY(b, c));
+      INSERT INTO pp VALUES(1, 'a', 'b');
+    COMMIT;
+  }
+} {}
+do_test fkey-2.14.3.11 {
+  execsql { 
+    BEGIN;
+      DROP TABLE cc;
+      DROP TABLE pp;
+    COMMIT;
+  }
+} {}
+do_test fkey-2.14.3.12 {
+  execsql {
+    CREATE TABLE b1(a, b);
+    CREATE TABLE b2(a, b REFERENCES b1);
+    DROP TABLE b1;
+  }
+} {}
+do_test fkey-2.14.3.13 {
+  execsql {
+    CREATE TABLE b3(a, b REFERENCES b2 DEFERRABLE INITIALLY DEFERRED);
+    DROP TABLE b2;
+  }
+} {}
+
+# Test that nothing goes wrong when dropping a table that refers to a view.
+# Or dropping a view that an existing FK (incorrectly) refers to. Or either
+# of the above scenarios with a virtual table.
+drop_all_tables
+do_test fkey-2.14.4.1 {
+  execsql {
+    CREATE TABLE t1(x REFERENCES v); 
+    CREATE VIEW v AS SELECT * FROM t1;
+  }
+} {}
+do_test fkey-2.14.4.2 {
+  execsql {
+    DROP VIEW v;
+  }
+} {}
+ifcapable vtab {
+  register_echo_module db
+  do_test fkey-2.14.4.3 {
+    execsql { CREATE VIRTUAL TABLE v USING echo(t1) }
+  } {}
+  do_test fkey-2.14.4.2 {
+    execsql {
+      DROP TABLE v;
+    }
+  } {}
+}
 
 #-------------------------------------------------------------------------
 # The following tests, fkey2-15.*, test that unnecessary FK related scans 

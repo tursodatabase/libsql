@@ -1,5 +1,5 @@
-C Change\sa\scouple\sof\scomments\sto\suse\s"SQLITE_MUTEX_OMIT"\sinstead\sof\sOMIT_MUTEX.
-D 2009-09-30T04:28:05
+C Remove\sunreachable\sbranches\sfrom\sfkey.c.\sAdd\sa\sfew\stests\sto\scover\sthe\sremaining\sbranches.
+D 2009-09-30T08:11:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 2a3d6fc0861b2f8dbd9feb7847b390267b281c60
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c e1128e8d2309b91d65b8c6a92b69060da3901bd1
+F src/fkey.c 8b438b1fda586519f8bb398538447fb2592bf668
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -330,9 +330,9 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test df3c11ad1e2fb5410fc7321e24adaaff070d44d3
+F test/fkey2.test 023917f6d133da94088fe4eafcdfceb81abade83
 F test/fkey3.test c17565b40c97a0dd5102610183c744611171b5ec
-F test/fkey_malloc.test da912d000bb6ceb1cd11b655de1989762fa71ceb
+F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
 F test/fts1b.test 5d8a01aefbecc8b7442b36c94c05eb7a845462d5
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9a4b7ec2928307e88783223903c842accaff7ccf
-R ed18c0f6e456a209dd60cbfd23f902b1
+P b733e939f785111eac987fe4a25ccfa512e4f0b4
+R b65fcb7a6b9e80aa54f47592d37aa613
 U dan
-Z e6780d1fc41ded3235a99fa871ec0a7c
+Z bf04350be182c658296913fed86e36e0

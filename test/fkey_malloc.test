@@ -101,6 +101,32 @@ do_malloc_test fkey_malloc-5 -sqlprep {
   UPDATE t1 SET x = 5;
 }
 
+do_malloc_test fkey_malloc-6 -sqlprep {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE t1(
+    x PRIMARY KEY, 
+    y REFERENCES t1 ON DELETE RESTRICT ON UPDATE SET DEFAULT
+  );
+  INSERT INTO t1 VALUES('abc', 'abc');
+  INSERT INTO t1 VALUES('def', 'def');
+} -sqlbody {
+  INSERT INTO t1 VALUES('ghi', 'ghi');
+  DELETE FROM t1 WHERE rowid>1;
+  UPDATE t1 SET x='jkl', y='jkl';
+}
+
+do_malloc_test fkey_malloc-7 -sqlprep {
+  PRAGMA foreign_keys = 1;
+  CREATE TABLE x(a, b, PRIMARY KEY(a, b));
+  CREATE TABLE y(c, d,
+    FOREIGN KEY(d, c) REFERENCES x DEFERRABLE INITIALLY DEFERRED
+  );
+  CREATE TABLE z(e, f, FOREIGN KEY(e, f) REFERENCES x);
+} -sqlbody {
+  DROP TABLE y;
+  DROP TABLE x;
+}
+
 finish_test
 
 

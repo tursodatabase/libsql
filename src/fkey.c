@@ -193,6 +193,7 @@ static int locateFkeyIndex(
   /* The caller is responsible for zeroing output parameters. */
   assert( ppIdx && *ppIdx==0 );
   assert( !paiCol || *paiCol==0 );
+  assert( pParse );
 
   /* If this is a non-composite (single column) foreign key, check if it 
   ** maps to the INTEGER PRIMARY KEY of table pParent. If so, leave *ppIdx 
@@ -272,7 +273,7 @@ static int locateFkeyIndex(
     }
   }
 
-  if( pParse && !pIdx ){
+  if( !pIdx ){
     if( !pParse->disableTriggers ){
       sqlite3ErrorMsg(pParse, "foreign key mismatch");
     }
@@ -542,18 +543,10 @@ static void fkScanChildren(
   ** each row found. Otherwise, for deferred constraints, increment the
   ** deferred constraint counter by nIncr for each row selected.  */
   pWInfo = sqlite3WhereBegin(pParse, pSrc, pWhere, 0, 0);
-  if( nIncr==0 ){
-    /* Special case: A RESTRICT Action. Throw an error immediately if one
-    ** of these is encountered.  */
-    sqlite3HaltConstraint(
-      pParse, OE_Abort, "foreign key constraint failed", P4_STATIC
-    );
-  }else{
-    if( nIncr>0 && pFKey->isDeferred==0 ){
-      sqlite3ParseToplevel(pParse)->mayAbort = 1;
-    }
-    sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
+  if( nIncr>0 && pFKey->isDeferred==0 ){
+    sqlite3ParseToplevel(pParse)->mayAbort = 1;
   }
+  sqlite3VdbeAddOp2(v, OP_FkCounter, pFKey->isDeferred, nIncr);
   if( pWInfo ){
     sqlite3WhereEnd(pWInfo);
   }
