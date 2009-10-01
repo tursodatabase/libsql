@@ -141,6 +141,7 @@ set FkeySimpleTests {
   4.14 "INSERT INTO t8 VALUES('a', 'b')"  {1 {foreign key constraint failed}}
   4.15 "UPDATE t7 SET b = 5"              {1 {foreign key constraint failed}}
   4.16 "UPDATE t7 SET rowid = 5"          {1 {foreign key constraint failed}}
+  4.17 "UPDATE t7 SET a = 10"             {0 {}}
 
   5.1  "INSERT INTO t9 VALUES(1, 3)"      {1 {no such table: main.nosuchtable}}
   5.2  "INSERT INTO t10 VALUES(1, 3)"     {1 {foreign key mismatch}}
@@ -562,6 +563,9 @@ do_test fkey2-7.7 {
 } {}
 do_test fkey2-7.8 {
   catchsql { UPDATE t1 SET a = 3 }
+} {1 {foreign key constraint failed}}
+do_test fkey2-7.9 {
+  catchsql { UPDATE t2 SET rowid = 3 }
 } {1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
