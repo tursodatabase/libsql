@@ -159,8 +159,6 @@ void sqlite3Update(
 # define isView 0
 #endif
 
-  hasFK = sqlite3FkRequired(pParse, pTab, pChanges);
-
   if( sqlite3ViewGetColumnNames(pParse, pTab) ){
     goto update_cleanup;
   }
@@ -229,6 +227,8 @@ void sqlite3Update(
     }
 #endif
   }
+
+  hasFK = sqlite3FkRequired(pParse, pTab, aXRef, chngRowid);
 
   /* Allocate memory for the array aRegIdx[].  There is one entry in the
   ** array for each index associated with table being updated.  Fill in
@@ -389,7 +389,7 @@ void sqlite3Update(
   /* If there are triggers on this table, populate an array of registers 
   ** with the required old.* column data.  */
   if( hasFK || pTrigger ){
-    u32 oldmask = sqlite3FkOldmask(pParse, pTab, pChanges);
+    u32 oldmask = (hasFK ? sqlite3FkOldmask(pParse, pTab) : 0);
     oldmask |= sqlite3TriggerOldmask(pParse, pTrigger, pChanges, pTab, onError);
     for(i=0; i<pTab->nCol; i++){
       if( aXRef[i]<0 || oldmask==0xffffffff || (oldmask & (1<<i)) ){
@@ -445,7 +445,9 @@ void sqlite3Update(
         aRegIdx, (chngRowid?regOldRowid:0), 1, onError, addr, 0);
 
     /* Do FK constraint checks. */
-    sqlite3FkCheck(pParse, pTab, pChanges, regOldRowid, 0);
+    if( hasFK ){
+      sqlite3FkCheck(pParse, pTab, regOldRowid, 0);
+    }
 
     /* Delete the index entries associated with the current record.  */
     j1 = sqlite3VdbeAddOp3(v, OP_NotExists, iCur, 0, regOldRowid);
@@ -457,7 +459,9 @@ void sqlite3Update(
     }
     sqlite3VdbeJumpHere(v, j1);
 
-    sqlite3FkCheck(pParse, pTab, pChanges, 0, regNewRowid);
+    if( hasFK ){
+      sqlite3FkCheck(pParse, pTab, 0, regNewRowid);
+    }
   
     /* Insert the new index entries and the new record. */
     sqlite3CompleteInsertion(pParse, pTab, iCur, regNewRowid, aRegIdx, 1, 0, 0);
@@ -465,7 +469,9 @@ void sqlite3Update(
     /* Do any ON CASCADE, SET NULL or SET DEFAULT operations required to
     ** handle rows (possibly in other tables) that refer via a foreign key
     ** to the row just updated. */ 
-    sqlite3FkActions(pParse, pTab, pChanges, regOldRowid);
+    if( hasFK ){
+      sqlite3FkActions(pParse, pTab, pChanges, regOldRowid);
+    }
   }
 
   /* Increment the row counter 

@@ -2949,18 +2949,18 @@ VTable *sqlite3GetVTable(sqlite3*, Table*);
 ** provided (enforcement of FK constraints requires the triggers sub-system).
 */
 #if !defined(SQLITE_OMIT_FOREIGN_KEY) && !defined(SQLITE_OMIT_TRIGGER)
-  void sqlite3FkCheck(Parse*, Table*, ExprList*, int, int);
+  void sqlite3FkCheck(Parse*, Table*, int, int);
   void sqlite3FkDropTable(Parse*, SrcList *, Table*);
   void sqlite3FkActions(Parse*, Table*, ExprList*, int);
-  int sqlite3FkRequired(Parse*, Table*, ExprList*);
-  u32 sqlite3FkOldmask(Parse*, Table*, ExprList*);
+  int sqlite3FkRequired(Parse*, Table*, int*, int);
+  u32 sqlite3FkOldmask(Parse*, Table*);
   FKey *sqlite3FkReferences(Table *);
 #else
   #define sqlite3FkActions(a,b,c,d)
-  #define sqlite3FkCheck(a,b,c,d,e)
+  #define sqlite3FkCheck(a,b,c,d)
   #define sqlite3FkDropTable(a,b,c)
-  #define sqlite3FkOldmask(a,b,c)  0
-  #define sqlite3FkRequired(a,b,c) 0
+  #define sqlite3FkOldmask(a,b)      0
+  #define sqlite3FkRequired(a,b,c,d) 0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
   void sqlite3FkDelete(Table*);

@@ -70,6 +70,9 @@ ifcapable {!foreignkey||!trigger} {
 #
 # fkey2-17.*: Test that the "count_changes" pragma does not interfere with
 #             FK constraint processing.
+# 
+# fkey2-18.*: Test that the authorization callback is invoked when processing
+#             FK constraints.
 #
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
@@ -136,6 +139,8 @@ set FkeySimpleTests {
   4.12 "UPDATE t7 SET b = 2"              {1 {foreign key constraint failed}}
   4.13 "UPDATE t7 SET b = 1"              {0 {}}
   4.14 "INSERT INTO t8 VALUES('a', 'b')"  {1 {foreign key constraint failed}}
+  4.15 "UPDATE t7 SET b = 5"              {1 {foreign key constraint failed}}
+  4.16 "UPDATE t7 SET rowid = 5"          {1 {foreign key constraint failed}}
 
   5.1  "INSERT INTO t9 VALUES(1, 3)"      {1 {no such table: main.nosuchtable}}
   5.2  "INSERT INTO t10 VALUES(1, 3)"     {1 {foreign key mismatch}}
@@ -1342,6 +1347,10 @@ do_test fkey2-17.2.9 {
 do_test fkey2-17.2.10 {
   execsql { SELECT * FROM high ; SELECT * FROM low }
 } {}
+
+#-------------------------------------------------------------------------
+# Test that the authorization callback works.
+#
 
 
 execsql { PRAGMA count_changes = 0 }

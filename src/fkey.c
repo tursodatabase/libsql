@@ -672,14 +672,11 @@ void sqlite3FkDropTable(Parse *pParse, SrcList *pName, Table *pTab){
 ** For an UPDATE operation, this function is called twice. Once before
 ** the original record is deleted from the table using the calling convention
 ** described for DELETE. Then again after the original record is deleted
-** but before the new record is inserted using the INSERT convention. In
-** both cases parameter pChanges is passed the list of columns being 
-** updated by the statement.
+** but before the new record is inserted using the INSERT convention. 
 */
 void sqlite3FkCheck(
   Parse *pParse,                  /* Parse context */
   Table *pTab,                    /* Row is being deleted from this table */ 
-  ExprList *pChanges,             /* Changed columns if this is an UPDATE */
   int regOld,                     /* Previous row data is stored here */
   int regNew                      /* New row data is stored here */
 ){
@@ -724,11 +721,6 @@ void sqlite3FkCheck(
       continue;
     }
     assert( pFKey->nCol==1 || (aiFree && pIdx) );
-
-    /* If the key does not overlap with the pChanges list, skip this FK. */
-    if( pChanges ){
-      /* TODO */
-    }
 
     if( aiFree ){
       aiCol = aiFree;
@@ -782,14 +774,6 @@ void sqlite3FkCheck(
     }
     assert( aiCol || pFKey->nCol==1 );
 
-    /* Check if this update statement has modified any of the child key 
-    ** columns for this foreign key constraint. If it has not, there is 
-    ** no need to search the child table for rows in violation. This is
-    ** just an optimization. Things would work fine without this check.  */
-    if( pChanges ){
-      /* TODO */
-    }
-
     /* Create a SrcList structure containing a single table (the table 
     ** the foreign key that refers to this table is attached to). This
     ** is required for the sqlite3WhereXXX() interface.  */
@@ -822,14 +806,11 @@ void sqlite3FkCheck(
 
 /*
 ** This function is called before generating code to update or delete a 
-** row contained in table pTab. If the operation is an update, then 
-** pChanges is a pointer to the list of columns to modify. If this is a 
-** delete, then pChanges is NULL.
+** row contained in table pTab.
 */
 u32 sqlite3FkOldmask(
   Parse *pParse,                  /* Parse context */
-  Table *pTab,                    /* Table being modified */
-  ExprList *pChanges              /* Non-NULL for UPDATE operations */
+  Table *pTab                     /* Table being modified */
 ){
   u32 mask = 0;
   if( pParse->db->flags&SQLITE_ForeignKeys ){
@@ -851,9 +832,13 @@ u32 sqlite3FkOldmask(
 
 /*
 ** This function is called before generating code to update or delete a 
-** row contained in table pTab. If the operation is an update, then 
-** pChanges is a pointer to the list of columns to modify. If this is a 
-** delete, then pChanges is NULL.
+** row contained in table pTab. If the operation is a DELETE, then
+** parameter aChange is passed a NULL value. For an UPDATE, aChange points
+** to an array of size N, where N is the number of columns in table pTab.
+** If the i'th column is not modified by the UPDATE, then the corresponding 
+** entry in the aChange[] array is set to -1. If the column is modified,
+** the value is 0 or greater. Parameter chngRowid is set to true if the
+** UPDATE statement modifies the rowid fields of the table.
 **
 ** If any foreign key processing will be required, this function returns
 ** true. If there is no foreign key related processing, this function 
@@ -862,10 +847,45 @@ u32 sqlite3FkOldmask(
 int sqlite3FkRequired(
   Parse *pParse,                  /* Parse context */
   Table *pTab,                    /* Table being modified */
-  ExprList *pChanges              /* Non-NULL for UPDATE operations */
+  int *aChange,                   /* Non-NULL for UPDATE operations */
+  int chngRowid                   /* True for UPDATE that affects rowid */
 ){
   if( pParse->db->flags&SQLITE_ForeignKeys ){
-    if( sqlite3FkReferences(pTab) || pTab->pFKey ) return 1;
+    if( !aChange ){
+      /* A DELETE operation. Foreign key processing is required if the 
+      ** table in question is either the child or parent table for any 
+      ** foreign key constraint.  */
+      return (sqlite3FkReferences(pTab) || pTab->pFKey);
+    }else{
+      /* This is an UPDATE. Foreign key processing is only required if the
+      ** operation modifies one or more child or parent key columns. */
+      int i;
+      FKey *p;
+
+      /* Check if any child key columns are being modified. */
+      for(p=pTab->pFKey; p; p=p->pNextFrom){
+        for(i=0; i<p->nCol; i++){
+          int iChildKey = p->aCol[i].iFrom;
+          if( aChange[iChildKey]>=0 ) return 1;
+          if( iChildKey==pTab->iPKey && chngRowid ) return 1;
+        }
+      }
+
+      /* Check if any parent key columns are being modified. */
+      for(p=sqlite3FkReferences(pTab); p; p=p->pNextTo){
+        for(i=0; i<p->nCol; i++){
+          char *zKey = p->aCol[i].zCol;
+          int iKey;
+          for(iKey=0; iKey<pTab->nCol; iKey++){
+            Column *pCol = &pTab->aCol[iKey];
+            if( (zKey ? !sqlite3StrICmp(pCol->zName, zKey) : pCol->isPrimKey) ){
+              if( aChange[iKey]>=0 ) return 1;
+              if( iKey==pTab->iPKey && chngRowid ) return 1;
+            }
+          }
+        }
+      }
+    }
   }
   return 0;
 }

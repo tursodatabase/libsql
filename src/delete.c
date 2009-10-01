@@ -342,7 +342,7 @@ void sqlite3DeleteFrom(
   ** this optimization caused the row change count (the value returned by 
   ** API function sqlite3_count_changes) to be set incorrectly.  */
   if( rcauth==SQLITE_OK && pWhere==0 && !pTrigger && !IsVirtual(pTab) 
-   && 0==sqlite3FkRequired(pParse, pTab, 0)
+   && 0==sqlite3FkRequired(pParse, pTab, 0, 0)
   ){
     assert( !isView );
     sqlite3VdbeAddOp4(v, OP_Clear, pTab->tnum, iDb, memCnt,
@@ -492,14 +492,14 @@ void sqlite3GenerateRowDelete(
  
   /* If there are any triggers to fire, allocate a range of registers to
   ** use for the old.* references in the triggers.  */
-  if( sqlite3FkRequired(pParse, pTab, 0) || pTrigger ){
+  if( sqlite3FkRequired(pParse, pTab, 0, 0) || pTrigger ){
     u32 mask;                     /* Mask of OLD.* columns in use */
     int iCol;                     /* Iterator used while populating OLD.* */
 
     /* TODO: Could use temporary registers here. Also could attempt to
     ** avoid copying the contents of the rowid register.  */
     mask = sqlite3TriggerOldmask(pParse, pTrigger, 0, pTab, onconf);
-    mask |= sqlite3FkOldmask(pParse, pTab, 0);
+    mask |= sqlite3FkOldmask(pParse, pTab);
     iOld = pParse->nMem+1;
     pParse->nMem += (1 + pTab->nCol);
 
@@ -528,7 +528,7 @@ void sqlite3GenerateRowDelete(
     /* Do FK processing. This call checks that any FK constraints that
     ** refer to this table (i.e. constraints attached to other tables) 
     ** are not violated by deleting this row.  */
-    sqlite3FkCheck(pParse, pTab, 0, iOld, 0);
+    sqlite3FkCheck(pParse, pTab, iOld, 0);
   }
 
   /* Delete the index and table entries. Skip this step if pTab is really
