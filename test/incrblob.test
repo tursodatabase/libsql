@@ -309,7 +309,7 @@ do_test incrblob-4.7 {
   list $rc $msg
 } {1 {cannot open value of type null}}
 
-do_test incrblob-4.8 {
+do_test incrblob-4.8.1 {
   execsql {
     INSERT INTO blobs(k, v, i) VALUES(X'010203040506070809', 'hello', 'world');
   }
@@ -318,6 +318,22 @@ do_test incrblob-4.8 {
   } msg ] 
   list $rc $msg
 } {1 {cannot open indexed column for writing}}
+do_test incrblob-4.8.2 {
+  execsql {
+    CREATE TABLE t3(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t3 VALUES(1, 2);
+  }
+  set rc [catch {
+    set ::blob [db incrblob -readonly t3 a 1]
+  } msg ] 
+  list $rc $msg
+} {1 {cannot open value of type null}}
+do_test incrblob-4.8.3 {
+  set rc [catch {
+    set ::blob [db incrblob -readonly t3 rowid 1]
+  } msg ] 
+  list $rc $msg
+} {1 {no such column: "rowid"}}
 
 do_test incrblob-4.9.1 {
   set rc [catch {

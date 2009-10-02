@@ -152,6 +152,10 @@ int sqlite3_blob_open(
       Index *pIdx;
 #ifndef SQLITE_OMIT_FOREIGN_KEY
       if( db->flags&SQLITE_ForeignKeys ){
+        /* Check that the column is not part of an FK child key definition. It
+        ** is not necessary to check if it is part of a parent key, as parent
+        ** key columns must be indexed. The check below will pick up this 
+        ** case.  */
         FKey *pFKey;
         for(pFKey=pTab->pFKey; pFKey; pFKey=pFKey->pNextFrom){
           int j;

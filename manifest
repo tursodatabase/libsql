@@ -1,5 +1,5 @@
-C Add\stest\scases\sto\scover\sthe\sbranches\sadded\sby\sthe\sprevious\scommit.
-D 2009-10-01T17:13:31
+C Add\sa\stest\sto\scheck\sthat\sthe\sincrblob\sAPI\scannot\sbe\sused\sto\swrite\sto\san\sIPK\scolumn.\sAlso\sa\scomment\sto\sexplain\swhy\sthe\sincrblob\scode\sdoes\snot\sneed\sto\scheck\sif\sa\scolumn\sis\spart\sof\sa\sparent\skey\sbefore\swriting\sto\sit.
+D 2009-10-02T06:35:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -211,7 +211,7 @@ F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
 F src/vdbeInt.h 7afb76c0296f9a2310e565803fa66798ef47e9d5
 F src/vdbeapi.c 524d79eb17bbcbe31c37c908b8e01edc5c684a90
 F src/vdbeaux.c 6834737c119f5662c9e6d147ddb4f72523a31aea
-F src/vdbeblob.c 3ba0f7ba1b3afce2d37a18e4f437992d430f0eae
+F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
 F src/vdbemem.c 0ff2b209fccade3ff6709286057b82ed7f6c1e70
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
@@ -404,7 +404,7 @@ F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
 F test/in4.test 64f3cc1acde1b9161ccdd8e5bde3daefdb5b2617
-F test/incrblob.test c80087a8ec28b4a58b5299251074048e17754f8f
+F test/incrblob.test 54ac96eacab29215f1e1513f3b6843ebd0242eac
 F test/incrblob2.test edc3a96e557bd61fb39acc8d2edd43371fbbaa19
 F test/incrblob_err.test c577c91d4ed9e8336cdb188b15d6ee2a6fe9604e
 F test/incrvacuum.test d0fb6ef6d747ef5c5ebe878aafa72dd3e178856b
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P edff3500058eb8ad2381f855ef7a09ecb680f7b8
-R e2635171e26dc176fc0016982e6b3937
+P aaa005b6da222f711f201c453d28f5be40e9c601
+R 41b569942ce78deea05315bc00bbbc6d
 U dan
-Z 1a9dbde56225ed80d968fe46fec694b5
+Z 9732e09af43d5f7c1ec2d1ca2b86bc1f
