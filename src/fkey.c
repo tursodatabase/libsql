@@ -732,6 +732,13 @@ void sqlite3FkCheck(
       if( aiCol[i]==pTab->iPKey ){
         aiCol[i] = -1;
       }
+#ifndef SQLITE_OMIT_AUTHORIZATION
+      /* Request permission to read the parent key columns. */
+      if( db->xAuth ){
+        char *zCol = pTo->aCol[pIdx ? pIdx->aiColumn[i] : pTo->iPKey].zName;
+        sqlite3AuthReadCol(pParse, pTo->zName, zCol, iDb, 0);
+      }
+#endif
     }
 
     /* Take a shared-cache advisory read-lock on the parent table. Allocate 

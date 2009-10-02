@@ -1351,13 +1351,78 @@ do_test fkey2-17.2.9 {
 do_test fkey2-17.2.10 {
   execsql { SELECT * FROM high ; SELECT * FROM low }
 } {}
+execsql { PRAGMA count_changes = 0 }
 
 #-------------------------------------------------------------------------
 # Test that the authorization callback works.
 #
 
+ifcapable auth {
+  do_test fkey2-18.1 {
+    execsql {
+      CREATE TABLE long(a, b PRIMARY KEY, c);
+      CREATE TABLE short(d, e, f REFERENCES long);
+      CREATE TABLE mid(g, h, i REFERENCES long DEFERRABLE INITIALLY DEFERRED);
+    }
+  } {}
 
-execsql { PRAGMA count_changes = 0 }
+  proc auth {args} {eval lappend ::authargs $args ; return SQLITE_OK}
+  db auth auth
+
+  # An insert on the parent table must read the child key of any deferred
+  # foreign key constraints. But not the child key of immediate constraints.
+  set authargs {}
+  do_test fkey2-18.2 {
+    execsql { INSERT INTO long VALUES(1, 2, 3) }
+    set authargs
+  } {SQLITE_INSERT long {} main {} SQLITE_READ mid i main {}}
+
+  # An insert on the child table of an immediate constraint must read the
+  # parent key columns (to see if it is a violation or not).
+  set authargs {}
+  do_test fkey2-18.3 {
+    execsql { INSERT INTO short VALUES(1, 3, 2) }
+    set authargs
+  } {SQLITE_INSERT short {} main {} SQLITE_READ long b main {}}
+  
+  # As must an insert on the child table of a deferred constraint.
+  set authargs {}
+  do_test fkey2-18.4 {
+    execsql { INSERT INTO mid VALUES(1, 3, 2) }
+    set authargs
+  } {SQLITE_INSERT mid {} main {} SQLITE_READ long b main {}}
+
+  do_test fkey2-18.5 {
+    execsql {
+      CREATE TABLE nought(a, b PRIMARY KEY, c);
+      CREATE TABLE cross(d, e, f,
+        FOREIGN KEY(e) REFERENCES nought(b) ON UPDATE CASCADE
+      );
+    }
+    execsql { INSERT INTO nought VALUES(2, 1, 2) }
+    execsql { INSERT INTO cross VALUES(0, 1, 0) }
+    set authargs [list]
+    execsql { UPDATE nought SET b = 5 }
+    set authargs
+  } {SQLITE_UPDATE nought b main {} SQLITE_READ cross e main {} SQLITE_READ cross e main {} SQLITE_READ nought b main {} SQLITE_READ nought b main {} SQLITE_READ nought b main {} SQLITE_UPDATE cross e main {} SQLITE_READ nought b main {} SQLITE_READ cross e main {} SQLITE_READ nought b main {} SQLITE_READ nought b main {}}
+
+  do_test fkey2-18.6 {
+    execsql {SELECT * FROM cross}
+  } {0 5 0}
+
+  rename auth {}
+  proc auth {args} {
+    if {[lindex $args 1] == "long"} {return SQLITE_IGNORE}
+    return SQLITE_OK
+  }
+  do_test fkey2-18.7 {
+    catchsql { INSERT INTO short VALUES(1, 3, 2) }
+  } {1 {access to long.b is prohibited}}
+
+  db auth {}
+  unset authargs
+}
+
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 
 # the same tests that were used to test the ".genfkey" command provided 
