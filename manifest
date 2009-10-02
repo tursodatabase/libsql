@@ -1,5 +1,5 @@
-C When\sinserting\sa\srow\sinto\sa\schild\stable,\sinvoke\sthe\sauthorization\scallback\sto\srequest\spermission\sto\sread\sthe\sparent\skey\scolumns.
-D 2009-10-02T14:23:42
+C Add\sone\smore\sauthentication\stest\sto\sfkey2.test\sto\scover\san\suntested\sbranch.
+D 2009-10-02T15:29:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test e4bc39a77e140bff6f5b8f6adfad599a0dca1720
+F test/fkey2.test 10ac5a185bd82fccebc1644960baee89a9a24bcc
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dca2a7f608d9237039541707846c76cd460f5805
-R 30336a7d8a841925ec6f327a1d0cb82e
+P 9842f2d5f606eb8f641ecae9fbc5368b8d7e4286
+R 3f4f5605b427a8a3e05e79ea9061feda
 U dan
-Z f7abd111a6647a2871746e5a320e0ffd
+Z 6f95349be215c026d8008f1f1d0bb69d
