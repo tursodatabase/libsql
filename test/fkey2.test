@@ -1421,6 +1421,9 @@ ifcapable auth {
     set authargs
   } {SQLITE_INSERT two {} main {} SQLITE_READ one a main {}}
 
+  # Return SQLITE_IGNORE to requests to read from the parent table. This
+  # causes inserts of non-NULL keys into the child table to fail.
+  #
   rename auth {}
   proc auth {args} {
     if {[lindex $args 1] == "long"} {return SQLITE_IGNORE}
@@ -1428,7 +1431,16 @@ ifcapable auth {
   }
   do_test fkey2-18.8 {
     catchsql { INSERT INTO short VALUES(1, 3, 2) }
-  } {1 {access to long.b is prohibited}}
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-18.9 {
+    execsql { INSERT INTO short VALUES(1, 3, NULL) }
+  } {}
+  do_test fkey2-18.10 {
+    execsql { SELECT * FROM short }
+  } {1 3 2 1 3 {}}
+  do_test fkey2-18.11 {
+    catchsql { UPDATE short SET f = 2 WHERE f IS NULL }
+  } {1 {foreign key constraint failed}}
 
   db auth {}
   unset authargs

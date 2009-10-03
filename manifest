@@ -1,5 +1,5 @@
-C Add\sone\smore\sauthentication\stest\sto\sfkey2.test\sto\scover\san\suntested\sbranch.
-D 2009-10-02T15:29:10
+C Handle\san\sSQLITE_IGNORE\sreturned\swhen\srequesting\sauthorization\sto\sread\sparent\skey\scolumns\sby\spretending\sthe\sparent\skey\scolumns\scontain\sNULL\svalues.
+D 2009-10-03T07:04:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 1b63d4f2a6e76af9e2964d4d86ccc8e74c3fae4a
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
-F src/auth.c 50a4fd3ad4a0d3dec95cec7c022a6ca9d5ca3f4e
+F src/auth.c a5471a6951a18f79d783da34be22cd94dfbe603a
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
@@ -116,7 +116,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 308e300d599d2d11b838687e2cf7309d42f29a1a
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c bcc2af88a4f88cb2127cd5fb68d4e09e73e03063
+F src/fkey.c 720f049dc4615a568b07cd7d65bbc499b8604f8a
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -164,7 +164,7 @@ F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c d6e64471aafb81f355262533393169a70529847a
 F src/sqlite.h.in 5af8181f815831a8672c3834c60e6b4418448bcc
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 20ca4172804c85745445bd3291d7884446b67bd7
+F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
 F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -330,7 +330,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 10ac5a185bd82fccebc1644960baee89a9a24bcc
+F test/fkey2.test 2220d7384624d792b692a94c65239f6359480312
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9842f2d5f606eb8f641ecae9fbc5368b8d7e4286
-R 3f4f5605b427a8a3e05e79ea9061feda
+P e4fa8be770eb79806d489be46f68f969de17378b
+R 2ef0920c3026f22dce7b0a365b2419f0
 U dan
-Z 6f95349be215c026d8008f1f1d0bb69d
+Z c958d9e98d78b6ad7096dbaf02193139

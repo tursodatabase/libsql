@@ -2734,7 +2734,7 @@ void sqlite3DeferForeignKey(Parse*, int);
   int sqlite3AuthCheck(Parse*,int, const char*, const char*, const char*);
   void sqlite3AuthContextPush(Parse*, AuthContext*, const char*);
   void sqlite3AuthContextPop(AuthContext*);
-  void sqlite3AuthReadCol(Parse*, const char *, const char *, int, Expr *);
+  int sqlite3AuthReadCol(Parse*, const char *, const char *, int);
 #else
 # define sqlite3AuthRead(a,b,c,d)
 # define sqlite3AuthCheck(a,b,c,d,e)    SQLITE_OK
