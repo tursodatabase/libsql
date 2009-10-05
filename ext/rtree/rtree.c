@@ -1486,8 +1486,8 @@ static void LinearPickSeeds(
   ** variables iLeftSeek and iRightSeed.
   */
   for(i=0; i<pRtree->nDim; i++){
-    float x1 = aCell[0].aCoord[i*2];
-    float x2 = aCell[0].aCoord[i*2+1];
+    float x1 = DCOORD(aCell[0].aCoord[i*2]);
+    float x2 = DCOORD(aCell[0].aCoord[i*2+1]);
     float x3 = x1;
     float x4 = x2;
     int jj;
@@ -1496,8 +1496,8 @@ static void LinearPickSeeds(
     int iCellRight = 0;
 
     for(jj=1; jj<nCell; jj++){
-      float left = aCell[jj].aCoord[i*2];
-      float right = aCell[jj].aCoord[i*2+1];
+      float left = DCOORD(aCell[jj].aCoord[i*2]);
+      float right = DCOORD(aCell[jj].aCoord[i*2+1]);
 
       if( left<x1 ) x1 = left;
       if( right>x4 ) x4 = right;
@@ -1855,6 +1855,9 @@ static int splitNodeGuttman(
   int i;
 
   aiUsed = sqlite3_malloc(sizeof(int)*nCell);
+  if( !aiUsed ){
+    return SQLITE_NOMEM;
+  }
   memset(aiUsed, 0, sizeof(int)*nCell);
 
   PickSeeds(pRtree, aCell, nCell, &iLeftSeed, &iRightSeed);

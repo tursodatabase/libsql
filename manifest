@@ -1,5 +1,5 @@
-C Handle\san\sSQLITE_IGNORE\sreturned\swhen\srequesting\sauthorization\sto\sread\sparent\skey\scolumns\sby\spretending\sthe\sparent\skey\scolumns\scontain\sNULL\svalues.
-D 2009-10-03T07:04:12
+C Fix\ssome\serrors\sin\sthe\sguttman\sversions\s(disabled\sby\sdefault)\sof\sthe\salgorithms\sin\srtree.c.
+D 2009-10-05T05:40:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -72,7 +72,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 833ab284f023ce449a1f21b8313f82be7cef1b7e
+F ext/rtree/rtree.c 5275d8f851c366f4a01e8a0c63aa0af492567f28
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test 207041aba07fdcdd93aa797a745839d305181857
 F ext/rtree/rtree2.test 9ac9d28fa948779df66916c67a5dcf9704c3cb74
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e4fa8be770eb79806d489be46f68f969de17378b
-R 2ef0920c3026f22dce7b0a365b2419f0
+P 3c24df38e6ae5dfe999bbf3133b65df0074c6a50
+R af41d6839c5b3fbd78aaa5433beb2784
 U dan
-Z c958d9e98d78b6ad7096dbaf02193139
+Z b0e13147f28456f325c79b5231df1d66
