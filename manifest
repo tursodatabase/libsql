@@ -1,5 +1,5 @@
-C Fix\ssome\serrors\sin\sthe\sguttman\sversions\s(disabled\sby\sdefault)\sof\sthe\salgorithms\sin\srtree.c.
-D 2009-10-05T05:40:09
+C Change\stclsqlite.c\sto\suse\sthe\sTcl_NRxxx()\sAPIs\sin\sTcl\sversions\s8.6\sand\slater.
+D 2009-10-06T14:59:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
 F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c 5eea5025c370d3a91ce0415f9d46f96fdc7aef44
+F src/tclsqlite.c 868d62910bc6b41c49554482bdcc1590efc01f3c
 F src/test1.c 9bd64834314b67345855c314dc479bc12596a9b7
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3c24df38e6ae5dfe999bbf3133b65df0074c6a50
-R af41d6839c5b3fbd78aaa5433beb2784
+P 64bad00b4f6fbbc3e5e75966f9c3959ad3d542ef
+R 78c6c7f47dc96b9157ff7801c0a79ba5
 U dan
-Z b0e13147f28456f325c79b5231df1d66
+Z 4d13066fa5ea076492e7b00880a2f631
