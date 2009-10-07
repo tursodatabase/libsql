@@ -423,6 +423,7 @@ static void fkLookupParent(
   }
 
   sqlite3VdbeResolveLabel(v, iOk);
+  sqlite3VdbeAddOp1(v, OP_Close, iCur);
 }
 
 /*
