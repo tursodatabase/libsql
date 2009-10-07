@@ -1,5 +1,5 @@
-C Update\sheader\sfile\scomments\sdescribing\sthe\ssqlite3_changes\sand\ssqlite3_total_changes\sfunctions\sto\sdescribe\show\schanges\smade\sby\sforeign\skey\sactions\sare\shandled.
-D 2009-10-07T10:43:26
+C Update\sthe\sheader\scomment\sfor\ssqlite3_blob_open\sto\snote\sthat\sit\sis\snot\spossible\sto\swrite\sto\sa\scolumn\sthat\sis\sindexed,\spart\sof\sa\sprimary\skey\sor,\sif\sforeign\skey\ssupport\sis\senabled,\spart\sof\sa\sforeign\skey.
+D 2009-10-07T11:29:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +162,7 @@ F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c d6e64471aafb81f355262533393169a70529847a
-F src/sqlite.h.in e40dab185cf58898673e7a6ce06241db8564c228
+F src/sqlite.h.in 2c9fa83525b14fe3dda38146fb3005847d57a14e
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
 F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
@@ -755,7 +755,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e9f72f1de459a9e8380609f6bd7d4b76afb59f89
-R 9714630a969f1d30b0951ea29ad33109
+P 4c342c026a84f2608c2b331a1ac016117b80f108
+R 00933329f46af3182360d2ad1c009d61
 U dan
-Z 618481cb64acfdfb0c14578253adf5f4
+Z 3a796131fdffd0cdb05bbf577f31d08d
