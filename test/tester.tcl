@@ -958,6 +958,20 @@ proc copy_file {from to} {
   }
 }
 
+# Drop all tables in database [db]
+proc drop_all_tables {{db db}} {
+  set pk [$db one "PRAGMA foreign_keys"]
+  $db eval "PRAGMA foreign_keys = OFF"
+  foreach {t type} [$db eval {
+    SELECT name, type FROM sqlite_master 
+    WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
+  }] {
+    $db eval "DROP $type $t"
+  }
+  $db eval " PRAGMA foreign_keys = $pk "
+}
+
+
 # If the library is compiled with the SQLITE_DEFAULT_AUTOVACUUM macro set
 # to non-zero, then set the global variable $AUTOVACUUM to 1.
 set AUTOVACUUM $sqlite_options(default_autovacuum)

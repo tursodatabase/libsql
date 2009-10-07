@@ -79,17 +79,6 @@ ifcapable {!foreignkey||!trigger} {
 #
 
 
-proc drop_all_tables {{db db}} {
-  execsql { PRAGMA foreign_keys = OFF }
-  foreach {t type} [execsql {
-    SELECT name, type FROM sqlite_master 
-    WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
-  }] {
-    execsql "DROP $type $t"
-  }
-  execsql { PRAGMA foreign_keys = ON }
-}
-
 execsql { PRAGMA foreign_keys = on }
 
 set FkeySimpleSchema {

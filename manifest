@@ -1,5 +1,5 @@
-C Add\sa\smissing\sOP_Close\sopcode\sto\sVDBE\sprograms\sthat\scheck\sfor\sFK\sconstraint\sviolations.
-D 2009-10-07T16:04:47
+C Add\ssome\stests\sof\sstatements\sin\sforeignkeys.html.
+D 2009-10-07T18:41:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/shell.c d6e64471aafb81f355262533393169a70529847a
 F src/sqlite.h.in 2c9fa83525b14fe3dda38146fb3005847d57a14e
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
-F src/sqliteLimit.h 504a3161886d2938cbd163054ad620b8356df758
+F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c 868d62910bc6b41c49554482bdcc1590efc01f3c
@@ -182,7 +182,7 @@ F src/test_async.c 731d23f953ece5bf40ce87810cfb7607218953c5
 F src/test_autoext.c f53b0cdf7bf5f08100009572a5d65cdb540bd0ad
 F src/test_backup.c 1384a18985a5a2d275c2662e48473bf1542ebd08
 F src/test_btree.c 5adbba9b138988a3cf4d3b5424dbc7c85651da02
-F src/test_config.c 97d840717efcca8cad5e353debc69780ea8ad7ce
+F src/test_config.c 4ac1e6257dcf926a71b7934410b71c5c326e68f2
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
 F src/test_func.c 26ac62d8ed7a9f45a1e05baffb1c1e55fe2a06f2
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
@@ -206,7 +206,7 @@ F src/update.c 2c8a64237e4fae604468d14380b877d169545b63
 F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 869d08eaab64e2a4eaf4ef9ea34b851892b65a75
-F src/vdbe.c cb9dae4c5c3706e5772756bb38710faa954f0bb9
+F src/vdbe.c df2824f4f8b38f313aea5f6ce651bff20eb29715
 F src/vdbe.h 7d5075e3fa4e5587a9be8d5e503857c825490cef
 F src/vdbeInt.h 7afb76c0296f9a2310e565803fa66798ef47e9d5
 F src/vdbeapi.c 524d79eb17bbcbe31c37c908b8e01edc5c684a90
@@ -319,6 +319,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
+F test/e_fkey.test 0f520315537039d6e2c72285dca2a63ab26b5c48
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -330,7 +331,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 2220d7384624d792b692a94c65239f6359480312
+F test/fkey2.test add654160d1b066f7b866d63d4435954ccbcab7d
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -574,7 +575,7 @@ F test/tclsqlite.test 8b1150d0486c4848c70d96422513a91c5342be0e
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl b22f925f3c6eea6283e29a81a7379091ca89ab40
+F test/tester.tcl 2caf7980d7dbb99dab9507ae0646802bc4d12c79
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -755,7 +756,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2fd487fdb669df89a8eb62cd0b7dc27ea1016edf
-R 9ddc4e2fa5a388e13b394f0c6d81b590
+P 5caa4a2b050d5743b1407485cf419aa36cf16ac6
+R 6e2bec7f14be2bc8a2ff167508eb9921
 U dan
-Z 7ec5b231b6f1f0bf46023d4eea263057
+Z 1105fea50b7c6c07e7cbb16d59bd372a

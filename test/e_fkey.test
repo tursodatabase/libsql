@@ -1,0 +1,210 @@
+# 2009 October 7
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify the "testable statements" in the
+# foreignkeys.in document.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+ifcapable {!foreignkey} { finish_test ; return }
+
+execsql "PRAGMA foreign_keys = ON"
+
+#-------------------------------------------------------------------------
+# /* EV: R-24728-13230 */
+# /* EV: R-24450-46174 */
+#
+# Test that MATCH clauses are parsed, but SQLite treats every foreign key
+# constraint as if it were "MATCH SIMPLE".
+#
+foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
+  drop_all_tables
+  do_test e_fkey-1.$zMatch.1 {
+    execsql "
+      CREATE TABLE p(a, b, c, PRIMARY KEY(b, c));
+      CREATE TABLE c(d, e, f, FOREIGN KEY(e, f) REFERENCES p MATCH $zMatch);
+    "
+  } {}
+  do_test e_fkey-1.$zMatch.2 {
+    execsql { INSERT INTO p VALUES(1, 2, 3)         }
+
+    # MATCH SIMPLE behaviour: Allow any child key that contains one or more
+    # NULL value to be inserted. Non-NULL values do not have to map to any
+    # parent key values, so long as at least one field of the child key is
+    # NULL.
+    execsql { INSERT INTO c VALUES('w', 2, 3)       }
+    execsql { INSERT INTO c VALUES('x', 'x', NULL)  }
+    execsql { INSERT INTO c VALUES('y', NULL, 'x')  }
+    execsql { INSERT INTO c VALUES('z', NULL, NULL) }
+
+    # Check that the FK is enforced properly if there are no NULL values 
+    # in the child key columns.
+    catchsql { INSERT INTO c VALUES('a', 2, 4) }
+  } {1 {foreign key constraint failed}}
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-21599-16038 */
+#
+# Test that SQLite does not support the SET CONSTRAINT statement. And
+# that it is possible to create both immediate and deferred constraints.
+#
+drop_all_tables
+do_test e_fkey-2.1 {
+  catchsql { SET CONSTRAINTS ALL IMMEDIATE }
+} {1 {near "SET": syntax error}}
+do_test e_fkey-2.2 {
+  catchsql { SET CONSTRAINTS ALL DEFERRED }
+} {1 {near "SET": syntax error}}
+
+do_test e_fkey-2.3 {
+  execsql {
+    CREATE TABLE p(a, b, PRIMARY KEY(a, b));
+    CREATE TABLE cd(c, d, 
+      FOREIGN KEY(c, d) REFERENCES p DEFERRABLE INITIALLY DEFERRED);
+    CREATE TABLE ci(c, d, 
+      FOREIGN KEY(c, d) REFERENCES p DEFERRABLE INITIALLY IMMEDIATE);
+    BEGIN;
+  }
+} {}
+do_test e_fkey-2.4 {
+  catchsql { INSERT INTO ci VALUES('x', 'y') }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-2.5 {
+  catchsql { INSERT INTO cd VALUES('x', 'y') }
+} {0 {}}
+do_test e_fkey-2.6 {
+  catchsql { COMMIT }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-2.7 {
+  execsql { 
+    DELETE FROM cd;
+    COMMIT;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-42264-30503 */
+#
+# Test that the maximum recursion depth of foreign key action programs is
+# governed by the SQLITE_MAX_TRIGGER_DEPTH and SQLITE_LIMIT_TRIGGER_DEPTH
+# settings.
+#
+proc test_on_delete_recursion {limit} {
+  drop_all_tables
+  execsql { 
+    BEGIN;
+    CREATE TABLE t0(a PRIMARY KEY, b);
+    INSERT INTO t0 VALUES('x0', NULL);
+  }
+  for {set i 1} {$i <= $limit} {incr i} {
+    execsql "
+      CREATE TABLE t$i (
+        a PRIMARY KEY, b REFERENCES t[expr $i-1] ON DELETE CASCADE
+      );
+      INSERT INTO t$i VALUES('x$i', 'x[expr $i-1]');
+    "
+  }
+  execsql COMMIT
+  catchsql "
+    DELETE FROM t0;
+    SELECT count(*) FROM t$limit;
+  "
+}
+proc test_on_update_recursion {limit} {
+  drop_all_tables
+  execsql { 
+    BEGIN;
+    CREATE TABLE t0(a PRIMARY KEY);
+    INSERT INTO t0 VALUES('xxx');
+  }
+  for {set i 1} {$i <= $limit} {incr i} {
+    set j [expr $i-1]
+
+    execsql "
+      CREATE TABLE t$i (a PRIMARY KEY REFERENCES t$j ON UPDATE CASCADE);
+      INSERT INTO t$i VALUES('xxx');
+    "
+  }
+  execsql COMMIT
+  catchsql "
+    UPDATE t0 SET a = 'yyy';
+    SELECT NOT (a='yyy') FROM t$limit;
+  "
+}
+
+do_test e_fkey-3.1.1 {
+  test_on_delete_recursion $SQLITE_MAX_TRIGGER_DEPTH
+} {0 0}
+do_test e_fkey-3.1.2 {
+  test_on_delete_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
+} {1 {too many levels of trigger recursion}}
+do_test e_fkey-3.1.3 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
+  test_on_delete_recursion 5
+} {0 0}
+do_test e_fkey-3.1.4 {
+  test_on_delete_recursion 6
+} {1 {too many levels of trigger recursion}}
+do_test e_fkey-3.1.5 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
+} {5}
+do_test e_fkey-3.2.1 {
+  test_on_update_recursion $SQLITE_MAX_TRIGGER_DEPTH
+} {0 0}
+do_test e_fkey-3.2.2 {
+  test_on_update_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
+} {1 {too many levels of trigger recursion}}
+do_test e_fkey-3.2.3 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
+  test_on_update_recursion 5
+} {0 0}
+do_test e_fkey-3.2.4 {
+  test_on_update_recursion 6
+} {1 {too many levels of trigger recursion}}
+do_test e_fkey-3.2.5 {
+  sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
+} {5}
+
+#-------------------------------------------------------------------------
+# /* EV: R-51769-32730 */
+#
+# The setting of the recursive_triggers pragma does not affect foreign
+# key actions.
+#
+foreach recursive_triggers_setting [list 0 1 ON OFF] {
+  drop_all_tables
+  execsql "PRAGMA recursive_triggers = $recursive_triggers_setting"
+
+  do_test e_fkey-4.$recursive_triggers_setting.1 {
+    execsql {
+      CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1 ON DELETE CASCADE);
+      INSERT INTO t1 VALUES(1, NULL);
+      INSERT INTO t1 VALUES(2, 1);
+      INSERT INTO t1 VALUES(3, 2);
+      INSERT INTO t1 VALUES(4, 3);
+      INSERT INTO t1 VALUES(5, 4);
+      SELECT count(*) FROM t1;
+    }
+  } {5}
+  do_test e_fkey-4.$recursive_triggers_setting.2 {
+    execsql { SELECT count(*) FROM t1 WHERE a = 1 }
+  } {1}
+  do_test e_fkey-4.$recursive_triggers_setting.3 {
+    execsql { 
+      DELETE FROM t1 WHERE a = 1;
+      SELECT count(*) FROM t1;
+    }
+  } {0}
+}
+
+finish_test
