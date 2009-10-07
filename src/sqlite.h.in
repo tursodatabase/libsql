@@ -1311,8 +1311,9 @@ sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
 ** on the [database connection] specified by the first parameter.
 ** Only changes that are directly specified by the [INSERT], [UPDATE],
 ** or [DELETE] statement are counted.  Auxiliary changes caused by
-** triggers are not counted. Use the [sqlite3_total_changes()] function
-** to find the total number of changes including changes caused by triggers.
+** triggers or [foreign key actions] are not counted. Use the
+** [sqlite3_total_changes()] function to find the total number of changes
+** including changes caused by triggers and foreign key actions.
 **
 ** Changes to a view that are simulated by an [INSTEAD OF trigger]
 ** are not counted.  Only real table changes are counted.
@@ -1364,8 +1365,8 @@ int sqlite3_changes(sqlite3*);
 **
 ** This function returns the number of row changes caused by [INSERT],
 ** [UPDATE] or [DELETE] statements since the [database connection] was opened.
-** The count includes all changes from all 
-** [CREATE TRIGGER | trigger] contexts.  However,
+** The count includes all changes from all [CREATE TRIGGER | trigger] 
+** contexts and changes made by [foreign key actions]. However,
 ** the count does not include changes used to implement [REPLACE] constraints,
 ** do rollbacks or ABORT processing, or [DROP TABLE] processing.  The
 ** count does not include rows of views that fire an [INSTEAD OF trigger],
