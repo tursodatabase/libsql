@@ -1028,7 +1028,7 @@ static int findLockInfo(
         rc = SQLITE_NOMEM;
         goto exit_findlockinfo;
       }
-      pLock->lockKey = lockKey;
+      memcpy(&pLock->lockKey,&lockKey,sizeof(lockKey));
       pLock->nRef = 1;
       pLock->cnt = 0;
       pLock->locktype = 0;
