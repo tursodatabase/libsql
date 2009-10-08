@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\ssegfault\sthat\scan\soccur\sfollowing\san\sOOM\sfault\swhile\srenaming\sa\ntable\sholding\sforeign\skey\sconstraints.
-D 2009-10-08T01:43:55
+C Update\striggerC.test\sto\smatch\sthe\schange\sto\sthe\sway\sthe\strigger-recursion\slimit\sis\shandled.
+D 2009-10-08T06:24:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -691,7 +688,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 4b1c11936b717527f321a7509c562dee7a19a55f
+F test/triggerC.test 0acc1d22d9c3d6cf0018bf795d544732a25657dc
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -759,14 +756,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 56f609da4bfcc794e1f8573652dcde8515e87098
-R 030802ae3699bd33d88485a0ad53a056
-U drh
-Z d1dc976e15a4f894cd3c81a147b52256
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFKzUPeoxKgR168RlERAnyfAJ9jtPWgzZk8sC0quRAQl5Y5pPxWLgCffYKC
-uK+noTMwegf4WgXFxPbKJ4s=
-=q6eQ
------END PGP SIGNATURE-----
+P 33973814c67bc9bac575bf2249df6530dd2184d3
+R dd04ee19d49e7a136c94ca39ddd17c66
+U dan
+Z a4b0521924041d87ab332fd1d83d83e4
