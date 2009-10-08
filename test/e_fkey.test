@@ -20,6 +20,110 @@ ifcapable {!foreignkey} { finish_test ; return }
 execsql "PRAGMA foreign_keys = ON"
 
 #-------------------------------------------------------------------------
+# /* EV: R-51437-39891 */
+#
+# Test an example from the "ON DELETE and ON UPDATE Actions" section 
+# of foreignkeys.html.
+#
+drop_all_tables
+do_test e_fkey-13.1 {
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child(y REFERENCES parent ON UPDATE SET NULL);
+    INSERT INTO parent VALUES('key');
+    INSERT INTO child VALUES('key');
+  }
+} {}
+do_test e_fkey-13.2 {
+  execsql {
+    UPDATE parent SET x = 'key';
+    SELECT IFNULL(y, 'null') FROM child;
+  }
+} {key}
+do_test e_fkey-13.3 {
+  execsql {
+    UPDATE parent SET x = 'key2';
+    SELECT IFNULL(y, 'null') FROM child;
+  }
+} {null}
+
+#-------------------------------------------------------------------------
+# /* EV: R-07065-59588 */
+#
+# Test an example from the "ON DELETE and ON UPDATE Actions" section 
+# of foreignkeys.html.
+#
+drop_all_tables
+do_test e_fkey-14.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER,
+      trackname   TEXT, 
+      trackartist INTEGER DEFAULT 0 REFERENCES artist(artistid) ON DELETE SET DEFAULT
+    );
+    INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
+    INSERT INTO track VALUES(14, 'Mr. Bojangles', 3);
+  }
+} {}
+do_test e_fkey-14.2 {
+  catchsql { DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-14.3 {
+  execsql {
+    INSERT INTO artist VALUES(0, 'Unknown Artist');
+    DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.';
+  }
+} {}
+do_test e_fkey-14.4 {
+  execsql { SELECT * FROM artist }
+} {0 {Unknown Artist}}
+do_test e_fkey-14.5 {
+  execsql { SELECT * FROM track }
+} {14 {Mr. Bojangles} 0}
+
+#-------------------------------------------------------------------------
+# /* EV: R-25213-27898 */
+#
+# Test an example from the "ON DELETE and ON UPDATE Actions" section 
+# of foreignkeys.html.
+#
+drop_all_tables
+do_test e_fkey-15.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER,
+      trackname   TEXT, 
+      trackartist INTEGER REFERENCES artist(artistid) ON UPDATE CASCADE
+    );
+
+    INSERT INTO artist VALUES(1, 'Dean Martin');
+    INSERT INTO artist VALUES(2, 'Frank Sinatra');
+    INSERT INTO track VALUES(11, 'That''s Amore', 1);
+    INSERT INTO track VALUES(12, 'Christmas Blues', 1);
+    INSERT INTO track VALUES(13, 'My Way', 2);
+  }
+} {}
+do_test e_fkey-15.2 {
+  execsql {
+    UPDATE artist SET artistid = 100 WHERE artistname = 'Dean Martin';
+  }
+} {}
+do_test e_fkey-15.3 {
+  execsql { SELECT * FROM artist }
+} {2 {Frank Sinatra} 100 {Dean Martin}}
+do_test e_fkey-15.4 {
+  execsql { SELECT * FROM track }
+} {11 {That's Amore} 100 12 {Christmas Blues} 100 13 {My Way} 2}
+
+#-------------------------------------------------------------------------
 # /* EV: R-36018-21755 */
 # /* EV: R-25384-39337 */
 # 
