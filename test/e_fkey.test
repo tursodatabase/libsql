@@ -126,6 +126,253 @@ do_test e_fkey-7.4 {
   {CREATE TABLE c3(e, 'f col 2', FOREIGN KEY('f col 2') REFERENCES "p" ON UPDATE CASCADE)} \
 ]
 
+#-------------------------------------------------------------------------
+# /* EV: R-14208-23986 */
+# /* EV: R-11078-03945 */
+#
+# Check that a DROP TABLE does an implicit DELETE FROM. Which does not
+# cause any triggers to fire, but does fire foreign key actions.
+#
+do_test e_fkey-8.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE p(a, b, PRIMARY KEY(a, b));
+
+    CREATE TABLE c1(c, d, FOREIGN KEY(c, d) REFERENCES p ON DELETE SET NULL);
+    CREATE TABLE c2(c, d, FOREIGN KEY(c, d) REFERENCES p ON DELETE SET DEFAULT);
+    CREATE TABLE c3(c, d, FOREIGN KEY(c, d) REFERENCES p ON DELETE CASCADE);
+    CREATE TABLE c4(c, d, FOREIGN KEY(c, d) REFERENCES p ON DELETE RESTRICT);
+    CREATE TABLE c5(c, d, FOREIGN KEY(c, d) REFERENCES p ON DELETE NO ACTION);
+
+    CREATE TABLE c6(c, d, 
+      FOREIGN KEY(c, d) REFERENCES p ON DELETE RESTRICT 
+      DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE TABLE c7(c, d, 
+      FOREIGN KEY(c, d) REFERENCES p ON DELETE NO ACTION
+      DEFERRABLE INITIALLY DEFERRED
+    );
+
+    CREATE TABLE log(msg);
+    CREATE TRIGGER tt AFTER DELETE ON p BEGIN
+      INSERT INTO log VALUES('delete ' || old.rowid);
+    END;
+  }
+} {}
+
+do_test e_fkey-8.2 {
+  execsql {
+    INSERT INTO p VALUES('a', 'b');
+    INSERT INTO c1 VALUES('a', 'b');
+    INSERT INTO c2 VALUES('a', 'b');
+    INSERT INTO c3 VALUES('a', 'b');
+    BEGIN;
+      DROP TABLE p;
+      SELECT * FROM c1;
+  }
+} {{} {}}
+do_test e_fkey-8.3 {
+  execsql { SELECT * FROM c2 }
+} {{} {}}
+do_test e_fkey-8.4 {
+  execsql { SELECT * FROM c3 }
+} {}
+do_test e_fkey-8.5 {
+  execsql { SELECT * FROM log }
+} {}
+do_test e_fkey-8.6 {
+  execsql ROLLBACK
+} {}
+do_test e_fkey-8.7 {
+  execsql {
+    BEGIN;
+      DELETE FROM p;
+      SELECT * FROM log;
+    ROLLBACK;
+  }
+} {{delete 1}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-32768-47925 */
+#
+# If an IMMEDIATE foreign key fails as a result of a DROP TABLE, the
+# DROP TABLE command fails.
+#
+do_test e_fkey-9.1 {
+  execsql { 
+    DELETE FROM c1;
+    DELETE FROM c2;
+    DELETE FROM c3;
+  }
+  execsql { INSERT INTO c5 VALUES('a', 'b') }
+  catchsql { DROP TABLE p }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-9.2 {
+  execsql { SELECT * FROM p }
+} {a b}
+do_test e_fkey-9.3 {
+  catchsql {
+    BEGIN;
+      DROP TABLE p;
+  }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-9.4 {
+  execsql {
+    SELECT * FROM p;
+    SELECT * FROM c5;
+    ROLLBACK;
+  }
+} {a b a b}
+
+#-------------------------------------------------------------------------
+# /* EV: R-05903-08460 */
+#
+# If a DEFERRED foreign key fails as a result of a DROP TABLE, attempting
+# to commit the transaction fails unless the violation is fixed.
+#
+do_test e_fkey-10.1 {
+  execsql { 
+    DELETE FROM c1 ; DELETE FROM c2 ; DELETE FROM c3 ;
+    DELETE FROM c4 ; DELETE FROM c5 ; DELETE FROM c6 ;
+    DELETE FROM c7 
+  }
+} {}
+do_test e_fkey-10.2 {
+  execsql { INSERT INTO c7 VALUES('a', 'b') }
+  execsql {
+    BEGIN;
+      DROP TABLE p;
+  }
+} {}
+do_test e_fkey-10.3 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-10.4 {
+  execsql { CREATE TABLE p(a, b, PRIMARY KEY(a, b)) }
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-10.5 {
+  execsql { INSERT INTO p VALUES('a', 'b') }
+  execsql COMMIT
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-57242-37005 */
+#
+# Any "foreign key mismatch" errors encountered while running an implicit
+# "DELETE FROM tbl" are ignored.
+#
+drop_all_tables
+do_test e_fkey-11.1 {
+  execsql {
+    PRAGMA foreign_keys = OFF;
+
+    CREATE TABLE p(a PRIMARY KEY, b REFERENCES nosuchtable);
+    CREATE TABLE c1(c, d, FOREIGN KEY(c, d) REFERENCES a);
+    CREATE TABLE c2(c REFERENCES p(b), d);
+    CREATE TABLE c3(c REFERENCES p ON DELETE SET NULL, d);
+
+    INSERT INTO p VALUES(1, 2);
+    INSERT INTO c1 VALUES(1, 2);
+    INSERT INTO c2 VALUES(1, 2);
+    INSERT INTO c3 VALUES(1, 2);
+  }
+} {}
+do_test e_fkey-11.2 {
+  execsql { PRAGMA foreign_keys = ON }
+  catchsql { DELETE FROM p }
+} {1 {no such table: main.nosuchtable}}
+do_test e_fkey-11.3 {
+  execsql {
+    BEGIN;
+      DROP TABLE p;
+      SELECT * FROM c3;
+    ROLLBACK;
+  }
+} {{} 2}
+do_test e_fkey-11.4 {
+  execsql { CREATE TABLE nosuchtable(x PRIMARY KEY) }
+  catchsql { DELETE FROM p }
+} {1 {foreign key mismatch}}
+do_test e_fkey-11.5 {
+  execsql { DROP TABLE c1 }
+  catchsql { DELETE FROM p }
+} {1 {foreign key mismatch}}
+do_test e_fkey-11.6 {
+  execsql { DROP TABLE c2 }
+  execsql { DELETE FROM p }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-54142-41346 */
+#
+# Test that the special behaviours of ALTER and DROP TABLE are only
+# activated when foreign keys are enabled. Special behaviours are:
+#
+#   1. ADD COLUMN not allowing a REFERENCES clause with a non-NULL 
+#      default value.
+#   2. Modifying foreign key definitions when a parent table is RENAMEd.
+#   3. Running an implicit DELETE FROM command as part of DROP TABLE.
+#
+do_test e_fkey-12.1.1 {
+  drop_all_tables
+  execsql { CREATE TABLE t1(a, b) }
+  catchsql { ALTER TABLE t1 ADD COLUMN c DEFAULT 'xxx' REFERENCES t2 }
+} {1 {Cannot add a REFERENCES column with non-NULL default value}}
+do_test e_fkey-12.1.2 {
+  execsql { PRAGMA foreign_keys = OFF }
+  execsql { ALTER TABLE t1 ADD COLUMN c DEFAULT 'xxx' REFERENCES t2 }
+  execsql { SELECT sql FROM sqlite_master WHERE name = 't1' }
+} {{CREATE TABLE t1(a, b, c DEFAULT 'xxx' REFERENCES t2)}}
+do_test e_fkey-12.1.3 {
+  execsql { PRAGMA foreign_keys = ON }
+} {}
+
+do_test e_fkey-12.2.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE p(a UNIQUE);
+    CREATE TABLE c(b REFERENCES p(a));
+    BEGIN;
+      ALTER TABLE p RENAME TO parent;
+      SELECT sql FROM sqlite_master WHERE name = 'c';
+    ROLLBACK;
+  }
+} {{CREATE TABLE c(b REFERENCES "parent"(a))}}
+do_test e_fkey-12.2.2 {
+  execsql {
+    PRAGMA foreign_keys = OFF;
+    ALTER TABLE p RENAME TO parent;
+    SELECT sql FROM sqlite_master WHERE name = 'c';
+  }
+} {{CREATE TABLE c(b REFERENCES p(a))}}
+do_test e_fkey-12.2.3 {
+  execsql { PRAGMA foreign_keys = ON }
+} {}
+
+do_test e_fkey-12.3.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE p(a UNIQUE);
+    CREATE TABLE c(b REFERENCES p(a) ON DELETE SET NULL);
+    INSERT INTO p VALUES('x');
+    INSERT INTO c VALUES('x');
+    BEGIN;
+      DROP TABLE p;
+      SELECT * FROM c;
+    ROLLBACK;
+  }
+} {{}}
+do_test e_fkey-12.3.2 {
+  execsql {
+    PRAGMA foreign_keys = OFF;
+    DROP TABLE p;
+    SELECT * FROM c;
+  }
+} {x}
+do_test e_fkey-12.3.3 {
+  execsql { PRAGMA foreign_keys = ON }
+} {}
 
 
 #-------------------------------------------------------------------------
