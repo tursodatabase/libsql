@@ -292,3 +292,63 @@ do_test genfkey-5.5 {
   }
 } {0 {}}
 
+# Test also column names that require quoting.
+do_test genfkey-6.1 {
+  execsql {
+    DROP TABLE "t.3";
+    DROP TABLE t13;
+    CREATE TABLE p(
+      "a.1 first", "b.2 second", 
+      UNIQUE("a.1 first", "b.2 second")
+    );
+    CREATE TABLE c(
+      "c.1 I", "d.2 II", 
+        FOREIGN KEY("c.1 I", "d.2 II") 
+        REFERENCES p("a.1 first", "b.2 second")
+        ON UPDATE CASCADE ON DELETE CASCADE
+    );
+  }
+} {}
+do_test genfkey-6.2 {
+  set rc [catch {exec ./sqlite3 test.db .genfkey} msg]
+} {0}
+do_test genfkey-6.3 {
+  execsql $msg
+  execsql {
+    INSERT INTO p VALUES('A', 'B');
+    INSERT INTO p VALUES('C', 'D');
+    INSERT INTO c VALUES('A', 'B');
+    INSERT INTO c VALUES('C', 'D');
+    UPDATE p SET "a.1 first" = 'X' WHERE rowid = 1;
+    DELETE FROM p WHERE rowid = 2;
+  }
+  execsql { SELECT * FROM c }
+} {X B}
+
+do_test genfkey-6.4 {
+  execsql {
+    DROP TABLE p;
+    DROP TABLE c;
+    CREATE TABLE parent("a.1", PRIMARY KEY("a.1"));
+    CREATE TABLE child("b.2", FOREIGN KEY("b.2") REFERENCES parent("a.1"));
+  }
+  set rc [catch {exec ./sqlite3 test.db .genfkey} msg]
+} {0}
+do_test genfkey-6.5 {
+  execsql $msg
+  execsql {
+    INSERT INTO parent VALUES(1);
+    INSERT INTO child VALUES(1);
+  }
+  catchsql { UPDATE parent SET "a.1"=0 }
+} {1 {constraint failed}}
+do_test genfkey-6.6 {
+  catchsql { UPDATE child SET "b.2"=7 }
+} {1 {constraint failed}}
+do_test genfkey-6.7 {
+  execsql {
+    SELECT * FROM parent;
+    SELECT * FROM child;
+  }
+} {1 1}
+

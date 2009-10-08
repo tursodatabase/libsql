@@ -1,5 +1,5 @@
-C Add\stests\sto\stest/e_fkey.test.
-D 2009-10-08T11:57:25
+C Fix\sa\sproblem\sin\sthe\slegacy\sgenfkey\scode\sto\sdo\swith\scolumn\snames\sthat\srequire\squoting.
+D 2009-10-08T13:42:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
-F src/shell.c d6e64471aafb81f355262533393169a70529847a
+F src/shell.c 270231b3f587f1f86391b9994fdfcd5d472c3fdf
 F src/sqlite.h.in 2c9fa83525b14fe3dda38146fb3005847d57a14e
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
@@ -734,7 +734,7 @@ F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
-F tool/genfkey.test 405a43d54f1646bfaa7a84b03bb959aef62a3a49
+F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
@@ -756,7 +756,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5806925283b889867567c4ad92518bad000e9d9d
-R 97b0c9624c1352ee1bd2b4c1a280677a
+P 533703d78ab4330b2dc8e08aaba89b4667e46331
+R ab684cf0fa4376c5eb1747e06c0968a4
 U dan
-Z b579362d2c03d6f47ae2f91d34cdcb70
+Z 3e243fab4d4da81ce8aeeb768378731e
