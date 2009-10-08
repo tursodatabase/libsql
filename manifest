@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Use\smemcpy()\srather\sthan\sstructure\sassignment\sso\sthat\smemcmp()\scan\slater\nbe\sused\sfor\scomparison.\s\sTicket\s[8550ecca70]
-D 2009-10-07T23:42:25
+C Fix\sa\ssegfault\sthat\scan\soccur\sfollowing\san\sOOM\sfault\swhile\srenaming\sa\ntable\sholding\sforeign\skey\sconstraints.
+D 2009-10-08T01:43:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 1b63d4f2a6e76af9e2964d4d86ccc8e74c3fae4a
+F src/alter.c ee4c8b09a91cf1b11ad9c2b0768bac939825212a
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c a5471a6951a18f79d783da34be22cd94dfbe603a
@@ -759,14 +759,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8382867956caf20f62c46c15b456c1c16d0824fd
-R 76290e80d2ef239d10246f9e34af4d36
+P 56f609da4bfcc794e1f8573652dcde8515e87098
+R 030802ae3699bd33d88485a0ad53a056
 U drh
-Z d96d85ec5a13c4dfed62c2912ddfa322
+Z d1dc976e15a4f894cd3c81a147b52256
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFKzSdkoxKgR168RlERAowDAJ9VuPryqdkaiwm7YRYx4tkcIMQvVwCeJoxP
-LLx2jj4PZfCPTBeUDNrUzUA=
-=7Fog
+iD8DBQFKzUPeoxKgR168RlERAnyfAJ9jtPWgzZk8sC0quRAQl5Y5pPxWLgCffYKC
+uK+noTMwegf4WgXFxPbKJ4s=
+=q6eQ
 -----END PGP SIGNATURE-----

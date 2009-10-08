@@ -127,6 +127,7 @@ static void renameParentFunc(
       }while( token==TK_SPACE );
 
       zParent = sqlite3DbStrNDup(db, (const char *)z, n);
+      if( zParent==0 ) break;
       sqlite3Dequote(zParent);
       if( 0==sqlite3StrICmp((const char *)zOld, zParent) ){
         char *zOut = sqlite3MPrintf(db, "%s%.*s\"%w\"", 
