@@ -20,6 +20,115 @@ ifcapable {!foreignkey} { finish_test ; return }
 execsql "PRAGMA foreign_keys = ON"
 
 #-------------------------------------------------------------------------
+# /* EV: R-36018-21755 */
+# /* EV: R-25384-39337 */
+# 
+# Test that parent keys are not checked when tables are created.
+#
+# Child keys are checked to ensure all component columns exist. If parent
+# key columns are explicitly specified, SQLite checks to make sure there
+# are the same number of columns in the child and parent keys. (TODO: This
+# is tested but does not correspond to any testable statement.)
+#
+# /* EV: R-50163-54229 */
+#
+# Also test that the above statements are true regardless of whether or not
+# foreign keys are enabled.
+# 
+foreach {tn zCreateTbl lRes} {
+  1 "CREATE TABLE t1(a, b REFERENCES t1)"                            {0 {}}
+  2 "CREATE TABLE t1(a, b REFERENCES t2)"                            {0 {}}
+  3 "CREATE TABLE t1(a, b, FOREIGN KEY(a,b) REFERENCES t1)"          {0 {}}
+  4 "CREATE TABLE t1(a, b, FOREIGN KEY(a,b) REFERENCES t2)"          {0 {}}
+  5 "CREATE TABLE t1(a, b, FOREIGN KEY(a,b) REFERENCES t2)"          {0 {}}
+  6 "CREATE TABLE t1(a, b, FOREIGN KEY(a,b) REFERENCES t2(n,d))"     {0 {}}
+  7 "CREATE TABLE t1(a, b, FOREIGN KEY(a,b) REFERENCES t1(a,b))"     {0 {}}
+
+  A "CREATE TABLE t1(a, b, FOREIGN KEY(c,b) REFERENCES t2)"          
+     {1 {unknown column "c" in foreign key definition}}
+  B "CREATE TABLE t1(a, b, FOREIGN KEY(c,b) REFERENCES t2(d))"          
+     {1 {number of columns in foreign key does not match the number of columns in the referenced table}}
+} {
+  do_test e_fkey-5.$tn.off {
+    drop_all_tables
+    execsql {PRAGMA foreign_keys = OFF}
+    catchsql $zCreateTbl
+  } $lRes
+  do_test e_fkey-5.$tn.on {
+    drop_all_tables
+    execsql {PRAGMA foreign_keys = ON}
+    catchsql $zCreateTbl
+  } $lRes
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-47952-62498 */
+#
+proc test_efkey_6 {tn zAlter isError} {
+  drop_all_tables 
+
+  do_test e_fkey-6.$tn.1 "
+    execsql { CREATE TABLE tbl(a, b) }
+    [list catchsql $zAlter]
+  " [lindex {{0 {}} {1 {Cannot add a REFERENCES column with non-NULL default value}}} $isError]
+
+}
+
+test_efkey_6 1 "ALTER TABLE tbl ADD COLUMN c REFERENCES xx" 0
+test_efkey_6 2 "ALTER TABLE tbl ADD COLUMN c DEFAULT NULL REFERENCES xx" 0
+test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
+
+#-------------------------------------------------------------------------
+# /* EV: R-47080-02069 */
+#
+# Test that ALTER TABLE adjusts REFERENCES clauses when the parent table
+# is RENAMED.
+#
+# /* EV: R-63827-54774 */
+#
+# Test that these adjustments are visible in the sqlite_master table.
+#
+do_test e_fkey-7.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE 'p 1 "parent one"'(a REFERENCES 'p 1 "parent one"', b, PRIMARY KEY(b));
+
+    CREATE TABLE c1(c, d REFERENCES 'p 1 "parent one"' ON UPDATE CASCADE);
+    CREATE TABLE c2(e, f, FOREIGN KEY(f) REFERENCES 'p 1 "parent one"' ON UPDATE CASCADE);
+    CREATE TABLE c3(e, 'f col 2', FOREIGN KEY('f col 2') REFERENCES 'p 1 "parent one"' ON UPDATE CASCADE);
+
+    INSERT INTO 'p 1 "parent one"' VALUES(1, 1);
+    INSERT INTO c1 VALUES(1, 1);
+    INSERT INTO c2 VALUES(1, 1);
+    INSERT INTO c3 VALUES(1, 1);
+
+    -- CREATE TABLE q(a, b, PRIMARY KEY(b));
+  }
+} {}
+do_test e_fkey-7.2 {
+  execsql { ALTER TABLE 'p 1 "parent one"' RENAME TO p }
+} {}
+do_test e_fkey-7.3 {
+  execsql {
+    UPDATE p SET a = 'xxx', b = 'xxx';
+    SELECT * FROM p;
+    SELECT * FROM c1;
+    SELECT * FROM c2;
+    SELECT * FROM c3;
+  }
+} {xxx xxx 1 xxx 1 xxx 1 xxx}
+do_test e_fkey-7.4 {
+  execsql { SELECT sql FROM sqlite_master WHERE type = 'table'}
+} [list                                                                     \
+  {CREATE TABLE "p"(a REFERENCES "p", b, PRIMARY KEY(b))}                   \
+  {CREATE TABLE c1(c, d REFERENCES "p" ON UPDATE CASCADE)}                  \
+  {CREATE TABLE c2(e, f, FOREIGN KEY(f) REFERENCES "p" ON UPDATE CASCADE)}  \
+  {CREATE TABLE c3(e, 'f col 2', FOREIGN KEY('f col 2') REFERENCES "p" ON UPDATE CASCADE)} \
+]
+
+
+
+#-------------------------------------------------------------------------
 # /* EV: R-24728-13230 */
 # /* EV: R-24450-46174 */
 #
