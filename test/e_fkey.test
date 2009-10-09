@@ -19,74 +19,498 @@ ifcapable {!foreignkey} { finish_test ; return }
 
 execsql "PRAGMA foreign_keys = ON"
 
+###########################################################################
+### SECTION 4.3: ON DELETE and ON UPDATE Actions
+###########################################################################
+
 #-------------------------------------------------------------------------
-# /* EV: R-51437-39891 */
+# /* EV: R-48270-44282 */
 #
-# Test an example from the "ON DELETE and ON UPDATE Actions" section 
-# of foreignkeys.html.
+# Test that configured ON DELETE and ON UPDATE actions take place when
+# deleting or modifying rows of the parent table, respectively.
+#
+# /* EV: R-48124-63225 */
+#
+# Test that a single FK constraint may have different actions configured
+# for ON DELETE and ON UPDATE.
+#
+do_test e_fkey-16.1 {
+  execsql {
+    CREATE TABLE p(a, b PRIMARY KEY, c);
+    CREATE TABLE c1(d, e, f DEFAULT 'k0' REFERENCES p 
+      ON UPDATE SET DEFAULT
+      ON DELETE SET NULL
+    );
+
+    INSERT INTO p VALUES(0, 'k0', '');
+    INSERT INTO p VALUES(1, 'k1', 'I');
+    INSERT INTO p VALUES(2, 'k2', 'II');
+    INSERT INTO p VALUES(3, 'k3', 'III');
+
+    INSERT INTO c1 VALUES(1, 'xx', 'k1');
+    INSERT INTO c1 VALUES(2, 'xx', 'k2');
+    INSERT INTO c1 VALUES(3, 'xx', 'k3');
+  }
+} {}
+do_test e_fkey-16.2 {
+  execsql {
+    UPDATE p SET b = 'k4' WHERE a = 1;
+    SELECT * FROM c1;
+  }
+} {1 xx k0 2 xx k2 3 xx k3}
+do_test e_fkey-16.3 {
+  execsql {
+    DELETE FROM p WHERE a = 2;
+    SELECT * FROM c1;
+  }
+} {1 xx k0 2 xx {} 3 xx k3}
+do_test e_fkey-16.4 {
+  execsql {
+    CREATE UNIQUE INDEX pi ON p(c);
+    REPLACE INTO p VALUES(5, 'k5', 'III');
+    SELECT * FROM c1;
+  }
+} {1 xx k0 2 xx {} 3 xx {}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-33326-45252 */
+#
+# Each foreign key in the system has an ON UPDATE and ON DELETE action,
+# either "NO ACTION", "RESTRICT", "SET NULL", "SET DEFAULT" or "CASCADE".
+#
+# /* EV: R-19803-45884 */
+#
+# If none is specified explicitly, "NO ACTION" is the default.
+# 
+drop_all_tables
+do_test e_fkey-17.1 {
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY, y);
+    CREATE TABLE child1(a, 
+      b REFERENCES parent ON UPDATE NO ACTION ON DELETE RESTRICT
+    );
+    CREATE TABLE child2(a, 
+      b REFERENCES parent ON UPDATE RESTRICT ON DELETE SET NULL
+    );
+    CREATE TABLE child3(a, 
+      b REFERENCES parent ON UPDATE SET NULL ON DELETE SET DEFAULT
+    );
+    CREATE TABLE child4(a, 
+      b REFERENCES parent ON UPDATE SET DEFAULT ON DELETE CASCADE
+    );
+
+    -- Create some foreign keys that use the default action - "NO ACTION"
+    CREATE TABLE child5(a, b REFERENCES parent ON UPDATE CASCADE);
+    CREATE TABLE child6(a, b REFERENCES parent ON DELETE RESTRICT);
+    CREATE TABLE child7(a, b REFERENCES parent ON DELETE NO ACTION);
+    CREATE TABLE child8(a, b REFERENCES parent ON UPDATE NO ACTION);
+  }
+} {}
+
+foreach {tn zTab lRes} {
+  2 child1 {0 0 parent b {} {NO ACTION} RESTRICT NONE}
+  3 child2 {0 0 parent b {} RESTRICT {SET NULL} NONE}
+  4 child3 {0 0 parent b {} {SET NULL} {SET DEFAULT} NONE}
+  5 child4 {0 0 parent b {} {SET DEFAULT} CASCADE NONE}
+  6 child5 {0 0 parent b {} CASCADE {NO ACTION} NONE}
+  7 child6 {0 0 parent b {} {NO ACTION} RESTRICT NONE}
+  8 child7 {0 0 parent b {} {NO ACTION} {NO ACTION} NONE}
+  9 child8 {0 0 parent b {} {NO ACTION} {NO ACTION} NONE}
+} {
+  do_test e_fkey-17.$tn { execsql "PRAGMA foreign_key_list($zTab)" } $lRes
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-19971-54976 */
+#
+# Test that "NO ACTION" means that nothing happens to a child row when
+# it's parent row is updated or deleted.
 #
 drop_all_tables
-do_test e_fkey-13.1 {
+do_test e_fkey-18.1 {
+  execsql {
+    CREATE TABLE parent(p1, p2, PRIMARY KEY(p1, p2));
+    CREATE TABLE child(c1, c2, 
+      FOREIGN KEY(c1, c2) REFERENCES parent
+      ON UPDATE NO ACTION
+      ON DELETE NO ACTION
+      DEFERRABLE INITIALLY DEFERRED
+    );
+    INSERT INTO parent VALUES('j', 'k');
+    INSERT INTO parent VALUES('l', 'm');
+    INSERT INTO child VALUES('j', 'k');
+    INSERT INTO child VALUES('l', 'm');
+  }
+} {}
+do_test e_fkey-18.2 {
+  execsql {
+    BEGIN;
+      UPDATE parent SET p1='k' WHERE p1='j';
+      DELETE FROM parent WHERE p1='l';
+      SELECT * FROM child;
+  }
+} {j k l m}
+do_test e_fkey-18.3 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-18.4 {
+  execsql ROLLBACK
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-04272-38653 */
+#
+# Test that "RESTRICT" means the application is prohibited from deleting
+# or updating a parent table row when there exists one or more child keys
+# mapped to it.
+#
+drop_all_tables
+do_test e_fkey-18.1 {
+  execsql {
+    CREATE TABLE parent(p1, p2);
+    CREATE UNIQUE INDEX parent_i ON parent(p1, p2);
+    CREATE TABLE child1(c1, c2, 
+      FOREIGN KEY(c2, c1) REFERENCES parent(p1, p2) ON DELETE RESTRICT
+    );
+    CREATE TABLE child2(c1, c2, 
+      FOREIGN KEY(c2, c1) REFERENCES parent(p1, p2) ON UPDATE RESTRICT
+    );
+  }
+} {}
+do_test e_fkey-18.2 {
+  execsql {
+    INSERT INTO parent VALUES('a', 'b');
+    INSERT INTO parent VALUES('c', 'd');
+    INSERT INTO child1 VALUES('b', 'a');
+    INSERT INTO child2 VALUES('d', 'c');
+  }
+} {}
+do_test e_fkey-18.3 {
+  catchsql { DELETE FROM parent WHERE p1 = 'a' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-18.4 {
+  catchsql { UPDATE parent SET p2 = 'e' WHERE p1 = 'c' }
+} {1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-37997-42187 */
+# 
+# Test that RESTRICT is slightly different from NO ACTION for IMMEDIATE
+# constraints, in that it is enforced immediately, not at the end of the 
+# statement.
+#
+drop_all_tables
+do_test e_fkey-19.1 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
-    CREATE TABLE child(y REFERENCES parent ON UPDATE SET NULL);
-    INSERT INTO parent VALUES('key');
-    INSERT INTO child VALUES('key');
+    CREATE TABLE child1(c REFERENCES parent ON UPDATE RESTRICT);
+    CREATE TABLE child2(c REFERENCES parent ON UPDATE NO ACTION);
+
+    INSERT INTO parent VALUES('key1');
+    INSERT INTO parent VALUES('key2');
+    INSERT INTO child1 VALUES('key1');
+    INSERT INTO child2 VALUES('key2');
+
+    CREATE TRIGGER parent_t AFTER UPDATE ON parent BEGIN
+      UPDATE child1 set c = new.x WHERE c = old.x;
+      UPDATE child2 set c = new.x WHERE c = old.x;
+    END;
   }
 } {}
-do_test e_fkey-13.2 {
-  execsql {
-    UPDATE parent SET x = 'key';
-    SELECT IFNULL(y, 'null') FROM child;
+do_test e_fkey-19.2 {
+  catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-19.3 {
+  execsql { 
+    UPDATE parent SET x = 'key two' WHERE x = 'key2';
+    SELECT * FROM child2;
   }
-} {key}
-do_test e_fkey-13.3 {
+} {{key two}}
+
+drop_all_tables
+do_test e_fkey-19.4 {
   execsql {
-    UPDATE parent SET x = 'key2';
-    SELECT IFNULL(y, 'null') FROM child;
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT);
+    CREATE TABLE child2(c REFERENCES parent ON DELETE NO ACTION);
+
+    INSERT INTO parent VALUES('key1');
+    INSERT INTO parent VALUES('key2');
+    INSERT INTO child1 VALUES('key1');
+    INSERT INTO child2 VALUES('key2');
+
+    CREATE TRIGGER parent_t AFTER DELETE ON parent BEGIN
+      UPDATE child1 SET c = NULL WHERE c = old.x;
+      UPDATE child2 SET c = NULL WHERE c = old.x;
+    END;
   }
-} {null}
+} {}
+do_test e_fkey-19.5 {
+  catchsql { DELETE FROM parent WHERE x = 'key1' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-19.6 {
+  execsql { 
+    DELETE FROM parent WHERE x = 'key2';
+    SELECT * FROM child2;
+  }
+} {{}}
+
+drop_all_tables
+do_test e_fkey-19.7 {
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT);
+    CREATE TABLE child2(c REFERENCES parent ON DELETE NO ACTION);
+
+    INSERT INTO parent VALUES('key1');
+    INSERT INTO parent VALUES('key2');
+    INSERT INTO child1 VALUES('key1');
+    INSERT INTO child2 VALUES('key2');
+  }
+} {}
+do_test e_fkey-19.8 {
+  catchsql { REPLACE INTO parent VALUES('key1') }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-19.9 {
+  execsql { 
+    REPLACE INTO parent VALUES('key2');
+    SELECT * FROM child2;
+  }
+} {key2}
 
 #-------------------------------------------------------------------------
-# /* EV: R-07065-59588 */
-#
-# Test an example from the "ON DELETE and ON UPDATE Actions" section 
-# of foreignkeys.html.
+# /* EV: R-24179-60523 */
+# 
+# Test that RESTRICT is enforced immediately, even for a DEFERRED constraint.
 #
 drop_all_tables
-do_test e_fkey-14.1 {
+do_test e_fkey-20.1 {
   execsql {
-    CREATE TABLE artist(
-      artistid    INTEGER PRIMARY KEY, 
-      artistname  TEXT
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child1(c REFERENCES parent ON UPDATE RESTRICT
+      DEFERRABLE INITIALLY DEFERRED
     );
-    CREATE TABLE track(
-      trackid     INTEGER,
-      trackname   TEXT, 
-      trackartist INTEGER DEFAULT 0 REFERENCES artist(artistid) ON DELETE SET DEFAULT
+    CREATE TABLE child2(c REFERENCES parent ON UPDATE NO ACTION
+      DEFERRABLE INITIALLY DEFERRED
     );
-    INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
-    INSERT INTO track VALUES(14, 'Mr. Bojangles', 3);
+
+    INSERT INTO parent VALUES('key1');
+    INSERT INTO parent VALUES('key2');
+    INSERT INTO child1 VALUES('key1');
+    INSERT INTO child2 VALUES('key2');
+    BEGIN;
   }
 } {}
-do_test e_fkey-14.2 {
-  catchsql { DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.' }
+do_test e_fkey-20.2 {
+  catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-14.3 {
+do_test e_fkey-20.3 {
+  execsql { UPDATE parent SET x = 'key two' WHERE x = 'key2' }
+} {}
+do_test e_fkey-20.4 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-20.5 {
   execsql {
-    INSERT INTO artist VALUES(0, 'Unknown Artist');
-    DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.';
+    UPDATE child2 SET c = 'key two';
+    COMMIT;
   }
 } {}
-do_test e_fkey-14.4 {
-  execsql { SELECT * FROM artist }
-} {0 {Unknown Artist}}
-do_test e_fkey-14.5 {
-  execsql { SELECT * FROM track }
-} {14 {Mr. Bojangles} 0}
+
+drop_all_tables
+do_test e_fkey-20.6 {
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT
+      DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE TABLE child2(c REFERENCES parent ON DELETE NO ACTION
+      DEFERRABLE INITIALLY DEFERRED
+    );
+
+    INSERT INTO parent VALUES('key1');
+    INSERT INTO parent VALUES('key2');
+    INSERT INTO child1 VALUES('key1');
+    INSERT INTO child2 VALUES('key2');
+    BEGIN;
+  }
+} {}
+do_test e_fkey-20.7 {
+  catchsql { DELETE FROM parent WHERE x = 'key1' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-20.8 {
+  execsql { DELETE FROM parent WHERE x = 'key2' }
+} {}
+do_test e_fkey-20.9 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-20.10 {
+  execsql {
+    UPDATE child2 SET c = NULL;
+    COMMIT;
+  }
+} {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-25213-27898 */
+# /* EV: R-03353-05327 */
+#
+# Test SET NULL actions.
+#
+drop_all_tables
+do_test e_fkey-21.1 {
+  execsql {
+    CREATE TABLE pA(x PRIMARY KEY);
+    CREATE TABLE cA(c REFERENCES pA ON DELETE SET NULL);
+    CREATE TABLE cB(c REFERENCES pA ON UPDATE SET NULL);
+
+    INSERT INTO pA VALUES(X'ABCD');
+    INSERT INTO pA VALUES(X'1234');
+    INSERT INTO cA VALUES(X'ABCD');
+    INSERT INTO cB VALUES(X'1234');
+  }
+} {}
+do_test e_fkey-21.2 {
+  execsql {
+    DELETE FROM pA WHERE rowid = 1;
+    SELECT quote(x) FROM pA;
+  }
+} {X'1234'}
+do_test e_fkey-21.3 {
+  execsql {
+    SELECT quote(c) FROM cA;
+  }
+} {NULL}
+do_test e_fkey-21.4 {
+  execsql {
+    UPDATE pA SET x = X'8765' WHERE rowid = 2;
+    SELECT quote(x) FROM pA;
+  }
+} {X'8765'}
+do_test e_fkey-21.5 {
+  execsql { SELECT quote(c) FROM cB }
+} {NULL}
+
+#-------------------------------------------------------------------------
+# /* EV: R-43054-54832 */
+#
+# Test SET DEFAULT actions.
+#
+drop_all_tables
+do_test e_fkey-22.1 {
+  execsql {
+    CREATE TABLE pA(x PRIMARY KEY);
+    CREATE TABLE cA(c DEFAULT X'0000' REFERENCES pA ON DELETE SET DEFAULT);
+    CREATE TABLE cB(c DEFAULT X'9999' REFERENCES pA ON UPDATE SET DEFAULT);
+
+    INSERT INTO pA(rowid, x) VALUES(1, X'0000');
+    INSERT INTO pA(rowid, x) VALUES(2, X'9999');
+    INSERT INTO pA(rowid, x) VALUES(3, X'ABCD');
+    INSERT INTO pA(rowid, x) VALUES(4, X'1234');
+
+    INSERT INTO cA VALUES(X'ABCD');
+    INSERT INTO cB VALUES(X'1234');
+  }
+} {}
+do_test e_fkey-22.2 {
+  execsql {
+    DELETE FROM pA WHERE rowid = 3;
+    SELECT quote(x) FROM pA;
+  }
+} {X'0000' X'9999' X'1234'}
+do_test e_fkey-22.3 {
+  execsql { SELECT quote(c) FROM cA }
+} {X'0000'}
+do_test e_fkey-22.4 {
+  execsql {
+    UPDATE pA SET x = X'8765' WHERE rowid = 4;
+    SELECT quote(x) FROM pA;
+  }
+} {X'0000' X'9999' X'8765'}
+do_test e_fkey-22.5 {
+  execsql { SELECT quote(c) FROM cB }
+} {X'9999'}
+
+#-------------------------------------------------------------------------
+# /* EV: R-61376-57267 */
+# /* EV: R-61809-62207 */
+#
+# Test ON DELETE CASCADE actions.
+#
+drop_all_tables
+do_test e_fkey-23.1 {
+  execsql {
+    CREATE TABLE p1(a, b UNIQUE);
+    CREATE TABLE c1(c REFERENCES p1(b) ON DELETE CASCADE, d);
+    INSERT INTO p1 VALUES(NULL, NULL);
+    INSERT INTO p1 VALUES(4, 4);
+    INSERT INTO p1 VALUES(5, 5);
+    INSERT INTO c1 VALUES(NULL, NULL);
+    INSERT INTO c1 VALUES(4, 4);
+    INSERT INTO c1 VALUES(5, 5);
+    SELECT count(*) FROM c1;
+  }
+} {3}
+do_test e_fkey-23.2 {
+  execsql {
+    DELETE FROM p1 WHERE a = 4;
+    SELECT d, c FROM c1;
+  }
+} {{} {} 5 5}
+do_test e_fkey-23.3 {
+  execsql {
+    DELETE FROM p1;
+    SELECT d, c FROM c1;
+  }
+} {{} {}}
+do_test e_fkey-23.4 {
+  execsql { SELECT * FROM p1 }
+} {}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-61376-57267 */
+# /* EV: R-13877-64542 */
+#
+# Test ON UPDATE CASCADE actions.
+#
+drop_all_tables
+do_test e_fkey-24.1 {
+  execsql {
+    CREATE TABLE p1(a, b UNIQUE);
+    CREATE TABLE c1(c REFERENCES p1(b) ON UPDATE CASCADE, d);
+    INSERT INTO p1 VALUES(NULL, NULL);
+    INSERT INTO p1 VALUES(4, 4);
+    INSERT INTO p1 VALUES(5, 5);
+    INSERT INTO c1 VALUES(NULL, NULL);
+    INSERT INTO c1 VALUES(4, 4);
+    INSERT INTO c1 VALUES(5, 5);
+    SELECT count(*) FROM c1;
+  }
+} {3}
+do_test e_fkey-24.2 {
+  execsql {
+    UPDATE p1 SET b = 10 WHERE b = 5;
+    SELECT d, c FROM c1;
+  }
+} {{} {} 4 4 5 10}
+do_test e_fkey-24.3 {
+  execsql {
+    UPDATE p1 SET b = 11 WHERE b = 4;
+    SELECT d, c FROM c1;
+  }
+} {{} {} 4 11 5 10}
+do_test e_fkey-24.4 {
+  execsql { 
+    UPDATE p1 SET b = 6 WHERE b IS NULL;
+    SELECT d, c FROM c1;
+  }
+} {{} {} 4 11 5 10}
+do_test e_fkey-23.5 {
+  execsql { SELECT * FROM p1 }
+} {{} 6 4 11 5 10}
+
+#-------------------------------------------------------------------------
+# /* EV: R-51329-33438 */
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html.
@@ -122,6 +546,226 @@ do_test e_fkey-15.3 {
 do_test e_fkey-15.4 {
   execsql { SELECT * FROM track }
 } {11 {That's Amore} 100 12 {Christmas Blues} 100 13 {My Way} 2}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-53968-51642 */
+#
+# Verify that adding an FK action does not absolve the user of the 
+# requirement not to violate the foreign key constraint.
+#
+drop_all_tables
+do_test e_fkey-25.1 {
+  execsql {
+    CREATE TABLE parent(a COLLATE nocase, b, c, PRIMARY KEY(c, a));
+    CREATE TABLE child(d DEFAULT 'a', e, f DEFAULT 'c',
+      FOREIGN KEY(f, d) REFERENCES parent ON UPDATE SET DEFAULT
+    );
+
+    INSERT INTO parent VALUES('A', 'b', 'c');
+    INSERT INTO parent VALUES('ONE', 'two', 'three');
+    INSERT INTO child VALUES('one', 'two', 'three');
+  }
+} {}
+do_test e_fkey-25.2 {
+  execsql {
+    BEGIN;
+      UPDATE parent SET a = '' WHERE a = 'oNe';
+      SELECT * FROM child;
+  }
+} {a two c}
+do_test e_fkey-25.3 {
+  execsql {
+    ROLLBACK;
+    DELETE FROM parent WHERE a = 'A';
+    SELECT * FROM parent;
+  }
+} {ONE two three}
+do_test e_fkey-25.4 {
+  catchsql { UPDATE parent SET a = '' WHERE a = 'oNe' }
+} {1 {foreign key constraint failed}}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-07065-59588 */
+# /* EV: R-28220-46694 */
+#
+# Test an example from the "ON DELETE and ON UPDATE Actions" section 
+# of foreignkeys.html. This example shows that adding an "ON DELETE DEFAULT"
+# clause does not abrogate the need to satisfy the foreign key constraint
+# (R-28220-46694).
+#
+drop_all_tables
+do_test e_fkey-14.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER,
+      trackname   TEXT, 
+      trackartist INTEGER DEFAULT 0 REFERENCES artist(artistid) ON DELETE SET DEFAULT
+    );
+    INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
+    INSERT INTO track VALUES(14, 'Mr. Bojangles', 3);
+  }
+} {}
+do_test e_fkey-14.2 {
+  catchsql { DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.' }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-14.3 {
+  execsql {
+    INSERT INTO artist VALUES(0, 'Unknown Artist');
+    DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.';
+  }
+} {}
+do_test e_fkey-14.4 {
+  execsql { SELECT * FROM artist }
+} {0 {Unknown Artist}}
+do_test e_fkey-14.5 {
+  execsql { SELECT * FROM track }
+} {14 {Mr. Bojangles} 0}
+
+#-------------------------------------------------------------------------
+# /* EV: R-35762-30306 */
+#
+# Check that the order of steps in an UPDATE or DELETE on a parent 
+# table is as follows:
+#
+#   1. Execute applicable BEFORE trigger programs,
+#   2. Check local (non foreign key) constraints,
+#   3. Update or delete the row in the parent table,
+#   4. Perform any required foreign key actions,
+#   5. Execute applicable AFTER trigger programs. 
+#
+drop_all_tables
+do_test e_fkey-27.1 {
+  proc maxparent {args} { db one {SELECT max(x) FROM parent} }
+  db func maxparent maxparent
+
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY);
+
+    CREATE TRIGGER bu BEFORE UPDATE ON parent BEGIN
+      INSERT INTO parent VALUES(new.x-old.x);
+    END;
+    CREATE TABLE child(
+      a DEFAULT (maxparent()) REFERENCES parent ON UPDATE SET DEFAULT
+    );
+    CREATE TRIGGER au AFTER UPDATE ON parent BEGIN
+      INSERT INTO parent VALUES(new.x+old.x);
+    END;
+
+    INSERT INTO parent VALUES(1);
+    INSERT INTO child VALUES(1);
+  }
+} {}
+do_test e_fkey-27.2 {
+  execsql {
+    UPDATE parent SET x = 22;
+    SELECT * FROM parent UNION ALL SELECT 'xxx' UNION ALL SELECT a FROM child;
+  }
+} {22 21 23 xxx 22}
+do_test e_fkey-27.3 {
+  execsql {
+    DELETE FROM child;
+    DELETE FROM parent;
+    INSERT INTO parent VALUES(-1);
+    INSERT INTO child VALUES(-1);
+    UPDATE parent SET x = 22;
+    SELECT * FROM parent UNION ALL SELECT 'xxx' UNION ALL SELECT a FROM child;
+  }
+} {22 23 21 xxx 23}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-27383-10246 */
+#
+# Verify that ON UPDATE actions only actually take place if the parent key
+# is set to a new value that is distinct from the old value. The default
+# collation sequence and affinity are used to determine if the new value
+# is 'distinct' from the old or not.
+#
+drop_all_tables
+do_test e_fkey-26.1 {
+  execsql {
+    CREATE TABLE zeus(a INTEGER COLLATE NOCASE, b, PRIMARY KEY(a, b));
+    CREATE TABLE apollo(c, d, 
+      FOREIGN KEY(c, d) REFERENCES zeus ON UPDATE CASCADE
+    );
+    INSERT INTO zeus VALUES('abc', 'xyz');
+    INSERT INTO apollo VALUES('ABC', 'xyz');
+  }
+  execsql {
+    UPDATE zeus SET a = 'aBc';
+    SELECT * FROM apollo;
+  }
+} {ABC xyz}
+do_test e_fkey-26.2 {
+  execsql {
+    UPDATE zeus SET a = 1, b = 1;
+    SELECT * FROM apollo;
+  }
+} {1 1}
+do_test e_fkey-26.3 {
+  execsql {
+    UPDATE zeus SET a = 1, b = 1;
+    SELECT typeof(c), c, typeof(d), d FROM apollo;
+  }
+} {integer 1 integer 1}
+do_test e_fkey-26.4 {
+  execsql {
+    UPDATE zeus SET a = '1';
+    SELECT typeof(c), c, typeof(d), d FROM apollo;
+  }
+} {integer 1 integer 1}
+do_test e_fkey-26.5 {
+  execsql {
+    UPDATE zeus SET b = '1';
+    SELECT typeof(c), c, typeof(d), d FROM apollo;
+  }
+} {integer 1 text 1}
+do_test e_fkey-26.6 {
+  execsql {
+    UPDATE zeus SET b = NULL;
+    SELECT typeof(c), c, typeof(d), d FROM apollo;
+  }
+} {integer 1 null {}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-51437-39891 */
+#
+# Test an example from the "ON DELETE and ON UPDATE Actions" section 
+# of foreignkeys.html. This example demonstrates that ON UPDATE actions
+# only take place if at least one parent key column is set to a value 
+# that is distinct from its previous value.
+#
+drop_all_tables
+do_test e_fkey-13.1 {
+  execsql {
+    CREATE TABLE parent(x PRIMARY KEY);
+    CREATE TABLE child(y REFERENCES parent ON UPDATE SET NULL);
+    INSERT INTO parent VALUES('key');
+    INSERT INTO child VALUES('key');
+  }
+} {}
+do_test e_fkey-13.2 {
+  execsql {
+    UPDATE parent SET x = 'key';
+    SELECT IFNULL(y, 'null') FROM child;
+  }
+} {key}
+do_test e_fkey-13.3 {
+  execsql {
+    UPDATE parent SET x = 'key2';
+    SELECT IFNULL(y, 'null') FROM child;
+  }
+} {null}
+
+###########################################################################
+### SECTION 5: CREATE, ALTER and DROP TABLE commands
+###########################################################################
 
 #-------------------------------------------------------------------------
 # /* EV: R-36018-21755 */
@@ -478,6 +1122,9 @@ do_test e_fkey-12.3.3 {
   execsql { PRAGMA foreign_keys = ON }
 } {}
 
+###########################################################################
+### SECTION 6: Limits and Unsupported Features
+###########################################################################
 
 #-------------------------------------------------------------------------
 # /* EV: R-24728-13230 */
