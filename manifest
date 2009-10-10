@@ -1,5 +1,8 @@
-C Add\stest\scases\sto\se_fkey.test.
-D 2009-10-09T18:16:55
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Update\srequirement\stext\sfor\ssqlite3_open_blob().\s\sUpdate\sevidence\scomment\nin\se_fkey.test\sto\sconform\sto\sthe\slatest\srequirement\sphrasing.
+D 2009-10-10T14:29:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +165,7 @@ F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c 270231b3f587f1f86391b9994fdfcd5d472c3fdf
-F src/sqlite.h.in 2c9fa83525b14fe3dda38146fb3005847d57a14e
+F src/sqlite.h.in 8e1ccddb12b5e983d0a17e1f1477c72b0a72dd84
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 61c55f5f83c63813903f374e9b33173572f0559a
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
@@ -319,7 +322,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_fkey.test 5106b8fb0832c9b6d90541c98577494b3057254f
+F test/e_fkey.test 543c1a09978aebc9e7f1f9e9b3e152522bc390ff
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -756,7 +759,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a2fb7902c01f8b095b25d338fc2f23cb26c941d9
-R 915c62ba9334f3e6b47b204d14e080a3
-U dan
-Z 7b2c0c612ba82ec335a32afc5fdab39c
+P e391dfe79d52e1de48688715d4a6707ffca214fd
+R 6e66b6d605ed8b289f71a5550bb8ed25
+U drh
+Z 43d5d438b8ccf27a392491687f40fca9
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK0JpPoxKgR168RlERAoyWAJ0f/KIASw5VF4TjInwPREvhzgQgiwCfUJ9D
+9SBPR3ZO+FUfDcMWSkQZ2d4=
+=wjme
+-----END PGP SIGNATURE-----

@@ -778,7 +778,8 @@ do_test e_fkey-13.3 {
 # are the same number of columns in the child and parent keys. (TODO: This
 # is tested but does not correspond to any testable statement.)
 #
-# /* EV: R-50163-54229 */
+# EV: R-08908-23439 A CREATE TABLE command operates the same whether 
+# or not foreign key constraints are enabled. 
 #
 # Also test that the above statements are true regardless of whether or not
 # foreign keys are enabled.

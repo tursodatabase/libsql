@@ -4509,8 +4509,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** and write access. If it is zero, the BLOB is opened for read access.
 ** It is not possible to open a column that is part of an index or primary 
 ** key for writing. ^If [foreign key constraints] are enabled, it is 
-** not possible to open a column that is part of a foreign key (sometimes 
-** termed a child key) for writing.
+** not possible to open a column that is part of a [child key] for writing.
 **
 ** Note that the database name is not the filename that contains
 ** the database but rather the symbolic name of the database that
