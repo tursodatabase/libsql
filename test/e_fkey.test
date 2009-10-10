@@ -20,6 +20,403 @@ ifcapable {!foreignkey} { finish_test ; return }
 execsql "PRAGMA foreign_keys = ON"
 
 ###########################################################################
+### SECTION 1: Introduction to Foreign Key Constraints
+###########################################################################
+
+###########################################################################
+### SECTION 2: Enabling Foreign Key Support
+###########################################################################
+
+###########################################################################
+### SECTION 3: Required and Suggested Database Indexes
+###########################################################################
+
+###########################################################################
+### SECTION 4.1: Composite Foreign Key Constraints
+###########################################################################
+
+###########################################################################
+### SECTION 4.2: Deferred Foreign Key Constraints
+###########################################################################
+
+#-------------------------------------------------------------------------
+# Note: R-35290-16460 is tested below.
+# TODO: R-30323-21917
+
+#-------------------------------------------------------------------------
+# /* EV: R-09323-30470 */
+#
+# Test that if a statement violates an immediate FK constraint, and the
+# database does not satisfy the FK constraint once all effects of the
+# statement have been applied, an error is reported and the effects of
+# the statement rolled back.
+#
+drop_all_tables
+do_test e_fkey-33.1 {
+  execsql {
+    CREATE TABLE king(a, b, PRIMARY KEY(a));
+    CREATE TABLE prince(c REFERENCES king, d);
+  }
+} {}
+
+do_test e_fkey-33.2 {
+  # Execute a statement that violates the immediate FK constraint.
+  catchsql { INSERT INTO prince VALUES(1, 2) }
+} {1 {foreign key constraint failed}}
+
+do_test e_fkey-33.3 {
+  # This time, use a trigger to fix the constraint violation before the
+  # statement has finished executing. Then execute the same statement as
+  # in the previous test case. This time, no error.
+  execsql {
+    CREATE TRIGGER kt AFTER INSERT ON prince WHEN
+      NOT EXISTS (SELECT a FROM king WHERE a = new.c)
+    BEGIN
+      INSERT INTO king VALUES(new.c, NULL);
+    END
+  }
+  execsql { INSERT INTO prince VALUES(1, 2) }
+} {}
+
+# Test that operating inside a transaction makes no difference to 
+# immediate constraint violation handling.
+do_test e_fkey-33.4 {
+  execsql {
+    BEGIN;
+    INSERT INTO prince VALUES(2, 3);
+    DROP TRIGGER kt;
+  }
+  catchsql { INSERT INTO prince VALUES(3, 4) }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-33.5 {
+  execsql {
+    COMMIT;
+    SELECT * FROM king;
+  }
+} {1 {} 2 {}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-49178-21358 */
+# /* EV: R-39692-12488 */
+# /* EV: R-55147-47664 */
+# /* EV: R-29604-30395 */
+#
+# Test that if a deferred constraint is violated within a transaction,
+# nothing happens immediately and the database is allowed to persist
+# in a state that does not satisfy the FK constraint. However attempts
+# to COMMIT the transaction fail until the FK constraint is satisfied.
+#
+proc test_efkey_34 {tn isError sql} {
+  do_test e_fkey-34.$tn "
+    catchsql {$sql}
+  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+}
+drop_all_tables
+
+test_efkey_34  1 0 {
+  CREATE TABLE ll(k PRIMARY KEY);
+  CREATE TABLE kk(c REFERENCES ll DEFERRABLE INITIALLY DEFERRED);
+}
+test_efkey_34  2 0 "BEGIN"
+test_efkey_34  3 0   "INSERT INTO kk VALUES(5)"
+test_efkey_34  4 0   "INSERT INTO kk VALUES(10)"
+test_efkey_34  5 1 "COMMIT"
+test_efkey_34  6 0   "INSERT INTO ll VALUES(10)"
+test_efkey_34  7 1 "COMMIT"
+test_efkey_34  8 0   "INSERT INTO ll VALUES(5)"
+test_efkey_34  9 0 "COMMIT"
+
+#-------------------------------------------------------------------------
+# /* EV: R-56844-61705 */
+#
+# When not running inside a transaction, a deferred constraint is similar
+# to an immediate constraint (violations are reported immediately).
+#
+drop_all_tables
+proc test_efkey_35 {tn isError sql} {
+  do_test e_fkey-35.$tn "
+    catchsql {$sql}
+  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+}
+do_test e_fkey-35.1 {
+  execsql {
+    CREATE TABLE parent(x, y);
+    CREATE UNIQUE INDEX pi ON parent(x, y);
+    CREATE TABLE child(a, b,
+      FOREIGN KEY(a, b) REFERENCES parent(x, y) DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+} {}
+test_efkey_35 2 1 "INSERT INTO child  VALUES('x', 'y')"
+test_efkey_35 3 0 "INSERT INTO parent VALUES('x', 'y')"
+test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-12782-61841 */
+#
+# Test that an FK constraint is made deferred by adding the following
+# to the definition:
+#
+#   DEFERRABLE INITIALLY DEFERRED
+#
+# /* EV: R-54882-46975 */
+#
+# Also test that adding any of the following to a foreign key definition 
+# makes the constraint IMMEDIATE:
+#
+#   NOT DEFERRABLE INITIALLY DEFERRED
+#   DEFERRABLE INITIALLY IMMEDIATE
+#   DEFERRABLE
+#
+# /* EV: R-35290-16460 */
+#
+# Foreign keys are IMMEDIATE by default (if there is no DEFERRABLE or NOT
+# DEFERRABLE clause).
+#
+drop_all_tables
+do_test e_fkey-29.1 {
+  execsql {
+    CREATE TABLE parent(x, y, z, PRIMARY KEY(x,y,z));
+    CREATE TABLE c1(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent NOT DEFERRABLE INITIALLY DEFERRED
+    );
+    CREATE TABLE c2(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE INITIALLY IMMEDIATE
+    );
+    CREATE TABLE c3(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE
+    );
+    CREATE TABLE c4(a, b, c, FOREIGN KEY(a, b, c) REFERENCES parent);
+
+    -- This FK constraint is the only deferrable one.
+    CREATE TABLE c5(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE INITIALLY DEFERRED
+    );
+
+    INSERT INTO parent VALUES('a', 'b', 'c');
+    INSERT INTO parent VALUES('d', 'e', 'f');
+    INSERT INTO parent VALUES('g', 'h', 'i');
+    INSERT INTO parent VALUES('j', 'k', 'l');
+    INSERT INTO parent VALUES('m', 'n', 'o');
+
+    INSERT INTO c1 VALUES('a', 'b', 'c');
+    INSERT INTO c2 VALUES('d', 'e', 'f');
+    INSERT INTO c3 VALUES('g', 'h', 'i');
+    INSERT INTO c4 VALUES('j', 'k', 'l');
+    INSERT INTO c5 VALUES('m', 'n', 'o');
+  }
+} {}
+
+proc test_efkey_29 {tn sql isError} {
+  do_test e_fkey-29.$tn "catchsql {$sql}" [
+    lindex {{0 {}} {1 {foreign key constraint failed}}} $isError
+  ]
+}
+test_efkey_29  2 "BEGIN"                                   0
+test_efkey_29  3 "DELETE FROM parent WHERE x = 'a'"        1
+test_efkey_29  4 "DELETE FROM parent WHERE x = 'd'"        1
+test_efkey_29  5 "DELETE FROM parent WHERE x = 'g'"        1
+test_efkey_29  6 "DELETE FROM parent WHERE x = 'j'"        1
+test_efkey_29  7 "DELETE FROM parent WHERE x = 'm'"        0
+test_efkey_29  8 "COMMIT"                                  1
+test_efkey_29  9 "ROLLBACK"                                0
+
+test_efkey_29  9 "BEGIN"                                   0
+test_efkey_29 10 "UPDATE parent SET z = 'z' WHERE z = 'c'" 1
+test_efkey_29 11 "UPDATE parent SET z = 'z' WHERE z = 'f'" 1
+test_efkey_29 12 "UPDATE parent SET z = 'z' WHERE z = 'i'" 1
+test_efkey_29 13 "UPDATE parent SET z = 'z' WHERE z = 'l'" 1
+test_efkey_29 14 "UPDATE parent SET z = 'z' WHERE z = 'o'" 0
+test_efkey_29 15 "COMMIT"                                  1
+test_efkey_29 16 "ROLLBACK"                                0
+
+test_efkey_29 17 "BEGIN"                                   0
+test_efkey_29 18 "INSERT INTO c1 VALUES(1, 2, 3)"          1
+test_efkey_29 19 "INSERT INTO c2 VALUES(1, 2, 3)"          1
+test_efkey_29 20 "INSERT INTO c3 VALUES(1, 2, 3)"          1
+test_efkey_29 21 "INSERT INTO c4 VALUES(1, 2, 3)"          1
+test_efkey_29 22 "INSERT INTO c5 VALUES(1, 2, 3)"          0
+test_efkey_29 23 "COMMIT"                                  1
+test_efkey_29 24 "INSERT INTO parent VALUES(1, 2, 3)"      0
+test_efkey_29 25 "COMMIT"                                  0
+
+test_efkey_29 26 "BEGIN"                                   0
+test_efkey_29 27 "UPDATE c1 SET a = 10"                    1
+test_efkey_29 28 "UPDATE c2 SET a = 10"                    1
+test_efkey_29 29 "UPDATE c3 SET a = 10"                    1
+test_efkey_29 30 "UPDATE c4 SET a = 10"                    1
+test_efkey_29 31 "UPDATE c5 SET a = 10"                    0
+test_efkey_29 32 "COMMIT"                                  1
+test_efkey_29 33 "ROLLBACK"                                0
+
+#-------------------------------------------------------------------------
+# /* EV: R-27340-26081 */
+#
+# Test an example from foreignkeys.html dealing with a deferred foreign 
+# key constraint.
+#
+do_test e_fkey-28.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER,
+      trackname   TEXT, 
+      trackartist INTEGER REFERENCES artist(artistid) DEFERRABLE INITIALLY DEFERRED
+    );
+  }
+} {}
+do_test e_fkey-28.2 {
+  execsql {
+    BEGIN;
+      INSERT INTO track VALUES(1, 'White Christmas', 5);
+  }
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-28.3 {
+  execsql {
+    INSERT INTO artist VALUES(5, 'Bing Crosby');
+    COMMIT;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-07223-48323 */
+#
+# Verify that a nested savepoint may be released without satisfying 
+# deferred foreign key constraints.
+#
+drop_all_tables
+do_test e_fkey-30.1 {
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY,
+      b REFERENCES t1 DEFERRABLE INITIALLY DEFERRED
+    );
+    INSERT INTO t1 VALUES(1, 1);
+    INSERT INTO t1 VALUES(2, 2);
+    INSERT INTO t1 VALUES(3, 3);
+  }
+} {}
+do_test e_fkey-30.2 {
+  execsql {
+    BEGIN;
+      SAVEPOINT one;
+        INSERT INTO t1 VALUES(4, 5);
+      RELEASE one;
+  }
+} {}
+do_test e_fkey-30.3 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-30.4 {
+  execsql {
+    UPDATE t1 SET a = 5 WHERE a = 4;
+    COMMIT;
+  }
+} {}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-44295-13823 */
+#
+# Check that a transaction savepoint (an outermost savepoint opened when
+# the database was in auto-commit mode) cannot be released without
+# satisfying deferred foreign key constraints. It may be rolled back.
+#
+do_test e_fkey-31.1 {
+  execsql {
+    SAVEPOINT one;
+      SAVEPOINT two;
+        INSERT INTO t1 VALUES(6, 7);
+      RELEASE two;
+  }
+} {}
+do_test e_fkey-31.2 {
+  catchsql {RELEASE one}
+} {1 {foreign key constraint failed}}
+do_test e_fkey-31.3 {
+  execsql {
+      UPDATE t1 SET a = 7 WHERE a = 6;
+    RELEASE one;
+  }
+} {}
+do_test e_fkey-31.4 {
+  execsql {
+    SAVEPOINT one;
+      SAVEPOINT two;
+        INSERT INTO t1 VALUES(9, 10);
+      RELEASE two;
+  }
+} {}
+do_test e_fkey-31.5 {
+  catchsql {RELEASE one}
+} {1 {foreign key constraint failed}}
+do_test e_fkey-31.6 {
+  execsql {ROLLBACK TO one ; RELEASE one}
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-37736-42616 */
+#
+# Test that if a COMMIT operation fails due to deferred foreign key 
+# constraints, any nested savepoints remain open.
+#
+do_test e_fkey-32.1 {
+  execsql {
+    DELETE FROM t1 WHERE a>3;
+    SELECT * FROM t1;
+  }
+} {1 1 2 2 3 3}
+do_test e_fkey-32.2 {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES(4, 4);
+      SAVEPOINT one;
+        INSERT INTO t1 VALUES(5, 6);
+        SELECT * FROM t1;
+  }
+} {1 1 2 2 3 3 4 4 5 6}
+do_test e_fkey-32.3 {
+  catchsql COMMIT
+} {1 {foreign key constraint failed}}
+do_test e_fkey-32.4 {
+  execsql {
+    ROLLBACK TO one;
+    COMMIT;
+    SELECT * FROM t1;
+  }
+} {1 1 2 2 3 3 4 4}
+
+do_test e_fkey-32.5 {
+  execsql {
+    SAVEPOINT a;
+      INSERT INTO t1 VALUES(5, 5);
+      SAVEPOINT b;
+        INSERT INTO t1 VALUES(6, 7);
+        SAVEPOINT c;
+          INSERT INTO t1 VALUES(7, 8);
+  }
+} {}
+do_test e_fkey-32.6 {
+  catchsql {RELEASE a}
+} {1 {foreign key constraint failed}}
+do_test e_fkey-32.7 {
+  execsql  {ROLLBACK TO c}
+  catchsql {RELEASE a}
+} {1 {foreign key constraint failed}}
+do_test e_fkey-32.8 {
+  execsql  {
+    ROLLBACK TO b;
+    RELEASE a;
+    SELECT * FROM t1;
+  }
+} {1 1 2 2 3 3 4 4 5 5}
+
+###########################################################################
 ### SECTION 4.3: ON DELETE and ON UPDATE Actions
 ###########################################################################
 
@@ -778,11 +1175,11 @@ do_test e_fkey-13.3 {
 # are the same number of columns in the child and parent keys. (TODO: This
 # is tested but does not correspond to any testable statement.)
 #
-# EV: R-08908-23439 A CREATE TABLE command operates the same whether 
-# or not foreign key constraints are enabled. 
+# /* EV: R-08908-23439 */
 #
 # Also test that the above statements are true regardless of whether or not
-# foreign keys are enabled.
+# foreign keys are enabled:  "A CREATE TABLE command operates the same whether
+# or not foreign key constraints are enabled."
 # 
 foreach {tn zCreateTbl lRes} {
   1 "CREATE TABLE t1(a, b REFERENCES t1)"                            {0 {}}
