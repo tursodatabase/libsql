@@ -385,7 +385,7 @@ do_test e_fkey-48.2 {
 } {1 {track.trackartist may not be NULL}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-01991-24099 */
+# /* EV: R-17902-59250 */
 #
 # Test an example from foreignkeys.html.
 #
@@ -429,7 +429,7 @@ do_test e_fkey-43.5 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-22377-02546 */
+# /* EV: R-15034-64331 */
 #
 # Test the second example from the first section of foreignkeys.html.
 #
@@ -573,7 +573,7 @@ do_test e_fkey-47.4 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-56396-15644 */
+# /* EV: R-24676-09859 */
 #
 # Test the example schema in the "Composite Foreign Key Constraints" 
 # section.
@@ -860,7 +860,7 @@ test_efkey_29 32 "COMMIT"                                  1
 test_efkey_29 33 "ROLLBACK"                                0
 
 #-------------------------------------------------------------------------
-# /* EV: R-27340-26081 */
+# /* EV: R-35043-01546 */
 #
 # Test an example from foreignkeys.html dealing with a deferred foreign 
 # key constraint.
@@ -1634,7 +1634,7 @@ do_test e_fkey-14.5 {
 } {14 {Mr. Bojangles} 0}
 
 #-------------------------------------------------------------------------
-# /* EV: R-35762-30306 */
+# /* EV: R-09564-22170 */
 #
 # Check that the order of steps in an UPDATE or DELETE on a parent 
 # table is as follows:
