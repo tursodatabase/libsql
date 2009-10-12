@@ -568,6 +568,257 @@ do_test e_fkey-47.4 {
 ### SECTION 3: Required and Suggested Database Indexes
 ###########################################################################
 
+#-------------------------------------------------------------------------
+# /* EV: R-13435-26311 */
+#
+# A parent key must be either a PRIMARY KEY, subject to a UNIQUE 
+# constraint, or have a UNIQUE index created on it.
+# 
+# /* EV: R-00376-39212 */
+#
+# Also test that if a parent key is not subject to a PRIMARY KEY or UNIQUE
+# constraint, but does have a UNIQUE index created on it, then the UNIQUE index
+# must use the default collation sequences associated with the parent key
+# columns.
+#
+drop_all_tables
+do_test e_fkey-57.1 {
+  execsql {
+    CREATE TABLE t2(a REFERENCES t1(x));
+  }
+} {}
+proc test_efkey_57 {tn isError sql} {
+  catchsql { DROP TABLE t1 }
+  execsql $sql
+  do_test e_fkey-57.$tn {
+    catchsql { INSERT INTO t2 VALUES(NULL) }
+  } [lindex {{0 {}} {1 {foreign key mismatch}}} $isError]
+}
+test_efkey_57 2 0 { CREATE TABLE t1(x PRIMARY KEY) }
+test_efkey_57 3 0 { CREATE TABLE t1(x UNIQUE) }
+test_efkey_57 4 0 { CREATE TABLE t1(x); CREATE UNIQUE INDEX t1i ON t1(x) }
+test_efkey_57 5 1 { 
+  CREATE TABLE t1(x); 
+  CREATE UNIQUE INDEX t1i ON t1(x COLLATE nocase);
+}
+test_efkey_57 6 1 { CREATE TABLE t1(x) }
+test_efkey_57 7 1 { CREATE TABLE t1(x, y, PRIMARY KEY(x, y)) }
+test_efkey_57 8 1 { CREATE TABLE t1(x, y, UNIQUE(x, y)) }
+test_efkey_57 9 1 { 
+  CREATE TABLE t1(x, y); 
+  CREATE UNIQUE INDEX t1i ON t1(x, y);
+}
+
+
+#-------------------------------------------------------------------------
+# This block tests an example in foreignkeys.html. Several testable
+# statements refer to this example, as follows
+#
+# /* EV: R-27484-01467 */
+#
+# FK Constraints on child1, child2 and child3 are Ok.
+#
+# /* EV: R-51039-44840 */
+#
+# Problem with FK on child4.
+#
+# /* EV: R-01060-48788 */
+#
+# Problem with FK on child5.
+#
+# /* EV: R-63088-37469 */
+#
+# Problem with FK on child6 and child7.
+#
+drop_all_tables
+do_test e_fkey-56.1 {
+  execsql {
+    CREATE TABLE parent(a PRIMARY KEY, b UNIQUE, c, d, e, f);
+    CREATE UNIQUE INDEX i1 ON parent(c, d);
+    CREATE INDEX i2 ON parent(e);
+    CREATE UNIQUE INDEX i3 ON parent(f COLLATE nocase);
+
+    CREATE TABLE child1(f, g REFERENCES parent(a));                       -- Ok
+    CREATE TABLE child2(h, i REFERENCES parent(b));                       -- Ok
+    CREATE TABLE child3(j, k, FOREIGN KEY(j, k) REFERENCES parent(c, d)); -- Ok
+    CREATE TABLE child4(l, m REFERENCES parent(e));                       -- Err
+    CREATE TABLE child5(n, o REFERENCES parent(f));                       -- Err
+    CREATE TABLE child6(p, q, FOREIGN KEY(p,q) REFERENCES parent(b, c));  -- Err
+    CREATE TABLE child7(r REFERENCES parent(c));                          -- Err
+  }
+} {}
+do_test e_fkey-56.2 {
+  execsql {
+    INSERT INTO parent VALUES(1, 2, 3, 4, 5, 6);
+    INSERT INTO child1 VALUES('xxx', 1);
+    INSERT INTO child2 VALUES('xxx', 2);
+    INSERT INTO child3 VALUES(3, 4);
+  }
+} {}
+do_test e_fkey-56.2 {
+  catchsql { INSERT INTO child4 VALUES('xxx', 5) }
+} {1 {foreign key mismatch}}
+do_test e_fkey-56.3 {
+  catchsql { INSERT INTO child5 VALUES('xxx', 6) }
+} {1 {foreign key mismatch}}
+do_test e_fkey-56.4 {
+  catchsql { INSERT INTO child6 VALUES(2, 3) }
+} {1 {foreign key mismatch}}
+do_test e_fkey-56.5 {
+  catchsql { INSERT INTO child7 VALUES(3) }
+} {1 {foreign key mismatch}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-03108-63659 */
+# /* EV: R-60781-26576 */
+#
+# Test errors in the database schema that are detected while preparing
+# DML statements. The error text for these messages always matches 
+# either "foreign key mismatch" or "no such table*" (using [string match]).
+#
+do_test e_fkey-57.1 {
+  execsql {
+    CREATE TABLE c1(c REFERENCES nosuchtable, d);
+
+    CREATE TABLE p2(a, b, UNIQUE(a, b));
+    CREATE TABLE c2(c, d, FOREIGN KEY(c, d) REFERENCES p2(a, x));
+
+    CREATE TABLE p3(a PRIMARY KEY, b);
+    CREATE TABLE c3(c REFERENCES p3(b), d);
+
+    CREATE TABLE p4(a PRIMARY KEY, b);
+    CREATE UNIQUE INDEX p4i ON p4(b COLLATE nocase);
+    CREATE TABLE c4(c REFERENCES p4(b), d);
+
+    CREATE TABLE p5(a PRIMARY KEY, b COLLATE nocase);
+    CREATE UNIQUE INDEX p5i ON p5(b COLLATE binary);
+    CREATE TABLE c5(c REFERENCES p4(b), d);
+
+    CREATE TABLE p6(a PRIMARY KEY, b);
+    CREATE TABLE c6(c, d, FOREIGN KEY(c, d) REFERENCES p6);
+
+    CREATE TABLE p7(a, b, PRIMARY KEY(a, b));
+    CREATE TABLE c7(c, d REFERENCES p7);
+  }
+} {}
+
+foreach {tn tbl err} {
+  2 c1 "no such table: main.nosuchtable"
+  3 c2 "foreign key mismatch"
+  4 c3 "foreign key mismatch"
+  5 c4 "foreign key mismatch"
+  6 c5 "foreign key mismatch"
+  7 c6 "foreign key mismatch"
+  8 c7 "foreign key mismatch"
+} {
+  do_test e_fkey-57.$tn {
+    catchsql "INSERT INTO $tbl VALUES('a', 'b')"
+  } [list 1 $err]
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-19353-43643 */
+#
+# Test the example of foreign key mismatch errors caused by implicitly
+# mapping a child key to the primary key of the parent table when the
+# child key consists of a different number of columns to that primary key.
+# 
+drop_all_tables
+do_test e_fkey-58.1 {
+  execsql {
+    CREATE TABLE parent2(a, b, PRIMARY KEY(a,b));
+
+    CREATE TABLE child8(x, y, FOREIGN KEY(x,y) REFERENCES parent2);     -- Ok
+    CREATE TABLE child9(x REFERENCES parent2);                          -- Err
+    CREATE TABLE child10(x,y,z, FOREIGN KEY(x,y,z) REFERENCES parent2); -- Err
+  }
+} {}
+do_test e_fkey-58.2 {
+  execsql {
+    INSERT INTO parent2 VALUES('I', 'II');
+    INSERT INTO child8 VALUES('I', 'II');
+  }
+} {}
+do_test e_fkey-58.3 {
+  catchsql { INSERT INTO child9 VALUES('I') }
+} {1 {foreign key mismatch}}
+do_test e_fkey-58.4 {
+  catchsql { INSERT INTO child9 VALUES('II') }
+} {1 {foreign key mismatch}}
+do_test e_fkey-58.5 {
+  catchsql { INSERT INTO child9 VALUES(NULL) }
+} {1 {foreign key mismatch}}
+do_test e_fkey-58.6 {
+  catchsql { INSERT INTO child10 VALUES('I', 'II', 'III') }
+} {1 {foreign key mismatch}}
+do_test e_fkey-58.7 {
+  catchsql { INSERT INTO child10 VALUES(1, 2, 3) }
+} {1 {foreign key mismatch}}
+do_test e_fkey-58.8 {
+  catchsql { INSERT INTO child10 VALUES(NULL, NULL, NULL) }
+} {1 {foreign key mismatch}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-23682-59820 */
+#
+# Test errors that are reported when creating the child table. 
+# Specifically:
+#
+#   * different number of child and parent key columns, and
+#   * child columns that do not exist.
+#
+# /* EV: R-33883-28833 */
+#
+# These errors are reported whether or not FK support is enabled.
+#
+drop_all_tables
+foreach fk [list OFF ON] {
+  execsql "PRAGMA foreign_keys = $fk"
+  set i 0
+  foreach {sql error} {
+    "CREATE TABLE child1(a, b, FOREIGN KEY(a, b) REFERENCES p(c))"
+      {number of columns in foreign key does not match the number of columns in the referenced table}
+    "CREATE TABLE child2(a, b, FOREIGN KEY(a, b) REFERENCES p(c, d, e))"
+      {number of columns in foreign key does not match the number of columns in the referenced table}
+    "CREATE TABLE child2(a, b, FOREIGN KEY(a, c) REFERENCES p(c, d))"
+      {unknown column "c" in foreign key definition}
+    "CREATE TABLE child2(a, b, FOREIGN KEY(c, b) REFERENCES p(c, d))"
+      {unknown column "c" in foreign key definition}
+  } {
+    do_test e_fkey-59.$fk.[incr i] {
+      catchsql $sql
+    } [list 1 $error]
+  }
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-47109-40581 */
+#
+# Test that a REFERENCING clause that does not specify parent key columns
+# implicitly maps to the primary key of the parent table.
+# 
+do_test e_fkey-60.1 {
+  execsql {
+    CREATE TABLE p1(a, b, PRIMARY KEY(a, b));
+    CREATE TABLE p2(a, b PRIMARY KEY);
+    CREATE TABLE c1(c, d, FOREIGN KEY(c, d) REFERENCES p1);
+    CREATE TABLE c2(a, b REFERENCES p2);
+  }
+} {}
+proc test_efkey_60 {tn isError sql} {
+  do_test e_fkey-60.$tn "
+    catchsql {$sql}
+  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+}
+
+test_efkey_60 2 1 "INSERT INTO c1 VALUES(239, 231)"
+test_efkey_60 3 0 "INSERT INTO p1 VALUES(239, 231)"
+test_efkey_60 4 0 "INSERT INTO c1 VALUES(239, 231)"
+test_efkey_60 5 1 "INSERT INTO c2 VALUES(239, 231)"
+test_efkey_60 6 0 "INSERT INTO p2 VALUES(239, 231)"
+test_efkey_60 7 0 "INSERT INTO c2 VALUES(239, 231)"
+
+
 ###########################################################################
 ### SECTION 4.1: Composite Foreign Key Constraints
 ###########################################################################
