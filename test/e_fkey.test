@@ -54,7 +54,7 @@ ifcapable trigger&&foreignkey {
 # Test the effects of defining OMIT_TRIGGER but not OMIT_FOREIGN_KEY.
 #
 # /* EV: R-22567-44039 */
-# /* EV: R-60444-29168 */
+# /* EV: R-41784-13339 */
 #
 # Specifically, test that "PRAGMA foreign_keys" is a no-op in this case.
 # When using the pragma to query the current setting, 0 rows are returned.
@@ -123,7 +123,7 @@ reset_db
 # Test that even if foreign keys are supported by the build, they must
 # be enabled using "PRAGMA foreign_keys = ON" (or similar).
 #
-# /* EV: R-15831-45974 */
+# /* EV: R-59578-04990 */
 #
 # This also tests that foreign key constraints are disabled by default.
 #
@@ -176,7 +176,7 @@ do_test e_fkey-54.3 {
 } {0}
 
 #-------------------------------------------------------------------------
-# /* EV: R-07050-54503 */
+# /* EV: R-46649-58537 */
 #
 # Test that it is not possible to enable or disable foreign key support
 # while not in auto-commit mode.
@@ -749,12 +749,14 @@ test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
 #
 #   DEFERRABLE INITIALLY DEFERRED
 #
-# /* EV: R-54882-46975 */
+# /* EV: R-09005-28791 */
 #
 # Also test that adding any of the following to a foreign key definition 
 # makes the constraint IMMEDIATE:
 #
 #   NOT DEFERRABLE INITIALLY DEFERRED
+#   NOT DEFERRABLE INITIALLY IMMEDIATE
+#   NOT DEFERRABLE
 #   DEFERRABLE INITIALLY IMMEDIATE
 #   DEFERRABLE
 #
@@ -771,15 +773,21 @@ do_test e_fkey-29.1 {
       FOREIGN KEY(a, b, c) REFERENCES parent NOT DEFERRABLE INITIALLY DEFERRED
     );
     CREATE TABLE c2(a, b, c,
-      FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE INITIALLY IMMEDIATE
+      FOREIGN KEY(a, b, c) REFERENCES parent NOT DEFERRABLE INITIALLY IMMEDIATE
     );
     CREATE TABLE c3(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent NOT DEFERRABLE
+    );
+    CREATE TABLE c4(a, b, c,
+      FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE INITIALLY IMMEDIATE
+    );
+    CREATE TABLE c5(a, b, c,
       FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE
     );
-    CREATE TABLE c4(a, b, c, FOREIGN KEY(a, b, c) REFERENCES parent);
+    CREATE TABLE c6(a, b, c, FOREIGN KEY(a, b, c) REFERENCES parent);
 
     -- This FK constraint is the only deferrable one.
-    CREATE TABLE c5(a, b, c,
+    CREATE TABLE c7(a, b, c,
       FOREIGN KEY(a, b, c) REFERENCES parent DEFERRABLE INITIALLY DEFERRED
     );
 
@@ -788,12 +796,16 @@ do_test e_fkey-29.1 {
     INSERT INTO parent VALUES('g', 'h', 'i');
     INSERT INTO parent VALUES('j', 'k', 'l');
     INSERT INTO parent VALUES('m', 'n', 'o');
+    INSERT INTO parent VALUES('p', 'q', 'r');
+    INSERT INTO parent VALUES('s', 't', 'u');
 
     INSERT INTO c1 VALUES('a', 'b', 'c');
     INSERT INTO c2 VALUES('d', 'e', 'f');
     INSERT INTO c3 VALUES('g', 'h', 'i');
     INSERT INTO c4 VALUES('j', 'k', 'l');
     INSERT INTO c5 VALUES('m', 'n', 'o');
+    INSERT INTO c6 VALUES('p', 'q', 'r');
+    INSERT INTO c7 VALUES('s', 't', 'u');
   }
 } {}
 
@@ -807,25 +819,31 @@ test_efkey_29  3 "DELETE FROM parent WHERE x = 'a'"        1
 test_efkey_29  4 "DELETE FROM parent WHERE x = 'd'"        1
 test_efkey_29  5 "DELETE FROM parent WHERE x = 'g'"        1
 test_efkey_29  6 "DELETE FROM parent WHERE x = 'j'"        1
-test_efkey_29  7 "DELETE FROM parent WHERE x = 'm'"        0
-test_efkey_29  8 "COMMIT"                                  1
-test_efkey_29  9 "ROLLBACK"                                0
+test_efkey_29  7 "DELETE FROM parent WHERE x = 'm'"        1
+test_efkey_29  8 "DELETE FROM parent WHERE x = 'p'"        1
+test_efkey_29  9 "DELETE FROM parent WHERE x = 's'"        0
+test_efkey_29 10 "COMMIT"                                  1
+test_efkey_29 11 "ROLLBACK"                                0
 
 test_efkey_29  9 "BEGIN"                                   0
 test_efkey_29 10 "UPDATE parent SET z = 'z' WHERE z = 'c'" 1
 test_efkey_29 11 "UPDATE parent SET z = 'z' WHERE z = 'f'" 1
 test_efkey_29 12 "UPDATE parent SET z = 'z' WHERE z = 'i'" 1
 test_efkey_29 13 "UPDATE parent SET z = 'z' WHERE z = 'l'" 1
-test_efkey_29 14 "UPDATE parent SET z = 'z' WHERE z = 'o'" 0
-test_efkey_29 15 "COMMIT"                                  1
-test_efkey_29 16 "ROLLBACK"                                0
+test_efkey_29 14 "UPDATE parent SET z = 'z' WHERE z = 'o'" 1
+test_efkey_29 15 "UPDATE parent SET z = 'z' WHERE z = 'r'" 1
+test_efkey_29 16 "UPDATE parent SET z = 'z' WHERE z = 'u'" 0
+test_efkey_29 17 "COMMIT"                                  1
+test_efkey_29 18 "ROLLBACK"                                0
 
 test_efkey_29 17 "BEGIN"                                   0
 test_efkey_29 18 "INSERT INTO c1 VALUES(1, 2, 3)"          1
 test_efkey_29 19 "INSERT INTO c2 VALUES(1, 2, 3)"          1
 test_efkey_29 20 "INSERT INTO c3 VALUES(1, 2, 3)"          1
 test_efkey_29 21 "INSERT INTO c4 VALUES(1, 2, 3)"          1
-test_efkey_29 22 "INSERT INTO c5 VALUES(1, 2, 3)"          0
+test_efkey_29 22 "INSERT INTO c5 VALUES(1, 2, 3)"          1
+test_efkey_29 22 "INSERT INTO c6 VALUES(1, 2, 3)"          1
+test_efkey_29 22 "INSERT INTO c7 VALUES(1, 2, 3)"          0
 test_efkey_29 23 "COMMIT"                                  1
 test_efkey_29 24 "INSERT INTO parent VALUES(1, 2, 3)"      0
 test_efkey_29 25 "COMMIT"                                  0
@@ -835,7 +853,9 @@ test_efkey_29 27 "UPDATE c1 SET a = 10"                    1
 test_efkey_29 28 "UPDATE c2 SET a = 10"                    1
 test_efkey_29 29 "UPDATE c3 SET a = 10"                    1
 test_efkey_29 30 "UPDATE c4 SET a = 10"                    1
-test_efkey_29 31 "UPDATE c5 SET a = 10"                    0
+test_efkey_29 31 "UPDATE c5 SET a = 10"                    1
+test_efkey_29 31 "UPDATE c6 SET a = 10"                    1
+test_efkey_29 31 "UPDATE c7 SET a = 10"                    0
 test_efkey_29 32 "COMMIT"                                  1
 test_efkey_29 33 "ROLLBACK"                                0
 

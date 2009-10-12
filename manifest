@@ -1,5 +1,5 @@
-C Extra\stest\scases\smapped\sto\sstatements\sin\sforeignkeys.html.
-D 2009-10-12T11:27:01
+C Update\se_fkey.test\sto\smatch\sthe\slatest\sversion\sof\sforeignkeys.html.
+D 2009-10-12T15:25:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -319,7 +319,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_fkey.test b9bf4788af033c5d56e58df1e989434d942196b3
+F test/e_fkey.test f2ad0c2ed60dcab0fbea4e66d2aab524cb11f28e
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -756,7 +756,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d61cc0e1a1e8b4bf49016d3d14554f9c20f86f6b
-R 19129dc0d2d5338325ee10c52d15ba5f
+P ffa6207dd72024f01ab6f2715fe628943f178ca5
+R c29f3cf16d31eed981f65eb23f3d9cb1
 U dan
-Z f04f7530e0d7bdd848703c83bac7f590
+Z 389f88f392d92b0f4a083356cf2c050b
