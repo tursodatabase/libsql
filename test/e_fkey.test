@@ -23,6 +23,352 @@ execsql "PRAGMA foreign_keys = ON"
 ### SECTION 1: Introduction to Foreign Key Constraints
 ###########################################################################
 
+#-------------------------------------------------------------------------
+# /* EV: R-04042-24825 */
+#
+# Verify that the syntax in the first example in section 1 is valid.
+#
+do_test e_fkey-38.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER, 
+      trackname   TEXT, 
+      trackartist INTEGER,
+      FOREIGN KEY(trackartist) REFERENCES artist(artistid)
+    );
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-61362-32087 */
+#
+# Attempting to insert a row into the 'track' table that corresponds
+# to no row in the 'artist' table fails.
+#
+do_test e_fkey-39.1 {
+  catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-39.2 {
+  execsql { INSERT INTO artist VALUES(2, 'artist 1') }
+  catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-39.2 {
+  execsql { INSERT INTO track VALUES(1, 'track 1', 2) }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-24401-52400 */
+#
+# Attempting to delete a row from the 'artist' table while there are 
+# dependent rows in the track table also fails.
+#
+do_test e_fkey-40.1 {
+  catchsql { DELETE FROM artist WHERE artistid = 2 }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-40.2 {
+  execsql { 
+    DELETE FROM track WHERE trackartist = 2;
+    DELETE FROM artist WHERE artistid = 2;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-23980-48859 */
+#
+# If the foreign key column (trackartist) in table 'track' is set to NULL,
+# there is no requirement for a matching row in the 'artist' table.
+#
+do_test e_fkey-41.1 {
+  execsql {
+    INSERT INTO track VALUES(1, 'track 1', NULL);
+    INSERT INTO track VALUES(2, 'track 2', NULL);
+  }
+} {}
+do_test e_fkey-41.2 {
+  execsql { SELECT * FROM artist }
+} {}
+do_test e_fkey-41.3 {
+  # Setting the trackid to a non-NULL value fails, of course.
+  catchsql { UPDATE track SET trackartist = 5 WHERE trackid = 1 }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-41.4 {
+  execsql {
+    INSERT INTO artist VALUES(5, 'artist 5');
+    UPDATE track SET trackartist = 5 WHERE trackid = 1;
+  }
+  catchsql { DELETE FROM artist WHERE artistid = 5}
+} {1 {foreign key constraint failed}}
+do_test e_fkey-41.5 {
+  execsql { 
+    UPDATE track SET trackartist = NULL WHERE trackid = 1;
+    DELETE FROM artist WHERE artistid = 5;
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-52486-21352 */
+#
+# Test that the following is true fo all rows in the track table:
+#
+#   trackartist IS NULL OR 
+#   EXISTS(SELECT 1 FROM artist WHERE artistid=trackartist)
+#
+
+# This procedure executes a test case to check that statement 
+# R-52486-21352 is true after executing the SQL statement passed.
+# as the second argument.
+proc test_r52486_21352 {tn sql} {
+  set res [catchsql $sql]
+  set results {
+    {0 {}} 
+    {1 {PRIMARY KEY must be unique}} 
+    {1 {foreign key constraint failed}}
+  }
+  if {[lsearch $results $res]<0} {
+    error $res
+  }
+
+  do_test e_fkey-42.$tn {
+    execsql {
+      SELECT count(*) FROM track WHERE NOT (
+        trackartist IS NULL OR 
+        EXISTS(SELECT 1 FROM artist WHERE artistid=trackartist)
+      )
+    }
+  } {0}
+}
+
+# Execute a series of random INSERT, UPDATE and DELETE operations
+# (some of which may fail due to FK or PK constraint violations) on 
+# the two tables in the example schema. Test that R-52486-21352
+# is true after executing each operation.
+#
+set Template {
+  {INSERT INTO track VALUES($t, 'track $t', $a)}
+  {DELETE FROM track WHERE trackid = $t}
+  {UPDATE track SET trackartist = $a WHERE trackid = $t}
+  {INSERT INTO artist VALUES($a, 'artist $a')}
+  {DELETE FROM artist WHERE artistid = $a}
+  {UPDATE artist SET artistid = $a2 WHERE artistid = $a}
+}
+for {set i 0} {$i < 500} {incr i} {
+  set a   [expr int(rand()*10)]
+  set a2  [expr int(rand()*10)]
+  set t   [expr int(rand()*50)]
+  set sql [subst [lindex $Template [expr int(rand()*6)]]]
+
+  test_r52486_21352 $i $sql
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-42412-59321 */
+#
+# Check that a NOT NULL constraint can be added to the example schema
+# to prohibit NULL child keys from being inserted.
+#
+drop_all_tables
+do_test e_fkey-48.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER, 
+      trackname   TEXT, 
+      trackartist INTEGER NOT NULL,
+      FOREIGN KEY(trackartist) REFERENCES artist(artistid)
+    );
+  }
+} {}
+do_test e_fkey-48.2 {
+  catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
+} {1 {track.trackartist may not be NULL}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-01991-24099 */
+#
+# Test an example from foreignkeys.html.
+#
+drop_all_tables
+do_test e_fkey-43.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER, 
+      trackname   TEXT, 
+      trackartist INTEGER,
+      FOREIGN KEY(trackartist) REFERENCES artist(artistid)
+    );
+    INSERT INTO artist VALUES(1, 'Dean Martin');
+    INSERT INTO artist VALUES(2, 'Frank Sinatra');
+    INSERT INTO track VALUES(11, 'That''s Amore', 1);
+    INSERT INTO track VALUES(12, 'Christmas Blues', 1);
+    INSERT INTO track VALUES(13, 'My Way', 2);
+  }
+} {}
+do_test e_fkey-43.2 {
+  catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', 3) }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-43.3 {
+  execsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
+} {}
+do_test e_fkey-43.4 {
+  catchsql { 
+    UPDATE track SET trackartist = 3 WHERE trackname = 'Mr. Bojangles';
+  }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-43.5 {
+  execsql {
+    INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
+    UPDATE track SET trackartist = 3 WHERE trackname = 'Mr. Bojangles';
+    INSERT INTO track VALUES(15, 'Boogie Woogie', 3);
+  }
+} {}
+
+#-------------------------------------------------------------------------
+# /* EV: R-22377-02546 */
+#
+# Test the second example from the first section of foreignkeys.html.
+#
+do_test e_fkey-44.1 {
+  catchsql {
+    DELETE FROM artist WHERE artistname = 'Frank Sinatra';
+  }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-44.2 {
+  execsql {
+    DELETE FROM track WHERE trackname = 'My Way';
+    DELETE FROM artist WHERE artistname = 'Frank Sinatra';
+  }
+} {}
+do_test e_fkey-44.3 {
+  catchsql {
+    UPDATE artist SET artistid=4 WHERE artistname = 'Dean Martin';
+  }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-44.4 {
+  execsql {
+    DELETE FROM track WHERE trackname IN('That''s Amore', 'Christmas Blues');
+    UPDATE artist SET artistid=4 WHERE artistname = 'Dean Martin';
+  }
+} {}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-56032-24923 */
+#
+# Test that a foreign key constraint is satisifed if "for each row in the child
+# table either one or more of the child key columns are NULL, or there exists a
+# row in the parent table for which each parent key column contains a value
+# equal to the value in its associated child key column".
+#
+# /* EV: R-57765-12380 */
+#
+# Test also that the comparison rules are used when testing if there 
+# is a matching row in the parent table of a foreign key constraint.
+#
+drop_all_tables
+do_test e_fkey-45.1 {
+  execsql {
+    CREATE TABLE par(p PRIMARY KEY);
+    CREATE TABLE chi(c REFERENCES par);
+
+    INSERT INTO par VALUES(1);
+    INSERT INTO par VALUES('1');
+    INSERT INTO par VALUES(X'31');
+    SELECT typeof(p) FROM par;
+  }
+} {integer text blob}
+
+proc test_efkey_45 {tn isError sql} {
+  do_test e_fkey-45.$tn.1 "
+    catchsql {$sql}
+  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+
+  do_test e_fkey-45.$tn.2 {
+    execsql {
+      SELECT * FROM chi WHERE c IS NOT NULL AND c NOT IN (SELECT p FROM par)
+    }
+  } {}
+}
+
+test_efkey_45 1 0 "INSERT INTO chi VALUES(1)"
+test_efkey_45 2 1 "INSERT INTO chi VALUES('1.0')"
+test_efkey_45 3 0 "INSERT INTO chi VALUES('1')"
+test_efkey_45 4 1 "DELETE FROM par WHERE p = '1'"
+test_efkey_45 5 0 "DELETE FROM chi WHERE c = '1'"
+test_efkey_45 6 0 "DELETE FROM par WHERE p = '1'"
+test_efkey_45 7 1 "INSERT INTO chi VALUES('1')"
+test_efkey_45 8 0 "INSERT INTO chi VALUES(X'31')"
+test_efkey_45 9 1 "INSERT INTO chi VALUES(X'32')"
+
+#-------------------------------------------------------------------------
+# /* EV: R-15796-47513 */
+#
+# Specifically, test that when comparing child and parent key values the
+# default collation sequence of the parent key column is used.
+#
+drop_all_tables
+do_test e_fkey-46.1 {
+  execsql {
+    CREATE TABLE t1(a COLLATE nocase PRIMARY KEY);
+    CREATE TABLE t2(b REFERENCES t1);
+  }
+} {}
+do_test e_fkey-46.2 {
+  execsql {
+    INSERT INTO t1 VALUES('oNe');
+    INSERT INTO t2 VALUES('one');
+    INSERT INTO t2 VALUES('ONE');
+    UPDATE t2 SET b = 'OnE';
+    UPDATE t1 SET a = 'ONE';
+  }
+} {}
+do_test e_fkey-46.3 {
+  catchsql { UPDATE t2 SET b = 'two' WHERE rowid = 1 }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-46.4 {
+  catchsql { DELETE FROM t1 WHERE rowid = 1 }
+} {1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-04240-13860 */
+#
+# Specifically, test that when comparing child and parent key values the
+# affinity of the parent key column is applied to the child key value
+# before the comparison takes place.
+#
+drop_all_tables
+do_test e_fkey-47.1 {
+  execsql {
+    CREATE TABLE t1(a NUMERIC PRIMARY KEY);
+    CREATE TABLE t2(b TEXT REFERENCES t1);
+  }
+} {}
+do_test e_fkey-47.2 {
+  execsql {
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES('three');
+    INSERT INTO t2 VALUES('2.0');
+    SELECT b, typeof(b) FROM t2;
+  }
+} {2.0 text}
+do_test e_fkey-47.3 {
+  execsql { SELECT typeof(a) FROM t1 }
+} {integer integer text}
+do_test e_fkey-47.4 {
+  catchsql { DELETE FROM t1 WHERE rowid = 2 }
+} {1 {foreign key constraint failed}}
+
 ###########################################################################
 ### SECTION 2: Enabling Foreign Key Support
 ###########################################################################
@@ -35,12 +381,64 @@ execsql "PRAGMA foreign_keys = ON"
 ### SECTION 4.1: Composite Foreign Key Constraints
 ###########################################################################
 
+#-------------------------------------------------------------------------
+# /* EV: R-56396-15644 */
+#
+# Test the example schema in the "Composite Foreign Key Constraints" 
+# section.
+#
+do_test e_fkey-36.1 {
+  execsql {
+    CREATE TABLE album(
+      albumartist TEXT,
+      albumname TEXT,
+      albumcover BINARY,
+      PRIMARY KEY(albumartist, albumname)
+    );
+    CREATE TABLE song(
+      songid INTEGER,
+      songartist TEXT,
+      songalbum TEXT,
+      songname TEXT,
+      FOREIGN KEY(songartist, songalbum) REFERENCES album(albumartist,albumname)
+    );
+  }
+} {}
+
+do_test e_fkey-36.2 {
+  execsql {
+    INSERT INTO album VALUES('Elvis Presley', 'Elvis'' Christmas Album', NULL);
+    INSERT INTO song VALUES(
+      1, 'Elvis Presley', 'Elvis'' Christmas Album', 'Here Comes Santa Clause'
+    );
+  }
+} {}
+do_test e_fkey-36.3 {
+  catchsql {
+    INSERT INTO song VALUES(2, 'Elvis Presley', 'Elvis Is Back!', 'Fever');
+  }
+} {1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-33626-48418 */
+#
+# Check that if any of the child key columns in the above schema are NULL,
+# there is no requirement for a corresponding parent key.
+#
+do_test e_fkey-37.1 {
+  execsql {
+    INSERT INTO song VALUES(2, 'Elvis Presley', NULL, 'Fever');
+    INSERT INTO song VALUES(3, NULL, 'Elvis Is Back', 'Soldier Boy');
+  }
+} {}
+
 ###########################################################################
 ### SECTION 4.2: Deferred Foreign Key Constraints
 ###########################################################################
 
 #-------------------------------------------------------------------------
 # Note: R-35290-16460 is tested below.
+#
 # TODO: R-30323-21917
 
 #-------------------------------------------------------------------------
