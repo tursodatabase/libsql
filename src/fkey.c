@@ -795,9 +795,11 @@ void sqlite3FkCheck(
     ** is required for the sqlite3WhereXXX() interface.  */
     pSrc = sqlite3SrcListAppend(db, 0, 0, 0);
     if( pSrc ){
-      pSrc->a->pTab = pFKey->pFrom;
-      pSrc->a->pTab->nRef++;
-      pSrc->a->iCursor = pParse->nTab++;
+      struct SrcList_item *pItem = pSrc->a;
+      pItem->pTab = pFKey->pFrom;
+      pItem->zName = pFKey->pFrom->zName;
+      pItem->pTab->nRef++;
+      pItem->iCursor = pParse->nTab++;
   
       if( regNew!=0 ){
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regNew, -1);
@@ -811,7 +813,7 @@ void sqlite3FkCheck(
         ** using OE_None). NO ACTION is the default.  */
         fkScanChildren(pParse, pSrc, pTab, pIdx, pFKey, aiCol, regOld, 1);
       }
-  
+      pItem->zName = 0;
       sqlite3SrcListDelete(db, pSrc);
     }
     sqlite3DbFree(db, aiCol);
