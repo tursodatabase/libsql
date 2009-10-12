@@ -12,16 +12,211 @@
 # This file implements tests to verify the "testable statements" in the
 # foreignkeys.in document.
 #
+# The tests in this file are arranged to mirror the structure of 
+# foreignkey.in, with one exception: The statements in section 2, which 
+# deals with enabling/disabling foreign key support, is tested first,
+# before section 1. This is because some statements in section 2 deal
+# with builds that do not include complete foreign key support (because
+# either SQLITE_OMIT_TRIGGER or SQLITE_OMIT_FOREIGN_KEY was defined
+# at build time).
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-ifcapable {!foreignkey} { finish_test ; return }
 
-execsql "PRAGMA foreign_keys = ON"
+###########################################################################
+### SECTION 2: Enabling Foreign Key Support
+###########################################################################
+
+#-------------------------------------------------------------------------
+# /* EV: R-33710-56344 */
+#
+# Test builds neither OMIT_FOREIGN_KEY or OMIT_TRIGGER defined have 
+# foreign key functionality.
+#
+ifcapable trigger&&foreignkey {
+  do_test e_fkey-49 {
+    execsql {
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE p(i PRIMARY KEY);
+      CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE);
+      INSERT INTO p VALUES('hello');
+      INSERT INTO c VALUES('hello');
+      UPDATE p SET i = 'world';
+      SELECT * FROM c;
+    }
+  } {world}
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-44697-61543 */
+#
+# Test the effects of defining OMIT_TRIGGER but not OMIT_FOREIGN_KEY.
+#
+# /* EV: R-22567-44039 */
+# /* EV: R-60444-29168 */
+#
+# Specifically, test that "PRAGMA foreign_keys" is a no-op in this case.
+# When using the pragma to query the current setting, 0 rows are returned.
+#
+reset_db
+ifcapable !trigger&&foreignkey {
+  do_test e_fkey-51.1 {
+    execsql {
+      PRAGMA foreign_keys = ON;
+      CREATE TABLE p(i PRIMARY KEY);
+      CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE);
+      INSERT INTO p VALUES('hello');
+      INSERT INTO c VALUES('hello');
+      UPDATE p SET i = 'world';
+      SELECT * FROM c;
+    }
+  } {hello}
+  do_test e_fkey-51.2 {
+    execsql { PRAGMA foreign_key_list(c) }
+  } {0 0 p j {} CASCADE {NO ACTION} NONE}
+  do_test e_fkey-51.3 {
+    execsql { PRAGMA foreign_keys }
+  } {}
+}
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-58428-36660 */
+#
+# Test the effects of defining OMIT_FOREIGN_KEY.
+#
+# /* EV: R-58428-36660 */
+#
+# Specifically, test that foreign key constraints cannot even be parsed 
+# in such a build.
+#
+reset_db
+ifcapable !foreignkey {
+  do_test e_fkey-52.1 {
+    execsql { CREATE TABLE p(i PRIMARY KEY) }
+    catchsql { CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE) }
+  } {1 {near "ON": syntax error}}
+  do_test e_fkey-52.2 {
+    # This is allowed, as in this build, "REFERENCES" is not a keyword.
+    # The declared datatype of column j is "REFERENCES p".
+    execsql { CREATE TABLE c(j REFERENCES p) }
+  } {}
+  do_test e_fkey-52.3 {
+    execsql { PRAGMA table_info(c) }
+  } {0 j {REFERENCES p} 0 {} 0}
+  do_test e_fkey-52.4 {
+    execsql { PRAGMA foreign_key_list(c) }
+  } {}
+  do_test e_fkey-52.5 {
+    execsql { PRAGMA foreign_keys }
+  } {}
+}
+
+ifcapable !foreignkey||!trigger { finish_test ; return }
+reset_db
+
+
+#-------------------------------------------------------------------------
+# /* EV: R-07280-60510 */
+#
+# Test that even if foreign keys are supported by the build, they must
+# be enabled using "PRAGMA foreign_keys = ON" (or similar).
+#
+# /* EV: R-15831-45974 */
+#
+# This also tests that foreign key constraints are disabled by default.
+#
+drop_all_tables
+do_test e_fkey-53.1 {
+  execsql {
+    CREATE TABLE p(i PRIMARY KEY);
+    CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE);
+    INSERT INTO p VALUES('hello');
+    INSERT INTO c VALUES('hello');
+    UPDATE p SET i = 'world';
+    SELECT * FROM c;
+  } 
+} {hello}
+do_test e_fkey-53.2 {
+  execsql {
+    DELETE FROM c;
+    DELETE FROM p;
+    PRAGMA foreign_keys = ON;
+    INSERT INTO p VALUES('hello');
+    INSERT INTO c VALUES('hello');
+    UPDATE p SET i = 'world';
+    SELECT * FROM c;
+  } 
+} {world}
+
+#-------------------------------------------------------------------------
+# /* EV: R-15278-54456 */
+# /* EV: R-11255-19907 */
+#
+# Test that the application can use "PRAGMA foreign_keys" to query for
+# whether or not foreign keys are currently enabled. This also tests
+# the example code in section 2 of foreignkeys.in.
+#
+reset_db
+do_test e_fkey-54.1 {
+  execsql { PRAGMA foreign_keys }
+} {0}
+do_test e_fkey-54.2 {
+  execsql { 
+    PRAGMA foreign_keys = ON;
+    PRAGMA foreign_keys;
+  }
+} {1}
+do_test e_fkey-54.3 {
+  execsql { 
+    PRAGMA foreign_keys = OFF;
+    PRAGMA foreign_keys;
+  }
+} {0}
+
+#-------------------------------------------------------------------------
+# /* EV: R-07050-54503 */
+#
+# Test that it is not possible to enable or disable foreign key support
+# while not in auto-commit mode.
+#
+reset_db
+do_test e_fkey-55.1 {
+  execsql {
+    PRAGMA foreign_keys = ON;
+    CREATE TABLE t1(a UNIQUE, b);
+    CREATE TABLE t2(c, d REFERENCES t1(a));
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES(2, 1);
+    BEGIN;
+      PRAGMA foreign_keys = OFF;
+  }
+  catchsql {
+      DELETE FROM t1
+  }
+} {1 {foreign key constraint failed}}
+do_test e_fkey-55.2 {
+  execsql { PRAGMA foreign_keys }
+} {1}
+do_test e_fkey-55.3 {
+  execsql {
+    COMMIT;
+    PRAGMA foreign_keys = OFF;
+    BEGIN;
+      PRAGMA foreign_keys = ON;
+      DELETE FROM t1;
+      PRAGMA foreign_keys;
+  }
+} {0}
+do_test e_fkey-55.4 {
+  execsql COMMIT
+} {}
 
 ###########################################################################
 ### SECTION 1: Introduction to Foreign Key Constraints
 ###########################################################################
+execsql "PRAGMA foreign_keys = ON"
 
 #-------------------------------------------------------------------------
 # /* EV: R-04042-24825 */
@@ -368,10 +563,6 @@ do_test e_fkey-47.3 {
 do_test e_fkey-47.4 {
   catchsql { DELETE FROM t1 WHERE rowid = 2 }
 } {1 {foreign key constraint failed}}
-
-###########################################################################
-### SECTION 2: Enabling Foreign Key Support
-###########################################################################
 
 ###########################################################################
 ### SECTION 3: Required and Suggested Database Indexes
