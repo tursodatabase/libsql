@@ -1289,6 +1289,7 @@ struct FKey {
   FKey *pNextTo;    /* Next foreign key on table named zTo */
   FKey *pPrevTo;    /* Previous foreign key on table named zTo */
   int nCol;         /* Number of columns in this key */
+  /* EV: R-30323-21917 */
   u8 isDeferred;    /* True if constraint checking is deferred till COMMIT */
   u8 aAction[2];          /* ON DELETE and ON UPDATE actions, respectively */
   Trigger *apTrigger[2];  /* Triggers for aAction[] actions */

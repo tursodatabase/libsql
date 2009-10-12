@@ -1178,7 +1178,11 @@ void sqlite3FkDelete(Table *pTab){
     fkTriggerDelete(pTab->dbMem, pFKey->apTrigger[1]);
 #endif
 
-    /* Delete the memory allocated for the FK structure. */
+    /* EV: R-30323-21917 Each foreign key constraint in SQLite is
+    ** classified as either immediate or deferred.
+    */
+    assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
+
     pNext = pFKey->pNextFrom;
     sqlite3DbFree(pTab->dbMem, pFKey);
   }
