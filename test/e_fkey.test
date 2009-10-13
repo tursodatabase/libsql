@@ -24,6 +24,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+proc eqp {sql {db db}} { uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db }
+
 ###########################################################################
 ### SECTION 2: Enabling Foreign Key Support
 ###########################################################################
@@ -669,6 +671,8 @@ do_test e_fkey-56.5 {
 } {1 {foreign key mismatch}}
 
 #-------------------------------------------------------------------------
+# /* EV: R-45488-08504 */
+# /* EV: R-48391-38472 */
 # /* EV: R-03108-63659 */
 # /* EV: R-60781-26576 */
 #
@@ -676,7 +680,7 @@ do_test e_fkey-56.5 {
 # DML statements. The error text for these messages always matches 
 # either "foreign key mismatch" or "no such table*" (using [string match]).
 #
-do_test e_fkey-57.1 {
+do_test e_fkey-66.1 {
   execsql {
     CREATE TABLE c1(c REFERENCES nosuchtable, d);
 
@@ -692,7 +696,7 @@ do_test e_fkey-57.1 {
 
     CREATE TABLE p5(a PRIMARY KEY, b COLLATE nocase);
     CREATE UNIQUE INDEX p5i ON p5(b COLLATE binary);
-    CREATE TABLE c5(c REFERENCES p4(b), d);
+    CREATE TABLE c5(c REFERENCES p5(b), d);
 
     CREATE TABLE p6(a PRIMARY KEY, b);
     CREATE TABLE c6(c, d, FOREIGN KEY(c, d) REFERENCES p6);
@@ -702,18 +706,36 @@ do_test e_fkey-57.1 {
   }
 } {}
 
-foreach {tn tbl err} {
-  2 c1 "no such table: main.nosuchtable"
-  3 c2 "foreign key mismatch"
-  4 c3 "foreign key mismatch"
-  5 c4 "foreign key mismatch"
-  6 c5 "foreign key mismatch"
-  7 c6 "foreign key mismatch"
-  8 c7 "foreign key mismatch"
+foreach {tn tbl ptbl err} {
+  2 c1 {} "no such table: main.nosuchtable"
+  3 c2 p2 "foreign key mismatch"
+  4 c3 p3 "foreign key mismatch"
+  5 c4 p4 "foreign key mismatch"
+  6 c5 p5 "foreign key mismatch"
+  7 c6 p6 "foreign key mismatch"
+  8 c7 p7 "foreign key mismatch"
 } {
-  do_test e_fkey-57.$tn {
+  do_test e_fkey-66.$tn.1 {
     catchsql "INSERT INTO $tbl VALUES('a', 'b')"
   } [list 1 $err]
+  do_test e_fkey-66.$tn.2 {
+    catchsql "UPDATE $tbl SET c = ?, d = ?"
+  } [list 1 $err]
+  do_test e_fkey-66.$tn.3 {
+    catchsql "INSERT INTO $tbl SELECT ?, ?"
+  } [list 1 $err]
+
+  if {$ptbl ne ""} {
+    do_test e_fkey-66.$tn.4 {
+      catchsql "DELETE FROM $ptbl"
+    } [list 1 $err]
+    do_test e_fkey-66.$tn.5 {
+      catchsql "UPDATE $ptbl SET a = ?, b = ?"
+    } [list 1 $err]
+    do_test e_fkey-66.$tn.6 {
+      catchsql "INSERT INTO $ptbl SELECT ?, ?"
+    } [list 1 $err]
+  }
 }
 
 #-------------------------------------------------------------------------
@@ -818,10 +840,255 @@ test_efkey_60 5 1 "INSERT INTO c2 VALUES(239, 231)"
 test_efkey_60 6 0 "INSERT INTO p2 VALUES(239, 231)"
 test_efkey_60 7 0 "INSERT INTO c2 VALUES(239, 231)"
 
+#-------------------------------------------------------------------------
+# /* EV: R-15417-28014 */
+#
+# Test that an index on on the child key columns of an FK constraint
+# is optional.
+#
+# /* EV: R-15741-50893 */
+#
+# Also test that if an index is created on the child key columns, it does
+# not make a difference whether or not it is a UNIQUE index.
+#
+drop_all_tables
+do_test e_fkey-61.1 {
+  execsql {
+    CREATE TABLE parent(x, y, UNIQUE(y, x));
+    CREATE TABLE c1(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+    CREATE TABLE c2(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+    CREATE TABLE c3(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+    CREATE INDEX c2i ON c2(a, b);
+    CREATE UNIQUE INDEX c3i ON c2(b, a);
+  }
+} {}
+proc test_efkey_61 {tn isError sql} {
+  do_test e_fkey-61.$tn "
+    catchsql {$sql}
+  " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
+}
+foreach {tn c} [list 2 c1 3 c2 4 c3] {
+  test_efkey_61 $tn.1 1 "INSERT INTO $c VALUES(1, 2)"
+  test_efkey_61 $tn.2 0 "INSERT INTO parent VALUES(1, 2)"
+  test_efkey_61 $tn.3 0 "INSERT INTO $c VALUES(1, 2)"
+
+  execsql "DELETE FROM $c ; DELETE FROM parent"
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-00279-52283 */
+#
+# Test an example showing that when a row is deleted from the parent 
+# table, the child table is queried for orphaned rows as follows:
+#
+#   SELECT rowid FROM track WHERE trackartist = ?
+#
+# /* EV: R-23302-30956 */
+#
+# Also test that if the SELECT above would return any rows, a foreign
+# key constraint is violated.
+#
+do_test e_fkey-62.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER, 
+      trackname   TEXT, 
+      trackartist INTEGER,
+      FOREIGN KEY(trackartist) REFERENCES artist(artistid)
+    );
+  }
+} {}
+do_test e_fkey-62.2 {
+  execsql {
+    PRAGMA foreign_keys = OFF;
+    EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
+    EXPLAIN QUERY PLAN SELECT rowid FROM track WHERE trackartist = ?;
+  }
+} {0 0 {TABLE artist} 0 0 {TABLE track}}
+do_test e_fkey-62.3 {
+  execsql { 
+    PRAGMA foreign_keys = ON;
+    EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
+  }
+} {0 0 {TABLE artist} 0 0 {TABLE track}}
+do_test e_fkey-62.4 {
+  execsql {
+    INSERT INTO artist VALUES(5, 'artist 5');
+    INSERT INTO artist VALUES(6, 'artist 6');
+    INSERT INTO artist VALUES(7, 'artist 7');
+    INSERT INTO track VALUES(1, 'track 1', 5);
+    INSERT INTO track VALUES(2, 'track 2', 6);
+  }
+} {}
+
+do_test e_fkey-62.5 {
+  concat \
+    [execsql { SELECT rowid FROM track WHERE trackartist = 5 }]   \
+    [catchsql { DELETE FROM artist WHERE artistid = 5 }]
+} {1 1 {foreign key constraint failed}}
+
+do_test e_fkey-62.6 {
+  concat \
+    [execsql { SELECT rowid FROM track WHERE trackartist = 7 }]   \
+    [catchsql { DELETE FROM artist WHERE artistid = 7 }]
+} {0 {}}
+
+do_test e_fkey-62.7 {
+  concat \
+    [execsql { SELECT rowid FROM track WHERE trackartist = 6 }]   \
+    [catchsql { DELETE FROM artist WHERE artistid = 6 }]
+} {2 1 {foreign key constraint failed}}
+
+#-------------------------------------------------------------------------
+# /* EV: R-54172-55848 */
+#
+# Test that when a row is deleted from the parent table of an FK 
+# constraint, the child table is queried for orphaned rows. The
+# query is equivalent to:
+#
+#   SELECT rowid FROM <child-table> WHERE <child-key> = :parent_key_value
+#
+# /* EV: R-61616-46700 */
+#
+# Also test that when a row is inserted into the parent table, or when the 
+# parent key values of an existing row are modified, a query equivalent
+# to the following is planned. In some cases it is not executed, but it
+# is always planned.
+#
+#   SELECT rowid FROM <child-table> WHERE <child-key> = :parent_key_value
+#
+#
+drop_all_tables
+do_test e_fkey-64.1 {
+  execsql { CREATE TABLE parent(x, y, UNIQUE(y, x)) }
+} {}
+foreach {tn sql} {
+  2 { 
+    CREATE TABLE child(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y))
+  }
+  3 { 
+    CREATE TABLE child(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+    CREATE INDEX childi ON child(a, b);
+  }
+  4 { 
+    CREATE TABLE child(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
+    CREATE UNIQUE INDEX childi ON child(b, a);
+  }
+} {
+  execsql $sql
+
+  execsql {PRAGMA foreign_keys = OFF}
+  set delete [concat \
+      [eqp "DELETE FROM parent WHERE 1"] \
+      [eqp "SELECT rowid FROM child WHERE a = ? AND b = ?"]
+  ]
+  set update [concat \
+      [eqp "UPDATE parent SET x=?, y=?"] \
+      [eqp "SELECT rowid FROM child WHERE a = ? AND b = ?"] \
+      [eqp "SELECT rowid FROM child WHERE a = ? AND b = ?"]
+  ]
+  execsql {PRAGMA foreign_keys = ON}
+
+  do_test e_fkey-64.$tn.1 { eqp "DELETE FROM parent WHERE 1" } $delete
+  do_test e_fkey-64.$tn.2 { eqp "UPDATE parent set x=?, y=?" } $update
+
+  execsql {DROP TABLE child}
+}
+
+#-------------------------------------------------------------------------
+# /* EV: R-14553-34013 */
+#
+# Test the example schema at the end of section 3. Also test that is
+# is "efficient". In this case "efficient" means that foreign key
+# related operations on the parent table do not provoke linear scans.
+#
+drop_all_tables
+do_test e_fkey-63.1 {
+  execsql {
+    CREATE TABLE artist(
+      artistid    INTEGER PRIMARY KEY, 
+      artistname  TEXT
+    );
+    CREATE TABLE track(
+      trackid     INTEGER,
+      trackname   TEXT, 
+      trackartist INTEGER REFERENCES artist
+    );
+    CREATE INDEX trackindex ON track(trackartist);
+  }
+} {}
+do_test e_fkey-63.2 {
+  eqp { INSERT INTO artist VALUES(?, ?) }
+} {}
+do_test e_fkey-63.3 {
+  eqp { UPDATE artist SET artistid = ?, artistname = ? }
+} [list \
+  0 0 {TABLE artist} \
+  0 0 {TABLE track WITH INDEX trackindex} \
+  0 0 {TABLE track WITH INDEX trackindex}
+]
+do_test e_fkey-63.4 {
+  eqp { DELETE FROM artist }
+} [list \
+  0 0 {TABLE artist} \
+  0 0 {TABLE track WITH INDEX trackindex}
+]
+
 
 ###########################################################################
 ### SECTION 4.1: Composite Foreign Key Constraints
 ###########################################################################
+
+#-------------------------------------------------------------------------
+# /* EV: R-41062-34431 */
+#
+# Check that parent and child keys must have the same number of columns.
+#
+foreach {tn sql err} {
+  1 "CREATE TABLE c(jj REFERENCES p(x, y))" 
+    {foreign key on jj should reference only one column of table p}
+
+  2 "CREATE TABLE c(jj REFERENCES p())" {near ")": syntax error}
+
+  3 "CREATE TABLE c(jj, FOREIGN KEY(jj) REFERENCES p(x, y))" 
+    {number of columns in foreign key does not match the number of columns in the referenced table}
+
+  4 "CREATE TABLE c(jj, FOREIGN KEY(jj) REFERENCES p())" 
+    {near ")": syntax error}
+
+  5 "CREATE TABLE c(ii, jj, FOREIGN KEY(jj, ii) REFERENCES p())" 
+    {near ")": syntax error}
+
+  6 "CREATE TABLE c(ii, jj, FOREIGN KEY(jj, ii) REFERENCES p(x))" 
+    {number of columns in foreign key does not match the number of columns in the referenced table}
+
+  7 "CREATE TABLE c(ii, jj, FOREIGN KEY(jj, ii) REFERENCES p(x,y,z))" 
+    {number of columns in foreign key does not match the number of columns in the referenced table}
+} {
+  drop_all_tables
+  do_test e_fkey-65.$tn [list catchsql $sql] [list 1 $err]
+}
+do_test e_fkey-65.8 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE p(x PRIMARY KEY);
+    CREATE TABLE c(a, b, FOREIGN KEY(a,b) REFERENCES p);
+  }
+  catchsql {DELETE FROM p}
+} {1 {foreign key mismatch}}
+do_test e_fkey-65.9 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE p(x, y, PRIMARY KEY(x,y));
+    CREATE TABLE c(a REFERENCES p);
+  }
+  catchsql {DELETE FROM p}
+} {1 {foreign key mismatch}}
+
 
 #-------------------------------------------------------------------------
 # /* EV: R-24676-09859 */
@@ -860,6 +1127,7 @@ do_test e_fkey-36.3 {
     INSERT INTO song VALUES(2, 'Elvis Presley', 'Elvis Is Back!', 'Fever');
   }
 } {1 {foreign key constraint failed}}
+
 
 #-------------------------------------------------------------------------
 # /* EV: R-33626-48418 */

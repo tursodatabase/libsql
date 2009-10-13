@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sasserts\sas\sevidence\sthat\sall\sFK\sconstraints\sare\seither\simmediate\sor\ndeferred.
-D 2009-10-12T22:30:49
+C Add\sfurther\stest\scases\sto\se_fkey.test.
+D 2009-10-13T10:39:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -322,7 +319,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_fkey.test 9f42822f9ca513cffc32a8ce00b074e53e951bf4
+F test/e_fkey.test fb71d3256bc9676c593953e577b10332dc1d6753
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -759,14 +756,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a4ab5215fed231c8e5f8714f5cadafd1209b362a
-R 4b18d30182072a8cd3031fc782eadfe8
-U drh
-Z ae8de04e4c5b2fdecf560180fe83fec1
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK064doxKgR168RlERAlWQAJ92yqj4W/BOhV0IW1IUn+D4AqGiwgCeKY3c
-ofWKl3KBlauHoZ3hAzBbU2Y=
-=e87L
------END PGP SIGNATURE-----
+P 634ef4fc9f4051245b38f558bb1c733031548c2f
+R 3419ce501d0c7c2573fb3cfb0130f288
+U dan
+Z 774cf19fb241e0081dde6df7fa45e05e
