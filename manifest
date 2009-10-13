@@ -1,5 +1,8 @@
-C Add\sfurther\stest\scases\sto\se_fkey.test.
-D 2009-10-13T10:39:17
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\smem3.c\sreleases\sits\smutex\son\san\ssqlite3_shutdown()\scall.
+D 2009-10-13T12:48:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,7 +135,7 @@ F src/malloc.c b1725183bcc4ce2e569f1b65da844dc3e4c7a643
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
-F src/mem3.c 67153ec933e08b70714055e872efb58a6b287939
+F src/mem3.c 805ab642adfafa171781a5d8ab112119dfaef118
 F src/mem5.c 4837b795ebdecc0cfe1522cd0c8b2c5d84ea490d
 F src/memjournal.c e68cb5f7e828b84d5bf2ea16c5d87f1ed7e9fe7f
 F src/mutex.c 828a40bc7bf79f01ef95ccbf8db8b02857739449
@@ -756,7 +759,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 634ef4fc9f4051245b38f558bb1c733031548c2f
-R 3419ce501d0c7c2573fb3cfb0130f288
-U dan
-Z 774cf19fb241e0081dde6df7fa45e05e
+P c85e58743a87bfbea6376c237e5e3a6909184f6c
+R a902a0fe985d2575bdd2782dd262b00c
+U drh
+Z a64e368a46129d4427b7420c167ae3ed
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK1HcvoxKgR168RlERAqsWAJ9B814s15aSPNqsw8HsHqOb8i/sTACfeLLK
+dUTrxepp/dbHpcTob2brPfQ=
+=MDr4
+-----END PGP SIGNATURE-----

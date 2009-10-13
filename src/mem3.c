@@ -578,6 +578,7 @@ static int memsys3Init(void *NotUsed){
 */
 static void memsys3Shutdown(void *NotUsed){
   UNUSED_PARAMETER(NotUsed);
+  mem3.mutex = 0;
   return;
 }
 
