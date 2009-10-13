@@ -1,5 +1,8 @@
-C Fixed\swarnings\swith\sMSVC\scompile.
-D 2009-10-13T19:19:24
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Update\sthe\sconfigure\sscript\sfor\sversion\s3.6.19.
+D 2009-10-13T22:47:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -19,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 1163c4a69c76777b60d3421c0f9d01274fd74699
+F configure 30e33c9dee7000cfa82fae0a2fe51b90a1c24bac x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -84,7 +87,7 @@ F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk c3c5c6d038512603c4c8a2599955a86fbd9e6973
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -757,7 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d0f55b5c3b1a85d837cd1d8a2f089c6bcf5a8c0d
-R 14f0ceddcb2ff3cfa9312dbf9b504c76
+P e0aa50c382a56bb02eaa589619b7e670006a26b3
+R 989a9468e4db33fc4015d0bb3c927c8c
 U drh
-Z e78f9810a4297222a886e94c9a042ac1
+Z c77a8e5a43c18f81fc9e77746a757c2f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK1QN1oxKgR168RlERAn/sAJ9vbDrnCZ7KOoePeG7szvgL88BcfgCfX65X
+qgkufBDaXyePEjW7csi+INo=
+=HJKG
+-----END PGP SIGNATURE-----
