@@ -30,7 +30,7 @@ do_test tkt-5ee237-1.1 {
     INSERT INTO t1 SELECT x+8 FROM t1;
   }
   db close
-  sqlite3 db b1.db -readonly 1
+  sqlite3 db test.db -readonly 1
   set rc [catch {
     db eval {SELECT rowid, x FROM t1 ORDER BY x} {
       db eval {UPDATE t1 SET x=x+1 WHERE rowid=:rowid}

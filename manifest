@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sTCL\swrapper\sto\sprovide\sa\snon-NULL\sobjProc\spointer\sto\sthe\nTcl_NRCreateCommand()\sinterface.\s\sThe\sTCL\sgurus\ssay\sthis\sis\sneeded\sto\nsupport\slegacy\sTCL\sextensions.
-D 2009-10-13T18:38:34
+C Fix\sa\stypo\sin\sthe\stest\sscript\sadded\sfor\sticket\s[5ee23731f15].
+D 2009-10-13T18:49:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -591,7 +591,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
-F test/tkt-5ee23731f.test c3034ce245ffc0da1bb8dbae8397f255ee65ca97
+F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
 F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
@@ -760,14 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f894ebf86d6bafcd1461f104f5f677b3b6a3aa1a
-R 78a04730a8c7b7cebc1d3f47c09f5bfa
+P 1b3cfa01dd7fb9a48f0008f5afd974db61c30cff
+R b341be8e0fe34457030485ca725f5a0d
 U drh
-Z 3c7266f38200d8f31bd2e5d5281dbd3f
+Z 299b7b7d82f5b740b9b23b97dff5d1da
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1MktoxKgR168RlERAgM/AJ4tDelhAOqaGTX4bLzzaDCACDLesACgirtD
-K1/iBwAIRLX5JOdd5czm15s=
-=ULek
+iD8DBQFK1MvXoxKgR168RlERAotoAJ0db9KOkVODvO9RFf3rni5bZpH7kQCfQ7Rm
+K7NC/wuJYvUGUq7pNnZfzZo=
+=8AEV
 -----END PGP SIGNATURE-----
