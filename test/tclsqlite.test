@@ -569,6 +569,9 @@ do_test tcl-11.2 {
 do_test tcl-11.3 {
   db exists {SELECT 1 FROM t4 WHERE x==8}
 } {0}
+do_test tcl-11.3.1 {
+  tcl_objproc db exists {SELECT 1 FROM t4 WHERE x==8}
+} {0}
 
 do_test tcl-12.1 {
   unset -nocomplain a b c version

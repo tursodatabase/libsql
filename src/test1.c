@@ -4869,6 +4869,37 @@ static int test_unlock_notify(
 
 
 /*
+**     tcl_objproc COMMANDNAME ARGS...
+**
+** Run a TCL command using its objProc interface.  Throw an error if
+** the command has no objProc interface.
+*/
+static int runAsObjProc(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  Tcl_CmdInfo cmdInfo;
+  if( objc<2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "COMMAND ...");
+    return TCL_ERROR;
+  }
+  if( !Tcl_GetCommandInfo(interp, Tcl_GetString(objv[1]), &cmdInfo) ){
+    Tcl_AppendResult(interp, "command not found: ",
+           Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  if( cmdInfo.objProc==0 ){
+    Tcl_AppendResult(interp, "command has no objProc: ",
+           Tcl_GetString(objv[1]), (char*)0);
+    return TCL_ERROR;
+  }
+  return cmdInfo.objProc(cmdInfo.objClientData, interp, objc-1, objv+1);
+}
+
+
+/*
 ** Register commands with the TCL interpreter.
 */
 int Sqlitetest1_Init(Tcl_Interp *interp){
@@ -4984,6 +5015,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "save_prng_state",               save_prng_state,    0 },
      { "restore_prng_state",            restore_prng_state, 0 },
      { "reset_prng_state",              reset_prng_state,   0 },
+     { "tcl_objproc",                   runAsObjProc,       0 },
 
      /* sqlite3_column_*() API */
      { "sqlite3_column_count",          test_column_count  ,0 },

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\stest\scase\sto\sverify\sthat\sticket\s[5ee23731f15]\shas\sbeen\sfixed.
-D 2009-10-13T15:42:49
+C Update\sthe\sTCL\swrapper\sto\sprovide\sa\snon-NULL\sobjProc\spointer\sto\sthe\nTcl_NRCreateCommand()\sinterface.\s\sThe\sTCL\sgurus\ssay\sthis\sis\sneeded\sto\nsupport\slegacy\sTCL\sextensions.
+D 2009-10-13T18:38:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -171,8 +171,8 @@ F src/sqliteInt.h 44cded4d6b78fe5fb5339454c44e51c64b7d8ed8
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c 868d62910bc6b41c49554482bdcc1590efc01f3c
-F src/test1.c 9bd64834314b67345855c314dc479bc12596a9b7
+F src/tclsqlite.c b91a03d52d39eda4392931ac4ebd421b9234c2be
+F src/test1.c 4da992ff460cba2167e67df3ba28ad66afebfe91
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
 F src/test4.c b5fd530f02a6a0dbffb23be202168a690985dedd
@@ -574,7 +574,7 @@ F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
 F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test bf102a5669c4db7a41330802f24a4a81a4204f83
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
-F test/tclsqlite.test 8b1150d0486c4848c70d96422513a91c5342be0e
+F test/tclsqlite.test bf4227eb236a4c097aa7974a2bf7d3225acf34be
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
@@ -760,14 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bc1101179abb4577417c971a7e4fbacde50e19a2
-R cf79a35faaf03c97023abaa3e5d4feea
+P f894ebf86d6bafcd1461f104f5f677b3b6a3aa1a
+R 78a04730a8c7b7cebc1d3f47c09f5bfa
 U drh
-Z 47b9b31e4d3789db641a51e6b331e60b
+Z 3c7266f38200d8f31bd2e5d5281dbd3f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1J/8oxKgR168RlERAuH0AJ9TgUqhzQCMtbf9WjHdu/bdlto6igCcCET5
-2WPnZ+F+7rlkdtMtAJR9Ka8=
-=MjzV
+iD8DBQFK1MktoxKgR168RlERAgM/AJ4tDelhAOqaGTX4bLzzaDCACDLesACgirtD
+K1/iBwAIRLX5JOdd5czm15s=
+=ULek
 -----END PGP SIGNATURE-----

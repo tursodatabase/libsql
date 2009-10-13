@@ -1415,6 +1415,7 @@ static Tcl_Obj *dbEvalColumnValue(DbEvalContext *p, int iCol){
 ** This allows stubs-enabled builds to be used with older Tcl libraries.
 */
 #if TCL_MAJOR_VERSION>8 || (TCL_MAJOR_VERSION==8 && TCL_MINOR_VERSION>=6)
+# define SQLITE_TCL_NRE 1
 static int DbUseNre(void){
   int major, minor;
   Tcl_GetVersion(&major, &minor, 0, 0);
@@ -1430,6 +1431,7 @@ static int DbUseNre(void){
 **
 **   if( DbUseNre() ) { ... }
 */
+# define SQLITE_TCL_NRE 0
 # define DbUseNre() 0
 # define Tcl_NRAddCallback(a,b,c,d,e,f) 0
 # define Tcl_NREvalObj(a,b,c) 0
@@ -2764,6 +2766,21 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   return rc;
 }
 
+#if SQLITE_TCL_NRE
+/*
+** Adaptor that provides an objCmd interface to the NRE-enabled
+** interface implementation.
+*/
+static int DbObjCmdAdaptor(
+  void *cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *const*objv
+){
+  return Tcl_NRCallObjProc(interp, DbObjCmd, cd, objc, objv);
+}
+#endif /* SQLITE_TCL_NRE */
+
 /*
 **   sqlite3 DBNAME FILENAME ?-vfs VFSNAME? ?-key KEY? ?-readonly BOOLEAN?
 **                           ?-create BOOLEAN? ?-nomutex BOOLEAN?
@@ -2907,7 +2924,8 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   p->interp = interp;
   zArg = Tcl_GetStringFromObj(objv[1], 0);
   if( DbUseNre() ){
-    Tcl_NRCreateCommand(interp, zArg, 0, DbObjCmd, (char*)p, DbDeleteCmd);
+    Tcl_NRCreateCommand(interp, zArg, DbObjCmdAdaptor, DbObjCmd,
+                        (char*)p, DbDeleteCmd);
   }else{
     Tcl_CreateObjCommand(interp, zArg, DbObjCmd, (char*)p, DbDeleteCmd);
   }
