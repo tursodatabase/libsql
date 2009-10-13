@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C When\sa\swrite\stransaction\sfails\sto\sbeing\sbecause\sthe\sdatabase\sis\sread-only,\nfail\sright\saway.\s\sDo\snot\sgive\sthe\serror\scode\san\sopportunity\sto\sbe\noverwritten\swith\sSQLITE_OK.\s\sTicket\s[5ee23731f15].
-D 2009-10-13T15:36:52
+C Add\sa\stest\scase\sto\sverify\sthat\sticket\s[5ee23731f15]\shas\sbeen\sfixed.
+D 2009-10-13T15:42:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -591,6 +591,7 @@ F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
+F test/tkt-5ee23731f.test c3034ce245ffc0da1bb8dbae8397f255ee65ca97
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
 F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
@@ -759,14 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5d381daa6e5248ec171aa682e2dad058d4012f24
-R 82aefe732ff2b55891702d5cb2bd1d26
+P bc1101179abb4577417c971a7e4fbacde50e19a2
+R cf79a35faaf03c97023abaa3e5d4feea
 U drh
-Z f616115b8c448ae264a6a089ef3b0977
+Z 47b9b31e4d3789db641a51e6b331e60b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1J6boxKgR168RlERAo9iAJ9WIMlx71E2TQm57QHZDmfdzis5XgCePK7n
-LwSyII4j0UCsbTnAweHtMWg=
-=DxJy
+iD8DBQFK1J/8oxKgR168RlERAuH0AJ9TgUqhzQCMtbf9WjHdu/bdlto6igCcCET5
+2WPnZ+F+7rlkdtMtAJR9Ka8=
+=MjzV
 -----END PGP SIGNATURE-----
