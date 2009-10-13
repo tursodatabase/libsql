@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\smem3.c\sreleases\sits\smutex\son\san\ssqlite3_shutdown()\scall.
-D 2009-10-13T12:48:44
+C Suppress\ssome\sharmless\scompiler\swarnings.
+D 2009-10-13T13:08:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -102,7 +102,7 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c ee4c8b09a91cf1b11ad9c2b0768bac939825212a
+F src/alter.c 9e4b52e6b1d3a26242cf2ce680c9fce801f00aa1
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
 F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
 F src/auth.c a5471a6951a18f79d783da34be22cd94dfbe603a
@@ -119,7 +119,7 @@ F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 308e300d599d2d11b838687e2cf7309d42f29a1a
 F src/expr.c c7f3f718bd5c392344ec8694a41c1824f30cf375
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
-F src/fkey.c 34ee2b0d60cc52f05dd6a205ce843c248096b509
+F src/fkey.c 41219cba186bcf0a053e42327dfa23aaba4f834a
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
 F src/global.c 271952d199a8cc59d4ce840b3bbbfd2f30c8ba32
 F src/hash.c ebcaa921ffd9d86f7ea5ae16a0a29d1c871130a7
@@ -759,14 +759,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c85e58743a87bfbea6376c237e5e3a6909184f6c
-R a902a0fe985d2575bdd2782dd262b00c
+P 16254ad5aad355acedf72e0a1c618438041d5889
+R 4f8e7e65dc8d019f2765d8b855b372d8
 U drh
-Z a64e368a46129d4427b7420c167ae3ed
+Z 4b1e05ae87c2ba51322519f78eeb4596
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1HcvoxKgR168RlERAqsWAJ9B814s15aSPNqsw8HsHqOb8i/sTACfeLLK
-dUTrxepp/dbHpcTob2brPfQ=
-=MDr4
+iD8DBQFK1HvGoxKgR168RlERAnAxAKCA0AURoDspoLahsP60GNKqD6FfcACbBQn5
+JrHiMxbaVUJo9UuTfq5SOxQ=
+=D6iI
 -----END PGP SIGNATURE-----

@@ -498,8 +498,9 @@ static void fkScanChildren(
       /* Set the collation sequence and affinity of the LHS of each TK_EQ
       ** expression to the parent key column defaults.  */
       if( pIdx ){
-        int iCol = pIdx->aiColumn[i];
-        Column *pCol = &pIdx->pTable->aCol[iCol];
+        Column *pCol;
+        iCol = pIdx->aiColumn[i];
+        pCol = &pIdx->pTable->aCol[iCol];
         pLeft->iTable = regData+iCol+1;
         pLeft->affinity = pCol->affinity;
         pLeft->pColl = sqlite3LocateCollSeq(pParse, pCol->zColl);
@@ -957,7 +958,7 @@ static Trigger *fkActionTrigger(
     int nFrom;                    /* Length in bytes of zFrom */
     Index *pIdx = 0;              /* Parent key index for this FK */
     int *aiCol = 0;               /* child table cols -> parent key cols */
-    TriggerStep *pStep;           /* First (only) step of trigger program */
+    TriggerStep *pStep = 0;        /* First (only) step of trigger program */
     Expr *pWhere = 0;             /* WHERE clause of trigger step */
     ExprList *pList = 0;          /* Changes list if ON UPDATE CASCADE */
     Select *pSelect = 0;          /* If RESTRICT, "SELECT RAISE(...)" */
