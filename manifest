@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sconfigure\sscript\sfor\sversion\s3.6.19.
-D 2009-10-13T22:47:14
+C Version\s3.6.19\srelease\scandidate
+D 2009-10-14T11:33:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -760,14 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e0aa50c382a56bb02eaa589619b7e670006a26b3
+P ac19dbc6a208be2313e47cbcc0b2a0d8d04bae4c
 R 989a9468e4db33fc4015d0bb3c927c8c
 U drh
-Z c77a8e5a43c18f81fc9e77746a757c2f
+Z c68f3421f3f8fb97175ced03120a9234
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1QN1oxKgR168RlERAn/sAJ9vbDrnCZ7KOoePeG7szvgL88BcfgCfX65X
-qgkufBDaXyePEjW7csi+INo=
-=HJKG
+iD8DBQFK1bcmoxKgR168RlERAqQ5AJ9xUtHzhAMNU+bXzeO3SQg1Qu58qgCZARPR
+8o61exV/iSWvw1xrcHTiCMo=
+=4tvm
 -----END PGP SIGNATURE-----
