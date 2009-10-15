@@ -323,6 +323,9 @@ struct Vdbe {
 #endif
   VdbeFrame *pFrame;      /* Parent frame */
   int nFrame;             /* Number of frames in pFrame list */
+  u8 optimizable;         /* True if VM may benefit from sqlite3_reoptimize() */
+  u32 optmask;            /* Bitmask of vars that may be used by reoptimize() */
+  u32 expmask;            /* Binding to these vars invalidates VM */
 };
 
 /*
@@ -388,6 +391,7 @@ int sqlite3VdbeFrameRestore(VdbeFrame *);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
 int sqlite3VdbeReleaseBuffers(Vdbe *p);
 #endif
+void sqlite3VdbeMemStoreType(Mem *pMem);
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY
 int sqlite3VdbeCheckFk(Vdbe *, int);

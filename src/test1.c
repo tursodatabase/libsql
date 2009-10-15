@@ -2050,6 +2050,34 @@ static int test_stmt_status(
 }
 
 /*
+** Usage:  sqlite3_reoptimize  STMT
+**
+** Call sqlite3_reoptimize() on the statement handle passed as the
+** only parameter. Return a string representing the value returned by
+** sqlite3_reoptimize - "SQLITE_OK", "SQLITE_MISUSE" etc.
+*/
+static int test_reoptimize(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  sqlite3_stmt *pStmt;
+  int rc;
+
+  if( objc!=2 ){
+    Tcl_AppendResult(interp, "wrong # args: should be \"", 
+       Tcl_GetString(objv[0]), " STMT", 0);
+    return TCL_ERROR;
+  }
+  if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  rc = sqlite3_reoptimize(pStmt);
+  Tcl_ResetResult(interp);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), 0);
+  return TCL_OK;
+}
+
+/*
 ** Usage:  sqlite3_next_stmt  DB  STMT
 **
 ** Return the next statment in sequence after STMT.
@@ -3303,6 +3331,7 @@ static int test_prepare(
   if( Tcl_GetIntFromObj(interp, objv[3], &bytes) ) return TCL_ERROR;
 
   rc = sqlite3_prepare(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
+  Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( zTail && objc>=5 ){
     if( bytes>=0 ){
@@ -3360,6 +3389,7 @@ static int test_prepare_v2(
 
   rc = sqlite3_prepare_v2(db, zSql, bytes, &pStmt, objc>=5 ? &zTail : 0);
   assert(rc==SQLITE_OK || pStmt==0);
+  Tcl_ResetResult(interp);
   if( sqlite3TestErrCode(interp, db, rc) ) return TCL_ERROR;
   if( zTail && objc>=5 ){
     if( bytes>=0 ){
@@ -5001,6 +5031,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
      { "sqlite3_step",                  test_step          ,0 },
      { "sqlite3_sql",                   test_sql           ,0 },
      { "sqlite3_next_stmt",             test_next_stmt     ,0 },
+     { "sqlite3_reoptimize",            test_reoptimize    ,0 },
 
      { "sqlite3_release_memory",        test_release_memory,     0},
      { "sqlite3_soft_heap_limit",       test_soft_heap_limit,    0},
