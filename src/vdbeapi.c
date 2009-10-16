@@ -914,6 +914,21 @@ static int vdbeUnbind(Vdbe *p, int i){
   sqlite3VdbeMemRelease(pVar);
   pVar->flags = MEM_Null;
   sqlite3Error(p->db, SQLITE_OK, 0);
+
+  /* If the bit corresponding to this variable is set in Vdbe.opmask, set 
+  ** the optimizable flag before returning. This tells the sqlite3_reoptimize()
+  ** function that the VM program may benefit from recompilation. 
+  **
+  ** If the bit in Vdbe.expmask is set, then binding a new value to this
+  ** variable invalidates the current query plan. This comes about when the
+  ** variable is the RHS of a LIKE or GLOB operator and the LIKE/GLOB is
+  ** able to use an index.  */
+  if( (i<32 && p->optmask & ((u32)1 << i)) || p->optmask==0xffffffff ){
+    p->optimizable = 1;
+  }
+  if( (i<32 && p->expmask & ((u32)1 << i)) || p->expmask==0xffffffff ){
+    p->expired = 1;
+  }
   return SQLITE_OK;
 }
 
@@ -1205,3 +1220,25 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   if( resetFlag ) pVdbe->aCounter[op-1] = 0;
   return v;
 }
+
+/*
+** If possible, optimize the statement for the current bindings.
+*/
+int sqlite3_reoptimize(sqlite3_stmt *pStmt){
+  int rc = SQLITE_OK;
+  Vdbe *v = (Vdbe *)pStmt;
+  sqlite3 *db = v->db;
+
+  sqlite3_mutex_enter(db->mutex);
+  if( v->isPrepareV2==0 || v->pc>0 ){
+    rc = SQLITE_MISUSE;
+  }else if( v->optimizable ){
+    rc = sqlite3Reprepare(v);
+    rc = sqlite3ApiExit(db, rc);
+  }
+  assert( rc!=SQLITE_OK || v->optimizable==0 );
+  sqlite3_mutex_leave(db->mutex);
+
+  return rc;
+}
+

@@ -5744,6 +5744,15 @@ int sqlite3_unlock_notify(
 int sqlite3_strnicmp(const char *, const char *, int);
 
 /*
+** CAPI3REF: Optimizing for Bound Parameters
+** EXPERIMENTAL
+**
+** If possible, optimize the SQL statement passed as the only argument
+** for the values currently bound to the statements SQL variables.
+*/
+int sqlite3_reoptimize(sqlite3_stmt *pStmt);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */
