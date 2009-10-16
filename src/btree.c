@@ -90,22 +90,24 @@ int sqlite3_enable_shared_cache(int enable){
 
 #ifdef SQLITE_DEBUG
 /*
-** This function is only used as part of an assert() statement. It checks
-** that connection p holds the required locks to read or write to the 
-** b-tree with root page iRoot. If so, true is returned. Otherwise, false. 
-** For example, when writing to a table b-tree with root-page iRoot via 
+**** This function is only used as part of an assert() statement. ***
+**
+** Check to see if pBtree holds the required locks to read or write to the 
+** table with root page iRoot.   Return 1 if it does and 0 if not.
+**
+** For example, when writing to a table with root-page iRoot via 
 ** Btree connection pBtree:
 **
 **    assert( hasSharedCacheTableLock(pBtree, iRoot, 0, WRITE_LOCK) );
 **
-** When writing to an index b-tree that resides in a sharable database, the 
+** When writing to an index that resides in a sharable database, the 
 ** caller should have first obtained a lock specifying the root page of
-** the corresponding table b-tree. This makes things a bit more complicated,
-** as this module treats each b-tree as a separate structure. To determine
-** the table b-tree corresponding to the index b-tree being written, this
+** the corresponding table. This makes things a bit more complicated,
+** as this module treats each table as a separate structure. To determine
+** the table corresponding to the index being written, this
 ** function has to search through the database schema.
 **
-** Instead of a lock on the b-tree rooted at page iRoot, the caller may
+** Instead of a lock on the table/index rooted at page iRoot, the caller may
 ** hold a write-lock on the schema table (root page 1). This is also
 ** acceptable.
 */
@@ -119,17 +121,22 @@ static int hasSharedCacheTableLock(
   Pgno iTab = 0;
   BtLock *pLock;
 
-  /* If this b-tree database is not shareable, or if the client is reading
+  /* If this database is not shareable, or if the client is reading
   ** and has the read-uncommitted flag set, then no lock is required. 
-  ** In these cases return true immediately.  If the client is reading 
-  ** or writing an index b-tree, but the schema is not loaded, then return
-  ** true also. In this case the lock is required, but it is too difficult
-  ** to check if the client actually holds it. This doesn't happen very
-  ** often.  */
+  ** Return true immediately.
+  */
   if( (pBtree->sharable==0)
    || (eLockType==READ_LOCK && (pBtree->db->flags & SQLITE_ReadUncommitted))
-   || (isIndex && (!pSchema || (pSchema->flags&DB_SchemaLoaded)==0 ))
   ){
+    return 1;
+  }
+
+  /* If the client is reading  or writing an index and the schema is
+  ** not loaded, then it is too difficult to actually check to see if
+  ** the correct locks are held.  So do not bother - just return true.
+  ** This case does not come up very often anyhow.
+  */
+  if( isIndex && (!pSchema || (pSchema->flags&DB_SchemaLoaded)==0) ){
     return 1;
   }
 
@@ -164,14 +171,24 @@ static int hasSharedCacheTableLock(
   /* Failed to find the required lock. */
   return 0;
 }
+#endif /* SQLITE_DEBUG */
 
+#ifdef SQLITE_DEBUG
 /*
-** This function is also used as part of assert() statements only. It 
-** returns true if there exist one or more cursors open on the table 
-** with root page iRoot that do not belong to either connection pBtree 
-** or some other connection that has the read-uncommitted flag set.
+**** This function may be used as part of assert() statements only. ****
 **
-** For example, before writing to page iRoot:
+** Return true if it would be illegal for pBtree to write into the
+** table or index rooted at iRoot because other shared connections are
+** simultaneously reading that same table or index.
+**
+** It is illegal for pBtree to write if some other Btree object that
+** shares the same BtShared object is currently reading or writing
+** the iRoot table.  Except, if the other Btree object has the
+** read-uncommitted flag set, then it is OK for the other object to
+** have a read cursor.
+**
+** For example, before writing to any part of the table or index
+** rooted at page iRoot, one should call:
 **
 **    assert( !hasReadConflicts(pBtree, iRoot) );
 */
@@ -190,7 +207,7 @@ static int hasReadConflicts(Btree *pBtree, Pgno iRoot){
 #endif    /* #ifdef SQLITE_DEBUG */
 
 /*
-** Query to see if btree handle p may obtain a lock of type eLock 
+** Query to see if Btree handle p may obtain a lock of type eLock 
 ** (READ_LOCK or WRITE_LOCK) on the table with root-page iTab. Return
 ** SQLITE_OK if the lock may be obtained (by calling
 ** setSharedCacheTableLock()), or SQLITE_LOCKED if not.
@@ -211,7 +228,7 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
   assert( eLock==READ_LOCK || (p==pBt->pWriter && p->inTrans==TRANS_WRITE) );
   assert( eLock==READ_LOCK || pBt->inTransaction==TRANS_WRITE );
   
-  /* This is a no-op if the shared-cache is not enabled */
+  /* This routine is a no-op if the shared-cache is not enabled */
   if( !p->sharable ){
     return SQLITE_OK;
   }
@@ -257,10 +274,10 @@ static int querySharedCacheTableLock(Btree *p, Pgno iTab, u8 eLock){
 **
 ** This function assumes the following:
 **
-**   (a) The specified b-tree connection handle is connected to a sharable
-**       b-tree database (one with the BtShared.sharable) flag set, and
+**   (a) The specified Btree object p is connected to a sharable
+**       database (one with the BtShared.sharable flag set), and
 **
-**   (b) No other b-tree connection handle holds a lock that conflicts
+**   (b) No other Btree objects hold a lock that conflicts
 **       with the requested lock (i.e. querySharedCacheTableLock() has
 **       already been called and returned SQLITE_OK).
 **
@@ -325,9 +342,9 @@ static int setSharedCacheTableLock(Btree *p, Pgno iTable, u8 eLock){
 #ifndef SQLITE_OMIT_SHARED_CACHE
 /*
 ** Release all the table locks (locks obtained via calls to
-** the setSharedCacheTableLock() procedure) held by Btree handle p.
+** the setSharedCacheTableLock() procedure) held by Btree object p.
 **
-** This function assumes that handle p has an open read or write 
+** This function assumes that Btree p has an open read or write 
 ** transaction. If it does not, then the BtShared.isPending variable
 ** may be incorrectly cleared.
 */
@@ -360,7 +377,7 @@ static void clearAllSharedCacheTableLocks(Btree *p){
     pBt->isExclusive = 0;
     pBt->isPending = 0;
   }else if( pBt->nTransaction==2 ){
-    /* This function is called when connection p is concluding its 
+    /* This function is called when Btree p is concluding its 
     ** transaction. If there currently exists a writer, and p is not
     ** that writer, then the number of locks held by connections other
     ** than the writer must be about to drop to zero. In this case
@@ -374,7 +391,7 @@ static void clearAllSharedCacheTableLocks(Btree *p){
 }
 
 /*
-** This function changes all write-locks held by connection p to read-locks.
+** This function changes all write-locks held by Btree p into read-locks.
 */
 static void downgradeAllSharedCacheTableLocks(Btree *p){
   BtShared *pBt = p->pBt;
@@ -395,9 +412,11 @@ static void downgradeAllSharedCacheTableLocks(Btree *p){
 static void releasePage(MemPage *pPage);  /* Forward reference */
 
 /*
-** Verify that the cursor holds a mutex on the BtShared
+***** This routine is used inside of assert() only ****
+**
+** Verify that the cursor holds the mutex on its BtShared
 */
-#ifndef NDEBUG
+#ifdef SQLITE_DEBUG
 static int cursorHoldsMutex(BtCursor *p){
   return sqlite3_mutex_held(p->pBt->mutex);
 }
@@ -428,7 +447,7 @@ static void invalidateAllOverflowCache(BtShared *pBt){
 
 /*
 ** This function is called before modifying the contents of a table
-** b-tree to invalidate any incrblob cursors that are open on the
+** to invalidate any incrblob cursors that are open on the
 ** row or one of the rows being modified.
 **
 ** If argument isClearTable is true, then the entire contents of the
@@ -437,7 +456,7 @@ static void invalidateAllOverflowCache(BtShared *pBt){
 **
 ** Otherwise, if argument isClearTable is false, then the row with
 ** rowid iRow is being replaced or deleted. In this case invalidate
-** only those incrblob cursors open on this specific row.
+** only those incrblob cursors open on that specific row.
 */
 static void invalidateIncrblobCursors(
   Btree *pBtree,          /* The database file to check */
@@ -455,10 +474,11 @@ static void invalidateIncrblobCursors(
 }
 
 #else
+  /* Stub functions when INCRBLOB is omitted */
   #define invalidateOverflowCache(x)
   #define invalidateAllOverflowCache(x)
   #define invalidateIncrblobCursors(x,y,z)
-#endif
+#endif /* SQLITE_OMIT_INCRBLOB */
 
 /*
 ** Set bit pgno of the BtShared.pHasContent bitvec. This is called 
@@ -491,7 +511,7 @@ static void invalidateIncrblobCursors(
 ** The solution is the BtShared.pHasContent bitvec. Whenever a page is 
 ** moved to become a free-list leaf page, the corresponding bit is
 ** set in the bitvec. Whenever a leaf page is extracted from the free-list,
-** optimization 2 above is ommitted if the corresponding bit is already
+** optimization 2 above is omitted if the corresponding bit is already
 ** set in BtShared.pHasContent. The contents of the bitvec are cleared
 ** at the end of every transaction.
 */
@@ -587,8 +607,8 @@ static int saveCursorPosition(BtCursor *pCur){
 }
 
 /*
-** Save the positions of all cursors except pExcept open on the table 
-** with root-page iRoot. Usually, this is called just before cursor
+** Save the positions of all cursors (except pExcept) that are open on
+** the table  with root-page iRoot. Usually, this is called just before cursor
 ** pExcept is used to modify the table (BtreeDelete() or BtreeInsert()).
 */
 static int saveAllCursors(BtShared *pBt, Pgno iRoot, BtCursor *pExcept){
@@ -993,7 +1013,10 @@ static u16 cellSizePtr(MemPage *pPage, u8 *pCell){
   assert( nSize==debuginfo.nSize );
   return (u16)nSize;
 }
-#ifndef NDEBUG
+
+#ifdef SQLITE_DEBUG
+/* This variation on cellSizePtr() is used inside of assert() statements
+** only. */
 static u16 cellSize(MemPage *pPage, int iCell){
   return cellSizePtr(pPage, findCell(pPage, iCell));
 }
