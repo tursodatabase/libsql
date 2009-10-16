@@ -2855,6 +2855,7 @@ case OP_SetCookie: {       /* in3 */
     /* Invalidate all prepared statements whenever the TEMP database
     ** schema is changed.  Ticket #1644 */
     sqlite3ExpirePreparedStatements(db);
+    p->expired = 0;
   }
   break;
 }
@@ -2971,6 +2972,11 @@ case OP_OpenWrite: {
   Btree *pX;
   VdbeCursor *pCur;
   Db *pDb;
+
+  if( p->expired ){
+    rc = SQLITE_ABORT;
+    break;
+  }
 
   nField = 0;
   pKeyInfo = 0;

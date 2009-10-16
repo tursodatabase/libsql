@@ -2965,18 +2965,13 @@ int sqlite3BtreeCommitPhaseOne(Btree *p, const char *zMaster){
 */
 static void btreeEndTransaction(Btree *p){
   BtShared *pBt = p->pBt;
-  BtCursor *pCsr;
   assert( sqlite3BtreeHoldsMutex(p) );
 
-  /* Search for a cursor held open by this b-tree connection. If one exists,
-  ** then the transaction will be downgraded to a read-only transaction
-  ** instead of actually concluded. A subsequent call to CommitPhaseTwo() 
-  ** or Rollback() will finish the transaction and unlock the database.  */
-  for(pCsr=pBt->pCursor; pCsr && pCsr->pBtree!=p; pCsr=pCsr->pNext);
-  assert( pCsr==0 || p->inTrans>TRANS_NONE );
-
   btreeClearHasContent(pBt);
-  if( pCsr ){
+  if( p->inTrans>TRANS_NONE && p->db->activeVdbeCnt>1 ){
+    /* If there are other active statements that belong to this database
+    ** handle, downgrade to a read-only transaction. The other statements
+    ** may still be reading from the database.  */
     downgradeAllSharedCacheTableLocks(p);
     p->inTrans = TRANS_READ;
   }else{
