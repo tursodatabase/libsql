@@ -1,5 +1,5 @@
-C Add\sthe\sexperimental\ssqlite3_reoptimize()\sAPI.
-D 2009-10-15T18:35:39
+C Remove\sa\smutex\sreference\sleak\sfrom\ssqlite3_reoptimize().
+D 2009-10-16T15:19:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +209,7 @@ F src/vacuum.c 869d08eaab64e2a4eaf4ef9ea34b851892b65a75
 F src/vdbe.c a03993ed188c9b2c575766dfe2b8cdc9f0bd2262
 F src/vdbe.h 1fb725c38df7f79dc60e9a61cb368152d9457e3c
 F src/vdbeInt.h aafda2e9761298e12ef0a3e8b5caed9aaf9c7592
-F src/vdbeapi.c 7de617aceb19563b2409c101ee4b2d6702e64d1b
+F src/vdbeapi.c a7669f434f1fb53457343e7e85d06d695f7bb4e8
 F src/vdbeaux.c bd26b3c765dff7c0bc089f550d82510a37f24d6a
 F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
 F src/vdbemem.c 7055a2941a7802094f4704cedc7a28cc88a23749
@@ -758,7 +758,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c1d499afc50d54b376945b4efb65c56c787a073d
-R e61b2301a45df21e4dc30b9f4d342cf1
+P 9bd6f3d8864d422fe42074688b191915b27ad8ea
+R 723564f2f75d771b2a25fc5af0a983d9
 U dan
-Z 1f7bbf5e059f514df66c16d9a82a79d8
+Z 39d2326c736939285f79811bc830d90e

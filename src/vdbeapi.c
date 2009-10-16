@@ -1233,8 +1233,6 @@ int sqlite3_reoptimize(sqlite3_stmt *pStmt){
   if( v->isPrepareV2==0 || v->pc>0 ){
     rc = SQLITE_MISUSE;
   }else if( v->optimizable ){
-    sqlite3 *db = v->db;
-    sqlite3_mutex_enter(db->mutex);
     rc = sqlite3Reprepare(v);
     rc = sqlite3ApiExit(db, rc);
   }
