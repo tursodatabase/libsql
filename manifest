@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.6.19\srelease\scandidate
-D 2009-10-14T11:33:55
+C Fix\scomment\stypos\sin\sbtreeInt.h.
+D 2009-10-16T13:23:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c 9c425425784c5d569bc0309c22251698ba906451
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
-F src/btreeInt.h 1c86297e69380f6577e7ae67452597dd8d5c2705
+F src/btreeInt.h cce1c3360cd5549ffa79f981951dfae93118ad79
 F src/build.c 3c5762687d0554ebe8844dfaddb828fcc15fe16d
 F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
@@ -760,14 +760,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ac19dbc6a208be2313e47cbcc0b2a0d8d04bae4c
-R 989a9468e4db33fc4015d0bb3c927c8c
+P c1d499afc50d54b376945b4efb65c56c787a073d
+R cf7ba44c45be9336ed7c2a5c9b298530
 U drh
-Z c68f3421f3f8fb97175ced03120a9234
+Z 27563b519474558dd6b5547423b5bb90
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK1bcmoxKgR168RlERAqQ5AJ9xUtHzhAMNU+bXzeO3SQg1Qu58qgCZARPR
-8o61exV/iSWvw1xrcHTiCMo=
-=4tvm
+iD8DBQFK2HPYoxKgR168RlERAkZuAJ92TotoUKoCIhNfm2FWCGunPPZHjQCfVF36
+HyFlyXF9kYuWkApFgboU+4c=
+=hlwq
 -----END PGP SIGNATURE-----

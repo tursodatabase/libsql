@@ -329,8 +329,8 @@ struct BtLock {
 ** this structure.
 **
 ** For some database files, the same underlying database cache might be 
-** shared between multiple connections.  In that case, each contection
-** has it own pointer to this object.  But each instance of this object
+** shared between multiple connections.  In that case, each connection
+** has it own instance of this object.  But each instance of this object
 ** points to the same BtShared object.  The database cache and the
 ** schema associated with the database file are all contained within
 ** the BtShared object.
@@ -471,7 +471,7 @@ struct CellInfo {
 ** The entry is identified by its MemPage and the index in
 ** MemPage.aCell[] of the entry.
 **
-** When a single database file can shared by two more database connections,
+** A single database file can shared by two more database connections,
 ** but cursors cannot be shared.  Each cursor is associated with a
 ** particular database connection identified BtCursor.pBtree.db.
 **
