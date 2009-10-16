@@ -1,5 +1,5 @@
-C Remove\sa\smutex\sreference\sleak\sfrom\ssqlite3_reoptimize().
-D 2009-10-16T15:19:08
+C Fix\sa\sproblem\sin\sthe\sanalyze3.test\sscript.
+D 2009-10-16T15:59:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -226,7 +226,7 @@ F test/alter4.test 9386ffd1e9c7245f43eca412b2058d747509cc1f
 F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test ad5329098fe4de4a96852231d53e3e9e6283ad4b
 F test/analyze2.test a2ad7b0a4e13801ee3968fe70f22aff52326569c
-F test/analyze3.test 030efdbb019e0246b43ff0040559ab8da2cd1d35
+F test/analyze3.test 2f00779be9c1637dd72793de755a17722995d836
 F test/async.test 8c75d31b8330f8b70cf2571b014d4476a063efdb
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
@@ -758,7 +758,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9bd6f3d8864d422fe42074688b191915b27ad8ea
-R 723564f2f75d771b2a25fc5af0a983d9
+P 9f0937066184421f23453ceb451fd726c75cb593
+R 86e25f1b6a52bb9c63882796d734f555
 U dan
-Z 39d2326c736939285f79811bc830d90e
+Z fec49abff05b5e5ceea062664695ce9e

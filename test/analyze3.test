@@ -317,7 +317,7 @@ do_test analyze3-3.2.1 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.2.2 {
-  sqlite3_bind_text $S 1 "abc" -1
+  sqlite3_bind_text $S 1 "abc" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.2.3 {
@@ -332,7 +332,7 @@ do_test analyze3-3.2.1 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.2.2 {
-  sqlite3_bind_text $S 1 "abc" -1
+  sqlite3_bind_text $S 1 "abc" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.2.3 {
@@ -370,15 +370,15 @@ do_test analyze3-3.4.1 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.4.2 {
-  sqlite3_bind_text $S 1 "abc" -1
+  sqlite3_bind_text $S 1 "abc" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.4.3 {
-  sqlite3_bind_text $S 2 "def" -1
+  sqlite3_bind_text $S 2 "def" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.4.4 {
-  sqlite3_bind_text $S 2 "ghi" -1
+  sqlite3_bind_text $S 2 "ghi" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.4.5 {
@@ -399,11 +399,11 @@ do_test analyze3-3.5.1 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.5.2 {
-  sqlite3_bind_text $S 31 "abc" -1
+  sqlite3_bind_text $S 31 "abc" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.5.3 {
-  sqlite3_bind_text $S 32 "def" -1
+  sqlite3_bind_text $S 32 "def" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.5.4 {
@@ -424,11 +424,11 @@ do_test analyze3-3.6.1 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.6.2 {
-  sqlite3_bind_text $S 32 "abc" -1
+  sqlite3_bind_text $S 32 "abc" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.6.3 {
-  sqlite3_bind_text $S 33 "def" -1
+  sqlite3_bind_text $S 33 "def" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.6.4 {
@@ -450,15 +450,15 @@ breakpoint
   test_reoptimize $S
 } {0}
 do_test analyze3-3.7.2 {
-  sqlite3_bind_text $S 32 "abc" -1
+  sqlite3_bind_text $S 32 "abc" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.7.3 {
-  sqlite3_bind_text $S 33 "def" -1
+  sqlite3_bind_text $S 33 "def" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.7.4 {
-  sqlite3_bind_text $S 10 "def" -1
+  sqlite3_bind_text $S 10 "def" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.7.5 {
@@ -481,11 +481,11 @@ do_test analyze3-3.8.2 {
   test_reoptimize $S
 } {0}
 do_test analyze3-3.8.3 {
-  sqlite3_bind_text $S 1 "abc" -1
+  sqlite3_bind_text $S 1 "abc" 3
   test_reoptimize $S
 } {0}
 do_test analyze3-3.8.4 {
-  sqlite3_bind_text $S 2 "def" -1
+  sqlite3_bind_text $S 2 "def" 3
   test_reoptimize $S
 } {1}
 do_test analyze3-3.8.5 {
@@ -495,28 +495,28 @@ do_test analyze3-3.8.6 {
   sqlite3_expired $S
 } {0}
 do_test analyze3-3.8.7 {
-  sqlite3_bind_text $S 2 "ghi%" -1
+  sqlite3_bind_text $S 2 "ghi%" 4
   sqlite3_expired $S
 } {0}
 do_test analyze3-3.8.8 {
   test_reoptimize $S
 } {1}
 do_test analyze3-3.8.9 {
-  sqlite3_bind_text $S 2 "ghi%def" -1
+  sqlite3_bind_text $S 2 "ghi%def" 7
   sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.10 {
   test_reoptimize $S
 } {1}
 do_test analyze3-3.8.11 {
-  sqlite3_bind_text $S 2 "%ab" -1
+  sqlite3_bind_text $S 2 "%ab" 3
   sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.12 {
   test_reoptimize $S
 } {1}
 do_test analyze3-3.8.12 {
-  sqlite3_bind_text $S 2 "%de" -1
+  sqlite3_bind_text $S 2 "%de" 3
   sqlite3_expired $S
 } {0}
 do_test analyze3-3.8.13 {
@@ -538,7 +538,7 @@ do_test analyze3-4.1.1 {
   sqlite3_reoptimize $S
 } {SQLITE_OK}
 do_test analyze3-4.1.2 {
-  sqlite3_bind_text $S 2 "abc" -1
+  sqlite3_bind_text $S 2 "abc" 3
   execsql { DROP TABLE t1 }
   sqlite3_reoptimize $S
 } {SQLITE_SCHEMA}
@@ -571,7 +571,7 @@ proc auth {args} {
   return SQLITE_OK
 }
 do_test analyze3-4.2.2 {
-  sqlite3_bind_text $S 2 "abc" -1
+  sqlite3_bind_text $S 2 "abc" 3
   sqlite3_reoptimize $S
 } {SQLITE_SCHEMA}
 do_test analyze3-4.2.3 {
