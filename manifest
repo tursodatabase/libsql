@@ -1,5 +1,8 @@
-C Add\sdocumentation\scomment\sfor\snew\sexperimental\sAPI\ssqlite3_reoptimize().
-D 2009-10-17T08:26:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthe\starget\sregister\sis\sallocated\sbefore\sadding\sthe\sbogus\nOP_Variable\sopcode\sin\sisLikeOrGlob().\s\sBugfix\sfor\sthe\snew\s\nsqlite3_reoptimize()\slogic.
+D 2009-10-17T13:13:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -215,7 +218,7 @@ F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
 F src/vdbemem.c 7055a2941a7802094f4704cedc7a28cc88a23749
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c 10b4796d864701376054cd5aad1c71c87cb76bd9
+F src/where.c 896ec4cd8c5f8d065d793abcf126856ddb6968b4
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -759,7 +762,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
-P 50136840d54674c239613265ebbacaabf215f4e2
-R 5de4b5101d2b013b4025a529eae51e36
-U dan
-Z bf4ddda16bc29b0c76b51c9255043fe9
+P c48f8ffedc30841aa4994eb925d09c2ee97a864d
+R f17b2afdf09b0b0d01056de06fcd1378
+U drh
+Z ac983319e6aad7dc98626d6a8e648957
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK2cLioxKgR168RlERAv9oAJ4opL0Af0SoiPR24UYMA3ZaQjnDHACcDVUR
+K7VhvxHq9I+RS9keLZ2Wv6E=
+=BhjO
+-----END PGP SIGNATURE-----

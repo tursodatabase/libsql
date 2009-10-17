@@ -695,9 +695,12 @@ static int isLikeOrGlob(
           ** value of the variable means there is no need to invoke the LIKE
           ** function, then no OP_Variable will be added to the program.
           ** This causes problems for the sqlite3_bind_parameter_name()
-          ** API. To workaround them, add a dummy OP_Variable here.  */ 
-          sqlite3ExprCodeTarget(pParse, pRight, 1);
+          ** API. To workaround them, add a dummy OP_Variable here.
+          */ 
+          int r1 = sqlite3GetTempReg(pParse);
+          sqlite3ExprCodeTarget(pParse, pRight, r1);
           sqlite3VdbeChangeP3(v, sqlite3VdbeCurrentAddr(v)-1, 0);
+          sqlite3ReleaseTempReg(pParse, r1);
         }
       }
     }else{
