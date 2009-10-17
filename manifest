@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sthe\starget\sregister\sis\sallocated\sbefore\sadding\sthe\sbogus\nOP_Variable\sopcode\sin\sisLikeOrGlob().\s\sBugfix\sfor\sthe\snew\s\nsqlite3_reoptimize()\slogic.
-D 2009-10-17T13:13:02
+C Fix\sa\sproblem\sin\sthe\sicu.test\sscript.
+D 2009-10-17T14:19:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -404,7 +401,7 @@ F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 4eca9d345f06d5b0b0105f7a2ef9e7f22658827b
 F test/hook.test c9c992f2914977072a71e98df3bfcad1f47737c9
-F test/icu.test f51d0f4407ff8bb1e872f51a0e8b08fdc5a6897e
+F test/icu.test 1fc0ff9a3bafc80abf679b11afc0f8a3ce995abd
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
 F test/in3.test 3cbf58c87f4052cee3a58b37b6389777505aa0c0
@@ -762,14 +759,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
-P c48f8ffedc30841aa4994eb925d09c2ee97a864d
-R f17b2afdf09b0b0d01056de06fcd1378
-U drh
-Z ac983319e6aad7dc98626d6a8e648957
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK2cLioxKgR168RlERAv9oAJ4opL0Af0SoiPR24UYMA3ZaQjnDHACcDVUR
-K7VhvxHq9I+RS9keLZ2Wv6E=
-=BhjO
------END PGP SIGNATURE-----
+P e74f8dc436213b7ef754adcab5ef7554d774474c
+R 526f4f2594b313400514824834c58d50
+U dan
+Z 506ccf08e87e0a1ee5dc78641f8ad030

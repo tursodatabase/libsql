@@ -26,12 +26,12 @@ execsql {CREATE TABLE test1(i1 int, i2 int, r1 real, r2 real, t1 text, t2 text)}
 execsql {INSERT INTO test1 VALUES(1,2,1.1,2.2,'hello','world')}
 proc test_expr {name settings expr result} {
   do_test $name [format {
-    db one {
+    lindex [db eval {
       BEGIN; 
       UPDATE test1 SET %s; 
       SELECT %s FROM test1; 
       ROLLBACK;
-    }
+    }] 0
   } $settings $expr] $result
 }
 
