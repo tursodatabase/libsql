@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sthe\ssqlite3_reoptimize()\schanges\sinto\sthe\strunk.
-D 2009-10-16T16:21:52
+C Add\sdocumentation\scomment\sfor\snew\sexperimental\sAPI\ssqlite3_reoptimize().
+D 2009-10-17T08:26:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +162,7 @@ F src/resolve.c 941843301f6fda6c6350839c6955a172441a0782
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c 1d0a13137532321b4364f964e46f057d271691e3
 F src/shell.c 270231b3f587f1f86391b9994fdfcd5d472c3fdf
-F src/sqlite.h.in f5173e894cc775a30557ec08935d633eecf7c340
+F src/sqlite.h.in 02edbab15c4556dc562f6f6b9b9d322e7719c800
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h cd893f92cc5605943ccf6ac46b46713d5f571e1e
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
@@ -738,38 +735,31 @@ F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
+F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439 x
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
-F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl 69dc8842a88d1f84c141e1a0bd2e42d8e859397f
-F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
-F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
-F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
+F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97 x
+F tool/mksqlite3c.tcl 69dc8842a88d1f84c141e1a0bd2e42d8e859397f x
+F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b x
+F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87 x
+F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a x
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/showdb.c 8ab8b3b53884312aafb7ef60982e255a6c31d238
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
-F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
-F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
-F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
-F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
+F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe x
+F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b x
+F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39 x
+F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355 x
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
-F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
+F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 32966ba4796e70d0afcff6abdda9bdcba08b098a 9f0937066184421f23453ceb451fd726c75cb593 61174aea74db59f6792e275aa366b7f0e1f2270b
-R 61972980031ca23020de60e9d0fbe40d
-U drh
-Z 1bd496ba22406bf1b4185ebae8272187
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK2J2moxKgR168RlERAnBlAJ0TOp4dztyQ8x3H8zZLjMwtg9ofCQCeM/sa
-FdOVdtjuYXVkiT+lGN/mPWo=
-=+vEN
------END PGP SIGNATURE-----
+F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
+P 50136840d54674c239613265ebbacaabf215f4e2
+R 5de4b5101d2b013b4025a529eae51e36
+U dan
+Z bf4ddda16bc29b0c76b51c9255043fe9

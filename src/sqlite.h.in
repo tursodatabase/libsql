@@ -5749,6 +5749,28 @@ int sqlite3_strnicmp(const char *, const char *, int);
 **
 ** If possible, optimize the SQL statement passed as the only argument
 ** for the values currently bound to the statements SQL variables.
+**
+** SQLite currently contains two optimizations that depend upon the values 
+** of SQL literals specified as part of a query:
+**
+** <ul>
+**   <li> The [range query optimization], and 
+**   <li> The [LIKE optimization].
+** </ul>
+**
+** Normally, queries that use an SQL [parameter] in the relevant expression 
+** or expressions may not benefit from either of the above optimizations.
+** This function may be used to overcome this limitation.
+**
+** Calling sqlite3_reoptimize() on a statement handle after values have been
+** bound to its SQL parameters causes SQLite to inspect the query and the
+** bound values to determine if either of the above optimizations may be
+** applied to it. If so, a new query plan is formulated to take advantage
+** of the optimizations.
+**
+** If it is determined that neither of the above optimizations may be
+** profitably applied to the query based on the values bound to SQL 
+** parameters, this function is a no-op.
 */
 int sqlite3_reoptimize(sqlite3_stmt *pStmt);
 
