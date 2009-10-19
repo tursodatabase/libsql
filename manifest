@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sincorrect\sassert()\sin\svdbeUnbind().
-D 2009-10-19T20:15:39
+C Remove\san\sunreachable\scondition\sin\sthe\sWHERE\sclause\sprocessing\sof\sbound\nparameters\sand\sreplace\sit\swith\san\sassert(),\sfor\stest\scoverage.
+D 2009-10-19T22:41:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -218,7 +218,7 @@ F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
 F src/vdbemem.c 7055a2941a7802094f4704cedc7a28cc88a23749
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
-F src/where.c acf24024bc00d84bfb83c82daa1d72a907cc8456
+F src/where.c 937fb6e4d63d8d6133b4eb3589ee00880cd12bd5
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -763,14 +763,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
-P 63bf73452de5a9d03e625e1888444a5355063b74
-R 956b359f0be6fbe2589c1352a6def76d
+P 651c1efb998b34f218694c45865fbe20b837a2ac
+R 2619639fd054d5cd59f66d2af80794d3
 U drh
-Z e4f007308823686e3c4aa7a5da2172d3
+Z f98fcb726ba1bd0ac977580c1890d9aa
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK3MjvoxKgR168RlERAst3AJ9qXwLtZl+qOJYOvpKiQEVbdeUlJQCfV9kG
-5PRbjwEp5yU5b6JZA3ooyMs=
-=h+a9
+iD8DBQFK3OsGoxKgR168RlERAqjvAJ40DyYuZYyj9ebU8QCPdYgdKgW/jQCgiToy
+bbznqWlejrKWFCwUwLi9COI=
+=isjf
 -----END PGP SIGNATURE-----
