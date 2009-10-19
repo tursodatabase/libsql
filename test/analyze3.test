@@ -10,7 +10,8 @@
 #***********************************************************************
 #
 # This file implements regression tests for SQLite library. This file 
-# implements tests for the sqlite3_reoptimize() functionality.
+# implements tests for range and LIKE constraints that use bound variables
+# instead of literal constant arguments.
 #
 
 set testdir [file dirname $argv0]
@@ -32,12 +33,12 @@ ifcapable !stat2 {
 #               in the same way as constants when planning queries that
 #               use LIKE expressions in the WHERE clause.
 #
-# analyze3-3.*: Test that sqlite3_reoptimize() is a no-op when there is
-#               no way for re-preparing the query to produce a superior 
-#               query plan.
+# analyze3-3.*: Test that binding to a variable does not invalidate the 
+#               query plan when there is no way in which replanning the
+#               query may produce a superior outcome.
 #
 # analyze3-4.*: Test that SQL or authorization callback errors occuring
-#               within sqlite3_reoptimize() are handled correctly.
+#               within sqlite3Reprepare() are handled correctly.
 #
 
 proc getvar {varname} { uplevel #0 set $varname }
@@ -69,8 +70,7 @@ proc sf_execsql {sql {db db}} {
 #
 # analyze3-1.1.4 - 3.1.9
 #   Show that using SQL variables produces the same results as using
-#   literal values to constrain the range scan. This works because the
-#   Tcl interface always calls [sqlite3_reoptimize] after binding values.
+#   literal values to constrain the range scan.
 #
 #   These tests also check that the compiler code considers column 
 #   affinities when estimating the number of rows scanned by the "use 
@@ -267,36 +267,15 @@ do_test analyze3-2.5 {
 
 
 #-------------------------------------------------------------------------
-# This block of tests checks that sqlite3_reoptimize() is a no-op if 
-# the values bound to any parameters that may affect the query plan
-# have not changed since the statement was last compiled.
-#
-# It is possible to tell if sqlite3_reoptimize() is a no-op by registering
-# an authorization callback. If the auth callback is not invoked from
-# within a give call to reoptimize(), then it must have been a no-op.
-#
-# Also test that:
-#
-#   * sqlite3_reoptimize() returns SQLITE_MISUSE if called on a statement
-#     that was prepared using the legacy sqlite3_prepare() interface,
-#
-#   * sqlite3_reoptimize() returns SQLITE_MISUSE if called on a statement
-#     that is not in the "reset" state.
+# This block of tests checks that statements are correctly marked as
+# expired when the values bound to any parameters that may affect the 
+# query plan are modified.
 #
 drop_all_tables
 db auth auth
 proc auth {args} {
   set ::auth 1
   return SQLITE_OK
-}
-
-# Return true if calling reoptimize() on the statement handle passed 
-# as an argument causes the statement to be recompiled.
-#
-proc test_reoptimize {stmt} {
-  set ::auth 0
-  sqlite3_reoptimize $stmt
-  set ::auth
 }
 
 do_test analyze3-3.1 {
@@ -314,76 +293,47 @@ do_test analyze3-3.1 {
 
 do_test analyze3-3.2.1 {
   set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE b>?" -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.2.2 {
   sqlite3_bind_text $S 1 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
-do_test analyze3-3.2.3 {
-  test_reoptimize $S
-} {0}
 do_test analyze3-3.2.4 {
   sqlite3_finalize $S
 } {SQLITE_OK}
 
-do_test analyze3-3.2.1 {
+do_test analyze3-3.2.5 {
   set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE b=?" -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
-do_test analyze3-3.2.2 {
+do_test analyze3-3.2.6 {
   sqlite3_bind_text $S 1 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
-do_test analyze3-3.2.3 {
-  sqlite3_finalize $S
-} {SQLITE_OK}
-
-do_test analyze3-3.3.1 {
-  set S [sqlite3_prepare db "SELECT * FROM t1 WHERE b=?" -1 dummy]
-  sqlite3_reoptimize $S
-} {SQLITE_MISUSE}
-do_test analyze3-3.3.2 {
-  sqlite3_finalize $S
-} {SQLITE_OK}
-
-do_test analyze3-3.3.1 {
-  set S [sqlite3_prepare_v2 db "SELECT * FROM t1" -1 dummy]
-  sqlite3_reoptimize $S
-} {SQLITE_OK}
-do_test analyze3-3.3.2 {
-  sqlite3_step $S
-} {SQLITE_ROW}
-do_test analyze3-3.3.3 {
-  sqlite3_reoptimize $S
-} {SQLITE_MISUSE}
-do_test analyze3-3.3.4 {
-  while {"SQLITE_ROW" == [sqlite3_step $S]} {}
-  sqlite3_reoptimize $S
-} {SQLITE_MISUSE}
-do_test analyze3-3.3.5 {
+do_test analyze3-3.2.7 {
   sqlite3_finalize $S
 } {SQLITE_OK}
 
 do_test analyze3-3.4.1 {
   set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE a=? AND b>?" -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.4.2 {
   sqlite3_bind_text $S 1 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.4.3 {
   sqlite3_bind_text $S 2 "def" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.4.4 {
   sqlite3_bind_text $S 2 "ghi" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.4.5 {
-  test_reoptimize $S
-} {0}
+  sqlite3_expired $S
+} {1}
 do_test analyze3-3.4.6 {
   sqlite3_finalize $S
 } {SQLITE_OK}
@@ -396,19 +346,16 @@ do_test analyze3-3.5.1 {
       ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31
     ) AND b>?32;
   } -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.5.2 {
   sqlite3_bind_text $S 31 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.5.3 {
   sqlite3_bind_text $S 32 "def" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
-do_test analyze3-3.5.4 {
-  test_reoptimize $S
-} {0}
 do_test analyze3-3.5.5 {
   sqlite3_finalize $S
 } {SQLITE_OK}
@@ -421,19 +368,16 @@ do_test analyze3-3.6.1 {
       ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32
     ) AND b>?33;
   } -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.6.2 {
   sqlite3_bind_text $S 32 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.6.3 {
   sqlite3_bind_text $S 33 "def" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
-do_test analyze3-3.6.4 {
-  test_reoptimize $S
-} {0}
 do_test analyze3-3.6.5 {
   sqlite3_finalize $S
 } {SQLITE_OK}
@@ -447,23 +391,20 @@ breakpoint
       ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32
     ) AND b>?10;
   } -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.7.2 {
   sqlite3_bind_text $S 32 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.7.3 {
   sqlite3_bind_text $S 33 "def" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.7.4 {
   sqlite3_bind_text $S 10 "def" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
-do_test analyze3-3.7.5 {
-  test_reoptimize $S
-} {0}
 do_test analyze3-3.7.6 {
   sqlite3_finalize $S
 } {SQLITE_OK}
@@ -478,49 +419,43 @@ do_test analyze3-3.8.2 {
   set S [sqlite3_prepare_v2 db {
     SELECT * FROM t4 WHERE x != ? AND y LIKE ?
   } -1 dummy]
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.8.3 {
   sqlite3_bind_text $S 1 "abc" 3
-  test_reoptimize $S
+  sqlite3_expired $S
 } {0}
 do_test analyze3-3.8.4 {
   sqlite3_bind_text $S 2 "def" 3
-  test_reoptimize $S
-} {1}
-do_test analyze3-3.8.5 {
-  test_reoptimize $S
-} {0}
-do_test analyze3-3.8.6 {
   sqlite3_expired $S
-} {0}
+} {1}
 do_test analyze3-3.8.7 {
   sqlite3_bind_text $S 2 "ghi%" 4
   sqlite3_expired $S
-} {0}
+} {1}
 do_test analyze3-3.8.8 {
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.9 {
   sqlite3_bind_text $S 2 "ghi%def" 7
   sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.10 {
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.11 {
   sqlite3_bind_text $S 2 "%ab" 3
   sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.12 {
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.12 {
   sqlite3_bind_text $S 2 "%de" 3
   sqlite3_expired $S
-} {0}
+} {1}
 do_test analyze3-3.8.13 {
-  test_reoptimize $S
+  sqlite3_expired $S
 } {1}
 do_test analyze3-3.8.14 {
   sqlite3_finalize $S
@@ -528,24 +463,22 @@ do_test analyze3-3.8.14 {
 
 #-------------------------------------------------------------------------
 # These tests check that errors encountered while repreparing an SQL
-# statement within sqlite3_reoptimize() are handled correctly.
+# statement within sqlite3Reprepare() are handled correctly.
 #
 
-# Check an schema error.
+# Check a schema error.
 #
 do_test analyze3-4.1.1 {
   set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE a=? AND b>?" -1 dummy]
-  sqlite3_reoptimize $S
-} {SQLITE_OK}
+  sqlite3_step $S
+} {SQLITE_DONE}
 do_test analyze3-4.1.2 {
+  sqlite3_reset $S
   sqlite3_bind_text $S 2 "abc" 3
   execsql { DROP TABLE t1 }
-  sqlite3_reoptimize $S
-} {SQLITE_SCHEMA}
-do_test analyze3-4.1.3 {
   sqlite3_step $S
 } {SQLITE_SCHEMA}
-do_test analyze3-4.1.4 {
+do_test analyze3-4.1.3 {
   sqlite3_finalize $S
 } {SQLITE_SCHEMA}
 
@@ -563,18 +496,16 @@ do_test analyze3-4.2.1 {
   execsql COMMIT
   execsql ANALYZE
   set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE a=? AND b>?" -1 dummy]
-  sqlite3_reoptimize $S
-} {SQLITE_OK}
+  sqlite3_step $S
+} {SQLITE_DONE}
 db auth auth
 proc auth {args} {
   if {[lindex $args 0] == "SQLITE_READ"} {return SQLITE_DENY}
   return SQLITE_OK
 }
 do_test analyze3-4.2.2 {
+  sqlite3_reset $S
   sqlite3_bind_text $S 2 "abc" 3
-  sqlite3_reoptimize $S
-} {SQLITE_SCHEMA}
-do_test analyze3-4.2.3 {
   sqlite3_step $S
 } {SQLITE_SCHEMA}
 do_test analyze3-4.2.4 {
@@ -583,7 +514,7 @@ do_test analyze3-4.2.4 {
 
 # Check the effect of an authorization error that occurs in a re-prepare
 # performed by sqlite3_step() is the same as one that occurs within
-# sqlite3_reoptimize().
+# sqlite3Reprepare().
 #
 do_test analyze3-4.3.1 {
   db auth {}

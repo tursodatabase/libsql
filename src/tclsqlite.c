@@ -1129,15 +1129,6 @@ static int dbPrepareAndBind(
   pPreStmt->nParm = iParm;
   *ppPreStmt = pPreStmt;
 
-  /* Call sqlite3_reoptimize() to optimize the statement according to
-  ** the values just bound to it. If SQLITE_ENABLE_STAT2 is not defined
-  ** or the statement will not benefit from re-optimization, this 
-  ** call is a no-op.  */
-  if( SQLITE_OK!=sqlite3_reoptimize(pPreStmt->pStmt) ){
-    Tcl_SetObjResult(interp, dbTextToObj(sqlite3_errmsg(pDb->db)));
-    return TCL_ERROR;
-  }
-
   return TCL_OK;
 }
 

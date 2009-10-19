@@ -323,8 +323,6 @@ struct Vdbe {
 #endif
   VdbeFrame *pFrame;      /* Parent frame */
   int nFrame;             /* Number of frames in pFrame list */
-  u8 optimizable;         /* True if VM may benefit from sqlite3_reoptimize() */
-  u32 optmask;            /* Bitmask of vars that may be used by reoptimize() */
   u32 expmask;            /* Binding to these vars invalidates VM */
 };
 

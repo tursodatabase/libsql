@@ -53,13 +53,14 @@ Vdbe *sqlite3VdbeCreate(sqlite3 *db){
 ** Remember the SQL string for a prepared statement.
 */
 void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
+  assert( isPrepareV2==1 || isPrepareV2==0 );
   if( p==0 ) return;
 #ifdef SQLITE_OMIT_TRACE
   if( !isPrepareV2 ) return;
 #endif
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
-  p->isPrepareV2 = isPrepareV2 ? 1 : 0;
+  p->isPrepareV2 = isPrepareV2;
 }
 
 /*
@@ -3053,13 +3054,12 @@ sqlite3_value *sqlite3VdbeGetValue(Vdbe *v, int iVar, u8 aff){
 ** to sqlite3_reoptimize() that re-preparing the statement may result
 ** in a better query plan.
 */
-void sqlite3VdbeSetVarmask(Vdbe *v, int iVar, int isExpire){
-  u32 *mask = (isExpire ? &v->expmask : &v->optmask);
+void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
   assert( iVar>0 );
   if( iVar>32 ){
-    *mask = 0xffffffff;
+    v->expmask = 0xffffffff;
   }else{
-    *mask |= ((u32)1 << (iVar-1));
+    v->expmask |= ((u32)1 << (iVar-1));
   }
 }
 
