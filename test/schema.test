@@ -364,4 +364,24 @@ do_test schema-12.1 {
   list [sqlite3_step $::STMT] [sqlite3_finalize $::STMT]
 } {SQLITE_ERROR SQLITE_SCHEMA}
 
+do_test schema-13.1 {
+  set S [sqlite3_prepare_v2 db "SELECT * FROM sqlite_master" -1 dummy]
+  db function hello hello
+  db function hello {}
+  db auth auth
+  proc auth {args} {
+    if {[lindex $args 0] == "SQLITE_READ"} {return SQLITE_DENY}
+    return SQLITE_OK
+  }
+  sqlite3_step $S
+} {SQLITE_SCHEMA}
+
+do_test schema-13.2 {
+  sqlite3_step $S
+} {SQLITE_SCHEMA}
+
+do_test schema-13.3 {
+  sqlite3_finalize $S
+} {SQLITE_SCHEMA}
+
 finish_test

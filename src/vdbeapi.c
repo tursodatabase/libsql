@@ -304,7 +304,7 @@ static int sqlite3Step(Vdbe *p){
   }
 
   if( p->pc<=0 && p->expired ){
-    if( ALWAYS(p->rc==SQLITE_OK) ){
+    if( ALWAYS(p->rc==SQLITE_OK || p->rc==SQLITE_SCHEMA) ){
       p->rc = SQLITE_SCHEMA;
     }
     rc = SQLITE_ERROR;
