@@ -2034,6 +2034,7 @@ static int whereRangeRegion(
 **
 ** If an error occurs, return an error code. Otherwise, SQLITE_OK.
 */
+#ifdef SQLITE_ENABLE_STAT2
 static int valueFromExpr(
   Parse *pParse, 
   Expr *pExpr, 
@@ -2050,6 +2051,7 @@ static int valueFromExpr(
   }
   return sqlite3ValueFromExpr(pParse->db, pExpr, SQLITE_UTF8, aff, pp);
 }
+#endif
 
 /*
 ** This function is used to estimate the number of rows that will be visited

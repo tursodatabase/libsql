@@ -576,4 +576,69 @@ ifcapable subquery {
 
 } ;# ifcapable subquery
 
+#-------------------------------------------------------------------------
+# The following tests are to ensure that bug b73fb0bd64 is fixed.
+#
+do_test join-11.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b TEXT);
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b TEXT);
+    INSERT INTO t1 VALUES(1,'abc');
+    INSERT INTO t1 VALUES(2,'def');
+    INSERT INTO t2 VALUES(1,'abc');
+    INSERT INTO t2 VALUES(2,'def');
+    SELECT * FROM t1 NATURAL JOIN t2;
+  }
+} {1 abc 2 def}
+
+do_test join-11.2 {
+  execsql { SELECT a FROM t1 JOIN t1 USING (a)}
+} {1 2}
+do_test join-11.3 {
+  execsql { SELECT a FROM t1 JOIN t1 AS t2 USING (a)}
+} {1 2}
+do_test join-11.3 {
+  execsql { SELECT * FROM t1 NATURAL JOIN t1 AS t2}
+} {1 abc 2 def}
+do_test join-11.4 {
+  execsql { SELECT * FROM t1 NATURAL JOIN t1 }
+} {1 abc 2 def}
+
+do_test join-11.5 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE t1(a COLLATE nocase, b);
+    CREATE TABLE t2(a, b);
+    INSERT INTO t1 VALUES('ONE', 1);
+    INSERT INTO t1 VALUES('two', 2);
+    INSERT INTO t2 VALUES('one', 1);
+    INSERT INTO t2 VALUES('two', 2);
+  }
+} {}
+do_test join-11.6 {
+  execsql { SELECT * FROM t1 NATURAL JOIN t2 }
+} {ONE 1 two 2}
+do_test join-11.7 {
+  execsql { SELECT * FROM t2 NATURAL JOIN t1 }
+} {two 2}
+
+do_test join-11.8 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE t1(a, b TEXT);
+    CREATE TABLE t2(b INTEGER, a);
+    INSERT INTO t1 VALUES('one', '1.0');
+    INSERT INTO t1 VALUES('two', '2');
+    INSERT INTO t2 VALUES(1, 'one');
+    INSERT INTO t2 VALUES(2, 'two');
+  }
+} {}
+do_test join-11.9 {
+  execsql { SELECT * FROM t1 NATURAL JOIN t2 }
+} {one 1.0 two 2}
+do_test join-11.10 {
+  execsql { SELECT * FROM t2 NATURAL JOIN t1 }
+} {1 one 2 two}
+
 finish_test
