@@ -918,8 +918,9 @@ static int vdbeUnbind(Vdbe *p, int i){
   /* If the bit corresponding to this variable in Vdbe.expmask is set, then 
   ** binding a new value to this variable invalidates the current query plan.
   */
-  assert( p->isPrepareV2 || p->expmask==0 );
-  if( (i<32 && p->expmask & ((u32)1 << i)) || p->expmask==0xffffffff ){
+  if( p->isPrepareV2 &&
+     ((i<32 && p->expmask & ((u32)1 << i)) || p->expmask==0xffffffff)
+  ){
     p->expired = 1;
   }
   return SQLITE_OK;
@@ -1213,4 +1214,3 @@ int sqlite3_stmt_status(sqlite3_stmt *pStmt, int op, int resetFlag){
   if( resetFlag ) pVdbe->aCounter[op-1] = 0;
   return v;
 }
-
