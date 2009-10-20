@@ -189,13 +189,13 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Loop through the tables in the main database. For each, do
-  ** an "INSERT INTO vacuum_db.xxx SELECT * FROM xxx;" to copy
+  ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
   ** the contents to the temporary database.
   */
   rc = execExecSql(db, 
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
-      "|| ' SELECT * FROM ' || quote(name) || ';'"
-      "FROM sqlite_master "
+      "|| ' SELECT * FROM main.' || quote(name) || ';'"
+      "FROM main.sqlite_master "
       "WHERE type = 'table' AND name!='sqlite_sequence' "
       "  AND rootpage>0"
 
@@ -211,7 +211,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   rc = execExecSql(db, 
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
-      "|| ' SELECT * FROM ' || quote(name) || ';' "
+      "|| ' SELECT * FROM main.' || quote(name) || ';' "
       "FROM vacuum_db.sqlite_master WHERE name=='sqlite_sequence';"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
@@ -225,7 +225,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   rc = execSql(db,
       "INSERT INTO vacuum_db.sqlite_master "
       "  SELECT type, name, tbl_name, rootpage, sql"
-      "    FROM sqlite_master"
+      "    FROM main.sqlite_master"
       "   WHERE type='view' OR type='trigger'"
       "      OR (type='table' AND rootpage=0)"
   );
