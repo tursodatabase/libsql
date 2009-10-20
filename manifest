@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\sVACUUM\scommand\sso\sthat\swhen\sthe\sMAIN\sand\sTEMP\sdatabases\shave\nidentically\snamed\stables,\scontent\sfrom\sthe\sTEMP\sdatabase\sdoes\snot\naccidently\soverwrite\sMAIN\sdatabase\scontent.\nTicket\s[d82e3f3721296e905d7e8c9dee718f71a826b0eb].\nNote\sthat\sthis\sbug\scould\spotentially\slead\sto\sdatabase\scorruption.
-D 2009-10-20T15:01:59
+C Clarify\sthe\suse\sof\ssqlite3_shutdown().\s\s\nTicket\s[f9af981dd2a2].\nComment\schanges\sonly\s-\sno\schanges\sto\scode.
+D 2009-10-20T15:27:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
 F src/shell.c 270231b3f587f1f86391b9994fdfcd5d472c3fdf
-F src/sqlite.h.in 65d5da2c6ce45bcaa11122f9e9398c015fba69ba
+F src/sqlite.h.in 2643b0946d2564a05088e656e0740863d55a02ea
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
-P f494ed38a8d3fabb7a064ba4a860d5288c5a571b
-R b72a71130ae3f7d0000897032d39db86
+P 0bbd8d72ec66cbe11c2548a04ad478202b2b69b6
+R e05c440be677d211f2825a857424fbcf
 U drh
-Z 837f755ebad8093b39e326d07ae62092
+Z 35c6ef37b9a5953f94a41f5c5ef22654
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK3dDqoxKgR168RlERAswBAKCOQaAId6gPlMqpI+c5rQCcOyOqQQCfdKm+
-rkKy+eYa2wEINnPhxXG7WQE=
-=0V8S
+iD8DBQFK3db+oxKgR168RlERAludAJ9qFRDQq+bdJV8pseixnH1c8NKiIQCeLf2F
+lLzEUPB4zY338K+RqSCCBrg=
+=asdE
 -----END PGP SIGNATURE-----

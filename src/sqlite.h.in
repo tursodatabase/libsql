@@ -820,6 +820,9 @@ struct sqlite3_vfs {
 ** The sqlite3_initialize() routine initializes the
 ** SQLite library.  The sqlite3_shutdown() routine
 ** deallocates any resources that were allocated by sqlite3_initialize().
+** This routines are designed to aid in process initialization and
+** shutdown on embedded systems.  Workstation applications using
+** SQLite normally do not need to invoke either of these routines.
 **
 ** A call to sqlite3_initialize() is an "effective" call if it is
 ** the first time sqlite3_initialize() is invoked during the lifetime of
@@ -831,11 +834,17 @@ struct sqlite3_vfs {
 ** A call to sqlite3_shutdown() is an "effective" call if it is the first
 ** call to sqlite3_shutdown() since the last sqlite3_initialize().  Only
 ** an effective call to sqlite3_shutdown() does any deinitialization.
-** All other calls to sqlite3_shutdown() are harmless no-ops.
+** All other valid calls to sqlite3_shutdown() are harmless no-ops.
 **
-** Among other things, sqlite3_initialize() shall invoke
+** The sqlite3_initialize() interface is threadsafe, but sqlite3_shutdown()
+** is not.  The sqlite3_shutdown() interface must only be called from a
+** single thread.  All open [database connections] must be closed and all
+** other SQLite resources must be deallocated prior to invoking
+** sqlite3_shutdown().
+**
+** Among other things, sqlite3_initialize() will invoke
 ** sqlite3_os_init().  Similarly, sqlite3_shutdown()
-** shall invoke sqlite3_os_end().
+** will invoke sqlite3_os_end().
 **
 ** The sqlite3_initialize() routine returns [SQLITE_OK] on success.
 ** If for some reason, sqlite3_initialize() is unable to initialize
