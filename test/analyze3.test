@@ -40,6 +40,10 @@ ifcapable !stat2 {
 # analyze3-4.*: Test that SQL or authorization callback errors occuring
 #               within sqlite3Reprepare() are handled correctly.
 #
+# analyze3-5.*: Check that the query plans of applicable statements are
+#               invalidated if the values of SQL parameter are modified
+#               using the clear_bindings() or transfer_bindings() APIs.
+#
 
 proc getvar {varname} { uplevel #0 set $varname }
 db function var getvar
@@ -526,5 +530,72 @@ do_test analyze3-4.3.1 {
 do_test analyze3-4.3.2 {
   sqlite3_finalize $S
 } {SQLITE_SCHEMA}
+db auth {}
+
+#-------------------------------------------------------------------------
+# Test that modifying bound variables using the clear_bindings() or
+# transfer_bindings() APIs works.
+#
+#   analyze3-5.1.*: sqlite3_clear_bindings()
+#   analyze3-5.2.*: sqlite3_transfer_bindings()
+#
+do_test analyze3-5.1.1 {
+  drop_all_tables
+  execsql {
+    CREATE TABLE t1(x TEXT COLLATE NOCASE);
+    CREATE INDEX i1 ON t1(x);
+    INSERT INTO t1 VALUES('aaa');
+    INSERT INTO t1 VALUES('abb');
+    INSERT INTO t1 VALUES('acc');
+    INSERT INTO t1 VALUES('baa');
+    INSERT INTO t1 VALUES('bbb');
+    INSERT INTO t1 VALUES('bcc');
+  }
+
+  set S [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE x LIKE ?" -1 dummy]
+  sqlite3_bind_text $S 1 "a%" 2
+  set R [list]
+  while { "SQLITE_ROW" == [sqlite3_step $S] } {
+    lappend R [sqlite3_column_text $S 0]
+  }
+  concat [sqlite3_reset $S] $R
+} {SQLITE_OK aaa abb acc}
+do_test analyze3-5.1.2 {
+  sqlite3_clear_bindings $S
+  set R [list]
+  while { "SQLITE_ROW" == [sqlite3_step $S] } {
+    lappend R [sqlite3_column_text $S 0]
+  }
+  concat [sqlite3_reset $S] $R
+} {SQLITE_OK}
+do_test analyze3-5.1.3 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
+do_test analyze3-5.1.1 {
+  set S1 [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE x LIKE ?" -1 dummy]
+  sqlite3_bind_text $S1 1 "b%" 2
+  set R [list]
+  while { "SQLITE_ROW" == [sqlite3_step $S1] } {
+    lappend R [sqlite3_column_text $S1 0]
+  }
+  concat [sqlite3_reset $S1] $R
+} {SQLITE_OK baa bbb bcc}
+
+do_test analyze3-5.1.2 {
+  set S2 [sqlite3_prepare_v2 db "SELECT * FROM t1 WHERE x = ?" -1 dummy]
+  sqlite3_bind_text $S2 1 "a%" 2
+  sqlite3_transfer_bindings $S2 $S1
+  set R [list]
+  while { "SQLITE_ROW" == [sqlite3_step $S1] } {
+    lappend R [sqlite3_column_text $S1 0]
+  }
+  concat [sqlite3_reset $S1] $R
+} {SQLITE_OK aaa abb acc}
+do_test analyze3-5.1.3 {
+  sqlite3_finalize $S2
+  sqlite3_finalize $S1
+} {SQLITE_OK}
 
 finish_test
+

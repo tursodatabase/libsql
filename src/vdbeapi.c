@@ -99,6 +99,9 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
     sqlite3VdbeMemRelease(&p->aVar[i]);
     p->aVar[i].flags = MEM_Null;
   }
+  if( p->isPrepareV2 && p->expmask ){
+    p->expired = 1;
+  }
   sqlite3_mutex_leave(mutex);
   return rc;
 }
@@ -1172,6 +1175,12 @@ int sqlite3_transfer_bindings(sqlite3_stmt *pFromStmt, sqlite3_stmt *pToStmt){
   Vdbe *pTo = (Vdbe*)pToStmt;
   if( pFrom->nVar!=pTo->nVar ){
     return SQLITE_ERROR;
+  }
+  if( pTo->isPrepareV2 && pTo->expmask ){
+    pTo->expired = 1;
+  }
+  if( pFrom->isPrepareV2 && pFrom->expmask ){
+    pFrom->expired = 1;
   }
   return sqlite3TransferBindings(pFromStmt, pToStmt);
 }
