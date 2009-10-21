@@ -2907,11 +2907,11 @@ static int process_input(struct callback_data *p, FILE *in){
           sqlite3_snprintf(sizeof(zPrefix), zPrefix, "SQL error:");
         }
         if( zErrMsg!=0 ){
-          printf("%s %s\n", zPrefix, zErrMsg);
+          fprintf(stderr, "%s %s\n", zPrefix, zErrMsg);
           sqlite3_free(zErrMsg);
           zErrMsg = 0;
         }else{
-          printf("%s %s\n", zPrefix, sqlite3_errmsg(p->db));
+          fprintf(stderr, "%s %s\n", zPrefix, sqlite3_errmsg(p->db));
         }
         errCnt++;
       }
