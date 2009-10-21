@@ -2259,7 +2259,7 @@ do_test e_fkey-26.6 {
 } {integer 1 null {}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-51437-39891 */
+# /* EV: R-58589-50781 */
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html. This example demonstrates that ON UPDATE actions
