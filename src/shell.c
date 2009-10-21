@@ -1384,7 +1384,13 @@ static void output_c_string(FILE *out, const char *z){
 static void output_html_string(FILE *out, const char *z){
   int i;
   while( *z ){
-    for(i=0; z[i] && z[i]!='<' && z[i]!='&'; i++){}
+    for(i=0;   z[i] 
+            && z[i]!='<' 
+            && z[i]!='&' 
+            && z[i]!='>' 
+            && z[i]!='\"' 
+            && z[i]!='\'';
+        i++){}
     if( i>0 ){
       fprintf(out,"%.*s",i,z);
     }
@@ -1392,6 +1398,12 @@ static void output_html_string(FILE *out, const char *z){
       fprintf(out,"&lt;");
     }else if( z[i]=='&' ){
       fprintf(out,"&amp;");
+    }else if( z[i]=='>' ){
+      fprintf(out,"&gt;");
+    }else if( z[i]=='\"' ){
+      fprintf(out,"&quot;");
+    }else if( z[i]=='\'' ){
+      fprintf(out,"&#39;");
     }else{
       break;
     }
@@ -1572,7 +1584,9 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
       if( p->cnt++==0 && p->showHeader ){
         fprintf(p->out,"<TR>");
         for(i=0; i<nArg; i++){
-          fprintf(p->out,"<TH>%s</TH>",azCol[i]);
+          fprintf(p->out,"<TH>");
+          output_html_string(p->out, azCol[i]);
+          fprintf(p->out,"</TH>\n");
         }
         fprintf(p->out,"</TR>\n");
       }
