@@ -274,7 +274,7 @@ typedef struct GenfkeyCb GenfkeyCb;
 ")"
 
 typedef struct SchemaTable SchemaTable;
-struct SchemaTable {
+static struct SchemaTable {
   const char *zName;
   const char *zObject;
   const char *zPragma;
@@ -731,7 +731,7 @@ static int invokeCallback(void *p, int nArg, char **azArg, char **azCol){
   return pCb->xData(pCb->pCtx, pCb->eType, azArg[0]);
 }
 
-int detectSchemaProblem(
+static int detectSchemaProblem(
   sqlite3 *db,                   /* Database connection */
   const char *zMessage,          /* English language error message */
   const char *zSql,              /* SQL statement to run */
