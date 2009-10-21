@@ -314,18 +314,18 @@ autoinc(X) ::= AUTOINCR.  {X = 1;}
 // check fails.
 //
 %type refargs {int}
-refargs(A) ::= .                     { A = OE_None * 0x000101; }
+refargs(A) ::= .                  { A = OE_None*0x0101; /* EV: R-19803-45884 */}
 refargs(A) ::= refargs(X) refarg(Y). { A = (X & ~Y.mask) | Y.value; }
 %type refarg {struct {int value; int mask;}}
 refarg(A) ::= MATCH nm.              { A.value = 0;     A.mask = 0x000000; }
 refarg(A) ::= ON DELETE refact(X).   { A.value = X;     A.mask = 0x0000ff; }
 refarg(A) ::= ON UPDATE refact(X).   { A.value = X<<8;  A.mask = 0x00ff00; }
 %type refact {int}
-refact(A) ::= SET NULL.              { A = OE_SetNull; }
-refact(A) ::= SET DEFAULT.           { A = OE_SetDflt; }
-refact(A) ::= CASCADE.               { A = OE_Cascade; }
-refact(A) ::= RESTRICT.              { A = OE_Restrict; }
-refact(A) ::= NO ACTION.             { A = OE_None; }
+refact(A) ::= SET NULL.              { A = OE_SetNull;  /* EV: R-33326-45252 */}
+refact(A) ::= SET DEFAULT.           { A = OE_SetDflt;  /* EV: R-33326-45252 */}
+refact(A) ::= CASCADE.               { A = OE_Cascade;  /* EV: R-33326-45252 */}
+refact(A) ::= RESTRICT.              { A = OE_Restrict; /* EV: R-33326-45252 */}
+refact(A) ::= NO ACTION.             { A = OE_None;     /* EV: R-33326-45252 */}
 %type defer_subclause {int}
 defer_subclause(A) ::= NOT DEFERRABLE init_deferred_pred_opt.     {A = 0;}
 defer_subclause(A) ::= DEFERRABLE init_deferred_pred_opt(X).      {A = X;}

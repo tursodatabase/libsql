@@ -1,5 +1,8 @@
-C For\sthe\sshell,\schanged\sthe\soutput\sof\sthe\serrors\son\slines\s2910\sand\s2914\sto\sgoto\nstderr.\s\sI\sleft\sthe\stimer\svalues\sgoing\sto\sstdout\sas\sall\sof\sthe\sother\sinteractive\nshell\scommands\s(startup\sbanner,\shelp,\setc.)\sgo\sto\sstdout\sand\sI\sfelt\sthis\swas\smore\nconsistent.\s\sTicket\s43db771bb2.
-D 2009-10-21T03:56:55
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sevidence\smarks\sto\sparse.y.\s\sFix\sa\sbroken\sevidence\slink\sin\se_fkey.tcl.
+D 2009-10-21T13:48:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os_unix.c 5686c0e4f0aa2c93b43b66c563ea1d5b80cd4b9b
 F src/os_win.c d02908847f3ad350fb9fd0804b7722627d30860d
 F src/pager.c ebd0a8f2421e8f0ad5b78201440004bf3e1c96d8
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
-F src/parse.y 2b75a329a5b3cdcb188609d9a30bb339aecfeddd
+F src/parse.y 0204f0dfe8974dc2a0d46eb9ab98a433a1f963d6
 F src/pcache.c c92ffd4f3e1279b3766854c6d18b5bf4aac0d1fa
 F src/pcache.h 435ef324197f79391f9c92b71d7f92b548ad7a36
 F src/pcache1.c 211295a9ff6a5b30f1ca50516731a5cf3e9bf82c
@@ -320,7 +323,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_fkey.test fb71d3256bc9676c593953e577b10332dc1d6753
+F test/e_fkey.test 27a4c2d26c0f4c793bc219ca87735bf52524ebdb
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -761,7 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 83216fbe904425f5b15d1ae689cea9d13670e979
-R d76b467197b5de2ca9c970e1c850fdb8
-U shane
-Z ce1fa5a1eb9780100a302b8cc488b1f6
+P 8a8eeb0c5af4bbeafd9864b03557eb9cd32f09ce
+R f28ab011c783a0bbe1723b99fcf4f0b8
+U drh
+Z 9f27ced07b6d05f64ef2d5a79854c829
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK3xEuoxKgR168RlERAgKaAJsENtQsG9JO7w9NQCYLcjXua2PLLgCfasM8
+Ngo9AyNfH1eW6P29i/EdHks=
+=aV1A
+-----END PGP SIGNATURE-----
