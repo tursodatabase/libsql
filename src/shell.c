@@ -106,9 +106,86 @@ static void endTimer(void){
        timeDiff(&sBegin.ru_stime, &sEnd.ru_stime));
   }
 }
+
 #define BEGIN_TIMER beginTimer()
 #define END_TIMER endTimer()
 #define HAS_TIMER 1
+
+#elif (defined(_WIN32) || defined(WIN32))
+
+#include <windows.h>
+
+/* Saved resource information for the beginning of an operation */
+static HANDLE hProcess;
+static FILETIME ftKernelBegin;
+static FILETIME ftUserBegin;
+typedef BOOL (WINAPI *GETPROCTIMES)(HANDLE, LPFILETIME, LPFILETIME, LPFILETIME, LPFILETIME);
+static GETPROCTIMES getProcessTimesAddr = NULL;
+
+/* True if the timer is enabled */
+static int enableTimer = 0;
+
+/*
+** Check to see if we have timer support.  Return 1 if necessary
+** support found (or found previously).
+*/
+static int hasTimer(void){
+  if( getProcessTimesAddr ){
+    return 1;
+  } else {
+    /* GetProcessTimes() isn't supported in WIN95 and some other Windows versions.
+    ** See if the version we are running on has it, and if it does, save off
+    ** a pointer to it and the current process handle.
+    */
+    hProcess = GetCurrentProcess();
+    if( hProcess ){
+      HINSTANCE hinstLib = LoadLibrary(TEXT("Kernel32.dll"));
+      if( NULL != hinstLib ){
+        getProcessTimesAddr = (GETPROCTIMES) GetProcAddress(hinstLib, "GetProcessTimes");
+        if( NULL != getProcessTimesAddr ){
+          return 1;
+        }
+        FreeLibrary(hinstLib); 
+      }
+    }
+  }
+  return 0;
+}
+
+/*
+** Begin timing an operation
+*/
+static void beginTimer(void){
+  if( enableTimer && getProcessTimesAddr ){
+    FILETIME ftCreation, ftExit;
+    getProcessTimesAddr(hProcess, &ftCreation, &ftExit, &ftKernelBegin, &ftUserBegin);
+  }
+}
+
+/* Return the difference of two FILETIME structs in seconds */
+static double timeDiff(FILETIME *pStart, FILETIME *pEnd){
+  sqlite_int64 i64Start = *((sqlite_int64 *) pStart);
+  sqlite_int64 i64End = *((sqlite_int64 *) pEnd);
+  return (double) ((i64End - i64Start) / 10000000.0);
+}
+
+/*
+** Print the timing results.
+*/
+static void endTimer(void){
+  if( enableTimer && getProcessTimesAddr){
+    FILETIME ftCreation, ftExit, ftKernelEnd, ftUserEnd;
+    getProcessTimesAddr(hProcess, &ftCreation, &ftExit, &ftKernelEnd, &ftUserEnd);
+    printf("CPU Time: user %f sys %f\n",
+       timeDiff(&ftUserBegin, &ftUserEnd),
+       timeDiff(&ftKernelBegin, &ftKernelEnd));
+  }
+}
+
+#define BEGIN_TIMER beginTimer()
+#define END_TIMER endTimer()
+#define HAS_TIMER hasTimer()
+
 #else
 #define BEGIN_TIMER 
 #define END_TIMER
@@ -1906,10 +1983,11 @@ static char zHelp[] =
   ".show                  Show the current values for various settings\n"
   ".tables ?PATTERN?      List names of tables matching a LIKE pattern\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
-#if HAS_TIMER
-  ".timer ON|OFF          Turn the CPU timer measurement on or off\n"
-#endif
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
+;
+
+static char zTimerHelp[] =
+  ".timer ON|OFF          Turn the CPU timer measurement on or off\n"
 ;
 
 /* Forward reference */
@@ -2204,6 +2282,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
 
   if( c=='h' && strncmp(azArg[0], "help", n)==0 ){
     fprintf(stderr,"%s",zHelp);
+    if( HAS_TIMER ){
+      fprintf(stderr,"%s",zTimerHelp);
+    }
   }else
 
   if( c=='i' && strncmp(azArg[0], "import", n)==0 && nArg>=3 ){
@@ -2655,15 +2736,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='t' && n>4 && strncmp(azArg[0], "timeout", n)==0 && nArg>=2 ){
     open_db(p);
     sqlite3_busy_timeout(p->db, atoi(azArg[1]));
-  }else
-  
-#if HAS_TIMER  
-  if( c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0 && nArg>1 ){
+  }else if( HAS_TIMER && c=='t' && n>=5 && strncmp(azArg[0], "timer", n)==0 && nArg>1 ){
     enableTimer = booleanValue(azArg[1]);
-  }else
-#endif
-
-  if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
+  }else if( c=='w' && strncmp(azArg[0], "width", n)==0 ){
     int j;
     assert( nArg<=ArraySize(azArg) );
     for(j=1; j<nArg && j<ArraySize(p->colWidth); j++){

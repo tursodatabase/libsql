@@ -1,5 +1,5 @@
-C For\sWindows\sVFS,\smodified\sxGetLastError()\sto\scall\sFormatMessage()\s\nwith\sthe\sFORMAT_MESSAGE_IGNORE_INSERTS\soption.\s\sAdditionally\supdated\nto\sensure\sstrings\sare\sreturned\sas\sUTF8.\s\sTicket\s39c85e8a4e.
-D 2009-10-21T02:00:48
+C For\sWindows\sversion\sof\sshell,\sadd\ssupport\sfor\s.timer\scommand\nusing\sthe\sGetProcessTimes()\sAPI\sif\savailable\s(in\sthe\ssame\sway\ngetrusage()\sis\sused\son\sUNIX.)\sTicket\s89668ca167.
+D 2009-10-21T03:42:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 270231b3f587f1f86391b9994fdfcd5d472c3fdf
+F src/shell.c 40364daed1653851fa727baa38c4afdbc8d17801
 F src/sqlite.h.in 2643b0946d2564a05088e656e0740863d55a02ea
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -761,7 +761,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b2aa48b52f140ad722001de686c5b2f802e9babd
-R 88fe3851909db662467ab0ab67772332
+P 761396f8cb79be34853ba698a65af54874c3c10e
+R 58a677fbffcf3d33e3376183088659ba
 U shane
-Z 511d63a6d62dacb90291925f2c8c96c3
+Z 2462a974d1dd735a6b5e18b16e693806
