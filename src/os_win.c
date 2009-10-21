@@ -73,7 +73,7 @@
 */
 #if SQLITE_OS_WINCE
 # define AreFileApisANSI() 1
-# define GetDiskFreeSpaceW() 0
+# define FormatMessageW(a,b,c,d,e,f,g) 0
 #endif
 
 /*
@@ -1248,27 +1248,59 @@ static int getTempname(int nBuf, char *zBuf){
 ** otherwise (if the message was truncated).
 */
 static int getLastErrorMsg(int nBuf, char *zBuf){
-  DWORD error = GetLastError();
-
-#if SQLITE_OS_WINCE
-  sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
-#else
   /* FormatMessage returns 0 on failure.  Otherwise it
   ** returns the number of TCHARs written to the output
   ** buffer, excluding the terminating null char.
   */
-  if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM,
-                      NULL,
-                      error,
-                      0,
-                      zBuf,
-                      nBuf-1,
-                      0))
-  {
-    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
-  }
-#endif
+  DWORD error = GetLastError();
+  DWORD dwLen = 0;
+  char *zOut;
 
+  if( isNT() ){
+    WCHAR *zTempWide = NULL;
+    dwLen = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL,
+                           error,
+                           0,
+                           (LPWSTR) &zTempWide,
+                           0,
+                           0);
+    if( dwLen > 0 ){
+      /* allocate a buffer and convert to UTF8 */
+      zOut = unicodeToUtf8(zTempWide);
+      /* free the system buffer allocated by FormatMessage */
+      LocalFree(zTempWide);
+    }
+/* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
+** Since the ASCII version of these Windows API do not exist for WINCE,
+** it's important to not reference them for WINCE builds.
+*/
+#if SQLITE_OS_WINCE==0
+  }else{
+    char *zTemp = NULL;
+    dwLen = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           NULL,
+                           error,
+                           0,
+                           (LPSTR) &zTemp,
+                           0,
+                           0);
+    if( dwLen > 0 ){
+      /* allocate a buffer and convert to UTF8 */
+      zOut = sqlite3_win32_mbcs_to_utf8(zTemp);
+      /* free the system buffer allocated by FormatMessage */
+      LocalFree(zTemp);
+    }
+#endif
+  }
+  if( 0 == dwLen ){
+    sqlite3_snprintf(nBuf, zBuf, "OsError 0x%x (%u)", error, error);
+  }else{
+    /* copy a maximum of nBuf chars to output buffer */
+    sqlite3_snprintf(nBuf, zBuf, "%s", zOut);
+    /* free the UTF8 buffer */
+    free(zOut);
+  }
   return 0;
 }
 
@@ -1636,14 +1668,14 @@ static int getSectorSize(
                                   &dwDummy);
       }else{
         /* trim path to just drive reference */
-        CHAR *p = (CHAR *)zConverted;
+        char *p = (char *)zConverted;
         for(;*p;p++){
           if( *p == '\\' ){
             *p = '\0';
             break;
           }
         }
-        dwRet = GetDiskFreeSpaceA((CHAR*)zConverted,
+        dwRet = GetDiskFreeSpaceA((char*)zConverted,
                                   &dwDummy,
                                   &bytesPerSector,
                                   &dwDummy,

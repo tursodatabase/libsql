@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Clarify\sthe\suse\sof\ssqlite3_shutdown().\s\s\nTicket\s[f9af981dd2a2].\nComment\schanges\sonly\s-\sno\schanges\sto\scode.
-D 2009-10-20T15:27:55
+C For\sWindows\sVFS,\smodified\sxGetLastError()\sto\scall\sFormatMessage()\s\nwith\sthe\sFORMAT_MESSAGE_IGNORE_INSERTS\soption.\s\sAdditionally\supdated\nto\sensure\sstrings\sare\sreturned\sas\sUTF8.\s\sTicket\s39c85e8a4e.
+D 2009-10-21T02:00:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -22,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 30e33c9dee7000cfa82fae0a2fe51b90a1c24bac x
+F configure 30e33c9dee7000cfa82fae0a2fe51b90a1c24bac
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -87,7 +84,7 @@ F ext/rtree/rtree_perf.tcl 0fabb6d5c48cb8024e042ce5d4bb88998b6ec1cb
 F ext/rtree/rtree_util.tcl ee0a0311eb12175319d78bfb37302320496cee6e
 F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk c3c5c6d038512603c4c8a2599955a86fbd9e6973
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -150,7 +147,7 @@ F src/os.h 00a1334a4eecee7f7bef79ac606b88d325119f21
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
 F src/os_unix.c 5686c0e4f0aa2c93b43b66c563ea1d5b80cd4b9b
-F src/os_win.c 49a360be4f42d5a63d00be9aa44449ed4d6717e0
+F src/os_win.c d02908847f3ad350fb9fd0804b7722627d30860d
 F src/pager.c ebd0a8f2421e8f0ad5b78201440004bf3e1c96d8
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
 F src/parse.y 2b75a329a5b3cdcb188609d9a30bb339aecfeddd
@@ -740,38 +737,31 @@ F test/whereB.test 0def95db3bdec220a731c7e4bec5930327c1d8c5
 F test/wherelimit.test 5e9fd41e79bb2b2d588ed999d641d9c965619b31
 F test/zeroblob.test caaecfb4f908f7bc086ed238668049f96774d688
 F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
-F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439 x
+F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
-F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e x
-F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97 x
-F tool/mksqlite3c.tcl 69dc8842a88d1f84c141e1a0bd2e42d8e859397f x
-F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b x
-F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87 x
-F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a x
+F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
+F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
+F tool/mksqlite3c.tcl 69dc8842a88d1f84c141e1a0bd2e42d8e859397f
+F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
+F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
+F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
 F tool/opcodeDoc.awk b3a2a3d5d3075b8bd90b7afe24283efdd586659c
 F tool/showdb.c 8ab8b3b53884312aafb7ef60982e255a6c31d238
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
-F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe x
-F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b x
-F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39 x
-F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355 x
+F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
+F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
+F tool/spaceanal.tcl b87db46ae29e3116411b1686e136b9b994d7de39
+F tool/speedtest.tcl 06c76698485ccf597b9e7dbb1ac70706eb873355
 F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
-F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff x
+F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f x
-P 0bbd8d72ec66cbe11c2548a04ad478202b2b69b6
-R e05c440be677d211f2825a857424fbcf
-U drh
-Z 35c6ef37b9a5953f94a41f5c5ef22654
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK3db+oxKgR168RlERAludAJ9qFRDQq+bdJV8pseixnH1c8NKiIQCeLf2F
-lLzEUPB4zY338K+RqSCCBrg=
-=asdE
------END PGP SIGNATURE-----
+F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
+P b2aa48b52f140ad722001de686c5b2f802e9babd
+R 88fe3851909db662467ab0ab67772332
+U shane
+Z 511d63a6d62dacb90291925f2c8c96c3
