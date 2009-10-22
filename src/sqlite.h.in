@@ -2952,6 +2952,8 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** that was returned from [sqlite3_prepare_v2()] or one of its variants)
 ** and the second argument is the index of the column for which information
 ** should be returned.  The leftmost column of the result set has the index 0.
+** The number of columns in the result can be determined using
+** [sqlite3_column_count()].
 **
 ** If the SQL statement does not currently point to a valid row, or if the
 ** column index is out of range, the result is undefined.

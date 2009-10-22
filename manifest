@@ -1,5 +1,8 @@
-C Merge\saccidental\sfork\sback\sto\strunk.
-D 2009-10-21T14:33:04
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Mention\sthe\ssqlite3_column_count()\sfunction\son\sthe\ssame\sdocumentation\spage\nwith\sall\sof\sthe\sother\ssqlite3_column...\sinterfaces.
+D 2009-10-22T00:14:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +165,7 @@ F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
 F src/shell.c 9a9fab0d54332c7e20876286dc48a145fd9dd462
-F src/sqlite.h.in 2643b0946d2564a05088e656e0740863d55a02ea
+F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
@@ -761,7 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c8815fcd88d17b2864e689c84eb8a63ef242ff04 0441d28e84af20e3a98a07a43471784ac09c78db
-R 6eeacdacb7f726e58cd0f945014915a5
-U shane
-Z af52b342b12ae0c95c670ce88ebf9992
+P f63397ad6c32f575fe33b2f7dd22380cd1f51f1d
+R c7c45b6611956e39d3cdedbb8d11e6e2
+U drh
+Z 12c4fa1b86257265a2fa9925ef79dd8f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK36PQoxKgR168RlERAuDDAJ9ltYIWLcHS0wYsmAPNt7F1zN3WLACffpEM
+G/IZ8nNaOVJulcTt2MrAnMI=
+=UYtC
+-----END PGP SIGNATURE-----
