@@ -1284,6 +1284,8 @@ test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
 # Foreign keys are IMMEDIATE by default (if there is no DEFERRABLE or NOT
 # DEFERRABLE clause).
 #
+# /* EV: R-30323-21917 */  FKs are either IMMEDIATE or DEFERRED.
+#
 drop_all_tables
 do_test e_fkey-29.1 {
   execsql {

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Mention\sthe\ssqlite3_column_count()\sfunction\son\sthe\ssame\sdocumentation\spage\nwith\sall\sof\sthe\sother\ssqlite3_column...\sinterfaces.
-D 2009-10-22T00:14:05
+C Add\smarkings\son\stest\sevidence\sfor\sR-30323-21917.
+D 2009-10-22T00:20:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -323,7 +323,7 @@ F test/descidx2.test 1310ed1326cdfed4ea2c55169631579f082d174f
 F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
-F test/e_fkey.test 27a4c2d26c0f4c793bc219ca87735bf52524ebdb
+F test/e_fkey.test af2750eddb48280cfd5ce1d8b2f7948bbd8779ad
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f63397ad6c32f575fe33b2f7dd22380cd1f51f1d
-R c7c45b6611956e39d3cdedbb8d11e6e2
+P 5354ace55f448d10128e2bfe4b904a1441e3bf10
+R b245b9c1f74645196c42f63cc83aa54d
 U drh
-Z 12c4fa1b86257265a2fa9925ef79dd8f
+Z 7e2aafe0748c57a887b2da682c0b0c54
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK36PQoxKgR168RlERAuDDAJ9ltYIWLcHS0wYsmAPNt7F1zN3WLACffpEM
-G/IZ8nNaOVJulcTt2MrAnMI=
-=UYtC
+iD8DBQFK36VGoxKgR168RlERAkxbAJ0Rs1ALNw2b4OGeLkxym5lGuB+r5wCfUq2t
+TZYbIm/ITCW5tXtbYNlXCU0=
+=WVSC
 -----END PGP SIGNATURE-----
