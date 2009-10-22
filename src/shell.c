@@ -1647,8 +1647,13 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
       for(i=0; i<nArg; i++){
         char *zSep = i>0 ? ",": "";
-        if( azArg[i]==0 ){
+        if( (azArg[i]==0) || (aiType && aiType[i]==SQLITE_NULL) ){
           fprintf(p->out,"%sNULL",zSep);
+        }else if( aiType && aiType[i]==SQLITE_TEXT ){
+          if( zSep[0] ) fprintf(p->out,"%s",zSep);
+          output_quoted_string(p->out, azArg[i]);
+        }else if( aiType && (aiType[i]==SQLITE_INTEGER || aiType[i]==SQLITE_FLOAT) ){
+          fprintf(p->out,"%s%s",zSep, azArg[i]);
         }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
           const void *pBlob = sqlite3_column_blob(p->pStmt, i);
           int nBlob = sqlite3_column_bytes(p->pStmt, i);
@@ -1830,7 +1835,7 @@ static int shell_exec(
     *pzErrMsg = NULL;
   }
 
-  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
   if( (SQLITE_OK != rc) || !pStmt ){
     if( pzErrMsg ){
       *pzErrMsg = save_err_msg(db);

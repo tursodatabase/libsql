@@ -1,5 +1,5 @@
-C Updated\sshell\sto\soutput\sblobs\sin\sX'1234'\sform\swhen\sin\s"insert"\smode.\s\sTicket\s[72adc99de9].
-D 2009-10-22T17:30:16
+C In\sshell,\sin\sshell_exec()\slogic,\suse\stype\sinfo\sif\savailable\swhen\noutputting\sin\s"insert"\smode\sfor\sother\stypes\sin\saddition\sto\sblobs.\nChanged\sshell_exec()\sto\suse\ssqlite_prepare_v2().\s\sTicket\s[72adc99de9].
+D 2009-10-22T18:12:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 47dc8e71891a4b42ce1cff2625f2c88fa1d59a21
+F src/shell.c 5d875ff501a361459fb3b7750af7818298acb515
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -761,7 +761,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e51af74c3aeb82604841cc83a490351d1422e838
-R 5e972fea3b82d3b02406cd88c5212c96
+P a2ad9e6363308b7137fcb1916769151b96933cdb
+R 31077e5a7f05cf18a673f218ab4410cb
 U shane
-Z 205a2d1cb1ef075c240f437a28ecdf29
+Z c29d7d7c6294333d062cff9c1215bb17
