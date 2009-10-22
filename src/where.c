@@ -648,17 +648,25 @@ static int isLikeOrGlob(
 #endif
   pList = pExpr->x.pList;
   pLeft = pList->a[1].pExpr;
-  if( pLeft->op!=TK_COLUMN ){
+  if( pLeft->op!=TK_COLUMN || sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT ){
+    /* IMP: R-02065-49465 The left-hand side of the LIKE or GLOB operator must
+    ** be the name of an indexed column with TEXT affinity. */
     return 0;
   }
+  assert( pLeft->iColumn!=(-1) ); /* Because IPK never has AFF_TEXT */
   pColl = sqlite3ExprCollSeq(pParse, pLeft);
-  assert( pColl!=0 || pLeft->iColumn==-1 );
-  if( pColl==0 ) return 0;
+  assert( pColl!=0 );  /* Every non-IPK column has a collating sequence */
   if( (pColl->type!=SQLITE_COLL_BINARY || *pnoCase) &&
       (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
+    /* IMP: R-09003-32046 For the GLOB operator, the column must use the
+    ** default BINARY collating sequence.
+    ** IMP: R-41408-28306 For the LIKE operator, if case_sensitive_like mode
+    ** is enabled then the column must use the default BINARY collating
+    ** sequence, or if case_sensitive_like mode is disabled then the column
+    ** must use the built-in NOCASE collating sequence.
+    */
     return 0;
   }
-  if( sqlite3ExprAffinity(pLeft)!=SQLITE_AFF_TEXT ) return 0;
 
   pRight = pList->a[0].pExpr;
   op = pRight->op;
