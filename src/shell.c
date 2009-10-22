@@ -1259,7 +1259,7 @@ struct previous_mode_data {
 ** state and mode information.
 */
 struct callback_data {
-  sqlite3 *db;            /* The database */
+  sqlite3 *db;           /* The database */
   int echoOn;            /* True to echo input commands */
   int cnt;               /* Number of records displayed so far */
   FILE *out;             /* Write results here */
@@ -1277,6 +1277,7 @@ struct callback_data {
                          ** .explain ON */
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
+  sqlite3_stmt *pStmt;   /* Current statement if any. */
 };
 
 /*
@@ -1317,6 +1318,17 @@ static int strlen30(const char *z){
   const char *z2 = z;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
+}
+
+/*
+** Output the given string as a hex-encoded blob (eg. X'1234' )
+*/
+static void output_hex_blob(FILE *out, const void *pBlob, int nBlob){
+  int i;
+  char *zBlob = (char *)pBlob;
+  fprintf(out,"X'");
+  for(i=0; i<nBlob; i++){ fprintf(out,"%02x",zBlob[i]); }
+  fprintf(out,"'");
 }
 
 /*
@@ -1483,10 +1495,10 @@ static void interrupt_handler(int NotUsed){
 #endif
 
 /*
-** This is the callback routine that the SQLite library
+** This is the callback routine that the shell
 ** invokes for each row of a query result.
 */
-static int callback(void *pArg, int nArg, char **azArg, char **azCol){
+static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int *aiType){
   int i;
   struct callback_data *p = (struct callback_data*)pArg;
   switch( p->mode ){
@@ -1637,6 +1649,11 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
         char *zSep = i>0 ? ",": "";
         if( azArg[i]==0 ){
           fprintf(p->out,"%sNULL",zSep);
+        }else if( aiType && aiType[i]==SQLITE_BLOB && p->pStmt ){
+          const void *pBlob = sqlite3_column_blob(p->pStmt, i);
+          int nBlob = sqlite3_column_bytes(p->pStmt, i);
+          if( zSep[0] ) fprintf(p->out,"%s",zSep);
+          output_hex_blob(p->out, pBlob, nBlob);
         }else if( isNumber(azArg[i], 0) ){
           fprintf(p->out,"%s%s",zSep, azArg[i]);
         }else{
@@ -1649,6 +1666,15 @@ static int callback(void *pArg, int nArg, char **azArg, char **azCol){
     }
   }
   return 0;
+}
+
+/*
+** This is the callback routine that the SQLite library
+** invokes for each row of a query result.
+*/
+static int callback(void *pArg, int nArg, char **azArg, char **azCol){
+  /* since we don't have type info, call the shell_callback with a NULL value */
+  return shell_callback(pArg, nArg, azArg, azCol, NULL);
 }
 
 /*
@@ -1764,6 +1790,133 @@ static int run_table_dump_query(
     rc = sqlite3_step(pSelect);
   }
   return sqlite3_finalize(pSelect);
+}
+
+/*
+** Allocate space and save off current error string.
+*/
+static char *save_err_msg(
+  sqlite3 *db            /* Database to query */
+){
+  int nErrMsg = 1+strlen30(sqlite3_errmsg(db));
+  char *zErrMsg = sqlite3_malloc(nErrMsg);
+  if( zErrMsg ){
+    memcpy(zErrMsg, sqlite3_errmsg(db), nErrMsg);
+  }
+  return zErrMsg;
+}
+
+/*
+** Execute a statement or set of statements.  Print 
+** any result rows/columns depending on the current mode 
+** set via the supplied callback.
+**
+** This is very similar to SQLite's built-in sqlite3_exec() 
+** function except it takes a slightly different callback 
+** and callback data argument.
+*/
+static int shell_exec(
+  sqlite3 *db,                                /* An open database */
+  const char *zSql,                           /* SQL to be evaluated */
+  int (*xCallback)(void*,int,char**,char**,int*),   /* Callback function */
+                                              /* (not the same as sqlite3_exec) */
+  struct callback_data *pArg,                 /* Pointer to struct callback_data */
+  char **pzErrMsg                             /* Error msg written here */
+){
+  sqlite3_stmt *pStmt = NULL;
+  int rc, rc2;
+
+  if( pzErrMsg ){
+    *pzErrMsg = NULL;
+  }
+
+  rc = sqlite3_prepare(db, zSql, -1, &pStmt, 0);
+  if( (SQLITE_OK != rc) || !pStmt ){
+    if( pzErrMsg ){
+      *pzErrMsg = save_err_msg(db);
+    }
+  }else{
+    /* perform the first step.  this will tell us if we
+    ** have a result set or not and how wide it is.
+    */
+    rc = sqlite3_step(pStmt);
+    /* if we have a result set... */
+    if( SQLITE_ROW == rc ){
+      /* if callback... */
+      if( xCallback ){
+        /* allocate space for col name ptr, value ptr, and type */
+        int nCol = sqlite3_column_count(pStmt);
+        void *pData = sqlite3_malloc(3*nCol*sizeof(const char*) + 1);
+        if( !pData ){
+          rc = SQLITE_NOMEM;
+        }else{
+          char **azCols = (char **)pData;      /* Names of result columns */
+          char **azVals = &azCols[nCol];       /* Results */
+          int *aiTypes = (int *)&azVals[nCol]; /* Result types */
+          int i;
+          assert(sizeof(int) <= sizeof(char *)); 
+          /* save off ptrs to column names */
+          for(i=0; i<nCol; i++){
+            azCols[i] = (char *)sqlite3_column_name(pStmt, i);
+          }
+          /* save off the prepared statment handle */
+          if( pArg ){
+            pArg->pStmt = pStmt;
+          }
+          do{
+            /* extract the data and data types */
+            for(i=0; i<nCol; i++){
+              azVals[i] = (char *)sqlite3_column_text(pStmt, i);
+              aiTypes[i] = sqlite3_column_type(pStmt, i);
+              if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
+                rc = SQLITE_NOMEM;
+                break; /* from for */
+              }
+            } /* end for */
+
+            /* if data and types extracted successfully... */
+            if( SQLITE_ROW == rc ){ 
+              /* call the supplied callback with the result row data */
+              if( xCallback(pArg, nCol, azVals, azCols, aiTypes) ){
+                rc = SQLITE_ABORT;
+              }else{
+                rc = sqlite3_step(pStmt);
+              }
+            }
+          } while( SQLITE_ROW == rc );
+          sqlite3_free(pData);
+          if( pArg ){
+            pArg->pStmt = NULL;
+          }
+        }
+      }else{
+        do{
+          rc = sqlite3_step(pStmt);
+        } while( rc == SQLITE_ROW );
+      }
+    }
+
+    /* if the last sqlite3_step() didn't complete successfully... */
+    if( (SQLITE_OK != rc) && (SQLITE_DONE != rc) ){ 
+      if( pzErrMsg ){
+        *pzErrMsg = save_err_msg(db);
+      }
+    }else{
+      rc = SQLITE_OK;
+    }
+
+    rc2 = sqlite3_finalize(pStmt);
+    /* if the last sqlite3_finalize() didn't complete successfully 
+    ** AND we don't have a save error from sqlite3_step ... */
+    if( (SQLITE_OK != rc2) && (SQLITE_OK == rc) ){
+      rc = rc2;
+      if( pzErrMsg ){
+        *pzErrMsg = save_err_msg(db);
+      }
+    }
+  }
+
+  return rc;
 }
 
 
@@ -2910,7 +3063,7 @@ static int process_input(struct callback_data *p, FILE *in){
       p->cnt = 0;
       open_db(p);
       BEGIN_TIMER;
-      rc = sqlite3_exec(p->db, zSql, callback, p, &zErrMsg);
+      rc = shell_exec(p->db, zSql, shell_callback, p, &zErrMsg);
       END_TIMER;
       if( rc || zErrMsg ){
         char zPrefix[100];
@@ -3229,7 +3382,7 @@ int main(int argc, char **argv){
     }else{
       int rc;
       open_db(&data);
-      rc = sqlite3_exec(data.db, zFirstCmd, callback, &data, &zErrMsg);
+      rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
       if( rc!=0 && zErrMsg!=0 ){
         fprintf(stderr,"SQL error: %s\n", zErrMsg);
         exit(1);
