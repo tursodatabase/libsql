@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sthe\sMD5\schecksum\slogic\sinto\sthe\sTCL\sinterface.\s\sThis\sfacilitates\sbuilding\na\stclsh\sthat\scontains\sboth\sSQLite\sand\sMD5.\s\sThe\splan\sis\sto\suse\sthis\naugmented\stclsh\sto\shelp\sbuild\sthe\sdocumentation.
-D 2009-10-22T20:52:05
+C In\sshell,\sreworked\s.header\sand\s.echo\shandling.\s\s\s\nUpdated\sshell_exec()\sto\s(really)\shandle\smultiple\sstatements.\nTickets\s[72adc99de9],\s[7b61b6c6ce],\sand\s[eb620916be].
+D 2009-10-22T21:23:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 5d875ff501a361459fb3b7750af7818298acb515
+F src/shell.c 3a2b0649426d75b5cd2937ed90d06b25951a91e4
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -763,14 +760,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9854ad00aed08793ae7ba3c2cfbab7a2dba4dcb8
-R ff5c7263b704c24b2617ea3d38e8b0a4
-U drh
-Z beec7ddcfaa2c60bb6e07c180674b0ac
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK4MX4oxKgR168RlERArbdAJ90lkW1Q+8Lz1nMdSvuEiSBFrB0vgCgh6mI
-NrvEz/WTtlUC3GfFZQ78MLs=
-=xACK
------END PGP SIGNATURE-----
+P a024c0a85b6f2288c455a7192f6ca7a8493b621a
+R 3ab26891a50ecbe8d9dce9e787f45010
+U shane
+Z 313314dc4aa5889bc53b3806bff86b7f

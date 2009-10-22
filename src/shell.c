@@ -1501,6 +1501,11 @@ static void interrupt_handler(int NotUsed){
 static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int *aiType){
   int i;
   struct callback_data *p = (struct callback_data*)pArg;
+
+  if( p->echoOn && p->cnt==0  && p->pStmt){
+    printf("%s\n", sqlite3_sql(p->pStmt));
+  }
+
   switch( p->mode ){
     case MODE_Line: {
       int w = 5;
@@ -1643,6 +1648,7 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
       break;
     }
     case MODE_Insert: {
+      p->cnt++;
       if( azArg==0 ) break;
       fprintf(p->out,"INSERT INTO %s VALUES(",p->zDestTable);
       for(i=0; i<nArg; i++){
@@ -1829,97 +1835,114 @@ static int shell_exec(
   char **pzErrMsg                             /* Error msg written here */
 ){
   sqlite3_stmt *pStmt = NULL;
-  int rc, rc2;
+  int rc = SQLITE_OK;
+  int rc2;
+  const char *zLeftover;      /* Tail of unprocessed SQL */
 
   if( pzErrMsg ){
     *pzErrMsg = NULL;
   }
 
-  rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, 0);
-  if( (SQLITE_OK != rc) || !pStmt ){
-    if( pzErrMsg ){
-      *pzErrMsg = save_err_msg(db);
-    }
-  }else{
-    /* perform the first step.  this will tell us if we
-    ** have a result set or not and how wide it is.
-    */
-    rc = sqlite3_step(pStmt);
-    /* if we have a result set... */
-    if( SQLITE_ROW == rc ){
-      /* if callback... */
-      if( xCallback ){
-        /* allocate space for col name ptr, value ptr, and type */
-        int nCol = sqlite3_column_count(pStmt);
-        void *pData = sqlite3_malloc(3*nCol*sizeof(const char*) + 1);
-        if( !pData ){
-          rc = SQLITE_NOMEM;
-        }else{
-          char **azCols = (char **)pData;      /* Names of result columns */
-          char **azVals = &azCols[nCol];       /* Results */
-          int *aiTypes = (int *)&azVals[nCol]; /* Result types */
-          int i;
-          assert(sizeof(int) <= sizeof(char *)); 
-          /* save off ptrs to column names */
-          for(i=0; i<nCol; i++){
-            azCols[i] = (char *)sqlite3_column_name(pStmt, i);
-          }
-          /* save off the prepared statment handle */
-          if( pArg ){
-            pArg->pStmt = pStmt;
-          }
-          do{
-            /* extract the data and data types */
-            for(i=0; i<nCol; i++){
-              azVals[i] = (char *)sqlite3_column_text(pStmt, i);
-              aiTypes[i] = sqlite3_column_type(pStmt, i);
-              if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
-                rc = SQLITE_NOMEM;
-                break; /* from for */
-              }
-            } /* end for */
-
-            /* if data and types extracted successfully... */
-            if( SQLITE_ROW == rc ){ 
-              /* call the supplied callback with the result row data */
-              if( xCallback(pArg, nCol, azVals, azCols, aiTypes) ){
-                rc = SQLITE_ABORT;
-              }else{
-                rc = sqlite3_step(pStmt);
-              }
-            }
-          } while( SQLITE_ROW == rc );
-          sqlite3_free(pData);
-          if( pArg ){
-            pArg->pStmt = NULL;
-          }
-        }
-      }else{
-        do{
-          rc = sqlite3_step(pStmt);
-        } while( rc == SQLITE_ROW );
-      }
-    }
-
-    /* if the last sqlite3_step() didn't complete successfully... */
-    if( (SQLITE_OK != rc) && (SQLITE_DONE != rc) ){ 
+  while( zSql[0] && (SQLITE_OK == rc) ){
+    rc = sqlite3_prepare_v2(db, zSql, -1, &pStmt, &zLeftover);
+    if( SQLITE_OK != rc ){
       if( pzErrMsg ){
         *pzErrMsg = save_err_msg(db);
       }
     }else{
-      rc = SQLITE_OK;
-    }
+      if( !pStmt ){
+        /* this happens for a comment or white-space */
+        zSql = zLeftover;
+        while( isspace(zSql[0]) ) zSql++;
+        continue;
+      }
 
-    rc2 = sqlite3_finalize(pStmt);
-    /* if the last sqlite3_finalize() didn't complete successfully 
-    ** AND we don't have a save error from sqlite3_step ... */
-    if( (SQLITE_OK != rc2) && (SQLITE_OK == rc) ){
-      rc = rc2;
-      if( pzErrMsg ){
-        *pzErrMsg = save_err_msg(db);
+      /* perform the first step.  this will tell us if we
+      ** have a result set or not and how wide it is.
+      */
+      rc = sqlite3_step(pStmt);
+      /* if we have a result set... */
+      if( SQLITE_ROW == rc ){
+        /* if we have a callback... */
+        if( xCallback ){
+          /* allocate space for col name ptr, value ptr, and type */
+          int nCol = sqlite3_column_count(pStmt);
+          void *pData = sqlite3_malloc(3*nCol*sizeof(const char*) + 1);
+          if( !pData ){
+            rc = SQLITE_NOMEM;
+          }else{
+            char **azCols = (char **)pData;      /* Names of result columns */
+            char **azVals = &azCols[nCol];       /* Results */
+            int *aiTypes = (int *)&azVals[nCol]; /* Result types */
+            int i;
+            assert(sizeof(int) <= sizeof(char *)); 
+            /* save off ptrs to column names */
+            for(i=0; i<nCol; i++){
+              azCols[i] = (char *)sqlite3_column_name(pStmt, i);
+            }
+            /* save off the prepared statment handle and reset row count */
+            if( pArg ){
+              pArg->pStmt = pStmt;
+              pArg->cnt = 0;
+            }
+            do{
+              /* extract the data and data types */
+              for(i=0; i<nCol; i++){
+                azVals[i] = (char *)sqlite3_column_text(pStmt, i);
+                aiTypes[i] = sqlite3_column_type(pStmt, i);
+                if( !azVals[i] && (aiTypes[i]!=SQLITE_NULL) ){
+                  rc = SQLITE_NOMEM;
+                  break; /* from for */
+                }
+              } /* end for */
+
+              /* if data and types extracted successfully... */
+              if( SQLITE_ROW == rc ){ 
+                /* call the supplied callback with the result row data */
+                if( xCallback(pArg, nCol, azVals, azCols, aiTypes) ){
+                  rc = SQLITE_ABORT;
+                }else{
+                  rc = sqlite3_step(pStmt);
+                }
+              }
+            } while( SQLITE_ROW == rc );
+            sqlite3_free(pData);
+            if( pArg ){
+              pArg->pStmt = NULL;
+            }
+          }
+        }else{
+          do{
+            rc = sqlite3_step(pStmt);
+          } while( rc == SQLITE_ROW );
+        }
+      }
+
+      /* if the last sqlite3_step() didn't complete successfully... */
+      if( (SQLITE_OK != rc) && (SQLITE_DONE != rc) ){ 
+        if( pzErrMsg ){
+          *pzErrMsg = save_err_msg(db);
+        }
+      }else{
+        rc = SQLITE_OK;
+      }
+
+      rc2 = sqlite3_finalize(pStmt);
+      /* if the last sqlite3_finalize() didn't complete successfully 
+      ** AND we don't have a save error from sqlite3_step ... */
+      if( (SQLITE_OK != rc2) && (SQLITE_OK == rc) ){
+        rc = rc2;
+        if( pzErrMsg ){
+          *pzErrMsg = save_err_msg(db);
+        }
+      }
+
+      if( SQLITE_OK == rc ){ 
+        zSql = zLeftover;
+        while( isspace(zSql[0]) ) zSql++;
       }
     }
-  }
+  } /* end while */
 
   return rc;
 }
@@ -3024,9 +3047,9 @@ static int process_input(struct callback_data *p, FILE *in){
       seenInterrupt = 0;
     }
     lineno++;
-    if( p->echoOn ) printf("%s\n", zLine);
     if( (zSql==0 || zSql[0]==0) && _all_whitespace(zLine) ) continue;
     if( zLine && zLine[0]=='.' && nSql==0 ){
+      if( p->echoOn ) printf("%s\n", zLine);
       rc = do_meta_command(zLine, p);
       if( rc==2 ){
         break;
