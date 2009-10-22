@@ -233,7 +233,6 @@ TESTSRC = \
   $(TOP)/src/test_init.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
-  $(TOP)/src/test_md5.c \
   $(TOP)/src/test_mutex.c \
   $(TOP)/src/test_onefile.c \
   $(TOP)/src/test_osinst.c \

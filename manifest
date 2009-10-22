@@ -1,10 +1,10 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\ssome\ssample\srequirement\simplementation\scomments\sto\swhere.c.
-D 2009-10-22T20:50:37
+C Merge\sthe\sMD5\schecksum\slogic\sinto\sthe\sTCL\sinterface.\s\sThis\sfacilitates\sbuilding\na\stclsh\sthat\scontains\sboth\sSQLite\sand\sMD5.\s\sThe\splan\sis\sto\suse\sthis\naugmented\stclsh\sto\shelp\sbuild\sthe\sdocumentation.
+D 2009-10-22T20:52:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 4ca3f1dd6efa2075bcb27f4dc43eef749877740d
+F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 10010ddbf52e2503c7c49c7c0b7c7a096f8638a6
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -89,7 +89,7 @@ F ext/rtree/tkt3363.test 6662237ea75bb431cd5d262dfc9535e1023315fc
 F ext/rtree/viewrtree.tcl 09526398dae87a5a87c5aac2b3854dbaf8376869
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk c3c5c6d038512603c4c8a2599955a86fbd9e6973
+F main.mk d588eab5d51b0bfe924a1cccdfdd2cbb4cbe40b4
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -171,7 +171,7 @@ F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c 97e1d25695e47897294bf84f689191052a00fefa
+F src/tclsqlite.c e1925591941305e74f479072791738b5efe04daf
 F src/test1.c 2232a39540a6b72f3be8f84b34d1ca0714f92aee
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
@@ -763,14 +763,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ab99faca6ce57a5e37405dfc8dc55d149cf3f8a3
-R 34571dc173db0fe4dde0ee5a4c1f4517
+P 9854ad00aed08793ae7ba3c2cfbab7a2dba4dcb8
+R ff5c7263b704c24b2617ea3d38e8b0a4
 U drh
-Z 57f929a0d55f694c41e3b88f33a92c56
+Z beec7ddcfaa2c60bb6e07c180674b0ac
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK4MWgoxKgR168RlERAoKuAJsE9zC9lPjG8CswhR72XKosUk+s8wCcDeq1
-OtMwydc7/6G0OV7ZW4H/IF8=
-=nOtI
+iD8DBQFK4MX4oxKgR168RlERArbdAJ90lkW1Q+8Lz1nMdSvuEiSBFrB0vgCgh6mI
+NrvEz/WTtlUC3GfFZQ78MLs=
+=xACK
 -----END PGP SIGNATURE-----
