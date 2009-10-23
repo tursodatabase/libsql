@@ -313,6 +313,108 @@ static void test_eval(
 }
 
 
+/*
+** convert one character from hex to binary
+*/
+static int testHexChar(char c){
+  if( c>='0' && c<='9' ){
+    return c - '0';
+  }else if( c>='a' && c<='f' ){
+    return c - 'a' + 10;
+  }else if( c>='A' && c<='F' ){
+    return c - 'A' + 10;
+  }
+  return 0;
+}
+
+/*
+** Convert hex to binary.
+*/
+static void testHexToBin(const char *zIn, char *zOut){
+  while( zIn[0] && zIn[1] ){
+    *(zOut++) = (testHexChar(zIn[0])<<4) + testHexChar(zIn[1]);
+    zIn += 2;
+  }
+}
+
+/*
+**      hex_to_utf16be(HEX)
+**
+** Convert the input string from HEX into binary.  Then return the
+** result using sqlite3_result_text16le().
+*/
+static void testHexToUtf16be(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  int n;
+  const char *zIn;
+  char *zOut;
+  assert( nArg==1 );
+  n = sqlite3_value_bytes(argv[0]);
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  zOut = sqlite3_malloc( n/2 );
+  if( zOut==0 ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    testHexToBin(zIn, zOut);
+    sqlite3_result_text16be(pCtx, zOut, n/2, sqlite3_free);
+  }
+}
+
+/*
+**      hex_to_utf8(HEX)
+**
+** Convert the input string from HEX into binary.  Then return the
+** result using sqlite3_result_text16le().
+*/
+static void testHexToUtf8(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  int n;
+  const char *zIn;
+  char *zOut;
+  assert( nArg==1 );
+  n = sqlite3_value_bytes(argv[0]);
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  zOut = sqlite3_malloc( n/2 );
+  if( zOut==0 ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    testHexToBin(zIn, zOut);
+    sqlite3_result_text(pCtx, zOut, n/2, sqlite3_free);
+  }
+}
+
+/*
+**      hex_to_utf16le(HEX)
+**
+** Convert the input string from HEX into binary.  Then return the
+** result using sqlite3_result_text16le().
+*/
+static void testHexToUtf16le(
+  sqlite3_context *pCtx, 
+  int nArg,
+  sqlite3_value **argv
+){
+  int n;
+  const char *zIn;
+  char *zOut;
+  assert( nArg==1 );
+  n = sqlite3_value_bytes(argv[0]);
+  zIn = (const char*)sqlite3_value_text(argv[0]);
+  zOut = sqlite3_malloc( n/2 );
+  if( zOut==0 ){
+    sqlite3_result_error_nomem(pCtx);
+  }else{
+    testHexToBin(zIn, zOut);
+    sqlite3_result_text16le(pCtx, zOut, n/2, sqlite3_free);
+  }
+}
+
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
      char *zName;
@@ -324,7 +426,10 @@ static int registerTestFunctions(sqlite3 *db){
     { "test_destructor",       1, SQLITE_UTF8, test_destructor},
 #ifndef SQLITE_OMIT_UTF16
     { "test_destructor16",     1, SQLITE_UTF8, test_destructor16},
+    { "hex_to_utf16be",        1, SQLITE_UTF8, testHexToUtf16be},
+    { "hex_to_utf16le",        1, SQLITE_UTF8, testHexToUtf16le},
 #endif
+    { "hex_to_utf8",           1, SQLITE_UTF8, testHexToUtf8},
     { "test_destructor_count", 0, SQLITE_UTF8, test_destructor_count},
     { "test_auxdata",         -1, SQLITE_UTF8, test_auxdata},
     { "test_error",            1, SQLITE_UTF8, test_error},
@@ -446,8 +551,6 @@ abuse_err:
                    (char*)0);
   return TCL_ERROR;
 }
-
-
 
 /*
 ** Register commands with the TCL interpreter.

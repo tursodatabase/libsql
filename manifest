@@ -1,5 +1,8 @@
-C In\sshell,\sensure\sthat\sdo_meta_command()\sreturns\sconsistent\serror\svalues.\s\s\nAdjusted\sthe\stext\sof\ssome\serror\smessage\sto\sbe\smore\sconsistent.\nTicket\s[beb2dd69ad].
-D 2009-10-23T01:27:39
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthat\sUTF16\sto\sUTF8\sconversions\sto\snot\sread\spast\sthe\send\sof\sthe\nUTF16\sinput\sbuffer\sif\sthe\slast\stwo\sbytes\sof\sthe\sUTF16\shappen\sto\sbe\sthe\nfirst\shalf\sof\sa\ssurrogate\spair.\s\sTicket\s[3fe897352e]
+D 2009-10-23T18:15:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -184,7 +187,7 @@ F src/test_backup.c 1384a18985a5a2d275c2662e48473bf1542ebd08
 F src/test_btree.c 5adbba9b138988a3cf4d3b5424dbc7c85651da02
 F src/test_config.c 4ac1e6257dcf926a71b7934410b71c5c326e68f2
 F src/test_devsym.c 9f4bc2551e267ce7aeda195f3897d0f30c5228f4
-F src/test_func.c 26ac62d8ed7a9f45a1e05baffb1c1e55fe2a06f2
+F src/test_func.c c6e9d7cfbd7bb0bd7c392a10d76adab4b48e813b
 F src/test_hexio.c 2f1122aa3f012fa0142ee3c36ce5c902a70cd12f
 F src/test_init.c f6a5dfaf2fb52d697eec1c825a641e5893c339d2
 F src/test_journal.c dab49b7c47b53242f039c9563b18cafb67ebfe03
@@ -202,7 +205,7 @@ F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 2053afa9952f69cf451bc0e6ea88072701f2925e
 F src/update.c 8e8535f66c32d946199cb1caad19646a97ead3a7
-F src/utf.c 99cf927eabb104621ba889ac0dd075fc1657ad30
+F src/utf.c 7b4012e80709fa654150dee360fc8dc62c4f3e12
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 48e1282bbd5eac4b461587c51658378658c00770
 F src/vdbe.c f0d6e7dbd4515758c188c9dd7025eb9dfcf021e0
@@ -587,6 +590,7 @@ F test/thread_common.tcl b65e6b1d1d90dc885e10ad080896c6c56eef0819
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
+F test/tkt-3fe897352e.test 8084dad39807eac10b10720c84193bd1a5980973
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-94c04eaadb.test 40e6b1fce420fbecf8c2379d3ec3cb6889e49091
@@ -760,7 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 009efad0f4293dd08a6f2f16d8eb9e94e2f962ca
-R f9d7f2aaa2e65e337a1efea04bfa77d8
-U shane
-Z 4f0172d3d5c0c4efeae4e77b96e3ca4c
+P 1ebac9edddd28bdbbd9815fdb64eb9129f39f94a
+R 10c8b96c1dc163bdaa37780882770a38
+U drh
+Z 0cd60e2c2d007317dff310d0e88c5141
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK4fLVoxKgR168RlERAr5CAJ0bzAp+z2Fww00QL0aoSxz38K0PMACfZgQl
+UXyWy3LAycOijyALRw/J7TI=
+=pctl
+-----END PGP SIGNATURE-----
