@@ -1,5 +1,5 @@
-C In\sshell,\smodified\s"import"\shandling\sto\sensure\serror\scode\sreturned\scorrectly\son\sexit.\nTicket\s[bd770b2c52].
-D 2009-10-23T00:37:16
+C In\sshell,\sensure\sthat\sdo_meta_command()\sreturns\sconsistent\serror\svalues.\s\s\nAdjusted\sthe\stext\sof\ssome\serror\smessage\sto\sbe\smore\sconsistent.\nTicket\s[beb2dd69ad].
+D 2009-10-23T01:27:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 4b1d54c6deae0b9a9e477a5dbed1e9853f958f91
+F src/shell.c 19c86a22e32096a3bc6845b200a793fb9f2d0376
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -760,7 +760,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 790402c150e2026cd0c147a4cadbe9b9ab97b688
-R ca40506625a393ee29409c8b893be283
+P 009efad0f4293dd08a6f2f16d8eb9e94e2f962ca
+R f9d7f2aaa2e65e337a1efea04bfa77d8
 U shane
-Z 5f0f64058678a5e5ac4bd6553c1be92d
+Z 4f0172d3d5c0c4efeae4e77b96e3ca4c
