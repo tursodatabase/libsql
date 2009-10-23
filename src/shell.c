@@ -2485,7 +2485,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
   if( c=='i' && strncmp(azArg[0], "import", n)==0 && nArg>=3 ){
     char *zTable = azArg[2];    /* Insert data into this table */
     char *zFile = azArg[1];     /* The file from which to extract data */
-    sqlite3_stmt *pStmt;        /* A statement */
+    sqlite3_stmt *pStmt = NULL; /* A statement */
     int rc;                     /* Result code */
     int nCol;                   /* Number of columns in the table */
     int nByte;                  /* Number of bytes in an SQL string */
@@ -2501,25 +2501,31 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     open_db(p);
     nSep = strlen30(p->separator);
     if( nSep==0 ){
-      fprintf(stderr, "non-null separator required for import\n");
-      return 0;
+      fprintf(stderr, "Error: non-null separator required for import\n");
+      return 1;
     }
     zSql = sqlite3_mprintf("SELECT * FROM '%q'", zTable);
-    if( zSql==0 ) return 0;
+    if( zSql==0 ){
+      fprintf(stderr, "Error: out of memory\n");
+      return 1;
+    }
     nByte = strlen30(zSql);
     rc = sqlite3_prepare(p->db, zSql, -1, &pStmt, 0);
     sqlite3_free(zSql);
     if( rc ){
+      if (pStmt) sqlite3_finalize(pStmt);
       fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
-      nCol = 0;
-      rc = 1;
-    }else{
-      nCol = sqlite3_column_count(pStmt);
+      return 1;
     }
+    nCol = sqlite3_column_count(pStmt);
     sqlite3_finalize(pStmt);
+    pStmt = 0;
     if( nCol==0 ) return 0;
     zSql = malloc( nByte + 20 + nCol*2 );
-    if( zSql==0 ) return 0;
+    if( zSql==0 ){
+      fprintf(stderr, "Error: out of memory\n");
+      return 1;
+    }
     sqlite3_snprintf(nByte+20, zSql, "INSERT INTO '%q' VALUES(?", zTable);
     j = strlen30(zSql);
     for(i=1; i<nCol; i++){
@@ -2532,19 +2538,21 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     free(zSql);
     if( rc ){
       fprintf(stderr, "Error: %s\n", sqlite3_errmsg(db));
-      sqlite3_finalize(pStmt);
+      if (pStmt) sqlite3_finalize(pStmt);
       return 1;
     }
     in = fopen(zFile, "rb");
     if( in==0 ){
-      fprintf(stderr, "cannot open file: %s\n", zFile);
+      fprintf(stderr, "Error: cannot open file: %s\n", zFile);
       sqlite3_finalize(pStmt);
-      return 0;
+      return 1;
     }
     azCol = malloc( sizeof(azCol[0])*(nCol+1) );
     if( azCol==0 ){
+      fprintf(stderr, "Error: out of memory\n");
       fclose(in);
-      return 0;
+      sqlite3_finalize(pStmt);
+      return 1;
     }
     sqlite3_exec(p->db, "BEGIN", 0, 0, 0);
     zCommit = "COMMIT";
@@ -2562,14 +2570,16 @@ static int do_meta_command(char *zLine, struct callback_data *p){
             z += nSep-1;
           }
         }
-      }
+      } /* end for */
       *z = 0;
       if( i+1!=nCol ){
-        fprintf(stderr,"%s line %d: expected %d columns of data but found %d\n",
-           zFile, lineno, nCol, i+1);
+        fprintf(stderr,
+                "Error: %s line %d: expected %d columns of data but found %d\n",
+                zFile, lineno, nCol, i+1);
         zCommit = "ROLLBACK";
         free(zLine);
-        break;
+        rc = 1;
+        break; /* from while */
       }
       for(i=0; i<nCol; i++){
         sqlite3_bind_text(pStmt, i+1, azCol[i], -1, SQLITE_STATIC);
@@ -2581,9 +2591,9 @@ static int do_meta_command(char *zLine, struct callback_data *p){
         fprintf(stderr,"Error: %s\n", sqlite3_errmsg(db));
         zCommit = "ROLLBACK";
         rc = 1;
-        break;
+        break; /* from while */
       }
-    }
+    } /* end while */
     free(azCol);
     fclose(in);
     sqlite3_finalize(pStmt);
@@ -3051,7 +3061,7 @@ static int process_input(struct callback_data *p, FILE *in){
     if( zLine && zLine[0]=='.' && nSql==0 ){
       if( p->echoOn ) printf("%s\n", zLine);
       rc = do_meta_command(zLine, p);
-      if( rc==2 ){
+      if( rc==2 ){ /* exit requested */
         break;
       }else if( rc ){
         errCnt++;
@@ -3405,8 +3415,8 @@ int main(int argc, char **argv){
     /* Run just the command that follows the database name
     */
     if( zFirstCmd[0]=='.' ){
-      do_meta_command(zFirstCmd, &data);
-      exit(0);
+      rc = do_meta_command(zFirstCmd, &data);
+      exit(rc);
     }else{
       int rc;
       open_db(&data);
