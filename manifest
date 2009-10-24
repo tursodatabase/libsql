@@ -1,5 +1,5 @@
-C In\sshell,\schanged\s".tables"\scommand\sto\snot\sadd\s'%'\sto\sspecified\spattern.\s\sThis\sis\sconsistent\nwith\sother\scommands\sthat\stake\sa\sLIKE\spattern\s(.dump,\s.schema,\s.indices).\nUpdated\sinternal\shelp\sto\sbetter\sdescribe\sLIKE\spattern\susage.\nFixed\sa\sfew\smore\sinconsistencies\sin\serror\smessages.\sTicket\s[6da68f691b].
-D 2009-10-24T02:00:07
+C In\sshell,\smodified\sto\snot\sprint\sinformational\smessages\sduring\sstartup\swhile\sin\s"batch\smode".\nTicket\s[2cb66577f6].
+D 2009-10-24T02:06:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 0e43ac51c416d61e5491beeed14495b37941f9ab
+F src/shell.c f66531a57fff927f95c98d99c28237d88e400c86
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -761,7 +761,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 65b1e3a4c31f6cb6fd3f600701658b0cdbee603f
-R 33ed6fc2ad95ec267314811e76645c50
+P 7201244e67c197f16d6752cc0fa7232a9664381e
+R 60ab33709c976a2fa35fbf9d45e0d905
 U shane
-Z 74660ae65b33d7b4cfbd712c9f8b941d
+Z c3ee7cc5ac51065bd4726a67a8531686

@@ -3356,6 +3356,13 @@ int main(int argc, char **argv){
     }else if( strcmp(argv[i],"-init")==0 ){
       i++;
       zInitFile = argv[i];
+    /* Need to check for batch mode here to so we can avoid printing
+    ** informational messages (like from process_sqliterc) before 
+    ** we do the actual processing of arguments later in a second pass.
+    */
+    }else if( strcmp(argv[i],"-batch")==0 ){
+      i++;
+      stdin_is_interactive = 0;
     }
   }
   if( i<argc ){
