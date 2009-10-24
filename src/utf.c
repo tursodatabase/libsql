@@ -488,8 +488,14 @@ char *sqlite3Utf8to16(sqlite3 *db, u8 enc, char *z, int n, int *pnOut){
 int sqlite3Utf16ByteLen(const void *zIn, int nChar){
   int c;
   unsigned char const *z = zIn;
-  unsigned char const *zTerm = &z[nChar];
+  unsigned char const *zTerm;
   int n = 0;
+
+  /* Some of the characters might be surrogates.  Be careful not to terminate
+  ** the string too early because of them.   In the worst case, all characters
+  ** or surrogates so make the terminator 2*nChar from the beginning. */
+  zTerm = &z[nChar*2];
+  
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16BE ){
     /* Using an "if (SQLITE_UTF16NATIVE==SQLITE_UTF16BE)" construct here
     ** and in other parts of this file means that at one branch will

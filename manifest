@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthat\sUTF16\sto\sUTF8\sconversions\sto\snot\sread\spast\sthe\send\sof\sthe\nUTF16\sinput\sbuffer\sif\sthe\slast\stwo\sbytes\sof\sthe\sUTF16\shappen\sto\sbe\sthe\nfirst\shalf\sof\sa\ssurrogate\spair.\s\sTicket\s[3fe897352e]
-D 2009-10-23T18:15:46
+C Check-in\s[19064d7cea]\sbroke\sthe\spTail\sreturn\son\ssqlite3_prepare16()\swhen\nthe\sSQL\scontained\ssurrogates.\sThis\scheck-in\srestores\scorrect\sfunction.\nPart\sof\sticket\s[3fe897352e].
+D 2009-10-24T01:55:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -205,7 +205,7 @@ F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 2053afa9952f69cf451bc0e6ea88072701f2925e
 F src/update.c 8e8535f66c32d946199cb1caad19646a97ead3a7
-F src/utf.c 7b4012e80709fa654150dee360fc8dc62c4f3e12
+F src/utf.c 2395dfcd72e0da4dbc75ff7e113bd415562750aa
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 48e1282bbd5eac4b461587c51658378658c00770
 F src/vdbe.c f0d6e7dbd4515758c188c9dd7025eb9dfcf021e0
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1ebac9edddd28bdbbd9815fdb64eb9129f39f94a
-R 10c8b96c1dc163bdaa37780882770a38
+P 19064d7cea838e1a93fe63743ed247f440679e97
+R 44dc5ec300c49505c4d9505ed09a5846
 U drh
-Z 0cd60e2c2d007317dff310d0e88c5141
+Z 311a3a4efd8a48ee4d5b8ab3156cfc0d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK4fLVoxKgR168RlERAr5CAJ0bzAp+z2Fww00QL0aoSxz38K0PMACfZgQl
-UXyWy3LAycOijyALRw/J7TI=
-=pctl
+iD8DBQFK4l6HoxKgR168RlERAh4lAJ9MkpkD9AGChuh3laSqM4tt1RLMVwCdHia4
+0BLXlH3U8qi9GDIqnVIMoCM=
+=ltxy
 -----END PGP SIGNATURE-----
