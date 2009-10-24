@@ -37,8 +37,8 @@
 # include <stdlib.h>
 # include <string.h>
 # include <assert.h>
-# include <ctype.h>
 #endif
+#include <ctype.h>
 
 /*
  * Windows needs to know which symbols to export.  Unix does not.

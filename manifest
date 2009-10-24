@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Another\sattempt\sat\sgetting\sthe\spTail\spointer\scomputations\scorrect\sfor\nsqlite3_prepare16().\s\sTicket\s[3fe897352e].
-D 2009-10-24T03:04:10
+C Fix\sa\scompiler\swarning\sthat\soccurs\swhen\sbuilding\sthe\sTCL\sinterface.
+D 2009-10-24T15:51:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -171,7 +171,7 @@ F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
-F src/tclsqlite.c e1925591941305e74f479072791738b5efe04daf
+F src/tclsqlite.c c2c4047177213baf485d4401c7dbb30a3c2ba322
 F src/test1.c 2232a39540a6b72f3be8f84b34d1ca0714f92aee
 F src/test2.c 0de743ec8890ca4f09e0bce5d6d5a681f5957fec
 F src/test3.c 2445c2beb5e7a0c91fd8136dc1339ec369a24898
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e3898e25cf0ea870612eeaca6af2396f0eab0e07
-R 812e08bbbda7f3c1c20cc13eab0908b5
+P a96b4e8c01d167d35b9ec08ee6603e52ead601b6
+R 6c03a3709574a1b24beff662534ec2bc
 U drh
-Z a77b23ae4660d0446d23e96276a09fed
+Z b00248272baf637dd9cfef9089c2f47a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK4m6toxKgR168RlERArtJAJ9QVy9jQaoZqiU28dnOR4bS/6L/8ACfWKTS
-yTokoUWQvjoZJq2ypxGLloM=
-=2RLp
+iD8DBQFK4yKJoxKgR168RlERAi6NAJ4+uc+/5LfSwtIyQS0YP/aW28lR2QCfbN/3
+1QwSh0x1cHrosgzroBaugyY=
+=qzuQ
 -----END PGP SIGNATURE-----
