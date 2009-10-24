@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Check-in\s[19064d7cea]\sbroke\sthe\spTail\sreturn\son\ssqlite3_prepare16()\swhen\nthe\sSQL\scontained\ssurrogates.\sThis\scheck-in\srestores\scorrect\sfunction.\nPart\sof\sticket\s[3fe897352e].
-D 2009-10-24T01:55:15
+C In\sshell,\schanged\s".tables"\scommand\sto\snot\sadd\s'%'\sto\sspecified\spattern.\s\sThis\sis\sconsistent\nwith\sother\scommands\sthat\stake\sa\sLIKE\spattern\s(.dump,\s.schema,\s.indices).\nUpdated\sinternal\shelp\sto\sbetter\sdescribe\sLIKE\spattern\susage.\nFixed\sa\sfew\smore\sinconsistencies\sin\serror\smessages.\sTicket\s[6da68f691b].
+D 2009-10-24T02:00:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -164,7 +161,7 @@ F src/random.c 676b9d7ac820fe81e6fb2394ac8c10cff7f38628
 F src/resolve.c 3ac31c7181fab03732125fdedf7c2091a5c07f1b
 F src/rowset.c c64dafba1f9fd876836c8db8682966b9d197eb1f
 F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
-F src/shell.c 19c86a22e32096a3bc6845b200a793fb9f2d0376
+F src/shell.c 0e43ac51c416d61e5491beeed14495b37941f9ab
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
@@ -764,14 +761,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 19064d7cea838e1a93fe63743ed247f440679e97
-R 44dc5ec300c49505c4d9505ed09a5846
-U drh
-Z 311a3a4efd8a48ee4d5b8ab3156cfc0d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK4l6HoxKgR168RlERAh4lAJ9MkpkD9AGChuh3laSqM4tt1RLMVwCdHia4
-0BLXlH3U8qi9GDIqnVIMoCM=
-=ltxy
------END PGP SIGNATURE-----
+P 65b1e3a4c31f6cb6fd3f600701658b0cdbee603f
+R 33ed6fc2ad95ec267314811e76645c50
+U shane
+Z 74660ae65b33d7b4cfbd712c9f8b941d

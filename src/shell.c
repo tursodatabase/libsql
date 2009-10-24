@@ -1713,7 +1713,7 @@ static void set_table_name(struct callback_data *p, const char *zName){
   if( needQuote ) n += 2;
   z = p->zDestTable = malloc( n+1 );
   if( z==0 ){
-    fprintf(stderr,"Out of memory!\n");
+    fprintf(stderr,"Error: out of memory\n");
     exit(1);
   }
   n = 0;
@@ -1929,7 +1929,7 @@ static int shell_exec(
 
       rc2 = sqlite3_finalize(pStmt);
       /* if the last sqlite3_finalize() didn't complete successfully 
-      ** AND we don't have a save error from sqlite3_step ... */
+      ** AND we don't have a saved error from sqlite3_step ... */
       if( (SQLITE_OK != rc2) && (SQLITE_OK == rc) ){
         rc = rc2;
         if( pzErrMsg ){
@@ -2136,6 +2136,8 @@ static char zHelp[] =
   ".bail ON|OFF           Stop after hitting an error.  Default OFF\n"
   ".databases             List names and files of attached databases\n"
   ".dump ?TABLE? ...      Dump the database in an SQL text format\n"
+  "                         If TABLE specified, only dump tables matching\n"
+  "                         LIKE pattern TABLE.\n"
   ".echo ON|OFF           Turn command echo on or off\n"
   ".exit                  Exit this program\n"
   ".explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.\n"
@@ -2150,7 +2152,9 @@ static char zHelp[] =
   ".header(s) ON|OFF      Turn display of headers on or off\n"
   ".help                  Show this message\n"
   ".import FILE TABLE     Import data from FILE into TABLE\n"
-  ".indices TABLE         Show names of all indices on TABLE\n"
+  ".indices ?TABLE?       Show names of all indices\n"
+  "                         If TABLE specified, only show indices for tables\n"
+  "                         matching LIKE pattern TABLE.\n"
 #ifdef SQLITE_ENABLE_IOTRACE
   ".iotrace FILE          Enable I/O diagnostic logging to FILE\n"
 #endif
@@ -2174,9 +2178,13 @@ static char zHelp[] =
   ".read FILENAME         Execute SQL in FILENAME\n"
   ".restore ?DB? FILE     Restore content of DB (default \"main\") from FILE\n"
   ".schema ?TABLE?        Show the CREATE statements\n"
+  "                         If TABLE specified, only show tables matching\n"
+  "                         LIKE pattern TABLE.\n"
   ".separator STRING      Change separator used by output mode and .import\n"
   ".show                  Show the current values for various settings\n"
-  ".tables ?PATTERN?      List names of tables matching a LIKE pattern\n"
+  ".tables ?TABLE?        List names of tables\n"
+  "                         If TABLE specified, only list tables matching\n"
+  "                         LIKE pattern TABLE.\n"
   ".timeout MS            Try opening locked tables for MS milliseconds\n"
   ".width NUM NUM ...     Set column widths for \"column\" mode\n"
 ;
@@ -2201,7 +2209,7 @@ static void open_db(struct callback_data *p){
           shellstaticFunc, 0, 0);
     }
     if( db==0 || SQLITE_OK!=sqlite3_errcode(db) ){
-      fprintf(stderr,"Unable to open database \"%s\": %s\n", 
+      fprintf(stderr,"Error: unable to open database \"%s\": %s\n", 
           p->zDbFilename, sqlite3_errmsg(db));
       exit(1);
     }
@@ -2600,27 +2608,42 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     sqlite3_exec(p->db, zCommit, 0, 0, 0);
   }else
 
-  if( c=='i' && strncmp(azArg[0], "indices", n)==0 && nArg>1 ){
+  if( c=='i' && strncmp(azArg[0], "indices", n)==0 ){
     struct callback_data data;
     char *zErrMsg = 0;
     open_db(p);
     memcpy(&data, p, sizeof(data));
     data.showHeader = 0;
     data.mode = MODE_List;
-    zShellStatic = azArg[1];
-    sqlite3_exec(p->db,
-      "SELECT name FROM sqlite_master "
-      "WHERE type='index' AND tbl_name LIKE shellstatic() "
-      "UNION ALL "
-      "SELECT name FROM sqlite_temp_master "
-      "WHERE type='index' AND tbl_name LIKE shellstatic() "
-      "ORDER BY 1",
-      callback, &data, &zErrMsg
-    );
-    zShellStatic = 0;
+    if( nArg==1 ){
+      rc = sqlite3_exec(p->db,
+        "SELECT name FROM sqlite_master "
+        "WHERE type='index' AND name NOT LIKE 'sqlite_%' "
+        "UNION ALL "
+        "SELECT name FROM sqlite_temp_master "
+        "WHERE type='index' "
+        "ORDER BY 1",
+        callback, &data, &zErrMsg
+      );
+    }else{
+      zShellStatic = azArg[1];
+      rc = sqlite3_exec(p->db,
+        "SELECT name FROM sqlite_master "
+        "WHERE type='index' AND tbl_name LIKE shellstatic() "
+        "UNION ALL "
+        "SELECT name FROM sqlite_temp_master "
+        "WHERE type='index' AND tbl_name LIKE shellstatic() "
+        "ORDER BY 1",
+        callback, &data, &zErrMsg
+      );
+      zShellStatic = 0;
+    }
     if( zErrMsg ){
       fprintf(stderr,"Error: %s\n", zErrMsg);
       sqlite3_free(zErrMsg);
+      rc = 1;
+    }else if( rc != SQLITE_OK ){
+      fprintf(stderr,"Error: querying sqlite_master and sqlite_temp_master\n");
       rc = 1;
     }
   }else
@@ -2902,7 +2925,7 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     if( nArg==1 ){
       rc = sqlite3_get_table(p->db,
         "SELECT name FROM sqlite_master "
-        "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%'"
+        "WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' "
         "UNION ALL "
         "SELECT name FROM sqlite_temp_master "
         "WHERE type IN ('table','view') "
@@ -2913,10 +2936,10 @@ static int do_meta_command(char *zLine, struct callback_data *p){
       zShellStatic = azArg[1];
       rc = sqlite3_get_table(p->db,
         "SELECT name FROM sqlite_master "
-        "WHERE type IN ('table','view') AND name LIKE '%'||shellstatic()||'%' "
+        "WHERE type IN ('table','view') AND name LIKE shellstatic() "
         "UNION ALL "
         "SELECT name FROM sqlite_temp_master "
-        "WHERE type IN ('table','view') AND name LIKE '%'||shellstatic()||'%' "
+        "WHERE type IN ('table','view') AND name LIKE shellstatic() "
         "ORDER BY 1",
         &azResult, &nRow, 0, &zErrMsg
       );
@@ -3140,7 +3163,7 @@ static int process_input(struct callback_data *p, FILE *in){
     }
   }
   if( zSql ){
-    if( !_all_whitespace(zSql) ) fprintf(stderr, "Incomplete SQL: %s\n", zSql);
+    if( !_all_whitespace(zSql) ) fprintf(stderr, "Error: incomplete SQL: %s\n", zSql);
     free(zSql);
   }
   free(zLine);
@@ -3230,15 +3253,15 @@ static int process_sqliterc(
     home_dir = find_home_dir();
     if( home_dir==0 ){
 #if !defined(__RTP__) && !defined(_WRS_KERNEL)
-      fprintf(stderr,"%s: cannot locate your home directory!\n", Argv0);
+      fprintf(stderr,"%s: Error: cannot locate your home directory\n", Argv0);
 #endif
       return 1;
     }
     nBuf = strlen30(home_dir) + 16;
     zBuf = malloc( nBuf );
     if( zBuf==0 ){
-      fprintf(stderr,"%s: out of memory!\n", Argv0);
-      exit(1);
+      fprintf(stderr,"%s: Error: out of memory\n",Argv0);
+      return 1;
     }
     sqlite3_snprintf(nBuf, zBuf,"%s/.sqliterc",home_dir);
     free(home_dir);
@@ -3247,7 +3270,7 @@ static int process_sqliterc(
   in = fopen(sqliterc,"rb");
   if( in ){
     if( stdin_is_interactive ){
-      printf("-- Loading resources from %s\n",sqliterc);
+      fprintf(stderr,"-- Loading resources from %s\n",sqliterc);
     }
     rc = process_input(p,in);
     fclose(in);
@@ -3355,8 +3378,8 @@ int main(int argc, char **argv){
 
 #ifdef SQLITE_OMIT_MEMORYDB
   if( data.zDbFilename==0 ){
-    fprintf(stderr,"%s: no database filename specified\n", argv[0]);
-    exit(1);
+    fprintf(stderr,"%s: Error: no database filename specified\n", Argv0);
+    return 1;
   }
 #endif
 
@@ -3373,7 +3396,10 @@ int main(int argc, char **argv){
   ** is given on the command line, look for a file named ~/.sqliterc and
   ** try to process it.
   */
-  process_sqliterc(&data,zInitFile);
+  rc = process_sqliterc(&data,zInitFile);
+  if( rc>0 ){
+    return rc;
+  }
 
   /* Make a second pass through the command-line argument and set
   ** options.  This second pass is delayed until after the initialization
@@ -3422,7 +3448,7 @@ int main(int argc, char **argv){
     }else if( strcmp(z,"-help")==0 || strcmp(z, "--help")==0 ){
       usage(1);
     }else{
-      fprintf(stderr,"%s: unknown option: %s\n", Argv0, z);
+      fprintf(stderr,"%s: Error: unknown option: %s\n", Argv0, z);
       fprintf(stderr,"Use -help for a list of options.\n");
       return 1;
     }
@@ -3433,14 +3459,16 @@ int main(int argc, char **argv){
     */
     if( zFirstCmd[0]=='.' ){
       rc = do_meta_command(zFirstCmd, &data);
-      exit(rc);
+      return rc;
     }else{
-      int rc;
       open_db(&data);
       rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
-      if( rc!=0 && zErrMsg!=0 ){
-        fprintf(stderr,"SQL error: %s\n", zErrMsg);
-        exit(1);
+      if( zErrMsg!=0 ){
+        fprintf(stderr,"Error: %s\n", zErrMsg);
+        return rc!=0 ? rc : 1;
+      }else if( rc!=0 ){
+        fprintf(stderr,"Error: unable to process SQL \"%s\"\n", zFirstCmd);
+        return rc;
       }
     }
   }else{
@@ -3480,7 +3508,8 @@ int main(int argc, char **argv){
   set_table_name(&data, 0);
   if( db ){
     if( sqlite3_close(db)!=SQLITE_OK ){
-      fprintf(stderr,"error closing database: %s\n", sqlite3_errmsg(db));
+      fprintf(stderr,"Error: cannot close database \"%s\"\n", sqlite3_errmsg(db));
+      rc++;
     }
   }
   return rc;
