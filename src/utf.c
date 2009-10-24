@@ -107,20 +107,20 @@ static const unsigned char sqlite3Utf8Trans1[] = {
   }                                                                 \
 }
 
-#define READ_UTF16LE(zIn, zTerm, c){                                  \
+#define READ_UTF16LE(zIn, TERM, c){                                   \
   c = (*zIn++);                                                       \
   c += ((*zIn++)<<8);                                                 \
-  if( c>=0xD800 && c<0xE000 && zIn<zTerm ){                           \
+  if( c>=0xD800 && c<0xE000 && TERM ){                                \
     int c2 = (*zIn++);                                                \
     c2 += ((*zIn++)<<8);                                              \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
   }                                                                   \
 }
 
-#define READ_UTF16BE(zIn, zTerm, c){                                  \
+#define READ_UTF16BE(zIn, TERM, c){                                   \
   c = ((*zIn++)<<8);                                                  \
   c += (*zIn++);                                                      \
-  if( c>=0xD800 && c<0xE000 && zIn<zTerm ){                           \
+  if( c>=0xD800 && c<0xE000 && TERM ){                                \
     int c2 = ((*zIn++)<<8);                                           \
     c2 += (*zIn++);                                                   \
     c = (c2&0x03FF) + ((c&0x003F)<<10) + (((c&0x03C0)+0x0040)<<10);   \
@@ -305,13 +305,13 @@ int sqlite3VdbeMemTranslate(Mem *pMem, u8 desiredEnc){
     if( pMem->enc==SQLITE_UTF16LE ){
       /* UTF-16 Little-endian -> UTF-8 */
       while( zIn<zTerm ){
-        READ_UTF16LE(zIn, zTerm, c); 
+        READ_UTF16LE(zIn, zIn<zTerm, c); 
         WRITE_UTF8(z, c);
       }
     }else{
       /* UTF-16 Big-endian -> UTF-8 */
       while( zIn<zTerm ){
-        READ_UTF16BE(zIn, zTerm, c); 
+        READ_UTF16BE(zIn, zIn<zTerm, c); 
         WRITE_UTF8(z, c);
       }
     }
@@ -481,38 +481,23 @@ char *sqlite3Utf8to16(sqlite3 *db, u8 enc, char *z, int n, int *pnOut){
 #endif
 
 /*
-** pZ is a UTF-16 encoded unicode string at least nChar characters long.
+** zIn is a UTF-16 encoded unicode string at least nChar characters long.
 ** Return the number of bytes in the first nChar unicode characters
 ** in pZ.  nChar must be non-negative.
 */
 int sqlite3Utf16ByteLen(const void *zIn, int nChar){
   int c;
   unsigned char const *z = zIn;
-  unsigned char const *zTerm;
   int n = 0;
-
-  /* Some of the characters might be surrogates.  Be careful not to terminate
-  ** the string too early because of them.   In the worst case, all characters
-  ** or surrogates so make the terminator 2*nChar from the beginning. */
-  zTerm = &z[nChar*2];
   
   if( SQLITE_UTF16NATIVE==SQLITE_UTF16BE ){
-    /* Using an "if (SQLITE_UTF16NATIVE==SQLITE_UTF16BE)" construct here
-    ** and in other parts of this file means that at one branch will
-    ** not be covered by coverage testing on any single host. But coverage
-    ** will be complete if the tests are run on both a little-endian and 
-    ** big-endian host. Because both the UTF16NATIVE and SQLITE_UTF16BE
-    ** macros are constant at compile time the compiler can determine
-    ** which branch will be followed. It is therefore assumed that no runtime
-    ** penalty is paid for this "if" statement.
-    */
     while( n<nChar ){
-      READ_UTF16BE(z, zTerm, c);
+      READ_UTF16BE(z, 1, c);
       n++;
     }
   }else{
     while( n<nChar ){
-      READ_UTF16LE(z, zTerm, c);
+      READ_UTF16LE(z, 1, c);
       n++;
     }
   }
@@ -554,7 +539,7 @@ void sqlite3UtfSelfTest(void){
     assert( n>0 && n<=4 );
     z[0] = 0;
     z = zBuf;
-    READ_UTF16LE(z, &zBuf[n], c);
+    READ_UTF16LE(z, 1, c);
     assert( c==i );
     assert( (z-zBuf)==n );
   }
@@ -566,7 +551,7 @@ void sqlite3UtfSelfTest(void){
     assert( n>0 && n<=4 );
     z[0] = 0;
     z = zBuf;
-    READ_UTF16BE(z, &zBuf[n], c);
+    READ_UTF16BE(z, 1, c);
     assert( c==i );
     assert( (z-zBuf)==n );
   }

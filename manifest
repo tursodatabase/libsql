@@ -1,5 +1,8 @@
-C In\sshell,\smodified\sto\snot\sprint\sinformational\smessages\sduring\sstartup\swhile\sin\s"batch\smode".\nTicket\s[2cb66577f6].
-D 2009-10-24T02:06:15
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Another\sattempt\sat\sgetting\sthe\spTail\spointer\scomputations\scorrect\sfor\nsqlite3_prepare16().\s\sTicket\s[3fe897352e].
+D 2009-10-24T03:04:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -202,7 +205,7 @@ F src/test_wsd.c 3ae5101de6cbfda2720152ab659ea84079719241
 F src/tokenize.c af8a56e6a50c5042fc305bfa796275e9bf26ff2b
 F src/trigger.c 2053afa9952f69cf451bc0e6ea88072701f2925e
 F src/update.c 8e8535f66c32d946199cb1caad19646a97ead3a7
-F src/utf.c 2395dfcd72e0da4dbc75ff7e113bd415562750aa
+F src/utf.c 3586a6a2457c5c88b6816f6cda58a54e291883f8
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 48e1282bbd5eac4b461587c51658378658c00770
 F src/vdbe.c f0d6e7dbd4515758c188c9dd7025eb9dfcf021e0
@@ -761,7 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7201244e67c197f16d6752cc0fa7232a9664381e
-R 60ab33709c976a2fa35fbf9d45e0d905
-U shane
-Z c3ee7cc5ac51065bd4726a67a8531686
+P e3898e25cf0ea870612eeaca6af2396f0eab0e07
+R 812e08bbbda7f3c1c20cc13eab0908b5
+U drh
+Z a77b23ae4660d0446d23e96276a09fed
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK4m6toxKgR168RlERArtJAJ9QVy9jQaoZqiU28dnOR4bS/6L/8ACfWKTS
+yTokoUWQvjoZJq2ypxGLloM=
+=2RLp
+-----END PGP SIGNATURE-----
