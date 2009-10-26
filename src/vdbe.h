@@ -205,9 +205,6 @@ void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
 sqlite3_value *sqlite3VdbeGetValue(Vdbe*, int, u8);
 void sqlite3VdbeSetVarmask(Vdbe*, int);
 
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-int sqlite3VdbeReleaseMemory(int);
-#endif
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);

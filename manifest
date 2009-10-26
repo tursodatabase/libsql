@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\scompiler\swarning\sthat\soccurs\swhen\sbuilding\sthe\sTCL\sinterface.
-D 2009-10-24T15:51:34
+C Remove\ssome\sobsolete\scode\swithin\s#if\s0\sthat\swas\scausing\sdeveloper\sconcern.
+D 2009-10-26T22:08:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c 25d44525b06c395975bf9dd633e39dd902f8f75d
-F src/malloc.c b1725183bcc4ce2e569f1b65da844dc3e4c7a643
+F src/malloc.c 685561d2f1602042e349aea5d7a88c3f10a63454
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
 F src/mem2.c d02bd6a5b34f2d59012a852615621939d9c09548
@@ -209,7 +209,7 @@ F src/utf.c 3586a6a2457c5c88b6816f6cda58a54e291883f8
 F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 48e1282bbd5eac4b461587c51658378658c00770
 F src/vdbe.c f0d6e7dbd4515758c188c9dd7025eb9dfcf021e0
-F src/vdbe.h 3fedb2121d026dd127350d33e875a49cf05df2e8
+F src/vdbe.h 449323a21c02226790acb6189dae78af17b92b78
 F src/vdbeInt.h 8e07f4356dd5bfe03ac5991338e59b68c9b3c717
 F src/vdbeapi.c 44b5f387459d5faa158aa8d3a26967f0c8596efd
 F src/vdbeaux.c fc032b050e0500000de534b2b0f0c63642459b8f
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a96b4e8c01d167d35b9ec08ee6603e52ead601b6
-R 6c03a3709574a1b24beff662534ec2bc
+P fc36034bdc3b21e91f24be812e103da26f5d7d5d
+R 6e51ac0c79ba4e0411eabb253ab34a84
 U drh
-Z b00248272baf637dd9cfef9089c2f47a
+Z aa5dd248ef68838f99770a61f2dd03bb
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK4yKJoxKgR168RlERAi6NAJ4+uc+/5LfSwtIyQS0YP/aW28lR2QCfbN/3
-1QwSh0x1cHrosgzroBaugyY=
-=qzuQ
+iD8DBQFK5h3ZoxKgR168RlERAlYCAJ9v1sXupX39vl6yQ1jXhLifpk+sQQCfaN4D
+GynQ5pJ5UzLnHrZDQqI1560=
+=V7Zh
 -----END PGP SIGNATURE-----
