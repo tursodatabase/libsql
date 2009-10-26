@@ -386,9 +386,6 @@ int sqlite3VdbeMemGrow(Mem *pMem, int n, int preserve);
 int sqlite3VdbeCloseStatement(Vdbe *, int);
 void sqlite3VdbeFrameDelete(VdbeFrame*);
 int sqlite3VdbeFrameRestore(VdbeFrame *);
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-int sqlite3VdbeReleaseBuffers(Vdbe *p);
-#endif
 void sqlite3VdbeMemStoreType(Mem *pMem);
 
 #ifndef SQLITE_OMIT_FOREIGN_KEY

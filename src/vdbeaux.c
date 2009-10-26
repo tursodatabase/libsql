@@ -1014,27 +1014,6 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
   sqlite3DbFree(p->v->db, p);
 }
 
-
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
-int sqlite3VdbeReleaseBuffers(Vdbe *p){
-  int ii;
-  int nFree = 0;
-  assert( sqlite3_mutex_held(p->db->mutex) );
-  for(ii=1; ii<=p->nMem; ii++){
-    Mem *pMem = &p->aMem[ii];
-    if( pMem->flags & MEM_RowSet ){
-      sqlite3RowSetClear(pMem->u.pRowSet);
-    }
-    if( pMem->z && pMem->flags&MEM_Dyn ){
-      assert( !pMem->xDel );
-      nFree += sqlite3DbMallocSize(pMem->db, pMem->z);
-      sqlite3VdbeMemRelease(pMem);
-    }
-  }
-  return nFree;
-}
-#endif
-
 #ifndef SQLITE_OMIT_EXPLAIN
 /*
 ** Give a listing of the program in the virtual machine.
@@ -3062,4 +3041,3 @@ void sqlite3VdbeSetVarmask(Vdbe *v, int iVar){
     v->expmask |= ((u32)1 << (iVar-1));
   }
 }
-

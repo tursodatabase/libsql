@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\ssome\sobsolete\scode\swithin\s#if\s0\sthat\swas\scausing\sdeveloper\sconcern.
-D 2009-10-26T22:08:22
+C Remove\sadditional\sobsolete\scode\sfrom\sthe\ssqlite3_release_memory()\slogic.
+D 2009-10-26T22:32:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -210,9 +210,9 @@ F src/util.c 59d4e9456bf1fe581f415a783fa0cee6115c8f35
 F src/vacuum.c 48e1282bbd5eac4b461587c51658378658c00770
 F src/vdbe.c f0d6e7dbd4515758c188c9dd7025eb9dfcf021e0
 F src/vdbe.h 449323a21c02226790acb6189dae78af17b92b78
-F src/vdbeInt.h 8e07f4356dd5bfe03ac5991338e59b68c9b3c717
+F src/vdbeInt.h 97312570b5104c445c45c63cc7d10c361c2a0fe5
 F src/vdbeapi.c 44b5f387459d5faa158aa8d3a26967f0c8596efd
-F src/vdbeaux.c fc032b050e0500000de534b2b0f0c63642459b8f
+F src/vdbeaux.c 55f467c7da95d70e039f1e2c9038511b7c2f5b5a
 F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
 F src/vdbemem.c 7055a2941a7802094f4704cedc7a28cc88a23749
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fc36034bdc3b21e91f24be812e103da26f5d7d5d
-R 6e51ac0c79ba4e0411eabb253ab34a84
+P 1d64e9453fb59d2bb1b5cb0cbacaf135b8f928c3
+R 055808866b4a031f466067aebb75fd9f
 U drh
-Z aa5dd248ef68838f99770a61f2dd03bb
+Z e36a4fd6d369ac1f78cb820b645edd04
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK5h3ZoxKgR168RlERAlYCAJ9v1sXupX39vl6yQ1jXhLifpk+sQQCfaN4D
-GynQ5pJ5UzLnHrZDQqI1560=
-=V7Zh
+iD8DBQFK5iOboxKgR168RlERAjR5AJ92Q7F87oz0ZKCxJkMCitXpCF9BeQCcC/IJ
+Ej+jMubTXX/OjVRTelNFQvk=
+=k8dV
 -----END PGP SIGNATURE-----
