@@ -48,9 +48,9 @@
 **
 ** The file is divided into pages.  The first page is called page 1,
 ** the second is page 2, and so forth.  A page number of zero indicates
-** "no such page".  The page size can be anything between 512 and 65536.
-** Each page can be either a btree page, a freelist page or an overflow
-** page.
+** "no such page".  The page size can be any power of 2 between 512 and 32768.
+** Each page can be either a btree page, a freelist page, an overflow
+** page, or a pointer-map page.
 **
 ** The first page is always a btree page.  The first 100 bytes of the first
 ** page contain a special header (the "file header") that describes the file.

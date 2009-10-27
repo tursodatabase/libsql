@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sadditional\sobsolete\scode\sfrom\sthe\ssqlite3_release_memory()\slogic.
-D 2009-10-26T22:32:55
+C Minor\supdates\sand\scorrections\sto\scomments\sin\sbtreeInt.h.\s\sNo\schanges\sto\scode.
+D 2009-10-27T18:06:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
 F src/btmutex.c 0f43a75bb5b8147b386e8e1c3e71ba734e3863b7
 F src/btree.c b2d060e41b4318fb5e52d80b75e19bcef1b1f2db
 F src/btree.h 577448a890c2ab9b21e6ab74f073526184bceebe
-F src/btreeInt.h cce1c3360cd5549ffa79f981951dfae93118ad79
+F src/btreeInt.h 1c863e543bb55772fa8db95535c370bb386c578c
 F src/build.c 3c5762687d0554ebe8844dfaddb828fcc15fe16d
 F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1d64e9453fb59d2bb1b5cb0cbacaf135b8f928c3
-R 055808866b4a031f466067aebb75fd9f
+P 2eeb6ed818dac240afe761b4e7c11e961255bf33
+R d1cfe6f9c1d4d6dcbf60d0dfcf814d18
 U drh
-Z e36a4fd6d369ac1f78cb820b645edd04
+Z 5b3dfb277529d56fb9e1836cd3b92185
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK5iOboxKgR168RlERAjR5AJ92Q7F87oz0ZKCxJkMCitXpCF9BeQCcC/IJ
-Ej+jMubTXX/OjVRTelNFQvk=
-=k8dV
+iD8DBQFK5zaVoxKgR168RlERAmxbAJ4jYG7nZBNa+A4Ed1GgYuHDHE8EUwCfdfwx
+nxiRyac8DB1G3t81x60tEbQ=
+=mppP
 -----END PGP SIGNATURE-----
