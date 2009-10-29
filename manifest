@@ -1,11 +1,14 @@
-C Version\s3.6.16\s(CVS\s6829)
-D 2009-06-27T14:10:30
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\s16-bit\sinteger\soverflow\sthat\smight\soccur\sin\sstatements\sthat\suse\sboth\s\nan\sEXISTS\sclause\sand\sIN\soperator\swith\sa\sRHS\sholding\sin\sexcess\sof\s32K\sentries.
+D 2009-10-29T18:38:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 8b8fb7823264331210cddf103831816c286ba446
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 51698ac39a2d114c1586b7694838f2f321c43f64
 F README b974cdc3f9f12b87e851b04e75996d720ebf81ac
-F VERSION 14699c0113d89f30362c19669ec8dcf5ae5e2a58
+F VERSION 69995005e306f1db3713713f994cfefa7c63effb
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 215333be9d99c260e076c3080a81dba3ae928c45
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -114,7 +117,7 @@ F src/callback.c cb68b21b0d4ae7d11ae0e487933bce3323784dcf
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c ab5f7137656652a48434d64f96bdcdc823bb23b3
 F src/delete.c fb05e577ab273cc8a63b44809aa5078f72f475c1
-F src/expr.c de80e2d6c2adc453e06f070837ca5b87d4373730
+F src/expr.c 6c5775cf0f0a0349980e26c2fa720dba6fcc9267
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/func.c 9856373f5315f6b8690d7f07f7191aa9f279ca87
 F src/global.c 448419c44ce0701104c2121b0e06919b44514c0c
@@ -162,7 +165,7 @@ F src/select.c 71748b8e244112cf73df9446c4246c192276c30d
 F src/shell.c db2643650b9268df89a4bedca3f1c6d9e786f1bb
 F src/sqlite.h.in ccc67f14d5661240d05eadb8ab308aa637b0630c
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 7f6ab3d1c8aaedc64dc046dc413d9bbe187adf00
+F src/sqliteInt.h 4186a8554e9187abc889d164a3b0531a049eb0f5
 F src/sqliteLimit.h ffe93f5a0c4e7bd13e70cd7bf84cfb5c3465f45d
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -737,7 +740,18 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl 672f81d693a03f80f5ae60bfefacd8a349e76746
-P 49f22e55d69d0b5a34400b36332a2eb861362eb2
-R 081c6cf0e8f2499b8b69ecc027b9626f
+P ff691a6b2a302fe7978459cb8df9d56184892ee0
+R aedc34ecde2d482867b67e02afee0a54
+T *branch * branch_3_6_16
+T *sym-branch_3_6_16 *
+T -sym-release *
+T -sym-trunk *
 U drh
-Z b0d3fc590df87bc7076fef537dbc78a6
+Z 5c26dfe013dd8a4cb93e3cbcd6ab7ae7
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK6eEhoxKgR168RlERAgiPAJ9zWeCCOKydOfs71s5Cs/XavFYZjACfZnCe
+Fds7/tBnX5Y95f4eNwilVYQ=
+=bKW1
+-----END PGP SIGNATURE-----

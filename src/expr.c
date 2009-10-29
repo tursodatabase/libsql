@@ -1672,7 +1672,7 @@ void sqlite3CodeSubselect(
       if( sqlite3Select(pParse, pSel, &dest) ){
         return;
       }
-      pExpr->iColumn = (i16)dest.iParm;
+      pExpr->iColumn = dest.iParm;
       ExprSetIrreducible(pExpr);
       break;
     }
