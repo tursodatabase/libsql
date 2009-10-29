@@ -1602,6 +1602,7 @@ void sqlite3CodeSubselect(
         sqlite3VdbeAddOp2(v, OP_Null, 0, r2);
         for(i=pList->nExpr, pItem=pList->a; i>0; i--, pItem++){
           Expr *pE2 = pItem->pExpr;
+          int iValToIns;
 
           /* If the expression is not constant then we will need to
           ** disable the test that was generated above that makes sure
@@ -1614,14 +1615,19 @@ void sqlite3CodeSubselect(
           }
 
           /* Evaluate the expression and insert it into the temp table */
-          r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
-          if( isRowid ){
-            sqlite3VdbeAddOp2(v, OP_MustBeInt, r3, sqlite3VdbeCurrentAddr(v)+2);
-            sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
+          if( isRowid && sqlite3ExprIsInteger(pE2, &iValToIns) ){
+            sqlite3VdbeAddOp3(v, OP_InsertInt, pExpr->iTable, r2, iValToIns);
           }else{
-            sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
-            sqlite3ExprCacheAffinityChange(pParse, r3, 1);
-            sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
+            r3 = sqlite3ExprCodeTarget(pParse, pE2, r1);
+            if( isRowid ){
+              sqlite3VdbeAddOp2(v, OP_MustBeInt, r3,
+                                sqlite3VdbeCurrentAddr(v)+2);
+              sqlite3VdbeAddOp3(v, OP_Insert, pExpr->iTable, r2, r3);
+            }else{
+              sqlite3VdbeAddOp4(v, OP_MakeRecord, r3, 1, r2, &affinity, 1);
+              sqlite3ExprCacheAffinityChange(pParse, r3, 1);
+              sqlite3VdbeAddOp2(v, OP_IdxInsert, pExpr->iTable, r2);
+            }
           }
         }
         sqlite3ReleaseTempReg(pParse, r1);
@@ -2875,6 +2881,7 @@ static int isAppropriateForFactoring(Expr *p){
 static int evalConstExpr(Walker *pWalker, Expr *pExpr){
   Parse *pParse = pWalker->pParse;
   switch( pExpr->op ){
+    case TK_IN:
     case TK_REGISTER: {
       return WRC_Prune;
     }

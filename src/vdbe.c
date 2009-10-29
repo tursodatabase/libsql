@@ -3758,7 +3758,13 @@ case OP_NewRowid: {           /* out2-prerelease */
 ** This instruction only works on tables.  The equivalent instruction
 ** for indices is OP_IdxInsert.
 */
-case OP_Insert: {
+/* Opcode: InsertInt P1 P2 P3 P4 P5
+**
+** This works exactly like OP_Insert except that the key is the
+** integer value P3, not the value of the integer stored in register P3.
+*/
+case OP_Insert: 
+case OP_InsertInt: {
   Mem *pData;       /* MEM cell holding data for the record to be inserted */
   Mem *pKey;        /* MEM cell holding key  for the record */
   i64 iKey;         /* The integer ROWID or key for the record to be inserted */
@@ -3770,20 +3776,26 @@ case OP_Insert: {
   int op;           /* Opcode for update hook: SQLITE_UPDATE or SQLITE_INSERT */
 
   pData = &p->aMem[pOp->p2];
-  pKey = &p->aMem[pOp->p3];
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pCursor!=0 );
   assert( pC->pseudoTableReg==0 );
-  assert( pKey->flags & MEM_Int );
   assert( pC->isTable );
   REGISTER_TRACE(pOp->p2, pData);
-  REGISTER_TRACE(pOp->p3, pKey);
 
-  iKey = pKey->u.i;
+  if( pOp->opcode==OP_Insert ){
+    pKey = &p->aMem[pOp->p3];
+    assert( pKey->flags & MEM_Int );
+    REGISTER_TRACE(pOp->p3, pKey);
+    iKey = pKey->u.i;
+  }else{
+    assert( pOp->opcode==OP_InsertInt );
+    iKey = pOp->p3;
+  }
+
   if( pOp->p5 & OPFLAG_NCHANGE ) p->nChange++;
-  if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = pKey->u.i;
+  if( pOp->p5 & OPFLAG_LASTROWID ) db->lastRowid = iKey;
   if( pData->flags & MEM_Null ){
     pData->z = 0;
     pData->n = 0;
