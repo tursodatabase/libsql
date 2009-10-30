@@ -1372,6 +1372,8 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   int iTab = pParse->nTab++;            /* Cursor of the RHS table */
   int mustBeUnique = (prNotFound==0);   /* True if RHS must be unique */
 
+  assert( pX->op==TK_IN );
+
   /* Check to see if an existing table or index can be used to
   ** satisfy the query.  This is preferable to generating a new 
   ** ephemeral table.
@@ -1449,7 +1451,7 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
   }
 
   if( eType==0 ){
-    /* Could not found an existing able or index to use as the RHS b-tree.
+    /* Could not found an existing table or index to use as the RHS b-tree.
     ** We will have to generate an ephemeral table to do the job.
     */
     int rMayHaveNull = 0;
@@ -1496,17 +1498,21 @@ int sqlite3FindInIndex(Parse *pParse, Expr *pX, int *prNotFound){
 ** If rMayHaveNull is zero, that means that the subquery is being used
 ** for membership testing only.  There is no need to initialize any
 ** registers to indicate the presense or absence of NULLs on the RHS.
+**
+** For a SELECT or EXISTS operator, return the register that holds the
+** result.  For IN operators or if an error occurs, the return value is 0.
 */
 #ifndef SQLITE_OMIT_SUBQUERY
-void sqlite3CodeSubselect(
+int sqlite3CodeSubselect(
   Parse *pParse,          /* Parsing context */
   Expr *pExpr,            /* The IN, SELECT, or EXISTS operator */
   int rMayHaveNull,       /* Register that records whether NULLs exist in RHS */
   int isRowid             /* If true, LHS of IN operator is a rowid */
 ){
   int testAddr = 0;                       /* One-time test address */
+  int rReg = 0;                           /* Register storing resulting */
   Vdbe *v = sqlite3GetVdbe(pParse);
-  if( NEVER(v==0) ) return;
+  if( NEVER(v==0) ) return 0;
   sqlite3ExprCachePush(pParse);
 
   /* This code must be run in its entirety every time it is encountered
@@ -1571,7 +1577,7 @@ void sqlite3CodeSubselect(
         dest.affinity = (u8)affinity;
         assert( (pExpr->iTable&0x0000FFFF)==pExpr->iTable );
         if( sqlite3Select(pParse, pExpr->x.pSelect, &dest) ){
-          return;
+          return 0;
         }
         pEList = pExpr->x.pSelect->pEList;
         if( ALWAYS(pEList!=0 && pEList->nExpr>0) ){ 
@@ -1671,9 +1677,9 @@ void sqlite3CodeSubselect(
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
       pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
       if( sqlite3Select(pParse, pSel, &dest) ){
-        return;
+        return 0;
       }
-      pExpr->iColumn = (i16)dest.iParm;
+      rReg = dest.iParm;
       ExprSetIrreducible(pExpr);
       break;
     }
@@ -1684,7 +1690,7 @@ void sqlite3CodeSubselect(
   }
   sqlite3ExprCachePop(pParse, 1);
 
-  return;
+  return rReg;
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
 
@@ -2441,8 +2447,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_SELECT: {
       testcase( op==TK_EXISTS );
       testcase( op==TK_SELECT );
-      sqlite3CodeSubselect(pParse, pExpr, 0, 0);
-      inReg = pExpr->iColumn;
+      inReg = sqlite3CodeSubselect(pParse, pExpr, 0, 0);
       break;
     }
     case TK_IN: {

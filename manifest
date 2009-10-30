@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Reduce\sthe\smemory\srequired\sby\sprepared\sstatements\sthat\suse\sthe\sIN\soperator\s\nwith\sa\slist\son\sthe\sright\sand\san\sINTEGER\sPRIMARY\sKEY\son\sthe\sleft.
-D 2009-10-29T13:48:11
+C Avoid\sstoring\sthe\sresult\sregister\sfor\sEXISTS\sand\sSELECT\sin\sany\sfield\sof\nthe\sExpr\sobject\s-\ssimply\sreturn\sthe\sregister\snumber\sas\sthe\sreturn\svalue\nof\sthe\sfunction\sthat\scodes\sthose\sexpressions.
+D 2009-10-30T13:25:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -117,7 +117,7 @@ F src/callback.c 10d237171472865f58fb07d515737238c9e06688
 F src/complete.c 5ad5c6cd4548211867c204c41a126d73a9fbcea0
 F src/date.c 657ff12ca0f1195b531561afacbb38b772d16638
 F src/delete.c 308e300d599d2d11b838687e2cf7309d42f29a1a
-F src/expr.c 658002e35de61e9a769a3bc438cc457171cbab17
+F src/expr.c 26dc693216dfafbdde18de2269cc00a627b7807b
 F src/fault.c dc88c821842157460750d2d61a8a8b4197d047ff
 F src/fkey.c 41219cba186bcf0a053e42327dfa23aaba4f834a
 F src/func.c e536218d193b8d326aab91120bc4c6f28aa2b606
@@ -167,7 +167,7 @@ F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
 F src/shell.c f66531a57fff927f95c98d99c28237d88e400c86
 F src/sqlite.h.in 5853e42a4066a6c9c3bf6592a9d57d0012bfdb90
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h 3b00a3ce79e60c5a47c342b738c8b75013f3ec84
+F src/sqliteInt.h 00256600cb4e17d71373df3844aa53aed5594cdb
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ad949fa1acb4546fe4f2a448025579cc374dd8dd
-R 3bb532253075d93fd9eb68f8cb42f41d
+P e7984ad2f7e4be30e7198ebd6609a7f6177513e2
+R cd38913b285f7c9e4491c7e2f4bd28f3
 U drh
-Z db24204c5eebb100574fed36b2374757
+Z f2bea1211055544cac6d8aed3a82cf0f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK6Z0eoxKgR168RlERAgR0AJ4oa9XQXZNp40kKyCy8jsoWfXPMEQCfVw3K
-6uxwA5vxXmgknZSewTJmSyo=
-=dwzc
+iD8DBQFK6ulooxKgR168RlERApWCAJ919Es2gcf6iS/BREMKcHKwIKx4KACcDgpe
+1pA/DYmqeS92rJTayP7P/0Q=
+=ExAd
 -----END PGP SIGNATURE-----
