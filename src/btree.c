@@ -6454,7 +6454,7 @@ int sqlite3BtreeInsert(
 ){
   int rc;
   int loc = seekResult;          /* -1: before desired location  +1: after */
-  int szNew;
+  int szNew = 0;
   int idx;
   MemPage *pPage;
   Btree *p = pCur->pBtree;
