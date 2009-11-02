@@ -2284,7 +2284,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 
 /*
 ** CAPI3REF: Run-Time Limit Categories {H12790} <H12760>
-** KEYWORDS: {limit category} {limit categories}
+** KEYWORDS: {limit category} {*limit categories}
 **
 ** These constants define various performance limits
 ** that can be lowered at run-time using [sqlite3_limit()].

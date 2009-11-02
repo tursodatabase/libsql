@@ -1820,21 +1820,15 @@ static void setSectorSize(Pager *pPager){
 **       database to during a rollback.
 **  (5)  4 byte big-endian integer which is the sector size.  The header
 **       is this many bytes in size.
-**  (6)  4 byte big-endian integer which is the page case.
-**  (7)  4 byte integer which is the number of bytes in the master journal
-**       name.  The value may be zero (indicate that there is no master
-**       journal.)
-**  (8)  N bytes of the master journal name.  The name will be nul-terminated
-**       and might be shorter than the value read from (5).  If the first byte
-**       of the name is \000 then there is no master journal.  The master
-**       journal name is stored in UTF-8.
-**  (9)  Zero or more pages instances, each as follows:
+**  (6)  4 byte big-endian integer which is the page size.
+**  (7)  zero padding out to the next sector size.
+**  (8)  Zero or more pages instances, each as follows:
 **        +  4 byte page number.
 **        +  pPager->pageSize bytes of data.
 **        +  4 byte checksum
 **
-** When we speak of the journal header, we mean the first 8 items above.
-** Each entry in the journal is an instance of the 9th item.
+** When we speak of the journal header, we mean the first 7 items above.
+** Each entry in the journal is an instance of the 8th item.
 **
 ** Call the value from the second bullet "nRec".  nRec is the number of
 ** valid page entries in the journal.  In most cases, you can compute the
