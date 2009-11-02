@@ -25,17 +25,11 @@
 #
 # This script also scans for lines of the form:
 #
-#       case OP_aaaa:       /* no-push */
+#       case OP_aaaa:       /* jump, in1, in2, in3, out2-prerelease, out3 */
 #
-# When the no-push comment is found on an opcode, it means that that
-# opcode does not leave a result on the stack.  By identifying which
-# opcodes leave results on the stack it is possible to determine a
-# much smaller upper bound on the size of the stack.  This allows
-# a smaller stack to be allocated, which is important to embedded
-# systems with limited memory space.  This script generates a series
-# of "NOPUSH_MASK" defines that contain bitmaps of opcodes that leave
-# results on the stack.  The NOPUSH_MASK defines are used in vdbeaux.c
-# to help determine the maximum stack size.
+# When such comments are found on an opcode, it means that certain
+# properties apply to that opcode.  Set corresponding flags using the
+# OPFLG_INITIALIZER macro.
 #
 
 
@@ -80,6 +74,7 @@
       out3[name] = 1
     }
   }
+  order[n_op++] = name;
 }
 
 # Assign numbers to all opcodes and output the result.
@@ -90,7 +85,8 @@ END {
   print "/* See the mkopcodeh.awk script for details */"
   op["OP_Noop"] = -1;
   op["OP_Explain"] = -1;
-  for(name in op){
+  for(i=0; i<n_op; i++){
+    name = order[i];
     if( op[name]<0 ){
       cnt++
       while( used[cnt] ) cnt++
@@ -123,7 +119,8 @@ END {
   #  bit 2:     output to p1.  release p1 before opcode runs
   #
   for(i=0; i<=max; i++) bv[i] = 0;
-  for(name in op){
+  for(i=0; i<n_op; i++){
+    name = order[i];
     x = op[name]
     a0 = a1 = a2 = a3 = a4 = a5 = a6 = a7 = 0
     # a8 = a9 = a10 = a11 = a12 = a13 = a14 = a15 = 0
