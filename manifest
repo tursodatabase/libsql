@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sgenerator\sAWK\sscript\sfor\sopcodes.h\sso\sthat\sit\salways\sgenerates\nopcode\snumbers\sin\sthe\ssame\sorder\sand\sis\snot\sdependent\son\sthe\shash\sorder\nof\sopcode\snames\swithin\sAWK.
-D 2009-11-02T18:14:50
+C Bug\sfix\sin\sthe\srecent\schanges\sto\smkopcodeh.awk.
+D 2009-11-02T18:44:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -94,7 +94,7 @@ F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
-F mkopcodeh.awk f33c497a3d6436c5db531afce1f07f1b80de7af7
+F mkopcodeh.awk 104fa333e4a7a689fac074437cbd51a31a803bd4
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
 F publish.sh c74b6c2b6b63435aa1b4b43b1396dfebfae84095
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9f6cf13dfbe6f1fe0c05a9c5df557ae20dc08cbd
-R 670dbfb3f1638e27958aebe5405b2480
+P e730195f52429dc1bc4c1559880effd68e3eced9
+R 43a792e65b7ac6d2b78c68561f4498a9
 U drh
-Z 120b7a5204e72c359ceb7fe4b8d0946e
+Z c8336987c789a3c651c8c2f520b5383d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK7yGdoxKgR168RlERAqALAJwMgUFh451psMmH/dQjCxEIobwEGwCfSYBc
-ggSE79NEZkMsrwnv1Mi1P3c=
-=7XS6
+iD8DBQFK7yitoxKgR168RlERAsCxAJ4+YgC5c/jLlrtA06ZfZK/VqKdzXgCfRnMm
+ZnQ1TAu8ukeHgZdVGV3k/OY=
+=sXy0
 -----END PGP SIGNATURE-----

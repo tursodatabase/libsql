@@ -84,7 +84,9 @@ END {
   print "/* Automatically generated.  Do not edit */"
   print "/* See the mkopcodeh.awk script for details */"
   op["OP_Noop"] = -1;
+  order[n_op++] = "OP_Noop";
   op["OP_Explain"] = -1;
+  order[n_op++] = "OP_Explain";
   for(i=0; i<n_op; i++){
     name = order[i];
     if( op[name]<0 ){
