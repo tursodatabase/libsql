@@ -66,8 +66,6 @@ puts $out [subst \
 ** if you want a wrapper to interface SQLite with your choice of programming
 ** language. The code for the "sqlite3" command-line shell is also in a
 ** separate file. This file contains only code for the core SQLite library.
-**
-** This amalgamation was generated on $today.
 */
 #define SQLITE_CORE 1
 #define SQLITE_AMALGAMATION 1}]
