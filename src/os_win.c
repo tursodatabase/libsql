@@ -1254,7 +1254,7 @@ static int getLastErrorMsg(int nBuf, char *zBuf){
   */
   DWORD error = GetLastError();
   DWORD dwLen = 0;
-  char *zOut;
+  char *zOut = 0;
 
   if( isNT() ){
     WCHAR *zTempWide = NULL;

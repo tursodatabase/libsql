@@ -60,7 +60,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 #endif
   assert( p->zSql==0 );
   p->zSql = sqlite3DbStrNDup(p->db, z, n);
-  p->isPrepareV2 = isPrepareV2;
+  p->isPrepareV2 = (u8)isPrepareV2;
 }
 
 /*
@@ -1359,7 +1359,7 @@ void sqlite3VdbeMakeReady(
 
     p->nCursor = (u16)nCursor;
     if( p->aVar ){
-      p->nVar = nVar;
+      p->nVar = (u16)nVar;
       for(n=0; n<nVar; n++){
         p->aVar[n].flags = MEM_Null;
         p->aVar[n].db = db;

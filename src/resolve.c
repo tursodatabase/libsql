@@ -407,7 +407,11 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
     if( p->pTab->iPKey==iCol ){
       p->iColumn = -1;
     }else{
+#if SQLITE_MAX_VARIABLE_NUMBER<=32767
+      p->iColumn = (i16)iCol;
+#else
       p->iColumn = iCol;
+#endif
       pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
     ExprSetProperty(p, EP_Resolved);
