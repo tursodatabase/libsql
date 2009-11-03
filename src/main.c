@@ -1481,9 +1481,6 @@ static const int aHardLimit[] = {
 #if SQLITE_MAX_LIKE_PATTERN_LENGTH<1
 # error SQLITE_MAX_LIKE_PATTERN_LENGTH must be at least 1
 #endif
-#if SQLITE_MAX_VARIABLE_NUMBER<1 || SQLITE_MAX_VARIABLE_NUMBER>32767
-# error SQLITE_MAX_VARIABLE_NUMBER must be between 1 and 32767
-#endif
 #if SQLITE_MAX_COLUMN>32767
 # error SQLITE_MAX_COLUMN must not exceed 32767
 #endif

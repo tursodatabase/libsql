@@ -1590,8 +1590,13 @@ struct Expr {
   int iTable;            /* TK_COLUMN: cursor number of table holding column
                          ** TK_REGISTER: register number
                          ** TK_TRIGGER: 1 -> new, 0 -> old */
+#if SQLITE_MAX_VARIABLE_NUMBER<=32767
   i16 iColumn;           /* TK_COLUMN: column index.  -1 for rowid.
                          ** TK_VARIABLE: variable number (always >= 1). */
+#else
+  int iColumn;           /* Some users want a lot of variables and are willing
+                         ** to bear the memory and performance costs. */
+#endif
   i16 iAgg;              /* Which entry in pAggInfo->aCol[] or ->aFunc[] */
   i16 iRightJoinTable;   /* If EP_FromJoin, the right table of the join */
   u8 flags2;             /* Second set of flags.  EP2_... */
