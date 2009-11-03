@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Adjust\sthe\slemon\simplementation\sso\sthat\sit\salways\scomputes\sthe\ssame\sPDA\nregardless\sof\sqsort()\simplementation\son\sthe\shost\splatform.\s\sIn\sother\swords,\nmake\sall\ssorts\sin\slemon\sstable.
-D 2009-11-03T13:02:26
+C Force\sall\sqsort()\scalls\sin\smkkeywordhash.c\sto\sbe\sstable\sso\sthat\swe\sget\npredictable\sresults\son\sdifferent\splatforms.
+D 2009-11-03T13:08:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -745,7 +745,7 @@ F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
 F tool/lemon.c ee5e39ce2b344ce7c81306b27a59da7698114a2d
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
-F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
+F tool/mkkeywordhash.c 9216336085e7a7c226a35c0bd780239968f8304f
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
 F tool/mksqlite3c.tcl a7e87ce780cbf30782bca3fd1197e86f92ae6f24
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 16a24b4485420bdf30d3c8e22cfbaf008e07df02
-R e72225eb55d8736569f8031586282767
+P d66a0f31ebcc56e6f0f462b3db6aab54f7fab816
+R 91e31635600cb3800baa14d4687e1d08
 U drh
-Z 9ed57d7b7fd138a4562a0f8b4ab054bf
+Z 0bb2002d9c9d8d6a6987522657519773
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK8CnloxKgR168RlERAvvEAJ4zARLPnrRgcFCLL+urqSma1EJWFACghoK5
-rpncZKK3rz8eBtrxBY7ZVmw=
-=tZsO
+iD8DBQFK8CtFoxKgR168RlERAvt+AJkBQI2LJH6CUrPXrZkZDQd5FHmWKwCeNWmo
+X0wFI2+tf0Wum9Vwm5FmTGU=
+=YTMU
 -----END PGP SIGNATURE-----
