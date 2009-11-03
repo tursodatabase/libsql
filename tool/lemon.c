@@ -369,6 +369,9 @@ static int actioncmp(
   if( rc==0 && ap1->type==REDUCE ){
     rc = ap1->x.rp->index - ap2->x.rp->index;
   }
+  if( rc==0 ){
+    rc = ap2 - ap1;
+  }
   return rc;
 }
 
@@ -1578,7 +1581,7 @@ static char *merge(
   }else if( b==0 ){
     head = a;
   }else{
-    if( (*cmp)(a,b)<0 ){
+    if( (*cmp)(a,b)<=0 ){
       ptr = a;
       a = NEXT(a);
     }else{
@@ -1587,7 +1590,7 @@ static char *merge(
     }
     head = ptr;
     while( a && b ){
-      if( (*cmp)(a,b)<0 ){
+      if( (*cmp)(a,b)<=0 ){
         NEXT(ptr) = a;
         ptr = a;
         a = NEXT(a);
@@ -1639,7 +1642,7 @@ static char *msort(
     set[i] = ep;
   }
   ep = 0;
-  for(i=0; i<LISTSIZE; i++) if( set[i] ) ep = merge(ep,set[i],cmp,offset);
+  for(i=0; i<LISTSIZE; i++) if( set[i] ) ep = merge(set[i],ep,cmp,offset);
   return ep;
 }
 /************************ From the file "option.c" **************************/
@@ -3516,6 +3519,7 @@ struct axset {
   struct state *stp;   /* A pointer to a state */
   int isTkn;           /* True to use tokens.  False for non-terminals */
   int nAction;         /* Number of actions */
+  int iOrder;          /* Original order of action sets */
 };
 
 /*
@@ -3524,7 +3528,13 @@ struct axset {
 static int axset_compare(const void *a, const void *b){
   struct axset *p1 = (struct axset*)a;
   struct axset *p2 = (struct axset*)b;
-  return p2->nAction - p1->nAction;
+  int c;
+  c = p2->nAction - p1->nAction;
+  if( c==0 ){
+    c = p2->iOrder - p1->iOrder;
+  }
+  assert( c!=0 || p1==p2 );
+  return c;
 }
 
 /*
@@ -3684,6 +3694,7 @@ int mhflag;     /* Output in makeheaders format if true */
   ** action table to a minimum, the heuristic of placing the largest action
   ** sets first is used.
   */
+  for(i=0; i<lemp->nstate*2; i++) ax[i].iOrder = i;
   qsort(ax, lemp->nstate*2, sizeof(ax[0]), axset_compare);
   pActtab = acttab_alloc();
   for(i=0; i<lemp->nstate*2 && ax[i].nAction>0; i++){
@@ -4097,7 +4108,11 @@ static int stateResortCompare(const void *a, const void *b){
   n = pB->nNtAct - pA->nNtAct;
   if( n==0 ){
     n = pB->nTknAct - pA->nTknAct;
+    if( n==0 ){
+      n = pB->statenum - pA->statenum;
+    }
   }
+  assert( n!=0 );
   return n;
 }
 
@@ -4401,6 +4416,7 @@ char *x;
 int Symbolcmpp(struct symbol **a, struct symbol **b){
   int i1 = (**a).index + 10000000*((**a).name[0]>'Z');
   int i2 = (**b).index + 10000000*((**b).name[0]>'Z');
+  assert( i1!=i2 || strcmp((**a).name,(**b).name)==0 );
   return i1-i2;
 }
 

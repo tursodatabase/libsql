@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C All\sSQLITE_MAX_VARIABLE_NUMBER\sto\sexceed\s32767.\s\sThe\ssizes\sof\ssome\sstructures\nincrease\swhen\sthe\scompile-time\sparameter\sis\sconfigured\sthis\sway.
-D 2009-11-03T01:22:08
+C Adjust\sthe\slemon\simplementation\sso\sthat\sit\salways\scomputes\sthe\ssame\sPDA\nregardless\sof\sqsort()\simplementation\son\sthe\shost\splatform.\s\sIn\sother\swords,\nmake\sall\ssorts\sin\slemon\sstable.
+D 2009-11-03T13:02:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -743,7 +743,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c 0eb9829c494dfcea449de36ad677efe7f0742801
+F tool/lemon.c ee5e39ce2b344ce7c81306b27a59da7698114a2d
 F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
 F tool/mkkeywordhash.c 8c9f8e3253555101aaa4bf7a0459cbfc8ddc41cc
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6610cac435428434bc978d5e4df92aa1e431240b
-R ccaf6a810237127b03d8c2dda40d5c18
+P 16a24b4485420bdf30d3c8e22cfbaf008e07df02
+R e72225eb55d8736569f8031586282767
 U drh
-Z 75578a720b6342c3a297305a01e4e12a
+Z 9ed57d7b7fd138a4562a0f8b4ab054bf
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK74XEoxKgR168RlERAoE0AJ0ReiaY3L/Gf3rz2iTVUhp4M+MNCACePwqQ
-9jr/776w6kq808+th2eWh+E=
-=478y
+iD8DBQFK8CnloxKgR168RlERAvvEAJ4zARLPnrRgcFCLL+urqSma1EJWFACghoK5
+rpncZKK3rz8eBtrxBY7ZVmw=
+=tZsO
 -----END PGP SIGNATURE-----
