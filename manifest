@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Force\sall\sqsort()\scalls\sin\smkkeywordhash.c\sto\sbe\sstable\sso\sthat\swe\sget\npredictable\sresults\son\sdifferent\splatforms.
-D 2009-11-03T13:08:17
+C Enhancements\sto\slemon\sto\sgenerate\smore\scompact\saction\stables\sand\sto\savoid\nmaking\sarray\sbounds\stests\sthat\scan\snever\sfail\son\saction\stable\scalculations.
+D 2009-11-03T19:18:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -128,7 +128,7 @@ F src/hwtime.h 4a1d45f4cae1f402ea19686acf24acf4f0cb53cb
 F src/insert.c 2fe2ef7bd03d6e0120e4525727c4ae7de5a2d571
 F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
-F src/lempar.c 0c4d1ab0a5ef2b0381eb81a732c54f68f27a574d
+F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
 F src/main.c 5e12af46a6e6149b755830f9c035be6eb77995a6
 F src/malloc.c 685561d2f1602042e349aea5d7a88c3f10a63454
@@ -743,8 +743,8 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c ee5e39ce2b344ce7c81306b27a59da7698114a2d
-F tool/lempar.c 2ed70b3fc896a47e07fedfe543324f008f53d223
+F tool/lemon.c 3088e4dec7f93c6b0925cf5bac04c8b7c8688835
+F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c 9216336085e7a7c226a35c0bd780239968f8304f
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d66a0f31ebcc56e6f0f462b3db6aab54f7fab816
-R 91e31635600cb3800baa14d4687e1d08
+P 3b02df27ab63936226a90098d88535ed19c2b782
+R 9657839e8a1b2321f27513cd9ab14412
 U drh
-Z 0bb2002d9c9d8d6a6987522657519773
+Z 79535e58caedc3efe5879d698faec6dd
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK8CtFoxKgR168RlERAvt+AJkBQI2LJH6CUrPXrZkZDQd5FHmWKwCeNWmo
-X0wFI2+tf0Wum9Vwm5FmTGU=
-=YTMU
+iD8DBQFK8IILoxKgR168RlERAhAJAJ9pB6KdOuaqs+7SONUxYOVTE6z/WwCfZnDD
+8HkIYKOVL/iazNE6Eoivw5I=
+=rFC0
 -----END PGP SIGNATURE-----

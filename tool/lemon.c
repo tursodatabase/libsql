@@ -520,21 +520,9 @@ int acttab_insert(acttab *p){
   **
   ** i is the index in p->aAction[] where p->mnLookahead is inserted.
   */
-  for(i=0; i<p->nAction+p->mnLookahead; i++){
-    if( p->aAction[i].lookahead<0 ){
-      for(j=0; j<p->nLookahead; j++){
-        k = p->aLookahead[j].lookahead - p->mnLookahead + i;
-        if( k<0 ) break;
-        if( p->aAction[k].lookahead>=0 ) break;
-      }
-      if( j<p->nLookahead ) continue;
-      for(j=0; j<p->nAction; j++){
-        if( p->aAction[j].lookahead==j+p->mnLookahead-i ) break;
-      }
-      if( j==p->nAction ){
-        break;  /* Fits in empty slots */
-      }
-    }else if( p->aAction[i].lookahead==p->mnLookahead ){
+  for(i=p->nAction-1; i>=0; i--){
+    /* First look for an existing action table entry that can be reused */
+    if( p->aAction[i].lookahead==p->mnLookahead ){
       if( p->aAction[i].action!=p->mnAction ) continue;
       for(j=0; j<p->nLookahead; j++){
         k = p->aLookahead[j].lookahead - p->mnLookahead + i;
@@ -550,6 +538,25 @@ int acttab_insert(acttab *p){
       }
       if( n==p->nLookahead ){
         break;  /* Same as a prior transaction set */
+      }
+    }
+  }
+  if( i<0 ){
+    /* If no reusable entry is found, look for an empty slot */
+    for(i=0; i<p->nAction; i++){
+      if( p->aAction[i].lookahead<0 ){
+        for(j=0; j<p->nLookahead; j++){
+          k = p->aLookahead[j].lookahead - p->mnLookahead + i;
+          if( k<0 ) break;
+          if( p->aAction[k].lookahead>=0 ) break;
+        }
+        if( j<p->nLookahead ) continue;
+        for(j=0; j<p->nAction; j++){
+          if( p->aAction[j].lookahead==j+p->mnLookahead-i ) break;
+        }
+        if( j==p->nAction ){
+          break;  /* Fits in empty slots */
+        }
       }
     }
   }
@@ -3568,7 +3575,7 @@ int mhflag;     /* Output in makeheaders format if true */
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, n;
+  int i, j, k, n;
   char *name;
   int mnTknOfst, mxTknOfst;
   int mnNtOfst, mxNtOfst;
@@ -3727,8 +3734,9 @@ int mhflag;     /* Output in makeheaders format if true */
   free(ax);
 
   /* Output the yy_action table */
-  fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
   n = acttab_size(pActtab);
+  fprintf(out,"#define YY_ACTTAB_COUNT (%d)\n", n); lineno++;
+  fprintf(out,"static const YYACTIONTYPE yy_action[] = {\n"); lineno++;
   for(i=j=0; i<n; i++){
     int action = acttab_yyaction(pActtab, i);
     if( action<0 ) action = lemp->nstate + lemp->nrule + 2;
@@ -3763,7 +3771,9 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out, "#define YY_SHIFT_USE_DFLT (%d)\n", mnTknOfst-1); lineno++;
   n = lemp->nstate;
   while( n>0 && lemp->sorted[n-1]->iTknOfst==NO_OFFSET ) n--;
-  fprintf(out, "#define YY_SHIFT_MAX %d\n", n-1); lineno++;
+  fprintf(out, "#define YY_SHIFT_COUNT (%d)\n", n-1); lineno++;
+  fprintf(out, "#define YY_SHIFT_MIN   (%d)\n", mnTknOfst); lineno++;
+  fprintf(out, "#define YY_SHIFT_MAX   (%d)\n", mxTknOfst); lineno++;
   fprintf(out, "static const %s yy_shift_ofst[] = {\n", 
           minimum_size_type(mnTknOfst-1, mxTknOfst)); lineno++;
   for(i=j=0; i<n; i++){
@@ -3786,7 +3796,9 @@ int mhflag;     /* Output in makeheaders format if true */
   fprintf(out, "#define YY_REDUCE_USE_DFLT (%d)\n", mnNtOfst-1); lineno++;
   n = lemp->nstate;
   while( n>0 && lemp->sorted[n-1]->iNtOfst==NO_OFFSET ) n--;
-  fprintf(out, "#define YY_REDUCE_MAX %d\n", n-1); lineno++;
+  fprintf(out, "#define YY_REDUCE_COUNT (%d)\n", n-1); lineno++;
+  fprintf(out, "#define YY_REDUCE_MIN   (%d)\n", mnNtOfst); lineno++;
+  fprintf(out, "#define YY_REDUCE_MAX   (%d)\n", mxNtOfst); lineno++;
   fprintf(out, "static const %s yy_reduce_ofst[] = {\n", 
           minimum_size_type(mnNtOfst-1, mxNtOfst)); lineno++;
   for(i=j=0; i<n; i++){
