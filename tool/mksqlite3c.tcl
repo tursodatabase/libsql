@@ -107,6 +107,7 @@ foreach hdr {
    sqliteicu.h
    sqliteInt.h
    sqliteLimit.h
+   sqlrr.h
    vdbe.h
    vdbeInt.h
 } {
@@ -298,7 +299,8 @@ foreach file {
 
    rtree.c
    icu.c
-   fts3_icu.c
+   fts3_icu.c   
+   sqlrr.c
 } {
   copy_file tsrc/$file
 }

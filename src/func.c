@@ -191,6 +191,9 @@ static void substrFunc(
     }
   }
   p1 = sqlite3_value_int(argv[1]);
+#ifdef SQLITE_SUBSTR_COMPATIBILITY
+  if( p1==0 ) p1 = 1; /* <rdar://problem/6778339> */
+#endif
   if( argc==3 ){
     p2 = sqlite3_value_int(argv[2]);
     if( p2<0 ){

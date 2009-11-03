@@ -17,6 +17,9 @@
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
+#ifdef SQLITE_ENABLE_SQLRR
+# include "sqlrr.h"
+#endif 
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -48,6 +51,9 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+    SRRecFinalize(pStmt);
+#endif
     sqlite3 *db = v->db;
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = v->db->mutex;
@@ -74,6 +80,9 @@ int sqlite3_reset(sqlite3_stmt *pStmt){
     rc = SQLITE_OK;
   }else{
     Vdbe *v = (Vdbe*)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+    SRRecReset(pStmt);
+#endif
     sqlite3_mutex_enter(v->db->mutex);
     rc = sqlite3VdbeReset(v);
     sqlite3VdbeMakeReady(v, -1, 0, 0, 0, 0, 0);
@@ -92,7 +101,14 @@ int sqlite3_clear_bindings(sqlite3_stmt *pStmt){
   int rc = SQLITE_OK;
   Vdbe *p = (Vdbe*)pStmt;
 #if SQLITE_THREADSAFE
-  sqlite3_mutex *mutex = ((Vdbe*)pStmt)->db->mutex;
+  sqlite3_mutex *mutex=NULL;
+#endif
+  if( NULL==pStmt ){ return SQLITE_OK; } /* <rdar://problem/6646331> */
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecClearBindings(pStmt);  
+#endif
+#if SQLITE_THREADSAFE
+  mutex = ((Vdbe*)pStmt)->db->mutex;
 #endif
   sqlite3_mutex_enter(mutex);
   for(i=0; i<p->nVar; i++){
@@ -404,6 +420,10 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     int cnt = 0;
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3 *db = v->db;
+#ifdef SQLITE_ENABLE_SQLRR
+    SRRecStep(pStmt);
+#endif
+    
     sqlite3_mutex_enter(db->mutex);
     while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
            && cnt++ < 5
@@ -431,6 +451,9 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     }
     rc = sqlite3ApiExit(db, rc);
     sqlite3_mutex_leave(db->mutex);
+#ifdef SQLITE_ENABLE_SQLRR
+    SRRecStepEnd(pStmt);
+#endif
   }
   return rc;
 }
@@ -971,11 +994,17 @@ int sqlite3_bind_blob(
   int nData, 
   void (*xDel)(void*)
 ){
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindBlob(pStmt, i, zData, nData);
+#endif
   return bindText(pStmt, i, zData, nData, xDel, 0);
 }
 int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindDouble(pStmt, i, rValue);
+#endif
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemSetDouble(&p->aVar[i-1], rValue);
@@ -984,11 +1013,17 @@ int sqlite3_bind_double(sqlite3_stmt *pStmt, int i, double rValue){
   return rc;
 }
 int sqlite3_bind_int(sqlite3_stmt *p, int i, int iValue){
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindInt64(p, i, (i64)iValue);
+#endif
   return sqlite3_bind_int64(p, i, (i64)iValue);
 }
 int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindInt64(pStmt, i, iValue);
+#endif
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemSetInt64(&p->aVar[i-1], iValue);
@@ -999,6 +1034,9 @@ int sqlite3_bind_int64(sqlite3_stmt *pStmt, int i, sqlite_int64 iValue){
 int sqlite3_bind_null(sqlite3_stmt *pStmt, int i){
   int rc;
   Vdbe *p = (Vdbe*)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindNull(pStmt, i);
+#endif
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3_mutex_leave(p->db->mutex);
@@ -1012,6 +1050,9 @@ int sqlite3_bind_text(
   int nData, 
   void (*xDel)(void*)
 ){
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindText(pStmt, i, zData, nData);
+#endif
   return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF8);
 }
 #ifndef SQLITE_OMIT_UTF16
@@ -1022,6 +1063,9 @@ int sqlite3_bind_text16(
   int nData, 
   void (*xDel)(void*)
 ){
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindText(pStmt, i, zData, nData);
+#endif
   return bindText(pStmt, i, zData, nData, xDel, SQLITE_UTF16NATIVE);
 }
 #endif /* SQLITE_OMIT_UTF16 */
@@ -1045,6 +1089,9 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
       break;
     }
     case SQLITE_TEXT: {
+#ifdef SQLITE_ENABLE_SQLRR
+      SRRecBindText(pStmt, i, zData, nData);
+#endif
       rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT,
                               pValue->enc);
       break;
@@ -1059,6 +1106,9 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
 int sqlite3_bind_zeroblob(sqlite3_stmt *pStmt, int i, int n){
   int rc;
   Vdbe *p = (Vdbe *)pStmt;
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecBindBlob(pStmt, i, NULL, n);
+#endif
   rc = vdbeUnbind(p, i);
   if( rc==SQLITE_OK ){
     sqlite3VdbeMemSetZeroBlob(&p->aVar[i-1], n);

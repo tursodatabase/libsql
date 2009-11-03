@@ -182,17 +182,20 @@ build_test_db memsubsys1-5 {PRAGMA page_size=4096}
 do_test memsubsys1-5.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
 } 23
-do_test memsubsys1-5.4 {
-  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq>4096}
-} 1
-do_test memsubsys1-5.5 {
-  set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
-} 0
-do_test memsubsys1-5.6 {
-  set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
-  expr {$s_ovfl>6000}
-} 1
+set msize [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
+if {[lindex $msize 2]!=0} {
+  do_test memsubsys1-5.4 {
+    set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
+    expr {$maxreq>4096}
+  } 1
+  do_test memsubsys1-5.5 {
+    set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
+  } 0
+  do_test memsubsys1-5.6 {
+    set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
+    expr {$s_ovfl>6000}
+  } 1
+}
 
 # Test 6:  Activate both PAGECACHE and SCRATCH with a 4k page size.
 # Make it so that SCRATCH is large enough
@@ -208,10 +211,13 @@ build_test_db memsubsys1-6 {PRAGMA page_size=4096}
 do_test memsubsys1-6.3 {
   set pg_used [lindex [sqlite3_status SQLITE_STATUS_PAGECACHE_USED 0] 2]
 } 23
-do_test memsubsys1-6.4 {
-  set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
-  expr {$maxreq>4096 && $maxreq<=(4096+$xtra_size)}
-} 1
+set msize [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0]
+if {[lindex $msize 2]!=0} {
+  do_test memsubsys1-6.4 {
+    set maxreq [lindex [sqlite3_status SQLITE_STATUS_MALLOC_SIZE 0] 2]
+    expr {$maxreq>4096 && $maxreq<=(4096+$xtra_size)}
+  } 1
+}
 do_test memsubsys1-6.5 {
   set s_used [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_USED 0] 2]
 } 1
@@ -268,19 +274,21 @@ do_test memsubsys1-8.1 {
 do_test memsubsys1-8.2 {
   set s_ovfl [lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]
 } 0
-do_test memsubsys1-8.3 {
-  sqlite3 db :memory:
-  db eval {
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 VALUES(zeroblob(400));
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-    INSERT INTO t1 SELECT * FROM t1;
-  }
-  expr {[lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]>0}
-} 1
-db close
+if {[lindex $msize 2]!=0} {
+  do_test memsubsys1-8.3 {
+    sqlite3 db :memory:
+    db eval {
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(zeroblob(400));
+      INSERT INTO t1 VALUES(zeroblob(400));
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+      INSERT INTO t1 SELECT * FROM t1;
+    }
+    expr {[lindex [sqlite3_status SQLITE_STATUS_SCRATCH_OVERFLOW 0] 2]>0}
+  } 1
+  db close
+}
 sqlite3_shutdown
 sqlite3_config_memstatus 0
 sqlite3_initialize

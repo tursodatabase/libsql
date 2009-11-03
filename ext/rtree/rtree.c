@@ -65,6 +65,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #ifndef SQLITE_AMALGAMATION
 typedef sqlite3_int64 i64;
@@ -2670,7 +2671,7 @@ static int rtreeInit(
   Rtree *pRtree;
   int nDb;              /* Length of string argv[1] */
   int nName;            /* Length of string argv[2] */
-  int eCoordType = (int)pAux;
+  int eCoordType = (int)(intptr_t)pAux;
 
   const char *aErrMsg[] = {
     0,                                                    /* 0 */

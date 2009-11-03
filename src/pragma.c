@@ -144,12 +144,12 @@ static int changeTempStorage(Parse *pParse, const char *zStorageType){
 /*
 ** Generate code to return a single integer value.
 */
-static void returnSingleInt(Parse *pParse, const char *zLabel, i64 value){
+static void returnSingleInt(Parse *pParse, const char *zLabel, i64 *pValue){
   Vdbe *v = sqlite3GetVdbe(pParse);
   int mem = ++pParse->nMem;
-  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(value));
+  i64 *pI64 = sqlite3DbMallocRaw(pParse->db, sizeof(*pValue));
   if( pI64 ){
-    memcpy(pI64, &value, sizeof(value));
+    memcpy(pI64, pValue, sizeof(*pValue));
   }
   sqlite3VdbeAddOp4(v, OP_Int64, 0, mem, 0, (char*)pI64, P4_INT64);
   sqlite3VdbeSetNumCols(v, 1);
@@ -208,7 +208,8 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
       assert( v!=0 );  /* Already allocated by sqlite3Pragma() */
       if( ALWAYS(v) ){
         if( zRight==0 ){
-          returnSingleInt(pParse, p->zName, (db->flags & p->mask)!=0 );
+          i64 value = ((db->flags & p->mask)!=0 ? 1 : 0);
+          returnSingleInt(pParse, p->zName, &value);
         }else{
           int mask = p->mask;          /* Mask of bits to set or clear. */
           if( db->autoCommit==0 ){
@@ -383,8 +384,8 @@ void sqlite3Pragma(
     Btree *pBt = pDb->pBt;
     assert( pBt!=0 );
     if( !zRight ){
-      int size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
-      returnSingleInt(pParse, "page_size", size);
+      i64 size = ALWAYS(pBt) ? sqlite3BtreeGetPageSize(pBt) : 0;
+      returnSingleInt(pParse, "page_size", &size);
     }else{
       /* Malloc may fail when setting the page-size, as there is an internal
       ** buffer that the pager module resizes using sqlite3_realloc().
@@ -407,7 +408,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft,"max_page_count")==0 ){
     Btree *pBt = pDb->pBt;
-    int newMax = 0;
+    i64 newMax = 0;
     assert( pBt!=0 );
     if( zRight ){
       newMax = atoi(zRight);
@@ -415,7 +416,7 @@ void sqlite3Pragma(
     if( ALWAYS(pBt) ){
       newMax = sqlite3BtreeMaxPageCount(pBt, newMax);
     }
-    returnSingleInt(pParse, "max_page_count", newMax);
+    returnSingleInt(pParse, "max_page_count", &newMax);
   }else
 
   /*
@@ -556,7 +557,7 @@ void sqlite3Pragma(
       if( iLimit<-1 ) iLimit = -1;
     }
     iLimit = sqlite3PagerJournalSizeLimit(pPager, iLimit);
-    returnSingleInt(pParse, "journal_size_limit", iLimit);
+    returnSingleInt(pParse, "journal_size_limit", &iLimit);
   }else
 
 #endif /* SQLITE_OMIT_PAGER_PRAGMAS */
@@ -576,13 +577,13 @@ void sqlite3Pragma(
       goto pragma_out;
     }
     if( !zRight ){
-      int auto_vacuum;
+      i64 auto_vacuum;
       if( ALWAYS(pBt) ){
          auto_vacuum = sqlite3BtreeGetAutoVacuum(pBt);
       }else{
          auto_vacuum = SQLITE_DEFAULT_AUTOVACUUM;
       }
-      returnSingleInt(pParse, "auto_vacuum", auto_vacuum);
+      returnSingleInt(pParse, "auto_vacuum", &auto_vacuum);
     }else{
       int eAuto = getAutoVacuum(zRight);
       assert( eAuto>=0 && eAuto<=2 );
@@ -664,7 +665,8 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"cache_size")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
-      returnSingleInt(pParse, "cache_size", pDb->pSchema->cache_size);
+      i64 cacheSize = pDb->pSchema->cache_size;
+      returnSingleInt(pParse, "cache_size", &cacheSize);
     }else{
       int size = atoi(zRight);
       if( size<0 ) size = -size;
@@ -686,7 +688,8 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "temp_store")==0 ){
     if( !zRight ){
-      returnSingleInt(pParse, "temp_store", db->temp_store);
+      i64 tempStore = db->temp_store;
+      returnSingleInt(pParse, "temp_store", &tempStore);
     }else{
       changeTempStorage(pParse, zRight);
     }
@@ -800,7 +803,8 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"synchronous")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     if( !zRight ){
-      returnSingleInt(pParse, "synchronous", pDb->safety_level-1);
+      i64 safetyLevel = pDb->safety_level-1;
+      returnSingleInt(pParse, "synchronous", &safetyLevel);
     }else{
       if( !db->autoCommit ){
         sqlite3ErrorMsg(pParse, 

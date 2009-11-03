@@ -18,6 +18,9 @@
 */
 
 #include "sqliteInt.h"
+#ifdef SQLITE_ENABLE_SQLRR
+# include "sqlrr.h"
+#endif
 
 /*
 ** Execute SQL code.  Return one of the SQLITE_ success/failure
@@ -44,7 +47,9 @@ int sqlite3_exec(
   int callbackIsInit;         /* True if callback data is initialized */
 
   if( zSql==0 ) zSql = "";
-
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecExec(db, zSql);
+#endif  
   sqlite3_mutex_enter(db->mutex);
   sqlite3Error(db, SQLITE_OK, 0);
   while( (rc==SQLITE_OK || (rc==SQLITE_SCHEMA && (++nRetry)<2)) && zSql[0] ){
@@ -125,6 +130,9 @@ int sqlite3_exec(
 exec_out:
   if( pStmt ) sqlite3VdbeFinalize((Vdbe *)pStmt);
   sqlite3DbFree(db, azCols);
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecExecEnd(db);
+#endif
 
   rc = sqlite3ApiExit(db, rc);
   if( rc!=SQLITE_OK && ALWAYS(rc==sqlite3_errcode(db)) && pzErrMsg ){

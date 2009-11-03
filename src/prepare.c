@@ -16,6 +16,9 @@
 ** $Id: prepare.c,v 1.131 2009/08/06 17:43:31 drh Exp $
 */
 #include "sqliteInt.h"
+#ifdef SQLITE_ENABLE_SQLRR
+# include "sqlrr.h"
+#endif
 
 /*
 ** Fill the InitData structure with an error message that indicates
@@ -774,6 +777,9 @@ int sqlite3_prepare(
 ){
   int rc;
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,0,0,ppStmt,pzTail);
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecPrepare(db, zSql, nBytes, 0, *ppStmt);
+#endif
   assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
@@ -786,6 +792,9 @@ int sqlite3_prepare_v2(
 ){
   int rc;
   rc = sqlite3LockAndPrepare(db,zSql,nBytes,1,0,ppStmt,pzTail);
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecPrepare(db, zSql, nBytes, 1, *ppStmt);
+#endif
   assert( rc==SQLITE_OK || ppStmt==0 || *ppStmt==0 );  /* VERIFY: F13021 */
   return rc;
 }
@@ -821,7 +830,9 @@ static int sqlite3Prepare16(
   if( zSql8 ){
     rc = sqlite3LockAndPrepare(db, zSql8, -1, saveSqlFlag, 0, ppStmt, &zTail8);
   }
-
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecPrepare(db, zSql8, -1, 1, *ppStmt);
+#endif
   if( zTail8 && pzTail ){
     /* If sqlite3_prepare returns a tail pointer, we calculate the
     ** equivalent pointer into the UTF-16 string by counting the unicode

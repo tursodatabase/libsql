@@ -64,6 +64,7 @@ set EXCLUDE {
   fuzz_malloc.test
   in2.test
   loadext.test
+  lock_proxy.test
   memleak.test
   misc7.test
   misuse.test

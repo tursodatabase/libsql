@@ -3128,6 +3128,7 @@ static int test_clear_bindings(
     return TCL_ERROR;
   }
   if( getStmtPointer(interp, Tcl_GetString(objv[1]), &pStmt) ) return TCL_ERROR;
+  sqlite3_clear_bindings(0); /* test for handling NULL <rdar://problem/6646331> */
   Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_clear_bindings(pStmt)));
   return TCL_OK;
 }

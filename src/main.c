@@ -16,6 +16,9 @@
 */
 #include "sqliteInt.h"
 
+#ifdef SQLITE_ENABLE_SQLRR
+# include "sqlrr.h"
+#endif 
 #ifdef SQLITE_ENABLE_FTS3
 # include "fts3.h"
 #endif
@@ -702,6 +705,10 @@ int sqlite3_close(sqlite3 *db){
   if( db->lookaside.bMalloced ){
     sqlite3_free(db->lookaside.pStart);
   }
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecClose(db);
+#endif
+  
   sqlite3_free(db);
   return SQLITE_OK;
 }
@@ -1513,6 +1520,12 @@ int sqlite3_limit(sqlite3 *db, int limitId, int newLimit){
   }
   return oldLimit;
 }
+#if defined(SQLITE_ENABLE_AUTO_PROFILE)
+static void profile_sql(void *aux, const char *sql, uint64_t ns) {
+#pragma unused(aux)
+	fprintf(stderr, "Query: %s\n Execution Time: %llu ms\n", sql, ns / 1000000);
+}
+#endif
 
 /*
 ** This routine does the work of opening a database on behalf of
@@ -1743,7 +1756,19 @@ opendb_out:
   }else if( rc!=SQLITE_OK ){
     db->magic = SQLITE_MAGIC_SICK;
   }
+#if defined(SQLITE_ENABLE_AUTO_PROFILE)
+  if( db && !rc ){
+    char *envprofile = getenv("SQLITE_AUTO_PROFILE");
+    
+    if( envprofile!=NULL ){
+      sqlite3_profile(db, profile_sql, NULL);
+    }
+  }
+#endif
   *ppDb = db;
+#ifdef SQLITE_ENABLE_SQLRR
+  SRRecOpen(db, zFilename, flags);
+#endif
   return sqlite3ApiExit(0, rc);
 }
 

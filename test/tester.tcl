@@ -361,11 +361,15 @@ proc finalize_testing {} {
       memdebug_log_sql leaks.sql
     }
   }
-  foreach f [glob -nocomplain test.db-*-journal] {
-    file delete -force $f
+  catch {
+    foreach f [glob -nocomplain test.db-*-journal] {
+      file delete -force $f
+    }
   }
-  foreach f [glob -nocomplain test.db-mj*] {
-    file delete -force $f
+  catch {
+    foreach f [glob -nocomplain test.db-mj*] {
+      file delete -force $f
+    }
   }
   exit [expr {$nErr>0}]
 }

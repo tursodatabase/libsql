@@ -714,23 +714,24 @@ do_test attach-6.1 {
   }
 } {0 {}}
 if {$tcl_platform(platform)=="unix"} {
-  do_test attach-6.2 {
-    sqlite3 dbx cannot-read
-    dbx eval {CREATE TABLE t1(a,b,c)}
-    dbx close
-    file attributes cannot-read -permission 0000
-    if {[file writable cannot-read]} {
-      puts "\n**** Tests do not work when run as root ****"
-      file delete -force cannot-read
-      exit 1
-    }
-    catchsql {
-      ATTACH DATABASE 'cannot-read' AS noread;
-    }
-  } {1 {unable to open database: cannot-read}}
-  do_test attach-6.2.2 {
-    db errorcode
-  } {14}
+  sqlite3 dbx cannot-read
+  dbx eval {CREATE TABLE t1(a,b,c)}
+  dbx close
+  file attributes cannot-read -permission 0000
+  if {[file writable cannot-read]} {
+    #puts "\n**** Tests do not work when run as root ****"
+    file delete -force cannot-read
+    #exit 1
+  } else {
+    do_test attach-6.2 {
+      catchsql {
+        ATTACH DATABASE 'cannot-read' AS noread;
+      }
+    } {1 {unable to open database: cannot-read}}
+    do_test attach-6.2.2 {
+      db errorcode
+    } {14}
+  }
   file delete -force cannot-read
 }
 

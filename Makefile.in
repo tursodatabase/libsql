@@ -326,6 +326,9 @@ SRC += \
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
+SRC += \
+  $(TOP)/ext/sqlrr/sqlrr.h \
+  $(TOP)/ext/sqlrr/sqlrr.c
 
 # Source code to the library files needed by the test fixture
 #
@@ -434,7 +437,9 @@ HDR += \
   $(TOP)/ext/rtree/rtree.h
 HDR += \
   $(TOP)/ext/icu/sqliteicu.h
-
+HDR += \
+  $(TOP)/ext/sqlrr/sqlrr.h
+  
 # If using the amalgamation, use sqlite3.c directly to build the test
 # fixture.  Otherwise link against libsqlite3.la.  (This distinction is
 # necessary because the test fixture requires non-API symbols which are

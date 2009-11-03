@@ -28,6 +28,28 @@
 */
 #ifdef SQLITE_SYSTEM_MALLOC
 
+#if (!defined(__APPLE__))
+
+#define SQLITE_MALLOC(x) malloc(x)
+#define SQLITE_FREE(x) free(x)
+#define SQLITE_REALLOC(x,y) realloc((x),(y))
+
+
+#else
+
+
+#include <sys/sysctl.h>
+#include <malloc/malloc.h>
+#include <libkern/OSAtomic.h>
+
+static malloc_zone_t* _sqliteZone_;
+
+#define SQLITE_MALLOC(x) malloc_zone_malloc(_sqliteZone_, (x))
+#define SQLITE_FREE(x) malloc_zone_free(_sqliteZone_, (x));
+#define SQLITE_REALLOC(x,y) malloc_zone_realloc(_sqliteZone_, (x), (y))
+
+#endif
+
 /*
 ** Like malloc(), but remember the size of the allocation
 ** so that we can find it later using sqlite3MemSize().
@@ -40,7 +62,7 @@ static void *sqlite3MemMalloc(int nByte){
   sqlite3_int64 *p;
   assert( nByte>0 );
   nByte = ROUND8(nByte);
-  p = malloc( nByte+8 );
+  p = SQLITE_MALLOC( nByte+8 );
   if( p ){
     p[0] = nByte;
     p++;
@@ -60,7 +82,7 @@ static void sqlite3MemFree(void *pPrior){
   sqlite3_int64 *p = (sqlite3_int64*)pPrior;
   assert( pPrior!=0 );
   p--;
-  free(p);
+  SQLITE_FREE(p);
 }
 
 /*
@@ -79,7 +101,7 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
   nByte = ROUND8(nByte);
   p = (sqlite3_int64*)pPrior;
   p--;
-  p = realloc(p, nByte+8 );
+  p = SQLITE_REALLOC(p, nByte+8 );
   if( p ){
     p[0] = nByte;
     p++;
@@ -110,6 +132,37 @@ static int sqlite3MemRoundup(int n){
 ** Initialize this module.
 */
 static int sqlite3MemInit(void *NotUsed){
+#if defined(__APPLE__)
+	if (_sqliteZone_) {
+		return SQLITE_OK;
+	}
+	int cpuCount;
+    size_t len;
+    
+    len = sizeof(cpuCount);
+    sysctlbyname("hw.ncpu", &cpuCount, &len, NULL, 0);  //  one almost always wants to use "hw.activecpu" for MT decisions, but not here.
+	
+	if (cpuCount > 1) {
+		// defer MT decisions to system malloc
+		_sqliteZone_ = malloc_default_zone();
+	} else {
+		// only 1 core, use our own zone to contention over global locks, 
+		// e.g. we have our own dedicated locks
+		malloc_zone_t* newzone = malloc_create_zone(4096, 0);
+		malloc_set_zone_name(newzone, "Sqlite_Heap");
+
+		bool success;		
+		do {
+			success = OSAtomicCompareAndSwapPtrBarrier(NULL, newzone, (void * volatile *)&_sqliteZone_);
+		} while (!_sqliteZone_);
+		
+		if (!success) {
+			// somebody registered a zone first
+			malloc_destroy_zone(newzone);
+		}
+	}
+#endif
+
   UNUSED_PARAMETER(NotUsed);
   return SQLITE_OK;
 }
@@ -118,6 +171,17 @@ static int sqlite3MemInit(void *NotUsed){
 ** Deinitialize this module.
 */
 static void sqlite3MemShutdown(void *NotUsed){
+#if (0 && defined(__APPLE__))
+	if (_sqliteZone_ && (_sqliteZone_ != malloc_default_zone())) {
+		malloc_zone_t* oldzone = _sqliteZone_;
+
+		bool success = OSAtomicCompareAndSwapPtrBarrier(oldzone, NULL, (void * volatile *)&_sqliteZone_);
+		if (success) {
+			malloc_destroy_zone(oldzone);
+		}
+	}
+#endif
+	
   UNUSED_PARAMETER(NotUsed);
   return;
 }
@@ -141,5 +205,9 @@ void sqlite3MemSetDefault(void){
   };
   sqlite3_config(SQLITE_CONFIG_MALLOC, &defaultMethods);
 }
+
+#undef SQLITE_MALLOC
+#undef SQLITE_FREE
+#undef SQLITE_REALLOC
 
 #endif /* SQLITE_SYSTEM_MALLOC */
