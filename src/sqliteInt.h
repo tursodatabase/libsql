@@ -1508,7 +1508,7 @@ struct AggInfo {
 ** the option is available (at compile-time).
 */
 #if SQLITE_MAX_VARIABLE_NUMBER<=32767
-typedef i64 ynVar;
+typedef i16 ynVar;
 #else
 typedef int ynVar;
 #endif
