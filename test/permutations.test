@@ -1,0 +1,761 @@
+# 2008 June 21
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: permutations.test,v 1.51 2009/07/01 18:09:02 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Argument processing.
+#
+#puts "PERM-DEBUG: argv=$argv"
+namespace eval ::perm {
+  variable testmode [lindex $::argv 0]
+  variable testfile [lindex $::argv 1]
+}
+set argv [lrange $argv 2 end]
+#puts "PERM-DEBUG: testmode=$::perm::testmode tstfile=$::perm::testfile"
+
+set ::permutations_presql ""
+set ::permutations_test_prefix ""
+
+if {$::perm::testmode eq "veryquick"} {
+  set ::perm::testmode [list persistent_journal no_journal]
+  set ISQUICK 1
+}
+if {$::perm::testmode eq "quick"} {
+  set ::perm::testmode [list persistent_journal no_journal autovacuum_ioerr]
+  set ISQUICK 1
+}
+if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
+  set ::perm::testmode {
+    memsubsys1 memsubsys2 singlethread multithread onefile utf16 exclusive
+    persistent_journal persistent_journal_error no_journal no_journal_error
+    autovacuum_ioerr no_mutex_try fullmutex journaltest inmemory_journal
+    pcache0 pcache10 pcache50 pcache90 pcache100
+  }
+}
+if {$::perm::testmode eq "targets"} { 
+  puts ""
+  puts -nonewline "veryquick            "
+  puts "Same as persistent_journal and no_journal"
+  puts -nonewline "quick                "
+  puts "Same as persistent_journal, no_journal and autovacuum_ioerr"
+  puts -nonewline "all                  "
+  puts "Everything except autovacuum_crash"
+}
+#puts "PERM-DEBUG: testmode=$::perm::testmode"
+
+set EXCLUDE {
+  all.test                  in2.test                  onefile.test
+  async2.test               incrvacuum_ioerr.test     permutations.test
+  async.test                jrnlmode2.test            quick.test
+  autovacuum_crash.test     jrnlmode3.test            shared_err.test
+  autovacuum_ioerr.test     jrnlmode4.test            soak.test
+  btree8.test               loadext.test              speed1p.test
+  corrupt.test              malloc2.test              speed1.test
+  crash2.test               malloc3.test              speed2.test
+  crash3.test               malloc4.test              speed3.test
+  crash4.test               mallocAll.test            speed4p.test
+  crash6.test               malloc.test               speed4.test
+  crash7.test               memleak.test              sqllimits1.test
+  crash.test                memsubsys1.test           thread001.test
+  exclusive3.test           memsubsys2.test           thread002.test
+  fts3.test                 misc7.test                utf16.test
+  fuzz_malloc.test          misuse.test               veryquick.test
+  fuzz.test                 mutex2.test               vtab_err.test
+  lookaside.test            fuzz3.test                savepoint4.test
+  savepoint6.test
+}
+set ALLTESTS [list]
+foreach filename [glob $testdir/*.test] {
+  set filename [file tail $filename]
+  if {[lsearch $EXCLUDE $filename] < 0} { lappend ALLTESTS $filename }
+}
+set ALLTESTS [lsort $ALLTESTS]
+
+rename finish_test really_finish_test2
+proc finish_test {} {}
+
+rename do_test really_do_test
+
+proc do_test {name args} {
+  eval really_do_test [list "perm-$::permutations_test_prefix.$name"] $args
+}
+
+# Overload the [sqlite3] command
+rename sqlite3 really_sqlite3
+proc sqlite3 {args} {
+  set r [eval really_sqlite3 $args]
+  if { [llength $args] == 2 && $::permutations_presql ne "" } {
+    [lindex $args 0] eval $::permutations_presql
+  }
+  set r
+}
+
+# run_tests OPTIONS
+#
+# where available options are:  
+#
+#       -initialize  SCRIPT                 (default "")
+#       -shutdown    SCRIPT                 (default "")
+#       -include     LIST-OF-FILES          (default $::ALLTESTS)
+#       -exclude     LIST-OF-FILES          (default "")
+#       -presql      SQL                    (default "")
+#       -description TITLE                  (default "")
+#
+proc run_tests {name args} {
+  set ::permutations_test_prefix $name
+  set options(-shutdown) ""
+  set options(-initialize) ""
+  set options(-exclude) ""
+  set options(-include) $::ALLTESTS
+  set options(-presql) ""
+  set options(-description) "no description supplied (fixme)"
+  array set options $args
+  #puts "PERM-DEBUG: name=$name testfile=$::perm::testfile"
+  #puts "PERM-DEBUG: [array get options]"
+
+  if {$::perm::testmode eq "targets"} {
+    puts [format "% -20s %s" $name [string trim $options(-description)]]
+    return
+  }
+  if {$::perm::testmode ne "" && [lsearch $::perm::testmode $name]<0} {
+    puts "skipping permutation test $name..."
+    return
+  }
+
+  uplevel $options(-initialize)
+  set ::permutations_presql $options(-presql)
+
+  foreach file [lsort $options(-include)] {
+    if {[lsearch $options(-exclude) $file] < 0 &&
+       ( $::perm::testfile eq "" ||
+         $::perm::testfile eq $file ||
+        "$::perm::testfile.test" eq $file )
+    } {
+      set ::perm::shared_cache_setting [shared_cache_setting]
+      uplevel source $::testdir/$file
+      if {$::perm::shared_cache_setting ne [shared_cache_setting]} {
+        error "File $::testdir/$file changed the shared cache setting from $::perm::shared_cache_setting to [shared_cache_setting]"
+      }
+    } else {
+      # puts "skipping file $file"
+    }
+  }
+
+  uplevel $options(-shutdown)
+  set ::permutations_test_prefix ""
+}
+
+proc shared_cache_setting {} {
+  set ret 0
+  catch {
+    set ret [sqlite3_enable_shared_cache]
+  }
+  return $ret
+}
+
+#############################################################################
+# Start of tests
+
+# Run some tests using pre-allocated page and scratch blocks.
+#
+run_tests "memsubsys1" -description {
+  Tests using pre-allocated page and scratch blocks
+} -exclude {
+  ioerr5.test
+  malloc5.test
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_pagecache 4096 24
+  sqlite3_config_scratch 25000 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_pagecache 0 0
+  sqlite3_config_scratch 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+# Run some tests using pre-allocated page and scratch blocks. This time
+# the allocations are too small to use in most cases.
+#
+# Both ioerr5.test and malloc5.test are excluded because they test the
+# sqlite3_soft_heap_limit() and sqlite3_release_memory() functionality.
+# This functionality is disabled if a pre-allocated page block is provided.
+#
+run_tests "memsubsys2" -description {
+  Tests using small pre-allocated page and scratch blocks
+} -exclude {
+  ioerr5.test
+  malloc5.test
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_pagecache 512 5
+  sqlite3_config_scratch 1000 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_pagecache 0 0
+  sqlite3_config_scratch 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+# Run all tests with the lookaside allocator disabled.
+#
+run_tests "nolookaside" -description {
+  OOM tests with lookaside disabled
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_lookaside 100 500
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+# Run some tests in SQLITE_CONFIG_SINGLETHREAD mode.
+#
+run_tests "singlethread" -description {
+  Tests run in SQLITE_CONFIG_SINGLETHREAD mode
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config singlethread}
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config serialized}
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+run_tests "nomutex" -description {
+  Tests run with the SQLITE_OPEN_MULTITHREADED flag passed to sqlite3_open().
+} -initialize {
+  rename sqlite3 sqlite3_nomutex
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -fullmutex 0 -nomutex 1
+    }
+    uplevel [concat sqlite3_nomutex $args]
+  }
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_nomutex sqlite3
+}
+
+# Run some tests in SQLITE_CONFIG_MULTITHREAD mode.
+#
+run_tests "multithread" -description {
+  Tests run in SQLITE_CONFIG_MULTITHREAD mode
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config multithread}
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  catch {sqlite3_config serialized}
+  sqlite3_initialize
+  autoinstall_test_functions
+}
+
+# Run some tests in SQLITE_OPEN_FULLMUTEX mode.
+#
+run_tests "fullmutex" -description {
+  Tests run in SQLITE_OPEN_FULLMUTEX mode
+} -initialize {
+  rename sqlite3 sqlite3_fullmutex
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -nomutex 0 -fullmutex 1
+    }
+    uplevel [concat sqlite3_fullmutex $args]
+  }
+} -include {
+  delete.test   delete2.test  insert.test  rollback.test  select1.test
+  select2.test  trans.test    update.test  vacuum.test    types.test
+  types2.test   types3.test
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_fullmutex sqlite3
+}
+
+# Run some tests using the "onefile" demo.
+#
+run_tests "onefile" -description {
+  Run some tests using the "test_onefile.c" demo
+} -initialize {
+  rename sqlite3 sqlite3_onefile
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -vfs fs
+    }
+    uplevel [concat sqlite3_onefile $args]
+  }
+} -include {
+  conflict.test  insert.test   insert2.test  insert3.test
+  rollback.test  select1.test  select2.test  select3.test
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_onefile sqlite3
+}
+
+# Run some tests using UTF-16 databases.
+#
+run_tests "utf16" -description {
+  Run tests using UTF-16 databases
+} -presql {
+  pragma encoding = 'UTF-16'
+} -include {
+    alter.test alter3.test
+    auth.test bind.test blob.test capi2.test capi3.test collate1.test
+    collate2.test collate3.test collate4.test collate5.test collate6.test
+    conflict.test date.test delete.test expr.test fkey1.test func.test
+    hook.test index.test insert2.test insert.test interrupt.test in.test
+    intpkey.test ioerr.test join2.test join.test lastinsert.test
+    laststmtchanges.test limit.test lock2.test lock.test main.test 
+    memdb.test minmax.test misc1.test misc2.test misc3.test notnull.test
+    null.test progress.test quote.test rowid.test select1.test select2.test
+    select3.test select4.test select5.test select6.test sort.test 
+    subselect.test tableapi.test table.test temptable.test
+    trace.test trigger1.test trigger2.test trigger3.test
+    trigger4.test types2.test types.test unique.test update.test
+    vacuum.test view.test where.test
+}
+
+# Run some tests in exclusive locking mode.
+#
+run_tests "exclusive" -description {
+  Run tests in exclusive locking mode.
+} -presql {
+  pragma locking_mode = 'exclusive'
+} -include {
+  rollback.test select1.test select2.test 
+  malloc.test ioerr.test
+} 
+
+# Run some tests in exclusive locking mode with truncated journals.
+#
+run_tests "exclusive-truncate" -description {
+  Run tests in exclusive locking mode and truncate journal mode.
+} -presql {
+  pragma locking_mode = 'exclusive';
+  pragma journal_mode = TRUNCATE;
+} -include {
+  delete.test delete2.test insert.test rollback.test select1.test
+  select2.test update.test malloc.test ioerr.test
+} 
+
+# Run some tests in persistent journal mode.
+#
+run_tests "persistent_journal" -description {
+  Run tests in persistent-journal mode.
+} -presql {
+  pragma journal_mode = persist
+} -include {
+  delete.test delete2.test insert.test rollback.test select1.test
+  select2.test trans.test update.test vacuum.test 
+}
+
+# Run some tests in truncating journal mode.
+#
+run_tests "truncate_journal" -description {
+  Run tests in persistent-journal mode.
+} -presql {
+  pragma journal_mode = truncate
+} -include {
+  delete.test delete2.test insert.test rollback.test select1.test
+  select2.test trans.test update.test vacuum.test 
+  malloc.test ioerr.test
+}
+
+# Run some error tests in persistent journal mode.
+#
+run_tests "persistent_journal_error" -description {
+  Run malloc.test and ioerr.test in persistent-journal mode.
+} -presql {
+  pragma journal_mode = persist
+} -include {
+  malloc.test ioerr.test
+}
+
+# Run some tests in no journal mode.
+#
+run_tests "no_journal" -description {
+  Run tests in no-journal mode.
+} -presql {
+  pragma journal_mode = persist
+} -include {
+  delete.test delete2.test insert.test rollback.test select1.test
+  select2.test trans.test update.test vacuum.test 
+}
+
+# Run some error tests in no journal mode.
+#
+run_tests "no_journal_error" -description {
+  Run malloc.test and ioerr.test in no-journal mode.
+} -presql {
+  pragma journal_mode = persist
+} -include {
+  malloc.test ioerr.test
+}
+
+# Run some crash-tests in autovacuum mode.
+#
+run_tests "autovacuum_crash" -description {
+  Run crash.test in autovacuum mode.
+} -presql {
+  pragma auto_vacuum = 1
+} -include crash.test
+
+# Run some ioerr-tests in autovacuum mode.
+#
+run_tests "autovacuum_ioerr" -description {
+  Run ioerr.test in autovacuum mode.
+} -presql {
+  pragma auto_vacuum = 1
+} -include ioerr.test
+
+# Run tests with an in-memory journal.
+#
+run_tests "inmemory_journal" -description {
+  Run tests with an in-memory journal file.
+} -presql {
+  pragma journal_mode = 'memory'
+} -exclude {
+  # Exclude all tests that simulate IO errors.
+  autovacuum_ioerr2.test incrvacuum_ioerr.test ioerr.test
+  ioerr.test ioerr2.test ioerr3.test ioerr4.test ioerr5.test
+  vacuum3.test incrblob_err.test diskfull.test backup_ioerr.test
+
+  # Exclude test scripts that use tcl IO to access journal files or count
+  # the number of fsync() calls.
+  pager.test exclusive.test jrnlmode.test sync.test misc1.test 
+  journal1.test conflict.test crash8.test tkt3457.test io.test
+}
+
+ifcapable mem3 {
+  run_tests "memsys3" -description {
+    Run tests using the allocator in mem3.c.
+  } -exclude {
+    autovacuum.test           delete3.test              manydb.test
+    bigrow.test               incrblob2.test            memdb.test
+    bitvec.test               index2.test               memsubsys1.test
+    capi3c.test               ioerr.test                memsubsys2.test
+    capi3.test                join3.test                pagesize.test
+    collate5.test             limit.test                backup_ioerr.test
+    backup_malloc.test
+  } -initialize {
+    catch {db close}
+    sqlite3_reset_auto_extension
+    sqlite3_shutdown
+    sqlite3_config_heap 25000000 0
+    sqlite3_config_lookaside 0 0
+    ifcapable mem5 {
+      # If both memsys3 and memsys5 are enabled in the build, the call to
+      # [sqlite3_config_heap] will initialize the system to use memsys5.
+      # The following overrides this preference and installs the memsys3
+      # allocator.
+      sqlite3_install_memsys3
+    }
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  }
+}
+
+ifcapable mem5 {
+  run_tests "memsys5" -description {
+    Run tests using the allocator in mem5.c.
+  } -exclude {
+    autovacuum.test           delete3.test              manydb.test
+    bigrow.test               incrblob2.test            memdb.test
+    bitvec.test               index2.test               memsubsys1.test
+    capi3c.test               ioerr.test                memsubsys2.test
+    capi3.test                join3.test                pagesize.test
+    collate5.test             limit.test                zeroblob.test
+  } -initialize {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_heap 25000000 64
+    sqlite3_config_lookaside 0 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  }
+
+  run_tests "memsys5-2" -description {
+    Run tests using the allocator in mem5.c in a different configuration.
+  } -include {
+    select1.test 
+  } -initialize {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_heap 40000000 16
+    sqlite3_config_lookaside 0 0
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_heap 0 0
+    sqlite3_config_lookaside 100 500
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  }
+}
+
+ifcapable threadsafe {
+  run_tests "no_mutex_try" -description {
+     The sqlite3_mutex_try() interface always fails
+  } -exclude [concat $EXCLUDE mutex1.test mutex2.test] \
+  -initialize {
+    catch {db close}
+    sqlite3_shutdown
+    install_mutex_counters 1
+    set ::disable_mutex_try 1
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    install_mutex_counters 0
+    sqlite3_initialize
+    autoinstall_test_functions
+  }
+}
+
+# run_tests "crash_safe_append" -description {
+#   Run crash.test with persistent journals on a SAFE_APPEND file-system.
+# } -initialize {
+#   rename crashsql sa_crashsql
+#   proc crashsql {args} {
+#     set options [lrange $args 0 [expr {[llength $args]-2}]]
+#     lappend options -char safe_append
+#     set sql [lindex $args end]
+#     lappend options "
+#       PRAGMA journal_mode=persistent;
+#       $sql
+#     "
+#     set fd [open test.db-journal w]
+#     puts $fd [string repeat 1234567890 100000]
+#     close $fd
+#     eval sa_crashsql $options
+#   }
+# } -shutdown {
+#   rename crashsql {}
+#   rename sa_crashsql crashsql
+# } -include crash.test
+
+run_tests "safe_append" -description {
+  Run some tests on a SAFE_APPEND file-system.
+} -initialize {
+  rename sqlite3 sqlite3_safeappend
+  proc sqlite3 {args} {
+    if {[string range [lindex $args 0] 0 0] ne "-"} {
+      lappend args -vfs devsym
+    }
+    uplevel [concat sqlite3_safeappend $args]
+  }
+  sqlite3_simulate_device -char safe_append
+} -shutdown {
+  rename sqlite3 {}
+  rename sqlite3_shutdown sqlite3
+} -include [lsort [concat shared_err.test $ALLTESTS]] \
+  -exclude async3.test
+
+# The set of tests to run on the alternative-pcache
+set perm-alt-pcache-testset {
+  async.test
+  attach.test
+  delete.test delete2.test
+  index.test
+  insert.test insert2.test
+  join.test join2.test
+  rollback.test
+  select1.test select2.test
+  trans.test
+  update.test
+}
+
+run_tests "pcache0" -description {
+  Alternative pcache implementation without random discard
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 0 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_config_lookaside 100 500
+  install_malloc_faultsim 1 
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache10" -description {
+  Alternative pcache implementation without 10% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache50" -description {
+  Alternative pcache implementation without 50% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache90" -description {
+  Alternative pcache implementation without 90% random discard
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 50 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include ${perm-alt-pcache-testset}
+
+run_tests "pcache100" -description {
+  Alternative pcache implementation that always discards when unpinning
+} -initialize {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 1 100 1
+  sqlite3_initialize
+  autoinstall_test_functions
+} -shutdown {
+  catch {db close}
+  sqlite3_shutdown
+  sqlite3_config_alt_pcache 0 0 0
+  sqlite3_initialize
+  autoinstall_test_functions
+} -include ${perm-alt-pcache-testset}
+
+run_tests "journaltest" -description {
+  Check that pages are synced before being written (test_journal.c).
+} -initialize {
+  set ISQUICK 1
+  catch {db close}
+  register_jt_vfs -default ""
+  #sqlite3_instvfs binarylog -default binarylog ostrace.bin
+} -shutdown {
+  #sqlite3_instvfs destroy binarylog
+  unregister_jt_vfs
+} -include [concat $::ALLTESTS savepoint6.test
+] -exclude {
+  incrvacuum.test
+  ioerr.test
+  corrupt4.test 
+  io.test 
+  crash8.test 
+  async4.test 
+}
+
+# End of tests
+#############################################################################
+
+if {$::perm::testmode eq "targets"} { puts "" ; exit }
+
+# Restore the [sqlite3] command.
+#
+rename sqlite3 {}
+rename really_sqlite3 sqlite3
+
+# Restore the [finish_test] command.
+#
+rename finish_test ""
+rename really_finish_test2 finish_test
+
+# Restore the [do_test] command.
+#
+rename do_test ""
+rename really_do_test do_test
+
+finish_test

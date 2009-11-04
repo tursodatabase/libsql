@@ -1,0 +1,337 @@
+# 2004 Jan 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for TCL interface to the
+# SQLite library. 
+#
+# The focus of the tests in this file is the  following interface:
+#
+#      sqlite_commit_hook    (tests hook-1..hook-3 inclusive)
+#      sqlite_update_hook    (tests hook-4-*)
+#      sqlite_rollback_hook  (tests hook-5.*)
+#
+# $Id: hook.test,v 1.15 2009/04/07 14:14:23 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+do_test hook-1.2 {
+  db commit_hook
+} {}
+
+
+do_test hook-3.1 {
+  set commit_cnt 0
+  proc commit_hook {} {
+    incr ::commit_cnt
+    return 0
+  }
+  db commit_hook ::commit_hook
+  db commit_hook
+} {::commit_hook}
+do_test hook-3.2 {
+  set commit_cnt
+} {0}
+do_test hook-3.3 {
+  execsql {
+    CREATE TABLE t2(a,b);
+  }
+  set commit_cnt
+} {1}
+do_test hook-3.4 {
+  execsql {
+    INSERT INTO t2 VALUES(1,2);
+    INSERT INTO t2 SELECT a+1, b+1 FROM t2;
+    INSERT INTO t2 SELECT a+2, b+2 FROM t2;
+  }
+  set commit_cnt
+} {4}
+do_test hook-3.5 {
+  set commit_cnt {}
+  proc commit_hook {} {
+    set ::commit_cnt [execsql {SELECT * FROM t2}]
+    return 0
+  }
+  execsql {
+    INSERT INTO t2 VALUES(5,6);
+  }
+  set commit_cnt
+} {1 2 2 3 3 4 4 5 5 6}
+do_test hook-3.6 {
+  set commit_cnt {}
+  proc commit_hook {} {
+    set ::commit_cnt [execsql {SELECT * FROM t2}] 
+    return 1
+  }
+  catchsql {
+    INSERT INTO t2 VALUES(6,7);
+  }
+} {1 {constraint failed}}
+do_test hook-3.7 {
+  set ::commit_cnt
+} {1 2 2 3 3 4 4 5 5 6 6 7}
+do_test hook-3.8 {
+  execsql {SELECT * FROM t2}
+} {1 2 2 3 3 4 4 5 5 6}
+
+# Test turnning off the commit hook
+#
+do_test hook-3.9 {
+  db commit_hook {}
+  set ::commit_cnt {}
+  execsql {
+    INSERT INTO t2 VALUES(7,8);
+  }
+  set ::commit_cnt
+} {}
+
+# Ticket #3564.
+#
+do_test hook-3.10 {
+  file delete -force test2.db test2.db-journal
+  sqlite3 db2 test2.db
+  proc commit_hook {} {
+    set y [db2 one {SELECT y FROM t3 WHERE y>10}]
+    return [expr {$y>10}]
+  }
+  db2 eval {CREATE TABLE t3(x,y)}
+  db2 commit_hook commit_hook
+  catchsql {INSERT INTO t3 VALUES(1,2)} db2
+  catchsql {INSERT INTO t3 VALUES(11,12)} db2
+  catchsql {INSERT INTO t3 VALUES(3,4)} db2
+  db2 eval {
+    SELECT * FROM t3 ORDER BY x;
+  }
+} {1 2 3 4}
+db2 close
+
+
+#----------------------------------------------------------------------------
+# Tests for the update-hook.
+#
+# 4.1.* - Very simple tests. Test that the update hook is invoked correctly 
+#         for INSERT, DELETE and UPDATE statements, including DELETE 
+#         statements with no WHERE clause.
+# 4.2.* - Check that the update-hook is invoked for rows modified by trigger
+#         bodies. Also that the database name is correctly reported when 
+#         an attached database is modified.
+# 4.3.* - Do some sorting, grouping, compound queries, population and 
+#         depopulation of indices, to make sure the update-hook is not 
+#         invoked incorrectly.
+#
+
+# Simple tests
+do_test hook-4.1.1 {
+  catchsql {
+    DROP TABLE t1;
+  }
+  execsql {
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+    INSERT INTO t1 VALUES(3, 'three');
+  }
+  db update_hook [list lappend ::update_hook]
+} {}
+do_test hook-4.1.2 {
+  execsql {
+    INSERT INTO t1 VALUES(4, 'four');
+    DELETE FROM t1 WHERE b = 'two';
+    UPDATE t1 SET b = '' WHERE a = 1 OR a = 3;
+    DELETE FROM t1 WHERE 1; -- Avoid the truncate optimization (for now)
+  }
+  set ::update_hook
+} [list \
+    INSERT main t1 4 \
+    DELETE main t1 2 \
+    UPDATE main t1 1 \
+    UPDATE main t1 3 \
+    DELETE main t1 1 \
+    DELETE main t1 3 \
+    DELETE main t1 4 \
+]
+
+ifcapable trigger {
+  # Update hook is not invoked for changes to sqlite_master
+  #
+  do_test hook-4.1.3 {
+    set ::update_hook {}
+    execsql {
+      CREATE TRIGGER r1 AFTER INSERT ON t1 BEGIN SELECT RAISE(IGNORE); END;
+    }
+    set ::update_hook
+  } {}
+  do_test hook-4.1.4 {
+    set ::update_hook {}
+    execsql {
+      DROP TRIGGER r1;
+    }
+    set ::update_hook
+  } {}
+  
+  set ::update_hook {}
+  do_test hook-4.2.1 {
+    catchsql {
+      DROP TABLE t2;
+    }
+    execsql {
+      CREATE TABLE t2(c INTEGER PRIMARY KEY, d);
+      CREATE TRIGGER t1_trigger AFTER INSERT ON t1 BEGIN
+        INSERT INTO t2 VALUES(new.a, new.b);
+        UPDATE t2 SET d = d || ' via trigger' WHERE new.a = c;
+        DELETE FROM t2 WHERE new.a = c;
+      END;
+    }
+  } {}
+  do_test hook-4.2.2 {
+    execsql {
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(2, 'two');
+    }
+    set ::update_hook
+  } [list \
+      INSERT main t1 1 \
+      INSERT main t2 1 \
+      UPDATE main t2 1 \
+      DELETE main t2 1 \
+      INSERT main t1 2 \
+      INSERT main t2 2 \
+      UPDATE main t2 2 \
+      DELETE main t2 2 \
+  ]
+} else {
+  execsql {
+    INSERT INTO t1 VALUES(1, 'one');
+    INSERT INTO t1 VALUES(2, 'two');
+  }
+}
+
+# Update-hook + ATTACH
+set ::update_hook {}
+ifcapable attach {
+  do_test hook-4.2.3 {
+    file delete -force test2.db
+    execsql {
+      ATTACH 'test2.db' AS aux;
+      CREATE TABLE aux.t3(a INTEGER PRIMARY KEY, b);
+      INSERT INTO aux.t3 SELECT * FROM t1;
+      UPDATE t3 SET b = 'two or so' WHERE a = 2;
+      DELETE FROM t3 WHERE 1; -- Avoid the truncate optimization (for now)
+    }
+    set ::update_hook
+  } [list \
+      INSERT aux t3 1 \
+      INSERT aux t3 2 \
+      UPDATE aux t3 2 \
+      DELETE aux t3 1 \
+      DELETE aux t3 2 \
+  ]
+}
+
+ifcapable trigger {
+  execsql {
+    DROP TRIGGER t1_trigger;
+  }
+}
+
+# Test that other vdbe operations involving btree structures do not 
+# incorrectly invoke the update-hook.
+set ::update_hook {}
+do_test hook-4.3.1 {
+  execsql {
+    CREATE INDEX t1_i ON t1(b);
+    INSERT INTO t1 VALUES(3, 'three');
+    UPDATE t1 SET b = '';
+    DELETE FROM t1 WHERE a > 1;
+  }
+  set ::update_hook
+} [list \
+    INSERT main t1 3 \
+    UPDATE main t1 1 \
+    UPDATE main t1 2 \
+    UPDATE main t1 3 \
+    DELETE main t1 2 \
+    DELETE main t1 3 \
+]
+set ::update_hook {}
+ifcapable compound&&attach {
+  do_test hook-4.3.2 {
+    execsql {
+      SELECT * FROM t1 UNION SELECT * FROM t3;
+      SELECT * FROM t1 UNION ALL SELECT * FROM t3;
+      SELECT * FROM t1 INTERSECT SELECT * FROM t3;
+      SELECT * FROM t1 EXCEPT SELECT * FROM t3;
+      SELECT * FROM t1 ORDER BY b;
+      SELECT * FROM t1 GROUP BY b;
+    }
+    set ::update_hook
+  } [list]
+}
+db update_hook {}
+#
+#----------------------------------------------------------------------------
+
+#----------------------------------------------------------------------------
+# Test the rollback-hook. The rollback-hook is a bit more complicated than
+# either the commit or update hooks because a rollback can happen 
+# explicitly (an sql ROLLBACK statement) or implicitly (a constraint or 
+# error condition).
+#
+# hook-5.1.* - Test explicit rollbacks.
+# hook-5.2.* - Test implicit rollbacks caused by constraint failure.
+#
+# hook-5.3.* - Test implicit rollbacks caused by IO errors.
+# hook-5.4.* - Test implicit rollbacks caused by malloc() failure.
+# hook-5.5.* - Test hot-journal rollbacks. Or should the rollback hook 
+#              not be called for these?
+#
+
+do_test hook-5.0 {
+  # Configure the rollback hook to increment global variable 
+  # $::rollback_hook each time it is invoked.
+  set ::rollback_hook 0
+  db rollback_hook [list incr ::rollback_hook]
+} {}
+
+# Test explicit rollbacks. Not much can really go wrong here.
+#
+do_test hook-5.1.1 {
+  set ::rollback_hook 0
+  execsql {
+    BEGIN;
+    ROLLBACK;
+  }
+  set ::rollback_hook
+} {1}
+
+# Test implicit rollbacks caused by constraints.
+#
+do_test hook-5.2.1 {
+  set ::rollback_hook 0
+  catchsql {
+    DROP TABLE t1;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES('one', 'I');
+    INSERT INTO t1 VALUES('one', 'I');
+  }
+  set ::rollback_hook
+} {1}
+do_test hook-5.2.2 {
+  # Check that the INSERT transaction above really was rolled back.
+  execsql {
+    SELECT count(*) FROM t1;
+  }
+} {1}
+
+#
+# End rollback-hook testing.
+#----------------------------------------------------------------------------
+
+finish_test

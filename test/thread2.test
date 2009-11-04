@@ -1,0 +1,240 @@
+# 2006 January 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is multithreading behavior
+#
+# $Id: thread2.test,v 1.3 2008/10/07 15:25:49 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !mutex {
+  finish_test
+  return
+}
+
+
+# Skip this whole file if the thread testing code is not enabled
+#
+if {[llength [info command thread_step]]==0 || [sqlite3 -has-codec]} {
+  finish_test
+  return
+}
+if {![info exists threadsOverrideEachOthersLocks]} {
+  finish_test
+  return
+}
+
+# Create some data to work with
+#
+do_test thread1-1.1 {
+  execsql {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,'abcdefgh');
+    INSERT INTO t1 SELECT a+1, b||b FROM t1;
+    INSERT INTO t1 SELECT a+2, b||b FROM t1;
+    INSERT INTO t1 SELECT a+4, b||b FROM t1;
+    SELECT count(*), max(length(b)) FROM t1;
+  }
+} {8 64}
+
+# Use the thread_swap command to move the database connections between
+# threads, then verify that they still work.
+#
+do_test thread2-1.2 {
+  db close
+  thread_create A test.db
+  thread_create B test.db
+  thread_swap A B
+  thread_compile A {SELECT a FROM t1 LIMIT 1}
+  thread_result A
+} {SQLITE_OK}
+do_test thread2-1.3 {
+  thread_step A
+  thread_result A
+} {SQLITE_ROW}
+do_test thread2-1.4 {
+  thread_argv A 0
+} {1}
+do_test thread2-1.5 {
+  thread_finalize A
+  thread_result A
+} {SQLITE_OK}
+do_test thread2-1.6 {
+  thread_compile B {SELECT a FROM t1 LIMIT 1}
+  thread_result B
+} {SQLITE_OK}
+do_test thread2-1.7 {
+  thread_step B
+  thread_result B
+} {SQLITE_ROW}
+do_test thread2-1.8 {
+  thread_argv B 0
+} {1}
+do_test thread2-1.9 {
+  thread_finalize B
+  thread_result B
+} {SQLITE_OK}
+
+# Swap them again.
+#
+do_test thread2-2.2 {
+  thread_swap A B
+  thread_compile A {SELECT a FROM t1 LIMIT 1}
+  thread_result A
+} {SQLITE_OK}
+do_test thread2-2.3 {
+  thread_step A
+  thread_result A
+} {SQLITE_ROW}
+do_test thread2-2.4 {
+  thread_argv A 0
+} {1}
+do_test thread2-2.5 {
+  thread_finalize A
+  thread_result A
+} {SQLITE_OK}
+do_test thread2-2.6 {
+  thread_compile B {SELECT a FROM t1 LIMIT 1}
+  thread_result B
+} {SQLITE_OK}
+do_test thread2-2.7 {
+  thread_step B
+  thread_result B
+} {SQLITE_ROW}
+do_test thread2-2.8 {
+  thread_argv B 0
+} {1}
+do_test thread2-2.9 {
+  thread_finalize B
+  thread_result B
+} {SQLITE_OK}
+thread_halt A
+thread_halt B
+
+# Save the original (correct) value of threadsOverrideEachOthersLocks
+# so that it can be restored.  If this value is left set incorrectly, lots
+# of things will go wrong in future tests.
+#
+set orig_threadOverride $threadsOverrideEachOthersLocks
+
+# Pretend we are on a system (like RedHat9) were threads do not
+# override each others locks.
+#
+set threadsOverrideEachOthersLocks 0
+
+# Verify that we can move database connections between threads as
+# long as no locks are held.
+#
+do_test thread2-3.1 {
+  thread_create A test.db
+  set DB [thread_db_get A]
+  thread_halt A
+} {}
+do_test thread2-3.2 {
+  set STMT [sqlite3_prepare $DB {SELECT a FROM t1 LIMIT 1} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test thread2-3.3 {
+  sqlite3_column_int $STMT 0
+} 1
+do_test thread2-3.4 {
+  sqlite3_finalize $STMT
+} SQLITE_OK
+do_test thread2-3.5 {
+  set STMT [sqlite3_prepare $DB {SELECT max(a) FROM t1} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test thread2-3.6 {
+  sqlite3_column_int $STMT 0
+} 8
+do_test thread2-3.7 {
+  sqlite3_finalize $STMT
+} SQLITE_OK
+do_test thread2-3.8 {
+  sqlite3_close $DB
+} {SQLITE_OK}
+
+do_test thread2-3.10 {
+  thread_create A test.db
+  thread_compile A {SELECT a FROM t1 LIMIT 1}
+  thread_step A
+  thread_finalize A
+  set DB [thread_db_get A]
+  thread_halt A
+} {}
+do_test thread2-3.11 {
+  set STMT [sqlite3_prepare $DB {SELECT a FROM t1 LIMIT 1} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test thread2-3.12 {
+  sqlite3_column_int $STMT 0
+} 1
+do_test thread2-3.13 {
+  sqlite3_finalize $STMT
+} SQLITE_OK
+do_test thread2-3.14 {
+  sqlite3_close $DB
+} SQLITE_OK
+
+do_test thread2-3.20 {
+  thread_create A test.db
+  thread_compile A {SELECT a FROM t1 LIMIT 3}
+  thread_step A
+  set STMT [thread_stmt_get A]
+  set DB [thread_db_get A]
+  sqlite3_step $STMT
+} SQLITE_ROW
+do_test thread2-3.22 {
+  sqlite3_column_int $STMT 0
+} 2
+do_test thread2-3.23 {
+  # The unlock fails here.  But because we never check the return
+  # code from sqlite3OsUnlock (because we cannot do anything about it
+  # if it fails) we do not realize that an error has occurred.
+  breakpoint
+  sqlite3_finalize $STMT
+} SQLITE_OK
+do_test thread2-3.25 {
+  thread_db_put A $DB
+  thread_halt A
+} {}
+
+do_test thread2-3.30 {
+  thread_create A test.db
+  thread_compile A {BEGIN}
+  thread_step A
+  thread_finalize A
+  thread_compile A {SELECT a FROM t1 LIMIT 1}
+  thread_step A
+  thread_finalize A
+  set DB [thread_db_get A]
+  set STMT [sqlite3_prepare $DB {INSERT INTO t1 VALUES(99,'error')} -1 TAIL]
+  sqlite3_step $STMT
+} SQLITE_ERROR
+do_test thread2-3.32 {
+  sqlite3_finalize $STMT
+} SQLITE_MISUSE
+do_test thread2-3.33 {
+  thread_db_put A $DB
+  thread_halt A
+} {}
+
+# VERY important to set the override flag back to its true value.
+#
+set threadsOverrideEachOthersLocks $orig_threadOverride
+
+# Also important to halt the worker threads, which are using spin
+# locks and eating away CPU cycles.
+#
+thread_halt *   
+finish_test

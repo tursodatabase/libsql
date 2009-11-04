@@ -1,0 +1,404 @@
+# 2008 Feb 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the r-tree extension.
+#
+# $Id: rtree1.test,v 1.7 2009/07/17 16:54:48 danielk1977 Exp $
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+}
+source [file join [file dirname [info script]] rtree_util.tcl]
+source $testdir/tester.tcl
+
+# Test plan:
+#
+#   rtree-1.*: Creating/destroying r-tree tables.
+#   rtree-2.*: Test the implicit constraints - unique rowid and
+#              (coord[N]<=coord[N+1]) for even values of N. Also
+#              automatic assigning of rowid values.
+#   rtree-3.*: Linear scans of r-tree data.
+#   rtree-4.*: Test INSERT
+#   rtree-5.*: Test DELETE
+#   rtree-6.*: Test UPDATE
+#   rtree-7.*: Test renaming an r-tree table.
+#   rtree-8.*: Test constrained scans of r-tree data.
+#
+
+ifcapable !rtree {
+  finish_test
+  return
+}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-1.* test CREATE and DROP table statements.
+#
+
+# Test creating and dropping an rtree table.
+#
+do_test rtree-1.1.1 {
+  execsql { CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2) }
+} {}
+do_test rtree-1.1.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {t1 t1_node t1_parent t1_rowid}
+do_test rtree-1.1.3 {
+  execsql { 
+    DROP TABLE t1; 
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {}
+
+# Test creating and dropping an rtree table with an odd name in
+# an attached database.
+#
+do_test rtree-1.2.1 {
+  file delete -force test2.db
+  execsql {
+    ATTACH 'test2.db' AS aux;
+    CREATE VIRTUAL TABLE aux.'a" "b' USING rtree(ii, x1, x2, y1, y2);
+  }
+} {}
+do_test rtree-1.2.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {}
+do_test rtree-1.2.3 {
+  execsql { SELECT name FROM aux.sqlite_master ORDER BY name }
+} {{a" "b} {a" "b_node} {a" "b_parent} {a" "b_rowid}}
+do_test rtree-1.2.4 {
+  execsql { 
+    DROP TABLE aux.'a" "b'; 
+    SELECT name FROM aux.sqlite_master ORDER BY name;
+  }
+} {}
+
+# Test that the logic for checking the number of columns specified
+# for an rtree table. Acceptable values are odd numbers between 3 and
+# 11, inclusive.
+#
+set cols [list i1 i2 i3 i4 i5 i6 i7 i8 i9 iA iB iC iD iE iF iG iH iI iJ iK]
+for {set nCol 1} {$nCol<[llength $cols]} {incr nCol} {
+
+  set columns [join [lrange $cols 0 [expr {$nCol-1}]] ,]
+
+  set X {0 {}}
+  if {$nCol%2 == 0}  { set X {1 {Wrong number of columns for an rtree table}} }
+  if {$nCol < 3}     { set X {1 {Too few columns for an rtree table}} }
+  if {$nCol > 11}    { set X {1 {Too many columns for an rtree table}} }
+
+  do_test rtree-1.3.$nCol {
+    catchsql " 
+      CREATE VIRTUAL TABLE t1 USING rtree($columns);
+    "
+  } $X
+
+  catchsql { DROP TABLE t1 }
+}
+
+# Test that it is possible to open an existing database that contains
+# r-tree tables.
+#
+do_test rtree-1.4.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2);
+    INSERT INTO t1 VALUES(1, 5.0, 10.0);
+    INSERT INTO t1 VALUES(2, 15.0, 20.0);
+  }
+} {}
+do_test rtree-1.4.2 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1 ORDER BY ii }
+} {1 5.0 10.0 2 15.0 20.0}
+do_test rtree-1.4.3 {
+  execsql { DROP TABLE t1 }
+} {}
+
+# Test that it is possible to create an r-tree table with ridiculous
+# column names.
+#
+do_test rtree-1.5.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING rtree("the key", "x dim.", "x2'dim");
+    INSERT INTO t1 VALUES(1, 2, 3);
+    SELECT "the key", "x dim.", "x2'dim" FROM t1;
+  }
+} {1 2.0 3.0}
+do_test rtree-1.5.1 {
+  execsql { DROP TABLE t1 }
+} {}
+
+# Force the r-tree constructor to fail.
+#
+do_test rtree-1.6.1 {
+  execsql { CREATE TABLE t1_rowid(a); }
+  catchsql {
+    CREATE VIRTUAL TABLE t1 USING rtree("the key", "x dim.", "x2'dim");
+  }
+} {1 {table "t1_rowid" already exists}}
+do_test rtree-1.6.1 {
+  execsql { DROP TABLE t1_rowid }
+} {}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-2.* 
+#
+do_test rtree-2.1.1 {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2);
+    SELECT * FROM t1;
+  }
+} {}
+
+do_test rtree-2.1.2 {
+  execsql { INSERT INTO t1 VALUES(NULL, 1, 3, 2, 4) }
+  execsql { SELECT * FROM t1 }
+} {1 1.0 3.0 2.0 4.0}
+do_test rtree-2.1.3 {
+  execsql { INSERT INTO t1 VALUES(NULL, 1, 3, 2, 4) }
+  execsql { SELECT rowid FROM t1 ORDER BY rowid }
+} {1 2}
+do_test rtree-2.1.3 {
+  execsql { INSERT INTO t1 VALUES(NULL, 1, 3, 2, 4) }
+  execsql { SELECT ii FROM t1 ORDER BY ii }
+} {1 2 3}
+
+do_test rtree-2.2.1 {
+  catchsql { INSERT INTO t1 VALUES(2, 1, 3, 2, 4) }
+} {1 {constraint failed}}
+do_test rtree-2.2.2 {
+  catchsql { INSERT INTO t1 VALUES(4, 1, 3, 4, 2) }
+} {1 {constraint failed}}
+do_test rtree-2.2.3 {
+  catchsql { INSERT INTO t1 VALUES(4, 3, 1, 2, 4) }
+} {1 {constraint failed}}
+do_test rtree-2.2.4 {
+  execsql { SELECT ii FROM t1 ORDER BY ii }
+} {1 2 3}
+
+do_test rtree-2.X {
+  execsql { DROP TABLE t1 }
+} {}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-3.* test linear scans of r-tree table data. To test
+# this we have to insert some data into an r-tree, but that is not the
+# focus of these tests.
+#
+do_test rtree-3.1.1 {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING rtree(ii, x1, x2, y1, y2);
+    SELECT * FROM t1;
+  }
+} {}
+do_test rtree-3.1.2 {
+  execsql { 
+    INSERT INTO t1 VALUES(5, 1, 3, 2, 4);
+    SELECT * FROM t1;
+  }
+} {5 1.0 3.0 2.0 4.0}
+do_test rtree-3.1.3 {
+  execsql {
+    INSERT INTO t1 VALUES(6, 2, 6, 4, 8);
+    SELECT * FROM t1;
+  }
+} {5 1.0 3.0 2.0 4.0 6 2.0 6.0 4.0 8.0}
+
+# Test the constraint on the coordinates (c[i]<=c[i+1] where (i%2==0)):
+do_test rtree-3.2.1 {
+  catchsql { INSERT INTO t1 VALUES(7, 2, 6, 4, 3) }
+} {1 {constraint failed}}
+do_test rtree-3.2.2 {
+  catchsql { INSERT INTO t1 VALUES(8, 2, 6, 3, 3) }
+} {0 {}}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-5.* test DELETE operations.
+#
+do_test rtree-5.1.1 {
+  execsql { CREATE VIRTUAL TABLE t2 USING rtree(ii, x1, x2) }
+} {}
+do_test rtree-5.1.2 {
+  execsql { 
+    INSERT INTO t2 VALUES(1, 10, 20);
+    INSERT INTO t2 VALUES(2, 30, 40);
+    INSERT INTO t2 VALUES(3, 50, 60);
+    SELECT * FROM t2 ORDER BY ii;
+  }
+} {1 10.0 20.0 2 30.0 40.0 3 50.0 60.0}
+do_test rtree-5.1.3 {
+  execsql { 
+    DELETE FROM t2 WHERE ii=2;
+    SELECT * FROM t2 ORDER BY ii;
+  }
+} {1 10.0 20.0 3 50.0 60.0}
+do_test rtree-5.1.4 {
+  execsql { 
+    DELETE FROM t2 WHERE ii=1;
+    SELECT * FROM t2 ORDER BY ii;
+  }
+} {3 50.0 60.0}
+do_test rtree-5.1.5 {
+  execsql { 
+    DELETE FROM t2 WHERE ii=3;
+    SELECT * FROM t2 ORDER BY ii;
+  }
+} {}
+do_test rtree-5.1.6 {
+  execsql { SELECT * FROM t2_rowid }
+} {}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-5.* test UPDATE operations.
+#
+do_test rtree-6.1.1 {
+  execsql { CREATE VIRTUAL TABLE t3 USING rtree(ii, x1, x2, y1, y2) }
+} {}
+do_test rtree-6.1.2 {
+  execsql {
+    INSERT INTO t3 VALUES(1, 2, 3, 4, 5);
+    UPDATE t3 SET x2=5;
+    SELECT * FROM t3;
+  }
+} {1 2.0 5.0 4.0 5.0}
+do_test rtree-6.1.3 {
+  execsql { UPDATE t3 SET ii = 2 }
+  execsql { SELECT * FROM t3 }
+} {2 2.0 5.0 4.0 5.0}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-7.* test rename operations.
+#
+do_test rtree-7.1.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t4 USING rtree(ii, x1, x2, y1, y2, z1, z2);
+    INSERT INTO t4 VALUES(1, 2, 3, 4, 5, 6, 7);
+  }
+} {}
+do_test rtree-7.1.2 {
+  execsql { ALTER TABLE t4 RENAME TO t5 }
+  execsql { SELECT * FROM t5 }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.1.3 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM t5 }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.1.4 {
+  execsql { ALTER TABLE t5 RENAME TO 'raisara "one"'''}
+  execsql { SELECT * FROM "raisara ""one""'" }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.1.5 {
+  execsql { SELECT * FROM 'raisara "one"''' }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.1.6 {
+  execsql { ALTER TABLE "raisara ""one""'" RENAME TO "abc 123" }
+  execsql { SELECT * FROM "abc 123" }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.1.7 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM "abc 123" }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+
+# An error midway through a rename operation.
+do_test rtree-7.2.1 {
+  execsql { 
+    CREATE TABLE t4_node(a);
+  }
+  catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
+} {1 {SQL logic error or missing database}}
+do_test rtree-7.2.2 {
+  execsql { SELECT * FROM "abc 123" }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.2.3 {
+  execsql { 
+    DROP TABLE t4_node;
+    CREATE TABLE t4_rowid(a);
+  }
+  catchsql { ALTER TABLE "abc 123" RENAME TO t4 }
+} {1 {SQL logic error or missing database}}
+do_test rtree-7.2.4 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM "abc 123" }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+do_test rtree-7.2.5 {
+  execsql { DROP TABLE t4_rowid }
+  execsql { ALTER TABLE "abc 123" RENAME TO t4 }
+  execsql { SELECT * FROM t4 }
+} {1 2.0 3.0 4.0 5.0 6.0 7.0}
+
+
+#----------------------------------------------------------------------------
+# Test cases rtree-8.*
+#
+
+# Test that the function to determine if a leaf cell is part of the
+# result set works.
+do_test rtree-8.1.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t6 USING rtree(ii, x1, x2);
+    INSERT INTO t6 VALUES(1, 3, 7);
+    INSERT INTO t6 VALUES(2, 4, 6);
+  }
+} {}
+do_test rtree-8.1.2 { execsql { SELECT ii FROM t6 WHERE x1>2 } } {1 2}
+do_test rtree-8.1.3 { execsql { SELECT ii FROM t6 WHERE x1>3 } } {2}
+do_test rtree-8.1.4 { execsql { SELECT ii FROM t6 WHERE x1>4 } } {}
+do_test rtree-8.1.5 { execsql { SELECT ii FROM t6 WHERE x1>5 } } {}
+do_test rtree-8.1.6 { execsql { SELECT ii FROM t6 WHERE x1<3 } } {}
+do_test rtree-8.1.7 { execsql { SELECT ii FROM t6 WHERE x1<4 } } {1}
+do_test rtree-8.1.8 { execsql { SELECT ii FROM t6 WHERE x1<5 } } {1 2}
+
+#----------------------------------------------------------------------------
+# Test cases rtree-9.*
+#
+# Test that ticket #3549 is fixed.
+do_test rtree-9.1 {
+  execsql {
+    CREATE TABLE foo (id INTEGER PRIMARY KEY);
+    CREATE VIRTUAL TABLE bar USING rtree (id, minX, maxX, minY, maxY);
+    INSERT INTO foo VALUES (null);
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    INSERT INTO foo SELECT null FROM foo;
+    DELETE FROM foo WHERE id > 40;
+    INSERT INTO bar SELECT NULL, 0, 0, 0, 0 FROM foo;
+  }
+} {}
+
+# This used to crash.
+do_test rtree-9.2 {
+  execsql {
+    SELECT count(*) FROM bar b1, bar b2, foo s1 WHERE s1.id = b1.id;
+  }
+} {1600}
+do_test rtree-9.3 {
+  execsql {
+    SELECT count(*) FROM bar b1, bar b2, foo s1 
+    WHERE b1.minX <= b2.maxX AND s1.id = b1.id;
+  }
+} {1600}
+
+#-------------------------------------------------------------------------
+# Ticket #3970: Check that the error message is meaningful when a 
+# keyword is used as a column name.
+#
+do_test rtree-10.1 {
+  catchsql { CREATE VIRTUAL TABLE t7 USING rtree(index, x1, y1, x2, y2) }
+} {1 {near "index": syntax error}}
+
+finish_test

@@ -1,0 +1,306 @@
+# 2007 January 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the INSERT transfer optimization.
+#
+# $Id: insert4.test,v 1.10 2008/01/21 16:22:46 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !view||!subquery {
+  finish_test
+  return
+}
+
+# The sqlite3_xferopt_count variable is incremented whenever the 
+# insert transfer optimization applies.
+#
+# This procedure runs a test to see if the sqlite3_xferopt_count is
+# set to N.
+#
+proc xferopt_test {testname N} {
+  do_test $testname {set ::sqlite3_xferopt_count} $N
+}
+
+# Create tables used for testing.
+#
+execsql {
+  PRAGMA legacy_file_format = 0;
+  CREATE TABLE t1(a int, b int, check(b>a));
+  CREATE TABLE t2(x int, y int);
+  CREATE VIEW v2 AS SELECT y, x FROM t2;
+  CREATE TABLE t3(a int, b int);
+}
+
+# Ticket #2252.  Make sure the an INSERT from identical tables
+# does not violate constraints.
+#
+do_test insert4-1.1 {
+  set sqlite3_xferopt_count 0
+  execsql {
+    DELETE FROM t1;
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(9,1);
+  }
+  catchsql {
+    INSERT INTO t1 SELECT * FROM t2;
+  }
+} {1 {constraint failed}}
+xferopt_test insert4-1.2 0
+do_test insert4-1.3 {
+  execsql {
+    SELECT * FROM t1;
+  }
+} {}
+
+# Tests to make sure that the transfer optimization is not occurring
+# when it is not a valid optimization.
+#
+# The SELECT must be against a real table.
+do_test insert4-2.1.1 {
+  execsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT 4, 8;
+    SELECT * FROM t1;
+  }
+} {4 8}
+xferopt_test insert4-2.1.2  0
+do_test insert4-2.2.1 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT * FROM v2;
+    SELECT * FROM t1;
+  }
+} {0 {1 9}}
+xferopt_test insert4-2.2.2 0
+
+# Do not run the transfer optimization if there is a LIMIT clause
+#
+do_test insert4-2.3.1 {
+  execsql {
+    DELETE FROM t2;
+    INSERT INTO t2 VALUES(9,1);
+    INSERT INTO t2 SELECT y, x FROM t2;
+    INSERT INTO t3 SELECT * FROM t2 LIMIT 1;
+    SELECT * FROM t3;
+  }
+} {9 1}
+xferopt_test insert4-2.3.2  0
+do_test insert4-2.3.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT * FROM t2 LIMIT 1;
+    SELECT * FROM t1;
+  }
+} {1 {constraint failed}}
+xferopt_test insert4-2.3.4 0
+
+# Do not run the transfer optimization if there is a DISTINCT
+#
+do_test insert4-2.4.1 {
+  execsql {
+    DELETE FROM t3;
+    INSERT INTO t3 SELECT DISTINCT * FROM t2;
+    SELECT * FROM t3;
+  }
+} {1 9 9 1}
+xferopt_test insert4-2.4.2 0
+do_test insert4-2.4.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 SELECT DISTINCT * FROM t2;
+  }
+} {1 {constraint failed}}
+xferopt_test insert4-2.4.4 0
+
+# The following procedure constructs two tables then tries to transfer
+# data from one table to the other.  Checks are made to make sure the
+# transfer is successful and that the transfer optimization was used or
+# not, as appropriate.
+#
+#     xfer_check TESTID  XFER-USED   INIT-DATA   DEST-SCHEMA   SRC-SCHEMA 
+#
+# The TESTID argument is the symbolic name for this test.  The XFER-USED
+# argument is true if the transfer optimization should be employed and
+# false if not.  INIT-DATA is a single row of data that is to be 
+# transfered.  DEST-SCHEMA and SRC-SCHEMA are table declarations for
+# the destination and source tables.
+#
+proc xfer_check {testid xferused initdata destschema srcschema} {
+  execsql "CREATE TABLE dest($destschema)"
+  execsql "CREATE TABLE src($srcschema)"
+  execsql "INSERT INTO src VALUES([join $initdata ,])"
+  set ::sqlite3_xferopt_count 0
+  do_test $testid.1 {
+    execsql {
+      INSERT INTO dest SELECT * FROM src;
+      SELECT * FROM dest;
+    }
+  } $initdata
+  do_test $testid.2 {
+    set ::sqlite3_xferopt_count
+  } $xferused
+  execsql {
+    DROP TABLE dest;
+    DROP TABLE src;
+  }
+}
+
+
+# Do run the transfer optimization if tables have identical
+# CHECK constraints.
+#
+xfer_check insert4-3.1 1 {1 9} \
+    {a int, b int CHECK(b>a)} \
+    {x int, y int CHECK(y>x)}
+xfer_check insert4-3.2 1 {1 9} \
+    {a int, b int CHECK(b>a)} \
+    {x int CHECK(y>x), y int}
+
+# Do run the transfer optimization if the destination table lacks
+# any CHECK constraints regardless of whether or not there are CHECK
+# constraints on the source table.
+#
+xfer_check insert4-3.3 1 {1 9} \
+    {a int, b int} \
+    {x int, y int CHECK(y>x)}
+
+# Do run the transfer optimization if the destination table omits
+# NOT NULL constraints that the source table has.
+#
+xfer_check insert4-3.4 0 {1 9} \
+    {a int, b int CHECK(b>a)} \
+    {x int, y int}
+
+# Do not run the optimization if the destination has NOT NULL
+# constraints that the source table lacks.
+#
+xfer_check insert4-3.5 0 {1 9} \
+    {a int, b int NOT NULL} \
+    {x int, y int}
+xfer_check insert4-3.6 0 {1 9} \
+    {a int, b int NOT NULL} \
+    {x int NOT NULL, y int}
+xfer_check insert4-3.7 0 {1 9} \
+    {a int NOT NULL, b int NOT NULL} \
+    {x int NOT NULL, y int}
+xfer_check insert4-3.8 0 {1 9} \
+    {a int NOT NULL, b int} \
+    {x int, y int}
+
+
+# Do run the transfer optimization if the destination table and
+# source table have the same NOT NULL constraints or if the 
+# source table has extra NOT NULL constraints.
+#
+xfer_check insert4-3.9 1 {1 9} \
+    {a int, b int} \
+    {x int NOT NULL, y int}
+xfer_check insert4-3.10 1 {1 9} \
+    {a int, b int} \
+    {x int NOT NULL, y int NOT NULL}
+xfer_check insert4-3.11 1 {1 9} \
+    {a int NOT NULL, b int} \
+    {x int NOT NULL, y int NOT NULL}
+xfer_check insert4-3.12 1 {1 9} \
+    {a int, b int NOT NULL} \
+    {x int NOT NULL, y int NOT NULL}
+
+# Do not run the optimization if any corresponding table
+# columns have different affinities.
+#
+xfer_check insert4-3.20 0 {1 9} \
+    {a text, b int} \
+    {x int, b int}
+xfer_check insert4-3.21 0 {1 9} \
+    {a int, b int} \
+    {x text, b int}
+
+# "int" and "integer" are equivalent so the optimization should
+# run here.
+#
+xfer_check insert4-3.22 1 {1 9} \
+    {a int, b int} \
+    {x integer, b int}
+
+# Ticket #2291.
+#
+
+do_test insert4-4.1a {
+  execsql {CREATE TABLE t4(a, b, UNIQUE(a,b))}
+} {}
+ifcapable vacuum {
+  do_test insert4-4.1b {
+    execsql {
+      INSERT INTO t4 VALUES(NULL,0);
+      INSERT INTO t4 VALUES(NULL,1);
+      INSERT INTO t4 VALUES(NULL,1);
+      VACUUM;   
+    }
+  } {}
+}
+
+# Check some error conditions:
+#
+do_test insert4-5.1 {
+  # Table does not exist.
+  catchsql { INSERT INTO t2 SELECT * FROM nosuchtable }
+} {1 {no such table: nosuchtable}}
+do_test insert4-5.2 {
+  # Number of columns does not match.
+  catchsql { 
+    CREATE TABLE t5(a, b, c);
+    INSERT INTO t4 SELECT * FROM t5;
+  }
+} {1 {table t4 has 2 columns but 3 values were supplied}}
+
+do_test insert4-6.1 {
+  set ::sqlite3_xferopt_count 0
+  execsql {
+    CREATE INDEX t2_i2 ON t2(x, y COLLATE nocase); 
+    CREATE INDEX t2_i1 ON t2(x ASC, y DESC);
+    CREATE INDEX t3_i1 ON t3(a, b);
+    INSERT INTO t2 SELECT * FROM t3;
+  }
+  set ::sqlite3_xferopt_count
+} {0}
+do_test insert4-6.2 {
+  set ::sqlite3_xferopt_count 0
+  execsql {
+    DROP INDEX t2_i2;
+    INSERT INTO t2 SELECT * FROM t3;
+  }
+  set ::sqlite3_xferopt_count
+} {0}
+do_test insert4-6.3 {
+  set ::sqlite3_xferopt_count 0
+  execsql {
+    DROP INDEX t2_i1;
+    CREATE INDEX t2_i1 ON t2(x ASC, y ASC);
+    INSERT INTO t2 SELECT * FROM t3;
+  }
+  set ::sqlite3_xferopt_count
+} {1}
+do_test insert4-6.4 {
+  set ::sqlite3_xferopt_count 0
+  execsql {
+    DROP INDEX t2_i1;
+    CREATE INDEX t2_i1 ON t2(x ASC, y COLLATE RTRIM);
+    INSERT INTO t2 SELECT * FROM t3;
+  }
+  set ::sqlite3_xferopt_count
+} {0}
+
+
+
+
+finish_test

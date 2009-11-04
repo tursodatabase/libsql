@@ -1,0 +1,58 @@
+# 2005 February 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the CREATE INDEX statement.
+#
+# $Id: index3.test,v 1.3 2008/03/19 13:03:34 drh Exp $
+
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Ticket #1115.  Make sure that when a UNIQUE index is created on a
+# non-unique column (or columns) that it fails and that it leaves no
+# residue behind.
+#
+do_test index3-1.1 {
+  execsql {
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(1);
+    SELECT * FROM t1;
+  }
+} {1 1}
+do_test index3-1.2 {
+  catchsql {
+    BEGIN;
+    CREATE UNIQUE INDEX i1 ON t1(a);
+  }
+} {1 {indexed columns are not unique}}
+do_test index3-1.3 {
+  catchsql COMMIT;
+} {0 {}}
+integrity_check index3-1.4
+
+# This test corrupts the database file so it must be the last test
+# in the series.
+#
+do_test index3-99.1 {
+  execsql {
+    PRAGMA writable_schema=on;
+    UPDATE sqlite_master SET sql='nonsense';
+  }
+  db close
+  sqlite3 db test.db
+  catchsql {
+    DROP INDEX i1;
+  }
+} {1 {malformed database schema (t1) - near "nonsense": syntax error}}
+
+finish_test

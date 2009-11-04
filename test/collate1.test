@@ -1,0 +1,307 @@
+#
+# 2001 September 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is page cache subsystem.
+#
+# $Id: collate1.test,v 1.5 2007/02/01 23:02:46 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+#
+# Tests are roughly organised as follows:
+#
+# collate1-1.* - Single-field ORDER BY with an explicit COLLATE clause.
+# collate1-2.* - Multi-field ORDER BY with an explicit COLLATE clause.
+# collate1-3.* - ORDER BY using a default collation type. Also that an 
+#                explict collate type overrides a default collate type.
+# collate1-4.* - ORDER BY using a data type.
+#
+
+#
+# Collation type 'HEX'. If an argument can be interpreted as a hexadecimal
+# number, then it is converted to one before the comparison is performed. 
+# Numbers are less than other strings. If neither argument is a number, 
+# [string compare] is used.
+#
+db collate HEX hex_collate
+proc hex_collate {lhs rhs} {
+  set lhs_ishex [regexp {^(0x|)[1234567890abcdefABCDEF]+$} $lhs]
+  set rhs_ishex [regexp {^(0x|)[1234567890abcdefABCDEF]+$} $rhs]
+  if {$lhs_ishex && $rhs_ishex} { 
+    set lhsx [scan $lhs %x]
+    set rhsx [scan $rhs %x]
+    if {$lhs < $rhs} {return -1}
+    if {$lhs == $rhs} {return 0}
+    if {$lhs > $rhs} {return 1}
+  }
+  if {$lhs_ishex} {
+    return -1;
+  }
+  if {$rhs_ishex} {
+    return 1;
+  }
+  return [string compare $lhs $rhs]
+}
+db function hex {format 0x%X}
+
+# Mimic the SQLite 2 collation type NUMERIC.
+db collate numeric numeric_collate
+proc numeric_collate {lhs rhs} {
+  if {$lhs == $rhs} {return 0} 
+  return [expr ($lhs>$rhs)?1:-1]
+}
+
+do_test collate1-1.0 {
+  execsql {
+    CREATE TABLE collate1t1(c1, c2);
+    INSERT INTO collate1t1 VALUES(45, hex(45));
+    INSERT INTO collate1t1 VALUES(NULL, NULL);
+    INSERT INTO collate1t1 VALUES(281, hex(281));
+  }
+} {}
+do_test collate1-1.1 {
+  execsql {
+    SELECT c2 FROM collate1t1 ORDER BY 1;
+  }
+} {{} 0x119 0x2D}
+do_test collate1-1.2 {
+  execsql {
+    SELECT c2 FROM collate1t1 ORDER BY 1 COLLATE hex;
+  }
+} {{} 0x2D 0x119}
+do_test collate1-1.3 {
+  execsql {
+    SELECT c2 FROM collate1t1 ORDER BY 1 COLLATE hex DESC;
+  }
+} {0x119 0x2D {}}
+do_test collate1-1.4 {
+  execsql {
+   SELECT c2 FROM collate1t1 ORDER BY 1 COLLATE hex ASC;
+  }
+} {{} 0x2D 0x119}
+do_test collate1-1.5 {
+  execsql {
+    SELECT c2 COLLATE hex FROM collate1t1 ORDER BY 1
+  }
+} {{} 0x2D 0x119}
+do_test collate1-1.6 {
+  execsql {
+    SELECT c2 COLLATE hex FROM collate1t1 ORDER BY 1 ASC
+  }
+} {{} 0x2D 0x119}
+do_test collate1-1.7 {
+  execsql {
+    SELECT c2 COLLATE hex FROM collate1t1 ORDER BY 1 DESC
+  }
+} {0x119 0x2D {}}
+do_test collate1-1.99 {
+  execsql {
+    DROP TABLE collate1t1;
+  }
+} {}
+
+do_test collate1-2.0 {
+  execsql {
+    CREATE TABLE collate1t1(c1, c2);
+    INSERT INTO collate1t1 VALUES('5', '0x11');
+    INSERT INTO collate1t1 VALUES('5', '0xA');
+    INSERT INTO collate1t1 VALUES(NULL, NULL);
+    INSERT INTO collate1t1 VALUES('7', '0xA');
+    INSERT INTO collate1t1 VALUES('11', '0x11');
+    INSERT INTO collate1t1 VALUES('11', '0x101');
+  }
+} {}
+do_test collate1-2.2 {
+  execsql {
+    SELECT c1, c2 FROM collate1t1 ORDER BY 1 COLLATE numeric, 2 COLLATE hex;
+  }
+} {{} {} 5 0xA 5 0x11 7 0xA 11 0x11 11 0x101}
+do_test collate1-2.3 {
+  execsql {
+    SELECT c1, c2 FROM collate1t1 ORDER BY 1 COLLATE binary, 2 COLLATE hex;
+  }
+} {{} {} 11 0x11 11 0x101 5 0xA 5 0x11 7 0xA}
+do_test collate1-2.4 {
+  execsql {
+    SELECT c1, c2 FROM collate1t1 ORDER BY 1 COLLATE binary DESC, 2 COLLATE hex;
+  }
+} {7 0xA 5 0xA 5 0x11 11 0x11 11 0x101 {} {}}
+do_test collate1-2.5 {
+  execsql {
+    SELECT c1, c2 FROM collate1t1 
+        ORDER BY 1 COLLATE binary DESC, 2 COLLATE hex DESC;
+  }
+} {7 0xA 5 0x11 5 0xA 11 0x101 11 0x11 {} {}}
+do_test collate1-2.6 {
+  execsql {
+    SELECT c1, c2 FROM collate1t1 
+        ORDER BY 1 COLLATE binary ASC, 2 COLLATE hex ASC;
+  }
+} {{} {} 11 0x11 11 0x101 5 0xA 5 0x11 7 0xA}
+do_test collate1-2.12.1 {
+  execsql {
+    SELECT c1 COLLATE numeric, c2 FROM collate1t1 
+     ORDER BY 1, 2 COLLATE hex;
+  }
+} {{} {} 5 0xA 5 0x11 7 0xA 11 0x11 11 0x101}
+do_test collate1-2.12.2 {
+  execsql {
+    SELECT c1 COLLATE hex, c2 FROM collate1t1 
+     ORDER BY 1 COLLATE numeric, 2 COLLATE hex;
+  }
+} {{} {} 5 0xA 5 0x11 7 0xA 11 0x11 11 0x101}
+do_test collate1-2.12.3 {
+  execsql {
+    SELECT c1, c2 COLLATE hex FROM collate1t1 
+     ORDER BY 1 COLLATE numeric, 2;
+  }
+} {{} {} 5 0xA 5 0x11 7 0xA 11 0x11 11 0x101}
+do_test collate1-2.12.4 {
+  execsql {
+    SELECT c1 COLLATE numeric, c2 COLLATE hex
+      FROM collate1t1 
+     ORDER BY 1, 2;
+  }
+} {{} {} 5 0xA 5 0x11 7 0xA 11 0x11 11 0x101}
+do_test collate1-2.13 {
+  execsql {
+    SELECT c1 COLLATE binary, c2 COLLATE hex
+      FROM collate1t1
+     ORDER BY 1, 2;
+  }
+} {{} {} 11 0x11 11 0x101 5 0xA 5 0x11 7 0xA}
+do_test collate1-2.14 {
+  execsql {
+    SELECT c1, c2
+      FROM collate1t1 ORDER BY 1 COLLATE binary DESC, 2 COLLATE hex;
+  }
+} {7 0xA 5 0xA 5 0x11 11 0x11 11 0x101 {} {}}
+do_test collate1-2.15 {
+  execsql {
+    SELECT c1 COLLATE binary, c2 COLLATE hex
+      FROM collate1t1 
+     ORDER BY 1 DESC, 2 DESC;
+  }
+} {7 0xA 5 0x11 5 0xA 11 0x101 11 0x11 {} {}}
+do_test collate1-2.16 {
+  execsql {
+    SELECT c1 COLLATE hex, c2 COLLATE binary
+      FROM collate1t1 
+     ORDER BY 1 COLLATE binary ASC, 2 COLLATE hex ASC;
+  }
+} {{} {} 11 0x11 11 0x101 5 0xA 5 0x11 7 0xA}
+do_test collate1-2.99 {
+  execsql {
+    DROP TABLE collate1t1;
+  }
+} {}
+
+#
+# These tests ensure that the default collation type for a column is used 
+# by an ORDER BY clause correctly. The focus is all the different ways
+# the column can be referenced. i.e. a, collate2t1.a, main.collate2t1.a etc.
+#
+do_test collate1-3.0 {
+  execsql {
+    CREATE TABLE collate1t1(a COLLATE hex, b);
+    INSERT INTO collate1t1 VALUES( '0x5', 5 );
+    INSERT INTO collate1t1 VALUES( '1', 1 );
+    INSERT INTO collate1t1 VALUES( '0x45', 69 );
+    INSERT INTO collate1t1 VALUES( NULL, NULL );
+    SELECT * FROM collate1t1 ORDER BY a;
+  }
+} {{} {} 1 1 0x5 5 0x45 69}
+
+do_test collate1-3.1 {
+  execsql {
+    SELECT * FROM collate1t1 ORDER BY 1;
+  }
+} {{} {} 1 1 0x5 5 0x45 69}
+do_test collate1-3.2 {
+  execsql {
+    SELECT * FROM collate1t1 ORDER BY collate1t1.a;
+  }
+} {{} {} 1 1 0x5 5 0x45 69}
+do_test collate1-3.3 {
+  execsql {
+    SELECT * FROM collate1t1 ORDER BY main.collate1t1.a;
+  }
+} {{} {} 1 1 0x5 5 0x45 69}
+do_test collate1-3.4 {
+  execsql {
+    SELECT a as c1, b as c2 FROM collate1t1 ORDER BY c1;
+  }
+} {{} {} 1 1 0x5 5 0x45 69}
+do_test collate1-3.5 {
+  execsql {
+    SELECT a as c1, b as c2 FROM collate1t1 ORDER BY c1 COLLATE binary;
+  }
+} {{} {} 0x45 69 0x5 5 1 1}
+do_test collate1-3.5.1 {
+  execsql {
+    SELECT a COLLATE binary as c1, b as c2
+      FROM collate1t1 ORDER BY c1;
+  }
+} {{} {} 0x45 69 0x5 5 1 1}
+do_test collate1-3.6 {
+  execsql {
+    DROP TABLE collate1t1;
+  }
+} {}
+
+# Update for SQLite version 3. The collate1-4.* test cases were written
+# before manifest types were introduced. The following test cases still
+# work, due to the 'affinity' mechanism, but they don't prove anything
+# about collation sequences.
+#
+do_test collate1-4.0 {
+  execsql {
+    CREATE TABLE collate1t1(c1 numeric, c2 text);
+    INSERT INTO collate1t1 VALUES(1, 1);
+    INSERT INTO collate1t1 VALUES(12, 12);
+    INSERT INTO collate1t1 VALUES(NULL, NULL);
+    INSERT INTO collate1t1 VALUES(101, 101);
+  }
+} {}
+do_test collate1-4.1 {
+  execsql {
+    SELECT c1 FROM collate1t1 ORDER BY 1;
+  }
+} {{} 1 12 101}
+do_test collate1-4.2 {
+  execsql {
+    SELECT c2 FROM collate1t1 ORDER BY 1;
+  }
+} {{} 1 101 12}
+do_test collate1-4.3 {
+  execsql {
+    SELECT c2+0 FROM collate1t1 ORDER BY 1;
+  }
+} {{} 1 12 101}
+do_test collate1-4.4 {
+  execsql {
+    SELECT c1||'' FROM collate1t1 ORDER BY 1;
+  }
+} {{} 1 101 12}
+do_test collate1-4.4.1 {
+  execsql {
+    SELECT (c1||'') COLLATE numeric FROM collate1t1 ORDER BY 1;
+  }
+} {{} 1 12 101}
+do_test collate1-4.5 {
+  execsql {
+    DROP TABLE collate1t1;
+  }
+} {}
+
+finish_test

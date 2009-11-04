@@ -1,0 +1,171 @@
+# 2004 Jun 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for the "sqlite3_trace()" API.
+#
+# $Id: trace.test,v 1.8 2009/04/07 14:14:23 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !trace {
+  finish_test
+  return
+}
+
+set ::stmtlist {}
+do_test trace-1.1 {
+  set rc [catch {db trace 1 2 3} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db trace ?CALLBACK?"}}
+proc trace_proc cmd {
+  lappend ::stmtlist [string trim $cmd]
+}
+do_test trace-1.2 {
+  db trace trace_proc
+  db trace
+} {trace_proc}
+do_test trace-1.3 {
+  execsql {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+    SELECT * FROM t1;
+  }
+} {1 2}
+do_test trace-1.4 {
+  set ::stmtlist
+} {{CREATE TABLE t1(a,b);} {INSERT INTO t1 VALUES(1,2);} {SELECT * FROM t1;}}
+do_test trace-1.5 {
+  db trace {}
+  db trace
+} {}
+
+# If we prepare a statement and execute it multiple times, the trace
+# happens on each execution.
+#
+db close
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
+do_test trace-2.1 {
+  set STMT [sqlite3_prepare $DB {INSERT INTO t1 VALUES(2,3)} -1 TAIL]
+  db trace trace_proc
+  proc trace_proc sql {
+    global TRACE_OUT
+    set TRACE_OUT $sql
+  }
+  set TRACE_OUT {}
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t1 VALUES(2,3)}
+do_test trace-2.2 {
+  set TRACE_OUT {}
+  sqlite3_reset $STMT
+  set TRACE_OUT 
+} {}
+do_test trace-2.3 {
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t1 VALUES(2,3)}
+do_test trace-2.4 {
+  execsql {SELECT * FROM t1}
+} {1 2 2 3 2 3}
+do_test trace-2.5 {
+  set TRACE_OUT
+} {SELECT * FROM t1}
+catch {sqlite3_finalize $STMT}
+
+# Similar tests, but this time for profiling.
+# 
+do_test trace-3.1 {
+  set rc [catch {db profile 1 2 3} msg]
+  lappend rc $msg
+} {1 {wrong # args: should be "db profile ?CALLBACK?"}}
+set ::stmtlist {}
+proc profile_proc {cmd tm} {
+  lappend ::stmtlist [string trim $cmd]
+}
+do_test trace-3.2 {
+  db trace {}
+  db profile profile_proc
+  db profile
+} {profile_proc}
+do_test trace-3.3 {
+  execsql {
+    CREATE TABLE t2(a,b);
+    INSERT INTO t2 VALUES(1,2);
+    SELECT * FROM t2;
+  }
+} {1 2}
+do_test trace-3.4 {
+  set ::stmtlist
+} {{CREATE TABLE t2(a,b);} {INSERT INTO t2 VALUES(1,2);} {SELECT * FROM t2;}}
+do_test trace-3.5 {
+  db profile {}
+  db profile
+} {}
+
+# If we prepare a statement and execute it multiple times, the profile
+# happens on each execution.
+#
+db close
+sqlite3 db test.db; set DB [sqlite3_connection_pointer db]
+do_test trace-4.1 {
+  set STMT [sqlite3_prepare $DB {INSERT INTO t2 VALUES(2,3)} -1 TAIL]
+  db trace trace_proc
+  proc profile_proc {sql tm} {
+    global TRACE_OUT
+    set TRACE_OUT $sql
+  }
+  set TRACE_OUT {}
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t2 VALUES(2,3)}
+do_test trace-4.2 {
+  set TRACE_OUT {}
+  sqlite3_reset $STMT
+  set TRACE_OUT 
+} {}
+do_test trace-4.3 {
+  sqlite3_step $STMT
+  set TRACE_OUT
+} {INSERT INTO t2 VALUES(2,3)}
+do_test trace-4.4 {
+  execsql {SELECT * FROM t1}
+} {1 2 2 3 2 3}
+do_test trace-4.5 {
+  set TRACE_OUT
+} {SELECT * FROM t1}
+catch {sqlite3_finalize $STMT}
+
+# Trigger tracing.
+#
+ifcapable trigger {
+  do_test trace-5.1 {
+    db eval {
+      CREATE TRIGGER r1t1 AFTER UPDATE ON t1 BEGIN
+        UPDATE t2 SET a=new.a WHERE rowid=new.rowid;
+      END;
+      CREATE TRIGGER r1t2 AFTER UPDATE ON t2 BEGIN
+        SELECT 'hello';
+      END;
+    }
+    set TRACE_OUT {}
+    proc trace_proc cmd {
+      lappend ::TRACE_OUT [string trim $cmd]
+    }
+    db eval {
+      UPDATE t1 SET a=a+1;
+    }
+    set TRACE_OUT
+  } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
+}
+
+finish_test

@@ -1,0 +1,505 @@
+# 2009 August 06
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements regression tests for SQLite library. This file 
+# implements tests for the extra functionality provided by the ANALYZE 
+# command when the library is compiled with SQLITE_ENABLE_STAT2 defined.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !stat2 {
+  finish_test
+  return
+}
+
+#--------------------------------------------------------------------
+# Test organization:
+#
+# analyze2-1.*: Tests to verify that ANALYZE creates and populates the
+#               sqlite_stat2 table as expected.
+#
+# analyze2-2.*: Test that when a table has two indexes on it and either
+#               index may be used for the scan, the index suggested by
+#               the contents of sqlite_stat2 table is prefered.
+# 
+# analyze2-3.*: Similar to the previous block of tests, but using tables
+#               that contain a mixture of NULL, numeric, text and blob
+#               values.
+#
+# analyze2-4.*: Check that when an indexed column uses a collation other
+#               than BINARY, the collation is taken into account when
+#               using the contents of sqlite_stat2 to estimate the cost
+#               of a range scan.
+#
+# analyze2-5.*: Check that collation sequences are used as described above
+#               even when the only available version of the collation 
+#               function require UTF-16 encoded arguments.
+#
+# analyze2-6.*: Check that the library behaves correctly when one of the
+#               sqlite_stat2 or sqlite_stat1 tables are missing.
+#
+# analyze2-7.*: Check that in a shared-schema situation, nothing goes
+#               wrong if sqlite_stat2 data is read by one connection,
+#               and freed by another.
+# 
+
+proc eqp {sql {db db}} {
+  uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db
+}
+
+do_test analyze2-1.1 {
+  execsql { CREATE TABLE t1(x PRIMARY KEY) }
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i) }
+  }
+  execsql { 
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} [list t1 sqlite_autoindex_t1_1 0 50  \
+        t1 sqlite_autoindex_t1_1 1 149 \
+        t1 sqlite_autoindex_t1_1 2 249 \
+        t1 sqlite_autoindex_t1_1 3 349 \
+        t1 sqlite_autoindex_t1_1 4 449 \
+        t1 sqlite_autoindex_t1_1 5 549 \
+        t1 sqlite_autoindex_t1_1 6 649 \
+        t1 sqlite_autoindex_t1_1 7 749 \
+        t1 sqlite_autoindex_t1_1 8 849 \
+        t1 sqlite_autoindex_t1_1 9 949 \
+]
+
+do_test analyze2-1.2 {
+  execsql {
+    DELETE FROM t1 WHERe x>9;
+    ANALYZE;
+    SELECT tbl, idx, group_concat(sample, ' ') FROM sqlite_stat2;
+  }
+} {t1 sqlite_autoindex_t1_1 {0 1 2 3 4 5 6 7 8 9}}
+do_test analyze2-1.3 {
+  execsql {
+    DELETE FROM t1 WHERE x>8;
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} {}
+do_test analyze2-1.4 {
+  execsql {
+    DELETE FROM t1;
+    ANALYZE;
+    SELECT * FROM sqlite_stat2;
+  }
+} {}
+
+do_test analyze2-2.1 {
+  execsql { 
+    BEGIN;
+    DROP TABLE t1;
+    CREATE TABLE t1(x, y);
+    CREATE INDEX t1_x ON t1(x);
+    CREATE INDEX t1_y ON t1(y);
+  }
+  for {set i 0} {$i < 1000} {incr i} {
+    execsql { INSERT INTO t1 VALUES($i, $i) }
+  }
+  execsql COMMIT
+  execsql ANALYZE
+} {}
+do_test analyze2-2.2 {
+  eqp "SELECT * FROM t1 WHERE x>500 AND y>700"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-2.3 {
+  eqp "SELECT * FROM t1 WHERE x>700 AND y>500"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.3 {
+  eqp "SELECT * FROM t1 WHERE y>700 AND x>500"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-2.4 {
+  eqp "SELECT * FROM t1 WHERE y>500 AND x>700"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.5 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 200 AND y BETWEEN 400 AND 700"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.6 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 400 AND 700"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-2.7 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN -400 AND -300 AND y BETWEEN 100 AND 300"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.8 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN -400 AND -300"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-2.9 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 500 AND 100 AND y BETWEEN 100 AND 300"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-2.10 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 300 AND y BETWEEN 500 AND 100"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+
+do_test analyze2-3.1 {
+  set alphabet [list a b c d e f g h i j]
+  execsql BEGIN
+  for {set i 0} {$i < 1000} {incr i} {
+    set str    [lindex $alphabet [expr ($i/100)%10]] 
+    append str [lindex $alphabet [expr ($i/ 10)%10]]
+    append str [lindex $alphabet [expr ($i/  1)%10]]
+    execsql { INSERT INTO t1 VALUES($str, $str) }
+  }
+  execsql COMMIT
+  execsql ANALYZE
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't1_x' 
+    GROUP BY tbl,idx
+  }
+} {t1 t1_x {100 299 499 699 899 ajj cjj ejj gjj ijj}}
+do_test analyze2-3.2 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't1_y' 
+    GROUP BY tbl,idx
+  }
+} {t1 t1_y {100 299 499 699 899 ajj cjj ejj gjj ijj}}
+
+do_test analyze2-3.3 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 500 AND y BETWEEN 'a' AND 'b'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-3.4 {
+  eqp "SELECT * FROM t1 WHERE x BETWEEN 100 AND 400 AND y BETWEEN 'a' AND 'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+do_test analyze2-3.5 {
+  eqp "SELECT * FROM t1 WHERE x<'a' AND y>'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-3.6 {
+  eqp "SELECT * FROM t1 WHERE x<444 AND y>'h'"
+} {0 0 {TABLE t1 WITH INDEX t1_y}}
+do_test analyze2-3.7 {
+  eqp "SELECT * FROM t1 WHERE x<221 AND y>'g'"
+} {0 0 {TABLE t1 WITH INDEX t1_x}}
+
+do_test analyze2-4.1 {
+  execsql { CREATE TABLE t3(a COLLATE nocase, b) }
+  execsql { CREATE INDEX t3a ON t3(a) }
+  execsql { CREATE INDEX t3b ON t3(b) }
+  set alphabet [list A b C d E f G h I j]
+  execsql BEGIN
+  for {set i 0} {$i < 1000} {incr i} {
+    set str    [lindex $alphabet [expr ($i/100)%10]] 
+    append str [lindex $alphabet [expr ($i/ 10)%10]]
+    append str [lindex $alphabet [expr ($i/  1)%10]]
+    execsql { INSERT INTO t3 VALUES($str, $str) }
+  }
+  execsql COMMIT
+  execsql ANALYZE
+} {}
+do_test analyze2-4.2 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't3a' 
+    GROUP BY tbl,idx
+  }
+} {t3 t3a {AfA bEj CEj dEj EEj fEj GEj hEj IEj jEj}}
+do_test analyze2-4.3 {
+  execsql { 
+    SELECT tbl,idx,group_concat(sample,' ') 
+    FROM sqlite_stat2 
+    WHERE idx = 't3b' 
+    GROUP BY tbl,idx
+  }
+} {t3 t3b {AbA CIj EIj GIj IIj bIj dIj fIj hIj jIj}}
+
+do_test analyze2-4.4 {
+  eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'C' AND b > 'A' AND b < 'C'"
+} {0 0 {TABLE t3 WITH INDEX t3b}}
+do_test analyze2-4.5 {
+  eqp "SELECT * FROM t3 WHERE a > 'A' AND a < 'c' AND b > 'A' AND b < 'c'"
+} {0 0 {TABLE t3 WITH INDEX t3a}}
+
+ifcapable utf16 {
+  proc test_collate {enc lhs rhs} {
+    # puts $enc
+    return [string compare $lhs $rhs]
+  }
+  do_test analyze2-5.1 {
+    add_test_collate db 0 0 1
+    execsql { CREATE TABLE t4(x COLLATE test_collate) }
+    execsql { CREATE INDEX t4x ON t4(x) }
+    set alphabet [list a b c d e f g h i j]
+    execsql BEGIN
+    for {set i 0} {$i < 1000} {incr i} {
+      set str    [lindex $alphabet [expr ($i/100)%10]] 
+      append str [lindex $alphabet [expr ($i/ 10)%10]]
+      append str [lindex $alphabet [expr ($i/  1)%10]]
+      execsql { INSERT INTO t4 VALUES($str) }
+    }
+    execsql COMMIT
+    execsql ANALYZE
+  } {}
+  do_test analyze2-5.2 {
+    execsql { 
+      SELECT tbl,idx,group_concat(sample,' ') 
+      FROM sqlite_stat2 
+      WHERE tbl = 't4' 
+      GROUP BY tbl,idx
+    }
+  } {t4 t4x {afa bej cej dej eej fej gej hej iej jej}}
+  do_test analyze2-5.3 {
+    eqp "SELECT * FROM t4 WHERE x>'ccc'"
+  } {0 0 {TABLE t4 WITH INDEX t4x}}
+  do_test analyze2-5.4 {
+    eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ccc' AND t42.x>'ggg'"
+  } {0 1 {TABLE t4 AS t42 WITH INDEX t4x} 1 0 {TABLE t4 AS t41 WITH INDEX t4x}}
+  do_test analyze2-5.5 {
+    eqp "SELECT * FROM t4 AS t41, t4 AS t42 WHERE t41.x>'ddd' AND t42.x>'ccc'"
+  } {0 0 {TABLE t4 AS t41 WITH INDEX t4x} 1 1 {TABLE t4 AS t42 WITH INDEX t4x}}
+}
+
+#--------------------------------------------------------------------
+# These tests, analyze2-6.*, verify that the library behaves correctly
+# when one of the sqlite_stat1 and sqlite_stat2 tables is missing.
+#
+# If the sqlite_stat1 table is not present, then the sqlite_stat2
+# table is not read. However, if it is the sqlite_stat2 table that
+# is missing, the data in the sqlite_stat1 table is still used.
+#
+# Tests analyze2-6.1.* test the libary when the sqlite_stat2 table
+# is missing. Tests analyze2-6.2.* test the library when sqlite_stat1
+# is not present.
+#
+do_test analyze2-6.0 {
+  execsql {
+    DROP TABLE IF EXISTS t4;
+    CREATE TABLE t5(a, b); CREATE INDEX t5i ON t5(a, b);
+    CREATE TABLE t6(a, b); CREATE INDEX t6i ON t6(a, b);
+  }
+  for {set ii 0} {$ii < 20} {incr ii} {
+    execsql {
+      INSERT INTO t5 VALUES($ii, $ii);
+      INSERT INTO t6 VALUES($ii/10, $ii/10);
+    }
+  }
+  execsql { 
+    CREATE TABLE master AS 
+    SELECT * FROM sqlite_master WHERE name LIKE 'sqlite_stat%' 
+  }
+} {}
+
+do_test analyze2-6.1.1 {
+  eqp {SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+do_test analyze2-6.1.2 {
+  db cache flush
+  execsql ANALYZE
+  eqp {SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.1.3 {
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.1.4 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat2';
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.1.5 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat1';
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+do_test analyze2-6.1.6 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    INSERT INTO sqlite_master SELECT * FROM master;
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+       t5.a = 1 AND
+       t6.a = 1 AND t6.b = 1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+
+do_test analyze2-6.2.1 {
+  execsql { 
+    DELETE FROM sqlite_stat1;
+    DELETE FROM sqlite_stat2;
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.2.2 {
+  db cache flush
+  execsql ANALYZE
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+do_test analyze2-6.2.3 {
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+do_test analyze2-6.2.4 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat1';
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.2.5 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    DELETE FROM sqlite_master WHERE tbl_name = 'sqlite_stat2';
+  }
+  sqlite3 db test.db
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+do_test analyze2-6.2.6 {
+  execsql { 
+    PRAGMA writable_schema = 1;
+    INSERT INTO sqlite_master SELECT * FROM master;
+  }
+  sqlite3 db test.db
+  execsql ANALYZE
+  eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+        t5.a>1 AND t5.a<15 AND
+        t6.a>1
+  }
+} {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+#--------------------------------------------------------------------
+# These tests, analyze2-7.*, test that the sqlite_stat2 functionality
+# works in shared-cache mode. Note that these tests reuse the database
+# created for the analyze2-6.* tests.
+#
+ifcapable shared_cache {
+  db close
+  set ::enable_shared_cache [sqlite3_enable_shared_cache 1]
+
+  proc incr_schema_cookie {zDb} {
+    foreach iOffset {24 40} {
+      set cookie [hexio_get_int [hexio_read $zDb $iOffset 4]]
+      incr cookie
+      hexio_write $zDb $iOffset [hexio_render_int32 $cookie]
+    }
+  }
+
+  do_test analyze2-7.1 {
+    sqlite3 db1 test.db
+    sqlite3 db2 test.db
+    db1 cache size 0
+    db2 cache size 0
+    execsql { SELECT count(*) FROM t5 } db1
+  } {20}
+  do_test analyze2-7.2 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db2
+  } {20}
+  do_test analyze2-7.3 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db1
+  } {20}
+  do_test analyze2-7.4 {
+    incr_schema_cookie test.db
+    execsql { SELECT count(*) FROM t5 } db2
+  } {20}
+
+  do_test analyze2-7.5 {
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.6 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db2
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db2
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.7 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+  do_test analyze2-7.8 {
+    execsql { DELETE FROM sqlite_stat2 } db2
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+  do_test analyze2-7.9 {
+    execsql { SELECT * FROM sqlite_master } db2
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db2
+  } {0 1 {TABLE t6 WITH INDEX t6i} 1 0 {TABLE t5 USING PRIMARY KEY}}
+
+  do_test analyze2-7.10 {
+    incr_schema_cookie test.db
+    execsql { SELECT * FROM sqlite_master } db1
+    eqp { SELECT * FROM t5,t6 WHERE t5.rowid=t6.rowid AND 
+          t5.a>1 AND t5.a<15 AND
+          t6.a>1
+    } db1
+  } {0 0 {TABLE t5 WITH INDEX t5i} 1 1 {TABLE t6 USING PRIMARY KEY}}
+
+  db1 close
+  db2 close
+  sqlite3_enable_shared_cache $::enable_shared_cache
+}
+
+finish_test

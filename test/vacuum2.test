@@ -1,0 +1,185 @@
+# 2005 February 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the VACUUM statement.
+#
+# $Id: vacuum2.test,v 1.10 2009/02/18 20:31:18 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If the VACUUM statement is disabled in the current build, skip all
+# the tests in this file.
+#
+ifcapable {!vacuum||!autoinc} {
+  finish_test
+  return
+}
+if $AUTOVACUUM {
+  finish_test
+  return
+}
+
+# Ticket #1121 - make sure vacuum works if all autoincrement tables
+# have been deleted.
+#
+do_test vacuum2-1.1 {
+  execsql {
+    CREATE TABLE t1(x INTEGER PRIMARY KEY AUTOINCREMENT, y);
+    DROP TABLE t1;
+    VACUUM;
+  }
+} {}
+
+# Ticket #2518.  Make sure vacuum increments the change counter
+# in the database header.
+#
+do_test vacuum2-2.1 {
+  execsql {
+    CREATE TABLE t1(x);
+    CREATE TABLE t2(y);
+    INSERT INTO t1 VALUES(1);
+  }
+  hexio_get_int [hexio_read test.db 24 4]
+} [expr {[hexio_get_int [hexio_read test.db 24 4]]+3}]
+do_test vacuum2-2.1 {
+  execsql {
+    VACUUM
+  }
+  hexio_get_int [hexio_read test.db 24 4]
+} [expr {[hexio_get_int [hexio_read test.db 24 4]]+1}]
+
+############################################################################
+# Verify that we can use the auto_vacuum pragma to request a new
+# autovacuum setting, do a VACUUM, and the new setting takes effect.
+# Make sure this happens correctly even if there are multiple open
+# connections to the same database file.
+#
+sqlite3 db2 test.db
+set pageSize [db eval {pragma page_size}]
+
+# We are currently not autovacuuming so the database should be 3 pages
+# in size.  1 page for each of sqlite_master, t1, and t2.
+#
+do_test vacuum2-3.1 {
+  execsql {
+    INSERT INTO t1 VALUES('hello');
+    INSERT INTO t2 VALUES('out there');
+  }
+  expr {[file size test.db]/$pageSize}
+} {3}
+set cksum [cksum]
+do_test vacuum2-3.2 {
+  cksum db2
+} $cksum
+
+# Convert the database to an autovacuumed database.
+ifcapable autovacuum {
+  do_test vacuum2-3.3 {
+    execsql {
+      PRAGMA auto_vacuum=FULL;
+      VACUUM;
+    }
+    expr {[file size test.db]/$pageSize}
+  } {4}
+}
+do_test vacuum2-3.4 {
+  cksum db2
+} $cksum
+do_test vacuum2-3.5 {
+  cksum
+} $cksum
+do_test vacuum2-3.6 {
+  execsql {PRAGMA integrity_check} db2
+} {ok}
+do_test vacuum2-3.7 {
+  execsql {PRAGMA integrity_check} db
+} {ok}
+
+# Convert the database back to a non-autovacuumed database.
+do_test vacuum2-3.13 {
+  execsql {
+    PRAGMA auto_vacuum=NONE;
+    VACUUM;
+  }
+  expr {[file size test.db]/$pageSize}
+} {3}
+do_test vacuum2-3.14 {
+  cksum db2
+} $cksum
+do_test vacuum2-3.15 {
+  cksum
+} $cksum
+do_test vacuum2-3.16 {
+  execsql {PRAGMA integrity_check} db2
+} {ok}
+do_test vacuum2-3.17 {
+  execsql {PRAGMA integrity_check} db
+} {ok}
+
+db2 close
+
+ifcapable autovacuum {
+  do_test vacuum2-4.1 {
+    db close
+    file delete -force test.db
+    sqlite3 db test.db
+    execsql {
+      pragma auto_vacuum=1;
+      create table t(a, b);
+      insert into t values(1, 2);
+      insert into t values(1, 2);
+      pragma auto_vacuum=0;
+      vacuum;
+      pragma auto_vacuum;
+    }
+  } {0}
+  do_test vacuum2-4.2 {
+    execsql {
+      pragma auto_vacuum=1;
+      vacuum;
+      pragma auto_vacuum;
+    }
+  } {1}
+  do_test vacuum2-4.3 {
+    execsql {
+      pragma integrity_check
+    }
+  } {ok}
+  do_test vacuum2-4.4 {
+    db close
+    sqlite3 db test.db
+    execsql {
+      pragma auto_vacuum;
+    }
+  } {1}
+  do_test vacuum2-4.5 {  # Ticket #3663
+    execsql {
+      pragma auto_vacuum=2;
+      vacuum;
+      pragma auto_vacuum;
+    }
+  } {2}
+  do_test vacuum2-4.6 {
+    execsql {
+      pragma integrity_check
+    }
+  } {ok}
+  do_test vacuum2-4.7 {
+    db close
+    sqlite3 db test.db
+    execsql {
+      pragma auto_vacuum;
+    }
+  } {2}
+}
+
+finish_test

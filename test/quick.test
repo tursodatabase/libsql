@@ -1,0 +1,154 @@
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file runs all tests.
+#
+# $Id: quick.test,v 1.95 2009/03/16 14:48:19 danielk1977 Exp $
+
+proc lshift {lvar} {
+  upvar $lvar l
+  set ret [lindex $l 0]
+  set l [lrange $l 1 end]
+  return $ret
+}
+while {[set arg [lshift argv]] != ""} {
+  switch -- $arg {
+    -sharedpagercache {
+      sqlite3_enable_shared_cache 1
+    }
+    -soak {
+       set SOAKTEST 1
+    }
+    -start {
+       set STARTAT "[lshift argv]*"
+    }
+    default {
+      set argv [linsert $argv 0 $arg]
+      break
+    }
+  }
+}
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+rename finish_test really_finish_test
+proc finish_test {} {
+  catch {db close}
+  show_memstats
+}
+set ISQUICK 1
+
+set EXCLUDE {
+  all.test
+  async.test
+  async2.test
+  async3.test
+  backup_ioerr.test
+  corrupt.test
+  corruptC.test
+  crash.test
+  crash2.test
+  crash3.test
+  crash4.test
+  crash5.test
+  crash6.test
+  crash7.test
+  delete3.test
+  fts3.test
+  fkey_malloc.test
+  fuzz.test
+  fuzz3.test
+  fuzz_malloc.test
+  in2.test
+  loadext.test
+  memleak.test
+  misc7.test
+  misuse.test
+  mutex2.test
+  notify2.test
+  onefile.test
+  permutations.test
+  quick.test
+  savepoint4.test
+  savepoint6.test
+  select9.test
+  soak.test
+  speed1.test
+  speed1p.test
+  speed2.test
+  speed3.test
+  speed4.test
+  speed4p.test
+  sqllimits1.test
+  tkt2686.test
+  thread001.test
+  thread002.test
+  thread003.test
+  thread004.test
+  thread005.test
+  trans2.test
+  vacuum3.test
+
+  incrvacuum_ioerr.test
+  autovacuum_crash.test
+  btree8.test
+  shared_err.test
+  vtab_err.test
+  veryquick.test
+  mallocAll.test
+}
+
+if {[sqlite3 -has-codec]} {
+  # lappend EXCLUDE \
+  #  conflict.test
+}
+
+
+# Files to include in the test.  If this list is empty then everything
+# that is not in the EXCLUDE list is run.
+#
+set INCLUDE {
+}
+
+# If the QUICKTEST_INCLUDE environment variable is set, then interpret
+# it as a list of test files. Always run these files, even if they
+# begin with "malloc*" or "ioerr*" or are part of the EXCLUDE list
+# defined above.
+#
+set QUICKTEST_INCLUDE {}
+catch { set QUICKTEST_INCLUDE $env(QUICKTEST_INCLUDE) }
+
+foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
+  set tail [file tail $testfile]
+  if { [lsearch $QUICKTEST_INCLUDE $tail]<0 } {
+    # If this is "veryquick.test", do not run any of the malloc or 
+    # IO error simulations.
+    if {[info exists ISVERYQUICK] && (
+      [string match *malloc* $testfile] || [string match *ioerr* $testfile]
+    ) } {
+      continue
+    }
+    if {[lsearch -exact $EXCLUDE $tail]>=0} continue
+  }
+  if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+  if {[info exists STARTAT] && [string match $STARTAT $tail]} {unset STARTAT}
+  if {[info exists STARTAT]} continue
+  source $testfile
+  catch {db close}
+  if {$sqlite_open_file_count>0} {
+    puts "$tail did not close all files: $sqlite_open_file_count"
+    incr nErr
+    lappend ::failList $tail
+    set sqlite_open_file_count 0
+  }
+}
+#set argv quick
+#source $testdir/permutations.test
+#set argv ""
+source $testdir/misuse.test
+
+set sqlite_open_file_count 0
+really_finish_test

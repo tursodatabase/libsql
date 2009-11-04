@@ -1,0 +1,254 @@
+# 2008 October 4
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: indexedby.test,v 1.5 2009/03/22 20:36:19 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Create a schema with some indexes.
+#
+do_test indexedby-1.1 {
+  execsql {
+    CREATE TABLE t1(a, b);
+    CREATE INDEX i1 ON t1(a);
+    CREATE INDEX i2 ON t1(b);
+
+    CREATE TABLE t2(c, d);
+    CREATE INDEX i3 ON t2(c);
+    CREATE INDEX i4 ON t2(d);
+
+    CREATE TABLE t3(e PRIMARY KEY, f);
+
+    CREATE VIEW v1 AS SELECT * FROM t1;
+  }
+} {}
+
+# Explain Query Plan
+#
+proc EQP {sql} {
+  uplevel "execsql {EXPLAIN QUERY PLAN $sql}"
+}
+
+# These tests are to check that "EXPLAIN QUERY PLAN" is working as expected.
+#
+do_test indexedby-1.2 {
+  EQP { select * from t1 WHERE a = 10; }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-1.3 {
+  EQP { select * from t1 ; }
+} {0 0 {TABLE t1}}
+do_test indexedby-1.4 {
+  EQP { select * from t1, t2 WHERE c = 10; }
+} {0 1 {TABLE t2 WITH INDEX i3} 1 0 {TABLE t1}}
+
+# Parser tests. Test that an INDEXED BY or NOT INDEX clause can be 
+# attached to a table in the FROM clause, but not to a sub-select or
+# SQL view. Also test that specifying an index that does not exist or
+# is attached to a different table is detected as an error.
+# 
+do_test indexedby-2.1 {
+  execsql { SELECT * FROM t1 NOT INDEXED WHERE a = 'one' AND b = 'two'}
+} {}
+do_test indexedby-2.2 {
+  execsql { SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' AND b = 'two'}
+} {}
+do_test indexedby-2.3 {
+  execsql { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' AND b = 'two'}
+} {}
+
+do_test indexedby-2.4 {
+  catchsql { SELECT * FROM t1 INDEXED BY i3 WHERE a = 'one' AND b = 'two'}
+} {1 {no such index: i3}}
+do_test indexedby-2.5 {
+  catchsql { SELECT * FROM t1 INDEXED BY i5 WHERE a = 'one' AND b = 'two'}
+} {1 {no such index: i5}}
+do_test indexedby-2.6 {
+  catchsql { SELECT * FROM t1 INDEXED BY WHERE a = 'one' AND b = 'two'}
+} {1 {near "WHERE": syntax error}}
+do_test indexedby-2.7 {
+  catchsql { SELECT * FROM v1 INDEXED BY i1 WHERE a = 'one' }
+} {1 {no such index: i1}}
+
+# Tests for single table cases.
+#
+do_test indexedby-3.1 {
+  EQP { SELECT * FROM t1 NOT INDEXED WHERE a = 'one' AND b = 'two'}
+} {0 0 {TABLE t1}}
+do_test indexedby-3.2 {
+  EQP { SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' AND b = 'two'}
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-3.3 {
+  EQP { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' AND b = 'two'}
+} {0 0 {TABLE t1 WITH INDEX i2}}
+do_test indexedby-3.4 {
+  catchsql { SELECT * FROM t1 INDEXED BY i2 WHERE a = 'one' }
+} {1 {cannot use index: i2}}
+do_test indexedby-3.5 {
+  catchsql { SELECT * FROM t1 INDEXED BY i2 ORDER BY a }
+} {1 {cannot use index: i2}}
+do_test indexedby-3.6 {
+  catchsql { SELECT * FROM t1 INDEXED BY i1 WHERE a = 'one' }
+} {0 {}}
+do_test indexedby-3.7 {
+  catchsql { SELECT * FROM t1 INDEXED BY i1 ORDER BY a }
+} {0 {}}
+
+do_test indexedby-3.8 {
+  EQP { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 ORDER BY e }
+} {0 0 {TABLE t3 WITH INDEX sqlite_autoindex_t3_1 ORDER BY}}
+do_test indexedby-3.9 {
+  EQP { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE e = 10 }
+} {0 0 {TABLE t3 WITH INDEX sqlite_autoindex_t3_1}}
+do_test indexedby-3.10 {
+  catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_1 WHERE f = 10 }
+} {1 {cannot use index: sqlite_autoindex_t3_1}}
+do_test indexedby-3.11 {
+  catchsql { SELECT * FROM t3 INDEXED BY sqlite_autoindex_t3_2 WHERE f = 10 }
+} {1 {no such index: sqlite_autoindex_t3_2}}
+
+# Tests for multiple table cases.
+#
+do_test indexedby-4.1 {
+  EQP { SELECT * FROM t1, t2 WHERE a = c }
+} {0 0 {TABLE t1} 1 1 {TABLE t2 WITH INDEX i3}}
+do_test indexedby-4.2 {
+  EQP { SELECT * FROM t1 INDEXED BY i1, t2 WHERE a = c }
+} {0 1 {TABLE t2} 1 0 {TABLE t1 WITH INDEX i1}}
+
+# Test embedding an INDEXED BY in a CREATE VIEW statement. This block
+# also tests that nothing bad happens if an index refered to by
+# a CREATE VIEW statement is dropped and recreated.
+#
+do_test indexedby-5.1 {
+  execsql {
+    CREATE VIEW v2 AS SELECT * FROM t1 INDEXED BY i1 WHERE a > 5;
+  }
+  EQP { SELECT * FROM v2 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-5.2 {
+  EQP { SELECT * FROM v2 WHERE b = 10 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-5.3 {
+  execsql { DROP INDEX i1 }
+  catchsql { SELECT * FROM v2 }
+} {1 {no such index: i1}}
+do_test indexedby-5.4 {
+  # Recreate index i1 in such a way as it cannot be used by the view query.
+  execsql { CREATE INDEX i1 ON t1(b) }
+  catchsql { SELECT * FROM v2 }
+} {1 {cannot use index: i1}}
+do_test indexedby-5.5 {
+  # Drop and recreate index i1 again. This time, create it so that it can
+  # be used by the query.
+  execsql { DROP INDEX i1 ; CREATE INDEX i1 ON t1(a) }
+  catchsql { SELECT * FROM v2 }
+} {0 {}}
+
+# Test that "NOT INDEXED" may use the rowid index, but not others.
+# 
+do_test indexedby-6.1 {
+  EQP { SELECT * FROM t1 WHERE b = 10 ORDER BY rowid }
+} {0 0 {TABLE t1 WITH INDEX i2 ORDER BY}}
+do_test indexedby-6.2 {
+  EQP { SELECT * FROM t1 NOT INDEXED WHERE b = 10 ORDER BY rowid }
+} {0 0 {TABLE t1 USING PRIMARY KEY ORDER BY}}
+
+# Test that "INDEXED BY" can be used in a DELETE statement.
+# 
+do_test indexedby-7.1 {
+  EQP { DELETE FROM t1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.2 {
+  EQP { DELETE FROM t1 NOT INDEXED WHERE a = 5 }
+} {0 0 {TABLE t1}}
+do_test indexedby-7.3 {
+  EQP { DELETE FROM t1 INDEXED BY i1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.4 {
+  EQP { DELETE FROM t1 INDEXED BY i1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-7.5 {
+  EQP { DELETE FROM t1 INDEXED BY i2 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i2}}
+do_test indexedby-7.6 {
+  catchsql { DELETE FROM t1 INDEXED BY i2 WHERE a = 5}
+} {1 {cannot use index: i2}}
+
+# Test that "INDEXED BY" can be used in an UPDATE statement.
+# 
+do_test indexedby-8.1 {
+  EQP { UPDATE t1 SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.2 {
+  EQP { UPDATE t1 NOT INDEXED SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1}}
+do_test indexedby-8.3 {
+  EQP { UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 }
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.4 {
+  EQP { UPDATE t1 INDEXED BY i1 SET rowid=rowid+1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i1}}
+do_test indexedby-8.5 {
+  EQP { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5 AND b = 10}
+} {0 0 {TABLE t1 WITH INDEX i2}}
+do_test indexedby-8.6 {
+  catchsql { UPDATE t1 INDEXED BY i2 SET rowid=rowid+1 WHERE a = 5}
+} {1 {cannot use index: i2}}
+
+# Test that bug #3560 is fixed.
+#
+do_test indexedby-9.1 {
+  execsql {
+    CREATE TABLE maintable( id integer);
+    CREATE TABLE joinme(id_int integer, id_text text);
+    CREATE INDEX joinme_id_text_idx on joinme(id_text);
+    CREATE INDEX joinme_id_int_idx on joinme(id_int);
+  }
+} {}
+do_test indexedby-9.2 {
+  catchsql {
+    select * from maintable as m inner join
+    joinme as j indexed by joinme_id_text_idx
+    on ( m.id  = j.id_int)
+  }
+} {1 {cannot use index: joinme_id_text_idx}}
+do_test indexedby-9.3 {
+  catchsql { select * from maintable, joinme INDEXED by joinme_id_text_idx }
+} {1 {cannot use index: joinme_id_text_idx}}
+
+# Make sure we can still create tables, indices, and columns whose name
+# is "indexed".
+#
+do_test indexedby-10.1 {
+  execsql {
+    CREATE TABLE indexed(x,y);
+    INSERT INTO indexed VALUES(1,2);
+    SELECT * FROM indexed;
+  }
+} {1 2}
+do_test indexedby-10.2 {
+  execsql {
+    CREATE INDEX i10 ON indexed(x);
+    SELECT * FROM indexed indexed by i10 where x>0;
+  }
+} {1 2}
+do_test indexedby-10.3 {
+  execsql {
+    DROP TABLE indexed;
+    CREATE TABLE t10(indexed INTEGER);
+    INSERT INTO t10 VALUES(1);
+    CREATE INDEX indexed ON t10(indexed);
+    SELECT * FROM t10 indexed by indexed WHERE indexed>0
+  }
+} {1}
+
+finish_test

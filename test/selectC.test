@@ -1,0 +1,169 @@
+# 2008 September 16
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. 
+#
+# $Id: selectC.test,v 1.5 2009/05/17 15:26:21 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# Ticket #
+do_test selectC-1.1 {
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(1,'aaa','bbb');
+    INSERT INTO t1 SELECT * FROM t1;
+    INSERT INTO t1 VALUES(2,'ccc','ddd');
+
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE y IN ('aaabbb','xxx');
+  }
+} {1 aaabbb}
+do_test selectC-1.2 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE b||c IN ('aaabbb','xxx');
+  }
+} {1 aaabbb}
+do_test selectC-1.3 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE y='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.4 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE b||c='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.5 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE x=2
+  }
+} {2 cccddd}
+do_test selectC-1.6 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE a=2
+  }
+} {2 cccddd}
+do_test selectC-1.7 {
+  execsql {
+    SELECT DISTINCT a AS x, b||c AS y
+      FROM t1
+     WHERE +y='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.8 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     GROUP BY x, y
+    HAVING y='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.9 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     GROUP BY x, y
+    HAVING b||c='aaabbb'
+  }
+} {1 aaabbb}
+do_test selectC-1.10 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     WHERE y='aaabbb'
+     GROUP BY x, y
+  }
+} {1 aaabbb}
+do_test selectC-1.11 {
+  execsql {
+    SELECT a AS x, b||c AS y
+      FROM t1
+     WHERE b||c='aaabbb'
+     GROUP BY x, y
+  }
+} {1 aaabbb}
+proc longname_toupper x {return [string toupper $x]}
+db function uppercaseconversionfunctionwithaverylongname longname_toupper
+do_test selectC-1.12.1 {
+  execsql {
+    SELECT DISTINCT upper(b) AS x
+      FROM t1
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.12.2 {
+  execsql {
+    SELECT DISTINCT uppercaseconversionfunctionwithaverylongname(b) AS x
+      FROM t1
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.13.1 {
+  execsql {
+    SELECT upper(b) AS x
+      FROM t1
+     GROUP BY x
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.13.2 {
+  execsql {
+    SELECT uppercaseconversionfunctionwithaverylongname(b) AS x
+      FROM t1
+     GROUP BY x
+     ORDER BY x
+  }
+} {AAA CCC}
+do_test selectC-1.14.1 {
+  execsql {
+    SELECT upper(b) AS x
+      FROM t1
+     ORDER BY x DESC
+  }
+} {CCC AAA AAA}
+do_test selectC-1.14.2 {
+  execsql {
+    SELECT uppercaseconversionfunctionwithaverylongname(b) AS x
+      FROM t1
+     ORDER BY x DESC
+  }
+} {CCC AAA AAA}
+
+# The following query used to leak memory.  Verify that has been fixed.
+#
+ifcapable trigger {
+  do_test selectC-2.1 {
+    catchsql {
+      CREATE TABLE t21a(a,b);
+      INSERT INTO t21a VALUES(1,2);
+      CREATE TABLE t21b(n);
+      CREATE TRIGGER r21 AFTER INSERT ON t21b BEGIN
+        SELECT a FROM t21a WHERE a>new.x UNION ALL
+        SELECT b FROM t21a WHERE b>new.x ORDER BY 1 LIMIT 2;
+      END;
+      INSERT INTO t21b VALUES(6);
+    }
+  } {1 {no such column: new.x}}
+}
+
+finish_test

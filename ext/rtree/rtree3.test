@@ -1,0 +1,74 @@
+# 2008 Feb 19
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing that the r-tree correctly handles
+# out-of-memory conditions.
+#
+# $Id: rtree3.test,v 1.2 2008/06/23 15:55:52 danielk1977 Exp $
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+} 
+source $testdir/tester.tcl
+
+ifcapable !rtree {
+  finish_test
+  return
+}
+
+# Only run these tests if memory debugging is turned on.
+#
+source $testdir/malloc_common.tcl
+if {!$MEMDEBUG} {
+   puts "Skipping malloc tests: not compiled with -DSQLITE_MEMDEBUG..."
+   finish_test
+   return
+}
+
+do_malloc_test rtree3-1 -sqlbody {
+  BEGIN TRANSACTION;
+  CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+  INSERT INTO rt VALUES(NULL, 3, 5, 7, 9);
+  INSERT INTO rt VALUES(NULL, 13, 15, 17, 19);
+  DELETE FROM rt WHERE ii = 1;
+  SELECT * FROM rt;
+  SELECT ii FROM rt WHERE ii = 2;
+  COMMIT;
+} 
+do_malloc_test rtree3-2 -sqlprep {
+  CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+  INSERT INTO rt VALUES(NULL, 3, 5, 7, 9);
+} -sqlbody {
+  DROP TABLE rt;
+} 
+
+
+do_malloc_test rtree3-3 -sqlprep {
+  CREATE VIRTUAL TABLE rt USING rtree(ii, x1, x2, y1, y2);
+  INSERT INTO rt VALUES(NULL, 3, 5, 7, 9);
+} -tclbody {
+  db eval BEGIN
+  for {set ii 0} {$ii < 100} {incr ii} {
+    set f [expr rand()]
+    db eval {INSERT INTO rt VALUES(NULL, $f*10.0, $f*10.0, $f*15.0, $f*15.0)}
+  }
+  db eval COMMIT
+  db eval BEGIN
+  for {set ii 0} {$ii < 100} {incr ii} {
+    set f [expr rand()]
+    db eval { DELETE FROM rt WHERE x1<($f*10.0) AND x1>($f*10.5) }
+  }
+  db eval COMMIT
+} 
+
+finish_test
+

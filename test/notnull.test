@@ -1,0 +1,539 @@
+# 2002 January 29
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.
+#
+# This file implements tests for the NOT NULL constraint.
+#
+# $Id: notnull.test,v 1.4 2006/01/17 09:35:02 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !conflict {
+  finish_test
+  return
+}
+
+do_test notnull-1.0 {
+  execsql {
+    CREATE TABLE t1 (
+      a NOT NULL,
+      b NOT NULL DEFAULT 5,
+      c NOT NULL ON CONFLICT REPLACE DEFAULT 6,
+      d NOT NULL ON CONFLICT IGNORE DEFAULT 7,
+      e NOT NULL ON CONFLICT ABORT DEFAULT 8
+    );
+    SELECT * FROM t1;
+  }
+} {}
+do_test notnull-1.1 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-1.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-1.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-1.4 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-1.5 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-1.6 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-1.7 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-1.8 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-1.9 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-1.10 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-1.11 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-1.12 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-1.13 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 6 4 5}}
+do_test notnull-1.14 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-1.15 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 6 4 5}}
+do_test notnull-1.16 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.c may not be NULL}}
+do_test notnull-1.17 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,d,e) VALUES(1,2,3,null,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.d may not be NULL}}
+do_test notnull-1.18 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,e) VALUES(1,2,3,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 7 5}}
+do_test notnull-1.19 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d) VALUES(1,2,3,4);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 4 8}}
+do_test notnull-1.20 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,null);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.e may not be NULL}}
+do_test notnull-1.21 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(e,d,c,b,a) VALUES(1,2,3,null,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {5 5 3 2 1}}
+
+do_test notnull-2.1 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-2.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR REPLACE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-2.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR IGNORE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-2.4 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR ABORT t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-2.5 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET b=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-2.6 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR REPLACE t1 SET b=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 5 3 5 4}}
+do_test notnull-2.7 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR IGNORE t1 SET b=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-2.8 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET c=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 6 5 4}}
+do_test notnull-2.9 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET d=null, a=b, b=a;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-2.10 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET e=null, a=b, b=a;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.e may not be NULL}}
+
+do_test notnull-3.0 {
+  execsql {
+    CREATE INDEX t1a ON t1(a);
+    CREATE INDEX t1b ON t1(b);
+    CREATE INDEX t1c ON t1(c);
+    CREATE INDEX t1d ON t1(d);
+    CREATE INDEX t1e ON t1(e);
+    CREATE INDEX t1abc ON t1(a,b,c);
+  }
+} {}
+do_test notnull-3.1 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-3.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-3.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-3.4 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-3.5 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(b,c,d,e) VALUES(2,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-3.6 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-3.7 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-3.8 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-3.9 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,c,d,e) VALUES(1,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-3.10 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-3.11 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-3.12 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,b,c,d,e) VALUES(1,null,3,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 5 3 4 5}}
+do_test notnull-3.13 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 6 4 5}}
+do_test notnull-3.14 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR IGNORE INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {}}
+do_test notnull-3.15 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 6 4 5}}
+do_test notnull-3.16 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,d,e) VALUES(1,2,null,4,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.c may not be NULL}}
+do_test notnull-3.17 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,d,e) VALUES(1,2,3,null,5);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.d may not be NULL}}
+do_test notnull-3.18 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR ABORT INTO t1(a,b,c,e) VALUES(1,2,3,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 7 5}}
+do_test notnull-3.19 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d) VALUES(1,2,3,4);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {1 2 3 4 8}}
+do_test notnull-3.20 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1(a,b,c,d,e) VALUES(1,2,3,4,null);
+    SELECT * FROM t1 order by a;
+  }
+} {1 {t1.e may not be NULL}}
+do_test notnull-3.21 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT OR REPLACE INTO t1(e,d,c,b,a) VALUES(1,2,3,null,5);
+    SELECT * FROM t1 order by a;
+  }
+} {0 {5 5 3 2 1}}
+
+do_test notnull-4.1 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-4.2 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR REPLACE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-4.3 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR IGNORE t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-4.4 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR ABORT t1 SET a=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.a may not be NULL}}
+do_test notnull-4.5 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET b=null;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-4.6 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR REPLACE t1 SET b=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 5 3 5 4}}
+do_test notnull-4.7 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE OR IGNORE t1 SET b=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-4.8 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET c=null, d=e, e=d;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 6 5 4}}
+do_test notnull-4.9 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET d=null, a=b, b=a;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {0 {1 2 3 4 5}}
+do_test notnull-4.10 {
+  catchsql {
+    DELETE FROM t1;
+    INSERT INTO t1 VALUES(1,2,3,4,5);
+    UPDATE t1 SET e=null, a=b, b=a;
+    SELECT * FROM t1 ORDER BY a;
+  }
+} {1 {t1.e may not be NULL}}
+
+# Test that bug 29ab7be99f is fixed.
+#
+do_test notnull-5.1 {
+  execsql {
+    DROP TABLE IF EXISTS t1;
+    CREATE TABLE t1(a, b NOT NULL);
+    CREATE TABLE t2(c, d);
+    INSERT INTO t2 VALUES(3, 4);
+    INSERT INTO t2 VALUES(5, NULL);
+  }
+}  {}
+do_test notnull-5.2 {
+  catchsql {
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 SELECT * FROM t2;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-5.3 {
+  execsql { SELECT * FROM t1 }
+} {1 2}
+do_test notnull-5.4 {
+  catchsql {
+    DELETE FROM t1;
+    BEGIN;
+      INSERT INTO t1 VALUES(1, 2);
+      INSERT INTO t1 SELECT * FROM t2;
+    COMMIT;
+  }
+} {1 {t1.b may not be NULL}}
+do_test notnull-5.5 {
+  execsql { SELECT * FROM t1 }
+} {1 2}
+
+finish_test
+

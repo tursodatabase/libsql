@@ -1,0 +1,136 @@
+# 2007 May 04
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the incremental vacuum feature.
+#
+# $Id: incrvacuum2.test,v 1.6 2009/07/25 13:42:50 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If this build of the library does not support auto-vacuum, omit this
+# whole file.
+ifcapable {!autovacuum || !pragma} {
+  finish_test
+  return
+}
+
+
+# Create a database in incremental vacuum mode that has many
+# pages on the freelist.
+#
+do_test incrvacuum2-1.1 {
+  execsql {
+    PRAGMA page_size=1024;
+    PRAGMA auto_vacuum=incremental;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(zeroblob(30000));
+    DELETE FROM t1;
+  }
+  file size test.db
+} {32768}
+
+# Vacuum off a single page.
+#
+do_test incrvacuum2-1.2 {
+  execsql {
+    PRAGMA incremental_vacuum(1);
+  }
+  file size test.db
+} {31744}
+
+# Vacuum off five pages
+#
+do_test incrvacuum2-1.3 {
+  execsql {
+    PRAGMA incremental_vacuum(5);
+  }
+  file size test.db
+} {26624}
+
+# Vacuum off all the rest
+#
+do_test incrvacuum2-1.4 {
+  execsql {
+    PRAGMA incremental_vacuum(1000);
+  }
+  file size test.db
+} {3072}
+
+# Make sure incremental vacuum works on attached databases.
+#
+ifcapable attach {
+  do_test incrvacuum2-2.1 {
+    file delete -force test2.db test2.db-journal
+    execsql {
+      ATTACH DATABASE 'test2.db' AS aux;
+      PRAGMA aux.auto_vacuum=incremental;
+      CREATE TABLE aux.t2(x);
+      INSERT INTO t2 VALUES(zeroblob(30000));
+      INSERT INTO t1 SELECT * FROM t2;
+      DELETE FROM t2;
+      DELETE FROM t1;
+    }
+    list [file size test.db] [file size test2.db]
+  } {32768 32768}
+  do_test incrvacuum2-2.2 {
+    execsql {
+      PRAGMA aux.incremental_vacuum(1)
+    }
+    list [file size test.db] [file size test2.db]
+  } {32768 31744}
+  do_test incrvacuum2-2.3 {
+    execsql {
+      PRAGMA aux.incremental_vacuum(5)
+    }
+    list [file size test.db] [file size test2.db]
+  } {32768 26624}
+  do_test incrvacuum2-2.4 {
+    execsql {
+      PRAGMA main.incremental_vacuum(5)
+    }
+    list [file size test.db] [file size test2.db]
+  } {27648 26624}
+  do_test incrvacuum2-2.5 {
+    execsql {
+      PRAGMA aux.incremental_vacuum
+    }
+    list [file size test.db] [file size test2.db]
+  } {27648 3072}
+  do_test incrvacuum2-2.6 {
+    execsql {
+      PRAGMA incremental_vacuum(1)
+    }
+    list [file size test.db] [file size test2.db]
+  } {26624 3072}
+}
+
+do_test incrvacuum2-3.1 {
+  execsql {
+    PRAGMA auto_vacuum = 'full';
+    BEGIN;
+    CREATE TABLE abc(a);
+    INSERT INTO abc VALUES(randstr(1500,1500));
+    COMMIT;
+  }
+} {}
+do_test incrvacuum2-3.2 {
+  execsql {
+    BEGIN;
+    DELETE FROM abc;
+    PRAGMA incremental_vacuum;
+    COMMIT;
+  }
+} {}
+
+integrity_check incremental2-3.3
+
+finish_test

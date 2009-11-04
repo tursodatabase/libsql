@@ -1,0 +1,63 @@
+# 2007 March 24
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# $Id: cache.test,v 1.4 2007/08/22 02:56:44 drh Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable {!pager_pragmas} {
+  finish_test
+  return
+}
+sqlite3_soft_heap_limit 0
+
+proc pager_cache_size {db} {
+  set bt [btree_from_db $db]
+  db_enter $db
+  array set stats [btree_pager_stats $bt]
+  db_leave $db
+  return $stats(page)
+}
+
+do_test cache-1.1 {
+  pager_cache_size db
+} {0}
+
+do_test cache-1.2 {
+  execsql {
+    PRAGMA auto_vacuum=OFF;
+    CREATE TABLE abc(a, b, c);
+    INSERT INTO abc VALUES(1, 2, 3);
+  }
+  pager_cache_size db
+} {2}
+
+# At one point, repeatedly locking and unlocking the cache was causing
+# a resource leak of one page per repetition. The page wasn't actually
+# leaked, but would not be reused until the pager-cache was full (i.e. 
+# 2000 pages by default).
+#
+# This tests that once the pager-cache is initialised, it can be locked
+# and unlocked repeatedly without internally allocating any new pages.
+#
+set cache_size [pager_cache_size db]
+for {set ii 0} {$ii < 10} {incr ii} {
+
+  do_test cache-1.3.$ii {
+    execsql {SELECT * FROM abc}
+    pager_cache_size db
+  } $::cache_size
+
+}
+sqlite3_soft_heap_limit $soft_limit
+
+finish_test
