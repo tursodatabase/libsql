@@ -290,11 +290,7 @@ struct Vdbe {
   VdbeCursor **apCsr;     /* One element of this array for each open cursor */
   u8 errorAction;         /* Recovery action to do in case of an error */
   u8 okVar;               /* True if azVar[] has been initialized */
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
-  u16 nVar;               /* Number of entries in aVar[] */
-#else
-  int nVar;               /* Some users want many variables. */
-#endif
+  ynVar nVar;             /* Number of entries in aVar[] */
   Mem *aVar;              /* Values for the OP_Variable opcode. */
   char **azVar;           /* Name of variables */
   u32 magic;              /* Magic number for sanity checking */

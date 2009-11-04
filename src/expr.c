@@ -571,20 +571,12 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
   if( z[1]==0 ){
     /* Wildcard of the form "?".  Assign the next variable number */
     assert( z[0]=='?' );
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
-    pExpr->iColumn = (i16)(++pParse->nVar);
-#else
-    pExpr->iColumn = ++pParse->nVar;
-#endif
+    pExpr->iColumn = (ynVar)(++pParse->nVar);
   }else if( z[0]=='?' ){
     /* Wildcard of the form "?nnn".  Convert "nnn" to an integer and
     ** use it as the variable number */
     int i = atoi((char*)&z[1]);
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
-    pExpr->iColumn = (i16)i;
-#else
-    pExpr->iColumn = i;
-#endif
+    pExpr->iColumn = (ynVar)i;
     testcase( i==0 );
     testcase( i==1 );
     testcase( i==db->aLimit[SQLITE_LIMIT_VARIABLE_NUMBER]-1 );
@@ -613,11 +605,7 @@ void sqlite3ExprAssignVarNumber(Parse *pParse, Expr *pExpr){
       }
     }
     if( i>=pParse->nVarExpr ){
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
-      pExpr->iColumn = (i16)(++pParse->nVar);
-#else
-      pExpr->iColumn = ++pParse->nVar;
-#endif
+      pExpr->iColumn = (ynVar)(++pParse->nVar);
       if( pParse->nVarExpr>=pParse->nVarExprAlloc-1 ){
         pParse->nVarExprAlloc += pParse->nVarExprAlloc + 10;
         pParse->apVarExpr =
