@@ -1219,7 +1219,7 @@ int sqlite3TempInMemory(const sqlite3 *db){
 ** The sqlite3TempInMemory() function is used to determine which.
 */
 int sqlite3BtreeFactory(
-  const sqlite3 *db,        /* Main database when opening aux otherwise 0 */
+  sqlite3 *db,              /* Main database when opening aux otherwise 0 */
   const char *zFilename,    /* Name of the file containing the BTree database */
   int omitJournal,          /* if TRUE then do not journal this file */
   int nCache,               /* How many pages in the page cache */

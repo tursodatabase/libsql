@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Create\sa\snew\sdatatype\s"ynVar"\sto\shold\s"nVar"\s(number\sof\svariable)\svalues.\nThis\sis\snormally\s16-bits\scan\scan\sbe\s32-bits\sif\sSQLITE_MAX_VARIABLE_NUMBER\nis\slarge\senough.
-D 2009-11-04T13:17:14
+C Remove\s"const"\sfrom\sparameter\sof\ssqlite3BtreeFactory()\sto\savoid\sa\scompiler\nwarning.
+D 2009-11-04T13:30:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -130,7 +130,7 @@ F src/journal.c e00df0c0da8413ab6e1bb7d7cab5665d4a9000d0
 F src/legacy.c 303b4ffcf1ae652fcf5ef635846c563c254564f6
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 0e88a335665db0b2fb4cece3e49dcb65d832635a
-F src/main.c 5e12af46a6e6149b755830f9c035be6eb77995a6
+F src/main.c aae32d5af35b88faff0664e0f937ee7133d77c8d
 F src/malloc.c 685561d2f1602042e349aea5d7a88c3f10a63454
 F src/mem0.c f2f84062d1f35814d6535c9f9e33de3bfb3b132c
 F src/mem1.c e6d5c23941288df8191b8a98c28e3f57771e2270
@@ -167,7 +167,7 @@ F src/select.c cbe366a0ce114856e66f5daf0f848d7c48a88298
 F src/shell.c f66531a57fff927f95c98d99c28237d88e400c86
 F src/sqlite.h.in 9106176cf206c36f01f8b761ba62671818bbe6ff
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
-F src/sqliteInt.h fd83f34791b2190e74a17c766416357362bea49b
+F src/sqliteInt.h 67a9ae42527204726d8eb7a58cdb238d659a82fa
 F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a6c696102eb483080b0a1d31b85f6b5f85c3efbf
-R b46f100bec743884ae51e2745fa19103
+P 24a4d520d540d92b611abc4eb57dc6da9be4eac6
+R a2178242a921307d19fbc8b7d2eec4f0
 U drh
-Z c4b09455b1c8d5faaecec02627c29df0
+Z a8d4aa9309aed4b69860cd88128a4708
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK8X7doxKgR168RlERAujcAJ4qwuE+4zHVcviG+M8T9uilfoU/tQCcD63W
-bgODEq/FjZmbT8I2nFlGf4g=
-=6QYX
+iD8DBQFK8YHdoxKgR168RlERAs0DAJ447A8mNmnCD0zy/gACLgqIHsmF8QCfYMHu
+do95dSeuDXCMLnSZQtGGeQE=
+=FnZg
 -----END PGP SIGNATURE-----
