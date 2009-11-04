@@ -1,5 +1,8 @@
-C Fix\scompiler\swarnings\son\sMSVC\sbuild.
-D 2009-11-03T19:42:31
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Report\serrors\sback\sup\sto\sthe\sATTACH\scommand\sif\sthe\scodec\sfails\sto\sinitialize.
+D 2009-11-04T01:56:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -101,7 +104,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c 9e4b52e6b1d3a26242cf2ce680c9fce801f00aa1
 F src/analyze.c 5a8b8aa3d170eac5e71af45458cec61f83c623ee
-F src/attach.c 13995348fc5a26cdd136a50806faf292aabc173f
+F src/attach.c 1f2ae6ca3de365c8e959f1d56beb6af589fef75b
 F src/auth.c a5471a6951a18f79d783da34be22cd94dfbe603a
 F src/backup.c 6f1c2d9862c8a3feb7739dfcca02c1f5352e37f3
 F src/bitvec.c ed215b95734045e58358c3b3e16448f8fe6a235a
@@ -761,7 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 27d8e684db4651155c4bcb8bb44bf1c692b8c48b
-R 87d07c1d512d6da4f67b4891197ec4ad
-U shane
-Z 269e8905230698d3c4544fc066424d81
+P 01c4b5b84ec7ce589e20ea66e80011f092ab32f0
+R e2a25ff4ddc7b4c71798abf6e78c337e
+U drh
+Z 0177e8eb3520e0a780ac6f543fa1c3c5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK8N9QoxKgR168RlERAp82AJ95tu59WyjxWxhH3t9LHcdk6HI9fQCggwwC
+5N+btBqwN2DmztOY0sBAvH4=
+=BClj
+-----END PGP SIGNATURE-----
