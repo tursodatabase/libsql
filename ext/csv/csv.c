@@ -159,7 +159,10 @@ static char *csv_getline( CSV *pCSV ){
       bEol = -1;
     }
   }
-  if( bShrink ){ pCSV->zRow = realloc( pCSV->zRow, n+1 ); }
+  if( bShrink ){ 
+    pCSV->zRow = realloc( pCSV->zRow, n+1 ); 
+    pCSV->maxRow = n+1;
+  }
   return bEol ? pCSV->zRow : 0;
 }
 
