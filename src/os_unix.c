@@ -3757,7 +3757,11 @@ static int fillInUnixFile(
 #endif
   }
 
-  if( pLockingStyle == &posixIoMethods || pLockingStyle == &nfsIoMethods ){
+  if( pLockingStyle == &posixIoMethods
+#if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
+    || pLockingStyle == &nfsIoMethods
+#endif
+  ){
     unixEnterMutex();
     rc = findLockInfo(pNew, &pNew->pLock, &pNew->pOpen);
     if( rc!=SQLITE_OK ){

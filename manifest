@@ -1,5 +1,8 @@
-C Merging\sin\sOSX\scustomizations:\n\nA\sext/sqlrr/sqlrr.[ch]\n--\sadd\ssql\srecording/replay\ssupport\s(very\sexperimental\sextension\s--\spre\salpha)\n\nM\sext/rtree/rtree.c\n--\sfix\scast\scompiler\swarning\n\nM\ssrc/func.c\n--\ssubstring\sbackward\scompatiblity\s<rdar://problem/6778339>\s\n\nM\ssrc/legacy.c\n--\sreplay\srecorder\scalls\n\nM\ssrc/main.c\n--\sif\sSQLITE_ENABLE_AUTO_PROFILE,\scall\ssqlite3_profile\swhen\senv(SQLITE_AUTO_PROFILE)\s\s\s\n--\sreplay\srecorder\scalls\n\nM\ssrc/mem1.c\n--\suse\scustom\smalloc\szone\son\ssingle\score\ssystems\n\nM\ssrc/os_unix.c\n--\shostid\svia\sgethostuuid\n--\sread-only\sfile\ssystem\ssupport\sfor\sproxy\slocking\n--\simproved\shandling\sof\ssimulated\sshared\slock\son\sAFP/SMB\son\s64\sbit\ssystems\n--\sdisable\swhole-file-lock\sNFS\sfile\slocking\n--\sfix\sfor\sdowngrading\sfrom\sexclusive\sto\sshared\slock\son\sNFS\n--\sproxy\slock\sbreaking\s&\srecreating\slocal\slock\sfiles\n--\ssupport\sSQLITE_OPEN_AUTOPROXY\sflag\n--\sonly\swrite\s1st\sbyte\sinto\snew\szero-length\sfiles\sif\sfs\sis\sDOS\n--\scache\sfs\stype\sinfo\sin\sunixFile\sstruct\n--\sforce\suse\sof\sfsync()\seven\sif\sfdatasync()\sis\savailable\n--\sremove\sflock\slocking\sstyle\ssupport\sfor\sSMB\n--\sreplace\sstrcpy\swith\sstrlcpy\n\nM\ssrc/prepare.c\n--\sreplay\srecorder\scalls\n\nM\ssrc/sqlite.h.in\n--\sadded\sSQLITE_OPEN_AUTOPROXY\n\nM\ssrc/sqliteInt.h\n--\sinclude\sreplay\srecorder\sheader\n\nM\ssrc/vdbeapi.c\n--\schecking\sfor\sNULL\sstatement\sfor\s<rdar://6646331>\s\n--\sreplay\srecorder\scalls
-D 2009-11-03T22:34:36
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\san\sundefined\svariable\son\snon-Mac\sbuilds.
+D 2009-11-05T18:31:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3400e494a10756968f8fcd8c3d553d279a063436
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +152,7 @@ F src/os.c 8d62d8d98ad7909cb0dd294c1e5f3835c887ccb6
 F src/os.h 00a1334a4eecee7f7bef79ac606b88d325119f21
 F src/os_common.h 8c61457df58f1a4bd5f5adc3e90e01b37bf7afbc
 F src/os_os2.c bed77dc26e3a95ce4a204936b9a1ca6fe612fcc5
-F src/os_unix.c cb7a1418fb41307a9fc97b9e4e772e36d4623a9f
+F src/os_unix.c 1d06b265ff2de6ed97c12bf720a02877c2b2053f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c 729f73feeb33355ae1f0982a74f112ce190c74aa
 F src/pager.h 11852d044c86cf5a9d6e34171fb0c4fcf1f6265f
@@ -765,10 +768,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 01c4b5b84ec7ce589e20ea66e80011f092ab32f0
-R 320cf17d3a0d32e6b3087d1f5155c40f
-T *branch * apple-osx
-T *sym-apple-osx *
-T -sym-trunk *
-U adam
-Z 409690f7ddbce583c414b998978aa931
+P 941a01eb868815f566539e9ab21f807d9e798e40
+R d9c03bbaac32722b9588636aff9e886a
+U drh
+Z 8da6d73402e146bcaf41213dc98262d4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK8xokoxKgR168RlERAqwWAJ0clMuAq3A66EFFkJvY8xLRuesiHACffaNk
+SLV0EJK8N4eFsQ/98U9xm5I=
+=SqO5
+-----END PGP SIGNATURE-----
