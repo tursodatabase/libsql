@@ -1009,7 +1009,7 @@ int sqlite3ValueFromExpr(
   }
   op = pExpr->op;
   if( op==TK_REGISTER ){
-    op = pExpr->op2;
+    op = pExpr->op2;  /* This only happens with SQLITE_ENABLE_STAT2 */
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){

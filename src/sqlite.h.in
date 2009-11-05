@@ -820,7 +820,7 @@ struct sqlite3_vfs {
 ** The sqlite3_initialize() routine initializes the
 ** SQLite library.  The sqlite3_shutdown() routine
 ** deallocates any resources that were allocated by sqlite3_initialize().
-** This routines are designed to aid in process initialization and
+** These routines are designed to aid in process initialization and
 ** shutdown on embedded systems.  Workstation applications using
 ** SQLite normally do not need to invoke either of these routines.
 **
@@ -2390,7 +2390,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** In the "v2" interfaces, the prepared statement
 ** that is returned (the [sqlite3_stmt] object) contains a copy of the
 ** original SQL text. This causes the [sqlite3_step()] interface to
-** behave a differently in three ways:
+** behave differently in three ways:
 **
 ** <ol>
 ** <li>
