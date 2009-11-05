@@ -56,7 +56,8 @@ struct CSV {
   FILE *f;                     /* File pointer for source CSV file */
   long offsetFirstRow;         /* ftell position of first row */
   int eof;                     /* True when at end of file */
-  char zRow[4096];             /* Buffer for current CSV row */
+  int maxRow;                  /* Size of zRow buffer */
+  char *zRow;                  /* Buffer for current CSV row */
   char cDelim;                 /* Character to use for delimiting columns */
   int nCol;                    /* Number of columns in current row */
   int maxCol;                  /* Size of aCols array */
@@ -104,8 +105,62 @@ static int csv_seek( CSV *pCSV, long pos ){
 static long csv_tell( CSV *pCSV ){
   return ftell( pCSV->f );
 }
-static char *csv_gets( CSV *pCSV ){
-  return fgets( pCSV->zRow, sizeof(pCSV->zRow), pCSV->f );
+
+
+/*
+** This routine reads a line of text from FILE in, stores
+** the text in memory obtained from malloc() and returns a pointer
+** to the text.  NULL is returned at end of file, or if malloc()
+** fails.
+**
+** The interface is like "readline" but no command-line editing
+** is done.
+**
+** This code was modified from existing code in shell.c of the sqlite3 CLI.
+*/
+static char *csv_getline( CSV *pCSV ){
+  int n = 0;
+  int bEol = 0;
+  int bShrink = 0;
+
+  /* allocate initial row buffer */
+  if( pCSV->maxRow < 1 ){
+    pCSV->zRow = sqlite3_malloc( 100 );
+    if( pCSV->zRow ){
+      pCSV->maxRow = 100;
+    }
+  }
+  if( !pCSV->zRow ) return 0;
+
+  /* read until eol */
+  while( !bEol ){
+    /* grow row buffer as needed */
+    if( n+100>pCSV->maxRow ){
+      int newSize = pCSV->maxRow*2 + 100;
+      char *p = sqlite3_realloc(pCSV->zRow, newSize);
+      if( !p ) return 0;
+      pCSV->maxRow = newSize;
+      pCSV->zRow = p;
+      bShrink = -1;
+    }
+    if( fgets(&pCSV->zRow[n], pCSV->maxRow-n, pCSV->f)==0 ){
+      if( n==0 ){
+        break;
+      }
+      pCSV->zRow[n] = '\0';
+      bEol = -1;
+      break;
+    }
+    /* look for line delimiter */
+    while( pCSV->zRow[n] ){ n++; }
+    if( (n>0) && ((pCSV->zRow[n-1]=='\n') || (pCSV->zRow[n-1]=='\r')) ){
+      pCSV->zRow[n-1] = '\n'; /* uniform line ending */
+      pCSV->zRow[n] = '\0';
+      bEol = -1;
+    }
+  }
+  if( bShrink ){ pCSV->zRow = realloc( pCSV->zRow, n+1 ); }
+  return bEol ? pCSV->zRow : 0;
 }
 
 
@@ -238,7 +293,7 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
   CSVCursor *pCsr = (CSVCursor *)pVtabCursor;
   int nCol = 0;
   char *s;
-  char zDelims[4] = ",\r\n";
+  char zDelims[3] = ",\n";
   char cDelim; /* char that delimited current col */
 
   if( pCSV->eof ){
@@ -249,7 +304,7 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
   pCsr->csvpos = csv_tell( pCSV );
 
   /* read the next row of data */
-  s = csv_gets( pCSV );
+  s = csv_getline( pCSV );
   if( !s ){
     /* and error or eof occured */
     pCSV->eof = -1;
@@ -259,14 +314,13 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
   /* allocate initial space for the column pointers */
   if( pCSV->maxCol < 1 ){
     /* take a guess */
-    pCSV->maxCol = (int)(strlen(pCSV->zRow) / 5 + 1);
-    if( pCSV->aCols ) sqlite3_free( pCSV->aCols );
-    pCSV->aCols = (char **)sqlite3_malloc( sizeof(char*) * pCSV->maxCol );
-    if( !pCSV->aCols ){
-      /* out of memory */
-      return SQLITE_NOMEM;
+    int maxCol = (int)(strlen(pCSV->zRow) / 5 + 1);
+    pCSV->aCols = (char **)sqlite3_malloc( sizeof(char*) * maxCol );
+    if( pCSV->aCols ){
+      pCSV->maxCol = maxCol;
     }
   }
+  if( !pCSV->aCols ) return SQLITE_NOMEM;
 
   /* add custom delim character */
   zDelims[0] = pCSV->cDelim;
@@ -277,8 +331,8 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
     if( *s=='\"' ){
       s++;  /* skip quote */
       pCSV->aCols[nCol] = s; /* save pointer for this col */
+      /* TBD: handle escaped quotes "" */
       /* find closing quote */
-#if 1
       s = strchr(s, '\"');
       if( !s ){
         /* no closing quote */
@@ -286,19 +340,8 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
         return SQLITE_ERROR;
       }
       *s = '\0'; /* null terminate this col */
-      /* fall through and look for following ",\n\r" */
+      /* fall through and look for following ",\n" */
       s++;
-#else
-      /* TBD: handle escaped quotes "" */
-      while( s[0] ){
-        if( s[0]=='\"' ){
-          if( s[1]=='\"' ){
-          }
-          break;
-        }
-        s++;
-      }
-#endif
     }else{
       pCSV->aCols[nCol] = s; /* save pointer for this col */
     }
@@ -313,7 +356,7 @@ static int csvNext( sqlite3_vtab_cursor* pVtabCursor ){
     *s = '\0';
     nCol++;
     /* if end of zRow, stop parsing cols */
-    if( (cDelim == '\n') || (cDelim == '\r') ) break;
+    if( cDelim == '\n' ) break;
     /* move to start of next col */
     s++; /* skip delimiter */
 
@@ -427,6 +470,7 @@ static int csvRelease( CSV *pCSV ){
     /* finalize any prepared statements here */
 
     csv_close( pCSV );
+    if( pCSV->zRow ) sqlite3_free( pCSV->zRow );
     if( pCSV->aCols ) sqlite3_free( pCSV->aCols );
     sqlite3_free( pCSV );
   }
