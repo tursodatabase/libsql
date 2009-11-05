@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\scomment\srelated\sto\scode\scoverage.\s\sNo\schanges\sto\scode.
-D 2009-11-05T16:29:05
+C Do\snot\slimit\sthe\strigger\srecursion\sdepth\swhen\sSQLITE_SMALL_STACK\sis\sdefined\nsince\strigger\srecursion\suses\sthe\sheap,\snot\sthe\sstack.
+D 2009-11-05T17:27:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -168,7 +168,7 @@ F src/shell.c f66531a57fff927f95c98d99c28237d88e400c86
 F src/sqlite.h.in 4464e9772122f0447305d425e04d122b6f1bffec
 F src/sqlite3ext.h 1db7d63ab5de4b3e6b83dd03d1a4e64fef6d2a17
 F src/sqliteInt.h 55d26b83d16107804693982028c8b3a075f5a836
-F src/sqliteLimit.h 38b2fffcd01faeaeaadea71b2b47695a81580c8b
+F src/sqliteLimit.h 285dd7140722adfa9998b9393314eaaf50215c27
 F src/status.c 237b193efae0cf6ac3f0817a208de6c6c6ef6d76
 F src/table.c cc86ad3d6ad54df7c63a3e807b5783c90411a08d
 F src/tclsqlite.c c2c4047177213baf485d4401c7dbb30a3c2ba322
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f1c09acaca3e205acf5b077c9b2d0fe35f035c1e
-R 480df2c9aa9bfc72a78bb656fcc48207
+P 6bdc2c99571c4effe47bc68fcab371dfb350d62a
+R c637d844ce67664e51752e29538bdaf8
 U drh
-Z 9f23cc5430294e50c4bcfe237527bf1c
+Z 350fb8f20de60ccba078a62856aba096
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK8v1VoxKgR168RlERAoEEAJ9brEk72aVJijTAhm1qYByr2sKGuQCfWY4R
-objlA8L9Uszv3msLA9B5wD8=
-=lv20
+iD8DBQFK8wsAoxKgR168RlERAnI7AJ9w7sPdHq5giilPiYEqbxtWi4JiugCfVx0g
+4CIDCLqXP5yBe+MGMgCIJqw=
+=ECat
 -----END PGP SIGNATURE-----
