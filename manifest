@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\stypo\son\sthe\synVar\stypedef\sthat\sunfortunately\scaused\s3.6.20\sto\sbe\nreleased\swith\sa\s"bug"\sthat\scauses\sexcess\smemory\susage\sfor\sExpr\sobjects.\nThis\sbug\sshould\sbe\sbenign\sin\sthe\ssense\sthat\sthe\scorrect\sanswer\sis\sstill\nalways\sobtained\s-\sit\sonly\suses\smore\smore\smemory\sthan\sis\sreally\snecessary.
-D 2009-11-04T23:02:52
+C Add\sa\scomment\srelated\sto\scode\scoverage.\s\sNo\schanges\sto\scode.
+D 2009-11-05T16:29:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a77dfde96ad86aafd3f71651a4333a104debe86a
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -214,7 +214,7 @@ F src/vdbeInt.h 53b430ad3ff91bc5c963d5573299801c54cb7cba
 F src/vdbeapi.c 44b5f387459d5faa158aa8d3a26967f0c8596efd
 F src/vdbeaux.c 0fac44db16b5dc116eb1cacbe619033cb09569c3
 F src/vdbeblob.c 9bfaeab22e261a6a7b6df04e7faaf7d6dfdbef5a
-F src/vdbemem.c 7055a2941a7802094f4704cedc7a28cc88a23749
+F src/vdbemem.c e86a65cb779eaae34710a6ffc0e76c9f7c1107be
 F src/vtab.c 3e54fe39374e5feb8b174de32a90e7a21966025d
 F src/walker.c 1edca756275f158b80f20eb6f104c8d3fcc96a04
 F src/where.c fac37876e09e005e52cdfcf896090b6f5ebbf25b
@@ -764,14 +764,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6f3081a8e52beca177ff708a0879d9fef7519766
-R abcec0d49b412d29c0af1040db584ee9
+P f1c09acaca3e205acf5b077c9b2d0fe35f035c1e
+R 480df2c9aa9bfc72a78bb656fcc48207
 U drh
-Z a3b9e7a374073977c226aca2bf8fec49
+Z 9f23cc5430294e50c4bcfe237527bf1c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK8ggfoxKgR168RlERAkJnAJ9nn5z3Pqlhsr5mqGJB/U7yZ3WP4QCghWdH
-mSqw9lAxyNzxsXHfVEGiYeA=
-=LGb2
+iD8DBQFK8v1VoxKgR168RlERAoEEAJ9brEk72aVJijTAhm1qYByr2sKGuQCfWY4R
+objlA8L9Uszv3msLA9B5wD8=
+=lv20
 -----END PGP SIGNATURE-----
