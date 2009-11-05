@@ -25,6 +25,9 @@
 #ifdef SQLITE_ENABLE_ICU
 # include "sqliteicu.h"
 #endif
+#ifdef SQLITE_ENABLE_CSV
+# include "csv.h"
+#endif
 
 /*
 ** The version of the library
@@ -1712,6 +1715,12 @@ static int openDatabase(
 #ifdef SQLITE_ENABLE_RTREE
   if( !db->mallocFailed && rc==SQLITE_OK){
     rc = sqlite3RtreeInit(db);
+  }
+#endif
+
+#ifdef SQLITE_ENABLE_CSV
+  if( !db->mallocFailed && rc==SQLITE_OK){
+    rc = sqlite3CsvInit(db);
   }
 #endif
 

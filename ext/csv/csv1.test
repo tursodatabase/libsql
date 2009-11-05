@@ -1,0 +1,253 @@
+# 2009 Nov 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the csv extension.
+#
+# $Id: csv1.test,v 1.7 2009/07/17 16:54:48 shaneh Exp $
+#
+
+if {![info exists testdir]} {
+  set testdir [file join [file dirname $argv0] .. .. test]
+}
+source $testdir/tester.tcl
+
+# Test plan:
+#
+#   csv-1.*: Creating/destroying csv tables.
+#   csv-2.*: Linear scans of csv data.
+#   csv-3.*: Test renaming an csv table.
+#   csv-4.*: CREATE errors
+#
+
+ifcapable !csv {
+  finish_test
+  return
+}
+
+# This file is delimited by ',' and has quoted fields.
+set test1csv [file join [file dirname [info script]] test1.csv]
+# This file is delimited by '|' and has quoted fields.
+set test2csv [file join [file dirname [info script]] test2.csv]
+# This file is delimited by '|'.  It does NOT have quoted fields.
+set test3csv [file join [file dirname [info script]] test3.csv]
+
+#----------------------------------------------------------------------------
+# Test cases csv-1.* test CREATE and DROP table statements.
+#
+
+# Test creating and dropping an csv table with a header row.
+#
+do_test csv-1.1.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test1csv', ',', USE_HEADER_ROW) "
+} {}
+do_test csv-1.1.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {t1}
+do_test csv-1.1.3 {
+  execsql { 
+    DROP TABLE t1; 
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {}
+
+# Test creating and dropping an csv table without a header row.
+#
+do_test csv-1.2.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test1csv', ',') "
+} {}
+do_test csv-1.2.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {t1}
+do_test csv-1.2.3 {
+  execsql { 
+    DROP TABLE t1; 
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {}
+
+# Test creating and dropping an csv table without a header row
+# and with the default delimiter ','.
+#
+do_test csv-1.3.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test1csv') "
+} {}
+do_test csv-1.3.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {t1}
+do_test csv-1.3.3 {
+  execsql { 
+    DROP TABLE t1; 
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {}
+
+# Test creating and dropping an csv table without a header row
+# and with the custom delimiter '|'.
+#
+do_test csv-1.4.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test2csv', '|') "
+} {}
+do_test csv-1.4.2 {
+  execsql { SELECT name FROM sqlite_master ORDER BY name }
+} {t1}
+do_test csv-1.4.3 {
+  execsql { 
+    DROP TABLE t1; 
+    SELECT name FROM sqlite_master ORDER BY name;
+  }
+} {}
+
+#----------------------------------------------------------------------------
+# Test cases csv-2.* test linear scans of csv table data. 
+#
+do_test csv-2.1.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test1csv', ',', USE_HEADER_ROW) "
+} {}
+do_test csv-2.1.2 {
+  execsql { 
+    SELECT * FROM t1;
+  }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-2.1.3 {
+  execsql { 
+    SELECT * FROM t1 WHERE colA='a';
+  }
+} {a b c a b c a b {c .. z} a b c,d}
+
+do_test csv-2.2.1 {
+  execsql " CREATE VIRTUAL TABLE t2 USING csv('$test1csv', ',') "
+} {}
+do_test csv-2.2.2 {
+  execsql { 
+    SELECT * FROM t2;
+  }
+} {colA colB colC 1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-2.2.3 {
+  execsql { 
+    SELECT * FROM t2 WHERE col1='a';
+  }
+} {a b c a b c a b {c .. z} a b c,d}
+
+# Test scanning with the custom delimiter '|'.
+#
+do_test csv-2.3.1 {
+  execsql " CREATE VIRTUAL TABLE t3 USING csv('$test2csv', '|') "
+} {}
+do_test csv-2.3.2 {
+  execsql { 
+    SELECT * FROM t3;
+  }
+} {colA colB colC 1 2 3 a b c a b c a b {c .. z} a b c|d}
+do_test csv-2.3.3 {
+  execsql { 
+    SELECT * FROM t3 WHERE col1='a';
+  }
+} {a b c a b c a b {c .. z} a b c|d}
+
+# Test scanning with the custom delimiter ';'.  The test file
+# uses | for a delimiter, so everything should be treated as
+# a single column.
+#
+do_test csv-2.4.1 {
+  execsql " CREATE VIRTUAL TABLE t4 USING csv('$test3csv', ';') "
+} {}
+do_test csv-2.4.2 {
+  execsql { 
+    SELECT * FROM t4;
+  }
+} {colA|colB|colC 1|2|3 a|b|c {a|b|c .. z} a|b|c|d}
+do_test csv-2.4.3 {
+  execsql { 
+    SELECT * FROM t4 WHERE col1 LIKE 'a%';
+  }
+} {a|b|c {a|b|c .. z} a|b|c|d}
+
+# Test rowid column.
+#
+do_test csv-2.5.1 {
+  execsql { 
+    SELECT rowid FROM t1;
+  }
+} {21 27 33 41 58}
+do_test csv-2.5.2 {
+  execsql { 
+    SELECT rowid FROM t1 WHERE colA='a';
+  }
+} {27 33 41 58}
+
+# Clean-up.
+#
+do_test csv-2.6.1 {
+  execsql { 
+    DROP TABLE t1; 
+    DROP TABLE t2; 
+    DROP TABLE t3; 
+    DROP TABLE t4; 
+  }
+} {}
+
+#----------------------------------------------------------------------------
+# Test cases csv-3.* test rename operations.
+#
+do_test csv-3.1.1 {
+  execsql " CREATE VIRTUAL TABLE t1 USING csv('$test1csv', ',', USE_HEADER_ROW) "
+  execsql " CREATE VIRTUAL TABLE t2 USING csv('$test1csv', ',', USE_HEADER_ROW) "
+} {}
+do_test csv-3.1.2 {
+  catchsql { ALTER TABLE t2 RENAME TO t1 }
+} {1 {there is already another table or index with this name: t1}}
+do_test csv-3.1.3 {
+  execsql { 
+    DROP TABLE t1; 
+    ALTER TABLE t2 RENAME TO t1 
+  }
+} {}
+do_test csv-3.1.4 {
+  execsql { ALTER TABLE t1 RENAME TO t5 }
+  execsql { SELECT * FROM t5 }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-3.1.5 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM t5 }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-3.1.6 {
+  execsql { ALTER TABLE t5 RENAME TO 'raisara "one"'''}
+  execsql { SELECT * FROM "raisara ""one""'" }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-3.1.7 {
+  execsql { SELECT * FROM 'raisara "one"''' }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-3.1.8 {
+  execsql { ALTER TABLE "raisara ""one""'" RENAME TO "abc 123" }
+  execsql { SELECT * FROM "abc 123" }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+do_test csv-3.1.9 {
+  db close
+  sqlite3 db test.db
+  execsql { SELECT * FROM "abc 123" }
+} {1 2 3 a b c a b c a b {c .. z} a b c,d}
+
+#----------------------------------------------------------------------------
+# Test cases csv-4.* test CREATE errors
+#
+
+# Test creating and dropping an csv table with a header row.
+#
+do_test csv-4.1.1 {
+  catchsql " CREATE VIRTUAL TABLE t1 USING csv() "
+} {1 {No CSV file specified}}
+do_test csv-4.1.2 {
+  catchsql " CREATE VIRTUAL TABLE t1 USING csv('foo') "
+} {1 {Error opening CSV file: 'foo'}}
+do_test csv-4.1.3 {
+  catchsql " CREATE VIRTUAL TABLE t1 USING csv(foo foo) "
+} {1 {Error opening CSV file: 'foo foo'}}
