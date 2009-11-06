@@ -1,0 +1,357 @@
+# 2009 Nov 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the CLI shell tool.
+#
+# $Id: shell1.test,v 1.7 2009/07/17 16:54:48 shaneh Exp $
+#
+
+# Test plan:
+#
+#   shell-1.*: Basic test that command can be called.
+#
+
+package require sqlite3
+
+proc do_test {name cmd expected} {
+  puts -nonewline "$name ..."
+  set res [uplevel $cmd]
+  if {$res eq $expected} {
+    puts Ok
+  } else {
+    puts Error
+    puts "  Got: $res"
+    puts "  Expected: $expected"
+  }
+}
+
+proc execsql {sql} {
+  uplevel [list db eval $sql]
+}
+
+proc catchsql {sql} {
+  set rc [catch {uplevel [list db eval $sql]} msg]
+  list $rc $msg
+}
+
+proc catchcmd {cmd} {
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set rc [catch { exec ./sqlite3 test.db < cmds.txt } msg]
+  list $rc $msg
+}
+
+file delete -force test.db test.db.journal
+sqlite3 db test.db
+
+#----------------------------------------------------------------------------
+# Test cases shell-1.* Basic test that command can be called.
+#
+
+# .backup ?DB? FILE      Backup DB (default "main") to FILE
+do_test shell-1.1.1 {
+} {}
+
+# .bail ON|OFF           Stop after hitting an error.  Default OFF
+do_test shell-1.2.1 {
+  catchcmd ".bail"
+} {1 {Error: unknown command or invalid arguments:  "bail". Enter ".help" for help}}
+do_test shell-1.2.2 {
+  catchcmd ".bail ON"
+} {0 {}}
+do_test shell-1.2.3 {
+  catchcmd ".bail OFF"
+} {0 {}}
+
+# .databases             List names and files of attached databases
+do_test shell-1.3.1 {
+  set res [catchcmd ".databases"]
+  regexp {0.*main.*test\.db} $res
+} {1}
+
+# .dump ?TABLE? ...      Dump the database in an SQL text format
+#                          If TABLE specified, only dump tables matching
+#                          LIKE pattern TABLE.
+do_test shell-1.4.1 {
+  set res [catchcmd ".dump"]
+  list [regexp {BEGIN TRANSACTION;} $res] \
+       [regexp {COMMIT;} $res]
+} {1 1}
+do_test shell-1.4.2 {
+  set res [catchcmd ".dump FOO"]
+  list [regexp {BEGIN TRANSACTION;} $res] \
+       [regexp {COMMIT;} $res]
+} {1 1}
+
+# .echo ON|OFF           Turn command echo on or off
+do_test shell-1.5.1 {
+  catchcmd ".echo"
+} {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
+do_test shell-1.5.2 {
+  catchcmd ".echo ON"
+} {0 {}}
+do_test shell-1.5.3 {
+  catchcmd ".echo OFF"
+} {0 {}}
+
+# .exit                  Exit this program
+do_test shell-1.6.1 {
+  catchcmd ".exit"
+} {0 {}}
+
+# .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
+do_test shell-1.7.1 {
+  catchcmd ".echo"
+} {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
+do_test shell-1.7.2 {
+  catchcmd ".explain ON"
+} {0 {}}
+do_test shell-1.7.3 {
+  catchcmd ".explain OFF"
+} {0 {}}
+
+# .genfkey ?OPTIONS?     Options are:
+#                          --no-drop: Do not drop old fkey triggers.
+#                          --ignore-errors: Ignore tables with fkey errors
+#                          --exec: Execute generated SQL immediately
+#                        See file tool/genfkey.README in the source
+#                        distribution for further information.
+do_test shell-1.8.1 {
+} {}
+
+# .header(s) ON|OFF      Turn display of headers on or off
+do_test shell-1.9.1 {
+  catchcmd ".header"
+} {1 {Error: unknown command or invalid arguments:  "header". Enter ".help" for help}}
+do_test shell-1.9.2 {
+  catchcmd ".header ON"
+} {0 {}}
+do_test shell-1.9.3 {
+  catchcmd ".header OFF"
+} {0 {}}
+do_test shell-1.9.4 {
+  catchcmd ".headers"
+} {1 {Error: unknown command or invalid arguments:  "headers". Enter ".help" for help}}
+do_test shell-1.9.5 {
+  catchcmd ".headers ON"
+} {0 {}}
+do_test shell-1.9.6 {
+  catchcmd ".headers OFF"
+} {0 {}}
+
+# .help                  Show this message
+do_test shell-1.10.1 {
+  set res [catchcmd ".help"]
+  # look for a few of the possible help commands
+  list [regexp {.help} $res] \
+       [regexp {.quit} $res] \
+       [regexp {.show} $res]
+} {1 1 1}
+
+# .import FILE TABLE     Import data from FILE into TABLE
+do_test shell-1.11.1 {
+  catchcmd ".import"
+} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+do_test shell-1.11.2 {
+  catchcmd ".import FOO"
+} {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
+do_test shell-1.11.2 {
+  catchcmd ".import FOO BAR"
+} {1 {Error: no such table: BAR}}
+
+# .indices ?TABLE?       Show names of all indices
+#                          If TABLE specified, only show indices for tables
+#                          matching LIKE pattern TABLE.
+do_test shell-1.12.1 {
+  catchcmd ".indices"
+} {0 {}}
+do_test shell-1.12.2 {
+  catchcmd ".indices FOO"
+} {0 {}}
+
+# .mode MODE ?TABLE?     Set output mode where MODE is one of:
+#                          csv      Comma-separated values
+#                          column   Left-aligned columns.  (See .width)
+#                          html     HTML <table> code
+#                          insert   SQL insert statements for TABLE
+#                          line     One value per line
+#                          list     Values delimited by .separator string
+#                          tabs     Tab-separated values
+#                          tcl      TCL list elements
+do_test shell-1.13.1 {
+  catchcmd ".mode"
+} {1 {Error: unknown command or invalid arguments:  "mode". Enter ".help" for help}}
+do_test shell-1.13.2 {
+  catchcmd ".mode FOO"
+} {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
+do_test shell-1.13.3 {
+  catchcmd ".mode csv"
+} {0 {}}
+do_test shell-1.13.4 {
+  catchcmd ".mode column"
+} {0 {}}
+do_test shell-1.13.5 {
+  catchcmd ".mode html"
+} {0 {}}
+do_test shell-1.13.6 {
+  catchcmd ".mode insert"
+} {0 {}}
+do_test shell-1.13.7 {
+  catchcmd ".mode line"
+} {0 {}}
+do_test shell-1.13.8 {
+  catchcmd ".mode list"
+} {0 {}}
+do_test shell-1.13.9 {
+  catchcmd ".mode tabs"
+} {0 {}}
+do_test shell-1.13.10 {
+  catchcmd ".mode tcl"
+} {0 {}}
+
+# .nullvalue STRING      Print STRING in place of NULL values
+do_test shell-1.14.1 {
+  catchcmd ".nullvalue"
+} {1 {Error: unknown command or invalid arguments:  "nullvalue". Enter ".help" for help}}
+do_test shell-1.14.2 {
+  catchcmd ".nullvalue FOO"
+} {0 {}}
+
+# .output FILENAME       Send output to FILENAME
+do_test shell-1.15.1 {
+  catchcmd ".output"
+} {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
+do_test shell-1.15.2 {
+  catchcmd ".output FOO"
+} {0 {}}
+
+# .output stdout         Send output to the screen
+do_test shell-1.16.1 {
+  catchcmd ".output stdout"
+} {0 {}}
+
+# .prompt MAIN CONTINUE  Replace the standard prompts
+do_test shell-1.17.1 {
+  catchcmd ".prompt"
+} {1 {Error: unknown command or invalid arguments:  "prompt". Enter ".help" for help}}
+do_test shell-1.17.2 {
+  catchcmd ".prompt FOO"
+} {0 {}}
+do_test shell-1.17.3 {
+  catchcmd ".prompt FOO BAR"
+} {0 {}}
+
+# .quit                  Exit this program
+do_test shell-1.18.1 {
+  catchcmd ".quit"
+} {0 {}}
+
+# .read FILENAME         Execute SQL in FILENAME
+do_test shell-1.19.1 {
+  catchcmd ".read"
+} {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
+do_test shell-1.19.2 {
+  file delete -force FOO
+  catchcmd ".read FOO"
+} {1 {Error: cannot open "FOO"}}
+
+# .restore ?DB? FILE     Restore content of DB (default "main") from FILE
+do_test shell-1.20.1 {
+  catchcmd ".restore"
+} {1 {Error: unknown command or invalid arguments:  "restore". Enter ".help" for help}}
+do_test shell-1.20.2 {
+  # catchcmd ".restore FOO"
+  #TBD!!! this asserts currently
+} {}
+
+# .schema ?TABLE?        Show the CREATE statements
+#                          If TABLE specified, only show tables matching
+#                          LIKE pattern TABLE.
+do_test shell-1.21.1 {
+  catchcmd ".schema"
+} {0 {}}
+do_test shell-1.21.2 {
+  catchcmd ".schema FOO"
+} {0 {}}
+
+# .separator STRING      Change separator used by output mode and .import
+do_test shell-1.22.1 {
+  catchcmd ".separator"
+} {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
+do_test shell-1.22.2 {
+  catchcmd ".separator FOO"
+} {0 {}}
+
+# .show                  Show the current values for various settings
+do_test shell-1.23.1 {
+  set res [catchcmd ".show"]
+  list [regexp {echo:} $res] \
+       [regexp {explain:} $res] \
+       [regexp {headers:} $res] \
+       [regexp {mode:} $res] \
+       [regexp {nullvalue:} $res] \
+       [regexp {output:} $res] \
+       [regexp {separator:} $res] \
+       [regexp {width:} $res]
+} {1 1 1 1 1 1 1 1}
+
+# .tables ?TABLE?        List names of tables
+#                          If TABLE specified, only list tables matching
+#                          LIKE pattern TABLE.
+do_test shell-1.24.1 {
+  catchcmd ".tables"
+} {0 {}}
+do_test shell-1.24.2 {
+  catchcmd ".tables FOO"
+} {0 {}}
+
+# .timeout MS            Try opening locked tables for MS milliseconds
+do_test shell-1.25.1 {
+  catchcmd ".timeout"
+} {1 {Error: unknown command or invalid arguments:  "timeout". Enter ".help" for help}}
+do_test shell-1.25.2 {
+  catchcmd ".timeout zzz"
+  #TBD!!! this should probably produce an error
+} {0 {}}
+do_test shell-1.25.2 {
+  catchcmd ".timeout 1"
+} {0 {}}
+
+# .width NUM NUM ...     Set column widths for "column" mode
+do_test shell-1.26.1 {
+  catchcmd ".width"
+  #TBD!!! this should probably produce an error
+} {0 {}}
+do_test shell-1.26.2 {
+  catchcmd ".width xxx"
+  #TBD!!! this should probably produce an error
+} {0 {}}
+do_test shell-1.26.3 {
+  catchcmd ".width xxx yyy"
+  #TBD!!! this should probably produce an error
+} {0 {}}
+do_test shell-1.26.4 {
+  catchcmd ".width 1 1"
+} {0 {}}
+
+# .timer ON|OFF          Turn the CPU timer measurement on or off
+do_test shell-1.27.1 {
+  catchcmd ".timer"
+} {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
+do_test shell-1.27.2 {
+  catchcmd ".timer ON"
+} {0 {}}
+do_test shell-1.27.3 {
+  catchcmd ".timer OFF"
+} {0 {}}
+
+# 
