@@ -757,6 +757,9 @@ struct unixLockInfo {
   int cnt;                        /* Number of SHARED locks held */
   int locktype;                   /* One of SHARED_LOCK, RESERVED_LOCK etc. */
   int nRef;                       /* Number of pointers to this structure */
+#if defined(SQLITE_ENABLE_LOCKING_STYLE)
+  unsigned long long sharedByte;  /* for AFP simulated shared lock */
+#endif
   struct unixLockInfo *pNext;     /* List of all unixLockInfo objects */
   struct unixLockInfo *pPrev;     /*    .... doubly linked */
 };
@@ -1043,6 +1046,9 @@ static int findLockInfo(
       pLock->nRef = 1;
       pLock->cnt = 0;
       pLock->locktype = 0;
+#if defined(SQLITE_ENABLE_LOCKING_STYLE)
+      pLock->sharedByte = 0;
+#endif
       pLock->pNext = lockList;
       pLock->pPrev = 0;
       if( lockList ) lockList->pPrev = pLock;
@@ -2443,7 +2449,6 @@ static int semClose(sqlite3_file *id) {
 */
 typedef struct afpLockingContext afpLockingContext;
 struct afpLockingContext {
-  unsigned long long sharedByte;
   int reserved;
   const char *dbPath;             /* Name of the open file */
 };
@@ -2678,9 +2683,9 @@ static int afpLock(sqlite3_file *id, int locktype){
     /* Now get the read-lock SHARED_LOCK */
     /* note that the quality of the randomness doesn't matter that much */
     lk = random();
-    context->sharedByte = (lk & mask)%(SHARED_SIZE - 1);
+    pLock->sharedByte = (lk & mask)%(SHARED_SIZE - 1);
     lrc1 = afpSetLock(context->dbPath, pFile, 
-          SHARED_FIRST+context->sharedByte, 1, 1);
+          SHARED_FIRST+pLock->sharedByte, 1, 1);
     if( IS_LOCK_ERROR(lrc1) ){
       lrc1Errno = pFile->lastErrno;
     }
@@ -2726,13 +2731,13 @@ static int afpLock(sqlite3_file *id, int locktype){
       ** reestablish the shared lock if we can't get the  afpUnlock
       */
       if( !(failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST +
-                         context->sharedByte, 1, 0)) ){
+                         pLock->sharedByte, 1, 0)) ){
         int failed2 = SQLITE_OK;
         /* now attemmpt to get the exclusive lock range */
         failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST, 
                                SHARED_SIZE, 1);
         if( failed && (failed2 = afpSetLock(context->dbPath, pFile, 
-                       SHARED_FIRST + context->sharedByte, 1, 1)) ){
+                       SHARED_FIRST + pLock->sharedByte, 1, 1)) ){
           /* Can't reestablish the shared lock.  Sqlite can't deal, this is
           ** a critical I/O error
           */
@@ -2776,6 +2781,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
   struct unixLockInfo *pLock;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
+  int skipShared = 0;
 #ifdef SQLITE_TEST
   int h = pFile->h;
 #endif
@@ -2817,10 +2823,12 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     
     if( pFile->locktype==EXCLUSIVE_LOCK ){
       rc = afpSetLock(context->dbPath, pFile, SHARED_FIRST, SHARED_SIZE, 0);
-      if( rc==SQLITE_OK && locktype==SHARED_LOCK ){
+      if( rc==SQLITE_OK && (locktype==SHARED_LOCK || pLock->cnt>1) ){
         /* only re-establish the shared lock if necessary */
-        int sharedLockByte = SHARED_FIRST+context->sharedByte;
+        int sharedLockByte = SHARED_FIRST+pLock->sharedByte;
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 1);
+      } else {
+        skipShared = 1;
       }
     }
     if( rc==SQLITE_OK && pFile->locktype>=PENDING_LOCK ){
@@ -2832,31 +2840,31 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
         context->reserved = 0; 
       }
     }
-    if( rc==SQLITE_OK && locktype==SHARED_LOCK){
+    if( rc==SQLITE_OK && (locktype==SHARED_LOCK || pLock->cnt>1)){
       pLock->locktype = SHARED_LOCK;
     }
-  }else if( locktype==NO_LOCK ){
+  }
+  if( rc==SQLITE_OK && locktype==NO_LOCK ){
 
     /* Decrement the shared lock counter.  Release the lock using an
      ** OS call only when all threads in this same process have released
      ** the lock.
      */
-    int sharedLockByte = SHARED_FIRST+context->sharedByte;
+    unsigned long long sharedLockByte = SHARED_FIRST+pLock->sharedByte;
     pLock->cnt--;
     if( pLock->cnt==0 ){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
-      rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 0);
-      pLock->locktype = NO_LOCK;
+      if( !skipShared ){
+        rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 0);
+      }
       if( !rc ){
+        pLock->locktype = NO_LOCK;
         pFile->locktype = NO_LOCK;
       }
     }
-  }
-
-  if( rc==SQLITE_OK ){
-    if( locktype==NO_LOCK ){
+    if( rc==SQLITE_OK ){
       struct unixOpenCnt *pOpen = pFile->pOpen;
         
       pOpen->nLock--;
