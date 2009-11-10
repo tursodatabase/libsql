@@ -14,8 +14,6 @@
 ** This header defines the interface to the virtual database engine
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
-**
-** $Id: vdbe.h,v 1.142 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_

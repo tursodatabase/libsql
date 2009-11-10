@@ -13,8 +13,6 @@
 ** This file contains routines used for walking the parser tree and
 ** resolve all identifiers by associating them with a particular
 ** table and column.
-**
-** $Id: resolve.c,v 1.30 2009/06/15 23:15:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

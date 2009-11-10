@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains C code routines that are called by the parser
 ** to handle UPDATE statements.
-**
-** $Id: update.c,v 1.207 2009/08/08 18:01:08 drh Exp $
 */
 #include "sqliteInt.h"
 

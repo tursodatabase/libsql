@@ -21,8 +21,6 @@
 **     BEGIN TRANSACTION
 **     COMMIT
 **     ROLLBACK
-**
-** $Id: build.c,v 1.557 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

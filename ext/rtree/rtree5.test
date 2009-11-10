@@ -12,8 +12,6 @@
 # The focus of this file is testing the r-tree extension when it is
 # configured to store values as 32 bit integers.
 #
-# $Id: rtree5.test,v 1.1 2008/07/14 15:37:01 danielk1977 Exp $
-#
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname $argv0] .. .. test]

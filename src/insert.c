@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains C code routines that are called by the parser
 ** to handle INSERT statements in SQLite.
-**
-** $Id: insert.c,v 1.270 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

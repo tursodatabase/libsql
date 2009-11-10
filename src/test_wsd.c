@@ -13,8 +13,6 @@
 ** The code in this file contains sample implementations of the 
 ** sqlite3_wsd_init() and sqlite3_wsd_find() functions required if the
 ** SQLITE_OMIT_WSD symbol is defined at build time.
-**
-** $Id: test_wsd.c,v 1.4 2009/03/23 04:33:33 danielk1977 Exp $
 */
 
 #if defined(SQLITE_OMIT_WSD) && defined(SQLITE_TEST)

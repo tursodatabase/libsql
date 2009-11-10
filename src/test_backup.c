@@ -9,8 +9,8 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
+** This file contains test logic for the sqlite3_backup() interface.
 **
-** $Id: test_backup.c,v 1.3 2009/03/30 12:56:52 drh Exp $
 */
 
 #include "tcl.h"

@@ -456,13 +456,6 @@ Makefile: $(TOP)/Makefile.in
 sqlite3.pc: $(TOP)/sqlite3.pc.in
 	./config.status
 
-# Generate the file "last_change" which contains the date of change
-# of the most recently modified source code file
-#
-last_change:	$(SRC)
-	cat $(SRC) | grep '$$Id: ' | sort -k 5 | tail -1 \
-          | $(NAWK) '{print $$5,$$6}' >last_change
-
 libsqlite3.la:	$(LIBOBJ)
 	$(LTLINK) -o $@ $(LIBOBJ) $(TLIBS) \
 		${ALLOWRELEASE} -rpath "$(libdir)" -version-info "8:6:8"

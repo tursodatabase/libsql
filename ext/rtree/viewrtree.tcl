@@ -186,4 +186,3 @@ proc cell_report {db zTab iParent iCell} {
 
 view_node
 bind .c <Configure> view_node
-

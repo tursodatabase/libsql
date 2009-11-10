@@ -14,8 +14,6 @@
 ** This file contains C code that splits an SQL input string up into
 ** individual tokens and sends those tokens one-by-one over to the
 ** parser for analysis.
-**
-** $Id: tokenize.c,v 1.163 2009/07/03 22:54:37 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

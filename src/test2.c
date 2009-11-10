@@ -12,8 +12,6 @@
 ** Code for testing the pager.c module in SQLite.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
-**
-** $Id: test2.c,v 1.74 2009/07/24 19:01:20 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

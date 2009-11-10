@@ -15,8 +15,6 @@
 ** This code used to be part of the tokenizer.c source file.  But by
 ** separating it out, the code will be automatically omitted from
 ** static links that do not use it.
-**
-** $Id: complete.c,v 1.8 2009/04/28 04:46:42 drh Exp $
 */
 #include "sqliteInt.h"
 #ifndef SQLITE_OMIT_COMPLETE

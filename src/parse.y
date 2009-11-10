@@ -13,8 +13,6 @@
 ** using the lemon parser generator to generate C code that runs
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
-**
-** @(#) $Id: parse.y,v 1.286 2009/08/10 03:57:58 shane Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"

@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file implements that page cache.
-**
-** @(#) $Id: pcache.c,v 1.47 2009/07/25 11:46:49 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

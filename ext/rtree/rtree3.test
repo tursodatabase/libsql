@@ -12,8 +12,6 @@
 # The focus of this file is testing that the r-tree correctly handles
 # out-of-memory conditions.
 #
-# $Id: rtree3.test,v 1.2 2008/06/23 15:55:52 danielk1977 Exp $
-#
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname $argv0] .. .. test]
@@ -71,4 +69,3 @@ do_malloc_test rtree3-3 -sqlprep {
 } 
 
 finish_test
-

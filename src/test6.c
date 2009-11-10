@@ -13,8 +13,6 @@
 ** This file contains code that modified the OS layer in order to simulate
 ** the effect on the database file of an OS crash or power failure.  This
 ** is used to test the ability of SQLite to recover from those situations.
-**
-** $Id: test6.c,v 1.43 2009/02/11 14:27:04 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 #include "sqliteInt.h"

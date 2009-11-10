@@ -59,8 +59,6 @@
 **
 ** There is an added cost of O(N) when switching between TEST and
 ** SMALLEST primitives.
-**
-** $Id: rowset.c,v 1.7 2009/05/22 01:00:13 drh Exp $
 */
 #include "sqliteInt.h"
 

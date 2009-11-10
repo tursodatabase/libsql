@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains routines used for walking the parser tree for
 ** an SQL statement.
-**
-** $Id: walker.c,v 1.7 2009/06/15 23:15:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

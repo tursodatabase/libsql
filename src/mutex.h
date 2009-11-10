@@ -18,8 +18,6 @@
 ** NOTE:  source files should *not* #include this header file directly.
 ** Source files should #include the sqliteInt.h file and let that file
 ** include this one indirectly.
-**
-** $Id: mutex.h,v 1.9 2008/10/07 15:25:48 drh Exp $
 */
 
 

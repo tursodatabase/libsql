@@ -14,8 +14,6 @@
 ** testing of the SQLite library. Specifically, the code in this file
 ** is used for testing the SQLite routines for converting between
 ** the various supported unicode encodings.
-**
-** $Id: test5.c,v 1.22 2008/08/12 15:04:59 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"

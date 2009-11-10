@@ -12,8 +12,6 @@
 ** Code for testing the btree.c module in SQLite.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
-**
-** $Id: test3.c,v 1.111 2009/07/09 05:07:38 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"

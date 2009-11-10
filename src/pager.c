@@ -17,8 +17,6 @@
 ** locking to prevent two processes from writing the same database
 ** file simultaneously, or one process from reading the database while
 ** another is writing.
-**
-** @(#) $Id: pager.c,v 1.629 2009/08/10 17:48:57 drh Exp $
 */
 #ifndef SQLITE_OMIT_DISKIO
 #include "sqliteInt.h"

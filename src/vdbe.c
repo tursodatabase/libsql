@@ -42,8 +42,6 @@
 ** of the code in this file is, therefore, important.  See other comments
 ** in this file for details.  If in doubt, do not deviate from existing
 ** commenting and indentation practices when changing or adding code.
-**
-** $Id: vdbe.c,v 1.874 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"

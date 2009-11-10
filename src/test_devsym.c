@@ -13,8 +13,6 @@
 ** This file contains code that modified the OS layer in order to simulate
 ** different device types (by overriding the return values of the 
 ** xDeviceCharacteristics() and xSectorSize() methods).
-**
-** $Id: test_devsym.c,v 1.9 2008/12/09 01:32:03 drh Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 

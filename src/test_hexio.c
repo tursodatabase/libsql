@@ -16,8 +16,6 @@
 ** command of TCL to do a lot of this, but there are some issues
 ** with historical versions of the "binary" command.  So it seems
 ** easier and safer to build our own mechanism.
-**
-** $Id: test_hexio.c,v 1.7 2008/05/12 16:17:42 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

@@ -10,10 +10,6 @@
 **
 *************************************************************************
 **
-** $Id: fault.c,v 1.11 2008/09/02 00:52:52 drh Exp $
-*/
-
-/*
 ** This file contains code to support the concept of "benign" 
 ** malloc failures (when the xMalloc() or xRealloc() method of the
 ** sqlite3_mem_methods structure fails to allocate a block of memory

@@ -11,8 +11,6 @@
 #
 # The focus of this file is testing that ticket #3363 is fixed.
 #
-# $Id: tkt3363.test,v 1.1 2008/09/08 11:07:03 danielk1977 Exp $
-#
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname $argv0] .. .. test]
@@ -50,5 +48,3 @@ do_test tkt3363.1.4 {
 } {7}
 
 finish_test
-
-

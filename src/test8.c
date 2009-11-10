@@ -12,8 +12,6 @@
 ** Code for testing the virtual table interfaces.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
-**
-** $Id: test8.c,v 1.78 2009/04/29 11:50:54 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

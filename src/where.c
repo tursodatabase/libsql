@@ -15,8 +15,6 @@
 ** rows.  Indices are selected and used to speed the search when doing
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
-**
-** $Id: where.c,v 1.411 2009/07/31 06:14:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

@@ -15,8 +15,6 @@
 ** of the SQLITE_CONFIG_PAGECACHE and sqlite3_release_memory() features.
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
-**
-** @(#) $Id: pcache1.c,v 1.19 2009/07/17 11:44:07 drh Exp $
 */
 
 #include "sqliteInt.h"

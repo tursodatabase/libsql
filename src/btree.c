@@ -9,8 +9,6 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.705 2009/08/10 03:57:58 shane Exp $
-**
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
 ** Including a description of file format and an overview of operation.

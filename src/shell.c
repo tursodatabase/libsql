@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains code to implement the "sqlite" command line
 ** utility for accessing SQLite databases.
-**
-** $Id: shell.c,v 1.210 2009/05/31 17:16:10 drh Exp $
 */
 #if defined(_WIN32) || defined(WIN32)
 /* This needs to come before any includes for MSVC compiler */

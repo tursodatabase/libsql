@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file contains the C functions that implement mutexes for OS/2
-**
-** $Id: mutex_os2.c,v 1.11 2008/11/22 19:50:54 pweilbacher Exp $
 */
 #include "sqliteInt.h"
 

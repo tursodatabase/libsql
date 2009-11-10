@@ -11,8 +11,6 @@
 *************************************************************************
 ** This is the implementation of generic hash-tables
 ** used in SQLite.
-**
-** $Id: hash.c,v 1.38 2009/05/09 23:29:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include <assert.h>

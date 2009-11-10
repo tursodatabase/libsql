@@ -11,8 +11,6 @@
 *************************************************************************
 ** 
 ** This file defines various limits of what SQLite can process.
-**
-** @(#) $Id: sqliteLimit.h,v 1.10 2009/01/10 16:15:09 danielk1977 Exp $
 */
 
 /*

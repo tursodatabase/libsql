@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file contains the C functions that implement mutexes for win32
-**
-** $Id: mutex_w32.c,v 1.18 2009/08/10 03:23:21 shane Exp $
 */
 #include "sqliteInt.h"
 

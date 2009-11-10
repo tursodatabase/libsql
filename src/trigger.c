@@ -8,9 +8,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-**
-**
-** $Id: trigger.c,v 1.143 2009/08/10 03:57:58 shane Exp $
+** This file contains the implementation for TRIGGERs
 */
 #include "sqliteInt.h"
 

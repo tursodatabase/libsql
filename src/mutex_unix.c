@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file contains the C functions that implement mutexes for pthreads
-**
-** $Id: mutex_unix.c,v 1.16 2008/12/08 18:19:18 drh Exp $
 */
 #include "sqliteInt.h"
 
