@@ -16,8 +16,8 @@
 
 # Test plan:
 #
-#   shell-1.*: Basic "dot" command token parsing.
-#   shell-2.*: Basic test that "dot" command can be called.
+#   shell1-1.*: Basic "dot" command token parsing.
+#   shell1-2.*: Basic test that "dot" command can be called.
 #
 
 package require sqlite3
@@ -57,116 +57,116 @@ sqlite3 db test.db
 
 
 #----------------------------------------------------------------------------
-# Test cases shell-1.* Basic "dot" command token parsing.
+# Test cases shell1-1.* Basic "dot" command token parsing.
 #
 
 # check first token handling
-do_test shell-1.1.1 {
+do_test shell1-1.1.1 {
   catchcmd ".foo"
 } {1 {Error: unknown command or invalid arguments:  "foo". Enter ".help" for help}}
-do_test shell-1.1.2 {
+do_test shell1-1.1.2 {
   catchcmd ".\"foo OFF\""
 } {1 {Error: unknown command or invalid arguments:  "foo OFF". Enter ".help" for help}}
-do_test shell-1.1.3 {
+do_test shell1-1.1.3 {
   catchcmd ".\'foo OFF\'"
 } {1 {Error: unknown command or invalid arguments:  "foo OFF". Enter ".help" for help}}
 
 # unbalanced quotes
-do_test shell-1.2.1 {
+do_test shell1-1.2.1 {
   catchcmd ".\"foo OFF"
 } {1 {Error: unknown command or invalid arguments:  "foo OFF". Enter ".help" for help}}
-do_test shell-1.2.2 {
+do_test shell1-1.2.2 {
   catchcmd ".\'foo OFF"
 } {1 {Error: unknown command or invalid arguments:  "foo OFF". Enter ".help" for help}}
-do_test shell-1.2.3 {
+do_test shell1-1.2.3 {
   catchcmd ".explain \"OFF"
 } {0 {}}
-do_test shell-1.2.4 {
+do_test shell1-1.2.4 {
   catchcmd ".explain \'OFF"
 } {0 {}}
-do_test shell-1.2.5 {
+do_test shell1-1.2.5 {
   catchcmd ".mode \"insert FOO"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
-do_test shell-1.2.6 {
+do_test shell1-1.2.6 {
   catchcmd ".mode \'insert FOO"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
 
 # check multiple tokens, and quoted tokens
-do_test shell-1.3.1 {
+do_test shell1-1.3.1 {
   catchcmd ".explain 1"
 } {0 {}}
-do_test shell-1.3.2 {
+do_test shell1-1.3.2 {
   catchcmd ".explain on"
 } {0 {}}
-do_test shell-1.3.3 {
+do_test shell1-1.3.3 {
   catchcmd ".explain \"1 2 3\""
 } {0 {}}
-do_test shell-1.3.4 {
+do_test shell1-1.3.4 {
   catchcmd ".explain \"OFF\""
 } {0 {}}
-do_test shell-1.3.5 {
+do_test shell1-1.3.5 {
   catchcmd ".\'explain\' \'OFF\'"
 } {0 {}}
-do_test shell-1.3.6 {
+do_test shell1-1.3.6 {
   catchcmd ".explain \'OFF\'"
 } {0 {}}
-do_test shell-1.3.7 {
+do_test shell1-1.3.7 {
   catchcmd ".\'explain\' \'OFF\'"
 } {0 {}}
 
 # check quoted args are unquoted
-do_test shell-1.4.1 {
+do_test shell1-1.4.1 {
   catchcmd ".mode FOO"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
-do_test shell-1.4.2 {
+do_test shell1-1.4.2 {
   catchcmd ".mode csv"
 } {0 {}}
-do_test shell-1.4.2 {
+do_test shell1-1.4.2 {
   catchcmd ".mode \"csv\""
 } {0 {}}
 
 
 #----------------------------------------------------------------------------
-# Test cases shell-2.* Basic test that "dot" command can be called.
+# Test cases shell1-2.* Basic test that "dot" command can be called.
 #
 
 # .backup ?DB? FILE      Backup DB (default "main") to FILE
-do_test shell-2.1.1 {
+do_test shell1-2.1.1 {
   catchcmd ".backup"
 } {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
-do_test shell-2.1.2 {
+do_test shell1-2.1.2 {
   # catchcmd ".backup FOO"
   #TBD!!! this asserts currently
 } {}
-do_test shell-2.1.3 {
+do_test shell1-2.1.3 {
   catchcmd ".backup FOO BAR"
 } {1 {Error: unknown database FOO}}
-do_test shell-2.1.4 {
+do_test shell1-2.1.4 {
   # too many arguments
   catchcmd ".backup FOO BAR BAD"
 } {1 {Error: unknown command or invalid arguments:  "backup". Enter ".help" for help}}
 
 # .bail ON|OFF           Stop after hitting an error.  Default OFF
-do_test shell-2.2.1 {
+do_test shell1-2.2.1 {
   catchcmd ".bail"
 } {1 {Error: unknown command or invalid arguments:  "bail". Enter ".help" for help}}
-do_test shell-2.2.2 {
+do_test shell1-2.2.2 {
   catchcmd ".bail ON"
 } {0 {}}
-do_test shell-2.2.3 {
+do_test shell1-2.2.3 {
   catchcmd ".bail OFF"
 } {0 {}}
-do_test shell-2.2.4 {
+do_test shell1-2.2.4 {
   # too many arguments
   catchcmd ".bail OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "bail". Enter ".help" for help}}
 
 # .databases             List names and files of attached databases
-do_test shell-2.3.1 {
+do_test shell1-2.3.1 {
   set res [catchcmd ".databases"]
   regexp {0.*main.*test\.db} $res
 } {1}
-do_test shell-2.3.2 {
+do_test shell1-2.3.2 {
   # too many arguments
   catchcmd ".databases BAD"
 } {1 {Error: unknown command or invalid arguments:  "databases". Enter ".help" for help}}
@@ -174,57 +174,57 @@ do_test shell-2.3.2 {
 # .dump ?TABLE? ...      Dump the database in an SQL text format
 #                          If TABLE specified, only dump tables matching
 #                          LIKE pattern TABLE.
-do_test shell-2.4.1 {
+do_test shell1-2.4.1 {
   set res [catchcmd ".dump"]
   list [regexp {BEGIN TRANSACTION;} $res] \
        [regexp {COMMIT;} $res]
 } {1 1}
-do_test shell-2.4.2 {
+do_test shell1-2.4.2 {
   set res [catchcmd ".dump FOO"]
   list [regexp {BEGIN TRANSACTION;} $res] \
        [regexp {COMMIT;} $res]
 } {1 1}
-do_test shell-2.4.3 {
+do_test shell1-2.4.3 {
   # too many arguments
   catchcmd ".dump FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "dump". Enter ".help" for help}}
 
 # .echo ON|OFF           Turn command echo on or off
-do_test shell-2.5.1 {
+do_test shell1-2.5.1 {
   catchcmd ".echo"
 } {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
-do_test shell-2.5.2 {
+do_test shell1-2.5.2 {
   catchcmd ".echo ON"
 } {0 {}}
-do_test shell-2.5.3 {
+do_test shell1-2.5.3 {
   catchcmd ".echo OFF"
 } {0 {}}
-do_test shell-2.5.4 {
+do_test shell1-2.5.4 {
   # too many arguments
   catchcmd ".echo OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "echo". Enter ".help" for help}}
 
 # .exit                  Exit this program
-do_test shell-2.6.1 {
+do_test shell1-2.6.1 {
   catchcmd ".exit"
 } {0 {}}
-do_test shell-2.6.2 {
+do_test shell1-2.6.2 {
   # too many arguments
   catchcmd ".exit BAD"
 } {1 {Error: unknown command or invalid arguments:  "exit". Enter ".help" for help}}
 
 # .explain ON|OFF        Turn output mode suitable for EXPLAIN on or off.
-do_test shell-2.7.1 {
+do_test shell1-2.7.1 {
   catchcmd ".explain"
   # explain is the exception to the booleans.  without an option, it turns it on.
 } {0 {}}
-do_test shell-2.7.2 {
+do_test shell1-2.7.2 {
   catchcmd ".explain ON"
 } {0 {}}
-do_test shell-2.7.3 {
+do_test shell1-2.7.3 {
   catchcmd ".explain OFF"
 } {0 {}}
-do_test shell-2.7.4 {
+do_test shell1-2.7.4 {
   # too many arguments
   catchcmd ".explain OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "explain". Enter ".help" for help}}
@@ -235,51 +235,51 @@ do_test shell-2.7.4 {
 #                          --exec: Execute generated SQL immediately
 #                        See file tool/genfkey.README in the source
 #                        distribution for further information.
-do_test shell-2.8.1 {
+do_test shell1-2.8.1 {
   catchcmd ".genfkey"
 } {0 {}}
-do_test shell-2.8.2 {
+do_test shell1-2.8.2 {
   catchcmd ".genfkey FOO"
 } {1 {unknown option: FOO}}
 
 # .header(s) ON|OFF      Turn display of headers on or off
-do_test shell-2.9.1 {
+do_test shell1-2.9.1 {
   catchcmd ".header"
 } {1 {Error: unknown command or invalid arguments:  "header". Enter ".help" for help}}
-do_test shell-2.9.2 {
+do_test shell1-2.9.2 {
   catchcmd ".header ON"
 } {0 {}}
-do_test shell-2.9.3 {
+do_test shell1-2.9.3 {
   catchcmd ".header OFF"
 } {0 {}}
-do_test shell-2.9.4 {
+do_test shell1-2.9.4 {
   # too many arguments
   catchcmd ".header OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "header". Enter ".help" for help}}
 
-do_test shell-2.9.5 {
+do_test shell1-2.9.5 {
   catchcmd ".headers"
 } {1 {Error: unknown command or invalid arguments:  "headers". Enter ".help" for help}}
-do_test shell-2.9.6 {
+do_test shell1-2.9.6 {
   catchcmd ".headers ON"
 } {0 {}}
-do_test shell-2.9.7 {
+do_test shell1-2.9.7 {
   catchcmd ".headers OFF"
 } {0 {}}
-do_test shell-2.9.8 {
+do_test shell1-2.9.8 {
   # too many arguments
   catchcmd ".headers OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "headers". Enter ".help" for help}}
 
 # .help                  Show this message
-do_test shell-2.10.1 {
+do_test shell1-2.10.1 {
   set res [catchcmd ".help"]
   # look for a few of the possible help commands
   list [regexp {.help} $res] \
        [regexp {.quit} $res] \
        [regexp {.show} $res]
 } {1 1 1}
-do_test shell-2.10.2 {
+do_test shell1-2.10.2 {
   # we allow .help to take extra args (it is help after all)
   set res [catchcmd ".help BAD"]
   # look for a few of the possible help commands
@@ -289,16 +289,16 @@ do_test shell-2.10.2 {
 } {1 1 1}
 
 # .import FILE TABLE     Import data from FILE into TABLE
-do_test shell-2.11.1 {
+do_test shell1-2.11.1 {
   catchcmd ".import"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell-2.11.2 {
+do_test shell1-2.11.2 {
   catchcmd ".import FOO"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
-do_test shell-2.11.2 {
+do_test shell1-2.11.2 {
   catchcmd ".import FOO BAR"
 } {1 {Error: no such table: BAR}}
-do_test shell-2.11.3 {
+do_test shell1-2.11.3 {
   # too many arguments
   catchcmd ".import FOO BAR BAD"
 } {1 {Error: unknown command or invalid arguments:  "import". Enter ".help" for help}}
@@ -306,13 +306,13 @@ do_test shell-2.11.3 {
 # .indices ?TABLE?       Show names of all indices
 #                          If TABLE specified, only show indices for tables
 #                          matching LIKE pattern TABLE.
-do_test shell-2.12.1 {
+do_test shell1-2.12.1 {
   catchcmd ".indices"
 } {0 {}}
-do_test shell-2.12.2 {
+do_test shell1-2.12.2 {
   catchcmd ".indices FOO"
 } {0 {}}
-do_test shell-2.12.3 {
+do_test shell1-2.12.3 {
   # too many arguments
   catchcmd ".indices FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "indices". Enter ".help" for help}}
@@ -326,134 +326,134 @@ do_test shell-2.12.3 {
 #                          list     Values delimited by .separator string
 #                          tabs     Tab-separated values
 #                          tcl      TCL list elements
-do_test shell-2.13.1 {
+do_test shell1-2.13.1 {
   catchcmd ".mode"
 } {1 {Error: unknown command or invalid arguments:  "mode". Enter ".help" for help}}
-do_test shell-2.13.2 {
+do_test shell1-2.13.2 {
   catchcmd ".mode FOO"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
-do_test shell-2.13.3 {
+do_test shell1-2.13.3 {
   catchcmd ".mode csv"
 } {0 {}}
-do_test shell-2.13.4 {
+do_test shell1-2.13.4 {
   catchcmd ".mode column"
 } {0 {}}
-do_test shell-2.13.5 {
+do_test shell1-2.13.5 {
   catchcmd ".mode html"
 } {0 {}}
-do_test shell-2.13.6 {
+do_test shell1-2.13.6 {
   catchcmd ".mode insert"
 } {0 {}}
-do_test shell-2.13.7 {
+do_test shell1-2.13.7 {
   catchcmd ".mode line"
 } {0 {}}
-do_test shell-2.13.8 {
+do_test shell1-2.13.8 {
   catchcmd ".mode list"
 } {0 {}}
-do_test shell-2.13.9 {
+do_test shell1-2.13.9 {
   catchcmd ".mode tabs"
 } {0 {}}
-do_test shell-2.13.10 {
+do_test shell1-2.13.10 {
   catchcmd ".mode tcl"
 } {0 {}}
-do_test shell-2.13.11 {
+do_test shell1-2.13.11 {
   # too many arguments
   catchcmd ".mode tcl BAD"
 } {1 {Error: invalid arguments:  "BAD". Enter ".help" for help}}
 
 # don't allow partial mode type matches
-do_test shell-2.13.12 {
+do_test shell1-2.13.12 {
   catchcmd ".mode l"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
-do_test shell-2.13.13 {
+do_test shell1-2.13.13 {
   catchcmd ".mode li"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
-do_test shell-2.13.14 {
+do_test shell1-2.13.14 {
   catchcmd ".mode lin"
 } {1 {Error: mode should be one of: column csv html insert line list tabs tcl}}
 
 # .nullvalue STRING      Print STRING in place of NULL values
-do_test shell-2.14.1 {
+do_test shell1-2.14.1 {
   catchcmd ".nullvalue"
 } {1 {Error: unknown command or invalid arguments:  "nullvalue". Enter ".help" for help}}
-do_test shell-2.14.2 {
+do_test shell1-2.14.2 {
   catchcmd ".nullvalue FOO"
 } {0 {}}
-do_test shell-2.14.3 {
+do_test shell1-2.14.3 {
   # too many arguments
   catchcmd ".nullvalue FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "nullvalue". Enter ".help" for help}}
 
 # .output FILENAME       Send output to FILENAME
-do_test shell-2.15.1 {
+do_test shell1-2.15.1 {
   catchcmd ".output"
 } {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
-do_test shell-2.15.2 {
+do_test shell1-2.15.2 {
   catchcmd ".output FOO"
 } {0 {}}
-do_test shell-2.15.3 {
+do_test shell1-2.15.3 {
   # too many arguments
   catchcmd ".output FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
 
 # .output stdout         Send output to the screen
-do_test shell-2.16.1 {
+do_test shell1-2.16.1 {
   catchcmd ".output stdout"
 } {0 {}}
-do_test shell-2.16.2 {
+do_test shell1-2.16.2 {
   # too many arguments
   catchcmd ".output stdout BAD"
 } {1 {Error: unknown command or invalid arguments:  "output". Enter ".help" for help}}
 
 # .prompt MAIN CONTINUE  Replace the standard prompts
-do_test shell-2.17.1 {
+do_test shell1-2.17.1 {
   catchcmd ".prompt"
 } {1 {Error: unknown command or invalid arguments:  "prompt". Enter ".help" for help}}
-do_test shell-2.17.2 {
+do_test shell1-2.17.2 {
   catchcmd ".prompt FOO"
 } {0 {}}
-do_test shell-2.17.3 {
+do_test shell1-2.17.3 {
   catchcmd ".prompt FOO BAR"
 } {0 {}}
-do_test shell-2.17.4 {
+do_test shell1-2.17.4 {
   # too many arguments
   catchcmd ".prompt FOO BAR BAD"
 } {1 {Error: unknown command or invalid arguments:  "prompt". Enter ".help" for help}}
 
 # .quit                  Exit this program
-do_test shell-2.18.1 {
+do_test shell1-2.18.1 {
   catchcmd ".quit"
 } {0 {}}
-do_test shell-2.18.2 {
+do_test shell1-2.18.2 {
   # too many arguments
   catchcmd ".quit BAD"
 } {1 {Error: unknown command or invalid arguments:  "quit". Enter ".help" for help}}
 
 # .read FILENAME         Execute SQL in FILENAME
-do_test shell-2.19.1 {
+do_test shell1-2.19.1 {
   catchcmd ".read"
 } {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
-do_test shell-2.19.2 {
+do_test shell1-2.19.2 {
   file delete -force FOO
   catchcmd ".read FOO"
 } {1 {Error: cannot open "FOO"}}
-do_test shell-2.19.3 {
+do_test shell1-2.19.3 {
   # too many arguments
   catchcmd ".read FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "read". Enter ".help" for help}}
 
 # .restore ?DB? FILE     Restore content of DB (default "main") from FILE
-do_test shell-2.20.1 {
+do_test shell1-2.20.1 {
   catchcmd ".restore"
 } {1 {Error: unknown command or invalid arguments:  "restore". Enter ".help" for help}}
-do_test shell-2.20.2 {
+do_test shell1-2.20.2 {
   # catchcmd ".restore FOO"
   #TBD!!! this asserts currently
 } {}
-do_test shell-2.20.3 {
+do_test shell1-2.20.3 {
   catchcmd ".restore FOO BAR"
 } {1 {Error: unknown database FOO}}
-do_test shell-2.20.4 {
+do_test shell1-2.20.4 {
   # too many arguments
   catchcmd ".restore FOO BAR BAD"
 } {1 {Error: unknown command or invalid arguments:  "restore". Enter ".help" for help}}
@@ -461,31 +461,31 @@ do_test shell-2.20.4 {
 # .schema ?TABLE?        Show the CREATE statements
 #                          If TABLE specified, only show tables matching
 #                          LIKE pattern TABLE.
-do_test shell-2.21.1 {
+do_test shell1-2.21.1 {
   catchcmd ".schema"
 } {0 {}}
-do_test shell-2.21.2 {
+do_test shell1-2.21.2 {
   catchcmd ".schema FOO"
 } {0 {}}
-do_test shell-2.21.3 {
+do_test shell1-2.21.3 {
   # too many arguments
   catchcmd ".schema FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "schema". Enter ".help" for help}}
 
 # .separator STRING      Change separator used by output mode and .import
-do_test shell-2.22.1 {
+do_test shell1-2.22.1 {
   catchcmd ".separator"
 } {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
-do_test shell-2.22.2 {
+do_test shell1-2.22.2 {
   catchcmd ".separator FOO"
 } {0 {}}
-do_test shell-2.22.3 {
+do_test shell1-2.22.3 {
   # too many arguments
   catchcmd ".separator FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "separator". Enter ".help" for help}}
 
 # .show                  Show the current values for various settings
-do_test shell-2.23.1 {
+do_test shell1-2.23.1 {
   set res [catchcmd ".show"]
   list [regexp {echo:} $res] \
        [regexp {explain:} $res] \
@@ -496,7 +496,7 @@ do_test shell-2.23.1 {
        [regexp {separator:} $res] \
        [regexp {width:} $res]
 } {1 1 1 1 1 1 1 1}
-do_test shell-2.23.2 {
+do_test shell1-2.23.2 {
   # too many arguments
   catchcmd ".show BAD"
 } {1 {Error: unknown command or invalid arguments:  "show". Enter ".help" for help}}
@@ -504,61 +504,61 @@ do_test shell-2.23.2 {
 # .tables ?TABLE?        List names of tables
 #                          If TABLE specified, only list tables matching
 #                          LIKE pattern TABLE.
-do_test shell-2.24.1 {
+do_test shell1-2.24.1 {
   catchcmd ".tables"
 } {0 {}}
-do_test shell-2.24.2 {
+do_test shell1-2.24.2 {
   catchcmd ".tables FOO"
 } {0 {}}
-do_test shell-2.24.3 {
+do_test shell1-2.24.3 {
   # too many arguments
   catchcmd ".tables FOO BAD"
 } {1 {Error: unknown command or invalid arguments:  "tables". Enter ".help" for help}}
 
 # .timeout MS            Try opening locked tables for MS milliseconds
-do_test shell-2.25.1 {
+do_test shell1-2.25.1 {
   catchcmd ".timeout"
 } {1 {Error: unknown command or invalid arguments:  "timeout". Enter ".help" for help}}
-do_test shell-2.25.2 {
+do_test shell1-2.25.2 {
   catchcmd ".timeout zzz"
   # this should be treated the same as a '0' timeout
 } {0 {}}
-do_test shell-2.25.3 {
+do_test shell1-2.25.3 {
   catchcmd ".timeout 1"
 } {0 {}}
-do_test shell-2.25.4 {
+do_test shell1-2.25.4 {
   # too many arguments
   catchcmd ".timeout 1 BAD"
 } {1 {Error: unknown command or invalid arguments:  "timeout". Enter ".help" for help}}
 
 # .width NUM NUM ...     Set column widths for "column" mode
-do_test shell-2.26.1 {
+do_test shell1-2.26.1 {
   catchcmd ".width"
 } {1 {Error: unknown command or invalid arguments:  "width". Enter ".help" for help}}
-do_test shell-2.26.2 {
+do_test shell1-2.26.2 {
   catchcmd ".width xxx"
   # this should be treated the same as a '0' width for col 1
 } {0 {}}
-do_test shell-2.26.3 {
+do_test shell1-2.26.3 {
   catchcmd ".width xxx yyy"
   # this should be treated the same as a '0' width for col 1 and 2
 } {0 {}}
-do_test shell-2.26.4 {
+do_test shell1-2.26.4 {
   catchcmd ".width 1 1"
   # this should be treated the same as a '1' width for col 1 and 2
 } {0 {}}
 
 # .timer ON|OFF          Turn the CPU timer measurement on or off
-do_test shell-2.27.1 {
+do_test shell1-2.27.1 {
   catchcmd ".timer"
 } {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
-do_test shell-2.27.2 {
+do_test shell1-2.27.2 {
   catchcmd ".timer ON"
 } {0 {}}
-do_test shell-2.27.3 {
+do_test shell1-2.27.3 {
   catchcmd ".timer OFF"
 } {0 {}}
-do_test shell-2.27.4 {
+do_test shell1-2.27.4 {
   # too many arguments
   catchcmd ".timer OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}

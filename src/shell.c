@@ -3372,7 +3372,6 @@ int main(int argc, char **argv){
     ** we do the actual processing of arguments later in a second pass.
     */
     }else if( strcmp(argv[i],"-batch")==0 ){
-      i++;
       stdin_is_interactive = 0;
     }
   }
