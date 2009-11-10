@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Initial\simplementation\sand\stest\scases\sfor\sthe\s"intarray"\svirtual\stable.
-D 2009-11-10T17:24:37
+C Additional\sintarray\stest\scases\sand\stweaks\sto\scomments.
+D 2009-11-10T17:55:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -190,7 +190,7 @@ F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
 F src/test_func.c 1c94388a23d4a9e7cd62ec79d612d1bae2451fa2
 F src/test_hexio.c 1c0f4238c6fb36c890ce7c07d9c8e1cecedad9ad
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
-F src/test_intarray.c 52862866211f2f8813471e6ac24f17afe1ddf2b7
+F src/test_intarray.c c905030e44e192559dba1a5c1e5e3fcbbbe20def
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c adc0ce3840ed19b49feb1d583b2212f560ef7866
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
@@ -426,7 +426,7 @@ F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
 F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
-F test/intarray.test 829a72b2bf7329c969703788e4355f1d9870116a
+F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
 F test/io.test e7bd58edb4e2131a8ecd81b4b00af3ee5c79d464
@@ -769,14 +769,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8097c64acfc74c913bc6d7d631bc1423c90df93f
-R 8b070e35abc0273e79586bc251b3aec5
+P 0e7d29253f093d4125ede3cfc478e4bf09aef987
+R 52665a87e5d6f5919cd61ce7e30fc2a5
 U drh
-Z 28d3772e2493768aa7f3896b180a9b39
+Z e6118dcdbf5f85120b9d2f449d14ebe3
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK+aHXoxKgR168RlERAm2qAJ958rJsRjQOpNvspuJfXRgPM0fPugCghSop
-UuOC37hwMLT7++0J6JCbgaM=
-=j9AA
+iD8DBQFK+aknoxKgR168RlERAh2vAKCNrNhYRrSdILHfT2qkBmO24bu4dQCdFRxQ
+rpBL1GTilzggZG+f9ilj4Ms=
+=uaJx
 -----END PGP SIGNATURE-----

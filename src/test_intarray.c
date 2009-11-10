@@ -55,7 +55,7 @@ struct intarray_cursor {
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 
 /*
-** Free an sqlite3_intarray object
+** Free an sqlite3_intarray object.
 */
 static void intarrayFree(sqlite3_intarray *p){
   if( p->xFree ){

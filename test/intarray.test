@@ -30,6 +30,8 @@ do_test intarray-1.0 {
     db eval {INSERT INTO t1(a,b) VALUES($i,$b)}
   }
   db eval {
+    CREATE TABLE t2(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t2 SELECT * FROM t1;
     SELECT b FROM t1 WHERE a IN (12,34,56,78) ORDER BY a
   }
 } {x012 x034 x056 x078}
@@ -58,5 +60,50 @@ do_test intarray-1.3 {
   }
 } {x045 x123 x678}
 
+do_test intarray-1.4 {
+  db eval {
+    SELECT count(b) FROM t1 WHERE a NOT IN ia3 ORDER BY a
+  }
+} {996}
+
+#explain {SELECT b FROM t1 WHERE a NOT IN ia3}
+
+do_test intarray-1.5 {
+  set cmd sqlite3_intarray_bind
+  lappend cmd $ia1
+  for {set i 1} {$i<=999} {incr i} {
+    lappend cmd $i
+    lappend cmd [expr {$i+1000}]
+    lappend cmd [expr {$i+2000}]
+  }
+  eval $cmd
+  db eval {
+    REPLACE INTO t1 SELECT * FROM t2;
+    DELETE FROM t1 WHERE a NOT IN ia1;
+    SELECT count(*) FROM t1;
+  }
+} {999}
+
+do_test intarray-1.6 {
+  db eval {
+    DELETE FROM t1 WHERE a IN ia1;
+    SELECT count(*) FROM t1;
+  }
+} {0}
+
+do_test intarray-2.1 {
+  db eval {
+    CREATE TEMP TABLE t3(p,q);
+    INSERT INTO t3 SELECT * FROM t2;
+    SELECT count(*) FROM t3 WHERE p IN ia1;
+  }
+} {999}
+
+do_test intarray-2.2 {
+  set ia5 [sqlite3_intarray_create db ia5]
+  db eval {
+    SELECT count(*) FROM t3 WHERE p IN ia1;
+  }
+} {999}
 
 finish_test
