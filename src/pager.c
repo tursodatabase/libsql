@@ -1794,7 +1794,7 @@ static void setSectorSize(Pager *pPager){
     pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
   }
   if( pPager->sectorSize<32 ){
-    pPager->sectorSize = 32;
+    pPager->sectorSize = 512;
   }
   if( pPager->sectorSize>MAX_SECTOR_SIZE ){
     assert( MAX_SECTOR_SIZE>=512 );
