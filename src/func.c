@@ -177,6 +177,7 @@ static void substrFunc(
     return;
   }
   p0type = sqlite3_value_type(argv[0]);
+  p1 = sqlite3_value_int(argv[1]);
   if( p0type==SQLITE_BLOB ){
     len = sqlite3_value_bytes(argv[0]);
     z = sqlite3_value_blob(argv[0]);
@@ -186,11 +187,12 @@ static void substrFunc(
     z = sqlite3_value_text(argv[0]);
     if( z==0 ) return;
     len = 0;
-    for(z2=z; *z2; len++){
-      SQLITE_SKIP_UTF8(z2);
+    if( p1<0 ){
+      for(z2=z; *z2; len++){
+        SQLITE_SKIP_UTF8(z2);
+      }
     }
   }
-  p1 = sqlite3_value_int(argv[1]);
   if( argc==3 ){
     p2 = sqlite3_value_int(argv[2]);
     if( p2<0 ){
@@ -220,10 +222,6 @@ static void substrFunc(
     }
   }
   assert( p1>=0 && p2>=0 );
-  if( p1+p2>len ){
-    p2 = len-p1;
-    if( p2<0 ) p2 = 0;
-  }
   if( p0type!=SQLITE_BLOB ){
     while( *z && p1 ){
       SQLITE_SKIP_UTF8(z);
@@ -234,6 +232,10 @@ static void substrFunc(
     }
     sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
   }else{
+    if( p1+p2>len ){
+      p2 = len-p1;
+      if( p2<0 ) p2 = 0;
+    }
     sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
   }
 }
