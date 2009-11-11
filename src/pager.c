@@ -911,10 +911,10 @@ static int readJournalHdr(
 
     /* Check that the values read from the page-size and sector-size fields
     ** are within range. To be 'in range', both values need to be a power
-    ** of two greater than or equal to 512, and not greater than their 
+    ** of two greater than or equal to 512 or 32, and not greater than their 
     ** respective compile time maximum limits.
     */
-    if( iPageSize<512                  || iSectorSize<512
+    if( iPageSize<512                  || iSectorSize<32
      || iPageSize>SQLITE_MAX_PAGE_SIZE || iSectorSize>MAX_SECTOR_SIZE
      || ((iPageSize-1)&iPageSize)!=0   || ((iSectorSize-1)&iSectorSize)!=0 
     ){
@@ -1779,8 +1779,8 @@ static int pager_truncate(Pager *pPager, Pgno nPage){
 ** For temporary files the effective sector size is always 512 bytes.
 **
 ** Otherwise, for non-temporary files, the effective sector size is
-** the value returned by the xSectorSize() method rounded up to 512 if
-** it is less than 512, or rounded down to MAX_SECTOR_SIZE if it
+** the value returned by the xSectorSize() method rounded up to 32 if
+** it is less than 32, or rounded down to MAX_SECTOR_SIZE if it
 ** is greater than MAX_SECTOR_SIZE.
 */
 static void setSectorSize(Pager *pPager){
@@ -1793,8 +1793,8 @@ static void setSectorSize(Pager *pPager){
     */
     pPager->sectorSize = sqlite3OsSectorSize(pPager->fd);
   }
-  if( pPager->sectorSize<512 ){
-    pPager->sectorSize = 512;
+  if( pPager->sectorSize<32 ){
+    pPager->sectorSize = 32;
   }
   if( pPager->sectorSize>MAX_SECTOR_SIZE ){
     assert( MAX_SECTOR_SIZE>=512 );

@@ -1,5 +1,8 @@
-C Modified\sCLI\sto\sraise\san\serror\swhen\sextra\scommand\sline\soptions\sare\spassed.\s\s\nAdded\stests\sto\sverify\scorrect\shandling,\sas\swell\sas\sother\sbasic\shandling\nof\scommand\sline\soptions.\sTicket\s[f5cb008a65].
-D 2009-11-11T04:17:07
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Allow\smedia\ssector\ssizes\sas\ssmall\sas\s32.\s\sThe\sformer\sminimum\ssize\swas\s512.
+D 2009-11-11T13:17:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +151,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c e31b8fc35cd1a07edcb5770aaac77b81b8659c99
+F src/pager.c f7d645a831cbca683bbf9f7d55ca7bd191223ce0
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y 0a36c62c090e7e5bb2e36f66909cf4a42c025e1b
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
@@ -767,7 +770,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d0591258b62df4fa610b7ac2a2af0344cf82f231
-R c7bfb4d38e343350d9b6f47a36dab0d7
-U shaneh
-Z 4e81a4c5bff85317d313a2cdd47185b8
+P 09b4f19f100fe82a8321b9ded99e679b7eedc1fa
+R 4660953738e09e48658e726d4ab4929b
+U drh
+Z eb38c72c7392595b8c9af9da37273b2d
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFK+rlYoxKgR168RlERAkd5AJ0ZWUnPqChJybXaCT0e1e2vLdOf+ACePwEx
+ifVUs5BZPo6twb6xD420UW4=
+=eW+2
+-----END PGP SIGNATURE-----
