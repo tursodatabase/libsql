@@ -335,6 +335,14 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }
 }
 
+
+#if 0  /* This function is never used. */
+/*
+** The COALESCE() and IFNULL() functions used to be implemented as shown
+** here.  But now they are implemented as VDBE code so that unused arguments
+** do not have to be computed.  This legacy implementation is retained as
+** comment.
+*/
 /*
 ** Implementation of the IFNULL(), NVL(), and COALESCE() functions.  
 ** All three do the same thing.  They return the first non-NULL
@@ -353,6 +361,8 @@ static void ifnullFunc(
     }
   }
 }
+#endif /* NOT USED */
+#define ifnullFunc versionFunc   /* Substitute function - never called */
 
 /*
 ** Implementation of random().  Return a random integer.  
@@ -1437,10 +1447,12 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,          -1, 0, 0, ifnullFunc       ),
     FUNCTION(coalesce,           0, 0, 0, 0                ),
+/*  FUNCTION(coalesce,          -1, 0, 0, ifnullFunc       ), */
+    {-1,SQLITE_UTF8,SQLITE_FUNC_COALESCE,0,0,ifnullFunc,0,0,"coalesce",0},
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
-    FUNCTION(ifnull,             2, 0, 1, ifnullFunc       ),
+/*  FUNCTION(ifnull,             2, 0, 0, ifnullFunc       ), */
+    {2,SQLITE_UTF8,SQLITE_FUNC_COALESCE,0,0,ifnullFunc,0,0,"ifnull",0},
     FUNCTION(random,             0, 0, 0, randomFunc       ),
     FUNCTION(randomblob,         1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),

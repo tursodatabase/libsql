@@ -2394,6 +2394,27 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3ErrorMsg(pParse, "unknown function: %.*s()", nId, zId);
         break;
       }
+
+      /* Attempt a direct implementation of the built-in COALESCE() and
+      ** IFNULL() functions.  This avoids unnecessary evalation of
+      ** arguments past the first non-NULL argument.
+      */
+      if( pDef->flags & SQLITE_FUNC_COALESCE ){
+        int endCoalesce = sqlite3VdbeMakeLabel(v);
+        assert( nFarg>=2 );
+        sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
+        for(i=1; i<nFarg; i++){
+          sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
+          sqlite3ExprCacheRemove(pParse, target);
+          sqlite3ExprCachePush(pParse);
+          sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
+          sqlite3ExprCachePop(pParse, 1);
+        }
+        sqlite3VdbeResolveLabel(v, endCoalesce);
+        break;
+      }
+
+
       if( pFarg ){
         r1 = sqlite3GetTempRange(pParse, nFarg);
         sqlite3ExprCachePush(pParse);     /* Ticket 2ea2425d34be */
