@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Tweaks\sto\sthe\sSUBSTR()\sfunction\sto\smake\sit\sdramatically\sfaster\sin\sthe\scommon\ncase\swhere\sthe\sinput\sstring\sis\slarge\sbut\sthe\s2nd\sand\s3rd\sarguments\sare\ssmall\npositive\sintegers.
-D 2009-11-11T20:53:31
+C Remove\san\sobsolete\s(and\sincorrect)\scomment\sfrom\ssqlite3MemCompare().\nNo\schanges\sto\scode.
+D 2009-11-11T23:48:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -216,7 +216,7 @@ F src/vdbeInt.h 59c65e7b810836b9e946acee45c7b3c02b967d1b
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
 F src/vdbeaux.c e85c8c7dc63b8e8941afe445a708bd188e5f9ba9
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
-F src/vdbemem.c eeb5988d4cb61130ad9d28ad4422b93fc9199856
+F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vtab.c 456fc226614569f0e46f216e33265bea268bd917
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 29d3324010a1f8a5e92372dc7b544405bf319e30
@@ -770,14 +770,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5a32bfc17ed022c85d2615c34b41a3dcae2594bd
-R 40ba71f59fe4e9d89ef2ec58e5f61b4f
+P 5a474a867c5988ad5ec03719516fdd38f0da5c2c
+R 6b8011eb59ad06eaa71c5080dbc1e3ad
 U drh
-Z 900447894e5e2bfd8a391e7b7ee91c4f
+Z c11349881589164a7397232cea14bf4f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK+yROoxKgR168RlERAgxxAKCHj71qH3RTTKkacqnNolY2rfQh3ACfYfTz
-I5+1whsNXmr3GYydKvNnoeA=
-=f867
+iD8DBQFK+01KoxKgR168RlERAvweAKCIKBWG5Y6Iox8nOEQOxXgg8IKh8ACgiK1Z
+zoZVc9Y0y/49kktgPBiWr4k=
+=e4PZ
 -----END PGP SIGNATURE-----

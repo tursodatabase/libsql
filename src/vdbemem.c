@@ -754,9 +754,6 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   int f1, f2;
   int combined_flags;
 
-  /* Interchange pMem1 and pMem2 if the collating sequence specifies
-  ** DESC order.
-  */
   f1 = pMem1->flags;
   f2 = pMem2->flags;
   combined_flags = f1|f2;
