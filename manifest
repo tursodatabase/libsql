@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Generate\sVDBE\scode\sfor\sthe\sbuilt-in\sCOALESCE()\sand\sIFNULL()\sfunctions.\s\sThis\nallows\sunused\sarguments\sto\snever\sbe\sevaluated,\swhich\sis\sa\sperformance\swin\swhen\nthe\sunused\sargument\sis\sa\ssubquery.
-D 2009-11-11T00:24:32
+C Additional\stest\scases\sfor\sthe\scoalesce()\sand\sifnull()\sfunctions.
+D 2009-11-11T01:14:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -276,6 +276,7 @@ F test/capi3c.test d9d293ce8fd4dc2944ce2dae5718fc7a6184a567
 F test/capi3d.test 57d83b690d7364bde02cddbf8339a4b50d80ce23
 F test/cast.test 166951664a0b0a2e0f8fb5997a152490c6363932
 F test/check.test b897cd3cc839b34b31cdd073e9882ccd03da977b
+F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
@@ -769,14 +770,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0c8db5d88ee41dab58d6464283b51f82f7457838
-R 77b5dc144a79987f5b38b3638c59cf4e
+P 30055b257c3c65f8123cad5ac6c62c4c6ca2c900
+R f47af5b75e0e8e616f1fd8b931ddb5b3
 U drh
-Z 3ce600a45d7855e5b1ce1fd4101b7aec
+Z 3b5efed677f45a2948478d37ad1216cc
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK+gRDoxKgR168RlERAgIHAJ0c3Kp4EnYcJoKIuhzMw7RRNw4w4wCcDLfM
-lEOWeC7zbgysoema8RzHOEA=
-=mkIE
+iD8DBQFK+g/toxKgR168RlERAjaZAJ4lZcZqcztQ7x0Q3/6iUvbKhaxjwwCfasc4
+Gd5rMrr89fVbrffFtkNRS+A=
+=P4HI
 -----END PGP SIGNATURE-----
