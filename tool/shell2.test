@@ -21,6 +21,8 @@
 
 package require sqlite3
 
+set CLI "./sqlite"
+
 proc do_test {name cmd expected} {
   puts -nonewline "$name ..."
   set res [uplevel $cmd]
@@ -43,11 +45,13 @@ proc catchsql {sql} {
   list $rc $msg
 }
 
-proc catchcmd {options db cmd} {
+proc catchcmd {db cmd} {
+  global CLI
   set out [open cmds.txt w]
   puts $out $cmd
   close $out
-  set rc [catch { exec ./sqlite $options $db < cmds.txt } msg]
+  set line "exec $CLI $db < cmds.txt"
+  set rc [catch { eval $line } msg]
   list $rc $msg
 }
 
@@ -60,12 +64,22 @@ sqlite3 db test.db
 #
 
 # Batch mode not creating databases.  
-# Reported on mailing list by Ken Zalewski <kennyz@nycap.rr.com>.
+# Reported on mailing list by Ken Zalewski.
 # Ticket [aeff892c57].
 do_test shell2-1.1.1 {
   file delete -force foo.db
-  set rc [ catchcmd "-batch" "foo.db" "CREATE TABLE t1(a);" ]
+  set rc [ catchcmd "-batch foo.db" "CREATE TABLE t1(a);" ]
   set fexist [file exist foo.db]
   list $rc $fexist
 } {{0 {}} 1}
+
+# Shell silently ignores extra parameters.
+# Ticket [f5cb008a65].
+do_test shell2-1.2.1 {
+  set rc [catch { eval exec $CLI \":memory:\" \"select 3\" \"select 4\" } msg]
+  list $rc \
+       [regexp {Error: too many options: "select 4"} $msg]
+} {1 1}
+
+
 

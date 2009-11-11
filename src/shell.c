@@ -3294,6 +3294,7 @@ static int process_sqliterc(
 ** Show available command line options
 */
 static const char zOptions[] = 
+  "   -help                show this message\n"
   "   -init filename       read/process named file\n"
   "   -echo                print commands before execution\n"
   "   -[no]header          turn headers on or off\n"
@@ -3391,6 +3392,11 @@ int main(int argc, char **argv){
   if( i<argc ){
     zFirstCmd = argv[i++];
   }
+  if( i<argc ){
+    fprintf(stderr,"%s: Error: too many options: \"%s\"\n", Argv0, argv[i]);
+    fprintf(stderr,"Use -help for a list of options.\n");
+    return 1;
+  }
   data.out = stdout;
 
 #ifdef SQLITE_OMIT_MEMORYDB
@@ -3441,10 +3447,20 @@ int main(int argc, char **argv){
       memcpy(data.separator,",",2);
     }else if( strcmp(z,"-separator")==0 ){
       i++;
+      if(i>=argc){
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"Use -help for a list of options.\n");
+        return 1;
+      }
       sqlite3_snprintf(sizeof(data.separator), data.separator,
                        "%.*s",(int)sizeof(data.separator)-1,argv[i]);
     }else if( strcmp(z,"-nullvalue")==0 ){
       i++;
+      if(i>=argc){
+        fprintf(stderr,"%s: Error: missing argument for option: %s\n", Argv0, z);
+        fprintf(stderr,"Use -help for a list of options.\n");
+        return 1;
+      }
       sqlite3_snprintf(sizeof(data.nullvalue), data.nullvalue,
                        "%.*s",(int)sizeof(data.nullvalue)-1,argv[i]);
     }else if( strcmp(z,"-header")==0 ){
