@@ -3119,8 +3119,7 @@ static Bitmask codeOneLoopStart(
     testcase( op==OP_SeekGe );
     testcase( op==OP_SeekLe );
     testcase( op==OP_SeekLt );
-    sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase, 
-                      SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
+    sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
 
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
@@ -3153,8 +3152,7 @@ static Bitmask codeOneLoopStart(
     testcase( op==OP_IdxGE );
     testcase( op==OP_IdxLT );
     if( op!=OP_Noop ){
-      sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
-                        SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
+      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
     }
 
@@ -3283,9 +3281,8 @@ static Bitmask codeOneLoopStart(
             int r;
             r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
                                          regRowid, 0);
-            sqlite3VdbeAddOp4(v, OP_RowSetTest, regRowset,
-                              sqlite3VdbeCurrentAddr(v)+2,
-                              r, SQLITE_INT_TO_PTR(iSet), P4_INT32);
+            sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset,
+                                 sqlite3VdbeCurrentAddr(v)+2, r, iSet);
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
@@ -3816,7 +3813,8 @@ WhereInfo *sqlite3WhereBegin(
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
-        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, SQLITE_INT_TO_PTR(n), P4_INT32);
+        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, 
+                            SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
       }
     }else{

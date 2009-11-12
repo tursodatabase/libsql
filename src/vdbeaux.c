@@ -196,6 +196,22 @@ int sqlite3VdbeAddOp4(
 }
 
 /*
+** Add an opcode that includes the p4 value as an integer.
+*/
+int sqlite3VdbeAddOp4Int(
+  Vdbe *p,            /* Add the opcode to this VM */
+  int op,             /* The new opcode */
+  int p1,             /* The P1 operand */
+  int p2,             /* The P2 operand */
+  int p3,             /* The P3 operand */
+  int p4              /* The P4 operand as an integer */
+){
+  int addr = sqlite3VdbeAddOp3(p, op, p1, p2, p3);
+  sqlite3VdbeChangeP4(p, addr, SQLITE_INT_TO_PTR(p4), P4_INT32);
+  return addr;
+}
+
+/*
 ** Create a new symbolic label for an instruction that has yet to be
 ** coded.  The symbolic label is really just a negative number.  The
 ** label can be used as the P2 value of an operation.  Later, when

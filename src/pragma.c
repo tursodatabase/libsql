@@ -1142,7 +1142,7 @@ void sqlite3Pragma(
             { OP_Halt,        0,  0,  0},
           };
           sqlite3GenerateIndexKey(pParse, pIdx, 1, 3, 1);
-          jmp2 = sqlite3VdbeAddOp3(v, OP_Found, j+2, 0, 3);
+          jmp2 = sqlite3VdbeAddOp4Int(v, OP_Found, j+2, 0, 3, 0);
           addr = sqlite3VdbeAddOpList(v, ArraySize(idxErr), idxErr);
           sqlite3VdbeChangeP4(v, addr+1, "rowid ", P4_STATIC);
           sqlite3VdbeChangeP4(v, addr+3, " missing from index ", P4_STATIC);

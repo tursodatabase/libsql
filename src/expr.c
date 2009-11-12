@@ -1546,7 +1546,7 @@ int sqlite3CodeSubselect(
       affinity = sqlite3ExprAffinity(pLeft);
 
       /* Whether this is an 'x IN(SELECT...)' or an 'x IN(<exprlist>)'
-      ** expression it is handled the same way. A virtual table is 
+      ** expression it is handled the same way.  An ephemeral table is 
       ** filled with single-field index keys representing the results
       ** from the SELECT or the <exprlist>.
       **
@@ -1754,12 +1754,7 @@ static void sqlite3ExprCodeIN(
   }else{
     /* In this case, the RHS is an index b-tree.
     */
-    int r2;   /* Register holding LHS value as a Record */
-
-    /* Create a record that can be used for membership testing.
-    */
-    r2 = sqlite3GetTempReg(pParse);
-    sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
+    sqlite3VdbeAddOp4(v, OP_Affinity, r1, 1, 0, &affinity, 1);
 
     /* If the set membership test fails, then the result of the 
     ** "x IN (...)" expression must be either 0 or NULL. If the set
@@ -1775,21 +1770,20 @@ static void sqlite3ExprCodeIN(
       ** Also run this branch if NULL is equivalent to FALSE
       ** for this particular IN operator.
       */
-      sqlite3VdbeAddOp3(v, OP_NotFound, pExpr->iTable, destIfFalse, r2);
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, pExpr->iTable, destIfFalse, r1, 1);
 
     }else{
       /* In this branch, the RHS of the IN might contain a NULL and
       ** the presence of a NULL on the RHS makes a difference in the
       ** outcome.
       */
-      static const char nullRecord[] = { 0x02, 0x00 };
       int j1, j2, j3;
 
       /* First check to see if the LHS is contained in the RHS.  If so,
       ** then the presence of NULLs in the RHS does not matter, so jump
       ** over all of the code that follows.
       */
-      j1 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+      j1 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, r1, 1);
 
       /* Here we begin generating code that runs if the LHS is not
       ** contained within the RHS.  Generate additional code that
@@ -1798,8 +1792,7 @@ static void sqlite3ExprCodeIN(
       ** jump to destIfFalse.
       */
       j2 = sqlite3VdbeAddOp1(v, OP_NotNull, rRhsHasNull);
-      sqlite3VdbeAddOp4(v, OP_Blob, 2, r2, 0, nullRecord, P4_STATIC);
-      j3 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+      j3 = sqlite3VdbeAddOp4Int(v, OP_Found, pExpr->iTable, 0, rRhsHasNull, 1);
       sqlite3VdbeAddOp2(v, OP_Integer, -1, rRhsHasNull);
       sqlite3VdbeJumpHere(v, j3);
       sqlite3VdbeAddOp2(v, OP_AddImm, rRhsHasNull, 1);
@@ -1816,7 +1809,6 @@ static void sqlite3ExprCodeIN(
       */
       sqlite3VdbeJumpHere(v, j1);
     }
-    sqlite3ReleaseTempReg(pParse, r2);
   }
   sqlite3ReleaseTempReg(pParse, r1);
   sqlite3ExprCachePop(pParse, 1);

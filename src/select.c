@@ -440,7 +440,7 @@ static void codeDistinct(
   v = pParse->pVdbe;
   r1 = sqlite3GetTempReg(pParse);
   sqlite3VdbeAddOp3(v, OP_MakeRecord, iMem, N, r1);
-  sqlite3VdbeAddOp3(v, OP_Found, iTab, addrRepeat, r1);
+  sqlite3VdbeAddOp4Int(v, OP_Found, iTab, addrRepeat, r1, 0);
   sqlite3VdbeAddOp2(v, OP_IdxInsert, iTab, r1);
   sqlite3ReleaseTempReg(pParse, r1);
 }
@@ -1670,7 +1670,7 @@ static int multiSelect(
       sqlite3VdbeAddOp2(v, OP_Rewind, tab1, iBreak);
       r1 = sqlite3GetTempReg(pParse);
       iStart = sqlite3VdbeAddOp2(v, OP_RowKey, tab1, r1);
-      sqlite3VdbeAddOp3(v, OP_NotFound, tab2, iCont, r1);
+      sqlite3VdbeAddOp4Int(v, OP_NotFound, tab2, iCont, r1, 0);
       sqlite3ReleaseTempReg(pParse, r1);
       selectInnerLoop(pParse, p, p->pEList, tab1, p->pEList->nExpr,
                       0, -1, &dest, iCont, iBreak);

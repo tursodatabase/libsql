@@ -598,4 +598,3 @@ do_test analyze3-5.1.3 {
 } {SQLITE_OK}
 
 finish_test
-
