@@ -884,6 +884,19 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
 expr(A) ::= expr(X) ISNULL|NOTNULL(E).   {spanUnaryPostfix(&A,pParse,@E,&X,&E);}
 expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
 
+%include {
+  /* A routine to convert a binary TK_IS or TK_ISNOT expression into a
+  ** unary TK_ISNULL or TK_NOTNULL expression. */
+  static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
+    sqlite3 *db = pParse->db;
+    if( db->mallocFailed==0 && pY->op==TK_NULL ){
+      pA->op = op;
+      sqlite3ExprDelete(db, pA->pRight);
+      pA->pRight = 0;
+    }
+  }
+}
+
 //    expr1 IS expr2
 //    expr1 IS NOT expr2
 //
@@ -892,15 +905,11 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
 // 
 expr(A) ::= expr(X) IS expr(Y).     {
   spanBinaryExpr(&A,pParse,TK_IS,&X,&Y);
-  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
-    A.pExpr->op = TK_ISNULL;
-  }
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_ISNULL);
 }
 expr(A) ::= expr(X) IS NOT expr(Y). {
   spanBinaryExpr(&A,pParse,TK_ISNOT,&X,&Y);
-  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
-    A.pExpr->op = TK_NOTNULL;
-  }
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_NOTNULL);
 }
 
 %include {

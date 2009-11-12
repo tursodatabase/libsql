@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Adjustments\sto\sthe\simplementation\sof\sLIMIT\sso\sthat\sit\suses\sfewer\sopcodes.
-D 2009-11-12T03:13:26
+C Suppress\sexcess\sOP_Null\sopcodes\scaused\sby\sbinary\sIS\sor\sIS\sNOT\soperators\s\nthat\sare\sconverted\sinto\sunary\sISNULL\sor\sNOTNULL\soperators.
+D 2009-11-12T03:46:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c 47343e340df799199fd1f1a184f0df8861519e1e
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
-F src/parse.y 0a36c62c090e7e5bb2e36f66909cf4a42c025e1b
+F src/parse.y f785d814562a14dc19202f61abb4372845f64752
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c db4a996e456eec2380732a1036e23e3f551f6573
@@ -770,14 +770,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8861b5c16031ad570ffbe17b3ec8163b136a7f63
-R 2e62411d417a05caf2dd89c1ca0e0fb5
+P 39d5b292d27faf00ab58ff4074f91f7aea97cd99
+R c19d84dba79b3abd8970106821a4d05d
 U drh
-Z e34f2d0325afcf3aef2ae5d8242ce5af
+Z 3cbf107f89243c15e854c8e3cdc20f73
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK+31aoxKgR168RlERAm5yAJoDGtDUZYQGDXxew/n6ZNZuiH02bwCfWGOF
-tQZHhWLWT4zFQub7T8BA6c4=
-=tCQs
+iD8DBQFK+4UeoxKgR168RlERAoVfAJ9p0PXyLRWA76+9khL8SSrXAwEe8gCeOt0X
+3oLu7ZH/IfhZcimL477cDUs=
+=cbgv
 -----END PGP SIGNATURE-----
