@@ -5025,15 +5025,17 @@ case OP_IfNeg: {        /* jump, in1 */
   break;
 }
 
-/* Opcode: IfZero P1 P2 * * *
+/* Opcode: IfZero P1 P2 P3 * *
 **
-** If the value of register P1 is exactly 0, jump to P2. 
+** The register P1 must contain an integer.  Add literal P3 to the
+** value in register P1.  If the result is exactly 0, jump to P2. 
 **
 ** It is illegal to use this instruction on a register that does
 ** not contain an integer.  An assertion fault will result if you try.
 */
 case OP_IfZero: {        /* jump, in1 */
   assert( pIn1->flags&MEM_Int );
+  pIn1->u.i += pOp->p3;
   if( pIn1->u.i==0 ){
      pc = pOp->p2 - 1;
   }

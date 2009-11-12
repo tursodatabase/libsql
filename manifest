@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C If\sthe\ssector\ssize\sis\sunspecified\s(initially\s0)\sthen\sset\sit\sto\s512,\snot\sto\s32.
-D 2009-11-11T23:58:06
+C Adjustments\sto\sthe\simplementation\sof\sLIMIT\sso\sthat\sit\suses\sfewer\sopcodes.
+D 2009-11-12T03:13:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/printf.c 03fabdd6112a0e23f78f8ac9a1396947ade0273b
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c aa3cb21e1ecd905c071fce8fb64d1a166cefc239
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c ecd7fb2fcb8d207dd381338377b5bacce0b38a2d
+F src/select.c 696f245c519c83b5d3b8892db22cfa6c55ef3bd0
 F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
 F src/sqlite.h.in 4464e9772122f0447305d425e04d122b6f1bffec
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -210,7 +210,7 @@ F src/update.c 8efeb09822886e33c265dd96d29a3d865ea6dcf2
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
-F src/vdbe.c 7e112c50e50d3b86f752bca563ef9369a3d8a471
+F src/vdbe.c 393a6766807b0b335f9f1bdebb41ba08d138e5ef
 F src/vdbe.h 7b06b21f76e349bc2b7e18599550d79bf943c940
 F src/vdbeInt.h 59c65e7b810836b9e946acee45c7b3c02b967d1b
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
@@ -770,14 +770,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c15b70b3aefc399dae1df5bb721530f0e2b7887a
-R b90b93f7f854c88da1f9a6b1e74b502b
+P 8861b5c16031ad570ffbe17b3ec8163b136a7f63
+R 2e62411d417a05caf2dd89c1ca0e0fb5
 U drh
-Z 4327ac2d667e56f35ffb44f65d860347
+Z e34f2d0325afcf3aef2ae5d8242ce5af
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK+0+UoxKgR168RlERAjjgAJ9jNmLhWxJ4mrPtF8QZQyv008kPpwCghE2/
-IbgAg0OFaYa8g8Ax0ACWJdI=
-=RCGh
+iD8DBQFK+31aoxKgR168RlERAm5yAJoDGtDUZYQGDXxew/n6ZNZuiH02bwCfWGOF
+tQZHhWLWT4zFQub7T8BA6c4=
+=tCQs
 -----END PGP SIGNATURE-----

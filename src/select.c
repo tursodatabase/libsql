@@ -681,8 +681,7 @@ static void selectInnerLoop(
   if( p->iLimit ){
     assert( pOrderBy==0 );  /* If there is an ORDER BY, the call to
                             ** pushOntoSorter() would have cleared p->iLimit */
-    sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
-    sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
+    sqlite3VdbeAddOp3(v, OP_IfZero, p->iLimit, iBreak, -1);
   }
 }
 
@@ -1308,7 +1307,7 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
   Vdbe *v = 0;
   int iLimit = 0;
   int iOffset;
-  int addr1;
+  int addr1, n;
   if( p->iLimit ) return;
 
   /* 
@@ -1323,10 +1322,19 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     p->iLimit = iLimit = ++pParse->nMem;
     v = sqlite3GetVdbe(pParse);
     if( NEVER(v==0) ) return;  /* VDBE should have already been allocated */
-    sqlite3ExprCode(pParse, p->pLimit, iLimit);
-    sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit);
-    VdbeComment((v, "LIMIT counter"));
-    sqlite3VdbeAddOp2(v, OP_IfZero, iLimit, iBreak);
+    if( sqlite3ExprIsInteger(p->pLimit, &n) ){
+      if( n==0 ){
+        sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
+      }else{
+        sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
+        VdbeComment((v, "LIMIT counter"));
+      }
+    }else{
+      sqlite3ExprCode(pParse, p->pLimit, iLimit);
+      sqlite3VdbeAddOp1(v, OP_MustBeInt, iLimit);
+      VdbeComment((v, "LIMIT counter"));
+      sqlite3VdbeAddOp2(v, OP_IfZero, iLimit, iBreak);
+    }
     if( p->pOffset ){
       p->iOffset = iOffset = ++pParse->nMem;
       pParse->nMem++;   /* Allocate an extra register for limit+offset */
@@ -1881,8 +1889,7 @@ static int generateOutputSubroutine(
   /* Jump to the end of the loop if the LIMIT is reached.
   */
   if( p->iLimit ){
-    sqlite3VdbeAddOp2(v, OP_AddImm, p->iLimit, -1);
-    sqlite3VdbeAddOp2(v, OP_IfZero, p->iLimit, iBreak);
+    sqlite3VdbeAddOp3(v, OP_IfZero, p->iLimit, iBreak, -1);
   }
 
   /* Generate the subroutine return
