@@ -157,6 +157,8 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** If x is a blob, then we count bytes.
 **
 ** If p1 is negative, then we begin abs(p1) from the end of x[].
+**
+** If p2 is negative, return the p2 characters preceeding p1.
 */
 static void substrFunc(
   sqlite3_context *context,
