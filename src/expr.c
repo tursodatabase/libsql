@@ -2992,6 +2992,62 @@ int sqlite3ExprCodeExprList(
 }
 
 /*
+** Generate code for a BETWEEN operator.
+**
+**    x BETWEEN y AND z
+**
+** The above is equivalent to 
+**
+**    x>=y AND x<=z
+**
+** Code it as such, taking care to do the common subexpression
+** elementation of x.
+*/
+static void exprCodeBetween(
+  Parse *pParse,    /* Parsing and code generating context */
+  Expr *pExpr,      /* The BETWEEN expression */
+  int dest,         /* Jump here if the jump is taken */
+  int jumpIfTrue,   /* Take the jump if the BETWEEN is true */
+  int jumpIfNull    /* Take the jump if the BETWEEN is NULL */
+){
+  Expr exprAnd;     /* The AND operator in  x>=y AND x<=z  */
+  Expr compLeft;    /* The  x>=y  term */
+  Expr compRight;   /* The  x<=z  term */
+  Expr exprX;       /* The  x  subexpression */
+  int regFree1 = 0; /* Temporary use register */
+
+  assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
+  exprX = *pExpr->pLeft;
+  exprAnd.op = TK_AND;
+  exprAnd.pLeft = &compLeft;
+  exprAnd.pRight = &compRight;
+  compLeft.op = TK_GE;
+  compLeft.pLeft = &exprX;
+  compLeft.pRight = pExpr->x.pList->a[0].pExpr;
+  compRight.op = TK_LE;
+  compRight.pLeft = &exprX;
+  compRight.pRight = pExpr->x.pList->a[1].pExpr;
+  exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
+  exprX.op = TK_REGISTER;
+  if( jumpIfTrue ){
+    sqlite3ExprIfTrue(pParse, &exprAnd, dest, jumpIfNull);
+  }else{
+    sqlite3ExprIfFalse(pParse, &exprAnd, dest, jumpIfNull);
+  }
+  sqlite3ReleaseTempReg(pParse, regFree1);
+
+  /* Ensure adequate test coverage */
+  testcase( jumpIfTrue==0 && jumpIfNull==0 && regFree1==0 );
+  testcase( jumpIfTrue==0 && jumpIfNull==0 && regFree1!=0 );
+  testcase( jumpIfTrue==0 && jumpIfNull!=0 && regFree1==0 );
+  testcase( jumpIfTrue==0 && jumpIfNull!=0 && regFree1!=0 );
+  testcase( jumpIfTrue!=0 && jumpIfNull==0 && regFree1==0 );
+  testcase( jumpIfTrue!=0 && jumpIfNull==0 && regFree1!=0 );
+  testcase( jumpIfTrue!=0 && jumpIfNull!=0 && regFree1==0 );
+  testcase( jumpIfTrue!=0 && jumpIfNull!=0 && regFree1!=0 );
+}
+
+/*
 ** Generate code for a boolean expression such that a jump is made
 ** to the label "dest" if the expression is true but execution
 ** continues straight thru if the expression is false.
@@ -3090,36 +3146,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_BETWEEN: {
-      /*    x BETWEEN y AND z
-      **
-      ** Is equivalent to 
-      **
-      **    x>=y AND x<=z
-      **
-      ** Code it as such, taking care to do the common subexpression
-      ** elementation of x.
-      */
-      Expr exprAnd;
-      Expr compLeft;
-      Expr compRight;
-      Expr exprX;
-
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      exprX = *pExpr->pLeft;
-      exprAnd.op = TK_AND;
-      exprAnd.pLeft = &compLeft;
-      exprAnd.pRight = &compRight;
-      compLeft.op = TK_GE;
-      compLeft.pLeft = &exprX;
-      compLeft.pRight = pExpr->x.pList->a[0].pExpr;
-      compRight.op = TK_LE;
-      compRight.pLeft = &exprX;
-      compRight.pRight = pExpr->x.pList->a[1].pExpr;
-      exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
-      testcase( regFree1==0 );
-      exprX.op = TK_REGISTER;
-      testcase( jumpIfNull==0 );
-      sqlite3ExprIfTrue(pParse, &exprAnd, dest, jumpIfNull);
+      exprCodeBetween(pParse, pExpr, dest, 1, jumpIfNull);
       break;
     }
     default: {
@@ -3250,36 +3277,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_BETWEEN: {
-      /*    x BETWEEN y AND z
-      **
-      ** Is equivalent to 
-      **
-      **    x>=y AND x<=z
-      **
-      ** Code it as such, taking care to do the common subexpression
-      ** elementation of x.
-      */
-      Expr exprAnd;
-      Expr compLeft;
-      Expr compRight;
-      Expr exprX;
-
-      assert( !ExprHasProperty(pExpr, EP_xIsSelect) );
-      exprX = *pExpr->pLeft;
-      exprAnd.op = TK_AND;
-      exprAnd.pLeft = &compLeft;
-      exprAnd.pRight = &compRight;
-      compLeft.op = TK_GE;
-      compLeft.pLeft = &exprX;
-      compLeft.pRight = pExpr->x.pList->a[0].pExpr;
-      compRight.op = TK_LE;
-      compRight.pLeft = &exprX;
-      compRight.pRight = pExpr->x.pList->a[1].pExpr;
-      exprX.iTable = sqlite3ExprCodeTemp(pParse, &exprX, &regFree1);
-      testcase( regFree1==0 );
-      exprX.op = TK_REGISTER;
-      testcase( jumpIfNull==0 );
-      sqlite3ExprIfFalse(pParse, &exprAnd, dest, jumpIfNull);
+      exprCodeBetween(pParse, pExpr, dest, 0, jumpIfNull);
       break;
     }
     default: {
