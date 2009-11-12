@@ -3357,30 +3357,16 @@ case OP_Seek: {    /* in2 */
 /* Opcode: Found P1 P2 P3 * *
 **
 ** Register P3 holds a blob constructed by MakeRecord.  P1 is an index.
-** If an entry that matches the value in register p3 exists in P1 then
-** jump to P2.  If the P3 value does not match any entry in P1
-** then fall thru.  The P1 cursor is left pointing at the matching entry
-** if it exists.
-**
-** This instruction is used to implement the IN operator where the
-** left-hand side is a SELECT statement.  P1 may be a true index, or it
-** may be a temporary index that holds the results of the SELECT
-** statement.   This instruction is also used to implement the
-** DISTINCT keyword in SELECT statements.
-**
-** This instruction checks if index P1 contains a record for which 
-** the first N serialized values exactly match the N serialized values
-** in the record in register P3, where N is the total number of values in
-** the P3 record (the P3 record is a prefix of the P1 record). 
-**
-** See also: NotFound, IsUnique, NotExists
+** If P3 is a prefix of any entry in P1 then a jump is made to P2 and
+** P1 is left pointing at the matching entry.
 */
 /* Opcode: NotFound P1 P2 P3 * *
 **
 ** Register P3 holds a blob constructed by MakeRecord.  P1 is
-** an index.  If no entry exists in P1 that matches the blob then jump
-** to P2.  If an entry does existing, fall through.  The cursor is left
-** pointing to the entry that matches.
+** an index.  If P3 is not the prefix of any entry in P1 then a jump
+** is made to P2.  If P1 does contain an entry whose prefix matches
+** P3 then control falls through to the next instruction and P1 is
+** left pointing at the matching entry.
 **
 ** See also: Found, NotExists, IsUnique
 */
@@ -3410,9 +3396,7 @@ case OP_Found: {        /* jump, in3 */
     if( pIdxKey==0 ){
       goto no_mem;
     }
-    if( pOp->opcode==OP_Found ){
-      pIdxKey->flags |= UNPACKED_PREFIX_MATCH;
-    }
+    pIdxKey->flags |= UNPACKED_PREFIX_MATCH;
     rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, pIdxKey, 0, 0, &res);
     sqlite3VdbeDeleteUnpackedRecord(pIdxKey);
     if( rc!=SQLITE_OK ){

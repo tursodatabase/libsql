@@ -1345,16 +1345,16 @@ static int isCandidateForInOpt(Select *p){
 ** When the b-tree is being used for membership tests, the calling function
 ** needs to know whether or not the structure contains an SQL NULL 
 ** value in order to correctly evaluate expressions like "X IN (Y, Z)".
-** If there is a chance that the b-tree might contain a NULL value at
+** If there is any chance that the (...) might contain a NULL value at
 ** runtime, then a register is allocated and the register number written
-** to *prNotFound. If there is no chance that the b-tree contains a
+** to *prNotFound. If there is no chance that the (...) contains a
 ** NULL value, then *prNotFound is left unchanged.
 **
 ** If a register is allocated and its location stored in *prNotFound, then
-** its initial value is NULL. If the b-tree does not remain constant
-** for the duration of the query (i.e. the SELECT that generates the b-tree
+** its initial value is NULL.  If the (...) does not remain constant
+** for the duration of the query (i.e. the SELECT within the (...)
 ** is a correlated subquery) then the value of the allocated register is
-** reset to NULL each time the b-tree is repopulated. This allows the
+** reset to NULL each time the subquery is rerun. This allows the
 ** caller to use vdbe code equivalent to the following:
 **
 **   if( register==NULL ){
@@ -1691,6 +1691,136 @@ int sqlite3CodeSubselect(
   sqlite3ExprCachePop(pParse, 1);
 
   return rReg;
+}
+#endif /* SQLITE_OMIT_SUBQUERY */
+
+#ifndef SQLITE_OMIT_SUBQUERY
+/*
+** Generate code for an IN expression.
+**
+**      x IN (SELECT ...)
+**      x IN (value, value, ...)
+**
+** The left-hand side (LHS) is a scalar expression.  The right-hand side (RHS)
+** is an array of zero or more values.  The expression is true if the LHS is
+** contained within the RHS.  The value of the expression is unknown (NULL)
+** if the LHS is NULL or if the LHS is not contained within the RHS and the
+** RHS contains one or more NULL values.
+**
+** This routine generates code will jump to destIfFalse if the LHS is not 
+** contained within the RHS.  If due to NULLs we cannot determine if the LHS
+** is contained in the RHS then jump to destIfNull.  If the LHS is contained
+** within the RHS then fall through.
+*/
+static void sqlite3ExprCodeIN(
+  Parse *pParse,        /* Parsing and code generating context */
+  Expr *pExpr,          /* The IN expression */
+  int destIfFalse,      /* Jump here if LHS is not contained in the RHS */
+  int destIfNull        /* Jump here if the results are unknown due to NULLs */
+){
+  int rRhsHasNull = 0;  /* Register that is true if RHS contains NULL values */
+  char affinity;        /* Comparison affinity to use */
+  int eType;            /* Type of the RHS */
+  int r1;               /* Temporary use register */
+  Vdbe *v;              /* Statement under construction */
+
+  /* Compute the RHS.   After this step, the table with cursor
+  ** pExpr->iTable will contains the values that make up the RHS.
+  */
+  v = pParse->pVdbe;
+  assert( v!=0 );       /* OOM detected prior to this routine */
+  VdbeNoopComment((v, "begin IN expr"));
+  eType = sqlite3FindInIndex(pParse, pExpr, &rRhsHasNull);
+
+  /* Figure out the affinity to use to create a key from the results
+  ** of the expression. affinityStr stores a static string suitable for
+  ** P4 of OP_MakeRecord.
+  */
+  affinity = comparisonAffinity(pExpr);
+
+  /* Code the LHS, the <expr> from "<expr> IN (...)".
+  */
+  sqlite3ExprCachePush(pParse);
+  r1 = sqlite3GetTempReg(pParse);
+  sqlite3ExprCode(pParse, pExpr->pLeft, r1);
+  sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
+
+
+  if( eType==IN_INDEX_ROWID ){
+    /* In this case, the RHS is the ROWID of table b-tree
+    */
+    sqlite3VdbeAddOp2(v, OP_MustBeInt, r1, destIfFalse);
+    sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, destIfFalse, r1);
+  }else{
+    /* In this case, the RHS is an index b-tree.
+    */
+    int r2;   /* Register holding LHS value as a Record */
+
+    /* Create a record that can be used for membership testing.
+    */
+    r2 = sqlite3GetTempReg(pParse);
+    sqlite3VdbeAddOp4(v, OP_MakeRecord, r1, 1, r2, &affinity, 1);
+
+    /* If the set membership test fails, then the result of the 
+    ** "x IN (...)" expression must be either 0 or NULL. If the set
+    ** contains no NULL values, then the result is 0. If the set 
+    ** contains one or more NULL values, then the result of the
+    ** expression is also NULL.
+    */
+    if( rRhsHasNull==0 || destIfFalse==destIfNull ){
+      /* This branch runs if it is known at compile time that the RHS
+      ** cannot contain NULL values. This happens as the result
+      ** of a "NOT NULL" constraint in the database schema.
+      **
+      ** Also run this branch if NULL is equivalent to FALSE
+      ** for this particular IN operator.
+      */
+      sqlite3VdbeAddOp3(v, OP_NotFound, pExpr->iTable, destIfFalse, r2);
+
+    }else{
+      /* In this branch, the RHS of the IN might contain a NULL and
+      ** the presence of a NULL on the RHS makes a difference in the
+      ** outcome.
+      */
+      static const char nullRecord[] = { 0x02, 0x00 };
+      int j1, j2, j3;
+
+      /* First check to see if the LHS is contained in the RHS.  If so,
+      ** then the presence of NULLs in the RHS does not matter, so jump
+      ** over all of the code that follows.
+      */
+      j1 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+
+      /* Here we begin generating code that runs if the LHS is not
+      ** contained within the RHS.  Generate additional code that
+      ** tests the RHS for NULLs.  If the RHS contains a NULL then
+      ** jump to destIfNull.  If there are no NULLs in the RHS then
+      ** jump to destIfFalse.
+      */
+      j2 = sqlite3VdbeAddOp1(v, OP_NotNull, rRhsHasNull);
+      sqlite3VdbeAddOp4(v, OP_Blob, 2, r2, 0, nullRecord, P4_STATIC);
+      j3 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
+      sqlite3VdbeAddOp2(v, OP_Integer, -1, rRhsHasNull);
+      sqlite3VdbeJumpHere(v, j3);
+      sqlite3VdbeAddOp2(v, OP_AddImm, rRhsHasNull, 1);
+      sqlite3VdbeJumpHere(v, j2);
+
+      /* Jump to the appropriate target depending on whether or not
+      ** the RHS contains a NULL
+      */
+      sqlite3VdbeAddOp2(v, OP_If, rRhsHasNull, destIfNull);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfFalse);
+
+      /* The OP_Found at the top of this branch jumps here when true, 
+      ** causing the overall IN expression evaluation to fall through.
+      */
+      sqlite3VdbeJumpHere(v, j1);
+    }
+    sqlite3ReleaseTempReg(pParse, r2);
+  }
+  sqlite3ReleaseTempReg(pParse, r1);
+  sqlite3ExprCachePop(pParse, 1);
+  VdbeComment((v, "end IN expr"));
 }
 #endif /* SQLITE_OMIT_SUBQUERY */
 
@@ -2472,95 +2602,19 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_IN: {
-      int rNotFound = 0;
-      int rMayHaveNull = 0;
-      int j2, j3, j4, j5;
-      char affinity;
-      int eType;
-
-      VdbeNoopComment((v, "begin IN expr r%d", target));
-      eType = sqlite3FindInIndex(pParse, pExpr, &rMayHaveNull);
-      if( rMayHaveNull ){
-        rNotFound = ++pParse->nMem;
-      }
-
-      /* Figure out the affinity to use to create a key from the results
-      ** of the expression. affinityStr stores a static string suitable for
-      ** P4 of OP_MakeRecord.
-      */
-      affinity = comparisonAffinity(pExpr);
-
-
-      /* Code the <expr> from "<expr> IN (...)". The temporary table
-      ** pExpr->iTable contains the values that make up the (...) set.
-      */
-      sqlite3ExprCachePush(pParse);
-      sqlite3ExprCode(pParse, pExpr->pLeft, target);
-      j2 = sqlite3VdbeAddOp1(v, OP_IsNull, target);
-      if( eType==IN_INDEX_ROWID ){
-        j3 = sqlite3VdbeAddOp1(v, OP_MustBeInt, target);
-        j4 = sqlite3VdbeAddOp3(v, OP_NotExists, pExpr->iTable, 0, target);
-        sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
-        j5 = sqlite3VdbeAddOp0(v, OP_Goto);
-        sqlite3VdbeJumpHere(v, j3);
-        sqlite3VdbeJumpHere(v, j4);
-        sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
-      }else{
-        r2 = regFree2 = sqlite3GetTempReg(pParse);
-
-        /* Create a record and test for set membership. If the set contains
-        ** the value, then jump to the end of the test code. The target
-        ** register still contains the true (1) value written to it earlier.
-        */
-        sqlite3VdbeAddOp4(v, OP_MakeRecord, target, 1, r2, &affinity, 1);
-        sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
-        j5 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, r2);
-
-        /* If the set membership test fails, then the result of the 
-        ** "x IN (...)" expression must be either 0 or NULL. If the set
-        ** contains no NULL values, then the result is 0. If the set 
-        ** contains one or more NULL values, then the result of the
-        ** expression is also NULL.
-        */
-        if( rNotFound==0 ){
-          /* This branch runs if it is known at compile time (now) that 
-          ** the set contains no NULL values. This happens as the result
-          ** of a "NOT NULL" constraint in the database schema. No need
-          ** to test the data structure at runtime in this case.
-          */
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, target);
-        }else{
-          /* This block populates the rNotFound register with either NULL
-          ** or 0 (an integer value). If the data structure contains one
-          ** or more NULLs, then set rNotFound to NULL. Otherwise, set it
-          ** to 0. If register rMayHaveNull is already set to some value
-          ** other than NULL, then the test has already been run and 
-          ** rNotFound is already populated.
-          */
-          static const char nullRecord[] = { 0x02, 0x00 };
-          j3 = sqlite3VdbeAddOp1(v, OP_NotNull, rMayHaveNull);
-          sqlite3VdbeAddOp2(v, OP_Null, 0, rNotFound);
-          sqlite3VdbeAddOp4(v, OP_Blob, 2, rMayHaveNull, 0, 
-                             nullRecord, P4_STATIC);
-          j4 = sqlite3VdbeAddOp3(v, OP_Found, pExpr->iTable, 0, rMayHaveNull);
-          sqlite3VdbeAddOp2(v, OP_Integer, 0, rNotFound);
-          sqlite3VdbeJumpHere(v, j4);
-          sqlite3VdbeJumpHere(v, j3);
-
-          /* Copy the value of register rNotFound (which is either NULL or 0)
-          ** into the target register. This will be the result of the
-          ** expression.
-          */
-          sqlite3VdbeAddOp2(v, OP_Copy, rNotFound, target);
-        }
-      }
-      sqlite3VdbeJumpHere(v, j2);
-      sqlite3VdbeJumpHere(v, j5);
-      sqlite3ExprCachePop(pParse, 1);
-      VdbeComment((v, "end IN expr r%d", target));
+      int destIfFalse = sqlite3VdbeMakeLabel(v);
+      int destIfNull = sqlite3VdbeMakeLabel(v);
+      sqlite3VdbeAddOp2(v, OP_Null, 0, target);
+      sqlite3ExprCodeIN(pParse, pExpr, destIfFalse, destIfNull);
+      sqlite3VdbeAddOp2(v, OP_Integer, 1, target);
+      sqlite3VdbeResolveLabel(v, destIfFalse);
+      sqlite3VdbeAddOp2(v, OP_AddImm, target, 0);
+      sqlite3VdbeResolveLabel(v, destIfNull);
       break;
     }
-#endif
+#endif /* SQLITE_OMIT_SUBQUERY */
+
+
     /*
     **    x BETWEEN y AND z
     **
@@ -3149,6 +3203,14 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       exprCodeBetween(pParse, pExpr, dest, 1, jumpIfNull);
       break;
     }
+    case TK_IN: {
+      int destIfFalse = sqlite3VdbeMakeLabel(v);
+      int destIfNull = jumpIfNull ? dest : destIfFalse;
+      sqlite3ExprCodeIN(pParse, pExpr, destIfFalse, destIfNull);
+      sqlite3VdbeAddOp2(v, OP_Goto, 0, dest);
+      sqlite3VdbeResolveLabel(v, destIfFalse);
+      break;
+    }
     default: {
       r1 = sqlite3ExprCodeTemp(pParse, pExpr, &regFree1);
       sqlite3VdbeAddOp3(v, OP_If, r1, dest, jumpIfNull!=0);
@@ -3278,6 +3340,16 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
     }
     case TK_BETWEEN: {
       exprCodeBetween(pParse, pExpr, dest, 0, jumpIfNull);
+      break;
+    }
+    case TK_IN: {
+      if( jumpIfNull ){
+        sqlite3ExprCodeIN(pParse, pExpr, dest, dest);
+      }else{
+        int destIfNull = sqlite3VdbeMakeLabel(v);
+        sqlite3ExprCodeIN(pParse, pExpr, dest, destIfNull);
+        sqlite3VdbeResolveLabel(v, destIfNull);
+      }
       break;
     }
     default: {
