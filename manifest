@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Changes\sto\stest_intarray.c\sso\sthat\sit\sbuild\swith\sSQLITE_OMIT_VIRTUALTABLE.\nAdded\stestcase()\smacros\sto\sexpr.c.
-D 2009-11-13T15:04:00
+C Force\s8-byte\smemory\salignment\son\smemory\sallocated\sfor\sVDBE\scursors.
+D 2009-11-13T17:05:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c daf0129735fed8541f8233288ed21223cd80294f
+F src/btree.c 4076d11eaf78382514707ee7013cb0e2e59c1437
 F src/btree.h ddd915fd44fea35f98b5505513f6a40a3308c7a6
 F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
 F src/build.c a48e74d24897100017d39ceba5de255e53ec9488
@@ -210,7 +210,7 @@ F src/update.c 8efeb09822886e33c265dd96d29a3d865ea6dcf2
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
-F src/vdbe.c d035dd3b693cb37874dfdfc77812e8496c435380
+F src/vdbe.c 3067cfcc86e61e1662f7322aa153f52857b61f8b
 F src/vdbe.h 65cd747e36ad444cb1a17e529030942c45a61fe3
 F src/vdbeInt.h 59c65e7b810836b9e946acee45c7b3c02b967d1b
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
@@ -771,14 +771,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6705ab1ad12cbdbbcf1f3e5439a4e6cbdcc421b3
-R 113ec7e28504a631fbea880c6edbe4b5
+P f0599d28fabe9e67a7150a91c266cb7655a2002e
+R b787bcf50272d59401284264a4dcbb30
 U drh
-Z 55bd08a5e60091a7c6ccfe092d37cd33
+Z 255150de2174a2682813e546e8d990c7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK/XVjoxKgR168RlERAkI6AJ92F0IYOBbisAxZZJEawtvMIRZbRwCbBrkq
-ORTLeq5KTxD7nLajGv9hog8=
-=/pam
+iD8DBQFK/ZH1oxKgR168RlERAuF9AJ9hHIIG7PFtXPqnbvCge9luG/0VIACfc7kV
+v+sk467/hW51kXF6lY7carY=
+=mwCb
 -----END PGP SIGNATURE-----

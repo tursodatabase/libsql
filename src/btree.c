@@ -3352,7 +3352,7 @@ int sqlite3BtreeCursor(
 ** this routine.
 */
 int sqlite3BtreeCursorSize(void){
-  return sizeof(BtCursor);
+  return ROUND8(sizeof(BtCursor));
 }
 
 /*
