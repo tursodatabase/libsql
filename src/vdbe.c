@@ -677,60 +677,41 @@ int sqlite3VdbeExec(
     ** is initialized to a NULL.
     */
     opProperty = opcodeProperty[pOp->opcode];
-    if( (opProperty & OPFLG_OUT2_PRERELEASE)!=0 ){
-      assert( pOp->p2>0 );
-      assert( pOp->p2<=p->nMem );
-      pOut = &p->aMem[pOp->p2];
-      sqlite3VdbeMemReleaseExternal(pOut);
-      pOut->flags = MEM_Null;
-      pOut->n = 0;
-    }else
- 
-    /* Do common setup for opcodes marked with one of the following
-    ** combinations of properties.
-    **
-    **           in1
-    **           in1 in2
-    **           in1 in2 out3
-    **           in1 in3
-    **
-    ** Variables pIn1, pIn2, and pIn3 are made to point to appropriate
-    ** registers for inputs.  Variable pOut points to the output register.
-    */
-    if( (opProperty & OPFLG_IN1)!=0 ){
-      assert( pOp->p1>0 );
-      assert( pOp->p1<=p->nMem );
-      pIn1 = &p->aMem[pOp->p1];
-      REGISTER_TRACE(pOp->p1, pIn1);
-      if( (opProperty & OPFLG_IN2)!=0 ){
+    if( opProperty & (OPFLG_OUT2_PRERELEASE | OPFLG_IN1 | OPFLG_IN2
+                      | OPFLG_IN3 | OPFLG_OUT2 | OPFLG_OUT3)
+    ){
+      if( (opProperty & OPFLG_OUT2_PRERELEASE)!=0 ){
         assert( pOp->p2>0 );
         assert( pOp->p2<=p->nMem );
-        pIn2 = &p->aMem[pOp->p2];
-        REGISTER_TRACE(pOp->p2, pIn2);
-        /* As currently implemented, in2 implies out3.  There is no reason
-        ** why this has to be, it just worked out that way. */
-        assert( (opProperty & OPFLG_OUT3)!=0 );
-        assert( pOp->p3>0 );
-        assert( pOp->p3<=p->nMem );
-        pOut = &p->aMem[pOp->p3];
-      }else if( (opProperty & OPFLG_IN3)!=0 ){
-        assert( pOp->p3>0 );
-        assert( pOp->p3<=p->nMem );
-        pIn3 = &p->aMem[pOp->p3];
-        REGISTER_TRACE(pOp->p3, pIn3);
+        pOut = &p->aMem[pOp->p2];
+        sqlite3VdbeMemReleaseExternal(pOut);
+        pOut->flags = MEM_Null;
+        pOut->n = 0;
+      }else{
+        if( (opProperty & OPFLG_IN1)!=0 ){
+          assert( pOp->p1>0 );
+          assert( pOp->p1<=p->nMem );
+          pIn1 = &p->aMem[pOp->p1];
+          REGISTER_TRACE(pOp->p1, pIn1);
+        }
+        if( (opProperty & (OPFLG_IN2|OPFLG_OUT2))!=0 ){
+          assert( pOp->p2>0 );
+          assert( pOp->p2<=p->nMem );
+          assert( (opProperty & OPFLG_OUT2)==0 || (opProperty & OPFLG_IN3)==0 );
+          pIn2 = pOut = &p->aMem[pOp->p2];
+        }
+        if( (opProperty & (OPFLG_IN3|OPFLG_OUT3))!=0 ){
+          assert( pOp->p3>0 );
+          assert( pOp->p3<=p->nMem );
+          pIn3 = pOut = &p->aMem[pOp->p3];
+        }
+#ifdef SQLITE_DEBUG
+        if( opProperty & OPFLG_IN2 ){ REGISTER_TRACE(pOp->p2, pIn2); }
+        if( opProperty & OPFLG_IN3 ){ REGISTER_TRACE(pOp->p3, pIn3); }
+#endif
       }
-    }else if( (opProperty & OPFLG_IN2)!=0 ){
-      assert( pOp->p2>0 );
-      assert( pOp->p2<=p->nMem );
-      pIn2 = &p->aMem[pOp->p2];
-      REGISTER_TRACE(pOp->p2, pIn2);
-    }else if( (opProperty & OPFLG_IN3)!=0 ){
-      assert( pOp->p3>0 );
-      assert( pOp->p3<=p->nMem );
-      pIn3 = &p->aMem[pOp->p3];
-      REGISTER_TRACE(pOp->p3, pIn3);
     }
-
+  
     switch( pOp->opcode ){
 
 /*****************************************************************************
@@ -786,10 +767,7 @@ case OP_Goto: {             /* jump */
 ** Write the current address onto register P1
 ** and then jump to address P2.
 */
-case OP_Gosub: {            /* jump */
-  assert( pOp->p1>0 );
-  assert( pOp->p1<=p->nMem );
-  pIn1 = &p->aMem[pOp->p1];
+case OP_Gosub: {            /* jump, in1 */
   assert( (pIn1->flags & MEM_Dyn)==0 );
   pIn1->flags = MEM_Int;
   pIn1->u.i = pc;
@@ -1075,10 +1053,7 @@ case OP_Move: {
 ** This instruction makes a deep copy of the value.  A duplicate
 ** is made of any string or blob constant.  See also OP_SCopy.
 */
-case OP_Copy: {             /* in1 */
-  assert( pOp->p2>0 );
-  assert( pOp->p2<=p->nMem );
-  pOut = &p->aMem[pOp->p2];
+case OP_Copy: {             /* in1, out2 */
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
   Deephemeralize(pOut);
@@ -1098,11 +1073,7 @@ case OP_Copy: {             /* in1 */
 ** during the lifetime of the copy.  Use OP_Copy to make a complete
 ** copy.
 */
-case OP_SCopy: {            /* in1 */
-  REGISTER_TRACE(pOp->p1, pIn1);
-  assert( pOp->p2>0 );
-  assert( pOp->p2<=p->nMem );
-  pOut = &p->aMem[pOp->p2];
+case OP_SCopy: {            /* in1, out2 */
   assert( pOut!=pIn1 );
   sqlite3VdbeMemShallowCopy(pOut, pIn1, MEM_Ephem);
   REGISTER_TRACE(pOp->p2, pOut);
@@ -1945,8 +1916,7 @@ case OP_Or: {             /* same as TK_OR, in1, in2, out3 */
 ** boolean complement in register P2.  If the value in register P1 is 
 ** NULL, then a NULL is stored in P2.
 */
-case OP_Not: {                /* same as TK_NOT, in1 */
-  pOut = &p->aMem[pOp->p2];
+case OP_Not: {                /* same as TK_NOT, in1, out2 */
   if( pIn1->flags & MEM_Null ){
     sqlite3VdbeMemSetNull(pOut);
   }else{
@@ -1961,8 +1931,7 @@ case OP_Not: {                /* same as TK_NOT, in1 */
 ** ones-complement of the P1 value into register P2.  If P1 holds
 ** a NULL then store a NULL in P2.
 */
-case OP_BitNot: {             /* same as TK_BITNOT, in1 */
-  pOut = &p->aMem[pOp->p2];
+case OP_BitNot: {             /* same as TK_BITNOT, in1, out2 */
   if( pIn1->flags & MEM_Null ){
     sqlite3VdbeMemSetNull(pOut);
   }else{
@@ -4333,8 +4302,8 @@ case OP_IdxRowid: {              /* out2-prerelease */
 ** If P5 is non-zero then the key value is increased by an epsilon prior 
 ** to the comparison.  This makes the opcode work like IdxLE.
 */
-case OP_IdxLT:          /* jump, in3 */
-case OP_IdxGE: {        /* jump, in3 */
+case OP_IdxLT:          /* jump */
+case OP_IdxGE: {        /* jump */
   VdbeCursor *pC;
   int res;
   UnpackedRecord r;
@@ -4696,19 +4665,13 @@ case OP_IntegrityCk: {
 **
 ** An assertion fails if P2 is not an integer.
 */
-case OP_RowSetAdd: {       /* in2 */
-  Mem *pIdx;
-  Mem *pVal;
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
-  pIdx = &p->aMem[pOp->p1];
-  assert( pOp->p2>0 && pOp->p2<=p->nMem );
-  pVal = &p->aMem[pOp->p2];
-  assert( (pVal->flags & MEM_Int)!=0 );
-  if( (pIdx->flags & MEM_RowSet)==0 ){
-    sqlite3VdbeMemSetRowSet(pIdx);
-    if( (pIdx->flags & MEM_RowSet)==0 ) goto no_mem;
+case OP_RowSetAdd: {       /* in1, in2 */
+  assert( (pIn2->flags & MEM_Int)!=0 );
+  if( (pIn1->flags & MEM_RowSet)==0 ){
+    sqlite3VdbeMemSetRowSet(pIn1);
+    if( (pIn1->flags & MEM_RowSet)==0 ) goto no_mem;
   }
-  sqlite3RowSetInsert(pIdx->u.pRowSet, pVal->u.i);
+  sqlite3RowSetInsert(pIn1->u.pRowSet, pIn2->u.i);
   break;
 }
 
@@ -4718,22 +4681,17 @@ case OP_RowSetAdd: {       /* in2 */
 ** register P3.  Or, if boolean index P1 is initially empty, leave P3
 ** unchanged and jump to instruction P2.
 */
-case OP_RowSetRead: {       /* jump, out3 */
-  Mem *pIdx;
+case OP_RowSetRead: {       /* jump, in1, out3 */
   i64 val;
-  assert( pOp->p1>0 && pOp->p1<=p->nMem );
   CHECK_FOR_INTERRUPT;
-  pIdx = &p->aMem[pOp->p1];
-  pOut = &p->aMem[pOp->p3];
-  if( (pIdx->flags & MEM_RowSet)==0 
-   || sqlite3RowSetNext(pIdx->u.pRowSet, &val)==0
+  if( (pIn1->flags & MEM_RowSet)==0 
+   || sqlite3RowSetNext(pIn1->u.pRowSet, &val)==0
   ){
     /* The boolean index is empty */
-    sqlite3VdbeMemSetNull(pIdx);
+    sqlite3VdbeMemSetNull(pIn1);
     pc = pOp->p2 - 1;
   }else{
     /* A value was pulled from the index */
-    assert( pOp->p3>0 && pOp->p3<=p->nMem );
     sqlite3VdbeMemSetInt64(pOut, val);
   }
   break;
