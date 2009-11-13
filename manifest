@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Force\s8-byte\smemory\salignment\son\smemory\sallocated\sfor\sVDBE\scursors.
-D 2009-11-13T17:05:54
+C Start\sreworking\sfts3\scode\sto\smatch\sthe\srest\sof\sSQLite\s(code\sconventions,\smalloc-failure\shandling\setc.).
+D 2009-11-13T10:36:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,17 +56,19 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 35bfa67d9cd659b799b8498895fe60b1e8bd3500
+F ext/fts3/fts3.c 835061e6c5324f80f13396418f9294b4691ac813
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3_expr.c 0bfdae44d0d8ea2cb3ccad32bb6d6843d78d1a2d
-F ext/fts3/fts3_expr.h b5412dcf565c6d90d6a8c22090ceb9ed8c745634
-F ext/fts3/fts3_hash.c e15e84d18f8df149ab290029872d4559c4c7c15a
-F ext/fts3/fts3_hash.h 004b759e1602ff16dfa02fea3ca1c77336ad6798
+F ext/fts3/fts3Int.h a6aa1a4ad280adf6487fbccacbbe986a2fabcb82
+F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
+F ext/fts3/fts3_hash.c 1af1833a4d581ee8d668bb71f5a500f7a0104982
+F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_tokenizer.c fcc8fdb5c161df7d61c77285ec2991da131f0181
+F ext/fts3/fts3_snippet.c 8ea9619247ac61c79aca650fc3307b8b4097b5f3
+F ext/fts3/fts3_tokenizer.c 185a212670a9bbdeb5cad6942305e681bce5c87b
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
+F ext/fts3/fts3_write.c 4285a2804ef308ed2eef946dae20d9d0361554d0
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -89,7 +88,7 @@ F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 0320def78eed84285c273f3d84dd20d8f26a0139
+F main.mk 5b9fc534b96fe16b6bb57883bb0e4e28cc902df6
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -188,7 +187,7 @@ F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 220a67047af393756f55760fdf442d935d0d88f3
 F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
 F src/test_func.c 1c94388a23d4a9e7cd62ec79d612d1bae2451fa2
-F src/test_hexio.c 1c0f4238c6fb36c890ce7c07d9c8e1cecedad9ad
+F src/test_hexio.c 160dba2ad21d164cade8fd6a12db0926ca574ac8
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c 25b3df15cca9ddb83927e002f4885d98a63bba0d
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
@@ -375,29 +374,30 @@ F test/fts2p.test 4b48c35c91e6a7dbf5ac8d1e5691823cc999aafb
 F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
-F test/fts3.test efb41507c90f47e8af2a9101d7460cddeb84656b
-F test/fts3aa.test 432d1d5c41939bb5405d4d6c80a9ec759b363393
-F test/fts3ab.test 7f6cf260ae80dda064023df8e8e503e9a412b91f
+F test/fts3.test f4f380d3717493605270dfa3b0fa893ea0afb18d
+F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
+F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
 F test/fts3ad.test 32a114c6f214081f244f642bde9fd5517938788e
-F test/fts3ae.test 31d8137fc7c14b5b991e3c4fa041ad2ac1255c7b
+F test/fts3ae.test ce32a13b34b0260928e4213b4481acf801533bda
 F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
-F test/fts3ag.test 1c316bedb40a7c962e38998df854ea3ae26a3daa
+F test/fts3ag.test 38d9c7dd4b607929498e8e0b32299af5665da1ab
 F test/fts3ah.test ba181d6a3dee0c929f0d69df67cac9c47cda6bff
 F test/fts3ai.test d29cee6ed653e30de478066881cec8aa766531b2
 F test/fts3aj.test 584facbc9ac4381a7ec624bfde677340ffc2a5a4
 F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
 F test/fts3al.test 6d19619402d2133773262652fc3f185cdf6be667
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
-F test/fts3an.test 4b4fdab5abe2f308bdc47f6e822df2bcae30361c
+F test/fts3an.test 931fa21bd80641ca594bfa32e105250a8a07918b
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
-F test/fts3c.test 4c7ef29b37aca3e8ebb6a39b57910caa6506034e
-F test/fts3d.test d92a47fe8ed59c9e53d2d8e6d2685bb380aadadc
+F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
+F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
+F test/fts3malloc.test 92dbea5665b6f333dd32886366481aa95ffaeb50
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -771,14 +771,11 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f0599d28fabe9e67a7150a91c266cb7655a2002e
-R b787bcf50272d59401284264a4dcbb30
-U drh
-Z 255150de2174a2682813e546e8d990c7
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFK/ZH1oxKgR168RlERAuF9AJ9hHIIG7PFtXPqnbvCge9luG/0VIACfc7kV
-v+sk467/hW51kXF6lY7carY=
-=mwCb
------END PGP SIGNATURE-----
+P bdc45ba77fb77771c8ff46b8d6c2dd29e6d3b019
+R a0400ee87fd3b17fac8e469e29fd58ca
+T *bgcolor * #f3f4f6
+T *branch * fts3-refactor
+T *sym-fts3-refactor *
+T -sym-trunk *
+U dan
+Z d56027263e4b0769a9172f5a73a4a788

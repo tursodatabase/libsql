@@ -11,11 +11,10 @@
 # This file implements regression tests for SQLite library.  The focus
 # of this script is testing the FTS3 module's optimize() function.
 #
-# $Id: fts3d.test,v 1.2 2008/07/15 21:32:07 shess Exp $
-#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/fts3_common.tcl
 
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 {
@@ -24,63 +23,24 @@ ifcapable !fts3 {
 }
 
 #*************************************************************************
-# Probe to see if support for the FTS3 dump_* functions is compiled in.
-# TODO(shess): Change main.mk to do the right thing and remove this test.
-db eval {
-  DROP TABLE IF EXISTS t1;
-  CREATE VIRTUAL TABLE t1 USING fts3(c);
-  INSERT INTO t1 (docid, c) VALUES (1, 'x');
-}
-
-set s {SELECT dump_terms(t1, 1) FROM t1 LIMIT 1}
-set r {1 {unable to use function dump_terms in the requested context}}
-if {[catchsql $s]==$r} {
-  finish_test
-  return
-}
-
-#*************************************************************************
 # Utility function to check for the expected terms in the segment
 # level/index.  _all version does same but for entire index.
 proc check_terms {test level index terms} {
-  # TODO(shess): Figure out why uplevel in do_test can't catch
-  # $level and $index directly.
-  set ::level $level
-  set ::index $index
-  do_test $test.terms {
-    execsql {
-      SELECT dump_terms(t1, $::level, $::index) FROM t1 LIMIT 1;
-    }
-  } [list $terms]
+  set where "level = $level AND idx = $index"
+  do_test $test.terms [list fts3_terms t1 $where] $terms
 }
 proc check_terms_all {test terms} {
-  do_test $test.terms {
-    execsql {
-      SELECT dump_terms(t1) FROM t1 LIMIT 1;
-    }
-  } [list $terms]
+  do_test $test.terms [list fts3_terms t1 1] $terms
 }
 
 # Utility function to check for the expected doclist for the term in
 # segment level/index.  _all version does same for entire index.
 proc check_doclist {test level index term doclist} {
-  # TODO(shess): Again, why can't the non-:: versions work?
-  set ::term $term
-  set ::level $level
-  set ::index $index
-  do_test $test {
-    execsql {
-      SELECT dump_doclist(t1, $::term, $::level, $::index) FROM t1 LIMIT 1;
-    }
-  } [list $doclist]
+  set where "level = $level AND idx = $index"
+  do_test $test.doclist [list fts3_doclist t1 $term $where] $doclist
 }
 proc check_doclist_all {test term doclist} {
-  set ::term $term
-  do_test $test {
-    execsql {
-      SELECT dump_doclist(t1, $::term) FROM t1 LIMIT 1;
-    }
-  } [list $doclist]
+  do_test $test.doclist [list fts3_doclist t1 $term 1] $doclist
 }
 
 #*************************************************************************
@@ -293,6 +253,7 @@ check_doclist fts3d-4.4.10 1 0 was {[2 0[1]]}
 
 # Optimize should leave the result in the level of the highest-level
 # prior segment.
+breakpoint
 do_test fts3d-4.5 {
   execsql {
     SELECT OPTIMIZE(t1) FROM t1 LIMIT 1;

@@ -316,6 +316,35 @@ static int utf8_to_utf8(
   return TCL_OK;
 }
 
+/*
+** USAGE:  read_varint BLOB VARNAME
+**
+** Read a varint from the start of BLOB. Set variable VARNAME to contain
+** the interpreted value. Return the number of bytes of BLOB consumed.
+*/
+static int read_varint(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  int nBlob;
+  unsigned char *zBlob;
+  sqlite3_int64 iVal;
+  int nVal;
+
+  if( objc!=3 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "BLOB VARNAME");
+    return TCL_ERROR;
+  }
+  zBlob = Tcl_GetByteArrayFromObj(objv[1], &nBlob);
+
+  nVal = sqlite3GetVarint(zBlob, (sqlite3_uint64 *)(&iVal));
+  Tcl_ObjSetVar2(interp, objv[2], 0, Tcl_NewWideIntObj(iVal), 0);
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(nVal));
+  return TCL_OK;
+}
+
 
 /*
 ** Register commands with the TCL interpreter.
@@ -331,6 +360,7 @@ int Sqlitetest_hexio_Init(Tcl_Interp *interp){
      { "hexio_render_int16",           hexio_render_int16    },
      { "hexio_render_int32",           hexio_render_int32    },
      { "utf8_to_utf8",                 utf8_to_utf8          },
+     { "read_varint",                  read_varint           },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

@@ -169,7 +169,7 @@ db eval {
   INSERT INTO t3(rowid, c) VALUES(1, $text);
   INSERT INTO t3(rowid, c) VALUES(2, 'Another lovely row');
 }
-for {set i 0} {$i<100} {incr i} {
+for {set i 0} {$i<68} {incr i} {
   db eval {INSERT INTO t3(rowid, c) VALUES(3+$i, $bigtext)}
   lappend ret 192
 }
