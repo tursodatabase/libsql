@@ -3192,6 +3192,7 @@ void sqlite3ExprIfTrue(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_BETWEEN: {
+      testcase( jumpIfNull==0 );
       exprCodeBetween(pParse, pExpr, dest, 1, jumpIfNull);
       break;
     }
@@ -3284,6 +3285,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_NOT: {
+      testcase( jumpIfNull==0 );
       sqlite3ExprIfTrue(pParse, pExpr->pLeft, dest, jumpIfNull);
       break;
     }
@@ -3331,6 +3333,7 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
       break;
     }
     case TK_BETWEEN: {
+      testcase( jumpIfNull==0 );
       exprCodeBetween(pParse, pExpr, dest, 0, jumpIfNull);
       break;
     }

@@ -221,7 +221,8 @@ int sqlite3_intarray_create(
   const char *zName,
   sqlite3_intarray **ppReturn
 ){
-  int rc;
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   sqlite3_intarray *p;
 
   *ppReturn = p = sqlite3_malloc( sizeof(*p) );
@@ -238,6 +239,7 @@ int sqlite3_intarray_create(
     rc = sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
   }
+#endif
   return rc;
 }
 
@@ -293,7 +295,7 @@ static int test_intarray_create(
   sqlite3 *db;
   const char *zName;
   sqlite3_intarray *pArray;
-  int rc;
+  int rc = SQLITE_OK;
   char zPtr[100];
 
   if( objc!=3 ){
@@ -302,7 +304,9 @@ static int test_intarray_create(
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ) return TCL_ERROR;
   zName = Tcl_GetString(objv[2]);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   rc = sqlite3_intarray_create(db, zName, &pArray);
+#endif
   if( rc!=SQLITE_OK ){
     assert( pArray==0 );
     Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
@@ -325,7 +329,7 @@ static int test_intarray_bind(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3_intarray *pArray;
-  int rc;
+  int rc = SQLITE_OK;
   int i, n;
   sqlite3_int64 *a;
 
@@ -335,6 +339,7 @@ static int test_intarray_bind(
   }
   pArray = (sqlite3_intarray*)sqlite3TestTextToPtr(Tcl_GetString(objv[1]));
   n = objc - 2;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
   a = sqlite3_malloc( sizeof(a[0])*n );
   if( a==0 ){
     Tcl_AppendResult(interp, "SQLITE_NOMEM", (char*)0);
@@ -349,6 +354,7 @@ static int test_intarray_bind(
     Tcl_AppendResult(interp, sqlite3TestErrorName(rc), (char*)0);
     return TCL_ERROR;
   }
+#endif
   return TCL_OK;
 }
 
