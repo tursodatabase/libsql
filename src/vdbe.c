@@ -3179,6 +3179,9 @@ case OP_SeekGt: {       /* jump, in3 */
   pC = p->apCsr[pOp->p1];
   assert( pC!=0 );
   assert( pC->pseudoTableReg==0 );
+  assert( OP_SeekLe == OP_SeekLt+1 );
+  assert( OP_SeekGe == OP_SeekLt+2 );
+  assert( OP_SeekGt == OP_SeekLt+3 );
   if( pC->pCursor!=0 ){
     oc = pOp->opcode;
     pC->nullRow = 0;
@@ -3208,12 +3211,12 @@ case OP_SeekGt: {       /* jump, in3 */
           ** integer. */
           res = 1;
           if( pIn3->r<0 ){
-            if( oc==OP_SeekGt || oc==OP_SeekGe ){
+            if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
               rc = sqlite3BtreeFirst(pC->pCursor, &res);
               if( rc!=SQLITE_OK ) goto abort_due_to_error;
             }
           }else{
-            if( oc==OP_SeekLt || oc==OP_SeekLe ){
+            if( oc<=OP_SeekLe ){  assert( oc==OP_SeekLt || oc==OP_SeekLe );
               rc = sqlite3BtreeLast(pC->pCursor, &res);
               if( rc!=SQLITE_OK ) goto abort_due_to_error;
             }
@@ -3245,11 +3248,20 @@ case OP_SeekGt: {       /* jump, in3 */
       assert( nField>0 );
       r.pKeyInfo = pC->pKeyInfo;
       r.nField = (u16)nField;
-      if( oc==OP_SeekGt || oc==OP_SeekLe ){
-        r.flags = UNPACKED_INCRKEY;
-      }else{
-        r.flags = 0;
-      }
+
+      /* The next line of code computes as follows, only faster:
+      **   if( oc==OP_SeekGt || oc==OP_SeekLe ){
+      **     r.flags = UNPACKED_INCRKEY;
+      **   }else{
+      **     r.flags = 0;
+      **   }
+      */
+      r.flags = UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt));
+      assert( oc!=OP_SeekGt || r.flags==UNPACKED_INCRKEY );
+      assert( oc!=OP_SeekLe || r.flags==UNPACKED_INCRKEY );
+      assert( oc!=OP_SeekGe || r.flags==0 );
+      assert( oc!=OP_SeekLt || r.flags==0 );
+
       r.aMem = &p->aMem[pOp->p3];
       rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, &r, 0, 0, &res);
       if( rc!=SQLITE_OK ){
@@ -3262,7 +3274,7 @@ case OP_SeekGt: {       /* jump, in3 */
 #ifdef SQLITE_TEST
     sqlite3_search_count++;
 #endif
-    if( oc==OP_SeekGe || oc==OP_SeekGt ){
+    if( oc>=OP_SeekGe ){  assert( oc==OP_SeekGe || oc==OP_SeekGt );
       if( res<0 || (res==0 && oc==OP_SeekGt) ){
         rc = sqlite3BtreeNext(pC->pCursor, &res);
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
