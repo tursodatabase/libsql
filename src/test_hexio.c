@@ -316,6 +316,19 @@ static int utf8_to_utf8(
   return TCL_OK;
 }
 
+static int getFts3Varint(const char *p, sqlite_int64 *v){
+  const unsigned char *q = (const unsigned char *) p;
+  sqlite_uint64 x = 0, y = 1;
+  while( (*q & 0x80) == 0x80 ){
+    x += y * (*q++ & 0x7f);
+    y <<= 7;
+  }
+  x += y * (*q++);
+  *v = (sqlite_int64) x;
+  return (int) (q - (unsigned char *)p);
+}
+
+
 /*
 ** USAGE:  read_varint BLOB VARNAME
 **
@@ -339,7 +352,7 @@ static int read_varint(
   }
   zBlob = Tcl_GetByteArrayFromObj(objv[1], &nBlob);
 
-  nVal = sqlite3GetVarint(zBlob, (sqlite3_uint64 *)(&iVal));
+  nVal = getFts3Varint(zBlob, (sqlite3_uint64 *)(&iVal));
   Tcl_ObjSetVar2(interp, objv[2], 0, Tcl_NewWideIntObj(iVal), 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nVal));
   return TCL_OK;

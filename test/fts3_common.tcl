@@ -80,6 +80,10 @@ proc fts3_integrity_check {tbl} {
     }
   }
 
+  foreach key [array names C] {
+    #puts "$key -> $C($key)"
+  }
+
 
   db eval "SELECT * FROM ${tbl}_content" E {
     set iCol 0
@@ -89,12 +93,17 @@ proc fts3_integrity_check {tbl} {
       set sql {SELECT fts3_tokenizer_test('simple', $c)}
 
       foreach {pos term dummy} [db one $sql] {
-        if {$C($iDoc,$iCol,$pos) != "$term"} {
-          set    es "Error at docid=$iDoc col=$iCol pos=$pos. "
-          append es "Index has \"$C($iDoc,$iCol,$pos)\", document has \"$term\""
+        if {![info exists C($iDoc,$iCol,$pos)]} {
+          set es "Error at docid=$iDoc col=$iCol pos=$pos. Index is missing"
           lappend errors $es
+        } else {
+          if {$C($iDoc,$iCol,$pos) != "$term"} {
+            set    es "Error at docid=$iDoc col=$iCol pos=$pos. Index "
+            append es "has \"$C($iDoc,$iCol,$pos)\", document has \"$term\""
+            lappend errors $es
+          }
+          unset C($iDoc,$iCol,$pos)
         }
-        unset C($iDoc,$iCol,$pos)
       }
       incr iCol
     }
@@ -245,7 +254,7 @@ proc fts3_read2 {tbl where varname} {
     } else {
       db eval " SELECT block 
                 FROM ${tbl}_segments 
-                WHERE blockid>=$start_block AND blockid<$leaves_end_block
+                WHERE blockid>=$start_block AND blockid<=$leaves_end_block
                 ORDER BY blockid
       " {
         foreach {t d} [fts3_readleaf $block] { lappend a($t) $d }
