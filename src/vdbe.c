@@ -555,6 +555,7 @@ int sqlite3VdbeExec(
   Vdbe *p                    /* The VDBE */
 ){
   int pc;                    /* The program counter */
+  Op *aOp = p->aOp;          /* Copy of p->aOp */
   Op *pOp;                   /* Current operation */
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
@@ -599,7 +600,7 @@ int sqlite3VdbeExec(
     printf("VDBE Program Listing:\n");
     sqlite3VdbePrintSql(p);
     for(i=0; i<p->nOp; i++){
-      sqlite3VdbePrintOp(stdout, i, &p->aOp[i]);
+      sqlite3VdbePrintOp(stdout, i, &aOp[i]);
     }
   }
   if( fileExists(db, "vdbe_trace") ){
@@ -614,7 +615,7 @@ int sqlite3VdbeExec(
     origPc = pc;
     start = sqlite3Hwtime();
 #endif
-    pOp = &p->aOp[pc];
+    pOp = &aOp[pc];
 
     /* Only allow tracing if SQLITE_DEBUG is defined.
     */
@@ -847,6 +848,7 @@ case OP_Halt: {
       ** as the p2 of the calling OP_Program.  */
       pc = p->aOp[pc].p2-1;
     }
+    aOp = p->aOp;
     break;
   }
 
@@ -1383,7 +1385,7 @@ case OP_Function: {
 
   ctx.isError = 0;
   if( ctx.pFunc->flags & SQLITE_FUNC_NEEDCOLL ){
-    assert( pOp>p->aOp );
+    assert( pOp>aOp );
     assert( pOp[-1].p4type==P4_COLLSEQ );
     assert( pOp[-1].opcode==OP_CollSeq );
     ctx.pColl = pOp[-1].p4.pColl;
@@ -4873,7 +4875,7 @@ case OP_Program: {        /* jump */
   p->nMem = pFrame->nChildMem;
   p->nCursor = (u16)pFrame->nChildCsr;
   p->apCsr = (VdbeCursor **)&p->aMem[p->nMem+1];
-  p->aOp = pProgram->aOp;
+  p->aOp = aOp = pProgram->aOp;
   p->nOp = pProgram->nOp;
   pc = -1;
 
@@ -5633,7 +5635,7 @@ default: {          /* This is really OP_Noop and OP_Explain */
       pOp->cnt++;
 #if 0
         fprintf(stdout, "%10llu ", elapsed);
-        sqlite3VdbePrintOp(stdout, origPc, &p->aOp[origPc]);
+        sqlite3VdbePrintOp(stdout, origPc, &aOp[origPc]);
 #endif
     }
 #endif
