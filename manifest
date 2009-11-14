@@ -1,5 +1,5 @@
-C Start\sreworking\sfts3\scode\sto\smatch\sthe\srest\sof\sSQLite\s(code\sconventions,\smalloc-failure\shandling\setc.).
-D 2009-11-13T10:36:21
+C Further\sOOM\stesting\sfor\sfts3\scode.\sAdd\sTcl\scode\simplementing\san\sintegrity-check\sfor\sfts3.
+D 2009-11-14T11:41:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,9 +56,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 835061e6c5324f80f13396418f9294b4691ac813
+F ext/fts3/fts3.c 1de6c9d40f1534eb542020eba56fb517780ee968
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h a6aa1a4ad280adf6487fbccacbbe986a2fabcb82
+F ext/fts3/fts3Int.h f8419da445790c0666d4b4d72dc15a07dd7ae93e
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
 F ext/fts3/fts3_hash.c 1af1833a4d581ee8d668bb71f5a500f7a0104982
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
@@ -375,6 +375,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test f4f380d3717493605270dfa3b0fa893ea0afb18d
+F test/fts3_common.tcl 2a38db65c919b5aa7b88d9c204e19e3d66fd810a
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
@@ -397,7 +398,7 @@ F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3malloc.test 92dbea5665b6f333dd32886366481aa95ffaeb50
+F test/fts3malloc.test b169661934883d99dc33a1dde1959a0448bd4f11
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -771,11 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bdc45ba77fb77771c8ff46b8d6c2dd29e6d3b019
-R a0400ee87fd3b17fac8e469e29fd58ca
-T *bgcolor * #f3f4f6
-T *branch * fts3-refactor
-T *sym-fts3-refactor *
-T -sym-trunk *
+P 30a92f1132801c7582007ee625c577ea2ac31cdf
+R b57a3a365be0f7386d8b2b667cc40aff
 U dan
-Z d56027263e4b0769a9172f5a73a4a788
+Z c9155f22386e8e971e228afde4beba2a

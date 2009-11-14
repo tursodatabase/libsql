@@ -278,6 +278,8 @@
 # define SQLITE_CORE 1
 #endif
 
+#include "fts3Int.h"
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -285,14 +287,10 @@
 #include <string.h>
 
 #include "fts3.h"
-#include "fts3_hash.h"
-#include "fts3_tokenizer.h"
 #ifndef SQLITE_CORE 
 # include "sqlite3ext.h"
   SQLITE_EXTENSION_INIT1
 #endif
-
-#include "fts3Int.h"
 
 
 
@@ -1282,14 +1280,14 @@ static int fts3PoslistNearMerge(
 /*
 ** Values that may be used as the first parameter to fts3DoclistMerge().
 */
-#define MERGE_AND        1        /* D + D -> D */
 #define MERGE_NOT        2        /* D + D -> D */
-#define MERGE_OR         3        /* D + D -> D */
-#define MERGE_POS_OR     4        /* P + P -> P */
-#define MERGE_PHRASE     5        /* P + P -> D */
-#define MERGE_POS_PHRASE 6        /* P + P -> P */
-#define MERGE_NEAR       7        /* P + P -> D */
-#define MERGE_POS_NEAR   8        /* P + P -> P */
+#define MERGE_AND        3        /* D + D -> D */
+#define MERGE_OR         4        /* D + D -> D */
+#define MERGE_POS_OR     5        /* P + P -> P */
+#define MERGE_PHRASE     6        /* P + P -> D */
+#define MERGE_POS_PHRASE 7        /* P + P -> P */
+#define MERGE_NEAR       8        /* P + P -> D */
+#define MERGE_POS_NEAR   9        /* P + P -> P */
 
 static int fts3DoclistMerge(
   int mergetype,                  /* One of the MERGE_XXX constants */
@@ -1690,8 +1688,9 @@ static int evalFts3Expr(
   char **paOut,                   /* OUT: Pointer to malloc'd result buffer */
   int *pnOut                      /* OUT: Size of buffer at *paOut */
 ){
-  int rc = SQLITE_OK;
+  int rc = SQLITE_OK;             /* Return code */
 
+  /* Zero the output parameters. */
   *paOut = 0;
   *pnOut = 0;
 
@@ -1730,7 +1729,7 @@ static int evalFts3Expr(
 
             nParam1 = pExpr->nNear+1;
             nParam2 = nParam1+pLeft->pPhrase->nToken+pRight->pPhrase->nToken-2;
-            aBuffer = sqlite3_malloc(nLeft + nRight);
+            aBuffer = sqlite3_malloc(nLeft+nRight+1);
             rc = fts3DoclistMerge(mergetype, nParam1, nParam2, aBuffer,
                 pnOut, aLeft, nLeft, aRight, nRight
             );
@@ -1743,29 +1742,28 @@ static int evalFts3Expr(
             break;
           }
 
-          case FTSQUERY_NOT: {
-            fts3DoclistMerge(MERGE_NOT, 0, 0, aLeft, pnOut,
-                aLeft, nLeft, aRight, nRight
-            );
-            *paOut = aLeft;
-            break;
-          }
-
-          case FTSQUERY_AND: {
-            fts3DoclistMerge(MERGE_AND, 0, 0, aLeft, pnOut,
-                aLeft, nLeft, aRight, nRight
-            );
-            *paOut = aLeft;
-            break;
-          }
-
           case FTSQUERY_OR: {
-            char *aBuffer = sqlite3_malloc(nRight+nLeft);
+            /* Allocate a buffer for the output. The maximum size is the
+            ** sum of the sizes of the two input buffers. The +1 term is
+            ** so that a buffer of zero bytes is never allocated - this can
+            ** cause fts3DoclistMerge() to incorrectly return SQLITE_NOMEM.
+            */
+            char *aBuffer = sqlite3_malloc(nRight+nLeft+1);
             rc = fts3DoclistMerge(MERGE_OR, 0, 0, aBuffer, pnOut,
                 aLeft, nLeft, aRight, nRight
             );
             *paOut = aBuffer;
             sqlite3_free(aLeft);
+            break;
+          }
+
+          case FTSQUERY_AND:
+          case FTSQUERY_NOT: {
+            assert( FTSQUERY_NOT==MERGE_NOT && FTSQUERY_AND==MERGE_AND );
+            fts3DoclistMerge(pExpr->eType, 0, 0, aLeft, pnOut,
+                aLeft, nLeft, aRight, nRight
+            );
+            *paOut = aLeft;
             break;
           }
         }

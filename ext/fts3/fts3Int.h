@@ -15,6 +15,10 @@
 #ifndef _FTSINT_H
 #define _FTSINT_H
 
+#if !defined(NDEBUG) && !defined(SQLITE_DEBUG) 
+# define NDEBUG 1
+#endif
+
 #include <sqlite3.h>
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
