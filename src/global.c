@@ -14,7 +14,6 @@
 */
 #include "sqliteInt.h"
 
-
 /* An array to map all upper-case characters into their corresponding
 ** lower-case character. 
 **
@@ -188,3 +187,12 @@ SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
 ** and dileterious behavior.
 */
 int sqlite3PendingByte = 0x40000000;
+
+#include "opcodes.h"
+/*
+** Properties of opcodes.  The OPFLG_INITIALIZER macro is
+** created by mkopcodeh.awk during compilation.  Data is obtained
+** from the comments following the "case OP_xxxx:" statements in
+** the vdbe.c file.  
+*/
+const unsigned char sqlite3OpcodeProperty[] = OPFLG_INITIALIZER;
