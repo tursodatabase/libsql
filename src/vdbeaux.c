@@ -2786,9 +2786,9 @@ int sqlite3VdbeRecordCompare(
 
   pKeyInfo = pPKey2->pKeyInfo;
   mem1.enc = pKeyInfo->enc;
-  mem1.db = pKeyInfo->db;
-  mem1.flags = 0;
-  VVA_ONLY( mem1.zMalloc = 0; ) /* Only used by assert() statements */
+  mem1.db = 0;
+  /* mem1.flags = 0;  // Will be initialized by sqlite3VdbeSerialGet() */
+  VVA_ONLY( mem1.zMalloc = 0; ) /* Only needed by assert() statements */
 
   /* Compilers may complain that mem1.u.i is potentially uninitialized.
   ** We could initialize it, as shown here, to silence those complaints.
