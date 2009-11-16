@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Optimizations\sto\sthe\smain\sloop\sinside\ssqlite3VdbeExec()\sto\shelp\sVDBE\sbyte\scode\nrun\sa\sfew\spercent\sfaster.
-D 2009-11-14T23:22:23
+C Optimizations\sto\sthe\ssqlite3VdbeRecordCompare()\sroutine\shelp\sit\sto\srun\s12.5%\nfaster\sfor\ssome\straces.
+D 2009-11-16T02:14:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -214,7 +214,7 @@ F src/vdbe.c 0bc1c3aaa0c5c13240c2e39ce3b9ae92586fc30b
 F src/vdbe.h 5f35750615163d1064052785b4a9f0eb004a720d
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
-F src/vdbeaux.c 45d1e150d811da2bafe820136b1c21616b2e5fd4
+F src/vdbeaux.c d86062c20dd11f76d7e84148eb90ad2e67c692bd
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vtab.c 456fc226614569f0e46f216e33265bea268bd917
@@ -771,14 +771,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8bd3cc82720ac7e8a9d4a03a882b6f8226867b0d
-R cb3a1da29955733378e76881557b866a
+P d622ac6ac7a297754494d3a33dbaeea02836272e
+R 8a77d446e8971c8c821f82b0e714ed44
 U drh
-Z afa90cd668940f60ced698df17c38b7b
+Z 16e3d159b2fe2d607c2cd029c6925807
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFK/zu0oxKgR168RlERAk/iAKCEVk6/+bUzTWEw8F/wvHvw0zgqfgCcC5l5
-k8ZGSZvLtvYXVF3tlPQ2ip8=
-=cEZ3
+iD8DBQFLALVsoxKgR168RlERAuTkAJ9U+8DcIbrOHGi1j8U4oY3KYE4vIgCdGFuq
+b9g15DE5dZ/IvtQYKf2f8vg=
+=1X66
 -----END PGP SIGNATURE-----
