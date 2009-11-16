@@ -19,20 +19,19 @@ ifcapable !fts3 { finish_test ; return }
 source $testdir/malloc_common.tcl
 source $testdir/fts3_common.tcl
 
+# Ensure the lookaside buffer is disabled for these tests.
+#
+sqlite3 db test.db
+sqlite3_db_config_lookaside db 0 0 0
+
 set sqlite_fts3_enable_parentheses 1
+set DO_MALLOC_TEST 1
 
-if 0 {
-do_malloc_test fts3_malloc-1.1 -sqlbody {
-  CREATE VIRTUAL TABLE ft USING fts3(a, b, c);
-}
-do_malloc_test fts3_malloc-1.2 -sqlprep {
-  CREATE VIRTUAL TABLE ft USING fts3(a, b, c);
-} -sqlbody {
-  DROP TABLE ft;
-}
-}
-
-set DO_MALLOC_TEST 0
+# Test organization:
+#
+# fts3_malloc-1.*: Test CREATE and DROP table statements.
+#
+#
 
 #-------------------------------------------------------------------------
 # This proc is used to test a single SELECT statement. Parameter $name is
@@ -55,15 +54,15 @@ set DO_MALLOC_TEST 0
 # is executed just once. In this case the test case passes if the results
 # match the expected results passed via parameter $result.
 #
-proc do_select_test {name sql result} {
 
+proc do_passive_test {name sql catchres} {
   if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
 
-  if {$::DO_MALLOC_TEST } {
-    set answers [list {1 {out of memory}} [list 0 $result]]
+  if {$::DO_MALLOC_TEST} {
+    set answers [list {1 {out of memory}} $catchres]
     set modes [list 100000 transient 1 persistent]
   } else {
-    set answers [list [list 0 $result]]
+    set answers [list $catchres]
     set modes [list 0 nofail]
   }
   set str [join $answers " OR "]
@@ -81,6 +80,14 @@ proc do_select_test {name sql result} {
       if {$nFail==0} break
     }
   }
+}
+
+proc do_select_test {name sql result} {
+  do_passive_test $name $sql [list 0 $result]
+}
+
+proc do_error_test {name sql error} {
+  do_passive_test $name $sql [list 1 $error]
 }
 
 #-------------------------------------------------------------------------
@@ -107,6 +114,8 @@ proc do_select_test {name sql result} {
 # being modified. Parameter $sql contains the SQL statement to test.
 #
 proc do_write_test {name tbl sql} {
+  if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
+
   # Figure out an statement to get a checksum for table $tbl.
   db eval "SELECT * FROM $tbl" V break
   set cksumsql "SELECT md5sum([join [concat rowid $V(*)] ,]) FROM $tbl"
@@ -114,7 +123,6 @@ proc do_write_test {name tbl sql} {
   # Calculate the initial table checksum.
   set cksum1 [db one $cksumsql]
 
-  if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
 
   if {$::DO_MALLOC_TEST } {
     set answers [list {1 {out of memory}} {0 {}}]
@@ -152,10 +160,36 @@ proc normal_list {l} {
   set ret
 }
 
-db close
-file delete -force test.db test.db-journal
-sqlite3 db test.db
-sqlite3_db_config_lookaside db 0 0 0
+
+do_write_test fts3_malloc-1.1 sqlite_master {
+  CREATE VIRTUAL TABLE ft1 USING fts3(a, b)
+}
+do_write_test fts3_malloc-1.2 sqlite_master {
+  CREATE VIRTUAL TABLE ft2 USING fts3([a], [b]);
+}
+do_write_test fts3_malloc-1.3 sqlite_master {
+  CREATE VIRTUAL TABLE ft3 USING fts3('a', "b");
+}
+do_write_test fts3_malloc-1.4 sqlite_master {
+  CREATE VIRTUAL TABLE ft4 USING fts3(`a`, 'fred''s column');
+}
+do_error_test fts3_malloc-1.5 {
+  CREATE VIRTUAL TABLE ft5 USING fts3(a, b, tokenize unknown)
+} {unknown tokenizer: unknown}
+do_write_test fts3_malloc-1.6 sqlite_master {
+  CREATE VIRTUAL TABLE ft6 USING fts3(a, b, tokenize porter)
+}
+
+# Test the xConnect/xDisconnect methods:
+db eval { ATTACH 'test2.db' AS aux }
+do_write_test fts3_malloc-1.6 aux.sqlite_master {
+  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
+}
+do_write_test fts3_malloc-1.6 aux.sqlite_master {
+  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
+}
+
+
 
 do_test fts3_malloc-2.0 {
   execsql { CREATE VIRTUAL TABLE ft USING fts3(a, b) }

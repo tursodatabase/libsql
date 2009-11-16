@@ -435,7 +435,7 @@ int sqlite3Fts3VarintLen(sqlite3_uint64 v){
 void sqlite3Fts3Dequote(char *z){
   int quote;
   int i, j;
-  if( z==0 ) return;
+
   quote = z[0];
   switch( quote ){
     case '\'':  break;
@@ -494,21 +494,21 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 
   assert( p->nPendingData==0 );
 
+  /* Free any prepared statements held */
   for(i=0; i<SizeofArray(p->aStmt); i++){
     sqlite3_finalize(p->aStmt[i]);
   }
-
-  if( p->pTokenizer ){
-    p->pTokenizer->pModule->xDestroy(p->pTokenizer);
-  }
-
   sqlite3_free(p->zSelectLeaves);
+
+  /* Invoke the tokenizer destructor to free the tokenizer. */
+  p->pTokenizer->pModule->xDestroy(p->pTokenizer);
+
   sqlite3_free(p);
   return SQLITE_OK;
 }
 
 /*
-** The xDisconnect() virtual table method.
+** The xDestroy() virtual table method.
 */
 static int fts3DestroyMethod(sqlite3_vtab *pVtab){
   int rc;                         /* Return code */
@@ -562,7 +562,7 @@ static int fts3DeclareVtab(Fts3Table *p){
       "CREATE TABLE x(%s %Q HIDDEN, docid HIDDEN)", zCols, p->zName
   );
 
-  if( !zSql || !zCols ){
+  if( !zCols || !zSql ){
     rc = SQLITE_NOMEM;
   }else{
     rc = sqlite3_declare_vtab(p->db, zSql);
@@ -588,7 +588,7 @@ static int fts3CreateTables(Fts3Table *p){
   zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
   for(i=0; zContentCols && i<p->nColumn; i++){
     char *z = p->azColumn[i];
-    zContentCols = sqlite3_mprintf("%z, c%d%s", zContentCols, i+1, z);
+    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i+1, z);
   }
 
   /* Create the whole SQL script */
@@ -610,7 +610,7 @@ static int fts3CreateTables(Fts3Table *p){
   /* Unless a malloc() failure has occurred, execute the SQL script to 
   ** create the tables used to store data for this FTS3 virtual table.
   */
-  if( zSql==0 || zContentCols==0 ){
+  if( zContentCols==0 || zSql==0 ){
     rc = SQLITE_NOMEM;
   }else{
     rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
