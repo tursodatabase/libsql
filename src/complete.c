@@ -24,8 +24,7 @@
 */
 #ifndef SQLITE_AMALGAMATION
 #ifdef SQLITE_ASCII
-extern const char sqlite3IsAsciiIdChar[];
-#define IdChar(C)  (((c=C)&0x80)!=0 || (c>0x1f && sqlite3IsAsciiIdChar[c-0x20]))
+#define IdChar(C)  ((sqlite3CtypeMap[(unsigned char)C]&0x46)!=0)
 #endif
 #ifdef SQLITE_EBCDIC
 extern const char sqlite3IsEbcdicIdChar[];
@@ -182,7 +181,9 @@ int sqlite3_complete(const char *zSql){
         break;
       }
       default: {
-        int c;
+#ifdef SQLITE_EBCDIC
+        unsigned char c;
+#endif
         if( IdChar((u8)*zSql) ){
           /* Keywords and unquoted identifiers */
           int nId;
