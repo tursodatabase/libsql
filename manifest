@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Back\sout\spart\sof\sthe\schange\sin\s[23ea2b700fd6d28d]\ssince\sTH3\sreveals\ssome\nproblems\sin\sOOM\ssituations.
-D 2009-11-16T21:28:45
+C Fix\sa\sreference\sto\sfreed\smemory\sthat\scan\soccur\sfollowing\san\sOOM\serror\sin\nwhere.c.
+D 2009-11-16T22:54:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +219,7 @@ F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vtab.c 456fc226614569f0e46f216e33265bea268bd917
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c d5c9692fc228bdc4826f50971b3801068cd4513b
+F src/where.c 5a8ed38834465e47c9e28ea5462f3ad8b90000c7
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -771,14 +771,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1c9243b0760741f48b15efb0da661255177aed8b
-R 2a3aeb21f4a3bbfe7cfca935b177d6e0
+P 15d215d62df72c1bf1e605629692ee40d96546a6
+R d253a6762b5dd3d0bde3393a87de556c
 U drh
-Z 9c2b416f8f787b6f334bf09d3499d0a9
+Z 12a310b917e34b7cdac3faa62159e6fc
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLAcQQoxKgR168RlERAs/sAJ9LLCrNdB5gT6NALFZz9zKR408UXQCfQ3la
-6skLmIYJc1m0uPoQURk432Y=
-=7uKK
+iD8DBQFLAdg+oxKgR168RlERAgPrAJ9mhwpaoSYOxmJuy6MMcqfG8OzxTQCfVnkP
+04+k4Lpu0ZIEUGV/hFCqsz8=
+=itlO
 -----END PGP SIGNATURE-----

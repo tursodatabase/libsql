@@ -2594,15 +2594,13 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** Code an OP_Affinity opcode to apply the column affinity string zAff
 ** to the n registers starting at base. 
 **
-** Buffer zAff was allocated using sqlite3DbMalloc(). It is the 
-** responsibility of this function to arrange for it to be eventually
-** freed using sqlite3DbFree().
+** This routine assumes that zAff is dynamic and makes its own copy.
 */
 static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   Vdbe *v = pParse->pVdbe;
   assert( v!=0 );
   sqlite3VdbeAddOp2(v, OP_Affinity, base, n);
-  sqlite3VdbeChangeP4(v, -1, zAff, P4_DYNAMIC);
+  sqlite3VdbeChangeP4(v, -1, zAff, 0);
   sqlite3ExprCacheAffinityChange(pParse, base, n);
 }
 
@@ -3130,7 +3128,6 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprCacheRemove(pParse, regBase+nEq);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
-      zAff = sqlite3DbStrDup(pParse->db, zAff);
       if( zAff 
        && sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE
       ){
@@ -3142,6 +3139,7 @@ static Bitmask codeOneLoopStart(
       codeApplyAffinity(pParse, regBase, nEq+1, zAff);
       nConstraint++;
     }
+    sqlite3DbFree(pParse->db, zAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
