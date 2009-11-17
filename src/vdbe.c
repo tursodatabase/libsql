@@ -2292,17 +2292,18 @@ op_column_out:
 ** memory cell in the range.
 */
 case OP_Affinity: {
-  char *zAffinity;   /* The affinity to be applied */
-  Mem *pData0;       /* First register to which to apply affinity */
-  Mem *pLast;        /* Last register to which to apply affinity */
-  Mem *pRec;         /* Current register */
+  const char *zAffinity;   /* The affinity to be applied */
+  char cAff;               /* A single character of affinity */
 
   zAffinity = pOp->p4.z;
-  pData0 = &aMem[pOp->p1];
-  pLast = &pData0[pOp->p2-1];
-  for(pRec=pData0; pRec<=pLast; pRec++){
-    ExpandBlob(pRec);
-    applyAffinity(pRec, zAffinity[pRec-pData0], encoding);
+  assert( zAffinity!=0 );
+  assert( zAffinity[pOp->p2]==0 );
+  pIn1 = &aMem[pOp->p1];
+  while( (cAff = *(zAffinity++))!=0 ){
+    assert( pIn1 <= &p->aMem[p->nMem] );
+    ExpandBlob(pIn1);
+    applyAffinity(pIn1, cAff, encoding);
+    pIn1++;
   }
   break;
 }
@@ -3255,6 +3256,7 @@ case OP_SeekGt: {       /* jump, in3 */
       assert( oc!=OP_SeekLt || r.flags==0 );
 
       r.aMem = &aMem[pOp->p3];
+      ExpandBlob(r.aMem);
       rc = sqlite3BtreeMovetoUnpacked(pC->pCursor, &r, 0, 0, &res);
       if( rc!=SQLITE_OK ){
         goto abort_due_to_error;

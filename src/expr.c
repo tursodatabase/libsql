@@ -1259,6 +1259,71 @@ int sqlite3ExprIsInteger(Expr *p, int *pValue){
 }
 
 /*
+** Return FALSE if there is no chance that the expression can be NULL.
+**
+** If the expression might be NULL or if the expression is too complex
+** to tell return TRUE.  
+**
+** This routine is used as an optimization, to skip OP_IsNull opcodes
+** when we know that a value cannot be NULL.  Hence, a false positive
+** (returning TRUE when in fact the expression can never be NULL) might
+** be a small performance hit but is otherwise harmless.  On the other
+** hand, a false negative (returning FALSE when the result could be NULL)
+** will likely result in an incorrect answer.  So when in doubt, return
+** TRUE.
+*/
+int sqlite3ExprCanBeNull(const Expr *p){
+  u8 op;
+  while( p->op==TK_UPLUS || p->op==TK_MINUS ){ p = p->pLeft; }
+  op = p->op;
+  if( op==TK_REGISTER ) op = p->op2;
+  switch( op ){
+    case TK_INTEGER:
+    case TK_STRING:
+    case TK_FLOAT:
+    case TK_BLOB:
+      return 0;
+    default:
+      return 1;
+  }
+}
+
+/*
+** Return TRUE if the given expression is a constant which would be
+** unchanged by OP_Affinity with the affinity given in the second
+** argument.
+**
+** This routine is used to determine if the OP_Affinity operation
+** can be omitted.  When in doubt return FALSE.  A false negative
+** is harmless.  A false positive, however, can result in the wrong
+** answer.
+*/
+int sqlite3ExprNeedsNoAffinityChange(const Expr *p, char aff){
+  u8 op;
+  if( aff==SQLITE_AFF_NONE ) return 1;
+  while( p->op==TK_UPLUS || p->op==TK_MINUS ){ p = p->pLeft; }
+  op = p->op;
+  if( op==TK_REGISTER ) op = p->op2;
+  switch( op ){
+    case TK_INTEGER: {
+      return aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC;
+    }
+    case TK_FLOAT: {
+      return aff==SQLITE_AFF_REAL || aff==SQLITE_AFF_NUMERIC;
+    }
+    case TK_STRING: {
+      return aff==SQLITE_AFF_TEXT;
+    }
+    case TK_BLOB: {
+      return 1;
+    }
+    default: {
+      return 0;
+    }
+  }
+}
+
+/*
 ** Return TRUE if the given string is a row-id column name.
 */
 int sqlite3IsRowid(const char *z){
