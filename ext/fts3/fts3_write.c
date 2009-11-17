@@ -874,6 +874,33 @@ static int fts3SegReaderCmp2(Fts3SegReader *pLhs, Fts3SegReader *pRhs){
 }
 
 /*
+** Compare the term that the Fts3SegReader object passed as the first argument
+** points to with the term specified by arguments zTerm and nTerm. 
+**
+** If the pSeg iterator is already at EOF, return 0. Otherwise, return
+** -ve if the pSeg term is less than zTerm/nTerm, 0 if the two terms are
+** equal, or +ve if the pSeg term is greater than zTerm/nTerm.
+*/
+static int fts3SegReaderTermCmp(
+  Fts3SegReader *pSeg,            /* Segment reader object */
+  const char *zTerm,              /* Term to compare to */
+  int nTerm                       /* Size of term zTerm in bytes */
+){
+  int res = 0;
+  if( pSeg->aNode ){
+    if( pSeg->nTerm>nTerm ){
+      res = memcmp(pSeg->zTerm, zTerm, nTerm);
+    }else{
+      res = memcmp(pSeg->zTerm, zTerm, pSeg->nTerm);
+    }
+    if( res==0 ){
+      res = pSeg->nTerm-nTerm;
+    }
+  }
+  return res;
+}
+
+/*
 ** Argument apSegment is an array of nSegment elements. It is known that
 ** the final (nSegment-nSuspect) members are already in sorted order
 ** (according to the comparison function provided). This function shuffles
@@ -1427,8 +1454,9 @@ static void fts3ColumnFilter(int iCol, char **ppList, int *pnList){
   int nList = *pnList;
   char *pEnd = &pList[nList];
   int iCurrent = 0;
-
   char *p = pList;
+
+  assert( iCol>=0 );
   while( 1 ){
     char c = 0;
     while( p<pEnd && (c | *p)&0xFE ) c = *p++ & 0x80;
@@ -1467,8 +1495,7 @@ int sqlite3Fts3SegReaderIterate(
   Fts3Table *p,                   /* Virtual table handle */
   Fts3SegReader **apSegment,      /* Array of Fts3SegReader objects */
   int nSegment,                   /* Size of apSegment array */
-  int flags,                      /* Flags mask */
-  int iCol,                       /* Column to filter for */
+  Fts3SegFilter *pFilter,         /* Restrictions on range of iteration */
   int (*xFunc)(Fts3Table *, void *, char *, int, char *, int),  /* Callback */
   void *pContext                  /* Callback context (2nd argument) */
 ){
@@ -1477,15 +1504,50 @@ int sqlite3Fts3SegReaderIterate(
   int nAlloc = 0;                 /* Allocated size of aBuffer buffer */
   int rc = SQLITE_OK;             /* Return code */
 
-  int isIgnoreEmpty  = (flags&FTS3_SEGMENT_IGNORE_EMPTY);
-  int isRequirePos = (flags&FTS3_SEGMENT_REQUIRE_POS);
-  int isColFilter = (flags&FTS3_SEGMENT_COLUMN_FILTER);
+  int isIgnoreEmpty =  (pFilter->flags & FTS3_SEGMENT_IGNORE_EMPTY);
+  int isRequirePos =   (pFilter->flags & FTS3_SEGMENT_REQUIRE_POS);
+  int isColFilter =    (pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
+  int isPrefix =       (pFilter->flags & FTS3_SEGMENT_PREFIX);
+
+  /* If the Fts3SegFilter defines a specific term (or term prefix) to search 
+  ** for, then advance each segment iterator until it points to a term of
+  ** equal or greater value than the specified term. This prevents many
+  ** unnecessary merge/sort operations for the case where single segment
+  ** b-tree leaf nodes contain more than one term.
+  */
+  if( pFilter->zTerm ){
+    int nTerm = pFilter->nTerm;
+    char *zTerm = pFilter->zTerm;
+    for(i=0; i<nSegment; i++){
+      Fts3SegReader *pSeg = apSegment[i];
+      while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 ){
+        rc = fts3SegReaderNext(pSeg);
+        if( rc!=SQLITE_OK ) goto finished;
+      }
+    }
+  }
 
   fts3SegReaderSort(apSegment, nSegment, nSegment, fts3SegReaderCmp);
   while( apSegment[0]->aNode ){
     int nTerm = apSegment[0]->nTerm;
     char *zTerm = apSegment[0]->zTerm;
     int nMerge = 1;
+
+    /* If this is a prefix-search, and if the term that apSegment[0] points
+    ** to does not share a suffix with pFilter->zTerm/nTerm, then all 
+    ** required callbacks have been made. In this case exit early.
+    **
+    ** Similarly, if this is a search for an exact match, and the first term
+    ** of segment apSegment[0] is not a match, exit early.
+    */
+    if( pFilter->zTerm ){
+      if( nTerm<pFilter->nTerm 
+       || (!isPrefix && nTerm>pFilter->nTerm)
+       || memcmp(zTerm, pFilter->zTerm, pFilter->nTerm) 
+    ){
+        goto finished;
+      }
+    }
 
     while( nMerge<nSegment 
         && apSegment[nMerge]->aNode
@@ -1527,9 +1589,8 @@ int sqlite3Fts3SegReaderIterate(
           j++;
         }
 
-        assert( iCol>=0 || isColFilter==0 );
         if( isColFilter ){
-          fts3ColumnFilter(iCol, &pList, &nList);
+          fts3ColumnFilter(pFilter->iCol, &pList, &nList);
         }
 
         if( !isIgnoreEmpty || nList>0 ){
@@ -1560,6 +1621,14 @@ int sqlite3Fts3SegReaderIterate(
         rc = xFunc(p, pContext, zTerm, nTerm, aBuffer, nDoclist);
         if( rc!=SQLITE_OK ) goto finished;
       }
+    }
+
+    /* If there is a term specified to filter on, and this is not a prefix
+    ** search, return now. The callback that corresponds to the required
+    ** term (if such a term exists in the index) has already been made.
+    */
+    if( pFilter->zTerm && !isPrefix ){
+      goto finished;
     }
 
     for(i=0; i<nMerge; i++){
@@ -1594,6 +1663,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   SegmentWriter *pWriter = 0;
   int nSegment = 0;               /* Number of segments being merged */
   Fts3SegReader **apSegment = 0;  /* Array of Segment iterators */
+  Fts3SegFilter filter;           /* Segment term filter condition */
 
   if( iLevel<0 ){
     /* This call is to merge all segments in the database to a single
@@ -1646,10 +1716,11 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   pStmt = 0;
   if( rc!=SQLITE_OK ) goto finished;
 
-  rc = sqlite3Fts3SegReaderIterate(
-      p, apSegment, nSegment, 
-      (iLevel<0 ? FTS3_SEGMENT_IGNORE_EMPTY : 0)|FTS3_SEGMENT_REQUIRE_POS, 
-      0, fts3MergeCallback, (void *)&pWriter
+  memset(&filter, 0, sizeof(Fts3SegFilter));
+  filter.flags = FTS3_SEGMENT_REQUIRE_POS;
+  filter.flags |= (iLevel<0 ? FTS3_SEGMENT_IGNORE_EMPTY : 0);
+  rc = sqlite3Fts3SegReaderIterate(p, apSegment, nSegment,
+      &filter, fts3MergeCallback, (void *)&pWriter
   );
   if( rc!=SQLITE_OK ) goto finished;
 

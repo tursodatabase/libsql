@@ -181,17 +181,24 @@ do_write_test fts3_malloc-1.6 sqlite_master {
 }
 
 # Test the xConnect/xDisconnect methods:
-db eval { ATTACH 'test2.db' AS aux }
-do_write_test fts3_malloc-1.6 aux.sqlite_master {
-  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
-}
-do_write_test fts3_malloc-1.6 aux.sqlite_master {
-  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
-}
+#db eval { ATTACH 'test2.db' AS aux }
+#do_write_test fts3_malloc-1.6 aux.sqlite_master {
+#  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
+#}
+#do_write_test fts3_malloc-1.6 aux.sqlite_master {
+#  CREATE VIRTUAL TABLE aux.ft7 USING fts3(a, b, c);
+#}
 
 
 
 do_test fts3_malloc-2.0 {
+  execsql { 
+    DROP TABLE ft1;
+    DROP TABLE ft2;
+    DROP TABLE ft3;
+    DROP TABLE ft4;
+    DROP TABLE ft6;
+  }
   execsql { CREATE VIRTUAL TABLE ft USING fts3(a, b) }
   for {set ii 1} {$ii < 32} {incr ii} {
     set a [list]

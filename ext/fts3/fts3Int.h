@@ -58,6 +58,7 @@ typedef struct Fts3Cursor Fts3Cursor;
 typedef struct Fts3Expr Fts3Expr;
 typedef struct Fts3Phrase Fts3Phrase;
 typedef struct Fts3SegReader Fts3SegReader;
+typedef struct Fts3SegFilter Fts3SegFilter;
 
 /*
 ** A connection to a fulltext index is an instance of the following
@@ -123,14 +124,14 @@ struct Fts3Cursor {
 ** of tokens in the string.
 */
 struct Fts3Phrase {
-  int nToken;          /* Number of tokens in the phrase */
-  int iColumn;         /* Index of column this phrase must match */
-  int isNot;           /* Phrase prefixed by unary not (-) operator */
+  int nToken;                /* Number of tokens in the phrase */
+  int iColumn;               /* Index of column this phrase must match */
+  int isNot;                 /* Phrase prefixed by unary not (-) operator */
   struct PhraseToken {
-    char *z;              /* Text of the token */
-    int n;                /* Number of bytes in buffer pointed to by z */
-    int isPrefix;         /* True if token ends in with a "*" character */
-  } aToken[1];         /* One entry for each token in the phrase */
+    char *z;                 /* Text of the token */
+    int n;                   /* Number of bytes in buffer pointed to by z */
+    int isPrefix;            /* True if token ends in with a "*" character */
+  } aToken[1];               /* One entry for each token in the phrase */
 };
 
 /*
@@ -178,12 +179,21 @@ int sqlite3Fts3Optimize(Fts3Table *);
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
 #define FTS3_SEGMENT_IGNORE_EMPTY  0x00000002
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
+#define FTS3_SEGMENT_PREFIX        0x00000008
+
+struct Fts3SegFilter {
+  const char *zTerm;
+  int nTerm;
+  int iCol;
+  int flags;
+};
 
 int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3SegReader *);
+
 int sqlite3Fts3SegReaderIterate(
-  Fts3Table *, Fts3SegReader **, int, int, int, 
+  Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
   int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
 );
 
