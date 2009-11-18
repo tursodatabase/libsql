@@ -174,6 +174,15 @@ int sqlite3Fts3UpdateMethod(sqlite3_vtab*,int,sqlite3_value**,sqlite3_int64*);
 int sqlite3Fts3PendingTermsFlush(Fts3Table *);
 void sqlite3Fts3PendingTermsClear(Fts3Table *);
 int sqlite3Fts3Optimize(Fts3Table *);
+int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
+  sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
+void sqlite3Fts3SegReaderFree(Fts3SegReader *);
+int sqlite3Fts3SegReaderIterate(
+  Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
+  int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
+);
+int sqlite3Fts3ReadBlock(Fts3Table*, sqlite3_int64, char const**, int*);
+int sqlite3Fts3AllSegdirs(Fts3Table*, sqlite3_stmt **);
 
 /* Flags allowed as part of the 4th argument to SegmentReaderIterate() */
 #define FTS3_SEGMENT_REQUIRE_POS   0x00000001
@@ -181,6 +190,7 @@ int sqlite3Fts3Optimize(Fts3Table *);
 #define FTS3_SEGMENT_COLUMN_FILTER 0x00000004
 #define FTS3_SEGMENT_PREFIX        0x00000008
 
+/* Type passed as 4th argument to SegmentReaderIterate() */
 struct Fts3SegFilter {
   const char *zTerm;
   int nTerm;
@@ -188,26 +198,12 @@ struct Fts3SegFilter {
   int flags;
 };
 
-int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
-  sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
-void sqlite3Fts3SegReaderFree(Fts3SegReader *);
-
-int sqlite3Fts3SegReaderIterate(
-  Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
-  int (*)(Fts3Table *, void *, char *, int, char *, int),  void *
-);
-
 /* fts3.c */
 int sqlite3Fts3PutVarint(char *, sqlite3_int64);
 int sqlite3Fts3GetVarint(const char *, sqlite_int64 *);
 int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
-
-/* Valid arguments for the second argument to sqlite3Fts3SqlStmt() */
-#define FTS3_SQL_GET_ALL_SEGDIRS 11
-#define FTS3_SQL_GET_BLOCK 17
-int sqlite3Fts3SqlStmt(Fts3Table *, int, sqlite3_stmt **);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);

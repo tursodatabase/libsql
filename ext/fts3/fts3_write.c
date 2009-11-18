@@ -29,6 +29,11 @@ typedef struct PendingList PendingList;
 typedef struct SegmentNode SegmentNode;
 typedef struct SegmentWriter SegmentWriter;
 
+/*
+** Data structure used while accumulating terms in the pending-terms hash
+** table. The hash table entry maps from term (a string) to a malloced
+** instance of this structure.
+*/
 struct PendingList {
   int nData;
   char *aData;
@@ -39,9 +44,15 @@ struct PendingList {
 };
 
 /*
-** fts3SegReaderNew()
-** fts3SegReaderNext()
-** sqlite3Fts3SegReaderFree()
+** An instance of this structure is used to iterate through the terms on
+** a contiguous set of segment b-tree leaf nodes. Although the details of
+** this structure are only manipulated by code in this file, opaque handles
+** of type Fts3SegReader* are also used by code in fts3.c to iterate through
+** terms when querying the full-text index. See functions:
+**
+**   sqlite3Fts3SegReaderNew()
+**   sqlite3Fts3SegReaderFree()
+**   sqlite3Fts3SegReaderIterate()
 */
 struct Fts3SegReader {
   int iIdx;                       /* Index within level */
@@ -68,9 +79,13 @@ struct Fts3SegReader {
 };
 
 /*
-** fts3LeafAdd()
-** fts3LeafWrite()
-** fts3LeafFree()
+** An instance of this structure is used to create a segment b-tree in the
+** database. The internal details of this type are only accessed by the
+** following functions:
+**
+**   fts3SegWriterAdd()
+**   fts3SegWriterFlush()
+**   fts3SegWriterFree()
 */
 struct SegmentWriter {
   SegmentNode *pTree;             /* Pointer to interior tree structure */
@@ -88,8 +103,8 @@ struct SegmentWriter {
 /*
 ** Type SegmentNode is used by the following three functions to create
 ** the interior part of the segment b+-tree structures (everything except
-** the leaf nodes. These functions and type are only ever used by code
-** within the fts3LeafXXX() family of functions described above.
+** the leaf nodes). These functions and type are only ever used by code
+** within the fts3SegWriterXXX() family of functions described above.
 **
 **   fts3NodeAddTerm()
 **   fts3NodeWrite()
@@ -109,23 +124,8 @@ struct SegmentNode {
 };
 
 /*
-** This is a comparison function used as a qsort() callback when sorting
-** an array of pending terms by term.
+** Valid values for the second argument to fts3SqlStmt().
 */
-static int qsortCompare(const void *lhs, const void *rhs){
-  char *z1 = fts3HashKey(*(Fts3HashElem **)lhs);
-  char *z2 = fts3HashKey(*(Fts3HashElem **)rhs);
-  int n1 = fts3HashKeysize(*(Fts3HashElem **)lhs);
-  int n2 = fts3HashKeysize(*(Fts3HashElem **)rhs);
-
-  int n = (n1<n2 ? n1 : n2);
-  int c = memcmp(z1, z2, n);
-  if( c==0 ){
-    c = n1 - n2;
-  }
-  return c;
-}
-
 #define SQL_DELETE_CONTENT             0
 #define SQL_IS_EMPTY                   1
 #define SQL_DELETE_ALL_CONTENT         2 
@@ -136,15 +136,14 @@ static int qsortCompare(const void *lhs, const void *rhs){
 #define SQL_INSERT_SEGMENTS            7
 #define SQL_NEXT_SEGMENTS_ID           8
 #define SQL_INSERT_SEGDIR              9
-
 #define SQL_SELECT_LEVEL              10
 #define SQL_SELECT_ALL_LEVEL          11
 #define SQL_SELECT_LEVEL_COUNT        12
 #define SQL_SELECT_SEGDIR_COUNT_MAX   13
-
 #define SQL_DELETE_SEGDIR_BY_LEVEL    14
 #define SQL_DELETE_SEGMENTS_RANGE     15
 #define SQL_CONTENT_INSERT            16
+#define SQL_GET_BLOCK                 17
 
 static int fts3SqlStmt(
   Fts3Table *p, 
@@ -207,9 +206,56 @@ static int fts3SqlStmt(
   return rc;
 }
 
-int sqlite3Fts3SqlStmt(Fts3Table *p, int eStmt, sqlite3_stmt **ppStmt){
-  return fts3SqlStmt(p, eStmt, ppStmt, 0);
+/*
+** Read a single block from the %_segments table. If the specified block
+** does not exist, return SQLITE_CORRUPT. If some other error (malloc, IO 
+** etc.) occurs, return the appropriate SQLite error code.
+**
+** Otherwise, if successful, set *pzBlock to point to a buffer containing
+** the block read from the database, and *pnBlock to the size of the read
+** block in bytes.
+**
+** WARNING: The returned buffer is only valid until the next call to 
+** sqlite3Fts3ReadBlock().
+*/
+int sqlite3Fts3ReadBlock(
+  Fts3Table *p,
+  sqlite3_int64 iBlock,
+  char const **pzBlock,
+  int *pnBlock
+){
+  sqlite3_stmt *pStmt;
+  int rc = fts3SqlStmt(p, SQL_GET_BLOCK, &pStmt, 0);
+  if( rc!=SQLITE_OK ) return rc;
+  sqlite3_reset(pStmt);
+
+  sqlite3_bind_int64(pStmt, 1, iBlock);
+  rc = sqlite3_step(pStmt); 
+  if( rc!=SQLITE_ROW ){
+    return SQLITE_CORRUPT;
+  }
+
+  *pnBlock = sqlite3_column_bytes(pStmt, 0);
+  *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
+  if( !*pzBlock ){
+    return SQLITE_NOMEM;
+  }
+  return SQLITE_OK;
 }
+
+/*
+** Set *ppStmt to a statement handle that may be used to iterate through
+** all rows in the %_segdir table, from oldest to newest. If successful,
+** return SQLITE_OK. If an error occurs while preparing the statement, 
+** return an SQLite error code.
+**
+** There is only ever one instance of this SQL statement compiled for
+** each FTS3 table.
+*/
+int sqlite3Fts3AllSegdirs(Fts3Table *p, sqlite3_stmt **ppStmt){
+  return fts3SqlStmt(p, SQL_SELECT_ALL_LEVEL, ppStmt, 0);
+}
+
 
 static int fts3SqlExec(Fts3Table *p, int eStmt, sqlite3_value **apVal){
   sqlite3_stmt *pStmt;
@@ -1191,7 +1237,7 @@ static void fts3NodeFree(SegmentNode *pTree){
   }
 }
 
-static int fts3LeafAdd(
+static int fts3SegWriterAdd(
   Fts3Table *p,                   /* Virtual table handle */
   SegmentWriter **ppWriter,       /* IN/OUT: SegmentWriter handle */ 
   int isCopyTerm,                 /* True if buffer zTerm must be copied */
@@ -1323,7 +1369,7 @@ static int fts3LeafAdd(
   return SQLITE_OK;
 }
 
-static int fts3LeafWrite(
+static int fts3SegWriterFlush(
   Fts3Table *p, 
   SegmentWriter *pWriter,
   int iLevel,
@@ -1352,7 +1398,7 @@ static int fts3LeafWrite(
   return rc;
 }
 
-static void fts3LeafFree(SegmentWriter *pWriter){
+static void fts3SegWriterFree(SegmentWriter *pWriter){
   if( pWriter ){
     sqlite3_free(pWriter->aData);
     sqlite3_free(pWriter->zMalloc);
@@ -1488,7 +1534,7 @@ static int fts3MergeCallback(
   int nDoclist
 ){
   SegmentWriter **ppW = (SegmentWriter **)pContext;
-  return fts3LeafAdd(p, ppW, 1, zTerm, nTerm, aDoclist, nDoclist);
+  return fts3SegWriterAdd(p, ppW, 1, zTerm, nTerm, aDoclist, nDoclist);
 }
 
 int sqlite3Fts3SegReaderIterate(
@@ -1517,7 +1563,7 @@ int sqlite3Fts3SegReaderIterate(
   */
   if( pFilter->zTerm ){
     int nTerm = pFilter->nTerm;
-    char *zTerm = pFilter->zTerm;
+    const char *zTerm = pFilter->zTerm;
     for(i=0; i<nSegment; i++){
       Fts3SegReader *pSeg = apSegment[i];
       while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 ){
@@ -1726,11 +1772,11 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
 
   rc = fts3DeleteSegdir(p, iLevel, apSegment, nSegment);
   if( rc==SQLITE_OK ){
-    rc = fts3LeafWrite(p, pWriter, iNewLevel, iIdx);
+    rc = fts3SegWriterFlush(p, pWriter, iNewLevel, iIdx);
   }
 
  finished:
-  fts3LeafFree(pWriter);
+  fts3SegWriterFree(pWriter);
   if( apSegment ){
     for(i=0; i<nSegment; i++){
       sqlite3Fts3SegReaderFree(apSegment[i]);
@@ -1740,6 +1786,26 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   sqlite3_reset(pStmt);
   return rc;
 }
+
+/*
+** This is a comparison function used as a qsort() callback when sorting
+** an array of pending terms by term. This occurs as part of flushing
+** the contents of the pending-terms hash table to the database.
+*/
+static int qsortCompare(const void *lhs, const void *rhs){
+  char *z1 = fts3HashKey(*(Fts3HashElem **)lhs);
+  char *z2 = fts3HashKey(*(Fts3HashElem **)rhs);
+  int n1 = fts3HashKeysize(*(Fts3HashElem **)lhs);
+  int n2 = fts3HashKeysize(*(Fts3HashElem **)rhs);
+
+  int n = (n1<n2 ? n1 : n2);
+  int c = memcmp(z1, z2, n);
+  if( c==0 ){
+    c = n1 - n2;
+  }
+  return c;
+}
+
 
 /* 
 ** Flush the contents of pendingTerms to a level 0 segment.
@@ -1791,14 +1857,14 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
     const char *z = fts3HashKey(apElem[i]);
     int n = fts3HashKeysize(apElem[i]);
     PendingList *pList = fts3HashData(apElem[i]);
-    rc = fts3LeafAdd(p, &pWriter, 0, z, n, pList->aData, pList->nData+1);
+    rc = fts3SegWriterAdd(p, &pWriter, 0, z, n, pList->aData, pList->nData+1);
   }
   if( rc==SQLITE_OK ){
-    rc = fts3LeafWrite(p, pWriter, 0, idx);
+    rc = fts3SegWriterFlush(p, pWriter, 0, idx);
   }
 
   /* Free all allocated resources before returning */
-  fts3LeafFree(pWriter);
+  fts3SegWriterFree(pWriter);
   sqlite3_free(apElem);
   sqlite3Fts3PendingTermsClear(p);
   return rc;

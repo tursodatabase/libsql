@@ -895,38 +895,6 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 
-/* TODO(shess) If we pushed LeafReader to the top of the file, or to
-** another file, term_select() could be pushed above
-** docListOfTerm().
-*/
-/*
-** Read a single block from the %_segments table.
-*/
-static int fts3ReadBlock(
-  Fts3Table *p,
-  sqlite3_int64 iBlock,
-  char const **pzBlock,
-  int *pnBlock
-){
-  sqlite3_stmt *pStmt;
-  int rc = sqlite3Fts3SqlStmt(p, FTS3_SQL_GET_BLOCK, &pStmt);
-  if( rc!=SQLITE_OK ) return rc;
-  sqlite3_reset(pStmt);
-
-  sqlite3_bind_int64(pStmt, 1, iBlock);
-  rc = sqlite3_step(pStmt); 
-  if( rc!=SQLITE_ROW ){
-    return SQLITE_CORRUPT;
-  }
-
-  *pnBlock = sqlite3_column_bytes(pStmt, 0);
-  *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
-  if( !*pzBlock ){
-    return SQLITE_NOMEM;
-  }
-  return SQLITE_OK;
-}
-
 /*
 ** The buffer pointed to by argument zNode (size nNode bytes) contains the
 ** root node of a b-tree segment. The segment is guaranteed to be at least
@@ -1013,7 +981,7 @@ static int fts3SelectLeaf(
     }
 
     /* Descend to interior node iChild. */
-    rc = fts3ReadBlock(p, iChild, &zCsr, &nBlock);
+    rc = sqlite3Fts3ReadBlock(p, iChild, &zCsr, &nBlock);
     if( rc!=SQLITE_OK ) break;
     zEnd = &zCsr[nBlock];
   }
@@ -1524,7 +1492,7 @@ static int fts3TermSelect(
   ** (unless the root node happens to be a leaf). It simply examines the
   ** b-tree structure to determine which leaves need to be inspected.
   */
-  rc = sqlite3Fts3SqlStmt(p, FTS3_SQL_GET_ALL_SEGDIRS, &pStmt);
+  rc = sqlite3Fts3AllSegdirs(p, &pStmt);
   while( rc==SQLITE_OK && SQLITE_ROW==(rc = sqlite3_step(pStmt)) ){
     Fts3SegReader *pNew = 0;
     int nRoot = sqlite3_column_bytes(pStmt, 4);
