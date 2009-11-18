@@ -2789,9 +2789,7 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
       Expr *pRight = pTerm->pExpr->pRight;
-      if( sqlite3ExprCanBeNull(pRight) ){
-        sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
-      }
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+j, pLevel->addrBrk);
       if( zAff ){
         if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_NONE ){
           zAff[j] = SQLITE_AFF_NONE;
@@ -3124,7 +3122,7 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
       if( zAff ){
         if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
           /* Since the comparison is to be performed with no conversions
@@ -3162,7 +3160,7 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
       if( zAff ){
         if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
           /* Since the comparison is to be performed with no conversions

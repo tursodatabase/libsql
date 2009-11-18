@@ -1289,6 +1289,24 @@ int sqlite3ExprCanBeNull(const Expr *p){
 }
 
 /*
+** Generate an OP_IsNull instruction that tests register iReg and jumps
+** to location iDest if the value in iReg is NULL.  The value in iReg 
+** was computed by pExpr.  If we can look at pExpr at compile-time and
+** determine that it can never generate a NULL, then the OP_IsNull operation
+** can be omitted.
+*/
+void sqlite3ExprCodeIsNullJump(
+  Vdbe *v,            /* The VDBE under construction */
+  const Expr *pExpr,  /* Only generate OP_IsNull if this expr can be NULL */
+  int iReg,           /* Test the value in this register for NULL */
+  int iDest           /* Jump here if the value is null */
+){
+  if( sqlite3ExprCanBeNull(pExpr) ){
+    sqlite3VdbeAddOp2(v, OP_IsNull, iReg, iDest);
+  }
+}
+
+/*
 ** Return TRUE if the given expression is a constant which would be
 ** unchanged by OP_Affinity with the affinity given in the second
 ** argument.
@@ -1316,6 +1334,10 @@ int sqlite3ExprNeedsNoAffinityChange(const Expr *p, char aff){
     }
     case TK_BLOB: {
       return 1;
+    }
+    case TK_COLUMN: {
+      return p->iTable>=0 && p->iColumn<0
+               && (aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC);
     }
     default: {
       return 0;
