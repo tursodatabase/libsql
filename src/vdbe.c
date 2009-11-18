@@ -215,7 +215,7 @@ static VdbeCursor *allocateCursor(
   }
   if( SQLITE_OK==sqlite3VdbeMemGrow(pMem, nByte, 0) ){
     p->apCsr[iCur] = pCx = (VdbeCursor*)pMem->z;
-    memset(pCx, 0, nByte);
+    memset(pCx, 0, sizeof(VdbeCursor));
     pCx->iDb = iDb;
     pCx->nField = nField;
     if( nField ){
@@ -224,6 +224,7 @@ static VdbeCursor *allocateCursor(
     if( isBtreeCursor ){
       pCx->pCursor = (BtCursor*)
           &pMem->z[ROUND8(sizeof(VdbeCursor))+2*nField*sizeof(u32)];
+      sqlite3BtreeCursorZero(pCx->pCursor);
     }
   }
   return pCx;
