@@ -1336,8 +1336,9 @@ int sqlite3ExprNeedsNoAffinityChange(const Expr *p, char aff){
       return 1;
     }
     case TK_COLUMN: {
-      return p->iTable>=0 && p->iColumn<0
-               && (aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC);
+      assert( p->iTable>=0 );  /* p cannot be part of a CHECK constraint */
+      return p->iColumn<0
+          && (aff==SQLITE_AFF_INTEGER || aff==SQLITE_AFF_NUMERIC);
     }
     default: {
       return 0;
