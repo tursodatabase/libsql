@@ -1,7 +1,7 @@
-C Merge\swith\s[4bd4330709].
-D 2009-11-19T14:57:14
+C Fix\ssome\sfts3\srelated\sissues\swith\sthe\sautoconf\sand\samalgamation\sbuild\ssystems.
+D 2009-11-19T15:25:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
-F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
+F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 10010ddbf52e2503c7c49c7c0b7c7a096f8638a6
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
@@ -19,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 71cfacd7732f55af4aecaa8e7bea518e11cecc5e
+F configure 71cfacd7732f55af4aecaa8e7bea518e11cecc5e x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -64,11 +64,11 @@ F ext/fts3/fts3_hash.c 1af1833a4d581ee8d668bb71f5a500f7a0104982
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_snippet.c 8ea9619247ac61c79aca650fc3307b8b4097b5f3
-F ext/fts3/fts3_tokenizer.c 185a212670a9bbdeb5cad6942305e681bce5c87b
+F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
+F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 041f6c4dda87db0248402245dc15c348ef8f7a99
+F ext/fts3/fts3_write.c 9048d3c1d5dcb43769cde7c00c3b3c8bcac41099
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -88,7 +88,7 @@ F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 5b9fc534b96fe16b6bb57883bb0e4e28cc902df6
+F main.mk 3f64bbfc5605584fe551305406991f7e02791fef
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -398,7 +398,7 @@ F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3malloc.test cda1b22d8c86c3e434d93b63f2fc7a0191fb6d30
+F test/fts3malloc.test efbd316eafe54471b7f68604c050418b31d1914e
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
@@ -754,7 +754,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c 9216336085e7a7c226a35c0bd780239968f8304f
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl a7e87ce780cbf30782bca3fd1197e86f92ae6f24
+F tool/mksqlite3c.tcl 24e8f32d406259135bbd23b5bb2adead51338a74
 F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c8d2bd37a4c16154912a0831690584011dc230cb 4bd43307090258f8652c995b056101c51b81274a
-R c6e29b4f41f6c75cf1ecaf9ff4360465
+P 7a46d1ebe348ce9f1e8732617a8e280f152fe979
+R 627d84d1c58a3ccfd8d073223703a50a
 U dan
-Z a2826435df5c371f1372a7d0448a17a3
+Z 1a410374b24b6acf121a498e7894d5a2

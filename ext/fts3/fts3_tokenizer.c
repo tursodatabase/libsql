@@ -35,10 +35,6 @@
 #include <ctype.h>
 #include <string.h>
 
-static int safe_isspace(char c){
-  return (c&0x80)==0 ? isspace(c) : 0;
-}
-
 /*
 ** Implementation of the SQL scalar function for accessing the underlying 
 ** hash table. This function may be called as follows:
@@ -170,7 +166,7 @@ int sqlite3Fts3InitTokenizer(
   if( !z ){
     zCopy = sqlite3_mprintf("simple");
   }else{
-    while( safe_isspace(*z) ) z++;
+    while( (*z&0x80) && isspace(*z) ) z++;
     if( sqlite3_strnicmp(z, "tokenize", 8) || fts3IsIdChar(z[8])){
       return SQLITE_OK;
     }

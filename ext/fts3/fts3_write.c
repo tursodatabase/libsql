@@ -17,6 +17,8 @@
 ** code in fts3.c.
 */
 
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
 #include "fts3Int.h"
 #include <string.h>
 #include <assert.h>
@@ -1947,3 +1949,4 @@ int sqlite3Fts3Optimize(Fts3Table *p){
   return rc;
 }
 
+#endif

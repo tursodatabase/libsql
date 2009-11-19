@@ -29,7 +29,10 @@ set DO_MALLOC_TEST 1
 
 # Test organization:
 #
-# fts3_malloc-1.*: Test CREATE and DROP table statements.
+# fts3_malloc-1.*: Test OOM during CREATE and DROP table statements.
+# fts3_malloc-2.*: Test OOM during SELECT operations.
+# fts3_malloc-3.*: Test OOM during SELECT operations with a larger database.
+# fts3_malloc-4.*: Test OOM during database write operations.
 #
 #
 
@@ -54,8 +57,15 @@ set DO_MALLOC_TEST 1
 # is executed just once. In this case the test case passes if the results
 # match the expected results passed via parameter $result.
 #
+proc do_select_test {name sql result} {
+  doPassiveTest $name $sql [list 0 $result]
+}
 
-proc do_passive_test {name sql catchres} {
+proc do_error_test {name sql error} {
+  doPassiveTest $name $sql [list 1 $error]
+}
+
+proc doPassiveTest {name sql catchres} {
   if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
 
   if {$::DO_MALLOC_TEST} {
@@ -82,13 +92,6 @@ proc do_passive_test {name sql catchres} {
   }
 }
 
-proc do_select_test {name sql result} {
-  do_passive_test $name $sql [list 0 $result]
-}
-
-proc do_error_test {name sql error} {
-  do_passive_test $name $sql [list 1 $error]
-}
 
 #-------------------------------------------------------------------------
 # Test a single write to the database. In this case a  "write" is a 
