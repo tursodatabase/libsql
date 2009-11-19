@@ -148,6 +148,7 @@ int sqlite3BtreeCursor(
   BtCursor *pCursor                    /* Space to write cursor structure */
 );
 int sqlite3BtreeCursorSize(void);
+void sqlite3BtreeCursorZero(BtCursor*);
 
 int sqlite3BtreeCloseCursor(BtCursor*);
 int sqlite3BtreeMovetoUnpacked(

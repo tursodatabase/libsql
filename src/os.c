@@ -138,6 +138,7 @@ int sqlite3OsFullPathname(
   int nPathOut, 
   char *zPathOut
 ){
+  zPathOut[0] = 0;
   return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
 }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

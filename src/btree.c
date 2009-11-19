@@ -3278,8 +3278,8 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
 ** root page of a b-tree.  If it is not, then the cursor acquired
 ** will not work correctly.
 **
-** It is assumed that the sqlite3BtreeCursorSize() bytes of memory 
-** pointed to by pCur have been zeroed by the caller.
+** It is assumed that the sqlite3BtreeCursorZero() has been called
+** on pCur to initialize the memory space prior to invoking this routine.
 */
 static int btreeCursor(
   Btree *p,                              /* The btree */
@@ -3353,6 +3353,18 @@ int sqlite3BtreeCursor(
 */
 int sqlite3BtreeCursorSize(void){
   return ROUND8(sizeof(BtCursor));
+}
+
+/*
+** Initialize memory that will be converted into a BtCursor object.
+**
+** The simple approach here would be to memset() the entire object
+** to zero.  But it turns out that the apPage[] and aiIdx[] arrays
+** do not need to be zeroed and they are large, so we can save a lot
+** of run-time by skipping the initialization of those elements.
+*/
+void sqlite3BtreeCursorZero(BtCursor *p){
+  memset(p, 0, offsetof(BtCursor, iPage));
 }
 
 /*

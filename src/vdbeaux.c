@@ -386,6 +386,8 @@ int sqlite3VdbeAssertMayAbort(Vdbe *v, int mayAbort){
 ** Variable *pMaxFuncArgs is set to the maximum value of any P2 argument 
 ** to an OP_Function, OP_AggStep or OP_VFilter opcode. This is used by 
 ** sqlite3VdbeMakeReady() to size the Vdbe.apArg[] array.
+**
+** The Op.opflags field is set on all opcodes.
 */
 static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   int i;
@@ -396,15 +398,14 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
   for(pOp=p->aOp, i=p->nOp-1; i>=0; i--, pOp++){
     u8 opcode = pOp->opcode;
 
+    pOp->opflags = sqlite3OpcodeProperty[opcode];
     if( opcode==OP_Function || opcode==OP_AggStep ){
       if( pOp->p5>nMaxArgs ) nMaxArgs = pOp->p5;
-#ifndef SQLITE_OMIT_VIRTUALTABLE
-    }else if( opcode==OP_VUpdate ){
-      if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
-#endif
     }else if( opcode==OP_Transaction && pOp->p2!=0 ){
       p->readOnly = 0;
 #ifndef SQLITE_OMIT_VIRTUALTABLE
+    }else if( opcode==OP_VUpdate ){
+      if( pOp->p2>nMaxArgs ) nMaxArgs = pOp->p2;
     }else if( opcode==OP_VFilter ){
       int n;
       assert( p->nOp - i >= 3 );
@@ -414,7 +415,7 @@ static void resolveP2Values(Vdbe *p, int *pMaxFuncArgs){
 #endif
     }
 
-    if( sqlite3VdbeOpcodeHasProperty(opcode, OPFLG_JUMP) && pOp->p2<0 ){
+    if( (pOp->opflags & OPFLG_JUMP)!=0 && pOp->p2<0 ){
       assert( -1-pOp->p2<p->nLabel );
       pOp->p2 = aLabel[-1-pOp->p2];
     }
@@ -476,7 +477,7 @@ int sqlite3VdbeAddOpList(Vdbe *p, int nOp, VdbeOpList const *aOp){
       VdbeOp *pOut = &p->aOp[i+addr];
       pOut->opcode = pIn->opcode;
       pOut->p1 = pIn->p1;
-      if( p2<0 && sqlite3VdbeOpcodeHasProperty(pOut->opcode, OPFLG_JUMP) ){
+      if( p2<0 && (sqlite3OpcodeProperty[pOut->opcode] & OPFLG_JUMP)!=0 ){
         pOut->p2 = addr + ADDR(p2);
       }else{
         pOut->p2 = p2;
@@ -2786,9 +2787,17 @@ int sqlite3VdbeRecordCompare(
   pKeyInfo = pPKey2->pKeyInfo;
   mem1.enc = pKeyInfo->enc;
   mem1.db = pKeyInfo->db;
-  mem1.flags = 0;
-  mem1.u.i = 0;  /* not needed, here to silence compiler warning */
-  mem1.zMalloc = 0;
+  /* mem1.flags = 0;  // Will be initialized by sqlite3VdbeSerialGet() */
+  VVA_ONLY( mem1.zMalloc = 0; ) /* Only needed by assert() statements */
+
+  /* Compilers may complain that mem1.u.i is potentially uninitialized.
+  ** We could initialize it, as shown here, to silence those complaints.
+  ** But in fact, mem1.u.i will never actually be used initialized, and doing 
+  ** the unnecessary initialization has a measurable negative performance
+  ** impact, since this routine is a very high runner.  And so, we choose
+  ** to ignore the compiler warnings and leave this variable uninitialized.
+  */
+  /*  mem1.u.i = 0;  // not needed, here to silence compiler warning */
   
   idx1 = getVarint32(aKey1, szHdr1);
   d1 = szHdr1;
@@ -2812,47 +2821,52 @@ int sqlite3VdbeRecordCompare(
     rc = sqlite3MemCompare(&mem1, &pPKey2->aMem[i],
                            i<nField ? pKeyInfo->aColl[i] : 0);
     if( rc!=0 ){
-      break;
+      assert( mem1.zMalloc==0 );  /* See comment below */
+
+      /* Invert the result if we are using DESC sort order. */
+      if( pKeyInfo->aSortOrder && i<nField && pKeyInfo->aSortOrder[i] ){
+        rc = -rc;
+      }
+    
+      /* If the PREFIX_SEARCH flag is set and all fields except the final
+      ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
+      ** pPKey2->rowid to the value of the rowid field in (pKey1, nKey1).
+      ** This is used by the OP_IsUnique opcode.
+      */
+      if( (pPKey2->flags & UNPACKED_PREFIX_SEARCH) && i==(pPKey2->nField-1) ){
+        assert( idx1==szHdr1 && rc );
+        assert( mem1.flags & MEM_Int );
+        pPKey2->flags &= ~UNPACKED_PREFIX_SEARCH;
+        pPKey2->rowid = mem1.u.i;
+      }
+    
+      return rc;
     }
     i++;
   }
 
-  /* No memory allocation is ever used on mem1. */
-  if( NEVER(mem1.zMalloc) ) sqlite3VdbeMemRelease(&mem1);
-
-  /* If the PREFIX_SEARCH flag is set and all fields except the final
-  ** rowid field were equal, then clear the PREFIX_SEARCH flag and set 
-  ** pPKey2->rowid to the value of the rowid field in (pKey1, nKey1).
-  ** This is used by the OP_IsUnique opcode.
+  /* No memory allocation is ever used on mem1.  Prove this using
+  ** the following assert().  If the assert() fails, it indicates a
+  ** memory leak and a need to call sqlite3VdbeMemRelease(&mem1).
   */
-  if( (pPKey2->flags & UNPACKED_PREFIX_SEARCH) && i==(pPKey2->nField-1) ){
-    assert( idx1==szHdr1 && rc );
-    assert( mem1.flags & MEM_Int );
-    pPKey2->flags &= ~UNPACKED_PREFIX_SEARCH;
-    pPKey2->rowid = mem1.u.i;
-  }
+  assert( mem1.zMalloc==0 );
 
-  if( rc==0 ){
-    /* rc==0 here means that one of the keys ran out of fields and
-    ** all the fields up to that point were equal. If the UNPACKED_INCRKEY
-    ** flag is set, then break the tie by treating key2 as larger.
-    ** If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
-    ** are considered to be equal.  Otherwise, the longer key is the 
-    ** larger.  As it happens, the pPKey2 will always be the longer
-    ** if there is a difference.
-    */
-    if( pPKey2->flags & UNPACKED_INCRKEY ){
-      rc = -1;
-    }else if( pPKey2->flags & UNPACKED_PREFIX_MATCH ){
-      /* Leave rc==0 */
-    }else if( idx1<szHdr1 ){
-      rc = 1;
-    }
-  }else if( pKeyInfo->aSortOrder && i<pKeyInfo->nField
-               && pKeyInfo->aSortOrder[i] ){
-    rc = -rc;
+  /* rc==0 here means that one of the keys ran out of fields and
+  ** all the fields up to that point were equal. If the UNPACKED_INCRKEY
+  ** flag is set, then break the tie by treating key2 as larger.
+  ** If the UPACKED_PREFIX_MATCH flag is set, then keys with common prefixes
+  ** are considered to be equal.  Otherwise, the longer key is the 
+  ** larger.  As it happens, the pPKey2 will always be the longer
+  ** if there is a difference.
+  */
+  assert( rc==0 );
+  if( pPKey2->flags & UNPACKED_INCRKEY ){
+    rc = -1;
+  }else if( pPKey2->flags & UNPACKED_PREFIX_MATCH ){
+    /* Leave rc==0 */
+  }else if( idx1<szHdr1 ){
+    rc = 1;
   }
-
   return rc;
 }
  
