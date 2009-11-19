@@ -13,8 +13,7 @@
 ** This module contains code that implements a parser for fts3 query strings
 ** (the right-hand argument to the MATCH operator). Because the supported 
 ** syntax is relatively simple, the whole tokenizer/parser system is
-** hand-coded. The public interface to this module is declared in source
-** code file "fts3_expr.h".
+** hand-coded. 
 */
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
 
@@ -40,7 +39,29 @@
 ** to zero causes the module to use the old syntax. If it is set to 
 ** non-zero the new syntax is activated. This is so both syntaxes can
 ** be tested using a single build of testfixture.
+**
+** The following describes the syntax supported by the fts3 MATCH
+** operator in a similar format to that used by the lemon parser
+** generator. This module does not use actually lemon, it uses a
+** custom parser.
+**
+**   query ::= andexpr (OR andexpr)*.
+**
+**   andexpr ::= notexpr (AND? notexpr)*.
+**
+**   notexpr ::= nearexpr (NOT nearexpr|-TOKEN)*.
+**   notexpr ::= LP query RP.
+**
+**   nearexpr ::= phrase (NEAR distance_opt nearexpr)*.
+**
+**   distance_opt ::= .
+**   distance_opt ::= / INTEGER.
+**
+**   phrase ::= TOKEN.
+**   phrase ::= COLUMN:TOKEN.
+**   phrase ::= "TOKEN TOKEN TOKEN...".
 */
+
 #ifdef SQLITE_TEST
 int sqlite3_fts3_enable_parentheses = 0;
 #else
@@ -56,8 +77,7 @@ int sqlite3_fts3_enable_parentheses = 0;
 */
 #define SQLITE_FTS3_DEFAULT_NEAR_PARAM 10
 
-#include "fts3_expr.h"
-#include "sqlite3.h"
+#include "fts3Int.h"
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
@@ -354,6 +374,9 @@ static int getNextNode(
        || cNext=='"' || cNext=='(' || cNext==')' || cNext==0
       ){
         pRet = (Fts3Expr *)sqlite3_malloc(sizeof(Fts3Expr));
+        if( !pRet ){
+          return SQLITE_NOMEM;
+        }
         memset(pRet, 0, sizeof(Fts3Expr));
         pRet->eType = pKey->eType;
         pRet->nNear = nNear;

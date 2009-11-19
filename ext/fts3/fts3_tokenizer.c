@@ -30,9 +30,10 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
-#include "fts3_hash.h"
-#include "fts3_tokenizer.h"
+#include "fts3Int.h"
 #include <assert.h>
+#include <ctype.h>
+#include <string.h>
 
 /*
 ** Implementation of the SQL scalar function for accessing the underlying 
@@ -59,14 +60,14 @@ static void scalarFunc(
   int argc,
   sqlite3_value **argv
 ){
-  fts3Hash *pHash;
+  Fts3Hash *pHash;
   void *pPtr = 0;
   const unsigned char *zName;
   int nName;
 
   assert( argc==1 || argc==2 );
 
-  pHash = (fts3Hash *)sqlite3_user_data(context);
+  pHash = (Fts3Hash *)sqlite3_user_data(context);
 
   zName = sqlite3_value_text(argv[0]);
   nName = sqlite3_value_bytes(argv[0])+1;
@@ -96,6 +97,128 @@ static void scalarFunc(
 
   sqlite3_result_blob(context, (void *)&pPtr, sizeof(pPtr), SQLITE_TRANSIENT);
 }
+
+static int fts3IsIdChar(char c){
+  static const char isFtsIdChar[] = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 0x */
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 1x */
+      0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /* 2x */
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0,  /* 3x */
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 4x */
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1,  /* 5x */
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /* 6x */
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,  /* 7x */
+  };
+  return (c&0x80 || isFtsIdChar[(int)(c)]);
+}
+
+const char *sqlite3Fts3NextToken(const char *zStr, int *pn){
+  const char *z1;
+  const char *z2 = 0;
+
+  /* Find the start of the next token. */
+  z1 = zStr;
+  while( z2==0 ){
+    switch( *z1 ){
+      case '\0': return 0;        /* No more tokens here */
+      case '\'':
+      case '"':
+      case '`': {
+        z2 = &z1[1];
+        while( *z2 && (z2[0]!=*z1 || z2[1]==*z1) ) z2++;
+        if( *z2 ) z2++;
+        break;
+      }
+      case '[':
+        z2 = &z1[1];
+        while( *z2 && z2[0]!=']' ) z2++;
+        if( *z2 ) z2++;
+        break;
+
+      default:
+        if( fts3IsIdChar(*z1) ){
+          z2 = &z1[1];
+          while( fts3IsIdChar(*z2) ) z2++;
+        }else{
+          z1++;
+        }
+    }
+  }
+
+  *pn = (z2-z1);
+  return z1;
+}
+
+int sqlite3Fts3InitTokenizer(
+  Fts3Hash *pHash,                /* Tokenizer hash table */
+  const char *zArg,               /* Possible tokenizer specification */
+  sqlite3_tokenizer **ppTok,      /* OUT: Tokenizer (if applicable) */
+  const char **pzTokenizer,       /* OUT: Set to zArg if is tokenizer */
+  char **pzErr                    /* OUT: Set to malloced error message */
+){
+  int rc;
+  char *z = (char *)zArg;
+  int n;
+  char *zCopy;
+  char *zEnd;                     /* Pointer to nul-term of zCopy */
+  sqlite3_tokenizer_module *m;
+
+  if( !z ){
+    zCopy = sqlite3_mprintf("simple");
+  }else{
+    while( (*z&0x80) && isspace(*z) ) z++;
+    if( sqlite3_strnicmp(z, "tokenize", 8) || fts3IsIdChar(z[8])){
+      return SQLITE_OK;
+    }
+    zCopy = sqlite3_mprintf("%s", &z[8]);
+    *pzTokenizer = zArg;
+  }
+  if( !zCopy ){
+    return SQLITE_NOMEM;
+  }
+
+  zEnd = &zCopy[strlen(zCopy)];
+
+  z = (char *)sqlite3Fts3NextToken(zCopy, &n);
+  z[n] = '\0';
+  sqlite3Fts3Dequote(z);
+
+  m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, z, strlen(z)+1);
+  if( !m ){
+    *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
+    rc = SQLITE_ERROR;
+  }else{
+    char const **aArg = 0;
+    int iArg = 0;
+    z = &z[n+1];
+    while( z<zEnd && (z = (char *)sqlite3Fts3NextToken(z, &n)) ){
+      int nNew = sizeof(char *)*(iArg+1);
+      char const **aNew = (const char **)sqlite3_realloc(aArg, nNew);
+      if( !aNew ){
+        sqlite3_free(zCopy);
+        sqlite3_free(aArg);
+        return SQLITE_NOMEM;
+      }
+      aArg = aNew;
+      aArg[iArg++] = z;
+      z[n] = '\0';
+      sqlite3Fts3Dequote(z);
+      z = &z[n+1];
+    }
+    rc = m->xCreate(iArg, aArg, ppTok);
+    assert( rc!=SQLITE_OK || *ppTok );
+    if( rc!=SQLITE_OK ){
+      *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
+    }else{
+      (*ppTok)->pModule = m; 
+    }
+    sqlite3_free(aArg);
+  }
+
+  sqlite3_free(zCopy);
+  return rc;
+}
+
 
 #ifdef SQLITE_TEST
 
@@ -133,7 +256,7 @@ static void testFunc(
   int argc,
   sqlite3_value **argv
 ){
-  fts3Hash *pHash;
+  Fts3Hash *pHash;
   sqlite3_tokenizer_module *p;
   sqlite3_tokenizer *pTokenizer = 0;
   sqlite3_tokenizer_cursor *pCsr = 0;
@@ -166,7 +289,7 @@ static void testFunc(
     zArg = (const char *)sqlite3_value_text(argv[1]);
   }
 
-  pHash = (fts3Hash *)sqlite3_user_data(context);
+  pHash = (Fts3Hash *)sqlite3_user_data(context);
   p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
 
   if( !p ){
@@ -335,7 +458,7 @@ static void intTestFunc(
 */
 int sqlite3Fts3InitHashTable(
   sqlite3 *db, 
-  fts3Hash *pHash, 
+  Fts3Hash *pHash, 
   const char *zName
 ){
   int rc = SQLITE_OK;

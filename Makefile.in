@@ -311,15 +311,17 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_expr.c \
-  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
   $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_snippet.c \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
-  $(TOP)/ext/fts3/fts3_tokenizer1.c
+  $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_write.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
   $(TOP)/ext/icu/icu.c
@@ -428,7 +430,7 @@ HDR += \
   $(TOP)/ext/fts2/fts2_tokenizer.h
 HDR += \
   $(TOP)/ext/fts3/fts3.h \
-  $(TOP)/ext/fts3/fts3_expr.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 HDR += \
