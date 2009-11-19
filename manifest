@@ -1,5 +1,5 @@
-C Merge\sfts3-refactor\sinto\sthe\smain\strunk.
-D 2009-11-19T15:26:54
+C Fix\sa\sperformance\sregression\sintroduced\swhile\sreworking\sthe\sfts3\scode.
+D 2009-11-19T18:28:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 3251d3c5e2304bcd2d8d92d1fa8fa204cfdcd28d
+F ext/fts3/fts3.c e7383c74407e54e198317a92a0229162d2b0b9a7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h f7488bbc9fd12bd3843f59265227321a92b39ed4
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4bd43307090258f8652c995b056101c51b81274a 3b17924754343c0163464dabf01a9c46ffccef28
-R 627d84d1c58a3ccfd8d073223703a50a
+P 551dbe30eab5855756e6356f6ba050f5d1791ef8
+R f7b891b4bcfc7c759749c61f9eb643c5
 U dan
-Z 3f2064eaa4e1d7bebb28fcd8b8486169
+Z 8e0de62e656b56f2e53230487feca6ce

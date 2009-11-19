@@ -926,6 +926,7 @@ static int fts3SelectLeaf(
   int nAlloc = 0;                 /* Size of allocated buffer */
 
   while( 1 ){
+    int isFirstTerm = 1;          /* True when processing first term on page */
     int iHeight;                  /* Height of this node in tree */
     sqlite3_int64 iChild;         /* Block id of child node to descend to */
     int nBlock;                   /* Size of child node in bytes */
@@ -940,9 +941,10 @@ static int fts3SelectLeaf(
       int nBuffer;                /* Total term size */
   
       /* Load the next term on the node into zBuffer */
-      if( zBuffer ){
+      if( !isFirstTerm ){
         zCsr += sqlite3Fts3GetVarint32(zCsr, &nPrefix);
       }
+      isFirstTerm = 0;
       zCsr += sqlite3Fts3GetVarint32(zCsr, &nSuffix);
       if( nPrefix+nSuffix>nAlloc ){
         char *zNew;
