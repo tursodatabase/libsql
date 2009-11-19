@@ -588,7 +588,7 @@ static int fts3CreateTables(Fts3Table *p){
   zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
   for(i=0; zContentCols && i<p->nColumn; i++){
     char *z = p->azColumn[i];
-    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i+1, z);
+    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
   }
 
   /* Create the whole SQL script */
@@ -934,10 +934,10 @@ static int fts3SelectLeaf(
     zCsr += sqlite3Fts3GetVarint(zCsr, &iChild);
   
     while( zCsr<zEnd ){
+      int cmp;                    /* memcmp() result */
       int nSuffix;                /* Size of term suffix */
       int nPrefix = 0;            /* Size of term prefix */
       int nBuffer;                /* Total term size */
-      int nMin;                   /* Minimum of nBuffer and nTerm */
   
       /* Load the next term on the node into zBuffer */
       if( zBuffer ){
@@ -967,8 +967,8 @@ static int fts3SelectLeaf(
       ** If the interior node term is larger than the specified term, then
       ** the tree headed by iChild may contain the specified term.
       */
-      nMin = (nBuffer>nTerm ? nTerm : nBuffer);
-      if( memcmp(zTerm, zBuffer, nMin)<0 ) break;
+      cmp = memcmp(zTerm, zBuffer, (nBuffer>nTerm ? nTerm : nBuffer));
+      if( cmp<0 || (cmp==0 && nBuffer>nTerm) ) break;
       iChild++;
     };
 
@@ -1421,8 +1421,8 @@ static int fts3TermSelectCb(
 ){
   TermSelect *pTS = (TermSelect *)pContext;
   int nNew = pTS->nOutput + nDoclist;
-
   char *aNew = sqlite3_malloc(nNew);
+
   if( !aNew ){
     return SQLITE_NOMEM;
   }
@@ -1507,7 +1507,7 @@ static int fts3TermSelect(
       sqlite3_int64 i1;
       rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1);
       if( rc==SQLITE_OK ){
-        sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 3);
+        sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
         rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
       }
     }
@@ -1546,6 +1546,7 @@ static int fts3TermSelect(
   filter.iCol = iColumn;
   filter.zTerm = zTerm;
   filter.nTerm = nTerm;
+
   rc = sqlite3Fts3SegReaderIterate(p, apSegment, nSegment, &filter,
       fts3TermSelectCb, (void *)&tsc
   );

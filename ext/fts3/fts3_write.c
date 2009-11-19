@@ -152,30 +152,31 @@ static int fts3SqlStmt(
   sqlite3_value **apVal
 ){
   const char *azSql[] = {
-    "DELETE FROM %Q.'%q_content' WHERE rowid = ?",
-    "SELECT NOT EXISTS(SELECT docid FROM %Q.'%q_content' WHERE rowid!=?)",
-    "DELETE FROM %Q.'%q_content'",
-    "DELETE FROM %Q.'%q_segments'",
-    "DELETE FROM %Q.'%q_segdir'",
-    "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
-    "SELECT coalesce(max(idx)+1, 0) FROM %Q.'%q_segdir' WHERE level=?",
-    "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
-    "SELECT coalesce(max(blockid)+1, 1) FROM %Q.'%q_segments'",
-    "INSERT INTO %Q.'%q_segdir' VALUES(?,?,?,?,?,?)",
+/* 0  */  "DELETE FROM %Q.'%q_content' WHERE rowid = ?",
+/* 1  */  "SELECT NOT EXISTS(SELECT docid FROM %Q.'%q_content' WHERE rowid!=?)",
+/* 2  */  "DELETE FROM %Q.'%q_content'",
+/* 3  */  "DELETE FROM %Q.'%q_segments'",
+/* 4  */  "DELETE FROM %Q.'%q_segdir'",
+/* 5  */  "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
+/* 6  */  "SELECT coalesce(max(idx)+1, 0) FROM %Q.'%q_segdir' WHERE level=?",
+/* 7  */  "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
+/* 8  */  "SELECT coalesce(max(blockid)+1, 1) FROM %Q.'%q_segments'",
+/* 9  */  "INSERT INTO %Q.'%q_segdir' VALUES(?,?,?,?,?,?)",
 
-    /* Return segments in order from oldest to newest.*/ 
-    "SELECT idx, start_block, leaves_end_block, end_block, root "
-        "FROM %Q.'%q_segdir' WHERE level = ? ORDER BY idx ASC",
-    "SELECT idx, start_block, leaves_end_block, end_block, root "
-        "FROM %Q.'%q_segdir' ORDER BY level DESC, idx ASC",
+          /* Return segments in order from oldest to newest.*/ 
+/* 10 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
+            "FROM %Q.'%q_segdir' WHERE level = ? ORDER BY idx ASC",
+/* 11 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
+            "FROM %Q.'%q_segdir' ORDER BY level DESC, idx ASC",
 
-    "SELECT count(*) FROM %Q.'%q_segdir' WHERE level = ?",
-    "SELECT count(*), max(level) FROM %Q.'%q_segdir'",
+/* 12 */  "SELECT count(*) FROM %Q.'%q_segdir' WHERE level = ?",
+/* 13 */  "SELECT count(*), max(level) FROM %Q.'%q_segdir'",
 
-    "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
-    "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
-    0, /* CONTENT_INSERT - generated elsewhere */
-    "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
+/* 14 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
+/* 15 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
+/* 16 */  0, /* CONTENT_INSERT - generated elsewhere */
+/* 17 */  "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
+
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -251,6 +252,14 @@ int sqlite3Fts3ReadBlock(
 **
 ** There is only ever one instance of this SQL statement compiled for
 ** each FTS3 table.
+**
+** The statement returns the following columns from the %_segdir table:
+**
+**   0: idx
+**   1: start_block
+**   2: leaves_end_block
+**   3: end_block
+**   4: root
 */
 int sqlite3Fts3AllSegdirs(Fts3Table *p, sqlite3_stmt **ppStmt){
   return fts3SqlStmt(p, SQL_SELECT_ALL_LEVEL, ppStmt, 0);
@@ -702,6 +711,7 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
   pReader->nTerm = nPrefix+nSuffix;
   pNext += nSuffix;
   pNext += sqlite3Fts3GetVarint32(pNext, &pReader->nDoclist);
+  assert( pNext<&pReader->aNode[pReader->nNode] );
   pReader->aDoclist = pNext;
   pReader->pOffsetList = 0;
   return SQLITE_OK;
@@ -754,7 +764,7 @@ static void fts3SegReaderNextDocid(
   ** Fts3SegReader.pOffsetList to point to the next offset list before
   ** returning.
   */
-  if( p==&pReader->aDoclist[pReader->nDoclist] ){
+  if( p>=&pReader->aDoclist[pReader->nDoclist] ){
     pReader->pOffsetList = 0;
   }else{
     sqlite3_int64 iDelta;
