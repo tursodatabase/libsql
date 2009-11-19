@@ -1,5 +1,5 @@
-C Merge\sthe\sfts3-refactor\sbranch\swith\sthe\strunk.
-D 2009-11-19T02:52:58
+C Merge\swith\s[4bd4330709].
+D 2009-11-19T14:57:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 53f3dfa49f28ab5b80cb083fb7c9051e596bcfa1
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +116,7 @@ F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 417df1ef5ea798532bb6290b0cc4265fef82980a
 F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
 F src/delete.c ec04635d152debdab70d4b30c5516b59282075ea
-F src/expr.c ba653dafb23a75a7dbfb2033daa9786faf1e09da
+F src/expr.c be7f3db3e3b57f1f66f7a2acc445e8cb03fbd5a5
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c bf54e1202cbfb28bf4b1fd9b58899009ae76716f
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fa0998e19d984ee57f4f506c34eb858026cc49c3 85940468e6f93f7c493fbc129f13cf6233c5d0c0
-R 985cc2377284c202d1c7ecad2a54b0e2
+P c8d2bd37a4c16154912a0831690584011dc230cb 4bd43307090258f8652c995b056101c51b81274a
+R c6e29b4f41f6c75cf1ecaf9ff4360465
 U dan
-Z 600804b7b33f5407e58df712974da46a
+Z a2826435df5c371f1372a7d0448a17a3
