@@ -543,6 +543,7 @@ int sqlite3VdbeExec(
   Op *pOp;                   /* Current operation */
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
+  u8 resetSchemaOnFault = 0; /* Reset schema after an error if true */
   u8 encoding = ENC(db);     /* The database encoding */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
   u8 checkProgress;          /* True if progress callbacks are enabled */
@@ -4430,6 +4431,7 @@ case OP_Destroy: {     /* out2-prerelease */
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( rc==SQLITE_OK && iMoved!=0 ){
       sqlite3RootPageMoved(&db->aDb[iDb], iMoved, pOp->p1);
+      resetSchemaOnFault = 1;
     }
 #endif
   }
@@ -5709,6 +5711,7 @@ vdbe_error_halt:
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
+  if( resetSchemaOnFault ) sqlite3ResetInternalSchema(db, 0);
 
   /* This is the only way out of this procedure.  We have to
   ** release the mutexes on btrees that were acquired at the

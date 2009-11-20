@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\smake\ssure\sa\sdatabase\scan\sbe\sattached\sto\sa\ssingle\shandle\stwice\sif\snot\sin\sshared-cache\smode.
-D 2009-11-20T10:18:06
+C Merge\sleaf\saccidentally\screated\sby\s[1c4984c62f].
+D 2009-11-20T10:23:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 6b9b4fd998fc2cbc05859b79af559b32792023ab
+F ext/fts3/fts3_write.c 69e6fb5a387aa7eb1f9d89e5bce35d21b879602e
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -162,7 +162,7 @@ F src/printf.c 03fabdd6112a0e23f78f8ac9a1396947ade0273b
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c aa3cb21e1ecd905c071fce8fb64d1a166cefc239
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c a727f61f3267bfa20ce1c3e85d38dc2132db1060
+F src/select.c 2f9ed7482e7a25b0b127fc41693bbdbe1caf5647
 F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
 F src/sqlite.h.in 4464e9772122f0447305d425e04d122b6f1bffec
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -209,7 +209,7 @@ F src/update.c 8efeb09822886e33c265dd96d29a3d865ea6dcf2
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
-F src/vdbe.c 95fa2b51a4e602f74594bd9a0f679b7eaf44f9c0
+F src/vdbe.c 89d618dd0b4544e319dfab84db7356e7ee5aa430
 F src/vdbe.h 5f35750615163d1064052785b4a9f0eb004a720d
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9a429349ccc2fa9acd28365a86578f602e87dafb
-R 46119cb7f99f2b8740a6d715a49a25dc
+P 1c4984c62f393f41f9182ea82546c16d02efa46f c6ed7e2a73a7a65cfa914ffcad4f603b6b7a22a8
+R a4c740bd2d6cd6d5d405c025a9a5ce19
 U dan
-Z 45d94d950c686cbe6192e3168ebbb70a
+Z 4d4aca1de07a44952499e25e5fd5b2ca

@@ -834,6 +834,9 @@ void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
   }
 }
 
+/*
+** Allocate a new SegReader object.
+*/
 int sqlite3Fts3SegReaderNew(
   Fts3Table *p,                   /* Virtual table handle */
   int iAge,                       /* Segment "age". */
@@ -963,7 +966,8 @@ static int fts3SegReaderNew(
 }
 
 /*
-** Compare the two Fts3SegReader structures. Comparison is as follows:
+** Compare the entries pointed to by two Fts3SegReader structures. 
+** Comparison is as follows:
 **
 **   1) EOF is greater than not EOF.
 **
@@ -995,11 +999,22 @@ static int fts3SegReaderCmp(Fts3SegReader *pLhs, Fts3SegReader *pRhs){
   return rc;
 }
 
-static int fts3SegReaderCmp2(Fts3SegReader *pLhs, Fts3SegReader *pRhs){
+/*
+** A different comparison function for SegReader structures. In this
+** version, it is assumed that each SegReader points to an entry in
+** a doclist for identical terms. Comparison is made as follows:
+**
+**   1) EOF (end of doclist in this case) is greater than not EOF.
+**
+**   2) By current docid.
+**
+**   3) By segment age. An older segment is considered larger.
+*/
+static int fts3SegReaderDoclistCmp(Fts3SegReader *pLhs, Fts3SegReader *pRhs){
   int rc = (pLhs->pOffsetList==0)-(pRhs->pOffsetList==0);
   if( rc==0 ){
     if( pLhs->iDocid==pRhs->iDocid ){
-      rc = pRhs->iIdx-pLhs->iIdx;
+      rc = pRhs->iIdx - pLhs->iIdx;
     }else{
       rc = (pLhs->iDocid > pRhs->iDocid) ? 1 : -1;
     }
@@ -1075,9 +1090,10 @@ static void fts3SegReaderSort(
 ** Insert a record into the %_segments table.
 */
 static int fts3WriteSegment(
-  Fts3Table *p, 
-  sqlite3_int64 iBlock,
-  char *z, int n
+  Fts3Table *p,                   /* Virtual table handle */
+  sqlite3_int64 iBlock,           /* Block id for new block */
+  char *z,                        /* Pointer to buffer containing block data */
+  int n                           /* Size of buffer z in bytes */
 ){
   sqlite3_stmt *pStmt;
   int rc = fts3SqlStmt(p, SQL_INSERT_SEGMENTS, &pStmt, 0);
@@ -1096,7 +1112,7 @@ static int fts3WriteSegment(
 ** Insert a record into the %_segdir table.
 */
 static int fts3WriteSegdir(
-  Fts3Table *p,               /* Virtual table handle */
+  Fts3Table *p,                   /* Virtual table handle */
   int iLevel,                     /* Value for "level" field */
   int iIdx,                       /* Value for "idx" field */
   sqlite3_int64 iStartBlock,      /* Value for "start_block" field */
@@ -1122,16 +1138,23 @@ static int fts3WriteSegdir(
   return rc;
 }
 
-static void fts3PrefixCompress(
-  const char *zPrev, 
-  int nPrev,
-  const char *zNext, 
-  int nNext,
-  int *pnPrefix
+/*
+** Return the size of the common prefix (if any) shared by zPrev and
+** zNext, in bytes. For example, 
+**
+**   fts3PrefixCompress("abc", 3, "abcdef", 6)   // returns 3
+**   fts3PrefixCompress("abX", 3, "abcdef", 6)   // returns 2
+**   fts3PrefixCompress("abX", 3, "Xbcdef", 6)   // returns 0
+*/
+static int fts3PrefixCompress(
+  const char *zPrev,              /* Buffer containing previous term */
+  int nPrev,                      /* Size of buffer zPrev in bytes */
+  const char *zNext,              /* Buffer containing next term */
+  int nNext                       /* Size of buffer zNext in bytes */
 ){
   int n;
   for(n=0; n<nPrev && zPrev[n]==zNext[n]; n++);
-  *pnPrefix = n;
+  return n;
 }
 
 /*
@@ -1158,7 +1181,7 @@ static int fts3NodeAddTerm(
     int nPrefix;                  /* Number of bytes of prefix compression */
     int nSuffix;                  /* Suffix length */
 
-    fts3PrefixCompress(pTree->zTerm, pTree->nTerm, zTerm, nTerm, &nPrefix);
+    nPrefix = fts3PrefixCompress(pTree->zTerm, pTree->nTerm, zTerm, nTerm);
     nSuffix = nTerm-nPrefix;
 
     nReq += sqlite3Fts3VarintLen(nPrefix)+sqlite3Fts3VarintLen(nSuffix)+nSuffix;
@@ -1263,10 +1286,20 @@ static int fts3TreeFinishNode(
 }
 
 /*
-** Helper function for fts3NodeWrite().
+** Write the buffer for the segment node pTree and all of its peers to the
+** database. Then call this function recursively to write the parent of 
+** pTree and its peers to the database. 
+**
+** Except, if pTree is a root node, do not write it to the database. Instead,
+** set output variables *paRoot and *pnRoot to contain the root node.
+**
+** If successful, SQLITE_OK is returned and output variable *piLast is
+** set to the largest blockid written to the database (or zero if no
+** blocks were written to the db). Otherwise, an SQLite error code is 
+** returned.
 */
 static int fts3NodeWrite(
-  Fts3Table *p,               /* Virtual table handle */
+  Fts3Table *p,                   /* Virtual table handle */
   SegmentNode *pTree,             /* SegmentNode handle */
   int iHeight,                    /* Height of this node in tree */
   sqlite3_int64 iLeaf,            /* Block id of first leaf node */
@@ -1326,6 +1359,14 @@ static void fts3NodeFree(SegmentNode *pTree){
   }
 }
 
+/*
+** Add a term to the segment being constructed by the SegmentWriter object
+** *ppWriter. When adding the first term to a segment, *ppWriter should
+** be passed NULL. This function will allocate a new SegmentWriter object
+** and return it via the input/output variable *ppWriter in this case.
+**
+** If successful, SQLITE_OK is returned. Otherwise, an SQLite error code.
+*/
 static int fts3SegWriterAdd(
   Fts3Table *p,                   /* Virtual table handle */
   SegmentWriter **ppWriter,       /* IN/OUT: SegmentWriter handle */ 
@@ -1368,7 +1409,7 @@ static int fts3SegWriterAdd(
   }
   nData = pWriter->nData;
 
-  fts3PrefixCompress(pWriter->zTerm, pWriter->nTerm, zTerm, nTerm, &nPrefix);
+  nPrefix = fts3PrefixCompress(pWriter->zTerm, pWriter->nTerm, zTerm, nTerm);
   nSuffix = nTerm-nPrefix;
 
   /* Figure out how many bytes are required by this new entry */
@@ -1458,18 +1499,26 @@ static int fts3SegWriterAdd(
   return SQLITE_OK;
 }
 
+/*
+** Flush all data associated with the SegmentWriter object pWriter to the
+** database. This function must be called after all terms have been added
+** to the segment using fts3SegWriterAdd(). If successful, SQLITE_OK is
+** returned. Otherwise, an SQLite error code.
+*/
 static int fts3SegWriterFlush(
-  Fts3Table *p, 
-  SegmentWriter *pWriter,
-  int iLevel,
-  int iIdx
+  Fts3Table *p,                   /* Virtual table handle */
+  SegmentWriter *pWriter,         /* SegmentWriter to flush to the db */
+  int iLevel,                     /* Value for 'level' column of %_segdir */
+  int iIdx                        /* Value for 'idx' column of %_segdir */
 ){
-  int rc;
+  int rc;                         /* Return code */
   if( pWriter->pTree ){
-    sqlite3_int64 iLast;
-    char *zRoot;
-    int nRoot;
-    sqlite3_int64 iLastLeaf = pWriter->iFree;
+    sqlite3_int64 iLast;          /* Largest block id written to database */
+    sqlite3_int64 iLastLeaf;      /* Largest leaf block id written to db */
+    char *zRoot;                  /* Pointer to buffer containing root node */
+    int nRoot;                    /* Size of buffer zRoot */
+
+    iLastLeaf = pWriter->iFree;
     rc = fts3WriteSegment(p, pWriter->iFree++, pWriter->aData, pWriter->nData);
     if( rc==SQLITE_OK ){
       rc = fts3NodeWrite(p, pWriter->pTree, 1,
@@ -1487,6 +1536,10 @@ static int fts3SegWriterFlush(
   return rc;
 }
 
+/*
+** Release all memory held by the SegmentWriter object passed as the 
+** first argument.
+*/
 static void fts3SegWriterFree(SegmentWriter *pWriter){
   if( pWriter ){
     sqlite3_free(pWriter->aData);
@@ -1519,6 +1572,11 @@ static int fts3IsEmpty(Fts3Table *p, sqlite3_value **apVal, int *pisEmpty){
   return rc;
 }
 
+/*
+** Set *pnSegment to the number of segments of level iLevel in the database.
+**
+** Return SQLITE_OK if successful, or an SQLite error code if not.
+*/
 static int fts3SegmentCount(Fts3Table *p, int iLevel, int *pnSegment){
   sqlite3_stmt *pStmt;
   int rc;
@@ -1533,6 +1591,13 @@ static int fts3SegmentCount(Fts3Table *p, int iLevel, int *pnSegment){
   return sqlite3_reset(pStmt);
 }
 
+/*
+** Set *pnSegment to the total number of segments in the database. Set
+** *pnMax to the largest segment level in the database (segment levels
+** are stored in the 'level' column of the %_segdir table).
+**
+** Return SQLITE_OK if successful, or an SQLite error code if not.
+*/
 static int fts3SegmentCountMax(Fts3Table *p, int *pnSegment, int *pnMax){
   sqlite3_stmt *pStmt;
   int rc;
@@ -1546,11 +1611,25 @@ static int fts3SegmentCountMax(Fts3Table *p, int *pnSegment, int *pnMax){
   return sqlite3_reset(pStmt);
 }
 
+/*
+** This function is used after merging multiple segments into a single large
+** segment to delete the old, now redundant, segment b-trees. Specifically,
+** it:
+** 
+**   1) Deletes all %_segments entries for the segments associated with 
+**      each of the SegReader objects in the array passed as the third 
+**      argument, and
+**
+**   2) deletes all %_segdir entries with level iLevel, or all %_segdir
+**      entries regardless of level if (iLevel<0).
+**
+** SQLITE_OK is returned if successful, otherwise an SQLite error code.
+*/
 static int fts3DeleteSegdir(
-  Fts3Table *p,
-  int iLevel, 
-  Fts3SegReader **apSegment, 
-  int nReader
+  Fts3Table *p,                   /* Virtual table handle */
+  int iLevel,                     /* Level of %_segdir entries to delete */
+  Fts3SegReader **apSegment,      /* Array of SegReader objects */
+  int nReader                     /* Size of array apSegment */
 ){
   int rc;                         /* Return Code */
   int i;                          /* Iterator variable */
@@ -1584,7 +1663,20 @@ static int fts3DeleteSegdir(
   return rc;
 }
 
-static void fts3ColumnFilter(int iCol, char **ppList, int *pnList){
+/*
+** When this function is called, buffer *ppList (size *pnList bytes) contains 
+** a position list that may (or may not) feature multiple columns. This
+** function adjusts the pointer *ppList and the length *pnList so that they
+** identify the subset of the position list that corresponds to column iCol.
+**
+** If there are no entries in the input position list for column iCol, then
+** *pnList is set to zero before returning.
+*/
+static void fts3ColumnFilter(
+  int iCol,                       /* Column to filter on */
+  char **ppList,                  /* IN/OUT: Pointer to position list */
+  int *pnList                     /* IN/OUT: Size of buffer *ppList in bytes */
+){
   char *pList = *ppList;
   int nList = *pnList;
   char *pEnd = &pList[nList];
@@ -1614,6 +1706,10 @@ static void fts3ColumnFilter(int iCol, char **ppList, int *pnList){
   *pnList = nList;
 }
 
+/*
+** sqlite3Fts3SegReaderIterate() callback used when merging multiple 
+** segments to create a single, larger segment.
+*/
 static int fts3MergeCallback(
   Fts3Table *p,
   void *pContext,
@@ -1707,7 +1803,7 @@ int sqlite3Fts3SegReaderIterate(
       for(i=0; i<nMerge; i++){
         fts3SegReaderFirstDocid(apSegment[i]);
       }
-      fts3SegReaderSort(apSegment, nMerge, nMerge, fts3SegReaderCmp2);
+      fts3SegReaderSort(apSegment, nMerge, nMerge, fts3SegReaderDoclistCmp);
       while( apSegment[0]->pOffsetList ){
         int j;                    /* Number of segments that share a docid */
         char *pList;
@@ -1749,7 +1845,7 @@ int sqlite3Fts3SegReaderIterate(
           }
         }
 
-        fts3SegReaderSort(apSegment, nMerge, j, fts3SegReaderCmp2);
+        fts3SegReaderSort(apSegment, nMerge, j, fts3SegReaderDoclistCmp);
       }
 
       if( nDoclist>0 ){
