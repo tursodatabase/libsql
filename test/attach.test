@@ -787,5 +787,34 @@ do_test attach-8.4 {
 db2 close
 file delete -force test2.db
 
+# Test that it is possible to attach the same database more than
+# once when not in shared-cache mode. That this is not possible in
+# shared-cache mode is tested in shared7.test.
+do_test attach-9.1 {
+  file delete -force test4.db
+  execsql {
+    ATTACH 'test4.db' AS aux1;
+    CREATE TABLE aux1.t1(a, b);
+    INSERT INTO aux1.t1 VALUES(1, 2);
+    ATTACH 'test4.db' AS aux2;
+    SELECT * FROM aux2.t1;
+  }
+} {1 2}
+do_test attach-9.2 {
+  file delete -force test4.db
+  catchsql {
+    BEGIN;
+      INSERT INTO aux1.t1 VALUES(3, 4);
+      INSERT INTO aux2.t1 VALUES(5, 6);
+  }
+} {1 {database is locked}}
+do_test attach-9.3 {
+  file delete -force test4.db
+  execsql {
+    COMMIT;
+    SELECT * FROM aux2.t1;
+  }
+} {1 2 3 4}
+
 
 finish_test
