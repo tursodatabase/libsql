@@ -5154,7 +5154,14 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   assert( !pPgOld || pPgOld->nRef==1 );
   if( pPgOld ){
     pPg->flags |= (pPgOld->flags&PGHDR_NEED_SYNC);
-    sqlite3PcacheDrop(pPgOld);
+    if( MEMDB ){
+      /* Do not discard pages from an in-memory database since we might
+      ** need to rollback later.  Just move the page out of the way. */
+      assert( pPager->dbSizeValid );
+      sqlite3PcacheMove(pPgOld, pPager->dbSize+1);
+    }else{
+      sqlite3PcacheDrop(pPgOld);
+    }
   }
 
   origPgno = pPg->pgno;
@@ -5199,18 +5206,12 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 
   /*
   ** For an in-memory database, make sure the original page continues
-  ** to exist, in case the transaction needs to roll back.  We allocate
-  ** the page now, instead of at rollback, because we can better deal
-  ** with an out-of-memory error now.  Ticket #3761.
+  ** to exist, in case the transaction needs to roll back.  Use pPgOld
+  ** as the original page since it has already been allocated.
   */
   if( MEMDB ){
-    DbPage *pNew;
-    rc = sqlite3PagerAcquire(pPager, origPgno, &pNew, 1);
-    if( rc!=SQLITE_OK ){
-      sqlite3PcacheMove(pPg, origPgno);
-      return rc;
-    }
-    sqlite3PagerUnref(pNew);
+    sqlite3PcacheMove(pPgOld, origPgno);
+    sqlite3PagerUnref(pPgOld);
   }
 
   return SQLITE_OK;

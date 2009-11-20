@@ -1,5 +1,8 @@
-C Improve\scomments\sand\sother\sthings\sin\sfts3_write.c.
-D 2009-11-20T05:05:19
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Avoid\sunnecessary\spage\scache\sallocations\swhen\smove\sa\spage\swhile\sautovacuuming\s\nan\sin-memory\sdatabase,\ssince\sthe\sallocation\smight\sfail\smaking\sit\simpossible\sto\nrollback\sthe\stransaction.
+D 2009-11-20T13:18:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,12 +153,12 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c 47343e340df799199fd1f1a184f0df8861519e1e
+F src/pager.c 4adc8baf93d50aa8e567173d27a37ff103106dab
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y f785d814562a14dc19202f61abb4372845f64752
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c db4a996e456eec2380732a1036e23e3f551f6573
+F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
 F src/pragma.c 6936d7df5e04b9f996f8f320d15e65b6944b2caa
 F src/prepare.c ad90970bba3aead154266d8bb6faf9fbb5233b94
 F src/printf.c 03fabdd6112a0e23f78f8ac9a1396947ade0273b
@@ -772,7 +775,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b456eacbbb16513d1b27e90015ea58a6dc92cc3b
-R 70a25367badaa9e85b170e396db9833f
-U dan
-Z 5ffc5a8c993fa4958f562d1dcf7d0c6b
+P 1cf0e3cc14bad22867e740736c2886dc1c4a48dc
+R 9f96df8d77aacbbe5a229c0e4825c7d0
+U drh
+Z a83b32939b8fe43907602c37e80ee0e1
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLBpcaoxKgR168RlERAjs+AJ9hMDoeCFoEOCx4N9Df2gvUGnw6XgCffKZD
+ZrQJ/Xtolyd5+f1xqb7zDs0=
+=mb8x
+-----END PGP SIGNATURE-----
