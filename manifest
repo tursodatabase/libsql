@@ -1,5 +1,5 @@
-C Minor\soptimizations\sto\sfts3\scode.
-D 2009-11-20T02:24:15
+C Improve\scomments\sand\sother\sthings\sin\sfts3_write.c.
+D 2009-11-20T05:05:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 3c8a5d912af939232480b3f4064ac49621816250
+F ext/fts3/fts3_write.c 6b9b4fd998fc2cbc05859b79af559b32792023ab
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4115c0c286052e32cb81f77a644d530c1766206f
-R d93aed1e18b2651263389c52f5a6aa80
+P b456eacbbb16513d1b27e90015ea58a6dc92cc3b
+R 70a25367badaa9e85b170e396db9833f
 U dan
-Z 234100290840447274601364a421931c
+Z 5ffc5a8c993fa4958f562d1dcf7d0c6b

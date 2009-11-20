@@ -147,11 +147,22 @@ struct SegmentNode {
 #define SQL_CONTENT_INSERT            16
 #define SQL_GET_BLOCK                 17
 
+/*
+** This function is used to obtain an SQLite prepared statement handle
+** for the statement identified by the second argument. If successful,
+** *pp is set to the requested statement handle and SQLITE_OK returned.
+** Otherwise, an SQLite error code is returned and *pp is set to 0.
+**
+** If argument apVal is not NULL, then it must point to an array with
+** at least as many entries as the requested statement has bound 
+** parameters. The values are bound to the statements parameters before
+** returning.
+*/
 static int fts3SqlStmt(
-  Fts3Table *p, 
-  int eStmt, 
-  sqlite3_stmt **pp, 
-  sqlite3_value **apVal
+  Fts3Table *p,                   /* Virtual table handle */
+  int eStmt,                      /* One of the SQL_XXX constants above */
+  sqlite3_stmt **pp,              /* OUT: Statement handle */
+  sqlite3_value **apVal           /* Values to bind to statement */
 ){
   const char *azSql[] = {
 /* 0  */  "DELETE FROM %Q.'%q_content' WHERE rowid = ?",
@@ -176,9 +187,8 @@ static int fts3SqlStmt(
 
 /* 14 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
 /* 15 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
-/* 16 */  0, /* CONTENT_INSERT - generated elsewhere */
+/* 16 */  "INSERT INTO %Q.'%q_content' VALUES(%z)",
 /* 17 */  "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
-
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -188,7 +198,25 @@ static int fts3SqlStmt(
   
   pStmt = p->aStmt[eStmt];
   if( !pStmt ){
-    char *zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName);
+    char *zSql;
+    if( eStmt==SQL_CONTENT_INSERT ){
+      int i;                      /* Iterator variable */  
+      char *zVarlist;             /* The "?, ?, ..." string */
+      zVarlist = (char *)sqlite3_malloc(2*p->nColumn+2);
+      if( !zVarlist ){
+        *pp = 0;
+        return SQLITE_NOMEM;
+      }
+      zVarlist[0] = '?';
+      zVarlist[p->nColumn*2+1] = '\0';
+      for(i=1; i<=p->nColumn; i++){
+        zVarlist[i*2-1] = ',';
+        zVarlist[i*2] = '?';
+      }
+      zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName, zVarlist);
+    }else{
+      zSql = sqlite3_mprintf(azSql[eStmt], p->zDb, p->zName);
+    }
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
@@ -208,6 +236,25 @@ static int fts3SqlStmt(
   *pp = pStmt;
   return rc;
 }
+
+/*
+** Similar to fts3SqlStmt(). Except, after binding the parameters in
+** array apVal[] to the SQL statement identified by eStmt, the statement
+** is executed.
+**
+** Returns SQLITE_OK if the statement is successfully executed, or an
+** SQLite error code otherwise.
+*/
+static int fts3SqlExec(Fts3Table *p, int eStmt, sqlite3_value **apVal){
+  sqlite3_stmt *pStmt;
+  int rc = fts3SqlStmt(p, eStmt, &pStmt, apVal); 
+  if( rc==SQLITE_OK ){
+    sqlite3_step(pStmt);
+    rc = sqlite3_reset(pStmt);
+  }
+  return rc;
+}
+
 
 /*
 ** Read a single block from the %_segments table. If the specified block
@@ -268,16 +315,18 @@ int sqlite3Fts3AllSegdirs(Fts3Table *p, sqlite3_stmt **ppStmt){
 }
 
 
-static int fts3SqlExec(Fts3Table *p, int eStmt, sqlite3_value **apVal){
-  sqlite3_stmt *pStmt;
-  int rc = fts3SqlStmt(p, eStmt, &pStmt, apVal); 
-  if( rc==SQLITE_OK ){
-    sqlite3_step(pStmt);
-    rc = sqlite3_reset(pStmt);
-  }
-  return rc;
-}
-
+/*
+** Append a single varint to a PendingList buffer. SQLITE_OK is returned
+** if successful, or an SQLite error code otherwise.
+**
+** This function also serves to allocate the PendingList structure itself.
+** For example, to create a new PendingList structure containing two
+** varints:
+**
+**   PendingList *p = 0;
+**   fts3PendingListAppendVarint(&p, 1);
+**   fts3PendingListAppendVarint(&p, 2);
+*/
 static int fts3PendingListAppendVarint(
   PendingList **pp,               /* IN/OUT: Pointer to PendingList struct */
   sqlite3_int64 i                 /* Value to append to data */
@@ -313,12 +362,21 @@ static int fts3PendingListAppendVarint(
   return SQLITE_OK;
 }
 
+/*
+** Add a docid/column/position entry to a PendingList structure. Non-zero
+** is returned if the structure is sqlite3_realloced as part of adding
+** the entry. Otherwise, zero.
+**
+** If an OOM error occurs, *pRc is set to SQLITE_NOMEM before returning.
+** Zero is always returned in this case. Otherwise, if no OOM error occurs,
+** it is set to SQLITE_OK.
+*/
 static int fts3PendingListAppend(
-  PendingList **pp,
-  sqlite3_int64 iDocid,
-  sqlite3_int64 iCol,
-  sqlite3_int64 iPos,
-  int *pRc
+  PendingList **pp,               /* IN/OUT: PendingList structure */
+  sqlite3_int64 iDocid,           /* Docid for entry to add */
+  sqlite3_int64 iCol,             /* Column for entry to add */
+  sqlite3_int64 iPos,             /* Position of term for entry to add */
+  int *pRc                        /* OUT: Return code */
 ){
   PendingList *p = *pp;
   int rc = SQLITE_OK;
@@ -363,6 +421,13 @@ static int fts3PendingListAppend(
   return 0;
 }
 
+/*
+** Tokenize the nul-terminated string zText and add all tokens to the
+** pending-terms hash-table. The docid used is that currently stored in
+** p->iPrevDocid, and the column is specified by argument iCol.
+**
+** If successful, SQLITE_OK is returned. Otherwise, an SQLite error code.
+*/
 static int fts3PendingTermsAdd(Fts3Table *p, const char *zText, int iCol){
   int rc;
   int iStart;
@@ -497,47 +562,19 @@ static int fts3InsertData(
   sqlite3_stmt *pContentInsert;   /* INSERT INTO %_content VALUES(...) */
 
   /* Locate the statement handle used to insert data into the %_content
-  ** table. If no such statement has been prepared, prepare a new one.
-  ** The SQL for this statement is:
+  ** table. The SQL for this statement is:
   **
   **   INSERT INTO %_content VALUES(?, ?, ?, ...)
   **
   ** The statement features N '?' variables, where N is the number of user
   ** defined columns in the FTS3 table, plus one for the docid field.
   */
-  pContentInsert = p->aStmt[SQL_CONTENT_INSERT];
-  if( !pContentInsert ){
-    char *zVarlist;               /* The "?, ?, ..." string */
-    char *zSql;                   /* The text of the INSERT statement */
-
-    /* Construct the SQL statement text. */
-    zVarlist = (char *)sqlite3_malloc(2*p->nColumn+2);
-    if( !zVarlist ){
-      return SQLITE_NOMEM;
-    }
-    zVarlist[0] = '?';
-    for(i=1; i<=p->nColumn; i++){
-      zVarlist[i*2-1] = ',';
-      zVarlist[i*2] = '?';
-    }
-    zVarlist[p->nColumn*2+1] = '\0';
-    zSql = sqlite3_mprintf("INSERT INTO %Q.'%q_content' VALUES(%z)",
-        p->zDb, p->zName, zVarlist
-    );
-    if( !zSql ) return SQLITE_NOMEM;
-
-    /* Prepare the SQL statement. */
-    rc = sqlite3_prepare_v2(p->db, zSql, -1, &pContentInsert, NULL);
-    sqlite3_free(zSql);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-    p->aStmt[SQL_CONTENT_INSERT] = pContentInsert;
+  rc = fts3SqlStmt(p, SQL_CONTENT_INSERT, &pContentInsert, &apVal[1]);
+  if( rc!=SQLITE_OK ){
+    return rc;
   }
 
-  /* Bind values to the prepared statement.
-  **
-  ** There is a quirk here. The users INSERT statement may have specified
+  /* There is a quirk here. The users INSERT statement may have specified
   ** a value for the "rowid" field, for the "docid" field, or for both.
   ** Which is a problem, since "rowid" and "docid" are aliases for the
   ** same value. For example:
@@ -547,10 +584,6 @@ static int fts3InsertData(
   ** In FTS3, if a non-NULL docid value is specified, it is the value
   ** inserted. Otherwise, the rowid value is used.
   */
-  for(i=0; i<=p->nColumn; i++){
-    rc = sqlite3_bind_value(pContentInsert, i+1, apVal[i+1]);
-    if( rc!=SQLITE_OK ) return rc;
-  }
   if( SQLITE_NULL!=sqlite3_value_type(apVal[3+p->nColumn]) ){
     rc = sqlite3_bind_value(pContentInsert, 1, apVal[3+p->nColumn]);
     if( rc!=SQLITE_OK ) return rc;
@@ -616,6 +649,10 @@ static int fts3DeleteTerms(Fts3Table *p, sqlite3_value **apVal){
   return sqlite3_reset(pSelect);
 }
 
+/*
+** Forward declaration to account for the circular dependency between
+** functions fts3SegmentMerge() and fts3AllocateSegdirIdx().
+*/
 static int fts3SegmentMerge(Fts3Table *, int);
 
 /* 
@@ -719,6 +756,10 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
   return SQLITE_OK;
 }
 
+/*
+** Set the SegReader to point to the first docid in the doclist associated
+** with the current term.
+*/
 static void fts3SegReaderFirstDocid(Fts3SegReader *pReader){
   int n;
   assert( pReader->aDoclist );
@@ -728,15 +769,14 @@ static void fts3SegReaderFirstDocid(Fts3SegReader *pReader){
 }
 
 /*
-**
+** Advance the SegReader to point to the next docid in the doclist
+** associated with the current term.
+** 
 ** If arguments ppOffsetList and pnOffsetList are not NULL, then 
 ** *ppOffsetList is set to point to the first column-offset list
 ** in the doclist entry (i.e. immediately past the docid varint).
 ** *pnOffsetList is set to the length of the set of column-offset
 ** lists, not including the nul-terminator byte. For example:
-**
-**   TODO: example. 
-** 
 */
 static void fts3SegReaderNextDocid(
   Fts3SegReader *pReader,
@@ -776,12 +816,15 @@ static void fts3SegReaderNextDocid(
 }
 
 /*
-** Free all allocations associated with the iterator passed as the first
-** argument.
+** Free all allocations associated with the iterator passed as the 
+** second argument.
 */
 void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
   if( pReader ){
     if( pReader->pStmt ){
+      /* Move the leaf-range SELECT statement to the aLeavesStmt[] array,
+      ** so that it can be reused when required by another query.
+      */
       assert( p->nLeavesStmt<p->nLeavesTotal );
       sqlite3_reset(pReader->pStmt);
       p->aLeavesStmt[p->nLeavesStmt++] = pReader->pStmt;
@@ -825,6 +868,11 @@ int sqlite3Fts3SegReaderNew(
     memcpy(pReader->aNode, zRoot, nRoot);
   }else{
     sqlite3_stmt *pStmt;
+
+    /* If the text of the SQL statement to iterate through a contiguous
+    ** set of entries in the %_segments table has not yet been composed,
+    ** compose it now.
+    */
     if( !p->zSelectLeaves ){
       p->zSelectLeaves = sqlite3_mprintf(
           "SELECT block FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ? "
@@ -835,6 +883,11 @@ int sqlite3Fts3SegReaderNew(
         goto finished;
       }
     }
+
+    /* If there are no free statements in the aLeavesStmt[] array, prepare
+    ** a new statement now. Otherwise, reuse a prepared statement from
+    ** aLeavesStmt[].
+    */
     if( p->nLeavesStmt==0 ){
       if( p->nLeavesTotal==p->nLeavesAlloc ){
         int nNew = p->nLeavesAlloc + 16;
@@ -856,6 +909,8 @@ int sqlite3Fts3SegReaderNew(
     }else{
       pReader->pStmt = p->aLeavesStmt[--p->nLeavesStmt];
     }
+
+    /* Bind the start and end leaf blockids to the prepared SQL statement. */
     sqlite3_bind_int64(pReader->pStmt, 1, iStartLeaf);
     sqlite3_bind_int64(pReader->pStmt, 2, iEndLeaf);
   }
@@ -1645,7 +1700,7 @@ int sqlite3Fts3SegReaderIterate(
       int nDoclist = 0;           /* Size of doclist */
       sqlite3_int64 iPrev = 0;    /* Previous docid stored in doclist */
 
-      /* The current term of the first nMerge entries in the linked list
+      /* The current term of the first nMerge entries in the array
       ** of Fts3SegReader objects is the same. The doclists must be merged
       ** and a single term added to the new segment.
       */
