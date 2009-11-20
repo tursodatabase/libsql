@@ -1323,11 +1323,10 @@ static void computeLimitRegisters(Parse *pParse, Select *p, int iBreak){
     v = sqlite3GetVdbe(pParse);
     if( NEVER(v==0) ) return;  /* VDBE should have already been allocated */
     if( sqlite3ExprIsInteger(p->pLimit, &n) ){
+      sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
+      VdbeComment((v, "LIMIT counter"));
       if( n==0 ){
         sqlite3VdbeAddOp2(v, OP_Goto, 0, iBreak);
-      }else{
-        sqlite3VdbeAddOp2(v, OP_Integer, n, iLimit);
-        VdbeComment((v, "LIMIT counter"));
       }
     }else{
       sqlite3ExprCode(pParse, p->pLimit, iLimit);
