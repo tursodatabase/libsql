@@ -5101,6 +5101,14 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
 
   assert( pPg->nRef>0 );
 
+  /* In order to be able to rollback, an in-memory database must journal
+  ** the page we are moving from.
+  */
+  if( MEMDB ){
+    rc = sqlite3PagerWrite(pPg);
+    if( rc ) return rc;
+  }
+
   /* If the page being moved is dirty and has not been saved by the latest
   ** savepoint, then save the current contents of the page into the 
   ** sub-journal now. This is required to handle the following scenario:
@@ -5119,7 +5127,7 @@ int sqlite3PagerMovepage(Pager *pPager, DbPage *pPg, Pgno pgno, int isCommit){
   ** one or more savepoint bitvecs. This is the reason this function
   ** may return SQLITE_NOMEM.
   */
-  if( pPg->flags&PGHDR_DIRTY 
+  if( pPg->flags&PGHDR_DIRTY
    && subjRequiresPage(pPg)
    && SQLITE_OK!=(rc = subjournalPage(pPg))
   ){

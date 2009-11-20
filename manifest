@@ -1,5 +1,8 @@
-C Merge\sleaf\saccidentally\screated\sby\s[1c4984c62f].
-D 2009-11-20T10:23:13
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C When\smoving\spages\sas\spart\sof\sautovacuum\son\san\sin-memory\sdatabase,\smake\ssure\nthat\sthe\ssource\slocation\sis\sjournalled\sso\sthat\sa\sROLLBACK\scan\soccur.\nPart\sof\sthe\sfix\sfor\sticket\s[564d412f15a00]
+D 2009-11-20T18:48:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c 4adc8baf93d50aa8e567173d27a37ff103106dab
+F src/pager.c 3c408c646d2a4adba5aedde9862ef69a27be68d8
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y f785d814562a14dc19202f61abb4372845f64752
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
@@ -772,7 +775,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1c4984c62f393f41f9182ea82546c16d02efa46f c6ed7e2a73a7a65cfa914ffcad4f603b6b7a22a8
-R a4c740bd2d6cd6d5d405c025a9a5ce19
-U dan
-Z 4d4aca1de07a44952499e25e5fd5b2ca
+P cae949ce971ca216e0f8880b2f93866619fa05be
+R 2694b0c14575364b4e238f551e9978fe
+U drh
+Z 282c516102a118903c65953429c1dd9e
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLBuSLoxKgR168RlERAuGTAJ9fd56Dwjiro+x2qI/XWq9kCYvkpgCeNshK
+ifMBSSRy91DoqTPyE1WJ+1s=
+=D02H
+-----END PGP SIGNATURE-----
