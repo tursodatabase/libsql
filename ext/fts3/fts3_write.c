@@ -779,9 +779,13 @@ static void fts3SegReaderNextDocid(
 ** Free all allocations associated with the iterator passed as the first
 ** argument.
 */
-void sqlite3Fts3SegReaderFree(Fts3SegReader *pReader){
+void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
   if( pReader ){
-    sqlite3_finalize(pReader->pStmt);
+    if( pReader->pStmt ){
+      assert( p->nLeavesStmt<p->nLeavesTotal );
+      sqlite3_reset(pReader->pStmt);
+      p->aLeavesStmt[p->nLeavesStmt++] = pReader->pStmt;
+    }
     sqlite3_free(pReader->zTerm);
     sqlite3_free(pReader);
   }
@@ -820,6 +824,7 @@ int sqlite3Fts3SegReaderNew(
     pReader->nNode = nRoot;
     memcpy(pReader->aNode, zRoot, nRoot);
   }else{
+    sqlite3_stmt *pStmt;
     if( !p->zSelectLeaves ){
       p->zSelectLeaves = sqlite3_mprintf(
           "SELECT block FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ? "
@@ -830,9 +835,26 @@ int sqlite3Fts3SegReaderNew(
         goto finished;
       }
     }
-    rc = sqlite3_prepare_v2(p->db, p->zSelectLeaves, -1, &pReader->pStmt, 0);
-    if( rc!=SQLITE_OK ){
-      goto finished;
+    if( p->nLeavesStmt==0 ){
+      if( p->nLeavesTotal==p->nLeavesAlloc ){
+        int nNew = p->nLeavesAlloc + 16;
+        sqlite3_stmt **aNew = (sqlite3_stmt **)sqlite3_realloc(
+            p->aLeavesStmt, nNew*sizeof(sqlite3_stmt *)
+        );
+        if( !aNew ){
+          rc = SQLITE_NOMEM;
+          goto finished;
+        }
+        p->nLeavesAlloc = nNew;
+        p->aLeavesStmt = aNew;
+      }
+      rc = sqlite3_prepare_v2(p->db, p->zSelectLeaves, -1, &pReader->pStmt, 0);
+      if( rc!=SQLITE_OK ){
+        goto finished;
+      }
+      p->nLeavesTotal++;
+    }else{
+      pReader->pStmt = p->aLeavesStmt[--p->nLeavesStmt];
     }
     sqlite3_bind_int64(pReader->pStmt, 1, iStartLeaf);
     sqlite3_bind_int64(pReader->pStmt, 2, iEndLeaf);
@@ -843,7 +865,7 @@ int sqlite3Fts3SegReaderNew(
   if( rc==SQLITE_OK ){
     *ppReader = pReader;
   }else{
-    sqlite3Fts3SegReaderFree(pReader);
+    sqlite3Fts3SegReaderFree(p, pReader);
   }
   return rc;
 }
@@ -1791,7 +1813,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   fts3SegWriterFree(pWriter);
   if( apSegment ){
     for(i=0; i<nSegment; i++){
-      sqlite3Fts3SegReaderFree(apSegment[i]);
+      sqlite3Fts3SegReaderFree(p, apSegment[i]);
     }
     sqlite3_free(apSegment);
   }

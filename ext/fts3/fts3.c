@@ -498,7 +498,11 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
   for(i=0; i<SizeofArray(p->aStmt); i++){
     sqlite3_finalize(p->aStmt[i]);
   }
+  for(i=0; i<p->nLeavesStmt; i++){
+    sqlite3_finalize(p->aLeavesStmt[i]);
+  }
   sqlite3_free(p->zSelectLeaves);
+  sqlite3_free(p->aLeavesStmt);
 
   /* Invoke the tokenizer destructor to free the tokenizer. */
   p->pTokenizer->pModule->xDestroy(p->pTokenizer);
@@ -864,32 +868,40 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
+static int fts3CursorSeek(Fts3Cursor *pCsr){
+  if( pCsr->isRequireSeek ){
+    pCsr->isRequireSeek = 0;
+    sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
+    if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
+      return SQLITE_OK;
+    }else{
+      int rc;
+      pCsr->isEof = 1;
+      if( SQLITE_OK==(rc = sqlite3_reset(pCsr->pStmt)) ){
+        rc = SQLITE_ERROR;
+      }
+      return rc;
+    }
+  }else{
+    return SQLITE_OK;
+  }
+}
+
 static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
 
   if( pCsr->aDoclist==0 ){
-    if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
-      rc = SQLITE_OK;
-    }else{
+    if( SQLITE_ROW!=sqlite3_step(pCsr->pStmt) ){
       pCsr->isEof = 1;
       rc = sqlite3_reset(pCsr->pStmt);
     }
   }else if( pCsr->pNextId>=&pCsr->aDoclist[pCsr->nDoclist] ){
     pCsr->isEof = 1;
-    rc = SQLITE_OK;
   }else{
     sqlite3_reset(pCsr->pStmt);
     fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
-    sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
-    if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
-      rc = SQLITE_OK;
-    }else{
-      pCsr->isEof = 1;
-      if( SQLITE_OK==(rc = sqlite3_reset(pCsr->pStmt)) ){
-        rc = SQLITE_ERROR;
-      }
-    }
+    pCsr->isRequireSeek = 1;
   }
   return rc;
 }
@@ -1524,7 +1536,7 @@ static int fts3TermSelect(
             apSegment, nAlloc*sizeof(Fts3SegReader *)
         );
         if( !pArray ){
-          sqlite3Fts3SegReaderFree(pNew);
+          sqlite3Fts3SegReaderFree(p, pNew);
           rc = SQLITE_NOMEM;
           goto finished;
         }
@@ -1563,7 +1575,7 @@ static int fts3TermSelect(
 finished:
   sqlite3_reset(pStmt);
   for(i=0; i<nSegment; i++){
-    sqlite3Fts3SegReaderFree(apSegment[i]);
+    sqlite3Fts3SegReaderFree(p, apSegment[i]);
   }
   sqlite3_free(apSegment);
   return rc;
@@ -1829,10 +1841,14 @@ static int fts3EofMethod(sqlite3_vtab_cursor *pCursor){
 ** one of the sqlite3_result_*() routines to store the requested
 ** value back in the pContext.
 */
-static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
+static int fts3ColumnMethod(sqlite3_vtab_cursor *pCursor,
                           sqlite3_context *pContext, int idxCol){
   Fts3Cursor *c = (Fts3Cursor *) pCursor;
   Fts3Table *v = cursor_vtab(c);
+  int rc = fts3CursorSeek(c);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
 
   if( idxCol<v->nColumn ){
     sqlite3_value *pVal = sqlite3_column_value(c->pStmt, idxCol+1);
@@ -1858,7 +1874,11 @@ static int fulltextColumn(sqlite3_vtab_cursor *pCursor,
 */
 static int fts3RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
   Fts3Cursor *pCsr = (Fts3Cursor *) pCursor;
-  *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
+  if( pCsr->aDoclist ){
+    *pRowid = pCsr->iPrevId;
+  }else{
+    *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
+  }
   return SQLITE_OK;
 }
 
@@ -2089,7 +2109,7 @@ static const sqlite3_module fts3Module = {
   /* xFilter       */ fts3FilterMethod,
   /* xNext         */ fts3NextMethod,
   /* xEof          */ fts3EofMethod,
-  /* xColumn       */ fulltextColumn,
+  /* xColumn       */ fts3ColumnMethod,
   /* xRowid        */ fts3RowidMethod,
   /* xUpdate       */ fts3UpdateMethod,
   /* xBegin        */ fts3BeginMethod,

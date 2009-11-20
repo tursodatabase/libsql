@@ -68,13 +68,13 @@ typedef struct Fts3SegFilter Fts3SegFilter;
 ** arguments.
 */
 struct Fts3Table {
-  sqlite3_vtab base;               /* Base class used by SQLite core */
-  sqlite3 *db;                     /* The database connection */
-  const char *zDb;                 /* logical database name */
-  const char *zName;               /* virtual table name */
-  int nColumn;                     /* number of columns in virtual table */
-  char **azColumn;                 /* column names.  malloced */
-  sqlite3_tokenizer *pTokenizer;   /* tokenizer for inserts and queries */
+  sqlite3_vtab base;              /* Base class used by SQLite core */
+  sqlite3 *db;                    /* The database connection */
+  const char *zDb;                /* logical database name */
+  const char *zName;              /* virtual table name */
+  int nColumn;                    /* number of columns in virtual table */
+  char **azColumn;                /* column names.  malloced */
+  sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
 
   /* Precompiled statements used by the implementation. Each of these 
   ** statements is run and reset within a single virtual table API call. 
@@ -87,6 +87,10 @@ struct Fts3Table {
   **    ORDER BY blockid"
   */
   char *zSelectLeaves;
+  int nLeavesStmt;                /* Valid statements in aLeavesStmt */
+  int nLeavesTotal;               /* Total number of prepared leaves stmts */
+  int nLeavesAlloc;               /* Allocated size of aLeavesStmt */
+  sqlite3_stmt **aLeavesStmt;     /* Array of prepared zSelectLeaves stmts */
 
   /* The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
@@ -110,6 +114,7 @@ struct Fts3Cursor {
   int eType;                      /* Search strategy (see below) */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
   int isEof;                      /* True if at End Of Results */
+  int isRequireSeek;              /* True if must seek pStmt to %_content row */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
   char *pNextId;                  /* Pointer into the body of aDoclist */
@@ -176,7 +181,7 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *);
 int sqlite3Fts3Optimize(Fts3Table *);
 int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
-void sqlite3Fts3SegReaderFree(Fts3SegReader *);
+void sqlite3Fts3SegReaderFree(Fts3Table *, Fts3SegReader *);
 int sqlite3Fts3SegReaderIterate(
   Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
   int (*)(Fts3Table *, void *, char *, int, char *, int),  void *

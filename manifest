@@ -1,5 +1,5 @@
-C Merge\sleaves\s[7cd178a72a]\sand\s[598727e6da].
-D 2009-11-19T18:30:14
+C Minor\soptimizations\sto\sfts3\scode.
+D 2009-11-20T02:24:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,9 +56,9 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c e7383c74407e54e198317a92a0229162d2b0b9a7
+F ext/fts3/fts3.c 4990e02c64ea19515b06b1300340bdf9a6f0eaa6
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h f7488bbc9fd12bd3843f59265227321a92b39ed4
+F ext/fts3/fts3Int.h 74b21db1c4479c220e803ecf45a78de3b5ac9480
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
 F ext/fts3/fts3_hash.c 1af1833a4d581ee8d668bb71f5a500f7a0104982
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 9048d3c1d5dcb43769cde7c00c3b3c8bcac41099
+F ext/fts3/fts3_write.c 3c8a5d912af939232480b3f4064ac49621816250
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -772,7 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7cd178a72ab99c94fdacffb19aad819ae600e57d 598727e6dae87f133c658fa125684f6ad978be60
-R fa3f77e1031f7ddfc32b18ebcb9c7d5a
+P 4115c0c286052e32cb81f77a644d530c1766206f
+R d93aed1e18b2651263389c52f5a6aa80
 U dan
-Z 98edfed95630a7f71d24a5499ccf87bc
+Z 234100290840447274601364a421931c
