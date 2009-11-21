@@ -1421,7 +1421,7 @@ static int pager_playback_one_page(
   PgHdr *pPg;                   /* An existing page in the cache */
   Pgno pgno;                    /* The page number of a page in journal */
   u32 cksum;                    /* Checksum used for sanity checking */
-  u8 *aData;                    /* Temporary storage for the page */
+  char *aData;                  /* Temporary storage for the page */
   sqlite3_file *jfd;            /* The file descriptor for the journal file */
 
   assert( (isMainJrnl&~1)==0 );      /* isMainJrnl is 0 or 1 */
@@ -1429,7 +1429,7 @@ static int pager_playback_one_page(
   assert( isMainJrnl || pDone );     /* pDone always used on sub-journals */
   assert( isSavepnt || pDone==0 );   /* pDone never used on non-savepoint */
 
-  aData = (u8*)pPager->pTmpSpace;
+  aData = pPager->pTmpSpace;
   assert( aData );         /* Temp storage must have already been allocated */
 
   /* Read the page number and page data from the journal or sub-journal
@@ -1438,7 +1438,7 @@ static int pager_playback_one_page(
   jfd = isMainJrnl ? pPager->jfd : pPager->sjfd;
   rc = read32bits(jfd, *pOffset, &pgno);
   if( rc!=SQLITE_OK ) return rc;
-  rc = sqlite3OsRead(jfd, aData, pPager->pageSize, (*pOffset)+4);
+  rc = sqlite3OsRead(jfd, (u8*)aData, pPager->pageSize, (*pOffset)+4);
   if( rc!=SQLITE_OK ) return rc;
   *pOffset += pPager->pageSize + 4 + isMainJrnl*4;
 
@@ -1457,7 +1457,7 @@ static int pager_playback_one_page(
   if( isMainJrnl ){
     rc = read32bits(jfd, (*pOffset)-4, &cksum);
     if( rc ) return rc;
-    if( !isSavepnt && pager_cksum(pPager, aData)!=cksum ){
+    if( !isSavepnt && pager_cksum(pPager, (u8*)aData)!=cksum ){
       return SQLITE_DONE;
     }
   }
@@ -1503,8 +1503,8 @@ static int pager_playback_one_page(
   pPg = pager_lookup(pPager, pgno);
   assert( pPg || !MEMDB );
   PAGERTRACE(("PLAYBACK %d page %d hash(%08x) %s\n",
-               PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, aData),
-               (isMainJrnl?"main-journal":"sub-journal")
+           PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, (u8*)aData),
+           (isMainJrnl?"main-journal":"sub-journal")
   ));
   if( (pPager->state>=PAGER_EXCLUSIVE)
    && (pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
@@ -1512,14 +1512,14 @@ static int pager_playback_one_page(
    && !isUnsync
   ){
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsWrite(pPager->fd, aData, pPager->pageSize, ofst);
+    rc = sqlite3OsWrite(pPager->fd, (u8*)aData, pPager->pageSize, ofst);
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
     }
     if( pPager->pBackup ){
       CODEC1(pPager, aData, pgno, 3, rc=SQLITE_NOMEM);
-      sqlite3BackupUpdate(pPager->pBackup, pgno, aData);
-      CODEC1(pPager, aData, pgno, 0, rc=SQLITE_NOMEM);
+      sqlite3BackupUpdate(pPager->pBackup, pgno, (u8*)aData);
+      CODEC2(pPager, aData, pgno, 7, rc=SQLITE_NOMEM, aData);
     }
   }else if( !isMainJrnl && pPg==0 ){
     /* If this is a rollback of a savepoint and data was not written to
@@ -1554,7 +1554,7 @@ static int pager_playback_one_page(
     */
     void *pData;
     pData = pPg->pData;
-    memcpy(pData, aData, pPager->pageSize);
+    memcpy(pData, (u8*)aData, pPager->pageSize);
     pPager->xReiniter(pPg);
     if( isMainJrnl && (!isSavepnt || *pOffset<=pPager->journalHdr) ){
       /* If the contents of this page were just restored from the main 
