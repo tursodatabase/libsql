@@ -1722,6 +1722,31 @@ static int fts3MergeCallback(
   return fts3SegWriterAdd(p, ppW, 1, zTerm, nTerm, aDoclist, nDoclist);
 }
 
+/*
+** This function is used to iterate through a contiguous set of terms 
+** stored in the full-text index. It merges data contained in one or 
+** more segments to support this.
+**
+** The second argument is passed an array of pointers to SegReader objects
+** allocated with sqlite3Fts3SegReaderNew(). This function merges the range 
+** of terms selected by each SegReader. If a single term is present in
+** more than one segment, the associated doclists are merged. For each
+** term and (possibly merged) doclist in the merged range, the callback
+** function xFunc is invoked with its arguments set as follows.
+**
+**   arg 0: Copy of 'p' parameter passed to this function
+**   arg 1: Copy of 'pContext' parameter passed to this function
+**   arg 2: Pointer to buffer containing term
+**   arg 3: Size of arg 2 buffer in bytes
+**   arg 4: Pointer to buffer containing doclist
+**   arg 5: Size of arg 2 buffer in bytes
+**
+** The 4th argument to this function is a pointer to a structure of type
+** Fts3SegFilter, defined in fts3Int.h. The contents of this structure
+** further restrict the range of terms that callbacks are made for and
+** modify the behaviour of this function. See comments above structure
+** definition for details.
+*/
 int sqlite3Fts3SegReaderIterate(
   Fts3Table *p,                   /* Virtual table handle */
   Fts3SegReader **apSegment,      /* Array of Fts3SegReader objects */

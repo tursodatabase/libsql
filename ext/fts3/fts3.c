@@ -1260,10 +1260,20 @@ static int fts3PoslistNearMerge(
 #define MERGE_NEAR       8        /* P + P -> D */
 #define MERGE_POS_NEAR   9        /* P + P -> P */
 
+/*
+** Merge the two doclists passed in buffer a1 (size n1 bytes) and a2
+** (size n2 bytes). The output is written to pre-allocated buffer aBuffer,
+** which is guaranteed to be large enough to hold the results. The number
+** of bytes written to aBuffer is stored in *pnBuffer before returning.
+**
+** If successful, SQLITE_OK is returned. Otherwise, if a malloc error
+** occurs while allocating a temporary buffer as part of the merge operation,
+** SQLITE_NOMEM is returned.
+*/
 static int fts3DoclistMerge(
   int mergetype,                  /* One of the MERGE_XXX constants */
-  int nParam1,
-  int nParam2,
+  int nParam1,                    /* Used by MERGE_NEAR and MERGE_POS_NEAR */
+  int nParam2,                    /* Used by MERGE_NEAR and MERGE_POS_NEAR */
   char *aBuffer,                  /* Pre-allocated output buffer */
   int *pnBuffer,                  /* OUT: Bytes written to aBuffer */
   char *a1,                       /* Buffer containing first doclist */
@@ -1425,6 +1435,11 @@ struct TermSelect {
   int nOutput;                    /* Size of output in bytes */
 };
 
+/*
+** This function is used as the sqlite3Fts3SegReaderIterate() callback when
+** querying the full-text index for a doclist associated with a term or
+** term-prefix.
+*/
 static int fts3TermSelectCb(
   Fts3Table *p,                   /* Virtual table object */
   void *pContext,                 /* Pointer to TermSelect structure */
@@ -1584,9 +1599,6 @@ finished:
 
 /* 
 ** Return a DocList corresponding to the phrase *pPhrase.
-**
-** The resulting DL_DOCIDS doclist is stored in pResult, which is
-** overwritten.
 */
 static int fts3PhraseSelect(
   Fts3Table *p,                   /* Virtual table handle */
@@ -1647,8 +1659,8 @@ static int fts3PhraseSelect(
 }
 
 /*
-** Evaluate the full-text expression pExpr against fts3 table pTab. Write
-** the results into pRes.
+** Evaluate the full-text expression pExpr against fts3 table pTab. Store
+** the resulting doclist in *paOut and *pnOut.
 */
 static int evalFts3Expr(
   Fts3Table *p,                   /* Virtual table handle */
@@ -1835,7 +1847,8 @@ static int fts3EofMethod(sqlite3_vtab_cursor *pCursor){
   return ((Fts3Cursor *)pCursor)->isEof;
 }
 
-/* This is the xColumn method of the virtual table.  The SQLite
+/* 
+** This is the xColumn method of the virtual table.  The SQLite
 ** core calls this method during a query when it needs the value
 ** of a column from the virtual table.  This method needs to use
 ** one of the sqlite3_result_*() routines to store the requested

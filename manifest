@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\sbug\sin\stransaction\srollback\sduring\sbackup\swhen\sthe\sCODEC\sis\senabled\nthat\scan\sresult\sin\sa\scorrupt\sbackup\sfile.\s\sThis\sis\sonly\sa\sproblem\swhen\nSQLITE_HAS_CODEC\sis\sdefined.
-D 2009-11-21T01:33:51
+C Add\ssome\smissing\scomments\sto\sfts3\sfiles.\sNo\ssource\scode\schanges.
+D 2009-11-21T03:03:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 4990e02c64ea19515b06b1300340bdf9a6f0eaa6
+F ext/fts3/fts3.c 6396a59d3fbe8e2ef0b6afe5d5a1f575943f3d22
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 74b21db1c4479c220e803ecf45a78de3b5ac9480
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
@@ -71,7 +68,7 @@ F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 69e6fb5a387aa7eb1f9d89e5bce35d21b879602e
+F ext/fts3/fts3_write.c ac1c03d0df946031062324ce89d8e65cb48031b5
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -775,14 +772,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2f42f91fe65b0b21671936013df08037091f0cc6
-R f31a7b27b605d7a26aa89eb1b256db48
-U drh
-Z 06dbdf8ffebc750a1009c3d1910ae035
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLB0OCoxKgR168RlERAkJZAJ9mG+901dHWGrJ3Ve4ChzrzuDAunwCfSxd3
-dv/JktoI/j9ez9dQLHX5Ffs=
-=dGQd
------END PGP SIGNATURE-----
+P f3398fc4db765e2c63d425d570c4469a84b3328c
+R 7d091a5cc3fdeb10834447e4b7fead9f
+U dan
+Z 2dfed66936aa5f392e1458f1e1c469a6
