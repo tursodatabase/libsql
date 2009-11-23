@@ -3838,7 +3838,7 @@ int sqlite3PagerAcquire(
       goto pager_acquire_err;
     }
 
-    if( nMax<(int)pgno || MEMDB || noContent ){
+    if( MEMDB || nMax<(int)pgno || noContent ){
       if( pgno>pPager->mxPgno ){
 	rc = SQLITE_FULL;
 	goto pager_acquire_err;
