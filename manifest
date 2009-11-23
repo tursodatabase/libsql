@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Rearrange\sthe\sorder\sof\stwo\sbranches\sin\sorder\sto\srestore\s100%\sbranch\scoverage\nafter\srecent\schanges\sto\sin-memory\sdatabase\sprocessing.
-D 2009-11-23T15:59:28
+C Make\ssure\sregisters\scomputed\sfor\sthe\sVFilter\sopcode\sare\smarked\sinvalid\nafter\sthe\sVFilter\sopcode\sfinishes.\s\sTicket\s[16fbf14cb2].
+D 2009-11-23T21:23:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -203,7 +203,7 @@ F src/test_osinst.c 90fb03d396f39956897dfb4bd0e62c6711db1cca
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
-F src/test_tclvar.c 0e50b7656bda33cf520da64e5069f35ae30aecab
+F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c 00fed80690ae7f1525483a35861511c48bc579f2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 9f7d39da1a1346fa0cf106ea0bf10bb6b8b61ddf
@@ -221,7 +221,7 @@ F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vtab.c 456fc226614569f0e46f216e33265bea268bd917
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 6dedaffcf818448ed8de4f0992fad2e181852638
+F src/where.c 11b5b00c49d53e767a7eb855bc60790edeca6185
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -731,6 +731,7 @@ F test/vtabA.test 0dcd4c81ffb56649f47d1b5fb9c5ae807ccf41f7
 F test/vtabB.test 04df5dc531b9f44d9ca65b9c1b79f12b5922a796
 F test/vtabC.test 1cf7896ab6859bfe3074244b2b0e12de5cbdd766
 F test/vtabD.test 74167b1578e5886fe4c886d6bef2fd1406444c42
+F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
@@ -775,14 +776,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a4380ab326e4b0de29271c824d041193e86b7139
-R e9edc0086f1c75d2d64b3dbdf0fc928b
+P 6ce6ff4402241d5c76acd0c60c85097dfcd7fd7c
+R 73371aa0d25fff72d71d0bb9cb88ddeb
 U drh
-Z 3b0ef23d140f2cb75c84af6f193ec6e6
+Z 5211c637bba904d1e29145c292e02226
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLCrFjoxKgR168RlERAsBGAJ9G0mhiLXC2fl2M09RCMI6yrjNQSwCZAZa2
-9pyVKRh0m6cYDxcr3Z7Iumo=
-=7OxL
+iD8DBQFLCv1loxKgR168RlERAsHlAJ40XyLuqbgpxyCT5lxXxL98BWYY0gCdH9m8
+1cRU7+EupRdTuuSJysOtySw=
+=9QWw
 -----END PGP SIGNATURE-----
