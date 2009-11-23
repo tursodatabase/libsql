@@ -87,7 +87,13 @@ static void resolveAlias(
     pDup->pColl = pExpr->pColl;
     pDup->flags |= EP_ExpCollate;
   }
-  sqlite3ExprClear(db, pExpr);
+
+  /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
+  ** prevents ExprDelete() from deleting the Expr structure itself,
+  ** allowing it to be repopulated by the memcpy() on the following line.
+  */
+  ExprSetProperty(pExpr, EP_Static);
+  sqlite3ExprDelete(db, pExpr);
   memcpy(pExpr, pDup, sizeof(*pExpr));
   sqlite3DbFree(db, pDup);
 }
