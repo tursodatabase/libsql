@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sSQLITE_SECURE_DELETE\sso\sthat\sit\soverwrites\scontent\son\sthe\sroot\spages\nof\stables\sand\sindices\sthat\sare\sdropped\susing\sthe\struncate\soptimization.
-D 2009-11-24T02:37:03
+C Fix\sa\stracing\smacro\sin\sthe\sVDBE\sin\sthe\sVColumn\sopcode.
+D 2009-11-24T16:26:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/update.c 8efeb09822886e33c265dd96d29a3d865ea6dcf2
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
-F src/vdbe.c 89d618dd0b4544e319dfab84db7356e7ee5aa430
+F src/vdbe.c 343175b0f5d8ad1dc018c52b3a4c428029cead92
 F src/vdbe.h 5f35750615163d1064052785b4a9f0eb004a720d
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
@@ -776,14 +776,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 83dc7d38c2695d1b2a7d4866a4df9be9e41d1abe
-R 66d43f35faf0287771b370c61b6f2c77
+P 02ef972a56aab1e61786000283193165d3968842
+R 906efa28fc9f004f544fa83f98fdcd2f
 U drh
-Z 95a4b42518293f40012354eec44d18a3
+Z 2d2b583acdac8f54f65dc7650540653b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLC0bSoxKgR168RlERAk3eAJ90ZdPJNFyBWXgdWrgJwhsyeE586wCdE52+
-z6KOAde/XddZS4kEa7iS+J8=
-=yv5q
+iD8DBQFLDAksoxKgR168RlERAhoZAJ4s2MG81bz6MXkHnY2NUGswNrmvawCfdWH6
+NQdetJi/ySSQPEc42bDGVps=
+=OmlQ
 -----END PGP SIGNATURE-----

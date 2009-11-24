@@ -5446,8 +5446,8 @@ case OP_VColumn: {
   ** dynamic allocation in sContext.s (a Mem struct) is  released.
   */
   sqlite3VdbeChangeEncoding(&sContext.s, encoding);
-  REGISTER_TRACE(pOp->p3, pDest);
   sqlite3VdbeMemMove(pDest, &sContext.s);
+  REGISTER_TRACE(pOp->p3, pDest);
   UPDATE_MAX_BLOBSIZE(pDest);
 
   if( sqlite3SafetyOn(db) ){
