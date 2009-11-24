@@ -1475,7 +1475,9 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
-  /*memset(&data[hdr], 0, pBt->usableSize - hdr);*/
+#ifdef SQLITE_SECURE_DELETE
+  memset(&data[hdr], 0, pBt->usableSize - hdr);
+#endif
   data[hdr] = (char)flags;
   first = hdr + 8 + 4*((flags&PTF_LEAF)==0 ?1:0);
   memset(&data[hdr+1], 0, 4);
@@ -6855,9 +6857,9 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
 */
 static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
-  Pgno pgno,            /* Page number to clear */
-  int freePageFlag,     /* Deallocate page if true */
-  int *pnChange
+  Pgno pgno,               /* Page number to clear */
+  int freePageFlag,        /* Deallocate page if true */
+  int *pnChange            /* Add number of Cells freed to this counter */
 ){
   MemPage *pPage;
   int rc;

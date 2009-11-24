@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sregisters\scomputed\sfor\sthe\sVFilter\sopcode\sare\smarked\sinvalid\nafter\sthe\sVFilter\sopcode\sfinishes.\s\sTicket\s[16fbf14cb2].
-D 2009-11-23T21:23:46
+C Fix\sSQLITE_SECURE_DELETE\sso\sthat\sit\soverwrites\scontent\son\sthe\sroot\spages\nof\stables\sand\sindices\sthat\sare\sdropped\susing\sthe\struncate\soptimization.
+D 2009-11-24T02:37:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 7f6c6aa7feeeb5e26e01b344161d9aa1b5d64177
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -111,7 +111,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c d37a90bbcc30f92f1ea772de94cd4225df1801ef
+F src/btree.c c13f6d1a469f7bac963fff7f17980919acd5f3ee
 F src/btree.h 7944a9dac59eb3e541aad45fd2747f1051e7c63d
 F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
 F src/build.c a48e74d24897100017d39ceba5de255e53ec9488
@@ -776,14 +776,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6ce6ff4402241d5c76acd0c60c85097dfcd7fd7c
-R 73371aa0d25fff72d71d0bb9cb88ddeb
+P 83dc7d38c2695d1b2a7d4866a4df9be9e41d1abe
+R 66d43f35faf0287771b370c61b6f2c77
 U drh
-Z 5211c637bba904d1e29145c292e02226
+Z 95a4b42518293f40012354eec44d18a3
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLCv1loxKgR168RlERAsHlAJ40XyLuqbgpxyCT5lxXxL98BWYY0gCdH9m8
-1cRU7+EupRdTuuSJysOtySw=
-=9QWw
+iD8DBQFLC0bSoxKgR168RlERAk3eAJ90ZdPJNFyBWXgdWrgJwhsyeE586wCdE52+
+z6KOAde/XddZS4kEa7iS+J8=
+=yv5q
 -----END PGP SIGNATURE-----
