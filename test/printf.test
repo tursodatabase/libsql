@@ -3506,6 +3506,43 @@ do_test printf-4.3 {
 do_test printf-4.4 {
   sqlite3_mprintf_str {%d %d A NULL pointer in %%Q: %Q} 1 2
 } {1 2 A NULL pointer in %Q: NULL}
+do_test printf-4.5 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.10q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+do_test printf-4.6 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.9q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+do_test printf-4.7 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.8q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''all'}
+do_test printf-4.8 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.7q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''al'}
+do_test printf-4.9 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.6q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y''a'}
+do_test printf-4.10 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.5q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y'''}
+do_test printf-4.11 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.4q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi Y'}
+do_test printf-4.12 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.3q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi '}
+do_test printf-4.13 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.2q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'Hi'}
+do_test printf-4.14 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.1q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: 'H'}
+do_test printf-4.15 {
+  sqlite3_mprintf_str {%d %d A quoted string: '%.0q'} 1 2 {Hi Y'all}
+} {1 2 A quoted string: ''}
+do_test printf-4.16 {
+  sqlite3_mprintf_str {%d A quoted string: '%.*q'} 1 6 {Hi Y'all}
+} {1 A quoted string: 'Hi Y''a'}
+
 
 do_test printf-5.1 {
   set x [sqlite3_mprintf_str {%d %d %100000s} 0 0 {Hello}]
