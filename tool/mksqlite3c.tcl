@@ -87,6 +87,7 @@ foreach hdr {
    btree.h
    btreeInt.h
    fts3.h
+   fts3Int.h
    fts3_hash.h
    fts3_tokenizer.h
    hash.h

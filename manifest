@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Support\szeroblob\sin\strace\soutput.
-D 2009-11-25T21:05:09
+C Make\ssure\sthe\snew\sfts3Int.h\sheader\sfile\sis\sadded\sto\sthe\samalgamation.
+D 2009-11-25T22:42:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -91,7 +91,7 @@ F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 4323353d807bcbe769d4c245b9f433a5e9ddf132
+F main.mk a92b99b264c3b277f8cf74d50aadc22c55967ef0
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -759,7 +759,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c 9216336085e7a7c226a35c0bd780239968f8304f
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl c2d2ec2fef48417c31d6da9ce2992619ab35bbc5
+F tool/mksqlite3c.tcl 1da28229695fdebdfe8a7d19902ef6c76d6c1c2d
 F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
@@ -777,14 +777,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 01d5451af0bd2743eb74b98f2e77dd2c75f403b6
-R 1426657988e2592baacd749a79560b8f
+P 5086bf8e838c824accda531afeb56a51dd40d795
+R ed5087328424f39f06205bbc572f551d
 U drh
-Z 7e512fc550cd921dd98a2661ddf11986
+Z f2bc54bbfa0e52f56ab37c3976d8a8d5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLDZwJoxKgR168RlERAoUEAJ9OOQNx5RwCpK2DoQYr9+bqDYZj4QCdFShj
-wj2ubpWGRrzjHMd4dYwSKEA=
-=egCX
+iD8DBQFLDbLToxKgR168RlERAj/GAJ0WmBi/7iDV7uT+jg9HQqK1QWEcPgCfRHfu
+F8LNHJsr2zwwkwQvbuskLOA=
+=sLHP
 -----END PGP SIGNATURE-----
