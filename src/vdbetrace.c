@@ -101,6 +101,7 @@ char *sqlite3VdbeExpandSql(
       for(i=0, pOp=p->aOp; ALWAYS(i<p->nOp); i++, pOp++){
         if( pOp->opcode!=OP_Variable ) continue;
         if( pOp->p3>1 ) continue;
+        if( pOp->p4.z==0 ) continue;
         if( memcmp(pOp->p4.z, zRawSql, n)==0 && pOp->p4.z[n]==0 ){
           idx = pOp->p1;
           break;
@@ -133,6 +134,8 @@ char *sqlite3VdbeExpandSql(
       {
         sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
       }
+    }else if( pVar->flags & MEM_Zero ){
+      sqlite3XPrintf(&out, "zeroblob(%d)", pVar->u.nZero);
     }else{
       assert( pVar->flags & MEM_Blob );
       sqlite3StrAccumAppend(&out, "x'", 2);

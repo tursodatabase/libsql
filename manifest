@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Get\strace\swith\sparameter\sinsertion\sworking\sfor\sUTF16\sdatabases.
-D 2009-11-25T19:35:23
+C Support\szeroblob\sin\strace\soutput.
+D 2009-11-25T21:05:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +219,7 @@ F src/vdbeapi.c 17680ab7a75ec938c5ba039a6c87489d01faf2cb
 F src/vdbeaux.c 0981dcb5b933b74ae7bc9bfa7770df5e4da849b3
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
-F src/vdbetrace.c 07c1f37c6dd753bf254928c8b4880aabf01653ff
+F src/vdbetrace.c f3f2516df6b6ce7573862691624e20e84c9bd71d
 F src/vtab.c 456fc226614569f0e46f216e33265bea268bd917
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 11b5b00c49d53e767a7eb855bc60790edeca6185
@@ -777,14 +777,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 545cfb3b63f482036ae152e6ebcce86d373585a8
-R bf765939fc59b1f09dfded7d2e7b810c
+P 01d5451af0bd2743eb74b98f2e77dd2c75f403b6
+R 1426657988e2592baacd749a79560b8f
 U drh
-Z 502c1270f78689fd631f9bda4d5d8cef
+Z 7e512fc550cd921dd98a2661ddf11986
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLDYb+oxKgR168RlERAkN1AJ4xk5LnqIkUiJ6464MOkgJWhl0VzACgiaz0
-IMigDnq3LvaxBTiGDg2jzno=
-=r6LT
+iD8DBQFLDZwJoxKgR168RlERAoUEAJ9OOQNx5RwCpK2DoQYr9+bqDYZj4QCdFShj
+wj2ubpWGRrzjHMd4dYwSKEA=
+=egCX
 -----END PGP SIGNATURE-----
