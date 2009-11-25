@@ -93,6 +93,9 @@ char *sqlite3VdbeExpandSql(
       }
     }else{
       assert( zRawSql[0]==':' || zRawSql[0]=='$' || zRawSql[0]=='@' );
+      testcase( zRawSql[0]==':' );
+      testcase( zRawSql[0]=='$' );
+      testcase( zRawSql[0]=='@' );
       n = sqlite3GetToken((u8*)zRawSql, &dummy);
       idx = 0;
       for(i=0, pOp=p->aOp; ALWAYS(i<p->nOp); i++, pOp++){
@@ -116,7 +119,20 @@ char *sqlite3VdbeExpandSql(
     }else if( pVar->flags & MEM_Real ){
       sqlite3XPrintf(&out, "%!.15g", pVar->r);
     }else if( pVar->flags & MEM_Str ){
-      sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
+#ifndef SQLITE_OMIT_UTF16
+      if( ENC(db)!=SQLITE_UTF8 ){
+        Mem utf8;
+        memset(&utf8, 0, sizeof(utf8));
+        utf8.db = db;
+        sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, ENC(db), SQLITE_STATIC);
+        sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
+        sqlite3XPrintf(&out, "'%.*q'", utf8.n, utf8.z);
+        sqlite3VdbeMemRelease(&utf8);
+      }else
+#endif
+      {
+        sqlite3XPrintf(&out, "'%.*q'", pVar->n, pVar->z);
+      }
     }else{
       assert( pVar->flags & MEM_Blob );
       sqlite3StrAccumAppend(&out, "x'", 2);
