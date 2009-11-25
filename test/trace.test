@@ -168,4 +168,20 @@ ifcapable trigger {
   } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
 }
 
+# With 3.6.21, we add the ability to expand host parameters in the trace
+# output.  Test this feature.
+#
+do_test trace-6.1 {
+  set ::t6int [expr {3+3}]
+  set ::t6real [expr {1.5*4.0}]
+  set ::t6str {test-six y'all}
+  db eval {SELECT x'3031323334' AS x} {set ::t6blob $x}
+  unset -nocomplain t6null
+  set TRACE_OUT {}
+  execsql {SELECT $::t6int, $::t6real, $t6str, $t6blob, $t6null}
+} {6 6.0 {test-six y'all} 01234 {}}
+do_test trace-6.2 {
+  set TRACE_OUT
+} {{SELECT 6, 6.0, 'test-six y''all', x'3031323334', NULL}}
+
 finish_test

@@ -250,6 +250,7 @@ foreach file {
    vdbemem.c
    vdbeaux.c
    vdbeapi.c
+   vdbetrace.c
    vdbe.c
    vdbeblob.c
    journal.c

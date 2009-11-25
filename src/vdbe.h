@@ -203,6 +203,9 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
 void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
 sqlite3_value *sqlite3VdbeGetValue(Vdbe*, int, u8);
 void sqlite3VdbeSetVarmask(Vdbe*, int);
+#ifndef SQLITE_OMIT_TRACE
+  char *sqlite3VdbeExpandSql(Vdbe*, const char*);
+#endif
 
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);

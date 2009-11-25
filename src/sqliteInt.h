@@ -2517,6 +2517,9 @@ void sqlite3StatusSet(int, int);
 int sqlite3IsNaN(double);
 
 void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
+#ifndef SQLITE_OMIT_TRACE
+void sqlite3XPrintf(StrAccum*, const char*, ...);
+#endif
 char *sqlite3MPrintf(sqlite3*,const char*, ...);
 char *sqlite3VMPrintf(sqlite3*,const char*, va_list);
 char *sqlite3MAppendf(sqlite3*,char*,const char*,...);

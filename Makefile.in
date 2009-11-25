@@ -175,7 +175,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo backup.lo bitvec.lo btmutex.lo \
         random.lo resolve.lo rowset.lo select.lo status.lo \
         table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
-        vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo \
+        vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbetrace.lo \
         walker.lo where.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
@@ -272,6 +272,7 @@ SRC = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/walker.c \
@@ -361,6 +362,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
   $(TOP)/src/where.c \
   parse.c
 
@@ -728,6 +730,9 @@ vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(HDR)
 
 vdbemem.lo:	$(TOP)/src/vdbemem.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbemem.c
+
+vdbetrace.lo:	$(TOP)/src/vdbetrace.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
 
 vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c

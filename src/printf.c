@@ -957,3 +957,15 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   fflush(stdout);
 }
 #endif
+
+#ifndef SQLITE_OMIT_TRACE
+/*
+** variable-argument wrapper around sqlite3VXPrintf().
+*/
+void sqlite3XPrintf(StrAccum *p, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap,zFormat);
+  sqlite3VXPrintf(p, 1, zFormat, ap);
+  va_end(ap);
+}
+#endif

@@ -5632,7 +5632,9 @@ case OP_Trace: {
   zTrace = (pOp->p4.z ? pOp->p4.z : p->zSql);
   if( zTrace ){
     if( db->xTrace ){
-      db->xTrace(db->pTraceArg, zTrace);
+      char *z = sqlite3VdbeExpandSql(p, zTrace);
+      db->xTrace(db->pTraceArg, z);
+      sqlite3DbFree(db, z);
     }
 #ifdef SQLITE_DEBUG
     if( (db->flags & SQLITE_SqlTrace)!=0 ){
