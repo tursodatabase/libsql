@@ -24,15 +24,19 @@
 ** a host parameter.  If the text contains no host parameters, return
 ** the total number of bytes in the text.
 */
-static int findNextHostParameter(const char *zSql){
+static int findNextHostParameter(const char *zSql, int *pnToken){
   int tokenType;
   int nTotal = 0;
   int n;
 
+  *pnToken = 0;
   while( zSql[0] ){
     n = sqlite3GetToken((u8*)zSql, &tokenType);
     assert( n>0 && tokenType!=TK_ILLEGAL );
-    if( tokenType==TK_VARIABLE ) break;
+    if( tokenType==TK_VARIABLE ){
+      *pnToken = n;
+      break;
+    }
     nTotal += n;
     zSql += n;
   }
@@ -40,9 +44,9 @@ static int findNextHostParameter(const char *zSql){
 }
 
 /*
-** Return a pointer to a string in memory obtained form sqlite3Malloc() which
+** Return a pointer to a string in memory obtained form sqlite3DbMalloc() which
 ** holds a copy of zRawSql but with host parameters expanded to their
-** current values.
+** current bindings.
 **
 ** The calling function is responsible for making sure the memory returned
 ** is eventually freed.
@@ -63,10 +67,9 @@ char *sqlite3VdbeExpandSql(
   int idx;                 /* Index of a host parameter */
   int nextIndex = 1;       /* Index of next ? host parameter */
   int n;                   /* Length of a token prefix */
+  int nToken;              /* Length of the parameter token */
   int i;                   /* Loop counter */
-  int dummy;               /* For holding a unused return value */
   Mem *pVar;               /* Value of a host parameter */
-  VdbeOp *pOp;             /* For looping over opcodes */
   StrAccum out;            /* Accumulate the output here */
   char zBase[100];         /* Initial working space */
 
@@ -75,19 +78,16 @@ char *sqlite3VdbeExpandSql(
                       db->aLimit[SQLITE_LIMIT_LENGTH]);
   out.db = db;
   while( zRawSql[0] ){
-    n = findNextHostParameter(zRawSql);
+    n = findNextHostParameter(zRawSql, &nToken);
     assert( n>0 );
     sqlite3StrAccumAppend(&out, zRawSql, n);
     zRawSql += n;
-    if( zRawSql[0]==0 ) break;
+    assert( zRawSql[0] || nToken==0 );
+    if( nToken==0 ) break;
     if( zRawSql[0]=='?' ){
-      zRawSql++;
-      if( sqlite3Isdigit(zRawSql[0]) ){
-        idx = 0;
-        while( sqlite3Isdigit(zRawSql[0]) ){
-          idx = idx*10 + zRawSql[0] - '0';
-          zRawSql++;
-        }
+      if( nToken>1 ){
+        assert( sqlite3Isdigit(zRawSql[1]) );
+        sqlite3GetInt32(&zRawSql[1], &idx);
       }else{
         idx = nextIndex;
       }
@@ -96,20 +96,10 @@ char *sqlite3VdbeExpandSql(
       testcase( zRawSql[0]==':' );
       testcase( zRawSql[0]=='$' );
       testcase( zRawSql[0]=='@' );
-      n = sqlite3GetToken((u8*)zRawSql, &dummy);
-      idx = 0;
-      for(i=0, pOp=p->aOp; ALWAYS(i<p->nOp); i++, pOp++){
-        if( pOp->opcode!=OP_Variable ) continue;
-        if( pOp->p3>1 ) continue;
-        if( pOp->p4.z==0 ) continue;
-        if( memcmp(pOp->p4.z, zRawSql, n)==0 && pOp->p4.z[n]==0 ){
-          idx = pOp->p1;
-          break;
-        }
-      }
+      idx = sqlite3VdbeParameterIndex(p, zRawSql, nToken);
       assert( idx>0 );
-      zRawSql += n;
     }
+    zRawSql += nToken;
     nextIndex = idx + 1;
     assert( idx>0 && idx<=p->nVar );
     pVar = &p->aVar[idx-1];
@@ -121,11 +111,12 @@ char *sqlite3VdbeExpandSql(
       sqlite3XPrintf(&out, "%!.15g", pVar->r);
     }else if( pVar->flags & MEM_Str ){
 #ifndef SQLITE_OMIT_UTF16
-      if( ENC(db)!=SQLITE_UTF8 ){
+      u8 enc = ENC(db);
+      if( enc!=SQLITE_UTF8 ){
         Mem utf8;
         memset(&utf8, 0, sizeof(utf8));
         utf8.db = db;
-        sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, ENC(db), SQLITE_STATIC);
+        sqlite3VdbeMemSetStr(&utf8, pVar->z, pVar->n, enc, SQLITE_STATIC);
         sqlite3VdbeChangeEncoding(&utf8, SQLITE_UTF8);
         sqlite3XPrintf(&out, "'%.*q'", utf8.n, utf8.z);
         sqlite3VdbeMemRelease(&utf8);
