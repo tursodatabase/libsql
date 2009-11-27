@@ -1546,8 +1546,9 @@ static int fts3TermSelect(
     assert( (rc==SQLITE_OK)==(pNew!=0) );
     if( pNew ){
       if( nSegment==nAlloc ){
+        Fts3SegReader **pArray;
         nAlloc += 16;
-        Fts3SegReader **pArray = (Fts3SegReader **)sqlite3_realloc(
+        pArray = (Fts3SegReader **)sqlite3_realloc(
             apSegment, nAlloc*sizeof(Fts3SegReader *)
         );
         if( !pArray ){
