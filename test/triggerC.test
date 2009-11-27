@@ -784,8 +784,76 @@ do_test triggerC-9.2 {
     SELECT a FROM t9 ORDER BY a;
   }
 } {1 2 3 4}
- 
 
+# At one point (between versions 3.6.18 and 3.6.20 inclusive), an UPDATE 
+# that fired a BEFORE trigger that itself updated the same row as the 
+# statement causing it to fire was causing a strange side-effect: The 
+# values updated by the statement within the trigger were being overwritten 
+# by the values in the new.* array, even if those values were not 
+# themselves written by the parent UPDATE statement.
+#
+# Technically speaking this was not a bug. The SQLite documentation says
+# that if a BEFORE UPDATE or BEFORE DELETE trigger modifies or deletes the
+# row that the parent statement is operating on the results are undefined. 
+# But as of 3.6.21 behaviour is restored to the way it was in versions
+# 3.6.17 and earlier to avoid causing unnecessary difficulties.
+#
+do_test triggerC-10.1 {
+  execsql {
+    CREATE TABLE t10(a, updatecnt DEFAULT 0);
+    CREATE TRIGGER t10_bu BEFORE UPDATE OF a ON t10 BEGIN
+      UPDATE t10 SET updatecnt = updatecnt+1 WHERE rowid = old.rowid;
+    END;
+    INSERT INTO t10(a) VALUES('hello');
+  }
+
+  # Before the problem was fixed, table t10 would contain the tuple 
+  # (world, 0) after running the following script (because the value
+  # 1 written to column "updatecnt" was clobbered by the old value 0).
+  #
+  execsql {
+    UPDATE t10 SET a = 'world';
+    SELECT * FROM t10;
+  }
+} {world 1}
+
+do_test triggerC-10.2 {
+  execsql {
+    UPDATE t10 SET a = 'tcl', updatecnt = 5;
+    SELECT * FROM t10;
+  }
+} {tcl 5}
+
+do_test triggerC-10.3 {
+  execsql {
+    CREATE TABLE t11(
+      c1,   c2,  c3,  c4,  c5,  c6,  c7,  c8,  c9, c10,
+      c11, c12, c13, c14, c15, c16, c17, c18, c19, c20,
+      c21, c22, c23, c24, c25, c26, c27, c28, c29, c30,
+      c31, c32, c33, c34, c35, c36, c37, c38, c39, c40
+    );
+
+    CREATE TRIGGER t11_bu BEFORE UPDATE OF c1 ON t11 BEGIN
+      UPDATE t11 SET c31 = c31+1, c32=c32+1 WHERE rowid = old.rowid;
+    END;
+
+    INSERT INTO t11 VALUES(
+      1,   2,  3,  4,  5,  6,  7,  8,  9, 10,
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+      21, 22, 23, 24, 25, 26, 27, 28, 29, 30,
+      31, 32, 33, 34, 35, 36, 37, 38, 39, 40
+    );
+  }
+
+  # Before the problem was fixed, table t10 would contain the tuple 
+  # (world, 0) after running the following script (because the value
+  # 1 written to column "updatecnt" was clobbered by the old value 0).
+  #
+  execsql {
+    UPDATE t11 SET c4=35, c33=22, c1=5;
+    SELECT * FROM t11;
+  } 
+} {5 2 3 35 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 32 33 22 34 35 36 37 38 39 40}
 
 
 finish_test
