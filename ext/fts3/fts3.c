@@ -1835,6 +1835,9 @@ static int fts3FilterMethod(
     int iCol = idxNum-FTS3_FULLTEXT_SEARCH;
     const char *zQuery = (const char *)sqlite3_value_text(apVal[0]);
 
+    if( zQuery==0 && sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
+      return SQLITE_NOMEM;
+    }
     rc = sqlite3Fts3PendingTermsFlush(p);
     if( rc!=SQLITE_OK ) return rc;
 
