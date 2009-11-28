@@ -1,5 +1,8 @@
-C Add\sa\stest\scase\sfor\screating\san\sFTS3\stable\swith\sno\smodule\sarguments\sor\sopening/closing\sbrackets\sin\sthe\sCREATE\sVIRTUAL\sTABLE\sstatement.
-D 2009-11-28T15:35:17
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sall\sbenign\sOOM\sfailure\sopportunities\sfrom\sthe\sFTS3\shash\stable\nimplementation.\s\sAll\sOOM\sfaults\scause\sSQLITE_NOMEM\sto\sbe\sreturned.
+D 2009-11-28T17:07:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -60,7 +63,7 @@ F ext/fts3/fts3.c 591a84934108c7838f31bd0379fd2ac9f5b6c2ef
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 74b21db1c4479c220e803ecf45a78de3b5ac9480
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
-F ext/fts3/fts3_hash.c 1af1833a4d581ee8d668bb71f5a500f7a0104982
+F ext/fts3/fts3_hash.c 29fba5a01e51c53e37040e53821e6b2cec18c8fb
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
@@ -775,7 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P db65fd5913aae4d83d2c2bc243653175be3c3d35
-R 9fcbd85e4dfbef4d1cba73d182c5e027
-U dan
-Z a8040dc309e6b365539843242aa4e716
+P a9cba7ea0a06efa7a63a3069b219cc30fb127e98
+R cd76edcc3f7664765b0f468b4b373929
+U drh
+Z 7d405c7b8c5c56c13626b9241d44be94
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLEVjhoxKgR168RlERArsFAJ9pg2grGcuObpwcFueNc37gYB76zACfcd7l
+Q3Z8+jEElhbCe4PM9MrJP58=
+=MGIf
+-----END PGP SIGNATURE-----

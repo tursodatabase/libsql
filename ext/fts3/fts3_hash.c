@@ -190,15 +190,17 @@ static void fts3HashInsertElement(
 /* Resize the hash table so that it cantains "new_size" buckets.
 ** "new_size" must be a power of 2.  The hash table might fail 
 ** to resize if sqliteMalloc() fails.
+**
+** Return non-zero if a memory allocation error occurs.
 */
-static void fts3Rehash(Fts3Hash *pH, int new_size){
+static int fts3Rehash(Fts3Hash *pH, int new_size){
   struct _fts3ht *new_ht;          /* The new hash table */
   Fts3HashElem *elem, *next_elem;  /* For looping over existing elements */
   int (*xHash)(const void*,int);   /* The hash function */
 
   assert( (new_size & (new_size-1))==0 );
   new_ht = (struct _fts3ht *)fts3HashMalloc( new_size*sizeof(struct _fts3ht) );
-  if( new_ht==0 ) return;
+  if( new_ht==0 ) return 1;
   fts3HashFree(pH->ht);
   pH->ht = new_ht;
   pH->htsize = new_size;
@@ -208,6 +210,7 @@ static void fts3Rehash(Fts3Hash *pH, int new_size){
     next_elem = elem->next;
     fts3HashInsertElement(pH, &new_ht[h], elem);
   }
+  return 0;
 }
 
 /* This function (for internal use only) locates an element in an
@@ -338,13 +341,13 @@ void *sqlite3Fts3HashInsert(
     return old_data;
   }
   if( data==0 ) return 0;
-  if( pH->htsize==0 ){
-    fts3Rehash(pH,8);
-    if( pH->htsize==0 ){
-      pH->count = 0;
-      return data;
-    }
+  if( (pH->htsize==0 && fts3Rehash(pH,8))
+   || (pH->count>=pH->htsize && fts3Rehash(pH, pH->htsize*2))
+  ){
+    pH->count = 0;
+    return data;
   }
+  assert( pH->htsize>0 );
   new_elem = (Fts3HashElem*)fts3HashMalloc( sizeof(Fts3HashElem) );
   if( new_elem==0 ) return data;
   if( pH->copyKey && pKey!=0 ){
@@ -359,9 +362,6 @@ void *sqlite3Fts3HashInsert(
   }
   new_elem->nKey = nKey;
   pH->count++;
-  if( pH->count > pH->htsize ){
-    fts3Rehash(pH,pH->htsize*2);
-  }
   assert( pH->htsize>0 );
   assert( (pH->htsize & (pH->htsize-1))==0 );
   h = hraw & (pH->htsize-1);
