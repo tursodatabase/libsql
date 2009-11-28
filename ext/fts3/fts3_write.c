@@ -409,7 +409,9 @@ static int fts3PendingListAppend(
   if( iCol>=0 ){
     assert( iPos>p->iLastPos || (iPos==0 && p->iLastPos==0) );
     rc = fts3PendingListAppendVarint(&p, 2+iPos-p->iLastPos);
-    p->iLastPos = iPos;
+    if( rc==SQLITE_OK ){
+      p->iLastPos = iPos;
+    }
   }
 
  pendinglistappend_out:

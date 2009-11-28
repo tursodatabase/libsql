@@ -1,0 +1,72 @@
+# 2009 November 28
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file implements tests to verify the "testable statements" in the
+# fts3.in document.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+ifcapable !fts3 {
+  finish_test
+  return
+}
+source $testdir/fts3_common.tcl
+
+set DO_MALLOC_TEST 0
+
+# Procs used to make the tests in this file easier to read.
+#
+proc ddl_test {tn ddl} {
+  uplevel [list do_write_test e_fts3-$tn sqlite_master $ddl]
+}
+proc write_test {tn tbl sql} {
+  uplevel [list do_write_test e_fts3-$tn $tbl $sql]
+}
+proc read_test {tn sql result} {
+  uplevel [list do_select_test e_fts3-$tn $sql $result]
+}
+
+#-----------------------------------------------------------------
+# Test the example CREATE VIRTUAL TABLE statements in section 1.1 
+# of fts3.in.
+#
+ddl_test   1.1.1 {CREATE VIRTUAL TABLE data USING fts3()}
+read_test  1.1.2 {PRAGMA table_info(data)} {0 content {} 0 {} 0}
+
+ddl_test   1.2.1 {
+  CREATE VIRTUAL TABLE pages USING fts3(title, keywords, body)
+}
+read_test  1.2.2 {
+  PRAGMA table_info(pages)
+} {0 title {} 0 {} 0 1 keywords {} 0 {} 0 2 body {} 0 {} 0}
+
+ddl_test   1.3.1 {
+  CREATE VIRTUAL TABLE mail USING fts3(
+      subject VARCHAR(256) NOT NULL,
+      body TEXT CHECK(length(body)<10240)
+  )
+}
+read_test  1.3.2 {
+  PRAGMA table_info(mail)
+} {0 subject {} 0 {} 0 1 body {} 0 {} 0}
+
+# A very large string. Used to test if the constraint on column "body" of
+# table "mail" is enforced (it should not be - FTS3 tables do not support
+# constraints).
+set largetext [string repeat "the quick brown fox " 5000]
+write_test 1.3.3 mail_content { INSERT INTO mail VALUES(NULL, $largetext) }
+read_test  1.3.4 {
+  SELECT subject IS NULL, length(body) FROM mail
+} [list 1 100000]
+
+finish_test

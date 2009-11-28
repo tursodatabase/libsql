@@ -286,3 +286,125 @@ proc fts3_read {tbl where varname} {
   }
 }
 
+##########################################################################
+
+#-------------------------------------------------------------------------
+# This proc is used to test a single SELECT statement. Parameter $name is
+# passed a name for the test case (i.e. "fts3_malloc-1.4.1") and parameter
+# $sql is passed the text of the SELECT statement. Parameter $result is
+# set to the expected output if the SELECT statement is successfully
+# executed using [db eval].
+#
+# Example:
+#
+#   do_select_test testcase-1.1 "SELECT 1+1, 1+2" {1 2}
+#
+# If global variable DO_MALLOC_TEST is set to a non-zero value, or if
+# it is not defined at all, then OOM testing is performed on the SELECT
+# statement. Each OOM test case is said to pass if either (a) executing
+# the SELECT statement succeeds and the results match those specified
+# by parameter $result, or (b) TCL throws an "out of memory" error.
+#
+# If DO_MALLOC_TEST is defined and set to zero, then the SELECT statement
+# is executed just once. In this case the test case passes if the results
+# match the expected results passed via parameter $result.
+#
+proc do_select_test {name sql result} {
+  doPassiveTest $name $sql [list 0 $result]
+}
+
+proc do_error_test {name sql error} {
+  doPassiveTest $name $sql [list 1 $error]
+}
+
+proc doPassiveTest {name sql catchres} {
+  if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
+
+  if {$::DO_MALLOC_TEST} {
+    set answers [list {1 {out of memory}} $catchres]
+    set modes [list 100000 transient 1 persistent]
+  } else {
+    set answers [list $catchres]
+    set modes [list 0 nofail]
+  }
+  set str [join $answers " OR "]
+
+  foreach {nRepeat zName} $modes {
+    for {set iFail 1} 1 {incr iFail} {
+      if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
+
+      set res [catchsql $sql]
+      if {[lsearch $answers $res]>=0} {
+        set res $str
+      }
+      do_test $name.$zName.$iFail [list set {} $res] $str
+      set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
+      if {$nFail==0} break
+    }
+  }
+}
+
+
+#-------------------------------------------------------------------------
+# Test a single write to the database. In this case a  "write" is a 
+# DELETE, UPDATE or INSERT statement.
+#
+# If OOM testing is performed, there are several acceptable outcomes:
+#
+#   1) The write succeeds. No error is returned.
+#
+#   2) An "out of memory" exception is thrown and:
+#
+#     a) The statement has no effect, OR
+#     b) The current transaction is rolled back, OR
+#     c) The statement succeeds. This can only happen if the connection
+#        is in auto-commit mode (after the statement is executed, so this
+#        includes COMMIT statements).
+#
+# If the write operation eventually succeeds, zero is returned. If a
+# transaction is rolled back, non-zero is returned.
+#
+# Parameter $name is the name to use for the test case (or test cases).
+# The second parameter, $tbl, should be the name of the database table
+# being modified. Parameter $sql contains the SQL statement to test.
+#
+proc do_write_test {name tbl sql} {
+  if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
+
+  # Figure out an statement to get a checksum for table $tbl.
+  db eval "SELECT * FROM $tbl" V break
+  set cksumsql "SELECT md5sum([join [concat rowid $V(*)] ,]) FROM $tbl"
+
+  # Calculate the initial table checksum.
+  set cksum1 [db one $cksumsql]
+
+
+  if {$::DO_MALLOC_TEST } {
+    set answers [list {1 {out of memory}} {0 {}}]
+    set modes [list 100000 transient 1 persistent]
+  } else {
+    set answers [list {0 {}}]
+    set modes [list 0 nofail]
+  }
+  set str [join $answers " OR "]
+
+  foreach {nRepeat zName} $modes {
+    for {set iFail 1} 1 {incr iFail} {
+      if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
+
+      set res [uplevel [list catchsql $sql]]
+      set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
+      if {$nFail==0} {
+        do_test $name.$zName.$iFail [list set {} $res] {0 {}}
+        return
+      } else {
+        if {[lsearch $answers $res]>=0} {
+          set res $str
+        }
+        do_test $name.$zName.$iFail [list set {} $res] $str
+        set cksum2 [db one $cksumsql]
+        if {$cksum1 != $cksum2} return
+      }
+    }
+  }
+}

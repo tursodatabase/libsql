@@ -1,5 +1,5 @@
-C Change\sthe\stest\snumbers\sin\se_fkey.test\sso\sthat\sthey\sare\sin\sorder.
-D 2009-11-27T18:31:41
+C Fix\sa\sbug\sintroduced\sby\sthe\sfts3\srefactoring\s(segfault\swhen\screating\sa\stable\swith\szero\smodule\sargs).\sAlso\sa\sfix\sto\shandle\san\sOOM\serror.
+D 2009-11-28T12:40:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c2776bb39a5cd97d8a96fcfd86f9ad17d3120606
+F ext/fts3/fts3.c 524b080a1a7e9c4ebe7ce49e63f8f22a40a8b795
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 74b21db1c4479c220e803ecf45a78de3b5ac9480
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c ac1c03d0df946031062324ce89d8e65cb48031b5
+F ext/fts3/fts3_write.c f1bffadc003b243bb804732c336c9ea55b85de09
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -326,6 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test f0fbfbcc01b24ad840ed61227b66a05201a7856d
+F test/e_fts3.test 50fcbde25544ee8ab268bfa1e06dda1e570d12d1
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -376,7 +377,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test f4f380d3717493605270dfa3b0fa893ea0afb18d
-F test/fts3_common.tcl c6493126a3847355c007bb36e0d15e496899aeb5
+F test/fts3_common.tcl b4d857bbc29ea8039cec556e49671168812cca08
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
@@ -585,7 +586,7 @@ F test/tclsqlite.test bf4227eb236a4c097aa7974a2bf7d3225acf34be
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 2caf7980d7dbb99dab9507ae0646802bc4d12c79
+F test/tester.tcl 02f671e71d1646440d226bed2dde8433f0a7bfa9
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -774,7 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 97d332416069d2fbce323740b276d0e7523eeee5
-R 8971b6fda5645b10b7224031af4ab0a0
+P ca73be44cc2dab5edc48292c467adc8362ddf645
+R 07cb40380182af95ccf713911fe63989
 U dan
-Z 0e0e27ba021e9cea945070788ad7bfa7
+Z d54fff7775225c261880c5e74340ae2b

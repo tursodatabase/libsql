@@ -634,7 +634,7 @@ static int fts3CreateTables(Fts3Table *p){
 **   argv[0]   -> module name
 **   argv[1]   -> database name
 **   argv[2]   -> table name
-**   argv[...] -> "column name" fields...
+**   argv[...] -> "column name" and other module argument fields.
 */
 int fts3InitVtab(
   int isCreate,                   /* True for xCreate, false for xConnect */
@@ -646,10 +646,10 @@ int fts3InitVtab(
   char **pzErr                    /* Write any error message here */
 ){
   Fts3Hash *pHash = (Fts3Hash *)pAux;
-  Fts3Table *p;               /* Pointer to allocated vtab */
+  Fts3Table *p;                   /* Pointer to allocated vtab */
   int rc;                         /* Return code */
-  int i;
-  int nByte;
+  int i;                          /* Iterator variable */
+  int nByte;                      /* Size of allocation used for *p */
   int iCol;
   int nString = 0;
   int nCol = 0;
@@ -679,6 +679,10 @@ int fts3InitVtab(
       return rc;
     }
     assert( pTokenizer );
+  }
+
+  if( nCol==0 ){
+    nCol = 1;
   }
 
   /* Allocate and populate the Fts3Table structure. */
@@ -725,6 +729,10 @@ int fts3InitVtab(
       zCsr += n+1;
       assert( zCsr <= &((char *)p)[nByte] );
     }
+  }
+  if( iCol==0 ){
+    assert( nCol==1 );
+    p->azColumn[0] = "content";
   }
 
   /* If this is an xCreate call, create the underlying tables in the 

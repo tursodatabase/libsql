@@ -412,7 +412,7 @@ proc execsql {sql {db db}} {
 #
 proc catchsql {sql {db db}} {
   # puts "SQL = $sql"
-  set r [catch {$db eval $sql} msg]
+  set r [catch [list uplevel [list $db eval $sql]] msg]
   lappend r $msg
   return $r
 }
