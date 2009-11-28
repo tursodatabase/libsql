@@ -46,144 +46,94 @@ struct Snippet {
 ** hi-bit-set characters.  This is the same solution used in the
 ** tokenizer.
 */
-/* TODO(shess) The snippet-generation code should be using the
-** tokenizer-generated tokens rather than doing its own local
-** tokenization.
-*/
-/* TODO(shess) Is __isascii() a portable version of (c&0x80)==0? */
-static int safe_isspace(char c){
+static int fts3snippetIsspace(char c){
   return (c&0x80)==0 ? isspace(c) : 0;
 }
-static int safe_isalnum(char c){
-  return (c&0x80)==0 ? isalnum(c) : 0;
-}
 
-/*******************************************************************/
-/* DataBuffer is used to collect data into a buffer in piecemeal
-** fashion.  It implements the usual distinction between amount of
-** data currently stored (nData) and buffer capacity (nCapacity).
-**
-** dataBufferInit - create a buffer with given initial capacity.
-** dataBufferReset - forget buffer's data, retaining capacity.
-** dataBufferSwap - swap contents of two buffers.
-** dataBufferExpand - expand capacity without adding data.
-** dataBufferAppend - append data.
-** dataBufferAppend2 - append two pieces of data at once.
-** dataBufferReplace - replace buffer's data.
+
+/*
+** A StringBuffer object holds a zero-terminated string that grows
+** arbitrarily by appending.  Space to hold the string is obtained
+** from sqlite3_malloc().  After any memory allocation failure, 
+** StringBuffer.z is set to NULL and no further allocation is attempted.
 */
-typedef struct DataBuffer {
-  char *pData;          /* Pointer to malloc'ed buffer. */
-  int nCapacity;        /* Size of pData buffer. */
-  int nData;            /* End of data loaded into pData. */
-} DataBuffer;
-
-static void dataBufferInit(DataBuffer *pBuffer, int nCapacity){
-  assert( nCapacity>=0 );
-  pBuffer->nData = 0;
-  pBuffer->nCapacity = nCapacity;
-  pBuffer->pData = nCapacity==0 ? NULL : sqlite3_malloc(nCapacity);
-}
-static void dataBufferReset(DataBuffer *pBuffer){
-  pBuffer->nData = 0;
-}
-static void dataBufferExpand(DataBuffer *pBuffer, int nAddCapacity){
-  assert( nAddCapacity>0 );
-  /* TODO(shess) Consider expanding more aggressively.  Note that the
-  ** underlying malloc implementation may take care of such things for
-  ** us already.
-  */
-  if( pBuffer->nData+nAddCapacity>pBuffer->nCapacity ){
-    pBuffer->nCapacity = pBuffer->nData+nAddCapacity;
-    pBuffer->pData = sqlite3_realloc(pBuffer->pData, pBuffer->nCapacity);
-  }
-}
-static void dataBufferAppend(DataBuffer *pBuffer,
-                             const char *pSource, int nSource){
-  assert( nSource>0 && pSource!=NULL );
-  dataBufferExpand(pBuffer, nSource);
-  memcpy(pBuffer->pData+pBuffer->nData, pSource, nSource);
-  pBuffer->nData += nSource;
-}
-static void dataBufferAppend2(DataBuffer *pBuffer,
-                              const char *pSource1, int nSource1,
-                              const char *pSource2, int nSource2){
-  assert( nSource1>0 && pSource1!=NULL );
-  assert( nSource2>0 && pSource2!=NULL );
-  dataBufferExpand(pBuffer, nSource1+nSource2);
-  memcpy(pBuffer->pData+pBuffer->nData, pSource1, nSource1);
-  memcpy(pBuffer->pData+pBuffer->nData+nSource1, pSource2, nSource2);
-  pBuffer->nData += nSource1+nSource2;
-}
-static void dataBufferReplace(DataBuffer *pBuffer,
-                              const char *pSource, int nSource){
-  dataBufferReset(pBuffer);
-  dataBufferAppend(pBuffer, pSource, nSource);
-}
-
-
-/* StringBuffer is a null-terminated version of DataBuffer. */
 typedef struct StringBuffer {
-  DataBuffer b;            /* Includes null terminator. */
+  char *z;         /* Text of the string.  Space from malloc. */
+  int nUsed;       /* Number bytes of z[] used, not counting \000 terminator */
+  int nAlloc;      /* Bytes allocated for z[] */
 } StringBuffer;
 
-static void initStringBuffer(StringBuffer *sb){
-  dataBufferInit(&sb->b, 100);
-  dataBufferReplace(&sb->b, "", 1);
-}
-static int stringBufferLength(StringBuffer *sb){
-  return sb->b.nData-1;
-}
-static char *stringBufferData(StringBuffer *sb){
-  return sb->b.pData;
+
+/*
+** Initialize a new StringBuffer.
+*/
+static void fts3SnippetSbInit(StringBuffer *p){
+  p->nAlloc = 100;
+  p->nUsed = 0;
+  p->z = sqlite3_malloc( p->nAlloc );
 }
 
-static void nappend(StringBuffer *sb, const char *zFrom, int nFrom){
-  assert( sb->b.nData>0 );
-  if( nFrom>0 ){
-    sb->b.nData--;
-    dataBufferAppend2(&sb->b, zFrom, nFrom, "", 1);
+/*
+** Append text to the string buffer.
+*/
+static void fts3SnippetAppend(StringBuffer *p, const char *zNew, int nNew){
+  if( p->z==0 ) return;
+  if( nNew<0 ) nNew = strlen(zNew);
+  if( p->nUsed + nNew >= p->nAlloc ){
+    int nAlloc;
+    char *zNew;
+
+    nAlloc = p->nUsed + nNew + p->nAlloc;
+    zNew = sqlite3_realloc(p->z, nAlloc);
+    if( zNew==0 ){
+      sqlite3_free(p->z);
+      p->z = 0;
+      return;
+    }
+    p->z = zNew;
+    p->nAlloc = nAlloc;
   }
-}
-static void append(StringBuffer *sb, const char *zFrom){
-  nappend(sb, zFrom, strlen(zFrom));
-}
-
-static int endsInWhiteSpace(StringBuffer *p){
-  return stringBufferLength(p)>0 &&
-    safe_isspace(stringBufferData(p)[stringBufferLength(p)-1]);
+  memcpy(&p->z[p->nUsed], zNew, nNew);
+  p->nUsed += nNew;
+  p->z[p->nUsed] = 0;
 }
 
 /* If the StringBuffer ends in something other than white space, add a
 ** single space character to the end.
 */
-static void appendWhiteSpace(StringBuffer *p){
-  if( stringBufferLength(p)==0 ) return;
-  if( !endsInWhiteSpace(p) ) append(p, " ");
-}
-
-/* Remove white space from the end of the StringBuffer */
-static void trimWhiteSpace(StringBuffer *p){
-  while( endsInWhiteSpace(p) ){
-    p->b.pData[--p->b.nData-1] = '\0';
+static void fts3SnippetAppendWhiteSpace(StringBuffer *p){
+  if( p->z && p->nUsed && !fts3snippetIsspace(p->z[p->nUsed-1]) ){
+    fts3SnippetAppend(p, " ", 1);
   }
 }
 
+/* Remove white space from the end of the StringBuffer */
+static void fts3SnippetTrimWhiteSpace(StringBuffer *p){
+  if( p->z ){
+    while( p->nUsed && fts3snippetIsspace(p->z[p->nUsed-1]) ){
+      p->nUsed--;
+    }
+    p->z[p->nUsed] = 0;
+  }
+}
 
 /* 
 ** Release all memory associated with the Snippet structure passed as
 ** an argument.
 */
 static void fts3SnippetFree(Snippet *p){
-  sqlite3_free(p->aMatch);
-  sqlite3_free(p->zOffset);
-  sqlite3_free(p->zSnippet);
-  sqlite3_free(p);
+  if( p ){
+    sqlite3_free(p->aMatch);
+    sqlite3_free(p->zOffset);
+    sqlite3_free(p->zSnippet);
+    sqlite3_free(p);
+  }
 }
 
 /*
 ** Append a single entry to the p->aMatch[] log.
 */
-static void snippetAppendMatch(
+static int snippetAppendMatch(
   Snippet *p,               /* Append the entry to this snippet */
   int iCol, int iTerm,      /* The column and query term */
   int iToken,               /* Matching token in document */
@@ -192,13 +142,16 @@ static void snippetAppendMatch(
   int i;
   struct snippetMatch *pMatch;
   if( p->nMatch+1>=p->nAlloc ){
+    struct snippetMatch *pNew;
     p->nAlloc = p->nAlloc*2 + 10;
-    p->aMatch = sqlite3_realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
-    if( p->aMatch==0 ){
+    pNew = sqlite3_realloc(p->aMatch, p->nAlloc*sizeof(p->aMatch[0]) );
+    if( pNew==0 ){
+      p->aMatch = 0;
       p->nMatch = 0;
       p->nAlloc = 0;
-      return;
+      return SQLITE_NOMEM;
     }
+    p->aMatch = pNew;
   }
   i = p->nMatch++;
   pMatch = &p->aMatch[i];
@@ -207,6 +160,7 @@ static void snippetAppendMatch(
   pMatch->iToken = iToken;
   pMatch->iStart = iStart;
   pMatch->nByte = nByte;
+  return SQLITE_OK;
 }
 
 /*
@@ -280,7 +234,7 @@ static int fts3ExprBeneathNot(Fts3Expr *p){
 ** Add entries to pSnippet->aMatch[] for every match that occurs against
 ** document zDoc[0..nDoc-1] which is stored in column iColumn.
 */
-static void snippetOffsetsOfColumn(
+static int snippetOffsetsOfColumn(
   Fts3Cursor *pCur,         /* The fulltest search cursor */
   Snippet *pSnippet,             /* The Snippet object to be filled in */
   int iColumn,                   /* Index of fulltext table column */
@@ -310,11 +264,12 @@ static void snippetOffsetsOfColumn(
   pTokenizer = pVtab->pTokenizer;
   pTModule = pTokenizer->pModule;
   rc = pTModule->xOpen(pTokenizer, zDoc, nDoc, &pTCursor);
-  if( rc ) return;
+  if( rc ) return rc;
   pTCursor->pTokenizer = pTokenizer;
 
   prevMatch = 0;
-  while( !pTModule->xNext(pTCursor, &zToken, &nToken, &iBegin, &iEnd, &iPos) ){
+  while( (rc = pTModule->xNext(pTCursor, &zToken, &nToken,
+                               &iBegin, &iEnd, &iPos))==SQLITE_OK ){
     Fts3Expr *pIter = pCur->pExpr;
     int iIter = -1;
     iRotorBegin[iRotor&FTS3_ROTOR_MASK] = iBegin;
@@ -339,15 +294,18 @@ static void snippetOffsetsOfColumn(
       if( i==(FTS3_ROTOR_SZ-2) || nPhrase==iIter+1 ){
         for(j=nPhrase-1; j>=0; j--){
           int k = (iRotor-j) & FTS3_ROTOR_MASK;
-          snippetAppendMatch(pSnippet, iColumn, i-j, iPos-j,
-                iRotorBegin[k], iRotorLen[k]);
+          rc = snippetAppendMatch(pSnippet, iColumn, i-j, iPos-j,
+                                  iRotorBegin[k], iRotorLen[k]);
+          if( rc ) goto end_offsets_of_column;
         }
       }
     }
     prevMatch = match<<1;
     iRotor++;
   }
+end_offsets_of_column:
   pTModule->xClose(pTCursor);  
+  return rc==SQLITE_DONE ? SQLITE_OK : rc;
 }
 
 /*
@@ -489,6 +447,7 @@ static int snippetAllOffsets(Fts3Cursor *pCsr, Snippet **ppSnippet){
   int iFirst, iLast;
   int iTerm = 0;
   Snippet *pSnippet;
+  int rc = SQLITE_OK;
 
   if( pCsr->pExpr==0 ){
     return SQLITE_OK;
@@ -512,19 +471,23 @@ static int snippetAllOffsets(Fts3Cursor *pCsr, Snippet **ppSnippet){
     iFirst = iColumn;
     iLast = iColumn;
   }
-  for(i=iFirst; i<=iLast; i++){
+  for(i=iFirst; rc==SQLITE_OK && i<=iLast; i++){
     const char *zDoc;
     int nDoc;
     zDoc = (const char*)sqlite3_column_text(pCsr->pStmt, i+1);
     nDoc = sqlite3_column_bytes(pCsr->pStmt, i+1);
-    snippetOffsetsOfColumn(pCsr, pSnippet, i, zDoc, nDoc);
+    if( zDoc==0 && sqlite3_column_type(pCsr->pStmt, i+1)!=SQLITE_NULL ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = snippetOffsetsOfColumn(pCsr, pSnippet, i, zDoc, nDoc);
+    }
   }
 
   while( trimSnippetOffsets(pCsr->pExpr, pSnippet, &iTerm) ){
     iTerm = 0;
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
@@ -538,7 +501,7 @@ static void snippetOffsetText(Snippet *p){
   StringBuffer sb;
   char zBuf[200];
   if( p->zOffset ) return;
-  initStringBuffer(&sb);
+  fts3SnippetSbInit(&sb);
   for(i=0; i<p->nMatch; i++){
     struct snippetMatch *pMatch = &p->aMatch[i];
     if( pMatch->iTerm>=0 ){
@@ -550,12 +513,12 @@ static void snippetOffsetText(Snippet *p){
       zBuf[0] = ' ';
       sqlite3_snprintf(sizeof(zBuf)-1, &zBuf[cnt>0], "%d %d %d %d",
           pMatch->iCol, pMatch->iTerm, pMatch->iStart, pMatch->nByte);
-      append(&sb, zBuf);
+      fts3SnippetAppend(&sb, zBuf, -1);
       cnt++;
     }
   }
-  p->zOffset = stringBufferData(&sb);
-  p->nOffset = stringBufferLength(&sb);
+  p->zOffset = sb.z;
+  p->nOffset = sb.z ? sb.nUsed : 0;
 }
 
 /*
@@ -593,10 +556,10 @@ static int wordBoundary(
     }
   }
   for(i=1; i<=10; i++){
-    if( safe_isspace(zDoc[iBreak-i]) ){
+    if( fts3snippetIsspace(zDoc[iBreak-i]) ){
       return iBreak - i + 1;
     }
-    if( safe_isspace(zDoc[iBreak+i]) ){
+    if( fts3snippetIsspace(zDoc[iBreak+i]) ){
       return iBreak + i + 1;
     }
   }
@@ -640,7 +603,7 @@ static void snippetText(
   pSnippet->zSnippet = 0;
   aMatch = pSnippet->aMatch;
   nMatch = pSnippet->nMatch;
-  initStringBuffer(&sb);
+  fts3SnippetSbInit(&sb);
 
   for(i=0; i<nMatch; i++){
     aMatch[i].snStatus = SNIPPET_IGNORE;
@@ -674,10 +637,10 @@ static void snippetText(
       iStart = tailOffset;
     }
     if( (iCol!=tailCol && tailCol>=0) || iStart!=tailOffset ){
-      trimWhiteSpace(&sb);
-      appendWhiteSpace(&sb);
-      append(&sb, zEllipsis);
-      appendWhiteSpace(&sb);
+      fts3SnippetTrimWhiteSpace(&sb);
+      fts3SnippetAppendWhiteSpace(&sb);
+      fts3SnippetAppend(&sb, zEllipsis, -1);
+      fts3SnippetAppendWhiteSpace(&sb);
     }
     iEnd = aMatch[i].iStart + aMatch[i].nByte + 40;
     iEnd = wordBoundary(iEnd, zDoc, nDoc, aMatch, nMatch, iCol);
@@ -695,11 +658,11 @@ static void snippetText(
       }
       if( iMatch<nMatch && aMatch[iMatch].iStart<iEnd
              && aMatch[iMatch].iCol==iCol ){
-        nappend(&sb, &zDoc[iStart], aMatch[iMatch].iStart - iStart);
+        fts3SnippetAppend(&sb, &zDoc[iStart], aMatch[iMatch].iStart - iStart);
         iStart = aMatch[iMatch].iStart;
-        append(&sb, zStartMark);
-        nappend(&sb, &zDoc[iStart], aMatch[iMatch].nByte);
-        append(&sb, zEndMark);
+        fts3SnippetAppend(&sb, zStartMark, -1);
+        fts3SnippetAppend(&sb, &zDoc[iStart], aMatch[iMatch].nByte);
+        fts3SnippetAppend(&sb, zEndMark, -1);
         iStart += aMatch[iMatch].nByte;
         for(j=iMatch+1; j<nMatch; j++){
           if( aMatch[j].iTerm==aMatch[iMatch].iTerm
@@ -709,20 +672,20 @@ static void snippetText(
           }
         }
       }else{
-        nappend(&sb, &zDoc[iStart], iEnd - iStart);
+        fts3SnippetAppend(&sb, &zDoc[iStart], iEnd - iStart);
         iStart = iEnd;
       }
     }
     tailCol = iCol;
     tailOffset = iEnd;
   }
-  trimWhiteSpace(&sb);
+  fts3SnippetTrimWhiteSpace(&sb);
   if( tailEllipsis ){
-    appendWhiteSpace(&sb);
-    append(&sb, zEllipsis);
+    fts3SnippetAppendWhiteSpace(&sb);
+    fts3SnippetAppend(&sb, zEllipsis, -1);
   }
-  pSnippet->zSnippet = stringBufferData(&sb);
-  pSnippet->nSnippet = stringBufferLength(&sb);
+  pSnippet->zSnippet = sb.z;
+  pSnippet->nSnippet = sb.z ? sb.nUsed : 0;
 }
 
 void sqlite3Fts3Offsets(
@@ -731,8 +694,16 @@ void sqlite3Fts3Offsets(
 ){
   Snippet *p;                     /* Snippet structure */
   int rc = snippetAllOffsets(pCsr, &p);
-  snippetOffsetText(p);
-  sqlite3_result_text(pCtx, p->zOffset, p->nOffset, SQLITE_TRANSIENT);
+  if( rc==SQLITE_OK ){
+    snippetOffsetText(p);
+    if( p->zOffset ){
+      sqlite3_result_text(pCtx, p->zOffset, p->nOffset, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_error_nomem(pCtx);
+    }
+  }else{
+    sqlite3_result_error_nomem(pCtx);
+  }
   fts3SnippetFree(p);
 }
 
@@ -745,8 +716,16 @@ void sqlite3Fts3Snippet(
 ){
   Snippet *p;                     /* Snippet structure */
   int rc = snippetAllOffsets(pCsr, &p);
-  snippetText(pCsr, p, zStart, zEnd, zEllipsis);
-  sqlite3_result_text(pCtx, p->zSnippet, p->nSnippet, SQLITE_TRANSIENT);
+  if( rc==SQLITE_OK ){
+    snippetText(pCsr, p, zStart, zEnd, zEllipsis);
+    if( p->zSnippet ){
+      sqlite3_result_text(pCtx, p->zSnippet, p->nSnippet, SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_error_nomem(pCtx);
+    }
+  }else{
+    sqlite3_result_error_nomem(pCtx);
+  }
   fts3SnippetFree(p);
 }
 

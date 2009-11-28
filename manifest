@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sFTS3\sto\sdetect\swhen\sthe\sRHS\sof\sthe\sMATCH\sopertor\sencounters\san\sOOM\nduring\sstring\sformat\sconversion\sand\sreport\sback\san\sSQLITE_NOMEM\serror.
-D 2009-11-28T17:23:48
+C Updates\sto\ssnippet()\sand\soffsets()\sfunctions\sof\sFTS3\sso\sthat\sthey\swork\nsanely\sfollowing\san\sOOM\sfault.
+D 2009-11-28T21:33:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -67,11 +67,11 @@ F ext/fts3/fts3_hash.c 29fba5a01e51c53e37040e53821e6b2cec18c8fb
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_snippet.c 082f2906deaaa2656f19b88834e89d099352af6e
+F ext/fts3/fts3_snippet.c b62144ea85f413b1226e6d8182320606d96e65ac
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c f1bffadc003b243bb804732c336c9ea55b85de09
+F ext/fts3/fts3_write.c 9b35ff9666b4867b406e63ca2277de6a81b53103
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -778,14 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 80754d383a0e890ea3f315dab941b9f166481ddd
-R c701b62bb7bcebeb3cce64991b77dc95
+P 31eed4f8f95f0799d634eccbd9e09cb58172d250
+R 63b6d1158b26a83c6b254a0d208f841c
 U drh
-Z 79bd1c9ce18f056385942b4e2103a96e
+Z 8559238aab4fefe4430f422ac07d6956
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLEVynoxKgR168RlERAmNeAKCFnXvJIGrlx8Xq9FMVpghKHSc6IwCfWSxQ
-fDg8QqRtiYK559S5hJk0sTo=
-=pBpa
+iD8DBQFLEZckoxKgR168RlERAilJAJ9fOhH9A66qH4Y5YOtTa1Ji3y2FSACcC046
+fNgY4pufsjXCsUyJbj/lIyo=
+=K2mf
 -----END PGP SIGNATURE-----

@@ -646,9 +646,11 @@ static int fts3DeleteTerms(Fts3Table *p, sqlite3_value **apVal){
         }
       }
     }
+    rc = sqlite3_reset(pSelect);
+  }else{
+    sqlite3_reset(pSelect);
   }
-
-  return sqlite3_reset(pSelect);
+  return rc;
 }
 
 /*
