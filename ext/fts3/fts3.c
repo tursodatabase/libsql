@@ -657,8 +657,8 @@ int fts3InitVtab(
   int nDb;
   int nName;
 
-  const char *zTokenizer = 0;
-  sqlite3_tokenizer *pTokenizer;  /* Tokenizer for this table */
+  const char *zTokenizer = 0;               /* Name of tokenizer to use */
+  sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
   nDb = strlen(argv[1]) + 1;
   nName = strlen(argv[2]) + 1;
@@ -749,9 +749,13 @@ int fts3InitVtab(
   *ppVTab = &p->base;
 
 fts3_init_out:
+  assert( p || (pTokenizer && rc!=SQLITE_OK) );
   if( rc!=SQLITE_OK ){
-    if( p ) fts3DisconnectMethod((sqlite3_vtab *)p);
-    else if( pTokenizer ) pTokenizer->pModule->xDestroy(pTokenizer);
+    if( p ){
+      fts3DisconnectMethod((sqlite3_vtab *)p);
+    }else{
+      pTokenizer->pModule->xDestroy(pTokenizer);
+    }
   }
   return rc;
 }

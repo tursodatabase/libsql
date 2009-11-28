@@ -378,10 +378,13 @@ proc do_write_test {name tbl sql} {
   # Calculate the initial table checksum.
   set cksum1 [db one $cksumsql]
 
-
   if {$::DO_MALLOC_TEST } {
     set answers [list {1 {out of memory}} {0 {}}]
-    set modes [list 100000 transient 1 persistent]
+    if {$::DO_MALLOC_TEST==1} {
+      set modes {100000 transient}
+    } else {
+      set modes {1 persistent}
+    }
   } else {
     set answers [list {0 {}}]
     set modes [list 0 nofail]
