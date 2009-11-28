@@ -64,7 +64,7 @@ char *sqlite3VdbeExpandSql(
   const char *zRawSql      /* Raw text of the SQL statement */
 ){
   sqlite3 *db;             /* The database connection */
-  int idx;                 /* Index of a host parameter */
+  int idx = 0;             /* Index of a host parameter */
   int nextIndex = 1;       /* Index of next ? host parameter */
   int n;                   /* Length of a token prefix */
   int nToken;              /* Length of the parameter token */
