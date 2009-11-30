@@ -234,7 +234,7 @@ static int hasVowel(const char *z){
 ** the first two characters of z[].
 */
 static int doubleConsonant(const char *z){
-  return isConsonant(z) && z[0]==z[1] && isConsonant(z+1);
+  return isConsonant(z) && z[0]==z[1];
 }
 
 /*
@@ -247,10 +247,10 @@ static int doubleConsonant(const char *z){
 */
 static int star_oh(const char *z){
   return
-    z[0]!=0 && isConsonant(z) &&
+    isConsonant(z) &&
     z[0]!='w' && z[0]!='x' && z[0]!='y' &&
-    z[1]!=0 && isVowel(z+1) &&
-    z[2]!=0 && isConsonant(z+2);
+    isVowel(z+1) &&
+    isConsonant(z+2);
 }
 
 /*

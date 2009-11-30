@@ -1,5 +1,8 @@
-C Add\stest\scases\sfor\sexamples\srecently\sadded\sto\sdocumentation\sfile\sfts3.html.
-D 2009-11-30T08:55:04
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Test\scoverage\simprovements\sin\sthe\sFTS3\sporter\sstemmer.
+D 2009-11-30T19:48:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -58,13 +61,13 @@ F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
 F ext/fts3/fts3.c 8e966349c954cea27d8acf468d77c0d113c52449
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 74b21db1c4479c220e803ecf45a78de3b5ac9480
+F ext/fts3/fts3Int.h cc08454bc85cfe86d5205532178b0af5501eec9f
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
 F ext/fts3/fts3_hash.c 29fba5a01e51c53e37040e53821e6b2cec18c8fb
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
-F ext/fts3/fts3_porter.c 3063da945fb0a935781c135f7575f39166173eca
-F ext/fts3/fts3_snippet.c b62144ea85f413b1226e6d8182320606d96e65ac
+F ext/fts3/fts3_porter.c 4248815484f9c7e9d4f3c72c1149464485c08abe
+F ext/fts3/fts3_snippet.c 39cf30a7916b2562867d52176e87b6d7de02aea0
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
@@ -775,7 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b939a37a8ce296785a300e79ab9d3d87ad91343f
-R 07bf5d7ea8efdfde49b03310dbe8e9d5
-U dan
-Z 5540823be73c9695614535782a706576
+P 498922cc356316a3ec59320529b685728e407746
+R 85fbd80c2eff94ee29818ce5daa5c593
+U drh
+Z 82d8de7e4c4da95df35f9d6571d07bab
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLFCGEoxKgR168RlERAqrhAJwKwdpq5MdPMYkvvsC2yzQUk6xomACfTaxo
+OaNnIAAU9JPJsrBdHKg5uAc=
+=vlNw
+-----END PGP SIGNATURE-----

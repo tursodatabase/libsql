@@ -545,7 +545,7 @@ static int wordBoundary(
   if( iBreak>=nDoc-10 ){
     return nDoc;
   }
-  for(i=0; i<nMatch && aMatch[i].iCol<iCol; i++){}
+  for(i=0; ALWAYS(i<nMatch) && aMatch[i].iCol<iCol; i++){}
   while( i<nMatch && aMatch[i].iStart+aMatch[i].nByte<iBreak ){ i++; }
   if( i<nMatch ){
     if( aMatch[i].iStart<iBreak+10 ){

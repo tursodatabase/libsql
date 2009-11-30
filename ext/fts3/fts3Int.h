@@ -53,6 +53,15 @@
 */
 #define FTS3_VARINT_MAX 10
 
+/*
+** Macros indicating that conditional expressions are always true or
+** false.
+*/
+#ifndef SQLITE_AMALGAMATION
+# define ALWAYS(x) (x)
+# define NEVER(X)  (x)
+#endif
+
 typedef struct Fts3Table Fts3Table;
 typedef struct Fts3Cursor Fts3Cursor;
 typedef struct Fts3Expr Fts3Expr;
