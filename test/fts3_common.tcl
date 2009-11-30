@@ -334,7 +334,7 @@ proc doPassiveTest {name sql catchres} {
       if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
 
       set res [catchsql $sql]
-      if {[lsearch $answers $res]>=0} {
+      if {[lsearch -exact $answers $res]>=0} {
         set res $str
       }
       do_test $name.$zName.$iFail [list set {} $res] $str

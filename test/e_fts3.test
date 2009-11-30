@@ -104,5 +104,64 @@ ddl_test   1.7.3 {DROP TABLE data}
 
 ##########################################################################
 
+##########################################################################
+# Test the example in section 5 (custom tokenizers).
+#
+ddl_test   2.1.1 { CREATE VIRTUAL TABLE simple USING fts3(tokenize=simple) } 
+write_test 2.1.2 simple_content { 
+  INSERT INTO simple VALUES('Right now they''re very frustrated')
 }
+read_test  2.1.3 {SELECT docid FROM simple WHERE simple MATCH 'Frustrated'} {1} 
+read_test  2.1.4 {SELECT docid FROM simple WHERE simple MATCH 'Frustration'} {}
+
+ddl_test   2.2.1 { CREATE VIRTUAL TABLE porter USING fts3(tokenize=porter) } 
+write_test 2.2.2 porter_content { 
+  INSERT INTO porter VALUES('Right now they''re very frustrated')
+}
+read_test  2.2.3 {SELECT docid FROM porter WHERE porter MATCH 'Frustrated'} {1} 
+read_test  2.2.4 {SELECT docid FROM porter WHERE porter MATCH 'Frustration'} {1}
+
+##########################################################################
+# Test the examples in section 4 (auxillary functions).
+#
+ddl_test   3.1.1 { CREATE VIRTUAL TABLE mail USING fts3(subject, body) }
+
+write_test 3.1.2 mail_content { 
+  INSERT INTO mail VALUES(
+    'hello world', 'This message is a hello world message.');
+}
+write_test 3.1.3 mail_content { 
+  INSERT INTO mail VALUES(
+    'urgent: serious', 'This mail is seen as a more serious mail');
+}
+
+read_test 3.1.4 { 
+  SELECT offsets(mail) FROM mail WHERE mail MATCH 'world';
+} {{0 0 6 5 1 0 24 5}}
+read_test 3.1.5 { 
+  SELECT offsets(mail) FROM mail WHERE mail MATCH 'message'
+} {{1 0 5 7 1 0 30 7}}
+read_test 3.1.6 { 
+  SELECT offsets(mail) FROM mail WHERE mail MATCH '"serious mail"'
+} {{1 0 28 7 1 1 36 4}}
+
+ddl_test 3.2.1 { CREATE VIRTUAL TABLE text USING fts3() }
+
+write_test 3.2.2 text_content {
+  INSERT INTO text VALUES('
+    During 30 Nov-1 Dec, 2-3oC drops. Cool in the upper portion, minimum temperature 14-16oC and cool elsewhere, minimum temperature 17-20oC. Cold to very cold on mountaintops, minimum temperature 6-12oC. Northeasterly winds 15-30 km/hr. After that, temperature increases. Northeasterly winds 15-30 km/hr.
+  ');
+}
+
+read_test 3.2.3 {
+  SELECT snippet(text) FROM text WHERE text MATCH 'cold'
+} {{<b>...</b> elsewhere, minimum temperature 17-20oC. <b>Cold</b> to very <b>cold</b> on mountaintops, minimum <b>...</b>}}
+
+read_test 3.2.4 {
+  SELECT snippet(text, '[', ']', '...') FROM text WHERE text MATCH '"min* tem*"'
+} {{... 2-3oC drops. Cool in the upper portion, [minimum] [temperature] 14-16oC and cool elsewhere, [minimum] ...}}
+
+#break
+}
+
 finish_test
