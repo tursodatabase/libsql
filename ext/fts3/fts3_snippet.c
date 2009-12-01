@@ -29,10 +29,10 @@ struct Snippet {
   int nAlloc;                     /* Space allocated for aMatch[] */
   struct snippetMatch {  /* One entry for each matching term */
     char snStatus;       /* Status flag for use while constructing snippets */
+    short int nByte;     /* Number of bytes in the term */
     short int iCol;      /* The column that contains the match */
     short int iTerm;     /* The index in Query.pTerms[] of the matching term */
     int iToken;          /* The index of the matching document token */
-    short int nByte;     /* Number of bytes in the term */
     int iStart;          /* The offset to the first character of the term */
   } *aMatch;                      /* Points to space obtained from malloc */
   char *zOffset;                  /* Text rendering of aMatch[] */
@@ -441,10 +441,12 @@ static int trimSnippetOffsets(
 ** If the offsets have already been computed, this routine is a no-op.
 */
 static int snippetAllOffsets(Fts3Cursor *pCsr, Snippet **ppSnippet){
-  Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;
-  int nColumn;
-  int iColumn, i;
-  int iFirst, iLast;
+  Fts3Table *p = (Fts3Table *)pCsr->base.pVtab;  /* The FTS3 virtual table */
+  int nColumn;           /* Number of columns.  Docid does count */
+  int iColumn;           /* Index of of a column */
+  int i;                 /* Loop index */
+  int iFirst;            /* First column to search */
+  int iLast;             /* Last coumn to search */
   int iTerm = 0;
   Snippet *pSnippet;
   int rc = SQLITE_OK;
@@ -461,7 +463,7 @@ static int snippetAllOffsets(Fts3Cursor *pCsr, Snippet **ppSnippet){
   memset(pSnippet, 0, sizeof(Snippet));
 
   nColumn = p->nColumn;
-  iColumn = (pCsr->eType - 2);
+  iColumn = (pCsr->eSearch - 2);
   if( iColumn<0 || iColumn>=nColumn ){
     /* Look for matches over all columns of the full-text index */
     iFirst = 0;

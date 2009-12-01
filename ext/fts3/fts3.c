@@ -474,13 +474,6 @@ static void fts3GetDeltaVarint2(char **pp, char *pEnd, sqlite3_int64 *pVal){
 }
 
 
-/*
-** The Fts3Cursor.eType member is always set to one of the following.
-*/
-#define FTS3_FULLSCAN_SEARCH 0    /* Linear scan of %_content table */
-#define FTS3_DOCID_SEARCH    1    /* Lookup by rowid on %_content table */
-#define FTS3_FULLTEXT_SEARCH 2    /* Full-text index search */
-
 static Fts3Table *cursor_vtab(Fts3Cursor *c){
   return (Fts3Table *) c->base.pVtab;
 }
@@ -1827,7 +1820,7 @@ static int fts3FilterMethod(
     sqlite3_free(zSql);
   }
   if( rc!=SQLITE_OK ) return rc;
-  pCsr->eType = idxNum;
+  pCsr->eSearch = idxNum;
 
   if( idxNum==FTS3_DOCID_SEARCH ){
     rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);

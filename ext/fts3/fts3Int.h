@@ -81,7 +81,7 @@ struct Fts3Table {
   sqlite3 *db;                    /* The database connection */
   const char *zDb;                /* logical database name */
   const char *zName;              /* virtual table name */
-  int nColumn;                    /* number of columns in virtual table */
+  int nColumn;                    /* number of named columns in virtual table */
   char **azColumn;                /* column names.  malloced */
   sqlite3_tokenizer *pTokenizer;  /* tokenizer for inserts and queries */
 
@@ -120,16 +120,35 @@ struct Fts3Table {
 */
 struct Fts3Cursor {
   sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
-  int eType;                      /* Search strategy (see below) */
+  i16 eSearch;                    /* Search strategy (see below) */
+  u8 isEof;                       /* True if at End Of Results */
+  u8 isRequireSeek;               /* True if must seek pStmt to %_content row */
   sqlite3_stmt *pStmt;            /* Prepared statement in use by the cursor */
-  int isEof;                      /* True if at End Of Results */
-  int isRequireSeek;              /* True if must seek pStmt to %_content row */
   Fts3Expr *pExpr;                /* Parsed MATCH query string */
   sqlite3_int64 iPrevId;          /* Previous id read from aDoclist */
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
 };
+
+/*
+** The Fts3Cursor.eSearch member is always set to one of the following.
+** Actualy, Fts3Cursor.eSearch can be greater than or equal to
+** FTS3_FULLTEXT_SEARCH.  If so, then Fts3Cursor.eSearch - 2 is the index
+** of the column to be searched.  For example, in
+**
+**     CREATE VIRTUAL TABLE ex1 USING fts3(a,b,c,d);
+**     SELECT docid FROM ex1 WHERE b MATCH 'one two three';
+** 
+** Because the LHS of the MATCH operator is 2nd column "b",
+** Fts3Cursor.eSearch will be set to FTS3_FULLTEXT_SEARCH+1.  (+0 for a,
+** +1 for b, +2 for c, +3 for d.)  If the LHS of MATCH were "ex1" 
+** indicating that all columns should be searched,
+** then eSearch would be set to FTS3_FULLTEXT_SEARCH+4.
+*/
+#define FTS3_FULLSCAN_SEARCH 0    /* Linear scan of %_content table */
+#define FTS3_DOCID_SEARCH    1    /* Lookup by rowid on %_content table */
+#define FTS3_FULLTEXT_SEARCH 2    /* Full-text index search */
 
 /*
 ** A "phrase" is a sequence of one or more tokens that must match in

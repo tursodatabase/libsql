@@ -33,10 +33,11 @@
 ** appended to the amalgamation.
 */
 #ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
+# include "sqlite3.h"
 # include <stdlib.h>
 # include <string.h>
 # include <assert.h>
+  typedef unsigned char u8;
 #endif
 #include <ctype.h>
 

@@ -1,5 +1,8 @@
-C Open\sa\ssavepoint\swithin\sthe\sFTS3\soptimize()\sfunction.
-D 2009-12-01T13:48:14
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Changes\sto\sthe\sTCL\sinterface\sheader\sto\sallow\sit\sto\sbe\scompiled\sindependently\nfrom\sthe\samalgamation.
+D 2009-12-01T13:57:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,15 +59,15 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 8e966349c954cea27d8acf468d77c0d113c52449
+F ext/fts3/fts3.c eca3828c5ef6efd4297c8b917d69ec11b9d223a9
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h cc08454bc85cfe86d5205532178b0af5501eec9f
+F ext/fts3/fts3Int.h 58698ec42ac69a31bb0fcfcf6692fdbbde84d73b
 F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
 F ext/fts3/fts3_hash.c 29fba5a01e51c53e37040e53821e6b2cec18c8fb
 F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 4248815484f9c7e9d4f3c72c1149464485c08abe
-F ext/fts3/fts3_snippet.c 39cf30a7916b2562867d52176e87b6d7de02aea0
+F ext/fts3/fts3_snippet.c 84ba2fad73aa12628f1950aed74babbf3975e73a
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
@@ -170,7 +173,7 @@ F src/sqliteInt.h f09be5c67f95f3d28d44e5b608b18cab28758ba4
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c e651be6b30d397d86384c6867bc016e4913bcac7
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 223746524139e1e02b7a2b61c05b5a690f91a0ff
+F src/tclsqlite.c bad6570a005b234ea670b9f7b48256da19a032d3
 F src/test1.c db4d8fd2849ab9aca0f27fd3773b8d68d078cf86
 F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c f17eeaf8114205844d76f4e69bab27ea341087af
@@ -775,7 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c022f66b5a65aa54d5ebd55cfe941118a2042280
-R 485d559dfdae9a83053e9af2113a2fa7
-U dan
-Z 93dd7c80e5edb7b19676b5d0865cea7e
+P 4924fbb244bd1b7103e29e045812cb1c4d2d81c8
+R 42f8b015db748b4bafad9aa12897ca9c
+U drh
+Z d0f2f45728e358cd980fa1a3c65f892f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLFSDhoxKgR168RlERAi8IAJ0UgMelzc/hXfHu2CiGtY3Mjg/bZgCbBthD
+PKncL0iuiXbbriX6qEmRkxQ=
+=6DZZ
+-----END PGP SIGNATURE-----
