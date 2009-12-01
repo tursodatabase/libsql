@@ -583,10 +583,16 @@ static int fts3InsertData(
   **
   **   INSERT INTO fts3tbl(rowid, docid) VALUES(1, 2);
   **
-  ** In FTS3, if a non-NULL docid value is specified, it is the value
-  ** inserted. Otherwise, the rowid value is used.
+  ** In FTS3, this is an error. It is an error to specify non-NULL values
+  ** for both docid and some other rowid alias.
   */
   if( SQLITE_NULL!=sqlite3_value_type(apVal[3+p->nColumn]) ){
+    if( SQLITE_NULL==sqlite3_value_type(apVal[0])
+     && SQLITE_NULL!=sqlite3_value_type(apVal[1])
+    ){
+      /* A rowid/docid conflict. */
+      return SQLITE_ERROR;
+    }
     rc = sqlite3_bind_value(pContentInsert, 1, apVal[3+p->nColumn]);
     if( rc!=SQLITE_OK ) return rc;
   }
@@ -1768,6 +1774,11 @@ int sqlite3Fts3SegReaderIterate(
   int isRequirePos =   (pFilter->flags & FTS3_SEGMENT_REQUIRE_POS);
   int isColFilter =    (pFilter->flags & FTS3_SEGMENT_COLUMN_FILTER);
   int isPrefix =       (pFilter->flags & FTS3_SEGMENT_PREFIX);
+
+  /* If there are zero segments, this function is a no-op. This scenario
+  ** comes about only when reading from an empty database.
+  */
+  if( nSegment==0 ) goto finished;
 
   /* If the Fts3SegFilter defines a specific term (or term prefix) to search 
   ** for, then advance each segment iterator until it points to a term of
