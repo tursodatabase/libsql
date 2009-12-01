@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Reorder\sfunction\sdeclarations\sin\smutex_os2.c.\s\sThis\sis\sa\sblind\schange\s-\swe\nhave\sno\scapability\sof\stesting\son\sOS/2.\s\s\nTicket\s[97214a34d814]
-D 2009-12-01T14:31:18
+C Add\stests\sfor\sthe\sremaining\sexamples\sin\sfts3.in.
+D 2009-12-01T15:04:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -329,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test fd1fcf89badd5f2773d7ac04775b5ff3488eda17
-F test/e_fts3.test 8a1dd987d08a655c24be7e898fcbf1e7655ffbab
+F test/e_fts3.test ad278add0deca99d2d8ec3d8b06ffed965d5abc2
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -778,14 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 58113932d93926b4aa037a7487105a55f883cd0a
-R 58cd33bd0bb94a22fdbc237eacf229c6
-U drh
-Z ac2766d6a74824f241c62a9d81b5f1a1
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLFSi6oxKgR168RlERAgiFAJ9wkFV7p4Q3F1E0PwZ7Jj6UDZugsACeOWwQ
-XFTghNztA5qx3UCLz2oGre0=
-=RI1L
------END PGP SIGNATURE-----
+P c40e4ef094bb9d58f14354602785ccc228f8bc2a
+R cccbd406b7272a2ee3a226a903f9413a
+U dan
+Z a0421c06194222c60ba1ecb18d1dddd8

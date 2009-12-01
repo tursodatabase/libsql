@@ -124,8 +124,6 @@ read_test  1.1.8.2 {PRAGMA table_info(data)} {0 content {} 0 {} 0}
 ddl_test   1.1.8.3 {DROP TABLE data}
 
 ##########################################################################
-
-##########################################################################
 # Test the examples in section 1.2 (populating fts3 tables)
 #
 ddl_test   1.2.1.1 {
@@ -173,7 +171,6 @@ write_test 1.2.2.4 docs_content {
   INSERT INTO docs VALUES('the book is dedicated to Solomon.');
 }
 read_test  1.2.2.5 { SELECT count(*) FROM docs_segdir } {3}
-#set DO_MALLOC_TEST 1
 write_test 1.2.2.6 docs_segdir {
   SELECT * FROM (SELECT optimize(docs) FROM docs LIMIT 1) WHERE 0;
 }
@@ -230,8 +227,6 @@ do_error_test e_fts3-1.3.3.5 {
   SELECT * FROM docs WHERE main.docs MATCH 'sqlite' 
 } {no such column: main.docs}
 ddl_test   1.3.2.8 { DROP TABLE docs }
-
-##########################################################################
 
 ##########################################################################
 # Test the examples in section 3 (full-text index queries).
@@ -297,53 +292,112 @@ ddl_test 1.4.2.10 { DROP TABLE docs }
 #
 set sqlite_fts3_enable_parentheses 1
 ddl_test 1.5.1.1 { CREATE VIRTUAL TABLE docs USING fts3() }
+foreach {tn docid content} {
+  2 1 "a database is a software system"
+  3 2 "sqlite is a software system"
+  4 3 "sqlite is a database"
+} {
+  set R($docid) $content
+  write_test 1.5.1.$tn docs_content { 
+    INSERT INTO docs(docid, content) VALUES($docid, $content)
+  }
+}
+read_test 1.5.1.4 {
+  SELECT * FROM docs WHERE docs MATCH 'sqlite AND database'
+} [list $R(3)]
+read_test 1.5.1.5 {
+  SELECT * FROM docs WHERE docs MATCH 'database sqlite'
+} [list $R(3)]
+read_test 1.5.1.6 {
+  SELECT * FROM docs WHERE docs MATCH 'sqlite OR database'
+} [list $R(1) $R(2) $R(3)]
+read_test 1.5.1.7 {
+  SELECT * FROM docs WHERE docs MATCH 'database NOT sqlite'
+} [list $R(1)]
+read_test 1.5.1.8 {
+  SELECT * FROM docs WHERE docs MATCH 'database and sqlite'
+} {}
 
-
-# TODO: Change numbering after here...
+write_test 1.5.2.1 docs_content {
+  INSERT INTO docs 
+    SELECT 'sqlite is also a library' UNION ALL
+    SELECT 'library software'
+}
+read_test 1.5.2.2 {
+  SELECT docid FROM docs WHERE docs MATCH 'sqlite AND database OR library'
+} {3 4 5}
+read_test 1.5.2.3 {
+  SELECT docid FROM docs WHERE docs MATCH 'sqlite AND database'
+    UNION
+  SELECT docid FROM docs WHERE docs MATCH 'library'
+} {3 4 5}
+write_test 1.5.2.4 docs_content {
+  INSERT INTO docs 
+    SELECT 'the sqlite library runs on linux' UNION ALL
+    SELECT 'as does the sqlite database (on linux)' UNION ALL
+    SELECT 'the sqlite database is accessed by the sqlite library'
+}
+read_test 1.5.2.2 {
+  SELECT docid FROM docs 
+  WHERE docs MATCH '("sqlite database" OR "sqlite library") AND linux';
+} {6 7}
+read_test 1.5.2.3 {
+  SELECT docid FROM docs WHERE docs MATCH 'linux'
+    INTERSECT
+  SELECT docid FROM (
+    SELECT docid FROM docs WHERE docs MATCH '"sqlite library"'
+      UNION
+    SELECT docid FROM docs WHERE docs MATCH '"sqlite database"'
+  );
+} {6 7}
 
 ##########################################################################
-# Test the example in section 5 (custom tokenizers).
+# Test the examples in section 3.2 (set operators with standard syntax).
+# These tests reuse the table populated by the block above.
 #
-ddl_test   2.1.1 { CREATE VIRTUAL TABLE simple USING fts3(tokenize=simple) } 
-write_test 2.1.2 simple_content { 
-  INSERT INTO simple VALUES('Right now they''re very frustrated')
-}
-read_test  2.1.3 {SELECT docid FROM simple WHERE simple MATCH 'Frustrated'} {1} 
-read_test  2.1.4 {SELECT docid FROM simple WHERE simple MATCH 'Frustration'} {}
+set sqlite_fts3_enable_parentheses 0
+read_test 1.6.1.1 {
+  SELECT * FROM docs WHERE docs MATCH 'sqlite -database'
+} {{sqlite is a software system} {sqlite is also a library} {the sqlite library runs on linux}}
+read_test 1.6.1.2 {
+  SELECT * FROM docs WHERE docs MATCH 'sqlite OR database library'
+} {{sqlite is also a library} {the sqlite library runs on linux} {the sqlite database is accessed by the sqlite library}}
 
-ddl_test   2.2.1 { CREATE VIRTUAL TABLE porter USING fts3(tokenize=porter) } 
-write_test 2.2.2 porter_content { 
-  INSERT INTO porter VALUES('Right now they''re very frustrated')
-}
-read_test  2.2.3 {SELECT docid FROM porter WHERE porter MATCH 'Frustrated'} {1} 
-read_test  2.2.4 {SELECT docid FROM porter WHERE porter MATCH 'Frustration'} {1}
-##########################################################################
+set sqlite_fts3_enable_parentheses 1
+read_test 1.6.1.3 {
+  SELECT * FROM docs WHERE docs MATCH 'sqlite OR database library'
+} {{sqlite is a software system} {sqlite is a database} {sqlite is also a library} {the sqlite library runs on linux} {as does the sqlite database (on linux)} {the sqlite database is accessed by the sqlite library}}
+read_test 1.6.1.4 {
+  SELECT * FROM docs WHERE docs MATCH '(sqlite OR database) library'
+} {{sqlite is also a library} {the sqlite library runs on linux} {the sqlite database is accessed by the sqlite library}}
+set sqlite_fts3_enable_parentheses 0
+ddl_test  1.6.1.5 { DROP TABLE docs }
 
 ##########################################################################
 # Test the examples in section 4 (auxillary functions).
 #
-ddl_test   3.1.1 { CREATE VIRTUAL TABLE mail USING fts3(subject, body) }
+ddl_test   1.7.1.1 { CREATE VIRTUAL TABLE mail USING fts3(subject, body) }
 
-write_test 3.1.2 mail_content { 
+write_test 1.7.1.2 mail_content { 
   INSERT INTO mail VALUES(
     'hello world', 'This message is a hello world message.');
 }
-write_test 3.1.3 mail_content { 
+write_test 1.7.1.3 mail_content { 
   INSERT INTO mail VALUES(
     'urgent: serious', 'This mail is seen as a more serious mail');
 }
 
-read_test 3.1.4 { 
+read_test  1.7.1.4 { 
   SELECT offsets(mail) FROM mail WHERE mail MATCH 'world';
 } {{0 0 6 5 1 0 24 5}}
-read_test 3.1.5 { 
+read_test  1.7.1.5 { 
   SELECT offsets(mail) FROM mail WHERE mail MATCH 'message'
 } {{1 0 5 7 1 0 30 7}}
-read_test 3.1.6 { 
+read_test  1.7.1.6 { 
   SELECT offsets(mail) FROM mail WHERE mail MATCH '"serious mail"'
 } {{1 0 28 7 1 1 36 4}}
 
-ddl_test 3.2.1 { CREATE VIRTUAL TABLE text USING fts3() }
+ddl_test   1.7.2.1 { CREATE VIRTUAL TABLE text USING fts3() }
 
 write_test 3.2.2 text_content {
   INSERT INTO text VALUES('
@@ -351,15 +405,32 @@ write_test 3.2.2 text_content {
   ');
 }
 
-read_test 3.2.3 {
+read_test  1.7.2.3 {
   SELECT snippet(text) FROM text WHERE text MATCH 'cold'
 } {{<b>...</b> elsewhere, minimum temperature 17-20oC. <b>Cold</b> to very <b>cold</b> on mountaintops, minimum <b>...</b>}}
 
-read_test 3.2.4 {
+read_test  1.7.2.4 {
   SELECT snippet(text, '[', ']', '...') FROM text WHERE text MATCH '"min* tem*"'
 } {{... 2-3oC drops. Cool in the upper portion, [minimum] [temperature] 14-16oC and cool elsewhere, [minimum] ...}}
 
-#break
+##########################################################################
+# Test the example in section 5 (custom tokenizers).
+#
+ddl_test   1.8.1.1 { CREATE VIRTUAL TABLE simple USING fts3(tokenize=simple) } 
+write_test 1.8.1.2 simple_content { 
+  INSERT INTO simple VALUES('Right now they''re very frustrated')
+}
+read_test 1.8.1.3 {SELECT docid FROM simple WHERE simple MATCH 'Frustrated'} {1} 
+read_test 1.8.1.4 {SELECT docid FROM simple WHERE simple MATCH 'Frustration'} {}
+
+ddl_test   1.8.2.1 { CREATE VIRTUAL TABLE porter USING fts3(tokenize=porter) } 
+write_test 1.8.2.2 porter_content { 
+  INSERT INTO porter VALUES('Right now they''re very frustrated')
+}
+read_test 1.8.2.4 {
+  SELECT docid FROM porter WHERE porter MATCH 'Frustration'
+} {1}
+
 }
 # End of tests of example code in fts3.html
 #-------------------------------------------------------------------------
