@@ -119,7 +119,7 @@ void sqlite3Update(
   Trigger *pTrigger;     /* List of triggers on pTab, if required */
   int tmask;             /* Mask of TRIGGER_BEFORE|TRIGGER_AFTER */
 #endif
-  int newmask;
+  int newmask;           /* Mask of NEW.* columns accessed by BEFORE triggers */
 
   /* Register Allocations */
   int regRowCount = 0;   /* A count of rows changed */
@@ -436,6 +436,8 @@ void sqlite3Update(
         ** if there are one or more BEFORE triggers that use this value via
         ** a new.* reference in a trigger program.
         */
+        testcase( i==31 );
+        testcase( i==32 );
         sqlite3VdbeAddOp3(v, OP_Column, iCur, i, regNew+i);
         sqlite3ColumnDefault(v, pTab, i, regNew+i);
       }

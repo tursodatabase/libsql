@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\sfaulty\sfunction\sprototype\sin\stest_intarray.c.
-D 2009-12-01T18:46:07
+C Add\stestcase()\smacros\sto\smake\ssure\sboundary\scases\sin\sBEFORE\sUPDATE\striggers\nare\swell\stested.
+D 2009-12-01T22:09:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -208,7 +208,7 @@ F src/test_thread.c 00fed80690ae7f1525483a35861511c48bc579f2
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 9f7d39da1a1346fa0cf106ea0bf10bb6b8b61ddf
 F src/trigger.c d46f9389e3bf3dd1cc1d288aba2f289c96b34200
-F src/update.c edf5649ffc9fca6d6884e34b6da6358e724919fd
+F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
@@ -778,14 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7737db490ceba02c29c36fe181b4e7895b40aa75
-R 5025e837faa6899de52099ca849ef8ea
+P 110956a6505a9f17d08142d47003cf3bc4e515d3
+R f7247a9524ee2d81021437c8fa2ecf38
 U drh
-Z 838cf1d6597aa02e40799aec47ba0584
+Z 1559414c8fea985346b66bc73803caef
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLFWRyoxKgR168RlERAnXoAJ9J1Nx/oh+3EzCsyEt/PQJ0DgWIBgCbB+h4
-fTph1NV8X0DU452xgPJaOXw=
-=aE0n
+iD8DBQFLFZQYoxKgR168RlERAp1sAJ9Du7y1J7wA/qkWiRYSTIIzGUs3CQCfbVt1
+9eUdCszKYUvVc/2XRoho8c0=
+=wGuC
 -----END PGP SIGNATURE-----
