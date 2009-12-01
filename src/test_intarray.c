@@ -276,7 +276,7 @@ int sqlite3_intarray_bind(
 ** Routines to encode and decode pointers
 */
 extern int getDbPointer(Tcl_Interp *interp, const char *zA, sqlite3 **ppDb);
-extern int sqlite3TestTextToPtr(const char*);
+extern void *sqlite3TestTextToPtr(const char*);
 extern int sqlite3TestMakePointerStr(Tcl_Interp*, char *zPtr, void*);
 extern const char *sqlite3TestErrorName(int);
 

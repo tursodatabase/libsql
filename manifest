@@ -1,5 +1,8 @@
-C Use\s#include\s"sqlite3.h"\sinstead\sof\s<sqlite3.h>\sin\sfts3Int.h.
-D 2009-12-01T17:08:09
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\sfaulty\sfunction\sprototype\sin\stest_intarray.c.
+D 2009-12-01T18:46:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -189,7 +192,7 @@ F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
 F src/test_func.c 1c94388a23d4a9e7cd62ec79d612d1bae2451fa2
 F src/test_hexio.c 0853ca2986c0cad788eb322b747cc1cbc1f1d31b
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
-F src/test_intarray.c 25b3df15cca9ddb83927e002f4885d98a63bba0d
+F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c adc0ce3840ed19b49feb1d583b2212f560ef7866
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
@@ -775,7 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fa56c1c47296c2f9ba1de9450d421dd06fde5a6a
-R 60efdb387e8fe83deafa06585da0c5e6
-U dan
-Z 130056e5004e805e2ca0a015b24b6898
+P 7737db490ceba02c29c36fe181b4e7895b40aa75
+R 5025e837faa6899de52099ca849ef8ea
+U drh
+Z 838cf1d6597aa02e40799aec47ba0584
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLFWRyoxKgR168RlERAnXoAJ9J1Nx/oh+3EzCsyEt/PQJ0DgWIBgCbB+h4
+fTph1NV8X0DU452xgPJaOXw=
+=aE0n
+-----END PGP SIGNATURE-----
