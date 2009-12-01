@@ -60,6 +60,8 @@
 #ifndef SQLITE_AMALGAMATION
 # define ALWAYS(x) (x)
 # define NEVER(X)  (x)
+typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
+typedef short int i16;            /* 2-byte (or larger) signed integer */
 #endif
 
 typedef struct Fts3Table Fts3Table;
