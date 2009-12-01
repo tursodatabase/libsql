@@ -19,7 +19,7 @@
 # define NDEBUG 1
 #endif
 
-#include <sqlite3.h>
+#include "sqlite3.h"
 #include "fts3_tokenizer.h"
 #include "fts3_hash.h"
 
