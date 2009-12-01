@@ -2155,9 +2155,18 @@ int sqlite3Fts3UpdateMethod(
 ** there was any data to flush) into a single segment. 
 */
 int sqlite3Fts3Optimize(Fts3Table *p){
-  int rc = sqlite3Fts3PendingTermsFlush(p);
+  int rc;
+  rc = sqlite3_exec(p->db, "SAVEPOINT fts3", 0, 0, 0);
   if( rc==SQLITE_OK ){
-    rc = fts3SegmentMerge(p, -1);
+    rc = sqlite3Fts3PendingTermsFlush(p);
+    if( rc==SQLITE_OK ){
+      rc = fts3SegmentMerge(p, -1);
+    }
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
+    }else{
+      sqlite3_exec(p->db, "ROLLBACK TO fts3 ; RELEASE fts3", 0, 0, 0);
+    }
   }
   return rc;
 }

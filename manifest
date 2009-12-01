@@ -1,5 +1,5 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\swhen\squerying\san\sempty\sFTS3\stable.\sAlso\srestore\sthe\srowid/docid\sconflict\shandling\sto\swork\sas\sit\sdid\sin\sversion\s3.6.20.
-D 2009-12-01T12:00:22
+C Open\sa\ssavepoint\swithin\sthe\sFTS3\soptimize()\sfunction.
+D 2009-12-01T13:48:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 39cf30a7916b2562867d52176e87b6d7de02aea0
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 3ca5d8b24cdf6fcf18676a629ea44ab6cbe9e868
+F ext/fts3/fts3_write.c 1d75e1be899ba8068ae88fe658f678e890b02f8f
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -326,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test fd1fcf89badd5f2773d7ac04775b5ff3488eda17
-F test/e_fts3.test 2750245de8425f11f5b07463f0c6efdfad49a936
+F test/e_fts3.test 8a1dd987d08a655c24be7e898fcbf1e7655ffbab
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -775,7 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6d112bfd53998b8f6693d3f2edbcd5ab4cdf5fb1
-R 85871751503ef5eb36e53f4cac58d258
+P c022f66b5a65aa54d5ebd55cfe941118a2042280
+R 485d559dfdae9a83053e9af2113a2fa7
 U dan
-Z 01db46b86c86cc6015cde0a44e9285a0
+Z 93dd7c80e5edb7b19676b5d0865cea7e
