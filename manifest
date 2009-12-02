@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\stestcase()\smacros\sto\smake\ssure\sboundary\scases\sin\sBEFORE\sUPDATE\striggers\nare\swell\stested.
-D 2009-12-01T22:09:25
+C Make\ssure\sa\svariable\sis\scleared\sbefore\suse\sin\sthe\swhere8.test\sscript.
+D 2009-12-02T02:49:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -744,7 +744,7 @@ F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
 F test/where7.test fdd58ab9dec9f97679e65d4414bf5e07d725d79f
-F test/where8.test 8d3704d04a683e792d373005f2e4e13bfd7e2dd5
+F test/where8.test 434f08974964b10378d67867773a2c3aedaf1d4b
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
 F test/whereA.test 1d1674254614147c866ab9b59af6582f454a858c
@@ -778,14 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 110956a6505a9f17d08142d47003cf3bc4e515d3
-R f7247a9524ee2d81021437c8fa2ecf38
+P 27175caa28919fe145d369f27f52346b8bbadb1e
+R 90bf1de355b962e3f7ec6befc709e50e
 U drh
-Z 1559414c8fea985346b66bc73803caef
+Z c8d1a28ea48912aa58c3422e3568810d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLFZQYoxKgR168RlERAp1sAJ9Du7y1J7wA/qkWiRYSTIIzGUs3CQCfbVt1
-9eUdCszKYUvVc/2XRoho8c0=
-=wGuC
+iD8DBQFLFdXQoxKgR168RlERAuaHAKCIBY7xu7a+psC9m3e5T78kWbMtDQCdGrfa
+8Lb7xZGwpe07xL8WTiPEsKM=
+=mgKe
 -----END PGP SIGNATURE-----

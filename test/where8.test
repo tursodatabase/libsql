@@ -642,6 +642,7 @@ foreach idxsql {
 
   } {
     do_test where8-4.$A.$B.1 {
+      unset -nocomplain R
       set R [execsql $sql]
       if {![info exists results($B)]} {
         set results($B) $R
