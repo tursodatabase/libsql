@@ -560,7 +560,6 @@ static int fts3InsertData(
   sqlite3_int64 *piDocid          /* OUT: Docid for row just inserted */
 ){
   int rc;                         /* Return code */
-  int i;                          /* Iterator variable */
   sqlite3_stmt *pContentInsert;   /* INSERT INTO %_content VALUES(...) */
 
   /* Locate the statement handle used to insert data into the %_content
@@ -880,8 +879,6 @@ int sqlite3Fts3SegReaderNew(
     pReader->nNode = nRoot;
     memcpy(pReader->aNode, zRoot, nRoot);
   }else{
-    sqlite3_stmt *pStmt;
-
     /* If the text of the SQL statement to iterate through a contiguous
     ** set of entries in the %_segments table has not yet been composed,
     ** compose it now.

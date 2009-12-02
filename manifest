@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sa\svariable\sis\scleared\sbefore\suse\sin\sthe\swhere8.test\sscript.
-D 2009-12-02T02:49:49
+C Clear\sthe\sPager.dbModified\sflag\swhen\sunlocking\sthe\sdatabase.\sAssert\sthat\sit\sis\sclear\swhen\slocking\sthe\sdatabase.
+D 2009-12-02T14:44:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +68,7 @@ F ext/fts3/fts3_snippet.c 84ba2fad73aa12628f1950aed74babbf3975e73a
 F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 1d75e1be899ba8068ae88fe658f678e890b02f8f
+F ext/fts3/fts3_write.c 5d3849443746f41ea4af96dac08d79f2bf75f204
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -153,7 +150,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c b2a564bbd28efef24b7598ce007d964e172f253b
+F src/pager.c a0ed14b86de9d012a962b83389ca01003b6acccb
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y f785d814562a14dc19202f61abb4372845f64752
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
@@ -778,14 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 27175caa28919fe145d369f27f52346b8bbadb1e
-R 90bf1de355b962e3f7ec6befc709e50e
-U drh
-Z c8d1a28ea48912aa58c3422e3568810d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLFdXQoxKgR168RlERAuaHAKCIBY7xu7a+psC9m3e5T78kWbMtDQCdGrfa
-8Lb7xZGwpe07xL8WTiPEsKM=
-=mgKe
------END PGP SIGNATURE-----
+P b34365296d65310bb015901d18ed463e73d47cbe
+R 0c016fda7bf18d24bbbb9c7a077b526a
+U dan
+Z 71a26ded21387ef10c25275abcc7461d

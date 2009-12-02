@@ -1147,6 +1147,7 @@ static void pager_unlock(Pager *pPager){
 
     pPager->changeCountDone = 0;
     pPager->state = PAGER_UNLOCK;
+    pPager->dbModified = 0;
   }
 }
 
@@ -2523,8 +2524,11 @@ static int pager_wait_on_lock(Pager *pPager, int locktype){
   assert( PAGER_RESERVED==RESERVED_LOCK );
   assert( PAGER_EXCLUSIVE==EXCLUSIVE_LOCK );
 
-  /* If the file is currently unlocked then the size must be unknown */
+  /* If the file is currently unlocked then the size must be unknown. It
+  ** must not have been modified at this point.
+  */
   assert( pPager->state>=PAGER_SHARED || pPager->dbSizeValid==0 );
+  assert( pPager->state>=PAGER_SHARED || pPager->dbModified==0 );
 
   /* Check that this is either a no-op (because the requested lock is 
   ** already held, or one of the transistions that the busy-handler
