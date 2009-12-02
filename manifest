@@ -1,5 +1,5 @@
-C Clear\sthe\sPager.dbModified\sflag\swhen\sunlocking\sthe\sdatabase.\sAssert\sthat\sit\sis\sclear\swhen\slocking\sthe\sdatabase.
-D 2009-12-02T14:44:33
+C Modify\sa\stest\sin\sfts3b.test\sto\sreflect\sthe\sfact\sthat\sthe\sdocid\sfield\smay\snow\sbe\supdated.
+D 2009-12-02T16:09:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -394,7 +394,7 @@ F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test 931fa21bd80641ca594bfa32e105250a8a07918b
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
-F test/fts3b.test b3a25180a633873d37d86e1ccd00ed690d37237a
+F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
@@ -775,7 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b34365296d65310bb015901d18ed463e73d47cbe
-R 0c016fda7bf18d24bbbb9c7a077b526a
+P d17ec16b7c5051c904c09580a856593b2fb85edc
+R 7a01e5790a2307f692084aa3068931e8
 U dan
-Z 71a26ded21387ef10c25275abcc7461d
+Z 57b07cd39d1b913e2abb6ce5a0b4f134

@@ -208,11 +208,23 @@ do_test fts3b-4.8 {
   }
 } {1 {SQL logic error or missing database}}
 
-# Don't allow update of docid, to match rowid behaviour.
 do_test fts3b-4.9 {
-  catchsql {
+  execsql { SELECT docid FROM t4 WHERE t4 MATCH 'testing' }
+} {12}
+do_test fts3b-4.10 {
+  execsql { 
     UPDATE t4 SET docid = 14 WHERE docid = 12;
+    SELECT docid FROM t4 WHERE t4 MATCH 'testing';
   }
-} {1 {SQL logic error or missing database}}
+} {14}
+do_test fts3b-4.11 {
+  execsql { SELECT * FROM t4 WHERE rowid = 14; }
+} {{still testing}}
+do_test fts3b-4.12 {
+  execsql { SELECT * FROM t4 WHERE rowid = 12; }
+} {}
+do_test fts3b-4.13 {
+  execsql { SELECT docid FROM t4 WHERE t4 MATCH 'still'; }
+} {14}
 
 finish_test
