@@ -1,5 +1,8 @@
-C Fix\san\suninitialized\svalue\sread\sin\ssqlite3async.c.
-D 2009-12-02T18:16:56
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\san\serror\smessage\sin\sFTS3\sto\savoid\susing\san\suninitialized\svariable.
+D 2009-12-02T20:25:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -65,7 +68,7 @@ F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c 4248815484f9c7e9d4f3c72c1149464485c08abe
 F ext/fts3/fts3_snippet.c 84ba2fad73aa12628f1950aed74babbf3975e73a
-F ext/fts3/fts3_tokenizer.c 36f78d1a43a29b0feaec1ced6da9e56b9c653d1f
+F ext/fts3/fts3_tokenizer.c 17335e980994e112c5d332d5bc391f9089350761
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
 F ext/fts3/fts3_write.c 5d3849443746f41ea4af96dac08d79f2bf75f204
@@ -775,7 +778,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a2e0725c20520aa90abb2bc04037ee7acebb930
-R 166ec7739206882740b8be9f04ffbce5
-U dan
-Z e19f4a38e8e35a8d02222ea6c00daf7a
+P 1cf2136c39239a6fea6ac2a555f55865dd517d93
+R 0f4546d90604cf92dd5fde0d50285661
+U drh
+Z 1284cd277d437cb9872d01d8f52cb230
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLFs1YoxKgR168RlERAsr4AJ0Wqgh8Ks34kpZXxxzkvIRC3waMbQCfRmhw
+h0NT+TCC5NLKQEBPsOETtWk=
+=ql9X
+-----END PGP SIGNATURE-----

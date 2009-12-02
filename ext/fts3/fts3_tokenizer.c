@@ -208,7 +208,7 @@ int sqlite3Fts3InitTokenizer(
     rc = m->xCreate(iArg, aArg, ppTok);
     assert( rc!=SQLITE_OK || *ppTok );
     if( rc!=SQLITE_OK ){
-      *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
+      *pzErr = sqlite3_mprintf("unknown tokenizer");
     }else{
       (*ppTok)->pModule = m; 
     }
