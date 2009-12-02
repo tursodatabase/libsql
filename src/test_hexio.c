@@ -352,7 +352,7 @@ static int read_varint(
   }
   zBlob = Tcl_GetByteArrayFromObj(objv[1], &nBlob);
 
-  nVal = getFts3Varint(zBlob, (sqlite3_uint64 *)(&iVal));
+  nVal = getFts3Varint((char*)zBlob, (sqlite3_int64 *)(&iVal));
   Tcl_ObjSetVar2(interp, objv[2], 0, Tcl_NewWideIntObj(iVal), 0);
   Tcl_SetObjResult(interp, Tcl_NewIntObj(nVal));
   return TCL_OK;
