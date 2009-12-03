@@ -1,0 +1,148 @@
+# 2009 December 03
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# Brute force (random data) tests for FTS3.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If this build does not include FTS3, skip the tests in this file.
+#
+ifcapable !fts3 { finish_test ; return }
+source $testdir/fts3_common.tcl
+
+set nVocab 100
+set lVocab [list]
+
+# Generate a vocabulary of nVocab words. Each word is 3 characters long.
+#
+set lChar {a b c d e f g h i j k l m n o p q r s t u v w x y z}
+for {set i 0} {$i < $nVocab} {incr i} {
+  set    word [lindex $lChar [expr int(rand()*26)]]
+  append word [lindex $lChar [expr int(rand()*26)]]
+  append word [lindex $lChar [expr int(rand()*26)]]
+  lappend lVocab $word
+}
+
+proc random_term {} {
+  lindex $::lVocab [expr {int(rand()*$::nVocab)}]
+}
+
+# Return a document consisting of $nWord arbitrarily selected terms
+# from the $::lVocab list.
+#
+proc generate_doc {nWord} {
+  set doc [list]
+  for {set i 0} {$i < $nWord} {incr i} {
+    lappend doc [random_term]
+  }
+  return $doc
+}
+
+
+
+# Primitives to update the table.
+#
+proc insert_row {rowid} {
+  set a [generate_doc [expr int((rand()*100))]]
+  set b [generate_doc [expr int((rand()*100))]]
+  set c [generate_doc [expr int((rand()*100))]]
+  execsql { INSERT INTO t1(docid, a, b, c) VALUES($rowid, $a, $b, $c) }
+  set ::t1($rowid) [list $a $b $c]
+}
+proc delete_row {rowid} {
+  execsql { DELETE FROM t1 WHERE rowid = $rowid }
+  catch {unset ::t1($rowid)}
+}
+proc update_row {rowid} {
+  set cols {a b c}
+  set iCol [expr int(rand()*3)]
+  set doc  [generate_doc [expr int((rand()*100))]]
+  lset ::t1($rowid) $iCol $doc
+  execsql "UPDATE t1 SET [lindex $cols $iCol] = \$doc WHERE rowid = \$rowid"
+}
+
+# Primitives to query the in-memory table.
+#
+proc simple_term {zTerm} {
+  set ret [list]
+  foreach {key value} [array get ::t1] {
+    if {[string first $zTerm $value]>=0} { lappend ret $key }
+  }
+  lsort -integer $ret
+}
+
+foreach nodesize {50 500 1000 2000} {
+  catch { array unset ::t1 }
+
+  # Create the FTS3 table. Populate it (and the Tcl array) with 100 rows.
+  #
+  db transaction {
+    catchsql { DROP TABLE t1 }
+    execsql "CREATE VIRTUAL TABLE t1 USING fts3(a, b, c, test:$nodesize)"
+    for {set i 0} {$i < 100} {incr i} { insert_row $i }
+  }
+  
+  for {set iTest 1} {$iTest <= 100} {incr iTest} {
+  
+    # Delete one row, update one row and insert one row.
+    #
+    set rows [array names ::t1]
+    set nRow [llength $rows]
+    set iUpdate [lindex $rows [expr {int(rand()*$nRow)}]]
+    set iDelete $iUpdate
+    while {$iDelete == $iUpdate} {
+      set iDelete [lindex $rows [expr {int(rand()*$nRow)}]]
+    }
+    set iInsert $iUpdate
+    while {[info exists ::t1($iInsert)]} {
+      set iInsert [expr {int(rand()*1000000)}]
+    }
+    db transaction {
+      insert_row $iInsert
+      update_row $iUpdate
+      delete_row $iDelete
+    }
+  
+    # Pick 10 terms from the vocabulary. Check that the results of querying
+    # the database for the set of documents containing each of these terms
+    # is the same as the result obtained by scanning the contents of the Tcl 
+    # array for each term.
+    #
+    set n [expr {$iTest % ([llength $::lVocab]-10)}]
+    foreach term [lrange $::lVocab $n [expr $n+10]] {
+      do_test fts3rnd-1.$nodesize.$iTest.$term {
+        execsql { SELECT docid FROM t1 WHERE t1 MATCH $term }
+      } [simple_term $term]
+    }
+
+    # Similar to the above, except for phrase queries.
+    #
+    for {set i 0} {$i < 10} {incr i} {
+      set term [list [random_term] [random_term]]
+      set match "\"$term\""
+      do_test fts3rnd-1.$nodesize.$iTest.$match {
+        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      } [simple_term $term]
+    }
+    
+    # Three word phrases.
+    #
+    for {set i 0} {$i < 10} {incr i} {
+      set term [list [random_term] [random_term] [random_term]]
+      set match "\"$term\""
+      do_test fts3rnd-1.$nodesize.$iTest.$match {
+        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      } [simple_term $term]
+    }
+  }
+}
+
+finish_test
+

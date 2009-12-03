@@ -24,9 +24,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#define INTERIOR_MAX 2048         /* Soft limit for segment node size */
-#define LEAF_MAX 2048             /* Soft limit for segment leaf size */
-
 typedef struct PendingList PendingList;
 typedef struct SegmentNode SegmentNode;
 typedef struct SegmentWriter SegmentWriter;
@@ -279,16 +276,18 @@ int sqlite3Fts3ReadBlock(
   if( rc!=SQLITE_OK ) return rc;
   sqlite3_reset(pStmt);
 
-  sqlite3_bind_int64(pStmt, 1, iBlock);
-  rc = sqlite3_step(pStmt); 
-  if( rc!=SQLITE_ROW ){
-    return SQLITE_CORRUPT;
-  }
-
-  *pnBlock = sqlite3_column_bytes(pStmt, 0);
-  *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
-  if( !*pzBlock ){
-    return SQLITE_NOMEM;
+  if( pzBlock ){
+    sqlite3_bind_int64(pStmt, 1, iBlock);
+    rc = sqlite3_step(pStmt); 
+    if( rc!=SQLITE_ROW ){
+      return SQLITE_CORRUPT;
+    }
+  
+    *pnBlock = sqlite3_column_bytes(pStmt, 0);
+    *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
+    if( !*pzBlock ){
+      return SQLITE_NOMEM;
+    }
   }
   return SQLITE_OK;
 }
@@ -1193,13 +1192,13 @@ static int fts3NodeAddTerm(
     nSuffix = nTerm-nPrefix;
 
     nReq += sqlite3Fts3VarintLen(nPrefix)+sqlite3Fts3VarintLen(nSuffix)+nSuffix;
-    if( nReq<=INTERIOR_MAX || !pTree->zTerm ){
+    if( nReq<=p->nNodeSize || !pTree->zTerm ){
 
-      if( nReq>INTERIOR_MAX ){
+      if( nReq>p->nNodeSize ){
         /* An unusual case: this is the first term to be added to the node
-        ** and the static node buffer (INTERIOR_MAX bytes) is not large
+        ** and the static node buffer (p->nNodeSize bytes) is not large
         ** enough. Use a separately malloced buffer instead This wastes
-        ** INTERIOR_MAX bytes, but since this scenario only comes about when
+        ** p->nNodeSize bytes, but since this scenario only comes about when
         ** the database contain two terms that share a prefix of almost 2KB, 
         ** this is not expected to be a serious problem. 
         */
@@ -1248,7 +1247,7 @@ static int fts3NodeAddTerm(
   ** now. Instead, the term is inserted into the parent of pTree. If pTree 
   ** has no parent, one is created here.
   */
-  pNew = (SegmentNode *)sqlite3_malloc(sizeof(SegmentNode) + INTERIOR_MAX);
+  pNew = (SegmentNode *)sqlite3_malloc(sizeof(SegmentNode) + p->nNodeSize);
   if( !pNew ){
     return SQLITE_NOMEM;
   }
@@ -1401,9 +1400,9 @@ static int fts3SegWriterAdd(
     *ppWriter = pWriter;
 
     /* Allocate a buffer in which to accumulate data */
-    pWriter->aData = (char *)sqlite3_malloc(LEAF_MAX);
+    pWriter->aData = (char *)sqlite3_malloc(p->nNodeSize);
     if( !pWriter->aData ) return SQLITE_NOMEM;
-    pWriter->nSize = LEAF_MAX;
+    pWriter->nSize = p->nNodeSize;
 
     /* Find the next free blockid in the %_segments table */
     rc = fts3SqlStmt(p, SQL_NEXT_SEGMENTS_ID, &pStmt, 0);
@@ -1427,7 +1426,7 @@ static int fts3SegWriterAdd(
     sqlite3Fts3VarintLen(nDoclist) +        /* Size of doclist */
     nDoclist;                               /* Doclist data */
 
-  if( nData>0 && nData+nReq>LEAF_MAX ){
+  if( nData>0 && nData+nReq>p->nNodeSize ){
     int rc;
 
     /* The current leaf node is full. Write it out to the database. */

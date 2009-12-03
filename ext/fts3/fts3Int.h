@@ -115,6 +115,8 @@ struct Fts3Table {
   int nLeavesAlloc;               /* Allocated size of aLeavesStmt */
   sqlite3_stmt **aLeavesStmt;     /* Array of prepared zSelectLeaves stmts */
 
+  int nNodeSize;                  /* Soft limit for node size */
+
   /* The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
   ** pending data, including hash table overhead, but not malloc overhead. 

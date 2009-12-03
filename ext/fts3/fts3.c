@@ -473,11 +473,6 @@ static void fts3GetDeltaVarint2(char **pp, char *pEnd, sqlite3_int64 *pVal){
   }
 }
 
-
-static Fts3Table *cursor_vtab(Fts3Cursor *c){
-  return (Fts3Table *) c->base.pVtab;
-}
-
 /*
 ** The xDisconnect() virtual table method.
 */
@@ -650,6 +645,14 @@ int fts3InitVtab(
   int nDb;
   int nName;
 
+#ifdef SQLITE_TEST
+  char *zTestParam = 0;
+  if( strncmp(argv[argc-1], "test:", 5)==0 ){
+    zTestParam = argv[argc-1];
+    argc--;
+  }
+#endif
+
   const char *zTokenizer = 0;               /* Name of tokenizer to use */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
@@ -696,6 +699,7 @@ int fts3InitVtab(
   p->nPendingData = 0;
   p->azColumn = (char **)&p[1];
   p->pTokenizer = pTokenizer;
+  p->nNodeSize = 1000;
   zCsr = (char *)&p->azColumn[nCol];
 
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
@@ -739,6 +743,11 @@ int fts3InitVtab(
   rc = fts3DeclareVtab(p);
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
+#ifdef SQLITE_TEST
+  if( zTestParam ){
+    p->nNodeSize = atoi(&zTestParam[5]);
+  }
+#endif
   *ppVTab = &p->base;
 
 fts3_init_out:
@@ -1010,12 +1019,16 @@ static int fts3SelectLeaf(
   return rc;
 }
 
+/*
+** This function is used to create delta-encoded serialized lists of FTS3 
+** varints. Each call to this function appends a single varint to a list.
+*/
 static void fts3PutDeltaVarint(
-  char **pp, 
-  sqlite3_int64 *piPrev, 
-  sqlite3_int64 iVal
+  char **pp,                      /* IN/OUT: Output pointer */
+  sqlite3_int64 *piPrev,          /* IN/OUT: Previous value written to list */
+  sqlite3_int64 iVal              /* Write this value to the list */
 ){
-  assert( iVal-*piPrev > 0 );
+  assert( iVal-*piPrev > 0 || (*piPrev==0 && iVal==0) );
   *pp += sqlite3Fts3PutVarint(*pp, iVal-*piPrev);
   *piPrev = iVal;
 }
@@ -1550,6 +1563,7 @@ static int fts3TermSelect(
         sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
         rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
       }
+      sqlite3Fts3ReadBlock(p, 0, 0, 0);
     }
     iAge++;
 
@@ -1699,6 +1713,9 @@ static int evalFts3Expr(
       if( SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight))
        && SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft))
       ){
+        assert( pExpr->eType==FTSQUERY_NEAR || pExpr->eType==FTSQUERY_OR     
+            || pExpr->eType==FTSQUERY_AND  || pExpr->eType==FTSQUERY_NOT
+        );
         switch( pExpr->eType ){
           case FTSQUERY_NEAR: {
             Fts3Expr *pLeft;
@@ -1749,8 +1766,7 @@ static int evalFts3Expr(
             break;
           }
 
-          case FTSQUERY_AND:
-          case FTSQUERY_NOT: {
+          default: {
             assert( FTSQUERY_NOT==MERGE_NOT && FTSQUERY_AND==MERGE_AND );
             fts3DoclistMerge(pExpr->eType, 0, 0, aLeft, pnOut,
                 aLeft, nLeft, aRight, nRight
@@ -1866,38 +1882,6 @@ static int fts3EofMethod(sqlite3_vtab_cursor *pCursor){
 }
 
 /* 
-** This is the xColumn method of the virtual table.  The SQLite
-** core calls this method during a query when it needs the value
-** of a column from the virtual table.  This method needs to use
-** one of the sqlite3_result_*() routines to store the requested
-** value back in the pContext.
-*/
-static int fts3ColumnMethod(sqlite3_vtab_cursor *pCursor,
-                          sqlite3_context *pContext, int idxCol){
-  Fts3Cursor *c = (Fts3Cursor *) pCursor;
-  Fts3Table *v = cursor_vtab(c);
-  int rc = fts3CursorSeek(c);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-
-  if( idxCol<v->nColumn ){
-    sqlite3_value *pVal = sqlite3_column_value(c->pStmt, idxCol+1);
-    sqlite3_result_value(pContext, pVal);
-  }else if( idxCol==v->nColumn ){
-    /* The extra column whose name is the same as the table.
-    ** Return a blob which is a pointer to the cursor
-    */
-    sqlite3_result_blob(pContext, &c, sizeof(c), SQLITE_TRANSIENT);
-  }else if( idxCol==v->nColumn+1 ){
-    /* The docid column, which is an alias for rowid. */
-    sqlite3_value *pVal = sqlite3_column_value(c->pStmt, 0);
-    sqlite3_result_value(pContext, pVal);
-  }
-  return SQLITE_OK;
-}
-
-/* 
 ** This is the xRowid method. The SQLite core calls this routine to
 ** retrieve the rowid for the current row of the result set. fts3
 ** exposes %_content.docid as the rowid for the virtual table. The
@@ -1911,6 +1895,43 @@ static int fts3RowidMethod(sqlite3_vtab_cursor *pCursor, sqlite_int64 *pRowid){
     *pRowid = sqlite3_column_int64(pCsr->pStmt, 0);
   }
   return SQLITE_OK;
+}
+
+/* 
+** This is the xColumn method, called by SQLite to request a value from
+** the row that the supplied cursor currently points to.
+*/
+static int fts3ColumnMethod(
+  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
+  sqlite3_context *pContext,      /* Context for sqlite3_result_xxx() calls */
+  int iCol                        /* Index of column to read value from */
+){
+  int rc;                         /* Return Code */
+  Fts3Cursor *pCsr = (Fts3Cursor *) pCursor;
+  Fts3Table *p = (Fts3Table *)pCursor->pVtab;
+
+  /* The column value supplied by SQLite must be in range. */
+  assert( iCol>=0 && iCol<=p->nColumn+1 );
+
+  rc = fts3CursorSeek(pCsr);
+  if( rc==SQLITE_OK ){
+    if( iCol==p->nColumn+1 ){
+      /* This call is a request for the "docid" column. Since "docid" is an 
+      ** alias for "rowid", use the xRowid() method to obtain the value.
+      */
+      sqlite3_int64 iRowid;
+      rc = fts3RowidMethod(pCursor, &iRowid);
+      sqlite3_result_int64(pContext, iRowid);
+    }else if( iCol==p->nColumn ){
+      /* The extra column whose name is the same as the table.
+      ** Return a blob which is a pointer to the cursor.
+      */
+      sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
+    }else{
+      sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
+    }
+  }
+  return rc;
 }
 
 /* 
