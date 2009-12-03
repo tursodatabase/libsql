@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\slinks\sfrom\sC/C++\sinterfaces\sto\stheir\sequivalent\sSQL\sfunctions.\s\sComment\nchanges\sonly\s-\sno\schanges\sto\scode.
-D 2009-12-03T01:01:02
+C Fix\scut-and-paste\serror\saffecting\sa\scouple\sof\sattach\stests\son\sWindows.
+D 2009-12-03T04:32:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -239,7 +236,7 @@ F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
 F test/async4.test aafa6328c559d3e4bb587de770cbdecfca06f0da
 F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
-F test/attach.test 7f07ec54a8b07fcc8fe32f5b2506306256f1f784
+F test/attach.test 826f7676c41c12b035181d257299b8c8a17d64f3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
@@ -778,14 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 620a8a2b38f5f2ad3db304b2bc88360285c174db
-R 9c210838cb6c09d3910666652ea7f1ce
-U drh
-Z e99f59c59291a6d9b68b762a11b1ea55
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLFw3RoxKgR168RlERAqYdAJ4xW0QPf9p6Uqb1IFos90mpYJE4cACgjll0
-dhSNwpiSXJnP2UU/nGOpgGI=
-=7kgZ
------END PGP SIGNATURE-----
+P acce10f77125b5ab05d10ec10aef68dffa4e826a
+R e26a61136025384c02e8f22d7efe042b
+U shaneh
+Z 4ea36331a802714efc576535aa6ba653

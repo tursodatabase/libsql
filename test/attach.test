@@ -801,7 +801,6 @@ do_test attach-9.1 {
   }
 } {1 2}
 do_test attach-9.2 {
-  file delete -force test4.db
   catchsql {
     BEGIN;
       INSERT INTO aux1.t1 VALUES(3, 4);
@@ -809,7 +808,6 @@ do_test attach-9.2 {
   }
 } {1 {database is locked}}
 do_test attach-9.3 {
-  file delete -force test4.db
   execsql {
     COMMIT;
     SELECT * FROM aux2.t1;
