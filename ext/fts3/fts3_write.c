@@ -682,14 +682,14 @@ static int fts3SegmentMerge(Fts3Table *, int);
 static int fts3AllocateSegdirIdx(Fts3Table *p, int iLevel, int *piIdx){
   int rc;                         /* Return Code */
   sqlite3_stmt *pNextIdx;         /* Query for next idx at level iLevel */
-  int iNext;                      /* Result of query pNextIdx */
+  int iNext = 0;                  /* Result of query pNextIdx */
 
   /* Set variable iNext to the next available segdir index at level iLevel. */
   rc = fts3SqlStmt(p, SQL_NEXT_SEGMENT_INDEX, &pNextIdx, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int(pNextIdx, 1, iLevel);
     if( SQLITE_ROW==sqlite3_step(pNextIdx) ){
-      iNext = sqlite3_column_int64(pNextIdx, 0);
+      iNext = sqlite3_column_int(pNextIdx, 0);
     }
     rc = sqlite3_reset(pNextIdx);
   }
@@ -807,7 +807,7 @@ static void fts3SegReaderNextDocid(
   */
   if( ppOffsetList ){
     *ppOffsetList = pReader->pOffsetList;
-    *pnOffsetList = p - pReader->pOffsetList - 1;
+    *pnOffsetList = (int)(p - pReader->pOffsetList - 1);
   }
 
   /* If there are no more entries in the doclist, set pOffsetList to
@@ -1160,6 +1160,7 @@ static int fts3PrefixCompress(
   int nNext                       /* Size of buffer zNext in bytes */
 ){
   int n;
+  UNUSED_PARAMETER(nNext);
   for(n=0; n<nPrev && zPrev[n]==zNext[n]; n++);
   return n;
 }
@@ -1520,10 +1521,10 @@ static int fts3SegWriterFlush(
 ){
   int rc;                         /* Return code */
   if( pWriter->pTree ){
-    sqlite3_int64 iLast;          /* Largest block id written to database */
+    sqlite3_int64 iLast = 0;      /* Largest block id written to database */
     sqlite3_int64 iLastLeaf;      /* Largest leaf block id written to db */
-    char *zRoot;                  /* Pointer to buffer containing root node */
-    int nRoot;                    /* Size of buffer zRoot */
+    char *zRoot = NULL;           /* Pointer to buffer containing root node */
+    int nRoot = 0;                /* Size of buffer zRoot */
 
     iLastLeaf = pWriter->iFree;
     rc = fts3WriteSegment(p, pWriter->iFree++, pWriter->aData, pWriter->nData);
@@ -1696,11 +1697,11 @@ static void fts3ColumnFilter(
     while( p<pEnd && (c | *p)&0xFE ) c = *p++ & 0x80;
   
     if( iCol==iCurrent ){
-      nList = (p - pList);
+      nList = (int)(p - pList);
       break;
     }
 
-    nList -= (p - pList);
+    nList -= (int)(p - pList);
     pList = p;
     if( nList==0 ){
       break;
@@ -2105,7 +2106,7 @@ int sqlite3Fts3UpdateMethod(
   Fts3Table *p = (Fts3Table *)pVtab;
   int rc = SQLITE_OK;             /* Return Code */
   int isRemove = 0;               /* True for an UPDATE or DELETE */
-  sqlite3_int64 iRemove;          /* Rowid removed by UPDATE or DELETE */
+  sqlite3_int64 iRemove = 0;      /* Rowid removed by UPDATE or DELETE */
 
   /* If this is a DELETE or UPDATE operation, remove the old record. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){

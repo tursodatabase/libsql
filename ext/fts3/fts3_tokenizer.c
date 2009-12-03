@@ -145,7 +145,7 @@ const char *sqlite3Fts3NextToken(const char *zStr, int *pn){
     }
   }
 
-  *pn = (z2-z1);
+  *pn = (int)(z2-z1);
   return z1;
 }
 
@@ -183,7 +183,7 @@ int sqlite3Fts3InitTokenizer(
   z[n] = '\0';
   sqlite3Fts3Dequote(z);
 
-  m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, z, strlen(z)+1);
+  m = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, z, (int)strlen(z)+1);
   if( !m ){
     *pzErr = sqlite3_mprintf("unknown tokenizer: %s", z);
     rc = SQLITE_ERROR;
@@ -191,12 +191,12 @@ int sqlite3Fts3InitTokenizer(
     char const **aArg = 0;
     int iArg = 0;
     z = &z[n+1];
-    while( z<zEnd && (z = (char *)sqlite3Fts3NextToken(z, &n)) ){
+    while( z<zEnd && (NULL!=(z = (char *)sqlite3Fts3NextToken(z, &n))) ){
       int nNew = sizeof(char *)*(iArg+1);
-      char const **aNew = (const char **)sqlite3_realloc(aArg, nNew);
+      char const **aNew = (const char **)sqlite3_realloc((void *)aArg, nNew);
       if( !aNew ){
         sqlite3_free(zCopy);
-        sqlite3_free(aArg);
+        sqlite3_free((void *)aArg);
         return SQLITE_NOMEM;
       }
       aArg = aNew;
@@ -212,7 +212,7 @@ int sqlite3Fts3InitTokenizer(
     }else{
       (*ppTok)->pModule = m; 
     }
-    sqlite3_free(aArg);
+    sqlite3_free((void *)aArg);
   }
 
   sqlite3_free(zCopy);
@@ -380,7 +380,7 @@ int queryTokenizer(
   sqlite3_bind_text(pStmt, 1, zName, -1, SQLITE_STATIC);
   if( SQLITE_ROW==sqlite3_step(pStmt) ){
     if( sqlite3_column_type(pStmt, 0)==SQLITE_BLOB ){
-      memcpy(pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
+      memcpy((void *)pp, sqlite3_column_blob(pStmt, 0), sizeof(*pp));
     }
   }
 
@@ -416,6 +416,9 @@ static void intTestFunc(
   const sqlite3_tokenizer_module *p1;
   const sqlite3_tokenizer_module *p2;
   sqlite3 *db = (sqlite3 *)sqlite3_user_data(context);
+
+  UNUSED_PARAMETER(argc);
+  UNUSED_PARAMETER(argv);
 
   /* Test the query function */
   sqlite3Fts3SimpleTokenizerModule(&p1);
@@ -476,13 +479,13 @@ int sqlite3Fts3InitHashTable(
   }
 #endif
 
-  if( rc!=SQLITE_OK
-   || (rc = sqlite3_create_function(db, zName, 1, any, p, scalarFunc, 0, 0))
-   || (rc = sqlite3_create_function(db, zName, 2, any, p, scalarFunc, 0, 0))
+  if( SQLITE_OK!=rc
+   || SQLITE_OK!=(rc = sqlite3_create_function(db, zName, 1, any, p, scalarFunc, 0, 0))
+   || SQLITE_OK!=(rc = sqlite3_create_function(db, zName, 2, any, p, scalarFunc, 0, 0))
 #ifdef SQLITE_TEST
-   || (rc = sqlite3_create_function(db, zTest, 2, any, p, testFunc, 0, 0))
-   || (rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0))
-   || (rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0))
+   || SQLITE_OK!=(rc = sqlite3_create_function(db, zTest, 2, any, p, testFunc, 0, 0))
+   || SQLITE_OK!=(rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0))
+   || SQLITE_OK!=(rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0))
 #endif
   );
 

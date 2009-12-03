@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\scompiler\swarnings\sunder\sMSVC.
-D 2009-12-03T04:40:48
+C Updates\sto\sFTS3\sto\scorrect\scompiler\swarnings\sunder\sMSVC.
+D 2009-12-03T06:26:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,19 +56,19 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c eca3828c5ef6efd4297c8b917d69ec11b9d223a9
+F ext/fts3/fts3.c 8352dc3506c3b30fde126ea5da9c431d3c243522
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 7bc65d9ada6715ecd11ed83513013d4c7bbc2eeb
-F ext/fts3/fts3_expr.c bdf11f3602f62f36f0e42823680bf22033dae0de
-F ext/fts3/fts3_hash.c 29fba5a01e51c53e37040e53821e6b2cec18c8fb
-F ext/fts3/fts3_hash.h 39524725425078bf9e814e9569c74a8e5a21b9fb
+F ext/fts3/fts3Int.h 515132f0ae6b35eccbeef72a2bafb16d7e251953
+F ext/fts3/fts3_expr.c c18794a62c257d3456d3314c5a18e348ae0d84bd
+F ext/fts3/fts3_hash.c 18feef38fca216992725e9eae775a0c7735e6724
+F ext/fts3/fts3_hash.h d410ff2c93c81a56b927fcf07b2099ccbfa7a479
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
-F ext/fts3/fts3_porter.c 4248815484f9c7e9d4f3c72c1149464485c08abe
-F ext/fts3/fts3_snippet.c 84ba2fad73aa12628f1950aed74babbf3975e73a
-F ext/fts3/fts3_tokenizer.c 17335e980994e112c5d332d5bc391f9089350761
+F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
+F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
+F ext/fts3/fts3_tokenizer.c 73a4e0e068720153901622f215298b73e7c976c7
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
-F ext/fts3/fts3_tokenizer1.c 0a5bcc579f35de5d24a9345d7908dc25ae403ee7
-F ext/fts3/fts3_write.c 5d3849443746f41ea4af96dac08d79f2bf75f204
+F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
+F ext/fts3/fts3_write.c 6c59b1d6eed759815151298c132d79301c205fce
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -775,7 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 59e2e2c6301e189a1a6601c681bbb0937a5cd14e
-R 4cd225486b10b23f8eba14d67e73bbe4
+P e3aa0870fce0666bf8c67ad6ec23e135d03b604a
+R 8d9ad89e2fac8a1d1d94a1d048213789
 U shaneh
-Z ef9e7d1e0537cf470262f7210a98337f
+Z 7667ec8a886e15725b2ab6f5b341cdfd

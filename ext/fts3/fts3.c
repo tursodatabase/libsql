@@ -447,7 +447,7 @@ void sqlite3Fts3Dequote(char *z){
   for(i=1, j=0; z[i]; i++){
     if( z[i]==quote ){
       if( z[i+1]==quote ){
-        z[j++] = quote;
+        z[j++] = (char)quote;
         i++;
       }else{
         z[j++] = 0;
@@ -653,8 +653,8 @@ int fts3InitVtab(
   const char *zTokenizer = 0;               /* Name of tokenizer to use */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
-  nDb = strlen(argv[1]) + 1;
-  nName = strlen(argv[2]) + 1;
+  nDb = (int)strlen(argv[1]) + 1;
+  nName = (int)strlen(argv[2]) + 1;
   for(i=3; i<argc; i++){
     char const *z = argv[i];
     rc = sqlite3Fts3InitTokenizer(pHash, z, &pTokenizer, &zTokenizer, pzErr);
@@ -662,7 +662,7 @@ int fts3InitVtab(
       return rc;
     }
     if( z!=zTokenizer ){
-      nString += strlen(z) + 1;
+      nString += (int)(strlen(z) + 1);
     }
   }
   nCol = argc - 3 - (zTokenizer!=0);
@@ -841,6 +841,8 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 */
 static int fts3OpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
   sqlite3_vtab_cursor *pCsr;               /* Allocated cursor */
+
+  UNUSED_PARAMETER(pVTab);
 
   /* Allocate a buffer large enough for an Fts3Cursor structure. If the
   ** allocation succeeds, zero it and return SQLITE_OK. Otherwise, 
@@ -1024,7 +1026,7 @@ static void fts3PoslistCopy(char **pp, char **ppPoslist){
   while( *pEnd | c ) c = *pEnd++ & 0x80;
   pEnd++;
   if( pp ){
-    int n = pEnd - *ppPoslist;
+    int n = (int)(pEnd - *ppPoslist);
     char *p = *pp;
     memcpy(p, *ppPoslist, n);
     p += n;
@@ -1038,7 +1040,7 @@ static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
   char c = 0;
   while( 0xFE & (*pEnd | c) ) c = *pEnd++ & 0x80;
   if( pp ){
-    int n = pEnd - *ppPoslist;
+    int n = (int)(pEnd - *ppPoslist);
     char *p = *pp;
     memcpy(p, *ppPoslist, n);
     p += n;
@@ -1425,7 +1427,7 @@ static int fts3DoclistMerge(
       assert(!"Invalid mergetype value passed to fts3DoclistMerge()");
   }
 
-  *pnBuffer = (p-aBuffer);
+  *pnBuffer = (int)(p-aBuffer);
   return SQLITE_OK;
 }
 
@@ -1456,6 +1458,10 @@ static int fts3TermSelectCb(
   TermSelect *pTS = (TermSelect *)pContext;
   int nNew = pTS->nOutput + nDoclist;
   char *aNew = sqlite3_malloc(nNew);
+
+  UNUSED_PARAMETER(p);
+  UNUSED_PARAMETER(zTerm);
+  UNUSED_PARAMETER(nTerm);
 
   if( !aNew ){
     return SQLITE_NOMEM;
@@ -1798,6 +1804,9 @@ static int fts3FilterMethod(
   Fts3Table *p = (Fts3Table *)pCursor->pVtab;
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
 
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(nVal);
+
   assert( idxNum>=0 && idxNum<=(FTS3_FULLTEXT_SEARCH+p->nColumn) );
   assert( nVal==0 || nVal==1 );
   assert( (nVal==0)==(idxNum==FTS3_FULLSCAN_SEARCH) );
@@ -1820,7 +1829,7 @@ static int fts3FilterMethod(
     sqlite3_free(zSql);
   }
   if( rc!=SQLITE_OK ) return rc;
-  pCsr->eSearch = idxNum;
+  pCsr->eSearch = (i16)idxNum;
 
   if( idxNum==FTS3_DOCID_SEARCH ){
     rc = sqlite3_bind_value(pCsr->pStmt, 1, apVal[0]);
@@ -1930,6 +1939,7 @@ static int fts3SyncMethod(sqlite3_vtab *pVtab){
 ** Implementation of xBegin() method. This is a no-op.
 */
 static int fts3BeginMethod(sqlite3_vtab *pVtab){
+  UNUSED_PARAMETER(pVtab);
   assert( ((Fts3Table *)pVtab)->nPendingData==0 );
   return SQLITE_OK;
 }
@@ -1940,6 +1950,7 @@ static int fts3BeginMethod(sqlite3_vtab *pVtab){
 ** by fts3SyncMethod().
 */
 static int fts3CommitMethod(sqlite3_vtab *pVtab){
+  UNUSED_PARAMETER(pVtab);
   assert( ((Fts3Table *)pVtab)->nPendingData==0 );
   return SQLITE_OK;
 }
@@ -2018,6 +2029,8 @@ static void fts3OffsetsFunc(
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
 
+  UNUSED_PARAMETER(nVal);
+
   assert( nVal==1 );
   if( fts3FunctionArg(pContext, "offsets", apVal[0], &pCsr) ) return;
   assert( pCsr );
@@ -2041,6 +2054,8 @@ static void fts3OptimizeFunc(
   int rc;                         /* Return code */
   Fts3Table *p;                   /* Virtual table handle */
   Fts3Cursor *pCursor;            /* Cursor handle passed through apVal[0] */
+
+  UNUSED_PARAMETER(nVal);
 
   assert( nVal==1 );
   if( fts3FunctionArg(pContext, "optimize", apVal[0], &pCursor) ) return;
@@ -2082,6 +2097,11 @@ static int fts3FindFunctionMethod(
     { "optimize", fts3OptimizeFunc },
   };
   int i;                          /* Iterator variable */
+
+  UNUSED_PARAMETER(pVtab);
+  UNUSED_PARAMETER(nArg);
+  UNUSED_PARAMETER(ppArg);
+
   for(i=0; i<SizeofArray(aOverload); i++){
     if( strcmp(zName, aOverload[i].zName)==0 ){
       *pxFunc = aOverload[i].xFunc;

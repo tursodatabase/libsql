@@ -56,7 +56,7 @@ static void fts3HashFree(void *p){
 ** true if the hash table should make its own private copy of keys and
 ** false if it should just use the supplied pointer.
 */
-void sqlite3Fts3HashInit(Fts3Hash *pNew, int keyClass, int copyKey){
+void sqlite3Fts3HashInit(Fts3Hash *pNew, char keyClass, char copyKey){
   assert( pNew!=0 );
   assert( keyClass>=FTS3_HASH_STRING && keyClass<=FTS3_HASH_BINARY );
   pNew->keyClass = keyClass;

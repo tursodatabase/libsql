@@ -71,7 +71,7 @@ struct Fts3HashElem {
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqlite3Fts3HashInit(Fts3Hash*, int keytype, int copyKey);
+void sqlite3Fts3HashInit(Fts3Hash *pNew, char keyClass, char copyKey);
 void *sqlite3Fts3HashInsert(Fts3Hash*, const void *pKey, int nKey, void *pData);
 void *sqlite3Fts3HashFind(const Fts3Hash*, const void *pKey, int nKey);
 void sqlite3Fts3HashClear(Fts3Hash*);

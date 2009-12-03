@@ -54,14 +54,26 @@
 #define FTS3_VARINT_MAX 10
 
 /*
+** This section provides definitions to allow the
+** FTS3 extension to be compiled outside of the 
+** amalgamation.
+*/
+#ifndef SQLITE_AMALGAMATION
+/*
 ** Macros indicating that conditional expressions are always true or
 ** false.
 */
-#ifndef SQLITE_AMALGAMATION
 # define ALWAYS(x) (x)
 # define NEVER(X)  (x)
+/*
+** Internal types used by SQLite.
+*/
 typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
 typedef short int i16;            /* 2-byte (or larger) signed integer */
+/*
+** Macro used to suppress compiler warnings for unused parameters.
+*/
+#define UNUSED_PARAMETER(x) (void)(x)
 #endif
 
 typedef struct Fts3Table Fts3Table;

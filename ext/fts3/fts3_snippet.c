@@ -78,7 +78,7 @@ static void fts3SnippetSbInit(StringBuffer *p){
 */
 static void fts3SnippetAppend(StringBuffer *p, const char *zNew, int nNew){
   if( p->z==0 ) return;
-  if( nNew<0 ) nNew = strlen(zNew);
+  if( nNew<0 ) nNew = (int)strlen(zNew);
   if( p->nUsed + nNew >= p->nAlloc ){
     int nAlloc;
     char *zNew;
@@ -155,11 +155,11 @@ static int snippetAppendMatch(
   }
   i = p->nMatch++;
   pMatch = &p->aMatch[i];
-  pMatch->iCol = iCol;
-  pMatch->iTerm = iTerm;
+  pMatch->iCol = (short)iCol;
+  pMatch->iTerm = (short)iTerm;
   pMatch->iToken = iToken;
   pMatch->iStart = iStart;
-  pMatch->nByte = nByte;
+  pMatch->nByte = (short)nByte;
   return SQLITE_OK;
 }
 
