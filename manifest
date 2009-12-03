@@ -1,5 +1,5 @@
-C Fix\scut-and-paste\serror\saffecting\sa\scouple\sof\sattach\stests\son\sWindows.
-D 2009-12-03T04:32:06
+C Fix\sa\scouple\sof\scompiler\swarnings\sunder\sMSVC.
+D 2009-12-03T04:40:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c a0ed14b86de9d012a962b83389ca01003b6acccb
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
-F src/parse.y f785d814562a14dc19202f61abb4372845f64752
+F src/parse.y b172fba9a954855502271556497c440506b6daf4
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
@@ -209,7 +209,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c 03309a08d549f9389cc3a3589afd4fadbdaf0679
-F src/vdbe.c 91b65712dcc35c80856ced6d64350059750dacc4
+F src/vdbe.c 5ed06318aac5d57849170a8bf39e807c22c5fedd
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c bb128b819b9ef1a2ce211a36a6cb70a1643fa239
@@ -775,7 +775,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P acce10f77125b5ab05d10ec10aef68dffa4e826a
-R e26a61136025384c02e8f22d7efe042b
+P 59e2e2c6301e189a1a6601c681bbb0937a5cd14e
+R 4cd225486b10b23f8eba14d67e73bbe4
 U shaneh
-Z 4ea36331a802714efc576535aa6ba653
+Z ef9e7d1e0537cf470262f7210a98337f

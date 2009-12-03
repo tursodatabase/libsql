@@ -890,7 +890,7 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
   static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
     sqlite3 *db = pParse->db;
     if( db->mallocFailed==0 && pY->op==TK_NULL ){
-      pA->op = op;
+      pA->op = (u8)op;
       sqlite3ExprDelete(db, pA->pRight);
       pA->pRight = 0;
     }

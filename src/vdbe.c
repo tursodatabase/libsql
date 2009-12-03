@@ -546,7 +546,7 @@ int sqlite3VdbeExec(
   u8 resetSchemaOnFault = 0; /* Reset schema after an error if true */
   u8 encoding = ENC(db);     /* The database encoding */
 #ifndef SQLITE_OMIT_PROGRESS_CALLBACK
-  u8 checkProgress;          /* True if progress callbacks are enabled */
+  int checkProgress;         /* True if progress callbacks are enabled */
   int nProgressOps = 0;      /* Opcodes executed since progress callback. */
 #endif
   Mem *aMem = p->aMem;       /* Copy of p->aMem */
@@ -3285,7 +3285,7 @@ case OP_SeekGt: {       /* jump, in3 */
       **     r.flags = 0;
       **   }
       */
-      r.flags = UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt));
+      r.flags = (u16)(UNPACKED_INCRKEY * (1 & (oc - OP_SeekLt)));
       assert( oc!=OP_SeekGt || r.flags==UNPACKED_INCRKEY );
       assert( oc!=OP_SeekLe || r.flags==UNPACKED_INCRKEY );
       assert( oc!=OP_SeekGe || r.flags==0 );
@@ -3414,7 +3414,7 @@ case OP_Found: {        /* jump, in3 */
     assert( pC->isTable==0 );
     if( pOp->p4.i>0 ){
       r.pKeyInfo = pC->pKeyInfo;
-      r.nField = pOp->p4.i;
+      r.nField = (u16)pOp->p4.i;
       r.aMem = pIn3;
       r.flags = UNPACKED_PREFIX_MATCH;
       pIdxKey = &r;
