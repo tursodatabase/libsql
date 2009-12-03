@@ -2346,11 +2346,8 @@ static int newDatabase(BtShared *pBt){
   int nPage;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  /* The database size has already been measured and cached, so failure
-  ** is impossible here.  If the original size measurement failed, then
-  ** processing aborts before entering this routine. */
   rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
-  if( NEVER(rc!=SQLITE_OK) || nPage>0 ){
+  if( rc!=SQLITE_OK || nPage>0 ){
     return rc;
   }
   pP1 = pBt->pPage1;
