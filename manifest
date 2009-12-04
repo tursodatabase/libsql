@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Clear\sa\sconflicting\sTCL\svariable\sin\sthe\sfts3rnd.test\stest\sscript.
-D 2009-12-04T01:44:43
+C Do\snot\srun\sfts3rnd.test\sas\spart\sof\squick.test.
+D 2009-12-04T05:41:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -526,7 +523,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test 31d0c41d1602af5a2b402682770943b77d42d309
+F test/quick.test d6591e74f3ac19da7fd076845f06dca48fd43cff
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -779,14 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5ab2b3e300b70bc04cdead69275f8f734ea2d885
-R 32e6adf3037719e1e08d9b1e6adfaf15
-U drh
-Z 35e3c8535aeb00408d6b8aa9894bb423
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLGGmOoxKgR168RlERAgfXAJ94YC+NA8wb6UWzcFkujMJ3+0sS/gCdGwSf
-UuK2mDFXAQV/9PjaQSDzy7w=
-=rXFN
------END PGP SIGNATURE-----
+P f9047b2e88a26ed52a54c527cca2a8c1123805d1
+R 580b2e1f258c44edfb3caa15c0c3a8d4
+U dan
+Z 25685b53842cd66a348067a70a73a7ce

@@ -59,7 +59,7 @@ set EXCLUDE {
   delete3.test
   e_fts3.test
   fts3.test
-  fts3fuzz.test
+  fts3rnd.test
   fkey_malloc.test
   fuzz.test
   fuzz3.test
