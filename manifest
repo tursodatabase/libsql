@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sassert()\sin\sbtree.c\sthat\smight\shave\sfired\son\sa\scorrupt\sdatabase\sfile.
-D 2009-12-03T21:26:53
+C Clear\sa\sconflicting\sTCL\svariable\sin\sthe\sfts3rnd.test\stest\sscript.
+D 2009-12-04T01:44:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -405,7 +405,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test bbb85c6b2b55f15a8ecaaf1585a94845501f7369
+F test/fts3rnd.test 45beb753dfdde39f40aae8e3467e8bfe7e94cfe0
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -779,14 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d5861d9ffecca499d79d722b5f742ffe3a5aff44
-R 672739783a57cc2945d2711dc3624ee1
+P 5ab2b3e300b70bc04cdead69275f8f734ea2d885
+R 32e6adf3037719e1e08d9b1e6adfaf15
 U drh
-Z 8b12fd840dfeb2d0d552e6c6adcc395d
+Z 35e3c8535aeb00408d6b8aa9894bb423
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLGC0goxKgR168RlERAsceAJ4tPVtQmWVNN9jH7h66NAP7ntVM3QCffxuS
-O3PLkAGKJceDIgUe5VAtAtE=
-=AN6z
+iD8DBQFLGGmOoxKgR168RlERAgfXAJ94YC+NA8wb6UWzcFkujMJ3+0sS/gCdGwSf
+UuK2mDFXAQV/9PjaQSDzy7w=
+=rXFN
 -----END PGP SIGNATURE-----

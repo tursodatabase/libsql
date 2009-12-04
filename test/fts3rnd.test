@@ -49,6 +49,7 @@ proc generate_doc {nWord} {
 
 # Primitives to update the table.
 #
+unset -nocomplain t1
 proc insert_row {rowid} {
   set a [generate_doc [expr int((rand()*100))]]
   set b [generate_doc [expr int((rand()*100))]]
@@ -145,4 +146,3 @@ foreach nodesize {50 500 1000 2000} {
 }
 
 finish_test
-
