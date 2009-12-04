@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\sinvolving\sa\s3-way\sNEAR\squery.
-D 2009-12-04T19:07:25
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\san\sassert()\sin\sbtree.c:releasePage()\sthat\sis\snot\snecessarily\strue\nwhen\sthe\sbtree\sis\srecovering\sfrom\san\sOOM\sthat\soccurs\sin\sthe\smiddle\sof\na\sbalance().
+D 2009-12-04T22:51:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,7 +111,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 086f343d8b7bc37eabd2cf81dbbce3db37a093da
+F src/btree.c 976b4ca0b0046bf52a8447381a136df7488f9969
 F src/btree.h 7944a9dac59eb3e541aad45fd2747f1051e7c63d
 F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
 F src/build.c a48e74d24897100017d39ceba5de255e53ec9488
@@ -776,7 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 082b8da005128f47f63e95b6b702bf4517221b2a
-R 8882a051c5ec0b862c5bc60eb34d651e
-U dan
-Z 1493d6f5f2ac30a6a5cc018ff1d6ae85
+P 507890a9139875b1b594225c432c714f67312c0e
+R a9917927ecf932a5206784016c23ed7e
+U drh
+Z 46b355286c20c46db7bbe0e342865ca8
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLGZJ/oxKgR168RlERAj8wAJ9G69y4b+LzPt4d3Ae0lzt3fJkTzQCcC1o7
+UcWORVO4f1q8aqaDcPGdI60=
+=Xm8G
+-----END PGP SIGNATURE-----
