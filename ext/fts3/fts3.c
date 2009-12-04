@@ -1563,12 +1563,14 @@ static int fts3TermSelect(
         sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
         rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
       }
-      sqlite3Fts3ReadBlock(p, 0, 0, 0);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3Fts3ReadBlock(p, 0, 0, 0);
+      }
     }
     iAge++;
 
     /* If a new Fts3SegReader was allocated, add it to the apSegment array. */
-    assert( (rc==SQLITE_OK)==(pNew!=0) );
+    assert( pNew!=0 || rc!=SQLITE_OK );
     if( pNew ){
       if( nSegment==nAlloc ){
         Fts3SegReader **pArray;
