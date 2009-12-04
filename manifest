@@ -1,5 +1,8 @@
-C Modify\s[2ad1461f25]\sto\savoid\sleaving\sa\sprepared\sstatement\sin\s"active"\sstate\sfollowing\san\sOOM\serror\sin\sFTS3.
-D 2009-12-04T14:11:34
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C In\sthe\sOSTRACE\sdebugging\smacros\sin\sos_unix.c,\sidentify\sthe\sVFS\scurrently\nin\suse.
+D 2009-12-04T14:25:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +151,7 @@ F src/os.c 4500ff276e277730776fe9b6c6c5930383ec4000
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c bdd6ca0932dcb51c344081aff430bcc71c14db7f
+F src/os_unix.c fe85acfeded5cc13c2340ab73c9baf841de4e6d9
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c a0ed14b86de9d012a962b83389ca01003b6acccb
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -776,7 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2ad1461f255c2499367b706a5ec65b44c1fc1618
-R 434ac8eeb95fc4fd25e48da71a4aeaab
-U dan
-Z 61ea5bb3c9293e72eaba32fbcf09b0bf
+P 69c21ee46aeeb624fd8638b17ff7259a3e5f9a46
+R 400f092ce88a5a339c0b27b8a8415aa3
+U drh
+Z ed4cd334a82b89245ccfc3ad9b838d68
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLGRvSoxKgR168RlERApe7AJ9uIN22ikW++Uqhi70+FZLKfs2R8gCfUGfY
+GTEEJa/7cpPCyUSqfXB/ROE=
+=u43h
+-----END PGP SIGNATURE-----

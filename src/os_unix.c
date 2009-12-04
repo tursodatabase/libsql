@@ -1159,7 +1159,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 #endif
   
   unixLeaveMutex();
-  OSTRACE4("TEST WR-LOCK %d %d %d\n", pFile->h, rc, reserved);
+  OSTRACE4("TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved);
 
   *pResOut = reserved;
   return rc;
@@ -1292,7 +1292,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   int tErrno;
 
   assert( pFile );
-  OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d\n", pFile->h,
+  OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       locktypeName(locktype), locktypeName(pFile->locktype),
       locktypeName(pLock->locktype), pLock->cnt , getpid());
 
@@ -1301,7 +1301,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   ** unixEnterMutex() hasn't been called yet.
   */
   if( pFile->locktype>=locktype ){
-    OSTRACE3("LOCK    %d %s ok (already held)\n", pFile->h,
+    OSTRACE3("LOCK    %d %s ok (already held) (unix)\n", pFile->h,
             locktypeName(locktype));
     return SQLITE_OK;
   }
@@ -1471,7 +1471,7 @@ static int unixLock(sqlite3_file *id, int locktype){
 
 end_lock:
   unixLeaveMutex();
-  OSTRACE4("LOCK    %d %s %s\n", pFile->h, locktypeName(locktype), 
+  OSTRACE4("LOCK    %d %s %s (unix)\n", pFile->h, locktypeName(locktype), 
       rc==SQLITE_OK ? "ok" : "failed");
   return rc;
 }
@@ -1535,7 +1535,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
   int tErrno;                      /* Error code from system call errors */
 
   assert( pFile );
-  OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d\n", pFile->h, locktype,
+  OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, locktype,
       pFile->locktype, pFile->pLock->locktype, pFile->pLock->cnt, getpid());
 
   assert( locktype<=SHARED_LOCK );
@@ -1816,7 +1816,7 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
     const char *zLockFile = (const char*)pFile->lockingContext;
     reserved = access(zLockFile, 0)==0;
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d\n", pFile->h, rc, reserved);
+  OSTRACE4("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved);
   *pResOut = reserved;
   return rc;
 }
@@ -1906,7 +1906,7 @@ static int dotlockUnlock(sqlite3_file *id, int locktype) {
   char *zLockFile = (char *)pFile->lockingContext;
 
   assert( pFile );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d\n", pFile->h, locktype,
+  OSTRACE5("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, locktype,
 	   pFile->locktype, getpid());
   assert( locktype<=SHARED_LOCK );
   
@@ -2020,7 +2020,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
       }
     }
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d\n", pFile->h, rc, reserved);
+  OSTRACE4("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved);
 
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
@@ -2087,7 +2087,7 @@ static int flockLock(sqlite3_file *id, int locktype) {
     /* got it, set the type and return ok */
     pFile->locktype = locktype;
   }
-  OSTRACE4("LOCK    %d %s %s\n", pFile->h, locktypeName(locktype), 
+  OSTRACE4("LOCK    %d %s %s (flock)\n", pFile->h, locktypeName(locktype), 
            rc==SQLITE_OK ? "ok" : "failed");
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
@@ -2109,7 +2109,7 @@ static int flockUnlock(sqlite3_file *id, int locktype) {
   unixFile *pFile = (unixFile*)id;
   
   assert( pFile );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d\n", pFile->h, locktype,
+  OSTRACE5("UNLOCK  %d %d was %d pid=%d (flock)\n", pFile->h, locktype,
            pFile->locktype, getpid());
   assert( locktype<=SHARED_LOCK );
   
@@ -2211,7 +2211,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
       sem_post(pSem);
     }
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d\n", pFile->h, rc, reserved);
+  OSTRACE4("TEST WR-LOCK %d %d %d (sem)\n", pFile->h, rc, reserved);
 
   *pResOut = reserved;
   return rc;
@@ -2286,7 +2286,7 @@ static int semUnlock(sqlite3_file *id, int locktype) {
 
   assert( pFile );
   assert( pSem );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d\n", pFile->h, locktype,
+  OSTRACE5("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, locktype,
 	   pFile->locktype, getpid());
   assert( locktype<=SHARED_LOCK );
   
@@ -2456,7 +2456,7 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
     }
   }
   
-  OSTRACE4("TEST WR-LOCK %d %d %d\n", pFile->h, rc, reserved);
+  OSTRACE4("TEST WR-LOCK %d %d %d (afp)\n", pFile->h, rc, reserved);
   
   *pResOut = reserved;
   return rc;
@@ -2492,7 +2492,7 @@ static int afpLock(sqlite3_file *id, int locktype){
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   
   assert( pFile );
-  OSTRACE5("LOCK    %d %s was %s pid=%d\n", pFile->h,
+  OSTRACE5("LOCK    %d %s was %s pid=%d (afp)\n", pFile->h,
          locktypeName(locktype), locktypeName(pFile->locktype), getpid());
 
   /* If there is already a lock of this type or more restrictive on the
@@ -2500,7 +2500,7 @@ static int afpLock(sqlite3_file *id, int locktype){
   ** unixEnterMutex() hasn't been called yet.
   */
   if( pFile->locktype>=locktype ){
-    OSTRACE3("LOCK    %d %s ok (already held)\n", pFile->h,
+    OSTRACE3("LOCK    %d %s ok (already held) (afp)\n", pFile->h,
            locktypeName(locktype));
     return SQLITE_OK;
   }
@@ -2619,7 +2619,7 @@ static int afpLock(sqlite3_file *id, int locktype){
   
 afp_end_lock:
   unixLeaveMutex();
-  OSTRACE4("LOCK    %d %s %s\n", pFile->h, locktypeName(locktype), 
+  OSTRACE4("LOCK    %d %s %s (afp)\n", pFile->h, locktypeName(locktype), 
          rc==SQLITE_OK ? "ok" : "failed");
   return rc;
 }
@@ -2637,7 +2637,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
   afpLockingContext *pCtx = (afpLockingContext *) pFile->lockingContext;
 
   assert( pFile );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d\n", pFile->h, locktype,
+  OSTRACE5("UNLOCK  %d %d was %d pid=%d (afp)\n", pFile->h, locktype,
          pFile->locktype, getpid());
 
   assert( locktype<=SHARED_LOCK );
