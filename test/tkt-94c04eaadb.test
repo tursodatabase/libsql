@@ -67,6 +67,7 @@ db close
 db2 close
 sqlite3async_start
 sqlite3async_wait
+sqlite3async_control halt never
 sqlite3async_shutdown
 
 finish_test

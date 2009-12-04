@@ -1,5 +1,5 @@
-C Do\snot\srun\sfts3rnd.test\sas\spart\sof\squick.test.
-D 2009-12-04T05:41:03
+C Reset\sthe\sstate\sof\sthe\sasynchronous\sIO\smodule\sat\sthe\send\sof\sthe\stkt-94c04eaadb.test\sscript.
+D 2009-12-04T08:41:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -602,7 +602,7 @@ F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
 F test/tkt-3fe897352e.test 8084dad39807eac10b10720c84193bd1a5980973
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
-F test/tkt-94c04eaadb.test 40e6b1fce420fbecf8c2379d3ec3cb6889e49091
+F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-d82e3f3721.txt cbed12b1a1e4740382de43ef1bb45c6bc0f8f473
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
@@ -776,7 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f9047b2e88a26ed52a54c527cca2a8c1123805d1
-R 580b2e1f258c44edfb3caa15c0c3a8d4
+P 3bb64842acdca2a4e81f1c72130a90c23b0804f1
+R 1f53e9168e6eecbc2ad14610a89af867
 U dan
-Z 25685b53842cd66a348067a70a73a7ce
+Z a4f919370d7d735ad20ccedd36d51ae5
