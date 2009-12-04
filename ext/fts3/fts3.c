@@ -1557,14 +1557,23 @@ static int fts3TermSelect(
       */
       rc = sqlite3Fts3SegReaderNew(p, iAge, 0, 0, 0, zRoot, nRoot, &pNew);
     }else{
-      sqlite3_int64 i1;
+      int rc2;                    /* Return value of sqlite3Fts3ReadBlock() */
+      sqlite3_int64 i1;           /* Blockid of leaf that may contain zTerm */
       rc = fts3SelectLeaf(p, zTerm, nTerm, zRoot, nRoot, &i1);
       if( rc==SQLITE_OK ){
         sqlite3_int64 i2 = sqlite3_column_int64(pStmt, 2);
         rc = sqlite3Fts3SegReaderNew(p, iAge, i1, i2, 0, 0, 0, &pNew);
       }
+
+      /* The following call to ReadBlock() serves to reset the SQL statement
+      ** used to retrieve blocks of data from the %_segments table. If it is
+      ** not reset here, then it may remain classified as an active statement 
+      ** by SQLite, which may lead to "DROP TABLE" or "DETACH" commands 
+      ** failing.
+      */ 
+      rc2 = sqlite3Fts3ReadBlock(p, 0, 0, 0);
       if( rc==SQLITE_OK ){
-        rc = sqlite3Fts3ReadBlock(p, 0, 0, 0);
+        rc = rc2;
       }
     }
     iAge++;
