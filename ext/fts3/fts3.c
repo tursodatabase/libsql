@@ -1051,6 +1051,8 @@ static void fts3PoslistCopy(char **pp, char **ppPoslist){
 static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
   char c = 0;
+
+  /* A column-list is terminated by either a 0x01 or 0x00. */
   while( 0xFE & (*pEnd | c) ) c = *pEnd++ & 0x80;
   if( pp ){
     int n = (int)(pEnd - *ppPoslist);
@@ -1106,8 +1108,20 @@ static void fts3PoslistMerge(
         if( 0==(*p2&0xFE) ) i2 = 0x7FFFFFFF;
       }
     }else if( iCol1<iCol2 ){
+      if( iCol1 ){
+        int n = sqlite3Fts3PutVarint(&p[1], iCol1);
+        *p = 0x01;
+        p += n+1;
+        p1 += n+1;
+      }
       fts3ColumnlistCopy(&p, &p1);
     }else{
+      if( iCol2 ){
+        int n = sqlite3Fts3PutVarint(&p[1], iCol2);
+        *p = 0x01;
+        p += n+1;
+        p2 += n+1;
+      }
       fts3ColumnlistCopy(&p, &p2);
     }
   }

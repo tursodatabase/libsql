@@ -91,6 +91,37 @@ proc simple_prefix {zPrefix} {
 }
 
 proc simple_near {termlist nNear} {
+  set ret [list]
+
+  # List of nNear+1 elements that contains no terms.
+  #
+  set dummyfields "[string repeat "X " $nNear]X"
+
+  foreach {key value} [array get ::t1] {
+    foreach v $value {
+      set v [concat $dummyfields $v $dummyfields]
+
+      set l [lsearch -exact -all $v [lindex $termlist 0]]
+      foreach T [lrange $termlist 1 end] {
+        set l2 [list]
+        foreach i $l {
+          set iStart [expr $i - $nNear - 1]
+          set iEnd [expr $i + $nNear + 1]
+          foreach i2 [lsearch -exact -all [lrange $v $iStart $iEnd] $T] {
+            incr i2 $iStart
+            if {$i2 != $i} { lappend l2 $i2 } 
+          }
+        }
+        set l $l2
+      }
+
+      if {[llength $l]} {
+        lappend ret $key
+      } 
+    }
+  }
+
+  lsort -unique -integer $ret
 }
 
 foreach nodesize {50 500 1000 2000} {
@@ -171,11 +202,21 @@ foreach nodesize {50 500 1000 2000} {
 
     # A NEAR query with terms as the arguments.
     #
-if 0 {
     for {set i 0} {$i < 10} {incr i} {
       set terms [list [random_term] [random_term]]
       set match [join $terms " NEAR "]
-      do_test fts3rnd-1.$nodesize.$iTest.5.$i {
+      do_test fts3rnd-1.$nodesize.$iTest.5.$i.$match {
+        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      } [simple_near $terms 10]
+    }
+ 
+if 0 {
+    # A 3-way NEAR query with terms as the arguments.
+    #
+    for {set i 0} {$i < 10} {incr i} {
+      set terms [list [random_term] [random_term] [random_term]]
+      set match [join $terms " NEAR "]
+      do_test fts3rnd-1.$nodesize.$iTest.5.$i.$match {
         execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
       } [simple_near $terms 10]
     }

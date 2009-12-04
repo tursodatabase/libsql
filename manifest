@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C In\sthe\sOSTRACE\sdebugging\smacros\sin\sos_unix.c,\sidentify\sthe\sVFS\scurrently\nin\suse.
-D 2009-12-04T14:25:19
+C Fix\sa\sproblem\sinvolving\sa\s3-way\sNEAR\squery.
+D 2009-12-04T19:07:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c da95f0191c2a016a78d12334ccfed76769043952
+F ext/fts3/fts3.c 54ad3e8f0374148768ad65724cff89a8a5a241a7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cc716c74afa7da8e0f8ef39404f33ea62a823eb3
 F ext/fts3/fts3_expr.c c18794a62c257d3456d3314c5a18e348ae0d84bd
@@ -405,7 +402,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test 65f534898c5f7cce3f51b2c2dfc179e2287346b2
+F test/fts3rnd.test 071ff7ed7bf60f8f7502a3e09cbc680dbd795da1
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -779,14 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 69c21ee46aeeb624fd8638b17ff7259a3e5f9a46
-R 400f092ce88a5a339c0b27b8a8415aa3
-U drh
-Z ed4cd334a82b89245ccfc3ad9b838d68
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLGRvSoxKgR168RlERApe7AJ9uIN22ikW++Uqhi70+FZLKfs2R8gCfUGfY
-GTEEJa/7cpPCyUSqfXB/ROE=
-=u43h
------END PGP SIGNATURE-----
+P 082b8da005128f47f63e95b6b702bf4517221b2a
+R 8882a051c5ec0b862c5bc60eb34d651e
+U dan
+Z 1493d6f5f2ac30a6a5cc018ff1d6ae85
