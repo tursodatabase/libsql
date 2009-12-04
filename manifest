@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\san\sassert()\sin\sbtree.c:releasePage()\sthat\sis\snot\snecessarily\strue\nwhen\sthe\sbtree\sis\srecovering\sfrom\san\sOOM\sthat\soccurs\sin\sthe\smiddle\sof\na\sbalance().
-D 2009-12-04T22:51:40
+C Add\sthe\sSQLITE_4_BYTE_ALIGNED_MALLOC\scompile-time\soption\swhich\stells\ssome\nassert()\sstatements\sthat\sthe\sunderlying\ssystem\sonly\srequires\s4-byte\salignment\nof\s8-byte\sdata\sobjects\slike\sdouble\sor\sint64\sand\sthat\ssystem\smalloc()\sonly\nguarantees\s4-byte\salignment\sof\sreturned\spointers.
+D 2009-12-04T23:10:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +169,7 @@ F src/select.c 2f9ed7482e7a25b0b127fc41693bbdbe1caf5647
 F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
 F src/sqlite.h.in 2d34605565e021851255e0bbcb15f8c1930d1f6f
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h f09be5c67f95f3d28d44e5b608b18cab28758ba4
+F src/sqliteInt.h e946a6a3f2df015cdbc7668e9626987e8badbb5f
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c e651be6b30d397d86384c6867bc016e4913bcac7
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -779,14 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 507890a9139875b1b594225c432c714f67312c0e
-R a9917927ecf932a5206784016c23ed7e
+P 04fc9c7661dd24d080f965e7eae9010a2d346e6a
+R 012380c4025d7401ec31300c24d1a49d
 U drh
-Z 46b355286c20c46db7bbe0e342865ca8
+Z 3a60f929898567f03b13abb7e9741c72
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLGZJ/oxKgR168RlERAj8wAJ9G69y4b+LzPt4d3Ae0lzt3fJkTzQCcC1o7
-UcWORVO4f1q8aqaDcPGdI60=
-=Xm8G
+iD8DBQFLGZbXoxKgR168RlERAgzLAKCGX83GaoDdnZtQhPjMOrZGC9L8TwCcC1Yk
+V482pOMKKDD0UFm2zbfBJVE=
+=H8qI
 -----END PGP SIGNATURE-----
