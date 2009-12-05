@@ -93,13 +93,8 @@ proc simple_prefix {zPrefix} {
 proc simple_near {termlist nNear} {
   set ret [list]
 
-  # List of nNear+1 elements that contains no terms.
-  #
-  set dummyfields "[string repeat "X " $nNear]X"
-
   foreach {key value} [array get ::t1] {
     foreach v $value {
-      set v [concat $dummyfields $v $dummyfields]
 
       set l [lsearch -exact -all $v [lindex $termlist 0]]
       foreach T [lrange $termlist 1 end] {
@@ -107,15 +102,17 @@ proc simple_near {termlist nNear} {
         foreach i $l {
           set iStart [expr $i - $nNear - 1]
           set iEnd [expr $i + $nNear + 1]
+          if {$iStart < 0} {set iStart 0}
           foreach i2 [lsearch -exact -all [lrange $v $iStart $iEnd] $T] {
             incr i2 $iStart
             if {$i2 != $i} { lappend l2 $i2 } 
           }
         }
-        set l $l2
+        set l [lsort -uniq -integer $l2]
       }
 
       if {[llength $l]} {
+#puts "MATCH($key): $v"
         lappend ret $key
       } 
     }
@@ -155,7 +152,7 @@ foreach nodesize {50 500 1000 2000} {
       update_row $iUpdate
       delete_row $iDelete
     }
-  
+
     # Pick 10 terms from the vocabulary. Check that the results of querying
     # the database for the set of documents containing each of these terms
     # is the same as the result obtained by scanning the contents of the Tcl 
@@ -210,17 +207,19 @@ foreach nodesize {50 500 1000 2000} {
       } [simple_near $terms 10]
     }
  
-if 0 {
     # A 3-way NEAR query with terms as the arguments.
     #
     for {set i 0} {$i < 10} {incr i} {
       set terms [list [random_term] [random_term] [random_term]]
-      set match [join $terms " NEAR "]
+      set nNear 11
+      set match [join $terms " NEAR/$nNear "]
+      set fts3 [execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }]
+      set tcl [simple_near $terms $nNear]
       do_test fts3rnd-1.$nodesize.$iTest.5.$i.$match {
         execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
-      } [simple_near $terms 10]
+      } [simple_near $terms $nNear]
+if {$::nErr} {exit -1}
     }
-}
   }
 }
 

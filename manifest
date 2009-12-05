@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\sFTS3\sand\s3-way\sNEAR\squeries.
-D 2009-12-05T11:37:19
+C Fix\sanother\sbug\sin\s3-way\sNEAR\squeries.
+D 2009-12-05T14:29:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 7d344410bffdddf98c1af623993dd284e156a89f
+F ext/fts3/fts3.c f4152f277722781048c9bba19aa605dbb831ad9a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cc716c74afa7da8e0f8ef39404f33ea62a823eb3
 F ext/fts3/fts3_expr.c c18794a62c257d3456d3314c5a18e348ae0d84bd
@@ -402,7 +402,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test 071ff7ed7bf60f8f7502a3e09cbc680dbd795da1
+F test/fts3rnd.test 151071849c9db2bade6e3d3c0c20e3a8f4f30892
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -776,7 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 08faee686eb2fabe0dde51231ee55880e78541e8
-R b8a65915c3bbacc7a62e1d6f19ca7f03
+P 23dc6fb5b28712d1ba18dc7ddb3f2ef3b469d611
+R bd59d2e643443e6c4d242260f4459347
 U dan
-Z bdcaf8016833561b09539543f7f27b88
+Z 684064b55602f4b676c31d5b0005b496

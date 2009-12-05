@@ -1124,11 +1124,17 @@ static void fts3PoslistMerge(
   char *p1 = *pp1;
   char *p2 = *pp2;
 
-  while( *p1 && *p2 ){
-    int iCol1 = 0;
-    int iCol2 = 0;
+  while( *p1 || *p2 ){
+    int iCol1;
+    int iCol2;
+
     if( *p1==0x01 ) sqlite3Fts3GetVarint32(&p1[1], &iCol1);
+    else if( *p1==0x00 ) iCol1 = OFFSET_LIST_END;
+    else iCol1 = 0;
+
     if( *p2==0x01 ) sqlite3Fts3GetVarint32(&p2[1], &iCol2);
+    else if( *p2==0x00 ) iCol2 = OFFSET_LIST_END;
+    else iCol2 = 0;
 
     if( iCol1==iCol2 ){
       sqlite3_int64 i1 = 0;
@@ -1380,6 +1386,10 @@ static int fts3DoclistMerge(
 
   if( !aBuffer ){
     return SQLITE_NOMEM;
+  }
+  if( n1==0 && n2==0 ){
+    *pnBuffer = 0;
+    return SQLITE_OK;
   }
 
   /* Read the first docid from each doclist */
