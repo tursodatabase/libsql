@@ -5579,7 +5579,7 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     u8 * const aTo = pTo->aData;
     int const iFromHdr = pFrom->hdrOffset;
     int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
-    TESTONLY(int rc;)
+    int rc;
     int iData;
   
   
