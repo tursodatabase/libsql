@@ -1,5 +1,5 @@
-C Catch\san\sobscure\scase\sof\sdatabase\scorruption.
-D 2009-12-05T18:03:51
+C Add\stest\scase\sfor\sthe\sobscure\scorruption\sdetection\sadded\sby\sthe\sprevious\scommit.
+D 2009-12-05T18:16:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -290,7 +290,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0ed68b11f22721052d880ee80bd528a0e0828236
-F test/corrupt.test f47f220959b40f79f30c4271eefcec0587e984e3
+F test/corrupt.test 85c3fececa01bc6d24ff5d7bf1373844840c0b98
 F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
@@ -402,7 +402,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test 151071849c9db2bade6e3d3c0c20e3a8f4f30892
+F test/fts3rnd.test 351197c4459c9d0a20e6413e5bc541a0dbfc4765
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -776,7 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3bb13a06521b54194c9f3eb44e0dc42bacf016a4
-R c1a926ab37f61c0c2b02b1d3be3199ea
+P 0f9b17a6da42b4da667bbbc00f713effe92a66b5
+R fb94845ed98c394aab22f4eeec2551a7
 U dan
-Z dce477f25b7ac265ef79fd810e61cc32
+Z a0458738b3e670f2ae299b61dcf4c17d

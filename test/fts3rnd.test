@@ -218,7 +218,6 @@ foreach nodesize {50 500 1000 2000} {
       do_test fts3rnd-1.$nodesize.$iTest.5.$i.$match {
         execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
       } [simple_near $terms $nNear]
-if {$::nErr} {exit -1}
     }
   }
 }
