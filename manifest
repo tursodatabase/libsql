@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sthe\sSQLITE_4_BYTE_ALIGNED_MALLOC\scompile-time\soption\swhich\stells\ssome\nassert()\sstatements\sthat\sthe\sunderlying\ssystem\sonly\srequires\s4-byte\salignment\nof\s8-byte\sdata\sobjects\slike\sdouble\sor\sint64\sand\sthat\ssystem\smalloc()\sonly\nguarantees\s4-byte\salignment\sof\sreturned\spointers.
-D 2009-12-04T23:10:13
+C Fix\ssome\sproblems\swith\sFTS3\sand\s3-way\sNEAR\squeries.
+D 2009-12-05T11:37:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 54ad3e8f0374148768ad65724cff89a8a5a241a7
+F ext/fts3/fts3.c 7d344410bffdddf98c1af623993dd284e156a89f
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h cc716c74afa7da8e0f8ef39404f33ea62a823eb3
 F ext/fts3/fts3_expr.c c18794a62c257d3456d3314c5a18e348ae0d84bd
@@ -379,7 +376,7 @@ F test/fts2p.test 4b48c35c91e6a7dbf5ac8d1e5691823cc999aafb
 F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
-F test/fts3.test f4f380d3717493605270dfa3b0fa893ea0afb18d
+F test/fts3.test ae0433b09b12def08105640e57693726c4949338
 F test/fts3_common.tcl 31935839b1b601a5955572cb4e8060513c96bde0
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
@@ -779,14 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 04fc9c7661dd24d080f965e7eae9010a2d346e6a
-R 012380c4025d7401ec31300c24d1a49d
-U drh
-Z 3a60f929898567f03b13abb7e9741c72
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLGZbXoxKgR168RlERAgzLAKCGX83GaoDdnZtQhPjMOrZGC9L8TwCcC1Yk
-V482pOMKKDD0UFm2zbfBJVE=
-=H8qI
------END PGP SIGNATURE-----
+P 08faee686eb2fabe0dde51231ee55880e78541e8
+R b8a65915c3bbacc7a62e1d6f19ca7f03
+U dan
+Z bdcaf8016833561b09539543f7f27b88

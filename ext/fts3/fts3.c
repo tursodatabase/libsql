@@ -1065,6 +1065,54 @@ static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
 }
 
 /*
+** Value used to signify the end of an offset-list. This is safe because
+** it is not possible to have a document with 2^31 terms.
+*/
+#define OFFSET_LIST_END 0x7fffffff
+
+/*
+** This function is used to help parse offset-lists. When this function is
+** called, *pp may point to the start of the next varint in the offset-list
+** being parsed, or it may point to 1 byte past the end of the offset-list
+** (in which case **pp will be 0x00 or 0x01).
+**
+** If *pp points past the end of the current offset list, set *pi to 
+** OFFSET_LIST_END and return. Otherwise, read the next varint from *pp,
+** increment the current value of *pi by the value read, and set *pp to
+** point to the next value before returning.
+*/
+static void fts3ReadNextPos(
+  char **pp,                      /* IN/OUT: Pointer into offset-list buffer */
+  sqlite3_int64 *pi               /* IN/OUT: Value read from offset-list */
+){
+  if( **pp&0xFE ){
+    fts3GetDeltaVarint(pp, pi);
+    *pi -= 2;
+  }else{
+    *pi = OFFSET_LIST_END;
+  }
+}
+
+/*
+** If parameter iCol is not 0, write an 0x01 byte followed by the value of
+** iCol encoded as a varint to *pp. 
+**
+** Set *pp to point to the byte just after the last byte written before 
+** returning (do not modify it if iCol==0). Return the total number of bytes
+** written (0 if iCol==0).
+*/
+static int fts3PutColNumber(char **pp, int iCol){
+  int n = 0;                      /* Number of bytes written */
+  if( iCol ){
+    char *p = *pp;                /* Output pointer */
+    n = 1 + sqlite3Fts3PutVarint(&p[1], iCol);
+    *p = 0x01;
+    *pp = &p[n];
+  }
+  return n;
+}
+
+/*
 **
 */
 static void fts3PoslistMerge(
@@ -1086,42 +1134,37 @@ static void fts3PoslistMerge(
       sqlite3_int64 i1 = 0;
       sqlite3_int64 i2 = 0;
       sqlite3_int64 iPrev = 0;
-      if( iCol1!=0 ){
-        int n;
-        *p++ = 0x01;
-        n = sqlite3Fts3PutVarint(p, iCol1);
-        p += n;
-        p1 += 1 + n;
-        p2 += 1 + n;
-      }
-      while( (*p1&0xFE) || (*p2&0xFE) ){
+      int n = fts3PutColNumber(&p, iCol1);
+      p1 += n;
+      p2 += n;
+
+      /* At this point, both p1 and p2 point to the start of offset-lists.
+      ** An offset-list is a list of non-negative delta-encoded varints, each 
+      ** incremented by 2 before being stored. Each list is terminated by a 0 
+      ** or 1 value (0x00 or 0x01). The following block merges the two lists
+      ** and writes the results to buffer p. p is left pointing to the byte
+      ** after the list written. No terminator (0x00 or 0x01) is written to
+      ** the output.
+      */
+      fts3GetDeltaVarint(&p1, &i1);
+      fts3GetDeltaVarint(&p2, &i2);
+      do {
+        fts3PutDeltaVarint(&p, &iPrev, (i1<i2) ? i1 : i2); 
+        iPrev -= 2;
         if( i1==i2 ){
-          fts3GetDeltaVarint(&p1, &i1); i1 -= 2;
-          fts3GetDeltaVarint(&p2, &i2); i2 -= 2;
+          fts3ReadNextPos(&p1, &i1);
+          fts3ReadNextPos(&p2, &i2);
         }else if( i1<i2 ){
-          fts3GetDeltaVarint(&p1, &i1); i1 -= 2;
+          fts3ReadNextPos(&p1, &i1);
         }else{
-          fts3GetDeltaVarint(&p2, &i2); i2 -= 2;
+          fts3ReadNextPos(&p2, &i2);
         }
-        fts3PutDeltaVarint(&p, &iPrev, (i1<i2 ? i1 : i2) + 2); iPrev -= 2;
-        if( 0==(*p1&0xFE) ) i1 = 0x7FFFFFFF;
-        if( 0==(*p2&0xFE) ) i2 = 0x7FFFFFFF;
-      }
+      }while( i1!=OFFSET_LIST_END || i2!=OFFSET_LIST_END );
     }else if( iCol1<iCol2 ){
-      if( iCol1 ){
-        int n = sqlite3Fts3PutVarint(&p[1], iCol1);
-        *p = 0x01;
-        p += n+1;
-        p1 += n+1;
-      }
+      p1 += fts3PutColNumber(&p, iCol1);
       fts3ColumnlistCopy(&p, &p1);
     }else{
-      if( iCol2 ){
-        int n = sqlite3Fts3PutVarint(&p[1], iCol2);
-        *p = 0x01;
-        p += n+1;
-        p2 += n+1;
-      }
+      p2 += fts3PutColNumber(&p, iCol2);
       fts3ColumnlistCopy(&p, &p2);
     }
   }
@@ -1188,13 +1231,14 @@ static int fts3PoslistPhraseMerge(
           fts3PutDeltaVarint(&p, &iPrev, iSave+2); iPrev -= 2;
           pSave = 0;
         }
-        if( iPos2<=iPos1 ){
+        if( (!isSaveLeft && iPos2<=(iPos1+nToken)) || iPos2<=iPos1 ){
           if( (*p2&0xFE)==0 ) break;
           fts3GetDeltaVarint(&p2, &iPos2); iPos2 -= 2;
         }else{
           if( (*p1&0xFE)==0 ) break;
           fts3GetDeltaVarint(&p1, &iPos1); iPos1 -= 2;
         }
+
       }
       if( pSave && pp ){
         p = pSave;
@@ -1241,13 +1285,16 @@ static int fts3PoslistPhraseMerge(
   return 1;
 }
 
+/*
+** Merge two position-lists as required by the NEAR operator.
+*/
 static int fts3PoslistNearMerge(
   char **pp,                      /* Output buffer */
   char *aTmp,                     /* Temporary buffer space */
   int nRight,                     /* Maximum difference in token positions */
   int nLeft,                      /* Maximum difference in token positions */
-  char **pp1,                     /* Left input list */
-  char **pp2                      /* Right input list */
+  char **pp1,                     /* IN/OUT: Left input list */
+  char **pp2                      /* IN/OUT: Right input list */
 ){
   char *p1 = *pp1;
   char *p2 = *pp2;
