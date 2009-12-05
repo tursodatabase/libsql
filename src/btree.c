@@ -5593,11 +5593,16 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
   
     /* Reinitialize page pTo so that the contents of the MemPage structure
-    ** match the new data. The initialization of pTo "cannot" fail, as the
-    ** data copied from pFrom is known to be valid.  */
+    ** match the new data. The initialization of pTo can actually fail under
+    ** fairly obscure circumstances, even though it is a copy of initialized 
+    ** page pFrom.
+    */
     pTo->isInit = 0;
-    TESTONLY(rc = ) btreeInitPage(pTo);
-    assert( rc==SQLITE_OK );
+    rc = btreeInitPage(pTo);
+    if( rc!=SQLITE_OK ){
+      *pRC = rc;
+      return;
+    }
   
     /* If this is an auto-vacuum database, update the pointer-map entries
     ** for any b-tree or overflow pages that pTo now contains the pointers to.
