@@ -1143,6 +1143,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   int top;                             /* First byte of cell content area */
   int gap;        /* First byte of gap between cell pointers and cell content */
   int rc;         /* Integer return code */
+  int usableSize; /* Usable size of the page */
   
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt );
@@ -1150,7 +1151,8 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   assert( nByte>=0 );  /* Minimum cell size is 4 */
   assert( pPage->nFree>=nByte );
   assert( pPage->nOverflow==0 );
-  assert( nByte<pPage->pBt->usableSize-8 );
+  usableSize = pPage->pBt->usableSize;
+  assert( nByte < usableSize-8 );
 
   nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
@@ -1173,7 +1175,11 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     */
     int pc, addr;
     for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
-      int size = get2byte(&data[pc+2]);     /* Size of free slot */
+      int size;            /* Size of the free slot */
+      if( pc>usableSize-4 || pc<addr+4 ){
+        return SQLITE_CORRUPT_BKPT;
+      }
+      size = get2byte(&data[pc+2]);
       if( size>=nByte ){
         int x = size - nByte;
         testcase( x==4 );
@@ -1183,6 +1189,8 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
           ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
           data[hdr+7] = (u8)(nFrag + x);
+        }else if( size+pc > usableSize ){
+          return SQLITE_CORRUPT_BKPT;
         }else{
           /* The slot remains on the free-list. Reduce its size to account
           ** for the portion used by the new allocation. */
