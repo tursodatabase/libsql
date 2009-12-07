@@ -12,8 +12,6 @@
 **
 ** This file contains the implementation of the sqlite3_unlock_notify()
 ** API method and its associated functionality.
-**
-** $Id: notify.c,v 1.4 2009/04/07 22:06:57 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"

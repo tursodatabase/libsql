@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** This file contains code used to implement the ATTACH and DETACH commands.
-**
-** $Id: attach.c,v 1.93 2009/05/31 21:21:41 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -151,7 +149,7 @@ static void attachFunc(
   aNew->safety_level = 3;
 
 #if SQLITE_HAS_CODEC
-  {
+  if( rc==SQLITE_OK ){
     extern int sqlite3CodecAttach(sqlite3*, int, const void*, int);
     extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
     int nKey;
@@ -168,13 +166,13 @@ static void attachFunc(
       case SQLITE_BLOB:
         nKey = sqlite3_value_bytes(argv[2]);
         zKey = (char *)sqlite3_value_blob(argv[2]);
-        sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
+        rc = sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
         break;
 
       case SQLITE_NULL:
         /* No key specified.  Use the key from the main database */
         sqlite3CodecGetKey(db, 0, (void**)&zKey, &nKey);
-        sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
+        rc = sqlite3CodecAttach(db, db->nDb-1, zKey, nKey);
         break;
     }
   }

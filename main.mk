@@ -54,7 +54,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          backup.o bitvec.o btmutex.o btree.o build.o \
          callback.o complete.o date.o delete.o expr.o fault.o fkey.o \
          fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
-         fts3_tokenizer.o fts3_tokenizer1.o \
+         fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o fts3_write.o \
          func.o global.o hash.o \
          icu.o insert.o journal.o legacy.o loadext.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
@@ -65,7 +65,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          random.o resolve.o rowset.o rtree.o select.o status.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
-         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o \
+         vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbetrace.o \
          walker.o where.o utf.o vtab.o
 
 
@@ -154,6 +154,7 @@ SRC = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/walker.c \
@@ -182,15 +183,17 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_expr.c \
-  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
   $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_snippet.c \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
-  $(TOP)/ext/fts3/fts3_tokenizer1.c
+  $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_write.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
   $(TOP)/ext/icu/icu.c
@@ -231,6 +234,7 @@ TESTSRC = \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
+  $(TOP)/src/test_intarray.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_mutex.c \
@@ -295,7 +299,7 @@ EXTHDR += \
   $(TOP)/ext/fts2/fts2_tokenizer.h
 EXTHDR += \
   $(TOP)/ext/fts3/fts3.h \
-  $(TOP)/ext/fts3/fts3_expr.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 EXTHDR += \
@@ -434,6 +438,9 @@ fts3_hash.o:	$(TOP)/ext/fts3/fts3_hash.c $(HDR) $(EXTHDR)
 fts3_icu.o:	$(TOP)/ext/fts3/fts3_icu.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_icu.c
 
+fts3_snippet.o:	$(TOP)/ext/fts3/fts3_snippet.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_snippet.c
+
 fts3_porter.o:	$(TOP)/ext/fts3/fts3_porter.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_porter.c
 
@@ -442,6 +449,9 @@ fts3_tokenizer.o:	$(TOP)/ext/fts3/fts3_tokenizer.c $(HDR) $(EXTHDR)
 
 fts3_tokenizer1.o:	$(TOP)/ext/fts3/fts3_tokenizer1.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_tokenizer1.c
+
+fts3_write.o:	$(TOP)/ext/fts3/fts3_write.c $(HDR) $(EXTHDR)
+	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/fts3/fts3_write.c
 
 rtree.o:	$(TOP)/ext/rtree/rtree.c $(HDR) $(EXTHDR)
 	$(TCCX) -DSQLITE_CORE -c $(TOP)/ext/rtree/rtree.c

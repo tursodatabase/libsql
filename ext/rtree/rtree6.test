@@ -8,8 +8,7 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-#
-# $Id: rtree6.test,v 1.1 2008/09/01 12:47:00 danielk1977 Exp $
+# 
 #
 
 if {![info exists testdir]} {
@@ -108,4 +107,3 @@ do_test rtree6.2.5 {
 ]
 
 finish_test
-

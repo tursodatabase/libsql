@@ -16,8 +16,6 @@
 **
 ** This file contains implementations of the low-level memory allocation
 ** routines specified in the sqlite3_mem_methods object.
-**
-** $Id: mem1.c,v 1.30 2009/03/23 04:33:33 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 

@@ -15,8 +15,6 @@
 **
 ** The emphasis of this file is a virtual table that provides
 ** access to TCL variables.
-**
-** $Id: test_tclvar.c,v 1.17 2008/08/12 14:48:41 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"
@@ -167,6 +165,15 @@ static int tclvarFilter(
     Tcl_ListObjAppendElement(0, p, pArg);
   }
   Tcl_EvalObjEx(interp, p, TCL_EVAL_GLOBAL);
+  if( pCur->pList1 ){
+    Tcl_DecrRefCount(pCur->pList1);
+  }
+  if( pCur->pList2 ){
+    Tcl_DecrRefCount(pCur->pList2);
+    pCur->pList2 = 0;
+  }
+  pCur->i1 = 0;
+  pCur->i2 = 0;
   pCur->pList1 = Tcl_GetObjResult(interp);
   Tcl_IncrRefCount(pCur->pList1);
   assert( pCur->i1==0 && pCur->i2==0 && pCur->pList2==0 );

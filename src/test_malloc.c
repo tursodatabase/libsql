@@ -12,8 +12,6 @@
 **
 ** This file contains code used to implement test interfaces to the
 ** memory allocation subsystem.
-**
-** $Id: test_malloc.c,v 1.55 2009/07/01 18:09:02 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

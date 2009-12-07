@@ -42,6 +42,8 @@ set ISQUICK 1
 
 set EXCLUDE {
   fts3.test
+  fts3malloc.test
+  fts3rnd.test
 }
 
 # Files to include in the test.  If this list is empty then everything

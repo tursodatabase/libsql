@@ -9,8 +9,6 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** $Id: btree.c,v 1.705 2009/08/10 03:57:58 shane Exp $
-**
 ** This file implements a external (disk-based) database using BTrees.
 ** See the header comment on "btreeInt.h" for additional information.
 ** Including a description of file format and an overview of operation.
@@ -1145,6 +1143,7 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   int top;                             /* First byte of cell content area */
   int gap;        /* First byte of gap between cell pointers and cell content */
   int rc;         /* Integer return code */
+  int usableSize; /* Usable size of the page */
   
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( pPage->pBt );
@@ -1152,7 +1151,8 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
   assert( nByte>=0 );  /* Minimum cell size is 4 */
   assert( pPage->nFree>=nByte );
   assert( pPage->nOverflow==0 );
-  assert( nByte<pPage->pBt->usableSize-8 );
+  usableSize = pPage->pBt->usableSize;
+  assert( nByte < usableSize-8 );
 
   nFrag = data[hdr+7];
   assert( pPage->cellOffset == hdr + 12 - 4*pPage->leaf );
@@ -1175,7 +1175,11 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
     */
     int pc, addr;
     for(addr=hdr+1; (pc = get2byte(&data[addr]))>0; addr=pc){
-      int size = get2byte(&data[pc+2]);     /* Size of free slot */
+      int size;            /* Size of the free slot */
+      if( pc>usableSize-4 || pc<addr+4 ){
+        return SQLITE_CORRUPT_BKPT;
+      }
+      size = get2byte(&data[pc+2]);
       if( size>=nByte ){
         int x = size - nByte;
         testcase( x==4 );
@@ -1185,6 +1189,8 @@ static int allocateSpace(MemPage *pPage, int nByte, int *pIdx){
           ** fragmented bytes within the page. */
           memcpy(&data[addr], &data[pc], 2);
           data[hdr+7] = (u8)(nFrag + x);
+        }else if( size+pc > usableSize ){
+          return SQLITE_CORRUPT_BKPT;
         }else{
           /* The slot remains on the free-list. Reduce its size to account
           ** for the portion used by the new allocation. */
@@ -1477,7 +1483,9 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
-  /*memset(&data[hdr], 0, pBt->usableSize - hdr);*/
+#ifdef SQLITE_SECURE_DELETE
+  memset(&data[hdr], 0, pBt->usableSize - hdr);
+#endif
   data[hdr] = (char)flags;
   first = hdr + 8 + 4*((flags&PTF_LEAF)==0 ?1:0);
   memset(&data[hdr+1], 0, 4);
@@ -1606,7 +1614,6 @@ static int getAndInitPage(
 */
 static void releasePage(MemPage *pPage){
   if( pPage ){
-    assert( pPage->nOverflow==0 || sqlite3PagerPageRefcount(pPage->pDbPage)>1 );
     assert( pPage->aData );
     assert( pPage->pBt );
     assert( sqlite3PagerGetExtra(pPage->pDbPage) == (void*)pPage );
@@ -2346,11 +2353,8 @@ static int newDatabase(BtShared *pBt){
   int nPage;
 
   assert( sqlite3_mutex_held(pBt->mutex) );
-  /* The database size has already been measured and cached, so failure
-  ** is impossible here.  If the original size measurement failed, then
-  ** processing aborts before entering this routine. */
   rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
-  if( NEVER(rc!=SQLITE_OK) || nPage>0 ){
+  if( rc!=SQLITE_OK || nPage>0 ){
     return rc;
   }
   pP1 = pBt->pPage1;
@@ -3280,8 +3284,8 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
 ** root page of a b-tree.  If it is not, then the cursor acquired
 ** will not work correctly.
 **
-** It is assumed that the sqlite3BtreeCursorSize() bytes of memory 
-** pointed to by pCur have been zeroed by the caller.
+** It is assumed that the sqlite3BtreeCursorZero() has been called
+** on pCur to initialize the memory space prior to invoking this routine.
 */
 static int btreeCursor(
   Btree *p,                              /* The btree */
@@ -3354,7 +3358,19 @@ int sqlite3BtreeCursor(
 ** this routine.
 */
 int sqlite3BtreeCursorSize(void){
-  return sizeof(BtCursor);
+  return ROUND8(sizeof(BtCursor));
+}
+
+/*
+** Initialize memory that will be converted into a BtCursor object.
+**
+** The simple approach here would be to memset() the entire object
+** to zero.  But it turns out that the apPage[] and aiIdx[] arrays
+** do not need to be zeroed and they are large, so we can save a lot
+** of run-time by skipping the initialization of those elements.
+*/
+void sqlite3BtreeCursorZero(BtCursor *p){
+  memset(p, 0, offsetof(BtCursor, iPage));
 }
 
 /*
@@ -5286,8 +5302,13 @@ static void insertCell(
   assert( i>=0 && i<=pPage->nCell+pPage->nOverflow );
   assert( pPage->nCell<=MX_CELL(pPage->pBt) && MX_CELL(pPage->pBt)<=5460 );
   assert( pPage->nOverflow<=ArraySize(pPage->aOvfl) );
-  assert( sz==cellSizePtr(pPage, pCell) );
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
+  /* The cell should normally be sized correctly.  However, when moving a
+  ** malformed cell from a leaf page to an interior page, if the cell size
+  ** wanted to be less than 4 but got rounded up to 4 on the leaf, then size
+  ** might be less than 8 (leaf-size + pointer) on the interior node.  Hence
+  ** the term after the || in the following assert(). */
+  assert( sz==cellSizePtr(pPage, pCell) || (sz==8 && iChild>0) );
   if( pPage->nOverflow || sz+2>pPage->nFree ){
     if( pTemp ){
       memcpy(pTemp+nSkip, pCell+nSkip, sz-nSkip);
@@ -5566,7 +5587,7 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     u8 * const aTo = pTo->aData;
     int const iFromHdr = pFrom->hdrOffset;
     int const iToHdr = ((pTo->pgno==1) ? 100 : 0);
-    TESTONLY(int rc;)
+    int rc;
     int iData;
   
   
@@ -5580,11 +5601,16 @@ static void copyNodeContent(MemPage *pFrom, MemPage *pTo, int *pRC){
     memcpy(&aTo[iToHdr], &aFrom[iFromHdr], pFrom->cellOffset + 2*pFrom->nCell);
   
     /* Reinitialize page pTo so that the contents of the MemPage structure
-    ** match the new data. The initialization of pTo "cannot" fail, as the
-    ** data copied from pFrom is known to be valid.  */
+    ** match the new data. The initialization of pTo can actually fail under
+    ** fairly obscure circumstances, even though it is a copy of initialized 
+    ** page pFrom.
+    */
     pTo->isInit = 0;
-    TESTONLY(rc = ) btreeInitPage(pTo);
-    assert( rc==SQLITE_OK );
+    rc = btreeInitPage(pTo);
+    if( rc!=SQLITE_OK ){
+      *pRC = rc;
+      return;
+    }
   
     /* If this is an auto-vacuum database, update the pointer-map entries
     ** for any b-tree or overflow pages that pTo now contains the pointers to.
@@ -6845,9 +6871,9 @@ int sqlite3BtreeCreateTable(Btree *p, int *piTable, int flags){
 */
 static int clearDatabasePage(
   BtShared *pBt,           /* The BTree that contains the table */
-  Pgno pgno,            /* Page number to clear */
-  int freePageFlag,     /* Deallocate page if true */
-  int *pnChange
+  Pgno pgno,               /* Page number to clear */
+  int freePageFlag,        /* Deallocate page if true */
+  int *pnChange            /* Add number of Cells freed to this counter */
 ){
   MemPage *pPage;
   int rc;

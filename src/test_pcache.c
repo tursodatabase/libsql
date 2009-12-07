@@ -20,8 +20,6 @@
 **
 ** This pagecache implementation is designed for simplicity
 ** not speed.  
-**
-** $Id: test_pcache.c,v 1.3 2009/04/11 11:38:54 drh Exp $
 */
 #include "sqlite3.h"
 #include <string.h>

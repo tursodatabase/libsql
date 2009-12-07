@@ -24,8 +24,6 @@
 ** If compiled with SQLITE_DEBUG, then additional logic is inserted
 ** that does error checking on mutexes to make sure they are being
 ** called correctly.
-**
-** $Id: mutex_noop.c,v 1.3 2008/12/05 17:17:08 drh Exp $
 */
 #include "sqliteInt.h"
 

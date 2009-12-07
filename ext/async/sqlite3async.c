@@ -1231,8 +1231,8 @@ static int asyncFullPathname(
   */
   if( rc==SQLITE_OK ){
     int i, j;
-    int n = nPathOut;
     char *z = zPathOut;
+    int n = strlen(z);
     while( n>1 && z[n-1]=='/' ){ n--; }
     for(i=j=0; i<n; i++){
       if( z[i]=='/' ){

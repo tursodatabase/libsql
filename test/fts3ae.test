@@ -58,7 +58,7 @@ db eval {
   DELETE FROM t1 WHERE rowid = 22;
 }
 
-do_test fts3af-1.1 {
+do_test fts3ae-1.1 {
   execsql {SELECT COUNT(*) FROM t1}
 } {14}
 

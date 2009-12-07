@@ -12,8 +12,6 @@
 ** This header file defines the interface that the sqlite page cache
 ** subsystem.  The page cache subsystem reads and writes a file a page
 ** at a time and provides a journal for rollback.
-**
-** @(#) $Id: pager.h,v 1.104 2009/07/24 19:01:19 drh Exp $
 */
 
 #ifndef _PAGER_H_

@@ -168,4 +168,70 @@ ifcapable trigger {
   } {{UPDATE t1 SET a=a+1;} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2} {-- TRIGGER r1t1} {-- TRIGGER r1t2}}
 }
 
+# With 3.6.21, we add the ability to expand host parameters in the trace
+# output.  Test this feature.
+#
+do_test trace-6.1 {
+  set ::t6int [expr {3+3}]
+  set ::t6real [expr {1.5*4.0}]
+  set ::t6str {test-six y'all}
+  db eval {SELECT x'3031323334' AS x} {set ::t6blob $x}
+  unset -nocomplain t6null
+  set TRACE_OUT {}
+  execsql {SELECT $::t6int, $::t6real, $t6str, $t6blob, $t6null}
+} {6 6.0 {test-six y'all} 01234 {}}
+do_test trace-6.2 {
+  set TRACE_OUT
+} {{SELECT 6, 6.0, 'test-six y''all', x'3031323334', NULL}}
+do_test trace-6.3 {
+  set TRACE_OUT {}
+  execsql {SELECT $::t6int, ?1, $::t6int}
+} {6 6 6}
+do_test trace-6.4 {
+  set TRACE_OUT
+} {{SELECT 6, 6, 6}}
+do_test trace-6.5 {
+  execsql {CREATE TABLE t6([$::t6int],"?1"); INSERT INTO t6 VALUES(1,2)}
+  set TRACE_OUT {}
+  execsql {SELECT '$::t6int', [$::t6int], $::t6int, ?1, "?1", $::t6int FROM t6}
+} {{$::t6int} 1 6 6 2 6}
+do_test trace-6.6 {
+  set TRACE_OUT
+} {{SELECT '$::t6int', [$::t6int], 6, 6, "?1", 6 FROM t6}}
+
+# Do these same tests with a UTF16 database.
+#
+do_test trace-6.100 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+     PRAGMA encoding=UTF16be;
+     CREATE TABLE t6([$::t6str],"?1");
+     INSERT INTO t6 VALUES(1,2);
+  }
+  db trace trace_proc
+  set TRACE_OUT {}
+  execsql {SELECT '$::t6str', [$::t6str], $::t6str, ?1, "?1", $::t6str FROM t6}
+} {{$::t6str} 1 {test-six y'all} {test-six y'all} 2 {test-six y'all}}
+do_test trace-6.101 {
+  set TRACE_OUT
+} {{SELECT '$::t6str', [$::t6str], 'test-six y''all', 'test-six y''all', "?1", 'test-six y''all' FROM t6}}
+
+do_test trace-6.200 {
+  db close
+  sqlite3 db :memory:
+  db eval {
+     PRAGMA encoding=UTF16le;
+     CREATE TABLE t6([$::t6str],"?1");
+     INSERT INTO t6 VALUES(1,2);
+  }
+  db trace trace_proc
+  set TRACE_OUT {}
+  execsql {SELECT '$::t6str', [$::t6str], $::t6str, ?1, "?1", $::t6str FROM t6}
+} {{$::t6str} 1 {test-six y'all} {test-six y'all} 2 {test-six y'all}}
+do_test trace-6.101 {
+  set TRACE_OUT
+} {{SELECT '$::t6str', [$::t6str], 'test-six y''all', 'test-six y''all', "?1", 'test-six y''all' FROM t6}}
+
+
 finish_test

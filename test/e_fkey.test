@@ -37,7 +37,7 @@ proc eqp {sql {db db}} { uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db }
 # foreign key functionality.
 #
 ifcapable trigger&&foreignkey {
-  do_test e_fkey-49 {
+  do_test e_fkey-1 {
     execsql {
       PRAGMA foreign_keys = ON;
       CREATE TABLE p(i PRIMARY KEY);
@@ -63,7 +63,7 @@ ifcapable trigger&&foreignkey {
 #
 reset_db
 ifcapable !trigger&&foreignkey {
-  do_test e_fkey-51.1 {
+  do_test e_fkey-2.1 {
     execsql {
       PRAGMA foreign_keys = ON;
       CREATE TABLE p(i PRIMARY KEY);
@@ -74,10 +74,10 @@ ifcapable !trigger&&foreignkey {
       SELECT * FROM c;
     }
   } {hello}
-  do_test e_fkey-51.2 {
+  do_test e_fkey-2.2 {
     execsql { PRAGMA foreign_key_list(c) }
   } {0 0 p j {} CASCADE {NO ACTION} NONE}
-  do_test e_fkey-51.3 {
+  do_test e_fkey-2.3 {
     execsql { PRAGMA foreign_keys }
   } {}
 }
@@ -95,22 +95,22 @@ ifcapable !trigger&&foreignkey {
 #
 reset_db
 ifcapable !foreignkey {
-  do_test e_fkey-52.1 {
+  do_test e_fkey-3.1 {
     execsql { CREATE TABLE p(i PRIMARY KEY) }
     catchsql { CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE) }
   } {1 {near "ON": syntax error}}
-  do_test e_fkey-52.2 {
+  do_test e_fkey-3.2 {
     # This is allowed, as in this build, "REFERENCES" is not a keyword.
     # The declared datatype of column j is "REFERENCES p".
     execsql { CREATE TABLE c(j REFERENCES p) }
   } {}
-  do_test e_fkey-52.3 {
+  do_test e_fkey-3.3 {
     execsql { PRAGMA table_info(c) }
   } {0 j {REFERENCES p} 0 {} 0}
-  do_test e_fkey-52.4 {
+  do_test e_fkey-3.4 {
     execsql { PRAGMA foreign_key_list(c) }
   } {}
-  do_test e_fkey-52.5 {
+  do_test e_fkey-3.5 {
     execsql { PRAGMA foreign_keys }
   } {}
 }
@@ -130,7 +130,7 @@ reset_db
 # This also tests that foreign key constraints are disabled by default.
 #
 drop_all_tables
-do_test e_fkey-53.1 {
+do_test e_fkey-4.1 {
   execsql {
     CREATE TABLE p(i PRIMARY KEY);
     CREATE TABLE c(j REFERENCES p ON UPDATE CASCADE);
@@ -140,7 +140,7 @@ do_test e_fkey-53.1 {
     SELECT * FROM c;
   } 
 } {hello}
-do_test e_fkey-53.2 {
+do_test e_fkey-4.2 {
   execsql {
     DELETE FROM c;
     DELETE FROM p;
@@ -161,16 +161,16 @@ do_test e_fkey-53.2 {
 # the example code in section 2 of foreignkeys.in.
 #
 reset_db
-do_test e_fkey-54.1 {
+do_test e_fkey-5.1 {
   execsql { PRAGMA foreign_keys }
 } {0}
-do_test e_fkey-54.2 {
+do_test e_fkey-5.2 {
   execsql { 
     PRAGMA foreign_keys = ON;
     PRAGMA foreign_keys;
   }
 } {1}
-do_test e_fkey-54.3 {
+do_test e_fkey-5.3 {
   execsql { 
     PRAGMA foreign_keys = OFF;
     PRAGMA foreign_keys;
@@ -184,7 +184,7 @@ do_test e_fkey-54.3 {
 # while not in auto-commit mode.
 #
 reset_db
-do_test e_fkey-55.1 {
+do_test e_fkey-6.1 {
   execsql {
     PRAGMA foreign_keys = ON;
     CREATE TABLE t1(a UNIQUE, b);
@@ -198,10 +198,10 @@ do_test e_fkey-55.1 {
       DELETE FROM t1
   }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-55.2 {
+do_test e_fkey-6.2 {
   execsql { PRAGMA foreign_keys }
 } {1}
-do_test e_fkey-55.3 {
+do_test e_fkey-6.3 {
   execsql {
     COMMIT;
     PRAGMA foreign_keys = OFF;
@@ -211,7 +211,7 @@ do_test e_fkey-55.3 {
       PRAGMA foreign_keys;
   }
 } {0}
-do_test e_fkey-55.4 {
+do_test e_fkey-6.4 {
   execsql COMMIT
 } {}
 
@@ -225,7 +225,7 @@ execsql "PRAGMA foreign_keys = ON"
 #
 # Verify that the syntax in the first example in section 1 is valid.
 #
-do_test e_fkey-38.1 {
+do_test e_fkey-7.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -246,14 +246,14 @@ do_test e_fkey-38.1 {
 # Attempting to insert a row into the 'track' table that corresponds
 # to no row in the 'artist' table fails.
 #
-do_test e_fkey-39.1 {
+do_test e_fkey-8.1 {
   catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-39.2 {
+do_test e_fkey-8.2 {
   execsql { INSERT INTO artist VALUES(2, 'artist 1') }
   catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-39.2 {
+do_test e_fkey-8.2 {
   execsql { INSERT INTO track VALUES(1, 'track 1', 2) }
 } {}
 
@@ -263,10 +263,10 @@ do_test e_fkey-39.2 {
 # Attempting to delete a row from the 'artist' table while there are 
 # dependent rows in the track table also fails.
 #
-do_test e_fkey-40.1 {
+do_test e_fkey-9.1 {
   catchsql { DELETE FROM artist WHERE artistid = 2 }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-40.2 {
+do_test e_fkey-9.2 {
   execsql { 
     DELETE FROM track WHERE trackartist = 2;
     DELETE FROM artist WHERE artistid = 2;
@@ -279,27 +279,27 @@ do_test e_fkey-40.2 {
 # If the foreign key column (trackartist) in table 'track' is set to NULL,
 # there is no requirement for a matching row in the 'artist' table.
 #
-do_test e_fkey-41.1 {
+do_test e_fkey-10.1 {
   execsql {
     INSERT INTO track VALUES(1, 'track 1', NULL);
     INSERT INTO track VALUES(2, 'track 2', NULL);
   }
 } {}
-do_test e_fkey-41.2 {
+do_test e_fkey-10.2 {
   execsql { SELECT * FROM artist }
 } {}
-do_test e_fkey-41.3 {
+do_test e_fkey-10.3 {
   # Setting the trackid to a non-NULL value fails, of course.
   catchsql { UPDATE track SET trackartist = 5 WHERE trackid = 1 }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-41.4 {
+do_test e_fkey-10.4 {
   execsql {
     INSERT INTO artist VALUES(5, 'artist 5');
     UPDATE track SET trackartist = 5 WHERE trackid = 1;
   }
   catchsql { DELETE FROM artist WHERE artistid = 5}
 } {1 {foreign key constraint failed}}
-do_test e_fkey-41.5 {
+do_test e_fkey-10.5 {
   execsql { 
     UPDATE track SET trackartist = NULL WHERE trackid = 1;
     DELETE FROM artist WHERE artistid = 5;
@@ -329,7 +329,7 @@ proc test_r52486_21352 {tn sql} {
     error $res
   }
 
-  do_test e_fkey-42.$tn {
+  do_test e_fkey-11.$tn {
     execsql {
       SELECT count(*) FROM track WHERE NOT (
         trackartist IS NULL OR 
@@ -368,7 +368,7 @@ for {set i 0} {$i < 500} {incr i} {
 # to prohibit NULL child keys from being inserted.
 #
 drop_all_tables
-do_test e_fkey-48.1 {
+do_test e_fkey-12.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -382,7 +382,7 @@ do_test e_fkey-48.1 {
     );
   }
 } {}
-do_test e_fkey-48.2 {
+do_test e_fkey-12.2 {
   catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
 } {1 {track.trackartist may not be NULL}}
 
@@ -392,7 +392,7 @@ do_test e_fkey-48.2 {
 # Test an example from foreignkeys.html.
 #
 drop_all_tables
-do_test e_fkey-43.1 {
+do_test e_fkey-13.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -411,18 +411,18 @@ do_test e_fkey-43.1 {
     INSERT INTO track VALUES(13, 'My Way', 2);
   }
 } {}
-do_test e_fkey-43.2 {
+do_test e_fkey-13.2 {
   catchsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', 3) }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-43.3 {
+do_test e_fkey-13.3 {
   execsql { INSERT INTO track VALUES(14, 'Mr. Bojangles', NULL) }
 } {}
-do_test e_fkey-43.4 {
+do_test e_fkey-13.4 {
   catchsql { 
     UPDATE track SET trackartist = 3 WHERE trackname = 'Mr. Bojangles';
   }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-43.5 {
+do_test e_fkey-13.5 {
   execsql {
     INSERT INTO artist VALUES(3, 'Sammy Davis Jr.');
     UPDATE track SET trackartist = 3 WHERE trackname = 'Mr. Bojangles';
@@ -435,23 +435,23 @@ do_test e_fkey-43.5 {
 #
 # Test the second example from the first section of foreignkeys.html.
 #
-do_test e_fkey-44.1 {
+do_test e_fkey-14.1 {
   catchsql {
     DELETE FROM artist WHERE artistname = 'Frank Sinatra';
   }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-44.2 {
+do_test e_fkey-14.2 {
   execsql {
     DELETE FROM track WHERE trackname = 'My Way';
     DELETE FROM artist WHERE artistname = 'Frank Sinatra';
   }
 } {}
-do_test e_fkey-44.3 {
+do_test e_fkey-14.3 {
   catchsql {
     UPDATE artist SET artistid=4 WHERE artistname = 'Dean Martin';
   }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-44.4 {
+do_test e_fkey-14.4 {
   execsql {
     DELETE FROM track WHERE trackname IN('That''s Amore', 'Christmas Blues');
     UPDATE artist SET artistid=4 WHERE artistname = 'Dean Martin';
@@ -473,7 +473,7 @@ do_test e_fkey-44.4 {
 # is a matching row in the parent table of a foreign key constraint.
 #
 drop_all_tables
-do_test e_fkey-45.1 {
+do_test e_fkey-15.1 {
   execsql {
     CREATE TABLE par(p PRIMARY KEY);
     CREATE TABLE chi(c REFERENCES par);
@@ -486,11 +486,11 @@ do_test e_fkey-45.1 {
 } {integer text blob}
 
 proc test_efkey_45 {tn isError sql} {
-  do_test e_fkey-45.$tn.1 "
+  do_test e_fkey-15.$tn.1 "
     catchsql {$sql}
   " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
 
-  do_test e_fkey-45.$tn.2 {
+  do_test e_fkey-15.$tn.2 {
     execsql {
       SELECT * FROM chi WHERE c IS NOT NULL AND c NOT IN (SELECT p FROM par)
     }
@@ -514,13 +514,13 @@ test_efkey_45 9 1 "INSERT INTO chi VALUES(X'32')"
 # default collation sequence of the parent key column is used.
 #
 drop_all_tables
-do_test e_fkey-46.1 {
+do_test e_fkey-16.1 {
   execsql {
     CREATE TABLE t1(a COLLATE nocase PRIMARY KEY);
     CREATE TABLE t2(b REFERENCES t1);
   }
 } {}
-do_test e_fkey-46.2 {
+do_test e_fkey-16.2 {
   execsql {
     INSERT INTO t1 VALUES('oNe');
     INSERT INTO t2 VALUES('one');
@@ -529,10 +529,10 @@ do_test e_fkey-46.2 {
     UPDATE t1 SET a = 'ONE';
   }
 } {}
-do_test e_fkey-46.3 {
+do_test e_fkey-16.3 {
   catchsql { UPDATE t2 SET b = 'two' WHERE rowid = 1 }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-46.4 {
+do_test e_fkey-16.4 {
   catchsql { DELETE FROM t1 WHERE rowid = 1 }
 } {1 {foreign key constraint failed}}
 
@@ -544,13 +544,13 @@ do_test e_fkey-46.4 {
 # before the comparison takes place.
 #
 drop_all_tables
-do_test e_fkey-47.1 {
+do_test e_fkey-17.1 {
   execsql {
     CREATE TABLE t1(a NUMERIC PRIMARY KEY);
     CREATE TABLE t2(b TEXT REFERENCES t1);
   }
 } {}
-do_test e_fkey-47.2 {
+do_test e_fkey-17.2 {
   execsql {
     INSERT INTO t1 VALUES(1);
     INSERT INTO t1 VALUES(2);
@@ -559,10 +559,10 @@ do_test e_fkey-47.2 {
     SELECT b, typeof(b) FROM t2;
   }
 } {2.0 text}
-do_test e_fkey-47.3 {
+do_test e_fkey-17.3 {
   execsql { SELECT typeof(a) FROM t1 }
 } {integer integer text}
-do_test e_fkey-47.4 {
+do_test e_fkey-17.4 {
   catchsql { DELETE FROM t1 WHERE rowid = 2 }
 } {1 {foreign key constraint failed}}
 
@@ -584,7 +584,7 @@ do_test e_fkey-47.4 {
 # columns.
 #
 drop_all_tables
-do_test e_fkey-57.1 {
+do_test e_fkey-18.1 {
   execsql {
     CREATE TABLE t2(a REFERENCES t1(x));
   }
@@ -592,7 +592,7 @@ do_test e_fkey-57.1 {
 proc test_efkey_57 {tn isError sql} {
   catchsql { DROP TABLE t1 }
   execsql $sql
-  do_test e_fkey-57.$tn {
+  do_test e_fkey-18.$tn {
     catchsql { INSERT INTO t2 VALUES(NULL) }
   } [lindex {{0 {}} {1 {foreign key mismatch}}} $isError]
 }
@@ -633,7 +633,7 @@ test_efkey_57 9 1 {
 # Problem with FK on child6 and child7.
 #
 drop_all_tables
-do_test e_fkey-56.1 {
+do_test e_fkey-19.1 {
   execsql {
     CREATE TABLE parent(a PRIMARY KEY, b UNIQUE, c, d, e, f);
     CREATE UNIQUE INDEX i1 ON parent(c, d);
@@ -649,7 +649,7 @@ do_test e_fkey-56.1 {
     CREATE TABLE child7(r REFERENCES parent(c));                          -- Err
   }
 } {}
-do_test e_fkey-56.2 {
+do_test e_fkey-19.2 {
   execsql {
     INSERT INTO parent VALUES(1, 2, 3, 4, 5, 6);
     INSERT INTO child1 VALUES('xxx', 1);
@@ -657,16 +657,16 @@ do_test e_fkey-56.2 {
     INSERT INTO child3 VALUES(3, 4);
   }
 } {}
-do_test e_fkey-56.2 {
+do_test e_fkey-19.2 {
   catchsql { INSERT INTO child4 VALUES('xxx', 5) }
 } {1 {foreign key mismatch}}
-do_test e_fkey-56.3 {
+do_test e_fkey-19.3 {
   catchsql { INSERT INTO child5 VALUES('xxx', 6) }
 } {1 {foreign key mismatch}}
-do_test e_fkey-56.4 {
+do_test e_fkey-19.4 {
   catchsql { INSERT INTO child6 VALUES(2, 3) }
 } {1 {foreign key mismatch}}
-do_test e_fkey-56.5 {
+do_test e_fkey-19.5 {
   catchsql { INSERT INTO child7 VALUES(3) }
 } {1 {foreign key mismatch}}
 
@@ -680,7 +680,7 @@ do_test e_fkey-56.5 {
 # DML statements. The error text for these messages always matches 
 # either "foreign key mismatch" or "no such table*" (using [string match]).
 #
-do_test e_fkey-66.1 {
+do_test e_fkey-20.1 {
   execsql {
     CREATE TABLE c1(c REFERENCES nosuchtable, d);
 
@@ -715,24 +715,24 @@ foreach {tn tbl ptbl err} {
   7 c6 p6 "foreign key mismatch"
   8 c7 p7 "foreign key mismatch"
 } {
-  do_test e_fkey-66.$tn.1 {
+  do_test e_fkey-20.$tn.1 {
     catchsql "INSERT INTO $tbl VALUES('a', 'b')"
   } [list 1 $err]
-  do_test e_fkey-66.$tn.2 {
+  do_test e_fkey-20.$tn.2 {
     catchsql "UPDATE $tbl SET c = ?, d = ?"
   } [list 1 $err]
-  do_test e_fkey-66.$tn.3 {
+  do_test e_fkey-20.$tn.3 {
     catchsql "INSERT INTO $tbl SELECT ?, ?"
   } [list 1 $err]
 
   if {$ptbl ne ""} {
-    do_test e_fkey-66.$tn.4 {
+    do_test e_fkey-20.$tn.4 {
       catchsql "DELETE FROM $ptbl"
     } [list 1 $err]
-    do_test e_fkey-66.$tn.5 {
+    do_test e_fkey-20.$tn.5 {
       catchsql "UPDATE $ptbl SET a = ?, b = ?"
     } [list 1 $err]
-    do_test e_fkey-66.$tn.6 {
+    do_test e_fkey-20.$tn.6 {
       catchsql "INSERT INTO $ptbl SELECT ?, ?"
     } [list 1 $err]
   }
@@ -746,7 +746,7 @@ foreach {tn tbl ptbl err} {
 # child key consists of a different number of columns to that primary key.
 # 
 drop_all_tables
-do_test e_fkey-58.1 {
+do_test e_fkey-21.1 {
   execsql {
     CREATE TABLE parent2(a, b, PRIMARY KEY(a,b));
 
@@ -755,28 +755,28 @@ do_test e_fkey-58.1 {
     CREATE TABLE child10(x,y,z, FOREIGN KEY(x,y,z) REFERENCES parent2); -- Err
   }
 } {}
-do_test e_fkey-58.2 {
+do_test e_fkey-21.2 {
   execsql {
     INSERT INTO parent2 VALUES('I', 'II');
     INSERT INTO child8 VALUES('I', 'II');
   }
 } {}
-do_test e_fkey-58.3 {
+do_test e_fkey-21.3 {
   catchsql { INSERT INTO child9 VALUES('I') }
 } {1 {foreign key mismatch}}
-do_test e_fkey-58.4 {
+do_test e_fkey-21.4 {
   catchsql { INSERT INTO child9 VALUES('II') }
 } {1 {foreign key mismatch}}
-do_test e_fkey-58.5 {
+do_test e_fkey-21.5 {
   catchsql { INSERT INTO child9 VALUES(NULL) }
 } {1 {foreign key mismatch}}
-do_test e_fkey-58.6 {
+do_test e_fkey-21.6 {
   catchsql { INSERT INTO child10 VALUES('I', 'II', 'III') }
 } {1 {foreign key mismatch}}
-do_test e_fkey-58.7 {
+do_test e_fkey-21.7 {
   catchsql { INSERT INTO child10 VALUES(1, 2, 3) }
 } {1 {foreign key mismatch}}
-do_test e_fkey-58.8 {
+do_test e_fkey-21.8 {
   catchsql { INSERT INTO child10 VALUES(NULL, NULL, NULL) }
 } {1 {foreign key mismatch}}
 
@@ -807,7 +807,7 @@ foreach fk [list OFF ON] {
     "CREATE TABLE child2(a, b, FOREIGN KEY(c, b) REFERENCES p(c, d))"
       {unknown column "c" in foreign key definition}
   } {
-    do_test e_fkey-59.$fk.[incr i] {
+    do_test e_fkey-22.$fk.[incr i] {
       catchsql $sql
     } [list 1 $error]
   }
@@ -819,7 +819,7 @@ foreach fk [list OFF ON] {
 # Test that a REFERENCING clause that does not specify parent key columns
 # implicitly maps to the primary key of the parent table.
 # 
-do_test e_fkey-60.1 {
+do_test e_fkey-23.1 {
   execsql {
     CREATE TABLE p1(a, b, PRIMARY KEY(a, b));
     CREATE TABLE p2(a, b PRIMARY KEY);
@@ -828,7 +828,7 @@ do_test e_fkey-60.1 {
   }
 } {}
 proc test_efkey_60 {tn isError sql} {
-  do_test e_fkey-60.$tn "
+  do_test e_fkey-23.$tn "
     catchsql {$sql}
   " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
 }
@@ -852,7 +852,7 @@ test_efkey_60 7 0 "INSERT INTO c2 VALUES(239, 231)"
 # not make a difference whether or not it is a UNIQUE index.
 #
 drop_all_tables
-do_test e_fkey-61.1 {
+do_test e_fkey-24.1 {
   execsql {
     CREATE TABLE parent(x, y, UNIQUE(y, x));
     CREATE TABLE c1(a, b, FOREIGN KEY(a, b) REFERENCES parent(x, y));
@@ -863,7 +863,7 @@ do_test e_fkey-61.1 {
   }
 } {}
 proc test_efkey_61 {tn isError sql} {
-  do_test e_fkey-61.$tn "
+  do_test e_fkey-24.$tn "
     catchsql {$sql}
   " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
 }
@@ -888,7 +888,7 @@ foreach {tn c} [list 2 c1 3 c2 4 c3] {
 # Also test that if the SELECT above would return any rows, a foreign
 # key constraint is violated.
 #
-do_test e_fkey-62.1 {
+do_test e_fkey-25.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -902,20 +902,20 @@ do_test e_fkey-62.1 {
     );
   }
 } {}
-do_test e_fkey-62.2 {
+do_test e_fkey-25.2 {
   execsql {
     PRAGMA foreign_keys = OFF;
     EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
     EXPLAIN QUERY PLAN SELECT rowid FROM track WHERE trackartist = ?;
   }
 } {0 0 {TABLE artist} 0 0 {TABLE track}}
-do_test e_fkey-62.3 {
+do_test e_fkey-25.3 {
   execsql { 
     PRAGMA foreign_keys = ON;
     EXPLAIN QUERY PLAN DELETE FROM artist WHERE 1;
   }
 } {0 0 {TABLE artist} 0 0 {TABLE track}}
-do_test e_fkey-62.4 {
+do_test e_fkey-25.4 {
   execsql {
     INSERT INTO artist VALUES(5, 'artist 5');
     INSERT INTO artist VALUES(6, 'artist 6');
@@ -925,19 +925,19 @@ do_test e_fkey-62.4 {
   }
 } {}
 
-do_test e_fkey-62.5 {
+do_test e_fkey-25.5 {
   concat \
     [execsql { SELECT rowid FROM track WHERE trackartist = 5 }]   \
     [catchsql { DELETE FROM artist WHERE artistid = 5 }]
 } {1 1 {foreign key constraint failed}}
 
-do_test e_fkey-62.6 {
+do_test e_fkey-25.6 {
   concat \
     [execsql { SELECT rowid FROM track WHERE trackartist = 7 }]   \
     [catchsql { DELETE FROM artist WHERE artistid = 7 }]
 } {0 {}}
 
-do_test e_fkey-62.7 {
+do_test e_fkey-25.7 {
   concat \
     [execsql { SELECT rowid FROM track WHERE trackartist = 6 }]   \
     [catchsql { DELETE FROM artist WHERE artistid = 6 }]
@@ -963,7 +963,7 @@ do_test e_fkey-62.7 {
 #
 #
 drop_all_tables
-do_test e_fkey-64.1 {
+do_test e_fkey-26.1 {
   execsql { CREATE TABLE parent(x, y, UNIQUE(y, x)) }
 } {}
 foreach {tn sql} {
@@ -993,8 +993,8 @@ foreach {tn sql} {
   ]
   execsql {PRAGMA foreign_keys = ON}
 
-  do_test e_fkey-64.$tn.1 { eqp "DELETE FROM parent WHERE 1" } $delete
-  do_test e_fkey-64.$tn.2 { eqp "UPDATE parent set x=?, y=?" } $update
+  do_test e_fkey-26.$tn.1 { eqp "DELETE FROM parent WHERE 1" } $delete
+  do_test e_fkey-26.$tn.2 { eqp "UPDATE parent set x=?, y=?" } $update
 
   execsql {DROP TABLE child}
 }
@@ -1007,7 +1007,7 @@ foreach {tn sql} {
 # related operations on the parent table do not provoke linear scans.
 #
 drop_all_tables
-do_test e_fkey-63.1 {
+do_test e_fkey-27.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -1021,17 +1021,17 @@ do_test e_fkey-63.1 {
     CREATE INDEX trackindex ON track(trackartist);
   }
 } {}
-do_test e_fkey-63.2 {
+do_test e_fkey-27.2 {
   eqp { INSERT INTO artist VALUES(?, ?) }
 } {}
-do_test e_fkey-63.3 {
+do_test e_fkey-27.3 {
   eqp { UPDATE artist SET artistid = ?, artistname = ? }
 } [list \
   0 0 {TABLE artist} \
   0 0 {TABLE track WITH INDEX trackindex} \
   0 0 {TABLE track WITH INDEX trackindex}
 ]
-do_test e_fkey-63.4 {
+do_test e_fkey-27.4 {
   eqp { DELETE FROM artist }
 } [list \
   0 0 {TABLE artist} \
@@ -1070,9 +1070,9 @@ foreach {tn sql err} {
     {number of columns in foreign key does not match the number of columns in the referenced table}
 } {
   drop_all_tables
-  do_test e_fkey-65.$tn [list catchsql $sql] [list 1 $err]
+  do_test e_fkey-28.$tn [list catchsql $sql] [list 1 $err]
 }
-do_test e_fkey-65.8 {
+do_test e_fkey-28.8 {
   drop_all_tables
   execsql {
     CREATE TABLE p(x PRIMARY KEY);
@@ -1080,7 +1080,7 @@ do_test e_fkey-65.8 {
   }
   catchsql {DELETE FROM p}
 } {1 {foreign key mismatch}}
-do_test e_fkey-65.9 {
+do_test e_fkey-28.9 {
   drop_all_tables
   execsql {
     CREATE TABLE p(x, y, PRIMARY KEY(x,y));
@@ -1096,7 +1096,7 @@ do_test e_fkey-65.9 {
 # Test the example schema in the "Composite Foreign Key Constraints" 
 # section.
 #
-do_test e_fkey-36.1 {
+do_test e_fkey-29.1 {
   execsql {
     CREATE TABLE album(
       albumartist TEXT,
@@ -1114,7 +1114,7 @@ do_test e_fkey-36.1 {
   }
 } {}
 
-do_test e_fkey-36.2 {
+do_test e_fkey-29.2 {
   execsql {
     INSERT INTO album VALUES('Elvis Presley', 'Elvis'' Christmas Album', NULL);
     INSERT INTO song VALUES(
@@ -1122,7 +1122,7 @@ do_test e_fkey-36.2 {
     );
   }
 } {}
-do_test e_fkey-36.3 {
+do_test e_fkey-29.3 {
   catchsql {
     INSERT INTO song VALUES(2, 'Elvis Presley', 'Elvis Is Back!', 'Fever');
   }
@@ -1135,7 +1135,7 @@ do_test e_fkey-36.3 {
 # Check that if any of the child key columns in the above schema are NULL,
 # there is no requirement for a corresponding parent key.
 #
-do_test e_fkey-37.1 {
+do_test e_fkey-30.1 {
   execsql {
     INSERT INTO song VALUES(2, 'Elvis Presley', NULL, 'Fever');
     INSERT INTO song VALUES(3, NULL, 'Elvis Is Back', 'Soldier Boy');
@@ -1160,19 +1160,19 @@ do_test e_fkey-37.1 {
 # the statement rolled back.
 #
 drop_all_tables
-do_test e_fkey-33.1 {
+do_test e_fkey-31.1 {
   execsql {
     CREATE TABLE king(a, b, PRIMARY KEY(a));
     CREATE TABLE prince(c REFERENCES king, d);
   }
 } {}
 
-do_test e_fkey-33.2 {
+do_test e_fkey-31.2 {
   # Execute a statement that violates the immediate FK constraint.
   catchsql { INSERT INTO prince VALUES(1, 2) }
 } {1 {foreign key constraint failed}}
 
-do_test e_fkey-33.3 {
+do_test e_fkey-31.3 {
   # This time, use a trigger to fix the constraint violation before the
   # statement has finished executing. Then execute the same statement as
   # in the previous test case. This time, no error.
@@ -1188,7 +1188,7 @@ do_test e_fkey-33.3 {
 
 # Test that operating inside a transaction makes no difference to 
 # immediate constraint violation handling.
-do_test e_fkey-33.4 {
+do_test e_fkey-31.4 {
   execsql {
     BEGIN;
     INSERT INTO prince VALUES(2, 3);
@@ -1196,7 +1196,7 @@ do_test e_fkey-33.4 {
   }
   catchsql { INSERT INTO prince VALUES(3, 4) }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-33.5 {
+do_test e_fkey-31.5 {
   execsql {
     COMMIT;
     SELECT * FROM king;
@@ -1215,7 +1215,7 @@ do_test e_fkey-33.5 {
 # to COMMIT the transaction fail until the FK constraint is satisfied.
 #
 proc test_efkey_34 {tn isError sql} {
-  do_test e_fkey-34.$tn "
+  do_test e_fkey-32.$tn "
     catchsql {$sql}
   " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
 }
@@ -1242,11 +1242,11 @@ test_efkey_34  9 0 "COMMIT"
 #
 drop_all_tables
 proc test_efkey_35 {tn isError sql} {
-  do_test e_fkey-35.$tn "
+  do_test e_fkey-33.$tn "
     catchsql {$sql}
   " [lindex {{0 {}} {1 {foreign key constraint failed}}} $isError]
 }
-do_test e_fkey-35.1 {
+do_test e_fkey-33.1 {
   execsql {
     CREATE TABLE parent(x, y);
     CREATE UNIQUE INDEX pi ON parent(x, y);
@@ -1287,7 +1287,7 @@ test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
 # /* EV: R-30323-21917 */  FKs are either IMMEDIATE or DEFERRED.
 #
 drop_all_tables
-do_test e_fkey-29.1 {
+do_test e_fkey-34.1 {
   execsql {
     CREATE TABLE parent(x, y, z, PRIMARY KEY(x,y,z));
     CREATE TABLE c1(a, b, c,
@@ -1331,7 +1331,7 @@ do_test e_fkey-29.1 {
 } {}
 
 proc test_efkey_29 {tn sql isError} {
-  do_test e_fkey-29.$tn "catchsql {$sql}" [
+  do_test e_fkey-34.$tn "catchsql {$sql}" [
     lindex {{0 {}} {1 {foreign key constraint failed}}} $isError
   ]
 }
@@ -1386,7 +1386,7 @@ test_efkey_29 33 "ROLLBACK"                                0
 # Test an example from foreignkeys.html dealing with a deferred foreign 
 # key constraint.
 #
-do_test e_fkey-28.1 {
+do_test e_fkey-35.1 {
   drop_all_tables
   execsql {
     CREATE TABLE artist(
@@ -1400,14 +1400,14 @@ do_test e_fkey-28.1 {
     );
   }
 } {}
-do_test e_fkey-28.2 {
+do_test e_fkey-35.2 {
   execsql {
     BEGIN;
       INSERT INTO track VALUES(1, 'White Christmas', 5);
   }
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-28.3 {
+do_test e_fkey-35.3 {
   execsql {
     INSERT INTO artist VALUES(5, 'Bing Crosby');
     COMMIT;
@@ -1421,7 +1421,7 @@ do_test e_fkey-28.3 {
 # deferred foreign key constraints.
 #
 drop_all_tables
-do_test e_fkey-30.1 {
+do_test e_fkey-36.1 {
   execsql {
     CREATE TABLE t1(a PRIMARY KEY,
       b REFERENCES t1 DEFERRABLE INITIALLY DEFERRED
@@ -1431,7 +1431,7 @@ do_test e_fkey-30.1 {
     INSERT INTO t1 VALUES(3, 3);
   }
 } {}
-do_test e_fkey-30.2 {
+do_test e_fkey-36.2 {
   execsql {
     BEGIN;
       SAVEPOINT one;
@@ -1439,10 +1439,10 @@ do_test e_fkey-30.2 {
       RELEASE one;
   }
 } {}
-do_test e_fkey-30.3 {
+do_test e_fkey-36.3 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-30.4 {
+do_test e_fkey-36.4 {
   execsql {
     UPDATE t1 SET a = 5 WHERE a = 4;
     COMMIT;
@@ -1457,7 +1457,7 @@ do_test e_fkey-30.4 {
 # the database was in auto-commit mode) cannot be released without
 # satisfying deferred foreign key constraints. It may be rolled back.
 #
-do_test e_fkey-31.1 {
+do_test e_fkey-37.1 {
   execsql {
     SAVEPOINT one;
       SAVEPOINT two;
@@ -1465,16 +1465,16 @@ do_test e_fkey-31.1 {
       RELEASE two;
   }
 } {}
-do_test e_fkey-31.2 {
+do_test e_fkey-37.2 {
   catchsql {RELEASE one}
 } {1 {foreign key constraint failed}}
-do_test e_fkey-31.3 {
+do_test e_fkey-37.3 {
   execsql {
       UPDATE t1 SET a = 7 WHERE a = 6;
     RELEASE one;
   }
 } {}
-do_test e_fkey-31.4 {
+do_test e_fkey-37.4 {
   execsql {
     SAVEPOINT one;
       SAVEPOINT two;
@@ -1482,10 +1482,10 @@ do_test e_fkey-31.4 {
       RELEASE two;
   }
 } {}
-do_test e_fkey-31.5 {
+do_test e_fkey-37.5 {
   catchsql {RELEASE one}
 } {1 {foreign key constraint failed}}
-do_test e_fkey-31.6 {
+do_test e_fkey-37.6 {
   execsql {ROLLBACK TO one ; RELEASE one}
 } {}
 
@@ -1495,13 +1495,13 @@ do_test e_fkey-31.6 {
 # Test that if a COMMIT operation fails due to deferred foreign key 
 # constraints, any nested savepoints remain open.
 #
-do_test e_fkey-32.1 {
+do_test e_fkey-38.1 {
   execsql {
     DELETE FROM t1 WHERE a>3;
     SELECT * FROM t1;
   }
 } {1 1 2 2 3 3}
-do_test e_fkey-32.2 {
+do_test e_fkey-38.2 {
   execsql {
     BEGIN;
       INSERT INTO t1 VALUES(4, 4);
@@ -1510,10 +1510,10 @@ do_test e_fkey-32.2 {
         SELECT * FROM t1;
   }
 } {1 1 2 2 3 3 4 4 5 6}
-do_test e_fkey-32.3 {
+do_test e_fkey-38.3 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-32.4 {
+do_test e_fkey-38.4 {
   execsql {
     ROLLBACK TO one;
     COMMIT;
@@ -1521,7 +1521,7 @@ do_test e_fkey-32.4 {
   }
 } {1 1 2 2 3 3 4 4}
 
-do_test e_fkey-32.5 {
+do_test e_fkey-38.5 {
   execsql {
     SAVEPOINT a;
       INSERT INTO t1 VALUES(5, 5);
@@ -1531,14 +1531,14 @@ do_test e_fkey-32.5 {
           INSERT INTO t1 VALUES(7, 8);
   }
 } {}
-do_test e_fkey-32.6 {
+do_test e_fkey-38.6 {
   catchsql {RELEASE a}
 } {1 {foreign key constraint failed}}
-do_test e_fkey-32.7 {
+do_test e_fkey-38.7 {
   execsql  {ROLLBACK TO c}
   catchsql {RELEASE a}
 } {1 {foreign key constraint failed}}
-do_test e_fkey-32.8 {
+do_test e_fkey-38.8 {
   execsql  {
     ROLLBACK TO b;
     RELEASE a;
@@ -1561,7 +1561,7 @@ do_test e_fkey-32.8 {
 # Test that a single FK constraint may have different actions configured
 # for ON DELETE and ON UPDATE.
 #
-do_test e_fkey-16.1 {
+do_test e_fkey-39.1 {
   execsql {
     CREATE TABLE p(a, b PRIMARY KEY, c);
     CREATE TABLE c1(d, e, f DEFAULT 'k0' REFERENCES p 
@@ -1579,19 +1579,19 @@ do_test e_fkey-16.1 {
     INSERT INTO c1 VALUES(3, 'xx', 'k3');
   }
 } {}
-do_test e_fkey-16.2 {
+do_test e_fkey-39.2 {
   execsql {
     UPDATE p SET b = 'k4' WHERE a = 1;
     SELECT * FROM c1;
   }
 } {1 xx k0 2 xx k2 3 xx k3}
-do_test e_fkey-16.3 {
+do_test e_fkey-39.3 {
   execsql {
     DELETE FROM p WHERE a = 2;
     SELECT * FROM c1;
   }
 } {1 xx k0 2 xx {} 3 xx k3}
-do_test e_fkey-16.4 {
+do_test e_fkey-39.4 {
   execsql {
     CREATE UNIQUE INDEX pi ON p(c);
     REPLACE INTO p VALUES(5, 'k5', 'III');
@@ -1610,7 +1610,7 @@ do_test e_fkey-16.4 {
 # If none is specified explicitly, "NO ACTION" is the default.
 # 
 drop_all_tables
-do_test e_fkey-17.1 {
+do_test e_fkey-40.1 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY, y);
     CREATE TABLE child1(a, 
@@ -1644,7 +1644,7 @@ foreach {tn zTab lRes} {
   8 child7 {0 0 parent b {} {NO ACTION} {NO ACTION} NONE}
   9 child8 {0 0 parent b {} {NO ACTION} {NO ACTION} NONE}
 } {
-  do_test e_fkey-17.$tn { execsql "PRAGMA foreign_key_list($zTab)" } $lRes
+  do_test e_fkey-40.$tn { execsql "PRAGMA foreign_key_list($zTab)" } $lRes
 }
 
 #-------------------------------------------------------------------------
@@ -1654,7 +1654,7 @@ foreach {tn zTab lRes} {
 # it's parent row is updated or deleted.
 #
 drop_all_tables
-do_test e_fkey-18.1 {
+do_test e_fkey-41.1 {
   execsql {
     CREATE TABLE parent(p1, p2, PRIMARY KEY(p1, p2));
     CREATE TABLE child(c1, c2, 
@@ -1669,7 +1669,7 @@ do_test e_fkey-18.1 {
     INSERT INTO child VALUES('l', 'm');
   }
 } {}
-do_test e_fkey-18.2 {
+do_test e_fkey-41.2 {
   execsql {
     BEGIN;
       UPDATE parent SET p1='k' WHERE p1='j';
@@ -1677,10 +1677,10 @@ do_test e_fkey-18.2 {
       SELECT * FROM child;
   }
 } {j k l m}
-do_test e_fkey-18.3 {
+do_test e_fkey-41.3 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-18.4 {
+do_test e_fkey-41.4 {
   execsql ROLLBACK
 } {}
 
@@ -1692,7 +1692,7 @@ do_test e_fkey-18.4 {
 # mapped to it.
 #
 drop_all_tables
-do_test e_fkey-18.1 {
+do_test e_fkey-41.1 {
   execsql {
     CREATE TABLE parent(p1, p2);
     CREATE UNIQUE INDEX parent_i ON parent(p1, p2);
@@ -1704,7 +1704,7 @@ do_test e_fkey-18.1 {
     );
   }
 } {}
-do_test e_fkey-18.2 {
+do_test e_fkey-41.2 {
   execsql {
     INSERT INTO parent VALUES('a', 'b');
     INSERT INTO parent VALUES('c', 'd');
@@ -1712,10 +1712,10 @@ do_test e_fkey-18.2 {
     INSERT INTO child2 VALUES('d', 'c');
   }
 } {}
-do_test e_fkey-18.3 {
+do_test e_fkey-41.3 {
   catchsql { DELETE FROM parent WHERE p1 = 'a' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-18.4 {
+do_test e_fkey-41.4 {
   catchsql { UPDATE parent SET p2 = 'e' WHERE p1 = 'c' }
 } {1 {foreign key constraint failed}}
 
@@ -1727,7 +1727,7 @@ do_test e_fkey-18.4 {
 # statement.
 #
 drop_all_tables
-do_test e_fkey-19.1 {
+do_test e_fkey-42.1 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child1(c REFERENCES parent ON UPDATE RESTRICT);
@@ -1744,10 +1744,10 @@ do_test e_fkey-19.1 {
     END;
   }
 } {}
-do_test e_fkey-19.2 {
+do_test e_fkey-42.2 {
   catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-19.3 {
+do_test e_fkey-42.3 {
   execsql { 
     UPDATE parent SET x = 'key two' WHERE x = 'key2';
     SELECT * FROM child2;
@@ -1755,7 +1755,7 @@ do_test e_fkey-19.3 {
 } {{key two}}
 
 drop_all_tables
-do_test e_fkey-19.4 {
+do_test e_fkey-42.4 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT);
@@ -1772,10 +1772,10 @@ do_test e_fkey-19.4 {
     END;
   }
 } {}
-do_test e_fkey-19.5 {
+do_test e_fkey-42.5 {
   catchsql { DELETE FROM parent WHERE x = 'key1' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-19.6 {
+do_test e_fkey-42.6 {
   execsql { 
     DELETE FROM parent WHERE x = 'key2';
     SELECT * FROM child2;
@@ -1783,7 +1783,7 @@ do_test e_fkey-19.6 {
 } {{}}
 
 drop_all_tables
-do_test e_fkey-19.7 {
+do_test e_fkey-42.7 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT);
@@ -1795,10 +1795,10 @@ do_test e_fkey-19.7 {
     INSERT INTO child2 VALUES('key2');
   }
 } {}
-do_test e_fkey-19.8 {
+do_test e_fkey-42.8 {
   catchsql { REPLACE INTO parent VALUES('key1') }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-19.9 {
+do_test e_fkey-42.9 {
   execsql { 
     REPLACE INTO parent VALUES('key2');
     SELECT * FROM child2;
@@ -1811,7 +1811,7 @@ do_test e_fkey-19.9 {
 # Test that RESTRICT is enforced immediately, even for a DEFERRED constraint.
 #
 drop_all_tables
-do_test e_fkey-20.1 {
+do_test e_fkey-43.1 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child1(c REFERENCES parent ON UPDATE RESTRICT
@@ -1828,16 +1828,16 @@ do_test e_fkey-20.1 {
     BEGIN;
   }
 } {}
-do_test e_fkey-20.2 {
+do_test e_fkey-43.2 {
   catchsql { UPDATE parent SET x = 'key one' WHERE x = 'key1' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-20.3 {
+do_test e_fkey-43.3 {
   execsql { UPDATE parent SET x = 'key two' WHERE x = 'key2' }
 } {}
-do_test e_fkey-20.4 {
+do_test e_fkey-43.4 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-20.5 {
+do_test e_fkey-43.5 {
   execsql {
     UPDATE child2 SET c = 'key two';
     COMMIT;
@@ -1845,7 +1845,7 @@ do_test e_fkey-20.5 {
 } {}
 
 drop_all_tables
-do_test e_fkey-20.6 {
+do_test e_fkey-43.6 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child1(c REFERENCES parent ON DELETE RESTRICT
@@ -1862,16 +1862,16 @@ do_test e_fkey-20.6 {
     BEGIN;
   }
 } {}
-do_test e_fkey-20.7 {
+do_test e_fkey-43.7 {
   catchsql { DELETE FROM parent WHERE x = 'key1' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-20.8 {
+do_test e_fkey-43.8 {
   execsql { DELETE FROM parent WHERE x = 'key2' }
 } {}
-do_test e_fkey-20.9 {
+do_test e_fkey-43.9 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-20.10 {
+do_test e_fkey-43.10 {
   execsql {
     UPDATE child2 SET c = NULL;
     COMMIT;
@@ -1884,7 +1884,7 @@ do_test e_fkey-20.10 {
 # Test SET NULL actions.
 #
 drop_all_tables
-do_test e_fkey-21.1 {
+do_test e_fkey-44.1 {
   execsql {
     CREATE TABLE pA(x PRIMARY KEY);
     CREATE TABLE cA(c REFERENCES pA ON DELETE SET NULL);
@@ -1896,24 +1896,24 @@ do_test e_fkey-21.1 {
     INSERT INTO cB VALUES(X'1234');
   }
 } {}
-do_test e_fkey-21.2 {
+do_test e_fkey-44.2 {
   execsql {
     DELETE FROM pA WHERE rowid = 1;
     SELECT quote(x) FROM pA;
   }
 } {X'1234'}
-do_test e_fkey-21.3 {
+do_test e_fkey-44.3 {
   execsql {
     SELECT quote(c) FROM cA;
   }
 } {NULL}
-do_test e_fkey-21.4 {
+do_test e_fkey-44.4 {
   execsql {
     UPDATE pA SET x = X'8765' WHERE rowid = 2;
     SELECT quote(x) FROM pA;
   }
 } {X'8765'}
-do_test e_fkey-21.5 {
+do_test e_fkey-44.5 {
   execsql { SELECT quote(c) FROM cB }
 } {NULL}
 
@@ -1923,7 +1923,7 @@ do_test e_fkey-21.5 {
 # Test SET DEFAULT actions.
 #
 drop_all_tables
-do_test e_fkey-22.1 {
+do_test e_fkey-45.1 {
   execsql {
     CREATE TABLE pA(x PRIMARY KEY);
     CREATE TABLE cA(c DEFAULT X'0000' REFERENCES pA ON DELETE SET DEFAULT);
@@ -1938,22 +1938,22 @@ do_test e_fkey-22.1 {
     INSERT INTO cB VALUES(X'1234');
   }
 } {}
-do_test e_fkey-22.2 {
+do_test e_fkey-45.2 {
   execsql {
     DELETE FROM pA WHERE rowid = 3;
     SELECT quote(x) FROM pA;
   }
 } {X'0000' X'9999' X'1234'}
-do_test e_fkey-22.3 {
+do_test e_fkey-45.3 {
   execsql { SELECT quote(c) FROM cA }
 } {X'0000'}
-do_test e_fkey-22.4 {
+do_test e_fkey-45.4 {
   execsql {
     UPDATE pA SET x = X'8765' WHERE rowid = 4;
     SELECT quote(x) FROM pA;
   }
 } {X'0000' X'9999' X'8765'}
-do_test e_fkey-22.5 {
+do_test e_fkey-45.5 {
   execsql { SELECT quote(c) FROM cB }
 } {X'9999'}
 
@@ -1964,7 +1964,7 @@ do_test e_fkey-22.5 {
 # Test ON DELETE CASCADE actions.
 #
 drop_all_tables
-do_test e_fkey-23.1 {
+do_test e_fkey-46.1 {
   execsql {
     CREATE TABLE p1(a, b UNIQUE);
     CREATE TABLE c1(c REFERENCES p1(b) ON DELETE CASCADE, d);
@@ -1977,19 +1977,19 @@ do_test e_fkey-23.1 {
     SELECT count(*) FROM c1;
   }
 } {3}
-do_test e_fkey-23.2 {
+do_test e_fkey-46.2 {
   execsql {
     DELETE FROM p1 WHERE a = 4;
     SELECT d, c FROM c1;
   }
 } {{} {} 5 5}
-do_test e_fkey-23.3 {
+do_test e_fkey-46.3 {
   execsql {
     DELETE FROM p1;
     SELECT d, c FROM c1;
   }
 } {{} {}}
-do_test e_fkey-23.4 {
+do_test e_fkey-46.4 {
   execsql { SELECT * FROM p1 }
 } {}
 
@@ -2001,7 +2001,7 @@ do_test e_fkey-23.4 {
 # Test ON UPDATE CASCADE actions.
 #
 drop_all_tables
-do_test e_fkey-24.1 {
+do_test e_fkey-47.1 {
   execsql {
     CREATE TABLE p1(a, b UNIQUE);
     CREATE TABLE c1(c REFERENCES p1(b) ON UPDATE CASCADE, d);
@@ -2014,25 +2014,25 @@ do_test e_fkey-24.1 {
     SELECT count(*) FROM c1;
   }
 } {3}
-do_test e_fkey-24.2 {
+do_test e_fkey-47.2 {
   execsql {
     UPDATE p1 SET b = 10 WHERE b = 5;
     SELECT d, c FROM c1;
   }
 } {{} {} 4 4 5 10}
-do_test e_fkey-24.3 {
+do_test e_fkey-47.3 {
   execsql {
     UPDATE p1 SET b = 11 WHERE b = 4;
     SELECT d, c FROM c1;
   }
 } {{} {} 4 11 5 10}
-do_test e_fkey-24.4 {
+do_test e_fkey-47.4 {
   execsql { 
     UPDATE p1 SET b = 6 WHERE b IS NULL;
     SELECT d, c FROM c1;
   }
 } {{} {} 4 11 5 10}
-do_test e_fkey-23.5 {
+do_test e_fkey-46.5 {
   execsql { SELECT * FROM p1 }
 } {{} 6 4 11 5 10}
 
@@ -2043,7 +2043,7 @@ do_test e_fkey-23.5 {
 # of foreignkeys.html.
 #
 drop_all_tables
-do_test e_fkey-15.1 {
+do_test e_fkey-48.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -2062,15 +2062,15 @@ do_test e_fkey-15.1 {
     INSERT INTO track VALUES(13, 'My Way', 2);
   }
 } {}
-do_test e_fkey-15.2 {
+do_test e_fkey-48.2 {
   execsql {
     UPDATE artist SET artistid = 100 WHERE artistname = 'Dean Martin';
   }
 } {}
-do_test e_fkey-15.3 {
+do_test e_fkey-48.3 {
   execsql { SELECT * FROM artist }
 } {2 {Frank Sinatra} 100 {Dean Martin}}
-do_test e_fkey-15.4 {
+do_test e_fkey-48.4 {
   execsql { SELECT * FROM track }
 } {11 {That's Amore} 100 12 {Christmas Blues} 100 13 {My Way} 2}
 
@@ -2082,7 +2082,7 @@ do_test e_fkey-15.4 {
 # requirement not to violate the foreign key constraint.
 #
 drop_all_tables
-do_test e_fkey-25.1 {
+do_test e_fkey-49.1 {
   execsql {
     CREATE TABLE parent(a COLLATE nocase, b, c, PRIMARY KEY(c, a));
     CREATE TABLE child(d DEFAULT 'a', e, f DEFAULT 'c',
@@ -2094,21 +2094,21 @@ do_test e_fkey-25.1 {
     INSERT INTO child VALUES('one', 'two', 'three');
   }
 } {}
-do_test e_fkey-25.2 {
+do_test e_fkey-49.2 {
   execsql {
     BEGIN;
       UPDATE parent SET a = '' WHERE a = 'oNe';
       SELECT * FROM child;
   }
 } {a two c}
-do_test e_fkey-25.3 {
+do_test e_fkey-49.3 {
   execsql {
     ROLLBACK;
     DELETE FROM parent WHERE a = 'A';
     SELECT * FROM parent;
   }
 } {ONE two three}
-do_test e_fkey-25.4 {
+do_test e_fkey-49.4 {
   catchsql { UPDATE parent SET a = '' WHERE a = 'oNe' }
 } {1 {foreign key constraint failed}}
 
@@ -2123,7 +2123,7 @@ do_test e_fkey-25.4 {
 # (R-28220-46694).
 #
 drop_all_tables
-do_test e_fkey-14.1 {
+do_test e_fkey-50.1 {
   execsql {
     CREATE TABLE artist(
       artistid    INTEGER PRIMARY KEY, 
@@ -2138,19 +2138,19 @@ do_test e_fkey-14.1 {
     INSERT INTO track VALUES(14, 'Mr. Bojangles', 3);
   }
 } {}
-do_test e_fkey-14.2 {
+do_test e_fkey-50.2 {
   catchsql { DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.' }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-14.3 {
+do_test e_fkey-50.3 {
   execsql {
     INSERT INTO artist VALUES(0, 'Unknown Artist');
     DELETE FROM artist WHERE artistname = 'Sammy Davis Jr.';
   }
 } {}
-do_test e_fkey-14.4 {
+do_test e_fkey-50.4 {
   execsql { SELECT * FROM artist }
 } {0 {Unknown Artist}}
-do_test e_fkey-14.5 {
+do_test e_fkey-50.5 {
   execsql { SELECT * FROM track }
 } {14 {Mr. Bojangles} 0}
 
@@ -2167,7 +2167,7 @@ do_test e_fkey-14.5 {
 #   5. Execute applicable AFTER trigger programs. 
 #
 drop_all_tables
-do_test e_fkey-27.1 {
+do_test e_fkey-51.1 {
   proc maxparent {args} { db one {SELECT max(x) FROM parent} }
   db func maxparent maxparent
 
@@ -2188,13 +2188,13 @@ do_test e_fkey-27.1 {
     INSERT INTO child VALUES(1);
   }
 } {}
-do_test e_fkey-27.2 {
+do_test e_fkey-51.2 {
   execsql {
     UPDATE parent SET x = 22;
     SELECT * FROM parent UNION ALL SELECT 'xxx' UNION ALL SELECT a FROM child;
   }
 } {22 21 23 xxx 22}
-do_test e_fkey-27.3 {
+do_test e_fkey-51.3 {
   execsql {
     DELETE FROM child;
     DELETE FROM parent;
@@ -2215,7 +2215,7 @@ do_test e_fkey-27.3 {
 # is 'distinct' from the old or not.
 #
 drop_all_tables
-do_test e_fkey-26.1 {
+do_test e_fkey-52.1 {
   execsql {
     CREATE TABLE zeus(a INTEGER COLLATE NOCASE, b, PRIMARY KEY(a, b));
     CREATE TABLE apollo(c, d, 
@@ -2229,31 +2229,31 @@ do_test e_fkey-26.1 {
     SELECT * FROM apollo;
   }
 } {ABC xyz}
-do_test e_fkey-26.2 {
+do_test e_fkey-52.2 {
   execsql {
     UPDATE zeus SET a = 1, b = 1;
     SELECT * FROM apollo;
   }
 } {1 1}
-do_test e_fkey-26.3 {
+do_test e_fkey-52.3 {
   execsql {
     UPDATE zeus SET a = 1, b = 1;
     SELECT typeof(c), c, typeof(d), d FROM apollo;
   }
 } {integer 1 integer 1}
-do_test e_fkey-26.4 {
+do_test e_fkey-52.4 {
   execsql {
     UPDATE zeus SET a = '1';
     SELECT typeof(c), c, typeof(d), d FROM apollo;
   }
 } {integer 1 integer 1}
-do_test e_fkey-26.5 {
+do_test e_fkey-52.5 {
   execsql {
     UPDATE zeus SET b = '1';
     SELECT typeof(c), c, typeof(d), d FROM apollo;
   }
 } {integer 1 text 1}
-do_test e_fkey-26.6 {
+do_test e_fkey-52.6 {
   execsql {
     UPDATE zeus SET b = NULL;
     SELECT typeof(c), c, typeof(d), d FROM apollo;
@@ -2269,7 +2269,7 @@ do_test e_fkey-26.6 {
 # that is distinct from its previous value.
 #
 drop_all_tables
-do_test e_fkey-13.1 {
+do_test e_fkey-53.1 {
   execsql {
     CREATE TABLE parent(x PRIMARY KEY);
     CREATE TABLE child(y REFERENCES parent ON UPDATE SET NULL);
@@ -2277,13 +2277,13 @@ do_test e_fkey-13.1 {
     INSERT INTO child VALUES('key');
   }
 } {}
-do_test e_fkey-13.2 {
+do_test e_fkey-53.2 {
   execsql {
     UPDATE parent SET x = 'key';
     SELECT IFNULL(y, 'null') FROM child;
   }
 } {key}
-do_test e_fkey-13.3 {
+do_test e_fkey-53.3 {
   execsql {
     UPDATE parent SET x = 'key2';
     SELECT IFNULL(y, 'null') FROM child;
@@ -2325,12 +2325,12 @@ foreach {tn zCreateTbl lRes} {
   B "CREATE TABLE t1(a, b, FOREIGN KEY(c,b) REFERENCES t2(d))"          
      {1 {number of columns in foreign key does not match the number of columns in the referenced table}}
 } {
-  do_test e_fkey-5.$tn.off {
+  do_test e_fkey-54.$tn.off {
     drop_all_tables
     execsql {PRAGMA foreign_keys = OFF}
     catchsql $zCreateTbl
   } $lRes
-  do_test e_fkey-5.$tn.on {
+  do_test e_fkey-54.$tn.on {
     drop_all_tables
     execsql {PRAGMA foreign_keys = ON}
     catchsql $zCreateTbl
@@ -2343,7 +2343,7 @@ foreach {tn zCreateTbl lRes} {
 proc test_efkey_6 {tn zAlter isError} {
   drop_all_tables 
 
-  do_test e_fkey-6.$tn.1 "
+  do_test e_fkey-56.$tn.1 "
     execsql { CREATE TABLE tbl(a, b) }
     [list catchsql $zAlter]
   " [lindex {{0 {}} {1 {Cannot add a REFERENCES column with non-NULL default value}}} $isError]
@@ -2364,7 +2364,7 @@ test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
 #
 # Test that these adjustments are visible in the sqlite_master table.
 #
-do_test e_fkey-7.1 {
+do_test e_fkey-56.1 {
   drop_all_tables
   execsql {
     CREATE TABLE 'p 1 "parent one"'(a REFERENCES 'p 1 "parent one"', b, PRIMARY KEY(b));
@@ -2381,10 +2381,10 @@ do_test e_fkey-7.1 {
     -- CREATE TABLE q(a, b, PRIMARY KEY(b));
   }
 } {}
-do_test e_fkey-7.2 {
+do_test e_fkey-56.2 {
   execsql { ALTER TABLE 'p 1 "parent one"' RENAME TO p }
 } {}
-do_test e_fkey-7.3 {
+do_test e_fkey-56.3 {
   execsql {
     UPDATE p SET a = 'xxx', b = 'xxx';
     SELECT * FROM p;
@@ -2393,7 +2393,7 @@ do_test e_fkey-7.3 {
     SELECT * FROM c3;
   }
 } {xxx xxx 1 xxx 1 xxx 1 xxx}
-do_test e_fkey-7.4 {
+do_test e_fkey-56.4 {
   execsql { SELECT sql FROM sqlite_master WHERE type = 'table'}
 } [list                                                                     \
   {CREATE TABLE "p"(a REFERENCES "p", b, PRIMARY KEY(b))}                   \
@@ -2409,7 +2409,7 @@ do_test e_fkey-7.4 {
 # Check that a DROP TABLE does an implicit DELETE FROM. Which does not
 # cause any triggers to fire, but does fire foreign key actions.
 #
-do_test e_fkey-8.1 {
+do_test e_fkey-57.1 {
   drop_all_tables
   execsql {
     CREATE TABLE p(a, b, PRIMARY KEY(a, b));
@@ -2436,7 +2436,7 @@ do_test e_fkey-8.1 {
   }
 } {}
 
-do_test e_fkey-8.2 {
+do_test e_fkey-57.2 {
   execsql {
     INSERT INTO p VALUES('a', 'b');
     INSERT INTO c1 VALUES('a', 'b');
@@ -2447,19 +2447,19 @@ do_test e_fkey-8.2 {
       SELECT * FROM c1;
   }
 } {{} {}}
-do_test e_fkey-8.3 {
+do_test e_fkey-57.3 {
   execsql { SELECT * FROM c2 }
 } {{} {}}
-do_test e_fkey-8.4 {
+do_test e_fkey-57.4 {
   execsql { SELECT * FROM c3 }
 } {}
-do_test e_fkey-8.5 {
+do_test e_fkey-57.5 {
   execsql { SELECT * FROM log }
 } {}
-do_test e_fkey-8.6 {
+do_test e_fkey-57.6 {
   execsql ROLLBACK
 } {}
-do_test e_fkey-8.7 {
+do_test e_fkey-57.7 {
   execsql {
     BEGIN;
       DELETE FROM p;
@@ -2474,7 +2474,7 @@ do_test e_fkey-8.7 {
 # If an IMMEDIATE foreign key fails as a result of a DROP TABLE, the
 # DROP TABLE command fails.
 #
-do_test e_fkey-9.1 {
+do_test e_fkey-58.1 {
   execsql { 
     DELETE FROM c1;
     DELETE FROM c2;
@@ -2483,16 +2483,16 @@ do_test e_fkey-9.1 {
   execsql { INSERT INTO c5 VALUES('a', 'b') }
   catchsql { DROP TABLE p }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-9.2 {
+do_test e_fkey-58.2 {
   execsql { SELECT * FROM p }
 } {a b}
-do_test e_fkey-9.3 {
+do_test e_fkey-58.3 {
   catchsql {
     BEGIN;
       DROP TABLE p;
   }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-9.4 {
+do_test e_fkey-58.4 {
   execsql {
     SELECT * FROM p;
     SELECT * FROM c5;
@@ -2506,28 +2506,28 @@ do_test e_fkey-9.4 {
 # If a DEFERRED foreign key fails as a result of a DROP TABLE, attempting
 # to commit the transaction fails unless the violation is fixed.
 #
-do_test e_fkey-10.1 {
+do_test e_fkey-59.1 {
   execsql { 
     DELETE FROM c1 ; DELETE FROM c2 ; DELETE FROM c3 ;
     DELETE FROM c4 ; DELETE FROM c5 ; DELETE FROM c6 ;
     DELETE FROM c7 
   }
 } {}
-do_test e_fkey-10.2 {
+do_test e_fkey-59.2 {
   execsql { INSERT INTO c7 VALUES('a', 'b') }
   execsql {
     BEGIN;
       DROP TABLE p;
   }
 } {}
-do_test e_fkey-10.3 {
+do_test e_fkey-59.3 {
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-10.4 {
+do_test e_fkey-59.4 {
   execsql { CREATE TABLE p(a, b, PRIMARY KEY(a, b)) }
   catchsql COMMIT
 } {1 {foreign key constraint failed}}
-do_test e_fkey-10.5 {
+do_test e_fkey-59.5 {
   execsql { INSERT INTO p VALUES('a', 'b') }
   execsql COMMIT
 } {}
@@ -2539,7 +2539,7 @@ do_test e_fkey-10.5 {
 # "DELETE FROM tbl" are ignored.
 #
 drop_all_tables
-do_test e_fkey-11.1 {
+do_test e_fkey-60.1 {
   execsql {
     PRAGMA foreign_keys = OFF;
 
@@ -2554,11 +2554,11 @@ do_test e_fkey-11.1 {
     INSERT INTO c3 VALUES(1, 2);
   }
 } {}
-do_test e_fkey-11.2 {
+do_test e_fkey-60.2 {
   execsql { PRAGMA foreign_keys = ON }
   catchsql { DELETE FROM p }
 } {1 {no such table: main.nosuchtable}}
-do_test e_fkey-11.3 {
+do_test e_fkey-60.3 {
   execsql {
     BEGIN;
       DROP TABLE p;
@@ -2566,15 +2566,15 @@ do_test e_fkey-11.3 {
     ROLLBACK;
   }
 } {{} 2}
-do_test e_fkey-11.4 {
+do_test e_fkey-60.4 {
   execsql { CREATE TABLE nosuchtable(x PRIMARY KEY) }
   catchsql { DELETE FROM p }
 } {1 {foreign key mismatch}}
-do_test e_fkey-11.5 {
+do_test e_fkey-60.5 {
   execsql { DROP TABLE c1 }
   catchsql { DELETE FROM p }
 } {1 {foreign key mismatch}}
-do_test e_fkey-11.6 {
+do_test e_fkey-60.6 {
   execsql { DROP TABLE c2 }
   execsql { DELETE FROM p }
 } {}
@@ -2590,21 +2590,21 @@ do_test e_fkey-11.6 {
 #   2. Modifying foreign key definitions when a parent table is RENAMEd.
 #   3. Running an implicit DELETE FROM command as part of DROP TABLE.
 #
-do_test e_fkey-12.1.1 {
+do_test e_fkey-61.1.1 {
   drop_all_tables
   execsql { CREATE TABLE t1(a, b) }
   catchsql { ALTER TABLE t1 ADD COLUMN c DEFAULT 'xxx' REFERENCES t2 }
 } {1 {Cannot add a REFERENCES column with non-NULL default value}}
-do_test e_fkey-12.1.2 {
+do_test e_fkey-61.1.2 {
   execsql { PRAGMA foreign_keys = OFF }
   execsql { ALTER TABLE t1 ADD COLUMN c DEFAULT 'xxx' REFERENCES t2 }
   execsql { SELECT sql FROM sqlite_master WHERE name = 't1' }
 } {{CREATE TABLE t1(a, b, c DEFAULT 'xxx' REFERENCES t2)}}
-do_test e_fkey-12.1.3 {
+do_test e_fkey-61.1.3 {
   execsql { PRAGMA foreign_keys = ON }
 } {}
 
-do_test e_fkey-12.2.1 {
+do_test e_fkey-61.2.1 {
   drop_all_tables
   execsql {
     CREATE TABLE p(a UNIQUE);
@@ -2615,18 +2615,18 @@ do_test e_fkey-12.2.1 {
     ROLLBACK;
   }
 } {{CREATE TABLE c(b REFERENCES "parent"(a))}}
-do_test e_fkey-12.2.2 {
+do_test e_fkey-61.2.2 {
   execsql {
     PRAGMA foreign_keys = OFF;
     ALTER TABLE p RENAME TO parent;
     SELECT sql FROM sqlite_master WHERE name = 'c';
   }
 } {{CREATE TABLE c(b REFERENCES p(a))}}
-do_test e_fkey-12.2.3 {
+do_test e_fkey-61.2.3 {
   execsql { PRAGMA foreign_keys = ON }
 } {}
 
-do_test e_fkey-12.3.1 {
+do_test e_fkey-61.3.1 {
   drop_all_tables
   execsql {
     CREATE TABLE p(a UNIQUE);
@@ -2639,14 +2639,14 @@ do_test e_fkey-12.3.1 {
     ROLLBACK;
   }
 } {{}}
-do_test e_fkey-12.3.2 {
+do_test e_fkey-61.3.2 {
   execsql {
     PRAGMA foreign_keys = OFF;
     DROP TABLE p;
     SELECT * FROM c;
   }
 } {x}
-do_test e_fkey-12.3.3 {
+do_test e_fkey-61.3.3 {
   execsql { PRAGMA foreign_keys = ON }
 } {}
 
@@ -2663,13 +2663,13 @@ do_test e_fkey-12.3.3 {
 #
 foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
   drop_all_tables
-  do_test e_fkey-1.$zMatch.1 {
+  do_test e_fkey-62.$zMatch.1 {
     execsql "
       CREATE TABLE p(a, b, c, PRIMARY KEY(b, c));
       CREATE TABLE c(d, e, f, FOREIGN KEY(e, f) REFERENCES p MATCH $zMatch);
     "
   } {}
-  do_test e_fkey-1.$zMatch.2 {
+  do_test e_fkey-62.$zMatch.2 {
     execsql { INSERT INTO p VALUES(1, 2, 3)         }
 
     # MATCH SIMPLE behaviour: Allow any child key that contains one or more
@@ -2694,14 +2694,14 @@ foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
 # that it is possible to create both immediate and deferred constraints.
 #
 drop_all_tables
-do_test e_fkey-2.1 {
+do_test e_fkey-62.1 {
   catchsql { SET CONSTRAINTS ALL IMMEDIATE }
 } {1 {near "SET": syntax error}}
-do_test e_fkey-2.2 {
+do_test e_fkey-62.2 {
   catchsql { SET CONSTRAINTS ALL DEFERRED }
 } {1 {near "SET": syntax error}}
 
-do_test e_fkey-2.3 {
+do_test e_fkey-62.3 {
   execsql {
     CREATE TABLE p(a, b, PRIMARY KEY(a, b));
     CREATE TABLE cd(c, d, 
@@ -2711,16 +2711,16 @@ do_test e_fkey-2.3 {
     BEGIN;
   }
 } {}
-do_test e_fkey-2.4 {
+do_test e_fkey-62.4 {
   catchsql { INSERT INTO ci VALUES('x', 'y') }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-2.5 {
+do_test e_fkey-62.5 {
   catchsql { INSERT INTO cd VALUES('x', 'y') }
 } {0 {}}
-do_test e_fkey-2.6 {
+do_test e_fkey-62.6 {
   catchsql { COMMIT }
 } {1 {foreign key constraint failed}}
-do_test e_fkey-2.7 {
+do_test e_fkey-62.7 {
   execsql { 
     DELETE FROM cd;
     COMMIT;
@@ -2777,36 +2777,36 @@ proc test_on_update_recursion {limit} {
   "
 }
 
-do_test e_fkey-3.1.1 {
+do_test e_fkey-63.1.1 {
   test_on_delete_recursion $SQLITE_MAX_TRIGGER_DEPTH
 } {0 0}
-do_test e_fkey-3.1.2 {
+do_test e_fkey-63.1.2 {
   test_on_delete_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
 } {1 {too many levels of trigger recursion}}
-do_test e_fkey-3.1.3 {
+do_test e_fkey-63.1.3 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
   test_on_delete_recursion 5
 } {0 0}
-do_test e_fkey-3.1.4 {
+do_test e_fkey-63.1.4 {
   test_on_delete_recursion 6
 } {1 {too many levels of trigger recursion}}
-do_test e_fkey-3.1.5 {
+do_test e_fkey-63.1.5 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
 } {5}
-do_test e_fkey-3.2.1 {
+do_test e_fkey-63.2.1 {
   test_on_update_recursion $SQLITE_MAX_TRIGGER_DEPTH
 } {0 0}
-do_test e_fkey-3.2.2 {
+do_test e_fkey-63.2.2 {
   test_on_update_recursion [expr $SQLITE_MAX_TRIGGER_DEPTH+1]
 } {1 {too many levels of trigger recursion}}
-do_test e_fkey-3.2.3 {
+do_test e_fkey-63.2.3 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 5
   test_on_update_recursion 5
 } {0 0}
-do_test e_fkey-3.2.4 {
+do_test e_fkey-63.2.4 {
   test_on_update_recursion 6
 } {1 {too many levels of trigger recursion}}
-do_test e_fkey-3.2.5 {
+do_test e_fkey-63.2.5 {
   sqlite3_limit db SQLITE_LIMIT_TRIGGER_DEPTH 1000000
 } {5}
 
@@ -2820,7 +2820,7 @@ foreach recursive_triggers_setting [list 0 1 ON OFF] {
   drop_all_tables
   execsql "PRAGMA recursive_triggers = $recursive_triggers_setting"
 
-  do_test e_fkey-4.$recursive_triggers_setting.1 {
+  do_test e_fkey-64.$recursive_triggers_setting.1 {
     execsql {
       CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1 ON DELETE CASCADE);
       INSERT INTO t1 VALUES(1, NULL);
@@ -2831,10 +2831,10 @@ foreach recursive_triggers_setting [list 0 1 ON OFF] {
       SELECT count(*) FROM t1;
     }
   } {5}
-  do_test e_fkey-4.$recursive_triggers_setting.2 {
+  do_test e_fkey-64.$recursive_triggers_setting.2 {
     execsql { SELECT count(*) FROM t1 WHERE a = 1 }
   } {1}
-  do_test e_fkey-4.$recursive_triggers_setting.3 {
+  do_test e_fkey-64.$recursive_triggers_setting.3 {
     execsql { 
       DELETE FROM t1 WHERE a = 1;
       SELECT count(*) FROM t1;

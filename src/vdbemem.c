@@ -14,8 +14,6 @@
 ** stores a single value in the VDBE.  Mem is an opaque structure visible
 ** only within the VDBE.  Interface routines refer to a Mem using the
 ** name sqlite_value
-**
-** $Id: vdbemem.c,v 1.152 2009/07/22 18:07:41 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -756,9 +754,6 @@ int sqlite3MemCompare(const Mem *pMem1, const Mem *pMem2, const CollSeq *pColl){
   int f1, f2;
   int combined_flags;
 
-  /* Interchange pMem1 and pMem2 if the collating sequence specifies
-  ** DESC order.
-  */
   f1 = pMem1->flags;
   f2 = pMem2->flags;
   combined_flags = f1|f2;
@@ -1009,7 +1004,7 @@ int sqlite3ValueFromExpr(
   }
   op = pExpr->op;
   if( op==TK_REGISTER ){
-    op = pExpr->op2;
+    op = pExpr->op2;  /* This only happens with SQLITE_ENABLE_STAT2 */
   }
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){

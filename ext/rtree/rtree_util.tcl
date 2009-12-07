@@ -13,8 +13,6 @@
 # analyzing r-tree structures created with this module. It is
 # used by both test procedures and the r-tree viewer application.
 #
-# $Id: rtree_util.tcl,v 1.1 2008/05/26 18:41:54 danielk1977 Exp $
-#
 
 
 #--------------------------------------------------------------------------
@@ -192,4 +190,3 @@ proc rtree_treedump {db zTab} {
   set d [rtree_depth $db $zTab]
   rtree_nodetreedump $db $zTab "" $d 1
 }
-

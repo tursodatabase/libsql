@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains code for implementations of the r-tree and r*-tree
 ** algorithms packaged as an SQLite virtual table module.
-**
-** $Id: rtree.c,v 1.14 2009/08/06 18:36:47 danielk1977 Exp $
 */
 
 #if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_RTREE)

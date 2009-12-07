@@ -33,10 +33,11 @@
 ** appended to the amalgamation.
 */
 #ifndef SQLITE_AMALGAMATION
-# include "sqliteInt.h"
+# include "sqlite3.h"
 # include <stdlib.h>
 # include <string.h>
 # include <assert.h>
+  typedef unsigned char u8;
 #endif
 #include <ctype.h>
 
@@ -3447,16 +3448,6 @@ static char zMainloop[] =
 ;
 #endif
 
-/*
-** If the macro TCLSH is two, then get the main loop code out of
-** the separate file "spaceanal_tcl.h".
-*/
-#if TCLSH==2
-static char zMainloop[] = 
-#include "spaceanal_tcl.h"
-;
-#endif
-
 #define TCLSH_MAIN main   /* Needed to fake out mktclapp */
 int TCLSH_MAIN(int argc, char **argv){
   Tcl_Interp *interp;
@@ -3498,6 +3489,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int SqlitetestOnefile_Init();
     extern int SqlitetestOsinst_Init(Tcl_Interp*);
     extern int Sqlitetestbackup_Init(Tcl_Interp*);
+    extern int Sqlitetestintarray_Init(Tcl_Interp*);
 
     Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
@@ -3522,13 +3514,14 @@ int TCLSH_MAIN(int argc, char **argv){
     SqlitetestOnefile_Init(interp);
     SqlitetestOsinst_Init(interp);
     Sqlitetestbackup_Init(interp);
+    Sqlitetestintarray_Init(interp);
 
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);
 #endif
   }
 #endif
-  if( argc>=2 || TCLSH==2 ){
+  if( argc>=2 ){
     int i;
     char zArgc[32];
     sqlite3_snprintf(sizeof(zArgc), zArgc, "%d", argc-(3-TCLSH));
@@ -3539,14 +3532,14 @@ int TCLSH_MAIN(int argc, char **argv){
       Tcl_SetVar(interp, "argv", argv[i],
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
-    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
+    if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
   }
-  if( argc<=1 || TCLSH==2 ){
+  if( argc<=1 ){
     Tcl_GlobalEval(interp, zMainloop);
   }
   return 0;

@@ -87,7 +87,7 @@ foreach hdr {
    btree.h
    btreeInt.h
    fts3.h
-   fts3_expr.h
+   fts3Int.h
    fts3_hash.h
    fts3_tokenizer.h
    hash.h
@@ -252,6 +252,7 @@ foreach file {
    vdbemem.c
    vdbeaux.c
    vdbeapi.c
+   vdbetrace.c
    vdbe.c
    vdbeblob.c
    journal.c
@@ -296,10 +297,12 @@ foreach file {
    fts3_porter.c
    fts3_tokenizer.c
    fts3_tokenizer1.c
+   fts3_write.c
+   fts3_snippet.c
 
    rtree.c
    icu.c
-   fts3_icu.c   
+   fts3_icu.c
    sqlrr.c
 } {
   copy_file tsrc/$file

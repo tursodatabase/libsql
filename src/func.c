@@ -157,6 +157,8 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
 ** If x is a blob, then we count bytes.
 **
 ** If p1 is negative, then we begin abs(p1) from the end of x[].
+**
+** If p2 is negative, return the p2 characters preceeding p1.
 */
 static void substrFunc(
   sqlite3_context *context,
@@ -177,6 +179,7 @@ static void substrFunc(
     return;
   }
   p0type = sqlite3_value_type(argv[0]);
+  p1 = sqlite3_value_int(argv[1]);
   if( p0type==SQLITE_BLOB ){
     len = sqlite3_value_bytes(argv[0]);
     z = sqlite3_value_blob(argv[0]);
@@ -186,11 +189,12 @@ static void substrFunc(
     z = sqlite3_value_text(argv[0]);
     if( z==0 ) return;
     len = 0;
-    for(z2=z; *z2; len++){
-      SQLITE_SKIP_UTF8(z2);
+    if( p1<0 ){
+      for(z2=z; *z2; len++){
+        SQLITE_SKIP_UTF8(z2);
+      }
     }
   }
-  p1 = sqlite3_value_int(argv[1]);
 #ifdef SQLITE_SUBSTR_COMPATIBILITY
   if( p1==0 ) p1 = 1; /* <rdar://problem/6778339> */
 #endif
@@ -223,10 +227,6 @@ static void substrFunc(
     }
   }
   assert( p1>=0 && p2>=0 );
-  if( p1+p2>len ){
-    p2 = len-p1;
-    if( p2<0 ) p2 = 0;
-  }
   if( p0type!=SQLITE_BLOB ){
     while( *z && p1 ){
       SQLITE_SKIP_UTF8(z);
@@ -237,6 +237,10 @@ static void substrFunc(
     }
     sqlite3_result_text(context, (char*)z, (int)(z2-z), SQLITE_TRANSIENT);
   }else{
+    if( p1+p2>len ){
+      p2 = len-p1;
+      if( p2<0 ) p2 = 0;
+    }
     sqlite3_result_blob(context, (char*)&z[p1], (int)p2, SQLITE_TRANSIENT);
   }
 }
@@ -338,6 +342,14 @@ static void lowerFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }
 }
 
+
+#if 0  /* This function is never used. */
+/*
+** The COALESCE() and IFNULL() functions used to be implemented as shown
+** here.  But now they are implemented as VDBE code so that unused arguments
+** do not have to be computed.  This legacy implementation is retained as
+** comment.
+*/
 /*
 ** Implementation of the IFNULL(), NVL(), and COALESCE() functions.  
 ** All three do the same thing.  They return the first non-NULL
@@ -356,6 +368,8 @@ static void ifnullFunc(
     }
   }
 }
+#endif /* NOT USED */
+#define ifnullFunc versionFunc   /* Substitute function - never called */
 
 /*
 ** Implementation of random().  Return a random integer.  
@@ -1440,10 +1454,12 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(upper,              1, 0, 0, upperFunc        ),
     FUNCTION(lower,              1, 0, 0, lowerFunc        ),
     FUNCTION(coalesce,           1, 0, 0, 0                ),
-    FUNCTION(coalesce,          -1, 0, 0, ifnullFunc       ),
     FUNCTION(coalesce,           0, 0, 0, 0                ),
+/*  FUNCTION(coalesce,          -1, 0, 0, ifnullFunc       ), */
+    {-1,SQLITE_UTF8,SQLITE_FUNC_COALESCE,0,0,ifnullFunc,0,0,"coalesce",0},
     FUNCTION(hex,                1, 0, 0, hexFunc          ),
-    FUNCTION(ifnull,             2, 0, 1, ifnullFunc       ),
+/*  FUNCTION(ifnull,             2, 0, 0, ifnullFunc       ), */
+    {2,SQLITE_UTF8,SQLITE_FUNC_COALESCE,0,0,ifnullFunc,0,0,"ifnull",0},
     FUNCTION(random,             0, 0, 0, randomFunc       ),
     FUNCTION(randomblob,         1, 0, 0, randomBlob       ),
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),

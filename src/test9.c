@@ -13,8 +13,6 @@
 ** This file contains obscure tests of the C-interface required
 ** for completeness. Test code is written in C for these cases
 ** as there is not much point in binding to Tcl.
-**
-** $Id: test9.c,v 1.7 2009/04/02 18:32:27 drh Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

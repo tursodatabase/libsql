@@ -12,8 +12,6 @@
 **
 ** This file contains OS interface code that is common to all
 ** architectures.
-**
-** $Id: os.c,v 1.127 2009/07/27 11:41:21 danielk1977 Exp $
 */
 #define _SQLITE_OS_C_ 1
 #include "sqliteInt.h"
@@ -140,6 +138,7 @@ int sqlite3OsFullPathname(
   int nPathOut, 
   char *zPathOut
 ){
+  zPathOut[0] = 0;
   return pVfs->xFullPathname(pVfs, zPath, nPathOut, zPathOut);
 }
 #ifndef SQLITE_OMIT_LOAD_EXTENSION

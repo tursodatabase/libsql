@@ -8,9 +8,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-**
-**
-** $Id: trigger.c,v 1.143 2009/08/10 03:57:58 shane Exp $
+** This file contains the implementation for TRIGGERs
 */
 #include "sqliteInt.h"
 
@@ -813,7 +811,8 @@ static TriggerPrg *codeRowTrigger(
   pProgram->nRef = 1;
   pPrg->pTrigger = pTrigger;
   pPrg->orconf = orconf;
-  pPrg->oldmask = 0xffffffff;
+  pPrg->aColmask[0] = 0xffffffff;
+  pPrg->aColmask[1] = 0xffffffff;
 
   /* Allocate and populate a new Parse context to use for coding the 
   ** trigger sub-program.  */
@@ -874,7 +873,8 @@ static TriggerPrg *codeRowTrigger(
     pProgram->nMem = pSubParse->nMem;
     pProgram->nCsr = pSubParse->nTab;
     pProgram->token = (void *)pTrigger;
-    pPrg->oldmask = pSubParse->oldmask;
+    pPrg->aColmask[0] = pSubParse->oldmask;
+    pPrg->aColmask[1] = pSubParse->newmask;
     sqlite3VdbeDelete(v);
   }
 
@@ -1034,28 +1034,36 @@ void sqlite3CodeRowTrigger(
 }
 
 /*
-** Triggers fired by UPDATE or DELETE statements may access values stored
-** in the old.* pseudo-table. This function returns a 32-bit bitmask
-** indicating which columns of the old.* table actually are used by
-** triggers. This information may be used by the caller to avoid having
-** to load the entire old.* record into memory when executing an UPDATE
-** or DELETE command.
+** Triggers may access values stored in the old.* or new.* pseudo-table. 
+** This function returns a 32-bit bitmask indicating which columns of the 
+** old.* or new.* tables actually are used by triggers. This information 
+** may be used by the caller, for example, to avoid having to load the entire
+** old.* record into memory when executing an UPDATE or DELETE command.
 **
 ** Bit 0 of the returned mask is set if the left-most column of the
-** table may be accessed using an old.<col> reference. Bit 1 is set if
+** table may be accessed using an [old|new].<col> reference. Bit 1 is set if
 ** the second leftmost column value is required, and so on. If there
 ** are more than 32 columns in the table, and at least one of the columns
 ** with an index greater than 32 may be accessed, 0xffffffff is returned.
 **
-** It is not possible to determine if the old.rowid column is accessed
-** by triggers. The caller must always assume that it is.
+** It is not possible to determine if the old.rowid or new.rowid column is 
+** accessed by triggers. The caller must always assume that it is.
 **
-** There is no equivalent function for new.* references.
+** Parameter isNew must be either 1 or 0. If it is 0, then the mask returned
+** applies to the old.* table. If 1, the new.* table.
+**
+** Parameter tr_tm must be a mask with one or both of the TRIGGER_BEFORE
+** and TRIGGER_AFTER bits set. Values accessed by BEFORE triggers are only
+** included in the returned mask if the TRIGGER_BEFORE bit is set in the
+** tr_tm parameter. Similarly, values accessed by AFTER triggers are only
+** included in the returned mask if the TRIGGER_AFTER bit is set in tr_tm.
 */
-u32 sqlite3TriggerOldmask(
+u32 sqlite3TriggerColmask(
   Parse *pParse,       /* Parse context */
   Trigger *pTrigger,   /* List of triggers on table pTab */
   ExprList *pChanges,  /* Changes list for any UPDATE OF triggers */
+  int isNew,           /* 1 for new.* ref mask, 0 for old.* ref mask */
+  int tr_tm,           /* Mask of TRIGGER_BEFORE|TRIGGER_AFTER */
   Table *pTab,         /* The table to code triggers from */
   int orconf           /* Default ON CONFLICT policy for trigger steps */
 ){
@@ -1063,12 +1071,15 @@ u32 sqlite3TriggerOldmask(
   u32 mask = 0;
   Trigger *p;
 
+  assert( isNew==1 || isNew==0 );
   for(p=pTrigger; p; p=p->pNext){
-    if( p->op==op && checkColumnOverlap(p->pColumns,pChanges) ){
+    if( p->op==op && (tr_tm&p->tr_tm)
+     && checkColumnOverlap(p->pColumns,pChanges)
+    ){
       TriggerPrg *pPrg;
       pPrg = getRowTrigger(pParse, p, pTab, orconf);
       if( pPrg ){
-        mask |= pPrg->oldmask;
+        mask |= pPrg->aColmask[isNew];
       }
     }
   }

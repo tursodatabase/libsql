@@ -15,8 +15,6 @@
 ** 
 ** The focus of this file is providing the TCL testing layer
 ** access to compile-time constants.
-**
-** $Id: test_config.c,v 1.50 2009/06/19 14:06:03 drh Exp $
 */
 
 #include "sqliteLimit.h"

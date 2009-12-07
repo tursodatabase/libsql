@@ -11,8 +11,6 @@
 #
 # The focus of this file is testing the r-tree extension.
 #
-# $Id: rtree1.test,v 1.7 2009/07/17 16:54:48 danielk1977 Exp $
-#
 
 if {![info exists testdir]} {
   set testdir [file join [file dirname $argv0] .. .. test]

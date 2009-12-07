@@ -13,8 +13,6 @@
 ** using the lemon parser generator to generate C code that runs
 ** the parser.  Lemon will also generate a header file containing
 ** numeric codes for all of the tokens.
-**
-** @(#) $Id: parse.y,v 1.286 2009/08/10 03:57:58 shane Exp $
 */
 
 // All token codes are small integers with #defines that begin with "TK_"
@@ -886,6 +884,19 @@ expr(A) ::= expr(X) likeop(OP) expr(Y) escape(E).  [LIKE_KW]  {
 expr(A) ::= expr(X) ISNULL|NOTNULL(E).   {spanUnaryPostfix(&A,pParse,@E,&X,&E);}
 expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
 
+%include {
+  /* A routine to convert a binary TK_IS or TK_ISNOT expression into a
+  ** unary TK_ISNULL or TK_NOTNULL expression. */
+  static void binaryToUnaryIfNull(Parse *pParse, Expr *pY, Expr *pA, int op){
+    sqlite3 *db = pParse->db;
+    if( db->mallocFailed==0 && pY->op==TK_NULL ){
+      pA->op = (u8)op;
+      sqlite3ExprDelete(db, pA->pRight);
+      pA->pRight = 0;
+    }
+  }
+}
+
 //    expr1 IS expr2
 //    expr1 IS NOT expr2
 //
@@ -894,15 +905,11 @@ expr(A) ::= expr(X) NOT NULL(E). {spanUnaryPostfix(&A,pParse,TK_NOTNULL,&X,&E);}
 // 
 expr(A) ::= expr(X) IS expr(Y).     {
   spanBinaryExpr(&A,pParse,TK_IS,&X,&Y);
-  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
-    A.pExpr->op = TK_ISNULL;
-  }
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_ISNULL);
 }
 expr(A) ::= expr(X) IS NOT expr(Y). {
   spanBinaryExpr(&A,pParse,TK_ISNOT,&X,&Y);
-  if( pParse->db->mallocFailed==0  && Y.pExpr->op==TK_NULL ){
-    A.pExpr->op = TK_NOTNULL;
-  }
+  binaryToUnaryIfNull(pParse, Y.pExpr, A.pExpr, TK_NOTNULL);
 }
 
 %include {

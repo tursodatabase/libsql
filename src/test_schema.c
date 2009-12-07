@@ -12,8 +12,6 @@
 ** Code for testing the virtual table interfaces.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
-**
-** $Id: test_schema.c,v 1.15 2008/07/07 14:50:14 drh Exp $
 */
 
 /* The code in this file defines a sqlite3 virtual-table module that

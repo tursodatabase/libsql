@@ -15,8 +15,6 @@
 ** of the SQLITE_CONFIG_PAGECACHE and sqlite3_release_memory() features.
 ** If the default page cache implementation is overriden, then neither of
 ** these two features are available.
-**
-** @(#) $Id: pcache1.c,v 1.19 2009/07/17 11:44:07 drh Exp $
 */
 
 #include "sqliteInt.h"
@@ -667,15 +665,7 @@ static void pcache1Rekey(
   pPage->iKey = iNew;
   pPage->pNext = pCache->apHash[h];
   pCache->apHash[h] = pPage;
-
-  /* The xRekey() interface is only used to move pages earlier in the
-  ** database file (in order to move all free pages to the end of the
-  ** file where they can be truncated off.)  Hence, it is not possible
-  ** for the new page number to be greater than the largest previously
-  ** fetched page.  But we retain the following test in case xRekey()
-  ** begins to be used in different ways in the future.
-  */
-  if( NEVER(iNew>pCache->iMaxKey) ){
+  if( iNew>pCache->iMaxKey ){
     pCache->iMaxKey = iNew;
   }
 

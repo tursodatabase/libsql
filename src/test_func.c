@@ -11,8 +11,6 @@
 *************************************************************************
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** implements new SQL functions used by the test scripts.
-**
-** $Id: test_func.c,v 1.16 2009/07/22 07:27:57 danielk1977 Exp $
 */
 #include "sqlite3.h"
 #include "tcl.h"

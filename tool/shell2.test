@@ -1,0 +1,85 @@
+# 2009 Nov 11
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The focus of this file is testing the CLI shell tool.
+#
+# $Id: shell2.test,v 1.7 2009/07/17 16:54:48 shaneh Exp $
+#
+
+# Test plan:
+#
+#   shell2-1.*: Misc. test of various tickets and reported errors.
+#
+
+package require sqlite3
+
+set CLI "./sqlite"
+
+proc do_test {name cmd expected} {
+  puts -nonewline "$name ..."
+  set res [uplevel $cmd]
+  if {$res eq $expected} {
+    puts Ok
+  } else {
+    puts Error
+    puts "  Got: $res"
+    puts "  Expected: $expected"
+    exit
+  }
+}
+
+proc execsql {sql} {
+  uplevel [list db eval $sql]
+}
+
+proc catchsql {sql} {
+  set rc [catch {uplevel [list db eval $sql]} msg]
+  list $rc $msg
+}
+
+proc catchcmd {db cmd} {
+  global CLI
+  set out [open cmds.txt w]
+  puts $out $cmd
+  close $out
+  set line "exec $CLI $db < cmds.txt"
+  set rc [catch { eval $line } msg]
+  list $rc $msg
+}
+
+file delete -force test.db test.db.journal
+sqlite3 db test.db
+
+
+#----------------------------------------------------------------------------
+#   shell2-1.*: Misc. test of various tickets and reported errors.
+#
+
+# Batch mode not creating databases.  
+# Reported on mailing list by Ken Zalewski.
+# Ticket [aeff892c57].
+do_test shell2-1.1.1 {
+  file delete -force foo.db
+  set rc [ catchcmd "-batch foo.db" "CREATE TABLE t1(a);" ]
+  set fexist [file exist foo.db]
+  list $rc $fexist
+} {{0 {}} 1}
+
+# Shell silently ignores extra parameters.
+# Ticket [f5cb008a65].
+do_test shell2-1.2.1 {
+  set rc [catch { eval exec $CLI \":memory:\" \"select 3\" \"select 4\" } msg]
+  list $rc \
+       [regexp {Error: too many options: "select 4"} $msg]
+} {1 1}
+
+
+

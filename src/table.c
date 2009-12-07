@@ -15,8 +15,6 @@
 **
 ** These routines are in a separate files so that they will not be linked
 ** if they are not used.
-**
-** $Id: table.c,v 1.40 2009/04/10 14:28:00 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>

@@ -5,8 +5,6 @@
 ** an historical reference.  Most of the "enhancements" have been backed
 ** out so that the functionality is now the same as standard printf().
 **
-** $Id: printf.c,v 1.104 2009/06/03 01:24:54 drh Exp $
-**
 **************************************************************************
 **
 ** The following modules is an enhanced replacement for the "printf" subroutines
@@ -647,14 +645,15 @@ void sqlite3VXPrintf(
       case etSQLESCAPE:
       case etSQLESCAPE2:
       case etSQLESCAPE3: {
-        int i, j, n, isnull;
+        int i, j, k, n, isnull;
         int needQuote;
         char ch;
         char q = ((xtype==etSQLESCAPE3)?'"':'\'');   /* Quote character */
         char *escarg = va_arg(ap,char*);
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
-        for(i=n=0; (ch=escarg[i])!=0; i++){
+        k = precision;
+        for(i=n=0; (ch=escarg[i])!=0 && k!=0; i++, k--){
           if( ch==q )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
@@ -670,15 +669,17 @@ void sqlite3VXPrintf(
         }
         j = 0;
         if( needQuote ) bufpt[j++] = q;
-        for(i=0; (ch=escarg[i])!=0; i++){
-          bufpt[j++] = ch;
+        k = i;
+        for(i=0; i<k; i++){
+          bufpt[j++] = ch = escarg[i];
           if( ch==q ) bufpt[j++] = ch;
         }
         if( needQuote ) bufpt[j++] = q;
         bufpt[j] = 0;
         length = j;
-        /* The precision is ignored on %q and %Q */
-        /* if( precision>=0 && precision<length ) length = precision; */
+        /* The precision in %q and %Q means how many input characters to
+        ** consume, not the length of the output...
+        ** if( precision>=0 && precision<length ) length = precision; */
         break;
       }
       case etTOKEN: {
@@ -954,5 +955,17 @@ void sqlite3DebugPrintf(const char *zFormat, ...){
   sqlite3StrAccumFinish(&acc);
   fprintf(stdout,"%s", zBuf);
   fflush(stdout);
+}
+#endif
+
+#ifndef SQLITE_OMIT_TRACE
+/*
+** variable-argument wrapper around sqlite3VXPrintf().
+*/
+void sqlite3XPrintf(StrAccum *p, const char *zFormat, ...){
+  va_list ap;
+  va_start(ap,zFormat);
+  sqlite3VXPrintf(p, 1, zFormat, ap);
+  va_end(ap);
 }
 #endif

@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains C code routines that are called by the parser
 ** in order to generate code for DELETE FROM statements.
-**
-** $Id: delete.c,v 1.207 2009/08/08 18:01:08 drh Exp $
 */
 #include "sqliteInt.h"
 
@@ -498,7 +496,9 @@ void sqlite3GenerateRowDelete(
 
     /* TODO: Could use temporary registers here. Also could attempt to
     ** avoid copying the contents of the rowid register.  */
-    mask = sqlite3TriggerOldmask(pParse, pTrigger, 0, pTab, onconf);
+    mask = sqlite3TriggerColmask(
+        pParse, pTrigger, 0, 0, TRIGGER_BEFORE|TRIGGER_AFTER, pTab, onconf
+    );
     mask |= sqlite3FkOldmask(pParse, pTab);
     iOld = pParse->nMem+1;
     pParse->nMem += (1 + pTab->nCol);
@@ -635,4 +635,3 @@ int sqlite3GenerateIndexKey(
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;
 }
-

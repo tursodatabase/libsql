@@ -14,8 +14,6 @@
 ** This header defines the interface to the virtual database engine
 ** or VDBE.  The VDBE implements an abstract machine that runs a
 ** simple program to access and modify the underlying database.
-**
-** $Id: vdbe.h,v 1.142 2009/07/24 17:58:53 danielk1977 Exp $
 */
 #ifndef _SQLITE_VDBE_H_
 #define _SQLITE_VDBE_H_
@@ -44,7 +42,7 @@ typedef struct SubProgram SubProgram;
 struct VdbeOp {
   u8 opcode;          /* What operation to perform */
   signed char p4type; /* One of the P4_xxx constants for p4 */
-  u8 opflags;         /* Not currently used */
+  u8 opflags;         /* Mask of the OPFLG_* flags in opcodes.h */
   u8 p5;              /* Fifth parameter is an unsigned character */
   int p1;             /* First operand */
   int p2;             /* Second parameter (often the jump destination) */
@@ -172,6 +170,7 @@ int sqlite3VdbeAddOp1(Vdbe*,int,int);
 int sqlite3VdbeAddOp2(Vdbe*,int,int,int);
 int sqlite3VdbeAddOp3(Vdbe*,int,int,int,int);
 int sqlite3VdbeAddOp4(Vdbe*,int,int,int,int,const char *zP4,int);
+int sqlite3VdbeAddOp4Int(Vdbe*,int,int,int,int,int);
 int sqlite3VdbeAddOpList(Vdbe*, int nOp, VdbeOpList const *aOp);
 void sqlite3VdbeChangeP1(Vdbe*, int addr, int P1);
 void sqlite3VdbeChangeP2(Vdbe*, int addr, int P2);
@@ -204,6 +203,9 @@ VdbeOp *sqlite3VdbeTakeOpArray(Vdbe*, int*, int*);
 void sqlite3VdbeProgramDelete(sqlite3 *, SubProgram *, int);
 sqlite3_value *sqlite3VdbeGetValue(Vdbe*, int, u8);
 void sqlite3VdbeSetVarmask(Vdbe*, int);
+#ifndef SQLITE_OMIT_TRACE
+  char *sqlite3VdbeExpandSql(Vdbe*, const char*);
+#endif
 
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);

@@ -10,8 +10,6 @@
 **
 *************************************************************************
 **
-** $Id: test_onefile.c,v 1.12 2009/04/07 11:21:29 danielk1977 Exp $
-**
 ** OVERVIEW:
 **
 **   This file contains some example code demonstrating how the SQLite 

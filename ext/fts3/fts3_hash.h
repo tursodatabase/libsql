@@ -18,8 +18,8 @@
 #define _FTS3_HASH_H_
 
 /* Forward declarations of structures. */
-typedef struct fts3Hash fts3Hash;
-typedef struct fts3HashElem fts3HashElem;
+typedef struct Fts3Hash Fts3Hash;
+typedef struct Fts3HashElem Fts3HashElem;
 
 /* A complete hash table is an instance of the following structure.
 ** The internals of this structure are intended to be opaque -- client
@@ -29,15 +29,15 @@ typedef struct fts3HashElem fts3HashElem;
 ** accessing this structure are really macros, so we can't really make
 ** this structure opaque.
 */
-struct fts3Hash {
+struct Fts3Hash {
   char keyClass;          /* HASH_INT, _POINTER, _STRING, _BINARY */
   char copyKey;           /* True if copy of key made on insert */
   int count;              /* Number of entries in this table */
-  fts3HashElem *first;    /* The first element of the array */
+  Fts3HashElem *first;    /* The first element of the array */
   int htsize;             /* Number of buckets in the hash table */
   struct _fts3ht {        /* the hash table */
     int count;               /* Number of entries with this hash */
-    fts3HashElem *chain;     /* Pointer to first entry with this hash */
+    Fts3HashElem *chain;     /* Pointer to first entry with this hash */
   } *ht;
 };
 
@@ -47,8 +47,8 @@ struct fts3Hash {
 ** Again, this structure is intended to be opaque, but it can't really
 ** be opaque because it is used by macros.
 */
-struct fts3HashElem {
-  fts3HashElem *next, *prev; /* Next and previous elements in the table */
+struct Fts3HashElem {
+  Fts3HashElem *next, *prev; /* Next and previous elements in the table */
   void *data;                /* Data associated with this element */
   void *pKey; int nKey;      /* Key associated with this element */
 };
@@ -71,10 +71,10 @@ struct fts3HashElem {
 /*
 ** Access routines.  To delete, insert a NULL pointer.
 */
-void sqlite3Fts3HashInit(fts3Hash*, int keytype, int copyKey);
-void *sqlite3Fts3HashInsert(fts3Hash*, const void *pKey, int nKey, void *pData);
-void *sqlite3Fts3HashFind(const fts3Hash*, const void *pKey, int nKey);
-void sqlite3Fts3HashClear(fts3Hash*);
+void sqlite3Fts3HashInit(Fts3Hash *pNew, char keyClass, char copyKey);
+void *sqlite3Fts3HashInsert(Fts3Hash*, const void *pKey, int nKey, void *pData);
+void *sqlite3Fts3HashFind(const Fts3Hash*, const void *pKey, int nKey);
+void sqlite3Fts3HashClear(Fts3Hash*);
 
 /*
 ** Shorthand for the functions above
@@ -88,8 +88,8 @@ void sqlite3Fts3HashClear(fts3Hash*);
 ** Macros for looping over all elements of a hash table.  The idiom is
 ** like this:
 **
-**   fts3Hash h;
-**   fts3HashElem *p;
+**   Fts3Hash h;
+**   Fts3HashElem *p;
 **   ...
 **   for(p=fts3HashFirst(&h); p; p=fts3HashNext(p)){
 **     SomeStructure *pData = fts3HashData(p);

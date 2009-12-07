@@ -11,8 +11,6 @@
 *************************************************************************
 ** Code for testing the client/server version of the SQLite library.
 ** Derived from test4.c.
-**
-** $Id: test7.c,v 1.13 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

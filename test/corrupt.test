@@ -257,4 +257,58 @@ do_test corrupt-6.1 {
   catchsql { INSERT INTO t1 VALUES( randomblob(10) ) }
 } {1 {database disk image is malformed}}
 
+ifcapable oversize_cell_check {
+  db close
+  file delete -force test.db test.db-journal
+  sqlite3 db test.db
+  execsql { 
+    PRAGMA page_size = 1024; CREATE TABLE t1(x);
+  }
+
+  do_test corrupt-7.1 {
+    for {set i 0} {$i < 39} {incr i} {
+      execsql {
+        INSERT INTO t1 VALUES(X'000100020003000400050006000700080009000A');
+      }
+    }
+  } {}
+  db close
+  
+  # Corrupt the root page of table t1 so that the first offset in the 
+  # cell-offset array points to the data for the SQL blob associated with
+  # record (rowid=10). The root page still passes the checks in btreeInitPage(),
+  # because the start of said blob looks like the start of a legitimate 
+  # page cell.
+  #
+  # Test case cc-2 overwrites the blob so that it no longer looks like a
+  # real cell. But, by the time it is overwritten, btreeInitPage() has already
+  # initialized the root page, so no corruption is detected.
+  #
+  # Test case cc-3 inserts an extra record into t1, forcing balance-deeper
+  # to run. After copying the contents of the root page to the new child,
+  # btreeInitPage() is called on the child. This time, it detects corruption
+  # (because the start of the blob associated with the (rowid=10) record
+  # no longer looks like a real cell). At one point the code assumed that 
+  # detecting corruption was not possible at that point, and an assert() failed.
+  #
+  set fd [open test.db r+]
+  fconfigure $fd -translation binary -encoding binary
+  seek $fd [expr 1024+8]
+  puts -nonewline $fd "\x03\x14"
+  close $fd
+  
+  sqlite3 db test.db
+  do_test corrupt-7.2 {
+    execsql { 
+      UPDATE t1 SET x = X'870400020003000400050006000700080009000A' 
+      WHERE rowid = 10;
+    }
+  } {}
+  do_test corrupt-7.3 {
+    catchsql {
+      INSERT INTO t1 VALUES(X'000100020003000400050006000700080009000A');
+    }
+  } {1 {database disk image is malformed}}
+}
+
 finish_test

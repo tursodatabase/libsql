@@ -13,8 +13,6 @@
 ** This file contains the implementation of an SQLite vfs wrapper that
 ** adds instrumentation to all vfs and file methods. C and Tcl interfaces
 ** are provided to control the instrumentation.
-**
-** $Id: test_osinst.c,v 1.19 2009/01/08 17:57:32 danielk1977 Exp $
 */
 
 #ifdef SQLITE_ENABLE_INSTVFS

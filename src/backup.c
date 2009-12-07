@@ -11,8 +11,6 @@
 *************************************************************************
 ** This file contains the implementation of the sqlite3_backup_XXX() 
 ** API functions and the related features.
-**
-** $Id: backup.c,v 1.19 2009/07/06 19:03:13 drh Exp $
 */
 #include "sqliteInt.h"
 #include "btreeInt.h"

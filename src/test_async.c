@@ -10,8 +10,6 @@
 **
 *************************************************************************
 **
-** $Id: test_async.c,v 1.62 2009/04/28 13:01:09 drh Exp $
-**
 ** This file contains a binding of the asynchronous IO extension interface
 ** (defined in ext/async/sqlite3async.h) to Tcl.
 */

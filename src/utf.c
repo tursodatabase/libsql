@@ -12,8 +12,6 @@
 ** This file contains routines used to translate between UTF-8, 
 ** UTF-16, UTF-16BE, and UTF-16LE.
 **
-** $Id: utf.c,v 1.73 2009/04/01 18:40:32 drh Exp $
-**
 ** Notes on UTF-8:
 **
 **   Byte-0    Byte-1    Byte-2    Byte-3    Value

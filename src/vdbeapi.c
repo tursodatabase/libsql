@@ -12,8 +12,6 @@
 **
 ** This file contains code use to implement APIs that are part of the
 ** VDBE.
-**
-** $Id: vdbeapi.c,v 1.167 2009/06/25 01:47:12 drh Exp $
 */
 #include "sqliteInt.h"
 #include "vdbeInt.h"
@@ -1172,8 +1170,7 @@ const char *sqlite3_bind_parameter_name(sqlite3_stmt *pStmt, int i){
 ** with that name.  If there is no variable with the given name,
 ** return 0.
 */
-int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
-  Vdbe *p = (Vdbe*)pStmt;
+int sqlite3VdbeParameterIndex(Vdbe *p, const char *zName, int nName){
   int i;
   if( p==0 ){
     return 0;
@@ -1182,12 +1179,15 @@ int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
   if( zName ){
     for(i=0; i<p->nVar; i++){
       const char *z = p->azVar[i];
-      if( z && strcmp(z,zName)==0 ){
+      if( z && memcmp(z,zName,nName)==0 && z[nName]==0 ){
         return i+1;
       }
     }
   }
   return 0;
+}
+int sqlite3_bind_parameter_index(sqlite3_stmt *pStmt, const char *zName){
+  return sqlite3VdbeParameterIndex((Vdbe*)pStmt, zName, sqlite3Strlen30(zName));
 }
 
 /*

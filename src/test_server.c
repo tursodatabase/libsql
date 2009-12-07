@@ -10,8 +10,6 @@
 **
 ******************************************************************************
 **
-** $Id: test_server.c,v 1.8 2008/06/26 10:41:19 danielk1977 Exp $
-**
 ** This file contains demonstration code.  Nothing in this file gets compiled
 ** or linked into the SQLite library unless you use a non-standard option:
 **

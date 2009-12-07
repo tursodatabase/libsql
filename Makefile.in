@@ -175,7 +175,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo backup.lo bitvec.lo btmutex.lo \
         random.lo resolve.lo rowset.lo select.lo status.lo \
         table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
-        vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo \
+        vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbetrace.lo \
         walker.lo where.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
@@ -272,6 +272,7 @@ SRC = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbeblob.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
   $(TOP)/src/walker.c \
@@ -311,15 +312,17 @@ SRC += \
 SRC += \
   $(TOP)/ext/fts3/fts3.c \
   $(TOP)/ext/fts3/fts3.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_expr.c \
-  $(TOP)/ext/fts3/fts3_expr.h \
   $(TOP)/ext/fts3/fts3_hash.c \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_icu.c \
   $(TOP)/ext/fts3/fts3_porter.c \
+  $(TOP)/ext/fts3/fts3_snippet.c \
   $(TOP)/ext/fts3/fts3_tokenizer.h \
   $(TOP)/ext/fts3/fts3_tokenizer.c \
-  $(TOP)/ext/fts3/fts3_tokenizer1.c
+  $(TOP)/ext/fts3/fts3_tokenizer1.c \
+  $(TOP)/ext/fts3/fts3_write.c
 SRC += \
   $(TOP)/ext/icu/sqliteicu.h \
   $(TOP)/ext/icu/icu.c
@@ -362,6 +365,7 @@ TESTSRC2 = \
   $(TOP)/src/vdbeapi.c \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbemem.c \
+  $(TOP)/src/vdbetrace.c \
   $(TOP)/src/where.c \
   parse.c
 
@@ -386,6 +390,7 @@ TESTSRC = \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_hexio.c \
   $(TOP)/src/test_init.c \
+  $(TOP)/src/test_intarray.c \
   $(TOP)/src/test_journal.c \
   $(TOP)/src/test_malloc.c \
   $(TOP)/src/test_mutex.c \
@@ -430,7 +435,7 @@ HDR += \
   $(TOP)/ext/fts2/fts2_tokenizer.h
 HDR += \
   $(TOP)/ext/fts3/fts3.h \
-  $(TOP)/ext/fts3/fts3_expr.h \
+  $(TOP)/ext/fts3/fts3Int.h \
   $(TOP)/ext/fts3/fts3_hash.h \
   $(TOP)/ext/fts3/fts3_tokenizer.h
 HDR += \
@@ -439,7 +444,7 @@ HDR += \
   $(TOP)/ext/icu/sqliteicu.h
 HDR += \
   $(TOP)/ext/sqlrr/sqlrr.h
-  
+
 # If using the amalgamation, use sqlite3.c directly to build the test
 # fixture.  Otherwise link against libsqlite3.la.  (This distinction is
 # necessary because the test fixture requires non-API symbols which are
@@ -460,13 +465,6 @@ Makefile: $(TOP)/Makefile.in
 
 sqlite3.pc: $(TOP)/sqlite3.pc.in
 	./config.status
-
-# Generate the file "last_change" which contains the date of change
-# of the most recently modified source code file
-#
-last_change:	$(SRC)
-	cat $(SRC) | grep '$$Id: ' | sort -k 5 | tail -1 \
-          | $(NAWK) '{print $$5,$$6}' >last_change
 
 libsqlite3.la:	$(LIBOBJ)
 	$(LTLINK) -o $@ $(LIBOBJ) $(TLIBS) \
@@ -737,6 +735,9 @@ vdbeblob.lo:	$(TOP)/src/vdbeblob.c $(HDR)
 
 vdbemem.lo:	$(TOP)/src/vdbemem.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbemem.c
+
+vdbetrace.lo:	$(TOP)/src/vdbetrace.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vdbetrace.c
 
 vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c

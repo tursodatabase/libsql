@@ -13,8 +13,6 @@
 ** This file contains routines used for walking the parser tree and
 ** resolve all identifiers by associating them with a particular
 ** table and column.
-**
-** $Id: resolve.c,v 1.30 2009/06/15 23:15:59 drh Exp $
 */
 #include "sqliteInt.h"
 #include <stdlib.h>
@@ -89,7 +87,13 @@ static void resolveAlias(
     pDup->pColl = pExpr->pColl;
     pDup->flags |= EP_ExpCollate;
   }
-  sqlite3ExprClear(db, pExpr);
+
+  /* Before calling sqlite3ExprDelete(), set the EP_Static flag. This 
+  ** prevents ExprDelete() from deleting the Expr structure itself,
+  ** allowing it to be repopulated by the memcpy() on the following line.
+  */
+  ExprSetProperty(pExpr, EP_Static);
+  sqlite3ExprDelete(db, pExpr);
   memcpy(pExpr, pDup, sizeof(*pExpr));
   sqlite3DbFree(db, pDup);
 }
@@ -260,6 +264,10 @@ static int lookupName(
             testcase( iCol==31 );
             testcase( iCol==32 );
             pParse->oldmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
+          }else{
+            testcase( iCol==31 );
+            testcase( iCol==32 );
+            pParse->newmask |= (iCol>=32 ? 0xffffffff : (((u32)1)<<iCol));
           }
           pExpr->iColumn = (i16)iCol;
           pExpr->pTab = pTab;
@@ -407,11 +415,7 @@ Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
     if( p->pTab->iPKey==iCol ){
       p->iColumn = -1;
     }else{
-#if SQLITE_MAX_VARIABLE_NUMBER<=32767
-      p->iColumn = (i16)iCol;
-#else
-      p->iColumn = iCol;
-#endif
+      p->iColumn = (ynVar)iCol;
       pItem->colUsed |= ((Bitmask)1)<<(iCol>=BMS ? BMS-1 : iCol);
     }
     ExprSetProperty(p, EP_Resolved);

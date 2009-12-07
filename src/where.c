@@ -15,8 +15,6 @@
 ** rows.  Indices are selected and used to speed the search when doing
 ** so is applicable.  Because this module is responsible for selecting
 ** indices, you might also think of this module as the "query optimizer".
-**
-** $Id: where.c,v 1.411 2009/07/31 06:14:52 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 
@@ -2596,16 +2594,39 @@ static void disableTerm(WhereLevel *pLevel, WhereTerm *pTerm){
 ** Code an OP_Affinity opcode to apply the column affinity string zAff
 ** to the n registers starting at base. 
 **
-** Buffer zAff was allocated using sqlite3DbMalloc(). It is the 
-** responsibility of this function to arrange for it to be eventually
-** freed using sqlite3DbFree().
+** As an optimization, SQLITE_AFF_NONE entries (which are no-ops) at the
+** beginning and end of zAff are ignored.  If all entries in zAff are
+** SQLITE_AFF_NONE, then no code gets generated.
+**
+** This routine makes its own copy of zAff so that the caller is free
+** to modify zAff after this routine returns.
 */
 static void codeApplyAffinity(Parse *pParse, int base, int n, char *zAff){
   Vdbe *v = pParse->pVdbe;
+  if( zAff==0 ){
+    assert( pParse->db->mallocFailed );
+    return;
+  }
   assert( v!=0 );
-  sqlite3VdbeAddOp2(v, OP_Affinity, base, n);
-  sqlite3VdbeChangeP4(v, -1, zAff, P4_DYNAMIC);
-  sqlite3ExprCacheAffinityChange(pParse, base, n);
+
+  /* Adjust base and n to skip over SQLITE_AFF_NONE entries at the beginning
+  ** and end of the affinity string.
+  */
+  while( n>0 && zAff[0]==SQLITE_AFF_NONE ){
+    n--;
+    base++;
+    zAff++;
+  }
+  while( n>1 && zAff[n-1]==SQLITE_AFF_NONE ){
+    n--;
+  }
+
+  /* Code the OP_Affinity opcode if there is anything left to do. */
+  if( n>0 ){
+    sqlite3VdbeAddOp2(v, OP_Affinity, base, n);
+    sqlite3VdbeChangeP4(v, -1, zAff, n);
+    sqlite3ExprCacheAffinityChange(pParse, base, n);
+  }
 }
 
 
@@ -2676,7 +2697,7 @@ static int codeEqualityTerm(
 
 /*
 ** Generate code that will evaluate all == and IN constraints for an
-** index.  The values for all constraints are left on the stack.
+** index.
 **
 ** For example, consider table t1(a,b,c,d,e,f) with index i1(a,b,c).
 ** Suppose the WHERE clause is this:  a==5 AND b IN (1,2,3) AND c>5 AND c<10
@@ -2688,7 +2709,8 @@ static int codeEqualityTerm(
 **
 ** In the example above nEq==2.  But this subroutine works for any value
 ** of nEq including 0.  If nEq==0, this routine is nearly a no-op.
-** The only thing it does is allocate the pLevel->iMem memory cell.
+** The only thing it does is allocate the pLevel->iMem memory cell and
+** compute the affinity string.
 **
 ** This routine always allocates at least one memory cell and returns
 ** the index of that memory cell. The code that
@@ -2766,11 +2788,15 @@ static int codeAllEqualityTerms(
     testcase( pTerm->eOperator & WO_ISNULL );
     testcase( pTerm->eOperator & WO_IN );
     if( (pTerm->eOperator & (WO_ISNULL|WO_IN))==0 ){
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+j, pLevel->addrBrk);
-      if( zAff 
-       && sqlite3CompareAffinity(pTerm->pExpr->pRight, zAff[j])==SQLITE_AFF_NONE
-      ){
-        zAff[j] = SQLITE_AFF_NONE;
+      Expr *pRight = pTerm->pExpr->pRight;
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+j, pLevel->addrBrk);
+      if( zAff ){
+        if( sqlite3CompareAffinity(pRight, zAff[j])==SQLITE_AFF_NONE ){
+          zAff[j] = SQLITE_AFF_NONE;
+        }
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[j]) ){
+          zAff[j] = SQLITE_AFF_NONE;
+        }
       }
     }
   }
@@ -2850,6 +2876,7 @@ static Bitmask codeOneLoopStart(
     const struct sqlite3_index_constraint *aConstraint =
                                                 pVtabIdx->aConstraint;
 
+    sqlite3ExprCachePush(pParse);
     iReg = sqlite3GetTempRange(pParse, nConstraint+2);
     for(j=1; j<=nConstraint; j++){
       for(k=0; k<nConstraint; k++){
@@ -2876,6 +2903,7 @@ static Bitmask codeOneLoopStart(
     pLevel->p1 = iCur;
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
     sqlite3ReleaseTempRange(pParse, iReg, nConstraint+2);
+    sqlite3ExprCachePop(pParse, 1);
   }else
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
 
@@ -3096,15 +3124,18 @@ static Bitmask codeOneLoopStart(
     if( pRangeStart ){
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
-      if( zAff 
-       && sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE
-      ){
-        /* Since the comparison is to be performed with no conversions applied
-        ** to the operands, set the affinity to apply to pRight to 
-        ** SQLITE_AFF_NONE.  */
-        zAff[nConstraint] = SQLITE_AFF_NONE;
-      }
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
+      if( zAff ){
+        if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
+          /* Since the comparison is to be performed with no conversions
+          ** applied to the operands, set the affinity to apply to pRight to 
+          ** SQLITE_AFF_NONE.  */
+          zAff[nConstraint] = SQLITE_AFF_NONE;
+        }
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[nConstraint]) ){
+          zAff[nConstraint] = SQLITE_AFF_NONE;
+        }
+      }  
       nConstraint++;
     }else if( isMinQuery ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
@@ -3121,8 +3152,7 @@ static Bitmask codeOneLoopStart(
     testcase( op==OP_SeekGe );
     testcase( op==OP_SeekLe );
     testcase( op==OP_SeekLt );
-    sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase, 
-                      SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
+    sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
 
     /* Load the value for the inequality constraint at the end of the
     ** range (if any).
@@ -3132,19 +3162,22 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeEnd->pExpr->pRight;
       sqlite3ExprCacheRemove(pParse, regBase+nEq);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
-      sqlite3VdbeAddOp2(v, OP_IsNull, regBase+nEq, addrNxt);
-      zAff = sqlite3DbStrDup(pParse->db, zAff);
-      if( zAff 
-       && sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE
-      ){
-        /* Since the comparison is to be performed with no conversions applied
-        ** to the operands, set the affinity to apply to pRight to 
-        ** SQLITE_AFF_NONE.  */
-        zAff[nConstraint] = SQLITE_AFF_NONE;
-      }
+      sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
+      if( zAff ){
+        if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
+          /* Since the comparison is to be performed with no conversions
+          ** applied to the operands, set the affinity to apply to pRight to 
+          ** SQLITE_AFF_NONE.  */
+          zAff[nConstraint] = SQLITE_AFF_NONE;
+        }
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[nConstraint]) ){
+          zAff[nConstraint] = SQLITE_AFF_NONE;
+        }
+      }  
       codeApplyAffinity(pParse, regBase, nEq+1, zAff);
       nConstraint++;
     }
+    sqlite3DbFree(pParse->db, zAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
@@ -3155,8 +3188,7 @@ static Bitmask codeOneLoopStart(
     testcase( op==OP_IdxGE );
     testcase( op==OP_IdxLT );
     if( op!=OP_Noop ){
-      sqlite3VdbeAddOp4(v, op, iIdxCur, addrNxt, regBase,
-                        SQLITE_INT_TO_PTR(nConstraint), P4_INT32);
+      sqlite3VdbeAddOp4Int(v, op, iIdxCur, addrNxt, regBase, nConstraint);
       sqlite3VdbeChangeP5(v, endEq!=bRev ?1:0);
     }
 
@@ -3285,9 +3317,8 @@ static Bitmask codeOneLoopStart(
             int r;
             r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
                                          regRowid, 0);
-            sqlite3VdbeAddOp4(v, OP_RowSetTest, regRowset,
-                              sqlite3VdbeCurrentAddr(v)+2,
-                              r, SQLITE_INT_TO_PTR(iSet), P4_INT32);
+            sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset,
+                                 sqlite3VdbeCurrentAddr(v)+2, r, iSet);
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
@@ -3818,7 +3849,8 @@ WhereInfo *sqlite3WhereBegin(
         Bitmask b = pTabItem->colUsed;
         int n = 0;
         for(; b; b=b>>1, n++){}
-        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, SQLITE_INT_TO_PTR(n), P4_INT32);
+        sqlite3VdbeChangeP4(v, sqlite3VdbeCurrentAddr(v)-1, 
+                            SQLITE_INT_TO_PTR(n), P4_INT32);
         assert( n<=pTab->nCol );
       }
     }else{
@@ -3946,7 +3978,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     if( pLevel->iLeftJoin ){
       int addr;
       addr = sqlite3VdbeAddOp1(v, OP_IfPos, pLevel->iLeftJoin);
-      sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
+      assert( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
+           || (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 );
+      if( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0 ){
+        sqlite3VdbeAddOp1(v, OP_NullRow, pTabList->a[i].iCursor);
+      }
       if( pLevel->iIdxCur>=0 ){
         sqlite3VdbeAddOp1(v, OP_NullRow, pLevel->iIdxCur);
       }
@@ -3997,7 +4033,6 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       int k, j, last;
       VdbeOp *pOp;
       Index *pIdx = pLevel->plan.u.pIdx;
-      int useIndexOnly = pLevel->plan.wsFlags & WHERE_IDX_ONLY;
 
       assert( pIdx!=0 );
       pOp = sqlite3VdbeGetOp(v, pWInfo->iTop);
@@ -4012,12 +4047,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
               break;
             }
           }
-          assert(!useIndexOnly || j<pIdx->nColumn);
+          assert( (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0
+               || j<pIdx->nColumn );
         }else if( pOp->opcode==OP_Rowid ){
           pOp->p1 = pLevel->iIdxCur;
           pOp->opcode = OP_IdxRowid;
-        }else if( pOp->opcode==OP_NullRow && useIndexOnly ){
-          pOp->opcode = OP_Noop;
         }
       }
     }

@@ -13,8 +13,6 @@
 ** implement the programmer interface to the library.  Routines in
 ** other files are for internal use by SQLite and should not be
 ** accessed by users of the library.
-**
-** $Id: legacy.c,v 1.35 2009/08/07 16:56:00 danielk1977 Exp $
 */
 
 #include "sqliteInt.h"

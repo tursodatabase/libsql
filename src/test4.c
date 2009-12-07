@@ -10,8 +10,6 @@
 **
 *************************************************************************
 ** Code for testing the the SQLite library in a multithreaded environment.
-**
-** $Id: test4.c,v 1.24 2008/10/12 00:27:54 shane Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

@@ -12,8 +12,6 @@
 ** Code for testing all sorts of SQLite interfaces.  This code
 ** is not included in the SQLite library.  It is used for automated
 ** testing of the SQLite library.
-**
-** $Id: test1.c,v 1.354 2009/08/10 04:37:50 danielk1977 Exp $
 */
 #include "sqliteInt.h"
 #include "tcl.h"

@@ -12,11 +12,10 @@
 # and then uses them to do some basic tests that FTS3 is internally
 # working as expected.
 #
-# $Id: fts3c.test,v 1.1 2008/07/03 19:53:22 shess Exp $
-#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/fts3_common.tcl
 
 # If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 {
@@ -25,125 +24,24 @@ ifcapable !fts3 {
 }
 
 #*************************************************************************
-# Probe to see if support for these functions is compiled in.
-# TODO(shess): Change main.mk to do the right thing and remove this test.
-db eval {
-  DROP TABLE IF EXISTS t1;
-  CREATE VIRTUAL TABLE t1 USING fts3(c);
-  INSERT INTO t1 (docid, c) VALUES (1, 'x');
-}
-
-set s {SELECT dump_terms(t1, 1) FROM t1 LIMIT 1}
-set r {1 {unable to use function dump_terms in the requested context}}
-if {[catchsql $s]==$r} {
-  finish_test
-  return
-}
-
-#*************************************************************************
-# Test that the new functions give appropriate errors.
-do_test fts3c-0.0 {
-  catchsql {
-    SELECT dump_terms(t1, 1) FROM t1 LIMIT 1;
-  }
-} {1 {dump_terms: incorrect arguments}}
-
-do_test fts3c-0.1 {
-  catchsql {
-    SELECT dump_terms(t1, 0, 0, 0) FROM t1 LIMIT 1;
-  }
-} {1 {dump_terms: incorrect arguments}}
-
-do_test fts3c-0.2 {
-  catchsql {
-    SELECT dump_terms(1, t1) FROM t1 LIMIT 1;
-  }
-} {1 {unable to use function dump_terms in the requested context}}
-
-do_test fts3c-0.3 {
-  catchsql {
-    SELECT dump_terms(t1, 16, 16) FROM t1 LIMIT 1;
-  }
-} {1 {dump_terms: segment not found}}
-
-do_test fts3c-0.4 {
-  catchsql {
-    SELECT dump_doclist(t1) FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: incorrect arguments}}
-
-do_test fts3c-0.5 {
-  catchsql {
-    SELECT dump_doclist(t1, NULL) FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: empty second argument}}
-
-do_test fts3c-0.6 {
-  catchsql {
-    SELECT dump_doclist(t1, '') FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: empty second argument}}
-
-do_test fts3c-0.7 {
-  catchsql {
-    SELECT dump_doclist(t1, 'a', 0) FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: incorrect arguments}}
-
-do_test fts3c-0.8 {
-  catchsql {
-    SELECT dump_doclist(t1, 'a', 0, 0, 0) FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: incorrect arguments}}
-
-do_test fts3c-0.9 {
-  catchsql {
-    SELECT dump_doclist(t1, 'a', 16, 16) FROM t1 LIMIT 1;
-  }
-} {1 {dump_doclist: segment not found}}
-
-#*************************************************************************
 # Utility function to check for the expected terms in the segment
 # level/index.  _all version does same but for entire index.
 proc check_terms {test level index terms} {
-  # TODO(shess): Figure out why uplevel in do_test can't catch
-  # $level and $index directly.
-  set ::level $level
-  set ::index $index
-  do_test $test.terms {
-    execsql {
-      SELECT dump_terms(t1, $::level, $::index) FROM t1 LIMIT 1;
-    }
-  } [list $terms]
+  set where "level = $level AND idx = $index"
+  do_test $test.terms [list fts3_terms t1 $where] $terms
 }
 proc check_terms_all {test terms} {
-  do_test $test.terms {
-    execsql {
-      SELECT dump_terms(t1) FROM t1 LIMIT 1;
-    }
-  } [list $terms]
+  do_test $test.terms [list fts3_terms t1 1] $terms
 }
 
 # Utility function to check for the expected doclist for the term in
 # segment level/index.  _all version does same for entire index.
 proc check_doclist {test level index term doclist} {
-  # TODO(shess): Again, why can't the non-:: versions work?
-  set ::term $term
-  set ::level $level
-  set ::index $index
-  do_test $test {
-    execsql {
-      SELECT dump_doclist(t1, $::term, $::level, $::index) FROM t1 LIMIT 1;
-    }
-  } [list $doclist]
+  set where "level = $level AND idx = $index"
+  do_test $test [list fts3_doclist t1 $term $where] $doclist
 }
 proc check_doclist_all {test term doclist} {
-  set ::term $term
-  do_test $test {
-    execsql {
-      SELECT dump_doclist(t1, $::term) FROM t1 LIMIT 1;
-    }
-  } [list $doclist]
+  do_test $test [list fts3_doclist t1 $term 1] $doclist
 }
 
 #*************************************************************************

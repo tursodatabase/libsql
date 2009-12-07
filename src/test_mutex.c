@@ -9,8 +9,7 @@
 **    May you share freely, never taking more than you give.
 **
 *************************************************************************
-** 
-** $Id: test_mutex.c,v 1.15 2009/03/20 13:15:30 drh Exp $
+** This file contains test logic for the sqlite3_mutex interfaces.
 */
 
 #include "tcl.h"

@@ -13,8 +13,6 @@
 ** This file contains the implementation of some Tcl commands used to
 ** test that sqlite3 database handles may be concurrently accessed by 
 ** multiple threads. Right now this only works on unix.
-**
-** $Id: test_thread.c,v 1.15 2009/03/27 12:32:56 drh Exp $
 */
 
 #include "sqliteInt.h"

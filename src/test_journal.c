@@ -14,8 +14,6 @@
 ** an existing VFS. The code in this file attempts to verify that SQLite
 ** correctly populates and syncs a journal file before writing to a
 ** corresponding database file.
-**
-** $Id: test_journal.c,v 1.17 2009/06/26 10:39:36 danielk1977 Exp $
 */
 #if SQLITE_TEST          /* This file is used for testing only */
 
