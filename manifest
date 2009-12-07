@@ -1,5 +1,5 @@
-C Move\ssome\sSQLITE_TEST\scode\sdown\sto\savoid\smixing\scode\sand\svariable\sdeclarations.\s\s\nFix\sa\stest\sfor\shigh-order\sbit\shandling\sin\ssqlite3Fts3InitTokenizer().
-D 2009-12-07T16:18:38
+C Add\sextra\stests\sfor\sparsing\sof\swhitespace\sin\stokenizer\sdeclarations,.
+D 2009-12-07T16:23:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -381,7 +381,7 @@ F test/fts3_common.tcl 31935839b1b601a5955572cb4e8060513c96bde0
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
-F test/fts3ad.test 32a114c6f214081f244f642bde9fd5517938788e
+F test/fts3ad.test e40570cb6f74f059129ad48bcef3d7cbc20dda49
 F test/fts3ae.test ce32a13b34b0260928e4213b4481acf801533bda
 F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
 F test/fts3ag.test 38d9c7dd4b607929498e8e0b32299af5665da1ab
@@ -776,7 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 78f6baffb0289a173b0bb56bc54bf0f32e6c957d
-R 3bcb0e3fb47a10ab9a562543f44d2298
-U shaneh
-Z 906f6dbc13d419fefe08c1236d44ae2f
+P fad43d290f9489726aaa2e999a17ea17ed78b27b
+R 641ad4159322f9a99ab3109dadfe7fb7
+U dan
+Z 20ce2e776fa4f674daf8efa37760bafd
