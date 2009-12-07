@@ -32,6 +32,9 @@ proc write_test {tn tbl sql} {
 proc read_test {tn sql result} {
   uplevel [list do_select_test e_fts3-$tn $sql $result]
 }
+proc error_test {tn sql result} {
+  uplevel [list do_error_test e_fts3-$tn $sql $result]
+}
 
 
 #-------------------------------------------------------------------------
@@ -43,7 +46,7 @@ proc read_test {tn sql result} {
 #   DO_MALLOC_TEST=1: Run tests with transient OOM errors.
 #   DO_MALLOC_TEST=2: Run tests with persistent OOM errors.
 #
-foreach DO_MALLOC_TEST {0 1 2} {
+foreach DO_MALLOC_TEST [lrange {0 1 2} 0 end] {
 
 # Reset the database and database connection. If this iteration of the 
 # [foreach] loop is testing with OOM errors, disable the lookaside buffer.
@@ -435,5 +438,32 @@ read_test 1.8.2.4 {
 # End of tests of example code in fts3.html
 #-------------------------------------------------------------------------
 
+#-------------------------------------------------------------------------
+# Test that errors in the arguments passed to the snippet and offsets
+# functions are handled correctly.
+#
+set DO_MALLOC_TEST 0
+ddl_test   2.1.1 { CREATE VIRTUAL TABLE t1 USING fts3(a, b) }
+write_test 2.1.2 t1_content { 
+  INSERT INTO t1 VALUES('one two three', x'A1B2C3D4E5F6');
+}
+error_test 2.1.3 {
+  SELECT offsets(a) FROM t1 WHERE a MATCH 'one'
+} {illegal first argument to offsets}
+error_test 2.1.4 {
+  SELECT offsets(b) FROM t1 WHERE a MATCH 'one'
+} {illegal first argument to offsets}
+error_test 2.1.5 {
+  SELECT optimize(a) FROM t1 LIMIT 1
+} {illegal first argument to optimize}
+error_test 2.1.6 {
+  SELECT snippet(a) FROM t1 WHERE a MATCH 'one'
+} {illegal first argument to snippet}
+error_test 2.1.7 {
+  SELECT snippet() FROM t1 WHERE a MATCH 'one'
+} {unable to use function snippet in the requested context}
+error_test 2.1.8 {
+  SELECT snippet(a, b, 'A', 'B', 'C') FROM t1 WHERE a MATCH 'one'
+} {wrong number of arguments to function snippet()}
 
 finish_test

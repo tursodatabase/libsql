@@ -646,7 +646,7 @@ int fts3InitVtab(
   int nName;
 
 #ifdef SQLITE_TEST
-  char *zTestParam = 0;
+  const char *zTestParam = 0;
   if( strncmp(argv[argc-1], "test:", 5)==0 ){
     zTestParam = argv[argc-1];
     argc--;
@@ -1470,8 +1470,7 @@ static int fts3DoclistMerge(
       break;
     }
 
-    case MERGE_POS_NEAR:
-    case MERGE_NEAR: {
+    default: assert( mergetype==MERGE_POS_NEAR || mergetype==MERGE_NEAR ); {
       char *aTmp = 0;
       char **ppPos = 0;
       if( mergetype==MERGE_POS_NEAR ){
@@ -1506,9 +1505,6 @@ static int fts3DoclistMerge(
       sqlite3_free(aTmp);
       break;
     }
-
-    default:
-      assert(!"Invalid mergetype value passed to fts3DoclistMerge()");
   }
 
   *pnBuffer = (int)(p-aBuffer);
@@ -2085,7 +2081,7 @@ static int fts3FunctionArg(
 ){
   Fts3Cursor *pRet;
   if( sqlite3_value_type(pVal)!=SQLITE_BLOB 
-   && sqlite3_value_bytes(pVal)!=sizeof(Fts3Cursor *)
+   || sqlite3_value_bytes(pVal)!=sizeof(Fts3Cursor *)
   ){
     char *zErr = sqlite3_mprintf("illegal first argument to %s", zFunc);
     sqlite3_result_error(pContext, zErr, -1);
@@ -2101,22 +2097,31 @@ static int fts3FunctionArg(
 ** Implementation of the snippet() function for FTS3
 */
 static void fts3SnippetFunc(
-  sqlite3_context *pContext,
-  int argc,
-  sqlite3_value **argv
+  sqlite3_context *pContext,      /* SQLite function call context */
+  int nVal,                       /* Size of apVal[] array */
+  sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
   const char *zStart = "<b>";
   const char *zEnd = "</b>";
   const char *zEllipsis = "<b>...</b>";
 
-  if( argc<1 || argc>4 ) return;
-  if( fts3FunctionArg(pContext, "snippet", argv[0], &pCsr) ) return;
+  /* There must be at least one argument passed to this function (otherwise
+  ** the non-overloaded version would have been called instead of this one).
+  */
+  assert( nVal>=1 );
 
-  switch( argc ){
-    case 4: zEllipsis = (const char*)sqlite3_value_text(argv[3]);
-    case 3: zEnd = (const char*)sqlite3_value_text(argv[2]);
-    case 2: zStart = (const char*)sqlite3_value_text(argv[1]);
+  if( nVal>4 ){
+    sqlite3_result_error(pContext, 
+        "wrong number of arguments to function snippet()", -1);
+    return;
+  }
+  if( fts3FunctionArg(pContext, "snippet", apVal[0], &pCsr) ) return;
+
+  switch( nVal ){
+    case 4: zEllipsis = (const char*)sqlite3_value_text(apVal[3]);
+    case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
+    case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
   }
 
   sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
