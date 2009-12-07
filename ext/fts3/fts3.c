@@ -645,6 +645,9 @@ int fts3InitVtab(
   int nDb;
   int nName;
 
+  const char *zTokenizer = 0;               /* Name of tokenizer to use */
+  sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
+
 #ifdef SQLITE_TEST
   const char *zTestParam = 0;
   if( strncmp(argv[argc-1], "test:", 5)==0 ){
@@ -652,9 +655,6 @@ int fts3InitVtab(
     argc--;
   }
 #endif
-
-  const char *zTokenizer = 0;               /* Name of tokenizer to use */
-  sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
   nDb = (int)strlen(argv[1]) + 1;
   nName = (int)strlen(argv[2]) + 1;
