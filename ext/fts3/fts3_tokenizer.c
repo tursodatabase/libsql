@@ -166,7 +166,6 @@ int sqlite3Fts3InitTokenizer(
   if( !z ){
     zCopy = sqlite3_mprintf("simple");
   }else{
-    while( !(*z&0x80) && isspace(*z) ) z++;
     if( sqlite3_strnicmp(z, "tokenize", 8) || fts3IsIdChar(z[8])){
       return SQLITE_OK;
     }

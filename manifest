@@ -1,5 +1,5 @@
-C Add\sextra\stests\sfor\sparsing\sof\swhitespace\sin\stokenizer\sdeclarations,.
-D 2009-12-07T16:23:43
+C Remove\sa\sredundant\sline\sfrom\sfts3.
+D 2009-12-07T16:26:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -65,7 +65,7 @@ F ext/fts3/fts3_hash.h d410ff2c93c81a56b927fcf07b2099ccbfa7a479
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
 F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
-F ext/fts3/fts3_tokenizer.c 3607b104612075d22e1369cb41b57eff2f8f8c17
+F ext/fts3/fts3_tokenizer.c 52112e7b50fbf24eb68e356081c5969917406cc6
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
 F ext/fts3/fts3_write.c ec51fb6886f910e78ae32158ec0301aa675f52d8
@@ -776,7 +776,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fad43d290f9489726aaa2e999a17ea17ed78b27b
-R 641ad4159322f9a99ab3109dadfe7fb7
+P 5030ba2e308df6aeef2ed6b2e153f7baf2c81262
+R 5d0b6a47a50c8a9cdc60d3d4d61a8cf2
 U dan
-Z 20ce2e776fa4f674daf8efa37760bafd
+Z c8ec237a471a3ace4effcad84a1af14e
