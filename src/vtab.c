@@ -670,8 +670,8 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     pParse->db = db;
   
     if( SQLITE_OK==sqlite3RunParser(pParse, zCreateTable, &zErr) 
-     && !db->mallocFailed
      && pParse->pNewTable
+     && !db->mallocFailed
      && !pParse->pNewTable->pSelect
      && (pParse->pNewTable->tabFlags & TF_Virtual)==0
     ){
