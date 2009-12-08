@@ -814,5 +814,25 @@ do_test attach-9.3 {
   }
 } {1 2 3 4}
 
-
+# Ticket [abe728bbc311d81334dae9762f0db87c07a98f79].
+# Multi-database commit on an attached TEMP database.
+#
+do_test attach-10.1 {
+  execsql {
+    ATTACH '' AS noname;
+    ATTACH ':memory:' AS inmem;
+    BEGIN;
+    CREATE TABLE noname.noname(x);
+    CREATE TABLE inmem.inmem(y);
+    CREATE TABLE main.main(z);
+    COMMIT;
+    SELECT name FROM noname.sqlite_master;
+    SELECT name FROM inmem.sqlite_master;
+  }
+} {noname inmem}
+do_test attach-10.2 {
+  lrange [execsql {
+    PRAGMA database_list;
+  }] 9 end
+} {4 noname {} 5 inmem {}}
 finish_test

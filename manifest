@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Avoid\sdereferencing\sa\snull\spointer\swhen\sdoing\sa\smulti-database\scomment\swhere\none\sor\smore\sof\sthe\sdatabases\sis\san\sATTACH-ed\sTEMP\sdatabase.\nTicket\s[abe728bbc311d].
-D 2009-12-08T13:36:56
+C Add\stest\scases\sfor\sticket\s[abe728bbc311].
+D 2009-12-08T13:44:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -239,7 +239,7 @@ F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
 F test/async4.test aafa6328c559d3e4bb587de770cbdecfca06f0da
 F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
-F test/attach.test 826f7676c41c12b035181d257299b8c8a17d64f3
+F test/attach.test ce9660e51768fab93cf129787be886c5d6c4fd81
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
 F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
@@ -779,14 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 003f3ed10cdb64b73d6df00e28260dd3491e1f16
-R 2e0c4e6b4164866175ea42dfc524a061
+P f43e37e0a4cc7c15c996f4404dc775636396567d
+R a6057ef92cd48c83669480ba55d2643b
 U drh
-Z 2b458c1aff5f1b0ec980faf2222eb1eb
+Z fd58c7a3cb08c42b6b4250242de672b0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLHlZ/oxKgR168RlERAu5SAKCNLRsVczdhX6Qajk56HvdknxZVXQCeIoOh
-4AD78jR01j/xAXqmd6RIs5k=
-=6zb5
+iD8DBQFLHlg5oxKgR168RlERAvB9AJ4nxLXTHzdJNAWzf6gE5d3v6rF0PwCdFQAo
+Yt9AhO556H3dKXJY78hPmrU=
+=P/Ej
 -----END PGP SIGNATURE-----
