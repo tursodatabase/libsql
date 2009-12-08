@@ -1266,8 +1266,9 @@ void sqlite3VdbeIOTraceSql(Vdbe *p){
 **
 ** nByte is the number of bytes of space needed.
 **
-** *ppFrom point to available space and pEnd points to the end of the
-** available space.
+** *ppFrom points to available space and pEnd points to the end of the
+** available space.  When space is allocated, *ppFrom is advanced past
+** the end of the allocated space.
 **
 ** *pnByte is a counter of the number of bytes of space that have failed
 ** to allocate.  If there is insufficient space in *ppFrom to satisfy the
@@ -1348,9 +1349,10 @@ void sqlite3VdbeMakeReady(
   ** being called from sqlite3_reset() to reset the virtual machine.
   */
   if( nVar>=0 && ALWAYS(db->mallocFailed==0) ){
-    u8 *zCsr = (u8 *)&p->aOp[p->nOp];
-    u8 *zEnd = (u8 *)&p->aOp[p->nOpAlloc];
-    int nByte;
+    u8 *zCsr = (u8 *)&p->aOp[p->nOp];       /* Memory avaliable for alloation */
+    u8 *zEnd = (u8 *)&p->aOp[p->nOpAlloc];  /* First byte past available mem */
+    int nByte;                              /* How much extra memory needed */
+
     resolveP2Values(p, &nArg);
     p->usesStmtJournal = (u8)usesStmtJournal;
     if( isExplain && nMem<10 ){
@@ -1360,6 +1362,16 @@ void sqlite3VdbeMakeReady(
     zCsr += (zCsr - (u8*)0)&7;
     assert( EIGHT_BYTE_ALIGNMENT(zCsr) );
 
+    /* Memory for registers, parameters, cursor, etc, is allocated in two
+    ** passes.  On the first pass, we try to reuse unused space at the 
+    ** end of the opcode array.  If we are unable to satisfy all memory
+    ** requirements by reusing the opcode array tail, then the second
+    ** pass will fill in the rest using a fresh allocation.  
+    **
+    ** This two-pass approach that reuses as much memory as possible from
+    ** the leftover space at the end of the opcode array can significantly
+    ** reduce the amount of memory held by a prepared statement.
+    */
     do {
       nByte = 0;
       p->aMem = allocSpace(p->aMem, nMem*sizeof(Mem), &zCsr, zEnd, &nByte);

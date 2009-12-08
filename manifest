@@ -1,5 +1,8 @@
-C Add\stests\sto\simprove\scoverage\sof\sfts3.\sAssociated\sbugfixes.
-D 2009-12-08T19:05:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\scomments\sto\sbetter\sexplain\sthe\stwo-pass\smemory\sallocation\sapproach\nfor\sprepared\sstatements.
+D 2009-12-08T19:58:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -213,7 +216,7 @@ F src/vdbe.c 5ed06318aac5d57849170a8bf39e807c22c5fedd
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c bb128b819b9ef1a2ce211a36a6cb70a1643fa239
-F src/vdbeaux.c 86d43cdf9615235e1def993a945dfaabc20ab079
+F src/vdbeaux.c 42ed644fea54c3fbfa70af7c65456ec4ab089c77
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -777,7 +780,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d6ae27512229d95502c584b17bb2cbdba401f80a
-R 9a53ddf5917c05e76f26075e2be743be
-U dan
-Z d714a86f89f40b4ba38c62abeeffc91f
+P f0eac4175aee6c50ee68acc253f76fbe44574250
+R 74e90ca8b896b5a20c44aa66d10e0006
+U drh
+Z 0320ff4e0cbee5e0cb2eb5909024d39a
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLHq/foxKgR168RlERAgQcAJ9ODdpS9x2lE2gipwRBT8+tK/molACdEdYd
+2HL4PZWshwGphboQkJAqVMM=
+=4VUQ
+-----END PGP SIGNATURE-----
