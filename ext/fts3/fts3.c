@@ -1244,9 +1244,10 @@ static int fts3PoslistPhraseMerge(
           if( (*p1&0xFE)==0 ) break;
           fts3GetDeltaVarint(&p1, &iPos1); iPos1 -= 2;
         }
-
       }
-      if( pSave && pp ){
+
+      if( pSave ){
+        assert( pp && p );
         p = pSave;
       }
 
@@ -1387,10 +1388,6 @@ static int fts3DoclistMerge(
   if( !aBuffer ){
     return SQLITE_NOMEM;
   }
-  if( n1==0 && n2==0 ){
-    *pnBuffer = 0;
-    return SQLITE_OK;
-  }
 
   /* Read the first docid from each doclist */
   fts3GetDeltaVarint2(&p1, pEnd1, &i1);
@@ -1475,7 +1472,7 @@ static int fts3DoclistMerge(
       char **ppPos = 0;
       if( mergetype==MERGE_POS_NEAR ){
         ppPos = &p;
-        aTmp = sqlite3_malloc(2*(n1+n2));
+        aTmp = sqlite3_malloc(2*(n1+n2+1));
         if( !aTmp ){
           return SQLITE_NOMEM;
         }
@@ -1908,6 +1905,7 @@ static int fts3FilterMethod(
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
   sqlite3_free(pCsr->aDoclist);
+  sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
   /* Compile a SELECT statement for this cursor. For a full-table-scan, the
@@ -2307,13 +2305,14 @@ int sqlite3Fts3Init(sqlite3 *db){
   Fts3Hash *pHash = 0;
   const sqlite3_tokenizer_module *pSimple = 0;
   const sqlite3_tokenizer_module *pPorter = 0;
+
+#ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
+  sqlite3Fts3IcuTokenizerModule(&pIcu);
+#endif
 
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
-#ifdef SQLITE_ENABLE_ICU
-  sqlite3Fts3IcuTokenizerModule(&pIcu);
-#endif
 
   /* Allocate and initialise the hash-table used to store tokenizers. */
   pHash = sqlite3_malloc(sizeof(Fts3Hash));
@@ -2327,14 +2326,18 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc==SQLITE_OK ){
     if( sqlite3Fts3HashInsert(pHash, "simple", 7, (void *)pSimple)
      || sqlite3Fts3HashInsert(pHash, "porter", 7, (void *)pPorter) 
+#ifdef SQLITE_ENABLE_ICU
      || (pIcu && sqlite3Fts3HashInsert(pHash, "icu", 4, (void *)pIcu))
+#endif
     ){
       rc = SQLITE_NOMEM;
     }
   }
 
 #ifdef SQLITE_TEST
-  sqlite3Fts3ExprInitTestInterface(db);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts3ExprInitTestInterface(db);
+  }
 #endif
 
   /* Create the virtual table wrapper around the hash-table and overload 

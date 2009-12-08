@@ -119,14 +119,14 @@ const char *sqlite3Fts3NextToken(const char *zStr, int *pn){
   /* Find the start of the next token. */
   z1 = zStr;
   while( z2==0 ){
-    switch( *z1 ){
+    char c = *z1;
+    switch( c ){
       case '\0': return 0;        /* No more tokens here */
       case '\'':
       case '"':
       case '`': {
-        z2 = &z1[1];
-        while( *z2 && (z2[0]!=*z1 || z2[1]==*z1) ) z2++;
-        if( *z2 ) z2++;
+        z2 = z1;
+        while( *++z2 && (*z2!=c || *++z2==c) );
         break;
       }
       case '[':

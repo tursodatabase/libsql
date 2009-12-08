@@ -2162,7 +2162,8 @@ int sqlite3Fts3Optimize(Fts3Table *p){
     if( rc==SQLITE_OK ){
       rc = sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
     }else{
-      sqlite3_exec(p->db, "ROLLBACK TO fts3 ; RELEASE fts3", 0, 0, 0);
+      sqlite3_exec(p->db, "ROLLBACK TO fts3", 0, 0, 0);
+      sqlite3_exec(p->db, "RELEASE fts3", 0, 0, 0);
     }
   }
   return rc;

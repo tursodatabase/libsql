@@ -273,7 +273,7 @@ int sqlite3Fts3ExprParse(sqlite3_tokenizer *,
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
-void sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
+int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
 #endif
 
 #endif /* _FTSINT_H */
