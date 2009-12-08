@@ -549,7 +549,8 @@ void sqlite3UnlinkAndDeleteTable(sqlite3 *db, int iDb, const char *zTabName){
 
   assert( db!=0 );
   assert( iDb>=0 && iDb<db->nDb );
-  assert( zTabName && zTabName[0] );
+  assert( zTabName );
+  testcase( zTabName[0]==0 );  /* Zero-length table names are allowed */
   pDb = &db->aDb[iDb];
   p = sqlite3HashInsert(&pDb->pSchema->tblHash, zTabName,
                         sqlite3Strlen30(zTabName),0);
