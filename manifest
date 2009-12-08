@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.6.21\srelease\scandidate\s3.
-D 2009-12-07T16:39:13
+C Add\sevidence\smarks\sfor\sthe\sabs()\sand\ssoundex()\sSQL\sfunctions.
+D 2009-12-08T02:06:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -122,7 +122,7 @@ F src/delete.c 8b8afb9cd7783d573eae55a3f4208bc0637a2bb8
 F src/expr.c 50385ed51f1cd7f1ab289629cd0f87d5b2fcca52
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
-F src/func.c bf54e1202cbfb28bf4b1fd9b58899009ae76716f
+F src/func.c 69906340991919b4933dd8630774ad069e4d582e
 F src/global.c 75946a4a2ab41c6ae58f10ca0ed31b3449694b26
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
@@ -779,14 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cd50acf37fd1e3b388f98fb2df7ed03cff454b24
-R 5d0b6a47a50c8a9cdc60d3d4d61a8cf2
+P 1ed88e9d01e9eda5cbc622e7614277f29bcc551c
+R 1471112a6091b5e86e8377c98442f269
 U drh
-Z 8b76b0c0726e570aef93558fa0c3fdc7
+Z 934fa2af6e75ab66dd516648026804d0
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLHS+0oxKgR168RlERArAKAJ97NTyJvzQHmWC2GXt2Xt7D52m04QCeLeQt
-HYPTNDWgvT/KRZ19RtHNjDQ=
-=tE2+
+iD8DBQFLHbSToxKgR168RlERAnPWAJ0aeQSnNtoESpvn5WXXGEReIAAiRQCfRgiL
+hfmjPRrVHJpru8MGZcB/9kU=
+=u0Gb
 -----END PGP SIGNATURE-----
