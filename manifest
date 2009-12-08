@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Allow\szero-length\snames\sfor\stables,\scolumns,\sand\sindices.\nFix\sfor\sticket\s[78e04e52eaf].
-D 2009-12-08T14:34:08
+C Begin\supdating\sAPI\sdocumentation\sto\suse\sthe\snew\sMD5-hash\sbased\s\nautomatic\srequirements\snumbering.\s\sComment\schanges\sonly.\s\sMany\ssimilar\nchanges\swill\sfollow.
+D 2009-12-08T15:16:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -167,7 +167,7 @@ F src/resolve.c d052e5c44bab34f83b3c1741aaa07478d18b5dd5
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 2f9ed7482e7a25b0b127fc41693bbdbe1caf5647
 F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
-F src/sqlite.h.in 2d34605565e021851255e0bbcb15f8c1930d1f6f
+F src/sqlite.h.in 338e1ac00faa7e3a536e7f1120827dd1f6432981
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h e946a6a3f2df015cdbc7668e9626987e8badbb5f
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -780,14 +780,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4eb9bf0b93a564844f133691936593245aa792fc
-R 7eeb7797797e30a8ad051eacc36b8fb3
+P 7b1cfd65a6f7c85ef8f6e4622973457cff9d007c
+R bc9b0ca13c1d42e3ef0f31c3eafc2706
 U drh
-Z e526c487a3b49cc4dcbee58d5a1860ea
+Z d3399929cb27f5d1d2ae1fd2280572aa
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLHmPjoxKgR168RlERAn8sAJ4zKC7D2a/28/ZL3xk1TkNKmpgL5gCfQVhb
-CrcH8bMVvWBkMeQMDvUm5sA=
-=MAb9
+iD8DBQFLHm3toxKgR168RlERAqh0AJ42+WxiDaf+yXW7XeNGamk5NI4QnQCcD5Ck
+Um9oKXZSMb+HswKtI2ZkMrA=
+=dxuM
 -----END PGP SIGNATURE-----

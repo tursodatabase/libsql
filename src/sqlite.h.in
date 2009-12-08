@@ -76,54 +76,42 @@ extern "C" {
 #endif
 
 /*
-** CAPI3REF: Compile-Time Library Version Numbers {H10010} <S60100>
+** CAPI3REF: Compile-Time Library Version Numbers
 **
-** The SQLITE_VERSION and SQLITE_VERSION_NUMBER #defines in
-** the sqlite3.h file specify the version of SQLite with which
-** that header file is associated.
-**
-** The "version" of SQLite is a string of the form "W.X.Y" or "W.X.Y.Z".
-** The W value is major version number and is always 3 in SQLite3.
-** The W value only changes when backwards compatibility is
-** broken and we intend to never break backwards compatibility.
-** The X value is the minor version number and only changes when
-** there are major feature enhancements that are forwards compatible
-** but not backwards compatible.
-** The Y value is the release number and is incremented with
-** each release but resets back to 0 whenever X is incremented.
-** The Z value only appears on branch releases.
-**
-** The SQLITE_VERSION_NUMBER is an integer that is computed as
-** follows:
-**
-** <blockquote><pre>
-** SQLITE_VERSION_NUMBER = W*1000000 + X*1000 + Y
-** </pre></blockquote>
+** ^(The [SQLITE_VERSION] C preprocessor macro in the sqlite3.h header
+** evaluates to a string literal that is the SQLite version in the
+** format "X.Y.Z" where X is the major version number (always 3 for
+** SQLite3) and Y is the minor version number and Z is the release number.)^
+** ^(The [SQLITE_VERSION_NUMBER] C preprocessor macro resolves to an integer
+** with the value (X*1000000 + Y*1000 + Z) where X, Y, and Z are the same
+** numbers used in [SQLITE_VERSION].)^
+** The SQLITE_VERSION_NUMBER for any given release of SQLite will also
+** be larger than the release from which it is derived.  Either Y will
+** be held constant and Z will be incremented or else Y will be incremented
+** and Z will be reset to zero.
 **
 ** Since version 3.6.18, SQLite source code has been stored in the
-** <a href="http://www.fossil-scm.org/">fossil configuration management
-** system</a>.  The SQLITE_SOURCE_ID
-** macro is a string which identifies a particular check-in of SQLite
-** within its configuration management system.  The string contains the
-** date and time of the check-in (UTC) and an SHA1 hash of the entire
-** source tree.
+** <a href="http://www.fossil-scm.org/">Fossil configuration management
+** system</a>.  ^The SQLITE_SOURCE_ID macro evalutes to
+** a string which identifies a particular check-in of SQLite
+** within its configuration management system.  ^The SQLITE_SOURCE_ID
+** string contains the date and time of the check-in (UTC) and an SHA1
+** hash of the entire source tree.
 **
 ** See also: [sqlite3_libversion()],
 ** [sqlite3_libversion_number()], [sqlite3_sourceid()],
 ** [sqlite_version()] and [sqlite_source_id()].
-**
-** Requirements: [H10011] [H10014]
 */
 #define SQLITE_VERSION        "--VERS--"
 #define SQLITE_VERSION_NUMBER --VERSION-NUMBER--
 #define SQLITE_SOURCE_ID      "--SOURCE-ID--"
 
 /*
-** CAPI3REF: Run-Time Library Version Numbers {H10020} <S60100>
+** CAPI3REF: Run-Time Library Version Numbers
 ** KEYWORDS: sqlite3_version
 **
 ** These interfaces provide the same information as the [SQLITE_VERSION],
-** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] #defines in the header,
+** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] C preprocessor macros
 ** but are associated with the library instead of the header file.  Cautious
 ** programmers might include assert() statements in their application to
 ** verify that values returned by these interfaces match the macros in
@@ -133,19 +121,20 @@ extern "C" {
 ** <blockquote><pre>
 ** assert( sqlite3_libversion_number()==SQLITE_VERSION_NUMBER );
 ** assert( strcmp(sqlite3_sourceid(),SQLITE_SOURCE_ID)==0 );
-** assert( strcmp(sqlite3_libversion,SQLITE_VERSION)==0 );
+** assert( strcmp(sqlite3_libversion(),SQLITE_VERSION)==0 );
 ** </pre></blockquote>
 **
-** The sqlite3_libversion() function returns the same information as is
-** in the sqlite3_version[] string constant.  The function is provided
-** for use in DLLs since DLL users usually do not have direct access to string
-** constants within the DLL.  Similarly, the sqlite3_sourceid() function
-** returns the same information as is in the [SQLITE_SOURCE_ID] #define of
-** the header file.
+** ^The sqlite3_version[] string constant contains the text of [SQLITE_VERSION]
+** macro.  ^The sqlite3_libversion() function returns a pointer to the
+** to the sqlite3_version[] string constant.  The sqlite3_libversion()
+** function is provided for use in DLLs since DLL users usually do not have
+** direct access to string constants within the DLL.  ^The
+** sqlite3_libversion_number() function returns an integer equal to
+** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function a pointer
+** to a string constant whose value is the same as the [SQLITE_SOURCE_ID]
+** C preprocessor macro.
 **
 ** See also: [sqlite_version()] and [sqlite_source_id()].
-**
-** Requirements: [H10021] [H10022] [H10023]
 */
 SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
