@@ -1706,10 +1706,11 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
     */
     for(i=0; i<db->nDb; i++){
       Btree *pBt = db->aDb[i].pBt;
-      if( i==1 ) continue;   /* Ignore the TEMP database */
       if( sqlite3BtreeIsInTrans(pBt) ){
         char const *zFile = sqlite3BtreeGetJournalname(pBt);
-        if( zFile[0]==0 ) continue;  /* Ignore :memory: databases */
+        if( zFile==0 || zFile[0]==0 ){
+          continue;  /* Ignore TEMP and :memory: databases */
+        }
         if( !needSync && !sqlite3BtreeSyncDisabled(pBt) ){
           needSync = 1;
         }

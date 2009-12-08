@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sevidence\smarks\sfor\sthe\sabs()\sand\ssoundex()\sSQL\sfunctions.
-D 2009-12-08T02:06:09
+C Avoid\sdereferencing\sa\snull\spointer\swhen\sdoing\sa\smulti-database\scomment\swhere\none\sor\smore\sof\sthe\sdatabases\sis\san\sATTACH-ed\sTEMP\sdatabase.\nTicket\s[abe728bbc311d].
+D 2009-12-08T13:36:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -216,7 +216,7 @@ F src/vdbe.c 5ed06318aac5d57849170a8bf39e807c22c5fedd
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c bb128b819b9ef1a2ce211a36a6cb70a1643fa239
-F src/vdbeaux.c 0981dcb5b933b74ae7bc9bfa7770df5e4da849b3
+F src/vdbeaux.c 6b9da05a16fbb52afd2bf0b3080087afdf16b6eb
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -779,14 +779,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1ed88e9d01e9eda5cbc622e7614277f29bcc551c
-R 1471112a6091b5e86e8377c98442f269
+P 003f3ed10cdb64b73d6df00e28260dd3491e1f16
+R 2e0c4e6b4164866175ea42dfc524a061
 U drh
-Z 934fa2af6e75ab66dd516648026804d0
+Z 2b458c1aff5f1b0ec980faf2222eb1eb
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLHbSToxKgR168RlERAnPWAJ0aeQSnNtoESpvn5WXXGEReIAAiRQCfRgiL
-hfmjPRrVHJpru8MGZcB/9kU=
-=u0Gb
+iD8DBQFLHlZ/oxKgR168RlERAu5SAKCNLRsVczdhX6Qajk56HvdknxZVXQCeIoOh
+4AD78jR01j/xAXqmd6RIs5k=
+=6zb5
 -----END PGP SIGNATURE-----
