@@ -381,13 +381,9 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
   const unsigned char *q = (const unsigned char *) p;
   sqlite_uint64 x = 0, y = 1;
-  while( (*q & 0x80) == 0x80 ){
+  while( (*q&0x80)==0x80 && q-(unsigned char *)p<FTS3_VARINT_MAX ){
     x += y * (*q++ & 0x7f);
     y <<= 7;
-    if( q - (unsigned char *)p >= FTS3_VARINT_MAX ){  /* bad data */
-      assert( 0 );
-      return 0;
-    }
   }
   x += y * (*q++);
   *v = (sqlite_int64) x;
@@ -402,7 +398,6 @@ int sqlite3Fts3GetVarint32(const char *p, int *pi){
  sqlite_int64 i;
  int ret = sqlite3Fts3GetVarint(p, &i);
  *pi = (int) i;
- assert( *pi==i );
  return ret;
 }
 
@@ -433,7 +428,7 @@ int sqlite3Fts3VarintLen(sqlite3_uint64 v){
 **     `mno`   becomes   mno
 */
 void sqlite3Fts3Dequote(char *z){
-  int quote;
+  char quote;
   int i, j;
 
   quote = z[0];
@@ -444,19 +439,22 @@ void sqlite3Fts3Dequote(char *z){
     case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
     default:    return;
   }
-  for(i=1, j=0; z[i]; i++){
+
+  i = 1;
+  j = 0;
+  while( ALWAYS(z[i]) ){
     if( z[i]==quote ){
       if( z[i+1]==quote ){
-        z[j++] = (char)quote;
-        i++;
+        z[j++] = quote;
+        i += 2;
       }else{
-        z[j++] = 0;
         break;
       }
     }else{
-      z[j++] = z[i];
+      z[j++] = z[i++];
     }
   }
+  z[j] = 0;
 }
 
 static void fts3GetDeltaVarint(char **pp, sqlite3_int64 *pVal){
@@ -891,11 +889,15 @@ static int fts3CursorSeek(Fts3Cursor *pCsr){
     if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
       return SQLITE_OK;
     }else{
-      int rc;
-      pCsr->isEof = 1;
-      if( SQLITE_OK==(rc = sqlite3_reset(pCsr->pStmt)) ){
-        rc = SQLITE_ERROR;
+      int rc = sqlite3_reset(pCsr->pStmt);
+      if( rc==SQLITE_OK ){
+        /* If no row was found and no error has occured, then the %_content
+        ** table is missing a row that is present in the full-text index.
+        ** The data structures are corrupt.
+        */
+        rc = SQLITE_CORRUPT;
       }
+      pCsr->isEof = 1;
       return rc;
     }
   }else{

@@ -310,11 +310,11 @@ proc fts3_read {tbl where varname} {
 # match the expected results passed via parameter $result.
 #
 proc do_select_test {name sql result} {
-  doPassiveTest $name $sql [list 0 $result]
+  uplevel [list doPassiveTest $name $sql [list 0 $result]]
 }
 
 proc do_error_test {name sql error} {
-  doPassiveTest $name $sql [list 1 $error]
+  uplevel [list doPassiveTest $name $sql [list 1 $error]]
 }
 
 proc doPassiveTest {name sql catchres} {
@@ -333,7 +333,7 @@ proc doPassiveTest {name sql catchres} {
     for {set iFail 1} 1 {incr iFail} {
       if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
 
-      set res [catchsql $sql]
+      set res [uplevel [list catchsql $sql]]
       if {[lsearch -exact $answers $res]>=0} {
         set res $str
       }

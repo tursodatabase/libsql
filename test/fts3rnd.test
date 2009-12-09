@@ -148,7 +148,14 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < 100} {incr i} { insert_row $i }
   }
   
-  for {set iTest 1} {$iTest <= 100} {incr iTest} {
+  for {set iTest 0} {$iTest <= 100} {incr iTest} {
+
+    set DO_MALLOC_TEST 0
+    set nRep 10
+    if {$iTest==100 && $nodesize==50} { 
+      set DO_MALLOC_TEST 1 
+      set nRep 2
+    }
   
     # Delete one row, update one row and insert one row.
     #
@@ -176,8 +183,8 @@ foreach nodesize {50 500 1000 2000} {
     #
     for {set i 0} {$i < 10} {incr i} {
       set term [random_term]
-      do_test fts3rnd-1.$nodesize.$iTest.1.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $term }
+      do_select_test fts3rnd-1.$nodesize.$iTest.1.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $term
       } [simple_phrase $term]
     }
 
@@ -185,66 +192,66 @@ foreach nodesize {50 500 1000 2000} {
     # to query for. Test that querying the Tcl array produces the same results
     # as querying the FTS3 table for the prefix.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set prefix [string range [random_term] 0 1]
       set match "${prefix}*"
-      do_test fts3rnd-1.$nodesize.$iTest.2.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.2.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $match]
     }
 
     # Similar to the above, except for phrase queries.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set term [list [random_term] [random_term]]
       set match "\"$term\""
-      do_test fts3rnd-1.$nodesize.$iTest.3.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.3.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $term]
     }
 
     # Three word phrases.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set term [list [random_term] [random_term] [random_term]]
       set match "\"$term\""
-      do_test fts3rnd-1.$nodesize.$iTest.4.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.4.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $term]
     }
 
     # Three word phrases made up of term-prefixes.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set    query "[string range [random_term] 0 1]* "
       append query "[string range [random_term] 0 1]* "
       append query "[string range [random_term] 0 1]*"
 
       set match "\"$query\""
-      do_test fts3rnd-1.$nodesize.$iTest.5.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.5.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_phrase $query]
     }
 
     # A NEAR query with terms as the arguments.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set terms [list [random_term] [random_term]]
       set match [join $terms " NEAR "]
-      do_test fts3rnd-1.$nodesize.$iTest.6.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.6.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match 
       } [simple_near $terms 10]
     }
 
     # A 3-way NEAR query with terms as the arguments.
     #
-    for {set i 0} {$i < 10} {incr i} {
+    for {set i 0} {$i < $nRep} {incr i} {
       set terms [list [random_term] [random_term] [random_term]]
       set nNear 11
       set match [join $terms " NEAR/$nNear "]
       set fts3 [execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }]
-      do_test fts3rnd-1.$nodesize.$iTest.7.$i {
-        execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+      do_select_test fts3rnd-1.$nodesize.$iTest.7.$i {
+        SELECT docid FROM t1 WHERE t1 MATCH $match
       } [simple_near $terms $nNear]
     }
     
@@ -255,12 +262,12 @@ foreach nodesize {50 500 1000 2000} {
       9  NOT setop_not
       10 AND setop_and
     } {
-      for {set i 0} {$i < 10} {incr i} {
+      for {set i 0} {$i < $nRep} {incr i} {
         set term1 [random_term]
         set term2 [random_term]
         set match "$term1 $op $term2"
-        do_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
-          execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+        do_select_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
+          SELECT docid FROM t1 WHERE t1 MATCH $match
         } [$proc [simple_phrase $term1] [simple_phrase $term2]]
       }
     }
@@ -272,14 +279,14 @@ foreach nodesize {50 500 1000 2000} {
       9  NOT setop_not
       10 AND setop_and
     } {
-      for {set i 0} {$i < 10} {incr i} {
+      for {set i 0} {$i < $nRep} {incr i} {
         set term1 [random_term]
         set term2 [random_term]
         set term3 [random_term]
         set term4 [random_term]
         set match "$term1 NEAR $term2 $op $term3 NEAR $term4"
-        do_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
-          execsql { SELECT docid FROM t1 WHERE t1 MATCH $match }
+        do_select_test fts3rnd-1.$nodesize.$iTest.$tn.$i {
+          SELECT docid FROM t1 WHERE t1 MATCH $match
         } [$proc                                  \
             [simple_near [list $term1 $term2] 10] \
             [simple_near [list $term3 $term4] 10]

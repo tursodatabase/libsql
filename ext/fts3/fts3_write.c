@@ -280,7 +280,7 @@ int sqlite3Fts3ReadBlock(
     sqlite3_bind_int64(pStmt, 1, iBlock);
     rc = sqlite3_step(pStmt); 
     if( rc!=SQLITE_ROW ){
-      return SQLITE_CORRUPT;
+      return (rc==SQLITE_DONE ? SQLITE_CORRUPT : rc);
     }
   
     *pnBlock = sqlite3_column_bytes(pStmt, 0);

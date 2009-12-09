@@ -37,6 +37,9 @@ proc error_test {tn sql result} {
   uplevel [list do_error_test e_fts3-$tn $sql $result]
 }
 
+
+if 1 {
+
 #-------------------------------------------------------------------------
 # The body of the following [foreach] block contains test cases to verify
 # that the example code in fts3.html works as expected. The tests run three
@@ -587,10 +590,13 @@ read_test 7.3.4 {
   SELECT * FROM t7, t8 WHERE a MATCH 'number' AND b MATCH 'letter'
 } {{number four} {letter D} {number four} {letter E} {number five} {letter D} {number five} {letter E}}
 
+}
+
 #-------------------------------------------------------------------------
 # Test the quoting of FTS3 table column names. Names may be quoted using
 # any of "", '', ``` or [].
 #
+set DO_MALLOC_TEST 0
 ddl_test  8.1.1 { CREATE VIRTUAL TABLE t9a USING fts3("c1", [c2]) }
 ddl_test  8.1.2 { CREATE VIRTUAL TABLE t9b USING fts3('c1', `c2`) }
 read_test 8.1.3 { PRAGMA table_info(t9a) } {0 c1 {} 0 {} 0 1 c2 {} 0 {} 0}
@@ -629,6 +635,46 @@ foreach DO_MALLOC_TEST {0 1 2} {
     SELECT * FROM t11 WHERE x MATCH 'rename*'
   } {{are renameable}}
 }
+#-------------------------------------------------------------------------
+
+#-------------------------------------------------------------------------
+# Test a couple of cases involving corrupt data structures:
+#
+#   1) A case where a document referenced by the full-text index is
+#      not present in the %_content table.
+#
+#   2) A badly formatted b-tree segment node.
+#
+set DO_MALLOC_TEST 0
+ddl_test   10.1.1 { CREATE VIRTUAL TABLE ta USING fts3 }
+write_test 10.1.2 ta_content { 
+  INSERT INTO ta VALUES('During a summer vacation in 1790') }
+write_test 10.1.3 ta_content {
+  INSERT INTO ta VALUES('Wordsworth went on a walking tour') }
+write_test 10.1.4 ta_content { DELETE FROM ta_content WHERE rowid = 2 }
+read_test  10.1.5 {
+  SELECT * FROM ta WHERE ta MATCH 'summer'
+} {{During a summer vacation in 1790}}
+error_test 10.1.6 {
+  SELECT * FROM ta WHERE ta MATCH 'walking'
+} {database disk image is malformed}
+
+write_test 10.2.1 ta_content { DELETE FROM ta }
+write_test 10.2.2 ta_content { 
+  INSERT INTO ta VALUES('debate demonstrated the rising difficulty') }
+write_test 10.2.3 ta_content { 
+  INSERT INTO ta VALUES('Google released its browser beta') }
+
+set blob [db one {SELECT root FROM ta_segdir WHERE rowid = 2}]
+binary scan $blob "a6 a3 a*" start middle end
+set middle "\x0E\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x06\x06"
+set blob [binary format "a6 a* a*" $start $middle $end]
+write_test 10.2.4 ta_segdir { 
+  UPDATE ta_segdir SET root = $blob WHERE rowid = 2
+}
+error_test 10.2.5 {
+  SELECT * FROM ta WHERE ta MATCH 'beta'
+} {database disk image is malformed}
 
 
 finish_test

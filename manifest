@@ -1,5 +1,5 @@
-C Mark\sfts3ReallocOrFree\sand\sfts3InitVtab\sas\sstatic.\sTicket\s[ff44d82f3b].
-D 2009-12-09T05:30:37
+C Improve\stest\scoverage\sof\sfts3.c.
+D 2009-12-09T14:39:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c cb9bd52e205b0f2f25fda5e166503f317f135731
+F ext/fts3/fts3.c 6e24afa93ecb3395b0e9467ca2b44fa7f66f4fdc
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 36f8e6d6fafa6d71a48e1810095e1e58fd55b199
 F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
 F ext/fts3/fts3_tokenizer.c 3dc76eaea6b58ecfbe50135b8473aa668d712dcd
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
-F ext/fts3/fts3_write.c 643be9c7b097f5ea8189cf6ed840edd59485c45f
+F ext/fts3/fts3_write.c c7d549ac5a2733d1d3004a784ad8387f5c65fc75
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -326,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test fd1fcf89badd5f2773d7ac04775b5ff3488eda17
-F test/e_fts3.test 3ad57e7b920c7dcfa373dc2ed2105f83e1cf69a6
+F test/e_fts3.test 3acfdc1c363f245e6e251e067a5c375dd5e34731
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -377,7 +377,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test ae0433b09b12def08105640e57693726c4949338
-F test/fts3_common.tcl 31935839b1b601a5955572cb4e8060513c96bde0
+F test/fts3_common.tcl 8f75c15fa4507d923a1c21152e2716d77dc74661
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
@@ -402,7 +402,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test ec82795eb358b7a4d6ce79e764d8d55556197584
+F test/fts3rnd.test 44fa7209327deabc3ca22e2ff7a293b0bd46c37f
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -777,7 +777,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fdfdc777c59a108496c7381c8b267b38485e2c13
-R 3bbf1578efaf46ed0df1e1e874fb62b3
+P a9038306c33c88120d8bef27209d8f0641c85c9b
+R db340fa6c4afcd8bc8679373cdbca6c1
 U dan
-Z 73fc6e587a1afaf349e955a71f230978
+Z eeb82c42887166b9ef7e8ca6456b81ff
