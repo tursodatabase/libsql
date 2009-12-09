@@ -624,7 +624,7 @@ static int fts3CreateTables(Fts3Table *p){
 **   argv[2]   -> table name
 **   argv[...] -> "column name" and other module argument fields.
 */
-int fts3InitVtab(
+static int fts3InitVtab(
   int isCreate,                   /* True for xCreate, false for xConnect */
   sqlite3 *db,                    /* The SQLite database connection */
   void *pAux,                     /* Hash table containing tokenizers */

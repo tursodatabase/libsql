@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Change\sto\sorder\sof\stwo\sbranches\sin\svtab.c\sin\sorder\sto\sa\srestore\s100%\stest\ncoverage.
-D 2009-12-08T22:16:15
+C Mark\sfts3ReallocOrFree\sand\sfts3InitVtab\sas\sstatic.\sTicket\s[ff44d82f3b].
+D 2009-12-09T05:30:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,10 +56,10 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c ece6d5b17b4be847ff139a8103c71443c699371f
+F ext/fts3/fts3.c cb9bd52e205b0f2f25fda5e166503f317f135731
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 36f8e6d6fafa6d71a48e1810095e1e58fd55b199
-F ext/fts3/fts3_expr.c 09a0e1bec4c780fb94661e146b93efbea04f7416
+F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
 F ext/fts3/fts3_hash.c 18feef38fca216992725e9eae775a0c7735e6724
 F ext/fts3/fts3_hash.h d410ff2c93c81a56b927fcf07b2099ccbfa7a479
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
@@ -780,14 +777,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0e5e18ea12c70559d4c63981c0bb5f9430c5bcbb
-R b37ac4b4a2f1150c99a08301f47a75ba
-U drh
-Z 806e0dcdcc76e3167ff245e90aa4ddff
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLHtAyoxKgR168RlERAnD5AJ9lq59S/L2gVSJ3A1PkjLVKOpUOAgCfTs+c
-1MZRpUfX8XUtHldb5w5obss=
-=nCg9
------END PGP SIGNATURE-----
+P fdfdc777c59a108496c7381c8b267b38485e2c13
+R 3bbf1578efaf46ed0df1e1e874fb62b3
+U dan
+Z 73fc6e587a1afaf349e955a71f230978
