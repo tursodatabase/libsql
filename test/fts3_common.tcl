@@ -330,7 +330,7 @@ proc doPassiveTest {name sql catchres} {
   set str [join $answers " OR "]
 
   foreach {nRepeat zName} $modes {
-    for {set iFail 48} 1 {incr iFail} {
+    for {set iFail 1} 1 {incr iFail} {
       if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
 
       set res [uplevel [list catchsql $sql]]

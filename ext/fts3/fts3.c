@@ -877,7 +877,7 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-static int fts3CursorSeek(Fts3Cursor *pCsr){
+static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
   if( pCsr->isRequireSeek ){
     pCsr->isRequireSeek = 0;
     sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
@@ -893,6 +893,9 @@ static int fts3CursorSeek(Fts3Cursor *pCsr){
         rc = SQLITE_CORRUPT;
       }
       pCsr->isEof = 1;
+      if( pContext && rc!=SQLITE_OK ){
+        sqlite3_result_error_code(pContext, rc);
+      }
       return rc;
     }
   }else{
@@ -2004,7 +2007,7 @@ static int fts3ColumnMethod(
     sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
     rc = SQLITE_OK;
   }else{
-    rc = fts3CursorSeek(pCsr);
+    rc = fts3CursorSeek(0, pCsr);
     if( rc==SQLITE_OK ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
@@ -2123,8 +2126,11 @@ static void fts3SnippetFunc(
     case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
     case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
   }
-
-  sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
+  if( !zStart || !zEnd || !zEllipsis ){
+    sqlite3_result_error_nomem(pContext);
+  }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
+  }
 }
 
 /*
@@ -2136,13 +2142,16 @@ static void fts3OffsetsFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
+  int rc;
 
   UNUSED_PARAMETER(nVal);
 
   assert( nVal==1 );
   if( fts3FunctionArg(pContext, "offsets", apVal[0], &pCsr) ) return;
   assert( pCsr );
-  sqlite3Fts3Offsets(pContext, pCsr);
+  if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    sqlite3Fts3Offsets(pContext, pCsr);
+  }
 }
 
 /* 
