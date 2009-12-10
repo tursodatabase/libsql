@@ -426,35 +426,30 @@ int sqlite3Fts3VarintLen(sqlite3_uint64 v){
 **     'xyz'   becomes   xyz
 **     [pqr]   becomes   pqr
 **     `mno`   becomes   mno
+**
 */
 void sqlite3Fts3Dequote(char *z){
-  char quote;
-  int i, j;
+  char quote;                     /* Quote character (if any ) */
 
   quote = z[0];
-  switch( quote ){
-    case '\'':  break;
-    case '"':   break;
-    case '`':   break;                /* For MySQL compatibility */
-    case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
-    default:    return;
-  }
+  if( quote=='[' || quote=='\'' || quote=='"' || quote=='`' ){
+    int iIn = 1;                  /* Index of next byte to read from input */
+    int iOut = 0;                 /* Index of next byte to write to output */
 
-  i = 1;
-  j = 0;
-  while( ALWAYS(z[i]) ){
-    if( z[i]==quote ){
-      if( z[i+1]==quote ){
-        z[j++] = quote;
-        i += 2;
+    /* If the first byte was a '[', then the close-quote character is a ']' */
+    if( quote=='[' ) quote = ']';  
+
+    while( ALWAYS(z[iIn]) ){
+      if( z[iIn]==quote ){
+        if( z[iIn+1]!=quote ) break;
+        z[iOut++] = quote;
+        iIn += 2;
       }else{
-        break;
+        z[iOut++] = z[iIn++];
       }
-    }else{
-      z[j++] = z[i++];
     }
+    z[iOut] = '\0';
   }
-  z[j] = 0;
 }
 
 static void fts3GetDeltaVarint(char **pp, sqlite3_int64 *pVal){
@@ -1594,12 +1589,20 @@ static int fts3TermSelect(
   int i;
   TermSelect tsc;
   Fts3SegFilter filter;           /* Segment term filter configuration */
-  Fts3SegReader **apSegment = 0;  /* Array of segments to read data from */
+  Fts3SegReader **apSegment;      /* Array of segments to read data from */
   int nSegment = 0;               /* Size of apSegment array */
-  int nAlloc = 0;                 /* Allocated size of segment array */
+  int nAlloc = 16;                /* Allocated size of segment array */
   int rc;                         /* Return code */
   sqlite3_stmt *pStmt;            /* SQL statement to scan %_segdir table */
   int iAge = 0;                   /* Used to assign ages to segments */
+
+  apSegment = (Fts3SegReader **)sqlite3_malloc(sizeof(Fts3SegReader*)*nAlloc);
+  if( !apSegment ) return SQLITE_NOMEM;
+  rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &apSegment[0]);
+  if( rc!=SQLITE_OK ) return rc;
+  if( apSegment[0] ){
+    nSegment = 1;
+  }
 
   /* Loop through the entire %_segdir table. For each segment, create a
   ** Fts3SegReader to iterate through the subset of the segment leaves
@@ -1716,8 +1719,6 @@ static int fts3PhraseSelect(
   int ii;
   int iCol = pPhrase->iColumn;
   int isTermPos = (pPhrase->nToken>1 || isReqPos);
-
-  assert( p->nPendingData==0 );
 
   for(ii=0; ii<pPhrase->nToken; ii++){
     struct PhraseToken *pTok = &pPhrase->aToken[ii];
@@ -1934,8 +1935,6 @@ static int fts3FilterMethod(
     if( zQuery==0 && sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
       return SQLITE_NOMEM;
     }
-    rc = sqlite3Fts3PendingTermsFlush(p);
-    if( rc!=SQLITE_OK ) return rc;
 
     rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
         iCol, zQuery, -1, &pCsr->pExpr
@@ -1991,21 +1990,22 @@ static int fts3ColumnMethod(
   /* The column value supplied by SQLite must be in range. */
   assert( iCol>=0 && iCol<=p->nColumn+1 );
 
-  rc = fts3CursorSeek(pCsr);
-  if( rc==SQLITE_OK ){
-    if( iCol==p->nColumn+1 ){
-      /* This call is a request for the "docid" column. Since "docid" is an 
-      ** alias for "rowid", use the xRowid() method to obtain the value.
-      */
-      sqlite3_int64 iRowid;
-      rc = fts3RowidMethod(pCursor, &iRowid);
-      sqlite3_result_int64(pContext, iRowid);
-    }else if( iCol==p->nColumn ){
-      /* The extra column whose name is the same as the table.
-      ** Return a blob which is a pointer to the cursor.
-      */
-      sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
-    }else{
+  if( iCol==p->nColumn+1 ){
+    /* This call is a request for the "docid" column. Since "docid" is an 
+    ** alias for "rowid", use the xRowid() method to obtain the value.
+    */
+    sqlite3_int64 iRowid;
+    rc = fts3RowidMethod(pCursor, &iRowid);
+    sqlite3_result_int64(pContext, iRowid);
+  }else if( iCol==p->nColumn ){
+    /* The extra column whose name is the same as the table.
+    ** Return a blob which is a pointer to the cursor.
+    */
+    sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
+    rc = SQLITE_OK;
+  }else{
+    rc = fts3CursorSeek(pCsr);
+    if( rc==SQLITE_OK ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }

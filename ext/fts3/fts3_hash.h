@@ -75,14 +75,16 @@ void sqlite3Fts3HashInit(Fts3Hash *pNew, char keyClass, char copyKey);
 void *sqlite3Fts3HashInsert(Fts3Hash*, const void *pKey, int nKey, void *pData);
 void *sqlite3Fts3HashFind(const Fts3Hash*, const void *pKey, int nKey);
 void sqlite3Fts3HashClear(Fts3Hash*);
+Fts3HashElem *sqlite3Fts3HashFindElem(const Fts3Hash *, const void *, int);
 
 /*
 ** Shorthand for the functions above
 */
-#define fts3HashInit   sqlite3Fts3HashInit
-#define fts3HashInsert sqlite3Fts3HashInsert
-#define fts3HashFind   sqlite3Fts3HashFind
-#define fts3HashClear  sqlite3Fts3HashClear
+#define fts3HashInit     sqlite3Fts3HashInit
+#define fts3HashInsert   sqlite3Fts3HashInsert
+#define fts3HashFind     sqlite3Fts3HashFind
+#define fts3HashClear    sqlite3Fts3HashClear
+#define fts3HashFindElem sqlite3Fts3HashFindElem
 
 /*
 ** Macros for looping over all elements of a hash table.  The idiom is

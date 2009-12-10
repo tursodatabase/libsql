@@ -225,6 +225,7 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *);
 int sqlite3Fts3Optimize(Fts3Table *);
 int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
+int sqlite3Fts3SegReaderPending(Fts3Table*,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3Table *, Fts3SegReader *);
 int sqlite3Fts3SegReaderIterate(
   Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,

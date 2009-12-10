@@ -325,19 +325,21 @@ proc doPassiveTest {name sql catchres} {
     set modes [list 100000 transient 1 persistent]
   } else {
     set answers [list $catchres]
-    set modes [list 0 nofail]
+    set modes [list 0 ""]
   }
   set str [join $answers " OR "]
 
   foreach {nRepeat zName} $modes {
-    for {set iFail 1} 1 {incr iFail} {
+    for {set iFail 48} 1 {incr iFail} {
       if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
 
       set res [uplevel [list catchsql $sql]]
       if {[lsearch -exact $answers $res]>=0} {
         set res $str
       }
-      do_test $name.$zName.$iFail [list set {} $res] $str
+      set testname "$name.$zName.$iFail"
+      if {$zName == ""} { set testname $name }
+      do_test $testname [list set {} $res] $str
       set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
       if {$nFail==0} break
     }

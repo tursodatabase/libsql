@@ -20,6 +20,9 @@ source $testdir/fts3_common.tcl
 set nVocab 100
 set lVocab [list]
 
+expr srand(0)
+
+
 # Generate a vocabulary of nVocab words. Each word is 3 characters long.
 #
 set lChar {a b c d e f g h i j k l m n o p q r s t u v w x y z}
@@ -149,6 +152,7 @@ foreach nodesize {50 500 1000 2000} {
   }
   
   for {set iTest 0} {$iTest <= 100} {incr iTest} {
+    catchsql COMMIT
 
     set DO_MALLOC_TEST 0
     set nRep 10
@@ -170,11 +174,11 @@ foreach nodesize {50 500 1000 2000} {
     while {[info exists ::t1($iInsert)]} {
       set iInsert [expr {int(rand()*1000000)}]
     }
-    db transaction {
+    execsql BEGIN
       insert_row $iInsert
       update_row $iUpdate
       delete_row $iDelete
-    }
+    if {0==($iTest%2)} { execsql COMMIT }
 
     # Pick 10 terms from the vocabulary. Check that the results of querying
     # the database for the set of documents containing each of these terms
@@ -293,6 +297,8 @@ foreach nodesize {50 500 1000 2000} {
           ]
       }
     }
+
+    catchsql COMMIT
   }
 }
 

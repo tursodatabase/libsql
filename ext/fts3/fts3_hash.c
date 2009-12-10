@@ -279,13 +279,12 @@ static void fts3RemoveElementByHash(
   }
 }
 
-/* Attempt to locate an element of the hash table pH with a key
-** that matches pKey,nKey.  Return the data for this element if it is
-** found, or NULL if there is no match.
-*/
-void *sqlite3Fts3HashFind(const Fts3Hash *pH, const void *pKey, int nKey){
-  int h;                 /* A hash on key */
-  Fts3HashElem *elem;    /* The element that matches key */
+Fts3HashElem *sqlite3Fts3HashFindElem(
+  const Fts3Hash *pH, 
+  const void *pKey, 
+  int nKey
+){
+  int h;                          /* A hash on key */
   int (*xHash)(const void*,int);  /* The hash function */
 
   if( pH==0 || pH->ht==0 ) return 0;
@@ -293,8 +292,19 @@ void *sqlite3Fts3HashFind(const Fts3Hash *pH, const void *pKey, int nKey){
   assert( xHash!=0 );
   h = (*xHash)(pKey,nKey);
   assert( (pH->htsize & (pH->htsize-1))==0 );
-  elem = fts3FindElementByHash(pH,pKey,nKey, h & (pH->htsize-1));
-  return elem ? elem->data : 0;
+  return fts3FindElementByHash(pH,pKey,nKey, h & (pH->htsize-1));
+}
+
+/* 
+** Attempt to locate an element of the hash table pH with a key
+** that matches pKey,nKey.  Return the data for this element if it is
+** found, or NULL if there is no match.
+*/
+void *sqlite3Fts3HashFind(const Fts3Hash *pH, const void *pKey, int nKey){
+  Fts3HashElem *pElem;            /* The element that matches key (if any) */
+
+  pElem = sqlite3Fts3HashFindElem(pH, pKey, nKey);
+  return pElem ? pElem->data : 0;
 }
 
 /* Insert an element into the hash table pH.  The key is pKey,nKey

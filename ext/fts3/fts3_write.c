@@ -30,7 +30,7 @@ typedef struct SegmentWriter SegmentWriter;
 
 /*
 ** Data structure used while accumulating terms in the pending-terms hash
-** table. The hash table entry maps from term (a string) to a malloced
+** table. The hash table entry maps from term (a string) to a malloc'd
 ** instance of this structure.
 */
 struct PendingList {
@@ -52,15 +52,22 @@ struct PendingList {
 **   sqlite3Fts3SegReaderNew()
 **   sqlite3Fts3SegReaderFree()
 **   sqlite3Fts3SegReaderIterate()
+**
+** Methods used to manipulate Fts3SegReader structures:
+**
+**   fts3SegReaderNext()
+**   fts3SegReaderFirstDocid()
+**   fts3SegReaderNextDocid()
 */
 struct Fts3SegReader {
-  int iIdx;                       /* Index within level */
+  int iIdx;                       /* Index within level, or 0x7FFFFFFF for PT */
   sqlite3_int64 iStartBlock;
   sqlite3_int64 iEndBlock;
   sqlite3_stmt *pStmt;            /* SQL Statement to access leaf nodes */
   char *aNode;                    /* Pointer to node data (or NULL) */
   int nNode;                      /* Size of buffer at aNode (or 0) */
   int nTermAlloc;                 /* Allocated size of zTerm buffer */
+  Fts3HashElem **ppNextElem;
 
   /* Variables set by fts3SegReaderNext(). These may be read directly
   ** by the caller. They are valid from the time SegmentReaderNew() returns
@@ -76,6 +83,8 @@ struct Fts3SegReader {
   char *pOffsetList;
   sqlite3_int64 iDocid;
 };
+
+#define fts3SegReaderIsPending(p) ((p)->ppNextElem!=0)
 
 /*
 ** An instance of this structure is used to create a segment b-tree in the
@@ -728,6 +737,20 @@ static int fts3SegReaderNext(Fts3SegReader *pReader){
 
   if( !pNext || pNext>=&pReader->aNode[pReader->nNode] ){
     int rc;
+    if( fts3SegReaderIsPending(pReader) ){
+      Fts3HashElem *pElem = *(pReader->ppNextElem);
+      if( pElem==0 ){
+        pReader->aNode = 0;
+      }else{
+        PendingList *pList = (PendingList *)fts3HashData(pElem);
+        pReader->zTerm = (char *)fts3HashKey(pElem);
+        pReader->nTerm = fts3HashKeysize(pElem);
+        pReader->nNode = pReader->nDoclist = pList->nData;
+        pReader->aNode = pReader->aDoclist = pList->aData;
+        pReader->ppNextElem++;
+      }
+      return SQLITE_OK;
+    }
     if( !pReader->pStmt ){
       pReader->aNode = 0;
       return SQLITE_OK;
@@ -837,7 +860,9 @@ void sqlite3Fts3SegReaderFree(Fts3Table *p, Fts3SegReader *pReader){
       sqlite3_reset(pReader->pStmt);
       p->aLeavesStmt[p->nLeavesStmt++] = pReader->pStmt;
     }
-    sqlite3_free(pReader->zTerm);
+    if( !fts3SegReaderIsPending(pReader) ){
+      sqlite3_free(pReader->zTerm);
+    }
     sqlite3_free(pReader);
   }
 }
@@ -934,6 +959,97 @@ int sqlite3Fts3SegReaderNew(
   return rc;
 }
 
+/*
+** This is a comparison function used as a qsort() callback when sorting
+** an array of pending terms by term. This occurs as part of flushing
+** the contents of the pending-terms hash table to the database.
+*/
+static int fts3CompareElemByTerm(const void *lhs, const void *rhs){
+  char *z1 = fts3HashKey(*(Fts3HashElem **)lhs);
+  char *z2 = fts3HashKey(*(Fts3HashElem **)rhs);
+  int n1 = fts3HashKeysize(*(Fts3HashElem **)lhs);
+  int n2 = fts3HashKeysize(*(Fts3HashElem **)rhs);
+
+  int n = (n1<n2 ? n1 : n2);
+  int c = memcmp(z1, z2, n);
+  if( c==0 ){
+    c = n1 - n2;
+  }
+  return c;
+}
+
+/*
+** This function is used to allocate an Fts3SegReader that iterates through
+** a subset of the terms stored in the Fts3Table.pendingTerms array.
+*/
+int sqlite3Fts3SegReaderPending(
+  Fts3Table *p,                   /* Virtual table handle */
+  const char *zTerm,              /* Term to search for */
+  int nTerm,                      /* Size of buffer zTerm */
+  int isPrefix,                   /* True for a term-prefix query */
+  Fts3SegReader **ppReader        /* OUT: SegReader for pending-terms */
+){
+  Fts3SegReader *pReader = 0;     /* Fts3SegReader object to return */
+  Fts3HashElem **aElem = 0;       /* Array of term hash entries to scan */
+  int nElem = 0;                  /* Size of array at aElem */
+  int rc = SQLITE_OK;             /* Return Code */
+
+  if( isPrefix ){
+    Fts3HashElem *pE = 0;         /* Iterator variable */
+
+    for(pE=fts3HashFirst(&p->pendingTerms); pE; pE=fts3HashNext(pE)){
+      char *zKey = (char *)fts3HashKey(pE);
+      int nKey = fts3HashKeysize(pE);
+      if( nKey>=nTerm && 0==memcmp(zKey, zTerm, nTerm) ){
+        int nByte = (1+nElem * sizeof(Fts3HashElem *));
+        Fts3HashElem **aElem2 = (Fts3HashElem **)sqlite3_realloc(aElem, nByte);
+        if( !aElem2 ){
+          rc = SQLITE_NOMEM;
+          nElem = 0;
+          break;
+        }
+        aElem = aElem2;
+        aElem[nElem++] = pE;
+      }
+    }
+
+    /* If more than one term matches the prefix, sort the Fts3HashElem
+    ** objects in term order using qsort(). This uses the same comparison
+    ** callback as is used when flushing terms to disk.
+    */
+    if( nElem>1 ){
+      qsort(aElem, nElem, sizeof(Fts3HashElem *), fts3CompareElemByTerm);
+    }
+
+  }else{
+    Fts3HashElem *pE = fts3HashFindElem(&p->pendingTerms, zTerm, nTerm);
+    if( pE ){
+      aElem = &pE;
+      nElem = 1;
+    }
+  }
+
+  if( nElem>0 ){
+    int nByte = sizeof(Fts3SegReader) + (nElem+1)*sizeof(Fts3HashElem *);
+    pReader = (Fts3SegReader *)sqlite3_malloc(nByte);
+    if( !pReader ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memset(pReader, 0, nByte);
+      pReader->iIdx = 0x7FFFFFFF;
+      pReader->ppNextElem = (Fts3HashElem **)&pReader[1];
+      memcpy(pReader->ppNextElem, aElem, nElem*sizeof(Fts3HashElem *));
+      fts3SegReaderNext(pReader);
+    }
+  }
+
+  if( isPrefix ){
+    sqlite3_free(aElem);
+  }
+  *ppReader = pReader;
+  return rc;
+}
+
 
 /*
 ** The second argument to this function is expected to be a statement of
@@ -977,7 +1093,7 @@ static int fts3SegReaderNew(
 **
 **   1) EOF is greater than not EOF.
 **
-**   2) The current terms (if any) are compared with memcmp(). If one
+**   2) The current terms (if any) are compared using memcmp(). If one
 **      term is a prefix of another, the longer term is considered the
 **      larger.
 **
@@ -1790,8 +1906,7 @@ int sqlite3Fts3SegReaderIterate(
       Fts3SegReader *pSeg = apSegment[i];
       while( fts3SegReaderTermCmp(pSeg, zTerm, nTerm)<0 ){
         rc = fts3SegReaderNext(pSeg);
-        if( rc!=SQLITE_OK ) goto finished;
-      }
+        if( rc!=SQLITE_OK ) goto finished; }
     }
   }
 
@@ -1849,9 +1964,9 @@ int sqlite3Fts3SegReaderIterate(
         sqlite3_int64 iDocid = apSegment[0]->iDocid;
         fts3SegReaderNextDocid(apSegment[0], &pList, &nList);
         j = 1;
-        while( j<nMerge 
-            && apSegment[j]->pOffsetList 
-            && apSegment[j]->iDocid==iDocid 
+        while( j<nMerge
+            && apSegment[j]->pOffsetList
+            && apSegment[j]->iDocid==iDocid
         ){
           fts3SegReaderNextDocid(apSegment[j], 0, 0);
           j++;
@@ -2009,25 +2124,6 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   return rc;
 }
 
-/*
-** This is a comparison function used as a qsort() callback when sorting
-** an array of pending terms by term. This occurs as part of flushing
-** the contents of the pending-terms hash table to the database.
-*/
-static int qsortCompare(const void *lhs, const void *rhs){
-  char *z1 = fts3HashKey(*(Fts3HashElem **)lhs);
-  char *z2 = fts3HashKey(*(Fts3HashElem **)rhs);
-  int n1 = fts3HashKeysize(*(Fts3HashElem **)lhs);
-  int n2 = fts3HashKeysize(*(Fts3HashElem **)rhs);
-
-  int n = (n1<n2 ? n1 : n2);
-  int c = memcmp(z1, z2, n);
-  if( c==0 ){
-    c = n1 - n2;
-  }
-  return c;
-}
-
 
 /* 
 ** Flush the contents of pendingTerms to a level 0 segment.
@@ -2070,7 +2166,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
   ** Also, should we be using qsort()?
   */
   if( nElem>1 ){
-    qsort(apElem, nElem, sizeof(Fts3HashElem *), qsortCompare);
+    qsort(apElem, nElem, sizeof(Fts3HashElem *), fts3CompareElemByTerm);
   }
 
 
