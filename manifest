@@ -1,5 +1,5 @@
-C Fix\shandling\sof\s"WHERE\scol\sMATCH\s?\sAND\sdocid\s=\s?"\sclauses\sin\sfts3.
-D 2009-12-10T18:29:05
+C Remove\ssome\sunused\smacros\sand\stypes\sfrom\sfts3.c.
+D 2009-12-10T18:38:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 2542d222475c97e0b73ed3323a2905e81fef648a
+F ext/fts3/fts3.c b79e729c851bb0bfe5c1d6755e88bba26331d2dd
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 1419e2973b44ee78f0ae8f7e03abfa2bdaf14f54
 F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
@@ -778,7 +778,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 61efff414254f209f1c69728ae2da3b3888b7290
-R 317e4960d3972e5703628a8e2153357f
+P 6cbbae849990d99b7ffe252b642d6be49d0c7235
+R 67e72b818fcb37f382269bc958948c54
 U dan
-Z def62a3a7397449ccead2b257ddb1820
+Z b4579d0afa6e2a80ce4411e6eade6c04
