@@ -4946,8 +4946,10 @@ struct sqlite3_mutex_methods {
 ** the appropriate thing to do.  {H17086} The sqlite3_mutex_notheld()
 ** interface should also return 1 when given a NULL pointer.
 */
+#ifndef NDEBUG
 int sqlite3_mutex_held(sqlite3_mutex*);
 int sqlite3_mutex_notheld(sqlite3_mutex*);
+#endif
 
 /*
 ** CAPI3REF: Mutex Types {H17001} <H17000>

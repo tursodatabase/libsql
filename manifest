@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Restore\sthe\sincorrect\slegacy\sON\sINSERT\ssyntax\sto\sthe\sparser\sas\sa\sno-op.\nThat\sway,\solder\sdatabases\sthat\sactually\suse\sthis\smeaningless\ssyntax\swill\nstill\sbe\sreadable.
-D 2009-12-09T21:43:36
+C Only\sdeclare\sthe\ssqlite3_mutex_held()\sand\ssqlite3_mutex_notheld()\sinterfaces\nin\sthe\sheader\sfile\sif\sNDEBUG\sis\snot\sdefined.
+D 2009-12-10T01:17:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -167,7 +167,7 @@ F src/resolve.c d052e5c44bab34f83b3c1741aaa07478d18b5dd5
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 68c58dc49341472e4e5661a47a1a9e5f8a161340
 F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
-F src/sqlite.h.in 338e1ac00faa7e3a536e7f1120827dd1f6432981
+F src/sqlite.h.in 9f04fe0beae6d39a973f2d75dde82db6708bcafc
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h e946a6a3f2df015cdbc7668e9626987e8badbb5f
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -781,14 +781,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0b34ab25624ae4b6c5fa7775328ff0e637d68bfc
-R 69d8516ac3c662ad4387737fbcf18321
+P 54b955c36ba5c139a63c6031855305b764d3fa6c
+R af7bd7d961d62f8a3ad909680a657a87
 U drh
-Z 9d097325245768e9b1c22f4f9e8a8349
+Z 29173053da939d420a44ec000f9044f8
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLIBoKoxKgR168RlERAv7vAJ47adx4GTBd5EeLPemVNhz7ib6fswCfWqdn
-fNs3XqqAXVNlExIdfceQcGc=
-=aeaG
+iD8DBQFLIEwtoxKgR168RlERArN7AJwJu6zTK/fKFR2tbMFA0GU+gGv4YACffJG4
+rSGfNuCvvW2w3AtoGqVeahA=
+=A3lG
 -----END PGP SIGNATURE-----
