@@ -466,10 +466,10 @@ int sqlite3Fts3InitHashTable(
   int rc = SQLITE_OK;
   void *p = (void *)pHash;
   const int any = SQLITE_ANY;
-  char *zTest = 0;
-  char *zTest2 = 0;
 
 #ifdef SQLITE_TEST
+  char *zTest = 0;
+  char *zTest2 = 0;
   void *pdb = (void *)db;
   zTest = sqlite3_mprintf("%s_test", zName);
   zTest2 = sqlite3_mprintf("%s_internal_test", zName);
@@ -486,10 +486,13 @@ int sqlite3Fts3InitHashTable(
    || SQLITE_OK!=(rc = sqlite3_create_function(db, zTest, 3, any, p, testFunc, 0, 0))
    || SQLITE_OK!=(rc = sqlite3_create_function(db, zTest2, 0, any, pdb, intTestFunc, 0, 0))
 #endif
-  );
+   );
 
+#ifdef SQLITE_TEST
   sqlite3_free(zTest);
   sqlite3_free(zTest2);
+#endif
+
   return rc;
 }
 
