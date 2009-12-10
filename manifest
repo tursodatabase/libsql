@@ -1,5 +1,5 @@
-C Fix\san\sOOM\srelated\sproblem\sin\sthe\ssnippet()\sand\soffsets()\sfunctions\sof\sfts3.
-D 2009-12-10T18:20:32
+C Fix\shandling\sof\s"WHERE\scol\sMATCH\s?\sAND\sdocid\s=\s?"\sclauses\sin\sfts3.
+D 2009-12-10T18:29:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c a52050eb59dd190cacfce49e82dd11e66885aef9
+F ext/fts3/fts3.c 2542d222475c97e0b73ed3323a2905e81fef648a
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 1419e2973b44ee78f0ae8f7e03abfa2bdaf14f54
 F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
@@ -326,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test fd1fcf89badd5f2773d7ac04775b5ff3488eda17
-F test/e_fts3.test 3acfdc1c363f245e6e251e067a5c375dd5e34731
+F test/e_fts3.test 3f3f70a0105d03d631b0db1408aa17bebd487d7f
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -778,7 +778,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 48c0db0eb2d134bb302bb5eca6beb0ec46736257
-R 4df67170c38eb456078008bc38ed8026
+P 61efff414254f209f1c69728ae2da3b3888b7290
+R 317e4960d3972e5703628a8e2153357f
 U dan
-Z bd1d5b1e641b924be3a08e7b99336f40
+Z def62a3a7397449ccead2b257ddb1820

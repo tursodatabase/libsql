@@ -803,31 +803,31 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
     if( pCons->usable==0 ) continue;
 
-    /* A direct lookup on the rowid or docid column. This is the best
-    ** strategy in all cases. Assign a cost of 1.0 and return early.
-    */
+    /* A direct lookup on the rowid or docid column. Assign a cost of 1.0. */
     if( pCons->op==SQLITE_INDEX_CONSTRAINT_EQ 
      && (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1 )
     ){
       pInfo->idxNum = FTS3_DOCID_SEARCH;
       pInfo->estimatedCost = 1.0;
       iCons = i;
-      break;
     }
 
     /* A MATCH constraint. Use a full-text search.
     **
     ** If there is more than one MATCH constraint available, use the first
     ** one encountered. If there is both a MATCH constraint and a direct
-    ** rowid/docid lookup, prefer the rowid/docid strategy.
+    ** rowid/docid lookup, prefer the MATCH strategy. This is done even 
+    ** though the rowid/docid lookup is faster than a MATCH query, selecting
+    ** it would lead to an "unable to use function MATCH in the requested 
+    ** context" error.
     */
-    if( iCons<0 
-     && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH 
+    if( pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH 
      && pCons->iColumn>=0 && pCons->iColumn<=p->nColumn
     ){
       pInfo->idxNum = FTS3_FULLTEXT_SEARCH + pCons->iColumn;
       pInfo->estimatedCost = 2.0;
       iCons = i;
+      break;
     }
   }
 

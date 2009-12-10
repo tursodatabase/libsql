@@ -38,8 +38,6 @@ proc error_test {tn sql result} {
 }
 
 
-if 1 {
-
 #-------------------------------------------------------------------------
 # The body of the following [foreach] block contains test cases to verify
 # that the example code in fts3.html works as expected. The tests run three
@@ -547,7 +545,6 @@ read_test  6.7 { SELECT * FROM t6 WHERE t6 MATCH NULL } {}
 read_test  6.8 { SELECT * FROM t6 WHERE x MATCH NULL } {}
 #-------------------------------------------------------------------------
 
-
 #-------------------------------------------------------------------------
 # Test a few facets of the FTS3 xFilter() callback implementation:
 #
@@ -560,6 +557,7 @@ read_test  6.8 { SELECT * FROM t6 WHERE x MATCH NULL } {}
 #      that refer to a single FTS3 table in a WHERE clause.
 #
 #
+set DO_MALLOC_TEST 0
 ddl_test   7.1.1 { CREATE VIRTUAL TABLE t7 USING fts3(a) }
 ddl_test   7.1.2 { CREATE VIRTUAL TABLE t8 USING fts3(b) }
 write_test 7.1.3 t7_content { INSERT INTO t7(docid, a) VALUES(4,'number four') }
@@ -589,8 +587,9 @@ error_test 7.3.3 {
 read_test 7.3.4 {
   SELECT * FROM t7, t8 WHERE a MATCH 'number' AND b MATCH 'letter'
 } {{number four} {letter D} {number four} {letter E} {number five} {letter D} {number five} {letter E}}
-
-}
+read_test 7.3.5 {
+  SELECT * FROM t7 WHERE a MATCH 'number' AND docid = 4
+} {{number four}}
 
 #-------------------------------------------------------------------------
 # Test the quoting of FTS3 table column names. Names may be quoted using
