@@ -184,7 +184,7 @@ write_test 1.2.2.4 docs_content {
 }
 read_test  1.2.2.5 { SELECT count(*) FROM docs_segdir } {3}
 write_test 1.2.2.6 docs_segdir {
-  SELECT * FROM (SELECT optimize(docs) FROM docs LIMIT 1) WHERE 0;
+  INSERT INTO docs(docs) VALUES('optimize');
 }
 read_test  1.2.2.7 { SELECT count(*) FROM docs_segdir } {1}
 ddl_test   1.2.2.8 { DROP TABLE docs }

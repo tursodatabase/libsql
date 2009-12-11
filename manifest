@@ -1,5 +1,5 @@
-C Add\scomment\sto\sfts3rnd.test\sto\sexplain\show\sthe\stest\sworks.
-D 2009-12-11T07:07:36
+C Rationalize\ssome\scode\sin\sfts3\sused\sby\soptimize\soperations,\squeries\sof\sthe\spending-terms\shash\stable\sand\ssegment\smerges.\sAdd\sthe\s"INSERT\sINTO\stbl(tbl)\sVALUES('optimize')"\ssyntax.
+D 2009-12-11T12:29:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
-F ext/fts3/fts3_write.c ee50b8feb757bf0cddc522223ebd49f91985a1ad
+F ext/fts3/fts3_write.c 883db716247dd36a5d881e817c95b47e869c14cd
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -326,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test fd1fcf89badd5f2773d7ac04775b5ff3488eda17
-F test/e_fts3.test 3f3f70a0105d03d631b0db1408aa17bebd487d7f
+F test/e_fts3.test ad5d08ca8634b1636c6129d023a1139938b6be05
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -778,7 +778,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ea884e1ed8dba1aa0f3cf68fc71923954983f6c6
-R ae6e3fceaf15353a41abf5fd7eaec6f2
+P 6b740c7cd57d618623ed028be4213dfef860054a
+R 5a68bfd74081748d8df270fc22751e08
 U dan
-Z ad28381e408238f8547c0374a8ed6615
+Z e468921fcf4b1ed0f9a093998ca6e7b2
