@@ -818,7 +818,7 @@ struct sqlite3_vfs {
 ** CAPI3REF: Flags for the xAccess VFS method
 **
 ** These integer constants can be used as the third parameter to
-** the xAccess method of an [sqlite3_vfs] object. {END}  They determine
+** the xAccess method of an [sqlite3_vfs] object.  They determine
 ** what kind of permissions the xAccess method is looking for.
 ** With SQLITE_ACCESS_EXISTS, the xAccess method
 ** simply checks whether the file exists.
@@ -964,14 +964,11 @@ SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 **
 ** ^Calls to sqlite3_db_config() return SQLITE_OK if and only if
 ** the call is considered successful.
-**
-** Requirements:
-** [H14203] [H14206] [H14209] [H14212] [H14215]
 */
 SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
-** CAPI3REF: Memory Allocation Routines {H10155} <S20120>
+** CAPI3REF: Memory Allocation Routines
 ** EXPERIMENTAL
 **
 ** An instance of this object defines the interface between SQLite
@@ -1053,7 +1050,7 @@ struct sqlite3_mem_methods {
 };
 
 /*
-** CAPI3REF: Configuration Options {H10160} <S20000>
+** CAPI3REF: Configuration Options
 ** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
@@ -1258,7 +1255,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_GETPCACHE    15  /* sqlite3_pcache_methods* */
 
 /*
-** CAPI3REF: Configuration Options {H10170} <S20000>
+** CAPI3REF: Configuration Options
 ** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
@@ -2501,7 +2498,7 @@ const char *sqlite3_sql(sqlite3_stmt *pStmt);
 typedef struct Mem sqlite3_value;
 
 /*
-** CAPI3REF: SQL Function Context Object {H16001} <S20200>
+** CAPI3REF: SQL Function Context Object
 **
 ** The context in which an SQL function executes is stored in an
 ** sqlite3_context object.  ^A pointer to an sqlite3_context object
@@ -2515,7 +2512,7 @@ typedef struct Mem sqlite3_value;
 typedef struct sqlite3_context sqlite3_context;
 
 /*
-** CAPI3REF: Binding Values To Prepared Statements {H13500} <S70300>
+** CAPI3REF: Binding Values To Prepared Statements
 ** KEYWORDS: {host parameter} {host parameters} {host parameter name}
 ** KEYWORDS: {SQL parameter} {SQL parameters} {parameter binding}
 **
@@ -2862,7 +2859,8 @@ int sqlite3_step(sqlite3_stmt*);
 /*
 ** CAPI3REF: Number of columns in a result set
 **
-** ^Returns the number of values in the current row of the result set.
+** ^The sqlite3_data_count(P) the number of columns in the
+** of the result set of [prepared statement] P.
 */
 int sqlite3_data_count(sqlite3_stmt *pStmt);
 
@@ -2870,7 +2868,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** CAPI3REF: Fundamental Datatypes
 ** KEYWORDS: SQLITE_TEXT
 **
-** {H10266} Every value in SQLite has one of five fundamental datatypes:
+** ^(Every value in SQLite has one of five fundamental datatypes:
 **
 ** <ul>
 ** <li> 64-bit signed integer
@@ -2878,7 +2876,7 @@ int sqlite3_data_count(sqlite3_stmt *pStmt);
 ** <li> string
 ** <li> BLOB
 ** <li> NULL
-** </ul> {END}
+** </ul>)^
 **
 ** These constants are codes for each of those types.
 **
@@ -3581,7 +3579,7 @@ void sqlite3_result_zeroblob(sqlite3_context*, int n);
 ** ^The remaining arguments to the application-supplied routine are two strings,
 ** each represented by a (length, data) pair and encoded in the encoding
 ** that was passed as the third argument when the collation sequence was
-** registered. {END}  The application defined collation routine should
+** registered.  The application defined collation routine should
 ** return negative, zero or positive if the first string is less than,
 ** equal to, or greater than the second string. i.e. (STRING1 - STRING2).
 **
@@ -3620,7 +3618,7 @@ int sqlite3_create_collation16(
 );
 
 /*
-** CAPI3REF: Collation Needed Callbacks {H16700} <S20300>
+** CAPI3REF: Collation Needed Callbacks
 **
 ** ^To avoid having to register all collation sequences before a database
 ** can be used, a single callback function may be registered with the
@@ -3779,7 +3777,7 @@ sqlite3 *sqlite3_db_handle(sqlite3_stmt*);
 sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 
 /*
-** CAPI3REF: Commit And Rollback Notification Callbacks {H12950} <S60400>
+** CAPI3REF: Commit And Rollback Notification Callbacks
 **
 ** ^The sqlite3_commit_hook() interface registers a callback
 ** function to be invoked whenever a transaction is [COMMIT | committed].
@@ -3953,7 +3951,7 @@ int sqlite3_release_memory(int);
 void sqlite3_soft_heap_limit(int);
 
 /*
-** CAPI3REF: Extract Metadata About A Column Of A Table {H12850} <S60300>
+** CAPI3REF: Extract Metadata About A Column Of A Table
 **
 ** ^This routine returns metadata about a specific column of a specific
 ** database table accessible using the [database connection] handle
@@ -4258,7 +4256,7 @@ struct sqlite3_index_info {
 ** CAPI3REF: Register A Virtual Table Implementation
 ** EXPERIMENTAL
 **
-** ^This routine is used to register a new [virtual table module] name.
+** ^These routines are used to register a new [virtual table module] name.
 ** ^Module names must be registered before
 ** creating a new [virtual table] using the module, or before using a
 ** preexisting [virtual table] for the module.
@@ -4271,8 +4269,12 @@ struct sqlite3_index_info {
 ** into the [xCreate] and [xConnect] methods of the virtual table module
 ** when a new virtual table is be being created or reinitialized.
 **
-** ^This interface has exactly the same effect as calling
-** [sqlite3_create_module_v2()] with a NULL client data destructor.
+** ^The sqlite3_create_module_v2() interface has a fifth parameter which
+** is a pointer to a destructor for the pClientData.  ^SQLite will
+** invoke the destructor function (if it is not NULL) when SQLite
+** no longer needs the pClientData pointer.  ^The sqlite3_create_module()
+** interface is equivalent to sqlite3_create_module_v2() with a NULL
+** destructor.
 */
 SQLITE_EXPERIMENTAL int sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
@@ -4280,17 +4282,6 @@ SQLITE_EXPERIMENTAL int sqlite3_create_module(
   const sqlite3_module *p,   /* Methods for the module */
   void *pClientData          /* Client data for xCreate/xConnect */
 );
-
-/*
-** CAPI3REF: Register A Virtual Table Implementation
-** EXPERIMENTAL
-**
-** ^This routine is identical to the [sqlite3_create_module()] method,
-** except that it has an extra parameter to specify 
-** a destructor function for the client data pointer.  ^SQLite will
-** invoke the destructor function (if it is not NULL) when SQLite
-** no longer needs the pClientData pointer.  
-*/
 SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
@@ -4405,7 +4396,7 @@ SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncNam
 typedef struct sqlite3_blob sqlite3_blob;
 
 /*
-** CAPI3REF: Open A BLOB For Incremental I/O {H17810} <S30230>
+** CAPI3REF: Open A BLOB For Incremental I/O
 **
 ** ^(This interfaces opens a [BLOB handle | handle] to the BLOB located
 ** in row iRow, column zColumn, table zTable in database zDb;
@@ -4873,7 +4864,7 @@ int sqlite3_mutex_notheld(sqlite3_mutex*);
 sqlite3_mutex *sqlite3_db_mutex(sqlite3*);
 
 /*
-** CAPI3REF: Low-Level Control Of Database Files {H11300} <S30800>
+** CAPI3REF: Low-Level Control Of Database Files
 **
 ** ^The [sqlite3_file_control()] interface makes a direct call to the
 ** xFileControl method for the [sqlite3_io_methods] object associated
