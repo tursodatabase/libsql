@@ -9,6 +9,72 @@
 # Brute force (random data) tests for FTS3.
 #
 
+#-------------------------------------------------------------------------
+#
+# The FTS3 tests implemented in this file focus on testing that FTS3
+# returns the correct set of documents for various types of full-text
+# query. This is done using pseudo-randomly generated data and queries.
+# The expected result of each query is calculated using Tcl code.
+#
+#   1. The database is initialized to contain a single table with three
+#      columns. 100 rows are inserted into the table. Each of the three
+#      values in each row is a document consisting of between 0 and 100
+#      terms. Terms are selected from a vocabulary of $G(nVocab) terms.
+#
+#   2. The following is performed 100 times:
+#
+#      a. A row is inserted into the database. The row contents are 
+#         generated as in step 1. The docid is a pseudo-randomly selected
+#         value between 0 and 1000000.
+# 
+#      b. A psuedo-randomly selected row is updated. One of its columns is
+#         set to contain a new document generated in the same way as the
+#         documents in step 1.
+# 
+#      c. A psuedo-randomly selected row is deleted.
+# 
+#      d. For each of several types of fts3 queries, 10 SELECT queries
+#         of the form:
+# 
+#           SELECT docid FROM <tbl> WHERE <tbl> MATCH '<query>'
+# 
+#         are evaluated. The results are compared to those calculated by
+#         Tcl code in this file. The patterns used for the different query
+#         types are:
+# 
+#           1.  query = <term>
+#           2.  query = <prefix>
+#           3.  query = "<term> <term>"
+#           4.  query = "<term> <term> <term>"
+#           5.  query = "<prefix> <prefix> <prefix>"
+#           6.  query = <term> NEAR <term>
+#           7.  query = <term> NEAR/11 <term> NEAR/11 <term>
+#           8.  query = <term> OR <term>
+#           9.  query = <term> NOT <term>
+#           10. query = <term> AND <term>
+#           11. query = <term> NEAR <term> OR <term> NEAR <term>
+#           12. query = <term> NEAR <term> NOT <term> NEAR <term>
+#           13. query = <term> NEAR <term> AND <term> NEAR <term>
+# 
+#         where <term> is a term psuedo-randomly selected from the vocabulary
+#         and prefix is the first 2 characters of such a term followed by
+#         a "*" character.
+#     
+#      Every second iteration, steps (a) through (d) above are performed
+#      within a single transaction. This forces the queries in (d) to
+#      read data from both the database and the in-memory hash table
+#      that caches the full-text index entries created by steps (a), (b)
+#      and (c) until the transaction is committed.
+#
+# The procedure above is run 5 times, using advisory fts3 node sizes of 50,
+# 500, 1000 and 2000 bytes.
+#
+# After the test using an advisory node-size of 50, an OOM test is run using
+# the database. This test is similar to step (d) above, except that it tests
+# the effects of transient and persistent OOM conditions encountered while
+# executing each query.
+#
+
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
@@ -17,11 +83,12 @@ source $testdir/tester.tcl
 ifcapable !fts3 { finish_test ; return }
 source $testdir/fts3_common.tcl
 
+set G(nVocab) 100
+
 set nVocab 100
 set lVocab [list]
 
 expr srand(0)
-
 
 # Generate a vocabulary of nVocab words. Each word is 3 characters long.
 #
