@@ -577,14 +577,6 @@ static int fts3InitVtab(
   const char *zTokenizer = 0;               /* Name of tokenizer to use */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
 
-#ifdef SQLITE_TEST
-  const char *zTestParam = 0;
-  if( strncmp(argv[argc-1], "test:", 5)==0 ){
-    zTestParam = argv[argc-1];
-    argc--;
-  }
-#endif
-
   nDb = (int)strlen(argv[1]) + 1;
   nName = (int)strlen(argv[2]) + 1;
   for(i=3; i<argc; i++){
@@ -672,11 +664,6 @@ static int fts3InitVtab(
   rc = fts3DeclareVtab(p);
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
-#ifdef SQLITE_TEST
-  if( zTestParam ){
-    p->nNodeSize = atoi(&zTestParam[5]);
-  }
-#endif
   *ppVTab = &p->base;
 
 fts3_init_out:
@@ -2280,12 +2267,6 @@ int sqlite3Fts3Init(sqlite3 *db){
       rc = SQLITE_NOMEM;
     }
   }
-
-#ifdef SQLITE_TEST
-  if( rc==SQLITE_OK ){
-    rc = sqlite3Fts3ExprInitTestInterface(db);
-  }
-#endif
 
   /* Create the virtual table wrapper around the hash-table and overload 
   ** the two scalar functions. If this is successful, register the

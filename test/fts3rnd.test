@@ -214,7 +214,8 @@ foreach nodesize {50 500 1000 2000} {
   #
   db transaction {
     catchsql { DROP TABLE t1 }
-    execsql "CREATE VIRTUAL TABLE t1 USING fts3(a, b, c, test:$nodesize)"
+    execsql "CREATE VIRTUAL TABLE t1 USING fts3(a, b, c)"
+    execsql "INSERT INTO t1(t1) VALUES('nodesize=$nodesize')"
     for {set i 0} {$i < 100} {incr i} { insert_row $i }
   }
   

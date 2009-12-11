@@ -2217,6 +2217,11 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
       rc = SQLITE_OK;
       sqlite3Fts3PendingTermsClear(p);
     }
+#ifdef SQLITE_TEST
+  }else if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
+    p->nNodeSize = atoi(&zVal[9]);
+    rc = SQLITE_OK;
+#endif
   }else{
     rc = SQLITE_ERROR;
   }

@@ -1,5 +1,5 @@
-C Rationalize\ssome\scode\sin\sfts3\sused\sby\soptimize\soperations,\squeries\sof\sthe\spending-terms\shash\stable\sand\ssegment\smerges.\sAdd\sthe\s"INSERT\sINTO\stbl(tbl)\sVALUES('optimize')"\ssyntax.
-D 2009-12-11T12:29:05
+C Change\sthe\sfts3\stest\sinterface\sused\sto\sconfigure\sthe\sadvisory\snode\ssize\sparaemeter.
+D 2009-12-11T16:03:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c b79e729c851bb0bfe5c1d6755e88bba26331d2dd
+F ext/fts3/fts3.c c059f8e743276b589cd07e311a42d9b699cc7bb7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 1419e2973b44ee78f0ae8f7e03abfa2bdaf14f54
 F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
@@ -68,7 +68,7 @@ F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
-F ext/fts3/fts3_write.c 883db716247dd36a5d881e817c95b47e869c14cd
+F ext/fts3/fts3_write.c 3f49f2cde3285c6e3559a756812c4a525abcfb25
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -88,7 +88,7 @@ F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk a92b99b264c3b277f8cf74d50aadc22c55967ef0
+F main.mk 93d7ab227d0110d996d0db430a9a27d42980c7be
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -402,7 +402,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
-F test/fts3rnd.test b1fd9a0b8bd95014b1c2cb9d5a8f27b5b3afc50d
+F test/fts3rnd.test 03e88da0bd300e48f9c9a154362d501fab259f9f
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -778,7 +778,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6b740c7cd57d618623ed028be4213dfef860054a
-R 5a68bfd74081748d8df270fc22751e08
+P 29476da353df4c67fe744c1c5f466ba5b9c1a54b
+R 8ca2da08c312091c8993186dd9f053b6
 U dan
-Z e468921fcf4b1ed0f9a093998ca6e7b2
+Z db31ff17c7c3485d488732b71bbeecde
