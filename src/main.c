@@ -265,7 +265,7 @@ int sqlite3_config(int op, ...){
     /* Mutex configuration options are only available in a threadsafe
     ** compile. 
     */
-#if SQLITE_THREADSAFE
+#if defined(SQLITE_THREADSAFE) && SQLITE_THREADSAFE>0
     case SQLITE_CONFIG_SINGLETHREAD: {
       /* Disable all mutexing */
       sqlite3GlobalConfig.bCoreMutex = 0;
