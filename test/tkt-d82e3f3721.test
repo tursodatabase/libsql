@@ -75,5 +75,6 @@ do_test tkt-d82e3-2.2 {
     SELECT * FROM temp.t3 JOIN main.t3;
   }
 } {1 8 9}
+db2 close
 
 finish_test
