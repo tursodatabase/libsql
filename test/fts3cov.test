@@ -18,6 +18,7 @@ source $testdir/tester.tcl
 #
 ifcapable !fts3 { finish_test ; return }
 source $testdir/fts3_common.tcl
+source $testdir/malloc_common.tcl
 
 set DO_MALLOC_TEST 0
 
@@ -173,6 +174,12 @@ do_write_test fts3cov-4.2 t3_content {
 # by inserting insert a document with some fairly large terms into a
 # full-text table with a very small node-size. 
 #
+# Test this handling of large terms in three contexts:
+#
+#   1. When flushing the pending-terms table.
+#   2. When optimizing the data structures using the INSERT syntax. 
+#   2. When optimizing the data structures using the deprecated SELECT syntax. 
+#
 do_test fts3cov-5.1 {
   execsql {
     CREATE VIRTUAL TABLE t4 USING fts3(x);
@@ -180,6 +187,8 @@ do_test fts3cov-5.1 {
   }
 } {}
 set DO_MALLOC_TEST 1
+
+# Test when flushing pending-terms table.
 do_write_test fts3cov-5.2 t4_content {
   INSERT INTO t4
     SELECT 'ItisanancientMarinerAndhestoppethoneofthreeAA' UNION ALL
@@ -189,14 +198,155 @@ do_write_test fts3cov-5.2 t4_content {
     SELECT 'BythylonggreybeardandglitteringeyeNowwhereforestoppstBB' UNION ALL
     SELECT 'BythylonggreybeardandglitteringeyeNowwhereforestoppstCC'
 }
-do_test fts3cov-5.3 {
-  execsql { INSERT INTO t4 VALUES('extra!') }
-} {}
-do_write_test fts3cov-5.2 t4_segments {
-  INSERT INTO t4(t4) VALUES('optimize')
+
+# Test when optimizing via INSERT.
+do_test fts3cov-5.3 { execsql { INSERT INTO t4 VALUES('extra!') } } {}
+do_write_test fts3cov-5.2 t4_segments { INSERT INTO t4(t4) VALUES('optimize') }
+
+# Test when optimizing via SELECT.
+do_test fts3cov-5.5 { execsql { INSERT INTO t4 VALUES('more extra!') } } {}
+do_write_test fts3cov-5.6 t4_segments {
+  SELECT * FROM (SELECT optimize(t4) FROM t4 LIMIT 1)
+  EXCEPT SELECT 'Index optimized'
 }
 
+#-------------------------------------------------------------------------
+# When merging all segments at a given level to create a single segment
+# at level+1, FTS3 runs a query of the form:
+#
+#   SELECT count(*) FROM %_segdir WHERE level = ?
+#
+# The query is compiled the first time this operation is required and
+# reused thereafter. This test aims to test the effects of an OOM while
+# preparing and executing this query for the first time.
+#
+# Then, keep inserting rows into the table so that the effects of an OOM
+# while re-executing the same query can also be tested.
+#
+do_test fts3cov-6.1 {
+  execsql { CREATE VIRTUAL TABLE t5 USING fts3(x) }
+  for {set i 0} {$i<16} {incr i} { execsql "INSERT INTO t5 VALUES('term$i')" }
+  execsql { SELECT count(*) FROM t5_segdir }
+} {16}
 
+# First time.
+db close
+sqlite3 db test.db
+do_write_test fts3cov-6.2 t5_content {
+  INSERT INTO t5 VALUES('segment number 16!');
+}
+
+# Second time.
+do_test fts3cov-6.3 {
+  for {set i 1} {$i<16} {incr i} { execsql "INSERT INTO t5 VALUES('term$i')" }
+  execsql { SELECT count(*) FROM t5_segdir }
+} {17}
+do_write_test fts3cov-6.4 t5_content {
+  INSERT INTO t5 VALUES('segment number 16!');
+}
+
+#-------------------------------------------------------------------------
+# Update the docid of a row. Test this in two scenarios:
+#
+#   1. When the row being updated is the only row in the table.
+#   2. When it is not.
+#
+# The two cases above take different paths because in case 1 all data 
+# structures can simply be emptied before inserting the new row record.
+# In case 2, the data structures actually have to be updated.
+#
+do_test fts3cov-7.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t7 USING fts3(a, b, c);
+    INSERT INTO t7 VALUES('A', 'B', 'C');
+    UPDATE t7 SET docid = 5;
+    SELECT docid, * FROM t7;
+  }
+} {5 A B C}
+do_test fts3cov-7.2 {
+  execsql {
+    INSERT INTO t7 VALUES('D', 'E', 'F');
+    UPDATE t7 SET docid = 1 WHERE docid = 6;
+    SELECT docid, * FROM t7;
+  }
+} {1 D E F 5 A B C}
+
+#-------------------------------------------------------------------------
+# If a set of documents are modified within a transaction, the 
+# pending-terms table must be flushed each time a document with a docid
+# less than or equal to the previous docid is modified. 
+#
+# This test checks the effects of an OOM error occuring when the 
+# pending-terms table is flushed for this reason as part of a DELETE 
+# statement.
+#
+do_malloc_test fts3cov-8 -sqlprep {
+  BEGIN;
+    CREATE VIRTUAL TABLE t8 USING fts3;
+    INSERT INTO t8 VALUES('the output of each batch run');
+    INSERT INTO t8 VALUES('(possibly a day''s work)');
+    INSERT INTO t8 VALUES('was written to two separate disks');
+  COMMIT;
+} -sqlbody {
+  BEGIN;
+    DELETE FROM t8 WHERE rowid = 3;
+    DELETE FROM t8 WHERE rowid = 2;
+    DELETE FROM t8 WHERE rowid = 1;
+  COMMIT;
+}
+
+#-------------------------------------------------------------------------
+# Test some branches in the code that handles "special" inserts like:
+#
+#   INSERT INTO t1(t1) VALUES('optimize');
+#
+# Also test that an optimize (INSERT method) works on an empty table.
+#
+set DO_MALLOC_TEST 0
+do_test fts3cov-9.1 {
+  execsql { CREATE VIRTUAL TABLE xx USING fts3 }
+} {}
+do_error_test fts3cov-9.2 {
+  INSERT INTO xx(xx) VALUES('optimise');   -- British spelling
+} {SQL logic error or missing database}
+do_error_test fts3cov-9.3 {
+  INSERT INTO xx(xx) VALUES('short');
+} {SQL logic error or missing database}
+do_error_test fts3cov-9.4 {
+  INSERT INTO xx(xx) VALUES('waytoolongtobecorrect');
+} {SQL logic error or missing database}
+do_test fts3cov-9.5 {
+  execsql { INSERT INTO xx(xx) VALUES('optimize') }
+} {}
+
+#-------------------------------------------------------------------------
+# Test that a table can be optimized in the middle of a transaction when
+# the pending-terms table is non-empty. This case involves some extra
+# branches because data must be read not only from the database, but
+# also from the pending-terms table.
+#
+do_malloc_test fts3cov-10 -sqlprep {
+  CREATE VIRTUAL TABLE t10 USING fts3;
+  INSERT INTO t10 VALUES('Optimising images for the web is a tricky business');
+  BEGIN;
+    INSERT INTO t10 VALUES('You have to get the right balance between');
+} -sqlbody {
+  INSERT INTO t10(t10) VALUES('optimize');
+}
+
+#-------------------------------------------------------------------------
+# Test a full-text query for a term that was once in the index, but is
+# no longer.
+#
+do_test fts3cov-11.1 {
+  execsql { 
+    CREATE VIRTUAL TABLE xx USING fts3;
+    INSERT INTO xx VALUES('one two three');
+    INSERT INTO xx VALUES('four five six');
+    DELETE FROM xx WHERE docid = 1;
+  }
+  execsql { SELECT * FROM xx WHERE xx MATCH 'two' }
+} {}
 
 finish_test
 

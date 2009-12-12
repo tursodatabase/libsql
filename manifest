@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Rename\stkt-d82e3f3721.txt\sto\suse\sthe\s(correct)\s.test\ssuffix.
-D 2009-12-12T13:58:19
+C Further\sfts3\scoverage\stests.
+D 2009-12-12T16:04:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +68,7 @@ F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 7ff73caa3327589bf6550f60d93ebdd1f6a0fb5c
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
-F ext/fts3/fts3_write.c 8fa73906993c46d1add03367d658b4b2f2214bb8
+F ext/fts3/fts3_write.c c2e0ef39df121b291fda42992ef1387f7938dea1
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 12e763d288d23b5a49de37caa30737b971a2f1e2
@@ -399,7 +396,7 @@ F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
 F test/fts3atoken.test 25c2070e1e8755d414bf9c8200427b277a9f99fa
 F test/fts3b.test e93bbb653e52afde110ad53bbd793f14fe7a8984
 F test/fts3c.test fc723a9cf10b397fdfc2b32e73c53c8b1ec02958
-F test/fts3cov.test ce49852ac727c74cfce8e5a4cc017c7edfab7b7e
+F test/fts3cov.test f2d27d29628941e4814473345603b20421b93c78
 F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
@@ -782,14 +779,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P eee921a99e69a9cd868a89de620bf47c4e26e4b5
-R 5d65e226c3987e06982591864693cc96
-U drh
-Z b6b0937ebc754fff562e435d0e81894c
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLI6F/oxKgR168RlERAv3/AKCGxXDpk/BocjexCfeSDuJTQRc0JwCeOdSJ
-ZSbD17MSKkOO16NEgcCVaWk=
-=0ws+
------END PGP SIGNATURE-----
+P 68cccd62b71f7b55bf7f2f56dc8507cbe80229ba
+R 24dafc1291b25c037b068505da647d63
+U dan
+Z f50ab64261ebba22ef3131cb9e897960

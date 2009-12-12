@@ -1959,7 +1959,8 @@ int sqlite3Fts3SegReaderIterate(
       nMerge++;
     }
 
-    if( nMerge==1 && !isIgnoreEmpty && !isColFilter && isRequirePos ){
+    assert( isIgnoreEmpty==0 || (isRequirePos && isColFilter==0) );
+    if( nMerge==1 && !isIgnoreEmpty ){
       Fts3SegReader *p0 = apSegment[0];
       rc = xFunc(p, pContext, zTerm, nTerm, p0->aDoclist, p0->nDoclist);
       if( rc!=SQLITE_OK ) goto finished;
@@ -2061,7 +2062,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   int rc;                         /* Return code */
   int iIdx;                       /* Index of new segment */
   int iNewLevel;                  /* Level to create new segment at */
-  sqlite3_stmt *pStmt;
+  sqlite3_stmt *pStmt = 0;
   SegmentWriter *pWriter = 0;
   int nSegment = 0;               /* Number of segments being merged */
   Fts3SegReader **apSegment = 0;  /* Array of Segment iterators */
@@ -2074,12 +2075,11 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
     ** greatest segment level currently present in the database. The index
     ** of the new segment is always 0.
     */
-    rc = sqlite3Fts3SegReaderPending(p, 0, 0, 1, &pPending);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
     iIdx = 0;
+    rc = sqlite3Fts3SegReaderPending(p, 0, 0, 1, &pPending);
+    if( rc!=SQLITE_OK ) goto finished;
     rc = fts3SegmentCountMax(p, &nSegment, &iNewLevel);
+    if( rc!=SQLITE_OK ) goto finished;
     nSegment += (pPending!=0);
     if( nSegment<=1 ){
       return SQLITE_DONE;
@@ -2092,17 +2092,18 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
     */
     iNewLevel = iLevel+1;
     rc = fts3AllocateSegdirIdx(p, iNewLevel, &iIdx);
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc!=SQLITE_OK ) goto finished;
     rc = fts3SegmentCount(p, iLevel, &nSegment);
+    if( rc!=SQLITE_OK ) goto finished;
   }
-  if( rc!=SQLITE_OK ) return rc;
   assert( nSegment>0 );
   assert( iNewLevel>=0 );
 
   /* Allocate space for an array of pointers to segment iterators. */
   apSegment = (Fts3SegReader**)sqlite3_malloc(sizeof(Fts3SegReader *)*nSegment);
   if( !apSegment ){
-    return SQLITE_NOMEM;
+    rc = SQLITE_NOMEM;
+    goto finished;
   }
   memset(apSegment, 0, sizeof(Fts3SegReader *)*nSegment);
 
@@ -2123,6 +2124,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
   rc = sqlite3_reset(pStmt);
   if( pPending ){
     apSegment[i] = pPending;
+    pPending = 0;
   }
   pStmt = 0;
   if( rc!=SQLITE_OK ) goto finished;
@@ -2148,6 +2150,7 @@ static int fts3SegmentMerge(Fts3Table *p, int iLevel){
     }
     sqlite3_free(apSegment);
   }
+  sqlite3Fts3SegReaderFree(p, pPending);
   sqlite3_reset(pStmt);
   return rc;
 }
