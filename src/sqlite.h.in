@@ -1218,7 +1218,8 @@ struct sqlite3_mem_methods {
 **
 ** <dt>SQLITE_CONFIG_LOOKASIDE</dt>
 ** <dd> ^(This option takes two arguments that determine the default
-** memory allocation lookaside optimization.  The first argument is the
+** memory allocation for the lookaside memory allocator on each
+** [database connection].  The first argument is the
 ** size of each lookaside buffer slot and the second is the number of
 ** slots allocated to each database connection.)^  ^(This option sets the
 ** <i>default</i> lookaside size. The [SQLITE_DBCONFIG_LOOKASIDE]
@@ -2711,8 +2712,9 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 /*
 ** CAPI3REF: Source Of Data In A Query Result
 **
-** ^These routines provide a means to determine what column of what
-** table in which database a result of a [SELECT] statement comes from.
+** ^These routines provide a means to determine the database, table, and
+** table column that is the origin of a particular result column in
+** [SELECT] statement.
 ** ^The name of the database or table or column can be returned as
 ** either a UTF-8 or UTF-16 string.  ^The _database_ routines return
 ** the database name, the _table_ routines return the table name, and
@@ -2724,10 +2726,10 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** ^The names returned are the original un-aliased names of the
 ** database, table, and column.
 **
-** ^The first argument these interfaces is a [prepared statement].
-** ^These functions return information about the Nth column returned by
+** ^The first argument to these interfaces is a [prepared statement].
+** ^These functions return information about the Nth result column returned by
 ** the statement, where N is the second function argument.
-** ^The left-most column is column 0 for these interface.
+** ^The left-most column is column 0 for these routines.
 **
 ** ^If the Nth column returned by the statement is an expression or
 ** subquery and is not a column value, then all of these functions return
@@ -2735,11 +2737,11 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** occurs.  ^Otherwise, they return the name of the attached database, table
 ** or column that query result column was extracted from.
 **
-** ^As with all other SQLite APIs, those postfixed with "16" return
-** UTF-16 encoded strings, the other functions return UTF-8.
+** ^As with all other SQLite APIs, those whose names end with "16" return
+** UTF-16 encoded strings and the other functions return UTF-8.
 **
 ** ^These APIs are only available if the library was compiled with the
-** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol defined.
+** [SQLITE_ENABLE_COLUMN_METADATA] C-preprocessor symbol.
 **
 ** If two or more threads call one or more of these routines against the same
 ** prepared statement and column at the same time then the results are
@@ -3622,14 +3624,14 @@ int sqlite3_create_collation16(
 **
 ** ^To avoid having to register all collation sequences before a database
 ** can be used, a single callback function may be registered with the
-** [database connection] to be called whenever an undefined collation
+** [database connection] to be invoked whenever an undefined collation
 ** sequence is required.
 **
 ** ^If the function is registered using the sqlite3_collation_needed() API,
 ** then it is passed the names of undefined collation sequences as strings
 ** encoded in UTF-8. ^If sqlite3_collation_needed16() is used,
 ** the names are passed as UTF-16 in machine native byte order.
-** ^A call to either function replaces any existing callback.
+** ^A call to either function replaces the existing collation-needed callback.
 **
 ** ^(When the callback is invoked, the first argument passed is a copy
 ** of the second argument to sqlite3_collation_needed() or
@@ -5100,7 +5102,7 @@ SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiw
 **
 ** ^(Each prepared statement maintains various
 ** [SQLITE_STMTSTATUS_SORT | counters] that measure the number
-** of times it has performed specific operations.)  These counters can
+** of times it has performed specific operations.)^  These counters can
 ** be used to monitor the performance characteristics of the prepared
 ** statements.  For example, if the number of table steps greatly exceeds
 ** the number of table searches or result rows, that would tend to indicate
@@ -5181,10 +5183,10 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** [sqlite3_config()] returns.)^
 **
 ** ^The xInit() method is called once for each call to [sqlite3_initialize()]
-** (usually only once during the lifetime of the process). ^It is passed
-** a copy of the sqlite3_pcache_methods.pArg value. ^It can be used to set
-** up global structures and mutexes required by the custom page cache 
-** implementation. 
+** (usually only once during the lifetime of the process). ^(The xInit()
+** method is passed a copy of the sqlite3_pcache_methods.pArg value.)^
+** ^The xInit() method can set up up global structures and/or any mutexes
+** required by the custom page cache implementation. 
 **
 ** ^The xShutdown() method is called from within [sqlite3_shutdown()], 
 ** if the application invokes this API. It can be used to clean up 
@@ -5375,7 +5377,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 **
 ** ^Function sqlite3_backup_step(B,N) will copy up to N pages between 
 ** the source and destination databases specified by [sqlite3_backup] object B.
-** ^If N is negative value, all remaining source pages are copied. 
+** ^If N is negative, all remaining source pages are copied. 
 ** ^If sqlite3_backup_step(B,N) successfully copies N pages and there
 ** are still more pages to be copied, then the function resturns [SQLITE_OK].
 ** ^If sqlite3_backup_step(B,N) successfully finishes copying all pages
