@@ -1,0 +1,168 @@
+# 2009 December 03
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# The tests in this file are structural coverage tests. They are designed
+# to complement the tests in fts3rnd.test and fts3doc.test. Between them,
+# the three files should provide full coverage of the fts3 extension code.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If this build does not include FTS3, skip the tests in this file.
+#
+ifcapable !fts3 { finish_test ; return }
+source $testdir/fts3_common.tcl
+
+set DO_MALLOC_TEST 0
+
+#--------------------------------------------------------------------------
+# When it first needs to read a block from the %_segments table, the FTS3 
+# module compiles an SQL statement for that purpose. The statement is 
+# stored and reused each subsequent time a block is read. This test case 
+# tests the effects of an OOM error occuring while compiling the statement.
+#
+# Similarly, when FTS3 first needs to scan through a set of segment leaves
+# to find a set of documents that matches a term, it allocates a string
+# containing the text of the required SQL, and compiles one or more 
+# statements to traverse the leaves. This test case tests that OOM errors
+# that occur while allocating this string and statement are handled correctly
+# also.
+#
+do_test fts3cov-1.1 {
+  execsql { 
+    CREATE VIRTUAL TABLE t1 USING fts3(x);
+    INSERT INTO t1(t1) VALUES('nodesize=24');
+    BEGIN;
+      INSERT INTO t1 VALUES('Is the night chilly and dark?');
+      INSERT INTO t1 VALUES('The night is chilly, but not dark.');
+      INSERT INTO t1 VALUES('The thin gray cloud is spread on high,');
+      INSERT INTO t1 VALUES('It covers but not hides the sky.');
+    COMMIT;
+    SELECT count(*)>0 FROM t1_segments;
+  }
+} {1}
+
+set DO_MALLOC_TEST 1
+do_restart_select_test fts3cov-1.2 {
+  SELECT docid FROM t1 WHERE t1 MATCH 'chilly';
+} {1 2}
+set DO_MALLOC_TEST 0
+
+#--------------------------------------------------------------------------
+# When querying the full-text index, if an expected internal node block is 
+# missing from the %_segments table, or if a NULL value is stored in the 
+# %_segments table instead of a binary blob, database corruption should be 
+# reported.
+#
+# Even with tiny 24 byte nodes, it takes a fair bit of data to produce a
+# segment b-tree that uses the %_segments table to store internal nodes. 
+#
+do_test fts3cov-2.1 {
+  execsql {
+    INSERT INTO t1(t1) VALUES('nodesize=24');
+    BEGIN;
+      INSERT INTO t1 VALUES('The moon is behind, and at the full;');
+      INSERT INTO t1 VALUES('And yet she looks both small and dull.');
+      INSERT INTO t1 VALUES('The night is chill, the cloud is gray:');
+      INSERT INTO t1 VALUES('''T is a month before the month of May,');
+      INSERT INTO t1 VALUES('And the Spring comes slowly up this way.');
+      INSERT INTO t1 VALUES('The lovely lady, Christabel,');
+      INSERT INTO t1 VALUES('Whom her father loves so well,');
+      INSERT INTO t1 VALUES('What makes her in the wood so late,');
+      INSERT INTO t1 VALUES('A furlong from the castle gate?');
+      INSERT INTO t1 VALUES('She had dreams all yesternight');
+      INSERT INTO t1 VALUES('Of her own betrothed knight;');
+      INSERT INTO t1 VALUES('And she in the midnight wood will pray');
+      INSERT INTO t1 VALUES('For the weal of her lover that''s far away.');
+    COMMIT;
+
+    INSERT INTO t1(t1) VALUES('optimize');
+    SELECT substr(hex(root), 1, 2) FROM t1_segdir;
+  }
+} {03}
+
+# Test the "missing entry" case:
+do_test fts3cov-2.1 {
+  set root [db one {SELECT root FROM t1_segdir}]
+  read_fts3varint [string range $root 1 end] left_child
+  execsql { DELETE FROM t1_segments WHERE blockid = $left_child }
+} {}
+do_error_test fts3cov-2.2 {
+  SELECT * FROM t1 WHERE t1 MATCH 'c*'
+} {database disk image is malformed}
+
+# Test the "replaced with NULL" case:
+do_test fts3cov-2.3 {
+  execsql { INSERT INTO t1_segments VALUES($left_child, NULL) }
+} {}
+do_error_test fts3cov-2.4 {
+  SELECT * FROM t1 WHERE t1 MATCH 'cloud'
+} {database disk image is malformed}
+
+#--------------------------------------------------------------------------
+# The following tests are to test the effects of OOM errors while storing
+# terms in the pending-hash table. Specifically, while creating doclist
+# blobs to store in the table. More specifically, to test OOM errors while
+# appending column numbers to doclists. For example, if a doclist consists
+# of:
+#
+#   <docid> <column 0 offset-list> 0x01 <column N> <column N offset-list>
+#
+# The following tests check that malloc errors encountered while appending
+# the "0x01 <column N>" data to the dynamically growable blob used to 
+# accumulate the doclist in memory are handled correctly.
+#
+do_test fts3cov-3.1 {
+  set cols [list]
+  set vals [list]
+  for {set i 0} {$i < 120} {incr i} {
+    lappend cols "col$i"
+    lappend vals "'word'"
+  }
+  execsql "CREATE VIRTUAL TABLE t2 USING fts3([join $cols ,])"
+} {}
+set DO_MALLOC_TEST 1 
+do_write_test fts3cov-3.2 t2_content "
+  INSERT INTO t2(docid, [join $cols ,]) VALUES(1, [join $vals ,])
+"
+do_write_test fts3cov-3.3 t2_content "
+  INSERT INTO t2(docid, [join $cols ,]) VALUES(200, [join $vals ,])
+"
+do_write_test fts3cov-3.4 t2_content "
+  INSERT INTO t2(docid, [join $cols ,]) VALUES(60000, [join $vals ,])
+"
+
+#-------------------------------------------------------------------------
+# If too much data accumulates in the pending-terms hash table, it is
+# flushed to the database automatically, even if the transaction has not
+# finished. The following tests check the effects of encountering an OOM 
+# while doing this.
+#
+do_test fts3cov-4.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t3 USING fts3(x);
+    INSERT INTO t3(t3) VALUES('nodesize=24');
+    INSERT INTO t3(t3) VALUES('maxpending=100');
+  }
+} {}
+set DO_MALLOC_TEST 1 
+do_write_test fts3cov-4.2 t3_content {
+  INSERT INTO t3(docid, x)
+    SELECT 1, 'Then Christabel stretched forth her hand,' UNION ALL
+    SELECT 3, 'And comforted fair Geraldine:'             UNION ALL
+    SELECT 4, '''O well, bright dame, may you command'    UNION ALL
+    SELECT 5, 'The service of Sir Leoline;'               UNION ALL
+    SELECT 2, 'And gladly our stout chivalry'             UNION ALL
+    SELECT 7, 'Will he send forth, and friends withal,'   UNION ALL
+    SELECT 8, 'To guide and guard you safe and free'      UNION ALL
+    SELECT 6, 'Home to your noble father''s hall.'''
+}
+
+finish_test
+

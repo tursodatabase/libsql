@@ -294,8 +294,8 @@ int sqlite3Fts3ReadBlock(
   
     *pnBlock = sqlite3_column_bytes(pStmt, 0);
     *pzBlock = (char *)sqlite3_column_blob(pStmt, 0);
-    if( !*pzBlock ){
-      return SQLITE_NOMEM;
+    if( sqlite3_column_type(pStmt, 0)!=SQLITE_BLOB ){
+      return SQLITE_CORRUPT;
     }
   }
   return SQLITE_OK;
@@ -510,7 +510,7 @@ static int fts3PendingTermsDocid(Fts3Table *p, sqlite_int64 iDocid){
   ** buffer was half empty, that would let the less frequent terms
   ** generate longer doclists.
   */
-  if( iDocid<=p->iPrevDocid || p->nPendingData>FTS3_MAX_PENDING_DATA ){
+  if( iDocid<=p->iPrevDocid || p->nPendingData>p->nMaxPendingData ){
     int rc = sqlite3Fts3PendingTermsFlush(p);
     if( rc!=SQLITE_OK ) return rc;
   }
@@ -2220,6 +2220,9 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
 #ifdef SQLITE_TEST
   }else if( nVal>9 && 0==sqlite3_strnicmp(zVal, "nodesize=", 9) ){
     p->nNodeSize = atoi(&zVal[9]);
+    rc = SQLITE_OK;
+  }else if( nVal>11 && 0==sqlite3_strnicmp(zVal, "maxpending=", 9) ){
+    p->nMaxPendingData = atoi(&zVal[11]);
     rc = SQLITE_OK;
 #endif
   }else{

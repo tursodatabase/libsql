@@ -621,6 +621,7 @@ static int fts3InitVtab(
   p->azColumn = (char **)&p[1];
   p->pTokenizer = pTokenizer;
   p->nNodeSize = 1000;
+  p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   zCsr = (char *)&p->azColumn[nCol];
 
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
@@ -2267,6 +2268,10 @@ int sqlite3Fts3Init(sqlite3 *db){
       rc = SQLITE_NOMEM;
     }
   }
+
+#ifdef SQLITE_TEST
+  sqlite3Fts3ExprInitTestInterface(db);
+#endif
 
   /* Create the virtual table wrapper around the hash-table and overload 
   ** the two scalar functions. If this is successful, register the

@@ -330,12 +330,12 @@ static int getFts3Varint(const char *p, sqlite_int64 *v){
 
 
 /*
-** USAGE:  read_varint BLOB VARNAME
+** USAGE:  read_fts3varint BLOB VARNAME
 **
 ** Read a varint from the start of BLOB. Set variable VARNAME to contain
 ** the interpreted value. Return the number of bytes of BLOB consumed.
 */
-static int read_varint(
+static int read_fts3varint(
   void * clientData,
   Tcl_Interp *interp,
   int objc,
@@ -373,7 +373,7 @@ int Sqlitetest_hexio_Init(Tcl_Interp *interp){
      { "hexio_render_int16",           hexio_render_int16    },
      { "hexio_render_int32",           hexio_render_int32    },
      { "utf8_to_utf8",                 utf8_to_utf8          },
-     { "read_varint",                  read_varint           },
+     { "read_fts3varint",              read_fts3varint       },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){
