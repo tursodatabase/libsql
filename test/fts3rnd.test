@@ -94,9 +94,11 @@ expr srand(0)
 #
 set lChar {a b c d e f g h i j k l m n o p q r s t u v w x y z}
 for {set i 0} {$i < $nVocab} {incr i} {
+  set len [expr int(rand()*3)+2]
   set    word [lindex $lChar [expr int(rand()*26)]]
   append word [lindex $lChar [expr int(rand()*26)]]
-  append word [lindex $lChar [expr int(rand()*26)]]
+  if {$len>2} { append word [lindex $lChar [expr int(rand()*26)]] }
+  if {$len>3} { append word [lindex $lChar [expr int(rand()*26)]] }
   lappend lVocab $word
 }
 
@@ -141,12 +143,19 @@ proc update_row {rowid} {
 
 proc simple_phrase {zPrefix} {
   set ret [list]
-  set pattern "*[string map {* \[a-z\]} $zPrefix]*"
+
+  set reg [string map {* {[^ ]*}} $zPrefix]
+  set reg " $reg "
+
   foreach {key value} [array get ::t1] {
-    if {[string match $pattern $value]} { lappend ret $key }
+    foreach col $value {
+      if {[regexp $reg " $col "]} {lappend ret $key}
+    }
   }
-  lsort -integer $ret
+
+  lsort -uniq -integer $ret
 }
+
 proc simple_near {termlist nNear} {
   set ret [list]
 
@@ -265,7 +274,7 @@ foreach nodesize {50 500 1000 2000} {
     # as querying the FTS3 table for the prefix.
     #
     for {set i 0} {$i < $nRep} {incr i} {
-      set prefix [string range [random_term] 0 1]
+      set prefix [string range [random_term] 0 end-1]
       set match "${prefix}*"
       do_select_test fts3rnd-1.$nodesize.$iTest.2.$i {
         SELECT docid FROM t1 WHERE t1 MATCH $match
@@ -295,9 +304,9 @@ foreach nodesize {50 500 1000 2000} {
     # Three word phrases made up of term-prefixes.
     #
     for {set i 0} {$i < $nRep} {incr i} {
-      set    query "[string range [random_term] 0 1]* "
-      append query "[string range [random_term] 0 1]* "
-      append query "[string range [random_term] 0 1]*"
+      set    query "[string range [random_term] 0 end-1]* "
+      append query "[string range [random_term] 0 end-1]* "
+      append query "[string range [random_term] 0 end-1]*"
 
       set match "\"$query\""
       do_select_test fts3rnd-1.$nodesize.$iTest.5.$i {

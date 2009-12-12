@@ -1228,11 +1228,9 @@ static int fts3WriteSegment(
   int rc = fts3SqlStmt(p, SQL_INSERT_SEGMENTS, &pStmt, 0);
   if( rc==SQLITE_OK ){
     sqlite3_bind_int64(pStmt, 1, iBlock);
-    rc = sqlite3_bind_blob(pStmt, 2, z, n, SQLITE_STATIC);
-    if( rc==SQLITE_OK ){
-      sqlite3_step(pStmt);
-      rc = sqlite3_reset(pStmt);
-    }
+    sqlite3_bind_blob(pStmt, 2, z, n, SQLITE_STATIC);
+    sqlite3_step(pStmt);
+    rc = sqlite3_reset(pStmt);
   }
   return rc;
 }
@@ -1258,11 +1256,9 @@ static int fts3WriteSegdir(
     sqlite3_bind_int64(pStmt, 3, iStartBlock);
     sqlite3_bind_int64(pStmt, 4, iLeafEndBlock);
     sqlite3_bind_int64(pStmt, 5, iEndBlock);
-    rc = sqlite3_bind_blob(pStmt, 6, zRoot, nRoot, SQLITE_STATIC);
-    if( rc==SQLITE_OK ){
-      sqlite3_step(pStmt);
-      rc = sqlite3_reset(pStmt);
-    }
+    sqlite3_bind_blob(pStmt, 6, zRoot, nRoot, SQLITE_STATIC);
+    sqlite3_step(pStmt);
+    rc = sqlite3_reset(pStmt);
   }
   return rc;
 }
@@ -1841,15 +1837,31 @@ static void fts3ColumnFilter(
 ** segments to create a single, larger segment.
 */
 static int fts3MergeCallback(
-  Fts3Table *p,
-  void *pContext,
-  char *zTerm,
-  int nTerm,
-  char *aDoclist,
-  int nDoclist
+  Fts3Table *p,                   /* FTS3 Virtual table handle */
+  void *pContext,                 /* Pointer to SegmentWriter* to write with */
+  char *zTerm,                    /* Term to write to the db */
+  int nTerm,                      /* Number of bytes in zTerm */
+  char *aDoclist,                 /* Doclist associated with zTerm */
+  int nDoclist                    /* Number of bytes in doclist */
 ){
   SegmentWriter **ppW = (SegmentWriter **)pContext;
   return fts3SegWriterAdd(p, ppW, 1, zTerm, nTerm, aDoclist, nDoclist);
+}
+
+/*
+** sqlite3Fts3SegReaderIterate() callback used when flushing the contents
+** of the pending-terms hash table to the database.
+*/
+static int fts3FlushCallback(
+  Fts3Table *p,                   /* FTS3 Virtual table handle */
+  void *pContext,                 /* Pointer to SegmentWriter* to write with */
+  char *zTerm,                    /* Term to write to the db */
+  int nTerm,                      /* Number of bytes in zTerm */
+  char *aDoclist,                 /* Doclist associated with zTerm */
+  int nDoclist                    /* Number of bytes in doclist */
+){
+  SegmentWriter **ppW = (SegmentWriter **)pContext;
+  return fts3SegWriterAdd(p, ppW, 0, zTerm, nTerm, aDoclist, nDoclist);
 }
 
 /*
@@ -2176,7 +2188,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
 
     memset(&f, 0, sizeof(Fts3SegFilter));
     f.flags = FTS3_SEGMENT_REQUIRE_POS;
-    rc = sqlite3Fts3SegReaderIterate(p, &pReader, 1, &f, fts3MergeCallback, c);
+    rc = sqlite3Fts3SegReaderIterate(p, &pReader, 1, &f, fts3FlushCallback, c);
   }
   assert( pWriter || rc!=SQLITE_OK );
 

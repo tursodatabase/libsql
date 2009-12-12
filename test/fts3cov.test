@@ -164,5 +164,39 @@ do_write_test fts3cov-4.2 t3_content {
     SELECT 6, 'Home to your noble father''s hall.'''
 }
 
+#-------------------------------------------------------------------------
+# When building the internal tree structure for each segment b-tree, FTS3
+# assumes that the content of each internal node will be less than
+# $nodesize bytes, where $nodesize is the advisory node size. If this turns
+# out to be untrue, then an extra buffer must be malloc'd for each term.
+# This test case tests these paths and the effects of said mallocs failing
+# by inserting insert a document with some fairly large terms into a
+# full-text table with a very small node-size. 
+#
+do_test fts3cov-5.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t4 USING fts3(x);
+    INSERT INTO t4(t4) VALUES('nodesize=24');
+  }
+} {}
+set DO_MALLOC_TEST 1
+do_write_test fts3cov-5.2 t4_content {
+  INSERT INTO t4
+    SELECT 'ItisanancientMarinerAndhestoppethoneofthreeAA' UNION ALL
+    SELECT 'ItisanancientMarinerAndhestoppethoneofthreeBB' UNION ALL
+    SELECT 'ItisanancientMarinerAndhestoppethoneofthreeCC' UNION ALL
+    SELECT 'BythylonggreybeardandglitteringeyeNowwhereforestoppstAA' UNION ALL
+    SELECT 'BythylonggreybeardandglitteringeyeNowwhereforestoppstBB' UNION ALL
+    SELECT 'BythylonggreybeardandglitteringeyeNowwhereforestoppstCC'
+}
+do_test fts3cov-5.3 {
+  execsql { INSERT INTO t4 VALUES('extra!') }
+} {}
+do_write_test fts3cov-5.2 t4_segments {
+  INSERT INTO t4(t4) VALUES('optimize')
+}
+
+
+
 finish_test
 
