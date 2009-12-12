@@ -348,5 +348,26 @@ do_test fts3cov-11.1 {
   execsql { SELECT * FROM xx WHERE xx MATCH 'two' }
 } {}
 
-finish_test
 
+do_malloc_test fts3cov-12 -sqlprep {
+  CREATE VIRTUAL TABLE t12 USING fts3;
+  INSERT INTO t12 VALUES('is one of the two togther');
+  BEGIN;
+    INSERT INTO t12 VALUES('one which was appropriate at the time');
+} -sqlbody {
+  SELECT * FROM t12 WHERE t12 MATCH 'one'
+}
+
+do_malloc_test fts3cov-13 -sqlprep {
+  PRAGMA encoding = 'UTF-16';
+  CREATE VIRTUAL TABLE t13 USING fts3;
+  INSERT INTO t13 VALUES('two scalar functions');
+  INSERT INTO t13 VALUES('scalar two functions');
+  INSERT INTO t13 VALUES('functions scalar two');
+} -sqlbody {
+  SELECT snippet(t13, '%%', '%%', '#') FROM t13 WHERE t13 MATCH 'two';
+  SELECT snippet(t13, '%%', '%%') FROM t13 WHERE t13 MATCH 'two';
+  SELECT snippet(t13, '%%') FROM t13 WHERE t13 MATCH 'two';
+}
+
+finish_test

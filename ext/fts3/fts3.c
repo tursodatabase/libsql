@@ -817,7 +817,7 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
         rc = SQLITE_CORRUPT;
       }
       pCsr->isEof = 1;
-      if( pContext && rc!=SQLITE_OK ){
+      if( pContext ){
         sqlite3_result_error_code(pContext, rc);
       }
       return rc;
@@ -1520,13 +1520,13 @@ static int fts3TermSelect(
   int nSegment = 0;               /* Size of apSegment array */
   int nAlloc = 16;                /* Allocated size of segment array */
   int rc;                         /* Return code */
-  sqlite3_stmt *pStmt;            /* SQL statement to scan %_segdir table */
+  sqlite3_stmt *pStmt = 0;        /* SQL statement to scan %_segdir table */
   int iAge = 0;                   /* Used to assign ages to segments */
 
   apSegment = (Fts3SegReader **)sqlite3_malloc(sizeof(Fts3SegReader*)*nAlloc);
   if( !apSegment ) return SQLITE_NOMEM;
   rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &apSegment[0]);
-  if( rc!=SQLITE_OK ) return rc;
+  if( rc!=SQLITE_OK ) goto finished;
   if( apSegment[0] ){
     nSegment = 1;
   }
@@ -2050,7 +2050,7 @@ static void fts3SnippetFunc(
     case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
     case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
   }
-  if( !zStart || !zEnd || !zEllipsis ){
+  if( !zEllipsis || !zEnd || !zStart ){
     sqlite3_result_error_nomem(pContext);
   }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
     sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
