@@ -1989,9 +1989,9 @@ int sqlite3_set_authorizer(
 ** These action code values signify what kind of operation is to be
 ** authorized.  The 3rd and 4th parameters to the authorization
 ** callback function will be parameters or NULL depending on which of these
-** codes is used as the second parameter.  ^The 5th parameter to the
+** codes is used as the second parameter.  ^(The 5th parameter to the
 ** authorizer callback is the name of the database ("main", "temp",
-** etc.) if applicable.  ^The 6th parameter to the authorizer callback
+** etc.) if applicable.)^  ^The 6th parameter to the authorizer callback
 ** is the name of the inner-most trigger or view that is responsible for
 ** the access attempt or NULL if this access attempt is directly from
 ** top-level SQL code.
@@ -2261,7 +2261,7 @@ typedef struct sqlite3_stmt sqlite3_stmt;
 ** [limits | SQLITE_MAX_XYZ].
 ** (The "_LIMIT_" in the name is changed to "_MAX_".))^
 ** ^Attempts to increase a limit above its hard upper bound are
-** silently truncated to the hard upper limit.
+** silently truncated to the hard upper bound.
 **
 ** Run-time limits are intended for use in applications that manage
 ** both their own internal database and also databases that are controlled
@@ -2315,9 +2315,9 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum number of arguments on a function.</dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_ATTACHED</dt>
-** <dd>The maximum number of [ATTACH | attached databases].</dd>
+** <dd>The maximum number of [ATTACH | attached databases].)^</dd>
 **
-** ^<dt>SQLITE_LIMIT_LIKE_PATTERN_LENGTH</dt>
+** ^(<dt>SQLITE_LIMIT_LIKE_PATTERN_LENGTH</dt>
 ** <dd>The maximum length of the pattern argument to the [LIKE] or
 ** [GLOB] operators.</dd>)^
 **
@@ -3700,10 +3700,10 @@ int sqlite3_sleep(int);
 /*
 ** CAPI3REF: Name Of The Folder Holding Temporary Files
 **
-** ^If this global variable is made to point to a string which is
+** ^(If this global variable is made to point to a string which is
 ** the name of a folder (a.k.a. directory), then all temporary files
 ** created by SQLite when using a built-in [sqlite3_vfs | VFS]
-** will be placed in that directory.  ^If this variable
+** will be placed in that directory.)^  ^If this variable
 ** is a NULL pointer, then SQLite performs a search for an appropriate
 ** temporary file directory.
 **
@@ -3964,7 +3964,7 @@ void sqlite3_soft_heap_limit(int);
 ** (i.e. "main", "temp", or an attached database) containing the specified
 ** table or NULL. ^If it is NULL, then all attached databases are searched
 ** for the table using the same algorithm used by the database engine to
-** resolve unqualified table references.)^
+** resolve unqualified table references.
 **
 ** ^The third and fourth parameters to this function are the table and column
 ** name of the desired column, respectively. Neither of these parameters
@@ -4187,8 +4187,8 @@ struct sqlite3_module {
 ** <pre>column OP expr</pre>
 **
 ** where OP is =, &lt;, &lt;=, &gt;, or &gt;=.)^  ^(The particular operator is
-** stored in aConstraint[].op.)^  ^The index of the column is stored in
-** aConstraint[].iColumn.  ^(aConstraint[].usable is TRUE if the
+** stored in aConstraint[].op.)^  ^(The index of the column is stored in
+** aConstraint[].iColumn.)^  ^(aConstraint[].usable is TRUE if the
 ** expr on the right-hand side can be evaluated (and thus the constraint
 ** is usable) and false if it cannot.)^
 **
@@ -4210,7 +4210,7 @@ struct sqlite3_module {
 **
 ** ^The idxNum and idxPtr values are recorded and passed into the
 ** [xFilter] method.
-** ^[sqlite3_free()] is used to free idxPtr if and only iff
+** ^[sqlite3_free()] is used to free idxPtr if and only if
 ** needToFreeIdxPtr is true.
 **
 ** ^The orderByConsumed means that output from [xFilter]/[xNext] will occur in
@@ -4359,7 +4359,7 @@ SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 ** ^(Virtual tables can provide alternative implementations of functions
 ** using the [xFindFunction] method of the [virtual table module].  
 ** But global versions of those functions
-** must exist in order to be overloaded.)
+** must exist in order to be overloaded.)^
 **
 ** ^(This API makes sure a global version of a function with a particular
 ** name and number of parameters exists.  If no such function exists
@@ -5224,16 +5224,16 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 ** ^(The xCachesize() method may be called at any time by SQLite to set the
 ** suggested maximum cache-size (number of pages stored by) the cache
 ** instance passed as the first argument. This is the value configured using
-** the SQLite "[PRAGMA cache_size]" command.) ^As with the bPurgeable parameter,
-** the implementation is not required to do anything with this
+** the SQLite "[PRAGMA cache_size]" command.)^  ^As with the bPurgeable
+** parameter, the implementation is not required to do anything with this
 ** value; it is advisory only.
 **
 ** ^The xPagecount() method should return the number of pages currently
 ** stored in the cache.
 ** 
-** T^he xFetch() method is used to fetch a page and return a pointer to it. 
-** A 'page', in this context, is a buffer of szPage bytes aligned at an
-** 8-byte boundary. The page to be fetched is determined by the key. ^The
+** ^The xFetch() method is used to fetch a page and return a pointer to it. 
+** ^A 'page', in this context, is a buffer of szPage bytes aligned at an
+** 8-byte boundary. ^The page to be fetched is determined by the key. ^The
 ** mimimum key value is 1. After it has been retrieved using xFetch, the page 
 ** is considered to be "pinned".
 **
@@ -5548,7 +5548,7 @@ int sqlite3_backup_pagecount(sqlite3_backup *p);
 ** ^(There may be at most one unlock-notify callback registered by a 
 ** blocked connection. If sqlite3_unlock_notify() is called when the
 ** blocked connection already has a registered unlock-notify callback,
-** then the new callback replaces the old.) ^If sqlite3_unlock_notify() is
+** then the new callback replaces the old.)^ ^If sqlite3_unlock_notify() is
 ** called with a NULL pointer as its second argument, then any existing
 ** unlock-notify callback is cancelled. ^The blocked connections 
 ** unlock-notify callback may also be canceled by closing the blocked
