@@ -1448,13 +1448,13 @@ int sqlite3_total_changes(sqlite3*);
 ** that is inside an explicit transaction, then the entire transaction
 ** will be rolled back automatically.
 **
-** ^(The sqlite3_interrupt(D) call is in effect until all currently running
-** SQL statements on [database connection] D complete.  Any new SQL statements
+** ^The sqlite3_interrupt(D) call is in effect until all currently running
+** SQL statements on [database connection] D complete.  ^Any new SQL statements
 ** that are started after the sqlite3_interrupt() call and before the 
 ** running statements reaches zero are interrupted as if they had been
-** running prior to the sqlite3_interrupt() call.  New SQL statements
+** running prior to the sqlite3_interrupt() call.  ^New SQL statements
 ** that are started after the running statement count reaches zero are
-** not effected by the sqlite3_interrupt().)^
+** not effected by the sqlite3_interrupt().
 ** ^A call to sqlite3_interrupt(D) that occurs when there are no running
 ** SQL statements is a no-op and has no effect on SQL statements
 ** that are started after the sqlite3_interrupt() call returns.
@@ -2294,7 +2294,7 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** <dd>The maximum size of any string or BLOB or table row.<dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_SQL_LENGTH</dt>
-** <dd>The maximum length of an SQL statement.</dd>)^
+** <dd>The maximum length of an SQL statement, in bytes.</dd>)^
 **
 ** ^(<dt>SQLITE_LIMIT_COLUMN</dt>
 ** <dd>The maximum number of columns in a table definition or in the
@@ -2407,8 +2407,8 @@ int sqlite3_limit(sqlite3*, int id, int newVal);
 ** ^When an error occurs, [sqlite3_step()] will return one of the detailed
 ** [error codes] or [extended error codes].  ^The legacy behavior was that
 ** [sqlite3_step()] would only return a generic [SQLITE_ERROR] result code
-** and you would have to make a second call to [sqlite3_reset()] in order
-** to find the underlying cause of the problem. With the "v2" prepare
+** and the application would have to make a second call to [sqlite3_reset()]
+** in order to find the underlying cause of the problem. With the "v2" prepare
 ** interfaces, the underlying reason for the error is returned immediately.
 ** </li>
 **
@@ -2632,7 +2632,7 @@ int sqlite3_bind_parameter_count(sqlite3_stmt*);
 ** In other words, the initial ":" or "$" or "@" or "?"
 ** is included as part of the name.)^
 ** ^Parameters of the form "?" without a following integer have no name
-** and are also referred to as "nameless" or "anonymous parameters".
+** and are referred to as "nameless" or "anonymous parameters".
 **
 ** ^The first host parameter has an index of 1, not 0.
 **
@@ -2734,7 +2734,7 @@ const void *sqlite3_column_name16(sqlite3_stmt*, int N);
 ** ^If the Nth column returned by the statement is an expression or
 ** subquery and is not a column value, then all of these functions return
 ** NULL.  ^These routine might also return NULL if a memory allocation error
-** occurs.  ^Otherwise, they return the name of the attached database, table
+** occurs.  ^Otherwise, they return the name of the attached database, table,
 ** or column that query result column was extracted from.
 **
 ** ^As with all other SQLite APIs, those whose names end with "16" return
@@ -2766,7 +2766,7 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt*,int);
 ** If this statement is a [SELECT] statement and the Nth column of the
 ** returned result set of that [SELECT] is a table column (not an
 ** expression or subquery) then the declared type of the table
-** column is returned.)  ^If the Nth column of the result set is an
+** column is returned.)^  ^If the Nth column of the result set is an
 ** expression or subquery, then a NULL pointer is returned.
 ** ^The returned string is always UTF-8 encoded.
 **
@@ -3120,10 +3120,10 @@ int sqlite3_reset(sqlite3_stmt *pStmt);
 ** aggregate, is encoded in UTF-8 for sqlite3_create_function() and UTF-16
 ** for sqlite3_create_function16().
 **
-** The first parameter is the [database connection] to which the SQL
-** function is to be added.  ^If a single program uses more than one database
-** connection internally, then SQL functions must be added individually to
-** each database connection.
+** ^The first parameter is the [database connection] to which the SQL
+** function is to be added.  ^If an application uses more than one database
+** connection then application-defined SQL functions must be added
+** to each database connection separately.
 **
 ** The second parameter is the name of the SQL function to be created or
 ** redefined.  ^The length of the name is limited to 255 bytes, exclusive of
@@ -3476,7 +3476,7 @@ typedef void (*sqlite3_destructor_type)(void*);
 ** or sqlite3_result_error16() resets the error code to SQLITE_ERROR.
 **
 ** ^The sqlite3_result_toobig() interface causes SQLite to throw an error
-** indicating that a string or BLOB is to long to represent.
+** indicating that a string or BLOB is too long to represent.
 **
 ** ^The sqlite3_result_nomem() interface causes SQLite to throw an error
 ** indicating that a memory allocation failed.
@@ -3929,7 +3929,7 @@ int sqlite3_release_memory(int);
 ** soft heap limit, [sqlite3_release_memory()] is invoked one or
 ** more times to free up some space before the allocation is performed.
 **
-** ^The limit is called "soft", because if [sqlite3_release_memory()]
+** ^The limit is called "soft" because if [sqlite3_release_memory()]
 ** cannot free sufficient memory to prevent the limit from being exceeded,
 ** the memory is allocated anyway and the current operation proceeds.
 **
@@ -3960,9 +3960,9 @@ void sqlite3_soft_heap_limit(int);
 ** passed as the first function argument.
 **
 ** ^The column is identified by the second, third and fourth parameters to
-** this function. ^(The second parameter is either the name of the database
-** (i.e. "main", "temp" or an attached database) containing the specified
-** table or NULL. If it is NULL, then all attached databases are searched
+** this function. ^The second parameter is either the name of the database
+** (i.e. "main", "temp", or an attached database) containing the specified
+** table or NULL. ^If it is NULL, then all attached databases are searched
 ** for the table using the same algorithm used by the database engine to
 ** resolve unqualified table references.)^
 **
@@ -4186,8 +4186,8 @@ struct sqlite3_module {
 **
 ** <pre>column OP expr</pre>
 **
-** where OP is =, &lt;, &lt;=, &gt;, or &gt;=.)^  ^The particular operator is
-** stored in aConstraint[].op.  ^The index of the column is stored in
+** where OP is =, &lt;, &lt;=, &gt;, or &gt;=.)^  ^(The particular operator is
+** stored in aConstraint[].op.)^  ^The index of the column is stored in
 ** aConstraint[].iColumn.  ^(aConstraint[].usable is TRUE if the
 ** expr on the right-hand side can be evaluated (and thus the constraint
 ** is usable) and false if it cannot.)^
@@ -4195,8 +4195,8 @@ struct sqlite3_module {
 ** ^The optimizer automatically inverts terms of the form "expr OP column"
 ** and makes other simplifications to the WHERE clause in an attempt to
 ** get as many WHERE clause terms into the form shown above as possible.
-** ^The aConstraint[] array only reports WHERE clause terms in the correct
-** form that refer to the particular virtual table being queried.
+** ^The aConstraint[] array only reports WHERE clause terms that are
+** relevant to the particular virtual table being queried.
 **
 ** ^Information about the ORDER BY clause is stored in aOrderBy[].
 ** ^Each term of aOrderBy records a column of the ORDER BY clause.
@@ -4260,7 +4260,7 @@ struct sqlite3_index_info {
 **
 ** ^These routines are used to register a new [virtual table module] name.
 ** ^Module names must be registered before
-** creating a new [virtual table] using the module, or before using a
+** creating a new [virtual table] using the module and before using a
 ** preexisting [virtual table] for the module.
 **
 ** ^The module name is registered on the [database connection] specified
@@ -4437,7 +4437,7 @@ typedef struct sqlite3_blob sqlite3_blob;
 ** ^Calls to [sqlite3_blob_read()] and [sqlite3_blob_write()] for
 ** a expired BLOB handle fail with an return code of [SQLITE_ABORT].
 ** ^(Changes written into a BLOB prior to the BLOB expiring are not
-** rollback by the expiration of the BLOB.  Such changes will eventually
+** rolled back by the expiration of the BLOB.  Such changes will eventually
 ** commit if the transaction continues to completion.)^
 **
 ** ^Use the [sqlite3_blob_bytes()] interface to determine the size of
@@ -4941,8 +4941,8 @@ int sqlite3_test_control(int op, ...);
 ** ^This interface is used to retrieve runtime status information
 ** about the preformance of SQLite, and optionally to reset various
 ** highwater marks.  ^The first argument is an integer code for
-** the specific parameter to measure.  ^Recognized integer codes
-** are of the form [SQLITE_STATUS_MEMORY_USED | SQLITE_STATUS_...].
+** the specific parameter to measure.  ^(Recognized integer codes
+** are of the form [SQLITE_STATUS_MEMORY_USED | SQLITE_STATUS_...].)^
 ** ^The current value of the parameter is returned into *pCurrent.
 ** ^The highest recorded value is returned in *pHighwater.  ^If the
 ** resetFlag is true, then the highest record value is reset after
@@ -5168,7 +5168,7 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 **
 ** ^(The [sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
 ** register an alternative page cache implementation by passing in an 
-** instance of the sqlite3_pcache_methods structure.) The majority of the 
+** instance of the sqlite3_pcache_methods structure.)^ The majority of the 
 ** heap memory used by SQLite is used by the page cache to cache data read 
 ** from, or ready to be written to, the database file. By implementing a 
 ** custom page cache using this API, an application can control more 
@@ -5332,7 +5332,7 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** read-locked while it is actually being read; it is not locked
 ** continuously for the entire backup operation. ^Thus, the backup may be
 ** performed on a live source database without preventing other users from
-** reading or writing to the source database for an extended period of time.
+** reading or writing to the source database while the backup is underway.
 ** 
 ** ^(To perform a backup operation: 
 **   <ol>
