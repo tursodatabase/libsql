@@ -2066,7 +2066,6 @@ static void fts3OffsetsFunc(
   sqlite3_value **apVal           /* Array of arguments */
 ){
   Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
-  int rc;
 
   UNUSED_PARAMETER(nVal);
 

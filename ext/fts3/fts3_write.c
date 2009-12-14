@@ -1959,7 +1959,7 @@ int sqlite3Fts3SegReaderIterate(
       nMerge++;
     }
 
-    assert( isIgnoreEmpty==0 || (isRequirePos && isColFilter==0) );
+    assert( isIgnoreEmpty || (isRequirePos && !isColFilter) );
     if( nMerge==1 && !isIgnoreEmpty ){
       Fts3SegReader *p0 = apSegment[0];
       rc = xFunc(p, pContext, zTerm, nTerm, p0->aDoclist, p0->nDoclist);
@@ -2221,7 +2221,7 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
 */
 static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
   int rc;                         /* Return Code */
-  const char *zVal = sqlite3_value_text(pVal);
+  const char *zVal = (const char *)sqlite3_value_text(pVal);
   int nVal = sqlite3_value_bytes(pVal);
 
   if( !zVal ){
