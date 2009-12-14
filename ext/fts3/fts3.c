@@ -2269,7 +2269,9 @@ int sqlite3Fts3Init(sqlite3 *db){
   }
 
 #ifdef SQLITE_TEST
-  sqlite3Fts3ExprInitTestInterface(db);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts3ExprInitTestInterface(db);
+  }
 #endif
 
   /* Create the virtual table wrapper around the hash-table and overload 

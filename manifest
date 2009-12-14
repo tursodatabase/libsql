@@ -1,5 +1,5 @@
-C Fix\sa\sbroken\sassert()\sin\sfts3_write.c.\sAlso\sfix\sa\scouple\sof\scompiler\swarnings\sin\sfts3\scode.
-D 2009-12-14T14:49:57
+C Handle\san\sunhandled\sOOM\serror\scode\sthat\soccurs\sin\sfts3\swith\sSQLITE_TEST\sdefined.
+D 2009-12-14T15:17:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 6ae94945dd95557b86b025db907b2ca95e54c7e0
+F ext/fts3/fts3.c 682882c15f73acc1bcf11fa9c1832f7d7efae552
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 6fdd41b4f296e5bcc908444dc591397995d4ff5d
 F ext/fts3/fts3_expr.c fcf6812dbfd9cb9a2cabaf50e741411794f83e7e
@@ -779,7 +779,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b3740b0aa0a7c6932e33e02b37baed5a5960a0bd
-R 1c3b2b5f783095efeeae9d3fc23b029c
+P a730a05b39c45138765df98d34b9db1ab4e72152
+R f362823d4714422a6bd69950b80eb0e2
 U dan
-Z fbab6b388dda107b430b70cf162bec4b
+Z de5d0dd98e748975d4150c0cd75341d2
