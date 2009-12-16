@@ -3416,9 +3416,7 @@ static Bitmask codeOneLoopStart(
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
       if( (pTerm->prereqAll & notReady)!=0 ){
-        testcase( pWInfo->untestedTerms==0
-               && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
-        pWInfo->untestedTerms = 1;
+        assert( pWInfo->untestedTerms );
         continue;
       }
       assert( pTerm->pExpr );
