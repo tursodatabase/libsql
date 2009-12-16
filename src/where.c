@@ -3265,13 +3265,14 @@ static Bitmask codeOneLoopStart(
     */
     WhereClause *pOrWc;    /* The OR-clause broken out into subterms */
     WhereTerm *pFinal;     /* Final subterm within the OR-clause. */
-    SrcList oneTab;        /* Shortened table list */
+    SrcList *pOrTab;       /* Shortened table list or OR-clause generation */
 
     int regReturn = ++pParse->nMem;           /* Register used with OP_Gosub */
     int regRowset = 0;                        /* Register for RowSet object */
     int regRowid = 0;                         /* Register holding rowid */
     int iLoopBody = sqlite3VdbeMakeLabel(v);  /* Start of loop body */
     int iRetInit;                             /* Address of regReturn init */
+    int untestedTerms = 0;             /* Some terms not completely tested */
     int ii;
    
     pTerm = pLevel->plan.u.pTerm;
@@ -3280,11 +3281,29 @@ static Bitmask codeOneLoopStart(
     assert( (pTerm->wtFlags & TERM_ORINFO)!=0 );
     pOrWc = &pTerm->u.pOrInfo->wc;
     pFinal = &pOrWc->a[pOrWc->nTerm-1];
+    pLevel->op = OP_Return;
+    pLevel->p1 = regReturn;
 
-    /* Set up a SrcList containing just the table being scanned by this loop. */
-    oneTab.nSrc = 1;
-    oneTab.nAlloc = 1;
-    oneTab.a[0] = *pTabItem;
+    /* Set up a new SrcList ni pOrTab containing the table being scanned
+    ** by this loop in the a[0] slot and all notReady tables in a[1..] slots.
+    ** This becomes the SrcList in the recursive call to sqlite3WhereBegin().
+    */
+    if( pWInfo->nLevel>1 ){
+      int nNotReady;                 /* The number of notReady tables */
+      struct SrcList_item *origSrc;     /* Original list of tables */
+      nNotReady = pWInfo->nLevel - iLevel - 1;
+      pOrTab = sqlite3StackAllocRaw(pParse->db,
+                            sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
+      if( pOrTab==0 ) return notReady;
+      pOrTab->nSrc = pOrTab->nAlloc = nNotReady + 1;
+      memcpy(pOrTab->a, pTabItem, sizeof(*pTabItem));
+      origSrc = pWInfo->pTabList->a;
+      for(k=1; k<=nNotReady; k++){
+        memcpy(&pOrTab->a[k], &origSrc[pLevel[k].iFrom], sizeof(pOrTab->a[k]));
+      }
+    }else{
+      pOrTab = pWInfo->pTabList;
+    }
 
     /* Initialize the rowset register to contain NULL. An SQL NULL is 
     ** equivalent to an empty rowset.
@@ -3309,8 +3328,9 @@ static Bitmask codeOneLoopStart(
       if( pOrTerm->leftCursor==iCur || pOrTerm->eOperator==WO_AND ){
         WhereInfo *pSubWInfo;          /* Info for single OR-term scan */
         /* Loop through table entries that match term pOrTerm. */
-        pSubWInfo = sqlite3WhereBegin(pParse, &oneTab, pOrTerm->pExpr, 0,
-                        WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE | WHERE_FORCE_TABLE);
+        pSubWInfo = sqlite3WhereBegin(pParse, pOrTab, pOrTerm->pExpr, 0,
+                        WHERE_OMIT_OPEN | WHERE_OMIT_CLOSE |
+                        WHERE_FORCE_TABLE | WHERE_ONETABLE_ONLY);
         if( pSubWInfo ){
           if( (wctrlFlags & WHERE_DUPLICATES_OK)==0 ){
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
@@ -3322,19 +3342,24 @@ static Bitmask codeOneLoopStart(
           }
           sqlite3VdbeAddOp2(v, OP_Gosub, regReturn, iLoopBody);
 
+          /* The pSubWInfo->untestedTerms flag means that this OR term
+          ** contained one or more AND term from a notReady table.  The
+          ** terms from the notReady table could not be tested and will
+          ** need to be tested later.
+          */
+          if( pSubWInfo->untestedTerms ) untestedTerms = 1;
+
           /* Finish the loop through table entries that match term pOrTerm. */
           sqlite3WhereEnd(pSubWInfo);
         }
       }
     }
     sqlite3VdbeChangeP1(v, iRetInit, sqlite3VdbeCurrentAddr(v));
-    /* sqlite3VdbeAddOp2(v, OP_Null, 0, regRowset); */
     sqlite3VdbeAddOp2(v, OP_Goto, 0, pLevel->addrBrk);
     sqlite3VdbeResolveLabel(v, iLoopBody);
 
-    pLevel->op = OP_Return;
-    pLevel->p1 = regReturn;
-    disableTerm(pLevel, pTerm);
+    if( pWInfo->nLevel>1 ) sqlite3StackFree(pParse->db, pOrTab);
+    if( !untestedTerms ) disableTerm(pLevel, pTerm);
   }else
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 
@@ -3362,7 +3387,12 @@ static Bitmask codeOneLoopStart(
     testcase( pTerm->wtFlags & TERM_VIRTUAL );
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-    if( (pTerm->prereqAll & notReady)!=0 ) continue;
+    if( (pTerm->prereqAll & notReady)!=0 ){
+      testcase( pWInfo->untestedTerms==0
+               && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
+      pWInfo->untestedTerms = 1;
+      continue;
+    }
     pE = pTerm->pExpr;
     assert( pE!=0 );
     if( pLevel->iLeftJoin && !ExprHasProperty(pE, EP_FromJoin) ){
@@ -3385,7 +3415,12 @@ static Bitmask codeOneLoopStart(
       testcase( pTerm->wtFlags & TERM_VIRTUAL );
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
-      if( (pTerm->prereqAll & notReady)!=0 ) continue;
+      if( (pTerm->prereqAll & notReady)!=0 ){
+        testcase( pWInfo->untestedTerms==0
+               && (pWInfo->wctrlFlags & WHERE_ONETABLE_ONLY)!=0 );
+        pWInfo->untestedTerms = 1;
+        continue;
+      }
       assert( pTerm->pExpr );
       sqlite3ExprIfFalse(pParse, pTerm->pExpr, addrCont, SQLITE_JUMPIFNULL);
       pTerm->wtFlags |= TERM_CODED;
@@ -3528,6 +3563,7 @@ WhereInfo *sqlite3WhereBegin(
 ){
   int i;                     /* Loop counter */
   int nByteWInfo;            /* Num. bytes allocated for WhereInfo struct */
+  int nTabList;              /* Number of elements in pTabList */
   WhereInfo *pWInfo;         /* Will become the return value of this function */
   Vdbe *v = pParse->pVdbe;   /* The virtual database engine */
   Bitmask notReady;          /* Cursors that are not yet positioned */
@@ -3547,6 +3583,13 @@ WhereInfo *sqlite3WhereBegin(
     return 0;
   }
 
+  /* This function normally generates a nested loop for all tables in 
+  ** pTabList.  But if the WHERE_ONETABLE_ONLY flag is set, then we should
+  ** only generate code for the first table in pTabList and assume that
+  ** any cursors associated with subsequent tables are uninitialized.
+  */
+  nTabList = (wctrlFlags & WHERE_ONETABLE_ONLY) ? 1 : pTabList->nSrc;
+
   /* Allocate and initialize the WhereInfo structure that will become the
   ** return value. A single allocation is used to store the WhereInfo
   ** struct, the contents of WhereInfo.a[], the WhereClause structure
@@ -3555,7 +3598,7 @@ WhereInfo *sqlite3WhereBegin(
   ** some architectures. Hence the ROUND8() below.
   */
   db = pParse->db;
-  nByteWInfo = ROUND8(sizeof(WhereInfo)+(pTabList->nSrc-1)*sizeof(WhereLevel));
+  nByteWInfo = ROUND8(sizeof(WhereInfo)+(nTabList-1)*sizeof(WhereLevel));
   pWInfo = sqlite3DbMallocZero(db, 
       nByteWInfo + 
       sizeof(WhereClause) +
@@ -3564,7 +3607,7 @@ WhereInfo *sqlite3WhereBegin(
   if( db->mallocFailed ){
     goto whereBeginError;
   }
-  pWInfo->nLevel = pTabList->nSrc;
+  pWInfo->nLevel = nTabList;
   pWInfo->pParse = pParse;
   pWInfo->pTabList = pTabList;
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
@@ -3583,7 +3626,7 @@ WhereInfo *sqlite3WhereBegin(
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.
   */
-  if( pWhere && (pTabList->nSrc==0 || sqlite3ExprIsConstantNotJoin(pWhere)) ){
+  if( pWhere && (nTabList==0 || sqlite3ExprIsConstantNotJoin(pWhere)) ){
     sqlite3ExprIfFalse(pParse, pWhere, pWInfo->iBreak, SQLITE_JUMPIFNULL);
     pWhere = 0;
   }
@@ -3603,6 +3646,11 @@ WhereInfo *sqlite3WhereBegin(
   ** to virtual table cursors are set. This is used to selectively disable 
   ** the OR-to-IN transformation in exprAnalyzeOrTerm(). It is not helpful 
   ** with virtual tables.
+  **
+  ** Note that bitmasks are created for all pTabList->nSrc tables in
+  ** pTabList, not just the first nTabList tables.  nTabList is normally
+  ** equal to pTabList->nSrc but might be shortened to 1 if the
+  ** WHERE_ONETABLE_ONLY flag is set.
   */
   assert( pWC->vmask==0 && pMaskSet->n==0 );
   for(i=0; i<pTabList->nSrc; i++){
@@ -3654,7 +3702,7 @@ WhereInfo *sqlite3WhereBegin(
   pLevel = pWInfo->a;
   andFlags = ~0;
   WHERETRACE(("*** Optimizer Start ***\n"));
-  for(i=iFrom=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
+  for(i=iFrom=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){
     WhereCost bestPlan;         /* Most efficient plan seen so far */
     Index *pIdx;                /* Index for FROM table at pTabItem */
     int j;                      /* For looping over FROM tables */
@@ -3699,8 +3747,8 @@ WhereInfo *sqlite3WhereBegin(
     */
     for(isOptimal=1; isOptimal>=0 && bestJ<0; isOptimal--){
       Bitmask mask = (isOptimal ? 0 : notReady);
-      assert( (pTabList->nSrc-iFrom)>1 || isOptimal );
-      for(j=iFrom, pTabItem=&pTabList->a[j]; j<pTabList->nSrc; j++, pTabItem++){
+      assert( (nTabList-iFrom)>1 || isOptimal );
+      for(j=iFrom, pTabItem=&pTabList->a[j]; j<nTabList; j++, pTabItem++){
         int doNotReorder;    /* True if this table should not be reordered */
         WhereCost sCost;     /* Cost information from best[Virtual]Index() */
         ExprList *pOrderBy;  /* ORDER BY clause for index to optimize */
@@ -3797,7 +3845,7 @@ WhereInfo *sqlite3WhereBegin(
   ** searching those tables.
   */
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
-  for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
+  for(i=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
 
@@ -3876,7 +3924,7 @@ WhereInfo *sqlite3WhereBegin(
   ** program.
   */
   notReady = ~(Bitmask)0;
-  for(i=0; i<pTabList->nSrc; i++){
+  for(i=0; i<nTabList; i++){
     notReady = codeOneLoopStart(pWInfo, i, wctrlFlags, notReady);
     pWInfo->iContinue = pWInfo->a[i].addrCont;
   }
@@ -3888,7 +3936,7 @@ WhereInfo *sqlite3WhereBegin(
   ** the index is listed as "{}".  If the primary key is used the
   ** index name is '*'.
   */
-  for(i=0; i<pTabList->nSrc; i++){
+  for(i=0; i<nTabList; i++){
     char *z;
     int n;
     pLevel = &pWInfo->a[i];
@@ -3956,7 +4004,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
   /* Generate loop termination code.
   */
   sqlite3ExprCacheClear(pParse);
-  for(i=pTabList->nSrc-1; i>=0; i--){
+  for(i=pWInfo->nLevel-1; i>=0; i--){
     pLevel = &pWInfo->a[i];
     sqlite3VdbeResolveLabel(v, pLevel->addrCont);
     if( pLevel->op!=OP_Noop ){
@@ -4002,7 +4050,8 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Close all of the cursors that were opened by sqlite3WhereBegin.
   */
-  for(i=0, pLevel=pWInfo->a; i<pTabList->nSrc; i++, pLevel++){
+  assert( pWInfo->nLevel==1 || pWInfo->nLevel==pTabList->nSrc );
+  for(i=0, pLevel=pWInfo->a; i<pWInfo->nLevel; i++, pLevel++){
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
