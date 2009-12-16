@@ -262,7 +262,7 @@ TESTSRC2 = \
   $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
   $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_expr.c                           \
-  $(TOP)/ext/fts3/fts3_tokenizer.c                                             \
+  $(TOP)/ext/fts3/fts3_tokenizer.c $(TOP)/ext/fts3/fts3_write.c                \
   $(TOP)/ext/async/sqlite3async.c
 
 # Header files used by all library source files.

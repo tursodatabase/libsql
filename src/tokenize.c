@@ -123,8 +123,9 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
     }
     case '-': {
       if( z[1]=='-' ){
+        /* IMP: R-15891-05542 -- syntax diagram for comments */
         for(i=2; (c=z[i])!=0 && c!='\n'; i++){}
-        *tokenType = TK_SPACE;
+        *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
         return i;
       }
       *tokenType = TK_MINUS;
@@ -155,9 +156,10 @@ int sqlite3GetToken(const unsigned char *z, int *tokenType){
         *tokenType = TK_SLASH;
         return 1;
       }
+      /* IMP: R-15891-05542 -- syntax diagram for comments */
       for(i=3, c=z[2]; (c!='*' || z[i]!='/') && (c=z[i])!=0; i++){}
       if( c ) i++;
-      *tokenType = TK_SPACE;
+      *tokenType = TK_SPACE;   /* IMP: R-22934-25134 */
       return i;
     }
     case '%': {

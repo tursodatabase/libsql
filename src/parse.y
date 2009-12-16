@@ -316,6 +316,7 @@ refargs(A) ::= .                  { A = OE_None*0x0101; /* EV: R-19803-45884 */}
 refargs(A) ::= refargs(X) refarg(Y). { A = (X & ~Y.mask) | Y.value; }
 %type refarg {struct {int value; int mask;}}
 refarg(A) ::= MATCH nm.              { A.value = 0;     A.mask = 0x000000; }
+refarg(A) ::= ON INSERT refact.      { A.value = 0;     A.mask = 0x000000; }
 refarg(A) ::= ON DELETE refact(X).   { A.value = X;     A.mask = 0x0000ff; }
 refarg(A) ::= ON UPDATE refact(X).   { A.value = X<<8;  A.mask = 0x00ff00; }
 %type refact {int}

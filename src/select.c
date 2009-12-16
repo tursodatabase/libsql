@@ -190,6 +190,39 @@ static int columnIndex(Table *pTab, const char *zCol){
 }
 
 /*
+** Search the first N tables in pSrc, from left to right, looking for a
+** table that has a column named zCol.  
+**
+** When found, set *piTab and *piCol to the table index and column index
+** of the matching column and return TRUE.
+**
+** If not found, return FALSE.
+*/
+static int tableAndColumnIndex(
+  SrcList *pSrc,       /* Array of tables to search */
+  int N,               /* Number of tables in pSrc->a[] to search */
+  const char *zCol,    /* Name of the column we are looking for */
+  int *piTab,          /* Write index of pSrc->a[] here */
+  int *piCol           /* Write index of pSrc->a[*piTab].pTab->aCol[] here */
+){
+  int i;               /* For looping over tables in pSrc */
+  int iCol;            /* Index of column matching zCol */
+
+  assert( (piTab==0)==(piCol==0) );  /* Both or neither are NULL */
+  for(i=0; i<N; i++){
+    iCol = columnIndex(pSrc->a[i].pTab, zCol);
+    if( iCol>=0 ){
+      if( piTab ){
+        *piTab = i;
+        *piCol = iCol;
+      }
+      return 1;
+    }
+  }
+  return 0;
+}
+
+/*
 ** This function is used to add terms implied by JOIN syntax to the
 ** WHERE clause expression of a SELECT statement. The new term, which
 ** is ANDed with the existing WHERE clause, is of the form:
@@ -203,8 +236,9 @@ static int columnIndex(Table *pTab, const char *zCol){
 static void addWhereTerm(
   Parse *pParse,                  /* Parsing context */
   SrcList *pSrc,                  /* List of tables in FROM clause */
-  int iSrc,                       /* Index of first table to join in pSrc */
+  int iLeft,                      /* Index of first table to join in pSrc */
   int iColLeft,                   /* Index of column in first table */
+  int iRight,                     /* Index of second table in pSrc */
   int iColRight,                  /* Index of column in second table */
   int isOuterJoin,                /* True if this is an OUTER join */
   Expr **ppWhere                  /* IN/OUT: The WHERE clause to add to */
@@ -214,12 +248,13 @@ static void addWhereTerm(
   Expr *pE2;
   Expr *pEq;
 
-  assert( pSrc->nSrc>(iSrc+1) );
-  assert( pSrc->a[iSrc].pTab );
-  assert( pSrc->a[iSrc+1].pTab );
+  assert( iLeft<iRight );
+  assert( pSrc->nSrc>iRight );
+  assert( pSrc->a[iLeft].pTab );
+  assert( pSrc->a[iRight].pTab );
 
-  pE1 = sqlite3CreateColumnExpr(db, pSrc, iSrc, iColLeft);
-  pE2 = sqlite3CreateColumnExpr(db, pSrc, iSrc+1, iColRight);
+  pE1 = sqlite3CreateColumnExpr(db, pSrc, iLeft, iColLeft);
+  pE2 = sqlite3CreateColumnExpr(db, pSrc, iRight, iColRight);
 
   pEq = sqlite3PExpr(pParse, TK_EQ, pE1, pE2, 0);
   if( pEq && isOuterJoin ){
@@ -308,11 +343,15 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
            "an ON or USING clause", 0);
         return 1;
       }
-      for(j=0; j<pLeftTab->nCol; j++){
-        char *zName = pLeftTab->aCol[j].zName;
-        int iRightCol = columnIndex(pRightTab, zName);
-        if( iRightCol>=0 ){
-          addWhereTerm(pParse, pSrc, i, j, iRightCol, isOuter, &p->pWhere);
+      for(j=0; j<pRightTab->nCol; j++){
+        char *zName;   /* Name of column in the right table */
+        int iLeft;     /* Matching left table */
+        int iLeftCol;  /* Matching column in the left table */
+
+        zName = pRightTab->aCol[j].zName;
+        if( tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol) ){
+          addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, j,
+                       isOuter, &p->pWhere);
         }
       }
     }
@@ -344,15 +383,22 @@ static int sqliteProcessJoin(Parse *pParse, Select *p){
     if( pRight->pUsing ){
       IdList *pList = pRight->pUsing;
       for(j=0; j<pList->nId; j++){
-        char *zName = pList->a[j].zName;
-        int iLeftCol = columnIndex(pLeftTab, zName);
-        int iRightCol = columnIndex(pRightTab, zName);
-        if( iLeftCol<0 || iRightCol<0 ){
+        char *zName;     /* Name of the term in the USING clause */
+        int iLeft;       /* Table on the left with matching column name */
+        int iLeftCol;    /* Column number of matching column on the left */
+        int iRightCol;   /* Column number of matching column on the right */
+
+        zName = pList->a[j].zName;
+        iRightCol = columnIndex(pRightTab, zName);
+        if( iRightCol<0
+         || !tableAndColumnIndex(pSrc, i+1, zName, &iLeft, &iLeftCol)
+        ){
           sqlite3ErrorMsg(pParse, "cannot join using column %s - column "
             "not present in both tables", zName);
           return 1;
         }
-        addWhereTerm(pParse, pSrc, i, iLeftCol, iRightCol, isOuter, &p->pWhere);
+        addWhereTerm(pParse, pSrc, iLeft, iLeftCol, i+1, iRightCol,
+                     isOuter, &p->pWhere);
       }
     }
   }
@@ -3169,14 +3215,14 @@ static int selectExpander(Walker *pWalker, Select *p){
             }
 
             if( i>0 && zTName==0 ){
-              struct SrcList_item *pLeft = &pTabList->a[i-1];
-              if( (pLeft[1].jointype & JT_NATURAL)!=0 &&
-                        columnIndex(pLeft->pTab, zName)>=0 ){
+              if( (pFrom->jointype & JT_NATURAL)!=0
+                && tableAndColumnIndex(pTabList, i, zName, 0, 0)
+              ){
                 /* In a NATURAL join, omit the join columns from the 
-                ** table on the right */
+                ** table to the right of the join */
                 continue;
               }
-              if( sqlite3IdListIndex(pLeft[1].pUsing, zName)>=0 ){
+              if( sqlite3IdListIndex(pFrom->pUsing, zName)>=0 ){
                 /* In a join with a USING clause, omit columns in the
                 ** using clause from the table on the right. */
                 continue;

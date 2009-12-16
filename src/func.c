@@ -117,7 +117,10 @@ static void lengthFunc(
 }
 
 /*
-** Implementation of the abs() function
+** Implementation of the abs() function.
+**
+** IMP: R-23979-26855 The abs(X) function returns the absolute value of
+** the numeric argument X. 
 */
 static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   assert( argc==1 );
@@ -127,6 +130,9 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       i64 iVal = sqlite3_value_int64(argv[0]);
       if( iVal<0 ){
         if( (iVal<<1)==0 ){
+          /* IMP: R-35460-15084 If X is the integer -9223372036854775807 then
+          ** abs(X) throws an integer overflow error since there is no
+          ** equivalent positive 64-bit two complement value. */
           sqlite3_result_error(context, "integer overflow", -1);
           return;
         }
@@ -136,10 +142,16 @@ static void absFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
       break;
     }
     case SQLITE_NULL: {
+      /* IMP: R-37434-19929 Abs(X) returns NULL if X is NULL. */
       sqlite3_result_null(context);
       break;
     }
     default: {
+      /* Because sqlite3_value_double() returns 0.0 if the argument is not
+      ** something that can be converted into a number, we have:
+      ** IMP: R-57326-31541 Abs(X) return 0.0 if X is a string or blob that
+      ** cannot be converted to a numeric value. 
+      */
       double rVal = sqlite3_value_double(argv[0]);
       if( rVal<0 ) rVal = -rVal;
       sqlite3_result_double(context, rVal);
@@ -1044,9 +1056,16 @@ static void trimFunc(
 }
 
 
+/* IMP: R-25361-16150 This function is omitted from SQLite by default. It
+** is only available if the SQLITE_SOUNDEX compile-time option is used
+** when SQLite is built.
+*/
 #ifdef SQLITE_SOUNDEX
 /*
 ** Compute the soundex encoding of a word.
+**
+** IMP: R-59782-00072 The soundex(X) function returns a string that is the
+** soundex encoding of the string X. 
 */
 static void soundexFunc(
   sqlite3_context *context,
@@ -1090,10 +1109,12 @@ static void soundexFunc(
     zResult[j] = 0;
     sqlite3_result_text(context, zResult, 4, SQLITE_TRANSIENT);
   }else{
+    /* IMP: R-64894-50321 The string "?000" is returned if the argument
+    ** is NULL or contains no ASCII alphabetic characters. */
     sqlite3_result_text(context, "?000", 4, SQLITE_STATIC);
   }
 }
-#endif
+#endif /* SQLITE_SOUNDEX */
 
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
 /*

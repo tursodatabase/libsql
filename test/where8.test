@@ -398,6 +398,10 @@ do_test where8-4.1 {
     INSERT INTO t4 VALUES('his', 'of', 378678316.5);
     INSERT INTO t4 VALUES(271.2019091, 'viewed', 3282306647);
     INSERT INTO t4 VALUES('hills', 'all', 'peak');
+    CREATE TABLE t5(s);
+    INSERT INTO t5 VALUES('tab-t5');
+    CREATE TABLE t6(t);
+    INSERT INTO t6 VALUES(123456);
     COMMIT;
   }
 } {}
@@ -639,6 +643,14 @@ foreach idxsql {
 197  { SELECT * FROM t3, t4 WHERE g = 2643383279 AND f = g }
 198  { SELECT * FROM t3, t4 WHERE g < 8979323846 }
 199  { SELECT * FROM t3, t4 WHERE 'are' <= b }
+200  { SELECT * FROM t3, t4 WHERE (a=1415926535 AND f=8628034825)
+                               OR (a=6939937510 AND f=2643383279) }
+201  { SELECT * FROM t3, t4, t5, t6
+        WHERE (a=1415926535 AND f=8628034825 AND s!='hello' AND t!=5)
+           OR (a=6939937510 AND f=2643383279 AND s='tab-t5' AND t=123456) }
+202  { SELECT * FROM t3, t4, t5, t6
+        WHERE (a=1415926535 AND f=8628034825 AND s!='hello' AND t==5)
+           OR (a=6939937510 AND f=2643383279 AND s='tab-t5' AND t!=123456) }
 
   } {
     do_test where8-4.$A.$B.1 {

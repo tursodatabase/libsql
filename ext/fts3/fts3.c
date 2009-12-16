@@ -292,70 +292,6 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
-
-
-/* TODO(shess) MAN, this thing needs some refactoring.  At minimum, it
-** would be nice to order the file better, perhaps something along the
-** lines of:
-**
-**  - utility functions
-**  - table setup functions
-**  - table update functions
-**  - table query functions
-**
-** Put the query functions last because they're likely to reference
-** typedefs or functions from the table update section.
-*/
-
-#if 0
-# define FTSTRACE(A)  printf A; fflush(stdout)
-#else
-# define FTSTRACE(A)
-#endif
-
-typedef enum DocListType {
-  DL_DOCIDS,              /* docids only */
-  DL_POSITIONS,           /* docids + positions */
-  DL_POSITIONS_OFFSETS    /* docids + positions + offsets */
-} DocListType;
-
-/*
-** By default, only positions and not offsets are stored in the doclists.
-** To change this so that offsets are stored too, compile with
-**
-**          -DDL_DEFAULT=DL_POSITIONS_OFFSETS
-**
-** If DL_DEFAULT is set to DL_DOCIDS, your table can only be inserted
-** into (no deletes or updates).
-*/
-#ifndef DL_DEFAULT
-# define DL_DEFAULT DL_POSITIONS
-#endif
-
-enum {
-  POS_END = 0,        /* end of this position list */
-  POS_COLUMN,         /* followed by new column number */
-  POS_BASE
-};
-
-/* utility functions */
-
-/* CLEAR() and SCRAMBLE() abstract memset() on a pointer to a single
-** record to prevent errors of the form:
-**
-** my_function(SomeType *b){
-**   memset(b, '\0', sizeof(b));  // sizeof(b)!=sizeof(*b)
-** }
-*/
-/* TODO(shess) Obvious candidates for a header file. */
-#define CLEAR(b) memset(b, '\0', sizeof(*(b)))
-
-#ifndef NDEBUG
-#  define SCRAMBLE(b) memset(b, 0x55, sizeof(*(b)))
-#else
-#  define SCRAMBLE(b)
-#endif
-
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
@@ -381,13 +317,9 @@ int sqlite3Fts3PutVarint(char *p, sqlite_int64 v){
 int sqlite3Fts3GetVarint(const char *p, sqlite_int64 *v){
   const unsigned char *q = (const unsigned char *) p;
   sqlite_uint64 x = 0, y = 1;
-  while( (*q & 0x80) == 0x80 ){
+  while( (*q&0x80)==0x80 && q-(unsigned char *)p<FTS3_VARINT_MAX ){
     x += y * (*q++ & 0x7f);
     y <<= 7;
-    if( q - (unsigned char *)p >= FTS3_VARINT_MAX ){  /* bad data */
-      assert( 0 );
-      return 0;
-    }
   }
   x += y * (*q++);
   *v = (sqlite_int64) x;
@@ -402,7 +334,6 @@ int sqlite3Fts3GetVarint32(const char *p, int *pi){
  sqlite_int64 i;
  int ret = sqlite3Fts3GetVarint(p, &i);
  *pi = (int) i;
- assert( *pi==i );
  return ret;
 }
 
@@ -431,31 +362,29 @@ int sqlite3Fts3VarintLen(sqlite3_uint64 v){
 **     'xyz'   becomes   xyz
 **     [pqr]   becomes   pqr
 **     `mno`   becomes   mno
+**
 */
 void sqlite3Fts3Dequote(char *z){
-  int quote;
-  int i, j;
+  char quote;                     /* Quote character (if any ) */
 
   quote = z[0];
-  switch( quote ){
-    case '\'':  break;
-    case '"':   break;
-    case '`':   break;                /* For MySQL compatibility */
-    case '[':   quote = ']';  break;  /* For MS SqlServer compatibility */
-    default:    return;
-  }
-  for(i=1, j=0; z[i]; i++){
-    if( z[i]==quote ){
-      if( z[i+1]==quote ){
-        z[j++] = (char)quote;
-        i++;
+  if( quote=='[' || quote=='\'' || quote=='"' || quote=='`' ){
+    int iIn = 1;                  /* Index of next byte to read from input */
+    int iOut = 0;                 /* Index of next byte to write to output */
+
+    /* If the first byte was a '[', then the close-quote character is a ']' */
+    if( quote=='[' ) quote = ']';  
+
+    while( ALWAYS(z[iIn]) ){
+      if( z[iIn]==quote ){
+        if( z[iIn+1]!=quote ) break;
+        z[iOut++] = quote;
+        iIn += 2;
       }else{
-        z[j++] = 0;
-        break;
+        z[iOut++] = z[iIn++];
       }
-    }else{
-      z[j++] = z[i];
     }
+    z[iOut] = '\0';
   }
 }
 
@@ -624,7 +553,7 @@ static int fts3CreateTables(Fts3Table *p){
 **   argv[2]   -> table name
 **   argv[...] -> "column name" and other module argument fields.
 */
-int fts3InitVtab(
+static int fts3InitVtab(
   int isCreate,                   /* True for xCreate, false for xConnect */
   sqlite3 *db,                    /* The SQLite database connection */
   void *pAux,                     /* Hash table containing tokenizers */
@@ -647,14 +576,6 @@ int fts3InitVtab(
 
   const char *zTokenizer = 0;               /* Name of tokenizer to use */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
-
-#ifdef SQLITE_TEST
-  const char *zTestParam = 0;
-  if( strncmp(argv[argc-1], "test:", 5)==0 ){
-    zTestParam = argv[argc-1];
-    argc--;
-  }
-#endif
 
   nDb = (int)strlen(argv[1]) + 1;
   nName = (int)strlen(argv[2]) + 1;
@@ -700,6 +621,7 @@ int fts3InitVtab(
   p->azColumn = (char **)&p[1];
   p->pTokenizer = pTokenizer;
   p->nNodeSize = 1000;
+  p->nMaxPendingData = FTS3_MAX_PENDING_DATA;
   zCsr = (char *)&p->azColumn[nCol];
 
   fts3HashInit(&p->pendingTerms, FTS3_HASH_STRING, 1);
@@ -743,11 +665,6 @@ int fts3InitVtab(
   rc = fts3DeclareVtab(p);
   if( rc!=SQLITE_OK ) goto fts3_init_out;
 
-#ifdef SQLITE_TEST
-  if( zTestParam ){
-    p->nNodeSize = atoi(&zTestParam[5]);
-  }
-#endif
   *ppVTab = &p->base;
 
 fts3_init_out:
@@ -810,31 +727,31 @@ static int fts3BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
     struct sqlite3_index_constraint *pCons = &pInfo->aConstraint[i];
     if( pCons->usable==0 ) continue;
 
-    /* A direct lookup on the rowid or docid column. This is the best
-    ** strategy in all cases. Assign a cost of 1.0 and return early.
-    */
+    /* A direct lookup on the rowid or docid column. Assign a cost of 1.0. */
     if( pCons->op==SQLITE_INDEX_CONSTRAINT_EQ 
      && (pCons->iColumn<0 || pCons->iColumn==p->nColumn+1 )
     ){
       pInfo->idxNum = FTS3_DOCID_SEARCH;
       pInfo->estimatedCost = 1.0;
       iCons = i;
-      break;
     }
 
     /* A MATCH constraint. Use a full-text search.
     **
     ** If there is more than one MATCH constraint available, use the first
     ** one encountered. If there is both a MATCH constraint and a direct
-    ** rowid/docid lookup, prefer the rowid/docid strategy.
+    ** rowid/docid lookup, prefer the MATCH strategy. This is done even 
+    ** though the rowid/docid lookup is faster than a MATCH query, selecting
+    ** it would lead to an "unable to use function MATCH in the requested 
+    ** context" error.
     */
-    if( iCons<0 
-     && pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH 
+    if( pCons->op==SQLITE_INDEX_CONSTRAINT_MATCH 
      && pCons->iColumn>=0 && pCons->iColumn<=p->nColumn
     ){
       pInfo->idxNum = FTS3_FULLTEXT_SEARCH + pCons->iColumn;
       pInfo->estimatedCost = 2.0;
       iCons = i;
+      break;
     }
   }
 
@@ -884,17 +801,24 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
-static int fts3CursorSeek(Fts3Cursor *pCsr){
+static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
   if( pCsr->isRequireSeek ){
     pCsr->isRequireSeek = 0;
     sqlite3_bind_int64(pCsr->pStmt, 1, pCsr->iPrevId);
     if( SQLITE_ROW==sqlite3_step(pCsr->pStmt) ){
       return SQLITE_OK;
     }else{
-      int rc;
+      int rc = sqlite3_reset(pCsr->pStmt);
+      if( rc==SQLITE_OK ){
+        /* If no row was found and no error has occured, then the %_content
+        ** table is missing a row that is present in the full-text index.
+        ** The data structures are corrupt.
+        */
+        rc = SQLITE_CORRUPT;
+      }
       pCsr->isEof = 1;
-      if( SQLITE_OK==(rc = sqlite3_reset(pCsr->pStmt)) ){
-        rc = SQLITE_ERROR;
+      if( pContext ){
+        sqlite3_result_error_code(pContext, rc);
       }
       return rc;
     }
@@ -1244,9 +1168,10 @@ static int fts3PoslistPhraseMerge(
           if( (*p1&0xFE)==0 ) break;
           fts3GetDeltaVarint(&p1, &iPos1); iPos1 -= 2;
         }
-
       }
-      if( pSave && pp ){
+
+      if( pSave ){
+        assert( pp && p );
         p = pSave;
       }
 
@@ -1387,10 +1312,6 @@ static int fts3DoclistMerge(
   if( !aBuffer ){
     return SQLITE_NOMEM;
   }
-  if( n1==0 && n2==0 ){
-    *pnBuffer = 0;
-    return SQLITE_OK;
-  }
 
   /* Read the first docid from each doclist */
   fts3GetDeltaVarint2(&p1, pEnd1, &i1);
@@ -1475,7 +1396,7 @@ static int fts3DoclistMerge(
       char **ppPos = 0;
       if( mergetype==MERGE_POS_NEAR ){
         ppPos = &p;
-        aTmp = sqlite3_malloc(2*(n1+n2));
+        aTmp = sqlite3_malloc(2*(n1+n2+1));
         if( !aTmp ){
           return SQLITE_NOMEM;
         }
@@ -1595,12 +1516,20 @@ static int fts3TermSelect(
   int i;
   TermSelect tsc;
   Fts3SegFilter filter;           /* Segment term filter configuration */
-  Fts3SegReader **apSegment = 0;  /* Array of segments to read data from */
+  Fts3SegReader **apSegment;      /* Array of segments to read data from */
   int nSegment = 0;               /* Size of apSegment array */
-  int nAlloc = 0;                 /* Allocated size of segment array */
+  int nAlloc = 16;                /* Allocated size of segment array */
   int rc;                         /* Return code */
-  sqlite3_stmt *pStmt;            /* SQL statement to scan %_segdir table */
+  sqlite3_stmt *pStmt = 0;        /* SQL statement to scan %_segdir table */
   int iAge = 0;                   /* Used to assign ages to segments */
+
+  apSegment = (Fts3SegReader **)sqlite3_malloc(sizeof(Fts3SegReader*)*nAlloc);
+  if( !apSegment ) return SQLITE_NOMEM;
+  rc = sqlite3Fts3SegReaderPending(p, zTerm, nTerm, isPrefix, &apSegment[0]);
+  if( rc!=SQLITE_OK ) goto finished;
+  if( apSegment[0] ){
+    nSegment = 1;
+  }
 
   /* Loop through the entire %_segdir table. For each segment, create a
   ** Fts3SegReader to iterate through the subset of the segment leaves
@@ -1717,8 +1646,6 @@ static int fts3PhraseSelect(
   int ii;
   int iCol = pPhrase->iColumn;
   int isTermPos = (pPhrase->nToken>1 || isReqPos);
-
-  assert( p->nPendingData==0 );
 
   for(ii=0; ii<pPhrase->nToken; ii++){
     struct PhraseToken *pTok = &pPhrase->aToken[ii];
@@ -1908,6 +1835,7 @@ static int fts3FilterMethod(
   /* In case the cursor has been used before, clear it now. */
   sqlite3_finalize(pCsr->pStmt);
   sqlite3_free(pCsr->aDoclist);
+  sqlite3Fts3ExprFree(pCsr->pExpr);
   memset(&pCursor[1], 0, sizeof(Fts3Cursor)-sizeof(sqlite3_vtab_cursor));
 
   /* Compile a SELECT statement for this cursor. For a full-table-scan, the
@@ -1934,8 +1862,6 @@ static int fts3FilterMethod(
     if( zQuery==0 && sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
       return SQLITE_NOMEM;
     }
-    rc = sqlite3Fts3PendingTermsFlush(p);
-    if( rc!=SQLITE_OK ) return rc;
 
     rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
         iCol, zQuery, -1, &pCsr->pExpr
@@ -1991,21 +1917,22 @@ static int fts3ColumnMethod(
   /* The column value supplied by SQLite must be in range. */
   assert( iCol>=0 && iCol<=p->nColumn+1 );
 
-  rc = fts3CursorSeek(pCsr);
-  if( rc==SQLITE_OK ){
-    if( iCol==p->nColumn+1 ){
-      /* This call is a request for the "docid" column. Since "docid" is an 
-      ** alias for "rowid", use the xRowid() method to obtain the value.
-      */
-      sqlite3_int64 iRowid;
-      rc = fts3RowidMethod(pCursor, &iRowid);
-      sqlite3_result_int64(pContext, iRowid);
-    }else if( iCol==p->nColumn ){
-      /* The extra column whose name is the same as the table.
-      ** Return a blob which is a pointer to the cursor.
-      */
-      sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
-    }else{
+  if( iCol==p->nColumn+1 ){
+    /* This call is a request for the "docid" column. Since "docid" is an 
+    ** alias for "rowid", use the xRowid() method to obtain the value.
+    */
+    sqlite3_int64 iRowid;
+    rc = fts3RowidMethod(pCursor, &iRowid);
+    sqlite3_result_int64(pContext, iRowid);
+  }else if( iCol==p->nColumn ){
+    /* The extra column whose name is the same as the table.
+    ** Return a blob which is a pointer to the cursor.
+    */
+    sqlite3_result_blob(pContext, &pCsr, sizeof(pCsr), SQLITE_TRANSIENT);
+    rc = SQLITE_OK;
+  }else{
+    rc = fts3CursorSeek(0, pCsr);
+    if( rc==SQLITE_OK ){
       sqlite3_result_value(pContext, sqlite3_column_value(pCsr->pStmt, iCol+1));
     }
   }
@@ -2123,8 +2050,11 @@ static void fts3SnippetFunc(
     case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
     case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
   }
-
-  sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
+  if( !zEllipsis || !zEnd || !zStart ){
+    sqlite3_result_error_nomem(pContext);
+  }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    sqlite3Fts3Snippet(pContext, pCsr, zStart, zEnd, zEllipsis);
+  }
 }
 
 /*
@@ -2142,7 +2072,9 @@ static void fts3OffsetsFunc(
   assert( nVal==1 );
   if( fts3FunctionArg(pContext, "offsets", apVal[0], &pCsr) ) return;
   assert( pCsr );
-  sqlite3Fts3Offsets(pContext, pCsr);
+  if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    sqlite3Fts3Offsets(pContext, pCsr);
+  }
 }
 
 /* 
@@ -2307,13 +2239,14 @@ int sqlite3Fts3Init(sqlite3 *db){
   Fts3Hash *pHash = 0;
   const sqlite3_tokenizer_module *pSimple = 0;
   const sqlite3_tokenizer_module *pPorter = 0;
+
+#ifdef SQLITE_ENABLE_ICU
   const sqlite3_tokenizer_module *pIcu = 0;
+  sqlite3Fts3IcuTokenizerModule(&pIcu);
+#endif
 
   sqlite3Fts3SimpleTokenizerModule(&pSimple);
   sqlite3Fts3PorterTokenizerModule(&pPorter);
-#ifdef SQLITE_ENABLE_ICU
-  sqlite3Fts3IcuTokenizerModule(&pIcu);
-#endif
 
   /* Allocate and initialise the hash-table used to store tokenizers. */
   pHash = sqlite3_malloc(sizeof(Fts3Hash));
@@ -2327,14 +2260,18 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( rc==SQLITE_OK ){
     if( sqlite3Fts3HashInsert(pHash, "simple", 7, (void *)pSimple)
      || sqlite3Fts3HashInsert(pHash, "porter", 7, (void *)pPorter) 
+#ifdef SQLITE_ENABLE_ICU
      || (pIcu && sqlite3Fts3HashInsert(pHash, "icu", 4, (void *)pIcu))
+#endif
     ){
       rc = SQLITE_NOMEM;
     }
   }
 
 #ifdef SQLITE_TEST
-  sqlite3Fts3ExprInitTestInterface(db);
+  if( rc==SQLITE_OK ){
+    rc = sqlite3Fts3ExprInitTestInterface(db);
+  }
 #endif
 
   /* Create the virtual table wrapper around the hash-table and overload 

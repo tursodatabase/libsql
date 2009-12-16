@@ -181,7 +181,7 @@ static int getNextToken(
 ** Enlarge a memory allocation.  If an out-of-memory allocation occurs,
 ** then free the old allocation.
 */
-void *fts3ReallocOrFree(void *pOrig, int nNew){
+static void *fts3ReallocOrFree(void *pOrig, int nNew){
   void *pRet = sqlite3_realloc(pOrig, nNew);
   if( !pRet ){
     sqlite3_free(pOrig);
@@ -913,8 +913,8 @@ exprtest_out:
 ** Register the query expression parser test function fts3_exprtest() 
 ** with database connection db. 
 */
-void sqlite3Fts3ExprInitTestInterface(sqlite3* db){
-  sqlite3_create_function(
+int sqlite3Fts3ExprInitTestInterface(sqlite3* db){
+  return sqlite3_create_function(
       db, "fts3_exprtest", -1, SQLITE_UTF8, 0, fts3ExprTest, 0, 0
   );
 }

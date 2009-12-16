@@ -208,7 +208,7 @@ proc fts3_doclist {tbl term where} {
 
 proc gobble_varint {varname} {
   upvar $varname blob
-  set n [read_varint $blob ret]
+  set n [read_fts3varint $blob ret]
   set blob [string range $blob $n end]
   return $ret
 }
@@ -310,36 +310,65 @@ proc fts3_read {tbl where varname} {
 # match the expected results passed via parameter $result.
 #
 proc do_select_test {name sql result} {
-  doPassiveTest $name $sql [list 0 $result]
+  uplevel [list doPassiveTest 0 $name $sql [list 0 $result]]
+}
+
+proc do_restart_select_test {name sql result} {
+  uplevel [list doPassiveTest 1 $name $sql [list 0 $result]]
 }
 
 proc do_error_test {name sql error} {
-  doPassiveTest $name $sql [list 1 $error]
+  uplevel [list doPassiveTest 0 $name $sql [list 1 $error]]
 }
 
-proc doPassiveTest {name sql catchres} {
+proc doPassiveTest {isRestart name sql catchres} {
   if {![info exists ::DO_MALLOC_TEST]} { set ::DO_MALLOC_TEST 1 }
 
-  if {$::DO_MALLOC_TEST} {
-    set answers [list {1 {out of memory}} $catchres]
-    set modes [list 100000 transient 1 persistent]
-  } else {
-    set answers [list $catchres]
-    set modes [list 0 nofail]
+  switch $::DO_MALLOC_TEST {
+    0 { # No malloc failures.
+      do_test $name [list catchsql $sql] $catchres
+      return
+    }
+    1 { # Simulate transient failures.
+      set nRepeat 1
+      set zName "transient"
+      set nStartLimit 100000
+      set nBackup 1
+    }
+    2 { # Simulate persistent failures.
+      set nRepeat 1
+      set zName "persistent"
+      set nStartLimit 100000
+      set nBackup 1
+    }
+    3 { # Simulate transient failures with extra brute force.
+      set nRepeat 100000
+      set zName "ridiculous"
+      set nStartLimit 1
+      set nBackup 10
+    }
   }
+
+  # The set of acceptable results from running [catchsql $sql].
+  #
+  set answers [list {1 {out of memory}} $catchres]
   set str [join $answers " OR "]
 
-  foreach {nRepeat zName} $modes {
-    for {set iFail 1} 1 {incr iFail} {
-      if {$::DO_MALLOC_TEST} {sqlite3_memdebug_fail $iFail -repeat $nRepeat}
+  set nFail 1
+  for {set iLimit $nStartLimit} {$nFail} {incr iLimit} {
+    for {set iFail 1} {$nFail && $iFail<=$iLimit} {incr iFail} {
+      for {set iTest 0} {$iTest<$nBackup && ($iFail-$iTest)>0} {incr iTest} {
 
-      set res [catchsql $sql]
-      if {[lsearch -exact $answers $res]>=0} {
-        set res $str
+        if {$isRestart} { sqlite3 db test.db }
+
+        sqlite3_memdebug_fail [expr $iFail-$iTest] -repeat $nRepeat
+        set res [uplevel [list catchsql $sql]]
+        if {[lsearch -exact $answers $res]>=0} { set res $str }
+        set testname "$name.$zName.$iFail"
+        do_test "$name.$zName.$iLimit.$iFail" [list set {} $res] $str
+
+        set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
       }
-      do_test $name.$zName.$iFail [list set {} $res] $str
-      set nFail [sqlite3_memdebug_fail -1 -benigncnt nBenign]
-      if {$nFail==0} break
     }
   }
 }

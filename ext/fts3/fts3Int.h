@@ -120,10 +120,11 @@ struct Fts3Table {
   /* The following hash table is used to buffer pending index updates during
   ** transactions. Variable nPendingData estimates the memory size of the 
   ** pending data, including hash table overhead, but not malloc overhead. 
-  ** When nPendingData exceeds FTS3_MAX_PENDING_DATA, the buffer is flushed 
+  ** When nPendingData exceeds nMaxPendingData, the buffer is flushed 
   ** automatically. Variable iPrevDocid is the docid of the most recently
   ** inserted record.
   */
+  int nMaxPendingData;
   int nPendingData;
   sqlite_int64 iPrevDocid;
   Fts3Hash pendingTerms;
@@ -225,6 +226,7 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *);
 int sqlite3Fts3Optimize(Fts3Table *);
 int sqlite3Fts3SegReaderNew(Fts3Table *,int, sqlite3_int64,
   sqlite3_int64, sqlite3_int64, const char *, int, Fts3SegReader**);
+int sqlite3Fts3SegReaderPending(Fts3Table*,const char*,int,int,Fts3SegReader**);
 void sqlite3Fts3SegReaderFree(Fts3Table *, Fts3SegReader *);
 int sqlite3Fts3SegReaderIterate(
   Fts3Table *, Fts3SegReader **, int, Fts3SegFilter *,
@@ -273,7 +275,7 @@ int sqlite3Fts3ExprParse(sqlite3_tokenizer *,
 );
 void sqlite3Fts3ExprFree(Fts3Expr *);
 #ifdef SQLITE_TEST
-void sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
+int sqlite3Fts3ExprInitTestInterface(sqlite3 *db);
 #endif
 
 #endif /* _FTSINT_H */

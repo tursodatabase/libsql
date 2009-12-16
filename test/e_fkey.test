@@ -31,10 +31,9 @@ proc eqp {sql {db db}} { uplevel execsql [list "EXPLAIN QUERY PLAN $sql"] $db }
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-33710-56344 */
-#
-# Test builds neither OMIT_FOREIGN_KEY or OMIT_TRIGGER defined have 
-# foreign key functionality.
+# EVIDENCE-OF: R-33710-56344 In order to use foreign key constraints in
+# SQLite, the library must be compiled with neither
+# SQLITE_OMIT_FOREIGN_KEY or SQLITE_OMIT_TRIGGER defined.
 #
 ifcapable trigger&&foreignkey {
   do_test e_fkey-1 {
@@ -51,15 +50,25 @@ ifcapable trigger&&foreignkey {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-44697-61543 */
-#
 # Test the effects of defining OMIT_TRIGGER but not OMIT_FOREIGN_KEY.
 #
-# /* EV: R-22567-44039 */
-# /* EV: R-41784-13339 */
+# EVIDENCE-OF: R-44697-61543 If SQLITE_OMIT_TRIGGER is defined but
+# SQLITE_OMIT_FOREIGN_KEY is not, then SQLite behaves as it did prior to
+# version 3.6.19 - foreign key definitions are parsed and may be queried
+# using PRAGMA foreign_key_list, but foreign key constraints are not
+# enforced.
 #
 # Specifically, test that "PRAGMA foreign_keys" is a no-op in this case.
 # When using the pragma to query the current setting, 0 rows are returned.
+#
+# EVIDENCE-OF: R-22567-44039 The PRAGMA foreign_keys command is a no-op
+# in this configuration.
+#
+# EVIDENCE-OF: R-41784-13339 Tip: If the command "PRAGMA foreign_keys"
+# returns no data instead of a single row containing "0" or "1", then
+# the version of SQLite you are using does not support foreign keys
+# (either because it is older than 3.6.19 or because it was compiled
+# with SQLITE_OMIT_FOREIGN_KEY or SQLITE_OMIT_TRIGGER defined).
 #
 reset_db
 ifcapable !trigger&&foreignkey {
@@ -84,9 +93,11 @@ ifcapable !trigger&&foreignkey {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-58428-36660 */
-#
 # Test the effects of defining OMIT_FOREIGN_KEY.
+#
+# EVIDENCE-OF: R-58428-36660 If OMIT_FOREIGN_KEY is defined, then
+# foreign key definitions cannot even be parsed (attempting to specify a
+# foreign key definition is a syntax error).
 #
 # /* EV: R-58428-36660 */
 #
@@ -120,14 +131,15 @@ reset_db
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-07280-60510 */
-#
-# Test that even if foreign keys are supported by the build, they must
-# be enabled using "PRAGMA foreign_keys = ON" (or similar).
-#
-# /* EV: R-59578-04990 */
+# EVIDENCE-OF: R-07280-60510 Assuming the library is compiled with
+# foreign key constraints enabled, it must still be enabled by the
+# application at runtime, using the PRAGMA foreign_keys command.
 #
 # This also tests that foreign key constraints are disabled by default.
+#
+# EVIDENCE-OF: R-59578-04990 Foreign key constraints are disabled by
+# default (for backwards compatibility), so must be enabled separately
+# for each database connection separately.
 #
 drop_all_tables
 do_test e_fkey-4.1 {
@@ -153,13 +165,14 @@ do_test e_fkey-4.2 {
 } {world}
 
 #-------------------------------------------------------------------------
-# /* EV: R-15278-54456 */
-# /* EV: R-11255-19907 */
+# EVIDENCE-OF: R-15278-54456 The application can can also use a PRAGMA
+# foreign_keys statement to determine if foreign keys are currently
+# enabled.
 #
-# Test that the application can use "PRAGMA foreign_keys" to query for
-# whether or not foreign keys are currently enabled. This also tests
-# the example code in section 2 of foreignkeys.in.
+# This also tests the example code in section 2 of foreignkeys.in.
 #
+# EVIDENCE-OF: R-11255-19907
+# 
 reset_db
 do_test e_fkey-5.1 {
   execsql { PRAGMA foreign_keys }
@@ -178,10 +191,13 @@ do_test e_fkey-5.3 {
 } {0}
 
 #-------------------------------------------------------------------------
-# /* EV: R-46649-58537 */
-#
 # Test that it is not possible to enable or disable foreign key support
 # while not in auto-commit mode.
+#
+# EVIDENCE-OF: R-46649-58537 It is not possible to enable or disable
+# foreign key constraints in the middle of a multi-statement transaction
+# (when SQLite is not in autocommit mode). Attempting to do so does not
+# return an error; it simply has no effect.
 #
 reset_db
 do_test e_fkey-6.1 {
@@ -221,9 +237,13 @@ do_test e_fkey-6.4 {
 execsql "PRAGMA foreign_keys = ON"
 
 #-------------------------------------------------------------------------
-# /* EV: R-04042-24825 */
-#
 # Verify that the syntax in the first example in section 1 is valid.
+#
+# EVIDENCE-OF: R-04042-24825 To do so, a foreign key definition may be
+# added by modifying the declaration of the track table to the
+# following: CREATE TABLE track( trackid INTEGER, trackname TEXT,
+# trackartist INTEGER, FOREIGN KEY(trackartist) REFERENCES
+# artist(artistid) );
 #
 do_test e_fkey-7.1 {
   execsql {
@@ -241,10 +261,9 @@ do_test e_fkey-7.1 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-61362-32087 */
-#
-# Attempting to insert a row into the 'track' table that corresponds
-# to no row in the 'artist' table fails.
+# EVIDENCE-OF: R-61362-32087 Attempting to insert a row into the track
+# table that does not correspond to any row in the artist table will
+# fail,
 #
 do_test e_fkey-8.1 {
   catchsql { INSERT INTO track VALUES(1, 'track 1', 1) }
@@ -258,10 +277,11 @@ do_test e_fkey-8.2 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-24401-52400 */
-#
 # Attempting to delete a row from the 'artist' table while there are 
 # dependent rows in the track table also fails.
+#
+# EVIDENCE-OF: R-24401-52400 as will attempting to delete a row from the
+# artist table when there exist dependent rows in the track table
 #
 do_test e_fkey-9.1 {
   catchsql { DELETE FROM artist WHERE artistid = 2 }
@@ -274,10 +294,12 @@ do_test e_fkey-9.2 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-23980-48859 */
-#
 # If the foreign key column (trackartist) in table 'track' is set to NULL,
 # there is no requirement for a matching row in the 'artist' table.
+#
+# EVIDENCE-OF: R-23980-48859 There is one exception: if the foreign key
+# column in the track table is NULL, then no corresponding entry in the
+# artist table is required.
 #
 do_test e_fkey-10.1 {
   execsql {
@@ -314,6 +336,10 @@ do_test e_fkey-10.5 {
 #   trackartist IS NULL OR 
 #   EXISTS(SELECT 1 FROM artist WHERE artistid=trackartist)
 #
+# EVIDENCE-OF: R-52486-21352 Expressed in SQL, this means that for every
+# row in the track table, the following expression evaluates to true:
+# trackartist IS NULL OR EXISTS(SELECT 1 FROM artist WHERE
+# artistid=trackartist)
 
 # This procedure executes a test case to check that statement 
 # R-52486-21352 is true after executing the SQL statement passed.
@@ -367,6 +393,11 @@ for {set i 0} {$i < 500} {incr i} {
 # Check that a NOT NULL constraint can be added to the example schema
 # to prohibit NULL child keys from being inserted.
 #
+# EVIDENCE-OF: R-42412-59321 Tip: If the application requires a stricter
+# relationship between artist and track, where NULL values are not
+# permitted in the trackartist column, simply add the appropriate "NOT
+# NULL" constraint to the schema.
+#
 drop_all_tables
 do_test e_fkey-12.1 {
   execsql {
@@ -387,7 +418,7 @@ do_test e_fkey-12.2 {
 } {1 {track.trackartist may not be NULL}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-17902-59250 */
+# EVIDENCE-OF: R-17902-59250
 #
 # Test an example from foreignkeys.html.
 #
@@ -431,7 +462,7 @@ do_test e_fkey-13.5 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-15034-64331 */
+# EVIDENCE-OF: R-15034-64331
 #
 # Test the second example from the first section of foreignkeys.html.
 #
@@ -460,17 +491,17 @@ do_test e_fkey-14.4 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-56032-24923 */
+# EVIDENCE-OF: R-56032-24923 The foreign key constraint is satisfied if
+# for each row in the child table either one or more of the child key
+# columns are NULL, or there exists a row in the parent table for which
+# each parent key column contains a value equal to the value in its
+# associated child key column.
 #
-# Test that a foreign key constraint is satisifed if "for each row in the child
-# table either one or more of the child key columns are NULL, or there exists a
-# row in the parent table for which each parent key column contains a value
-# equal to the value in its associated child key column".
-#
-# /* EV: R-57765-12380 */
-#
-# Test also that the comparison rules are used when testing if there 
+# Test also that the usual comparison rules are used when testing if there 
 # is a matching row in the parent table of a foreign key constraint.
+#
+# EVIDENCE-OF: R-57765-12380 In the above paragraph, the term "equal"
+# means equal when values are compared using the rules specified here.
 #
 drop_all_tables
 do_test e_fkey-15.1 {
@@ -508,10 +539,11 @@ test_efkey_45 8 0 "INSERT INTO chi VALUES(X'31')"
 test_efkey_45 9 1 "INSERT INTO chi VALUES(X'32')"
 
 #-------------------------------------------------------------------------
-# /* EV: R-15796-47513 */
-#
 # Specifically, test that when comparing child and parent key values the
 # default collation sequence of the parent key column is used.
+#
+# EVIDENCE-OF: R-15796-47513 When comparing text values, the collating
+# sequence associated with the parent key column is always used.
 #
 drop_all_tables
 do_test e_fkey-16.1 {
@@ -537,11 +569,13 @@ do_test e_fkey-16.4 {
 } {1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-04240-13860 */
-#
 # Specifically, test that when comparing child and parent key values the
 # affinity of the parent key column is applied to the child key value
 # before the comparison takes place.
+#
+# EVIDENCE-OF: R-04240-13860 When comparing values, if the parent key
+# column has an affinity, then that affinity is applied to the child key
+# value before the comparison is performed.
 #
 drop_all_tables
 do_test e_fkey-17.1 {
@@ -571,17 +605,22 @@ do_test e_fkey-17.4 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-13435-26311 */
-#
 # A parent key must be either a PRIMARY KEY, subject to a UNIQUE 
 # constraint, or have a UNIQUE index created on it.
-# 
-# /* EV: R-00376-39212 */
 #
+# EVIDENCE-OF: R-13435-26311 Usually, the parent key of a foreign key
+# constraint is the primary key of the parent table. If they are not the
+# primary key, then the parent key columns must be collectively subject
+# to a UNIQUE constraint or have a UNIQUE index.
+# 
 # Also test that if a parent key is not subject to a PRIMARY KEY or UNIQUE
 # constraint, but does have a UNIQUE index created on it, then the UNIQUE index
 # must use the default collation sequences associated with the parent key
 # columns.
+#
+# EVIDENCE-OF: R-00376-39212 If the parent key columns have a UNIQUE
+# index, then that index must use the collation sequences that are
+# specified in the CREATE TABLE statement for the parent table.
 #
 drop_all_tables
 do_test e_fkey-18.1 {
@@ -616,21 +655,27 @@ test_efkey_57 9 1 {
 # This block tests an example in foreignkeys.html. Several testable
 # statements refer to this example, as follows
 #
-# /* EV: R-27484-01467 */
+# EVIDENCE-OF: R-27484-01467
 #
 # FK Constraints on child1, child2 and child3 are Ok.
 #
-# /* EV: R-51039-44840 */
+# Problem with FK on child4:
 #
-# Problem with FK on child4.
+# EVIDENCE-OF: R-51039-44840 The foreign key declared as part of table
+# child4 is an error because even though the parent key column is
+# indexed, the index is not UNIQUE.
 #
-# /* EV: R-01060-48788 */
+# Problem with FK on child5:
 #
-# Problem with FK on child5.
+# EVIDENCE-OF: R-01060-48788 The foreign key for table child5 is an
+# error because even though the parent key column has a unique index,
+# the index uses a different collating sequence.
 #
-# /* EV: R-63088-37469 */
+# Problem with FK on child6 and child7:
 #
-# Problem with FK on child6 and child7.
+# EVIDENCE-OF: R-63088-37469 Tables child6 and child7 are incorrect
+# because while both have UNIQUE indices on their parent keys, the keys
+# are not an exact match to the columns of a single UNIQUE index.
 #
 drop_all_tables
 do_test e_fkey-19.1 {
@@ -671,14 +716,32 @@ do_test e_fkey-19.5 {
 } {1 {foreign key mismatch}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-45488-08504 */
-# /* EV: R-48391-38472 */
-# /* EV: R-03108-63659 */
-# /* EV: R-60781-26576 */
-#
 # Test errors in the database schema that are detected while preparing
 # DML statements. The error text for these messages always matches 
 # either "foreign key mismatch" or "no such table*" (using [string match]).
+#
+# EVIDENCE-OF: R-45488-08504 If the database schema contains foreign key
+# errors that require looking at more than one table definition to
+# identify, then those errors are not detected when the tables are
+# created.
+#
+# EVIDENCE-OF: R-48391-38472 Instead, such errors prevent the
+# application from preparing SQL statements that modify the content of
+# the child or parent tables in ways that use the foreign keys.
+#
+# EVIDENCE-OF: R-03108-63659 The English language error message for
+# foreign key DML errors is usually "foreign key mismatch" but can also
+# be "no such table" if the parent table does not exist.
+#
+# EVIDENCE-OF: R-60781-26576 Foreign key DML errors are may be reported
+# if: The parent table does not exist, or The parent key columns named
+# in the foreign key constraint do not exist, or The parent key columns
+# named in the foreign key constraint are not the primary key of the
+# parent table and are not subject to a unique constraint using
+# collating sequence specified in the CREATE TABLE, or The child table
+# references the primary key of the parent without specifying the
+# primary key columns and the number of primary key columns in the
+# parent do not match the number of child key columns.
 #
 do_test e_fkey-20.1 {
   execsql {
@@ -739,7 +802,7 @@ foreach {tn tbl ptbl err} {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-19353-43643 */
+# EVIDENCE-OF: R-19353-43643
 #
 # Test the example of foreign key mismatch errors caused by implicitly
 # mapping a child key to the primary key of the parent table when the
@@ -781,17 +844,22 @@ do_test e_fkey-21.8 {
 } {1 {foreign key mismatch}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-23682-59820 */
-#
 # Test errors that are reported when creating the child table. 
 # Specifically:
 #
 #   * different number of child and parent key columns, and
 #   * child columns that do not exist.
 #
-# /* EV: R-33883-28833 */
+# EVIDENCE-OF: R-23682-59820 By contrast, if foreign key errors can be
+# recognized simply by looking at the definition of the child table and
+# without having to consult the parent table definition, then the CREATE
+# TABLE statement for the child table fails.
 #
 # These errors are reported whether or not FK support is enabled.
+#
+# EVIDENCE-OF: R-33883-28833 Foreign key DDL errors are reported
+# regardless of whether or not foreign key constraints are enabled when
+# the table is created.
 #
 drop_all_tables
 foreach fk [list OFF ON] {
@@ -841,10 +909,11 @@ test_efkey_60 6 0 "INSERT INTO p2 VALUES(239, 231)"
 test_efkey_60 7 0 "INSERT INTO c2 VALUES(239, 231)"
 
 #-------------------------------------------------------------------------
-# /* EV: R-15417-28014 */
-#
 # Test that an index on on the child key columns of an FK constraint
 # is optional.
+#
+# EVIDENCE-OF: R-15417-28014 Indices are not required for child key
+# columns
 #
 # /* EV: R-15741-50893 */
 #
@@ -876,17 +945,16 @@ foreach {tn c} [list 2 c1 3 c2 4 c3] {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-00279-52283 */
+# EVIDENCE-OF: R-00279-52283
 #
 # Test an example showing that when a row is deleted from the parent 
 # table, the child table is queried for orphaned rows as follows:
 #
 #   SELECT rowid FROM track WHERE trackartist = ?
 #
-# /* EV: R-23302-30956 */
-#
-# Also test that if the SELECT above would return any rows, a foreign
-# key constraint is violated.
+# EVIDENCE-OF: R-23302-30956 If this SELECT returns any rows at all,
+# then SQLite concludes that deleting the row from the parent table
+# would violate the foreign key constraint and returns an error.
 #
 do_test e_fkey-25.1 {
   execsql {
@@ -944,7 +1012,7 @@ do_test e_fkey-25.7 {
 } {2 1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-54172-55848 */
+# EVIDENCE-OF: R-54172-55848
 #
 # Test that when a row is deleted from the parent table of an FK 
 # constraint, the child table is queried for orphaned rows. The
@@ -960,6 +1028,10 @@ do_test e_fkey-25.7 {
 # is always planned.
 #
 #   SELECT rowid FROM <child-table> WHERE <child-key> = :parent_key_value
+#
+# EVIDENCE-OF: R-61616-46700 Similar queries may be run if the content
+# of the parent key is modified or a new row is inserted into the parent
+# table.
 #
 #
 drop_all_tables

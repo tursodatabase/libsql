@@ -506,8 +506,9 @@ void *sqlite3_aggregate_context(sqlite3_context *p, int nByte){
   assert( p && p->pFunc && p->pFunc->xStep );
   assert( sqlite3_mutex_held(p->s.db->mutex) );
   pMem = p->pMem;
+  testcase( nByte<0 );
   if( (pMem->flags & MEM_Agg)==0 ){
-    if( nByte==0 ){
+    if( nByte<=0 ){
       sqlite3VdbeMemReleaseExternal(pMem);
       pMem->flags = MEM_Null;
       pMem->z = 0;
