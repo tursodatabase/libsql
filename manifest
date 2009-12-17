@@ -1,5 +1,5 @@
-C Fixed\ssome\sTCL\stest\scases\sto\swork\sif\sSQLITE_OMIT_TRIGGER\sis\sdefined.
-D 2009-12-17T22:12:52
+C Modified\sstatement\smachine\sin\ssqlite3_complete()\sto\sreturn\s0\son\sempty\sstring.\s\s\nAdded/updated\stests\sfor\ssame.\s\sTicket\s356c885b0b.
+D 2009-12-17T22:17:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +113,7 @@ F src/btree.h 7944a9dac59eb3e541aad45fd2747f1051e7c63d
 F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
 F src/build.c 5a18b6846e99cb923008a8c888d3fd520f0bea52
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
-F src/complete.c 417df1ef5ea798532bb6290b0cc4265fef82980a
+F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
 F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
 F src/delete.c 8b8afb9cd7783d573eae55a3f4208bc0637a2bb8
 F src/expr.c 50385ed51f1cd7f1ab289629cd0f87d5b2fcca52
@@ -468,7 +468,7 @@ F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
 F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
-F test/main.test 347ab987f16167858781383427476b33dc69fdb7
+F test/main.test 2be2352ac77ac5b238c6337a5469aeeef57677e6
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test d23580e15c33ee0353717129421b077541e910dc
 F test/malloc3.test 4bc57f850b212f706f3e1b37c4eced1d5a727cd1
@@ -781,7 +781,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 29e3c8da1bd3971215036e5f5cfa5b25c6caa81f
-R 821d3650108711607e08c70b0cbff634
+P 85e3c73497d72d09becf728efe81041277ca1730
+R 441a9b5eb3dd9b55570d6d08e1a1ee71
 U shaneh
-Z 39fa2349d7d22ddb3b872ed12521d5b0
+Z 240b5a79be1f4714cd0b02c34f1cf679
