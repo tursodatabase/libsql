@@ -1212,6 +1212,7 @@ static char *local_getline(char *zPrompt, FILE *in){
     while( zLine[n] ){ n++; }
     if( n>0 && zLine[n-1]=='\n' ){
       n--;
+      if( n>0 && zLine[n-1]=='\r' ) n--;
       zLine[n] = 0;
       eol = 1;
     }

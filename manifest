@@ -1,5 +1,5 @@
-C Fix\stypo\sin\scomment\sof\sprepare.c.
-D 2009-12-17T21:05:43
+C In\sshell.c\s(CLI),\smodified\slocal_getline()\sto\sremove\s'\\r'\sas\swell\sas\s'\\n'\sfrom\send\sof\slines.
+D 2009-12-17T21:07:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -163,7 +163,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c d052e5c44bab34f83b3c1741aaa07478d18b5dd5
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 68c58dc49341472e4e5661a47a1a9e5f8a161340
-F src/shell.c f4948cb6d30665d755a6b5e0ec313d1094aab828
+F src/shell.c b9fae60b0f2ce306c20fa99e83c75023bf35f15b
 F src/sqlite.h.in 176e993dce3c9cfe5610aca0ef99f4dfd70896bb
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 93d5d01d9ea57b95ba709733dce830ec056deb84
@@ -780,7 +780,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 69a1348a3c88ffbf401cf72bbec8b4a76557bd11
-R a3cd17ae6a702b03711fe1c27cf099f5
+P 333c3ffe6d4d2293d01958812b9c02b0bf9796a4
+R a4ad0e37f43026325871f20db17b6645
 U shaneh
-Z f0b61bdb971825439decf06867c1b245
+Z e3f07a84a0ab96f881064527948376d1
