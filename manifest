@@ -1,5 +1,5 @@
-C Updated\sand\sadded\snew\stest\scases\sfor\sCLI.
-D 2009-12-17T21:07:54
+C Fixed\ssome\sTCL\stest\scases\sto\swork\sif\sSQLITE_OMIT_TRIGGER\sis\sdefined.
+D 2009-12-17T22:12:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -589,7 +589,7 @@ F test/tclsqlite.test bf4227eb236a4c097aa7974a2bf7d3225acf34be
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 02f671e71d1646440d226bed2dde8433f0a7bfa9
+F test/tester.tcl f38dd7ca63d81197c853989dbd39dfa3582c9ce7
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -694,7 +694,7 @@ F test/tkt3992.test f3e7d548ac26f763b47bc0f750da3d03c81071da
 F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
-F test/trace.test 655053a05fccdd0efab3f7f38534a1fe79134c5e
+F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
 F test/trans.test d887cb07630dc39879a322d958ad8b006137485c
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
@@ -781,7 +781,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b1b48be1cf55f3179eab8824cf5fee8100518845
-R 37f20cb01daefc7d00b2fda374808fa1
+P 29e3c8da1bd3971215036e5f5cfa5b25c6caa81f
+R 821d3650108711607e08c70b0cbff634
 U shaneh
-Z 84579b7f1b22a4b5f6196ec7ebd2f213
+Z 39fa2349d7d22ddb3b872ed12521d5b0
