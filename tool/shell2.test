@@ -21,7 +21,7 @@
 
 package require sqlite3
 
-set CLI "./sqlite"
+set CLI "./sqlite3"
 
 proc do_test {name cmd expected} {
   puts -nonewline "$name ..."
@@ -45,7 +45,7 @@ proc catchsql {sql} {
   list $rc $msg
 }
 
-proc catchcmd {db cmd} {
+proc catchcmd {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
   puts $out $cmd
