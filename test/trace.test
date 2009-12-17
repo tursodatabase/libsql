@@ -82,6 +82,12 @@ do_test trace-2.5 {
 } {SELECT * FROM t1}
 catch {sqlite3_finalize $STMT}
 
+do_test trace-2.6 {
+  set TRACE_OUT {}
+  db eval VACUUM
+  set TRACE_OUT
+} {VACUUM}
+
 # Similar tests, but this time for profiling.
 # 
 do_test trace-3.1 {
