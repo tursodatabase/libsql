@@ -1310,6 +1310,7 @@ static int fts3DoclistMerge(
   );
 
   if( !aBuffer ){
+    *pnBuffer = 0;
     return SQLITE_NOMEM;
   }
 
@@ -1678,6 +1679,7 @@ static int fts3PhraseSelect(
       sqlite3_free(pOut);
       pOut = pList;
     }
+    assert( nOut==0 || pOut!=0 );
   }
 
   if( rc==SQLITE_OK ){
