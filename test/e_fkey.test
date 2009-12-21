@@ -99,8 +99,6 @@ ifcapable !trigger&&foreignkey {
 # foreign key definitions cannot even be parsed (attempting to specify a
 # foreign key definition is a syntax error).
 #
-# /* EV: R-58428-36660 */
-#
 # Specifically, test that foreign key constraints cannot even be parsed 
 # in such a build.
 #
@@ -329,8 +327,6 @@ do_test e_fkey-10.5 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-52486-21352 */
-#
 # Test that the following is true fo all rows in the track table:
 #
 #   trackartist IS NULL OR 
@@ -388,8 +384,6 @@ for {set i 0} {$i < 500} {incr i} {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-42412-59321 */
-#
 # Check that a NOT NULL constraint can be added to the example schema
 # to prohibit NULL child keys from being inserted.
 #
@@ -882,10 +876,13 @@ foreach fk [list OFF ON] {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-47109-40581 */
-#
 # Test that a REFERENCING clause that does not specify parent key columns
 # implicitly maps to the primary key of the parent table.
+#
+# EVIDENCE-OF: R-47109-40581 Attaching a "REFERENCES
+# &lt;parent-table&gt;" clause to a column definition creates a foreign
+# key constraint that maps the column to the primary key of
+# &lt;parent-table&gt;.
 # 
 do_test e_fkey-23.1 {
   execsql {
@@ -915,10 +912,11 @@ test_efkey_60 7 0 "INSERT INTO c2 VALUES(239, 231)"
 # EVIDENCE-OF: R-15417-28014 Indices are not required for child key
 # columns
 #
-# /* EV: R-15741-50893 */
-#
 # Also test that if an index is created on the child key columns, it does
 # not make a difference whether or not it is a UNIQUE index.
+#
+# EVIDENCE-OF: R-15741-50893 The child key index does not have to be
+# (and usually will not be) a UNIQUE index.
 #
 drop_all_tables
 do_test e_fkey-24.1 {
@@ -1020,8 +1018,6 @@ do_test e_fkey-25.7 {
 #
 #   SELECT rowid FROM <child-table> WHERE <child-key> = :parent_key_value
 #
-# /* EV: R-61616-46700 */
-#
 # Also test that when a row is inserted into the parent table, or when the 
 # parent key values of an existing row are modified, a query equivalent
 # to the following is planned. In some cases it is not executed, but it
@@ -1072,7 +1068,7 @@ foreach {tn sql} {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-14553-34013 */
+# EVIDENCE-OF: R-14553-34013
 #
 # Test the example schema at the end of section 3. Also test that is
 # is "efficient". In this case "efficient" means that foreign key
@@ -1116,9 +1112,10 @@ do_test e_fkey-27.4 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-41062-34431 */
-#
 # Check that parent and child keys must have the same number of columns.
+#
+# EVIDENCE-OF: R-41062-34431 Parent and child keys must have the same
+# cardinality.
 #
 foreach {tn sql err} {
   1 "CREATE TABLE c(jj REFERENCES p(x, y))" 
@@ -1163,7 +1160,7 @@ do_test e_fkey-28.9 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-24676-09859 */
+# EVIDENCE-OF: R-24676-09859
 #
 # Test the example schema in the "Composite Foreign Key Constraints" 
 # section.
@@ -1202,10 +1199,9 @@ do_test e_fkey-29.3 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-33626-48418 */
-#
-# Check that if any of the child key columns in the above schema are NULL,
-# there is no requirement for a corresponding parent key.
+# EVIDENCE-OF: R-33626-48418 In SQLite, if any of the child key columns
+# (in this case songartist and songalbum) are NULL, then there is no
+# requirement for a corresponding row in the parent table.
 #
 do_test e_fkey-30.1 {
   execsql {
@@ -1219,17 +1215,15 @@ do_test e_fkey-30.1 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# Note: R-35290-16460 is tested below.
-#
-# TODO: R-30323-21917
-
-#-------------------------------------------------------------------------
-# /* EV: R-09323-30470 */
-#
 # Test that if a statement violates an immediate FK constraint, and the
 # database does not satisfy the FK constraint once all effects of the
 # statement have been applied, an error is reported and the effects of
 # the statement rolled back.
+#
+# EVIDENCE-OF: R-09323-30470 If a statement modifies the contents of the
+# database so that an immediate foreign key constraint is in violation
+# at the conclusion the statement, an exception is thrown and the
+# effects of the statement are reverted.
 #
 drop_all_tables
 do_test e_fkey-31.1 {
@@ -1276,15 +1270,24 @@ do_test e_fkey-31.5 {
 } {1 {} 2 {}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-49178-21358 */
-# /* EV: R-39692-12488 */
-# /* EV: R-55147-47664 */
-# /* EV: R-29604-30395 */
-#
 # Test that if a deferred constraint is violated within a transaction,
 # nothing happens immediately and the database is allowed to persist
 # in a state that does not satisfy the FK constraint. However attempts
 # to COMMIT the transaction fail until the FK constraint is satisfied.
+#
+# EVIDENCE-OF: R-49178-21358 By contrast, if a statement modifies the
+# contents of the database such that a deferred foreign key constraint
+# is violated, the violation is not reported immediately.
+#
+# EVIDENCE-OF: R-39692-12488 Deferred foreign key constraints are not
+# checked until the transaction tries to COMMIT.
+#
+# EVIDENCE-OF: R-55147-47664 For as long as the user has an open
+# transaction, the database is allowed to exist in a state that violates
+# any number of deferred foreign key constraints.
+#
+# EVIDENCE-OF: R-29604-30395 However, COMMIT will fail as long as
+# foreign key constraints remain in violation.
 #
 proc test_efkey_34 {tn isError sql} {
   do_test e_fkey-32.$tn "
@@ -1307,10 +1310,14 @@ test_efkey_34  8 0   "INSERT INTO ll VALUES(5)"
 test_efkey_34  9 0 "COMMIT"
 
 #-------------------------------------------------------------------------
-# /* EV: R-56844-61705 */
-#
 # When not running inside a transaction, a deferred constraint is similar
 # to an immediate constraint (violations are reported immediately).
+#
+# EVIDENCE-OF: R-56844-61705 If the current statement is not inside an
+# explicit transaction (a BEGIN/COMMIT/ROLLBACK block), then an implicit
+# transaction is committed as soon as the statement has finished
+# executing. In this case deferred constraints behave the same as
+# immediate constraints.
 #
 drop_all_tables
 proc test_efkey_35 {tn isError sql} {
@@ -1333,14 +1340,14 @@ test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-12782-61841 */
+# EVIDENCE-OF: R-12782-61841
 #
 # Test that an FK constraint is made deferred by adding the following
 # to the definition:
 #
 #   DEFERRABLE INITIALLY DEFERRED
 #
-# /* EV: R-09005-28791 */
+# EVIDENCE-OF: R-09005-28791
 #
 # Also test that adding any of the following to a foreign key definition 
 # makes the constraint IMMEDIATE:
@@ -1351,12 +1358,14 @@ test_efkey_35 4 0 "INSERT INTO child  VALUES('x', 'y')"
 #   DEFERRABLE INITIALLY IMMEDIATE
 #   DEFERRABLE
 #
-# /* EV: R-35290-16460 */
-#
 # Foreign keys are IMMEDIATE by default (if there is no DEFERRABLE or NOT
 # DEFERRABLE clause).
 #
-# /* EV: R-30323-21917 */  FKs are either IMMEDIATE or DEFERRED.
+# EVIDENCE-OF: R-35290-16460 Foreign key constraints are immediate by
+# default.
+#
+# EVIDENCE-OF: R-30323-21917 Each foreign key constraint in SQLite is
+# classified as either immediate or deferred.
 #
 drop_all_tables
 do_test e_fkey-34.1 {
@@ -1453,7 +1462,7 @@ test_efkey_29 32 "COMMIT"                                  1
 test_efkey_29 33 "ROLLBACK"                                0
 
 #-------------------------------------------------------------------------
-# /* EV: R-35043-01546 */
+# EVIDENCE-OF: R-35043-01546
 #
 # Test an example from foreignkeys.html dealing with a deferred foreign 
 # key constraint.
@@ -1487,10 +1496,12 @@ do_test e_fkey-35.3 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-07223-48323 */
-#
 # Verify that a nested savepoint may be released without satisfying 
 # deferred foreign key constraints.
+#
+# EVIDENCE-OF: R-07223-48323 A nested savepoint transaction may be
+# RELEASEd while the database is in a state that does not satisfy a
+# deferred foreign key constraint.
 #
 drop_all_tables
 do_test e_fkey-36.1 {
@@ -1523,11 +1534,15 @@ do_test e_fkey-36.4 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-44295-13823 */
-#
 # Check that a transaction savepoint (an outermost savepoint opened when
 # the database was in auto-commit mode) cannot be released without
 # satisfying deferred foreign key constraints. It may be rolled back.
+#
+# EVIDENCE-OF: R-44295-13823 A transaction savepoint (a non-nested
+# savepoint that was opened while there was not currently an open
+# transaction), on the other hand, is subject to the same restrictions
+# as a COMMIT - attempting to RELEASE it while the database is in such a
+# state will fail.
 #
 do_test e_fkey-37.1 {
   execsql {
@@ -1562,10 +1577,13 @@ do_test e_fkey-37.6 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-37736-42616 */
-#
 # Test that if a COMMIT operation fails due to deferred foreign key 
 # constraints, any nested savepoints remain open.
+#
+# EVIDENCE-OF: R-37736-42616 If a COMMIT statement (or the RELEASE of a
+# transaction SAVEPOINT) fails because the database is currently in a
+# state that violates a deferred foreign key constraint and there are
+# currently nested savepoints, the nested savepoints remain open.
 #
 do_test e_fkey-38.1 {
   execsql {
@@ -1623,15 +1641,19 @@ do_test e_fkey-38.8 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-48270-44282 */
-#
 # Test that configured ON DELETE and ON UPDATE actions take place when
 # deleting or modifying rows of the parent table, respectively.
 #
-# /* EV: R-48124-63225 */
+# EVIDENCE-OF: R-48270-44282 Foreign key ON DELETE and ON UPDATE clauses
+# are used to configure actions that take place when deleting rows from
+# the parent table (ON DELETE), or modifying the parent key values of
+# existing rows (ON UPDATE).
 #
 # Test that a single FK constraint may have different actions configured
 # for ON DELETE and ON UPDATE.
+#
+# EVIDENCE-OF: R-48124-63225 A single foreign key constraint may have
+# different actions configured for ON DELETE and ON UPDATE.
 #
 do_test e_fkey-39.1 {
   execsql {
@@ -1672,14 +1694,17 @@ do_test e_fkey-39.4 {
 } {1 xx k0 2 xx {} 3 xx {}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-33326-45252 */
-#
 # Each foreign key in the system has an ON UPDATE and ON DELETE action,
 # either "NO ACTION", "RESTRICT", "SET NULL", "SET DEFAULT" or "CASCADE".
 #
-# /* EV: R-19803-45884 */
+# EVIDENCE-OF: R-33326-45252 The ON DELETE and ON UPDATE action
+# associated with each foreign key in an SQLite database is one of "NO
+# ACTION", "RESTRICT", "SET NULL", "SET DEFAULT" or "CASCADE".
 #
 # If none is specified explicitly, "NO ACTION" is the default.
+#
+# EVIDENCE-OF: R-19803-45884 If an action is not explicitly specified,
+# it defaults to "NO ACTION".
 # 
 drop_all_tables
 do_test e_fkey-40.1 {
@@ -1720,10 +1745,12 @@ foreach {tn zTab lRes} {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-19971-54976 */
-#
 # Test that "NO ACTION" means that nothing happens to a child row when
 # it's parent row is updated or deleted.
+#
+# EVIDENCE-OF: R-19971-54976 Configuring "NO ACTION" means just that:
+# when a parent key is modified or deleted from the database, no special
+# action is taken.
 #
 drop_all_tables
 do_test e_fkey-41.1 {
@@ -1757,11 +1784,14 @@ do_test e_fkey-41.4 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-04272-38653 */
-#
 # Test that "RESTRICT" means the application is prohibited from deleting
 # or updating a parent table row when there exists one or more child keys
 # mapped to it.
+#
+# EVIDENCE-OF: R-04272-38653 The "RESTRICT" action means that the
+# application is prohibited from deleting (for ON DELETE RESTRICT) or
+# modifying (for ON UPDATE RESTRICT) a parent key when there exists one
+# or more child keys mapped to it.
 #
 drop_all_tables
 do_test e_fkey-41.1 {
@@ -1792,11 +1822,16 @@ do_test e_fkey-41.4 {
 } {1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-37997-42187 */
-# 
 # Test that RESTRICT is slightly different from NO ACTION for IMMEDIATE
 # constraints, in that it is enforced immediately, not at the end of the 
 # statement.
+#
+# EVIDENCE-OF: R-37997-42187 The difference between the effect of a
+# RESTRICT action and normal foreign key constraint enforcement is that
+# the RESTRICT action processing happens as soon as the field is updated
+# - not at the end of the current statement as it would with an
+# immediate constraint, or at the end of the current transaction as it
+# would with a deferred constraint.
 #
 drop_all_tables
 do_test e_fkey-42.1 {
@@ -1878,9 +1913,12 @@ do_test e_fkey-42.9 {
 } {key2}
 
 #-------------------------------------------------------------------------
-# /* EV: R-24179-60523 */
-# 
 # Test that RESTRICT is enforced immediately, even for a DEFERRED constraint.
+#
+# EVIDENCE-OF: R-24179-60523 Even if the foreign key constraint it is
+# attached to is deferred, configuring a RESTRICT action causes SQLite
+# to return an error immediately if a parent key with dependent child
+# keys is deleted or modified.
 #
 drop_all_tables
 do_test e_fkey-43.1 {
@@ -1951,9 +1989,13 @@ do_test e_fkey-43.10 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-03353-05327 */
-#
 # Test SET NULL actions.
+#
+# EVIDENCE-OF: R-03353-05327 If the configured action is "SET NULL",
+# then when a parent key is deleted (for ON DELETE SET NULL) or modified
+# (for ON UPDATE SET NULL), the child key columns of all rows in the
+# child table that mapped to the parent key are set to contain SQL NULL
+# values.
 #
 drop_all_tables
 do_test e_fkey-44.1 {
@@ -1990,9 +2032,11 @@ do_test e_fkey-44.5 {
 } {NULL}
 
 #-------------------------------------------------------------------------
-# /* EV: R-43054-54832 */
-#
 # Test SET DEFAULT actions.
+#
+# EVIDENCE-OF: R-43054-54832 The "SET DEFAULT" actions are similar to
+# "SET NULL", except that each of the child key columns is set to
+# contain the columns default value instead of NULL.
 #
 drop_all_tables
 do_test e_fkey-45.1 {
@@ -2030,10 +2074,14 @@ do_test e_fkey-45.5 {
 } {X'9999'}
 
 #-------------------------------------------------------------------------
-# /* EV: R-61376-57267 */
-# /* EV: R-61809-62207 */
-#
 # Test ON DELETE CASCADE actions.
+#
+# EVIDENCE-OF: R-61376-57267 A "CASCADE" action propagates the delete or
+# update operation on the parent key to each dependent child key.
+#
+# EVIDENCE-OF: R-61809-62207 For an "ON DELETE CASCADE" action, this
+# means that each row in the child table that was associated with the
+# deleted parent row is also deleted.
 #
 drop_all_tables
 do_test e_fkey-46.1 {
@@ -2067,10 +2115,14 @@ do_test e_fkey-46.4 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-61376-57267 */
-# /* EV: R-13877-64542 */
-#
 # Test ON UPDATE CASCADE actions.
+#
+# EVIDENCE-OF: R-13877-64542 For an "ON UPDATE CASCADE" action, it means
+# that the values stored in each dependent child key are modified to
+# match the new parent key values.
+#
+# EVIDENCE-OF: R-61376-57267 A "CASCADE" action propagates the delete or
+# update operation on the parent key to each dependent child key.
 #
 drop_all_tables
 do_test e_fkey-47.1 {
@@ -2109,7 +2161,7 @@ do_test e_fkey-46.5 {
 } {{} 6 4 11 5 10}
 
 #-------------------------------------------------------------------------
-# /* EV: R-51329-33438 */
+# EVIDENCE-OF: R-51329-33438
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html.
@@ -2148,10 +2200,12 @@ do_test e_fkey-48.4 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-53968-51642 */
-#
 # Verify that adding an FK action does not absolve the user of the 
 # requirement not to violate the foreign key constraint.
+#
+# EVIDENCE-OF: R-53968-51642 Configuring an ON UPDATE or ON DELETE
+# action does not mean that the foreign key constraint does not need to
+# be satisfied.
 #
 drop_all_tables
 do_test e_fkey-49.1 {
@@ -2186,13 +2240,18 @@ do_test e_fkey-49.4 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-07065-59588 */
-# /* EV: R-28220-46694 */
+# EVIDENCE-OF: R-07065-59588
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html. This example shows that adding an "ON DELETE DEFAULT"
 # clause does not abrogate the need to satisfy the foreign key constraint
 # (R-28220-46694).
+#
+# EVIDENCE-OF: R-28220-46694 For example, if an "ON DELETE SET DEFAULT"
+# action is configured, but there is no row in the parent table that
+# corresponds to the default values of the child key columns, deleting a
+# parent key while dependent child keys exist still causes a foreign key
+# violation.
 #
 drop_all_tables
 do_test e_fkey-50.1 {
@@ -2227,7 +2286,7 @@ do_test e_fkey-50.5 {
 } {14 {Mr. Bojangles} 0}
 
 #-------------------------------------------------------------------------
-# /* EV: R-09564-22170 */
+# EVIDENCE-OF: R-09564-22170
 #
 # Check that the order of steps in an UPDATE or DELETE on a parent 
 # table is as follows:
@@ -2279,12 +2338,14 @@ do_test e_fkey-51.3 {
 
 
 #-------------------------------------------------------------------------
-# /* EV: R-27383-10246 */
-#
 # Verify that ON UPDATE actions only actually take place if the parent key
 # is set to a new value that is distinct from the old value. The default
 # collation sequence and affinity are used to determine if the new value
 # is 'distinct' from the old or not.
+#
+# EVIDENCE-OF: R-27383-10246 An ON UPDATE action is only taken if the
+# values of the parent key are modified so that the new parent key
+# values are not equal to the old.
 #
 drop_all_tables
 do_test e_fkey-52.1 {
@@ -2333,7 +2394,7 @@ do_test e_fkey-52.6 {
 } {integer 1 null {}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-58589-50781 */
+# EVIDENCE-OF: R-58589-50781
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html. This example demonstrates that ON UPDATE actions
@@ -2367,21 +2428,27 @@ do_test e_fkey-53.3 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-36018-21755 */
-# /* EV: R-25384-39337 */
-# 
 # Test that parent keys are not checked when tables are created.
+#
+# EVIDENCE-OF: R-36018-21755 The parent key definitions of foreign key
+# constraints are not checked when a table is created.
+#
+# EVIDENCE-OF: R-25384-39337 There is nothing stopping the user from
+# creating a foreign key definition that refers to a parent table that
+# does not exist, or to parent key columns that do not exist or are not
+# collectively bound by a PRIMARY KEY or UNIQUE constraint.
 #
 # Child keys are checked to ensure all component columns exist. If parent
 # key columns are explicitly specified, SQLite checks to make sure there
 # are the same number of columns in the child and parent keys. (TODO: This
 # is tested but does not correspond to any testable statement.)
 #
-# /* EV: R-08908-23439 */
-#
 # Also test that the above statements are true regardless of whether or not
 # foreign keys are enabled:  "A CREATE TABLE command operates the same whether
 # or not foreign key constraints are enabled."
+#
+# EVIDENCE-OF: R-08908-23439 A CREATE TABLE command operates the same
+# whether or not foreign key constraints are enabled.
 # 
 foreach {tn zCreateTbl lRes} {
   1 "CREATE TABLE t1(a, b REFERENCES t1)"                            {0 {}}
@@ -2410,7 +2477,10 @@ foreach {tn zCreateTbl lRes} {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-47952-62498 */
+# EVIDENCE-OF: R-47952-62498 It is not possible to use the "ALTER TABLE
+# ... ADD COLUMN" syntax to add a column that includes a REFERENCES
+# clause, unless the default value of the new column is NULL. Attempting
+# to do so returns an error.
 #
 proc test_efkey_6 {tn zAlter isError} {
   drop_all_tables 
@@ -2427,14 +2497,19 @@ test_efkey_6 2 "ALTER TABLE tbl ADD COLUMN c DEFAULT NULL REFERENCES xx" 0
 test_efkey_6 3 "ALTER TABLE tbl ADD COLUMN c DEFAULT 0 REFERENCES xx" 1
 
 #-------------------------------------------------------------------------
-# /* EV: R-47080-02069 */
-#
 # Test that ALTER TABLE adjusts REFERENCES clauses when the parent table
 # is RENAMED.
 #
-# /* EV: R-63827-54774 */
+# EVIDENCE-OF: R-47080-02069 If an "ALTER TABLE ... RENAME TO" command
+# is used to rename a table that is the parent table of one or more
+# foreign key constraints, the definitions of the foreign key
+# constraints are modified to refer to the parent table by its new name
 #
 # Test that these adjustments are visible in the sqlite_master table.
+#
+# EVIDENCE-OF: R-63827-54774 The text of the child CREATE TABLE
+# statement or statements stored in the sqlite_master table are modified
+# to reflect the new parent table name.
 #
 do_test e_fkey-56.1 {
   drop_all_tables
@@ -2475,11 +2550,16 @@ do_test e_fkey-56.4 {
 ]
 
 #-------------------------------------------------------------------------
-# /* EV: R-14208-23986 */
-# /* EV: R-11078-03945 */
-#
 # Check that a DROP TABLE does an implicit DELETE FROM. Which does not
 # cause any triggers to fire, but does fire foreign key actions.
+#
+# EVIDENCE-OF: R-14208-23986 If foreign key constraints are enabled when
+# it is prepared, the DROP TABLE command performs an implicit DELETE to
+# remove all rows from the table before dropping it.
+#
+# EVIDENCE-OF: R-11078-03945 The implicit DELETE does not cause any SQL
+# triggers to fire, but may invoke foreign key actions or constraint
+# violations.
 #
 do_test e_fkey-57.1 {
   drop_all_tables
@@ -2541,10 +2621,11 @@ do_test e_fkey-57.7 {
 } {{delete 1}}
 
 #-------------------------------------------------------------------------
-# /* EV: R-32768-47925 */
-#
 # If an IMMEDIATE foreign key fails as a result of a DROP TABLE, the
 # DROP TABLE command fails.
+#
+# EVIDENCE-OF: R-32768-47925 If an immediate foreign key constraint is
+# violated, the DROP TABLE statement fails and the table is not dropped.
 #
 do_test e_fkey-58.1 {
   execsql { 
@@ -2573,10 +2654,13 @@ do_test e_fkey-58.4 {
 } {a b a b}
 
 #-------------------------------------------------------------------------
-# /* EV: R-05903-08460 */
-#
 # If a DEFERRED foreign key fails as a result of a DROP TABLE, attempting
 # to commit the transaction fails unless the violation is fixed.
+#
+# EVIDENCE-OF: R-05903-08460 If a deferred foreign key constraint is
+# violated, then an error is reported when the user attempts to commit
+# the transaction if the foreign key constraint violations still exist
+# at that point.
 #
 do_test e_fkey-59.1 {
   execsql { 
@@ -2605,10 +2689,11 @@ do_test e_fkey-59.5 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-57242-37005 */
-#
 # Any "foreign key mismatch" errors encountered while running an implicit
 # "DELETE FROM tbl" are ignored.
+#
+# EVIDENCE-OF: R-57242-37005 Any "foreign key mismatch" errors
+# encountered as part of an implicit DELETE are ignored.
 #
 drop_all_tables
 do_test e_fkey-60.1 {
@@ -2652,8 +2737,6 @@ do_test e_fkey-60.6 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-54142-41346 */
-#
 # Test that the special behaviours of ALTER and DROP TABLE are only
 # activated when foreign keys are enabled. Special behaviours are:
 #
@@ -2661,6 +2744,9 @@ do_test e_fkey-60.6 {
 #      default value.
 #   2. Modifying foreign key definitions when a parent table is RENAMEd.
 #   3. Running an implicit DELETE FROM command as part of DROP TABLE.
+#
+# EVIDENCE-OF: R-54142-41346 The properties of the DROP TABLE and ALTER
+# TABLE commands described above only apply if foreign keys are enabled.
 #
 do_test e_fkey-61.1.1 {
   drop_all_tables
@@ -2727,11 +2813,14 @@ do_test e_fkey-61.3.3 {
 ###########################################################################
 
 #-------------------------------------------------------------------------
-# /* EV: R-24728-13230 */
-# /* EV: R-24450-46174 */
-#
 # Test that MATCH clauses are parsed, but SQLite treats every foreign key
 # constraint as if it were "MATCH SIMPLE".
+#
+# EVIDENCE-OF: R-24728-13230 SQLite parses MATCH clauses (i.e. does not
+# report a syntax error if you specify one), but does not enforce them.
+#
+# EVIDENCE-OF: R-24450-46174 All foreign key constraints in SQLite are
+# handled as if MATCH SIMPLE were specified.
 #
 foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
   drop_all_tables
@@ -2760,10 +2849,11 @@ foreach zMatch [list SIMPLE PARTIAL FULL Simple parTIAL FuLL ] {
 }
 
 #-------------------------------------------------------------------------
-# /* EV: R-21599-16038 */
-#
 # Test that SQLite does not support the SET CONSTRAINT statement. And
 # that it is possible to create both immediate and deferred constraints.
+#
+# EVIDENCE-OF: R-21599-16038 In SQLite, a foreign key constraint is
+# permanently marked as deferred or immediate when it is created.
 #
 drop_all_tables
 do_test e_fkey-62.1 {
@@ -2800,11 +2890,14 @@ do_test e_fkey-62.7 {
 } {}
 
 #-------------------------------------------------------------------------
-# /* EV: R-42264-30503 */
-#
 # Test that the maximum recursion depth of foreign key action programs is
 # governed by the SQLITE_MAX_TRIGGER_DEPTH and SQLITE_LIMIT_TRIGGER_DEPTH
 # settings.
+#
+# EVIDENCE-OF: R-42264-30503 The SQLITE_MAX_TRIGGER_DEPTH and
+# SQLITE_LIMIT_TRIGGER_DEPTH settings determine the maximum allowable
+# depth of trigger program recursion. For the purposes of these limits,
+# foreign key actions are considered trigger programs.
 #
 proc test_on_delete_recursion {limit} {
   drop_all_tables
@@ -2883,10 +2976,11 @@ do_test e_fkey-63.2.5 {
 } {5}
 
 #-------------------------------------------------------------------------
-# /* EV: R-51769-32730 */
-#
 # The setting of the recursive_triggers pragma does not affect foreign
 # key actions.
+#
+# EVIDENCE-OF: R-51769-32730 The PRAGMA recursive_triggers setting does
+# not not affect the operation of foreign key actions.
 #
 foreach recursive_triggers_setting [list 0 1 ON OFF] {
   drop_all_tables
