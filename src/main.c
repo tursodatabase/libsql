@@ -2281,6 +2281,22 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, sqlite3 *db, int N)
+    **
+    ** Enable or disable various optimizations for testing purposes.  The 
+    ** argument N is a bitmask of optimizations to be disabled.  For normal
+    ** operation N should be 0.  The idea is that a test program (like the
+    ** SQL Logic Test or SLT test module) can run the same SQL multiple times
+    ** with various optimizations disabled to verify that the same answer
+    ** is obtained in every case.
+    */
+    case SQLITE_TESTCTRL_OPTIMIZATIONS: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int x = va_arg(ap,int);
+      db->flags = (x & SQLITE_OptMask) | (db->flags & ~SQLITE_OptMask);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

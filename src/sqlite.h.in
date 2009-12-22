@@ -4923,6 +4923,7 @@ int sqlite3_test_control(int op, ...);
 ** Applications should not use any of these parameters or the
 ** [sqlite3_test_control()] interface.
 */
+#define SQLITE_TESTCTRL_FIRST                    5
 #define SQLITE_TESTCTRL_PRNG_SAVE                5
 #define SQLITE_TESTCTRL_PRNG_RESTORE             6
 #define SQLITE_TESTCTRL_PRNG_RESET               7
@@ -4933,6 +4934,8 @@ int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_ASSERT                  12
 #define SQLITE_TESTCTRL_ALWAYS                  13
 #define SQLITE_TESTCTRL_RESERVE                 14
+#define SQLITE_TESTCTRL_OPTIMIZATIONS           15
+#define SQLITE_TESTCTRL_LAST                    15
 
 /*
 ** CAPI3REF: SQLite Runtime Status

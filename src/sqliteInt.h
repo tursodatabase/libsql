@@ -898,37 +898,43 @@ struct sqlite3 {
 #define ENC(db) ((db)->aDb[0].pSchema->enc)
 
 /*
-** Possible values for the sqlite.flags and or Db.flags fields.
-**
-** On sqlite.flags, the SQLITE_InTrans value means that we have
-** executed a BEGIN.  On Db.flags, SQLITE_InTrans means a statement
-** transaction is active on that particular database file.
+** Possible values for the sqlite3.flags.
 */
-#define SQLITE_VdbeTrace      0x00000001  /* True to trace VDBE execution */
-#define SQLITE_InTrans        0x00000008  /* True if in a transaction */
-#define SQLITE_InternChanges  0x00000010  /* Uncommitted Hash table changes */
-#define SQLITE_FullColNames   0x00000020  /* Show full column names on SELECT */
-#define SQLITE_ShortColNames  0x00000040  /* Show short columns names */
-#define SQLITE_CountRows      0x00000080  /* Count rows changed by INSERT, */
+#define SQLITE_VdbeTrace      0x00000100  /* True to trace VDBE execution */
+#define SQLITE_InternChanges  0x00000200  /* Uncommitted Hash table changes */
+#define SQLITE_FullColNames   0x00000400  /* Show full column names on SELECT */
+#define SQLITE_ShortColNames  0x00000800  /* Show short columns names */
+#define SQLITE_CountRows      0x00001000  /* Count rows changed by INSERT, */
                                           /*   DELETE, or UPDATE and return */
                                           /*   the count using a callback. */
-#define SQLITE_NullCallback   0x00000100  /* Invoke the callback once if the */
+#define SQLITE_NullCallback   0x00002000  /* Invoke the callback once if the */
                                           /*   result set is empty */
-#define SQLITE_SqlTrace       0x00000200  /* Debug print SQL as it executes */
-#define SQLITE_VdbeListing    0x00000400  /* Debug listings of VDBE programs */
-#define SQLITE_WriteSchema    0x00000800  /* OK to update SQLITE_MASTER */
-#define SQLITE_NoReadlock     0x00001000  /* Readlocks are omitted when 
+#define SQLITE_SqlTrace       0x00004000  /* Debug print SQL as it executes */
+#define SQLITE_VdbeListing    0x00008000  /* Debug listings of VDBE programs */
+#define SQLITE_WriteSchema    0x00010000  /* OK to update SQLITE_MASTER */
+#define SQLITE_NoReadlock     0x00020000  /* Readlocks are omitted when 
                                           ** accessing read-only databases */
-#define SQLITE_IgnoreChecks   0x00002000  /* Do not enforce check constraints */
-#define SQLITE_ReadUncommitted 0x0004000  /* For shared-cache mode */
-#define SQLITE_LegacyFileFmt  0x00008000  /* Create new databases in format 1 */
-#define SQLITE_FullFSync      0x00010000  /* Use full fsync on the backend */
-#define SQLITE_LoadExtension  0x00020000  /* Enable load_extension */
-#define SQLITE_RecoveryMode   0x00040000  /* Ignore schema errors */
-#define SQLITE_ReverseOrder   0x00100000  /* Reverse unordered SELECTs */
-#define SQLITE_RecTriggers    0x00200000  /* Enable recursive triggers */
-#define SQLITE_ForeignKeys    0x00400000  /* Enforce foreign key constraints */
-#define SQLITE_OmitFlattener  0x00800000  /* Do not flatten queries */
+#define SQLITE_IgnoreChecks   0x00040000  /* Do not enforce check constraints */
+#define SQLITE_ReadUncommitted 0x0080000  /* For shared-cache mode */
+#define SQLITE_LegacyFileFmt  0x00100000  /* Create new databases in format 1 */
+#define SQLITE_FullFSync      0x00200000  /* Use full fsync on the backend */
+#define SQLITE_LoadExtension  0x00400000  /* Enable load_extension */
+#define SQLITE_RecoveryMode   0x00800000  /* Ignore schema errors */
+#define SQLITE_ReverseOrder   0x01000000  /* Reverse unordered SELECTs */
+#define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
+#define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
+
+/*
+** Bits of the sqlite3.flags field that are used by the
+** sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS,...) interface.
+** These must be the low-order bits of the flags field.
+*/
+#define SQLITE_QueryFlattener 0x01        /* Disable query flattening */
+#define SQLITE_IndexSort      0x02        /* Disable indexes for sorting */
+#define SQLITE_IndexSearch    0x04        /* Disable indexes for searching */
+#define SQLITE_IndexCover     0x08        /* Disable index covering table */
+#define SQLITE_RegisterReuse  0x10        /* Disable register reuse */
+#define SQLITE_OptMask        0x1f        /* Mask of all disablable opts */
 
 /*
 ** Possible values for the sqlite.magic field.

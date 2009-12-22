@@ -2592,13 +2592,7 @@ static int flattenSubquery(
   */
   assert( p!=0 );
   assert( p->pPrior==0 );  /* Unable to flatten compound queries */
-
-  /* The "PRAGMA omit_flattener=ON" statement disables query flattening for
-  ** testing purposes.  The only reason to disable the query flattener is
-  ** to verify that we get the same answer with and without the flattener.
-  ** In production use, there is never a reason to turn the flattener off. */
-  if( db->flags & SQLITE_OmitFlattener ) return 0;
-
+  if( db->flags & SQLITE_QueryFlattener ) return 0;
   pSrc = p->pSrc;
   assert( pSrc && iFrom>=0 && iFrom<pSrc->nSrc );
   pSubitem = &pSrc->a[iFrom];
