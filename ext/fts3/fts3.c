@@ -957,11 +957,27 @@ static void fts3PutDeltaVarint(
   *piPrev = iVal;
 }
 
+/*
+** When this function is called, *ppPoslist is assumed to point to the 
+** start of a position-list.
+*/
 static void fts3PoslistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
   char c = 0;
+
+  /* The end of a position list is marked by a zero encoded as an FTS3 
+  ** varint. A single 0x00 byte. Except, if the 0x00 byte is preceded by
+  ** a byte with the 0x80 bit set, then it is not a varint 0, but the tail
+  ** of some other, multi-byte, value.
+  **
+  ** The following block moves pEnd to point to the first byte that is not 
+  ** immediately preceded by a byte with the 0x80 bit set. Then increments
+  ** pEnd once more so that it points to the byte immediately following the
+  ** last byte in the position-list.
+  */
   while( *pEnd | c ) c = *pEnd++ & 0x80;
   pEnd++;
+
   if( pp ){
     int n = (int)(pEnd - *ppPoslist);
     char *p = *pp;
@@ -986,6 +1002,25 @@ static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
     *pp = p;
   }
   *ppPoslist = pEnd;
+}
+
+/*
+** This function is used to count the entries in a column-list (delta-encoded
+** list of term offsets within a single column of a single row).
+*/
+static int fts3ColumnlistCount(char **ppCollist){
+  char *pEnd = *ppCollist;
+  char c = 0;
+  int nEntry = 0;
+
+  /* A column-list is terminated by either a 0x01 or 0x00. */
+  while( 0xFE & (*pEnd | c) ){
+    c = *pEnd++ & 0x80;
+    if( !c ) nEntry++;
+  }
+
+  *ppCollist = pEnd;
+  return nEntry;
 }
 
 /*
@@ -1699,7 +1734,8 @@ static int evalFts3Expr(
   Fts3Table *p,                   /* Virtual table handle */
   Fts3Expr *pExpr,                /* Parsed fts3 expression */
   char **paOut,                   /* OUT: Pointer to malloc'd result buffer */
-  int *pnOut                      /* OUT: Size of buffer at *paOut */
+  int *pnOut,                     /* OUT: Size of buffer at *paOut */
+  int isReqPos                    /* Require positions in output buffer */
 ){
   int rc = SQLITE_OK;             /* Return code */
 
@@ -1708,17 +1744,23 @@ static int evalFts3Expr(
   *pnOut = 0;
 
   if( pExpr ){
+    assert( pExpr->eType==FTSQUERY_PHRASE 
+         || pExpr->eType==FTSQUERY_NEAR 
+         || isReqPos==0
+    );
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      int isReqPos = (pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR);
-      rc = fts3PhraseSelect(p, pExpr->pPhrase, isReqPos, paOut, pnOut);
+      rc = fts3PhraseSelect(p, pExpr->pPhrase, 
+          isReqPos || (pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR),
+          paOut, pnOut
+      );
     }else{
       char *aLeft;
       char *aRight;
       int nLeft;
       int nRight;
 
-      if( SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight))
-       && SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft))
+      if( 0==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight, isReqPos))
+       && 0==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft, isReqPos))
       ){
         assert( pExpr->eType==FTSQUERY_NEAR || pExpr->eType==FTSQUERY_OR     
             || pExpr->eType==FTSQUERY_AND  || pExpr->eType==FTSQUERY_NOT
@@ -1727,7 +1769,7 @@ static int evalFts3Expr(
           case FTSQUERY_NEAR: {
             Fts3Expr *pLeft;
             Fts3Expr *pRight;
-            int mergetype = MERGE_NEAR;
+            int mergetype = isReqPos ? MERGE_POS_NEAR : MERGE_NEAR;
             int nParam1;
             int nParam2;
             char *aBuffer;
@@ -1870,7 +1912,7 @@ static int fts3FilterMethod(
     );
     if( rc!=SQLITE_OK ) return rc;
 
-    rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist);
+    rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;
   }
@@ -1990,6 +2032,193 @@ static int fts3CommitMethod(sqlite3_vtab *pVtab){
 static int fts3RollbackMethod(sqlite3_vtab *pVtab){
   sqlite3Fts3PendingTermsClear((Fts3Table *)pVtab);
   return SQLITE_OK;
+}
+
+/*
+** The following flags affect the format of the blob of unsigned int values
+** returned by the matchinfo() function. The format is defined as follows:
+**
+**   Integer 0: Number of 'simple queries' that make up the FTS3 query.
+**   Integer 1: Number of columns in queried table.
+**
+** followed by the data for (query 0, column 0), (query 0, column 1) ...
+** (query 1, column 0) and so on.
+**
+** The first integer in each data is the number of hits that the simple
+** query has in the current column.
+**
+** If the GLOBALCOUNT flag is set, then this is followed by the total
+** number of hits the simple query has in the current column of *all*
+** selected rows.
+**
+** If the POSITIONLIST flag is set, then this is followed by <local-count>
+** integers - the positions of each of the hits for the current column/query.
+*/
+#define FTS3_MATCHINFO_GLOBALCOUNT  0x00000001
+#define FTS3_MATCHINFO_POSITIONLIST 0x00000002
+
+typedef struct MatchInfo MatchInfo;
+struct MatchInfo {
+  int rc;                         /* Return code. SQLITE_OK if no error */
+  sqlite3_int64 iDocid;           /* Docid of entry to return data for */
+  Fts3Table *pTab;                /* FTS3 Virtual table */
+  int flags;                      /* Output flags (see above) */
+  int nQuery;                     /* Number of simple queries */
+
+  /* Malloced output buffer */
+  unsigned int *aOut;
+  int nOut;
+  int nAlloc;
+};
+
+static void fts3MatchInfoAppend(MatchInfo *pInfo, unsigned int iVal){
+  if( pInfo->rc!=SQLITE_OK ) return;
+
+  if( pInfo->nOut==pInfo->nAlloc ){
+    int nNew = pInfo->nAlloc*2+100;
+    unsigned int *aNew = (unsigned int *)sqlite3_realloc(
+        pInfo->aOut, nNew * sizeof(unsigned int)
+    );
+    if( !aNew ){
+      pInfo->rc = SQLITE_NOMEM;
+      return;
+    }
+    pInfo->aOut = aNew;
+    pInfo->nAlloc = nNew;
+  }
+
+  pInfo->aOut[pInfo->nOut++] = iVal;
+}
+
+/*
+** Iterate through each simple query that makes up the query expression 
+** implemented by the cursor passed as the first argument.
+*/
+static void fts3ExprMatchInfo(
+  sqlite3_context *pCtx,
+  Fts3Expr *pExpr,
+  MatchInfo *pInfo
+){
+  int eType = pExpr->eType;
+  if( eType==FTSQUERY_NOT || pInfo->rc ){
+    return;
+  }else if( eType!=FTSQUERY_PHRASE && eType!=FTSQUERY_NEAR ){
+    assert( pExpr->pLeft && pExpr->pRight );
+    fts3ExprMatchInfo(pCtx, pExpr->pLeft, pInfo);
+    if( pInfo->rc==SQLITE_OK ){
+      fts3ExprMatchInfo(pCtx, pExpr->pRight, pInfo);
+    }
+  }else{
+    Fts3Table *pTab = pInfo->pTab;
+
+    /* If it is not loaded already, load the doclist for this simple query
+    ** from the FTS3 full-text index. 
+    */
+    if( pExpr->isLoaded==0 ){
+      pInfo->rc = evalFts3Expr(pTab,pExpr,&pExpr->aDoclist,&pExpr->nDoclist,1);
+      if( pInfo->rc ) return;
+      pExpr->isLoaded = 1;
+    }
+
+    /* If aDoclist is not NULL, search for the doclist entry in pExpr->aDoclist
+    ** associated with the docid pInfo->iDocid.
+    */
+    if( pExpr->aDoclist ){
+      char *pEnd = &pExpr->aDoclist[pExpr->nDoclist];
+      sqlite3_int64 iSearch = pInfo->iDocid;
+
+      if( pExpr->pCurrent==0 ){
+        assert( pExpr->iDocid==0 );
+        pExpr->pCurrent = pExpr->aDoclist;
+        fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iDocid);
+      }
+
+      while( pExpr->iDocid<iSearch && pExpr->pCurrent<pEnd ){
+        /* Skip pCurrent to the start of the next doclist entry */
+        fts3PoslistCopy(0, &pExpr->pCurrent);
+        if( pExpr->pCurrent<pEnd ){
+          fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iDocid);
+        }
+      }
+
+      if( pExpr->iDocid==iSearch ){
+        int i;
+        for(i=0; i<pTab->nColumn; i++){
+          unsigned int iLocalOff;
+
+          /* Add space for the "local-count" field. */
+          iLocalOff = pInfo->nOut;
+          fts3MatchInfoAppend(pInfo, 0);
+          if( pInfo->rc ) return;
+
+          /* If the GLOBALCOUNT field is required, write the global-count
+          ** value for this query/column to the output buffer.
+          */
+          if( pInfo->flags&FTS3_MATCHINFO_GLOBALCOUNT ){
+            if( !pExpr->aHist ){
+              char *pCsr = pExpr->aDoclist;
+
+              /* Allocate a zeroed buffer to store the global-counts 
+              ** corresponding to this simple query for each table column. 
+              */
+              int nByte = sizeof(unsigned int)*pTab->nColumn;
+              pExpr->aHist = (unsigned int *)sqlite3_malloc(nByte);
+              if( !pExpr->aHist ){
+                pInfo->rc = SQLITE_NOMEM;
+                return;
+              }
+              memset(pExpr->aHist, 0, nByte);
+
+              /* Scan the entire doclist to populate Fts3Expr.aHist[]. */ 
+              while( pCsr<pEnd ){
+                while( *pCsr++ & 0x80 );
+                while( *pCsr ){
+                  sqlite3_int64 iCol = 0;
+                  if( *pCsr==0x01 ) pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
+                  pExpr->aHist[iCol] += fts3ColumnlistCount(&pCsr);
+                }
+                pCsr++;
+              }
+            }
+
+            fts3MatchInfoAppend(pInfo, pExpr->aHist[i]);
+          }
+
+          if( i==0 ){
+            if( *pExpr->pCurrent==0x01 ) continue;
+          }else{
+            sqlite3_int64 iCol;
+            char *pList = pExpr->pCurrent;
+            if( *pList==0x00 ) continue;
+            pList++;
+            pList += sqlite3Fts3GetVarint(pList, &iCol);
+            if( iCol!=i ) continue;
+            pExpr->pCurrent = pList;
+          }
+
+          if( pInfo->flags&FTS3_MATCHINFO_POSITIONLIST ){
+            int nLocal = 0;
+            sqlite3_int64 iOffset = 0;
+            char *pList = pExpr->pCurrent;
+            while( *pList&0xFE ){
+              fts3GetDeltaVarint(&pList, &iOffset); iOffset -= 2;
+              fts3MatchInfoAppend(pInfo, iOffset);
+              nLocal++;
+            }
+            pExpr->pCurrent = pList;
+            pInfo->aOut[iLocalOff] = nLocal;
+          }else{
+            pInfo->aOut[iLocalOff] = fts3ColumnlistCount(&pExpr->pCurrent);
+          }
+        }
+        pExpr->pCurrent++;
+        if( pExpr->pCurrent<pEnd ){
+          fts3GetDeltaVarint(&pExpr->pCurrent, &pExpr->iDocid);
+        }
+      }
+    }
+    pInfo->nQuery++;
+  }
 }
 
 /*
@@ -2120,6 +2349,66 @@ static void fts3OptimizeFunc(
 }
 
 /*
+** Implementation of the matchinfo() function for FTS3
+*/
+static void fts3MatchinfoFunc(
+  sqlite3_context *pContext,      /* SQLite function call context */
+  int nVal,                       /* Size of argument array */
+  sqlite3_value **apVal           /* Array of arguments */
+){
+  Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
+  int flags = 0;
+
+
+  if( nVal==2 ){
+    int i;
+    const unsigned char *zFlags = sqlite3_value_text(apVal[1]);
+    for(i=0; zFlags[i]; i++){
+      switch( zFlags[i] ){
+        case 'g': flags |= FTS3_MATCHINFO_GLOBALCOUNT; break;
+        case 'p': flags |= FTS3_MATCHINFO_POSITIONLIST; break;
+        default: {
+          char zErr[18];
+          memcpy(zErr, "Unknown flag: \"%c\"", 18);
+          zErr[16] = (char)zFlags[i];
+          sqlite3_result_error(pContext, zErr, -1);
+          return;
+        }
+      }
+    }
+  }else if( nVal!=1 ){
+    sqlite3_result_error(pContext,
+        "wrong number of arguments to function matchinfo()", -1);
+    return;
+  }
+
+  if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
+    MatchInfo ctx;
+    memset(&ctx, 0, sizeof(ctx));
+    ctx.iDocid = pCsr->iPrevId;
+    ctx.pTab = (Fts3Table *)pCsr->base.pVtab;
+    ctx.flags = flags;
+
+    fts3MatchInfoAppend(&ctx, 0);
+    fts3MatchInfoAppend(&ctx, ctx.pTab->nColumn);
+
+    /* Iterate through each of the 'simple' queries that make up the query
+    ** expression. A 'simple' query is a phrase (including token and token 
+    ** prefix) or NEAR query. 
+    */
+    fts3ExprMatchInfo(pContext, pCsr->pExpr, &ctx);
+    if( ctx.rc ){
+      sqlite3_free(ctx.aOut);
+      sqlite3_result_error_code(pContext, ctx.rc);
+    }else{
+      int nByte = ctx.nOut*sizeof(unsigned int);
+      ctx.aOut[0] = ctx.nQuery;
+      sqlite3_result_blob(pContext, ctx.aOut, nByte, sqlite3_free);
+    }
+  }
+}
+
+/*
 ** This routine implements the xFindFunction method for the FTS3
 ** virtual table.
 */
@@ -2137,6 +2426,7 @@ static int fts3FindFunctionMethod(
     { "snippet", fts3SnippetFunc },
     { "offsets", fts3OffsetsFunc },
     { "optimize", fts3OptimizeFunc },
+    { "matchinfo", fts3MatchinfoFunc },
   };
   int i;                          /* Iterator variable */
 
@@ -2284,6 +2574,7 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     return sqlite3_create_module_v2(

@@ -147,14 +147,32 @@ proc simple_phrase {zPrefix} {
   set reg [string map {* {[^ ]*}} $zPrefix]
   set reg " $reg "
 
-  foreach {key value} [array get ::t1] {
+  foreach key [lsort -integer [array names ::t1]] {
+    set value $::t1($key)
+    set cnt [list]
     foreach col $value {
-      if {[regexp $reg " $col "]} {lappend ret $key}
+      if {[regexp $reg " $col "]} { lappend ret $key ; break }
     }
   }
 
-  lsort -uniq -integer $ret
+  #lsort -uniq -integer $ret
+  set ret
 }
+
+proc simple_token_matchinfo {zToken} {
+  foreach key [lsort -integer [array names ::t1]] {
+    set value $::t1($key)
+    set cnt [list]
+    foreach col $value {
+      lappend cnt [llength [lsearch -all $col $zToken]]
+    }
+    if {[lindex [lsort $cnt] end]} {
+      lappend ret $key [concat 1 3 $cnt]
+    }
+  }
+  
+  set ret
+} 
 
 proc simple_near {termlist nNear} {
   set ret [list]
@@ -214,6 +232,14 @@ proc setop_and {A B} {
   return $ret
 }
 
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
 set sqlite_fts3_enable_parentheses 1
 
 foreach nodesize {50 500 1000 2000} {
@@ -228,7 +254,7 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < 100} {incr i} { insert_row $i }
   }
   
-  for {set iTest 0} {$iTest <= 100} {incr iTest} {
+  for {set iTest 1} {$iTest <= 100} {incr iTest} {
     catchsql COMMIT
 
     set DO_MALLOC_TEST 0
@@ -265,8 +291,8 @@ foreach nodesize {50 500 1000 2000} {
     for {set i 0} {$i < 10} {incr i} {
       set term [random_term]
       do_select_test fts3rnd-1.$nodesize.$iTest.1.$i {
-        SELECT docid FROM t1 WHERE t1 MATCH $term
-      } [simple_phrase $term]
+        SELECT docid, mit(matchinfo(t1)) FROM t1 WHERE t1 MATCH $term
+      } [simple_token_matchinfo $term]
     }
 
     # This time, use the first two characters of each term as a term prefix

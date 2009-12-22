@@ -145,4 +145,8 @@ struct sqlite3_tokenizer_cursor {
   /* Tokenizer implementations will typically add additional fields */
 };
 
+int fts3_global_term_cnt(int iTerm, int iCol);
+int fts3_term_cnt(int iTerm, int iCol);
+
+
 #endif /* _FTS3_TOKENIZER_H_ */

@@ -186,6 +186,16 @@ struct Fts3Phrase {
 
 /*
 ** A tree of these objects forms the RHS of a MATCH operator.
+**
+** If Fts3Expr.eType is either FTSQUERY_NEAR or FTSQUERY_PHRASE and isLoaded
+** is true, then aDoclist points to a malloced buffer, size nDoclist bytes, 
+** containing the results of the NEAR or phrase query in FTS3 doclist
+** format. As usual, the initial "Length" field found in doclists stored
+** on disk is omitted from this buffer.
+**
+** Variable pCurrent always points to the start of a docid field within
+** aDoclist. Since the doclist is usually scanned in docid order, this can
+** be used to accelerate seeking to the required docid within the doclist.
 */
 struct Fts3Expr {
   int eType;                 /* One of the FTSQUERY_XXX values defined below */
@@ -194,6 +204,13 @@ struct Fts3Expr {
   Fts3Expr *pLeft;           /* Left operand */
   Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
+
+  int isLoaded;
+  sqlite3_int64 iDocid;
+  char *aDoclist;
+  int nDoclist;
+  char *pCurrent;
+  unsigned int *aHist;
 };
 
 /*
