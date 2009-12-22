@@ -185,6 +185,9 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "writable_schema",          SQLITE_WriteSchema|SQLITE_RecoveryMode },
     { "omit_readlock",            SQLITE_NoReadlock    },
 
+    /* For testing purposes only */
+    { "omit_flattener",           SQLITE_OmitFlattener },
+
     /* TODO: Maybe it shouldn't be possible to change the ReadUncommitted
     ** flag if there are any active statements. */
     { "read_uncommitted",         SQLITE_ReadUncommitted },
