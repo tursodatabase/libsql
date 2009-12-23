@@ -200,6 +200,8 @@ SRC += \
 SRC += \
   $(TOP)/ext/rtree/rtree.h \
   $(TOP)/ext/rtree/rtree.c
+SRC += \
+  $(TOP)/ext/sqlrr/sqlrr.c
 
 
 # Generated source code files
@@ -306,6 +308,8 @@ EXTHDR += \
   $(TOP)/ext/rtree/rtree.h
 EXTHDR += \
   $(TOP)/ext/icu/sqliteicu.h
+EXTHDR += \
+  $(TOP)/ext/sqlrr/sqlrr.h
 
 # This is the default Makefile target.  The objects listed here
 # are what get build when you type just "make" with no arguments.
@@ -329,10 +333,10 @@ objects: $(LIBOBJ_ORIG)
 # files are automatically generated.  This target takes care of
 # all that automatic generation.
 #
-target_source:	$(SRC) $(TOP)/tool/vdbe-compress.tcl
+target_source:	$(SRC) $(EXTHDR) $(TOP)/tool/vdbe-compress.tcl
 	rm -rf tsrc
 	mkdir tsrc
-	cp -f $(SRC) tsrc
+	cp -f $(SRC) $(EXTHDR) tsrc
 	rm tsrc/sqlite.h.in tsrc/parse.y
 	tclsh $(TOP)/tool/vdbe-compress.tcl <tsrc/vdbe.c >vdbe.new
 	mv vdbe.new tsrc/vdbe.c

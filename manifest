@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sthe\slatest\schanges\son\strunk\s(and\sespecially\sthe\sfix\sfor\nthe\s(xANDy)OR(z)\sbug)\sinto\sapple-osx.
-D 2009-12-16T23:46:12
+C Fix\sthe\smain.mk\smakefile\sso\sthat\sthe\ssqlrr\sextension\sis\sbuilt\sinto\sthe\namalgamation\scorrectly.
+D 2009-12-23T18:06:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df768f5addf7b6da984aa279123d2671d716cf5c
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -94,7 +94,7 @@ F ext/sqlrr/sqlrr.c 8d1e6571cd6a6beabdb5bcdfe3a0e723b914db41
 F ext/sqlrr/sqlrr.h 09e4f8929ad9bc2638732c0cc0db5eef8c417824
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk 93d7ab227d0110d996d0db430a9a27d42980c7be
+F main.mk 545f893ba2ac22811aa566e4dc90735b8d34d987
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -787,14 +787,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ad08794d7239bb804eb39c00170821732b60cb65 04915562a0c2cb377bc7baa0c06c5d9ac376563c
-R d023a6c65c47e42ad7fb99357a2e6785
+P 5754a3a56144ee0e073c80651bf11cb23ee7f447
+R 7323af8ddb2eb0c03f543e7388fd01d2
 U drh
-Z 0eacb22f164afbc3b89f4f76f202d6d0
+Z d9dc7bd925f43ed454c2d64b11cfec19
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
+Version: GnuPG v1.4.1 (Darwin)
 
-iD8DBQFLKXFIoxKgR168RlERAlsqAJ96R9ALS/cmuJr8UEoq6zYOOlYbfQCeOl8e
-j+eTy/OkuWViInsisc5DLeU=
-=W0CZ
+iD8DBQFLMlw/oxKgR168RlERAqe0AJ95kGF947T1/Hv023qrel6PpPEDoACfYPZx
+GGM2E88rV8TlKteHMJC+R9o=
+=1r0e
 -----END PGP SIGNATURE-----
