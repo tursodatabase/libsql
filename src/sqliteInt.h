@@ -930,10 +930,10 @@ struct sqlite3 {
 ** These must be the low-order bits of the flags field.
 */
 #define SQLITE_QueryFlattener 0x01        /* Disable query flattening */
-#define SQLITE_IndexSort      0x02        /* Disable indexes for sorting */
-#define SQLITE_IndexSearch    0x04        /* Disable indexes for searching */
-#define SQLITE_IndexCover     0x08        /* Disable index covering table */
-#define SQLITE_RegisterReuse  0x10        /* Disable register reuse */
+#define SQLITE_ColumnCache    0x02        /* Disable the column cache */
+#define SQLITE_IndexSort      0x04        /* Disable indexes for sorting */
+#define SQLITE_IndexSearch    0x08        /* Disable indexes for searching */
+#define SQLITE_IndexCover     0x10        /* Disable index covering table */
 #define SQLITE_OptMask        0x1f        /* Mask of all disablable opts */
 
 /*
@@ -1648,14 +1648,13 @@ struct Expr {
 #define EP_DblQuoted  0x0040  /* token.z was originally in "..." */
 #define EP_InfixFunc  0x0080  /* True for an infix function: LIKE, GLOB, etc */
 #define EP_ExpCollate 0x0100  /* Collating sequence specified explicitly */
-#define EP_AnyAff     0x0200  /* Can take a cached column of any affinity */
-#define EP_FixedDest  0x0400  /* Result needed in a specific register */
-#define EP_IntValue   0x0800  /* Integer value contained in u.iValue */
-#define EP_xIsSelect  0x1000  /* x.pSelect is valid (otherwise x.pList is) */
+#define EP_FixedDest  0x0200  /* Result needed in a specific register */
+#define EP_IntValue   0x0400  /* Integer value contained in u.iValue */
+#define EP_xIsSelect  0x0800  /* x.pSelect is valid (otherwise x.pList is) */
 
-#define EP_Reduced    0x2000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
-#define EP_TokenOnly  0x4000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
-#define EP_Static     0x8000  /* Held in memory not obtained from malloc() */
+#define EP_Reduced    0x1000  /* Expr struct is EXPR_REDUCEDSIZE bytes only */
+#define EP_TokenOnly  0x2000  /* Expr struct is EXPR_TOKENONLYSIZE bytes only */
+#define EP_Static     0x4000  /* Held in memory not obtained from malloc() */
 
 /*
 ** The following are the meanings of bits in the Expr.flags2 field.
@@ -2133,7 +2132,6 @@ struct Parse {
   struct yColCache {
     int iTable;           /* Table cursor number */
     int iColumn;          /* Table column number */
-    u8 affChange;         /* True if this register has had an affinity change */
     u8 tempReg;           /* iReg is a temp register that needs to be freed */
     int iLevel;           /* Nesting level */
     int iReg;             /* Reg with value of this column. 0 means none. */
@@ -2652,7 +2650,7 @@ void sqlite3DeleteFrom(Parse*, SrcList*, Expr*);
 void sqlite3Update(Parse*, SrcList*, ExprList*, Expr*, int);
 WhereInfo *sqlite3WhereBegin(Parse*, SrcList*, Expr*, ExprList**, u16);
 void sqlite3WhereEnd(WhereInfo*);
-int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int, int);
+int sqlite3ExprCodeGetColumn(Parse*, Table*, int, int, int);
 void sqlite3ExprCodeMove(Parse*, int, int, int);
 void sqlite3ExprCodeCopy(Parse*, int, int, int);
 void sqlite3ExprCacheStore(Parse*, int, int, int);

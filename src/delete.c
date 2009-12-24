@@ -364,7 +364,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,0,WHERE_DUPLICATES_OK);
     if( pWInfo==0 ) goto delete_from_cleanup;
-    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, iRowid, 0);
+    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, iRowid);
     sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, regRowid);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
