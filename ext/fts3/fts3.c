@@ -2051,11 +2051,15 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 ** number of hits the simple query has in the current column of *all*
 ** selected rows.
 **
+** If the PHRASELENGTH flag is set, this is followed by the number of
+** tokens in the phrase.
+**
 ** If the POSITIONLIST flag is set, then this is followed by <local-count>
 ** integers - the positions of each of the hits for the current column/query.
 */
 #define FTS3_MATCHINFO_GLOBALCOUNT  0x00000001
 #define FTS3_MATCHINFO_POSITIONLIST 0x00000002
+#define FTS3_MATCHINFO_PHRASELENGTH 0x00000004
 
 typedef struct MatchInfo MatchInfo;
 struct MatchInfo {
@@ -2102,13 +2106,14 @@ static void fts3ExprMatchInfo(
   int eType = pExpr->eType;
   if( eType==FTSQUERY_NOT || pInfo->rc ){
     return;
-  }else if( eType!=FTSQUERY_PHRASE && eType!=FTSQUERY_NEAR ){
+  }else if( eType!=FTSQUERY_PHRASE ){
     assert( pExpr->pLeft && pExpr->pRight );
     fts3ExprMatchInfo(pCtx, pExpr->pLeft, pInfo);
     if( pInfo->rc==SQLITE_OK ){
       fts3ExprMatchInfo(pCtx, pExpr->pRight, pInfo);
     }
   }else{
+    int nPhrase = pExpr->pPhrase->nToken;
     Fts3Table *pTab = pInfo->pTab;
 
     /* If it is not loaded already, load the doclist for this simple query
@@ -2174,7 +2179,7 @@ static void fts3ExprMatchInfo(
                 while( *pCsr++ & 0x80 );
                 while( *pCsr ){
                   sqlite3_int64 iCol = 0;
-                  if( *pCsr==0x01 ) pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
+                  if( *pCsr==0x01 ) pCsr += sqlite3Fts3GetVarint(++pCsr, &iCol);
                   pExpr->aHist[iCol] += fts3ColumnlistCount(&pCsr);
                 }
                 pCsr++;
@@ -2182,6 +2187,10 @@ static void fts3ExprMatchInfo(
             }
 
             fts3MatchInfoAppend(pInfo, pExpr->aHist[i]);
+          }
+
+          if( pInfo->flags&FTS3_MATCHINFO_PHRASELENGTH ){
+            fts3MatchInfoAppend(pInfo, nPhrase);
           }
 
           if( i==0 ){
@@ -2202,7 +2211,7 @@ static void fts3ExprMatchInfo(
             char *pList = pExpr->pCurrent;
             while( *pList&0xFE ){
               fts3GetDeltaVarint(&pList, &iOffset); iOffset -= 2;
-              fts3MatchInfoAppend(pInfo, iOffset);
+              fts3MatchInfoAppend(pInfo, iOffset+1-nPhrase);
               nLocal++;
             }
             pExpr->pCurrent = pList;
@@ -2367,6 +2376,7 @@ static void fts3MatchinfoFunc(
       switch( zFlags[i] ){
         case 'g': flags |= FTS3_MATCHINFO_GLOBALCOUNT; break;
         case 'p': flags |= FTS3_MATCHINFO_POSITIONLIST; break;
+        case 'n': flags |= FTS3_MATCHINFO_PHRASELENGTH; break;
         default: {
           char zErr[18];
           memcpy(zErr, "Unknown flag: \"%c\"", 18);

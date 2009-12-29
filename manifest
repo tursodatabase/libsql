@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Immediately\spurge\sentries\sfrom\sthe\scolumn\scache\swhen\sthe\sassociated\sregister\nundergoes\san\saffinity\schange.\s\sTicket\s[eb5548a849].\s\sEnhance\sthe\nSQLITE_TESTCTRL_OPTIMIZATIONS\ssetting\sof\ssqlite3_test_control\sso\sthat\sit\ncan\sdisable\sthe\scolumn\scache\sfor\stesting\spurposes,\sin\san\seffort\sto\sprevent\nfuture\sproblems\sof\sa\ssimilar\snature\sto\sthis\sone.
-D 2009-12-24T16:00:29
+C Fix\sa\sbug\striggered\sby\soptimizing\san\sFTS3\stable\swhen\sthere\sare\sno\ssegments\son\sdisk\sbut\spending\sterms\sin\sthe\shash\stable.
+D 2009-12-29T10:32:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 0a09deb5525fd7580cfdef4fdbf71fb3147a071d
+F ext/fts3/fts3.c 439bda67fb8e2fb825244e57f18b214b0c8e12b7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 0d7c8d66ff9be8c79710438a46a7d046fcdedfc2
 F ext/fts3/fts3_expr.c 541de159278cfa694c584c763d23c3e23d796851
@@ -71,7 +68,7 @@ F ext/fts3/fts3_snippet.c 6c2eb6d872d66b2a9aa5663f2662e993f18a6496
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
-F ext/fts3/fts3_write.c 2847b13da9e00016b81ea4b80ff5a298e55bc32d
+F ext/fts3/fts3_write.c ccb92226608350dc3698ff7befa078d6f7a44fcc
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
@@ -785,14 +782,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4a97c623f4e190134de4b2ca406e311034a74797
-R becfd603a317957c894c09ed10d1cf47
-U drh
-Z 823ba23042dadaf02b5d95ffa78418d3
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLM5AgoxKgR168RlERArV4AJ9/5N6dJdz2JusC+5zWn7ZEq+ZJdQCdFCUl
-ifDSVjdF1pkT8+LtcL0nAJ8=
-=ip6B
------END PGP SIGNATURE-----
+P ea4e57e1c1b6663ceb12872e31a8503f6c14e3d8
+R 1abee5eb0072273064e6ac8608970f84
+U dan
+Z fa856d0b8cbc18556cebf59fd5fb55cb

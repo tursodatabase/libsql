@@ -2228,8 +2228,9 @@ static int fts3SpecialInsert(Fts3Table *p, sqlite3_value *pVal){
     return SQLITE_NOMEM;
   }else if( nVal==8 && 0==sqlite3_strnicmp(zVal, "optimize", 8) ){
     rc = fts3SegmentMerge(p, -1);
-    if( rc==SQLITE_DONE || rc==SQLITE_OK ){
+    if( rc==SQLITE_DONE ){
       rc = SQLITE_OK;
+    }else{
       sqlite3Fts3PendingTermsClear(p);
     }
 #ifdef SQLITE_TEST
