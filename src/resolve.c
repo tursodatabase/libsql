@@ -243,18 +243,17 @@ static int lookupName(
         int iCol;
         pSchema = pTab->pSchema;
         cntTab++;
-        if( sqlite3IsRowid(zCol) ){
-          iCol = -1;
-        }else{
-          for(iCol=0; iCol<pTab->nCol; iCol++){
-            Column *pCol = &pTab->aCol[iCol];
-            if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-              if( iCol==pTab->iPKey ){
-                iCol = -1;
-              }
-              break;
+        for(iCol=0; iCol<pTab->nCol; iCol++){
+          Column *pCol = &pTab->aCol[iCol];
+          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            if( iCol==pTab->iPKey ){
+              iCol = -1;
             }
+            break;
           }
+        }
+        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) ){
+          iCol = -1;
         }
         if( iCol<pTab->nCol ){
           cnt++;

@@ -1,5 +1,8 @@
-C Fix\sa\sbug\striggered\sby\soptimizing\san\sFTS3\stable\swhen\sthere\sare\sno\ssegments\son\sdisk\sbut\spending\sterms\sin\sthe\shash\stable.
-D 2009-12-29T10:32:37
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Within\sthe\sspecial\snew.*\sand\sold.*\stables\sof\sa\strigger,\srecognize\sall\sthe\noriginal\stable\snames\seven\sif\sthose\snames\soverload\sthe\s"rowid",\s"oid",\sor\n"_rowid_"\sspecial\snames.\s\sTicket\s[34d2ae1c6d0].
+D 2009-12-29T23:39:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +163,7 @@ F src/pragma.c 6936d7df5e04b9f996f8f320d15e65b6944b2caa
 F src/prepare.c 170bd953058efe1c46b8ad9020d49cd6f40f0b45
 F src/printf.c 644bc7d59df3dc56d6d8b9a510914bfc6b51bc69
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c d052e5c44bab34f83b3c1741aaa07478d18b5dd5
+F src/resolve.c e8e0866009405b24b81791b8cabc4463fd1d7ebb
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 71511cdee4393c4dbaaa6feeff6c860b3f7e4f5f
 F src/shell.c b9fae60b0f2ce306c20fa99e83c75023bf35f15b
@@ -711,6 +714,7 @@ F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test 4083c64d80854d271bad211268a08985f3d61cbd
+F test/triggerD.test df3813735294734e276aee16419438efc4ecb348
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
 F test/types3.test a0f66bf12f80fad89493535474f7a6d16fa58150
@@ -782,7 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ea4e57e1c1b6663ceb12872e31a8503f6c14e3d8
-R 1abee5eb0072273064e6ac8608970f84
-U dan
-Z fa856d0b8cbc18556cebf59fd5fb55cb
+P a3b50e4f80ca2dacc1f72435b8c72d55ffdb64e7
+R f48679649439ab9386fd156c71fddf11
+U drh
+Z cdc40e7610bed6b843da33280239e765
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLOpMboxKgR168RlERAhbUAJ0UFn3Wusl7zyXFuCOVWh4d9Mj8lACfXjay
+d8Ta5iEBJi1t63q9H+ChXTA=
+=k8FU
+-----END PGP SIGNATURE-----
