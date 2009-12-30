@@ -2076,12 +2076,6 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
 **
 ** There must be an open cursor to pTab in iTable when this routine
 ** is called.  If iColumn<0 then code is generated that extracts the rowid.
-**
-** This routine might attempt to reuse the value of the column that
-** has already been loaded into a register.  The value will always
-** be used if it has not undergone any affinity changes.  But if
-** an affinity change has occurred, then the cached value will only be
-** used if allowAffChng is true.
 */
 int sqlite3ExprCodeGetColumn(
   Parse *pParse,   /* Parsing and code generating context */

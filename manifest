@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Within\sthe\sspecial\snew.*\sand\sold.*\stables\sof\sa\strigger,\srecognize\sall\sthe\noriginal\stable\snames\seven\sif\sthose\snames\soverload\sthe\s"rowid",\s"oid",\sor\n"_rowid_"\sspecial\snames.\s\sTicket\s[34d2ae1c6d0].
-D 2009-12-29T23:39:04
+C Remove\sobsolete\scomment\stext\sfrom\sexpr.c.\s\sNo\sfunctional\scode\schanges.
+D 2009-12-30T00:12:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
 F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
 F src/delete.c 1425b44a1a8127ada4c909e8b71439354e523c24
-F src/expr.c 6d138c36168ca68d37a19a375af10f5b806214fc
+F src/expr.c 0fdd547d2820aa700acc39697b9a9894153a627e
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c 69906340991919b4933dd8630774ad069e4d582e
@@ -786,14 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a3b50e4f80ca2dacc1f72435b8c72d55ffdb64e7
-R f48679649439ab9386fd156c71fddf11
+P 1a0e5fa9f0ff792c678c99d49960601a0cef925b
+R c944cb92f9c7adb761dff8e00f68f2ab
 U drh
-Z cdc40e7610bed6b843da33280239e765
+Z 0a9d06310e3026b788d21ad4199080c9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLOpMboxKgR168RlERAhbUAJ0UFn3Wusl7zyXFuCOVWh4d9Mj8lACfXjay
-d8Ta5iEBJi1t63q9H+ChXTA=
-=k8FU
+iD4DBQFLOpr7oxKgR168RlERAqODAJ95/X/Mz9zcgmO9ICWmC875amZZ6wCY2pxa
+fInkJOmTbDkCjMKTRtPxLg==
+=mePS
 -----END PGP SIGNATURE-----
