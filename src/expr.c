@@ -1964,8 +1964,14 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
   */
   if( pParse->db->flags & SQLITE_ColumnCache ) return;
 
-  /* First replace any existing entry */
+  /* First replace any existing entry.
+  **
+  ** Actually, the way the column cache is currently used, we are guaranteed
+  ** that the object will never already be in cache.  Verify this guarantee.
+  */
+#ifndef NDEBUG
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
+#if 0 /* This code wold remove the entry from the cache if it existed */
     if( p->iReg && p->iTable==iTab && p->iColumn==iCol ){
       cacheEntryClear(pParse, p);
       p->iLevel = pParse->iCacheLevel;
@@ -1973,7 +1979,10 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
       p->lru = pParse->iCacheCnt++;
       return;
     }
+#endif
+    assert( p->iReg==0 || p->iTable!=iTab || p->iColumn!=iCol );
   }
+#endif
 
   /* Find an empty slot and replace it */
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
