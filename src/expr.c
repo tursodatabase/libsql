@@ -2019,14 +2019,16 @@ void sqlite3ExprCacheStore(Parse *pParse, int iTab, int iCol, int iReg){
 }
 
 /*
-** Indicate that a register is being overwritten.  Purge the register
-** from the column cache.
+** Indicate that registers between iReg..iReg+nReg-1 are being overwritten.
+** Purge the range of registers from the column cache.
 */
-void sqlite3ExprCacheRemove(Parse *pParse, int iReg){
+void sqlite3ExprCacheRemove(Parse *pParse, int iReg, int nReg){
   int i;
+  int iLast = iReg + nReg - 1;
   struct yColCache *p;
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    if( p->iReg==iReg ){
+    int r = p->iReg;
+    if( r>=iReg && r<=iLast ){
       cacheEntryClear(pParse, p);
       p->iReg = 0;
     }
@@ -2136,16 +2138,7 @@ void sqlite3ExprCacheClear(Parse *pParse){
 ** registers starting with iStart.
 */
 void sqlite3ExprCacheAffinityChange(Parse *pParse, int iStart, int iCount){
-  int iEnd = iStart + iCount - 1;
-  int i;
-  struct yColCache *p;
-  for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
-    int r = p->iReg;
-    if( r>=iStart && r<=iEnd ){
-      cacheEntryClear(pParse, p);
-      p->iReg = 0;
-    }
-  }
+  sqlite3ExprCacheRemove(pParse, iStart, iCount);
 }
 
 /*
@@ -2177,19 +2170,24 @@ void sqlite3ExprCodeCopy(Parse *pParse, int iFrom, int iTo, int nReg){
   }
 }
 
+#if defined(SQLITE_DEBUG) || defined(SQLITE_COVERAGE_TEST)
 /*
 ** Return true if any register in the range iFrom..iTo (inclusive)
 ** is used as part of the column cache.
+**
+** This routine is used within assert() and testcase() macros only
+** and does not appear in a normal build.
 */
 static int usedAsColumnCache(Parse *pParse, int iFrom, int iTo){
   int i;
   struct yColCache *p;
   for(i=0, p=pParse->aColCache; i<SQLITE_N_COLCACHE; i++, p++){
     int r = p->iReg;
-    if( r>=iFrom && r<=iTo ) return 1;
+    if( r>=iFrom && r<=iTo ) return 1;    /*NO_TEST*/
   }
   return 0;
 }
+#endif /* SQLITE_DEBUG || SQLITE_COVERAGE_TEST */
 
 /*
 ** If the last instruction coded is an ephemeral copy of any of
@@ -2585,7 +2583,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         sqlite3ExprCode(pParse, pFarg->a[0].pExpr, target);
         for(i=1; i<nFarg; i++){
           sqlite3VdbeAddOp2(v, OP_NotNull, target, endCoalesce);
-          sqlite3ExprCacheRemove(pParse, target);
+          sqlite3ExprCacheRemove(pParse, target, 1);
           sqlite3ExprCachePush(pParse);
           sqlite3ExprCode(pParse, pFarg->a[i].pExpr, target);
           sqlite3ExprCachePop(pParse, 1);
@@ -2640,7 +2638,6 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       if( nFarg ){
         sqlite3ReleaseTempRange(pParse, r1, nFarg);
       }
-      sqlite3ExprCacheAffinityChange(pParse, r1, nFarg);
       break;
     }
 #ifndef SQLITE_OMIT_SUBQUERY
@@ -3720,7 +3717,8 @@ int sqlite3GetTempRange(Parse *pParse, int nReg){
   int i, n;
   i = pParse->iRangeReg;
   n = pParse->nRangeReg;
-  if( nReg<=n && !usedAsColumnCache(pParse, i, i+n-1) ){
+  if( nReg<=n ){
+    assert( !usedAsColumnCache(pParse, i, i+n-1) );
     pParse->iRangeReg += nReg;
     pParse->nRangeReg -= nReg;
   }else{
@@ -3730,6 +3728,7 @@ int sqlite3GetTempRange(Parse *pParse, int nReg){
   return i;
 }
 void sqlite3ReleaseTempRange(Parse *pParse, int iReg, int nReg){
+  sqlite3ExprCacheRemove(pParse, iReg, nReg);
   if( nReg>pParse->nRangeReg ){
     pParse->nRangeReg = nReg;
     pParse->iRangeReg = iReg;
