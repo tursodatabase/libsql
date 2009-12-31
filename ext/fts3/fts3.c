@@ -2210,8 +2210,9 @@ static void fts3ExprMatchInfo(
             sqlite3_int64 iOffset = 0;
             char *pList = pExpr->pCurrent;
             while( *pList&0xFE ){
-              fts3GetDeltaVarint(&pList, &iOffset); iOffset -= 2;
-              fts3MatchInfoAppend(pInfo, iOffset+1-nPhrase);
+              fts3GetDeltaVarint(&pList, &iOffset);
+              iOffset -= 2;
+              fts3MatchInfoAppend(pInfo, (unsigned int)(iOffset+1-nPhrase));
               nLocal++;
             }
             pExpr->pCurrent = pList;

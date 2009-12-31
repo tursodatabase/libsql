@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Change\sevidence\smarks\sto\strack\srequirement\snumber\schanges\sin\sthe\sforeign-key\ndocumentation.
-D 2009-12-31T15:51:38
+C Changes\sto\sremove\swarnings\sin\sMSVC\sbuild.
+D 2009-12-31T19:06:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 439bda67fb8e2fb825244e57f18b214b0c8e12b7
+F ext/fts3/fts3.c ac757a4561401c5b3cea6e387e758503ec4770b5
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 0d7c8d66ff9be8c79710438a46a7d046fcdedfc2
 F ext/fts3/fts3_expr.c 541de159278cfa694c584c763d23c3e23d796851
@@ -222,7 +219,7 @@ F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 7c7713d66cda699f16bf1cc601d8d4f5070ab935
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 62553021aee64332af4acd9be23e6cec4727f9a0
+F src/where.c 43b11af016ac50724a95397c0ca447cae88f3c11
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -786,14 +783,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 96919a46bbd63cb1794c8eb96b6ad23ecc09ba6b
-R 31d26d53f36533e364a11b5c8d3fc4a0
-U drh
-Z 4fdc3edb0ee8ffe0384531a2294bbf0e
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLPMiNoxKgR168RlERAtC1AJ9PfRuwcNFzDoPLxMn7nvuLXXkDzQCfY4cL
-7qFNOZ5OUs2kewo7Prlv16Y=
-=xn8H
------END PGP SIGNATURE-----
+P 6b4fcd81e775ff4c5d7bc454378555cf73cf5772
+R fd95eb4173f58c5b727a9b9b7202bcea
+U shaneh
+Z f91f2ffe2dc04d5879652cb91a55023e
