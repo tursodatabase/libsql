@@ -65,6 +65,9 @@ do_test fuzz2-2.11 {
 do_test fuzz2-2.12 {
   fuzzcatch {SELECT - #196}
 } {1}
+
+ifcapable {trigger} {  # Only do the following tests if triggers are enabled
+
 do_test fuzz2-3.0 {
   fuzzcatch {CREATE TRIGGER "AAAAAA" . "AAAAAA" AFTER UPDATE OF "AAAAAA" , "AAAAAA" ON "AAAAAA" . "AAAAAA" FOR EACH ROW BEGIN UPDATE AAAAAA SET "AAAAAA" = #162;  END}
 } {1}
@@ -74,6 +77,9 @@ do_test fuzz2-3.1 {
 do_test fuzz2-3.2 {
   fuzzcatch {CREATE TEMP TRIGGER IF NOT EXISTS AAAAAA . "AAAAAA" BEFORE UPDATE OF "AAAAAA" ON AAAAAA . "AAAAAA" BEGIN SELECT ALL * , #175 "AAAAAA" FROM "AAAAAA" . AAAAAA;  END}
 } {1}
+
+} ;# End of ifcapable {trigger}
+
 do_test fuzz2-4.0 {
   fuzzcatch {ATTACH DATABASE #168 AS whatever}
 } {1}

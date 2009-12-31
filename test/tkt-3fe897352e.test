@@ -17,6 +17,13 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# The following tests use hex_to_utf16be() and hex_to_utf16le() which 
+# which are only available if SQLite is built with UTF16 support.
+ifcapable {!utf16} {
+  finish_test
+  return
+}
+
 do_test tkt-3fe89-1.1 {
   db close
   sqlite3 db :memory:
