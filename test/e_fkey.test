@@ -412,7 +412,7 @@ do_test e_fkey-12.2 {
 } {1 {track.trackartist may not be NULL}}
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-17902-59250
+# EVIDENCE-OF: R-16127-35442
 #
 # Test an example from foreignkeys.html.
 #
@@ -456,7 +456,7 @@ do_test e_fkey-13.5 {
 } {}
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-15034-64331
+# EVIDENCE-OF: R-15958-50233
 #
 # Test the second example from the first section of foreignkeys.html.
 #
@@ -879,10 +879,10 @@ foreach fk [list OFF ON] {
 # Test that a REFERENCING clause that does not specify parent key columns
 # implicitly maps to the primary key of the parent table.
 #
-# EVIDENCE-OF: R-47109-40581 Attaching a "REFERENCES
-# &lt;parent-table&gt;" clause to a column definition creates a foreign
+# EVIDENCE-OF: R-43879-08025 Attaching a "REFERENCES <parent-table>"
+# clause to a column definition creates a foreign
 # key constraint that maps the column to the primary key of
-# &lt;parent-table&gt;.
+# <parent-table>.
 # 
 do_test e_fkey-23.1 {
   execsql {
@@ -1010,7 +1010,8 @@ do_test e_fkey-25.7 {
 } {2 1 {foreign key constraint failed}}
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-54172-55848
+# EVIDENCE-OF: R-47936-10044 Or, more generally:
+# SELECT rowid FROM <child-table> WHERE <child-key> = :parent_key_value
 #
 # Test that when a row is deleted from the parent table of an FK 
 # constraint, the child table is queried for orphaned rows. The
@@ -1462,7 +1463,7 @@ test_efkey_29 32 "COMMIT"                                  1
 test_efkey_29 33 "ROLLBACK"                                0
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-35043-01546
+# EVIDENCE-OF: R-24499-57071
 #
 # Test an example from foreignkeys.html dealing with a deferred foreign 
 # key constraint.
@@ -2161,7 +2162,7 @@ do_test e_fkey-46.5 {
 } {{} 6 4 11 5 10}
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-51329-33438
+# EVIDENCE-OF: R-65058-57158
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html.
@@ -2240,7 +2241,7 @@ do_test e_fkey-49.4 {
 
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-07065-59588
+# EVIDENCE-OF: R-11856-19836
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html. This example shows that adding an "ON DELETE DEFAULT"
@@ -2394,7 +2395,7 @@ do_test e_fkey-52.6 {
 } {integer 1 null {}}
 
 #-------------------------------------------------------------------------
-# EVIDENCE-OF: R-58589-50781
+# EVIDENCE-OF: R-35129-58141
 #
 # Test an example from the "ON DELETE and ON UPDATE Actions" section 
 # of foreignkeys.html. This example demonstrates that ON UPDATE actions
