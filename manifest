@@ -1,5 +1,8 @@
-C Minor\schanges\sto\stest\sscripts\sto\ssupport\svarious\sSQLITE_OMIT\soptions.
-D 2009-12-31T19:48:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\scomments\sand\san\sassert()\sto\shelp\sclarify\sthe\soperation\sof\sthe\nsqlite3VdbeList()\sroutine\sused\sto\simplement\sEXPLAIN.
+D 2009-12-31T20:35:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -213,7 +216,7 @@ F src/vdbe.c 5ed06318aac5d57849170a8bf39e807c22c5fedd
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c fc3787eb2f5487d4cc3444de42d56f2e39d311f5
-F src/vdbeaux.c 42ed644fea54c3fbfa70af7c65456ec4ab089c77
+F src/vdbeaux.c 2e4a421bd3771ecd3b6c9a1c7abc7270a787a01b
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -783,7 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6cf76c2ae25d6e58926637ecd42eed6b300b1a25
-R a3c177701c76e1795362a375d5a00fd7
-U shaneh
-Z 4cd33a23217680a7f9bd034ed143d288
+P 97f8a886b6314b044a0522a88f569798fdfb3ef9
+R ec2bfde20add495412a6ede87e046ffd
+U drh
+Z 7d63ddb9262e6acf68d6ca4997c73dd9
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLPQr+oxKgR168RlERAvY/AJ9kaCj6kLbG2bTFSo/X9qosbF5uHQCff9FG
+yWtwufLA/m9wpfdsngsfSh4=
+=0KpD
+-----END PGP SIGNATURE-----
