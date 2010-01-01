@@ -253,7 +253,7 @@ static int lookupName(
           }
         }
         if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) ){
-          iCol = -1;
+          iCol = -1;        /* IMP: R-44911-55124 */
         }
         if( iCol<pTab->nCol ){
           cnt++;
@@ -281,7 +281,7 @@ static int lookupName(
     */
     if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) ){
       cnt = 1;
-      pExpr->iColumn = -1;
+      pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;
     }
 

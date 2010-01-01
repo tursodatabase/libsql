@@ -3663,7 +3663,7 @@ case OP_NewRowid: {           /* out2-prerelease */
           goto abort_due_to_error;
         }
         if( res ){
-          v = 1;
+          v = 1;   /* IMP: R-61914-48074 */
         }else{
           assert( sqlite3BtreeCursorIsValid(pC->pCursor) );
           rc = sqlite3BtreeKeySize(pC->pCursor, &v);
@@ -3671,7 +3671,7 @@ case OP_NewRowid: {           /* out2-prerelease */
           if( v==MAX_ROWID ){
             pC->useRandomRowid = 1;
           }else{
-            v++;
+            v++;   /* IMP: R-29538-34987 */
           }
         }
       }
@@ -3695,7 +3695,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         sqlite3VdbeMemIntegerify(pMem);
         assert( (pMem->flags & MEM_Int)!=0 );  /* mem(P3) holds an integer */
         if( pMem->u.i==MAX_ROWID || pC->useRandomRowid ){
-          rc = SQLITE_FULL;
+          rc = SQLITE_FULL;   /* IMP: R-12275-61338 */
           goto abort_due_to_error;
         }
         if( v<pMem->u.i+1 ){
@@ -3708,6 +3708,11 @@ case OP_NewRowid: {           /* out2-prerelease */
       sqlite3BtreeSetCachedRowid(pC->pCursor, v<MAX_ROWID ? v+1 : 0);
     }
     if( pC->useRandomRowid ){
+      /* IMPLEMENTATION-OF: R-48598-02938 If the largest ROWID is equal to the
+      ** largest possible integer (9223372036854775807) then the database
+      ** engine starts picking candidate ROWIDs at random until it finds one
+      ** that is not previously used.
+      */
       assert( pOp->p3==0 );  /* We cannot be in random rowid mode if this is
                              ** an AUTOINCREMENT table. */
       v = db->lastRowid;
@@ -3723,7 +3728,7 @@ case OP_NewRowid: {           /* out2-prerelease */
         cnt++;
       }while( cnt<100 && rc==SQLITE_OK && res==0 );
       if( rc==SQLITE_OK && res==0 ){
-        rc = SQLITE_FULL;
+        rc = SQLITE_FULL;   /* IMP: R-38219-53002 */
         goto abort_due_to_error;
       }
     }
