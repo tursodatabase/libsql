@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\snew\ssqlite3_test_control()\sverb\sthat\sfacilitates\stesting\sthat\sall\nkeywords\sare\sshown\sin\sthe\sdocumentation.\s\s(Two\skeywords\swere\sfound\sto\nbe\smissing\swhile\stesting\sthe\schange.)
-D 2010-01-02T03:21:35
+C Fix\sa\sbug\sin\sthe\snew\ssqlite3_test_control\scase\sof\sthe\sprevious\scheck-in.
+D 2010-01-02T03:46:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,7 +132,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c 9304428e71b1d622b764913e1432e69156814755
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c 0ccd64804fa7f17b6913b19c525625b0121f894f
+F src/main.c a0f6dfbdd79e01baf75ad62bdbfdeae9e560eb96
 F src/malloc.c 5fa175797f982b178eaf38afba9c588a866be729
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 552f7e11486272f27948d2de9c012884d1f52908
@@ -786,14 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0e918c54893c361fb005295847f89aadcbfae35d
-R 4e2278a90d83aeb76194f552dd614ab2
+P d3cdc4b12be7f1ed2249ad210482200868956d12
+R 047d1c5bb153bc040a549a907f16107f
 U drh
-Z 6cc1d51d83bc0a29c7be4eda186a8f3f
+Z 6dc4f01f89c08e391eb9a66f4b2613a9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLPrvBoxKgR168RlERAl39AJ4z8HMdS6dRMjYvZStCrX4tTzIf7QCeLL+Z
-zmFXEMFv/PKMmwqfXsIA47c=
-=8Nrv
+iD8DBQFLPsGnoxKgR168RlERAkrWAJ0ZGJJy+5KFTMkbrfz90FsJmwxY5QCeN3vh
+oKIjY83kRZfkqbPt0/cbgkk=
+=58hz
 -----END PGP SIGNATURE-----

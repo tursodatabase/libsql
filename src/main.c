@@ -2310,7 +2310,7 @@ int sqlite3_test_control(int op, ...){
     case SQLITE_TESTCTRL_ISKEYWORD: {
       const char *zWord = va_arg(ap, const char*);
       int n = sqlite3Strlen30(zWord);
-      rc = sqlite3KeywordCode((u8*)zWord, n) ? SQLITE_N_KEYWORD : 0;
+      rc = (sqlite3KeywordCode((u8*)zWord, n)!=TK_ID) ? SQLITE_N_KEYWORD : 0;
       break;
     }
 #endif 
