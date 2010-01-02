@@ -99,22 +99,7 @@ db func mit mit
 
 do_test fts3query-3.3 {
   execsql { SELECT mit(matchinfo(foobar)) FROM foobar WHERE foobar MATCH 'the' }
-} {{1 1 3}}
-do_test fts3query-3.4 {
-  execsql { 
-    SELECT mit(matchinfo(foobar, 'g')) FROM foobar WHERE foobar MATCH 'the' 
-  }
 } {{1 1 3 3}}
-do_test fts3query-3.5 {
-  execsql { 
-    SELECT mit(matchinfo(foobar, 'p')) FROM foobar WHERE foobar MATCH 'the' 
-  }
-} {{1 1 3 27 74 79}}
-do_test fts3query-3.5 {
-  execsql { 
-    SELECT mit(matchinfo(foobar, 'pg')) FROM foobar WHERE foobar MATCH 'the' 
-  }
-} {{1 1 3 3 27 74 79}}
 
 finish_test
 

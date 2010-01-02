@@ -70,6 +70,8 @@
 */
 typedef unsigned char u8;         /* 1-byte (or larger) unsigned integer */
 typedef short int i16;            /* 2-byte (or larger) signed integer */
+typedef unsigned int u32;         /* 4-byte unsigned integer */
+typedef sqlite3_uint64 u64;       /* 8-byte unsigned integer */
 /*
 ** Macro used to suppress compiler warnings for unused parameters.
 */
@@ -146,6 +148,8 @@ struct Fts3Cursor {
   char *pNextId;                  /* Pointer into the body of aDoclist */
   char *aDoclist;                 /* List of docids for full-text queries */
   int nDoclist;                   /* Size of buffer at aDoclist */
+  int isMatchinfoOk;              /* True when aMatchinfo[] matches iPrevId */
+  u32 *aMatchinfo;
 };
 
 /*
@@ -205,12 +209,12 @@ struct Fts3Expr {
   Fts3Expr *pRight;          /* Right operand */
   Fts3Phrase *pPhrase;       /* Valid if eType==FTSQUERY_PHRASE */
 
-  int isLoaded;
-  sqlite3_int64 iDocid;
-  char *aDoclist;
-  int nDoclist;
+  int isLoaded;              /* True if aDoclist/nDoclist are initialized. */
+  char *aDoclist;            /* Buffer containing doclist */
+  int nDoclist;              /* Size of aDoclist in bytes */
+
+  sqlite3_int64 iCurrent;
   char *pCurrent;
-  unsigned int *aHist;
 };
 
 /*
@@ -273,6 +277,9 @@ int sqlite3Fts3GetVarint32(const char *, int *);
 int sqlite3Fts3VarintLen(sqlite3_uint64);
 void sqlite3Fts3Dequote(char *);
 
+char *sqlite3Fts3FindPositions(Fts3Expr *, sqlite3_int64, int);
+int sqlite3Fts3ExprLoadDoclist(Fts3Table *, Fts3Expr *);
+
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
 int sqlite3Fts3InitHashTable(sqlite3 *, Fts3Hash *, const char *);
@@ -285,6 +292,10 @@ void sqlite3Fts3Offsets(sqlite3_context*, Fts3Cursor*);
 void sqlite3Fts3Snippet(sqlite3_context*, Fts3Cursor*, 
   const char *, const char *, const char *
 );
+void sqlite3Fts3Snippet2(sqlite3_context *, Fts3Cursor *, const char *,
+  const char *, const char *, int, int
+);
+void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *);
 
 /* fts3_expr.c */
 int sqlite3Fts3ExprParse(sqlite3_tokenizer *, 
