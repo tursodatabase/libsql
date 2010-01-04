@@ -1,5 +1,8 @@
-C Add\sexperimental\simplementation\sof\sFTS3\sfunctions\smatchinfo()\sand\ssnippet()\s(not\senabled\sby\sdefault).
-D 2010-01-02T19:02:02
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Version\s3.6.22\sRelease\sCandidate\s1
+D 2010-01-04T13:30:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -783,7 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3b77701bc854997346e9cc33fe64d00d4b6332bd
+P 51f7ee844057086789dcfcdcba7daf45343cae62
 R 352836846f02a941ba33453a9ca0d839
-U dan
-Z 0ec00194a72e0933026761576b69b758
+U drh
+Z d2f1c5c9f41d0202e5cdbf5fbf5b287e
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLQe1roxKgR168RlERAutIAJ92kUvacl3G6meA6+kiiahiS4JLsQCeLUB/
+UoBszAahCBC8pdWrc6Uj6z4=
+=gOQW
+-----END PGP SIGNATURE-----
