@@ -195,7 +195,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   catchcmd "-version test.db" "" 
-} {0 3.6.21}
+} {0 3.6.22}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
