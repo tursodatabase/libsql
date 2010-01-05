@@ -211,6 +211,31 @@ static int sqlite3MemRoundup(int n){
 }
 
 /*
+** Fill a buffer with pseudo-random bytes.  This is used to preset
+** the content of a new memory allocation to unpredictable values and
+** to clear the content of a freed allocation to unpredictable values.
+*/
+static void randomFill(char *pBuf, int nByte){
+  unsigned int x, y, r;
+  x = SQLITE_PTR_TO_INT(pBuf);
+  y = nByte | 1;
+  while( nByte >= 4 ){
+    x = (x>>1) ^ (-(x&1) & 0xd0000001);
+    y = y*1103515245 + 12345;
+    r = x ^ y;
+    *(int*)pBuf = r;
+    pBuf += 4;
+    nByte -= 4;
+  }
+  while( nByte-- > 0 ){
+    x = (x>>1) ^ (-(x&1) & 0xd0000001);
+    y = y*1103515245 + 12345;
+    r = x ^ y;
+    *(pBuf++) = r & 0xff;
+  }
+}
+
+/*
 ** Allocate nByte bytes of memory.
 */
 static void *sqlite3MemMalloc(int nByte){
@@ -260,7 +285,8 @@ static void *sqlite3MemMalloc(int nByte){
     adjustStats(nByte, +1);
     pInt = (int*)&pHdr[1];
     pInt[nReserve/sizeof(int)] = REARGUARD;
-    memset(pInt, 0x65, nReserve);
+    randomFill((char*)pInt, nByte);
+    memset(((char*)pInt)+nByte, 0x65, nReserve-nByte);
     p = (void*)pInt;
   }
   sqlite3_mutex_leave(mem.mutex);
@@ -296,8 +322,8 @@ static void sqlite3MemFree(void *pPrior){
   z = (char*)pBt;
   z -= pHdr->nTitle;
   adjustStats(pHdr->iSize, -1);
-  memset(z, 0x2b, sizeof(void*)*pHdr->nBacktraceSlots + sizeof(*pHdr) +
-                  pHdr->iSize + sizeof(int) + pHdr->nTitle);
+  randomFill(z, sizeof(void*)*pHdr->nBacktraceSlots + sizeof(*pHdr) +
+                pHdr->iSize + sizeof(int) + pHdr->nTitle);
   free(z);
   sqlite3_mutex_leave(mem.mutex);  
 }
@@ -320,7 +346,7 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
   if( pNew ){
     memcpy(pNew, pPrior, nByte<pOldHdr->iSize ? nByte : pOldHdr->iSize);
     if( nByte>pOldHdr->iSize ){
-      memset(&((char*)pNew)[pOldHdr->iSize], 0x2b, nByte - pOldHdr->iSize);
+      randomFill(&((char*)pNew)[pOldHdr->iSize], nByte - pOldHdr->iSize);
     }
     sqlite3MemFree(pPrior);
   }

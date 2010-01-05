@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\scase\sin\sos_unix.c\swhere\stwo\sstructures\sthat\smight\shave\suninitialized\npadding\sbytes\sare\scompared\susing\smemcmp().
-D 2010-01-05T00:14:49
+C In\sthe\sdebugging\smemory\sallocator,\sinitialize\snew\smemory\sallocations\sto\npseudo-randomness\sin\san\seffort\sto\sfind\sproblems\swith\smemcmp()\sof\sstructures\nthat\shave\suninitialized\spad\sbytes.
+D 2010-01-05T03:30:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/main.c a0f6dfbdd79e01baf75ad62bdbfdeae9e560eb96
 F src/malloc.c 5fa175797f982b178eaf38afba9c588a866be729
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 552f7e11486272f27948d2de9c012884d1f52908
-F src/mem2.c 3f196f6fd3f4320035eb4acbe4530686da2f14b1
+F src/mem2.c 92b4f772b1ee7469e256f1c2eff0b51a0ba19460
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c 4837b795ebdecc0cfe1522cd0c8b2c5d84ea490d
 F src/memjournal.c 5bfc2f33c914946e2f77ed3f882aff14dfc9355d
@@ -786,14 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9d8ab0f1f5ea4f05a685ea6541f501532514e8c5
-R abc03fa17b185ce91d6852a56cfe2c0c
+P e02f25560216c7c96c5e1c7e71a8531650b3a96f
+R 0a313dee315b72c3b419645fb9cfd73c
 U drh
-Z 43c2ff37317308f6c74d6b1f4aba9e71
+Z 4d3d5214f091be48926cc62b09c41b4c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLQoR/oxKgR168RlERAtJKAJ9aUCZJdHm9noMR4ibCjjfhvvx8mQCfSs+F
-TTrKa0Y3SL/H+8L9jNVAzK4=
-=xT3S
+iD8DBQFLQrJKoxKgR168RlERAlC8AJwOg5AslX/pB3YH7ewA4+9wmshQXQCfdzWI
+f4ZfaOxedp3VuJNU/z/Hj64=
+=6YvT
 -----END PGP SIGNATURE-----
