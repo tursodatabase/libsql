@@ -1,5 +1,5 @@
-C Apply\sfix\s[097737e368]\sto\sthe\s3.6.1\sbranch.
-D 2010-01-05T18:06:38
+C Apply\sfix\s[9b8acf8319]\sto\sthe\s3.6.1\sbranch.
+D 2010-01-05T18:11:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/insert.c 89cd9af52a5ea6fb7d0cfc9c3b935d6406c360c4
 F src/journal.c cffd2cd214e58c0e99c3ff632b3bee6c7cbb260e
 F src/legacy.c aac57bd984e666059011ea01ec4383892a253be3
 F src/loadext.c eb1fe4f44d7c8ff53fc0c6a4388ab79fbd34cd64
-F src/main.c d750c6c0d381252851401f6ea2ee72185de005ed
+F src/main.c bafdff2621497d602a5010a8700297d5fd8a9792
 F src/malloc.c 22c68fc62f0c2df0f1deb8cd9a5ea968f995cac2
 F src/md5.c 008216bbb5d34c6fbab5357aa68575ad8a31516a
 F src/mem1.c 3a7fe31d8290baa3bb203af72f7dfd6323966bcd
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 65ab777fd0a29ca99a240411b94ac83041f90c98
-R 0688a9cc7d3074a421e3eb24b4a52eea
+P 9f819ea6b21e13e6def5c841cbdba96661f322a3
+R 3d0a074f76cf6d4fa9806148f6ad144b
 U dan
-Z 68f2f61dc743d15d18454969a70157e8
+Z e82845b46439863070353ea34d902bb9

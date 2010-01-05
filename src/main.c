@@ -1131,31 +1131,24 @@ const char *sqlite3_errmsg(sqlite3 *db){
 ** error.
 */
 const void *sqlite3_errmsg16(sqlite3 *db){
-  /* Because all the characters in the string are in the unicode
-  ** range 0x00-0xFF, if we pad the big-endian string with a 
-  ** zero byte, we can obtain the little-endian string with
-  ** &big_endian[1].
-  */
-  static const char outOfMemBe[] = {
-    0, 'o', 0, 'u', 0, 't', 0, ' ', 
-    0, 'o', 0, 'f', 0, ' ', 
-    0, 'm', 0, 'e', 0, 'm', 0, 'o', 0, 'r', 0, 'y', 0, 0, 0
+  static const u16 outOfMem[] = {
+    'o', 'u', 't', ' ', 'o', 'f', ' ', 'm', 'e', 'm', 'o', 'r', 'y', 0
   };
-  static const char misuseBe [] = {
-    0, 'l', 0, 'i', 0, 'b', 0, 'r', 0, 'a', 0, 'r', 0, 'y', 0, ' ', 
-    0, 'r', 0, 'o', 0, 'u', 0, 't', 0, 'i', 0, 'n', 0, 'e', 0, ' ', 
-    0, 'c', 0, 'a', 0, 'l', 0, 'l', 0, 'e', 0, 'd', 0, ' ', 
-    0, 'o', 0, 'u', 0, 't', 0, ' ', 
-    0, 'o', 0, 'f', 0, ' ', 
-    0, 's', 0, 'e', 0, 'q', 0, 'u', 0, 'e', 0, 'n', 0, 'c', 0, 'e', 0, 0, 0
+  static const u16 misuse[] = {
+    'l', 'i', 'b', 'r', 'a', 'r', 'y', ' ',
+    'r', 'o', 'u', 't', 'i', 'n', 'e', ' ',
+    'c', 'a', 'l', 'l', 'e', 'd', ' ',
+    'o', 'u', 't', ' ',
+    'o', 'f', ' ',
+    's', 'e', 'q', 'u', 'e', 'n', 'c', 'e', 0
   };
 
   const void *z;
   if( !db ){
-    return (void *)(&outOfMemBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
+    return (void *)outOfMem;
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
-    return (void *)(&misuseBe[SQLITE_UTF16NATIVE==SQLITE_UTF16LE?1:0]);
+    return (void *)misuse;
   }
   sqlite3_mutex_enter(db->mutex);
   assert( !db->mallocFailed );
