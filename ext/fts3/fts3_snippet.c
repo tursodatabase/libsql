@@ -839,7 +839,7 @@ static int fts3LoadSnippetBuffer(
 
     while( iPrev<(iPos+SNIPPET_BUFFER_CHUNK) ){
       if( iPrev>=iPos ){
-        aBuffer[iPrev&SNIPPET_BUFFER_MASK] = i+1;
+        aBuffer[iPrev&SNIPPET_BUFFER_MASK] = (u8)(i+1);
       }
       if( 0==((*pList)&0xFE) ){
         nFin++;
@@ -1033,7 +1033,7 @@ static int fts3StringAppend(
   int nAppend
 ){
   if( nAppend<0 ){
-    nAppend = strlen(zAppend);
+    nAppend = (int)strlen(zAppend);
   }
 
   if( pStr->n+nAppend+1>=pStr->nAlloc ){
