@@ -1,5 +1,5 @@
-C Version\s3.6.1\s(CVS\s5540)
-D 2008-08-06T10:50:00
+C Apply\sfix\s[097737e368]\sto\sthe\s3.6.1\sbranch.
+D 2010-01-05T18:06:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -99,7 +99,7 @@ F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
 F src/btree.c da7491ef06c0209da962e1520bfc5c90b5c5cc96
 F src/btree.h 03256ed7ee42b5ecacbe887070b0f8249e7d069d
 F src/btreeInt.h ab18c7b4980314e9e4b402e5dcde09f3c2545576
-F src/build.c f774f01e10885319d8f839cf00f25cc6a8a7d605
+F src/build.c d8fe03f76229e333c9e1989eb22b4120f1f46376
 F src/callback.c c9f75a4c403f166af3761df47d78a806587d63af
 F src/complete.c cb14e06dbe79dee031031f0d9e686ff306afe07c
 F src/date.c 52a54811218a76da6235420f532ece841159a96d
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 01fb8a0d2ca1d7ac31316cef1675dc9852265db6
-R f1679cb1675cee37fa12d4fa26f13c35
-U drh
-Z 56e89e221c5215782fe30888ef49647e
+P 65ab777fd0a29ca99a240411b94ac83041f90c98
+R 0688a9cc7d3074a421e3eb24b4a52eea
+U dan
+Z 68f2f61dc743d15d18454969a70157e8
