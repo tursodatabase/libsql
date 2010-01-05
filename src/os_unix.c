@@ -3804,16 +3804,17 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a resusable file descriptor are not dire.  */
   if( 0==stat(zPath, &sStat) ){
-    struct unixOpenCnt *pO;
-    struct unixFileId id;
-    id.dev = sStat.st_dev;
-    id.ino = sStat.st_ino;
+    struct unixOpenCnt *pOpen;
 
     unixEnterMutex();
-    for(pO=openList; pO && memcmp(&id, &pO->fileId, sizeof(id)); pO=pO->pNext);
-    if( pO ){
+    pOpen = openList;
+    while( pOpen && (pOpen->fileId.dev!=sStat.st_dev
+                     || pOpen->fileId.ino!=sStat.st_ino) ){
+       pOpen = pOpen->pNext;
+    }
+    if( pOpen ){
       UnixUnusedFd **pp;
-      for(pp=&pO->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
+      for(pp=&pOpen->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
       pUnused = *pp;
       if( pUnused ){
         *pp = pUnused->pNext;
@@ -4673,7 +4674,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
 # ifdef _CS_DARWIN_USER_TEMP_DIR
   {
     confstr(_CS_DARWIN_USER_TEMP_DIR, lPath, maxLen);
-    len = strlcat(lPath, "sqliteplocks", maxLen);
+    len = strlcat(lPath, "sqliteplocks", maxLen);    
     if( mkdir(lPath, SQLITE_DEFAULT_PROXYDIR_PERMISSIONS) ){
       /* if mkdir fails, handle as lock file creation failure */
 #  ifdef SQLITE_DEBUG

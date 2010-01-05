@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.6.22\sRelease\sCandidate\s1
-D 2010-01-04T13:30:16
+C Fix\sa\scase\sin\sos_unix.c\swhere\stwo\sstructures\sthat\smight\shave\suninitialized\npadding\sbytes\sare\scompared\susing\smemcmp().
+D 2010-01-05T00:14:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/os.c 4500ff276e277730776fe9b6c6c5930383ec4000
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c fe85acfeded5cc13c2340ab73c9baf841de4e6d9
+F src/os_unix.c b24510792108ffee0c8175c1d2fc644913b241d2
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c a0ed14b86de9d012a962b83389ca01003b6acccb
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -786,14 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 51f7ee844057086789dcfcdcba7daf45343cae62
-R 352836846f02a941ba33453a9ca0d839
+P 9d8ab0f1f5ea4f05a685ea6541f501532514e8c5
+R abc03fa17b185ce91d6852a56cfe2c0c
 U drh
-Z d2f1c5c9f41d0202e5cdbf5fbf5b287e
+Z 43c2ff37317308f6c74d6b1f4aba9e71
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLQe1roxKgR168RlERAutIAJ92kUvacl3G6meA6+kiiahiS4JLsQCeLUB/
-UoBszAahCBC8pdWrc6Uj6z4=
-=gOQW
+iD8DBQFLQoR/oxKgR168RlERAtJKAJ9aUCZJdHm9noMR4ibCjjfhvvx8mQCfSs+F
+TTrKa0Y3SL/H+8L9jNVAzK4=
+=xT3S
 -----END PGP SIGNATURE-----
