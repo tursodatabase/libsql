@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\sin\sthe\sshell\stool.\sIn\ssome\scases\ssqlite3_errmsg()\swas\sbeing\scalled\sbefore\ssqlite3_finalize(),\scausing\serror\smessages\sto\sbe\smore\sgeneric\sthan\sthey\sshould\sbe.
-D 2010-01-05T04:59:57
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\snew\spages\sare\szeroed\seven\swhen\sloading\sa\sfreelist\spage\susing\sthe\nnoContent\soption.\s\sThis\sprevents\sa\sharmless\svalgrind\swarning.
+D 2010-01-05T13:40:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c b24510792108ffee0c8175c1d2fc644913b241d2
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c a0ed14b86de9d012a962b83389ca01003b6acccb
+F src/pager.c e5421d38470fe58faee71a5a66a778ada882394c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
@@ -783,7 +786,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6462817b2f817a6105449b0ea3e1e336e42571d1
-R 9bce1ef60ed204cfc7f1e0bb2bf15d25
-U dan
-Z 8e70d59d100b7e6a49e556eb5a97a125
+P e5d07045fabe0803715cfb291aa9e971235cb08a
+R 9204573cc57fc8c565280f450d5531c6
+U drh
+Z a6765f277796358c7e24877831e1596a
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLQ0FWoxKgR168RlERAmCCAJ0cj/UiTlS2LANp0D5MtDxf6bDBRgCeOduF
+gxI5LlY5wNHX6CO/q6BHQWs=
+=chCy
+-----END PGP SIGNATURE-----

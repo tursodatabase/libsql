@@ -3862,9 +3862,8 @@ int sqlite3PagerAcquire(
         TESTONLY( rc = ) addToSavepointBitvecs(pPager, pgno);
         testcase( rc==SQLITE_NOMEM );
         sqlite3EndBenignMalloc();
-      }else{
-        memset(pPg->pData, 0, pPager->pageSize);
       }
+      memset(pPg->pData, 0, pPager->pageSize);
       IOTRACE(("ZERO %p %d\n", pPager, pgno));
     }else{
       assert( pPg->pPager==pPager );
