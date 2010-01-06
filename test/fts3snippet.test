@@ -1,0 +1,68 @@
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+ifcapable !fts3 { finish_test ; return }
+
+do_test fts3snippet-1.1 {
+  execsql {
+    CREATE VIRTUAL TABLE ft USING fts3;
+    INSERT INTO ft VALUES('xxx xxx xxx xxx');
+  }
+} {}
+
+proc normalize {L} {
+  set ret [list]
+  foreach l $L {lappend ret $l}
+  return $ret
+}
+
+do_test fts3snippet-1.2 {
+  execsql { SELECT offsets(ft) FROM ft WHERE ft MATCH 'xxx' }
+} {{0 0 0 3 0 0 4 3 0 0 8 3 0 0 12 3}}
+
+do_test fts3snippet-1.3 {
+  execsql { SELECT offsets(ft) FROM ft WHERE ft MATCH '"xxx xxx"' }
+} [list [normalize {
+    0 0  0 3 
+    0 0  4 3 
+    0 1  4 3 
+    0 0  8 3 
+    0 1  8 3 
+    0 1 12 3
+}]]
+
+
+do_test fts3snippet-1.4 {
+  execsql { SELECT offsets(ft) FROM ft WHERE ft MATCH '"xxx xxx" xxx' }
+} [list [normalize {
+    0 0  0 3 
+    0 2  0 3 
+    0 0  4 3 
+    0 1  4 3 
+    0 2  4 3 
+    0 0  8 3 
+    0 1  8 3 
+    0 2  8 3 
+    0 1 12 3
+    0 2 12 3
+}]]
+
+do_test fts3snippet-1.5 {
+  execsql { SELECT offsets(ft) FROM ft WHERE ft MATCH 'xxx "xxx xxx"' }
+} [list [normalize {
+    0 0  0 3 
+    0 1  0 3 
+    0 0  4 3 
+    0 1  4 3 
+    0 2  4 3 
+    0 0  8 3 
+    0 1  8 3 
+    0 2  8 3 
+    0 0 12 3
+    0 2 12 3
+}]]
+
+finish_test
+

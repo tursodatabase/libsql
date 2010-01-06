@@ -1131,39 +1131,36 @@ do_test fts3ac-4.2 {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'christmas candlelight'
   }
-} {{<b>...</b> place.? What do you think about going here <b>Christmas</b> 
-eve?? They have an 11:00 a.m. service and a <b>candlelight</b> service at 5:00 p.m., 
-among others. <b>...</b>}}
+} {{<b>...</b>here <b>Christmas</b> 
+eve?? They have an 11:00 a.m. service and a <b>candlelight</b> service<b>...</b>}}
 
 do_test fts3ac-4.3 {
   execsql {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'deal sheet potential reuse'
   }
-} {{EOL-Accenture <b>Deal</b> <b>Sheet</b> <b>...</b> intent
-     Review Enron asset base for <b>potential</b> <b>reuse</b>/ licensing
-     Contract negotiations <b>...</b>}}
+} {{EOL-Accenture <b>Deal</b> <b>Sheet</b><b>...</b>asset base for <b>potential</b> <b>reuse</b>/ licensing
+     Contract negotiations<b>...</b>}}
 do_test fts3ac-4.4 {
   execsql {
     SELECT snippet(email,'<<<','>>>',' ') FROM email
      WHERE email MATCH 'deal sheet potential reuse'
   }
-} {{EOL-Accenture <<<Deal>>> <<<Sheet>>>  intent
-     Review Enron asset base for <<<potential>>> <<<reuse>>>/ licensing
-     Contract negotiations  }}
+} {{EOL-Accenture <<<Deal>>> <<<Sheet>>> asset base for <<<potential>>> <<<reuse>>>/ licensing
+     Contract negotiations }}
 do_test fts3ac-4.5 {
   execsql {
     SELECT snippet(email,'<<<','>>>',' ') FROM email
      WHERE email MATCH 'first things'
   }
-} {{Re: <<<First>>> Polish Deal!  Congrats!  <<<Things>>> seem to be building rapidly now on the  }}
+} {{Re: <<<First>>> Polish Deal! Congrats!  <<<Things>>> seem to be building rapidly now }}
 do_test fts3ac-4.6 {
   execsql {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'chris is here'
   }
-} {{<b>chris</b>.germany@enron.com <b>...</b> Sounds good to me.  I bet this <b>is</b> next to the Warick?? Hotel. <b>...</b> place.? What do you think about going <b>here</b> Christmas 
-eve?? They have an 11:00 a.m. <b>...</b>}}
+} {{<b>...</b><b>chris</b>.germany@enron.com'" <<b>chris</b><b>...</b>bet this <b>is</b> next to<b>...</b>about going <b>here</b> Christmas 
+eve<b>...</b>}}
 do_test fts3ac-4.7 {
   execsql {
     SELECT snippet(email) FROM email
@@ -1171,19 +1168,15 @@ do_test fts3ac-4.7 {
   }
 } {{Erin:
 
-<b>Pursuant</b> <b>to</b> your request, attached are the Schedule to <b>...</b>}}
+<b>Pursuant</b> <b>to</b> your request, attached are the Schedule to the ISDA Master Agreement, together<b>...</b>}}
 do_test fts3ac-4.8 {
   execsql {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'ancillary load davis'
   }
-} {{pete.<b>davis</b>@enron.com <b>...</b> Start Date: 4/22/01; HourAhead hour: 3;  No <b>ancillary</b> schedules awarded.  
-Variances detected.
-Variances detected in <b>Load</b> schedule.
+} {{pete.<b>davis</b>@enron.com<b>...</b>3;  No <b>ancillary</b> schedules awarded<b>...</b>detected in <b>Load</b> schedule.
 
-    LOG MESSAGES:
-
-PARSING <b>...</b>}}
+    LOG<b>...</b>}}
 
 # Combinations of AND and OR operators:
 #
@@ -1192,22 +1185,17 @@ do_test fts3ac-5.1 {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'questar enron OR com'
   }
-} {{matt.smith@<b>enron</b>.<b>com</b> <b>...</b> six reports:  
-
-31 Keystone Receipts
+} {{matt.smith@<b>enron</b>.<b>com</b><b>...</b>31 Keystone Receipts
 15 <b>Questar</b> Pipeline
-40 Rockies Production
-22 West_2 <b>...</b>}}
+40 Rockies<b>...</b>}}
+
 do_test fts3ac-5.2 {
   execsql {
     SELECT snippet(email) FROM email
      WHERE email MATCH 'enron OR com questar'
   }
-} {{matt.smith@<b>enron</b>.<b>com</b> <b>...</b> six reports:  
-
-31 Keystone Receipts
+} {{matt.smith@<b>enron</b>.<b>com</b><b>...</b>31 Keystone Receipts
 15 <b>Questar</b> Pipeline
-40 Rockies Production
-22 West_2 <b>...</b>}}
+40 Rockies<b>...</b>}}
 
 finish_test

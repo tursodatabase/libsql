@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\san\sissue\swith\slemon\sgenerating\sincorrect\sgrammars.\s\sThis\sissue\sdoes\nnot\seffect\sSQLite.
-D 2010-01-06T13:07:31
+C Change\sthe\sfts3\ssnippet\sfunction\sto\sreturn\s(hopefully)\smore\srelevant\ssnippets\sin\sless\stime.
+D 2010-01-06T17:19:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,15 +56,15 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 15fb87c1f00dfd88c2fbbbd9e50f319ea77834f0
+F ext/fts3/fts3.c 04e95afa45789d7a3da59f458d4a8c1879c31446
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
-F ext/fts3/fts3Int.h 9326800fa10e06d8e9d6d519f873b1371252968a
+F ext/fts3/fts3Int.h 45bc7e284806042119722c8f4127ee944b77f0dd
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c 0e38f76c5992dd08d20fc81e1265763370f9ea4f
+F ext/fts3/fts3_snippet.c 612b3ad63abf2c5c85b6a46aac94bd90280e905a
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -383,7 +380,7 @@ F test/fts3.test ae0433b09b12def08105640e57693726c4949338
 F test/fts3_common.tcl 2a2044688ce3addb1dd58d3d846c574cf4b7bbcd
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
-F test/fts3ac.test 356280144a2c92aa7b11474afadfe62a437fcd69
+F test/fts3ac.test fc1ac42c33f8a66d48ae41e4728f7ca4b6dfc950
 F test/fts3ad.test e40570cb6f74f059129ad48bcef3d7cbc20dda49
 F test/fts3ae.test ce32a13b34b0260928e4213b4481acf801533bda
 F test/fts3af.test d394978c534eabf22dd0837e718b913fd66b499c
@@ -392,7 +389,7 @@ F test/fts3ah.test ba181d6a3dee0c929f0d69df67cac9c47cda6bff
 F test/fts3ai.test d29cee6ed653e30de478066881cec8aa766531b2
 F test/fts3aj.test 584facbc9ac4381a7ec624bfde677340ffc2a5a4
 F test/fts3ak.test bd14deafe9d1586e8e9bf032411026ac4f8c925d
-F test/fts3al.test 6d19619402d2133773262652fc3f185cdf6be667
+F test/fts3al.test 07d64326e79bbdbab20ee87fc3328fbf01641c9f
 F test/fts3am.test 218aa6ba0dfc50c7c16b2022aac5c6be593d08d8
 F test/fts3an.test 931fa21bd80641ca594bfa32e105250a8a07918b
 F test/fts3ao.test 0aa29dd4fc1c8d46b1f7cfe5926f7ac97551bea9
@@ -405,9 +402,10 @@ F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
-F test/fts3near.test dc196dd17b4606f440c580d45b3d23aa975fd077
+F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test ca21717993f51caa7e36231dba2499868f3f8a6f
 F test/fts3rnd.test 153b4214bad6084a348814f3dd651a92e2f31d9b
+F test/fts3snippet.test bfbceb2e292ddfdc6bb0b1b252ccea78bd6091be
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -786,14 +784,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 28d0d7710761114a44a1a3a425a6883c661f06e7
-R cb14a38f5906a10fa21936447376b66a
-U drh
-Z 437ad8ccf6b703d6a3f5435217fbeff7
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLRIsWoxKgR168RlERAko3AJ9cRW4W+hFzWCSEF5rdeL83LKknrgCfQKRR
-l/RSoin5yCY/+/3Q1I6oeNA=
-=d16B
------END PGP SIGNATURE-----
+P 077a6bee2dd4668a5b13c37aa7d4c052350ec782
+R 63513c05ce3003328b753382175b1505
+U dan
+Z 7955c05e9b09116e00ebafe15af16394
