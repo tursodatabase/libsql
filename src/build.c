@@ -3417,7 +3417,6 @@ int sqlite3OpenTempDatabase(Parse *pParse){
       pParse->rc = rc;
       return 1;
     }
-    assert( (db->flags & SQLITE_InTrans)==0 || db->autoCommit );
     assert( db->aDb[1].pSchema );
     sqlite3PagerJournalMode(sqlite3BtreePager(db->aDb[1].pBt),
                             db->dfltJournalMode);

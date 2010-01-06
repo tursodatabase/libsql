@@ -2306,6 +2306,40 @@ int sqlite3_test_control(int op, ...){
       break;
     }
 
+    /*  sqlite3_test_control(SQLITE_TESTCTRL_OPTIMIZATIONS, sqlite3 *db, int N)
+    **
+    ** Enable or disable various optimizations for testing purposes.  The 
+    ** argument N is a bitmask of optimizations to be disabled.  For normal
+    ** operation N should be 0.  The idea is that a test program (like the
+    ** SQL Logic Test or SLT test module) can run the same SQL multiple times
+    ** with various optimizations disabled to verify that the same answer
+    ** is obtained in every case.
+    */
+    case SQLITE_TESTCTRL_OPTIMIZATIONS: {
+      sqlite3 *db = va_arg(ap, sqlite3*);
+      int x = va_arg(ap,int);
+      db->flags = (x & SQLITE_OptMask) | (db->flags & ~SQLITE_OptMask);
+      break;
+    }
+
+#ifdef SQLITE_N_KEYWORD
+    /* sqlite3_test_control(SQLITE_TESTCTRL_ISKEYWORD, const char *zWord)
+    **
+    ** If zWord is a keyword recognized by the parser, then return the
+    ** number of keywords.  Or if zWord is not a keyword, return 0.
+    ** 
+    ** This test feature is only available in the amalgamation since
+    ** the SQLITE_N_KEYWORD macro is not defined in this file if SQLite
+    ** is built using separate source files.
+    */
+    case SQLITE_TESTCTRL_ISKEYWORD: {
+      const char *zWord = va_arg(ap, const char*);
+      int n = sqlite3Strlen30(zWord);
+      rc = (sqlite3KeywordCode((u8*)zWord, n)!=TK_ID) ? SQLITE_N_KEYWORD : 0;
+      break;
+    }
+#endif 
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */

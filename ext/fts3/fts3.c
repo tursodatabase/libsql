@@ -797,6 +797,7 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   sqlite3_finalize(pCsr->pStmt);
   sqlite3Fts3ExprFree(pCsr->pExpr);
   sqlite3_free(pCsr->aDoclist);
+  sqlite3_free(pCsr->aMatchinfo);
   sqlite3_free(pCsr);
   return SQLITE_OK;
 }
@@ -842,6 +843,7 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
     sqlite3_reset(pCsr->pStmt);
     fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
     pCsr->isRequireSeek = 1;
+    pCsr->isMatchinfoOk = 1;
   }
   return rc;
 }
@@ -957,11 +959,27 @@ static void fts3PutDeltaVarint(
   *piPrev = iVal;
 }
 
+/*
+** When this function is called, *ppPoslist is assumed to point to the 
+** start of a position-list.
+*/
 static void fts3PoslistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
   char c = 0;
+
+  /* The end of a position list is marked by a zero encoded as an FTS3 
+  ** varint. A single 0x00 byte. Except, if the 0x00 byte is preceded by
+  ** a byte with the 0x80 bit set, then it is not a varint 0, but the tail
+  ** of some other, multi-byte, value.
+  **
+  ** The following block moves pEnd to point to the first byte that is not 
+  ** immediately preceded by a byte with the 0x80 bit set. Then increments
+  ** pEnd once more so that it points to the byte immediately following the
+  ** last byte in the position-list.
+  */
   while( *pEnd | c ) c = *pEnd++ & 0x80;
   pEnd++;
+
   if( pp ){
     int n = (int)(pEnd - *ppPoslist);
     char *p = *pp;
@@ -1310,6 +1328,7 @@ static int fts3DoclistMerge(
   );
 
   if( !aBuffer ){
+    *pnBuffer = 0;
     return SQLITE_NOMEM;
   }
 
@@ -1678,6 +1697,7 @@ static int fts3PhraseSelect(
       sqlite3_free(pOut);
       pOut = pList;
     }
+    assert( nOut==0 || pOut!=0 );
   }
 
   if( rc==SQLITE_OK ){
@@ -1697,7 +1717,8 @@ static int evalFts3Expr(
   Fts3Table *p,                   /* Virtual table handle */
   Fts3Expr *pExpr,                /* Parsed fts3 expression */
   char **paOut,                   /* OUT: Pointer to malloc'd result buffer */
-  int *pnOut                      /* OUT: Size of buffer at *paOut */
+  int *pnOut,                     /* OUT: Size of buffer at *paOut */
+  int isReqPos                    /* Require positions in output buffer */
 ){
   int rc = SQLITE_OK;             /* Return code */
 
@@ -1706,17 +1727,23 @@ static int evalFts3Expr(
   *pnOut = 0;
 
   if( pExpr ){
+    assert( pExpr->eType==FTSQUERY_PHRASE 
+         || pExpr->eType==FTSQUERY_NEAR 
+         || isReqPos==0
+    );
     if( pExpr->eType==FTSQUERY_PHRASE ){
-      int isReqPos = (pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR);
-      rc = fts3PhraseSelect(p, pExpr->pPhrase, isReqPos, paOut, pnOut);
+      rc = fts3PhraseSelect(p, pExpr->pPhrase, 
+          isReqPos || (pExpr->pParent && pExpr->pParent->eType==FTSQUERY_NEAR),
+          paOut, pnOut
+      );
     }else{
       char *aLeft;
       char *aRight;
       int nLeft;
       int nRight;
 
-      if( SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight))
-       && SQLITE_OK==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft))
+      if( 0==(rc = evalFts3Expr(p, pExpr->pRight, &aRight, &nRight, isReqPos))
+       && 0==(rc = evalFts3Expr(p, pExpr->pLeft, &aLeft, &nLeft, isReqPos))
       ){
         assert( pExpr->eType==FTSQUERY_NEAR || pExpr->eType==FTSQUERY_OR     
             || pExpr->eType==FTSQUERY_AND  || pExpr->eType==FTSQUERY_NOT
@@ -1725,7 +1752,7 @@ static int evalFts3Expr(
           case FTSQUERY_NEAR: {
             Fts3Expr *pLeft;
             Fts3Expr *pRight;
-            int mergetype = MERGE_NEAR;
+            int mergetype = isReqPos ? MERGE_POS_NEAR : MERGE_NEAR;
             int nParam1;
             int nParam2;
             char *aBuffer;
@@ -1868,7 +1895,7 @@ static int fts3FilterMethod(
     );
     if( rc!=SQLITE_OK ) return rc;
 
-    rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist);
+    rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
     pCsr->pNextId = pCsr->aDoclist;
     pCsr->iPrevId = 0;
   }
@@ -1991,6 +2018,63 @@ static int fts3RollbackMethod(sqlite3_vtab *pVtab){
 }
 
 /*
+** Load the doclist associated with expression pExpr to pExpr->aDoclist.
+** The loaded doclist contains positions as well as the document ids.
+** This is used by the matchinfo(), snippet() and offsets() auxillary
+** functions.
+*/
+int sqlite3Fts3ExprLoadDoclist(Fts3Table *pTab, Fts3Expr *pExpr){
+  return evalFts3Expr(pTab, pExpr, &pExpr->aDoclist, &pExpr->nDoclist, 1);
+}
+
+/*
+** After ExprLoadDoclist() (see above) has been called, this function is
+** used to iterate through the position lists that make up the doclist
+** stored in pExpr->aDoclist.
+*/
+char *sqlite3Fts3FindPositions(
+  Fts3Expr *pExpr,                /* Access this expressions doclist */
+  sqlite3_int64 iDocid,           /* Docid associated with requested pos-list */
+  int iCol                        /* Column of requested pos-list */
+){
+  assert( pExpr->isLoaded );
+  if( pExpr->aDoclist ){
+    char *pEnd = &pExpr->aDoclist[pExpr->nDoclist];
+    char *pCsr = pExpr->pCurrent;
+
+    assert( pCsr );
+    while( pCsr<pEnd ){
+      if( pExpr->iCurrent<iDocid ){
+        fts3PoslistCopy(0, &pCsr);
+        fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+        pExpr->pCurrent = pCsr;
+      }else{
+        if( pExpr->iCurrent==iDocid ){
+          int iThis = 0;
+          if( iCol<0 ){
+            /* If iCol is negative, return a pointer to the start of the
+            ** position-list (instead of a pointer to the start of a list
+            ** of offsets associated with a specific column).
+            */
+            return pCsr;
+          }
+          while( iThis<iCol ){
+            fts3ColumnlistCopy(0, &pCsr);
+            if( *pCsr==0x00 ) return 0;
+            pCsr++;
+            pCsr += sqlite3Fts3GetVarint32(pCsr, &iThis);
+          }
+          if( iCol==iThis ) return pCsr;
+        }
+        return 0;
+      }
+    }
+  }
+
+  return 0;
+}
+
+/*
 ** Helper function used by the implementation of the overloaded snippet(),
 ** offsets() and optimize() SQL functions.
 **
@@ -2058,6 +2142,47 @@ static void fts3SnippetFunc(
 }
 
 /*
+** Implementation of the snippet2() function for FTS3
+*/
+static void fts3Snippet2Func(
+  sqlite3_context *pContext,      /* SQLite function call context */
+  int nVal,                       /* Size of apVal[] array */
+  sqlite3_value **apVal           /* Array of arguments */
+){
+  Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
+  const char *zStart = "<b>";
+  const char *zEnd = "</b>";
+  const char *zEllipsis = "<b>...</b>";
+  int iCol = -1;
+  int nToken = 10;
+
+  /* There must be at least one argument passed to this function (otherwise
+  ** the non-overloaded version would have been called instead of this one).
+  */
+  assert( nVal>=1 );
+
+  if( nVal>6 ){
+    sqlite3_result_error(pContext, 
+        "wrong number of arguments to function snippet()", -1);
+    return;
+  }
+  if( fts3FunctionArg(pContext, "snippet", apVal[0], &pCsr) ) return;
+
+  switch( nVal ){
+    case 6: nToken = sqlite3_value_int(apVal[5]);
+    case 5: iCol = sqlite3_value_int(apVal[4]);
+    case 4: zEllipsis = (const char*)sqlite3_value_text(apVal[3]);
+    case 3: zEnd = (const char*)sqlite3_value_text(apVal[2]);
+    case 2: zStart = (const char*)sqlite3_value_text(apVal[1]);
+  }
+  if( !zEllipsis || !zEnd || !zStart ){
+    sqlite3_result_error_nomem(pContext);
+  }else if( SQLITE_OK==fts3CursorSeek(pContext, pCsr) ){
+    sqlite3Fts3Snippet2(pContext, pCsr, zStart, zEnd, zEllipsis, iCol, nToken);
+  }
+}
+
+/*
 ** Implementation of the offsets() function for FTS3
 */
 static void fts3OffsetsFunc(
@@ -2118,6 +2243,27 @@ static void fts3OptimizeFunc(
 }
 
 /*
+** Implementation of the matchinfo() function for FTS3
+*/
+static void fts3MatchinfoFunc(
+  sqlite3_context *pContext,      /* SQLite function call context */
+  int nVal,                       /* Size of argument array */
+  sqlite3_value **apVal           /* Array of arguments */
+){
+  Fts3Cursor *pCsr;               /* Cursor handle passed through apVal[0] */
+
+  if( nVal!=1 ){
+    sqlite3_result_error(pContext,
+        "wrong number of arguments to function matchinfo()", -1);
+    return;
+  }
+
+  if( SQLITE_OK==fts3FunctionArg(pContext, "matchinfo", apVal[0], &pCsr) ){
+    sqlite3Fts3Matchinfo(pContext, pCsr);
+  }
+}
+
+/*
 ** This routine implements the xFindFunction method for the FTS3
 ** virtual table.
 */
@@ -2133,8 +2279,10 @@ static int fts3FindFunctionMethod(
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } aOverload[] = {
     { "snippet", fts3SnippetFunc },
+    { "snippet2", fts3Snippet2Func },
     { "offsets", fts3OffsetsFunc },
     { "optimize", fts3OptimizeFunc },
+    { "matchinfo", fts3MatchinfoFunc },
   };
   int i;                          /* Iterator variable */
 
@@ -2281,7 +2429,9 @@ int sqlite3Fts3Init(sqlite3 *db){
   if( SQLITE_OK==rc 
    && SQLITE_OK==(rc = sqlite3Fts3InitHashTable(db, pHash, "fts3_tokenizer"))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet", -1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "snippet2", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "offsets", 1))
+   && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
     return sqlite3_create_module_v2(

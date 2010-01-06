@@ -1212,6 +1212,7 @@ static char *local_getline(char *zPrompt, FILE *in){
     while( zLine[n] ){ n++; }
     if( n>0 && zLine[n-1]=='\n' ){
       n--;
+      if( n>0 && zLine[n-1]=='\r' ) n--;
       zLine[n] = 0;
       eol = 1;
     }
@@ -1832,10 +1833,9 @@ static int shell_exec(
   struct callback_data *pArg,                 /* Pointer to struct callback_data */
   char **pzErrMsg                             /* Error msg written here */
 ){
-  sqlite3_stmt *pStmt = NULL;
-  int rc = SQLITE_OK;
-  int rc2;
-  const char *zLeftover;      /* Tail of unprocessed SQL */
+  sqlite3_stmt *pStmt = NULL;     /* Statement to execute. */
+  int rc = SQLITE_OK;             /* Return Code */
+  const char *zLeftover;          /* Tail of unprocessed SQL */
 
   if( pzErrMsg ){
     *pzErrMsg = NULL;
@@ -1916,28 +1916,15 @@ static int shell_exec(
         }
       }
 
-      /* if the last sqlite3_step() didn't complete successfully... */
-      if( (SQLITE_OK != rc) && (SQLITE_DONE != rc) ){ 
-        if( pzErrMsg ){
-          *pzErrMsg = save_err_msg(db);
-        }
-      }else{
-        rc = SQLITE_OK;
-      }
-
-      rc2 = sqlite3_finalize(pStmt);
-      /* if the last sqlite3_finalize() didn't complete successfully 
-      ** AND we don't have a saved error from sqlite3_step ... */
-      if( (SQLITE_OK != rc2) && (SQLITE_OK == rc) ){
-        rc = rc2;
-        if( pzErrMsg ){
-          *pzErrMsg = save_err_msg(db);
-        }
-      }
-
-      if( SQLITE_OK == rc ){ 
+      /* Finalize the statement just executed. If this fails, save a 
+      ** copy of the error message. Otherwise, set zSql to point to the
+      ** next statement to execute. */
+      rc = sqlite3_finalize(pStmt);
+      if( rc==SQLITE_OK ){
         zSql = zLeftover;
         while( isspace(zSql[0]) ) zSql++;
+      }else if( pzErrMsg ){
+        *pzErrMsg = save_err_msg(db);
       }
     }
   } /* end while */

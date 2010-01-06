@@ -1041,18 +1041,21 @@ void sqlite3VdbeFrameDelete(VdbeFrame *p){
 ** p->explain==2, only OP_Explain instructions are listed and these
 ** are shown in a different format.  p->explain==2 is used to implement
 ** EXPLAIN QUERY PLAN.
+**
+** When p->explain==1, first the main program is listed, then each of
+** the trigger subprograms are listed one by one.
 */
 int sqlite3VdbeList(
   Vdbe *p                   /* The VDBE */
 ){
-  int nRow;                            /* Total number of rows to return */
+  int nRow;                            /* Stop when row count reaches this */
   int nSub = 0;                        /* Number of sub-vdbes seen so far */
   SubProgram **apSub = 0;              /* Array of sub-vdbes */
-  Mem *pSub = 0;
-  sqlite3 *db = p->db;
-  int i;
-  int rc = SQLITE_OK;
-  Mem *pMem = p->pResultSet = &p->aMem[1];
+  Mem *pSub = 0;                       /* Memory cell hold array of subprogs */
+  sqlite3 *db = p->db;                 /* The database connection */
+  int i;                               /* Loop counter */
+  int rc = SQLITE_OK;                  /* Return code */
+  Mem *pMem = p->pResultSet = &p->aMem[1];  /* First Mem of result set */
 
   assert( p->explain );
   assert( p->magic==VDBE_MAGIC_RUN );
@@ -1072,12 +1075,24 @@ int sqlite3VdbeList(
     return SQLITE_ERROR;
   }
 
-  /* Figure out total number of rows that will be returned by this 
-  ** EXPLAIN program.  */
+  /* When the number of output rows reaches nRow, that means the
+  ** listing has finished and sqlite3_step() should return SQLITE_DONE.
+  ** nRow is the sum of the number of rows in the main program, plus
+  ** the sum of the number of rows in all trigger subprograms encountered
+  ** so far.  The nRow value will increase as new trigger subprograms are
+  ** encountered, but p->pc will eventually catch up to nRow.
+  */
   nRow = p->nOp;
   if( p->explain==1 ){
+    /* The first 8 memory cells are used for the result set.  So we will
+    ** commandeer the 9th cell to use as storage for an array of pointers
+    ** to trigger subprograms.  The VDBE is guaranteed to have at least 9
+    ** cells.  */
+    assert( p->nMem>9 );
     pSub = &p->aMem[9];
     if( pSub->flags&MEM_Blob ){
+      /* On the first call to sqlite3_step(), pSub will hold a NULL.  It is
+      ** initialized to a BLOB by the P4_SUBPROGRAM processing logic below */
       nSub = pSub->n/sizeof(Vdbe*);
       apSub = (SubProgram **)pSub->z;
     }
@@ -1100,8 +1115,12 @@ int sqlite3VdbeList(
     char *z;
     Op *pOp;
     if( i<p->nOp ){
+      /* The output line number is small enough that we are still in the
+      ** main program. */
       pOp = &p->aOp[i];
     }else{
+      /* We are currently listing subprograms.  Figure out which one and
+      ** pick up the appropriate opcode. */
       int j;
       i -= p->nOp;
       for(j=0; i>=apSub[j]->nOp; j++){
@@ -1123,6 +1142,11 @@ int sqlite3VdbeList(
       pMem->enc = SQLITE_UTF8;
       pMem++;
 
+      /* When an OP_Program opcode is encounter (the only opcode that has
+      ** a P4_SUBPROGRAM argument), expand the size of the array of subprograms
+      ** kept in p->aMem[9].z to hold the new program - assuming this subprogram
+      ** has not already been seen.
+      */
       if( pOp->p4type==P4_SUBPROGRAM ){
         int nByte = (nSub+1)*sizeof(SubProgram*);
         int j;

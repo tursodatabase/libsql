@@ -472,7 +472,7 @@ static void schemaIsValid(Parse *pParse){
     }
 
     /* Read the schema cookie from the database. If it does not match the 
-    ** value stored as part of the in the in-memory schema representation,
+    ** value stored as part of the in-memory schema representation,
     ** set Parse.rc to SQLITE_SCHEMA. */
     sqlite3BtreeGetMeta(pBt, BTREE_SCHEMA_VERSION, (u32 *)&cookie);
     if( cookie!=db->aDb[iDb].pSchema->schema_cookie ){

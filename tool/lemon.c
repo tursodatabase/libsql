@@ -491,6 +491,7 @@ void acttab_action(acttab *p, int lookahead, int action){
 */
 int acttab_insert(acttab *p){
   int i, j, k, n;
+  int nActtab;     /* Number of slots in the p->aAction[] table */
   assert( p->nLookahead>0 );
 
   /* Make sure we have enough space to hold the expanded action table
@@ -498,7 +499,8 @@ int acttab_insert(acttab *p){
   ** must be appended to the current action table
   */
   n = p->mxLookahead + 1;
-  if( p->nAction + n >= p->nActionAlloc ){
+  nActtab = p->nAction + n;
+  if( nActtab >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
     p->aAction = realloc( p->aAction,
@@ -516,11 +518,11 @@ int acttab_insert(acttab *p){
   /* Scan the existing action table looking for an offset where we can
   ** insert the current transaction set.  Fall out of the loop when that
   ** offset is found.  In the worst case, we fall out of the loop when
-  ** i reaches p->nAction, which means we append the new transaction set.
+  ** i reaches nActtab, which means we append the new transaction set.
   **
   ** i is the index in p->aAction[] where p->mnLookahead is inserted.
   */
-  for(i=p->nAction-1; i>=0; i--){
+  for(i=nActtab-1; i>=0; i--){
     /* First look for an existing action table entry that can be reused */
     if( p->aAction[i].lookahead==p->mnLookahead ){
       if( p->aAction[i].action!=p->mnAction ) continue;
@@ -543,7 +545,7 @@ int acttab_insert(acttab *p){
   }
   if( i<0 ){
     /* If no reusable entry is found, look for an empty slot */
-    for(i=0; i<p->nAction; i++){
+    for(i=0; i<nActtab; i++){
       if( p->aAction[i].lookahead<0 ){
         for(j=0; j<p->nLookahead; j++){
           k = p->aLookahead[j].lookahead - p->mnLookahead + i;

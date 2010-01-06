@@ -243,18 +243,17 @@ static int lookupName(
         int iCol;
         pSchema = pTab->pSchema;
         cntTab++;
-        if( sqlite3IsRowid(zCol) ){
-          iCol = -1;
-        }else{
-          for(iCol=0; iCol<pTab->nCol; iCol++){
-            Column *pCol = &pTab->aCol[iCol];
-            if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
-              if( iCol==pTab->iPKey ){
-                iCol = -1;
-              }
-              break;
+        for(iCol=0; iCol<pTab->nCol; iCol++){
+          Column *pCol = &pTab->aCol[iCol];
+          if( sqlite3StrICmp(pCol->zName, zCol)==0 ){
+            if( iCol==pTab->iPKey ){
+              iCol = -1;
             }
+            break;
           }
+        }
+        if( iCol>=pTab->nCol && sqlite3IsRowid(zCol) ){
+          iCol = -1;        /* IMP: R-44911-55124 */
         }
         if( iCol<pTab->nCol ){
           cnt++;
@@ -282,7 +281,7 @@ static int lookupName(
     */
     if( cnt==0 && cntTab==1 && sqlite3IsRowid(zCol) ){
       cnt = 1;
-      pExpr->iColumn = -1;
+      pExpr->iColumn = -1;     /* IMP: R-44911-55124 */
       pExpr->affinity = SQLITE_AFF_INTEGER;
     }
 

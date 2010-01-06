@@ -364,6 +364,8 @@ do_test schema-12.1 {
   list [sqlite3_step $::STMT] [sqlite3_finalize $::STMT]
 } {SQLITE_ERROR SQLITE_SCHEMA}
 
+ifcapable {auth} {
+
 do_test schema-13.1 {
   set S [sqlite3_prepare_v2 db "SELECT * FROM sqlite_master" -1 dummy]
   db function hello hello
@@ -383,5 +385,7 @@ do_test schema-13.2 {
 do_test schema-13.3 {
   sqlite3_finalize $S
 } {SQLITE_SCHEMA}
+
+}
 
 finish_test

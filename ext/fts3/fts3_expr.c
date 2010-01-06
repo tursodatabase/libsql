@@ -735,6 +735,7 @@ void sqlite3Fts3ExprFree(Fts3Expr *p){
   if( p ){
     sqlite3Fts3ExprFree(p->pLeft);
     sqlite3Fts3ExprFree(p->pRight);
+    sqlite3_free(p->aDoclist);
     sqlite3_free(p);
   }
 }

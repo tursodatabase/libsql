@@ -596,6 +596,7 @@ int main(int argc, char **argv){
   printf("int sqlite3KeywordCode(const unsigned char *z, int n){\n");
   printf("  return keywordCode((char*)z, n);\n");
   printf("}\n");
+  printf("#define SQLITE_N_KEYWORD %d\n", nKeyword);
 
   return 0;
 }

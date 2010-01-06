@@ -1,0 +1,105 @@
+# 2009 December 20
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+# This file contains tests of fts3 queries that have been useful during
+# the development process as well as some that have been useful in tracking
+# down bugs. They are not focused on any particular functionality.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If this build does not include FTS3, skip the tests in this file.
+#
+ifcapable !fts3 { finish_test ; return }
+source $testdir/fts3_common.tcl
+set DO_MALLOC_TEST 0
+
+do_test fts3query-1.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t1 USING fts3(x);
+    BEGIN;
+      INSERT INTO t1 VALUES('The source code for SQLite is in the public');
+  }
+} {}
+
+do_select_test fts3query-1.2 {
+  SELECT * FROM t1;
+} {{The source code for SQLite is in the public}}
+do_select_test fts3query-1.3 {
+  SELECT * FROM t1 WHERE t1 MATCH 'sqlite'
+} {{The source code for SQLite is in the public}}
+
+do_test fts3query-1.4 { execsql {COMMIT} } {}
+
+do_select_test fts3query-1.5 {
+  SELECT * FROM t1;
+} {{The source code for SQLite is in the public}}
+do_select_test fts3query-1.6 {
+  SELECT * FROM t1 WHERE t1 MATCH 'sqlite'
+} {{The source code for SQLite is in the public}}
+
+
+set sqlite_fts3_enable_parentheses 1
+do_test fts3query-2.1 {
+  execsql {
+    CREATE VIRTUAL TABLE zoink USING fts3;
+    INSERT INTO zoink VALUES('The apple falls far from the tree');
+  }
+} {}
+do_test fts3query-2.2 {
+  execsql {
+    SELECT docid FROM zoink WHERE zoink MATCH '(apple oranges) AND apple'
+  }
+} {}
+do_test fts3query-2.3 {
+  execsql {
+    SELECT docid FROM zoink WHERE zoink MATCH 'apple AND (oranges apple)'
+  }
+} {}
+set sqlite_fts3_enable_parentheses 0
+
+do_test fts3query-3.1 {
+  execsql {
+    CREATE VIRTUAL TABLE foobar using FTS3(description, tokenize porter);
+    INSERT INTO foobar (description) values ('
+      Filed under: Emerging Technologies, EV/Plug-in, Hybrid, Chevrolet, GM, 
+      ZENN 2011 Chevy Volt - Click above for high-res image gallery There are 
+      16 days left in the month of December. Besides being time for most 
+      Americans to kick their Christmas shopping sessions into high gear and
+      start planning their resolutions for 2010, it also means that there''s
+      precious little time for EEStor to "deliver functional technology" to
+      Zenn Motors as promised. Still, the promises held out by the secretive
+      company are too great for us to forget about entirely. We''d love for
+      EEStor''s claims to be independently verified and proven accurate, as
+      would just about anyone else looking to break free of petroleum in fav
+    '); 
+  }
+} {}
+
+do_test fts3query-3.2 {
+  execsql { SELECT docid FROM foobar WHERE description MATCH '"high sp d"' }
+} {}
+
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
+do_test fts3query-3.3 {
+  execsql { SELECT mit(matchinfo(foobar)) FROM foobar WHERE foobar MATCH 'the' }
+} {{1 1 3 3}}
+
+finish_test
+

@@ -364,7 +364,7 @@ void sqlite3DeleteFrom(
     sqlite3VdbeAddOp2(v, OP_Null, 0, iRowSet);
     pWInfo = sqlite3WhereBegin(pParse, pTabList, pWhere,0,WHERE_DUPLICATES_OK);
     if( pWInfo==0 ) goto delete_from_cleanup;
-    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, iRowid, 0);
+    regRowid = sqlite3ExprCodeGetColumn(pParse, pTab, -1, iCur, iRowid);
     sqlite3VdbeAddOp2(v, OP_RowSetAdd, iRowSet, regRowid);
     if( db->flags & SQLITE_CountRows ){
       sqlite3VdbeAddOp2(v, OP_AddImm, memCnt, 1);
@@ -630,7 +630,6 @@ int sqlite3GenerateIndexKey(
   if( doMakeRec ){
     sqlite3VdbeAddOp3(v, OP_MakeRecord, regBase, nCol+1, regOut);
     sqlite3VdbeChangeP4(v, -1, sqlite3IndexAffinityStr(v, pIdx), 0);
-    sqlite3ExprCacheAffinityChange(pParse, regBase, nCol+1);
   }
   sqlite3ReleaseTempRange(pParse, regBase, nCol+1);
   return regBase;

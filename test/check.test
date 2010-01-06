@@ -239,43 +239,43 @@ do_test check-4.3 {
     SELECT * FROM t4
   }
 } {4 3}
-do_test check-4.3 {
+do_test check-4.4 {
   execsql {
     UPDATE t4 SET x=12, y=2;
     SELECT * FROM t4
   }
 } {12 2}
-do_test check-4.4 {
+do_test check-4.5 {
   execsql {
     UPDATE t4 SET x=12, y=-22;
     SELECT * FROM t4
   }
 } {12 -22}
-do_test check-4.5 {
+do_test check-4.6 {
   catchsql {
     UPDATE t4 SET x=0, y=1;
   }
 } {1 {constraint failed}}
-do_test check-4.6 {
+do_test check-4.7 {
   execsql {
     SELECT * FROM t4;
   }
 } {12 -22}
-do_test check-4.7 {
+do_test check-4.8 {
   execsql {
     PRAGMA ignore_check_constraints=ON;
     UPDATE t4 SET x=0, y=1;
     SELECT * FROM t4;
   }
 } {0 1}
-do_test check-4.8 {
+do_test check-4.9 {
   catchsql {
     PRAGMA ignore_check_constraints=OFF;
     UPDATE t4 SET x=0, y=2;
   }
 } {1 {constraint failed}}
 ifcapable vacuum {
-  do_test check_4.9 {
+  do_test check_4.10 {
     catchsql {
       VACUUM
     }

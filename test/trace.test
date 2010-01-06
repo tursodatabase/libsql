@@ -59,12 +59,12 @@ do_test trace-2.1 {
   db trace trace_proc
   proc trace_proc sql {
     global TRACE_OUT
-    set TRACE_OUT $sql
+    lappend TRACE_OUT [string trim $sql]
   }
   set TRACE_OUT {}
   sqlite3_step $STMT
   set TRACE_OUT
-} {INSERT INTO t1 VALUES(2,3)}
+} {{INSERT INTO t1 VALUES(2,3)}}
 do_test trace-2.2 {
   set TRACE_OUT {}
   sqlite3_reset $STMT
@@ -73,14 +73,21 @@ do_test trace-2.2 {
 do_test trace-2.3 {
   sqlite3_step $STMT
   set TRACE_OUT
-} {INSERT INTO t1 VALUES(2,3)}
+} {{INSERT INTO t1 VALUES(2,3)}}
 do_test trace-2.4 {
+  set TRACE_OUT {}
   execsql {SELECT * FROM t1}
 } {1 2 2 3 2 3}
 do_test trace-2.5 {
   set TRACE_OUT
-} {SELECT * FROM t1}
+} {{SELECT * FROM t1}}
 catch {sqlite3_finalize $STMT}
+
+do_test trace-2.6 {
+  set TRACE_OUT {}
+  db eval VACUUM
+  set TRACE_OUT
+} {VACUUM}
 
 # Similar tests, but this time for profiling.
 # 
@@ -122,12 +129,12 @@ do_test trace-4.1 {
   db trace trace_proc
   proc profile_proc {sql tm} {
     global TRACE_OUT
-    set TRACE_OUT $sql
+    lappend TRACE_OUT [string trim $sql]
   }
   set TRACE_OUT {}
   sqlite3_step $STMT
   set TRACE_OUT
-} {INSERT INTO t2 VALUES(2,3)}
+} {{INSERT INTO t2 VALUES(2,3)}}
 do_test trace-4.2 {
   set TRACE_OUT {}
   sqlite3_reset $STMT
@@ -136,13 +143,14 @@ do_test trace-4.2 {
 do_test trace-4.3 {
   sqlite3_step $STMT
   set TRACE_OUT
-} {INSERT INTO t2 VALUES(2,3)}
+} {{INSERT INTO t2 VALUES(2,3)}}
 do_test trace-4.4 {
+  set TRACE_OUT {}
   execsql {SELECT * FROM t1}
 } {1 2 2 3 2 3}
 do_test trace-4.5 {
   set TRACE_OUT
-} {SELECT * FROM t1}
+} {{SELECT * FROM t1}}
 catch {sqlite3_finalize $STMT}
 
 # Trigger tracing.
@@ -229,7 +237,7 @@ do_test trace-6.200 {
   set TRACE_OUT {}
   execsql {SELECT '$::t6str', [$::t6str], $::t6str, ?1, "?1", $::t6str FROM t6}
 } {{$::t6str} 1 {test-six y'all} {test-six y'all} 2 {test-six y'all}}
-do_test trace-6.101 {
+do_test trace-6.201 {
   set TRACE_OUT
 } {{SELECT '$::t6str', [$::t6str], 'test-six y''all', 'test-six y''all', "?1", 'test-six y''all' FROM t6}}
 

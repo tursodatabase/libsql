@@ -86,6 +86,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   int saved_flags;        /* Saved value of the db->flags */
   int saved_nChange;      /* Saved value of db->nChange */
   int saved_nTotalChange; /* Saved value of db->nTotalChange */
+  void (*saved_xTrace)(void*,const char*);  /* Saved db->xTrace */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
   int isMemDb;            /* True if vacuuming a :memory: database */
   int nRes;
@@ -101,8 +102,10 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   saved_flags = db->flags;
   saved_nChange = db->nChange;
   saved_nTotalChange = db->nTotalChange;
+  saved_xTrace = db->xTrace;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
   db->flags &= ~SQLITE_ForeignKeys;
+  db->xTrace = 0;
 
   pMain = db->aDb[0].pBt;
   isMemDb = sqlite3PagerIsMemdb(sqlite3BtreePager(pMain));
@@ -283,6 +286,7 @@ end_of_vacuum:
   db->flags = saved_flags;
   db->nChange = saved_nChange;
   db->nTotalChange = saved_nTotalChange;
+  db->xTrace = saved_xTrace;
 
   /* Currently there is an SQL level transaction open on the vacuum
   ** database. No locks are held on any other files (since the main file

@@ -21,7 +21,7 @@
 
 package require sqlite3
 
-set CLI "./sqlite"
+set CLI "./sqlite3"
 
 proc do_test {name cmd expected} {
   puts -nonewline "$name ..."
@@ -45,7 +45,7 @@ proc catchsql {sql} {
   list $rc $msg
 }
 
-proc catchcmd {db cmd} {
+proc catchcmd {db {cmd ""}} {
   global CLI
   set out [open cmds.txt w]
   puts $out $cmd
@@ -81,5 +81,21 @@ do_test shell2-1.2.1 {
        [regexp {Error: too many options: "select 4"} $msg]
 } {1 1}
 
+# Test a problem reported on the mailing list. The shell was at one point
+# returning the generic SQLITE_ERROR message ("SQL error or missing database")
+# instead of the "too many levels..." message in the test below.
+#
+do_test shell2-1.3 {
+  catchcmd "-batch test.db" {
+    PRAGMA recursive_triggers = ON;
+    CREATE TABLE t5(a PRIMARY KEY, b, c);
+    INSERT INTO t5 VALUES(1, 2, 3);
+    CREATE TRIGGER au_tble AFTER UPDATE ON t5 BEGIN
+      UPDATE OR IGNORE t5 SET a = new.a, c = 10;
+    END;
+
+    UPDATE OR REPLACE t5 SET a = 4 WHERE a = 1;
+  }
+} {1 {Error: near line 9: too many levels of trigger recursion}}
 
 

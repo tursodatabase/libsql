@@ -3160,7 +3160,7 @@ static Bitmask codeOneLoopStart(
     nConstraint = nEq;
     if( pRangeEnd ){
       Expr *pRight = pRangeEnd->pExpr->pRight;
-      sqlite3ExprCacheRemove(pParse, regBase+nEq);
+      sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
       if( zAff ){
@@ -3295,7 +3295,8 @@ static Bitmask codeOneLoopStart(
       pOrTab = sqlite3StackAllocRaw(pParse->db,
                             sizeof(*pOrTab)+ nNotReady*sizeof(pOrTab->a[0]));
       if( pOrTab==0 ) return notReady;
-      pOrTab->nSrc = pOrTab->nAlloc = nNotReady + 1;
+      pOrTab->nAlloc = (i16)(nNotReady + 1);
+      pOrTab->nSrc = pOrTab->nAlloc;
       memcpy(pOrTab->a, pTabItem, sizeof(*pTabItem));
       origSrc = pWInfo->pTabList->a;
       for(k=1; k<=nNotReady; k++){
@@ -3336,7 +3337,7 @@ static Bitmask codeOneLoopStart(
             int iSet = ((ii==pOrWc->nTerm-1)?-1:ii);
             int r;
             r = sqlite3ExprCodeGetColumn(pParse, pTabItem->pTab, -1, iCur, 
-                                         regRowid, 0);
+                                         regRowid);
             sqlite3VdbeAddOp4Int(v, OP_RowSetTest, regRowset,
                                  sqlite3VdbeCurrentAddr(v)+2, r, iSet);
           }

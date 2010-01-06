@@ -964,15 +964,19 @@ proc copy_file {from to} {
 
 # Drop all tables in database [db]
 proc drop_all_tables {{db db}} {
-  set pk [$db one "PRAGMA foreign_keys"]
-  $db eval "PRAGMA foreign_keys = OFF"
+  ifcapable trigger&&foreignkey {
+    set pk [$db one "PRAGMA foreign_keys"]
+    $db eval "PRAGMA foreign_keys = OFF"
+  }
   foreach {t type} [$db eval {
     SELECT name, type FROM sqlite_master 
     WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
   }] {
     $db eval "DROP $type $t"
   }
-  $db eval " PRAGMA foreign_keys = $pk "
+  ifcapable trigger&&foreignkey {
+    $db eval "PRAGMA foreign_keys = $pk"
+  }
 }
 
 

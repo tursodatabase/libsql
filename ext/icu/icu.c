@@ -454,7 +454,7 @@ int sqlite3IcuInit(sqlite3 *db){
     void *pContext;                           /* sqlite3_user_data() context */
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp",-1, SQLITE_ANY,          0, icuRegexpFunc},
+    {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
 
     {"lower",  1, SQLITE_UTF16,        0, icuCaseFunc16},
     {"lower",  2, SQLITE_UTF16,        0, icuCaseFunc16},
