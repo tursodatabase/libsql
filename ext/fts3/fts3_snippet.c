@@ -450,6 +450,9 @@ int fts3SnippetShift(
 
       pMod = (sqlite3_tokenizer_module *)pTab->pTokenizer->pModule;
       rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
+      if( rc!=SQLITE_OK ){
+        return rc;
+      }
       pC->pTokenizer = pTab->pTokenizer;
       while( rc==SQLITE_OK && iCurrent<(nSnippet+nDesired) ){
         const char *ZDUMMY; int DUMMY1, DUMMY2, DUMMY3;

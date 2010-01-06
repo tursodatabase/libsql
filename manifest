@@ -1,5 +1,5 @@
-C Change\sthe\sfts3\ssnippet\sfunction\sto\sreturn\s(hopefully)\smore\srelevant\ssnippets\sin\sless\stime.
-D 2010-01-06T17:19:22
+C Fix\sa\ssegfault\sthat\scan\soccur\sfollowing\san\sOOM\sin\sthe\sFTS3\ssnippet()\sfunction
+D 2010-01-06T18:36:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,7 +64,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c 612b3ad63abf2c5c85b6a46aac94bd90280e905a
+F ext/fts3/fts3_snippet.c f3d4bc931f041d8eddaab7e9a9328381e799a31e
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -784,7 +784,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 077a6bee2dd4668a5b13c37aa7d4c052350ec782
-R 63513c05ce3003328b753382175b1505
+P 8a208223a74d451f60d9cd707d63fb7d157d1737
+R 83ede8c4e7ec647a7bad4aa471ed9d37
 U dan
-Z 7955c05e9b09116e00ebafe15af16394
+Z d18fd5f25c622057e3ab533cbe2570aa
