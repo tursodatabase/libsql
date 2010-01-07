@@ -1,5 +1,8 @@
-C Changes\sto\stest\scode\sso\sthat\stestfixture\scompiles\swhen\sOMIT_SHARED_CACHE\sand\sOMIT_UTF16\sare\sdefined.
-D 2010-01-07T11:27:31
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sthe\sexpression\scomparison\slogic\sto\stake\sthe\sCOLLATE\soperator\sinto\saccount.\nTicket\s[360c6073e197]
+D 2010-01-07T15:17:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +119,7 @@ F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
 F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
-F src/expr.c d695300ba8b7a42d6b27a52d0288b974c89bf698
+F src/expr.c b186cb2a2bab8fae4bbee4582a1c92cfc8d6aad3
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c 69906340991919b4933dd8630774ad069e4d582e
@@ -124,7 +127,7 @@ F src/global.c 75946a4a2ab41c6ae58f10ca0ed31b3449694b26
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c f9c6098988675ac258b2f98ea5f7e370fc9990fa
+F src/insert.c 11eeb4f2e5d57b7c106f0c28eea8d0dd896dfd70
 F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c 9304428e71b1d622b764913e1432e69156814755
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -160,7 +163,7 @@ F src/pragma.c 6936d7df5e04b9f996f8f320d15e65b6944b2caa
 F src/prepare.c 170bd953058efe1c46b8ad9020d49cd6f40f0b45
 F src/printf.c 644bc7d59df3dc56d6d8b9a510914bfc6b51bc69
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c 69a45df25039eb58e321653914ad670ffe49d486
+F src/resolve.c 56ecd50851afa9dbcc1803ef86a9b17b3f3d3b89
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 0109b993c360d649857523abb72919e1794f9b45
 F src/shell.c b95c5fcfe458027f192914a47474652969a1ec0f
@@ -433,7 +436,7 @@ F test/init.test 3f9e97948cf2335c08a5e3edc3df3a26cdaa76f2
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
-F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
+F test/insert4.test c1469999a58e86a85b74df645a820f4cc7a8273b
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
@@ -500,7 +503,7 @@ F test/memsubsys1.test fd8a33046b6e758e3eb93747dc4eec21fe56bf64
 F test/memsubsys2.test 72a731225997ad5e8df89fdbeae9224616b6aecc
 F test/minmax.test 722d80816f7e096bf2c04f4111f1a6c1ba65453d
 F test/minmax2.test 33504c01a03bd99226144e4b03f7631a274d66e0
-F test/minmax3.test 94742aa922153953ce3562702815e4f1f079bdb8
+F test/minmax3.test a38686c33b07d595e98a2fc6d3aa84a5e886a972
 F test/misc1.test 1b89c02c4a33b49dee4cd1d20d161aaaba719075
 F test/misc2.test a628db7b03e18973e5d446c67696b03de718c9fd
 F test/misc3.test 72c5dc87a78e7865c5ec7a969fc572913dbe96b6
@@ -784,7 +787,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3b5ccd2682176929f4da8a3f39a7e8f58b179f18
-R af20b3790ea978fec44add9031dd631c
-U dan
-Z 0fa44c75cc7974ccbaf267c317a458e5
+P d6ee5ff6c815e3aadd92d331560b529394eae661
+R 8a8b46968fc71c4a14b23f3c5b724baa
+U drh
+Z 8aa04fbf144e000aa38deafde10e964c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLRfryoxKgR168RlERAoWYAJkBzgNbrhQEOwANUltOu1MbTLB+fQCeNI4J
+z1KroLxlemLylQvQzuGxJ/c=
+=1fiA
+-----END PGP SIGNATURE-----

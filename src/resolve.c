@@ -686,7 +686,7 @@ static int resolveOrderByTermToExprList(
   ** result-set entry.
   */
   for(i=0; i<pEList->nExpr; i++){
-    if( sqlite3ExprCompare(pEList->a[i].pExpr, pE) ){
+    if( sqlite3ExprCompare(pEList->a[i].pExpr, pE)<2 ){
       return i+1;
     }
   }
