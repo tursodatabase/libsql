@@ -1,5 +1,8 @@
-C Fix\sa\ssegfault\sthat\scan\soccur\sfollowing\san\sOOM\sin\sthe\sFTS3\ssnippet()\sfunction
-D 2010-01-06T18:36:27
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Another\sattempt\sat\sfixing\sthe\stable\sgenerator\sin\slemon.\s\sAgain,\sthis\sdoes\nnot\seffect\sthe\sSQLite\sgrammar.
+D 2010-01-07T03:53:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -760,7 +763,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c f3a625c38b5621674f27775b307ea100b6a7b62d
+F tool/lemon.c 102000370ae3de57e1198faffbccf3b1d71d6f75
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -784,7 +787,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8a208223a74d451f60d9cd707d63fb7d157d1737
-R 83ede8c4e7ec647a7bad4aa471ed9d37
-U dan
-Z d18fd5f25c622057e3ab533cbe2570aa
+P c7e5966e3b031672f149d0b6e1f75f9bc40868fa
+R c71e215e8efe7e980817f2247ed81780
+U drh
+Z eaa58ce585624f7f98bd421d59de7fbe
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLRVqjoxKgR168RlERAr98AJ0fYlm+0rcqam2O2GKZRNuoWdSXiwCeKGNO
+zIN2JBTaxHsvBtPlPjm5964=
+=BXEN
+-----END PGP SIGNATURE-----
