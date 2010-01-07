@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Another\sattempt\sat\sfixing\sthe\stable\sgenerator\sin\slemon.\s\sAgain,\sthis\sdoes\nnot\seffect\sthe\sSQLite\sgrammar.
-D 2010-01-07T03:53:04
+C Fixes\sto\sproblems\sin\sFTS3\ssnippet()\sfunction\sfound\sby\sth3\stests.
+D 2010-01-07T10:54:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 04e95afa45789d7a3da59f458d4a8c1879c31446
+F ext/fts3/fts3.c 7b1969f6b958059ab7c6c8450fa4f27cf88681c7
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 45bc7e284806042119722c8f4127ee944b77f0dd
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
@@ -67,7 +64,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c f3d4bc931f041d8eddaab7e9a9328381e799a31e
+F ext/fts3/fts3_snippet.c 210bd2a9336e25d4d82a2e81c85abd9b9f8f31ca
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -408,7 +405,7 @@ F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test ca21717993f51caa7e36231dba2499868f3f8a6f
 F test/fts3rnd.test 153b4214bad6084a348814f3dd651a92e2f31d9b
-F test/fts3snippet.test bfbceb2e292ddfdc6bb0b1b252ccea78bd6091be
+F test/fts3snippet.test 16a05b313bf85da4d0b5cb683549fc2279430fbe
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -787,14 +784,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c7e5966e3b031672f149d0b6e1f75f9bc40868fa
-R c71e215e8efe7e980817f2247ed81780
-U drh
-Z eaa58ce585624f7f98bd421d59de7fbe
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLRVqjoxKgR168RlERAr98AJ0fYlm+0rcqam2O2GKZRNuoWdSXiwCeKGNO
-zIN2JBTaxHsvBtPlPjm5964=
-=BXEN
------END PGP SIGNATURE-----
+P e22c090f35b3a2bac64781d33aa1123ed765dbbf
+R c4c872b237c2eb5c969c1e58ad74f097
+U dan
+Z 9b608ddefd032d66f262f5c7928a6a08

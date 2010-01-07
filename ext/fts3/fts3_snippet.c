@@ -45,12 +45,10 @@ static int fts3ExprIterate(
 ){
   int rc;
   int eType = pExpr->eType;
-  if( eType==FTSQUERY_NOT ){
-    rc = SQLITE_OK;
-  }else if( eType!=FTSQUERY_PHRASE ){
+  if( eType!=FTSQUERY_PHRASE ){
     assert( pExpr->pLeft && pExpr->pRight );
     rc = fts3ExprIterate(pExpr->pLeft, x, pCtx);
-    if( rc==SQLITE_OK ){
+    if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
       rc = fts3ExprIterate(pExpr->pRight, x, pCtx);
     }
   }else{
@@ -108,7 +106,7 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, void *ctx){
     rc = sqlite3Fts3ExprLoadDoclist(p->pTab, pExpr);
     pExpr->isLoaded = 1;
     if( rc==SQLITE_OK ){
-      fts3ExprNearTrim(pExpr);
+      rc = fts3ExprNearTrim(pExpr);
     }
   }
 
@@ -459,10 +457,10 @@ int fts3SnippetShift(
         rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &DUMMY2, &DUMMY3, &iCurrent);
       }
       pMod->xClose(pC);
-      if( rc!=SQLITE_OK && rc!=SQLITE_DONE ){
-        return rc;
-      }
-      nShift = iCurrent-nSnippet;
+      if( rc!=SQLITE_OK && rc!=SQLITE_DONE ){ return rc; }
+
+      nShift = (rc==SQLITE_DONE)+iCurrent-nSnippet;
+      assert( nShift<=nDesired );
       if( nShift>0 ){
         *piPos += nShift;
         *pHlmask = hlmask >> nShift;
@@ -475,6 +473,8 @@ int fts3SnippetShift(
 static int fts3SnippetText(
   Fts3Cursor *pCsr,               /* FTS3 Cursor */
   SnippetFragment *pFragment,     /* Snippet to extract */
+  int iFragment,                  /* Fragment number */
+  int isLast,                     /* True for final fragment in snippet */
   int nSnippet,                   /* Number of tokens in extracted snippet */
   const char *zOpen,              /* String inserted before highlighted term */
   const char *zClose,             /* String inserted after highlighted term */
@@ -486,7 +486,6 @@ static int fts3SnippetText(
   const char *zDoc;               /* Document text to extract snippet from */
   int nDoc;                       /* Size of zDoc in bytes */
   int iCurrent = 0;               /* Current token number of document */
-  int iStart = 0;                 /* Byte offset of current token */
   int iEnd = 0;                   /* Byte offset of end of current token */
   int isShiftDone = 0;
   int iPos = pFragment->iPos;
@@ -495,7 +494,7 @@ static int fts3SnippetText(
   sqlite3_tokenizer_module *pMod; /* Tokenizer module methods object */
   sqlite3_tokenizer_cursor *pC;   /* Tokenizer cursor open on zDoc/nDoc */
   const char *ZDUMMY;             /* Dummy arguments used with tokenizer */
-  int DUMMY1, DUMMY2, DUMMY3;     /* Dummy arguments used with tokenizer */
+  int DUMMY1;                     /* Dummy arguments used with tokenizer */
   
   zDoc = (const char *)sqlite3_column_text(pCsr->pStmt, pFragment->iCol+1);
   if( zDoc==0 ){
@@ -506,10 +505,7 @@ static int fts3SnippetText(
   }
   nDoc = sqlite3_column_bytes(pCsr->pStmt, pFragment->iCol+1);
 
-  /* Open a token cursor on the document. Read all tokens up to and 
-  ** including token iPos (the first token of the snippet). Set variable
-  ** iStart to the byte offset in zDoc of the start of token iPos.
-  */
+  /* Open a token cursor on the document. */
   pMod = (sqlite3_tokenizer_module *)pTab->pTokenizer->pModule;
   rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
   if( rc!=SQLITE_OK ){
@@ -518,50 +514,54 @@ static int fts3SnippetText(
   pC->pTokenizer = pTab->pTokenizer;
 
   while( rc==SQLITE_OK ){
-    int iBegin;
-    int iFin;
+    int iBegin;                   /* Offset in zDoc of start of token */
+    int iFin;                     /* Offset in zDoc of end of token */
+    int isHighlight;
+
     rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &iBegin, &iFin, &iCurrent);
-
-    if( rc==SQLITE_OK ){
-      if( iCurrent<iPos ) continue;
-
-      if( !isShiftDone ){
-        int n = nDoc - iBegin;
-        rc = fts3SnippetShift(pTab, nSnippet, &zDoc[iBegin], n, &iPos, &hlmask);
-        if( rc!=SQLITE_OK || iCurrent<iPos ) continue;
-      }
-      if( iCurrent==iPos ){
-        iStart = iEnd = iBegin;
-      }
-
-      if( iCurrent>=(iPos+nSnippet) ){
-        rc = SQLITE_DONE;
-      }else{
-        iEnd = iFin;
-        if( hlmask & ((u64)1 << (iCurrent-iPos)) ){
-          if( fts3StringAppend(pOut, &zDoc[iStart], iBegin-iStart)
-           || fts3StringAppend(pOut, zOpen, -1)
-           || fts3StringAppend(pOut, &zDoc[iBegin], iEnd-iBegin)
-           || fts3StringAppend(pOut, zClose, -1)
-          ){
-            rc = SQLITE_NOMEM;
-          }
-          iStart = iEnd;
-        }
-      }
-    }
-  }
-  assert( rc!=SQLITE_OK );
-  if( rc==SQLITE_DONE ){
-    rc = fts3StringAppend(pOut, &zDoc[iStart], iEnd-iStart);
-    if( rc==SQLITE_OK ){
-      rc = pMod->xNext(pC, &ZDUMMY, &DUMMY1, &DUMMY2, &DUMMY3, &iCurrent);
+    if( rc!=SQLITE_OK ){
       if( rc==SQLITE_DONE ){
+        /* Special case - the last token of the snippet is also the last token
+        ** of the column. Append any punctuation that occurred between the end
+        ** of the previous token and the end of the document to the output. 
+        ** Then break out of the loop. */
         rc = fts3StringAppend(pOut, &zDoc[iEnd], -1);
-      }else if( rc==SQLITE_OK && zEllipsis ){
+      }
+      break;
+    }
+    if( iCurrent<iPos ){ continue; }
+
+    if( !isShiftDone ){
+      int n = nDoc - iBegin;
+      rc = fts3SnippetShift(pTab, nSnippet, &zDoc[iBegin], n, &iPos, &hlmask);
+      isShiftDone = 1;
+
+      /* Now that the shift has been done, check if the initial "..." are
+      ** required. They are required if (a) this is not the first fragment,
+      ** or (b) this fragment does not begin at position 0 of its column. 
+      */
+      if( rc==SQLITE_OK && (iPos>0 || iFragment>0) ){
         rc = fts3StringAppend(pOut, zEllipsis, -1);
       }
+      if( rc!=SQLITE_OK || iCurrent<iPos ) continue;
     }
+
+    if( iCurrent>=(iPos+nSnippet) ){
+      if( isLast ){
+        rc = fts3StringAppend(pOut, zEllipsis, -1);
+      }
+      break;
+    }
+
+    /* Set isHighlight to true if this term should be highlighted. */
+    isHighlight = (hlmask & ((u64)1 << (iCurrent-iPos)))!=0;
+
+    if( iCurrent>iPos ) rc = fts3StringAppend(pOut, &zDoc[iEnd], iBegin-iEnd);
+    if( rc==SQLITE_OK && isHighlight ) rc = fts3StringAppend(pOut, zOpen, -1);
+    if( rc==SQLITE_OK ) rc = fts3StringAppend(pOut, &zDoc[iBegin], iFin-iBegin);
+    if( rc==SQLITE_OK && isHighlight ) rc = fts3StringAppend(pOut, zClose, -1);
+
+    iEnd = iFin;
   }
 
   pMod->xClose(pC);
@@ -803,13 +803,9 @@ void sqlite3Fts3Snippet(
   assert( nFToken>0 );
 
   for(i=0; i<nSnippet && rc==SQLITE_OK; i++){
-    SnippetFragment *p = &aSnippet[i];
-    const char *zTail = ((i==nSnippet-1) ? zEllipsis : 0);
-
-    if( i>0 || p->iPos>0 ){
-      fts3StringAppend(&res, zEllipsis, -1);
-    }
-    rc = fts3SnippetText(pCsr, p, nFToken, zStart, zEnd, zTail, &res);
+    rc = fts3SnippetText(pCsr, &aSnippet[i], 
+        i, (i==nSnippet-1), nFToken, zStart, zEnd, zEllipsis, &res
+    );
   }
 
  snippet_out:
@@ -951,7 +947,7 @@ void sqlite3Fts3Offsets(
           sqlite3_snprintf(sizeof(aBuffer), aBuffer, 
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
-          fts3StringAppend(&res, aBuffer, -1);
+          rc = fts3StringAppend(&res, aBuffer, -1);
         }
       }
     }

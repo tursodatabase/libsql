@@ -2176,7 +2176,7 @@ static void fts3SnippetFunc(
   const char *zEnd = "</b>";
   const char *zEllipsis = "<b>...</b>";
   int iCol = -1;
-  int nToken = 15;
+  int nToken = 15;                /* Default number of tokens in snippet */
 
   /* There must be at least one argument passed to this function (otherwise
   ** the non-overloaded version would have been called instead of this one).

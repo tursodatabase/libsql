@@ -1,9 +1,29 @@
+# 2010 January 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+#
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-# If SQLITE_ENABLE_FTS3 is defined, omit this file.
+# If SQLITE_ENABLE_FTS3 is not defined, omit this file.
 ifcapable !fts3 { finish_test ; return }
+
+# Transform the list $L to its "normal" form. So that it can be compared to
+# another list with the same set of elements using [string compare].
+#
+proc normalize {L} {
+  set ret [list]
+  foreach l $L {lappend ret $l}
+  return $ret
+}
 
 do_test fts3snippet-1.1 {
   execsql {
@@ -11,12 +31,6 @@ do_test fts3snippet-1.1 {
     INSERT INTO ft VALUES('xxx xxx xxx xxx');
   }
 } {}
-
-proc normalize {L} {
-  set ret [list]
-  foreach l $L {lappend ret $l}
-  return $ret
-}
 
 do_test fts3snippet-1.2 {
   execsql { SELECT offsets(ft) FROM ft WHERE ft MATCH 'xxx' }
@@ -63,6 +77,32 @@ do_test fts3snippet-1.5 {
     0 0 12 3
     0 2 12 3
 }]]
+
+do_test fts3snippet-2.1 {
+  execsql {
+    DROP TABLE IF EXISTS ft;
+    CREATE VIRTUAL TABLE ft USING fts3;
+    INSERT INTO ft VALUES('one two three four five six seven eight nine ten');
+  }
+} {}
+foreach {tn expr res} {
+   1 one       "[one] two three four five..."
+   2 two       "one [two] three four five..."
+   3 three     "one two [three] four five..."
+   4 four      "...two three [four] five six..."
+   5 five      "...three four [five] six seven..."
+   6 six       "...four five [six] seven eight..."
+   7 seven     "...five six [seven] eight nine..."
+   8 eight     "...six seven [eight] nine ten"
+   9 nine      "...six seven eight [nine] ten"
+  10 ten       "...six seven eight nine [ten]"
+} {
+  do_test fts3snippet-2.2.$tn {
+    execsql {
+      SELECT snippet(ft, '[', ']', '...', 0, 5) FROM ft WHERE ft MATCH $expr
+    }
+  } [list $res]
+}
 
 finish_test
 
