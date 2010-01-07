@@ -76,8 +76,12 @@ set db_pgsz [db eval {PRAGMA page_size}]
 db close
 set db_npage [expr {$db_fsize / $db_pgsz}]
 
+# restore in case get the page_size above changed things
+copy_file $db_name.org $db_name
+copy_file $jrnl_name.org $jrnl_name
+
 # calculate checksum nonce
-set pgno 1
+set pgno 0
 set pg_offset [expr $sectsz+((4+$db_pgsz+4)*$pgno)]
 set nonce [hexio_get_int [hexio_read $jrnl_name [expr $pg_offset+4+$db_pgsz] 4]]
 for {set i [expr $db_pgsz-200]} {$i>0} {set i [expr $i-200]} {
@@ -107,6 +111,6 @@ hexio_write $jrnl_name 24 [format %08x $db_pgsz]
 sqlite3 db $db_name
 do_test restore_jrnl-1.0 {
   catchsql {PRAGMA integrity_check}
-} {0 {ok}}
+} {0 ok}
 
 db close
