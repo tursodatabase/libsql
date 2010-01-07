@@ -219,7 +219,7 @@ static int btree_cursor(
   Btree *pBt;
   int iTable;
   BtCursor *pCur;
-  int rc;
+  int rc = SQLITE_OK;
   int wrFlag;
   char zBuf[30];
 
@@ -234,7 +234,9 @@ static int btree_cursor(
   pCur = (BtCursor *)ckalloc(sqlite3BtreeCursorSize());
   memset(pCur, 0, sqlite3BtreeCursorSize());
   sqlite3BtreeEnter(pBt);
+#ifndef SQLITE_OMIT_SHARED_CACHE
   rc = sqlite3BtreeLockTable(pBt, iTable, wrFlag);
+#endif
   if( rc==SQLITE_OK ){
     rc = sqlite3BtreeCursor(pBt, iTable, wrFlag, 0, pCur);
   }

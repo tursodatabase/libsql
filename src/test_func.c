@@ -341,6 +341,7 @@ static void testHexToBin(const char *zIn, char *zOut){
 ** Convert the input string from HEX into binary.  Then return the
 ** result using sqlite3_result_text16le().
 */
+#ifndef SQLITE_OMIT_UTF16
 static void testHexToUtf16be(
   sqlite3_context *pCtx, 
   int nArg,
@@ -360,6 +361,7 @@ static void testHexToUtf16be(
     sqlite3_result_text16be(pCtx, zOut, n/2, sqlite3_free);
   }
 }
+#endif
 
 /*
 **      hex_to_utf8(HEX)
@@ -393,6 +395,7 @@ static void testHexToUtf8(
 ** Convert the input string from HEX into binary.  Then return the
 ** result using sqlite3_result_text16le().
 */
+#ifndef SQLITE_OMIT_UTF16
 static void testHexToUtf16le(
   sqlite3_context *pCtx, 
   int nArg,
@@ -412,6 +415,7 @@ static void testHexToUtf16le(
     sqlite3_result_text16le(pCtx, zOut, n/2, sqlite3_free);
   }
 }
+#endif
 
 static int registerTestFunctions(sqlite3 *db){
   static const struct {
