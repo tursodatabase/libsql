@@ -1,5 +1,8 @@
-C Added\soption\sto\sdump\spages.
-D 2010-01-08T04:50:22
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Update\scomments\sin\sfts3.c\sto\smore\saccurately\sdescribe\sthe\sdoclist\sformat.
+D 2010-01-08T23:01:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +59,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 7b1969f6b958059ab7c6c8450fa4f27cf88681c7
+F ext/fts3/fts3.c 451eb6554f3fce20e39ad6e3aea8b73e570582eb
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h 45bc7e284806042119722c8f4127ee944b77f0dd
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
@@ -785,7 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b97aca1200d959a1e7c08dd4e9dbce4724342119
-R 954d1ee5bc4e8dbfdb8e25f58c6f3247
-U shaneh
-Z 6999a75f8e62879e0ec4ab88e2a317f7
+P 08c545f03082421166a21274b39e07bb348c17e6
+R fd480c683a62029e9ec671a9327220e6
+U drh
+Z fc689ecb2cdb2cbb899bfa1ef8dbe1b0
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLR7lQoxKgR168RlERAiFaAJ0baFwo7PSUJOJhCvizsqF8gfeh8QCfSRxZ
+sHuj1+mD+8zQC/K58Uto6eY=
+=pm4s
+-----END PGP SIGNATURE-----
