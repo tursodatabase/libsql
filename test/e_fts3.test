@@ -411,7 +411,7 @@ read_test  1.7.1.6 {
 
 ddl_test   1.7.2.1 { CREATE VIRTUAL TABLE text USING fts3() }
 
-write_test 3.2.2 text_content {
+write_test 1.7.2.2 text_content {
   INSERT INTO text VALUES('
     During 30 Nov-1 Dec, 2-3oC drops. Cool in the upper portion, minimum temperature 14-16oC and cool elsewhere, minimum temperature 17-20oC. Cold to very cold on mountaintops, minimum temperature 6-12oC. Northeasterly winds 15-30 km/hr. After that, temperature increases. Northeasterly winds 15-30 km/hr.
   ');
@@ -419,11 +419,11 @@ write_test 3.2.2 text_content {
 
 read_test  1.7.2.3 {
   SELECT snippet(text) FROM text WHERE text MATCH 'cold'
-} {{<b>...</b> elsewhere, minimum temperature 17-20oC. <b>Cold</b> to very <b>cold</b> on mountaintops, minimum <b>...</b>}}
+} {{<b>...</b>cool elsewhere, minimum temperature 17-20oC. <b>Cold</b> to very <b>cold</b> on mountaintops, minimum temperature 6<b>...</b>}}
 
 read_test  1.7.2.4 {
   SELECT snippet(text, '[', ']', '...') FROM text WHERE text MATCH '"min* tem*"'
-} {{... 2-3oC drops. Cool in the upper portion, [minimum] [temperature] 14-16oC and cool elsewhere, [minimum] ...}}
+} {{...the upper portion, [minimum] [temperature] 14-16oC and cool elsewhere, [minimum] [temperature] 17-20oC. Cold...}}
 
 ##########################################################################
 # Test the example in section 5 (custom tokenizers).
@@ -472,7 +472,7 @@ error_test 2.1.7 {
   SELECT snippet() FROM t1 WHERE a MATCH 'one'
 } {unable to use function snippet in the requested context}
 error_test 2.1.8 {
-  SELECT snippet(a, b, 'A', 'B', 'C') FROM t1 WHERE a MATCH 'one'
+  SELECT snippet(a, b, 'A', 'B', 'C', 'D', 'E') FROM t1 WHERE a MATCH 'one'
 } {wrong number of arguments to function snippet()}
 #-------------------------------------------------------------------------
 
@@ -518,16 +518,16 @@ write_test 5.2 t5_content {
 }
 read_test 5.3 { 
   SELECT snippet(t5) FROM t5 WHERE t5 MATCH 'miles'
-} {{<b>...</b> Down to a sunless sea.  So twice five <b>miles</b> of fertile ground With walls and towers were <b>...</b>}}
+} {{<b>...</b>to a sunless sea.  So twice five <b>miles</b> of fertile ground With walls and towers<b>...</b>}}
 read_test 5.4 { 
   SELECT snippet(t5, '<i>') FROM t5 WHERE t5 MATCH 'miles'
-} {{<b>...</b> Down to a sunless sea.  So twice five <i>miles</b> of fertile ground With walls and towers were <b>...</b>}}
+} {{<b>...</b>to a sunless sea.  So twice five <i>miles</b> of fertile ground With walls and towers<b>...</b>}}
 read_test 5.5 { 
   SELECT snippet(t5, '<i>', '</i>') FROM t5 WHERE t5 MATCH 'miles'
-} {{<b>...</b> Down to a sunless sea.  So twice five <i>miles</i> of fertile ground With walls and towers were <b>...</b>}}
+} {{<b>...</b>to a sunless sea.  So twice five <i>miles</i> of fertile ground With walls and towers<b>...</b>}}
 read_test 5.6 { 
   SELECT snippet(t5, '<i>', '</i>', 'XXX') FROM t5 WHERE t5 MATCH 'miles'
-} {{XXX Down to a sunless sea.  So twice five <i>miles</i> of fertile ground With walls and towers were XXX}}
+} {{XXXto a sunless sea.  So twice five <i>miles</i> of fertile ground With walls and towersXXX}}
 #-------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------

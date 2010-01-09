@@ -908,9 +908,23 @@ void sqlite3Fts3Offsets(
     rc = fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void *)&sCtx);
     if( rc!=SQLITE_OK ) goto offsets_out;
 
-    /* Initialize a tokenizer iterator to iterate through column iCol. */
+    /* Retreive the text stored in column iCol. If an SQL NULL is stored 
+    ** in column iCol, jump immediately to the next iteration of the loop.
+    ** If an OOM occurs while retrieving the data (this can happen if SQLite
+    ** needs to transform the data from utf-16 to utf-8), return SQLITE_NOMEM 
+    ** to the caller. 
+    */
     zDoc = (const char *)sqlite3_column_text(pCsr->pStmt, iCol+1);
     nDoc = sqlite3_column_bytes(pCsr->pStmt, iCol+1);
+    if( zDoc==0 ){
+      if( sqlite3_column_type(pCsr->pStmt, iCol+1)==SQLITE_NULL ){
+        continue;
+      }
+      rc = SQLITE_NOMEM;
+      goto offsets_out;
+    }
+
+    /* Initialize a tokenizer iterator to iterate through column iCol. */
     rc = pMod->xOpen(pTab->pTokenizer, zDoc, nDoc, &pC);
     if( rc!=SQLITE_OK ) goto offsets_out;
     pC->pTokenizer = pTab->pTokenizer;

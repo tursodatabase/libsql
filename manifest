@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\scomments\sin\sfts3.c\sto\smore\saccurately\sdescribe\sthe\sdoclist\sformat.
-D 2010-01-08T23:01:33
+C Fix\shandling\sof\san\sOOM\serror\sin\sthe\sfts3\soffsets()\sfunction.\sFix\sa\scouple\sof\ssnippet\srelated\stest\scases\sin\se_fts3.test.
+D 2010-01-09T07:33:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -67,7 +64,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c 210bd2a9336e25d4d82a2e81c85abd9b9f8f31ca
+F ext/fts3/fts3_snippet.c a521f904baca19e0ed7025bc0e38d24fc05d21bf
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -329,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
-F test/e_fts3.test ad5d08ca8634b1636c6129d023a1139938b6be05
+F test/e_fts3.test e95c2085c817ebb929c85773394d5fb250a8f610
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -788,14 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 08c545f03082421166a21274b39e07bb348c17e6
-R fd480c683a62029e9ec671a9327220e6
-U drh
-Z fc689ecb2cdb2cbb899bfa1ef8dbe1b0
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLR7lQoxKgR168RlERAiFaAJ0baFwo7PSUJOJhCvizsqF8gfeh8QCfSRxZ
-sHuj1+mD+8zQC/K58Uto6eY=
-=pm4s
------END PGP SIGNATURE-----
+P e424a0307359fee6875424c10ecad1a10acfba0e
+R 172138024910e4c6fdf1759b2e1ab812
+U dan
+Z 370e96d093c040b65438f7314092ae6c
