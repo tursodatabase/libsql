@@ -28,6 +28,27 @@ static void fts3GetDeltaPosition(char **pp, int *piPos){
   *piPos += (iVal-2);
 }
 
+static int fts3ExprIterate2(
+  Fts3Expr *pExpr,                /* Expression to iterate phrases of */
+  int *piPhrase,                  /* Pointer to phrase counter */
+  int (*x)(Fts3Expr*,int,void*),  /* Callback function to invoke for phrases */
+  void *pCtx                      /* Second argument to pass to callback */
+){
+  int rc;
+  int eType = pExpr->eType;
+  if( eType!=FTSQUERY_PHRASE ){
+    assert( pExpr->pLeft && pExpr->pRight );
+    rc = fts3ExprIterate2(pExpr->pLeft, piPhrase, x, pCtx);
+    if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
+      rc = fts3ExprIterate2(pExpr->pRight, piPhrase, x, pCtx);
+    }
+  }else{
+    rc = x(pExpr, *piPhrase, pCtx);
+    (*piPhrase)++;
+  }
+  return rc;
+}
+
 /*
 ** Iterate through all phrase nodes in an FTS3 query, except those that
 ** are part of a sub-tree that is the right-hand-side of a NOT operator.
@@ -40,21 +61,11 @@ static void fts3GetDeltaPosition(char **pp, int *piPos){
 */
 static int fts3ExprIterate(
   Fts3Expr *pExpr,                /* Expression to iterate phrases of */
-  int (*x)(Fts3Expr *, void *),   /* Callback function to invoke for phrases */
+  int (*x)(Fts3Expr*,int,void*),  /* Callback function to invoke for phrases */
   void *pCtx                      /* Second argument to pass to callback */
 ){
-  int rc;
-  int eType = pExpr->eType;
-  if( eType!=FTSQUERY_PHRASE ){
-    assert( pExpr->pLeft && pExpr->pRight );
-    rc = fts3ExprIterate(pExpr->pLeft, x, pCtx);
-    if( rc==SQLITE_OK && eType!=FTSQUERY_NOT ){
-      rc = fts3ExprIterate(pExpr->pRight, x, pCtx);
-    }
-  }else{
-    rc = x(pExpr, pCtx);
-  }
-  return rc;
+  int iPhrase = 0;
+  return fts3ExprIterate2(pExpr, &iPhrase, x, pCtx);
 }
 
 typedef struct LoadDoclistCtx LoadDoclistCtx;
@@ -95,7 +106,7 @@ static int fts3ExprNearTrim(Fts3Expr *pExpr){
   return rc;
 }
 
-static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, void *ctx){
+static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int rc = SQLITE_OK;
   LoadDoclistCtx *p = (LoadDoclistCtx *)ctx;
 
@@ -113,7 +124,7 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, void *ctx){
   return rc;
 }
 
-static int fts3ExprLoadDoclistsCb2(Fts3Expr *pExpr, void *ctx){
+static int fts3ExprLoadDoclistsCb2(Fts3Expr *pExpr, int iPhrase, void *ctx){
   if( pExpr->aDoclist ){
     pExpr->pCurrent = pExpr->aDoclist;
     pExpr->iCurrent = 0;
@@ -140,130 +151,172 @@ static int fts3ExprLoadDoclists(
 }
 
 /*
-** Each call to this function populates a chunk of a snippet-buffer 
-** SNIPPET_BUFFER_CHUNK bytes in size.
-**
-** Return true if the end of the data has been reached (and all subsequent
-** calls to fts3LoadSnippetBuffer() with the same arguments will be no-ops), 
-** or false otherwise.
+** The following types are used as part of the implementation of the 
+** fts3BestSnippet() routine.
 */
-static int fts3LoadSnippetBuffer(
-  int iPos,                       /* Document token offset to load data for */
-  u8 *aBuffer,                    /* Circular snippet buffer to populate */
-  int nList,                      /* Number of position lists in appList */
-  char **apList,                  /* IN/OUT: nList position list pointers */
-  int *aiPrev                     /* IN/OUT: Previous positions read */
-){
-  int i;
-  int nFin = 0;
-
-  assert( (iPos&(SNIPPET_BUFFER_CHUNK-1))==0 );
-
-  memset(&aBuffer[iPos&SNIPPET_BUFFER_MASK], 0, SNIPPET_BUFFER_CHUNK);
-
-  for(i=0; i<nList; i++){
-    int iPrev = aiPrev[i];
-    char *pList = apList[i];
-
-    if( iPrev<0 || !pList ){
-      nFin++;
-      continue;
-    }
-
-    while( iPrev<(iPos+SNIPPET_BUFFER_CHUNK) ){
-      assert( iPrev>=iPos );
-      aBuffer[iPrev&SNIPPET_BUFFER_MASK] = i+1;
-      if( 0==((*pList)&0xFE) ){
-        iPrev = -1;
-        break;
-      }else{
-        fts3GetDeltaPosition(&pList, &iPrev); 
-      }
-    }
-
-    aiPrev[i] = iPrev;
-    apList[i] = pList;
-  }
-
-  return (nFin==nList);
-}
-
 typedef struct SnippetCtx SnippetCtx;
+typedef struct SnippetPhrase SnippetPhrase;
+
 struct SnippetCtx {
-  Fts3Cursor *pCsr;
-  int iCol;
-  int iPhrase;
-  int *aiPrev;
-  int *anToken;
-  char **apList;
+  Fts3Cursor *pCsr;               /* Cursor snippet is being generated from */
+  int iCol;                       /* Extract snippet from this column */
+  int nSnippet;                   /* Requested snippet length (in tokens) */
+  int nPhrase;                    /* Number of phrases in query */
+  SnippetPhrase *aPhrase;         /* Array of size nPhrase */
+  int iCurrent;                   /* First token of current snippet */
+};
+struct SnippetPhrase {
+  int nToken;                     /* Number of tokens in phrase */
+  char *pList;                    /* Pointer to start of phrase position list */
+  int iHead;                      /* Next value in position list */
+  char *pHead;                    /* Position list data following iHead */
+  int iTail;                      /* Next value in trailing position list */
+  char *pTail;                    /* Position list data following iTail */
 };
 
-static int fts3SnippetFindPositions(Fts3Expr *pExpr, void *ctx){
+/*
+** Advance the position list iterator specified by the first two 
+** arguments so that it points to the first element with a value greater
+** than or equal to parameter iNext.
+*/
+static void fts3SnippetAdvance(char **ppIter, int *piIter, int iNext){
+  char *pIter = *ppIter;
+  if( pIter ){
+    int iIter = *piIter;
+
+    while( iIter<iNext ){
+      if( 0==(*pIter & 0xFE) ){
+        iIter = -1;
+        pIter = 0;
+        break;
+      }
+      fts3GetDeltaPosition(&pIter, &iIter);
+    }
+
+    *piIter = iIter;
+    *ppIter = pIter;
+  }
+}
+
+static int fts3SnippetNextCandidate(SnippetCtx *pIter){
+  int i;                          /* Loop counter */
+
+  if( pIter->iCurrent<0 ){
+    /* The SnippetCtx object has just been initialized. The first snippet
+    ** candidate always starts at offset 0 (even if this candidate has a
+    ** score of 0.0).
+    */
+    pIter->iCurrent = 0;
+
+    /* Advance the 'head' iterator of each phrase to the first offset that
+    ** is greater than or equal to (iNext+nSnippet).
+    */
+    for(i=0; i<pIter->nPhrase; i++){
+      SnippetPhrase *pPhrase = &pIter->aPhrase[i];
+      fts3SnippetAdvance(&pPhrase->pHead, &pPhrase->iHead, pIter->nSnippet);
+    }
+  }else{
+    int iStart;
+    int iEnd = 0x7FFFFFFF;
+
+    for(i=0; i<pIter->nPhrase; i++){
+      SnippetPhrase *pPhrase = &pIter->aPhrase[i];
+      if( pPhrase->pHead && pPhrase->iHead<iEnd ){
+        iEnd = pPhrase->iHead;
+      }
+    }
+    if( iEnd==0x7FFFFFFF ){
+      return 1;
+    }
+
+    pIter->iCurrent = iStart = iEnd - pIter->nSnippet + 1;
+    for(i=0; i<pIter->nPhrase; i++){
+      SnippetPhrase *pPhrase = &pIter->aPhrase[i];
+      fts3SnippetAdvance(&pPhrase->pHead, &pPhrase->iHead, iEnd+1);
+      fts3SnippetAdvance(&pPhrase->pTail, &pPhrase->iTail, iStart);
+    }
+  }
+
+  return 0;
+}
+
+static void fts3SnippetDetails(
+  SnippetCtx *pIter,              /* Snippet iterator */
+  u64 mCovered,                   /* Bitmask of phrases already covered */
+  int *piToken,                   /* OUT: First token of proposed snippet */
+  int *piScore,                   /* OUT: "Score" for this snippet */
+  u64 *pmCover,                   /* OUT: Bitmask of phrases covered */
+  u64 *pmHighlight                /* OUT: Bitmask of terms to highlight */
+){
+  int iStart = pIter->iCurrent;   /* First token of snippet */
+
+  int iScore = 0;
+  int i;
+  u64 mCover = 0;
+  u64 mHighlight = 0;
+
+  for(i=0; i<pIter->nPhrase; i++){
+    SnippetPhrase *pPhrase = &pIter->aPhrase[i];
+    if( pPhrase->pTail ){
+      char *pCsr = pPhrase->pTail;
+      int iCsr = pPhrase->iTail;
+
+      while( iCsr<(iStart+pIter->nSnippet) ){
+        int j;
+        u64 mPhrase = (u64)1 << i;
+        u64 mPos = (u64)1 << (iCsr - iStart);
+        assert( iCsr>=iStart );
+        if( (mCover|mCovered)&mPhrase ){
+          iScore++;
+        }else{
+          iScore += 1000;
+        }
+        mCover |= mPhrase;
+
+        for(j=0; j<pPhrase->nToken; j++){
+          mHighlight |= (mPos>>j);
+        }
+
+        if( 0==(*pCsr & 0x0FE) ) break;
+        fts3GetDeltaPosition(&pCsr, &iCsr);
+      }
+    }
+  }
+
+  *piToken = iStart;
+  *piScore = iScore;
+  *pmCover = mCover;
+  *pmHighlight = mHighlight;
+}
+
+/*
+** This function is an fts3ExprIterate() callback used by fts3BestSnippet().
+** Each invocation populates an element of the SnippetCtx.aPhrase[] array.
+*/
+static int fts3SnippetFindPositions(Fts3Expr *pExpr, int iPhrase, void *ctx){
   SnippetCtx *p = (SnippetCtx *)ctx;
-  int iPhrase = p->iPhrase++;
+  SnippetPhrase *pPhrase = &p->aPhrase[iPhrase];
   char *pCsr;
 
-  p->anToken[iPhrase] = pExpr->pPhrase->nToken;
-  pCsr = sqlite3Fts3FindPositions(pExpr, p->pCsr->iPrevId, p->iCol);
+  pPhrase->nToken = pExpr->pPhrase->nToken;
 
+  pCsr = sqlite3Fts3FindPositions(pExpr, p->pCsr->iPrevId, p->iCol);
   if( pCsr ){
-    int iVal;
-    pCsr += sqlite3Fts3GetVarint32(pCsr, &iVal);
-    p->apList[iPhrase] = pCsr;
-    p->aiPrev[iPhrase] = iVal-2;
+    int iFirst = 0;
+    pPhrase->pList = pCsr;
+    fts3GetDeltaPosition(&pCsr, &iFirst);
+    pPhrase->pHead = pCsr;
+    pPhrase->pTail = pCsr;
+    pPhrase->iHead = iFirst;
+    pPhrase->iTail = iFirst;
+  }else{
+    assert( pPhrase->pList==0 && pPhrase->pHead==0 && pPhrase->pTail==0 );
   }
+
   return SQLITE_OK;
 }
 
-static void fts3SnippetCnt(
-  int iIdx, 
-  int nSnippet, 
-  int *anCnt, 
-  u8 *aBuffer,
-  int *anToken,
-  u64 *pHlmask
-){
-  int iSub =  (iIdx-1)&SNIPPET_BUFFER_MASK;
-  int iAdd =  (iIdx+nSnippet-1)&SNIPPET_BUFFER_MASK;
-
-  u64 h = *pHlmask;
-
-  anCnt[ aBuffer[iSub]  ]--;
-  anCnt[ aBuffer[iAdd]  ]++;
-
-  h = h >> 1;
-  if( aBuffer[iAdd] ){
-    int j;
-    for(j=anToken[aBuffer[iAdd]-1]; j>=1; j--){
-      h |= (u64)1 << (nSnippet-j);
-    }
-  }
-  *pHlmask = h;
-}
-
-static int fts3SnippetScore(int n, int *anCnt, u64 covmask){
-  int j;
-  int iScore = 0;
-  for(j=1; j<=n; j++){
-    int nCnt = anCnt[j];
-    iScore += nCnt;
-    if( nCnt && 0==(covmask & ((u64)1 << (j-1))) ){
-      iScore += 1000;
-    }
-  }
-  return iScore;
-}
-
-static u64 fts3SnippetMask(int n, int *anCnt){
-  int j;
-  u64 mask = 0;
-
-  if( n>64 ) n = 64;
-  for(j=1; j<=n; j++){
-    if( anCnt[j] ) mask |= ((u64)1)<<(j-1);
-  }
-  return mask;
-}
+#define BITMASK_SIZE 64
 
 typedef struct SnippetFragment SnippetFragment;
 struct SnippetFragment {
@@ -283,21 +336,13 @@ static int fts3BestSnippet(
   int *piScore                    /* OUT: Score of snippet pFragment */
 ){
   int rc;                         /* Return Code */
-  u8 aBuffer[SNIPPET_BUFFER_SIZE];/* Circular snippet buffer */
-  int *aiPrev;                    /* Used by fts3LoadSnippetBuffer() */
-  int *anToken;                   /* Number of tokens in each phrase */
-  char **apList;                  /* Array of position lists */
-  int *anCnt;                     /* Running totals of phrase occurences */
   int nList;                      /* Number of phrases in expression */
-  int nByte;                      /* Bytes of dynamic space required */
-  int i;                          /* Loop counter */
-  u64 hlmask = 0;                 /* Current mask of highlighted terms */
-  u64 besthlmask = 0;             /* Mask of highlighted terms for iBestPos */
-  u64 bestcovmask = 0;            /* Mask of terms with at least one hit */
-  int iBestPos = 0;               /* Starting position of 'best' snippet */
-  int iBestScore = 0;             /* Score of best snippet higher->better */
-  int iEnd = 0x7FFFFFFF;
-  SnippetCtx sCtx;
+  SnippetCtx sCtx;                /* Snippet context object */
+  int nByte;                      /* Number of bytes of space to allocate */
+  int iBestScore = -1;
+  int i;
+
+  memset(&sCtx, 0, sizeof(sCtx));
 
   /* Iterate through the phrases in the expression to count them. The same
   ** callback makes sure the doclists are loaded for each phrase.
@@ -308,84 +353,53 @@ static int fts3BestSnippet(
   }
 
   /* Now that it is known how many phrases there are, allocate and zero
-  ** the required arrays using malloc().
+  ** the required space using malloc().
   */
-  nByte = sizeof(u8*)*nList +     /* apList */
-      sizeof(int)*(nList) +       /* anToken */
-      sizeof(int)*nList +         /* aiPrev */
-      sizeof(int)*(nList+1);      /* anCnt */
-  apList = (char **)sqlite3_malloc(nByte);
-  if( !apList ){
+  nByte = sizeof(SnippetPhrase) * nList;
+  sCtx.aPhrase = (SnippetPhrase *)sqlite3_malloc(nByte);
+  if( !sCtx.aPhrase ){
     return SQLITE_NOMEM;
   }
-  memset(apList, 0, nByte);
-  anToken = (int *)&apList[nList];
-  aiPrev = &anToken[nList];
-  anCnt = &aiPrev[nList];
+  memset(sCtx.aPhrase, 0, nByte);
 
-  /* Initialize the contents of the aiPrev and aiList arrays. */
+  /* Initialize the contents of the SnippetCtx object. Then iterate through
+  ** the set of phrases in the expression to populate the aPhrase[] array.
+  */
   sCtx.pCsr = pCsr;
   sCtx.iCol = iCol;
-  sCtx.apList = apList;
-  sCtx.aiPrev = aiPrev;
-  sCtx.anToken = anToken;
-  sCtx.iPhrase = 0;
+  sCtx.nSnippet = nSnippet;
+  sCtx.nPhrase = nList;
+  sCtx.iCurrent = -1;
   (void)fts3ExprIterate(pCsr->pExpr, fts3SnippetFindPositions, (void *)&sCtx);
 
   for(i=0; i<nList; i++){
-    if( apList[i] && aiPrev[i]>=0 ){
+    if( sCtx.aPhrase[i].pHead ){
       *pmSeen |= (u64)1 << i;
     }
   }
 
-  /* Load the first two chunks of data into the buffer. */
-  memset(aBuffer, 0, SNIPPET_BUFFER_SIZE);
-  fts3LoadSnippetBuffer(0, aBuffer, nList, apList, aiPrev);
-  fts3LoadSnippetBuffer(SNIPPET_BUFFER_CHUNK, aBuffer, nList, apList, aiPrev);
-
-  /* Set the initial contents of the highlight-mask and anCnt[] array. */
-  for(i=1-nSnippet; i<=0; i++){
-    fts3SnippetCnt(i, nSnippet, anCnt, aBuffer, anToken, &hlmask);
-  }
-  iBestScore = fts3SnippetScore(nList, anCnt, mCovered);
-  besthlmask = hlmask;
-  iBestPos = 0;
-  bestcovmask = fts3SnippetMask(nList, anCnt);
-
-  for(i=1; i<iEnd; i++){
-    int iScore;
-
-    if( 0==(i&(SNIPPET_BUFFER_CHUNK-1)) ){
-      int iLoad = i + SNIPPET_BUFFER_CHUNK;
-      if( fts3LoadSnippetBuffer(iLoad, aBuffer, nList, apList, aiPrev) ){
-        iEnd = iLoad;
-      }
-    }
-
-    /* Figure out how highly a snippet starting at token offset i scores
-    ** according to fts3SnippetScore(). If it is higher than any previously
-    ** considered position, save the current position, score and hlmask as 
-    ** the best snippet candidate found so far.
-    */
-    fts3SnippetCnt(i, nSnippet, anCnt, aBuffer, anToken, &hlmask);
-    iScore = fts3SnippetScore(nList, anCnt, mCovered);
-    if( iScore>iBestScore ){
-      iBestPos = i;
-      iBestScore = iScore;
-      besthlmask = hlmask;
-      bestcovmask = fts3SnippetMask(nList, anCnt);
-    }
-  }
-
-  sqlite3_free(apList);
-
-  pFragment->iPos = iBestPos;
-  pFragment->hlmask = besthlmask;
   pFragment->iCol = iCol;
-  pFragment->covered = bestcovmask;
+  while( !fts3SnippetNextCandidate(&sCtx) ){
+    int iPos;
+    int iScore;
+    u64 mCover;
+    u64 mHighlight;
+    fts3SnippetDetails(&sCtx, mCovered, &iPos, &iScore, &mCover, &mHighlight);
+
+    assert( iScore>=0 );
+    if( iScore>iBestScore ){
+      pFragment->iPos = iPos;
+      pFragment->hlmask = mHighlight;
+      pFragment->covered = mCover;
+      iBestScore = iScore;
+    }
+  }
+
+  sqlite3_free(sCtx.aPhrase);
   *piScore = iBestScore;
   return SQLITE_OK;
 }
+
 
 typedef struct StrBuffer StrBuffer;
 struct StrBuffer {
@@ -639,6 +653,7 @@ static void fts3LoadColumnlistCounts(char **pp, u32 *aOut){
 */
 static int fts3ExprGlobalMatchinfoCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
+  int iPhrase,
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
@@ -662,10 +677,11 @@ static int fts3ExprGlobalMatchinfoCb(
 
 static int fts3ExprLocalMatchinfoCb(
   Fts3Expr *pExpr,                /* Phrase expression node */
+  int iPhrase,
   void *pCtx                      /* Pointer to MatchInfo structure */
 ){
   MatchInfo *p = (MatchInfo *)pCtx;
-  int iPhrase = p->iPhrase++;
+  p->iPhrase++;
 
   if( pExpr->aDoclist ){
     char *pCsr;
@@ -836,7 +852,7 @@ struct TermOffsetCtx {
 /*
 ** This function is an fts3ExprIterate() callback used by sqlite3Fts3Offsets().
 */
-static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, void *ctx){
+static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   TermOffsetCtx *p = (TermOffsetCtx *)ctx;
   int nTerm;                      /* Number of tokens in phrase */
   int iTerm;                      /* For looping through nTerm phrase terms */

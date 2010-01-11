@@ -2113,7 +2113,7 @@ int sqlite3Fts3ExprLoadDoclist(Fts3Table *pTab, Fts3Expr *pExpr){
 
 /*
 ** After ExprLoadDoclist() (see above) has been called, this function is
-** used to iterate through the position lists that make up the doclist
+** used to iterate/search through the position lists that make up the doclist
 ** stored in pExpr->aDoclist.
 */
 char *sqlite3Fts3FindPositions(
