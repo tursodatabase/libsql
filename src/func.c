@@ -440,12 +440,18 @@ static void last_insert_rowid(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  /* IMP: R-51513-12026 The last_insert_rowid() SQL function is a
+  ** wrapper around the sqlite3_last_insert_rowid() C/C++ interface
+  ** function. */
   sqlite3_result_int64(context, sqlite3_last_insert_rowid(db));
 }
 
 /*
-** Implementation of the changes() SQL function.  The return value is the
-** same as the sqlite3_changes() API function.
+** Implementation of the changes() SQL function.
+**
+** IMP: R-62073-11209 The changes() SQL function is a wrapper
+** around the sqlite3_changes() C/C++ function and hence follows the same
+** rules for counting changes.
 */
 static void changes(
   sqlite3_context *context,
@@ -468,6 +474,8 @@ static void total_changes(
 ){
   sqlite3 *db = sqlite3_context_db_handle(context);
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  /* IMP: R-52756-41993 This function is a wrapper around the
+  ** sqlite3_total_changes() C/C++ interface. */
   sqlite3_result_int(context, sqlite3_total_changes(db));
 }
 
@@ -735,7 +743,9 @@ static void versionFunc(
   sqlite3_value **NotUsed2
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_result_text(context, sqlite3_version, -1, SQLITE_STATIC);
+  /* IMP: R-48699-48617 This function is an SQL wrapper around the
+  ** sqlite3_libversion() C-interface. */
+  sqlite3_result_text(context, sqlite3_libversion(), -1, SQLITE_STATIC);
 }
 
 /*
@@ -749,7 +759,9 @@ static void sourceidFunc(
   sqlite3_value **NotUsed2
 ){
   UNUSED_PARAMETER2(NotUsed, NotUsed2);
-  sqlite3_result_text(context, SQLITE_SOURCE_ID, -1, SQLITE_STATIC);
+  /* IMP: R-24470-31136 This function is an SQL wrapper around the
+  ** sqlite3_sourceid() C interface. */
+  sqlite3_result_text(context, sqlite3_sourceid(), -1, SQLITE_STATIC);
 }
 
 /* Array for converting from half-bytes (nybbles) into ASCII hex
@@ -878,7 +890,7 @@ static void zeroblobFunc(
   if( n>db->aLimit[SQLITE_LIMIT_LENGTH] ){
     sqlite3_result_error_toobig(context);
   }else{
-    sqlite3_result_zeroblob(context, (int)n);
+    sqlite3_result_zeroblob(context, (int)n); /* IMP: R-00293-64994 */
   }
 }
 
