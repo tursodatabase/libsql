@@ -4576,7 +4576,7 @@ case OP_ParseSchema: {
     initData.iDb = pOp->p1;
     initData.pzErrMsg = &p->zErrMsg;
     zSql = sqlite3MPrintf(db,
-       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s",
+       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
        db->aDb[iDb].zName, zMaster, pOp->p4.z);
     if( zSql==0 ){
       rc = SQLITE_NOMEM;

@@ -315,7 +315,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   {
     char *zSql;
     zSql = sqlite3MPrintf(db, 
-        "SELECT name, rootpage, sql FROM '%q'.%s",
+        "SELECT name, rootpage, sql FROM '%q'.%s ORDER BY rowid",
         db->aDb[iDb].zName, zMasterName);
     (void)sqlite3SafetyOff(db);
 #ifndef SQLITE_OMIT_AUTHORIZATION
