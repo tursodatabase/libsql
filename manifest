@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\sfew\sdocumentation\sevidence\scomments\sto\sthe\sbuilt-in\sfunction\s\nimplementations.
-D 2010-01-11T18:26:42
+C Use\s#ifdefs\sto\sdisable\sunused\scode\swhen\sSQLITE_OMIT_FLOATING_POINT\sis\sdefined.
+D 2010-01-12T17:04:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
 F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
-F src/expr.c b186cb2a2bab8fae4bbee4582a1c92cfc8d6aad3
+F src/expr.c e6f042e88b3603f9ca698c0453c4ee0b91506788
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c 7cd1b3abad8bcccf555fad9274d608da972467a3
@@ -212,7 +212,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c ad4f03079ba0fe83590d1cc9197e8e4844e38592
 F src/vacuum.c db6415fd0f1be191e16228457a6deb9f232e6ad6
-F src/vdbe.c e05765736504d9dbcbb3dfa8964932780002ec39
+F src/vdbe.c 9035d0ec1ba8e9268d024c9c08fd258479a7fdb6
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
 F src/vdbeapi.c fc3787eb2f5487d4cc3444de42d56f2e39d311f5
@@ -788,14 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a2b1183d9e9898d06d623b342bbb552e85a9b3f6
-R 46f4dcf6ec2cb691894cdd8d9b71e8a0
+P 8bd0f8147dbf75367243b3eecfb705da6e794ab7
+R 2f049c9b0458cd4d56b0979326210233
 U drh
-Z cf904688820a6d52eba284b60c049013
+Z 56a3411ed01b97bc47b7776cdc99d804
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLS21moxKgR168RlERAv4fAJ9y6E6zgCvqUiDBxAI3g4LOWdeIzQCfRTyH
-M+noBTgcZxBSkO+AmAlxTVk=
-=gvnT
+iD8DBQFLTKuKoxKgR168RlERArj5AJ9MklFLlBTCDE3gwJo/U2R4JCBGqQCfeywI
+MozPgxZX2+OOhsyGOcvPvws=
+=hPv2
 -----END PGP SIGNATURE-----
