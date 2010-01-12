@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Use\s#ifdefs\sto\sdisable\sunused\scode\swhen\sSQLITE_OMIT_FLOATING_POINT\sis\sdefined.
-D 2010-01-12T17:04:08
+C Update\scomments\sin\sfts3_snippet.c.
+D 2010-01-12T17:57:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -67,7 +64,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c 99bc7e7356ff17667afa5ef744cae5c8dc71c7d6
+F ext/fts3/fts3_snippet.c fdc2c12e9387d140f3b4422caa4adcbc9c8eddc9
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -406,7 +403,7 @@ F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3query.test ca21717993f51caa7e36231dba2499868f3f8a6f
+F test/fts3query.test 154fe4b015fd61af523ee083570a134f508f5be7
 F test/fts3rnd.test 153b4214bad6084a348814f3dd651a92e2f31d9b
 F test/fts3snippet.test 16a05b313bf85da4d0b5cb683549fc2279430fbe
 F test/func.test af106ed834001738246d276659406823e35cde7b
@@ -788,14 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8bd0f8147dbf75367243b3eecfb705da6e794ab7
-R 2f049c9b0458cd4d56b0979326210233
-U drh
-Z 56a3411ed01b97bc47b7776cdc99d804
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLTKuKoxKgR168RlERArj5AJ9MklFLlBTCDE3gwJo/U2R4JCBGqQCfeywI
-MozPgxZX2+OOhsyGOcvPvws=
-=hPv2
------END PGP SIGNATURE-----
+P 66bab8561926963a87f15ad559cba36545c9892c
+R 559c18af8cc5acebd93fdb777aca8b37
+U dan
+Z e6a76bd6811266db12895b07d433a416

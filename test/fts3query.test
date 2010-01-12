@@ -99,7 +99,7 @@ db func mit mit
 
 do_test fts3query-3.3 {
   execsql { SELECT mit(matchinfo(foobar)) FROM foobar WHERE foobar MATCH 'the' }
-} {{1 1 3 3}}
+} {{1 1 3 3 1}}
 
 finish_test
 
