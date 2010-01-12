@@ -1092,8 +1092,8 @@ void sqlite3RegisterDateTimeFunctions(void){
     FUNCTION(current_date,      0, 0, 0, cdateFunc     ),
 #else
     STR_FUNCTION(current_time,      0, "%H:%M:%S",          0, currentTimeFunc),
-    STR_FUNCTION(current_timestamp, 0, "%Y-%m-%d",          0, currentTimeFunc),
-    STR_FUNCTION(current_date,      0, "%Y-%m-%d %H:%M:%S", 0, currentTimeFunc),
+    STR_FUNCTION(current_date,      0, "%Y-%m-%d",          0, currentTimeFunc),
+    STR_FUNCTION(current_timestamp, 0, "%Y-%m-%d %H:%M:%S", 0, currentTimeFunc),
 #endif
   };
   int i;

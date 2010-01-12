@@ -1,5 +1,8 @@
-C Update\scomments\sin\sfts3_snippet.c.
-D 2010-01-12T17:57:30
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sthe\simplementation\sof\sCURRENT_TIMESTAME\sand\sCURRENT_DATE\swhen\s\nSQLITE_OMIT_DATETIME_FUNCS\sis\sdefined.
+D 2010-01-12T19:28:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +117,7 @@ F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
 F src/build.c 6ab7f8d8fa5b0ac6bfdce359e85f580b7a9b2e86
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
-F src/date.c a79c0a8f219370b972e320741f995a3bef9df33f
+F src/date.c 485a4409a384310e6d93fd1104a9d0a8658becd9
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
 F src/expr.c e6f042e88b3603f9ca698c0453c4ee0b91506788
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -785,7 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 66bab8561926963a87f15ad559cba36545c9892c
-R 559c18af8cc5acebd93fdb777aca8b37
-U dan
-Z e6a76bd6811266db12895b07d433a416
+P dd9689b7c31861484f8d8062478ae73d3c940902
+R e91e57338cb8f293a4bb9b23c125a66b
+U drh
+Z 53dae532f59a801426d68826b9c81461
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLTM1XoxKgR168RlERAjdBAJ9w5UHXdiEuVz7cQHXUtE7S8TVG3gCgiDHp
+XJDT0231aWBlk4lbq8Tk25c=
+=U05+
+-----END PGP SIGNATURE-----
