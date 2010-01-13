@@ -2754,6 +2754,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         target
       ));
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
       /* If the column has REAL affinity, it may currently be stored as an
       ** integer. Use OP_RealAffinity to make sure it is really real.  */
       if( pExpr->iColumn>=0 
@@ -2761,6 +2762,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ){
         sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
       }
+#endif
       break;
     }
 

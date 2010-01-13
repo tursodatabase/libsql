@@ -255,6 +255,7 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
   z += incr;
   *realnum = 0;
   while( sqlite3Isdigit(*z) ){ z += incr; }
+#ifndef SQLITE_OMIT_FLOATING_POINT
   if( *z=='.' ){
     z += incr;
     if( !sqlite3Isdigit(*z) ) return 0;
@@ -268,6 +269,7 @@ int sqlite3IsNumber(const char *z, int *realnum, u8 enc){
     while( sqlite3Isdigit(*z) ){ z += incr; }
     *realnum = 1;
   }
+#endif
   return *z==0;
 }
 
@@ -429,6 +431,9 @@ static int compare2pow63(const char *zNum){
   c = memcmp(zNum,"922337203685477580",18)*10;
   if( c==0 ){
     c = zNum[18] - '8';
+    testcase( c==(-1) );
+    testcase( c==0 );
+    testcase( c==(+1) );
   }
   return c;
 }
@@ -465,6 +470,9 @@ int sqlite3Atoi64(const char *zNum, i64 *pNum){
     v = v*10 + c - '0';
   }
   *pNum = neg ? -v : v;
+  testcase( i==18 );
+  testcase( i==19 );
+  testcase( i==20 );
   if( c!=0 || (i==0 && zStart==zNum) || i>19 ){
     /* zNum is empty or contains non-numeric text or is longer
     ** than 19 digits (thus guaranting that it is too large) */
@@ -508,6 +516,9 @@ int sqlite3FitsIn64Bits(const char *zNum, int negFlag){
     zNum++;   /* Skip leading zeros.  Ticket #2454 */
   }
   for(i=0; zNum[i]; i++){ assert( zNum[i]>='0' && zNum[i]<='9' ); }
+  testcase( i==18 );
+  testcase( i==19 );
+  testcase( i==20 );
   if( i<19 ){
     /* Guaranteed to fit if less than 19 digits */
     return 1;
@@ -548,9 +559,11 @@ int sqlite3GetInt32(const char *zNum, int *pValue){
   **             1234567890
   **     2^31 -> 2147483648
   */
+  testcase( i==10 );
   if( i>10 ){
     return 0;
   }
+  testcase( v-neg==2147483647 );
   if( v-neg>2147483647 ){
     return 0;
   }
