@@ -1297,6 +1297,10 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
         break;
       }
     }
+#ifdef SQLITE_OMIT_FLOATING_POINT
+    pOut->u.i = rB;
+    MemSetTypeFlag(pOut, MEM_Int);
+#else
     if( sqlite3IsNaN(rB) ){
       goto arithmetic_result_is_null;
     }
@@ -1305,6 +1309,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     if( (flags & MEM_Real)==0 ){
       sqlite3VdbeIntegerAffinity(pOut);
     }
+#endif
   }
   break;
 
