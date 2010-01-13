@@ -315,6 +315,10 @@ void sqlite3VdbeMemRelease(Mem *p){
 ** before attempting the conversion.
 */
 static i64 doubleToInt64(double r){
+#ifdef SQLITE_OMIT_FLOATING_POINT
+  /* When floating-point is omitted, double and int64 are the same thing */
+  return r;
+#else
   /*
   ** Many compilers we encounter do not define constants for the
   ** minimum and maximum 64-bit integers, or they define them
@@ -336,6 +340,7 @@ static i64 doubleToInt64(double r){
   }else{
     return (i64)r;
   }
+#endif
 }
 
 /*

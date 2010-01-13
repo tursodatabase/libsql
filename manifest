@@ -1,5 +1,8 @@
-C Add\stests\sto\sbackup.test\sto\sverify\sthat\sSQLite\sbehaves\sas\sexpected\swhen\sthe\ssource\sdatabase\sis\smodified\smid-backup.
-D 2010-01-13T14:08:01
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\sthe\sdoubleToInt64()\sroutine\sa\spass-through\swhen\susing\sOMIT_FLOATING_POINT.
+D 2010-01-13T15:15:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -215,7 +218,7 @@ F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
 F src/vdbeapi.c fc3787eb2f5487d4cc3444de42d56f2e39d311f5
 F src/vdbeaux.c 2e4a421bd3771ecd3b6c9a1c7abc7270a787a01b
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
-F src/vdbemem.c a0fa68734dfc2692f5dee4968def1981e34f3549
+F src/vdbemem.c 1ce5005ee4a1ee25ef677abdcaef1259261cc252
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 7c7713d66cda699f16bf1cc601d8d4f5070ab935
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -785,7 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dfc6595d347ea87923a857778b68751103f535d2
-R af14a12e0fb93ccaa943052917036ca2
-U dan
-Z 2a08504403cd615454c575ebb53e6c12
+P 985d3bec07430536485056bcd2ae0471791601ed
+R 9f8cf667b0afbdd9545d404fbec2bd6d
+U drh
+Z d1d141aad07484d109238464ff4bf4c5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLTeOfoxKgR168RlERAlU4AJ4w8Z8Bt+r/4+9pC7Gb2JRnglriKQCeODzf
+Bnr1B7NVjy4Q6Uvl11ICxqI=
+=xtZb
+-----END PGP SIGNATURE-----
