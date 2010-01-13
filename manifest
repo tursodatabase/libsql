@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Comment\sout\sunused\scode\swhen\sSQLITE_OMIT_FLOATING_POINT\sis\sselected.\nAdded\stestcase()\smacros\sto\sboundary\sconditions\sin\sutil.c\sroutines.
-D 2010-01-13T04:22:21
+C Add\stests\sto\sbackup.test\sto\sverify\sthat\sSQLite\sbehaves\sas\sexpected\swhen\sthe\ssource\sdatabase\sis\smodified\smid-backup.
+D 2010-01-13T14:08:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -250,7 +247,7 @@ F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
 F test/autovacuum.test 25f891bc343a8bf5d9229e2e9ddab9f31a9ab5ec
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
-F test/backup.test 9b184cc3cccb153e73387a88c6e6d23210212f86
+F test/backup.test 8962568895a1178041544ca014b940086f0178f5
 F test/backup2.test 159419073d9769fdb1780ed7e5b391a046f898d5
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
@@ -788,14 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 61df5986600b6c9e6d5c42efc0067a27fe54251f
-R ed1297a5ea74ad9a93623001b89f8fe6
-U drh
-Z 6850a89c31f37b37c7103946a0617fb2
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLTUqAoxKgR168RlERArrjAJ4+fjS5/JTEovzvoqB7ZbKz9iMf2wCeITA6
-uHjhIi3LJdPEe5X1lDBaOhI=
-=jnHU
------END PGP SIGNATURE-----
+P dfc6595d347ea87923a857778b68751103f535d2
+R af14a12e0fb93ccaa943052917036ca2
+U dan
+Z 2a08504403cd615454c575ebb53e6c12

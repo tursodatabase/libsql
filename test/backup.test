@@ -904,4 +904,62 @@ ifcapable memorymanage {
   db3 close
 }
 
+
+# Test that if the database is written to via the same database handle being
+# used as the source by a backup operation:
+#
+#   10.1.*: If the db is in-memory, the backup is restarted.
+#   10.2.*: If the db is a file, the backup is not restarted.
+#
+db close
+file delete -force test.db test.db-journal
+foreach {tn file rc} {
+  1 test.db  SQLITE_DONE
+  2 :memory: SQLITE_OK
+} {
+  do_test backup-10.$tn.1 {
+    sqlite3 db $file
+    execsql { 
+      CREATE TABLE t1(a INTEGER PRIMARY KEY, b BLOB);
+      BEGIN;
+        INSERT INTO t1 VALUES(NULL, randomblob(200));
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+        INSERT INTO t1 SELECT NULL, randomblob(200) FROM t1;
+      COMMIT;
+      SELECT count(*) FROM t1;
+    }
+  } {256}
+
+  do_test backup-10.$tn.2 {
+    set pgs [execsql {pragma page_count}]
+    expr {$pgs > 50 && $pgs < 75}
+  } {1}
+
+  do_test backup-10.$tn.3 {
+    file delete -force bak.db bak.db-journal
+    sqlite3 db2 bak.db
+    sqlite3_backup B db2 main db main
+    B step 50
+  } {SQLITE_OK}
+
+  do_test backup-10.$tn.4 {
+    execsql { UPDATE t1 SET b = randomblob(200) WHERE a IN (1, 250) }
+  } {}
+
+  do_test backup-10.$tn.5 {
+    B step 50
+  } $rc
+
+  do_test backup-10.6 {
+    B finish
+  } {SQLITE_OK}
+}
+
+db2 close
 finish_test
