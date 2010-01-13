@@ -31,6 +31,7 @@ void sqlite3Coverage(int x){
 }
 #endif
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Return true if the floating point value is Not a Number (NaN).
 **
@@ -75,6 +76,7 @@ int sqlite3IsNaN(double x){
   testcase( rc );
   return rc;
 }
+#endif /* SQLITE_OMIT_FLOATING_POINT */
 
 /*
 ** Compute a string length that is limited to what can be stored in

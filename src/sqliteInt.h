@@ -2532,7 +2532,11 @@ int sqlite3StatusValue(int);
 void sqlite3StatusAdd(int, int);
 void sqlite3StatusSet(int, int);
 
-int sqlite3IsNaN(double);
+#ifndef SQLITE_OMIT_FLOATING_POINT
+  int sqlite3IsNaN(double);
+#else
+# define sqlite3IsNaN(X)  0
+#endif
 
 void sqlite3VXPrintf(StrAccum*, int, const char*, va_list);
 #ifndef SQLITE_OMIT_TRACE
