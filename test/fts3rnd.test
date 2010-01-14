@@ -159,25 +159,41 @@ proc simple_phrase {zPrefix} {
   set ret
 }
 
+# This [proc] is used to test the FTS3 matchinfo() function.
+# 
 proc simple_token_matchinfo {zToken} {
-  set total(0) 0
-  set total(1) 0
-  set total(2) 0
 
-  foreach key [lsort -integer [array names ::t1]] {
+  set nDoc(0) 0
+  set nDoc(1) 0
+  set nDoc(2) 0
+  set nHit(0) 0
+  set nHit(1) 0
+  set nHit(2) 0
+
+
+  foreach key [array names ::t1] {
     set value $::t1($key)
-    set cnt [list]
+    set a($key) [list]
     foreach i {0 1 2} col $value {
-      set n [llength [lsearch -all $col $zToken]]
-      lappend cnt $n
-      incr total($i) $n
-    }
-    if {[lindex [lsort $cnt] end]} {
-      lappend ret $key [concat 1 3 XXX $cnt]
+      set hit [llength [lsearch -all $col $zToken]]
+      lappend a($key) $hit
+      incr nHit($i) $hit
+      if {$hit>0} { incr nDoc($i) }
     }
   }
-  
-  string map [list XXX "$total(0) $total(1) $total(2)"] $ret
+
+  set ret [list]
+  foreach docid [lsort -integer [array names a]] {
+    if { [lindex [lsort -integer $a($docid)] end] } {
+      set matchinfo [list 1 3]
+      foreach i {0 1 2} hit $a($docid) {
+        lappend matchinfo $hit $nHit($i) $nDoc($i)
+      }
+      lappend ret $docid $matchinfo
+    }
+  }
+
+  set ret
 } 
 
 proc simple_near {termlist nNear} {
