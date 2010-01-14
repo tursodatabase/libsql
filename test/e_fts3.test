@@ -65,6 +65,14 @@ sqlite3 db test.db
 if {$DO_MALLOC_TEST} { sqlite3_db_config_lookaside db 0 0 0 }
 db eval "PRAGMA encoding = '$enc'"
 
+proc mit {blob} {
+  set scan(littleEndian) i*
+  set scan(bigEndian) I*
+  binary scan $blob $scan($::tcl_platform(byteOrder)) r
+  return $r
+}
+db func mit mit
+
 ##########################################################################
 # Test the example CREATE VIRTUAL TABLE statements in section 1.1 
 # of fts3.in.
@@ -425,6 +433,23 @@ read_test  1.7.2.4 {
   SELECT snippet(text, '[', ']', '...') FROM text WHERE text MATCH '"min* tem*"'
 } {{...the upper portion, [minimum] [temperature] 14-16oC and cool elsewhere, [minimum] [temperature] 17-20oC. Cold...}}
 
+ddl_test   1.7.3.1 { DROP TABLE IF EXISTS t1 }
+ddl_test   1.7.3.2 { CREATE VIRTUAL TABLE t1 USING fts3(a, b) }
+write_test 1.7.3.3 t1_content { 
+  INSERT INTO t1 VALUES(
+    'transaction default models default', 'Non transaction reads');
+}
+write_test 1.7.3.4 t1_content { 
+  INSERT INTO t1 VALUES('the default transaction', 'these semantics present');
+}
+write_test 1.7.3.5 t1_content { 
+  INSERT INTO t1 VALUES('single request', 'default data');
+}
+read_test  1.7.3.6 { 
+  SELECT mit(matchinfo(t1)) FROM t1 
+    WHERE t1 MATCH 'default transaction "these semantics"';
+} {{3 2 1 3 2 0 1 1 1 2 2 0 1 1 0 0 0 1 1 1}}
+
 ##########################################################################
 # Test the example in section 5 (custom tokenizers).
 #
@@ -452,6 +477,7 @@ read_test 1.8.2.4 {
 # functions are handled correctly.
 #
 set DO_MALLOC_TEST 0
+ddl_test   2.1.0 { DROP TABLE IF EXISTS t1 }
 ddl_test   2.1.1 { CREATE VIRTUAL TABLE t1 USING fts3(a, b) }
 write_test 2.1.2 t1_content { 
   INSERT INTO t1 VALUES('one two three', x'A1B2C3D4E5F6');

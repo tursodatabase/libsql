@@ -1,5 +1,5 @@
-C Fix\ssome\smatchinfo\srelated\stest\sproblems\sin\sfts3rnd.test.
-D 2010-01-14T11:17:05
+C Add\sa\stest\sto\se_fts3.test\sfor\sthe\smatchinfo\sexample\sin\sfts3.html.
+D 2010-01-14T11:45:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -326,7 +326,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
-F test/e_fts3.test e95c2085c817ebb929c85773394d5fb250a8f610
+F test/e_fts3.test 5adb033fae6e07002d11f4a7c8f8e8ff9f31e8ec
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -785,7 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 67c3aea563e019083f0ed87b57982a0379637d4f
-R 8e69825ad6823779e3340d8c7cfb5e0a
+P da7abe05887d1ad52552d8ce3a153a0a76f96c5a
+R 5042b01c82f71d4627ff255b6d524663
 U dan
-Z b7d555c32c5b8aefdf64aab0d007e815
+Z 872dd4d3d7fbe754f123dcb0fa0c8e61
