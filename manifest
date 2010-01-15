@@ -1,5 +1,5 @@
-C Add\scoverage\stests\sfor\sfts3_snippet.c.\sAlso\sfixes\srelated\sto\sthe\ssame.
-D 2010-01-15T17:25:53
+C Fix\stest\snumbering\sin\sfts3snippet.test.
+D 2010-01-15T17:33:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -405,7 +405,7 @@ F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test 154fe4b015fd61af523ee083570a134f508f5be7
 F test/fts3rnd.test 2f5761db9dd92f6fe09d08976ac658ef521846ed
-F test/fts3snippet.test 3562e7e765bb3a8efeb425ad4fdcff5793219b7d
+F test/fts3snippet.test d763197e7d6bc090638abcf68a780dd0d93635ab
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -785,7 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e5336edc55313afac11ea085257cb6e75a0287a7
-R 3dd015be1ba4e72ecda3f74bc253611f
+P 5e9d8ccae9731f380527463ef87ddcd216b4b721
+R 6754ce2dfd9d134bc105f32a3aa30412
 U dan
-Z bf82d4cd440faa8bc0ad658561804fcb
+Z bbb4d86ef223195e8166a6c82a95bc90
