@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\se_fts3.test\sfor\sthe\smatchinfo\sexample\sin\sfts3.html.
-D 2010-01-14T11:45:04
+C Add\scoverage\stests\sfor\sfts3_snippet.c.\sAlso\sfixes\srelated\sto\sthe\ssame.
+D 2010-01-15T17:25:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -64,7 +64,7 @@ F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
 F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
-F ext/fts3/fts3_snippet.c fdc2c12e9387d140f3b4422caa4adcbc9c8eddc9
+F ext/fts3/fts3_snippet.c e5bce65adf33452f02528bce694487172e8f8d2d
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
@@ -377,7 +377,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test ae0433b09b12def08105640e57693726c4949338
-F test/fts3_common.tcl 2a2044688ce3addb1dd58d3d846c574cf4b7bbcd
+F test/fts3_common.tcl 1d887ded06dac9b993cfb175618df7f70c796de2
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test fc1ac42c33f8a66d48ae41e4728f7ca4b6dfc950
@@ -405,7 +405,7 @@ F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test 154fe4b015fd61af523ee083570a134f508f5be7
 F test/fts3rnd.test 2f5761db9dd92f6fe09d08976ac658ef521846ed
-F test/fts3snippet.test 16a05b313bf85da4d0b5cb683549fc2279430fbe
+F test/fts3snippet.test 3562e7e765bb3a8efeb425ad4fdcff5793219b7d
 F test/func.test af106ed834001738246d276659406823e35cde7b
 F test/func2.test 772d66227e4e6684b86053302e2d74a2500e1e0f
 F test/fuzz.test a4174c3009a3e2c2e14b31b364ebf7ddb49de2c9
@@ -785,7 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P da7abe05887d1ad52552d8ce3a153a0a76f96c5a
-R 5042b01c82f71d4627ff255b6d524663
+P e5336edc55313afac11ea085257cb6e75a0287a7
+R 3dd015be1ba4e72ecda3f74bc253611f
 U dan
-Z 872dd4d3d7fbe754f123dcb0fa0c8e61
+Z bf82d4cd440faa8bc0ad658561804fcb

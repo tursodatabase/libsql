@@ -179,7 +179,7 @@ static int fts3ExprNearTrim(Fts3Expr *pExpr){
 
   assert( pExpr->eType==FTSQUERY_PHRASE );
   while( rc==SQLITE_OK
-   && pExpr->aDoclist && pParent 
+   && pParent 
    && pParent->eType==FTSQUERY_NEAR 
    && pParent->pRight==pExpr 
   ){
@@ -768,8 +768,9 @@ static void fts3LoadColumnlistCounts(char **pp, u32 *aOut, int isGlobal){
       pCsr += sqlite3Fts3GetVarint(pCsr, &iCol);
     }
     nHit = fts3ColumnlistCount(&pCsr);
+    assert( nHit>0 );
     if( isGlobal ){
-      if( nHit ) aOut[iCol*3+1]++;
+      aOut[iCol*3+1]++;
     }
     aOut[iCol*3] += nHit;
   }
@@ -914,13 +915,17 @@ void sqlite3Fts3Snippet(
   SnippetFragment aSnippet[4];    /* Maximum of 4 fragments per snippet */
   int nFToken = -1;               /* Number of tokens in each fragment */
 
-  do {
+  for(nSnippet=1; 1; nSnippet++){
+
     int iSnip;                    /* Loop counter 0..nSnippet-1 */
     u64 mCovered = 0;             /* Bitmask of phrases covered by snippet */
     u64 mSeen = 0;                /* Bitmask of phrases seen by BestSnippet() */
 
-    nSnippet++;
-    nFToken = (nToken+nSnippet-1) / nSnippet;
+    if( nToken>=0 ){
+      nFToken = (nToken+nSnippet-1) / nSnippet;
+    }else{
+      nFToken = -1 * nToken;
+    }
 
     for(iSnip=0; iSnip<nSnippet; iSnip++){
       int iBestScore = -1;        /* Best score of columns checked so far */
@@ -956,8 +961,8 @@ void sqlite3Fts3Snippet(
     ** one of the nSnippet snippet fragments, break out of the loop.
     */
     assert( (mCovered&mSeen)==mCovered );
-    if( mSeen==mCovered ) break;
-  }while( nSnippet<SizeofArray(aSnippet) );
+    if( mSeen==mCovered || nSnippet==SizeofArray(aSnippet) ) break;
+  }
 
   assert( nFToken>0 );
 
@@ -1063,11 +1068,13 @@ void sqlite3Fts3Offsets(
     const char *zDoc;
     int nDoc;
 
-    /* Initialize the contents of sCtx.aTerm[] for column iCol. */
+    /* Initialize the contents of sCtx.aTerm[] for column iCol. There is 
+    ** no way that this operation can fail, so the return code from
+    ** fts3ExprIterate() can be discarded.
+    */
     sCtx.iCol = iCol;
     sCtx.iTerm = 0;
-    rc = fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void *)&sCtx);
-    if( rc!=SQLITE_OK ) goto offsets_out;
+    (void)fts3ExprIterate(pCsr->pExpr, fts3ExprTermOffsetInit, (void *)&sCtx);
 
     /* Retreive the text stored in column iCol. If an SQL NULL is stored 
     ** in column iCol, jump immediately to the next iteration of the loop.
@@ -1127,7 +1134,7 @@ void sqlite3Fts3Offsets(
       }
     }
     if( rc==SQLITE_DONE ){
-      rc = SQLITE_ERROR;
+      rc = SQLITE_CORRUPT;
     }
 
     pMod->xClose(pC);

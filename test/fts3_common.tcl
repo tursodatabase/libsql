@@ -326,7 +326,7 @@ proc doPassiveTest {isRestart name sql catchres} {
 
   switch $::DO_MALLOC_TEST {
     0 { # No malloc failures.
-      do_test $name [list catchsql $sql] $catchres
+      do_test $name [list set {} [uplevel [list catchsql $sql]]] $catchres
       return
     }
     1 { # Simulate transient failures.
