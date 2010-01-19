@@ -53,6 +53,9 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
     SRRecFinalize(pStmt);
 #endif
     sqlite3 *db = v->db;
+    if( db==0 ){
+      return SQLITE_MISUSE;
+    }
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex = v->db->mutex;
 #endif
@@ -414,10 +417,10 @@ end_of_step:
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
   int rc = SQLITE_MISUSE;
-  if( pStmt ){
+  Vdbe *v = (Vdbe*)pStmt;
+  sqlite3 *db;
+  if( v && ((db = v->db) != NULL)){
     int cnt = 0;
-    Vdbe *v = (Vdbe*)pStmt;
-    sqlite3 *db = v->db;
 #ifdef SQLITE_ENABLE_SQLRR
     SRRecStep(pStmt);
 #endif

@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sthe\sOS-X\sbranch\sto\sinclude\sall\strunk\schanges\sthrough\sversion\s3.6.22.
-D 2010-01-06T13:12:48
+C robustness\sfixes\sfor\spreventing\sa\sfinalized\sstatement\sfrom\sbeing\sreused
+D 2010-01-19T23:50:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df768f5addf7b6da984aa279123d2671d716cf5c
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,7 +129,7 @@ F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c f9c6098988675ac258b2f98ea5f7e370fc9990fa
 F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
-F src/legacy.c 3c3f78cbe4ada0b17b208da1e2e2773d6a96f27d
+F src/legacy.c c9c8f267723fc458b02983994039a8c0b831a101
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c 90176cc9163ed825e86ff021210f0ecc37aeed89
@@ -218,8 +215,8 @@ F src/vacuum.c db6415fd0f1be191e16228457a6deb9f232e6ad6
 F src/vdbe.c e05765736504d9dbcbb3dfa8964932780002ec39
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h d7ea821ac7813c9bea0fe87558c35e07b2c7c44d
-F src/vdbeapi.c 2d8304acf89303a070a158937c13b9697a6721ab
-F src/vdbeaux.c 2e4a421bd3771ecd3b6c9a1c7abc7270a787a01b
+F src/vdbeapi.c adab93a7133e28b979ef63f5dcd5ca343954d085
+F src/vdbeaux.c 251147ba6268b673101b9fdacdd9277da37c12f4
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1e16e3a16e55f4c3452834f0e041726021aa66e0
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -790,14 +787,9 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a3204d8a217d47e5120ab16918c1b7d4be5a021e 077a6bee2dd4668a5b13c37aa7d4c052350ec782
-R 285e8b8dcdef148f0049020c6394997d
-U drh
-Z 386d9a9da91cf1df72706a198ddb2ae5
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLRIxToxKgR168RlERAojmAJ9EzRc4OEWj0eJm08wIt5iNnckikgCfSAbn
-17IApgGE5dz73Fmj8EQ+3yU=
-=Saz1
------END PGP SIGNATURE-----
+P 541e2b488e4e40706e457c6d3b5647d53da02ce9
+R 478cd8c986e68696068e8d209931e4c5
+T *branch * apple-osx
+T *sym-apple-osx *
+U adam
+Z 1b45182e7b58bf478f36589a9bc5ada0

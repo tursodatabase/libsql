@@ -44,6 +44,10 @@ int sqlite3_exec(
   int nRetry = 0;             /* Number of retry attempts */
   int callbackIsInit;         /* True if callback data is initialized */
 
+  if (!sqlite3SafetyCheckOk(db)) {
+    return SQLITE_MISUSE;
+  }
+  	
   if( zSql==0 ) zSql = "";
 #ifdef SQLITE_ENABLE_SQLRR
   SRRecExec(db, zSql);

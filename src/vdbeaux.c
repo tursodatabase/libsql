@@ -66,7 +66,7 @@ void sqlite3VdbeSetSql(Vdbe *p, const char *z, int n, int isPrepareV2){
 */
 const char *sqlite3_sql(sqlite3_stmt *pStmt){
   Vdbe *p = (Vdbe *)pStmt;
-  return (p->isPrepareV2 ? p->zSql : 0);
+  return ((p && p->isPrepareV2) ? p->zSql : 0);
 }
 
 /*
@@ -2336,6 +2336,7 @@ void sqlite3VdbeDelete(Vdbe *p){
   sqlite3DbFree(db, p->zSql);
   p->magic = VDBE_MAGIC_DEAD;
   sqlite3DbFree(db, p->pFree);
+  p->db = NULL;
   sqlite3DbFree(db, p);
 }
 
