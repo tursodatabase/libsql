@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sApple\sOS-X\sbranch\sto\sinclude\sall\sof\sthe\slatest\schanges\sin\strunk.
-D 2010-01-20T01:26:07
+C Align\sthe\sos_unix.c\ssource\sfile\swith\sthe\sversion\sfound\son\strunk.
+D 2010-01-20T13:20:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df768f5addf7b6da984aa279123d2671d716cf5c
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/os.c 4500ff276e277730776fe9b6c6c5930383ec4000
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c b0f41dcee44f93886f8df7ce80649925f1d1d5c2
+F src/os_unix.c 0b97269557d5a148d43c55edab5a20b62d0e10e3
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c e5421d38470fe58faee71a5a66a778ada882394c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -792,14 +792,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a7a0c8d644873764cb799f9d6aacede4a4fb531f 095c74ea6260096f6a600fdc0edccf7ea24aace4
-R 9efc2ddca9523f1d13408e0a94e5c09d
+P 96499b1dd69a0954e30e4b5b4f2272ab306afcdb 571594bfbe89d9949bdb8b07712e96d0a3467c6e
+R a941e3b4351f348c4273e4ffefa122f7
 U drh
-Z 171e5663e7167a7a582c0d48cd85564a
+Z b7bdf37e77a6e7947e42f3f327673189
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLVluyoxKgR168RlERAptFAJ0ezMHELePGnkaE3fPF5VuOdS+P+wCdFprX
-uvkr3u4H0si4VaJuh+e1VI0=
-=sYOn
+iD8DBQFLVwMaoxKgR168RlERAqE/AJ9fO7S6dcVrGQzP7yNPtPGJbQk/0wCcCvNu
+2NymGUEKKtQgKWSphPhh2gY=
+=cIK7
 -----END PGP SIGNATURE-----

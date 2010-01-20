@@ -132,12 +132,10 @@
 # endif
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
-#define SQLITE_FSFLAGS_IS_READONLY  0x1
-#define SQLITE_FSFLAGS_IS_LOCAL     0x2
-#define SQLITE_FSFLAGS_IS_HFSPLUS   0x4
-#define SQLITE_FSFLAGS_IS_MSDOS     0x8
-#define SQLITE_FSFLAGS_INITIALIZED     0x10000
-
+/*
+** Allowed values of unixFile.fsFlags
+*/
+#define SQLITE_FSFLAGS_IS_MSDOS     0x1
 
 /*
 ** If we are to be thread-safe, include the pthreads header and define
@@ -1003,18 +1001,18 @@ static int findLockInfo(
   ** is a race condition such that another thread has already populated
   ** the first page of the database, no damage is done.
   */
-  if (( statbuf.st_size==0 ) && (0 != (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS))) {
-      rc = write(fd, "S", 1);
-      if( rc!=1 ){
-        pFile->lastErrno = errno;
-        return SQLITE_IOERR;
-      }
-      rc = fstat(fd, &statbuf);
-      if( rc!=0 ){
-        pFile->lastErrno = errno;
-        return SQLITE_IOERR;
-      }
+  if( statbuf.st_size==0 && (pFile->fsFlags & SQLITE_FSFLAGS_IS_MSDOS)!=0 ){
+    rc = write(fd, "S", 1);
+    if( rc!=1 ){
+      pFile->lastErrno = errno;
+      return SQLITE_IOERR;
     }
+    rc = fstat(fd, &statbuf);
+    if( rc!=0 ){
+      pFile->lastErrno = errno;
+      return SQLITE_IOERR;
+    }
+  }
 #endif
 
   memset(&lockKey, 0, sizeof(lockKey));
@@ -1182,64 +1180,6 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   return rc;
 }
 
-#ifdef SQLITE_ENABLE_NFS_RANGELOCK
-/*
-** Perform a file locking operation on a range of bytes in a file.
-** The "op" parameter should be one of F_RDLCK, F_WRLCK, or F_UNLCK.
-** Return 0 on success or -1 for failure.  On failure, write the error
-** code into *pErrcode.
-**
-** If the SQLITE_WHOLE_FILE_LOCKING bit is clear, then only lock
-** the range of bytes on the locking page between SHARED_FIRST and
-** SHARED_SIZE.  If SQLITE_WHOLE_FILE_LOCKING is set, then lock all
-** bytes from 0 up to but not including PENDING_BYTE, and all bytes
-** that follow SHARED_FIRST.
-**
-** In other words, of SQLITE_WHOLE_FILE_LOCKING if false (the historical
-** default case) then only lock a small range of bytes from SHARED_FIRST
-** through SHARED_FIRST+SHARED_SIZE-1.  But if SQLITE_WHOLE_FILE_LOCKING is
-** true then lock every byte in the file except for PENDING_BYTE and
-** RESERVED_BYTE.
-**
-** SQLITE_WHOLE_FILE_LOCKING=true overlaps SQLITE_WHOLE_FILE_LOCKING=false
-** and so the locking schemes are compatible.  One type of lock will
-** effectively exclude the other type.  The reason for using the
-** SQLITE_WHOLE_FILE_LOCKING=true is that by indicating the full range
-** of bytes to be read or written, we give hints to NFS to help it
-** maintain cache coherency.  On the other hand, whole file locking
-** is slower, so we don't want to use it except for NFS.
-*/
-static int rangeLock(unixFile *pFile, int op, int *pErrcode){
-  struct flock lock;
-  int rc;
-  lock.l_type = op;
-  lock.l_start = SHARED_FIRST;
-  lock.l_whence = SEEK_SET;
-  if( (pFile->fileFlags & SQLITE_WHOLE_FILE_LOCKING)==0 ){
-    lock.l_len = SHARED_SIZE;
-    rc = fcntl(pFile->h, F_SETLK, &lock);
-    *pErrcode = errno;
-  }else{
-    lock.l_len = 0;
-    rc = fcntl(pFile->h, F_SETLK, &lock);
-    *pErrcode = errno;
-    if( NEVER(op==F_UNLCK) || rc!=(-1) ){
-      lock.l_start = 0;
-      lock.l_len = PENDING_BYTE;
-      rc = fcntl(pFile->h, F_SETLK, &lock);
-      if( ALWAYS(op!=F_UNLCK) && rc==(-1) ){
-        *pErrcode = errno;
-        lock.l_type = F_UNLCK;
-        lock.l_start = SHARED_FIRST;
-        lock.l_len = 0;
-        fcntl(pFile->h, F_SETLK, &lock);
-      }
-    }
-  }
-  return rc;
-}
-
-#endif /* SQLITE_ENABLE_NFS_RANGELOCK */
 /*
 ** Lock the file with the lock specified by parameter locktype - one
 ** of the following:
@@ -1600,14 +1540,14 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
 #endif
 
     /* downgrading to a shared lock on NFS involves clearing the write lock
-     ** before establishing the readlock - to avoid a race condition we downgrade
-     ** the lock in 2 blocks, so that part of the range will be covered by a 
-     ** write lock until the rest is covered by a read lock:
-     **  1:   [WWWWW]
-     **  2:   [....W]
-     **  3:   [RRRRW]
-     **  4:   [RRRR.]
-     */
+    ** before establishing the readlock - to avoid a race condition we downgrade
+    ** the lock in 2 blocks, so that part of the range will be covered by a 
+    ** write lock until the rest is covered by a read lock:
+    **  1:   [WWWWW]
+    **  2:   [....W]
+    **  3:   [RRRRW]
+    **  4:   [RRRR.]
+    */
     if( locktype==SHARED_LOCK ){
       if( handleNFSUnlock ){
         off_t divSize = SHARED_SIZE - 1;
@@ -2808,13 +2748,13 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     
 #ifndef NDEBUG
     /* When reducing a lock such that other processes can start
-     ** reading the database file again, make sure that the
-     ** transaction counter was updated if any part of the database
-     ** file changed.  If the transaction counter is not updated,
-     ** other connections to the same file might not realize that
-     ** the file has changed and hence might not know to flush their
-     ** cache.  The use of a stale cache can lead to database corruption.
-     */
+    ** reading the database file again, make sure that the
+    ** transaction counter was updated if any part of the database
+    ** file changed.  If the transaction counter is not updated,
+    ** other connections to the same file might not realize that
+    ** the file has changed and hence might not know to flush their
+    ** cache.  The use of a stale cache can lead to database corruption.
+    */
     assert( pFile->inNormalWrite==0
            || pFile->dbUpdate==0
            || pFile->transCntrChng==1 );
@@ -2847,9 +2787,9 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
   if( rc==SQLITE_OK && locktype==NO_LOCK ){
 
     /* Decrement the shared lock counter.  Release the lock using an
-     ** OS call only when all threads in this same process have released
-     ** the lock.
-     */
+    ** OS call only when all threads in this same process have released
+    ** the lock.
+    */
     unsigned long long sharedLockByte = SHARED_FIRST+pLock->sharedByte;
     pLock->cnt--;
     if( pLock->cnt==0 ){
@@ -3238,8 +3178,9 @@ static int full_fsync(int fd, int fullSync, int dataOnly){
   if( rc ) rc = fsync(fd);
 
 #elif defined(__APPLE__)
-  // fdatasync() on HFS+ doesn't yet flush the file size if it changed correctly
-	// so currently we default to the macro that redefines fdatasync to fsync
+  /* fdatasync() on HFS+ doesn't yet flush the file size if it changed correctly
+  ** so currently we default to the macro that redefines fdatasync to fsync
+  */
   rc = fsync(fd);
 #else 
   rc = fdatasync(fd);
@@ -4097,7 +4038,9 @@ static int unixOpen(
   int isCreate     = (flags & SQLITE_OPEN_CREATE);
   int isReadonly   = (flags & SQLITE_OPEN_READONLY);
   int isReadWrite  = (flags & SQLITE_OPEN_READWRITE);
+#if SQLITE_ENABLE_LOCKING_STYLE
   int isAutoProxy  = (flags & SQLITE_OPEN_AUTOPROXY);
+#endif
 
   /* If creating a master or main-file journal, this function will open
   ** a file-descriptor on the directory too. The first time unixSync()
@@ -4231,12 +4174,8 @@ static int unixOpen(
 
   noLock = eType!=SQLITE_OPEN_MAIN_DB;
 
-#if SQLITE_PREFER_PROXY_LOCKING
-  isAutoProxy = 1;
-#endif
   
 #if defined(__APPLE__) || SQLITE_ENABLE_LOCKING_STYLE
-
   struct statfs fsInfo;
   if( fstatfs(fd, &fsInfo) == -1 ){
     ((unixFile*)pFile)->lastErrno = errno;
@@ -4244,23 +4183,15 @@ static int unixOpen(
     close(fd); /* silently leak if fail, in error */
     return SQLITE_IOERR_ACCESS;
   }
-  
-  ((unixFile*)pFile)->fsFlags = SQLITE_FSFLAGS_INITIALIZED;
-  
-  if (fsInfo.f_flags & MNT_RDONLY) {
-    ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_READONLY;
-  }
-  if (fsInfo.f_flags & MNT_LOCAL) {
-    ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_LOCAL;
-  }
-  if (0 == strncmp("hfs", fsInfo.f_fstypename, 3)) {
-    ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_HFSPLUS;
-  } else if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
+  if (0 == strncmp("msdos", fsInfo.f_fstypename, 5)) {
     ((unixFile*)pFile)->fsFlags |= SQLITE_FSFLAGS_IS_MSDOS;
   }
 #endif
   
 #if SQLITE_ENABLE_LOCKING_STYLE
+#if SQLITE_PREFER_PROXY_LOCKING
+  isAutoProxy = 1;
+#endif
   if( isAutoProxy && (zPath!=NULL) && (!noLock) && pVfs->xOpen ){
     char *envforce = getenv("SQLITE_FORCE_PROXY_LOCKING");
     int useProxy = 0;
@@ -4809,7 +4740,8 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
 # ifdef _CS_DARWIN_USER_TEMP_DIR
   {
     if( !confstr(_CS_DARWIN_USER_TEMP_DIR, lPath, maxLen) ){
-      OSTRACE4("GETLOCKPATH  failed %s errno=%d pid=%d\n", lPath, errno, getpid());
+      OSTRACE4("GETLOCKPATH  failed %s errno=%d pid=%d\n",
+               lPath, errno, getpid());
       return SQLITE_IOERR_LOCK;
     }
     len = strlcat(lPath, "sqliteplocks", maxLen);    
@@ -4856,7 +4788,9 @@ static int proxyCreateLockPath(const char *lockPath){
         if( mkdir(buf, SQLITE_DEFAULT_PROXYDIR_PERMISSIONS) ){
           int err=errno;
           if( err!=EEXIST ) {
-            OSTRACE5("CREATELOCKPATH  FAILED creating %s, '%s' proxy lock path=%s pid=%d\n", buf, strerror(err), lockPath, getpid());
+            OSTRACE5("CREATELOCKPATH  FAILED creating %s, "
+                     "'%s' proxy lock path=%s pid=%d\n",
+                     buf, strerror(err), lockPath, getpid());
             return err;
           }
         }
@@ -5210,8 +5144,10 @@ static int proxyTakeConch(unixFile *pFile){
             /* create a copy of the lock path if the conch is taken */
             goto end_takeconch;
           }
-        }else if( hostIdMatch && !strncmp(pCtx->lockProxyPath, 
-                                          &readBuf[PROXY_PATHINDEX], readLen-PROXY_PATHINDEX) ){
+        }else if( hostIdMatch
+               && !strncmp(pCtx->lockProxyPath, &readBuf[PROXY_PATHINDEX],
+                           readLen-PROXY_PATHINDEX)
+        ){
           /* conch host and lock path match */
           goto end_takeconch; 
         }
