@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\swith\sthe\sCLI\swhere\snot\sall\sSQL\scommands\swere\sbeing\sechoed.\s\s\nAdded\stests\sof\ssame\sto\stools/shell2.test.\s\sTicket\s[eb620916be].
-D 2010-01-18T18:17:10
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Manually\scopy\sover\sthe\srebustness\sfixes\sfrom\sthe\sapple-osx\sbranch.
+D 2010-01-20T01:20:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -126,7 +129,7 @@ F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c 11eeb4f2e5d57b7c106f0c28eea8d0dd896dfd70
 F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
-F src/legacy.c 9304428e71b1d622b764913e1432e69156814755
+F src/legacy.c 16f385490f377c2c80a6c7357391d499087defed
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c a0f6dfbdd79e01baf75ad62bdbfdeae9e560eb96
@@ -212,8 +215,8 @@ F src/vacuum.c 28ee5a4963d16cf2477075d85966c0f461cd79de
 F src/vdbe.c b0c18b5c5ab4745a09b8f164e5db36413d98872e
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
-F src/vdbeapi.c fc3787eb2f5487d4cc3444de42d56f2e39d311f5
-F src/vdbeaux.c 2e4a421bd3771ecd3b6c9a1c7abc7270a787a01b
+F src/vdbeapi.c 1dc9dce4b2f5fbcde70e75b08ea1e657b5aee41b
+F src/vdbeaux.c 8f30e619a8077ee516fa1494fa603550fa951726
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c 1ce5005ee4a1ee25ef677abdcaef1259261cc252
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -785,7 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 34f6854685f00158bc536dd53ac5bc20e19fe071
-R 33c261ff7c30e0ad7a1793cafe971c5c
-U shaneh
-Z 79aeb636bb9c2f44057691bade01f4e8
+P 7080ae3bc3828168483ac23d5b8976d67ea5089e
+R 3250e1f1cb98525c679e43949f6887ba
+U drh
+Z 80303b25f3b40a711abf1fdd5fde6c71
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLVlp7oxKgR168RlERArgqAJsFnDPDckfZNwKw0qwzXYLaFTwlQwCdEXTk
+6yaX+yx7Uj9A+mdhdwAWsf8=
+=IqnZ
+-----END PGP SIGNATURE-----
