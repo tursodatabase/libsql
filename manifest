@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Manually\scopy\sover\sthe\srebustness\sfixes\sfrom\sthe\sapple-osx\sbranch.
-D 2010-01-20T01:20:56
+C Move\sthe\sApple\sOS-X\sVFS\schanges\sinto\sthe\strunk.
+D 2010-01-20T13:07:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -151,7 +151,7 @@ F src/os.c 4500ff276e277730776fe9b6c6c5930383ec4000
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c b24510792108ffee0c8175c1d2fc644913b241d2
+F src/os_unix.c 0b97269557d5a148d43c55edab5a20b62d0e10e3
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c e5421d38470fe58faee71a5a66a778ada882394c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -167,7 +167,7 @@ F src/resolve.c 56ecd50851afa9dbcc1803ef86a9b17b3f3d3b89
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 0109b993c360d649857523abb72919e1794f9b45
 F src/shell.c d7408dbe4d17fbefc0e63e85f6498634962922f9
-F src/sqlite.h.in d493cf5029de67fe7252324473d89140a007a6c4
+F src/sqlite.h.in ab2e4b701d1f715a746c03f9f204ae0993ec0200
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 84b20b8be124b9c1d4abfd79208710febba382fa
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -788,14 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7080ae3bc3828168483ac23d5b8976d67ea5089e
-R 3250e1f1cb98525c679e43949f6887ba
+P 095c74ea6260096f6a600fdc0edccf7ea24aace4
+R e4abf14fe2df55de8faa5f5d45f42420
 U drh
-Z 80303b25f3b40a711abf1fdd5fde6c71
+Z ec0cb069e0230592effd43c2896e2f61
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLVlp7oxKgR168RlERArgqAJsFnDPDckfZNwKw0qwzXYLaFTwlQwCdEXTk
-6yaX+yx7Uj9A+mdhdwAWsf8=
-=IqnZ
+iD8DBQFLVwANoxKgR168RlERAmzcAJ9oMlWU73oI5EEQ1akOqN4co4sD0QCeKjK8
+uNDkKBTXCwwi5UODxueds0E=
+=6M6W
 -----END PGP SIGNATURE-----
