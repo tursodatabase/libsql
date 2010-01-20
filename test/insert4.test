@@ -301,6 +301,29 @@ do_test insert4-6.4 {
 } {0}
 
 
-
+do_test insert4-6.5 {
+  execsql {
+    CREATE TABLE t6a(x CHECK( x<>'abc' ));
+    INSERT INTO t6a VALUES('ABC');
+    SELECT * FROM t6a;
+  }
+} {ABC}
+do_test insert4-6.6 {
+  execsql {
+    CREATE TABLE t6b(x CHECK( x<>'abc' COLLATE nocase ));
+  }
+  catchsql {
+    INSERT INTO t6b SELECT * FROM t6a;
+  }
+} {1 {constraint failed}}
+do_test insert4-6.7 {
+  execsql {
+    DROP TABLE t6b;
+    CREATE TABLE t6b(x CHECK( x COLLATE nocase <>'abc' ));
+  }
+  catchsql {
+    INSERT INTO t6b SELECT * FROM t6a;
+  }
+} {1 {constraint failed}}
 
 finish_test

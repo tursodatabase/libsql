@@ -1882,6 +1882,7 @@ static char *dup8bytes(Vdbe *v, const char *in){
   return out;
 }
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
 /*
 ** Generate an instruction that will put the floating point
 ** value described by z[0..n-1] into register iMem.
@@ -1901,6 +1902,7 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
     sqlite3VdbeAddOp4(v, OP_Real, 0, iMem, 0, zV, P4_REAL);
   }
 }
+#endif
 
 
 /*
@@ -1911,7 +1913,8 @@ static void codeReal(Vdbe *v, const char *z, int negateFlag, int iMem){
 ** z[n] character is guaranteed to be something that does not look
 ** like the continuation of the number.
 */
-static void codeInteger(Vdbe *v, Expr *pExpr, int negFlag, int iMem){
+static void codeInteger(Parse *pParse, Expr *pExpr, int negFlag, int iMem){
+  Vdbe *v = pParse->pVdbe;
   if( pExpr->flags & EP_IntValue ){
     int i = pExpr->u.iValue;
     if( negFlag ) i = -i;
@@ -1927,7 +1930,11 @@ static void codeInteger(Vdbe *v, Expr *pExpr, int negFlag, int iMem){
       zV = dup8bytes(v, (char*)&value);
       sqlite3VdbeAddOp4(v, OP_Int64, 0, iMem, 0, zV, P4_INT64);
     }else{
+#ifdef SQLITE_OMIT_FLOATING_POINT
+      sqlite3ErrorMsg(pParse, "oversized integer: %s%s", negFlag ? "-" : "", z);
+#else
       codeReal(v, z, negFlag, iMem);
+#endif
     }
   }
 }
@@ -2314,14 +2321,16 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       break;
     }
     case TK_INTEGER: {
-      codeInteger(v, pExpr, 0, target);
+      codeInteger(pParse, pExpr, 0, target);
       break;
     }
+#ifndef SQLITE_OMIT_FLOATING_POINT
     case TK_FLOAT: {
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       codeReal(v, pExpr->u.zToken, 0, target);
       break;
     }
+#endif
     case TK_STRING: {
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       sqlite3VdbeAddOp4(v, OP_String8, 0, target, 0, pExpr->u.zToken, 0);
@@ -2491,11 +2500,13 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     case TK_UMINUS: {
       Expr *pLeft = pExpr->pLeft;
       assert( pLeft );
-      if( pLeft->op==TK_FLOAT ){
+      if( pLeft->op==TK_INTEGER ){
+        codeInteger(pParse, pLeft, 1, target);
+#ifndef SQLITE_OMIT_FLOATING_POINT
+      }else if( pLeft->op==TK_FLOAT ){
         assert( !ExprHasProperty(pExpr, EP_IntValue) );
         codeReal(v, pLeft->u.zToken, 1, target);
-      }else if( pLeft->op==TK_INTEGER ){
-        codeInteger(v, pLeft, 1, target);
+#endif
       }else{
         regFree1 = r1 = sqlite3GetTempReg(pParse);
         sqlite3VdbeAddOp2(v, OP_Integer, 0, r1);
@@ -2743,6 +2754,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
         target
       ));
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
       /* If the column has REAL affinity, it may currently be stored as an
       ** integer. Use OP_RealAffinity to make sure it is really real.  */
       if( pExpr->iColumn>=0 
@@ -2750,6 +2762,7 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
       ){
         sqlite3VdbeAddOp1(v, OP_RealAffinity, target);
       }
+#endif
       break;
     }
 
@@ -3415,57 +3428,61 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 }
 
 /*
-** Do a deep comparison of two expression trees.  Return TRUE (non-zero)
-** if they are identical and return FALSE if they differ in any way.
+** Do a deep comparison of two expression trees.  Return 0 if the two
+** expressions are completely identical.  Return 1 if they differ only
+** by a COLLATE operator at the top level.  Return 2 if there are differences
+** other than the top-level COLLATE operator.
 **
-** Sometimes this routine will return FALSE even if the two expressions
+** Sometimes this routine will return 2 even if the two expressions
 ** really are equivalent.  If we cannot prove that the expressions are
-** identical, we return FALSE just to be safe.  So if this routine
-** returns false, then you do not really know for certain if the two
-** expressions are the same.  But if you get a TRUE return, then you
+** identical, we return 2 just to be safe.  So if this routine
+** returns 2, then you do not really know for certain if the two
+** expressions are the same.  But if you get a 0 or 1 return, then you
 ** can be sure the expressions are the same.  In the places where
-** this routine is used, it does not hurt to get an extra FALSE - that
+** this routine is used, it does not hurt to get an extra 2 - that
 ** just might result in some slightly slower code.  But returning
-** an incorrect TRUE could lead to a malfunction.
+** an incorrect 0 or 1 could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB){
   int i;
   if( pA==0||pB==0 ){
-    return pB==pA;
+    return pB==pA ? 0 : 2;
   }
   assert( !ExprHasAnyProperty(pA, EP_TokenOnly|EP_Reduced) );
   assert( !ExprHasAnyProperty(pB, EP_TokenOnly|EP_Reduced) );
   if( ExprHasProperty(pA, EP_xIsSelect) || ExprHasProperty(pB, EP_xIsSelect) ){
-    return 0;
+    return 2;
   }
-  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 0;
-  if( pA->op!=pB->op ) return 0;
-  if( !sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 0;
-  if( !sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 0;
+  if( (pA->flags & EP_Distinct)!=(pB->flags & EP_Distinct) ) return 2;
+  if( pA->op!=pB->op ) return 2;
+  if( sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 2;
+  if( sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 2;
 
   if( pA->x.pList && pB->x.pList ){
-    if( pA->x.pList->nExpr!=pB->x.pList->nExpr ) return 0;
+    if( pA->x.pList->nExpr!=pB->x.pList->nExpr ) return 2;
     for(i=0; i<pA->x.pList->nExpr; i++){
       Expr *pExprA = pA->x.pList->a[i].pExpr;
       Expr *pExprB = pB->x.pList->a[i].pExpr;
-      if( !sqlite3ExprCompare(pExprA, pExprB) ) return 0;
+      if( sqlite3ExprCompare(pExprA, pExprB) ) return 2;
     }
   }else if( pA->x.pList || pB->x.pList ){
-    return 0;
+    return 2;
   }
 
-  if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 0;
+  if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
-      return 0;
+      return 2;
     }
   }else if( pA->op!=TK_COLUMN && pA->u.zToken ){
-    if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 0;
+    if( ExprHasProperty(pB, EP_IntValue) || NEVER(pB->u.zToken==0) ) return 2;
     if( sqlite3StrICmp(pA->u.zToken,pB->u.zToken)!=0 ){
-      return 0;
+      return 2;
     }
   }
-  return 1;
+  if( (pA->flags & EP_ExpCollate)!=(pB->flags & EP_ExpCollate) ) return 1;
+  if( (pA->flags & EP_ExpCollate)!=0 && pA->pColl!=pB->pColl ) return 2;
+  return 0;
 }
 
 
@@ -3596,7 +3613,7 @@ static int analyzeAggregate(Walker *pWalker, Expr *pExpr){
         */
         struct AggInfo_func *pItem = pAggInfo->aFunc;
         for(i=0; i<pAggInfo->nFunc; i++, pItem++){
-          if( sqlite3ExprCompare(pItem->pExpr, pExpr) ){
+          if( sqlite3ExprCompare(pItem->pExpr, pExpr)==0 ){
             break;
           }
         }

@@ -606,7 +606,9 @@ void sqlite3VXPrintf(
           while( nPad-- ) bufpt[i++] = '0';
           length = width;
         }
-#endif
+#else
+        length = 0;
+#endif /* SQLITE_OMIT_FLOATING_POINT */
         break;
       case etSIZE:
         *(va_arg(ap,int*)) = pAccum->nChar;

@@ -104,7 +104,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   saved_nTotalChange = db->nTotalChange;
   saved_xTrace = db->xTrace;
   db->flags |= SQLITE_WriteSchema | SQLITE_IgnoreChecks;
-  db->flags &= ~SQLITE_ForeignKeys;
+  db->flags &= ~(SQLITE_ForeignKeys | SQLITE_ReverseOrder);
   db->xTrace = 0;
 
   pMain = db->aDb[0].pBt;

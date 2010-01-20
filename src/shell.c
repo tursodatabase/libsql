@@ -1501,10 +1501,6 @@ static int shell_callback(void *pArg, int nArg, char **azArg, char **azCol, int 
   int i;
   struct callback_data *p = (struct callback_data*)pArg;
 
-  if( p->echoOn && p->cnt==0  && p->pStmt){
-    printf("%s\n", sqlite3_sql(p->pStmt));
-  }
-
   switch( p->mode ){
     case MODE_Line: {
       int w = 5;
@@ -1853,6 +1849,12 @@ static int shell_exec(
         zSql = zLeftover;
         while( isspace(zSql[0]) ) zSql++;
         continue;
+      }
+
+      /* echo the sql statement if echo on */
+      if( pArg->echoOn ){
+        char *zStmtSql = sqlite3_sql(pStmt);
+        fprintf(pArg->out,"%s\n", zStmtSql ? zStmtSql : zSql);
       }
 
       /* perform the first step.  this will tell us if we

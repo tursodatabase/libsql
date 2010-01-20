@@ -76,6 +76,17 @@ do_test fts3near-1.15 {
   execsql {SELECT docid FROM t1 WHERE content MATCH 'one NEAR two NEAR one'}
 } {3} 
 
+do_test fts3near-1.16 {
+  execsql {
+    SELECT docid FROM t1 WHERE content MATCH '"one three" NEAR/0 "four five"'
+  }
+} {1} 
+do_test fts3near-1.17 {
+  execsql {
+    SELECT docid FROM t1 WHERE content MATCH '"four five" NEAR/0 "one three"'
+  }
+} {1} 
+
 
 # Output format of the offsets() function:
 #
@@ -154,6 +165,7 @@ do_test fts3near-3.6 {
     SELECT offsets(t1) FROM t1 WHERE content MATCH 'three NEAR/0 "two four"'
   }
 } {{0 0 8 5 0 1 14 3 0 2 18 4}}
+breakpoint
 do_test fts3near-3.7 {
   execsql {
     SELECT offsets(t1) FROM t1 WHERE content MATCH '"two four" NEAR/0 three'}
@@ -170,7 +182,7 @@ do_test fts3near-4.1 {
   execsql {
     SELECT snippet(t1) FROM t1 WHERE content MATCH 'specification NEAR supports'
   }
-} {{<b>...</b> devices, handheld devices, etc. This <b>specification</b> also <b>supports</b> content positioning, downloadable fonts, <b>...</b>}}
+} {{<b>...</b>braille devices, handheld devices, etc. This <b>specification</b> also <b>supports</b> content positioning, downloadable fonts, table layout<b>...</b>}}
 
 do_test fts3near-5.1 {
   execsql {

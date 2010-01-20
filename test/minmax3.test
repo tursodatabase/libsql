@@ -174,7 +174,7 @@ do_test minmax3-2.8 {
   execsql { SELECT min(b) FROM t2 WHERE a = 3 AND b<1; }
 } {{}}
 
-do_test minmax3-2.1 {
+do_test minmax3-3.1 {
   execsql {
     DROP TABLE t2;
     CREATE TABLE t2(a, b);
@@ -192,26 +192,91 @@ do_test minmax3-2.1 {
     INSERT INTO t2 VALUES(3, 3);
   }
 } {}
-do_test minmax3-2.2 {
+do_test minmax3-3.2 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1; }
 } {1}
-do_test minmax3-2.3 {
+do_test minmax3-3.3 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b>1; }
 } {2}
-do_test minmax3-2.4 {
+do_test minmax3-3.4 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b>-1; }
 } {1}
-do_test minmax3-2.5 {
+do_test minmax3-3.5 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1; }
 } {1}
-do_test minmax3-2.6 {
+do_test minmax3-3.6 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b<2; }
 } {1}
-do_test minmax3-2.7 {
+do_test minmax3-3.7 {
   execsql { SELECT min(b) FROM t2 WHERE a = 1 AND b<1; }
 } {{}}
-do_test minmax3-2.8 {
+do_test minmax3-3.8 {
   execsql { SELECT min(b) FROM t2 WHERE a = 3 AND b<1; }
 } {{}}
+
+do_test minmax3-4.1 {
+  execsql {
+    CREATE TABLE t4(x);
+    INSERT INTO t4 VALUES('abc');
+    INSERT INTO t4 VALUES('BCD');
+    SELECT max(x) FROM t4;
+  }
+} {abc}
+do_test minmax3-4.2 {
+  execsql {
+    SELECT max(x COLLATE nocase) FROM t4;
+  }
+} {BCD}
+do_test minmax3-4.3 {
+  execsql {
+    SELECT max(x), max(x COLLATE nocase) FROM t4;
+  }
+} {abc BCD}
+do_test minmax3-4.4 {
+  execsql {
+    SELECT max(x COLLATE binary), max(x COLLATE nocase) FROM t4;
+  }
+} {abc BCD}
+do_test minmax3-4.5 {
+  execsql {
+    SELECT max(x COLLATE nocase), max(x COLLATE rtrim) FROM t4;
+  }
+} {BCD abc}
+do_test minmax3-4.6 {
+  execsql {
+    SELECT max(x COLLATE nocase), max(x) FROM t4;
+  }
+} {BCD abc}
+do_test minmax3-4.10 {
+  execsql {
+    SELECT min(x) FROM t4;
+  }
+} {BCD}
+do_test minmax3-4.11 {
+  execsql {
+    SELECT min(x COLLATE nocase) FROM t4;
+  }
+} {abc}
+do_test minmax3-4.12 {
+  execsql {
+    SELECT min(x), min(x COLLATE nocase) FROM t4;
+  }
+} {BCD abc}
+do_test minmax3-4.13 {
+  execsql {
+    SELECT min(x COLLATE binary), min(x COLLATE nocase) FROM t4;
+  }
+} {BCD abc}
+do_test minmax3-4.14 {
+  execsql {
+    SELECT min(x COLLATE nocase), min(x COLLATE rtrim) FROM t4;
+  }
+} {abc BCD}
+do_test minmax3-4.15 {
+  execsql {
+    SELECT min(x COLLATE nocase), min(x) FROM t4;
+  }
+} {abc BCD}
+
 
 finish_test

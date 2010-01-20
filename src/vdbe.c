@@ -884,6 +884,7 @@ case OP_Int64: {           /* out2-prerelease */
   break;
 }
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
 /* Opcode: Real * P2 * P4 *
 **
 ** P4 is a pointer to a 64-bit floating point value.
@@ -895,6 +896,7 @@ case OP_Real: {            /* same as TK_FLOAT, out2-prerelease */
   pOut->r = *pOp->p4.pReal;
   break;
 }
+#endif
 
 /* Opcode: String8 * P2 * P4 *
 **
@@ -1295,6 +1297,10 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
         break;
       }
     }
+#ifdef SQLITE_OMIT_FLOATING_POINT
+    pOut->u.i = rB;
+    MemSetTypeFlag(pOut, MEM_Int);
+#else
     if( sqlite3IsNaN(rB) ){
       goto arithmetic_result_is_null;
     }
@@ -1303,6 +1309,7 @@ case OP_Remainder: {           /* same as TK_REM, in1, in2, out3 */
     if( (flags & MEM_Real)==0 ){
       sqlite3VdbeIntegerAffinity(pOut);
     }
+#endif
   }
   break;
 
@@ -1530,6 +1537,7 @@ case OP_MustBeInt: {            /* jump, in1 */
   break;
 }
 
+#ifndef SQLITE_OMIT_FLOATING_POINT
 /* Opcode: RealAffinity P1 * * * *
 **
 ** If register P1 holds an integer convert it to a real value.
@@ -1546,6 +1554,7 @@ case OP_RealAffinity: {                  /* in1 */
   }
   break;
 }
+#endif
 
 #ifndef SQLITE_OMIT_CAST
 /* Opcode: ToText P1 * * * *
@@ -1629,7 +1638,7 @@ case OP_ToInt: {                  /* same as TK_TO_INT, in1 */
   break;
 }
 
-#ifndef SQLITE_OMIT_CAST
+#if !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT)
 /* Opcode: ToReal P1 * * * *
 **
 ** Force the value in register P1 to be a floating point number.
@@ -1646,7 +1655,7 @@ case OP_ToReal: {                  /* same as TK_TO_REAL, in1 */
   }
   break;
 }
-#endif /* SQLITE_OMIT_CAST */
+#endif /* !defined(SQLITE_OMIT_CAST) && !defined(SQLITE_OMIT_FLOATING_POINT) */
 
 /* Opcode: Lt P1 P2 P3 P4 P5
 **
@@ -4572,7 +4581,7 @@ case OP_ParseSchema: {
     initData.iDb = pOp->p1;
     initData.pzErrMsg = &p->zErrMsg;
     zSql = sqlite3MPrintf(db,
-       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s",
+       "SELECT name, rootpage, sql FROM '%q'.%s WHERE %s ORDER BY rowid",
        db->aDb[iDb].zName, zMaster, pOp->p4.z);
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
@@ -5664,6 +5673,7 @@ case OP_Trace: {
 ** the same as a no-op.  This opcodesnever appears in a real VM program.
 */
 default: {          /* This is really OP_Noop and OP_Explain */
+  assert( pOp->opcode==OP_Noop || pOp->opcode==OP_Explain );
   break;
 }
 

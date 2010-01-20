@@ -409,7 +409,23 @@ char *arg;
 
 /*
 ** The state of the yy_action table under construction is an instance of
-** the following structure
+** the following structure.
+**
+** The yy_action table maps the pair (state_number, lookahead) into an
+** action_number.  The table is an array of integers pairs.  The state_number
+** determines an initial offset into the yy_action array.  The lookahead
+** value is then added to this initial offset to get an index X into the
+** yy_action array. If the aAction[X].lookahead equals the value of the
+** of the lookahead input, then the value of the action_number output is
+** aAction[X].action.  If the lookaheads do not match then the
+** default action for the state_number is returned.
+**
+** All actions associated with a single state_number are first entered
+** into aLookahead[] using multiple calls to acttab_action().  Then the 
+** actions for that single state_number are placed into the aAction[] 
+** array with a single call to acttab_insert().  The acttab_insert() call
+** also resets the aLookahead[] array in preparation for the next
+** state number.
 */
 typedef struct acttab acttab;
 struct acttab {
@@ -454,7 +470,10 @@ acttab *acttab_alloc(void){
   return p;
 }
 
-/* Add a new action to the current transaction set
+/* Add a new action to the current transaction set.  
+**
+** This routine is called once for each lookahead for a particular
+** state.
 */
 void acttab_action(acttab *p, int lookahead, int action){
   if( p->nLookahead>=p->nLookaheadAlloc ){
@@ -491,7 +510,6 @@ void acttab_action(acttab *p, int lookahead, int action){
 */
 int acttab_insert(acttab *p){
   int i, j, k, n;
-  int nActtab;     /* Number of slots in the p->aAction[] table */
   assert( p->nLookahead>0 );
 
   /* Make sure we have enough space to hold the expanded action table
@@ -499,8 +517,7 @@ int acttab_insert(acttab *p){
   ** must be appended to the current action table
   */
   n = p->mxLookahead + 1;
-  nActtab = p->nAction + n;
-  if( nActtab >= p->nActionAlloc ){
+  if( p->nAction + n >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
     p->aAction = realloc( p->aAction,
@@ -515,16 +532,16 @@ int acttab_insert(acttab *p){
     }
   }
 
-  /* Scan the existing action table looking for an offset where we can
-  ** insert the current transaction set.  Fall out of the loop when that
-  ** offset is found.  In the worst case, we fall out of the loop when
-  ** i reaches nActtab, which means we append the new transaction set.
+  /* Scan the existing action table looking for an offset that is a 
+  ** duplicate of the current transaction set.  Fall out of the loop
+  ** if and when the duplicate is found.
   **
   ** i is the index in p->aAction[] where p->mnLookahead is inserted.
   */
-  for(i=nActtab-1; i>=0; i--){
-    /* First look for an existing action table entry that can be reused */
+  for(i=p->nAction-1; i>=0; i--){
     if( p->aAction[i].lookahead==p->mnLookahead ){
+      /* All lookaheads and actions in the aLookahead[] transaction
+      ** must match against the candidate aAction[i] entry. */
       if( p->aAction[i].action!=p->mnAction ) continue;
       for(j=0; j<p->nLookahead; j++){
         k = p->aLookahead[j].lookahead - p->mnLookahead + i;
@@ -533,19 +550,30 @@ int acttab_insert(acttab *p){
         if( p->aLookahead[j].action!=p->aAction[k].action ) break;
       }
       if( j<p->nLookahead ) continue;
+
+      /* No possible lookahead value that is not in the aLookahead[]
+      ** transaction is allowed to match aAction[i] */
       n = 0;
       for(j=0; j<p->nAction; j++){
         if( p->aAction[j].lookahead<0 ) continue;
         if( p->aAction[j].lookahead==j+p->mnLookahead-i ) n++;
       }
       if( n==p->nLookahead ){
-        break;  /* Same as a prior transaction set */
+        break;  /* An exact match is found at offset i */
       }
     }
   }
+
+  /* If no existing offsets exactly match the current transaction, find an
+  ** an empty offset in the aAction[] table in which we can add the
+  ** aLookahead[] transaction.
+  */
   if( i<0 ){
-    /* If no reusable entry is found, look for an empty slot */
-    for(i=0; i<nActtab; i++){
+    /* Look for holes in the aAction[] table that fit the current
+    ** aLookahead[] transaction.  Leave i set to the offset of the hole.
+    ** If no holes are found, i is left at p->nAction, which means the
+    ** transaction will be appended. */
+    for(i=0; i<p->nActionAlloc - p->mxLookahead; i++){
       if( p->aAction[i].lookahead<0 ){
         for(j=0; j<p->nLookahead; j++){
           k = p->aLookahead[j].lookahead - p->mnLookahead + i;

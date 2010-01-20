@@ -279,6 +279,7 @@ void sqlite3Fts3Dequote(char *);
 
 char *sqlite3Fts3FindPositions(Fts3Expr *, sqlite3_int64, int);
 int sqlite3Fts3ExprLoadDoclist(Fts3Table *, Fts3Expr *);
+int sqlite3Fts3ExprNearTrim(Fts3Expr *, Fts3Expr *, int);
 
 /* fts3_tokenizer.c */
 const char *sqlite3Fts3NextToken(const char *, int *);
@@ -289,10 +290,7 @@ int sqlite3Fts3InitTokenizer(Fts3Hash *pHash,
 
 /* fts3_snippet.c */
 void sqlite3Fts3Offsets(sqlite3_context*, Fts3Cursor*);
-void sqlite3Fts3Snippet(sqlite3_context*, Fts3Cursor*, 
-  const char *, const char *, const char *
-);
-void sqlite3Fts3Snippet2(sqlite3_context *, Fts3Cursor *, const char *,
+void sqlite3Fts3Snippet(sqlite3_context *, Fts3Cursor *, const char *,
   const char *, const char *, int, int
 );
 void sqlite3Fts3Matchinfo(sqlite3_context *, Fts3Cursor *);
