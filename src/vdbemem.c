@@ -468,21 +468,26 @@ int sqlite3VdbeMemRealify(Mem *pMem){
 /*
 ** Convert pMem so that it has types MEM_Real or MEM_Int or both.
 ** Invalidate any prior representations.
+**
+** Every effort is made to force the conversion, even if the input
+** is a string that does not look completely like a number.  Convert
+** as much of the string as we can and ignore the rest.
 */
 int sqlite3VdbeMemNumerify(Mem *pMem){
-  double r1, r2;
-  i64 i;
+  int rc;
   assert( (pMem->flags & (MEM_Int|MEM_Real|MEM_Null))==0 );
   assert( (pMem->flags & (MEM_Blob|MEM_Str))!=0 );
   assert( pMem->db==0 || sqlite3_mutex_held(pMem->db->mutex) );
-  r1 = sqlite3VdbeRealValue(pMem);
-  i = doubleToInt64(r1);
-  r2 = (double)i;
-  if( r1==r2 ){
-    sqlite3VdbeMemIntegerify(pMem);
+  rc = sqlite3VdbeChangeEncoding(pMem, SQLITE_UTF8);
+  if( rc ) return rc;
+  rc = sqlite3VdbeMemNulTerminate(pMem);
+  if( rc ) return rc;
+  if( sqlite3Atoi64(pMem->z, &pMem->u.i) ){
+    MemSetTypeFlag(pMem, MEM_Int);
   }else{
-    pMem->r = r1;
+    pMem->r = sqlite3VdbeRealValue(pMem);
     MemSetTypeFlag(pMem, MEM_Real);
+    sqlite3VdbeIntegerAffinity(pMem);
   }
   return SQLITE_OK;
 }
