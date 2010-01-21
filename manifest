@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Redesign\sthe\sstring\sto\snumeric\svalue\scaster\sso\sthat\sit\sis\smore\slikely\sto\nwork\son\sunusual\sfloating\spoint\shardware.
-D 2010-01-21T01:53:08
+C Fix\sa\ssegfault\sthat\scan\soccur\swhen\sthe\sLHS\sof\sa\sLIKE\soperator\shas\san\nundefined\scollating\ssequence.\s\sTicket\s[1258875e07553].
+D 2010-01-21T23:11:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -222,7 +222,7 @@ F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 7c7713d66cda699f16bf1cc601d8d4f5070ab935
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 43b11af016ac50724a95397c0ca447cae88f3c11
+F src/where.c 1041ef1174ad36679d078188510f56f2801737a5
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -788,14 +788,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f9c54e95ecf1c36c4750bb151e91d81c1d1bd596
-R 3e61b23567b174ad8e61bfe06454c1ae
+P 8bb1104c6f02c88eb09ed345890be71dee099485
+R 0abdfac59ebbcddce0c713e5b594cec6
 U drh
-Z b36821be2163198094fa5c8204d312e5
+Z 233775c6ba99b7211a744ca50a2c5e05
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLV7OHoxKgR168RlERAmaWAKCKiOPK/gaKglHagKY28OJSuIbFigCgjEq9
-dFT+JRCF+URG2mLXFWfa/os=
-=csLp
+iD4DBQFLWN8goxKgR168RlERAgOrAKCJPwdncYpQ3yWCBfBInfc65a3b1wCXX371
+DQT4SNVo+od/74dnfAKKUw==
+=Pmoo
 -----END PGP SIGNATURE-----
