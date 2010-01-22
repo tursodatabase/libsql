@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\ssegfault\sthat\scan\soccur\swhen\sthe\sLHS\sof\sa\sLIKE\soperator\shas\san\nundefined\scollating\ssequence.\s\sTicket\s[1258875e07553].
-D 2010-01-21T23:11:25
+C Fix\stwo\ssimilar\sproblems\sin\sfts3\sthat\smeant\sthat\san\sOOM\serror\scould\scause\sa\smemory\sleak.
+D 2010-01-22T15:48:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -66,11 +63,11 @@ F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
 F ext/fts3/fts3_hash.c 3c8f6387a4a7f5305588b203fa7c887d753e1f1c
 F ext/fts3/fts3_hash.h 8331fb2206c609f9fc4c4735b9ab5ad6137c88ec
 F ext/fts3/fts3_icu.c ac494aed69835008185299315403044664bda295
-F ext/fts3/fts3_porter.c a651e287e02b49b565a6ccf9441959d434489156
+F ext/fts3/fts3_porter.c 7546e4503e286a67fd4f2a82159620e3e9c7a1bc
 F ext/fts3/fts3_snippet.c e5bce65adf33452f02528bce694487172e8f8d2d
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
-F ext/fts3/fts3_tokenizer1.c 11a604a53cff5e8c28882727bf794e5252e5227b
+F ext/fts3/fts3_tokenizer1.c b6d86d1d750787db5c168c73da4e87670ed890a1
 F ext/fts3/fts3_write.c ccb92226608350dc3698ff7befa078d6f7a44fcc
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
@@ -404,7 +401,7 @@ F test/fts3d.test 95fb3c862cbc4297c93fceb9a635543744e9ef52
 F test/fts3e.test 1f6c6ac9cc8b772ca256e6b22aaeed50c9350851
 F test/fts3expr.test 05dab77387801e4900009917bb18f556037d82da
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
-F test/fts3malloc.test d02ee86b21edd2b43044e0d6dfdcd26cb6efddcb
+F test/fts3malloc.test 059592c4f37ccd30138bbf8e3e5b7982cb5c8f2e
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
 F test/fts3query.test 154fe4b015fd61af523ee083570a134f508f5be7
 F test/fts3rnd.test 2f5761db9dd92f6fe09d08976ac658ef521846ed
@@ -788,14 +785,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8bb1104c6f02c88eb09ed345890be71dee099485
-R 0abdfac59ebbcddce0c713e5b594cec6
-U drh
-Z 233775c6ba99b7211a744ca50a2c5e05
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD4DBQFLWN8goxKgR168RlERAgOrAKCJPwdncYpQ3yWCBfBInfc65a3b1wCXX371
-DQT4SNVo+od/74dnfAKKUw==
-=Pmoo
------END PGP SIGNATURE-----
+P a82e6b4585b9ddba581204976cd5ea8704339185
+R 1d0679ec078fa3ba616176fe55ef6412
+U dan
+Z 0057f18ebe7740aa86b9e7dd3d9cc373

@@ -33,7 +33,8 @@ set DO_MALLOC_TEST 1
 # fts3_malloc-2.*: Test OOM during SELECT operations.
 # fts3_malloc-3.*: Test OOM during SELECT operations with a larger database.
 # fts3_malloc-4.*: Test OOM during database write operations.
-#
+# fts3_malloc-5.*: Test that a couple of memory leaks that could follow
+#                  OOM in tokenizer code have been fixed.
 #
 
 
@@ -287,6 +288,16 @@ foreach {tn sql} {
 do_test fts3_malloc-4.2 {
   execsql { SELECT a FROM ft }
 } {two four {two four}}
+
+do_write_test fts3_malloc-5.1 ft_content {
+  INSERT INTO ft VALUES('short alongertoken reallyquitealotlongerimeanit andthistokenisjustsolongthatonemightbeforgivenforimaginingthatitwasmerelyacontrivedexampleandnotarealtoken', 'cynics!')
+}
+do_test fts3_malloc-5.2 {
+  execsql { CREATE VIRTUAL TABLE ft8 USING fts3(x, tokenize porter) }
+} {}
+do_write_test fts3_malloc-5.3 ft_content {
+  INSERT INTO ft8 VALUES('short alongertoken reallyquitealotlongerimeanit andthistokenisjustsolongthatonemightbeforgivenforimaginingthatitwasmerelyacontrivedexampleandnotarealtoken')
+}
 
 
 finish_test
