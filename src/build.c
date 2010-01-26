@@ -3402,6 +3402,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
   sqlite3 *db = pParse->db;
   if( db->aDb[1].pBt==0 && !pParse->explain ){
     int rc;
+    Btree *pBt;
     static const int flags = 
           SQLITE_OPEN_READWRITE |
           SQLITE_OPEN_CREATE |
@@ -3409,17 +3410,19 @@ int sqlite3OpenTempDatabase(Parse *pParse){
           SQLITE_OPEN_DELETEONCLOSE |
           SQLITE_OPEN_TEMP_DB;
 
-    rc = sqlite3BtreeFactory(db, 0, 0, SQLITE_DEFAULT_CACHE_SIZE, flags,
-                                 &db->aDb[1].pBt);
+    rc = sqlite3BtreeFactory(db, 0, 0, SQLITE_DEFAULT_CACHE_SIZE, flags, &pBt);
     if( rc!=SQLITE_OK ){
       sqlite3ErrorMsg(pParse, "unable to open a temporary database "
         "file for storing temporary tables");
       pParse->rc = rc;
       return 1;
     }
+    db->aDb[1].pBt = pBt;
     assert( db->aDb[1].pSchema );
-    sqlite3PagerJournalMode(sqlite3BtreePager(db->aDb[1].pBt),
-                            db->dfltJournalMode);
+    if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
+      db->mallocFailed = 1;
+    }
+    sqlite3PagerJournalMode(sqlite3BtreePager(pBt), db->dfltJournalMode);
   }
   return 0;
 }
