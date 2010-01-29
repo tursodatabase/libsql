@@ -403,6 +403,7 @@ struct Pager {
   Pager *pPrev;               /* sqlite3_release_memory() will work */
   int iInUseMM;               /* Non-zero if unavailable to MM */
   int iInUseDB;               /* Non-zero if in sqlite3_release_memory() */
+  u8 onPagerList;             /* True if part of the sqlite3PagerList */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   char dbFileVers[16];        /* Changes whenever database file changes */
@@ -511,6 +512,10 @@ static const unsigned char aJournalMagic[] = {
 ** function.  It does not prevent, for example, two Btrees from accessing
 ** the same pager at the same time.  Other general-purpose mutexes in
 ** the btree layer handle that chore.
+**
+** The pagerMutexHeld(X) macro is for sanity checking.  This macro verifies
+** that the database-connection mutex is held for pager X and asserts if it
+** is not.
 */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   static void pagerEnter(Pager *p){
@@ -531,9 +536,11 @@ static const unsigned char aJournalMagic[] = {
     p->iInUseDB--;
     assert( p->iInUseDB>=0 );
   }
+# define pagerMutexHeld(X)  assert( (X)->iInUseDB>0 || !(X)->onPagerList )
 #else
 # define pagerEnter(X)
 # define pagerLeave(X)
+# define pagerMutexHeld(X)
 #endif
 
 /*
@@ -1273,6 +1280,7 @@ static PgHdr *pager_lookup(Pager *pPager, Pgno pgno){
 static void pager_reset(Pager *pPager){
   PgHdr *pPg, *pNext;
   if( pPager->errCode ) return;
+  pagerMutexHeld(pPager);
   for(pPg=pPager->pAll; pPg; pPg=pNext){
     IOTRACE(("PGFREE %p %d\n", pPager, pPg->pgno));
     PAGER_INCR(sqlite3_pager_pgfree_count);
@@ -2373,6 +2381,7 @@ int sqlite3PagerOpen(
     }
     pPager->pPrev = 0;
     sqlite3PagerList = pPager;
+    pPager->onPagerList = 1;
     sqlite3_mutex_leave(mutex);
   }
 #endif
@@ -2637,6 +2646,7 @@ static void pager_truncate_cache(Pager *pPager){
   PgHdr **ppPg;
   int dbSize = pPager->dbSize;
 
+  pagerMutexHeld(pPager);
   ppPg = &pPager->pAll;
   while( (pPg = *ppPg)!=0 ){
     if( pPg->pgno<=dbSize ){
@@ -2707,7 +2717,9 @@ int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
   }
   if( MEMDB ){
     pPager->dbSize = nPage;
+    pagerEnter(pPager);
     pager_truncate_cache(pPager);
+    pagerLeave(pPager);
     return SQLITE_OK;
   }
   pagerEnter(pPager);
@@ -2720,12 +2732,10 @@ int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
   /* Get an exclusive lock on the database before truncating. */
   pagerEnter(pPager);
   rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-  pagerLeave(pPager);
-  if( rc!=SQLITE_OK ){
-    return rc;
+  if( rc==SQLITE_OK ){
+    rc = pager_truncate(pPager, nPage);
   }
-
-  rc = pager_truncate(pPager, nPage);
+  pagerLeave(pPager);
   return rc;
 }
 
@@ -2759,6 +2769,7 @@ int sqlite3PagerClose(Pager *pPager){
       pPager->pNext->pPrev = pPager->pPrev;
     }
     sqlite3_mutex_leave(mutex);
+    pPager->onPagerList = 0;
   }
 #endif
 

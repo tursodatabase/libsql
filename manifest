@@ -1,5 +1,8 @@
-C Version\s3.5.9\s(CVS\s5131)
-D 2008-05-14T16:18:11
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\smissing\smutex\son\spage\scache\struncation\sduring\svacuum\sand\sauto-vacuum\s\nwhen\sSQLITE_ENABLE_MEMORY_MANAGEMENT\sis\sengaged.
+D 2010-01-29T21:23:35
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -121,7 +124,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 2607309c4848bfb8a5766d94d74157b54a44c6c0
+F src/pager.c 38743db63f91064ed68dba0b415cccf603be036a
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -634,7 +637,18 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P e4aab150042bd22868ab02645151cb69a1c02ba0
-R c25ac8c50b83839e3cddbf23a801f9cb
+P b6129f4cc28f6ba55d19039545555b33857ffd72
+R 298ea4553820c86bc49de9db5217cdcf
+T *bgcolor * #8696fe
+T *branch * branch-3.5.9
+T *sym-branch-3.5.9 *
+T -sym-trunk *
 U drh
-Z 5d9759a5b998826f7607e53c2a3b8fed
+Z bc97c693bc947a5ae3e3ed014689d2e7
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLY1HaoxKgR168RlERAoniAJwOUHTFrCPOA7r6/18Q/Dp5vxUEAwCdGNnZ
+0OTkC0QU7xRU5btnXdQ92nY=
+=Y3Su
+-----END PGP SIGNATURE-----
