@@ -2756,6 +2756,10 @@ int sqlite3PagerTruncate(Pager *pPager, Pgno nPage){
 ** to the caller.
 */
 int sqlite3PagerClose(Pager *pPager){
+  pagerEnter(pPager);
+  pPager->errCode = 0;
+  pager_reset(pPager);
+  pagerLeave(pPager);
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   if( !MEMDB ){
 #ifndef SQLITE_MUTEX_NOOP
@@ -2774,12 +2778,9 @@ int sqlite3PagerClose(Pager *pPager){
     pPager->onPagerList = 0;
   }
 #endif
-
   disable_simulated_io_errors();
   sqlite3FaultBeginBenign(-1);
-  pPager->errCode = 0;
   pPager->exclusiveMode = 0;
-  pager_reset(pPager);
   pagerUnlockAndRollback(pPager);
   enable_simulated_io_errors();
   sqlite3FaultEndBenign(-1);

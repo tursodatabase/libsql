@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sadditional\spagerMutexHeld()\smacros\sto\sbetter\sverify\sthe\scorrect\soperation\nof\spager.c.
-D 2010-01-30T18:22:56
+C Remove\sall\scache\spages\sfrom\sthe\sLRU\slist\sprior\sto\sremoving\sthe\spager\sfrom\sthe\npager\slist\swhen\sclosing\sa\spager.
+D 2010-01-30T19:00:55
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 3b4bce33b051a1d22ae8d0df87f22d3700d6aedb
+F src/pager.c ce1e53959413c5e41b9242c3b28800a2bcb1e2ae
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -637,14 +637,14 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P ea3b941a7182851117fab9851e98e175ebb356e2
-R bd7d6bb5cd32313270d6b71a45d11bfc
+P c50e972f1bea2e357f64ffd5df868bf51d942e2d
+R 36f835414aa04d98dddf953ed614b296
 U drh
-Z 9bc3ebc48726190adbe0cae17390612c
+Z fffc5f9ba8ca83294c88a45d2f860720
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLZHkGoxKgR168RlERAquJAJ0WynkMN7mPphhmB68hDJGBoRv+iACcCrqq
-j6ssvTULN5/drdc8tggA75U=
-=rCLK
+iD8DBQFLZIHqoxKgR168RlERArFRAJoD8+F7K7rddFbpXj9QxFnE7UaDXwCeINqB
+ifiO8Ws6773K464iIx4YI3I=
+=byhl
 -----END PGP SIGNATURE-----
