@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Always\shold\sthe\sMEM2\smutex\swhen\sinitially\smarking\sa\spager\sas\sin\suse\sby\sits\ndatabase\sconnection.
-D 2010-01-30T22:28:47
+C The\siInUseDB\sand\siInUseMM\svariables\sdo\snot\sneed\sto\sbe\svolatile.
+D 2010-01-30T23:08:24
 F Makefile.arm-wince-mingw32ce-gcc ac5f7b2cef0cd850d6f755ba6ee4ab961b1fadf7
 F Makefile.in 79aeba12300a54903f1b1257c1e7c190234045dd
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +124,7 @@ F src/os_common.h e8b748b2f2ecc8a498e50bfe5d8721f189c19d2a
 F src/os_os2.c 0c3a5802bc4fdb7cb5f66771552b081c4e48a216
 F src/os_unix.c a810e2aefdaddacf479407f76f8f4ca381d231b2
 F src/os_win.c 3a60bddd07ea6f8adb2314dd5996ac97b988f403
-F src/pager.c 1f77fc8d4ca6c8119c46e578c6595b8bc58b2966
+F src/pager.c 8e6b147f46c80fe31ee4d202d2478f461aa7ce18
 F src/pager.h 4f051fd856de6fd3c19aef5f82eace54122b9173
 F src/parse.y fc4bd35c6088901f7c8daead26c6fb11c87d22e7
 F src/pragma.c 2e4bb2e76e48a32750529fdc4bfe86ac5f54e01b
@@ -637,14 +637,14 @@ F www/tclsqlite.tcl 8be95ee6dba05eabcd27a9d91331c803f2ce2130
 F www/vdbe.tcl 87a31ace769f20d3627a64fa1fade7fed47b90d0
 F www/version3.tcl 890248cf7b70e60c383b0e84d77d5132b3ead42b
 F www/whentouse.tcl fc46eae081251c3c181bd79c5faef8195d7991a5
-P a718e6634795a48b5dd5c08833ab561e6381a62d
-R ede77834150c4686fbce83c90fb93739
+P 622c17177af6851fec11bdec8fb6246c13135b2f
+R e9eaccaf9f16fa14643ac18463a7e091
 U drh
-Z 271b73fa90b6232af1206fcf2703ce9e
+Z ba00ac2997800f42b378226025ca0d50
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLZLKioxKgR168RlERArSqAJ0ZqE31rSrzcJl/uPoUKXMfOlFjNQCfVJZ0
-xM3NDDmzfB5aB8fx/vE9XOk=
-=vAb3
+iD8DBQFLZLvqoxKgR168RlERAizUAJ9Di56YC1Zc+ZRYvDwFKYstmzdmgACdGglw
+1AHQmR5SOB5iTAk/+APTz0g=
+=9KoF
 -----END PGP SIGNATURE-----

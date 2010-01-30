@@ -401,8 +401,8 @@ struct Pager {
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   Pager *pNext;               /* Doubly linked list of pagers on which */
   Pager *pPrev;               /* sqlite3_release_memory() will work */
-  volatile int iInUseMM;      /* Non-zero if unavailable to MM */
-  volatile int iInUseDB;      /* Non-zero if in sqlite3_release_memory() */
+  int iInUseDB;               /* Non-zero if in sqlite3_release_memory() */
+  u8 iInUseMM;                /* Non-zero if unavailable to MM */
   u8 onPagerList;             /* True if part of the sqlite3PagerList */
 #endif
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
