@@ -519,13 +519,13 @@ static const unsigned char aJournalMagic[] = {
 */
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   static void pagerEnter(Pager *p){
-    p->iInUseDB++;
-    if( p->iInUseMM && p->iInUseDB==1 ){
+    if( p->iInUseDB>0 ){
+      p->iInUseDB++;
+    }else{
 #ifndef SQLITE_MUTEX_NOOP
       sqlite3_mutex *mutex;
       mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_STATIC_MEM2);
 #endif
-      p->iInUseDB = 0;
       sqlite3_mutex_enter(mutex);
       assert( p->iInUseMM==0 );
       p->iInUseDB = 1;
@@ -3318,9 +3318,11 @@ int sqlite3PagerReleaseMemory(int nReq){
     if( !pPg ) break;
 
     pPager = pPg->pPager;
+    assert( pPager->iInUseDB==0 );
     savedBusy = pPager->pBusyHandler;
     pPager->pBusyHandler = 0;
     rc = pager_recycle(pPager, &pPg);
+    assert( pPager->iInUseDB==0 );
     pPager->pBusyHandler = savedBusy;
     if( rc==SQLITE_OK ){
       /* We've found a page to free. At this point the page has been 
