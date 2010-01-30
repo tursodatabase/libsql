@@ -3294,7 +3294,6 @@ int sqlite3PagerReleaseMemory(int nReq){
 
   while( rc==SQLITE_OK && (nReq<0 || nReleased<nReq) ){
     PgHdr *pPg;
-    PgHdr *pRecycled;
  
     /* Try to find a page to recycle that does not require a sync(). If
     ** this is not possible, find one that does require a sync().
@@ -3319,14 +3318,10 @@ int sqlite3PagerReleaseMemory(int nReq){
     if( !pPg ) break;
 
     pPager = pPg->pPager;
-    assert(!pPg->needSync || pPg==pPager->lru.pFirst);
-    assert(pPg->needSync || pPg==pPager->lru.pFirstSynced);
-  
     savedBusy = pPager->pBusyHandler;
     pPager->pBusyHandler = 0;
-    rc = pager_recycle(pPager, &pRecycled);
+    rc = pager_recycle(pPager, &pPg);
     pPager->pBusyHandler = savedBusy;
-    assert(pRecycled==pPg || rc!=SQLITE_OK);
     if( rc==SQLITE_OK ){
       /* We've found a page to free. At this point the page has been 
       ** removed from the page hash-table, free-list and synced-list 
