@@ -47,9 +47,12 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
   }else{
     Vdbe *v = (Vdbe*)pStmt;
     sqlite3 *db = v->db;
+#if SQLITE_THREADSAFE
+    sqlite3_mutex *mutex;
+#endif
     if( db==0 ) return SQLITE_MISUSE;
 #if SQLITE_THREADSAFE
-    sqlite3_mutex *mutex = v->db->mutex;
+    mutex = v->db->mutex;
 #endif
     sqlite3_mutex_enter(mutex);
     rc = sqlite3VdbeFinalize(v);
