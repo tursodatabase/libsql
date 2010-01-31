@@ -3421,6 +3421,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
     assert( db->aDb[1].pSchema );
     if( SQLITE_NOMEM==sqlite3BtreeSetPageSize(pBt, db->nextPagesize, -1, 0) ){
       db->mallocFailed = 1;
+      return 1;
     }
     sqlite3PagerJournalMode(sqlite3BtreePager(pBt), db->dfltJournalMode);
   }
