@@ -2424,6 +2424,15 @@ int sqlite3WalkSelectFrom(Walker*, Select*);
 #endif
 
 /*
+** FTS4 is really an extension for FTS3.  It is enabled using the
+** SQLITE_ENABLE_FTS3 macro.  But to avoid confusion we also all
+** the SQLITE_ENABLE_FTS4 macro to serve as an alisse for SQLITE_ENABLE_FTS3.
+*/
+#if defined(SQLITE_ENABLE_FTS4) && !defined(SQLITE_ENABLE_FTS3)
+# define SQLITE_ENABLE_FTS3
+#endif
+
+/*
 ** The ctype.h header is needed for non-ASCII systems.  It is also
 ** needed by FTS3 when FTS3 is included in the amalgamation.
 */

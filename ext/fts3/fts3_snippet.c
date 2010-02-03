@@ -841,6 +841,7 @@ static int fts3ExprLocalMatchinfoCb(
 static int fts3GetMatchinfo(Fts3Cursor *pCsr){
   MatchInfo sInfo;
   Fts3Table *pTab = (Fts3Table *)pCsr->base.pVtab;
+  int rc = SQLITE_OK;
 
   sInfo.pCursor = pCsr;
   sInfo.nCol = pTab->nColumn;
@@ -851,7 +852,6 @@ static int fts3GetMatchinfo(Fts3Cursor *pCsr){
     ** allocate the array used to accumulate the matchinfo data and
     ** initialize those elements that are constant for every row.
     */
-    int rc;                       /* Return Code */
     int nPhrase;                  /* Number of phrases */
     int nMatchinfo;               /* Number of u32 elements in match-info */
 
@@ -861,6 +861,9 @@ static int fts3GetMatchinfo(Fts3Cursor *pCsr){
       return rc;
     }
     nMatchinfo = 2 + 3*sInfo.nCol*nPhrase;
+    if( pTab->bHasDocsize ){
+      nMatchinfo += 1 + 2*pTab->nColumn;
+    }
 
     sInfo.aMatchinfo = (u32 *)sqlite3_malloc(sizeof(u32)*nMatchinfo);
     if( !sInfo.aMatchinfo ){ 
@@ -873,14 +876,22 @@ static int fts3GetMatchinfo(Fts3Cursor *pCsr){
     sInfo.aMatchinfo[0] = nPhrase;
     sInfo.aMatchinfo[1] = sInfo.nCol;
     (void)fts3ExprIterate(pCsr->pExpr, fts3ExprGlobalMatchinfoCb,(void*)&sInfo);
-
+    if( pTab->bHasDocsize ){
+      int ofst = 2 + 3*sInfo.aMatchinfo[0]*sInfo.aMatchinfo[1];
+      rc = sqlite3Fts3MatchinfoDocsizeGlobal(pCsr, &sInfo.aMatchinfo[ofst]);
+    }
     pCsr->aMatchinfo = sInfo.aMatchinfo;
+    pCsr->isMatchinfoNeeded = 1;
   }
 
   sInfo.aMatchinfo = pCsr->aMatchinfo;
-  if( pCsr->isMatchinfoOk ){
+  if( rc==SQLITE_OK && pCsr->isMatchinfoNeeded ){
     (void)fts3ExprIterate(pCsr->pExpr, fts3ExprLocalMatchinfoCb, (void*)&sInfo);
-    pCsr->isMatchinfoOk = 0;
+    if( pTab->bHasDocsize ){
+      int ofst = 2 + 3*sInfo.aMatchinfo[0]*sInfo.aMatchinfo[1];
+      rc = sqlite3Fts3MatchinfoDocsizeLocal(pCsr, &sInfo.aMatchinfo[ofst]);
+    }
+    pCsr->isMatchinfoNeeded = 0;
   }
 
   return SQLITE_OK;
@@ -1161,7 +1172,11 @@ void sqlite3Fts3Matchinfo(sqlite3_context *pContext, Fts3Cursor *pCsr){
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pContext, rc);
   }else{
+    Fts3Table *pTab = (Fts3Table*)pCsr->base.pVtab;
     int n = sizeof(u32)*(2+pCsr->aMatchinfo[0]*pCsr->aMatchinfo[1]*3);
+    if( pTab->bHasDocsize ){
+      n += sizeof(u32)*(1 + 2*pTab->nColumn);
+    }
     sqlite3_result_blob(pContext, pCsr->aMatchinfo, n, SQLITE_TRANSIENT);
   }
 }
