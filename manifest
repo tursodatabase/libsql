@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sa\snew\sfull-text\ssearch\svariant\sthat\stracks\sthe\stotal\snumber\sof\sdocuments\nand\sdocument\ssizes,\sto\smake\sranking\ssearch\sresults\seasier.\s\sCurrently\ncalled\sFTS4.
-D 2010-02-03T19:55:14
+C Fix\sa\sperformance\sglitch\sthat\sappears\sfor\slarge\stransactions.
+D 2010-02-04T17:38:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c e5421d38470fe58faee71a5a66a778ada882394c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
-F src/pcache.c 3b079306376e0e04c0d3df40c0a4b750a1839310
+F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
 F src/pragma.c 5644b2cc765f68253765e0b16ce3a2bfc092342d
@@ -789,14 +789,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fb96f2a2c63a061a90733448c4af14384893d409
-R cebd9f25bde0bad0943fd6d4314421a5
+P 1b6e6094c88214e02c9e3638932997ac20bfe413
+R a169746145d95681a0eb74b572825817
 U drh
-Z 8f1299c4fd8f52f0ac3afc1a7ff14204
+Z 2e5d2a4ce8f32874758dbc577421eb49
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLadSloxKgR168RlERAqW2AJ9xDCE8KRurE5InnprgJZrm8J5wEACfRtrl
-zUHf9PdVIjx+cZGi6z+aaL0=
-=uJca
+iD8DBQFLawYboxKgR168RlERAqIiAJ9m+MAjJTz7+kI+tNhVlPG+dvXwEwCffivJ
+RRcggDk+1C8swBXLSBSOFXQ=
+=83UN
 -----END PGP SIGNATURE-----
