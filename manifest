@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\sperformance\sglitch\sthat\sappears\sfor\slarge\stransactions.
-D 2010-02-04T17:38:32
+C Remove\sthe\suse\sof\s64-bit\smath\sin\sthe\soffset\scomputations\sof\s\nthe\sOP_Column\sopcode\sfor\sa\ssmall\sperformance\simprovement.
+D 2010-02-05T14:12:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c aa0b1da8f71edff84b4b41dbe05fe6ac75d819c6
 F src/vacuum.c 28ee5a4963d16cf2477075d85966c0f461cd79de
-F src/vdbe.c b0c18b5c5ab4745a09b8f164e5db36413d98872e
+F src/vdbe.c 78f2167915a8a9611e79eeaf13318d247abed185
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
 F src/vdbeapi.c a8b6a6617fc9a0492e4f7d6626d3afe994ddd3f2
@@ -789,14 +789,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1b6e6094c88214e02c9e3638932997ac20bfe413
-R a169746145d95681a0eb74b572825817
+P 26cb1df73504d5d883cf0967e57b46aa062d0b00
+R 1958cacd7f583aec4ab73bfa77d04590
 U drh
-Z 2e5d2a4ce8f32874758dbc577421eb49
+Z fc01b4de0eee88e8eb53af6f3beff67e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLawYboxKgR168RlERAqIiAJ9m+MAjJTz7+kI+tNhVlPG+dvXwEwCffivJ
-RRcggDk+1C8swBXLSBSOFXQ=
-=83UN
+iD8DBQFLbCdpoxKgR168RlERAleAAJ9zp4nXhvCTHxqvWnr21SgA/iUicACdEllu
+mfGoLjhZumCpTb2x8CplRYs=
+=/N/5
 -----END PGP SIGNATURE-----

@@ -2068,7 +2068,7 @@ case OP_Column: {
   u8 *zIdx;          /* Index into header */
   u8 *zEndHdr;       /* Pointer to first byte after the header */
   u32 offset;        /* Offset into the data */
-  u64 offset64;      /* 64-bit offset.  64 bits needed to catch overflow */
+  u32 szField;       /* Number of bytes in the content of a field */
   int szHdr;         /* Size of the header size field at start of record */
   int avail;         /* Number of bytes of available data */
   Mem *pReg;         /* PseudoTable input register */
@@ -2243,12 +2243,16 @@ case OP_Column: {
     ** column and aOffset[i] will contain the offset from the beginning
     ** of the record to the start of the data for the i-th column
     */
-    offset64 = offset;
     for(i=0; i<nField; i++){
       if( zIdx<zEndHdr ){
-        aOffset[i] = (u32)offset64;
+        aOffset[i] = offset;
         zIdx += getVarint32(zIdx, aType[i]);
-        offset64 += sqlite3VdbeSerialTypeLen(aType[i]);
+        szField = sqlite3VdbeSerialTypeLen(aType[i]);
+        offset += szField;
+        if( offset<szField ){  /* True if offset overflows */
+          zIdx = &zEndHdr[1];  /* Forces SQLITE_CORRUPT return below */
+          break;
+        }
       }else{
         /* If i is less that nField, then there are less fields in this
         ** record than SetNumColumns indicated there are columns in the
@@ -2268,8 +2272,8 @@ case OP_Column: {
     ** of the record (when all fields present), then we must be dealing 
     ** with a corrupt database.
     */
-    if( (zIdx > zEndHdr)|| (offset64 > payloadSize)
-     || (zIdx==zEndHdr && offset64!=(u64)payloadSize) ){
+    if( (zIdx > zEndHdr) || (offset > payloadSize)
+         || (zIdx==zEndHdr && offset!=payloadSize) ){
       rc = SQLITE_CORRUPT_BKPT;
       goto op_column_out;
     }
