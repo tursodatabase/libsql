@@ -3822,6 +3822,8 @@ static int fillInUnixFile(
   pNew->lastErrno = 0;
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
+    if( h>=0 ) close(h);
+    h = -1;
     unlink(zFilename);
     isDelete = 0;
   }

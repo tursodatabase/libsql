@@ -1,5 +1,8 @@
-C Avoid\struncating\snon-in-memory\ssub-journals\swhen\sreleasing\sa\ssavepoint\sfor\sa\ssmall\sperformance\simprovement.
-D 2010-02-05T16:28:00
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sfile\sdescriptors\sare\sclosed\sbefore\sunlinking\sin\sVxWorks.
+D 2010-02-05T18:00:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,7 +151,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c 0b97269557d5a148d43c55edab5a20b62d0e10e3
+F src/os_unix.c 85479b27b995c2924a0905e4767d58598fb45000
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c 4cf8da7cf454d09086400c3b2943b41e6e46e829
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -786,7 +789,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 61a2c8d4d64c28119e9f06eb42f9c0437ba7a7bd
-R 7b780dc261c98bc95bb0a9dcb2e2f834
-U shaneh
-Z d9892d5150c22658e41a11ffe03f2d66
+P 27dc5b1c52eaa5f99cf44ee31204f62598fbf011
+R 3ba9a44bc6dc025226dbeec1039229af
+U drh
+Z e7553a909f891032352b25ece0d2bf55
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLbFy+oxKgR168RlERAvi3AJ4iSgHPeSld3G/lZ80D58qvjPpIXgCfdgis
+x5HMC3pHyeLTKGC/N5Wa6sw=
+=LmbB
+-----END PGP SIGNATURE-----
