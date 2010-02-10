@@ -926,6 +926,11 @@ void sqlite3Fts3Snippet(
   SnippetFragment aSnippet[4];    /* Maximum of 4 fragments per snippet */
   int nFToken = -1;               /* Number of tokens in each fragment */
 
+  if( !pCsr->pExpr ){
+    sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
+    return;
+  }
+
   for(nSnippet=1; 1; nSnippet++){
 
     int iSnip;                    /* Loop counter 0..nSnippet-1 */
@@ -1053,6 +1058,11 @@ void sqlite3Fts3Offsets(
   StrBuffer res = {0, 0, 0};      /* Result string */
   TermOffsetCtx sCtx;             /* Context for fts3ExprTermOffsetInit() */
 
+  if( !pCsr->pExpr ){
+    sqlite3_result_text(pCtx, "", 0, SQLITE_STATIC);
+    return;
+  }
+
   memset(&sCtx, 0, sizeof(sCtx));
   assert( pCsr->isRequireSeek==0 );
 
@@ -1168,7 +1178,12 @@ void sqlite3Fts3Offsets(
 ** Implementation of matchinfo() function.
 */
 void sqlite3Fts3Matchinfo(sqlite3_context *pContext, Fts3Cursor *pCsr){
-  int rc = fts3GetMatchinfo(pCsr);
+  int rc;
+  if( !pCsr->pExpr ){
+    sqlite3_result_blob(pContext, "", 0, SQLITE_STATIC);
+    return;
+  }
+  rc = fts3GetMatchinfo(pCsr);
   if( rc!=SQLITE_OK ){
     sqlite3_result_error_code(pContext, rc);
   }else{
