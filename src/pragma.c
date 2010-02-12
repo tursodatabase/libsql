@@ -417,6 +417,25 @@ void sqlite3Pragma(
   }else
 
   /*
+  **  PRAGMA [database.]secure_delete
+  **  PRAGMA [database.]secure_delete=ON/OFF
+  **
+  ** The first form reports the current setting for the
+  ** secure_delete flag.  The second form changes the secure_delete
+  ** flag setting and reports thenew value.
+  */
+  if( sqlite3StrICmp(zLeft,"secure_delete")==0 ){
+    Btree *pBt = pDb->pBt;
+    int b = -1;
+    assert( pBt!=0 );
+    if( zRight ){
+      b = getBoolean(zRight);
+    }
+    b = sqlite3BtreeSecureDelete(pBt, b);
+    returnSingleInt(pParse, "secure_delete", b);
+  }else
+
+  /*
   **  PRAGMA [database.]page_count
   **
   ** Return the number of pages in the specified database.

@@ -1,5 +1,8 @@
-C Fix\sa\ssegfault\sin\sfts3\sthat\smay\soccur\sif\sthe\ssnippet,\soffsets\sor\smatchinfo\sfunctions\sare\sused\sin\sa\squery\sthat\sdoes\snot\scontain\sa\sMATCH\sclause.
-D 2010-02-10T05:33:18
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C All\sthe\ssecure-delete\ssetting\sto\sbe\schanged\sat\srun-time\susing\sa\spragma.\nThe\sSQLITE_SECURE_DELETE\scompile-time\soption\sdetermines\sthe\sdefault\ssetting.
+D 2010-02-12T18:18:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -108,9 +111,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c efdef3953c49e28f8b8fa9cc0ac5754cc1a7489a
-F src/btree.h 7944a9dac59eb3e541aad45fd2747f1051e7c63d
-F src/btreeInt.h 54f4245decd0409ea52cf9aee422d3d761d7ac10
+F src/btree.c 25078c9bba2ed69f1c929e19fe71659d55511f99
+F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
+F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 81412e0f3cabd0cc7a71a1644c46d9ccad9613f5
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c 4c8a742c4a4a6d9c835912648f5c8f032ea36c7b
@@ -150,13 +153,13 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 85479b27b995c2924a0905e4767d58598fb45000
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c 4cf8da7cf454d09086400c3b2943b41e6e46e829
+F src/pager.c 5dee83c3cf4e94b72fcd81dca67abd7617227217
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
-F src/pragma.c 5644b2cc765f68253765e0b16ce3a2bfc092342d
+F src/pragma.c c0591d6f77be6b281f5cb68031c9aab0a7bf50a4
 F src/prepare.c d4cd38ccfb51f1424d0e61d4878a810b7e1ebb60
 F src/printf.c 2c2702dc4955394dae554b7c45f45656eb42de7f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -786,7 +789,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f64b81f13de4875343c752e7183bf61032dc9594
-R 5333db164ef39e64c57fafc741c13181
-U dan
-Z d15835a4ab01775366b26edc0ebe998b
+P 14ab536a96f81595ab8c3dcd4b72075f1a827c8b
+R 8c56002353eb719f638bc73e0f805265
+U drh
+Z 9e25690ce3b9770e58f6c8fa7d210a05
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLdZuDoxKgR168RlERAnGTAKCGoy1G06Shul4IKI+EICeUa82BwACeLCUf
++FBQFqONYf4Ztpufoz0uTZE=
+=Tyh+
+-----END PGP SIGNATURE-----

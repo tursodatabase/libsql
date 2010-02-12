@@ -2875,9 +2875,7 @@ static int pager_write_pagelist(PgHdr *pList){
     ** any such pages to the file.
     **
     ** Also, do not write out any page that has the PGHDR_DONT_WRITE flag
-    ** set (set by sqlite3PagerDontWrite()).  Note that if compiled with
-    ** SQLITE_SECURE_DELETE the PGHDR_DONT_WRITE bit is never set and so
-    ** the second test is always true.
+    ** set (set by sqlite3PagerDontWrite()).
     */
     if( pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
       i64 offset = (pgno-1)*(i64)pPager->pageSize;   /* Offset to write */
@@ -4385,7 +4383,6 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 }
 #endif
 
-#ifndef SQLITE_SECURE_DELETE
 /*
 ** A call to this routine tells the pager that it is not necessary to
 ** write the information on page pPg back to the disk, even though
@@ -4411,7 +4408,6 @@ void sqlite3PagerDontWrite(PgHdr *pPg){
 #endif
   }
 }
-#endif /* !defined(SQLITE_SECURE_DELETE) */
 
 /*
 ** This routine is called to increment the value of the database file 
