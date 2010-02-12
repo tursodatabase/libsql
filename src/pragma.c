@@ -431,6 +431,12 @@ void sqlite3Pragma(
     if( zRight ){
       b = getBoolean(zRight);
     }
+    if( pId2->n==0 && b>=0 ){
+      int ii;
+      for(ii=0; ii<db->nDb; ii++){
+        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, b);
+      }
+    }
     b = sqlite3BtreeSecureDelete(pBt, b);
     returnSingleInt(pParse, "secure_delete", b);
   }else

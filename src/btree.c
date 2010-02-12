@@ -2172,6 +2172,7 @@ int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
 */
 int sqlite3BtreeSecureDelete(Btree *p, int newFlag){
   int b;
+  if( p==0 ) return 0;
   sqlite3BtreeEnter(p);
   if( newFlag>=0 ){
     p->pBt->secureDelete = (newFlag!=0) ? 1 : 0;
