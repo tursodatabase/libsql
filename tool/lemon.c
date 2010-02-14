@@ -1372,6 +1372,7 @@ int max;
 #define ERRMSGSIZE  10000 /* Hope this is big enough.  No way to error check */
 #define LINEWIDTH      79 /* Max width of any output line */
 #define PREFIXLIMIT    30 /* Max width of the prefix on each line */
+static int noerrorclipping = 0;
 void ErrorMsg(const char *filename, int lineno, const char *format, ...){
   char errmsg[ERRMSGSIZE];
   char prefix[PREFIXLIMIT+10];
@@ -1381,33 +1382,41 @@ void ErrorMsg(const char *filename, int lineno, const char *format, ...){
   va_list ap;
   int end, restart, base;
 
-  va_start(ap, format);
-  /* Prepare a prefix to be prepended to every output line */
-  if( lineno>0 ){
-    sprintf(prefix,"%.*s:%d: ",PREFIXLIMIT-10,filename,lineno);
+  if( noerrorclipping ) {
+    fprintf(stderr, "%s:%d: ", filename, lineno);
+    va_start(ap, format);
+    vfprintf(stderr,format,ap);
+    va_end(ap);
+    fprintf(stderr, "\n");
   }else{
-    sprintf(prefix,"%.*s: ",PREFIXLIMIT-10,filename);
-  }
-  prefixsize = lemonStrlen(prefix);
-  availablewidth = LINEWIDTH - prefixsize;
+    va_start(ap, format);
+    /* Prepare a prefix to be prepended to every output line */
+    if( lineno>0 ){
+      sprintf(prefix,"%.*s:%d: ",PREFIXLIMIT-10,filename,lineno);
+    }else{
+      sprintf(prefix,"%.*s: ",PREFIXLIMIT-10,filename);
+    }
+    prefixsize = lemonStrlen(prefix);
+    availablewidth = LINEWIDTH - prefixsize;
 
-  /* Generate the error message */
-  vsprintf(errmsg,format,ap);
-  va_end(ap);
-  errmsgsize = lemonStrlen(errmsg);
-  /* Remove trailing '\n's from the error message. */
-  while( errmsgsize>0 && errmsg[errmsgsize-1]=='\n' ){
-     errmsg[--errmsgsize] = 0;
-  }
+    /* Generate the error message */
+    vsprintf(errmsg,format,ap);
+    va_end(ap);
+    errmsgsize = lemonStrlen(errmsg);
+    /* Remove trailing '\n's from the error message. */
+    while( errmsgsize>0 && errmsg[errmsgsize-1]=='\n' ){
+      errmsg[--errmsgsize] = 0;
+    }
 
-  /* Print the error message */
-  base = 0;
-  while( errmsg[base]!=0 ){
-    end = restart = findbreak(&errmsg[base],0,availablewidth);
-    restart += base;
-    while( errmsg[restart]==' ' ) restart++;
-    fprintf(stdout,"%s%.*s\n",prefix,end,&errmsg[base]);
-    base = restart;
+    /* Print the error message */
+    base = 0;
+    while( errmsg[base]!=0 ){
+      end = restart = findbreak(&errmsg[base],0,availablewidth);
+      restart += base;
+      while( errmsg[restart]==' ' ) restart++;
+      fprintf(stdout,"%s%.*s\n",prefix,end,&errmsg[base]);
+      base = restart;
+    }
   }
 }
 /**************** From the file "main.c" ************************************/
@@ -1472,6 +1481,7 @@ char **argv;
   static int nolinenosflag = 0;
   static struct s_options options[] = {
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
+    {OPT_FLAG, "e", (char*)&noerrorclipping, "Don't clip error output."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
     {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
     {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
