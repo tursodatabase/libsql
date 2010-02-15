@@ -123,4 +123,52 @@ do_test triggerD-2.4 {
   }
 } {r5 1 1 1 201 r6 1 1 1 201}
 
+
+###########################################################################
+#
+# Ticket [985771e1161200ae5eac3162686ea6711c035d08]:
+#
+# When both a main database table and a TEMP table have the same name,
+# and a main database trigge is created on the main table, the trigger
+# is incorrectly bound to the TEMP table. For example:
+#
+#   CREATE TABLE t1(x);
+#   CREATE TEMP TABLE t1(x);
+#   CREATE TABLE t2(z);
+#   CREATE TRIGGER main.r1 AFTER INSERT ON t1 BEGIN
+#     INSERT INTO t2 VALUES(10000 + new.x);
+#   END;
+#   INSERT INTO main.t1 VALUES(3);
+#   INSERT INTO temp.t1 VALUES(4);
+#   SELECT * FROM t2;
+# 
+# The r1 trigger fires when the value 4 is inserted into the temp.t1
+# table, rather than when value 3 is inserted into main.t1.
+#
+do_test triggerD-3.1 {
+  db eval {
+    CREATE TABLE t300(x);
+    CREATE TEMP TABLE t300(x);
+    CREATE TABLE t301(y);
+    CREATE TRIGGER main.r300 AFTER INSERT ON t300 BEGIN
+      INSERT INTO t301 VALUES(10000 + new.x);
+    END;
+    INSERT INTO main.t300 VALUES(3);
+    INSERT INTO temp.t300 VALUES(4);
+    SELECT * FROM t301;
+  }
+} {10003}
+do_test triggerD-3.2 {
+  db eval {
+    DELETE FROM t301;
+    CREATE TRIGGER temp.r301 AFTER INSERT ON t300 BEGIN
+      INSERT INTO t301 VALUES(20000 + new.x);
+    END;
+    INSERT INTO main.t300 VALUES(3);
+    INSERT INTO temp.t300 VALUES(4);
+    SELECT * FROM t301;
+  }
+} {10003 20004}
+
+
 finish_test

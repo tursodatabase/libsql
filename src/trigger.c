@@ -126,7 +126,8 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
-  if( pName2->n==0 && pTab && pTab->pSchema==db->aDb[1].pSchema ){
+  if( db->init.busy==0 && pName2->n==0 && pTab
+        && pTab->pSchema==db->aDb[1].pSchema ){
     iDb = 1;
   }
 
