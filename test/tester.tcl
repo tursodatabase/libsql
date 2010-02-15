@@ -964,11 +964,18 @@ proc drop_all_tables {{db db}} {
     set pk [$db one "PRAGMA foreign_keys"]
     $db eval "PRAGMA foreign_keys = OFF"
   }
-  foreach {t type} [$db eval {
-    SELECT name, type FROM sqlite_master 
-    WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
-  }] {
-    $db eval "DROP $type $t"
+  foreach {idx name file} [db eval {PRAGMA database_list}] {
+    if {$idx==1} {
+      set master sqlite_temp_master
+    } else {
+      set master $name.sqlite_master
+    }
+    foreach {t type} [$db eval "
+      SELECT name, type FROM $master
+      WHERE type IN('table', 'view') AND name NOT like 'sqlite_%'
+    "] {
+      $db eval "DROP $type $t"
+    }
   }
   ifcapable trigger&&foreignkey {
     $db eval "PRAGMA foreign_keys = $pk"
