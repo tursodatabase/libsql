@@ -3119,7 +3119,7 @@ case OP_OpenEphemeral: {
 ** register P2.  In other words, cursor P1 becomes an alias for the 
 ** MEM_Blob content contained in register P2.
 **
-** A pseudo-table created by this opcode is used to hold the a single
+** A pseudo-table created by this opcode is used to hold a single
 ** row output from the sorter so that the row can be decomposed into
 ** individual columns using the OP_Column opcode.  The OP_Column opcode
 ** is the only cursor opcode that works with a pseudo-table.

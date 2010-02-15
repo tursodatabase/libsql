@@ -1,5 +1,8 @@
-C Merged\stracing\sand\sinitialization\schanges\sfrom\smutex_unix.c.
-D 2010-02-13T02:31:09
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\stypo\sin\sthe\sdocumentation\sfor\sthe\sOP_OpenPseudo\sopcode.
+D 2010-02-15T15:17:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +212,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c aa0b1da8f71edff84b4b41dbe05fe6ac75d819c6
 F src/vacuum.c 28ee5a4963d16cf2477075d85966c0f461cd79de
-F src/vdbe.c 78f2167915a8a9611e79eeaf13318d247abed185
+F src/vdbe.c 428411c6fbd49e9a4ce043dad87a0b079d403714
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
 F src/vdbeapi.c a8b6a6617fc9a0492e4f7d6626d3afe994ddd3f2
@@ -787,7 +790,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2bb38bb96ff6b9fb91dd1cf214041cf113ac5508
-R 232b63cb29b9e4506009aea6dd09a4d6
-U shaneh
-Z 85585006145b2cc2993f7e2137036d14
+P 942aa1f6a91655356cc32a8185cb447331d405dc
+R 96ed7c8828d98879cc72ca6f67e06ea7
+U drh
+Z b17df2ad7162be0be25a28fbf6e0b8be
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLeWV1oxKgR168RlERAkXLAKCKwAiZiL6LVwUZ5Xo7V1gh47mmNQCdGXl+
+hNkVcTOcCExujWunCRv/xwU=
+=LcuG
+-----END PGP SIGNATURE-----
