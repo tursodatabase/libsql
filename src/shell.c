@@ -1853,7 +1853,7 @@ static int shell_exec(
 
       /* echo the sql statement if echo on */
       if( pArg->echoOn ){
-        char *zStmtSql = sqlite3_sql(pStmt);
+        const char *zStmtSql = sqlite3_sql(pStmt);
         fprintf(pArg->out,"%s\n", zStmtSql ? zStmtSql : zSql);
       }
 
