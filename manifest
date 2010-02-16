@@ -1,5 +1,5 @@
-C Fix\sfor\s[e9a9fde1f4].\sWhen\sopening\san\sexisting\srtree,\sdetermine\sthe\snode\ssize\sby\sinspecting\sthe\sroot\snode\sof\sthe\sr-tree\sstructure\s(instead\sof\sassuming\sit\sis\sa\sfunction\sof\sthe\spage-size).
-D 2010-02-16T10:59:41
+C Change\sa\sC++\sstyle\scomment\sin\sos_unix.c\sto\suse\snormal\sC\sstyle\scommenting.
+D 2010-02-16T12:18:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -149,7 +149,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c 85479b27b995c2924a0905e4767d58598fb45000
+F src/os_unix.c 0af0a55e2dd55bc4f4c3ccf04cc8f1f4a2e2e65f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
 F src/pager.c 5dee83c3cf4e94b72fcd81dca67abd7617227217
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -788,7 +788,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ab197d0aaf18016ac2dd3674f49bea5f1556451c
-R 881d2a8a41b8ae3c95eeef834233ccdb
+P ebc9433fddf78ef7b4237686951d8d79c1c98f03
+R b5dfe1f1114f3d23dae72982ad21694f
 U dan
-Z 64c445e5b0bc8d218abafa630888b286
+Z cf26dc12bf459704264dda128f7767fa

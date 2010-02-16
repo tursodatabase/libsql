@@ -5262,7 +5262,7 @@ static int proxyTakeConch(unixFile *pFile){
            */
           forceNewLockPath = 1;
           tryOldLockPath = 0;
-          continue; // go back to the do {} while start point, try again
+          continue; /* go back to the do {} while start point, try again */
         }
       }
       if( rc==SQLITE_OK ){
