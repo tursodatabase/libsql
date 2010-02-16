@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sthe\sALTER\sTABLE\sRENAME\scommand\sso\sthat\sit\sconverts\sFOREIGN\sKEY\sconstraints\nin\sATTACH-ed\sand\sin\sTEMP\stables\sas\swell\sas\sin\sthe\smain\sdatabase.\nTicket\s[13336e9c3c8c3f].
-D 2010-02-15T18:03:20
+C Fix\sfor\s[e9a9fde1f4].\sWhen\sopening\san\sexisting\srtree,\sdetermine\sthe\snode\ssize\sby\sinspecting\sthe\sroot\snode\sof\sthe\sr-tree\sstructure\s(instead\sof\sassuming\sit\sis\sa\sfunction\sof\sthe\spage-size).
+D 2010-02-16T10:59:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -77,7 +74,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c 038d59b05783c2e6c927a7352bb118a76c31065a
+F ext/rtree/rtree.c b82403b0320a7278e0a0e6562c08c8bba17ee0dd
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test f72885ed80a329d6bd7991043016d74b51edf2c5
 F ext/rtree/rtree2.test 7b665c44d25e51b3098068d983a39902b2e2d7a1
@@ -85,6 +82,7 @@ F ext/rtree/rtree3.test dece988c363368af8c11862995c762071894918f
 F ext/rtree/rtree4.test 94fdd570ab5bc47244d87d4590023be43ac786bd
 F ext/rtree/rtree5.test 92508f5152a50110af6551fa5b769d1bbd7c4ef3
 F ext/rtree/rtree6.test 11aade5311789068ca659be24a47cc0d852b1971
+F ext/rtree/rtree7.test 6fd29fb8e13795c822f4ceeea92ab5d61c96976d
 F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
@@ -790,14 +788,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ec914af32675e472694270d46f3ba2214eb2fe90
-R b63197d6039614d907827a453eecec99
-U drh
-Z 49dfd565a21afaa90179ba63716c3b3a
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLeYxroxKgR168RlERAp42AJ9eXZoQAtGar3vAWWJ+ElAji3XDgACfTqUL
-/luMg2NSLMumM1Iu2R9tVWU=
-=ahs6
------END PGP SIGNATURE-----
+P ab197d0aaf18016ac2dd3674f49bea5f1556451c
+R 881d2a8a41b8ae3c95eeef834233ccdb
+U dan
+Z 64c445e5b0bc8d218abafa630888b286
