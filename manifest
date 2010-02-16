@@ -1,5 +1,5 @@
-C Added\sadditional\srounding\stests.
-D 2010-02-16T22:00:36
+C Remove\sduplicated\sassignment\sin\srealloc.
+D 2010-02-16T22:06:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c a0f6dfbdd79e01baf75ad62bdbfdeae9e560eb96
 F src/malloc.c 5fa175797f982b178eaf38afba9c588a866be729
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
-F src/mem1.c 552f7e11486272f27948d2de9c012884d1f52908
+F src/mem1.c 86f33483a343873bab8ae1b648c2eac55462da74
 F src/mem2.c 92b4f772b1ee7469e256f1c2eff0b51a0ba19460
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c 4837b795ebdecc0cfe1522cd0c8b2c5d84ea490d
@@ -788,7 +788,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7a1933097f2a95bd495c1621fca99e8952a1b25a
-R ca399e3d0f2d6f8be8f0f4b20e5d3fb6
+P b8ee76bc1fd355110149bd9135dd31a5724c2ac6
+R 5e2126b9b3083501eb493eb6933f3f29
 U shaneh
-Z b58ba50cfe1c773cd5719e055e92f490
+Z 0a666a93623a5a83ee6f99d90ca54163
