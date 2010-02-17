@@ -1,5 +1,5 @@
-C Avoid\susing\sthe\sinternal\sprintf\sroutine\sfor\sround(x,y)\sin\sthe\scommon\scase\swhere\sy==0.
-D 2010-02-17T04:19:27
+C Consistent\suse\sof\s#ifdef\sfor\sSQLITE_HAS_CODEC\sto\savoid\sconfusion.
+D 2010-02-17T17:48:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -104,7 +104,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c e6f4d11b1c0b23642fc46bac9abe0753c4294e05
 F src/analyze.c 55155f05ee9ab4ce33b7a4d19c449053f8935200
-F src/attach.c a6b5e97c84c46c731aad064c413e40e12cb718b7
+F src/attach.c f6d33268019460724e4c57aeec543eaaa55d8310
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
@@ -157,7 +157,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
-F src/pragma.c 55cfa9daa145075cdb928dfce53e55665d6ad709
+F src/pragma.c 5febf8b5d88cc331effb3f2e14d0473488649b1e
 F src/prepare.c d4cd38ccfb51f1424d0e61d4878a810b7e1ebb60
 F src/printf.c 2c2702dc4955394dae554b7c45f45656eb42de7f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -788,7 +788,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3863638b8cd8d41cf4abf8b0d618892de845e91f
-R 4a859d44fd44fb2e90c77b0569157d3b
+P d76ad8b3c494ffb4e670da0e92a1f8dbf7f48daf
+R a0fcf012eeeaa6a43756a232ecac05ef
 U shaneh
-Z 9dee3f892d9b2c7e04d5a57e6362923c
+Z 6db38cc05906d785948a9a447f1df2f3

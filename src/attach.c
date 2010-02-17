@@ -150,7 +150,7 @@ static void attachFunc(
   aNew->zName = sqlite3DbStrDup(db, zName);
   aNew->safety_level = 3;
 
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
   if( rc==SQLITE_OK ){
     extern int sqlite3CodecAttach(sqlite3*, int, const void*, int);
     extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);

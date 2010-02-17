@@ -1393,7 +1393,7 @@ void sqlite3Pragma(
   }else
 #endif
 
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
   if( sqlite3StrICmp(zLeft, "key")==0 && zRight ){
     sqlite3_key(db, zRight, sqlite3Strlen30(zRight));
   }else
@@ -1416,9 +1416,9 @@ void sqlite3Pragma(
     }
   }else
 #endif
-#if SQLITE_HAS_CODEC || defined(SQLITE_ENABLE_CEROD)
+#if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
   if( sqlite3StrICmp(zLeft, "activate_extensions")==0 ){
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
     if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
       sqlite3_activate_see(&zRight[4]);
     }
