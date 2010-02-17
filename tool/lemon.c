@@ -1980,7 +1980,6 @@ struct pstate {
 /* Parse a single token */
 static void parseonetoken(struct pstate *psp)
 {
-  char *endptr;
   const char *x;
   x = Strsafe(psp->tokenstart);     /* Save the token permanently */
 #if 0
@@ -3576,7 +3575,7 @@ void ReportTable(
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, k, n;
+  int i, j, n;
   const char *name;
   int mnTknOfst, mxTknOfst;
   int mnNtOfst, mxNtOfst;
