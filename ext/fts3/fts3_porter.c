@@ -605,9 +605,11 @@ static int porterNext(
     if( c->iOffset>iStartOffset ){
       int n = c->iOffset-iStartOffset;
       if( n>c->nAllocated ){
+        char *pNew;
         c->nAllocated = n+20;
-        c->zToken = sqlite3_realloc(c->zToken, c->nAllocated);
-        if( c->zToken==NULL ) return SQLITE_NOMEM;
+        pNew = sqlite3_realloc(c->zToken, c->nAllocated);
+        if( !pNew ) return SQLITE_NOMEM;
+        c->zToken = pNew;
       }
       porter_stemmer(&z[iStartOffset], n, c->zToken, pnBytes);
       *pzToken = c->zToken;

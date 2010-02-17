@@ -139,19 +139,26 @@ struct SegmentNode {
 #define SQL_DELETE_ALL_CONTENT         2 
 #define SQL_DELETE_ALL_SEGMENTS        3
 #define SQL_DELETE_ALL_SEGDIR          4
-#define SQL_SELECT_CONTENT_BY_ROWID    5
-#define SQL_NEXT_SEGMENT_INDEX         6
-#define SQL_INSERT_SEGMENTS            7
-#define SQL_NEXT_SEGMENTS_ID           8
-#define SQL_INSERT_SEGDIR              9
-#define SQL_SELECT_LEVEL              10
-#define SQL_SELECT_ALL_LEVEL          11
-#define SQL_SELECT_LEVEL_COUNT        12
-#define SQL_SELECT_SEGDIR_COUNT_MAX   13
-#define SQL_DELETE_SEGDIR_BY_LEVEL    14
-#define SQL_DELETE_SEGMENTS_RANGE     15
-#define SQL_CONTENT_INSERT            16
-#define SQL_GET_BLOCK                 17
+#define SQL_DELETE_ALL_DOCSIZE         5
+#define SQL_DELETE_ALL_STAT            6
+#define SQL_SELECT_CONTENT_BY_ROWID    7
+#define SQL_NEXT_SEGMENT_INDEX         8
+#define SQL_INSERT_SEGMENTS            9
+#define SQL_NEXT_SEGMENTS_ID          10
+#define SQL_INSERT_SEGDIR             11
+#define SQL_SELECT_LEVEL              12
+#define SQL_SELECT_ALL_LEVEL          13
+#define SQL_SELECT_LEVEL_COUNT        14
+#define SQL_SELECT_SEGDIR_COUNT_MAX   15
+#define SQL_DELETE_SEGDIR_BY_LEVEL    16
+#define SQL_DELETE_SEGMENTS_RANGE     17
+#define SQL_CONTENT_INSERT            18
+#define SQL_GET_BLOCK                 19
+#define SQL_DELETE_DOCSIZE            20
+#define SQL_REPLACE_DOCSIZE           21
+#define SQL_SELECT_DOCSIZE            22
+#define SQL_SELECT_DOCTOTAL           23
+#define SQL_REPLACE_DOCTOTAL          24
 
 /*
 ** This function is used to obtain an SQLite prepared statement handle
@@ -176,25 +183,32 @@ static int fts3SqlStmt(
 /* 2  */  "DELETE FROM %Q.'%q_content'",
 /* 3  */  "DELETE FROM %Q.'%q_segments'",
 /* 4  */  "DELETE FROM %Q.'%q_segdir'",
-/* 5  */  "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
-/* 6  */  "SELECT coalesce(max(idx)+1, 0) FROM %Q.'%q_segdir' WHERE level=?",
-/* 7  */  "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
-/* 8  */  "SELECT coalesce(max(blockid)+1, 1) FROM %Q.'%q_segments'",
-/* 9  */  "INSERT INTO %Q.'%q_segdir' VALUES(?,?,?,?,?,?)",
+/* 5  */  "DELETE FROM %Q.'%q_docsize'",
+/* 6  */  "DELETE FROM %Q.'%q_stat'",
+/* 7  */  "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
+/* 8  */  "SELECT coalesce(max(idx)+1, 0) FROM %Q.'%q_segdir' WHERE level=?",
+/* 9  */  "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
+/* 10 */  "SELECT coalesce(max(blockid)+1, 1) FROM %Q.'%q_segments'",
+/* 11 */  "INSERT INTO %Q.'%q_segdir' VALUES(?,?,?,?,?,?)",
 
           /* Return segments in order from oldest to newest.*/ 
-/* 10 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
+/* 12 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
             "FROM %Q.'%q_segdir' WHERE level = ? ORDER BY idx ASC",
-/* 11 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
+/* 13 */  "SELECT idx, start_block, leaves_end_block, end_block, root "
             "FROM %Q.'%q_segdir' ORDER BY level DESC, idx ASC",
 
-/* 12 */  "SELECT count(*) FROM %Q.'%q_segdir' WHERE level = ?",
-/* 13 */  "SELECT count(*), max(level) FROM %Q.'%q_segdir'",
+/* 14 */  "SELECT count(*) FROM %Q.'%q_segdir' WHERE level = ?",
+/* 15 */  "SELECT count(*), max(level) FROM %Q.'%q_segdir'",
 
-/* 14 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
-/* 15 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
-/* 16 */  "INSERT INTO %Q.'%q_content' VALUES(%z)",
-/* 17 */  "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
+/* 16 */  "DELETE FROM %Q.'%q_segdir' WHERE level = ?",
+/* 17 */  "DELETE FROM %Q.'%q_segments' WHERE blockid BETWEEN ? AND ?",
+/* 18 */  "INSERT INTO %Q.'%q_content' VALUES(%z)",
+/* 19 */  "SELECT block FROM %Q.'%q_segments' WHERE blockid = ?",
+/* 20 */  "DELETE FROM %Q.'%q_docsize' WHERE docid = ?",
+/* 21 */  "REPLACE INTO %Q.'%q_docsize' VALUES(?,?)",
+/* 22 */  "SELECT size FROM %Q.'%q_docsize' WHERE docid=?",
+/* 23 */  "SELECT value FROM %Q.'%q_stat' WHERE id=0",
+/* 24 */  "REPLACE INTO %Q.'%q_stat' VALUES(0,?)",
   };
   int rc = SQLITE_OK;
   sqlite3_stmt *pStmt;
@@ -251,14 +265,21 @@ static int fts3SqlStmt(
 ** Returns SQLITE_OK if the statement is successfully executed, or an
 ** SQLite error code otherwise.
 */
-static int fts3SqlExec(Fts3Table *p, int eStmt, sqlite3_value **apVal){
+static void fts3SqlExec(
+  int *pRC,                /* Result code */
+  Fts3Table *p,            /* The FTS3 table */
+  int eStmt,               /* Index of statement to evaluate */
+  sqlite3_value **apVal    /* Parameters to bind */
+){
   sqlite3_stmt *pStmt;
-  int rc = fts3SqlStmt(p, eStmt, &pStmt, apVal); 
+  int rc;
+  if( *pRC ) return;
+  rc = fts3SqlStmt(p, eStmt, &pStmt, apVal); 
   if( rc==SQLITE_OK ){
     sqlite3_step(pStmt);
     rc = sqlite3_reset(pStmt);
   }
-  return rc;
+  *pRC = rc;
 }
 
 
@@ -438,11 +459,17 @@ static int fts3PendingListAppend(
 **
 ** If successful, SQLITE_OK is returned. Otherwise, an SQLite error code.
 */
-static int fts3PendingTermsAdd(Fts3Table *p, const char *zText, int iCol){
+static int fts3PendingTermsAdd(
+  Fts3Table *p,          /* FTS table into which text will be inserted */
+  const char *zText,     /* Text of document to be inseted */
+  int iCol,              /* Column number into which text is inserted */
+  u32 *pnWord            /* OUT: Number of tokens inserted */
+){
   int rc;
   int iStart;
   int iEnd;
   int iPos;
+  int nWord = 0;
 
   char const *zToken;
   int nToken;
@@ -466,6 +493,8 @@ static int fts3PendingTermsAdd(Fts3Table *p, const char *zText, int iCol){
       && SQLITE_OK==(rc = xNext(pCsr, &zToken, &nToken, &iStart, &iEnd, &iPos))
   ){
     PendingList *pList;
+ 
+    if( iPos>=nWord ) nWord = iPos+1;
 
     /* Positions cannot be negative; we use -1 as a terminator internally.
     ** Tokens must have a non-zero length.
@@ -495,6 +524,7 @@ static int fts3PendingTermsAdd(Fts3Table *p, const char *zText, int iCol){
   }
 
   pModule->xClose(pCsr);
+  *pnWord = nWord;
   return (rc==SQLITE_DONE ? SQLITE_OK : rc);
 }
 
@@ -535,12 +565,12 @@ void sqlite3Fts3PendingTermsClear(Fts3Table *p){
 ** Argument apVal is the same as the similarly named argument passed to
 ** fts3InsertData(). Parameter iDocid is the docid of the new row.
 */
-static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal){
+static int fts3InsertTerms(Fts3Table *p, sqlite3_value **apVal, u32 *aSz){
   int i;                          /* Iterator variable */
   for(i=2; i<p->nColumn+2; i++){
     const char *zText = (const char *)sqlite3_value_text(apVal[i]);
     if( zText ){
-      int rc = fts3PendingTermsAdd(p, zText, i-2);
+      int rc = fts3PendingTermsAdd(p, zText, i-2, &aSz[i-2]);
       if( rc!=SQLITE_OK ){
         return rc;
       }
@@ -621,18 +651,18 @@ static int fts3InsertData(
 ** pending terms.
 */
 static int fts3DeleteAll(Fts3Table *p){
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
 
   /* Discard the contents of the pending-terms hash table. */
   sqlite3Fts3PendingTermsClear(p);
 
   /* Delete everything from the %_content, %_segments and %_segdir tables. */
-  rc = fts3SqlExec(p, SQL_DELETE_ALL_CONTENT, 0);
-  if( rc==SQLITE_OK ){
-    rc = fts3SqlExec(p, SQL_DELETE_ALL_SEGMENTS, 0);
-  }
-  if( rc==SQLITE_OK ){
-    rc = fts3SqlExec(p, SQL_DELETE_ALL_SEGDIR, 0);
+  fts3SqlExec(&rc, p, SQL_DELETE_ALL_CONTENT, 0);
+  fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGMENTS, 0);
+  fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
+  if( p->bHasDocsize ){
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_DOCSIZE, 0);
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_STAT, 0);
   }
   return rc;
 }
@@ -642,20 +672,27 @@ static int fts3DeleteAll(Fts3Table *p){
 ** (an integer) of a row about to be deleted. Remove all terms from the
 ** full-text index.
 */
-static int fts3DeleteTerms(Fts3Table *p, sqlite3_value **apVal){
+static void fts3DeleteTerms(
+  int *pRC,               /* Result code */
+  Fts3Table *p,           /* The FTS table to delete from */
+  sqlite3_value **apVal,  /* apVal[] contains the docid to be deleted */
+  u32 *aSz                /* Sizes of deleted document written here */
+){
   int rc;
   sqlite3_stmt *pSelect;
 
+  if( *pRC ) return;
   rc = fts3SqlStmt(p, SQL_SELECT_CONTENT_BY_ROWID, &pSelect, apVal);
   if( rc==SQLITE_OK ){
     if( SQLITE_ROW==sqlite3_step(pSelect) ){
       int i;
       for(i=1; i<=p->nColumn; i++){
         const char *zText = (const char *)sqlite3_column_text(pSelect, i);
-        rc = fts3PendingTermsAdd(p, zText, -1);
+        rc = fts3PendingTermsAdd(p, zText, -1, &aSz[i-1]);
         if( rc!=SQLITE_OK ){
           sqlite3_reset(pSelect);
-          return rc;
+          *pRC = rc;
+          return;
         }
       }
     }
@@ -663,7 +700,7 @@ static int fts3DeleteTerms(Fts3Table *p, sqlite3_value **apVal){
   }else{
     sqlite3_reset(pSelect);
   }
-  return rc;
+  *pRC = rc;
 }
 
 /*
@@ -1783,7 +1820,7 @@ static int fts3DeleteSegdir(
       rc = sqlite3_reset(pDelete);
     }
   }else{
-    rc = fts3SqlExec(p, SQL_DELETE_ALL_SEGDIR, 0);
+    fts3SqlExec(&rc, p, SQL_DELETE_ALL_SEGDIR, 0);
   }
 
   return rc;
@@ -2212,6 +2249,209 @@ int sqlite3Fts3PendingTermsFlush(Fts3Table *p){
 }
 
 /*
+** Encode N integers as varints into a blob.
+*/
+static void fts3EncodeIntArray(
+  int N,             /* The number of integers to encode */
+  u32 *a,            /* The integer values */
+  char *zBuf,        /* Write the BLOB here */
+  int *pNBuf         /* Write number of bytes if zBuf[] used here */
+){
+  int i, j;
+  for(i=j=0; i<N; i++){
+    j += sqlite3Fts3PutVarint(&zBuf[j], (sqlite3_int64)a[i]);
+  }
+  *pNBuf = j;
+}
+
+/*
+** Decode a blob of varints into N integers
+*/
+static void fts3DecodeIntArray(
+  int N,             /* The number of integers to decode */
+  u32 *a,            /* Write the integer values */
+  const char *zBuf,  /* The BLOB containing the varints */
+  int nBuf           /* size of the BLOB */
+){
+  int i, j;
+  for(i=j=0; i<N; i++){
+    sqlite3_int64 x;
+    j += sqlite3Fts3GetVarint(&zBuf[j], &x);
+    a[i] = (u32)(x & 0xffffffff);
+  }
+}
+
+/*
+** Fill in the document size auxiliary information for the matchinfo
+** structure.  The auxiliary information is:
+**
+**    N     Total number of documents in the full-text index
+**    a0    Average length of column 0 over the whole index
+**    n0    Length of column 0 on the matching row
+**    ...
+**    aM    Average length of column M over the whole index
+**    nM    Length of column M on the matching row
+**
+** The fts3MatchinfoDocsizeLocal() routine fills in the nX values.
+** The fts3MatchinfoDocsizeGlobal() routine fills in N and the aX values.
+*/
+int sqlite3Fts3MatchinfoDocsizeLocal(Fts3Cursor *pCur, u32 *a){
+  const char *pBlob;       /* The BLOB holding %_docsize info */
+  int nBlob;               /* Size of the BLOB */
+  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
+  int i, j;                /* Loop counters */
+  sqlite3_int64 x;         /* Varint value */
+  int rc;                  /* Result code from subfunctions */
+  Fts3Table *p;            /* The FTS table */
+
+  p = (Fts3Table*)pCur->base.pVtab;
+  rc = fts3SqlStmt(p, SQL_SELECT_DOCSIZE, &pStmt, 0);
+  if( rc ){
+    return rc;
+  }
+  sqlite3_bind_int64(pStmt, 1, pCur->iPrevId);
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    nBlob = sqlite3_column_bytes(pStmt, 0);
+    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
+    for(i=j=0; i<p->nColumn && j<nBlob; i++){
+      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
+      a[2+i*2] = (u32)(x & 0xffffffff);
+    }
+  }
+  sqlite3_reset(pStmt);
+  return SQLITE_OK; 
+}
+int sqlite3Fts3MatchinfoDocsizeGlobal(Fts3Cursor *pCur, u32 *a){
+  const char *pBlob;       /* The BLOB holding %_stat info */
+  int nBlob;               /* Size of the BLOB */
+  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
+  int i, j;                /* Loop counters */
+  sqlite3_int64 x;         /* Varint value */
+  int nDoc;                /* Number of documents */
+  int rc;                  /* Result code from subfunctions */
+  Fts3Table *p;            /* The FTS table */
+
+  p = (Fts3Table*)pCur->base.pVtab;
+  rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
+  if( rc ){
+    return rc;
+  }
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    nBlob = sqlite3_column_bytes(pStmt, 0);
+    pBlob = (const char*)sqlite3_column_blob(pStmt, 0);
+    j = sqlite3Fts3GetVarint(pBlob, &x);
+    a[0] = nDoc = (u32)(x & 0xffffffff);
+    for(i=0; i<p->nColumn && j<nBlob; i++){
+      j = sqlite3Fts3GetVarint(&pBlob[j], &x);
+      a[1+i*2] = ((u32)(x & 0xffffffff) + nDoc/2)/nDoc;
+    }
+  }
+  sqlite3_reset(pStmt);
+  return SQLITE_OK; 
+}
+
+/*
+** Insert the sizes (in tokens) for each column of the document
+** with docid equal to p->iPrevDocid.  The sizes are encoded as
+** a blob of varints.
+*/
+static void fts3InsertDocsize(
+  int *pRC,         /* Result code */
+  Fts3Table *p,     /* Table into which to insert */
+  u32 *aSz          /* Sizes of each column */
+){
+  char *pBlob;             /* The BLOB encoding of the document size */
+  int nBlob;               /* Number of bytes in the BLOB */
+  sqlite3_stmt *pStmt;     /* Statement used to insert the encoding */
+  int rc;                  /* Result code from subfunctions */
+
+  if( *pRC ) return;
+  pBlob = sqlite3_malloc( 10*p->nColumn );
+  if( pBlob==0 ){
+    *pRC = SQLITE_NOMEM;
+    return;
+  }
+  fts3EncodeIntArray(p->nColumn, aSz, pBlob, &nBlob);
+  rc = fts3SqlStmt(p, SQL_REPLACE_DOCSIZE, &pStmt, 0);
+  if( rc ){
+    sqlite3_free(pBlob);
+    *pRC = rc;
+    return;
+  }
+  sqlite3_bind_int64(pStmt, 1, p->iPrevDocid);
+  sqlite3_bind_blob(pStmt, 2, pBlob, nBlob, sqlite3_free);
+  sqlite3_step(pStmt);
+  *pRC = sqlite3_reset(pStmt);
+}
+
+/*
+** Update the 0 record of the %_stat table so that it holds a blob
+** which contains the document count followed by the cumulative
+** document sizes for all columns.
+*/
+static void fts3UpdateDocTotals(
+  int *pRC,       /* The result code */
+  Fts3Table *p,   /* Table being updated */
+  u32 *aSzIns,    /* Size increases */
+  u32 *aSzDel,    /* Size decreases */
+  int nChng       /* Change in the number of documents */
+){
+  char *pBlob;             /* Storage for BLOB written into %_stat */
+  int nBlob;               /* Size of BLOB written into %_stat */
+  u32 *a;                  /* Array of integers that becomes the BLOB */
+  sqlite3_stmt *pStmt;     /* Statement for reading and writing */
+  int i;                   /* Loop counter */
+  int rc;                  /* Result code from subfunctions */
+
+  if( *pRC ) return;
+  a = sqlite3_malloc( (sizeof(u32)+10)*(p->nColumn+1) );
+  if( a==0 ){
+    *pRC = SQLITE_NOMEM;
+    return;
+  }
+  pBlob = (char*)&a[p->nColumn+1];
+  rc = fts3SqlStmt(p, SQL_SELECT_DOCTOTAL, &pStmt, 0);
+  if( rc ){
+    sqlite3_free(a);
+    *pRC = rc;
+    return;
+  }
+  if( sqlite3_step(pStmt)==SQLITE_ROW ){
+    fts3DecodeIntArray(p->nColumn+1, a,
+         sqlite3_column_blob(pStmt, 0),
+         sqlite3_column_bytes(pStmt, 0));
+  }else{
+    memset(a, 0, sizeof(int)*(p->nColumn+1) );
+  }
+  sqlite3_reset(pStmt);
+  if( nChng<0 && a[0]<-nChng ){
+    a[0] = 0;
+  }else{
+    a[0] += nChng;
+  }
+  for(i=0; i<p->nColumn; i++){
+    u32 x = a[i+1];
+    if( x+aSzIns[i] < aSzDel[i] ){
+      x = 0;
+    }else{
+      x = x + aSzIns[i] - aSzDel[i];
+    }
+    a[i+1] = x;
+  }
+  fts3EncodeIntArray(p->nColumn+1, a, pBlob, &nBlob);
+  rc = fts3SqlStmt(p, SQL_REPLACE_DOCTOTAL, &pStmt, 0);
+  if( rc ){
+    sqlite3_free(a);
+    *pRC = rc;
+    return;
+  }
+  sqlite3_bind_blob(pStmt, 1, pBlob, nBlob, SQLITE_STATIC);
+  sqlite3_step(pStmt);
+  *pRC = sqlite3_reset(pStmt);
+  sqlite3_free(a);
+}
+
+/*
 ** Handle a 'special' INSERT of the form:
 **
 **   "INSERT INTO tbl(tbl) VALUES(<expr>)"
@@ -2262,7 +2502,16 @@ int sqlite3Fts3UpdateMethod(
   int rc = SQLITE_OK;             /* Return Code */
   int isRemove = 0;               /* True for an UPDATE or DELETE */
   sqlite3_int64 iRemove = 0;      /* Rowid removed by UPDATE or DELETE */
+  u32 *aSzIns;                    /* Sizes of inserted documents */
+  u32 *aSzDel;                    /* Sizes of deleted documents */
+  int nChng = 0;                  /* Net change in number of documents */
 
+
+  /* Allocate space to hold the change in document sizes */
+  aSzIns = sqlite3_malloc( sizeof(aSzIns[0])*p->nColumn*2 );
+  if( aSzIns==0 ) return SQLITE_NOMEM;
+  aSzDel = &aSzIns[p->nColumn];
+  memset(aSzIns, 0, sizeof(aSzIns[0])*p->nColumn*2);
 
   /* If this is a DELETE or UPDATE operation, remove the old record. */
   if( sqlite3_value_type(apVal[0])!=SQLITE_NULL ){
@@ -2279,15 +2528,16 @@ int sqlite3Fts3UpdateMethod(
         isRemove = 1;
         iRemove = sqlite3_value_int64(apVal[0]);
         rc = fts3PendingTermsDocid(p, iRemove);
-        if( rc==SQLITE_OK ){
-          rc = fts3DeleteTerms(p, apVal);
-          if( rc==SQLITE_OK ){
-            rc = fts3SqlExec(p, SQL_DELETE_CONTENT, apVal);
-          }
+        fts3DeleteTerms(&rc, p, apVal, aSzDel);
+        fts3SqlExec(&rc, p, SQL_DELETE_CONTENT, apVal);
+        if( p->bHasDocsize ){
+          fts3SqlExec(&rc, p, SQL_DELETE_DOCSIZE, apVal);
+          nChng--;
         }
       }
     }
   }else if( sqlite3_value_type(apVal[p->nColumn+2])!=SQLITE_NULL ){
+    sqlite3_free(aSzIns);
     return fts3SpecialInsert(p, apVal[p->nColumn+2]);
   }
   
@@ -2298,10 +2548,19 @@ int sqlite3Fts3UpdateMethod(
       rc = fts3PendingTermsDocid(p, *pRowid);
     }
     if( rc==SQLITE_OK ){
-      rc = fts3InsertTerms(p, apVal);
+      rc = fts3InsertTerms(p, apVal, aSzIns);
+    }
+    if( p->bHasDocsize ){
+      nChng++;
+      fts3InsertDocsize(&rc, p, aSzIns);
     }
   }
 
+  if( p->bHasDocsize ){
+    fts3UpdateDocTotals(&rc, p, aSzIns, aSzDel, nChng);
+  }
+
+  sqlite3_free(aSzIns);
   return rc;
 }
 

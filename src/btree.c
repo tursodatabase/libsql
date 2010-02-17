@@ -1247,11 +1247,11 @@ static int freeSpace(MemPage *pPage, int start, int size){
   assert( sqlite3_mutex_held(pPage->pBt->mutex) );
   assert( size>=0 );   /* Minimum cell size is 4 */
 
-#ifdef SQLITE_SECURE_DELETE
-  /* Overwrite deleted information with zeros when the SECURE_DELETE 
-  ** option is enabled at compile-time */
-  memset(&data[start], 0, size);
-#endif
+  if( pPage->pBt->secureDelete ){
+    /* Overwrite deleted information with zeros when the secure_delete
+    ** option is enabled */
+    memset(&data[start], 0, size);
+  }
 
   /* Add the space back into the linked list of freeblocks.  Note that
   ** even though the freeblock list was checked by btreeInitPage(),
@@ -1483,9 +1483,9 @@ static void zeroPage(MemPage *pPage, int flags){
   assert( sqlite3PagerGetData(pPage->pDbPage) == data );
   assert( sqlite3PagerIswriteable(pPage->pDbPage) );
   assert( sqlite3_mutex_held(pBt->mutex) );
-#ifdef SQLITE_SECURE_DELETE
-  memset(&data[hdr], 0, pBt->usableSize - hdr);
-#endif
+  if( pBt->secureDelete ){
+    memset(&data[hdr], 0, pBt->usableSize - hdr);
+  }
   data[hdr] = (char)flags;
   first = hdr + 8 + 4*((flags&PTF_LEAF)==0 ?1:0);
   memset(&data[hdr+1], 0, 4);
@@ -1805,6 +1805,9 @@ int sqlite3BtreeOpen(
     pBt->pCursor = 0;
     pBt->pPage1 = 0;
     pBt->readOnly = sqlite3PagerIsreadonly(pBt->pPager);
+#ifdef SQLITE_SECURE_DELETE
+    pBt->secureDelete = 1;
+#endif
     pBt->pageSize = get2byte(&zDbHeader[16]);
     if( pBt->pageSize<512 || pBt->pageSize>SQLITE_MAX_PAGE_SIZE
          || ((pBt->pageSize-1)&pBt->pageSize)!=0 ){
@@ -2160,6 +2163,23 @@ int sqlite3BtreeMaxPageCount(Btree *p, int mxPage){
   n = sqlite3PagerMaxPageCount(p->pBt->pPager, mxPage);
   sqlite3BtreeLeave(p);
   return n;
+}
+
+/*
+** Set the secureDelete flag if newFlag is 0 or 1.  If newFlag is -1,
+** then make no changes.  Always return the value of the secureDelete
+** setting after the change.
+*/
+int sqlite3BtreeSecureDelete(Btree *p, int newFlag){
+  int b;
+  if( p==0 ) return 0;
+  sqlite3BtreeEnter(p);
+  if( newFlag>=0 ){
+    p->pBt->secureDelete = (newFlag!=0) ? 1 : 0;
+  } 
+  b = p->pBt->secureDelete;
+  sqlite3BtreeLeave(p);
+  return b;
 }
 #endif /* !defined(SQLITE_OMIT_PAGER_PRAGMAS) || !defined(SQLITE_OMIT_VACUUM) */
 
@@ -4904,17 +4924,17 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
   nFree = get4byte(&pPage1->aData[36]);
   put4byte(&pPage1->aData[36], nFree+1);
 
-#ifdef SQLITE_SECURE_DELETE
-  /* If the SQLITE_SECURE_DELETE compile-time option is enabled, then
-  ** always fully overwrite deleted information with zeros.
-  */
-  if( (!pPage && (rc = btreeGetPage(pBt, iPage, &pPage, 0)))
-   ||            (rc = sqlite3PagerWrite(pPage->pDbPage))
-  ){
-    goto freepage_out;
+  if( pBt->secureDelete ){
+    /* If the secure_delete option is enabled, then
+    ** always fully overwrite deleted information with zeros.
+    */
+    if( (!pPage && (rc = btreeGetPage(pBt, iPage, &pPage, 0)))
+     ||            (rc = sqlite3PagerWrite(pPage->pDbPage))
+    ){
+      goto freepage_out;
+    }
+    memset(pPage->aData, 0, pPage->pBt->pageSize);
   }
-  memset(pPage->aData, 0, pPage->pBt->pageSize);
-#endif
 
   /* If the database supports auto-vacuum, write an entry in the pointer-map
   ** to indicate that the page is free.
@@ -4965,11 +4985,9 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
       if( rc==SQLITE_OK ){
         put4byte(&pTrunk->aData[4], nLeaf+1);
         put4byte(&pTrunk->aData[8+nLeaf*4], iPage);
-#ifndef SQLITE_SECURE_DELETE
-        if( pPage ){
+        if( pPage && !pBt->secureDelete ){
           sqlite3PagerDontWrite(pPage->pDbPage);
         }
-#endif
         rc = btreeSetHasContent(pBt, iPage);
       }
       TRACE(("FREE-PAGE: %d leaf on trunk page %d\n",pPage->pgno,pTrunk->pgno));
@@ -5778,10 +5796,10 @@ static int balance_nonroot(
       ** In this case, temporarily copy the cell into the aOvflSpace[]
       ** buffer. It will be copied out again as soon as the aSpace[] buffer
       ** is allocated.  */
-#ifdef SQLITE_SECURE_DELETE
-      memcpy(&aOvflSpace[apDiv[i]-pParent->aData], apDiv[i], szNew[i]);
-      apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
-#endif
+      if( pBt->secureDelete ){
+        memcpy(&aOvflSpace[apDiv[i]-pParent->aData], apDiv[i], szNew[i]);
+        apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+      }
       dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i], &rc);
     }
   }

@@ -653,7 +653,7 @@ static int isLikeOrGlob(
   }
   assert( pLeft->iColumn!=(-1) ); /* Because IPK never has AFF_TEXT */
   pColl = sqlite3ExprCollSeq(pParse, pLeft);
-  assert( pColl!=0 );  /* Every non-IPK column has a collating sequence */
+  if( pColl==0 ) return 0;  /* Happens when LHS has an undefined collation */
   if( (pColl->type!=SQLITE_COLL_BINARY || *pnoCase) &&
       (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
     /* IMP: R-09003-32046 For the GLOB operator, the column must use the

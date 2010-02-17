@@ -1003,6 +1003,169 @@ ifcapable altertable {
   do_test fkey2-14.2.2.7 {
     execsql { INSERT INTO t3 VALUES(1, NULL, 1) }
   } {}
+
+  # Repeat for TEMP tables
+  #
+  drop_all_tables
+  do_test fkey2-14.1tmp.1 {
+    # Adding a column with a REFERENCES clause is not supported.
+    execsql { 
+      CREATE TEMP TABLE t1(a PRIMARY KEY);
+      CREATE TEMP TABLE t2(a, b);
+    }
+    catchsql { ALTER TABLE t2 ADD COLUMN c REFERENCES t1 }
+  } {0 {}}
+  do_test fkey2-14.1tmp.2 {
+    catchsql { ALTER TABLE t2 ADD COLUMN d DEFAULT NULL REFERENCES t1 }
+  } {0 {}}
+  do_test fkey2-14.1tmp.3 {
+    catchsql { ALTER TABLE t2 ADD COLUMN e REFERENCES t1 DEFAULT NULL}
+  } {0 {}}
+  do_test fkey2-14.1tmp.4 {
+    catchsql { ALTER TABLE t2 ADD COLUMN f REFERENCES t1 DEFAULT 'text'}
+  } {1 {Cannot add a REFERENCES column with non-NULL default value}}
+  do_test fkey2-14.1tmp.5 {
+    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT CURRENT_TIME REFERENCES t1 }
+  } {1 {Cannot add a REFERENCES column with non-NULL default value}}
+  do_test fkey2-14.1tmp.6 {
+    execsql { 
+      PRAGMA foreign_keys = off;
+      ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
+      PRAGMA foreign_keys = on;
+      SELECT sql FROM sqlite_temp_master WHERE name='t2';
+    }
+  } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
+
+  do_test fkey2-14.2tmp.1.1 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
+  } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  do_test fkey2-14.2tmp.1.2 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t4 t3
+  } {{CREATE TABLE t1(a REFERENCES t2)}}
+  do_test fkey2-14.2tmp.1.3 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES "t2")} t2 t3
+  } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  
+  # Test ALTER TABLE RENAME TABLE a bit.
+  #
+  do_test fkey2-14.2tmp.2.1 {
+    drop_all_tables
+    execsql {
+      CREATE TEMP TABLE t1(a PRIMARY KEY, b REFERENCES t1);
+      CREATE TEMP TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2);
+      CREATE TEMP TABLE t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1);
+    }
+    execsql { SELECT sql FROM sqlite_temp_master WHERE type = 'table'}
+  } [list \
+    {CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1)}                     \
+    {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2)}    \
+    {CREATE TABLE t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1)}  \
+  ]
+  do_test fkey2-14.2tmp.2.2 {
+    execsql { ALTER TABLE t1 RENAME TO t4 }
+    execsql { SELECT sql FROM sqlite_temp_master WHERE type = 'table'}
+  } [list \
+    {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4")}                    \
+    {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)}     \
+    {CREATE TABLE t3(a REFERENCES "t4", b REFERENCES t2, c REFERENCES "t4")} \
+  ]
+  do_test fkey2-14.2tmp.2.3 {
+    catchsql { INSERT INTO t3 VALUES(1, 2, 3) }
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-14.2tmp.2.4 {
+    execsql { INSERT INTO t4 VALUES(1, NULL) }
+  } {}
+  do_test fkey2-14.2tmp.2.5 {
+    catchsql { UPDATE t4 SET b = 5 }
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-14.2tmp.2.6 {
+    catchsql { UPDATE t4 SET b = 1 }
+  } {0 {}}
+  do_test fkey2-14.2tmp.2.7 {
+    execsql { INSERT INTO t3 VALUES(1, NULL, 1) }
+  } {}
+
+  # Repeat for ATTACH-ed tables
+  #
+  drop_all_tables
+  do_test fkey2-14.1aux.1 {
+    # Adding a column with a REFERENCES clause is not supported.
+    execsql { 
+      ATTACH ':memory:' AS aux;
+      CREATE TABLE aux.t1(a PRIMARY KEY);
+      CREATE TABLE aux.t2(a, b);
+    }
+    catchsql { ALTER TABLE t2 ADD COLUMN c REFERENCES t1 }
+  } {0 {}}
+  do_test fkey2-14.1aux.2 {
+    catchsql { ALTER TABLE t2 ADD COLUMN d DEFAULT NULL REFERENCES t1 }
+  } {0 {}}
+  do_test fkey2-14.1aux.3 {
+    catchsql { ALTER TABLE t2 ADD COLUMN e REFERENCES t1 DEFAULT NULL}
+  } {0 {}}
+  do_test fkey2-14.1aux.4 {
+    catchsql { ALTER TABLE t2 ADD COLUMN f REFERENCES t1 DEFAULT 'text'}
+  } {1 {Cannot add a REFERENCES column with non-NULL default value}}
+  do_test fkey2-14.1aux.5 {
+    catchsql { ALTER TABLE t2 ADD COLUMN g DEFAULT CURRENT_TIME REFERENCES t1 }
+  } {1 {Cannot add a REFERENCES column with non-NULL default value}}
+  do_test fkey2-14.1aux.6 {
+    execsql { 
+      PRAGMA foreign_keys = off;
+      ALTER TABLE t2 ADD COLUMN h DEFAULT 'text' REFERENCES t1;
+      PRAGMA foreign_keys = on;
+      SELECT sql FROM aux.sqlite_master WHERE name='t2';
+    }
+  } {{CREATE TABLE t2(a, b, c REFERENCES t1, d DEFAULT NULL REFERENCES t1, e REFERENCES t1 DEFAULT NULL, h DEFAULT 'text' REFERENCES t1)}}
+
+  do_test fkey2-14.2aux.1.1 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t2 t3
+  } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  do_test fkey2-14.2aux.1.2 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES t2)} t4 t3
+  } {{CREATE TABLE t1(a REFERENCES t2)}}
+  do_test fkey2-14.2aux.1.3 {
+    test_rename_parent {CREATE TABLE t1(a REFERENCES "t2")} t2 t3
+  } {{CREATE TABLE t1(a REFERENCES "t3")}}
+  
+  # Test ALTER TABLE RENAME TABLE a bit.
+  #
+  do_test fkey2-14.2aux.2.1 {
+    drop_all_tables
+    execsql {
+      CREATE TABLE aux.t1(a PRIMARY KEY, b REFERENCES t1);
+      CREATE TABLE aux.t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2);
+      CREATE TABLE aux.t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1);
+    }
+    execsql { SELECT sql FROM aux.sqlite_master WHERE type = 'table'}
+  } [list \
+    {CREATE TABLE t1(a PRIMARY KEY, b REFERENCES t1)}                     \
+    {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES t1, c REFERENCES t2)}    \
+    {CREATE TABLE t3(a REFERENCES t1, b REFERENCES t2, c REFERENCES t1)}  \
+  ]
+  do_test fkey2-14.2aux.2.2 {
+    execsql { ALTER TABLE t1 RENAME TO t4 }
+    execsql { SELECT sql FROM aux.sqlite_master WHERE type = 'table'}
+  } [list \
+    {CREATE TABLE "t4"(a PRIMARY KEY, b REFERENCES "t4")}                    \
+    {CREATE TABLE t2(a PRIMARY KEY, b REFERENCES "t4", c REFERENCES t2)}     \
+    {CREATE TABLE t3(a REFERENCES "t4", b REFERENCES t2, c REFERENCES "t4")} \
+  ]
+  do_test fkey2-14.2aux.2.3 {
+    catchsql { INSERT INTO t3 VALUES(1, 2, 3) }
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-14.2aux.2.4 {
+    execsql { INSERT INTO t4 VALUES(1, NULL) }
+  } {}
+  do_test fkey2-14.2aux.2.5 {
+    catchsql { UPDATE t4 SET b = 5 }
+  } {1 {foreign key constraint failed}}
+  do_test fkey2-14.2aux.2.6 {
+    catchsql { UPDATE t4 SET b = 1 }
+  } {0 {}}
+  do_test fkey2-14.2aux.2.7 {
+    execsql { INSERT INTO t3 VALUES(1, NULL, 1) }
+  } {}
 }
 
 do_test fkey-2.14.3.1 {

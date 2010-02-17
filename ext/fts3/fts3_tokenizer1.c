@@ -182,9 +182,11 @@ static int simpleNext(
     if( c->iOffset>iStartOffset ){
       int i, n = c->iOffset-iStartOffset;
       if( n>c->nTokenAllocated ){
+        char *pNew;
         c->nTokenAllocated = n+20;
-        c->pToken = sqlite3_realloc(c->pToken, c->nTokenAllocated);
-        if( c->pToken==NULL ) return SQLITE_NOMEM;
+        pNew = sqlite3_realloc(c->pToken, c->nTokenAllocated);
+        if( !pNew ) return SQLITE_NOMEM;
+        c->pToken = pNew;
       }
       for(i=0; i<n; i++){
         /* TODO(shess) This needs expansion to handle UTF-8

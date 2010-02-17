@@ -126,7 +126,8 @@ void sqlite3BeginTrigger(
     goto trigger_cleanup;
   }
   pTab = sqlite3SrcListLookup(pParse, pTableName);
-  if( pName2->n==0 && pTab && pTab->pSchema==db->aDb[1].pSchema ){
+  if( db->init.busy==0 && pName2->n==0 && pTab
+        && pTab->pSchema==db->aDb[1].pSchema ){
     iDb = 1;
   }
 
@@ -254,12 +255,12 @@ void sqlite3FinishTrigger(
   TriggerStep *pStepList, /* The triggered program */
   Token *pAll             /* Token that describes the complete CREATE TRIGGER */
 ){
-  Trigger *pTrig = pParse->pNewTrigger;    /* Trigger being finished */
-  char *zName;                             /* Name of trigger */
-  sqlite3 *db = pParse->db;                /* The database */
-  DbFixer sFix;
-  int iDb;                                 /* Database containing the trigger */
-  Token nameToken;           /* Trigger name for error reporting */
+  Trigger *pTrig = pParse->pNewTrigger;   /* Trigger being finished */
+  char *zName;                            /* Name of trigger */
+  sqlite3 *db = pParse->db;               /* The database */
+  DbFixer sFix;                           /* Fixer object */
+  int iDb;                                /* Database containing the trigger */
+  Token nameToken;                        /* Trigger name for error reporting */
 
   pTrig = pParse->pNewTrigger;
   pParse->pNewTrigger = 0;
@@ -278,7 +279,7 @@ void sqlite3FinishTrigger(
     goto triggerfinish_cleanup;
   }
 
-  /* if we are not initializing, and this trigger is not on a TEMP table, 
+  /* if we are not initializing,
   ** build the sqlite_master entry
   */
   if( !db->init.busy ){

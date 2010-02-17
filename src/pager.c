@@ -2875,9 +2875,7 @@ static int pager_write_pagelist(PgHdr *pList){
     ** any such pages to the file.
     **
     ** Also, do not write out any page that has the PGHDR_DONT_WRITE flag
-    ** set (set by sqlite3PagerDontWrite()).  Note that if compiled with
-    ** SQLITE_SECURE_DELETE the PGHDR_DONT_WRITE bit is never set and so
-    ** the second test is always true.
+    ** set (set by sqlite3PagerDontWrite()).
     */
     if( pgno<=pPager->dbSize && 0==(pList->flags&PGHDR_DONT_WRITE) ){
       i64 offset = (pgno-1)*(i64)pPager->pageSize;   /* Offset to write */
@@ -4385,7 +4383,6 @@ int sqlite3PagerIswriteable(DbPage *pPg){
 }
 #endif
 
-#ifndef SQLITE_SECURE_DELETE
 /*
 ** A call to this routine tells the pager that it is not necessary to
 ** write the information on page pPg back to the disk, even though
@@ -4411,7 +4408,6 @@ void sqlite3PagerDontWrite(PgHdr *pPg){
 #endif
   }
 }
-#endif /* !defined(SQLITE_SECURE_DELETE) */
 
 /*
 ** This routine is called to increment the value of the database file 
@@ -4981,30 +4977,34 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
     ** operation. Store this value in nNew. Then free resources associated 
     ** with any savepoints that are destroyed by this operation.
     */
-    nNew = iSavepoint + (op==SAVEPOINT_ROLLBACK);
+    nNew = iSavepoint + (( op==SAVEPOINT_RELEASE ) ? 0 : 1);
     for(ii=nNew; ii<pPager->nSavepoint; ii++){
       sqlite3BitvecDestroy(pPager->aSavepoint[ii].pInSavepoint);
     }
     pPager->nSavepoint = nNew;
 
-    /* If this is a rollback operation, playback the specified savepoint.
+    /* If this is a release of the outermost savepoint, truncate 
+    ** the sub-journal to zero bytes in size. */
+    if( op==SAVEPOINT_RELEASE ){
+      if( nNew==0 && isOpen(pPager->sjfd) ){
+        /* Only truncate if it is an in-memory sub-journal. */
+        if( sqlite3IsMemJournal(pPager->sjfd) ){
+          rc = sqlite3OsTruncate(pPager->sjfd, 0);
+        }
+        pPager->nSubRec = 0;
+      }
+    }
+    /* Else this is a rollback operation, playback the specified savepoint.
     ** If this is a temp-file, it is possible that the journal file has
     ** not yet been opened. In this case there have been no changes to
     ** the database file, so the playback operation can be skipped.
     */
-    if( op==SAVEPOINT_ROLLBACK && isOpen(pPager->jfd) ){
+    else if( isOpen(pPager->jfd) ){
       PagerSavepoint *pSavepoint = (nNew==0)?0:&pPager->aSavepoint[nNew-1];
       rc = pagerPlaybackSavepoint(pPager, pSavepoint);
       assert(rc!=SQLITE_DONE);
     }
   
-    /* If this is a release of the outermost savepoint, truncate 
-    ** the sub-journal to zero bytes in size. */
-    if( nNew==0 && op==SAVEPOINT_RELEASE && isOpen(pPager->sjfd) ){
-      assert( rc==SQLITE_OK );
-      rc = sqlite3OsTruncate(pPager->sjfd, 0);
-      pPager->nSubRec = 0;
-    }
   }
   return rc;
 }

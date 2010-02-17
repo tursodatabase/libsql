@@ -188,6 +188,32 @@ foreach PGSZ {512 2048 4096 8192} {
     ifcapable {vacuum} {execsql VACUUM}
   } {}
   integrity_check pagesize-2.$PGSZ.17
+
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  do_test pagesize-2.$PGSZ.30 {
+    execsql "
+      CREATE TABLE t1(x);
+      PRAGMA temp.page_size=$PGSZ;
+      CREATE TEMP TABLE t2(y);
+      PRAGMA main.page_size;
+      PRAGMA temp.page_size;
+    "
+  } [list 1024 $PGSZ]
+
+  db close
+  file delete -force test.db
+  sqlite3 db test.db
+  do_test pagesize-2.$PGSZ.40 {
+    execsql "
+      PRAGMA page_size=$PGSZ;
+      CREATE TABLE t1(x);
+      CREATE TEMP TABLE t2(y);
+      PRAGMA main.page_size;
+      PRAGMA temp.page_size;
+    "
+  } [list $PGSZ $PGSZ]
 }
 
 finish_test

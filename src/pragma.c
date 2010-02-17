@@ -418,6 +418,31 @@ void sqlite3Pragma(
   }else
 
   /*
+  **  PRAGMA [database.]secure_delete
+  **  PRAGMA [database.]secure_delete=ON/OFF
+  **
+  ** The first form reports the current setting for the
+  ** secure_delete flag.  The second form changes the secure_delete
+  ** flag setting and reports thenew value.
+  */
+  if( sqlite3StrICmp(zLeft,"secure_delete")==0 ){
+    Btree *pBt = pDb->pBt;
+    sqlite3_int64 b = -1;
+    assert( pBt!=0 );
+    if( zRight ){
+      b = getBoolean(zRight);
+    }
+    if( pId2->n==0 && b>=0 ){
+      int ii;
+      for(ii=0; ii<db->nDb; ii++){
+        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, b);
+      }
+    }
+    b = sqlite3BtreeSecureDelete(pBt, b);
+    returnSingleInt(pParse, "secure_delete", &b);
+  }else
+
+  /*
   **  PRAGMA [database.]page_count
   **
   ** Return the number of pages in the specified database.
@@ -1372,7 +1397,7 @@ void sqlite3Pragma(
   }else
 #endif
 
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
   if( sqlite3StrICmp(zLeft, "key")==0 && zRight ){
     sqlite3_key(db, zRight, sqlite3Strlen30(zRight));
   }else
@@ -1395,17 +1420,15 @@ void sqlite3Pragma(
     }
   }else
 #endif
-#if SQLITE_HAS_CODEC || defined(SQLITE_ENABLE_CEROD)
+#if defined(SQLITE_HAS_CODEC) || defined(SQLITE_ENABLE_CEROD)
   if( sqlite3StrICmp(zLeft, "activate_extensions")==0 ){
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
     if( sqlite3StrNICmp(zRight, "see-", 4)==0 ){
-      extern void sqlite3_activate_see(const char*);
       sqlite3_activate_see(&zRight[4]);
     }
 #endif
 #ifdef SQLITE_ENABLE_CEROD
     if( sqlite3StrNICmp(zRight, "cerod-", 6)==0 ){
-      extern void sqlite3_activate_cerod(const char*);
       sqlite3_activate_cerod(&zRight[6]);
     }
 #endif

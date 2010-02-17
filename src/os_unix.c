@@ -3822,6 +3822,8 @@ static int fillInUnixFile(
   pNew->lastErrno = 0;
 #if OS_VXWORKS
   if( rc!=SQLITE_OK ){
+    if( h>=0 ) close(h);
+    h = -1;
     unlink(zFilename);
     isDelete = 0;
   }
@@ -5260,7 +5262,7 @@ static int proxyTakeConch(unixFile *pFile){
            */
           forceNewLockPath = 1;
           tryOldLockPath = 0;
-          continue; // go back to the do {} while start point, try again
+          continue; /* go back to the do {} while start point, try again */
         }
       }
       if( rc==SQLITE_OK ){

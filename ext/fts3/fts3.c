@@ -305,6 +305,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "fts3.h"
 #ifndef SQLITE_CORE 
@@ -460,29 +461,46 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 }
 
 /*
+** Construct one or more SQL statements from the format string given
+** and then evaluate those statements.  The success code is writting
+** into *pRc.
+**
+** If *pRc is initially non-zero then this routine is a no-op.
+*/
+void fts3DbExec(
+  int *pRc,              /* Success code */
+  sqlite3 *db,           /* Database in which to run SQL */
+  const char *zFormat,   /* Format string for SQL */
+  ...                    /* Arguments to the format string */
+){
+  va_list ap;
+  char *zSql;
+  if( *pRc ) return;
+  va_start(ap, zFormat);
+  zSql = sqlite3_vmprintf(zFormat, ap);
+  va_end(ap);
+  if( zSql==0 ){
+    *pRc = SQLITE_NOMEM;
+  }else{
+    *pRc = sqlite3_exec(db, zSql, 0, 0, 0);
+    sqlite3_free(zSql);
+  }
+}
+
+/*
 ** The xDestroy() virtual table method.
 */
 static int fts3DestroyMethod(sqlite3_vtab *pVtab){
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;              /* Return code */
   Fts3Table *p = (Fts3Table *)pVtab;
+  sqlite3 *db = p->db;
 
-  /* Create a script to drop the underlying three storage tables. */
-  char *zSql = sqlite3_mprintf(
-      "DROP TABLE IF EXISTS %Q.'%q_content';"
-      "DROP TABLE IF EXISTS %Q.'%q_segments';"
-      "DROP TABLE IF EXISTS %Q.'%q_segdir';", 
-      p->zDb, p->zName, p->zDb, p->zName, p->zDb, p->zName
-  );
-
-  /* If malloc has failed, set rc to SQLITE_NOMEM. Otherwise, try to
-  ** execute the SQL script created above.
-  */
-  if( zSql ){
-    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
-    sqlite3_free(zSql);
-  }else{
-    rc = SQLITE_NOMEM;
-  }
+  /* Drop the shadow tables */
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_content'", p->zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segments'", p->zDb,p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_segdir'", p->zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_docsize'", p->zDb, p->zName);
+  fts3DbExec(&rc, db, "DROP TABLE IF EXISTS %Q.'%q_stat'", p->zDb, p->zName);
 
   /* If everything has worked, invoke fts3DisconnectMethod() to free the
   ** memory associated with the Fts3Table structure and return SQLITE_OK.
@@ -531,22 +549,33 @@ static int fts3DeclareVtab(Fts3Table *p){
 ** as part of the vtab xCreate() method.
 */
 static int fts3CreateTables(Fts3Table *p){
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
   int i;                          /* Iterator variable */
   char *zContentCols;             /* Columns of %_content table */
-  char *zSql;                     /* SQL script to create required tables */
+  sqlite3 *db = p->db;            /* The database connection */
 
   /* Create a list of user columns for the content table */
-  zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
-  for(i=0; zContentCols && i<p->nColumn; i++){
-    char *z = p->azColumn[i];
-    zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
-  }
+  if( p->bHasContent ){
+    zContentCols = sqlite3_mprintf("docid INTEGER PRIMARY KEY");
+    for(i=0; zContentCols && i<p->nColumn; i++){
+      char *z = p->azColumn[i];
+      zContentCols = sqlite3_mprintf("%z, 'c%d%q'", zContentCols, i, z);
+    }
+    if( zContentCols==0 ) rc = SQLITE_NOMEM;
 
-  /* Create the whole SQL script */
-  zSql = sqlite3_mprintf(
-      "CREATE TABLE %Q.'%q_content'(%s);"
-      "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);"
+    /* Create the content table */
+    fts3DbExec(&rc, db, 
+       "CREATE TABLE %Q.'%q_content'(%s)",
+       p->zDb, p->zName, zContentCols
+    );
+    sqlite3_free(zContentCols);
+  }
+  /* Create other tables */
+  fts3DbExec(&rc, db, 
+      "CREATE TABLE %Q.'%q_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
+      p->zDb, p->zName
+  );
+  fts3DbExec(&rc, db, 
       "CREATE TABLE %Q.'%q_segdir'("
         "level INTEGER,"
         "idx INTEGER,"
@@ -556,21 +585,37 @@ static int fts3CreateTables(Fts3Table *p){
         "root BLOB,"
         "PRIMARY KEY(level, idx)"
       ");",
-      p->zDb, p->zName, zContentCols, p->zDb, p->zName, p->zDb, p->zName
+      p->zDb, p->zName
   );
-
-  /* Unless a malloc() failure has occurred, execute the SQL script to 
-  ** create the tables used to store data for this FTS3 virtual table.
-  */
-  if( zContentCols==0 || zSql==0 ){
-    rc = SQLITE_NOMEM;
-  }else{
-    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
+  if( p->bHasDocsize ){
+    fts3DbExec(&rc, db, 
+        "CREATE TABLE %Q.'%q_docsize'(docid INTEGER PRIMARY KEY, size BLOB);",
+        p->zDb, p->zName
+    );
+    fts3DbExec(&rc, db, 
+        "CREATE TABLE %Q.'%q_stat'(id INTEGER PRIMARY KEY, value BLOB);",
+        p->zDb, p->zName
+    );
   }
-
-  sqlite3_free(zSql);
-  sqlite3_free(zContentCols);
   return rc;
+}
+
+/*
+** Determine if a table currently exists in the database.
+*/
+static void fts3TableExists(
+  int *pRc,             /* Success code */
+  sqlite3 *db,          /* The database connection to test */
+  const char *zDb,      /* ATTACHed database within the connection */
+  const char *zName,    /* Name of the FTS3 table */
+  const char *zSuffix,  /* Shadow table extension */
+  u8 *pResult           /* Write results here */
+){
+  int rc = SQLITE_OK;
+  if( *pRc ) return;
+  fts3DbExec(&rc, db, "SELECT 1 FROM %Q.'%q%s'", zDb, zName, zSuffix);
+  *pResult = (rc==SQLITE_OK) ? 1 : 0;
+  if( rc!=SQLITE_ERROR ) *pRc = rc;
 }
 
 /*
@@ -689,9 +734,15 @@ static int fts3InitVtab(
   ** database. TODO: For xConnect(), it could verify that said tables exist.
   */
   if( isCreate ){
+    p->bHasContent = 1;
+    p->bHasDocsize = argv[0][3]=='4';
     rc = fts3CreateTables(p);
-    if( rc!=SQLITE_OK ) goto fts3_init_out;
+  }else{
+    rc = SQLITE_OK;
+    fts3TableExists(&rc, db, argv[1], argv[2], "_content", &p->bHasContent);
+    fts3TableExists(&rc, db, argv[1], argv[2], "_docsize", &p->bHasDocsize);
   }
+  if( rc!=SQLITE_OK ) goto fts3_init_out;
 
   rc = fts3DeclareVtab(p);
   if( rc!=SQLITE_OK ) goto fts3_init_out;
@@ -868,7 +919,7 @@ static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
     sqlite3_reset(pCsr->pStmt);
     fts3GetDeltaVarint(&pCsr->pNextId, &pCsr->iPrevId);
     pCsr->isRequireSeek = 1;
-    pCsr->isMatchinfoOk = 1;
+    pCsr->isMatchinfoNeeded = 1;
   }
   return rc;
 }
@@ -2354,22 +2405,35 @@ static int fts3RenameMethod(
   sqlite3_vtab *pVtab,            /* Virtual table handle */
   const char *zName               /* New name of table */
 ){
-  Fts3Table *p = (Fts3Table *)pVtab;     
-  int rc = SQLITE_NOMEM;          /* Return Code */
-  char *zSql;                     /* SQL script to run to rename tables */
+  Fts3Table *p = (Fts3Table *)pVtab;
+  sqlite3 *db;                    /* Database connection */
+  int rc;                         /* Return Code */
  
-  zSql = sqlite3_mprintf(
-    "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';"
-    "ALTER TABLE %Q.'%q_segments' RENAME TO '%q_segments';"
-    "ALTER TABLE %Q.'%q_segdir'   RENAME TO '%q_segdir';"
-    , p->zDb, p->zName, zName 
-    , p->zDb, p->zName, zName 
-    , p->zDb, p->zName, zName
+  db = p->db;
+  rc = SQLITE_OK;
+  fts3DbExec(&rc, db,
+    "ALTER TABLE %Q.'%q_content'  RENAME TO '%q_content';",
+    p->zDb, p->zName, zName
   );
-  if( zSql ){
-    rc = sqlite3_exec(p->db, zSql, 0, 0, 0);
-    sqlite3_free(zSql);
+  if( rc==SQLITE_ERROR ) rc = SQLITE_OK;
+  if( p->bHasDocsize ){
+    fts3DbExec(&rc, db,
+      "ALTER TABLE %Q.'%q_docsize'  RENAME TO '%q_docsize';",
+      p->zDb, p->zName, zName
+    );
+    fts3DbExec(&rc, db,
+      "ALTER TABLE %Q.'%q_stat'  RENAME TO '%q_stat';",
+      p->zDb, p->zName, zName
+    );
   }
+  fts3DbExec(&rc, db,
+    "ALTER TABLE %Q.'%q_segments' RENAME TO '%q_segments';",
+    p->zDb, p->zName, zName
+  );
+  fts3DbExec(&rc, db,
+    "ALTER TABLE %Q.'%q_segdir'   RENAME TO '%q_segdir';",
+    p->zDb, p->zName, zName
+  );
   return rc;
 }
 
@@ -2479,9 +2543,15 @@ int sqlite3Fts3Init(sqlite3 *db){
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "matchinfo", -1))
    && SQLITE_OK==(rc = sqlite3_overload_function(db, "optimize", 1))
   ){
-    return sqlite3_create_module_v2(
+    rc = sqlite3_create_module_v2(
         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
     );
+    if( rc==SQLITE_OK ){
+      rc = sqlite3_create_module_v2(
+          db, "fts4", &fts3Module, (void *)pHash, 0
+      );
+    }
+    return rc;
   }
 
   /* An error has occurred. Delete the hash table and return the error code. */

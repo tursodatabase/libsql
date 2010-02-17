@@ -479,9 +479,9 @@ void sqlite3AlterRenameTable(
     ** for which the renamed table is the parent table.  */
     if( (zWhere=whereForeignKeys(pParse, pTab))!=0 ){
       sqlite3NestedParse(pParse, 
-          "UPDATE sqlite_master SET "
+          "UPDATE \"%w\".%s SET "
               "sql = sqlite_rename_parent(sql, %Q, %Q) "
-              "WHERE %s;", zTabName, zName, zWhere);
+              "WHERE %s;", zDb, SCHEMA_TABLE(iDb), zTabName, zName, zWhere);
       sqlite3DbFree(db, zWhere);
     }
   }

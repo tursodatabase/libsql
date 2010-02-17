@@ -407,6 +407,7 @@ struct BtShared {
   MemPage *pPage1;      /* First page of the database */
   u8 readOnly;          /* True if the underlying file is readonly */
   u8 pageSizeFixed;     /* True if the page size can no longer be changed */
+  u8 secureDelete;      /* True if secure_delete is enabled */
 #ifndef SQLITE_OMIT_AUTOVACUUM
   u8 autoVacuum;        /* True if auto-vacuum is enabled */
   u8 incrVacuum;        /* True if incr-vacuum is enabled */

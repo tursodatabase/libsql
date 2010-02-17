@@ -144,11 +144,13 @@ static void attachFunc(
     pPager = sqlite3BtreePager(aNew->pBt);
     sqlite3PagerLockingMode(pPager, db->dfltLockMode);
     sqlite3PagerJournalMode(pPager, db->dfltJournalMode);
+    sqlite3BtreeSecureDelete(aNew->pBt,
+                             sqlite3BtreeSecureDelete(db->aDb[0].pBt,-1) );
   }
   aNew->zName = sqlite3DbStrDup(db, zName);
   aNew->safety_level = 3;
 
-#if SQLITE_HAS_CODEC
+#ifdef SQLITE_HAS_CODEC
   if( rc==SQLITE_OK ){
     extern int sqlite3CodecAttach(sqlite3*, int, const void*, int);
     extern void sqlite3CodecGetKey(sqlite3*, int, void**, int*);
