@@ -2299,10 +2299,20 @@ to follow the previous rule.");
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
       }else{
-        struct symbol *sp = Symbol_new(x);
-        psp->declargslot = &sp->datatype;
-        psp->insertLineMacro = 0;
-        psp->state = WAITING_FOR_DECL_ARG;
+        struct symbol *sp = Symbol_find(x);
+        if((sp) && (sp->datatype)){
+          ErrorMsg(psp->filename,psp->tokenlineno,
+            "Symbol %%type \"%s\" already defined", x);
+          psp->errorcnt++;
+          psp->state = RESYNC_AFTER_DECL_ERROR;
+        }else{
+          if (!sp){
+            sp = Symbol_new(x);
+          }
+          psp->declargslot = &sp->datatype;
+          psp->insertLineMacro = 0;
+          psp->state = WAITING_FOR_DECL_ARG;
+        }
       }
       break;
     case WAITING_FOR_PRECEDENCE_SYMBOL:
