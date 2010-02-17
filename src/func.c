@@ -271,14 +271,24 @@ static void roundFunc(sqlite3_context *context, int argc, sqlite3_value **argv){
   }
   if( sqlite3_value_type(argv[0])==SQLITE_NULL ) return;
   r = sqlite3_value_double(argv[0]);
-  zBuf = sqlite3_mprintf("%.*f",n,r);
-  if( zBuf==0 ){
-    sqlite3_result_error_nomem(context);
+  /* If Y==0 and X will fit in a 64-bit int,
+  ** handle the rounding directly,
+  ** otherwise use printf.
+  */
+  if( n==0 && r>=0 && r<LARGEST_INT64-1 ){
+    r = (double)((sqlite_int64)(r+0.5));
+  }else if( n==0 && r<0 && (-r)<LARGEST_INT64-1 ){
+    r = -(double)((sqlite_int64)((-r)+0.5));
   }else{
+    zBuf = sqlite3_mprintf("%.*f",n,r);
+    if( zBuf==0 ){
+      sqlite3_result_error_nomem(context);
+      return;
+    }
     sqlite3AtoF(zBuf, &r);
     sqlite3_free(zBuf);
-    sqlite3_result_double(context, r);
   }
+  sqlite3_result_double(context, r);
 }
 #endif
 
