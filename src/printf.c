@@ -939,6 +939,28 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   return z;
 }
 
+/*
+** Format and write a message to the log if logging is enabled.
+*/
+void sqlite3_log(int iPriority, const char *zFormat, ...){
+  void (*xLog)(void*, int, const char*);  /* The global logger function */
+  void *pLogArg;                          /* First argument to the logger */
+  va_list ap;                             /* Vararg list */
+  char *zMsg;                             /* Complete log message */
+  
+  xLog = sqlite3GlobalConfig.xLog;
+  if( xLog ){
+    va_start(ap, zFormat);
+    sqlite3BeginBenignMalloc();
+    zMsg = sqlite3_vmprintf(zFormat, ap);
+    sqlite3EndBenignMalloc();
+    va_end(ap);
+    pLogArg = sqlite3GlobalConfig.pLogArg;
+    xLog(pLogArg, iPriority, zMsg ? zMsg : zFormat);
+    sqlite3_free(zMsg);
+  }
+}
+
 #if defined(SQLITE_DEBUG)
 /*
 ** A version of printf() that understands %lld.  Used for debugging.

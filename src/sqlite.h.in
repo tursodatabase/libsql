@@ -914,7 +914,6 @@ int sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library
-** EXPERIMENTAL
 **
 ** The sqlite3_config() interface is used to make global configuration
 ** changes to SQLite in order to tune SQLite to the specific needs of
@@ -1255,6 +1254,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_LOOKASIDE    13  /* int int */
 #define SQLITE_CONFIG_PCACHE       14  /* sqlite3_pcache_methods* */
 #define SQLITE_CONFIG_GETPCACHE    15  /* sqlite3_pcache_methods* */
+#define SQLITE_CONFIG_LOG          16  /* xFunc, void* */
 
 /*
 ** CAPI3REF: Configuration Options
@@ -5662,6 +5662,20 @@ int sqlite3_unlock_notify(
 ** that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_strnicmp(const char *, const char *, int);
+
+/*
+** CAPI3REF: Error Logging Interface
+** EXPERIMENTAL
+**
+** ^The [sqlite3_log()] interface writes a message into the error log
+** established by the [SQLITE_CONFIG_ERRORLOG] option to [sqlite3_config()].
+**
+** The sqlite3_log() interface is intended for use by extensions such as
+** virtual tables, collating functions, and SQL functions.  While there is
+** nothing to prevent an application from calling sqlite3_log(), doing so
+** is considered bad form.
+*/
+void sqlite3_log(int iPriority, const char *zFormat, ...);
 
 /*
 ** Undo the hack that converts floating point types to integer for

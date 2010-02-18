@@ -378,6 +378,16 @@ int sqlite3_config(int op, ...){
       sqlite3GlobalConfig.nLookaside = va_arg(ap, int);
       break;
     }
+    
+    /* Record a pointer to the logger funcction and its first argument.
+    ** The default is NULL.  Logging is disabled if the function pointer is
+    ** NULL.
+    */
+    case SQLITE_CONFIG_LOG: {
+      sqlite3GlobalConfig.xLog = va_arg(ap, void(*)(void*,int,const char*));
+      sqlite3GlobalConfig.pLogArg = va_arg(ap, void*);
+      break;
+    }
 
     default: {
       rc = SQLITE_ERROR;
