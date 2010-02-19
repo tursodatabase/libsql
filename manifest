@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sa\snew,\sexperimental\slogging\sinterface\sdesigned\sto\said\sin\sdebugging\sof\ndeeply\sembedded\sprojects\sthat\suse\sSQLite.
-D 2010-02-18T18:45:10
+C Changes\sto\spragma\sintegrity_check\sto\scheck\srowid\sorder.\s\sTests\sof\ssame\sin\scorruptE.test.
+D 2010-02-19T04:28:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,7 +109,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 744e98359dfc79fed43e8dec911e33e108b06aae
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c c9ee3c30fbf21ebb4f45c244bd47d7999e6f2704
+F src/btree.c b7ac4420d10662259ad3421145eab16a279f5bd3
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 81412e0f3cabd0cc7a71a1644c46d9ccad9613f5
@@ -300,13 +297,14 @@ F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
 F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
-F test/corrupt7.test e66cb109ed64e7ac985d8b4a3422c213d074c62d
+F test/corrupt7.test 1eb2214f29474fa6b155aa3da8a7d46bf52089e1
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
 F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
 F test/corruptB.test 66b4544104dd03d0f33ea69ddac3fa4a682cd3c2
 F test/corruptC.test 691ed070baef5e1345939caadf270a52837a5064
 F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
+F test/corruptE.test dbf66cae4c0e977ca9625a9114cdd01df8967bef
 F test/count.test 454e1ce985c94d13efeac405ce54439f49336163
 F test/crash.test 1b6ac8410689ff78028887f445062dc897c9ac89
 F test/crash2.test 5b14d4eb58b880e231361d3b609b216acda86651
@@ -792,14 +790,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0e4225804010cb0e3f254e2dbffc4fe0e7d982ce
-R e1b84b3199b12981899c4cf8ff08b1fe
-U drh
-Z 01212a28378b63d61c38823b1b1cabd0
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.10 (Darwin)
-
-iEYEARECAAYFAkt9irYACgkQoxKgR168RlFqLACfTtjHG4O+0YQ6hh1MZq3NFfjO
-3wAAn2U6GgjbwSAri4XLyLGkLsGJgnkn
-=i25A
------END PGP SIGNATURE-----
+P 103321e37ae46eacfad4e127d13477ad5dd02bab
+R becff0b48e882ac8f957bf23a46ac2b6
+U shaneh
+Z 75f7bf2a2627891ab273971d988089a2
