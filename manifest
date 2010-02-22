@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sin\sthe\smassive\sclean-up\sand\sANSI-fication\sof\sLemon\scarried\sout\nby\sRyan\sGordon.\s\sThere\sare\sno\sfunctional\schanges\sto\sSQLite\sitself\s-\sLemon\nstill\sgenerates\sexactly\sthe\ssame\sparsing\sautomaton\sfrom\sexactly\sthe\ssame\ngrammar.
-D 2010-02-22T19:37:44
+C Fix\san\sassertion-fault/segfault\sproblem\sthat\scomes\sup\swhen\strying\sto\nVACUUM\san\sauto-vacuumed\sdatabase\swith\sa\slarge\sschema.\s\nTicket\s[da1151f97df244].
+D 2010-02-22T23:17:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 0af0a55e2dd55bc4f4c3ccf04cc8f1f4a2e2e65f
 F src/os_win.c 5ffab20249a61e0625f869efe157fa009747039b
-F src/pager.c 5dee83c3cf4e94b72fcd81dca67abd7617227217
+F src/pager.c d0e53cd301c82d3b67ee69c7b900b56e5b17070d
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
@@ -730,6 +730,7 @@ F test/utf16align.test 54cd35a27c005a9b6e7815d887718780b6a462ae
 F test/vacuum.test 68e39b2228b4b772166debef4a82accf6ddd32f3
 F test/vacuum2.test ec57f21d394b7b72249b11f8e4b5d487bab56539
 F test/vacuum3.test f39ad1428347c5808cd2da7578c470f186a4d0ce
+F test/vacuum4.test d3f8ecff345f166911568f397d2432c16d2867d9
 F test/varint.test ab7b110089a08b9926ed7390e7e97bdefeb74102
 F test/veryquick.test e265401afefa994cdf2fe4b6f286b1e87c2f9b9d
 F test/view.test 45f518205ecdb6dd23a86dd4a99bb4ae945e625d
@@ -793,14 +794,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a8076aede33c07e9a2aaa05be8a888f37b45e41c 721f33e7221c5fc907e9e293ac3242843f4fcfb7
-R 450fcba6aea5b20aec6d511bce230dbe
+P 1e8b842039cc06b57a321226633c55b94eb8dcd7
+R 06756ad8541fef8ef0cebc9ff5692f8d
 U drh
-Z f72661ff70306bbed226b0e608b0a014
+Z b557d7fb4d0e234f9fa6b902c44ce00a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLgt0LoxKgR168RlERAoxeAJ9pMwbfj9A/W4G3C1CtQ290wQ3EXwCcCH1G
-03zT6XIKKGdbivHexIMUwAE=
-=j4CO
+iD8DBQFLgxCZoxKgR168RlERAnKMAJ4sis2aZYWJRDTipYeWbj/CPDSbGwCdFGgm
+Uu4h1w5TiR0CYCeH1mIeplU=
+=d4Ru
 -----END PGP SIGNATURE-----
