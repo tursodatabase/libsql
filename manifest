@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Log\sall\serror\smessages\sif\slogging\sis\senabled.
-D 2010-02-22T19:32:32
+C Merge\sin\sthe\smassive\sclean-up\sand\sANSI-fication\sof\sLemon\scarried\sout\nby\sRyan\sGordon.\s\sThere\sare\sno\sfunctional\schanges\sto\sSQLite\sitself\s-\sLemon\nstill\sgenerates\sexactly\sthe\ssame\sparsing\sautomaton\sfrom\sexactly\sthe\ssame\ngrammar.
+D 2010-02-22T19:37:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -768,7 +768,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c 102000370ae3de57e1198faffbccf3b1d71d6f75
+F tool/lemon.c 651d2564255b78e9eef5ed23156a879b5fefad33
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -793,14 +793,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cae47c5b09cb122689bcb020a66ce14982cc4aa8
-R d7121689968b9a49bfb3b115f6caae1f
+P a8076aede33c07e9a2aaa05be8a888f37b45e41c 721f33e7221c5fc907e9e293ac3242843f4fcfb7
+R 450fcba6aea5b20aec6d511bce230dbe
 U drh
-Z 756dc0e686614f50b3726f7d79fbf33e
+Z f72661ff70306bbed226b0e608b0a014
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLgtvToxKgR168RlERAgD+AJ9pel9BuoeQ60Zg2RwC7UUcyLa15QCgjQyw
-eVPi7VygVLOyvzAZ+LPjDAY=
-=r/gG
+iD8DBQFLgt0LoxKgR168RlERAoxeAJ9pMwbfj9A/W4G3C1CtQ290wQ3EXwCcCH1G
+03zT6XIKKGdbivHexIMUwAE=
+=j4CO
 -----END PGP SIGNATURE-----

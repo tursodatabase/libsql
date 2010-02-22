@@ -34,6 +34,24 @@ extern int access();
 #define MAXRHS 1000
 #endif
 
+static const char **made_files = NULL;
+static int made_files_count = 0;
+static int successful_exit = 0;
+static void LemonAtExit(void)
+{
+    /* if we failed, delete (most) files we made, to unconfuse build tools. */
+    int i;
+    for (i = 0; i < made_files_count; i++) {
+        if (!successful_exit) {
+            remove(made_files[i]);
+        }
+        free((void *) made_files[i]);
+    }
+    free(made_files);
+    made_files_count = 0;
+    made_files = NULL;
+}
+
 static char *msort(char*,char**,int(*)(const char*,const char*));
 
 /*
@@ -42,6 +60,11 @@ static char *msort(char*,char**,int(*)(const char*,const char*));
 ** we have to define the following variant of strlen().
 */
 #define lemonStrlen(X)   ((int)strlen(X))
+
+/* a few forward declarations... */
+struct rule;
+struct lemon;
+struct action;
 
 static struct action *Action_new(void);
 static struct action *Action_sort(struct action *);
@@ -55,59 +78,60 @@ void FindFollowSets();
 void FindActions();
 
 /********* From the file "configlist.h" *********************************/
-void Configlist_init(/* void */);
-struct config *Configlist_add(/* struct rule *, int */);
-struct config *Configlist_addbasis(/* struct rule *, int */);
-void Configlist_closure(/* void */);
-void Configlist_sort(/* void */);
-void Configlist_sortbasis(/* void */);
-struct config *Configlist_return(/* void */);
-struct config *Configlist_basis(/* void */);
-void Configlist_eat(/* struct config * */);
-void Configlist_reset(/* void */);
+void Configlist_init(void);
+struct config *Configlist_add(struct rule *, int);
+struct config *Configlist_addbasis(struct rule *, int);
+void Configlist_closure(struct lemon *);
+void Configlist_sort(void);
+void Configlist_sortbasis(void);
+struct config *Configlist_return(void);
+struct config *Configlist_basis(void);
+void Configlist_eat(struct config *);
+void Configlist_reset(void);
 
 /********* From the file "error.h" ***************************************/
 void ErrorMsg(const char *, int,const char *, ...);
 
 /****** From the file "option.h" ******************************************/
+enum option_type { OPT_FLAG=1,  OPT_INT,  OPT_DBL,  OPT_STR,
+         OPT_FFLAG, OPT_FINT, OPT_FDBL, OPT_FSTR};
 struct s_options {
-  enum { OPT_FLAG=1,  OPT_INT,  OPT_DBL,  OPT_STR,
-         OPT_FFLAG, OPT_FINT, OPT_FDBL, OPT_FSTR} type;
-  char *label;
+  enum option_type type;
+  const char *label;
   char *arg;
-  char *message;
+  const char *message;
 };
-int    OptInit(/* char**,struct s_options*,FILE* */);
-int    OptNArgs(/* void */);
-char  *OptArg(/* int */);
-void   OptErr(/* int */);
-void   OptPrint(/* void */);
+int    OptInit(char**,struct s_options*,FILE*);
+int    OptNArgs(void);
+char  *OptArg(int);
+void   OptErr(int);
+void   OptPrint(void);
 
 /******** From the file "parse.h" *****************************************/
-void Parse(/* struct lemon *lemp */);
+void Parse(struct lemon *lemp);
 
 /********* From the file "plink.h" ***************************************/
-struct plink *Plink_new(/* void */);
-void Plink_add(/* struct plink **, struct config * */);
-void Plink_copy(/* struct plink **, struct plink * */);
-void Plink_delete(/* struct plink * */);
+struct plink *Plink_new(void);
+void Plink_add(struct plink **, struct config *);
+void Plink_copy(struct plink **, struct plink *);
+void Plink_delete(struct plink *);
 
 /********** From the file "report.h" *************************************/
-void Reprint(/* struct lemon * */);
-void ReportOutput(/* struct lemon * */);
-void ReportTable(/* struct lemon * */);
-void ReportHeader(/* struct lemon * */);
-void CompressTables(/* struct lemon * */);
-void ResortStates(/* struct lemon * */);
+void Reprint(struct lemon *);
+void ReportOutput(struct lemon *);
+void ReportTable(struct lemon *, int);
+void ReportHeader(struct lemon *);
+void CompressTables(struct lemon *);
+void ResortStates(struct lemon *);
 
 /********** From the file "set.h" ****************************************/
-void  SetSize(/* int N */);             /* All sets will be of size N */
-char *SetNew(/* void */);               /* A new set for element 0..N */
-void  SetFree(/* char* */);             /* Deallocate a set */
+void  SetSize(int);             /* All sets will be of size N */
+char *SetNew(void);               /* A new set for element 0..N */
+void  SetFree(char*);             /* Deallocate a set */
 
-int SetAdd(/* char*,int */);            /* Add element to a set */
-int SetUnion(/* char *A,char *B */);    /* A <- A U B, thru element N */
-
+char *SetNew(void);               /* A new set for element 0..N */
+int SetAdd(char*,int);            /* Add element to a set */
+int SetUnion(char *,char *);    /* A <- A U B, thru element N */
 #define SetFind(X,Y) (X[Y])       /* True if Y is in set X */
 
 /********** From the file "struct.h" *************************************/
@@ -119,23 +143,25 @@ typedef enum {LEMON_FALSE=0, LEMON_TRUE} Boolean;
 
 /* Symbols (terminals and nonterminals) of the grammar are stored
 ** in the following: */
-struct symbol {
-  char *name;              /* Name of the symbol */
-  int index;               /* Index number for this symbol */
-  enum {
-    TERMINAL,
-    NONTERMINAL,
-    MULTITERMINAL
-  } type;                  /* Symbols are all either TERMINALS or NTs */
-  struct rule *rule;       /* Linked list of rules of this (if an NT) */
-  struct symbol *fallback; /* fallback token in case this token doesn't parse */
-  int prec;                /* Precedence if defined (-1 otherwise) */
-  enum e_assoc {
+enum symbol_type {
+  TERMINAL,
+  NONTERMINAL,
+  MULTITERMINAL
+};
+enum e_assoc {
     LEFT,
     RIGHT,
     NONE,
     UNK
-  } assoc;                 /* Associativity if precedence is defined */
+};
+struct symbol {
+  const char *name;        /* Name of the symbol */
+  int index;               /* Index number for this symbol */
+  enum symbol_type type;   /* Symbols are all either TERMINALS or NTs */
+  struct rule *rule;       /* Linked list of rules of this (if an NT) */
+  struct symbol *fallback; /* fallback token in case this token doesn't parse */
+  int prec;                /* Precedence if defined (-1 otherwise) */
+  enum e_assoc assoc;      /* Associativity if precedence is defined */
   char *firstset;          /* First-set for all rules of this symbol */
   Boolean lambda;          /* True if NT and can generate an empty string */
   int useCnt;              /* Number of times used */
@@ -156,14 +182,14 @@ struct symbol {
 ** structure.  */
 struct rule {
   struct symbol *lhs;      /* Left-hand side of the rule */
-  char *lhsalias;          /* Alias for the LHS (NULL if none) */
+  const char *lhsalias;    /* Alias for the LHS (NULL if none) */
   int lhsStart;            /* True if left-hand side is the start symbol */
   int ruleline;            /* Line number for the rule */
   int nrhs;                /* Number of RHS symbols */
   struct symbol **rhs;     /* The RHS symbols */
-  char **rhsalias;         /* An alias for each RHS symbol (NULL if none) */
+  const char **rhsalias;   /* An alias for each RHS symbol (NULL if none) */
   int line;                /* Line number at which code begins */
-  char *code;              /* The code executed when this rule is reduced */
+  const char *code;        /* The code executed when this rule is reduced */
   struct symbol *precsym;  /* Precedence symbol for this rule */
   int index;               /* An index number for this rule */
   Boolean canReduce;       /* True if this rule is ever reduced */
@@ -176,6 +202,10 @@ struct rule {
 ** Configurations also contain a follow-set which is a list of terminal
 ** symbols which are allowed to immediately follow the end of the rule.
 ** Every configuration is recorded as an instance of the following: */
+enum cfgstatus {
+  COMPLETE,
+  INCOMPLETE
+};
 struct config {
   struct rule *rp;         /* The rule upon which the configuration is based */
   int dot;                 /* The parse point */
@@ -183,29 +213,28 @@ struct config {
   struct plink *fplp;      /* Follow-set forward propagation links */
   struct plink *bplp;      /* Follow-set backwards propagation links */
   struct state *stp;       /* Pointer to state which contains this */
-  enum {
-    COMPLETE,              /* The status is used during followset and */
-    INCOMPLETE             /*    shift computations */
-  } status;
+  enum cfgstatus status;   /* used during followset and shift computations */
   struct config *next;     /* Next configuration in the state */
   struct config *bp;       /* The next basis configuration */
+};
+
+enum e_action {
+  SHIFT,
+  ACCEPT,
+  REDUCE,
+  ERROR,
+  SSCONFLICT,              /* A shift/shift conflict */
+  SRCONFLICT,              /* Was a reduce, but part of a conflict */
+  RRCONFLICT,              /* Was a reduce, but part of a conflict */
+  SH_RESOLVED,             /* Was a shift.  Precedence resolved conflict */
+  RD_RESOLVED,             /* Was reduce.  Precedence resolved conflict */
+  NOT_USED                 /* Deleted by compression */
 };
 
 /* Every shift or reduce operation is stored as one of the following */
 struct action {
   struct symbol *sp;       /* The look-ahead symbol */
-  enum e_action {
-    SHIFT,
-    ACCEPT,
-    REDUCE,
-    ERROR,
-    SSCONFLICT,              /* A shift/shift conflict */
-    SRCONFLICT,              /* Was a reduce, but part of a conflict */
-    RRCONFLICT,              /* Was a reduce, but part of a conflict */
-    SH_RESOLVED,             /* Was a shift.  Precedence resolved conflict */
-    RD_RESOLVED,             /* Was reduce.  Precedence resolved conflict */
-    NOT_USED                 /* Deleted by compression */
-  } type;
+  enum e_action type;
   union {
     struct state *stp;     /* The new state, if a shift */
     struct rule *rp;       /* The rule, if a reduce */
@@ -292,41 +321,41 @@ struct lemon {
 /*
 ** Code for processing tables in the LEMON parser generator.
 */
-
 /* Routines for handling a strings */
 
-char *Strsafe();
+const char *Strsafe(const char *);
 
-void Strsafe_init(/* void */);
-int Strsafe_insert(/* char * */);
-char *Strsafe_find(/* char * */);
+void Strsafe_init(void);
+int Strsafe_insert(const char *);
+const char *Strsafe_find(const char *);
 
 /* Routines for handling symbols of the grammar */
 
-struct symbol *Symbol_new();
-int Symbolcmpp(/* struct symbol **, struct symbol ** */);
-void Symbol_init(/* void */);
-int Symbol_insert(/* struct symbol *, char * */);
-struct symbol *Symbol_find(/* char * */);
-struct symbol *Symbol_Nth(/* int */);
-int Symbol_count(/*  */);
-struct symbol **Symbol_arrayof(/*  */);
+struct symbol *Symbol_new(const char *);
+int Symbolcmpp(const void *, const void *);
+void Symbol_init(void);
+int Symbol_insert(struct symbol *, const char *);
+struct symbol *Symbol_find(const char *);
+struct symbol *Symbol_Nth(int);
+int Symbol_count(void);
+struct symbol **Symbol_arrayof(void);
 
 /* Routines to manage the state table */
 
-int Configcmp(/* struct config *, struct config * */);
-struct state *State_new();
-void State_init(/* void */);
-int State_insert(/* struct state *, struct config * */);
-struct state *State_find(/* struct config * */);
+int Configcmp(const char *, const char *);
+struct state *State_new(void);
+void State_init(void);
+int State_insert(struct state *, struct config *);
+struct state *State_find(struct config *);
 struct state **State_arrayof(/*  */);
 
 /* Routines used for efficiency in Configlist_add */
 
-void Configtable_init(/* void */);
-int Configtable_insert(/* struct config * */);
-struct config *Configtable_find(/* struct config * */);
-void Configtable_clear(/* int(*)(struct config *) */);
+void Configtable_init(void);
+int Configtable_insert(struct config *);
+struct config *Configtable_find(struct config *);
+void Configtable_clear(int(*)(struct config *));
+
 /****************** From the file "action.c" *******************************/
 /*
 ** Routines processing parser actions in the LEMON parser generator.
@@ -335,7 +364,7 @@ void Configtable_clear(/* int(*)(struct config *) */);
 /* Allocate a new parser action */
 static struct action *Action_new(void){
   static struct action *freelist = 0;
-  struct action *new;
+  struct action *newaction;
 
   if( freelist==0 ){
     int i;
@@ -348,9 +377,9 @@ static struct action *Action_new(void){
     for(i=0; i<amt-1; i++) freelist[i].next = &freelist[i+1];
     freelist[amt-1].next = 0;
   }
-  new = freelist;
+  newaction = freelist;
   freelist = freelist->next;
-  return new;
+  return newaction;
 }
 
 /* Compare two actions for sorting purposes.  Return negative, zero, or
@@ -384,22 +413,22 @@ static struct action *Action_sort(
   return ap;
 }
 
-void Action_add(app,type,sp,arg)
-struct action **app;
-enum e_action type;
-struct symbol *sp;
-char *arg;
-{
-  struct action *new;
-  new = Action_new();
-  new->next = *app;
-  *app = new;
-  new->type = type;
-  new->sp = sp;
+void Action_add(
+  struct action **app,
+  enum e_action type,
+  struct symbol *sp,
+  char *arg
+){
+  struct action *newaction;
+  newaction = Action_new();
+  newaction->next = *app;
+  *app = newaction;
+  newaction->type = type;
+  newaction->sp = sp;
   if( type==SHIFT ){
-    new->x.stp = (struct state *)arg;
+    newaction->x.stp = (struct state *)arg;
   }else{
-    new->x.rp = (struct rule *)arg;
+    newaction->x.rp = (struct rule *)arg;
   }
 }
 /********************** New code to implement the "acttab" module ***********/
@@ -427,14 +456,16 @@ char *arg;
 ** also resets the aLookahead[] array in preparation for the next
 ** state number.
 */
+struct lookahead_action {
+  int lookahead;             /* Value of the lookahead token */
+  int action;                /* Action to take on the given lookahead */
+};
 typedef struct acttab acttab;
 struct acttab {
   int nAction;                 /* Number of used slots in aAction[] */
   int nActionAlloc;            /* Slots allocated for aAction[] */
-  struct {
-    int lookahead;             /* Value of the lookahead token */
-    int action;                /* Action to take on the given lookahead */
-  } *aAction,                  /* The yy_action[] table under construction */
+  struct lookahead_action
+    *aAction,                  /* The yy_action[] table under construction */
     *aLookahead;               /* A single new transaction set */
   int mnLookahead;             /* Minimum aLookahead[].lookahead */
   int mnAction;                /* Action associated with mnLookahead */
@@ -461,7 +492,7 @@ void acttab_free(acttab *p){
 
 /* Allocate a new acttab structure */
 acttab *acttab_alloc(void){
-  acttab *p = calloc( 1, sizeof(*p) );
+  acttab *p = (acttab *) calloc( 1, sizeof(*p) );
   if( p==0 ){
     fprintf(stderr,"Unable to allocate memory for a new acttab.");
     exit(1);
@@ -478,7 +509,7 @@ acttab *acttab_alloc(void){
 void acttab_action(acttab *p, int lookahead, int action){
   if( p->nLookahead>=p->nLookaheadAlloc ){
     p->nLookaheadAlloc += 25;
-    p->aLookahead = realloc( p->aLookahead,
+    p->aLookahead = (struct lookahead_action *) realloc( p->aLookahead,
                              sizeof(p->aLookahead[0])*p->nLookaheadAlloc );
     if( p->aLookahead==0 ){
       fprintf(stderr,"malloc failed\n");
@@ -520,7 +551,7 @@ int acttab_insert(acttab *p){
   if( p->nAction + n >= p->nActionAlloc ){
     int oldAlloc = p->nActionAlloc;
     p->nActionAlloc = p->nAction + n + p->nActionAlloc + 20;
-    p->aAction = realloc( p->aAction,
+    p->aAction = (struct lookahead_action *) realloc( p->aAction,
                           sizeof(p->aAction[0])*p->nActionAlloc);
     if( p->aAction==0 ){
       fprintf(stderr,"malloc failed\n");
@@ -618,8 +649,7 @@ int acttab_insert(acttab *p){
 ** are not RHS symbols with a defined precedence, the precedence
 ** symbol field is left blank.
 */
-void FindRulePrecedences(xp)
-struct lemon *xp;
+void FindRulePrecedences(struct lemon *xp)
 {
   struct rule *rp;
   for(rp=xp->rule; rp; rp=rp->next){
@@ -648,8 +678,7 @@ struct lemon *xp;
 ** The first set is the set of all terminal symbols which can begin
 ** a string generated by that nonterminal.
 */
-void FindFirstSets(lemp)
-struct lemon *lemp;
+void FindFirstSets(struct lemon *lemp)
 {
   int i, j;
   struct rule *rp;
@@ -710,9 +739,8 @@ struct lemon *lemp;
 ** are added to between some states so that the LR(1) follow sets
 ** can be computed later.
 */
-PRIVATE struct state *getstate(/* struct lemon * */);  /* forward reference */
-void FindStates(lemp)
-struct lemon *lemp;
+PRIVATE struct state *getstate(struct lemon *);  /* forward reference */
+void FindStates(struct lemon *lemp)
 {
   struct symbol *sp;
   struct rule *rp;
@@ -770,9 +798,8 @@ does not work properly.",sp->name);
 /* Return a pointer to a state which is described by the configuration
 ** list which has been built from calls to Configlist_add.
 */
-PRIVATE void buildshifts(/* struct lemon *, struct state * */); /* Forwd ref */
-PRIVATE struct state *getstate(lemp)
-struct lemon *lemp;
+PRIVATE void buildshifts(struct lemon *, struct state *); /* Forwd ref */
+PRIVATE struct state *getstate(struct lemon *lemp)
 {
   struct config *cfp, *bp;
   struct state *stp;
@@ -816,9 +843,7 @@ struct lemon *lemp;
 /*
 ** Return true if two symbols are the same.
 */
-int same_symbol(a,b)
-struct symbol *a;
-struct symbol *b;
+int same_symbol(struct symbol *a, struct symbol *b)
 {
   int i;
   if( a==b ) return 1;
@@ -834,13 +859,11 @@ struct symbol *b;
 /* Construct all successor states to the given state.  A "successor"
 ** state is any state which can be reached by a shift action.
 */
-PRIVATE void buildshifts(lemp,stp)
-struct lemon *lemp;
-struct state *stp;     /* The state from which successors are computed */
+PRIVATE void buildshifts(struct lemon *lemp, struct state *stp)
 {
   struct config *cfp;  /* For looping thru the config closure of "stp" */
   struct config *bcfp; /* For the inner loop on config closure of "stp" */
-  struct config *new;  /* */
+  struct config *newcfg;  /* */
   struct symbol *sp;   /* Symbol following the dot in configuration "cfp" */
   struct symbol *bsp;  /* Symbol following the dot in configuration "bcfp" */
   struct state *newstp; /* A pointer to a successor state */
@@ -865,8 +888,8 @@ struct state *stp;     /* The state from which successors are computed */
       bsp = bcfp->rp->rhs[bcfp->dot];           /* Get symbol after dot */
       if( !same_symbol(bsp,sp) ) continue;      /* Must be same as for "cfp" */
       bcfp->status = COMPLETE;                  /* Mark this config as used */
-      new = Configlist_addbasis(bcfp->rp,bcfp->dot+1);
-      Plink_add(&new->bplp,bcfp);
+      newcfg = Configlist_addbasis(bcfp->rp,bcfp->dot+1);
+      Plink_add(&newcfg->bplp,bcfp);
     }
 
     /* Get a pointer to the state described by the basis configuration set
@@ -889,8 +912,7 @@ struct state *stp;     /* The state from which successors are computed */
 /*
 ** Construct the propagation links
 */
-void FindLinks(lemp)
-struct lemon *lemp;
+void FindLinks(struct lemon *lemp)
 {
   int i;
   struct config *cfp, *other;
@@ -925,8 +947,7 @@ struct lemon *lemp;
 ** A followset is the set of all symbols which can come immediately
 ** after a configuration.
 */
-void FindFollowSets(lemp)
-struct lemon *lemp;
+void FindFollowSets(struct lemon *lemp)
 {
   int i;
   struct config *cfp;
@@ -958,12 +979,11 @@ struct lemon *lemp;
   }while( progress );
 }
 
-static int resolve_conflict();
+static int resolve_conflict(struct action *,struct action *, struct symbol *);
 
 /* Compute the reduce actions, and resolve conflicts.
 */
-void FindActions(lemp)
-struct lemon *lemp;
+void FindActions(struct lemon *lemp)
 {
   int i,j;
   struct config *cfp;
@@ -1046,11 +1066,11 @@ struct lemon *lemp;
 ** If either action is a SHIFT, then it must be apx.  This
 ** function won't work if apx->type==REDUCE and apy->type==SHIFT.
 */
-static int resolve_conflict(apx,apy,errsym)
-struct action *apx;
-struct action *apy;
-struct symbol *errsym;   /* The error symbol (if defined.  NULL otherwise) */
-{
+static int resolve_conflict(
+  struct action *apx,
+  struct action *apy,
+  struct symbol *errsym   /* The error symbol (if defined.  NULL otherwise) */
+){
   struct symbol *spx, *spy;
   int errcnt = 0;
   assert( apx->sp==apy->sp );  /* Otherwise there would be no conflict */
@@ -1123,7 +1143,7 @@ static struct config **basisend = 0;     /* End of list of basis configs */
 
 /* Return a pointer to a new configuration */
 PRIVATE struct config *newconfig(){
-  struct config *new;
+  struct config *newcfg;
   if( freelist==0 ){
     int i;
     int amt = 3;
@@ -1135,14 +1155,13 @@ PRIVATE struct config *newconfig(){
     for(i=0; i<amt-1; i++) freelist[i].next = &freelist[i+1];
     freelist[amt-1].next = 0;
   }
-  new = freelist;
+  newcfg = freelist;
   freelist = freelist->next;
-  return new;
+  return newcfg;
 }
 
 /* The configuration "old" is no longer used */
-PRIVATE void deleteconfig(old)
-struct config *old;
+PRIVATE void deleteconfig(struct config *old)
 {
   old->next = freelist;
   freelist = old;
@@ -1169,10 +1188,10 @@ void Configlist_reset(){
 }
 
 /* Add another configuration to the configuration list */
-struct config *Configlist_add(rp,dot)
-struct rule *rp;    /* The rule */
-int dot;            /* Index into the RHS of the rule where the dot goes */
-{
+struct config *Configlist_add(
+  struct rule *rp,    /* The rule */
+  int dot             /* Index into the RHS of the rule where the dot goes */
+){
   struct config *cfp, model;
 
   assert( currentend!=0 );
@@ -1196,9 +1215,7 @@ int dot;            /* Index into the RHS of the rule where the dot goes */
 }
 
 /* Add a basis configuration to the configuration list */
-struct config *Configlist_addbasis(rp,dot)
-struct rule *rp;
-int dot;
+struct config *Configlist_addbasis(struct rule *rp, int dot)
 {
   struct config *cfp, model;
 
@@ -1226,8 +1243,7 @@ int dot;
 }
 
 /* Compute the closure of the configuration list */
-void Configlist_closure(lemp)
-struct lemon *lemp;
+void Configlist_closure(struct lemon *lemp)
 {
   struct config *cfp, *newcfp;
   struct rule *rp, *newrp;
@@ -1306,8 +1322,7 @@ struct config *Configlist_basis(){
 }
 
 /* Free all elements of the given configuration list */
-void Configlist_eat(cfp)
-struct config *cfp;
+void Configlist_eat(struct config *cfp)
 {
   struct config *nextcfp;
   for(; cfp; cfp=nextcfp){
@@ -1324,72 +1339,13 @@ struct config *cfp;
 ** Code for printing error message.
 */
 
-/* Find a good place to break "msg" so that its length is at least "min"
-** but no more than "max".  Make the point as close to max as possible.
-*/
-static int findbreak(msg,min,max)
-char *msg;
-int min;
-int max;
-{
-  int i,spot;
-  char c;
-  for(i=spot=min; i<=max; i++){
-    c = msg[i];
-    if( c=='\t' ) msg[i] = ' ';
-    if( c=='\n' ){ msg[i] = ' '; spot = i; break; }
-    if( c==0 ){ spot = i; break; }
-    if( c=='-' && i<max-1 ) spot = i+1;
-    if( c==' ' ) spot = i;
-  }
-  return spot;
-}
-
-/*
-** The error message is split across multiple lines if necessary.  The
-** splits occur at a space, if there is a space available near the end
-** of the line.
-*/
-#define ERRMSGSIZE  10000 /* Hope this is big enough.  No way to error check */
-#define LINEWIDTH      79 /* Max width of any output line */
-#define PREFIXLIMIT    30 /* Max width of the prefix on each line */
 void ErrorMsg(const char *filename, int lineno, const char *format, ...){
-  char errmsg[ERRMSGSIZE];
-  char prefix[PREFIXLIMIT+10];
-  int errmsgsize;
-  int prefixsize;
-  int availablewidth;
   va_list ap;
-  int end, restart, base;
-
+  fprintf(stderr, "%s:%d: ", filename, lineno);
   va_start(ap, format);
-  /* Prepare a prefix to be prepended to every output line */
-  if( lineno>0 ){
-    sprintf(prefix,"%.*s:%d: ",PREFIXLIMIT-10,filename,lineno);
-  }else{
-    sprintf(prefix,"%.*s: ",PREFIXLIMIT-10,filename);
-  }
-  prefixsize = lemonStrlen(prefix);
-  availablewidth = LINEWIDTH - prefixsize;
-
-  /* Generate the error message */
-  vsprintf(errmsg,format,ap);
+  vfprintf(stderr,format,ap);
   va_end(ap);
-  errmsgsize = lemonStrlen(errmsg);
-  /* Remove trailing '\n's from the error message. */
-  while( errmsgsize>0 && errmsg[errmsgsize-1]=='\n' ){
-     errmsg[--errmsgsize] = 0;
-  }
-
-  /* Print the error message */
-  base = 0;
-  while( errmsg[base]!=0 ){
-    end = restart = findbreak(&errmsg[base],0,availablewidth);
-    restart += base;
-    while( errmsg[restart]==' ' ) restart++;
-    fprintf(stdout,"%s%.*s\n",prefix,end,&errmsg[base]);
-    base = restart;
-  }
+  fprintf(stderr, "\n");
 }
 /**************** From the file "main.c" ************************************/
 /*
@@ -1413,13 +1369,13 @@ static char **azDefine = 0;  /* Name of the -D macros */
 static void handle_D_option(char *z){
   char **paz;
   nDefine++;
-  azDefine = realloc(azDefine, sizeof(azDefine[0])*nDefine);
+  azDefine = (char **) realloc(azDefine, sizeof(azDefine[0])*nDefine);
   if( azDefine==0 ){
     fprintf(stderr,"out of memory\n");
     exit(1);
   }
   paz = &azDefine[nDefine-1];
-  *paz = malloc( lemonStrlen(z)+1 );
+  *paz = (char *) malloc( lemonStrlen(z)+1 );
   if( *paz==0 ){
     fprintf(stderr,"out of memory\n");
     exit(1);
@@ -1429,11 +1385,17 @@ static void handle_D_option(char *z){
   *z = 0;
 }
 
+static char *user_templatename = NULL;
+static void handle_T_option(char *z){
+  user_templatename = (char *) malloc( lemonStrlen(z)+1 );
+  if( user_templatename==0 ){
+    memory_error();
+  }
+  strcpy(user_templatename, z);
+}
 
 /* The main program.  Parse the command line and do it... */
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   static int version = 0;
   static int rpflag = 0;
@@ -1447,6 +1409,7 @@ char **argv;
     {OPT_FLAG, "b", (char*)&basisflag, "Print only the basis in report."},
     {OPT_FLAG, "c", (char*)&compress, "Don't compress the action table."},
     {OPT_FSTR, "D", (char*)handle_D_option, "Define an %ifdef macro."},
+    {OPT_FSTR, "T", (char*)handle_T_option, "Specify a template file."},
     {OPT_FLAG, "g", (char*)&rpflag, "Print grammar without actions."},
     {OPT_FLAG, "m", (char*)&mhflag, "Output a makeheaders compatible file."},
     {OPT_FLAG, "l", (char*)&nolinenosflag, "Do not print #line statements."},
@@ -1457,7 +1420,10 @@ char **argv;
     {OPT_FLAG,0,0,0}
   };
   int i;
+  int exitcode;
   struct lemon lem;
+
+  atexit(LemonAtExit);
 
   OptInit(argv,options,stderr);
   if( version ){
@@ -1496,8 +1462,7 @@ char **argv;
   Symbol_new("{default}");
   lem.symbols = Symbol_arrayof();
   for(i=0; i<=lem.nsymbol; i++) lem.symbols[i]->index = i;
-  qsort(lem.symbols,lem.nsymbol+1,sizeof(struct symbol*),
-        (int(*)())Symbolcmpp);
+  qsort(lem.symbols,lem.nsymbol+1,sizeof(struct symbol*), Symbolcmpp);
   for(i=0; i<=lem.nsymbol; i++) lem.symbols[i]->index = i;
   for(i=1; isupper(lem.symbols[i]->name[0]); i++);
   lem.nterminal = i;
@@ -1555,11 +1520,15 @@ char **argv;
     printf("                   %d states, %d parser table entries, %d conflicts\n",
       lem.nstate, lem.tablesize, lem.nconflict);
   }
-  if( lem.nconflict ){
+  if( lem.nconflict > 0 ){
     fprintf(stderr,"%d parsing conflicts.\n",lem.nconflict);
   }
-  exit(lem.errorcnt + lem.nconflict);
-  return (lem.errorcnt + lem.nconflict);
+
+  /* return 0 on success, 1 on failure. */
+  exitcode = ((lem.errorcnt > 0) || (lem.nconflict > 0)) ? 1 : 0;
+  successful_exit = (exitcode == 0);
+  exit(exitcode);
+  return (exitcode);
 }
 /******************** From the file "msort.c" *******************************/
 /*
@@ -1693,10 +1662,7 @@ static FILE *errstream;
 ** Print the command line with a carrot pointing to the k-th character
 ** of the n-th field.
 */
-static void errline(n,k,err)
-int n;
-int k;
-FILE *err;
+static void errline(int n, int k, FILE *err)
 {
   int spcnt, i;
   if( argv[0] ) fprintf(err,"%s",argv[0]);
@@ -1718,8 +1684,7 @@ FILE *err;
 ** Return the index of the N-th non-switch argument.  Return -1
 ** if N is out of range.
 */
-static int argindex(n)
-int n;
+static int argindex(int n)
 {
   int i;
   int dashdash = 0;
@@ -1740,9 +1705,7 @@ static char emsg[] = "Command line syntax error: ";
 /*
 ** Process a flag command line argument.
 */
-static int handleflags(i,err)
-int i;
-FILE *err;
+static int handleflags(int i, FILE *err)
 {
   int v;
   int errcnt = 0;
@@ -1760,9 +1723,9 @@ FILE *err;
   }else if( op[j].type==OPT_FLAG ){
     *((int*)op[j].arg) = v;
   }else if( op[j].type==OPT_FFLAG ){
-    (*(void(*)())(op[j].arg))(v);
+    (*(void(*)(int))(op[j].arg))(v);
   }else if( op[j].type==OPT_FSTR ){
-    (*(void(*)())(op[j].arg))(&argv[i][2]);
+    (*(void(*)(char *))(op[j].arg))(&argv[i][2]);
   }else{
     if( err ){
       fprintf(err,"%smissing argument on switch.\n",emsg);
@@ -1776,9 +1739,7 @@ FILE *err;
 /*
 ** Process a command line switch which has an argument.
 */
-static int handleswitch(i,err)
-int i;
-FILE *err;
+static int handleswitch(int i, FILE *err)
 {
   int lv = 0;
   double dv = 0.0;
@@ -1845,29 +1806,26 @@ FILE *err;
         *(double*)(op[j].arg) = dv;
         break;
       case OPT_FDBL:
-        (*(void(*)())(op[j].arg))(dv);
+        (*(void(*)(double))(op[j].arg))(dv);
         break;
       case OPT_INT:
         *(int*)(op[j].arg) = lv;
         break;
       case OPT_FINT:
-        (*(void(*)())(op[j].arg))((int)lv);
+        (*(void(*)(int))(op[j].arg))((int)lv);
         break;
       case OPT_STR:
         *(char**)(op[j].arg) = sv;
         break;
       case OPT_FSTR:
-        (*(void(*)())(op[j].arg))(sv);
+        (*(void(*)(char *))(op[j].arg))(sv);
         break;
     }
   }
   return errcnt;
 }
 
-int OptInit(a,o,err)
-char **a;
-struct s_options *o;
-FILE *err;
+int OptInit(char **a, struct s_options *o, FILE *err)
 {
   int errcnt = 0;
   argv = a;
@@ -1904,16 +1862,14 @@ int OptNArgs(){
   return cnt;
 }
 
-char *OptArg(n)
-int n;
+char *OptArg(int n)
 {
   int i;
   i = argindex(n);
   return i>=0 ? argv[i] : 0;
 }
 
-void OptErr(n)
-int n;
+void OptErr(int n)
 {
   int i;
   i = argindex(n);
@@ -1975,42 +1931,43 @@ void OptPrint(){
 */
 
 /* The state of the parser */
+enum e_state {
+  INITIALIZE,
+  WAITING_FOR_DECL_OR_RULE,
+  WAITING_FOR_DECL_KEYWORD,
+  WAITING_FOR_DECL_ARG,
+  WAITING_FOR_PRECEDENCE_SYMBOL,
+  WAITING_FOR_ARROW,
+  IN_RHS,
+  LHS_ALIAS_1,
+  LHS_ALIAS_2,
+  LHS_ALIAS_3,
+  RHS_ALIAS_1,
+  RHS_ALIAS_2,
+  PRECEDENCE_MARK_1,
+  PRECEDENCE_MARK_2,
+  RESYNC_AFTER_RULE_ERROR,
+  RESYNC_AFTER_DECL_ERROR,
+  WAITING_FOR_DESTRUCTOR_SYMBOL,
+  WAITING_FOR_DATATYPE_SYMBOL,
+  WAITING_FOR_FALLBACK_ID,
+  WAITING_FOR_WILDCARD_ID
+};
 struct pstate {
   char *filename;       /* Name of the input file */
   int tokenlineno;      /* Linenumber at which current token starts */
   int errorcnt;         /* Number of errors so far */
   char *tokenstart;     /* Text of current token */
   struct lemon *gp;     /* Global state vector */
-  enum e_state {
-    INITIALIZE,
-    WAITING_FOR_DECL_OR_RULE,
-    WAITING_FOR_DECL_KEYWORD,
-    WAITING_FOR_DECL_ARG,
-    WAITING_FOR_PRECEDENCE_SYMBOL,
-    WAITING_FOR_ARROW,
-    IN_RHS,
-    LHS_ALIAS_1,
-    LHS_ALIAS_2,
-    LHS_ALIAS_3,
-    RHS_ALIAS_1,
-    RHS_ALIAS_2,
-    PRECEDENCE_MARK_1,
-    PRECEDENCE_MARK_2,
-    RESYNC_AFTER_RULE_ERROR,
-    RESYNC_AFTER_DECL_ERROR,
-    WAITING_FOR_DESTRUCTOR_SYMBOL,
-    WAITING_FOR_DATATYPE_SYMBOL,
-    WAITING_FOR_FALLBACK_ID,
-    WAITING_FOR_WILDCARD_ID
-  } state;                   /* The state of the parser */
+  enum e_state state;        /* The state of the parser */
   struct symbol *fallback;   /* The fallback token */
   struct symbol *lhs;        /* Left-hand side of current rule */
-  char *lhsalias;            /* Alias for the LHS */
+  const char *lhsalias;      /* Alias for the LHS */
   int nrhs;                  /* Number of right-hand side symbols seen */
   struct symbol *rhs[MAXRHS];  /* RHS symbols */
-  char *alias[MAXRHS];       /* Aliases for each RHS symbol (or NULL) */
+  const char *alias[MAXRHS]; /* Aliases for each RHS symbol (or NULL) */
   struct rule *prevrule;     /* Previous rule parsed */
-  char *declkeyword;         /* Keyword of a declaration */
+  const char *declkeyword;   /* Keyword of a declaration */
   char **declargslot;        /* Where the declaration argument should be put */
   int insertLineMacro;       /* Add #line before declaration insert */
   int *decllinenoslot;       /* Where to write declaration line number */
@@ -2021,10 +1978,9 @@ struct pstate {
 };
 
 /* Parse a single token */
-static void parseonetoken(psp)
-struct pstate *psp;
+static void parseonetoken(struct pstate *psp)
 {
-  char *x;
+  const char *x;
   x = Strsafe(psp->tokenstart);     /* Save the token permanently */
 #if 0
   printf("%s:%d: Token=[%s] state=%d\n",psp->filename,psp->tokenlineno,
@@ -2156,7 +2112,7 @@ to follow the previous rule.");
           int i;
           rp->ruleline = psp->tokenlineno;
           rp->rhs = (struct symbol**)&rp[1];
-          rp->rhsalias = (char**)&(rp->rhs[psp->nrhs]);
+          rp->rhsalias = (const char**)&(rp->rhs[psp->nrhs]);
           for(i=0; i<psp->nrhs; i++){
             rp->rhs[i] = psp->rhs[i];
             rp->rhsalias[i] = psp->alias[i];
@@ -2195,17 +2151,18 @@ to follow the previous rule.");
         struct symbol *msp = psp->rhs[psp->nrhs-1];
         if( msp->type!=MULTITERMINAL ){
           struct symbol *origsp = msp;
-          msp = calloc(1,sizeof(*msp));
+          msp = (struct symbol *) calloc(1,sizeof(*msp));
           memset(msp, 0, sizeof(*msp));
           msp->type = MULTITERMINAL;
           msp->nsubsym = 1;
-          msp->subsym = calloc(1,sizeof(struct symbol*));
+          msp->subsym = (struct symbol **) calloc(1,sizeof(struct symbol*));
           msp->subsym[0] = origsp;
           msp->name = origsp->name;
           psp->rhs[psp->nrhs-1] = msp;
         }
         msp->nsubsym++;
-        msp->subsym = realloc(msp->subsym, sizeof(struct symbol*)*msp->nsubsym);
+        msp->subsym = (struct symbol **) realloc(msp->subsym,
+          sizeof(struct symbol*)*msp->nsubsym);
         msp->subsym[msp->nsubsym-1] = Symbol_new(&x[1]);
         if( islower(x[1]) || islower(msp->subsym[0]->name[0]) ){
           ErrorMsg(psp->filename,psp->tokenlineno,
@@ -2324,7 +2281,7 @@ to follow the previous rule.");
     case WAITING_FOR_DESTRUCTOR_SYMBOL:
       if( !isalpha(x[0]) ){
         ErrorMsg(psp->filename,psp->tokenlineno,
-          "Symbol name missing after %destructor keyword");
+          "Symbol name missing after %%destructor keyword");
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
       }else{
@@ -2338,14 +2295,24 @@ to follow the previous rule.");
     case WAITING_FOR_DATATYPE_SYMBOL:
       if( !isalpha(x[0]) ){
         ErrorMsg(psp->filename,psp->tokenlineno,
-          "Symbol name missing after %destructor keyword");
+          "Symbol name missing after %%type keyword");
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
       }else{
-        struct symbol *sp = Symbol_new(x);
-        psp->declargslot = &sp->datatype;
-        psp->insertLineMacro = 0;
-        psp->state = WAITING_FOR_DECL_ARG;
+        struct symbol *sp = Symbol_find(x);
+        if((sp) && (sp->datatype)){
+          ErrorMsg(psp->filename,psp->tokenlineno,
+            "Symbol %%type \"%s\" already defined", x);
+          psp->errorcnt++;
+          psp->state = RESYNC_AFTER_DECL_ERROR;
+        }else{
+          if (!sp){
+            sp = Symbol_new(x);
+          }
+          psp->declargslot = &sp->datatype;
+          psp->insertLineMacro = 0;
+          psp->state = WAITING_FOR_DECL_ARG;
+        }
       }
       break;
     case WAITING_FOR_PRECEDENCE_SYMBOL:
@@ -2370,7 +2337,8 @@ to follow the previous rule.");
       break;
     case WAITING_FOR_DECL_ARG:
       if( x[0]=='{' || x[0]=='\"' || isalnum(x[0]) ){
-        char *zOld, *zNew, *zBuf, *z;
+        const char *zOld, *zNew;
+        char *zBuf, *z;
         int nOld, n, nLine, nNew, nBack;
         int addLineMacro;
         char zLine[50];
@@ -2394,8 +2362,8 @@ to follow the previous rule.");
           nLine = lemonStrlen(zLine);
           n += nLine + lemonStrlen(psp->filename) + nBack;
         }
-        *psp->declargslot = zBuf = realloc(*psp->declargslot, n);
-        zBuf += nOld;
+        *psp->declargslot = (char *) realloc(*psp->declargslot, n);
+        zBuf = *psp->declargslot + nOld;
         if( addLineMacro ){
           if( nOld && zBuf[-1]!='\n' ){
             *(zBuf++) = '\n';
@@ -2531,8 +2499,7 @@ static void preprocess_input(char *z){
 ** token is passed to the function "parseonetoken" which builds all
 ** the appropriate data structures in the global state vector "gp".
 */
-void Parse(gp)
-struct lemon *gp;
+void Parse(struct lemon *gp)
 {
   struct pstate ps;
   FILE *fp;
@@ -2686,7 +2653,7 @@ static struct plink *plink_freelist = 0;
 
 /* Allocate a new plink */
 struct plink *Plink_new(){
-  struct plink *new;
+  struct plink *newlink;
 
   if( plink_freelist==0 ){
     int i;
@@ -2700,27 +2667,23 @@ struct plink *Plink_new(){
     for(i=0; i<amt-1; i++) plink_freelist[i].next = &plink_freelist[i+1];
     plink_freelist[amt-1].next = 0;
   }
-  new = plink_freelist;
+  newlink = plink_freelist;
   plink_freelist = plink_freelist->next;
-  return new;
+  return newlink;
 }
 
 /* Add a plink to a plink list */
-void Plink_add(plpp,cfp)
-struct plink **plpp;
-struct config *cfp;
+void Plink_add(struct plink **plpp, struct config *cfp)
 {
-  struct plink *new;
-  new = Plink_new();
-  new->next = *plpp;
-  *plpp = new;
-  new->cfp = cfp;
+  struct plink *newlink;
+  newlink = Plink_new();
+  newlink->next = *plpp;
+  *plpp = newlink;
+  newlink->cfp = cfp;
 }
 
 /* Transfer every plink on the list "from" to the list "to" */
-void Plink_copy(to,from)
-struct plink **to;
-struct plink *from;
+void Plink_copy(struct plink **to, struct plink *from)
 {
   struct plink *nextpl;
   while( from ){
@@ -2732,8 +2695,7 @@ struct plink *from;
 }
 
 /* Delete every plink on the list */
-void Plink_delete(plp)
-struct plink *plp;
+void Plink_delete(struct plink *plp)
 {
   struct plink *nextpl;
 
@@ -2753,14 +2715,12 @@ struct plink *plp;
 ** name comes from malloc() and must be freed by the calling
 ** function.
 */
-PRIVATE char *file_makename(lemp,suffix)
-struct lemon *lemp;
-char *suffix;
+PRIVATE char *file_makename(struct lemon *lemp, const char *suffix)
 {
   char *name;
   char *cp;
 
-  name = malloc( lemonStrlen(lemp->filename) + lemonStrlen(suffix) + 5 );
+  name = (char*)malloc( lemonStrlen(lemp->filename) + lemonStrlen(suffix) + 5 );
   if( name==0 ){
     fprintf(stderr,"Can't allocate space for a filename.\n");
     exit(1);
@@ -2775,11 +2735,11 @@ char *suffix;
 /* Open a file with a name based on the name of the input file,
 ** but with a different (specified) suffix, and return a pointer
 ** to the stream */
-PRIVATE FILE *file_open(lemp,suffix,mode)
-struct lemon *lemp;
-char *suffix;
-char *mode;
-{
+PRIVATE FILE *file_open(
+  struct lemon *lemp,
+  const char *suffix,
+  const char *mode
+){
   FILE *fp;
 
   if( lemp->outname ) free(lemp->outname);
@@ -2790,13 +2750,30 @@ char *mode;
     lemp->errorcnt++;
     return 0;
   }
+
+  /* Add files we create to a list, so we can delete them if we fail. This
+  ** is to keep makefiles from getting confused. We don't include .out files,
+  ** though: this is debug information, and you don't want it deleted if there
+  ** was an error you need to track down.
+  */
+  if(( *mode=='w' ) && (strcmp(suffix, ".out") != 0)){
+    const char **ptr = (const char **)
+        realloc(made_files, sizeof (const char **) * (made_files_count + 1));
+    char *fname = strdup(lemp->outname);
+    if ((ptr == NULL) || (fname == NULL)) {
+        free(ptr);
+        free(fname);
+        memory_error();
+    }
+    made_files = ptr;
+    made_files[made_files_count++] = fname;
+  }
   return fp;
 }
 
 /* Duplicate the input file without comments and without actions 
 ** on rules */
-void Reprint(lemp)
-struct lemon *lemp;
+void Reprint(struct lemon *lemp)
 {
   struct rule *rp;
   struct symbol *sp;
@@ -2841,9 +2818,7 @@ struct lemon *lemp;
   }
 }
 
-void ConfigPrint(fp,cfp)
-FILE *fp;
-struct config *cfp;
+void ConfigPrint(FILE *fp, struct config *cfp)
 {
   struct rule *rp;
   struct symbol *sp;
@@ -2936,8 +2911,7 @@ int PrintAction(struct action *ap, FILE *fp, int indent){
 }
 
 /* Generate the "y.output" log file */
-void ReportOutput(lemp)
-struct lemon *lemp;
+void ReportOutput(struct lemon *lemp)
 {
   int i;
   struct state *stp;
@@ -3003,12 +2977,11 @@ struct lemon *lemp;
 
 /* Search for the file "name" which is in the same directory as
 ** the exacutable */
-PRIVATE char *pathsearch(argv0,name,modemask)
-char *argv0;
-char *name;
-int modemask;
+PRIVATE char *pathsearch(char *argv0, char *name, int modemask)
 {
-  char *pathlist;
+  const char *pathlist;
+  char *pathbufptr;
+  char *pathbuf;
   char *path,*cp;
   char c;
 
@@ -3024,22 +2997,25 @@ int modemask;
     if( path ) sprintf(path,"%s/%s",argv0,name);
     *cp = c;
   }else{
-    extern char *getenv();
     pathlist = getenv("PATH");
     if( pathlist==0 ) pathlist = ".:/bin:/usr/bin";
+    pathbuf = (char *) malloc( lemonStrlen(pathlist) + 1 );
     path = (char *)malloc( lemonStrlen(pathlist)+lemonStrlen(name)+2 );
-    if( path!=0 ){
-      while( *pathlist ){
-        cp = strchr(pathlist,':');
-        if( cp==0 ) cp = &pathlist[lemonStrlen(pathlist)];
+    if( (pathbuf != 0) && (path!=0) ){
+      pathbufptr = pathbuf;
+      strcpy(pathbuf, pathlist);
+      while( *pathbuf ){
+        cp = strchr(pathbuf,':');
+        if( cp==0 ) cp = &pathbuf[lemonStrlen(pathbuf)];
         c = *cp;
         *cp = 0;
-        sprintf(path,"%s/%s",pathlist,name);
+        sprintf(path,"%s/%s",pathbuf,name);
         *cp = c;
-        if( c==0 ) pathlist = "";
-        else pathlist = &cp[1];
+        if( c==0 ) pathbuf[0] = 0;
+        else pathbuf = &cp[1];
         if( access(path,modemask)==0 ) break;
       }
+      free(pathbufptr);
     }
   }
   return path;
@@ -3049,9 +3025,7 @@ int modemask;
 ** which is to be put in the action table of the generated machine.
 ** Return negative if no action should be generated.
 */
-PRIVATE int compute_action(lemp,ap)
-struct lemon *lemp;
-struct action *ap;
+PRIVATE int compute_action(struct lemon *lemp, struct action *ap)
 {
   int act;
   switch( ap->type ){
@@ -3074,11 +3048,7 @@ struct action *ap;
 ** if name!=0, then any word that begin with "Parse" is changed to
 ** begin with *name instead.
 */
-PRIVATE void tplt_xfer(name,in,out,lineno)
-char *name;
-FILE *in;
-FILE *out;
-int *lineno;
+PRIVATE void tplt_xfer(char *name, FILE *in, FILE *out, int *lineno)
 {
   int i, iStart;
   char line[LINESIZE];
@@ -3103,14 +3073,30 @@ int *lineno;
 
 /* The next function finds the template file and opens it, returning
 ** a pointer to the opened file. */
-PRIVATE FILE *tplt_open(lemp)
-struct lemon *lemp;
+PRIVATE FILE *tplt_open(struct lemon *lemp)
 {
   static char templatename[] = "lempar.c";
   char buf[1000];
   FILE *in;
   char *tpltname;
   char *cp;
+
+  /* first, see if user specified a template filename on the command line. */
+  if (user_templatename != 0) {
+    if( access(user_templatename,004)==-1 ){
+      fprintf(stderr,"Can't find the parser driver template file \"%s\".\n",
+        user_templatename);
+      lemp->errorcnt++;
+      return 0;
+    }
+    in = fopen(user_templatename,"rb");
+    if( in==0 ){
+      fprintf(stderr,"Can't open the template file \"%s\".\n",user_templatename);
+      lemp->errorcnt++;
+      return 0;
+    }
+    return in;
+  }
 
   cp = strrchr(lemp->filename,'.');
   if( cp ){
@@ -3141,10 +3127,7 @@ struct lemon *lemp;
 }
 
 /* Print a #line directive line to the output file. */
-PRIVATE void tplt_linedir(out,lineno,filename)
-FILE *out;
-int lineno;
-char *filename;
+PRIVATE void tplt_linedir(FILE *out, int lineno, char *filename)
 {
   fprintf(out,"#line %d \"",lineno);
   while( *filename ){
@@ -3156,11 +3139,7 @@ char *filename;
 }
 
 /* Print a string to the file and keep the linenumber up to date */
-PRIVATE void tplt_print(out,lemp,str,lineno)
-FILE *out;
-struct lemon *lemp;
-char *str;
-int *lineno;
+PRIVATE void tplt_print(FILE *out, struct lemon *lemp, char *str, int *lineno)
 {
   if( str==0 ) return;
   while( *str ){
@@ -3182,12 +3161,12 @@ int *lineno;
 ** The following routine emits code for the destructor for the
 ** symbol sp
 */
-void emit_destructor_code(out,sp,lemp,lineno)
-FILE *out;
-struct symbol *sp;
-struct lemon *lemp;
-int *lineno;
-{
+void emit_destructor_code(
+  FILE *out,
+  struct symbol *sp,
+  struct lemon *lemp,
+  int *lineno
+){
  char *cp = 0;
 
  if( sp->type==TERMINAL ){
@@ -3225,9 +3204,7 @@ int *lineno;
 /*
 ** Return TRUE (non-zero) if the given symbol has a destructor.
 */
-int has_destructor(sp, lemp)
-struct symbol *sp;
-struct lemon *lemp;
+int has_destructor(struct symbol *sp, struct lemon *lemp)
 {
   int ret;
   if( sp->type==TERMINAL ){
@@ -3250,13 +3227,13 @@ struct lemon *lemp;
 **
 ** If n==-1, then the previous character is overwritten.
 */
-PRIVATE char *append_str(char *zText, int n, int p1, int p2){
+PRIVATE char *append_str(const char *zText, int n, int p1, int p2){
+  static char empty[1] = { 0 };
   static char *z = 0;
   static int alloced = 0;
   static int used = 0;
   int c;
   char zInt[40];
-
   if( zText==0 ){
     used = 0;
     return z;
@@ -3270,9 +3247,9 @@ PRIVATE char *append_str(char *zText, int n, int p1, int p2){
   }
   if( n+sizeof(zInt)*2+used >= alloced ){
     alloced = n + sizeof(zInt)*2 + used + 200;
-    z = realloc(z,  alloced);
+    z = (char *) realloc(z,  alloced);
   }
-  if( z==0 ) return "";
+  if( z==0 ) return empty;
   while( n-- > 0 ){
     c = *(zText++);
     if( c=='%' && n>0 && zText[0]=='d' ){
@@ -3305,12 +3282,15 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
   lhsused = 0;
 
   if( rp->code==0 ){
-    rp->code = "\n";
+    static char newlinestr[2] = { '\n', '\0' };
+    rp->code = newlinestr;
     rp->line = rp->ruleline;
   }
 
   append_str(0,0,0,0);
-  for(cp=rp->code; *cp; cp++){
+
+  /* This const cast is wrong but harmless, if we're careful. */
+  for(cp=(char *)rp->code; *cp; cp++){
     if( isalpha(*cp) && (cp==rp->code || (!isalnum(cp[-1]) && cp[-1]!='_')) ){
       char saved;
       for(xp= &cp[1]; isalnum(*xp) || *xp=='_'; xp++);
@@ -3383,13 +3363,13 @@ PRIVATE void translate_code(struct lemon *lemp, struct rule *rp){
 ** Generate code which executes when the rule "rp" is reduced.  Write
 ** the code to "out".  Make sure lineno stays up-to-date.
 */
-PRIVATE void emit_code(out,rp,lemp,lineno)
-FILE *out;
-struct rule *rp;
-struct lemon *lemp;
-int *lineno;
-{
- char *cp;
+PRIVATE void emit_code(
+  FILE *out,
+  struct rule *rp,
+  struct lemon *lemp,
+  int *lineno
+){
+ const char *cp;
 
  /* Generate code to do the reduce action */
  if( rp->code ){
@@ -3412,12 +3392,12 @@ int *lineno;
 ** union, also set the ".dtnum" field of every terminal and nonterminal
 ** symbol.
 */
-void print_stack_union(out,lemp,plineno,mhflag)
-FILE *out;                  /* The output stream */
-struct lemon *lemp;         /* The main info structure for this parser */
-int *plineno;               /* Pointer to the line number */
-int mhflag;                 /* True if generating makeheaders output */
-{
+void print_stack_union(
+  FILE *out,                  /* The output stream */
+  struct lemon *lemp,         /* The main info structure for this parser */
+  int *plineno,               /* Pointer to the line number */
+  int mhflag                  /* True if generating makeheaders output */
+){
   int lineno = *plineno;    /* The line number of the output */
   char **types;             /* A hash table of datatypes */
   int arraysize;            /* Size of the "types" array */
@@ -3425,7 +3405,7 @@ int mhflag;                 /* True if generating makeheaders output */
   char *stddt;              /* Standardized name for a datatype */
   int i,j;                  /* Loop counters */
   int hash;                 /* For hashing the name of a type */
-  char *name;               /* Name of the parser */
+  const char *name;         /* Name of the parser */
 
   /* Allocate and initialize types[] and allocate stddt[] */
   arraysize = lemp->nsymbol * 2;
@@ -3594,10 +3574,10 @@ static void writeRuleText(FILE *out, struct rule *rp){
 
 
 /* Generate C source code for the parser */
-void ReportTable(lemp, mhflag)
-struct lemon *lemp;
-int mhflag;     /* Output in makeheaders format if true */
-{
+void ReportTable(
+  struct lemon *lemp,
+  int mhflag     /* Output in makeheaders format if true */
+){
   FILE *out, *in;
   char line[LINESIZE];
   int  lineno;
@@ -3605,8 +3585,8 @@ int mhflag;     /* Output in makeheaders format if true */
   struct action *ap;
   struct rule *rp;
   struct acttab *pActtab;
-  int i, j, k, n;
-  char *name;
+  int i, j, n;
+  const char *name;
   int mnTknOfst, mxTknOfst;
   int mnNtOfst, mxNtOfst;
   struct axset *ax;
@@ -3632,7 +3612,7 @@ int mhflag;     /* Output in makeheaders format if true */
 
   /* Generate #defines for all tokens */
   if( mhflag ){
-    char *prefix;
+    const char *prefix;
     fprintf(out,"#if INTERFACE\n"); lineno++;
     if( lemp->tokenprefix ) prefix = lemp->tokenprefix;
     else                    prefix = "";
@@ -3710,7 +3690,7 @@ int mhflag;     /* Output in makeheaders format if true */
   */
 
   /* Compute the actions on all states and count them up */
-  ax = calloc(lemp->nstate*2, sizeof(ax[0]));
+  ax = (struct axset *) calloc(lemp->nstate*2, sizeof(ax[0]));
   if( ax==0 ){
     fprintf(stderr,"malloc failed\n");
     exit(1);
@@ -4038,11 +4018,10 @@ int mhflag;     /* Output in makeheaders format if true */
 }
 
 /* Generate a header file for the parser */
-void ReportHeader(lemp)
-struct lemon *lemp;
+void ReportHeader(struct lemon *lemp)
 {
   FILE *out, *in;
-  char *prefix;
+  const char *prefix;
   char line[LINESIZE];
   char pattern[LINESIZE];
   int i;
@@ -4078,8 +4057,7 @@ struct lemon *lemp;
 ** it the default.  Except, there is no default if the wildcard token
 ** is a possible look-ahead.
 */
-void CompressTables(lemp)
-struct lemon *lemp;
+void CompressTables(struct lemon *lemp)
 {
   struct state *stp;
   struct action *ap, *ap2;
@@ -4163,8 +4141,7 @@ static int stateResortCompare(const void *a, const void *b){
 ** Renumber and resort states so that states with fewer choices
 ** occur at the end.  Except, keep state 0 as the first state.
 */
-void ResortStates(lemp)
-struct lemon *lemp;
+void ResortStates(struct lemon *lemp)
 {
   int i;
   struct state *stp;
@@ -4204,8 +4181,7 @@ struct lemon *lemp;
 static int size = 0;
 
 /* Set the set size */
-void SetSize(n)
-int n;
+void SetSize(int n)
 {
   size = n+1;
 }
@@ -4222,17 +4198,14 @@ char *SetNew(){
 }
 
 /* Deallocate a set */
-void SetFree(s)
-char *s;
+void SetFree(char *s)
 {
   free(s);
 }
 
 /* Add a new element to the set.  Return TRUE if the element was added
 ** and FALSE if it was already there. */
-int SetAdd(s,e)
-char *s;
-int e;
+int SetAdd(char *s, int e)
 {
   int rv;
   assert( e>=0 && e<size );
@@ -4242,9 +4215,7 @@ int e;
 }
 
 /* Add every element of s2 to s1.  Return TRUE if s1 changes. */
-int SetUnion(s1,s2)
-char *s1;
-char *s2;
+int SetUnion(char *s1, char *s2)
 {
   int i, progress;
   progress = 0;
@@ -4270,8 +4241,7 @@ char *s2;
 ** Code for processing tables in the LEMON parser generator.
 */
 
-PRIVATE int strhash(x)
-char *x;
+PRIVATE int strhash(const char *x)
 {
   int h = 0;
   while( *x) h = h*13 + *(x++);
@@ -4282,15 +4252,16 @@ char *x;
 ** keep strings in a table so that the same string is not in more
 ** than one place.
 */
-char *Strsafe(y)
-char *y;
+const char *Strsafe(const char *y)
 {
-  char *z;
+  const char *z;
+  char *cpy;
 
   if( y==0 ) return 0;
   z = Strsafe_find(y);
-  if( z==0 && (z=malloc( lemonStrlen(y)+1 ))!=0 ){
-    strcpy(z,y);
+  if( z==0 && (cpy=(char *)malloc( lemonStrlen(y)+1 ))!=0 ){
+    strcpy(cpy,y);
+    z = cpy;
     Strsafe_insert(z);
   }
   MemoryCheck(z);
@@ -4313,7 +4284,7 @@ struct s_x1 {
 ** in an associative array of type "x1".
 */
 typedef struct s_x1node {
-  char *data;                  /* The data */
+  const char *data;        /* The data */
   struct s_x1node *next;   /* Next entry with the same hash */
   struct s_x1node **from;  /* Previous link */
 } x1node;
@@ -4342,8 +4313,7 @@ void Strsafe_init(){
 }
 /* Insert a new record into the array.  Return TRUE if successful.
 ** Prior data with the same key is NOT overwritten */
-int Strsafe_insert(data)
-char *data;
+int Strsafe_insert(const char *data)
 {
   x1node *np;
   int h;
@@ -4399,8 +4369,7 @@ char *data;
 
 /* Return a pointer to data assigned to the given key.  Return NULL
 ** if no such key. */
-char *Strsafe_find(key)
-char *key;
+const char *Strsafe_find(const char *key)
 {
   int h;
   x1node *np;
@@ -4418,8 +4387,7 @@ char *key;
 /* Return a pointer to the (terminal or nonterminal) symbol "x".
 ** Create a new symbol if this is the first time "x" has been seen.
 */
-struct symbol *Symbol_new(x)
-char *x;
+struct symbol *Symbol_new(const char *x)
 {
   struct symbol *sp;
 
@@ -4455,7 +4423,10 @@ char *x;
 ** order (the order they appeared in the grammar file) gives the
 ** smallest parser tables in SQLite.
 */
-int Symbolcmpp(struct symbol **a, struct symbol **b){
+int Symbolcmpp(const void *_a, const void *_b)
+{
+  const struct symbol **a = (const struct symbol **) _a;
+  const struct symbol **b = (const struct symbol **) _b;
   int i1 = (**a).index + 10000000*((**a).name[0]>'Z');
   int i2 = (**b).index + 10000000*((**b).name[0]>'Z');
   assert( i1!=i2 || strcmp((**a).name,(**b).name)==0 );
@@ -4478,8 +4449,8 @@ struct s_x2 {
 ** in an associative array of type "x2".
 */
 typedef struct s_x2node {
-  struct symbol *data;                  /* The data */
-  char *key;                   /* The key */
+  struct symbol *data;     /* The data */
+  const char *key;         /* The key */
   struct s_x2node *next;   /* Next entry with the same hash */
   struct s_x2node **from;  /* Previous link */
 } x2node;
@@ -4508,9 +4479,7 @@ void Symbol_init(){
 }
 /* Insert a new record into the array.  Return TRUE if successful.
 ** Prior data with the same key is NOT overwritten */
-int Symbol_insert(data,key)
-struct symbol *data;
-char *key;
+int Symbol_insert(struct symbol *data, const char *key)
 {
   x2node *np;
   int h;
@@ -4568,8 +4537,7 @@ char *key;
 
 /* Return a pointer to data assigned to the given key.  Return NULL
 ** if no such key. */
-struct symbol *Symbol_find(key)
-char *key;
+struct symbol *Symbol_find(const char *key)
 {
   int h;
   x2node *np;
@@ -4585,8 +4553,7 @@ char *key;
 }
 
 /* Return the n-th data.  Return NULL if n is out of range. */
-struct symbol *Symbol_Nth(n)
-int n;
+struct symbol *Symbol_Nth(int n)
 {
   struct symbol *data;
   if( x2a && n>0 && n<=x2a->count ){
@@ -4620,10 +4587,10 @@ struct symbol **Symbol_arrayof()
 }
 
 /* Compare two configurations */
-int Configcmp(a,b)
-struct config *a;
-struct config *b;
+int Configcmp(const char *_a,const char *_b)
 {
+  const struct config *a = (struct config *) _a;
+  const struct config *b = (struct config *) _b;
   int x;
   x = a->rp->index - b->rp->index;
   if( x==0 ) x = a->dot - b->dot;
@@ -4631,9 +4598,7 @@ struct config *b;
 }
 
 /* Compare two states */
-PRIVATE int statecmp(a,b)
-struct config *a;
-struct config *b;
+PRIVATE int statecmp(struct config *a, struct config *b)
 {
   int rc;
   for(rc=0; rc==0 && a && b;  a=a->bp, b=b->bp){
@@ -4648,8 +4613,7 @@ struct config *b;
 }
 
 /* Hash a state */
-PRIVATE int statehash(a)
-struct config *a;
+PRIVATE int statehash(struct config *a)
 {
   int h=0;
   while( a ){
@@ -4662,10 +4626,10 @@ struct config *a;
 /* Allocate a new state structure */
 struct state *State_new()
 {
-  struct state *new;
-  new = (struct state *)calloc(1, sizeof(struct state) );
-  MemoryCheck(new);
-  return new;
+  struct state *newstate;
+  newstate = (struct state *)calloc(1, sizeof(struct state) );
+  MemoryCheck(newstate);
+  return newstate;
 }
 
 /* There is one instance of the following structure for each
@@ -4714,9 +4678,7 @@ void State_init(){
 }
 /* Insert a new record into the array.  Return TRUE if successful.
 ** Prior data with the same key is NOT overwritten */
-int State_insert(data,key)
-struct state *data;
-struct config *key;
+int State_insert(struct state *data, struct config *key)
 {
   x3node *np;
   int h;
@@ -4774,8 +4736,7 @@ struct config *key;
 
 /* Return a pointer to data assigned to the given key.  Return NULL
 ** if no such key. */
-struct state *State_find(key)
-struct config *key;
+struct state *State_find(struct config *key)
 {
   int h;
   x3node *np;
@@ -4807,8 +4768,7 @@ struct state **State_arrayof()
 }
 
 /* Hash a configuration */
-PRIVATE int confighash(a)
-struct config *a;
+PRIVATE int confighash(struct config *a)
 {
   int h=0;
   h = h*571 + a->rp->index*37 + a->dot;
@@ -4860,8 +4820,7 @@ void Configtable_init(){
 }
 /* Insert a new record into the array.  Return TRUE if successful.
 ** Prior data with the same key is NOT overwritten */
-int Configtable_insert(data)
-struct config *data;
+int Configtable_insert(struct config *data)
 {
   x4node *np;
   int h;
@@ -4872,7 +4831,7 @@ struct config *data;
   h = ph & (x4a->size-1);
   np = x4a->ht[h];
   while( np ){
-    if( Configcmp(np->data,data)==0 ){
+    if( Configcmp((const char *) np->data,(const char *) data)==0 ){
       /* An existing entry with the same key is found. */
       /* Fail because overwrite is not allows. */
       return 0;
@@ -4917,8 +4876,7 @@ struct config *data;
 
 /* Return a pointer to data assigned to the given key.  Return NULL
 ** if no such key. */
-struct config *Configtable_find(key)
-struct config *key;
+struct config *Configtable_find(struct config *key)
 {
   int h;
   x4node *np;
@@ -4927,7 +4885,7 @@ struct config *key;
   h = confighash(key) & (x4a->size-1);
   np = x4a->ht[h];
   while( np ){
-    if( Configcmp(np->data,key)==0 ) break;
+    if( Configcmp((const char *) np->data,(const char *) key)==0 ) break;
     np = np->next;
   }
   return np ? np->data : 0;
@@ -4935,8 +4893,7 @@ struct config *key;
 
 /* Remove all data from the table.  Pass each data to the function "f"
 ** as it is removed.  ("f" may be null to avoid this step.) */
-void Configtable_clear(f)
-int(*f)(/* struct config * */);
+void Configtable_clear(int(*f)(struct config *))
 {
   int i;
   if( x4a==0 || x4a->count==0 ) return;
