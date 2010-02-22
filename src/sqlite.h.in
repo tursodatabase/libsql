@@ -5675,7 +5675,7 @@ int sqlite3_strnicmp(const char *, const char *, int);
 ** nothing to prevent an application from calling sqlite3_log(), doing so
 ** is considered bad form.
 */
-void sqlite3_log(int iPriority, const char *zFormat, ...);
+void sqlite3_log(int iErrCode, const char *zFormat, ...);
 
 /*
 ** Undo the hack that converts floating point types to integer for
