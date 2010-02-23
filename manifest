@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sthe\sobsolete\ssqlite3SafetyOn()\smechanism.\s\sAdd\sadditional\slogging\noutput\sfor\sCORRUPT,\sand\sCANTOPEN\serrors.
-D 2010-02-23T17:36:33
+C Fix\sa\ssegfault\sthat\scan\soccur\sif\sa\smalloc\sfails\sin\sATTACH\sin\sshared-cache\smode.
+D 2010-02-23T11:05:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -107,7 +104,7 @@ F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
 F src/alter.c e6f4d11b1c0b23642fc46bac9abe0753c4294e05
 F src/analyze.c 92a65a5a402898a52b03695c7f0cd383724d711f
-F src/attach.c d855b36c7ebe31643bb64b8f2a4f799599f57f97
+F src/attach.c 7abe1607c2054585377cdba3c219e8572f84ca5e
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
@@ -243,7 +240,7 @@ F test/async5.test f3592d79c84d6e83a5f50d3fd500445f7d97dfdf
 F test/attach.test ce9660e51768fab93cf129787be886c5d6c4fd81
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test bd9830bc3a0d22ed1310c9bff6896927937017dc
-F test/attachmalloc.test cf8cf17d183de357b1147a9baacbdfc85b940b61
+F test/attachmalloc.test 38d2da5fdaf09ba0add57296967a3061e5842584
 F test/auth.test 8f21c160a4562f54f27618e85bac869efcecbcaf
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
@@ -793,14 +790,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6d910245ad0097521cf1619449cc3d202137b8b8
-R 4a55fdf9e3eb291dfcc82c0590d9deb7
-U drh
-Z 26147ac467d0ee1674ecf48b84753d80
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLhBIkoxKgR168RlERAl/sAJ9uSxPewxWPXcY00iSJJIp+Q1yjKQCcCt45
-2X5N2P2VUOeqI8eEiWATH4s=
-=TuL6
------END PGP SIGNATURE-----
+P 7c4cca6d1a23a6d1591b62f58c3716a944969947
+R 29083e92256fe9431ab529b4a073f35b
+U dan
+Z aeca5acb27017a622d1ae758ae6aaf7d
