@@ -24,6 +24,12 @@ do_test stmt-1.1 {
 # that if a statement journal is required by a statement it is opened and
 # remains open until the current transaction is committed or rolled back.
 #
+# This only work if SQLITE_TEMP_STORE!=3
+#
+if {$::TEMP_STORE==3} {
+  finish_test
+  return
+}
 do_test stmt-1.2 {
   set sqlite_open_file_count
 } {1}
@@ -77,4 +83,3 @@ do_test stmt-2.4 {
 filecount stmt-2.5 { REPLACE INTO t1 VALUES(5, 5) } 3
 
 finish_test
-
