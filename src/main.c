@@ -36,7 +36,7 @@ const char *sqlite3_libversion(void){ return sqlite3_version; }
 const char *sqlite3_sourceid(void){ return SQLITE_SOURCE_ID; }
 int sqlite3_libversion_number(void){ return SQLITE_VERSION_NUMBER; }
 int sqlite3_threadsafe(void){ return SQLITE_THREADSAFE; }
-const char *sqlite3_compileopts(void){ 
+const char *sqlite3_compileopts(void){
   static char zOpts[32] = "";
   sqlite_int64 iEnable = 0; /* bitmask of all the SQLITE_ENABLE* defines */
   sqlite_int64 iOmit = 0;   /* bitmask of all the SQLITE_OMIT* defines */
@@ -49,41 +49,26 @@ const char *sqlite3_compileopts(void){
 #ifdef SQLITE_4_BYTE_ALIGNED_MALLOC
   iOther |= ((sqlite_int64)1<<1);
 #endif
-#ifdef SQLITE_AMALGAMATION
+#ifdef SQLITE_API
   iOther |= ((sqlite_int64)1<<2);
 #endif
-#ifdef SQLITE_API
+#ifdef SQLITE_CASE_SENSITIVE_LIKE
   iOther |= ((sqlite_int64)1<<3);
 #endif
-#ifdef SQLITE_ASCII
+#ifdef SQLITE_CHECK_PAGES
   iOther |= ((sqlite_int64)1<<4);
 #endif
-#ifdef SQLITE_BIG_DBL
+#ifdef SQLITE_COVERAGE_TEST
   iOther |= ((sqlite_int64)1<<5);
 #endif
-#ifdef SQLITE_CASE_SENSITIVE_LIKE
+#ifdef SQLITE_DEBUG
   iOther |= ((sqlite_int64)1<<6);
 #endif
-#ifdef SQLITE_CHECK_PAGES
+#ifdef SQLITE_DISABLE_DIRSYNC
   iOther |= ((sqlite_int64)1<<7);
 #endif
-#ifdef SQLITE_CORE
-  iOther |= ((sqlite_int64)1<<8);
-#endif
-#ifdef SQLITE_COVERAGE_TEST
-  iOther |= ((sqlite_int64)1<<9);
-#endif
-#ifdef SQLITE_DEBUG
-  iOther |= ((sqlite_int64)1<<10);
-#endif
-#ifdef SQLITE_DISABLE_DIRSYNC
-  iOther |= ((sqlite_int64)1<<11);
-#endif
 #ifdef SQLITE_DISABLE_LFS
-  iOther |= ((sqlite_int64)1<<12);
-#endif
-#ifdef SQLITE_EBCDIC
-  iOther |= ((sqlite_int64)1<<13);
+  iOther |= ((sqlite_int64)1<<8);
 #endif
 #ifdef SQLITE_ENABLE_ATOMIC_WRITE
   iEnable |= ((sqlite_int64)1<<0);
@@ -106,107 +91,92 @@ const char *sqlite3_compileopts(void){
 #ifdef SQLITE_ENABLE_FTS3
   iEnable |= ((sqlite_int64)1<<6);
 #endif
-#ifdef SQLITE_ENABLE_FTS4
+#ifdef SQLITE_ENABLE_FTS3_PARENTHESIS
   iEnable |= ((sqlite_int64)1<<7);
 #endif
-#ifdef SQLITE_ENABLE_ICU
+#ifdef SQLITE_ENABLE_FTS4
   iEnable |= ((sqlite_int64)1<<8);
 #endif
-#ifdef SQLITE_ENABLE_IOTRACE
+#ifdef SQLITE_ENABLE_ICU
   iEnable |= ((sqlite_int64)1<<9);
 #endif
-#ifdef SQLITE_ENABLE_LOAD_EXTENSION
+#ifdef SQLITE_ENABLE_IOTRACE
   iEnable |= ((sqlite_int64)1<<10);
 #endif
-#ifdef SQLITE_ENABLE_LOCKING_STYLE
+#ifdef SQLITE_ENABLE_LOAD_EXTENSION
   iEnable |= ((sqlite_int64)1<<11);
 #endif
-#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
+#ifdef SQLITE_ENABLE_LOCKING_STYLE
   iEnable |= ((sqlite_int64)1<<12);
 #endif
-#ifdef SQLITE_ENABLE_MEMSYS3
+#ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   iEnable |= ((sqlite_int64)1<<13);
 #endif
-#ifdef SQLITE_ENABLE_MEMSYS5
+#ifdef SQLITE_ENABLE_MEMSYS3
   iEnable |= ((sqlite_int64)1<<14);
 #endif
-#ifdef SQLITE_ENABLE_OVERSIZE_CELL_CHECK
+#ifdef SQLITE_ENABLE_MEMSYS5
   iEnable |= ((sqlite_int64)1<<15);
 #endif
-#ifdef SQLITE_ENABLE_RTREE
+#ifdef SQLITE_ENABLE_OVERSIZE_CELL_CHECK
   iEnable |= ((sqlite_int64)1<<16);
 #endif
-#ifdef SQLITE_ENABLE_STAT2
+#ifdef SQLITE_ENABLE_RTREE
   iEnable |= ((sqlite_int64)1<<17);
 #endif
-#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
+#ifdef SQLITE_ENABLE_STAT2
   iEnable |= ((sqlite_int64)1<<18);
 #endif
-#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+#ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   iEnable |= ((sqlite_int64)1<<19);
 #endif
-#ifdef SQLITE_EXTERN
-  iOther |= ((sqlite_int64)1<<14);
-#endif
-#ifdef SQLITE_FILE_HEADER
-  iOther |= ((sqlite_int64)1<<15);
+#ifdef SQLITE_ENABLE_UPDATE_DELETE_LIMIT
+  iEnable |= ((sqlite_int64)1<<20);
 #endif
 #ifdef SQLITE_HAS_CODEC
-  iOther |= ((sqlite_int64)1<<16);
+  iOther |= ((sqlite_int64)1<<9);
 #endif
 #ifdef SQLITE_HAVE_ISNAN
-  iOther |= ((sqlite_int64)1<<17);
+  iOther |= ((sqlite_int64)1<<10);
 #endif
 #ifdef SQLITE_HOMEGROWN_RECURSIVE_MUTEX
-  iOther |= ((sqlite_int64)1<<18);
+  iOther |= ((sqlite_int64)1<<11);
 #endif
 #ifdef SQLITE_IGNORE_AFP_LOCK_ERRORS
-  iOther |= ((sqlite_int64)1<<19);
+  iOther |= ((sqlite_int64)1<<12);
 #endif
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
-  iOther |= ((sqlite_int64)1<<20);
+  iOther |= ((sqlite_int64)1<<13);
 #endif
 #ifdef SQLITE_INT64_TYPE
-  iOther |= ((sqlite_int64)1<<21);
-#endif
-#ifdef SQLITE_INTEGRITY_CHECK_ERROR_MAX
-  iOther |= ((sqlite_int64)1<<22);
+  iOther |= ((sqlite_int64)1<<14);
 #endif
 #ifdef SQLITE_LOCK_TRACE
-  iOther |= ((sqlite_int64)1<<23);
-#endif
-#ifdef SQLITE_MALLOC_SOFT_LIMIT
-  iOther |= ((sqlite_int64)1<<24);
+  iOther |= ((sqlite_int64)1<<15);
 #endif
 #ifdef SQLITE_MEMDEBUG
-  iOther |= ((sqlite_int64)1<<25);
+  iOther |= ((sqlite_int64)1<<16);
 #endif
 #ifdef SQLITE_MIXED_ENDIAN_64BIT_FLOAT
-  iOther |= ((sqlite_int64)1<<26);
+  iOther |= ((sqlite_int64)1<<17);
 #endif
 #ifdef SQLITE_MUTEX_NOOP
-  iOther |= ((sqlite_int64)1<<27);
+  iOther |= ((sqlite_int64)1<<18);
 #endif
 #ifdef SQLITE_MUTEX_OMIT
-  iOther |= ((sqlite_int64)1<<28);
+  iOther |= ((sqlite_int64)1<<19);
 #endif
 #ifdef SQLITE_MUTEX_OS2
-  iOther |= ((sqlite_int64)1<<29);
+  iOther |= ((sqlite_int64)1<<20);
 #endif
 #ifdef SQLITE_MUTEX_PTHREADS
-  iOther |= ((sqlite_int64)1<<30);
+  iOther |= ((sqlite_int64)1<<21);
 #endif
 #ifdef SQLITE_MUTEX_W32
-  iOther |= ((sqlite_int64)1<<31);
+  iOther |= ((sqlite_int64)1<<22);
 #endif
 #ifdef SQLITE_NO_SYNC
-  iOther |= ((sqlite_int64)1<<32);
-#endif
-#ifdef SQLITE_N_COLCACHE
-  iOther |= ((sqlite_int64)1<<33);
-#endif
-#ifdef SQLITE_N_KEYWORD
-  iOther |= ((sqlite_int64)1<<34);
+  iOther |= ((sqlite_int64)1<<23);
 #endif
 #ifdef SQLITE_OMIT_ALTERTABLE
   iOmit |= ((sqlite_int64)1<<0);
@@ -367,65 +337,32 @@ const char *sqlite3_compileopts(void){
 #ifdef SQLITE_OMIT_XFER_OPT
   iOmit |= ((sqlite_int64)1<<52);
 #endif
-#ifdef SQLITE_OS_OTHER
-  iOther |= ((sqlite_int64)1<<35);
-#endif
-#ifdef SQLITE_OS_UNIX
-  iOther |= ((sqlite_int64)1<<36);
-#endif
 #ifdef SQLITE_PERFORMANCE_TRACE
-  iOther |= ((sqlite_int64)1<<37);
-#endif
-#ifdef SQLITE_PRINT_BUF_SIZE
-  iOther |= ((sqlite_int64)1<<38);
-#endif
-#ifdef SQLITE_PRIVATE
-  iOther |= ((sqlite_int64)1<<39);
+  iOther |= ((sqlite_int64)1<<24);
 #endif
 #ifdef SQLITE_PROXY_DEBUG
-  iOther |= ((sqlite_int64)1<<40);
+  iOther |= ((sqlite_int64)1<<25);
 #endif
 #ifdef SQLITE_SECURE_DELETE
-  iOther |= ((sqlite_int64)1<<41);
+  iOther |= ((sqlite_int64)1<<26);
 #endif
 #ifdef SQLITE_SMALL_STACK
-  iOther |= ((sqlite_int64)1<<42);
+  iOther |= ((sqlite_int64)1<<27);
 #endif
 #ifdef SQLITE_SOUNDEX
-  iOther |= ((sqlite_int64)1<<43);
-#endif
-#ifdef SQLITE_SYSTEM_MALLOC
-  iOther |= ((sqlite_int64)1<<44);
+  iOther |= ((sqlite_int64)1<<28);
 #endif
 #ifdef SQLITE_TCL
-  iOther |= ((sqlite_int64)1<<45);
-#endif
-#ifdef SQLITE_TEMP_FILE_PREFIX
-  iOther |= ((sqlite_int64)1<<46);
-#endif
-#ifdef SQLITE_TEMP_STORE
-  iOther |= ((sqlite_int64)1<<47);
+  iOther |= ((sqlite_int64)1<<29);
 #endif
 #ifdef SQLITE_TEST
-  iOther |= ((sqlite_int64)1<<48);
-#endif
-#ifdef SQLITE_TEXT
-  iOther |= ((sqlite_int64)1<<49);
-#endif
-#ifdef SQLITE_THREADSAFE
-  iOther |= ((sqlite_int64)1<<50);
+  iOther |= ((sqlite_int64)1<<30);
 #endif
 #ifdef SQLITE_USE_ALLOCA
-  iOther |= ((sqlite_int64)1<<51);
-#endif
-#ifdef SQLITE_VERSION
-  iOther |= ((sqlite_int64)1<<52);
-#endif
-#ifdef SQLITE_VERSION_NUMBER
-  iOther |= ((sqlite_int64)1<<53);
+  iOther |= ((sqlite_int64)1<<31);
 #endif
 #ifdef SQLITE_ZERO_MALLOC
-  iOther |= ((sqlite_int64)1<<54);
+  iOther |= ((sqlite_int64)1<<32);
 #endif
 
   sqlite3_snprintf(sizeof(zOpts)-1, zOpts, 
