@@ -415,6 +415,7 @@ struct callback_data {
   char outfile[FILENAME_MAX]; /* Filename for *out */
   const char *zDbFilename;    /* name of the database file */
   sqlite3_stmt *pStmt;   /* Current statement if any. */
+  FILE *pLog;            /* Write log output here */
 };
 
 /*
@@ -455,6 +456,16 @@ static int strlen30(const char *z){
   const char *z2 = z;
   while( *z2 ){ z2++; }
   return 0x3fffffff & (int)(z2 - z);
+}
+
+/*
+** A callback for the sqlite3_log() interface.
+*/
+static void shellLog(void *pArg, int iErrCode, const char *zMsg){
+  struct callback_data *p = (struct callback_data*)pArg;
+  if( p->pLog==0 ) return;
+  fprintf(p->pLog, "(%d) %s\n", iErrCode, zMsg);
+  fflush(p->pLog);
 }
 
 /*
@@ -1223,6 +1234,7 @@ static char zHelp[] =
 #ifndef SQLITE_OMIT_LOAD_EXTENSION
   ".load FILE ?ENTRY?     Load an extension library\n"
 #endif
+  ".log FILE|off          Turn logging on or off.  FILE can be stderr/stdout\n"
   ".mode MODE ?TABLE?     Set output mode where MODE is one of:\n"
   "                         csv      Comma-separated values\n"
   "                         column   Left-aligned columns.  (See .width)\n"
@@ -1737,6 +1749,26 @@ static int do_meta_command(char *zLine, struct callback_data *p){
     }
   }else
 #endif
+
+  if( c=='l' && strncmp(azArg[0], "log", n)==0 && nArg>=1 ){
+    const char *zFile = azArg[1];
+    if( p->pLog && p->pLog!=stdout && p->pLog!=stderr ){
+      fclose(p->pLog);
+      p->pLog = 0;
+    }
+    if( strcmp(zFile,"stdout")==0 ){
+      p->pLog = stdout;
+    }else if( strcmp(zFile, "stderr")==0 ){
+      p->pLog = stderr;
+    }else if( strcmp(zFile, "off")==0 ){
+      p->pLog = 0;
+    }else{
+      p->pLog = fopen(zFile, "w");
+      if( p->pLog==0 ){
+        fprintf(stderr, "Error: cannot open \"%s\"\n", zFile);
+      }
+    }
+  }else
 
   if( c=='m' && strncmp(azArg[0], "mode", n)==0 && nArg==2 ){
     int n2 = strlen30(azArg[1]);
@@ -2383,6 +2415,7 @@ static void main_init(struct callback_data *data) {
   data->mode = MODE_List;
   memcpy(data->separator,"|", 2);
   data->showHeader = 0;
+  sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
 }
