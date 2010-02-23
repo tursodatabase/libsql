@@ -1,5 +1,5 @@
-C Apply\sfix\s[9b8acf8319]\sto\sthe\s3.6.1\sbranch.
-D 2010-01-05T18:11:53
+C Fix\sa\ssegfault\sthat\scan\soccur\sif\sa\smalloc\sfails\sin\sATTACH\sin\sshared-cache\smode.
+D 2010-02-23T10:50:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,7 +92,7 @@ F sqlite3.def a1be7b9a4b8b51ac41c6ff6e8e44a14ef66b338b
 F sqlite3.pc.in 32b8a014799c2028c8e0c9cc5659718262fc493f
 F src/alter.c 2c541aaa88d720301253f181799d4af7bb9ddf1c
 F src/analyze.c 747ce8cb6b318bb0d0576cfb5277aed98cbbeb5c
-F src/attach.c a85c14612e7e3410e0c3d2e0241832fa9688bd14
+F src/attach.c c4adb24b40039bf6fcb091db7db51524e44c5505
 F src/auth.c c8b2ab5c8bad4bd90ed7c294694f48269162c627
 F src/bitvec.c 95c86bd18d8fedf0533f5af196192546e10a7e7d
 F src/btmutex.c 709cad2cdca0afd013f0f612363810e53f59ec53
@@ -207,7 +207,7 @@ F test/async3.test 9ffa0977a78cc6351862a1583be2b1eecd41736d
 F test/attach.test 75a5d22f88e730967d68f2c9f95e786e3953d8e3
 F test/attach2.test a295d2d7061adcee5884ef4a93c7c96a82765437
 F test/attach3.test 7b92dc8e40c1ebca9732ca6f2d3fefbd46f196df
-F test/attachmalloc.test ccbde53bcb0a61020afa3e0670ca9c6c5b99af32
+F test/attachmalloc.test 95826e77cad2507b2b260b8fa6e4ec624e20c345
 F test/auth.test 9eb4b6b99eee54c95711c74c4b9694acf4d850ed
 F test/auth2.test ee3ba272e2b975e913afc9b041ee75706e190005
 F test/autoinc.test 42af2c407c4e37d0626f9cda57ed381e94522c9d
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9f819ea6b21e13e6def5c841cbdba96661f322a3
-R 3d0a074f76cf6d4fa9806148f6ad144b
+P 62b4891b155ae566006236fee368794eabcd71a3
+R d96209734cd2738ccdad625a0426d4ae
 U dan
-Z e82845b46439863070353ea34d902bb9
+Z 9b5cc3787278b4c31dbe3b17b7863d17
