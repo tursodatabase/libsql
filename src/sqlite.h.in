@@ -130,16 +130,20 @@ extern "C" {
 ** function is provided for use in DLLs since DLL users usually do not have
 ** direct access to string constants within the DLL.  ^The
 ** sqlite3_libversion_number() function returns an integer equal to
-** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function a pointer
-** to a string constant whose value is the same as the [SQLITE_SOURCE_ID]
-** C preprocessor macro.
+** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function returns 
+** a pointer to a string constant whose value is the same as the 
+** [SQLITE_SOURCE_ID] C preprocessor macro.  ^The sqlite3_compileopts() 
+** function returns a pointer to a string constant whose value describes
+** the compiler options used.
 **
-** See also: [sqlite_version()] and [sqlite_source_id()].
+** See also: [sqlite_version()], [sqlite_source_id()], 
+** and [sqlite_compile_opts()].
 */
 SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
 const char *sqlite3_sourceid(void);
 int sqlite3_libversion_number(void);
+const char *sqlite3_compileopts(void);
 
 /*
 ** CAPI3REF: Test To See If The Library Is Threadsafe

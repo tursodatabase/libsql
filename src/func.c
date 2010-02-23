@@ -774,6 +774,21 @@ static void sourceidFunc(
   sqlite3_result_text(context, sqlite3_sourceid(), -1, SQLITE_STATIC);
 }
 
+/*
+** Implementation of the sqlite_compile_opts() function. The result is a string
+** that identifies the compiler options used to build SQLite.
+*/
+static void compileoptsFunc(
+  sqlite3_context *context,
+  int NotUsed,
+  sqlite3_value **NotUsed2
+){
+  UNUSED_PARAMETER2(NotUsed, NotUsed2);
+  /* IMP: R-xxxx This function is an SQL wrapper around the
+  ** sqlite3_compileopts() C interface. */
+  sqlite3_result_text(context, sqlite3_compileopts(), -1, SQLITE_STATIC);
+}
+
 /* Array for converting from half-bytes (nybbles) into ASCII hex
 ** digits. */
 static const char hexdigits[] = {
@@ -1505,6 +1520,7 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
     FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
+    FUNCTION(sqlite_compile_opts,0, 0, 0, compileoptsFunc  ),
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),
