@@ -161,7 +161,6 @@ void sqlite3ErrorMsg(Parse *pParse, const char *zFormat, ...){
     sqlite3DbFree(db, pParse->zErrMsg);
     pParse->zErrMsg = zMsg;
     pParse->rc = SQLITE_ERROR;
-    sqlite3_log(SQLITE_ERROR, pParse->zErrMsg);
   }
 }
 
@@ -1010,6 +1009,17 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 }
 #endif /* !SQLITE_OMIT_BLOB_LITERAL || SQLITE_HAS_CODEC */
 
+/*
+** Log an error that is an API call on a connection pointer that should
+** not have been used.  The "type" of connection pointer is given as the
+** argument.  The zType is a word like "NULL" or "closed" or "invalid".
+*/
+static void logBadConnection(const char *zType){
+  sqlite3_log(SQLITE_MISUSE, 
+     "API call with %s database connection pointer",
+     zType
+  );
+}
 
 /*
 ** Check to make sure we have a valid db pointer.  This test is not
@@ -1027,9 +1037,15 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 */
 int sqlite3SafetyCheckOk(sqlite3 *db){
   u32 magic;
-  if( db==0 ) return 0;
+  if( db==0 ){
+    logBadConnection("NULL");
+    return 0;
+  }
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_OPEN ){
+    if( !sqlite3SafetyCheckSickOrOk(db) ){
+      logBadConnection("unopened");
+    }
     return 0;
   }else{
     return 1;
@@ -1040,6 +1056,10 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_SICK &&
       magic!=SQLITE_MAGIC_OPEN &&
-      magic!=SQLITE_MAGIC_BUSY ) return 0;
-  return 1;
+      magic!=SQLITE_MAGIC_BUSY ){
+    logBadConnection( magic==SQLITE_MAGIC_CLOSED ? "closed" : "invalid" );
+    return 0;
+  }else{
+    return 1;
+  }
 }

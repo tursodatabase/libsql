@@ -647,7 +647,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   if( !pTab ){
     sqlite3Error(db, SQLITE_MISUSE, 0);
     sqlite3_mutex_leave(db->mutex);
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   assert( (pTab->tabFlags & TF_Virtual)!=0 );
 

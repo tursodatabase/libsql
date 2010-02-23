@@ -257,7 +257,7 @@ int sqlite3_config(int op, ...){
 
   /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
   ** the SQLite library is in use. */
-  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE;
+  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE_BKPT;
 
   va_start(ap, op);
   switch( op ){
@@ -601,7 +601,7 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_OK;
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
 
@@ -948,7 +948,7 @@ int sqlite3CreateFunc(
       (!xFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   
 #ifndef SQLITE_OMIT_UTF16
@@ -1279,7 +1279,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
-    return sqlite3ErrStr(SQLITE_MISUSE);
+    return sqlite3ErrStr(SQLITE_MISUSE_BKPT);
   }
   sqlite3_mutex_enter(db->mutex);
   if( db->mallocFailed ){
@@ -1348,7 +1348,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 */
 int sqlite3_errcode(sqlite3 *db){
   if( db && !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
@@ -1357,7 +1357,7 @@ int sqlite3_errcode(sqlite3 *db){
 }
 int sqlite3_extended_errcode(sqlite3 *db){
   if( db && !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
@@ -1395,7 +1395,7 @@ static int createCollation(
     enc2 = SQLITE_UTF16NATIVE;
   }
   if( enc2<SQLITE_UTF8 || enc2>SQLITE_UTF16BE ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
 
   /* Check if this call is removing or replacing an existing collation 

@@ -32,6 +32,28 @@ int sqlite3_expired(sqlite3_stmt *pStmt){
 #endif
 
 /*
+** Check on a Vdbe to make sure it has not been finalized.  Log
+** an error and return true if it has been finalized (or is otherwise
+** invalid).  Return false if it is ok.
+*/
+static int vdbeSafety(Vdbe *p){
+  if( p->db==0 ){
+    sqlite3_log(SQLITE_MISUSE, "API called with finalized prepared statement");
+    return 1;
+  }else{
+    return 0;
+  }
+}
+static int vdbeSafetyNotNull(Vdbe *p){
+  if( p==0 ){
+    sqlite3_log(SQLITE_MISUSE, "API called with NULL prepared statement");
+    return 1;
+  }else{
+    return vdbeSafety(p);
+  }
+}
+
+/*
 ** The following routine destroys a virtual machine that is created by
 ** the sqlite3_compile() routine. The integer returned is an SQLITE_
 ** success/failure code that describes the result of executing the virtual
@@ -50,7 +72,7 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex;
 #endif
-    if( db==0 ) return SQLITE_MISUSE;
+    if( vdbeSafety(v) ) return SQLITE_MISUSE_BKPT;
 #if SQLITE_THREADSAFE
     mutex = v->db->mutex;
 #endif
@@ -299,7 +321,9 @@ static int sqlite3Step(Vdbe *p){
 
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
-    return SQLITE_MISUSE;
+    sqlite3_log(SQLITE_MISUSE, 
+          "attempt to step a halted statement: [%s]", p->zSql);
+    return SQLITE_MISUSE_BKPT;
   }
 
   /* Check that malloc() has not failed. If it has, return early. */
@@ -394,39 +418,41 @@ end_of_step:
 ** call sqlite3Reprepare() and try again.
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
-  int rc = SQLITE_MISUSE;
+  int rc = SQLITE_OK;
   Vdbe *v = (Vdbe*)pStmt;
-  if( v && (v->db)!=0 ){
-    int cnt = 0;
-    sqlite3 *db = v->db;
-    sqlite3_mutex_enter(db->mutex);
-    while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
-           && cnt++ < 5
-           && (rc = sqlite3Reprepare(v))==SQLITE_OK ){
-      sqlite3_reset(pStmt);
-      v->expired = 0;
-    }
-    if( rc==SQLITE_SCHEMA && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
-      /* This case occurs after failing to recompile an sql statement. 
-      ** The error message from the SQL compiler has already been loaded 
-      ** into the database handle. This block copies the error message 
-      ** from the database handle into the statement and sets the statement
-      ** program counter to 0 to ensure that when the statement is 
-      ** finalized or reset the parser error message is available via
-      ** sqlite3_errmsg() and sqlite3_errcode().
-      */
-      const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
-      sqlite3DbFree(db, v->zErrMsg);
-      if( !db->mallocFailed ){
-        v->zErrMsg = sqlite3DbStrDup(db, zErr);
-      } else {
-        v->zErrMsg = 0;
-        v->rc = SQLITE_NOMEM;
-      }
-    }
-    rc = sqlite3ApiExit(db, rc);
-    sqlite3_mutex_leave(db->mutex);
+  int cnt = 0;
+  sqlite3 *db;
+  if( vdbeSafetyNotNull(v) ){
+    return SQLITE_MISUSE_BKPT;
   }
+  db = v->db;
+  sqlite3_mutex_enter(db->mutex);
+  while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
+         && cnt++ < 5
+         && (rc = sqlite3Reprepare(v))==SQLITE_OK ){
+    sqlite3_reset(pStmt);
+    v->expired = 0;
+  }
+  if( rc==SQLITE_SCHEMA && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
+    /* This case occurs after failing to recompile an sql statement. 
+    ** The error message from the SQL compiler has already been loaded 
+    ** into the database handle. This block copies the error message 
+    ** from the database handle into the statement and sets the statement
+    ** program counter to 0 to ensure that when the statement is 
+    ** finalized or reset the parser error message is available via
+    ** sqlite3_errmsg() and sqlite3_errcode().
+    */
+    const char *zErr = (const char *)sqlite3_value_text(db->pErr); 
+    sqlite3DbFree(db, v->zErrMsg);
+    if( !db->mallocFailed ){
+      v->zErrMsg = sqlite3DbStrDup(db, zErr);
+    } else {
+      v->zErrMsg = 0;
+      v->rc = SQLITE_NOMEM;
+    }
+  }
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
   return rc;
 }
 
@@ -896,12 +922,16 @@ const void *sqlite3_column_origin_name16(sqlite3_stmt *pStmt, int N){
 */
 static int vdbeUnbind(Vdbe *p, int i){
   Mem *pVar;
-  if( p==0 ) return SQLITE_MISUSE;
+  if( vdbeSafetyNotNull(p) ){
+    return SQLITE_MISUSE_BKPT;
+  }
   sqlite3_mutex_enter(p->db->mutex);
   if( p->magic!=VDBE_MAGIC_RUN || p->pc>=0 ){
     sqlite3Error(p->db, SQLITE_MISUSE, 0);
     sqlite3_mutex_leave(p->db->mutex);
-    return SQLITE_MISUSE;
+    sqlite3_log(SQLITE_MISUSE, 
+        "bind on a busy prepared statement: [%s]", p->zSql);
+    return SQLITE_MISUSE_BKPT;
   }
   if( i<1 || i>p->nVar ){
     sqlite3Error(p->db, SQLITE_RANGE, 0);

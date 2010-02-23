@@ -1111,7 +1111,7 @@ static int transferOwnership(unixFile *pFile){
   }
   if( pFile->locktype!=NO_LOCK ){
     /* We cannot change ownership while we are holding a lock! */
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   OSTRACE4("Transfer ownership of %d from %d to %d\n",
             pFile->h, pFile->tid, hSelf);
@@ -1512,7 +1512,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   h = pFile->h;
@@ -2735,7 +2735,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   pLock = pFile->pLock;
