@@ -86,6 +86,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
+  $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \

@@ -1359,6 +1359,34 @@ void sqlite3Pragma(
   }else
 #endif /* SQLITE_OMIT_SCHEMA_VERSION_PRAGMAS */
 
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+  /*
+  **   PRAGMA compile_options
+  **   PRAGMA compile_option(<option>)
+  **
+  ** The first form returns a single row for each option that was 
+  ** defined at compile time.  The second form returns 0 or 1 
+  ** indicating whether the specified option was defined at 
+  ** compile time.
+  */
+  if( sqlite3StrICmp(zLeft, "compile_option")==0 && zRight ){
+    int used = sqlite3_compileoption_used(zRight);
+    returnSingleInt(pParse, zRight, used);
+  }else
+
+  if( sqlite3StrICmp(zLeft, "compile_options")==0 && !zRight ){
+    int i = 0;
+    const char *zOpt;
+    sqlite3VdbeSetNumCols(v, 1);
+    pParse->nMem = 1;
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "compile_option", SQLITE_STATIC);
+    while( (zOpt = sqlite3_compileoption_get(i++))!=0 ){
+      sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, zOpt, 0);
+      sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
+    }
+  }else
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
   ** Report the current state of file logs for all databases
