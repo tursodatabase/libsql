@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sassertion-fault/segfault\sproblem\sthat\scomes\sup\swhen\strying\sto\nVACUUM\san\sauto-vacuumed\sdatabase\swith\sa\slarge\sschema.\s\nTicket\s[da1151f97df244].
-D 2010-02-22T23:17:42
+C Remove\sthe\s".genfkey"\scommand\sfrom\sthe\sshell.\s\sWe've\shad\sforeign-key\ssupport\nin\sthe\score\ssince\s3.6.19.\s\sAnyone\swho\sstill\sneeds\sthe\ssimulated\sforeign-key\ntriggers\scan\salways\sgenerate\sthem\swith\san\solder\sversion\sof\sthe\sshell.
+D 2010-02-23T01:01:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -167,7 +167,7 @@ F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c a1648d98e869937b29f4f697461fe4d60f220a7b
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 0109b993c360d649857523abb72919e1794f9b45
-F src/shell.c 56521a172567f5f9f59f528599bf63380e150ac4
+F src/shell.c 285a9a83bebd12265841cea7e84f4b6088fe676e
 F src/sqlite.h.in 16f33c1ceb971bfa7a04a73039947630f445146e
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h d5fe1c8335b5bf376639837fa42124327cdb6767
@@ -794,14 +794,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1e8b842039cc06b57a321226633c55b94eb8dcd7
-R 06756ad8541fef8ef0cebc9ff5692f8d
+P 86d50ce57feb78440956192e37a03686ffa1e196
+R d7e4885c2790f006c9fb03f523fb52e7
 U drh
-Z b557d7fb4d0e234f9fa6b902c44ce00a
+Z ce6478007e315584d717adb0d5a3c11c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLgxCZoxKgR168RlERAnKMAJ4sis2aZYWJRDTipYeWbj/CPDSbGwCdFGgm
-Uu4h1w5TiR0CYCeH1mIeplU=
-=d4Ru
+iD8DBQFLgykLoxKgR168RlERAtBUAJ0WyBEJgyN2CRLORdcgGbStXZq3KQCdEb8r
+rzZD4GEkFRgOhQAEyCwafJo=
+=dDQ/
 -----END PGP SIGNATURE-----
