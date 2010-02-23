@@ -231,6 +231,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
+  $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -392,7 +393,7 @@ TESTSRC = \
 
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
-  $(TOP)/src/build.c $(TOP)/src/date.c                                         \
+  $(TOP)/src/build.c $(TOP)/src/ctime.c $(TOP)/src/date.c                      \
   $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/os.c      \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \

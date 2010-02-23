@@ -164,7 +164,7 @@ NAWK = @AWK@
 # Object files for the SQLite library (non-amalgamation).
 #
 OBJS0 = alter.lo analyze.lo attach.lo auth.lo backup.lo bitvec.lo btmutex.lo \
-        btree.lo build.lo callback.lo complete.lo date.lo \
+        btree.lo build.lo callback.lo complete.lo ctime.lo date.lo \
         delete.lo expr.lo fault.lo fkey.lo func.lo global.lo \
         hash.lo journal.lo insert.lo legacy.lo loadext.lo \
         main.lo malloc.lo mem0.lo mem1.lo mem2.lo mem3.lo mem5.lo \
@@ -204,6 +204,7 @@ SRC = \
   $(TOP)/src/build.c \
   $(TOP)/src/callback.c \
   $(TOP)/src/complete.c \
+  $(TOP)/src/ctime.c \
   $(TOP)/src/date.c \
   $(TOP)/src/delete.c \
   $(TOP)/src/expr.c \
@@ -339,6 +340,7 @@ TESTSRC2 = \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
   $(TOP)/src/date.c \
+  $(TOP)/src/ctime.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
@@ -541,6 +543,9 @@ callback.lo:	$(TOP)/src/callback.c $(HDR)
 
 complete.lo:	$(TOP)/src/complete.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/complete.c
+
+ctime.lo:	$(TOP)/src/ctime.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/ctime.c
 
 date.lo:	$(TOP)/src/date.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/date.c

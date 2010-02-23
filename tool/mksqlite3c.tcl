@@ -266,6 +266,7 @@ foreach file {
    auth.c
    build.c
    callback.c
+   ctime.c
    delete.c
    func.c
    fkey.c

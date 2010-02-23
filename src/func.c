@@ -774,6 +774,52 @@ static void sourceidFunc(
   sqlite3_result_text(context, sqlite3_sourceid(), -1, SQLITE_STATIC);
 }
 
+/*
+** Implementation of the sqlite_compileoption_used() function.
+** The result is an integer that identifies if the compiler option
+** was used to build SQLite.
+*/
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+static void compileoptionusedFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  const char *zOptName;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  /* IMP: R-xxxx This function is an SQL wrapper around the
+  ** sqlite3_compileoption_used() C interface. */
+  if (   ( sqlite3_value_type(argv[0])==SQLITE_TEXT )
+      && ( (zOptName = (const char*)sqlite3_value_text(argv[0]))!=0 )){
+    sqlite3_result_int(context, sqlite3_compileoption_used(zOptName));
+  }else{
+    sqlite3_result_null(context);
+  }
+}
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+
+/*
+** Implementation of the sqlite_compileoption_get() function. 
+** The result is a string that identifies the compiler options 
+** used to build SQLite.
+*/
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+static void compileoptiongetFunc(
+  sqlite3_context *context,
+  int argc,
+  sqlite3_value **argv
+){
+  int n;
+  assert( argc==1 );
+  UNUSED_PARAMETER(argc);
+  /* IMP: R-xxxx This function is an SQL wrapper around the
+  ** sqlite3_compileoption_get() C interface. */
+  n = sqlite3_value_int(argv[0]);
+  sqlite3_result_text(context, sqlite3_compileoption_get(n), -1, SQLITE_STATIC);
+}
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+
 /* Array for converting from half-bytes (nybbles) into ASCII hex
 ** digits. */
 static const char hexdigits[] = {
@@ -1505,6 +1551,10 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(nullif,             2, 0, 1, nullifFunc       ),
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
     FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+    FUNCTION(sqlite_compile_option_used,1, 0, 0, compileoptionusedFunc  ),
+    FUNCTION(sqlite_compile_option_get, 1, 0, 0, compileoptiongetFunc  ),
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
     FUNCTION(changes,            0, 0, 0, changes          ),

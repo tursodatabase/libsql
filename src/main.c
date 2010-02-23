@@ -384,7 +384,12 @@ int sqlite3_config(int op, ...){
     ** NULL.
     */
     case SQLITE_CONFIG_LOG: {
-      sqlite3GlobalConfig.xLog = va_arg(ap, void(*)(void*,int,const char*));
+      /* MSVC is picky about pulling func ptrs from va lists.
+      ** http://support.microsoft.com/kb/47961
+      ** sqlite3GlobalConfig.xLog = va_arg(ap, void(*)(void*,int,const char*));
+      */
+      typedef void(*LOGFUNC_t)(void*,int,const char*);
+      sqlite3GlobalConfig.xLog = va_arg(ap, LOGFUNC_t);
       sqlite3GlobalConfig.pLogArg = va_arg(ap, void*);
       break;
     }

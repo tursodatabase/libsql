@@ -108,7 +108,7 @@ extern "C" {
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
-** KEYWORDS: sqlite3_version
+** KEYWORDS: sqlite3_version, sqlite3_sourceid
 **
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] C preprocessor macros
@@ -130,9 +130,9 @@ extern "C" {
 ** function is provided for use in DLLs since DLL users usually do not have
 ** direct access to string constants within the DLL.  ^The
 ** sqlite3_libversion_number() function returns an integer equal to
-** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function a pointer
-** to a string constant whose value is the same as the [SQLITE_SOURCE_ID]
-** C preprocessor macro.
+** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function returns 
+** a pointer to a string constant whose value is the same as the 
+** [SQLITE_SOURCE_ID] C preprocessor macro.
 **
 ** See also: [sqlite_version()] and [sqlite_source_id()].
 */
@@ -140,6 +140,33 @@ SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
 const char *sqlite3_sourceid(void);
 int sqlite3_libversion_number(void);
+
+/*
+** CAPI3REF: Run-Time Library Compilation Options Diagnostics
+** KEYWORDS: sqlite3_compileoption_used, sqlite3_compileoption_get
+**
+** ^The sqlite3_compileoption_used() function returns 0 or 1 
+** indicating whether the specified option was defined at 
+** compile time.  ^The SQLITE_ prefix may be omitted from the 
+** option name passed to sqlite3_compileoption_used().  
+**
+** ^The sqlite3_compileoption_get() function allows interating
+** over the list of options that were defined at compile time by
+** returning the N-th compile time option string.  ^If N is out of range,
+** sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_ 
+** prefix is omitted from any strings returned by 
+** sqlite3_compileoption_get().
+**
+** ^Support for the diagnostic functions sqlite3_compileoption_used()
+** and sqlite3_compileoption_get() may be omitted by specifing the 
+** SQLITE_OMIT_COMPILEOPTION_DIAGS option at compile time.
+**
+** See also: [sqlite_compile_option_used()] and [sqlite_compile_option_get()].
+*/
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+int sqlite3_compileoption_used(const char *zOptName);
+const char *sqlite3_compileoption_get(int N);
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
 /*
 ** CAPI3REF: Test To See If The Library Is Threadsafe
