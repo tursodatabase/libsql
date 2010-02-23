@@ -123,16 +123,7 @@ void sqlite3VtabUnlock(VTable *pVTab){
   if( pVTab->nRef==0 ){
     sqlite3_vtab *p = pVTab->pVtab;
     if( p ){
-#ifdef SQLITE_DEBUG
-      if( pVTab->db->magic==SQLITE_MAGIC_BUSY ){
-        (void)sqlite3SafetyOff(db);
-        p->pModule->xDisconnect(p);
-        (void)sqlite3SafetyOn(db);
-      } else
-#endif
-      {
-        p->pModule->xDisconnect(p);
-      }
+      p->pModule->xDisconnect(p);
     }
     sqlite3DbFree(db, pVTab);
   }
@@ -468,9 +459,7 @@ static int vtabCallConstructor(
   db->pVTab = pTab;
 
   /* Invoke the virtual table constructor */
-  (void)sqlite3SafetyOff(db);
   rc = xConstruct(db, pMod->pAux, nArg, azArg, &pVTable->pVtab, &zErr);
-  (void)sqlite3SafetyOn(db);
   if( rc==SQLITE_NOMEM ) db->mallocFailed = 1;
 
   if( SQLITE_OK!=rc ){
@@ -717,10 +706,8 @@ int sqlite3VtabCallDestroy(sqlite3 *db, int iDb, const char *zTab){
   if( ALWAYS(pTab!=0 && pTab->pVTable!=0) ){
     VTable *p = vtabDisconnectAll(db, pTab);
 
-    rc = sqlite3SafetyOff(db);
     assert( rc==SQLITE_OK );
     rc = p->pMod->pModule->xDestroy(p->pVtab);
-    (void)sqlite3SafetyOn(db);
 
     /* Remove the sqlite3_vtab* from the aVTrans[] array, if applicable */
     if( rc==SQLITE_OK ){
@@ -772,10 +759,8 @@ static void callFinaliser(sqlite3 *db, int offset){
 int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
   int i;
   int rc = SQLITE_OK;
-  int rcsafety;
   VTable **aVTrans = db->aVTrans;
 
-  rc = sqlite3SafetyOff(db);
   db->aVTrans = 0;
   for(i=0; rc==SQLITE_OK && i<db->nVTrans; i++){
     int (*x)(sqlite3_vtab *);
@@ -788,11 +773,6 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
     }
   }
   db->aVTrans = aVTrans;
-  rcsafety = sqlite3SafetyOn(db);
-
-  if( rc==SQLITE_OK ){
-    rc = rcsafety;
-  }
   return rc;
 }
 

@@ -123,7 +123,6 @@ void sqlite3Error(sqlite3 *db, int err_code, const char *zFormat, ...){
       va_start(ap, zFormat);
       z = sqlite3VMPrintf(db, zFormat, ap);
       va_end(ap);
-      sqlite3_log(err_code, "%s", z);
       sqlite3ValueSetStr(db->pErr, -1, z, SQLITE_UTF8, SQLITE_DYNAMIC);
     }else{
       sqlite3ValueSetStr(db->pErr, 0, 0, SQLITE_UTF8, SQLITE_STATIC);
@@ -1013,64 +1012,6 @@ void *sqlite3HexToBlob(sqlite3 *db, const char *z, int n){
 
 
 /*
-** Change the sqlite.magic from SQLITE_MAGIC_OPEN to SQLITE_MAGIC_BUSY.
-** Return an error (non-zero) if the magic was not SQLITE_MAGIC_OPEN
-** when this routine is called.
-**
-** This routine is called when entering an SQLite API.  The SQLITE_MAGIC_OPEN
-** value indicates that the database connection passed into the API is
-** open and is not being used by another thread.  By changing the value
-** to SQLITE_MAGIC_BUSY we indicate that the connection is in use.
-** sqlite3SafetyOff() below will change the value back to SQLITE_MAGIC_OPEN
-** when the API exits. 
-**
-** This routine is a attempt to detect if two threads use the
-** same sqlite* pointer at the same time.  There is a race 
-** condition so it is possible that the error is not detected.
-** But usually the problem will be seen.  The result will be an
-** error which can be used to debug the application that is
-** using SQLite incorrectly.
-**
-** Ticket #202:  If db->magic is not a valid open value, take care not
-** to modify the db structure at all.  It could be that db is a stale
-** pointer.  In other words, it could be that there has been a prior
-** call to sqlite3_close(db) and db has been deallocated.  And we do
-** not want to write into deallocated memory.
-*/
-#ifdef SQLITE_DEBUG
-int sqlite3SafetyOn(sqlite3 *db){
-  if( db->magic==SQLITE_MAGIC_OPEN ){
-    db->magic = SQLITE_MAGIC_BUSY;
-    assert( sqlite3_mutex_held(db->mutex) );
-    return 0;
-  }else if( db->magic==SQLITE_MAGIC_BUSY ){
-    db->magic = SQLITE_MAGIC_ERROR;
-    db->u1.isInterrupted = 1;
-  }
-  return 1;
-}
-#endif
-
-/*
-** Change the magic from SQLITE_MAGIC_BUSY to SQLITE_MAGIC_OPEN.
-** Return an error (non-zero) if the magic was not SQLITE_MAGIC_BUSY
-** when this routine is called.
-*/
-#ifdef SQLITE_DEBUG
-int sqlite3SafetyOff(sqlite3 *db){
-  if( db->magic==SQLITE_MAGIC_BUSY ){
-    db->magic = SQLITE_MAGIC_OPEN;
-    assert( sqlite3_mutex_held(db->mutex) );
-    return 0;
-  }else{
-    db->magic = SQLITE_MAGIC_ERROR;
-    db->u1.isInterrupted = 1;
-    return 1;
-  }
-}
-#endif
-
-/*
 ** Check to make sure we have a valid db pointer.  This test is not
 ** foolproof but it does provide some measure of protection against
 ** misuse of the interface such as passing in db pointers that are
@@ -1088,11 +1029,7 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
   u32 magic;
   if( db==0 ) return 0;
   magic = db->magic;
-  if( magic!=SQLITE_MAGIC_OPEN 
-#ifdef SQLITE_DEBUG
-     && magic!=SQLITE_MAGIC_BUSY
-#endif
-  ){
+  if( magic!=SQLITE_MAGIC_OPEN ){
     return 0;
   }else{
     return 1;

@@ -1939,16 +1939,31 @@ int sqlite3_get_autocommit(sqlite3 *db){
   return db->autoCommit;
 }
 
-#ifdef SQLITE_DEBUG
 /*
-** The following routine is subtituted for constant SQLITE_CORRUPT in
-** debugging builds.  This provides a way to set a breakpoint for when
-** corruption is first detected.
+** The following routines are subtitutes for constants SQLITE_CORRUPT,
+** SQLITE_MISUSE, SQLITE_CANTOPEN, SQLITE_IOERR and possibly other error
+** constants.  They server two purposes:
+**
+**   1.  Serve as a convenient place to set a breakpoint in a debugger
+**       to detect when version error conditions occurs.
+**
+**   2.  Invoke sqlite3_log() to provide the source code location where
+**       a low-level error is first detected.
 */
-int sqlite3Corrupt(void){
+int sqlite3CorruptError(int lineno){
+  sqlite3_log(SQLITE_CORRUPT,
+              "database corruption found by source line %d", lineno);
   return SQLITE_CORRUPT;
 }
-#endif
+int sqlite3MisuseError(int lineno){
+  sqlite3_log(SQLITE_MISUSE, "misuse detected by source line %d", lineno);
+  return SQLITE_MISUSE;
+}
+int sqlite3CantopenError(int lineno){
+  sqlite3_log(SQLITE_CANTOPEN, "cannot open file at source line %d", lineno);
+  return SQLITE_CANTOPEN;
+}
+
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -1992,7 +2007,6 @@ int sqlite3_table_column_metadata(
 
   /* Ensure the database schema has been loaded */
   sqlite3_mutex_enter(db->mutex);
-  (void)sqlite3SafetyOn(db);
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Init(db, &zErrMsg);
   if( SQLITE_OK!=rc ){
@@ -2051,7 +2065,6 @@ int sqlite3_table_column_metadata(
 
 error_out:
   sqlite3BtreeLeaveAll(db);
-  (void)sqlite3SafetyOff(db);
 
   /* Whether the function call succeeded or failed, set the output parameters
   ** to whatever their local counterparts contain. If an error did occur,

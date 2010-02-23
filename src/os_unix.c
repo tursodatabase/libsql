@@ -3867,7 +3867,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     }
   }
   *pFd = fd;
-  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN);
+  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN_BKPT);
 }
 
 /*
@@ -4130,7 +4130,7 @@ static int unixOpen(
       fd = open(zName, openFlags, openMode);
     }
     if( fd<0 ){
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
       goto open_finished;
     }
   }
@@ -4354,7 +4354,7 @@ static int unixFullPathname(
   }else{
     int nCwd;
     if( getcwd(zOut, nOut-1)==0 ){
-      return SQLITE_CANTOPEN;
+      return SQLITE_CANTOPEN_BKPT;
     }
     nCwd = (int)strlen(zOut);
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
@@ -4865,7 +4865,7 @@ static int proxyCreateUnixFile(
       case EIO: 
         return SQLITE_IOERR_LOCK; /* even though it is the conch */
       default:
-        return SQLITE_CANTOPEN;
+        return SQLITE_CANTOPEN_BKPT;
     }
   }
   
@@ -5249,7 +5249,7 @@ static int proxyTakeConch(unixFile *pFile){
         if( fd>=0 ){
           pFile->h = fd;
         }else{
-          rc=SQLITE_CANTOPEN; /* SQLITE_BUSY? proxyTakeConch called
+          rc=SQLITE_CANTOPEN_BKPT; /* SQLITE_BUSY? proxyTakeConch called
            during locking */
         }
       }

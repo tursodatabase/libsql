@@ -316,10 +316,6 @@ static int sqlite3Step(Vdbe *p){
     rc = SQLITE_ERROR;
     goto end_of_step;
   }
-  if( sqlite3SafetyOn(db) ){
-    p->rc = SQLITE_MISUSE;
-    return SQLITE_MISUSE;
-  }
   if( p->pc<0 ){
     /* If there are no other statements currently running, then
     ** reset the interrupt flag.  This prevents a call to sqlite3_interrupt
@@ -350,10 +346,6 @@ static int sqlite3Step(Vdbe *p){
 #endif /* SQLITE_OMIT_EXPLAIN */
   {
     rc = sqlite3VdbeExec(p);
-  }
-
-  if( sqlite3SafetyOff(db) ){
-    rc = SQLITE_MISUSE;
   }
 
 #ifndef SQLITE_OMIT_TRACE

@@ -1417,7 +1417,7 @@ static int winOpen(
       return winOpen(pVfs, zName, id, 
              ((flags|SQLITE_OPEN_READONLY)&~SQLITE_OPEN_READWRITE), pOutFlags);
     }else{
-      return SQLITE_CANTOPEN;
+      return SQLITE_CANTOPEN_BKPT;
     }
   }
   if( pOutFlags ){
@@ -1439,7 +1439,7 @@ static int winOpen(
   ){
     CloseHandle(h);
     free(zConverted);
-    return SQLITE_CANTOPEN;
+    return SQLITE_CANTOPEN_BKPT;
   }
   if( isTemp ){
     pFile->zDeleteOnClose = zConverted;

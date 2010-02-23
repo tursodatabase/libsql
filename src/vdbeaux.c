@@ -1059,7 +1059,6 @@ int sqlite3VdbeList(
 
   assert( p->explain );
   assert( p->magic==VDBE_MAGIC_RUN );
-  assert( db->magic==SQLITE_MAGIC_BUSY );
   assert( p->rc==SQLITE_OK || p->rc==SQLITE_BUSY || p->rc==SQLITE_NOMEM );
 
   /* Even though this opcode does not use dynamic strings for
@@ -1474,9 +1473,7 @@ void sqlite3VdbeFreeCursor(Vdbe *p, VdbeCursor *pCx){
     sqlite3_vtab_cursor *pVtabCursor = pCx->pVtabCursor;
     const sqlite3_module *pModule = pCx->pModule;
     p->inVtabMethod = 1;
-    (void)sqlite3SafetyOff(p->db);
     pModule->xClose(pVtabCursor);
-    (void)sqlite3SafetyOn(p->db);
     p->inVtabMethod = 0;
   }
 #endif
@@ -1657,9 +1654,7 @@ static int vdbeCommit(sqlite3 *db, Vdbe *p){
 
   /* If there are any write-transactions at all, invoke the commit hook */
   if( needXcommit && db->xCommitCallback ){
-    (void)sqlite3SafetyOff(db);
     rc = db->xCommitCallback(db->pCommitArg);
-    (void)sqlite3SafetyOn(db);
     if( rc ){
       return SQLITE_CONSTRAINT;
     }
@@ -2213,9 +2208,7 @@ int sqlite3VdbeReset(Vdbe *p){
   ** error, then it might not have been halted properly.  So halt
   ** it now.
   */
-  (void)sqlite3SafetyOn(db);
   sqlite3VdbeHalt(p);
-  (void)sqlite3SafetyOff(db);
 
   /* If the VDBE has be run even partially, then transfer the error code
   ** and error message from the VDBE into the main database structure.  But
@@ -3017,7 +3010,7 @@ int sqlite3VdbeIdxKeyCompare(
   ** that btreeParseCellPtr() and sqlite3GetVarint32() are implemented */
   if( nCellKey<=0 || nCellKey>0x7fffffff ){
     *res = 0;
-    return SQLITE_CORRUPT;
+    return SQLITE_CORRUPT_BKPT;
   }
   memset(&m, 0, sizeof(m));
   rc = sqlite3VdbeMemFromBtree(pC->pCursor, 0, (int)nCellKey, 1, &m);

@@ -3162,7 +3162,7 @@ int sqlite3PagerOpen(
       ** as it will not be possible to open the journal file or even
       ** check for a hot-journal before reading.
       */
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
     }
     if( rc!=SQLITE_OK ){
       sqlite3_free(zPathname);
@@ -3621,7 +3621,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
             rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
             assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
             if( rc==SQLITE_OK && fout&SQLITE_OPEN_READONLY ){
-              rc = SQLITE_CANTOPEN;
+              rc = SQLITE_CANTOPEN_BKPT;
               sqlite3OsClose(pPager->jfd);
             }
           }else{

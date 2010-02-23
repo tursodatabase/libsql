@@ -192,9 +192,7 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
   initData.iDb = iDb;
   initData.rc = SQLITE_OK;
   initData.pzErrMsg = pzErrMsg;
-  (void)sqlite3SafetyOff(db);
   sqlite3InitCallback(&initData, 3, (char **)azArg, 0);
-  (void)sqlite3SafetyOn(db);
   if( initData.rc ){
     rc = initData.rc;
     goto error_out;
@@ -317,7 +315,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     zSql = sqlite3MPrintf(db, 
         "SELECT name, rootpage, sql FROM '%q'.%s ORDER BY rowid",
         db->aDb[iDb].zName, zMasterName);
-    (void)sqlite3SafetyOff(db);
 #ifndef SQLITE_OMIT_AUTHORIZATION
     {
       int (*xAuth)(void*,int,const char*,const char*,const char*,const char*);
@@ -330,7 +327,6 @@ static int sqlite3InitOne(sqlite3 *db, int iDb, char **pzErrMsg){
     }
 #endif
     if( rc==SQLITE_OK ) rc = initData.rc;
-    (void)sqlite3SafetyOn(db);
     sqlite3DbFree(db, zSql);
 #ifndef SQLITE_OMIT_ANALYZE
     if( rc==SQLITE_OK ){
@@ -539,11 +535,6 @@ static int sqlite3Prepare(
     goto end_prepare;
   }
   pParse->pReprepare = pReprepare;
-
-  if( sqlite3SafetyOn(db) ){
-    rc = SQLITE_MISUSE;
-    goto end_prepare;
-  }
   assert( ppStmt && *ppStmt==0 );
   assert( !db->mallocFailed );
   assert( sqlite3_mutex_held(db->mutex) );
@@ -579,7 +570,6 @@ static int sqlite3Prepare(
       if( rc ){
         const char *zDb = db->aDb[i].zName;
         sqlite3Error(db, rc, "database schema is locked: %s", zDb);
-        (void)sqlite3SafetyOff(db);
         testcase( db->flags & SQLITE_ReadUncommitted );
         goto end_prepare;
       }
@@ -596,7 +586,6 @@ static int sqlite3Prepare(
     testcase( nBytes==mxLen+1 );
     if( nBytes>mxLen ){
       sqlite3Error(db, SQLITE_TOOBIG, "statement too long");
-      (void)sqlite3SafetyOff(db);
       rc = sqlite3ApiExit(db, SQLITE_TOOBIG);
       goto end_prepare;
     }
@@ -652,10 +641,6 @@ static int sqlite3Prepare(
     }
   }
 #endif
-
-  if( sqlite3SafetyOff(db) ){
-    rc = SQLITE_MISUSE;
-  }
 
   assert( db->init.busy==0 || saveSqlFlag==0 );
   if( db->init.busy==0 ){
