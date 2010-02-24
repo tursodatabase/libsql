@@ -1057,7 +1057,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   if( magic!=SQLITE_MAGIC_SICK &&
       magic!=SQLITE_MAGIC_OPEN &&
       magic!=SQLITE_MAGIC_BUSY ){
-    logBadConnection( magic==SQLITE_MAGIC_CLOSED ? "closed" : "invalid" );
+    logBadConnection("invalid");
     return 0;
   }else{
     return 1;

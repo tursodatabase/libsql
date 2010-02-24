@@ -269,6 +269,7 @@ static void *memsys5MallocUnsafe(int nByte){
   */
   for(iBin=iLogsize; mem5.aiFreelist[iBin]<0 && iBin<=LOGMAX; iBin++){}
   if( iBin>LOGMAX ){
+    testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes", nByte);
     return 0;
   }

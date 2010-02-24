@@ -43,6 +43,7 @@ static void *sqlite3MemMalloc(int nByte){
     p[0] = nByte;
     p++;
   }else{
+    testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
   }
   return (void *)p;
@@ -95,6 +96,7 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
     p[0] = nByte;
     p++;
   }else{
+    testcase( sqlite3GlobalConfig.xLog!=0 );
     sqlite3_log(SQLITE_NOMEM,
       "failed memory resize %u to %u bytes",
       sqlite3MemSize(pPrior), nByte);
