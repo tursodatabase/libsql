@@ -131,4 +131,23 @@ do_test vtabA-2.4 {
   analyse_parse {(a whatelse can i hidden test, b HIDDEN hidden)} {a b}
 } {{} {whatelse can i test} hidden}
 
+
+# Ticket [d2f02d37f52bfe23e421f2c60fbb8586ac76ff01]:
+# assertion failure on an UPDATE involving two virtual tables.
+#
+do_test vtabA-3.1 {
+  db eval {
+    DROP TABLE IF EXISTS t1;
+    DROP TABLE IF EXISTS t2;
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,2);
+    CREATE TABLE t2(x,y);
+    INSERT INTO t2 VALUES(3,4);
+    CREATE VIRTUAL TABLE vt1 USING echo(t1);
+    CREATE VIRTUAL TABLE vt2 USING echo(t2);
+    UPDATE vt2 SET x=(SELECT a FROM vt1 WHERE b=2) WHERE y=4;
+    SELECT * FROM t2;
+  }
+} {1 4}
+
 finish_test
