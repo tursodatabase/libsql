@@ -19,13 +19,20 @@
 #include "sqliteInt.h"
 
 /*
-** An array of names of all compile-time options.
+** An array of names of all compile-time options.  This array should 
+** be sorted A-Z.
 **
 ** This array looks large, but in a typical installation actually uses
-** only a handful of compile-time options, so most this array is usually
+** only a handful of compile-time options, so most times this array is usually
 ** rather short and uses little memory space.
 */
 static const char * const azCompileOpt[] = {
+
+/* These macros are provided to "stringify" the value of the define
+** for those options in which the value is meaningful. */
+#define CTIMEOPT_VAL_(opt) #opt
+#define CTIMEOPT_VAL(opt) CTIMEOPT_VAL_(opt)
+
 #ifdef SQLITE_32BIT_ROWID
   "32BIT_ROWID",
 #endif
@@ -43,6 +50,9 @@ static const char * const azCompileOpt[] = {
 #endif
 #ifdef SQLITE_DEBUG
   "DEBUG",
+#endif
+#ifdef SQLITE_DEFAULT_LOCKING_MODE
+  "DEFAULT_LOCKING_MODE=" CTIMEOPT_VAL(SQLITE_DEFAULT_LOCKING_MODE),
 #endif
 #ifdef SQLITE_DISABLE_DIRSYNC
   "DISABLE_DIRSYNC",
@@ -87,7 +97,7 @@ static const char * const azCompileOpt[] = {
   "ENABLE_LOAD_EXTENSION",
 #endif
 #ifdef SQLITE_ENABLE_LOCKING_STYLE
-  "ENABLE_LOCKING_STYLE",
+  "ENABLE_LOCKING_STYLE=" CTIMEOPT_VAL(SQLITE_ENABLE_LOCKING_STYLE),
 #endif
 #ifdef SQLITE_ENABLE_MEMORY_MANAGEMENT
   "ENABLE_MEMORY_MANAGEMENT",
@@ -323,14 +333,20 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_TCL
   "TCL",
 #endif
+#ifdef SQLITE_TEMP_STORE
+  "TEMP_STORE=" CTIMEOPT_VAL(SQLITE_TEMP_STORE),
+#endif
 #ifdef SQLITE_TEST
   "TEST",
+#endif
+#ifdef SQLITE_THREADSAFE
+  "THREADSAFE=" CTIMEOPT_VAL(SQLITE_THREADSAFE),
 #endif
 #ifdef SQLITE_USE_ALLOCA
   "USE_ALLOCA",
 #endif
 #ifdef SQLITE_ZERO_MALLOC
-  "ZERO_MALLOC",
+  "ZERO_MALLOC"
 #endif
 };
 
@@ -349,7 +365,8 @@ int sqlite3_compileoption_used(const char *zOptName){
   /* Since ArraySize(azCompileOpt) is normally in single digits, a
   ** linear search is adequate.  No need for a binary search. */
   for(i=0; i<ArraySize(azCompileOpt); i++){
-    if( sqlite3StrNICmp(zOptName, azCompileOpt[i], n+1)==0 ) return 1;
+    if(   (sqlite3StrNICmp(zOptName, azCompileOpt[i], n)==0)
+       && ( (azCompileOpt[i][n]==0) || (azCompileOpt[i][n]=='=') ) ) return 1;
   }
   return 0;
 }
