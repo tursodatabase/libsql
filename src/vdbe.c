@@ -850,6 +850,8 @@ case OP_Halt: {
     assert( p->rc!=SQLITE_OK );
     sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
     sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pc, p->zSql, pOp->p4.z);
+  }else if( p->rc ){
+    sqlite3_log(pOp->p1, "constraint failed at %d in [%s]", pc, p->zSql);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );

@@ -481,10 +481,10 @@ do_test analyze3-4.1.2 {
   sqlite3_bind_text $S 2 "abc" 3
   execsql { DROP TABLE t1 }
   sqlite3_step $S
-} {SQLITE_SCHEMA}
+} {SQLITE_ERROR}
 do_test analyze3-4.1.3 {
   sqlite3_finalize $S
-} {SQLITE_SCHEMA}
+} {SQLITE_ERROR}
 
 # Check an authorization error.
 #
@@ -511,10 +511,10 @@ do_test analyze3-4.2.2 {
   sqlite3_reset $S
   sqlite3_bind_text $S 2 "abc" 3
   sqlite3_step $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 do_test analyze3-4.2.4 {
   sqlite3_finalize $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 
 # Check the effect of an authorization error that occurs in a re-prepare
 # performed by sqlite3_step() is the same as one that occurs within
@@ -526,10 +526,10 @@ do_test analyze3-4.3.1 {
   execsql { CREATE TABLE t2(d, e, f) }
   db auth auth
   sqlite3_step $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 do_test analyze3-4.3.2 {
   sqlite3_finalize $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 db auth {}
 
 #-------------------------------------------------------------------------
