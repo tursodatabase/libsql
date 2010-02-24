@@ -2703,7 +2703,6 @@ static int rtreeInit(
   int isCreate                        /* True for xCreate, false for xConnect */
 ){
   int rc = SQLITE_OK;
-  int iPageSize = 0;
   Rtree *pRtree;
   int nDb;              /* Length of string argv[1] */
   int nName;            /* Length of string argv[2] */

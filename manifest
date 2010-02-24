@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhancements\sto\sthe\sway\serrors\sare\sreported\sup\swhen\san\sautomatic\nstatement\sreprepare\sfails.
-D 2010-02-24T17:15:19
+C Remove\san\sunused\svariable\sfrom\srtree.
+D 2010-02-24T18:25:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -77,7 +77,7 @@ F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
 F ext/icu/sqliteicu.h 728867a802baa5a96de7495e9689a8e01715ef37
 F ext/rtree/README 6315c0d73ebf0ec40dedb5aa0e942bc8b54e3761
-F ext/rtree/rtree.c b82403b0320a7278e0a0e6562c08c8bba17ee0dd
+F ext/rtree/rtree.c a354f6be11a91706680936fdf77b4588f0b34dbe
 F ext/rtree/rtree.h 834dbcb82dc85b2481cde6a07cdadfddc99e9b9e
 F ext/rtree/rtree1.test f72885ed80a329d6bd7991043016d74b51edf2c5
 F ext/rtree/rtree2.test 7b665c44d25e51b3098068d983a39902b2e2d7a1
@@ -794,14 +794,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ff61e0fd802c46c2d84c4b0c0bc8a0f34959bb25
-R 658916f84409712fa7dd2548647c2d32
+P 1a6d4bb130382564093b6370818ae4a7633f4074
+R d7cbaa8b7d7b278e9482fb7d1f098fcd
 U drh
-Z ccb108eaf5c8840f33d32e69034f28ee
+Z 688d557fd57a83deb71613699a5870da
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLhV6poxKgR168RlERAkKMAKCK4ulcjdItzZ4IyBdUjP6qgi/oLwCcDgEl
-48bCZk0NWHJfXdvLWtlvzcQ=
-=+4UP
+iD8DBQFLhW86oxKgR168RlERAkDjAJ9QKX0HcqzLExmawk0KoyogwLBMlQCcCLE5
+kf1ZeFqoFZCHiKNtKjnTtrc=
+=hvc6
 -----END PGP SIGNATURE-----
