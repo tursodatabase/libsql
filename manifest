@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\san\sassertion\sfault\sthat\soccurs\swhen\stwo\sdifferent\svirtual\stables\sare\nused\sin\sa\ssingle\sUPDATE\sstatement.\nTicket\s[d2f02d37f52b].
-D 2010-02-24T15:10:14
+C Enhancements\sto\sthe\sway\serrors\sare\sreported\sup\swhen\san\sautomatic\nstatement\sreprepare\sfails.
+D 2010-02-24T17:15:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -162,7 +162,7 @@ F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
 F src/pragma.c 1ee3a5bea3e79bd4ad2519eb9745e1781bf443ea
-F src/prepare.c 341413e4703df1f0430e595a78c33e722e6cb8d0
+F src/prepare.c c80630169d82945070a50ebf298611fd9f1485f1
 F src/printf.c f5c160b471e4a4dd22b756cb4ffe0c6979fd6d24
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c a1648d98e869937b29f4f697461fe4d60f220a7b
@@ -217,7 +217,7 @@ F src/vacuum.c 28ee5a4963d16cf2477075d85966c0f461cd79de
 F src/vdbe.c eb8b083191412e89292b864687f86afa28f4dc3f
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
-F src/vdbeapi.c e9a5abc45877b228925cc69d765df2dc134efb9f
+F src/vdbeapi.c a8e8b6292864e71998df527f69cc5dde778a96c0
 F src/vdbeaux.c 417ee0c5677188b3b72a0ccdda5668183e28bb51
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
@@ -794,14 +794,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8bf710ce6dfab0e6fd4de7d6d3157008cc70d192
-R bebac69f9e91e2bdba37c73f6ba495f8
+P ff61e0fd802c46c2d84c4b0c0bc8a0f34959bb25
+R 658916f84409712fa7dd2548647c2d32
 U drh
-Z 0be4993a1f8e20282f72f2cbfcc52d54
+Z ccb108eaf5c8840f33d32e69034f28ee
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLhUFaoxKgR168RlERAp+bAJ9aIMVDQ8Dp1bj/Ib3bZe0DoRm3AACgiGAa
-9wkaSzZ50yED/siF1Ki8y5I=
-=FpV3
+iD8DBQFLhV6poxKgR168RlERAkKMAKCK4ulcjdItzZ4IyBdUjP6qgi/oLwCcDgEl
+48bCZk0NWHJfXdvLWtlvzcQ=
+=+4UP
 -----END PGP SIGNATURE-----

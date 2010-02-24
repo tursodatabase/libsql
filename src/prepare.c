@@ -728,7 +728,7 @@ int sqlite3Reprepare(Vdbe *p){
       db->mallocFailed = 1;
     }
     assert( pNew==0 );
-    return (rc==SQLITE_LOCKED) ? SQLITE_LOCKED : SQLITE_SCHEMA;
+    return rc;
   }else{
     assert( pNew!=0 );
   }

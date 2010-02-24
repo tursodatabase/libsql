@@ -418,10 +418,12 @@ end_of_step:
 ** call sqlite3Reprepare() and try again.
 */
 int sqlite3_step(sqlite3_stmt *pStmt){
-  int rc = SQLITE_OK;
-  Vdbe *v = (Vdbe*)pStmt;
-  int cnt = 0;
-  sqlite3 *db;
+  int rc = SQLITE_OK;      /* Result from sqlite3Step() */
+  int rc2 = SQLITE_OK;     /* Result from sqlite3Reprepare() */
+  Vdbe *v = (Vdbe*)pStmt;  /* the prepared statement */
+  int cnt = 0;             /* Counter to prevent infinite loop of reprepares */
+  sqlite3 *db;             /* The database connection */
+
   if( vdbeSafetyNotNull(v) ){
     return SQLITE_MISUSE_BKPT;
   }
@@ -429,11 +431,11 @@ int sqlite3_step(sqlite3_stmt *pStmt){
   sqlite3_mutex_enter(db->mutex);
   while( (rc = sqlite3Step(v))==SQLITE_SCHEMA
          && cnt++ < 5
-         && (rc = sqlite3Reprepare(v))==SQLITE_OK ){
+         && (rc2 = rc = sqlite3Reprepare(v))==SQLITE_OK ){
     sqlite3_reset(pStmt);
     v->expired = 0;
   }
-  if( rc==SQLITE_SCHEMA && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
+  if( rc2!=SQLITE_OK && v->isPrepareV2 && db->pErr ){
     /* This case occurs after failing to recompile an sql statement. 
     ** The error message from the SQL compiler has already been loaded 
     ** into the database handle. This block copies the error message 
@@ -446,9 +448,10 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     sqlite3DbFree(db, v->zErrMsg);
     if( !db->mallocFailed ){
       v->zErrMsg = sqlite3DbStrDup(db, zErr);
+      v->rc = rc2;
     } else {
       v->zErrMsg = 0;
-      v->rc = SQLITE_NOMEM;
+      v->rc = rc = SQLITE_NOMEM;
     }
   }
   rc = sqlite3ApiExit(db, rc);
