@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\sON\sclause\sof\sa\sLEFT\sJOIN\sdoes\snot\scause\san\sindex\sto\sbe\nused\sto\sspeed\saccess\sto\sa\stable\sto\sthe\sleft\sof\sthe\sjoin.\nTicket\s[ebdbadade5]
-D 2010-02-25T04:15:48
+C Expire\spragma\sstatements\swhen\sreset,\seven\sif\sthey\swere\snot\srun\sto\scompletion.
+D 2010-02-25T14:47:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
-F src/pragma.c 1ee3a5bea3e79bd4ad2519eb9745e1781bf443ea
+F src/pragma.c edaded19e5a5f2c96aeab08928d6643b8de14eba
 F src/prepare.c c80630169d82945070a50ebf298611fd9f1485f1
 F src/printf.c f5c160b471e4a4dd22b756cb4ffe0c6979fd6d24
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -215,10 +215,10 @@ F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c 5a15aa0cc1a642aeb3ebb37c8c2bba7e1c014581
 F src/vacuum.c deb50c41c39849770ab1bf27e8a35ba1036e3962
 F src/vdbe.c 6de14d95ade1193f2a694ce673f69ac20032fa17
-F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
-F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
+F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
+F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
 F src/vdbeapi.c e0398d74af46911033b92088f740582f3c400515
-F src/vdbeaux.c 417ee0c5677188b3b72a0ccdda5668183e28bb51
+F src/vdbeaux.c 9089e0cdcc7ed3bc4564f2684ce84f5911973ea9
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1168763d2cd96acfa0488198e8bc82f0c4fa35a3
-R 1756ec34ec14812b999545b49c238389
+P f0ae251abb9e8a8793f46a30b79b2ce541cf14d5
+R 8b107df37b458e983784936eaf5fdbea
 U drh
-Z cef349c135ac8fde894db77ffb6c3cd3
+Z c22f338e59aad7a1b1c2424e3a89156a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLhfl5oxKgR168RlERAuYtAJ9UCQXaWqORFlTB8prfqFcd5VDUngCcDDwZ
-5GuaCQJQEFY+u7p5eZA7abU=
-=4lWh
+iD8DBQFLho1poxKgR168RlERAtzRAJ9394HBtSKDbf1COfLt9MZN1jx3oQCfYvjd
+a+BqRtJmrba2rkJpR5hhYk4=
+=hG6d
 -----END PGP SIGNATURE-----

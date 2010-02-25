@@ -285,6 +285,7 @@ void sqlite3Pragma(
   Db *pDb;
   Vdbe *v = pParse->pVdbe = sqlite3VdbeCreate(db);
   if( v==0 ) return;
+  sqlite3VdbeRunOnlyOnce(v);
   pParse->nMem = 2;
 
   /* Interpret the [database.] part of the pragma statement. iDb is the
@@ -1461,12 +1462,6 @@ void sqlite3Pragma(
 
  
   {/* Empty ELSE clause */}
-
-  /* Code an OP_Expire at the end of each PRAGMA program to cause
-  ** the VDBE implementing the pragma to expire. Most (all?) pragmas
-  ** are only valid for a single execution.
-  */
-  sqlite3VdbeAddOp2(v, OP_Expire, 1, 0);
 
   /*
   ** Reset the safety level, in case the fullfsync flag or synchronous
