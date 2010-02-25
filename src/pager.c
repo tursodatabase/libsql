@@ -3842,7 +3842,7 @@ int sqlite3PagerAcquire(
       goto pager_acquire_err;
     }
 
-    if( MEMDB || nMax<(int)pgno || noContent ){
+    if( MEMDB || nMax<(int)pgno || noContent || !isOpen(pPager->fd) ){
       if( pgno>pPager->mxPgno ){
 	rc = SQLITE_FULL;
 	goto pager_acquire_err;
