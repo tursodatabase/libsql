@@ -98,10 +98,10 @@ static Btree *findBtree(sqlite3 *pErrorDb, sqlite3 *pDb, const char *zDb){
     }else{
       pParse->db = pDb;
       if( sqlite3OpenTempDatabase(pParse) ){
-        sqlite3ErrorClear(pParse);
         sqlite3Error(pErrorDb, pParse->rc, "%s", pParse->zErrMsg);
         rc = SQLITE_ERROR;
       }
+      sqlite3DbFree(pErrorDb, pParse->zErrMsg);
       sqlite3StackFree(pErrorDb, pParse);
     }
     if( rc ){

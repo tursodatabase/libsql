@@ -1096,7 +1096,7 @@ static int transferOwnership(unixFile *pFile){
   }
   if( pFile->locktype!=NO_LOCK ){
     /* We cannot change ownership while we are holding a lock! */
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   OSTRACE4("Transfer ownership of %d from %d to %d\n",
             pFile->h, pFile->tid, hSelf);
@@ -1543,7 +1543,7 @@ static int unixUnlock(sqlite3_file *id, int locktype){
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   h = pFile->h;
@@ -2645,7 +2645,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   if( pFile->locktype>SHARED_LOCK ){
@@ -3695,7 +3695,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     }
   }
   *pFd = fd;
-  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN);
+  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN_BKPT);
 }
 
 /*
@@ -3955,7 +3955,7 @@ static int unixOpen(
       fd = open(zName, openFlags, openMode);
     }
     if( fd<0 ){
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
       goto open_finished;
     }
   }
@@ -4154,7 +4154,7 @@ static int unixFullPathname(
   }else{
     int nCwd;
     if( getcwd(zOut, nOut-1)==0 ){
-      return SQLITE_CANTOPEN;
+      return SQLITE_CANTOPEN_BKPT;
     }
     nCwd = (int)strlen(zOut);
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
@@ -4740,6 +4740,50 @@ static int proxyCreateUnixFile(const char *path, unixFile **ppFile) {
   ** unixOpen() is NULL. This tells unixOpen() may try to open a proxy-file 
   ** for the proxy-file (creating a potential infinite loop).
   */
+  pUnused = findReusableFd(path, openFlags);
+  if( pUnused ){
+    fd = pUnused->fd;
+  }else{
+    pUnused = sqlite3_malloc(sizeof(*pUnused));
+    if( !pUnused ){
+      return SQLITE_NOMEM;
+    }
+  }
+  if( fd<0 ){
+    fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    terrno = errno;
+    if( fd<0 && errno==ENOENT && islockfile ){
+      if( proxyCreateLockPath(path) == SQLITE_OK ){
+        fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+      }
+    }
+  }
+  if( fd<0 ){
+    openFlags = O_RDONLY;
+    fd = open(path, openFlags, SQLITE_DEFAULT_FILE_PERMISSIONS);
+    terrno = errno;
+  }
+  if( fd<0 ){
+    if( islockfile ){
+      return SQLITE_BUSY;
+    }
+    switch (terrno) {
+      case EACCES:
+        return SQLITE_PERM;
+      case EIO: 
+        return SQLITE_IOERR_LOCK; /* even though it is the conch */
+      default:
+        return SQLITE_CANTOPEN_BKPT;
+    }
+  }
+  
+  pNew = (unixFile *)sqlite3_malloc(sizeof(*pNew));
+  if( pNew==NULL ){
+    rc = SQLITE_NOMEM;
+    goto end_create_proxy;
+  }
+  memset(pNew, 0, sizeof(unixFile));
+  pNew->openFlags = openFlags;
   dummyVfs.pAppData = (void*)&autolockIoFinder;
   dummyVfs.xOpen = 0;
   rc = unixOpen(&dummyVfs, path, (sqlite3_file *)pNew, flags, &flags);
@@ -4904,11 +4948,150 @@ end_takeconch:
                      pCtx->lockProxyPath;
         }
       }
+>>>>>>> BEGIN MERGE CONFLICT
+      
+      /* if the conch isn't writable and doesn't match, we can't take it */
+      if( (conchFile->openFlags&O_RDWR) == 0 ){
+        rc = SQLITE_BUSY;
+        goto end_takeconch;
+      }
+      
+      /* either the conch didn't match or we need to create a new one */
+      if( !pCtx->lockProxyPath ){
+        proxyGetLockPath(pCtx->dbPath, lockPath, MAXPATHLEN);
+        tempLockPath = lockPath;
+        /* create a copy of the lock path _only_ if the conch is taken */
+      }
+      
+      /* update conch with host and path (this will fail if other process
+      ** has a shared lock already), if the host id matches, use the big
+      ** stick.
+      */
+      futimes(conchFile->h, NULL);
+      if( hostIdMatch && !createConch ){
+        if( conchFile->pLock && conchFile->pLock->cnt>1 ){
+          /* We are trying for an exclusive lock but another thread in this
+           ** same process is still holding a shared lock. */
+          rc = SQLITE_BUSY;
+        } else {          
+          rc = proxyConchLock(pFile, myHostID, EXCLUSIVE_LOCK);
+        }
+      }else{
+        rc = conchFile->pMethod->xLock((sqlite3_file*)conchFile, EXCLUSIVE_LOCK);
+      }
+      if( rc==SQLITE_OK ){
+        char writeBuffer[PROXY_MAXCONCHLEN];
+        int writeSize = 0;
+        
+        writeBuffer[0] = (char)PROXY_CONCHVERSION;
+        memcpy(&writeBuffer[PROXY_HEADERLEN], myHostID, PROXY_HOSTIDLEN);
+        if( pCtx->lockProxyPath!=NULL ){
+          strlcpy(&writeBuffer[PROXY_PATHINDEX], pCtx->lockProxyPath, MAXPATHLEN);
+        }else{
+          strlcpy(&writeBuffer[PROXY_PATHINDEX], tempLockPath, MAXPATHLEN);
+        }
+        writeSize = PROXY_PATHINDEX + strlen(&writeBuffer[PROXY_PATHINDEX]);
+        ftruncate(conchFile->h, writeSize);
+        rc = unixWrite((sqlite3_file *)conchFile, writeBuffer, writeSize, 0);
+        fsync(conchFile->h);
+        /* If we created a new conch file (not just updated the contents of a 
+         ** valid conch file), try to match the permissions of the database 
+         */
+        if( rc==SQLITE_OK && createConch ){
+          struct stat buf;
+          int err = fstat(pFile->h, &buf);
+          if( err==0 ){
+            mode_t cmode = buf.st_mode&(S_IRUSR|S_IWUSR | S_IRGRP|S_IWGRP |
+                                        S_IROTH|S_IWOTH);
+            /* try to match the database file R/W permissions, ignore failure */
+#ifndef SQLITE_PROXY_DEBUG
+            fchmod(conchFile->h, cmode);
+#else
+            if( fchmod(conchFile->h, cmode)!=0 ){
+              int code = errno;
+              fprintf(stderr, "fchmod %o FAILED with %d %s\n",
+                      cmode, code, strerror(code));
+            } else {
+              fprintf(stderr, "fchmod %o SUCCEDED\n",cmode);
+            }
+          }else{
+            int code = errno;
+            fprintf(stderr, "STAT FAILED[%d] with %d %s\n", 
+                    err, code, strerror(code));
+#endif
+          }
+        }
+      }
+      conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, SHARED_LOCK);
+      
+    end_takeconch:
+      OSTRACE2("TRANSPROXY: CLOSE  %d\n", pFile->h);
+      if( rc==SQLITE_OK && pFile->openFlags ){
+        if( pFile->h>=0 ){
+#ifdef STRICT_CLOSE_ERROR
+          if( close(pFile->h) ){
+            pFile->lastErrno = errno;
+            return SQLITE_IOERR_CLOSE;
+          }
+#else
+          close(pFile->h); /* silently leak fd if fail */
+#endif
+        }
+        pFile->h = -1;
+        int fd = open(pCtx->dbPath, pFile->openFlags,
+                      SQLITE_DEFAULT_FILE_PERMISSIONS);
+        OSTRACE2("TRANSPROXY: OPEN  %d\n", fd);
+        if( fd>=0 ){
+          pFile->h = fd;
+        }else{
+          rc=SQLITE_CANTOPEN_BKPT; /* SQLITE_BUSY? proxyTakeConch called
+           during locking */
+        }
+      }
+      if( rc==SQLITE_OK && !pCtx->lockProxy ){
+        char *path = tempLockPath ? tempLockPath : pCtx->lockProxyPath;
+        rc = proxyCreateUnixFile(path, &pCtx->lockProxy, 1);
+        if( rc!=SQLITE_OK && rc!=SQLITE_NOMEM && tryOldLockPath ){
+          /* we couldn't create the proxy lock file with the old lock file path
+           ** so try again via auto-naming 
+           */
+          forceNewLockPath = 1;
+          tryOldLockPath = 0;
+          continue; /* go back to the do {} while start point, try again */
+        }
+      }
+      if( rc==SQLITE_OK ){
+        /* Need to make a copy of path if we extracted the value
+         ** from the conch file or the path was allocated on the stack
+         */
+        if( tempLockPath ){
+          pCtx->lockProxyPath = sqlite3DbStrDup(0, tempLockPath);
+          if( !pCtx->lockProxyPath ){
+            rc = SQLITE_NOMEM;
+          }
+        }
+      }
+      if( rc==SQLITE_OK ){
+        pCtx->conchHeld = 1;
+        
+        if( pCtx->lockProxy->pMethod == &afpIoMethods ){
+          afpLockingContext *afpCtx;
+          afpCtx = (afpLockingContext *)pCtx->lockProxy->lockingContext;
+          afpCtx->dbPath = pCtx->lockProxyPath;
+        }
+      } else {
+        conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
+      }
+      OSTRACE3("TAKECONCH  %d %s\n", conchFile->h, rc==SQLITE_OK?"ok":"failed");
+      return rc;
+    } while (1); /* in case we need to retry the :auto: lock file - we should never get here except via the 'continue' call. */
+============================
     } else {
       conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
     }
     OSTRACE3("TAKECONCH  %d %s\n", conchFile->h, rc==SQLITE_OK?"ok":"failed");
     return rc;
+<<<<<<< END MERGE CONFLICT
   }
 }
 

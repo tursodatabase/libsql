@@ -376,15 +376,15 @@ do_test schema-13.1 {
     return SQLITE_OK
   }
   sqlite3_step $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 
 do_test schema-13.2 {
   sqlite3_step $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 
 do_test schema-13.3 {
   sqlite3_finalize $S
-} {SQLITE_SCHEMA}
+} {SQLITE_AUTH}
 
 }
 

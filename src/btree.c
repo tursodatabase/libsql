@@ -5901,7 +5901,7 @@ static int balance_nonroot(
       if( leafData ){ i--; }
       subtotal = 0;
       k++;
-      if( k>NB+1 ){ rc = SQLITE_CORRUPT; goto balance_cleanup; }
+      if( k>NB+1 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
     }
   }
   szNew[k] = subtotal;
@@ -5955,7 +5955,7 @@ static int balance_nonroot(
   ** Allocate k new pages.  Reuse old pages where possible.
   */
   if( apOld[0]->pgno<=1 ){
-    rc = SQLITE_CORRUPT;
+    rc = SQLITE_CORRUPT_BKPT;
     goto balance_cleanup;
   }
   pageFlags = apOld[0]->aData[0];
@@ -7538,7 +7538,7 @@ static int checkTreePage(
       }
     }
   }
- 
+
   /* Check for complete coverage of the page
   */
   data = pPage->aData;

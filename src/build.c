@@ -1974,13 +1974,12 @@ void sqlite3DropTable(Parse *pParse, SrcList *pName, int isView, int noErr){
   }
   assert( pParse->nErr==0 );
   assert( pName->nSrc==1 );
+  if( noErr ) db->suppressErr++;
   pTab = sqlite3LocateTable(pParse, isView, 
                             pName->a[0].zName, pName->a[0].zDatabase);
+  if( noErr ) db->suppressErr--;
 
   if( pTab==0 ){
-    if( noErr ){
-      sqlite3ErrorClear(pParse);
-    }
     goto exit_drop_table;
   }
   iDb = sqlite3SchemaToIndex(db, pTab->pSchema);

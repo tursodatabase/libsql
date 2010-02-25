@@ -1176,7 +1176,7 @@ do_test capi3c-19.4 {
   sqlite3_reset $STMT
   db eval {DROP TABLE t3}
   sqlite3_step $STMT
-} SQLITE_SCHEMA
+} SQLITE_ERROR
 do_test capi3c-19.4.1 {
   sqlite3_errmsg $DB
 } {no such table: t3}
