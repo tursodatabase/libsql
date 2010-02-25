@@ -202,7 +202,7 @@ void sqlite3FinishCoding(Parse *pParse){
                          pParse->isMultiWrite && pParse->mayAbort);
     pParse->rc = SQLITE_DONE;
     pParse->colNamesSet = 0;
-  }else if( pParse->rc==SQLITE_OK ){
+  }else{
     pParse->rc = SQLITE_ERROR;
   }
   pParse->nTab = 0;

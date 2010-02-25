@@ -1043,7 +1043,8 @@ int sqlite3SafetyCheckOk(sqlite3 *db){
   }
   magic = db->magic;
   if( magic!=SQLITE_MAGIC_OPEN ){
-    if( !sqlite3SafetyCheckSickOrOk(db) ){
+    if( sqlite3SafetyCheckSickOrOk(db) ){
+      testcase( sqlite3GlobalConfig.xLog!=0 );
       logBadConnection("unopened");
     }
     return 0;
@@ -1057,6 +1058,7 @@ int sqlite3SafetyCheckSickOrOk(sqlite3 *db){
   if( magic!=SQLITE_MAGIC_SICK &&
       magic!=SQLITE_MAGIC_OPEN &&
       magic!=SQLITE_MAGIC_BUSY ){
+    testcase( sqlite3GlobalConfig.xLog!=0 );
     logBadConnection("invalid");
     return 0;
   }else{

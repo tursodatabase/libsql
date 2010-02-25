@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Test\scoverage\senhancements.\s\sAdditional\sdocumentation\sdetail\son\sthe\snew\nsqlite3_log()\sinterface.
-D 2010-02-25T21:27:59
+C Fix\sto\sthe\sdatabase\sconnection\svalidity\schecker.\s\sOther\stest\scoverage\nenhancements.
+D 2010-02-25T23:44:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -115,7 +115,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 0fc16c6faa2358ad5d892da528cedaade06b70e4
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
-F src/build.c 254a273acb8923f3bdecc933d787f4f67737c489
+F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c ceb247eb31620bba66a94c3f697db489a1652353
@@ -212,7 +212,7 @@ F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 340c9eca0fb24b1197468d96ba059f867c9834c7
 F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
-F src/util.c 5a15aa0cc1a642aeb3ebb37c8c2bba7e1c014581
+F src/util.c 0a28d634d41031be63da19cc7cdfbc4a7e0bfea6
 F src/vacuum.c deb50c41c39849770ab1bf27e8a35ba1036e3962
 F src/vdbe.c 6de14d95ade1193f2a694ce673f69ac20032fa17
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1cc4be7ebc463921827e61da724f0de946c061f6
-R 1c73afd7cbcdebdb258490d2c24799bd
+P d986e9289388fd72257b26cb2f9c972177255cd4
+R af8ab02c230217b95a74eec41f7db4ef
 U drh
-Z 275be1edf4f26aa0d7cebaa1746de83b
+Z 92bbdbd809aca6154a1ba44c761f4d15
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLhutjoxKgR168RlERAlrFAJoC7p9doKclaKmbSgjogvOsoOZUUQCeLm7H
-KHa6uF4qzTRfmkYuWOIa0Ao=
-=0tVZ
+iD8DBQFLhwtSoxKgR168RlERAiPdAJ9I+vTQM4qOnnLxOSTsB57ZAynIbwCggZiC
+VIO6ZAEyzKFZ08ul9s3wUMk=
+=f8rU
 -----END PGP SIGNATURE-----
