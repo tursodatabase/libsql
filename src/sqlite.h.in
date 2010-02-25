@@ -5696,11 +5696,15 @@ int sqlite3_strnicmp(const char *, const char *, int);
 **
 ** ^The [sqlite3_log()] interface writes a message into the error log
 ** established by the [SQLITE_CONFIG_ERRORLOG] option to [sqlite3_config()].
+** ^If logging is enabled, the zFormat string and subsequent arguments are
+** passed through to [sqlite3_vmprintf()] to generate the final output string.
 **
 ** The sqlite3_log() interface is intended for use by extensions such as
 ** virtual tables, collating functions, and SQL functions.  While there is
 ** nothing to prevent an application from calling sqlite3_log(), doing so
 ** is considered bad form.
+**
+** The zFormat string must not be NULL.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
 

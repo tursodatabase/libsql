@@ -949,7 +949,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...){
   char *zMsg;                             /* Complete log message */
   
   xLog = sqlite3GlobalConfig.xLog;
-  if( xLog && zFormat ){
+  if( xLog ){
     va_start(ap, zFormat);
     sqlite3BeginBenignMalloc();
     zMsg = sqlite3_vmprintf(zFormat, ap);

@@ -334,9 +334,7 @@ static int sqlite3Step(Vdbe *p){
   }
 
   if( p->pc<=0 && p->expired ){
-    if( p->rc==SQLITE_OK ){
-      p->rc = SQLITE_SCHEMA;
-    }
+    p->rc = SQLITE_SCHEMA;
     rc = SQLITE_ERROR;
     goto end_of_step;
   }
@@ -435,7 +433,7 @@ int sqlite3_step(sqlite3_stmt *pStmt){
     sqlite3_reset(pStmt);
     v->expired = 0;
   }
-  if( rc2!=SQLITE_OK && v->isPrepareV2 && db->pErr ){
+  if( rc2!=SQLITE_OK && ALWAYS(v->isPrepareV2) && ALWAYS(db->pErr) ){
     /* This case occurs after failing to recompile an sql statement. 
     ** The error message from the SQL compiler has already been loaded 
     ** into the database handle. This block copies the error message 
