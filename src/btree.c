@@ -3021,7 +3021,7 @@ static int getOverflowPage(
   Pgno *pPgnoNext              /* OUT: Next overflow page number */
 ){
   Pgno next = 0;
-  int rc;
+  int rc = SQLITE_OK;          /* Initialized to placate warning */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   /* One of these must not be NULL. Otherwise, why call this function? */

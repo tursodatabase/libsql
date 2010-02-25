@@ -388,14 +388,14 @@ void sqlite3Insert(
   int appendFlag = 0;   /* True if the insert is likely to be an append */
 
   /* Register allocations */
-  int regFromSelect;    /* Base register for data coming from SELECT */
+  int regFromSelect = 0;/* Base register for data coming from SELECT */
   int regAutoinc = 0;   /* Register holding the AUTOINCREMENT counter */
   int regRowCount = 0;  /* Memory cell used for the row counter */
   int regIns;           /* Block of regs holding rowid+data being inserted */
   int regRowid;         /* registers holding insert rowid */
   int regData;          /* register holding first column to insert */
   int regRecord;        /* Holds the assemblied row record */
-  int regEof;           /* Register recording end of SELECT data */
+  int regEof = 0;       /* Register recording end of SELECT data */
   int *aRegIdx = 0;     /* One register allocated to each index */
 
 
@@ -1095,7 +1095,8 @@ void sqlite3GenerateConstraintChecks(
   Vdbe *v;
   int nCol;
   int onError;
-  int j1, j2, j3;     /* Addresses of jump instructions */
+  int j1, j3;         /* Addresses of jump instructions */
+  int j2 = 0;         /* Initialized to placate warning */
   int regData;        /* Register containing first data column */
   int iCur;
   Index *pIdx;

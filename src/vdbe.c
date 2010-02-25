@@ -543,8 +543,10 @@ int sqlite3VdbeExec(
   int rc = SQLITE_OK;        /* Value to return */
   sqlite3 *db = p->db;       /* The database */
   u8 encoding = ENC(db);     /* The database encoding */
-  Mem *pIn1, *pIn2, *pIn3;   /* Input operands */
-  Mem *pOut;                 /* Output operand */
+  Mem *pIn1 = 0;             /* Input operands */
+  Mem *pIn2 = 0;             /* Input operands */
+  Mem *pIn3 = 0;             /* Input operands */
+  Mem *pOut = 0;             /* Output operand */
   u8 opProperty;
   int iCompare = 0;          /* Result of last OP_Compare operation */
   int *aPermute = 0;         /* Permuation of columns for OP_Compare */
@@ -3532,7 +3534,7 @@ case OP_Insert: {
 */
 case OP_Delete: {
   int i = pOp->p1;
-  i64 iKey;
+  i64 iKey = 0;
   Cursor *pC;
 
   assert( i>=0 && i<p->nCursor );

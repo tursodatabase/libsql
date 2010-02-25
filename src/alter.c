@@ -46,7 +46,7 @@ static void renameTableFunc(
   unsigned char const *zTableName = sqlite3_value_text(argv[1]);
 
   int token;
-  Token tname;
+  Token tname = {0,0,0};               /* Initialized to placate warning */
   unsigned char const *zCsr = zSql;
   int len = 0;
   char *zRet;
@@ -101,7 +101,7 @@ static void renameTriggerFunc(
   unsigned char const *zTableName = sqlite3_value_text(argv[1]);
 
   int token;
-  Token tname;
+  Token tname = {0,0,0};               /* Initialized to placate warning */
   int dist = 3;
   unsigned char const *zCsr = zSql;
   int len = 0;

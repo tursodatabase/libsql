@@ -911,7 +911,7 @@ static void trimFunc(
     flags = SQLITE_PTR_TO_INT(sqlite3_user_data(context));
     if( flags & 1 ){
       while( nIn>0 ){
-        int len;
+        int len = 0;                   /* Initialized to placate warning. */
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( memcmp(zIn, azChar[i], len)==0 ) break;
@@ -923,7 +923,7 @@ static void trimFunc(
     }
     if( flags & 2 ){
       while( nIn>0 ){
-        int len;
+        int len = 0;                   /* Initialized to placate warning. */
         for(i=0; i<nChar; i++){
           len = aLen[i];
           if( len<=nIn && memcmp(&zIn[nIn-len],azChar[i],len)==0 ) break;
