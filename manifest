@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Minor\ssimplifications\sto\sthe\scompile-time\soption\sreporting\sfunctions\sand\npragmas\sto\sfacilitate\scoverage\stesting.
-D 2010-02-25T15:28:42
+C Fixed\snumbering\sof\sa\sfew\stests;\sminor\stweaks\son\sothers.\s\s\nAdded\sa\scouple\snew\stests\sto\sstress\sprevious\ssimplifications.
+D 2010-02-25T18:07:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -321,7 +318,7 @@ F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
-F test/ctime.test aa0953d27564dac33d6c3fd5903312788b7fa383
+F test/ctime.test 50e1fd7bc76a89014e27c73381e7b5ec75bb17cb
 F test/date.test 0b8473ed9ab6fd4283b4a01f035e1067762ba734
 F test/default.test 6faf23ccb300114924353007795aa9a8ec0aa9dc
 F test/delete.test f7629d9eb245dfca170169cc5c7a735dec34aeb4
@@ -795,14 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 78351d289bba83e536b64666c566b7bfc57351da
-R fc8b2f3b47f245eabb47345addf3c287
-U drh
-Z 4e47927e3bcb66e5fb9f95fb6ecab24b
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLhpctoxKgR168RlERAqODAJ9s1JUohWfuDCMn8r6UjUKPuWx+sgCfVoJZ
-FiEbzo9If4ZwffR72z1peFY=
-=7Yci
------END PGP SIGNATURE-----
+P 633d874783a94f923ff8240f9153764033d37a89
+R b415f1e2575ca4e2284804631588393c
+U shaneh
+Z 6fde487eda25da0e582d84373048848c

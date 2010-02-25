@@ -110,7 +110,7 @@ do_test ctime-1.4.5 {
   }
 } {0 1}
 
-do_test ctime-1.4 {
+do_test ctime-1.5 {
   set ans1 [ catchsql {
     PRAGMA compile_option('THREADSAFE=0');
   } ]
@@ -120,17 +120,18 @@ do_test ctime-1.4 {
   lsort [ list $ans1 $ans2 ]
 } {{0 0} {0 1}}
 
-do_test ctime-1.5 {
+do_test ctime-1.6 {
   execsql {
     PRAGMA compile_option('THREADSAFE=');
   }
 } {0}
-do_test ctime-1.6 {
+
+do_test ctime-1.7.1 {
   execsql {
     PRAGMA compile_option('SQLITE_OMIT_COMPILEOPTION_DIAGS');
   }
 } {0}
-do_test ctime-1.7 {
+do_test ctime-1.7.2 {
   execsql {
     PRAGMA compile_option('OMIT_COMPILEOPTION_DIAGS');
   }
@@ -169,6 +170,21 @@ do_test ctime-2.1.6 {
     SELECT sqlite_compile_option_used('THREADSAFE', 0);
   }
 } {1 {wrong number of arguments to function sqlite_compile_option_used()}}
+do_test ctime-2.1.7 {
+  catchsql {
+    SELECT sqlite_compile_option_used(0);
+  }
+} {0 0}
+do_test ctime-2.1.8 {
+  catchsql {
+    SELECT sqlite_compile_option_used('0');
+  }
+} {0 0}
+do_test ctime-2.1.9 {
+  catchsql {
+    SELECT sqlite_compile_option_used(1.0);
+  }
+} {0 0}
 
 do_test ctime-2.2.1 {
   catchsql {
@@ -192,10 +208,10 @@ do_test ctime-2.3 {
 # This assumes there is at least 1 compile time option
 # (see SQLITE_THREADSAFE above).
 do_test ctime-2.4 {
-  set res [ catchsql {
+  set ans [ catchsql {
     SELECT sqlite_compile_option_get(0);
   } ]
-  list [lindex $res 0]
+  list [lindex $ans 0]
 } {0}
 
 # Get the list of defines using the pragma,
