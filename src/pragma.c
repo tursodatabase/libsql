@@ -1375,7 +1375,7 @@ void sqlite3Pragma(
     returnSingleInt(pParse, zRight, used);
   }else
 
-  if( sqlite3StrICmp(zLeft, "compile_options")==0 && !zRight ){
+  if( sqlite3StrICmp(zLeft, "compile_options")==0 ){
     int i = 0;
     const char *zOpt;
     sqlite3VdbeSetNumCols(v, 1);

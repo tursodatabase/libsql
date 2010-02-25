@@ -790,11 +790,8 @@ static void compileoptionusedFunc(
   UNUSED_PARAMETER(argc);
   /* IMP: R-xxxx This function is an SQL wrapper around the
   ** sqlite3_compileoption_used() C interface. */
-  if (   ( sqlite3_value_type(argv[0])==SQLITE_TEXT )
-      && ( (zOptName = (const char*)sqlite3_value_text(argv[0]))!=0 )){
+  if( (zOptName = (const char*)sqlite3_value_text(argv[0]))!=0 ){
     sqlite3_result_int(context, sqlite3_compileoption_used(zOptName));
-  }else{
-    sqlite3_result_null(context);
   }
 }
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
