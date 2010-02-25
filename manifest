@@ -1,5 +1,5 @@
-C Fixed\snumbering\sof\sa\sfew\stests;\sminor\stweaks\son\sothers.\s\s\nAdded\sa\scouple\snew\stests\sto\sstress\sprevious\ssimplifications.
-D 2010-02-25T18:07:59
+C Add\sexperimental\sfix\sfor\scorruption\sdetection\sproblem.\sThis\smay\swell\sbe\srevised\syet.
+D 2010-02-25T12:09:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c ae804d16fb1ed8d3a0087b0fba2dcf37f312275c
+F src/btree.c 0fc16c6faa2358ad5d892da528cedaade06b70e4
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 254a273acb8923f3bdecc933d787f4f67737c489
@@ -292,7 +292,7 @@ F test/collateA.test b8218ab90d1fa5c59dcf156efabb1b2599c580d6
 F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0ed68b11f22721052d880ee80bd528a0e0828236
-F test/corrupt.test 85c3fececa01bc6d24ff5d7bf1373844840c0b98
+F test/corrupt.test f413a96e5f7a3df55529a530339c5194efce59e0
 F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
@@ -792,7 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 633d874783a94f923ff8240f9153764033d37a89
-R b415f1e2575ca4e2284804631588393c
-U shaneh
-Z 6fde487eda25da0e582d84373048848c
+P 9b18dfd19e825b09c1d246c826e179b9892308df
+R eafa7db6f5fb13e5c1fd5ab7d385d1ec
+U dan
+Z 4907aa0adf782240299c0dcbeaf7f20b

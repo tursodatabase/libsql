@@ -5061,7 +5061,25 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
       rc = getOverflowPage(pBt, ovflPgno, &pOvfl, &iNext);
       if( rc ) return rc;
     }
-    rc = freePage2(pBt, pOvfl, ovflPgno);
+
+    if( (pOvfl || (pOvfl = btreePageLookup(pBt, ovflPgno)))
+     && sqlite3PagerPageRefcount(pOvfl->pDbPage)!=1
+    ){
+      /* There is no reason any cursor should have an outstanding reference 
+      ** to an overflow page belonging to a cell that is being deleted/updated.
+      ** So if there exists more than one reference to this page, then it 
+      ** must not really be an overflow page and the database must be corrupt. 
+      ** It is helpful to detect this before calling freePage2(), as 
+      ** freePage2() may zero the page contents if secure-delete mode is
+      ** enabled. If this 'overflow' page happens to be a page that the
+      ** caller is iterating through or using in some other way, this
+      ** can be problematic.
+      */
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      rc = freePage2(pBt, pOvfl, ovflPgno);
+    }
+
     if( pOvfl ){
       sqlite3PagerUnref(pOvfl->pDbPage);
     }
