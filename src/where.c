@@ -1096,7 +1096,7 @@ static void exprAnalyze(
   Expr *pExpr;                     /* The expression to be analyzed */
   Bitmask prereqLeft;              /* Prerequesites of the pExpr->pLeft */
   Bitmask prereqAll;               /* Prerequesites of pExpr */
-  Bitmask extraRight = 0;          /* */
+  Bitmask extraRight = 0;          /* Extra dependencies on LEFT JOIN */
   Expr *pStr1 = 0;                 /* RHS of LIKE/GLOB operator */
   int isComplete = 0;              /* RHS of LIKE/GLOB ends with wildcard */
   int noCase = 0;                  /* LIKE/GLOB distinguishes case */
@@ -1168,7 +1168,8 @@ static void exprAnalyze(
       pLeft = pDup->pLeft;
       pNew->leftCursor = pLeft->iTable;
       pNew->u.leftColumn = pLeft->iColumn;
-      pNew->prereqRight = prereqLeft;
+      testcase( (prereqLeft | extraRight) != prereqLeft );
+      pNew->prereqRight = prereqLeft | extraRight;
       pNew->prereqAll = prereqAll;
       pNew->eOperator = operatorMask(pDup->op);
     }

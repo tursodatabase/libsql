@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\stestcase()\smacros\sbeside\seach\ssqlite3_log()\scall\sto\smake\ssure\sit\sis\ntested\swith\sboth\slogging\senable\sand\sdisabled.
-D 2010-02-24T21:44:07
+C Make\ssure\sthe\sON\sclause\sof\sa\sLEFT\sJOIN\sdoes\snot\scause\san\sindex\sto\sbe\nused\sto\sspeed\saccess\sto\sa\stable\sto\sthe\sleft\sof\sthe\sjoin.\nTicket\s[ebdbadade5]
+D 2010-02-25T04:15:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 606adf51cd6d4ba51a8c6dccede06a6f7b0dd72d
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 9269ec75e1e36e69748fd918ac5a636020c85e7e
+F src/where.c 399ea4c090284c9d16f76d685b9b44e8b9b4442b
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -757,7 +757,7 @@ F test/where2.test 45eacc126aabb37959a387aa83e59ce1f1f03820
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
-F test/where6.test 42c4373595f4409d9c6a9987b4a60000ad664faf
+F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
 F test/where7.test fdd58ab9dec9f97679e65d4414bf5e07d725d79f
 F test/where8.test 2bb8ea44b745fcc93db150fac9ce33d12e499760
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dd480f62afa56ff85c2dd57ee7a16eee427e823f
-R c9523526f48a8860988dae54cadcdbf1
+P 1168763d2cd96acfa0488198e8bc82f0c4fa35a3
+R 1756ec34ec14812b999545b49c238389
 U drh
-Z 1dbd84d12743933d537cbe784ede4bca
+Z cef349c135ac8fde894db77ffb6c3cd3
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLhZ2qoxKgR168RlERAtqjAJ9ekluC7QTqJi+Q6cIzjOZVf34HNACfUmiQ
-TteOSExg+iy0J6i1CF0ncys=
-=oaDc
+iD8DBQFLhfl5oxKgR168RlERAuYtAJ9UCQXaWqORFlTB8prfqFcd5VDUngCcDDwZ
+5GuaCQJQEFY+u7p5eZA7abU=
+=4lWh
 -----END PGP SIGNATURE-----
