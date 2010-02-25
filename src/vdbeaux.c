@@ -255,6 +255,13 @@ void sqlite3VdbeResolveLabel(Vdbe *p, int x){
   }
 }
 
+/*
+** Mark the VDBE as one that can only be run one time.
+*/
+void sqlite3VdbeRunOnlyOnce(Vdbe *p){
+  p->runOnlyOnce = 1;
+}
+
 #ifdef SQLITE_DEBUG /* sqlite3AssertMayAbort() logic */
 
 /*
@@ -2228,6 +2235,7 @@ int sqlite3VdbeReset(Vdbe *p){
     }else{
       sqlite3Error(db, SQLITE_OK, 0);
     }
+    if( p->runOnlyOnce ) p->expired = 1;
   }else if( p->rc && p->expired ){
     /* The expired flag was set on the VDBE before the first call
     ** to sqlite3_step(). For consistency (since sqlite3_step() was
