@@ -56,7 +56,9 @@ int sqlite3_finalize(sqlite3_stmt *pStmt){
 #if SQLITE_THREADSAFE
     sqlite3_mutex *mutex;
 #endif
-    if( db==0 ) return SQLITE_MISUSE;
+    if (!sqlite3SafetyCheckOk(db)) {
+      return SQLITE_MISUSE;
+    }
 #if SQLITE_THREADSAFE
     mutex = v->db->mutex;
 #endif
@@ -420,7 +422,7 @@ end_of_step:
 int sqlite3_step(sqlite3_stmt *pStmt){
   int rc = SQLITE_MISUSE;
   Vdbe *v = (Vdbe*)pStmt;
-  if( v && (v->db)!=0 ){
+  if( v && (sqlite3SafetyCheckOk(db = v->db))){
     int cnt = 0;
     sqlite3 *db = v->db;
 #ifdef SQLITE_ENABLE_SQLRR
