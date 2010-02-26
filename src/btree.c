@@ -5815,8 +5815,15 @@ static int balance_nonroot(
       ** buffer. It will be copied out again as soon as the aSpace[] buffer
       ** is allocated.  */
       if( pBt->secureDelete ){
-        memcpy(&aOvflSpace[apDiv[i]-pParent->aData], apDiv[i], szNew[i]);
-        apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+        int iOff = apDiv[i] - pParent->aData;
+        if( (iOff+szNew[i])>pBt->usableSize ){
+          rc = SQLITE_CORRUPT_BKPT;
+          memset(apOld, 0, (i+1)*sizeof(MemPage*));
+          goto balance_cleanup;
+        }else{
+          memcpy(&aOvflSpace[iOff], apDiv[i], szNew[i]);
+          apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+        }
       }
       dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i], &rc);
     }
