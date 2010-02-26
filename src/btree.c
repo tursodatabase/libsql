@@ -5323,7 +5323,7 @@ static void insertCell(
   Pgno iChild,      /* If non-zero, replace first 4 bytes with this value */
   int *pRC          /* Read and write return code from here */
 ){
-  int idx;          /* Where to write new cell content in data[] */
+  int idx = 0;      /* Where to write new cell content in data[] */
   int j;            /* Loop counter */
   int end;          /* First byte past the last cell pointer in data[] */
   int ins;          /* Index in data[] where new cell pointer is inserted */

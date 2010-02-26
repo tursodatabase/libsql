@@ -1248,7 +1248,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   struct unixLockInfo *pLock = pFile->pLock;
   struct flock lock;
   int s = 0;
-  int tErrno;
+  int tErrno = 0;
 
   assert( pFile );
   OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
