@@ -1,11 +1,14 @@
-C Minor\schanges\sto\ssilence\ssome\scompiler\swarnings\swith\sMSVC.
-D 2010-02-26T01:46:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Increase\sthe\sversion\snumber\sto\s3.6.23\sin\spreparation\sfor\sthe\snext\srelease.
+D 2010-02-26T12:58:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks ab005d301296c40e021ccd0133ce49ca811e319f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 2f8d921ecf804e9eb01e836a09512d0318ebd4d3
+F VERSION 3e18b3dd7290883913c25d66c0ddb409ce318654
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -19,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 8bcd25791aa958ecb255385d1c2d91ab1c5acd93
+F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2 x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -792,7 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0f6291bbbd31673e2a65f38c7fc364c33719d25e
-R 0416664a3dc7f6b03e53bf4af7ac78bd
-U shaneh
-Z ea521e1682af37a17d6d1d2bff6e15f9
+P 4927c62d6214d93e582bf1266215ed3519630c15
+R af4a7e45e4a4a9405e99108a38202106
+U drh
+Z 3162c30bb0f99d38c354b0e173e5f3de
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLh8WRoxKgR168RlERAhAqAJ0QiRyipYMpY436kmCSp0ScHxdx9gCeLtq3
+QFma8bnc+p2xYKTQw6Gq194=
+=XP77
+-----END PGP SIGNATURE-----
