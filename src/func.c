@@ -1549,8 +1549,8 @@ void sqlite3RegisterGlobalFunctions(void){
     FUNCTION(sqlite_version,     0, 0, 0, versionFunc      ),
     FUNCTION(sqlite_source_id,   0, 0, 0, sourceidFunc     ),
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
-    FUNCTION(sqlite_compile_option_used,1, 0, 0, compileoptionusedFunc  ),
-    FUNCTION(sqlite_compile_option_get, 1, 0, 0, compileoptiongetFunc  ),
+    FUNCTION(sqlite_compileoption_used,1, 0, 0, compileoptionusedFunc  ),
+    FUNCTION(sqlite_compileoption_get, 1, 0, 0, compileoptiongetFunc  ),
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
     FUNCTION(quote,              1, 0, 0, quoteFunc        ),
     FUNCTION(last_insert_rowid,  0, 0, 0, last_insert_rowid),
