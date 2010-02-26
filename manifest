@@ -1,5 +1,5 @@
-C More\sdouble\sfree\sparanoia
-D 2010-02-26T20:54:10
+C fix\smerge\serror\sand\scompiler\swarning
+D 2010-02-26T22:05:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in df768f5addf7b6da984aa279123d2671d716cf5c
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -160,7 +160,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
-F src/pragma.c 43e02b0258c1a228f442564fbe8e0c4d748c8bef
+F src/pragma.c 4cf0b84933aad381a3031b1416b8c8d9491e5ccd
 F src/prepare.c ca47539f6a7608639359be382d9df7eb45d2ad87
 F src/printf.c 2c2702dc4955394dae554b7c45f45656eb42de7f
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -216,7 +216,7 @@ F src/vacuum.c 28ee5a4963d16cf2477075d85966c0f461cd79de
 F src/vdbe.c 428411c6fbd49e9a4ce043dad87a0b079d403714
 F src/vdbe.h bea1f0cd530775bdb58a340265f3cf3ee920e9b2
 F src/vdbeInt.h e276691b6835da5c0008cc5beaaecedcd7bdba8e
-F src/vdbeapi.c 3dfa02353e360293f286dccabb11eb0c46a8eda2
+F src/vdbeapi.c 24fa8ef6d23ea215fd24417c744ffdb1ddb9aa88
 F src/vdbeaux.c 8f30e619a8077ee516fa1494fa603550fa951726
 F src/vdbeblob.c 84f924700a7a889152aeebef77ca5f4e3875ffb4
 F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
@@ -792,9 +792,9 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4b72e39bd00572d9375639f4b978eff1b1d9aa20
-R 0e4fd53b0c59e5aed6d9b9b2db0deda1
+P 62dfb44b3b66c4acb1a7a10c44cbee1022a88883
+R 3cecb802e0818a552699f238e5d8e344
 T *branch * apple-osx
 T *sym-apple-osx *
 U adam
-Z 834681205dbe2d932ad16df3e881db11
+Z 1ccb326a490da92940855d68c89ac99f

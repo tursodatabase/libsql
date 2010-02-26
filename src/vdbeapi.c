@@ -422,9 +422,10 @@ end_of_step:
 int sqlite3_step(sqlite3_stmt *pStmt){
   int rc = SQLITE_MISUSE;
   Vdbe *v = (Vdbe*)pStmt;
+  sqlite3 *db;
+	
   if( v && (sqlite3SafetyCheckOk(db = v->db))){
     int cnt = 0;
-    sqlite3 *db = v->db;
 #ifdef SQLITE_ENABLE_SQLRR
     SRRecStep(pStmt);
 #endif
@@ -1095,7 +1096,7 @@ int sqlite3_bind_value(sqlite3_stmt *pStmt, int i, const sqlite3_value *pValue){
     }
     case SQLITE_TEXT: {
 #ifdef SQLITE_ENABLE_SQLRR
-      SRRecBindText(pStmt, i, zData, nData);
+      SRRecBindText(pStmt, i, pValue->z, pValue->n);
 #endif
       rc = bindText(pStmt,i,  pValue->z, pValue->n, SQLITE_TRANSIENT,
                               pValue->enc);

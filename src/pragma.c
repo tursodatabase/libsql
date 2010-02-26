@@ -412,7 +412,7 @@ void sqlite3Pragma(
       newMax = atoi(zRight);
     }
     if( ALWAYS(pBt) ){
-      newMax = sqlite3BtreeMaxPageCount(pBt, newMax);
+      newMax = sqlite3BtreeMaxPageCount(pBt, (int)newMax);
     }
     returnSingleInt(pParse, "max_page_count", &newMax);
   }else
