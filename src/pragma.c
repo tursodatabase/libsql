@@ -1363,18 +1363,10 @@ void sqlite3Pragma(
 #ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
   /*
   **   PRAGMA compile_options
-  **   PRAGMA compile_option(<option>)
   **
-  ** The first form returns a single row for each option that was 
-  ** defined at compile time.  The second form returns 0 or 1 
-  ** indicating whether the specified option was defined at 
-  ** compile time.
+  ** Return the names of all compile-time options used in this build,
+  ** one option per row.
   */
-  if( sqlite3StrICmp(zLeft, "compile_option")==0 && zRight ){
-    int used = sqlite3_compileoption_used(zRight);
-    returnSingleInt(pParse, zRight, used);
-  }else
-
   if( sqlite3StrICmp(zLeft, "compile_options")==0 ){
     int i = 0;
     const char *zOpt;
