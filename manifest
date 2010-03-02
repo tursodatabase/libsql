@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Rename\sthe\ssqlite_compile_option_*()\sSQL\sfunctions\sto\ssqlite_compileoption_*()\nfor\sconsistency\swith\sthe\sC/C++\sinterface.
-D 2010-02-26T16:37:48
+C When\sTEMP\sfiles\sare\sin\smemory,\salso\sput\sthe\smassive\sTEMP\sfile\sused\sby\nthe\sVACUUM\scommand\sin\smemory.
+D 2010-03-02T23:34:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -158,7 +158,7 @@ F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
 F src/pager.c ace73a84f53a551fb8b9334205af210a29874b2c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
-F src/pcache.c 815bcb3cf0e14b23212efd3f4981f667a5fd633e
+F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
 F src/pragma.c 56d95f76154a5f873c32eae485bb625f3c70be46
@@ -213,7 +213,7 @@ F src/trigger.c 340c9eca0fb24b1197468d96ba059f867c9834c7
 F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
 F src/util.c 0a28d634d41031be63da19cc7cdfbc4a7e0bfea6
-F src/vacuum.c deb50c41c39849770ab1bf27e8a35ba1036e3962
+F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
 F src/vdbe.c 8b705e48cf4b6d0493ad0f109763d60c1b429487
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 733778df996a2dda7c31ff7b544cb6f9a6ed4c97
-R 7f351a8380a57500bdc76d848dfdb822
+P dd4962aa34c4dd118d2cb15465384636eacc64d5
+R ac5110c4b5361a172abacbcddc5f3639
 U drh
-Z 9c0ca58ad9d71dc0c1f9bebd48b21b4a
+Z 07077b963fb4a11b496a5dfabf41f21f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLh/jeoxKgR168RlERAgx7AJ9t8rjVK1sKv6l87VjKqoxYlMqILwCeOAZq
-XkZC4ILkhEvojBGezLNi0to=
-=MB8W
+iD8DBQFLjaChoxKgR168RlERAqfZAKCBi0FYDVZH16SKumc+hP6bjjlfxACfcEj5
+uE+bTZfUPtvsU45ATdp+Vd4=
+=HPsx
 -----END PGP SIGNATURE-----

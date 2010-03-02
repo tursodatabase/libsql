@@ -189,6 +189,7 @@ void sqlite3PcacheSetPageSize(PCache *pCache, int szPage){
   if( pCache->pCache ){
     sqlite3GlobalConfig.pcache.xDestroy(pCache->pCache);
     pCache->pCache = 0;
+    pCache->pPage1 = 0;
   }
   pCache->szPage = szPage;
 }

@@ -138,7 +138,11 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** time to parse and run the PRAGMA to turn journalling off than it does
   ** to write the journal header file.
   */
-  zSql = "ATTACH '' AS vacuum_db;";
+  if( sqlite3TempInMemory(db) ){
+    zSql = "ATTACH ':memory:' AS vacuum_db;";
+  }else{
+    zSql = "ATTACH '' AS vacuum_db;";
+  }
   rc = execSql(db, pzErrMsg, zSql);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   pDb = &db->aDb[db->nDb-1];
