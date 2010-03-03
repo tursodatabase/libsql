@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Modify\sthe\ssqlite3_log()\sinterface\sand\simplementation\sso\sthat\sit\snever\nuses\sdynamic\smemory\sallocation\s-\sto\savoid\sdeadlocking\swhen\scalled\swhile\nholding\sthe\smemory\sallocator\smutex.
-D 2010-03-03T22:25:18
+C Pull\sthe\slatest\sLemon\supdates\sfrom\sthe\slemon-update-2010\sbranch\sinto\nthe\strunk.
+D 2010-03-03T22:43:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -770,7 +770,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c 651d2564255b78e9eef5ed23156a879b5fefad33
+F tool/lemon.c 6958cb9935be265bf51dbc718ef325e3b77685b6
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0354ab279f0ea9915a14d1ed972b4aa6b5a27fd1
-R 926156f9ae585a784895773b700799f0
+P 28d1bc98d60319b10af427072037a0121bc76259 83495128c820e963c70d11c3196f81d8cf01f867
+R 5bcf7657cf8259e9279d36af5e2c5c7b
 U drh
-Z a5e3e8dcfa2c5ad6badf36c518ae99a7
+Z 0f9492b8396c3d749ab3aae315e18f6d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLjuHSoxKgR168RlERAu2uAJ9FMiE/PiQGTF1xE6N9Vhp5wtfQGgCgiZmk
-jbyYImM3VWOBm37tm51Ua0M=
-=bI8b
+iD8DBQFLjuYeoxKgR168RlERAlrSAKCA0xyD30EEpNmtBDVfUAqmfk5EZACeO+r+
+rLgIbkZX3mD3k7SGIl1BSp4=
+=sB+r
 -----END PGP SIGNATURE-----
