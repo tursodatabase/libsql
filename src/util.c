@@ -651,6 +651,19 @@ int sqlite3PutVarint32(unsigned char *p, u32 v){
 }
 
 /*
+** Bitmasks used by sqlite3GetVarint().  These precomputed constants
+** are defined here rather than simply putting the constant expressions
+** inline in order to work around bugs in the RVT compiler.
+**
+** SLOT_2_0     A mask for  (0x7f<<14) | 0x7f
+**
+** SLOT_4_2_0   A mask for  (0x7f<<28) | SLOT_2_0
+*/
+#define SLOT_2_0     0x001fc07f
+#define SLOT_4_2_0   0xf01fc07f
+
+
+/*
 ** Read a 64-bit variable-length integer from memory starting at p[0].
 ** Return the number of bytes read.  The value is stored in *v.
 */
@@ -677,13 +690,17 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
     return 2;
   }
 
+  /* Verify that constants are precomputed correctly */
+  assert( SLOT_2_0 == ((0x7f<<14) | (0x7f)) );
+  assert( SLOT_4_2_0 == ((0xf<<28) | (0x7f<<14) | (0x7f)) );
+
   p++;
   a = a<<14;
   a |= *p;
   /* a: p0<<14 | p2 (unmasked) */
   if (!(a&0x80))
   {
-    a &= (0x7f<<14)|(0x7f);
+    a &= SLOT_2_0;
     b &= 0x7f;
     b = b<<7;
     a |= b;
@@ -692,14 +709,14 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   }
 
   /* CSE1 from below */
-  a &= (0x7f<<14)|(0x7f);
+  a &= SLOT_2_0;
   p++;
   b = b<<14;
   b |= *p;
   /* b: p1<<14 | p3 (unmasked) */
   if (!(b&0x80))
   {
-    b &= (0x7f<<14)|(0x7f);
+    b &= SLOT_2_0;
     /* moved CSE1 up */
     /* a &= (0x7f<<14)|(0x7f); */
     a = a<<7;
@@ -713,7 +730,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   /* 1:save off p0<<21 | p1<<14 | p2<<7 | p3 (masked) */
   /* moved CSE1 up */
   /* a &= (0x7f<<14)|(0x7f); */
-  b &= (0x7f<<14)|(0x7f);
+  b &= SLOT_2_0;
   s = a;
   /* s: p0<<14 | p2 (masked) */
 
@@ -746,7 +763,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   {
     /* we can skip this cause it was (effectively) done above in calc'ing s */
     /* b &= (0x7f<<28)|(0x7f<<14)|(0x7f); */
-    a &= (0x7f<<14)|(0x7f);
+    a &= SLOT_2_0;
     a = a<<7;
     a |= b;
     s = s>>18;
@@ -760,8 +777,8 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   /* a: p2<<28 | p4<<14 | p6 (unmasked) */
   if (!(a&0x80))
   {
-    a &= (0x1f<<28)|(0x7f<<14)|(0x7f);
-    b &= (0x7f<<14)|(0x7f);
+    a &= SLOT_4_2_0;
+    b &= SLOT_2_0;
     b = b<<7;
     a |= b;
     s = s>>11;
@@ -770,14 +787,14 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
   }
 
   /* CSE2 from below */
-  a &= (0x7f<<14)|(0x7f);
+  a &= SLOT_2_0;
   p++;
   b = b<<14;
   b |= *p;
   /* b: p3<<28 | p5<<14 | p7 (unmasked) */
   if (!(b&0x80))
   {
-    b &= (0x1f<<28)|(0x7f<<14)|(0x7f);
+    b &= SLOT_4_2_0;
     /* moved CSE2 up */
     /* a &= (0x7f<<14)|(0x7f); */
     a = a<<7;
@@ -794,7 +811,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 
   /* moved CSE2 up */
   /* a &= (0x7f<<29)|(0x7f<<15)|(0xff); */
-  b &= (0x7f<<14)|(0x7f);
+  b &= SLOT_2_0;
   b = b<<8;
   a |= b;
 
