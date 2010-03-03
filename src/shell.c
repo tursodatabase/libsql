@@ -2418,6 +2418,7 @@ static void main_init(struct callback_data *data) {
   sqlite3_config(SQLITE_CONFIG_LOG, shellLog, data);
   sqlite3_snprintf(sizeof(mainPrompt), mainPrompt,"sqlite> ");
   sqlite3_snprintf(sizeof(continuePrompt), continuePrompt,"   ...> ");
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
 }
 
 int main(int argc, char **argv){
