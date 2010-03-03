@@ -2274,9 +2274,11 @@ static void fts3DecodeIntArray(
   int nBuf           /* size of the BLOB */
 ){
   int i, j;
+  UNUSED_PARAMETER(nBuf);
   for(i=j=0; i<N; i++){
     sqlite3_int64 x;
     j += sqlite3Fts3GetVarint(&zBuf[j], &x);
+    assert(j<=nBuf);
     a[i] = (u32)(x & 0xffffffff);
   }
 }
@@ -2421,10 +2423,10 @@ static void fts3UpdateDocTotals(
          sqlite3_column_blob(pStmt, 0),
          sqlite3_column_bytes(pStmt, 0));
   }else{
-    memset(a, 0, sizeof(int)*(p->nColumn+1) );
+    memset(a, 0, sizeof(u32)*(p->nColumn+1) );
   }
   sqlite3_reset(pStmt);
-  if( nChng<0 && a[0]<-nChng ){
+  if( nChng<0 && a[0]<(u32)(-nChng) ){
     a[0] = 0;
   }else{
     a[0] += nChng;

@@ -4928,8 +4928,8 @@ static int freePage2(BtShared *pBt, MemPage *pMemPage, Pgno iPage){
     /* If the secure_delete option is enabled, then
     ** always fully overwrite deleted information with zeros.
     */
-    if( (!pPage && (rc = btreeGetPage(pBt, iPage, &pPage, 0)))
-     ||            (rc = sqlite3PagerWrite(pPage->pDbPage))
+    if( (!pPage && ((rc = btreeGetPage(pBt, iPage, &pPage, 0))!=0) )
+     ||            ((rc = sqlite3PagerWrite(pPage->pDbPage))!=0)
     ){
       goto freepage_out;
     }
@@ -5061,7 +5061,25 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
       rc = getOverflowPage(pBt, ovflPgno, &pOvfl, &iNext);
       if( rc ) return rc;
     }
-    rc = freePage2(pBt, pOvfl, ovflPgno);
+
+    if( (pOvfl || (pOvfl = btreePageLookup(pBt, ovflPgno)))
+     && sqlite3PagerPageRefcount(pOvfl->pDbPage)!=1
+    ){
+      /* There is no reason any cursor should have an outstanding reference 
+      ** to an overflow page belonging to a cell that is being deleted/updated.
+      ** So if there exists more than one reference to this page, then it 
+      ** must not really be an overflow page and the database must be corrupt. 
+      ** It is helpful to detect this before calling freePage2(), as 
+      ** freePage2() may zero the page contents if secure-delete mode is
+      ** enabled. If this 'overflow' page happens to be a page that the
+      ** caller is iterating through or using in some other way, this
+      ** can be problematic.
+      */
+      rc = SQLITE_CORRUPT_BKPT;
+    }else{
+      rc = freePage2(pBt, pOvfl, ovflPgno);
+    }
+
     if( pOvfl ){
       sqlite3PagerUnref(pOvfl->pDbPage);
     }
@@ -5305,7 +5323,7 @@ static void insertCell(
   Pgno iChild,      /* If non-zero, replace first 4 bytes with this value */
   int *pRC          /* Read and write return code from here */
 ){
-  int idx;          /* Where to write new cell content in data[] */
+  int idx = 0;      /* Where to write new cell content in data[] */
   int j;            /* Loop counter */
   int end;          /* First byte past the last cell pointer in data[] */
   int ins;          /* Index in data[] where new cell pointer is inserted */
@@ -5797,8 +5815,15 @@ static int balance_nonroot(
       ** buffer. It will be copied out again as soon as the aSpace[] buffer
       ** is allocated.  */
       if( pBt->secureDelete ){
-        memcpy(&aOvflSpace[apDiv[i]-pParent->aData], apDiv[i], szNew[i]);
-        apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+        int iOff = apDiv[i] - pParent->aData;
+        if( (iOff+szNew[i])>pBt->usableSize ){
+          rc = SQLITE_CORRUPT_BKPT;
+          memset(apOld, 0, (i+1)*sizeof(MemPage*));
+          goto balance_cleanup;
+        }else{
+          memcpy(&aOvflSpace[iOff], apDiv[i], szNew[i]);
+          apDiv[i] = &aOvflSpace[apDiv[i]-pParent->aData];
+        }
       }
       dropCell(pParent, i+nxDiv-pParent->nOverflow, szNew[i], &rc);
     }
@@ -5919,7 +5944,7 @@ static int balance_nonroot(
       if( leafData ){ i--; }
       subtotal = 0;
       k++;
-      if( k>NB+1 ){ rc = SQLITE_CORRUPT; goto balance_cleanup; }
+      if( k>NB+1 ){ rc = SQLITE_CORRUPT_BKPT; goto balance_cleanup; }
     }
   }
   szNew[k] = subtotal;
@@ -5973,7 +5998,7 @@ static int balance_nonroot(
   ** Allocate k new pages.  Reuse old pages where possible.
   */
   if( apOld[0]->pgno<=1 ){
-    rc = SQLITE_CORRUPT;
+    rc = SQLITE_CORRUPT_BKPT;
     goto balance_cleanup;
   }
   pageFlags = apOld[0]->aData[0];
@@ -7411,7 +7436,9 @@ static void checkList(
 static int checkTreePage(
   IntegrityCk *pCheck,  /* Context for the sanity check */
   int iPage,            /* Page number of the page to check */
-  char *zParentContext  /* Parent context */
+  char *zParentContext, /* Parent context */
+  i64 *pnParentMinKey, 
+  i64 *pnParentMaxKey
 ){
   MemPage *pPage;
   int i, rc, depth, d2, pgno, cnt;
@@ -7422,6 +7449,8 @@ static int checkTreePage(
   int usableSize;
   char zContext[100];
   char *hit = 0;
+  i64 nMinKey = 0;
+  i64 nMaxKey = 0;
 
   sqlite3_snprintf(sizeof(zContext), zContext, "Page %d: ", iPage);
 
@@ -7464,6 +7493,16 @@ static int checkTreePage(
     btreeParseCellPtr(pPage, pCell, &info);
     sz = info.nData;
     if( !pPage->intKey ) sz += (int)info.nKey;
+    /* For intKey pages, check that the keys are in order.
+    */
+    else if( i==0 ) nMinKey = nMaxKey = info.nKey;
+    else{
+      if( info.nKey <= nMaxKey ){
+        checkAppendMsg(pCheck, zContext, 
+            "Rowid %lld out of order (previous was %lld)", info.nKey, nMaxKey);
+      }
+      nMaxKey = info.nKey;
+    }
     assert( sz==info.nPayload );
     if( (sz>info.nLocal) 
      && (&pCell[info.iOverflow]<=&pPage->aData[pBt->usableSize])
@@ -7487,25 +7526,62 @@ static int checkTreePage(
         checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, zContext);
       }
 #endif
-      d2 = checkTreePage(pCheck, pgno, zContext);
+      d2 = checkTreePage(pCheck, pgno, zContext, &nMinKey, i==0 ? NULL : &nMaxKey);
       if( i>0 && d2!=depth ){
         checkAppendMsg(pCheck, zContext, "Child page depth differs");
       }
       depth = d2;
     }
   }
+
   if( !pPage->leaf ){
     pgno = get4byte(&pPage->aData[pPage->hdrOffset+8]);
     sqlite3_snprintf(sizeof(zContext), zContext, 
                      "On page %d at right child: ", iPage);
 #ifndef SQLITE_OMIT_AUTOVACUUM
     if( pBt->autoVacuum ){
-      checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, 0);
+      checkPtrmap(pCheck, pgno, PTRMAP_BTREE, iPage, zContext);
     }
 #endif
-    checkTreePage(pCheck, pgno, zContext);
+    checkTreePage(pCheck, pgno, zContext, NULL, !pPage->nCell ? NULL : &nMaxKey);
   }
  
+  /* For intKey leaf pages, check that the min/max keys are in order
+  ** with any left/parent/right pages.
+  */
+  if( pPage->leaf && pPage->intKey ){
+    /* if we are a left child page */
+    if( pnParentMinKey ){
+      /* if we are the left most child page */
+      if( !pnParentMaxKey ){
+        if( nMaxKey > *pnParentMinKey ){
+          checkAppendMsg(pCheck, zContext, 
+              "Rowid %lld out of order (max larger than parent min of %lld)",
+              nMaxKey, *pnParentMinKey);
+        }
+      }else{
+        if( nMinKey <= *pnParentMinKey ){
+          checkAppendMsg(pCheck, zContext, 
+              "Rowid %lld out of order (min less than parent min of %lld)",
+              nMinKey, *pnParentMinKey);
+        }
+        if( nMaxKey > *pnParentMaxKey ){
+          checkAppendMsg(pCheck, zContext, 
+              "Rowid %lld out of order (max larger than parent max of %lld)",
+              nMaxKey, *pnParentMaxKey);
+        }
+        *pnParentMinKey = nMaxKey;
+      }
+    /* else if we're a right child page */
+    } else if( pnParentMaxKey ){
+      if( nMinKey <= *pnParentMaxKey ){
+        checkAppendMsg(pCheck, zContext, 
+            "Rowid %lld out of order (min less than parent max of %lld)",
+            nMinKey, *pnParentMaxKey);
+      }
+    }
+  }
+
   /* Check for complete coverage of the page
   */
   data = pPage->aData;
@@ -7529,7 +7605,7 @@ static int checkTreePage(
       }
       if( (pc+size-1)>=usableSize ){
         checkAppendMsg(pCheck, 0, 
-            "Corruption detected in cell %d on page %d",i,iPage,0);
+            "Corruption detected in cell %d on page %d",i,iPage);
       }else{
         for(j=pc+size-1; j>=pc; j--) hit[j]++;
       }
@@ -7635,7 +7711,7 @@ char *sqlite3BtreeIntegrityCheck(
       checkPtrmap(&sCheck, aRoot[i], PTRMAP_ROOTPAGE, 0, 0);
     }
 #endif
-    checkTreePage(&sCheck, aRoot[i], "List of tree roots: ");
+    checkTreePage(&sCheck, aRoot[i], "List of tree roots: ", NULL, NULL);
   }
 
   /* Make sure every page in the file is referenced

@@ -1261,19 +1261,33 @@ void sqlite3GenerateConstraintChecks(
         ** the triggers and remove both the table and index b-tree entries.
         **
         ** Otherwise, if there are no triggers or the recursive-triggers
-        ** flag is not set, call GenerateRowIndexDelete(). This removes
-        ** the index b-tree entries only. The table b-tree entry will be 
-        ** replaced by the new entry when it is inserted.  */
+        ** flag is not set, but the table has one or more indexes, call 
+        ** GenerateRowIndexDelete(). This removes the index b-tree entries 
+        ** only. The table b-tree entry will be replaced by the new entry 
+        ** when it is inserted.  
+        **
+        ** If either GenerateRowDelete() or GenerateRowIndexDelete() is called,
+        ** also invoke MultiWrite() to indicate that this VDBE may require
+        ** statement rollback (if the statement is aborted after the delete
+        ** takes place). Earlier versions called sqlite3MultiWrite() regardless,
+        ** but being more selective here allows statements like:
+        **
+        **   REPLACE INTO t(rowid) VALUES($newrowid)
+        **
+        ** to run without a statement journal if there are no indexes on the
+        ** table.
+        */
         Trigger *pTrigger = 0;
         if( pParse->db->flags&SQLITE_RecTriggers ){
           pTrigger = sqlite3TriggersExist(pParse, pTab, TK_DELETE, 0, 0);
         }
-        sqlite3MultiWrite(pParse);
         if( pTrigger || sqlite3FkRequired(pParse, pTab, 0, 0) ){
+          sqlite3MultiWrite(pParse);
           sqlite3GenerateRowDelete(
               pParse, pTab, baseCur, regRowid, 0, pTrigger, OE_Replace
           );
-        }else{
+        }else if( pTab->pIndex ){
+          sqlite3MultiWrite(pParse);
           sqlite3GenerateRowIndexDelete(pParse, pTab, baseCur, 0);
         }
         seenReplace = 1;

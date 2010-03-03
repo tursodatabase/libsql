@@ -108,7 +108,7 @@ extern "C" {
 
 /*
 ** CAPI3REF: Run-Time Library Version Numbers
-** KEYWORDS: sqlite3_version
+** KEYWORDS: sqlite3_version, sqlite3_sourceid
 **
 ** These interfaces provide the same information as the [SQLITE_VERSION],
 ** [SQLITE_VERSION_NUMBER], and [SQLITE_SOURCE_ID] C preprocessor macros
@@ -130,9 +130,9 @@ extern "C" {
 ** function is provided for use in DLLs since DLL users usually do not have
 ** direct access to string constants within the DLL.  ^The
 ** sqlite3_libversion_number() function returns an integer equal to
-** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function a pointer
-** to a string constant whose value is the same as the [SQLITE_SOURCE_ID]
-** C preprocessor macro.
+** [SQLITE_VERSION_NUMBER].  ^The sqlite3_sourceid() function returns 
+** a pointer to a string constant whose value is the same as the 
+** [SQLITE_SOURCE_ID] C preprocessor macro.
 **
 ** See also: [sqlite_version()] and [sqlite_source_id()].
 */
@@ -140,6 +140,33 @@ SQLITE_EXTERN const char sqlite3_version[];
 const char *sqlite3_libversion(void);
 const char *sqlite3_sourceid(void);
 int sqlite3_libversion_number(void);
+
+#ifndef SQLITE_OMIT_COMPILEOPTION_DIAGS
+/*
+** CAPI3REF: Run-Time Library Compilation Options Diagnostics
+**
+** ^The sqlite3_compileoption_used() function returns 0 or 1 
+** indicating whether the specified option was defined at 
+** compile time.  ^The SQLITE_ prefix may be omitted from the 
+** option name passed to sqlite3_compileoption_used().  
+**
+** ^The sqlite3_compileoption_get() function allows interating
+** over the list of options that were defined at compile time by
+** returning the N-th compile time option string.  ^If N is out of range,
+** sqlite3_compileoption_get() returns a NULL pointer.  ^The SQLITE_ 
+** prefix is omitted from any strings returned by 
+** sqlite3_compileoption_get().
+**
+** ^Support for the diagnostic functions sqlite3_compileoption_used()
+** and sqlite3_compileoption_get() may be omitted by specifing the 
+** [SQLITE_OMIT_COMPILEOPTION_DIAGS] option at compile time.
+**
+** See also: SQL functions [sqlite_compileoption_used()] and
+** [sqlite_compileoption_get()] and the [compile_options pragma].
+*/
+int sqlite3_compileoption_used(const char *zOptName);
+const char *sqlite3_compileoption_get(int N);
+#endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
 /*
 ** CAPI3REF: Test To See If The Library Is Threadsafe
@@ -914,7 +941,6 @@ int sqlite3_os_end(void);
 
 /*
 ** CAPI3REF: Configuring The SQLite Library
-** EXPERIMENTAL
 **
 ** The sqlite3_config() interface is used to make global configuration
 ** changes to SQLite in order to tune SQLite to the specific needs of
@@ -1255,6 +1281,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_LOOKASIDE    13  /* int int */
 #define SQLITE_CONFIG_PCACHE       14  /* sqlite3_pcache_methods* */
 #define SQLITE_CONFIG_GETPCACHE    15  /* sqlite3_pcache_methods* */
+#define SQLITE_CONFIG_LOG          16  /* xFunc, void* */
 
 /*
 ** CAPI3REF: Configuration Options
@@ -5662,6 +5689,24 @@ int sqlite3_unlock_notify(
 ** that SQLite uses internally when comparing identifiers.
 */
 int sqlite3_strnicmp(const char *, const char *, int);
+
+/*
+** CAPI3REF: Error Logging Interface
+** EXPERIMENTAL
+**
+** ^The [sqlite3_log()] interface writes a message into the error log
+** established by the [SQLITE_CONFIG_LOG] option to [sqlite3_config()].
+** ^If logging is enabled, the zFormat string and subsequent arguments are
+** passed through to [sqlite3_vmprintf()] to generate the final output string.
+**
+** The sqlite3_log() interface is intended for use by extensions such as
+** virtual tables, collating functions, and SQL functions.  While there is
+** nothing to prevent an application from calling sqlite3_log(), doing so
+** is considered bad form.
+**
+** The zFormat string must not be NULL.
+*/
+void sqlite3_log(int iErrCode, const char *zFormat, ...);
 
 /*
 ** Undo the hack that converts floating point types to integer for

@@ -342,7 +342,7 @@ foreach {DO_MALLOC_TEST enc} {
     }
     execsql COMMIT
   } {}
-  do_snippet_test $T.7.2 {one two} -1 3 {*}$testresults
+  eval [list do_snippet_test $T.7.2 {one two} -1 3] $testresults
   
   ##########################################################################
   # Test the matchinfo function.

@@ -83,7 +83,7 @@ void sqlite3StatusSet(int op, int X){
 int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag){
   wsdStatInit;
   if( op<0 || op>=ArraySize(wsdStat.nowValue) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   *pCurrent = wsdStat.nowValue[op];
   *pHighwater = wsdStat.mxValue[op];

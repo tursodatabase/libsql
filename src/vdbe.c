@@ -538,7 +538,7 @@ static int checkSavepointCount(sqlite3 *db){
 int sqlite3VdbeExec(
   Vdbe *p                    /* The VDBE */
 ){
-  int pc;                    /* The program counter */
+  int pc=0;                  /* The program counter */
   Op *aOp = p->aOp;          /* Copy of p->aOp */
   Op *pOp;                   /* Current operation */
   int rc = SQLITE_OK;        /* Value to return */
@@ -563,7 +563,6 @@ int sqlite3VdbeExec(
   /*** INSERT STACK UNION HERE ***/
 
   assert( p->magic==VDBE_MAGIC_RUN );  /* sqlite3_step() verifies this */
-  assert( db->magic==SQLITE_MAGIC_BUSY );
   sqlite3VdbeMutexArrayEnter(p);
   if( p->rc==SQLITE_NOMEM ){
     /* This happens if a malloc() inside a call to sqlite3_column_text() or
@@ -648,9 +647,7 @@ int sqlite3VdbeExec(
     if( checkProgress ){
       if( db->nProgressOps==nProgressOps ){
         int prc;
-        if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
-        prc =db->xProgress(db->pProgressArg);
-        if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
+        prc = db->xProgress(db->pProgressArg);
         if( prc!=0 ){
           rc = SQLITE_INTERRUPT;
           goto vdbe_error_halt;
@@ -850,7 +847,13 @@ case OP_Halt: {
   p->errorAction = (u8)pOp->p2;
   p->pc = pc;
   if( pOp->p4.z ){
+    assert( p->rc!=SQLITE_OK );
     sqlite3SetString(&p->zErrMsg, db, "%s", pOp->p4.z);
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(pOp->p1, "abort at %d in [%s]: %s", pc, p->zSql, pOp->p4.z);
+  }else if( p->rc ){
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(pOp->p1, "constraint failed at %d in [%s]", pc, p->zSql);
   }
   rc = sqlite3VdbeHalt(p);
   assert( rc==SQLITE_BUSY || rc==SQLITE_OK || rc==SQLITE_ERROR );
@@ -1400,21 +1403,12 @@ case OP_Function: {
     assert( pOp[-1].opcode==OP_CollSeq );
     ctx.pColl = pOp[-1].p4.pColl;
   }
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   (*ctx.pFunc->xFunc)(&ctx, n, apVal);
-  if( sqlite3SafetyOn(db) ){
-    sqlite3VdbeMemRelease(&ctx.s);
-    goto abort_due_to_misuse;
-  }
   if( db->mallocFailed ){
     /* Even though a malloc() has failed, the implementation of the
     ** user function may have called an sqlite3_result_XXX() function
     ** to return a value. The following call releases any resources
     ** associated with such a value.
-    **
-    ** Note: Maybe MemRelease() should be called if sqlite3SafetyOn()
-    ** fails also (the if(...) statement above). But if people are
-    ** misusing sqlite, they have bigger problems than a leaked value.
     */
     sqlite3VdbeMemRelease(&ctx.s);
     goto no_mem;
@@ -3119,7 +3113,7 @@ case OP_OpenEphemeral: {
 ** register P2.  In other words, cursor P1 becomes an alias for the 
 ** MEM_Blob content contained in register P2.
 **
-** A pseudo-table created by this opcode is used to hold the a single
+** A pseudo-table created by this opcode is used to hold a single
 ** row output from the sorter so that the row can be decomposed into
 ** individual columns using the OP_Column opcode.  The OP_Column opcode
 ** is the only cursor opcode that works with a pseudo-table.
@@ -4049,12 +4043,10 @@ case OP_Rowid: {                 /* out2-prerelease */
     pVtab = pC->pVtabCursor->pVtab;
     pModule = pVtab->pModule;
     assert( pModule->xRowid );
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     rc = pModule->xRowid(pC->pVtabCursor, &v);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = pVtab->zErrMsg;
     pVtab->zErrMsg = 0;
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 #endif /* SQLITE_OMIT_VIRTUALTABLE */
   }else{
     assert( pC->pCursor!=0 );
@@ -4590,7 +4582,6 @@ case OP_ParseSchema: {
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      (void)sqlite3SafetyOff(db);
       assert( db->init.busy==0 );
       db->init.busy = 1;
       initData.rc = SQLITE_OK;
@@ -4599,7 +4590,6 @@ case OP_ParseSchema: {
       if( rc==SQLITE_OK ) rc = initData.rc;
       sqlite3DbFree(db, zSql);
       db->init.busy = 0;
-      (void)sqlite3SafetyOn(db);
     }
   }
   sqlite3BtreeLeaveAll(db);
@@ -5169,9 +5159,7 @@ case OP_AggFinal: {
 ** a transaction.
 */
 case OP_Vacuum: {
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse; 
   rc = sqlite3RunVacuum(&p->zErrMsg, db);
-  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   break;
 }
 #endif
@@ -5315,12 +5303,10 @@ case OP_VOpen: {
   pVtab = pOp->p4.pVtab->pVtab;
   pModule = (sqlite3_module *)pVtab->pModule;
   assert(pVtab && pModule);
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xOpen(pVtab, &pVtabCursor);
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
-  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
   if( SQLITE_OK==rc ){
     /* Initialize sqlite3_vtab_cursor base class */
     pVtabCursor->pVtab = pVtab;
@@ -5394,7 +5380,6 @@ case OP_VFilter: {   /* jump */
       sqlite3VdbeMemStoreType(apArg[i]);
     }
 
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     p->inVtabMethod = 1;
     rc = pModule->xFilter(pVtabCursor, iQuery, pOp->p4.z, nArg, apArg);
     p->inVtabMethod = 0;
@@ -5404,7 +5389,6 @@ case OP_VFilter: {   /* jump */
     if( rc==SQLITE_OK ){
       res = pModule->xEof(pVtabCursor);
     }
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
     if( res ){
       pc = pOp->p2 - 1;
@@ -5450,7 +5434,6 @@ case OP_VColumn: {
   sqlite3VdbeMemMove(&sContext.s, pDest);
   MemSetTypeFlag(&sContext.s, MEM_Null);
 
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pModule->xColumn(pCur->pVtabCursor, &sContext, pOp->p2);
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
@@ -5468,9 +5451,6 @@ case OP_VColumn: {
   REGISTER_TRACE(pOp->p3, pDest);
   UPDATE_MAX_BLOBSIZE(pDest);
 
-  if( sqlite3SafetyOn(db) ){
-    goto abort_due_to_misuse;
-  }
   if( sqlite3VdbeMemTooBig(pDest) ){
     goto too_big;
   }
@@ -5507,7 +5487,6 @@ case OP_VNext: {   /* jump */
   ** data is available) and the error code returned when xColumn or
   ** some other method is next invoked on the save virtual table cursor.
   */
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   p->inVtabMethod = 1;
   rc = pModule->xNext(pCur->pVtabCursor);
   p->inVtabMethod = 0;
@@ -5517,7 +5496,6 @@ case OP_VNext: {   /* jump */
   if( rc==SQLITE_OK ){
     res = pModule->xEof(pCur->pVtabCursor);
   }
-  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
   if( !res ){
     /* If there is data, jump to P2 */
@@ -5543,12 +5521,10 @@ case OP_VRename: {
   assert( pVtab->pModule->xRename );
   REGISTER_TRACE(pOp->p1, pName);
   assert( pName->flags & MEM_Str );
-  if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
   rc = pVtab->pModule->xRename(pVtab, pName->z);
   sqlite3DbFree(db, p->zErrMsg);
   p->zErrMsg = pVtab->zErrMsg;
   pVtab->zErrMsg = 0;
-  if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
 
   break;
 }
@@ -5599,12 +5575,10 @@ case OP_VUpdate: {
       apArg[i] = pX;
       pX++;
     }
-    if( sqlite3SafetyOff(db) ) goto abort_due_to_misuse;
     rc = pModule->xUpdate(pVtab, nArg, apArg, &rowid);
     sqlite3DbFree(db, p->zErrMsg);
     p->zErrMsg = pVtab->zErrMsg;
     pVtab->zErrMsg = 0;
-    if( sqlite3SafetyOn(db) ) goto abort_due_to_misuse;
     if( rc==SQLITE_OK && pOp->p1 ){
       assert( nArg>1 && apArg[0] && (apArg[0]->flags&MEM_Null) );
       db->lastRowid = rowid;
@@ -5729,6 +5703,7 @@ default: {          /* This is really OP_Noop and OP_Explain */
 vdbe_error_halt:
   assert( rc );
   p->rc = rc;
+  sqlite3_log(rc, "prepared statement aborts at %d: [%s]", pc, p->zSql);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
@@ -5756,12 +5731,6 @@ no_mem:
   sqlite3SetString(&p->zErrMsg, db, "out of memory");
   rc = SQLITE_NOMEM;
   goto vdbe_error_halt;
-
-  /* Jump to here for an SQLITE_MISUSE error.
-  */
-abort_due_to_misuse:
-  rc = SQLITE_MISUSE;
-  /* Fall thru into abort_due_to_error */
 
   /* Jump to here for any other kind of fatal error.  The "rc" variable
   ** should hold the error number.

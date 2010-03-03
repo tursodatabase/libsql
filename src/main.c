@@ -257,7 +257,7 @@ int sqlite3_config(int op, ...){
 
   /* sqlite3_config() shall return SQLITE_MISUSE if it is invoked while
   ** the SQLite library is in use. */
-  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE;
+  if( sqlite3GlobalConfig.isInit ) return SQLITE_MISUSE_BKPT;
 
   va_start(ap, op);
   switch( op ){
@@ -376,6 +376,21 @@ int sqlite3_config(int op, ...){
     case SQLITE_CONFIG_LOOKASIDE: {
       sqlite3GlobalConfig.szLookaside = va_arg(ap, int);
       sqlite3GlobalConfig.nLookaside = va_arg(ap, int);
+      break;
+    }
+    
+    /* Record a pointer to the logger funcction and its first argument.
+    ** The default is NULL.  Logging is disabled if the function pointer is
+    ** NULL.
+    */
+    case SQLITE_CONFIG_LOG: {
+      /* MSVC is picky about pulling func ptrs from va lists.
+      ** http://support.microsoft.com/kb/47961
+      ** sqlite3GlobalConfig.xLog = va_arg(ap, void(*)(void*,int,const char*));
+      */
+      typedef void(*LOGFUNC_t)(void*,int,const char*);
+      sqlite3GlobalConfig.xLog = va_arg(ap, LOGFUNC_t);
+      sqlite3GlobalConfig.pLogArg = va_arg(ap, void*);
       break;
     }
 
@@ -591,7 +606,7 @@ int sqlite3_close(sqlite3 *db){
     return SQLITE_OK;
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
 
@@ -938,7 +953,7 @@ int sqlite3CreateFunc(
       (!xFunc && (!xFinal && xStep)) ||
       (nArg<-1 || nArg>SQLITE_MAX_FUNCTION_ARG) ||
       (255<(nName = sqlite3Strlen30( zFunctionName))) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   
 #ifndef SQLITE_OMIT_UTF16
@@ -1269,7 +1284,7 @@ const char *sqlite3_errmsg(sqlite3 *db){
     return sqlite3ErrStr(SQLITE_NOMEM);
   }
   if( !sqlite3SafetyCheckSickOrOk(db) ){
-    return sqlite3ErrStr(SQLITE_MISUSE);
+    return sqlite3ErrStr(SQLITE_MISUSE_BKPT);
   }
   sqlite3_mutex_enter(db->mutex);
   if( db->mallocFailed ){
@@ -1338,7 +1353,7 @@ const void *sqlite3_errmsg16(sqlite3 *db){
 */
 int sqlite3_errcode(sqlite3 *db){
   if( db && !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
@@ -1347,7 +1362,7 @@ int sqlite3_errcode(sqlite3 *db){
 }
 int sqlite3_extended_errcode(sqlite3 *db){
   if( db && !sqlite3SafetyCheckSickOrOk(db) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   if( !db || db->mallocFailed ){
     return SQLITE_NOMEM;
@@ -1385,7 +1400,7 @@ static int createCollation(
     enc2 = SQLITE_UTF16NATIVE;
   }
   if( enc2<SQLITE_UTF8 || enc2>SQLITE_UTF16BE ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
 
   /* Check if this call is removing or replacing an existing collation 
@@ -1929,16 +1944,34 @@ int sqlite3_get_autocommit(sqlite3 *db){
   return db->autoCommit;
 }
 
-#ifdef SQLITE_DEBUG
 /*
-** The following routine is subtituted for constant SQLITE_CORRUPT in
-** debugging builds.  This provides a way to set a breakpoint for when
-** corruption is first detected.
+** The following routines are subtitutes for constants SQLITE_CORRUPT,
+** SQLITE_MISUSE, SQLITE_CANTOPEN, SQLITE_IOERR and possibly other error
+** constants.  They server two purposes:
+**
+**   1.  Serve as a convenient place to set a breakpoint in a debugger
+**       to detect when version error conditions occurs.
+**
+**   2.  Invoke sqlite3_log() to provide the source code location where
+**       a low-level error is first detected.
 */
-int sqlite3Corrupt(void){
+int sqlite3CorruptError(int lineno){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_CORRUPT,
+              "database corruption found by source line %d", lineno);
   return SQLITE_CORRUPT;
 }
-#endif
+int sqlite3MisuseError(int lineno){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_MISUSE, "misuse detected by source line %d", lineno);
+  return SQLITE_MISUSE;
+}
+int sqlite3CantopenError(int lineno){
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(SQLITE_CANTOPEN, "cannot open file at source line %d", lineno);
+  return SQLITE_CANTOPEN;
+}
+
 
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
@@ -1982,7 +2015,6 @@ int sqlite3_table_column_metadata(
 
   /* Ensure the database schema has been loaded */
   sqlite3_mutex_enter(db->mutex);
-  (void)sqlite3SafetyOn(db);
   sqlite3BtreeEnterAll(db);
   rc = sqlite3Init(db, &zErrMsg);
   if( SQLITE_OK!=rc ){
@@ -2041,7 +2073,6 @@ int sqlite3_table_column_metadata(
 
 error_out:
   sqlite3BtreeLeaveAll(db);
-  (void)sqlite3SafetyOff(db);
 
   /* Whether the function call succeeded or failed, set the output parameters
   ** to whatever their local counterparts contain. If an error did occur,

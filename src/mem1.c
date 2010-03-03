@@ -42,6 +42,9 @@ static void *sqlite3MemMalloc(int nByte){
   if( p ){
     p[0] = nByte;
     p++;
+  }else{
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(SQLITE_NOMEM, "failed to allocate %u bytes of memory", nByte);
   }
   return (void *)p;
 }
@@ -62,6 +65,18 @@ static void sqlite3MemFree(void *pPrior){
 }
 
 /*
+** Report the allocated size of a prior return from xMalloc()
+** or xRealloc().
+*/
+static int sqlite3MemSize(void *pPrior){
+  sqlite3_int64 *p;
+  if( pPrior==0 ) return 0;
+  p = (sqlite3_int64*)pPrior;
+  p--;
+  return (int)p[0];
+}
+
+/*
 ** Like realloc().  Resize an allocation previously obtained from
 ** sqlite3MemMalloc().
 **
@@ -75,26 +90,18 @@ static void *sqlite3MemRealloc(void *pPrior, int nByte){
   sqlite3_int64 *p = (sqlite3_int64*)pPrior;
   assert( pPrior!=0 && nByte>0 );
   nByte = ROUND8(nByte);
-  p = (sqlite3_int64*)pPrior;
   p--;
   p = realloc(p, nByte+8 );
   if( p ){
     p[0] = nByte;
     p++;
+  }else{
+    testcase( sqlite3GlobalConfig.xLog!=0 );
+    sqlite3_log(SQLITE_NOMEM,
+      "failed memory resize %u to %u bytes",
+      sqlite3MemSize(pPrior), nByte);
   }
   return (void*)p;
-}
-
-/*
-** Report the allocated size of a prior return from xMalloc()
-** or xRealloc().
-*/
-static int sqlite3MemSize(void *pPrior){
-  sqlite3_int64 *p;
-  if( pPrior==0 ) return 0;
-  p = (sqlite3_int64*)pPrior;
-  p--;
-  return (int)p[0];
 }
 
 /*

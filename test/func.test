@@ -235,6 +235,85 @@ ifcapable floatingpoint {
   do_test func-4.16 {
     catchsql {SELECT round(b,2.0) FROM t1 ORDER BY b}
   } {0 {-2.0 1.23 2.0}}
+  # Verify some values reported on the mailing list.
+  # Some of these fail on MSVC builds with 64-bit
+  # long doubles, but not on GCC builds with 80-bit
+  # long doubles.
+  for {set i 1} {$i<999} {incr i} {
+    set x1 [expr 40222.5 + $i]
+    set x2 [expr 40223.0 + $i]
+    do_test func-4.17.$i {
+      execsql {SELECT round($x1);}
+    } $x2
+  }
+  for {set i 1} {$i<999} {incr i} {
+    set x1 [expr 40222.05 + $i]
+    set x2 [expr 40222.10 + $i]
+    do_test func-4.18.$i {
+      execsql {SELECT round($x1,1);}
+    } $x2
+  }
+  do_test func-4.20 {
+    execsql {SELECT round(40223.4999999999);}
+  } {40223.0}
+  do_test func-4.21 {
+    execsql {SELECT round(40224.4999999999);}
+  } {40224.0}
+  do_test func-4.22 {
+    execsql {SELECT round(40225.4999999999);}
+  } {40225.0}
+  for {set i 1} {$i<10} {incr i} {
+    do_test func-4.23.$i {
+      execsql {SELECT round(40223.4999999999,$i);}
+    } {40223.5}
+    do_test func-4.24.$i {
+      execsql {SELECT round(40224.4999999999,$i);}
+    } {40224.5}
+    do_test func-4.25.$i {
+      execsql {SELECT round(40225.4999999999,$i);}
+    } {40225.5}
+  }
+  for {set i 10} {$i<32} {incr i} {
+    do_test func-4.26.$i {
+      execsql {SELECT round(40223.4999999999,$i);}
+    } {40223.4999999999}
+    do_test func-4.27.$i {
+      execsql {SELECT round(40224.4999999999,$i);}
+    } {40224.4999999999}
+    do_test func-4.28.$i {
+      execsql {SELECT round(40225.4999999999,$i);}
+    } {40225.4999999999}
+  }
+  do_test func-4.29 {
+    execsql {SELECT round(1234567890.5);}
+  } {1234567891.0}
+  do_test func-4.30 {
+    execsql {SELECT round(12345678901.5);}
+  } {12345678902.0}
+  do_test func-4.31 {
+    execsql {SELECT round(123456789012.5);}
+  } {123456789013.0}
+  do_test func-4.32 {
+    execsql {SELECT round(1234567890123.5);}
+  } {1234567890124.0}
+  do_test func-4.33 {
+    execsql {SELECT round(12345678901234.5);}
+  } {12345678901235.0}
+  do_test func-4.34 {
+    execsql {SELECT round(1234567890123.35,1);}
+  } {1234567890123.4}
+  do_test func-4.35 {
+    execsql {SELECT round(1234567890123.445,2);}
+  } {1234567890123.45}
+  do_test func-4.36 {
+    execsql {SELECT round(99999999999994.5);}
+  } {99999999999995.0}
+  do_test func-4.37 {
+    execsql {SELECT round(9999999999999.55,1);}
+  } {9999999999999.6}
+  do_test func-4.38 {
+    execsql {SELECT round(9999999999999.555,2);}
+  } {9999999999999.56}
 }
 
 # Test the upper() and lower() functions

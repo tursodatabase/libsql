@@ -1,4 +1,4 @@
-# 2004 August 30
+# 2004 August 30 {}
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -310,5 +310,42 @@ ifcapable oversize_cell_check {
     }
   } {1 {database disk image is malformed}}
 }
+
+db close
+file delete -force test.db test.db-journal
+do_test corrupt-8.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA secure_delete = on;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(5, randomblob(1900));
+  }
+
+  hexio_write test.db 2044 [hexio_render_int32 2]
+  hexio_write test.db 24   [hexio_render_int32 45]
+
+  catchsql { INSERT OR REPLACE INTO t1 VALUES(5, randomblob(1900)) }
+} {1 {database disk image is malformed}}
+
+db close
+file delete -force test.db test.db-journal
+do_test corrupt-8.2 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA secure_delete = on;
+    PRAGMA auto_vacuum = 0;
+    CREATE TABLE t1(x INTEGER PRIMARY KEY, y);
+    INSERT INTO t1 VALUES(5, randomblob(900));
+    INSERT INTO t1 VALUES(6, randomblob(900));
+  }
+
+  hexio_write test.db 2047 FF
+  hexio_write test.db 24   [hexio_render_int32 45]
+
+  catchsql { INSERT INTO t1 VALUES(4, randomblob(1900)) }
+} {1 {database disk image is malformed}}
 
 finish_test

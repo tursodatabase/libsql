@@ -664,6 +664,9 @@ static int resolveOrderByTermToExprList(
   int i;             /* Loop counter */
   ExprList *pEList;  /* The columns of the result set */
   NameContext nc;    /* Name context for resolving pE */
+  sqlite3 *db;       /* Database connection */
+  int rc;            /* Return code from subprocedures */
+  u8 savedSuppErr;   /* Saved value of db->suppressErr */
 
   assert( sqlite3ExprIsInteger(pE, &i)==0 );
   pEList = pSelect->pEList;
@@ -676,10 +679,12 @@ static int resolveOrderByTermToExprList(
   nc.pEList = pEList;
   nc.allowAgg = 1;
   nc.nErr = 0;
-  if( sqlite3ResolveExprNames(&nc, pE) ){
-    sqlite3ErrorClear(pParse);
-    return 0;
-  }
+  db = pParse->db;
+  savedSuppErr = db->suppressErr;
+  db->suppressErr = 1;
+  rc = sqlite3ResolveExprNames(&nc, pE);
+  db->suppressErr = savedSuppErr;
+  if( rc ) return 0;
 
   /* Try to match the ORDER BY expression against an expression
   ** in the result set.  Return an 1-based index of the matching
