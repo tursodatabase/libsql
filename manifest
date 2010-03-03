@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C When\sTEMP\sfiles\sare\sin\smemory,\salso\sput\sthe\smassive\sTEMP\sfile\sused\sby\nthe\sVACUUM\scommand\sin\smemory.\s\sThis\sis\sa\scherry-pick\smerge\sof\n[9daf4e7d07]
-D 2010-03-03T00:02:58
+C Modify\sthe\ssqlite3_log()\sinterface\sand\simplementation\sso\sthat\sit\snever\suses\ndynamic\smemory\sallocation\s-\sto\savoid\sdeadlocking\swhen\scalled\swhile\sholding\s\nthe\smemory\sallocator\smutex.\s\sCherry-pick\smerge\sof\s[28d1bc98d6].
+D 2010-03-03T22:40:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,13 +161,13 @@ F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
 F src/pragma.c f37f33665b02447d83669620ddc1fd4fd1f70b0a
 F src/prepare.c dede8f2d7f5810cea08ab7a4ced02fcc2d6478e9
-F src/printf.c ed476ea406ce79dec397268ef9035f914ee40453
+F src/printf.c 7c2ae3a3c1833691bfbeed85f75125d8752b278e
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 8e51ac017123b86f35de30ccdb0f18c73963c979
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 0109b993c360d649857523abb72919e1794f9b45
 F src/shell.c 546fe4b6df101c6cc3d08aa7b7b414136ce03ffc
-F src/sqlite.h.in 37d8930135ae33ac8f122351df0bc6c4d979ab61
+F src/sqlite.h.in e8e40f18450884f2693f330ff5956fd920678fd1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 4d7df175023a23232cc0abc07b51081ef9a61cec
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -787,14 +787,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b8fbf4275bded6680e368a6a8343866467bd7e22
-R 8d3fb3450b9039abffe355510b2ce9e1
+P e5342234357dcfde33fb7589f87d64f6de7d9970
+R 01beb709cf7bc8e3972a5b032e7b971a
 U drh
-Z f181595e67ffa01f9304a3649d1c0172
+Z 0d66440290a8834e0da1130d7723d7df
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLjac1oxKgR168RlERAk6eAJ0YE+odWO/gkCH53A7tOKqbbQSrfwCdFSCy
-ReHe9787/6uuebRnSKK4zco=
-=zWwd
+iD8DBQFLjuVOoxKgR168RlERAgTuAJ4qlt0mKQUYvcO4Xl9vNMna3dxhcgCfcVYt
+H1/v9Io9D3GEbLQlwd992Nk=
+=ii3q
 -----END PGP SIGNATURE-----

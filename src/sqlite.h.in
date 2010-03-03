@@ -5653,6 +5653,12 @@ int sqlite3_strnicmp(const char *, const char *, int);
 ** virtual tables, collating functions, and SQL functions.  While there is
 ** nothing to prevent an application from calling sqlite3_log(), doing so
 ** is considered bad form.
+**
+** To avoid deadlocks and other threading problems, the sqlite3_log() routine
+** will not use dynamically allocated memory.  The log message is stored in
+** a fixed-length buffer on the stack.  If the log message is longer than
+** a few hundred characters, it will be truncated to the length of the
+** buffer.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
 
