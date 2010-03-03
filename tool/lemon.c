@@ -398,7 +398,7 @@ static int actioncmp(
     rc = ap1->x.rp->index - ap2->x.rp->index;
   }
   if( rc==0 ){
-    rc = ap2 - ap1;
+    rc = (int) (ap2 - ap1);
   }
   return rc;
 }
