@@ -1,5 +1,5 @@
-C Merge\schange\s[83e47ca006]\sinto\sthe\s3.6.1\sbranch.
-D 2010-03-03T08:34:39
+C Fix\ssome\sextra\sinstances\sof\sthe\sproblematic\sconstant\sin\sutil.c\son\sthe\s3.6.1\sbranch.
+D 2010-03-03T15:49:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/tokenize.c bfdc945527a4645bf54c8bf34d1f18c019b37117
 F src/trigger.c b61aaf7bff8e3763b234dbf46a1a64fb88a34e64
 F src/update.c 1d7d70ac77b4e2fd9004f1279ed5dc645599ece9
 F src/utf.c a7004436a6ef2aee012ace93de274dd0f3c7624e
-F src/util.c 4dc882cebdc80a7efec3c8083146d82d75e1f74c
+F src/util.c 2f10789f4b25f36822d663773f56ce9d33c7ea11
 F src/vacuum.c ef342828002debc97514617af3424aea8ef8522c
 F src/vdbe.c 412c486b22f29cfdf922c6588c209f35127c3962
 F src/vdbe.h 647fcf33a551ba10a974162c56846cb9aef2276b
@@ -617,7 +617,7 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P a25505978638bcb8fe11ab0bb4c17c3aec698d74
-R 5bbfeed6395ccacddd82b0cd2b6492e7
+P 96bfaf9c8c26e24d72111ed970f85f25f5b1b62e
+R 4818a50baadc1a49a234a4950db55fa4
 U dan
-Z 416c0c52cc188554d4d16defdbe4775d
+Z 649e0101dc5198168db8b8ffff4b24c3
