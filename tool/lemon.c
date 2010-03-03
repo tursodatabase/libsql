@@ -2284,21 +2284,11 @@ to follow the previous rule.");
         psp->errorcnt++;
         psp->state = RESYNC_AFTER_DECL_ERROR;
       }else{
-        struct symbol *sp = Symbol_find(x);
-        if((sp) && (sp->datatype)){
-          ErrorMsg(psp->filename,psp->tokenlineno,
-            "Symbol %%destructor \"%s\" already defined", x);
-          psp->errorcnt++;
-          psp->state = RESYNC_AFTER_DECL_ERROR;
-        }else{
-          if (!sp){
-            sp = Symbol_new(x);
-          }
-          psp->declargslot = &sp->destructor;
-          psp->decllinenoslot = &sp->destLineno;
-          psp->insertLineMacro = 1;
-          psp->state = WAITING_FOR_DECL_ARG;
-        }
+        struct symbol *sp = Symbol_new(x);
+        psp->declargslot = &sp->destructor;
+        psp->decllinenoslot = &sp->destLineno;
+        psp->insertLineMacro = 1;
+        psp->state = WAITING_FOR_DECL_ARG;
       }
       break;
     case WAITING_FOR_DATATYPE_SYMBOL:
