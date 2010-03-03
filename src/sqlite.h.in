@@ -5705,6 +5705,12 @@ int sqlite3_strnicmp(const char *, const char *, int);
 ** is considered bad form.
 **
 ** The zFormat string must not be NULL.
+**
+** To avoid deadlocks and other threading problems, the sqlite3_log() routine
+** will not use dynamically allocated memory.  The log message is stored in
+** a fixed-length buffer on the stack.  If the log message is longer than
+** a few hundred characters, it will be truncated to the length of the
+** buffer.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
 

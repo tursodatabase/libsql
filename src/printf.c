@@ -940,24 +940,38 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 }
 
 /*
+** This is the routine that actually formats the sqlite3_log() message.
+** We house it in a separate routine from sqlite3_log() to avoid using
+** stack space on small-stack systems when logging is disabled.
+**
+** sqlite3_log() must render into a static buffer.  It cannot dynamically
+** allocate memory because it might be called while the memory allocator
+** mutex is held.
+*/
+static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
+  StrAccum acc;                           /* String accumulator */
+#ifdef SQLITE_SMALL_STACK
+  char zMsg[150];                         /* Complete log message */
+#else
+  char zMsg[400];                         /* Complete log message */
+#endif
+
+  sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
+  acc.useMalloc = 0;
+  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
+                           sqlite3StrAccumFinish(&acc));
+}
+
+/*
 ** Format and write a message to the log if logging is enabled.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...){
-  void (*xLog)(void*, int, const char*);  /* The global logger function */
-  void *pLogArg;                          /* First argument to the logger */
   va_list ap;                             /* Vararg list */
-  char *zMsg;                             /* Complete log message */
-  
-  xLog = sqlite3GlobalConfig.xLog;
-  if( xLog ){
+  if( sqlite3GlobalConfig.xLog ){
     va_start(ap, zFormat);
-    sqlite3BeginBenignMalloc();
-    zMsg = sqlite3_vmprintf(zFormat, ap);
-    sqlite3EndBenignMalloc();
+    renderLogMsg(iErrCode, zFormat, ap);
     va_end(ap);
-    pLogArg = sqlite3GlobalConfig.pLogArg;
-    xLog(pLogArg, iErrCode, zMsg ? zMsg : zFormat);
-    sqlite3_free(zMsg);
   }
 }
 
