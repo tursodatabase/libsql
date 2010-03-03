@@ -45,7 +45,6 @@ static void LemonAtExit(void)
         if (!successful_exit) {
             remove(made_files[i]);
         }
-        free((void *) made_files[i]);
     }
     free(made_files);
     made_files_count = 0;
@@ -2769,10 +2768,9 @@ PRIVATE FILE *file_open(
   if(( *mode=='w' ) && (strcmp(suffix, ".out") != 0)){
     const char **ptr = (const char **)
         realloc(made_files, sizeof (const char **) * (made_files_count + 1));
-    char *fname = strdup(lemp->outname);
+    const char *fname = Strsafe(lemp->outname);
     if ((ptr == NULL) || (fname == NULL)) {
         free(ptr);
-        free(fname);
         memory_error();
     }
     made_files = ptr;
