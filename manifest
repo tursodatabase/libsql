@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Factor\sout\sconstant\sexpressions\sin\ssqlite3GetVarint()\sto\swork\saround\nnuisance\swarning\smessages\sfrom\sthe\sRVT\scompiler.
-D 2010-03-03T15:18:38
+C Fix\ssome\sextra\sinstances\sof\sthe\sconstants\saddressed\sby\s[83e47ca006].
+D 2010-03-03T16:02:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +209,7 @@ F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 340c9eca0fb24b1197468d96ba059f867c9834c7
 F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c dad16adcc0c35ef2437dca125a4b07419d361052
-F src/util.c 23c2e2a05ae1a2a8b848e6b145cc506d8f9ff223
+F src/util.c c076b2e38134d71ed09fee62ee788ad2d4121b93
 F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
 F src/vdbe.c 8b705e48cf4b6d0493ad0f109763d60c1b429487
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
@@ -795,14 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 00e5679047a0a96dc4396aae5e061909faf3b81d
-R d5279b0f0440c162ac13b57ad638ff10
-U drh
-Z 7a56c2200dee81fc4fcb29db9cc92e1e
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLjn3XoxKgR168RlERAk+wAKCIrMiXPhEryGElvlKVi8+iIR5PHACfQJjd
-3YnU+1KeqqESzTSJszdAYpA=
-=A+ES
------END PGP SIGNATURE-----
+P 83e47ca0069de259e98798d84d88301a5b4b6d2e
+R b254a895c1aed55531168a2f7a11c1dc
+U dan
+Z f02550fa435e14ac73a675de6c737016
