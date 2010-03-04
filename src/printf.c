@@ -606,9 +606,7 @@ void sqlite3VXPrintf(
           while( nPad-- ) bufpt[i++] = '0';
           length = width;
         }
-#else
-        length = 0;
-#endif /* SQLITE_OMIT_FLOATING_POINT */
+#endif
         break;
       case etSIZE:
         *(va_arg(ap,int*)) = pAccum->nChar;
@@ -949,12 +947,8 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
 ** mutex is held.
 */
 static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
-  StrAccum acc;                           /* String accumulator */
-#ifdef SQLITE_SMALL_STACK
-  char zMsg[150];                         /* Complete log message */
-#else
-  char zMsg[400];                         /* Complete log message */
-#endif
+  StrAccum acc;                          /* String accumulator */
+  char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
 
   sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
   acc.useMalloc = 0;

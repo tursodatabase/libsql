@@ -5703,7 +5703,9 @@ default: {          /* This is really OP_Noop and OP_Explain */
 vdbe_error_halt:
   assert( rc );
   p->rc = rc;
-  sqlite3_log(rc, "prepared statement aborts at %d: [%s]", pc, p->zSql);
+  testcase( sqlite3GlobalConfig.xLog!=0 );
+  sqlite3_log(rc, "statement aborts at %d: [%s] %s", 
+                   pc, p->zSql, p->zErrMsg);
   sqlite3VdbeHalt(p);
   if( rc==SQLITE_IOERR_NOMEM ) db->mallocFailed = 1;
   rc = SQLITE_ERROR;
