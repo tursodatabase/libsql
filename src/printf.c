@@ -460,7 +460,9 @@ void sqlite3VXPrintf(
       case etEXP:
       case etGENERIC:
         realvalue = va_arg(ap,double);
-#ifndef SQLITE_OMIT_FLOATING_POINT
+#ifdef SQLITE_OMIT_FLOATING_POINT
+        length = 0;
+#else
         if( precision<0 ) precision = 6;         /* Set default precision */
         if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
         if( realvalue<0.0 ){
@@ -606,7 +608,7 @@ void sqlite3VXPrintf(
           while( nPad-- ) bufpt[i++] = '0';
           length = width;
         }
-#endif
+#endif /* !defined(SQLITE_OMIT_FLOATING_POINT) */
         break;
       case etSIZE:
         *(va_arg(ap,int*)) = pAccum->nChar;
