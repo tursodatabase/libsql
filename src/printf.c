@@ -655,7 +655,7 @@ void sqlite3VXPrintf(
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
         k = precision;
-        for(i=n=0; (ch=escarg[i])!=0 && k!=0; i++, k--){
+        for(i=n=0; k!=0 && (ch=escarg[i])!=0; i++, k--){
           if( ch==q )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
