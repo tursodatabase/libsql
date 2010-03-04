@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Increase\sthe\smaximum\slength\sof\san\ssqlite3_log()\sresult\sstring.\s\sProvide\smore\ndetails\son\sthe\sstatement\sabort\slog\smessage.
-D 2010-03-04T00:53:33
+C Suppress\sharmless\scompiler\swarnings.
+D 2010-03-04T16:12:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c 97c2d5dd1015c35aabef8f18399c28bb9bcb7664
+F src/os_unix.c 284398041b13abf5a2785a53e9cf5a8923011e3d
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
 F src/pager.c ace73a84f53a551fb8b9334205af210a29874b2c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -171,7 +171,7 @@ F src/select.c 4113ef360430ed4e7533690ef46d06c20204adce
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
 F src/sqlite.h.in 08a2d9a278ff0dfd65055a7ec9c599f7ae1a3c18
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 32e6eb47d2f6fad587e16b0abbbfe3f7d55f2ec0
+F src/sqliteInt.h dd123c74d150078c5afc572a6bc76e0920cd9c9c
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c d329385a2cba3ea49d9d68af0ad84b22d46b4f40
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 84d760bfc1d219fda99901061bb5db2cafe9eb1d
-R 952c1e46748606994709a17ed2dc102e
+P 5322d1df5ba981001d248b7fb2ee02281e4f9723
+R 8518eb4aa88e157fd575727ed4a44d56
 U drh
-Z 6ab237967302805fc460ab0eaddd0a85
+Z b40a37769134e1c148f3f0d5e007c480
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLjwSQoxKgR168RlERAg4GAJ99wdO6zHQ+BQheTEebbxyfPgVwrwCfYERl
-d/IAf2HBq2gWIzTZvGEQx8Q=
-=kHv9
+iD8DBQFLj9v2oxKgR168RlERAlDTAJ96DQjq56uSJZBAaoHGSC19cEzB6QCfe07F
+8QzCK3CiczCBfiQDcZd+HXw=
+=HTRs
 -----END PGP SIGNATURE-----

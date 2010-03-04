@@ -84,37 +84,34 @@
 #define SQLITE_INDEX_SAMPLES 10
 
 /*
-** This macro is used to "hide" some ugliness in casting an int
-** value to a ptr value under the MSVC 64-bit compiler.   Casting
-** non 64-bit values to ptr types results in a "hard" error with 
-** the MSVC 64-bit compiler which this attempts to avoid.  
+** The following macros are used to cast pointers to integers and
+** integers to pointers.  The way you do this varies from one compiler
+** to the next, so we have developed the following set of #if statements
+** to generate appropriate macros for a wide range of compilers.
 **
-** A simple compiler pragma or casting sequence could not be found
-** to correct this in all situations, so this macro was introduced.
-**
-** It could be argued that the intptr_t type could be used in this
-** case, but that type is not available on all compilers, or 
-** requires the #include of specific headers which differs between
-** platforms.
+** The correct "ANSI" way to do this is to use the intptr_t type. 
+** Unfortunately, that typedef is not available on all compilers, or
+** if it is available, it requires an #include of specific headers
+** that very from one machine to the next.
 **
 ** Ticket #3860:  The llvm-gcc-4.2 compiler from Apple chokes on
 ** the ((void*)&((char*)0)[X]) construct.  But MSVC chokes on ((void*)(X)).
 ** So we have to define the macros in different ways depending on the
 ** compiler.
 */
-#if defined(__GNUC__)
-# if defined(HAVE_STDINT_H)
-#   define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
-#   define SQLITE_PTR_TO_INT(X)  ((int)(intptr_t)(X))
-# else
-#   define SQLITE_INT_TO_PTR(X)  ((void*)(X))
-#   define SQLITE_PTR_TO_INT(X)  ((int)(X))
-# endif
-#else
-# define SQLITE_INT_TO_PTR(X)   ((void*)&((char*)0)[X])
-# define SQLITE_PTR_TO_INT(X)   ((int)(((char*)X)-(char*)0))
+#if defined(__PTRDIFF_TYPE__)  /* This case should work for GCC */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(__PTRDIFF_TYPE__)(X))
+# define SQLITE_PTR_TO_INT(X)  ((int)(__PTRDIFF_TYPE__)(X))
+#elif !defined(__GNUC__)       /* Works for compilers other than LLVM */
+# define SQLITE_INT_TO_PTR(X)  ((void*)&((char*)0)[X])
+# define SQLITE_PTR_TO_INT(X)  ((int)(((char*)X)-(char*)0))
+#elif defined(HAVE_STDINT_H)   /* Use this case if we have ANSI headers */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(intptr_t)(X))
+# define SQLITE_PTR_TO_INT(X)  ((int)(intptr_t)(X))
+#else                          /* Generates a warning - but it always works */
+# define SQLITE_INT_TO_PTR(X)  ((void*)(X))
+# define SQLITE_PTR_TO_INT(X)  ((int)(X))
 #endif
-
 
 /*
 ** The SQLITE_THREADSAFE macro must be defined as either 0 or 1.

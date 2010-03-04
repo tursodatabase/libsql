@@ -1557,7 +1557,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1569,7 +1569,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1581,7 +1581,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST+divSize;
         lock.l_len = SHARED_SIZE-divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1594,7 +1594,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
