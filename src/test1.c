@@ -4909,7 +4909,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_open_file_count;
   extern int sqlite3_sort_count;
   extern int sqlite3_current_time;
-#if SQLITE_OS_UNIX && defined(__APPLE__)
+#if SQLITE_OS_UNIX && defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
   extern int sqlite3_hostid_num;
 #endif
   extern int sqlite3_max_blobsize;
@@ -5140,7 +5140,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3_open_file_count, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_current_time", 
       (char*)&sqlite3_current_time, TCL_LINK_INT);
-#if SQLITE_OS_UNIX && defined(__APPLE__)
+#if SQLITE_OS_UNIX && defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
   Tcl_LinkVar(interp, "sqlite_hostid_num", 
       (char*)&sqlite3_hostid_num, TCL_LINK_INT);
 #endif

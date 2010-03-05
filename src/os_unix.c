@@ -132,6 +132,10 @@
 # endif
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
+#if defined(__APPLE__)
+# include <sys/mount.h>
+#endif
+
 /*
 ** Allowed values of unixFile.fsFlags
 */

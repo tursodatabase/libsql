@@ -1,5 +1,5 @@
-C Fix\sfor\s[9abd6aa831].\sDo\snot\soverread\sa\sbuffer\sused\sfor\san\s%q\sor\s%w\sconversion\swith\sa\sprecision\sspecifier.
-D 2010-03-04T17:58:45
+C Adjust\ssome\s#ifdefs\sso\sthat\sthe\sbuild\sworks\son\sMac\sboth\swith\sand\swithout\nSQLITE_ENABLE_LOCKING_STYLE.
+D 2010-03-05T13:41:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
-F src/os_unix.c 284398041b13abf5a2785a53e9cf5a8923011e3d
+F src/os_unix.c d4832e89360c7d1b980800437368cbf3b3297723
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
 F src/pager.c ace73a84f53a551fb8b9334205af210a29874b2c
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
@@ -173,7 +173,7 @@ F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c d329385a2cba3ea49d9d68af0ad84b22d46b4f40
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c bad6570a005b234ea670b9f7b48256da19a032d3
-F src/test1.c db4d8fd2849ab9aca0f27fd3773b8d68d078cf86
+F src/test1.c aa9b1e10e834330e7759afb639420117e2422ded
 F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -792,7 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 14ad62b9a54dba5c5a2d4a994bcd4be6ab6e711f
-R 77848a5a664026af8d7d5cde853f6424
-U dan
-Z 8c8ae9dac09dd905c67187f5d19d475d
+P 5e472896e02eed05c6c0886a48acd0bdc7a38731
+R 204609ced7defe98357285940ebaac29
+U drh
+Z b84420254e8669712066d9c952bf24d0
