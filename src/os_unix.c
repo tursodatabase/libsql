@@ -128,11 +128,10 @@
 # else
 #  include <sys/file.h>
 #  include <sys/param.h>
-#  include <sys/mount.h>
 # endif
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
 # include <sys/mount.h>
 #endif
 
