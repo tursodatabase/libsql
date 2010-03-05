@@ -1,5 +1,5 @@
-C Modify\sthe\svdbe\sso\sthat\sthe\scomparison\soperator\sopcodes\sdo\snot\smodify\sthe\sdata\stype\sof\soperands.\sFix\sfor\s[aa92c76cd4].
-D 2010-03-05T16:32:12
+C Fix\sa\sone\sbyte\sbuffer\soverread\sin\sfts3.
+D 2010-03-05T17:27:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -56,7 +56,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c c7a20cf4c2e9fa22c9f304bece60f466b4d92589
+F ext/fts3/fts3.c 15ca4d9baf2ca6efa132bc8afdc62911deb5a83e
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h df812ef35f1b47a44ec68a44ec0c2a769c973d85
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
@@ -792,7 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 27413fc8dd52b754b4be9344a66bb9e0d752d48e
-R f2ab83c256285b8820ce8d6baa7f32be
+P 8858042fa1449516a2c7dbb991dca3eb6c5794cb
+R 8a9e89b47a06ff6e530c432a233196bb
 U dan
-Z 19b361fab49c5821c8736e06dd81041c
+Z 5bdb78b3531af14f46db30fbad40b790

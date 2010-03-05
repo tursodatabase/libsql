@@ -1037,7 +1037,12 @@ static void fts3PutDeltaVarint(
 
 /*
 ** When this function is called, *ppPoslist is assumed to point to the 
-** start of a position-list.
+** start of a position-list. After it returns, *ppPoslist points to the
+** first byte after the position-list.
+**
+** If pp is not NULL, then the contents of the position list are copied
+** to *pp. *pp is set to point to the first byte past the last byte copied
+** before this function returns.
 */
 static void fts3PoslistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
@@ -2181,7 +2186,9 @@ char *sqlite3Fts3FindPositions(
     while( pCsr<pEnd ){
       if( pExpr->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);
-        fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+        if( pCsr<pEnd ){
+          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+        }
         pExpr->pCurrent = pCsr;
       }else{
         if( pExpr->iCurrent==iDocid ){
