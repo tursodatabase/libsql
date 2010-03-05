@@ -3339,6 +3339,7 @@ int sqlite3PagerOpen(
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
+
   *ppPager = pPager;
   return SQLITE_OK;
 }
@@ -3488,8 +3489,24 @@ static int readDbPage(PgHdr *pPg){
     rc = SQLITE_OK;
   }
   if( pgno==1 ){
-    u8 *dbFileVers = &((u8*)pPg->pData)[24];
-    memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
+    if( rc ){
+      /* If the read is unsuccessful, set the dbFileVers[] to something
+      ** that will never be a valid file version.  dbFileVers[] is a copy
+      ** of bytes 24..39 of the database.  Bytes 28..31 should always be
+      ** zero.  Bytes 32..35 and 35..39 should be page numbers which are
+      ** never 0xffffffff.  So filling pPager->dbFileVers[] with all 0xff
+      ** bytes should suffice.
+      **
+      ** For an encrypted database, the situation is more complex:  bytes
+      ** 24..39 of the database are white noise.  But the probability of
+      ** white noising equaling 16 bytes of 0xff is vanishingly small so
+      ** we should still be ok.
+      */
+      memset(pPager->dbFileVers, 0xff, sizeof(pPager->dbFileVers));
+    }else{
+      u8 *dbFileVers = &((u8*)pPg->pData)[24];
+      memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
+    }
   }
   CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
 

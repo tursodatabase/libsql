@@ -1,5 +1,8 @@
-C Change\sa\scondition\sin\ssqlite3VdbeMemShallowCopy()\sto\savoid\saccessing\san\sunitialized\svariable\s(doing\sso\swas\snot\sdangerous,\sbut\scaused\sa\svalgrind\serror).
-D 2010-03-05T18:46:12
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthe\sdbFileVers\sfield\sin\sthe\sPager\sobject\sis\sproperly\sinitialized\neven\sif\sthere\sis\san\sI/O\serror\swhile\sreading\sits\scontent\soff\sof\sdisk.
+D 2010-03-05T20:17:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c ace73a84f53a551fb8b9334205af210a29874b2c
+F src/pager.c aafc314dee6e55be6cd6b4b1f9f8de62f0e1dfcc
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -792,7 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6e3e014af91601ed1f3a9cbe23f7c4260a4d177f
-R 388898322e7463920b97bb7843b3071a
-U dan
-Z 52df57cad18b098b73d39ae1b405ce26
+P 4793c381c6ff4e4d25433298be30028721a9cb67
+R 7b4a6ab87f116cc447789e269334119f
+U drh
+Z 00a421bab571893d9c696160e4b5eaa4
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLkWbtoxKgR168RlERAl7RAJ4zorYQIvAsovJC+i4CWjSBy47hKwCfeUwU
+RmW5deinND0RnxHbm1F9kGA=
+=NuKq
+-----END PGP SIGNATURE-----
