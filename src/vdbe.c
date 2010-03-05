@@ -239,17 +239,30 @@ static VdbeCursor *allocateCursor(
 static void applyNumericAffinity(Mem *pRec){
   if( (pRec->flags & (MEM_Real|MEM_Int))==0 ){
     int realnum;
+    u8 enc = pRec->enc;
     sqlite3VdbeMemNulTerminate(pRec);
-    if( (pRec->flags&MEM_Str)
-         && sqlite3IsNumber(pRec->z, &realnum, pRec->enc) ){
+    if( (pRec->flags&MEM_Str) && sqlite3IsNumber(pRec->z, &realnum, enc) ){
       i64 value;
-      sqlite3VdbeChangeEncoding(pRec, SQLITE_UTF8);
-      if( !realnum && sqlite3Atoi64(pRec->z, &value) ){
+      char *zUtf8 = pRec->z;
+#ifndef SQLITE_OMIT_UTF16
+      if( enc!=SQLITE_UTF8 ){
+        assert( pRec->db );
+        zUtf8 = sqlite3Utf16to8(pRec->db, pRec->z, pRec->n, enc);
+        if( !zUtf8 ) return;
+      }
+#endif
+      if( !realnum && sqlite3Atoi64(zUtf8, &value) ){
         pRec->u.i = value;
         MemSetTypeFlag(pRec, MEM_Int);
       }else{
-        sqlite3VdbeMemRealify(pRec);
+        sqlite3AtoF(zUtf8, &pRec->r);
+        MemSetTypeFlag(pRec, MEM_Real);
       }
+#ifndef SQLITE_OMIT_UTF16
+      if( enc!=SQLITE_UTF8 ){
+        sqlite3DbFree(pRec->db, zUtf8);
+      }
+#endif
     }
   }
 }
@@ -1731,9 +1744,13 @@ case OP_Gt:               /* same as TK_GT, jump, in1, in3 */
 case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   int res;            /* Result of the comparison of pIn1 against pIn3 */
   char affinity;      /* Affinity to use for comparison */
+  u16 flags1;         /* Copy of initial value of pIn1->flags */
+  u16 flags3;         /* Copy of initial value of pIn3->flags */
 
   pIn1 = &aMem[pOp->p1];
   pIn3 = &aMem[pOp->p3];
+  flags1 = pIn1->flags;
+  flags3 = pIn3->flags;
   if( (pIn1->flags | pIn3->flags)&MEM_Null ){
     /* One or both operands are NULL */
     if( pOp->p5 & SQLITE_NULLEQ ){
@@ -1788,6 +1805,10 @@ case OP_Ge: {             /* same as TK_GE, jump, in1, in3 */
   }else if( res ){
     pc = pOp->p2-1;
   }
+
+  /* Undo any changes made by applyAffinity() to the input registers. */
+  pIn1->flags = (pIn1->flags&~MEM_TypeMask) | (flags1&MEM_TypeMask);
+  pIn3->flags = (pIn3->flags&~MEM_TypeMask) | (flags3&MEM_TypeMask);
   break;
 }
 

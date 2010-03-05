@@ -2858,7 +2858,7 @@ void sqlite3ValueSetStr(sqlite3_value*, int, const void *,u8,
                         void(*)(void*));
 void sqlite3ValueFree(sqlite3_value*);
 sqlite3_value *sqlite3ValueNew(sqlite3 *);
-char *sqlite3Utf16to8(sqlite3 *, const void*, int);
+char *sqlite3Utf16to8(sqlite3 *, const void*, int, u8);
 #ifdef SQLITE_ENABLE_STAT2
 char *sqlite3Utf8to16(sqlite3 *, u8, char *, int, int *);
 #endif

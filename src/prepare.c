@@ -800,7 +800,7 @@ static int sqlite3Prepare16(
     return SQLITE_MISUSE_BKPT;
   }
   sqlite3_mutex_enter(db->mutex);
-  zSql8 = sqlite3Utf16to8(db, zSql, nBytes);
+  zSql8 = sqlite3Utf16to8(db, zSql, nBytes, SQLITE_UTF16NATIVE);
   if( zSql8 ){
     rc = sqlite3LockAndPrepare(db, zSql8, -1, saveSqlFlag, 0, ppStmt, &zTail8);
   }
