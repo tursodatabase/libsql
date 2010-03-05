@@ -1,5 +1,5 @@
-C Fix\sa\sone\sbyte\sbuffer\soverread\sin\sfts3.
-D 2010-03-05T17:27:02
+C Change\sa\scondition\sin\ssqlite3VdbeMemShallowCopy()\sto\savoid\saccessing\san\sunitialized\svariable\s(doing\sso\swas\snot\sdangerous,\sbut\scaused\sa\svalgrind\serror).
+D 2010-03-05T18:46:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -217,7 +217,7 @@ F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
 F src/vdbeapi.c 74c25680046a116b24b95393914d3669c23305dc
 F src/vdbeaux.c 9089e0cdcc7ed3bc4564f2684ce84f5911973ea9
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
-F src/vdbemem.c aeba77b59f3553d3cc5b72c18a8267c6fba546b9
+F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c 606adf51cd6d4ba51a8c6dccede06a6f7b0dd72d
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
@@ -792,7 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8858042fa1449516a2c7dbb991dca3eb6c5794cb
-R 8a9e89b47a06ff6e530c432a233196bb
+P 6e3e014af91601ed1f3a9cbe23f7c4260a4d177f
+R 388898322e7463920b97bb7843b3071a
 U dan
-Z 5bdb78b3531af14f46db30fbad40b790
+Z 52df57cad18b098b73d39ae1b405ce26
