@@ -1,5 +1,8 @@
-C Correct\san\sassert()\sin\smem2.c\s(test\scode\sonly).
-D 2010-03-08T15:17:53
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sNEVER\sand\sassert\smacros\sand\sexplanatory\scomments\sfor\sunreachable\nconditions.
+D 2010-03-08T21:40:14
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c aafc314dee6e55be6cd6b4b1f9f8de62f0e1dfcc
+F src/pager.c 80688c6fee918b7d9aa1c4911a0094d0ebbde31e
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -215,7 +218,7 @@ F src/vdbe.c 8acca6dab2505e9650f6f014ada6ef30570cba99
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
 F src/vdbeapi.c 74c25680046a116b24b95393914d3669c23305dc
-F src/vdbeaux.c 9089e0cdcc7ed3bc4564f2684ce84f5911973ea9
+F src/vdbeaux.c 0f352f63be78138bd94275aa3c8361e760ecc639
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -792,7 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 049cadf92bca5645a6f398eb83940344643fcacf
-R 44531d6e0649c8c2f5ca2e5b3e312dbd
-U dan
-Z c0272962af3309a07b6881e16dadde1c
+P 1a88e31b03e090732243a70bec082b32ecf77c43
+R f3874b1be973c593eaa7992a12823374
+U drh
+Z dbb001cd92997e4a6d2ebb439d68c75a
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLlW7EoxKgR168RlERAlkoAJ0fWhVbW4P9ob39rp8EbDS9DHV3owCeML1P
+pajE+dcM1CcoUySPiJbTQ40=
+=fH93
+-----END PGP SIGNATURE-----

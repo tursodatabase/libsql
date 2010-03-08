@@ -5007,6 +5007,7 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
         /* Only truncate if it is an in-memory sub-journal. */
         if( sqlite3IsMemJournal(pPager->sjfd) ){
           rc = sqlite3OsTruncate(pPager->sjfd, 0);
+          assert( rc==SQLITE_OK );
         }
         pPager->nSubRec = 0;
       }
