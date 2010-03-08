@@ -300,7 +300,8 @@ static void sqlite3MemFree(void *pPrior){
   struct MemBlockHdr *pHdr;
   void **pBt;
   char *z;
-  assert( sqlite3GlobalConfig.bMemstat || mem.mutex!=0 );
+  assert( sqlite3GlobalConfig.bMemstat || sqlite3GlobalConfig.bCoreMutex==0 
+       || mem.mutex!=0 );
   pHdr = sqlite3MemsysGetHeader(pPrior);
   pBt = (void**)pHdr;
   pBt -= pHdr->nBacktraceSlots;
