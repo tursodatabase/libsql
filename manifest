@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Disable\sFTS4\s(which\sis\sincomplete\sand\snot\sready\sfor\spublication)\sto\sprevent\naccidental\suse.
-D 2010-03-09T12:35:22
+C Version\s3.6.23\srelease\scandidate\s2
+D 2010-03-09T12:35:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 30e9f966e7bc517f69796828026c8b23337c356b
+P 87a6a9970b8cea25fc5f8ff03d87762dd1166899
 R 1fcfb960d20a15b8470efbc87dfb021d
 U drh
-Z 84c0a15a0a52140e2dca7872afef584f
+Z 6db52ba17428ec753946fe0b8a5bc8e9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLlkCNoxKgR168RlERAopPAJ40/b4XjqE0zNc1EOfPd1PnpP+TYgCePyBm
-jW4t6TUL5eE3SjIHQnqizkk=
-=Md0G
+iD8DBQFLlkCqoxKgR168RlERAua6AJ94QPf2FUP7qgK82iSuLnClDx/K+QCfSIGg
+iw4R4+v+WhFPtZR1FCnvj/M=
+=li0r
 -----END PGP SIGNATURE-----
