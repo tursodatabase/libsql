@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Check-in\s[87a6a9970b]\sdid\snot\scompletely\sdisable\sFTS4.\s\sThis\scheck-in\saims\nto\sfinish\sthe\sjob.
-D 2010-03-09T13:02:09
+C Version\s3.6.23\srelease\scandidate\s3
+D 2010-03-09T13:12:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 73f4d292dc66ac41456f2ebddada82c7f5633431
+P 0259b6299e435b3c3a7ca33df8c38c8a5dc84a61
 R 3cdf85b053e7d2c29d535ebbf31f6037
 U drh
-Z 8ef848802a5e0f9292743403e01b6176
+Z 6af3e9e189db228ac16dce3edc3ecdfe
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLlkbVoxKgR168RlERAo9sAJ9Eq1E0sFN98AYAhn0EnJGVqh04egCdFFEg
-Vp667gjbizejMCwpzbRquto=
-=E1Ez
+iD4DBQFLlklPoxKgR168RlERAlxLAJ9N27bENPJYTsAasOc2duxTzQ5JRQCWP/1W
+2IcMiwkVBtizTvLI6h5z6w==
+=fTiZ
 -----END PGP SIGNATURE-----
