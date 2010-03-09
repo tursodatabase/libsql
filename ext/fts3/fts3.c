@@ -2553,11 +2553,13 @@ int sqlite3Fts3Init(sqlite3 *db){
     rc = sqlite3_create_module_v2(
         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
     );
+#if 0 /* FTS4 is disabled in 3.6.23 since it is not yet ready for publication */
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_module_v2(
           db, "fts4", &fts3Module, (void *)pHash, 0
       );
     }
+#endif /* disable FTS4 */
     return rc;
   }
 

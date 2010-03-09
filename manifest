@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.6.23\srelease\scandidate\s1
-D 2010-03-09T05:01:50
+C Disable\sFTS4\s(which\sis\sincomplete\sand\snot\sready\sfor\spublication)\sto\sprevent\naccidental\suse.
+D 2010-03-09T12:35:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +59,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c 15ca4d9baf2ca6efa132bc8afdc62911deb5a83e
+F ext/fts3/fts3.c dea6740e642a71f32cce37935b7bab95fb29f4ac
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h df812ef35f1b47a44ec68a44ec0c2a769c973d85
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ffb6596e6c80e284c1542b03f2c7bbfce0bd87d9
-R f3874b1be973c593eaa7992a12823374
+P 30e9f966e7bc517f69796828026c8b23337c356b
+R 1fcfb960d20a15b8470efbc87dfb021d
 U drh
-Z 065b8aec0d4631d6131983047e2c7a34
+Z 84c0a15a0a52140e2dca7872afef584f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLldZBoxKgR168RlERAqopAJ0bzqgJYzp51nTQ5DnEVr5IZ+1ANQCbBeSQ
-/xTYtPdypiaQ22SGKjviTmI=
-=hGtj
+iD8DBQFLlkCNoxKgR168RlERAopPAJ40/b4XjqE0zNc1EOfPd1PnpP+TYgCePyBm
+jW4t6TUL5eE3SjIHQnqizkk=
+=Md0G
 -----END PGP SIGNATURE-----
