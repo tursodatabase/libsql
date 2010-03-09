@@ -21,6 +21,10 @@ ifcapable !fts3 {
   finish_test
   return
 }
+if {[db eval {SELECT sqlite_compileoption_used('ENABLE_FTS4')}]==0} {
+  finish_test
+  return
+}
 
 do_test fts4aa-1.0 {
 db eval {
