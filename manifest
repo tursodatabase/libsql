@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Version\s3.6.23\srelease\scandidate\s3
-D 2010-03-09T13:12:40
+C Minor\schanges\sto\ssilence\scompiler\swarnings\son\svarious\sMSVC\sbuilds.
+D 2010-03-09T14:41:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -22,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2 x
+F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -112,7 +109,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 22bcd5cbc53a1f9ce4b39763aaf43a7333d9346b
+F src/btree.c 0d6e44d664b1775b269ea7e6f66fdffcfc32ceb3
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -147,7 +144,7 @@ F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
 F src/mutex_noop.c 5f58eaa31f2d742cb8957a747f7887ae98f16053
 F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
 F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
-F src/mutex_w32.c 90c3bd10db9f2c30b1f24a1885b54a8a263ff86a
+F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
 F src/notify.c f799bbda67ab6619b36b0a24153b49518874a203
 F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
@@ -212,7 +209,7 @@ F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 340c9eca0fb24b1197468d96ba059f867c9834c7
 F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
-F src/util.c c076b2e38134d71ed09fee62ee788ad2d4121b93
+F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
 F src/vdbe.c 8acca6dab2505e9650f6f014ada6ef30570cba99
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
@@ -795,14 +792,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0259b6299e435b3c3a7ca33df8c38c8a5dc84a61
-R 3cdf85b053e7d2c29d535ebbf31f6037
-U drh
-Z 6af3e9e189db228ac16dce3edc3ecdfe
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD4DBQFLlklPoxKgR168RlERAlxLAJ9N27bENPJYTsAasOc2duxTzQ5JRQCWP/1W
-2IcMiwkVBtizTvLI6h5z6w==
-=fTiZ
------END PGP SIGNATURE-----
+P 747baea5c32f9a5de4b46a1fd1b24bd509c9a85e
+R 9a8c86aca762c89d9e8d5e12eed130b2
+U shaneh
+Z 44878407510f777dacb6dbadfdfc7b33

@@ -5062,7 +5062,7 @@ static int clearCell(MemPage *pPage, unsigned char *pCell){
       if( rc ) return rc;
     }
 
-    if( (pOvfl || (pOvfl = btreePageLookup(pBt, ovflPgno)))
+    if( ( pOvfl || ((pOvfl = btreePageLookup(pBt, ovflPgno))!=0) )
      && sqlite3PagerPageRefcount(pOvfl->pDbPage)!=1
     ){
       /* There is no reason any cursor should have an outstanding reference 
@@ -5815,7 +5815,7 @@ static int balance_nonroot(
       ** buffer. It will be copied out again as soon as the aSpace[] buffer
       ** is allocated.  */
       if( pBt->secureDelete ){
-        int iOff = apDiv[i] - pParent->aData;
+        int iOff = SQLITE_PTR_TO_INT(apDiv[i]) - SQLITE_PTR_TO_INT(pParent->aData);
         if( (iOff+szNew[i])>pBt->usableSize ){
           rc = SQLITE_CORRUPT_BKPT;
           memset(apOld, 0, (i+1)*sizeof(MemPage*));

@@ -246,7 +246,9 @@ static void winMutexEnter(sqlite3_mutex *p){
 #endif
 }
 static int winMutexTry(sqlite3_mutex *p){
+#ifndef NDEBUG
   DWORD tid = GetCurrentThreadId(); 
+#endif
   int rc = SQLITE_BUSY;
   assert( p->id==SQLITE_MUTEX_RECURSIVE || winMutexNotheld2(p, tid) );
   /*
@@ -284,7 +286,9 @@ static int winMutexTry(sqlite3_mutex *p){
 ** is not currently allocated.  SQLite will never do either.
 */
 static void winMutexLeave(sqlite3_mutex *p){
-  DWORD tid = GetCurrentThreadId(); 
+#ifndef NDEBUG
+  DWORD tid = GetCurrentThreadId();
+#endif
   assert( p->nRef>0 );
   assert( p->owner==tid );
   p->nRef--;

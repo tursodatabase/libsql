@@ -692,7 +692,7 @@ u8 sqlite3GetVarint(const unsigned char *p, u64 *v){
 
   /* Verify that constants are precomputed correctly */
   assert( SLOT_2_0 == ((0x7f<<14) | (0x7f)) );
-  assert( SLOT_4_2_0 == ((0xf<<28) | (0x7f<<14) | (0x7f)) );
+  assert( SLOT_4_2_0 == ((0xfU<<28) | (0x7f<<14) | (0x7f)) );
 
   p++;
   a = a<<14;
