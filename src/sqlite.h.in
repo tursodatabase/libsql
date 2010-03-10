@@ -968,11 +968,10 @@ int sqlite3_os_end(void);
 ** ^If the option is unknown or SQLite is unable to set the option
 ** then this routine returns a non-zero [error code].
 */
-SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
+int sqlite3_config(int, ...);
 
 /*
 ** CAPI3REF: Configure database connections
-** EXPERIMENTAL
 **
 ** The sqlite3_db_config() interface is used to make configuration
 ** changes to a [database connection].  The interface is similar to
@@ -992,11 +991,10 @@ SQLITE_EXPERIMENTAL int sqlite3_config(int, ...);
 ** ^Calls to sqlite3_db_config() return SQLITE_OK if and only if
 ** the call is considered successful.
 */
-SQLITE_EXPERIMENTAL int sqlite3_db_config(sqlite3*, int op, ...);
+int sqlite3_db_config(sqlite3*, int op, ...);
 
 /*
 ** CAPI3REF: Memory Allocation Routines
-** EXPERIMENTAL
 **
 ** An instance of this object defines the interface between SQLite
 ** and low-level memory allocation routines.
@@ -1078,7 +1076,6 @@ struct sqlite3_mem_methods {
 
 /*
 ** CAPI3REF: Configuration Options
-** EXPERIMENTAL
 **
 ** These constants are the available integer configuration options that
 ** can be passed as the first argument to the [sqlite3_config()] interface.
@@ -1284,8 +1281,7 @@ struct sqlite3_mem_methods {
 #define SQLITE_CONFIG_LOG          16  /* xFunc, void* */
 
 /*
-** CAPI3REF: Configuration Options
-** EXPERIMENTAL
+** CAPI3REF: Database Connection Configuration Options
 **
 ** These constants are the available integer configuration options that
 ** can be passed as the second argument to the [sqlite3_db_config()] interface.
@@ -2061,7 +2057,6 @@ int sqlite3_set_authorizer(
 
 /*
 ** CAPI3REF: Tracing And Profiling Functions
-** EXPERIMENTAL
 **
 ** These routines register callback functions that can be used for
 ** tracing and profiling the execution of SQL statements.
@@ -2079,7 +2074,7 @@ int sqlite3_set_authorizer(
 ** the original statement text and an estimate of wall-clock time
 ** of how long that statement took to run.
 */
-SQLITE_EXPERIMENTAL void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
+void *sqlite3_trace(sqlite3*, void(*xTrace)(void*,const char*), void*);
 SQLITE_EXPERIMENTAL void *sqlite3_profile(sqlite3*,
    void(*xProfile)(void*,const char*,sqlite3_uint64), void*);
 
@@ -4154,8 +4149,6 @@ int sqlite3_auto_extension(void (*xEntryPoint)(void));
 void sqlite3_reset_auto_extension(void);
 
 /*
-****** EXPERIMENTAL - subject to change without notice **************
-**
 ** The interface to the virtual-table mechanism is currently considered
 ** to be experimental.  The interface might change in incompatible ways.
 ** If this is a problem for you, do not use the interface at this time.
@@ -4175,7 +4168,6 @@ typedef struct sqlite3_module sqlite3_module;
 /*
 ** CAPI3REF: Virtual Table Object
 ** KEYWORDS: sqlite3_module {virtual table module}
-** EXPERIMENTAL
 **
 ** This structure, sometimes called a a "virtual table module", 
 ** defines the implementation of a [virtual tables].  
@@ -4222,7 +4214,6 @@ struct sqlite3_module {
 /*
 ** CAPI3REF: Virtual Table Indexing Information
 ** KEYWORDS: sqlite3_index_info
-** EXPERIMENTAL
 **
 ** The sqlite3_index_info structure and its substructures is used to
 ** pass information into and receive the reply from the [xBestIndex]
@@ -4304,7 +4295,6 @@ struct sqlite3_index_info {
 
 /*
 ** CAPI3REF: Register A Virtual Table Implementation
-** EXPERIMENTAL
 **
 ** ^These routines are used to register a new [virtual table module] name.
 ** ^Module names must be registered before
@@ -4326,13 +4316,13 @@ struct sqlite3_index_info {
 ** interface is equivalent to sqlite3_create_module_v2() with a NULL
 ** destructor.
 */
-SQLITE_EXPERIMENTAL int sqlite3_create_module(
+int sqlite3_create_module(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
   void *pClientData          /* Client data for xCreate/xConnect */
 );
-SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
+int sqlite3_create_module_v2(
   sqlite3 *db,               /* SQLite connection to register module with */
   const char *zName,         /* Name of the module */
   const sqlite3_module *p,   /* Methods for the module */
@@ -4343,7 +4333,6 @@ SQLITE_EXPERIMENTAL int sqlite3_create_module_v2(
 /*
 ** CAPI3REF: Virtual Table Instance Object
 ** KEYWORDS: sqlite3_vtab
-** EXPERIMENTAL
 **
 ** Every [virtual table module] implementation uses a subclass
 ** of this object to describe a particular instance
@@ -4369,7 +4358,6 @@ struct sqlite3_vtab {
 /*
 ** CAPI3REF: Virtual Table Cursor Object
 ** KEYWORDS: sqlite3_vtab_cursor {virtual table cursor}
-** EXPERIMENTAL
 **
 ** Every [virtual table module] implementation uses a subclass of the
 ** following structure to describe cursors that point into the
@@ -4391,18 +4379,16 @@ struct sqlite3_vtab_cursor {
 
 /*
 ** CAPI3REF: Declare The Schema Of A Virtual Table
-** EXPERIMENTAL
 **
 ** ^The [xCreate] and [xConnect] methods of a
 ** [virtual table module] call this interface
 ** to declare the format (the names and datatypes of the columns) of
 ** the virtual tables they implement.
 */
-SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
+int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 
 /*
 ** CAPI3REF: Overload A Function For A Virtual Table
-** EXPERIMENTAL
 **
 ** ^(Virtual tables can provide alternative implementations of functions
 ** using the [xFindFunction] method of the [virtual table module].  
@@ -4417,7 +4403,7 @@ SQLITE_EXPERIMENTAL int sqlite3_declare_vtab(sqlite3*, const char *zSQL);
 ** purpose is to be a placeholder function that can be overloaded
 ** by a [virtual table].
 */
-SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
+int sqlite3_overload_function(sqlite3*, const char *zFuncName, int nArg);
 
 /*
 ** The interface to the virtual-table mechanism defined above (back up
@@ -4427,8 +4413,6 @@ SQLITE_EXPERIMENTAL int sqlite3_overload_function(sqlite3*, const char *zFuncNam
 **
 ** When the virtual-table mechanism stabilizes, we will declare the
 ** interface fixed, support it indefinitely, and remove this comment.
-**
-****** EXPERIMENTAL - subject to change without notice **************
 */
 
 /*
@@ -4771,7 +4755,6 @@ void sqlite3_mutex_leave(sqlite3_mutex*);
 
 /*
 ** CAPI3REF: Mutex Methods Object
-** EXPERIMENTAL
 **
 ** An instance of this structure defines the low-level routines
 ** used to allocate and use mutexes.
@@ -4988,7 +4971,6 @@ int sqlite3_test_control(int op, ...);
 
 /*
 ** CAPI3REF: SQLite Runtime Status
-** EXPERIMENTAL
 **
 ** ^This interface is used to retrieve runtime status information
 ** about the preformance of SQLite, and optionally to reset various
@@ -5016,12 +4998,11 @@ int sqlite3_test_control(int op, ...);
 **
 ** See also: [sqlite3_db_status()]
 */
-SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
+int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 
 
 /*
 ** CAPI3REF: Status Parameters
-** EXPERIMENTAL
 **
 ** These integer constants designate various run-time status parameters
 ** that can be returned by [sqlite3_status()].
@@ -5108,7 +5089,6 @@ SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, i
 
 /*
 ** CAPI3REF: Database Connection Status
-** EXPERIMENTAL
 **
 ** ^This interface is used to retrieve runtime status information 
 ** about a single [database connection].  ^The first argument is the
@@ -5124,11 +5104,10 @@ SQLITE_EXPERIMENTAL int sqlite3_status(int op, int *pCurrent, int *pHighwater, i
 **
 ** See also: [sqlite3_status()] and [sqlite3_stmt_status()].
 */
-SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
+int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for database connections
-** EXPERIMENTAL
 **
 ** These constants are the available integer "verbs" that can be passed as
 ** the second argument to the [sqlite3_db_status()] interface.
@@ -5150,7 +5129,6 @@ SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiw
 
 /*
 ** CAPI3REF: Prepared Statement Status
-** EXPERIMENTAL
 **
 ** ^(Each prepared statement maintains various
 ** [SQLITE_STMTSTATUS_SORT | counters] that measure the number
@@ -5172,11 +5150,10 @@ SQLITE_EXPERIMENTAL int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiw
 **
 ** See also: [sqlite3_status()] and [sqlite3_db_status()].
 */
-SQLITE_EXPERIMENTAL int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
+int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 
 /*
 ** CAPI3REF: Status Parameters for prepared statements
-** EXPERIMENTAL
 **
 ** These preprocessor macros define integer codes that name counter
 ** values associated with the [sqlite3_stmt_status()] interface.
@@ -5201,7 +5178,6 @@ SQLITE_EXPERIMENTAL int sqlite3_stmt_status(sqlite3_stmt*, int op,int resetFlg);
 
 /*
 ** CAPI3REF: Custom Page Cache Object
-** EXPERIMENTAL
 **
 ** The sqlite3_pcache type is opaque.  It is implemented by
 ** the pluggable module.  The SQLite core has no knowledge of
@@ -5216,7 +5192,6 @@ typedef struct sqlite3_pcache sqlite3_pcache;
 /*
 ** CAPI3REF: Application Defined Page Cache.
 ** KEYWORDS: {page cache}
-** EXPERIMENTAL
 **
 ** ^(The [sqlite3_config]([SQLITE_CONFIG_PCACHE], ...) interface can
 ** register an alternative page cache implementation by passing in an 
@@ -5358,7 +5333,6 @@ struct sqlite3_pcache_methods {
 
 /*
 ** CAPI3REF: Online Backup Object
-** EXPERIMENTAL
 **
 ** The sqlite3_backup object records state information about an ongoing
 ** online backup operation.  ^The sqlite3_backup object is created by
@@ -5371,7 +5345,6 @@ typedef struct sqlite3_backup sqlite3_backup;
 
 /*
 ** CAPI3REF: Online Backup API.
-** EXPERIMENTAL
 **
 ** The backup API copies the content of one database into another.
 ** It is useful either for creating backups of databases or
@@ -5559,7 +5532,6 @@ int sqlite3_backup_pagecount(sqlite3_backup *p);
 
 /*
 ** CAPI3REF: Unlock Notification
-** EXPERIMENTAL
 **
 ** ^When running in shared-cache mode, a database operation may fail with
 ** an [SQLITE_LOCKED] error if the required locks on the shared-cache or
@@ -5681,7 +5653,6 @@ int sqlite3_unlock_notify(
 
 /*
 ** CAPI3REF: String Comparison
-** EXPERIMENTAL
 **
 ** ^The [sqlite3_strnicmp()] API allows applications and extensions to
 ** compare the contents of two buffers containing UTF-8 strings in a
@@ -5692,7 +5663,6 @@ int sqlite3_strnicmp(const char *, const char *, int);
 
 /*
 ** CAPI3REF: Error Logging Interface
-** EXPERIMENTAL
 **
 ** ^The [sqlite3_log()] interface writes a message into the error log
 ** established by the [SQLITE_CONFIG_LOG] option to [sqlite3_config()].
