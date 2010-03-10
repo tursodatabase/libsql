@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sSQLITE_DBSTATUS_CACHE_SIZE\sverb\sfor\ssqlite3_db_status().\s\sThe\s\nhighwater\smark\sdoes\snot\syet\swork\son\sthis\sverb.
-D 2010-03-10T21:42:07
+C Move\sthe\sctime.c\ssource\smodule\snear\sthe\sbeginning\sof\sthe\slist\sof\sfiles\ninserted\sinto\sthe\samalgamation\sso\sthat\s#defines\sthat\sare\soverridden\sin\nother\smodules\swill\snot\seffect\sthe\svalues\sreturned\sby\nsqlite3_compiletime_used().
+D 2010-03-10T23:13:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -776,7 +776,7 @@ F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
 F tool/mkspeedsql.tcl a1a334d288f7adfe6e996f2e712becf076745c97
-F tool/mksqlite3c.tcl e1245579315f821e83e06934e93732b4c60a0375
+F tool/mksqlite3c.tcl 4c6924c7e877defa8f9a12ef1e6867de614acf3f
 F tool/mksqlite3h.tcl eb100dce83f24b501b325b340f8b5eb8e5106b3b
 F tool/mksqlite3internalh.tcl 7b43894e21bcb1bb39e11547ce7e38a063357e87
 F tool/omittest.tcl 27d6f6e3b1e95aeb26a1c140e6eb57771c6d794a
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d670e8bd51c794e2d7ea365ca553c2b74cf5a3a3
-R 326703426b5762cb1b1b4e921668b426
+P 418c6d8113bc337556b0d47acfd6a7d865d1121f
+R 3f2b78a22e4875c367371e44fb59a9b0
 U drh
-Z d9e46a05490936dfb28aef36eac5829e
+Z 1cec0a12987695a8137fed791b404644
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLmBIyoxKgR168RlERAs2fAJ9UH6kL0H4mcl0Kk+NEMSARDnhf5wCghHZo
-zkVH6ZsaevJkndO4chI7aCA=
-=W5iC
+iD8DBQFLmCe2oxKgR168RlERAn/ZAJ92sAWFQgbytu6nRt55fRcBoeokVQCbBVSd
+zrVOUqTy+bjHBsloTqu/hi4=
+=M3CA
 -----END PGP SIGNATURE-----
