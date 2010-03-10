@@ -4855,6 +4855,16 @@ int sqlite3PagerRefcount(Pager *pPager){
 }
 
 /*
+** Return the approximate number of bytes of memory currently
+** used by the pager and its associated cache.
+*/
+int sqlite3PagerMemUsed(Pager *pPager){
+  int perPageSize = pPager->pageSize + pPager->nExtra + 20;
+  return perPageSize*sqlite3PcachePagecount(pPager->pPCache)
+           + sqlite3MallocSize(pPager);
+}
+
+/*
 ** Return the number of references to the specified page.
 */
 int sqlite3PagerPageRefcount(DbPage *pPage){

@@ -112,6 +112,26 @@ int sqlite3_db_status(
       }
       break;
     }
+
+    /* 
+    ** Return an approximation for the amount of memory currently used
+    ** by all pagers associated with the given database connection.  The
+    ** highwater mark is meaningless and is returned as zero.
+    */
+    case SQLITE_DBSTATUS_CACHE_USED: {
+      int totalUsed = 0;
+      int i;
+      for(i=0; i<db->nDb; i++){
+        Btree *pBt = db->aDb[i].pBt;
+        if( pBt ){
+          Pager *pPager = sqlite3BtreePager(pBt);
+          totalUsed += sqlite3PagerMemUsed(pPager);
+        }
+      }
+      *pCurrent = totalUsed;
+      *pHighwater = 0;
+      break;
+    }
     default: {
       return SQLITE_ERROR;
     }

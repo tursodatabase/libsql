@@ -5093,9 +5093,11 @@ int sqlite3_status(int op, int *pCurrent, int *pHighwater, int resetFlag);
 ** ^This interface is used to retrieve runtime status information 
 ** about a single [database connection].  ^The first argument is the
 ** database connection object to be interrogated.  ^The second argument
-** is the parameter to interrogate.  ^Currently, the only allowed value
-** for the second parameter is [SQLITE_DBSTATUS_LOOKASIDE_USED].
-** Additional options will likely appear in future releases of SQLite.
+** is an integer constant, taken from the set of
+** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros, that
+** determiness the parameter to interrogate.  The set of 
+** [SQLITE_DBSTATUS_LOOKASIDE_USED | SQLITE_DBSTATUS_*] macros is likely
+** to grow in future releases of SQLite.
 **
 ** ^The current value of the requested parameter is written into *pCur
 ** and the highest instantaneous value is written into *pHiwtr.  ^If
@@ -5122,9 +5124,17 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 ** ^(<dt>SQLITE_DBSTATUS_LOOKASIDE_USED</dt>
 ** <dd>This parameter returns the number of lookaside memory slots currently
 ** checked out.</dd>)^
+**
+** <dt>SQLITE_DBSTATUS_CACHE_USED</dt>
+** <dd>^This parameter returns the approximate number of of bytes of heap
+** memory used by all pager caches associated with the database connection.
+** ^The highwater mark associated with SQLITE_DBSTATUS_CACHE_USED is always 0.
+** checked out.</dd>)^
 ** </dl>
 */
 #define SQLITE_DBSTATUS_LOOKASIDE_USED     0
+#define SQLITE_DBSTATUS_CACHE_USED         1
+#define SQLITE_DBSTATUS_MAX                1   /* Largest defined DBSTATUS */
 
 
 /*
