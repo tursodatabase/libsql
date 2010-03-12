@@ -57,7 +57,8 @@ struct MemBlockHdr {
   struct MemBlockHdr *pNext, *pPrev;  /* Linked list of all unfreed memory */
   char nBacktrace;                    /* Number of backtraces on this alloc */
   char nBacktraceSlots;               /* Available backtrace slots */
-  short nTitle;                       /* Bytes of title; includes '\0' */
+  u8 nTitle;                          /* Bytes of title; includes '\0' */
+  u8 eType;                           /* Allocation type code */
   int iForeGuard;                     /* Guard word for sanity */
 };
 
@@ -265,6 +266,7 @@ static void *sqlite3MemMalloc(int nByte){
     }
     mem.pLast = pHdr;
     pHdr->iForeGuard = FOREGUARD;
+    pHdr->eType = MEMTYPE_HEAP;
     pHdr->nBacktraceSlots = mem.nBacktrace;
     pHdr->nTitle = mem.nTitle;
     if( mem.nBacktrace ){
@@ -371,6 +373,47 @@ void sqlite3MemSetDefault(void){
   };
   sqlite3_config(SQLITE_CONFIG_MALLOC, &defaultMethods);
 }
+
+/*
+** Set the "type" of an allocation.
+*/
+void sqlite3MemdebugSetType(void *p, u8 eType){
+  if( p ){
+    struct MemBlockHdr *pHdr;
+    pHdr = sqlite3MemsysGetHeader(p);
+    assert( pHdr->iForeGuard==FOREGUARD );
+    pHdr->eType = eType;
+  }
+}
+
+/*
+** Return TRUE if the mask of type in eType matches the type of the
+** allocation p.  Also return true if p==NULL.
+**
+** This routine is designed for use within an assert() statement, to
+** verify the type of an allocation.  For example:
+**
+**     assert( sqlite3MemdebugHasType(p, MEMTYPE_DB) );
+*/
+int sqlite3MemdebugHasType(void *p, u8 eType){
+  int rc = 1;
+  if( p ){
+    struct MemBlockHdr *pHdr;
+    pHdr = sqlite3MemsysGetHeader(p);
+    assert( pHdr->iForeGuard==FOREGUARD );         /* Allocation is valid */
+    assert( (pHdr->eType & (pHdr->eType-1))==0 );  /* Only one type bit set */
+    if( (pHdr->eType&eType)==0 ){
+      void **pBt;
+      pBt = (void**)pHdr;
+      pBt -= pHdr->nBacktraceSlots;
+      backtrace_symbols_fd(pBt, pHdr->nBacktrace, fileno(stderr));
+      fprintf(stderr, "\n");
+      rc = 0;
+    }
+  }
+  return rc;
+}
+ 
 
 /*
 ** Set the number of backtrace levels kept for each allocation.

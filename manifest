@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Move\sthe\sctime.c\ssource\smodule\snear\sthe\sbeginning\sof\sthe\slist\sof\sfiles\ninserted\sinto\sthe\samalgamation\sso\sthat\s#defines\sthat\sare\soverridden\sin\nother\smodules\swill\snot\seffect\sthe\svalues\sreturned\sby\nsqlite3_compiletime_used().
-D 2010-03-10T23:13:54
+C Add\sassert()s\sto\smem2.c\s(activated\sby\sSQLITE_MEMDEBUG)\swhich\sverify\sthat\nmemory\salloctions\sthat\smight\shave\scome\sfrom\slookaside\sare\salways\sfreed\nusing\sa\slookaside-aware\sfree\sroutine.
+D 2010-03-12T16:32:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -135,10 +135,10 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c 7d89bb6dcc6993a8d32f4f22dae3e57c50a41399
-F src/malloc.c 5fa175797f982b178eaf38afba9c588a866be729
+F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
-F src/mem2.c ee752297650632935218dcf3b20c5ed5899cb4b5
+F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
 F src/memjournal.c 5bfc2f33c914946e2f77ed3f882aff14dfc9355d
@@ -160,7 +160,7 @@ F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
-F src/pcache1.c 2bb2261190b42a348038f5b1c285c8cef415fcc8
+F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
 F src/pragma.c 56d95f76154a5f873c32eae485bb625f3c70be46
 F src/prepare.c 18292e5f365655cd5c5693e09508e90668f7d547
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
@@ -171,7 +171,7 @@ F src/select.c 4113ef360430ed4e7533690ef46d06c20204adce
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
 F src/sqlite.h.in 30ff19c3a52f14cb0bd7c598f674068bccc22ccc
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 4e411c08ff8d776272948abb861be32e4786eff8
+F src/sqliteInt.h f9b890585c644da05e86b772042ae2059e61fd27
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 418c6d8113bc337556b0d47acfd6a7d865d1121f
-R 3f2b78a22e4875c367371e44fb59a9b0
+P bb591802fff5a99ae504509e812bb34e762eaef0
+R 186ecc2081ee65c0f8ee3d1b1372d8b0
 U drh
-Z 1cec0a12987695a8137fed791b404644
+Z 9c8eb30bbeb3dcf4398c4d7241d3ba9c
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLmCe2oxKgR168RlERAn/ZAJ92sAWFQgbytu6nRt55fRcBoeokVQCbBVSd
-zrVOUqTy+bjHBsloTqu/hi4=
-=M3CA
+iD8DBQFLmmy5oxKgR168RlERAg8iAJ4rM9xkHfG/M6XD6ejNennKrxQDGwCgibIf
+n4ngbmeDUYGL/Jvz6Tn0drM=
+=FOIW
 -----END PGP SIGNATURE-----
