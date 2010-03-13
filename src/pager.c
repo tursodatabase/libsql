@@ -4489,6 +4489,10 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       change_counter++;
       put32bits(((char*)pPgHdr->pData)+24, change_counter);
 
+      /* Also store the current database size in bytes 28..31 */
+      assert( pPager->dbSizeValid );
+      put32bits(((char*)pPgHdr->pData)+28, pPager->dbSize);
+
       /* If running in direct mode, write the contents of page 1 to the file. */
       if( DIRECT_MODE ){
         const void *zBuf = pPgHdr->pData;

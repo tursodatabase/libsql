@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sassert()s\sto\smem2.c\s(activated\sby\sSQLITE_MEMDEBUG)\swhich\sverify\sthat\nmemory\salloctions\sthat\smight\shave\scome\sfrom\slookaside\sare\salways\sfreed\nusing\sa\slookaside-aware\sfree\sroutine.
-D 2010-03-12T16:32:54
+C Store\sthe\sdatabase\ssize\sin\spages\sin\sbytes\s28..31\sof\sthe\sheader.\s\sCurrently\nthis\sis\sfor\sforensic\suse\sonly,\sbut\sit\smight\sbe\sused\sin\sthe\sfuture.
+D 2010-03-13T02:15:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 59af09650f2ed505c818319af6d9c8a2d831fc67
+F src/pager.c db7a3988cd5958011c3bce4ed1b788c40107628a
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bb591802fff5a99ae504509e812bb34e762eaef0
-R 186ecc2081ee65c0f8ee3d1b1372d8b0
+P c2af2164cf7b279ebb3e08201561348be6e765df
+R d4036b1876ef9037b9a7026f7622970f
 U drh
-Z 9c8eb30bbeb3dcf4398c4d7241d3ba9c
+Z cefe55d8054e3e1cb0316576971b492f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLmmy5oxKgR168RlERAg8iAJ4rM9xkHfG/M6XD6ejNennKrxQDGwCgibIf
-n4ngbmeDUYGL/Jvz6Tn0drM=
-=FOIW
+iD8DBQFLmvVYoxKgR168RlERAk2+AJ41hjEJOaS4x4qEcCfUTzpF92tnqwCdFtdb
+3g4EnJ80m46uyfLvv7nDZwo=
+=rxVW
 -----END PGP SIGNATURE-----
