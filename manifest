@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Store\sthe\sdatabase\ssize\sin\spages\sin\sbytes\s28..31\sof\sthe\sheader.\s\sCurrently\nthis\sis\sfor\sforensic\suse\sonly,\sbut\sit\smight\sbe\sused\sin\sthe\sfuture.
-D 2010-03-13T02:15:49
+C Fix\sFTS3\sso\sthat\sit\sdoes\snot\srun\sillegal\sSQL\sand\scause\sa\sspurious\slog\nmessage.\s\sTicket\s[42d45a693e6].
+D 2010-03-15T19:27:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -59,7 +59,7 @@ F ext/fts2/mkfts2amal.tcl 974d5d438cb3f7c4a652639262f82418c1e4cff0
 F ext/fts3/README.syntax a19711dc5458c20734b8e485e75fb1981ec2427a
 F ext/fts3/README.tokenizers 998756696647400de63d5ba60e9655036cb966e9
 F ext/fts3/README.txt 8c18f41574404623b76917b9da66fcb0ab38328d
-F ext/fts3/fts3.c dea6740e642a71f32cce37935b7bab95fb29f4ac
+F ext/fts3/fts3.c 54d3c2273c1ef7928f8a77b2dff0b6736e5b8f6b
 F ext/fts3/fts3.h 3a10a0af180d502cecc50df77b1b22df142817fe
 F ext/fts3/fts3Int.h df812ef35f1b47a44ec68a44ec0c2a769c973d85
 F ext/fts3/fts3_expr.c f4ff02ebe854e97ac03ff00b38b728a9ab57fd4b
@@ -118,7 +118,7 @@ F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 675186d89e0e6c028390b6c75d5356beffb669d4
+F src/ctime.c ceb247eb31620bba66a94c3f697db489a1652353
 F src/date.c 485a4409a384310e6d93fd1104a9d0a8658becd9
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
 F src/expr.c 6baed2a0448d494233d9c0a610eea018ab386a32
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c2af2164cf7b279ebb3e08201561348be6e765df
-R d4036b1876ef9037b9a7026f7622970f
+P 59f75bba028e1107ed41d447c27aef31a6656b68
+R 1f89c10b36338422510ff672b0f80d2d
 U drh
-Z cefe55d8054e3e1cb0316576971b492f
+Z 6cc5c3980c33b9c6deb66707a1aeeba9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLmvVYoxKgR168RlERAk2+AJ41hjEJOaS4x4qEcCfUTzpF92tnqwCdFtdb
-3g4EnJ80m46uyfLvv7nDZwo=
-=rxVW
+iD8DBQFLnoo/oxKgR168RlERAiiOAKCKBx1/MB8tgbUyWC1g9MT2otS2OQCfWVoV
+DVWU3wk0fSDCduM/O7VAtXE=
+=rlq/
 -----END PGP SIGNATURE-----

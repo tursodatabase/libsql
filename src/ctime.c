@@ -84,10 +84,8 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_ENABLE_FTS3_PARENTHESIS
   "ENABLE_FTS3_PARENTHESIS",
 #endif
-#if 0 /* Disabled because FTS4 is not ready for publication */
 #ifdef SQLITE_ENABLE_FTS4
   "ENABLE_FTS4",
-#endif
 #endif
 #ifdef SQLITE_ENABLE_ICU
   "ENABLE_ICU",

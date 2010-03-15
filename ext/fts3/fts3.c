@@ -601,6 +601,14 @@ static int fts3CreateTables(Fts3Table *p){
 }
 
 /*
+** An sqlite3_exec() callback for fts3TableExists.
+*/
+static int fts3TableExistsCallback(void *pArg, int n, char **pp1, char **pp2){
+  *(int*)pArg = 1;
+  return 1;
+}
+
+/*
 ** Determine if a table currently exists in the database.
 */
 static void fts3TableExists(
@@ -612,10 +620,17 @@ static void fts3TableExists(
   u8 *pResult           /* Write results here */
 ){
   int rc = SQLITE_OK;
+  int res = 0;
+  char *zSql;
   if( *pRc ) return;
-  fts3DbExec(&rc, db, "SELECT 1 FROM %Q.'%q%s'", zDb, zName, zSuffix);
-  *pResult = (rc==SQLITE_OK) ? 1 : 0;
-  if( rc!=SQLITE_ERROR ) *pRc = rc;
+  zSql = sqlite3_mprintf(
+    "SELECT 1 FROM %Q.sqlite_master WHERE name='%q%s'",
+    zDb, zName, zSuffix
+  );    
+  rc = sqlite3_exec(db, zSql, fts3TableExistsCallback, &res, 0);
+  sqlite3_free(zSql);
+  *pResult = res & 0xff;
+  if( rc!=SQLITE_ABORT ) *pRc = rc;
 }
 
 /*
@@ -2553,13 +2568,11 @@ int sqlite3Fts3Init(sqlite3 *db){
     rc = sqlite3_create_module_v2(
         db, "fts3", &fts3Module, (void *)pHash, hashDestroy
     );
-#if 0 /* FTS4 is disabled in 3.6.23 since it is not yet ready for publication */
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_module_v2(
           db, "fts4", &fts3Module, (void *)pHash, 0
       );
     }
-#endif /* disable FTS4 */
     return rc;
   }
 
