@@ -2048,7 +2048,13 @@ static int fts3FilterMethod(
     rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
         iCol, zQuery, -1, &pCsr->pExpr
     );
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_ERROR ){
+        p->base.zErrMsg = sqlite3_mprintf("malformed MATCH expression: [%s]",
+                                          zQuery);
+      }
+      return rc;
+    }
 
     rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
     pCsr->pNextId = pCsr->aDoclist;

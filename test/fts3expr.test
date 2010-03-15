@@ -336,53 +336,53 @@ do_test fts3expr-4.1 {
 # Mismatched parenthesis:
 do_test fts3expr-4.2.1 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example AND (hello OR world))' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [example AND (hello OR world))]}}
 do_test fts3expr-4.2.2 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example AND (hello OR world' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [example AND (hello OR world]}}
 do_test fts3expr-4.2.3 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH '(hello' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [(hello]}}
 do_test fts3expr-4.2.4 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH '(' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [(]}}
 do_test fts3expr-4.2.5 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH ')' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [)]}}
 
 do_test fts3expr-4.2.6 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example (hello world' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [example (hello world]}}
 
 # Unterminated quotation marks:
 do_test fts3expr-4.3.1 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example OR "hello world' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [example OR "hello world]}}
 do_test fts3expr-4.3.2 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'example OR hello world"' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [example OR hello world"]}}
 
 # Binary operators without the required operands.
 do_test fts3expr-4.4.1 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'OR hello world' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [OR hello world]}}
 do_test fts3expr-4.4.2 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'hello world OR' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [hello world OR]}}
 do_test fts3expr-4.4.3 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'one (hello world OR) two' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [one (hello world OR) two]}}
 do_test fts3expr-4.4.4 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'one (OR hello world) two' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [one (OR hello world) two]}}
 
 # NEAR operators with something other than phrases as arguments.
 do_test fts3expr-4.5.1 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH '(hello OR world) NEAR one' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [(hello OR world) NEAR one]}}
 do_test fts3expr-4.5.2 {
   catchsql { SELECT * FROM t1 WHERE t1 MATCH 'one NEAR (hello OR world)' }
-} {1 {SQL logic error or missing database}}
+} {1 {malformed MATCH expression: [one NEAR (hello OR world)]}}
 
 #------------------------------------------------------------------------
 # The following OOM tests are designed to cover cases in fts3_expr.c.
