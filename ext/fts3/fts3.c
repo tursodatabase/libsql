@@ -467,7 +467,7 @@ static int fts3DisconnectMethod(sqlite3_vtab *pVtab){
 **
 ** If *pRc is initially non-zero then this routine is a no-op.
 */
-void fts3DbExec(
+static void fts3DbExec(
   int *pRc,              /* Success code */
   sqlite3 *db,           /* Database in which to run SQL */
   const char *zFormat,   /* Format string for SQL */
