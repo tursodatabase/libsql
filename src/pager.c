@@ -1315,11 +1315,11 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
 #endif
 
-    sqlite3PcacheCleanAll(pPager->pPCache);
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
     pPager->nRec = 0;
   }
+  sqlite3PcacheCleanAll(pPager->pPCache);
 
   if( !pPager->exclusiveMode ){
     rc2 = osUnlock(pPager->fd, SHARED_LOCK);
@@ -4106,12 +4106,11 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       }
     }
 
-    /* If the required locks were successfully obtained, open the journal
-    ** file and write the first journal-header to it.
+    /* No need to open the journal file at this time.  It will be
+    ** opened before it is written to.  If we defer opening the journal,
+    ** we might save the work of creating a file if the transaction
+    ** ends up being a no-op.
     */
-    if( rc==SQLITE_OK && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
-      rc = pager_open_journal(pPager);
-    }
   }else if( isOpen(pPager->jfd) && pPager->journalOff==0 ){
     /* This happens when the pager was in exclusive-access mode the last
     ** time a (read or write) transaction was successfully concluded
@@ -4126,7 +4125,6 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   }
 
   PAGERTRACE(("TRANSACTION %d\n", PAGERID(pPager)));
-  assert( !isOpen(pPager->jfd) || pPager->journalOff>0 || rc!=SQLITE_OK );
   if( rc!=SQLITE_OK ){
     assert( !pPager->dbModified );
     /* Ignore any IO error that occurs within pager_end_transaction(). The
@@ -4182,11 +4180,11 @@ static int pager_write(PgHdr *pPg){
     ** or both.
     **
     ** Higher level routines should have already started a transaction,
-    ** which means they have acquired the necessary locks and opened
-    ** a rollback journal.  Double-check to makes sure this is the case.
+    ** which means they have acquired the necessary locks but the rollback
+    ** journal might not yet be open.
     */
     rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
-    if( NEVER(rc!=SQLITE_OK) ){
+    if( rc!=SQLITE_OK ){
       return rc;
     }
     if( !isOpen(pPager->jfd) && pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
@@ -4921,11 +4919,6 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     int ii;                                 /* Iterator variable */
     PagerSavepoint *aNew;                   /* New Pager.aSavepoint array */
 
-    /* Either there is no active journal or the sub-journal is open or 
-    ** the journal is always stored in memory */
-    assert( pPager->nSavepoint==0 || isOpen(pPager->sjfd) ||
-            pPager->journalMode==PAGER_JOURNALMODE_MEMORY );
-
     /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
     ** if the allocation fails. Otherwise, zero the new portion in case a 
     ** malloc failure occurs while populating it in the for(...) loop below.
@@ -4944,7 +4937,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     for(ii=nCurrent; ii<nSavepoint; ii++){
       assert( pPager->dbSizeValid );
       aNew[ii].nOrig = pPager->dbSize;
-      if( isOpen(pPager->jfd) && ALWAYS(pPager->journalOff>0) ){
+      if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
         aNew[ii].iOffset = pPager->journalOff;
       }else{
         aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
@@ -5336,6 +5329,15 @@ int sqlite3PagerJournalMode(Pager *pPager, int eMode){
   ){
     if( isOpen(pPager->jfd) ){
       sqlite3OsClose(pPager->jfd);
+    }
+    assert( (PAGER_JOURNALMODE_TRUNCATE & 1)==1 );
+    assert( (PAGER_JOURNALMODE_PERSIST & 1)==1 );
+    assert( (PAGER_JOURNALMODE_DELETE & 1)==0 );
+    assert( (PAGER_JOURNALMODE_MEMORY & 1)==0 );
+    assert( (PAGER_JOURNALMODE_OFF & 1)==0 );
+    if( (pPager->journalMode & 1)==1 && (eMode & 1)==0
+         && !pPager->exclusiveMode ){
+      sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
     }
     pPager->journalMode = (u8)eMode;
   }
