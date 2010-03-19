@@ -2483,6 +2483,7 @@ static int rtreeUpdate(
       }
       rc = sqlite3_reset(pRtree->pReadRowid);
     }
+    *pRowid = cell.iRowid;
 
     if( rc==SQLITE_OK ){
       rc = ChooseLeaf(pRtree, &cell, 0, &pLeaf);

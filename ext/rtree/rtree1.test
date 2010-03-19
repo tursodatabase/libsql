@@ -399,4 +399,21 @@ do_test rtree-10.1 {
   catchsql { CREATE VIRTUAL TABLE t7 USING rtree(index, x1, y1, x2, y2) }
 } {1 {near "index": syntax error}}
 
+#-------------------------------------------------------------------------
+# Test last_insert_rowid().
+# 
+do_test rtree-11.1 {
+  execsql {
+    CREATE VIRTUAL TABLE t8 USING rtree(idx, x1, x2, y1, y2);
+    INSERT INTO t8 VALUES(1, 1.0, 1.0, 2.0, 2.0);
+    SELECT last_insert_rowid();
+  }
+} {1}
+do_test rtree-11.2 {
+  execsql {
+    INSERT INTO t8 VALUES(NULL, 1.0, 1.0, 2.0, 2.0);
+    SELECT last_insert_rowid();
+  }
+} {2}
+
 finish_test
