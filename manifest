@@ -1,5 +1,8 @@
-C Have\sthe\sxUpdate()\smethod\sof\sthe\srtree\smodule\svirtual\stable\simplementation\sset\sthe\s*pRowid\soutput\svariable\swhen\sinserting\sa\srow.\sFix\sfor\s[dd3ba6063a].
-D 2010-03-19T19:02:28
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Put\san\sALWAYS()\saround\sa\scondition\sin\spcache.c\sthat\smust\salways\sbe\strue\sin\nthe\scurrent\simplementation.
+D 2010-03-19T19:23:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +158,7 @@ F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
 F src/pager.c 26453ead93cc5ff69f6b7d1bf639948e3a0a6b06
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
-F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
+F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
 F src/pragma.c 56d95f76154a5f873c32eae485bb625f3c70be46
@@ -793,7 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 146d4f5d3459235d8b2d27a5d77beb7645f75185
-R cecb3de7429c8aa39856297db7e7e065
-U dan
-Z dde395691a3822eb04a7749756af2e51
+P f31d22489d44701c89cb13c663dfa1a6cc04f900
+R b257e193ce5c3b6dd8c13259f0300d3c
+U drh
+Z 3289d0c3f2644c9db4c24fa69003c4cc
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLo89LoxKgR168RlERAq9OAJ9XbBewWm/LYmWiA6LR/Mxb7peuFwCeL6ir
+SrQcupYva2iN4z2bjeYNeTM=
+=z5Gf
+-----END PGP SIGNATURE-----
