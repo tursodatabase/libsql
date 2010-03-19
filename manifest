@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\sin-journal\sboolean\svector\sis\scleared\sand\sreleased\swhen\sending\na\stransaction.\s\sThis\sfixes\san\sobscure\sproblem\swith\sthe\sprevious\scheck-in.
-D 2010-03-19T16:52:54
+C Store\sthe\sSQLite\sversion\snumber\sof\sthe\slast\swriter\sin\sbits\s96..99\sof\sthe\sheader.
+D 2010-03-19T16:55:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c f3d8a68d1531778e99add862db170dc66e505d19
+F src/pager.c 26453ead93cc5ff69f6b7d1bf639948e3a0a6b06
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b78e58ae1570ab4d66a69db445a752c6456038a0
-R 77e02e0286e85fa3260c1380a6e63645
+P 69d749d93d6565b848ce5c07f2738d144c6564bf
+R 599d0632b9cdb2c58e5d9edce25d110a
 U drh
-Z b4fddd4b5335ec12cf16c58c1d7ed772
+Z b45d6db2a12b641f2472736f902b373b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLo6vpoxKgR168RlERAvaEAJ4hGZ4IMStbFWI7Vu3Lcf6c4D4dnwCfcJo+
-AOm5uXd0mmMTVK/MHPQkVr0=
-=OW3p
+iD8DBQFLo6yWoxKgR168RlERAgeAAJ9pNOa8SRBbkNmjYgQViyfUUe2ovwCfbSGN
+06ig9VCoZq+gIHyU4IdUywc=
+=gUGm
 -----END PGP SIGNATURE-----

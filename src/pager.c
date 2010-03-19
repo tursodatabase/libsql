@@ -4490,6 +4490,10 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       assert( pPager->dbSizeValid );
       put32bits(((char*)pPgHdr->pData)+28, pPager->dbSize);
 
+      /* Also store the SQLite version number in bytes 96..99 */
+      assert( pPager->dbSizeValid );
+      put32bits(((char*)pPgHdr->pData)+96, SQLITE_VERSION_NUMBER);
+
       /* If running in direct mode, write the contents of page 1 to the file. */
       if( DIRECT_MODE ){
         const void *zBuf = pPgHdr->pData;
