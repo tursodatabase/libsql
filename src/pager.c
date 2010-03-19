@@ -1314,11 +1314,10 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
 #ifdef SQLITE_CHECK_PAGES
     sqlite3PcacheIterateDirty(pPager->pPCache, pager_set_pagehash);
 #endif
-
-    sqlite3BitvecDestroy(pPager->pInJournal);
-    pPager->pInJournal = 0;
-    pPager->nRec = 0;
   }
+  sqlite3BitvecDestroy(pPager->pInJournal);
+  pPager->pInJournal = 0;
+  pPager->nRec = 0;
   sqlite3PcacheCleanAll(pPager->pPCache);
 
   if( !pPager->exclusiveMode ){

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Do\screate,\sopen,\sor\sinitialize\sthe\srollback\sjournal\suntil\ssomething\sactually\nneeds\sto\sbe\swritten\sinto\sthe\sjournal.\s\sThat\sway,\sexpensive\sfilesystem\noperations\sare\savoided\sif\sthe\stransaction\sends\sup\sbeing\sa\sno-op.
-D 2010-03-19T15:48:14
+C Make\ssure\sthe\sin-journal\sboolean\svector\sis\scleared\sand\sreleased\swhen\sending\na\stransaction.\s\sThis\sfixes\san\sobscure\sproblem\swith\sthe\sprevious\scheck-in.
+D 2010-03-19T16:52:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 8e5cefa30e46da6824cb7c6f092b3894b4c3b7bf
+F src/pager.c f3d8a68d1531778e99add862db170dc66e505d19
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b7e42ae77443b33e0ab83265064830594094dc7c
-R dfec378b8748bf5ce92e741ebb2a5676
+P b78e58ae1570ab4d66a69db445a752c6456038a0
+R 77e02e0286e85fa3260c1380a6e63645
 U drh
-Z f8af9d6e06b574d3c55a4284484dcb07
+Z b4fddd4b5335ec12cf16c58c1d7ed772
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLo5zBoxKgR168RlERAsHsAJ9MbPKPBalfwi46+MveEw5XQfUkFACeJa58
-S6m/QgLe0r+Ynag8entdHnE=
-=P1LI
+iD8DBQFLo6vpoxKgR168RlERAvaEAJ4hGZ4IMStbFWI7Vu3Lcf6c4D4dnwCfcJo+
+AOm5uXd0mmMTVK/MHPQkVr0=
+=OW3p
 -----END PGP SIGNATURE-----
