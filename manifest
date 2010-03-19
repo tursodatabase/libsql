@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Mark\sinternal\sroutines\sas\s"static"\sin\sFTS3.\nTicket\s[b1552d0fa7].
-D 2010-03-18T16:34:45
+C Rewrite\sa\scouple\sof\squeries\sused\sinternally\sby\sFTS3\sto\stake\sadvantage\sof\sthe\s"SELECT\smax(x)\sFROM\s..."\soptimization.
+D 2010-03-19T06:59:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -71,7 +68,7 @@ F ext/fts3/fts3_snippet.c ec53bd8a8384172b9e866f48fa2d6055f3b9f3cf
 F ext/fts3/fts3_tokenizer.c 1a49ee3d79cbf0b9386250370d9cbfe4bb89c8ff
 F ext/fts3/fts3_tokenizer.h 13ffd9fcb397fec32a05ef5cd9e0fa659bf3dbd3
 F ext/fts3/fts3_tokenizer1.c b6d86d1d750787db5c168c73da4e87670ed890a1
-F ext/fts3/fts3_write.c bff9bea026d6e627ab8e78e2ade310981128e0bd
+F ext/fts3/fts3_write.c 4b21a0c6f2772b261f14e3a2e80e1e3e849268b0
 F ext/fts3/mkfts3amal.tcl 252ecb7fe6467854f2aa237bf2c390b74e71f100
 F ext/icu/README.txt 3b130aa66e7a681136f6add198b076a2f90d1e33
 F ext/icu/icu.c 850e9a36567bbcce6bd85a4b68243cad8e3c2de2
@@ -796,14 +793,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bea9258643edfeb98ebf59d93fa18a14e4221fea
-R da88be09fb0f3b3bd9d4c5c0ab241d5e
-U drh
-Z 2b2dfc29b37d20deb3125dc4741ad0ad
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLolYooxKgR168RlERAgOaAJ406SphJxYCh+IcG+59/UHQ/5B0PACghJA8
-aeLH3CBjPdUAGI+7lk9EX5c=
-=ALgl
------END PGP SIGNATURE-----
+P 39b34ac4a7bd06144b3630c0ad71bad0615418b6
+R 0beeb22a2bd626a841f0cfea3315c725
+U dan
+Z 78efa9b25fddb1d945403b19c00fb61f
