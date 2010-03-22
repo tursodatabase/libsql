@@ -1,5 +1,8 @@
-C Change\sthe\sformatting\sof\sthe\spreprocessor\smacros\ssurrounding\sthe\scompileoption\sinterface\sin\ssqlite.h.in.\sThis\sis\sso\sthe\sdocumentation\sproduced\sby\sparsing\sthis\spart\sof\ssqlite.h.in\sis\sformatted\ssimilarly\sto\sthe\sdocs\sfor\sthe\sdeprecated\sinterfaces\s(with\sthe\s#ifndef\svisible\son\sthe\swebpage).
-D 2010-03-22T04:32:14
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Disable\sthe\s"init.test"\stest\sscript\swhen\scompiled\swith\sSQLITE_THREADSAFE=0.
+D 2010-03-22T15:47:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -435,7 +438,7 @@ F test/index.test cbf301cdb2da43e4eac636c3400c2439af1834ad
 F test/index2.test ee83c6b5e3173a3d7137140d945d9a5d4fdfb9d6
 F test/index3.test 727d55dceb9a4ec36675057bb5becfc265e28ca6
 F test/indexedby.test 946ca2628a521f4ced0520421a0788345abaf3dc
-F test/init.test 3f9e97948cf2335c08a5e3edc3df3a26cdaa76f2
+F test/init.test 15c823093fdabbf7b531fe22cf037134d09587a7
 F test/insert.test aef273dd1cee84cc92407469e6bd1b3cdcb76908
 F test/insert2.test 4f3a04d168c728ed5ec2c88842e772606c7ce435
 F test/insert3.test 1b7db95a03ad9c5013fdf7d6722b6cd66ee55e30
@@ -793,7 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 88810cd091b33f2c56f842e32cafbac5d34d7412
-R e21368731c5d74b4db86df649cca6db2
-U dan
-Z 70d161e45a37d8635afe5d9f0301fad9
+P 161958d11f2ef6ce4d7ba69afea03e0a6764cc1b
+R 2bdcbaf3e59a4b46be07ea298d47a493
+U drh
+Z a7def5cebf1f65dd3973d09395418443
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLp5EeoxKgR168RlERAp+KAJ9a5zl4fECGpNKiFVopfu3moCp+4QCfdlVg
+RUAI/uMaLp2aOKUyBYQj2e0=
+=12Xo
+-----END PGP SIGNATURE-----
