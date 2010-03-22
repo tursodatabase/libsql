@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Disable\sthe\s"init.test"\stest\sscript\swhen\scompiled\swith\sSQLITE_THREADSAFE=0.
-D 2010-03-22T15:47:39
+C After\sa\srollback\sthat\swrites\sor\struncates\sthe\sdatabase\sfile,\ssync\sthe\sdatabase\sfile\sbefore\sinvalidating\sthe\sjournal\scontents.
+D 2010-03-22T17:13:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +152,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 26453ead93cc5ff69f6b7d1bf639948e3a0a6b06
+F src/pager.c 2a374f72e6c87150d043173b8041dc537f926b02
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -317,7 +314,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
+F test/crash8.test 167fbacd3e301c54c69930432134d9e4e86a1ac3
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -796,14 +793,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 161958d11f2ef6ce4d7ba69afea03e0a6764cc1b
-R 2bdcbaf3e59a4b46be07ea298d47a493
-U drh
-Z a7def5cebf1f65dd3973d09395418443
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLp5EeoxKgR168RlERAp+KAJ9a5zl4fECGpNKiFVopfu3moCp+4QCfdlVg
-RUAI/uMaLp2aOKUyBYQj2e0=
-=12Xo
------END PGP SIGNATURE-----
+P ad68fa65bbd6b82e69fe8c36e4c459ea2ced0f8c
+R da2830191169e82dff44001b6ff66f57
+U dan
+Z 80e6e915ad885752ec643850a26719f6

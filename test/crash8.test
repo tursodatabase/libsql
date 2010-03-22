@@ -340,4 +340,30 @@ ifcapable pragma {
   } {jkl}
 }
 
+catch { db close }
+file delete -force test.db test.db-journal
+sqlite3 db test.db
+
+do_test crash8-5.1 {
+  execsql {
+    CREATE TABLE t1(x PRIMARY KEY);
+    INSERT INTO t1 VALUES(randomblob(900));
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;
+    INSERT INTO t1 SELECT randomblob(900) FROM t1;          /* 64 */
+  }
+  crashsql -file test.db -delay 1 {
+    PRAGMA cache_size = 10;
+    BEGIN;
+      UPDATE t1 SET x = randomblob(900);
+    ROLLBACK;
+    INSERT INTO t1 VALUES(randomblob(900));
+  }
+  execsql { PRAGMA integrity_check }
+} {ok}
+
+
 finish_test

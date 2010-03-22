@@ -2018,6 +2018,9 @@ end_playback:
     rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
     testcase( rc!=SQLITE_OK );
   }
+  if( rc==SQLITE_OK && pPager->noSync==0 && pPager->state>=PAGER_EXCLUSIVE ){
+    rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+  }
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0');
     testcase( rc!=SQLITE_OK );
