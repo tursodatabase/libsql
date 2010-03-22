@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Modify\sthe\ssqlite3_log()\sinterface\sand\simplementation\sso\sthat\sit\snever\suses\ndynamic\smemory\sallocation\s-\sto\savoid\sdeadlocking\swhen\scalled\swhile\sholding\s\nthe\smemory\sallocator\smutex.\s\sCherry-pick\smerge\sof\s[28d1bc98d6].
-D 2010-03-03T22:40:10
+C Sync\sthe\sdatabase\sfile\safter\sa\srollback.\s\sThis\sis\sa\scherrypick\smerge\nof\scheck-in\s[b21b911f23].
+D 2010-03-22T23:55:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c5827ead754ab32b9585487177c93bb00b9497b3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c bf7f66b06d9f507b049de647fc725fcd20bb647f
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 71d2a70723f3b44bc1ebe65419b56f079a91d0c9
+F src/pager.c cba88e3121d37be873e650ae0203527483965788
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -315,7 +315,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
+F test/crash8.test 167fbacd3e301c54c69930432134d9e4e86a1ac3
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -787,14 +787,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e5342234357dcfde33fb7589f87d64f6de7d9970
-R 01beb709cf7bc8e3972a5b032e7b971a
+P 6f368b5448363ae497bd4ff49b4ceeafb27f8cb3
+R bd630940bca5e76dbf9cec59380fa024
 U drh
-Z 0d66440290a8834e0da1130d7723d7df
+Z 7127016c75143e7ed652563bb0f1fa6a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLjuVOoxKgR168RlERAgTuAJ4qlt0mKQUYvcO4Xl9vNMna3dxhcgCfcVYt
-H1/v9Io9D3GEbLQlwd992Nk=
-=ii3q
+iD8DBQFLqANioxKgR168RlERAgaVAKCHSUDoxuCNvq2jkAczXOPrZ/vbGQCfasQl
+MjTiX811W87HBuGmIpQZpqU=
+=gXTK
 -----END PGP SIGNATURE-----
