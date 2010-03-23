@@ -1,5 +1,8 @@
-C Add\san\sextra\stest\scase\sfor\scrash\srecovery.
-D 2010-03-22T17:38:11
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Close\sthe\sauxiliary\sdatabase\sdb2\sat\sthe\send\sof\sthe\scrash8.test\sscript.
+D 2010-03-23T15:29:50
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -314,7 +317,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test a6742d8196ac426be4c547b27fd2e24236b66c82
+F test/crash8.test 3af0fc90c3e593b85e810b8d6c50fc7d0df30008
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -793,7 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b21b911f233842357af9ccc14525bbd48a38edb1
-R ffd53e378ecdea15b6b3ff7659ae3ab4
-U dan
-Z 60f0c36d7fc83afd295b943f92e6fd9c
+P f2326dad4e47b2657be302e194970967960eb1c0
+R 12ec33056b1da6c918e26c80ce3d8684
+U drh
+Z 0ea833f6dc63d03e7a414dccc68b9799
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLqN5xoxKgR168RlERAkEpAJ0THRZC7VJTqqoA5KGj/v3pMPlHwACfU/Yd
+PJ/B4Nj/zQNYgTneXs+ICwA=
+=sy6h
+-----END PGP SIGNATURE-----

@@ -396,5 +396,6 @@ for {set i 1} {$i < 10} {incr i} {
     execsql { PRAGMA integrity_check } db2
   } {ok}
 }
+catch {db2 close}
 
 finish_test
