@@ -48,7 +48,7 @@
 ** This is similar in concept to how sqlite encodes "varints" but
 ** the encoding is not the same.  SQLite varints are big-endian
 ** are are limited to 9 bytes in length whereas FTS3 varints are
-** little-endian and can be upt to 10 bytes in length (in theory).
+** little-endian and can be up to 10 bytes in length (in theory).
 **
 ** Example encodings:
 **
@@ -59,26 +59,26 @@
 **
 **** Document lists ****
 ** A doclist (document list) holds a docid-sorted list of hits for a
-** given term.  Doclists hold docids, and can optionally associate
-** token positions and offsets with docids.  A position is the index
-** of a word within the document.  The first word of the document has
-** a position of 0.
+** given term.  Doclists hold docids and associated token positions.
+** A docid is the unique integer identifier for a single document.
+** A position is the index of a word within the document.  The first 
+** word of the document has a position of 0.
 **
 ** FTS3 used to optionally store character offsets using a compile-time
 ** option.  But that functionality is no longer supported.
 **
-** A DL_POSITIONS_OFFSETS doclist is stored like this:
+** A doclist is stored like this:
 **
 ** array {
 **   varint docid;
 **   array {                (position list for column 0)
-**     varint position;     (delta from previous position plus POS_BASE)
+**     varint position;     (2 more than the delta from previous position)
 **   }
 **   array {
 **     varint POS_COLUMN;   (marks start of position list for new column)
 **     varint column;       (index of new column)
 **     array {
-**       varint position;   (delta from previous position plus POS_BASE)
+**       varint position;   (2 more than the delta from previous position)
 **     }
 **   }
 **   varint POS_END;        (marks end of positions for this document.
@@ -90,7 +90,7 @@
 ** in the same logical place as the position element, and act as sentinals
 ** ending a position list array.  POS_END is 0.  POS_COLUMN is 1.
 ** The positions numbers are not stored literally but rather as two more
-** the difference from the prior position, or the just the position plus
+** than the difference from the prior position, or the just the position plus
 ** 2 for the first position.  Example:
 **
 **   label:       A B C D E  F  G H   I  J K
@@ -104,14 +104,14 @@
 ** 234 at I is the next docid.  It has one position 72 (72-2) and then
 ** terminates with the 0 at K.
 **
-** A DL_POSITIONS doclist omits the startOffset and endOffset
-** information.  A DL_DOCIDS doclist omits both the position and
-** offset information, becoming an array of varint-encoded docids.
+** A "position-list" is the list of positions for multiple columns for
+** a single docid.  A "column-list" is the set of positions for a single
+** column.  Hence, a position-list consists of one or more column-lists,
+** a document record consists of a docid followed by a position-list and
+** a doclist consists of one or more document records.
 **
-** On-disk data is stored as type DL_DEFAULT, so we don't serialize
-** the type.  Due to how deletion is implemented in the segmentation
-** system, on-disk doclists MUST store at least positions.
-**
+** A bare doclist omits the position information, becoming an 
+** array of varint-encoded docids.
 **
 **** Segment leaf nodes ****
 ** Segment leaf nodes store terms and doclists, ordered by term.  Leaf
@@ -313,6 +313,20 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
+/*
+** The testcase() macro is only used by the amalgamation.  If undefined,
+** make it a no-op.
+*/
+#ifndef testcase
+# define testcase(X)
+#endif
+
+/*
+** Terminator values for position-lists and column-lists.
+*/
+#define POS_COLUMN  (1)     /* Column-list terminator */
+#define POS_END     (0)     /* Position-list terminator */ 
+
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
@@ -359,8 +373,7 @@ int sqlite3Fts3GetVarint32(const char *p, int *pi){
 }
 
 /*
-** Return the number of bytes required to store the value passed as the
-** first argument in varint form.
+** Return the number of bytes required to encode v as a varint
 */
 int sqlite3Fts3VarintLen(sqlite3_uint64 v){
   int i = 0;
@@ -411,7 +424,7 @@ void sqlite3Fts3Dequote(char *z){
 
 /*
 ** Read a single varint from the doclist at *pp and advance *pp to point
-** to the next element of the varlist.  Add the value of the varint
+** to the first byte past the end of the varint.  Add the value of the varint
 ** to *pVal.
 */
 static void fts3GetDeltaVarint(char **pp, sqlite3_int64 *pVal){
@@ -547,6 +560,10 @@ static int fts3DeclareVtab(Fts3Table *p){
 ** Create the backing store tables (%_content, %_segments and %_segdir)
 ** required by the FTS3 table passed as the only argument. This is done
 ** as part of the vtab xCreate() method.
+**
+** If the p->bHasDocsize boolean is true (indicating that this is an
+** FTS4 table, not an FTS3 table) then also create the %_docsize and
+** %_stat tables required by FTS4.
 */
 static int fts3CreateTables(Fts3Table *p){
   int rc = SQLITE_OK;             /* Return code */
@@ -639,7 +656,7 @@ static void fts3TableExists(
 **
 ** The argv[] array contains the following:
 **
-**   argv[0]   -> module name
+**   argv[0]   -> module name  ("fts3" or "fts4")
 **   argv[1]   -> database name
 **   argv[2]   -> table name
 **   argv[...] -> "column name" and other module argument fields.
@@ -658,12 +675,12 @@ static int fts3InitVtab(
   int rc;                         /* Return code */
   int i;                          /* Iterator variable */
   int nByte;                      /* Size of allocation used for *p */
-  int iCol;
-  int nString = 0;
-  int nCol = 0;
-  char *zCsr;
-  int nDb;
-  int nName;
+  int iCol;                       /* Column index */
+  int nString = 0;                /* Bytes required to hold all column names */
+  int nCol = 0;                   /* Number of columns in the FTS table */
+  char *zCsr;                     /* Space for holding column names */
+  int nDb;                        /* Bytes required to hold database name */
+  int nName;                      /* Bytes required to hold table name */
 
   const char *zTokenizer = 0;               /* Name of tokenizer to use */
   sqlite3_tokenizer *pTokenizer = 0;        /* Tokenizer for this table */
@@ -893,6 +910,11 @@ static int fulltextClose(sqlite3_vtab_cursor *pCursor){
   return SQLITE_OK;
 }
 
+/*
+** Position the pCsr->pStmt statement so that it is on the row
+** of the %_content table that contains the last match.  Return
+** SQLITE_OK on success.  
+*/
 static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
   if( pCsr->isRequireSeek ){
     pCsr->isRequireSeek = 0;
@@ -919,6 +941,17 @@ static int fts3CursorSeek(sqlite3_context *pContext, Fts3Cursor *pCsr){
   }
 }
 
+/*
+** Advance the cursor to the next row in the %_content table that
+** matches the search criteria.  For a MATCH search, this will be
+** the next row that matches.  For a full-table scan, this will be
+** simply the next row in the %_content table.  For a docid lookup,
+** this routine simply sets the EOF flag.
+**
+** Return SQLITE_OK if nothing goes wrong.  SQLITE_OK is returned
+** even if we reach end-of-file.  The fts3EofMethod() will be called
+** subsequently to determine whether or not an EOF was hit.
+*/
 static int fts3NextMethod(sqlite3_vtab_cursor *pCursor){
   int rc = SQLITE_OK;             /* Return code */
   Fts3Cursor *pCsr = (Fts3Cursor *)pCursor;
@@ -1055,6 +1088,11 @@ static void fts3PutDeltaVarint(
 ** start of a position-list. After it returns, *ppPoslist points to the
 ** first byte after the position-list.
 **
+** A position list is list of positions (delta encoded) and columns for 
+** a single document record of a doclist.  So, in other words, this
+** routine advances *ppPoslist so that it points to the next docid in
+** the doclist, or to the first byte past the end of the doclist.
+**
 ** If pp is not NULL, then the contents of the position list are copied
 ** to *pp. *pp is set to point to the first byte past the last byte copied
 ** before this function returns.
@@ -1064,17 +1102,20 @@ static void fts3PoslistCopy(char **pp, char **ppPoslist){
   char c = 0;
 
   /* The end of a position list is marked by a zero encoded as an FTS3 
-  ** varint. A single 0x00 byte. Except, if the 0x00 byte is preceded by
+  ** varint. A single POS_END (0) byte. Except, if the 0 byte is preceded by
   ** a byte with the 0x80 bit set, then it is not a varint 0, but the tail
   ** of some other, multi-byte, value.
   **
-  ** The following block moves pEnd to point to the first byte that is not 
+  ** The following while-loop moves pEnd to point to the first byte that is not 
   ** immediately preceded by a byte with the 0x80 bit set. Then increments
   ** pEnd once more so that it points to the byte immediately following the
   ** last byte in the position-list.
   */
-  while( *pEnd | c ) c = *pEnd++ & 0x80;
-  pEnd++;
+  while( *pEnd | c ){
+    c = *pEnd++ & 0x80;
+    testcase( c!=0 && (*pEnd)==0 );
+  }
+  pEnd++;  /* Advance past the POS_END terminator byte */
 
   if( pp ){
     int n = (int)(pEnd - *ppPoslist);
@@ -1086,12 +1127,34 @@ static void fts3PoslistCopy(char **pp, char **ppPoslist){
   *ppPoslist = pEnd;
 }
 
+/*
+** When this function is called, *ppPoslist is assumed to point to the 
+** start of a column-list. After it returns, *ppPoslist points to the
+** to the terminator (POS_COLUMN or POS_END) byte of the column-list.
+**
+** A column-list is list of delta-encoded positions for a single column
+** within a single document within a doclist.
+**
+** The column-list is terminated either by a POS_COLUMN varint (1) or
+** a POS_END varint (0).  This routine leaves *ppPoslist pointing to
+** the POS_COLUMN or POS_END that terminates the column-list.
+**
+** If pp is not NULL, then the contents of the column-list are copied
+** to *pp. *pp is set to point to the first byte past the last byte copied
+** before this function returns.  The POS_COLUMN or POS_END terminator
+** is not copied into *pp.
+*/
 static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
   char c = 0;
 
-  /* A column-list is terminated by either a 0x01 or 0x00. */
-  while( 0xFE & (*pEnd | c) ) c = *pEnd++ & 0x80;
+  /* A column-list is terminated by either a 0x01 or 0x00 byte that is
+  ** not part of a multi-byte varint.
+  */
+  while( 0xFE & (*pEnd | c) ){
+    c = *pEnd++ & 0x80;
+    testcase( c!=0 && ((*pEnd)&0xfe)==0 );
+  }
   if( pp ){
     int n = (int)(pEnd - *ppPoslist);
     char *p = *pp;
@@ -1103,37 +1166,45 @@ static void fts3ColumnlistCopy(char **pp, char **ppPoslist){
 }
 
 /*
-** Value used to signify the end of an offset-list. This is safe because
+** Value used to signify the end of an position-list. This is safe because
 ** it is not possible to have a document with 2^31 terms.
 */
-#define OFFSET_LIST_END 0x7fffffff
+#define POSITION_LIST_END 0x7fffffff
 
 /*
-** This function is used to help parse offset-lists. When this function is
-** called, *pp may point to the start of the next varint in the offset-list
-** being parsed, or it may point to 1 byte past the end of the offset-list
-** (in which case **pp will be 0x00 or 0x01).
+** This function is used to help parse position-lists. When this function is
+** called, *pp may point to the start of the next varint in the position-list
+** being parsed, or it may point to 1 byte past the end of the position-list
+** (in which case **pp will be a terminator bytes POS_END (0) or
+** (1)).
 **
-** If *pp points past the end of the current offset list, set *pi to 
-** OFFSET_LIST_END and return. Otherwise, read the next varint from *pp,
+** If *pp points past the end of the current position-list, set *pi to 
+** POSITION_LIST_END and return. Otherwise, read the next varint from *pp,
 ** increment the current value of *pi by the value read, and set *pp to
 ** point to the next value before returning.
+**
+** Before calling this routine *pi must be initialized to the value of
+** the previous position, or zero if we are reading the first position
+** in the position-list.  Because positions are delta-encoded, the value
+** of the previous position is needed in order to compute the value of
+** the next position.
 */
 static void fts3ReadNextPos(
-  char **pp,                      /* IN/OUT: Pointer into offset-list buffer */
-  sqlite3_int64 *pi               /* IN/OUT: Value read from offset-list */
+  char **pp,                    /* IN/OUT: Pointer into position-list buffer */
+  sqlite3_int64 *pi             /* IN/OUT: Value read from position-list */
 ){
-  if( **pp&0xFE ){
+  if( (**pp)&0xFE ){
     fts3GetDeltaVarint(pp, pi);
     *pi -= 2;
   }else{
-    *pi = OFFSET_LIST_END;
+    *pi = POSITION_LIST_END;
   }
 }
 
 /*
-** If parameter iCol is not 0, write an 0x01 byte followed by the value of
-** iCol encoded as a varint to *pp. 
+** If parameter iCol is not 0, write an POS_COLUMN (1) byte followed by
+** the value of iCol encoded as a varint to *pp.   This will start a new
+** column list.
 **
 ** Set *pp to point to the byte just after the last byte written before 
 ** returning (do not modify it if iCol==0). Return the total number of bytes
@@ -1151,7 +1222,11 @@ static int fts3PutColNumber(char **pp, int iCol){
 }
 
 /*
-**
+** Compute the union of two position lists.  The output written
+** into *pp contains all positions of both *pp1 and *pp2 in sorted
+** order and with any duplicates removed.  All pointers are
+** updated appropriately.   The caller is responsible for insuring
+** that there is enough space in *pp to hold the complete output.
 */
 static void fts3PoslistMerge(
   char **pp,                      /* Output buffer */
@@ -1163,32 +1238,33 @@ static void fts3PoslistMerge(
   char *p2 = *pp2;
 
   while( *p1 || *p2 ){
-    int iCol1;
-    int iCol2;
+    int iCol1;         /* The current column index in pp1 */
+    int iCol2;         /* The current column index in pp2 */
 
-    if( *p1==0x01 ) sqlite3Fts3GetVarint32(&p1[1], &iCol1);
-    else if( *p1==0x00 ) iCol1 = OFFSET_LIST_END;
+    if( *p1==POS_COLUMN ) sqlite3Fts3GetVarint32(&p1[1], &iCol1);
+    else if( *p1==POS_END ) iCol1 = POSITION_LIST_END;
     else iCol1 = 0;
 
-    if( *p2==0x01 ) sqlite3Fts3GetVarint32(&p2[1], &iCol2);
-    else if( *p2==0x00 ) iCol2 = OFFSET_LIST_END;
+    if( *p2==POS_COLUMN ) sqlite3Fts3GetVarint32(&p2[1], &iCol2);
+    else if( *p2==POS_END ) iCol2 = POSITION_LIST_END;
     else iCol2 = 0;
 
     if( iCol1==iCol2 ){
-      sqlite3_int64 i1 = 0;
-      sqlite3_int64 i2 = 0;
+      sqlite3_int64 i1 = 0;       /* Last position from pp1 */
+      sqlite3_int64 i2 = 0;       /* Last position from pp2 */
       sqlite3_int64 iPrev = 0;
       int n = fts3PutColNumber(&p, iCol1);
       p1 += n;
       p2 += n;
 
-      /* At this point, both p1 and p2 point to the start of offset-lists.
-      ** An offset-list is a list of non-negative delta-encoded varints, each 
-      ** incremented by 2 before being stored. Each list is terminated by a 0 
-      ** or 1 value (0x00 or 0x01). The following block merges the two lists
+      /* At this point, both p1 and p2 point to the start of column-lists
+      ** for the same column (the column with index iCol1 and iCol2).
+      ** A column-list is a list of non-negative delta-encoded varints, each 
+      ** incremented by 2 before being stored. Each list is terminated by a
+      ** POS_END (0) or POS_COLUMN (1). The following block merges the two lists
       ** and writes the results to buffer p. p is left pointing to the byte
-      ** after the list written. No terminator (0x00 or 0x01) is written to
-      ** the output.
+      ** after the list written. No terminator (POS_END or POS_COLUMN) is
+      ** written to the output.
       */
       fts3GetDeltaVarint(&p1, &i1);
       fts3GetDeltaVarint(&p2, &i2);
@@ -1203,7 +1279,7 @@ static void fts3PoslistMerge(
         }else{
           fts3ReadNextPos(&p2, &i2);
         }
-      }while( i1!=OFFSET_LIST_END || i2!=OFFSET_LIST_END );
+      }while( i1!=POSITION_LIST_END || i2!=POSITION_LIST_END );
     }else if( iCol1<iCol2 ){
       p1 += fts3PutColNumber(&p, iCol1);
       fts3ColumnlistCopy(&p, &p1);
@@ -1213,7 +1289,7 @@ static void fts3PoslistMerge(
     }
   }
 
-  *p++ = '\0';
+  *p++ = POS_END;
   *pp = p;
   *pp1 = p1 + 1;
   *pp2 = p2 + 1;
