@@ -313,20 +313,6 @@
   SQLITE_EXTENSION_INIT1
 #endif
 
-/*
-** The testcase() macro is only used by the amalgamation.  If undefined,
-** make it a no-op.
-*/
-#ifndef testcase
-# define testcase(X)
-#endif
-
-/*
-** Terminator values for position-lists and column-lists.
-*/
-#define POS_COLUMN  (1)     /* Column-list terminator */
-#define POS_END     (0)     /* Position-list terminator */ 
-
 /* 
 ** Write a 64-bit variable-length integer to memory starting at p[0].
 ** The length of data written will be between 1 and FTS3_VARINT_MAX bytes.
@@ -1312,11 +1298,11 @@ static int fts3PoslistPhraseMerge(
   int iCol1 = 0;
   int iCol2 = 0;
   assert( *p1!=0 && *p2!=0 );
-  if( *p1==0x01 ){ 
+  if( *p1==POS_COLUMN ){ 
     p1++;
     p1 += sqlite3Fts3GetVarint32(p1, &iCol1);
   }
-  if( *p2==0x01 ){ 
+  if( *p2==POS_COLUMN ){ 
     p2++;
     p2 += sqlite3Fts3GetVarint32(p2, &iCol2);
   }
@@ -1329,11 +1315,12 @@ static int fts3PoslistPhraseMerge(
       sqlite3_int64 iPos2 = 0;
 
       if( pp && iCol1 ){
-        *p++ = 0x01;
+        *p++ = POS_COLUMN;
         p += sqlite3Fts3PutVarint(p, iCol1);
       }
 
-      assert( *p1!=0x00 && *p2!=0x00 && *p1!=0x01 && *p2!=0x01 );
+      assert( *p1!=POS_END && *p1!=POS_COLUMN );
+      assert( *p2!=POS_END && *p2!=POS_COLUMN );
       fts3GetDeltaVarint(&p1, &iPos1); iPos1 -= 2;
       fts3GetDeltaVarint(&p2, &iPos2); iPos2 -= 2;
 
@@ -1585,6 +1572,7 @@ static int fts3DoclistMerge(
     default: assert( mergetype==MERGE_POS_NEAR || mergetype==MERGE_NEAR ); {
       char *aTmp = 0;
       char **ppPos = 0;
+
       if( mergetype==MERGE_POS_NEAR ){
         ppPos = &p;
         aTmp = sqlite3_malloc(2*(n1+n2+1));
@@ -1689,9 +1677,9 @@ static int fts3TermSelectCb(
 **
 ** The returned doclist may be in one of two formats, depending on the 
 ** value of parameter isReqPos. If isReqPos is zero, then the doclist is
-** a sorted list of delta-compressed docids. If isReqPos is non-zero, 
-** then the returned list is in the same format as is stored in the
-** database without the found length specifier at the start of on-disk
+** a sorted list of delta-compressed docids (a bare doclist). If isReqPos
+** is non-zero, then the returned list is in the same format as is stored 
+** in the database without the found length specifier at the start of on-disk
 ** doclists.
 */
 static int fts3TermSelect(
@@ -1951,7 +1939,9 @@ int sqlite3Fts3ExprNearTrim(Fts3Expr *pLeft, Fts3Expr *pRight, int nNear){
 
 /*
 ** Evaluate the full-text expression pExpr against fts3 table pTab. Store
-** the resulting doclist in *paOut and *pnOut.
+** the resulting doclist in *paOut and *pnOut.  This routine mallocs for
+** the space needed to store the output.  The caller is responsible for
+** freeing the space when it has finished.
 */
 static int evalFts3Expr(
   Fts3Table *p,                   /* Virtual table handle */
