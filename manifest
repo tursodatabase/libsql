@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C More\scommenting\sand\sdocumentation\senhancements\sin\sFTS3.
-D 2010-03-23T18:24:07
+C Attempt\sto\ssuppress\sa\swarning\sfrom\sBorland\sCode\sGuard.
+D 2010-03-24T11:55:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -218,7 +218,7 @@ F src/vdbe.c 8acca6dab2505e9650f6f014ada6ef30570cba99
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
 F src/vdbeapi.c 74c25680046a116b24b95393914d3669c23305dc
-F src/vdbeaux.c 0f352f63be78138bd94275aa3c8361e760ecc639
+F src/vdbeaux.c 863cd854d343e3e71622f20e5066d3007f9216c5
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -796,14 +796,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3e4a0082170155b5b779afd075a3ee650530ca68
-R 5227b1a15356eed32d5ce7971a352572
+P 892e286709c4a72aae364b85dd43bea525bb1b4d
+R 4e7747e6db66a7edbd7dd3bc5f585004
 U drh
-Z 55be70887ecbe2a6b639a9af5e7abde1
+Z 2ab106cf9f20d8820321fdf18867654a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLqQdKoxKgR168RlERApBYAKCHb5ZhKZNk9Keu/8tRViMQHHsZ+ACfYBue
-f4ixLxLJfwNjN74T1v76hhU=
-=3nbs
+iD8DBQFLqf2ioxKgR168RlERAk6sAKCMJy1kpasa8Iln1YSuu28cwzVTfwCdGJ6Z
+xmlmqHa8MLbO8oc6p2G4nto=
+=XtmL
 -----END PGP SIGNATURE-----
