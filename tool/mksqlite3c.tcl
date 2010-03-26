@@ -211,6 +211,7 @@ foreach file {
    sqliteInt.h
 
    global.c
+   ctime.c
    status.c
    date.c
    os.c
@@ -266,7 +267,6 @@ foreach file {
    auth.c
    build.c
    callback.c
-   ctime.c
    delete.c
    func.c
    fkey.c
