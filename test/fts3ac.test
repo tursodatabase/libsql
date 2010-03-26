@@ -1198,4 +1198,22 @@ do_test fts3ac-5.2 {
 15 <b>Questar</b> Pipeline
 40 Rockies<b>...</b>}}
 
+#-------------------------------------------------------------------------
+# Test a problem reported on the mailing list.
+#
+do_test fts3ac-6.1 {
+  execsql {
+    CREATE VIRTUAL TABLE ft USING fts3(one, two);
+    INSERT INTO ft VALUES('', 'foo');
+    INSERT INTO ft VALUES('foo', 'foo');
+    SELECT offsets(ft) FROM ft WHERE ft MATCH 'foo';
+  }
+} {{1 0 0 3} {0 0 0 3 1 0 0 3}}
+do_test fts3ac-6.2 {
+  execsql {
+    DELETE FROM ft WHERE one = 'foo';
+    SELECT offsets(ft) FROM ft WHERE ft MATCH 'foo';
+  }
+} {{1 0 0 3}}
+
 finish_test

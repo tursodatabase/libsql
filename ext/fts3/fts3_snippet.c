@@ -1156,11 +1156,13 @@ void sqlite3Fts3Offsets(
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
+        }else if( rc==SQLITE_DONE ){
+          rc = SQLITE_CORRUPT;
         }
       }
     }
     if( rc==SQLITE_DONE ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_OK;
     }
 
     pMod->xClose(pC);
