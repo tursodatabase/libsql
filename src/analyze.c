@@ -618,12 +618,16 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                   n = 24;
                 }
                 pSample->nByte = (u8)n;
-                pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
-                if( pSample->u.z ){
-                  memcpy(pSample->u.z, z, n);
+                if( n < 1){
+                  pSample->u.z = 0;
                 }else{
-                  db->mallocFailed = 1;
-                  break;
+                  pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
+                  if( pSample->u.z ){
+                    memcpy(pSample->u.z, z, n);
+                  }else{
+                    db->mallocFailed = 1;
+                    break;
+                  }
                 }
               }
             }
