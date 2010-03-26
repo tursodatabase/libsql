@@ -1,14 +1,14 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Pull\sin\sother\sfixes\sfrom\sthe\strunk:\s\scheck-ins\s[bea9258643],\n[f186b6a619],\sand\s[bb591802ff].
-D 2010-03-26T21:53:12
+C Update\sthe\sversion\snumber\sto\s3.6.23.1.
+D 2010-03-26T22:28:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks ab005d301296c40e021ccd0133ce49ca811e319f
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 3e18b3dd7290883913c25d66c0ddb409ce318654
+F VERSION 09d2dfb6a4a47d07b3b2091e349eedef78fb0f77
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2
+F configure 17dee87ba9b797ea22940dc0fb5b08147bfb246a
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f18a129a7aab09a1e0d34155e82bcbf7479a401d
-R 50e3bd42226db594509d5c3a819815bc
+P b1f342a6643829020beef542a0700d90822e6467
+R 590a011d9441875bded2c173c371f1c1
 U drh
-Z 9156d1cd66a381c14ff2bf7b510593f1
+Z f7171db765620a4ccff85bc2ced22202
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLrS32oxKgR168RlERArweAJ9P9PRYQdSH+sU4s0FqXbAyz4Sp9gCeOz5i
-/CzXSHa4yQ1+MihNxx/d1mo=
-=e9s1
+iD8DBQFLrTT6oxKgR168RlERArP2AJ0UeA3bKxomgH1prR7M+4tHuMlN7wCfXBZE
+Jr7IGDFSJ/vsM6VpeiKkkf4=
+=diSA
 -----END PGP SIGNATURE-----
