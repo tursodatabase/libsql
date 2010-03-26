@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Version\s3.6.22
-D 2010-03-09T19:31:43
+C After\sany\srollback\sthat\smodifies\sthe\sdatabase\sfile,\ssync\sthe\sdatabase\nbefore\sdeleting\sthe\srollback\sjournal.\s\sThis\sis\sa\scherry-pick\smerge\nof\scheck-ins\s[b21b911f23]\sand\s[f2326dad4e]
+D 2010-03-26T17:37:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 80688c6fee918b7d9aa1c4911a0094d0ebbde31e
+F src/pager.c 1915e3ec1a2157d0c29086b7fc0c936a2d97029e
 F src/pager.h 1b32faf2e578ac3e7bcf9c9d11217128261c5c54
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 4956b41d6ba913f7a8a56fbf32be78caed0e45c2
@@ -317,7 +317,7 @@ F test/crash4.test 02ff4f15c149ca1e88a5c299b4896c84d9450c3b
 F test/crash5.test 80a2f7073381837fc082435c97df52a830abcd80
 F test/crash6.test 9c730cf06335003cb1f5cfceddacd044155336e0
 F test/crash7.test e20a7b9ee1d16eaef7c94a4cb7ed2191b4d05970
-F test/crash8.test 5b32966fcb58fd616d24ce94303420351d076eb9
+F test/crash8.test a6742d8196ac426be4c547b27fd2e24236b66c82
 F test/crashtest1.c 09c1c7d728ccf4feb9e481671e29dda5669bbcc2
 F test/createtab.test 199cf68f44e5d9e87a0b8afc7130fdeb4def3272
 F test/cse.test 277350a26264495e86b1785f34d2d0c8600e021c
@@ -795,14 +795,19 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 20c400e73a9b6586b97de61da0d9f3d9a01dbebc
-R bef78c216faef953a6eddc0170e02337
+P 4ae453ea7be69018d8c16eb8dabe05617397dc4d
+R 8820f51193049a6809823c77f7f14764
+T *bgcolor * #00b0f0
+T *branch * branch-3.6.23
+T *sym-branch-3.6.23 *
+T -sym-release *
+T -sym-trunk *
 U drh
-Z 18025c7420056ae41f12ed18eace5eef
+Z 18d9817887835a3157ab3e9c1e686481
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLlqIloxKgR168RlERAk/hAJ9JiCzvEXeRZo3lDNqwPc1gemhEFgCfa5xe
-J3yhTIwklJduhaeZmyIPGx8=
-=FtXn
+iD8DBQFLrPDNoxKgR168RlERAjkcAJ43abOs8/wslEIJk5Gx+jWDGbxTlACeNJlr
+dStHAb91KgzPsmZ4TTunvXU=
+=J280
 -----END PGP SIGNATURE-----
