@@ -317,6 +317,7 @@ ifcapable attach {
       puts -nonewline $out [read $in]
       close $in
       close $out
+      hexio_write testerr.db 28 00000000
       execsql {REINDEX t2}
       execsql {PRAGMA integrity_check}
     } {ok}

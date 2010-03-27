@@ -4156,10 +4156,10 @@ static int pager_write(PgHdr *pPg){
   */
   assert( pPager->state>=PAGER_RESERVED );
 
-  /* If an error has been previously detected, we should not be
-  ** calling this routine.  Repeat the error for robustness.
+  /* If an error has been previously detected, report the same error
+  ** again.
   */
-  if( NEVER(pPager->errCode) )  return pPager->errCode;
+  if( pPager->errCode )  return pPager->errCode;
 
   /* Higher-level routines never call this function if database is not
   ** writable.  But check anyway, just for robustness. */
@@ -4489,10 +4489,6 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       change_counter++;
       put32bits(((char*)pPgHdr->pData)+24, change_counter);
 
-      /* Also store the current database size in bytes 28..31 */
-      assert( pPager->dbSizeValid );
-      put32bits(((char*)pPgHdr->pData)+28, pPager->dbSize);
-
       /* Also store the SQLite version number in bytes 96..99 */
       assert( pPager->dbSizeValid );
       put32bits(((char*)pPgHdr->pData)+96, SQLITE_VERSION_NUMBER);
@@ -4570,10 +4566,8 @@ int sqlite3PagerCommitPhaseOne(
   /* The dbOrigSize is never set if journal_mode=OFF */
   assert( pPager->journalMode!=PAGER_JOURNALMODE_OFF || pPager->dbOrigSize==0 );
 
-  /* If a prior error occurred, this routine should not be called.  ROLLBACK
-  ** is the appropriate response to an error, not COMMIT.  Guard against
-  ** coding errors by repeating the prior error. */
-  if( NEVER(pPager->errCode) ) return pPager->errCode;
+  /* If a prior error occurred, report that error again. */
+  if( pPager->errCode ) return pPager->errCode;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));
@@ -4924,6 +4918,9 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
   if( nSavepoint>nCurrent && pPager->useJournal ){
     int ii;                                 /* Iterator variable */
     PagerSavepoint *aNew;                   /* New Pager.aSavepoint array */
+
+    rc = sqlite3PagerPagecount(pPager, 0);
+    if( rc ) return rc;
 
     /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
     ** if the allocation fails. Otherwise, zero the new portion in case a 

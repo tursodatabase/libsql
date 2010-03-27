@@ -1,5 +1,8 @@
-C Increase\sthe\sestimated\scost\sof\susing\sa\svirtual\stable\sas\sthe\souter\sloop\sof\sa\sjoin\swhen\sthere\sexists\san\sORDER\sBY\sclause\sthat\sis\snot\ssatisfied\sby\sthe\svirtual\stable.\sFix\sfor\s[775b39dd3c].
-D 2010-03-27T09:44:42
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Experimental\schanges\sthat\scause\sSQLite\sto\suse\sbytes\s28..31\sof\sthe\sdatabase\nheader\sto\sdetermine\sthe\sdatabase\ssize,\srather\sthan\susing\sthe\sactual\sdatabase\nsize.\s\sThis\sallows\sdatabase\sspace\sto\sbe\spreallocated.
+D 2010-03-27T17:12:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,9 +112,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 0d6e44d664b1775b269ea7e6f66fdffcfc32ceb3
+F src/btree.c 28c3975060209dc5c5ca91abaa5e034dab03539f
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
-F src/btreeInt.h 71ed5e7f009caf17b7dc304350b3cb64b5970135
+F src/btreeInt.h 132d750db5d86b75344cec870501fa09a67b1f96
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -152,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 2a374f72e6c87150d043173b8041dc537f926b02
+F src/pager.c af1c58b7b884839853cc553681f771297de56049
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -293,7 +296,7 @@ F test/colmeta.test 087c42997754b8c648819832241daf724f813322
 F test/colname.test 08948a4809d22817e0e5de89c7c0a8bd90cb551b
 F test/conflict.test 0ed68b11f22721052d880ee80bd528a0e0828236
 F test/corrupt.test 0d346c9fe064ca71281685a8a732fcc83461bb99
-F test/corrupt2.test a571e30ea4e82318f319a24b6cc55935ce862079
+F test/corrupt2.test 576122d756feda40e63ef1c1ff6c4720a927d126
 F test/corrupt3.test 263e8bb04e2728df832fddf6973cf54c91db0c32
 F test/corrupt4.test acdb01afaedf529004b70e55de1a6f5a05ae7fff
 F test/corrupt5.test c23da7bfb20917cc7fdbb13ee25c7cc4e9fffeff
@@ -528,7 +531,7 @@ F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
 F test/permutations.test 91928573ca2db2c88dbc50ab34e4a585d912b580
-F test/pragma.test 5aeb48a442dba3c3e8e38773b121371814ab3b17
+F test/pragma.test 6960f9efbce476f70ba9ee2171daf5042f9e3d8a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
@@ -794,7 +797,18 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c33b38b59f733494ca0bce3f59a669fe7ed76b9f
-R 1048b4f005b8cf985bff319e6cd284fa
-U dan
-Z 25a9f1889e9ba9dd674533c69390c60b
+P 9e075e70f0e2a1ad302d17150cd58f91669a97a6
+R 8d4f88bef4d5dad0eb6446592a8450b9
+T *bgcolor * #c0ffc0
+T *branch * experimental
+T *sym-experimental *
+T -sym-trunk *
+U drh
+Z 4146840317f4bfa6058f588cd6ed7701
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLrjyHoxKgR168RlERArtLAKCJtnFICZRpFQj18diXIg+u0uOi3ACgh4j0
+mhbXREy6ig+7NdEp5dlms38=
+=ITwY
+-----END PGP SIGNATURE-----
