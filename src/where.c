@@ -1819,6 +1819,7 @@ static void bestVirtualIndex(
   WhereTerm *pTerm;
   int i, j;
   int nOrderBy;
+  double rCost;
 
   /* Make sure wsFlags is initialized to some sane value. Otherwise, if the 
   ** malloc in allocateIndexInfo() fails and this function returns leaving
@@ -1905,6 +1906,15 @@ static void bestVirtualIndex(
     }
   }
 
+  /* If there is an ORDER BY clause, and the selected virtual table index
+  ** does not satisfy it, increase the cost of the scan accordingly. This
+  ** matches the processing for non-virtual tables in bestBtreeIndex().
+  */
+  rCost = pIdxInfo->estimatedCost;
+  if( pOrderBy && pIdxInfo->orderByConsumed==0 ){
+    rCost += estLog(rCost)*rCost;
+  }
+
   /* The cost is not allowed to be larger than SQLITE_BIG_DBL (the
   ** inital value of lowestCost in this loop. If it is, then the
   ** (cost<lowestCost) test below will never be true.
@@ -1912,10 +1922,10 @@ static void bestVirtualIndex(
   ** Use "(double)2" instead of "2.0" in case OMIT_FLOATING_POINT 
   ** is defined.
   */
-  if( (SQLITE_BIG_DBL/((double)2))<pIdxInfo->estimatedCost ){
+  if( (SQLITE_BIG_DBL/((double)2))<rCost ){
     pCost->rCost = (SQLITE_BIG_DBL/((double)2));
   }else{
-    pCost->rCost = pIdxInfo->estimatedCost;
+    pCost->rCost = rCost;
   }
   pCost->plan.u.pVtabIdx = pIdxInfo;
   if( pIdxInfo->orderByConsumed ){
