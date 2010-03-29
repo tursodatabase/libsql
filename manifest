@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Experimental\schanges\sthat\scause\sSQLite\sto\suse\sbytes\s28..31\sof\sthe\sdatabase\nheader\sto\sdetermine\sthe\sdatabase\ssize,\srather\sthan\susing\sthe\sactual\sdatabase\nsize.\s\sThis\sallows\sdatabase\sspace\sto\sbe\spreallocated.
-D 2010-03-27T17:12:36
+C Fix\sissues\swith\sthe\sio.test\sscript.\s\sThere\sis\sstill\sa\sproblem\swith\sa\nROLLBACK\sTO\snot\sworking\son\san\sinitially\sempty\sdatabase\sfiles.\s\sAnd\smuch\nmore\stesting\sis\sneeded.
+D 2010-03-29T19:36:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,7 +112,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 28c3975060209dc5c5ca91abaa5e034dab03539f
+F src/btree.c 6bb6cf7bed564d5a836888d49952d18991a8fe0d
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 132d750db5d86b75344cec870501fa09a67b1f96
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -447,7 +447,7 @@ F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/intarray.test 066b7d7ac38d25bf96f87f1b017bfc687551cdd4
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test e7bd58edb4e2131a8ecd81b4b00af3ee5c79d464
+F test/io.test 1b895d6774491895cbc75659969f07ca01860c88
 F test/ioerr.test 390785ec65f10aa58a82b048ee12e9052d783fa8
 F test/ioerr2.test 1b56cb80d5b0726ee3ba325ca175734541e32955
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -797,18 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9e075e70f0e2a1ad302d17150cd58f91669a97a6
-R 8d4f88bef4d5dad0eb6446592a8450b9
-T *bgcolor * #c0ffc0
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P b844ac6fcb72595a71e5c5283ec461309a87ba79
+R a62dd4e3ab32e20d939eda838bfbb2f1
 U drh
-Z 4146840317f4bfa6058f588cd6ed7701
+Z 329f9cf3c013b023df41a7bffafbcabe
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLrjyHoxKgR168RlERArtLAKCJtnFICZRpFQj18diXIg+u0uOi3ACgh4j0
-mhbXREy6ig+7NdEp5dlms38=
-=ITwY
+iD8DBQFLsQFXoxKgR168RlERArjwAJ9IAQ+b2v66KY2Sc5o+HExqkMOi4QCfYPzp
+xOxyx0MFrr6GJcUVrjEt7MQ=
+=YC1M
 -----END PGP SIGNATURE-----
