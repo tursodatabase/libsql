@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sissues\swith\sthe\sio.test\sscript.\s\sThere\sis\sstill\sa\sproblem\swith\sa\nROLLBACK\sTO\snot\sworking\son\san\sinitially\sempty\sdatabase\sfiles.\s\sAnd\smuch\nmore\stesting\sis\sneeded.
-D 2010-03-29T19:36:52
+C The\sbtree\slayer\snow\stracks\swhen\sa\sdatabase\sis\sempty\sat\sthe\sstart\sof\sa\ntransaction\sand\srolls\sback\sto\sthat\sstate.
+D 2010-03-29T21:13:12
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,9 +112,9 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 6bb6cf7bed564d5a836888d49952d18991a8fe0d
+F src/btree.c ca75bce3383240f9fb14590ddfcd72883cc09609
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
-F src/btreeInt.h 132d750db5d86b75344cec870501fa09a67b1f96
+F src/btreeInt.h 22447d259639271774a931cbf66aa55112846681
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b844ac6fcb72595a71e5c5283ec461309a87ba79
-R a62dd4e3ab32e20d939eda838bfbb2f1
+P 09786e2a51817d572a01ae7f3621f03fd27fc363
+R 374d4e1ebc45357833ef412064f83b3a
 U drh
-Z 329f9cf3c013b023df41a7bffafbcabe
+Z f7859e59aff17b5062eec588988fe36a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLsQFXoxKgR168RlERArjwAJ9IAQ+b2v66KY2Sc5o+HExqkMOi4QCfYPzp
-xOxyx0MFrr6GJcUVrjEt7MQ=
-=YC1M
+iD8DBQFLsRfroxKgR168RlERAh5qAJ9ii/cdywZXO69iqjmUK4x4PMqBWQCaAldq
+HBAvsvdbZb3qzjSHqjbyuqg=
+=orZt
 -----END PGP SIGNATURE-----
