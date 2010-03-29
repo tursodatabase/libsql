@@ -200,10 +200,16 @@ do_test io-2.5.3 {
 # journal file is not actually created until the 'COMMIT' statement
 # is executed.
 #
+# Changed 2010-03-27:  The size of the database is now stored in 
+# bytes 28..31 and so when a page is added to the database, page 1
+# is immediately modified and the journal file immediately comes into
+# existance.  To fix this test, the BEGIN is changed into a a
+# BEGIN IMMEDIATE and the INSERT is omitted.
+#
 do_test io-2.6.1 {
   execsql {
-    BEGIN;
-    INSERT INTO abc VALUES(9, randstr(1000,1000));
+    BEGIN IMMEDIATE;
+    -- INSERT INTO abc VALUES(9, randstr(1000,1000));
   }
   file exists test.db-journal
 } {0}
@@ -213,12 +219,15 @@ do_test io-2.6.2 {
   # should fail with SQLITE_CANTOPEN and the transaction rolled back.
   #
   file mkdir test.db-journal
-  catchsql { COMMIT }
+  catchsql {
+    INSERT INTO abc VALUES(9, randstr(1000,1000));
+    COMMIT
+  }
 } {1 {unable to open database file}}
 do_test io-2.6.3 {
   file delete -force test.db-journal
   catchsql { COMMIT }
-} {1 {cannot commit - no transaction is active}}
+} {0 {}}
 do_test io-2.6.4 {
   execsql { SELECT * FROM abc }
 } {1 2 3 4 5 6 7 8}
