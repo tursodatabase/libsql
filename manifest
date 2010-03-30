@@ -1,5 +1,8 @@
-C Do\snot\scrash\swhen\scompiling\san\s"INSERT\sINTO\stbl\sDEFAULT\sVALUES"\swhen\stbl\shas\seither\sBEFORE\sor\sINSTEAD\sOF\striggers\sattached\sto\sit.\sTicket\s[f3162063fd].
-D 2010-03-30T12:40:33
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sa\sNEVER\smacro\saround\sa\stest\sin\sbtree.c\sthat\scan\snot\slonger\sbe\strue.
+D 2010-03-30T15:51:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +112,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c b293534bc2df23c57668a585b17ee7faaaef0939
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c ca75bce3383240f9fb14590ddfcd72883cc09609
+F src/btree.c dc9dc08fcc61f65cd7d85d85fc08905475eea406
 F src/btree.h 0e193b7e90f1d78b79c79474040e3d66a553a4fa
 F src/btreeInt.h 22447d259639271774a931cbf66aa55112846681
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -794,7 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 371bab5d6534860ce908e52129c64a49946be33a
-R 3994aaba17557add292404e3cf90a6c0
-U dan
-Z ebc48098411fcbe12e5a9df180be6bde
+P ca359a3e8048bd11605c41c4b48134c0343e543b
+R 32ec8ae8b71a3dfac8895cb995707072
+U drh
+Z b60f084ae0f371ea36d8a15f0b37127b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLsh30oxKgR168RlERAh4HAJ9Ddtt3lx/ldCmB2GllUt31h81qEwCfZ4JP
+cTXZAF6OUE+YI98jV9daDJc=
+=R6CC
+-----END PGP SIGNATURE-----

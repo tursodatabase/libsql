@@ -6882,8 +6882,14 @@ static int btreeCreateTable(Btree *p, int *piTable, int flags){
       releasePage(pRoot);
       return rc;
     }
+
+    /* When the new root page was allocated, page 1 was made writable in
+    ** order either to increase the database filesize, or to decrement the
+    ** freelist count.  Hence, the sqlite3BtreeUpdateMeta() call cannot fail.
+    */
+    assert( sqlite3PagerIswriteable(pBt->pPage1->pDbPage) );
     rc = sqlite3BtreeUpdateMeta(p, 4, pgnoRoot);
-    if( rc ){
+    if( NEVER(rc) ){
       releasePage(pRoot);
       return rc;
     }
