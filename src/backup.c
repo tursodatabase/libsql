@@ -331,9 +331,8 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     /* Now that there is a read-lock on the source database, query the
     ** source pager for the number of pages in the database.
     */
-    if( rc==SQLITE_OK ){
-      rc = sqlite3PagerPagecount(pSrcPager, &nSrcPage);
-    }
+    nSrcPage = (int)sqlite3BtreeLastPage(p->pSrc);
+    assert( nSrcPage>=0 );
     for(ii=0; (nPage<0 || ii<nPage) && p->iNext<=(Pgno)nSrcPage && !rc; ii++){
       const Pgno iSrcPg = p->iNext;                 /* Source page number */
       if( iSrcPg!=PENDING_BYTE_PAGE(p->pSrc->pBt) ){

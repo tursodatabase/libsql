@@ -1123,8 +1123,9 @@ static void pager_unlock(Pager *pPager){
 
     /* If the file is unlocked, somebody else might change it. The
     ** values stored in Pager.dbSize etc. might become invalid if
-    ** this happens. TODO: Really, this doesn't need to be cleared
+    ** this happens.  One can argue that this doesn't need to be cleared
     ** until the change-counter check fails in PagerSharedLock().
+    ** Clearing the page size cache here is being conservative.
     */
     pPager->dbSizeValid = 0;
 
@@ -2382,10 +2383,12 @@ void *sqlite3PagerTempSpace(Pager *pPager){
 ** Regardless of mxPage, return the current maximum page count.
 */
 int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
+  int nPage;
   if( mxPage>0 ){
     pPager->mxPgno = mxPage;
   }
-  sqlite3PagerPagecount(pPager, 0);
+  sqlite3PagerPagecount(pPager, &nPage);
+  assert( pPager->mxPgno>=nPage );
   return pPager->mxPgno;
 }
 
@@ -2497,9 +2500,7 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   }
 
   /* Set the output variable and return SQLITE_OK */
-  if( pnPage ){
-    *pnPage = nPage;
-  }
+  *pnPage = nPage;
   return SQLITE_OK;
 }
 
@@ -3697,16 +3698,16 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** detected.  The chance of an undetected change is so small that
       ** it can be neglected.
       */
+      int nPage;
       char dbFileVers[sizeof(pPager->dbFileVers)];
-      sqlite3PagerPagecount(pPager, 0);
+      sqlite3PagerPagecount(pPager, &nPage);
 
       if( pPager->errCode ){
         rc = pPager->errCode;
         goto failed;
       }
 
-      assert( pPager->dbSizeValid );
-      if( pPager->dbSize>0 ){
+      if( nPage>0 ){
         IOTRACE(("CKVERS %p %d\n", pPager, sizeof(dbFileVers)));
         rc = sqlite3OsRead(pPager->fd, &dbFileVers, sizeof(dbFileVers), 24);
         if( rc!=SQLITE_OK ){
@@ -3991,6 +3992,7 @@ static int openSubJournal(Pager *pPager){
 */
 static int pager_open_journal(Pager *pPager){
   int rc = SQLITE_OK;                        /* Return code */
+  int nPage;                                 /* Size of database file */
   sqlite3_vfs * const pVfs = pPager->pVfs;   /* Local cache of vfs pointer */
 
   assert( pPager->state>=PAGER_RESERVED );
@@ -4003,13 +4005,9 @@ static int pager_open_journal(Pager *pPager){
   ** an error state. */
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
-  /* TODO: Is it really possible to get here with dbSizeValid==0? If not,
-  ** the call to PagerPagecount() can be removed.
-  */
   testcase( pPager->dbSizeValid==0 );
-  sqlite3PagerPagecount(pPager, 0);
-
-  pPager->pInJournal = sqlite3BitvecCreate(pPager->dbSize);
+  sqlite3PagerPagecount(pPager, &nPage);
+  pPager->pInJournal = sqlite3BitvecCreate(nPage);
   if( pPager->pInJournal==0 ){
     return SQLITE_NOMEM;
   }
@@ -4490,7 +4488,6 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       put32bits(((char*)pPgHdr->pData)+24, change_counter);
 
       /* Also store the SQLite version number in bytes 96..99 */
-      assert( pPager->dbSizeValid );
       put32bits(((char*)pPgHdr->pData)+96, SQLITE_VERSION_NUMBER);
 
       /* If running in direct mode, write the contents of page 1 to the file. */
@@ -4918,8 +4915,9 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
   if( nSavepoint>nCurrent && pPager->useJournal ){
     int ii;                                 /* Iterator variable */
     PagerSavepoint *aNew;                   /* New Pager.aSavepoint array */
+    int nPage;                              /* Size of database file */
 
-    rc = sqlite3PagerPagecount(pPager, 0);
+    rc = sqlite3PagerPagecount(pPager, &nPage);
     if( rc ) return rc;
 
     /* Grow the Pager.aSavepoint array using realloc(). Return SQLITE_NOMEM
@@ -4938,15 +4936,14 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
 
     /* Populate the PagerSavepoint structures just allocated. */
     for(ii=nCurrent; ii<nSavepoint; ii++){
-      assert( pPager->dbSizeValid );
-      aNew[ii].nOrig = pPager->dbSize;
+      aNew[ii].nOrig = nPage;
       if( isOpen(pPager->jfd) && pPager->journalOff>0 ){
         aNew[ii].iOffset = pPager->journalOff;
       }else{
         aNew[ii].iOffset = JOURNAL_HDR_SZ(pPager);
       }
       aNew[ii].iSubRec = pPager->nSubRec;
-      aNew[ii].pInSavepoint = sqlite3BitvecCreate(pPager->dbSize);
+      aNew[ii].pInSavepoint = sqlite3BitvecCreate(nPage);
       if( !aNew[ii].pInSavepoint ){
         return SQLITE_NOMEM;
       }

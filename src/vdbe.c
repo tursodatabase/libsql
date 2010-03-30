@@ -5616,19 +5616,7 @@ case OP_VUpdate: {
 ** Write the current number of pages in database P1 to memory cell P2.
 */
 case OP_Pagecount: {            /* out2-prerelease */
-  int p1;
-  int nPage;
-  Pager *pPager;
-
-  p1 = pOp->p1; 
-  pPager = sqlite3BtreePager(db->aDb[p1].pBt);
-  rc = sqlite3PagerPagecount(pPager, &nPage);
-  /* OP_Pagecount is always called from within a read transaction.  The
-  ** page count has already been successfully read and cached.  So the
-  ** sqlite3PagerPagecount() call above cannot fail. */
-  if( ALWAYS(rc==SQLITE_OK) ){
-    pOut->u.i = nPage;
-  }
+  pOut->u.i = sqlite3BtreeLastPage(db->aDb[pOp->p1].pBt);
   break;
 }
 #endif

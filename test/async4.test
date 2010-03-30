@@ -94,6 +94,7 @@ do_test async4.1.14 {
 do_test async4.1.15 {
   sqlite3async_start
   sqlite3async_wait
+  hexio_write test.db 28 00000000
   execsql { pragma integrity_check } db2
 } {{*** in database main ***
 Page 5 is never used}}
