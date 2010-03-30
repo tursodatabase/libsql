@@ -855,5 +855,67 @@ do_test triggerC-10.3 {
   } 
 } {5 2 3 35 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 32 33 22 34 35 36 37 38 39 40}
 
+#-------------------------------------------------------------------------
+# Test that bug [371bab5d65] has been fixed. BEFORE INSERT and INSTEAD OF
+# INSERT triggers with the DEFAULT VALUES INSERT syntax.
+#
+do_test triggerC-11.0 {
+  catchsql { DROP TABLE log }
+  execsql  { CREATE TABLE log(a, b) }
+} {}
+
+foreach {testno tbl defaults} {
+  1 "CREATE TABLE t1(a, b)"                          {{} {}}
+  2 "CREATE TABLE t1(a DEFAULT 1, b DEFAULT 'abc')"  {1 abc}
+  3 "CREATE TABLE t1(a, b DEFAULT 4.5)"              {{} 4.5}
+} {
+  do_test triggerC-11.$testno.1 {
+    catchsql { DROP TABLE t1 }
+    execsql { DELETE FROM log }
+    execsql $tbl
+    execsql {
+      CREATE TRIGGER tt1 BEFORE INSERT ON t1 BEGIN 
+        INSERT INTO log VALUES(new.a, new.b);
+      END;
+      INSERT INTO t1 DEFAULT VALUES;
+      SELECT * FROM log;
+    }
+  } $defaults
+
+  do_test triggerC-11.$testno.2 {
+    execsql { DELETE FROM log }
+    execsql {
+      CREATE TRIGGER tt2 AFTER INSERT ON t1 BEGIN 
+        INSERT INTO log VALUES(new.a, new.b);
+      END;
+      INSERT INTO t1 DEFAULT VALUES;
+      SELECT * FROM log;
+    }
+  } [concat $defaults $defaults]
+
+  do_test triggerC-11.$testno.3 {
+    execsql { DROP TRIGGER tt1 }
+    execsql { DELETE FROM log }
+    execsql {
+      INSERT INTO t1 DEFAULT VALUES;
+      SELECT * FROM log;
+    }
+  } $defaults
+} 
+do_test triggerC-11.4 {
+  catchsql { DROP TABLE t2 }
+  execsql {
+    DELETE FROM log;
+    CREATE TABLE t2(a, b);
+    CREATE VIEW v2 AS SELECT * FROM t2;
+    CREATE TRIGGER tv2 INSTEAD OF INSERT ON v2 BEGIN
+      INSERT INTO log VALUES(new.a, new.b);
+    END;
+    INSERT INTO v2 DEFAULT VALUES;
+    SELECT a, b, a IS NULL, b IS NULL FROM log;
+  }
+} {{} {} 1 1}
+
+
 
 finish_test

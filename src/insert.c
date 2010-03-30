@@ -846,7 +846,7 @@ void sqlite3Insert(
           if( pColumn->a[j].idx==i ) break;
         }
       }
-      if( pColumn && j>=pColumn->nId ){
+      if( (!useTempTable && !pList) || (pColumn && j>=pColumn->nId) ){
         sqlite3ExprCode(pParse, pTab->aCol[i].pDflt, regCols+i+1);
       }else if( useTempTable ){
         sqlite3VdbeAddOp3(v, OP_Column, srcTab, j, regCols+i+1); 

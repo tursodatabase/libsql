@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Change\san\s#if\sinto\san\s#ifdef.
-D 2010-03-30T11:57:01
+C Do\snot\scrash\swhen\scompiling\san\s"INSERT\sINTO\stbl\sDEFAULT\sVALUES"\swhen\stbl\shas\seither\sBEFORE\sor\sINSTEAD\sOF\striggers\sattached\sto\sit.\sTicket\s[f3162063fd].
+D 2010-03-30T12:40:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -129,7 +126,7 @@ F src/global.c 5a9c1e3c93213ca574786ac1caa976ce8f709105
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 76d6b44a9f9050134fd81205f4b792cbdac7c925
+F src/insert.c 3a9567687f6b84ab9a41448e3d2ce20424f4743c
 F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -722,7 +719,7 @@ F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
 F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
-F test/triggerC.test 4083c64d80854d271bad211268a08985f3d61cbd
+F test/triggerC.test cac41fe31adc1abb9fa08532762fc2b4f662ab03
 F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
 F test/types.test 9a825ec8eea4e965d7113b74c76a78bb5240f2ac
 F test/types2.test 3555aacf8ed8dc883356e59efc314707e6247a84
@@ -797,14 +794,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0092b36c7bbd04bf3826de7805e8a14739390f31
-R e6830afd696f92886f4e15da36e8a21e
-U drh
-Z 40be774e9b474c9229e7a0a284180d51
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLsecQoxKgR168RlERArHaAJ9qx0xDw9sULVJZASqsXe/+aloLGQCeOPwi
-veew0hRT3qVYZBfj+VUdiAo=
-=Cote
------END PGP SIGNATURE-----
+P 371bab5d6534860ce908e52129c64a49946be33a
+R 3994aaba17557add292404e3cf90a6c0
+U dan
+Z ebc48098411fcbe12e5a9df180be6bde
