@@ -4190,7 +4190,7 @@ case OP_Rewind: {        /* jump */
   break;
 }
 
-/* Opcode: Next P1 P2 * * *
+/* Opcode: Next P1 P2 * * P5
 **
 ** Advance cursor P1 so that it points to the next key/data pair in its
 ** table or index.  If there are no more key/value pairs then fall through
@@ -4199,9 +4199,12 @@ case OP_Rewind: {        /* jump */
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
 **
+** If P5 is positive and the jump is taken, then event counter
+** number P5-1 in the prepared statement is incremented.
+**
 ** See also: Prev
 */
-/* Opcode: Prev P1 P2 * * *
+/* Opcode: Prev P1 P2 * * P5
 **
 ** Back up cursor P1 so that it points to the previous key/data pair in its
 ** table or index.  If there is no previous key/value pairs then fall through
@@ -4209,6 +4212,9 @@ case OP_Rewind: {        /* jump */
 ** jump immediately to P2.
 **
 ** The P1 cursor must be for a real table, not a pseudo-table.
+**
+** If P5 is positive and the jump is taken, then event counter
+** number P5-1 in the prepared statement is incremented.
 */
 case OP_Prev:          /* jump */
 case OP_Next: {        /* jump */
@@ -4218,6 +4224,7 @@ case OP_Next: {        /* jump */
 
   CHECK_FOR_INTERRUPT;
   assert( pOp->p1>=0 && pOp->p1<p->nCursor );
+  assert( pOp->p5<=ArraySize(p->aCounter) );
   pC = p->apCsr[pOp->p1];
   if( pC==0 ){
     break;  /* See ticket #2273 */
