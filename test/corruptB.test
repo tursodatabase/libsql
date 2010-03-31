@@ -154,7 +154,7 @@ do_test corruptB-2.1.1 {
 do_test corruptB-2.1.2 {
   sqlite3 db test.db
   catchsql { SELECT * FROM t1 }
-} {1 {database or disk is full}}
+} {1 {database disk image is malformed}}
 
 #---------------------------------------------------------------------------
 

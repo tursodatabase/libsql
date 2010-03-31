@@ -1583,9 +1583,11 @@ static int getAndInitPage(
   MemPage **ppPage     /* Write the page pointer here */
 ){
   int rc;
-  TESTONLY( Pgno iLastPg = btreePagecount(pBt); )
   assert( sqlite3_mutex_held(pBt->mutex) );
 
+  if( pgno<=0 || pgno>btreePagecount(pBt) ){
+    return SQLITE_CORRUPT_BKPT;
+  }
   rc = btreeGetPage(pBt, pgno, ppPage, 0);
   if( rc==SQLITE_OK ){
     rc = btreeInitPage(*ppPage);
@@ -1593,15 +1595,6 @@ static int getAndInitPage(
       releasePage(*ppPage);
     }
   }
-
-  /* If the requested page number was either 0 or greater than the page
-  ** number of the last page in the database, this function should return
-  ** SQLITE_CORRUPT or some other error (i.e. SQLITE_FULL). Check that this
-  ** is the case.  */
-  assert( (pgno>0 && pgno<=iLastPg) || rc!=SQLITE_OK );
-  testcase( pgno==0 );
-  testcase( pgno==iLastPg );
-
   return rc;
 }
 
