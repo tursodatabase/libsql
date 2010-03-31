@@ -2252,9 +2252,14 @@ static int lockBtree(BtShared *pBt){
   ** a valid database file. 
   */
   nPage = get4byte(28+(u8*)pPage1->aData);
-  if( nPage==0 && (rc = sqlite3PagerPagecount(pBt->pPager, &nPage))!=0 ){
-    goto page1_init_failed;
-  }else if( nPage>0 ){
+  if( nPage==0 ){
+    rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
+    /* The sqlite3PagerSharedLock() call above has already determined
+    ** the database file size, so this call to sqlite3PagerPagecount()
+    ** cannot fail. */
+    if( NEVER(rc) ) goto page1_init_failed;
+  }
+  if( nPage>0 ){
     int pageSize;
     int usableSize;
     u8 *page1 = pPage1->aData;
