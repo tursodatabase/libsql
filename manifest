@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Update\sthe\sversion\snumber\sto\s3.6.23.1.
-D 2010-03-26T22:28:06
+C Include\sshell.c\sand\ssqlite3.def\sin\sthe\samalgamation\sZIP\sarchive.\nTicket\s[e063139eb3f8]
+D 2010-03-31T11:56:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -22,7 +22,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 17dee87ba9b797ea22940dc0fb5b08147bfb246a
+F configure 17dee87ba9b797ea22940dc0fb5b08147bfb246a x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -90,7 +90,7 @@ F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk a36a05a481afcc00388c4d6d4db0e12cacb546e3
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -99,7 +99,7 @@ F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
 F mkopcodec.awk 3fb9bf077053c968451f4dd03d11661ac373f9d1
 F mkopcodeh.awk 29b84656502eee5f444c3147f331ee686956ab0e
 F mkso.sh fd21c06b063bb16a5d25deea1752c2da6ac3ed83
-F publish.sh c74b6c2b6b63435aa1b4b43b1396dfebfae84095
+F publish.sh 313c5b2425f2cf5e547db7549a9796acc4508f22
 F publish_osx.sh 2ad2ee7d50632dff99949edc9c162dbb052f7534
 F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
@@ -795,14 +795,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b1f342a6643829020beef542a0700d90822e6467
-R 590a011d9441875bded2c173c371f1c1
+P b078b588d617e07886ad156e9f54ade6d823568e
+R 73eebe2ceee2e2f9e1f44fcfea939481
 U drh
-Z f7171db765620a4ccff85bc2ced22202
+Z 36754c74f747e9925201c9432f54e2e5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLrTT6oxKgR168RlERArP2AJ0UeA3bKxomgH1prR7M+4tHuMlN7wCfXBZE
-Jr7IGDFSJ/vsM6VpeiKkkf4=
-=diSA
+iD8DBQFLsziDoxKgR168RlERAhk6AKCNIZx25YQh/GXF1ga4TJAuUn24dgCfQLf5
+XFMzaQdyn+hjLYTww0WM5EE=
+=VFOS
 -----END PGP SIGNATURE-----
