@@ -4006,7 +4006,8 @@ static int pager_open_journal(Pager *pPager){
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   testcase( pPager->dbSizeValid==0 );
-  sqlite3PagerPagecount(pPager, &nPage);
+  rc = sqlite3PagerPagecount(pPager, &nPage);
+  if( rc ) return rc;
   pPager->pInJournal = sqlite3BitvecCreate(nPage);
   if( pPager->pInJournal==0 ){
     return SQLITE_NOMEM;

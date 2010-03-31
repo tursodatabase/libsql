@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Report\scorruption\sif\sa\sdatabase\scontains\sa\sreference\sthat\sis\sout\sof\srange\naccording\sto\sthe\sfilesize-in-header\sdatabase\ssize.
-D 2010-03-31T20:29:07
+C Make\ssure\san\sOOM\serror\son\ssqlite3PagerPagecount()\sis\sdetected\sand\sreported\nout\sto\sthe\sinterface.
+D 2010-03-31T23:20:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c d9f426234c8fe92f3ce57126e14766a654a20690
+F src/pager.c 600058c0cda55fc3d6e3adc6ac97e1935d15cd01
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 06b9ca32255572a699dc51f46f848d0bf01255e1
-R 7d8684b73c602c2980a1877629272610
+P a91db0b1cd0b0fbadc5c8fe2eb8863629b411d87
+R d0cfacaf286f70607c801b2627e3ae09
 U drh
-Z 019388e72c1d6fcd99563b309203809e
+Z c3eaed996d3d32543d54fe382e9d282d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLs7CWoxKgR168RlERAo7kAJ9xfXtlWiJg/NoBVHXelNJHhEKNoQCff5FN
-VAKy4m4ZJBO8z9GemyuG8jU=
-=aexS
+iD8DBQFLs9ipoxKgR168RlERAoJtAJ0e7fA4jGclTUv0A6kz2i9Ci2nJlwCferWu
+1xFYT/N/pXTWZeYe5uezcH0=
+=FDGP
 -----END PGP SIGNATURE-----
