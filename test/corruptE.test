@@ -21,6 +21,13 @@ catch {file delete -force test.db test.db-journal test.bu}
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not run the tests in this file if ENABLE_OVERSIZE_CELL_CHECK is on.
+#
+ifcapable oversize_cell_check {
+  finish_test
+  return
+}
+
 # Construct a compact, dense database for testing.
 #
 do_test corruptE-1.1 {
