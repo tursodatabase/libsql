@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Restore\sthe\ssize\sinformation\sin\sthe\sBtShared\sstructure\swhen\sa\stransaction\nrolls\sback.
-D 2010-04-01T02:22:20
+C Remove\sa\sNEVER\sin\ssqlite3PagerPagecount()\sthat\scan\sin\sfact\sbe\strue.
+D 2010-04-01T02:47:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 600058c0cda55fc3d6e3adc6ac97e1935d15cd01
+F src/pager.c 2e91228dc3468b283e20d72edbd44b146af3c85e
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8aecf302a5aac66e43a8cc6c4e0d917f74e9e0de
-R bd1d919e84a4b353ebc0e7345ab0655f
+P 802aeb30c9baf4059fa84f4693f290f80d3a4085
+R 75e8a8ba9141278233386f2d0b38726b
 U drh
-Z ed0dff6d70629b6b387b9571deb31dbc
+Z f388f97aaea9c9c6d6b6574c7dadb3b1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLtANfoxKgR168RlERArNuAJ9P3VmiLa1914Cr4qg4M+NSrvdCAQCfSUDl
-h2MNlBC2RVGWwOilTcrxl34=
-=m3P9
+iD8DBQFLtAkpoxKgR168RlERAvOwAJ0ZLP5wndkZV4iJRnK06w+Nu6PQhgCfSLmA
+sYyX0hX31L1UZj/QDpJoZwA=
+=Hc+r
 -----END PGP SIGNATURE-----

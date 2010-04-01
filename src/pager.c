@@ -2463,7 +2463,7 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   Pgno nPage;               /* Value to return via *pnPage */
 
   /* If the pager is already in the error state, return the error code. */
-  if( NEVER(pPager->errCode) ){
+  if( pPager->errCode ){
     return pPager->errCode;
   }
 
