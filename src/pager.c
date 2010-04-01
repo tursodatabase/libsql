@@ -3832,7 +3832,7 @@ int sqlite3PagerAcquire(
   assert( (*ppPage)->pgno==pgno );
   assert( (*ppPage)->pPager==pPager || (*ppPage)->pPager==0 );
 
-  if( (*ppPage)->pPager ){
+  if( (*ppPage)->pPager && !noContent ){
     /* In this case the pcache already contains an initialized copy of
     ** the page. Return without further ado.  */
     assert( pgno<=PAGER_MAX_PGNO && pgno!=PAGER_MJ_PGNO(pPager) );
