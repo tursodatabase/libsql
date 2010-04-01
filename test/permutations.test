@@ -739,6 +739,7 @@ run_tests "journaltest" -description {
   io.test 
   crash8.test 
   async4.test 
+  bigfile.test
 }
 
 # End of tests

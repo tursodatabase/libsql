@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Do\snot\sjournal\sthe\scontent\sof\sfreelist\sleaf\spages.\s\sThis\srestores\san\noptimization\sthat\swas\saccidently\sundone\sby\scheck-in\s[12f7346c13]\son\n[2009-01-20].
-D 2010-04-01T13:41:11
+C Zero\sthe\sfilesize-in-header\sword\sfor\sbigfile.tcl.\s\sRemove\sbigfile.tcl\sfrom\nthe\sjournaltest\spermutation.
+D 2010-04-01T16:15:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -258,7 +258,7 @@ F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
 F test/badutf.test d5360fc31f643d37a973ab0d8b4fb85799c3169f
 F test/between.test 16b1776c6323faadb097a52d673e8e3d8be7d070
-F test/bigfile.test b746a34ce0e2039994b45fea8b7fbfa78f594cdf
+F test/bigfile.test 1e12ce56e59fc41ace231009599506c22b031fbb
 F test/bigrow.test f0aeb7573dcb8caaafea76454be3ade29b7fc747
 F test/bind.test 3c7b320969000c441a70952b0b15938fbb66237c
 F test/bindxfer.test efecd12c580c14df5f4ad3b3e83c667744a4f7e0
@@ -530,7 +530,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 91928573ca2db2c88dbc50ab34e4a585d912b580
+F test/permutations.test e09e831b1078254c49ec5e184d50a2b549b7f80c
 F test/pragma.test 6960f9efbce476f70ba9ee2171daf5042f9e3d8a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8f00533782a0eae5613caaf86608384cb702fc51
-R 4375a6bc9c872c0b22907e8e60fe5550
+P b1e7a1a677e1c2a6c2ab83a67070605465a3e495
+R 9fa91d4a76b67ab8ac81622d820523d5
 U drh
-Z a9410a27ac15f88e89ced3ab243add4b
+Z 7ff7bcc0bb51d9ef86c59f74c80f8687
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLtKJ6oxKgR168RlERAtkGAJ0QRTGSnFJlaaAourV28oxLbWQ+lwCfWFuK
-Sxyy3mIBIqCmrUf8H/mwDn4=
-=WOt2
+iD8DBQFLtMbAoxKgR168RlERAqelAJoCwoDmFMIslZ+B/cnziIgrm5XB3wCfSL5h
++LA7HiLm3oh5P78hlOoqFg8=
+=IbzO
 -----END PGP SIGNATURE-----
