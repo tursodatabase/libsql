@@ -3198,6 +3198,11 @@ int sqlite3BtreeRollback(Btree *p){
     ** call btreeGetPage() on page 1 again to make
     ** sure pPage1->aData is set correctly. */
     if( btreeGetPage(pBt, 1, &pPage1, 0)==SQLITE_OK ){
+      int nPage = get4byte(28+(u8*)pPage1->aData);
+      testcase( nPage==0 );
+      if( nPage==0 ) sqlite3PagerPagecount(pBt->pPager, &nPage);
+      testcase( pBt->nPage!=nPage );
+      pBt->nPage = nPage;
       releasePage(pPage1);
     }
     assert( countWriteCursors(pBt)==0 );
