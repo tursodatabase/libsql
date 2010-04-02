@@ -2230,9 +2230,11 @@ int sqlite3BtreeGetAutoVacuum(Btree *p){
 ** is returned if we run out of memory. 
 */
 static int lockBtree(BtShared *pBt){
-  int rc;
-  MemPage *pPage1;
-  int nPage;
+  int rc;              /* Result code from subfunctions */
+  MemPage *pPage1;     /* Page 1 of the database file */
+  int nPage;           /* Number of pages in the database */
+  int nPageFile = 0;   /* Number of pages in the database file */
+  int nPageHeader;     /* Number of pages in the database according to hdr */
 
   assert( sqlite3_mutex_held(pBt->mutex) );
   assert( pBt->pPage1==0 );
@@ -2244,13 +2246,12 @@ static int lockBtree(BtShared *pBt){
   /* Do some checking to help insure the file we opened really is
   ** a valid database file. 
   */
-  nPage = get4byte(28+(u8*)pPage1->aData);
+  nPage = nPageHeader = get4byte(28+(u8*)pPage1->aData);
+  if( (rc = sqlite3PagerPagecount(pBt->pPager, &nPageFile))!=SQLITE_OK ){;
+    goto page1_init_failed;
+  }
   if( nPage==0 ){
-    rc = sqlite3PagerPagecount(pBt->pPager, &nPage);
-    /* The sqlite3PagerSharedLock() call above has already determined
-    ** the database file size, so this call to sqlite3PagerPagecount()
-    ** cannot fail. */
-    if( NEVER(rc) ) goto page1_init_failed;
+    nPage = nPageFile;
   }
   if( nPage>0 ){
     int pageSize;
@@ -2297,6 +2298,10 @@ static int lockBtree(BtShared *pBt){
       rc = sqlite3PagerSetPagesize(pBt->pPager, &pBt->pageSize,
                                    pageSize-usableSize);
       return rc;
+    }
+    if( nPageHeader>nPageFile ){
+      rc = SQLITE_CORRUPT_BKPT;
+      goto page1_init_failed;
     }
     if( usableSize<480 ){
       goto page1_init_failed;

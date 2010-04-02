@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Pager\schanges\sfor\scode\scoverage\stesting.
-D 2010-04-02T03:39:00
+C If\sthe\ssize\sof\sthe\sdatabase\saccording\sto\sthe\sheader\sis\slarger\sthan\sthe\s\nactual\sdatabase\sfile\ssize,\sreport\sthat\sthe\sdatabase\sis\scorrupt.
+D 2010-04-02T12:46:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -112,7 +112,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e86634da8c48357a759694c9c7c471125cd8d5a8
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 639a8ca0656708e1448d60757a7ac4342ddddcf8
+F src/btree.c aa756431f712e4c30af0d0fd4df4d43897471a34
 F src/btree.h ad6cff92286f9b02ec32f0b97136e9a544249f37
 F src/btreeInt.h 22447d259639271774a931cbf66aa55112846681
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1dc4f9fe9b83467ba014e759b93f6caa2925e4d2
-R a5a89f456dfebd182036caf7cce7076f
+P b04a45ea9714e7a35372b5d6a58868b307d10502
+R 06ecba5df1d5408ada18a2d2a32d9a06
 U drh
-Z 16b3a9383baa226cbf443dfbe35a49a5
+Z 62a18eff5162d3c5f6dbbcc5b8811101
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLtWbXoxKgR168RlERAtxfAJ4rk5KBxJCdgQOiiXk+sEFGRxqJRwCfXiqn
-H3pGhkBHNpPzF3tT9qdU7e0=
-=hQc5
+iD8DBQFLtec5oxKgR168RlERAtopAKCCfpIK0uzxHa5hP0afNalmHZOLEACeI23I
+DZeffigSN9kUTWYrQA9NS9w=
+=ul9b
 -----END PGP SIGNATURE-----
