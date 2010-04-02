@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Disable\sthe\scorruptE.test\sscript\swhen\sENABLE_OVERSIZE_CELL_CHECK\sis\son.
-D 2010-04-01T18:33:14
+C Pager\schanges\sfor\scode\scoverage\stesting.
+D 2010-04-02T03:39:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 148d2f625db3727250c0b880481ae7630b6d0eb0
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 7ea0549f435e9de6d13b18ad4e4f65c512dff477
+F src/pager.c 2ac73f55f5782c434c91ce48c756060e1366aeb7
 F src/pager.h ef8a2cf10084f60ab45ee2dfded8bf8b0c655ddf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 63610c71ca629de5e81950bc3c2ee6014e67853b
-R 0a2d3319b64c8bb39c084a2bfec6f634
+P 1dc4f9fe9b83467ba014e759b93f6caa2925e4d2
+R a5a89f456dfebd182036caf7cce7076f
 U drh
-Z 3204a496bac96920bfa7b060f31578f2
+Z 16b3a9383baa226cbf443dfbe35a49a5
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLtObtoxKgR168RlERAungAKCLAiH3RiuH5opcYjFSqOcG9xB1CACfcJqT
-ezX13XLXPwfrJmassYHQm+c=
-=jFQj
+iD8DBQFLtWbXoxKgR168RlERAtxfAJ4rk5KBxJCdgQOiiXk+sEFGRxqJRwCfXiqn
+H3pGhkBHNpPzF3tT9qdU7e0=
+=hQc5
 -----END PGP SIGNATURE-----

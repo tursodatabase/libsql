@@ -2462,11 +2462,6 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
 int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
   Pgno nPage;               /* Value to return via *pnPage */
 
-  /* If the pager is already in the error state, return the error code. */
-  if( pPager->errCode ){
-    return pPager->errCode;
-  }
-
   /* Determine the number of pages in the file. Store this in nPage. */
   if( pPager->dbSizeValid ){
     nPage = pPager->dbSize;
@@ -4158,7 +4153,7 @@ static int pager_write(PgHdr *pPg){
   /* If an error has been previously detected, report the same error
   ** again.
   */
-  if( pPager->errCode )  return pPager->errCode;
+  if( NEVER(pPager->errCode) )  return pPager->errCode;
 
   /* Higher-level routines never call this function if database is not
   ** writable.  But check anyway, just for robustness. */
@@ -4565,7 +4560,7 @@ int sqlite3PagerCommitPhaseOne(
   assert( pPager->journalMode!=PAGER_JOURNALMODE_OFF || pPager->dbOrigSize==0 );
 
   /* If a prior error occurred, report that error again. */
-  if( pPager->errCode ) return pPager->errCode;
+  if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));
