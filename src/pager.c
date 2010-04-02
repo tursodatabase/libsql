@@ -4322,7 +4322,8 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     */
     pg1 = ((pPg->pgno-1) & ~(nPagePerSector-1)) + 1;
 
-    sqlite3PagerPagecount(pPager, (int *)&nPageCount);
+    rc = sqlite3PagerPagecount(pPager, (int *)&nPageCount);
+    if( rc ) return rc;
     if( pPg->pgno>nPageCount ){
       nPage = (pPg->pgno - pg1)+1;
     }else if( (pg1+nPagePerSector-1)>nPageCount ){
