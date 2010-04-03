@@ -1978,6 +1978,14 @@ static int pager_playback(Pager *pPager, int isHot){
           rc = SQLITE_OK;
           pPager->journalOff = szJ;
           break;
+        }else if( rc==SQLITE_IOERR_SHORT_READ ){
+          /* If the journal has been truncated, simply stop reading and
+          ** processing the journal. This might happen if the journal was
+          ** not completely written and synced prior to a crash.  In that
+          ** case, the database should have never been written in the
+          ** first place so it is OK to simply abandon the rollback. */
+          rc = SQLITE_OK;
+          goto end_playback;
         }else{
           /* If we are unable to rollback, quit and return the error
           ** code.  This will cause the pager to enter the error state
