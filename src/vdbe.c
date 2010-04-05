@@ -3068,10 +3068,10 @@ case OP_OpenWrite: {
 **
 ** Open a new cursor P1 to a transient table.
 ** The cursor is always opened read/write even if 
-** the main database is read-only.  The transient or virtual
+** the main database is read-only.  The ephemeral
 ** table is deleted automatically when the cursor is closed.
 **
-** P2 is the number of columns in the virtual table.
+** P2 is the number of columns in the ephemeral table.
 ** The cursor points to a BTree table if P4==0 and to a BTree index
 ** if P4 is not 0.  If P4 is not NULL, it points to a KeyInfo structure
 ** that defines the format of keys in the index.
