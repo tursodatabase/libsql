@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Progress\stoward\sgetting\sautomatic\sindices\sto\swork.\s\sStill\sfailing\sin\scorner\ncases.
-D 2010-04-06T18:28:21
+C Runs\squicktest\swithout\shitting\san\sassert\snow.\s\sSome\stests\sget\sunexpected\nresults\sstill\sand\sthere\sis\sa\smemory\sleak.
+D 2010-04-06T18:51:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 4112c8011c638fa1fbf8d187323045eab87f8ca4
+F src/where.c 7e924eac52ccec527caab00f8cd2c568ddec4b25
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1b2a04125f964e14f3fb90171c5ab86a0641d1c9
-R 433fe0cd5ce154376aec2fb36719f0c2
+P ac6d0fba78eb9dcd69372e128d4a039aaff4b417
+R 140c941067720eff2f185f65d7312426
 U drh
-Z cec6b182a87eaa16fdbd37972b0b02d2
+Z c806bfb50a880ce7c034d29cbdd9ee07
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLu31IoxKgR168RlERApyUAJwL/bHa+2HOhBjl9MyxsO3K4nUTUACfVW6y
-jbuOBT0KqSbZOrc09LW9uY8=
-=l9KV
+iD8DBQFLu4LCoxKgR168RlERAhvtAJ0Z9m/sy/wquxBz0esuUtBuGtZHcACfZVG9
+lJhZUiswVMJ53+NC/x7MU3Q=
+=eWDo
 -----END PGP SIGNATURE-----

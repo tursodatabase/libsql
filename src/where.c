@@ -4078,11 +4078,8 @@ WhereInfo *sqlite3WhereBegin(
     pLevel->iTabCur = pTabItem->iCursor;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
-      if( pLevel->plan.wsFlags & WHERE_TEMP_INDEX ){
-        constructTransientIndex(pParse, pWC, pTabItem, notReady, pLevel);
-      }
-      continue;
-    }
+      /* Do nothing */
+    }else
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( (pLevel->plan.wsFlags & WHERE_VIRTUALTABLE)!=0 ){
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
