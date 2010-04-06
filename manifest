@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Automatically\sgenerate\stransient\sindices\sfor\stables\sin\sjoins\sthat\swould\notherwise\shave\sto\suse\sa\sfull\stable\sscan.
-D 2010-04-06T15:57:05
+C Progress\stoward\sgetting\sautomatic\sindices\sto\swork.\s\sStill\sfailing\sin\scorner\ncases.
+D 2010-04-06T18:28:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 31a93f75fe2f0bfb41013c12ebe4b614a16b7a47
+F src/where.c 4112c8011c638fa1fbf8d187323045eab87f8ca4
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -797,18 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8e1d7ef47f643503aa823d9986a931a83c63648b
-R c3a498c4dea21e46007d85650f9619c4
-T *bgcolor * #c0ffc0
-T *branch * experimental
-T *sym-experimental *
-T -sym-trunk *
+P 1b2a04125f964e14f3fb90171c5ab86a0641d1c9
+R 433fe0cd5ce154376aec2fb36719f0c2
 U drh
-Z 743c66884ea969285e0481b1f9ac3453
+Z cec6b182a87eaa16fdbd37972b0b02d2
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLu1nVoxKgR168RlERAiZgAJ9KZKlXqjE3tTVU4jPro4jOsxmJOACfV5Zr
-zSYpRUw3ZJ23jK06IGLM6Yk=
-=lnkH
+iD8DBQFLu31IoxKgR168RlERApyUAJwL/bHa+2HOhBjl9MyxsO3K4nUTUACfVW6y
+jbuOBT0KqSbZOrc09LW9uY8=
+=l9KV
 -----END PGP SIGNATURE-----

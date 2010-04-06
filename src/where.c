@@ -1657,6 +1657,7 @@ static void bestTransientIndex(
   double costTempIdx;         /* per-query cost of the transient index */
   WhereTerm *pTerm;           /* A single term of the WHERE clause */
   WhereTerm *pWCEnd;          /* End of pWC->a[] */
+  Table *pTable;              /* Table tht might be indexed */
 
   if( (pCost->plan.wsFlags & WHERE_NOT_FULLSCAN)!=0 ){
     /* We already have some kind of index in use for this query. */
@@ -1678,11 +1679,14 @@ static void bestTransientIndex(
   }
 
   /* Search for any equality comparison term */
+  pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pTerm->leftCursor==pSrc->iCursor
        && (pTerm->prereqRight & notReady)==0
        && (pTerm->eOperator & WO_EQ)!=0
+       && sqlite3IndexAffinityOk(pTerm->pExpr,
+                                 pTable->aCol[pTerm->u.leftColumn].affinity)
     ){
       WHERETRACE(("auto-index reduces cost from %.2f to %.2f\n",
                     pCost->rCost, costTempIdx));
@@ -1719,6 +1723,7 @@ static void constructTransientIndex(
   int addrTop;                /* Top of the index fill loop */
   int regRecord;              /* Register holding an index record */
   int n;                      /* Column counter */
+  CollSeq *pColl;             /* Collating sequence to on a column */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1730,16 +1735,21 @@ static void constructTransientIndex(
 
   /* Count the number of columns that will be added to the index */
   nColumn = 0;
+  pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pTerm->leftCursor==pSrc->iCursor
        && (pTerm->prereqRight & notReady)==0
        && (pTerm->eOperator & WO_EQ)!=0
+       && sqlite3IndexAffinityOk(pTerm->pExpr,
+                                 pTable->aCol[pTerm->u.leftColumn].affinity)
     ){
       nColumn++;
     }
   }
   assert( nColumn>0 );
+  pLevel->plan.nEq = nColumn;
+  pLevel->plan.wsFlags = WHERE_COLUMN_EQ | WO_EQ;
 
   /* Construct the Index object to describe this index */
   nByte = sizeof(Index);
@@ -1754,17 +1764,21 @@ static void constructTransientIndex(
   pIdx->aSortOrder = (u8*)&pIdx->aiColumn[nColumn];
   pIdx->zName = "auto-index";
   pIdx->nColumn = nColumn;
-  pIdx->pTable = pTable = pSrc->pTab;
+  pIdx->pTable = pTable;
   n = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pTerm->leftCursor==pSrc->iCursor
        && (pTerm->prereqRight & notReady)==0
        && (pTerm->eOperator & WO_EQ)!=0
+       && sqlite3IndexAffinityOk(pTerm->pExpr,
+                                 pTable->aCol[pTerm->u.leftColumn].affinity)
     ){
       int iCol = pTerm->u.leftColumn;
+      Expr *pX;
       pIdx->aiColumn[n] = iCol;
-      pIdx->azColl[n] = pTable->aCol[iCol].zColl;
-      if( pIdx->azColl[n]==0 ) pIdx->azColl[n] = "BINARY";
+      pX = pTerm->pExpr;
+      pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+      pIdx->azColl[n] = pColl->zName;
       n++;
     }
   }
@@ -1775,6 +1789,7 @@ static void constructTransientIndex(
   assert( pLevel->iIdxCur>=0 );
   sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pLevel->iIdxCur, nColumn+1, 0,
                     (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
+  VdbeComment((v, "auto-idx for %s", pTable->zName));
 
   /* Fill the transient index with content */
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
@@ -4060,8 +4075,14 @@ WhereInfo *sqlite3WhereBegin(
 #endif /* SQLITE_OMIT_EXPLAIN */
     pTabItem = &pTabList->a[pLevel->iFrom];
     pTab = pTabItem->pTab;
+    pLevel->iTabCur = pTabItem->iCursor;
     iDb = sqlite3SchemaToIndex(db, pTab->pSchema);
-    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
+    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ){
+      if( pLevel->plan.wsFlags & WHERE_TEMP_INDEX ){
+        constructTransientIndex(pParse, pWC, pTabItem, notReady, pLevel);
+      }
+      continue;
+    }
 #ifndef SQLITE_OMIT_VIRTUALTABLE
     if( (pLevel->plan.wsFlags & WHERE_VIRTUALTABLE)!=0 ){
       const char *pVTab = (const char *)sqlite3GetVTable(db, pTab);
@@ -4084,7 +4105,6 @@ WhereInfo *sqlite3WhereBegin(
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
-    pLevel->iTabCur = pTabItem->iCursor;
     if( (pLevel->plan.wsFlags & WHERE_TEMP_INDEX)!=0 ){
       constructTransientIndex(pParse, pWC, pTabItem, notReady, pLevel);
     }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
