@@ -235,6 +235,7 @@ struct WhereCost {
 #define WHERE_COLUMN_IN    0x00040000  /* x IN (...) */
 #define WHERE_COLUMN_NULL  0x00080000  /* x IS NULL */
 #define WHERE_INDEXED      0x000f0000  /* Anything that uses an index */
+#define WHERE_NOT_FULLSCAN 0x000f3000  /* Does not do a full table scan */
 #define WHERE_IN_ABLE      0x000f1000  /* Able to support an IN operator */
 #define WHERE_TOP_LIMIT    0x00100000  /* x<EXPR or x<=EXPR constraint */
 #define WHERE_BTM_LIMIT    0x00200000  /* x>EXPR or x>=EXPR constraint */
@@ -244,6 +245,7 @@ struct WhereCost {
 #define WHERE_UNIQUE       0x04000000  /* Selects no more than one row */
 #define WHERE_VIRTUALTABLE 0x08000000  /* Use virtual-table processing */
 #define WHERE_MULTI_OR     0x10000000  /* OR using multiple indices */
+#define WHERE_TEMP_INDEX   0x20000000  /* Uses an ephemeral index */
 
 /*
 ** Initialize a preallocated WhereClause structure.
@@ -1635,6 +1637,159 @@ static void bestOrClauseIndex(
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 }
 
+/*
+** If the query plan for pSrc specified in pCost is a full table scan
+** an indexing is allows (if there is no NOT INDEXED clause) and it
+** possible to construct a transient index that would perform better
+** than a full table scan even when the cost of constructing the index
+** is taken into account, then alter the query plan to use the
+** transient index.
+*/
+static void bestTransientIndex(
+  Parse *pParse,              /* The parsing context */
+  WhereClause *pWC,           /* The WHERE clause */
+  struct SrcList_item *pSrc,  /* The FROM clause term to search */
+  Bitmask notReady,           /* Mask of cursors that are not available */
+  WhereCost *pCost            /* Lowest cost query plan */
+){
+  double nTableRow;           /* Rows in the input table */
+  double logN;                /* log(nTableRow) */
+  double costTempIdx;         /* per-query cost of the transient index */
+  WhereTerm *pTerm;           /* A single term of the WHERE clause */
+  WhereTerm *pWCEnd;          /* End of pWC->a[] */
+
+  if( (pCost->plan.wsFlags & WHERE_NOT_FULLSCAN)!=0 ){
+    /* We already have some kind of index in use for this query. */
+    return;
+  }
+  if( pSrc->notIndexed ){
+    /* The NOT INDEXED clause appears in the SQL. */
+    return;
+  }
+
+  assert( pParse->nQueryLoop >= (double)1 );
+  nTableRow = pSrc->pIndex ? pSrc->pIndex->aiRowEst[0] : 1000000;
+  logN = estLog(nTableRow);
+  costTempIdx = 2*logN*(nTableRow/pParse->nQueryLoop + 1);
+  if( costTempIdx>=pCost->rCost ){
+    /* The cost of creating the transient table would be greater than
+    ** doing the full table scan */
+    return;
+  }
+
+  /* Search for any equality comparison term */
+  pWCEnd = &pWC->a[pWC->nTerm];
+  for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    if( pTerm->leftCursor==pSrc->iCursor
+       && (pTerm->prereqRight & notReady)==0
+       && (pTerm->eOperator & WO_EQ)!=0
+    ){
+      WHERETRACE(("auto-index reduces cost from %.2f to %.2f\n",
+                    pCost->rCost, costTempIdx));
+      pCost->rCost = costTempIdx;
+      pCost->nRow = logN + 1;
+      pCost->plan.wsFlags = WHERE_TEMP_INDEX;
+      pCost->used = pTerm->prereqRight;
+      break;
+    }
+  }
+}
+
+/*
+** Generate code to construct a transient index.  Also create the
+** corresponding Index structure and put it in pLevel->plan.u.pIdx.
+*/
+static void constructTransientIndex(
+  Parse *pParse,              /* The parsing context */
+  WhereClause *pWC,           /* The WHERE clause */
+  struct SrcList_item *pSrc,  /* The FROM clause term to get the next index */
+  Bitmask notReady,           /* Mask of cursors that are not available */
+  WhereLevel *pLevel          /* Write new index here */
+){
+  int nColumn;                /* Number of columns in the constructed index */
+  WhereTerm *pTerm;           /* A single term of the WHERE clause */
+  WhereTerm *pWCEnd;          /* End of pWC->a[] */
+  int nByte;                  /* Byte of memory needed for pIdx */
+  Index *pIdx;                /* Object describing the transient index */
+  Vdbe *v;                    /* Prepared statement under construction */
+  int regIsInit;              /* Register set by initialization */
+  int addrInit;               /* Address of the initialization bypass jump */
+  Table *pTable;              /* The table being indexed */
+  KeyInfo *pKeyinfo;          /* Key information for the index */   
+  int addrTop;                /* Top of the index fill loop */
+  int regRecord;              /* Register holding an index record */
+  int n;                      /* Column counter */
+
+  /* Generate code to skip over the creation and initialization of the
+  ** transient index on 2nd and subsequent iterations of the loop. */
+  v = pParse->pVdbe;
+  assert( v!=0 );
+  regIsInit = ++pParse->nMem;
+  addrInit = sqlite3VdbeAddOp1(v, OP_If, regIsInit);
+  sqlite3VdbeAddOp2(v, OP_Integer, 1, regIsInit);
+
+  /* Count the number of columns that will be added to the index */
+  nColumn = 0;
+  pWCEnd = &pWC->a[pWC->nTerm];
+  for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    if( pTerm->leftCursor==pSrc->iCursor
+       && (pTerm->prereqRight & notReady)==0
+       && (pTerm->eOperator & WO_EQ)!=0
+    ){
+      nColumn++;
+    }
+  }
+  assert( nColumn>0 );
+
+  /* Construct the Index object to describe this index */
+  nByte = sizeof(Index);
+  nByte += nColumn*sizeof(int);     /* Index.aiColumn */
+  nByte += nColumn*sizeof(char*);   /* Index.azColl */
+  nByte += nColumn;                 /* Index.aSortOrder */
+  pIdx = sqlite3DbMallocZero(pParse->db, nByte);
+  if( pIdx==0 ) return;
+  pLevel->plan.u.pIdx = pIdx;
+  pIdx->azColl = (char**)&pIdx[1];
+  pIdx->aiColumn = (int*)&pIdx->azColl[nColumn];
+  pIdx->aSortOrder = (u8*)&pIdx->aiColumn[nColumn];
+  pIdx->zName = "auto-index";
+  pIdx->nColumn = nColumn;
+  pIdx->pTable = pTable = pSrc->pTab;
+  n = 0;
+  for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
+    if( pTerm->leftCursor==pSrc->iCursor
+       && (pTerm->prereqRight & notReady)==0
+       && (pTerm->eOperator & WO_EQ)!=0
+    ){
+      int iCol = pTerm->u.leftColumn;
+      pIdx->aiColumn[n] = iCol;
+      pIdx->azColl[n] = pTable->aCol[iCol].zColl;
+      if( pIdx->azColl[n]==0 ) pIdx->azColl[n] = "BINARY";
+      n++;
+    }
+  }
+  assert( n==pIdx->nColumn );
+
+  /* Create the transient index */
+  pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
+  assert( pLevel->iIdxCur>=0 );
+  sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pLevel->iIdxCur, nColumn+1, 0,
+                    (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
+
+  /* Fill the transient index with content */
+  addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
+  regRecord = sqlite3GetTempReg(pParse);
+  sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1);
+  sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
+  sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
+  sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
+  sqlite3VdbeJumpHere(v, addrTop);
+  sqlite3ReleaseTempReg(pParse, regRecord);
+  
+  /* Jump here when skipping the initialization */
+  sqlite3VdbeJumpHere(v, addrInit);
+}
+
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Allocate and populate an sqlite3_index_info structure. It is the 
@@ -2481,10 +2636,10 @@ static void bestBtreeIndex(
     /**** Cost of using this index has now been computed ****/
 
     WHERETRACE((
-      "tbl=%s idx=%s nEq=%d nInMul=%d nBound=%d bSort=%d bLookup=%d"
-      " wsFlags=%d   (nRow=%.2f cost=%.2f)\n",
+      "%s(%s): nEq=%d nInMul=%d nBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
+      "         notReady=0x%llx nRow=%.2f cost=%.2f used=0x%llx\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
-      nEq, nInMul, nBound, bSort, bLookup, wsFlags, nRow, cost
+      nEq, nInMul, nBound, bSort, bLookup, wsFlags, notReady, nRow, cost, used
     ));
 
     /* If this index is the best we have seen so far, then record this
@@ -2529,6 +2684,7 @@ static void bestBtreeIndex(
   ));
   
   bestOrClauseIndex(pParse, pWC, pSrc, notReady, pOrderBy, pCost);
+  bestTransientIndex(pParse, pWC, pSrc, notReady, pCost);
   pCost->plan.wsFlags |= eqTermMask;
 }
 
@@ -3471,6 +3627,9 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
         }
         sqlite3DbFree(db, pInfo);
       }
+      if( pWInfo->a[i].plan.wsFlags & WHERE_TEMP_INDEX ){
+        sqlite3DbFree(db, pWInfo->a[i].plan.u.pIdx);
+      }
     }
     whereClauseClear(pWInfo->pWC);
     sqlite3DbFree(db, pWInfo);
@@ -3617,6 +3776,8 @@ WhereInfo *sqlite3WhereBegin(
       sizeof(WhereMaskSet)
   );
   if( db->mallocFailed ){
+    sqlite3DbFree(db, pWInfo);
+    pWInfo = 0;
     goto whereBeginError;
   }
   pWInfo->nLevel = nTabList;
@@ -3625,6 +3786,7 @@ WhereInfo *sqlite3WhereBegin(
   pWInfo->iBreak = sqlite3VdbeMakeLabel(v);
   pWInfo->pWC = pWC = (WhereClause *)&((u8 *)pWInfo)[nByteWInfo];
   pWInfo->wctrlFlags = wctrlFlags;
+  pWInfo->savedNQueryLoop = pParse->nQueryLoop;
   pMaskSet = (WhereMaskSet*)&pWC[1];
 
   /* Split the WHERE clause into separate subexpressions where each
@@ -3804,13 +3966,16 @@ WhereInfo *sqlite3WhereBegin(
     }
     andFlags &= bestPlan.plan.wsFlags;
     pLevel->plan = bestPlan.plan;
-    if( bestPlan.plan.wsFlags & WHERE_INDEXED ){
+    testcase( bestPlan.plan.wsFlags & WHERE_INDEXED );
+    testcase( bestPlan.plan.wsFlags & WHERE_TEMP_INDEX );
+    if( bestPlan.plan.wsFlags & (WHERE_INDEXED|WHERE_TEMP_INDEX) ){
       pLevel->iIdxCur = pParse->nTab++;
     }else{
       pLevel->iIdxCur = -1;
     }
     notReady &= ~getMask(pMaskSet, pTabList->a[bestJ].iCursor);
     pLevel->iFrom = (u8)bestJ;
+    if( bestPlan.nRow>=(double)1 ) pParse->nQueryLoop *= bestPlan.nRow;
 
     /* Check that if the table scanned by this loop iteration had an
     ** INDEXED BY clause attached to it, that the named index is being
@@ -3857,6 +4022,7 @@ WhereInfo *sqlite3WhereBegin(
   ** searching those tables.
   */
   sqlite3CodeVerifySchema(pParse, -1); /* Insert the cookie verifier Goto */
+  notReady = ~(Bitmask)0;
   for(i=0, pLevel=pWInfo->a; i<nTabList; i++, pLevel++){
     Table *pTab;     /* Table to open */
     int iDb;         /* Index of database containing table/index */
@@ -3869,7 +4035,9 @@ WhereInfo *sqlite3WhereBegin(
       if( pItem->zAlias ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s AS %s", zMsg, pItem->zAlias);
       }
-      if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+      if( (pLevel->plan.wsFlags & WHERE_TEMP_INDEX)!=0 ){
+        zMsg = sqlite3MAppendf(db, zMsg, "%s WITH AUTOMATIC INDEX", zMsg);
+      }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
         zMsg = sqlite3MAppendf(db, zMsg, "%s WITH INDEX %s",
            zMsg, pLevel->plan.u.pIdx->zName);
       }else if( pLevel->plan.wsFlags & WHERE_MULTI_OR ){
@@ -3917,7 +4085,9 @@ WhereInfo *sqlite3WhereBegin(
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
     pLevel->iTabCur = pTabItem->iCursor;
-    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+    if( (pLevel->plan.wsFlags & WHERE_TEMP_INDEX)!=0 ){
+      constructTransientIndex(pParse, pWC, pTabItem, notReady, pLevel);
+    }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
       Index *pIx = pLevel->plan.u.pIdx;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       int iIdxCur = pLevel->iIdxCur;
@@ -3928,6 +4098,7 @@ WhereInfo *sqlite3WhereBegin(
       VdbeComment((v, "%s", pIx->zName));
     }
     sqlite3CodeVerifySchema(pParse, iDb);
+    notReady &= ~getMask(pWC->pMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
 
@@ -3997,7 +4168,10 @@ WhereInfo *sqlite3WhereBegin(
 
   /* Jump here if malloc fails */
 whereBeginError:
-  whereInfoFree(db, pWInfo);
+  if( pWInfo ){
+    pParse->nQueryLoop = pWInfo->savedNQueryLoop;
+    whereInfoFree(db, pWInfo);
+  }
   return 0;
 }
 
@@ -4069,10 +4243,11 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     assert( pTab!=0 );
     if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
     if( (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0 ){
-      if( !pWInfo->okOnePass && (pLevel->plan.wsFlags & WHERE_IDX_ONLY)==0 ){
+      int ws = pLevel->plan.wsFlags;
+      if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
-      if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+      if( (ws & (WHERE_INDEXED|WHERE_TEMP_INDEX)) == WHERE_INDEXED ){
         sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
       }
     }
@@ -4120,6 +4295,9 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Final cleanup
   */
-  whereInfoFree(db, pWInfo);
+  if( pWInfo ){
+    pParse->nQueryLoop = pWInfo->savedNQueryLoop;
+    whereInfoFree(db, pWInfo);
+  }
   return;
 }
