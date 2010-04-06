@@ -1749,7 +1749,7 @@ static void constructTransientIndex(
   }
   assert( nColumn>0 );
   pLevel->plan.nEq = nColumn;
-  pLevel->plan.wsFlags = WHERE_COLUMN_EQ | WO_EQ;
+  pLevel->plan.wsFlags |= WHERE_COLUMN_EQ | WO_EQ;
 
   /* Construct the Index object to describe this index */
   nByte = sizeof(Index);
@@ -1787,9 +1787,9 @@ static void constructTransientIndex(
   /* Create the transient index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
   assert( pLevel->iIdxCur>=0 );
-  sqlite3VdbeAddOp4(v, OP_OpenEphemeral, pLevel->iIdxCur, nColumn+1, 0,
+  sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nColumn+1, 0,
                     (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
-  VdbeComment((v, "auto-idx for %s", pTable->zName));
+  VdbeComment((v, "for %s", pTable->zName));
 
   /* Fill the transient index with content */
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
@@ -1798,6 +1798,7 @@ static void constructTransientIndex(
   sqlite3VdbeAddOp2(v, OP_IdxInsert, pLevel->iIdxCur, regRecord);
   sqlite3VdbeChangeP5(v, OPFLAG_USESEEKRESULT);
   sqlite3VdbeAddOp2(v, OP_Next, pLevel->iTabCur, addrTop+1);
+  sqlite3VdbeChangeP5(v, SQLITE_STMTSTATUS_AUTOINDEX);
   sqlite3VdbeJumpHere(v, addrTop);
   sqlite3ReleaseTempReg(pParse, regRecord);
   
@@ -3643,7 +3644,11 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
         sqlite3DbFree(db, pInfo);
       }
       if( pWInfo->a[i].plan.wsFlags & WHERE_TEMP_INDEX ){
-        sqlite3DbFree(db, pWInfo->a[i].plan.u.pIdx);
+        Index *pIdx = pWInfo->a[i].plan.u.pIdx;
+        if( pIdx ){
+          sqlite3DbFree(db, pIdx->zColAff);
+          sqlite3DbFree(db, pIdx);
+        }
       }
     }
     whereClauseClear(pWInfo->pWC);
@@ -4118,6 +4123,7 @@ WhereInfo *sqlite3WhereBegin(
     notReady &= ~getMask(pWC->pMaskSet, pTabItem->iCursor);
   }
   pWInfo->iTop = sqlite3VdbeCurrentAddr(v);
+  if( db->mallocFailed ) goto whereBeginError;
 
   /* Generate the code to do the search.  Each iteration of the for
   ** loop below generates code for a single nested loop of the VM

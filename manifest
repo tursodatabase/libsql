@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Runs\squicktest\swithout\shitting\san\sassert\snow.\s\sSome\stests\sget\sunexpected\nresults\sstill\sand\sthere\sis\sa\smemory\sleak.
-D 2010-04-06T18:51:43
+C Veryquick.test\sis\snow\sworking.\s\sThe\sSQLITE_STMTSTATUS_AUTOINDEX\scounter\nadded.
+D 2010-04-06T22:33:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,14 +169,14 @@ F src/resolve.c a1648d98e869937b29f4f697461fe4d60f220a7b
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 5a08245cb18b7ddf2456274653599cbf738d3830
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in 1b81828af38e040820577fb7a05e7f378add7e6f
+F src/sqlite.h.in c5001b77dc0cb046136da65d8dbdf234048be21d
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h ce32d5b93f5157b20c581f3a53657347f1ac908f
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c bad6570a005b234ea670b9f7b48256da19a032d3
-F src/test1.c aa9b1e10e834330e7759afb639420117e2422ded
+F src/test1.c 8b4c246c41e75c3ff033edb2e8c2cf15820861ae
 F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -214,9 +214,9 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
-F src/vdbe.c 011f41a5bd40181657322d24590b92874cf8c21e
+F src/vdbe.c fccdf72a632fa8ce968677481f4fe5b1181a792a
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
-F src/vdbeInt.h ae1e6ba0dd3fb4a886898d2829d748be701b01f8
+F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 74c25680046a116b24b95393914d3669c23305dc
 F src/vdbeaux.c 3028b2d50df39697e21263685349b5ff1333a29b
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
@@ -224,7 +224,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 7e924eac52ccec527caab00f8cd2c568ddec4b25
+F src/where.c 6831620423f91e2e767a51de1403e8f3b6316fcd
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -285,7 +285,7 @@ F test/coalesce.test cee0dccb9fbd2d494b77234bccf9dc6c6786eb91
 F test/collate1.test e3eaa48c21e150814be1a7b852d2a8af24458d04
 F test/collate2.test 04cebe4a033be319d6ddbb3bbc69464e01700b49
 F test/collate3.test d28d2cfab2c3a3d4628ae4b2b7afc9965daa3b4c
-F test/collate4.test 4545554388daaa604e5b3def3aa2f7ed6d56e8da
+F test/collate4.test 9e685f813b6312e43f8a338facd47fc3154afe23
 F test/collate5.test fe0f43c4740d7b71b959cac668d19e42f2e06e4d
 F test/collate6.test 8be65a182abaac8011a622131486dafb8076e907
 F test/collate7.test fac8db7aac3978466c04ae892cc74dcf2bc031aa
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ac6d0fba78eb9dcd69372e128d4a039aaff4b417
-R 140c941067720eff2f185f65d7312426
+P a8224448cc305258a59a9023e6604783dda73e45
+R 04ef1a23bc52b6a1a3ee5f47f9065328
 U drh
-Z c806bfb50a880ce7c034d29cbdd9ee07
+Z 2c8a1d6e39c0a73967ab20ce9f98aac7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLu4LCoxKgR168RlERAhvtAJ0Z9m/sy/wquxBz0esuUtBuGtZHcACfZVG9
-lJhZUiswVMJ53+NC/x7MU3Q=
-=eWDo
+iD8DBQFLu7bVoxKgR168RlERAp7SAKCB/eaPC1kzSWPOS4X+0upLG0txcQCfS010
+0HcCrWR2RNOuocUzlux6m+4=
+=3I0Y
 -----END PGP SIGNATURE-----

@@ -341,7 +341,7 @@ do_test collate4-2.1.0 {
 } {}
 do_test collate4-2.1.1 {
   count {
-    SELECT * FROM collate4t2, collate4t1 WHERE a = b;
+    SELECT * FROM collate4t2 NOT INDEXED, collate4t1 NOT INDEXED WHERE a = b;
   }
 } {A a A A 19}
 do_test collate4-2.1.2 {
@@ -356,7 +356,7 @@ do_test collate4-2.1.3 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE b = a;
   }
-} {A A 19}
+} {A A 13}
 do_test collate4-2.1.4 {
   execsql {
     DROP INDEX collate4i1;
@@ -365,7 +365,7 @@ do_test collate4-2.1.4 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE a = b;
   }
-} {A a A A 19}
+} {A a A A 14}
 do_test collate4-2.1.5 {
   count {
     SELECT * FROM collate4t2, collate4t1 WHERE b = a;
@@ -426,7 +426,7 @@ do_test collate4-2.2.0 {
 } {}
 do_test collate4-2.2.1 {
   count {
-    SELECT * FROM collate4t2 NATURAL JOIN collate4t1;
+    SELECT * FROM collate4t2 NOT INDEXED NATURAL JOIN collate4t1 NOT INDEXED;
   }
 } {0 0 0 0 0 1 0 1 0 0 1 1 1 0 0 1 0 1 1 1 0 1 1 1 63}
 do_test collate4-2.2.1b {
