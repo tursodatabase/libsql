@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Enhance\scomments\son\sthe\sSrcList\sobject\sdefinition\sto\sbetter\sexplain\sthe\noperation\sof\sthe\sSrcList.a[].colUsed\sfield.\s\sNo\schanges\sto\scode.
-D 2010-04-07T14:33:07
+C Make\ssure\sthat\sall\sautomatic\sindices\sare\scovering\sindices.\s\sOtherwise,\sthe\ntable\sand\sindex\smight\sbe\sused\stogether\sin\sa\squery\sbut\sthe\stable\scould\sget\nout\sof\ssync\swith\sthe\sautomatic\sindex\sthrough\sout-of-band\schanges.
+D 2010-04-07T14:59:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 6831620423f91e2e767a51de1403e8f3b6316fcd
+F src/where.c 186b72b01f9afe0b4dbb68e90e14d6dceb287aed
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 064c283eee82c5053e84058a0e1908e468da6ce3
-R 2ea9a93d8f9ff175759bacc0a1fd3296
+P c0f67ea131c3e237e46311b1a3dcb3febf2ea036
+R 0e5421f4e341a57c85b79d77e22a68e3
 U drh
-Z 49063b48e9e24945a681e3cbaa857e35
+Z b97f0b4c3618aad21acc127e7b33602d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLvJepoxKgR168RlERAvdbAJ4j8n07sFWyrBxSwl1Z/sTtVx4x8gCfX6OS
-0ygpWKStUSB8+v8Z3feY2PY=
-=69dZ
+iD8DBQFLvJ3koxKgR168RlERAm7oAJ0Xzm3BtJ0ZfA9RjpPh9mHBaxTARgCfQDNh
+ievdlvN7dk9MClGNwMCoKvk=
+=ZzMO
 -----END PGP SIGNATURE-----

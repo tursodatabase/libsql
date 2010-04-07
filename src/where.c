@@ -1638,8 +1638,27 @@ static void bestOrClauseIndex(
 }
 
 /*
+** Return TRUE if the WHERE clause term pTerm is of a form where it
+** could be used with an index to access pSrc, assuming an appropriate
+** index existed.
+*/
+static int termCanDriveIndex(
+  WhereTerm *pTerm,              /* WHERE clause term to check */
+  struct SrcList_item *pSrc,     /* Table we are trying to access */
+  Bitmask notReady               /* Tables in outer loops of the join */
+){
+  char aff;
+  if( pTerm->leftCursor!=pSrc->iCursor ) return 0;
+  if( pTerm->eOperator!=WO_EQ ) return 0;
+  if( (pTerm->prereqRight & notReady)!=0 ) return 0;
+  aff = pSrc->pTab->aCol[pTerm->u.leftColumn].affinity;
+  if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
+  return 1;
+}
+
+/*
 ** If the query plan for pSrc specified in pCost is a full table scan
-** an indexing is allows (if there is no NOT INDEXED clause) and it
+** and indexing is allows (if there is no NOT INDEXED clause) and it
 ** possible to construct a transient index that would perform better
 ** than a full table scan even when the cost of constructing the index
 ** is taken into account, then alter the query plan to use the
@@ -1682,12 +1701,7 @@ static void bestTransientIndex(
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
-    if( pTerm->leftCursor==pSrc->iCursor
-       && (pTerm->prereqRight & notReady)==0
-       && (pTerm->eOperator & WO_EQ)!=0
-       && sqlite3IndexAffinityOk(pTerm->pExpr,
-                                 pTable->aCol[pTerm->u.leftColumn].affinity)
-    ){
+    if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       WHERETRACE(("auto-index reduces cost from %.2f to %.2f\n",
                     pCost->rCost, costTempIdx));
       pCost->rCost = costTempIdx;
@@ -1723,7 +1737,11 @@ static void constructTransientIndex(
   int addrTop;                /* Top of the index fill loop */
   int regRecord;              /* Register holding an index record */
   int n;                      /* Column counter */
+  int i;                      /* Loop counter */
+  int mxBitCol;               /* Maximum column in pSrc->colUsed */
   CollSeq *pColl;             /* Collating sequence to on a column */
+  Bitmask idxCols;            /* Bitmap of columns used for indexing */
+  Bitmask extraCols;          /* Bitmap of additional columns */
 
   /* Generate code to skip over the creation and initialization of the
   ** transient index on 2nd and subsequent iterations of the loop. */
@@ -1733,23 +1751,39 @@ static void constructTransientIndex(
   addrInit = sqlite3VdbeAddOp1(v, OP_If, regIsInit);
   sqlite3VdbeAddOp2(v, OP_Integer, 1, regIsInit);
 
-  /* Count the number of columns that will be added to the index */
+  /* Count the number of columns that will be added to the index
+  ** and used to match WHERE clause constraints */
   nColumn = 0;
   pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
+  idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
-    if( pTerm->leftCursor==pSrc->iCursor
-       && (pTerm->prereqRight & notReady)==0
-       && (pTerm->eOperator & WO_EQ)!=0
-       && sqlite3IndexAffinityOk(pTerm->pExpr,
-                                 pTable->aCol[pTerm->u.leftColumn].affinity)
-    ){
+    if( termCanDriveIndex(pTerm, pSrc, notReady) ){
+      int iCol = pTerm->u.leftColumn;
+      if( iCol<BMS && iCol>=0 ) idxCols |= 1<<iCol;
       nColumn++;
     }
   }
   assert( nColumn>0 );
   pLevel->plan.nEq = nColumn;
-  pLevel->plan.wsFlags |= WHERE_COLUMN_EQ | WO_EQ;
+
+  /* Count the number of additional columns needed to create a
+  ** covering index.  A "covering index" is an index that contains all
+  ** columns that are needed by the query.  With a covering index, the
+  ** original table never needs to be accessed.  Automatic indices must
+  ** be a covering index because the index will not be updated if the
+  ** original table changes and the index and table cannot both be used
+  ** if they go out of sync.
+  */
+  extraCols = pSrc->colUsed & ~idxCols;
+  mxBitCol = (pTable->nCol >= BMS-1) ? BMS-1 : pTable->nCol;
+  for(i=0; i<mxBitCol; i++){
+    if( extraCols & (1<<i) ) nColumn++;
+  }
+  if( pSrc->colUsed & (((Bitmask)1)<<(BMS-1)) ){
+    nColumn += pTable->nCol - BMS + 1;
+  }
+  pLevel->plan.wsFlags |= WHERE_COLUMN_EQ | WHERE_IDX_ONLY | WO_EQ;
 
   /* Construct the Index object to describe this index */
   nByte = sizeof(Index);
@@ -1767,22 +1801,32 @@ static void constructTransientIndex(
   pIdx->pTable = pTable;
   n = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
-    if( pTerm->leftCursor==pSrc->iCursor
-       && (pTerm->prereqRight & notReady)==0
-       && (pTerm->eOperator & WO_EQ)!=0
-       && sqlite3IndexAffinityOk(pTerm->pExpr,
-                                 pTable->aCol[pTerm->u.leftColumn].affinity)
-    ){
-      int iCol = pTerm->u.leftColumn;
-      Expr *pX;
-      pIdx->aiColumn[n] = iCol;
-      pX = pTerm->pExpr;
+    if( termCanDriveIndex(pTerm, pSrc, notReady) ){
+      Expr *pX = pTerm->pExpr;
+      pIdx->aiColumn[n] = pTerm->u.leftColumn;
       pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
       pIdx->azColl[n] = pColl->zName;
       n++;
     }
   }
-  assert( n==pIdx->nColumn );
+  assert( n==pLevel->plan.nEq );
+
+  /* Add additional columns needed to make the index into a covering index */
+  for(i=0; i<mxBitCol; i++){
+    if( extraCols & (1<<i) ){
+      pIdx->aiColumn[n] = i;
+      pIdx->azColl[n] = "BINARY";
+      n++;
+    }
+  }
+  if( pSrc->colUsed & (((Bitmask)1)<<(BMS-1)) ){
+    for(i=BMS-1; i<pTable->nCol; i++){
+      pIdx->aiColumn[n] = i;
+      pIdx->azColl[n] = "BINARY";
+      n++;
+    }
+  }
+  assert( n==nColumn );
 
   /* Create the transient index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
@@ -2594,7 +2638,7 @@ static void bestBtreeIndex(
 
     /* If currently calculating the cost of using an index (not the IPK
     ** index), determine if all required column data may be obtained without 
-    ** seeking to entries in the main table (i.e. if the index is a covering
+    ** using the main table (i.e. if the index is a covering
     ** index for this query). If it is, set the WHERE_IDX_ONLY flag in
     ** wsFlags. Otherwise, set the bLookup variable to true.  */
     if( pIdx && wsFlags ){
@@ -4264,8 +4308,10 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
     struct SrcList_item *pTabItem = &pTabList->a[pLevel->iFrom];
     Table *pTab = pTabItem->pTab;
     assert( pTab!=0 );
-    if( (pTab->tabFlags & TF_Ephemeral)!=0 || pTab->pSelect ) continue;
-    if( (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0 ){
+    if( (pTab->tabFlags & TF_Ephemeral)==0
+     && pTab->pSelect==0
+     && (pWInfo->wctrlFlags & WHERE_OMIT_CLOSE)==0
+    ){
       int ws = pLevel->plan.wsFlags;
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
