@@ -1774,6 +1774,9 @@ typedef u64 Bitmask;
 ** and the next table on the list.  The parser builds the list this way.
 ** But sqlite3SrcListShiftJoinType() later shifts the jointypes so that each
 ** jointype expresses the join between the table and the previous table.
+**
+** In the colUsed field, the high-order bit (bit 63) is set if the table
+** contains more than 63 columns and the 64-th or later column is used.
 */
 struct SrcList {
   i16 nSrc;        /* Number of tables or subqueries in the FROM clause */
