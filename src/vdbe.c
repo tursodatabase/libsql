@@ -1383,7 +1383,7 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
     sqlite3VdbeMemStoreType(pArg);
-    REGISTER_TRACE(pOp->p2, pArg);
+    REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
   assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );

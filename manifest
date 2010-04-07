@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Veryquick.test\sis\snow\sworking.\s\sThe\sSQLITE_STMTSTATUS_AUTOINDEX\scounter\nadded.
-D 2010-04-06T22:33:55
+C Fix\sthe\strace\soutput\sof\sthe\sOP_Function\sopcode\sto\sshow\sthe\scorrect\nregister\snumbers.
+D 2010-04-07T14:32:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -214,7 +214,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
-F src/vdbe.c fccdf72a632fa8ce968677481f4fe5b1181a792a
+F src/vdbe.c 2abd931ea2aec3eacc6426677f40cc5a1071d34e
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 74c25680046a116b24b95393914d3669c23305dc
@@ -797,14 +797,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a8224448cc305258a59a9023e6604783dda73e45
-R 04ef1a23bc52b6a1a3ee5f47f9065328
+P abbf16e5e7895971710fb3a8fd9c782fc1218a77
+R fdc0f316a1238a9becc0727535b6d195
 U drh
-Z 2c8a1d6e39c0a73967ab20ce9f98aac7
+Z c6e7663c2146769d7615afb1d8cf66ba
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLu7bVoxKgR168RlERAp7SAKCB/eaPC1kzSWPOS4X+0upLG0txcQCfS010
-0HcCrWR2RNOuocUzlux6m+4=
-=3I0Y
+iD8DBQFLvJdvoxKgR168RlERAlgfAJ91sHiOSeNuewQlQUkGSxc282RdOwCdHh/S
+gU2HPQfdu7zTm2zCX0lOkoE=
+=U9O0
 -----END PGP SIGNATURE-----
