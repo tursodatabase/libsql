@@ -132,7 +132,7 @@ struct SqliteDb {
   int maxStmt;               /* The next maximum number of stmtList */
   int nStmt;                 /* Number of statements in stmtList */
   IncrblobChannel *pIncrblob;/* Linked list of open incrblob channels */
-  int nStep, nSort;          /* Statistics for most recent operation */
+  int nStep, nSort, nIndex;  /* Statistics for most recent operation */
   int nTransaction;          /* Number of nested [transaction] methods */
 };
 
@@ -1351,6 +1351,7 @@ static int dbEvalStep(DbEvalContext *p){
 
       pDb->nStep = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_FULLSCAN_STEP,1);
       pDb->nSort = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_SORT,1);
+      pDb->nIndex = sqlite3_stmt_status(pStmt,SQLITE_STMTSTATUS_AUTOINDEX,1);
       dbReleaseColumnNames(p);
       p->pPreStmt = 0;
 
@@ -2528,7 +2529,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
   }
 
   /*
-  **     $db status (step|sort)
+  **     $db status (step|sort|autoindex)
   **
   ** Display SQLITE_STMTSTATUS_FULLSCAN_STEP or 
   ** SQLITE_STMTSTATUS_SORT for the most recent eval.
@@ -2545,8 +2546,11 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
       v = pDb->nStep;
     }else if( strcmp(zOp, "sort")==0 ){
       v = pDb->nSort;
+    }else if( strcmp(zOp, "autoindex")==0 ){
+      v = pDb->nIndex;
     }else{
-      Tcl_AppendResult(interp, "bad argument: should be step or sort", 
+      Tcl_AppendResult(interp, 
+            "bad argument: should be autoindex, step, or sort", 
             (char*)0);
       return TCL_ERROR;
     }
