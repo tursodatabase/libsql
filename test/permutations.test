@@ -742,6 +742,19 @@ run_tests "journaltest" -description {
   bigfile.test
 }
 
+if {[info commands register_demovfs] != ""} {
+  run_tests "demovfs" -description {
+    Check that pages are synced before being written (test_journal.c).
+  } -initialize {
+    register_demovfs
+  } -shutdown {
+    unregister_demovfs
+  } -include {
+    insert.test   insert2.test  insert3.test rollback.test 
+    select1.test  select2.test  select3.test
+  }
+}
+
 # End of tests
 #############################################################################
 

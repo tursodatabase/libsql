@@ -3481,6 +3481,7 @@ int TCLSH_MAIN(int argc, char **argv){
     extern int Sqlitetest9_Init(Tcl_Interp*);
     extern int Sqlitetestasync_Init(Tcl_Interp*);
     extern int Sqlitetest_autoext_Init(Tcl_Interp*);
+    extern int Sqlitetest_demovfs_Init(Tcl_Interp *);
     extern int Sqlitetest_func_Init(Tcl_Interp*);
     extern int Sqlitetest_hexio_Init(Tcl_Interp*);
     extern int Sqlitetest_init_Init(Tcl_Interp*);
@@ -3507,6 +3508,7 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetest9_Init(interp);
     Sqlitetestasync_Init(interp);
     Sqlitetest_autoext_Init(interp);
+    Sqlitetest_demovfs_Init(interp);
     Sqlitetest_func_Init(interp);
     Sqlitetest_hexio_Init(interp);
     Sqlitetest_init_Init(interp);

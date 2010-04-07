@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\san\sinterface\sto\sthe\sSQLITE_STMTSTATUS_AUTOINDEX\sstatus\sinformation\nto\sthe\sTCL\sbindings.\s\sAdd\ssome\ssimple\sautomatic\sindex\stest\scases.
-D 2010-04-07T19:32:00
+C Pull\sover\sthe\slatest\schanges\sfrom\sthe\strunk.
+D 2010-04-07T20:32:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -92,7 +92,7 @@ F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
 F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
-F main.mk a36a05a481afcc00388c4d6d4db0e12cacb546e3
+F main.mk d286b99eb87db41cfc5394e346604ef49509867d
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
 F mkextu.sh 416f9b7089d80e5590a29692c9d9280a10dbad9f
 F mkextw.sh 4123480947681d9b434a5e7b1ee08135abe409ac
@@ -112,7 +112,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e86634da8c48357a759694c9c7c471125cd8d5a8
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c aa756431f712e4c30af0d0fd4df4d43897471a34
+F src/btree.c 01559397cbd4a5aa62a822e8ca9ac94b6db14743
 F src/btree.h ad6cff92286f9b02ec32f0b97136e9a544249f37
 F src/btreeInt.h 22447d259639271774a931cbf66aa55112846681
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -175,7 +175,7 @@ F src/sqliteInt.h bd7ff54663bdd5b57e0eb8b49aca5a3a3c60119a
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c c00d4ed7b365b61aa80c159e611d5e3fded6ea1c
+F src/tclsqlite.c ebf7a964f8311bc52266cf75afedae98cd743df3
 F src/test1.c 8b4c246c41e75c3ff033edb2e8c2cf15820861ae
 F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
@@ -190,6 +190,7 @@ F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 8c408fbffbe8082d1d3dc55044ddfd5580f3c9b9
+F src/test_demovfs.c a3533803c92e659b80a6c9aaf60852ff0a891c8f
 F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
@@ -531,7 +532,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test e09e831b1078254c49ec5e184d50a2b549b7f80c
+F test/permutations.test dfc70940fedd5660b89f9b9e3f158f3970f83c4e
 F test/pragma.test 6960f9efbce476f70ba9ee2171daf5042f9e3d8a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -798,14 +799,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a811a47fbe4f757a7ab575ae5a0f65177a3f07c0
-R dbe510a1d9d8d39e89b08673a1789f57
+P 1f40441204d9a912b1d6b67ff6ff9e17146c7abd a3540c6acf2bb6bdd44c101b63f17ca85e6b68ed
+R 7f80d010d15aec8e14d8cf92d911e2d4
 U drh
-Z 4e449990f788af388aab3ad158bffbb5
+Z e9e2b30ff539b1f1c9a0478a2a8d653a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLvN2zoxKgR168RlERAp2oAJwMcL6AMMRbF4hKmnduZZlExp9waACfbPXK
-RKD8ALvU6iGgErFuUvakXVo=
-=jT+h
+iD8DBQFLvOvWoxKgR168RlERAg1MAJ9jynVuYFCgOw6be3NbgI4qOE4nnQCfUKhm
+r4JK585gjPilvuu1iGgxefA=
+=x2Vr
 -----END PGP SIGNATURE-----
