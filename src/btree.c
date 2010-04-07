@@ -3280,6 +3280,9 @@ int sqlite3BtreeSavepoint(Btree *p, int op, int iSavepoint){
       if( iSavepoint<0 && pBt->initiallyEmpty ) pBt->nPage = 0;
       rc = newDatabase(pBt);
       pBt->nPage = get4byte(28 + pBt->pPage1->aData);
+      if( pBt->nPage==0 ){
+        sqlite3PagerPagecount(pBt->pPager, (int*)&pBt->nPage);
+      }
     }
     sqlite3BtreeLeave(p);
   }
