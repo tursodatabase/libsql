@@ -1637,6 +1637,7 @@ static void bestOrClauseIndex(
 #endif /* SQLITE_OMIT_OR_OPTIMIZATION */
 }
 
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
 /*
 ** Return TRUE if the WHERE clause term pTerm is of a form where it
 ** could be used with an index to access pSrc, assuming an appropriate
@@ -1655,7 +1656,9 @@ static int termCanDriveIndex(
   if( !sqlite3IndexAffinityOk(pTerm->pExpr, aff) ) return 0;
   return 1;
 }
+#endif
 
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
 /*
 ** If the query plan for pSrc specified in pCost is a full table scan
 ** and indexing is allows (if there is no NOT INDEXED clause) and it
@@ -1664,7 +1667,7 @@ static int termCanDriveIndex(
 ** is taken into account, then alter the query plan to use the
 ** transient index.
 */
-static void bestTransientIndex(
+static void bestAutomaticIndex(
   Parse *pParse,              /* The parsing context */
   WhereClause *pWC,           /* The WHERE clause */
   struct SrcList_item *pSrc,  /* The FROM clause term to search */
@@ -1678,6 +1681,10 @@ static void bestTransientIndex(
   WhereTerm *pWCEnd;          /* End of pWC->a[] */
   Table *pTable;              /* Table tht might be indexed */
 
+  if( (pParse->db->flags & SQLITE_AutoIndex)==0 ){
+    /* Automatic indices are disabled at run-time */
+    return;
+  }
   if( (pCost->plan.wsFlags & WHERE_NOT_FULLSCAN)!=0 ){
     /* We already have some kind of index in use for this query. */
     return;
@@ -1712,12 +1719,18 @@ static void bestTransientIndex(
     }
   }
 }
+#else
+# define bestAutomaticIndex(A,B,C,D,E)  /* no-op */
+#endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
+
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
 /*
-** Generate code to construct a transient index.  Also create the
-** corresponding Index structure and put it in pLevel->plan.u.pIdx.
+** Generate code to construct the Index object for an automatic index
+** and to set up the WhereLevel object pLevel so that the code generator
+** makes use of the automatic index.
 */
-static void constructTransientIndex(
+static void constructAutomaticIndex(
   Parse *pParse,              /* The parsing context */
   WhereClause *pWC,           /* The WHERE clause */
   struct SrcList_item *pSrc,  /* The FROM clause term to get the next index */
@@ -1811,7 +1824,8 @@ static void constructTransientIndex(
   }
   assert( n==pLevel->plan.nEq );
 
-  /* Add additional columns needed to make the index into a covering index */
+  /* Add additional columns needed to make the automatic index into
+  ** a covering index */
   for(i=0; i<mxBitCol; i++){
     if( extraCols & (1<<i) ){
       pIdx->aiColumn[n] = i;
@@ -1828,14 +1842,14 @@ static void constructTransientIndex(
   }
   assert( n==nColumn );
 
-  /* Create the transient index */
+  /* Create the automatic index */
   pKeyinfo = sqlite3IndexKeyinfo(pParse, pIdx);
   assert( pLevel->iIdxCur>=0 );
   sqlite3VdbeAddOp4(v, OP_OpenAutoindex, pLevel->iIdxCur, nColumn+1, 0,
                     (char*)pKeyinfo, P4_KEYINFO_HANDOFF);
   VdbeComment((v, "for %s", pTable->zName));
 
-  /* Fill the transient index with content */
+  /* Fill the automatic index with content */
   addrTop = sqlite3VdbeAddOp1(v, OP_Rewind, pLevel->iTabCur);
   regRecord = sqlite3GetTempReg(pParse);
   sqlite3GenerateIndexKey(pParse, pIdx, pLevel->iTabCur, regRecord, 1);
@@ -1849,6 +1863,7 @@ static void constructTransientIndex(
   /* Jump here when skipping the initialization */
   sqlite3VdbeJumpHere(v, addrInit);
 }
+#endif /* SQLITE_OMIT_AUTOMATIC_INDEX */
 
 #ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
@@ -2744,7 +2759,7 @@ static void bestBtreeIndex(
   ));
   
   bestOrClauseIndex(pParse, pWC, pSrc, notReady, pOrderBy, pCost);
-  bestTransientIndex(pParse, pWC, pSrc, notReady, pCost);
+  bestAutomaticIndex(pParse, pWC, pSrc, notReady, pCost);
   pCost->plan.wsFlags |= eqTermMask;
 }
 
@@ -4151,9 +4166,12 @@ WhereInfo *sqlite3WhereBegin(
     }else{
       sqlite3TableLock(pParse, iDb, pTab->tnum, 0, pTab->zName);
     }
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
     if( (pLevel->plan.wsFlags & WHERE_TEMP_INDEX)!=0 ){
-      constructTransientIndex(pParse, pWC, pTabItem, notReady, pLevel);
-    }else if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
+      constructAutomaticIndex(pParse, pWC, pTabItem, notReady, pLevel);
+    }else
+#endif
+    if( (pLevel->plan.wsFlags & WHERE_INDEXED)!=0 ){
       Index *pIx = pLevel->plan.u.pIdx;
       KeyInfo *pKey = sqlite3IndexKeyinfo(pParse, pIx);
       int iIdxCur = pLevel->iIdxCur;

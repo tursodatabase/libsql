@@ -173,6 +173,9 @@ static int flagPragma(Parse *pParse, const char *zLeft, const char *zRight){
     { "legacy_file_format",       SQLITE_LegacyFileFmt },
     { "fullfsync",                SQLITE_FullFSync     },
     { "reverse_unordered_selects", SQLITE_ReverseOrder  },
+#ifndef SQLITE_OMIT_AUTOMATIC_INDEX
+    { "automatic_index",          SQLITE_AutoIndex     },
+#endif
 #ifdef SQLITE_DEBUG
     { "sql_trace",                SQLITE_SqlTrace      },
     { "vdbe_listing",             SQLITE_VdbeListing   },

@@ -912,6 +912,7 @@ struct sqlite3 {
 #define SQLITE_ReverseOrder   0x01000000  /* Reverse unordered SELECTs */
 #define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
 #define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
+#define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
 
 /*
 ** Bits of the sqlite3.flags field that are used by the

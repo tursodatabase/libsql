@@ -171,6 +171,9 @@ static const char * const azCompileOpt[] = {
 #ifdef SQLITE_OMIT_AUTOINIT
   "OMIT_AUTOINIT",
 #endif
+#ifdef SQLITE_OMIT_AUTOMATIC_INDEX
+  "OMIT_AUTOMATIC_INDEX",
+#endif
 #ifdef SQLITE_OMIT_AUTOVACUUM
   "OMIT_AUTOVACUUM",
 #endif
