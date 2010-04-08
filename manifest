@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Merge\sautomatic\sindex\schanges\sinto\sthe\strunk.
-D 2010-04-08T01:16:20
+C Make\ssure\sF_OK,\sR_OK,\sand\sW_OK\sare\sdefined\sin\stest_demovfs.c.\s\sDefine\sthem\smanually\nif\sthey\sare\snot.\s\sThis\sis\snecessary\sto\sget\sthe\smodule\sto\scompile\son\ssome\ssystems.
+D 2010-04-08T11:35:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -190,7 +187,7 @@ F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 8c408fbffbe8082d1d3dc55044ddfd5580f3c9b9
-F src/test_demovfs.c a3533803c92e659b80a6c9aaf60852ff0a891c8f
+F src/test_demovfs.c 301a047287021940136a3a52d2366dc51f8072d5
 F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
@@ -799,14 +796,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a3540c6acf2bb6bdd44c101b63f17ca85e6b68ed d067d9f7a9138e026c1018361127e34385928657
-R 6de3d923fcac21cdb23f5cf757fdd27b
+P bf7b8d863665870a38f0b2335cc71de856a515b4
+R d5c1c467a2fe159dee9601f419d531a4
 U drh
-Z 5a775b8d77bdb4424d535d7f42dbf68e
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLvS5ooxKgR168RlERAsH0AJ9c22BUD9BphL4wVeIQE0+4NLYFKgCeInGI
-fyTJFbPX8dMPpCpst7eJaVo=
-=jJ9S
------END PGP SIGNATURE-----
+Z 3c255bfefa1bd6638573105dd556d073

@@ -471,6 +471,16 @@ static int demoDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
   return (rc==0 ? SQLITE_OK : SQLITE_IOERR_DELETE);
 }
 
+#ifndef F_OK
+# define F_OK 0
+#endif
+#ifndef R_OK
+# define R_OK 4
+#endif
+#ifndef W_OK
+# define W_OK 2
+#endif
+
 /*
 ** Query the file-system to see if the named file exists, is readable or
 ** is both readable and writable.
