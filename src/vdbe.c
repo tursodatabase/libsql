@@ -1383,7 +1383,7 @@ case OP_Function: {
   for(i=0; i<n; i++, pArg++){
     apVal[i] = pArg;
     sqlite3VdbeMemStoreType(pArg);
-    REGISTER_TRACE(pOp->p2, pArg);
+    REGISTER_TRACE(pOp->p2+i, pArg);
   }
 
   assert( pOp->p4type==P4_FUNCDEF || pOp->p4type==P4_VDBEFUNC );
@@ -3082,6 +3082,14 @@ case OP_OpenWrite: {
 ** this opcode.  Then this opcode was call OpenVirtual.  But
 ** that created confusion with the whole virtual-table idea.
 */
+/* Opcode: OpenAutoindex P1 P2 * P4 *
+**
+** This opcode works the same as OP_OpenEphemeral.  It has a
+** different name to distinguish its use.  Tables created using
+** by this opcode will be used for automatically created transient
+** indices in joins.
+*/
+case OP_OpenAutoindex: 
 case OP_OpenEphemeral: {
   VdbeCursor *pCx;
   static const int openFlags = 

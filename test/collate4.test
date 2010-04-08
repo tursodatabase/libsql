@@ -321,6 +321,7 @@ do_test collate4-1.2.25 {
 #
 do_test collate4-2.1.0 {
   execsql {
+    PRAGMA automatic_index=OFF;
     CREATE TABLE collate4t1(a COLLATE NOCASE);
     CREATE TABLE collate4t2(b COLLATE TEXT);
 
@@ -426,7 +427,7 @@ do_test collate4-2.2.0 {
 } {}
 do_test collate4-2.2.1 {
   count {
-    SELECT * FROM collate4t2 NATURAL JOIN collate4t1;
+    SELECT * FROM collate4t2 NOT INDEXED NATURAL JOIN collate4t1 NOT INDEXED;
   }
 } {0 0 0 0 0 1 0 1 0 0 1 1 1 0 0 1 0 1 1 1 0 1 1 1 63}
 do_test collate4-2.2.1b {

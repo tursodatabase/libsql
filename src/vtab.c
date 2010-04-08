@@ -657,6 +657,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
   }else{
     pParse->declareVtab = 1;
     pParse->db = db;
+    pParse->nQueryLoop = 1;
   
     if( SQLITE_OK==sqlite3RunParser(pParse, zCreateTable, &zErr) 
      && pParse->pNewTable

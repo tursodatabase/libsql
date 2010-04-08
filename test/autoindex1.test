@@ -1,0 +1,93 @@
+# 2010 April 07
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#*************************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this script is testing automatic index creation logic.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+
+# If the library is not compiled with automatic index support then
+# skip all tests in this file.
+#
+ifcapable {!autoindex} {
+  finish_test
+  return
+}
+
+# With automatic index turned off, we do a full scan of the T2 table
+do_test autoindex1-100 {
+  db eval {
+    CREATE TABLE t1(a,b);
+    INSERT INTO t1 VALUES(1,11);
+    INSERT INTO t1 VALUES(2,22);
+    INSERT INTO t1 SELECT a+2, b+22 FROM t1;
+    INSERT INTO t1 SELECT a+4, b+44 FROM t1;
+    CREATE TABLE t2(c,d);
+    INSERT INTO t2 SELECT a, 900+b FROM t1;
+  }
+  db eval {
+    PRAGMA automatic_index=OFF;
+    SELECT b, d FROM t1 JOIN t2 ON a=c ORDER BY b;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-101 {
+  db status step
+} {63}
+do_test autoindex1-102 {
+  db status autoindex
+} {0}
+
+# With autoindex turned on, we build an index once and then use that index
+# to find T2 values.
+do_test autoindex1-110 {
+  db eval {
+    PRAGMA automatic_index=ON;
+    SELECT b, d FROM t1 JOIN t2 ON a=c ORDER BY b;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-111 {
+  db status step
+} {7}
+do_test autoindex1-112 {
+  db status autoindex
+} {7}
+
+# The same test as above, but this time the T2 query is a subquery rather
+# than a join.
+do_test autoindex1-200 {
+  db eval {
+    PRAGMA automatic_index=OFF;
+    SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-201 {
+  db status step
+} {35}
+do_test autoindex1-202 {
+  db status autoindex
+} {0}
+do_test autoindex1-210 {
+  db eval {
+    PRAGMA automatic_index=ON;
+    SELECT b, (SELECT d FROM t2 WHERE c=a) FROM t1;
+  }
+} {11 911 22 922 33 933 44 944 55 955 66 966 77 977 88 988}
+do_test autoindex1-211 {
+  db status step
+} {7}
+do_test autoindex1-212 {
+  db status autoindex
+} {7}
+
+
+
+finish_test
