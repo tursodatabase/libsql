@@ -4350,7 +4350,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
       if( !pWInfo->okOnePass && (ws & WHERE_IDX_ONLY)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pTabItem->iCursor);
       }
-      if( (ws & (WHERE_INDEXED|WHERE_TEMP_INDEX)) == WHERE_INDEXED ){
+      if( (ws & WHERE_INDEXED)!=0 && (ws & WHERE_TEMP_INDEX)==0 ){
         sqlite3VdbeAddOp1(v, OP_Close, pLevel->iIdxCur);
       }
     }
@@ -4398,9 +4398,7 @@ void sqlite3WhereEnd(WhereInfo *pWInfo){
 
   /* Final cleanup
   */
-  if( pWInfo ){
-    pParse->nQueryLoop = pWInfo->savedNQueryLoop;
-    whereInfoFree(db, pWInfo);
-  }
+  pParse->nQueryLoop = pWInfo->savedNQueryLoop;
+  whereInfoFree(db, pWInfo);
   return;
 }
