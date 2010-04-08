@@ -1774,6 +1774,8 @@ static void constructAutomaticIndex(
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
       Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
+      testcase( iCol==BMS );
+      testcase( iCol==BMS-1 );
       if( (idxCols & cMask)==0 ){
         nColumn++;
         idxCols |= cMask;
@@ -1793,6 +1795,8 @@ static void constructAutomaticIndex(
   */
   extraCols = pSrc->colUsed & (~idxCols | (((Bitmask)1)<<(BMS-1)));
   mxBitCol = (pTable->nCol >= BMS-1) ? BMS-1 : pTable->nCol;
+  testcase( pTable->nCol==BMS-1 );
+  testcase( pTable->nCol==BMS-2 );
   for(i=0; i<mxBitCol; i++){
     if( extraCols & (1<<i) ) nColumn++;
   }
@@ -3700,7 +3704,7 @@ static int nQPlan = 0;              /* Next free slow in _query_plan[] */
 ** Free a WhereInfo structure
 */
 static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
-  if( pWInfo ){
+  if( ALWAYS(pWInfo) ){
     int i;
     for(i=0; i<pWInfo->nLevel; i++){
       sqlite3_index_info *pInfo = pWInfo->a[i].pIdxInfo;
