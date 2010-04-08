@@ -103,4 +103,37 @@ do_test autoindex1-310 {
   db eval {SELECT d FROM t2 ORDER BY d}
 } {919 930 941 952 963 974 985 996}
 
+# The next test does a 10-way join on unindexed tables.  Without
+# automatic indices, the join will take a long time to complete.
+# With automatic indices, it should only take about a second.
+#
+do_test autoindex1-400 {
+  db eval {
+    CREATE TABLE t4(a, b);
+    INSERT INTO t4 VALUES(1,2);
+    INSERT INTO t4 VALUES(2,3);
+  }
+  for {set n 2} {$n<4096} {set n [expr {$n+$n}]} {
+    db eval {INSERT INTO t4 SELECT a+$n, b+$n FROM t4}
+  }
+  db eval {
+    SELECT count(*) FROM t4;
+  }
+} {4096}
+do_test autoindex1-401 {
+  db eval {
+    SELECT count(*)
+      FROM t4 AS x1
+      JOIN t4 AS x2 ON x2.a=x1.b
+      JOIN t4 AS x3 ON x3.a=x2.b
+      JOIN t4 AS x4 ON x4.a=x3.b
+      JOIN t4 AS x5 ON x5.a=x4.b
+      JOIN t4 AS x6 ON x6.a=x5.b
+      JOIN t4 AS x7 ON x7.a=x6.b
+      JOIN t4 AS x8 ON x8.a=x7.b
+      JOIN t4 AS x9 ON x9.a=x8.b
+      JOIN t4 AS x10 ON x10.a=x9.b;
+  }
+} {4087}
+
 finish_test
