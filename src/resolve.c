@@ -403,7 +403,7 @@ lookupname_end:
 
 /*
 ** Allocate and return a pointer to an expression to load the column iCol
-** from datasource iSrc datasource in SrcList pSrc.
+** from datasource iSrc in SrcList pSrc.
 */
 Expr *sqlite3CreateColumnExpr(sqlite3 *db, SrcList *pSrc, int iSrc, int iCol){
   Expr *p = sqlite3ExprAlloc(db, TK_COLUMN, 0, 0);
