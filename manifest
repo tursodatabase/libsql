@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sthe\scomputation\sof\sthe\snumber\sof\srows\sin\sa\stable\sduring\sautomatic\nindex\sgeneration.
-D 2010-04-08T15:01:00
+C New\stest\scases\sfor\sautomatic\sindices.\s\sNew\stestcase()\smacros\sassociated\nwith\scolumn-used\sbitmasks.
+D 2010-04-08T15:01:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/pragma.c e166ea41544f8e57a08db86dbe87212b7d378fe8
 F src/prepare.c e8164a925274cb7803b5f8ab3cf42f2a508ad33f
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c a1648d98e869937b29f4f697461fe4d60f220a7b
+F src/resolve.c f17f6615093acddd9a5ed9904a39f5de8ff92b9d
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 5a08245cb18b7ddf2456274653599cbf738d3830
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
@@ -250,7 +250,7 @@ F test/auth.test 8f21c160a4562f54f27618e85bac869efcecbcaf
 F test/auth2.test 270baddc8b9c273682760cffba6739d907bd2882
 F test/auth3.test a4755e6a2a2fea547ffe63c874eb569e60a28eb5
 F test/autoinc.test 85ef3180a737e6580086a018c09c6f1a52759b46
-F test/autoindex1.test 1ab878fa736b3cf8fa7b99f1d45e09ffa02a6c13
+F test/autoindex1.test 637a6937c0a418973df086f271d6cf3474b084bc
 F test/autovacuum.test 25f891bc343a8bf5d9229e2e9ddab9f31a9ab5ec
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
@@ -799,14 +799,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P af97b4881a8f010055cde672634141d7ed6898fc
-R 189f525b453ffe6645c72e74e5753384
+P edeab06a5010c82491a6cc9393cf2a35a7622ac5
+R 3d6f994b2bd9dcab1b6154af0d66fe63
 U drh
-Z 120eeaf33e13295b22c77bafcc4479fd
+Z 0c418d305b2aa7feea9ae0219789f436
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLve+voxKgR168RlERAu90AJ9LihyzApsQCmIA/Se27rrzZ3urCgCfZ9Ei
-GvxJaneZawJ1mUfT4w2pFAE=
-=6WQF
+iD8DBQFLve/foxKgR168RlERAssZAJ9doXebZgLphKwzSQhRjoRdtdMYRwCfctGL
+MfbrhTHSy2sAdRksWCmPgWU=
+=KTV/
 -----END PGP SIGNATURE-----
