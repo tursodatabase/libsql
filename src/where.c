@@ -1695,7 +1695,8 @@ static void bestAutomaticIndex(
   }
 
   assert( pParse->nQueryLoop >= (double)1 );
-  nTableRow = pSrc->pIndex ? pSrc->pIndex->aiRowEst[0] : 1000000;
+  pTable = pSrc->pTab;
+  nTableRow = pTable->pIndex ? pTable->pIndex->aiRowEst[0] : 1000000;
   logN = estLog(nTableRow);
   costTempIdx = 2*logN*(nTableRow/pParse->nQueryLoop + 1);
   if( costTempIdx>=pCost->rCost ){
@@ -1705,7 +1706,6 @@ static void bestAutomaticIndex(
   }
 
   /* Search for any equality comparison term */
-  pTable = pSrc->pTab;
   pWCEnd = &pWC->a[pWC->nTerm];
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
