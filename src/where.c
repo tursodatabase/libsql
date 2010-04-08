@@ -1773,8 +1773,11 @@ static void constructAutomaticIndex(
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
       int iCol = pTerm->u.leftColumn;
-      if( iCol<BMS && iCol>=0 ) idxCols |= 1<<iCol;
-      nColumn++;
+      Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
+      if( (idxCols & cMask)==0 ){
+        nColumn++;
+        idxCols |= cMask;
+      }
     }
   }
   assert( nColumn>0 );
@@ -1788,7 +1791,7 @@ static void constructAutomaticIndex(
   ** original table changes and the index and table cannot both be used
   ** if they go out of sync.
   */
-  extraCols = pSrc->colUsed & ~idxCols;
+  extraCols = pSrc->colUsed & (~idxCols | (((Bitmask)1)<<(BMS-1)));
   mxBitCol = (pTable->nCol >= BMS-1) ? BMS-1 : pTable->nCol;
   for(i=0; i<mxBitCol; i++){
     if( extraCols & (1<<i) ) nColumn++;
@@ -1813,13 +1816,19 @@ static void constructAutomaticIndex(
   pIdx->nColumn = nColumn;
   pIdx->pTable = pTable;
   n = 0;
+  idxCols = 0;
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( termCanDriveIndex(pTerm, pSrc, notReady) ){
-      Expr *pX = pTerm->pExpr;
-      pIdx->aiColumn[n] = pTerm->u.leftColumn;
-      pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
-      pIdx->azColl[n] = pColl->zName;
-      n++;
+      int iCol = pTerm->u.leftColumn;
+      Bitmask cMask = iCol>=BMS ? ((Bitmask)1)<<(BMS-1) : ((Bitmask)1)<<iCol;
+      if( (idxCols & cMask)==0 ){
+        Expr *pX = pTerm->pExpr;
+        idxCols |= cMask;
+        pIdx->aiColumn[n] = pTerm->u.leftColumn;
+        pColl = sqlite3BinaryCompareCollSeq(pParse, pX->pLeft, pX->pRight);
+        pIdx->azColl[n] = pColl->zName;
+        n++;
+      }
     }
   }
   assert( n==pLevel->plan.nEq );
