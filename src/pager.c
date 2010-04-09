@@ -1508,11 +1508,12 @@ static int pager_playback_one_page(
            (isMainJrnl?"main-journal":"sub-journal")
   ));
   if( (pPager->state>=PAGER_EXCLUSIVE)
-   && (pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
+   && (!isSavepnt || pPg==0 || 0==(pPg->flags&PGHDR_NEED_SYNC))
    && isOpen(pPager->fd)
    && !isUnsync
   ){
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
+    testcase( !isSavepnt && pPg!=0 && (pPg->flags&PGHDR_NEED_SYNC)!=0 );
     rc = sqlite3OsWrite(pPager->fd, (u8*)aData, pPager->pageSize, ofst);
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
