@@ -73,15 +73,15 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
     ** or executed.  All the parser does is build the internal data
     ** structures that describe the table, index, or view.
     */
-    char *zErr;
     int rc;
+    sqlite3_stmt *pStmt;
+
     assert( db->init.busy );
     db->init.iDb = iDb;
     db->init.newTnum = atoi(argv[1]);
     db->init.orphanTrigger = 0;
-    rc = sqlite3_exec(db, argv[2], 0, 0, &zErr);
+    rc = sqlite3_prepare(db, argv[2], -1, &pStmt, 0);
     db->init.iDb = 0;
-    assert( rc!=SQLITE_OK || zErr==0 );
     if( SQLITE_OK!=rc ){
       if( db->init.orphanTrigger ){
         assert( iDb==1 );
@@ -90,11 +90,11 @@ int sqlite3InitCallback(void *pInit, int argc, char **argv, char **NotUsed){
         if( rc==SQLITE_NOMEM ){
           db->mallocFailed = 1;
         }else if( rc!=SQLITE_INTERRUPT && rc!=SQLITE_LOCKED ){
-          corruptSchema(pData, argv[0], zErr);
+          corruptSchema(pData, argv[0], sqlite3_errmsg(db));
         }
       }
-      sqlite3DbFree(db, zErr);
     }
+    sqlite3_finalize(pStmt);
   }else if( argv[0]==0 ){
     corruptSchema(pData, 0, 0);
   }else{
