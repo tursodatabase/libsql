@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\swhere\sa\sprocess\sin\sexclusive\smode\scould\sdelete\sa\shot-journal\sfile\swithout\srolling\sit\sback\sfrom\swithin\ssqlite3_close()\sor\sDETACH.\sThis\sproblem\swas\sintroduced\sby\sthe\sprevious\scommit,\sit\sis\snot\spresent\sin\sany\sreleases.
-D 2010-04-12T17:08:45
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Clear\sa\sglobal\svariable\sin\se_fts3.test\sbefore\sit\sis\sused.
+D 2010-04-12T19:43:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -333,7 +336,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
-F test/e_fts3.test 5adb033fae6e07002d11f4a7c8f8e8ff9f31e8ec
+F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -797,7 +800,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 562d20e662da474ea326165730ecfdfcf9b414ee
-R 8333162e7f153eb6e6f78b7cbd811ab4
-U dan
-Z 65fbb5bed20edd048b9a7fedeedd0df1
+P 51a613950824698687c0db83b7884db33d45f7f5
+R ff89b38a0a4a8fecbd176e1ed262b9c3
+U drh
+Z 08eb609a7934096f724eca11d8ed75b5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLw3fyoxKgR168RlERApVMAJ9f1yTVR1hBKqFZPhPTgmDsmIYfuACffsYB
+gJYRnEpMu05BFGT/ycW9PUI=
+=ZWEh
+-----END PGP SIGNATURE-----
