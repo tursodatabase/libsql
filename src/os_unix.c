@@ -1536,9 +1536,11 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
     ** the file has changed and hence might not know to flush their
     ** cache.  The use of a stale cache can lead to database corruption.
     */
+#if 0
     assert( pFile->inNormalWrite==0
          || pFile->dbUpdate==0
          || pFile->transCntrChng==1 );
+#endif
     pFile->inNormalWrite = 0;
 #endif
 
@@ -2956,10 +2958,12 @@ static int unixRead(
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
+#if 0
   assert( pFile->pUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
+#endif
 
   got = seekAndRead(pFile, offset, pBuf, amt);
   if( got==amt ){
@@ -3031,10 +3035,12 @@ static int unixWrite(
 
   /* If this is a database file (not a journal, master-journal or temp
   ** file), the bytes in the locking range should never be read or written. */
+#if 0
   assert( pFile->pUnused==0
        || offset>=PENDING_BYTE+512
        || offset+amt<=PENDING_BYTE 
   );
+#endif
 
 #ifndef NDEBUG
   /* If we are doing a normal write to a database file (as opposed to

@@ -5186,6 +5186,21 @@ case OP_AggFinal: {
   break;
 }
 
+/* Opcode: Checkpoint P1 P2 P3 * P5
+*/
+case OP_Checkpoint: {
+  Btree *pBt;                     /* Btree to checkpoint */
+  int nMin = pOp->p2;             /* Minimum number of pages to copy */
+  int nMax = pOp->p3;             /* Maximum number of pages to copy */
+  int doNotSync = pOp->p5;        /* True to sync database */
+
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+  pBt = db->aDb[pOp->p1].pBt;
+
+  rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt), nMin, nMax, !doNotSync);
+  break;
+};  
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /* Opcode: Vacuum * * * * *

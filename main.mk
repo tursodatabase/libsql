@@ -56,7 +56,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          fts3.o fts3_expr.o fts3_hash.o fts3_icu.o fts3_porter.o \
          fts3_snippet.o fts3_tokenizer.o fts3_tokenizer1.o fts3_write.o \
          func.o global.o hash.o \
-         icu.o insert.o journal.o legacy.o loadext.o \
+         icu.o insert.o journal.o legacy.o loadext.o log.o \
          main.o malloc.o mem0.o mem1.o mem2.o mem3.o mem5.o \
          memjournal.o \
          mutex.o mutex_noop.o mutex_os2.o mutex_unix.o mutex_w32.o \
@@ -101,6 +101,8 @@ SRC = \
   $(TOP)/src/journal.c \
   $(TOP)/src/legacy.c \
   $(TOP)/src/loadext.c \
+  $(TOP)/src/log.c \
+  $(TOP)/src/log.h \
   $(TOP)/src/main.c \
   $(TOP)/src/malloc.c \
   $(TOP)/src/mem0.c \
@@ -255,8 +257,8 @@ TESTSRC = \
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
   $(TOP)/src/build.c $(TOP)/src/date.c                                         \
-  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/mem5.c    \
-  $(TOP)/src/os.c                                                              \
+  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/log.c     \
+  $(TOP)/src/mem5.c $(TOP)/src/os.c                                            \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \

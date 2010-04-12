@@ -93,6 +93,7 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
+   log.h
    mutex.h
    opcodes.h
    os_common.h
@@ -243,6 +244,7 @@ foreach file {
    pcache.c
    pcache1.c
    rowset.c
+   log.c
    pager.c
 
    btmutex.c

@@ -1,0 +1,192 @@
+# 2007 September 7
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+
+source $testdir/tester.tcl
+if {[run_thread_tests]==0} { finish_test ; return }
+
+do_test walthread-1.1 {
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(x PRIMARY KEY);
+    INSERT INTO t1 VALUES(randomblob(100));
+    INSERT INTO t1 VALUES(randomblob(100));
+    INSERT INTO t1 SELECT md5sum(x) FROM t1;
+  }
+} {wal}
+do_test walthread-1.2 {
+  execsql {
+    SELECT (SELECT count(*) FROM t1), (
+      SELECT md5sum(x) FROM t1 WHERE oid != (SELECT max(oid) FROM t1)
+    ) == (
+      SELECT x FROM t1 WHERE oid = (SELECT max(oid) FROM t1)
+    )
+  }
+} {3 1}
+do_test walthread-1.3 {
+  execsql { PRAGMA integrity_check } 
+} {ok}
+do_test walthread-1.4 {
+  execsql { PRAGMA lock_status } 
+} {main unlocked temp unknown}
+
+#--------------------------------------------------------------------------
+# Start N threads. Each thread performs both read and write transactions.
+# Each read transaction consists of:
+#
+#   1) Reading the md5sum of all but the last table row,
+#   2) Running integrity check.
+#   3) Reading the value stored in the last table row,
+#   4) Check that the values read in steps 1 and 3 are the same, and that
+#      the md5sum of all but the last table row has not changed.
+#
+# Each write transaction consists of:
+#
+#   1) Modifying the contents of t1 (inserting, updating, deleting rows).
+#   2) Appending a new row to the table containing the md5sum() of all
+#      rows in the table.
+#
+# Each of the N threads runs N read transactions followed by a single write
+# transaction in a loop as fast as possible.
+#
+# There is also a single checkpointer thread. It runs the following loop:
+#
+#   1) Execute "CHECKPOINT main 32 -1 1"
+#   2) Sleep for 500 ms.
+#
+
+set thread_program {
+  proc rest {ms} {
+    set ::rest 0
+    after $ms {set ::rest 1}
+    vwait ::rest
+  }
+
+  proc dosql {DB sql} {
+    set res ""
+    set stmt [sqlite3_prepare_v2 $DB $sql -1 dummy_tail]
+    set rc [sqlite3_step $stmt]
+    if {$rc eq "SQLITE_ROW"} {
+      set res [sqlite3_column_text $stmt 0]
+    }
+    set rc [sqlite3_finalize $stmt]
+
+    if {$rc ne "SQLITE_OK"} {
+      error $rc 
+    }
+    return $res
+  }
+
+  proc read_transaction {DB} {
+    dosql $DB BEGIN
+
+    set md5_1 [dosql $DB {
+      SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1)
+    }]
+    set check [dosql $DB { PRAGMA integrity_check }]
+    set md5_2 [dosql $DB { 
+      SELECT x FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1)
+    }]
+    set md5_3 [dosql $DB {
+      SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1)
+    }]
+
+    dosql $DB COMMIT
+
+    if {$check ne "ok" 
+     || $md5_1 ne $md5_2
+     || $md5_2 ne $md5_3
+    } {
+      error "Failed read transaction $check $md5_1 $md5_2 $md5_3"
+    }
+  }
+
+  proc write_transaction {DB} {
+    dosql $DB BEGIN
+    dosql $DB "INSERT INTO t1 VALUES(randomblob(100))"
+    dosql $DB "INSERT INTO t1 VALUES(randomblob(100))"
+    dosql $DB "INSERT INTO t1 SELECT md5sum(x) FROM t1"
+    dosql $DB COMMIT
+  }
+
+  proc checkpointer {DB} {
+    while { !$::finished } {
+      dosql $DB "PRAGMA checkpoint(32)"
+      rest 1000
+    }
+  }
+
+  proc worker {DB N} {
+    set j 0
+    while { !$::finished } {
+      for {set i 0} {$i < $N} {incr i} { read_transaction $DB }
+      write_transaction $DB
+      rest 1
+    }
+  }
+
+  set ::finished 0
+  after [expr $seconds*1000] {set ::finished 1}
+
+  set ::DB [sqlthread open test.db]
+  dosql $::DB { PRAGMA journal_mode = WAL }
+
+  set rc [catch {
+    if {$role eq "worker"} { worker $DB $N }
+    if {$role eq "checkpointer"} { checkpointer $DB }
+  } msg]
+
+  sqlite3_close $::DB
+
+  if {$rc==0} { set msg OK } 
+  set msg
+}
+
+set NTHREAD 6
+set SECONDS 30
+
+#set prg "set N $NTHREAD ; set seconds $SECONDS"
+set prg "set N 1 ; set seconds $SECONDS"
+
+array unset finished
+for {set i 0} {$i < $NTHREAD} {incr i} {
+  thread_spawn finished($i) {set role worker} $prg $thread_program
+}
+thread_spawn finished(C) {set role checkpointer} $prg $thread_program
+#set finished(C) 1
+
+puts "... test runs for approximately $SECONDS seconds ..."
+for {set i 0} {$i < $::NTHREAD} {incr i} {
+  if {![info exists finished($i)]} {
+    vwait finished($i)
+  }
+  do_test walthread-2.$i {
+    set ::finished($i)
+  } OK
+}
+do_test walthread-2.C {
+  if {![info exists finished(C)]} { vwait finished(C) }
+  set ::finished(C)
+} OK
+
+set logsize 0
+
+set rows    [execsql { SELECT count(*) FROM t1 }]
+catch { set logsize [expr [file size test.db-wal] / 1024] }
+set dbsize  [expr [file size test.db] / 1024]
+
+puts "rows=$rows db=${dbsize}K log=${logsize}K"
+
+finish_test
+
+

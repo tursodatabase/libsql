@@ -446,6 +446,31 @@ void sqlite3Pragma(
   }else
 
   /*
+  **  PRAGMA [database.]secure_delete
+  **  PRAGMA [database.]secure_delete=ON/OFF
+  **
+  ** The first form reports the current setting for the
+  ** secure_delete flag.  The second form changes the secure_delete
+  ** flag setting and reports thenew value.
+  */
+  if( sqlite3StrICmp(zLeft,"secure_delete")==0 ){
+    Btree *pBt = pDb->pBt;
+    int b = -1;
+    assert( pBt!=0 );
+    if( zRight ){
+      b = getBoolean(zRight);
+    }
+    if( pId2->n==0 && b>=0 ){
+      int ii;
+      for(ii=0; ii<db->nDb; ii++){
+        sqlite3BtreeSecureDelete(db->aDb[ii].pBt, b);
+      }
+    }
+    b = sqlite3BtreeSecureDelete(pBt, b);
+    returnSingleInt(pParse, "secure_delete", b);
+  }else
+
+  /*
   **  PRAGMA [database.]page_count
   **
   ** Return the number of pages in the specified database.
@@ -515,7 +540,7 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
     int eMode;
     static char * const azModeName[] = {
-      "delete", "persist", "off", "truncate", "memory"
+      "delete", "persist", "off", "truncate", "memory", "wal"
     };
 
     if( zRight==0 ){
@@ -561,6 +586,7 @@ void sqlite3Pragma(
               || eMode==PAGER_JOURNALMODE_TRUNCATE
               || eMode==PAGER_JOURNALMODE_PERSIST
               || eMode==PAGER_JOURNALMODE_OFF
+              || eMode==PAGER_JOURNALMODE_WAL
               || eMode==PAGER_JOURNALMODE_MEMORY );
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
@@ -1382,6 +1408,26 @@ void sqlite3Pragma(
     }
   }else
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
+
+  if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
+    int nMin = 0;
+    int nMax = 0;
+    int nosync = 0;
+
+    if( zRight ){
+      char *z = zRight;
+      sqlite3GetInt32(z, &nMin);
+      while( sqlite3Isdigit(*z) ) z++;
+      while( *z && !sqlite3Isdigit(*z) ) z++;
+      sqlite3GetInt32(z, &nMax);
+      while( sqlite3Isdigit(*z) ) z++;
+      while( *z && !sqlite3Isdigit(*z) ) z++;
+      sqlite3GetInt32(z, &nosync);
+    }
+    sqlite3VdbeUsesBtree(v, iDb);
+    sqlite3VdbeAddOp2(v, OP_Transaction, iDb, 1);
+    sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, nMin, nMax);
+  }else
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*
