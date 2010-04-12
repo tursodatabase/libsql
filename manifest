@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sissues\sand\sclarify\sthe\soperation\sof\spager_playback_one_page().\nA\sblock\scomment\sin\spager.c\sidentifies\s13\sinvariants\son\sthe\spager\ssubsystem.\nTicket\s[9d68c883132c8].
-D 2010-04-10T17:52:58
+C Reset\sthe\ssimulated\sdevice\sin\sthe\stest\sharness\sto\sits\sdefault\nconfiguration\swhenever\sit\sis\srestarted.
+D 2010-04-12T14:51:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -191,7 +191,7 @@ F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 8c408fbffbe8082d1d3dc55044ddfd5580f3c9b9
 F src/test_demovfs.c 301a047287021940136a3a52d2366dc51f8072d5
-F src/test_devsym.c de3c9af2bb9a8b1e44525c449e4ec3f88e3d4110
+F src/test_devsym.c 3adf69c716e5c90bf5b7a1afe817e3ecac1adf6f
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
@@ -800,14 +800,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0a64a937b583c32c02c83fc669addf79662efea8
-R d0f57454f63eb10f5ebef992026a2823
+P 0906597698b697ab2993a460f257e326cb58e475
+R f5bee91a8ab0e92ee4807bc0cf920ec9
 U drh
-Z 5e031dacab379eda04d33b11e754a1c3
+Z d2267b85d8f489a9efc2d0f94542979f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLwLr9oxKgR168RlERAssXAJ4j+RdaTfsZ3v6bfrfa9otSr7mQcACfTiG0
-tKLTzrdLF0jiSa5xYSUaR2A=
-=tMzT
+iD8DBQFLwzNhoxKgR168RlERArhMAJ9Jdcg74XXFdQNQj20xuFFVNZ+ZIACdG1c6
+NJ+fuuzqw7g8dHQ7gRK1k0U=
+=3V5r
 -----END PGP SIGNATURE-----

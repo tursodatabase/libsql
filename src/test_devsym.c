@@ -346,9 +346,13 @@ void devsym_register(int iDeviceChar, int iSectorSize){
   }
   if( iDeviceChar>=0 ){
     g.iDeviceChar = iDeviceChar;
+  }else{
+    g.iDeviceChar = 0;
   }
   if( iSectorSize>=0 ){
     g.iSectorSize = iSectorSize;
+  }else{
+    g.iSectorSize = 512;
   }
 }
 
