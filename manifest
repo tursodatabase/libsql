@@ -1,5 +1,5 @@
-C Import\sexperimental\swrite-ahead-logging\scode.
-D 2010-04-12T19:00:30
+C Add\s"log.h",\swhich\sshould\shave\sbeen\spart\sof\sthe\sprevious\scommit.
+D 2010-04-12T19:05:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -132,6 +132,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/log.c 6e8f296f6c566a297cd074c4165f1695fd1df5b7
+F src/log.h e691f7d935d6a8ad63b9de2e6014627056f01e1a
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -802,11 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 51a613950824698687c0db83b7884db33d45f7f5
-R d1eaede94883ac0829acce36d14527da
-T *bgcolor * #ffd0c0
-T *branch * wal
-T *sym-wal *
-T -sym-trunk *
+P 409d61baeb0a19d1700c973f16c8acef7b8506cd
+R 05e422fded750e42fd289d80ab078a37
 U dan
-Z 9f87e000c4066ee64fca3bc82365cd7e
+Z 97a0dd7c04bfbe6a9f80405a5df46925
