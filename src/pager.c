@@ -2699,6 +2699,31 @@ void sqlite3PagerTruncateImage(Pager *pPager, Pgno nPage){
 }
 
 /*
+** This function is called before attempting a hot-journal rollback. It
+** syncs the journal file to disk, then sets pPager->journalHdr to the
+** size of the journal file so that the pager_playback() routine knows
+** that the entire journal file has been synced.
+**
+** Syncing a hot-journal to disk before attempting to roll it back ensures 
+** that if a power-failure occurs during the rollback, the process that
+** attempts rollback following system recovery sees the same journal
+** content as this process.
+**
+** If everything goes as planned, SQLITE_OK is returned. Otherwise, 
+** an SQLite error code.
+*/
+static int pagerSyncHotJournal(Pager *pPager){
+  int rc = SQLITE_OK;
+  if( !pPager->noSync ){
+    rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_NORMAL);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsFileSize(pPager->jfd, &pPager->journalHdr);
+  }
+  return rc;
+}
+
+/*
 ** Shutdown the page cache.  Free all memory and close all files.
 **
 ** If a transaction was in progress when this routine is called, that
@@ -2727,7 +2752,9 @@ int sqlite3PagerClose(Pager *pPager){
     ** be played back into the database. If a power failure occurs while
     ** this is happening, the database may become corrupt.
     */
-    pPager->journalHdr = -1;
+    if( isOpen(pPager->jfd) ){
+      pPager->errCode = pagerSyncHotJournal(pPager);
+    }
     pagerUnlockAndRollback(pPager);
   }
   sqlite3EndBenignMalloc();
@@ -3770,12 +3797,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** the journal before playing it back.
       */
       if( isOpen(pPager->jfd) ){
-        if( !pPager->noSync ){
-          rc = sqlite3OsSync(pPager->jfd, SQLITE_SYNC_NORMAL);
-        }
-        if( rc==SQLITE_OK ){
-          rc = sqlite3OsFileSize(pPager->jfd, &pPager->journalHdr);
-        }
+        rc = pagerSyncHotJournal(pPager);
         if( rc==SQLITE_OK ){
           rc = pager_playback(pPager, 1);
         }
