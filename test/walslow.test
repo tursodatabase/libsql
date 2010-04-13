@@ -41,14 +41,12 @@ for {set seed 1} {$seed<10} {incr seed} {
     do_test walslow-1.seed=$seed.$iTest.1 {
       set w [expr int(rand()*2000)]
       set x [expr int(rand()*2000)]
-      set y [expr int(rand()*9)+1]
-      set z [expr int(rand()*2)]
       execsql { INSERT INTO t1 VALUES(randomblob($w), randomblob($x)) }
       execsql { PRAGMA integrity_check }
     } {ok}
 
     do_test walslow-1.seed=$seed.$iTest.2 {
-      execsql "PRAGMA checkpoint('$y $y $z')"
+      execsql "PRAGMA checkpoint;"
       execsql { PRAGMA integrity_check }
     } {ok}
 

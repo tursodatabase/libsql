@@ -1385,23 +1385,9 @@ void sqlite3Pragma(
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
   if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
-    int nMin = 0;
-    int nMax = 0;
-    int nosync = 0;
-
-    if( zRight ){
-      char *z = zRight;
-      sqlite3GetInt32(z, &nMin);
-      while( sqlite3Isdigit(*z) ) z++;
-      while( *z && !sqlite3Isdigit(*z) ) z++;
-      sqlite3GetInt32(z, &nMax);
-      while( sqlite3Isdigit(*z) ) z++;
-      while( *z && !sqlite3Isdigit(*z) ) z++;
-      sqlite3GetInt32(z, &nosync);
-    }
     sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp2(v, OP_Transaction, iDb, 1);
-    sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, nMin, nMax);
+    sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
   }else
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)

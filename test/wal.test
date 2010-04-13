@@ -514,7 +514,7 @@ do_test wal-12.2 {
 do_test wal-12.3 {
   execsql { 
     DELETE FROM t1 WHERE rowid<54;
-    PRAGMA checkpoint('1 100000');
+    PRAGMA checkpoint;
   }
   file size test.db
 } [expr 14*1024]

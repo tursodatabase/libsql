@@ -191,7 +191,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 28 */
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 32 */
 
-      PRAGMA checkpoint('70 70');
+      PRAGMA checkpoint;
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
@@ -231,7 +231,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 28 */
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 32 */
 
-      PRAGMA checkpoint('70 70');
+      PRAGMA checkpoint;
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));

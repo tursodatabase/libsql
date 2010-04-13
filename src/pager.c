@@ -5654,7 +5654,7 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 /*
 ** This function is called when the user invokes "PRAGMA checkpoint".
 */
-int sqlite3PagerCheckpoint(Pager *pPager, int nMin, int nMax, int doSync){
+int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pLog ){
     rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);

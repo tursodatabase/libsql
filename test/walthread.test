@@ -124,7 +124,7 @@ set thread_program {
 
   proc checkpointer {DB} {
     while { !$::finished } {
-      dosql $DB "PRAGMA checkpoint(32)"
+      dosql $DB "PRAGMA checkpoint"
       rest 1000
     }
   }
