@@ -3880,8 +3880,6 @@ sqlite3_stmt *sqlite3_next_stmt(sqlite3 *pDb, sqlite3_stmt *pStmt);
 ** an error or constraint causes an implicit rollback to occur.
 ** ^The rollback callback is not invoked if a transaction is
 ** automatically rolled back because the database connection is closed.
-** ^The rollback callback is not invoked if a transaction is
-** rolled back because a commit callback returned non-zero.
 **
 ** See also the [sqlite3_update_hook()] interface.
 */

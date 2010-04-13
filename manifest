@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\se_fts3.test\sto\sthe\sset\sof\stests\sexcluded\sfrom\sthe\sinmemory_journal\nexclusion\slist,\ssince\sit\sdoes\ssimulated\sOOM\serrors\swhich\strigger\sI/O\serrors\nand\sSQLite\sis\sunable\sto\srecover\sfrom\sI/O\serrors\swithout\sa\spersistent\sjournal.
-D 2010-04-12T20:54:14
+C Test\sthat\sthe\srollback-hook\sis\sinvoked\sif\sa\scommit-hook\simplementation\sreturns\snon-zero\s(causing\sa\srollback).\sRemove\sdocumentation\scomment\sthat\ssays\sotherwise\sfrom\ssqlite.h.in.
+D 2010-04-13T06:18:02
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -169,7 +166,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 5a08245cb18b7ddf2456274653599cbf738d3830
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in c5001b77dc0cb046136da65d8dbdf234048be21d
+F src/sqlite.h.in 0aeb53778e1591032fdf12ba7aa059250beb480a
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h bd7ff54663bdd5b57e0eb8b49aca5a3a3c60119a
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -424,7 +421,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 4eca9d345f06d5b0b0105f7a2ef9e7f22658827b
-F test/hook.test c9c992f2914977072a71e98df3bfcad1f47737c9
+F test/hook.test f04c3412463f8ec117c1c704c74ca0f627ce733a
 F test/icu.test 1fc0ff9a3bafc80abf679b11afc0f8a3ce995abd
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -800,14 +797,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1f2cb9402838373f6370660dfc885013df079895
-R 5567f4e8e626c3cb084ceff986806e4e
-U drh
-Z deb0531907145df38c27450b253f1d1a
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLw4h5oxKgR168RlERAjQeAJ4/Z9ltgzAA1u0gks/CLLSHD5Q+YgCeK/Zj
-HvGRuCSTWXMpAy0S5Uom4JU=
-=odUk
------END PGP SIGNATURE-----
+P e7e7127f0b0db582274338a9fefc30a0c0be07c3
+R 169f65701c60c914b5babe14af8a5a2d
+U dan
+Z 59ba641787a7f590bcc552c76de3273b
