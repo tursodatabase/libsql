@@ -2188,7 +2188,7 @@ end_playback:
 static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   Pgno pgno = pPg->pgno;       /* Page number to read */
-  int rc;                      /* Return code */
+  int rc = SQLITE_OK;          /* Return code */
   i64 iOffset;                 /* Byte offset of file to read from */
   int isInLog = 0;             /* True if page is in log file */
 
