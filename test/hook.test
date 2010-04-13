@@ -334,4 +334,31 @@ do_test hook-5.2.2 {
 # End rollback-hook testing.
 #----------------------------------------------------------------------------
 
+#----------------------------------------------------------------------------
+# Test that if a commit-hook returns non-zero (causing a rollback), the
+# rollback-hook is invoked.
+#
+proc commit_hook {} {
+  lappend ::hooks COMMIT
+  return 1
+}
+proc rollback_hook {} {
+  lappend ::hooks ROLLBACK
+}
+do_test hook-6.1 {
+  set ::hooks [list]
+  db commit_hook commit_hook
+  db rollback_hook rollback_hook
+  catchsql {
+    BEGIN;
+      INSERT INTO t1 VALUES('two', 'II');
+    COMMIT;
+  }
+  execsql { SELECT * FROM t1 }
+} {one I}
+do_test hook-6.2 {
+  set ::hooks
+} {COMMIT ROLLBACK}
+unset ::hooks
+
 finish_test

@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sduplicate\ssecure_delete\spragma\simplemention.
-D 2010-04-12T19:32:00
+C Sync\swal\sbranch\swith\s[012cf101bf].
+D 2010-04-13T06:20:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -143,7 +140,7 @@ F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
-F src/memjournal.c 5bfc2f33c914946e2f77ed3f882aff14dfc9355d
+F src/memjournal.c f3be374af30588de297dcf678925b2a4758e4135
 F src/mutex.c 581a272e09098040ca3ef543cb5f3d643eff7d50
 F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
 F src/mutex_noop.c 5f58eaa31f2d742cb8957a747f7887ae98f16053
@@ -171,7 +168,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 5a08245cb18b7ddf2456274653599cbf738d3830
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in c5001b77dc0cb046136da65d8dbdf234048be21d
+F src/sqlite.h.in 0aeb53778e1591032fdf12ba7aa059250beb480a
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h bd7ff54663bdd5b57e0eb8b49aca5a3a3c60119a
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -338,7 +335,7 @@ F test/descidx3.test 3394ad4d089335cac743c36a14129d6d931c316f
 F test/diskfull.test 0cede7ef9d8f415d9d3944005c76be7589bb5ebb
 F test/distinctagg.test 1a6ef9c87a58669438fc771450d7a72577417376
 F test/e_fkey.test 6721a741c6499b3ab7e5385923233343c8f1ad05
-F test/e_fts3.test 5adb033fae6e07002d11f4a7c8f8e8ff9f31e8ec
+F test/e_fts3.test 75bb0aee26384ef586165e21018a17f7cd843469
 F test/enc.test e54531cd6bf941ee6760be041dff19a104c7acea
 F test/enc2.test 6d91a5286f59add0cfcbb2d0da913b76f2242398
 F test/enc3.test 5c550d59ff31dccdba5d1a02ae11c7047d77c041
@@ -426,7 +423,7 @@ F test/fuzz2.test 207d0f9d06db3eaf47a6b7bfc835b8e2fc397167
 F test/fuzz3.test aec64345184d1662bd30e6a17851ff659d596dc5
 F test/fuzz_common.tcl a87dfbb88c2a6b08a38e9a070dabd129e617b45b
 F test/fuzz_malloc.test 4eca9d345f06d5b0b0105f7a2ef9e7f22658827b
-F test/hook.test c9c992f2914977072a71e98df3bfcad1f47737c9
+F test/hook.test f04c3412463f8ec117c1c704c74ca0f627ce733a
 F test/icu.test 1fc0ff9a3bafc80abf679b11afc0f8a3ce995abd
 F test/in.test d49419c6df515852f477fa513f3317181d46bc92
 F test/in2.test 5d4c61d17493c832f7d2d32bef785119e87bde75
@@ -534,7 +531,7 @@ F test/pageropt.test 3ee6578891baaca967f0bd349e4abfa736229e1a
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test eebc4420b37cb07733ae9b6e99c9da7c40dd6d58
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test dfc70940fedd5660b89f9b9e3f158f3970f83c4e
+F test/permutations.test 6117bae41935a787cc92faee81e91f813580eccb
 F test/pragma.test 6960f9efbce476f70ba9ee2171daf5042f9e3d8a
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -806,14 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8de9f010044fc992b5b45a7bb0da1284b404ecdb
-R 8d5d43ae19836a365923e6a5505ada34
-U drh
-Z ed2aa69bda36500ab38a65459c32fa94
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLw3UzoxKgR168RlERAvKMAJ411flPN1Hpy71eZLlqKus1l1HRZwCdFOYO
-H++hcxwG2yJTYj8rinuj2EU=
-=pmZ3
------END PGP SIGNATURE-----
+P c15fda145b621fc86402914aa5b015e53590555a 012cf101bf8be9e39c138786ea5a5039b8131e55
+R a82603ab9844babf112f19212a1fe8c5
+U dan
+Z 1e9c7b3cdd0156e9796faa9c1b265349
