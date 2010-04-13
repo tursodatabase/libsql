@@ -80,7 +80,7 @@ set thread_procs {
 }
 
 proc thread_spawn {varname args} {
-  sqlthread spawn $varname [join $args ;]
+  sqlthread spawn $varname [join $args {;}]
 }
 
 # Return true if this build can run the multi-threaded tests.

@@ -8,6 +8,10 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode. The tests in this file use 
+# brute force methods, so may take a while to run.
 #
 
 set testdir [file dirname $argv0]

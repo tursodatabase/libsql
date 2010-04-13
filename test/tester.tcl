@@ -143,6 +143,7 @@ proc reset_db {} {
   catch {db close}
   file delete -force test.db
   file delete -force test.db-journal
+  file delete -force test.db-wal
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {

@@ -1,4 +1,4 @@
-# 2007 September 7
+# 2010 April 13
 #
 # The author disclaims copyright to this source code.  In place of
 # a legal notice, here is a blessing:
@@ -8,6 +8,9 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode.
 #
 
 set testdir [file dirname $argv0]
@@ -140,6 +143,7 @@ set thread_program {
 
   set ::DB [sqlthread open test.db]
   dosql $::DB { PRAGMA journal_mode = WAL }
+
 
   set rc [catch {
     if {$role eq "worker"} { worker $DB $N }
