@@ -55,7 +55,9 @@ int sqlite3LogFrames(Log *pLog, int, PgHdr *, Pgno, int, int);
 int sqlite3LogCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
-  u8 *zBuf                        /* Temporary buffer to use */
+  u8 *zBuf,                       /* Temporary buffer to use */
+  int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
+  void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
 );
 
 #endif /* _LOG_H_ */

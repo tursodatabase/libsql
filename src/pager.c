@@ -3120,6 +3120,7 @@ static int pager_write_pagelist(PgHdr *pList){
   ** EXCLUSIVE, it means the database file has been changed and any rollback
   ** will require a journal playback.
   */
+  assert( !pagerUseLog(pList->pPager) );
   assert( pPager->state>=PAGER_RESERVED );
   rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
 
@@ -3785,21 +3786,13 @@ int sqlite3PagerSharedLock(Pager *pPager){
   if( pagerUseLog(pPager) ){
     int changed = 0;
 
-    /* TODO: Change the following block to grab a WAL read-lock. Or, 
-    ** combine obtaining the read-lock with LogOpenSnapshot()?  */
-    rc = pager_wait_on_lock(pPager, SHARED_LOCK);
-    if( rc!=SQLITE_OK ){
-      assert( pPager->state==PAGER_UNLOCK );
-      return pager_error(pPager, rc);
-    }
-
     rc = sqlite3LogOpenSnapshot(pPager->pLog, &changed);
     if( rc==SQLITE_OK ){
       if( changed ){
         pager_reset(pPager);
         assert( pPager->errCode || pPager->dbSizeValid==0 );
       }
-      pPager->state = PAGER_SHARED;
+      pPager->state = PAGER_SHARED;         /* TODO: Is this right? */
       rc = sqlite3PagerPagecount(pPager, &changed);
     }
   }else if( pPager->state==PAGER_UNLOCK || isErrorReset ){
@@ -4330,20 +4323,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
     assert( pPager->pInJournal==0 );
     assert( !MEMDB && !pPager->tempFile );
 
-    /* Obtain a RESERVED lock on the database file. If the exFlag parameter
-    ** is true, then immediately upgrade this to an EXCLUSIVE lock. The
-    ** busy-handler callback can be used when upgrading to the EXCLUSIVE
-    ** lock, but not when obtaining the RESERVED lock.
-    */
-    rc = sqlite3OsLock(pPager->fd, RESERVED_LOCK);
-    if( rc==SQLITE_OK ){
-      pPager->state = PAGER_RESERVED;
-      if( exFlag ){
-        rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-      }
-    }
-
-    if( rc==SQLITE_OK && pagerUseLog(pPager) ){
+    if( pagerUseLog(pPager) ){
       /* Grab the write lock on the log file. If successful, upgrade to
       ** PAGER_EXCLUSIVE state. Otherwise, return an error code to the caller.
       ** The busy-handler is not invoked if another connection already
@@ -4352,6 +4332,20 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       rc = sqlite3LogWriteLock(pPager->pLog, 1);
       if( rc==SQLITE_OK ){
         pPager->dbOrigSize = pPager->dbSize;
+        pPager->state = PAGER_RESERVED;
+      }
+    }else{
+      /* Obtain a RESERVED lock on the database file. If the exFlag parameter
+      ** is true, then immediately upgrade this to an EXCLUSIVE lock. The
+      ** busy-handler callback can be used when upgrading to the EXCLUSIVE
+      ** lock, but not when obtaining the RESERVED lock.
+      */
+      rc = sqlite3OsLock(pPager->fd, RESERVED_LOCK);
+      if( rc==SQLITE_OK ){
+        pPager->state = PAGER_RESERVED;
+        if( exFlag ){
+          rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
+        }
       }
     }
 
@@ -5657,11 +5651,10 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
 int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pLog ){
-    rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
-    if( rc==SQLITE_OK ){
-      u8 *zBuf = (u8 *)pPager->pTmpSpace;
-      rc = sqlite3LogCheckpoint(pPager->pLog, pPager->fd, zBuf);
-    }
+    u8 *zBuf = (u8 *)pPager->pTmpSpace;
+    rc = sqlite3LogCheckpoint(pPager->pLog, pPager->fd, 
+        zBuf, pPager->xBusyHandler, pPager->pBusyHandlerArg
+    );
   }
   return rc;
 }

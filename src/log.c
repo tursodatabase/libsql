@@ -13,6 +13,7 @@
 typedef struct LogSummaryHdr LogSummaryHdr;
 typedef struct LogSummary LogSummary;
 typedef struct LogCheckpoint LogCheckpoint;
+typedef struct LogLock LogLock;
 
 
 /*
@@ -55,28 +56,50 @@ struct LogSummary {
   int nRef;                       /* Number of pointers to this structure */
   int fd;                         /* File descriptor open on log-summary */
   char *zPath;                    /* Path to associated WAL file */
+  LogLock *pLock;                 /* Linked list of locks on this object */
   LogSummary *pNext;              /* Next in global list */
   int nData;                      /* Size of aData allocation/mapping */
   u32 *aData;                     /* File body */
 };
 
+
 /*
-** List of all LogSummary objects created by this process. Protected by
-** static mutex LOG_SUMMARY_MUTEX. TODO: Should have a dedicated mutex
-** here instead of borrowing the LRU mutex.
+** The four lockable regions associated with each log-summary. A connection
+** may take either a SHARED or EXCLUSIVE lock on each.
 */
-#define LOG_SUMMARY_MUTEX SQLITE_MUTEX_STATIC_LRU
-static LogSummary *pLogSummary = 0;
+#define LOG_REGION_A 0x01
+#define LOG_REGION_B 0x02
+#define LOG_REGION_C 0x04
+#define LOG_REGION_D 0x08
+
+/*
+** A single instance of this structure is allocated as part of each 
+** connection to a database log. All structures associated with the 
+** same log file are linked together into a list using LogLock.pNext
+** starting at LogSummary.pLock.
+**
+** The mLock field of the structure describes the locks (if any) 
+** currently held by the connection. If a SHARED lock is held on
+** any of the four locking regions, then the associated LOG_REGION_X
+** bit (see above) is set. If an EXCLUSIVE lock is held on the region,
+** then the (LOG_REGION_X << 8) bit is set.
+*/
+struct LogLock {
+  LogLock *pNext;                 /* Next lock on the same log */
+  u32 mLock;                      /* Mask of locks */
+};
 
 struct Log {
   LogSummary *pSummary;           /* Log file summary data */
   sqlite3_vfs *pVfs;              /* The VFS used to create pFd */
   sqlite3_file *pFd;              /* File handle for log file */
   int sync_flags;                 /* Flags to use with OsSync() */
-  int isLocked;                   /* True if a snapshot is held open */
+  int isLocked;                   /* Non-zero if a snapshot is held open */
   int isWriteLocked;              /* True if this is the writer connection */
   LogSummaryHdr hdr;              /* Log summary header for current snapshot */
+  LogLock lock;                   /* Lock held by this connection (if any) */
 };
+
 
 /*
 ** This structure is used to implement an iterator that iterates through
@@ -101,6 +124,15 @@ struct LogCheckpoint {
     u32 *aDbPage;                 /* Pointer to db page array */
   } aSegment[1];
 };
+
+
+/*
+** List of all LogSummary objects created by this process. Protected by
+** static mutex LOG_SUMMARY_MUTEX. TODO: Should have a dedicated mutex
+** here instead of borrowing the LRU mutex.
+*/
+#define LOG_SUMMARY_MUTEX SQLITE_MUTEX_STATIC_LRU
+static LogSummary *pLogSummary = 0;
 
 /*
 ** Generate an 8 byte checksum based on the data in array aByte[] and the
@@ -664,6 +696,9 @@ int sqlite3LogOpen(
     rc = sqlite3OsLock(pRet->pFd, SQLITE_LOCK_SHARED);
   }
 
+  pRet->lock.pNext = pSummary->pLock;
+  pSummary->pLock = &pRet->lock;
+
  out:
   sqlite3_mutex_leave(mutex);
   sqlite3_free(zWal);
@@ -838,8 +873,14 @@ int sqlite3LogClose(
 ){
   int rc = SQLITE_OK;
   if( pLog ){
+    LogLock **ppL;
     LogSummary *pSummary = pLog->pSummary;
     sqlite3_mutex *mutex = 0;
+
+    sqlite3_mutex_enter(pSummary->mutex);
+    for(ppL=&pSummary->pLock; *ppL!=&pLog->lock; ppL=&(*ppL)->pNext);
+    *ppL = pLog->lock.pNext;
+    sqlite3_mutex_leave(pSummary->mutex);
 
     if( sqlite3GlobalConfig.bCoreMutex ){
       mutex = sqlite3_mutex_alloc(LOG_SUMMARY_MUTEX);
@@ -939,7 +980,108 @@ static void logLeaveMutex(Log *pLog){
 }
 
 /*
-** The caller must hold a SHARED lock on the database file.
+** Values for the second parameter to logLockRegion().
+*/
+#define LOG_UNLOCK 0
+#define LOG_RDLOCK 1
+#define LOG_WRLOCK 2
+
+static int logLockRegion(Log *pLog, u32 mRegion, int op){
+  LogSummary *pSummary = pLog->pSummary;
+  LogLock *p;                     /* Used to iterate through in-process locks */
+  u32 mNew;                       /* New locks on file */
+  u32 mOld;                       /* Old locks on file */
+  u32 mNewLock;                   /* New locks held by pLog */
+
+  assert( 
+       /* Writer lock operations */
+          (op==LOG_WRLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
+
+       /* Reader lock operations */
+       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B))
+       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_D))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_D))
+
+       /* Checkpointer lock operations */
+       || (op==LOG_WRLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
+       || (op==LOG_WRLOCK && mRegion==(LOG_REGION_A))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B|LOG_REGION_C))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
+  );
+
+  sqlite3_mutex_enter(pSummary->mutex);
+
+  /* If obtaining (not releasing) a lock, check if there exist any 
+  ** conflicting locks in process. Return SQLITE_BUSY in this case.
+  */
+  if( op ){
+    u32 mConflict = (mRegion<<8) | ((op==LOG_WRLOCK) ? mRegion : 0);
+    for(p=pSummary->pLock; p; p=p->pNext){
+      if( p!=&pLog->lock && (p->mLock & mConflict) ){
+        sqlite3_mutex_leave(pSummary->mutex);
+        return SQLITE_BUSY;
+      }
+    }
+  }
+
+  /* Determine the new lock mask for this log connection */
+  switch( op ){
+    case LOG_UNLOCK: 
+      mNewLock = (pLog->lock.mLock & ~(mRegion|(mRegion<<8))); 
+      break;
+    case LOG_RDLOCK:
+      mNewLock = ((pLog->lock.mLock & ~(mRegion<<8)) | mRegion);
+      break;
+    default:
+      assert( op==LOG_WRLOCK );
+      mNewLock = (pLog->lock.mLock | (mRegion<<8) | mRegion);
+      break;
+  }
+
+  /* Determine the current and desired sets of locks at the file level. */
+  mNew = 0;
+  for(p=pSummary->pLock; p; p=p->pNext){
+    assert( (p->mLock & (p->mLock<<8))==(p->mLock & 0x00000F00) );
+    if( p!=&pLog->lock ) mNew |= p->mLock;
+  }
+  mOld = mNew | pLog->lock.mLock;
+  mNew = mNew | mNewLock;
+
+  if( mNew!=mOld ){
+    int rc;
+    u32 mChange = (mNew^mOld) | ((mNew^mOld)>>8);
+    struct flock f;
+    memset(&f, 0, sizeof(f));
+    f.l_type = (op==LOG_WRLOCK?F_WRLCK:(op==LOG_RDLOCK?F_RDLCK:F_UNLCK));
+    f.l_whence = SEEK_SET;
+
+    if(      mChange & LOG_REGION_A ) f.l_start = 12;
+    else if( mChange & LOG_REGION_B ) f.l_start = 13;
+    else if( mChange & LOG_REGION_C ) f.l_start = 14;
+    else if( mChange & LOG_REGION_D ) f.l_start = 15;
+
+    if(      mChange & LOG_REGION_D ) f.l_len   = 16 - f.l_start;
+    else if( mChange & LOG_REGION_C ) f.l_len   = 15 - f.l_start;
+    else if( mChange & LOG_REGION_B ) f.l_len   = 14 - f.l_start;
+    else if( mChange & LOG_REGION_A ) f.l_len   = 13 - f.l_start;
+
+    rc = fcntl(pSummary->fd, F_SETLK, &f);
+    if( rc!=0 ){
+      sqlite3_mutex_leave(pSummary->mutex);
+      return SQLITE_BUSY;
+    }
+  }
+
+  pLog->lock.mLock = mNewLock;
+  sqlite3_mutex_leave(pSummary->mutex);
+  return SQLITE_OK;
+}
+
+/*
+** Lock a snapshot.
 **
 ** If this call obtains a new read-lock and the database contents have been
 ** modified since the most recent call to LogCloseSnapshot() on this Log
@@ -950,6 +1092,36 @@ static void logLeaveMutex(Log *pLog){
 int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
   int rc = SQLITE_OK;
   if( pLog->isLocked==0 ){
+    int nAttempt;
+
+    /* Obtain a snapshot-lock on the log-summary file. The procedure
+    ** for obtaining the snapshot log is:
+    **
+    **    1. Attempt a SHARED lock on regions A and B.
+    **    2a. If step 1 is successful, drop the lock on region B.
+    **    2b. If step 1 is unsuccessful, attempt a SHARED lock on region D.
+    **    3. Repeat the above until the lock attempt in step 1 or 2b is 
+    **       successful.
+    **
+    ** If neither of the locks can be obtained after 5 tries, presumably
+    ** something is wrong (i.e. a process not following the locking protocol). 
+    ** Return an error code in this case.
+    */
+    rc = SQLITE_BUSY;
+    for(nAttempt=0; nAttempt<5 && rc==SQLITE_BUSY; nAttempt++){
+      rc = logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B, LOG_RDLOCK);
+      if( rc==SQLITE_BUSY ){
+        rc = logLockRegion(pLog, LOG_REGION_D, LOG_RDLOCK);
+        if( rc==SQLITE_OK ) pLog->isLocked = LOG_REGION_D;
+      }else{
+        logLockRegion(pLog, LOG_REGION_B, LOG_UNLOCK);
+        pLog->isLocked = LOG_REGION_A;
+      }
+    }
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
     if( SQLITE_OK==(rc = logEnterMutex(pLog)) ){
       u32 aCksum[2] = {1, 1};
       u32 aHdr[LOGSUMMARY_HDR_NFIELD+2];
@@ -967,13 +1139,17 @@ int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
         *pChanged = 1;
       }
       if( rc==SQLITE_OK ){
-        pLog->isLocked = 1;
         if( memcmp(&pLog->hdr, aHdr, sizeof(LogSummaryHdr)) ){
           *pChanged = 1;
           memcpy(&pLog->hdr, aHdr, LOGSUMMARY_HDR_NFIELD*sizeof(u32));
         }
       }
       logLeaveMutex(pLog);
+    }
+
+    if( rc!=SQLITE_OK ){
+      /* An error occured while attempting log recovery. */
+      sqlite3LogCloseSnapshot(pLog);
     }
   }
   return rc;
@@ -983,6 +1159,10 @@ int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
 ** Unlock the current snapshot.
 */
 void sqlite3LogCloseSnapshot(Log *pLog){
+  if( pLog->isLocked ){
+    assert( pLog->isLocked==LOG_REGION_A || pLog->isLocked==LOG_REGION_D );
+    logLockRegion(pLog, pLog->isLocked, LOG_UNLOCK);
+  }
   pLog->isLocked = 0;
 }
 
@@ -1072,11 +1252,20 @@ void sqlite3LogMaxpgno(Log *pLog, Pgno *pPgno){
 int sqlite3LogWriteLock(Log *pLog, int op){
   assert( pLog->isLocked );
   if( op ){
+
+    /* Obtain the writer lock */
+    int rc = logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_WRLOCK);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
     if( memcmp(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr)) ){
       return SQLITE_BUSY;
     }
     pLog->isWriteLocked = 1;
+
   }else if( pLog->isWriteLocked ){
+    logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_UNLOCK);
     memcpy(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr));
     pLog->isWriteLocked = 0;
   }
@@ -1226,18 +1415,25 @@ int sqlite3LogFrames(
 int sqlite3LogCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
-  u8 *zBuf                        /* Temporary buffer to use */
+  u8 *zBuf,                       /* Temporary buffer to use */
+  int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
+  void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
 ){
+  int rc;
 
-  /* Assert() that the caller is holding an EXCLUSIVE lock on the 
-  ** database file. 
-  */
-#ifdef SQLITE_DEBUG
-  int lock;
-  sqlite3OsFileControl(pFd, SQLITE_FCNTL_LOCKSTATE, &lock);
-  assert( lock>=4 );
-#endif
+  do {
+    rc = logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_WRLOCK);
+  }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
+  if( rc!=SQLITE_OK ) return rc;
+
+  do {
+    rc = logLockRegion(pLog, LOG_REGION_A, LOG_WRLOCK);
+  }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
+  if( rc!=SQLITE_OK ) return rc;
   
-  return logCheckpoint(pLog, pFd, zBuf);
+  rc = logCheckpoint(pLog, pFd, zBuf);
+
+  logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
+  return rc;
 }
 
