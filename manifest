@@ -1,5 +1,5 @@
-C Fix\stest\sscript\sissues\spreventing\swalthread.test\sfrom\srunning.
-D 2010-04-13T11:35:01
+C Fix\sother\sproblems\sin\sthe\sWAL\stest\sscripts.
+D 2010-04-13T11:45:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -537,7 +537,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test b72d77e97ab2e6bd890bdc0ed4b7f57ec2f7ef93
+F test/quick.test 6f202befe1cfae0b63df96b3120a8022ab11f574
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -756,7 +756,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 2c279aad6d34a9f8b8226d65c6d464375fc10343
+F test/wal.test 5dc92880060c255c74376b9f5c0beb85a7399b93
 F test/walcrash.test df3b4f84d7bb2252914b34ab0995ce4d249779b5
 F test/walslow.test ba50a02439f7ecfc9c92f6ba7b2013a2a707ac80
 F test/walthread.test b03790383ff7ba0119e04f230fcef3b635aab32f
@@ -803,7 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4a0b29dc5e573a5d696ede17db5d7acf8d23aa98
-R 2e081cfd5144f338793cfa49bfc89545
+P d90b1dde0702ceb0eae2a3da36733a7e5b1a6b3a
+R a841ebbbfc361d1f0f1f7f50f82ea9fc
 U dan
-Z 734473cb8e02a3d72068235b175d9c7c
+Z 96ff40b46c8873b7b202d8b466c8d9da

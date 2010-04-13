@@ -104,6 +104,7 @@ set EXCLUDE {
 
   walslow.test
   walcrash.test
+  walthread.test
 }
 
 if {[sqlite3 -has-codec]} {

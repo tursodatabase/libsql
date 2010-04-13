@@ -510,7 +510,7 @@ do_test wal-12.2 {
     PRAGMA checkpoint;
   }
   file size test.db
-} [expr 67*1024]
+} [expr 68*1024]
 do_test wal-12.3 {
   execsql { 
     DELETE FROM t1 WHERE rowid<54;
@@ -560,6 +560,9 @@ breakpoint
   sqlite3_wal db2 test.db
   execsql {PRAGMA integrity_check } db2
 } {ok}
+
+foreach handle {db db2 db3} { catch { $handle close } }
+unset handle
 
 finish_test
 
