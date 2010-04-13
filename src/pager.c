@@ -3782,20 +3782,17 @@ int sqlite3PagerSharedLock(Pager *pPager){
     pager_reset(pPager);
   }
 
-  if( pPager->noReadlock ){
-    assert( pPager->readOnly );
-    pPager->state = PAGER_SHARED;
-  }else{
+  if( pagerUseLog(pPager) ){
+    int changed = 0;
+
+    /* TODO: Change the following block to grab a WAL read-lock. Or, 
+    ** combine obtaining the read-lock with LogOpenSnapshot()?  */
     rc = pager_wait_on_lock(pPager, SHARED_LOCK);
     if( rc!=SQLITE_OK ){
       assert( pPager->state==PAGER_UNLOCK );
       return pager_error(pPager, rc);
     }
-  }
-  assert( pPager->state>=SHARED_LOCK );
 
-  if( pagerUseLog(pPager) ){
-    int changed = 0;
     rc = sqlite3LogOpenSnapshot(pPager->pLog, &changed);
     if( rc==SQLITE_OK ){
       if( changed ){
@@ -3810,6 +3807,17 @@ int sqlite3PagerSharedLock(Pager *pPager){
     int isHotJournal = 0;
     assert( !MEMDB );
     assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
+    if( pPager->noReadlock ){
+      assert( pPager->readOnly );
+      pPager->state = PAGER_SHARED;
+    }else{
+      rc = pager_wait_on_lock(pPager, SHARED_LOCK);
+      if( rc!=SQLITE_OK ){
+        assert( pPager->state==PAGER_UNLOCK );
+        return pager_error(pPager, rc);
+      }
+    }
+    assert( pPager->state>=SHARED_LOCK );
 
     /* If a journal file exists, and there is no RESERVED lock on the
     ** database file, then it either needs to be played back or deleted.

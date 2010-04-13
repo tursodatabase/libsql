@@ -1,5 +1,5 @@
-C Sync\swal\sbranch\swith\s[012cf101bf].
-D 2010-04-13T06:20:45
+C Fix\sa\spager\sbug\sintroduced\sby\sthe\swal\scode.
+D 2010-04-13T11:18:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 5bf0015cebe2f21635da2af983c348eb88b3b4c1
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c d61318cd04a42076c6524cb22c14fe036adbddcb
+F src/pager.c 020c29713e77755f316cd95c233e75582a63766e
 F src/pager.h 80c57ba672fcd24215a68abf1c98d474a5080b9b
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -537,7 +537,7 @@ F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
 F test/progress.test 5b075c3c790c7b2a61419bc199db87aaf48b8301
 F test/ptrchng.test ef1aa72d6cf35a2bbd0869a649b744e9d84977fc
-F test/quick.test d6591e74f3ac19da7fd076845f06dca48fd43cff
+F test/quick.test b72d77e97ab2e6bd890bdc0ed4b7f57ec2f7ef93
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
@@ -803,7 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c15fda145b621fc86402914aa5b015e53590555a 012cf101bf8be9e39c138786ea5a5039b8131e55
-R a82603ab9844babf112f19212a1fe8c5
+P 9d690f24f634696f76fa38372461cfa69263e91e
+R 8f595e612b9933c5a5c59646f7c7d5da
 U dan
-Z 1e9c7b3cdd0156e9796faa9c1b265349
+Z 45325555f32460c0270b99616d9c91ef
