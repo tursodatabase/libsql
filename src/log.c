@@ -1004,6 +1004,7 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
 
        /* Region D reader lock operations */
        || (op==LOG_RDLOCK && mRegion==(LOG_REGION_D))
+       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_A))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_D))
 
        /* Checkpointer lock operations */
@@ -1334,12 +1335,9 @@ void sqlite3LogMaxpgno(Log *pLog, Pgno *pPgno){
 }
 
 /* 
-** The caller must hold at least a RESERVED lock on the database file
-** when invoking this function.
-**
 ** This function returns SQLITE_OK if the caller may write to the database.
 ** Otherwise, if the caller is operating on a snapshot that has already
-** been overwritten by another writer, SQLITE_OBE is returned.
+** been overwritten by another writer, SQLITE_BUSY is returned.
 */
 int sqlite3LogWriteLock(Log *pLog, int op){
   assert( pLog->isLocked );
@@ -1351,14 +1349,26 @@ int sqlite3LogWriteLock(Log *pLog, int op){
       return rc;
     }
 
-    /* TODO: What if this is a region D reader? And after writing this
-    ** transaction it continues to hold a read-lock on the db? Maybe we 
-    ** need to switch it to a region A reader here so that unlocking C|D
-    ** does not leave the connection with no lock at all.
+    /* If this is connection is a region D, then the SHARED lock on region
+    ** D has just been upgraded to EXCLUSIVE. But no lock at all is held on
+    ** region A. This means that if the write-transaction is committed
+    ** and this connection downgrades to a reader, it will be left with no
+    ** lock at all. And its snapshot could get clobbered by a checkpoint
+    ** operation. 
+    **
+    ** To stop this from happening, grab a SHARED lock on region A now.
+    ** This should always be successful, as the only time a client holds
+    ** an EXCLUSIVE lock on region A, it must also be holding an EXCLUSIVE
+    ** lock on region C (a checkpointer does this). This is not possible,
+    ** as this connection currently has the EXCLUSIVE lock on region C.
     */
-    assert( pLog->isLocked!=LOG_REGION_D );
+    if( pLog->isLocked==LOG_REGION_D ){
+      logLockRegion(pLog, LOG_REGION_A, LOG_RDLOCK);
+      pLog->isLocked = LOG_REGION_A;
+    }
 
     if( memcmp(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr)) ){
+      logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_UNLOCK);
       return SQLITE_BUSY;
     }
     pLog->isWriteLocked = 1;

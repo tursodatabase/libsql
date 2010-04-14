@@ -447,25 +447,82 @@ foreach code [list {
     return 1
   }
   db busy busyhandler
-  do_test wal-10.$tn.9 {
+  do_test wal-10.$tn.17 {
     execsql { PRAGMA checkpoint } 
   } {}
-  do_test wal-10.$tn.10 {
+  do_test wal-10.$tn.18 {
     sql3 { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
-  do_test wal-10.$tn.11 {
+  do_test wal-10.$tn.19 {
     catchsql { INSERT INTO t1 VALUES(13, 14) }
   } {1 {database is locked}}
-  do_test wal-10.$tn.12 {
+  do_test wal-10.$tn.20 {
     execsql { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
-  do_test wal-10.$tn.13 {
+  do_test wal-10.$tn.21 {
     sql3 COMMIT
   } {}
-  do_test wal-10.$tn.14 {
+  do_test wal-10.$tn.22 {
     execsql { INSERT INTO t1 VALUES(13, 14) }
     execsql { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
+
+  # Set [db3] up as a "region D" reader again. Then upgrade it to a writer
+  # and back down to a reader. Then, check that a checkpoint is not possible
+  # (as [db3] still has a snapshot locked).
+  #
+  do_test wal-10.$tn.23 {
+    execsql { PRAGMA checkpoint }
+  } {}
+  do_test wal-10.$tn.24 {
+    sql2 { BEGIN; SELECT * FROM t1; }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
+  do_test wal-10.$tn.25 {
+    execsql { PRAGMA checkpoint }
+  } {}
+  do_test wal-10.$tn.26 {
+    catchsql { INSERT INTO t1 VALUES(15, 16) }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.27 {
+    sql3 { INSERT INTO t1 VALUES(15, 16) }
+  } {}
+  do_test wal-10.$tn.28 {
+    code3 {
+      set ::STMT [sqlite3_prepare db3 "SELECT * FROM t1" -1 TAIL]
+      sqlite3_step $::STMT
+    }
+    sql3 COMMIT
+    execsql { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
+  db busy {}
+  do_test wal-10.$tn.29 {
+    execsql { INSERT INTO t1 VALUES(17, 18) }
+    catchsql { PRAGMA checkpoint }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.30 {
+    code3 { sqlite3_finalize $::STMT }
+    execsql { PRAGMA checkpoint }
+  } {}
+
+  # At one point, if a reader failed to upgrade to a writer because it
+  # was reading an old snapshot, the write-locks were not being released.
+  # Test that this bug has been fixed.
+  #
+  do_test wal-10.$tn.31 {
+    execsql { BEGIN ; SELECT * FROM t1 }
+    sql2 { INSERT INTO t1 VALUES(19, 20) }
+    catchsql { INSERT INTO t1 VALUES(21, 22) }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.32 {
+    # This statement would fail when the bug was present.
+    sql2 { INSERT INTO t1 VALUES(21, 22) }
+  } {}
+  do_test wal-10.$tn.33 {
+    execsql { SELECT * FROM t1 ; COMMIT }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
+  do_test wal-10.$tn.34 {
+    execsql { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22}
 
   catch { db close }
   catch { code2 { db2 close } }
