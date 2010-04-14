@@ -15,28 +15,12 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-
-proc range {args} {
-  set ret [list]
-  foreach {start end} $args {
-    for {set i $start} {$i <= $end} {incr i} {
-      lappend ret $i
-    }
-  }
-  set ret
-}
+source $testdir/lock_common.tcl
 
 proc reopen_db {} {
   catch { db close }
   file delete -force test.db test.db-wal
   sqlite3_wal db test.db
-  #register_logtest
-}
-proc register_logtest {{db db}} {
-  register_logsummary_module $db
-  execsql { CREATE VIRTUAL TABLE temp.logsummary USING logsummary } $db
-  execsql { CREATE VIRTUAL TABLE temp.logcontent USING logcontent } $db
-  execsql { CREATE VIRTUAL TABLE temp.loglock USING loglock } $db
 }
 
 proc sqlite3_wal {args} {
@@ -309,100 +293,186 @@ unset handle
 
 #-------------------------------------------------------------------------
 # The following block of tests - wal-10.* - test that the WAL locking 
-# scheme works for clients in a single process.
+# scheme works in simple cases. This block of tests is run twice. Once
+# using multiple connections in the address space of the current process,
+# and once with all connections except one running in external processes.
 #
-reopen_db
-sqlite3_wal db2 test.db
-sqlite3_wal db3 test.db
+foreach code [list {
+  set ::code2_chan [launch_testfixture]
+  set ::code3_chan [launch_testfixture]
+  proc code2 {tcl} { testfixture $::code2_chan $tcl }
+  proc code3 {tcl} { testfixture $::code3_chan $tcl }
+  set tn 1
+} {
+  proc code2 {tcl} { uplevel #0 $tcl }
+  proc code3 {tcl} { uplevel #0 $tcl }
+  set tn 2
+}] {
 
-do_test wal-10.1 {
-  execsql {
-    CREATE TABLE t1(a, b);
-    INSERT INTO t1 VALUES(1, 2);
-    BEGIN;
-      INSERT INTO t1 VALUES(3, 4);
-  }
-  execsql "SELECT * FROM t1" db2
-} {1 2}
-do_test wal-10.2 {
-  execsql { COMMIT }
-  execsql "SELECT * FROM t1" db2
-} {1 2 3 4}
-do_test wal-10.3 {
-  execsql { 
-    BEGIN;
+  eval $code
+  reopen_db
+
+  # Open connections [db2] and [db3]. Depending on which iteration this
+  # is, the connections may be created in this interpreter, or in 
+  # interpreters running in other OS processes. As such, the [db2] and [db3]
+  # commands should only be accessed within [code2] and [code3] blocks,
+  # respectively.
+  #
+  code2 { sqlite3 db2 test.db ; db2 eval { PRAGMA journal_mode = WAL } }
+  code3 { sqlite3 db3 test.db ; db3 eval { PRAGMA journal_mode = WAL } }
+
+  # Shorthand commands. Execute SQL using database connection [db2] or 
+  # [db3]. Return the results.
+  #
+  proc sql2 {sql} { code2 [list db2 eval $sql] }
+  proc sql3 {sql} { code3 [list db3 eval $sql] }
+
+  # Initialize the database schema and contents.
+  #
+  do_test wal-10.$tn.1 {
+    execsql {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
       SELECT * FROM t1;
-  } db2
-} {1 2 3 4}
-do_test wal-10.4 {
-  catchsql { PRAGMA checkpoint } 
-} {1 {database is locked}}
-do_test wal-10.5 {
-  execsql { INSERT INTO t1 VALUES(5, 6) }
-  execsql { SELECT * FROM t1 } db2
-} {1 2 3 4}
+    }
+  } {1 2}
 
-# Connection [db2] is holding a lock on a snapshot, preventing [db] from
-# checkpointing the database. Add a busy-handler to [db]. If [db2] completes
-# its transaction from within the busy-handler, [db] is able to complete
-# the checkpoint operation.
-#
-proc busyhandler x {
-  if {$x==4} {
-    execsql { COMMIT } db2
+  # Open a transaction and write to the database using [db]. Check that [db2]
+  # is still able to read the snapshot before the transaction was opened.
+  #
+  do_test wal-10.$tn.2 {
+    execsql { BEGIN; INSERT INTO t1 VALUES(3, 4); }
+    sql2 {SELECT * FROM t1}
+  } {1 2}
+
+  # Have [db] commit the transaction. Check that [db2] is now seeing the 
+  # new, updated snapshot.
+  #
+  do_test wal-10.$tn.3 {
+    execsql { COMMIT }
+    sql2 {SELECT * FROM t1}
+  } {1 2 3 4}
+
+  # Have [db2] open a read transaction. Then write to the db via [db]. Check
+  # that [db2] is still seeing the original snapshot. Then read with [db3].
+  # [db3] should see the newly committed data.
+  #
+  do_test wal-10.$tn.4 {
+    sql2 { BEGIN ; SELECT * FROM t1}
+  } {1 2 3 4}
+  do_test wal-10.$tn.5 {
+    execsql { INSERT INTO t1 VALUES(5, 6); }
+    sql2 {SELECT * FROM t1}
+  } {1 2 3 4}
+  do_test wal-10.$tn.6 {
+    sql3 {SELECT * FROM t1}
+  } {1 2 3 4 5 6}
+  do_test wal-10.$tn.7 {
+    sql2 COMMIT
+  } {}
+
+  # Have [db2] open a write transaction. Then attempt to write to the 
+  # database via [db]. This should fail (writer lock cannot be obtained).
+  #
+  # Then open a read-transaction with [db]. Commit the [db2] transaction
+  # to disk. Verify that [db] still cannot write to the database (because
+  # it is reading an old snapshot).
+  #
+  # Close the current [db] transaction. Open a new one. [db] can now write
+  # to the database (as it is not locked and [db] is reading the latest
+  # snapshot).
+  #
+  do_test wal-10.$tn.7 {
+    sql2 { BEGIN; INSERT INTO t1 VALUES(7, 8) ; }
+    catchsql { INSERT INTO t1 VALUES(9, 10) }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.8 {
+    execsql { BEGIN ; SELECT * FROM t1 }
+  } {1 2 3 4 5 6}
+  do_test wal-10.$tn.9 {
+    sql2 COMMIT
+    catchsql { INSERT INTO t1 VALUES(9, 10) }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.10 {
+    execsql { COMMIT; BEGIN; INSERT INTO t1 VALUES(9, 10); COMMIT; }
+    execsql { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10}
+
+  # Open a read transaction with [db2]. Check that this prevents [db] from
+  # checkpointing the database. But not from writing to it.
+  #
+  do_test wal-10.$tn.11 {
+    sql2 { BEGIN; SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10}
+  do_test wal-10.$tn.12 {
+    catchsql { PRAGMA checkpoint } 
+  } {1 {database is locked}}
+  do_test wal-10.$tn.13 {
+    execsql { INSERT INTO t1 VALUES(11, 12) }
+    sql2 {SELECT * FROM t1}
+  } {1 2 3 4 5 6 7 8 9 10}
+
+  # Connection [db2] is holding a lock on a snapshot, preventing [db] from
+  # checkpointing the database. Add a busy-handler to [db]. If [db2] completes
+  # its transaction from within the busy-handler, [db] is able to complete
+  # the checkpoint operation.
+  #
+  proc busyhandler x {
+    if {$x==4} { sql2 COMMIT }
+    if {$x<5} { return 0 }
+    return 1
   }
-  if {$x<5} {return 0}
-  return 1
-}
-db busy busyhandler
-do_test wal-10.6 {
-  execsql { PRAGMA checkpoint } 
-} {}
+  db busy busyhandler
+  do_test wal-10.$tn.14 {
+    execsql { PRAGMA checkpoint } 
+  } {}
 
-# Similar to the test above. Except this time, a new read transaction is
-# started (db3) while the checkpointer is waiting for an old one to finish.
-# The checkpointer can finish, but any subsequent write operations must
-# wait until after db3 has closed the read transaction.
-#
-db busy {}
-do_test wal-10.7 {
-  execsql { 
-    BEGIN;
-      SELECT * FROM t1;
-  } db2
-} {1 2 3 4 5 6}
-do_test wal-10.8 {
-  execsql { INSERT INTO t1 VALUES(7, 8) }
-  catchsql { PRAGMA checkpoint } 
-} {1 {database is locked}}
-proc busyhandler x {
-  if {$x==3} { execsql { BEGIN; SELECT * FROM t1 } db3 }
-  if {$x==4} { execsql { COMMIT } db2 }
-  if {$x<5}  { return 0 }
-  return 1
-}
-db busy busyhandler
-do_test wal-10.9 {
-  execsql { PRAGMA checkpoint } 
-} {}
-do_test wal-10.10 {
-  execsql { SELECT * FROM t1 } db3
-} {1 2 3 4 5 6 7 8}
-do_test wal-10.11 {
-  catchsql { INSERT INTO t1 VALUES(9, 10) }
-} {1 {database is locked}}
-do_test wal-10.12 {
-  execsql { SELECT * FROM t1 }
-} {1 2 3 4 5 6 7 8}
-do_test wal-10.13 {
-  execsql { COMMIT } db3
-} {}
-do_test wal-10.14 {
-  execsql { INSERT INTO t1 VALUES(9, 10) }
-  execsql { SELECT * FROM t1 }
-} {1 2 3 4 5 6 7 8 9 10}
+  # Similar to the test above. Except this time, a new read transaction is
+  # started (db3) while the checkpointer is waiting for an old one (db2) to 
+  # finish. The checkpointer can finish, but any subsequent write operations 
+  # must wait until after db3 has closed the read transaction, as db3 is a
+  # "region D" writer.
+  #
+  db busy {}
+  do_test wal-10.$tn.15 {
+    sql2 { BEGIN; SELECT * FROM t1; }
+  } {1 2 3 4 5 6 7 8 9 10 11 12}
+  do_test wal-10.$tn.16 {
+    catchsql { PRAGMA checkpoint } 
+  } {1 {database is locked}}
+  proc busyhandler x {
+    if {$x==3} { sql3 { BEGIN; SELECT * FROM t1 } }
+    if {$x==4} { sql2 COMMIT }
+    if {$x<5}  { return 0 }
+    return 1
+  }
+  db busy busyhandler
+  do_test wal-10.$tn.9 {
+    execsql { PRAGMA checkpoint } 
+  } {}
+  do_test wal-10.$tn.10 {
+    sql3 { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10 11 12}
+  do_test wal-10.$tn.11 {
+    catchsql { INSERT INTO t1 VALUES(13, 14) }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.12 {
+    execsql { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10 11 12}
+  do_test wal-10.$tn.13 {
+    sql3 COMMIT
+  } {}
+  do_test wal-10.$tn.14 {
+    execsql { INSERT INTO t1 VALUES(13, 14) }
+    execsql { SELECT * FROM t1 }
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 
-foreach handle {db db2 db3} { catch { $handle close } }
-unset handle
+  catch { db close }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+  catch { close $::code2_chan }
+  catch { close $::code3_chan }
+}
+
 finish_test
 

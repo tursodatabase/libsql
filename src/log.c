@@ -1100,7 +1100,7 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
       /* 1000 */ {1, 1},    /* 1001 */ {0, 0}, 
       /* 1010 */ {0, 0},    /* 1011 */ {0, 0},
       /* 1100 */ {1, 2},    /* 1101 */ {0, 0}, 
-      /* 1110 */ {1, 3},    /* 1111 */ {0, 0}
+      /* 1110 */ {0, 0},    /* 1111 */ {0, 0}
     };
     int rc;                       /* Return code of fcntl() */
     struct flock f;               /* Locking operation */
