@@ -989,84 +989,129 @@ static void logLeaveMutex(Log *pLog){
 static int logLockRegion(Log *pLog, u32 mRegion, int op){
   LogSummary *pSummary = pLog->pSummary;
   LogLock *p;                     /* Used to iterate through in-process locks */
-  u32 mNew;                       /* New locks on file */
-  u32 mOld;                       /* Old locks on file */
-  u32 mNewLock;                   /* New locks held by pLog */
+  u32 mOther;                     /* Locks held by other connections */
+  u32 mNew;                       /* New mask for pLog */
 
   assert( 
        /* Writer lock operations */
           (op==LOG_WRLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
 
-       /* Reader lock operations */
+       /* Normal reader lock operations */
        || (op==LOG_RDLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B))
-       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_D))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B))
+
+       /* Region D reader lock operations */
+       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_D))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_D))
 
        /* Checkpointer lock operations */
        || (op==LOG_WRLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
        || (op==LOG_WRLOCK && mRegion==(LOG_REGION_A))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B|LOG_REGION_C))
        || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
+       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B|LOG_REGION_C))
   );
+
+  /* Assert that a connection never tries to go from an EXCLUSIVE to a 
+  ** SHARED lock on a region. Moving from SHARED to EXCLUSIVE sometimes
+  ** happens though (when a region D reader upgrades to a writer).
+  */
+  assert( op!=LOG_RDLOCK || 0==(pLog->lock.mLock & (mRegion<<8)) );
 
   sqlite3_mutex_enter(pSummary->mutex);
 
-  /* If obtaining (not releasing) a lock, check if there exist any 
-  ** conflicting locks in process. Return SQLITE_BUSY in this case.
+  /* Calculate a mask of logs held by all connections in this process apart
+  ** from this one. The least significant byte of the mask contains a mask
+  ** of the SHARED logs held. The next least significant byte of the mask
+  ** indicates the EXCLUSIVE locks held. For example, to test if some other
+  ** connection is holding a SHARED lock on region A, or an EXCLUSIVE lock
+  ** on region C, do:
+  **
+  **   hasSharedOnA    = (mOther & (LOG_REGION_A<<0));
+  **   hasExclusiveOnC = (mOther & (LOG_REGION_C<<8));
+  **
+  ** In all masks, if the bit in the EXCLUSIVE byte mask is set, so is the 
+  ** corresponding bit in the SHARED mask.
   */
-  if( op ){
-    u32 mConflict = (mRegion<<8) | ((op==LOG_WRLOCK) ? mRegion : 0);
-    for(p=pSummary->pLock; p; p=p->pNext){
-      if( p!=&pLog->lock && (p->mLock & mConflict) ){
-        sqlite3_mutex_leave(pSummary->mutex);
-        return SQLITE_BUSY;
-      }
+  mOther = 0;
+  for(p=pSummary->pLock; p; p=p->pNext){
+    assert( (p->mLock & (p->mLock<<8))==(p->mLock&0x0000FF00) );
+    if( p!=&pLog->lock ){
+      mOther |= p->mLock;
     }
   }
 
-  /* Determine the new lock mask for this log connection */
+  /* If this call is to lock a region (not to unlock one), test if locks held
+  ** by any other connection in this process prevent the new locks from
+  ** begin granted. If so, exit the summary mutex and return SQLITE_BUSY.
+  */
+  if( op && (mOther & (mRegion << (op==LOG_RDLOCK ? 8 : 0))) ){
+    sqlite3_mutex_leave(pSummary->mutex);
+    return SQLITE_BUSY;
+  }
+
+  /* Figure out the new log mask for this connection. */
   switch( op ){
     case LOG_UNLOCK: 
-      mNewLock = (pLog->lock.mLock & ~(mRegion|(mRegion<<8))); 
+      mNew = (pLog->lock.mLock & ~(mRegion|(mRegion<<8)));
       break;
     case LOG_RDLOCK:
-      mNewLock = ((pLog->lock.mLock & ~(mRegion<<8)) | mRegion);
+      mNew = (pLog->lock.mLock | mRegion);
       break;
     default:
       assert( op==LOG_WRLOCK );
-      mNewLock = (pLog->lock.mLock | (mRegion<<8) | mRegion);
+      mNew = (pLog->lock.mLock | (mRegion<<8) | mRegion);
       break;
   }
 
-  /* Determine the current and desired sets of locks at the file level. */
-  mNew = 0;
-  for(p=pSummary->pLock; p; p=p->pNext){
-    assert( (p->mLock & (p->mLock<<8))==(p->mLock & 0x00000F00) );
-    if( p!=&pLog->lock ) mNew |= p->mLock;
+  /* Now modify the locks held on the log-summary file descriptor. This
+  ** file descriptor is shared by all log connections in this process. 
+  ** Therefore:
+  **
+  **   + If one or more log connections in this process hold a SHARED lock
+  **     on a region, the file-descriptor should hold a SHARED lock on
+  **     the file region.
+  **
+  **   + If a log connection in this process holds an EXCLUSIVE lock on a
+  **     region, the file-descriptor should also hold an EXCLUSIVE lock on
+  **     the region in question.
+  **
+  ** If this is an LOG_UNLOCK operation, only regions for which no other
+  ** connection holds a lock should actually be unlocked. And if this
+  ** is a LOG_RDLOCK operation and other connections already hold all
+  ** the required SHARED locks, then no system call is required.
+  */
+  if( op==LOG_UNLOCK ){
+    mRegion = (mRegion & ~mOther);
   }
-  mOld = mNew | pLog->lock.mLock;
-  mNew = mNew | mNewLock;
+  if( (op==LOG_WRLOCK)
+   || (op==LOG_UNLOCK && mRegion) 
+   || (op==LOG_RDLOCK && (mOther&mRegion)!=mRegion)
+  ){
+    struct LockMap {
+      int iStart;                 /* Byte offset to start locking operation */
+      int iLen;                   /* Length field for locking operation */
+    } aMap[] = {
+      /* 0000 */ {0, 0},    /* 0001 */ {4, 1}, 
+      /* 0010 */ {3, 1},    /* 0011 */ {3, 2},
+      /* 0100 */ {2, 1},    /* 0101 */ {0, 0}, 
+      /* 0110 */ {2, 2},    /* 0111 */ {2, 3},
+      /* 1000 */ {1, 1},    /* 1001 */ {0, 0}, 
+      /* 1010 */ {0, 0},    /* 1011 */ {0, 0},
+      /* 1100 */ {1, 2},    /* 1101 */ {0, 0}, 
+      /* 1110 */ {1, 3},    /* 1111 */ {0, 0}
+    };
+    int rc;                       /* Return code of fcntl() */
+    struct flock f;               /* Locking operation */
 
-  if( mNew!=mOld ){
-    int rc;
-    u32 mChange = (mNew^mOld) | ((mNew^mOld)>>8);
-    struct flock f;
+    assert( mRegion<ArraySize(aMap) && aMap[mRegion].iStart!=0 );
+
     memset(&f, 0, sizeof(f));
     f.l_type = (op==LOG_WRLOCK?F_WRLCK:(op==LOG_RDLOCK?F_RDLCK:F_UNLCK));
     f.l_whence = SEEK_SET;
-
-    if(      mChange & LOG_REGION_A ) f.l_start = 12;
-    else if( mChange & LOG_REGION_B ) f.l_start = 13;
-    else if( mChange & LOG_REGION_C ) f.l_start = 14;
-    else if( mChange & LOG_REGION_D ) f.l_start = 15;
-
-    if(      mChange & LOG_REGION_D ) f.l_len   = 16 - f.l_start;
-    else if( mChange & LOG_REGION_C ) f.l_len   = 15 - f.l_start;
-    else if( mChange & LOG_REGION_B ) f.l_len   = 14 - f.l_start;
-    else if( mChange & LOG_REGION_A ) f.l_len   = 13 - f.l_start;
+    f.l_start = 32 + aMap[mRegion].iStart;
+    f.l_len = aMap[mRegion].iLen;
 
     rc = fcntl(pSummary->fd, F_SETLK, &f);
     if( rc!=0 ){
@@ -1075,7 +1120,7 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
     }
   }
 
-  pLog->lock.mLock = mNewLock;
+  pLog->lock.mLock = mNew;
   sqlite3_mutex_leave(pSummary->mutex);
   return SQLITE_OK;
 }
@@ -1305,6 +1350,13 @@ int sqlite3LogWriteLock(Log *pLog, int op){
     if( rc!=SQLITE_OK ){
       return rc;
     }
+
+    /* TODO: What if this is a region D reader? And after writing this
+    ** transaction it continues to hold a read-lock on the db? Maybe we 
+    ** need to switch it to a region A reader here so that unlocking C|D
+    ** does not leave the connection with no lock at all.
+    */
+    assert( pLog->isLocked!=LOG_REGION_D );
 
     if( memcmp(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr)) ){
       return SQLITE_BUSY;

@@ -1,5 +1,5 @@
-C Fixes\sfor\slocking\sissues\sin\sWAL\smode.
-D 2010-04-14T11:23:30
+C Improve\sthe\slogLockRegion()\sfunction\sin\slog.c.
+D 2010-04-14T15:49:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c 78575e5bed43578580a0ee86fd3c2e924abe4a88
+F src/log.c e01488f4e515d17ecb21d6cebc5a37bec5b0e56c
 F src/log.h a2654af46ce7b5732f4d5a731abfdd180f0a06d9
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
@@ -803,7 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3f958e87c33d667d299b03ffdef58db5dc6363f4
-R 91ba1bf1aecd8bbf6dbeda941d0dbe58
+P a9617eff39177250e2f118f25fdd4b3acb8b0478
+R 7008c4f8854b7fbb33a10340b4b449d8
 U dan
-Z d3b26d31320c12902d5354af18b08451
+Z d0e2fbdd9e82a46dc4aa039b5fc8e3ce
