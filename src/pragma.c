@@ -1386,7 +1386,6 @@ void sqlite3Pragma(
 
   if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
     sqlite3VdbeUsesBtree(v, iDb);
-    sqlite3VdbeAddOp2(v, OP_Transaction, iDb, 1);
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
   }else
 

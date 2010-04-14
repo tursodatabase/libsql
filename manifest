@@ -1,5 +1,5 @@
-C Add\sexperimental\slocking\sscheme.
-D 2010-04-13T19:27:31
+C Fixes\sfor\slocking\sissues\sin\sWAL\smode.
+D 2010-04-14T11:23:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c d89988bb26a3cd414858c97642a612b4ce6e540f
+F src/log.c 78575e5bed43578580a0ee86fd3c2e924abe4a88
 F src/log.h a2654af46ce7b5732f4d5a731abfdd180f0a06d9
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
@@ -160,7 +160,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
-F src/pragma.c 9f1d53d40b47743f3d6151df15915970367c9de5
+F src/pragma.c f12cb58a8aa0d80cfed282ef87a285ed71beb793
 F src/prepare.c fd1398cb1da54385ba5bd68d93928f10d10a1d9c
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -756,10 +756,10 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test d5916b3a40d74dd5bf6ff21b42e6fa7f255efd13
+F test/wal.test a4be3c7a36e3db3d9d276dc7664c2ed5eece1e8a
 F test/walcrash.test 45cfbab30bb7cbe0b2e9d5cabe90dbcad10cb89b
 F test/walslow.test 38076d5fad49e3678027be0f8110e6a32d531dc2
-F test/walthread.test 1592116f74261d77ea697d9503b0cd1ab1c15e74
+F test/walthread.test 58cd64b06f186251f09f64e4918fb74a7e52c963
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 45eacc126aabb37959a387aa83e59ce1f1f03820
 F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
@@ -803,7 +803,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f4e1150fed2c520c7c52612cb1019429d78dc32a
-R da172d13acb33c194abd32bf4ed20cc9
+P 3f958e87c33d667d299b03ffdef58db5dc6363f4
+R 91ba1bf1aecd8bbf6dbeda941d0dbe58
 U dan
-Z cd10eeca0187a805032040fdd27191f0
+Z d3b26d31320c12902d5354af18b08451

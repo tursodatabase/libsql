@@ -617,7 +617,7 @@ int sqlite3LogOpen(
   const char *zDb,                /* Name of database file */
   Log **ppLog                     /* OUT: Allocated Log handle */
 ){
-  int rc;                         /* Return Code */
+  int rc = SQLITE_OK;             /* Return Code */
   Log *pRet;                      /* Object to allocate and return */
   LogSummary *pSummary = 0;       /* Summary object */
   sqlite3_mutex *mutex = 0;       /* LOG_SUMMARY_MUTEX mutex */
@@ -806,7 +806,7 @@ static int logCheckpoint(
   int pgsz = pLog->hdr.pgsz;      /* Database page-size */
   LogCheckpoint *pIter = 0;       /* Log iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
-  u32 iFrame;                     /* Log frame containing data for iDbpage */
+  u32 iFrame = 0;                 /* Log frame containing data for iDbpage */
 
   /* Allocate the iterator */
   pIter = logCheckpointInit(pLog);
@@ -1081,6 +1081,77 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
 }
 
 /*
+** Try to read the log-summary header. Attempt to verify the header
+** checksum. If the checksum can be verified, copy the log-summary
+** header into structure pLog->hdr. If the contents of pLog->hdr are
+** modified by this and pChanged is not NULL, set *pChanged to 1. 
+** Otherwise leave *pChanged unmodified.
+**
+** If the checksum cannot be verified return SQLITE_ERROR.
+*/
+int logSummaryTryHdr(Log *pLog, int *pChanged){
+  u32 aCksum[2] = {1, 1};
+  u32 aHdr[LOGSUMMARY_HDR_NFIELD+2];
+
+  /* First try to read the header without a lock. Verify the checksum
+  ** before returning. This will almost always work.  
+  */
+  memcpy(aHdr, pLog->pSummary->aData, sizeof(aHdr));
+  logChecksumBytes((u8*)aHdr, sizeof(u32)*LOGSUMMARY_HDR_NFIELD, aCksum);
+  if( aCksum[0]!=aHdr[LOGSUMMARY_HDR_NFIELD]
+   || aCksum[1]!=aHdr[LOGSUMMARY_HDR_NFIELD+1]
+  ){
+    return SQLITE_ERROR;
+  }
+
+  if( memcmp(&pLog->hdr, aHdr, sizeof(LogSummaryHdr)) ){
+    if( pChanged ){
+      *pChanged = 1;
+    }
+    memcpy(&pLog->hdr, aHdr, sizeof(LogSummaryHdr));
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Read the log-summary header from the log-summary file into structure 
+** pLog->hdr. If attempting to verify the header checksum fails, try
+** to recover the log before returning.
+**
+** If the log-summary header is successfully read, return SQLITE_OK. 
+** Otherwise an SQLite error code.
+*/
+int logSummaryReadHdr(Log *pLog, int *pChanged){
+  int rc;
+
+  /* First try to read the header without a lock. Verify the checksum
+  ** before returning. This will almost always work.  
+  */
+  if( SQLITE_OK==logSummaryTryHdr(pLog, pChanged) ){
+    return SQLITE_OK;
+  }
+
+  /* If the first attempt to read the header failed, lock the log-summary
+  ** file and try again. If the header checksum verification fails this
+  ** time as well, run log recovery.
+  */
+  if( SQLITE_OK==(rc = logEnterMutex(pLog)) ){
+    if( SQLITE_OK!=logSummaryTryHdr(pLog, pChanged) ){
+      if( pChanged ){
+        *pChanged = 1;
+      }
+      rc = logSummaryRecover(pLog->pSummary, pLog->pFd);
+      if( rc==SQLITE_OK ){
+        rc = logSummaryTryHdr(pLog, 0);
+      }
+    }
+    logLeaveMutex(pLog);
+  }
+
+  return rc;
+}
+
+/*
 ** Lock a snapshot.
 **
 ** If this call obtains a new read-lock and the database contents have been
@@ -1122,31 +1193,7 @@ int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
       return rc;
     }
 
-    if( SQLITE_OK==(rc = logEnterMutex(pLog)) ){
-      u32 aCksum[2] = {1, 1};
-      u32 aHdr[LOGSUMMARY_HDR_NFIELD+2];
-      memcpy(aHdr, pLog->pSummary->aData, sizeof(aHdr));
-
-      /* Verify the checksum on the log-summary header. If it fails,
-      ** recover the log-summary from the log file.
-      */
-      logChecksumBytes((u8*)aHdr, sizeof(u32)*LOGSUMMARY_HDR_NFIELD, aCksum);
-      if( aCksum[0]!=aHdr[LOGSUMMARY_HDR_NFIELD]
-       || aCksum[1]!=aHdr[LOGSUMMARY_HDR_NFIELD+1]
-      ){
-        rc = logSummaryRecover(pLog->pSummary, pLog->pFd);
-        memcpy(aHdr, pLog->pSummary->aData, sizeof(aHdr));
-        *pChanged = 1;
-      }
-      if( rc==SQLITE_OK ){
-        if( memcmp(&pLog->hdr, aHdr, sizeof(LogSummaryHdr)) ){
-          *pChanged = 1;
-          memcpy(&pLog->hdr, aHdr, LOGSUMMARY_HDR_NFIELD*sizeof(u32));
-        }
-      }
-      logLeaveMutex(pLog);
-    }
-
+    rc = logSummaryReadHdr(pLog, pChanged);
     if( rc!=SQLITE_OK ){
       /* An error occured while attempting log recovery. */
       sqlite3LogCloseSnapshot(pLog);
@@ -1409,8 +1456,13 @@ int sqlite3LogFrames(
 }
 
 /* 
-** Checkpoint the database. When this function is called the caller
-** must hold an exclusive lock on the database file.
+** Checkpoint the database:
+**
+**   1. Wait for an EXCLUSIVE lock on regions B and C.
+**   2. Wait for an EXCLUSIVE lock on region A.
+**   3. Copy the contents of the log into the database file.
+**   4. Zero the log-summary header (so new readers will ignore the log).
+**   5. Drop the locks obtained in steps 1 and 2.
 */
 int sqlite3LogCheckpoint(
   Log *pLog,                      /* Log connection */
@@ -1419,20 +1471,30 @@ int sqlite3LogCheckpoint(
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
 ){
-  int rc;
+  int rc;                         /* Return code */
 
+  /* Wait for a write-lock on regions B and C. */
   do {
     rc = logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_WRLOCK);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
   if( rc!=SQLITE_OK ) return rc;
 
+  /* Wait for a write-lock on region A. */
   do {
     rc = logLockRegion(pLog, LOG_REGION_A, LOG_WRLOCK);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
-  if( rc!=SQLITE_OK ) return rc;
-  
-  rc = logCheckpoint(pLog, pFd, zBuf);
+  if( rc!=SQLITE_OK ){
+    logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
+    return rc;
+  }
 
+  /* Copy data from the log to the database file. */
+  rc = logSummaryReadHdr(pLog, 0);
+  if( rc==SQLITE_OK ){
+    rc = logCheckpoint(pLog, pFd, zBuf);
+  }
+
+  /* Release the locks. */
   logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
   return rc;
 }

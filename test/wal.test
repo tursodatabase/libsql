@@ -27,7 +27,7 @@ proc range {args} {
 }
 
 proc reopen_db {} {
-  db close
+  catch { db close }
   file delete -force test.db test.db-wal
   sqlite3_wal db test.db
   #register_logtest
@@ -223,7 +223,6 @@ do_test wal-7.1 {
     CREATE TABLE t1(a, b);
     INSERT INTO t1 VALUES(1, 2);
   }
-
   list [file size test.db] [file size test.db-wal]
 } [list 0 [expr (1024+20)*3]]
 do_test wal-7.2 {
@@ -231,272 +230,17 @@ do_test wal-7.2 {
   list [file size test.db] [file size test.db-wal]
 } [list 2048 [expr (1024+20)*3]]
 
-# db close
-# sqlite3_wal db test.db
-# register_logsummary_module db
-# # Warm-body tests of the virtual tables used for testing.
-# # 
-# do_test wal-8.1 {
-#   execsql { CREATE VIRTUAL TABLE temp.logsummary USING logsummary }
-#   execsql { CREATE VIRTUAL TABLE temp.logcontent USING logcontent }
-#   execsql { CREATE VIRTUAL TABLE temp.loglock USING loglock }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 0 0 0 0 0 0]
-# 
-# do_test wal-8.2 {
-#   sqlite3_wal db2 test.db
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 2 0 0 0 0 0 0]
-# do_test wal-8.3 {
-#   db2 close
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 0 0 0 0 0 0]
-# do_test wal-8.4 {
-#   execsql { INSERT INTO t1 VALUES(3, 4) }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 2 3 0 0]
-# do_test wal-8.5 {
-#   execsql { PRAGMA checkpoint }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 0 0 0 0 0]
-# 
-# do_test wal-8.6 {
-#   execsql { INSERT INTO t1 VALUES(5, 6) }
-#   execsql { PRAGMA checkpoint('1 1 1') }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 0 3 0 0]
-# do_test wal-8.7 {
-#   execsql { SELECT logpage, dbpage FROM logcontent }
-# } {}
-# do_test wal-8.8 {
-#   execsql { INSERT INTO t1 VALUES(7, 8) }
-#   execsql { SELECT logpage, dbpage FROM logcontent }
-# } {4 T:4 5 2}
-# do_test wal-8.9 {
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 4 5 0 0]
-# do_test wal-8.10 {
-#   execsql { SELECT * FROM loglock }
-# } [list [file join [pwd] test.db] 0 0 0]
-# do_test wal-8.11 {
-#   execsql { BEGIN; SELECT * FROM t1; }
-#   execsql { SELECT * FROM loglock }
-# } [list [file join [pwd] test.db] 0 0 4]
-# 
-# # Try making the log wrap around.
-# #
-# reopen_db
-# 
-# do_test wal-9.1 {
-#   execsql {
-#     BEGIN;
-#     CREATE TABLE t1(a PRIMARY KEY, b);
-#   }
-#   for {set i 0} {$i < 100} {incr i} {
-#     execsql { INSERT INTO t1 VALUES($i, randomblob(100)) }
-#   }
-#   execsql COMMIT
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 2 17 0 0]
-# do_test wal-9.2 {
-#   execsql { SELECT logpage, dbpage FROM logcontent }
-# } {2 T:2 3 1 4 2 5 3 6 4 7 5 8 6 9 7 10 8 11 9 12 10 13 11 14 12 15 13 16 14 17 15}
-# do_test wal-9.3 {
-#   execsql { PRAGMA checkpoint('12, 12') }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 15 17 0 0]
-# do_test wal-9.4 {
-#   execsql { SELECT logpage, dbpage FROM logcontent }
-# } {15 13 16 14 17 15}
-# do_test wal-9.5 {
-#   execsql { SELECT count(*) FROM t1 }
-# } {100}
-# do_test wal-9.6 {
-#   execsql { INSERT INTO t1 VALUES(100, randomblob(100)) }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 2 15 20 0 0]
-# 
-# do_test wal-9.7 {
-#   execsql { SELECT count(*) FROM t1 }
-# } {101}
-# do_test wal-9.8 {
-#   db close
-#   sqlite3_wal db test.db
-#   register_logtest
-#   execsql { SELECT count(*) FROM t1 }
-# } {101}
-# do_test wal-9.9 {
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 0 0 0 0 0 0]
-# 
-# reopen_db
-# do_test wal-10.1 {
-#   execsql {
-#     PRAGMA page_size = 1024;
-#     CREATE TABLE t1(x PRIMARY KEY);
-#     INSERT INTO t1 VALUES(randomblob(900));
-#     INSERT INTO t1 VALUES(randomblob(900));
-#     INSERT INTO t1 SELECT randomblob(900) FROM t1;         -- 4
-#     INSERT INTO t1 SELECT randomblob(900) FROM t1;         -- 8
-#     INSERT INTO t1 SELECT randomblob(900) FROM t1;         -- 16
-#   }
-#   list [file size test.db] [file size test.db-wal]
-# } {0 55296}
-# do_test wal-10.2 {
-#   execsql { PRAGMA checkpoint('20 30') }
-# } {}
-# do_test wal-10.3 {
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 34 38 54 0 0]
-# do_test wal-10.4 {
-#   execsql { SELECT dbpage FROM logcontent }
-# } {21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37}
-# do_test wal-10.5 {
-#   execsql { INSERT INTO t1 VALUES(randomblob(900)) }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 34 38 6 34 54]
-# do_test wal-10.6 {
-#   execsql { SELECT count(*) FROM t1 WHERE x NOT NULL }
-# } {17}
-# do_test wal-10.8 {
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 38 54  1 6]
-# do_test wal-10.9 {
-#   execsql { INSERT INTO t1 SELECT randomblob(900) FROM t1 }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 34 38 68 34 54]
-# 
-# do_test wal-10.10 {
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 38 54  1 33  55 68]
-# 
-# do_test wal-10.11 {
-#   execsql { SELECT count(*) FROM t1 WHERE x NOT NULL }
-# } {34}
-# 
-# do_test wal-10.12 {
-#   execsql { PRAGMA checkpoint('35 35') }
-# } {}
-# do_test wal-10.13 {
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 22 68]
-# do_test wal-10.13a {
-#   execsql { SELECT dbpage FROM logcontent }
-# } [list \
-#   50 51 52 53 54 55 56 57 58 59 60 61    \
-#   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \
-#   62 63 64 65 66 67 68 69 70 71 72 73 74 75 \
-# ]
-# 
-# do_test wal-10.14 {
-#   execsql { SELECT count(*) FROM t1 WHERE x NOT NULL }
-# } {34}
-# do_test wal-10.15 {
-#   execsql { PRAGMA integrity_check }
-# } {ok}
-# do_test wal-10.16 {
-#   execsql { PRAGMA checkpoint('20 20') }
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 7 63 68 0 0]
-# do_test wal-10.17 {
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 63 68]
-# do_test wal-10.17a {
-#   execsql { SELECT dbpage FROM logcontent }
-# } {70 71 72 73 74 75}
-# 
-# do_test wal-10.18 {
-#   execsql { INSERT INTO t1 SELECT randomblob(900) FROM t1 }
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 63 147]
-# integrity_check wal-10.19
-# 
-# do_test wal-10.20 {
-#   execsql { PRAGMA checkpoint('52 52') }
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 116 147]
-# do_test wal-10.20a {
-#   execsql { SELECT * FROM logsummary }
-# } [list [file join [pwd] test.db] 1 1024 69 116 147 0 0]
-# integrity_check wal-10.20.integrity
-# 
-# do_test wal-10.21 {
-#   execsql { INSERT INTO t1 VALUES( randomblob(900) ) }
-#   execsql { SELECT logpage FROM logcontent }
-# } [range 116 152]
-# do_test wal-10.22 {
-#   execsql { PRAGMA integrity_check }
-# } {ok}
-# 
-# file delete -force testX.db testX.db-wal
-# file copy test.db testX.db
-# file copy test.db-wal testX.db-wal
-# do_test wal-10.23 {
-#   sqlite3_wal db2 testX.db
-#   register_logtest db2
-#   execsql { SELECT logpage FROM logcontent WHERE db LIKE '%testX%' } db2
-# } [range 34 54  1 33  55 152]
-# 
-# do_test wal-10.24 {
-#   execsql { PRAGMA integrity_check } db2
-# } {ok}
-# db2 close
-# 
-# do_test wal-11.1 {
-#   reopen_db
-#   sqlite3_wal db2 test.db
-# 
-#   execsql {
-#     BEGIN;
-#       CREATE TABLE t1(x);
-#       CREATE TABLE t2(x PRIMARY KEY);
-#       INSERT INTO t1 VALUES(randomblob(900));
-#       INSERT INTO t1 VALUES(randomblob(900));
-#       INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  4 */
-#       INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  8 */
-#       INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16 */
-#       INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 32 */
-#       INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 64 */
-# 
-#       INSERT INTO t2 VALUES('x');
-#       INSERT INTO t2 VALUES('y');
-#       INSERT INTO t2 VALUES('z');
-#     COMMIT;
-#     SELECT * FROM logsummary;
-#   }
-# } [list [file join [pwd] test.db] 2 1024 2 2 70 0 0]
-# 
-# do_test wal-11.2 {
-#   execsql {
-#     BEGIN; SELECT x FROM t2;
-#   } db2
-# } {x y z}
-# do_test wal-11.2 {
-#   execsql {
-#     INSERT INTO t1 VALUES(randomblob(900));
-#     PRAGMA checkpoint('10 100');
-#     INSERT INTO t1 VALUES(randomblob(900));
-#     INSERT INTO t2 VALUES('0');
-#     SELECT * FROM logsummary;
-#   }
-# } [list [file join [pwd] test.db] 2 1024 71 71 7 71 73]
-# do_test wal-12.3 {
-#   execsql { PRAGMA integrity_check } db2
-# } {ok}
-# db2 close
-
-
 # Execute some transactions in auto-vacuum mode to test database file
 # truncation.
 #
-do_test wal-12.1 {
+do_test wal-8.1 {
   reopen_db
   execsql {
     PRAGMA auto_vacuum = 1;
     PRAGMA auto_vacuum;
   }
 } {1}
-do_test wal-12.2 {
+do_test wal-8.2 {
   execsql {
     PRAGMA page_size = 1024;
     CREATE TABLE t1(x);
@@ -511,7 +255,7 @@ do_test wal-12.2 {
   }
   file size test.db
 } [expr 68*1024]
-do_test wal-12.3 {
+do_test wal-8.3 {
   execsql { 
     DELETE FROM t1 WHERE rowid<54;
     PRAGMA checkpoint;
@@ -522,7 +266,7 @@ do_test wal-12.3 {
 # Run some "warm-body" tests to ensure that log-summary files with more
 # than 256 entries (log summaries that contain index blocks) work Ok.
 #
-do_test wal-13.1 {
+do_test wal-9.1 {
   reopen_db
   execsql {
     PRAGMA page_size = 1024;
@@ -539,12 +283,12 @@ do_test wal-13.1 {
   }
   file size test.db
 } 0
-do_test wal-13.2 {
+do_test wal-9.2 {
   sqlite3_wal db2 test.db
   execsql {PRAGMA integrity_check } db2
 } {ok}
 
-do_test wal-13.3 {
+do_test wal-9.3 {
   file delete -force test2.db test2.db-wal
   file copy test.db test2.db
   file copy test.db-wal test2.db-wal
@@ -553,8 +297,7 @@ do_test wal-13.3 {
 } {ok}
 db3 close
 
-do_test wal-13.4 {
-breakpoint
+do_test wal-9.4 {
   execsql { PRAGMA checkpoint }
   db2 close
   sqlite3_wal db2 test.db
@@ -564,5 +307,102 @@ breakpoint
 foreach handle {db db2 db3} { catch { $handle close } }
 unset handle
 
+#-------------------------------------------------------------------------
+# The following block of tests - wal-10.* - test that the WAL locking 
+# scheme works for clients in a single process.
+#
+reopen_db
+sqlite3_wal db2 test.db
+sqlite3_wal db3 test.db
+
+do_test wal-10.1 {
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    BEGIN;
+      INSERT INTO t1 VALUES(3, 4);
+  }
+  execsql "SELECT * FROM t1" db2
+} {1 2}
+do_test wal-10.2 {
+  execsql { COMMIT }
+  execsql "SELECT * FROM t1" db2
+} {1 2 3 4}
+do_test wal-10.3 {
+  execsql { 
+    BEGIN;
+      SELECT * FROM t1;
+  } db2
+} {1 2 3 4}
+do_test wal-10.4 {
+  catchsql { PRAGMA checkpoint } 
+} {1 {database is locked}}
+do_test wal-10.5 {
+  execsql { INSERT INTO t1 VALUES(5, 6) }
+  execsql { SELECT * FROM t1 } db2
+} {1 2 3 4}
+
+# Connection [db2] is holding a lock on a snapshot, preventing [db] from
+# checkpointing the database. Add a busy-handler to [db]. If [db2] completes
+# its transaction from within the busy-handler, [db] is able to complete
+# the checkpoint operation.
+#
+proc busyhandler x {
+  if {$x==4} {
+    execsql { COMMIT } db2
+  }
+  if {$x<5} {return 0}
+  return 1
+}
+db busy busyhandler
+do_test wal-10.6 {
+  execsql { PRAGMA checkpoint } 
+} {}
+
+# Similar to the test above. Except this time, a new read transaction is
+# started (db3) while the checkpointer is waiting for an old one to finish.
+# The checkpointer can finish, but any subsequent write operations must
+# wait until after db3 has closed the read transaction.
+#
+db busy {}
+do_test wal-10.7 {
+  execsql { 
+    BEGIN;
+      SELECT * FROM t1;
+  } db2
+} {1 2 3 4 5 6}
+do_test wal-10.8 {
+  execsql { INSERT INTO t1 VALUES(7, 8) }
+  catchsql { PRAGMA checkpoint } 
+} {1 {database is locked}}
+proc busyhandler x {
+  if {$x==3} { execsql { BEGIN; SELECT * FROM t1 } db3 }
+  if {$x==4} { execsql { COMMIT } db2 }
+  if {$x<5}  { return 0 }
+  return 1
+}
+db busy busyhandler
+do_test wal-10.9 {
+  execsql { PRAGMA checkpoint } 
+} {}
+do_test wal-10.10 {
+  execsql { SELECT * FROM t1 } db3
+} {1 2 3 4 5 6 7 8}
+do_test wal-10.11 {
+  catchsql { INSERT INTO t1 VALUES(9, 10) }
+} {1 {database is locked}}
+do_test wal-10.12 {
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4 5 6 7 8}
+do_test wal-10.13 {
+  execsql { COMMIT } db3
+} {}
+do_test wal-10.14 {
+  execsql { INSERT INTO t1 VALUES(9, 10) }
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4 5 6 7 8 9 10}
+
+foreach handle {db db2 db3} { catch { $handle close } }
+unset handle
 finish_test
 

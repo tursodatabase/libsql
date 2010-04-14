@@ -62,7 +62,7 @@ do_test walthread-1.4 {
 # Each of the N threads runs N read transactions followed by a single write
 # transaction in a loop as fast as possible.
 #
-# There is also a single checkpointer thread. It runs the following loop:
+# Ther is also a single checkpointer thread. It runs the following loop:
 #
 #   1) Execute "CHECKPOINT main 32 -1 1"
 #   2) Sleep for 500 ms.
@@ -85,7 +85,7 @@ set thread_program {
     set rc [sqlite3_finalize $stmt]
 
     if {$rc ne "SQLITE_OK"} {
-      error $rc 
+      error "$rc: [sqlite3_errmsg $DB]"
     }
     return $res
   }
