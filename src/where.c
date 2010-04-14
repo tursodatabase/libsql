@@ -2601,10 +2601,10 @@ static void bestBtreeIndex(
     int nBound = 100;
     int bSort = 0;
     int bLookup = 0;
+    WhereTerm *pTerm;           /* A single term of the WHERE clause */
 
     /* Determine the values of nEq and nInMul */
     for(nEq=0; nEq<pProbe->nColumn; nEq++){
-      WhereTerm *pTerm;           /* A single term of the WHERE clause */
       int j = pProbe->aiColumn[nEq];
       pTerm = findTerm(pWC, iCur, j, notReady, eqTermMask, pIdx);
       if( pTerm==0 ) break;
@@ -2685,8 +2685,7 @@ static void bestBtreeIndex(
       }
     }
 
-    /**** Begin adding up the cost of using this index (Needs improvements)
-    **
+    /*
     ** Estimate the number of rows of output.  For an IN operator,
     ** do not let the estimate exceed half the rows in the table.
     */
@@ -2723,6 +2722,38 @@ static void bestBtreeIndex(
     }
     /**** Cost of using this index has now been computed ****/
 
+    /* If there are additional constraints on this table that cannot
+    ** be used with the current index, but which might lower the number
+    ** of output rows, adjust the nRow value accordingly.  This only 
+    ** matters if the current index is the least costly, so do not bother
+    ** with this step if we already know this index will not be chosen.
+    */
+    if( nRow>2 && cost<=pCost->rCost ){
+      int k;
+      int nSkip = nEq;
+      Bitmask thisTab = getMask(pWC->pMaskSet, iCur);
+      for(pTerm=pWC->a, k=pWC->nTerm; nRow>2 && k; k--, pTerm++){
+        if( pTerm->wtFlags & TERM_VIRTUAL ) continue;
+        if( (pTerm->prereqAll & notReady)!=thisTab ) continue;
+        if( pTerm->eOperator & (WO_EQ|WO_IN|WO_ISNULL) ){
+          if( nSkip ){
+            /* Ignore the first nEq equality matches since the index
+            ** has already accounted for these */
+            nSkip--;
+          }else{
+            /* Assume each additional equality match reduces the result
+            ** set size by a factor of 10 */
+            nRow /= 10;
+          }
+        }else{
+          /* Any other expression lowers the output row count by half */
+          nRow /= 2;
+        }
+      }
+      if( nRow<2 ) nRow = 2;
+    }
+
+
     WHERETRACE((
       "%s(%s): nEq=%d nInMul=%d nBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
       "         notReady=0x%llx nRow=%.2f cost=%.2f used=0x%llx\n",
@@ -2733,7 +2764,9 @@ static void bestBtreeIndex(
     /* If this index is the best we have seen so far, then record this
     ** index and its cost in the pCost structure.
     */
-    if( (!pIdx || wsFlags) && cost<pCost->rCost ){
+    if( (!pIdx || wsFlags)
+     && (cost<pCost->rCost || (cost==pCost->rCost && nRow<pCost->nRow))
+    ){
       pCost->rCost = cost;
       pCost->nRow = nRow;
       pCost->used = used;
@@ -2768,7 +2801,8 @@ static void bestBtreeIndex(
   );
 
   WHERETRACE(("best index is: %s\n", 
-    (pCost->plan.u.pIdx ? pCost->plan.u.pIdx->zName : "ipk")
+    ((pCost->plan.wsFlags & WHERE_NOT_FULLSCAN)==0 ? "none" : 
+         pCost->plan.u.pIdx ? pCost->plan.u.pIdx->zName : "ipk")
   ));
   
   bestOrClauseIndex(pParse, pWC, pSrc, notReady, pOrderBy, pCost);
@@ -4042,7 +4076,8 @@ WhereInfo *sqlite3WhereBegin(
         assert( isOptimal || (sCost.used&notReady)==0 );
 
         if( (sCost.used&notReady)==0
-         && (j==iFrom || sCost.rCost<bestPlan.rCost) 
+         && (j==iFrom || sCost.rCost<bestPlan.rCost
+             || (sCost.rCost==bestPlan.rCost && sCost.nRow<bestPlan.nRow))
         ){
           bestPlan = sCost;
           bestJ = j;
