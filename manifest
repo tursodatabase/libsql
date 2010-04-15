@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Bring\sover\sthe\srecent\squery\splanner\senhancements\sfrom\sthe\strunk.
-D 2010-04-15T02:37:11
+C Change\sthe\sway\schecksums\sare\scalculated.
+D 2010-04-15T10:58:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +131,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c 165addfd51fa9581936ec04914b17a3b274c49bd
+F src/log.c bf7ce56249b2a08d26b4029430c32a01efc4a64e
 F src/log.h a2654af46ce7b5732f4d5a731abfdd180f0a06d9
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
@@ -807,14 +804,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c18077f2465fc34830f11c9832e76be5746eaeea defaf0d99a807027f8883bf821b6482025f9f54e
-R 5f5abc6d19fbeba7fb34263a5662faa7
-U drh
-Z 9dfe9b346dd22ca03d0d17a2ddbb8a3c
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLxnvaoxKgR168RlERAkpHAJ9umCCf7Sfy2xa1T3mJ1bqzrPY7tgCgjEA2
-oN5S7m+hWn0GMbvXKOIs1cY=
-=ADT1
------END PGP SIGNATURE-----
+P 82969f27e5ea843cb379666d8a02e4a3fddc03b2
+R b356f412a9c351edeb3f07a632ecce9f
+U dan
+Z 01a21dba5524ff578c531f4245d5f626

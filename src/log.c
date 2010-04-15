@@ -141,23 +141,21 @@ static LogSummary *pLogSummary = 0;
 */
 #define LOG_CKSM_BYTES 8
 static void logChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
-  u32 *z32 = (u32 *)aByte;
-  int n32 = nByte / sizeof(u32);
-  int i;
+  u64 sum1 = aCksum[0];
+  u64 sum2 = aCksum[1];
+  u32 *a32 = (u32 *)aByte;
+  u32 *aEnd = (u32 *)&aByte[nByte];
 
   assert( LOG_CKSM_BYTES==2*sizeof(u32) );
   assert( (nByte&0x00000003)==0 );
 
-  u32 cksum0 = aCksum[0];
-  u32 cksum1 = aCksum[1];
+  do {
+    sum1 += (*a32++);
+    sum2 += sum1;
+  } while( a32<aEnd );
 
-  for(i=0; i<n32; i++){
-    cksum0 = (cksum0 >> 8) + (cksum0 ^ z32[i]);
-    cksum1 = (cksum1 >> 8) + (cksum1 ^ z32[i]);
-  }
-
-  aCksum[0] = cksum0;
-  aCksum[1] = cksum1;
+  aCksum[0] = sum1 + (sum1>>24);
+  aCksum[1] = sum2 + (sum2>>24);
 }
 
 /*
@@ -1259,8 +1257,6 @@ void sqlite3LogCloseSnapshot(Log *pLog){
   pLog->isLocked = 0;
 }
 
-
-
 /* 
 ** Read a page from the log, if it is present. 
 */
@@ -1268,6 +1264,8 @@ int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
   u32 iRead = 0;
   u32 *aData = pLog->pSummary->aData;
   int iFrame = (pLog->hdr.iLastPg & 0xFFFFFF00);
+
+  assert( pLog->isLocked );
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
   ** at the end of the log-summary. An alternative to this would be to
@@ -1349,11 +1347,11 @@ int sqlite3LogWriteLock(Log *pLog, int op){
       return rc;
     }
 
-    /* If this is connection is a region D, then the SHARED lock on region
-    ** D has just been upgraded to EXCLUSIVE. But no lock at all is held on
-    ** region A. This means that if the write-transaction is committed
+    /* If this is connection is a region D reader, then the SHARED lock on 
+    ** region D has just been upgraded to EXCLUSIVE. But no lock at all is 
+    ** held on region A. This means that if the write-transaction is committed
     ** and this connection downgrades to a reader, it will be left with no
-    ** lock at all. And its snapshot could get clobbered by a checkpoint
+    ** lock at all. And so its snapshot could get clobbered by a checkpoint
     ** operation. 
     **
     ** To stop this from happening, grab a SHARED lock on region A now.
@@ -1367,6 +1365,10 @@ int sqlite3LogWriteLock(Log *pLog, int op){
       pLog->isLocked = LOG_REGION_A;
     }
 
+    /* If this connection is not reading the most recent database snapshot,
+    ** it is not possible to write to the database. In this case release
+    ** the write locks and return SQLITE_BUSY.
+    */
     if( memcmp(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr)) ){
       logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_UNLOCK);
       return SQLITE_BUSY;
@@ -1535,13 +1537,15 @@ int sqlite3LogCheckpoint(
 ){
   int rc;                         /* Return code */
 
-  /* Wait for a write-lock on regions B and C. */
+  assert( !pLog->isLocked );
+
+  /* Wait for an EXCLUSIVE lock on regions B and C. */
   do {
     rc = logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_WRLOCK);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
   if( rc!=SQLITE_OK ) return rc;
 
-  /* Wait for a write-lock on region A. */
+  /* Wait for an EXCLUSIVE lock on region A. */
   do {
     rc = logLockRegion(pLog, LOG_REGION_A, LOG_WRLOCK);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
