@@ -286,8 +286,9 @@ do_test where8-3.15 {
     SELECT c FROM t1, t2 WHERE a BETWEEN 1 AND 2 OR a = (
       SELECT sum(e IS NULL) FROM t2 AS inner WHERE t2.d>inner.d
     )
+    ORDER BY c
   }
-} {I II I II I II I II I II I II III I II III I II III I II III I II III 9 0}
+} {I I I I I I I I I I II II II II II II II II II II III III III III III 9 1}
 
 #-----------------------------------------------------------------------
 # The following tests - where8-4.* - verify that adding or removing 
