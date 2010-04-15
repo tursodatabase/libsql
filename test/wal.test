@@ -531,5 +531,95 @@ foreach code [list {
   catch { close $::code3_chan }
 }
 
+#-------------------------------------------------------------------------
+# This block of tests, wal-11.*, test that nothing goes terribly wrong
+# if frames must be written to the log file before a transaction is
+# committed (in order to free up memory).
+#
+do_test wal-11.1 {
+  reopen_db
+  execsql {
+    PRAGMA cache_size = 10;
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x PRIMARY KEY);
+  }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {0 3}
+do_test wal-11.2 {
+  execsql { PRAGMA checkpoint }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 3}
+do_test wal-11.3 {
+  execsql { INSERT INTO t1 VALUES( randomblob(900) ) }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 4}
+
+do_test wal-11.4 {
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 2
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 4
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 8
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 16
+  }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 33}
+do_test wal-11.5 {
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {16 ok}
+do_test wal-11.6 {
+  execsql COMMIT
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 42}
+do_test wal-11.7 {
+  execsql { 
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {16 ok}
+do_test wal-11.8 {
+  execsql { PRAGMA checkpoint }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {37 42}
+do_test wal-11.9 {
+  db close
+  sqlite3_wal db test.db
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {37 0}
+
+do_test wal-11.10 {
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 32
+      SELECT count(*) FROM t1;
+  }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {37 38}
+do_test wal-11.11 {
+  execsql {
+      SELECT count(*) FROM t1;
+    ROLLBACK;
+    SELECT count(*) FROM t1;
+  }
+} {32 16}
+do_test wal-11.12 {
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {37 38}
+do_test wal-11.13 {
+  execsql {
+    INSERT INTO t1 VALUES( randomblob(900) );
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {17 ok}
+do_test wal-11.14 {
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {37 38}
+
+
 finish_test
 

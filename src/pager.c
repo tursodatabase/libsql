@@ -3253,76 +3253,80 @@ static int pagerStress(void *p, PgHdr *pPg){
   assert( pPg->pPager==pPager );
   assert( pPg->flags&PGHDR_DIRTY );
 
-  if( pagerUseLog(pPager) ) return SQLITE_OK;
-
-  /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
-  ** is journalling a set of two or more database pages that are stored
-  ** on the same disk sector. Syncing the journal is not allowed while
-  ** this is happening as it is important that all members of such a
-  ** set of pages are synced to disk together. So, if the page this function
-  ** is trying to make clean will require a journal sync and the doNotSync
-  ** flag is set, return without doing anything. The pcache layer will
-  ** just have to go ahead and allocate a new page buffer instead of
-  ** reusing pPg.
-  **
-  ** Similarly, if the pager has already entered the error state, do not
-  ** try to write the contents of pPg to disk.
-  */
-  if( NEVER(pPager->errCode)
-   || (pPager->doNotSync && pPg->flags&PGHDR_NEED_SYNC)
-  ){
-    return SQLITE_OK;
-  }
-
-  /* Sync the journal file if required. */
-  if( pPg->flags&PGHDR_NEED_SYNC ){
-    rc = syncJournal(pPager);
-    if( rc==SQLITE_OK && pPager->fullSync && 
-      !(pPager->journalMode==PAGER_JOURNALMODE_MEMORY) &&
-      !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
+  if( pagerUseLog(pPager) ){
+    /* Write a single frame for this page to the log. */
+    assert( pPg->pDirty==0 );
+    rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pPg, 0, 0, 0);
+  }else{
+    /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
+    ** is journalling a set of two or more database pages that are stored
+    ** on the same disk sector. Syncing the journal is not allowed while
+    ** this is happening as it is important that all members of such a
+    ** set of pages are synced to disk together. So, if the page this function
+    ** is trying to make clean will require a journal sync and the doNotSync
+    ** flag is set, return without doing anything. The pcache layer will
+    ** just have to go ahead and allocate a new page buffer instead of
+    ** reusing pPg.
+    **
+    ** Similarly, if the pager has already entered the error state, do not
+    ** try to write the contents of pPg to disk.
+    */
+    if( NEVER(pPager->errCode)
+     || (pPager->doNotSync && pPg->flags&PGHDR_NEED_SYNC)
     ){
-      pPager->nRec = 0;
-      rc = writeJournalHdr(pPager);
+      return SQLITE_OK;
     }
-  }
-
-  /* If the page number of this page is larger than the current size of
-  ** the database image, it may need to be written to the sub-journal.
-  ** This is because the call to pager_write_pagelist() below will not
-  ** actually write data to the file in this case.
-  **
-  ** Consider the following sequence of events:
-  **
-  **   BEGIN;
-  **     <journal page X>
-  **     <modify page X>
-  **     SAVEPOINT sp;
-  **       <shrink database file to Y pages>
-  **       pagerStress(page X)
-  **     ROLLBACK TO sp;
-  **
-  ** If (X>Y), then when pagerStress is called page X will not be written
-  ** out to the database file, but will be dropped from the cache. Then,
-  ** following the "ROLLBACK TO sp" statement, reading page X will read
-  ** data from the database file. This will be the copy of page X as it
-  ** was when the transaction started, not as it was when "SAVEPOINT sp"
-  ** was executed.
-  **
-  ** The solution is to write the current data for page X into the 
-  ** sub-journal file now (if it is not already there), so that it will
-  ** be restored to its current value when the "ROLLBACK TO sp" is 
-  ** executed.
-  */
-  if( NEVER(
-      rc==SQLITE_OK && pPg->pgno>pPager->dbSize && subjRequiresPage(pPg)
-  ) ){
-    rc = subjournalPage(pPg);
-  }
-
-  /* Write the contents of the page out to the database file. */
-  if( rc==SQLITE_OK ){
-    pPg->pDirty = 0;
-    rc = pager_write_pagelist(pPg);
+  
+    /* Sync the journal file if required. */
+    if( pPg->flags&PGHDR_NEED_SYNC ){
+      rc = syncJournal(pPager);
+      if( rc==SQLITE_OK && pPager->fullSync && 
+        !(pPager->journalMode==PAGER_JOURNALMODE_MEMORY) &&
+        !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
+      ){
+        pPager->nRec = 0;
+        rc = writeJournalHdr(pPager);
+      }
+    }
+  
+    /* If the page number of this page is larger than the current size of
+    ** the database image, it may need to be written to the sub-journal.
+    ** This is because the call to pager_write_pagelist() below will not
+    ** actually write data to the file in this case.
+    **
+    ** Consider the following sequence of events:
+    **
+    **   BEGIN;
+    **     <journal page X>
+    **     <modify page X>
+    **     SAVEPOINT sp;
+    **       <shrink database file to Y pages>
+    **       pagerStress(page X)
+    **     ROLLBACK TO sp;
+    **
+    ** If (X>Y), then when pagerStress is called page X will not be written
+    ** out to the database file, but will be dropped from the cache. Then,
+    ** following the "ROLLBACK TO sp" statement, reading page X will read
+    ** data from the database file. This will be the copy of page X as it
+    ** was when the transaction started, not as it was when "SAVEPOINT sp"
+    ** was executed.
+    **
+    ** The solution is to write the current data for page X into the 
+    ** sub-journal file now (if it is not already there), so that it will
+    ** be restored to its current value when the "ROLLBACK TO sp" is 
+    ** executed.
+    */
+    if( NEVER(
+        rc==SQLITE_OK && pPg->pgno>pPager->dbSize && subjRequiresPage(pPg)
+    ) ){
+      rc = subjournalPage(pPg);
+    }
+  
+    /* Write the contents of the page out to the database file. */
+    if( rc==SQLITE_OK ){
+      pPg->pDirty = 0;
+      rc = pager_write_pagelist(pPg);
+    }
   }
 
   /* Mark the page as clean. */
