@@ -2737,12 +2737,23 @@ static void bestBtreeIndex(
     ** matters if the current index is the least costly, so do not bother
     ** with this step if we already know this index will not be chosen.
     ** Also, never reduce the output row count below 2 using this step.
+    **
+    ** Do not reduce the output row count if pSrc is the only table that
+    ** is notReady; if notReady is a power of two.  This will be the case
+    ** when the main sqlite3WhereBegin() loop is scanning for a table with
+    ** and "optimal" index, and on such a scan the output row count
+    ** reduction is not valid because it does not update the "pCost->used"
+    ** bitmap.  The notReady bitmap will also be a power of two when we
+    ** are scanning for the last table in a 64-way join.  We are willing
+    ** to bypass this optimization in that corner case.
     */
-    if( nRow>2 && cost<=pCost->rCost ){
-      int k;
-      int nSkipEq = nEq;
-      int nSkipRange = nBound;
-      Bitmask thisTab = getMask(pWC->pMaskSet, iCur);
+    if( nRow>2 && cost<=pCost->rCost && (notReady & (notReady-1))!=0 ){
+      int k;                       /* Loop counter */
+      int nSkipEq = nEq;           /* Number of == constraints to skip */
+      int nSkipRange = nBound;     /* Number of < constraints to skip */
+      Bitmask thisTab;             /* Bitmap for pSrc */
+
+      thisTab = getMask(pWC->pMaskSet, iCur);
       for(pTerm=pWC->a, k=pWC->nTerm; nRow>2 && k; k--, pTerm++){
         if( pTerm->wtFlags & TERM_VIRTUAL ) continue;
         if( (pTerm->prereqAll & notReady)!=thisTab ) continue;

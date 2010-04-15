@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Further\srefinements\sto\stable\sorder\sselection\son\sjoin\squery\splanning.
-D 2010-04-15T01:04:54
+C The\squery\splanner\sfix\sof\scheck-in\s[33b1f584ef]\sshould\shave\sbeen\son\sthe\strunk.
+D 2010-04-15T13:29:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -225,7 +225,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 74ff6f0d96b3190f8abe2ceaa09858441749e8ff
+F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -800,14 +800,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b87cb0c2bd9c52a938795a974e101879b81210e3
-R ac19ec910df4152a1528b71c1365be54
+P defaf0d99a807027f8883bf821b6482025f9f54e
+R a8916448766fe2dc0eee7acf074d6482
 U drh
-Z 406deb0be8ed4b7e4bb6e640f59e7f15
+Z 28450adfa9ef42da4766c0ed11d89126
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLxmY4oxKgR168RlERAsvwAJ4tlJVE6cdAiLgjUGC8Snj86Xjm4ACeIy59
-w6HyVplE+rrSW13BtidRydE=
-=uibN
+iD8DBQFLxxTGoxKgR168RlERAr/aAJwLuSD1d16efrb/1zmza7D1Lt3gJwCeMzR0
+I06a/9mduq2NTfZ7gOTnT48=
+=kB+a
 -----END PGP SIGNATURE-----
