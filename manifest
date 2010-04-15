@@ -1,5 +1,5 @@
-C Change\sthe\sway\schecksums\sare\scalculated.
-D 2010-04-15T10:58:52
+C Merge\stwo\sleaves\son\sthe\sWAL\sbranch.
+D 2010-04-15T13:33:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +131,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c bf7ce56249b2a08d26b4029430c32a01efc4a64e
+F src/log.c 3647edbc85ac745db7f18bc1102344aa2ee5259a
 F src/log.h a2654af46ce7b5732f4d5a731abfdd180f0a06d9
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
@@ -224,7 +224,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 74ff6f0d96b3190f8abe2ceaa09858441749e8ff
+F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -804,7 +804,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 82969f27e5ea843cb379666d8a02e4a3fddc03b2
-R b356f412a9c351edeb3f07a632ecce9f
+P 84955c2e9ce526c5a3ed479aa09f093a7e37c7d0 33b1f584ef712625c4df8e2aefe895fa89f6a795
+R bcaf3c70b81f92c4b906909c026342d3
 U dan
-Z 01a21dba5524ff578c531f4245d5f626
+Z 3782bee1cb14af26018fee50d035e5d0

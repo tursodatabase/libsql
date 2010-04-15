@@ -806,6 +806,10 @@ static int logCheckpoint(
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Log frame containing data for iDbpage */
 
+  if( pLog->hdr.iLastPg==0 ){
+    return SQLITE_OK;
+  }
+
   /* Allocate the iterator */
   pIter = logCheckpointInit(pLog);
   if( !pIter ) return SQLITE_NOMEM;
