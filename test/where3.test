@@ -199,13 +199,13 @@ do_test where3-2.5 {
      WHERE cpk=ax AND bpk=cx
   }
 } {tA {} tC * tB * tD *}
-do_test where3-2.5 {
+do_test where3-2.6 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE bpk=cx AND apk=bx
   }
 } {tC {} tB * tA * tD *}
-do_test where3-2.6 {
+do_test where3-2.7 {
   queryplan {
     SELECT * FROM tA, tB, tC LEFT JOIN tD ON dpk=cx
      WHERE cpk=bx AND apk=cx

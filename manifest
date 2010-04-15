@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C The\squery\splanner\suses\snon-indexable\sWHERE\sclause\sterms\sto\sreduce\sthe\nestimated\snumber\sof\soutput\srows,\sthen\suses\sthe\sestimated\snumber\sof\soutput\nrows\sas\sa\stie-breaker\swhen\schoosing\stable\sorder.
-D 2010-04-14T19:01:45
+C Further\srefinements\sto\stable\sorder\sselection\son\sjoin\squery\splanning.
+D 2010-04-15T01:04:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -225,7 +225,7 @@ F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 458b6e0d5e3e4eaaf75e352a88641ab2d7e21cad
+F src/where.c 74ff6f0d96b3190f8abe2ceaa09858441749e8ff
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 14165b3e32715b700b5f0cbf8f6e3833dda0be45
@@ -558,7 +558,7 @@ F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/securedel.test 328d2921c0ca49bdd3352e516b0377fc07143254
 F test/select1.test f67ca2dfc05df41c7b86eb32ca409b427a5f43b0
-F test/select2.test 9735da20ccd41e42bf2b4c19fd939141b591adae
+F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
 F test/select3.test 2ce595f8fb8e2ac10071d3b4e424cadd4634a054
 F test/select4.test 44aa6e7110592e18110b0b9cf5c024d37d23be17
 F test/select5.test e758b8ef94f69b111df4cb819008856655dcd535
@@ -723,7 +723,7 @@ F test/trigger6.test 0e411654f122552da6590f0b4e6f781048a4a9b9
 F test/trigger7.test 72feaf8dbc52cea84de0c3e6ce7559ff19c479af
 F test/trigger8.test 30cb0530bd7c4728055420e3f739aa00412eafa4
 F test/trigger9.test 5b0789f1c5c4600961f8e68511b825b87be53e31
-F test/triggerA.test 0718ad2d9bfef27c7af00e636df79bee6b988da7
+F test/triggerA.test eaf11a29db2a11967d2d4b49d37f92bce598194e
 F test/triggerB.test 56780c031b454abac2340dbb3b71ac5c56c3d7fe
 F test/triggerC.test cac41fe31adc1abb9fa08532762fc2b4f662ab03
 F test/triggerD.test c6add3817351451e419f6ff9e9a259b02b6e2de7
@@ -759,12 +759,12 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 45eacc126aabb37959a387aa83e59ce1f1f03820
-F test/where3.test 97d3936e6a443b968f1a61cdcc0f673252000e94
+F test/where3.test aa44a9b29e8c9f3d7bb94a3bb3a95b31627d520d
 F test/where4.test e9b9e2f2f98f00379e6031db6a6fca29bae782a2
 F test/where5.test fdf66f96d29a064b63eb543e28da4dfdccd81ad2
 F test/where6.test 5da5a98cec820d488e82708301b96cb8c18a258b
-F test/where7.test fdd58ab9dec9f97679e65d4414bf5e07d725d79f
-F test/where8.test 2bb8ea44b745fcc93db150fac9ce33d12e499760
+F test/where7.test a0a92b8ce48d9c027fbdd7b764c7de1e1213575a
+F test/where8.test a6c740fd286d7883e274e17b6230a9d672a7ab1f
 F test/where8m.test da346596e19d54f0aba35ebade032a7c47d79739
 F test/where9.test be19e1a92f80985c1a121b4678bf7d2123eaa623
 F test/whereA.test 24c234263c8fe358f079d5e57d884fb569d2da0a
@@ -800,14 +800,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 012cf101bf8be9e39c138786ea5a5039b8131e55
-R e6913462c9fc35ffdd8fb296dee81dc4
+P b87cb0c2bd9c52a938795a974e101879b81210e3
+R ac19ec910df4152a1528b71c1365be54
 U drh
-Z b112ddd6d5441568434e7011a246cd66
+Z 406deb0be8ed4b7e4bb6e640f59e7f15
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFLxhEcoxKgR168RlERAr4AAJ4o9PzYb8/4qM3TXJMcn3pTohzAyQCeOO2/
-T96saJ5mGiq/UIbcA3uQVL0=
-=Qkym
+iD8DBQFLxmY4oxKgR168RlERAsvwAJ4tlJVE6cdAiLgjUGC8Snj86Xjm4ACeIy59
+w6HyVplE+rrSW13BtidRydE=
+=uibN
 -----END PGP SIGNATURE-----

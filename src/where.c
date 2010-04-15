@@ -1575,6 +1575,11 @@ static void bestOrClauseIndex(
   WhereTerm * const pWCEnd = &pWC->a[pWC->nTerm];        /* End of pWC->a[] */
   WhereTerm *pTerm;                 /* A single term of the WHERE clause */
 
+  /* No OR-clause optimization allowed if the NOT INDEXED clause is used */
+  if( pSrc->notIndexed ){
+    return;
+  }
+
   /* Search the WHERE clause terms for a usable WO_OR term. */
   for(pTerm=pWC->a; pTerm<pWCEnd; pTerm++){
     if( pTerm->eOperator==WO_OR 
@@ -1617,8 +1622,9 @@ static void bestOrClauseIndex(
       /* If there is an ORDER BY clause, increase the scan cost to account 
       ** for the cost of the sort. */
       if( pOrderBy!=0 ){
+        WHERETRACE(("... sorting increases OR cost %.9g to %.9g\n",
+                    rTotal, rTotal+nRow*estLog(nRow)));
         rTotal += nRow*estLog(nRow);
-        WHERETRACE(("... sorting increases OR cost to %.9g\n", rTotal));
       }
 
       /* If the cost of scanning using this OR term for optimization is
@@ -2569,14 +2575,14 @@ static void bestBtreeIndex(
     **    Set to true if there was at least one "x IN (SELECT ...)" term used 
     **    in determining the value of nInMul.
     **
-    **  nBound:
+    **  estBound:
     **    An estimate on the amount of the table that must be searched.  A
     **    value of 100 means the entire table is searched.  Range constraints
     **    might reduce this to a value less than 100 to indicate that only
     **    a fraction of the table needs searching.  In the absence of
     **    sqlite_stat2 ANALYZE data, a single inequality reduces the search
     **    space to 1/3rd its original size.  So an x>? constraint reduces
-    **    nBound to 33.  Two constraints (x>? AND x<?) reduce nBound to 11.
+    **    estBound to 33.  Two constraints (x>? AND x<?) reduce estBound to 11.
     **
     **  bSort:   
     **    Boolean. True if there is an ORDER BY clause that will require an 
@@ -2598,7 +2604,8 @@ static void bestBtreeIndex(
     int nEq;
     int bInEst = 0;
     int nInMul = 1;
-    int nBound = 100;
+    int estBound = 100;
+    int nBound = 0;             /* Number of range constraints seen */
     int bSort = 0;
     int bLookup = 0;
     WhereTerm *pTerm;           /* A single term of the WHERE clause */
@@ -2624,18 +2631,20 @@ static void bestBtreeIndex(
       used |= pTerm->prereqRight;
     }
 
-    /* Determine the value of nBound. */
+    /* Determine the value of estBound. */
     if( nEq<pProbe->nColumn ){
       int j = pProbe->aiColumn[nEq];
       if( findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE|WO_GT|WO_GE, pIdx) ){
         WhereTerm *pTop = findTerm(pWC, iCur, j, notReady, WO_LT|WO_LE, pIdx);
         WhereTerm *pBtm = findTerm(pWC, iCur, j, notReady, WO_GT|WO_GE, pIdx);
-        whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &nBound);
+        whereRangeScanEst(pParse, pProbe, nEq, pBtm, pTop, &estBound);
         if( pTop ){
+          nBound = 1;
           wsFlags |= WHERE_TOP_LIMIT;
           used |= pTop->prereqRight;
         }
         if( pBtm ){
+          nBound++;
           wsFlags |= WHERE_BTM_LIMIT;
           used |= pBtm->prereqRight;
         }
@@ -2704,8 +2713,8 @@ static void bestBtreeIndex(
     /* Adjust the number of rows and the cost downward to reflect rows
     ** that are excluded by range constraints.
     */
-    nRow = (nRow * (double)nBound) / (double)100;
-    cost = (cost * (double)nBound) / (double)100;
+    nRow = (nRow * (double)estBound) / (double)100;
+    cost = (cost * (double)estBound) / (double)100;
 
     /* Add in the estimated cost of sorting the result
     */
@@ -2727,23 +2736,35 @@ static void bestBtreeIndex(
     ** of output rows, adjust the nRow value accordingly.  This only 
     ** matters if the current index is the least costly, so do not bother
     ** with this step if we already know this index will not be chosen.
+    ** Also, never reduce the output row count below 2 using this step.
     */
     if( nRow>2 && cost<=pCost->rCost ){
       int k;
-      int nSkip = nEq;
+      int nSkipEq = nEq;
+      int nSkipRange = nBound;
       Bitmask thisTab = getMask(pWC->pMaskSet, iCur);
       for(pTerm=pWC->a, k=pWC->nTerm; nRow>2 && k; k--, pTerm++){
         if( pTerm->wtFlags & TERM_VIRTUAL ) continue;
         if( (pTerm->prereqAll & notReady)!=thisTab ) continue;
         if( pTerm->eOperator & (WO_EQ|WO_IN|WO_ISNULL) ){
-          if( nSkip ){
+          if( nSkipEq ){
             /* Ignore the first nEq equality matches since the index
             ** has already accounted for these */
-            nSkip--;
+            nSkipEq--;
           }else{
             /* Assume each additional equality match reduces the result
             ** set size by a factor of 10 */
             nRow /= 10;
+          }
+        }else if( pTerm->eOperator & (WO_LT|WO_LE|WO_GT|WO_GE) ){
+          if( nSkipRange ){
+            /* Ignore the first nBound range constraints since the index
+            ** has already accounted for these */
+            nSkipRange--;
+          }else{
+            /* Assume each additional range constraint reduces the result
+            ** set size by a factor of 3 */
+            nRow /= 3;
           }
         }else{
           /* Any other expression lowers the output row count by half */
@@ -2755,17 +2776,18 @@ static void bestBtreeIndex(
 
 
     WHERETRACE((
-      "%s(%s): nEq=%d nInMul=%d nBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
+      "%s(%s): nEq=%d nInMul=%d estBound=%d bSort=%d bLookup=%d wsFlags=0x%x\n"
       "         notReady=0x%llx nRow=%.2f cost=%.2f used=0x%llx\n",
       pSrc->pTab->zName, (pIdx ? pIdx->zName : "ipk"), 
-      nEq, nInMul, nBound, bSort, bLookup, wsFlags, notReady, nRow, cost, used
+      nEq, nInMul, estBound, bSort, bLookup, wsFlags,
+      notReady, nRow, cost, used
     ));
 
     /* If this index is the best we have seen so far, then record this
     ** index and its cost in the pCost structure.
     */
     if( (!pIdx || wsFlags)
-     && (cost<pCost->rCost || (cost==pCost->rCost && nRow<pCost->nRow))
+     && (cost<pCost->rCost || (cost<=pCost->rCost && nRow<pCost->nRow))
     ){
       pCost->rCost = cost;
       pCost->nRow = nRow;
@@ -4015,20 +4037,25 @@ WhereInfo *sqlite3WhereBegin(
     bestPlan.rCost = SQLITE_BIG_DBL;
 
     /* Loop through the remaining entries in the FROM clause to find the
-    ** next nested loop. The FROM clause entries may be iterated through
+    ** next nested loop. The loop tests all FROM clause entries
     ** either once or twice. 
     **
-    ** The first iteration, which is always performed, searches for the
-    ** FROM clause entry that permits the lowest-cost, "optimal" scan. In
+    ** The first test is always performed if there are two or more entries
+    ** remaining and never performed if there is only one FROM clause entry
+    ** to choose from.  The first test looks for an "optimal" scan.  In
     ** this context an optimal scan is one that uses the same strategy
     ** for the given FROM clause entry as would be selected if the entry
     ** were used as the innermost nested loop.  In other words, a table
     ** is chosen such that the cost of running that table cannot be reduced
-    ** by waiting for other tables to run first.
+    ** by waiting for other tables to run first.  This "optimal" test works
+    ** by first assuming that the FROM clause is on the inner loop and finding
+    ** its query plan, then checking to see if that query plan uses any
+    ** other FROM clause terms that are notReady.  If no notReady terms are
+    ** used then the "optimal" query plan works.
     **
-    ** The second iteration is only performed if no optimal scan strategies
-    ** were found by the first. This iteration is used to search for the
-    ** lowest cost scan overall.
+    ** The second loop iteration is only performed if no optimal scan
+    ** strategies were found by the first loop. This 2nd iteration is used to
+    ** search for the lowest cost scan overall.
     **
     ** Previous versions of SQLite performed only the second iteration -
     ** the next outermost loop was always that with the lowest overall
@@ -4046,9 +4073,8 @@ WhereInfo *sqlite3WhereBegin(
     ** algorithm may choose to use t2 for the outer loop, which is a much
     ** costlier approach.
     */
-    for(isOptimal=1; isOptimal>=0 && bestJ<0; isOptimal--){
-      Bitmask mask = (isOptimal ? 0 : notReady);
-      assert( (nTabList-iFrom)>1 || isOptimal );
+    for(isOptimal=(iFrom<nTabList-1); isOptimal>=0; isOptimal--){
+      Bitmask mask;  /* Mask of tables not yet ready */
       for(j=iFrom, pTabItem=&pTabList->a[j]; j<nTabList; j++, pTabItem++){
         int doNotReorder;    /* True if this table should not be reordered */
         WhereCost sCost;     /* Cost information from best[Virtual]Index() */
@@ -4061,6 +4087,7 @@ WhereInfo *sqlite3WhereBegin(
           if( j==iFrom ) iFrom++;
           continue;
         }
+        mask = (isOptimal ? m : notReady);
         pOrderBy = ((i==0 && ppOrderBy )?*ppOrderBy:0);
   
         assert( pTabItem->pTab );
@@ -4076,9 +4103,11 @@ WhereInfo *sqlite3WhereBegin(
         assert( isOptimal || (sCost.used&notReady)==0 );
 
         if( (sCost.used&notReady)==0
-         && (j==iFrom || sCost.rCost<bestPlan.rCost
-             || (sCost.rCost==bestPlan.rCost && sCost.nRow<bestPlan.nRow))
+         && (bestJ<0 || sCost.rCost<bestPlan.rCost
+             || (sCost.rCost<=bestPlan.rCost && sCost.nRow<bestPlan.nRow))
         ){
+          WHERETRACE(("... best so far with cost=%g and nRow=%g\n",
+                      sCost.rCost, sCost.nRow));
           bestPlan = sCost;
           bestJ = j;
         }

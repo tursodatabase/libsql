@@ -90,12 +90,10 @@ do_test where7-1.9 {
   }
 } {2 4 5 scan 0 sort 0}
 do_test where7-1.10 {
-breakpoint
   count_steps {
     SELECT a FROM t1 WHERE (b=3 OR c>=10 OR c=4 OR b>10)
   }
 } {2 4 5 scan 0 sort 0}
-breakpoint
 do_test where7-1.11 {
   count_steps {
     SELECT a FROM t1 WHERE (d=5 AND b=3) OR c==100 ORDER BY a;
@@ -106,13 +104,7 @@ do_test where7-1.12 {
     SELECT a FROM t1 WHERE (b BETWEEN 2 AND 4) OR c=100 ORDER BY a
   }
 } {1 2 3 5 scan 0 sort 1}
-do_test where7-1.13.1 {
-  count_steps {
-    SELECT a FROM t1 WHERE (b BETWEEN 0 AND 2) OR (c BETWEEN 9 AND 999)
-    ORDER BY a DESC
-  }
-} {5 4 1 scan 4 sort 0}
-do_test where7-1.13.2 {
+do_test where7-1.13 {
   count_steps {
     SELECT a FROM t1 WHERE (b BETWEEN 0 AND 2) OR (c BETWEEN 9 AND 999)
     ORDER BY +a DESC
