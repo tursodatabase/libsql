@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Disable\squery\sflattening\swhen\sthe\souter\squery\sis\sa\scompound\sSELECT\sand\nthe\sinner\squery\shas\sa\sLIMIT\sclause.\s\sTicket\s[02a8e81d44].
-D 2010-04-15T23:24:29
+C Changes\sfor\sbranch\scoverage\sof\snotify.c.\s\s\sFixed\squirk\sof\s\nunlock_notify()\swhere\sit\swould\sstill\sthink\sit\swas\sblocked\nafter\sa\scallback\swas\scleared\s(even\safter\sthe\stransaction\non\sthe\sblocking\sconnection\swas\sclosed).
+D 2010-04-16T22:05:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -22,7 +19,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2 x
+F configure 72c0ad7c8cfabbffeaf8ca61e1d24143cf857eb2
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -90,7 +87,7 @@ F ext/rtree/rtree_perf.tcl 6c18c1f23cd48e0f948930c98dfdd37dfccb5195
 F ext/rtree/rtree_util.tcl 06aab2ed5b826545bf215fff90ecb9255a8647ea
 F ext/rtree/tkt3363.test 2bf324f7908084a5f463de3109db9c6e607feb1b
 F ext/rtree/viewrtree.tcl eea6224b3553599ae665b239bd827e182b466024
-F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895 x
+F install-sh 9d4de14ab9fb0facae2f48780b874848cbf2f895
 F ltmain.sh 3ff0879076df340d2e23ae905484d8c15d5fdea8
 F main.mk d286b99eb87db41cfc5394e346604ef49509867d
 F mkdll.sh 7d09b23c05d56532e9d44a50868eb4b12ff4f74a
@@ -148,7 +145,7 @@ F src/mutex_noop.c 5f58eaa31f2d742cb8957a747f7887ae98f16053
 F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
 F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
 F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
-F src/notify.c f799bbda67ab6619b36b0a24153b49518874a203
+F src/notify.c 62ec477243ba2fda8d1c4c0551a245f09d0e730f
 F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
@@ -801,14 +798,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f538d759beda67e042b66181b65bd432488f7650
-R 34d0a17088c0fdff5f60f2ea4cf2882d
-U drh
-Z b46bcb95ee573d80fced144df93d24f1
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFLx6AxoxKgR168RlERAq3yAJ9VLNfRM+IKVowVDGm7aiEH4HuZmQCaA/ai
-zk4R64zbGoGnQ/UpEadFxjM=
-=0vth
------END PGP SIGNATURE-----
+P f96782b389b5b97b488dc5814f7082e0393f64cd
+R 2c27fde6c2e2916cbe462ef0898d86e8
+U shaneh
+Z b1ee3b1606ac5471056337dc734ca38d

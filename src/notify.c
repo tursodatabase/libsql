@@ -157,6 +157,7 @@ int sqlite3_unlock_notify(
 
   if( xNotify==0 ){
     removeFromBlockedList(db);
+    db->pBlockingConnection = 0;
     db->pUnlockConnection = 0;
     db->xUnlockNotify = 0;
     db->pUnlockArg = 0;
@@ -196,7 +197,12 @@ int sqlite3_unlock_notify(
 */
 void sqlite3ConnectionBlocked(sqlite3 *db, sqlite3 *pBlocker){
   enterMutex();
-  if( db->pBlockingConnection==0 && db->pUnlockConnection==0 ){
+  if( db->pBlockingConnection==0 ){
+    /* 
+    ** We can not register an unlock callback unless we think we are 
+    ** blocked.
+    */
+    assert( db->pUnlockConnection==0 );
     addToBlockedList(db);
   }
   db->pBlockingConnection = pBlocker;
@@ -301,7 +307,15 @@ void sqlite3ConnectionUnlocked(sqlite3 *db){
     }
 
     /* Step 3. */
-    if( p->pBlockingConnection==0 && p->pUnlockConnection==0 ){
+    if( p->pBlockingConnection==0 ){
+      /* 
+      ** If we were blocked on db, we would set
+      ** pBlockingConnection to 0 above.  And we can 
+      ** only wait on a connection we are blocked on.
+      ** So if we were waiting on db (pUnlockConnection==db)
+      ** then it would have been set to 0 above as well.
+      */
+      assert( p->pUnlockConnection==0 );
       /* Remove connection p from the blocked connections list. */
       *pp = p->pNextBlocked;
       p->pNextBlocked = 0;
