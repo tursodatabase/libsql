@@ -12,7 +12,7 @@
 
 typedef struct LogSummaryHdr LogSummaryHdr;
 typedef struct LogSummary LogSummary;
-typedef struct LogCheckpoint LogCheckpoint;
+typedef struct LogIterator LogIterator;
 typedef struct LogLock LogLock;
 
 
@@ -109,14 +109,14 @@ struct Log {
 **
 ** The internals of this structure are only accessed by:
 **
-**   logCheckpointInit() - Create a new iterator,
-**   logCheckpointNext() - Step an iterator,
-**   logCheckpointFree() - Free an iterator.
+**   logIteratorInit() - Create a new iterator,
+**   logIteratorNext() - Step an iterator,
+**   logIteratorFree() - Free an iterator.
 **
 ** This functionality is used by the checkpoint code (see logCheckpoint()).
 */
-struct LogCheckpoint {
-  int nSegment;                   /* Size of LogCheckpoint.aSummary[] array */
+struct LogIterator {
+  int nSegment;                   /* Size of LogIterator.aSegment[] array */
   int nFinal;                     /* Elements in segment nSegment-1 */
   struct LogSegment {
     int iNext;                    /* Next aIndex index */
@@ -346,6 +346,8 @@ static int logDecodeFrame(
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* Frame data */
 ){
+  assert( LOG_FRAME_HDRSIZE==20 );
+
   logChecksumBytes(aFrame, 12, aCksum);
   logChecksumBytes(aData, nData, aCksum);
 
@@ -513,7 +515,7 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     /* Read all frames from the log file. */
     iFrame = 0;
     iOffset = 0;
-    for(iOffset=0; (iOffset+nFrame)<nSize; iOffset+=nFrame){
+    for(iOffset=0; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
       int isValid;                /* True if this frame is valid */
@@ -713,8 +715,8 @@ int sqlite3LogOpen(
   return rc;
 }
 
-static int logCheckpointNext(
-  LogCheckpoint *p,               /* Iterator */
+static int logIteratorNext(
+  LogIterator *p,               /* Iterator */
   u32 *piPage,                    /* OUT: Next db page to write */
   u32 *piFrame                    /* OUT: Log frame to read from */
 ){
@@ -744,9 +746,9 @@ static int logCheckpointNext(
   return (iRet==0xFFFFFFFF);
 }
 
-static LogCheckpoint *logCheckpointInit(Log *pLog){
+static LogIterator *logIteratorInit(Log *pLog){
   u32 *aData = pLog->pSummary->aData;
-  LogCheckpoint *p;               /* Return value */
+  LogIterator *p;                 /* Return value */
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
   int nByte;                      /* Number of bytes to allocate */
@@ -759,8 +761,8 @@ static LogCheckpoint *logCheckpointInit(Log *pLog){
   nSegment = (iLast >> 8) + 1;
   nFinal = (iLast & 0x000000FF);
 
-  nByte = sizeof(LogCheckpoint) + (nSegment-1)*sizeof(struct LogSegment) + 512;
-  p = (LogCheckpoint *)sqlite3_malloc(nByte);
+  nByte = sizeof(LogIterator) + (nSegment-1)*sizeof(struct LogSegment) + 512;
+  p = (LogIterator *)sqlite3_malloc(nByte);
   if( p ){
     memset(p, 0, nByte);
     p->nSegment = nSegment;
@@ -786,9 +788,9 @@ static LogCheckpoint *logCheckpointInit(Log *pLog){
 }
 
 /* 
-** Free a log iterator allocated by logCheckpointInit().
+** Free a log iterator allocated by logIteratorInit().
 */
-static void logCheckpointFree(LogCheckpoint *p){
+static void logIteratorFree(LogIterator *p){
   sqlite3_free(p);
 }
 
@@ -802,7 +804,7 @@ static int logCheckpoint(
 ){
   int rc;                         /* Return code */
   int pgsz = pLog->hdr.pgsz;      /* Database page-size */
-  LogCheckpoint *pIter = 0;       /* Log iterator context */
+  LogIterator *pIter = 0;         /* Log iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Log frame containing data for iDbpage */
 
@@ -811,7 +813,7 @@ static int logCheckpoint(
   }
 
   /* Allocate the iterator */
-  pIter = logCheckpointInit(pLog);
+  pIter = logIteratorInit(pLog);
   if( !pIter ) return SQLITE_NOMEM;
 
   /* Sync the log file to disk */
@@ -819,7 +821,7 @@ static int logCheckpoint(
   if( rc!=SQLITE_OK ) goto out;
 
   /* Iterate through the contents of the log, copying data to the db file. */
-  while( 0==logCheckpointNext(pIter, &iDbpage, &iFrame) ){
+  while( 0==logIteratorNext(pIter, &iDbpage, &iFrame) ){
     rc = sqlite3OsRead(pLog->pFd, zBuf, pgsz, 
         (iFrame-1) * (pgsz+LOG_FRAME_HDRSIZE) + LOG_FRAME_HDRSIZE
     );
@@ -861,7 +863,7 @@ static int logCheckpoint(
 #endif
 
  out:
-  logCheckpointFree(pIter);
+  logIteratorFree(pIter);
   return rc;
 }
 

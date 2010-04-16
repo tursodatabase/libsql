@@ -621,5 +621,63 @@ do_test wal-11.14 {
 } {37 38}
 
 
+#-------------------------------------------------------------------------
+# This block of tests, wal-12.*, tests a problem...
+#
+reopen_db
+do_test wal-12.1 {
+  execsql {
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(x, y);
+    CREATE TABLE t2(x, y);
+    INSERT INTO t1 VALUES('A', 1);
+  }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {0 5}
+do_test wal-12.2 {
+  db close
+  sqlite3_wal db test.db
+  execsql {
+    UPDATE t1 SET y = 0 WHERE x = 'A';
+  }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 1}
+do_test wal-12.3 {
+  execsql { INSERT INTO t2 VALUES('B', 1) }
+  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+} {3 2}
+
+do_test wal-12.4 {
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  sqlite3_wal db2 test2.db
+breakpoint
+  execsql { SELECT * FROM t2 } db2
+} {B 1}
+db2 close
+
+file copy -force test.db-wal A
+do_test wal-12.5 {
+  execsql {
+    PRAGMA checkpoint;
+    UPDATE t2 SET y = 2 WHERE x = 'B'; 
+    PRAGMA checkpoint;
+    UPDATE t1 SET y = 1 WHERE x = 'A';
+    PRAGMA checkpoint;
+    UPDATE t1 SET y = 0 WHERE x = 'A';
+    SELECT * FROM t2;
+  }
+} {B 2}
+file copy -force test.db-wal B
+
+do_test wal-12.4 {
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  sqlite3_wal db2 test2.db
+  execsql { SELECT * FROM t2 } db2
+} {B 2}
+db2 close
+
+
 finish_test
 

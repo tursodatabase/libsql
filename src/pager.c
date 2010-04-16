@@ -3253,9 +3253,9 @@ static int pagerStress(void *p, PgHdr *pPg){
   assert( pPg->pPager==pPager );
   assert( pPg->flags&PGHDR_DIRTY );
 
+  pPg->pDirty = 0;
   if( pagerUseLog(pPager) ){
     /* Write a single frame for this page to the log. */
-    assert( pPg->pDirty==0 );
     rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pPg, 0, 0, 0);
   }else{
     /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
@@ -3324,7 +3324,6 @@ static int pagerStress(void *p, PgHdr *pPg){
   
     /* Write the contents of the page out to the database file. */
     if( rc==SQLITE_OK ){
-      pPg->pDirty = 0;
       rc = pager_write_pagelist(pPg);
     }
   }
