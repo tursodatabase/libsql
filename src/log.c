@@ -4,6 +4,35 @@
 ** "journal_mode=wal" mode.
 */
 
+/*
+** LOG FILE FORMAT
+**
+** A log file consists of a header followed by zero or more log frames.
+** The log header is 12 bytes in size and consists of the following three
+** big-endian 32-bit unsigned integer values:
+**
+**    0: Database page size,
+**    4: Randomly selected salt value 1,
+**    8: Randomly selected salt value 2.
+**
+** Immediately following the log header are zero or more log frames. Each
+** frame itself consists of a 16-byte header followed by a <page-size> bytes
+** of page data. The header is broken into 4 big-endian 32-bit unsigned 
+** integer values, as follows:
+**
+**    0:  Page number.
+**    4:  For commit records, the size of the database image in pages 
+**        after the commit. For all other records, zero.
+**    8:  Checksum value 1.
+**    12: Checksum value 2.
+*/
+
+/* 
+** LOG SUMMARY FORMAT
+**
+** TODO.
+*/
+
 #include "log.h"
 
 #include <unistd.h>
@@ -39,8 +68,20 @@ struct LogSummaryHdr {
 #define LOGSUMMARY_FRAME_OFFSET \
   (LOGSUMMARY_HDR_NFIELD + LOG_CKSM_BYTES/sizeof(u32))
 
+
+
 /* Size of frame header */
-#define LOG_FRAME_HDRSIZE 20
+#define LOG_FRAME_HDRSIZE 16
+#define LOG_HDRSIZE       12
+
+/*
+** Return the offset of frame iFrame in the log file, assuming a database
+** page size of pgsz bytes. The offset returned is to the start of the
+** log frame-header.
+*/
+#define logFrameOffset(iFrame, pgsz) (                               \
+  LOG_HDRSIZE + ((iFrame)-1)*((pgsz)+LOG_FRAME_HDRSIZE)              \
+)
 
 /*
 ** There is one instance of this structure for each log-summary object
@@ -124,6 +165,7 @@ struct LogIterator {
     u32 *aDbPage;                 /* Pointer to db page array */
   } aSegment[1];
 };
+
 
 
 /*
@@ -291,7 +333,6 @@ static int logSummaryUnmap(LogSummary *pSummary, int isTruncate){
   return rc;
 }
 
-
 static void logSummaryWriteHdr(LogSummary *pSummary, LogSummaryHdr *pHdr){
   u32 *aData = pSummary->aData;
   memcpy(aData, pHdr, sizeof(LogSummaryHdr));
@@ -321,17 +362,16 @@ static void logEncodeFrame(
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* OUT: Write encoded frame here */
 ){
-  assert( LOG_FRAME_HDRSIZE==20 );
+  assert( LOG_FRAME_HDRSIZE==16 );
 
-  sqlite3Put4byte(&aFrame[0], nData);
-  sqlite3Put4byte(&aFrame[4], iPage);
-  sqlite3Put4byte(&aFrame[8], nTruncate);
+  sqlite3Put4byte(&aFrame[0], iPage);
+  sqlite3Put4byte(&aFrame[4], nTruncate);
 
-  logChecksumBytes(aFrame, 12, aCksum);
+  logChecksumBytes(aFrame, 8, aCksum);
   logChecksumBytes(aData, nData, aCksum);
 
-  sqlite3Put4byte(&aFrame[12], aCksum[0]);
-  sqlite3Put4byte(&aFrame[16], aCksum[1]);
+  sqlite3Put4byte(&aFrame[8], aCksum[0]);
+  sqlite3Put4byte(&aFrame[12], aCksum[1]);
 }
 
 /*
@@ -346,20 +386,20 @@ static int logDecodeFrame(
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* Frame data */
 ){
-  assert( LOG_FRAME_HDRSIZE==20 );
+  assert( LOG_FRAME_HDRSIZE==16 );
 
-  logChecksumBytes(aFrame, 12, aCksum);
+  logChecksumBytes(aFrame, 8, aCksum);
   logChecksumBytes(aData, nData, aCksum);
 
-  if( aCksum[0]!=sqlite3Get4byte(&aFrame[12]) 
-   || aCksum[1]!=sqlite3Get4byte(&aFrame[16]) 
+  if( aCksum[0]!=sqlite3Get4byte(&aFrame[8]) 
+   || aCksum[1]!=sqlite3Get4byte(&aFrame[12]) 
   ){
     /* Checksum failed. */
     return 0;
   }
 
-  *piPage = sqlite3Get4byte(&aFrame[4]);
-  *pnTruncate = sqlite3Get4byte(&aFrame[8]);
+  *piPage = sqlite3Get4byte(&aFrame[0]);
+  *pnTruncate = sqlite3Get4byte(&aFrame[4]);
   return 1;
 }
 
@@ -486,12 +526,12 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     int iFrame;                   /* Index of last frame read */
     i64 iOffset;                  /* Next offset to read from log file */
     int nPgsz;                    /* Page size according to the log */
-    u32 aCksum[2] = {2, 3};       /* Running checksum */
+    u32 aCksum[2];                /* Running checksum */
 
     /* Read in the first frame header in the file (to determine the 
     ** database page size).
     */
-    rc = sqlite3OsRead(pFd, aBuf, LOG_FRAME_HDRSIZE, 0);
+    rc = sqlite3OsRead(pFd, aBuf, LOG_HDRSIZE, 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -503,6 +543,8 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     if( nPgsz&(nPgsz-1) || nPgsz>SQLITE_MAX_PAGE_SIZE ){
       goto finished;
     }
+    aCksum[0] = sqlite3Get4byte(&aBuf[4]);
+    aCksum[1] = sqlite3Get4byte(&aBuf[8]);
 
     /* Malloc a buffer to read frames into. */
     nFrame = nPgsz + LOG_FRAME_HDRSIZE;
@@ -514,8 +556,7 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
 
     /* Read all frames from the log file. */
     iFrame = 0;
-    iOffset = 0;
-    for(iOffset=0; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
+    for(iOffset=LOG_HDRSIZE; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
       int isValid;                /* True if this frame is valid */
@@ -823,7 +864,7 @@ static int logCheckpoint(
   /* Iterate through the contents of the log, copying data to the db file. */
   while( 0==logIteratorNext(pIter, &iDbpage, &iFrame) ){
     rc = sqlite3OsRead(pLog->pFd, zBuf, pgsz, 
-        (iFrame-1) * (pgsz+LOG_FRAME_HDRSIZE) + LOG_FRAME_HDRSIZE
+        logFrameOffset(iFrame, pgsz) + LOG_FRAME_HDRSIZE
     );
     if( rc!=SQLITE_OK ) goto out;
     rc = sqlite3OsWrite(pFd, zBuf, pgsz, (iDbpage-1)*pgsz);
@@ -1319,8 +1360,7 @@ int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
   ** required page. Read and return data from the log file.
   */
   if( iRead ){
-    i64 iOffset = (iRead-1) * (pLog->hdr.pgsz+LOG_FRAME_HDRSIZE);
-    iOffset += LOG_FRAME_HDRSIZE;
+    i64 iOffset = logFrameOffset(iRead, pLog->hdr.pgsz) + LOG_FRAME_HDRSIZE;
     *pInLog = 1;
     return sqlite3OsRead(pLog->pFd, pOut, pLog->hdr.pgsz, iOffset);
   }
@@ -1401,45 +1441,43 @@ int sqlite3LogFrames(
   int isCommit,                   /* True if this is a commit */
   int isSync                      /* True to sync the log file */
 ){
-  /* Each frame has a 20 byte header, as follows:
-  **
-  **   + Pseudo-random salt (4 bytes)
-  **   + Page number (4 bytes)
-  **   + New database size, or 0 if not a commit frame (4 bytes)
-  **   + Checksum (CHECKSUM_BYTES bytes);
-  **
-  ** The checksum is computed based on the following:
-  **
-  **   + The previous checksum, or {2, 3} for the first frame in the log.
-  **   + The non-checksum fields of the frame header, and
-  **   + The frame contents (page data).
-  **
-  ** This format must also be understood by the code in logSummaryRecover().
-  ** The size of the frame header is used by LogRead() and LogCheckpoint().
-  */
   int rc;                         /* Used to catch return codes */
   u32 iFrame;                     /* Next frame address */
-  u8 aFrame[LOG_FRAME_HDRSIZE];
+  u8 aFrame[LOG_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
   PgHdr *p;                       /* Iterator to run through pList with. */
-  u32 aCksum[2];
-
+  u32 aCksum[2];                  /* Checksums */
   PgHdr *pLast;                   /* Last frame in list */
   int nLast = 0;                  /* Number of extra copies of last page */
 
-  assert( LOG_FRAME_HDRSIZE==(4 * 3 + LOG_CKSM_BYTES) );
+  assert( LOG_FRAME_HDRSIZE==(4 * 2 + LOG_CKSM_BYTES) );
   assert( pList );
+
+  /* If this is the first frame written into the log, write the log 
+  ** header to the start of the log file. See comments at the top of
+  ** this file for a description of the log-header format.
+  */
+  assert( LOG_FRAME_HDRSIZE>=LOG_HDRSIZE );
+  iFrame = pLog->hdr.iLastPg;
+  if( iFrame==0 ){
+    sqlite3Put4byte(aFrame, nPgsz);
+    sqlite3_randomness(8, &aFrame[4]);
+    pLog->hdr.iCheck1 = sqlite3Get4byte(&aFrame[4]);
+    pLog->hdr.iCheck2 = sqlite3Get4byte(&aFrame[8]);
+    rc = sqlite3OsWrite(pLog->pFd, aFrame, LOG_HDRSIZE, 0);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+  }
 
   aCksum[0] = pLog->hdr.iCheck1;
   aCksum[1] = pLog->hdr.iCheck2;
 
   /* Write the log file. */
-  iFrame = pLog->hdr.iLastPg;
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
 
-    iFrame++;
-    iOffset = (iFrame-1) * (nPgsz+sizeof(aFrame));
+    iOffset = logFrameOffset(++iFrame, nPgsz);
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;

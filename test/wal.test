@@ -28,6 +28,10 @@ proc sqlite3_wal {args} {
   [lindex $args 0] eval { PRAGMA journal_mode = wal }
 }
 
+proc log_file_size {nFrame pgsz} {
+  expr {12 + ($pgsz+16)*$nFrame}
+}
+
 #
 # These are 'warm-body' tests used while developing the WAL code. They
 # serve to prove that a few really simple cases work:
@@ -58,7 +62,7 @@ do_test wal-1.1 {
 do_test wal-1.2 {
   # There are now two pages in the log.
   file size test.db-wal
-} [expr (20+1024)*2]
+} [log_file_size 2 1024]
 
 do_test wal-1.3 {
   execsql { SELECT * FROM sqlite_master }
@@ -208,11 +212,11 @@ do_test wal-7.1 {
     INSERT INTO t1 VALUES(1, 2);
   }
   list [file size test.db] [file size test.db-wal]
-} [list 0 [expr (1024+20)*3]]
+} [list 0 [log_file_size 3 1024]]
 do_test wal-7.2 {
   execsql { PRAGMA checkpoint }
   list [file size test.db] [file size test.db-wal]
-} [list 2048 [expr (1024+20)*3]]
+} [list 2048 [log_file_size 3 1024]]
 
 # Execute some transactions in auto-vacuum mode to test database file
 # truncation.
@@ -547,12 +551,12 @@ do_test wal-11.1 {
 } {0 3}
 do_test wal-11.2 {
   execsql { PRAGMA checkpoint }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {3 3}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 3 [log_file_size 3 1024]]
 do_test wal-11.3 {
   execsql { INSERT INTO t1 VALUES( randomblob(900) ) }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {3 4}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 3 [log_file_size 4 1024]]
 
 do_test wal-11.4 {
   execsql { 
@@ -562,8 +566,8 @@ do_test wal-11.4 {
       INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 8
       INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 16
   }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {3 33}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 3 [log_file_size 33 1024]]
 do_test wal-11.5 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -572,8 +576,8 @@ do_test wal-11.5 {
 } {16 ok}
 do_test wal-11.6 {
   execsql COMMIT
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {3 42}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 3 [log_file_size 42 1024]]
 do_test wal-11.7 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -582,12 +586,12 @@ do_test wal-11.7 {
 } {16 ok}
 do_test wal-11.8 {
   execsql { PRAGMA checkpoint }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {37 42}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 37 [log_file_size 42 1024]]
 do_test wal-11.9 {
   db close
   sqlite3_wal db test.db
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
+  list [expr [file size test.db]/1024] [file size test.db-wal]
 } {37 0}
 
 do_test wal-11.10 {
@@ -597,8 +601,8 @@ do_test wal-11.10 {
       INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 32
       SELECT count(*) FROM t1;
   }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {37 38}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 37 [log_file_size 40 1024]]
 do_test wal-11.11 {
   execsql {
       SELECT count(*) FROM t1;
@@ -607,8 +611,8 @@ do_test wal-11.11 {
   }
 } {32 16}
 do_test wal-11.12 {
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {37 38}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 37 [log_file_size 40 1024]]
 do_test wal-11.13 {
   execsql {
     INSERT INTO t1 VALUES( randomblob(900) );
@@ -617,12 +621,14 @@ do_test wal-11.13 {
   }
 } {17 ok}
 do_test wal-11.14 {
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {37 38}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 37 [log_file_size 40 1024]]
 
 
 #-------------------------------------------------------------------------
-# This block of tests, wal-12.*, tests a problem...
+# This block of tests, wal-12.*, tests the fix for a problem that 
+# could occur if a log that is a prefix of an older log is written 
+# into a reused log file.
 #
 reopen_db
 do_test wal-12.1 {
@@ -632,8 +638,8 @@ do_test wal-12.1 {
     CREATE TABLE t2(x, y);
     INSERT INTO t1 VALUES('A', 1);
   }
-  list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
-} {0 5}
+  list [expr [file size test.db]/1024] [file size test.db-wal]
+} [list 0 [log_file_size 5 1024]]
 do_test wal-12.2 {
   db close
   sqlite3_wal db test.db
