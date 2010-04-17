@@ -23,9 +23,17 @@ proc reopen_db {} {
   sqlite3_wal db test.db
 }
 
+set ::blobcnt 0
+proc blob {nByte} {
+  incr ::blobcnt
+  return [string range [string repeat "${::blobcnt}x" $nByte] 1 $nByte]
+}
+
 proc sqlite3_wal {args} {
   eval sqlite3 $args
   [lindex $args 0] eval { PRAGMA journal_mode = wal }
+  [lindex $args 0] eval { PRAGMA synchronous = normal }
+  [lindex $args 0] function blob blob
 }
 
 proc log_file_size {nFrame pgsz} {
@@ -49,6 +57,7 @@ proc log_deleted {logfile} {
 #
 
 do_test wal-0.1 {
+  execsql { PRAGMA synchronous = normal }
   execsql { PRAGMA journal_mode = wal }
 } {wal}
 
@@ -235,13 +244,13 @@ do_test wal-8.2 {
   execsql {
     PRAGMA page_size = 1024;
     CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES(randomblob(900));
-    INSERT INTO t1 VALUES(randomblob(900));
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  4 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  8 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 32 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 64 */
+    INSERT INTO t1 VALUES(blob(900));
+    INSERT INTO t1 VALUES(blob(900));
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /*  4 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /*  8 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 16 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 32 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 64 */
     PRAGMA checkpoint;
   }
   file size test.db
@@ -262,15 +271,15 @@ do_test wal-9.1 {
   execsql {
     PRAGMA page_size = 1024;
     CREATE TABLE t1(x PRIMARY KEY);
-    INSERT INTO t1 VALUES(randomblob(900));
-    INSERT INTO t1 VALUES(randomblob(900));
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  4 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /*  8 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 16 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 32 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 64 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 128 */
-    INSERT INTO t1 SELECT randomblob(900) FROM t1;       /* 256 */
+    INSERT INTO t1 VALUES(blob(900));
+    INSERT INTO t1 VALUES(blob(900));
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /*  4 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /*  8 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 16 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 32 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 64 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 128 */
+    INSERT INTO t1 SELECT blob(900) FROM t1;       /* 256 */
   }
   file size test.db
 } 0
@@ -557,20 +566,20 @@ do_test wal-11.2 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
 } [list 3 [log_file_size 3 1024]]
 do_test wal-11.3 {
-  execsql { INSERT INTO t1 VALUES( randomblob(900) ) }
+  execsql { INSERT INTO t1 VALUES( blob(900) ) }
   list [expr [file size test.db]/1024] [file size test.db-wal]
 } [list 3 [log_file_size 4 1024]]
 
 do_test wal-11.4 {
   execsql { 
     BEGIN;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 2
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 4
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 8
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 16
+      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 2
+      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 4
+      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 8
+      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 16
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 3 [log_file_size 33 1024]]
+} [list 3 [log_file_size 32 1024]]
 do_test wal-11.5 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -580,7 +589,7 @@ do_test wal-11.5 {
 do_test wal-11.6 {
   execsql COMMIT
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 3 [log_file_size 42 1024]]
+} [list 3 [log_file_size 41 1024]]
 do_test wal-11.7 {
   execsql { 
     SELECT count(*) FROM t1;
@@ -590,22 +599,21 @@ do_test wal-11.7 {
 do_test wal-11.8 {
   execsql { PRAGMA checkpoint }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 42 1024]]
+} [list 37 [log_file_size 41 1024]]
 do_test wal-11.9 {
   db close
-  sqlite3_wal db test.db
   list [expr [file size test.db]/1024] [log_deleted test.db-wal]
 } {37 1}
-
+sqlite3_wal db test.db
 do_test wal-11.10 {
   execsql {
     PRAGMA cache_size = 10;
     BEGIN;
-      INSERT INTO t1 SELECT randomblob(900) FROM t1;   -- 32
+      INSERT INTO t1 SELECT blob(900) FROM t1;   -- 32
       SELECT count(*) FROM t1;
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 40 1024]]
+} [list 37 [log_file_size 35 1024]]
 do_test wal-11.11 {
   execsql {
       SELECT count(*) FROM t1;
@@ -615,17 +623,17 @@ do_test wal-11.11 {
 } {32 16}
 do_test wal-11.12 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 40 1024]]
+} [list 37 [log_file_size 35 1024]]
 do_test wal-11.13 {
   execsql {
-    INSERT INTO t1 VALUES( randomblob(900) );
+    INSERT INTO t1 VALUES( blob(900) );
     SELECT count(*) FROM t1;
     PRAGMA integrity_check;
   }
 } {17 ok}
 do_test wal-11.14 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 40 1024]]
+} [list 37 [log_file_size 35 1024]]
 
 
 #-------------------------------------------------------------------------

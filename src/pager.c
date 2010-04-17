@@ -3764,6 +3764,7 @@ static int pagerOpenLog(Pager *pPager){
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCKSTATE, &locktype);
     assert( locktype==SQLITE_LOCK_SHARED );
 #endif
+    pPager->state = PAGER_SHARED;
   }
 
   return SQLITE_OK;
@@ -4880,7 +4881,7 @@ int sqlite3PagerCommitPhaseOne(
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
         rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pList,
-            pPager->dbSize, 1, 1
+            pPager->dbSize, 1, pPager->fullSync
         );
       }
       sqlite3PcacheCleanAll(pPager->pPCache);

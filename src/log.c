@@ -881,7 +881,7 @@ int sqlite3LogOpen(
   zWal = sqlite3_mprintf("%s-wal", zDb);
   if( !zWal ) goto out;
   logNormalizePath(zWal);
-  flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_DB);
+  flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
   nWal = sqlite3Strlen30(zWal);
 
   /* Enter the mutex that protects the linked-list of LogSummary structures */
@@ -1545,9 +1545,10 @@ int sqlite3LogFrames(
 
   /* Sync the log file if the 'isSync' flag was specified. */
   if( isSync ){
-#if 0
     i64 iSegment = sqlite3OsSectorSize(pLog->pFd);
-    i64 iOffset = iFrame * (nPgsz+sizeof(aFrame));
+    i64 iOffset = logFrameOffset(iFrame+1, nPgsz);
+
+    assert( isCommit );
 
     if( iSegment<SQLITE_DEFAULT_SECTOR_SIZE ){
       iSegment = SQLITE_DEFAULT_SECTOR_SIZE;
@@ -1568,7 +1569,6 @@ int sqlite3LogFrames(
       nLast++;
       iOffset += nPgsz;
     }
-#endif
 
     rc = sqlite3OsSync(pLog->pFd, pLog->sync_flags);
     if( rc!=SQLITE_OK ){
