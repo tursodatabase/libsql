@@ -103,6 +103,93 @@ struct LogSummary {
   u32 *aData;                     /* File body */
 };
 
+/*
+** This module uses three different types of file-locks. All are taken
+** on the log-summary file. The three types of locks are as follows:
+**
+** MUTEX:  The MUTEX lock is used as a robust inter-process mutex. It
+**         is held while the log-summary header is modified, and 
+**         sometimes when it is read. It is also held while a new client
+**         obtains the DMH lock (see below), and while log recovery is
+**         being run.
+**
+** DMH:    The DMH (Dead Mans Hand mechanism) lock is used to ensure
+**         that log-recovery is always run following a system restart.
+**         When it first opens a log-summary file, a process takes a
+**         SHARED lock on the DMH region. This lock is not released until
+**         the log-summary file is closed. 
+**
+**         The process then attempts to upgrade to an EXCLUSIVE lock. If 
+**         successful, then the contents of the log-summary file are deemed 
+**         suspect and the log-summary header zeroed. This forces the
+**         first process that reads the log-summary file to run log 
+**         recovery. After zeroing the log-summary header, the process
+**         downgrades to a SHARED lock on the DMH region.
+**
+**         If the attempt to obtain the EXCLUSIVE lock fails, then the
+**         process concludes that some other process is already using the
+**         log-summary file, and it can therefore be trusted.
+**
+**         The procedure described in the previous three paragraphs (taking
+**         a SHARED lock and then upgrading to an EXCLUSIVE lock to check
+**         if the process is the only one to have an open connection to the 
+**         log file) is protected by holding the MUTEX lock. This avoids the
+**         race condition wherein the first two clients connect almost 
+**         simultaneously following a system restart and each prevents 
+**         the other from obtaining the EXCLUSIVE lock.
+**
+**
+** REGION: There are 4 different region locks, regions A, B, C and D.
+**         Various EXCLUSIVE and SHARED locks on these regions are obtained
+**         when a client reads, writes or checkpoints the database.
+**
+**    To obtain a reader lock:
+**
+**         1. Attempt a SHARED lock on regions A and B.
+**         2. If step 1 is successful, drop the lock on region B. Or, if
+**            it is unsuccessful, attempt a SHARED lock on region D.
+**         3. Repeat the above until the lock attempt in step 1 or 2 is 
+**            successful.
+**
+**         The reader lock is released when the read transaction is finished.
+**
+**    To obtain a writer lock:
+**
+**         1. Take (wait for) an EXCLUSIVE lock on regions C and D.
+**
+**         The locks are released after the write transaction is finished
+**         and, if any frames were committed to the log, the log-summary
+**         file updated.
+**
+**    To obtain a checkpointer lock:
+**
+**         1. Take (wait for) an EXCLUSIVE lock on regions B and C.
+**         2. Take (wait for) an EXCLUSIVE lock on region A.
+**
+**         Step 1 waits until any existing writer has finished. And forces
+**         all new readers to become "region D" readers.
+**
+**         Step 2 causes the checkpointer to wait until all existing region A
+**         readers have finished their transactions. Once the exclusive lock
+**         on region A has been obtained, only "region D" readers exist.
+**         These readers are operating on the snapshot at the head of the
+**         log. As such, the log can be safely copied into the database file
+**         without interfering with the readers.
+**
+**         Once the checkpoint has finished and the log-summary header
+**         updated (to indicate the log contents can now be ignored), all
+**         locks are released.
+**
+**         However, there may still exist region D readers using data in 
+**         the body of the log file, so the log file itself cannot be 
+**         truncated or overwritten until all region D readers have finished.
+**         That requirement is satisfied, because writers (the clients that
+**         write to the log file) require an exclusive lock on region D.
+**         Which they cannot get until all region D readers have finished.
+*/
+#define LOG_LOCK_MUTEX  12
+#define LOG_LOCK_DMH    13
+#define LOG_LOCK_REGION 14
 
 /*
 ** The four lockable regions associated with each log-summary. A connection
@@ -114,10 +201,6 @@ struct LogSummary {
 #define LOG_REGION_B 0x02
 #define LOG_REGION_C 0x04
 #define LOG_REGION_D 0x08
-
-#define LOG_LOCK_MUTEX  12
-#define LOG_LOCK_DMH    13
-#define LOG_LOCK_REGION 14
 
 /*
 ** A single instance of this structure is allocated as part of each 
