@@ -2526,8 +2526,8 @@ static void substSelect(
 **  (14)  The subquery does not use OFFSET
 **
 **  (15)  The outer query is not part of a compound select or the
-**        subquery does not have both an ORDER BY and a LIMIT clause.
-**        (See ticket #2339)
+**        subquery does not have a LIMIT clause.
+**        (See ticket #2339 and ticket [02a8e81d44]).
 **
 **  (16)  The outer query is not an aggregate or the subquery does
 **        not contain ORDER BY.  (Ticket #2942)  This used to not matter
@@ -2610,7 +2610,7 @@ static int flattenSubquery(
   ** and (14). */
   if( pSub->pLimit && p->pLimit ) return 0;              /* Restriction (13) */
   if( pSub->pOffset ) return 0;                          /* Restriction (14) */
-  if( p->pRightmost && pSub->pLimit && pSub->pOrderBy ){
+  if( p->pRightmost && pSub->pLimit ){
     return 0;                                            /* Restriction (15) */
   }
   if( pSubSrc->nSrc==0 ) return 0;                       /* Restriction (7)  */
