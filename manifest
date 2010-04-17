@@ -1,5 +1,8 @@
-C Changes\sfor\sbranch\scoverage\sof\snotify.c.\s\s\sFixed\squirk\sof\s\nunlock_notify()\swhere\sit\swould\sstill\sthink\sit\swas\sblocked\nafter\sa\scallback\swas\scleared\s(even\safter\sthe\stransaction\non\sthe\sblocking\sconnection\swas\sclosed).
-D 2010-04-16T22:05:32
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C It\sis\spossible\sfor\ssqlite3.pUnlockConnection\sto\sbe\snon-NULL\swhen\nsqlite3.pBlockingConnection\sis\sNULL,\sas\sthe\snotify1.test\sscript\ndemonstrates.
+D 2010-04-17T16:10:19
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -145,7 +148,7 @@ F src/mutex_noop.c 5f58eaa31f2d742cb8957a747f7887ae98f16053
 F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
 F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
 F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
-F src/notify.c 62ec477243ba2fda8d1c4c0551a245f09d0e730f
+F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
 F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
@@ -798,7 +801,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f96782b389b5b97b488dc5814f7082e0393f64cd
-R 2c27fde6c2e2916cbe462ef0898d86e8
-U shaneh
-Z b1ee3b1606ac5471056337dc734ca38d
+P c54e8dad01b0ecaf8d66b10e64e862dcad8a6746
+R 13909a17787fe24daf5817b78f495441
+U drh
+Z cdb4de73a4162744a1beea6762027d5a
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFLyd1yoxKgR168RlERAm3SAKCL+0wxu77deGVhwPtVYY39ulGa5ACdH99G
+zJ0U301AQ+E8lKrWMWFetlQ=
+=LJR8
+-----END PGP SIGNATURE-----
