@@ -321,9 +321,12 @@ static int sqlite3Step(Vdbe *p){
 
   assert(p);
   if( p->magic!=VDBE_MAGIC_RUN ){
-    sqlite3_log(SQLITE_MISUSE, 
-          "attempt to step a halted statement: [%s]", p->zSql);
-    return SQLITE_MISUSE_BKPT;
+    /* We used to require that sqlite3_reset() be called before retrying
+    ** sqlite3_step() after any error.  But after 3.6.23, we changed this
+    ** so that sqlite3_reset() would be called automatically instead of
+    ** throwing the error.
+    */
+    sqlite3_reset((sqlite3_stmt*)p);
   }
 
   /* Check that malloc() has not failed. If it has, return early. */

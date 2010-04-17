@@ -1410,7 +1410,7 @@ do_test fkey2-17.1.2 {
 } {SQLITE_CONSTRAINT}
 do_test fkey2-17.1.3 {
   sqlite3_step $STMT
-} {SQLITE_MISUSE}
+} {SQLITE_CONSTRAINT}
 do_test fkey2-17.1.4 {
   sqlite3_finalize $STMT
 } {SQLITE_CONSTRAINT}
