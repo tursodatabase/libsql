@@ -2871,7 +2871,9 @@ int sqlite3PagerClose(Pager *pPager){
   sqlite3BeginBenignMalloc();
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
-  sqlite3LogClose(pPager->pLog, pPager->fd, pTmp);
+  sqlite3LogClose(pPager->pLog, pPager->fd, 
+    (pPager->noSync ? 0 : pPager->sync_flags), pTmp
+  );
   pPager->pLog = 0;
   pager_reset(pPager);
   if( MEMDB ){
@@ -4881,7 +4883,7 @@ int sqlite3PagerCommitPhaseOne(
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
         rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pList,
-            pPager->dbSize, 1, pPager->fullSync
+            pPager->dbSize, 1, (pPager->fullSync ? pPager->sync_flags : 0)
         );
       }
       sqlite3PcacheCleanAll(pPager->pPCache);
@@ -5700,6 +5702,7 @@ int sqlite3PagerCheckpoint(Pager *pPager){
   if( pPager->pLog ){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
     rc = sqlite3LogCheckpoint(pPager->pLog, pPager->fd, 
+        (pPager->noSync ? 0 : pPager->sync_flags),
         zBuf, pPager->xBusyHandler, pPager->pBusyHandlerArg
     );
   }

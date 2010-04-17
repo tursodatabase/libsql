@@ -1,5 +1,5 @@
-C Merge\swith\strunk\scommit\s[3e646e3f4c].
-D 2010-04-17T15:45:35
+C Do\snot\ssync\sany\sfiles\sin\swal\smode\sif\s"PRAGMA\ssynchronous=off"\sis\sset.\sIf\sfiles\sare\ssynced,\spass\seither\sSQLITE_SYNC_FULL\sor\sSQLITE_SYNC_NORMAL\sto\sthe\sxSync()\scallback\sas\sconfigured\sby\s"PRAGMA\sfullfsync".
+D 2010-04-17T17:34:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,8 +131,8 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c a72baea84cecef9a4e45308b1504e6fe69c8284e
-F src/log.h a2654af46ce7b5732f4d5a731abfdd180f0a06d9
+F src/log.c 8bcd490de703a12563c939a59cb4e187a0c67fe3
+F src/log.h 3cfec02156f5db3d233352897a47601930a29955
 F src/main.c c0e7192bad5b90544508b241eb2487ac661de890
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -154,7 +154,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 5bf0015cebe2f21635da2af983c348eb88b3b4c1
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 751ada65b9a4aa0b31c36ffa3f6548200a55ca16
+F src/pager.c 344eddf3c59eed4b4aca31abbf762d0e301ae44d
 F src/pager.h ce5d076f3860a5f2d7460c582cd68383343b33cf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -805,7 +805,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9bc9b6847303d0324543a9ded8dd0473490122d8 3e646e3f4cd0ca288e444561e951cecfdaee2ab5
-R 9ec1fc417b85c6217c6e7a04071a1912
+P 43463970f5885fb116588695146f2a56cb22804a
+R 0e49b7b76893a9b984350c6fdab0ea9a
 U dan
-Z 5c9ba544c6cd36a35ee164445a4a1f25
+Z ad3f9c0ef28635a13cd67b8f240d7d22

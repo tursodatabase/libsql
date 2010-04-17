@@ -19,25 +19,14 @@
 
 #include "sqliteInt.h"
 
-/* Flags that may be set in the 'flags' argument to sqlite3LogWrite(): */
-#define LOG_MASK_COMMIT        0x08
-#define LOG_MASK_MASTERJOURNAL 0x10
-#define LOG_MASK_TRUNCATE      0x20
-
-
-#define LOG_TRUNCATE_BIT       0x80000000 
-
 /* Connection to a log file. There is one object of this type for each pager. */
 typedef struct Log Log;
 
 /* Open and close a connection to a log file. */
 int sqlite3LogOpen(sqlite3_vfs*, const char *zDb, Log **ppLog);
-int sqlite3LogClose(Log *pLog, sqlite3_file *pFd, u8 *zBuf);
+int sqlite3LogClose(Log *pLog, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
 
-/* Configure the log connection. */
-void sqlite3LogSetSyncflags(Log *, int sync_flags);
-
-/* Used by readers to open (lock) and close (unlock) a database snapshot. */
+/* Used by readers to open (lock) and close (unlock) a snapshot. */
 int sqlite3LogOpenSnapshot(Log *pLog, int *);
 void sqlite3LogCloseSnapshot(Log *pLog);
 
@@ -48,13 +37,14 @@ void sqlite3LogMaxpgno(Log *pLog, Pgno *pPgno);
 /* Obtain or release the WRITER lock. */
 int sqlite3LogWriteLock(Log *pLog, int op);
 
-/* Write a segment to the log. */
+/* Write a frame or frames to the log. */
 int sqlite3LogFrames(Log *pLog, int, PgHdr *, Pgno, int, int);
 
 /* Copy pages from the log to the database file */ 
 int sqlite3LogCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
+  int sync_flags,                 /* Flags to sync db file with (or 0) */
   u8 *zBuf,                       /* Temporary buffer to use */
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */

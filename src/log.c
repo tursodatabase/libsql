@@ -140,7 +140,6 @@ struct Log {
   LogSummary *pSummary;           /* Log file summary data */
   sqlite3_vfs *pVfs;              /* The VFS used to create pFd */
   sqlite3_file *pFd;              /* File handle for log file */
-  int sync_flags;                 /* Flags to use with OsSync() */
   int isLocked;                   /* Non-zero if a snapshot is held open */
   int isWriteLocked;              /* True if this is the writer connection */
   LogSummaryHdr hdr;              /* Log summary header for current snapshot */
@@ -240,42 +239,6 @@ static void logNormalizePath(char *zPath){
     z[j++] = z[i];
   }
   z[j] = 0;
-}
-
-/*
-** Lock the summary file pSummary->fd.
-*/
-static int logSummaryLock(LogSummary *pSummary){
-  int rc;
-  struct flock f;
-  memset(&f, 0, sizeof(f));
-  f.l_type = F_WRLCK;
-  f.l_whence = SEEK_SET;
-  f.l_start = 0;
-  f.l_len = 1;
-  rc = fcntl(pSummary->fd, F_SETLKW, &f);
-  if( rc!=0 ){
-    return SQLITE_IOERR;
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Unlock the summary file pSummary->fd.
-*/
-static int logSummaryUnlock(LogSummary *pSummary){
-  int rc;
-  struct flock f;
-  memset(&f, 0, sizeof(f));
-  f.l_type = F_UNLCK;
-  f.l_whence = SEEK_SET;
-  f.l_start = 0;
-  f.l_len = 1;
-  rc = fcntl(pSummary->fd, F_SETLK, &f);
-  if( rc!=0 ){
-    return SQLITE_IOERR;
-  }
-  return SQLITE_OK;
 }
 
 /*
@@ -875,7 +838,6 @@ int sqlite3LogOpen(
   if( !pRet ) goto out;
   pRet->pVfs = pVfs;
   pRet->pFd = (sqlite3_file *)&pRet[1];
-  pRet->sync_flags = SQLITE_SYNC_NORMAL;
 
   /* Normalize the path name. */
   zWal = sqlite3_mprintf("%s-wal", zDb);
@@ -1038,6 +1000,7 @@ static void logIteratorFree(LogIterator *p){
 static int logCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
+  int sync_flags,                 /* Flags for OsSync() (or 0) */
   u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
@@ -1055,8 +1018,10 @@ static int logCheckpoint(
   if( !pIter ) return SQLITE_NOMEM;
 
   /* Sync the log file to disk */
-  rc = sqlite3OsSync(pLog->pFd, pLog->sync_flags);
-  if( rc!=SQLITE_OK ) goto out;
+  if( sync_flags ){
+    rc = sqlite3OsSync(pLog->pFd, sync_flags);
+    if( rc!=SQLITE_OK ) goto out;
+  }
 
   /* Iterate through the contents of the log, copying data to the db file. */
   while( 0==logIteratorNext(pIter, &iDbpage, &iFrame) ){
@@ -1073,8 +1038,10 @@ static int logCheckpoint(
   if( rc!=SQLITE_OK ) goto out;
 
   /* Sync the database file. If successful, update the log-summary. */
-  rc = sqlite3OsSync(pFd, pLog->sync_flags);
-  if( rc!=SQLITE_OK ) goto out;
+  if( sync_flags ){
+    rc = sqlite3OsSync(pFd, sync_flags);
+    if( rc!=SQLITE_OK ) goto out;
+  }
   pLog->hdr.iLastPg = 0;
   pLog->hdr.iCheck1 = 2;
   pLog->hdr.iCheck2 = 3;
@@ -1111,6 +1078,7 @@ static int logCheckpoint(
 int sqlite3LogClose(
   Log *pLog,                      /* Log to close */
   sqlite3_file *pFd,              /* Database file */
+  int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
   u8 *zBuf                        /* Buffer of at least page-size bytes */
 ){
   int rc = SQLITE_OK;
@@ -1154,7 +1122,7 @@ int sqlite3LogClose(
         **   2. Truncate the log file.
         **   3. Unlink the log-summary file.
         */
-        rc = logCheckpoint(pLog, pFd, zBuf);
+        rc = logCheckpoint(pLog, pFd, sync_flags, zBuf);
         if( rc==SQLITE_OK ){
           rc = sqlite3OsDelete(pLog->pVfs, pSummary->zPath, 0);
         }
@@ -1180,17 +1148,6 @@ int sqlite3LogClose(
   }
   return rc;
 }
-
-/*
-** Set the flags to pass to the sqlite3OsSync() function when syncing
-** the log file.
-*/
-#if 0
-void sqlite3LogSetSyncflags(Log *pLog, int sync_flags){
-  assert( sync_flags==SQLITE_SYNC_NORMAL || sync_flags==SQLITE_SYNC_FULL );
-  pLog->sync_flags = sync_flags;
-}
-#endif
 
 /*
 ** Enter and leave the log-summary mutex. In this context, entering the
@@ -1487,7 +1444,7 @@ int sqlite3LogFrames(
   PgHdr *pList,                   /* List of dirty pages to write */
   Pgno nTruncate,                 /* Database size after this commit */
   int isCommit,                   /* True if this is a commit */
-  int isSync                      /* True to sync the log file */
+  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
 ){
   int rc;                         /* Used to catch return codes */
   u32 iFrame;                     /* Next frame address */
@@ -1544,7 +1501,7 @@ int sqlite3LogFrames(
   }
 
   /* Sync the log file if the 'isSync' flag was specified. */
-  if( isSync ){
+  if( sync_flags ){
     i64 iSegment = sqlite3OsSectorSize(pLog->pFd);
     i64 iOffset = logFrameOffset(iFrame+1, nPgsz);
 
@@ -1570,7 +1527,7 @@ int sqlite3LogFrames(
       iOffset += nPgsz;
     }
 
-    rc = sqlite3OsSync(pLog->pFd, pLog->sync_flags);
+    rc = sqlite3OsSync(pLog->pFd, sync_flags);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1623,6 +1580,7 @@ int sqlite3LogFrames(
 int sqlite3LogCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
+  int sync_flags,                 /* Flags to sync db file with (or 0) */
   u8 *zBuf,                       /* Temporary buffer to use */
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
@@ -1649,7 +1607,7 @@ int sqlite3LogCheckpoint(
   /* Copy data from the log to the database file. */
   rc = logSummaryReadHdr(pLog, 0);
   if( rc==SQLITE_OK ){
-    rc = logCheckpoint(pLog, pFd, zBuf);
+    rc = logCheckpoint(pLog, pFd, sync_flags, zBuf);
   }
 
   /* Release the locks. */
