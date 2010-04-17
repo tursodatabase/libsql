@@ -32,6 +32,10 @@ proc log_file_size {nFrame pgsz} {
   expr {12 + ($pgsz+16)*$nFrame}
 }
 
+proc log_deleted {logfile} {
+  return [expr [file exists $logfile]==0]
+}
+
 #
 # These are 'warm-body' tests used while developing the WAL code. They
 # serve to prove that a few really simple cases work:
@@ -179,7 +183,6 @@ do_test wal-5.5 {
 } {1 2 3 4}
 db close
 
-
 foreach sector {512 4096} {
   sqlite3_simulate_device -sectorsize $sector
   foreach pgsz {512 1024 2048 4096} {
@@ -198,8 +201,8 @@ foreach sector {512 4096} {
     } [expr $pgsz*2]
   
     do_test wal-6.$sector.$pgsz.2 {
-      file size test.db-wal
-    } {0}
+      log_deleted test.db-wal
+    } {1}
   }
 }
 
@@ -591,8 +594,8 @@ do_test wal-11.8 {
 do_test wal-11.9 {
   db close
   sqlite3_wal db test.db
-  list [expr [file size test.db]/1024] [file size test.db-wal]
-} {37 0}
+  list [expr [file size test.db]/1024] [log_deleted test.db-wal]
+} {37 1}
 
 do_test wal-11.10 {
   execsql {

@@ -491,6 +491,7 @@ static int assert_pager_state(Pager *pPager){
 }
 #endif
 
+
 /*
 ** Return true if it is necessary to write page *pPg into the sub-journal.
 ** A page needs to be written into the sub-journal if there exists one
@@ -1188,19 +1189,6 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 }
 
 /*
-** Open a connection to the write-ahead log file for pager pPager.
-*/
-static int pagerOpenLog(Pager *pPager){
-  if( !pPager->pLog ){
-    int rc;                       /* Return code from LogOpen() */
-
-    rc = sqlite3LogOpen(pPager->pVfs, pPager->zFilename, &pPager->pLog);
-    if( rc!=SQLITE_OK ) return rc;
-  }
-  return SQLITE_OK;
-}
-
-/*
 ** Return true if this pager uses a write-ahead log instead of the usual
 ** rollback journal. Otherwise false.
 */
@@ -1241,8 +1229,9 @@ static void pager_unlock(Pager *pPager){
 
     if( pagerUseLog(pPager) ){
       sqlite3LogCloseSnapshot(pPager->pLog);
+    }else{
+      rc = osUnlock(pPager->fd, NO_LOCK);
     }
-    rc = osUnlock(pPager->fd, NO_LOCK);
     if( rc ){
       pPager->errCode = rc;
     }
@@ -3734,6 +3723,54 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 }
 
 /*
+** Open a connection to the write-ahead log file for pager pPager. If
+** the log connection is already open, this function is a no-op.
+*/
+static int pagerOpenLog(Pager *pPager){
+  if( !pPager->pLog ){
+    int rc;                       /* Return code */
+
+    /* Before opening the log file, obtain a SHARED lock on the database
+    ** file. This lock will not be released until after the log file
+    ** connection has been closed. The purpose of this lock is to stop
+    ** any other process from unlinking the log or log-summary files while
+    ** this connection still has them open. An EXCLUSIVE lock on the
+    ** database file is required to unlink either of those two files.
+    */
+    assert( pPager->state==PAGER_UNLOCK );
+    rc = pager_wait_on_lock(pPager, SHARED_LOCK);
+    if( rc!=SQLITE_OK ){
+      assert( pPager->state==PAGER_UNLOCK );
+      return pager_error(pPager, rc);
+    }
+    assert( pPager->state>=SHARED_LOCK );
+
+    /* Open the connection to the log file. If this operation fails, 
+    ** (e.g. due to malloc() failure), unlock the database file and 
+    ** return an error code.
+    */
+    rc = sqlite3LogOpen(pPager->pVfs, pPager->zFilename, &pPager->pLog);
+    if( rc!=SQLITE_OK ){
+      osUnlock(pPager->fd, SQLITE_LOCK_NONE);
+      pPager->state = PAGER_UNLOCK;
+      return rc;
+    }
+  }else{
+    /* If the log file was already open, check that the pager is still holding
+    ** the required SHARED lock on the database file. 
+    */
+#ifdef SQLITE_DEBUG
+    int locktype;
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCKSTATE, &locktype);
+    assert( locktype==SQLITE_LOCK_SHARED );
+#endif
+  }
+
+  return SQLITE_OK;
+}
+
+
+/*
 ** This function is called to obtain a shared lock on the database file.
 ** It is illegal to call sqlite3PagerAcquire() until after this function
 ** has been successfully called. If a shared-lock is already held when
@@ -3786,17 +3823,25 @@ int sqlite3PagerSharedLock(Pager *pPager){
     pager_reset(pPager);
   }
 
-  if( pagerUseLog(pPager) ){
-    int changed = 0;
 
+  if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
+    int changed = 0;              /* True if the cache must be flushed */
+
+    /* Open the log file, if it is not already open. */
+    rc = pagerOpenLog(pPager);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
+
+    /* Open a log snapshot to read from. */
     rc = sqlite3LogOpenSnapshot(pPager->pLog, &changed);
     if( rc==SQLITE_OK ){
+      int dummy;
       if( changed ){
         pager_reset(pPager);
         assert( pPager->errCode || pPager->dbSizeValid==0 );
       }
-      pPager->state = PAGER_SHARED;         /* TODO: Is this right? */
-      rc = sqlite3PagerPagecount(pPager, &changed);
+      rc = sqlite3PagerPagecount(pPager, &dummy);
     }
   }else if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs * const pVfs = pPager->pVfs;
@@ -5611,15 +5656,13 @@ int sqlite3PagerJournalMode(Pager *pPager, int eMode){
       sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
     }
 
-    if( eMode==PAGER_JOURNALMODE_WAL ){
-      int rc = pagerOpenLog(pPager);
-      if( rc!=SQLITE_OK ){
-        /* TODO: The error code should not just get dropped here. Change 
-        ** this to set a flag to force the log to be opened the first time
-        ** it is actually required.  */
-        return (int)pPager->journalMode;
-      }
+    /* Switching into WAL mode can only take place when no 
+    ** locks are held on the database file. 
+    */
+    if( eMode==PAGER_JOURNALMODE_WAL && pPager->state!=PAGER_UNLOCK ){
+      return (int)pPager->journalMode;
     }
+
     pPager->journalMode = (u8)eMode;
   }
   return (int)pPager->journalMode;

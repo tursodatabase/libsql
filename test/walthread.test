@@ -21,12 +21,14 @@ if {[run_thread_tests]==0} { finish_test ; return }
 do_test walthread-1.1 {
   execsql {
     PRAGMA journal_mode = WAL;
+    PRAGMA lock_status;
     CREATE TABLE t1(x PRIMARY KEY);
+    PRAGMA lock_status;
     INSERT INTO t1 VALUES(randomblob(100));
     INSERT INTO t1 VALUES(randomblob(100));
     INSERT INTO t1 SELECT md5sum(x) FROM t1;
   }
-} {wal}
+} {wal main unlocked temp closed main shared temp closed}
 do_test walthread-1.2 {
   execsql {
     SELECT (SELECT count(*) FROM t1), (
@@ -41,7 +43,7 @@ do_test walthread-1.3 {
 } {ok}
 do_test walthread-1.4 {
   execsql { PRAGMA lock_status } 
-} {main unlocked temp unknown}
+} {main shared temp unknown}
 
 #--------------------------------------------------------------------------
 # Start N threads. Each thread performs both read and write transactions.
