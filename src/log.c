@@ -203,6 +203,14 @@ struct LogSummary {
 #define LOG_REGION_D 0x08
 
 /*
+** Values for the third parameter to logLockRegion().
+*/
+#define LOG_UNLOCK  0             /* Unlock a range of bytes */
+#define LOG_RDLOCK  1             /* Put a SHARED lock on a range of bytes */
+#define LOG_WRLOCK  2             /* Put an EXCLUSIVE lock on a byte-range */
+#define LOG_WRLOCKW 3             /* Block on EXCLUSIVE lock on a byte-range */
+
+/*
 ** A single instance of this structure is allocated as part of each 
 ** connection to a database log. All structures associated with the 
 ** same log file are linked together into a list using LogLock.pNext
@@ -225,6 +233,7 @@ struct Log {
   sqlite3_file *pFd;              /* File handle for log file */
   int isLocked;                   /* Non-zero if a snapshot is held open */
   int isWriteLocked;              /* True if this is the writer connection */
+  u32 iCallback;                  /* Value to pass to log callback (or 0) */
   LogSummaryHdr hdr;              /* Log summary header for current snapshot */
   LogLock lock;                   /* Lock held by this connection (if any) */
 };
@@ -647,29 +656,29 @@ finished:
 }
 
 /*
-** Values for the third parameter to logLockRegion().
+** Place, modify or remove a lock on the log-summary file associated 
+** with pSummary.
 */
-#define LOG_UNLOCK  0
-#define LOG_RDLOCK  1
-#define LOG_WRLOCK  2
-#define LOG_WRLOCKW 3
-
-static int logLockFd(LogSummary *pSummary, int iStart, int nByte, int op){
+static int logLockFd(
+  LogSummary *pSummary,           /* The log-summary object to lock */
+  int iStart,                     /* First byte to lock */
+  int nByte,                      /* Number of bytes to lock */
+  int op                          /* LOG_UNLOCK, RDLOCK, WRLOCK or WRLOCKW */
+){
   int aType[4] = { 
-    F_UNLCK,                    /* LOG_UNLOCK */
-    F_RDLCK,                    /* LOG_RDLOCK */
-    F_WRLCK,                    /* LOG_WRLOCK */
-    F_WRLCK                     /* LOG_WRLOCKW */
+    F_UNLCK,                      /* LOG_UNLOCK */
+    F_RDLCK,                      /* LOG_RDLOCK */
+    F_WRLCK,                      /* LOG_WRLOCK */
+    F_WRLCK                       /* LOG_WRLOCKW */
   };
   int aOp[4] = { 
-    F_SETLK,                    /* LOG_UNLOCK */
-    F_SETLK,                    /* LOG_RDLOCK */
-    F_SETLK,                    /* LOG_WRLOCK */
-    F_SETLKW                    /* LOG_WRLOCKW */
+    F_SETLK,                      /* LOG_UNLOCK */
+    F_SETLK,                      /* LOG_RDLOCK */
+    F_SETLK,                      /* LOG_WRLOCK */
+    F_SETLKW                      /* LOG_WRLOCKW */
   };
-
-  struct flock f;               /* Locking operation */
-  int rc;                       /* Value returned by fcntl() */
+  struct flock f;                 /* Locking operation */
+  int rc;                         /* Value returned by fcntl() */
 
   assert( ArraySize(aType)==ArraySize(aOp) );
   assert( op>=0 && op<ArraySize(aType) );
@@ -816,18 +825,27 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
   return SQLITE_OK;
 }
 
+/*
+** Lock the DMH region, either with an EXCLUSIVE or SHARED lock. This
+** function is never called with LOG_UNLOCK - the only way the DMH region
+** is every completely unlocked is by by closing the file descriptor.
+*/
 static int logLockDMH(LogSummary *pSummary, int eLock){
+  assert( sqlite3_mutex_held(pSummary->mutex) );
   assert( eLock==LOG_RDLOCK || eLock==LOG_WRLOCK );
   return logLockFd(pSummary, LOG_LOCK_DMH, 1, eLock);
 }
 
+/*
+** Lock (or unlock) the MUTEX region. It is always locked using an
+** EXCLUSIVE, blocking lock.
+*/
 static int logLockMutex(LogSummary *pSummary, int eLock){
+  assert( sqlite3_mutex_held(pSummary->mutex) );
   assert( eLock==LOG_WRLOCKW || eLock==LOG_UNLOCK );
   logLockFd(pSummary, LOG_LOCK_MUTEX, 1, eLock);
   return SQLITE_OK;
 }
-
-
 
 /*
 ** This function intializes the connection to the log-summary identified
@@ -880,7 +898,7 @@ static int logSummaryInit(
   }
   rc = logLockDMH(pSummary, LOG_RDLOCK);
   if( rc!=SQLITE_OK ){
-    return SQLITE_IOERR;
+    rc = SQLITE_IOERR;
   }
 
  out:
@@ -1461,7 +1479,7 @@ int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
 /* 
 ** Set *pPgno to the size of the database file (or zero, if unknown).
 */
-void sqlite3LogMaxpgno(Log *pLog, Pgno *pPgno){
+void sqlite3LogDbsize(Log *pLog, Pgno *pPgno){
   assert( pLog->isLocked );
   *pPgno = pLog->hdr.nPage;
 }
@@ -1646,9 +1664,10 @@ int sqlite3LogFrames(
   if( isCommit && SQLITE_OK==(rc = logEnterMutex(pLog)) ){
     logSummaryWriteHdr(pLog->pSummary, &pLog->hdr);
     logLeaveMutex(pLog);
+    pLog->iCallback = iFrame;
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 /* 
@@ -1696,5 +1715,14 @@ int sqlite3LogCheckpoint(
   /* Release the locks. */
   logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
   return rc;
+}
+
+int sqlite3LogCallback(Log *pLog){
+  u32 ret = 0;
+  if( pLog ){
+    ret = pLog->iCallback;
+    pLog->iCallback = 0;
+  }
+  return (int)ret;
 }
 

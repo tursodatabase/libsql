@@ -2686,7 +2686,7 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
     i64 n = 0;              /* File size in bytes returned by OsFileSize() */
 
     if( pagerUseLog(pPager) ){
-      sqlite3LogMaxpgno(pPager->pLog, &nPage);
+      sqlite3LogDbsize(pPager->pLog, &nPage);
     }
 
     if( nPage==0 ){
@@ -5707,6 +5707,10 @@ int sqlite3PagerCheckpoint(Pager *pPager){
     );
   }
   return rc;
+}
+
+int sqlite3PagerLogCallback(Pager *pPager){
+  return sqlite3LogCallback(pPager->pLog);
 }
 
 #endif /* SQLITE_OMIT_DISKIO */

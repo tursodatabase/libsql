@@ -5727,6 +5727,40 @@ int sqlite3_strnicmp(const char *, const char *, int);
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
 
 /*
+** Experimental WAL callback interface.
+**
+** The [sqlite3_log_hook()] function is used to register a callback that
+** will be invoked each time a database connection commits data to a
+** write-ahead-log (i.e. whenever a transaction is committed in
+** journal_mode=WAL mode). 
+**
+** The callback is invoked by SQLite after the commit has taken place and 
+** the associated write-lock on the database released, so the implementation 
+** may read, write or checkpoint the database as required.
+**
+** The first parameter passed to the callback function when it is invoked
+** is a copy of the third parameter passed to sqlite3_log_hook() when
+** registering the callback. The second is a copy of the database handle.
+** The third parameter is the name of the database that was written to -
+** either "main" or the name of an ATTACHed database. The fourth parameter
+** is the number of pages currently in the log file, including those that
+** were just committed.
+**
+** If an invocation of the callback function returns non-zero, then a
+** checkpoint is automatically run on the database. If zero is returned,
+** no special action is taken.
+**
+** A single database handle may have at most a single log callback 
+** registered at one time. Calling [sqlite3_log_hook()] replaces any
+** previously registered log callback. 
+*/
+void *sqlite3_log_hook(
+  sqlite3*, 
+  int(*)(void *,sqlite3*,const char*,int),
+  void*
+);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

@@ -1187,6 +1187,24 @@ void *sqlite3_rollback_hook(
 }
 
 /*
+** Register a callback to be invoked each time a transaction is written
+** into the write-ahead-log by this database connection.
+*/
+void *sqlite3_log_hook(
+  sqlite3 *db,                    /* Attach the hook to this db handle */
+  int(*xCallback)(void *, sqlite3*, const char*, int),
+  void *pArg                      /* First argument passed to xCallback() */
+){
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pLogArg;
+  db->xLogCallback = xCallback;
+  db->pLogArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+}
+
+/*
 ** This function returns true if main-memory should be used instead of
 ** a temporary file for transient pager files and statement journals.
 ** The value returned depends on the value of db->temp_store (runtime

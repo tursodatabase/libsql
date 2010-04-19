@@ -133,7 +133,9 @@ int sqlite3PagerRollback(Pager*);
 int sqlite3PagerOpenSavepoint(Pager *pPager, int n);
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
+
 int sqlite3PagerCheckpoint(Pager *pPager);
+int sqlite3PagerLogCallback(Pager *pPager);
 
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);

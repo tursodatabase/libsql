@@ -32,7 +32,7 @@ void sqlite3LogCloseSnapshot(Log *pLog);
 
 /* Read a page from the log, if it is present. */
 int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut);
-void sqlite3LogMaxpgno(Log *pLog, Pgno *pPgno);
+void sqlite3LogDbsize(Log *pLog, Pgno *pPgno);
 
 /* Obtain or release the WRITER lock. */
 int sqlite3LogWriteLock(Log *pLog, int op);
@@ -49,5 +49,8 @@ int sqlite3LogCheckpoint(
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
 );
+
+/* Return the value to pass to a log callback. Or 0 for no callback. */
+int sqlite3LogCallback(Log *pLog);
 
 #endif /* _LOG_H_ */

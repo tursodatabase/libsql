@@ -306,6 +306,23 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   pCtx->s.db->mallocFailed = 1;
 }
 
+static int doLogCallbacks(sqlite3 *db){
+  int i;
+  int rc = SQLITE_OK;
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      int nEntry = sqlite3PagerLogCallback(sqlite3BtreePager(pBt));
+      if( db->xLogCallback && nEntry>0 && rc==SQLITE_OK
+       && db->xLogCallback(db->pLogArg, db, db->aDb[i].zName, nEntry)
+      ){
+        rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+      }
+    }
+  }
+  return rc;
+}
+
 /*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
@@ -386,6 +403,14 @@ static int sqlite3Step(Vdbe *p){
     db->xProfile(db->pProfileArg, p->zSql, elapseTime);
   }
 #endif
+
+  if( rc==SQLITE_DONE ){
+    assert( p->rc==SQLITE_OK );
+    p->rc = doLogCallbacks(db);
+    if( p->rc!=SQLITE_OK ){
+      rc = SQLITE_ERROR;
+    }
+  }
 
   db->errCode = rc;
   if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){
