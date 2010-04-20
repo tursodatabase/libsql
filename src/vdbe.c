@@ -5187,6 +5187,9 @@ case OP_AggFinal: {
 }
 
 /* Opcode: Checkpoint P1 * * * *
+**
+** Checkpoint database P1. This is a no-op if P1 is not currently in
+** WAL mode.
 */
 case OP_Checkpoint: {
   Btree *pBt;                     /* Btree to checkpoint */
@@ -5195,6 +5198,84 @@ case OP_Checkpoint: {
   assert( (p->btreeMask & (1<<pOp->p1))!=0 );
   pBt = db->aDb[pOp->p1].pBt;
   rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+  break;
+};  
+
+/* Opcode: JournalMode P1 P2 P3 * *
+**
+** Change the journal mode of database P1 to P3. P3 must be one of the
+** PAGER_JOURNALMODE_XXX values. If changing between the various rollback
+** modes (delete, truncate, persist, off and memory), this is a simple
+** operation. No IO is required.
+**
+** If changing into or out of WAL mode the procedure is more complicated.
+**
+** Write a string containing the final journal-mode to register P2.
+*/
+case OP_JournalMode: {
+  Btree *pBt;                     /* Btree to change journal mode of */
+  Pager *pPager;                  /* Pager associated with pBt */
+  int eNew = pOp->p3;             /* New journal mode */
+
+  assert( eNew==PAGER_JOURNALMODE_DELETE 
+       || eNew==PAGER_JOURNALMODE_TRUNCATE 
+       || eNew==PAGER_JOURNALMODE_PERSIST 
+       || eNew==PAGER_JOURNALMODE_OFF
+       || eNew==PAGER_JOURNALMODE_MEMORY
+       || eNew==PAGER_JOURNALMODE_WAL
+       || eNew==PAGER_JOURNALMODE_QUERY
+  );
+  assert( pOp->p1>=0 && pOp->p1<db->nDb );
+  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
+
+  pBt = db->aDb[pOp->p1].pBt;
+  pPager = sqlite3BtreePager(pBt);
+
+  if( eNew!=PAGER_JOURNALMODE_QUERY ){
+    int eOld = sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_QUERY);
+    if( (eNew!=eOld)
+     && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
+    ){
+      if( !db->autoCommit || db->activeVdbeCnt>1 ){
+        rc = SQLITE_ERROR;
+        sqlite3SetString(&p->zErrMsg, db, 
+            "cannot change %s wal mode from within a transaction",
+            (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
+        );
+      }else{
+  
+        /* If leaving WAL mode, close the log file. If successful, the call to
+        ** PagerCloseLog() checkpoints and deletes the write-ahead-log file.
+        ** An EXCLUSIVE lock is still held on the database file after returning.
+        */
+        if( eOld==PAGER_JOURNALMODE_WAL ){
+          rc = sqlite3PagerCloseLog(pPager);
+          if( rc!=SQLITE_OK ) goto abort_due_to_error;
+          sqlite3PagerJournalMode(pPager, eNew);
+        }else{
+          sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_DELETE);
+        }
+  
+        /* Open a transaction on the database file. Regardless of the journal
+        ** mode, this transaction always uses a rollback journal.
+        */
+        assert( sqlite3BtreeIsInTrans(pBt)==0 );
+        rc = sqlite3BtreeBeginTrans(pBt, 2);
+        assert( rc==SQLITE_OK || eOld!=PAGER_JOURNALMODE_WAL );
+        if( rc!=SQLITE_OK ) goto abort_due_to_error;
+        rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
+        if( rc!=SQLITE_OK ) goto abort_due_to_error;
+      }
+    }
+  }
+
+  eNew = sqlite3PagerJournalMode(pPager, eNew);
+  pOut = &aMem[pOp->p2];
+  pOut->flags = MEM_Str|MEM_Static|MEM_Term;
+  pOut->z = sqlite3JournalModename(eNew);
+  pOut->n = sqlite3Strlen30(pOut->z);
+  pOut->enc = SQLITE_UTF8;
+  sqlite3VdbeChangeEncoding(pOut, encoding);
   break;
 };  
 

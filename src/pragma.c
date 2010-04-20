@@ -257,6 +257,28 @@ static const char *actionName(u8 action){
 }
 #endif
 
+
+/*
+** Parameter eMode must be one of the PAGER_JOURNALMODE_XXX constants
+** defined in pager.h. This function returns the associated lowercase
+** journal-mode name.
+*/
+const char *sqlite3JournalModename(int eMode){
+  static char * const azModeName[] = {
+    "delete", "persist", "off", "truncate", "memory", "wal"
+  };
+  assert( PAGER_JOURNALMODE_DELETE==0 );
+  assert( PAGER_JOURNALMODE_PERSIST==1 );
+  assert( PAGER_JOURNALMODE_OFF==2 );
+  assert( PAGER_JOURNALMODE_TRUNCATE==3 );
+  assert( PAGER_JOURNALMODE_MEMORY==4 );
+  assert( PAGER_JOURNALMODE_WAL==5 );
+  assert( eMode>=0 && eMode<=ArraySize(azModeName) );
+
+  if( eMode==ArraySize(azModeName) ) return 0;
+  return azModeName[eMode];
+}
+
 /*
 ** Process a pragma statement.  
 **
@@ -513,18 +535,21 @@ void sqlite3Pragma(
   **  PRAGMA [database.]journal_mode = (delete|persist|off|truncate|memory)
   */
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
-    int eMode;
-    static char * const azModeName[] = {
-      "delete", "persist", "off", "truncate", "memory", "wal"
-    };
+    int eMode;                    /* One of the PAGER_JOURNALMODE_XXX symbols */
+
+    sqlite3VdbeSetNumCols(v, 1);
+    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
 
     if( zRight==0 ){
       eMode = PAGER_JOURNALMODE_QUERY;
     }else{
+      const char *zMode;
       int n = sqlite3Strlen30(zRight);
-      eMode = sizeof(azModeName)/sizeof(azModeName[0]) - 1;
-      while( eMode>=0 && sqlite3StrNICmp(zRight, azModeName[eMode], n)!=0 ){
-        eMode--;
+      for(eMode=0; (zMode = sqlite3JournalModename(eMode)); eMode++){
+        if( sqlite3StrNICmp(zRight, zMode, n)==0 ) break;
+      }
+      if( !zMode ){
+        eMode = PAGER_JOURNALMODE_QUERY;
       }
     }
     if( pId2->n==0 && eMode==PAGER_JOURNALMODE_QUERY ){
@@ -533,40 +558,32 @@ void sqlite3Pragma(
       ** the journal-mode of the main database).
       */
       eMode = db->dfltJournalMode;
+      sqlite3VdbeAddOp2(v, OP_String8, 0, 1);
+      sqlite3VdbeChangeP4(v, -1, sqlite3JournalModename(eMode), P4_STATIC);
     }else{
-      Pager *pPager;
-      if( pId2->n==0 ){
+      int ii;
+
+      if( pId2->n==0 && eMode!=PAGER_JOURNALMODE_WAL ){
         /* This indicates that no database name was specified as part
         ** of the PRAGMA command. In this case the journal-mode must be
         ** set on all attached databases, as well as the main db file.
         **
         ** Also, the sqlite3.dfltJournalMode variable is set so that
         ** any subsequently attached databases also use the specified
-        ** journal mode.
+        ** journal mode. Except, the default journal mode is never set
+        ** to WAL.
         */
-        int ii;
-        assert(pDb==&db->aDb[0]);
-        for(ii=1; ii<db->nDb; ii++){
-          if( db->aDb[ii].pBt ){
-            pPager = sqlite3BtreePager(db->aDb[ii].pBt);
-            sqlite3PagerJournalMode(pPager, eMode);
-          }
-        }
         db->dfltJournalMode = (u8)eMode;
       }
-      pPager = sqlite3BtreePager(pDb->pBt);
-      eMode = sqlite3PagerJournalMode(pPager, eMode);
+
+      for(ii=db->nDb-1; ii>=0; ii--){
+        if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
+          sqlite3VdbeUsesBtree(v, ii);
+          sqlite3VdbeAddOp3(v, OP_JournalMode, ii, 1, eMode);
+        }
+      }
     }
-    assert( eMode==PAGER_JOURNALMODE_DELETE
-              || eMode==PAGER_JOURNALMODE_TRUNCATE
-              || eMode==PAGER_JOURNALMODE_PERSIST
-              || eMode==PAGER_JOURNALMODE_OFF
-              || eMode==PAGER_JOURNALMODE_WAL
-              || eMode==PAGER_JOURNALMODE_MEMORY );
-    sqlite3VdbeSetNumCols(v, 1);
-    sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
-    sqlite3VdbeAddOp4(v, OP_String8, 0, 1, 0, 
-           azModeName[eMode], P4_STATIC);
+
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
   }else
 

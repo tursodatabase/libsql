@@ -136,6 +136,8 @@ int sqlite3PagerSharedLock(Pager *pPager);
 
 int sqlite3PagerCheckpoint(Pager *pPager);
 int sqlite3PagerLogCallback(Pager *pPager);
+int sqlite3PagerOpenLog(Pager *pPager, int *pisOpen);
+int sqlite3PagerCloseLog(Pager *pPager);
 
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);

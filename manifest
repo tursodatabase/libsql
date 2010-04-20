@@ -1,5 +1,5 @@
-C Add\sthe\ssqlite3_log_hook()\sinterface\sfor\sscheduling\scheckpoints.
-D 2010-04-19T18:03:52
+C Use\sthe\sread\sand\swrite\sversion\sfields\sof\sthe\sdatabase\sheader\sto\smark\sa\sdatabase\sas\soperating\sin\swal-mode.
+D 2010-04-20T18:53:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,8 +109,8 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e86634da8c48357a759694c9c7c471125cd8d5a8
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 01559397cbd4a5aa62a822e8ca9ac94b6db14743
-F src/btree.h ad6cff92286f9b02ec32f0b97136e9a544249f37
+F src/btree.c 013cf019484e309e909a667654612b38a02dc2b6
+F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h 22447d259639271774a931cbf66aa55112846681
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 908f3e0172c3d4058f4ca0acd42c637c52e9669f
@@ -154,13 +154,13 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 5bf0015cebe2f21635da2af983c348eb88b3b4c1
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c f9ad51dfa617131240ae77545c0083118324fc81
-F src/pager.h aeaee9ceb4a4a6d15c2163ef4e11a7590fd54b59
+F src/pager.c 1dcf76bead8f1b51809bd8189ef9b02f2c94dc7f
+F src/pager.h cee4487ab4f0911dd9f22a40e3cd55afdb7ef444
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
-F src/pragma.c f12cb58a8aa0d80cfed282ef87a285ed71beb793
+F src/pragma.c bae3ce82ca6d0ac5d3ca3e46b286856d1f0ddd70
 F src/prepare.c fd1398cb1da54385ba5bd68d93928f10d10a1d9c
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -214,7 +214,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b1d542c8919d4d11119f78069e1906a1ad07e0ee
-F src/vdbe.c 2e2aaa765de667dd15e0462cf853efd1b2f97998
+F src/vdbe.c 304851b32c5f918a7ce92e4e9f94fbde0b604b21
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 466044df5bc916f778833e927165fd02cdef6086
@@ -758,9 +758,10 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test a56ff378f58b145fd3bf38c277fbfe792cd47bdd
+F test/wal.test 273c0006e75c99cb34d0659851e7103fd4748c20
 F test/walcrash.test 45cfbab30bb7cbe0b2e9d5cabe90dbcad10cb89b
 F test/walhook.test 76a559e262f0715c470bade4a8d8333035f8ee47
+F test/walmode.test cd6ee20f08af2d81fddc049f8d7e387a807f067e
 F test/walslow.test 38076d5fad49e3678027be0f8110e6a32d531dc2
 F test/walthread.test 27e44ee6fd02f1f494a24f999c97086af3ab739d
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
@@ -806,7 +807,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9d51c3b754f0b94fea5ef3d669ad583b93b2b024
-R 8eb45c9f56fe0d743248bffdfb606bc1
+P 9bda601455705475075e33bfa85687bce34b15ff
+R b30f3db6dd942a33d471d74ec2e33c70
 U dan
-Z e82f118f370901abf724c6ac84b89351
+Z d82da3172ce11d2f9fc95cc996cdb180
