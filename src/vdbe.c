@@ -5260,9 +5260,6 @@ case OP_JournalMode: {
         ** mode, this transaction always uses a rollback journal.
         */
         assert( sqlite3BtreeIsInTrans(pBt)==0 );
-        rc = sqlite3BtreeBeginTrans(pBt, 2);
-        assert( rc==SQLITE_OK || eOld!=PAGER_JOURNALMODE_WAL );
-        if( rc!=SQLITE_OK ) goto abort_due_to_error;
         rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
         if( rc!=SQLITE_OK ) goto abort_due_to_error;
       }
@@ -5272,7 +5269,7 @@ case OP_JournalMode: {
   eNew = sqlite3PagerJournalMode(pPager, eNew);
   pOut = &aMem[pOp->p2];
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
-  pOut->z = sqlite3JournalModename(eNew);
+  pOut->z = (char *)sqlite3JournalModename(eNew);
   pOut->n = sqlite3Strlen30(pOut->z);
   pOut->enc = SQLITE_UTF8;
   sqlite3VdbeChangeEncoding(pOut, encoding);

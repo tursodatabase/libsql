@@ -420,6 +420,7 @@ struct BtShared {
   u16 maxLeaf;          /* Maximum local payload in a LEAFDATA table */
   u16 minLeaf;          /* Minimum local payload in a LEAFDATA table */
   u8 inTransaction;     /* Transaction state */
+  u8 doNotUseWAL;       /* If true, do not open write-ahead-log file */
   int nTransaction;     /* Number of open transactions (read + write) */
   u32 nPage;            /* Number of pages in the database */
   void *pSchema;        /* Pointer to space allocated by sqlite3BtreeSchema() */

@@ -2276,7 +2276,7 @@ static int lockBtree(BtShared *pBt){
     ** may not be the latest version - there may be a newer one in the log
     ** file.
     */
-    if( page1[19]==2 ){
+    if( page1[19]==2 && pBt->doNotUseWAL==0 ){
       int isOpen = 0;
       rc = sqlite3PagerOpenLog(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
@@ -7992,16 +7992,29 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   BtShared *pBt = pBtree->pBt;
   int rc;                         /* Return code */
  
-  assert( pBtree->inTrans==TRANS_WRITE );
-  assert( pBt->pPage1 );
+  assert( pBtree->inTrans==TRANS_NONE );
   assert( iVersion==1 || iVersion==2 );
 
-  rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
+  /* If setting the version fields to 1, do not automatically open the
+  ** WAL connection, even if the version fields are currently set to 2.
+  */
+  pBt->doNotUseWAL = (iVersion==1);
+
+  rc = sqlite3BtreeBeginTrans(pBtree, 0);
   if( rc==SQLITE_OK ){
     u8 *aData = pBt->pPage1->aData;
-    aData[18] = (u8)iVersion;
-    aData[19] = (u8)iVersion;
+    if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
+      rc = sqlite3BtreeBeginTrans(pBtree, 1);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
+        if( rc==SQLITE_OK ){
+          aData[18] = (u8)iVersion;
+          aData[19] = (u8)iVersion;
+        }
+      }
+    }
   }
 
+  pBt->doNotUseWAL = 0;
   return rc;
 }

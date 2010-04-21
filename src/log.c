@@ -1235,7 +1235,6 @@ int sqlite3LogClose(
         }
         logSummaryUnmap(pSummary, 0);
       }
-      sqlite3OsUnlock(pFd, SQLITE_LOCK_NONE);
 
       sqlite3_mutex_free(pSummary->mutex);
       sqlite3_free(pSummary);

@@ -625,7 +625,7 @@ do_test wal-11.10 {
       SELECT count(*) FROM t1;
   }
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 37 1024]]
+} [list 37 [log_file_size 35 1024]]
 do_test wal-11.11 {
   execsql {
       SELECT count(*) FROM t1;
@@ -635,7 +635,7 @@ do_test wal-11.11 {
 } {32 16}
 do_test wal-11.12 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 37 1024]]
+} [list 37 [log_file_size 35 1024]]
 do_test wal-11.13 {
   execsql {
     INSERT INTO t1 VALUES( blob(900) );
@@ -645,7 +645,7 @@ do_test wal-11.13 {
 } {17 ok}
 do_test wal-11.14 {
   list [expr [file size test.db]/1024] [file size test.db-wal]
-} [list 37 [log_file_size 37 1024]]
+} [list 37 [log_file_size 35 1024]]
 
 
 #-------------------------------------------------------------------------
