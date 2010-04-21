@@ -1,5 +1,5 @@
-C Use\sthe\sread\sand\swrite\sversion\sfields\sof\sthe\sdatabase\sheader\sto\smark\sa\sdatabase\sas\soperating\sin\swal-mode.
-D 2010-04-20T18:53:15
+C Minor\schanges\sto\stest\scases\sto\saccount\sfor\sthe\sfact\sthat\sdatabases\swith\sread/write\sversions\sof\s2\sare\snow\sunderstood.
+D 2010-04-21T06:19:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -170,7 +170,7 @@ F src/select.c b7c9a40bc1567bceff52ad4b73108734ee4bf268
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
 F src/sqlite.h.in b9b0365613d4a99a0e6bc0ae6dbc73cc4a7e7cb7
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 6ed0ed77103d00006d6a534c0239baf6decadb3f
+F src/sqliteInt.h 8da48f67766bafb916b551482c51d8aad1be2331
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -305,7 +305,7 @@ F test/corrupt6.test e69b877d478224deab7b66844566258cecacd25e
 F test/corrupt7.test 1eb2214f29474fa6b155aa3da8a7d46bf52089e1
 F test/corrupt8.test 9992ef7f67cefc576b92373f6bf5ab8775280f51
 F test/corrupt9.test 4aa1cb1ef091cb0e13e89a819c72911631b5176a
-F test/corruptA.test 99e95620b980161cb3e79f06a884a4bb8ae265ff
+F test/corruptA.test a2fb8d8037e5105d21dc094c3ef44864934325dd
 F test/corruptB.test d88b500f7994cb2eb9646410c263111e9831f889
 F test/corruptC.test 691ed070baef5e1345939caadf270a52837a5064
 F test/corruptD.test 3ae6e2dc6e2226c6935a8a40d4b5ee3eba75f8c0
@@ -542,7 +542,7 @@ F test/quick.test 6f202befe1cfae0b63df96b3120a8022ab11f574
 F test/quote.test 215897dbe8de1a6f701265836d6601cc6ed103e6
 F test/randexpr1.tcl 40dec52119ed3a2b8b2a773bce24b63a3a746459
 F test/randexpr1.test 1084050991e9ba22c1c10edd8d84673b501cc25a
-F test/rdonly.test bd054831f8a3078e765a0657e247182486f0cb47
+F test/rdonly.test 329558d8f3f7679e7e00f5f1d7cdd5dde78ba382
 F test/reindex.test 44edd3966b474468b823d481eafef0c305022254
 F test/rollback.test 73355ad4492ff9a3a31e61c7e5eb5e01a1de94ca
 F test/rowhash.test 97f56043ba11f0679920416c0cdbc72e5272267b
@@ -807,7 +807,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9bda601455705475075e33bfa85687bce34b15ff
-R b30f3db6dd942a33d471d74ec2e33c70
+P 96bef18c1411c3e0348295886f105e1646c46320
+R 9d271c34e1ffdb3d856b3b8726b0e8d7
 U dan
-Z d82da3172ce11d2f9fc95cc996cdb180
+Z 58b9eaab75f6eeb69a49f445ee7bfb3c
