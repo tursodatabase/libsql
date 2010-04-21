@@ -32,11 +32,6 @@ db close
 set seed 0
 set REPEATS 100
 
-proc sqlite3_wal {args} {
-  eval sqlite3 $args
-  [lindex $args 0] eval { PRAGMA journal_mode = wal }
-}
-
 # walcrash-1.*
 #
 for {set i 1} {$i < $REPEATS} {incr i} {
@@ -51,7 +46,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
     }
   } {1 {child process exited abnormally}}
   do_test walcrash-1.$i.2 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT sum(a)==max(b) FROM t1 }
   } {1}
   integrity_check walcrash-1.$i.3
@@ -59,17 +54,18 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   
   do_test walcrash-1.$i.4 {
     crashsql -delay 2 -file test.db-wal -seed [incr seed] {
-      PRAGMA journal_mode = WAL;
-      PRAGMA journal_mode = WAL;
       INSERT INTO t1 VALUES(4, (SELECT sum(a) FROM t1) + 4);
       INSERT INTO t1 VALUES(5, (SELECT sum(a) FROM t1) + 5);
     }
   } {1 {child process exited abnormally}}
   do_test walcrash-1.$i.5 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT sum(a)==max(b) FROM t1 }
   } {1}
   integrity_check walcrash-1.$i.6
+  do_test walcrash-1.$i.5 {
+    execsql { PRAGMA main.journal_mode }
+  } {wal}
   db close
 }
 
@@ -87,7 +83,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
     }
   } {1 {child process exited abnormally}}
   do_test walcrash-2.$i.2 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT sum(a)==max(b) FROM t1 }
   } {1}
   integrity_check walcrash-2.$i.3
@@ -95,16 +91,18 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   
   do_test walcrash-2.$i.4 {
     crashsql -delay 2 -file test.db-wal -seed [incr seed] {
-      PRAGMA journal_mode = WAL;
       INSERT INTO t1 VALUES(6, (SELECT sum(a) FROM t1) + 6);
       INSERT INTO t1 VALUES(7, (SELECT sum(a) FROM t1) + 7);
     }
   } {1 {child process exited abnormally}}
   do_test walcrash-2.$i.5 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT sum(a)==max(b) FROM t1 }
   } {1}
   integrity_check walcrash-2.$i.6
+  do_test walcrash-2.$i.6 {
+    execsql { PRAGMA main.journal_mode }
+  } {wal}
   db close
 }
 
@@ -157,12 +155,13 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   } {1 {child process exited abnormally}}
 
   do_test walcrash-4.$i.2 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { 
       SELECT * FROM t1 WHERE a = 1;
     }
   } {1 2}
   do_test walcrash-4.$i.3 { execsql { PRAGMA main.integrity_check } } {ok}
+  do_test walcrash-4.$i.4 { execsql { PRAGMA main.journal_mode } } {wal}
 
   db close
 }
@@ -199,10 +198,11 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   } {1 {child process exited abnormally}}
 
   do_test walcrash-5.$i.2 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT count(*)==33 OR count(*)==34 FROM t1 WHERE x != 1 }
   } {1}
   do_test walcrash-5.$i.3 { execsql { PRAGMA main.integrity_check } } {ok}
+  do_test walcrash-5.$i.4 { execsql { PRAGMA main.journal_mode } } {wal}
 
   db close
 }
@@ -239,10 +239,37 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   } {1 {child process exited abnormally}}
 
   do_test walcrash-6.$i.2 {
-    sqlite3_wal db test.db
+    sqlite3 db test.db
     execsql { SELECT count(*)==34 OR count(*)==35 FROM t1 WHERE x != 1 }
   } {1}
   do_test walcrash-6.$i.3 { execsql { PRAGMA main.integrity_check } } {ok}
+  do_test walcrash-6.$i.4 { execsql { PRAGMA main.journal_mode } } {wal}
+
+  db close
+}
+
+for {set i 1} {$i < $REPEATS} {incr i} {
+  file delete -force test.db test.db-wal
+
+  do_test walcrash-7.$i.1 {
+    crashsql -delay 3 -file test.db -seed [incr seed] -blocksize 512 {
+      PRAGMA journal_mode = wal;
+      BEGIN;
+        CREATE TABLE t1(a, b);
+        INSERT INTO t1 VALUES(1, 2);
+      COMMIT;
+      PRAGMA checkpoint;
+      CREATE INDEX i1 ON t1(a);
+      PRAGMA checkpoint;
+    }
+  } {1 {child process exited abnormally}}
+
+  do_test walcrash-7.$i.2 {
+    sqlite3 db test.db
+    execsql { SELECT b FROM t1 WHERE a = 1 }
+  } {2}
+  do_test walcrash-7.$i.3 { execsql { PRAGMA main.integrity_check } } {ok}
+  do_test walcrash-7.$i.4 { execsql { PRAGMA main.journal_mode } } {wal}
 
   db close
 }

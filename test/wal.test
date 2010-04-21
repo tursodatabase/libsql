@@ -685,7 +685,6 @@ do_test wal-12.4 {
 } {B 1}
 db2 close
 
-file copy -force test.db-wal A
 do_test wal-12.5 {
   execsql {
     PRAGMA checkpoint;
@@ -697,7 +696,6 @@ do_test wal-12.5 {
     SELECT * FROM t2;
   }
 } {B 2}
-file copy -force test.db-wal B
 
 do_test wal-12.4 {
   file copy -force test.db test2.db

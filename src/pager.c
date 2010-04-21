@@ -491,6 +491,16 @@ static int assert_pager_state(Pager *pPager){
 }
 #endif
 
+#ifndef NDEBUG 
+static void assert_file_lock(Pager *pPager, int eLock){
+  int locktype;
+  sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCKSTATE, &locktype);
+  assert( locktype==eLock );
+}
+#else
+# define assert_file_lock(x,y) 
+#endif
+
 
 /*
 ** Return true if it is necessary to write page *pPg into the sub-journal.
@@ -3726,6 +3736,59 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   return rc;
 }
 
+/*
+** Check if the *-wal file that corresponds to the database opened by pPager
+** exists. Assuming no error occurs, set *pExists to 1 if the file exists,
+** or 0 otherwise and return SQLITE_OK. If an IO or OOM error occurs, return
+** an SQLite error code.
+**
+** The caller must hold a SHARED lock on the database file to call this
+** function.
+*/
+static int pagerHasWAL(Pager *pPager, int *pExists){
+  int rc;                         /* Return code */
+
+  /* Check that a SHARED lock is held on the database file. Because an
+  ** EXCLUSIVE lock on the db file is required to delete a WAL, this
+  ** ensures there is no race condition between the xAccess() below and
+  ** an xDelete() being executed by some other connection.
+  */
+  assert_file_lock(pPager, SQLITE_LOCK_SHARED);
+
+  if( !pPager->tempFile ){
+    char *zLog = sqlite3_mprintf("%s-wal", pPager->zFilename);
+    if( !zLog ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3OsAccess(pPager->pVfs, zLog, SQLITE_ACCESS_EXISTS, pExists);
+      sqlite3_free(zLog);
+    }
+  }else{
+    rc = SQLITE_OK;
+    *pExists = 0;
+  }
+  return rc;
+}
+
+static int pagerOpenSnapshot(Pager *pPager){
+  int rc;
+  int changed;
+
+  assert( pagerUseLog(pPager) );
+
+  rc = sqlite3LogOpenSnapshot(pPager->pLog, &changed);
+  if( rc==SQLITE_OK ){
+    int dummy;
+    if( changed ){
+        pager_reset(pPager);
+        assert( pPager->errCode || pPager->dbSizeValid==0 );
+    }
+    rc = sqlite3PagerPagecount(pPager, &dummy);
+  }
+  pPager->state = PAGER_SHARED;
+
+  return rc;
+}
 
 /*
 ** This function is called to obtain a shared lock on the database file.
@@ -3781,23 +3844,11 @@ int sqlite3PagerSharedLock(Pager *pPager){
   }
 
   if( pagerUseLog(pPager) ){
-    int changed = 0;              /* True if the cache must be flushed */
-
-    /* Open a log snapshot to read from. */
-    rc = sqlite3LogOpenSnapshot(pPager->pLog, &changed);
-    if( rc==SQLITE_OK ){
-      int dummy;
-      if( changed ){
-        pager_reset(pPager);
-        assert( pPager->errCode || pPager->dbSizeValid==0 );
-      }
-      rc = sqlite3PagerPagecount(pPager, &dummy);
-    }
-    pPager->state = PAGER_SHARED;
-
+    rc = pagerOpenSnapshot(pPager);
   }else if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs * const pVfs = pPager->pVfs;
     int isHotJournal = 0;
+    int isWal = 0;
     assert( !MEMDB );
     assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
     if( pPager->noReadlock ){
@@ -3952,7 +4003,17 @@ int sqlite3PagerSharedLock(Pager *pPager){
     }
     assert( pPager->exclusiveMode || pPager->state==PAGER_SHARED );
 
-    if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
+    rc = pagerHasWAL(pPager, &isWal);
+    if( rc!=SQLITE_OK ){
+      goto failed;
+    }
+    if( isWal ){
+      pager_reset(pPager);
+      rc = sqlite3PagerOpenLog(pPager, 0);
+      if( rc==SQLITE_OK ){
+        rc = pagerOpenSnapshot(pPager);
+      }
+    }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
       pPager->journalMode = PAGER_JOURNALMODE_DELETE;
     }
   }
@@ -5675,13 +5736,7 @@ int sqlite3PagerLogCallback(Pager *pPager){
 int sqlite3PagerOpenLog(Pager *pPager, int *pisOpen){
   int rc = SQLITE_OK;             /* Return code */
 
-#ifdef SQLITE_DEBUG
-  int locktype;
-  sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCKSTATE, &locktype);
-  assert( locktype==SQLITE_LOCK_SHARED );
-  assert( pPager->state>=PAGER_SHARED );
-#endif
-
+  assert_file_lock(pPager, SQLITE_LOCK_SHARED);
   if( !pPager->pLog ){
 
     /* Open the connection to the log file. If this operation fails, 
@@ -5725,15 +5780,7 @@ int sqlite3PagerCloseLog(Pager *pPager){
       pPager->pLog = 0;
     }
 
-    /* Make sure the EXCLUSIVE lock has not been lost somehow */
-#ifdef SQLITE_DEBUG
-    {
-      int locktype;
-      sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_LOCKSTATE, &locktype);
-      assert( locktype==SQLITE_LOCK_EXCLUSIVE );
-    }
-#endif
-
+    assert_file_lock(pPager, SQLITE_LOCK_EXCLUSIVE);
   }
   return rc;
 }

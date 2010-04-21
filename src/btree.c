@@ -2268,7 +2268,14 @@ static int lockBtree(BtShared *pBt){
       goto page1_init_failed;
     }
 
-    /* If the write version is set to 2, turn on write-ahead logging mode. */
+    /* If the write version is set to 2, this database should be accessed
+    ** in WAL mode. If the log is not already open, open it now. Then 
+    ** return SQLITE_OK and return without populating BtShared.pPage1.
+    ** The caller detects this and calls this function again. This is
+    ** required as the version of page 1 currently in the page1 buffer
+    ** may not be the latest version - there may be a newer one in the log
+    ** file.
+    */
     if( page1[19]==2 ){
       int isOpen = 0;
       rc = sqlite3PagerOpenLog(pBt->pPager, &isOpen);
