@@ -3755,8 +3755,8 @@ static int pagerHasWAL(Pager *pPager, int *pExists){
 }
 
 static int pagerOpenSnapshot(Pager *pPager){
-  int rc;
-  int changed;
+  int rc;                         /* Return code */
+  int changed = 0;                /* True if cache must be reset */
 
   assert( pagerUseLog(pPager) );
 
@@ -3764,8 +3764,8 @@ static int pagerOpenSnapshot(Pager *pPager){
   if( rc==SQLITE_OK ){
     int dummy;
     if( changed ){
-        pager_reset(pPager);
-        assert( pPager->errCode || pPager->dbSizeValid==0 );
+      pager_reset(pPager);
+      assert( pPager->errCode || pPager->dbSizeValid==0 );
     }
     rc = sqlite3PagerPagecount(pPager, &dummy);
   }

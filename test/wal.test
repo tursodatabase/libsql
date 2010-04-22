@@ -676,7 +676,6 @@ do_test wal-12.3 {
   execsql { INSERT INTO t2 VALUES('B', 1) }
   list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
 } {3 2}
-
 do_test wal-12.4 {
   file copy -force test.db test2.db
   file copy -force test.db-wal test2.db-wal
@@ -684,7 +683,6 @@ do_test wal-12.4 {
   execsql { SELECT * FROM t2 } db2
 } {B 1}
 db2 close
-
 do_test wal-12.5 {
   execsql {
     PRAGMA checkpoint;
@@ -696,14 +694,47 @@ do_test wal-12.5 {
     SELECT * FROM t2;
   }
 } {B 2}
-
-do_test wal-12.4 {
+do_test wal-12.6 {
   file copy -force test.db test2.db
   file copy -force test.db-wal test2.db-wal
   sqlite3_wal db2 test2.db
   execsql { SELECT * FROM t2 } db2
 } {B 2}
 db2 close
+db close
+
+#-------------------------------------------------------------------------
+# Test large log summaries.
+#
+do_test wal-13.1 {
+  list [file exists test.db] [file exists test.db-wal]
+} {1 0}
+do_test wal-13.2 {
+  set fd [open test.db-wal w]
+  seek $fd [expr 200*1024*1024]
+  puts $fd ""
+  close $fd
+  sqlite3 db test.db
+  execsql { SELECT * FROM t2 }
+} {B 2}
+do_test wal-13.3 {
+  db close
+  file exists test.db-wal
+} {0}
+do_test wal-13.4 {
+  sqlite3 db test.db
+  execsql { SELECT count(*) FROM t2 }
+} {1}
+do_test wal-13.5 {
+  for {set i 0} {$i < 15} {incr i} {
+    execsql { INSERT INTO t2 SELECT randomblob(400), randomblob(400) FROM t2 }
+  }
+  execsql { SELECT count(*) FROM t2 }
+} [expr int(pow(2, 15))]
+do_test wal-13.6 {
+  file size test.db-wal-summary
+} [expr 192*1024]
+
 
 finish_test
 

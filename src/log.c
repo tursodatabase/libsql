@@ -84,6 +84,15 @@ struct LogSummaryHdr {
 )
 
 /*
+** If using mmap() to access a shared (or otherwise) log-summary file, then
+** the mapping size is incremented in units of the following size.
+**
+** A 64 KB log-summary mapping corresponds to a log file containing over
+** 13000 frames, so the mapping size does not need to be increased often.
+*/
+#define LOGSUMMARY_MMAP_INCREMENT (64*1024)
+
+/*
 ** There is one instance of this structure for each log-summary object
 ** that this process has a connection to. They are stored in a linked
 ** list starting at pLogSummary (global variable).
@@ -99,6 +108,7 @@ struct LogSummary {
   char *zPath;                    /* Path to associated WAL file */
   LogLock *pLock;                 /* Linked list of locks on this object */
   LogSummary *pNext;              /* Next in global list */
+
   int nData;                      /* Size of aData allocation/mapping */
   u32 *aData;                     /* File body */
 };
@@ -288,10 +298,22 @@ static void logChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
   assert( LOG_CKSM_BYTES==2*sizeof(u32) );
   assert( (nByte&0x00000003)==0 );
 
-  do {
-    sum1 += (*a32++);
-    sum2 += sum1;
-  } while( a32<aEnd );
+  if( SQLITE_LITTLEENDIAN ){
+#ifdef SQLITE_DEBUG
+    u8 *a = (u8 *)a32;
+    assert( *a32==(a[0] + (a[1]<<8) + (a[2]<<16) + (a[3]<<24)) );
+#endif
+    do {
+      sum1 += *a32;
+      sum2 += sum1;
+    } while( ++a32<aEnd );
+  }else{
+    do {
+      u8 *a = (u8*)a32;
+      sum1 += a[0] + (a[1]<<8) + (a[2]<<16) + (a[3]<<24);
+      sum2 += sum1;
+    } while( ++a32<aEnd );
+  }
 
   aCksum[0] = sum1 + (sum1>>24);
   aCksum[1] = sum2 + (sum2>>24);
@@ -331,42 +353,6 @@ static void logNormalizePath(char *zPath){
     z[j++] = z[i];
   }
   z[j] = 0;
-}
-
-/*
-** Memory map the first nByte bytes of the summary file opened with 
-** pSummary->fd at pSummary->aData. If the summary file is smaller than
-** nByte bytes in size when this function is called, ftruncate() is
-** used to expand it before it is mapped.
-**
-** It is assumed that an exclusive lock is held on the summary file
-** by the caller (to protect the ftruncate()).
-*/
-static int logSummaryMap(LogSummary *pSummary, int nByte){
-  struct stat sStat;
-  int rc;
-  int fd = pSummary->fd;
-  void *pMap;
-
-  assert( pSummary->aData==0 );
-
-  /* If the file is less than nByte bytes in size, cause it to grow. */
-  rc = fstat(fd, &sStat);
-  if( rc!=0 ) return SQLITE_IOERR;
-  if( sStat.st_size<nByte ){
-    rc = ftruncate(fd, nByte);
-    if( rc!=0 ) return SQLITE_IOERR;
-  }
-
-  /* Map the file. */
-  pMap = mmap(0, nByte, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-  if( pMap==MAP_FAILED ){
-    return SQLITE_IOERR;
-  }
-  pSummary->aData = (u32 *)pMap;
-  pSummary->nData = nByte;
-
-  return SQLITE_OK;
 }
 
 /*
@@ -524,6 +510,44 @@ static void logMergesort8(
 
 
 /*
+** Memory map the first nByte bytes of the summary file opened with 
+** pSummary->fd at pSummary->aData. If the summary file is smaller than
+** nByte bytes in size when this function is called, ftruncate() is
+** used to expand it before it is mapped.
+**
+** It is assumed that an exclusive lock is held on the summary file
+** by the caller (to protect the ftruncate()).
+*/
+static int logSummaryMap(LogSummary *pSummary, int nByte){
+  struct stat sStat;
+  int rc;
+  int fd = pSummary->fd;
+  void *pMap;
+
+  assert( pSummary->aData==0 );
+
+  /* If the file is less than nByte bytes in size, cause it to grow. */
+  rc = fstat(fd, &sStat);
+  if( rc!=0 ) return SQLITE_IOERR;
+  if( sStat.st_size<nByte ){
+    rc = ftruncate(fd, nByte);
+    if( rc!=0 ) return SQLITE_IOERR;
+  }else{
+    nByte = sStat.st_size;
+  }
+
+  /* Map the file. */
+  pMap = mmap(0, nByte, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+  if( pMap==MAP_FAILED ){
+    return SQLITE_IOERR;
+  }
+  pSummary->aData = (u32 *)pMap;
+  pSummary->nData = nByte/4;
+
+  return SQLITE_OK;
+}
+
+/*
 ** Return the index in the LogSummary.aData array that corresponds to 
 ** frame iFrame. The log-summary file consists of a header, followed by
 ** alternating "map" and "index" blocks.
@@ -542,6 +566,16 @@ static int logSummaryEntry(u32 iFrame){
 */
 static void logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
   u32 iSlot = logSummaryEntry(iFrame);
+
+  if( (iSlot+128)>=pSummary->nData ){
+    int nByte = pSummary->nData*4 + LOGSUMMARY_MMAP_INCREMENT;
+
+    sqlite3_mutex_enter(pSummary->mutex);
+    munmap(pSummary->aData, pSummary->nData*4);
+    pSummary->aData = 0;
+    logSummaryMap(pSummary, nByte);
+    sqlite3_mutex_leave(pSummary->mutex);
+  }
 
   /* Set the log-summary entry itself */
   pSummary->aData[iSlot] = iPage;
@@ -606,7 +640,7 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     ** SQLITE_MAX_PAGE_SIZE, conclude that the log file contains no valid data.
     */
     nPgsz = sqlite3Get4byte(&aBuf[0]);
-    if( nPgsz&(nPgsz-1) || nPgsz>SQLITE_MAX_PAGE_SIZE ){
+    if( nPgsz&(nPgsz-1) || nPgsz>SQLITE_MAX_PAGE_SIZE || nPgsz<512 ){
       goto finished;
     }
     aCksum[0] = sqlite3Get4byte(&aBuf[4]);
@@ -885,7 +919,7 @@ static int logSummaryInit(
   assert( sqlite3_mutex_held(pSummary->mutex) );
   rc = logLockMutex(pSummary, LOG_WRLOCKW);
   if( rc!=SQLITE_OK ) return rc;
-  rc = logSummaryMap(pSummary, 512*1024);
+  rc = logSummaryMap(pSummary, LOGSUMMARY_MMAP_INCREMENT);
   if( rc!=SQLITE_OK ) goto out;
 
   /* Try to obtain an EXCLUSIVE lock on the dead-mans-hand region. If this
