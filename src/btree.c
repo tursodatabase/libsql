@@ -8004,7 +8004,7 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   if( rc==SQLITE_OK ){
     u8 *aData = pBt->pPage1->aData;
     if( aData[18]!=(u8)iVersion || aData[19]!=(u8)iVersion ){
-      rc = sqlite3BtreeBeginTrans(pBtree, 1);
+      rc = sqlite3BtreeBeginTrans(pBtree, 2);
       if( rc==SQLITE_OK ){
         rc = sqlite3PagerWrite(pBt->pPage1->pDbPage);
         if( rc==SQLITE_OK ){

@@ -3732,17 +3732,12 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 ** an SQLite error code.
 **
 ** The caller must hold a SHARED lock on the database file to call this
-** function.
+** function. Because an EXCLUSIVE lock on the db file is required to delete 
+** a WAL, this ensures there is no race condition between the xAccess() 
+** below and an xDelete() being executed by some other connection.
 */
 static int pagerHasWAL(Pager *pPager, int *pExists){
   int rc;                         /* Return code */
-
-  /* Check that a SHARED lock is held on the database file. Because an
-  ** EXCLUSIVE lock on the db file is required to delete a WAL, this
-  ** ensures there is no race condition between the xAccess() below and
-  ** an xDelete() being executed by some other connection.
-  */
-  assert( pPager->state>=PAGER_SHARED );
 
   if( !pPager->tempFile ){
     char *zLog = sqlite3_mprintf("%s-wal", pPager->zFilename);
@@ -5755,12 +5750,29 @@ int sqlite3PagerOpenLog(Pager *pPager, int *pisOpen){
 */
 int sqlite3PagerCloseLog(Pager *pPager){
   int rc = SQLITE_OK;
-  if( pPager->pLog ){
 
-    /* Try to obtain an EXCLUSIVE lock on the database file. */
+  assert( pPager->journalMode==PAGER_JOURNALMODE_WAL );
+
+  /* If the log file is not already open, but does exist in the file-system,
+  ** it may need to be checkpointed before the connection can switch to
+  ** rollback mode. Open it now so this can happen.
+  */
+  if( !pPager->pLog ){
+    int logexists = 0;
+    rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_SHARED);
+    if( rc==SQLITE_OK ){
+      rc = pagerHasWAL(pPager, &logexists);
+    }
+    if( rc==SQLITE_OK && logexists ){
+      rc = sqlite3LogOpen(pPager->pVfs, pPager->zFilename, &pPager->pLog);
+    }
+  }
+    
+  /* Checkpoint and close the log. Because an EXCLUSIVE lock is held on
+  ** the database file, the log and log-summary files will be deleted.
+  */
+  if( rc==SQLITE_OK && pPager->pLog ){
     rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_EXCLUSIVE);
-
-    /* If the EXCLUSIVE lock was obtained, checkpoint and close the log. */
     if( rc==SQLITE_OK ){
       rc = sqlite3LogClose(pPager->pLog, pPager->fd,
         (pPager->noSync ? 0 : pPager->sync_flags), 

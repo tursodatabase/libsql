@@ -5244,11 +5244,12 @@ case OP_JournalMode: {
         );
       }else{
   
-        /* If leaving WAL mode, close the log file. If successful, the call to
-        ** PagerCloseLog() checkpoints and deletes the write-ahead-log file.
-        ** An EXCLUSIVE lock is still held on the database file after returning.
-        */
         if( eOld==PAGER_JOURNALMODE_WAL ){
+          /* If leaving WAL mode, close the log file. If successful, the call
+          ** to PagerCloseLog() checkpoints and deletes the write-ahead-log 
+          ** file. An EXCLUSIVE lock may still be held on the database file 
+          ** after a successful return. 
+          */
           rc = sqlite3PagerCloseLog(pPager);
           if( rc!=SQLITE_OK ) goto abort_due_to_error;
           sqlite3PagerJournalMode(pPager, eNew);
