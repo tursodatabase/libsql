@@ -1569,6 +1569,14 @@ int sqlite3LogWriteLock(Log *pLog, int op){
 }
 
 /* 
+** Return true if data has been written but not committed to the log file. 
+*/
+int sqlite3LogDirty(Log *pLog){
+  assert( pLog->isWriteLocked );
+  return( pLog->hdr.iLastPg!=((LogSummaryHdr*)pLog->pSummary->aData)->iLastPg );
+}
+
+/* 
 ** Write a set of frames to the log. The caller must hold at least a
 ** RESERVED lock on the database file.
 */

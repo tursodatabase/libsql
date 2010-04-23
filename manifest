@@ -1,5 +1,5 @@
-C Add\svery\ssimple\stest\scases\sfor\sbackup\sand\sVACUUM\sof\sWAL\sdatabases.\sMore\sto\scome.
-D 2010-04-23T11:44:41
+C Fixes\sand\stests\sfor\sbackup\sof\sa\sWAL\sdatabase.
+D 2010-04-23T19:15:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,8 +131,8 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c da486aab7abfab8edbc20eb49e2f68e9d3a902b6
-F src/log.h b8c45a6348d9ef57c5205a08c611d57d07ee9feb
+F src/log.c d9fdaad6b0b5ace54153b85f5bfcf1b9d1abac67
+F src/log.h bc44b0eec723648c8aa0a05ab78e1b76a4032e02
 F src/main.c 867de6aa444abd97771b2b70472f448d65c1c77e
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -154,7 +154,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 5bf0015cebe2f21635da2af983c348eb88b3b4c1
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c d83d2ea6d2025554e079f891854b133924305e19
+F src/pager.c 485a34834a96863fd709f4d01f886ae70a9689ea
 F src/pager.h cee4487ab4f0911dd9f22a40e3cd55afdb7ef444
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -253,7 +253,7 @@ F test/autoindex1.test ffb06a246e2c1f89cfbe3d93eca513c9e78d4063
 F test/autovacuum.test 25f891bc343a8bf5d9229e2e9ddab9f31a9ab5ec
 F test/autovacuum_ioerr2.test 598b0663074d3673a9c1bc9a16e80971313bafe6
 F test/avtrans.test 1e901d8102706b63534dbd2bdd4d8f16c4082650
-F test/backup.test 3549ea8f541a08205c0eb813b21e81ea8301f6ed
+F test/backup.test b1e874fa9b01de9dd5137a8371d060b76a435162
 F test/backup2.test 159419073d9769fdb1780ed7e5b391a046f898d5
 F test/backup_ioerr.test 1f012e692f42c0442ae652443258f70e9f20fa38
 F test/backup_malloc.test 1e063c6d75143d0d6e0ae77971dd690070369387
@@ -759,7 +759,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test fcb5ec1fbec08c1165b6974f126056f2b4cead49
-F test/walbak.test 3aecf824ee6433bd34673336623c4990aa1346ba
+F test/walbak.test f6fde9a5f59d0c697cb1f4af7876178c2f69a7ba
 F test/walcrash.test f022cee7eb7baa5fb898726120a6a4073dd831d1
 F test/walhook.test 76a559e262f0715c470bade4a8d8333035f8ee47
 F test/walmode.test c2f4e30ad64910b2d8faf6cf4e940b3f201b41df
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5d6d4423d1def39bd2424703120aa985085c3f8e
-R 7813072bd3855cfe2a094b15eff01c69
+P 1077d8130b8ed5716ad73f78382270909d347963
+R 0d1581e70f8ee05579afbc11de72b135
 U dan
-Z f898bd1b5727c5103088c594c0575550
+Z c6fc40f98d5658443e299ebf167b2a61

@@ -2234,9 +2234,30 @@ static int readDbPage(PgHdr *pPg){
   return rc;
 }
 
+/*
+** This function is called when a transaction on a WAL database is rolled
+** back. For each dirty page in the cache, do one of the following:
+**
+**   * If the page has no outstanding references, simply discard it.
+**   * Otherwise, if the page has one or more outstanding references, 
+**     reload the original content from the database (or log file).
+*/
 static int pagerRollbackLog(Pager *pPager){
   int rc = SQLITE_OK;
   PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+
+  /* Normally, if a transaction is rolled back, any backup processes are
+  ** updated as data is copied out of the rollback journal and into the
+  ** database. This is not generally possible with a WAL database, as
+  ** rollback involves simply truncating the log file. Therefore, if one
+  ** or more frames have already been written to the log (and therefore 
+  ** also copied into the backup databases) as part of this transaction,
+  ** the backups must be restarted.
+  */
+  if( sqlite3LogDirty(pPager->pLog) ){
+    sqlite3BackupRestart(pPager->pBackup);
+  }
+
   pPager->dbSize = pPager->dbOrigSize;
   while( pList && rc==SQLITE_OK ){
     PgHdr *pNext = pList->pDirty;
@@ -3218,6 +3239,33 @@ static int subjournalPage(PgHdr *pPg){
   return rc;
 }
 
+/*
+** This function is a wrapper around sqlite3LogFrames(). As well as logging
+** the contents of the list of pages headed by pList (connected by pDirty),
+** this function notifies any active backup processes that the pages have
+** changed. 
+*/ 
+static int pagerLogFrames(
+  Pager *pPager,                  /* Pager object */
+  PgHdr *pList,                   /* List of frames to log */
+  Pgno nTruncate,                 /* Database size after this commit */
+  int isCommit,                   /* True if this is a commit */
+  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+){
+  int rc;                         /* Return code */
+
+  assert( pPager->pLog );
+  rc = sqlite3LogFrames(pPager->pLog, 
+      pPager->pageSize, pList, nTruncate, isCommit, sync_flags
+  );
+  if( rc==SQLITE_OK && pPager->pBackup ){
+    PgHdr *p;
+    for(p=pList; p; p=p->pDirty){
+      sqlite3BackupUpdate(pPager->pBackup, p->pgno, (u8 *)p->pData);
+    }
+  }
+  return rc;
+}
 
 /*
 ** This function is called by the pcache layer when it has reached some
@@ -3248,7 +3296,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   pPg->pDirty = 0;
   if( pagerUseLog(pPager) ){
     /* Write a single frame for this page to the log. */
-    rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pPg, 0, 0, 0);
+    rc = pagerLogFrames(pPager, pPg, 0, 0, 0);
   }else{
     /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
     ** is journalling a set of two or more database pages that are stored
@@ -4881,8 +4929,8 @@ int sqlite3PagerCommitPhaseOne(
     if( pagerUseLog(pPager) ){
       PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
       if( pList ){
-        rc = sqlite3LogFrames(pPager->pLog, pPager->pageSize, pList,
-            pPager->dbSize, 1, (pPager->fullSync ? pPager->sync_flags : 0)
+        rc = pagerLogFrames(pPager, pList, pPager->dbSize, 1, 
+            (pPager->fullSync ? pPager->sync_flags : 0)
         );
       }
       sqlite3PcacheCleanAll(pPager->pPCache);
@@ -5119,6 +5167,7 @@ int sqlite3PagerRollback(Pager *pPager){
   PAGERTRACE(("ROLLBACK %d\n", PAGERID(pPager)));
   if( pagerUseLog(pPager) ){
     int rc2;
+
     rc = sqlite3PagerSavepoint(pPager, SAVEPOINT_ROLLBACK, -1);
     rc2 = pager_end_transaction(pPager, pPager->setMaster);
     if( rc==SQLITE_OK ) rc = rc2;

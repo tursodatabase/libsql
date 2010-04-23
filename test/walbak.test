@@ -20,6 +20,12 @@ proc log_file_size {nFrame pgsz} {
   expr {12 + ($pgsz+16)*$nFrame}
 }
 
+# Test organization:
+# 
+#   walback-1.*: Simple tests.
+#   walback-2.*: Test backups when the source db is modified mid-backup.
+#
+
 # Make sure a simple backup from a WAL database works.
 #
 do_test walbak-1.0 {
@@ -53,20 +59,20 @@ db2 close
 
 # Try a VACUUM on a WAL database.
 #
-do_test walbak-2.1 {
+do_test walbak-1.4 {
   execsql { 
     VACUUM;
     PRAGMA main.journal_mode;
   }
 } {wal}
-do_test walbak-2.2 {
+do_test walbak-1.5 {
   list [file size test.db] [file size test.db-wal]
 } [list 1024 [log_file_size 6 1024]]
-do_test walbak-2.3 {
+do_test walbak-1.6 {
   execsql { PRAGMA checkpoint }
   list [file size test.db] [file size test.db-wal]
 } [list [expr 3*1024] [log_file_size 6 1024]]
-do_test walbak-2.4 {
+do_test walbak-1.7 {
   execsql { 
     CREATE TABLE t2(a, b);
     INSERT INTO t2 SELECT * FROM t1;
@@ -74,13 +80,105 @@ do_test walbak-2.4 {
   }
   list [file size test.db] [file size test.db-wal]
 } [list [expr 3*1024] [log_file_size 6 1024]]
-do_test walbak-2.5 {
+do_test walbak-1.8 {
   execsql { VACUUM }
   list [file size test.db] [file size test.db-wal]
 } [list [expr 3*1024] [log_file_size 8 1024]]
-do_test walbak-2.6 {
+do_test walbak-1.9 {
   execsql { PRAGMA checkpoint }
   list [file size test.db] [file size test.db-wal]
 } [list [expr 2*1024] [log_file_size 8 1024]]
 
+#-------------------------------------------------------------------------
+# Backups when the source db is modified mid-backup.
+#
+proc sig {{db db}} {
+  $db eval { 
+    PRAGMA integrity_check;
+    SELECT md5sum(a, b) FROM t1; 
+  }
+}
+db close
+file delete test.db
+sqlite3 db test.db
+do_test walbak-2.1 {
+  execsql { PRAGMA journal_mode = WAL }
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(500), randomblob(500));
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /*  2 */
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /*  4 */
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /*  8 */
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /* 16 */
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /* 32 */
+      INSERT INTO t1 SELECT randomblob(500), randomblob(500) FROM t1; /* 64 */
+    COMMIT;
+  }
+} {}
+do_test walbak-2.2 {
+  db backup abc.db
+  sqlite3 db2 abc.db
+  string compare [sig db] [sig db2]
+} {0}
+
+do_test walbak-2.3 {
+  sqlite3_backup B db2 main db main
+  B step 50
+  execsql { UPDATE t1 SET b = randomblob(500) }
+  list [B step 1000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test walbak-2.4 {
+  string compare [sig db] [sig db2]
+} {0}
+
+do_test walbak-2.5 {
+  db close
+  sqlite3 db test.db
+  execsql { PRAGMA cache_size = 10 }
+  sqlite3_backup B db2 main db main
+  B step 50
+  execsql {
+    BEGIN;
+      UPDATE t1 SET b = randomblob(500);
+  }
+  expr [file size test.db-wal] > 10*1024
+} {1}
+do_test walbak-2.6 {
+  B step 1000
+} {SQLITE_BUSY}
+do_test walbak-2.7 {
+  execsql COMMIT
+  list [B step 1000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test walbak-2.8 {
+  string compare [sig db] [sig db2]
+} {0}
+
+do_test walbak-2.9 {
+  db close
+  sqlite3 db test.db
+  execsql { PRAGMA cache_size = 10 }
+  sqlite3_backup B db2 main db main
+  B step 50
+  execsql {
+    BEGIN;
+      UPDATE t1 SET b = randomblob(500);
+  }
+  expr [file size test.db-wal] > 10*1024
+} {1}
+do_test walbak-2.10 {
+  B step 1000
+} {SQLITE_BUSY}
+do_test walbak-2.11 {
+  execsql ROLLBACK
+set sigB [sig db]
+  list [B step 1000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test walbak-2.12 {
+  string compare [sig db] [sig db2]
+} {0}
+db2 close
+
 finish_test
+
