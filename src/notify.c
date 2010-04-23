@@ -157,6 +157,7 @@ int sqlite3_unlock_notify(
 
   if( xNotify==0 ){
     removeFromBlockedList(db);
+    db->pBlockingConnection = 0;
     db->pUnlockConnection = 0;
     db->xUnlockNotify = 0;
     db->pUnlockArg = 0;
