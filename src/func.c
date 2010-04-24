@@ -1416,9 +1416,6 @@ static void groupConcatFinalize(sqlite3_context *context){
 ** external linkage.
 */
 void sqlite3RegisterBuiltinFunctions(sqlite3 *db){
-#ifndef SQLITE_OMIT_ALTERTABLE
-  sqlite3AlterFunctions(db);
-#endif
   if( !db->mallocFailed ){
     int rc = sqlite3_overload_function(db, "MATCH", 2);
     assert( rc==SQLITE_NOMEM || rc==SQLITE_OK );
@@ -1592,4 +1589,7 @@ void sqlite3RegisterGlobalFunctions(void){
     sqlite3FuncDefInsert(pHash, &aFunc[i]);
   }
   sqlite3RegisterDateTimeFunctions();
+#ifndef SQLITE_OMIT_ALTERTABLE
+  sqlite3AlterFunctions();
+#endif
 }
