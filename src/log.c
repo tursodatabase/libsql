@@ -28,9 +28,33 @@
 */
 
 /* 
-** LOG SUMMARY FORMAT
+** LOG SUMMARY FILE FORMAT
 **
-** TODO.
+** The log-summary file consists of a header region, followed by an 
+** region that contains no useful data (used to apply byte-range locks
+** to), followed by the data region. 
+**
+** The contents of both the header and data region are specified in terms
+** of 1, 2 and 4 byte unsigned integers. All integers are stored in 
+** machine-endian order.
+**
+** A log-summary file is essentially a shadow-pager map. It contains a
+** mapping from database page number to the set of locations in the log 
+** file that contain versions of the database page. When a database 
+** client needs to read a page of data, it first queries the log-summary
+** file to determine if the required version of the page is stored in
+** the log. If so, it is read from the log file. If not, it is read from
+** the database file.
+**
+** Whenever a transaction is appended to the log or a checkpoint transfers
+** data from the log file into the database file, the log-summary is 
+** updated accordingly.
+**
+** The fields in the log-summary file header are described in the comment 
+** directly above the definition of struct LogSummaryHdr (see below). 
+** Immediately following the fields in the LogSummaryHdr structure is
+** an 8 byte checksum based on the contents of the header. This field is
+** not the same as the iCheck1 and iCheck2 fields of the LogSummaryHdr.
 */
 
 #include "log.h"
@@ -65,14 +89,19 @@ struct LogSummaryHdr {
 /* Size of serialized LogSummaryHdr object. */
 #define LOGSUMMARY_HDR_NFIELD (sizeof(LogSummaryHdr) / sizeof(u32))
 
-#define LOGSUMMARY_FRAME_OFFSET \
-  (LOGSUMMARY_HDR_NFIELD + LOG_CKSM_BYTES/sizeof(u32))
+/* A block of 16 bytes beginning at LOGSUMMARY_LOCK_OFFSET is reserved
+** for locks. Since some systems only feature mandatory file-locks, we
+** do not read or write data from the region of the file on which locks
+** are applied.
+*/
+#define LOGSUMMARY_LOCK_OFFSET   ((sizeof(LogSummaryHdr))+2*sizeof(u32))
+#define LOGSUMMARY_LOCK_RESERVED 16
 
-
-
-/* Size of frame header */
+/* Size of header before each frame in log file */
 #define LOG_FRAME_HDRSIZE 16
-#define LOG_HDRSIZE       12
+
+/* Size of log header */
+#define LOG_HDRSIZE 12
 
 /*
 ** Return the offset of frame iFrame in the log file, assuming a database
@@ -80,7 +109,7 @@ struct LogSummaryHdr {
 ** log frame-header.
 */
 #define logFrameOffset(iFrame, pgsz) (                               \
-  LOG_HDRSIZE + ((iFrame)-1)*((pgsz)+LOG_FRAME_HDRSIZE)              \
+  LOG_HDRSIZE + ((iFrame)-1)*((pgsz)+LOG_FRAME_HDRSIZE)        \
 )
 
 /*
@@ -197,9 +226,9 @@ struct LogSummary {
 **         write to the log file) require an exclusive lock on region D.
 **         Which they cannot get until all region D readers have finished.
 */
-#define LOG_LOCK_MUTEX  12
-#define LOG_LOCK_DMH    13
-#define LOG_LOCK_REGION 14
+#define LOG_LOCK_MUTEX  (LOGSUMMARY_LOCK_OFFSET)
+#define LOG_LOCK_DMH    (LOG_LOCK_MUTEX+1)
+#define LOG_LOCK_REGION (LOG_LOCK_DMH+1)
 
 /*
 ** The four lockable regions associated with each log-summary. A connection
@@ -386,13 +415,13 @@ static int logSummaryUnmap(LogSummary *pSummary, int isUnlink){
 }
 
 static void logSummaryWriteHdr(LogSummary *pSummary, LogSummaryHdr *pHdr){
-  u32 *aData = pSummary->aData;
-  memcpy(aData, pHdr, sizeof(LogSummaryHdr));
-  aData[LOGSUMMARY_HDR_NFIELD] = 1;
-  aData[LOGSUMMARY_HDR_NFIELD+1] = 1;
-  logChecksumBytes(
-    (u8 *)aData, sizeof(LogSummaryHdr), &aData[LOGSUMMARY_HDR_NFIELD]
-  );
+  u32 *aHdr = pSummary->aData;                   /* Write header here */
+  u32 *aCksum = &aHdr[LOGSUMMARY_HDR_NFIELD];    /* Write header cksum here */
+
+  assert( LOGSUMMARY_HDR_NFIELD==sizeof(LogSummaryHdr)/4 );
+  memcpy(aHdr, pHdr, sizeof(LogSummaryHdr));
+  aCksum[0] = aCksum[1] = 1;
+  logChecksumBytes((u8 *)aHdr, sizeof(LogSummaryHdr), aCksum);
 }
 
 /*
@@ -553,7 +582,11 @@ static int logSummaryMap(LogSummary *pSummary, int nByte){
 ** alternating "map" and "index" blocks.
 */
 static int logSummaryEntry(u32 iFrame){
-  return ((((iFrame-1)>>8)<<6) + iFrame-1 + 2 + LOGSUMMARY_HDR_NFIELD);
+  return (
+      (LOGSUMMARY_LOCK_OFFSET+LOGSUMMARY_LOCK_RESERVED)/sizeof(u32)
+    + (((iFrame-1)>>8)<<6)        /* Indexes that occur before iFrame */
+    + iFrame-1                    /* Db page numbers that occur before iFrame */
+  );
 }
 
 
@@ -692,6 +725,9 @@ finished:
 /*
 ** Place, modify or remove a lock on the log-summary file associated 
 ** with pSummary.
+**
+** The locked byte-range should be inside the region dedicated to 
+** locking. This region of the log-summary file is never read or written.
 */
 static int logLockFd(
   LogSummary *pSummary,           /* The log-summary object to lock */
@@ -716,6 +752,13 @@ static int logLockFd(
 
   assert( ArraySize(aType)==ArraySize(aOp) );
   assert( op>=0 && op<ArraySize(aType) );
+  assert( nByte>0 );
+  assert( iStart>=LOGSUMMARY_LOCK_OFFSET 
+       && iStart+nByte<=LOGSUMMARY_LOCK_OFFSET+LOGSUMMARY_LOCK_RESERVED
+  );
+#if defined(SQLITE_DEBUG) && defined(SQLITE_OS_UNIX)
+  if( pSummary->aData ) memset(&((u8*)pSummary->aData)[iStart], op, nByte);
+#endif
 
   memset(&f, 0, sizeof(f));
   f.l_type = aType[op];
@@ -834,13 +877,13 @@ static int logLockRegion(Log *pLog, u32 mRegion, int op){
       int iStart;                 /* Byte offset to start locking operation */
       int iLen;                   /* Length field for locking operation */
     } aMap[] = {
-      /* 0000 */ {0, 0},                    /* 0001 */ {4+LOG_LOCK_REGION, 1}, 
-      /* 0010 */ {3+LOG_LOCK_REGION, 1},    /* 0011 */ {3+LOG_LOCK_REGION, 2},
-      /* 0100 */ {2+LOG_LOCK_REGION, 1},    /* 0101 */ {0, 0}, 
-      /* 0110 */ {2+LOG_LOCK_REGION, 2},    /* 0111 */ {2+LOG_LOCK_REGION, 3},
-      /* 1000 */ {1+LOG_LOCK_REGION, 1},    /* 1001 */ {0, 0}, 
+      /* 0000 */ {0, 0},                    /* 0001 */ {3+LOG_LOCK_REGION, 1}, 
+      /* 0010 */ {2+LOG_LOCK_REGION, 1},    /* 0011 */ {2+LOG_LOCK_REGION, 2},
+      /* 0100 */ {1+LOG_LOCK_REGION, 1},    /* 0101 */ {0, 0}, 
+      /* 0110 */ {1+LOG_LOCK_REGION, 2},    /* 0111 */ {1+LOG_LOCK_REGION, 3},
+      /* 1000 */ {0+LOG_LOCK_REGION, 1},    /* 1001 */ {0, 0}, 
       /* 1010 */ {0, 0},                    /* 1011 */ {0, 0},
-      /* 1100 */ {1+LOG_LOCK_REGION, 2},    /* 1101 */ {0, 0}, 
+      /* 1100 */ {0+LOG_LOCK_REGION, 2},    /* 1101 */ {0, 0}, 
       /* 1110 */ {0, 0},                    /* 1111 */ {0, 0}
     };
     int rc;                       /* Return code of logLockFd() */
