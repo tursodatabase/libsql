@@ -915,6 +915,7 @@ struct sqlite3 {
 #define SQLITE_RecTriggers    0x02000000  /* Enable recursive triggers */
 #define SQLITE_ForeignKeys    0x04000000  /* Enforce foreign key constraints  */
 #define SQLITE_AutoIndex      0x08000000  /* Enable automatic indexes */
+#define SQLITE_PreferBuiltin  0x10000000  /* Preference to built-in funcs */
 
 /*
 ** Bits of the sqlite3.flags field that are used by the
@@ -2883,7 +2884,7 @@ extern int sqlite3PendingByte;
 #endif
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);
-void sqlite3AlterFunctions(sqlite3*);
+void sqlite3AlterFunctions(void);
 void sqlite3AlterRenameTable(Parse*, SrcList*, Token*);
 int sqlite3GetToken(const unsigned char *, int *);
 void sqlite3NestedParse(Parse*, const char*, ...);

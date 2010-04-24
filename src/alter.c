@@ -226,17 +226,23 @@ static void renameTriggerFunc(
 /*
 ** Register built-in functions used to help implement ALTER TABLE
 */
-void sqlite3AlterFunctions(sqlite3 *db){
-  sqlite3CreateFunc(db, "sqlite_rename_table", 2, SQLITE_UTF8, 0,
-                         renameTableFunc, 0, 0);
+void sqlite3AlterFunctions(void){
+  static SQLITE_WSD FuncDef aAlterTableFuncs[] = {
+    FUNCTION(sqlite_rename_table,   2, 0, 0, renameTableFunc),
 #ifndef SQLITE_OMIT_TRIGGER
-  sqlite3CreateFunc(db, "sqlite_rename_trigger", 2, SQLITE_UTF8, 0,
-                         renameTriggerFunc, 0, 0);
+    FUNCTION(sqlite_rename_trigger, 2, 0, 0, renameTriggerFunc),
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  sqlite3CreateFunc(db, "sqlite_rename_parent", 3, SQLITE_UTF8, 0,
-                         renameParentFunc, 0, 0);
+    FUNCTION(sqlite_rename_parent,  3, 0, 0, renameParentFunc),
 #endif
+  };
+  int i;
+  FuncDefHash *pHash = &GLOBAL(FuncDefHash, sqlite3GlobalFunctions);
+  FuncDef *aFunc = (FuncDef*)&GLOBAL(FuncDef, aAlterTableFuncs);
+
+  for(i=0; i<ArraySize(aAlterTableFuncs); i++){
+    sqlite3FuncDefInsert(pHash, &aFunc[i]);
+  }
 }
 
 /*
@@ -380,7 +386,9 @@ void sqlite3AlterRenameTable(
   char *zWhere = 0;         /* Where clause to locate temp triggers */
 #endif
   VTable *pVTab = 0;        /* Non-zero if this is a v-tab with an xRename() */
-  
+  int savedDbFlags;         /* Saved value of db->flags */
+
+  savedDbFlags = db->flags;  
   if( NEVER(db->mallocFailed) ) goto exit_rename_table;
   assert( pSrc->nSrc==1 );
   assert( sqlite3BtreeHoldsAllMutexes(pParse->db) );
@@ -389,6 +397,7 @@ void sqlite3AlterRenameTable(
   if( !pTab ) goto exit_rename_table;
   iDb = sqlite3SchemaToIndex(pParse->db, pTab->pSchema);
   zDb = db->aDb[iDb].zName;
+  db->flags |= SQLITE_PreferBuiltin;
 
   /* Get a NULL terminated version of the new table name. */
   zName = sqlite3NameFromToken(db, pName);
@@ -556,6 +565,7 @@ void sqlite3AlterRenameTable(
 exit_rename_table:
   sqlite3SrcListDelete(db, pSrc);
   sqlite3DbFree(db, zName);
+  db->flags = savedDbFlags;
 }
 
 
@@ -675,9 +685,11 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
   zCol = sqlite3DbStrNDup(db, (char*)pColDef->z, pColDef->n);
   if( zCol ){
     char *zEnd = &zCol[pColDef->n-1];
+    int savedDbFlags = db->flags;
     while( zEnd>zCol && (*zEnd==';' || sqlite3Isspace(*zEnd)) ){
       *zEnd-- = '\0';
     }
+    db->flags |= SQLITE_PreferBuiltin;
     sqlite3NestedParse(pParse, 
         "UPDATE \"%w\".%s SET "
           "sql = substr(sql,1,%d) || ', ' || %Q || substr(sql,%d) "
@@ -686,6 +698,7 @@ void sqlite3AlterFinishAddColumn(Parse *pParse, Token *pColDef){
       zTab
     );
     sqlite3DbFree(db, zCol);
+    db->flags = savedDbFlags;
   }
 
   /* If the default value of the new column is NULL, then set the file
