@@ -139,6 +139,10 @@ do_test wal-3.3 {
 } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 db2 close
 
+#-------------------------------------------------------------------------
+# The following tests, wal-4.*, test that savepoints work with WAL 
+# databases.
+#
 do_test wal-4.1 {
   execsql {
     DELETE FROM t1;
@@ -162,6 +166,57 @@ do_test wal-4.3 {
   }
 } {a b}
 
+do_test wal-4.4 {
+  db close
+  sqlite3 db test.db
+  db func blob blob
+  list [execsql { SELECT * FROM t1 }] [file size test.db-wal]
+} {{a b} 0}
+do_test wal-4.5 {
+  execsql { PRAGMA cache_size = 10 }
+  execsql {
+    CREATE TABLE t2(a, b);
+    INSERT INTO t2 VALUES(blob(400), blob(400));
+    SAVEPOINT tr;
+      INSERT INTO t2 SELECT blob(400), blob(400) FROM t2; /*  2 */
+      INSERT INTO t2 SELECT blob(400), blob(400) FROM t2; /*  4 */
+      INSERT INTO t2 SELECT blob(400), blob(400) FROM t2; /*  8 */
+      INSERT INTO t2 SELECT blob(400), blob(400) FROM t2; /* 16 */
+      INSERT INTO t2 SELECT blob(400), blob(400) FROM t2; /* 32 */
+      INSERT INTO t1 SELECT blob(400), blob(400) FROM t1; /*  2 */
+      INSERT INTO t1 SELECT blob(400), blob(400) FROM t1; /*  4 */
+      INSERT INTO t1 SELECT blob(400), blob(400) FROM t1; /*  8 */
+      INSERT INTO t1 SELECT blob(400), blob(400) FROM t1; /* 16 */
+      INSERT INTO t1 SELECT blob(400), blob(400) FROM t1; /* 32 */
+      SELECT count(*) FROM t2;
+  }
+} {32}
+do_test wal-4.6 {
+  execsql { ROLLBACK TO tr }
+} {}
+do_test wal-4.7 {
+  set logsize [file size test.db-wal]
+  execsql {
+      INSERT INTO t1 VALUES('x', 'y');
+    RELEASE tr;
+  }
+  expr { $logsize == [file size test.db-wal] }
+} {1}
+do_test wal-4.8 {
+  execsql { SELECT count(*) FROM t2 }
+} {1}
+do_test wal-4.9 {
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  sqlite3 db2 test2.db
+  execsql { SELECT count(*) FROM t2 ; SELECT count(*) FROM t1 } db2
+} {1 2}
+do_test wal-4.10 {
+  execsql { PRAGMA integrity_check } db2
+} {ok}
+db2 close
+
+reopen_db
 do_test wal-5.1 {
   execsql {
     CREATE TEMP TABLE t2(a, b);

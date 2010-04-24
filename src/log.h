@@ -37,6 +37,9 @@ void sqlite3LogDbsize(Log *pLog, Pgno *pPgno);
 /* Obtain or release the WRITER lock. */
 int sqlite3LogWriteLock(Log *pLog, int op);
 
+/* Undo any frames written (but not committed) to the log */
+int sqlite3LogUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx);
+
 /* Return true if data has been written but not committed to the log file. */
 int sqlite3LogDirty(Log *pLog);
 

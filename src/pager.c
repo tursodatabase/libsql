@@ -2235,16 +2235,44 @@ static int readDbPage(PgHdr *pPg){
 }
 
 /*
-** This function is called when a transaction on a WAL database is rolled
-** back. For each dirty page in the cache, do one of the following:
+** This function is invoked once for each page that has already been 
+** written into the log file when a WAL transaction is rolled back.
+** Parameter iPg is the page number of said page. The pCtx argument 
+** is actually a pointer to the Pager structure.
 **
-**   * If the page has no outstanding references, simply discard it.
-**   * Otherwise, if the page has one or more outstanding references, 
-**     reload the original content from the database (or log file).
+** If page iPg is present in the cache, and has no outstanding references,
+** it is discarded. Otherwise, if there are one or more outstanding
+** references, the page content is reloaded from the database. If the
+** attempt to reload content from the database is required and fails, 
+** return an SQLite error code. Otherwise, SQLITE_OK.
+*/
+static int pagerUndoCallback(void *pCtx, Pgno iPg){
+  int rc = SQLITE_OK;
+  Pager *pPager = (Pager *)pCtx;
+  PgHdr *pPg;
+
+  pPg = sqlite3PagerLookup(pPager, iPg);
+  if( pPg ){
+    if( sqlite3PcachePageRefcount(pPg)==1 ){
+      sqlite3PcacheDrop(pPg);
+    }else{
+      rc = readDbPage(pPg);
+      if( rc==SQLITE_OK ){
+        pPager->xReiniter(pPg);
+      }
+      sqlite3PagerUnref(pPg);
+    }
+  }
+
+  return rc;
+}
+
+/*
+** This function is called to rollback a transaction on a WAL database.
 */
 static int pagerRollbackLog(Pager *pPager){
-  int rc = SQLITE_OK;
-  PgHdr *pList = sqlite3PcacheDirtyList(pPager->pPCache);
+  int rc;                         /* Return Code */
+  PgHdr *pList;                   /* List of dirty pages to revert */
 
   /* Normally, if a transaction is rolled back, any backup processes are
   ** updated as data is copied out of the rollback journal and into the
@@ -2258,20 +2286,22 @@ static int pagerRollbackLog(Pager *pPager){
     sqlite3BackupRestart(pPager->pBackup);
   }
 
+  /* For all pages in the cache that are currently dirty or have already
+  ** been written (but not committed) to the log file, do one of the 
+  ** following:
+  **
+  **   + Discard the cached page (if refcount==0), or
+  **   + Reload page content from the database (if refcount>0).
+  */
   pPager->dbSize = pPager->dbOrigSize;
+  rc = sqlite3LogUndo(pPager->pLog, pagerUndoCallback, (void *)pPager);
+  pList = sqlite3PcacheDirtyList(pPager->pPCache);
   while( pList && rc==SQLITE_OK ){
     PgHdr *pNext = pList->pDirty;
-    if( sqlite3PcachePageRefcount(pList)==0 ){
-      sqlite3PagerLookup(pPager, pList->pgno);
-      sqlite3PcacheDrop(pList);
-    }else{
-      rc = readDbPage(pList);
-      if( rc==SQLITE_OK ){
-        pPager->xReiniter(pList);
-      }
-    }
+    rc = pagerUndoCallback((void *)pPager, pList->pgno);
     pList = pNext;
   }
+
   return rc;
 }
 

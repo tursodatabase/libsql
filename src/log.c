@@ -1611,6 +1611,33 @@ int sqlite3LogWriteLock(Log *pLog, int op){
   return SQLITE_OK;
 }
 
+/*
+** The log handle passed to this function must be holding the write-lock.
+**
+** If any data has been written (but not committed) to the log file, this
+** function moves the write-pointer back to the start of the transaction.
+**
+** Additionally, the callback function is invoked for each frame written
+** to the log since the start of the transaction. If the callback returns
+** other than SQLITE_OK, it is not invoked again and the error code is
+** returned to the caller.
+**
+** Otherwise, if the callback function does not return an error, this
+** function returns SQLITE_OK.
+*/
+int sqlite3LogUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+  int rc = SQLITE_OK;
+  Pgno iMax = pLog->hdr.iLastPg;
+  Pgno iFrame;
+
+  assert( pLog->isWriteLocked );
+  logSummaryReadHdr(pLog, 0);
+  for(iFrame=pLog->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
+    rc = xUndo(pUndoCtx, pLog->pSummary->aData[logSummaryEntry(iFrame)]);
+  }
+  return rc;
+}
+
 /* 
 ** Return true if data has been written but not committed to the log file. 
 */

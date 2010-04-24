@@ -1,5 +1,5 @@
-C Merge\swith\s[0291ed974d].\nMerge\swith\s[0291ed974d].\nMerge\swith\s[0291ed974d].
-D 2010-04-24T14:33:08
+C Fix\sbugs\sin\sWAL\smode\srollback.
+D 2010-04-24T18:44:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,8 +131,8 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/log.c 7569a2f6541c86127914d50e9fd6e65c17111bc6
-F src/log.h bc44b0eec723648c8aa0a05ab78e1b76a4032e02
+F src/log.c 6097555f746e9992b3bb7a257d2e60ced69e3a84
+F src/log.h 06eacedac8b5a720cb88aa3c9e5d886ba7b394fe
 F src/main.c 867de6aa444abd97771b2b70472f448d65c1c77e
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
@@ -154,7 +154,7 @@ F src/os_common.h 240c88b163b02c21a9f21f87d49678a0aa21ff30
 F src/os_os2.c 75a8c7b9a00a2cf1a65f9fa4afbc27d46634bb2f
 F src/os_unix.c 5bf0015cebe2f21635da2af983c348eb88b3b4c1
 F src/os_win.c 1c7453c2df4dab26d90ff6f91272aea18bcf7053
-F src/pager.c 485a34834a96863fd709f4d01f886ae70a9689ea
+F src/pager.c 9da40bb50d2baa8f7cbb18579f147b7623856211
 F src/pager.h cee4487ab4f0911dd9f22a40e3cd55afdb7ef444
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -758,7 +758,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test fcb5ec1fbec08c1165b6974f126056f2b4cead49
+F test/wal.test 8dcfd1ce874aead6199fa715ba8e35cfbb3ef766
 F test/walbak.test f6fde9a5f59d0c697cb1f4af7876178c2f69a7ba
 F test/walcrash.test f022cee7eb7baa5fb898726120a6a4073dd831d1
 F test/walhook.test 76a559e262f0715c470bade4a8d8333035f8ee47
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1e793d3a6d46ec5d744e077b10362e7cfa118eef 0291ed974d5bf1e344e2c38422530cc961b897da
-R 2a96ead5dd8a150336ca23e8e3a9aa5f
+P a352f6285e33a806fbe4475e720e763fdc5bb47d
+R a372a014eac56d1df8e79bcff4ecc6e7
 U dan
-Z 95ff3026ac52c375d39478f793178d69
+Z 3d8f3676c5fc9fd427fe6aa0aa15e428
