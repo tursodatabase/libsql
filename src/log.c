@@ -316,15 +316,26 @@ static LogSummary *pLogSummary = 0;
 ** Generate an 8 byte checksum based on the data in array aByte[] and the
 ** initial values of aCksum[0] and aCksum[1]. The checksum is written into
 ** aCksum[] before returning.
+**
+** The range of bytes to checksum is treated as an array of 32-bit 
+** little-endian unsigned integers. For each integer X in the array, from
+** start to finish, do the following:
+**
+**   aCksum[0] += X;
+**   aCksum[1] += aCksum[0];
+**
+** For the calculation above, use 64-bit unsigned accumulators. Before
+** returning, truncate the values to 32-bits as follows: 
+**
+**   aCksum[0] = (u32)(aCksum[0] + (aCksum[0]>>24));
+**   aCksum[1] = (u32)(aCksum[1] + (aCksum[1]>>24));
 */
-#define LOG_CKSM_BYTES 8
 static void logChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
   u64 sum1 = aCksum[0];
   u64 sum2 = aCksum[1];
   u32 *a32 = (u32 *)aByte;
   u32 *aEnd = (u32 *)&aByte[nByte];
 
-  assert( LOG_CKSM_BYTES==2*sizeof(u32) );
   assert( (nByte&0x00000003)==0 );
 
   if( SQLITE_LITTLEENDIAN ){
@@ -1666,7 +1677,7 @@ int sqlite3LogFrames(
   PgHdr *pLast;                   /* Last frame in list */
   int nLast = 0;                  /* Number of extra copies of last page */
 
-  assert( LOG_FRAME_HDRSIZE==(4 * 2 + LOG_CKSM_BYTES) );
+  assert( LOG_FRAME_HDRSIZE==(4 * 2 + 2*sizeof(u32)) );
   assert( pList );
 
   /* If this is the first frame written into the log, write the log 
