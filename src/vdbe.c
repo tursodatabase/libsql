@@ -5231,6 +5231,12 @@ case OP_JournalMode: {
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
 
+  if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(pBt)) 
+   && eNew==PAGER_JOURNALMODE_WAL 
+  ){
+    eNew = PAGER_JOURNALMODE_QUERY;
+  }
+
   if( eNew!=PAGER_JOURNALMODE_QUERY ){
     int eOld = sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_QUERY);
     if( (eNew!=eOld)

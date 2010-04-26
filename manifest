@@ -1,5 +1,5 @@
-C Fixes\sfor\sproblems\swith\ssmall\scaches\sand\sSAVEPOINT\srollback\sin\sWAL\smode.
-D 2010-04-26T16:57:10
+C Do\snot\sattempt\sto\sset\sjournal_mode=wal\son\s:memory:\sor\stemp\sfile\sdatabases.
+D 2010-04-26T17:42:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -212,7 +212,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 8e7d9a6fd076774bb6e211cad335c7337948a164
-F src/vdbe.c 09e88e8b01b413271b5ccd8c902c424cd563e342
+F src/vdbe.c da7ee09fdb5ee6ecfac11b74086834ff6583cd23
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 466044df5bc916f778833e927165fd02cdef6086
@@ -553,7 +553,7 @@ F test/savepoint2.test 9b8543940572a2f01a18298c3135ad0c9f4f67d7
 F test/savepoint3.test e328085853b14898d78ceea00dfe7db18bb6a9ec
 F test/savepoint4.test c8f8159ade6d2acd9128be61e1230f1c1edc6cc0
 F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
-F test/savepoint6.test 8e871226bcd20241c0ee7da28166f5c525d7cba9
+F test/savepoint6.test 30f5c068d7aceacbf9bd6a7df1c99f34b2fc2723
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
 F test/securedel.test 328d2921c0ca49bdd3352e516b0377fc07143254
@@ -762,7 +762,7 @@ F test/wal.test b5d5fe1b3171eefb25355758e0dc689096bc1f87
 F test/walbak.test f6fde9a5f59d0c697cb1f4af7876178c2f69a7ba
 F test/walcrash.test f022cee7eb7baa5fb898726120a6a4073dd831d1
 F test/walhook.test 76a559e262f0715c470bade4a8d8333035f8ee47
-F test/walmode.test c2f4e30ad64910b2d8faf6cf4e940b3f201b41df
+F test/walmode.test 40119078da084e6a7403ba57485d5a86ee0e2646
 F test/walslow.test 38076d5fad49e3678027be0f8110e6a32d531dc2
 F test/walthread.test a7962d8b899366cc71f8381d9aeab8ae9e1b544d
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 205e5d8ac08f7d7853427b4cd235fca125155d2d
-R f3447c8eaaa2559454ba677c09b3ac47
+P 6a944f028d4a070bef29e1fbc6fbef481ebcd34c
+R 74f903b2272910b858a0c5c9e03f5db8
 U dan
-Z 1f4eebc47ae413fc016108c1a59ad1db
+Z 9dd751e835cbcac366a5e64c32910528
