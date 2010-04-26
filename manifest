@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Identify\sthe\sSQLite\sversion\smeta-value\sentry\sin\sthe\sdb-header\soutput\sof\nshowdb.
-D 2010-04-26T17:30:53
+C Change\sthe\sdefault_cache_size\spragma\sto\salways\sstore\sa\spositive\svalue.
+D 2010-04-26T17:36:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
-F src/pragma.c e166ea41544f8e57a08db86dbe87212b7d378fe8
+F src/pragma.c 71ba42f5a6f1c91266ca065c2a55c168c7846d3a
 F src/prepare.c fd1398cb1da54385ba5bd68d93928f10d10a1d9c
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -801,14 +801,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2ff824e58ce8b8f605c809ac960dcbfc51c30e30
-R 07d9a10059fff93d4de005270606b0db
+P 245d934b72cbc6e897193e7892195b6561995939
+R 1a721a7e3d8403e75d36dd22925eaa62
 U drh
-Z 92020570ca8608c3a29033eaaebd4aa8
+Z d3141c0d53e4f0054b2b5670e084ebf2
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL1c3QoxKgR168RlERAk7nAJ0RNPM+2ysEsEOLzmoRWkmlbmvLeACfXafV
-1if1i0LIIQFX3bMAD0w2gxM=
-=aVQ6
+iD8DBQFL1c8noxKgR168RlERAk2fAJwIn4ScLPQ6cD+9QSCdisImYXuM8QCfTXNt
+XvbQVdO+MSVbonYnIw7jvtU=
+=Dgm7
 -----END PGP SIGNATURE-----
