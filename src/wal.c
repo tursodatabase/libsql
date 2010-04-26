@@ -57,7 +57,7 @@
 ** not the same as the iCheck1 and iCheck2 fields of the LogSummaryHdr.
 */
 
-#include "log.h"
+#include "wal.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -1006,7 +1006,7 @@ static int logSummaryInit(
 ** were to do this just after this client opened one of these files, the
 ** system would be badly broken.
 */
-int sqlite3LogOpen(
+int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open log file with */
   const char *zDb,                /* Name of database file */
   Log **ppLog                     /* OUT: Allocated Log handle */
@@ -1264,7 +1264,7 @@ static int logCheckpoint(
 /*
 ** Close a connection to a log file.
 */
-int sqlite3LogClose(
+int sqlite3WalClose(
   Log *pLog,                      /* Log to close */
   sqlite3_file *pFd,              /* Database file */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
@@ -1444,7 +1444,7 @@ int logSummaryReadHdr(Log *pLog, int *pChanged){
 ** is left unmodified. This is used by the pager layer to determine whether 
 ** or not any cached pages may be safely reused.
 */
-int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
+int sqlite3WalOpenSnapshot(Log *pLog, int *pChanged){
   int rc = SQLITE_OK;
   if( pLog->isLocked==0 ){
     int nAttempt;
@@ -1480,7 +1480,7 @@ int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
     rc = logSummaryReadHdr(pLog, pChanged);
     if( rc!=SQLITE_OK ){
       /* An error occured while attempting log recovery. */
-      sqlite3LogCloseSnapshot(pLog);
+      sqlite3WalCloseSnapshot(pLog);
     }
   }
   return rc;
@@ -1489,7 +1489,7 @@ int sqlite3LogOpenSnapshot(Log *pLog, int *pChanged){
 /*
 ** Unlock the current snapshot.
 */
-void sqlite3LogCloseSnapshot(Log *pLog){
+void sqlite3WalCloseSnapshot(Log *pLog){
   if( pLog->isLocked ){
     assert( pLog->isLocked==LOG_REGION_A || pLog->isLocked==LOG_REGION_D );
     logLockRegion(pLog, pLog->isLocked, LOG_UNLOCK);
@@ -1500,7 +1500,7 @@ void sqlite3LogCloseSnapshot(Log *pLog){
 /* 
 ** Read a page from the log, if it is present. 
 */
-int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
+int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
   u32 iRead = 0;
   u32 *aData = pLog->pSummary->aData;
   int iFrame = (pLog->hdr.iLastPg & 0xFFFFFF00);
@@ -1566,7 +1566,7 @@ int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
 /* 
 ** Set *pPgno to the size of the database file (or zero, if unknown).
 */
-void sqlite3LogDbsize(Log *pLog, Pgno *pPgno){
+void sqlite3WalDbsize(Log *pLog, Pgno *pPgno){
   assert( pLog->isLocked );
   *pPgno = pLog->hdr.nPage;
 }
@@ -1576,7 +1576,7 @@ void sqlite3LogDbsize(Log *pLog, Pgno *pPgno){
 ** Otherwise, if the caller is operating on a snapshot that has already
 ** been overwritten by another writer, SQLITE_BUSY is returned.
 */
-int sqlite3LogWriteLock(Log *pLog, int op){
+int sqlite3WalWriteLock(Log *pLog, int op){
   assert( pLog->isLocked );
   if( op ){
 
@@ -1636,7 +1636,7 @@ int sqlite3LogWriteLock(Log *pLog, int op){
 ** Otherwise, if the callback function does not return an error, this
 ** function returns SQLITE_OK.
 */
-int sqlite3LogUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
   Pgno iMax = pLog->hdr.iLastPg;
   Pgno iFrame;
@@ -1652,7 +1652,7 @@ int sqlite3LogUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
 /* 
 ** Return true if data has been written but not committed to the log file. 
 */
-int sqlite3LogDirty(Log *pLog){
+int sqlite3WalDirty(Log *pLog){
   assert( pLog->isWriteLocked );
   return( pLog->hdr.iLastPg!=((LogSummaryHdr*)pLog->pSummary->aData)->iLastPg );
 }
@@ -1661,7 +1661,7 @@ int sqlite3LogDirty(Log *pLog){
 ** Write a set of frames to the log. The caller must hold at least a
 ** RESERVED lock on the database file.
 */
-int sqlite3LogFrames(
+int sqlite3WalFrames(
   Log *pLog,                      /* Log handle to write to */
   int nPgsz,                      /* Database page-size in bytes */
   PgHdr *pList,                   /* List of dirty pages to write */
@@ -1801,7 +1801,7 @@ int sqlite3LogFrames(
 **   4. Zero the log-summary header (so new readers will ignore the log).
 **   5. Drop the locks obtained in steps 1 and 2.
 */
-int sqlite3LogCheckpoint(
+int sqlite3WalCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
@@ -1839,7 +1839,7 @@ int sqlite3LogCheckpoint(
   return rc;
 }
 
-int sqlite3LogCallback(Log *pLog){
+int sqlite3WalCallback(Log *pLog){
   u32 ret = 0;
   if( pLog ){
     ret = pLog->iCallback;
@@ -1847,4 +1847,3 @@ int sqlite3LogCallback(Log *pLog){
   }
   return (int)ret;
 }
-

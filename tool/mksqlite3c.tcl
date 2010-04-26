@@ -93,7 +93,6 @@ foreach hdr {
    hash.h
    hwtime.h
    keywordhash.h
-   log.h
    mutex.h
    opcodes.h
    os_common.h
@@ -110,6 +109,7 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   wal.h
 } {
   set available_hdr($hdr) 1
 }
@@ -244,7 +244,7 @@ foreach file {
    pcache.c
    pcache1.c
    rowset.c
-   log.c
+   wal.c
    pager.c
 
    btmutex.c

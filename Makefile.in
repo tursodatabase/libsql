@@ -276,6 +276,8 @@ SRC = \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
   $(TOP)/src/where.c
 
@@ -741,6 +743,9 @@ vdbetrace.lo:	$(TOP)/src/vdbetrace.c $(HDR)
 
 vtab.lo:	$(TOP)/src/vtab.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/vtab.c
+
+wal.lo:	$(TOP)/src/wal.c $(HDR)
+	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/wal.c
 
 walker.lo:	$(TOP)/src/walker.c $(HDR)
 	$(LTCOMPILE) $(TEMP_STORE) -c $(TOP)/src/walker.c

@@ -14,8 +14,8 @@
 ** the implementation of each function in log.c for further details.
 */
 
-#ifndef _LOG_H_
-#define _LOG_H_
+#ifndef _WAL_H_
+#define _WAL_H_
 
 #include "sqliteInt.h"
 
@@ -23,31 +23,31 @@
 typedef struct Log Log;
 
 /* Open and close a connection to a log file. */
-int sqlite3LogOpen(sqlite3_vfs*, const char *zDb, Log **ppLog);
-int sqlite3LogClose(Log *pLog, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
+int sqlite3WalOpen(sqlite3_vfs*, const char *zDb, Log **ppLog);
+int sqlite3WalClose(Log *pLog, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot. */
-int sqlite3LogOpenSnapshot(Log *pLog, int *);
-void sqlite3LogCloseSnapshot(Log *pLog);
+int sqlite3WalOpenSnapshot(Log *pLog, int *);
+void sqlite3WalCloseSnapshot(Log *pLog);
 
 /* Read a page from the log, if it is present. */
-int sqlite3LogRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut);
-void sqlite3LogDbsize(Log *pLog, Pgno *pPgno);
+int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut);
+void sqlite3WalDbsize(Log *pLog, Pgno *pPgno);
 
 /* Obtain or release the WRITER lock. */
-int sqlite3LogWriteLock(Log *pLog, int op);
+int sqlite3WalWriteLock(Log *pLog, int op);
 
 /* Undo any frames written (but not committed) to the log */
-int sqlite3LogUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx);
+int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx);
 
 /* Return true if data has been written but not committed to the log file. */
-int sqlite3LogDirty(Log *pLog);
+int sqlite3WalDirty(Log *pLog);
 
 /* Write a frame or frames to the log. */
-int sqlite3LogFrames(Log *pLog, int, PgHdr *, Pgno, int, int);
+int sqlite3WalFrames(Log *pLog, int, PgHdr *, Pgno, int, int);
 
 /* Copy pages from the log to the database file */ 
-int sqlite3LogCheckpoint(
+int sqlite3WalCheckpoint(
   Log *pLog,                      /* Log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
@@ -57,6 +57,6 @@ int sqlite3LogCheckpoint(
 );
 
 /* Return the value to pass to a log callback. Or 0 for no callback. */
-int sqlite3LogCallback(Log *pLog);
+int sqlite3WalCallback(Log *pLog);
 
-#endif /* _LOG_H_ */
+#endif /* _WAL_H_ */
