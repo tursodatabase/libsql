@@ -925,7 +925,8 @@ struct sqlite3 {
 #define SQLITE_IndexSort      0x04        /* Disable indexes for sorting */
 #define SQLITE_IndexSearch    0x08        /* Disable indexes for searching */
 #define SQLITE_IndexCover     0x10        /* Disable index covering table */
-#define SQLITE_OptMask        0x1f        /* Mask of all disablable opts */
+#define SQLITE_GroupByOrder   0x20        /* Disable GROUPBY cover of ORDERBY */
+#define SQLITE_OptMask        0xff        /* Mask of all disablable opts */
 
 /*
 ** Possible values for the sqlite.magic field.
@@ -2689,6 +2690,7 @@ void sqlite3Vacuum(Parse*);
 int sqlite3RunVacuum(char**, sqlite3*);
 char *sqlite3NameFromToken(sqlite3*, Token*);
 int sqlite3ExprCompare(Expr*, Expr*);
+int sqlite3ExprListCompare(ExprList*, ExprList*);
 void sqlite3ExprAnalyzeAggregates(NameContext*, Expr*);
 void sqlite3ExprAnalyzeAggList(NameContext*,ExprList*);
 Vdbe *sqlite3GetVdbe(Parse*);

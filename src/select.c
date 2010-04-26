@@ -3718,6 +3718,18 @@ int sqlite3Select(
     isDistinct = 0;
   }
 
+  /* If there is both a GROUP BY and an ORDER BY clause and they are
+  ** identical, then disable the ORDER BY clause since the GROUP BY
+  ** will cause elements to come out in the correct order.  This is
+  ** an optimization - the correct answer should result regardless.
+  ** Use the SQLITE_GroupByOrder flag with SQLITE_TESTCTRL_OPTIMIZER
+  ** to disable this optimization for testing purposes.
+  */
+  if( sqlite3ExprListCompare(p->pGroupBy, pOrderBy)==0
+         && (db->flags & SQLITE_GroupByOrder)==0 ){
+    pOrderBy = 0;
+  }
+
   /* If there is an ORDER BY clause, then this sorting
   ** index might end up being unused if the data can be 
   ** extracted in pre-sorted order.  If that is the case, then the
