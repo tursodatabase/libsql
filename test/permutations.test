@@ -756,6 +756,13 @@ if {[info commands register_demovfs] != ""} {
   }
 }
 
+run_tests "wal" -description {
+  Run tests with journal_mode=WAL
+} -include {
+  savepoint.test
+  savepoint2.test
+}
+
 # End of tests
 #############################################################################
 
