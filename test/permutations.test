@@ -761,6 +761,7 @@ run_tests "wal" -description {
 } -include {
   savepoint.test
   savepoint2.test
+  savepoint6.test
 }
 
 # End of tests

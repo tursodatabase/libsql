@@ -1669,6 +1669,27 @@ int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   return rc;
 }
 
+u32 sqlite3WalSavepoint(Log *pLog){
+  assert( pLog->isWriteLocked );
+  return pLog->hdr.iLastPg;
+}
+
+int sqlite3WalSavepointUndo(Log *pLog, u32 iFrame){
+  int rc = SQLITE_OK;
+  u8 aCksum[8];
+  assert( pLog->isWriteLocked );
+
+  pLog->hdr.iLastPg = iFrame;
+  if( iFrame>0 ){
+    i64 iOffset = logFrameOffset(iFrame, pLog->hdr.pgsz) + sizeof(u32)*2;
+    rc = sqlite3OsRead(pLog->pFd, aCksum, sizeof(aCksum), iOffset);
+    pLog->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
+    pLog->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
+  }
+
+  return rc;
+}
+
 /* 
 ** Return true if data has been written but not committed to the log file. 
 */
@@ -1678,8 +1699,8 @@ int sqlite3WalDirty(Log *pLog){
 }
 
 /* 
-** Write a set of frames to the log. The caller must hold at least a
-** RESERVED lock on the database file.
+** Write a set of frames to the log. The caller must hold the write-lock
+** on the log file (obtained using sqlite3WalWriteLock()).
 */
 int sqlite3WalFrames(
   Log *pLog,                      /* Log handle to write to */

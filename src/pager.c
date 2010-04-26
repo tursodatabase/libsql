@@ -221,6 +221,7 @@ struct PagerSavepoint {
   Bitvec *pInSavepoint;        /* Set of pages in this savepoint */
   Pgno nOrig;                  /* Original number of pages in file */
   Pgno iSubRec;                /* Index of first record in sub-journal */
+  u32 iFrame;                  /* Last frame in WAL when savepoint opened */
 };
 
 /*
@@ -1539,6 +1540,7 @@ static int pager_playback_one_page(
 
   aData = pPager->pTmpSpace;
   assert( aData );         /* Temp storage must have already been allocated */
+  assert( pagerUseLog(pPager)==0 || (!isMainJrnl && isSavepnt) );
 
   /* Read the page number and page data from the journal or sub-journal
   ** file. Return an error code to the caller if an IO error occurs.
@@ -1608,7 +1610,11 @@ static int pager_playback_one_page(
   ** is possible to fail a statement on a database that does not yet exist.
   ** Do not attempt to write if database file has never been opened.
   */
-  pPg = pager_lookup(pPager, pgno);
+  if( pagerUseLog(pPager) ){
+    pPg = 0;
+  }else{
+    pPg = pager_lookup(pPager, pgno);
+  }
   assert( pPg || !MEMDB );
   PAGERTRACE(("PLAYBACK %d page %d hash(%08x) %s\n",
            PAGERID(pPager), pgno, pager_datahash(pPager->pageSize, (u8*)aData),
@@ -1625,6 +1631,7 @@ static int pager_playback_one_page(
   ){
     i64 ofst = (pgno-1)*(i64)pPager->pageSize;
     testcase( !isSavepnt && pPg!=0 && (pPg->flags&PGHDR_NEED_SYNC)!=0 );
+    assert( !pagerUseLog(pPager) );
     rc = sqlite3OsWrite(pPager->fd, (u8*)aData, pPager->pageSize, ofst);
     if( pgno>pPager->dbFileSize ){
       pPager->dbFileSize = pgno;
@@ -1689,6 +1696,7 @@ static int pager_playback_one_page(
       ** segment is synced. If a crash occurs during or following this,
       ** database corruption may ensue.
       */
+      assert( !pagerUseLog(pPager) );
       sqlite3PcacheMakeClean(pPg);
     }
 #ifdef SQLITE_CHECK_PAGES
@@ -2428,6 +2436,10 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   if( pSavepoint ){
     u32 ii;            /* Loop counter */
     i64 offset = pSavepoint->iSubRec*(4+pPager->pageSize);
+
+    if( pagerUseLog(pPager) ){
+      rc = sqlite3WalSavepointUndo(pPager->pLog, pSavepoint->iFrame);
+    }
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->nSubRec; ii++){
       assert( offset==ii*(4+pPager->pageSize) );
       rc = pager_playback_one_page(pPager, &offset, pDone, 0, 1);
@@ -2439,6 +2451,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   if( rc==SQLITE_OK ){
     pPager->journalOff = szJ;
   }
+
   return rc;
 }
 
@@ -3326,7 +3339,12 @@ static int pagerStress(void *p, PgHdr *pPg){
   pPg->pDirty = 0;
   if( pagerUseLog(pPager) ){
     /* Write a single frame for this page to the log. */
-    rc = pagerLogFrames(pPager, pPg, 0, 0, 0);
+    if( subjRequiresPage(pPg) ){ 
+      rc = subjournalPage(pPg); 
+    }
+    if( rc==SQLITE_OK ){
+      rc = pagerLogFrames(pPager, pPg, 0, 0, 0);
+    }
   }else{
     /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
     ** is journalling a set of two or more database pages that are stored
@@ -5341,6 +5359,9 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
       aNew[ii].pInSavepoint = sqlite3BitvecCreate(nPage);
       if( !aNew[ii].pInSavepoint ){
         return SQLITE_NOMEM;
+      }
+      if( pagerUseLog(pPager) ){
+        aNew[ii].iFrame = sqlite3WalSavepoint(pPager->pLog);
       }
     }
 

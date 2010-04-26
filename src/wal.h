@@ -40,6 +40,9 @@ int sqlite3WalWriteLock(Log *pLog, int op);
 /* Undo any frames written (but not committed) to the log */
 int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx);
 
+u32 sqlite3WalSavepoint(Log *pLog);
+int sqlite3WalSavepointUndo(Log *pLog, u32 iFrame);
+
 /* Return true if data has been written but not committed to the log file. */
 int sqlite3WalDirty(Log *pLog);
 
