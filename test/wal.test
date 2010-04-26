@@ -787,8 +787,9 @@ do_test wal-13.5 {
   execsql { SELECT count(*) FROM t2 }
 } [expr int(pow(2, 15))]
 do_test wal-13.6 {
-  file size test.db-wal-summary
-} [expr 192*1024]
+  set sz [file size test.db-wal-summary]
+  expr {$sz<=(3*64*1024) && $sz>(2*64*1024)}
+} {1}
 
 
 finish_test

@@ -10,7 +10,7 @@
 #***********************************************************************
 # This file implements regression tests for SQLite library.  The
 # focus of this file is testing the operation of the library in
-# "PRAGMA journal_mode=WAL" mode.
+# "PRAGMA journal_mode=WAL" mode with multiple threads.
 #
 
 set testdir [file dirname $argv0]
@@ -18,6 +18,11 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
 
+set sqlite_walsummary_mmap_incr 64
+
+#--------------------------------------------------------------------------
+# Initialize the database used for the multi-thread test.
+#
 do_test walthread-1.1 {
   execsql {
     PRAGMA journal_mode = WAL;
@@ -69,7 +74,6 @@ do_test walthread-1.4 {
 #   1) Execute "CHECKPOINT main 32 -1 1"
 #   2) Sleep for 500 ms.
 #
-
 set thread_program {
   proc rest {ms} {
     set ::rest 0

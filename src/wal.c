@@ -119,7 +119,12 @@ struct LogSummaryHdr {
 ** A 64 KB log-summary mapping corresponds to a log file containing over
 ** 13000 frames, so the mapping size does not need to be increased often.
 */
-#define LOGSUMMARY_MMAP_INCREMENT (64*1024)
+#ifdef SQLITE_TEST
+int sqlite3_walsummary_mmap_incr = 128;
+# define LOGSUMMARY_MMAP_INCREMENT sqlite3_walsummary_mmap_incr
+#else
+# define LOGSUMMARY_MMAP_INCREMENT (64*1024)
+#endif
 
 /*
 ** There is one instance of this structure for each log-summary object
@@ -611,9 +616,10 @@ static int logSummaryEntry(u32 iFrame){
 static void logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
   u32 iSlot = logSummaryEntry(iFrame);
 
-  if( (iSlot+128)>=pSummary->nData ){
+  while( (iSlot+128)>=pSummary->nData ){
     int nByte = pSummary->nData*4 + LOGSUMMARY_MMAP_INCREMENT;
 
+    /* Unmap and remap the log-summary file. */
     sqlite3_mutex_enter(pSummary->mutex);
     munmap(pSummary->aData, pSummary->nData*4);
     pSummary->aData = 0;
@@ -1377,8 +1383,11 @@ int logSummaryTryHdr(Log *pLog, int *pChanged){
   u32 aCksum[2] = {1, 1};
   u32 aHdr[LOGSUMMARY_HDR_NFIELD+2];
 
-  /* First try to read the header without a lock. Verify the checksum
-  ** before returning. This will almost always work.  
+  /* Read the header. The caller may or may not have locked the log-summary
+  ** file, meaning it is possible that an inconsistent snapshot is read
+  ** from the file. If this happens, return SQLITE_ERROR. The caller will
+  ** retry. Or, if the caller has already locked the file and the header
+  ** still looks inconsistent, it will run recovery.
   */
   memcpy(aHdr, pLog->pSummary->aData, sizeof(aHdr));
   logChecksumBytes((u8*)aHdr, sizeof(u32)*LOGSUMMARY_HDR_NFIELD, aCksum);
@@ -1410,10 +1419,16 @@ int logSummaryReadHdr(Log *pLog, int *pChanged){
 
   /* First try to read the header without a lock. Verify the checksum
   ** before returning. This will almost always work.  
+  **
+  ** TODO: Doing this causes a race-condition with the code that resizes
+  ** the mapping. Unless Log.pSummary->mutex is held, it is possible that 
+  ** LogSummary.aData is invalid.
   */
+#if 0
   if( SQLITE_OK==logSummaryTryHdr(pLog, pChanged) ){
     return SQLITE_OK;
   }
+#endif
 
   /* If the first attempt to read the header failed, lock the log-summary
   ** file and try again. If the header checksum verification fails this
@@ -1502,10 +1517,13 @@ void sqlite3WalCloseSnapshot(Log *pLog){
 */
 int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
   u32 iRead = 0;
-  u32 *aData = pLog->pSummary->aData;
+  u32 *aData; 
   int iFrame = (pLog->hdr.iLastPg & 0xFFFFFF00);
 
   assert( pLog->isLocked );
+
+  sqlite3_mutex_enter(pLog->pSummary->mutex);
+  aData = pLog->pSummary->aData;
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
   ** at the end of the log-summary. An alternative to this would be to
@@ -1548,6 +1566,8 @@ int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
     }
   }
   assert( iRead==0 || aData[logSummaryEntry(iRead)]==pgno );
+
+  sqlite3_mutex_leave(pLog->pSummary->mutex);
 
   /* If iRead is non-zero, then it is the log frame number that contains the
   ** required page. Read and return data from the log file.
