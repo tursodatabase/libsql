@@ -170,7 +170,7 @@ static void print_db_header(void){
   print_decode_line(aData, 84, 4, "meta[11]");
   print_decode_line(aData, 88, 4, "meta[12]");
   print_decode_line(aData, 92, 4, "meta[13]");
-  print_decode_line(aData, 96, 4, "meta[14]");
+  print_decode_line(aData, 96, 4, "SQLite version number");
 }
 
 /*
