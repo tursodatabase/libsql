@@ -1112,6 +1112,15 @@ int sqlite3_os_init(void){
     os2Sleep,          /* xSleep */
     os2CurrentTime,    /* xCurrentTime */
     os2GetLastError    /* xGetLastError */
+    0,                 /* xShmOpen */
+    0,                 /* xShmSize */
+    0,                 /* xShmPush */
+    0,                 /* xShmPull */
+    0,                 /* xShmLock */
+    0,                 /* xShmClose */
+    0,                 /* xShmDelete */
+    0,                 /* xRename */
+    0,                 /* xCurrentTimeInt64 */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
   initUconvObjects();

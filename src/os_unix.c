@@ -119,6 +119,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #if SQLITE_ENABLE_LOCKING_STYLE
 # include <sys/ioctl.h>
@@ -4562,6 +4563,158 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
 }
 
 /*
+** Structure used internally by this VFS to record the state of an
+** open shared memory segment.
+*/
+struct unixShm {
+  sqlite3_vfs *pVfs;   /* VFS that opened this shared-memory segment */
+  int size;            /* Size of the shared memory area */
+  char *pBuf;          /* Pointer to the beginning */
+  unixFile fd;         /* The open file descriptor */
+};
+
+/*
+** Close a shared-memory segment
+*/
+static int unixShmClose(sqlite3_shm *pSharedMem){
+  struct unixShm *p = (struct unixShm*)pSharedMem;
+  if( p && p->pVfs ){
+    if( p->pBuf ){
+      munmap(p->pBuf, p->size);
+    }
+    if( p->fd.pMethod ){
+      p->fd.pMethod->xClose((sqlite3_file*)&p->fd);
+    }
+    memset(p, 0, sizeof(*p));
+    sqlite3_free(p);
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Size increment by which shared memory grows
+*/
+#define SQLITE_UNIX_SHM_INCR  4096
+
+/*
+** Open a shared-memory area.  This implementation uses mmapped files.
+*/
+static int unixShmOpen(
+  sqlite3_vfs *pVfs,    /* The VFS */
+  const char *zName,    /* Name of file to mmap */
+  sqlite3_shm **pShm    /* Write the unixShm object created here */
+){
+  struct unixShm *p = 0;
+  int rc;
+  int outFlags;
+  struct stat sStat;
+
+  p = sqlite3_malloc( sizeof(*p) );
+  *pShm = (sqlite3_shm*)p;
+  if( p==0 ) return SQLITE_NOMEM;
+  memset(p, 0, sizeof(*p));
+  p->pVfs = pVfs;
+  rc = pVfs->xOpen(pVfs, zName, (sqlite3_file*)&p->fd,
+                   SQLITE_OPEN_READWRITE | SQLITE_OPEN_MAIN_JOURNAL,
+                   &outFlags);
+  if( rc!=SQLITE_OK ) goto shm_open_err;
+
+  rc = fstat(p->fd.h, &sStat);
+  if( rc!=0 ) goto shm_open_err;
+  if( sStat.st_size<SQLITE_UNIX_SHM_INCR ){
+    rc = ftruncate(p->fd.h, SQLITE_UNIX_SHM_INCR);
+    if( rc!=0 ) goto shm_open_err;
+    p->size = SQLITE_UNIX_SHM_INCR;
+  }else{
+    p->size = sStat.st_size;
+  }
+
+  /* Map the file. */
+  p->pBuf = mmap(0, p->size, PROT_READ|PROT_WRITE, MAP_SHARED, p->fd.h, 0);
+  if( p->pBuf==MAP_FAILED ){
+    rc = SQLITE_IOERR;
+    goto shm_open_err;
+  }
+  return SQLITE_OK;
+
+shm_open_err:
+  unixShmClose((sqlite3_shm*)p);
+  *pShm = 0;
+  return rc;
+}
+
+/*
+** Query and/or changes the size of a shared-memory segment.
+** The reqSize parameter is the new size of the segment, or -1 to
+** do just a query.  The size of the segment after resizing is
+** written into pNewSize.  The start of the shared memory buffer
+** is stored in **ppBuffer.
+*/
+static int unixShmSize(
+  sqlite3_shm *pSharedMem,  /* Pointer returned by unixShmOpen() */
+  int reqSize,              /* Requested size.  -1 for query only */
+  int *pNewSize,            /* Write new size here */
+  char **ppBuf              /* Write new buffer origin here */
+){
+  struct unixShm *p = (struct unixShm*)pSharedMem;
+  int rc = SQLITE_OK;
+
+  if( reqSize>=0 ){
+    reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
+    reqSize *= SQLITE_UNIX_SHM_INCR;
+    if( reqSize!=p->size ){
+      munmap(p->pBuf, p->size);
+      rc = ftruncate(p->fd.h, reqSize);
+      if( rc ){
+        p->pBuf = 0;
+        p->size = 0;
+      }else{
+        p->pBuf = mmap(0, reqSize, PROT_READ|PROT_WRITE, MAP_SHARED, p->fd.h,0);
+        p->size = p->pBuf ? reqSize : 0;
+      }
+    }
+  }
+  *pNewSize = p->size;
+  *ppBuf = p->pBuf;
+  return rc;
+}
+
+/*
+** Create or release a lock on shared memory.
+*/
+static int unixShmLock(
+  sqlite3_shm *pSharedMem,   /* Pointer from unixShmOpen() */
+  int lockType,              /* _RDLK, _WRLK, or _UNLK, possibly ORed _BLOCK */
+  int ofst,                  /* Start of lock region */
+  int nByte                  /* Size of lock region in bytes */
+){
+  struct unixShm *p = (struct unixShm*)pSharedMem;
+  struct flock f;
+  int op;
+  int rc;
+  
+  f.l_whence = SEEK_SET;
+  f.l_start = ofst;
+  f.l_len = nByte;
+  switch( lockType & 0x07 ){
+    case SQLITE_SHM_RDLK:  f.l_type = F_RDLCK;   break;
+    case SQLITE_SHM_WRLK:  f.l_type = F_WRLCK;   break;
+    case SQLITE_SHM_UNLK:  f.l_type = F_UNLCK;   break;
+  }
+  op = (lockType & 0x08)!=0 ? F_SETLKW : F_SETLK;
+  rc = fcntl(p->fd.h, op, &f);
+  return (rc==0) ? SQLITE_OK : SQLITE_BUSY;
+}
+
+/*
+** Delete a shared-memory segment from the system.
+*/
+static int unixShmDelete(sqlite3_vfs *pVfs, const char *zName){
+  return pVfs->xDelete(pVfs, zName, 0);
+}
+
+
+/*
 ************************ End of sqlite3_vfs methods ***************************
 ******************************************************************************/
 
@@ -5761,7 +5914,7 @@ int sqlite3_os_init(void){
   ** that filesystem time.
   */
   #define UNIXVFS(VFSNAME, FINDER) {                        \
-    1,                    /* iVersion */                    \
+    2,                    /* iVersion */                    \
     sizeof(unixFile),     /* szOsFile */                    \
     MAX_PATHNAME,         /* mxPathname */                  \
     0,                    /* pNext */                       \
@@ -5778,7 +5931,16 @@ int sqlite3_os_init(void){
     unixRandomness,       /* xRandomness */                 \
     unixSleep,            /* xSleep */                      \
     unixCurrentTime,      /* xCurrentTime */                \
-    unixGetLastError      /* xGetLastError */               \
+    unixGetLastError,     /* xGetLastError */               \
+    unixShmOpen,          /* xShmOpen */                    \
+    unixShmSize,          /* xShmSize */                    \
+    0,                    /* xShmPush */                    \
+    0,                    /* xShmPull */                    \
+    unixShmLock,          /* xShmLock */                    \
+    unixShmClose,         /* xShmClose */                   \
+    unixShmDelete,        /* xShmDelete */                  \
+    0,                    /* xRename */                     \
+    0,                    /* xCurrentTimeInt64 */           \
   }
 
   /*
