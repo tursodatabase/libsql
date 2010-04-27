@@ -2285,6 +2285,7 @@ static int lockBtree(BtShared *pBt){
         releasePage(pPage1);
         return SQLITE_OK;
       }
+      rc = SQLITE_NOTADB;
     }
 
     /* The maximum embedded fraction must be exactly 25%.  And the minimum

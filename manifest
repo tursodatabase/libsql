@@ -1,5 +1,5 @@
-C Run\strans.test\sand\savtrans.test\sas\spart\sof\sthe\s"wal"\spermutation.
-D 2010-04-27T06:49:34
+C Fix\sa\sproblem\swith\sidentifying\sa\scorrupt\sdatabase\sin\sWAL\smode.
+D 2010-04-27T14:37:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c e86634da8c48357a759694c9c7c471125cd8d5a8
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c f87ed73ef82bccb1e5dd63d6a4919272d3354c8a
+F src/btree.c dd26f3b5725ac3cbc765857a76523ac10dbfe761
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b51a5f8bc660616aa264025dd7ad4bdab458814b
-R 25f06e3e98c7ea6b1eb255e6fd74be59
+P c8893310510148f7e71ede5691606b6fc1c3df4d
+R f19cde4cc4d379e9990f915e41f267c6
 U dan
-Z 9cceaabbad6baa9da4fc7d1b5b1a7fe5
+Z cdf65bfac6e74e44b7b865cbe4482fc0
