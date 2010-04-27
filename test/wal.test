@@ -19,7 +19,7 @@ source $testdir/lock_common.tcl
 
 proc reopen_db {} {
   catch { db close }
-  file delete -force test.db test.db-wal
+  file delete -force test.db test.db-wal test.db-wal-summary
   sqlite3_wal db test.db
 }
 
@@ -249,12 +249,10 @@ do_test wal-4.5.2 {
   }
 } {32}
 do_test wal-4.5.3 {
-breakpoint
   execsql { ROLLBACK TO tr }
 } {}
 do_test wal-4.5.4 {
   set logsize [file size test.db-wal]
-breakpoint
   execsql {
       INSERT INTO t1 VALUES('x', 'y');
     RELEASE tr;
@@ -269,7 +267,6 @@ do_test wal-4.5.6 {
   file copy -force test.db test2.db
   file copy -force test.db-wal test2.db-wal
   sqlite3 db2 test2.db
-breakpoint
   execsql { SELECT count(*) FROM t2 ; SELECT count(*) FROM t1 } db2
 } {1 2}
 do_test wal-4.5.7 {
@@ -823,10 +820,11 @@ db close
 #-------------------------------------------------------------------------
 # Test large log summaries.
 #
-do_test wal-13.1 {
+set sqlite_walsummary_mmap_incr 64
+do_test wal-13.1.1 {
   list [file exists test.db] [file exists test.db-wal]
 } {1 0}
-do_test wal-13.2 {
+do_test wal-13.1.2 {
   set fd [open test.db-wal w]
   seek $fd [expr 200*1024*1024]
   puts $fd ""
@@ -834,25 +832,63 @@ do_test wal-13.2 {
   sqlite3 db test.db
   execsql { SELECT * FROM t2 }
 } {B 2}
-do_test wal-13.3 {
+do_test wal-13.1.3 {
   db close
   file exists test.db-wal
 } {0}
-do_test wal-13.4 {
+do_test wal-13.1.4 {
   sqlite3 db test.db
   execsql { SELECT count(*) FROM t2 }
 } {1}
-do_test wal-13.5 {
-  for {set i 0} {$i < 15} {incr i} {
+do_test wal-13.1.5 {
+  for {set i 0} {$i < 6} {incr i} {
     execsql { INSERT INTO t2 SELECT randomblob(400), randomblob(400) FROM t2 }
   }
   execsql { SELECT count(*) FROM t2 }
-} [expr int(pow(2, 15))]
-do_test wal-13.6 {
-  set sz [file size test.db-wal-summary]
-  expr {$sz<=(3*64*1024) && $sz>(2*64*1024)}
-} {1}
+} [expr int(pow(2, 6))]
+do_test wal-13.1.6 {
+  file size test.db-wal
+} [log_file_size 80 1024]
 
+foreach code [list {
+  set tn 2
+  proc buddy {tcl} { uplevel #0 $tcl }
+} {
+  set tn 3
+  set ::buddy [launch_testfixture]
+  proc buddy {tcl} { testfixture $::buddy $tcl }
+}] {
+
+  eval $code
+  reopen_db
+
+  do_test wal-13.$tn.0 {
+    buddy { sqlite3 db2 test.db }
+    execsql {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 SELECT randomblob(400);
+    }
+    execsql { SELECT count(*) FROM t1 }
+  } {1}
+
+  for {set ii 1} {$ii<16} {incr ii} {
+    do_test wal-13.$tn.$ii.a {
+      buddy { db2 eval { INSERT INTO t1 SELECT randomblob(400) FROM t1 } }
+      buddy { db2 eval { SELECT count(*) FROM t1 } }
+    } [expr (1<<$ii)]
+    do_test wal-13.$tn.$ii.b {
+      db eval { SELECT count(*) FROM t1 }
+    } [expr (1<<$ii)]
+    do_test wal-13.$tn.$ii.c {
+      db eval { SELECT count(*) FROM t1 }
+    } [expr (1<<$ii)]
+  }
+
+  catch { db2 close }
+  catch { close $::buddy }
+  db close
+}
 
 finish_test
 

@@ -24,6 +24,7 @@ proc launch_testfixture {} {
   }
   set chan [open "|$prg tf_main.tcl" r+]
   fconfigure $chan -buffering line
+  testfixture $chan "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
   return $chan
 }
 

@@ -758,6 +758,10 @@ if {[info commands register_demovfs] != ""} {
 
 run_tests "wal" -description {
   Run tests with journal_mode=WAL
+} -initialize {
+  set ::savepoint6_iterations 100
+} -shutdown {
+  unset -nocomplain ::savepoint6_iterations
 } -include {
   savepoint.test
   savepoint2.test

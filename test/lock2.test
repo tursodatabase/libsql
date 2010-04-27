@@ -34,7 +34,6 @@ source $testdir/lock_common.tcl
 #
 do_test lock2-1.1 {
   set ::tf1 [launch_testfixture]
-  testfixture $::tf1 "sqlite3_test_control_pending_byte $::sqlite_pending_byte"
   testfixture $::tf1 {
     sqlite3 db test.db -key xyzzy
     db eval {select * from sqlite_master}

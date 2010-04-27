@@ -26,7 +26,9 @@ set DATABASE_SCHEMA {
     CREATE INDEX i2 ON t1(y);
 }
 
-set ::ITERATIONS 1000
+if {0==[info exists ::savepoint6_iterations]} {
+  set ::savepoint6_iterations 1000
+}
 
 #--------------------------------------------------------------------------
 # In memory database state.
@@ -257,7 +259,7 @@ foreach zSetup [list {
     checkdb
   } {ok}
   
-  for {set i 0} {$i < $::ITERATIONS} {incr i} {
+  for {set i 0} {$i < $::savepoint6_iterations} {incr i} {
     do_test savepoint6-$testname.$i.1 {
       savepoint_op
       checkdb

@@ -593,6 +593,22 @@ static int logSummaryMap(LogSummary *pSummary, int nByte){
 }
 
 /*
+** The log-summary file is already mapped to pSummary->aData[], but the
+** mapping needs to be resized. Unmap and remap the file so that the mapping 
+** is at least nByte bytes in size, or the size of the entire file if it 
+** is larger than nByte bytes.
+*/
+static int logSummaryRemap(LogSummary *pSummary, int nByte){
+  int rc;
+  sqlite3_mutex_enter(pSummary->mutex);
+  munmap(pSummary->aData, pSummary->nData*4);
+  pSummary->aData = 0;
+  rc = logSummaryMap(pSummary, nByte);
+  sqlite3_mutex_leave(pSummary->mutex);
+  return rc;
+}
+
+/*
 ** Return the index in the LogSummary.aData array that corresponds to 
 ** frame iFrame. The log-summary file consists of a header, followed by
 ** alternating "map" and "index" blocks.
@@ -613,18 +629,18 @@ static int logSummaryEntry(u32 iFrame){
 ** the previous call), but that restriction is not enforced or asserted
 ** here.
 */
-static void logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
+static int logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
   u32 iSlot = logSummaryEntry(iFrame);
 
   while( (iSlot+128)>=pSummary->nData ){
+    int rc;
     int nByte = pSummary->nData*4 + LOGSUMMARY_MMAP_INCREMENT;
 
     /* Unmap and remap the log-summary file. */
-    sqlite3_mutex_enter(pSummary->mutex);
-    munmap(pSummary->aData, pSummary->nData*4);
-    pSummary->aData = 0;
-    logSummaryMap(pSummary, nByte);
-    sqlite3_mutex_leave(pSummary->mutex);
+    rc = logSummaryRemap(pSummary, nByte);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
   }
 
   /* Set the log-summary entry itself */
@@ -649,6 +665,8 @@ static void logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
     logMergesort8(aFrame, aTmp, aIndex, &nIndex);
     memset(&aIndex[nIndex], aIndex[nIndex-1], 256-nIndex);
   }
+
+  return SQLITE_OK;
 }
 
 
@@ -1496,6 +1514,16 @@ int sqlite3WalOpenSnapshot(Log *pLog, int *pChanged){
     if( rc!=SQLITE_OK ){
       /* An error occured while attempting log recovery. */
       sqlite3WalCloseSnapshot(pLog);
+    }else{
+      /* Check if the mapping needs to grow. */
+      LogSummary *pSummary = pLog->pSummary;
+
+      if( pLog->hdr.iLastPg 
+       && logSummaryEntry(pLog->hdr.iLastPg)>=pSummary->nData 
+      ){
+        rc = logSummaryRemap(pSummary, 0);
+        assert( rc || logSummaryEntry(pLog->hdr.iLastPg)<pSummary->nData );
+      }
     }
   }
   return rc;
@@ -1516,20 +1544,20 @@ void sqlite3WalCloseSnapshot(Log *pLog){
 ** Read a page from the log, if it is present. 
 */
 int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
+  LogSummary *pSummary = pLog->pSummary;
   u32 iRead = 0;
   u32 *aData; 
   int iFrame = (pLog->hdr.iLastPg & 0xFFFFFF00);
 
   assert( pLog->isLocked );
-
-  sqlite3_mutex_enter(pLog->pSummary->mutex);
-  aData = pLog->pSummary->aData;
+  sqlite3_mutex_enter(pSummary->mutex);
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
   ** at the end of the log-summary. An alternative to this would be to
   ** build an index in private memory each time a read transaction is
   ** opened on a new snapshot.
   */
+  aData = pSummary->aData;
   if( pLog->hdr.iLastPg ){
     u32 *pi = &aData[logSummaryEntry(pLog->hdr.iLastPg)];
     u32 *piStop = pi - (pLog->hdr.iLastPg & 0xFF);
