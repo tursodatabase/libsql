@@ -666,6 +666,34 @@ foreach code [list {
     execsql { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22}
 
+  # Test that if a checkpointer cannot obtain the required locks, it
+  # releases all locks before returning a busy error.
+  #
+  do_test wal-10.$tn.35 {
+    execsql { 
+      DELETE FROM t1;
+      INSERT INTO t1 VALUES('a', 'b');
+      INSERT INTO t1 VALUES('c', 'd');
+    }
+    sql2 {
+      BEGIN;
+        SELECT * FROM t1;
+    }
+  } {a b c d}
+  proc busyhandler x { return 1 }
+  db busy busyhandler
+  do_test wal-10.$tn.36 {
+    catchsql { PRAGMA checkpoint }
+  } {1 {database is locked}}
+  do_test wal-10.$tn.36 {
+    sql3 { INSERT INTO t1 VALUES('e', 'f') }
+    sql2 { SELECT * FROM t1 }
+  } {a b c d}
+  do_test wal-10.$tn.37 {
+    sql2 COMMIT
+    execsql { PRAGMA checkpoint }
+  } {}
+
   catch { db close }
   catch { code2 { db2 close } }
   catch { code3 { db3 close } }
