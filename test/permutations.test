@@ -763,9 +763,8 @@ run_tests "wal" -description {
 } -shutdown {
   unset -nocomplain ::savepoint6_iterations
 } -include {
-  savepoint.test
-  savepoint2.test
-  savepoint6.test
+  savepoint.test     savepoint2.test     savepoint6.test
+  trans.test         avtrans.test
 }
 
 # End of tests
