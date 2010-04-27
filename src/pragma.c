@@ -351,11 +351,11 @@ void sqlite3Pragma(
   ** page cache size value and the persistent page cache size value
   ** stored in the database file.
   **
-  ** The default cache size is stored in meta-value 2 of page 1 of the
-  ** database file.  The cache size is actually the absolute value of
-  ** this memory location.  The sign of meta-value 2 determines the
-  ** synchronous setting.  A negative value means synchronous is off
-  ** and a positive value means synchronous is on.
+  ** Older versions of SQLite would set the default cache size to a
+  ** negative number to indicate synchronous=OFF.  These days, synchronous
+  ** is always on by default regardless of the sign of the default cache
+  ** size.  But continue to take the absolute value of the default cache
+  ** size of historical compatibility.
   */
   if( sqlite3StrICmp(zLeft,"default_cache_size")==0 ){
     static const VdbeOpList getCacheSize[] = {
@@ -384,10 +384,6 @@ void sqlite3Pragma(
       if( size<0 ) size = -size;
       sqlite3BeginWriteOperation(pParse, 0, iDb);
       sqlite3VdbeAddOp2(v, OP_Integer, size, 1);
-      sqlite3VdbeAddOp3(v, OP_ReadCookie, iDb, 2, BTREE_DEFAULT_CACHE_SIZE);
-      addr = sqlite3VdbeAddOp2(v, OP_IfPos, 2, 0);
-      sqlite3VdbeAddOp2(v, OP_Integer, -size, 1);
-      sqlite3VdbeJumpHere(v, addr);
       sqlite3VdbeAddOp3(v, OP_SetCookie, iDb, BTREE_DEFAULT_CACHE_SIZE, 1);
       pDb->pSchema->cache_size = size;
       sqlite3BtreeSetCacheSize(pDb->pBt, pDb->pSchema->cache_size);

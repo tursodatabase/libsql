@@ -3440,7 +3440,6 @@ void sqlite3ExprIfFalse(Parse *pParse, Expr *pExpr, int dest, int jumpIfNull){
 ** an incorrect 0 or 1 could lead to a malfunction.
 */
 int sqlite3ExprCompare(Expr *pA, Expr *pB){
-  int i;
   if( pA==0||pB==0 ){
     return pB==pA ? 0 : 2;
   }
@@ -3453,18 +3452,7 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   if( pA->op!=pB->op ) return 2;
   if( sqlite3ExprCompare(pA->pLeft, pB->pLeft) ) return 2;
   if( sqlite3ExprCompare(pA->pRight, pB->pRight) ) return 2;
-
-  if( pA->x.pList && pB->x.pList ){
-    if( pA->x.pList->nExpr!=pB->x.pList->nExpr ) return 2;
-    for(i=0; i<pA->x.pList->nExpr; i++){
-      Expr *pExprA = pA->x.pList->a[i].pExpr;
-      Expr *pExprB = pB->x.pList->a[i].pExpr;
-      if( sqlite3ExprCompare(pExprA, pExprB) ) return 2;
-    }
-  }else if( pA->x.pList || pB->x.pList ){
-    return 2;
-  }
-
+  if( sqlite3ExprListCompare(pA->x.pList, pB->x.pList) ) return 2;
   if( pA->iTable!=pB->iTable || pA->iColumn!=pB->iColumn ) return 2;
   if( ExprHasProperty(pA, EP_IntValue) ){
     if( !ExprHasProperty(pB, EP_IntValue) || pA->u.iValue!=pB->u.iValue ){
@@ -3481,6 +3469,31 @@ int sqlite3ExprCompare(Expr *pA, Expr *pB){
   return 0;
 }
 
+/*
+** Compare two ExprList objects.  Return 0 if they are identical and 
+** non-zero if they differ in any way.
+**
+** This routine might return non-zero for equivalent ExprLists.  The
+** only consequence will be disabled optimizations.  But this routine
+** must never return 0 if the two ExprList objects are different, or
+** a malfunction will result.
+**
+** Two NULL pointers are considered to be the same.  But a NULL pointer
+** always differs from a non-NULL pointer.
+*/
+int sqlite3ExprListCompare(ExprList *pA, ExprList *pB){
+  int i;
+  if( pA==0 && pB==0 ) return 0;
+  if( pA==0 || pB==0 ) return 1;
+  if( pA->nExpr!=pB->nExpr ) return 1;
+  for(i=0; i<pA->nExpr; i++){
+    Expr *pExprA = pA->a[i].pExpr;
+    Expr *pExprB = pB->a[i].pExpr;
+    if( pA->a[i].sortOrder!=pB->a[i].sortOrder ) return 1;
+    if( sqlite3ExprCompare(pExprA, pExprB) ) return 1;
+  }
+  return 0;
+}
 
 /*
 ** Add a new element to the pAggInfo->aCol[] array.  Return the index of
