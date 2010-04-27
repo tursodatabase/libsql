@@ -4647,8 +4647,13 @@ shm_open_err:
 ** Query and/or changes the size of a shared-memory segment.
 ** The reqSize parameter is the new size of the segment, or -1 to
 ** do just a query.  The size of the segment after resizing is
-** written into pNewSize.  The start of the shared memory buffer
-** is stored in **ppBuffer.
+** written into pNewSize.  A writer lock is held on the shared memory
+** segment while resizing it.
+**
+** If ppBuffer is not NULL, the a reader lock is acquired no the shared
+** memory segment and *ppBuffer is made to point to the start of the 
+** shared memory segment.  xShmRelease() must be called to release the
+** lock.
 */
 static int unixShmSize(
   sqlite3_shm *pSharedMem,  /* Pointer returned by unixShmOpen() */
@@ -4677,6 +4682,14 @@ static int unixShmSize(
   *pNewSize = p->size;
   *ppBuf = p->pBuf;
   return rc;
+}
+
+/*
+** Release the lock held on the shared memory segment to that other
+** threads are free to resize it if necessary.
+*/
+static int unixShmRelease(sqlite3_shm *pSharedMem){
+  return SQLITE_OK;
 }
 
 /*
@@ -5934,6 +5947,7 @@ int sqlite3_os_init(void){
     unixGetLastError,     /* xGetLastError */               \
     unixShmOpen,          /* xShmOpen */                    \
     unixShmSize,          /* xShmSize */                    \
+    unixShmRelease,       /* xShmRelease */                 \
     0,                    /* xShmPush */                    \
     0,                    /* xShmPull */                    \
     unixShmLock,          /* xShmLock */                    \

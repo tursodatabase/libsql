@@ -782,15 +782,6 @@ static int crashEnableCmd(
     cfRandomness,         /* xRandomness */
     cfSleep,              /* xSleep */
     cfCurrentTime,        /* xCurrentTime */
-    0,                    /* xShmOpen */
-    0,                    /* xShmSize */
-    0,                    /* xShmPush */
-    0,                    /* xShmPull */
-    0,                    /* xShmLock */
-    0,                    /* xShmClose */
-    0,                    /* xShmDelete */
-    0,                    /* xRename */
-    0                     /* xCurrentTimeInt64 */
   };
 
   if( objc!=2 ){
