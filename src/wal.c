@@ -4,6 +4,7 @@
 ** "journal_mode=wal" mode.
 */
 
+
 /*
 ** LOG FILE FORMAT
 **
@@ -157,7 +158,7 @@ struct LogSummary {
 **         obtains the DMH lock (see below), and while log recovery is
 **         being run.
 **
-** DMH:    The DMH (Dead Mans Hand mechanism) lock is used to ensure
+** DMS:    The DMS (Dead Mans Switch mechanism) lock is used to ensure
 **         that log-recovery is always run following a system restart.
 **         When it first opens a log-summary file, a process takes a
 **         SHARED lock on the DMH region. This lock is not released until
