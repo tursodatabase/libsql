@@ -5761,9 +5761,9 @@ int sqlite3_strnicmp(const char *, const char *, int);
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
 
 /*
-** Experimental WAL callback interface.
+** CAPI3REF: Write-Ahead Log Commit Hook
 **
-** The [sqlite3_log_hook()] function is used to register a callback that
+** The [sqlite3_wal_hook()] function is used to register a callback that
 ** will be invoked each time a database connection commits data to a
 ** write-ahead-log (i.e. whenever a transaction is committed in
 ** journal_mode=WAL mode). 
@@ -5773,7 +5773,7 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** may read, write or checkpoint the database as required.
 **
 ** The first parameter passed to the callback function when it is invoked
-** is a copy of the third parameter passed to sqlite3_log_hook() when
+** is a copy of the third parameter passed to sqlite3_wal_hook() when
 ** registering the callback. The second is a copy of the database handle.
 ** The third parameter is the name of the database that was written to -
 ** either "main" or the name of an ATTACHed database. The fourth parameter
@@ -5785,10 +5785,10 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** no special action is taken.
 **
 ** A single database handle may have at most a single log callback 
-** registered at one time. Calling [sqlite3_log_hook()] replaces any
+** registered at one time. Calling [sqlite3_wal_hook()] replaces any
 ** previously registered log callback. 
 */
-void *sqlite3_log_hook(
+void *sqlite3_wal_hook(
   sqlite3*, 
   int(*)(void *,sqlite3*,const char*,int),
   void*

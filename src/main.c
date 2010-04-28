@@ -1190,7 +1190,7 @@ void *sqlite3_rollback_hook(
 ** Register a callback to be invoked each time a transaction is written
 ** into the write-ahead-log by this database connection.
 */
-void *sqlite3_log_hook(
+void *sqlite3_wal_hook(
   sqlite3 *db,                    /* Attach the hook to this db handle */
   int(*xCallback)(void *, sqlite3*, const char*, int),
   void *pArg                      /* First argument passed to xCallback() */
