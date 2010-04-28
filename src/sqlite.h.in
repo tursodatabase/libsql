@@ -848,7 +848,7 @@ struct sqlite3_vfs {
   int (*xShmRelease)(sqlite3_shm*);
   int (*xShmPush)(sqlite3_shm*);
   int (*xShmPull)(sqlite3_shm*);
-  int (*xShmLock)(sqlite3_shm*, int lockType, int ofst, int nByte);
+  int (*xShmLock)(sqlite3_shm*, int desiredLock, int *gotLock, int shouldBlock);
   int (*xShmClose)(sqlite3_shm*);
   int (*xShmDelete)(sqlite3_vfs*, const char *zName);
   int (*xRename)(sqlite3_vfs*, const char *zOld, const char *zNew, int dirSync);
@@ -880,18 +880,20 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Flags for the xShmLock VFS method
 **
-** These integer constants can be used as the second parameter to
-** the xShmLock method of an [sqlite3_vfs] object.  They determine
-** the specific locking action.  Exactly one of the first three
-** values must be used ini the lockType parameter.  The fourth
-** value (SQLITE_SHM_BLOCK) can optionally be ORed into the lockType
-** parameter to cause the thread to block until the lock becomes
-** available.
+** These integer constants define the various locking states that
+** an sqlite3_shm object can be in.  The SQLITE_SHM_QUERY integer
+** is not a valid data - it is a constant pasted to the 
+** sqlite3_vfs.xShmLock() method for querying the current lock
+** state.
 */
-#define SQLITE_SHM_RDLK   0x01
-#define SQLITE_SHM_WRLK   0x02
-#define SQLITE_SHM_UNLK   0x04
-#define SQLITE_SHM_BLOCK  0x08
+#define SQLITE_SHM_UNLOCK       0
+#define SQLITE_SHM_READ_PREFIX  1
+#define SQLITE_SHM_READ_FULL    2
+#define SQLITE_SHM_WRITE        3
+#define SQLITE_SHM_PENDING      4
+#define SQLITE_SHM_CHECKPOINT   5
+#define SQLITE_SHM_RECOVER      6
+#define SQLITE_SHM_QUERY        (-1)
 
 /*
 ** CAPI3REF: Initialize The SQLite Library
