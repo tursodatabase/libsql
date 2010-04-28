@@ -46,6 +46,27 @@ proc testfixture {chan cmd} {
   }
 }
 
+proc testfixture_nb_cb {varname chan} {
+  set line [gets $chan]
+  if { $line == "OVER" } {
+    set $varname $::tfnb($chan)
+    unset ::tfnb($chan)
+    close $chan
+  } else {
+    append ::tfnb($chan) $line
+  }
+}
+
+proc testfixture_nb {varname cmd} {
+  set chan [launch_testfixture]
+  set ::tfnb($chan) ""
+  fconfigure $chan -blocking 0 -buffering none
+  puts $chan $cmd
+  puts $chan OVER
+  fileevent $chan readable [list testfixture_nb_cb $varname $chan]
+  return ""
+}
+
 # Write the main loop for the child testfixture processes into file
 # tf_main.tcl. The parent (this script) interacts with the child processes
 # via a two way pipe. The parent writes a script to the stdin of the child
@@ -61,7 +82,7 @@ puts $f {
     set line [gets stdin]
     puts $l "READ $line"
     if { $line == "OVER" } {
-      catch {eval $script} result
+      set rc [catch {eval $script} result]
       puts $result
       puts $l "WRITE $result"
       puts OVER
@@ -70,7 +91,7 @@ puts $f {
       set script ""
     } else {
       append script $line
-      append script " ; "
+      append script "\n"
     }
   }
   close $l

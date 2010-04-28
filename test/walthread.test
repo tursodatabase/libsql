@@ -16,43 +16,158 @@
 set testdir [file dirname $argv0]
 
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
 
 set sqlite_walsummary_mmap_incr 64
 
-#--------------------------------------------------------------------------
-# Initialize the database used for the multi-thread test.
+# The number of threads to start. And the amount of time to run the test
+# for. Respectively.
 #
-do_test walthread-1.1 {
-  execsql {
-    PRAGMA journal_mode = WAL;
-    PRAGMA lock_status;
-    CREATE TABLE t1(x PRIMARY KEY);
-    PRAGMA lock_status;
-    INSERT INTO t1 VALUES(randomblob(100));
-    INSERT INTO t1 VALUES(randomblob(100));
-    INSERT INTO t1 SELECT md5sum(x) FROM t1;
+set NTHREAD 10
+set SECONDS 5
+
+# The parameter is the name of a variable in the callers context. The
+# variable may or may not exist when this command is invoked.
+#
+# If the variable does exist, its value is returned. Otherwise, this
+# command uses [vwait] to wait until it is set, then returns the value.
+# In other words, this is a version of the [set VARNAME] command that
+# blocks until a variable exists.
+#
+proc wait_for_var {varname} {
+  if {0==[uplevel [list info exists $varname]]} {
+    uplevel [list vwait $varname]
   }
-} {wal main unlocked temp closed main shared temp closed}
-do_test walthread-1.2 {
-  execsql {
-    SELECT (SELECT count(*) FROM t1), (
-      SELECT md5sum(x) FROM t1 WHERE oid != (SELECT max(oid) FROM t1)
-    ) == (
-      SELECT x FROM t1 WHERE oid = (SELECT max(oid) FROM t1)
-    )
+  uplevel [list set $varname]
+}
+
+proc lshift {lvar} {
+  upvar $lvar L
+  set ret [lindex $L 0]
+  set L [lrange $L 1 end]
+  return $ret
+}
+
+
+#-------------------------------------------------------------------------
+#   do_thread_test TESTNAME OPTIONS...
+# 
+# where OPTIONS are: 
+#
+#   -seconds   SECONDS                How many seconds to run the test for
+#   -init      SCRIPT                 Script to run before test.
+#   -thread    NAME COUNT SCRIPT      Scripts to run in threads (or processes).
+#   -processes BOOLEAN                True to use processes instead of threads.
+#
+proc do_thread_test {args} {
+  set A $args
+
+  set P(testname) [lshift A]
+  set P(seconds) 5
+  set P(init) ""
+  set P(threads) [list]
+  set P(processes) 0
+
+  unset -nocomplain ::done
+
+  while {[llength $A]>0} {
+    set a [lshift A]
+    switch -glob -- $a {
+      -seconds {
+        set P(seconds) [lshift A]
+      }
+
+      -init {
+        set P(init) [lshift A]
+      }
+
+      -processes {
+        set P(processes) [lshift A]
+      }
+
+      -thread {
+        set name  [lshift A]
+        set count [lshift A]
+        set prg   [lshift A]
+        lappend P(threads) [list $name $count $prg]
+      }
+
+      default {
+        error "Unknown option: $a"
+      }
+    }
   }
-} {3 1}
-do_test walthread-1.3 {
-  execsql { PRAGMA integrity_check } 
-} {ok}
-do_test walthread-1.4 {
-  execsql { PRAGMA lock_status } 
-} {main shared temp unknown}
+
+  puts "Running $P(testname) for $P(seconds) seconds..."
+
+  catch { db close }
+  file delete -force test.db test.db-journal test.db-wal
+
+  sqlite3 db test.db
+  eval $P(init)
+  db close
+
+  foreach T $P(threads) {
+    set name  [lindex $T 0]
+    set count [lindex $T 1]
+    set prg   [lindex $T 2]
+
+    for {set i 1} {$i <= $count} {incr i} {
+      set program [string map [list %TEST% $prg %SECONDS% $P(seconds) %I% $i] {
+
+        set tid %I%
+
+        proc usleep {ms} {
+          set ::usleep 0
+          after $ms {set ::usleep 1}
+          vwait ::usleep
+        }
+        proc busyhandler {n} { usleep 10 ; return 0 }
+
+        sqlite3 db test.db
+        db busy busyhandler
+        db eval { SELECT randomblob($tid*5) }
+
+        set ::finished 0
+        after [expr %SECONDS% * 1000] {set ::finished 1}
+        proc tt_continue {} { expr ($::finished==0) }
+
+        set rc [catch { %TEST% } msg]
+
+        db close
+        list $rc $msg
+      }]
+
+      if {$P(processes)==0} {
+        sqlthread spawn ::done($name,$i) $program
+      } else {
+        testfixture_nb ::done($name,$i) $program
+      }
+    }
+  }
+
+  set report "  Results:"
+  foreach T $P(threads) {
+    set name  [lindex $T 0]
+    set count [lindex $T 1]
+    set prg   [lindex $T 2]
+
+    set reslist [list]
+    for {set i 1} {$i <= $count} {incr i} {
+      set res [wait_for_var ::done($name,$i)]
+      lappend reslist [lindex $res 1]
+      do_test $P(testname).$name.$i [list lindex $res 0] 0
+    }
+
+    append report "   $name $reslist"
+  }
+  puts $report
+}
 
 #--------------------------------------------------------------------------
-# Start N threads. Each thread performs both read and write transactions.
-# Each read transaction consists of:
+# Start NTHREAD threads. Each thread performs both read and write 
+# transactions. Each read transaction consists of:
 #
 #   1) Reading the md5sum of all but the last table row,
 #   2) Running integrity check.
@@ -71,132 +186,73 @@ do_test walthread-1.4 {
 #
 # Ther is also a single checkpointer thread. It runs the following loop:
 #
-#   1) Execute "CHECKPOINT main 32 -1 1"
+#   1) Execute "PRAGMA checkpoint"
 #   2) Sleep for 500 ms.
 #
-set thread_program {
-  proc rest {ms} {
-    set ::rest 0
-    after $ms {set ::rest 1}
-    vwait ::rest
-  }
 
-  proc dosql {DB sql} {
-    set res ""
-    set stmt [sqlite3_prepare_v2 $DB $sql -1 dummy_tail]
-    set rc [sqlite3_step $stmt]
-    if {$rc eq "SQLITE_ROW"} {
-      set res [sqlite3_column_text $stmt 0]
+foreach {mode name} {
+      0 walthread-1-threads 
+      1 walthread-1-processes
+} {
+  do_thread_test $name -processes $mode -seconds $SECONDS -init {
+    execsql {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(x PRIMARY KEY);
+      PRAGMA lock_status;
+      INSERT INTO t1 VALUES(randomblob(100));
+      INSERT INTO t1 VALUES(randomblob(100));
+      INSERT INTO t1 SELECT md5sum(x) FROM t1;
     }
-    set rc [sqlite3_finalize $stmt]
-
-    if {$rc ne "SQLITE_OK"} {
-      error "$rc: [sqlite3_errmsg $DB]"
+  } -thread main $NTHREAD {
+  
+    proc read_transaction {} {
+      set results [db eval {
+        BEGIN;
+          PRAGMA integrity_check;
+          SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
+          SELECT x FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1);
+          SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
+        COMMIT;
+      }]
+  
+      if {[llength $results]!=4
+       || [lindex $results 0] != "ok"
+       || [lindex $results 1] != [lindex $results 2]
+       || [lindex $results 2] != [lindex $results 3]
+      } {
+        error "Failed read transaction: $results"
+      }
     }
-    return $res
-  }
-
-  proc read_transaction {DB} {
-    dosql $DB BEGIN
-
-    set md5_1 [dosql $DB {
-      SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1)
-    }]
-    set check [dosql $DB { PRAGMA integrity_check }]
-    set md5_2 [dosql $DB { 
-      SELECT x FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1)
-    }]
-    set md5_3 [dosql $DB {
-      SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1)
-    }]
-
-    dosql $DB COMMIT
-
-    if {$check ne "ok" 
-     || $md5_1 ne $md5_2
-     || $md5_2 ne $md5_3
-    } {
-      error "Failed read transaction $check $md5_1 $md5_2 $md5_3"
+  
+    proc write_transaction {} {
+      db eval {
+        BEGIN;
+          INSERT INTO t1 VALUES(randomblob(100));
+          INSERT INTO t1 VALUES(randomblob(100));
+          INSERT INTO t1 SELECT md5sum(x) FROM t1;
+        COMMIT;
+      }
     }
-  }
-
-  proc write_transaction {DB} {
-    dosql $DB BEGIN
-    dosql $DB "INSERT INTO t1 VALUES(randomblob(100))"
-    dosql $DB "INSERT INTO t1 VALUES(randomblob(100))"
-    dosql $DB "INSERT INTO t1 SELECT md5sum(x) FROM t1"
-    dosql $DB COMMIT
-  }
-
-  proc checkpointer {DB} {
-    while { !$::finished } {
-      dosql $DB "PRAGMA checkpoint"
-      rest 1000
+  
+    set nRun 0
+    while {[tt_continue]} {
+      read_transaction
+      write_transaction 
+      usleep 1
+      incr nRun
     }
-  }
-
-  proc worker {DB N} {
-    set j 0
-    while { !$::finished } {
-      for {set i 0} {$i < $N} {incr i} { read_transaction $DB }
-      write_transaction $DB
-      rest 1
+    set nRun
+  
+  } -thread ckpt 1 {
+    set nRun 0
+    while {[tt_continue]} {
+      db eval "PRAGMA checkpoint"
+      usleep 500
+      incr nRun
     }
+    set nRun
   }
-
-  set ::finished 0
-  after [expr $seconds*1000] {set ::finished 1}
-
-  set ::DB [sqlthread open test.db]
-  dosql $::DB { PRAGMA journal_mode = WAL }
-
-
-  set rc [catch {
-    if {$role eq "worker"} { worker $DB $N }
-    if {$role eq "checkpointer"} { checkpointer $DB }
-  } msg]
-
-  sqlite3_close $::DB
-
-  if {$rc==0} { set msg OK } 
-  set msg
 }
-
-set NTHREAD 6
-set SECONDS 30
-
-#set prg "set N $NTHREAD ; set seconds $SECONDS"
-set prg "set N 1 ; set seconds $SECONDS"
-
-array unset finished
-for {set i 0} {$i < $NTHREAD} {incr i} {
-  thread_spawn finished($i) {set role worker} $prg $thread_program
-}
-thread_spawn finished(C) {set role checkpointer} $prg $thread_program
-#set finished(C) 1
-
-puts "... test runs for approximately $SECONDS seconds ..."
-for {set i 0} {$i < $::NTHREAD} {incr i} {
-  if {![info exists finished($i)]} {
-    vwait finished($i)
-  }
-  do_test walthread-2.$i {
-    set ::finished($i)
-  } OK
-}
-do_test walthread-2.C {
-  if {![info exists finished(C)]} { vwait finished(C) }
-  set ::finished(C)
-} OK
-
-set logsize 0
-
-set rows    [execsql { SELECT count(*) FROM t1 }]
-catch { set logsize [expr [file size test.db-wal] / 1024] }
-set dbsize  [expr [file size test.db] / 1024]
-
-puts "rows=$rows db=${dbsize}K log=${logsize}K"
 
 finish_test
-
 

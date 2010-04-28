@@ -1541,7 +1541,7 @@ void sqlite3WalCloseSnapshot(Log *pLog){
   pLog->isLocked = 0;
 }
 
-/* 
+/*
 ** Read a page from the log, if it is present. 
 */
 int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
