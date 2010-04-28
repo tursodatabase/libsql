@@ -4697,26 +4697,11 @@ static int unixShmRelease(sqlite3_shm *pSharedMem){
 */
 static int unixShmLock(
   sqlite3_shm *pSharedMem,   /* Pointer from unixShmOpen() */
-  int lockType,              /* _RDLK, _WRLK, or _UNLK, possibly ORed _BLOCK */
-  int ofst,                  /* Start of lock region */
-  int nByte                  /* Size of lock region in bytes */
+  int desiredLock,           /* The locking state desired */
+  int *pGotLock,             /* The locking state actually obtained */
+  int shouldBlock            /* Block for the lock if true and possible */
 ){
-  struct unixShm *p = (struct unixShm*)pSharedMem;
-  struct flock f;
-  int op;
-  int rc;
-  
-  f.l_whence = SEEK_SET;
-  f.l_start = ofst;
-  f.l_len = nByte;
-  switch( lockType & 0x07 ){
-    case SQLITE_SHM_RDLK:  f.l_type = F_RDLCK;   break;
-    case SQLITE_SHM_WRLK:  f.l_type = F_WRLCK;   break;
-    case SQLITE_SHM_UNLK:  f.l_type = F_UNLCK;   break;
-  }
-  op = (lockType & 0x08)!=0 ? F_SETLKW : F_SETLK;
-  rc = fcntl(p->fd.h, op, &f);
-  return (rc==0) ? SQLITE_OK : SQLITE_BUSY;
+  return SQLITE_OK;
 }
 
 /*
