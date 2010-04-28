@@ -61,6 +61,9 @@ proc lshift {lvar} {
 #   -processes BOOLEAN                True to use processes instead of threads.
 #
 proc do_thread_test {args} {
+
+  #if {[string match walthread-2* [lindex $args 0]]==0} return
+
   set A $args
 
   set P(testname) [lshift A]
@@ -131,11 +134,11 @@ proc do_thread_test {args} {
 
         set ::finished 0
         after [expr %SECONDS% * 1000] {set ::finished 1}
-        proc tt_continue {} { expr ($::finished==0) }
+        proc tt_continue {} { update ; expr ($::finished==0) }
 
         set rc [catch { %TEST% } msg]
 
-        db close
+        catch { db close }
         list $rc $msg
       }]
 
@@ -184,7 +187,7 @@ proc do_thread_test {args} {
 # Each of the N threads runs N read transactions followed by a single write
 # transaction in a loop as fast as possible.
 #
-# Ther is also a single checkpointer thread. It runs the following loop:
+# There is also a single checkpointer thread. It runs the following loop:
 #
 #   1) Execute "PRAGMA checkpoint"
 #   2) Sleep for 500 ms.
@@ -238,7 +241,6 @@ foreach {mode name} {
     while {[tt_continue]} {
       read_transaction
       write_transaction 
-      usleep 1
       incr nRun
     }
     set nRun
@@ -251,6 +253,63 @@ foreach {mode name} {
       incr nRun
     }
     set nRun
+  }
+}
+
+#--------------------------------------------------------------------------
+#
+foreach {mode name} {
+      0 walthread-2-threads 
+      1 walthread-2-processes
+} {
+  do_thread_test $name -processes $mode -seconds $SECONDS -init {
+    execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
+  } -thread RB 2 {
+
+    db close
+    set nRun 0
+    set nDel 0
+    while {[tt_continue]} {
+      sqlite3 db test.db
+      db busy busyhandler
+      db eval { SELECT * FROM sqlite_master }
+      catch { db eval { PRAGMA journal_mode = DELETE } }
+      db eval {
+        BEGIN;
+        INSERT INTO t1 VALUES(NULL, randomblob(100+$tid));
+      }
+      incr nRun 1
+      incr nDel [file exists test.db-journal]
+      db eval COMMIT
+
+      set ic [db eval {PRAGMA integrity_check}]
+      if {$ic != "ok"} { error $ic }
+      db close
+    }
+    list $nRun $nDel
+
+  } -thread WAL 2 {
+    db close
+    set nRun 0
+    set nWal 0
+    while {[tt_continue]} {
+      sqlite3 db test.db
+      db busy busyhandler
+      db eval { SELECT * FROM sqlite_master }
+      catch { db eval { PRAGMA journal_mode = WAL } }
+      db eval {
+        BEGIN;
+        INSERT INTO t1 VALUES(NULL, randomblob(110+$tid));
+      }
+      incr nRun 1
+      incr nWal [file exists test.db-wal]
+      db eval COMMIT
+
+      set ic [db eval {PRAGMA integrity_check}]
+      if {$ic != "ok"} { error $ic }
+      db close
+    }
+    list $nRun $nWal
   }
 }
 
