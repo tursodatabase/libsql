@@ -1,22 +1,33 @@
-
 /*
-** This file contains the implementation of a log file used in 
+** 2010 February 1
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file contains the implementation of a write-ahead log file used in 
 ** "journal_mode=wal" mode.
 */
+#include "wal.h"
 
 
 /*
-** LOG FILE FORMAT
+** WRITE-AHEAD LOG (WAL) FILE FORMAT
 **
-** A log file consists of a header followed by zero or more log frames.
-** The log header is 12 bytes in size and consists of the following three
+** A wal file consists of a header followed by zero or more "frames".
+** The header is 12 bytes in size and consists of the following three
 ** big-endian 32-bit unsigned integer values:
 **
 **     0: Database page size,
 **     4: Randomly selected salt value 1,
 **     8: Randomly selected salt value 2.
 **
-** Immediately following the log header are zero or more log frames. Each
+** Immediately following the header are zero or more frames. Each
 ** frame itself consists of a 16-byte header followed by a <page-size> bytes
 ** of page data. The header is broken into 4 big-endian 32-bit unsigned 
 ** integer values, as follows:
@@ -29,56 +40,49 @@
 */
 
 /* 
-** LOG SUMMARY FILE FORMAT
+** WAL-INDEX FILE FORMAT
 **
-** The log-summary file consists of a header region, followed by an 
-** region that contains no useful data (used to apply byte-range locks
+** The wal-index file consists of a 32-byte header region, followed by an 
+** 8-byte region that contains no useful data (used to apply byte-range locks
 ** to), followed by the data region. 
 **
 ** The contents of both the header and data region are specified in terms
 ** of 1, 2 and 4 byte unsigned integers. All integers are stored in 
-** machine-endian order.
+** machine-endian order.  The wal-index is not a persistent file and
+** so it does not need to be portable across archtectures.
 **
-** A log-summary file is essentially a shadow-pager map. It contains a
-** mapping from database page number to the set of locations in the log 
+** A wal-index file is essentially a shadow-pager map. It contains a
+** mapping from database page number to the set of locations in the wal
 ** file that contain versions of the database page. When a database 
-** client needs to read a page of data, it first queries the log-summary
+** client needs to read a page of data, it first queries the wal-index
 ** file to determine if the required version of the page is stored in
-** the log. If so, it is read from the log file. If not, it is read from
-** the database file.
+** the wal. If so, the page is read from the wal. If not, the page is
+** read from the database file.
 **
-** Whenever a transaction is appended to the log or a checkpoint transfers
-** data from the log file into the database file, the log-summary is 
+** Whenever a transaction is appended to the wal or a checkpoint transfers
+** data from the wal into the database file, the wal-index is 
 ** updated accordingly.
 **
-** The fields in the log-summary file header are described in the comment 
-** directly above the definition of struct LogSummaryHdr (see below). 
-** Immediately following the fields in the LogSummaryHdr structure is
+** The fields in the wal-index file header are described in the comment 
+** directly above the definition of struct WalIndexHdr (see below). 
+** Immediately following the fields in the WalIndexHdr structure is
 ** an 8 byte checksum based on the contents of the header. This field is
-** not the same as the iCheck1 and iCheck2 fields of the LogSummaryHdr.
+** not the same as the iCheck1 and iCheck2 fields of the WalIndexHdr.
 */
 
-#include "wal.h"
-
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-
-typedef struct LogSummaryHdr LogSummaryHdr;
-typedef struct LogSummary LogSummary;
-typedef struct LogIterator LogIterator;
-typedef struct LogLock LogLock;
+/* Object declarations */
+typedef struct WalIndexHdr WalIndexHdr;
+typedef struct WalIterator WalIterator;
 
 
 /*
-** The following structure may be used to store the same data that
-** is stored in the log-summary header.
+** The following object stores a copy of the wal-index header.
 **
 ** Member variables iCheck1 and iCheck2 contain the checksum for the
-** last frame written to the log, or 2 and 3 respectively if the log 
+** last frame written to the wal, or 2 and 3 respectively if the log 
 ** is currently empty.
 */
-struct LogSummaryHdr {
+struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u32 pgsz;                       /* Database page size in bytes */
   u32 iLastPg;                    /* Address of last valid frame in log */
@@ -87,200 +91,46 @@ struct LogSummaryHdr {
   u32 iCheck2;                    /* Checkpoint value 2 */
 };
 
-/* Size of serialized LogSummaryHdr object. */
-#define LOGSUMMARY_HDR_NFIELD (sizeof(LogSummaryHdr) / sizeof(u32))
+/* Size of serialized WalIndexHdr object. */
+#define WALINDEX_HDR_NFIELD (sizeof(WalIndexHdr) / sizeof(u32))
 
-/* A block of 16 bytes beginning at LOGSUMMARY_LOCK_OFFSET is reserved
+/* A block of 16 bytes beginning at WALINDEX_LOCK_OFFSET is reserved
 ** for locks. Since some systems only feature mandatory file-locks, we
 ** do not read or write data from the region of the file on which locks
 ** are applied.
 */
-#define LOGSUMMARY_LOCK_OFFSET   ((sizeof(LogSummaryHdr))+2*sizeof(u32))
-#define LOGSUMMARY_LOCK_RESERVED 16
+#define WALINDEX_LOCK_OFFSET   ((sizeof(WalIndexHdr))+2*sizeof(u32))
+#define WALINDEX_LOCK_RESERVED 8
 
-/* Size of header before each frame in log file */
-#define LOG_FRAME_HDRSIZE 16
+/* Size of header before each frame in wal */
+#define WAL_FRAME_HDRSIZE 16
 
-/* Size of log header */
-#define LOG_HDRSIZE 12
+/* Size of write ahead log header */
+#define WAL_HDRSIZE 12
 
 /*
-** Return the offset of frame iFrame in the log file, assuming a database
-** page size of pgsz bytes. The offset returned is to the start of the
-** log frame-header.
+** Return the offset of frame iFrame in the write-ahead log file, 
+** assuming a database page size of pgsz bytes. The offset returned
+** is to the start of the write-ahead log frame-header.
 */
-#define logFrameOffset(iFrame, pgsz) (                               \
-  LOG_HDRSIZE + ((iFrame)-1)*((pgsz)+LOG_FRAME_HDRSIZE)        \
+#define walFrameOffset(iFrame, pgsz) (                               \
+  WAL_HDRSIZE + ((iFrame)-1)*((pgsz)+WAL_FRAME_HDRSIZE)        \
 )
 
 /*
-** If using mmap() to access a shared (or otherwise) log-summary file, then
-** the mapping size is incremented in units of the following size.
-**
-** A 64 KB log-summary mapping corresponds to a log file containing over
-** 13000 frames, so the mapping size does not need to be increased often.
+** An open write-ahead log file is represented by an instance of the
+** following object.
 */
-#ifdef SQLITE_TEST
-int sqlite3_walsummary_mmap_incr = 128;
-# define LOGSUMMARY_MMAP_INCREMENT sqlite3_walsummary_mmap_incr
-#else
-# define LOGSUMMARY_MMAP_INCREMENT (64*1024)
-#endif
-
-/*
-** There is one instance of this structure for each log-summary object
-** that this process has a connection to. They are stored in a linked
-** list starting at pLogSummary (global variable).
-**
-** TODO: LogSummary.fd is a unix file descriptor. Unix APIs are used 
-**       directly in this implementation because the VFS does not support
-**       the required blocking file-locks.
-*/
-struct LogSummary {
-  sqlite3_mutex *mutex;           /* Mutex used to protect this object */
-  int nRef;                       /* Number of pointers to this structure */
-  int fd;                         /* File descriptor open on log-summary */
-  char *zPath;                    /* Path to associated WAL file */
-  LogLock *pLock;                 /* Linked list of locks on this object */
-  LogSummary *pNext;              /* Next in global list */
-
-  int nData;                      /* Size of aData allocation/mapping */
-  u32 *aData;                     /* File body */
-};
-
-/*
-** This module uses three different types of file-locks. All are taken
-** on the log-summary file. The three types of locks are as follows:
-**
-** MUTEX:  The MUTEX lock is used as a robust inter-process mutex. It
-**         is held while the log-summary header is modified, and 
-**         sometimes when it is read. It is also held while a new client
-**         obtains the DMH lock (see below), and while log recovery is
-**         being run.
-**
-** DMS:    The DMS (Dead Mans Switch mechanism) lock is used to ensure
-**         that log-recovery is always run following a system restart.
-**         When it first opens a log-summary file, a process takes a
-**         SHARED lock on the DMH region. This lock is not released until
-**         the log-summary file is closed. 
-**
-**         The process then attempts to upgrade to an EXCLUSIVE lock. If 
-**         successful, then the contents of the log-summary file are deemed 
-**         suspect and the log-summary header zeroed. This forces the
-**         first process that reads the log-summary file to run log 
-**         recovery. After zeroing the log-summary header, the process
-**         downgrades to a SHARED lock on the DMH region.
-**
-**         If the attempt to obtain the EXCLUSIVE lock fails, then the
-**         process concludes that some other process is already using the
-**         log-summary file, and it can therefore be trusted.
-**
-**         The procedure described in the previous three paragraphs (taking
-**         a SHARED lock and then upgrading to an EXCLUSIVE lock to check
-**         if the process is the only one to have an open connection to the 
-**         log file) is protected by holding the MUTEX lock. This avoids the
-**         race condition wherein the first two clients connect almost 
-**         simultaneously following a system restart and each prevents 
-**         the other from obtaining the EXCLUSIVE lock.
-**
-**
-** REGION: There are 4 different region locks, regions A, B, C and D.
-**         Various EXCLUSIVE and SHARED locks on these regions are obtained
-**         when a client reads, writes or checkpoints the database.
-**
-**    To obtain a reader lock:
-**
-**         1. Attempt a SHARED lock on regions A and B.
-**         2. If step 1 is successful, drop the lock on region B. Or, if
-**            it is unsuccessful, attempt a SHARED lock on region D.
-**         3. Repeat the above until the lock attempt in step 1 or 2 is 
-**            successful.
-**
-**         The reader lock is released when the read transaction is finished.
-**
-**    To obtain a writer lock:
-**
-**         1. Take (wait for) an EXCLUSIVE lock on regions C and D.
-**
-**         The locks are released after the write transaction is finished
-**         and, if any frames were committed to the log, the log-summary
-**         file updated.
-**
-**    To obtain a checkpointer lock:
-**
-**         1. Take (wait for) an EXCLUSIVE lock on regions B and C.
-**         2. Take (wait for) an EXCLUSIVE lock on region A.
-**
-**         Step 1 waits until any existing writer has finished. And forces
-**         all new readers to become "region D" readers.
-**
-**         Step 2 causes the checkpointer to wait until all existing region A
-**         readers have finished their transactions. Once the exclusive lock
-**         on region A has been obtained, only "region D" readers exist.
-**         These readers are operating on the snapshot at the head of the
-**         log. As such, the log can be safely copied into the database file
-**         without interfering with the readers.
-**
-**         Once the checkpoint has finished and the log-summary header
-**         updated (to indicate the log contents can now be ignored), all
-**         locks are released.
-**
-**         However, there may still exist region D readers using data in 
-**         the body of the log file, so the log file itself cannot be 
-**         truncated or overwritten until all region D readers have finished.
-**         That requirement is satisfied, because writers (the clients that
-**         write to the log file) require an exclusive lock on region D.
-**         Which they cannot get until all region D readers have finished.
-*/
-#define LOG_LOCK_MUTEX  (LOGSUMMARY_LOCK_OFFSET)
-#define LOG_LOCK_DMH    (LOG_LOCK_MUTEX+1)
-#define LOG_LOCK_REGION (LOG_LOCK_DMH+1)
-
-/*
-** The four lockable regions associated with each log-summary. A connection
-** may take either a SHARED or EXCLUSIVE lock on each. An ORed combination
-** of the following bitmasks is passed as the second argument to the
-** logLockRegion() function.
-*/
-#define LOG_REGION_A 0x01
-#define LOG_REGION_B 0x02
-#define LOG_REGION_C 0x04
-#define LOG_REGION_D 0x08
-
-/*
-** Values for the third parameter to logLockRegion().
-*/
-#define LOG_UNLOCK  0             /* Unlock a range of bytes */
-#define LOG_RDLOCK  1             /* Put a SHARED lock on a range of bytes */
-#define LOG_WRLOCK  2             /* Put an EXCLUSIVE lock on a byte-range */
-#define LOG_WRLOCKW 3             /* Block on EXCLUSIVE lock on a byte-range */
-
-/*
-** A single instance of this structure is allocated as part of each 
-** connection to a database log. All structures associated with the 
-** same log file are linked together into a list using LogLock.pNext
-** starting at LogSummary.pLock.
-**
-** The mLock field of the structure describes the locks (if any) 
-** currently held by the connection. If a SHARED lock is held on
-** any of the four locking regions, then the associated LOG_REGION_X
-** bit (see above) is set. If an EXCLUSIVE lock is held on the region,
-** then the (LOG_REGION_X << 8) bit is set.
-*/
-struct LogLock {
-  LogLock *pNext;                 /* Next lock on the same log */
-  u32 mLock;                      /* Mask of locks */
-};
-
-struct Log {
-  LogSummary *pSummary;           /* Log file summary data */
-  sqlite3_vfs *pVfs;              /* The VFS used to create pFd */
-  sqlite3_file *pFd;              /* File handle for log file */
-  int isLocked;                   /* Non-zero if a snapshot is held open */
-  int isWriteLocked;              /* True if this is the writer connection */
-  u32 iCallback;                  /* Value to pass to log callback (or 0) */
-  LogSummaryHdr hdr;              /* Log summary header for current snapshot */
-  LogLock lock;                   /* Lock held by this connection (if any) */
+struct Wal {
+  sqlite3_vfs *pVfs;         /* The VFS used to create pFd */
+  sqlite3_file *pFd;         /* File handle for WAL file */
+  u32 iCallback;             /* Value to pass to log callback (or 0) */
+  sqlite3_shm *pWIndex;      /* The open wal-index file */
+  int szWIndex;              /* Size of the wal-index */
+  u32 *pWiData;              /* Pointer to wal-index content in memory */
+  u8 lockState;              /* SQLITE_SHM_xxxx constant showing lock state */
+  u8 readerType;             /* SQLITE_SHM_READ or SQLITE_SHM_READ_FULL */
+  WalIndexHdr hdr;           /* Wal-index for current snapshot */
 };
 
 
@@ -292,31 +142,22 @@ struct Log {
 **
 ** The internals of this structure are only accessed by:
 **
-**   logIteratorInit() - Create a new iterator,
-**   logIteratorNext() - Step an iterator,
-**   logIteratorFree() - Free an iterator.
+**   walIteratorInit() - Create a new iterator,
+**   walIteratorNext() - Step an iterator,
+**   walIteratorFree() - Free an iterator.
 **
-** This functionality is used by the checkpoint code (see logCheckpoint()).
+** This functionality is used by the checkpoint code (see walCheckpoint()).
 */
-struct LogIterator {
-  int nSegment;                   /* Size of LogIterator.aSegment[] array */
+struct WalIterator {
+  int nSegment;                   /* Size of WalIterator.aSegment[] array */
   int nFinal;                     /* Elements in segment nSegment-1 */
-  struct LogSegment {
+  struct WalSegment {
     int iNext;                    /* Next aIndex index */
     u8 *aIndex;                   /* Pointer to index array */
     u32 *aDbPage;                 /* Pointer to db page array */
   } aSegment[1];
 };
 
-
-
-/*
-** List of all LogSummary objects created by this process. Protected by
-** static mutex LOG_SUMMARY_MUTEX. TODO: Should have a dedicated mutex
-** here instead of borrowing the LRU mutex.
-*/
-#define LOG_SUMMARY_MUTEX SQLITE_MUTEX_STATIC_LRU
-static LogSummary *pLogSummary = 0;
 
 /*
 ** Generate an 8 byte checksum based on the data in array aByte[] and the
@@ -336,7 +177,7 @@ static LogSummary *pLogSummary = 0;
 **   aCksum[0] = (u32)(aCksum[0] + (aCksum[0]>>24));
 **   aCksum[1] = (u32)(aCksum[1] + (aCksum[1]>>24));
 */
-static void logChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
+static void walChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
   u64 sum1 = aCksum[0];
   u64 sum2 = aCksum[1];
   u32 *a32 = (u32 *)aByte;
@@ -366,84 +207,42 @@ static void logChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
 }
 
 /*
-** Argument zPath must be a nul-terminated string containing a path-name.
-** This function modifies the string in-place by removing any "./" or "../" 
-** elements in the path. For example, the following input:
+** Attempt to change the lock status.
 **
-**   "/home/user/plans/good/../evil/./world_domination.txt"
-**
-** is overwritten with the 'normalized' version:
-**
-**   "/home/user/plans/evil/world_domination.txt"
+** When changing the lock status to SQLITE_SHM_READ, store the
+** type of reader lock (either SQLITE_SHM_READ or SQLITE_SHM_READ_FULL)
+** in pWal->readerType.
 */
-static void logNormalizePath(char *zPath){
-  int i, j;
-  char *z = zPath;
-  int n = strlen(z);
-
-  while( n>1 && z[n-1]=='/' ){ n--; }
-  for(i=j=0; i<n; i++){
-    if( z[i]=='/' ){
-      if( z[i+1]=='/' ) continue;
-      if( z[i+1]=='.' && i+2<n && z[i+2]=='/' ){
-        i += 1;
-        continue;
-      }
-      if( z[i+1]=='.' && i+3<n && z[i+2]=='.' && z[i+3]=='/' ){
-        while( j>0 && z[j-1]!='/' ){ j--; }
-        if( j>0 ){ j--; }
-        i += 2;
-        continue;
-      }
+static int walSetLock(Wal *pWal, int desiredStatus){
+  int rc, got;
+  if( pWal->lockState==desiredStatus ) return SQLITE_OK;
+  rc = pWal->pVfs->xShmLock(pWal->pWIndex, desiredStatus, &got);
+  if( rc==SQLITE_OK ){
+    pWal->lockState = desiredStatus;
+    if( desiredStatus==SQLITE_SHM_READ ){
+      pWal->readerType = got;
     }
-    z[j++] = z[i];
-  }
-  z[j] = 0;
-}
-
-/*
-** Unmap the log-summary mapping and close the file-descriptor. If
-** the isTruncate argument is non-zero, truncate the log-summary file
-** region to zero bytes.
-**
-** Regardless of the value of isTruncate, close the file-descriptor
-** opened on the log-summary file.
-*/
-static int logSummaryUnmap(LogSummary *pSummary, int isUnlink){
-  int rc = SQLITE_OK;
-  if( pSummary->aData ){
-    assert( pSummary->fd>0 );
-    munmap(pSummary->aData, pSummary->nData);
-    pSummary->aData = 0;
-    if( isUnlink ){
-      char *zFile = sqlite3_mprintf("%s-summary", pSummary->zPath);
-      if( !zFile ){
-        rc = SQLITE_NOMEM;
-      }
-      unlink(zFile);
-      sqlite3_free(zFile);
-    }
-  }
-  if( pSummary->fd>0 ){
-    close(pSummary->fd);
-    pSummary->fd = -1;
   }
   return rc;
 }
 
-static void logSummaryWriteHdr(LogSummary *pSummary, LogSummaryHdr *pHdr){
-  u32 *aHdr = pSummary->aData;                   /* Write header here */
-  u32 *aCksum = &aHdr[LOGSUMMARY_HDR_NFIELD];    /* Write header cksum here */
+/*
+** Update the header of the wal-index file.
+*/
+static void walIndexWriteHdr(Wal *pWal, WalIndexHdr *pHdr){
+  u32 *aHdr = pWal->pWiData;                   /* Write header here */
+  u32 *aCksum = &aHdr[WALINDEX_HDR_NFIELD];    /* Write header cksum here */
 
-  assert( LOGSUMMARY_HDR_NFIELD==sizeof(LogSummaryHdr)/4 );
-  memcpy(aHdr, pHdr, sizeof(LogSummaryHdr));
+  assert( WALINDEX_HDR_NFIELD==sizeof(WalIndexHdr)/4 );
+  assert( aHdr!=0 );
+  memcpy(aHdr, pHdr, sizeof(WalIndexHdr));
   aCksum[0] = aCksum[1] = 1;
-  logChecksumBytes((u8 *)aHdr, sizeof(LogSummaryHdr), aCksum);
+  walChecksumBytes((u8 *)aHdr, sizeof(WalIndexHdr), aCksum);
 }
 
 /*
 ** This function encodes a single frame header and writes it to a buffer
-** supplied by the caller. A log frame-header is made up of a series of 
+** supplied by the caller. A frame-header is made up of a series of 
 ** 4-byte big-endian integers, as follows:
 **
 **     0: Database page size in bytes.
@@ -452,7 +251,7 @@ static void logSummaryWriteHdr(LogSummary *pSummary, LogSummaryHdr *pHdr){
 **    12: Frame checksum 1.
 **    16: Frame checksum 2.
 */
-static void logEncodeFrame(
+static void walEncodeFrame(
   u32 *aCksum,                    /* IN/OUT: Checksum values */
   u32 iPage,                      /* Database page number for frame */
   u32 nTruncate,                  /* New db size (or 0 for non-commit frames) */
@@ -460,13 +259,13 @@ static void logEncodeFrame(
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* OUT: Write encoded frame here */
 ){
-  assert( LOG_FRAME_HDRSIZE==16 );
+  assert( WAL_FRAME_HDRSIZE==16 );
 
   sqlite3Put4byte(&aFrame[0], iPage);
   sqlite3Put4byte(&aFrame[4], nTruncate);
 
-  logChecksumBytes(aFrame, 8, aCksum);
-  logChecksumBytes(aData, nData, aCksum);
+  walChecksumBytes(aFrame, 8, aCksum);
+  walChecksumBytes(aData, nData, aCksum);
 
   sqlite3Put4byte(&aFrame[8], aCksum[0]);
   sqlite3Put4byte(&aFrame[12], aCksum[1]);
@@ -476,7 +275,7 @@ static void logEncodeFrame(
 ** Return 1 and populate *piPage, *pnTruncate and aCksum if the 
 ** frame checksum looks Ok. Otherwise return 0.
 */
-static int logDecodeFrame(
+static int walDecodeFrame(
   u32 *aCksum,                    /* IN/OUT: Checksum values */
   u32 *piPage,                    /* OUT: Database page number for frame */
   u32 *pnTruncate,                /* OUT: New db size (or 0 if not commit) */
@@ -484,10 +283,10 @@ static int logDecodeFrame(
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* Frame data */
 ){
-  assert( LOG_FRAME_HDRSIZE==16 );
+  assert( WAL_FRAME_HDRSIZE==16 );
 
-  logChecksumBytes(aFrame, 8, aCksum);
-  logChecksumBytes(aData, nData, aCksum);
+  walChecksumBytes(aFrame, 8, aCksum);
+  walChecksumBytes(aData, nData, aCksum);
 
   if( aCksum[0]!=sqlite3Get4byte(&aFrame[8]) 
    || aCksum[1]!=sqlite3Get4byte(&aFrame[12]) 
@@ -501,8 +300,8 @@ static int logDecodeFrame(
   return 1;
 }
 
-static void logMergesort8(
-  Pgno *aContent,                 /* Pages in log */
+static void walMergesort8(
+  Pgno *aContent,                 /* Pages in wal */
   u8 *aBuffer,                    /* Buffer of at least *pnList items to use */
   u8 *aList,                      /* IN/OUT: List to sort */
   int *pnList                     /* IN/OUT: Number of elements in aList[] */
@@ -518,8 +317,8 @@ static void logMergesort8(
     int iOut = 0;                 /* Current index in output buffer */
 
     /* TODO: Change to non-recursive version. */
-    logMergesort8(aContent, aBuffer, aLeft, &nLeft);
-    logMergesort8(aContent, aBuffer, aRight, &nRight);
+    walMergesort8(aContent, aBuffer, aLeft, &nLeft);
+    walMergesort8(aContent, aBuffer, aRight, &nRight);
 
     while( iRight<nRight || iLeft<nLeft ){
       u8 logpage;
@@ -556,96 +355,80 @@ static void logMergesort8(
 
 
 /*
-** Memory map the first nByte bytes of the summary file opened with 
-** pSummary->fd at pSummary->aData. If the summary file is smaller than
-** nByte bytes in size when this function is called, ftruncate() is
-** used to expand it before it is mapped.
-**
-** It is assumed that an exclusive lock is held on the summary file
-** by the caller (to protect the ftruncate()).
-*/
-static int logSummaryMap(LogSummary *pSummary, int nByte){
-  struct stat sStat;
-  int rc;
-  int fd = pSummary->fd;
-  void *pMap;
-
-  assert( pSummary->aData==0 );
-
-  /* If the file is less than nByte bytes in size, cause it to grow. */
-  rc = fstat(fd, &sStat);
-  if( rc!=0 ) return SQLITE_IOERR;
-  if( sStat.st_size<nByte ){
-    rc = ftruncate(fd, nByte);
-    if( rc!=0 ) return SQLITE_IOERR;
-  }else{
-    nByte = sStat.st_size;
-  }
-
-  /* Map the file. */
-  pMap = mmap(0, nByte, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
-  if( pMap==MAP_FAILED ){
-    return SQLITE_IOERR;
-  }
-  pSummary->aData = (u32 *)pMap;
-  pSummary->nData = nByte/4;
-
-  return SQLITE_OK;
-}
-
-/*
-** The log-summary file is already mapped to pSummary->aData[], but the
-** mapping needs to be resized. Unmap and remap the file so that the mapping 
-** is at least nByte bytes in size, or the size of the entire file if it 
-** is larger than nByte bytes.
-*/
-static int logSummaryRemap(LogSummary *pSummary, int nByte){
-  int rc;
-  sqlite3_mutex_enter(pSummary->mutex);
-  munmap(pSummary->aData, pSummary->nData*4);
-  pSummary->aData = 0;
-  rc = logSummaryMap(pSummary, nByte);
-  sqlite3_mutex_leave(pSummary->mutex);
-  return rc;
-}
-
-/*
-** Return the index in the LogSummary.aData array that corresponds to 
-** frame iFrame. The log-summary file consists of a header, followed by
+** Return the index in the WalIndex.aData array that corresponds to 
+** frame iFrame. The wal-index file consists of a header, followed by
 ** alternating "map" and "index" blocks.
 */
-static int logSummaryEntry(u32 iFrame){
+static int walIndexEntry(u32 iFrame){
   return (
-      (LOGSUMMARY_LOCK_OFFSET+LOGSUMMARY_LOCK_RESERVED)/sizeof(u32)
+      (WALINDEX_LOCK_OFFSET+WALINDEX_LOCK_RESERVED)/sizeof(u32)
     + (((iFrame-1)>>8)<<6)        /* Indexes that occur before iFrame */
     + iFrame-1                    /* Db page numbers that occur before iFrame */
   );
 }
 
+/*
+** Release our reference to the wal-index memory map.
+*/
+static void walIndexUnmap(Wal *pWal){
+  if( pWal->pWiData ){
+    pWal->pVfs->xShmRelease(pWal->pWIndex);
+    pWal->pWiData = 0;
+  }
+}
 
 /*
-** Set an entry in the log-summary map to map log frame iFrame to db 
-** page iPage. Values are always appended to the log-summary (i.e. the
+** Map the wal-index file into memory if it isn't already.
+*/
+static int walIndexMap(Wal *pWal){
+  int rc = SQLITE_OK;
+  if( pWal->pWiData==0 ){
+    rc = pWal->pVfs->xShmSize(pWal->pWIndex, -1,
+                              &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
+  }
+  return rc;
+}
+
+/*
+** Resize the wal-index file.
+*/
+static int walIndexRemap(Wal *pWal, int newSize){
+  int rc;
+  walIndexUnmap(pWal);
+  rc = pWal->pVfs->xShmSize(pWal->pWIndex, newSize,
+                            &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
+  return rc;
+}
+
+/*
+** Increment by which to increase the wal-index file size.
+*/
+#define WALINDEX_MMAP_INCREMENT (64*1024)
+
+/*
+** Set an entry in the wal-index map to map log frame iFrame to db 
+** page iPage. Values are always appended to the wal-index (i.e. the
 ** value of iFrame is always exactly one more than the value passed to
 ** the previous call), but that restriction is not enforced or asserted
 ** here.
 */
-static int logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
-  u32 iSlot = logSummaryEntry(iFrame);
-
-  while( (iSlot+128)>=pSummary->nData ){
+static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
+  u32 iSlot = walIndexEntry(iFrame);
+  
+  walIndexMap(pWal);
+  while( (iSlot+128)>=pWal->szWIndex ){
     int rc;
-    int nByte = pSummary->nData*4 + LOGSUMMARY_MMAP_INCREMENT;
+    int nByte = pWal->szWIndex*4 + WALINDEX_MMAP_INCREMENT;
 
-    /* Unmap and remap the log-summary file. */
-    rc = logSummaryRemap(pSummary, nByte);
+    /* Unmap and remap the wal-index file. */
+    rc = walIndexRemap(pWal, nByte);
     if( rc!=SQLITE_OK ){
       return rc;
     }
   }
 
-  /* Set the log-summary entry itself */
-  pSummary->aData[iSlot] = iPage;
+  /* Set the wal-index entry itself */
+  pWal->pWiData[iSlot] = iPage;
 
   /* If the frame number is a multiple of 256 (frames are numbered starting
   ** at 1), build an index of the most recently added 256 frames.
@@ -657,13 +440,13 @@ static int logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
     u8 *aIndex;                   /* 256 bytes to build index in */
     u8 *aTmp;                     /* Scratch space to use while sorting */
 
-    aFrame = &pSummary->aData[iSlot-255];
-    aIndex = (u8 *)&pSummary->aData[iSlot+1];
+    aFrame = &pWal->pWiData[iSlot-255];
+    aIndex = (u8 *)&pWal->pWiData[iSlot+1];
     aTmp = &aIndex[256];
 
     nIndex = 256;
     for(i=0; i<256; i++) aIndex[i] = (u8)i;
-    logMergesort8(aFrame, aTmp, aIndex, &nIndex);
+    walMergesort8(aFrame, aTmp, aIndex, &nIndex);
     memset(&aIndex[nIndex], aIndex[nIndex-1], 256-nIndex);
   }
 
@@ -672,23 +455,24 @@ static int logSummaryAppend(LogSummary *pSummary, u32 iFrame, u32 iPage){
 
 
 /*
-** Recover the log-summary by reading the log file. The caller must hold 
-** an exclusive lock on the log-summary file.
+** Recover the wal-index by reading the write-ahead log file. 
+** The caller must hold RECOVER lock on the wal-index file.
 */
-static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
+static int walIndexRecover(Wal *pWal){
   int rc;                         /* Return Code */
   i64 nSize;                      /* Size of log file */
-  LogSummaryHdr hdr;              /* Recovered log-summary header */
+  WalIndexHdr hdr;              /* Recovered wal-index header */
 
+  assert( pWal->lockState==SQLITE_SHM_RECOVER );
   memset(&hdr, 0, sizeof(hdr));
 
-  rc = sqlite3OsFileSize(pFd, &nSize);
+  rc = sqlite3OsFileSize(pWal->pFd, &nSize);
   if( rc!=SQLITE_OK ){
     return rc;
   }
 
-  if( nSize>LOG_FRAME_HDRSIZE ){
-    u8 aBuf[LOG_FRAME_HDRSIZE];   /* Buffer to load first frame header into */
+  if( nSize>WAL_FRAME_HDRSIZE ){
+    u8 aBuf[WAL_FRAME_HDRSIZE];   /* Buffer to load first frame header into */
     u8 *aFrame = 0;               /* Malloc'd buffer to load entire frame */
     int nFrame;                   /* Number of bytes at aFrame */
     u8 *aData;                    /* Pointer to data part of aFrame buffer */
@@ -700,7 +484,7 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     /* Read in the first frame header in the file (to determine the 
     ** database page size).
     */
-    rc = sqlite3OsRead(pFd, aBuf, LOG_HDRSIZE, 0);
+    rc = sqlite3OsRead(pWal->pFd, aBuf, WAL_HDRSIZE, 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -716,26 +500,26 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
     aCksum[1] = sqlite3Get4byte(&aBuf[8]);
 
     /* Malloc a buffer to read frames into. */
-    nFrame = nPgsz + LOG_FRAME_HDRSIZE;
+    nFrame = nPgsz + WAL_FRAME_HDRSIZE;
     aFrame = (u8 *)sqlite3_malloc(nFrame);
     if( !aFrame ){
       return SQLITE_NOMEM;
     }
-    aData = &aFrame[LOG_FRAME_HDRSIZE];
+    aData = &aFrame[WAL_FRAME_HDRSIZE];
 
     /* Read all frames from the log file. */
     iFrame = 0;
-    for(iOffset=LOG_HDRSIZE; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
+    for(iOffset=WAL_HDRSIZE; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
       int isValid;                /* True if this frame is valid */
 
       /* Read and decode the next log frame. */
-      rc = sqlite3OsRead(pFd, aFrame, nFrame, iOffset);
+      rc = sqlite3OsRead(pWal->pFd, aFrame, nFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
-      isValid = logDecodeFrame(aCksum, &pgno, &nTruncate, nPgsz, aData, aFrame);
+      isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, nPgsz, aData, aFrame);
       if( !isValid ) break;
-      logSummaryAppend(pSummary, ++iFrame, pgno);
+      walIndexAppend(pWal, ++iFrame, pgno);
 
       /* If nTruncate is non-zero, this is a commit record. */
       if( nTruncate ){
@@ -754,268 +538,7 @@ static int logSummaryRecover(LogSummary *pSummary, sqlite3_file *pFd){
   }
 
 finished:
-  logSummaryWriteHdr(pSummary, &hdr);
-  return rc;
-}
-
-/*
-** Place, modify or remove a lock on the log-summary file associated 
-** with pSummary.
-**
-** The locked byte-range should be inside the region dedicated to 
-** locking. This region of the log-summary file is never read or written.
-*/
-static int logLockFd(
-  LogSummary *pSummary,           /* The log-summary object to lock */
-  int iStart,                     /* First byte to lock */
-  int nByte,                      /* Number of bytes to lock */
-  int op                          /* LOG_UNLOCK, RDLOCK, WRLOCK or WRLOCKW */
-){
-  int aType[4] = { 
-    F_UNLCK,                      /* LOG_UNLOCK */
-    F_RDLCK,                      /* LOG_RDLOCK */
-    F_WRLCK,                      /* LOG_WRLOCK */
-    F_WRLCK                       /* LOG_WRLOCKW */
-  };
-  int aOp[4] = { 
-    F_SETLK,                      /* LOG_UNLOCK */
-    F_SETLK,                      /* LOG_RDLOCK */
-    F_SETLK,                      /* LOG_WRLOCK */
-    F_SETLKW                      /* LOG_WRLOCKW */
-  };
-  struct flock f;                 /* Locking operation */
-  int rc;                         /* Value returned by fcntl() */
-
-  assert( ArraySize(aType)==ArraySize(aOp) );
-  assert( op>=0 && op<ArraySize(aType) );
-  assert( nByte>0 );
-  assert( iStart>=LOGSUMMARY_LOCK_OFFSET 
-       && iStart+nByte<=LOGSUMMARY_LOCK_OFFSET+LOGSUMMARY_LOCK_RESERVED
-  );
-#if defined(SQLITE_DEBUG) && defined(SQLITE_OS_UNIX)
-  if( pSummary->aData ) memset(&((u8*)pSummary->aData)[iStart], op, nByte);
-#endif
-
-  memset(&f, 0, sizeof(f));
-  f.l_type = aType[op];
-  f.l_whence = SEEK_SET;
-  f.l_start = iStart;
-  f.l_len = nByte;
-  rc = fcntl(pSummary->fd, aOp[op], &f);
-  return (rc==0) ? SQLITE_OK : SQLITE_BUSY;
-}
-
-static int logLockRegion(Log *pLog, u32 mRegion, int op){
-  LogSummary *pSummary = pLog->pSummary;
-  LogLock *p;                     /* Used to iterate through in-process locks */
-  u32 mOther;                     /* Locks held by other connections */
-  u32 mNew;                       /* New mask for pLog */
-
-  assert( 
-       /* Writer lock operations */
-          (op==LOG_WRLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_C|LOG_REGION_D))
-
-       /* Normal reader lock operations */
-       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B))
-
-       /* Region D reader lock operations */
-       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_D))
-       || (op==LOG_RDLOCK && mRegion==(LOG_REGION_A))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_D))
-
-       /* Checkpointer lock operations */
-       || (op==LOG_WRLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
-       || (op==LOG_WRLOCK && mRegion==(LOG_REGION_A))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_B|LOG_REGION_C))
-       || (op==LOG_UNLOCK && mRegion==(LOG_REGION_A|LOG_REGION_B|LOG_REGION_C))
-  );
-
-  /* Assert that a connection never tries to go from an EXCLUSIVE to a 
-  ** SHARED lock on a region. Moving from SHARED to EXCLUSIVE sometimes
-  ** happens though (when a region D reader upgrades to a writer).
-  */
-  assert( op!=LOG_RDLOCK || 0==(pLog->lock.mLock & (mRegion<<8)) );
-
-  sqlite3_mutex_enter(pSummary->mutex);
-
-  /* Calculate a mask of logs held by all connections in this process apart
-  ** from this one. The least significant byte of the mask contains a mask
-  ** of the SHARED logs held. The next least significant byte of the mask
-  ** indicates the EXCLUSIVE locks held. For example, to test if some other
-  ** connection is holding a SHARED lock on region A, or an EXCLUSIVE lock
-  ** on region C, do:
-  **
-  **   hasSharedOnA    = (mOther & (LOG_REGION_A<<0));
-  **   hasExclusiveOnC = (mOther & (LOG_REGION_C<<8));
-  **
-  ** In all masks, if the bit in the EXCLUSIVE byte mask is set, so is the 
-  ** corresponding bit in the SHARED mask.
-  */
-  mOther = 0;
-  for(p=pSummary->pLock; p; p=p->pNext){
-    assert( (p->mLock & (p->mLock<<8))==(p->mLock&0x0000FF00) );
-    if( p!=&pLog->lock ){
-      mOther |= p->mLock;
-    }
-  }
-
-  /* If this call is to lock a region (not to unlock one), test if locks held
-  ** by any other connection in this process prevent the new locks from
-  ** begin granted. If so, exit the summary mutex and return SQLITE_BUSY.
-  */
-  if( op && (mOther & (mRegion << (op==LOG_RDLOCK ? 8 : 0))) ){
-    sqlite3_mutex_leave(pSummary->mutex);
-    return SQLITE_BUSY;
-  }
-
-  /* Figure out the new log mask for this connection. */
-  switch( op ){
-    case LOG_UNLOCK: 
-      mNew = (pLog->lock.mLock & ~(mRegion|(mRegion<<8)));
-      break;
-    case LOG_RDLOCK:
-      mNew = (pLog->lock.mLock | mRegion);
-      break;
-    default:
-      assert( op==LOG_WRLOCK );
-      mNew = (pLog->lock.mLock | (mRegion<<8) | mRegion);
-      break;
-  }
-
-  /* Now modify the locks held on the log-summary file descriptor. This
-  ** file descriptor is shared by all log connections in this process. 
-  ** Therefore:
-  **
-  **   + If one or more log connections in this process hold a SHARED lock
-  **     on a region, the file-descriptor should hold a SHARED lock on
-  **     the file region.
-  **
-  **   + If a log connection in this process holds an EXCLUSIVE lock on a
-  **     region, the file-descriptor should also hold an EXCLUSIVE lock on
-  **     the region in question.
-  **
-  ** If this is an LOG_UNLOCK operation, only regions for which no other
-  ** connection holds a lock should actually be unlocked. And if this
-  ** is a LOG_RDLOCK operation and other connections already hold all
-  ** the required SHARED locks, then no system call is required.
-  */
-  if( op==LOG_UNLOCK ){
-    mRegion = (mRegion & ~mOther);
-  }
-  if( (op==LOG_WRLOCK)
-   || (op==LOG_UNLOCK && mRegion) 
-   || (op==LOG_RDLOCK && (mOther&mRegion)!=mRegion)
-  ){
-    struct LockMap {
-      int iStart;                 /* Byte offset to start locking operation */
-      int iLen;                   /* Length field for locking operation */
-    } aMap[] = {
-      /* 0000 */ {0, 0},                    /* 0001 */ {3+LOG_LOCK_REGION, 1}, 
-      /* 0010 */ {2+LOG_LOCK_REGION, 1},    /* 0011 */ {2+LOG_LOCK_REGION, 2},
-      /* 0100 */ {1+LOG_LOCK_REGION, 1},    /* 0101 */ {0, 0}, 
-      /* 0110 */ {1+LOG_LOCK_REGION, 2},    /* 0111 */ {1+LOG_LOCK_REGION, 3},
-      /* 1000 */ {0+LOG_LOCK_REGION, 1},    /* 1001 */ {0, 0}, 
-      /* 1010 */ {0, 0},                    /* 1011 */ {0, 0},
-      /* 1100 */ {0+LOG_LOCK_REGION, 2},    /* 1101 */ {0, 0}, 
-      /* 1110 */ {0, 0},                    /* 1111 */ {0, 0}
-    };
-    int rc;                       /* Return code of logLockFd() */
-
-    assert( mRegion<ArraySize(aMap) && aMap[mRegion].iStart!=0 );
-
-    rc = logLockFd(pSummary, aMap[mRegion].iStart, aMap[mRegion].iLen, op);
-    if( rc!=0 ){
-      sqlite3_mutex_leave(pSummary->mutex);
-      return rc;
-    }
-  }
-
-  pLog->lock.mLock = mNew;
-  sqlite3_mutex_leave(pSummary->mutex);
-  return SQLITE_OK;
-}
-
-/*
-** Lock the DMH region, either with an EXCLUSIVE or SHARED lock. This
-** function is never called with LOG_UNLOCK - the only way the DMH region
-** is every completely unlocked is by by closing the file descriptor.
-*/
-static int logLockDMH(LogSummary *pSummary, int eLock){
-  assert( sqlite3_mutex_held(pSummary->mutex) );
-  assert( eLock==LOG_RDLOCK || eLock==LOG_WRLOCK );
-  return logLockFd(pSummary, LOG_LOCK_DMH, 1, eLock);
-}
-
-/*
-** Lock (or unlock) the MUTEX region. It is always locked using an
-** EXCLUSIVE, blocking lock.
-*/
-static int logLockMutex(LogSummary *pSummary, int eLock){
-  assert( sqlite3_mutex_held(pSummary->mutex) );
-  assert( eLock==LOG_WRLOCKW || eLock==LOG_UNLOCK );
-  logLockFd(pSummary, LOG_LOCK_MUTEX, 1, eLock);
-  return SQLITE_OK;
-}
-
-/*
-** This function intializes the connection to the log-summary identified
-** by struct pSummary.
-*/
-static int logSummaryInit(
-  LogSummary *pSummary,           /* Log summary object to initialize */
-  sqlite3_file *pFd               /* File descriptor open on log file */
-){
-  int rc;                         /* Return Code */
-  char *zFile;                    /* File name for summary file */
-
-  assert( pSummary->fd<0 );
-  assert( pSummary->aData==0 );
-  assert( pSummary->nRef>0 );
-  assert( pSummary->zPath );
-
-  /* Open a file descriptor on the summary file. */
-  zFile = sqlite3_mprintf("%s-summary", pSummary->zPath);
-  if( !zFile ){
-    return SQLITE_NOMEM;
-  }
-  pSummary->fd = open(zFile, O_RDWR|O_CREAT, S_IWUSR|S_IRUSR);
-  sqlite3_free(zFile);
-  if( pSummary->fd<0 ){
-    return SQLITE_IOERR;
-  }
-
-  /* Grab an exclusive lock the summary file. Then mmap() it. 
-  **
-  ** TODO: This code needs to be enhanced to support a growable mapping. 
-  ** For now, just make the mapping very large to start with. The 
-  ** pages should not be allocated until they are first accessed anyhow,
-  ** so using a large mapping consumes no more resources than a smaller
-  ** one would.
-  */
-  assert( sqlite3_mutex_held(pSummary->mutex) );
-  rc = logLockMutex(pSummary, LOG_WRLOCKW);
-  if( rc!=SQLITE_OK ) return rc;
-  rc = logSummaryMap(pSummary, LOGSUMMARY_MMAP_INCREMENT);
-  if( rc!=SQLITE_OK ) goto out;
-
-  /* Try to obtain an EXCLUSIVE lock on the dead-mans-hand region. If this
-  ** is possible, the contents of the log-summary file (if any) may not
-  ** be trusted. Zero the log-summary header before continuing.
-  */
-  rc = logLockDMH(pSummary, LOG_WRLOCK);
-  if( rc==SQLITE_OK ){
-    memset(pSummary->aData, 0, (LOGSUMMARY_HDR_NFIELD+2)*sizeof(u32) );
-  }
-  rc = logLockDMH(pSummary, LOG_RDLOCK);
-  if( rc!=SQLITE_OK ){
-    rc = SQLITE_IOERR;
-  }
-
- out:
-  logLockMutex(pSummary, LOG_UNLOCK);
+  walIndexWriteHdr(pWal, &hdr);
   return rc;
 }
 
@@ -1027,112 +550,57 @@ static int logSummaryInit(
 **
 ** A SHARED lock should be held on the database file when this function
 ** is called. The purpose of this SHARED lock is to prevent any other
-** client from unlinking the log or log-summary file. If another process
+** client from unlinking the log or wal-index file. If another process
 ** were to do this just after this client opened one of these files, the
 ** system would be badly broken.
 */
 int sqlite3WalOpen(
-  sqlite3_vfs *pVfs,              /* vfs module to open log file with */
+  sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
   const char *zDb,                /* Name of database file */
-  Log **ppLog                     /* OUT: Allocated Log handle */
+  Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
   int rc = SQLITE_OK;             /* Return Code */
-  Log *pRet;                      /* Object to allocate and return */
-  LogSummary *pSummary = 0;       /* Summary object */
-  sqlite3_mutex *mutex = 0;       /* LOG_SUMMARY_MUTEX mutex */
+  Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
   char *zWal = 0;                 /* Path to WAL file */
   int nWal;                       /* Length of zWal in bytes */
 
   assert( zDb );
+  if( pVfs->xShmOpen==0 ) return SQLITE_CANTOPEN;
 
-  /* Allocate an instance of struct Log to return. */
-  *ppLog = 0;
-  pRet = (Log *)sqlite3MallocZero(sizeof(Log) + pVfs->szOsFile);
-  if( !pRet ) goto out;
+  /* Allocate an instance of struct Wal to return. */
+  *ppWal = 0;
+  nWal = strlen(zDb);
+  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal+11);
+  if( !pRet ) goto wal_open_out;
   pRet->pVfs = pVfs;
   pRet->pFd = (sqlite3_file *)&pRet[1];
+  zWal = pVfs->szOsFile + (char*)pRet->pFd;
+  sqlite3_snprintf(nWal, zWal, "%s-wal-index", zDb);
+  rc = pVfs->xShmOpen(pVfs, zWal, &pRet->pWIndex);
+  if( rc ) goto wal_open_out;
 
-  /* Normalize the path name. */
-  zWal = sqlite3_mprintf("%s-wal", zDb);
-  if( !zWal ) goto out;
-  logNormalizePath(zWal);
+  /* Open file handle on the write-ahead log file. */
+  zWal[nWal-6] = 0;
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
-  nWal = sqlite3Strlen30(zWal);
+  rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
 
-  /* Enter the mutex that protects the linked-list of LogSummary structures */
-  if( sqlite3GlobalConfig.bCoreMutex ){
-    mutex = sqlite3_mutex_alloc(LOG_SUMMARY_MUTEX);
-  }
-  sqlite3_mutex_enter(mutex);
-
-  /* Search for an existing log summary object in the linked list. If one 
-  ** cannot be found, allocate and initialize a new object.
-  */
-  for(pSummary=pLogSummary; pSummary; pSummary=pSummary->pNext){
-    int nPath = sqlite3Strlen30(pSummary->zPath);
-    if( nWal==nPath && 0==memcmp(pSummary->zPath, zWal, nPath) ) break;
-  }
-  if( !pSummary ){
-    int nByte = sizeof(LogSummary) + nWal + 1;
-    pSummary = (LogSummary *)sqlite3MallocZero(nByte);
-    if( !pSummary ){
-      rc = SQLITE_NOMEM;
-      goto out;
-    }
-    if( sqlite3GlobalConfig.bCoreMutex ){
-      pSummary->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_RECURSIVE);
-    }
-    pSummary->zPath = (char *)&pSummary[1];
-    pSummary->fd = -1;
-    memcpy(pSummary->zPath, zWal, nWal);
-    pSummary->pNext = pLogSummary;
-    pLogSummary = pSummary;
-  }
-  pSummary->nRef++;
-  pRet->pSummary = pSummary;
-
-  /* Exit the mutex protecting the linked-list of LogSummary objects. */
-  sqlite3_mutex_leave(mutex);
-  mutex = 0;
-
-  /* Open file handle on the log file. */
-  rc = sqlite3OsOpen(pVfs, pSummary->zPath, pRet->pFd, flags, &flags);
-  if( rc!=SQLITE_OK ) goto out;
-
-  /* Object pSummary is shared between all connections to the database made
-  ** by this process. So at this point it may or may not be connected to
-  ** the log-summary. If it is not, connect it.
-  */
-  sqlite3_mutex_enter(pSummary->mutex);
-  mutex = pSummary->mutex;
-  if( pSummary->fd<0 ){
-    rc = logSummaryInit(pSummary, pRet->pFd);
-  }
-
-  pRet->lock.pNext = pSummary->pLock;
-  pSummary->pLock = &pRet->lock;
-
- out:
-  sqlite3_mutex_leave(mutex);
-  sqlite3_free(zWal);
+wal_open_out:
   if( rc!=SQLITE_OK ){
-    assert(0);
     if( pRet ){
+      pVfs->xShmClose(pRet->pWIndex);
       sqlite3OsClose(pRet->pFd);
       sqlite3_free(pRet);
     }
-    assert( !pSummary || pSummary->nRef==0 );
-    sqlite3_free(pSummary);
   }
-  *ppLog = pRet;
+  *ppWal = pRet;
   return rc;
 }
 
-static int logIteratorNext(
-  LogIterator *p,               /* Iterator */
-  u32 *piPage,                    /* OUT: Next db page to write */
-  u32 *piFrame                    /* OUT: Log frame to read from */
+static int walIteratorNext(
+  WalIterator *p,               /* Iterator */
+  u32 *piPage,                  /* OUT: Next db page to write */
+  u32 *piFrame                  /* OUT: Wal frame to read from */
 ){
   u32 iMin = *piPage;
   u32 iRet = 0xFFFFFFFF;
@@ -1140,7 +608,7 @@ static int logIteratorNext(
   int nBlock = p->nFinal;
 
   for(i=p->nSegment-1; i>=0; i--){
-    struct LogSegment *pSegment = &p->aSegment[i];
+    struct WalSegment *pSegment = &p->aSegment[i];
     while( pSegment->iNext<nBlock ){
       u32 iPg = pSegment->aDbPage[pSegment->aIndex[pSegment->iNext]];
       if( iPg>iMin ){
@@ -1160,23 +628,25 @@ static int logIteratorNext(
   return (iRet==0xFFFFFFFF);
 }
 
-static LogIterator *logIteratorInit(Log *pLog){
-  u32 *aData = pLog->pSummary->aData;
-  LogIterator *p;                 /* Return value */
+static WalIterator *walIteratorInit(Wal *pWal){
+  u32 *aData;                     /* Content of the wal-index file */
+  WalIterator *p;                 /* Return value */
   int nSegment;                   /* Number of segments to merge */
   u32 iLast;                      /* Last frame in log */
   int nByte;                      /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   int nFinal;                     /* Number of unindexed entries */
-  struct LogSegment *pFinal;      /* Final (unindexed) segment */
+  struct WalSegment *pFinal;      /* Final (unindexed) segment */
   u8 *aTmp;                       /* Temp space used by merge-sort */
 
-  iLast = pLog->hdr.iLastPg;
+  walIndexMap(pWal);
+  aData = pWal->pWiData;
+  iLast = pWal->hdr.iLastPg;
   nSegment = (iLast >> 8) + 1;
   nFinal = (iLast & 0x000000FF);
 
-  nByte = sizeof(LogIterator) + (nSegment-1)*sizeof(struct LogSegment) + 512;
-  p = (LogIterator *)sqlite3_malloc(nByte);
+  nByte = sizeof(WalIterator) + (nSegment-1)*sizeof(struct WalSegment) + 512;
+  p = (WalIterator *)sqlite3_malloc(nByte);
   if( p ){
     memset(p, 0, nByte);
     p->nSegment = nSegment;
@@ -1184,63 +654,63 @@ static LogIterator *logIteratorInit(Log *pLog){
   }
 
   for(i=0; i<nSegment-1; i++){
-    p->aSegment[i].aDbPage = &aData[logSummaryEntry(i*256+1)];
-    p->aSegment[i].aIndex = (u8 *)&aData[logSummaryEntry(i*256+1)+256];
+    p->aSegment[i].aDbPage = &aData[walIndexEntry(i*256+1)];
+    p->aSegment[i].aIndex = (u8 *)&aData[walIndexEntry(i*256+1)+256];
   }
   pFinal = &p->aSegment[nSegment-1];
 
-  pFinal->aDbPage = &aData[logSummaryEntry((nSegment-1)*256+1)];
+  pFinal->aDbPage = &aData[walIndexEntry((nSegment-1)*256+1)];
   pFinal->aIndex = (u8 *)&pFinal[1];
   aTmp = &pFinal->aIndex[256];
   for(i=0; i<nFinal; i++){
     pFinal->aIndex[i] = i;
   }
-  logMergesort8(pFinal->aDbPage, aTmp, pFinal->aIndex, &nFinal);
+  walMergesort8(pFinal->aDbPage, aTmp, pFinal->aIndex, &nFinal);
   p->nFinal = nFinal;
 
   return p;
 }
 
 /* 
-** Free a log iterator allocated by logIteratorInit().
+** Free a log iterator allocated by walIteratorInit().
 */
-static void logIteratorFree(LogIterator *p){
+static void walIteratorFree(WalIterator *p){
   sqlite3_free(p);
 }
 
 /*
 ** Checkpoint the contents of the log file.
 */
-static int logCheckpoint(
-  Log *pLog,                      /* Log connection */
+static int walCheckpoint(
+  Wal *pWal,                      /* Wal connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags for OsSync() (or 0) */
   u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
-  int pgsz = pLog->hdr.pgsz;      /* Database page-size */
-  LogIterator *pIter = 0;         /* Log iterator context */
+  int pgsz = pWal->hdr.pgsz;      /* Database page-size */
+  WalIterator *pIter = 0;         /* Wal iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
-  u32 iFrame = 0;                 /* Log frame containing data for iDbpage */
+  u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
 
-  if( pLog->hdr.iLastPg==0 ){
+  if( pWal->hdr.iLastPg==0 ){
     return SQLITE_OK;
   }
 
   /* Allocate the iterator */
-  pIter = logIteratorInit(pLog);
+  pIter = walIteratorInit(pWal);
   if( !pIter ) return SQLITE_NOMEM;
 
   /* Sync the log file to disk */
   if( sync_flags ){
-    rc = sqlite3OsSync(pLog->pFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pFd, sync_flags);
     if( rc!=SQLITE_OK ) goto out;
   }
 
   /* Iterate through the contents of the log, copying data to the db file. */
-  while( 0==logIteratorNext(pIter, &iDbpage, &iFrame) ){
-    rc = sqlite3OsRead(pLog->pFd, zBuf, pgsz, 
-        logFrameOffset(iFrame, pgsz) + LOG_FRAME_HDRSIZE
+  while( 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
+    rc = sqlite3OsRead(pWal->pFd, zBuf, pgsz, 
+        walFrameOffset(iFrame, pgsz) + WAL_FRAME_HDRSIZE
     );
     if( rc!=SQLITE_OK ) goto out;
     rc = sqlite3OsWrite(pFd, zBuf, pgsz, (iDbpage-1)*pgsz);
@@ -1248,18 +718,18 @@ static int logCheckpoint(
   }
 
   /* Truncate the database file */
-  rc = sqlite3OsTruncate(pFd, ((i64)pLog->hdr.nPage*(i64)pgsz));
+  rc = sqlite3OsTruncate(pFd, ((i64)pWal->hdr.nPage*(i64)pgsz));
   if( rc!=SQLITE_OK ) goto out;
 
-  /* Sync the database file. If successful, update the log-summary. */
+  /* Sync the database file. If successful, update the wal-index. */
   if( sync_flags ){
     rc = sqlite3OsSync(pFd, sync_flags);
     if( rc!=SQLITE_OK ) goto out;
   }
-  pLog->hdr.iLastPg = 0;
-  pLog->hdr.iCheck1 = 2;
-  pLog->hdr.iCheck2 = 3;
-  logSummaryWriteHdr(pLog->pSummary, &pLog->hdr);
+  pWal->hdr.iLastPg = 0;
+  pWal->hdr.iCheck1 = 2;
+  pWal->hdr.iCheck2 = 3;
+  walIndexWriteHdr(pWal, &pWal->hdr);
 
   /* TODO: If a crash occurs and the current log is copied into the 
   ** database there is no problem. However, if a crash occurs while
@@ -1275,14 +745,14 @@ static int logCheckpoint(
   ** an unwelcome performance hit. Alternatives are...
   */
 #if 0 
-  memset(zBuf, 0, LOG_FRAME_HDRSIZE);
-  rc = sqlite3OsWrite(pLog->pFd, zBuf, LOG_FRAME_HDRSIZE, 0);
+  memset(zBuf, 0, WAL_FRAME_HDRSIZE);
+  rc = sqlite3OsWrite(pWal->pFd, zBuf, WAL_FRAME_HDRSIZE, 0);
   if( rc!=SQLITE_OK ) goto out;
-  rc = sqlite3OsSync(pLog->pFd, pLog->sync_flags);
+  rc = sqlite3OsSync(pWal->pFd, pWal->sync_flags);
 #endif
 
  out:
-  logIteratorFree(pIter);
+  walIteratorFree(pIter);
   return rc;
 }
 
@@ -1290,180 +760,92 @@ static int logCheckpoint(
 ** Close a connection to a log file.
 */
 int sqlite3WalClose(
-  Log *pLog,                      /* Log to close */
+  Wal *pWal,                      /* Wal to close */
   sqlite3_file *pFd,              /* Database file */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
   u8 *zBuf                        /* Buffer of at least page-size bytes */
 ){
   int rc = SQLITE_OK;
-  if( pLog ){
-    LogLock **ppL;
-    LogSummary *pSummary = pLog->pSummary;
-    sqlite3_mutex *mutex = 0;
-
-    sqlite3_mutex_enter(pSummary->mutex);
-    for(ppL=&pSummary->pLock; *ppL!=&pLog->lock; ppL=&(*ppL)->pNext);
-    *ppL = pLog->lock.pNext;
-    sqlite3_mutex_leave(pSummary->mutex);
-
-    if( sqlite3GlobalConfig.bCoreMutex ){
-      mutex = sqlite3_mutex_alloc(LOG_SUMMARY_MUTEX);
-    }
-    sqlite3_mutex_enter(mutex);
-
-    /* Decrement the reference count on the log summary. If this is the last
-    ** reference to the log summary object in this process, the object will
-    ** be freed. If this is also the last connection to the database, then
-    ** checkpoint the database and truncate the log and log-summary files
-    ** to zero bytes in size.
-    **/
-    pSummary->nRef--;
-    if( pSummary->nRef==0 ){
-      int rc;
-      LogSummary **pp;
-      for(pp=&pLogSummary; *pp!=pSummary; pp=&(*pp)->pNext);
-      *pp = (*pp)->pNext;
-
-      sqlite3_mutex_leave(mutex);
-
-      rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
-      if( rc==SQLITE_OK ){
-
-        /* This is the last connection to the database (including other
-        ** processes). Do three things:
-        **
-        **   1. Checkpoint the db.
-        **   2. Truncate the log file.
-        **   3. Unlink the log-summary file.
-        */
-        rc = logCheckpoint(pLog, pFd, sync_flags, zBuf);
-        if( rc==SQLITE_OK ){
-          rc = sqlite3OsDelete(pLog->pVfs, pSummary->zPath, 0);
-        }
-
-        logSummaryUnmap(pSummary, 1);
-      }else{
-        if( rc==SQLITE_BUSY ){
-          rc = SQLITE_OK;
-        }
-        logSummaryUnmap(pSummary, 0);
-      }
-
-      sqlite3_mutex_free(pSummary->mutex);
-      sqlite3_free(pSummary);
-    }else{
-      sqlite3_mutex_leave(mutex);
-    }
-
-    /* Close the connection to the log file and free the Log handle. */
-    sqlite3OsClose(pLog->pFd);
-    sqlite3_free(pLog);
+  if( pWal ){
+    pWal->pVfs->xShmClose(pWal->pWIndex);
+    sqlite3OsClose(pWal->pFd);
+    sqlite3_free(pWal);
   }
   return rc;
 }
 
 /*
-** Enter and leave the log-summary mutex. In this context, entering the
-** log-summary mutex means:
-**
-**   1. Obtaining mutex pLog->pSummary->mutex, and
-**   2. Taking an exclusive lock on the log-summary file.
-**
-** i.e. this mutex locks out other processes as well as other threads
-** hosted in this address space.
-*/
-static int logEnterMutex(Log *pLog){
-  LogSummary *pSummary = pLog->pSummary;
-  int rc;
-
-  sqlite3_mutex_enter(pSummary->mutex);
-  rc = logLockMutex(pSummary, LOG_WRLOCKW);
-  if( rc!=SQLITE_OK ){
-    sqlite3_mutex_leave(pSummary->mutex);
-  }
-  return rc;
-}
-static void logLeaveMutex(Log *pLog){
-  LogSummary *pSummary = pLog->pSummary;
-  logLockMutex(pSummary, LOG_UNLOCK);
-  sqlite3_mutex_leave(pSummary->mutex);
-}
-
-/*
-** Try to read the log-summary header. Attempt to verify the header
-** checksum. If the checksum can be verified, copy the log-summary
-** header into structure pLog->hdr. If the contents of pLog->hdr are
+** Try to read the wal-index header. Attempt to verify the header
+** checksum. If the checksum can be verified, copy the wal-index
+** header into structure pWal->hdr. If the contents of pWal->hdr are
 ** modified by this and pChanged is not NULL, set *pChanged to 1. 
 ** Otherwise leave *pChanged unmodified.
 **
 ** If the checksum cannot be verified return SQLITE_ERROR.
 */
-int logSummaryTryHdr(Log *pLog, int *pChanged){
+int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2] = {1, 1};
-  u32 aHdr[LOGSUMMARY_HDR_NFIELD+2];
+  u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
-  /* Read the header. The caller may or may not have locked the log-summary
+  /* Read the header. The caller may or may not have locked the wal-index
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return SQLITE_ERROR. The caller will
   ** retry. Or, if the caller has already locked the file and the header
   ** still looks inconsistent, it will run recovery.
   */
-  memcpy(aHdr, pLog->pSummary->aData, sizeof(aHdr));
-  logChecksumBytes((u8*)aHdr, sizeof(u32)*LOGSUMMARY_HDR_NFIELD, aCksum);
-  if( aCksum[0]!=aHdr[LOGSUMMARY_HDR_NFIELD]
-   || aCksum[1]!=aHdr[LOGSUMMARY_HDR_NFIELD+1]
+  memcpy(aHdr, pWal->pWiData, sizeof(aHdr));
+  walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);
+  if( aCksum[0]!=aHdr[WALINDEX_HDR_NFIELD]
+   || aCksum[1]!=aHdr[WALINDEX_HDR_NFIELD+1]
   ){
     return SQLITE_ERROR;
   }
 
-  if( memcmp(&pLog->hdr, aHdr, sizeof(LogSummaryHdr)) ){
+  if( memcmp(&pWal->hdr, aHdr, sizeof(WalIndexHdr)) ){
     if( pChanged ){
       *pChanged = 1;
     }
-    memcpy(&pLog->hdr, aHdr, sizeof(LogSummaryHdr));
+    memcpy(&pWal->hdr, aHdr, sizeof(WalIndexHdr));
   }
   return SQLITE_OK;
 }
 
 /*
-** Read the log-summary header from the log-summary file into structure 
-** pLog->hdr. If attempting to verify the header checksum fails, try
+** Read the wal-index header from the wal-index file into structure 
+** pWal->hdr. If attempting to verify the header checksum fails, try
 ** to recover the log before returning.
 **
-** If the log-summary header is successfully read, return SQLITE_OK. 
+** If the wal-index header is successfully read, return SQLITE_OK. 
 ** Otherwise an SQLite error code.
 */
-int logSummaryReadHdr(Log *pLog, int *pChanged){
+static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;
+
+  assert( pWal->lockState==SQLITE_SHM_READ );
+  walIndexMap(pWal);
 
   /* First try to read the header without a lock. Verify the checksum
   ** before returning. This will almost always work.  
-  **
-  ** TODO: Doing this causes a race-condition with the code that resizes
-  ** the mapping. Unless Log.pSummary->mutex is held, it is possible that 
-  ** LogSummary.aData is invalid.
   */
-#if 0
-  if( SQLITE_OK==logSummaryTryHdr(pLog, pChanged) ){
+  if( SQLITE_OK==walIndexTryHdr(pWal, pChanged) ){
     return SQLITE_OK;
   }
-#endif
 
-  /* If the first attempt to read the header failed, lock the log-summary
+  /* If the first attempt to read the header failed, lock the wal-index
   ** file and try again. If the header checksum verification fails this
   ** time as well, run log recovery.
   */
-  if( SQLITE_OK==(rc = logEnterMutex(pLog)) ){
-    if( SQLITE_OK!=logSummaryTryHdr(pLog, pChanged) ){
+  if( SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) ){
+    if( SQLITE_OK!=walIndexTryHdr(pWal, pChanged) ){
       if( pChanged ){
         *pChanged = 1;
       }
-      rc = logSummaryRecover(pLog->pSummary, pLog->pFd);
+      rc = walIndexRecover(pWal);
       if( rc==SQLITE_OK ){
-        rc = logSummaryTryHdr(pLog, 0);
+        rc = walIndexTryHdr(pWal, 0);
       }
     }
-    logLeaveMutex(pLog);
+    walSetLock(pWal, SQLITE_SHM_READ);
   }
 
   return rc;
@@ -1473,57 +855,29 @@ int logSummaryReadHdr(Log *pLog, int *pChanged){
 ** Lock a snapshot.
 **
 ** If this call obtains a new read-lock and the database contents have been
-** modified since the most recent call to LogCloseSnapshot() on this Log
+** modified since the most recent call to WalCloseSnapshot() on this Wal
 ** connection, then *pChanged is set to 1 before returning. Otherwise, it 
 ** is left unmodified. This is used by the pager layer to determine whether 
 ** or not any cached pages may be safely reused.
 */
-int sqlite3WalOpenSnapshot(Log *pLog, int *pChanged){
-  int rc = SQLITE_OK;
-  if( pLog->isLocked==0 ){
-    int nAttempt;
+int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
+  int rc;
 
-    /* Obtain a snapshot-lock on the log-summary file. The procedure
-    ** for obtaining the snapshot log is:
-    **
-    **    1. Attempt a SHARED lock on regions A and B.
-    **    2a. If step 1 is successful, drop the lock on region B.
-    **    2b. If step 1 is unsuccessful, attempt a SHARED lock on region D.
-    **    3. Repeat the above until the lock attempt in step 1 or 2b is 
-    **       successful.
-    **
-    ** If neither of the locks can be obtained after 5 tries, presumably
-    ** something is wrong (i.e. a process not following the locking protocol). 
-    ** Return an error code in this case.
-    */
-    rc = SQLITE_BUSY;
-    for(nAttempt=0; nAttempt<5 && rc==SQLITE_BUSY; nAttempt++){
-      rc = logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B, LOG_RDLOCK);
-      if( rc==SQLITE_BUSY ){
-        rc = logLockRegion(pLog, LOG_REGION_D, LOG_RDLOCK);
-        if( rc==SQLITE_OK ) pLog->isLocked = LOG_REGION_D;
-      }else{
-        logLockRegion(pLog, LOG_REGION_B, LOG_UNLOCK);
-        pLog->isLocked = LOG_REGION_A;
-      }
-    }
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
+  rc = walSetLock(pWal, SQLITE_SHM_READ);
+  if( rc==SQLITE_OK ){
+    pWal->lockState = SQLITE_SHM_READ;
 
-    rc = logSummaryReadHdr(pLog, pChanged);
+    rc = walIndexReadHdr(pWal, pChanged);
     if( rc!=SQLITE_OK ){
       /* An error occured while attempting log recovery. */
-      sqlite3WalCloseSnapshot(pLog);
+      sqlite3WalCloseSnapshot(pWal);
     }else{
       /* Check if the mapping needs to grow. */
-      LogSummary *pSummary = pLog->pSummary;
-
-      if( pLog->hdr.iLastPg 
-       && logSummaryEntry(pLog->hdr.iLastPg)>=pSummary->nData 
-      ){
-        rc = logSummaryRemap(pSummary, 0);
-        assert( rc || logSummaryEntry(pLog->hdr.iLastPg)<pSummary->nData );
+     if( pWal->hdr.iLastPg 
+      && walIndexEntry(pWal->hdr.iLastPg)>=pWal->szWIndex
+     ){
+        rc = walIndexRemap(pWal, 0);
+        assert( rc || walIndexEntry(pWal->hdr.iLastPg)<pWal->szWIndex );
       }
     }
   }
@@ -1533,41 +887,39 @@ int sqlite3WalOpenSnapshot(Log *pLog, int *pChanged){
 /*
 ** Unlock the current snapshot.
 */
-void sqlite3WalCloseSnapshot(Log *pLog){
-  if( pLog->isLocked ){
-    assert( pLog->isLocked==LOG_REGION_A || pLog->isLocked==LOG_REGION_D );
-    logLockRegion(pLog, pLog->isLocked, LOG_UNLOCK);
+void sqlite3WalCloseSnapshot(Wal *pWal){
+  if( pWal->lockState!=SQLITE_SHM_UNLOCK ){
+    assert( pWal->lockState==SQLITE_SHM_READ );
+    walSetLock(pWal, SQLITE_SHM_UNLOCK);
   }
-  pLog->isLocked = 0;
 }
 
 /*
 ** Read a page from the log, if it is present. 
 */
-int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
-  LogSummary *pSummary = pLog->pSummary;
+int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut){
   u32 iRead = 0;
   u32 *aData; 
-  int iFrame = (pLog->hdr.iLastPg & 0xFFFFFF00);
+  int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
 
-  assert( pLog->isLocked );
-  sqlite3_mutex_enter(pSummary->mutex);
+  assert( pWal->lockState==SQLITE_SHM_READ );
+  walIndexMap(pWal);
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
-  ** at the end of the log-summary. An alternative to this would be to
+  ** at the end of the wal-index. An alternative to this would be to
   ** build an index in private memory each time a read transaction is
   ** opened on a new snapshot.
   */
-  aData = pSummary->aData;
-  if( pLog->hdr.iLastPg ){
-    u32 *pi = &aData[logSummaryEntry(pLog->hdr.iLastPg)];
-    u32 *piStop = pi - (pLog->hdr.iLastPg & 0xFF);
+  aData = pWal->pWiData;
+  if( pWal->hdr.iLastPg ){
+    u32 *pi = &aData[walIndexEntry(pWal->hdr.iLastPg)];
+    u32 *piStop = pi - (pWal->hdr.iLastPg & 0xFF);
     while( *pi!=pgno && pi!=piStop ) pi--;
     if( pi!=piStop ){
       iRead = (pi-piStop) + iFrame;
     }
   }
-  assert( iRead==0 || aData[logSummaryEntry(iRead)]==pgno );
+  assert( iRead==0 || aData[walIndexEntry(iRead)]==pgno );
 
   while( iRead==0 && iFrame>0 ){
     int iLow = 0;
@@ -1576,7 +928,7 @@ int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
     u8 *aIndex;
 
     iFrame -= 256;
-    aFrame = &aData[logSummaryEntry(iFrame+1)];
+    aFrame = &aData[walIndexEntry(iFrame+1)];
     aIndex = (u8 *)&aFrame[256];
 
     while( iLow<=iHigh ){
@@ -1594,20 +946,19 @@ int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
       }
     }
   }
-  assert( iRead==0 || aData[logSummaryEntry(iRead)]==pgno );
-
-  sqlite3_mutex_leave(pLog->pSummary->mutex);
+  assert( iRead==0 || aData[walIndexEntry(iRead)]==pgno );
+  walIndexUnmap(pWal);
 
   /* If iRead is non-zero, then it is the log frame number that contains the
   ** required page. Read and return data from the log file.
   */
   if( iRead ){
-    i64 iOffset = logFrameOffset(iRead, pLog->hdr.pgsz) + LOG_FRAME_HDRSIZE;
-    *pInLog = 1;
-    return sqlite3OsRead(pLog->pFd, pOut, pLog->hdr.pgsz, iOffset);
+    i64 iOffset = walFrameOffset(iRead, pWal->hdr.pgsz) + WAL_FRAME_HDRSIZE;
+    *pInWal = 1;
+    return sqlite3OsRead(pWal->pFd, pOut, pWal->hdr.pgsz, iOffset);
   }
 
-  *pInLog = 0;
+  *pInWal = 0;
   return SQLITE_OK;
 }
 
@@ -1615,9 +966,10 @@ int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut){
 /* 
 ** Set *pPgno to the size of the database file (or zero, if unknown).
 */
-void sqlite3WalDbsize(Log *pLog, Pgno *pPgno){
-  assert( pLog->isLocked );
-  *pPgno = pLog->hdr.nPage;
+void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
+  assert( pWal->lockState==SQLITE_SHM_READ
+       || pWal->lockState==SQLITE_SHM_WRITE );
+  *pPgno = pWal->hdr.nPage;
 }
 
 /* 
@@ -1625,54 +977,19 @@ void sqlite3WalDbsize(Log *pLog, Pgno *pPgno){
 ** Otherwise, if the caller is operating on a snapshot that has already
 ** been overwritten by another writer, SQLITE_BUSY is returned.
 */
-int sqlite3WalWriteLock(Log *pLog, int op){
-  assert( pLog->isLocked );
+int sqlite3WalWriteLock(Wal *pWal, int op){
+  int rc;
   if( op ){
-
-    /* Obtain the writer lock */
-    int rc = logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_WRLOCK);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
-
-    /* If this is connection is a region D reader, then the SHARED lock on 
-    ** region D has just been upgraded to EXCLUSIVE. But no lock at all is 
-    ** held on region A. This means that if the write-transaction is committed
-    ** and this connection downgrades to a reader, it will be left with no
-    ** lock at all. And so its snapshot could get clobbered by a checkpoint
-    ** operation. 
-    **
-    ** To stop this from happening, grab a SHARED lock on region A now.
-    ** This should always be successful, as the only time a client holds
-    ** an EXCLUSIVE lock on region A, it must also be holding an EXCLUSIVE
-    ** lock on region C (a checkpointer does this). This is not possible,
-    ** as this connection currently has the EXCLUSIVE lock on region C.
-    */
-    if( pLog->isLocked==LOG_REGION_D ){
-      logLockRegion(pLog, LOG_REGION_A, LOG_RDLOCK);
-      pLog->isLocked = LOG_REGION_A;
-    }
-
-    /* If this connection is not reading the most recent database snapshot,
-    ** it is not possible to write to the database. In this case release
-    ** the write locks and return SQLITE_BUSY.
-    */
-    if( memcmp(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr)) ){
-      logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_UNLOCK);
-      return SQLITE_BUSY;
-    }
-    pLog->isWriteLocked = 1;
-
-  }else if( pLog->isWriteLocked ){
-    logLockRegion(pLog, LOG_REGION_C|LOG_REGION_D, LOG_UNLOCK);
-    memcpy(&pLog->hdr, pLog->pSummary->aData, sizeof(pLog->hdr));
-    pLog->isWriteLocked = 0;
+    assert( pWal->lockState == SQLITE_SHM_READ );
+    rc = walSetLock(pWal, SQLITE_SHM_WRITE);
+  }else if( pWal->lockState==SQLITE_SHM_WRITE ){
+    rc = walSetLock(pWal, SQLITE_SHM_READ);
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 /*
-** The log handle passed to this function must be holding the write-lock.
+** The Wal object passed to this function must be holding the write-lock.
 **
 ** If any data has been written (but not committed) to the log file, this
 ** function moves the write-pointer back to the start of the transaction.
@@ -1685,35 +1002,42 @@ int sqlite3WalWriteLock(Log *pLog, int op){
 ** Otherwise, if the callback function does not return an error, this
 ** function returns SQLITE_OK.
 */
-int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
-  Pgno iMax = pLog->hdr.iLastPg;
+  Pgno iMax = pWal->hdr.iLastPg;
   Pgno iFrame;
 
-  assert( pLog->isWriteLocked );
-  logSummaryReadHdr(pLog, 0);
-  for(iFrame=pLog->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
-    rc = xUndo(pUndoCtx, pLog->pSummary->aData[logSummaryEntry(iFrame)]);
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
+  walIndexReadHdr(pWal, 0);
+  for(iFrame=pWal->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
+    rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
   }
+  walIndexUnmap(pWal);
   return rc;
 }
 
-u32 sqlite3WalSavepoint(Log *pLog){
-  assert( pLog->isWriteLocked );
-  return pLog->hdr.iLastPg;
+/* Return an integer that records the current (uncommitted) write
+** position in the WAL
+*/
+u32 sqlite3WalSavepoint(Wal *pWal){
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
+  return pWal->hdr.iLastPg;
 }
 
-int sqlite3WalSavepointUndo(Log *pLog, u32 iFrame){
+/* Move the write position of the WAL back to iFrame.  Called in
+** response to a ROLLBACK TO command.
+*/
+int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   int rc = SQLITE_OK;
   u8 aCksum[8];
-  assert( pLog->isWriteLocked );
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
 
-  pLog->hdr.iLastPg = iFrame;
+  pWal->hdr.iLastPg = iFrame;
   if( iFrame>0 ){
-    i64 iOffset = logFrameOffset(iFrame, pLog->hdr.pgsz) + sizeof(u32)*2;
-    rc = sqlite3OsRead(pLog->pFd, aCksum, sizeof(aCksum), iOffset);
-    pLog->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
-    pLog->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
+    i64 iOffset = walFrameOffset(iFrame, pWal->hdr.pgsz) + sizeof(u32)*2;
+    rc = sqlite3OsRead(pWal->pFd, aCksum, sizeof(aCksum), iOffset);
+    pWal->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
+    pWal->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
   }
 
   return rc;
@@ -1722,9 +1046,9 @@ int sqlite3WalSavepointUndo(Log *pLog, u32 iFrame){
 /* 
 ** Return true if data has been written but not committed to the log file. 
 */
-int sqlite3WalDirty(Log *pLog){
-  assert( pLog->isWriteLocked );
-  return( pLog->hdr.iLastPg!=((LogSummaryHdr*)pLog->pSummary->aData)->iLastPg );
+int sqlite3WalDirty(Wal *pWal){
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
+  return( pWal->hdr.iLastPg!=((WalIndexHdr*)pWal->pWiData)->iLastPg );
 }
 
 /* 
@@ -1732,7 +1056,7 @@ int sqlite3WalDirty(Log *pLog){
 ** on the log file (obtained using sqlite3WalWriteLock()).
 */
 int sqlite3WalFrames(
-  Log *pLog,                      /* Log handle to write to */
+  Wal *pWal,                      /* Wal handle to write to */
   int nPgsz,                      /* Database page-size in bytes */
   PgHdr *pList,                   /* List of dirty pages to write */
   Pgno nTruncate,                 /* Database size after this commit */
@@ -1741,52 +1065,53 @@ int sqlite3WalFrames(
 ){
   int rc;                         /* Used to catch return codes */
   u32 iFrame;                     /* Next frame address */
-  u8 aFrame[LOG_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
+  u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
   PgHdr *p;                       /* Iterator to run through pList with. */
   u32 aCksum[2];                  /* Checksums */
   PgHdr *pLast;                   /* Last frame in list */
   int nLast = 0;                  /* Number of extra copies of last page */
 
-  assert( LOG_FRAME_HDRSIZE==(4 * 2 + 2*sizeof(u32)) );
+  assert( WAL_FRAME_HDRSIZE==(4 * 2 + 2*sizeof(u32)) );
   assert( pList );
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
 
   /* If this is the first frame written into the log, write the log 
   ** header to the start of the log file. See comments at the top of
   ** this file for a description of the log-header format.
   */
-  assert( LOG_FRAME_HDRSIZE>=LOG_HDRSIZE );
-  iFrame = pLog->hdr.iLastPg;
+  assert( WAL_FRAME_HDRSIZE>=WAL_HDRSIZE );
+  iFrame = pWal->hdr.iLastPg;
   if( iFrame==0 ){
     sqlite3Put4byte(aFrame, nPgsz);
     sqlite3_randomness(8, &aFrame[4]);
-    pLog->hdr.iCheck1 = sqlite3Get4byte(&aFrame[4]);
-    pLog->hdr.iCheck2 = sqlite3Get4byte(&aFrame[8]);
-    rc = sqlite3OsWrite(pLog->pFd, aFrame, LOG_HDRSIZE, 0);
+    pWal->hdr.iCheck1 = sqlite3Get4byte(&aFrame[4]);
+    pWal->hdr.iCheck2 = sqlite3Get4byte(&aFrame[8]);
+    rc = sqlite3OsWrite(pWal->pFd, aFrame, WAL_HDRSIZE, 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
   }
 
-  aCksum[0] = pLog->hdr.iCheck1;
-  aCksum[1] = pLog->hdr.iCheck2;
+  aCksum[0] = pWal->hdr.iCheck1;
+  aCksum[1] = pWal->hdr.iCheck2;
 
   /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
 
-    iOffset = logFrameOffset(++iFrame, nPgsz);
+    iOffset = walFrameOffset(++iFrame, nPgsz);
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
-    logEncodeFrame(aCksum, p->pgno, nDbsize, nPgsz, p->pData, aFrame);
-    rc = sqlite3OsWrite(pLog->pFd, aFrame, sizeof(aFrame), iOffset);
+    walEncodeFrame(aCksum, p->pgno, nDbsize, nPgsz, p->pData, aFrame);
+    rc = sqlite3OsWrite(pWal->pFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pLog->pFd, p->pData, nPgsz, iOffset + sizeof(aFrame));
+    rc = sqlite3OsWrite(pWal->pFd, p->pData, nPgsz, iOffset + sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1795,8 +1120,8 @@ int sqlite3WalFrames(
 
   /* Sync the log file if the 'isSync' flag was specified. */
   if( sync_flags ){
-    i64 iSegment = sqlite3OsSectorSize(pLog->pFd);
-    i64 iOffset = logFrameOffset(iFrame+1, nPgsz);
+    i64 iSegment = sqlite3OsSectorSize(pWal->pFd);
+    i64 iOffset = walFrameOffset(iFrame+1, nPgsz);
 
     assert( isCommit );
 
@@ -1805,14 +1130,14 @@ int sqlite3WalFrames(
     }
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
-      logEncodeFrame(aCksum,pLast->pgno,nTruncate,nPgsz,pLast->pData,aFrame);
-      rc = sqlite3OsWrite(pLog->pFd, aFrame, sizeof(aFrame), iOffset);
+      walEncodeFrame(aCksum,pLast->pgno,nTruncate,nPgsz,pLast->pData,aFrame);
+      rc = sqlite3OsWrite(pWal->pFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
 
-      iOffset += LOG_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pLog->pFd, pLast->pData, nPgsz, iOffset); 
+      iOffset += WAL_FRAME_HDRSIZE;
+      rc = sqlite3OsWrite(pWal->pFd, pLast->pData, nPgsz, iOffset); 
       if( rc!=SQLITE_OK ){
         return rc;
       }
@@ -1820,44 +1145,44 @@ int sqlite3WalFrames(
       iOffset += nPgsz;
     }
 
-    rc = sqlite3OsSync(pLog->pFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pFd, sync_flags);
     if( rc!=SQLITE_OK ){
       return rc;
     }
   }
 
   /* Append data to the log summary. It is not necessary to lock the 
-  ** log-summary to do this as the RESERVED lock held on the db file
+  ** wal-index to do this as the RESERVED lock held on the db file
   ** guarantees that there are no other writers, and no data that may
   ** be in use by existing readers is being overwritten.
   */
-  iFrame = pLog->hdr.iLastPg;
+  iFrame = pWal->hdr.iLastPg;
   for(p=pList; p; p=p->pDirty){
     iFrame++;
-    logSummaryAppend(pLog->pSummary, iFrame, p->pgno);
+    walIndexAppend(pWal, iFrame, p->pgno);
   }
   while( nLast>0 ){
     iFrame++;
     nLast--;
-    logSummaryAppend(pLog->pSummary, iFrame, pLast->pgno);
+    walIndexAppend(pWal, iFrame, pLast->pgno);
   }
 
   /* Update the private copy of the header. */
-  pLog->hdr.pgsz = nPgsz;
-  pLog->hdr.iLastPg = iFrame;
+  pWal->hdr.pgsz = nPgsz;
+  pWal->hdr.iLastPg = iFrame;
   if( isCommit ){
-    pLog->hdr.iChange++;
-    pLog->hdr.nPage = nTruncate;
+    pWal->hdr.iChange++;
+    pWal->hdr.nPage = nTruncate;
   }
-  pLog->hdr.iCheck1 = aCksum[0];
-  pLog->hdr.iCheck2 = aCksum[1];
+  pWal->hdr.iCheck1 = aCksum[0];
+  pWal->hdr.iCheck2 = aCksum[1];
 
-  /* If this is a commit, update the log-summary header too. */
-  if( isCommit && SQLITE_OK==(rc = logEnterMutex(pLog)) ){
-    logSummaryWriteHdr(pLog->pSummary, &pLog->hdr);
-    logLeaveMutex(pLog);
-    pLog->iCallback = iFrame;
+  /* If this is a commit, update the wal-index header too. */
+  if( isCommit ){
+    walIndexWriteHdr(pWal, &pWal->hdr);
+    pWal->iCallback = iFrame;
   }
+  walIndexUnmap(pWal);
 
   return rc;
 }
@@ -1865,14 +1190,13 @@ int sqlite3WalFrames(
 /* 
 ** Checkpoint the database:
 **
-**   1. Wait for an EXCLUSIVE lock on regions B and C.
-**   2. Wait for an EXCLUSIVE lock on region A.
-**   3. Copy the contents of the log into the database file.
-**   4. Zero the log-summary header (so new readers will ignore the log).
-**   5. Drop the locks obtained in steps 1 and 2.
+**   1. Acquire a CHECKPOINT lock
+**   2. Copy the contents of the log into the database file.
+**   3. Zero the wal-index header (so new readers will ignore the log).
+**   4. Drop the CHECKPOINT lock.
 */
 int sqlite3WalCheckpoint(
-  Log *pLog,                      /* Log connection */
+  Wal *pWal,                      /* Wal connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   u8 *zBuf,                       /* Temporary buffer to use */
@@ -1882,48 +1206,47 @@ int sqlite3WalCheckpoint(
   int rc;                         /* Return code */
   int isChanged = 0;              /* True if a new wal-index header is loaded */
 
-  assert( !pLog->isLocked );
+  assert( pWal->lockState==SQLITE_SHM_UNLOCK );
 
-  /* Wait for an EXCLUSIVE lock on regions B and C. */
+  /* Get the CHECKPOINT lock */
   do {
-    rc = logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_WRLOCK);
-  }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
-  if( rc!=SQLITE_OK ) return rc;
-
-  /* Wait for an EXCLUSIVE lock on region A. */
-  do {
-    rc = logLockRegion(pLog, LOG_REGION_A, LOG_WRLOCK);
+    rc = walSetLock(pWal, SQLITE_SHM_CHECKPOINT);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
   if( rc!=SQLITE_OK ){
-    logLockRegion(pLog, LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
+    walSetLock(pWal, SQLITE_SHM_UNLOCK);
     return rc;
   }
 
   /* Copy data from the log to the database file. */
-  rc = logSummaryReadHdr(pLog, &isChanged);
+  rc = walIndexReadHdr(pWal, &isChanged);
   if( rc==SQLITE_OK ){
-    rc = logCheckpoint(pLog, pFd, sync_flags, zBuf);
+    rc = walCheckpoint(pWal, pFd, sync_flags, zBuf);
   }
   if( isChanged ){
     /* If a new wal-index header was loaded before the checkpoint was 
-    ** performed, then the pager-cache associated with log pLog is now
+    ** performed, then the pager-cache associated with log pWal is now
     ** out of date. So zero the cached wal-index header to ensure that
     ** next time the pager opens a snapshot on this database it knows that
     ** the cache needs to be reset.
     */
-    memset(&pLog->hdr, 0, sizeof(LogSummaryHdr));
+    memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
   }
 
   /* Release the locks. */
-  logLockRegion(pLog, LOG_REGION_A|LOG_REGION_B|LOG_REGION_C, LOG_UNLOCK);
+  walSetLock(pWal, SQLITE_SHM_UNLOCK);
   return rc;
 }
 
-int sqlite3WalCallback(Log *pLog){
+/* Return the value to pass to a sqlite3_wal_hook callback, the
+** number of frames in the WAL at the point of the last commit since
+** sqlite3WalCallback() was called.  If no commits have occurred since
+** the last call, then return 0.
+*/
+int sqlite3WalCallback(Wal *pWal){
   u32 ret = 0;
-  if( pLog ){
-    ret = pLog->iCallback;
-    pLog->iCallback = 0;
+  if( pWal ){
+    ret = pWal->iCallback;
+    pWal->iCallback = 0;
   }
   return (int)ret;
 }

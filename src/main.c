@@ -1197,9 +1197,9 @@ void *sqlite3_wal_hook(
 ){
   void *pRet;
   sqlite3_mutex_enter(db->mutex);
-  pRet = db->pLogArg;
-  db->xLogCallback = xCallback;
-  db->pLogArg = pArg;
+  pRet = db->pWalArg;
+  db->xWalCallback = xCallback;
+  db->pWalArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 }

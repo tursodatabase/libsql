@@ -2278,7 +2278,7 @@ static int lockBtree(BtShared *pBt){
     */
     if( page1[19]==2 && pBt->doNotUseWAL==0 ){
       int isOpen = 0;
-      rc = sqlite3PagerOpenLog(pBt->pPager, &isOpen);
+      rc = sqlite3PagerOpenWal(pBt->pPager, &isOpen);
       if( rc!=SQLITE_OK ){
         goto page1_init_failed;
       }else if( isOpen==0 ){

@@ -5049,6 +5049,7 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
   unixShm **pp;          /* For looping over sibling connections */
   int nRef;              /* Number of connections to pFile */
 
+  if( pSharedMem==0 ) return SQLITE_OK;
   p = (struct unixShm*)pSharedMem;
   pFile = p->pFile;
 
@@ -5092,7 +5093,7 @@ static int unixShmSize(
   sqlite3_shm *pSharedMem,  /* Pointer returned by unixShmOpen() */
   int reqSize,              /* Requested size.  -1 for query only */
   int *pNewSize,            /* Write new size here */
-  char **ppBuf              /* Write new buffer origin here */
+  void **ppBuf              /* Write new buffer origin here */
 ){
   unixShm *p = (unixShm*)pSharedMem;
   unixShmFile *pFile = p->pFile;
@@ -5165,7 +5166,7 @@ static int unixShmLock(
    || desiredLock==p->lockState
    || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
   ){
-    *pGotLock = p->lockState;
+    if( pGotLock ) *pGotLock = p->lockState;
     return SQLITE_OK;
   }
 
@@ -5257,7 +5258,7 @@ static int unixShmLock(
     }
   }
   sqlite3_mutex_leave(pFile->mutex);
-  *pGotLock = p->lockState;
+  if( pGotLock ) *pGotLock = p->lockState;
   return rc;
 }
 

@@ -22,11 +22,11 @@
 /* Connection to a write-ahead log (WAL) file. 
 ** There is one object of this type for each pager. 
 */
-typedef struct Log Log;
+typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, const char *zDb, Log **ppLog);
-int sqlite3WalClose(Log *pLog, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
+int sqlite3WalOpen(sqlite3_vfs*, const char *zDb, Wal **ppWal);
+int sqlite3WalClose(Wal *pWal, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
 ** snapshot is like a read-transaction.  It is the state of the database
@@ -35,39 +35,39 @@ int sqlite3WalClose(Log *pLog, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
 ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
 ** transaction and releases the lock.
 */
-int sqlite3WalOpenSnapshot(Log *pLog, int *);
-void sqlite3WalCloseSnapshot(Log *pLog);
+int sqlite3WalOpenSnapshot(Wal *pWal, int *);
+void sqlite3WalCloseSnapshot(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
-int sqlite3WalRead(Log *pLog, Pgno pgno, int *pInLog, u8 *pOut);
+int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut);
 
 /* Return the size of the database as it existed at the beginning
 ** of the snapshot */
-void sqlite3WalDbsize(Log *pLog, Pgno *pPgno);
+void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno);
 
 /* Obtain or release the WRITER lock. */
-int sqlite3WalWriteLock(Log *pLog, int op);
+int sqlite3WalWriteLock(Wal *pWal, int op);
 
 /* Undo any frames written (but not committed) to the log */
-int sqlite3WalUndo(Log *pLog, int (*xUndo)(void *, Pgno), void *pUndoCtx);
+int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx);
 
 /* Return an integer that records the current (uncommitted) write
 ** position in the WAL */
-u32 sqlite3WalSavepoint(Log *pLog);
+u32 sqlite3WalSavepoint(Wal *pWal);
 
 /* Move the write position of the WAL back to iFrame.  Called in
 ** response to a ROLLBACK TO command. */
-int sqlite3WalSavepointUndo(Log *pLog, u32 iFrame);
+int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame);
 
 /* Return true if data has been written but not committed to the log file. */
-int sqlite3WalDirty(Log *pLog);
+int sqlite3WalDirty(Wal *pWal);
 
 /* Write a frame or frames to the log. */
-int sqlite3WalFrames(Log *pLog, int, PgHdr *, Pgno, int, int);
+int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 
 /* Copy pages from the log to the database file */ 
 int sqlite3WalCheckpoint(
-  Log *pLog,                      /* Log connection */
+  Wal *pWal,                      /* Write-ahead log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   u8 *zBuf,                       /* Temporary buffer to use */
@@ -80,6 +80,6 @@ int sqlite3WalCheckpoint(
 ** sqlite3WalCallback() was called.  If no commits have occurred since
 ** the last call, then return 0.
 */
-int sqlite3WalCallback(Log *pLog);
+int sqlite3WalCallback(Wal *pWal);
 
 #endif /* _WAL_H_ */
