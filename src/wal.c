@@ -1880,6 +1880,7 @@ int sqlite3WalCheckpoint(
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
 ){
   int rc;                         /* Return code */
+  int isChanged = 0;              /* True if a new wal-index header is loaded */
 
   assert( !pLog->isLocked );
 
@@ -1899,9 +1900,18 @@ int sqlite3WalCheckpoint(
   }
 
   /* Copy data from the log to the database file. */
-  rc = logSummaryReadHdr(pLog, 0);
+  rc = logSummaryReadHdr(pLog, &isChanged);
   if( rc==SQLITE_OK ){
     rc = logCheckpoint(pLog, pFd, sync_flags, zBuf);
+  }
+  if( isChanged ){
+    /* If a new wal-index header was loaded before the checkpoint was 
+    ** performed, then the pager-cache associated with log pLog is now
+    ** out of date. So zero the cached wal-index header to ensure that
+    ** next time the pager opens a snapshot on this database it knows that
+    ** the cache needs to be reset.
+    */
+    memset(&pLog->hdr, 0, sizeof(LogSummaryHdr));
   }
 
   /* Release the locks. */

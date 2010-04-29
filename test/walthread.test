@@ -24,9 +24,10 @@ set sqlite_walsummary_mmap_incr 64
 # How long, in seconds, to run each test for. If a test is set to run for
 # 0 seconds, it is omitted entirely.
 #
-set seconds(walthread-1)  0
-set seconds(walthread-2)  0
+set seconds(walthread-1) 20
+set seconds(walthread-2) 20
 set seconds(walthread-3) 20
+set seconds(walthread-4) 20
 
 # The parameter is the name of a variable in the callers context. The
 # variable may or may not exist when this command is invoked.
@@ -373,7 +374,7 @@ do_thread_test2 walthread-2 -seconds $seconds(walthread-2) -init {
   set {} "[expr $nRun-$nDel] w, $nDel r"
 }
 
-do_thread_test2 walthread-3 -seconds $seconds(walthread-3) -init {
+do_thread_test walthread-3 -seconds $seconds(walthread-3) -init {
   execsql {
     PRAGMA journal_mode = WAL;
     CREATE TABLE t1(cnt PRIMARY KEY, sum1, sum2);
@@ -423,6 +424,34 @@ do_thread_test2 walthread-3 -seconds $seconds(walthread-3) -init {
     incr s1 $c
     incr c 1
   }
+}
+
+do_thread_test2 walthread-4 -seconds $seconds(walthread-4) -init {
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b UNIQUE);
+  }
+} -thread r 1 {
+  # This connection only ever reads the database. Therefore the 
+  # busy-handler is not required. Disable it to check that this is true.
+  db busy {}
+  while {[tt_continue]} integrity_check
+  set {} ok
+} -thread w 1 {
+
+  proc wal_hook {zDb nEntry} {
+    if {$nEntry>15} { return 1 }
+    return 0
+  }
+  db wal_hook wal_hook
+  set row 1
+  while {[tt_continue]} {
+    db eval { REPLACE INTO t1 VALUES($row, randomblob(300)) }
+    incr row
+    if {$row == 10} { set row 1 }
+  }
+
+  set {} ok
 }
 
 finish_test
