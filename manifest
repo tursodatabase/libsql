@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Progress\stowards\sa\sVFS\sthat\swill\ssupport\sWAL.\s\sLocking\scode\sis\sin\splace\nbut\sis\suntested.\s\sStill\sno\ssupport\sfor\sthe\sDMS.
-D 2010-04-29T15:17:48
+C Untested\simplementation\sof\sthe\sshared-memory\sdead-man-switch.
+D 2010-04-29T16:40:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 340c503705cdb447753a55771911a92aa41d27c8
+F src/os_unix.c f0e002e74108c8a3f70c63dd91419ab6bcafd095
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c b4a41030860229e80295fa1f37addab24d21799c
 F src/pager.h cee4487ab4f0911dd9f22a40e3cd55afdb7ef444
@@ -811,14 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3cc55a7568daa3796483f632e33478969e381cf5
-R 1f2ad602233779dda1e35a2877201d1f
+P 1bde41cf081570ad257f927b641e752dff4ed014
+R a7ee89d9d5eb7d4f4fd9d69824beab31
 U drh
-Z 5bb08c68390b552fdeb1ef93301ae98c
+Z 15bd57757c5a0ce16c3065e9d45dae67
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL2aMhoxKgR168RlERAntLAKCNwNXdF9LrZZqkEN8f3gsvrSxoXACaA2Ku
-SvIawhrGV2wraxrir5MNan8=
-=Vfpz
+iD4DBQFL2baVoxKgR168RlERArO2AJ9g8Vnb6XlVDltcg68idEyJzFPcYwCYh7Xs
+0Mdctk0jP1xbHiTJhHLX+A==
+=minX
 -----END PGP SIGNATURE-----

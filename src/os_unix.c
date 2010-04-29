@@ -4698,7 +4698,7 @@ static const char *unixShmLockString(u8 mask){
 ** Locks block if the UNIX_SHM_MUTEX bit is set and are non-blocking
 ** otherwise.
 */
-static int unixShmSystemLocks(
+static int unixShmSystemLock(
   unixShmFile *pFile,   /* Apply locks to this open shared-memory segment */
   int lockType,         /* F_UNLCK, F_RDLCK, or F_WRLCK */
   u8 lockMask           /* Which bytes to lock or unlock */
@@ -4708,6 +4708,9 @@ static int unixShmSystemLocks(
   int i;                /* Offset into the locking byte range */
   int rc;               /* Result code form fcntl() */
   u8 mask;              /* Mask of bits in lockMask */
+
+  /* Access to the unixShmFile object is serialized by the caller */
+  assert( sqlite3_mutex_held(pFile->mutex) );
 
   /* Initialize the locking parameters */
   memset(&f, 0, sizeof(f));
@@ -4787,6 +4790,9 @@ static int unixShmUnlock(
   unixShm *pX; /* For looping over all sibling connections */
   u8 allMask;  /* Union of locks held by connections other than "p" */
 
+  /* Access to the unixShmFile object is serialized by the caller */
+  assert( sqlite3_mutex_held(pFile->mutex) );
+
   /* We never try to unlock locks that we do not hold */
   assert( ((p->exclMask|p->sharedMask) & unlockMask)==unlockMask );
 
@@ -4799,7 +4805,7 @@ static int unixShmUnlock(
 
   /* Unlock the system-level locks */
   if( (unlockMask & allMask)!=unlockMask ){
-    rc = unixShmSystemLocks(pFile, F_UNLCK, unlockMask & ~allMask);
+    rc = unixShmSystemLock(pFile, F_UNLCK, unlockMask & ~allMask);
   }else{
     rc = SQLITE_OK;
   }
@@ -4824,6 +4830,9 @@ static int unixShmSharedLock(
   unixShm *pX;   /* For looping over all sibling connections */
   u8 allShared;  /* Union of locks held by connections other than "p" */
 
+  /* Access to the unixShmFile object is serialized by the caller */
+  assert( sqlite3_mutex_held(pFile->mutex) );
+
   /* Find out which shared locks are already held by sibling connections.
   ** If any sibling already holds an exclusive lock, go ahead and return
   ** SQLITE_BUSY.
@@ -4836,7 +4845,7 @@ static int unixShmSharedLock(
 
   /* Get shared locks at the system level, if necessary */
   if( (~allShared) & readMask ){
-    rc = unixShmSystemLocks(pFile, F_RDLCK, readMask);
+    rc = unixShmSystemLock(pFile, F_RDLCK, readMask);
   }else{
     rc = SQLITE_OK;
   }
@@ -4860,6 +4869,9 @@ static int unixShmExclusiveLock(
   int rc;        /* Result code */
   unixShm *pX;   /* For looping over all sibling connections */
 
+  /* Access to the unixShmFile object is serialized by the caller */
+  assert( sqlite3_mutex_held(pFile->mutex) );
+
   /* Make sure no sibling connections hold locks that will block this
   ** lock.  If any do, return SQLITE_BUSY right away.
   */
@@ -4872,7 +4884,7 @@ static int unixShmExclusiveLock(
   /* Get the exclusive locks at the system level.  Then if successful
   ** also mark the local connection as being locked.
   */
-  rc = unixShmSystemLocks(pFile, F_WRLCK, writeMask);
+  rc = unixShmSystemLock(pFile, F_WRLCK, writeMask);
   if( rc==SQLITE_OK ){
     p->sharedMask &= ~writeMask;
     p->exclMask |= writeMask;
@@ -4917,16 +4929,20 @@ static int unixShmOpen(
   const char *zName,    /* Name of file to mmap */
   sqlite3_shm **pShm    /* Write the unixShm object created here */
 ){
-  struct unixShm *p = 0;
-  struct unixShmFile *pFile = 0;
-  int rc;
-  struct unixFileId fid;
-  struct stat sStat;
+  struct unixShm *p = 0;             /* The connection to be opened */
+  struct unixShmFile *pFile = 0;     /* The underlying mmapped file */
+  int rc;                            /* Result code */
+  struct unixFileId fid;             /* Unix file identifier */
+  struct stat sStat;                 /* Result from stat() an fstat() */
 
+  /* Allocate space for the new sqlite3_shm object */
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
 
+  /* Look to see if there is an existing unixShmFile that can be used.
+  ** If no matching unixShmFile currently exists, create a new one.
+  */
   unixEnterMutex();
   rc = stat(zName, &sStat);
   if( rc==0 ){
@@ -4982,16 +4998,27 @@ static int unixShmOpen(
     pFile->fid.ino = sStat.st_ino;
     pFile->size = (int)sStat.st_size;
     pFile->size = (pFile->size/SQLITE_UNIX_SHM_INCR)*SQLITE_UNIX_SHM_INCR;
-    if( pFile->size==0 ){
-      pFile->size = SQLITE_UNIX_SHM_INCR;
-      rc = ftruncate(pFile->h, pFile->size);
-      if( rc ){
-        rc = SQLITE_FULL;
+
+    /* Check to see if another process is holding the dead-man switch.
+    ** If not, truncate the file to zero length. 
+    */
+    if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_MUTEX) ){
+      rc = SQLITE_IOERR_LOCK;
+      goto shm_open_err;
+    }
+    if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_DMS)==SQLITE_OK ){
+      if( ftruncate(pFile->h, 0) ){
+        rc = SQLITE_IOERR;
         goto shm_open_err;
       }
+      pFile->size = 0;
     }
+    rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
+    if( rc ) goto shm_open_err;
+    unixShmSystemLock(pFile, F_UNLCK, UNIX_SHM_MUTEX);
   }
 
+  /* Make the new connection a child of the unixShmFile */
   p->pFile = pFile;
   p->pNext = pFile->pFirst;
 #ifdef SQLITE_DEBUG
@@ -5003,6 +5030,7 @@ static int unixShmOpen(
   unixLeaveMutex();
   return SQLITE_OK;
 
+  /* Jump here on any error */
 shm_open_err:
   unixShmPurge();
   sqlite3_free(p);
