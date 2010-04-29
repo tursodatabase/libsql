@@ -21,11 +21,12 @@ if {[run_thread_tests]==0} { finish_test ; return }
 
 set sqlite_walsummary_mmap_incr 64
 
-# The number of threads to start. And the amount of time to run the test
-# for. Respectively.
+# How long, in seconds, to run each test for. If a test is set to run for
+# 0 seconds, it is omitted entirely.
 #
-set NTHREAD 10
-set SECONDS 5
+set seconds(walthread-1)  0
+set seconds(walthread-2)  0
+set seconds(walthread-3) 20
 
 # The parameter is the name of a variable in the callers context. The
 # variable may or may not exist when this command is invoked.
@@ -42,6 +43,13 @@ proc wait_for_var {varname} {
   uplevel [list set $varname]
 }
 
+# The argument is the name of a list variable in the callers context. The 
+# first element of the list is removed and returned. For example:
+#
+#   set L {a b c}
+#   set x [lshift L]
+#   assert { $x == "a" && $L == "b c" }
+#
 proc lshift {lvar} {
   upvar $lvar L
   set ret [lindex $L 0]
@@ -59,10 +67,9 @@ proc lshift {lvar} {
 #   -init      SCRIPT                 Script to run before test.
 #   -thread    NAME COUNT SCRIPT      Scripts to run in threads (or processes).
 #   -processes BOOLEAN                True to use processes instead of threads.
+#   -check     SCRIPT                 Script to run after test.
 #
 proc do_thread_test {args} {
-
-  #if {[string match walthread-2* [lindex $args 0]]==0} return
 
   set A $args
 
@@ -71,6 +78,10 @@ proc do_thread_test {args} {
   set P(init) ""
   set P(threads) [list]
   set P(processes) 0
+  set P(check) {
+    set ic [db eval "PRAGMA integrity_check"]
+    if {$ic != "ok"} { error $ic }
+  }
 
   unset -nocomplain ::done
 
@@ -89,6 +100,10 @@ proc do_thread_test {args} {
         set P(processes) [lshift A]
       }
 
+      -check {
+        set P(check) [lshift A]
+      }
+
       -thread {
         set name  [lshift A]
         set count [lshift A]
@@ -100,6 +115,11 @@ proc do_thread_test {args} {
         error "Unknown option: $a"
       }
     }
+  }
+
+  if {$P(seconds) == 0} {
+    puts "Skipping $P(testname)"
+    return
   }
 
   puts "Running $P(testname) for $P(seconds) seconds..."
@@ -117,23 +137,34 @@ proc do_thread_test {args} {
     set prg   [lindex $T 2]
 
     for {set i 1} {$i <= $count} {incr i} {
-      set program [string map [list %TEST% $prg %SECONDS% $P(seconds) %I% $i] {
+      set vars "
+        set E(pid) $i
+        set E(nthread) $count
+        set E(seconds) $P(seconds)
+      "
+      set program [string map [list %TEST% $prg %VARS% $vars] {
 
-        set tid %I%
+        %VARS%
 
         proc usleep {ms} {
           set ::usleep 0
           after $ms {set ::usleep 1}
           vwait ::usleep
         }
+
+        proc integrity_check {{db db}} {
+          set ic [$db eval {PRAGMA integrity_check}]
+          if {$ic != "ok"} {error $ic}
+        }
+
         proc busyhandler {n} { usleep 10 ; return 0 }
 
         sqlite3 db test.db
         db busy busyhandler
-        db eval { SELECT randomblob($tid*5) }
+        db eval { SELECT randomblob($E(pid)*5) }
 
         set ::finished 0
-        after [expr %SECONDS% * 1000] {set ::finished 1}
+        after [expr $E(seconds) * 1000] {set ::finished 1}
         proc tt_continue {} { update ; expr ($::finished==0) }
 
         set rc [catch { %TEST% } msg]
@@ -166,10 +197,28 @@ proc do_thread_test {args} {
     append report "   $name $reslist"
   }
   puts $report
+
+  sqlite3 db test.db
+  set res ""
+  if {[catch $P(check) msg]} { set res $msg }
+  do_test $P(testname).check [list set {} $res] ""
 }
 
+# A wrapper around [do_thread_test] which runs the specified test twice.
+# Once using processes, once using threads. This command takes the same
+# arguments as [do_thread_test], except specifying the -processes switch
+# is illegal.
+#
+proc do_thread_test2 {args} {
+  set name [lindex $args 0]
+  if {[lsearch $args -processes]>=0} { error "bad option: -processes"}
+  uplevel [lreplace $args 0 0 do_thread_test "$name-threads" -processes 0]
+  uplevel [lreplace $args 0 0 do_thread_test "$name-processes" -processes 1]
+}
+
+
 #--------------------------------------------------------------------------
-# Start NTHREAD threads. Each thread performs both read and write 
+# Start 10 threads. Each thread performs both read and write 
 # transactions. Each read transaction consists of:
 #
 #   1) Reading the md5sum of all but the last table row,
@@ -192,124 +241,187 @@ proc do_thread_test {args} {
 #   1) Execute "PRAGMA checkpoint"
 #   2) Sleep for 500 ms.
 #
-
-foreach {mode name} {
-      0 walthread-1-threads 
-      1 walthread-1-processes
-} {
-  do_thread_test $name -processes $mode -seconds $SECONDS -init {
-    execsql {
-      PRAGMA journal_mode = WAL;
-      CREATE TABLE t1(x PRIMARY KEY);
-      PRAGMA lock_status;
-      INSERT INTO t1 VALUES(randomblob(100));
-      INSERT INTO t1 VALUES(randomblob(100));
-      INSERT INTO t1 SELECT md5sum(x) FROM t1;
-    }
-  } -thread main $NTHREAD {
-  
-    proc read_transaction {} {
-      set results [db eval {
-        BEGIN;
-          PRAGMA integrity_check;
-          SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
-          SELECT x FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1);
-          SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
-        COMMIT;
-      }]
-  
-      if {[llength $results]!=4
-       || [lindex $results 0] != "ok"
-       || [lindex $results 1] != [lindex $results 2]
-       || [lindex $results 2] != [lindex $results 3]
-      } {
-        error "Failed read transaction: $results"
-      }
-    }
-  
-    proc write_transaction {} {
-      db eval {
-        BEGIN;
-          INSERT INTO t1 VALUES(randomblob(100));
-          INSERT INTO t1 VALUES(randomblob(100));
-          INSERT INTO t1 SELECT md5sum(x) FROM t1;
-        COMMIT;
-      }
-    }
-  
-    set nRun 0
-    while {[tt_continue]} {
-      read_transaction
-      write_transaction 
-      incr nRun
-    }
-    set nRun
-  
-  } -thread ckpt 1 {
-    set nRun 0
-    while {[tt_continue]} {
-      db eval "PRAGMA checkpoint"
-      usleep 500
-      incr nRun
-    }
-    set nRun
+do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(x PRIMARY KEY);
+    PRAGMA lock_status;
+    INSERT INTO t1 VALUES(randomblob(100));
+    INSERT INTO t1 VALUES(randomblob(100));
+    INSERT INTO t1 SELECT md5sum(x) FROM t1;
   }
+} -thread main 10 {
+
+  proc read_transaction {} {
+    set results [db eval {
+      BEGIN;
+        PRAGMA integrity_check;
+        SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
+        SELECT x FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1);
+        SELECT md5sum(x) FROM t1 WHERE rowid != (SELECT max(rowid) FROM t1);
+      COMMIT;
+    }]
+
+    if {[llength $results]!=4
+     || [lindex $results 0] != "ok"
+     || [lindex $results 1] != [lindex $results 2]
+     || [lindex $results 2] != [lindex $results 3]
+    } {
+      error "Failed read transaction: $results"
+    }
+  }
+
+  proc write_transaction {} {
+    db eval {
+      BEGIN;
+        INSERT INTO t1 VALUES(randomblob(100));
+        INSERT INTO t1 VALUES(randomblob(100));
+        INSERT INTO t1 SELECT md5sum(x) FROM t1;
+      COMMIT;
+    }
+  }
+
+  set nRun 0
+  while {[tt_continue]} {
+    read_transaction
+    write_transaction 
+    incr nRun
+  }
+  set nRun
+
+} -thread ckpt 1 {
+  set nRun 0
+  while {[tt_continue]} {
+    db eval "PRAGMA checkpoint"
+    usleep 500
+    incr nRun
+  }
+  set nRun
 }
 
 #--------------------------------------------------------------------------
+# This test has clients run the following procedure as fast as possible
+# in a loop:
 #
-foreach {mode name} {
-      0 walthread-2-threads 
-      1 walthread-2-processes
-} {
-  do_thread_test $name -processes $mode -seconds $SECONDS -init {
-    execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
-  } -thread RB 2 {
+#   1. Open a database handle.
+#   2. Execute a read-only transaction on the db.
+#   3. Do "PRAGMA journal_mode = XXX", where XXX is one of WAL or DELETE.
+#      Ignore any SQLITE_BUSY error.
+#   4. Execute a write transaction to insert a row into the db.
+#   5. Run "PRAGMA integrity_check"
+#
+# At present, there are 4 clients in total. 2 do "journal_mode = WAL", and
+# two do "journal_mode = DELETE".
+#
+# Each client returns a string of the form "W w, R r", where W is the 
+# number of write-transactions performed using a WAL journal, and D is
+# the number of write-transactions performed using a rollback journal.
+# For example, "192 w, 185 r".
+#
+do_thread_test2 walthread-2 -seconds $seconds(walthread-2) -init {
+  execsql { CREATE TABLE t1(x INTEGER PRIMARY KEY, y UNIQUE) }
+} -thread RB 2 {
 
-    db close
-    set nRun 0
-    set nDel 0
-    while {[tt_continue]} {
-      sqlite3 db test.db
-      db busy busyhandler
-      db eval { SELECT * FROM sqlite_master }
-      catch { db eval { PRAGMA journal_mode = DELETE } }
-      db eval {
-        BEGIN;
-        INSERT INTO t1 VALUES(NULL, randomblob(100+$tid));
-      }
-      incr nRun 1
-      incr nDel [file exists test.db-journal]
-      db eval COMMIT
-
-      set ic [db eval {PRAGMA integrity_check}]
-      if {$ic != "ok"} { error $ic }
-      db close
+  db close
+  set nRun 0
+  set nDel 0
+  while {[tt_continue]} {
+    sqlite3 db test.db
+    db busy busyhandler
+    db eval { SELECT * FROM sqlite_master }
+    catch { db eval { PRAGMA journal_mode = DELETE } }
+    db eval {
+      BEGIN;
+      INSERT INTO t1 VALUES(NULL, randomblob(100+$E(pid)));
     }
-    list $nRun $nDel
-
-  } -thread WAL 2 {
-    db close
-    set nRun 0
-    set nWal 0
-    while {[tt_continue]} {
-      sqlite3 db test.db
-      db busy busyhandler
-      db eval { SELECT * FROM sqlite_master }
-      catch { db eval { PRAGMA journal_mode = WAL } }
-      db eval {
-        BEGIN;
-        INSERT INTO t1 VALUES(NULL, randomblob(110+$tid));
-      }
-      incr nRun 1
-      incr nWal [file exists test.db-wal]
-      db eval COMMIT
-
-      set ic [db eval {PRAGMA integrity_check}]
-      if {$ic != "ok"} { error $ic }
-      db close
+    incr nRun 1
+    incr nDel [file exists test.db-journal]
+    if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+      error "File-system looks bad..."
     }
-    list $nRun $nWal
+    db eval COMMIT
+
+    integrity_check
+    db close
+  }
+  list $nRun $nDel
+  set {} "[expr $nRun-$nDel] w, $nDel r"
+
+} -thread WAL 2 {
+  db close
+  set nRun 0
+  set nDel 0
+  while {[tt_continue]} {
+    sqlite3 db test.db
+    db busy busyhandler
+    db eval { SELECT * FROM sqlite_master }
+    catch { db eval { PRAGMA journal_mode = WAL } }
+    db eval {
+      BEGIN;
+      INSERT INTO t1 VALUES(NULL, randomblob(110+$E(pid)));
+    }
+    incr nRun 1
+    incr nDel [file exists test.db-journal]
+    if {[file exists test.db-journal] + [file exists test.db-wal] != 1} {
+      error "File-system looks bad..."
+    }
+    db eval COMMIT
+
+    integrity_check
+    db close
+  }
+  set {} "[expr $nRun-$nDel] w, $nDel r"
+}
+
+do_thread_test2 walthread-3 -seconds $seconds(walthread-3) -init {
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(cnt PRIMARY KEY, sum1, sum2);
+    CREATE INDEX i1 ON t1(sum1);
+    CREATE INDEX i2 ON t1(sum2);
+    INSERT INTO t1 VALUES(0, 0, 0);
+  }
+} -thread t 10 {
+
+  set nextwrite $E(pid)
+
+  proc wal_hook {zDb nEntry} {
+    if {$nEntry>10} { return 1 }
+    return 0
+  }
+  db wal_hook wal_hook
+
+  while {[tt_continue]} {
+    set max 0
+    while { $max != ($nextwrite-1) && [tt_continue] } {
+      set max [db eval { SELECT max(cnt) FROM t1 }]
+    }
+
+    if {[tt_continue]} {
+      set sum1 [db eval { SELECT sum(cnt) FROM t1 }]
+      set sum2 [db eval { SELECT sum(sum1) FROM t1 }]
+      db eval { INSERT INTO t1 VALUES($nextwrite, $sum1, $sum2) }
+      incr nextwrite $E(nthread)
+      integrity_check
+    }
+  }
+
+  set {} ok
+} -check {
+  puts "  Final db contains [db eval {SELECT count(*) FROM t1}] rows"
+  puts "  Final integrity-check says: [db eval {PRAGMA integrity_check}]"
+
+  # Check that the contents of the database are Ok.
+  set c 0
+  set s1 0
+  set s2 0
+  db eval { SELECT cnt, sum1, sum2 FROM t1 ORDER BY cnt } {
+    if {$c != $cnt || $s1 != $sum1 || $s2 != $sum2} {
+      error "database content is invalid"
+    }
+    incr s2 $s1
+    incr s1 $c
+    incr c 1
   }
 }
 
