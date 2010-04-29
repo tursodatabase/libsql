@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Optimization:\sConvert\san\sORDER\sBY\sclause\sinto\sa\sno-op\sif\sthe\squery\salso\ncontains\sa\sGROUP\sBY\sclause\sthat\swill\sforce\sthe\ssame\soutput\sorder.
-D 2010-04-26T19:17:27
+C Zero\sthe\s"immediate\sFK\sconstraint\scounter"\sassociated\swith\sa\sstatement\sobject\swhen\ssqlite3_reset()\sis\scalled.\sFix\sfor\s[c39ff61c43].
+D 2010-04-29T22:57:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 4f2f967b7e58a35bb74fb7ec8ae90e0f4ca7868b
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +216,7 @@ F src/vdbe.c 2abd931ea2aec3eacc6426677f40cc5a1071d34e
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 11bcc381e81e797fcf3e81fa6a14ec16a04801cc
-F src/vdbeaux.c 3028b2d50df39697e21263685349b5ff1333a29b
+F src/vdbeaux.c 395d21a1617553ea9b9f4abe0d302449d8549e1d
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -348,7 +345,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 82652daf32ec5a40634a10bc8db571b84d39c7fe
+F test/fkey2.test d5e065ede294ab52affe2116d54dc85a09301354
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -801,14 +798,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 36fb2cae75b5dfe1fe818895f03c0b4f4190a722
-R 39601da2973f0d22788b2e5833832c44
-U drh
-Z 9d6faae1537324b0ce24766e774d3c1e
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL1ebKoxKgR168RlERAixaAJ9MtsB9+gfG3m3Uh9CtO8GjRZH+fgCghDsR
-Xx+FaS5+UH9uAeCG9zc761s=
-=CIW0
------END PGP SIGNATURE-----
+P ca9d86baf70f210d331ce93102177c8005c494cb
+R a059ba0054bf8b8b3e167094c8be4a0d
+U dan
+Z cbcb2b19feabf4740bc2edb9662818e3
