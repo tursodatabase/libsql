@@ -962,6 +962,7 @@ do_test wal-14 {
   db2 eval { PRAGMA integrity_check }
 } {ok}
 
-
+catch { db close }
+catch { db2 close }
 finish_test
 
