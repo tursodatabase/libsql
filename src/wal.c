@@ -889,6 +889,8 @@ int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
       }
     }
   }
+
+  walIndexUnmap(pWal);
   return rc;
 }
 
@@ -1082,6 +1084,7 @@ int sqlite3WalFrames(
   assert( WAL_FRAME_HDRSIZE==(4 * 2 + 2*sizeof(u32)) );
   assert( pList );
   assert( pWal->lockState==SQLITE_SHM_WRITE );
+  assert( pWal->pWiData==0 );
 
   /* If this is the first frame written into the log, write the log 
   ** header to the start of the log file. See comments at the top of
@@ -1158,6 +1161,7 @@ int sqlite3WalFrames(
       return rc;
     }
   }
+  assert( pWal->pWiData==0 );
 
   /* Append data to the log summary. It is not necessary to lock the 
   ** wal-index to do this as the RESERVED lock held on the db file

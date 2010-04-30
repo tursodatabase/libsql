@@ -5083,7 +5083,7 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
 ** written into pNewSize.  A writer lock is held on the shared memory
 ** segment while resizing it.
 **
-** If ppBuffer is not NULL, the a reader lock is acquired no the shared
+** If ppBuffer is not NULL, the a reader lock is acquired on the shared
 ** memory segment and *ppBuffer is made to point to the start of the 
 ** shared memory segment.  xShmRelease() must be called to release the
 ** lock.
