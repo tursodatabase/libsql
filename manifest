@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C In\sthe\sdebugging\soutput\sfor\sSHM-LOCK\sin\sos_unix.c,\suse\ssymbolic\snames\nfor\sthe\slock\sstates\srather\sthan\sraw\snumbers.
-D 2010-04-30T16:48:20
+C Fix\sa\sproblem\swith\scalculating\sthe\srequired\ssize\sof\sthe\swal-index\swhen\sappending\sframes.
+D 2010-04-30T16:50:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +221,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c efe21d703cd5f32c18fd87762b6ac20dc47c5785
+F src/wal.c f4bdb4f86fa7e08a69c8955e3bd22b5026143427
 F src/wal.h c3f347ba8f1cde46d9bcc6fedaf3ed0aa4b53294
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
@@ -811,14 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 90119fecbce06c8db82194dfd9d5045be29b1cda
-R ebae94644ba62e3155e25c91f8d6fd85
-U drh
-Z 02eccc20e834aee25fd2cd7428a6b07d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL2wnXoxKgR168RlERAkXlAJ97RPvDHNYNUAR/6YpO0tH6FowdpgCghlQl
-WdLDFQjAGffRMStZhNqyiHA=
-=AZcG
------END PGP SIGNATURE-----
+P 2afc33de2b2012d034fb0d2057a5a45e304516ca
+R 70ef57c4a03e427eca1482f7ccd1ced8
+U dan
+Z 0d70ee7035126be286a826f0c20d1cde

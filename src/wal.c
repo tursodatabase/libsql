@@ -433,9 +433,9 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   u32 iSlot = walIndexEntry(iFrame);
   
   walIndexMap(pWal, -1);
-  while( (iSlot+128)>=pWal->szWIndex ){
+  while( ((iSlot+128)*sizeof(u32))>=pWal->szWIndex ){
     int rc;
-    int nByte = pWal->szWIndex*4 + WALINDEX_MMAP_INCREMENT;
+    int nByte = pWal->szWIndex + WALINDEX_MMAP_INCREMENT;
 
     /* Enlarge the storage, then remap it. */
     rc = walIndexRemap(pWal, nByte);
