@@ -1,5 +1,5 @@
-C Reapply\scommits\s[837d82a929]\sand\s[c05e7dca17]\sthat\swere\saccidentally\soverwritten.
-D 2010-04-30T16:24:46
+C Fix\sa\sbug\swhereby\supgrading\sfrom\sa\sREAD_FULL\sto\sa\sWRITE\slock,\sand\sthen\sback\sto\sa\sread\slock\swas\sdropping\sall\sWAL\slocks.
+D 2010-04-30T16:38:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 7d10d3a8b4f3e0c7bde874ca7e488ea95b7cae35
+F src/os_unix.c d0deee9969cec7364c7de92418888e042a366fcf
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1d20342424b452ea96aaf161de1f98f26a9155a0
-R 88f12ad5a621dbb661d799113c2782f7
+P 598de52700ba13e3228289220a74fc62073c62d4
+R 723210e8144121fec5928d0b8c025919
 U dan
-Z 72810ce2ab0ab749da9f7335fd238964
+Z c28d7cd6bf4885aaa152a2bab954cfdb
