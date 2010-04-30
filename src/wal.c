@@ -1009,6 +1009,24 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
   if( op ){
     assert( pWal->lockState == SQLITE_SHM_READ );
     rc = walSetLock(pWal, SQLITE_SHM_WRITE);
+
+    /* If this connection is not reading the most recent database snapshot,
+    ** it is not possible to write to the database. In this case release
+    ** the write locks and return SQLITE_BUSY.
+    */
+    if( rc==SQLITE_OK ){
+      rc = walIndexMap(pWal, -1);
+      if( rc==SQLITE_OK 
+       && memcmp(&pWal->hdr, pWal->pWiData, sizeof(WalIndexHdr))
+      ){
+        rc = SQLITE_BUSY;
+      }
+      walIndexUnmap(pWal);
+      if( rc!=SQLITE_OK ){
+        walSetLock(pWal, SQLITE_SHM_READ);
+      }
+    }
+
   }else if( pWal->lockState==SQLITE_SHM_WRITE ){
     rc = walSetLock(pWal, SQLITE_SHM_READ);
   }
