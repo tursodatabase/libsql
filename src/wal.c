@@ -912,7 +912,7 @@ int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut){
   u32 *aData; 
   int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
 
-  assert( pWal->lockState==SQLITE_SHM_READ );
+  assert( pWal->lockState==SQLITE_SHM_READ||pWal->lockState==SQLITE_SHM_WRITE );
   walIndexMap(pWal);
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
