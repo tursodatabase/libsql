@@ -217,11 +217,10 @@ static int walSetLock(Wal *pWal, int desiredStatus){
   int rc, got;
   if( pWal->lockState==desiredStatus ) return SQLITE_OK;
   rc = pWal->pVfs->xShmLock(pWal->pWIndex, desiredStatus, &got);
-  if( rc==SQLITE_OK ){
-    pWal->lockState = desiredStatus;
-    if( desiredStatus==SQLITE_SHM_READ ){
-      pWal->readerType = got;
-    }
+  pWal->lockState = got;
+  if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
+    pWal->readerType = got;
+    pWal->lockState = SQLITE_SHM_READ;
   }
   return rc;
 }
@@ -785,35 +784,8 @@ int sqlite3WalClose(
 ){
   int rc = SQLITE_OK;
   if( pWal ){
-    int isDelete = 0;             /* True to unlink wal and wal-index files */
-
-    /* If an EXCLUSIVE lock can be obtained on the database file (using the
-    ** ordinary, rollback-mode locking methods, this guarantees that the
-    ** connection associated with this log file is the only connection to
-    ** the database. In this case checkpoint the database and unlink both
-    ** the wal and wal-index files.
-    **
-    ** The EXCLUSIVE lock is not released before returning.
-    */
-    rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
-    if( rc==SQLITE_OK ){
-      rc = walCheckpoint(pWal, pFd, sync_flags, zBuf);
-      if( rc==SQLITE_OK ){
-        isDelete = 1;
-      }
-      walIndexUnmap(pWal);
-    }
-
     pWal->pVfs->xShmClose(pWal->pWIndex);
     sqlite3OsClose(pWal->pFd);
-    if( isDelete ){
-      int nWal;
-      char *zWal = &((char *)pWal->pFd)[pWal->pVfs->szOsFile];
-      sqlite3OsDelete(pWal->pVfs, zWal, 0);
-      nWal = sqlite3Strlen30(zWal);
-      memcpy(&zWal[nWal], "-index", 7);
-      pWal->pVfs->xShmDelete(pWal->pVfs, zWal);
-    }
     sqlite3_free(pWal);
   }
   return rc;
@@ -1036,24 +1008,6 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
   if( op ){
     assert( pWal->lockState == SQLITE_SHM_READ );
     rc = walSetLock(pWal, SQLITE_SHM_WRITE);
-
-    /* If this connection is not reading the most recent database snapshot,
-    ** it is not possible to write to the database. In this case release
-    ** the write locks and return SQLITE_BUSY.
-    */
-    if( rc==SQLITE_OK ){
-      rc = walIndexMap(pWal, -1);
-      if( rc==SQLITE_OK 
-       && memcmp(&pWal->hdr, pWal->pWiData, sizeof(WalIndexHdr))
-      ){
-        rc = SQLITE_BUSY;
-      }
-      walIndexUnmap(pWal);
-      if( rc!=SQLITE_OK ){
-        walSetLock(pWal, SQLITE_SHM_READ);
-      }
-    }
-
   }else if( pWal->lockState==SQLITE_SHM_WRITE ){
     rc = walSetLock(pWal, SQLITE_SHM_READ);
   }

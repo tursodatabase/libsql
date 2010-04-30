@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\scouple\suninitialized\svariables\sin\sthe\sxShmLock\smethod\sof\sthe\sunix\sVFS.\nImproved\sdebugging\slogic\sfor\sxShmLock.
-D 2010-04-30T15:54:47
+C Correctly\srecord\sthe\sfact\sthat\sthe\sSHM\slock\sreached\sPENDING\sif\sit\sdid\sso\nbut\sfailed\sto\sreach\sCHECKPOINT.
+D 2010-04-30T16:12:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c e4a52d13bff093bc446886cf7b0dfacbc7c2e8a4
+F src/wal.c f08889611d5da7d2cbe9557748e74f70ab454974
 F src/wal.h c3f347ba8f1cde46d9bcc6fedaf3ed0aa4b53294
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
@@ -811,14 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c05e7dca172719f33e245c08d0c0e8ab47e5a537
-R 948b3a20fa291178488b4491978dd814
+P 69567c5fca9e30b7660e6f56350be929c3890d7e
+R f1e5ca7c2966e55a12226da1f0023970
 U drh
-Z 0b83af1d29a8669f0e45a2c764ca0612
+Z 994a305fc2d5c733b714331360471304
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL2v1KoxKgR168RlERAtTvAJ9anChtmXUlkLMCUv41sdV2i+tOhgCfd+Pd
-kBX8Xzf3zeWR2SKzYU3eb8s=
-=dWTT
+iD8DBQFL2wFboxKgR168RlERAtivAJ421LoVOiKR0QgB26iqLm0H6jPUVQCfaTeL
+mXtGX6pDDXUBVGxSGpeJW2k=
+=Sf6+
 -----END PGP SIGNATURE-----
