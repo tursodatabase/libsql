@@ -829,7 +829,7 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;
 
-  assert( pWal->lockState==SQLITE_SHM_READ );
+  assert( pWal->lockState>=SQLITE_SHM_READ );
   walIndexMap(pWal);
 
   /* First try to read the header without a lock. Verify the checksum
@@ -1051,14 +1051,6 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   }
 
   return rc;
-}
-
-/* 
-** Return true if data has been written but not committed to the log file. 
-*/
-int sqlite3WalDirty(Wal *pWal){
-  assert( pWal->lockState==SQLITE_SHM_WRITE );
-  return( pWal->hdr.iLastPg!=((WalIndexHdr*)pWal->pWiData)->iLastPg );
 }
 
 /* 

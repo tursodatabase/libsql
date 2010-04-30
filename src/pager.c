@@ -2272,6 +2272,16 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
     }
   }
 
+  /* Normally, if a transaction is rolled back, any backup processes are
+  ** updated as data is copied out of the rollback journal and into the
+  ** database. This is not generally possible with a WAL database, as
+  ** rollback involves simply truncating the log file. Therefore, if one
+  ** or more frames have already been written to the log (and therefore 
+  ** also copied into the backup databases) as part of this transaction,
+  ** the backups must be restarted.
+  */
+  sqlite3BackupRestart(pPager->pBackup);
+
   return rc;
 }
 
@@ -2281,18 +2291,6 @@ static int pagerUndoCallback(void *pCtx, Pgno iPg){
 static int pagerRollbackWal(Pager *pPager){
   int rc;                         /* Return Code */
   PgHdr *pList;                   /* List of dirty pages to revert */
-
-  /* Normally, if a transaction is rolled back, any backup processes are
-  ** updated as data is copied out of the rollback journal and into the
-  ** database. This is not generally possible with a WAL database, as
-  ** rollback involves simply truncating the log file. Therefore, if one
-  ** or more frames have already been written to the log (and therefore 
-  ** also copied into the backup databases) as part of this transaction,
-  ** the backups must be restarted.
-  */
-  if( sqlite3WalDirty(pPager->pWal) ){
-    sqlite3BackupRestart(pPager->pBackup);
-  }
 
   /* For all pages in the cache that are currently dirty or have already
   ** been written (but not committed) to the log file, do one of the 

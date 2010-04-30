@@ -4798,7 +4798,7 @@ static int unixShmUnlock(
   /* Compute locks held by sibling connections */
   for(pX=pFile->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
-    assert( (pX->exclMask & unlockMask)==0 );
+    assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
     allMask |= pX->sharedMask;
   }
 

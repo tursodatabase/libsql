@@ -59,9 +59,6 @@ u32 sqlite3WalSavepoint(Wal *pWal);
 ** response to a ROLLBACK TO command. */
 int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame);
 
-/* Return true if data has been written but not committed to the log file. */
-int sqlite3WalDirty(Wal *pWal);
-
 /* Write a frame or frames to the log. */
 int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 
