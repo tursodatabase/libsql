@@ -1,5 +1,8 @@
-C When\sclosing\sa\sWAL\sconnection,\sattempt\san\sexclusive\slock\son\sthe\sdatabase\sfile.\sIf\sthe\slock\sis\sobtained,\scheckpoint\sthe\sdatabase\sand\sdelete\sthe\swal\sand\swal-index\sfiles.
-D 2010-04-30T15:49:28
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\scouple\suninitialized\svariables\sin\sthe\sxShmLock\smethod\sof\sthe\sunix\sVFS.\nImproved\sdebugging\slogic\sfor\sxShmLock.
+D 2010-04-30T15:54:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c b2322d8fb389b4bc7834b1596bd8afac776a2f20
+F src/os_unix.c 7d10d3a8b4f3e0c7bde874ca7e488ea95b7cae35
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 837d82a92977cbfa0963411daf8160d286a7ed32
-R 3059f2f53adc88a1128c0bd66d3f0bb8
-U dan
-Z 901b5f2ba561b4eab874813e39c862c1
+P c05e7dca172719f33e245c08d0c0e8ab47e5a537
+R 948b3a20fa291178488b4491978dd814
+U drh
+Z 0b83af1d29a8669f0e45a2c764ca0612
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL2v1KoxKgR168RlERAtTvAJ9anChtmXUlkLMCUv41sdV2i+tOhgCfd+Pd
+kBX8Xzf3zeWR2SKzYU3eb8s=
+=dWTT
+-----END PGP SIGNATURE-----

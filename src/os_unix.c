@@ -4716,6 +4716,7 @@ static int unixShmSystemLock(
   f.l_whence = SEEK_SET;
   if( (lockMask & UNIX_SHM_MUTEX)!=0 && lockType!=F_UNLCK ){
     lockOp = F_SETLKW;
+    OSTRACE(("SHM-LOCK requesting blocking lock\n"));
   }else{
     lockOp = F_SETLK;
   }
@@ -4768,7 +4769,7 @@ static int unixShmSystemLock(
       OSTRACE(("write-lock failed"));
     }
   }
-  OSTRACE((" - change requested %s - afterwards %s,%s\n",
+  OSTRACE((" - change requested %s - afterwards %s:%s\n",
            unixShmLockString(lockMask),
            unixShmLockString(pFile->sharedMask),
            unixShmLockString(pFile->exclMask)));
@@ -4794,6 +4795,7 @@ static int unixShmUnlock(
   assert( sqlite3_mutex_held(pFile->mutex) );
 
   /* Compute locks held by sibling connections */
+  allMask = 0;
   for(pX=pFile->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
     assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
@@ -4834,6 +4836,7 @@ static int unixShmSharedLock(
   ** If any sibling already holds an exclusive lock, go ahead and return
   ** SQLITE_BUSY.
   */
+  allShared = 0;
   for(pX=pFile->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
     if( (pX->exclMask & readMask)!=0 ) return SQLITE_BUSY;
@@ -5004,12 +5007,13 @@ static int unixShmOpen(
     if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_DMS)==SQLITE_OK ){
       if( ftruncate(pFile->h, 0) ){
         rc = SQLITE_IOERR;
-        goto shm_open_err;
       }
     }
-    rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
-    if( rc ) goto shm_open_err;
+    if( rc==SQLITE_OK ){
+      rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
+    }
     unixShmSystemLock(pFile, F_UNLCK, UNIX_SHM_MUTEX);
+    if( rc ) goto shm_open_err;
   }
 
   /* Make the new connection a child of the unixShmFile */
@@ -5201,10 +5205,14 @@ static int unixShmLock(
    || desiredLock==p->lockState
    || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
   ){
+    OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %d and got %d\n",
+             p->id, getpid(), desiredLock, p->lockState));
     if( pGotLock ) *pGotLock = p->lockState;
     return SQLITE_OK;
   }
 
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %d->%d\n",
+            p->id, getpid(), p->lockState, desiredLock));
   sqlite3_mutex_enter(pFile->mutex);
   switch( desiredLock ){
     case SQLITE_SHM_UNLOCK: {
@@ -5293,6 +5301,7 @@ static int unixShmLock(
     }
   }
   sqlite3_mutex_leave(pFile->mutex);
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %d\n", p->id,getpid(),p->lockState));
   if( pGotLock ) *pGotLock = p->lockState;
   return rc;
 }
