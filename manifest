@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C The\sfirst\s6\sWAL\stests\snow\swork.\s\sIt's\sa\sstart.
-D 2010-04-30T02:13:27
+C Merge\slatest\sbugfix\sinto\swal\sbranch.
+D 2010-04-30T06:02:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +216,7 @@ F src/vdbe.c 21a96eeeb43dedd40072028db0b42e137296a81a
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c 85e448c7d1d6dde7226c721cd8da8f9b5286699d
-F src/vdbeaux.c be6ca4bb330c7730b358dd627d6d632ca93482c9
+F src/vdbeaux.c 395d21a1617553ea9b9f4abe0d302449d8549e1d
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -350,7 +347,7 @@ F test/expr.test 9f521ae22f00e074959f72ce2e55d46b9ed23f68
 F test/filectrl.test 8923a6dc7630f31c8a9dd3d3d740aa0922df7bf8
 F test/filefmt.test 84e3d0fe9f12d0d2ac852465c6f8450aea0d6f43
 F test/fkey1.test 01c7de578e11747e720c2d9aeef27f239853c4da
-F test/fkey2.test 82652daf32ec5a40634a10bc8db571b84d39c7fe
+F test/fkey2.test d5e065ede294ab52affe2116d54dc85a09301354
 F test/fkey3.test 42f88d6048d8dc079e2a8cf7baad1cc1483a7620
 F test/fkey_malloc.test a5ede29bd2f6e56dea78c3d43fb86dd696c068c8
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
@@ -811,14 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 62db5fa3b61be885b2d94e9b9ce3877b2c588350
-R aef0120cea29fe330250fe68f6819085
-U drh
-Z 4fcebc28f74cfe3c8cf3e566a4608163
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL2jzNoxKgR168RlERAgWeAJ95gf+z42nfTDpmaeXk9ZGzWPlbxwCdFTJp
-+xaXsShNpvEvsgzl2lnGlxE=
-=76cZ
------END PGP SIGNATURE-----
+P a92c1851da10acf51e7f6f086b8a23bd731940b3 f660be615a0c1f4641782a83744533f5d3119218
+R 789557e2ecf4320c154527de09c21ada
+U dan
+Z b95a42f00187a9dd3e8e01985f34fa1c

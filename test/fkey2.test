@@ -1598,6 +1598,32 @@ ifcapable auth {
   unset authargs
 }
 
+
+do_test fkey2-19.1 {
+  execsql {
+    CREATE TABLE main(id INTEGER PRIMARY KEY);
+    CREATE TABLE sub(id INT REFERENCES main(id));
+    INSERT INTO main VALUES(1);
+    INSERT INTO main VALUES(2);
+    INSERT INTO sub VALUES(2);
+  }
+} {}
+do_test fkey2-19.2 {
+  set S [sqlite3_prepare_v2 db "DELETE FROM main WHERE id = ?" -1 dummy]
+  sqlite3_bind_int $S 1 2
+  sqlite3_step $S
+} {SQLITE_CONSTRAINT}
+do_test fkey2-19.3 {
+  sqlite3_reset $S
+} {SQLITE_CONSTRAINT}
+do_test fkey2-19.4 {
+  sqlite3_bind_int $S 1 1
+  sqlite3_step $S
+} {SQLITE_DONE}
+do_test fkey2-19.4 {
+  sqlite3_finalize $S
+} {SQLITE_OK}
+
 #-------------------------------------------------------------------------
 # The following block of tests, those prefixed with "fkey2-genfkey.", are 
 # the same tests that were used to test the ".genfkey" command provided 
