@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Correctly\srecord\sthe\sfact\sthat\sthe\sSHM\slock\sreached\sPENDING\sif\sit\sdid\sso\nbut\sfailed\sto\sreach\sCHECKPOINT.
-D 2010-04-30T16:12:04
+C Add\sxShmXXX()\smethods\sto\sthe\stest\sVFS\sin\stest_devsym.test.
+D 2010-04-30T16:19:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -191,7 +188,7 @@ F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 8c408fbffbe8082d1d3dc55044ddfd5580f3c9b9
 F src/test_demovfs.c da81a5f7785bb352bda7911c332a983ec4f17f27
-F src/test_devsym.c 361d069bf74d4044bf53eb29dc0fa3709ed98baf
+F src/test_devsym.c c05024cd179603181cde66d0ff83ce81e146f6de
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
@@ -811,14 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 69567c5fca9e30b7660e6f56350be929c3890d7e
-R f1e5ca7c2966e55a12226da1f0023970
-U drh
-Z 994a305fc2d5c733b714331360471304
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL2wFboxKgR168RlERAtivAJ421LoVOiKR0QgB26iqLm0H6jPUVQCfaTeL
-mXtGX6pDDXUBVGxSGpeJW2k=
-=Sf6+
------END PGP SIGNATURE-----
+P d9250e84ac1fc6590f8670e1d801630650c7846a
+R e706456f30289526a342dac546a83543
+U dan
+Z 9513429a159541b5d8980cb57914a083
