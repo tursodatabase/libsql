@@ -1,5 +1,8 @@
-C Add\sa\smissing\swalIndexUnmap()\scall\sto\sthe\scheckpoint\scode.\sChange\sa\scouple\sof\sSQLITE_CANTOPEN\sconstants\sto\sSQLITE_CANTOPEN_BKPT.
-D 2010-04-30T11:43:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Separate\sthe\sconcepts\sof\sunderlying\sstorage\ssize\sand\smapped\ssize\sin\sthe\nVFS\sshared-memory\simplementation.
+D 2010-04-30T14:39:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 7451a717574c9b9809ad7c429345482c29239230
+F src/os_unix.c b2322d8fb389b4bc7834b1596bd8afac776a2f20
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -166,7 +169,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in a710846e91159742ee3ddcbabb56eb7c7478e3a5
+F src/sqlite.h.in 6e91727c0c3f9e1365e8fea2b07369a09830f47f
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 32dfe6294b46914fb567db493994bf902fb0f8c9
 F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
@@ -221,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 9327e0d4e2b19dcf5614d3bb8cdff25ebbe0e290
+F src/wal.c a4c643582fd9956b46dca187161d466f584b47af
 F src/wal.h c3f347ba8f1cde46d9bcc6fedaf3ed0aa4b53294
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2e7a0050e192dd197d4db92393ab120897c14836
-R c2c9e5e0c48b0291d2627d6aeb69855a
-U dan
-Z e7fa4c17c25ce2a31997877294b65d50
+P 1f9e8c5c27ae2c68bc01d8e2bb2c662be7b3f161
+R 2fbe76e11b4a2b6e620f52387007559a
+U drh
+Z 868ea682fbe4fab342b578dc69caee7c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL2uu6oxKgR168RlERAqI3AJ4jq6FSOAaisShm+qyJakBJL+pVmwCgg1Vd
+tQBOoEYMwVK9lQZSibwuRzM=
+=5suj
+-----END PGP SIGNATURE-----

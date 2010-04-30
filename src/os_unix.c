@@ -4594,11 +4594,9 @@ struct unixShmFile {
   sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
   sqlite3_mutex *mutexRecov; /* The RECOVER mutex */
   char *zFilename;           /* Name of the file */
-  int size;                  /* Size of the file */
   int h;                     /* Open file descriptor */
-  char *pMMapBuf;            /* Where currently mmapped() */
-  int nReadPrefix;           /* Number of SQLITE_SHM_READ_PREFIX locks */
-  int nReadFull;             /* Number of SQLITE_SHM_READ_FULL locks */
+  int szMap;                 /* Size of the mapping of file into memory */
+  char *pMMapBuf;            /* Where currently mmapped().  NULL if unmapped */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
   unixShmFile *pNext;        /* Next in list of all unixShmFile objects */
@@ -4995,8 +4993,6 @@ static int unixShmOpen(
     }
     pFile->fid.dev = sStat.st_dev;
     pFile->fid.ino = sStat.st_ino;
-    pFile->size = (int)sStat.st_size;
-    pFile->size = (pFile->size/SQLITE_UNIX_SHM_INCR)*SQLITE_UNIX_SHM_INCR;
 
     /* Check to see if another process is holding the dead-man switch.
     ** If not, truncate the file to zero length. 
@@ -5010,7 +5006,6 @@ static int unixShmOpen(
         rc = SQLITE_IOERR;
         goto shm_open_err;
       }
-      pFile->size = 0;
     }
     rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
     if( rc ) goto shm_open_err;
@@ -5078,22 +5073,64 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
 }
 
 /*
-** Query and/or changes the size of a shared-memory segment.
-** The reqSize parameter is the new size of the segment, or -1 to
-** do just a query.  The size of the segment after resizing is
-** written into pNewSize.  A writer lock is held on the shared memory
-** segment while resizing it.
+** Query and/or changes the size of the underlying storage for
+** a shared-memory segment.  The reqSize parameter is the new size
+** of the underlying storage, or -1 to do just a query.  The size
+** of the underlying storage (after resizing if resizing occurs) is
+** written into pNewSize.
 **
-** If ppBuffer is not NULL, the a reader lock is acquired on the shared
-** memory segment and *ppBuffer is made to point to the start of the 
-** shared memory segment.  xShmRelease() must be called to release the
-** lock.
+** This routine does not (necessarily) change the size of the mapping 
+** of the underlying storage into memory.  Use xShmGet() to change
+** the mapping size.
+**
+** The reqSize parameter is the minimum size requested.  The implementation
+** is free to expand the storage to some larger amount if it chooses.
 */
 static int unixShmSize(
   sqlite3_shm *pSharedMem,  /* Pointer returned by unixShmOpen() */
   int reqSize,              /* Requested size.  -1 for query only */
-  int *pNewSize,            /* Write new size here */
-  void **ppBuf              /* Write new buffer origin here */
+  int *pNewSize             /* Write new size here */
+){
+  unixShm *p = (unixShm*)pSharedMem;
+  unixShmFile *pFile = p->pFile;
+  int rc = SQLITE_OK;
+  struct stat sStat;
+
+  if( reqSize>=0 ){
+    reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
+    reqSize *= SQLITE_UNIX_SHM_INCR;
+    rc = ftruncate(pFile->h, reqSize);
+  }
+  if( fstat(pFile->h, &sStat)==0 ){
+    *pNewSize = (int)sStat.st_size;
+  }else{
+    *pNewSize = 0;
+    rc = SQLITE_IOERR;
+  }
+  return rc;
+}
+
+
+/*
+** Map the shared storage into memory.  The minimum size of the
+** mapping should be reqMapSize if reqMapSize is positive.  If
+** reqMapSize is zero or negative, the implementation can choose
+** whatever mapping size is convenient.
+**
+** *ppBuf is made to point to the memory which is a mapping of the
+** underlying storage.  This segment is locked.  unixShmRelease()
+** must be called to release the lock.
+**
+** *pNewMapSize is set to the size of the mapping.
+**
+** *ppBuf and *pNewMapSize might be NULL and zero if no space has
+** yet been allocated to the underlying storage.
+*/
+static int unixShmGet(
+  sqlite3_shm *pSharedMem, /* Pointer returned by unixShmOpen() */
+  int reqMapSize,          /* Requested size of mapping. -1 means don't care */
+  int *pNewMapSize,        /* Write new size of mapping here */
+  void **ppBuf             /* Write mapping buffer origin here */
 ){
   unixShm *p = (unixShm*)pSharedMem;
   unixShmFile *pFile = p->pFile;
@@ -5101,23 +5138,21 @@ static int unixShmSize(
 
   sqlite3_mutex_enter(pFile->mutexBuf);
   sqlite3_mutex_enter(pFile->mutex);
-  if( reqSize>=0 ){
-    reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
-    reqSize *= SQLITE_UNIX_SHM_INCR;
-    if( reqSize!=pFile->size ){
-      if( pFile->pMMapBuf ) munmap(pFile->pMMapBuf, pFile->size);
-      rc = ftruncate(pFile->h, reqSize);
-      if( rc ){
-        pFile->pMMapBuf = 0;
-        pFile->size = 0;
-      }else{
-        pFile->pMMapBuf = mmap(0, reqSize, PROT_READ|PROT_WRITE, MAP_SHARED,
-                               pFile->h, 0);
-        pFile->size = pFile->pMMapBuf ? reqSize : 0;
-      }
+  if( pFile->szMap==0 || reqMapSize>pFile->szMap ){
+    int actualSize;
+    if( unixShmSize(pSharedMem, -1, &actualSize)==SQLITE_OK
+     && reqMapSize<actualSize
+    ){
+      reqMapSize = actualSize;
     }
+    if( pFile->pMMapBuf ){
+      munmap(pFile->pMMapBuf, pFile->szMap);
+    }
+    pFile->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
+                           pFile->h, 0);
+    pFile->szMap = pFile->pMMapBuf ? reqMapSize : 0;
   }
-  *pNewSize = pFile->size;
+  *pNewMapSize = pFile->szMap;
   *ppBuf = pFile->pMMapBuf;
   sqlite3_mutex_leave(pFile->mutex);
   return rc;
@@ -6490,6 +6525,7 @@ int sqlite3_os_init(void){
     unixGetLastError,     /* xGetLastError */               \
     unixShmOpen,          /* xShmOpen */                    \
     unixShmSize,          /* xShmSize */                    \
+    unixShmGet,           /* xShmGet */                     \
     unixShmRelease,       /* xShmRelease */                 \
     0,                    /* xShmPush */                    \
     0,                    /* xShmPull */                    \

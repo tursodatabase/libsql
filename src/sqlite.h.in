@@ -844,7 +844,8 @@ struct sqlite3_vfs {
   ** definition.  Those that follow are added in version 2 or later
   */
   int (*xShmOpen)(sqlite3_vfs*, const char *zName, sqlite3_shm**);
-  int (*xShmSize)(sqlite3_shm*, int reqSize, int *pNewSize, void**);
+  int (*xShmSize)(sqlite3_shm*, int reqSize, int *pNewSize);
+  int (*xShmGet)(sqlite3_shm*, int reqMapSize, int *pMapSize, void**);
   int (*xShmRelease)(sqlite3_shm*);
   int (*xShmPush)(sqlite3_shm*);
   int (*xShmPull)(sqlite3_shm*);

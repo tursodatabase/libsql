@@ -126,7 +126,7 @@ struct Wal {
   sqlite3_file *pFd;         /* File handle for WAL file */
   u32 iCallback;             /* Value to pass to log callback (or 0) */
   sqlite3_shm *pWIndex;      /* The open wal-index file */
-  int szWIndex;              /* Size of the wal-index */
+  int szWIndex;              /* Size of the wal-index that is mapped in mem */
   u32 *pWiData;              /* Pointer to wal-index content in memory */
   u8 lockState;              /* SQLITE_SHM_xxxx constant showing lock state */
   u8 readerType;             /* SQLITE_SHM_READ or SQLITE_SHM_READ_FULL */
@@ -368,7 +368,8 @@ static int walIndexEntry(u32 iFrame){
 }
 
 /*
-** Release our reference to the wal-index memory map.
+** Release our reference to the wal-index memory map, if we are holding
+** it.
 */
 static void walIndexUnmap(Wal *pWal){
   if( pWal->pWiData ){
@@ -378,26 +379,42 @@ static void walIndexUnmap(Wal *pWal){
 }
 
 /*
-** Resize the wal-index file.  If newSize is negative, leave the size
-** unchanged.
+** Map the wal-index file into memory if it isn't already. 
+**
+** The reqSize parameter is the minimum required size of the mapping.
+** A value of -1 means "don't care".  The reqSize parameter is ignored
+** if the mapping is already held.
 */
-static int walIndexRemap(Wal *pWal, int newSize){
-  int rc;
-  walIndexUnmap(pWal);
-  rc = pWal->pVfs->xShmSize(pWal->pWIndex, newSize,
-                            &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
-  if( rc==SQLITE_OK && pWal->pWiData==0 ){
-    assert( pWal->szWIndex==0 );
-    pWal->pWiData = &pWal->iCallback;
+static int walIndexMap(Wal *pWal, int reqSize){
+  int rc = SQLITE_OK;
+  if( pWal->pWiData==0 ){
+    rc = pWal->pVfs->xShmGet(pWal->pWIndex, reqSize, &pWal->szWIndex,
+                             (void**)(char*)&pWal->pWiData);
+    if( rc==SQLITE_OK && pWal->pWiData==0 ){
+      /* Make sure pWal->pWiData is not NULL while we are holding the
+      ** lock on the mapping. */
+      assert( pWal->szWIndex==0 );
+      pWal->pWiData = &pWal->iCallback;
+    }
   }
   return rc;
 }
 
 /*
-** Map the wal-index file into memory if it isn't already.
+** Remap the wal-index so that the mapping covers the full size
+** of the underlying file.
+**
+** If enlargeTo is non-negative, then increase the size of the underlying
+** storage to be at least as big as enlargeTo before remapping.
 */
-static int walIndexMap(Wal *pWal){
-  int rc = walIndexRemap(pWal, -1);
+static int walIndexRemap(Wal *pWal, int enlargeTo){
+  int rc;
+  int sz;
+  rc = pWal->pVfs->xShmSize(pWal->pWIndex, enlargeTo, &sz);
+  if( rc==SQLITE_OK && sz>pWal->szWIndex ){
+    walIndexUnmap(pWal);
+    rc = walIndexMap(pWal, sz);
+  }
   return rc;
 }
 
@@ -416,12 +433,12 @@ static int walIndexMap(Wal *pWal){
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   u32 iSlot = walIndexEntry(iFrame);
   
-  walIndexMap(pWal);
+  walIndexMap(pWal, -1);
   while( (iSlot+128)>=pWal->szWIndex ){
     int rc;
     int nByte = pWal->szWIndex*4 + WALINDEX_MMAP_INCREMENT;
 
-    /* Unmap and remap the wal-index file. */
+    /* Enlarge the storage, then remap it. */
     rc = walIndexRemap(pWal, nByte);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -640,7 +657,7 @@ static WalIterator *walIteratorInit(Wal *pWal){
   struct WalSegment *pFinal;      /* Final (unindexed) segment */
   u8 *aTmp;                       /* Temp space used by merge-sort */
 
-  walIndexMap(pWal);
+  walIndexMap(pWal, -1);
   aData = pWal->pWiData;
   iLast = pWal->hdr.iLastPg;
   nSegment = (iLast >> 8) + 1;
@@ -789,7 +806,8 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
   if( pWal->szWIndex==0 ){
-    int rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
+    int rc;
+    rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
     if( rc ) return rc;
   }
 
@@ -830,7 +848,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
-  walIndexMap(pWal);
+  walIndexMap(pWal, -1);
 
   /* First try to read the header without a lock. Verify the checksum
   ** before returning. This will almost always work.  
@@ -881,11 +899,10 @@ int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
       sqlite3WalCloseSnapshot(pWal);
     }else{
       /* Check if the mapping needs to grow. */
-     if( pWal->hdr.iLastPg 
-      && walIndexEntry(pWal->hdr.iLastPg)>=pWal->szWIndex
-     ){
-        rc = walIndexRemap(pWal, 0);
-        assert( rc || walIndexEntry(pWal->hdr.iLastPg)<pWal->szWIndex );
+      if( pWal->hdr.iLastPg 
+       && walIndexEntry(pWal->hdr.iLastPg)>=pWal->szWIndex
+      ){
+         walIndexRemap(pWal, -1);
       }
     }
   }
@@ -913,7 +930,7 @@ int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut){
   int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
 
   assert( pWal->lockState==SQLITE_SHM_READ||pWal->lockState==SQLITE_SHM_WRITE );
-  walIndexMap(pWal);
+  walIndexMap(pWal, -1);
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
   ** at the end of the wal-index. An alternative to this would be to
