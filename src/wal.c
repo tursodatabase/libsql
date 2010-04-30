@@ -378,25 +378,26 @@ static void walIndexUnmap(Wal *pWal){
 }
 
 /*
-** Map the wal-index file into memory if it isn't already.
-*/
-static int walIndexMap(Wal *pWal){
-  int rc = SQLITE_OK;
-  if( pWal->pWiData==0 ){
-    rc = pWal->pVfs->xShmSize(pWal->pWIndex, -1,
-                              &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
-  }
-  return rc;
-}
-
-/*
-** Resize the wal-index file.
+** Resize the wal-index file.  If newSize is negative, leave the size
+** unchanged.
 */
 static int walIndexRemap(Wal *pWal, int newSize){
   int rc;
   walIndexUnmap(pWal);
   rc = pWal->pVfs->xShmSize(pWal->pWIndex, newSize,
                             &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
+  if( rc==SQLITE_OK && pWal->pWiData==0 ){
+    assert( pWal->szWIndex==0 );
+    pWal->pWiData = &pWal->iCallback;
+  }
+  return rc;
+}
+
+/*
+** Map the wal-index file into memory if it isn't already.
+*/
+static int walIndexMap(Wal *pWal){
+  int rc = walIndexRemap(pWal, -1);
   return rc;
 }
 
@@ -576,12 +577,12 @@ int sqlite3WalOpen(
   pRet->pVfs = pVfs;
   pRet->pFd = (sqlite3_file *)&pRet[1];
   zWal = pVfs->szOsFile + (char*)pRet->pFd;
-  sqlite3_snprintf(nWal, zWal, "%s-wal-index", zDb);
+  sqlite3_snprintf(nWal+11, zWal, "%s-wal-index", zDb);
   rc = pVfs->xShmOpen(pVfs, zWal, &pRet->pWIndex);
   if( rc ) goto wal_open_out;
 
   /* Open file handle on the write-ahead log file. */
-  zWal[nWal-6] = 0;
+  zWal[nWal+4] = 0;
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
   rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
 
@@ -787,11 +788,18 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2] = {1, 1};
   u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
+  if( pWal->szWIndex==0 ){
+    int rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
+    if( rc ) return rc;
+  }
+
   /* Read the header. The caller may or may not have locked the wal-index
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return SQLITE_ERROR. The caller will
   ** retry. Or, if the caller has already locked the file and the header
   ** still looks inconsistent, it will run recovery.
+  **
+  ** FIX-ME:  It is no longer possible to have not locked the wal-index.
   */
   memcpy(aHdr, pWal->pWiData, sizeof(aHdr));
   walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);

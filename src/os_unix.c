@@ -4710,7 +4710,7 @@ static int unixShmSystemLock(
   u8 mask;              /* Mask of bits in lockMask */
 
   /* Access to the unixShmFile object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
+  assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
 
   /* Initialize the locking parameters */
   memset(&f, 0, sizeof(f));
@@ -4732,13 +4732,15 @@ static int unixShmSystemLock(
   mask <<= 1;
   while( mask!=0 && (lockMask & mask)!=0 ){
     f.l_len++;
+    mask <<= 1;
   }
 
   /* Verify that all bits set in lockMask are contiguous */
   assert( mask==0 || (lockMask & ~(mask | (mask-1)))==0 );
 
   /* Acquire the system-level lock */
-  rc = (fcntl(pFile->h, lockOp, &f)==0) ? SQLITE_OK : SQLITE_BUSY;
+  rc = fcntl(pFile->h, lockOp, &f);
+  rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
 
   /* Update the global lock state and do debug tracing */
 #ifdef SQLITE_DEBUG
@@ -4792,9 +4794,6 @@ static int unixShmUnlock(
 
   /* Access to the unixShmFile object is serialized by the caller */
   assert( sqlite3_mutex_held(pFile->mutex) );
-
-  /* We never try to unlock locks that we do not hold */
-  assert( ((p->exclMask|p->sharedMask) & unlockMask)==unlockMask );
 
   /* Compute locks held by sibling connections */
   for(pX=pFile->pFirst; pX; pX=pX->pNext){
@@ -4960,7 +4959,7 @@ static int unixShmOpen(
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-    memset(pFile, 0, sizeof(pFile));
+    memset(pFile, 0, sizeof(*pFile));
     pFile->zFilename = (char*)&pFile[1];
     memcpy(pFile->zFilename, zName, nName+1);
     pFile->h = -1;
@@ -4983,7 +4982,7 @@ static int unixShmOpen(
       goto shm_open_err;
     }
 
-    pFile->h = open(zName, O_CREAT, 0664);
+    pFile->h = open(zName, O_RDWR|O_CREAT, 0664);
     if( pFile->h<0 ){
       rc = SQLITE_CANTOPEN;
       goto shm_open_err;
