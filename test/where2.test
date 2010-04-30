@@ -620,4 +620,35 @@ ifcapable or_opt&&tclvar {
   }
 }
 
+# Indices with redundant columns
+#
+do_test where2-11.1 {
+  execsql {
+    CREATE TABLE t11(a,b,c,d);
+    CREATE INDEX i11aba ON t11(a,b,a,c); -- column A occurs twice.
+    INSERT INTO t11 VALUES(1,2,3,4);
+    INSERT INTO t11 VALUES(5,6,7,8);
+    INSERT INTO t11 VALUES(1,2,9,10);
+    INSERT INTO t11 VALUES(5,11,12,13);
+    SELECT c FROM t11 WHERE a=1 AND b=2 ORDER BY c;
+  }
+} {3 9}
+do_test where2-11.2 {
+  execsql {
+    CREATE INDEX i11cccccccc ON t11(c,c,c,c,c,c,c,c); -- repeated column
+    SELECT d FROM t11 WHERE c=9;
+  }
+} {10}
+do_test where2-11.3 {
+  execsql {
+    SELECT d FROM t11 WHERE c IN (1,2,3,4,5);
+  }
+} {4}
+do_test where2-11.4 {
+  execsql {
+    SELECT d FROM t11 WHERE c=7 OR (a=1 AND b=2) ORDER BY d;
+  }
+} {4 8 10}
+
+
 finish_test
