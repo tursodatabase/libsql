@@ -1,5 +1,5 @@
-C Fix\sa\scouple\sof\sassert()\sstatements\sin\sos_unix.c\sand\swal.c.\sCombine\ssqlite3WalIsDirty()\swith\ssqlite3WalUndo().
-D 2010-04-30T09:52:18
+C Add\smissing\smutexes\sto\sunixShmClose().
+D 2010-04-30T10:06:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +150,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 685b0347383b5d12dee9961b3cc0337ff075617b
+F src/os_unix.c f5e41bd2f563f85c10a9c9e62bbac8e3b783efc3
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 72b95fde15dae56390dc8d4168fb2757447e289e
-R 8864259ed44807eea46d7c4986422a72
+P a8f958be804ee05c4137b3cd110db344713af5f2
+R 5f2e996a1ab6f83c7e08f128286e26ff
 U dan
-Z 967d048f88e642230f471eb242428feb
+Z 8a044884de878c7767a8936662f5ee57

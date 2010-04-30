@@ -5046,7 +5046,6 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
   unixShm *p;            /* The connection to be closed */
   unixShmFile *pFile;    /* The underlying shared-memory file */
   unixShm **pp;          /* For looping over sibling connections */
-  int nRef;              /* Number of connections to pFile */
 
   if( pSharedMem==0 ) return SQLITE_OK;
   p = (struct unixShm*)pSharedMem;
@@ -5056,13 +5055,10 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
   assert( p->exclMask==0 );
   assert( p->sharedMask==0 );
 
-
   /* Remove connection p from the set of connections associated with pFile */
   sqlite3_mutex_enter(pFile->mutex);
   for(pp=&pFile->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
   *pp = p->pNext;
-  pFile->nRef--;
-  nRef = pFile->nRef;
 
   /* Free the connection p */
   sqlite3_free(p);
@@ -5070,9 +5066,14 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
 
   /* If pFile->nRef has reached 0, then close the underlying
   ** shared-memory file, too */
-  if( nRef==0 ){
+  unixEnterMutex();
+  assert( pFile->nRef>0 );
+  pFile->nRef--;
+  if( pFile->nRef==0 ){
     unixShmPurge();
   }
+  unixLeaveMutex();
+
   return SQLITE_OK;
 }
 
