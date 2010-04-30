@@ -926,7 +926,7 @@ int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
     }else{
       /* Check if the mapping needs to grow. */
       if( pWal->hdr.iLastPg 
-       && walIndexEntry(pWal->hdr.iLastPg)>=pWal->szWIndex
+       && walIndexEntry(pWal->hdr.iLastPg)*sizeof(u32)>=pWal->szWIndex
       ){
          walIndexRemap(pWal, -1);
       }
