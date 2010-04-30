@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\ssome\sobsolete\sdebugging\sparameters.
-D 2010-04-30T17:28:35
+C Change\sthe\sSHM\sVFS\slogic\sin\sos_unix.c\sso\sthat\sit\sdoes\snot\shold\san\sexclusive\nlock\sn\sthe\smapped\smemory\swhen\salso\sholding\sa\sCHECKPOINT\slock.\s\sThis\nimproves\sconcurrency\sbetween\sreaders\sand\scheckpointers.
+D 2010-04-30T17:47:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c edbc13a32a6b835b5303a444bd7da9404dc17e58
+F src/os_unix.c 559f9f18ccd85a6d8da0309753f4be124998bddf
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -811,14 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 79d356fea6008a8adf8ebd4906571375f3cf5213
-R 7623f491cc3fe25e6cf1447dc278db34
+P a012aed498bf41a5f6f3006182b0c4c2ab0fe1bb
+R 8c6bff1c20fef6364d82d75506d94733
 U drh
-Z 4cf1ecd05c61c28ec308c760f4a7a514
+Z 01ae0928e38536e336a0fa4223ef6f3d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL2xNGoxKgR168RlERAkqbAKCB34id8nZsSwu8Q+yGhmvcyx0/GACdHh30
-Yn92idGRYRLRmXhKMauGM8c=
-=ZLEl
+iD8DBQFL2xfKoxKgR168RlERAu5rAKCJ9R7soT0Y2Sx2CpYlaWrlm57SuACeIVK9
+g9rON3+p6pxGk+AOwiTbLws=
+=wAdF
 -----END PGP SIGNATURE-----

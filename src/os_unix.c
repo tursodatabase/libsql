@@ -5140,7 +5140,10 @@ static int unixShmGet(
   unixShmFile *pFile = p->pFile;
   int rc = SQLITE_OK;
 
-  sqlite3_mutex_enter(pFile->mutexBuf);
+  if( p->lockState!=SQLITE_SHM_CHECKPOINT ){
+    sqlite3_mutex_enter(pFile->mutexBuf);
+    p->hasMutexBuf = 1;
+  }
   sqlite3_mutex_enter(pFile->mutex);
   if( pFile->szMap==0 || reqMapSize>pFile->szMap ){
     int actualSize;
@@ -5168,8 +5171,11 @@ static int unixShmGet(
 */
 static int unixShmRelease(sqlite3_shm *pSharedMem){
   unixShm *p = (unixShm*)pSharedMem;
-  unixShmFile *pFile = p->pFile;
-  sqlite3_mutex_leave(pFile->mutexBuf);  
+  if( p->hasMutexBuf ){
+    unixShmFile *pFile = p->pFile;
+    sqlite3_mutex_leave(pFile->mutexBuf);
+    p->hasMutexBuf = 0;
+  }
   return SQLITE_OK;
 }
 
