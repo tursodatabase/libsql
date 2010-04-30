@@ -5242,7 +5242,7 @@ static int unixShmLock(
       }else if( p->lockState==SQLITE_SHM_WRITE ){
         rc = unixShmSharedLock(pFile, p, UNIX_SHM_A);
         unixShmUnlock(pFile, p, UNIX_SHM_C|UNIX_SHM_D);
-        p->lockState = SQLITE_SHM_READ;
+        p->lockState = p->readLock = SQLITE_SHM_READ;
       }else{
         assert( p->lockState==SQLITE_SHM_RECOVER );
         unixShmUnlock(pFile, p, UNIX_SHM_MUTEX);
