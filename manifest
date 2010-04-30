@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\sin\sthe\sprevious\scommit.\sBoth\sunixShm.lockState\sand\sunixShm.readLock\sshould\sbe\sset\sto\sREAD\swhen\sdowngrading\sfrom\sa\sWRITE\sto\sa\sREAD\slock
-D 2010-04-30T16:41:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C In\sthe\sdebugging\soutput\sfor\sSHM-LOCK\sin\sos_unix.c,\suse\ssymbolic\snames\nfor\sthe\slock\sstates\srather\sthan\sraw\snumbers.
+D 2010-04-30T16:48:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 72413d328c45dce9d7d11a8726a660dd501732c7
+F src/os_unix.c edbc13a32a6b835b5303a444bd7da9404dc17e58
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 434f9751fc2dfc11ade004282deda5f8560bcba2
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 55f5af5e174df7a28deeb36faa51138926669897
-R 30163f46a964ded4f6fbb73a10520c97
-U dan
-Z 2d3273731b921855c7e11145f0f666b0
+P 90119fecbce06c8db82194dfd9d5045be29b1cda
+R ebae94644ba62e3155e25c91f8d6fd85
+U drh
+Z 02eccc20e834aee25fd2cd7428a6b07d
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL2wnXoxKgR168RlERAkXlAJ97RPvDHNYNUAR/6YpO0tH6FowdpgCghlQl
+WdLDFQjAGffRMStZhNqyiHA=
+=AZcG
+-----END PGP SIGNATURE-----

@@ -5173,6 +5173,20 @@ static int unixShmRelease(sqlite3_shm *pSharedMem){
   return SQLITE_OK;
 }
 
+/*
+** Symbolic names for LOCK states used for debugging.
+*/
+#ifdef SQLITE_DEBUG
+static const char *azLkName[] = {
+  "UNLOCK",
+  "READ",
+  "READ_FULL",
+  "WRITE",
+  "PENDING",
+  "CHECKPOINT",
+  "RECOVER"
+};
+#endif
 
 
 /*
@@ -5205,14 +5219,14 @@ static int unixShmLock(
    || desiredLock==p->lockState
    || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
   ){
-    OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %d and got %d\n",
-             p->id, getpid(), desiredLock, p->lockState));
+    OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s and got %s\n",
+             p->id, getpid(), azLkName[desiredLock], azLkName[p->lockState]));
     if( pGotLock ) *pGotLock = p->lockState;
     return SQLITE_OK;
   }
 
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %d->%d\n",
-            p->id, getpid(), p->lockState, desiredLock));
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s->%s\n",
+            p->id, getpid(), azLkName[p->lockState], azLkName[desiredLock]));
   sqlite3_mutex_enter(pFile->mutex);
   switch( desiredLock ){
     case SQLITE_SHM_UNLOCK: {
@@ -5301,7 +5315,8 @@ static int unixShmLock(
     }
   }
   sqlite3_mutex_leave(pFile->mutex);
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %d\n", p->id,getpid(),p->lockState));
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %s\n",
+           p->id, getpid(), azLkName[p->lockState]));
   if( pGotLock ) *pGotLock = p->lockState;
   return rc;
 }
