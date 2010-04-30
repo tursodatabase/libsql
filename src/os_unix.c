@@ -4984,13 +4984,13 @@ static int unixShmOpen(
 
     pFile->h = open(zName, O_RDWR|O_CREAT, 0664);
     if( pFile->h<0 ){
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
     }
 
     rc = fstat(pFile->h, &sStat);
     if( rc ){
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
     }
     pFile->fid.dev = sStat.st_dev;

@@ -567,7 +567,7 @@ int sqlite3WalOpen(
   int nWal;                       /* Length of zWal in bytes */
 
   assert( zDb );
-  if( pVfs->xShmOpen==0 ) return SQLITE_CANTOPEN;
+  if( pVfs->xShmOpen==0 ) return SQLITE_CANTOPEN_BKPT;
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
@@ -1237,6 +1237,7 @@ int sqlite3WalCheckpoint(
   }
 
   /* Release the locks. */
+  walIndexUnmap(pWal);
   walSetLock(pWal, SQLITE_SHM_UNLOCK);
   return rc;
 }
