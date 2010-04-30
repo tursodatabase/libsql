@@ -5113,7 +5113,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_TEST
   extern char sqlite3_query_plan[];
   static char *query_plan = sqlite3_query_plan;
-/*  extern int sqlite3_walsummary_mmap_incr;                 // In wal.c */
 #ifdef SQLITE_ENABLE_FTS3
   extern int sqlite3_fts3_enable_parentheses;
 #endif
@@ -5173,8 +5172,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_TEST
   Tcl_LinkVar(interp, "sqlite_query_plan",
       (char*)&query_plan, TCL_LINK_STRING|TCL_LINK_READ_ONLY);
-/*  Tcl_LinkVar(interp, "sqlite_walsummary_mmap_incr",
-      (char*)&sqlite3_walsummary_mmap_incr, TCL_LINK_INT); */
 #endif
 #ifdef SQLITE_DEBUG
   Tcl_LinkVar(interp, "sqlite_addop_trace",

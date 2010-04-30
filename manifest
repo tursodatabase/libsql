@@ -1,5 +1,8 @@
-C Fix\sa\sproblem\swith\sresizing\sthe\swal-index\smapping\safter\sthe\smapping\shas\sbeen\sextended\sby\san\sexternal\sprocess.
-D 2010-04-30T17:05:24
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\ssome\sobsolete\sdebugging\sparameters.
+D 2010-04-30T17:28:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +176,7 @@ F src/sqliteLimit.h 3afab2291762b5d09ae20c18feb8e9fa935a60a6
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 4de81521174fedacd8393ea7b70b730ce17f8eae
-F src/test1.c a449144907face6414f68f6a5663a5b8cadabbd4
+F src/test1.c 8b4c246c41e75c3ff033edb2e8c2cf15820861ae
 F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -758,7 +761,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 67f1b8ec4aa2251db2b4d33f43ea9b1ba1711210
+F test/wal.test 830fc2d723fc4c55ef5666141e3a54e0cedd87e5
 F test/walbak.test f6fde9a5f59d0c697cb1f4af7876178c2f69a7ba
 F test/walcrash.test f022cee7eb7baa5fb898726120a6a4073dd831d1
 F test/walhook.test 287a69d662939604f2e0452dace2cec8ef634d5e
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9526b11130f3ed2f5227386a26263c767214603a
-R 91978a8283887836c2a96b7f05bffc8f
-U dan
-Z 2ea44366a0f8d457f9964ceb9f3d8476
+P 79d356fea6008a8adf8ebd4906571375f3cf5213
+R 7623f491cc3fe25e6cf1447dc278db34
+U drh
+Z 4cf1ecd05c61c28ec308c760f4a7a514
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL2xNGoxKgR168RlERAkqbAKCB34id8nZsSwu8Q+yGhmvcyx0/GACdHh30
+Yn92idGRYRLRmXhKMauGM8c=
+=ZLEl
+-----END PGP SIGNATURE-----

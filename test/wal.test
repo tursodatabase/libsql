@@ -848,7 +848,6 @@ db close
 #-------------------------------------------------------------------------
 # Test large log summaries.
 #
-set sqlite_walsummary_mmap_incr 64
 do_test wal-13.1.1 {
   list [file exists test.db] [file exists test.db-wal]
 } {1 0}
@@ -911,6 +910,9 @@ foreach code [list {
     do_test wal-13.$tn.$ii.c {
       db eval { SELECT count(*) FROM t1 }
     } [expr (1<<$ii)]
+    do_test wal-13.$tn.$ii.d {
+      db eval { PRAGMA integrity_check }
+    } {ok}
   }
 
   catch { db2 close }
@@ -965,4 +967,3 @@ do_test wal-14 {
 catch { db close }
 catch { db2 close }
 finish_test
-
