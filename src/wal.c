@@ -785,8 +785,35 @@ int sqlite3WalClose(
 ){
   int rc = SQLITE_OK;
   if( pWal ){
+    int isDelete = 0;             /* True to unlink wal and wal-index files */
+
+    /* If an EXCLUSIVE lock can be obtained on the database file (using the
+    ** ordinary, rollback-mode locking methods, this guarantees that the
+    ** connection associated with this log file is the only connection to
+    ** the database. In this case checkpoint the database and unlink both
+    ** the wal and wal-index files.
+    **
+    ** The EXCLUSIVE lock is not released before returning.
+    */
+    rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
+    if( rc==SQLITE_OK ){
+      rc = walCheckpoint(pWal, pFd, sync_flags, zBuf);
+      if( rc==SQLITE_OK ){
+        isDelete = 1;
+      }
+      walIndexUnmap(pWal);
+    }
+
     pWal->pVfs->xShmClose(pWal->pWIndex);
     sqlite3OsClose(pWal->pFd);
+    if( isDelete ){
+      int nWal;
+      char *zWal = &((char *)pWal->pFd)[pWal->pVfs->szOsFile];
+      sqlite3OsDelete(pWal->pVfs, zWal, 0);
+      nWal = sqlite3Strlen30(zWal);
+      memcpy(&zWal[nWal], "-index", 7);
+      pWal->pVfs->xShmDelete(pWal->pVfs, zWal);
+    }
     sqlite3_free(pWal);
   }
   return rc;
