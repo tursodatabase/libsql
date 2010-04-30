@@ -1,5 +1,5 @@
-C Add\sxShmXXX()\smethods\sto\sthe\stest\sVFS\sin\stest_devsym.test.
-D 2010-04-30T16:19:40
+C Reapply\scommits\s[837d82a929]\sand\s[c05e7dca17]\sthat\swere\saccidentally\soverwritten.
+D 2010-04-30T16:24:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -221,7 +221,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c f08889611d5da7d2cbe9557748e74f70ab454974
+F src/wal.c efe21d703cd5f32c18fd87762b6ac20dc47c5785
 F src/wal.h c3f347ba8f1cde46d9bcc6fedaf3ed0aa4b53294
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c faadd9c2bf08868e5135192b44e0d753e363a885
@@ -808,7 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d9250e84ac1fc6590f8670e1d801630650c7846a
-R e706456f30289526a342dac546a83543
+P 1d20342424b452ea96aaf161de1f98f26a9155a0
+R 88f12ad5a621dbb661d799113c2782f7
 U dan
-Z 9513429a159541b5d8980cb57914a083
+Z 72810ce2ab0ab749da9f7335fd238964
