@@ -209,7 +209,7 @@ do_test walmode-5.2.5 {
 if {$TEMP_STORE>=2} {
   set tempJrnlMode memory
 } else {
-  set tempJrnlMode
+  set tempJrnlMode delete
 }
 do_test walmode-5.3.1 {
   sqlite3 db test.db
