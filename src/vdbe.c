@@ -5212,11 +5212,15 @@ case OP_Checkpoint: {
 **
 ** Write a string containing the final journal-mode to register P2.
 */
-case OP_JournalMode: {
+case OP_JournalMode: {    /* out2-prerelease */
   Btree *pBt;                     /* Btree to change journal mode of */
   Pager *pPager;                  /* Pager associated with pBt */
-  int eNew = pOp->p3;             /* New journal mode */
+  int eNew;                       /* New journal mode */
+  int eOld;                       /* The old journal mode */
+  const sqlite3_vfs *pVfs;        /* The VFS of pPager */
+  const char *zFilename;          /* Name of database file for pPager */
 
+  eNew = pOp->p3;
   assert( eNew==PAGER_JOURNALMODE_DELETE 
        || eNew==PAGER_JOURNALMODE_TRUNCATE 
        || eNew==PAGER_JOURNALMODE_PERSIST 
@@ -5230,15 +5234,21 @@ case OP_JournalMode: {
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
+  zFilename = sqlite3PagerFilename(pPager);
+  pVfs = sqlite3PagerVfs(pPager);
 
-  if( 0==sqlite3Strlen30(sqlite3BtreeGetFilename(pBt)) 
-   && eNew==PAGER_JOURNALMODE_WAL 
+  /* Do not allow a transition to journal_mode=WAL for a database
+  ** in temporary storage or if the VFS does not support xShmOpen.
+  */
+  if( eNew==PAGER_JOURNALMODE_WAL
+   && (zFilename[0]==0                               /* Temp file */
+         || pVfs->iVersion<2 || pVfs->xShmOpen==0)   /* No xShmOpen support */
   ){
     eNew = PAGER_JOURNALMODE_QUERY;
   }
 
   if( eNew!=PAGER_JOURNALMODE_QUERY ){
-    int eOld = sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_QUERY);
+    eOld = sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_QUERY);
     if( (eNew!=eOld)
      && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
     ){

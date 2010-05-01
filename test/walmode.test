@@ -153,6 +153,7 @@ do_test walmode-5.1.1 {
   sqlite3 db :memory:
   execsql { PRAGMA main.journal_mode }
 } {memory}
+breakpoint
 do_test walmode-5.1.2 {
   execsql { PRAGMA main.journal_mode = wal }
 } {memory}
@@ -205,13 +206,18 @@ do_test walmode-5.2.5 {
   }
 } {1 2 3 4 delete}
 
+if {$TEMP_STORE>=2} {
+  set tempJrnlMode memory
+} else {
+  set tempJrnlMode
+}
 do_test walmode-5.3.1 {
   sqlite3 db test.db
   execsql { PRAGMA temp.journal_mode }
-} {delete}
+} $tempJrnlMode
 do_test walmode-5.3.2 {
   execsql { PRAGMA temp.journal_mode = wal }
-} {delete}
+} $tempJrnlMode
 do_test walmode-5.3.3 {
   execsql {
     BEGIN;
@@ -221,17 +227,16 @@ do_test walmode-5.3.3 {
     SELECT * FROM t1;
     PRAGMA temp.journal_mode;
   }
-} {1 2 delete}
+} [list 1 2 $tempJrnlMode]
 do_test walmode-5.3.4 {
   execsql { PRAGMA temp.journal_mode = wal }
-} {delete}
+} $tempJrnlMode
 do_test walmode-5.3.5 {
   execsql { 
     INSERT INTO t1 VALUES(3, 4);
     SELECT * FROM t1;
     PRAGMA temp.journal_mode;
   }
-} {1 2 3 4 delete}
+} [list 1 2 3 4 $tempJrnlMode]
 
 finish_test
-
