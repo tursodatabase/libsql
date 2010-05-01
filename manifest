@@ -1,5 +1,8 @@
-C Support\scompile-time\soption\sSQLITE_OMIT_WAL,\sfor\sbuilding\swithout\sWAL\ssupport.
-D 2010-05-01T16:40:20
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Rework\smutexes\son\sthe\sSHM\simplemention\sfor\sos_unix\sto\savoid\sa\sdeadlock\sduring\nWAL\srecovery.
+D 2010-05-01T17:50:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
 F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 27ec47f27987b9f25bc55df5e458f7f380730f66
+F src/os_unix.c d402146bd3731575ff399d2ebcdc0867034e8451
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c e9c7fe979b32a3c5bf4216d8fbe1cf8beff8a1b8
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P dcabc90ca588281fa7a290972ec8af6816932489
-R e813455665cf7f3ad3b5157515fc2fe7
-U dan
-Z 955de6008d5a15476ae5c3900eb59d71
+P 9b230c43dfa112e3e1589f9775926807bd36b36e
+R 70dfb91700ac677788e5556f2fcdd9f6
+U drh
+Z aec6f98e0ebcce7f7132104408636399
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL3GnyoxKgR168RlERAm3bAJwJDWmdlrwEHnjKELzYU8/fifSwAQCeNiz2
+E59QAYMayqNW9OBp4QF0LdQ=
+=o6hV
+-----END PGP SIGNATURE-----

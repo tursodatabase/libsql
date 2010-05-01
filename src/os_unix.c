@@ -4594,7 +4594,6 @@ struct unixShmFile {
   struct unixFileId fid;     /* Unique file identifier */
   sqlite3_mutex *mutex;      /* Mutex to access this object */
   sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
-  sqlite3_mutex *mutexRecov; /* The RECOVER mutex */
   char *zFilename;           /* Name of the file */
   int h;                     /* Open file descriptor */
   int szMap;                 /* Size of the mapping of file into memory */
@@ -4633,7 +4632,6 @@ struct unixShm {
   u8 readLock;               /* Which of the two read-lock states to use */
   u8 hasMutex;               /* True if holding the unixShmFile mutex */
   u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
-  u8 hasMutexRecov;          /* True if holding pFile->mutexRecov */
   u8 sharedMask;             /* Mask of shared locks held */
   u8 exclMask;               /* Mask of exclusive locks held */
 #ifdef SQLITE_DEBUG
@@ -4909,7 +4907,6 @@ static void unixShmPurge(void){
     if( p->nRef==0 ){
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
       if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
-      if( p->mutexRecov ) sqlite3_mutex_free(p->mutexRecov);
       if( p->h>=0 ) close(p->h);
       *pp = p->pNext;
       sqlite3_free(p);
@@ -4976,11 +4973,6 @@ static int unixShmOpen(
     }
     pFile->mutexBuf = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
     if( pFile->mutexBuf==0 ){
-      rc = SQLITE_NOMEM;
-      goto shm_open_err;
-    }
-    pFile->mutexRecov = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pFile->mutexRecov==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
@@ -5124,8 +5116,19 @@ static int unixShmSize(
 ** whatever mapping size is convenient.
 **
 ** *ppBuf is made to point to the memory which is a mapping of the
-** underlying storage.  This segment is locked.  unixShmRelease()
-** must be called to release the lock.
+** underlying storage.  A mutex is acquired to prevent other threads
+** from running while *ppBuf is in use in order to prevent other threads
+** remapping *ppBuf out from under this thread.  The unixShmRelease()
+** call will release the mutex.  However, if the lock state is CHECKPOINT,
+** the mutex is not acquired because CHECKPOINT will never remap the
+** buffer.  RECOVER might remap, though, so CHECKPOINT will acquire
+** the mutex if and when it promotes to RECOVER.
+**
+** RECOVER needs to be atomic.  The same mutex that prevents *ppBuf from
+** being remapped also prevents more than one thread from being in
+** RECOVER at a time.  But, RECOVER sometimes wants to remap itself.
+** To prevent RECOVER from losing its lock while remapping, the
+** mutex is not released by unixShmRelease() when in RECOVER.
 **
 ** *pNewMapSize is set to the size of the mapping.
 **
@@ -5142,7 +5145,7 @@ static int unixShmGet(
   unixShmFile *pFile = p->pFile;
   int rc = SQLITE_OK;
 
-  if( p->lockState!=SQLITE_SHM_CHECKPOINT ){
+  if( p->lockState!=SQLITE_SHM_CHECKPOINT && p->hasMutexBuf==0 ){
     sqlite3_mutex_enter(pFile->mutexBuf);
     p->hasMutexBuf = 1;
   }
@@ -5170,10 +5173,16 @@ static int unixShmGet(
 /*
 ** Release the lock held on the shared memory segment to that other
 ** threads are free to resize it if necessary.
+**
+** If the lock is not currently held, this routine is a harmless no-op.
+**
+** If the shared-memory object is in lock state RECOVER, then we do not
+** really want to release the lock, so in that case too, this routine
+** is a no-op.
 */
 static int unixShmRelease(sqlite3_shm *pSharedMem){
   unixShm *p = (unixShm*)pSharedMem;
-  if( p->hasMutexBuf ){
+  if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
     unixShmFile *pFile = p->pFile;
     sqlite3_mutex_leave(pFile->mutexBuf);
     p->hasMutexBuf = 0;
@@ -5235,6 +5244,11 @@ static int unixShmLock(
 
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s->%s\n",
             p->id, getpid(), azLkName[p->lockState], azLkName[desiredLock]));
+  
+  if( desiredLock==SQLITE_SHM_RECOVER && !p->hasMutexBuf ){
+    sqlite3_mutex_enter(pFile->mutexBuf);
+    p->hasMutexBuf = 1;
+  }
   sqlite3_mutex_enter(pFile->mutex);
   switch( desiredLock ){
     case SQLITE_SHM_UNLOCK: {
@@ -5268,7 +5282,6 @@ static int unixShmLock(
       }else{
         assert( p->lockState==SQLITE_SHM_RECOVER );
         unixShmUnlock(pFile, p, UNIX_SHM_MUTEX);
-        sqlite3_mutex_leave(pFile->mutexRecov);
         p->lockState = p->readLock;
         rc = SQLITE_OK;
       }
@@ -5289,7 +5302,6 @@ static int unixShmLock(
            || p->lockState==SQLITE_SHM_RECOVER );
       if( p->lockState==SQLITE_SHM_RECOVER ){
         unixShmUnlock(pFile, p, UNIX_SHM_MUTEX);
-        sqlite3_mutex_leave(pFile->mutexRecov);
         p->lockState = SQLITE_SHM_CHECKPOINT;
         rc = SQLITE_OK;
       }
@@ -5312,9 +5324,7 @@ static int unixShmLock(
       assert( p->lockState==SQLITE_SHM_READ
            || p->lockState==SQLITE_SHM_READ_FULL
            || p->lockState==SQLITE_SHM_CHECKPOINT );
-      sqlite3_mutex_leave(pFile->mutex);
-      sqlite3_mutex_enter(pFile->mutexRecov);
-      sqlite3_mutex_enter(pFile->mutex);
+      assert( sqlite3_mutex_held(pFile->mutexBuf) );
       rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_MUTEX);
       if( rc==SQLITE_OK ){
         p->lockState = SQLITE_SHM_RECOVER;
