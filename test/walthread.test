@@ -28,6 +28,7 @@ set seconds(walthread-1) 20
 set seconds(walthread-2) 20
 set seconds(walthread-3) 20
 set seconds(walthread-4) 20
+set seconds(walthread-5) 1
 
 # The parameter is the name of a variable in the callers context. The
 # variable may or may not exist when this command is invoked.
@@ -130,7 +131,7 @@ proc do_thread_test {args} {
 
   sqlite3 db test.db
   eval $P(init)
-  db close
+  catch { db close }
 
   foreach T $P(threads) {
     set name  [lindex $T 0]
@@ -452,6 +453,82 @@ do_thread_test2 walthread-4 -seconds $seconds(walthread-4) -init {
   }
 
   set {} ok
+}
+
+
+# This test case attempts to provoke a deadlock condition that existed in
+# the unix VFS at one point. The problem occurred only while recovering a 
+# very large wal file (one that requires a wal-index larger than the 
+# initial default allocation of 64KB).
+#
+# When recovering a log file, mutexes are usually obtained and released
+# as follows:
+#
+#   xShmGet                         ENTER mutexBuf
+#   xShmLock(RECOVER)               ENTER mutexRecov
+#     <do recovery work>
+#   xShmLock(READ)                  LEAVE mutexRecov
+#   xShmRelease                     LEAVE mutexBuf         
+#
+# However, if the initial wal-index allocation needs to be enlarged during
+# the recovery process, the mutex operations become:
+#
+#   xShmGet                         ENTER mutexBuf
+#   xShmLock(RECOVER)               ENTER mutexRecov
+#     <do first part of recovery work>
+#     xShmRelease                   LEAVE mutexBuf
+#     xShmSize
+#     xShmGet                       ENTER mutexBuf
+#     <do second part of recovery work>
+#   xShmLock(READ)                  LEAVE mutexRecov
+#   xShmRelease                     LEAVE mutexBuf         
+#
+# If multiple threads attempt the above simultaneously, deadlock can occur.
+#
+do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
+
+  proc log_file_size {nFrame pgsz} {
+    expr {12 + ($pgsz+16)*$nFrame}
+  }
+
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(x);
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(900));
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*     2 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*     4 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*     8 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*    16 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*    32 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*    64 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*   128 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*   256 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*   512 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*  1024 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*  2048 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*  4096 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /*  8192 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /* 16384 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /* 32768 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;      /* 65536 */
+    COMMIT;
+  }
+
+  file copy -force test.db-wal bak.db-wal
+  file copy -force test.db bak.db
+  db close
+
+  file copy -force bak.db-wal test.db-wal
+  file copy -force bak.db test.db
+
+  if {[file size test.db-wal] < [log_file_size [expr 64*1024] 1024]} {
+    error "Somehow failed to create a large log file"
+  }
+  puts "Database with large log file recovered. Now running clients..."
+} -thread T 5 {
+  db eval { SELECT count(*) FROM t1 }
 }
 
 finish_test
