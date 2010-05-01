@@ -133,6 +133,7 @@ struct Wal {
   u8 lockState;              /* SQLITE_SHM_xxxx constant showing lock state */
   u8 readerType;             /* SQLITE_SHM_READ or SQLITE_SHM_READ_FULL */
   WalIndexHdr hdr;           /* Wal-index for current snapshot */
+  char *zName;               /* Name of underlying storage */
 };
 
 
@@ -590,24 +591,23 @@ int sqlite3WalOpen(
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
   nWal = strlen(zDb);
-  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal+11);
+  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal+5);
   if( !pRet ) goto wal_open_out;
   pRet->pVfs = pVfs;
   pRet->pFd = (sqlite3_file *)&pRet[1];
-  zWal = pVfs->szOsFile + (char*)pRet->pFd;
-  sqlite3_snprintf(nWal+11, zWal, "%s-wal-index", zDb);
+  pRet->zName = zWal = pVfs->szOsFile + (char*)pRet->pFd;
+  sqlite3_snprintf(nWal+5, zWal, "%s-wal", zDb);
   rc = pVfs->xShmOpen(pVfs, zWal, &pRet->pWIndex);
   if( rc ) goto wal_open_out;
 
   /* Open file handle on the write-ahead log file. */
-  zWal[nWal+4] = 0;
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
   rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
 
 wal_open_out:
   if( rc!=SQLITE_OK ){
     if( pRet ){
-      pVfs->xShmClose(pRet->pWIndex);
+      pVfs->xShmClose(pRet->pWIndex, 0);
       sqlite3OsClose(pRet->pFd);
       sqlite3_free(pRet);
     }
@@ -805,15 +805,10 @@ int sqlite3WalClose(
       walIndexUnmap(pWal);
     }
 
-    pWal->pVfs->xShmClose(pWal->pWIndex);
+    pWal->pVfs->xShmClose(pWal->pWIndex, isDelete);
     sqlite3OsClose(pWal->pFd);
     if( isDelete ){
-      int nWal;
-      char *zWal = &((char *)pWal->pFd)[pWal->pVfs->szOsFile];
-      sqlite3OsDelete(pWal->pVfs, zWal, 0);
-      nWal = sqlite3Strlen30(zWal);
-      memcpy(&zWal[nWal], "-index", 7);
-      pWal->pVfs->xShmDelete(pWal->pVfs, zWal);
+      sqlite3OsDelete(pWal->pVfs, pWal->zName, 0);
     }
     sqlite3_free(pWal);
   }
