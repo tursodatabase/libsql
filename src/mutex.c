@@ -77,6 +77,7 @@ int sqlite3MutexEnd(void){
 ** Retrieve a pointer to a static mutex or allocate a new dynamic one.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
+  if( !sqlite3GlobalConfig.bCoreMutex ) return 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
