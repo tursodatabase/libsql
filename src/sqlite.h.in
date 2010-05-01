@@ -847,8 +847,6 @@ struct sqlite3_vfs {
   int (*xShmSize)(sqlite3_shm*, int reqSize, int *pNewSize);
   int (*xShmGet)(sqlite3_shm*, int reqMapSize, int *pMapSize, void**);
   int (*xShmRelease)(sqlite3_shm*);
-  int (*xShmPush)(sqlite3_shm*);
-  int (*xShmPull)(sqlite3_shm*);
   int (*xShmLock)(sqlite3_shm*, int desiredLock, int *gotLock);
   int (*xShmClose)(sqlite3_shm*);
   int (*xShmDelete)(sqlite3_vfs*, const char *zName);

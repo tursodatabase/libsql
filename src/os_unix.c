@@ -6587,8 +6587,6 @@ int sqlite3_os_init(void){
     unixShmSize,          /* xShmSize */                    \
     unixShmGet,           /* xShmGet */                     \
     unixShmRelease,       /* xShmRelease */                 \
-    0,                    /* xShmPush */                    \
-    0,                    /* xShmPull */                    \
     unixShmLock,          /* xShmLock */                    \
     unixShmClose,         /* xShmClose */                   \
     unixShmDelete,        /* xShmDelete */                  \
