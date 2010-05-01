@@ -4589,6 +4589,12 @@ typedef struct unixShmFile unixShmFile;
 ** Either unixShmFile.mutex must be held or unixShmFile.nRef==0 and
 ** unixMutexHeld() is true when reading or writing any other field
 ** in this structure.
+**
+** To avoid deadlocks, mutex and mutexBuf are always released in the
+** reverse order that they are acquired.  mutexBuf is always acquired
+** first and released last.  This invariant is check by asserting
+** sqlite3_mutex_notheld() on mutex whenever mutexBuf is acquired or
+** released.
 */
 struct unixShmFile {
   struct unixFileId fid;     /* Unique file identifier */
@@ -5146,6 +5152,7 @@ static int unixShmGet(
   int rc = SQLITE_OK;
 
   if( p->lockState!=SQLITE_SHM_CHECKPOINT && p->hasMutexBuf==0 ){
+    assert( sqlite3_mutex_notheld(pFile->mutex) );
     sqlite3_mutex_enter(pFile->mutexBuf);
     p->hasMutexBuf = 1;
   }
@@ -5184,6 +5191,7 @@ static int unixShmRelease(sqlite3_shm *pSharedMem){
   unixShm *p = (unixShm*)pSharedMem;
   if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
     unixShmFile *pFile = p->pFile;
+    assert( sqlite3_mutex_notheld(pFile->mutex) );
     sqlite3_mutex_leave(pFile->mutexBuf);
     p->hasMutexBuf = 0;
   }
@@ -5246,6 +5254,7 @@ static int unixShmLock(
             p->id, getpid(), azLkName[p->lockState], azLkName[desiredLock]));
   
   if( desiredLock==SQLITE_SHM_RECOVER && !p->hasMutexBuf ){
+    assert( sqlite3_mutex_notheld(pFile->mutex) );
     sqlite3_mutex_enter(pFile->mutexBuf);
     p->hasMutexBuf = 1;
   }
