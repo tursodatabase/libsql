@@ -13,6 +13,8 @@
 ** This file contains the implementation of a write-ahead log file used in 
 ** "journal_mode=wal" mode.
 */
+#ifndef SQLITE_OMIT_WAL
+
 #include "wal.h"
 
 
@@ -1271,6 +1273,7 @@ int sqlite3WalCheckpoint(
   int isChanged = 0;              /* True if a new wal-index header is loaded */
 
   assert( pWal->lockState==SQLITE_SHM_UNLOCK );
+  assert( pWal->pWiData==0 );
 
   /* Get the CHECKPOINT lock */
   do {
@@ -1315,3 +1318,4 @@ int sqlite3WalCallback(Wal *pWal){
   }
   return (int)ret;
 }
+#endif /* #ifndef SQLITE_OMIT_WAL */

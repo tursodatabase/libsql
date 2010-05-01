@@ -306,9 +306,14 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
   pCtx->s.db->mallocFailed = 1;
 }
 
+/*
+** This function is called after a transaction has been committed. It 
+** invokes callbacks registered with sqlite3_wal_hook() as required.
+*/
 static int doWalCallbacks(sqlite3 *db){
-  int i;
   int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_WAL
+  int i;
   for(i=0; i<db->nDb; i++){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
@@ -320,6 +325,7 @@ static int doWalCallbacks(sqlite3 *db){
       }
     }
   }
+#endif
   return rc;
 }
 

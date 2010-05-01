@@ -67,8 +67,10 @@ do_test rdonly-1.5 {
 # write-version is reloaded). This way, SQLite does not discover that
 # the database is read-only until after it is locked.
 #
+set ro_version 02
+ifcapable wal { set ro_version 03 }
 do_test rdonly-1.6 {
-  hexio_write test.db 18 03              ; # write-version
+  hexio_write test.db 18 $ro_version     ; # write-version
   hexio_write test.db 24 11223344        ; # change-counter
   catchsql {
     INSERT INTO t1 VALUES(2);

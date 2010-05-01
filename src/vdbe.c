@@ -5186,6 +5186,7 @@ case OP_AggFinal: {
   break;
 }
 
+#ifndef SQLITE_OMIT_WAL
 /* Opcode: Checkpoint P1 * * * *
 **
 ** Checkpoint database P1. This is a no-op if P1 is not currently in
@@ -5200,6 +5201,7 @@ case OP_Checkpoint: {
   rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
   break;
 };  
+#endif
 
 /* Opcode: JournalMode P1 P2 P3 * *
 **
@@ -5234,6 +5236,8 @@ case OP_JournalMode: {    /* out2-prerelease */
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
+
+#ifndef SQLITE_OMIT_WAL
   zFilename = sqlite3PagerFilename(pPager);
   pVfs = sqlite3PagerVfs(pPager);
 
@@ -5282,6 +5286,7 @@ case OP_JournalMode: {    /* out2-prerelease */
       }
     }
   }
+#endif /* ifndef SQLITE_OMIT_WAL */
 
   eNew = sqlite3PagerJournalMode(pPager, eNew);
   pOut = &aMem[pOp->p2];

@@ -17,6 +17,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !wal {finish_test ; return }
+
 proc reopen_db {} {
   catch { db close }
   file delete -force test.db test.db-wal

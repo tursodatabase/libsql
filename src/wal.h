@@ -19,6 +19,22 @@
 
 #include "sqliteInt.h"
 
+#ifdef SQLITE_OMIT_WAL
+# define sqlite3WalOpen(x,y,z)             0
+# define sqlite3WalClose(w,x,y,z)          0
+# define sqlite3WalOpenSnapshot(y,z)       0
+# define sqlite3WalCloseSnapshot(z) 
+# define sqlite3WalRead(w,x,y,z)           0
+# define sqlite3WalDbsize(y,z)
+# define sqlite3WalWriteLock(y,z)          0
+# define sqlite3WalUndo(x,y,z)             0
+# define sqlite3WalSavepoint(z)            0
+# define sqlite3WalSavepointUndo(y,z)      0
+# define sqlite3WalFrames(u,v,w,x,y,z)     0
+# define sqlite3WalCheckpoint(u,v,w,x,y,z) 0
+# define sqlite3WalCallback(z)             0
+#else
+
 /* Connection to a write-ahead log (WAL) file. 
 ** There is one object of this type for each pager. 
 */
@@ -79,4 +95,5 @@ int sqlite3WalCheckpoint(
 */
 int sqlite3WalCallback(Wal *pWal);
 
+#endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */

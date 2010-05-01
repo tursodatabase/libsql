@@ -18,6 +18,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 if {[run_thread_tests]==0} { finish_test ; return }
+ifcapable !wal             { finish_test ; return }
 
 set sqlite_walsummary_mmap_incr 64
 

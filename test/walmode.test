@@ -16,6 +16,25 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# If the library was compiled without WAL support, check that the 
+# "PRAGMA journal_mode=WAL" treats "WAL" as an unrecognized mode.
+#
+ifcapable !wal {
+
+  do_test walmode-0.1 {
+    execsql { PRAGMA journal_mode = wal }
+  } {delete}
+  do_test walmode-0.2 {
+    execsql { PRAGMA main.journal_mode = wal }
+  } {delete}
+  do_test walmode-0.3 {
+    execsql { PRAGMA main.journal_mode }
+  } {delete}
+
+  finish_test
+  return
+}
+
 do_test walmode-1.1 {
   set sqlite_sync_count 0
   execsql { PRAGMA page_size = 1024 }

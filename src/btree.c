@@ -2261,6 +2261,15 @@ static int lockBtree(BtShared *pBt){
     if( memcmp(page1, zMagicHeader, 16)!=0 ){
       goto page1_init_failed;
     }
+
+#ifdef SQLITE_OMIT_WAL
+    if( page1[18]>1 ){
+      pBt->readOnly = 1;
+    }
+    if( page1[19]>1 ){
+      goto page1_init_failed;
+    }
+#else
     if( page1[18]>2 ){
       pBt->readOnly = 1;
     }
@@ -2287,6 +2296,7 @@ static int lockBtree(BtShared *pBt){
       }
       rc = SQLITE_NOTADB;
     }
+#endif
 
     /* The maximum embedded fraction must be exactly 25%.  And the minimum
     ** embedded fraction must be 12.5% for both leaf-data and non-leaf-data.

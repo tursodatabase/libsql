@@ -4562,6 +4562,8 @@ static int unixGetLastError(sqlite3_vfs *NotUsed, int NotUsed2, char *NotUsed3){
   return 0;
 }
 
+#ifndef SQLITE_OMIT_WAL
+
 /* Forward reference */
 typedef struct unixShm unixShm;
 typedef struct unixShmFile unixShmFile;
@@ -5334,6 +5336,15 @@ static int unixShmDelete(sqlite3_vfs *pVfs, const char *zName){
   return pVfs->xDelete(pVfs, zName, 0);
 }
 
+#else
+# define unixShmOpen    0
+# define unixShmSize    0
+# define unixShmGet     0
+# define unixShmRelease 0
+# define unixShmLock    0
+# define unixShmClose   0
+# define unixShmDelete  0
+#endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
 ************************ End of sqlite3_vfs methods ***************************

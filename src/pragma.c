@@ -265,7 +265,10 @@ static const char *actionName(u8 action){
 */
 const char *sqlite3JournalModename(int eMode){
   static char * const azModeName[] = {
-    "delete", "persist", "off", "truncate", "memory", "wal"
+    "delete", "persist", "off", "truncate", "memory"
+#ifndef SQLITE_OMIT_WAL
+     , "wal"
+#endif
   };
   assert( PAGER_JOURNALMODE_DELETE==0 );
   assert( PAGER_JOURNALMODE_PERSIST==1 );
@@ -1397,10 +1400,17 @@ void sqlite3Pragma(
   }else
 #endif /* SQLITE_OMIT_COMPILEOPTION_DIAGS */
 
+#ifndef SQLITE_OMIT_WAL
+  /*
+  **   PRAGMA [database.]checkpoint
+  **
+  ** Checkpoint the database.
+  */
   if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
     sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
   }else
+#endif
 
 #if defined(SQLITE_DEBUG) || defined(SQLITE_TEST)
   /*

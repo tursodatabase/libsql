@@ -16,6 +16,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !wal {finish_test ; return }
+
 proc sqlite3_wal {args} {
   eval sqlite3 $args
   [lindex $args 0] eval { 

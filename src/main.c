@@ -1195,6 +1195,7 @@ void *sqlite3_wal_hook(
   int(*xCallback)(void *, sqlite3*, const char*, int),
   void *pArg                      /* First argument passed to xCallback() */
 ){
+#ifndef SQLITE_OMIT_WAL
   void *pRet;
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pWalArg;
@@ -1202,6 +1203,9 @@ void *sqlite3_wal_hook(
   db->pWalArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
+#else
+  return 0;
+#endif
 }
 
 /*

@@ -399,7 +399,9 @@ struct Pager {
   char *pTmpSpace;            /* Pager.pageSize bytes of space for tmp use */
   PCache *pPCache;            /* Pointer to page cache object */
   sqlite3_backup *pBackup;    /* Pointer to list of ongoing backup processes */
+#ifndef SQLITE_OMIT_WAL
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
+#endif
 };
 
 /*
@@ -1192,9 +1194,16 @@ static int addToSavepointBitvecs(Pager *pPager, Pgno pgno){
 ** Return true if this pager uses a write-ahead log instead of the usual
 ** rollback journal. Otherwise false.
 */
+#ifndef SQLITE_OMIT_WAL
 static int pagerUseWal(Pager *pPager){
   return (pPager->pWal!=0);
 }
+#else
+# define pagerUseWal(x) 0
+# define pagerRollbackWal(x) 0
+# define pagerWalFrames(v,w,x,y,z) 0
+# define pagerOpenWalIfPresent(z) SQLITE_OK
+#endif
 
 /*
 ** Unlock the database file. This function is a no-op if the pager
@@ -2242,6 +2251,7 @@ static int readDbPage(PgHdr *pPg){
   return rc;
 }
 
+#ifndef SQLITE_OMIT_WAL
 /*
 ** This function is invoked once for each page that has already been 
 ** written into the log file when a WAL transaction is rolled back.
@@ -2310,6 +2320,115 @@ static int pagerRollbackWal(Pager *pPager){
 
   return rc;
 }
+
+/*
+** This function is a wrapper around sqlite3WalFrames(). As well as logging
+** the contents of the list of pages headed by pList (connected by pDirty),
+** this function notifies any active backup processes that the pages have
+** changed. 
+*/ 
+static int pagerWalFrames(
+  Pager *pPager,                  /* Pager object */
+  PgHdr *pList,                   /* List of frames to log */
+  Pgno nTruncate,                 /* Database size after this commit */
+  int isCommit,                   /* True if this is a commit */
+  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
+){
+  int rc;                         /* Return code */
+
+  assert( pPager->pWal );
+  rc = sqlite3WalFrames(pPager->pWal, 
+      pPager->pageSize, pList, nTruncate, isCommit, sync_flags
+  );
+  if( rc==SQLITE_OK && pPager->pBackup ){
+    PgHdr *p;
+    for(p=pList; p; p=p->pDirty){
+      sqlite3BackupUpdate(pPager->pBackup, p->pgno, (u8 *)p->pData);
+    }
+  }
+  return rc;
+}
+
+/*
+** Open a WAL snapshot on the log file this pager is connected to.
+*/
+static int pagerOpenSnapshot(Pager *pPager){
+  int rc;                         /* Return code */
+  int changed = 0;                /* True if cache must be reset */
+
+  assert( pagerUseWal(pPager) );
+
+  rc = sqlite3WalOpenSnapshot(pPager->pWal, &changed);
+  if( rc==SQLITE_OK ){
+    int dummy;
+    if( changed ){
+      pager_reset(pPager);
+      assert( pPager->errCode || pPager->dbSizeValid==0 );
+    }
+    rc = sqlite3PagerPagecount(pPager, &dummy);
+  }
+  pPager->state = PAGER_SHARED;
+
+  return rc;
+}
+
+/*
+** Check if the *-wal file that corresponds to the database opened by pPager
+** exists. Assuming no error occurs, set *pExists to 1 if the file exists,
+** or 0 otherwise and return SQLITE_OK. If an IO or OOM error occurs, return
+** an SQLite error code.
+*/
+static int pagerHasWAL(Pager *pPager, int *pExists){
+  int rc;                         /* Return code */
+
+  if( !pPager->tempFile ){
+    char *zWal = sqlite3_mprintf("%s-wal", pPager->zFilename);
+    if( !zWal ){
+      rc = SQLITE_NOMEM;
+    }else{
+      rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
+      sqlite3_free(zWal);
+    }
+  }else{
+    rc = SQLITE_OK;
+    *pExists = 0;
+  }
+  return rc;
+}
+
+/*
+** Check if the *-wal file that corresponds to the database opened by pPager
+** exists. If it does, open the pager in WAL mode. Otherwise, if no error
+** occurs, make sure Pager.journalMode is not set to PAGER_JOURNALMODE_WAL.
+** If an IO or OOM error occurs, return an SQLite error code.
+**
+** If the WAL file is opened, also open a snapshot (read transaction).
+**
+** The caller must hold a SHARED lock on the database file to call this
+** function. Because an EXCLUSIVE lock on the db file is required to delete 
+** a WAL, this ensures there is no race condition between the xAccess() 
+** below and an xDelete() being executed by some other connection.
+*/
+static int pagerOpenWalIfPresent(Pager *pPager){
+  int rc = SQLITE_OK;
+  if( !pPager->tempFile ){
+    int isWal;                    /* True if WAL file exists */
+    rc = pagerHasWAL(pPager, &isWal);
+    if( rc==SQLITE_OK ){
+      if( isWal ){
+        pager_reset(pPager);
+        rc = sqlite3PagerOpenWal(pPager, 0);
+        if( rc==SQLITE_OK ){
+          rc = pagerOpenSnapshot(pPager);
+        }
+      }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
+        pPager->journalMode = PAGER_JOURNALMODE_DELETE;
+      }
+    }
+  }
+  return rc;
+}
+#endif
 
 /*
 ** Playback savepoint pSavepoint. Or, if pSavepoint==NULL, then playback
@@ -2934,10 +3053,12 @@ int sqlite3PagerClose(Pager *pPager){
   sqlite3BeginBenignMalloc();
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
+#ifndef SQLITE_OMIT_WAL
   sqlite3WalClose(pPager->pWal, pPager->fd, 
     (pPager->noSync ? 0 : pPager->sync_flags), pTmp
   );
   pPager->pWal = 0;
+#endif
   pager_reset(pPager);
   if( MEMDB ){
     pager_unlock(pPager);
@@ -3276,34 +3397,6 @@ static int subjournalPage(PgHdr *pPg){
     pPager->nSubRec++;
     assert( pPager->nSavepoint>0 );
     rc = addToSavepointBitvecs(pPager, pPg->pgno);
-  }
-  return rc;
-}
-
-/*
-** This function is a wrapper around sqlite3WalFrames(). As well as logging
-** the contents of the list of pages headed by pList (connected by pDirty),
-** this function notifies any active backup processes that the pages have
-** changed. 
-*/ 
-static int pagerWalFrames(
-  Pager *pPager,                  /* Pager object */
-  PgHdr *pList,                   /* List of frames to log */
-  Pgno nTruncate,                 /* Database size after this commit */
-  int isCommit,                   /* True if this is a commit */
-  int sync_flags                  /* Flags to pass to OsSync() (or 0) */
-){
-  int rc;                         /* Return code */
-
-  assert( pPager->pWal );
-  rc = sqlite3WalFrames(pPager->pWal, 
-      pPager->pageSize, pList, nTruncate, isCommit, sync_flags
-  );
-  if( rc==SQLITE_OK && pPager->pBackup ){
-    PgHdr *p;
-    for(p=pList; p; p=p->pDirty){
-      sqlite3BackupUpdate(pPager->pBackup, p->pgno, (u8 *)p->pData);
-    }
   }
   return rc;
 }
@@ -3820,55 +3913,6 @@ static int hasHotJournal(Pager *pPager, int *pExists){
 }
 
 /*
-** Check if the *-wal file that corresponds to the database opened by pPager
-** exists. Assuming no error occurs, set *pExists to 1 if the file exists,
-** or 0 otherwise and return SQLITE_OK. If an IO or OOM error occurs, return
-** an SQLite error code.
-**
-** The caller must hold a SHARED lock on the database file to call this
-** function. Because an EXCLUSIVE lock on the db file is required to delete 
-** a WAL, this ensures there is no race condition between the xAccess() 
-** below and an xDelete() being executed by some other connection.
-*/
-static int pagerHasWAL(Pager *pPager, int *pExists){
-  int rc;                         /* Return code */
-
-  if( !pPager->tempFile ){
-    char *zWal = sqlite3_mprintf("%s-wal", pPager->zFilename);
-    if( !zWal ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
-      sqlite3_free(zWal);
-    }
-  }else{
-    rc = SQLITE_OK;
-    *pExists = 0;
-  }
-  return rc;
-}
-
-static int pagerOpenSnapshot(Pager *pPager){
-  int rc;                         /* Return code */
-  int changed = 0;                /* True if cache must be reset */
-
-  assert( pagerUseWal(pPager) );
-
-  rc = sqlite3WalOpenSnapshot(pPager->pWal, &changed);
-  if( rc==SQLITE_OK ){
-    int dummy;
-    if( changed ){
-      pager_reset(pPager);
-      assert( pPager->errCode || pPager->dbSizeValid==0 );
-    }
-    rc = sqlite3PagerPagecount(pPager, &dummy);
-  }
-  pPager->state = PAGER_SHARED;
-
-  return rc;
-}
-
-/*
 ** This function is called to obtain a shared lock on the database file.
 ** It is illegal to call sqlite3PagerAcquire() until after this function
 ** has been successfully called. If a shared-lock is already held when
@@ -3926,7 +3970,6 @@ int sqlite3PagerSharedLock(Pager *pPager){
   }else if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs * const pVfs = pPager->pVfs;
     int isHotJournal = 0;
-    int isWal = 0;
     assert( !MEMDB );
     assert( sqlite3PcacheRefCount(pPager->pPCache)==0 );
     if( pPager->noReadlock ){
@@ -4081,19 +4124,10 @@ int sqlite3PagerSharedLock(Pager *pPager){
     }
     assert( pPager->exclusiveMode || pPager->state==PAGER_SHARED );
 
-    rc = pagerHasWAL(pPager, &isWal);
-    if( rc!=SQLITE_OK ){
-      goto failed;
-    }
-    if( isWal ){
-      pager_reset(pPager);
-      rc = sqlite3PagerOpenWal(pPager, 0);
-      if( rc==SQLITE_OK ){
-        rc = pagerOpenSnapshot(pPager);
-      }
-    }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
-      pPager->journalMode = PAGER_JOURNALMODE_DELETE;
-    }
+    /* If there is a WAL file in the file-system, open this database in WAL
+    ** mode. Otherwise, the following function call is a no-op.
+    */
+    rc = pagerOpenWalIfPresent(pPager);
   }
 
  failed:
@@ -5789,6 +5823,7 @@ sqlite3_backup **sqlite3PagerBackupPtr(Pager *pPager){
   return &pPager->pBackup;
 }
 
+#ifndef SQLITE_OMIT_WAL
 /*
 ** This function is called when the user invokes "PRAGMA checkpoint".
 */
@@ -5836,7 +5871,6 @@ int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen){
   return rc;
 }
 
-
 /*
 ** This function is called to close the connection to the log file prior
 ** to switching from WAL to rollback mode.
@@ -5881,5 +5915,6 @@ int sqlite3PagerCloseWal(Pager *pPager){
   }
   return rc;
 }
+#endif
 
 #endif /* SQLITE_OMIT_DISKIO */

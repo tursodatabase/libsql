@@ -16,6 +16,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+ifcapable !wal {finish_test ; return }
+
 proc log_file_size {nFrame pgsz} {
   expr {12 + ($pgsz+16)*$nFrame}
 }
