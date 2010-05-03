@@ -48,7 +48,7 @@ for {set seed 1} {$seed<10} {incr seed} {
     } {ok}
 
     do_test walslow-1.seed=$seed.$iTest.2 {
-      execsql "PRAGMA checkpoint;"
+      execsql "PRAGMA wal_checkpoint;"
       execsql { PRAGMA integrity_check }
     } {ok}
 

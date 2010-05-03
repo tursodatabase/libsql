@@ -241,7 +241,7 @@ proc do_thread_test2 {args} {
 #
 # There is also a single checkpointer thread. It runs the following loop:
 #
-#   1) Execute "PRAGMA checkpoint"
+#   1) Execute "PRAGMA wal_checkpoint"
 #   2) Sleep for 500 ms.
 #
 do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
@@ -295,7 +295,7 @@ do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
 } -thread ckpt 1 {
   set nRun 0
   while {[tt_continue]} {
-    db eval "PRAGMA checkpoint"
+    db eval "PRAGMA wal_checkpoint"
     usleep 500
     incr nRun
   }

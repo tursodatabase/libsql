@@ -824,7 +824,7 @@ struct sqlite3 {
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
 #ifndef SQLITE_OMIT_WAL
-  int nDefaultCheckpoint;       /* Value configured by wal_autocheckpoint() */
+  int nAutoCheckpoint;          /* Value configured by wal_autocheckpoint() */
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
 #endif

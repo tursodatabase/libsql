@@ -1402,12 +1402,29 @@ void sqlite3Pragma(
 
 #ifndef SQLITE_OMIT_WAL
   /*
-  **   PRAGMA [database.]checkpoint
+  **   PRAGMA [database.]wal_checkpoint
   **
   ** Checkpoint the database.
   */
-  if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
+  if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 ){
+    if( sqlite3ReadSchema(pParse) ) goto pragma_out;
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
+  }else
+
+  /*
+  **   PRAGMA wal_autocheckpoint
+  **   PRAGMA wal_autocheckpoint = N
+  **
+  ** Configure a database connection to automatically checkpoint a database
+  ** after accumulating N frames in the log. Or query for the current value
+  ** of N.
+  */
+  if( sqlite3StrICmp(zLeft, "wal_autocheckpoint")==0 ){
+    if( zRight ){
+      int nAuto = atoi(zRight);
+      sqlite3_wal_autocheckpoint(db, nAuto);
+    }
+    returnSingleInt(pParse, "wal_autocheckpoint", db->nAutoCheckpoint);
   }else
 #endif
 

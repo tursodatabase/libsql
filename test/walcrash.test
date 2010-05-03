@@ -192,7 +192,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 28 */
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 32 */
 
-      PRAGMA checkpoint;
+      PRAGMA wal_checkpoint;
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
@@ -233,7 +233,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 28 */
       INSERT INTO t1 SELECT randomblob(900) FROM t1 LIMIT 4;   /* 32 */
 
-      PRAGMA checkpoint;
+      PRAGMA wal_checkpoint;
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
       INSERT INTO t1 VALUES(randomblob(900));
@@ -260,9 +260,9 @@ for {set i 1} {$i < $REPEATS} {incr i} {
         CREATE TABLE t1(a, b);
         INSERT INTO t1 VALUES(1, 2);
       COMMIT;
-      PRAGMA checkpoint;
+      PRAGMA wal_checkpoint;
       CREATE INDEX i1 ON t1(a);
-      PRAGMA checkpoint;
+      PRAGMA wal_checkpoint;
     }
   } {1 {child process exited abnormally}}
 

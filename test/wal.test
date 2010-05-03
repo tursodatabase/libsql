@@ -349,7 +349,7 @@ do_test wal-7.1 {
   list [file size test.db] [file size test.db-wal]
 } [list 1024 [log_file_size 3 1024]]
 do_test wal-7.2 {
-  execsql { PRAGMA checkpoint }
+  execsql { PRAGMA wal_checkpoint }
   list [file size test.db] [file size test.db-wal]
 } [list 2048 [log_file_size 3 1024]]
 
@@ -380,14 +380,14 @@ do_test wal-8.2 {
     INSERT INTO t1 SELECT blob(900) FROM t1;       /* 16 */
     INSERT INTO t1 SELECT blob(900) FROM t1;       /* 32 */
     INSERT INTO t1 SELECT blob(900) FROM t1;       /* 64 */
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
   }
   file size test.db
 } [expr 68*1024]
 do_test wal-8.3 {
   execsql { 
     DELETE FROM t1 WHERE rowid<54;
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
   }
   file size test.db
 } [expr 14*1024]
@@ -426,7 +426,7 @@ do_test wal-9.3 {
 db3 close
 
 do_test wal-9.4 {
-  execsql { PRAGMA checkpoint }
+  execsql { PRAGMA wal_checkpoint }
   db2 close
   sqlite3_wal db2 test.db
   execsql {PRAGMA integrity_check } db2
@@ -549,7 +549,7 @@ foreach code [list {
     sql2 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
-    catchsql { PRAGMA checkpoint } 
+    catchsql { PRAGMA wal_checkpoint } 
   } {1 {database is locked}}
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
@@ -568,7 +568,7 @@ foreach code [list {
   }
   db busy busyhandler
   do_test wal-10.$tn.14 {
-    execsql { PRAGMA checkpoint } 
+    execsql { PRAGMA wal_checkpoint } 
   } {}
 
   # Similar to the test above. Except this time, a new read transaction is
@@ -582,7 +582,7 @@ foreach code [list {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
-    catchsql { PRAGMA checkpoint } 
+    catchsql { PRAGMA wal_checkpoint } 
   } {1 {database is locked}}
   proc busyhandler x {
     if {$x==3} { sql3 { BEGIN; SELECT * FROM t1 } }
@@ -592,7 +592,7 @@ foreach code [list {
   }
   db busy busyhandler
   do_test wal-10.$tn.17 {
-    execsql { PRAGMA checkpoint } 
+    execsql { PRAGMA wal_checkpoint } 
   } {}
   do_test wal-10.$tn.18 {
     sql3 { SELECT * FROM t1 }
@@ -616,13 +616,13 @@ foreach code [list {
   # (as [db3] still has a snapshot locked).
   #
   do_test wal-10.$tn.23 {
-    execsql { PRAGMA checkpoint }
+    execsql { PRAGMA wal_checkpoint }
   } {}
   do_test wal-10.$tn.24 {
     sql2 { BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.25 {
-    execsql { PRAGMA checkpoint }
+    execsql { PRAGMA wal_checkpoint }
   } {}
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
@@ -641,11 +641,11 @@ foreach code [list {
   db busy {}
   do_test wal-10.$tn.29 {
     execsql { INSERT INTO t1 VALUES(17, 18) }
-    catchsql { PRAGMA checkpoint }
+    catchsql { PRAGMA wal_checkpoint }
   } {1 {database is locked}}
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
-    execsql { PRAGMA checkpoint }
+    execsql { PRAGMA wal_checkpoint }
   } {}
 
   # At one point, if a reader failed to upgrade to a writer because it
@@ -685,7 +685,7 @@ foreach code [list {
   proc busyhandler x { return 1 }
   db busy busyhandler
   do_test wal-10.$tn.36 {
-    catchsql { PRAGMA checkpoint }
+    catchsql { PRAGMA wal_checkpoint }
   } {1 {database is locked}}
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
@@ -693,7 +693,7 @@ foreach code [list {
   } {a b c d}
   do_test wal-10.$tn.37 {
     sql2 COMMIT
-    execsql { PRAGMA checkpoint }
+    execsql { PRAGMA wal_checkpoint }
   } {}
 
   catch { db close }
@@ -718,7 +718,7 @@ do_test wal-11.1 {
   list [expr [file size test.db]/1024] [expr [file size test.db-wal]/1044]
 } {1 3}
 do_test wal-11.2 {
-  execsql { PRAGMA checkpoint }
+  execsql { PRAGMA wal_checkpoint }
   list [expr [file size test.db]/1024] [file size test.db-wal]
 } [list 3 [log_file_size 3 1024]]
 do_test wal-11.3 {
@@ -753,7 +753,7 @@ do_test wal-11.7 {
   }
 } {16 ok}
 do_test wal-11.8 {
-  execsql { PRAGMA checkpoint }
+  execsql { PRAGMA wal_checkpoint }
   list [expr [file size test.db]/1024] [file size test.db-wal]
 } [list 37 [log_file_size 41 1024]]
 do_test wal-11.9 {
@@ -829,11 +829,11 @@ do_test wal-12.4 {
 db2 close
 do_test wal-12.5 {
   execsql {
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
     UPDATE t2 SET y = 2 WHERE x = 'B'; 
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
     UPDATE t1 SET y = 1 WHERE x = 'A';
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
     UPDATE t1 SET y = 0 WHERE x = 'A';
     SELECT * FROM t2;
   }
@@ -955,11 +955,11 @@ do_test wal-14 {
     INSERT INTO t1 SELECT randomblob(10), randomblob(100);
   }
 
-  # After executing the "PRAGMA checkpoint", connection [db] was being
+  # After executing the "PRAGMA wal_checkpoint", connection [db] was being
   # left with an inconsistent cache. Running the CREATE INDEX statement
   # in this state led to database corruption.
   catchsql { 
-    PRAGMA checkpoint;
+    PRAGMA wal_checkpoint;
     CREATE INDEX i1 on t1(b);
   }
    

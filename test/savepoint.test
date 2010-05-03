@@ -792,7 +792,7 @@ do_test savepoint-11.6 {
 integrity_check savepoint-11.7
 do_test savepoint-11.8 {
   execsql { ROLLBACK }
-  execsql { PRAGMA checkpoint }
+  execsql { PRAGMA wal_checkpoint }
   file size test.db
 } {8192}
 

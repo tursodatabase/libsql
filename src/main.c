@@ -1191,12 +1191,12 @@ void *sqlite3_rollback_hook(
 ** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().
 ** Return non-zero, indicating to the caller that a checkpoint should be run,
 ** if the number of frames in the log file is greater than 
-** sqlite3.nDefaultCheckpoint (the value configured by wal_autocheckpoint()).
+** sqlite3.nAutoCheckpoint (the value configured by wal_autocheckpoint()).
 */ 
 static int defaultWalHook(void *p, sqlite3 *db, const char *z, int nFrame){
   UNUSED_PARAMETER(p);
   UNUSED_PARAMETER(z);
-  return ( nFrame>=db->nDefaultCheckpoint );
+  return ( nFrame>=db->nAutoCheckpoint );
 }
 
 /*
@@ -1213,8 +1213,8 @@ static int defaultWalHook(void *p, sqlite3 *db, const char *z, int nFrame){
 int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
   sqlite3_mutex_enter(db->mutex);
   if( nFrame>0 ){
-    db->nDefaultCheckpoint = nFrame;
     sqlite3_wal_hook(db, defaultWalHook, 0);
+    db->nAutoCheckpoint = nFrame;
   }else{
     sqlite3_wal_hook(db, 0, 0);
   }
@@ -1236,6 +1236,7 @@ void *sqlite3_wal_hook(
   pRet = db->pWalArg;
   db->xWalCallback = xCallback;
   db->pWalArg = pArg;
+  db->nAutoCheckpoint = 0;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
 }
@@ -1870,7 +1871,7 @@ static int openDatabase(
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
                         sqlite3GlobalConfig.nLookaside);
 
-  sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_CACHE_SIZE);
+  sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
   if( db ){

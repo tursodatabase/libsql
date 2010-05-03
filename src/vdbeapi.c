@@ -321,7 +321,7 @@ static int doWalCallbacks(sqlite3 *db){
       if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK
        && db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry)
       ){
-        rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+        rc = sqlite3Checkpoint(db, i);
       }
     }
   }
