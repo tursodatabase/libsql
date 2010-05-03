@@ -489,6 +489,7 @@ db2 close
 #   3) Backing up memory-to-file. 
 #
 set iTest 0
+file delete -force bak.db-wal
 foreach {writer file} {db test.db db3 test.db db :memory:} {
   incr iTest
   catch { file delete bak.db }

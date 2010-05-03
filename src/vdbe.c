@@ -5193,12 +5193,7 @@ case OP_AggFinal: {
 ** WAL mode.
 */
 case OP_Checkpoint: {
-  Btree *pBt;                     /* Btree to checkpoint */
-
-  assert( pOp->p1>=0 && pOp->p1<db->nDb );
-  assert( (p->btreeMask & (1<<pOp->p1))!=0 );
-  pBt = db->aDb[pOp->p1].pBt;
-  rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+  rc = sqlite3Checkpoint(db, pOp->p1);
   break;
 };  
 #endif

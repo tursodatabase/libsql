@@ -1186,6 +1186,42 @@ void *sqlite3_rollback_hook(
   return pRet;
 }
 
+#ifndef SQLITE_OMIT_WAL
+/*
+** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().
+** Return non-zero, indicating to the caller that a checkpoint should be run,
+** if the number of frames in the log file is greater than 
+** sqlite3.nDefaultCheckpoint (the value configured by wal_autocheckpoint()).
+*/ 
+static int defaultWalHook(void *p, sqlite3 *db, const char *z, int nFrame){
+  UNUSED_PARAMETER(p);
+  UNUSED_PARAMETER(z);
+  return ( nFrame>=db->nDefaultCheckpoint );
+}
+
+/*
+** Configure an sqlite3_wal_hook() callback to automatically checkpoint
+** a database after committing a transaction if there are nFrame or
+** more frames in the log file. Passing zero or a negative value as the
+** nFrame parameter disables automatic checkpoints entirely.
+**
+** The callback registered by this function replaces any existing callback
+** registered using sqlite3_wal_hook(). Likewise, registering a callback
+** using sqlite3_wal_hook() disables the automatic checkpoint mechanism
+** configured by this function.
+*/
+int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
+  sqlite3_mutex_enter(db->mutex);
+  if( nFrame>0 ){
+    db->nDefaultCheckpoint = nFrame;
+    sqlite3_wal_hook(db, defaultWalHook, 0);
+  }else{
+    sqlite3_wal_hook(db, 0, 0);
+  }
+  sqlite3_mutex_leave(db->mutex);
+  return SQLITE_OK;
+}
+
 /*
 ** Register a callback to be invoked each time a transaction is written
 ** into the write-ahead-log by this database connection.
@@ -1195,7 +1231,6 @@ void *sqlite3_wal_hook(
   int(*xCallback)(void *, sqlite3*, const char*, int),
   void *pArg                      /* First argument passed to xCallback() */
 ){
-#ifndef SQLITE_OMIT_WAL
   void *pRet;
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pWalArg;
@@ -1203,10 +1238,77 @@ void *sqlite3_wal_hook(
   db->pWalArg = pArg;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
-#else
-  return 0;
-#endif
 }
+
+/*
+** Checkpoint database zDb. If zDb is NULL, the main database is checkpointed.
+*/
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
+  int rc;                         /* Return code */
+  int iDb = 0;                    /* sqlite3.aDb[] index of db to checkpoint */
+
+  sqlite3_mutex_enter(db->mutex);
+  if( zDb ){
+    iDb = sqlite3FindDbName(db, zDb);
+  }
+  if( iDb<0 ){
+    rc = SQLITE_ERROR;
+  }else{
+    rc = sqlite3Checkpoint(db, iDb);
+  }
+  sqlite3_mutex_leave(db->mutex);
+
+  return rc;
+}
+
+/*
+** Run a checkpoint on database iDb. This is a no-op if database iDb is
+** not currently open in WAL mode.
+**
+** If a transaction is open at either the database handle (db) or b-tree
+** level, this function returns SQLITE_LOCKED and a checkpoint is not
+** attempted. If an error occurs while running the checkpoint, an SQLite
+** error code is returned (i.e. SQLITE_IOERR). Otherwise, SQLITE_OK.
+**
+** The mutex on database handle db should be held by the caller. The mutex
+** associated with the specific b-tree being checkpointed is taken by
+** this function while the checkpoint is running.
+*/
+int sqlite3Checkpoint(sqlite3 *db, int iDb){
+  Btree *pBt;                     /* Btree handle to checkpoint */
+  int rc;                         /* Return code */
+
+  assert( sqlite3_mutex_held(db->mutex) );
+
+  pBt = db->aDb[iDb].pBt;
+  if( sqlite3BtreeIsInReadTrans(pBt) ){
+    rc = SQLITE_LOCKED;
+  }else{
+    sqlite3BtreeEnter(pBt);
+    rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+    sqlite3BtreeLeave(pBt);
+  }
+
+  return rc;
+}
+#else /* ifndef SQLITE_OMIT_WAL */
+/*
+** If SQLITE_OMIT_WAL is defined, the following API functions are no-ops:
+**
+**   sqlite3_wal_hook()
+**   sqlite3_wal_checkpoint()
+**   sqlite3_wal_autocheckpoint()
+*/
+void *sqlite3_wal_hook(
+  sqlite3 *x,
+  int(*xCallback)(void *, sqlite3*, const char*, int),
+  void *pArg
+){
+  return 0;
+}
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){ return SQLITE_OK; }
+int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){ return SQLITE_OK; }
+#endif
 
 /*
 ** This function returns true if main-memory should be used instead of
@@ -1767,6 +1869,8 @@ static int openDatabase(
   /* Enable the lookaside-malloc subsystem */
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
                         sqlite3GlobalConfig.nLookaside);
+
+  sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_CACHE_SIZE);
 
 opendb_out:
   if( db ){

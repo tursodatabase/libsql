@@ -824,6 +824,7 @@ struct sqlite3 {
   void *pUpdateArg;
   void (*xUpdateCallback)(void*,int, const char*,const char*,sqlite_int64);
 #ifndef SQLITE_OMIT_WAL
+  int nDefaultCheckpoint;       /* Value configured by wal_autocheckpoint() */
   int (*xWalCallback)(void *, sqlite3 *, const char *, int);
   void *pWalArg;
 #endif
@@ -2998,6 +2999,7 @@ CollSeq *sqlite3BinaryCompareCollSeq(Parse *, Expr *, Expr *);
 int sqlite3TempInMemory(const sqlite3*);
 VTable *sqlite3GetVTable(sqlite3*, Table*);
 const char *sqlite3JournalModename(int);
+int sqlite3Checkpoint(sqlite3*, int);
 
 /* Declarations for functions in fkey.c. All of these are replaced by
 ** no-op macros if OMIT_FOREIGN_KEY is defined. In this case no foreign

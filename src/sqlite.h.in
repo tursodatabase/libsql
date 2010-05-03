@@ -5798,6 +5798,16 @@ void *sqlite3_wal_hook(
 );
 
 /*
+** CAPI3REF: Configure an auto-checkpoint
+*/
+int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
+
+/*
+** CAPI3REF: Checkpoint a database
+*/
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
+
+/*
 ** Undo the hack that converts floating point types to integer for
 ** builds on processors without floating point support.
 */

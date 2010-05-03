@@ -1407,7 +1407,6 @@ void sqlite3Pragma(
   ** Checkpoint the database.
   */
   if( sqlite3StrICmp(zLeft, "checkpoint")==0 ){
-    sqlite3VdbeUsesBtree(v, iDb);
     sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
   }else
 #endif

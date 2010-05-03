@@ -462,30 +462,6 @@ do_thread_test2 walthread-4 -seconds $seconds(walthread-4) -init {
 # very large wal file (one that requires a wal-index larger than the 
 # initial default allocation of 64KB).
 #
-# When recovering a log file, mutexes are usually obtained and released
-# as follows:
-#
-#   xShmGet                         ENTER mutexBuf
-#   xShmLock(RECOVER)               ENTER mutexRecov
-#     <do recovery work>
-#   xShmLock(READ)                  LEAVE mutexRecov
-#   xShmRelease                     LEAVE mutexBuf         
-#
-# However, if the initial wal-index allocation needs to be enlarged during
-# the recovery process, the mutex operations become:
-#
-#   xShmGet                         ENTER mutexBuf
-#   xShmLock(RECOVER)               ENTER mutexRecov
-#     <do first part of recovery work>
-#     xShmRelease                   LEAVE mutexBuf
-#     xShmSize
-#     xShmGet                       ENTER mutexBuf
-#     <do second part of recovery work>
-#   xShmLock(READ)                  LEAVE mutexRecov
-#   xShmRelease                     LEAVE mutexBuf         
-#
-# If multiple threads attempt the above simultaneously, deadlock can occur.
-#
 do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
 
   proc log_file_size {nFrame pgsz} {
