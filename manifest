@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Documentation\sstubs\sfor\ssqlite3_wal_autocheckpoint\sand\ssqlite3_wal_checkpoint.
-D 2010-05-03T18:51:42
+C Fix\sa\sbug\sin\sthe\scomputation\sof\sthe\scurrent\stime\sfor\sthe\salternative\nCURRENT_TIMESTAMP\sfunctions\sused\swhen\sSQLITE_OMIT_DATETIME\sis\sdefined.
+D 2010-05-03T19:17:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 01843bdf4b0420fd28046525d150fcd9802931a9
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 51553a859994d01d8bf3500747f66a890c459774
-F src/date.c 8a389e9529418b6333190a418034e2e8723a2fac
+F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
 F src/expr.c 286f62b24217ade1c14ba56de413ffdd607b6a41
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -812,14 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 551df11a5613e3edc6c5de44f0ac6abc2d0e6cdf
-R 4bf4e5b0f4a906e96bd3ac0228a243cf
+P 313762427d96954667909887a797ea996dc6304a
+R 7bdbd648f5b941a1b7af481017022cae
 U drh
-Z 0fab1e112184576c01ef1da394728446
+Z 11ea5e9f20105717e49fcdc4088a48fa
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL3xtBoxKgR168RlERAs2dAJ9tK6vYcy8xoZSuH9L5BfJRR+YsjwCeN1V1
-fc6lrByT4ChnQSV8LN9F/xI=
-=0Ylj
+iD8DBQFL3yEwoxKgR168RlERAt9FAJwKEESFjDM1Jdcqt8QB2dixGkdQwACcCNox
+ZyQy8yYFMU+Da4OcsseBydQ=
+=mdHz
 -----END PGP SIGNATURE-----
