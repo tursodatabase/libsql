@@ -1253,7 +1253,9 @@ void *sqlite3_wal_hook(
 
 
 /*
-** Checkpoint database zDb. If zDb is NULL, the main database is checkpointed.
+** Checkpoint database zDb. If zDb is NULL, or if the buffer zDb points
+** to contains a zero-length string, all attached databases are 
+** checkpointed.
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 #ifdef SQLITE_OMIT_WAL
@@ -1263,7 +1265,7 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
   int iDb = SQLITE_MAX_ATTACHED;  /* sqlite3.aDb[] index of db to checkpoint */
 
   sqlite3_mutex_enter(db->mutex);
-  if( zDb ){
+  if( zDb && zDb[0] ){
     iDb = sqlite3FindDbName(db, zDb);
   }
   if( iDb<0 ){

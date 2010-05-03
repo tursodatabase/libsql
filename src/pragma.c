@@ -1408,7 +1408,7 @@ void sqlite3Pragma(
   */
   if( sqlite3StrICmp(zLeft, "wal_checkpoint")==0 ){
     if( sqlite3ReadSchema(pParse) ) goto pragma_out;
-    sqlite3VdbeAddOp3(v, OP_Checkpoint, iDb, 0, 0);
+    sqlite3VdbeAddOp3(v, OP_Checkpoint, pId2->z?iDb:SQLITE_MAX_ATTACHED, 0, 0);
   }else
 
   /*
