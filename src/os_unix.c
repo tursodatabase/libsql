@@ -4557,7 +4557,7 @@ static int unixCurrentTimeInt64(sqlite3_vfs *NotUsed, sqlite3_int64 *piNow){
 static int unixCurrentTime(sqlite3_vfs *NotUsed, double *prNow){
   sqlite3_int64 i;
   unixCurrentTimeInt64(0, &i);
-  *prNow = i*86400000.0;
+  *prNow = i/86400000.0;
   return 0;
 }
 
