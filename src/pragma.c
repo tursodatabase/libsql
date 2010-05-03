@@ -1424,7 +1424,9 @@ void sqlite3Pragma(
       int nAuto = atoi(zRight);
       sqlite3_wal_autocheckpoint(db, nAuto);
     }
-    returnSingleInt(pParse, "wal_autocheckpoint", db->nAutoCheckpoint);
+    returnSingleInt(pParse, "wal_autocheckpoint", 
+       db->xWalCallback==sqlite3WalDefaultHook ? 
+           SQLITE_PTR_TO_INT(db->pWalArg) : 0);
   }else
 #endif
 

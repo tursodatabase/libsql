@@ -1191,13 +1191,19 @@ void *sqlite3_rollback_hook(
 ** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().
 ** Return non-zero, indicating to the caller that a checkpoint should be run,
 ** if the number of frames in the log file is greater than 
-** sqlite3.nAutoCheckpoint (the value configured by wal_autocheckpoint()).
+** sqlite3.pWalArg cast to an integer (the value configured by
+** wal_autocheckpoint()).
 */ 
-static int defaultWalHook(void *p, sqlite3 *db, const char *z, int nFrame){
-  UNUSED_PARAMETER(p);
-  UNUSED_PARAMETER(z);
-  return ( nFrame>=db->nAutoCheckpoint );
+int sqlite3WalDefaultHook(
+  void *p,               /* Argument */
+  sqlite3 *db,           /* Connection */
+  const char *zNotUsed,  /* Database */
+  int nFrame             /* Size of WAL */
+){
+  UNUSED_PARAMETER(zNotUsed);
+  return ( nFrame>=SQLITE_PTR_TO_INT(p));
 }
+#endif /* SQLITE_OMIT_WAL */
 
 /*
 ** Configure an sqlite3_wal_hook() callback to automatically checkpoint
@@ -1211,14 +1217,15 @@ static int defaultWalHook(void *p, sqlite3 *db, const char *z, int nFrame){
 ** configured by this function.
 */
 int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
+#ifndef SQLITE_OMIT_WAL
   sqlite3_mutex_enter(db->mutex);
   if( nFrame>0 ){
-    sqlite3_wal_hook(db, defaultWalHook, 0);
-    db->nAutoCheckpoint = nFrame;
+    sqlite3_wal_hook(db, sqlite3WalDefaultHook, SQLITE_INT_TO_PTR(nFrame));
   }else{
     sqlite3_wal_hook(db, 0, 0);
   }
   sqlite3_mutex_leave(db->mutex);
+#endif
   return SQLITE_OK;
 }
 
@@ -1231,20 +1238,27 @@ void *sqlite3_wal_hook(
   int(*xCallback)(void *, sqlite3*, const char*, int),
   void *pArg                      /* First argument passed to xCallback() */
 ){
+#ifndef SQLITE_OMIT_WAL
   void *pRet;
   sqlite3_mutex_enter(db->mutex);
   pRet = db->pWalArg;
   db->xWalCallback = xCallback;
   db->pWalArg = pArg;
-  db->nAutoCheckpoint = 0;
   sqlite3_mutex_leave(db->mutex);
   return pRet;
+#else
+  return 0;
+#endif
 }
+
 
 /*
 ** Checkpoint database zDb. If zDb is NULL, the main database is checkpointed.
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
+#ifdef SQLITE_OMIT_WAL
+  return SQLITE_OK;
+#else
   int rc;                         /* Return code */
   int iDb = 0;                    /* sqlite3.aDb[] index of db to checkpoint */
 
@@ -1259,11 +1273,13 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
     rc = sqlite3Checkpoint(db, iDb);
     sqlite3Error(db, rc, 0);
   }
+  rc = sqlite3ApiExit(db, rc);
   sqlite3_mutex_leave(db->mutex);
-
-  return sqlite3ApiExit(db, rc);
+  return rc;
+#endif
 }
 
+#ifndef SQLITE_OMIT_WAL
 /*
 ** Run a checkpoint on database iDb. This is a no-op if database iDb is
 ** not currently open in WAL mode.
@@ -1294,24 +1310,7 @@ int sqlite3Checkpoint(sqlite3 *db, int iDb){
 
   return rc;
 }
-#else /* ifndef SQLITE_OMIT_WAL */
-/*
-** If SQLITE_OMIT_WAL is defined, the following API functions are no-ops:
-**
-**   sqlite3_wal_hook()
-**   sqlite3_wal_checkpoint()
-**   sqlite3_wal_autocheckpoint()
-*/
-void *sqlite3_wal_hook(
-  sqlite3 *x,
-  int(*xCallback)(void *, sqlite3*, const char*, int),
-  void *pArg
-){
-  return 0;
-}
-int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){ return SQLITE_OK; }
-int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){ return SQLITE_OK; }
-#endif
+#endif /* SQLITE_OMIT_WAL */
 
 /*
 ** This function returns true if main-memory should be used instead of

@@ -1,5 +1,8 @@
-C Have\ssqlite3_wal_checkpoint()\spopulate\sthe\sdatabase\shandle\serror\smessage\sand\serror\scode\s(as\sreturned\sby\ssqlite3_errmsg()\sand\ssqlite3_errcode()).
-D 2010-05-03T12:14:16
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Make\ssure\sthe\smutex\sis\sheld\swhile\scalling\ssqlite3ApiExit()\sin\s\nsqlite3_wal_checkpoint().\s\sOther\scleanup\sof\sWAL\slogic.
+D 2010-05-03T13:37:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +134,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c 1cc6f391018f2b868d812bf2b1be7c20a5269805
+F src/main.c 0f66a2b0c2ce2c44ab4a5436e05064d39d8f5cbf
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
@@ -158,7 +161,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 6dc1871ce8ead9187161c370a58cd06c84221f76
-F src/pragma.c 4540555271b98366a408289318c7c1e508d7c8a6
+F src/pragma.c 5fa66bc24bd4e842d3edb86a319223b86ba5493c
 F src/prepare.c fd1398cb1da54385ba5bd68d93928f10d10a1d9c
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -168,7 +171,7 @@ F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
 F src/sqlite.h.in 8097161ad63e2a00e26217da43327d396371c2e5
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h cb2b63a9538b9e79fc41b6d5026703600ab84407
+F src/sqliteInt.h e7f1368eb56d8a410e510bcffb9ca5795060c58c
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 714e5947264571386f966aa8fcdd5607b5832238
-R 10b5fe590305e038296dabbf1b136051
-U dan
-Z 5bc5dc751e1eadc239ebcfefeac3d5fa
+P ff234cf574c7ae384ab1ebc79b2171ef0541bc91
+R e7545824307d5d5af98e4766ae2a26ad
+U drh
+Z 9a835b2804bf8190a366f2e988463519
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL3tGdoxKgR168RlERAkuOAJ96ZgqU19yVJ4CAdOh6a78a7JzGjwCfSnph
+d7jKPMvbqcd69IRRUWbjMNM=
+=vT7t
+-----END PGP SIGNATURE-----
