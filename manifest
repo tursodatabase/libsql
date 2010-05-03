@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Change\sthe\sVFS\sdefinition\sso\sthat\sall\smethods\stake\sa\sVFS\sobject\spointer\sas\ntheir\sfirst\sparameter.
-D 2010-05-03T16:30:27
+C Update\sthe\scrash-test\sVFS\sin\stest6.c\sto\spass-through\sthe\sshared-memory\nmethods\sto\sthe\sreal\sunderlying\sVFS.\s\sThis\sfixes\sthe\swalcrash.test\sscript.
+D 2010-05-03T16:36:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -181,7 +181,7 @@ F src/test2.c b6b43413d495addd039a88b87d65c839f86b18cb
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
 F src/test5.c cc55900118fa4add8ec9cf69fc4225a4662f76b1
-F src/test6.c 49b39daf8e88ed6baab25c524ca5635304f6f315
+F src/test6.c 8b9eedc2fee0850636797bcd30a9dd740b449cd7
 F src/test7.c 3f2d63e4ccf97f8c2cf1a7fa0a3c8e2e2a354e6e
 F src/test8.c f959db9a22d882013b64c92753fa793b2ce3bdea
 F src/test9.c bea1e8cf52aa93695487badedd6e1886c321ea60
@@ -811,14 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7fecd21f45b9ce773ffbcef6c84066474e8cd01c
-R 8a081f2aa3260ab8e76808d511399703
+P 43b5b07f0d996d7ef7426346b1792e9ca898f487
+R a80f3f4ea6ee6aea4b04fb34a6c3ea12
 U drh
-Z 272c621824fe58d9bb0901b6611e7d18
+Z 4c3ef2bd40e742d4d228ff19c85ff350
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL3vomoxKgR168RlERAtVAAKCH2h/fK4tE1+G5sUz8teeCt8g18QCfUvK9
-AwV097UC6aXg4MmFLWuxDEo=
-=xXDB
+iD8DBQFL3vuroxKgR168RlERAg7YAKCMOaR1lvqjck2/wA1N4NHbOXR7eACdGv8r
+bigNQ81aPV6U5WqfhyJCQhI=
+=VGaH
 -----END PGP SIGNATURE-----

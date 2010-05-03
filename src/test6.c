@@ -657,6 +657,33 @@ static int cfCurrentTime(sqlite3_vfs *pCfVfs, double *pTimeOut){
   sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
   return pVfs->xCurrentTime(pVfs, pTimeOut);
 }
+static int cfShmOpen(sqlite3_vfs *pCfVfs, const char *zName, sqlite3_shm **pp){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmOpen(pVfs, zName, pp);
+}
+static int cfShmSize(sqlite3_vfs *pCfVfs, sqlite3_shm *p,
+                     int reqSize, int *pNew){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmSize(pVfs, p, reqSize, pNew);
+}
+static int cfShmGet(sqlite3_vfs *pCfVfs, sqlite3_shm *p,
+                    int reqSize, int *pSize, void **pp){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmGet(pVfs, p, reqSize, pSize, pp);
+}
+static int cfShmRelease(sqlite3_vfs *pCfVfs, sqlite3_shm *p){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmRelease(pVfs, p);
+}
+static int cfShmLock(sqlite3_vfs *pCfVfs, sqlite3_shm *p,
+                     int desiredLock, int *gotLock){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmLock(pVfs, p, desiredLock, gotLock);
+}
+static int cfShmClose(sqlite3_vfs *pCfVfs, sqlite3_shm *p, int delFlag){
+  sqlite3_vfs *pVfs = (sqlite3_vfs *)pCfVfs->pAppData;
+  return pVfs->xShmClose(pVfs, p, delFlag);
+}
 
 static int processDevSymArgs(
   Tcl_Interp *interp,
@@ -764,7 +791,7 @@ static int crashEnableCmd(
 ){
   int isEnable;
   static sqlite3_vfs crashVfs = {
-    1,                  /* iVersion */
+    2,                  /* iVersion */
     0,                  /* szOsFile */
     0,                  /* mxPathname */
     0,                  /* pNext */
@@ -782,6 +809,15 @@ static int crashEnableCmd(
     cfRandomness,         /* xRandomness */
     cfSleep,              /* xSleep */
     cfCurrentTime,        /* xCurrentTime */
+    0,                    /* xGetlastError */
+    cfShmOpen,            /* xShmOpen */
+    cfShmSize,            /* xShmSize */
+    cfShmGet,             /* xShmGet */
+    cfShmRelease,         /* xShmRelease */
+    cfShmLock,            /* xShmLock */
+    cfShmClose,           /* xShmClose */
+    0,                    /* xRename */
+    0,                    /* xCurrentTimeInt64 */
   };
 
   if( objc!=2 ){
@@ -802,6 +838,11 @@ static int crashEnableCmd(
     crashVfs.mxPathname = pOriginalVfs->mxPathname;
     crashVfs.pAppData = (void *)pOriginalVfs;
     crashVfs.szOsFile = sizeof(CrashFile) + pOriginalVfs->szOsFile;
+    if( pOriginalVfs->iVersion<2 || pOriginalVfs->xShmOpen==0 ){
+      crashVfs.xShmOpen = 0;
+    }else{
+      crashVfs.xShmOpen = cfShmOpen;
+    }
     sqlite3_vfs_register(&crashVfs, 0);
   }else{
     crashVfs.pAppData = 0;
