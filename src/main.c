@@ -1254,12 +1254,14 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
   }
   if( iDb<0 ){
     rc = SQLITE_ERROR;
+    sqlite3Error(db, SQLITE_ERROR, "unknown database: %s", zDb);
   }else{
     rc = sqlite3Checkpoint(db, iDb);
+    sqlite3Error(db, rc, 0);
   }
   sqlite3_mutex_leave(db->mutex);
 
-  return rc;
+  return sqlite3ApiExit(db, rc);
 }
 
 /*

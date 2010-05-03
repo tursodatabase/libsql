@@ -968,4 +968,86 @@ do_test wal-14 {
 
 catch { db close }
 catch { db2 close }
+
+#-------------------------------------------------------------------------
+# The following block of tests - wal-15.* - focus on testing the 
+# implementation of the sqlite3_wal_checkpoint() interface.
+#
+file delete -force test.db test.db-wal
+sqlite3 db test.db
+do_test wal-15.1 {
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+  }
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+  }
+} {}
+
+# Test that an error is returned if the database name is not recognized
+#
+do_test wal-15.2.1 {
+  sqlite3_wal_checkpoint db aux
+} {SQLITE_ERROR}
+do_test wal-15.2.2 {
+  sqlite3_errcode db
+} {SQLITE_ERROR}
+do_test wal-15.2.3 {
+  sqlite3_errmsg db
+} {unknown database: aux}
+
+# Test that an error is returned if an attempt is made to checkpoint
+# if a transaction is open on the database.
+#
+do_test wal-15.3.1 {
+  execsql {
+    BEGIN;
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  sqlite3_wal_checkpoint db main
+} {SQLITE_LOCKED}
+do_test wal-15.3.2 {
+  sqlite3_errcode db
+} {SQLITE_LOCKED}
+do_test wal-15.3.3 {
+  sqlite3_errmsg db
+} {database table is locked}
+
+# Also test that an error is returned if the db cannot be checkpointed
+# because of locks held by another connection.
+#
+sqlite3 db2 test.db
+do_test wal-15.4.1 {
+  execsql {
+    BEGIN;
+    SELECT * FROM t1;
+  } db2
+} {1 2}
+do_test wal-15.4.2 {
+  execsql { COMMIT }
+  sqlite3_wal_checkpoint db
+} {SQLITE_BUSY}
+do_test wal-15.4.3 {
+  sqlite3_errmsg db
+} {database is locked}
+
+# After [db2] drops its lock, [db] may checkpoint the db.
+#
+do_test wal-15.4.4 {
+  execsql { COMMIT } db2
+  sqlite3_wal_checkpoint db
+} {SQLITE_OK}
+do_test wal-15.4.5 {
+  sqlite3_errmsg db
+} {not an error}
+do_test wal-15.4.6 {
+  file size test.db
+} [expr 1024*2]
+
+catch { db2 close }
+catch { db close }
 finish_test
+
+
