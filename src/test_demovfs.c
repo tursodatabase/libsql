@@ -623,7 +623,7 @@ sqlite3_vfs *sqlite3_demovfs(void){
     demoDlClose,                  /* xDlClose */
     demoRandomness,               /* xRandomness */
     demoSleep,                    /* xSleep */
-    demoCurrentTime               /* xCurrentTime */
+    demoCurrentTime,              /* xCurrentTime */
   };
   return &demovfs;
 }

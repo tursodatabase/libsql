@@ -40,6 +40,7 @@ int sqlite3OSTrace = 0;
     if(sqlite3OSTrace) sqlite3DebugPrintf(X,Y,Z,A,B,C)
 #define OSTRACE7(X,Y,Z,A,B,C,D) \
     if(sqlite3OSTrace) sqlite3DebugPrintf(X,Y,Z,A,B,C,D)
+#define OSTRACE(X)          if( sqlite3OSTrace ) sqlite3DebugPrintf X
 #else
 #define OSTRACE1(X)
 #define OSTRACE2(X,Y)
@@ -48,6 +49,7 @@ int sqlite3OSTrace = 0;
 #define OSTRACE5(X,Y,Z,A,B)
 #define OSTRACE6(X,Y,Z,A,B,C)
 #define OSTRACE7(X,Y,Z,A,B,C,D)
+#define OSTRACE(X)
 #endif
 
 /*

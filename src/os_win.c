@@ -1912,7 +1912,7 @@ int sqlite3_os_init(void){
     winRandomness,     /* xRandomness */
     winSleep,          /* xSleep */
     winCurrentTime,    /* xCurrentTime */
-    winGetLastError    /* xGetLastError */
+    winGetLastError,   /* xGetLastError */
   };
 
   sqlite3_vfs_register(&winVfs, 1);

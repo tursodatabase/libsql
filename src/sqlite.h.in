@@ -818,8 +818,9 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 **
 */
 typedef struct sqlite3_vfs sqlite3_vfs;
+typedef struct sqlite3_shm sqlite3_shm;
 struct sqlite3_vfs {
-  int iVersion;            /* Structure version number */
+  int iVersion;            /* Structure version number (currently 2) */
   int szOsFile;            /* Size of subclassed sqlite3_file */
   int mxPathname;          /* Maximum file pathname length */
   sqlite3_vfs *pNext;      /* Next registered VFS */
@@ -838,8 +839,23 @@ struct sqlite3_vfs {
   int (*xSleep)(sqlite3_vfs*, int microseconds);
   int (*xCurrentTime)(sqlite3_vfs*, double*);
   int (*xGetLastError)(sqlite3_vfs*, int, char *);
-  /* New fields may be appended in figure versions.  The iVersion
-  ** value will increment whenever this happens. */
+  /*
+  ** The methods above are in version 1 of the sqlite_vfs object
+  ** definition.  Those that follow are added in version 2 or later
+  */
+  int (*xShmOpen)(sqlite3_vfs*, const char *zName, sqlite3_shm**);
+  int (*xShmSize)(sqlite3_shm*, int reqSize, int *pNewSize);
+  int (*xShmGet)(sqlite3_shm*, int reqMapSize, int *pMapSize, void**);
+  int (*xShmRelease)(sqlite3_shm*);
+  int (*xShmLock)(sqlite3_shm*, int desiredLock, int *gotLock);
+  int (*xShmClose)(sqlite3_shm*, int deleteFlag);
+  int (*xRename)(sqlite3_vfs*, const char *zOld, const char *zNew, int dirSync);
+  int (*xCurrentTimeInt64)(sqlite3_vfs*, sqlite3_int64*);
+  /*
+  ** The methods above are in versions 1 and 2 of the sqlite_vfs object.
+  ** New fields may be appended in figure versions.  The iVersion
+  ** value will increment whenever this happens. 
+  */
 };
 
 /*
@@ -858,6 +874,24 @@ struct sqlite3_vfs {
 #define SQLITE_ACCESS_EXISTS    0
 #define SQLITE_ACCESS_READWRITE 1
 #define SQLITE_ACCESS_READ      2
+
+/*
+** CAPI3REF: Flags for the xShmLock VFS method
+**
+** These integer constants define the various locking states that
+** an sqlite3_shm object can be in.  The SQLITE_SHM_QUERY integer
+** is not a valid data - it is a constant pasted to the 
+** sqlite3_vfs.xShmLock() method for querying the current lock
+** state.
+*/
+#define SQLITE_SHM_UNLOCK       0
+#define SQLITE_SHM_READ         1
+#define SQLITE_SHM_READ_FULL    2
+#define SQLITE_SHM_WRITE        3
+#define SQLITE_SHM_PENDING      4
+#define SQLITE_SHM_CHECKPOINT   5
+#define SQLITE_SHM_RECOVER      6
+#define SQLITE_SHM_QUERY        (-1)
 
 /*
 ** CAPI3REF: Initialize The SQLite Library
@@ -5725,6 +5759,50 @@ int sqlite3_strnicmp(const char *, const char *, int);
 ** buffer.
 */
 void sqlite3_log(int iErrCode, const char *zFormat, ...);
+
+/*
+** CAPI3REF: Write-Ahead Log Commit Hook
+**
+** The [sqlite3_wal_hook()] function is used to register a callback that
+** will be invoked each time a database connection commits data to a
+** write-ahead-log (i.e. whenever a transaction is committed in
+** journal_mode=WAL mode). 
+**
+** The callback is invoked by SQLite after the commit has taken place and 
+** the associated write-lock on the database released, so the implementation 
+** may read, write or checkpoint the database as required.
+**
+** The first parameter passed to the callback function when it is invoked
+** is a copy of the third parameter passed to sqlite3_wal_hook() when
+** registering the callback. The second is a copy of the database handle.
+** The third parameter is the name of the database that was written to -
+** either "main" or the name of an ATTACHed database. The fourth parameter
+** is the number of pages currently in the log file, including those that
+** were just committed.
+**
+** If an invocation of the callback function returns non-zero, then a
+** checkpoint is automatically run on the database. If zero is returned,
+** no special action is taken.
+**
+** A single database handle may have at most a single log callback 
+** registered at one time. Calling [sqlite3_wal_hook()] replaces any
+** previously registered log callback. 
+*/
+void *sqlite3_wal_hook(
+  sqlite3*, 
+  int(*)(void *,sqlite3*,const char*,int),
+  void*
+);
+
+/*
+** CAPI3REF: Configure an auto-checkpoint
+*/
+int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
+
+/*
+** CAPI3REF: Checkpoint a database
+*/
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 
 /*
 ** Undo the hack that converts floating point types to integer for

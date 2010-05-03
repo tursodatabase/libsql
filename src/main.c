@@ -1186,6 +1186,142 @@ void *sqlite3_rollback_hook(
   return pRet;
 }
 
+#ifndef SQLITE_OMIT_WAL
+/*
+** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().
+** Return non-zero, indicating to the caller that a checkpoint should be run,
+** if the number of frames in the log file is greater than 
+** sqlite3.pWalArg cast to an integer (the value configured by
+** wal_autocheckpoint()).
+*/ 
+int sqlite3WalDefaultHook(
+  void *p,               /* Argument */
+  sqlite3 *db,           /* Connection */
+  const char *zNotUsed,  /* Database */
+  int nFrame             /* Size of WAL */
+){
+  UNUSED_PARAMETER(zNotUsed);
+  return ( nFrame>=SQLITE_PTR_TO_INT(p));
+}
+#endif /* SQLITE_OMIT_WAL */
+
+/*
+** Configure an sqlite3_wal_hook() callback to automatically checkpoint
+** a database after committing a transaction if there are nFrame or
+** more frames in the log file. Passing zero or a negative value as the
+** nFrame parameter disables automatic checkpoints entirely.
+**
+** The callback registered by this function replaces any existing callback
+** registered using sqlite3_wal_hook(). Likewise, registering a callback
+** using sqlite3_wal_hook() disables the automatic checkpoint mechanism
+** configured by this function.
+*/
+int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
+#ifndef SQLITE_OMIT_WAL
+  sqlite3_mutex_enter(db->mutex);
+  if( nFrame>0 ){
+    sqlite3_wal_hook(db, sqlite3WalDefaultHook, SQLITE_INT_TO_PTR(nFrame));
+  }else{
+    sqlite3_wal_hook(db, 0, 0);
+  }
+  sqlite3_mutex_leave(db->mutex);
+#endif
+  return SQLITE_OK;
+}
+
+/*
+** Register a callback to be invoked each time a transaction is written
+** into the write-ahead-log by this database connection.
+*/
+void *sqlite3_wal_hook(
+  sqlite3 *db,                    /* Attach the hook to this db handle */
+  int(*xCallback)(void *, sqlite3*, const char*, int),
+  void *pArg                      /* First argument passed to xCallback() */
+){
+#ifndef SQLITE_OMIT_WAL
+  void *pRet;
+  sqlite3_mutex_enter(db->mutex);
+  pRet = db->pWalArg;
+  db->xWalCallback = xCallback;
+  db->pWalArg = pArg;
+  sqlite3_mutex_leave(db->mutex);
+  return pRet;
+#else
+  return 0;
+#endif
+}
+
+
+/*
+** Checkpoint database zDb. If zDb is NULL, the main database is checkpointed.
+*/
+int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
+#ifdef SQLITE_OMIT_WAL
+  return SQLITE_OK;
+#else
+  int rc;                         /* Return code */
+  int iDb = SQLITE_MAX_ATTACHED;  /* sqlite3.aDb[] index of db to checkpoint */
+
+  sqlite3_mutex_enter(db->mutex);
+  if( zDb ){
+    iDb = sqlite3FindDbName(db, zDb);
+  }
+  if( iDb<0 ){
+    rc = SQLITE_ERROR;
+    sqlite3Error(db, SQLITE_ERROR, "unknown database: %s", zDb);
+  }else{
+    rc = sqlite3Checkpoint(db, iDb);
+    sqlite3Error(db, rc, 0);
+  }
+  rc = sqlite3ApiExit(db, rc);
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
+#endif
+}
+
+#ifndef SQLITE_OMIT_WAL
+/*
+** Run a checkpoint on database iDb. This is a no-op if database iDb is
+** not currently open in WAL mode.
+**
+** If a transaction is open on the database being checkpointed, this 
+** function returns SQLITE_LOCKED and a checkpoint is not attempted. If 
+** an error occurs while running the checkpoint, an SQLite error code is 
+** returned (i.e. SQLITE_IOERR). Otherwise, SQLITE_OK.
+**
+** The mutex on database handle db should be held by the caller. The mutex
+** associated with the specific b-tree being checkpointed is taken by
+** this function while the checkpoint is running.
+**
+** If iDb is passed SQLITE_MAX_ATTACHED, then all attached databases are
+** checkpointed. If an error is encountered it is returned immediately -
+** no attempt is made to checkpoint any remaining databases.
+*/
+int sqlite3Checkpoint(sqlite3 *db, int iDb){
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Used to iterate through attached dbs */
+
+  assert( sqlite3_mutex_held(db->mutex) );
+
+  for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
+    if( i==iDb || iDb==SQLITE_MAX_ATTACHED ){
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        if( sqlite3BtreeIsInReadTrans(pBt) ){
+          rc = SQLITE_LOCKED;
+        }else{
+          sqlite3BtreeEnter(pBt);
+          rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+          sqlite3BtreeLeave(pBt);
+        }
+      }
+    }
+  }
+
+  return rc;
+}
+#endif /* SQLITE_OMIT_WAL */
+
 /*
 ** This function returns true if main-memory should be used instead of
 ** a temporary file for transient pager files and statement journals.
@@ -1745,6 +1881,8 @@ static int openDatabase(
   /* Enable the lookaside-malloc subsystem */
   setupLookaside(db, 0, sqlite3GlobalConfig.szLookaside,
                         sqlite3GlobalConfig.nLookaside);
+
+  sqlite3_wal_autocheckpoint(db, SQLITE_DEFAULT_WAL_AUTOCHECKPOINT);
 
 opendb_out:
   if( db ){

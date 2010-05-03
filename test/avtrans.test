@@ -22,8 +22,9 @@ source $testdir/tester.tcl
 # Create several tables to work with.
 #
 do_test avtrans-1.0 {
-  execsql {
-    PRAGMA auto_vacuum=ON;
+  execsql { PRAGMA auto_vacuum=ON }
+  wal_set_journal_mode
+  execsql { 
     CREATE TABLE one(a int PRIMARY KEY, b text);
     INSERT INTO one VALUES(1,'one');
     INSERT INTO one VALUES(2,'two');
@@ -48,6 +49,7 @@ do_test avtrans-1.10 {
   execsql {SELECT b FROM two ORDER BY a} altdb
 } {I V X}
 integrity_check avtrans-1.11
+wal_check_journal_mode avtrans-1.12
 
 # Basic transactions
 #
@@ -84,6 +86,7 @@ do_test avtrans-2.10 {
   }
 } {1 2 3 1 5 10}
 integrity_check avtrans-2.11
+wal_check_journal_mode avtrans-2.12
 
 # Check the locking behavior
 #
@@ -913,9 +916,11 @@ for {set i 2} {$i<=$limit} {incr i} {
         } {1}
       }
     }
+    wal_check_journal_mode avtrans-9.$i-6.$cnt
   }
   set ::pager_old_format 0
 }
 integrity_check avtrans-10.1
+wal_check_journal_mode avtrans-10.2
    
 finish_test

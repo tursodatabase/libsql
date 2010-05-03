@@ -179,7 +179,7 @@ static sqlite3_vfs jt_vfs = {
   jtDlClose,                     /* xDlClose */
   jtRandomness,                  /* xRandomness */
   jtSleep,                       /* xSleep */
-  jtCurrentTime                  /* xCurrentTime */
+  jtCurrentTime,                 /* xCurrentTime */
 };
 
 static sqlite3_io_methods jt_io_methods = {

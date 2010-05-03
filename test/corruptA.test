@@ -37,9 +37,11 @@ integrity_check corruptA-1.2
 db close
 file copy -force test.db test.db-template
 
+set unreadable_version 02
+ifcapable wal { set unreadable_version 03 }
 do_test corruptA-2.1 {
   file copy -force test.db-template test.db
-  hexio_write test.db 19 02   ;# the read format number
+  hexio_write test.db 19 $unreadable_version   ;# the read format number
   sqlite3 db test.db
   catchsql {SELECT * FROM t1}  
 } {1 {file is encrypted or is not a database}}

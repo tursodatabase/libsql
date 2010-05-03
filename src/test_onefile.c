@@ -198,7 +198,14 @@ static fs_vfs_t fs_vfs = {
     fsDlClose,                                  /* xDlClose */
     fsRandomness,                               /* xRandomness */
     fsSleep,                                    /* xSleep */
-    fsCurrentTime                               /* xCurrentTime */
+    fsCurrentTime,                              /* xCurrentTime */
+    0,                                          /* xShmOpen */
+    0,                                          /* xShmSize */
+    0,                                          /* xShmLock */
+    0,                                          /* xShmClose */
+    0,                                          /* xShmDelete */
+    0,                                          /* xRename */
+    0                                           /* xCurrentTimeInt64 */
   }, 
   0,                                            /* pFileList */
   0                                             /* pParent */

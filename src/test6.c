@@ -781,7 +781,7 @@ static int crashEnableCmd(
     cfDlClose,            /* xDlClose */
     cfRandomness,         /* xRandomness */
     cfSleep,              /* xSleep */
-    cfCurrentTime         /* xCurrentTime */
+    cfCurrentTime,        /* xCurrentTime */
   };
 
   if( objc!=2 ){

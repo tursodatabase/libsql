@@ -203,7 +203,7 @@ static sqlite3_vfs inst_vfs = {
   instDlClose,            /* xDlClose */
   instRandomness,         /* xRandomness */
   instSleep,              /* xSleep */
-  instCurrentTime         /* xCurrentTime */
+  instCurrentTime,        /* xCurrentTime */
 };
 
 static sqlite3_io_methods inst_io_methods = {

@@ -4868,6 +4868,35 @@ static int test_unlock_notify(
 }
 #endif
 
+/*
+** tclcmd:  sqlite3_wal_checkpoint db ?NAME?
+*/
+static int test_wal_checkpoint(
+  ClientData clientData, /* Unused */
+  Tcl_Interp *interp,    /* The TCL interpreter that invoked this command */
+  int objc,              /* Number of arguments */
+  Tcl_Obj *CONST objv[]  /* Command arguments */
+){
+  char *zDb = 0;
+  sqlite3 *db;
+  int rc;
+
+  if( objc!=3 && objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "DB ?NAME?");
+    return TCL_ERROR;
+  }
+
+  if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
+    return TCL_ERROR;
+  }
+  if( objc==3 ){
+    zDb = Tcl_GetString(objv[2]);
+  }
+  rc = sqlite3_wal_checkpoint(db, zDb);
+  Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
+  return TCL_OK;
+}
+
 
 /*
 **     tcl_objproc COMMANDNAME ARGS...
@@ -5089,6 +5118,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
      { "sqlite3_unlock_notify", test_unlock_notify, 0  },
 #endif
+     { "sqlite3_wal_checkpoint", test_wal_checkpoint, 0  },
   };
   static int bitmask_size = sizeof(Bitmask)*8;
   int i;

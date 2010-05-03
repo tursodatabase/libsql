@@ -109,6 +109,14 @@
 #endif
 
 /*
+** The default number of frames to accumulate in the log file before
+** checkpointing the database in WAL mode.
+*/
+#ifndef SQLITE_DEFAULT_WAL_AUTOCHECKPOINT
+# define SQLITE_DEFAULT_WAL_AUTOCHECKPOINT  1000
+#endif
+
+/*
 ** The maximum number of attached databases.  This must be between 0
 ** and 30.  The upper bound on 30 is because a 32-bit integer bitmap
 ** is used internally to track attached databases.

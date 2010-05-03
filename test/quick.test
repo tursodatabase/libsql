@@ -101,6 +101,10 @@ set EXCLUDE {
   vtab_err.test
   veryquick.test
   mallocAll.test
+
+  walslow.test
+  walcrash.test
+  walthread.test
 }
 
 if {[sqlite3 -has-codec]} {

@@ -76,6 +76,7 @@ typedef struct PgHdr DbPage;
 #define PAGER_JOURNALMODE_OFF         2   /* Journal omitted.  */
 #define PAGER_JOURNALMODE_TRUNCATE    3   /* Commit by truncating journal */
 #define PAGER_JOURNALMODE_MEMORY      4   /* In-memory journal file */
+#define PAGER_JOURNALMODE_WAL         5   /* Use write-ahead logging */
 
 /*
 ** The remainder of this file contains the declarations of the functions
@@ -132,6 +133,11 @@ int sqlite3PagerRollback(Pager*);
 int sqlite3PagerOpenSavepoint(Pager *pPager, int n);
 int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
+
+int sqlite3PagerCheckpoint(Pager *pPager);
+int sqlite3PagerWalCallback(Pager *pPager);
+int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
+int sqlite3PagerCloseWal(Pager *pPager);
 
 /* Functions used to query pager state and configuration. */
 u8 sqlite3PagerIsreadonly(Pager*);

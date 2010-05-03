@@ -307,6 +307,29 @@ void sqlite3_result_error_nomem(sqlite3_context *pCtx){
 }
 
 /*
+** This function is called after a transaction has been committed. It 
+** invokes callbacks registered with sqlite3_wal_hook() as required.
+*/
+static int doWalCallbacks(sqlite3 *db){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_WAL
+  int i;
+  for(i=0; i<db->nDb; i++){
+    Btree *pBt = db->aDb[i].pBt;
+    if( pBt ){
+      int nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
+      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK
+       && db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry)
+      ){
+        rc = sqlite3Checkpoint(db, i);
+      }
+    }
+  }
+#endif
+  return rc;
+}
+
+/*
 ** Execute the statement pStmt, either until a row of data is ready, the
 ** statement is completely executed or an error occurs.
 **
@@ -386,6 +409,14 @@ static int sqlite3Step(Vdbe *p){
     db->xProfile(db->pProfileArg, p->zSql, elapseTime);
   }
 #endif
+
+  if( rc==SQLITE_DONE ){
+    assert( p->rc==SQLITE_OK );
+    p->rc = doWalCallbacks(db);
+    if( p->rc!=SQLITE_OK ){
+      rc = SQLITE_ERROR;
+    }
+  }
 
   db->errCode = rc;
   if( SQLITE_NOMEM==sqlite3ApiExit(p->db, p->rc) ){

@@ -1111,7 +1111,7 @@ int sqlite3_os_init(void){
     os2Randomness,     /* xRandomness */
     os2Sleep,          /* xSleep */
     os2CurrentTime,    /* xCurrentTime */
-    os2GetLastError    /* xGetLastError */
+    os2GetLastError,   /* xGetLastError */
   };
   sqlite3_vfs_register(&os2Vfs, 1);
   initUconvObjects();

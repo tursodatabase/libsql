@@ -66,7 +66,7 @@ LIBOBJ+= alter.o analyze.o attach.o auth.o \
          table.o tokenize.o trigger.o \
          update.o util.o vacuum.o \
          vdbe.o vdbeapi.o vdbeaux.o vdbeblob.o vdbemem.o vdbetrace.o \
-         walker.o where.o utf.o vtab.o
+         wal.o walker.o where.o utf.o vtab.o
 
 
 
@@ -158,6 +158,8 @@ SRC = \
   $(TOP)/src/vdbetrace.c \
   $(TOP)/src/vdbeInt.h \
   $(TOP)/src/vtab.c \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/wal.h \
   $(TOP)/src/walker.c \
   $(TOP)/src/where.c
 
@@ -255,8 +257,8 @@ TESTSRC = \
 TESTSRC2 = \
   $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
   $(TOP)/src/build.c $(TOP)/src/date.c                                         \
-  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/mem5.c    \
-  $(TOP)/src/os.c                                                              \
+  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/wal.c     \
+  $(TOP)/src/mem5.c $(TOP)/src/os.c                                            \
   $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
   $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
   $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \

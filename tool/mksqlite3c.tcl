@@ -109,6 +109,7 @@ foreach hdr {
    sqliteLimit.h
    vdbe.h
    vdbeInt.h
+   wal.h
 } {
   set available_hdr($hdr) 1
 }
@@ -243,6 +244,7 @@ foreach file {
    pcache.c
    pcache1.c
    rowset.c
+   wal.c
    pager.c
 
    btmutex.c

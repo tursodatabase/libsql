@@ -143,6 +143,7 @@ proc reset_db {} {
   catch {db close}
   file delete -force test.db
   file delete -force test.db-journal
+  file delete -force test.db-wal
   sqlite3 db ./test.db
   set ::DB [sqlite3_connection_pointer db]
   if {[info exists ::SETUP_SQL]} {
@@ -979,6 +980,42 @@ proc drop_all_tables {{db db}} {
   }
   ifcapable trigger&&foreignkey {
     $db eval "PRAGMA foreign_keys = $pk"
+  }
+}
+
+#-------------------------------------------------------------------------
+# If a test script is executed with global variable 
+# $::permutations_test_prefix set to "wal", then the tests are run
+# in WAL mode. Otherwise, they should be run in rollback mode. The 
+# following Tcl procs are used to make this less intrusive:
+#
+#   wal_set_journal_mode ?DB?
+#
+#     If running a WAL test, execute "PRAGMA journal_mode = wal" using
+#     connection handle DB. Otherwise, this command is a no-op.
+#
+#   wal_check_journal_mode TESTNAME ?DB?
+#
+#     If running a WAL test, execute a tests case that fails if the main
+#     database for connection handle DB is not currently a WAL database.
+#     Otherwise (if not running a WAL permutation) this is a no-op.
+#
+#   wal_is_wal_mode
+#   
+#     Returns true if this test should be run in WAL mode. False otherwise.
+# 
+proc wal_is_wal_mode {} {
+  expr { [catch {set ::permutations_test_prefix} v]==0 && $v == "wal" }
+}
+proc wal_set_journal_mode {{db db}} {
+  if { [wal_is_wal_mode] } {
+    $db eval "PRAGMA journal_mode = WAL"
+  }
+}
+proc wal_check_journal_mode {testname {db db}} {
+  if { [wal_is_wal_mode] } {
+    $db eval { SELECT * FROM sqlite_master }
+    do_test $testname [list $db eval "PRAGMA main.journal_mode"] {wal}
   }
 }
 
