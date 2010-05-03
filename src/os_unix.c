@@ -5072,11 +5072,16 @@ shm_open_err:
 ** Close a connection to shared-memory.  Delete the underlying 
 ** storage if deleteFlag is true.
 */
-static int unixShmClose(sqlite3_shm *pSharedMem, int deleteFlag){
+static int unixShmClose(
+  sqlite3_vfs *pVfs,         /* The VFS */
+  sqlite3_shm *pSharedMem,   /* The shared-memory to be closed */
+  int deleteFlag             /* Delete after closing if true */
+){
   unixShm *p;            /* The connection to be closed */
   unixShmFile *pFile;    /* The underlying shared-memory file */
   unixShm **pp;          /* For looping over sibling connections */
 
+  UNUSED_PARAMETER(pVfs);
   if( pSharedMem==0 ) return SQLITE_OK;
   p = (struct unixShm*)pSharedMem;
   pFile = p->pFile;
@@ -5123,6 +5128,7 @@ static int unixShmClose(sqlite3_shm *pSharedMem, int deleteFlag){
 ** is free to expand the storage to some larger amount if it chooses.
 */
 static int unixShmSize(
+  sqlite3_vfs *pVfs,        /* The VFS */
   sqlite3_shm *pSharedMem,  /* Pointer returned by unixShmOpen() */
   int reqSize,              /* Requested size.  -1 for query only */
   int *pNewSize             /* Write new size here */
@@ -5131,6 +5137,8 @@ static int unixShmSize(
   unixShmFile *pFile = p->pFile;
   int rc = SQLITE_OK;
   struct stat sStat;
+
+  UNUSED_PARAMETER(pVfs);
 
   if( reqSize>=0 ){
     reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
@@ -5174,6 +5182,7 @@ static int unixShmSize(
 ** yet been allocated to the underlying storage.
 */
 static int unixShmGet(
+  sqlite3_vfs *pVfs,       /* The VFS */
   sqlite3_shm *pSharedMem, /* Pointer returned by unixShmOpen() */
   int reqMapSize,          /* Requested size of mapping. -1 means don't care */
   int *pNewMapSize,        /* Write new size of mapping here */
@@ -5191,7 +5200,7 @@ static int unixShmGet(
   sqlite3_mutex_enter(pFile->mutex);
   if( pFile->szMap==0 || reqMapSize>pFile->szMap ){
     int actualSize;
-    if( unixShmSize(pSharedMem, -1, &actualSize)==SQLITE_OK
+    if( unixShmSize(pVfs, pSharedMem, -1, &actualSize)==SQLITE_OK
      && reqMapSize<actualSize
     ){
       reqMapSize = actualSize;
@@ -5219,8 +5228,9 @@ static int unixShmGet(
 ** really want to release the lock, so in that case too, this routine
 ** is a no-op.
 */
-static int unixShmRelease(sqlite3_shm *pSharedMem){
+static int unixShmRelease(sqlite3_vfs *pVfs, sqlite3_shm *pSharedMem){
   unixShm *p = (unixShm*)pSharedMem;
+  UNUSED_PARAMETER(pVfs);
   if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
     unixShmFile *pFile = p->pFile;
     assert( sqlite3_mutex_notheld(pFile->mutex) );
@@ -5250,6 +5260,7 @@ static const char *azLkName[] = {
 ** Change the lock state for a shared-memory segment.
 */
 static int unixShmLock(
+  sqlite3_vfs *pVfs,         /* The VFS */
   sqlite3_shm *pSharedMem,   /* Pointer from unixShmOpen() */
   int desiredLock,           /* One of SQLITE_SHM_xxxxx locking states */
   int *pGotLock              /* The lock you actually got */
@@ -5257,6 +5268,8 @@ static int unixShmLock(
   unixShm *p = (unixShm*)pSharedMem;
   unixShmFile *pFile = p->pFile;
   int rc = SQLITE_PROTOCOL;
+
+  UNUSED_PARAMETER(pVfs);
 
   /* Note that SQLITE_SHM_READ_FULL and SQLITE_SHM_PENDING are never
   ** directly requested; they are side effects from requesting

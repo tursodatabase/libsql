@@ -69,11 +69,11 @@ static int devsymSleep(sqlite3_vfs*, int microseconds);
 static int devsymCurrentTime(sqlite3_vfs*, double*);
 
 static int devsymShmOpen(sqlite3_vfs *, const char *, sqlite3_shm **);
-static int devsymShmSize(sqlite3_shm *, int , int *);
-static int devsymShmGet(sqlite3_shm *, int , int *, void **);
-static int devsymShmRelease(sqlite3_shm *);
-static int devsymShmLock(sqlite3_shm *, int , int *);
-static int devsymShmClose(sqlite3_shm *, int);
+static int devsymShmSize(sqlite3_vfs*, sqlite3_shm *, int , int *);
+static int devsymShmGet(sqlite3_vfs*, sqlite3_shm *, int , int *, void **);
+static int devsymShmRelease(sqlite3_vfs*, sqlite3_shm *);
+static int devsymShmLock(sqlite3_vfs*, sqlite3_shm *, int , int *);
+static int devsymShmClose(sqlite3_vfs*, sqlite3_shm *, int);
 
 static sqlite3_vfs devsym_vfs = {
   2,                     /* iVersion */
@@ -357,25 +357,36 @@ static int devsymShmOpen(
 ){
   return g.pVfs->xShmOpen(g.pVfs, zName, pp);
 }
-static int devsymShmSize(sqlite3_shm *p, int reqSize, int *pNewSize){
-  return g.pVfs->xShmSize(p, reqSize, pNewSize);
+static int devsymShmSize(
+  sqlite3_vfs *pVfs,
+  sqlite3_shm *p,
+  int reqSize,
+  int *pNewSize
+){
+  return g.pVfs->xShmSize(g.pVfs, p, reqSize, pNewSize);
 }
 static int devsymShmGet(
+  sqlite3_vfs *pVfs,
   sqlite3_shm *p, 
   int reqMapSize, 
   int *pMapSize, 
   void **pp
 ){
-  return g.pVfs->xShmGet(p, reqMapSize, pMapSize, pp);
+  return g.pVfs->xShmGet(g.pVfs, p, reqMapSize, pMapSize, pp);
 }
-static int devsymShmRelease(sqlite3_shm *p){
-  return g.pVfs->xShmRelease(p);
+static int devsymShmRelease(sqlite3_vfs *pVfs, sqlite3_shm *p){
+  return g.pVfs->xShmRelease(g.pVfs, p);
 }
-static int devsymShmLock(sqlite3_shm *p, int desiredLock, int *gotLock){
-  return g.pVfs->xShmLock(p, desiredLock, gotLock);
+static int devsymShmLock(
+  sqlite3_vfs *pVfs,
+  sqlite3_shm *p,
+  int desiredLock,
+  int *gotLock
+){
+  return g.pVfs->xShmLock(g.pVfs, p, desiredLock, gotLock);
 }
-static int devsymShmClose(sqlite3_shm *p, int deleteFlag){
-  return g.pVfs->xShmClose(p, deleteFlag);
+static int devsymShmClose(sqlite3_vfs *pVfs, sqlite3_shm *p, int deleteFlag){
+  return g.pVfs->xShmClose(g.pVfs, p, deleteFlag);
 }
 
 /*

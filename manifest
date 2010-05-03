@@ -1,5 +1,8 @@
-C Have\ssqlite3_wal_checkpoint()\shandle\sa\szero-length\sstring\sin\sthe\ssame\sway\sas\sa\sNULL\spointer.\sFix\s"PRAGMA\swal_checkpoint"\sso\sthat\sit\scheckpoints\sall\sattached\sdatabases.
-D 2010-05-03T15:58:51
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sVFS\sdefinition\sso\sthat\sall\smethods\stake\sa\sVFS\sobject\spointer\sas\ntheir\sfirst\sparameter.
+D 2010-05-03T16:30:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c f3c0faad1c6de4f06f5ec30d586a4e62a980dc6f
+F src/os_unix.c 7d706a3a50818271f01020864eb9a777b14d5299
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c e9c7fe979b32a3c5bf4216d8fbe1cf8beff8a1b8
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -166,7 +169,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in 8097161ad63e2a00e26217da43327d396371c2e5
+F src/sqlite.h.in 409c5a6df42a54122d2bf8a0e2cfdad29f60f462
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h e7f1368eb56d8a410e510bcffb9ca5795060c58c
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -188,7 +191,7 @@ F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 6210f501d358bde619ae761f06f123529c6ba24f
 F src/test_demovfs.c da81a5f7785bb352bda7911c332a983ec4f17f27
-F src/test_devsym.c 2160798b2dbd7bfa6225a70c31283ef9a097660a
+F src/test_devsym.c 257adf02150986902f1f15b478f8a319ecfce7f3
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
@@ -221,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c dadd533e0103883f72bf541eaf1ef34adb4e3c99
+F src/wal.c 5face3be0769d3a60d77fcde31bffabd27e93d9b
 F src/wal.h d6d4a6809151e30bed5b01dd05cf27858f5a7bc8
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -808,7 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ab77b3ae6da3370d8bc3b2c9c0edc723b69f5a95
-R 295bc2b46c703594035744e018f208b3
-U dan
-Z 92ca3ad74429d3d61c41c53f30e242bb
+P 7fecd21f45b9ce773ffbcef6c84066474e8cd01c
+R 8a081f2aa3260ab8e76808d511399703
+U drh
+Z 272c621824fe58d9bb0901b6611e7d18
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL3vomoxKgR168RlERAtVAAKCH2h/fK4tE1+G5sUz8teeCt8g18QCfUvK9
+AwV097UC6aXg4MmFLWuxDEo=
+=xXDB
+-----END PGP SIGNATURE-----

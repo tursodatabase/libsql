@@ -844,11 +844,11 @@ struct sqlite3_vfs {
   ** definition.  Those that follow are added in version 2 or later
   */
   int (*xShmOpen)(sqlite3_vfs*, const char *zName, sqlite3_shm**);
-  int (*xShmSize)(sqlite3_shm*, int reqSize, int *pNewSize);
-  int (*xShmGet)(sqlite3_shm*, int reqMapSize, int *pMapSize, void**);
-  int (*xShmRelease)(sqlite3_shm*);
-  int (*xShmLock)(sqlite3_shm*, int desiredLock, int *gotLock);
-  int (*xShmClose)(sqlite3_shm*, int deleteFlag);
+  int (*xShmSize)(sqlite3_vfs*, sqlite3_shm*, int reqSize, int *pNewSize);
+  int (*xShmGet)(sqlite3_vfs*, sqlite3_shm*, int reqSize, int *pSize, void**);
+  int (*xShmRelease)(sqlite3_vfs*, sqlite3_shm*);
+  int (*xShmLock)(sqlite3_vfs*, sqlite3_shm*, int desiredLock, int *gotLock);
+  int (*xShmClose)(sqlite3_vfs*, sqlite3_shm*, int deleteFlag);
   int (*xRename)(sqlite3_vfs*, const char *zOld, const char *zNew, int dirSync);
   int (*xCurrentTimeInt64)(sqlite3_vfs*, sqlite3_int64*);
   /*

@@ -219,7 +219,7 @@ static void walChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
 static int walSetLock(Wal *pWal, int desiredStatus){
   int rc, got;
   if( pWal->lockState==desiredStatus ) return SQLITE_OK;
-  rc = pWal->pVfs->xShmLock(pWal->pWIndex, desiredStatus, &got);
+  rc = pWal->pVfs->xShmLock(pWal->pVfs, pWal->pWIndex, desiredStatus, &got);
   pWal->lockState = got;
   if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
     pWal->readerType = got;
@@ -375,7 +375,7 @@ static int walIndexEntry(u32 iFrame){
 */
 static void walIndexUnmap(Wal *pWal){
   if( pWal->pWiData ){
-    pWal->pVfs->xShmRelease(pWal->pWIndex);
+    pWal->pVfs->xShmRelease(pWal->pVfs, pWal->pWIndex);
     pWal->pWiData = 0;
   }
 }
@@ -390,8 +390,8 @@ static void walIndexUnmap(Wal *pWal){
 static int walIndexMap(Wal *pWal, int reqSize){
   int rc = SQLITE_OK;
   if( pWal->pWiData==0 ){
-    rc = pWal->pVfs->xShmGet(pWal->pWIndex, reqSize, &pWal->szWIndex,
-                             (void**)(char*)&pWal->pWiData);
+    rc = pWal->pVfs->xShmGet(pWal->pVfs, pWal->pWIndex, reqSize,
+                             &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
     if( rc==SQLITE_OK && pWal->pWiData==0 ){
       /* Make sure pWal->pWiData is not NULL while we are holding the
       ** lock on the mapping. */
@@ -412,7 +412,7 @@ static int walIndexMap(Wal *pWal, int reqSize){
 static int walIndexRemap(Wal *pWal, int enlargeTo){
   int rc;
   int sz;
-  rc = pWal->pVfs->xShmSize(pWal->pWIndex, enlargeTo, &sz);
+  rc = pWal->pVfs->xShmSize(pWal->pVfs, pWal->pWIndex, enlargeTo, &sz);
   if( rc==SQLITE_OK && sz>pWal->szWIndex ){
     walIndexUnmap(pWal);
     rc = walIndexMap(pWal, sz);
@@ -607,7 +607,7 @@ int sqlite3WalOpen(
 wal_open_out:
   if( rc!=SQLITE_OK ){
     if( pRet ){
-      pVfs->xShmClose(pRet->pWIndex, 0);
+      pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
       sqlite3OsClose(pRet->pFd);
       sqlite3_free(pRet);
     }
@@ -805,7 +805,7 @@ int sqlite3WalClose(
       walIndexUnmap(pWal);
     }
 
-    pWal->pVfs->xShmClose(pWal->pWIndex, isDelete);
+    pWal->pVfs->xShmClose(pWal->pVfs, pWal->pWIndex, isDelete);
     sqlite3OsClose(pWal->pFd);
     if( isDelete ){
       sqlite3OsDelete(pWal->pVfs, pWal->zName, 0);
