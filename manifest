@@ -1,5 +1,8 @@
-C Fix\sa\scouple\sof\serrors\sin\sWAL\scode\sthat\scan\soccur\sin\san\sOOM\ssituation.
-D 2010-05-03T17:18:24
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Clear\sglobal\svariable\s"seconds"\sbefore\suse\sin\swalthread.test.
+D 2010-05-03T17:24:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -765,7 +768,7 @@ F test/walfault.test 51ffa1eb3e12d63355100888ad183f06e6ffdafb
 F test/walhook.test 5f18e0fc8787f1f8889d7a9971af18f334f83786
 F test/walmode.test bac6f06544a8554588a1543def996bbe2fc41792
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
-F test/walthread.test cc3c5302dfd56361def4023b7f29d361f1f1602d
+F test/walthread.test bc612c04c2a3292bf988f080298f5dd2bafb913f
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test aa44a9b29e8c9f3d7bb94a3bb3a95b31627d520d
@@ -809,7 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ea09ff37911376505e8262ee9841224995b696f2
-R 2c0875fe87911ee05105de14156e695d
-U dan
-Z 93954dd7704e07e316c58f51f274de72
+P 9d3f3736be42ef8ab48b099d4712e08dfca97873
+R 352c433be6f612896dc16081fdef01f7
+U drh
+Z c9af523ce17ec290d0e69ce8e0d5eb0f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL3wbhoxKgR168RlERAmHUAJ0R3+PtPhUWqPAp0hNk6HIh36rbcgCfUYu7
+umIGiqAmPFCNkQspbbGTlrc=
+=gdS9
+-----END PGP SIGNATURE-----

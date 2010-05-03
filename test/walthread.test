@@ -25,6 +25,7 @@ set sqlite_walsummary_mmap_incr 64
 # How long, in seconds, to run each test for. If a test is set to run for
 # 0 seconds, it is omitted entirely.
 #
+unset -nocomplain seconds
 set seconds(walthread-1) 20
 set seconds(walthread-2) 20
 set seconds(walthread-3) 20
@@ -509,4 +510,3 @@ do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
 }
 
 finish_test
-
