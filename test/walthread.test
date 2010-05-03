@@ -508,5 +508,6 @@ do_thread_test walthread-5 -seconds $seconds(walthread-5) -init {
 } -thread T 5 {
   db eval { SELECT count(*) FROM t1 }
 }
+unset -nocomplain seconds
 
 finish_test
