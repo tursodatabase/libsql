@@ -73,8 +73,7 @@ static int devsymShmSize(sqlite3_shm *, int , int *);
 static int devsymShmGet(sqlite3_shm *, int , int *, void **);
 static int devsymShmRelease(sqlite3_shm *);
 static int devsymShmLock(sqlite3_shm *, int , int *);
-static int devsymShmClose(sqlite3_shm *);
-static int devsymShmDelete(sqlite3_vfs *, const char *);
+static int devsymShmClose(sqlite3_shm *, int);
 
 static sqlite3_vfs devsym_vfs = {
   2,                     /* iVersion */
@@ -106,11 +105,8 @@ static sqlite3_vfs devsym_vfs = {
   devsymShmSize,
   devsymShmGet,
   devsymShmRelease,
-  0,
-  0,
   devsymShmLock,
   devsymShmClose,
-  devsymShmDelete,
   0,
   0,
 };
@@ -378,11 +374,8 @@ static int devsymShmRelease(sqlite3_shm *p){
 static int devsymShmLock(sqlite3_shm *p, int desiredLock, int *gotLock){
   return g.pVfs->xShmLock(p, desiredLock, gotLock);
 }
-static int devsymShmClose(sqlite3_shm *p){
-  return g.pVfs->xShmClose(p);
-}
-static int devsymShmDelete(sqlite3_vfs *pVfs, const char *zName){
-  return g.pVfs->xShmDelete(g.pVfs, zName);
+static int devsymShmClose(sqlite3_shm *p, int deleteFlag){
+  return g.pVfs->xShmClose(p, deleteFlag);
 }
 
 /*
@@ -400,7 +393,6 @@ void devsym_register(int iDeviceChar, int iSectorSize){
     devsym_vfs.xShmRelease = (g.pVfs->xShmRelease ? devsymShmRelease : 0);
     devsym_vfs.xShmLock = (g.pVfs->xShmLock ? devsymShmLock : 0);
     devsym_vfs.xShmClose = (g.pVfs->xShmClose ? devsymShmClose : 0);
-    devsym_vfs.xShmDelete = (g.pVfs->xShmDelete ? devsymShmDelete : 0);
     sqlite3_vfs_register(&devsym_vfs, 0);
   }
   if( iDeviceChar>=0 ){

@@ -4923,7 +4923,15 @@ static void unixShmPurge(void){
 }
 
 /*
-** Open a shared-memory area.  This implementation uses mmapped files.
+** Open a shared-memory area.  This particular implementation uses
+** mmapped files.
+**
+** zName is a filename used to identify the shared-memory area.  The
+** implementation does not (and perhaps should not) use this name
+** directly, but rather use it as a template for finding an appropriate
+** name for the shared-memory storage.  In this implementation, the
+** string "-index" is appended to zName and used as the name of the
+** mmapped file.
 **
 ** When opening a new shared-memory file, if no other instances of that
 ** file are currently open, in this process or in other processes, then
@@ -4931,25 +4939,38 @@ static void unixShmPurge(void){
 */
 static int unixShmOpen(
   sqlite3_vfs *pVfs,    /* The VFS */
-  const char *zName,    /* Name of file to mmap */
+  const char *zName,    /* Base name of file to mmap */
   sqlite3_shm **pShm    /* Write the unixShm object created here */
 ){
   struct unixShm *p = 0;             /* The connection to be opened */
   struct unixShmFile *pFile = 0;     /* The underlying mmapped file */
   int rc;                            /* Result code */
   struct unixFileId fid;             /* Unix file identifier */
+  struct unixShmFile *pNew;          /* Newly allocated pFile */
   struct stat sStat;                 /* Result from stat() an fstat() */
+  int nName;                         /* Size of zName in bytes */
 
-  /* Allocate space for the new sqlite3_shm object */
+  /* Allocate space for the new sqlite3_shm object.  Also speculatively
+  ** allocate space for a new unixShmFile and filename.
+  */
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
+  nName = strlen(zName);
+  pNew = sqlite3_malloc( sizeof(*pFile) + nName + 10 );
+  if( pNew==0 ){
+    rc = SQLITE_NOMEM;
+    goto shm_open_err;
+  }
+  memset(pNew, 0, sizeof(*pNew));
+  pNew->zFilename = (char*)&pNew[1];
+  sqlite3_snprintf(nName+10, pNew->zFilename, "%s-index", zName);
 
   /* Look to see if there is an existing unixShmFile that can be used.
   ** If no matching unixShmFile currently exists, create a new one.
   */
   unixEnterMutex();
-  rc = stat(zName, &sStat);
+  rc = stat(pNew->zFilename, &sStat);
   if( rc==0 ){
     memset(&fid, 0, sizeof(fid));
     fid.dev = sStat.st_dev;
@@ -4958,16 +4979,11 @@ static int unixShmOpen(
       if( memcmp(&pFile->fid, &fid, sizeof(fid))==0 ) break;
     }
   }
-  if( pFile==0 ){
-    int nName = strlen(zName);
-    pFile = sqlite3_malloc( sizeof(*pFile) + nName + 1 );
-    if( pFile==0 ){
-      rc = SQLITE_NOMEM;
-      goto shm_open_err;
-    }
-    memset(pFile, 0, sizeof(*pFile));
-    pFile->zFilename = (char*)&pFile[1];
-    memcpy(pFile->zFilename, zName, nName+1);
+  if( pFile ){
+    sqlite3_free(pNew);
+  }else{
+    pFile = pNew;
+    pNew = 0;
     pFile->h = -1;
     pFile->pNext = unixShmFileList;
     unixShmFileList = pFile;
@@ -4983,7 +4999,7 @@ static int unixShmOpen(
       goto shm_open_err;
     }
 
-    pFile->h = open(zName, O_RDWR|O_CREAT, 0664);
+    pFile->h = open(pFile->zFilename, O_RDWR|O_CREAT, 0664);
     if( pFile->h<0 ){
       rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
@@ -5033,15 +5049,17 @@ shm_open_err:
   unixShmPurge();
   sqlite3_free(p);
   sqlite3_free(pFile);
+  sqlite3_free(pNew);
   *pShm = 0;
   unixLeaveMutex();
   return rc;
 }
 
 /*
-** Close a connectioon to shared-memory.
+** Close a connection to shared-memory.  Delete the underlying 
+** storage if deleteFlag is true.
 */
-static int unixShmClose(sqlite3_shm *pSharedMem){
+static int unixShmClose(sqlite3_shm *pSharedMem, int deleteFlag){
   unixShm *p;            /* The connection to be closed */
   unixShmFile *pFile;    /* The underlying shared-memory file */
   unixShm **pp;          /* For looping over sibling connections */
@@ -5069,6 +5087,7 @@ static int unixShmClose(sqlite3_shm *pSharedMem){
   assert( pFile->nRef>0 );
   pFile->nRef--;
   if( pFile->nRef==0 ){
+    if( deleteFlag ) unlink(pFile->zFilename);
     unixShmPurge();
   }
   unixLeaveMutex();
@@ -5348,13 +5367,6 @@ static int unixShmLock(
   return rc;
 }
 
-/*
-** Delete a shared-memory segment from the system.
-*/
-static int unixShmDelete(sqlite3_vfs *pVfs, const char *zName){
-  return pVfs->xDelete(pVfs, zName, 0);
-}
-
 #else
 # define unixShmOpen    0
 # define unixShmSize    0
@@ -5362,7 +5374,6 @@ static int unixShmDelete(sqlite3_vfs *pVfs, const char *zName){
 # define unixShmRelease 0
 # define unixShmLock    0
 # define unixShmClose   0
-# define unixShmDelete  0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -6587,11 +6598,8 @@ int sqlite3_os_init(void){
     unixShmSize,          /* xShmSize */                    \
     unixShmGet,           /* xShmGet */                     \
     unixShmRelease,       /* xShmRelease */                 \
-    0,                    /* xShmPush */                    \
-    0,                    /* xShmPull */                    \
     unixShmLock,          /* xShmLock */                    \
     unixShmClose,         /* xShmClose */                   \
-    unixShmDelete,        /* xShmDelete */                  \
     0,                    /* xRename */                     \
     0,                    /* xCurrentTimeInt64 */           \
   }
