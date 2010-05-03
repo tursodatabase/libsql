@@ -377,9 +377,7 @@ static int sqlite3Step(Vdbe *p){
 
 #ifndef SQLITE_OMIT_TRACE
     if( db->xProfile && !db->init.busy ){
-      double rNow;
-      sqlite3OsCurrentTime(db->pVfs, &rNow);
-      p->startTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
+      sqlite3OsCurrentTimeInt64(db->pVfs, &p->startTime);
     }
 #endif
 
@@ -400,13 +398,9 @@ static int sqlite3Step(Vdbe *p){
   /* Invoke the profile callback if there is one
   */
   if( rc!=SQLITE_ROW && db->xProfile && !db->init.busy && p->zSql ){
-    double rNow;
-    u64 elapseTime;
-
-    sqlite3OsCurrentTime(db->pVfs, &rNow);
-    elapseTime = (u64)((rNow - (int)rNow)*3600.0*24.0*1000000000.0);
-    elapseTime -= p->startTime;
-    db->xProfile(db->pProfileArg, p->zSql, elapseTime);
+    sqlite3_int64 iNow;
+    sqlite3OsCurrentTimeInt64(db->pVfs, &iNow);
+    db->xProfile(db->pProfileArg, p->zSql, iNow - p->startTime);
   }
 #endif
 

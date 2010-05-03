@@ -346,7 +346,7 @@ static int devsymSleep(sqlite3_vfs *pVfs, int nMicro){
 ** Return the current time as a Julian Day number in *pTimeOut.
 */
 static int devsymCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
-  return sqlite3OsCurrentTime(g.pVfs, pTimeOut);
+  return g.pVfs->xCurrentTime(g.pVfs, pTimeOut);
 }
 
 

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Merge\sthe\swrite-ahead-logging\schanges\sinto\sthe\strunk.
-D 2010-05-03T14:08:28
+C Use\sVFS\smethod\sxCurrentTimeInt64\sinstead\sof\sxCurrentTime\swhen\sit\sis\savailable.\nProvide\san\simplementation\sof\sxCurrentTimeInt64\sfor\sos_unix.c.
+D 2010-05-03T14:32:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
 F src/callback.c 01843bdf4b0420fd28046525d150fcd9802931a9
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 51553a859994d01d8bf3500747f66a890c459774
-F src/date.c 485a4409a384310e6d93fd1104a9d0a8658becd9
+F src/date.c 8a389e9529418b6333190a418034e2e8723a2fac
 F src/delete.c 610dc008e88a9599f905f5cbe9577ac9c36e0581
 F src/expr.c 286f62b24217ade1c14ba56de413ffdd607b6a41
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
@@ -149,11 +149,11 @@ F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
 F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
 F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
-F src/os.c 8bc63cf91e9802e2b807198e54e50227fa889306
-F src/os.h 534b082c3cb349ad05fa6fa0b06087e022af282c
+F src/os.c aec6922553585a25d5655666defc125a7e217674
+F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 5c821e4eb04093102d901c22f40341bc1d30aef0
+F src/os_unix.c f3c0faad1c6de4f06f5ec30d586a4e62a980dc6f
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c e9c7fe979b32a3c5bf4216d8fbe1cf8beff8a1b8
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -191,13 +191,13 @@ F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
 F src/test_config.c 6210f501d358bde619ae761f06f123529c6ba24f
 F src/test_demovfs.c da81a5f7785bb352bda7911c332a983ec4f17f27
-F src/test_devsym.c 3d324248b80f31b3b29ab9bca39c4d856a2c9160
+F src/test_devsym.c 2160798b2dbd7bfa6225a70c31283ef9a097660a
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
 F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
-F src/test_journal.c 0537fcf9d4ecb394ec8b27d887a004ecaab85f16
+F src/test_journal.c 51da4dd6118ee843349592fde29429fab84a6243
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
@@ -218,7 +218,7 @@ F src/vacuum.c 8e7d9a6fd076774bb6e211cad335c7337948a164
 F src/vdbe.c 8be37a1b18786b5c026adcb2e9edc93e3a940885
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
-F src/vdbeapi.c cf1ff7cbcbd44d2082af71b98762407ae01ce009
+F src/vdbeapi.c f2da22e5dcb1943ce6605614636e6bf32158640d
 F src/vdbeaux.c 395d21a1617553ea9b9f4abe0d302449d8549e1d
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
@@ -811,14 +811,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 946e06cd2a2cc209b0786b7e9d28c0746320d646 27a5c09ce8a35039d844d08cfe5698e8b438abfe
-R 496e930fc5a775a552ace6c40959352e
+P de9ae443cc8eebfb0692dcdac93bde9e4c54199a
+R e2427a6bed16c13592f9c9205631cbf2
 U drh
-Z 6de75408ba1e125bd7e7fd0306efd7dd
+Z 44856fc90c606c86cc9a47a6ae746757
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL3tjgoxKgR168RlERAn8zAJ4myOF3FCYW6KNideNeI9JIkyQm6ACfbPiT
-qZo9Et3fACK9ap0KUhaVVwE=
-=UJ+t
+iD8DBQFL3t6BoxKgR168RlERAmG1AJ9O0XG5Km2CNUBGaWq0PnJbrMhSsgCeJiI9
+DrNwLLIIqnopSV7zMILP0LA=
+=3EtO
 -----END PGP SIGNATURE-----
