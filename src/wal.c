@@ -592,25 +592,29 @@ int sqlite3WalOpen(
   *ppWal = 0;
   nWal = strlen(zDb);
   pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal+5);
-  if( !pRet ) goto wal_open_out;
+  if( !pRet ){
+    return SQLITE_NOMEM;
+  }
+
   pRet->pVfs = pVfs;
   pRet->pFd = (sqlite3_file *)&pRet[1];
   pRet->zName = zWal = pVfs->szOsFile + (char*)pRet->pFd;
   sqlite3_snprintf(nWal+5, zWal, "%s-wal", zDb);
   rc = pVfs->xShmOpen(pVfs, zWal, &pRet->pWIndex);
-  if( rc ) goto wal_open_out;
 
   /* Open file handle on the write-ahead log file. */
-  flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
-  rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
+  if( rc==SQLITE_OK ){
+    flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
+    rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
+  }
 
-wal_open_out:
   if( rc!=SQLITE_OK ){
     if( pRet ){
       pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
       sqlite3OsClose(pRet->pFd);
       sqlite3_free(pRet);
     }
+    pRet = 0;
   }
   *ppWal = pRet;
   return rc;
@@ -666,26 +670,26 @@ static WalIterator *walIteratorInit(Wal *pWal){
 
   nByte = sizeof(WalIterator) + (nSegment-1)*sizeof(struct WalSegment) + 512;
   p = (WalIterator *)sqlite3_malloc(nByte);
+
   if( p ){
     memset(p, 0, nByte);
     p->nSegment = nSegment;
+
+    for(i=0; i<nSegment-1; i++){
+      p->aSegment[i].aDbPage = &aData[walIndexEntry(i*256+1)];
+      p->aSegment[i].aIndex = (u8 *)&aData[walIndexEntry(i*256+1)+256];
+    }
+    pFinal = &p->aSegment[nSegment-1];
+  
+    pFinal->aDbPage = &aData[walIndexEntry((nSegment-1)*256+1)];
+    pFinal->aIndex = (u8 *)&pFinal[1];
+    aTmp = &pFinal->aIndex[256];
+    for(i=0; i<nFinal; i++){
+      pFinal->aIndex[i] = i;
+    }
+    walMergesort8(pFinal->aDbPage, aTmp, pFinal->aIndex, &nFinal);
     p->nFinal = nFinal;
   }
-
-  for(i=0; i<nSegment-1; i++){
-    p->aSegment[i].aDbPage = &aData[walIndexEntry(i*256+1)];
-    p->aSegment[i].aIndex = (u8 *)&aData[walIndexEntry(i*256+1)+256];
-  }
-  pFinal = &p->aSegment[nSegment-1];
-
-  pFinal->aDbPage = &aData[walIndexEntry((nSegment-1)*256+1)];
-  pFinal->aIndex = (u8 *)&pFinal[1];
-  aTmp = &pFinal->aIndex[256];
-  for(i=0; i<nFinal; i++){
-    pFinal->aIndex[i] = i;
-  }
-  walMergesort8(pFinal->aDbPage, aTmp, pFinal->aIndex, &nFinal);
-  p->nFinal = nFinal;
 
   return p;
 }

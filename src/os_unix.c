@@ -4972,8 +4972,8 @@ static int unixShmOpen(
   nName = strlen(zName);
   pNew = sqlite3_malloc( sizeof(*pFile) + nName + 10 );
   if( pNew==0 ){
-    rc = SQLITE_NOMEM;
-    goto shm_open_err;
+    sqlite3_free(p);
+    return SQLITE_NOMEM;
   }
   memset(pNew, 0, sizeof(*pNew));
   pNew->zFilename = (char*)&pNew[1];
@@ -5059,9 +5059,8 @@ static int unixShmOpen(
 
   /* Jump here on any error */
 shm_open_err:
-  unixShmPurge();
+  unixShmPurge();                 /* This call frees pFile if required */
   sqlite3_free(p);
-  sqlite3_free(pFile);
   sqlite3_free(pNew);
   *pShm = 0;
   unixLeaveMutex();

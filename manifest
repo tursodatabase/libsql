@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sthe\scrash-test\sVFS\sin\stest6.c\sto\spass-through\sthe\sshared-memory\nmethods\sto\sthe\sreal\sunderlying\sVFS.\s\sThis\sfixes\sthe\swalcrash.test\sscript.
-D 2010-05-03T16:36:56
+C Fix\sa\scouple\sof\serrors\sin\sWAL\scode\sthat\scan\soccur\sin\san\sOOM\ssituation.
+D 2010-05-03T17:18:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +150,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 7d706a3a50818271f01020864eb9a777b14d5299
+F src/os_unix.c 2d19037594cd2ae30e6ad77cb4f1cc5a20e4a7df
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c e9c7fe979b32a3c5bf4216d8fbe1cf8beff8a1b8
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -224,7 +221,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 5face3be0769d3a60d77fcde31bffabd27e93d9b
+F src/wal.c f2dd17d7edecf300a170ce1ef96a14e7edd74686
 F src/wal.h d6d4a6809151e30bed5b01dd05cf27858f5a7bc8
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -764,6 +761,7 @@ F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 0223196f4311a504b0127746613c4434054f7968
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test 63edc6a9e05f645b54d649186a5818fc82953e2e
+F test/walfault.test 51ffa1eb3e12d63355100888ad183f06e6ffdafb
 F test/walhook.test 5f18e0fc8787f1f8889d7a9971af18f334f83786
 F test/walmode.test bac6f06544a8554588a1543def996bbe2fc41792
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -811,14 +809,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 43b5b07f0d996d7ef7426346b1792e9ca898f487
-R a80f3f4ea6ee6aea4b04fb34a6c3ea12
-U drh
-Z 4c3ef2bd40e742d4d228ff19c85ff350
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL3vuroxKgR168RlERAg7YAKCMOaR1lvqjck2/wA1N4NHbOXR7eACdGv8r
-bigNQ81aPV6U5WqfhyJCQhI=
-=VGaH
------END PGP SIGNATURE-----
+P ea09ff37911376505e8262ee9841224995b696f2
+R 2c0875fe87911ee05105de14156e695d
+U dan
+Z 93954dd7704e07e316c58f51f274de72
