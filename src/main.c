@@ -1260,7 +1260,7 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
   return SQLITE_OK;
 #else
   int rc;                         /* Return code */
-  int iDb = 0;                    /* sqlite3.aDb[] index of db to checkpoint */
+  int iDb = SQLITE_MAX_ATTACHED;  /* sqlite3.aDb[] index of db to checkpoint */
 
   sqlite3_mutex_enter(db->mutex);
   if( zDb ){
@@ -1284,28 +1284,38 @@ int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb){
 ** Run a checkpoint on database iDb. This is a no-op if database iDb is
 ** not currently open in WAL mode.
 **
-** If a transaction is open at either the database handle (db) or b-tree
-** level, this function returns SQLITE_LOCKED and a checkpoint is not
-** attempted. If an error occurs while running the checkpoint, an SQLite
-** error code is returned (i.e. SQLITE_IOERR). Otherwise, SQLITE_OK.
+** If a transaction is open on the database being checkpointed, this 
+** function returns SQLITE_LOCKED and a checkpoint is not attempted. If 
+** an error occurs while running the checkpoint, an SQLite error code is 
+** returned (i.e. SQLITE_IOERR). Otherwise, SQLITE_OK.
 **
 ** The mutex on database handle db should be held by the caller. The mutex
 ** associated with the specific b-tree being checkpointed is taken by
 ** this function while the checkpoint is running.
+**
+** If iDb is passed SQLITE_MAX_ATTACHED, then all attached databases are
+** checkpointed. If an error is encountered it is returned immediately -
+** no attempt is made to checkpoint any remaining databases.
 */
 int sqlite3Checkpoint(sqlite3 *db, int iDb){
-  Btree *pBt;                     /* Btree handle to checkpoint */
-  int rc;                         /* Return code */
+  int rc = SQLITE_OK;             /* Return code */
+  int i;                          /* Used to iterate through attached dbs */
 
   assert( sqlite3_mutex_held(db->mutex) );
 
-  pBt = db->aDb[iDb].pBt;
-  if( sqlite3BtreeIsInReadTrans(pBt) ){
-    rc = SQLITE_LOCKED;
-  }else{
-    sqlite3BtreeEnter(pBt);
-    rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
-    sqlite3BtreeLeave(pBt);
+  for(i=0; i<db->nDb && rc==SQLITE_OK; i++){
+    if( i==iDb || iDb==SQLITE_MAX_ATTACHED ){
+      Btree *pBt = db->aDb[i].pBt;
+      if( pBt ){
+        if( sqlite3BtreeIsInReadTrans(pBt) ){
+          rc = SQLITE_LOCKED;
+        }else{
+          sqlite3BtreeEnter(pBt);
+          rc = sqlite3PagerCheckpoint(sqlite3BtreePager(pBt));
+          sqlite3BtreeLeave(pBt);
+        }
+      }
+    }
   }
 
   return rc;

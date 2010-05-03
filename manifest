@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sthe\smutex\sis\sheld\swhile\scalling\ssqlite3ApiExit()\sin\s\nsqlite3_wal_checkpoint().\s\sOther\scleanup\sof\sWAL\slogic.
-D 2010-05-03T13:37:30
+C If\sthe\ssqlite3_wal_checkpoint()\sAPI\sis\spassed\sa\sNULL\spointer\sin\splace\sof\sa\sdatabase\sname,\sattempt\sto\scheckpoint\sall\sattached\sdatabases.
+D 2010-05-03T14:05:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -134,7 +131,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c 0f66a2b0c2ce2c44ab4a5436e05064d39d8f5cbf
+F src/main.c 6bc746f6016e0a3e6a7089078d9feffc0aa24a5e
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
@@ -811,14 +808,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ff234cf574c7ae384ab1ebc79b2171ef0541bc91
-R e7545824307d5d5af98e4766ae2a26ad
-U drh
-Z 9a835b2804bf8190a366f2e988463519
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL3tGdoxKgR168RlERAkuOAJ96ZgqU19yVJ4CAdOh6a78a7JzGjwCfSnph
-d7jKPMvbqcd69IRRUWbjMNM=
-=vT7t
------END PGP SIGNATURE-----
+P 11a85b821abff1ecb7ec8c37bc7783be9fc4ea6d
+R 496e930fc5a775a552ace6c40959352e
+U dan
+Z 225bbd40c88bfb84bfc467a361edc728
