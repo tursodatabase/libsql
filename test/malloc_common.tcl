@@ -89,8 +89,10 @@ proc do_malloc_test {tn args} {
         catch {db close} 
         catch {file delete -force test.db}
         catch {file delete -force test.db-journal}
+        catch {file delete -force test.db-wal}
         catch {file delete -force test2.db}
         catch {file delete -force test2.db-journal}
+        catch {file delete -force test2.db-wal}
         if {[info exists ::mallocopts(-testdb)]} {
           file copy $::mallocopts(-testdb) test.db
         }
