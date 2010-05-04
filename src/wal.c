@@ -613,7 +613,7 @@ int sqlite3WalOpen(
   }
 
   if( rc!=SQLITE_OK ){
-    pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
+    if( pRet->pWIndex ) pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
     sqlite3OsClose(pRet->pFd);
     sqlite3_free(pRet);
   }else{
