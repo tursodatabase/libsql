@@ -250,11 +250,27 @@ for {set i 1} {$i < $REPEATS} {incr i} {
   db close
 }
 
+#-------------------------------------------------------------------------
+# This test case simulates a crash while checkpointing the database. Page
+# 1 is one of the pages overwritten by the checkpoint. This is a special
+# case because it means the content of page 1 may be damaged. SQLite will
+# have to determine:
+#
+#   (a) that the database is a WAL database, and 
+#   (b) the database page-size
+#
+# based on the log file.
+#
 for {set i 1} {$i < $REPEATS} {incr i} {
   file delete -force test.db test.db-wal
 
+  # Select a page-size for this test.
+  #
+  set pgsz [lindex {512 1024 2048 4096 8192 16384} [expr $i%6]]
+
   do_test walcrash-7.$i.1 {
-    crashsql -delay 3 -file test.db -seed [incr seed] -blocksize 512 {
+    crashsql -delay 3 -file test.db -seed [incr seed] -blocksize 512 "
+      PRAGMA page_size = $pgsz;
       PRAGMA journal_mode = wal;
       BEGIN;
         CREATE TABLE t1(a, b);
@@ -263,7 +279,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
       PRAGMA wal_checkpoint;
       CREATE INDEX i1 ON t1(a);
       PRAGMA wal_checkpoint;
-    }
+    "
   } {1 {child process exited abnormally}}
 
   do_test walcrash-7.$i.2 {

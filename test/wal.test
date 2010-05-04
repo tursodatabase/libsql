@@ -1193,8 +1193,152 @@ foreach {tn sectorsize logsize} {
 }
 sqlite3_test_control_pending_byte $old_pending_byte
 
+#-------------------------------------------------------------------------
+# This test - wal-18.* - verifies a couple of specific conditions that
+# may be encountered while recovering a log file are handled correctly:
+#
+#   wal-18.1.* When the first 32-bits of a frame checksum is correct but 
+#              the second 32-bits are false, and
+#
+#   wal-18.2.* When the page-size field that occurs at the start of a log
+#              file is a power of 2 greater than 16384 or smaller than 512.
+#
+file delete -force test.db test.db-wal test.db-journal
+do_test wal-18.0 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = 0;
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = OFF;
+
+    CREATE TABLE t1(a, b, UNIQUE(a, b));
+    INSERT INTO t1 VALUES(0, 0);
+    PRAGMA wal_checkpoint;
+
+    INSERT INTO t1 VALUES(1, 2);          -- frames 1 and 2
+    INSERT INTO t1 VALUES(3, 4);          -- frames 3 and 4
+    INSERT INTO t1 VALUES(5, 6);          -- frames 5 and 6
+  }
+
+  file copy -force test.db testX.db
+  file copy -force test.db-wal testX.db-wal
+  db close
+  list [file size testX.db] [file size testX.db-wal]
+} [list [expr 3*1024] [log_file_size 6 1024]]
+
+foreach {nFrame result} {
+         0      {0 0}
+         1      {0 0}
+         2      {0 0 1 2}
+         3      {0 0 1 2}
+         4      {0 0 1 2 3 4}
+         5      {0 0 1 2 3 4}
+         6      {0 0 1 2 3 4 5 6}
+} {
+  do_test wal-18.1.$nFrame {
+    file copy -force testX.db test.db
+    file copy -force testX.db-wal test.db-wal
+
+    hexio_write test.db-wal [expr 12 + $nFrame*(16+1024) + 12] 00000000
+
+    sqlite3 db test.db
+    execsql { 
+      SELECT * FROM t1;
+      PRAGMA integrity_check; 
+    }
+  } [concat $result ok]
+  db close
+} 
+
+proc randomblob {pgsz} {
+  sqlite3 rbdb :memory:
+  set blob [rbdb one {SELECT randomblob($pgsz)}]
+  rbdb close
+  set blob
+}
+
+proc logcksum {ckv1 ckv2 blob} {
+  upvar $ckv1 c1
+  upvar $ckv2 c2
+
+  binary scan $blob iu* values
+  foreach v $values {
+    incr c1 $v
+    incr c2 $c1
+  }
+
+  set c1 [expr ($c1 + ($c1>>24))&0xFFFFFFFF]
+  set c2 [expr ($c2 + ($c2>>24))&0xFFFFFFFF]
+}
+
+file copy -force test.db testX.db
+foreach {tn pgsz works} { 
+  1    128    0
+  2    256    0
+  3    512    1
+  4   1024    1
+  5   2048    1
+  6   4096    1
+  7   8192    1
+  8  16384    1
+  9  32768    1
+ 10  65536    0
+} {
+
+  for {set pg 1} {$pg <= 3} {incr pg} {
+    file copy -force testX.db test.db
+    file delete -force test.db-wal
+  
+    # Check that the database now exists and consists of three pages. And
+    # that there is no associated wal file.
+    #
+    do_test wal-18.2.$tn.$pg.1 { file exists test.db-wal } 0
+    do_test wal-18.2.$tn.$pg.2 { file exists test.db } 1
+    do_test wal-18.2.$tn.$pg.3 { file size test.db } [expr 1024*3]
+  
+    do_test wal-18.2.$tn.$pg.4 {
+
+      # Create a wal file that contains a single frame (database page
+      # number $pg) with the commit flag set. The frame checksum is
+      # correct, but the contents of the database page are corrupt.
+      #
+      # The page-size in the log file header is set to $pgsz. If the
+      # WAL code considers $pgsz to be a valid SQLite database file page-size,
+      # the database will be corrupt (because the garbage frame contents
+      # will be treated as valid content). If $pgsz is invalid (too small
+      # or too large), the db will not be corrupt as the log file will
+      # be ignored.
+      #
+      set c1 22
+      set c2 23
+      set walhdr [binary format III $pgsz $c1 $c2]
+      set framebody [randomblob $pgsz]
+      set framehdr  [binary format II $pg 5]
+      logcksum c1 c2 $framehdr
+      logcksum c1 c2 $framebody
+      set framehdr [binary format IIII $pg 5 $c1 $c2]
+      set fd [open test.db-wal w]
+      fconfigure $fd -encoding binary -translation binary
+      puts -nonewline $fd $walhdr
+      puts -nonewline $fd $framehdr
+      puts -nonewline $fd $framebody
+      close $fd
+  
+      file size test.db-wal
+    } [log_file_size 1 $pgsz]
+  
+    do_test wal-18.2.$tn.$pg.5 {
+      sqlite3 db test.db
+      set rc [catch { db one {PRAGMA integrity_check} } msg]
+      expr { $rc!=0 || $msg!="ok" }
+    } $works
+  
+    db close
+  }
+}
+
 catch { db2 close }
 catch { db close }
 finish_test
-
 

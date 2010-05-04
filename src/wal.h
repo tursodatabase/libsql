@@ -24,7 +24,7 @@
 # define sqlite3WalClose(w,x,y,z)          0
 # define sqlite3WalOpenSnapshot(y,z)       0
 # define sqlite3WalCloseSnapshot(z) 
-# define sqlite3WalRead(w,x,y,z)           0
+# define sqlite3WalRead(v,w,x,y,z)         0
 # define sqlite3WalDbsize(y,z)
 # define sqlite3WalWriteLock(y,z)          0
 # define sqlite3WalUndo(x,y,z)             0
@@ -42,7 +42,7 @@ typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
 int sqlite3WalOpen(sqlite3_vfs*, const char *zDb, Wal **ppWal);
-int sqlite3WalClose(Wal *pWal, sqlite3_file *pFd, int sync_flags, u8 *zBuf);
+int sqlite3WalClose(Wal *pWal, sqlite3_file *pFd, int sync_flags, int, u8 *);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
 ** snapshot is like a read-transaction.  It is the state of the database
@@ -55,7 +55,7 @@ int sqlite3WalOpenSnapshot(Wal *pWal, int *);
 void sqlite3WalCloseSnapshot(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
-int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut);
+int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
 
 /* Return the size of the database as it existed at the beginning
 ** of the snapshot */
@@ -83,6 +83,7 @@ int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
+  int nBuf,                       /* Size of buffer nBuf */
   u8 *zBuf,                       /* Temporary buffer to use */
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */

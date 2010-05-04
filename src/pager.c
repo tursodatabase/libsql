@@ -2196,8 +2196,8 @@ static int readDbPage(PgHdr *pPg){
   Pager *pPager = pPg->pPager; /* Pager object associated with page pPg */
   Pgno pgno = pPg->pgno;       /* Page number to read */
   int rc = SQLITE_OK;          /* Return code */
-  i64 iOffset;                 /* Byte offset of file to read from */
   int isInWal = 0;             /* True if page is in log file */
+  int pgsz = pPager->pageSize; /* Number of bytes to read */
 
   assert( pPager->state>=PAGER_SHARED && !MEMDB );
   assert( isOpen(pPager->fd) );
@@ -2210,11 +2210,11 @@ static int readDbPage(PgHdr *pPg){
 
   if( pagerUseWal(pPager) ){
     /* Try to pull the page from the write-ahead log. */
-    rc = sqlite3WalRead(pPager->pWal, pgno, &isInWal, pPg->pData);
+    rc = sqlite3WalRead(pPager->pWal, pgno, &isInWal, pgsz, pPg->pData);
   }
   if( rc==SQLITE_OK && !isInWal ){
-    iOffset = (pgno-1)*(i64)pPager->pageSize;
-    rc = sqlite3OsRead(pPager->fd, pPg->pData, pPager->pageSize, iOffset);
+    i64 iOffset = (pgno-1)*(i64)pPager->pageSize;
+    rc = sqlite3OsRead(pPager->fd, pPg->pData, pgsz, iOffset);
     if( rc==SQLITE_IOERR_SHORT_READ ){
       rc = SQLITE_OK;
     }
@@ -2832,6 +2832,15 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
   int rc = SQLITE_OK;
   memset(pDest, 0, N);
   assert( isOpen(pPager->fd) || pPager->tempFile );
+
+  if( pagerUseWal(pPager) ){
+    int isInWal = 0;
+    rc = sqlite3WalRead(pPager->pWal, 1, &isInWal, N, pDest);
+    if( rc!=SQLITE_OK || isInWal ){
+      return rc;
+    }
+  }
+
   if( isOpen(pPager->fd) ){
     IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
     rc = sqlite3OsRead(pPager->fd, pDest, N, 0);
@@ -3055,7 +3064,8 @@ int sqlite3PagerClose(Pager *pPager){
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
   sqlite3WalClose(pPager->pWal, pPager->fd, 
-    (pPager->noSync ? 0 : pPager->sync_flags), pTmp
+    (pPager->noSync ? 0 : pPager->sync_flags), 
+    pPager->pageSize, pTmp
   );
   pPager->pWal = 0;
 #endif
@@ -5833,7 +5843,8 @@ int sqlite3PagerCheckpoint(Pager *pPager){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
     rc = sqlite3WalCheckpoint(pPager->pWal, pPager->fd, 
         (pPager->noSync ? 0 : pPager->sync_flags),
-        zBuf, pPager->xBusyHandler, pPager->pBusyHandlerArg
+        pPager->pageSize, zBuf, 
+        pPager->xBusyHandler, pPager->pBusyHandlerArg
     );
   }
   return rc;
@@ -5908,7 +5919,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
     if( rc==SQLITE_OK ){
       rc = sqlite3WalClose(pPager->pWal, pPager->fd,
         (pPager->noSync ? 0 : pPager->sync_flags), 
-        (u8*)pPager->pTmpSpace
+        pPager->pageSize, (u8*)pPager->pTmpSpace
       );
       pPager->pWal = 0;
     }

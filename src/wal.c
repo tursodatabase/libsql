@@ -710,6 +710,7 @@ static int walCheckpoint(
   Wal *pWal,                      /* Wal connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags for OsSync() (or 0) */
+  int nBuf,                       /* Size of zBuf in bytes */
   u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
@@ -718,13 +719,19 @@ static int walCheckpoint(
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
 
-  if( pWal->hdr.iLastPg==0 ){
-    return SQLITE_OK;
-  }
-
   /* Allocate the iterator */
   pIter = walIteratorInit(pWal);
   if( !pIter ) return SQLITE_NOMEM;
+
+  if( pWal->hdr.iLastPg==0 ){
+    rc = SQLITE_OK;
+    goto out;
+  }
+
+  if( pWal->hdr.pgsz!=nBuf ){
+    rc = SQLITE_CORRUPT_BKPT;
+    goto out;
+  }
 
   /* Sync the log file to disk */
   if( sync_flags ){
@@ -788,7 +795,8 @@ int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
   sqlite3_file *pFd,              /* Database file */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
-  u8 *zBuf                        /* Buffer of at least page-size bytes */
+  int nBuf,
+  u8 *zBuf                        /* Buffer of at least nBuf bytes */
 ){
   int rc = SQLITE_OK;
   if( pWal ){
@@ -804,7 +812,7 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      rc = walCheckpoint(pWal, pFd, sync_flags, zBuf);
+      rc = walCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf);
       if( rc==SQLITE_OK ){
         isDelete = 1;
       }
@@ -953,7 +961,13 @@ void sqlite3WalCloseSnapshot(Wal *pWal){
 /*
 ** Read a page from the log, if it is present. 
 */
-int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut){
+int sqlite3WalRead(
+  Wal *pWal, 
+  Pgno pgno, 
+  int *pInWal, 
+  int nOut,
+  u8 *pOut
+){
   u32 iRead = 0;
   u32 *aData; 
   int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
@@ -1011,7 +1025,7 @@ int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, u8 *pOut){
   if( iRead ){
     i64 iOffset = walFrameOffset(iRead, pWal->hdr.pgsz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
-    return sqlite3OsRead(pWal->pFd, pOut, pWal->hdr.pgsz, iOffset);
+    return sqlite3OsRead(pWal->pFd, pOut, nOut, iOffset);
   }
 
   *pInWal = 0;
@@ -1266,6 +1280,7 @@ int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Wal connection */
   sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
+  int nBuf,                       /* Size of temporary buffer */
   u8 *zBuf,                       /* Temporary buffer to use */
   int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
   void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
@@ -1288,7 +1303,7 @@ int sqlite3WalCheckpoint(
   /* Copy data from the log to the database file. */
   rc = walIndexReadHdr(pWal, &isChanged);
   if( rc==SQLITE_OK ){
-    rc = walCheckpoint(pWal, pFd, sync_flags, zBuf);
+    rc = walCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf);
   }
   if( isChanged ){
     /* If a new wal-index header was loaded before the checkpoint was 

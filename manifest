@@ -1,5 +1,5 @@
-C Fix\sa\stypo\sin\swalfault.test.
-D 2010-05-04T11:06:03
+C Fix\sproblems\swith\srecovering\swal\sfiles\sthat\suse\sa\spage-size\sother\sthan\sthe\sdefault.
+D 2010-05-04T14:47:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
 F src/os_unix.c 7ab8d2fe59954dca619af3e1bbd4789f5032fece
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
-F src/pager.c e9c7fe979b32a3c5bf4216d8fbe1cf8beff8a1b8
+F src/pager.c f030536592582d29a761b75988f409c894c37d5e
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -221,8 +221,8 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 1d0abe01ae9836f207ecfe2d3f1ece97b744fc3e
-F src/wal.h d6d4a6809151e30bed5b01dd05cf27858f5a7bc8
+F src/wal.c 558700d2d596af389305c193fe98e79406a50982
+F src/wal.h b4c42014b5fa3b4e6244ac8c65de7ff67adeb27c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
@@ -758,9 +758,9 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 511c630993d5adc170f56e581909b6eb580b0f53
+F test/wal.test 2b3626a6c839ef281e2a51f6223578e5fa7616c2
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
-F test/walcrash.test 63edc6a9e05f645b54d649186a5818fc82953e2e
+F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walfault.test 2504c5c50d8f9a9e48969de381eb98e2a8b89195
 F test/walhook.test 5f18e0fc8787f1f8889d7a9971af18f334f83786
 F test/walmode.test bac6f06544a8554588a1543def996bbe2fc41792
@@ -809,7 +809,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a60104aa7e38e7d9f2ff2eae02687dc9c5dd5d77
-R 9692cfa3edc87873be9342b2b7fc3777
+P 232dbe8ecec16485be5c5995fdf7a0ed951c2097
+R 8e6184a7c7d1eb3d58e7d51edd48bf22
 U dan
-Z 6f47b056126e5089750d5cf38e878789
+Z 520c27e9585f17af9827fbfa6794dca0
