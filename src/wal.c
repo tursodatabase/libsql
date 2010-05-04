@@ -1076,8 +1076,6 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 }
 
 /*
-** The Wal object passed to this function must be holding the write-lock.
-**
 ** If any data has been written (but not committed) to the log file, this
 ** function moves the write-pointer back to the start of the transaction.
 **
@@ -1094,9 +1092,9 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   Pgno iMax = pWal->hdr.iLastPg;
   Pgno iFrame;
 
-  assert( pWal->lockState==SQLITE_SHM_WRITE );
   walIndexReadHdr(pWal, 0);
   for(iFrame=pWal->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
+    assert( pWal->lockState==SQLITE_SHM_WRITE );
     rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
   }
   walIndexUnmap(pWal);
