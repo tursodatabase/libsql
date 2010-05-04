@@ -562,6 +562,19 @@ finished:
   return rc;
 }
 
+/*
+** Close an open wal-index
+*/
+static void walIndexClose(Wal *pWal){
+  sqlite3_shm *pWIndex = pWal->pWIndex;
+  if( pWIndex ){
+    sqlite3_vfs *pVfs = pWal->pVfs;
+    int notUsed;
+    pVfs->xShmLock(pVfs, pWIndex, SQLITE_SHM_UNLOCK, &notUsed);
+    pVfs->xShmClose(pVfs, pWIndex, 0);
+  }
+}
+
 /* 
 ** Open a connection to the log file associated with database zDb. The
 ** database file does not actually have to exist. zDb is used only to
@@ -613,7 +626,7 @@ int sqlite3WalOpen(
   }
 
   if( rc!=SQLITE_OK ){
-    if( pRet->pWIndex ) pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
+    walIndexClose(pRet);
     sqlite3OsClose(pRet->pFd);
     sqlite3_free(pRet);
   }else{
@@ -819,7 +832,7 @@ int sqlite3WalClose(
       walIndexUnmap(pWal);
     }
 
-    pWal->pVfs->xShmClose(pWal->pVfs, pWal->pWIndex, isDelete);
+    walIndexClose(pWal);
     sqlite3OsClose(pWal->pFd);
     if( isDelete ){
       sqlite3OsDelete(pWal->pVfs, pWal->zName, 0);
