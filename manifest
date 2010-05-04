@@ -1,5 +1,5 @@
-C Test\sthat\sthe\scorrect\snumber\sof\spadding\sframes\sare\sappended\sto\sthe\slog\sfile\safter\scommitting\sa\stransaction\sin\ssynchronous=FULL\smode.
-D 2010-05-04T10:36:21
+C Fix\sa\stypo\sin\swalfault.test.
+D 2010-05-04T11:06:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -221,7 +221,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c fcd2c4ce4a7d44928763966c2199e0de800fae89
+F src/wal.c 1d0abe01ae9836f207ecfe2d3f1ece97b744fc3e
 F src/wal.h d6d4a6809151e30bed5b01dd05cf27858f5a7bc8
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -386,7 +386,7 @@ F test/fts2q.test b2fbbe038b7a31a52a6079b215e71226d8c6a682
 F test/fts2r.test b154c30b63061d8725e320fba1a39e2201cadd5e
 F test/fts2token.test d8070b241a15ff13592a9ae4a8b7c171af6f445a
 F test/fts3.test ae0433b09b12def08105640e57693726c4949338
-F test/fts3_common.tcl 1d887ded06dac9b993cfb175618df7f70c796de2
+F test/fts3_common.tcl 4d8eec9db565fed9098f45c378f28e1657802011
 F test/fts3aa.test 5327d4c1d9b6c61021696746cc9a6cdc5bf159c0
 F test/fts3ab.test 09aeaa162aee6513d9ff336b6932211008b9d1f9
 F test/fts3ac.test 636ed7486043055d4f126a0e385f2d5a82ebbf63
@@ -412,8 +412,8 @@ F test/fts3expr.test 5e745b2b6348499d9ef8d59015de3182072c564c
 F test/fts3expr2.test 18da930352e5693eaa163a3eacf96233b7290d1a
 F test/fts3malloc.test 059592c4f37ccd30138bbf8e3e5b7982cb5c8f2e
 F test/fts3near.test 2e318ee434d32babd27c167142e2b94ddbab4844
-F test/fts3query.test 1acb21b58d6aa7504e990f0f589be85e9a133969
-F test/fts3rnd.test 2f5761db9dd92f6fe09d08976ac658ef521846ed
+F test/fts3query.test 2468caf7938dbc3be2e049524320ce4faf2227b3
+F test/fts3rnd.test 707533ce943f490443ce5e696236bb1675a37635
 F test/fts3snippet.test 9f9a4a7e396c5d8ce2898be65ebabc429555430f
 F test/fts4aa.test eadf85621c0a113d4c7ad3ccbf8441130e007b8f
 F test/func.test 6c5ce11e3a0021ca3c0649234e2d4454c89110ca
@@ -503,7 +503,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test e3ea401904d010cb7c1e4b2ee8803f4a9f5b999d
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 206a1694c0d30cb8b8cbdda68ab8e1f232fd1ab9
+F test/malloc_common.tcl f95c4d3459877e64c2d856b8a9c39210f9968ddf
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -761,7 +761,7 @@ F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 511c630993d5adc170f56e581909b6eb580b0f53
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test 63edc6a9e05f645b54d649186a5818fc82953e2e
-F test/walfault.test cdd1a27ed89bcb14596005ab2477b3724dd5f805
+F test/walfault.test 2504c5c50d8f9a9e48969de381eb98e2a8b89195
 F test/walhook.test 5f18e0fc8787f1f8889d7a9971af18f334f83786
 F test/walmode.test bac6f06544a8554588a1543def996bbe2fc41792
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -809,7 +809,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 49bef00e5cda600ceb964148bf745de4aff1ab62
-R 44e8b17dd54df12e28ab0c945b738027
+P a60104aa7e38e7d9f2ff2eae02687dc9c5dd5d77
+R 9692cfa3edc87873be9342b2b7fc3777
 U dan
-Z dab97771a4b803a69cb81f43590ea234
+Z 6f47b056126e5089750d5cf38e878789

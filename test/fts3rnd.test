@@ -82,6 +82,7 @@ source $testdir/tester.tcl
 #
 ifcapable !fts3 { finish_test ; return }
 source $testdir/fts3_common.tcl
+source $testdir/malloc_common.tcl
 
 set G(nVocab) 100
 

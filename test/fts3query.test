@@ -20,6 +20,7 @@ source $testdir/tester.tcl
 # If this build does not include FTS3, skip the tests in this file.
 #
 ifcapable !fts3 { finish_test ; return }
+source $testdir/malloc_common.tcl
 source $testdir/fts3_common.tcl
 set DO_MALLOC_TEST 0
 

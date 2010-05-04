@@ -573,16 +573,20 @@ finished:
 ** client from unlinking the log or wal-index file. If another process
 ** were to do this just after this client opened one of these files, the
 ** system would be badly broken.
+**
+** If the log file is successfully opened, SQLITE_OK is returned and 
+** *ppWal is set to point to a new WAL handle. If an error occurs,
+** an SQLite error code is returned and *ppWal is left unmodified.
 */
 int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
   const char *zDb,                /* Name of database file */
   Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
-  int rc = SQLITE_OK;             /* Return Code */
+  int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
-  char *zWal = 0;                 /* Path to WAL file */
+  char *zWal;                     /* Path to WAL file */
   int nWal;                       /* Length of zWal in bytes */
 
   assert( zDb );
@@ -609,14 +613,12 @@ int sqlite3WalOpen(
   }
 
   if( rc!=SQLITE_OK ){
-    if( pRet ){
-      pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
-      sqlite3OsClose(pRet->pFd);
-      sqlite3_free(pRet);
-    }
-    pRet = 0;
+    pVfs->xShmClose(pVfs, pRet->pWIndex, 0);
+    sqlite3OsClose(pRet->pFd);
+    sqlite3_free(pRet);
+  }else{
+    *ppWal = pRet;
   }
-  *ppWal = pRet;
   return rc;
 }
 

@@ -23,7 +23,7 @@ do_malloc_test walfault-oom-1 -sqlbody {
   PRAGMA journal_mode = WAL;
   CREATE TABLE t1(a, b);
   INSERT INTO t1 VALUES(1, 2);
-  PRAGMA checkpoint;
+  PRAGMA wal_checkpoint;
 }
 
 do_malloc_test walfault-oom-2 -tclprep {
