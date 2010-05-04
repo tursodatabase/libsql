@@ -2785,8 +2785,10 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
   if( mxPage>0 ){
     pPager->mxPgno = mxPage;
   }
-  sqlite3PagerPagecount(pPager, &nPage);
-  assert( pPager->mxPgno>=nPage );
+  if( pPager->state!=PAGER_UNLOCK ){
+    sqlite3PagerPagecount(pPager, &nPage);
+    assert( pPager->mxPgno>=nPage );
+  }
   return pPager->mxPgno;
 }
 
@@ -2876,7 +2878,7 @@ int sqlite3PagerPagecount(Pager *pPager, int *pnPage){
     int rc;                 /* Error returned by OsFileSize() */
     i64 n = 0;              /* File size in bytes returned by OsFileSize() */
 
-    if( pagerUseWal(pPager) ){
+    if( pagerUseWal(pPager) && pPager->state!=PAGER_UNLOCK ){
       sqlite3WalDbsize(pPager->pWal, &nPage);
     }
 

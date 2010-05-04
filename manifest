@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Be\ssure\sto\srelease\sall\swal-index\slocks\sbefore\sclosing\sthe\swal-index.
-D 2010-05-04T17:38:42
+C When\ssqlite3PagerPagecount()\sis\scalled\swithout\sany\slocks,\salways\sreturn\nthe\sphysical\sfile\ssize,\snot\sthe\slogical\sfile\ssize.
+D 2010-05-04T18:50:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
 F src/os_unix.c 7ab8d2fe59954dca619af3e1bbd4789f5032fece
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
-F src/pager.c f030536592582d29a761b75988f409c894c37d5e
+F src/pager.c 224df6ad5f8c1fed238570092199db1e57233779
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -812,14 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8f9d22d58c75ad7476c1eea8ba296347e30b7beb
-R 8fbb8b98c2b4c7e4e790d9b614444182
+P b15b67fa14ff77963f470678ff6188c63be8e079
+R 90a516a40aed68998882df9ec8564c82
 U drh
-Z cd1e036df5c7f4b84b82fa991fe96193
+Z a30cf60f66607a4454bb94232875c47b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL4FuloxKgR168RlERAuGdAKCKxpQuBFvFj5bt0Vv1gj+o6sGfqQCfZXDE
-c8UJveZgjNHF+6e0sDdZ4FI=
-=CRPz
+iD8DBQFL4GyCoxKgR168RlERAqJFAJ40lJ/yFBAWE6VloZv7iEujVoKLPQCeMvkL
+ZkjLFoOe5DHk4e/ITO6H6WY=
+=5Otc
 -----END PGP SIGNATURE-----
