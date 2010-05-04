@@ -914,12 +914,12 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** or not any cached pages may be safely reused.
 */
 int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
-  int rc;
+  int rc;                         /* Return code */
 
   rc = walSetLock(pWal, SQLITE_SHM_READ);
-  if( rc==SQLITE_OK ){
-    pWal->lockState = SQLITE_SHM_READ;
+  assert( rc!=SQLITE_OK || pWal->lockState==SQLITE_SHM_READ );
 
+  if( rc==SQLITE_OK ){
     rc = walIndexReadHdr(pWal, pChanged);
     if( rc!=SQLITE_OK ){
       /* An error occured while attempting log recovery. */
@@ -942,10 +942,10 @@ int sqlite3WalOpenSnapshot(Wal *pWal, int *pChanged){
 ** Unlock the current snapshot.
 */
 void sqlite3WalCloseSnapshot(Wal *pWal){
-  if( pWal->lockState!=SQLITE_SHM_UNLOCK ){
-    assert( pWal->lockState==SQLITE_SHM_READ );
-    walSetLock(pWal, SQLITE_SHM_UNLOCK);
-  }
+  assert( pWal->lockState==SQLITE_SHM_READ
+       || pWal->lockState==SQLITE_SHM_UNLOCK
+  );
+  walSetLock(pWal, SQLITE_SHM_UNLOCK);
 }
 
 /*
