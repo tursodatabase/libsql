@@ -4648,7 +4648,6 @@ struct unixShm {
   unixShmFile *pFile;        /* The underlying unixShmFile object */
   unixShm *pNext;            /* Next unixShm with the same unixShmFile */
   u8 lockState;              /* Current lock state */
-  u8 readLock;               /* Which of the two read-lock states to use */
   u8 hasMutex;               /* True if holding the unixShmFile mutex */
   u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
   u8 sharedMask;             /* Mask of shared locks held */
@@ -4667,8 +4666,7 @@ struct unixShm {
 ** Constants used for locking
 */
 #define UNIX_SHM_BASE      32        /* Byte offset of the first lock byte */
-#define UNIX_SHM_MUTEX     0x01      /* Mask for MUTEX lock */
-#define UNIX_SHM_DMS       0x04      /* Mask for Dead-Man-Switch lock */
+#define UNIX_SHM_DMS       0x01      /* Mask for Dead-Man-Switch lock */
 #define UNIX_SHM_A         0x10      /* Mask for region locks... */
 #define UNIX_SHM_B         0x20
 #define UNIX_SHM_C         0x40
@@ -4695,13 +4693,12 @@ static const char *unixShmLockString(u8 mask){
   iBuf += 8;
   if( iBuf>=sizeof(zBuf) ) iBuf = 0;
 
-  z[0] = (mask & UNIX_SHM_MUTEX) ? 'M' : '.';
-  z[1] = (mask & UNIX_SHM_DMS)   ? 'S' : '.';
-  z[2] = (mask & UNIX_SHM_A)     ? 'A' : '.';
-  z[3] = (mask & UNIX_SHM_B)     ? 'B' : '.';
-  z[4] = (mask & UNIX_SHM_C)     ? 'C' : '.';
-  z[5] = (mask & UNIX_SHM_D)     ? 'D' : '.';
-  z[6] = 0;
+  z[0] = (mask & UNIX_SHM_DMS)   ? 'S' : '.';
+  z[1] = (mask & UNIX_SHM_A)     ? 'A' : '.';
+  z[2] = (mask & UNIX_SHM_B)     ? 'B' : '.';
+  z[3] = (mask & UNIX_SHM_C)     ? 'C' : '.';
+  z[4] = (mask & UNIX_SHM_D)     ? 'D' : '.';
+  z[5] = 0;
   return z;
 }
 #endif /* SQLITE_DEBUG */
@@ -4712,7 +4709,7 @@ static const char *unixShmLockString(u8 mask){
 ** lockMask might contain multiple bits but all bits are guaranteed
 ** to be contiguous.
 **
-** Locks block if the UNIX_SHM_MUTEX bit is set and are non-blocking
+** Locks block if the mask is exactly UNIX_SHM_C and are non-blocking
 ** otherwise.
 */
 static int unixShmSystemLock(
@@ -4733,7 +4730,7 @@ static int unixShmSystemLock(
   memset(&f, 0, sizeof(f));
   f.l_type = lockType;
   f.l_whence = SEEK_SET;
-  if( (lockMask & UNIX_SHM_MUTEX)!=0 && lockType!=F_UNLCK ){
+  if( lockMask==UNIX_SHM_C && lockType!=F_UNLCK ){
     lockOp = F_SETLKW;
     OSTRACE(("SHM-LOCK requesting blocking lock\n"));
   }else{
@@ -5029,10 +5026,6 @@ static int unixShmOpen(
     /* Check to see if another process is holding the dead-man switch.
     ** If not, truncate the file to zero length. 
     */
-    if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_MUTEX) ){
-      rc = SQLITE_IOERR_LOCK;
-      goto shm_open_err;
-    }
     if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_DMS)==SQLITE_OK ){
       if( ftruncate(pFile->h, 0) ){
         rc = SQLITE_IOERR;
@@ -5041,7 +5034,6 @@ static int unixShmOpen(
     if( rc==SQLITE_OK ){
       rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
     }
-    unixShmSystemLock(pFile, F_UNLCK, UNIX_SHM_MUTEX);
     if( rc ) goto shm_open_err;
   }
 
@@ -5321,21 +5313,21 @@ static int unixShmLock(
           if( rc==SQLITE_BUSY ){
             rc = unixShmSharedLock(pFile, p, UNIX_SHM_D);
             if( rc==SQLITE_OK ){
-              p->lockState = p->readLock = SQLITE_SHM_READ_FULL;
+              p->lockState = SQLITE_SHM_READ_FULL;
             }
           }else{
             unixShmUnlock(pFile, p, UNIX_SHM_B);
-            p->lockState = p->readLock = SQLITE_SHM_READ;
+            p->lockState = SQLITE_SHM_READ;
           }
         }
       }else if( p->lockState==SQLITE_SHM_WRITE ){
         rc = unixShmSharedLock(pFile, p, UNIX_SHM_A);
         unixShmUnlock(pFile, p, UNIX_SHM_C|UNIX_SHM_D);
-        p->lockState = p->readLock = SQLITE_SHM_READ;
+        p->lockState = SQLITE_SHM_READ;
       }else{
         assert( p->lockState==SQLITE_SHM_RECOVER );
-        unixShmUnlock(pFile, p, UNIX_SHM_MUTEX);
-        p->lockState = p->readLock;
+        unixShmUnlock(pFile, p, UNIX_SHM_C);
+        p->lockState = SQLITE_SHM_READ;
         rc = SQLITE_OK;
       }
       break;
@@ -5354,7 +5346,7 @@ static int unixShmLock(
            || p->lockState==SQLITE_SHM_PENDING
            || p->lockState==SQLITE_SHM_RECOVER );
       if( p->lockState==SQLITE_SHM_RECOVER ){
-        unixShmUnlock(pFile, p, UNIX_SHM_MUTEX);
+        unixShmUnlock(pFile, p, UNIX_SHM_C);
         p->lockState = SQLITE_SHM_CHECKPOINT;
         rc = SQLITE_OK;
       }
@@ -5378,7 +5370,7 @@ static int unixShmLock(
            || p->lockState==SQLITE_SHM_READ_FULL
            || p->lockState==SQLITE_SHM_CHECKPOINT );
       assert( sqlite3_mutex_held(pFile->mutexBuf) );
-      rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_MUTEX);
+      rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_C);
       if( rc==SQLITE_OK ){
         p->lockState = SQLITE_SHM_RECOVER;
       }

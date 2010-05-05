@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Prohibit\sbackup\sif\sthe\sdestination\sis\susing\sWAL\sand\shas\sa\sdifferent\spage\nsize\sfrom\sthe\ssource.
-D 2010-05-05T16:23:27
+C Simplifications\sto\sthe\sSHM\slocking\simplementation\sin\sos_unix.c.
+D 2010-05-05T18:20:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 7ab8d2fe59954dca619af3e1bbd4789f5032fece
+F src/os_unix.c 623a195fbcdb7b92cf275acf3ced2388459519a4
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 224df6ad5f8c1fed238570092199db1e57233779
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -812,14 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2ac5d96c8e5831b392d83c86491d9ed8bc9c8db7
-R 82b3438b071d9502db3bdd3a22e84c0d
+P 7bd44794c482beee16c684712545275e2bf63dfa
+R a2161c22aa5f81f0774fe4cb87094f8c
 U drh
-Z de906577ce23bb1b1b5ca675861faf36
+Z add6d6f68ea7db2fc288d70b0b6b408e
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL4ZuCoxKgR168RlERAuZbAJ4ikNBaO50mnTJ8j201rDXr+9WYqgCfU42A
-ws1gQpPQnYG7m2yeQMuRCxw=
-=XKt5
+iD8DBQFL4bbaoxKgR168RlERAn7mAJ46ccfjrHQ4zLP/jnvmuIjIcwQqEgCfQBpL
++aPZctVfU7OgkP5kSXlpTgM=
+=jtYE
 -----END PGP SIGNATURE-----
