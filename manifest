@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Get\sthe\sprevious\smutex\sfix\sworking\swith\sSQLITE_DEBUG\sand\swith\sthe\samalgamation.
-D 2010-05-05T00:22:21
+C Do\snot\sattempt\sto\smodify\sthe\spage_size\swhen\srunning\sVACUUM\son\sa\sWAL\sdatabase.
+D 2010-05-05T03:39:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -214,7 +214,7 @@ F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
 F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
-F src/vacuum.c 8e7d9a6fd076774bb6e211cad335c7337948a164
+F src/vacuum.c 15db45c738d8c4414e535d027a35f15d5edff0a4
 F src/vdbe.c 8be37a1b18786b5c026adcb2e9edc93e3a940885
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
@@ -812,14 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 451fd175758983c335aab449fdc4cb838156c4cb
-R 045e2e841d66b6071070228cb0d8c719
+P df19928f7ee94bca3989313ff16507c15d6efe2b
+R 069bb5f53fdfcba24cfeb576b63f1beb
 U drh
-Z 28121b315f3da7a423e5bbc25a4e7e69
+Z 8a5d544d9196499f84a43f63f2529a8f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL4LpAoxKgR168RlERAs4JAJ9mYm8FUjs24AAvPT3+A1OTbH8RHACdFekG
-3tezMw8gAYDoEh0uXo6E0oE=
-=HyII
+iD8DBQFL4OiMoxKgR168RlERAjEXAJ9ODmY13dc7A8c10DMd/YLHkGk71QCePYVs
+bLofxrhxIuLx1i3pAamMk0s=
+=gO6s
 -----END PGP SIGNATURE-----

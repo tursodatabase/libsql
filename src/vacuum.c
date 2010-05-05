@@ -168,6 +168,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   }
 #endif
 
+  /* Do not attempt to change the page size for a WAL database */
+  if( sqlite3PagerJournalMode(sqlite3BtreePager(pMain),
+                              PAGER_JOURNALMODE_QUERY)==PAGER_JOURNALMODE_WAL ){
+    db->nextPagesize = 0;
+  }
+
   if( sqlite3BtreeSetPageSize(pTemp, sqlite3BtreeGetPageSize(pMain), nRes, 0)
    || (!isMemDb && sqlite3BtreeSetPageSize(pTemp, db->nextPagesize, nRes, 0))
    || NEVER(db->mallocFailed)
