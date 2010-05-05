@@ -288,8 +288,8 @@ static void attachBackupObject(sqlite3_backup *p){
 int sqlite3_backup_step(sqlite3_backup *p, int nPage){
   int rc;
   int destMode;       /* Destination journal mode */
-  int pgszSrc;        /* Source page size */
-  int pgszDest;       /* Destination page size */
+  int pgszSrc = 0;    /* Source page size */
+  int pgszDest = 0;   /* Destination page size */
 
   sqlite3_mutex_enter(p->pSrcDb->mutex);
   sqlite3BtreeEnter(p->pSrc);
@@ -297,17 +297,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     sqlite3_mutex_enter(p->pDestDb->mutex);
   }
 
-  /* Do not allow backup if the destination database is in WAL mode */
-  destMode = sqlite3PagerJournalMode(sqlite3BtreePager(p->pDest),
-                                     PAGER_JOURNALMODE_QUERY);
-  pgszSrc = sqlite3BtreeGetPageSize(p->pSrc);
-  pgszDest = sqlite3BtreeGetPageSize(p->pDest);
-  if( destMode==PAGER_JOURNALMODE_WAL && pgszSrc!=pgszDest ){
-    rc = SQLITE_READONLY;
-  }else{
-    rc = p->rc;
-  }
-
+  rc = p->rc;
   if( !isFatalError(rc) ){
     Pager * const pSrcPager = sqlite3BtreePager(p->pSrc);     /* Source pager */
     Pager * const pDestPager = sqlite3BtreePager(p->pDest);   /* Dest pager */
@@ -339,6 +329,16 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     if( rc==SQLITE_OK && 0==sqlite3BtreeIsInReadTrans(p->pSrc) ){
       rc = sqlite3BtreeBeginTrans(p->pSrc, 0);
       bCloseTrans = 1;
+    }
+
+    /* Do not allow backup if the destination database is in WAL mode
+    ** and the page sizes are different between source and destination */
+    pgszSrc = sqlite3BtreeGetPageSize(p->pSrc);
+    pgszDest = sqlite3BtreeGetPageSize(p->pDest);
+    destMode = sqlite3PagerJournalMode(sqlite3BtreePager(p->pDest),
+                                         PAGER_JOURNALMODE_QUERY);
+    if( SQLITE_OK==rc && destMode==PAGER_JOURNALMODE_WAL && pgszSrc!=pgszDest ){
+      rc = SQLITE_READONLY;
     }
   
     /* Now that there is a read-lock on the source database, query the

@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Simplifications\sto\sthe\sSHM\slocking\simplementation\sin\sos_unix.c.
-D 2010-05-05T18:20:07
+C Do\snot\scompare\spage\ssizes\son\ssource\sand\sdestination\sof\sbackup\suntil\ntransactions\sare\sstarted\sand\sthe\spage\ssizes\sare\slocked.\s\sThis\sis\sa\nfix\sto\scheck-in\s[7bd44794c4].
+D 2010-05-05T18:46:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,7 +109,7 @@ F src/alter.c a9ff6f14b3935502537e90194b66c7bc79bed317
 F src/analyze.c 8dfd781ac326496746ecdfc3e099250ed5d79be5
 F src/attach.c 7abe1607c2054585377cdba3c219e8572f84ca5e
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 5c2dbddbe97f6bc2c01e3fcde4cfd2385b0c7411
+F src/backup.c de9809091b3b99f69e37261c133f7f8b19f6eca6
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c d0414a5f09b0cacb64bd60b91c5a3720585925aa
@@ -812,14 +812,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7bd44794c482beee16c684712545275e2bf63dfa
-R a2161c22aa5f81f0774fe4cb87094f8c
+P 9de05bfb09e29bafdf5782263330fe8eefcfaba3
+R 37171b2dee1e2cfb0d4c65563316cb42
 U drh
-Z add6d6f68ea7db2fc288d70b0b6b408e
+Z 23a5102ed1b42825806ab1e4a794b6d7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL4bbaoxKgR168RlERAn7mAJ46ccfjrHQ4zLP/jnvmuIjIcwQqEgCfQBpL
-+aPZctVfU7OgkP5kSXlpTgM=
-=jtYE
+iD8DBQFL4b0ZoxKgR168RlERAiSAAJ417bV1PGOMpJIz3ysmcloS8N8BuwCcDdW2
+cZ5DIznx/YBIFs/Nrb9NWhQ=
+=nHgc
 -----END PGP SIGNATURE-----
