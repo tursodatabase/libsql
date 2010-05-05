@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\ssure\sthe\spage\ssize\sof\sthe\smain\sdatabase\sis\sfixed\sfollowing\sa\nfailed\sVACUUM\sattempt.\s\sOtherwise,\stwo\sconsecutive\sfailed\sVACUUM\sattempts\nwith\sattempted\spage_size\schanges\son\sencrypted\sor\sWAL\sdatabases\scould\nresult\sin\sdatabase\scorruption.
-D 2010-05-05T04:11:45
+C When\sclosing\sa\sWAL\sdatabase,\sif\sthe\sexclusive\slock\son\sthe\sdatabase\sfile\sis\sobtained\sand\sthe\sdatabase\ssuccessfully\scheckpointed,\sdelete\sthe\swal-index\sfile\sfrom\sthe\sfile\ssystem.
+D 2010-05-05T15:33:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +221,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 73d17ad0d6a88e00ce5ac849c5f176cadd9ff375
+F src/wal.c faafbea1d530e0ad60a2b77a9c32627077527d37
 F src/wal.h b4c42014b5fa3b4e6244ac8c65de7ff67adeb27c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -812,14 +809,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 58a1a59be89b33c6d5fa8b43571037d7d96625a1
-R 066bf2576a40b4c0c16f4225fc3d2e48
-U drh
-Z cb782788a922488bfa66a64e6b6463a6
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL4PAEoxKgR168RlERAj4kAJ9RhM+s29Nfkv269nD6t7X4gUmQ3gCfW1vO
-GdUgzvdErwr4cFc4x4yLGro=
-=aer0
------END PGP SIGNATURE-----
+P 208e7d5d3a8915433dbf50c6cc6698ec6c8df944
+R 865b9c2886168b2786175a8dffa911ed
+U dan
+Z 1bbd17cb33b9f710875e715283353398

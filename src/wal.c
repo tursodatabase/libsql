@@ -563,15 +563,15 @@ finished:
 }
 
 /*
-** Close an open wal-index
+** Close an open wal-index.
 */
-static void walIndexClose(Wal *pWal){
+static void walIndexClose(Wal *pWal, int isDelete){
   sqlite3_shm *pWIndex = pWal->pWIndex;
   if( pWIndex ){
     sqlite3_vfs *pVfs = pWal->pVfs;
     int notUsed;
     pVfs->xShmLock(pVfs, pWIndex, SQLITE_SHM_UNLOCK, &notUsed);
-    pVfs->xShmClose(pVfs, pWIndex, 0);
+    pVfs->xShmClose(pVfs, pWIndex, isDelete);
   }
 }
 
@@ -626,7 +626,7 @@ int sqlite3WalOpen(
   }
 
   if( rc!=SQLITE_OK ){
-    walIndexClose(pRet);
+    walIndexClose(pRet, 0);
     sqlite3OsClose(pRet->pFd);
     sqlite3_free(pRet);
   }else{
@@ -832,7 +832,7 @@ int sqlite3WalClose(
       walIndexUnmap(pWal);
     }
 
-    walIndexClose(pWal);
+    walIndexClose(pWal, isDelete);
     sqlite3OsClose(pWal->pFd);
     if( isDelete ){
       sqlite3OsDelete(pWal->pVfs, pWal->zName, 0);
