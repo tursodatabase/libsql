@@ -433,11 +433,14 @@ static int walIndexRemap(Wal *pWal, int enlargeTo){
 ** here.
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
+  int rc;
   u32 iSlot = walIndexEntry(iFrame);
   
-  walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, -1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   while( ((iSlot+128)*sizeof(u32))>=pWal->szWIndex ){
-    int rc;
     int nByte = pWal->szWIndex + WALINDEX_MMAP_INCREMENT;
 
     /* Enlarge the storage, then remap it. */
@@ -539,7 +542,8 @@ static int walIndexRecover(Wal *pWal){
       if( rc!=SQLITE_OK ) break;
       isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, nPgsz, aData, aFrame);
       if( !isValid ) break;
-      walIndexAppend(pWal, ++iFrame, pgno);
+      rc = walIndexAppend(pWal, ++iFrame, pgno);
+      if( rc!=SQLITE_OK ) break;
 
       /* If nTruncate is non-zero, this is a commit record. */
       if( nTruncate ){
@@ -851,7 +855,7 @@ int sqlite3WalClose(
 **
 ** If the checksum cannot be verified return SQLITE_ERROR.
 */
-int walIndexTryHdr(Wal *pWal, int *pChanged){
+int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
   u32 aCksum[2] = {1, 1};
   u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
@@ -874,8 +878,9 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   if( aCksum[0]!=aHdr[WALINDEX_HDR_NFIELD]
    || aCksum[1]!=aHdr[WALINDEX_HDR_NFIELD+1]
   ){
-    return SQLITE_ERROR;
+    return SQLITE_OK;
   }
+  *pisValid = 1;
 
   if( memcmp(&pWal->hdr, aHdr, sizeof(WalIndexHdr)) ){
     if( pChanged ){
@@ -896,15 +901,20 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 */
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;
+  int isValid = 0;
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
-  walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, -1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
 
   /* First try to read the header without a lock. Verify the checksum
   ** before returning. This will almost always work.  
   */
-  if( SQLITE_OK==walIndexTryHdr(pWal, pChanged) ){
-    return SQLITE_OK;
+  rc = walIndexTryHdr(pWal, &isValid, pChanged);
+  if( isValid || rc!=SQLITE_OK ){
+    return rc;
   }
 
   /* If the first attempt to read the header failed, lock the wal-index
@@ -912,18 +922,22 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** time as well, run log recovery.
   */
   if( SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) ){
-    if( SQLITE_OK!=walIndexTryHdr(pWal, pChanged) ){
+    rc = walIndexTryHdr(pWal, &isValid, pChanged);
+    if( rc==SQLITE_OK && isValid==0 ){
       if( pChanged ){
         *pChanged = 1;
       }
       rc = walIndexRecover(pWal);
       if( rc==SQLITE_OK ){
-        rc = walIndexTryHdr(pWal, 0);
+        rc = walIndexTryHdr(pWal, &isValid, 0);
       }
     }
     walSetLock(pWal, SQLITE_SHM_READ);
   }
 
+  if( rc==SQLITE_OK && isValid==0 ){
+    rc = SQLITE_ERROR;
+  }
   return rc;
 }
 
@@ -981,12 +995,16 @@ int sqlite3WalRead(
   int nOut,
   u8 *pOut
 ){
+  int rc;                         /* Return code */
   u32 iRead = 0;
   u32 *aData; 
   int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
 
   assert( pWal->lockState==SQLITE_SHM_READ||pWal->lockState==SQLITE_SHM_WRITE );
-  walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, -1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
 
   /* Do a linear search of the unindexed block of page-numbers (if any) 
   ** at the end of the wal-index. An alternative to this would be to
@@ -1105,7 +1123,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   Pgno iMax = pWal->hdr.iLastPg;
   Pgno iFrame;
 
-  walIndexReadHdr(pWal, 0);
+  rc = walIndexReadHdr(pWal, 0);
   for(iFrame=pWal->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
     assert( pWal->lockState==SQLITE_SHM_WRITE );
     rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
@@ -1237,9 +1255,6 @@ int sqlite3WalFrames(
     }
 
     rc = sqlite3OsSync(pWal->pFd, sync_flags);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
   }
   assert( pWal->pWiData==0 );
 
@@ -1249,33 +1264,35 @@ int sqlite3WalFrames(
   ** be in use by existing readers is being overwritten.
   */
   iFrame = pWal->hdr.iLastPg;
-  for(p=pList; p; p=p->pDirty){
+  for(p=pList; p && rc==SQLITE_OK; p=p->pDirty){
     iFrame++;
-    walIndexAppend(pWal, iFrame, p->pgno);
+    rc = walIndexAppend(pWal, iFrame, p->pgno);
   }
-  while( nLast>0 ){
+  while( nLast>0 && rc==SQLITE_OK ){
     iFrame++;
     nLast--;
-    walIndexAppend(pWal, iFrame, pLast->pgno);
+    rc = walIndexAppend(pWal, iFrame, pLast->pgno);
   }
 
-  /* Update the private copy of the header. */
-  pWal->hdr.pgsz = nPgsz;
-  pWal->hdr.iLastPg = iFrame;
-  if( isCommit ){
-    pWal->hdr.iChange++;
-    pWal->hdr.nPage = nTruncate;
-  }
-  pWal->hdr.iCheck1 = aCksum[0];
-  pWal->hdr.iCheck2 = aCksum[1];
+  if( rc==SQLITE_OK ){
+    /* Update the private copy of the header. */
+    pWal->hdr.pgsz = nPgsz;
+    pWal->hdr.iLastPg = iFrame;
+    if( isCommit ){
+      pWal->hdr.iChange++;
+      pWal->hdr.nPage = nTruncate;
+    }
+    pWal->hdr.iCheck1 = aCksum[0];
+    pWal->hdr.iCheck2 = aCksum[1];
 
-  /* If this is a commit, update the wal-index header too. */
-  if( isCommit ){
-    walIndexWriteHdr(pWal, &pWal->hdr);
-    pWal->iCallback = iFrame;
+    /* If this is a commit, update the wal-index header too. */
+    if( isCommit ){
+      walIndexWriteHdr(pWal, &pWal->hdr);
+      pWal->iCallback = iFrame;
+    }
   }
+
   walIndexUnmap(pWal);
-
   return rc;
 }
 

@@ -52,5 +52,75 @@ do_malloc_test walfault-oom-2 -tclprep {
   SELECT count(*) FROM x;
 }
 
+# A [testvfs] callback for the VFS created by [do_shmfault_test]. This
+# callback injects SQLITE_IOERR faults into the following methods:
+#
+#   xShmOpen
+#   xShmSize
+#   xShmGet
+# 
+# Faults are not injected into xShmRelease, xShmClose or xShmLock method 
+# calls. The global tcl variables used are:
+#
+#   $::shmfault_ioerr_countdown
+#   $::shmfault_ioerr_persist
+#
+proc shmfault_vfs_cb {method args} {
+
+  # If ::shmfault_ioerr_countdown is not set, always return SQLITE_OK.
+  #
+  if {[info exists ::shmfault_ioerr_countdown]==0} { return SQLITE_OK }
+
+  if {$method == "xShmOpen"
+   || $method == "xShmSize"
+   || $method == "xShmGet"
+  } {
+    incr ::shmfault_ioerr_countdown -1
+    if { ($::shmfault_ioerr_countdown==0)
+      || ($::shmfault_ioerr_countdown<=0 && $::shmfault_ioerr_persist)
+    } {
+      return SQLITE_IOERR
+    }
+  }
+  return SQLITE_OK
+}
+
+proc do_shmfault_test {name args} {
+  array set A $args
+
+  # Create a VFS to use:
+  testvfs shmfault shmfault_vfs_cb
+  
+  foreach mode {transient persistent} {
+    set ::shmfault_ioerr_persist [expr {$mode == "persistent"}]
+    for {set nDelay 1} {$nDelay < 10000} {incr nDelay} {
+      set ::shmfault_ioerr_countdown $nDelay
+  
+      file delete -force test.db test.db-wal test.db-journal
+      
+      set rc [catch {
+        sqlite3 db test.db -vfs shmfault
+        db eval $A(-sqlbody)
+      } msg]
+      set hit_error [expr {$::shmfault_ioerr_countdown<=0}]
+      unset ::shmfault_ioerr_countdown
+      catch { db close }
+      
+      do_test $name-$mode.$nDelay.1 [list set {} $hit_error] $rc
+  
+      if {$hit_error==0} break
+    }
+  }
+
+  shmfault delete
+}
+
+do_shmfault_test walfault-shm-1 -sqlbody {
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE t1(a PRIMARY KEY, b);
+  INSERT INTO t1 VALUES('a', 'b');
+  PRAGMA wal_checkpoint;
+}
 
 finish_test
+
