@@ -1,5 +1,8 @@
-C Test\sthe\shandling\sof\serrors\sreturned\sby\sthe\sxShmXXX()\sAPIs.
-D 2010-05-05T19:04:59
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Further\ssimplifications\sto\sthe\sSHM\slocking\slogic.\s\sRemove\sthe\sSQLITE_SHM_QUERY\noption.\s\sUnify\sthe\sWRITE\sto\sREAD\sand\sRECOVER\sto\sREAD\stransitions.
+D 2010-05-05T19:09:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,7 +153,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 623a195fbcdb7b92cf275acf3ced2388459519a4
+F src/os_unix.c 2ce91d5d9a8d0e8d4d2ed3bcb510d19945b77bc5
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 224df6ad5f8c1fed238570092199db1e57233779
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -166,7 +169,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c c40427c7245535a04a9cb4a417b6cc05c022e6a4
-F src/sqlite.h.in ac4c94610542bdbaa9cc94be3059d6830caea8ff
+F src/sqlite.h.in e6ead287be496055ade50424b7799f84475da7d7
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 9819b45610abeca390176243a9a31758c1f0ac7a
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -810,7 +813,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ec7157788b16936b4b6e4642107b3c86aa44df24
-R 6831c56fbef38774f5073956c09582ec
-U dan
-Z 80e37064d0fb8ee254d6e645af9fdd96
+P 72663123d6be2b194cad7a6057d0f20dd0d9fe05
+R a9b4a745dd84e1e6c5aa687e7866b305
+U drh
+Z ba8b9550144dbde8add352394fc13a1f
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL4cJ/oxKgR168RlERAn5HAJ9H9/xHH78dGiXt8tKDpcuSc8tO9QCfaUiX
+yaPexQIPM4/rd4uKeZ+hs2w=
+=FoJP
+-----END PGP SIGNATURE-----

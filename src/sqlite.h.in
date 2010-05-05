@@ -879,10 +879,7 @@ struct sqlite3_vfs {
 ** CAPI3REF: Flags for the xShmLock VFS method
 **
 ** These integer constants define the various locking states that
-** an sqlite3_shm object can be in.  The SQLITE_SHM_QUERY integer
-** is not a valid data - it is a constant pasted to the 
-** sqlite3_vfs.xShmLock() method for querying the current lock
-** state.
+** an sqlite3_shm object can be in.
 */
 #define SQLITE_SHM_UNLOCK       0
 #define SQLITE_SHM_READ         1
@@ -891,7 +888,6 @@ struct sqlite3_vfs {
 #define SQLITE_SHM_PENDING      4
 #define SQLITE_SHM_CHECKPOINT   5
 #define SQLITE_SHM_RECOVER      6
-#define SQLITE_SHM_QUERY        (-1)
 
 /*
 ** CAPI3REF: Initialize The SQLite Library

@@ -5266,8 +5266,7 @@ static int unixShmLock(
   ** directly requested; they are side effects from requesting
   ** SQLITE_SHM_READ and SQLITE_SHM_CHECKPOINT, respectively.
   */
-  assert( desiredLock==SQLITE_SHM_QUERY
-       || desiredLock==SQLITE_SHM_UNLOCK
+  assert( desiredLock==SQLITE_SHM_UNLOCK
        || desiredLock==SQLITE_SHM_READ
        || desiredLock==SQLITE_SHM_WRITE
        || desiredLock==SQLITE_SHM_CHECKPOINT
@@ -5276,8 +5275,7 @@ static int unixShmLock(
   /* Return directly if this is just a lock state query, or if
   ** the connection is already in the desired locking state.
   */
-  if( desiredLock==SQLITE_SHM_QUERY
-   || desiredLock==p->lockState
+  if( desiredLock==p->lockState
    || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
   ){
     OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s and got %s\n",
@@ -5320,15 +5318,12 @@ static int unixShmLock(
             p->lockState = SQLITE_SHM_READ;
           }
         }
-      }else if( p->lockState==SQLITE_SHM_WRITE ){
+      }else{
+       assert( p->lockState==SQLITE_SHM_WRITE
+               || p->lockState==SQLITE_SHM_RECOVER );
         rc = unixShmSharedLock(pFile, p, UNIX_SHM_A);
         unixShmUnlock(pFile, p, UNIX_SHM_C|UNIX_SHM_D);
         p->lockState = SQLITE_SHM_READ;
-      }else{
-        assert( p->lockState==SQLITE_SHM_RECOVER );
-        unixShmUnlock(pFile, p, UNIX_SHM_C);
-        p->lockState = SQLITE_SHM_READ;
-        rc = SQLITE_OK;
       }
       break;
     }
