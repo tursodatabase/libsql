@@ -28,7 +28,7 @@
 #include "sqliteInt.h"
 
 
-#if defined(SQLITE_MUTEX_NOOP) && !defined(SQLITE_DEBUG)
+#ifndef SQLITE_DEBUG
 /*
 ** Stub routines for all mutex methods.
 **
@@ -44,7 +44,7 @@ static void noopMutexEnter(sqlite3_mutex *p){ return; }
 static int noopMutexTry(sqlite3_mutex *p){ return SQLITE_OK; }
 static void noopMutexLeave(sqlite3_mutex *p){ return; }
 
-sqlite3_mutex_methods *sqlite3DefaultMutex(void){
+sqlite3_mutex_methods *sqlite3NoopMutex(void){
   static sqlite3_mutex_methods sMutex = {
     noopMutexInit,
     noopMutexEnd,
@@ -60,9 +60,9 @@ sqlite3_mutex_methods *sqlite3DefaultMutex(void){
 
   return &sMutex;
 }
-#endif /* defined(SQLITE_MUTEX_NOOP) && !defined(SQLITE_DEBUG) */
+#endif /* !SQLITE_DEBUG */
 
-#if defined(SQLITE_MUTEX_NOOP) && defined(SQLITE_DEBUG)
+#ifdef SQLITE_DEBUG
 /*
 ** In this implementation, error checking is provided for testing
 ** and debugging purposes.  The mutexes still do not provide any
@@ -165,7 +165,7 @@ static void debugMutexLeave(sqlite3_mutex *p){
   assert( p->id==SQLITE_MUTEX_RECURSIVE || debugMutexNotheld(p) );
 }
 
-sqlite3_mutex_methods *sqlite3DefaultMutex(void){
+sqlite3_mutex_methods *sqlite3NoopMutex(void){
   static sqlite3_mutex_methods sMutex = {
     debugMutexInit,
     debugMutexEnd,
@@ -181,4 +181,14 @@ sqlite3_mutex_methods *sqlite3DefaultMutex(void){
 
   return &sMutex;
 }
-#endif /* defined(SQLITE_MUTEX_NOOP) && defined(SQLITE_DEBUG) */
+#endif /* SQLITE_DEBUG */
+
+/*
+** If compiled with SQLITE_MUTEX_NOOP, then the no-op mutex implementation
+** is used regardless of the run-time threadsafety setting.
+*/
+#ifdef SQLITE_MUTEX_NOOP
+sqlite3_mutex_methods *sqlite3DefaultMutex(void){
+  return sqliteNoopMutex();
+}
+#endif /* SQLITE_MUTEX_NOOP */

@@ -31,23 +31,26 @@ static SQLITE_WSD int mutexIsInit = 0;
 */
 int sqlite3MutexInit(void){ 
   int rc = SQLITE_OK;
-  if( sqlite3GlobalConfig.bCoreMutex ){
-    if( !sqlite3GlobalConfig.mutex.xMutexAlloc ){
-      /* If the xMutexAlloc method has not been set, then the user did not
-      ** install a mutex implementation via sqlite3_config() prior to 
-      ** sqlite3_initialize() being called. This block copies pointers to
-      ** the default implementation into the sqlite3GlobalConfig structure.
-      */
-      sqlite3_mutex_methods *pFrom = sqlite3DefaultMutex();
-      sqlite3_mutex_methods *pTo = &sqlite3GlobalConfig.mutex;
+  if( !sqlite3GlobalConfig.mutex.xMutexAlloc ){
+    /* If the xMutexAlloc method has not been set, then the user did not
+    ** install a mutex implementation via sqlite3_config() prior to 
+    ** sqlite3_initialize() being called. This block copies pointers to
+    ** the default implementation into the sqlite3GlobalConfig structure.
+    */
+    sqlite3_mutex_methods *pFrom;
+    sqlite3_mutex_methods *pTo = &sqlite3GlobalConfig.mutex;
 
-      memcpy(pTo, pFrom, offsetof(sqlite3_mutex_methods, xMutexAlloc));
-      memcpy(&pTo->xMutexFree, &pFrom->xMutexFree,
-             sizeof(*pTo) - offsetof(sqlite3_mutex_methods, xMutexFree));
-      pTo->xMutexAlloc = pFrom->xMutexAlloc;
+    if( sqlite3GlobalConfig.bCoreMutex ){
+      pFrom = sqlite3DefaultMutex();
+    }else{
+      pFrom = sqlite3NoopMutex();
     }
-    rc = sqlite3GlobalConfig.mutex.xMutexInit();
+    memcpy(pTo, pFrom, offsetof(sqlite3_mutex_methods, xMutexAlloc));
+    memcpy(&pTo->xMutexFree, &pFrom->xMutexFree,
+           sizeof(*pTo) - offsetof(sqlite3_mutex_methods, xMutexFree));
+    pTo->xMutexAlloc = pFrom->xMutexAlloc;
   }
+  rc = sqlite3GlobalConfig.mutex.xMutexInit();
 
 #ifdef SQLITE_DEBUG
   GLOBAL(int, mutexIsInit) = 1;
@@ -77,7 +80,6 @@ int sqlite3MutexEnd(void){
 ** Retrieve a pointer to a static mutex or allocate a new dynamic one.
 */
 sqlite3_mutex *sqlite3_mutex_alloc(int id){
-  if( !sqlite3GlobalConfig.bCoreMutex ) return 0;
 #ifndef SQLITE_OMIT_AUTOINIT
   if( sqlite3_initialize() ) return 0;
 #endif
