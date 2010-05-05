@@ -123,7 +123,7 @@ struct SqliteDb {
   SqlFunc *pFunc;            /* List of SQL functions */
   Tcl_Obj *pUpdateHook;      /* Update hook script (if any) */
   Tcl_Obj *pRollbackHook;    /* Rollback hook script (if any) */
-  Tcl_Obj *pLogHook;         /* WAL hook script (if any) */
+  Tcl_Obj *pWalHook;         /* WAL hook script (if any) */
   Tcl_Obj *pUnlockNotify;    /* Unlock notify script (if any) */
   SqlCollate *pCollate;      /* List of SQL collation functions */
   int rc;                    /* Return code of most recent sqlite3_exec() */
@@ -486,8 +486,8 @@ static void DbDeleteCmd(void *db){
   if( pDb->pRollbackHook ){
     Tcl_DecrRefCount(pDb->pRollbackHook);
   }
-  if( pDb->pLogHook ){
-    Tcl_DecrRefCount(pDb->pLogHook);
+  if( pDb->pWalHook ){
+    Tcl_DecrRefCount(pDb->pWalHook);
   }
   if( pDb->pCollateNeeded ){
     Tcl_DecrRefCount(pDb->pCollateNeeded);
@@ -593,19 +593,22 @@ static void DbRollbackHandler(void *clientData){
   }
 }
 
-static int DbLogHandler(
+/*
+** This procedure handles wal_hook callbacks.
+*/
+static int DbWalHandler(
   void *clientData, 
   sqlite3 *db, 
   const char *zDb, 
   int nEntry
 ){
-  int ret = 0;
+  int ret = SQLITE_OK;
   Tcl_Obj *p;
   SqliteDb *pDb = (SqliteDb*)clientData;
   Tcl_Interp *interp = pDb->interp;
-  assert(pDb->pLogHook);
+  assert(pDb->pWalHook);
 
-  p = Tcl_DuplicateObj(pDb->pLogHook);
+  p = Tcl_DuplicateObj(pDb->pWalHook);
   Tcl_IncrRefCount(p);
   Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zDb, -1));
   Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(nEntry));
@@ -2775,7 +2778,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( choice==DB_UPDATE_HOOK ){
       ppHook = &pDb->pUpdateHook;
     }else if( choice==DB_WAL_HOOK ){
-      ppHook = &pDb->pLogHook;
+      ppHook = &pDb->pWalHook;
     }else{
       ppHook = &pDb->pRollbackHook;
     }
@@ -2801,7 +2804,7 @@ static int DbObjCmd(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
 
     sqlite3_update_hook(pDb->db, (pDb->pUpdateHook?DbUpdateHandler:0), pDb);
     sqlite3_rollback_hook(pDb->db,(pDb->pRollbackHook?DbRollbackHandler:0),pDb);
-    sqlite3_wal_hook(pDb->db,(pDb->pLogHook?DbLogHandler:0),pDb);
+    sqlite3_wal_hook(pDb->db,(pDb->pWalHook?DbWalHandler:0),pDb);
 
     break;
   }

@@ -5780,9 +5780,10 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** is the number of pages currently in the log file, including those that
 ** were just committed.
 **
-** If an invocation of the callback function returns non-zero, then a
-** checkpoint is automatically run on the database. If zero is returned,
-** no special action is taken.
+** The callback function should normally return SQLITE_OK.  If an error
+** code is returned, that error will propagate back up through the
+** SQLite code base to cause the statement that provoked the callback
+** to fail.
 **
 ** A single database handle may have at most a single log callback 
 ** registered at one time. Calling [sqlite3_wal_hook()] replaces any

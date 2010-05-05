@@ -318,10 +318,8 @@ static int doWalCallbacks(sqlite3 *db){
     Btree *pBt = db->aDb[i].pBt;
     if( pBt ){
       int nEntry = sqlite3PagerWalCallback(sqlite3BtreePager(pBt));
-      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK
-       && db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry)
-      ){
-        rc = sqlite3Checkpoint(db, i);
+      if( db->xWalCallback && nEntry>0 && rc==SQLITE_OK ){
+        rc = db->xWalCallback(db->pWalArg, db, db->aDb[i].zName, nEntry);
       }
     }
   }

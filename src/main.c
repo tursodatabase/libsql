@@ -1189,19 +1189,20 @@ void *sqlite3_rollback_hook(
 #ifndef SQLITE_OMIT_WAL
 /*
 ** The sqlite3_wal_hook() callback registered by sqlite3_wal_autocheckpoint().
-** Return non-zero, indicating to the caller that a checkpoint should be run,
-** if the number of frames in the log file is greater than 
-** sqlite3.pWalArg cast to an integer (the value configured by
+** Invoke sqlite3_wal_checkpoint if the number of frames in the log file
+** is greater than sqlite3.pWalArg cast to an integer (the value configured by
 ** wal_autocheckpoint()).
 */ 
 int sqlite3WalDefaultHook(
-  void *p,               /* Argument */
+  void *pClientData,     /* Argument */
   sqlite3 *db,           /* Connection */
-  const char *zNotUsed,  /* Database */
+  const char *zDb,       /* Database */
   int nFrame             /* Size of WAL */
 ){
-  UNUSED_PARAMETER(zNotUsed);
-  return ( nFrame>=SQLITE_PTR_TO_INT(p));
+  if( nFrame>=SQLITE_PTR_TO_INT(pClientData) ){
+    sqlite3_wal_checkpoint(db, zDb);
+  }
+  return SQLITE_OK;
 }
 #endif /* SQLITE_OMIT_WAL */
 
@@ -1218,13 +1219,11 @@ int sqlite3WalDefaultHook(
 */
 int sqlite3_wal_autocheckpoint(sqlite3 *db, int nFrame){
 #ifndef SQLITE_OMIT_WAL
-  sqlite3_mutex_enter(db->mutex);
   if( nFrame>0 ){
     sqlite3_wal_hook(db, sqlite3WalDefaultHook, SQLITE_INT_TO_PTR(nFrame));
   }else{
     sqlite3_wal_hook(db, 0, 0);
   }
-  sqlite3_mutex_leave(db->mutex);
 #endif
   return SQLITE_OK;
 }

@@ -390,7 +390,7 @@ do_thread_test walthread-3 -seconds $seconds(walthread-3) -init {
   set nextwrite $E(pid)
 
   proc wal_hook {zDb nEntry} {
-    if {$nEntry>10} { return 1 }
+    if {$nEntry>10} {db eval {PRAGMA wal_checkpoint}}
     return 0
   }
   db wal_hook wal_hook
@@ -443,7 +443,7 @@ do_thread_test2 walthread-4 -seconds $seconds(walthread-4) -init {
 } -thread w 1 {
 
   proc wal_hook {zDb nEntry} {
-    if {$nEntry>15} { return 1 }
+    if {$nEntry>15} {db eval {PRAGMA wal_checkpoint}}
     return 0
   }
   db wal_hook wal_hook
