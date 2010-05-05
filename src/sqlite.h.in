@@ -5489,10 +5489,14 @@ typedef struct sqlite3_backup sqlite3_backup;
 ** [SQLITE_NOMEM], [SQLITE_BUSY], [SQLITE_LOCKED], or an
 ** [SQLITE_IOERR_ACCESS | SQLITE_IOERR_XXX] extended error code.
 **
-** ^The sqlite3_backup_step() might return [SQLITE_READONLY] if the destination
-** database was opened read-only or if
-** the destination is an in-memory database with a different page size
-** from the source database.
+** ^(The sqlite3_backup_step() might return [SQLITE_READONLY] if
+** <ol>
+** <li> the destination database was opened read-only, or
+** <li> the destination database is using write-ahead-log journaling
+** and the destination and source page sizes differ, or
+** <li> The destination database is an in-memory database and the
+** destination and source page sizes differ.
+** </ol>)^
 **
 ** ^If sqlite3_backup_step() cannot obtain a required file-system lock, then
 ** the [sqlite3_busy_handler | busy-handler function]
