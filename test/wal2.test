@@ -1,0 +1,239 @@
+# 2010 May 5
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+ifcapable !wal {finish_test ; return }
+
+proc set_tvfs_hdr {file args} {
+  if {[llength $args]>1} {
+    return -code error {wrong # args: should be "set_tvfs_hdr fileName ?val?"}
+  }
+
+  set blob [tvfs shm $file]
+  if {[llength $args]} {
+    set blob [binary format i8a* [lindex $args 0] [string range $blob 32 end]]
+    tvfs shm $file $blob
+  }
+
+  binary scan $blob i8 ints
+  return $ints
+}
+
+proc incr_tvfs_hdr {file idx incrval} {
+  set ints [set_tvfs_hdr $file]
+  set v [lindex $ints $idx]
+  incr v $incrval
+  lset ints $idx $v
+  set_tvfs_hdr $file $ints
+}
+
+
+#-------------------------------------------------------------------------
+# Test case wal2-1.*:
+#
+# Set up a small database containing a single table. The database is not
+# checkpointed during the test - all content resides in the log file.
+#
+# Two connections are established to the database file - a writer ([db])
+# and a reader ([db2]). For each of the 8 integer fields in the wal-index
+# header (6 fields and 2 checksum values), do the following:
+#
+#   1. Modify the database using the writer.
+#
+#   2. Attempt to read the database using the reader. Before the reader
+#      has a chance to snapshot the wal-index header, increment one
+#      of the the integer fields (so that the reader ends up with a corrupted
+#      header).
+#
+#   3. Check that the reader recovers the wal-index and reads the correct
+#      database content.
+#
+do_test wal2-1.0 {
+  proc tvfs_cb {method args} { return SQLITE_OK }
+  testvfs tvfs tvfs_cb
+
+  sqlite3 db  test.db -vfs tvfs
+  sqlite3 db2 test.db -vfs tvfs
+
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a);
+  } db2
+  execsql {
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES(3);
+    INSERT INTO t1 VALUES(4);
+    SELECT count(a), sum(a) FROM t1;
+  }
+} {4 10}
+do_test wal2-1.1 {
+  execsql { SELECT count(a), sum(a) FROM t1 } db2
+} {4 10}
+
+foreach {tn iInsert res wal_index_hdr_mod wal_locks} {
+         2    5   {5 15}    0             {READ RECOVER READ UNLOCK}
+         3    6   {6 21}    1             {READ RECOVER READ UNLOCK}
+         4    7   {7 28}    2             {READ RECOVER READ UNLOCK}
+         5    8   {8 36}    3             {READ RECOVER READ UNLOCK}
+         6    9   {9 45}    4             {READ RECOVER READ UNLOCK}
+         7   10   {10 55}   5             {READ RECOVER READ UNLOCK}
+         8   11   {11 66}   6             {READ RECOVER READ UNLOCK}
+         9   12   {12 78}   7             {READ RECOVER READ UNLOCK}
+        10   13   {13 91}   -1            {READ UNLOCK}
+} {
+
+  do_test wal2-1.$tn.1 {
+    execsql { INSERT INTO t1 VALUES($iInsert) }
+
+    set ::locks [list]
+    set ::cb_done 0
+
+    proc tvfs_cb {method args} {
+      if {$::cb_done == 0 && $method == "xShmGet"} {
+        set ::cb_done 1
+        if {$::wal_index_hdr_mod >= 0} {
+          incr_tvfs_hdr [lindex $args 0] $::wal_index_hdr_mod 1
+        }
+      }
+
+      if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
+      return SQLITE_OK
+    }
+
+    execsql { SELECT count(a), sum(a) FROM t1 } db2
+  } $res
+
+  do_test wal2-1.$tn.2 {
+    set ::locks
+  } $wal_locks
+}
+db close
+db2 close
+tvfs delete
+file delete -force test.db test.db-wal test.db-journal
+
+#-------------------------------------------------------------------------
+# This test case is very similar to the previous one, except, after
+# the reader reads the corrupt wal-index header, but before it has
+# a chance to re-read it under the cover of the RECOVER lock, the
+# wal-index header is replaced with a valid, but out-of-date, header.
+#
+# Because the header checksum looks Ok, the reader does not run recovery,
+# it simply drops back to a READ lock and proceeds. But because the
+# header is out-of-date, the reader reads the out-of-date snapshot.
+#
+# After this, the header is corrupted again and the reader is allowed
+# to run recovery. This time, it sees an up-to-date snapshot of the
+# database file.
+#
+do_test wal2-2.0 {
+
+  testvfs tvfs tvfs_cb
+  proc tvfs_cb {method args} {
+    if {$method == "xShmOpen"} { set ::shm_file [lindex $args 0] }
+    return SQLITE_OK
+  }
+
+  sqlite3 db  test.db -vfs tvfs
+  sqlite3 db2 test.db -vfs tvfs
+
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a);
+  } db2
+  execsql {
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES(3);
+    INSERT INTO t1 VALUES(4);
+    SELECT count(a), sum(a) FROM t1;
+  }
+} {4 10}
+do_test wal2-2.1 {
+  execsql { SELECT count(a), sum(a) FROM t1 } db2
+} {4 10}
+
+foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
+         2    5   {4 10}   {5 15}    0
+         3    6   {5 15}   {6 21}    1
+         4    7   {6 21}   {7 28}    2
+         5    8   {7 28}   {8 36}    3
+         6    9   {8 36}   {9 45}    4
+         7   10   {9 45}   {10 55}   5
+         8   11   {10 55}  {11 66}   6
+         9   12   {11 66}  {12 78}   7
+} {
+  do_test wal2-1.$tn.1 {
+    set oldhdr [set_tvfs_hdr $::shm_file]
+    execsql { INSERT INTO t1 VALUES($iInsert) }
+    execsql { SELECT count(a), sum(a) FROM t1 }
+  } $res1
+
+  do_test wal2-2.$tn.2 {
+    set ::locks [list]
+    set ::cb_done 0
+    proc tvfs_cb {method args} {
+      if {$::cb_done == 0 && $method == "xShmGet"} {
+        set ::cb_done 1
+        if {$::wal_index_hdr_mod >= 0} {
+          incr_tvfs_hdr $::shm_file $::wal_index_hdr_mod 1
+        }
+      }
+      if {$method == "xShmLock"} {
+        set lock [lindex $args 2]
+        lappend ::locks $lock
+        if {$lock == "RECOVER"} {
+          set_tvfs_hdr $::shm_file $::oldhdr
+        }
+      }
+      return SQLITE_OK
+    }
+
+    execsql { SELECT count(a), sum(a) FROM t1 } db2
+  } $res0
+
+  do_test wal2-2.$tn.3 {
+    set ::locks
+  } {READ RECOVER READ UNLOCK}
+
+  do_test wal2-2.$tn.4 {
+    set ::locks [list]
+    set ::cb_done 0
+    proc tvfs_cb {method args} {
+      if {$::cb_done == 0 && $method == "xShmGet"} {
+        set ::cb_done 1
+        if {$::wal_index_hdr_mod >= 0} {
+          incr_tvfs_hdr $::shm_file $::wal_index_hdr_mod 1
+        }
+      }
+      if {$method == "xShmLock"} {
+        set lock [lindex $args 2]
+        lappend ::locks $lock
+      }
+      return SQLITE_OK
+    }
+
+    execsql { SELECT count(a), sum(a) FROM t1 } db2
+  } $res1
+}
+db close
+db2 close
+tvfs delete
+file delete -force test.db test.db-wal test.db-journal
+
+finish_test

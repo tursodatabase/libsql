@@ -52,6 +52,16 @@ do_malloc_test walfault-oom-2 -tclprep {
   SELECT count(*) FROM x;
 }
 
+do_ioerr_test walfault-ioerr-1 -sqlprep {
+  PRAGMA auto_vacuum = 1;
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE abc(a PRIMARY KEY);
+  INSERT INTO abc VALUES(randomblob(1500));
+} -sqlbody {
+  DELETE FROM abc;
+  PRAGMA wal_checkpoint;
+}
+
 # A [testvfs] callback for the VFS created by [do_shmfault_test]. This
 # callback injects SQLITE_IOERR faults into methods for which an entry
 # in array ::shmfault_ioerr_methods is defined. For example, to enable
@@ -196,7 +206,6 @@ do_shmfault_test walfault-shm-3 -methods xShmSize -tclprep {
   if {[file exists test.db-wal]==0} {error "Failed to create WAL file!"}
 
   sqlite3 db test.db -vfs shmfault
-breakpoint
 } -sqlbody {
   SELECT count(*) FROM t1;
 }

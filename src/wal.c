@@ -694,10 +694,8 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nByte = sizeof(WalIterator) + (nSegment-1)*sizeof(struct WalSegment) + 512;
   p = (WalIterator *)sqlite3_malloc(nByte);
   if( !p ){
-    return SQLITE_NOMEM;
-  }
-
-  if( p ){
+    rc = SQLITE_NOMEM;
+  }else{
     memset(p, 0, nByte);
     p->nSegment = nSegment;
 
@@ -718,7 +716,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   }
 
   *pp = p;
-  return SQLITE_OK;
+  return rc;
 }
 
 /* 
