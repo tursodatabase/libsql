@@ -1203,6 +1203,7 @@ static int pagerUseWal(Pager *pPager){
 # define pagerRollbackWal(x) 0
 # define pagerWalFrames(v,w,x,y,z) 0
 # define pagerOpenWalIfPresent(z) SQLITE_OK
+# define pagerOpenSnapshot(z) SQLITE_OK
 #endif
 
 /*

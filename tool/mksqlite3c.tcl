@@ -244,8 +244,8 @@ foreach file {
    pcache.c
    pcache1.c
    rowset.c
-   wal.c
    pager.c
+   wal.c
 
    btmutex.c
    btree.c
