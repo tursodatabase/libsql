@@ -1227,6 +1227,7 @@ do_test wal-18.0 {
   list [file size testX.db] [file size testX.db-wal]
 } [list [expr 3*1024] [log_file_size 6 1024]]
 
+unset -nocomplain nFrame result
 foreach {nFrame result} {
          0      {0 0}
          1      {0 0}

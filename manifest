@@ -1,5 +1,5 @@
-C Add\stests\sfor\ssome\slock-contention\scases.
-D 2010-05-06T12:15:48
+C Unset\sa\stcl\svariable\sbefore\sreusing\sit\sin\swal.test.
+D 2010-05-06T13:36:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -761,8 +761,8 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test f0b331017a12a31dd4bbb20aee9c179fbfdd5921
-F test/wal2.test d56139ed12d2680edd867bc55fb843109e5ead26
+F test/wal.test 7dda3fc1637aa035510199e166941bfe987846ba
+F test/wal2.test 4a8e20416020f83b792464edee18107321dea99a
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walfault.test 2d6e00e07ae4287d6ae552589bcc8532697d8173
@@ -813,7 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6767b62a9a063582889f5ceb42f95eab24c697da
-R 36d041a467bd775916bd009df85b9ff3
+P f0fcb9c9a67e2bf7bbedbedbc27791b605a21dd1
+R 6e3f6cf8a28ee26b2021cd53f530e545
 U dan
-Z 5e2467a63542c24c70ddf9b2bcc52a27
+Z 51fe938b1a898b4d46946fd2baefdd24

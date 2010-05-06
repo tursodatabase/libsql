@@ -292,7 +292,6 @@ do_test wal2-3.3 {
     }
     return SQLITE_OK
   }
-
   set ::sabotage 1
   set ::locked 1
   list [info exists ::sabotage] [info exists ::locked]
