@@ -115,9 +115,6 @@ The following are the allowed lock transitions:
 (11n)  CHECKPOINT         UNLOCK          UNLOCK
 (11o)  RECOVER            READ            READ
 
-These 17 transitions are all that needs to be supported.  The lock
-manager implementation can assert that fact.  The other 25 possible
+These 15 transitions are all that needs to be supported.  The lock
+manager implementation can assert that fact.  The other 27 possible
 transitions among the 7 locking states will never occur.
-
-The rules above are sufficient for correctness.  For maximum concurrency,
-the following additional considerations apply:
