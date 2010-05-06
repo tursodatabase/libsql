@@ -336,4 +336,34 @@ do_test wal2-4.3 {
 db close
 tvfs delete
 
+#-------------------------------------------------------------------------
+# Test that if a database connection is forced to run recovery before it
+# can perform a checkpoint, it transistions from RECOVERY->CHECKPOINT
+# before doing so.
+#
+do_test wal2-5.1 {
+  proc tvfs_cb {method args} {
+    set ::shm_file [lindex $args 0]
+    if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
+    return $::tvfs_cb_return
+  }
+  set tvfs_cb_return SQLITE_OK
+
+  testvfs tvfs tvfs_cb
+
+  sqlite3 db test.db -vfs tvfs
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE x(y);
+    INSERT INTO x VALUES(1);
+  }
+
+  incr_tvfs_hdr $::shm_file 1 1
+  set ::locks [list]
+  execsql { PRAGMA wal_checkpoint }
+  set ::locks
+} {CHECKPOINT RECOVER CHECKPOINT UNLOCK}
+
+
+
 finish_test

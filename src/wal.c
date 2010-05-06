@@ -919,6 +919,7 @@ int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;
   int isValid = 0;
+  int lockState;
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
   assert( pChanged );
@@ -939,6 +940,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** file and try again. If the header checksum verification fails this
   ** time as well, run log recovery.
   */
+  lockState = pWal->lockState;
   if( SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) ){
     /* This call to walIndexTryHdr() may not return an error code, as the
     ** wal-index is already mapped. It may find that the header is invalid,
@@ -950,7 +952,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       *pChanged = 1;
       rc = walIndexRecover(pWal);
     }
-    walSetLock(pWal, SQLITE_SHM_READ);
+    walSetLock(pWal, lockState);
   }
 
   return rc;
