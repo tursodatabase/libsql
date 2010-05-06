@@ -34,8 +34,6 @@
 **
 ** This routines provide no mutual exclusion or error checking.
 */
-static int noopMutexHeld(sqlite3_mutex *p){ return 1; }
-static int noopMutexNotheld(sqlite3_mutex *p){ return 1; }
 static int noopMutexInit(void){ return SQLITE_OK; }
 static int noopMutexEnd(void){ return SQLITE_OK; }
 static sqlite3_mutex *noopMutexAlloc(int id){ return (sqlite3_mutex*)8; }
@@ -54,8 +52,8 @@ sqlite3_mutex_methods *sqlite3NoopMutex(void){
     noopMutexTry,
     noopMutexLeave,
 
-    noopMutexHeld,
-    noopMutexNotheld
+    0,
+    0,
   };
 
   return &sMutex;
