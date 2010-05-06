@@ -276,6 +276,20 @@ do_test wal-4.5.7 {
 } {ok}
 db2 close
 
+do_test wal-4.6.1 {
+  execsql {
+    DELETE FROM t2;
+    PRAGMA wal_checkpoint;
+    BEGIN;
+      INSERT INTO t2 VALUES('w', 'x');
+      SAVEPOINT save;
+        INSERT INTO t2 VALUES('y', 'z');
+      ROLLBACK TO save;
+    COMMIT;
+    SELECT * FROM t2;
+  }
+} {w x}
+
 
 reopen_db
 do_test wal-5.1 {
@@ -1340,7 +1354,52 @@ foreach {tn pgsz works} {
   }
 }
 
+#-------------------------------------------------------------------------
+# The following test - wal-19.* - fixes a bug that was present during
+# development.
+#
+# When a database connection in WAL mode is closed, it attempts an
+# EXCLUSIVE lock on the database file. If the lock is obtained, the
+# connection knows that it is the last connection to disconnect from
+# the database, so it runs a checkpoint operation. The bug was that
+# the connection was not updating its private copy of the wal-index 
+# header before doing so, meaning that it could checkpoint an old
+# snapshot.
+#
+do_test wal-19.1 {
+  file delete -force test.db test.db-wal test.db-journal
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  execsql { SELECT * FROM t1 } db2
+} {1 2 3 4}
+do_test wal-19.2 {
+  execsql {
+    INSERT INTO t1 VALUES(5, 6);
+    SELECT * FROM t1;
+  }
+} {1 2 3 4 5 6}
+do_test wal-19.3 {
+  db close
+  db2 close
+  file exists test.db-wal
+} {0}
+do_test wal-19.4 {
+  # When the bug was present, the following was returning {1 2 3 4} only,
+  # as [db2] had an out-of-date copy of the wal-index header when it was
+  # closed.
+  #
+  sqlite3 db test.db
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4 5 6}
+
 catch { db2 close }
 catch { db close }
+
 finish_test
 

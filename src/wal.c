@@ -371,6 +371,19 @@ static int walIndexEntry(u32 iFrame){
 }
 
 /*
+** Return the minimum mapping size in bytes that can be used to read the
+** wal-index up to and including frame iFrame. If iFrame is the last frame
+** in a block of 256 frames, the returned byte-count includes the space
+** required by the 256-byte index block.
+*/
+static int walMappingSize(u32 iFrame){
+  return ( WALINDEX_LOCK_OFFSET + WALINDEX_LOCK_RESERVED 
+         + iFrame*sizeof(u32)
+         + (iFrame>>8)*256
+  );
+}
+
+/*
 ** Release our reference to the wal-index memory map, if we are holding
 ** it.
 */
@@ -835,7 +848,7 @@ int sqlite3WalClose(
     */
     rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      rc = walCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf);
+      rc = sqlite3WalCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf, 0, 0);
       if( rc==SQLITE_OK ){
         isDelete = 1;
       }
