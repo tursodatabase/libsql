@@ -53,17 +53,18 @@ do_malloc_test walfault-oom-2 -tclprep {
 }
 
 # A [testvfs] callback for the VFS created by [do_shmfault_test]. This
-# callback injects SQLITE_IOERR faults into the following methods:
+# callback injects SQLITE_IOERR faults into methods for which an entry
+# in array ::shmfault_ioerr_methods is defined. For example, to enable
+# errors in xShmOpen:
 #
-#   xShmOpen
-#   xShmSize
-#   xShmGet
+#   set ::shmfault_ioerr_methods(xShmOpen) 1
 # 
 # Faults are not injected into xShmRelease, xShmClose or xShmLock method 
 # calls. The global tcl variables used are:
 #
 #   $::shmfault_ioerr_countdown
 #   $::shmfault_ioerr_persist
+#   $::shmfault_ioerr_methods
 #
 proc shmfault_vfs_cb {method args} {
 
@@ -71,10 +72,7 @@ proc shmfault_vfs_cb {method args} {
   #
   if {[info exists ::shmfault_ioerr_countdown]==0} { return SQLITE_OK }
 
-  if {$method == "xShmOpen"
-   || $method == "xShmSize"
-   || $method == "xShmGet"
-  } {
+  if {[info exists ::shmfault_ioerr_methods($method)]} {
     incr ::shmfault_ioerr_countdown -1
     if { ($::shmfault_ioerr_countdown==0)
       || ($::shmfault_ioerr_countdown<=0 && $::shmfault_ioerr_persist)
@@ -85,25 +83,41 @@ proc shmfault_vfs_cb {method args} {
   return SQLITE_OK
 }
 
+# Options are:
+#
+#   -tclprep TCL
+#   -sqlprep SQL
+#   -sqlbody SQL
+#
 proc do_shmfault_test {name args} {
+
+  set A(-tclprep) "sqlite3 db test.db -vfs shmfault"
+  set A(-sqlprep) ""
+  set A(-sqlbody) ""
+  set A(-methods) [list xShmGet xShmOpen xShmSize]
   array set A $args
 
   # Create a VFS to use:
   testvfs shmfault shmfault_vfs_cb
+
+  unset -nocomplain ::shmfault_ioerr_methods
+  foreach m $A(-methods) { set ::shmfault_ioerr_methods($m) 1 }
   
   foreach mode {transient persistent} {
     set ::shmfault_ioerr_persist [expr {$mode == "persistent"}]
+
     for {set nDelay 1} {$nDelay < 10000} {incr nDelay} {
-      set ::shmfault_ioerr_countdown $nDelay
   
       file delete -force test.db test.db-wal test.db-journal
-      
-      set rc [catch {
-        sqlite3 db test.db -vfs shmfault
-        db eval $A(-sqlbody)
-      } msg]
+
+      eval $A(-tclprep)
+      db eval $A(-sqlprep)
+
+      set ::shmfault_ioerr_countdown $nDelay
+      set rc [catch { db eval $A(-sqlbody) } msg]
       set hit_error [expr {$::shmfault_ioerr_countdown<=0}]
       unset ::shmfault_ioerr_countdown
+
       catch { db close }
       
       do_test $name-$mode.$nDelay.1 [list set {} $hit_error] $rc
@@ -115,11 +129,76 @@ proc do_shmfault_test {name args} {
   shmfault delete
 }
 
+
 do_shmfault_test walfault-shm-1 -sqlbody {
   PRAGMA journal_mode = WAL;
   CREATE TABLE t1(a PRIMARY KEY, b);
   INSERT INTO t1 VALUES('a', 'b');
   PRAGMA wal_checkpoint;
+}
+
+do_shmfault_test walfault-shm-2 -methods xShmSize -sqlprep {
+  PRAGMA page_size = 512;
+  PRAGMA journal_mode = WAL;
+  PRAGMA wal_autocheckpoint = 0;
+} -sqlbody {
+  CREATE TABLE t1(x);
+  BEGIN;
+    INSERT INTO t1 VALUES(randomblob(400));           /* 1 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 2 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 4 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 8 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 16 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 32 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 64 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 128 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 256 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 512 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 1024 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 2048 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 4096 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 8192 */
+    INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 16384 */
+  COMMIT;
+}
+
+do_shmfault_test walfault-shm-3 -methods xShmSize -tclprep {
+  sqlite3 db test.db -vfs shmfault
+  unset -nocomplain ::shmfault_ioerr_countdown
+  db eval {
+    PRAGMA page_size = 512;
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    CREATE TABLE t1(x);
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(400));           /* 1 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 2 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 4 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 8 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 16 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 32 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 64 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 128 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 256 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 512 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 1024 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 2048 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 4096 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 8192 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 16384 */
+    COMMIT;
+  }
+
+  set ::shmfault_ioerr_countdown 1
+  set ::shmfault_ioerr_methods(xShmGet) 1
+  db close
+  unset ::shmfault_ioerr_methods(xShmGet)
+  if {[file exists test.db-wal]==0} {error "Failed to create WAL file!"}
+
+  sqlite3 db test.db -vfs shmfault
+breakpoint
+} -sqlbody {
+  SELECT count(*) FROM t1;
 }
 
 finish_test

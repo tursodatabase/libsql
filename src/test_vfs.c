@@ -341,6 +341,7 @@ static void tvfsGrowBuffer(TestvfsShm *pShm, int reqSize, int *pNewSize){
   TestvfsBuffer *pBuffer = pShm->pBuffer;
   if( reqSize>pBuffer->n ){
     pBuffer->a = (u8 *)ckrealloc((char *)pBuffer->a, reqSize);
+    memset(&pBuffer->a[pBuffer->n], 0x55, reqSize-pBuffer->n);
     pBuffer->n = reqSize;
   }
   *pNewSize = pBuffer->n;
@@ -467,11 +468,13 @@ static int tvfsShmSize(
   Testvfs *p = (Testvfs *)(pVfs->pAppData);
   TestvfsShm *pShm = (TestvfsShm *)pShmHandle;
 
-  tvfsGrowBuffer(pShm, reqSize, pNewSize);
   tvfsExecTcl(p, "xShmSize", 
       Tcl_NewStringObj(pShm->pBuffer->zFile, -1), pShm->id, 0
   );
   tvfsResultCode(p, &rc);
+  if( rc==SQLITE_OK ){
+    tvfsGrowBuffer(pShm, reqSize, pNewSize);
+  }
   return rc;
 }
 
@@ -549,7 +552,9 @@ static int tvfsShmClose(
   TestvfsShm *pShm = (TestvfsShm *)pShmHandle;
   TestvfsBuffer *pBuffer = pShm->pBuffer;
 
+#if 0
   assert( (deleteFlag!=0)==(pBuffer->nRef==1) );
+#endif
 
   tvfsExecTcl(p, "xShmClose", 
       Tcl_NewStringObj(pShm->pBuffer->zFile, -1), pShm->id, 0
@@ -759,6 +764,7 @@ static int testvfs_cmd(
   pVfs->zName = p->zName;
   pVfs->mxPathname = p->pParent->mxPathname;
   pVfs->szOsFile += p->pParent->szOsFile;
+  p->pVfs = pVfs;
 
   Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   sqlite3_vfs_register(pVfs, 0);

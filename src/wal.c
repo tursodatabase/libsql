@@ -670,7 +670,7 @@ static int walIteratorNext(
   return (iRet==0xFFFFFFFF);
 }
 
-static WalIterator *walIteratorInit(Wal *pWal){
+static int walIteratorInit(Wal *pWal, WalIterator **pp){
   u32 *aData;                     /* Content of the wal-index file */
   WalIterator *p;                 /* Return value */
   int nSegment;                   /* Number of segments to merge */
@@ -680,8 +680,12 @@ static WalIterator *walIteratorInit(Wal *pWal){
   int nFinal;                     /* Number of unindexed entries */
   struct WalSegment *pFinal;      /* Final (unindexed) segment */
   u8 *aTmp;                       /* Temp space used by merge-sort */
+  int rc;                         /* Return code of walIndexMap() */
 
-  walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, -1);
+  if( rc!=SQLITE_OK ){
+    return rc;
+  }
   aData = pWal->pWiData;
   iLast = pWal->hdr.iLastPg;
   nSegment = (iLast >> 8) + 1;
@@ -689,6 +693,9 @@ static WalIterator *walIteratorInit(Wal *pWal){
 
   nByte = sizeof(WalIterator) + (nSegment-1)*sizeof(struct WalSegment) + 512;
   p = (WalIterator *)sqlite3_malloc(nByte);
+  if( !p ){
+    return SQLITE_NOMEM;
+  }
 
   if( p ){
     memset(p, 0, nByte);
@@ -710,7 +717,8 @@ static WalIterator *walIteratorInit(Wal *pWal){
     p->nFinal = nFinal;
   }
 
-  return p;
+  *pp = p;
+  return SQLITE_OK;
 }
 
 /* 
@@ -737,11 +745,8 @@ static int walCheckpoint(
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
 
   /* Allocate the iterator */
-  pIter = walIteratorInit(pWal);
-  if( !pIter ) return SQLITE_NOMEM;
-
-  if( pWal->hdr.iLastPg==0 ){
-    rc = SQLITE_OK;
+  rc = walIteratorInit(pWal, &pIter);
+  if( rc!=SQLITE_OK || pWal->hdr.iLastPg==0 ){
     goto out;
   }
 
