@@ -531,7 +531,8 @@ void sqlite3Pragma(
 
   /*
   **  PRAGMA [database.]journal_mode
-  **  PRAGMA [database.]journal_mode = (delete|persist|off|truncate|memory)
+  **  PRAGMA [database.]journal_mode =
+  **                      (delete|persist|off|truncate|memory|wal|off)
   */
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
     int eMode;                    /* One of the PAGER_JOURNALMODE_XXX symbols */
@@ -562,15 +563,14 @@ void sqlite3Pragma(
     }else{
       int ii;
 
-      if( pId2->n==0 && eMode!=PAGER_JOURNALMODE_WAL ){
-        /* This indicates that no database name was specified as part
-        ** of the PRAGMA command. In this case the journal-mode must be
-        ** set on all attached databases, as well as the main db file.
+      if( pId2->n==0 ){
+        /* When there is no database name before the "journal_mode" keyword
+        ** in the PRAGMA, then the journal-mode will be set on
+        ** all attached databases, as well as the main db file.
         **
         ** Also, the sqlite3.dfltJournalMode variable is set so that
         ** any subsequently attached databases also use the specified
-        ** journal mode. Except, the default journal mode is never set
-        ** to WAL.
+        ** journal mode.
         */
         db->dfltJournalMode = (u8)eMode;
       }

@@ -950,6 +950,11 @@ static char *displayP4(Op *pOp, char *zTemp, int nTemp){
 
 /*
 ** Declare to the Vdbe that the BTree object at db->aDb[i] is used.
+**
+** The prepared statement has to know in advance which Btree objects
+** will be used so that it can acquire mutexes on them all in sorted
+** order (via sqlite3VdbeMutexArrayEnter().  Mutexes are acquired
+** in order (and released in reverse order) to avoid deadlocks.
 */
 void sqlite3VdbeUsesBtree(Vdbe *p, int i){
   int mask;
