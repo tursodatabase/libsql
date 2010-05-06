@@ -745,6 +745,7 @@ run_tests "journaltest" -description {
   crash8.test 
   async4.test 
   bigfile.test
+  savepoint6.test
 }]
 
 if {[info commands register_demovfs] != ""} {
