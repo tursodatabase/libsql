@@ -306,4 +306,34 @@ db close
 tvfs delete
 file delete -force test.db test.db-wal test.db-journal
 
+#-------------------------------------------------------------------------
+# Test that a database connection using a VFS that does not support the
+# xShmXXX interfaces cannot open a WAL database.
+#
+do_test wal2-4.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE data(x);
+    INSERT INTO data VALUES('need xShmOpen to see this');
+    PRAGMA wal_checkpoint;
+  }
+} {wal}
+do_test wal2-4.2 {
+  db close
+  proc ok {args} {return SQLITE_OK}
+  testvfs -noshm tvfs ok
+  sqlite3 db test.db -vfs tvfs
+  catchsql { SELECT * FROM data }
+} {1 {unable to open database file}}
+do_test wal2-4.3 {
+  db close
+  proc ok {args} {return SQLITE_OK}
+  testvfs tvfs ok
+  sqlite3 db test.db -vfs tvfs
+  catchsql { SELECT * FROM data }
+} {0 {{need xShmOpen to see this}}}
+db close
+tvfs delete
+
 finish_test

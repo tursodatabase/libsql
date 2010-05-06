@@ -648,7 +648,7 @@ static void testvfs_obj_del(ClientData cd){
 #define TESTVFS_MAX_ARGS 12
 
 /*
-** Usage:  testvfs VFSNAME SCRIPT
+** Usage:  testvfs ?-noshm? VFSNAME SCRIPT
 **
 ** This command creates two things when it is invoked: an SQLite VFS, and
 ** a Tcl command. Both are named VFSNAME. The VFS is installed. It is not
@@ -732,13 +732,15 @@ static int testvfs_cmd(
   Tcl_Obj **apScript;             /* Array of pScript elements */
   int nByte;                      /* Bytes of space to allocate at p */
   int i;                          /* Counter variable */
+  int isNoshm = 0;                /* True if -noshm is passed */
 
-  if( objc!=3 ){
-    Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME SCRIPT");
-    return TCL_ERROR;
+  if( objc<3 ) goto bad_args;
+  if( strcmp(Tcl_GetString(objv[1]), "-noshm")==0 ){
+    isNoshm = 1;
   }
-  zVfs = Tcl_GetString(objv[1]);
-  pScript = objv[2];
+  if( objc!=3+isNoshm ) goto bad_args;
+  zVfs = Tcl_GetString(objv[isNoshm+1]);
+  pScript = objv[isNoshm+2];
 
   if( TCL_OK!=Tcl_ListObjGetElements(interp, pScript, &nScript, &apScript) ){
     return TCL_ERROR;
@@ -768,11 +770,23 @@ static int testvfs_cmd(
   pVfs->mxPathname = p->pParent->mxPathname;
   pVfs->szOsFile += p->pParent->szOsFile;
   p->pVfs = pVfs;
+  if( isNoshm ){
+    pVfs->xShmOpen = 0;
+    pVfs->xShmGet = 0;
+    pVfs->xShmSize = 0;
+    pVfs->xShmRelease = 0;
+    pVfs->xShmClose = 0;
+    pVfs->xShmLock = 0;
+  }
 
   Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   sqlite3_vfs_register(pVfs, 0);
 
   return TCL_OK;
+
+ bad_args:
+  Tcl_WrongNumArgs(interp, 1, objv, "?-noshm? VFSNAME SCRIPT");
+  return TCL_ERROR;
 }
 
 int Sqlitetestvfs_Init(Tcl_Interp *interp){
