@@ -2578,7 +2578,6 @@ int main(int argc, char **argv){
     */
     if( zFirstCmd[0]=='.' ){
       rc = do_meta_command(zFirstCmd, &data);
-      return rc;
     }else{
       open_db(&data);
       rc = shell_exec(data.db, zFirstCmd, shell_callback, &data, &zErrMsg);
@@ -2625,9 +2624,10 @@ int main(int argc, char **argv){
     }
   }
   set_table_name(&data, 0);
-  if( db ){
-    if( sqlite3_close(db)!=SQLITE_OK ){
-      fprintf(stderr,"Error: cannot close database \"%s\"\n", sqlite3_errmsg(db));
+  if( data.db ){
+    if( sqlite3_close(data.db)!=SQLITE_OK ){
+      fprintf(stderr,"Error: cannot close database \"%s\"\n",
+              sqlite3_errmsg(db));
       rc++;
     }
   }
