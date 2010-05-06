@@ -387,6 +387,7 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
     { SQLITE_ERROR,  "SQLITE_ERROR"  },
     { SQLITE_IOERR,  "SQLITE_IOERR"  },
     { SQLITE_LOCKED, "SQLITE_LOCKED" },
+    { SQLITE_BUSY,   "SQLITE_BUSY"   },
   };
 
   const char *z;

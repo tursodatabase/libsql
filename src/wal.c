@@ -219,6 +219,7 @@ static void walChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
 static int walSetLock(Wal *pWal, int desiredStatus){
   int rc, got;
   if( pWal->lockState==desiredStatus ) return SQLITE_OK;
+  got = pWal->lockState;
   rc = pWal->pVfs->xShmLock(pWal->pVfs, pWal->pWIndex, desiredStatus, &got);
   pWal->lockState = got;
   if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){

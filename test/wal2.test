@@ -236,4 +236,75 @@ db2 close
 tvfs delete
 file delete -force test.db test.db-wal test.db-journal
 
+#-------------------------------------------------------------------------
+# This test case - wal2-3.* - tests the response of the library to an
+# SQLITE_BUSY when attempting to obtain a READ or RECOVER lock.
+#
+#   wal2-3.0 - 2: SQLITE_BUSY when obtaining a READ lock
+#   wal2-3.3 - 6: SQLITE_BUSY when obtaining a RECOVER lock
+#
+do_test wal2-3.0 {
+  proc tvfs_cb {method args} {
+    if {$method == "xShmLock"} {
+      if {[info exists ::locked]} { return SQLITE_BUSY }
+    }
+    return SQLITE_OK
+  }
+
+  proc busyhandler x {
+    if {$x>3} { unset -nocomplain ::locked }
+    return 0
+  }
+
+  testvfs tvfs tvfs_cb
+  sqlite3 db test.db -vfs tvfs
+  db busy busyhandler
+
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a);
+    INSERT INTO t1 VALUES(1);
+    INSERT INTO t1 VALUES(2);
+    INSERT INTO t1 VALUES(3);
+    INSERT INTO t1 VALUES(4);
+  } 
+
+  set ::locked 1
+  info exists ::locked
+} {1}
+do_test wal2-3.1 {
+  execsql { SELECT count(a), sum(a) FROM t1 }
+} {4 10}
+do_test wal2-3.2 {
+  info exists ::locked
+} {0}
+
+do_test wal2-3.3 {
+  proc tvfs_cb {method args} {
+    if {$method == "xShmLock"} {
+      if {[info exists ::sabotage]} {
+        unset -nocomplain ::sabotage
+        incr_tvfs_hdr [lindex $args 0] 1 1
+      }
+      if {[info exists ::locked] && [lindex $args 2] == "RECOVER"} {
+        return SQLITE_BUSY
+      }
+    }
+    return SQLITE_OK
+  }
+
+  set ::sabotage 1
+  set ::locked 1
+  list [info exists ::sabotage] [info exists ::locked]
+} {1 1}
+do_test wal2-3.4 {
+  execsql { SELECT count(a), sum(a) FROM t1 }
+} {4 10}
+do_test wal2-3.5 {
+  list [info exists ::sabotage] [info exists ::locked]
+} {0 0}
+db close
+tvfs delete
+file delete -force test.db test.db-wal test.db-journal
+
 finish_test
