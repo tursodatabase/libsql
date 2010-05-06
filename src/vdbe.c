@@ -5257,6 +5257,7 @@ case OP_JournalMode: {    /* out2-prerelease */
             "cannot change %s wal mode from within a transaction",
             (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
         );
+        break;
       }else{
   
         if( eOld==PAGER_JOURNALMODE_WAL ){

@@ -1,5 +1,8 @@
-C Further\scoverage\stests.
-D 2010-05-06T15:56:28
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C After\sthrowing\san\serror\sto\ssay\sthat\sone\scannot\schange\sinto\sWAL\smode\swithin\na\stranactions,\sdo\snot\sthen\sgo\sand\schange\sinto\sWAL\smode.
+D 2010-05-06T16:06:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -215,7 +218,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 90a32e098cf06c5524c76b21027ee7520a821065
-F src/vdbe.c 8be37a1b18786b5c026adcb2e9edc93e3a940885
+F src/vdbe.c e4f1d6c20b0b7b782ac15be8f17d7663250b2850
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -813,7 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2edc5129f216abec9b13a0ad9b6640606caa9f72
-R b6c7487b1e45fddee5b55391d5b620e7
-U dan
-Z 73a0d98dae929bcd07f7907cdc405ac1
+P 98a9713e0030a36ea99a18a12a2e7685c6db72b3
+R a6a5701c6d4007c6249db0d97b38d4b9
+U drh
+Z 5088fc0f8b2c64d8a5a9201858770842
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL4ukRoxKgR168RlERAl8bAJ9p5VPkPYSbXCDjRN/Gx6UcnU6HcgCfcazb
+/vpPlHetvENT53KXSL9Rsh0=
+=ElgJ
+-----END PGP SIGNATURE-----
