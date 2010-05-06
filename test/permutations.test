@@ -81,6 +81,10 @@ foreach filename [glob $testdir/*.test] {
   if {[lsearch $EXCLUDE $filename] < 0} { lappend ALLTESTS $filename }
 }
 set ALLTESTS [lsort $ALLTESTS]
+set WALTESTS [list]
+foreach filename $ALLTESTS {
+  if {![regexp {^wal} $filename]} {lappend WALTESTS $filename}
+}
 
 rename finish_test really_finish_test2
 proc finish_test {} {}
@@ -733,7 +737,7 @@ run_tests "journaltest" -description {
   #sqlite3_instvfs destroy binarylog
   unregister_jt_vfs
 } -include [concat $::ALLTESTS savepoint6.test
-] -exclude {
+] -exclude [concat $::WALTESTS {
   incrvacuum.test
   ioerr.test
   corrupt4.test 
@@ -741,7 +745,7 @@ run_tests "journaltest" -description {
   crash8.test 
   async4.test 
   bigfile.test
-}
+}]
 
 if {[info commands register_demovfs] != ""} {
   run_tests "demovfs" -description {
