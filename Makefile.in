@@ -176,7 +176,7 @@ OBJS0 = alter.lo analyze.lo attach.lo auth.lo backup.lo bitvec.lo btmutex.lo \
         table.lo tokenize.lo trigger.lo update.lo \
         util.lo vacuum.lo \
         vdbe.lo vdbeapi.lo vdbeaux.lo vdbeblob.lo vdbemem.lo vdbetrace.lo \
-        walker.lo where.lo utf.lo vtab.lo
+        wal.lo walker.lo where.lo utf.lo vtab.lo
 
 # Object files for the amalgamation.
 #
@@ -341,8 +341,8 @@ TESTSRC2 = \
   $(TOP)/src/bitvec.c \
   $(TOP)/src/btree.c \
   $(TOP)/src/build.c \
-  $(TOP)/src/date.c \
   $(TOP)/src/ctime.c \
+  $(TOP)/src/date.c \
   $(TOP)/src/expr.c \
   $(TOP)/src/func.c \
   $(TOP)/src/insert.c \
@@ -367,6 +367,8 @@ TESTSRC2 = \
   $(TOP)/src/vdbeaux.c \
   $(TOP)/src/vdbemem.c \
   $(TOP)/src/vdbetrace.c \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/wal.h \
   $(TOP)/src/where.c \
   parse.c
 
@@ -387,6 +389,7 @@ TESTSRC = \
   $(TOP)/src/test_backup.c \
   $(TOP)/src/test_btree.c \
   $(TOP)/src/test_config.c \
+  $(TOP)/src/test_demovfs.c \
   $(TOP)/src/test_devsym.c \
   $(TOP)/src/test_func.c \
   $(TOP)/src/test_hexio.c \
@@ -402,6 +405,7 @@ TESTSRC = \
   $(TOP)/src/test_server.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
+  $(TOP)/src/test_vfs.c \
   $(TOP)/src/test_wsd.c
 
 # Header files used by all library source files.
