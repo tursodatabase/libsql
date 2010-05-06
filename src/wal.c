@@ -564,6 +564,7 @@ static int walIndexRecover(Wal *pWal){
 
 finished:
   walIndexWriteHdr(pWal, &hdr);
+  memcpy(&pWal->hdr, &hdr, sizeof(hdr));
   return rc;
 }
 
@@ -871,11 +872,7 @@ int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
 
   /* Read the header. The caller may or may not have locked the wal-index
   ** file, meaning it is possible that an inconsistent snapshot is read
-  ** from the file. If this happens, return SQLITE_ERROR. The caller will
-  ** retry. Or, if the caller has already locked the file and the header
-  ** still looks inconsistent, it will run recovery.
-  **
-  ** FIX-ME:  It is no longer possible to have not locked the wal-index.
+  ** from the file. If this happens, return SQLITE_ERROR.
   */
   memcpy(aHdr, pWal->pWiData, sizeof(aHdr));
   walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);
@@ -887,9 +884,7 @@ int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
   *pisValid = 1;
 
   if( memcmp(&pWal->hdr, aHdr, sizeof(WalIndexHdr)) ){
-    if( pChanged ){
-      *pChanged = 1;
-    }
+    *pChanged = 1;
     memcpy(&pWal->hdr, aHdr, sizeof(WalIndexHdr));
   }
   return SQLITE_OK;
@@ -908,6 +903,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int isValid = 0;
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
+  assert( pChanged );
   rc = walIndexMap(pWal, -1);
   if( rc!=SQLITE_OK ){
     return rc;
@@ -926,22 +922,19 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** time as well, run log recovery.
   */
   if( SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) ){
+    /* This call to walIndexTryHdr() may not return an error code, as the
+    ** wal-index is already mapped. It may find that the header is invalid,
+    ** but there is no chance of hitting an actual error.  */
+    assert( pWal->szWIndex );
     rc = walIndexTryHdr(pWal, &isValid, pChanged);
-    if( rc==SQLITE_OK && isValid==0 ){
-      if( pChanged ){
-        *pChanged = 1;
-      }
+    assert( rc==SQLITE_OK );
+    if( isValid==0 ){
+      *pChanged = 1;
       rc = walIndexRecover(pWal);
-      if( rc==SQLITE_OK ){
-        rc = walIndexTryHdr(pWal, &isValid, 0);
-      }
     }
     walSetLock(pWal, SQLITE_SHM_READ);
   }
 
-  if( rc==SQLITE_OK && isValid==0 ){
-    rc = SQLITE_ERROR;
-  }
   return rc;
 }
 
@@ -1123,11 +1116,12 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 ** function returns SQLITE_OK.
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
+  int unused;
   int rc = SQLITE_OK;
   Pgno iMax = pWal->hdr.iLastPg;
   Pgno iFrame;
 
-  rc = walIndexReadHdr(pWal, 0);
+  rc = walIndexReadHdr(pWal, &unused);
   for(iFrame=pWal->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
     assert( pWal->lockState==SQLITE_SHM_WRITE );
     rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);

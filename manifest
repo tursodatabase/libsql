@@ -1,5 +1,5 @@
-C Unset\sa\stcl\svariable\sbefore\sreusing\sit\sin\swal.test.
-D 2010-05-06T13:36:47
+C Add\stests\sto\scover\sa\scouple\sof\sbranches\sin\swal.c.
+D 2010-05-06T14:42:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in d83a0ffef3dcbfb08b410a6c6dd6c009ec9167fb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 5fa16130ca31747510f95cfdecfde0e2834f4923
+F src/wal.c cc0c15289777ce3bad07769f762040089492a917
 F src/wal.h b4c42014b5fa3b4e6244ac8c65de7ff67adeb27c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -765,7 +765,7 @@ F test/wal.test 7dda3fc1637aa035510199e166941bfe987846ba
 F test/wal2.test 4a8e20416020f83b792464edee18107321dea99a
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
-F test/walfault.test 2d6e00e07ae4287d6ae552589bcc8532697d8173
+F test/walfault.test e3e96418015d31fd492a4862fc3cd0c5936b2087
 F test/walhook.test a1c375ae791d5d7d511c166159729230791c574d
 F test/walmode.test bac6f06544a8554588a1543def996bbe2fc41792
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -813,7 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f0fcb9c9a67e2bf7bbedbedbc27791b605a21dd1
-R 6e3f6cf8a28ee26b2021cd53f530e545
+P e83efb232fe8d30714f4c7cffeef80092aea4df7
+R 0bf684f67aaa290741def7759e4f2363
 U dan
-Z 51fe938b1a898b4d46946fd2baefdd24
+Z 239bc029f8f147d89b1ba27be4213141

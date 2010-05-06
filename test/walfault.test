@@ -210,5 +210,30 @@ do_shmfault_test walfault-shm-3 -methods xShmSize -tclprep {
   SELECT count(*) FROM t1;
 }
 
+do_shmfault_test walfault-shm-4 -tclprep {
+  sqlite3 db test.db -vfs shmfault
+  unset -nocomplain ::shmfault_ioerr_countdown
+  db eval {
+    PRAGMA page_size = 512;
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    CREATE TABLE t1(x);
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(400));           /* 1 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 2 */
+      INSERT INTO t1 SELECT randomblob(400) FROM t1;    /* 4 */
+    COMMIT;
+  }
+
+  set ::shmfault_ioerr_countdown 1
+  set ::shmfault_ioerr_methods(xShmGet) 1
+  db close
+  unset ::shmfault_ioerr_methods(xShmGet)
+  if {[file exists test.db-wal]==0} {error "Failed to create WAL file!"}
+  sqlite3 db test.db -vfs shmfault
+} -sqlbody {
+  SELECT count(*) FROM t1;
+}
+
 finish_test
 
