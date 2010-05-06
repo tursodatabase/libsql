@@ -113,9 +113,7 @@ The following are the allowed lock transitions:
 (11l)  PENDING            UNLOCK          UNLOCK
 (11m)  PENDING            CHECKPOINT      CHECKPOINT
 (11n)  CHECKPOINT         UNLOCK          UNLOCK
-(11o)  CHECKPOINT         RECOVER         RECOVER
-(11p)  RECOVER            READ            READ
-(11q)  RECOVER            CHECKPOINT      CHECKPOINT
+(11o)  RECOVER            READ            READ
 
 These 17 transitions are all that needs to be supported.  The lock
 manager implementation can assert that fact.  The other 25 possible

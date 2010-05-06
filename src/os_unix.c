@@ -5339,12 +5339,7 @@ static int unixShmLock(
     case SQLITE_SHM_CHECKPOINT: {
       assert( p->lockState==SQLITE_SHM_UNLOCK
            || p->lockState==SQLITE_SHM_PENDING
-           || p->lockState==SQLITE_SHM_RECOVER );
-      if( p->lockState==SQLITE_SHM_RECOVER ){
-        unixShmUnlock(pFile, p, UNIX_SHM_C);
-        p->lockState = SQLITE_SHM_CHECKPOINT;
-        rc = SQLITE_OK;
-      }
+      );
       if( p->lockState==SQLITE_SHM_UNLOCK ){
         rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_B|UNIX_SHM_C);
         if( rc==SQLITE_OK ){
@@ -5363,7 +5358,7 @@ static int unixShmLock(
       assert( desiredLock==SQLITE_SHM_RECOVER );
       assert( p->lockState==SQLITE_SHM_READ
            || p->lockState==SQLITE_SHM_READ_FULL
-           || p->lockState==SQLITE_SHM_CHECKPOINT );
+      );
       assert( sqlite3_mutex_held(pFile->mutexBuf) );
       rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_C);
       if( rc==SQLITE_OK ){

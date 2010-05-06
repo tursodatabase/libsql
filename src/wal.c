@@ -501,7 +501,7 @@ static int walIndexRecover(Wal *pWal){
   i64 nSize;                      /* Size of log file */
   WalIndexHdr hdr;              /* Recovered wal-index header */
 
-  assert( pWal->lockState==SQLITE_SHM_RECOVER );
+  assert( pWal->lockState>SQLITE_SHM_READ );
   memset(&hdr, 0, sizeof(hdr));
 
   rc = sqlite3OsFileSize(pWal->pFd, &nSize);
@@ -941,7 +941,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** time as well, run log recovery.
   */
   lockState = pWal->lockState;
-  if( SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) ){
+  if( lockState>SQLITE_SHM_READ
+   || SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) 
+  ){
     /* This call to walIndexTryHdr() may not return an error code, as the
     ** wal-index is already mapped. It may find that the header is invalid,
     ** but there is no chance of hitting an actual error.  */
@@ -952,7 +954,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       *pChanged = 1;
       rc = walIndexRecover(pWal);
     }
-    walSetLock(pWal, lockState);
+    if( lockState==SQLITE_SHM_READ ){
+      walSetLock(pWal, SQLITE_SHM_READ);
+    }
   }
 
   return rc;
