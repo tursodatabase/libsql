@@ -399,6 +399,7 @@ static int walIndexMap(Wal *pWal, int reqSize){
       assert( pWal->szWIndex==0 );
       pWal->pWiData = &pWal->iCallback;
     }
+    assert( rc==SQLITE_OK || pWal->pWiData==0 );
   }
   return rc;
 }
@@ -1117,12 +1118,13 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int unused;
-  int rc = SQLITE_OK;
+  int rc;
   Pgno iMax = pWal->hdr.iLastPg;
   Pgno iFrame;
 
+  assert( pWal->pWiData==0 );
   rc = walIndexReadHdr(pWal, &unused);
-  for(iFrame=pWal->hdr.iLastPg+1; iFrame<=iMax && rc==SQLITE_OK; iFrame++){
+  for(iFrame=pWal->hdr.iLastPg+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
     assert( pWal->lockState==SQLITE_SHM_WRITE );
     rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
   }

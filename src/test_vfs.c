@@ -495,7 +495,9 @@ static int tvfsShmGet(
       Tcl_NewStringObj(pShm->pBuffer->zFile, -1), pShm->id, 0
   );
   tvfsResultCode(p, &rc);
-  *pp = pShm->pBuffer->a;
+  if( rc==SQLITE_OK ){
+    *pp = pShm->pBuffer->a;
+  }
   return rc;
 }
 

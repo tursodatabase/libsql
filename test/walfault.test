@@ -105,6 +105,7 @@ proc do_shmfault_test {name args} {
   set A(-sqlprep) ""
   set A(-sqlbody) ""
   set A(-methods) [list xShmGet xShmOpen xShmSize]
+  set A(-coverageonly) 0
   array set A $args
 
   # Create a VFS to use:
@@ -130,6 +131,7 @@ proc do_shmfault_test {name args} {
 
       catch { db close }
       
+      if {$A(-coverageonly)} { set rc $hit_error }
       do_test $name-$mode.$nDelay.1 [list set {} $hit_error] $rc
   
       if {$hit_error==0} break
@@ -138,7 +140,6 @@ proc do_shmfault_test {name args} {
 
   shmfault delete
 }
-
 
 do_shmfault_test walfault-shm-1 -sqlbody {
   PRAGMA journal_mode = WAL;
@@ -233,6 +234,20 @@ do_shmfault_test walfault-shm-4 -tclprep {
   sqlite3 db test.db -vfs shmfault
 } -sqlbody {
   SELECT count(*) FROM t1;
+}
+
+do_shmfault_test walfault-shm-5 -coverageonly 1 -sqlprep {
+  PRAGMA cache_size = 10;
+  PRAGMA journal_mode = WAL;
+  CREATE TABLE abc(a PRIMARY KEY);
+  INSERT INTO abc VALUES(randomblob(900));
+} -sqlbody {
+  BEGIN;
+    INSERT INTO abc SELECT randomblob(900) FROM abc;    /* 1 */
+    INSERT INTO abc SELECT randomblob(900) FROM abc;    /* 2 */
+    INSERT INTO abc SELECT randomblob(900) FROM abc;    /* 4 */
+    INSERT INTO abc SELECT randomblob(900) FROM abc;    /* 8 */
+  ROLLBACK;
 }
 
 finish_test

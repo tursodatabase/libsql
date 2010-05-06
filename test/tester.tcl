@@ -749,6 +749,7 @@ proc do_ioerr_test {testname args} {
       #   1.  We never hit the IO error and the SQL returned OK
       #   2.  An IO error was hit and the SQL failed
       #
+      #puts "s=$s r=$r q=$q"
       expr { ($s && !$r && !$q) || (!$s && $r && $q) }
     } {1}
 
