@@ -877,35 +877,42 @@ int sqlite3WalClose(
 ** modified by this and pChanged is not NULL, set *pChanged to 1. 
 ** Otherwise leave *pChanged unmodified.
 **
-** If the checksum cannot be verified return SQLITE_ERROR.
+** If the checksum cannot be verified return non-zero. If the header
+** is read successfully and the checksum verified, return zero.
 */
-int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
+int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2] = {1, 1};
   u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
-  assert( *pisValid==0 );
+  assert( pWal->pWiData );
   if( pWal->szWIndex==0 ){
-    return SQLITE_OK;
+    /* The wal-index is of size 0 bytes. This is handled in the same way
+    ** as an invalid header. The caller will run recovery to construct
+    ** a valid wal-index file before accessing the database.
+    */
+    return 1;
   }
 
-  /* Read the header. The caller may or may not have locked the wal-index
+  /* Read the header. The caller may or may not have an exclusive 
+  ** (WRITE, PENDING, CHECKPOINT or RECOVER) lock on the wal-index
   ** file, meaning it is possible that an inconsistent snapshot is read
-  ** from the file. If this happens, return SQLITE_ERROR.
+  ** from the file. If this happens, return non-zero.
   */
   memcpy(aHdr, pWal->pWiData, sizeof(aHdr));
   walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);
   if( aCksum[0]!=aHdr[WALINDEX_HDR_NFIELD]
    || aCksum[1]!=aHdr[WALINDEX_HDR_NFIELD+1]
   ){
-    return SQLITE_OK;
+    return 1;
   }
-  *pisValid = 1;
 
   if( memcmp(&pWal->hdr, aHdr, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
     memcpy(&pWal->hdr, aHdr, sizeof(WalIndexHdr));
   }
-  return SQLITE_OK;
+
+  /* The header was successfully read. Return zero. */
+  return 0;
 }
 
 /*
@@ -917,9 +924,8 @@ int walIndexTryHdr(Wal *pWal, int *pisValid, int *pChanged){
 ** Otherwise an SQLite error code.
 */
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
-  int rc;
-  int isValid = 0;
-  int lockState;
+  int rc;                         /* Return code */
+  int lockState;                  /* pWal->lockState before running recovery */
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
   assert( pChanged );
@@ -928,29 +934,39 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
     return rc;
   }
 
-  /* First try to read the header without a lock. Verify the checksum
-  ** before returning. This will almost always work.  
+  /* First attempt to read the wal-index header. This may fail for one
+  ** of two reasons: (a) the wal-index does not yet exist or has been
+  ** corrupted and needs to be constructed by running recovery, or (b)
+  ** the caller is only holding a READ lock and made a dirty read of
+  ** the wal-index header.
+  **
+  ** A dirty read of the wal-index header occurs if another thread or
+  ** process happens to be writing to the wal-index header at roughly
+  ** the same time as this thread is reading it. In this case it is 
+  ** possible that an inconsistent header is read (which is detected
+  ** using the header checksum mechanism).
   */
-  rc = walIndexTryHdr(pWal, &isValid, pChanged);
-  if( isValid || rc!=SQLITE_OK ){
-    return rc;
+  if( walIndexTryHdr(pWal, pChanged)==0 ){
+    return SQLITE_OK;
   }
 
   /* If the first attempt to read the header failed, lock the wal-index
-  ** file and try again. If the header checksum verification fails this
-  ** time as well, run log recovery.
+  ** file with an exclusive lock and try again. If the header checksum 
+  ** verification fails again, we can be sure that it is not simply a
+  ** dirty read, but that the wal-index really does need to be 
+  ** reconstructed by running log recovery.
+  **
+  ** In the paragraph above, an "exclusive lock" may be any of WRITE,
+  ** PENDING, CHECKPOINT or RECOVER. If any of these are already held,
+  ** no locking operations are required. If the caller currently holds
+  ** a READ lock, then upgrade to a RECOVER lock before re-reading the
+  ** wal-index header and revert to a READ lock before returning.
   */
   lockState = pWal->lockState;
   if( lockState>SQLITE_SHM_READ
    || SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) 
   ){
-    /* This call to walIndexTryHdr() may not return an error code, as the
-    ** wal-index is already mapped. It may find that the header is invalid,
-    ** but there is no chance of hitting an actual error.  */
-    assert( pWal->pWiData );
-    rc = walIndexTryHdr(pWal, &isValid, pChanged);
-    assert( rc==SQLITE_OK );
-    if( isValid==0 ){
+    if( walIndexTryHdr(pWal, pChanged) ){
       *pChanged = 1;
       rc = walIndexRecover(pWal);
     }
