@@ -250,5 +250,81 @@ do_shmfault_test walfault-shm-5 -coverageonly 1 -sqlprep {
   ROLLBACK;
 }
 
+#-------------------------------------------------------------------------
+# When a database is checkpointed, SQLite does the following:
+#
+#   1. xShmLock(CHECKPOINT) to lock the WAL.
+#   2. xShmGet(-1) to get a mapping to read the wal-index header.
+#   3. If the mapping obtained in (2) is not large enough to cover the
+#      entire wal-index, call xShmGet(nReq) to get a larger mapping.
+#   4. Do the checkpoint.
+#   5. Release the lock and mapping.
+#
+# This test case tests the outcome of an IO error in step 2.
+#
+proc shmfault_vfs_cb_6 {method args} {
+  switch -- $::shm_state {
+    0 { return SQLITE_OK }
+    1 {
+      if {$method == "xShmGet"} {
+        set ::wal_index [tvfs shm [lindex $args 0]]
+        tvfs shm [lindex $args 0] [string range $::wal_index 0 65535]
+        set ::shm_state 2
+      }
+    }
+    2 {
+      if {$method == "xShmGet"} {
+        tvfs shm [lindex $args 0] $::wal_index
+        return SQLITE_IOERR
+      }
+    }
+  }
+  return SQLITE_OK
+}
+do_test walfault-shm-6.1 {
+  set ::shm_state 0
+  testvfs tvfs shmfault_vfs_cb_6
+
+  sqlite3 db  test.db -vfs tvfs
+  sqlite3 db2 test.db -vfs tvfs
+
+  execsql {
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    CREATE TABLE t1(x);
+    INSERT INTO t1 VALUES(randomblob(900));
+  }
+} {wal 0}
+do_test walfault-shm-6.2 {
+  execsql {
+    PRAGMA wal_autocheckpoint = 0;
+    BEGIN;
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 2 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 4 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 8 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 16 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 32 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 64 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 128 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 256 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 512 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 1024 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 2048 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 4096 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 8192 */
+      INSERT INTO t1 SELECT randomblob(900) FROM t1;    /* 16384 */
+    COMMIT;
+  } db2
+} {0}
+do_test walfault-shm-6.3 {
+  set ::shm_state 1
+  catchsql { PRAGMA wal_checkpoint } db2
+} {1 {disk I/O error}}
+set ::shm_state 0
+db close
+db2 close
+tvfs delete
+unset -nocomplain ::wal_index ::shm_state
+
 finish_test
 

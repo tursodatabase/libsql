@@ -411,7 +411,9 @@ static int walIndexMap(Wal *pWal, int reqSize){
       assert( pWal->szWIndex==0 );
       pWal->pWiData = &pWal->iCallback;
     }
-    assert( rc==SQLITE_OK || pWal->pWiData==0 );
+    if( rc!=SQLITE_OK ){
+      walIndexUnmap(pWal);
+    }
   }
   return rc;
 }
@@ -1129,7 +1131,7 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
         walSetLock(pWal, SQLITE_SHM_READ);
       }
     }
-  }else if( pWal->lockState==SQLITE_SHM_WRITE ){
+  }else if( ALWAYS( pWal->lockState==SQLITE_SHM_WRITE ) ){
     rc = walSetLock(pWal, SQLITE_SHM_READ);
   }
   return rc;

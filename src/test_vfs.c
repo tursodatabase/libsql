@@ -490,12 +490,12 @@ static int tvfsShmGet(
   Testvfs *p = (Testvfs *)(pVfs->pAppData);
   TestvfsShm *pShm = (TestvfsShm *)pShmHandle;
 
-  tvfsGrowBuffer(pShm, reqMapSize, pMapSize);
   tvfsExecTcl(p, "xShmGet", 
       Tcl_NewStringObj(pShm->pBuffer->zFile, -1), pShm->id, 0
   );
   tvfsResultCode(p, &rc);
   if( rc==SQLITE_OK ){
+    tvfsGrowBuffer(pShm, reqMapSize, pMapSize);
     *pp = pShm->pBuffer->a;
   }
   return rc;
