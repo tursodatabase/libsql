@@ -398,12 +398,11 @@ static void walIndexUnmap(Wal *pWal){
 ** Map the wal-index file into memory if it isn't already. 
 **
 ** The reqSize parameter is the minimum required size of the mapping.
-** A value of -1 means "don't care".  The reqSize parameter is ignored
-** if the mapping is already held.
+** A value of -1 means "don't care".
 */
 static int walIndexMap(Wal *pWal, int reqSize){
   int rc = SQLITE_OK;
-  if( pWal->pWiData==0 ){
+  if( pWal->pWiData==0 || reqSize>pWal->szWIndex ){
     rc = pWal->pVfs->xShmGet(pWal->pVfs, pWal->pWIndex, reqSize,
                              &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
     if( rc==SQLITE_OK && pWal->pWiData==0 ){
