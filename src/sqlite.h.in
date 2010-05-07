@@ -5763,31 +5763,34 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 /*
 ** CAPI3REF: Write-Ahead Log Commit Hook
 **
-** The [sqlite3_wal_hook()] function is used to register a callback that
+** ^The [sqlite3_wal_hook()] function is used to register a callback that
 ** will be invoked each time a database connection commits data to a
-** write-ahead-log (i.e. whenever a transaction is committed in
-** journal_mode=WAL mode). 
+** [write-ahead log] (i.e. whenever a transaction is committed in
+** [journal_mode | journal_mode=WAL mode]). 
 **
-** The callback is invoked by SQLite after the commit has taken place and 
+** ^The callback is invoked by SQLite after the commit has taken place and 
 ** the associated write-lock on the database released, so the implementation 
-** may read, write or checkpoint the database as required.
+** may read, write or [checkpoint] the database as required.
 **
-** The first parameter passed to the callback function when it is invoked
+** ^The first parameter passed to the callback function when it is invoked
 ** is a copy of the third parameter passed to sqlite3_wal_hook() when
-** registering the callback. The second is a copy of the database handle.
-** The third parameter is the name of the database that was written to -
-** either "main" or the name of an ATTACHed database. The fourth parameter
-** is the number of pages currently in the log file, including those that
-** were just committed.
+** registering the callback. ^The second is a copy of the database handle.
+** ^The third parameter is the name of the database that was written to -
+** either "main" or the name of an ATTACHed database. ^The fourth parameter
+** is the number of pages currently in the write-ahead log file,
+** including those that were just committed.
 **
-** The callback function should normally return SQLITE_OK.  If an error
+** The callback function should normally return SQLITE_OK.  ^If an error
 ** code is returned, that error will propagate back up through the
 ** SQLite code base to cause the statement that provoked the callback
-** to fail.
+** to report an error, though the commit will have still occurred.
 **
-** A single database handle may have at most a single log callback 
-** registered at one time. Calling [sqlite3_wal_hook()] replaces any
-** previously registered log callback. 
+** A single database handle may have at most a single write-ahead log callback 
+** registered at one time. ^Calling [sqlite3_wal_hook()] replaces any
+** previously registered write-ahead log callback. Note that the
+** [sqlite3_wal_autocheckpoint()] interface and the
+** [wal_autocheckpoint pragma] both invoke [sqlite3_wal_hook()] and will
+** those overwrite any prior [sqlite3_wal_hook()] settings.
 */
 void *sqlite3_wal_hook(
   sqlite3*, 
@@ -5798,28 +5801,42 @@ void *sqlite3_wal_hook(
 /*
 ** CAPI3REF: Configure an auto-checkpoint
 **
-** The [sqlite3_wal_autocheckpoint(D,N)] is a wrapper around
+** ^The [sqlite3_wal_autocheckpoint(D,N)] is a wrapper around
 ** [sqlite3_wal_hook()] that causes any database on [database connection] D
-** to automatically checkpoint
+** to automatically [checkpoint]
 ** after committing a transaction if there are N or
-** more frames in the write-ahead-log file.  Passing zero or 
+** more frames in the [write-ahead log] file.  ^Passing zero or 
 ** a negative value as the nFrame parameter disables automatic
 ** checkpoints entirely.
 **
-** The callback registered by this function replaces any existing callback
-** registered using [sqlite3_wal_hook()]. Likewise, registering a callback
+** ^The callback registered by this function replaces any existing callback
+** registered using [sqlite3_wal_hook()].  ^Likewise, registering a callback
 ** using [sqlite3_wal_hook()] disables the automatic checkpoint mechanism
 ** configured by this function.
+**
+** ^The [wal_autocheckpoint pragma] can be used to invoke this interface
+** from SQL.
+**
+** ^Every new [database connection] defaults to having the auto-checkpoint
+** enabled with a threshold of 1000 pages.  The use of this interface
+** is only necessary if the default setting is found to be suboptimal
+** for a particular application.
 */
 int sqlite3_wal_autocheckpoint(sqlite3 *db, int N);
 
 /*
 ** CAPI3REF: Checkpoint a database
 **
-** The [sqlite3_wal_checkpoint(D,X)] interface causes database named X
-** on [database connection] D to be checkpointed.  If X is NULL or an
+** ^The [sqlite3_wal_checkpoint(D,X)] interface causes database named X
+** on [database connection] D to be [checkpointed].  ^If X is NULL or an
 ** empty string, then a checkpoint is run on all databases of
-** connection D.
+** connection D.  If the database connection D is not in
+** [WAL | write-ahead log mode] then this interface is a harmless no-op.
+**
+** The [wal_checkpoint pragma] can be used to invoke this interface
+** from SQL.  The [sqlite3_wal_autocheckpoint()] interface and the
+** [wal_autocheckpoint pragma] can be used to cause this interface to be
+** run whenever the WAL reaches a certain size threshold.
 */
 int sqlite3_wal_checkpoint(sqlite3 *db, const char *zDb);
 
