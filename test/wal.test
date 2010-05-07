@@ -33,6 +33,7 @@ proc blob {nByte} {
 
 proc sqlite3_wal {args} {
   eval sqlite3 $args
+  [lindex $args 0] eval { PRAGMA auto_vacuum = 0 }
   [lindex $args 0] eval { PRAGMA page_size = 1024 }
   [lindex $args 0] eval { PRAGMA journal_mode = wal }
   [lindex $args 0] eval { PRAGMA synchronous = normal }
@@ -61,6 +62,7 @@ proc log_deleted {logfile} {
 #
 
 do_test wal-0.1 {
+  execsql { PRAGMA auto_vacuum = 0 }
   execsql { PRAGMA synchronous = normal }
   execsql { PRAGMA journal_mode = wal }
 } {wal}
@@ -337,6 +339,7 @@ foreach sector {512 4096} {
       sqlite3 db test.db -vfs devsym
       execsql "
         PRAGMA page_size = $pgsz;
+        PRAGMA auto_vacuum = 0;
         PRAGMA journal_mode = wal;
       "
       execsql "
@@ -908,14 +911,15 @@ do_test wal-13.2.1 {
   execsql { SELECT count(*) FROM t2 }
 } {1}
 do_test wal-13.2.2 {
+  db function blob blob
   for {set i 0} {$i < 16} {incr i} {
-    execsql { INSERT INTO t2 SELECT randomblob(400), randomblob(400) FROM t2 }
+    execsql { INSERT INTO t2 SELECT blob(400), blob(400) FROM t2 }
   }
   execsql { SELECT count(*) FROM t2 }
 } [expr int(pow(2, 16))]
-do_test wal-13.2.1 {
+do_test wal-13.2.3 {
   file size test.db-wal
-} [log_file_size 33123 1024]
+} [log_file_size 33502 1024]
 
 foreach code [list {
   set tn 3
@@ -1013,6 +1017,7 @@ file delete -force test.db test.db-wal
 sqlite3 db test.db
 do_test wal-15.1 {
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA page_size = 1024;
     PRAGMA journal_mode = WAL;
   }
@@ -1109,6 +1114,8 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
     sqlite3 db test.db
     execsql {
       ATTACH 'test2.db' AS aux;
+      PRAGMA main.auto_vacuum = 0;
+      PRAGMA aux.auto_vacuum = 0;
       PRAGMA main.journal_mode = WAL;
       PRAGMA aux.journal_mode = WAL;
       PRAGMA synchronous = NORMAL;
@@ -1302,6 +1309,10 @@ foreach {tn pgsz works} {
  10  65536    0
  11   1020    0
 } {
+
+  if {$::SQLITE_MAX_PAGE_SIZE < $pgsz} {
+    set works 0
+  }
 
   for {set pg 1} {$pg <= 3} {incr pg} {
     file copy -force testX.db test.db

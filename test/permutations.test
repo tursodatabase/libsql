@@ -73,7 +73,6 @@ set EXCLUDE {
   fuzz_malloc.test          misuse.test               veryquick.test
   fuzz.test                 mutex2.test               vtab_err.test
   lookaside.test            fuzz3.test                savepoint4.test
-  savepoint6.test
 }
 set ALLTESTS [list]
 foreach filename [glob $testdir/*.test] {
@@ -744,7 +743,6 @@ run_tests "journaltest" -description {
   crash8.test 
   async4.test 
   bigfile.test
-  savepoint6.test
 }]
 
 if {[info commands register_demovfs] != ""} {
