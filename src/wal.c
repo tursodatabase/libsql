@@ -1349,10 +1349,15 @@ int sqlite3WalCheckpoint(
   int rc;                         /* Return code */
   int isChanged = 0;              /* True if a new wal-index header is loaded */
 
-  assert( pWal->lockState==SQLITE_SHM_UNLOCK );
   assert( pWal->pWiData==0 );
 
   /* Get the CHECKPOINT lock */
+  if( pWal->lockState!=SQLITE_SHM_UNLOCK ){
+    /* This can occur when locking_mode=EXCLUSIVE */
+    assert( pWal->lockState==SQLITE_SHM_READ
+         || pWal->lockState==SQLITE_SHM_READ_FULL );
+    walSetLock(pWal, SQLITE_SHM_UNLOCK);
+  }
   do {
     rc = walSetLock(pWal, SQLITE_SHM_CHECKPOINT);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
