@@ -27,6 +27,7 @@
 */
 #include "sqliteInt.h"
 
+#ifndef SQLITE_MUTEX_OMIT
 
 #ifndef SQLITE_DEBUG
 /*
@@ -196,3 +197,4 @@ sqlite3_mutex_methods *sqlite3DefaultMutex(void){
   return sqliteNoopMutex();
 }
 #endif /* SQLITE_MUTEX_NOOP */
+#endif /* SQLITE_MUTEX_OMIT */

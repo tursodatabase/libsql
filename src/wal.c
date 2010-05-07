@@ -643,7 +643,7 @@ int sqlite3WalOpen(
   pRet->pFd = (sqlite3_file *)&pRet[1];
   pRet->zName = zWal = pVfs->szOsFile + (char*)pRet->pFd;
   sqlite3_snprintf(nWal+5, zWal, "%s-wal", zDb);
-  rc = pVfs->xShmOpen(pVfs, zWal, &pRet->pWIndex);
+  rc = pVfs->xShmOpen(pVfs, zDb, &pRet->pWIndex);
 
   /* Open file handle on the write-ahead log file. */
   if( rc==SQLITE_OK ){
@@ -1110,7 +1110,7 @@ void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
 ** been overwritten by another writer, SQLITE_BUSY is returned.
 */
 int sqlite3WalWriteLock(Wal *pWal, int op){
-  int rc;
+  int rc = SQLITE_OK;
   if( op ){
     assert( pWal->lockState == SQLITE_SHM_READ );
     rc = walSetLock(pWal, SQLITE_SHM_WRITE);
@@ -1209,7 +1209,7 @@ int sqlite3WalFrames(
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
   PgHdr *p;                       /* Iterator to run through pList with. */
   u32 aCksum[2];                  /* Checksums */
-  PgHdr *pLast;                   /* Last frame in list */
+  PgHdr *pLast = 0;               /* Last frame in list */
   int nLast = 0;                  /* Number of extra copies of last page */
 
   assert( WAL_FRAME_HDRSIZE==(4 * 2 + 2*sizeof(u32)) );

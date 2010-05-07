@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Additional\stweaks\sto\sAPI\sdocumentation.\s\sNo\sfunctional\scode\schanges.
-D 2010-05-07T18:23:25
+C Change\sthe\sxShmOpen()\smethod\sof\sthe\sVFS\sto\stake\sthe\sdatabase\sfile\sname\sas\nits\sargument,\snot\sthe\sWAL\sfile\sname.\s\sAlso\sfix\ssome\sunrelated\scompiler\nwarnings.
+D 2010-05-07T20:02:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -146,7 +146,7 @@ F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
 F src/memjournal.c f3be374af30588de297dcf678925b2a4758e4135
 F src/mutex.c e2358d8f9a9021ab0bba4d511bb701e471e6e5f6
 F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
-F src/mutex_noop.c e4942ed01b10f64ebe30cae4d5ad999c534c6c74
+F src/mutex_noop.c 10ae943d26ba86ea92319f72adbb501a89c563e0
 F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
 F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
 F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
@@ -155,7 +155,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 00403219ceac733ade0b0bb7373146f8e1c18ac1
+F src/os_unix.c 164d85df39df72fb1e9611cbf723f9287e622d98
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c a47af9c2c9ca425bd68642d61764266331a3323f
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 53b7461586bd883313e8bed46830557c720899c8
+F src/wal.c 6704aa53295073e590f3d802acec9722df671cd8
 F src/wal.h b4c42014b5fa3b4e6244ac8c65de7ff67adeb27c
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 681ba20cf077e9a0fccd51ed50101ad0f2c67eb3
-R d93fe5d7a022d828466356fc5c3d115a
+P e1230782a371f09cd46dacc8ecbc6a0c5baab2d5
+R 34103b151852b68b8447281dee8b52f5
 U drh
-Z b6f25889c2827c3df48865eb571dc2c2
+Z 09fd161899845c827ac24875d31a8565
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL5FqjoxKgR168RlERAkpDAKCLOKLETC2lxFAjTa52s6k4khvc8QCfas5Z
-/QOnAmlom2QxcknPDDqWyas=
-=uwDy
+iD8DBQFL5HHToxKgR168RlERAruYAJ0VKELfyDrHdFSidCXg6pDgk6NVIgCfW0O4
+0ozplsGsZxT6V2WCirZEVVU=
+=fGE6
 -----END PGP SIGNATURE-----

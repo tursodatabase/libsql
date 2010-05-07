@@ -4949,7 +4949,7 @@ static void unixShmPurge(void){
 */
 static int unixShmOpen(
   sqlite3_vfs *pVfs,    /* The VFS */
-  const char *zName,    /* Base name of file to mmap */
+  const char *zName,    /* Name of the corresponding database file */
   sqlite3_shm **pShm    /* Write the unixShm object created here */
 ){
   struct unixShm *p = 0;             /* The connection to be opened */
@@ -4967,14 +4967,14 @@ static int unixShmOpen(
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   nName = strlen(zName);
-  pNew = sqlite3_malloc( sizeof(*pFile) + nName + 10 );
+  pNew = sqlite3_malloc( sizeof(*pFile) + nName + 15 );
   if( pNew==0 ){
     sqlite3_free(p);
     return SQLITE_NOMEM;
   }
   memset(pNew, 0, sizeof(*pNew));
   pNew->zFilename = (char*)&pNew[1];
-  sqlite3_snprintf(nName+10, pNew->zFilename, "%s-index", zName);
+  sqlite3_snprintf(nName+10, pNew->zFilename, "%s-wal-index", zName);
 
   /* Look to see if there is an existing unixShmFile that can be used.
   ** If no matching unixShmFile currently exists, create a new one.
@@ -5223,9 +5223,8 @@ static int unixShmRelease(sqlite3_vfs *pVfs, sqlite3_shm *pSharedMem){
   unixShm *p = (unixShm*)pSharedMem;
   UNUSED_PARAMETER(pVfs);
   if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
-    unixShmFile *pFile = p->pFile;
-    assert( sqlite3_mutex_notheld(pFile->mutex) );
-    sqlite3_mutex_leave(pFile->mutexBuf);
+    assert( sqlite3_mutex_notheld(p->pFile->mutex) );
+    sqlite3_mutex_leave(p->pFile->mutexBuf);
     p->hasMutexBuf = 0;
   }
   return SQLITE_OK;
