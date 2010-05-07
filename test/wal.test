@@ -918,8 +918,8 @@ do_test wal-13.2.2 {
   execsql { SELECT count(*) FROM t2 }
 } [expr int(pow(2, 16))]
 do_test wal-13.2.3 {
-  file size test.db-wal
-} [log_file_size 33502 1024]
+  expr [file size test.db-wal] > [log_file_size 33000 1024]
+} 1
 
 foreach code [list {
   set tn 3
