@@ -5198,7 +5198,7 @@ case OP_Checkpoint: {
 };  
 #endif
 
-/* Opcode: JournalMode P1 P2 P3 * *
+/* Opcode: JournalMode P1 P2 P3 * P5
 **
 ** Change the journal mode of database P1 to P3. P3 must be one of the
 ** PAGER_JOURNALMODE_XXX values. If changing between the various rollback
@@ -5208,6 +5208,11 @@ case OP_Checkpoint: {
 ** If changing into or out of WAL mode the procedure is more complicated.
 **
 ** Write a string containing the final journal-mode to register P2.
+**
+** If an attempt to change in to or out of WAL mode fails because another
+** connection also has the same database open, then an SQLITE_BUSY error
+** is raised if P5==0, or of P5!=0 the journal mode changed is skipped
+** without signaling the error.
 */
 case OP_JournalMode: {    /* out2-prerelease */
   Btree *pBt;                     /* Btree to change journal mode of */
@@ -5285,18 +5290,27 @@ case OP_JournalMode: {    /* out2-prerelease */
           ** after a successful return. 
           */
           rc = sqlite3PagerCloseWal(pPager);
-          if( rc!=SQLITE_OK ) goto abort_due_to_error;
-          sqlite3PagerJournalMode(pPager, eNew);
+          if( rc==SQLITE_OK ){
+            sqlite3PagerJournalMode(pPager, eNew);
+          }else if( rc==SQLITE_BUSY && pOp->p5==0 ){
+            goto abort_due_to_error;
+          }
         }else{
           sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_DELETE);
+          rc = SQLITE_OK;
         }
   
         /* Open a transaction on the database file. Regardless of the journal
         ** mode, this transaction always uses a rollback journal.
         */
         assert( sqlite3BtreeIsInTrans(pBt)==0 );
-        rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
-        if( rc!=SQLITE_OK ) goto abort_due_to_error;
+        if( rc==SQLITE_OK ){
+          rc = sqlite3BtreeSetVersion(pBt, 
+                                      (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
+          if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
+        }else if( rc==SQLITE_BUSY ){
+          rc = SQLITE_OK;
+        }
       }
     }
   }

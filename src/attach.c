@@ -348,6 +348,7 @@ static void codeAttach(
       */
       sqlite3VdbeAddOp3(v, OP_JournalMode, db->nDb, regArgs+3, 
                            db->dfltJournalMode);
+      sqlite3VdbeChangeP5(v, 1);
     }
 
     /* Code an OP_Expire. For an ATTACH statement, set P1 to true (expire this
