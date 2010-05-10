@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C If\san\sATTACH\scommand\sfiles\sdue\sto\sOP_JournalMode\sbut\sstill\sattaches\sthe\ndatabase,\smake\ssure\sVACUUM\sstill\sdetaches\sit\swhen\sdone.
-D 2010-05-10T14:10:58
+C Fix\san\suninitialized\svariable\sin\sOSX\sproxy\slocking.
+D 2010-05-10T17:29:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 164d85df39df72fb1e9611cbf723f9287e622d98
+F src/os_unix.c f3a7ea94e5b59b602d6a6981489554dabcd9c88b
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c a47af9c2c9ca425bd68642d61764266331a3323f
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0bdea4cfbd7832f2a00c01b93c92ba13d20139ef
-R 9014c21dcf58ddf23dc85907a38f6c75
+P 6ecdc7ba2b5e79e8b5862fb49cf6c2b99a40659a
+R 296fb986e11cf95b39b6950a58d4fefa
 U drh
-Z d231509bf5d75d0a7182ae588ca4bb8b
+Z 1d3446aa2fde26de146001251a9f61c1
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFL6BP2oxKgR168RlERAignAJQNAle/gWkbKShnq3kcL+DtdcO2AJ9vguYT
-n1LeBzEa/iP6Gu/jqjlBKQ==
-=h4WY
+iD8DBQFL6EJ7oxKgR168RlERAqHaAJ4v/6NURAmQGNkn7dnF83kfUHcQdgCfaHE7
+456WC63S5McoXqylSXNLqvY=
+=Mr4k
 -----END PGP SIGNATURE-----
