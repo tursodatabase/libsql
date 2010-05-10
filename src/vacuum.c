@@ -103,7 +103,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   void (*saved_xTrace)(void*,const char*);  /* Saved db->xTrace */
   Db *pDb = 0;            /* Database to detach at end of vacuum */
   int isMemDb;            /* True if vacuuming a :memory: database */
-  int nRes;
+  int nRes;               /* Bytes of reserved space at the end of each page */
+  int nDb;                /* Number of attached databases */
 
   if( !db->autoCommit ){
     sqlite3SetString(pzErrMsg, db, "cannot VACUUM from within a transaction");
@@ -138,15 +139,18 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** time to parse and run the PRAGMA to turn journalling off than it does
   ** to write the journal header file.
   */
+  nDb = db->nDb;
   if( sqlite3TempInMemory(db) ){
     zSql = "ATTACH ':memory:' AS vacuum_db;";
   }else{
     zSql = "ATTACH '' AS vacuum_db;";
   }
   rc = execSql(db, pzErrMsg, zSql);
+  if( db->nDb>nDb ){
+    pDb = &db->aDb[db->nDb-1];
+    assert( strcmp(pDb->zName,"vacuum_db")==0 );
+  }
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  pDb = &db->aDb[db->nDb-1];
-  assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
   pTemp = db->aDb[db->nDb-1].pBt;
 
   /* The call to execSql() to attach the temp database has left the file
