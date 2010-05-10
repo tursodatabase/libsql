@@ -356,6 +356,16 @@ static void walMergesort8(
 #endif
 }
 
+/*
+** Define the size of the hash tables in the wal-index file. There
+** is a hash-table following every HASHTABLE_NPAGE page numbers in the
+** wal-index.
+*/
+#define HASHTABLE_NPAGE      4096
+#define HASHTABLE_DATATYPE   u16
+
+#define HASHTABLE_NSLOT     (HASHTABLE_NPAGE*2)
+#define HASHTABLE_NBYTE     (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
 
 /*
 ** Return the index in the WalIndex.aData array that corresponds to 
@@ -365,8 +375,8 @@ static void walMergesort8(
 static int walIndexEntry(u32 iFrame){
   return (
       (WALINDEX_LOCK_OFFSET+WALINDEX_LOCK_RESERVED)/sizeof(u32)
-    + (((iFrame-1)>>8)<<6)        /* Indexes that occur before iFrame */
-    + iFrame-1                    /* Db page numbers that occur before iFrame */
+    + (((iFrame-1)/HASHTABLE_NPAGE) * HASHTABLE_NBYTE)/sizeof(u32)
+    + (iFrame-1)
   );
 }
 
@@ -377,9 +387,10 @@ static int walIndexEntry(u32 iFrame){
 ** required by the 256-byte index block.
 */
 static int walMappingSize(u32 iFrame){
-  return ( WALINDEX_LOCK_OFFSET + WALINDEX_LOCK_RESERVED 
-         + iFrame*sizeof(u32)
-         + (iFrame>>8)*256
+  const int nByte = (sizeof(u32)*HASHTABLE_NPAGE + HASHTABLE_NBYTE) ;
+  return ( WALINDEX_LOCK_OFFSET 
+         + WALINDEX_LOCK_RESERVED 
+         + nByte * ((iFrame + HASHTABLE_NPAGE - 1)/HASHTABLE_NPAGE)
   );
 }
 
@@ -441,6 +452,56 @@ static int walIndexRemap(Wal *pWal, int enlargeTo){
 */
 #define WALINDEX_MMAP_INCREMENT (64*1024)
 
+static int walHashKey(u32 iPage){
+  return (iPage*2) % (HASHTABLE_NSLOT-1);
+}
+
+
+/* 
+** Find the hash table and (section of the) page number array used to
+** store data for WAL frame iFrame.
+**
+** Set output variable *paHash to point to the start of the hash table
+** in the wal-index file. Set *piZero to one less than the frame 
+** number of the first frame indexed by this hash table. If a
+** slot in the hash table is set to N, it refers to frame number 
+** (*piZero+N) in the log.
+**
+** Finally, set *paPgno such that for all frames F between (*piZero+1) and 
+** (*piZero+HASHTABLE_NPAGE), (*paPgno)[F] is the database page number 
+** associated with frame F.
+*/
+static void walHashFind(
+  Wal *pWal,                      /* WAL handle */
+  u32 iFrame,                     /* Find the hash table indexing this frame */
+  HASHTABLE_DATATYPE **paHash,    /* OUT: Pointer to hash index */
+  u32 **paPgno,                   /* OUT: Pointer to page number array */
+  u32 *piZero                     /* OUT: Frame associated with *paPgno[0] */
+){
+  u32 iZero;
+  u32 *aPgno;
+  HASHTABLE_DATATYPE *aHash;
+
+  iZero = ((iFrame-1)/HASHTABLE_NPAGE) * HASHTABLE_NPAGE;
+  aPgno = &pWal->pWiData[walIndexEntry(iZero+1)-iZero-1];
+  aHash = (HASHTABLE_DATATYPE *)&aPgno[iZero+HASHTABLE_NPAGE+1];
+
+  /* Assert that:
+  **
+  **   + the mapping is large enough for this hash-table, and
+  **
+  **   + that aPgno[iZero+1] really is the database page number associated
+  **     with the first frame indexed by this hash table.
+  */
+  assert( (u32*)(&aHash[HASHTABLE_NSLOT])<=&pWal->pWiData[pWal->szWIndex/4] );
+  assert( walIndexEntry(iZero+1)==(&aPgno[iZero+1] - pWal->pWiData) );
+
+  *paHash = aHash;
+  *paPgno = aPgno;
+  *piZero = iZero;
+}
+
+
 /*
 ** Set an entry in the wal-index map to map log frame iFrame to db 
 ** page iPage. Values are always appended to the wal-index (i.e. the
@@ -449,47 +510,38 @@ static int walIndexRemap(Wal *pWal, int enlargeTo){
 ** here.
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
-  int rc;
-  u32 iSlot = walIndexEntry(iFrame);
+  int rc;                         /* Return code */
+  int nMapping;                   /* Required mapping size in bytes */
   
+  /* Make sure the wal-index is mapped. Enlarge the mapping if required. */
+  nMapping = walMappingSize(iFrame);
   rc = walIndexMap(pWal, -1);
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
-  while( ((iSlot+128)*sizeof(u32))>=pWal->szWIndex ){
+  while( rc==SQLITE_OK && nMapping>pWal->szWIndex ){
     int nByte = pWal->szWIndex + WALINDEX_MMAP_INCREMENT;
-
-    /* Enlarge the storage, then remap it. */
     rc = walIndexRemap(pWal, nByte);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
   }
 
-  /* Set the wal-index entry itself */
-  pWal->pWiData[iSlot] = iPage;
-
-  /* If the frame number is a multiple of 256 (frames are numbered starting
-  ** at 1), build an index of the most recently added 256 frames.
+  /* Assuming the wal-index file was successfully mapped, find the hash 
+  ** table and section of of the page number array that pertain to frame 
+  ** iFrame of the WAL. Then populate the page number array and the hash 
+  ** table entry.
   */
-  if( (iFrame&0x000000FF)==0 ){
-    int i;                        /* Iterator used while initializing aIndex */
-    u32 *aFrame;                  /* Pointer to array of 256 frames */
-    int nIndex;                   /* Number of entries in index */
-    u8 *aIndex;                   /* 256 bytes to build index in */
-    u8 *aTmp;                     /* Scratch space to use while sorting */
+  if( rc==SQLITE_OK ){
+    int iKey;                     /* Hash table key */
+    u32 iZero;                    /* One less than frame number of aPgno[1] */
+    u32 *aPgno;                   /* Page number array */
+    HASHTABLE_DATATYPE *aHash;    /* Hash table */
+    int idx;                      /* Value to write to hash-table slot */
 
-    aFrame = &pWal->pWiData[iSlot-255];
-    aIndex = (u8 *)&pWal->pWiData[iSlot+1];
-    aTmp = &aIndex[256];
-
-    nIndex = 256;
-    for(i=0; i<256; i++) aIndex[i] = (u8)i;
-    walMergesort8(aFrame, aTmp, aIndex, &nIndex);
-    memset(&aIndex[nIndex], aIndex[nIndex-1], 256-nIndex);
+    walHashFind(pWal, iFrame, &aHash, &aPgno, &iZero);
+    idx = iFrame - iZero;
+    if( idx==1 ) memset(aHash, 0, HASHTABLE_NBYTE);
+    aPgno[iFrame] = iPage;
+    for(iKey=walHashKey(iPage); aHash[iKey]; iKey=(iKey+1)%HASHTABLE_NSLOT);
+    aHash[iKey] = idx;
   }
 
-  return SQLITE_OK;
+  return rc;
 }
 
 
@@ -684,7 +736,6 @@ static int walIteratorNext(
       }
       pSegment->iNext++;
     }
-
     nBlock = 256;
   }
 
@@ -700,7 +751,6 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   int nByte;                      /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   int nFinal;                     /* Number of unindexed entries */
-  struct WalSegment *pFinal;      /* Final (unindexed) segment */
   u8 *aTmp;                       /* Temp space used by merge-sort */
   int rc;                         /* Return code of walIndexMap() */
 
@@ -713,28 +763,30 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nSegment = (iLast >> 8) + 1;
   nFinal = (iLast & 0x000000FF);
 
-  nByte = sizeof(WalIterator) + (nSegment-1)*sizeof(struct WalSegment) + 512;
+  nByte = sizeof(WalIterator) + (nSegment+1)*(sizeof(struct WalSegment)+256);
   p = (WalIterator *)sqlite3_malloc(nByte);
   if( !p ){
     rc = SQLITE_NOMEM;
   }else{
+    u8 *aSpace;
     memset(p, 0, nByte);
     p->nSegment = nSegment;
 
-    for(i=0; i<nSegment-1; i++){
+    aSpace = (u8 *)&p->aSegment[nSegment];
+    aTmp = &aSpace[nSegment*256];
+    for(i=0; i<nSegment; i++){
+      int j;
+      int nIndex = (i==nSegment-1) ? nFinal : 256;
       p->aSegment[i].aDbPage = &aData[walIndexEntry(i*256+1)];
-      p->aSegment[i].aIndex = (u8 *)&aData[walIndexEntry(i*256+1)+256];
+      p->aSegment[i].aIndex = aSpace;
+      for(j=0; j<nIndex; j++){
+        aSpace[j] = j;
+      }
+      walMergesort8(p->aSegment[i].aDbPage, aTmp, aSpace, &nIndex);
+      memset(&aSpace[nIndex], aSpace[nIndex-1], 256-nIndex);
+      aSpace += 256;
+      p->nFinal = nIndex;
     }
-    pFinal = &p->aSegment[nSegment-1];
-  
-    pFinal->aDbPage = &aData[walIndexEntry((nSegment-1)*256+1)];
-    pFinal->aIndex = (u8 *)&pFinal[1];
-    aTmp = &pFinal->aIndex[256];
-    for(i=0; i<nFinal; i++){
-      pFinal->aIndex[i] = i;
-    }
-    walMergesort8(pFinal->aDbPage, aTmp, pFinal->aIndex, &nFinal);
-    p->nFinal = nFinal;
   }
 
   *pp = p;
@@ -1020,70 +1072,118 @@ void sqlite3WalCloseSnapshot(Wal *pWal){
 ** Read a page from the log, if it is present. 
 */
 int sqlite3WalRead(
-  Wal *pWal, 
-  Pgno pgno, 
-  int *pInWal, 
-  int nOut,
-  u8 *pOut
+  Wal *pWal,                      /* WAL handle */
+  Pgno pgno,                      /* Database page number to read data for */
+  int *pInWal,                    /* OUT: True if data is read from WAL */
+  int nOut,                       /* Size of buffer pOut in bytes */
+  u8 *pOut                        /* Buffer to write page data to */
 ){
   int rc;                         /* Return code */
-  u32 iRead = 0;
-  u32 *aData; 
-  int iFrame = (pWal->hdr.iLastPg & 0xFFFFFF00);
+  u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
+  u32 iLast = pWal->hdr.iLastPg;  /* Last page in WAL for this reader */
+  int iHash;                      /* Used to loop through N hash tables */
 
+  /* If the "last page" field of the wal-index header snapshot is 0, then
+  ** no data will be read from the wal under any circumstances. Return early
+  ** in this case to avoid the walIndexMap/Unmap overhead.
+  */
+  if( iLast==0 ){
+    *pInWal = 0;
+    return SQLITE_OK;
+  }
+
+  /* Ensure the wal-index is mapped. */
   assert( pWal->lockState==SQLITE_SHM_READ||pWal->lockState==SQLITE_SHM_WRITE );
-  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.iLastPg));
+  rc = walIndexMap(pWal, walMappingSize(iLast));
   if( rc!=SQLITE_OK ){
     return rc;
   }
 
-  /* Do a linear search of the unindexed block of page-numbers (if any) 
-  ** at the end of the wal-index. An alternative to this would be to
-  ** build an index in private memory each time a read transaction is
-  ** opened on a new snapshot.
+  /* Search the hash table or tables for an entry matching page number
+  ** pgno. Each iteration of the following for() loop searches one
+  ** hash table (each hash table indexes up to HASHTABLE_NPAGE frames).
+  **
+  ** This code may run concurrently to the code in walIndexAppend()
+  ** that adds entries to the wal-index (and possibly to this hash 
+  ** table). This means the non-zero value just read from the hash 
+  ** slot (aHash[iKey]) may have been added before or after the 
+  ** current read transaction was opened. Values added after the
+  ** read transaction was opened may have been written incorrectly -
+  ** i.e. these slots may contain garbage data. However, we assume
+  ** that any slots written before the current read transaction was
+  ** opened remain unmodified.
+  **
+  ** For the reasons above, the if(...) condition featured in the inner
+  ** loop of the following block is more stringent that would be required 
+  ** if we had exclusive access to the hash-table:
+  **
+  **   (aPgno[iFrame]==pgno): 
+  **     This condition filters out normal hash-table collisions.
+  **
+  **   (iFrame<=iLast): 
+  **     This condition filters out entries that were added to the hash
+  **     table after the current read-transaction had started.
+  **
+  **   (iFrame>iRead): 
+  **     This filters out a dangerous class of garbage data. The 
+  **     garbage hash slot may refer to a frame with the correct page 
+  **     number, but not the most recent version of the frame. For
+  **     example, if at the start of the read-transaction the log 
+  **     contains three copies of the desired page in frames 2, 3 and 4,
+  **     the hash table may contain the following:
+  **
+  **       { ..., 2, 3, 4, 0, 0, ..... }
+  **
+  **     The correct answer is to read data from frame 4. But a 
+  **     dirty-read may potentially cause the hash-table to appear as 
+  **     follows to the reader:
+  **
+  **       { ..., 2, 3, 4, 3, 0, ..... }
+  **
+  **     Without this part of the if(...) clause, the reader might
+  **     incorrectly read data from frame 3 instead of 4. This would be
+  **     an error.
+  **
+  ** It is not actually clear to the developers that such a dirty-read
+  ** can occur. But if it does, it should not cause any problems.
   */
-  aData = pWal->pWiData;
-  if( pWal->hdr.iLastPg ){
-    u32 *pi = &aData[walIndexEntry(pWal->hdr.iLastPg)];
-    u32 *piStop = pi - (pWal->hdr.iLastPg & 0xFF);
-    while( *pi!=pgno && pi!=piStop ) pi--;
-    if( pi!=piStop ){
-      iRead = (pi-piStop) + iFrame;
+  for(iHash=iLast; iHash>0 && iRead==0; iHash-=HASHTABLE_NPAGE){
+    HASHTABLE_DATATYPE *aHash;    /* Pointer to hash table */
+    u32 *aPgno;                   /* Pointer to array of page numbers */
+    u32 iZero;                    /* Frame number corresponding to aPgno[0] */
+    int iKey;                     /* Hash slot index */
+
+    walHashFind(pWal, iHash, &aHash, &aPgno, &iZero);
+    for(iKey=walHashKey(pgno); aHash[iKey]; iKey=(iKey+1)%HASHTABLE_NSLOT){
+      u32 iFrame = aHash[iKey] + iZero;
+      if( iFrame<=iLast && aPgno[iFrame]==pgno && iFrame>iRead ){
+        iRead = iFrame;
+      }
     }
   }
-  assert( iRead==0 || aData[walIndexEntry(iRead)]==pgno );
+  assert( iRead==0 || pWal->pWiData[walIndexEntry(iRead)]==pgno );
 
-  while( iRead==0 && iFrame>0 ){
-    int iLow = 0;
-    int iHigh = 255;
-    u32 *aFrame;
-    u8 *aIndex;
-
-    iFrame -= 256;
-    aFrame = &aData[walIndexEntry(iFrame+1)];
-    aIndex = (u8 *)&aFrame[256];
-
-    while( iLow<=iHigh ){
-      int iTest = (iLow+iHigh)>>1;
-      u32 iPg = aFrame[aIndex[iTest]];
-
-      if( iPg==pgno ){
-        iRead = iFrame + 1 + aIndex[iTest];
+#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
+  /* If expensive assert() statements are available, do a linear search
+  ** of the wal-index file content. Make sure the results agree with the
+  ** result obtained using the hash indexes above.  */
+  {
+    u32 iRead2 = 0;
+    u32 iTest;
+    for(iTest=iLast; iTest>0; iTest--){
+      if( pWal->pWiData[walIndexEntry(iTest)]==pgno ){
+        iRead2 = iTest;
         break;
       }
-      else if( iPg<pgno ){
-        iLow = iTest+1;
-      }else{
-        iHigh = iTest-1;
-      }
     }
+    assert( iRead==iRead2 );
   }
-  assert( iRead==0 || aData[walIndexEntry(iRead)]==pgno );
-  walIndexUnmap(pWal);
+#endif
 
   /* If iRead is non-zero, then it is the log frame number that contains the
   ** required page. Read and return data from the log file.
   */
+  walIndexUnmap(pWal);
   if( iRead ){
     i64 iOffset = walFrameOffset(iRead, pWal->hdr.pgsz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
