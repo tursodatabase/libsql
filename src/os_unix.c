@@ -4974,7 +4974,7 @@ static int unixShmOpen(
   }
   memset(pNew, 0, sizeof(*pNew));
   pNew->zFilename = (char*)&pNew[1];
-  sqlite3_snprintf(nName+11, pNew->zFilename, "%s-wal-index", zName);
+  sqlite3_snprintf(nName+12, pNew->zFilename, "%s-wal-index", zName);
 
   /* Look to see if there is an existing unixShmFile that can be used.
   ** If no matching unixShmFile currently exists, create a new one.

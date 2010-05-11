@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C When\san\sattempt\sto\schange\sjournal_mode\sfails\sdue\sto\slocks,\sbe\ssure\sto\nleave\sinternal\sstructures\sin\sa\sconsistent\sstate.
-D 2010-05-11T14:00:40
+C Have\sos_unix.c\suse\sthe\ssuffix\s"-wal-index"\sfor\swal-index\sfiles\sinstead\sof\s"-wal-inde".
+D 2010-05-11T16:29:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +152,7 @@ F src/os.c aec6922553585a25d5655666defc125a7e217674
 F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c 34fe71c67fce72360411d60fe069c7f0dc612dd0
+F src/os_unix.c c306feb1be41283afc47f1da74363d2bde466aae
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c ad9cb3bea70d8b159de1a9b235c94c7abc340956
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
@@ -816,14 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 71e7b1cf9f4cd02a2a9bc8a3e58acd7a7e3c7e60
-R 4e56ae5b5c6dc9c4578307cf9cabc049
-U drh
-Z 39ad9b92bbe3fbf79e993721511a7177
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL6WMLoxKgR168RlERAh9dAKCDHsolel28a05r827rBwgvPK+FmgCgiJ5+
-ogu8kwxgozZv5wVoe6BYdeU=
-=+wv8
------END PGP SIGNATURE-----
+P cf3d1e0b8a739302cf2848ac3e6eaaae04e6a44c
+R 9e8678dd913fdf27b972a0d8a71d71aa
+U dan
+Z 7c26350aa029a41cf2e5094ee69988d0
