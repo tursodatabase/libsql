@@ -1285,8 +1285,9 @@ proc logcksum {ckv1 ckv2 blob} {
   upvar $ckv1 c1
   upvar $ckv2 c2
 
-  binary scan $blob iu* values
+  binary scan $blob i* values
   foreach v $values {
+    set v [expr {$v & 0xFFFFFFFF}]
     incr c1 $v
     incr c2 $c1
   }
@@ -1427,6 +1428,7 @@ do_test wal-19.4 {
 # file in step 3 and the checkpoint was corrupting the database file.
 #
 do_test wal-20.1 {
+  catch {db close}
   file delete -force test.db test.db-wal test.db-journal
   sqlite3 db test.db
   execsql {

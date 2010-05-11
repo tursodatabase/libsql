@@ -43,9 +43,17 @@ do_test walmode-1.1 {
 do_test walmode-1.2 {
   file size test.db
 } {1024}
+
+set expected_sync_count 3
+if {$::tcl_platform(platform)!="windows"} {
+  ifcapable dirsync {
+    incr expected_sync_count
+  }
+}
 do_test walmode-1.3 {
   set sqlite_sync_count
-} {4}
+} $expected_sync_count
+
 do_test walmode-1.4 {
   file exists test.db-wal
 } {0}

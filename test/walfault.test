@@ -61,6 +61,7 @@ do_ioerr_test walfault-ioerr-1 -sqlprep {
   DELETE FROM abc;
   PRAGMA wal_checkpoint;
 }
+catch {db close}
 
 # A [testvfs] callback for the VFS created by [do_shmfault_test]. This
 # callback injects SQLITE_IOERR faults into methods for which an entry
