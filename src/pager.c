@@ -1404,8 +1404,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       }
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
-    }else if( pPager->exclusiveMode 
-     || pPager->journalMode==PAGER_JOURNALMODE_PERSIST
+    }else if( pPager->journalMode==PAGER_JOURNALMODE_PERSIST
+      || (pPager->exclusiveMode && pPager->journalMode!=PAGER_JOURNALMODE_WAL)
     ){
       rc = zeroJournalHdr(pPager, hasMaster);
       pager_error(pPager, rc);
@@ -1439,6 +1439,17 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   if( pagerUseWal(pPager) ){
     rc2 = sqlite3WalWriteLock(pPager->pWal, 0);
     pPager->state = PAGER_SHARED;
+
+    /* If the connection was in locking_mode=exclusive mode but is no longer,
+    ** drop the EXCLUSIVE lock held on the database file.
+    */
+    if( rc2==SQLITE_OK 
+     && !pPager->exclusiveMode 
+     && sqlite3WalExclusiveMode(pPager->pWal, -1) 
+    ){
+      sqlite3WalExclusiveMode(pPager->pWal, 0);
+      rc2 = osUnlock(pPager->fd, SHARED_LOCK);
+    }
   }else if( !pPager->exclusiveMode ){
     rc2 = osUnlock(pPager->fd, SHARED_LOCK);
     pPager->state = PAGER_SHARED;
@@ -4509,15 +4520,34 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
   assert( pPager->state!=PAGER_UNLOCK );
   pPager->subjInMemory = (u8)subjInMemory;
+
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->pInJournal==0 );
     assert( !MEMDB && !pPager->tempFile );
 
     if( pagerUseWal(pPager) ){
+      /* If the pager is configured to use locking_mode=exclusive, and an
+      ** exclusive lock on the database is not already held, obtain it now.
+      */
+      if( pPager->exclusiveMode && !sqlite3WalExclusiveMode(pPager->pWal, -1) ){
+        rc = sqlite3OsLock(pPager->fd, EXCLUSIVE_LOCK);
+        pPager->state = PAGER_SHARED;
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        sqlite3WalExclusiveMode(pPager->pWal, 1);
+      }
+
       /* Grab the write lock on the log file. If successful, upgrade to
-      ** PAGER_EXCLUSIVE state. Otherwise, return an error code to the caller.
+      ** PAGER_RESERVED state. Otherwise, return an error code to the caller.
       ** The busy-handler is not invoked if another connection already
       ** holds the write-lock. If possible, the upper layer will call it.
+      **
+      ** WAL mode sets Pager.state to PAGER_RESERVED when it has an open
+      ** transaction, but never to PAGER_EXCLUSIVE. This is because in 
+      ** PAGER_EXCLUSIVE state the code to roll back savepoint transactions
+      ** may copy data from the sub-journal into the database file as well
+      ** as into the page cache. Which would be incorrect in WAL mode.
       */
       rc = sqlite3WalWriteLock(pPager->pWal, 1);
       if( rc==SQLITE_OK ){
@@ -4525,6 +4555,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         pPager->state = PAGER_RESERVED;
         pPager->journalOff = 0;
       }
+
+      assert( rc!=SQLITE_OK || pPager->state==PAGER_RESERVED );
+      assert( rc==SQLITE_OK || pPager->state==PAGER_SHARED );
     }else{
       /* Obtain a RESERVED lock on the database file. If the exFlag parameter
       ** is true, then immediately upgrade this to an EXCLUSIVE lock. The

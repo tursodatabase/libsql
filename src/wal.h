@@ -96,5 +96,10 @@ int sqlite3WalCheckpoint(
 */
 int sqlite3WalCallback(Wal *pWal);
 
+/* Tell the wal layer that an EXCLUSIVE lock has been obtained (or released)
+** by the pager layer on the database file.
+*/
+int sqlite3WalExclusiveMode(Wal *pWal, int op);
+
 #endif /* ifndef SQLITE_OMIT_WAL */
 #endif /* _WAL_H_ */

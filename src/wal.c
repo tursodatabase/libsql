@@ -132,6 +132,7 @@ struct Wal {
   u32 *pWiData;              /* Pointer to wal-index content in memory */
   u8 lockState;              /* SQLITE_SHM_xxxx constant showing lock state */
   u8 readerType;             /* SQLITE_SHM_READ or SQLITE_SHM_READ_FULL */
+  u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
   WalIndexHdr hdr;           /* Wal-index for current snapshot */
   char *zName;               /* Name of underlying storage */
 };
@@ -217,14 +218,17 @@ static void walChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
 ** in pWal->readerType.
 */
 static int walSetLock(Wal *pWal, int desiredStatus){
-  int rc, got;
-  if( pWal->lockState==desiredStatus ) return SQLITE_OK;
-  got = pWal->lockState;
-  rc = pWal->pVfs->xShmLock(pWal->pVfs, pWal->pWIndex, desiredStatus, &got);
-  pWal->lockState = got;
-  if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
-    pWal->readerType = got;
-    pWal->lockState = SQLITE_SHM_READ;
+  int rc = SQLITE_OK;             /* Return code */
+  if( pWal->exclusiveMode || pWal->lockState==desiredStatus ){
+    pWal->lockState = desiredStatus;
+  }else{
+    int got = pWal->lockState;
+    rc = pWal->pVfs->xShmLock(pWal->pVfs, pWal->pWIndex, desiredStatus, &got);
+    pWal->lockState = got;
+    if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
+      pWal->readerType = got;
+      pWal->lockState = SQLITE_SHM_READ;
+    }
   }
   return rc;
 }
@@ -1231,7 +1235,7 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
         walSetLock(pWal, SQLITE_SHM_READ);
       }
     }
-  }else if( ALWAYS( pWal->lockState==SQLITE_SHM_WRITE ) ){
+  }else if( pWal->lockState==SQLITE_SHM_WRITE ){
     rc = walSetLock(pWal, SQLITE_SHM_READ);
   }
   return rc;
@@ -1250,18 +1254,20 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 ** function returns SQLITE_OK.
 */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
-  int unused;
-  int rc;
-  Pgno iMax = pWal->hdr.iLastPg;
-  Pgno iFrame;
-
-  assert( pWal->pWiData==0 );
-  rc = walIndexReadHdr(pWal, &unused);
-  for(iFrame=pWal->hdr.iLastPg+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
-    assert( pWal->lockState==SQLITE_SHM_WRITE );
-    rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
+  int rc = SQLITE_OK;
+  if( pWal->lockState==SQLITE_SHM_WRITE ){
+    int unused;
+    Pgno iMax = pWal->hdr.iLastPg;
+    Pgno iFrame;
+  
+    assert( pWal->pWiData==0 );
+    rc = walIndexReadHdr(pWal, &unused);
+    for(iFrame=pWal->hdr.iLastPg+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
+      assert( pWal->lockState==SQLITE_SHM_WRITE );
+      rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
+    }
+    walIndexUnmap(pWal);
   }
-  walIndexUnmap(pWal);
   return rc;
 }
 
@@ -1500,4 +1506,35 @@ int sqlite3WalCallback(Wal *pWal){
   }
   return (int)ret;
 }
+
+/*
+** This function is called to set or query the exclusive-mode flag 
+** associated with the WAL connection passed as the first argument. The
+** exclusive-mode flag should be set to indicate that the caller is
+** holding an EXCLUSIVE lock on the database file (it does this in
+** locking_mode=exclusive mode). If the EXCLUSIVE lock is to be dropped,
+** the flag set by this function should be cleared before doing so.
+**
+** The value of the exclusive-mode flag may only be modified when
+** the WAL connection is in READ state.
+**
+** When the flag is set, this module does not call the VFS xShmLock()
+** method to obtain any locks on the wal-index (as it assumes it
+** has exclusive access to the wal and wal-index files anyhow). It
+** continues to hold (and does not drop) the existing READ lock on
+** the wal-index.
+**
+** To set or clear the flag, the "op" parameter is passed 1 or 0,
+** respectively. To query the flag, pass -1. In all cases, the value
+** returned is the value of the exclusive-mode flag (after its value
+** has been modified, if applicable).
+*/
+int sqlite3WalExclusiveMode(Wal *pWal, int op){
+  if( op>=0 ){
+    assert( pWal->lockState==SQLITE_SHM_READ );
+    pWal->exclusiveMode = (u8)op;
+  }
+  return pWal->exclusiveMode;
+}
+
 #endif /* #ifndef SQLITE_OMIT_WAL */
