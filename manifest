@@ -1,5 +1,8 @@
-C Changes\sso\sthat\sWAL\sand\sexclusive-locking\smode\swork\stogether.
-D 2010-05-11T12:19:27
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C When\san\sattempt\sto\schange\sjournal_mode\sfails\sdue\sto\slocks,\sbe\ssure\sto\nleave\sinternal\sstructures\sin\sa\sconsistent\sstate.
+D 2010-05-11T14:00:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +157,7 @@ F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
 F src/os_unix.c 34fe71c67fce72360411d60fe069c7f0dc612dd0
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
-F src/pager.c 871ccb53e901dabf92b9b2806f0fbe4a2c039d99
+F src/pager.c ad9cb3bea70d8b159de1a9b235c94c7abc340956
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -215,7 +218,7 @@ F src/update.c c0dc6b75ad28b76b619042d934f337b02acee208
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b17355fc10cef0875626932ec2f1fa1deb0daa48
-F src/vdbe.c 066dab3af747cb56a8277b26695f88b17b189b3d
+F src/vdbe.c 27edb0becb155e8484628419e29df33af496150a
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -813,7 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a5630806c87b0f4e5632c37c357f98effd9608a
-R ed8f197401fc52de24ef292a838d5248
-U dan
-Z ca9adf09cbf258f90f9e808c81428995
+P 71e7b1cf9f4cd02a2a9bc8a3e58acd7a7e3c7e60
+R 4e56ae5b5c6dc9c4578307cf9cabc049
+U drh
+Z 39ad9b92bbe3fbf79e993721511a7177
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL6WMLoxKgR168RlERAh9dAKCDHsolel28a05r827rBwgvPK+FmgCgiJ5+
+ogu8kwxgozZv5wVoe6BYdeU=
+=+wv8
+-----END PGP SIGNATURE-----

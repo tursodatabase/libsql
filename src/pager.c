@@ -5959,6 +5959,10 @@ int sqlite3PagerCloseWal(Pager *pPager){
         pPager->pageSize, (u8*)pPager->pTmpSpace
       );
       pPager->pWal = 0;
+    }else{
+      /* If we cannot get an EXCLUSIVE lock, downgrade the PENDING lock
+      ** that we did get back to SHARED. */
+      sqlite3OsUnlock(pPager->fd, SQLITE_LOCK_SHARED);
     }
   }
   return rc;
