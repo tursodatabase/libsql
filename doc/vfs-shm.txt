@@ -78,14 +78,24 @@ during testing using an instrumented lock manager.
 
 (5)  No part of the wal-index will be read without holding either some
      kind of SHM lock or an EXCLUSIVE lock on the original database.
+     The original database is the file named in the 2nd parameter to
+     the xShmOpen method.
+
 (6)  A holder of a READ_FULL will never read any page of the database
      file that is contained anywhere in the wal-index.
+
 (7)  No part of the wal-index other than the header will be written nor
-     will the size of the wal-index grow without holding a WRITE.
+     will the size of the wal-index grow without holding a WRITE or
+     an EXCLUSIVE on the original database file.
+
 (8)  The wal-index header will not be written without holding one of
-     WRITE, CHECKPOINT, or RECOVER.
-(9)  A CHECKPOINT or RECOVER must be held in order to reset the last valid
-     frame counter in the header of the wal-index back to zero.
+     WRITE, CHECKPOINT, or RECOVER on the wal-index or an EXCLUSIVE on
+     the original database files.
+
+(9)  A CHECKPOINT or RECOVER must be held on the wal-index, or an
+     EXCLUSIVE on the original database file, in order to reset the 
+     last valid frame counter in the header of the wal-index back to zero.
+
 (10) A WRITE can only increase the last valid frame pointer in the header.
 
 The SQLite core will only ever send requests for UNLOCK, READ, WRITE,

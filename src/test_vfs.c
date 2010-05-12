@@ -16,15 +16,20 @@
 #include "sqlite3.h"
 #include "sqliteInt.h"
 
-typedef struct tvfs_file tvfs_file;
-struct tvfs_file {
-  sqlite3_file base;
-  sqlite3_file *pReal;
-};
+#if 0  /* FIX THIS LATER */
 
 typedef struct Testvfs Testvfs;
 typedef struct TestvfsShm TestvfsShm;
 typedef struct TestvfsBuffer TestvfsBuffer;
+typedef struct tvfs_file tvfs_file;
+struct tvfs_file {
+  sqlite3_file base;        /* Base class.  Must be first */
+  sqlite3_vfs *pVfs;        /* the VFS */
+  TestvfsShm *pShm;         /* Shared memory segment */
+  const char *zFilename;    /* Filename */
+  sqlite3_file *pReal;      /* The real, underlying file descriptor */
+};
+
 
 /*
 ** An instance of this structure is allocated for each VFS created. The
@@ -97,15 +102,15 @@ static int tvfsRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int tvfsSleep(sqlite3_vfs*, int microseconds);
 static int tvfsCurrentTime(sqlite3_vfs*, double*);
 
-static int tvfsShmOpen(sqlite3_vfs *, const char *, sqlite3_shm **);
-static int tvfsShmSize(sqlite3_vfs*, sqlite3_shm *, int , int *);
-static int tvfsShmGet(sqlite3_vfs*, sqlite3_shm *, int , int *, void **);
-static int tvfsShmRelease(sqlite3_vfs*, sqlite3_shm *);
-static int tvfsShmLock(sqlite3_vfs*, sqlite3_shm *, int , int *);
-static int tvfsShmClose(sqlite3_vfs*, sqlite3_shm *, int);
+static int tvfsShmOpen(sqlite3_file*);
+static int tvfsShmSize(sqlite3_file*, int , int *);
+static int tvfsShmGet(sqlite3_file*, int , int *, void **);
+static int tvfsShmRelease(sqlite3_file*);
+static int tvfsShmLock(sqlite3_file*, int , int *);
+static int tvfsShmClose(sqlite3_file*, int);
 
 static sqlite3_io_methods tvfs_io_methods = {
-  1,                            /* iVersion */
+  2,                            /* iVersion */
   tvfsClose,                      /* xClose */
   tvfsRead,                       /* xRead */
   tvfsWrite,                      /* xWrite */
@@ -117,7 +122,13 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsCheckReservedLock,          /* xCheckReservedLock */
   tvfsFileControl,                /* xFileControl */
   tvfsSectorSize,                 /* xSectorSize */
-  tvfsDeviceCharacteristics       /* xDeviceCharacteristics */
+  tvfsDeviceCharacteristics,      /* xDeviceCharacteristics */
+  tvfsShmOpen,                    /* xShmOpen */
+  tvfsShmSize,                    /* xShmSize */
+  tvfsShmGet,                     /* xShmGet */
+  tvfsShmRelease,                 /* xShmRelease */
+  tvfsShmLock,                    /* xShmLock */
+  tvfsShmClose                    /* xShmClose */
 };
 
 /*
@@ -238,6 +249,9 @@ static int tvfsOpen(
 ){
   int rc;
   tvfs_file *p = (tvfs_file *)pFile;
+  p->pShm = 0;
+  p->zFilename = zName;
+  p->pVfs = pVfs;
   p->pReal = (sqlite3_file *)&p[1];
   rc = sqlite3OsOpen(PARENTVFS(pVfs), zName, p->pReal, flags, pOutFlags);
   if( p->pReal->pMethods ){
@@ -405,15 +419,16 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
 }
 
 static int tvfsShmOpen(
-  sqlite3_vfs *pVfs, 
-  const char *zName, 
-  sqlite3_shm **pp
+  sqlite3_file *pFileDes
 ){
   Testvfs *p = (Testvfs *)(pVfs->pAppData);
   int rc = SQLITE_OK;             /* Return code */
   Tcl_Obj *pId = 0;               /* Id for this connection */
   TestvfsBuffer *pBuffer;         /* Buffer to open connection to */
   TestvfsShm *pShm;               /* New shm handle */
+  tvfs_file *pFd;                 /* The file descriptor */
+
+  pFd = (tvfs_file*)pFileDes;
 
   /* Evaluate the Tcl script: 
   **
@@ -424,7 +439,7 @@ static int tvfsShmOpen(
   ** connection is named "anon". Otherwise, the value returned by the
   ** script is used as the connection name.
   */
-  tvfsExecTcl(p, "xShmOpen", Tcl_NewStringObj(zName, -1), 0, 0);
+  tvfsExecTcl(p, "xShmOpen", Tcl_NewStringObj(pFd->zFilename, -1), 0, 0);
   if( tvfsResultCode(p, &rc) ){
     if( rc!=SQLITE_OK ) return rc;
     pId = Tcl_NewStringObj("anon", -1);
@@ -714,12 +729,6 @@ static int testvfs_cmd(
     tvfsSleep,                    /* xSleep */
     tvfsCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
-    tvfsShmOpen,
-    tvfsShmSize,
-    tvfsShmGet,
-    tvfsShmRelease,
-    tvfsShmLock,
-    tvfsShmClose,
     0,
     0,
   };
@@ -788,9 +797,10 @@ static int testvfs_cmd(
   Tcl_WrongNumArgs(interp, 1, objv, "?-noshm? VFSNAME SCRIPT");
   return TCL_ERROR;
 }
+#endif /* 0 */
 
 int Sqlitetestvfs_Init(Tcl_Interp *interp){
-  Tcl_CreateObjCommand(interp, "testvfs", testvfs_cmd, 0, 0);
+  /* Tcl_CreateObjCommand(interp, "testvfs", testvfs_cmd, 0, 0); */
   return TCL_OK;
 }
 

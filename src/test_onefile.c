@@ -199,11 +199,6 @@ static fs_vfs_t fs_vfs = {
     fsRandomness,                               /* xRandomness */
     fsSleep,                                    /* xSleep */
     fsCurrentTime,                              /* xCurrentTime */
-    0,                                          /* xShmOpen */
-    0,                                          /* xShmSize */
-    0,                                          /* xShmLock */
-    0,                                          /* xShmClose */
-    0,                                          /* xShmDelete */
     0,                                          /* xRename */
     0                                           /* xCurrentTimeInt64 */
   }, 
@@ -224,7 +219,12 @@ static sqlite3_io_methods fs_io_methods = {
   fsCheckReservedLock,          /* xCheckReservedLock */
   fsFileControl,                /* xFileControl */
   fsSectorSize,                 /* xSectorSize */
-  fsDeviceCharacteristics       /* xDeviceCharacteristics */
+  fsDeviceCharacteristics,      /* xDeviceCharacteristics */
+  0,                            /* xShmOpen */
+  0,                            /* xShmSize */
+  0,                            /* xShmLock */
+  0,                            /* xShmClose */
+  0,                            /* xShmDelete */
 };
 
 
@@ -241,7 +241,12 @@ static sqlite3_io_methods tmp_io_methods = {
   tmpCheckReservedLock,         /* xCheckReservedLock */
   tmpFileControl,               /* xFileControl */
   tmpSectorSize,                /* xSectorSize */
-  tmpDeviceCharacteristics      /* xDeviceCharacteristics */
+  tmpDeviceCharacteristics,     /* xDeviceCharacteristics */
+  0,                            /* xShmOpen */
+  0,                            /* xShmSize */
+  0,                            /* xShmLock */
+  0,                            /* xShmClose */
+  0,                            /* xShmDelete */
 };
 
 /* Useful macros used in several places */

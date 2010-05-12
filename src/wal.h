@@ -41,8 +41,8 @@
 typedef struct Wal Wal;
 
 /* Open and close a connection to a write-ahead log. */
-int sqlite3WalOpen(sqlite3_vfs*, const char *zDb, Wal **ppWal);
-int sqlite3WalClose(Wal *pWal, sqlite3_file *pFd, int sync_flags, int, u8 *);
+int sqlite3WalOpen(sqlite3_vfs*, sqlite3_file*, const char *zName, Wal**);
+int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
 
 /* Used by readers to open (lock) and close (unlock) a snapshot.  A 
 ** snapshot is like a read-transaction.  It is the state of the database
@@ -81,7 +81,6 @@ int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);
 /* Copy pages from the log to the database file */ 
 int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
-  sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   int nBuf,                       /* Size of buffer nBuf */
   u8 *zBuf,                       /* Temporary buffer to use */

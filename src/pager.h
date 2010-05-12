@@ -135,6 +135,7 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint);
 int sqlite3PagerSharedLock(Pager *pPager);
 
 int sqlite3PagerCheckpoint(Pager *pPager);
+int sqlite3PagerWalSupported(Pager *pPager);
 int sqlite3PagerWalCallback(Pager *pPager);
 int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen);
 int sqlite3PagerCloseWal(Pager *pPager);

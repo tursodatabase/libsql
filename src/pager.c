@@ -3077,7 +3077,7 @@ int sqlite3PagerClose(Pager *pPager){
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, pPager->fd, 
+  sqlite3WalClose(pPager->pWal,
     (pPager->noSync ? 0 : pPager->sync_flags), 
     pPager->pageSize, pTmp
   );
@@ -5878,7 +5878,7 @@ int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal, pPager->fd, 
+    rc = sqlite3WalCheckpoint(pPager->pWal,
         (pPager->noSync ? 0 : pPager->sync_flags),
         pPager->pageSize, zBuf, 
         pPager->xBusyHandler, pPager->pBusyHandlerArg
@@ -5889,6 +5889,15 @@ int sqlite3PagerCheckpoint(Pager *pPager){
 
 int sqlite3PagerWalCallback(Pager *pPager){
   return sqlite3WalCallback(pPager->pWal);
+}
+
+/*
+** Return true if the underlying VFS for the given pager supports the
+** primitives necessary for write-ahead logging.
+*/
+int sqlite3PagerWalSupported(Pager *pPager){
+  const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
+  return pMethods->iVersion>=2 && pMethods->xShmOpen!=0;
 }
 
 /*
@@ -5903,12 +5912,14 @@ int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen){
 
   assert( pPager->state>=PAGER_SHARED );
   if( !pPager->pWal ){
+    if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
 
     /* Open the connection to the log file. If this operation fails, 
     ** (e.g. due to malloc() failure), unlock the database file and 
     ** return an error code.
     */
-    rc = sqlite3WalOpen(pPager->pVfs, pPager->zFilename, &pPager->pWal);
+    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
+                        pPager->zFilename, &pPager->pWal);
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
     }
@@ -5944,7 +5955,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
       rc = pagerHasWAL(pPager, &logexists);
     }
     if( rc==SQLITE_OK && logexists ){
-      rc = sqlite3WalOpen(pPager->pVfs, pPager->zFilename, &pPager->pWal);
+      rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
+                          pPager->zFilename, &pPager->pWal);
     }
   }
     
@@ -5954,8 +5966,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal, pPager->fd,
-        (pPager->noSync ? 0 : pPager->sync_flags), 
+      rc = sqlite3WalClose(pPager->pWal,
+                           (pPager->noSync ? 0 : pPager->sync_flags), 
         pPager->pageSize, (u8*)pPager->pTmpSpace
       );
       pPager->pWal = 0;

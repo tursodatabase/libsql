@@ -5248,8 +5248,8 @@ case OP_JournalMode: {    /* out2-prerelease */
   ** in temporary storage or if the VFS does not support xShmOpen.
   */
   if( eNew==PAGER_JOURNALMODE_WAL
-   && (zFilename[0]==0                               /* Temp file */
-         || pVfs->iVersion<2 || pVfs->xShmOpen==0)   /* No xShmOpen support */
+   && (zFilename[0]==0                         /* Temp file */
+       || !sqlite3PagerWalSupported(pPager))   /* No xShmOpen support */
   ){
     eNew = PAGER_JOURNALMODE_QUERY;
   }

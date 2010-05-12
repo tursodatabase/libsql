@@ -125,16 +125,17 @@ struct WalIndexHdr {
 */
 struct Wal {
   sqlite3_vfs *pVfs;         /* The VFS used to create pFd */
-  sqlite3_file *pFd;         /* File handle for WAL file */
+  sqlite3_file *pDbFd;       /* File handle for the database file */
+  sqlite3_file *pWalFd;      /* File handle for WAL file */
   u32 iCallback;             /* Value to pass to log callback (or 0) */
-  sqlite3_shm *pWIndex;      /* The open wal-index file */
   int szWIndex;              /* Size of the wal-index that is mapped in mem */
   u32 *pWiData;              /* Pointer to wal-index content in memory */
   u8 lockState;              /* SQLITE_SHM_xxxx constant showing lock state */
   u8 readerType;             /* SQLITE_SHM_READ or SQLITE_SHM_READ_FULL */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
+  u8 isWindexOpen;           /* True if ShmOpen() called on pDbFd */
   WalIndexHdr hdr;           /* Wal-index for current snapshot */
-  char *zName;               /* Name of underlying storage */
+  char *zWalName;            /* Name of WAL file */
 };
 
 
@@ -223,7 +224,7 @@ static int walSetLock(Wal *pWal, int desiredStatus){
     pWal->lockState = desiredStatus;
   }else{
     int got = pWal->lockState;
-    rc = pWal->pVfs->xShmLock(pWal->pVfs, pWal->pWIndex, desiredStatus, &got);
+    rc = sqlite3OsShmLock(pWal->pWalFd, desiredStatus, &got);
     pWal->lockState = got;
     if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
       pWal->readerType = got;
@@ -404,7 +405,7 @@ static int walMappingSize(u32 iFrame){
 */
 static void walIndexUnmap(Wal *pWal){
   if( pWal->pWiData ){
-    pWal->pVfs->xShmRelease(pWal->pVfs, pWal->pWIndex);
+    sqlite3OsShmRelease(pWal->pDbFd);
     pWal->pWiData = 0;
   }
 }
@@ -418,8 +419,8 @@ static void walIndexUnmap(Wal *pWal){
 static int walIndexMap(Wal *pWal, int reqSize){
   int rc = SQLITE_OK;
   if( pWal->pWiData==0 || reqSize>pWal->szWIndex ){
-    rc = pWal->pVfs->xShmGet(pWal->pVfs, pWal->pWIndex, reqSize,
-                             &pWal->szWIndex, (void**)(char*)&pWal->pWiData);
+    rc = sqlite3OsShmGet(pWal->pDbFd, reqSize, &pWal->szWIndex,
+                             (void**)(char*)&pWal->pWiData);
     if( rc==SQLITE_OK && pWal->pWiData==0 ){
       /* Make sure pWal->pWiData is not NULL while we are holding the
       ** lock on the mapping. */
@@ -443,7 +444,7 @@ static int walIndexMap(Wal *pWal, int reqSize){
 static int walIndexRemap(Wal *pWal, int enlargeTo){
   int rc;
   int sz;
-  rc = pWal->pVfs->xShmSize(pWal->pVfs, pWal->pWIndex, enlargeTo, &sz);
+  rc = sqlite3OsShmSize(pWal->pDbFd, enlargeTo, &sz);
   if( rc==SQLITE_OK && sz>pWal->szWIndex ){
     walIndexUnmap(pWal);
     rc = walIndexMap(pWal, sz);
@@ -561,7 +562,7 @@ static int walIndexRecover(Wal *pWal){
   assert( pWal->lockState>SQLITE_SHM_READ );
   memset(&hdr, 0, sizeof(hdr));
 
-  rc = sqlite3OsFileSize(pWal->pFd, &nSize);
+  rc = sqlite3OsFileSize(pWal->pWalFd, &nSize);
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -579,7 +580,7 @@ static int walIndexRecover(Wal *pWal){
     /* Read in the first frame header in the file (to determine the 
     ** database page size).
     */
-    rc = sqlite3OsRead(pWal->pFd, aBuf, WAL_HDRSIZE, 0);
+    rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -610,7 +611,7 @@ static int walIndexRecover(Wal *pWal){
       int isValid;                /* True if this frame is valid */
 
       /* Read and decode the next log frame. */
-      rc = sqlite3OsRead(pWal->pFd, aFrame, nFrame, iOffset);
+      rc = sqlite3OsRead(pWal->pWalFd, aFrame, nFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
       isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, nPgsz, aData, aFrame);
       if( !isValid ) break;
@@ -648,12 +649,11 @@ finished:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  sqlite3_shm *pWIndex = pWal->pWIndex;
-  if( pWIndex ){
-    sqlite3_vfs *pVfs = pWal->pVfs;
+  if( pWal->isWindexOpen ){
     int notUsed;
-    pVfs->xShmLock(pVfs, pWIndex, SQLITE_SHM_UNLOCK, &notUsed);
-    pVfs->xShmClose(pVfs, pWIndex, isDelete);
+    sqlite3OsShmLock(pWal->pDbFd, SQLITE_SHM_UNLOCK, &notUsed);
+    sqlite3OsShmClose(pWal->pDbFd, isDelete);
+    pWal->isWindexOpen = 0;
   }
 }
 
@@ -675,41 +675,44 @@ static void walIndexClose(Wal *pWal, int isDelete){
 */
 int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
-  const char *zDb,                /* Name of database file */
+  sqlite3_file *pDbFd,            /* The open database file */
+  const char *zDbName,            /* Name of the database file */
   Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
-  char *zWal;                     /* Path to WAL file */
+  char *zWal;                     /* Name of write-ahead log file */
   int nWal;                       /* Length of zWal in bytes */
 
-  assert( zDb );
-  if( pVfs->xShmOpen==0 ) return SQLITE_CANTOPEN_BKPT;
+  assert( zDbName && zDbName[0] );
+  assert( pDbFd );
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
-  nWal = strlen(zDb);
-  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal+5);
+  nWal = sqlite3Strlen30(zWal) + 5;
+  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal);
   if( !pRet ){
     return SQLITE_NOMEM;
   }
 
   pRet->pVfs = pVfs;
-  pRet->pFd = (sqlite3_file *)&pRet[1];
-  pRet->zName = zWal = pVfs->szOsFile + (char*)pRet->pFd;
-  sqlite3_snprintf(nWal+5, zWal, "%s-wal", zDb);
-  rc = pVfs->xShmOpen(pVfs, zDb, &pRet->pWIndex);
+  pRet->pWalFd = (sqlite3_file *)&pRet[1];
+  pRet->pDbFd = pDbFd;
+  pRet->zWalName = zWal = pVfs->szOsFile + (char*)pRet->pWalFd;
+  sqlite3_snprintf(nWal, zWal, "%s-wal", zDbName);
+  rc = sqlite3OsShmOpen(pDbFd);
+  pRet->isWindexOpen = 1;
 
   /* Open file handle on the write-ahead log file. */
   if( rc==SQLITE_OK ){
     flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
-    rc = sqlite3OsOpen(pVfs, zWal, pRet->pFd, flags, &flags);
+    rc = sqlite3OsOpen(pVfs, zWal, pRet->pWalFd, flags, &flags);
   }
 
   if( rc!=SQLITE_OK ){
     walIndexClose(pRet, 0);
-    sqlite3OsClose(pRet->pFd);
+    sqlite3OsClose(pRet->pWalFd);
     sqlite3_free(pRet);
   }else{
     *ppWal = pRet;
@@ -809,7 +812,6 @@ static void walIteratorFree(WalIterator *p){
 */
 static int walCheckpoint(
   Wal *pWal,                      /* Wal connection */
-  sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags for OsSync() (or 0) */
   int nBuf,                       /* Size of zBuf in bytes */
   u8 *zBuf                        /* Temporary buffer to use */
@@ -833,27 +835,27 @@ static int walCheckpoint(
 
   /* Sync the log file to disk */
   if( sync_flags ){
-    rc = sqlite3OsSync(pWal->pFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
     if( rc!=SQLITE_OK ) goto out;
   }
 
   /* Iterate through the contents of the log, copying data to the db file. */
   while( 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
-    rc = sqlite3OsRead(pWal->pFd, zBuf, pgsz, 
+    rc = sqlite3OsRead(pWal->pWalFd, zBuf, pgsz, 
         walFrameOffset(iFrame, pgsz) + WAL_FRAME_HDRSIZE
     );
     if( rc!=SQLITE_OK ) goto out;
-    rc = sqlite3OsWrite(pFd, zBuf, pgsz, (iDbpage-1)*pgsz);
+    rc = sqlite3OsWrite(pWal->pDbFd, zBuf, pgsz, (iDbpage-1)*pgsz);
     if( rc!=SQLITE_OK ) goto out;
   }
 
   /* Truncate the database file */
-  rc = sqlite3OsTruncate(pFd, ((i64)pWal->hdr.nPage*(i64)pgsz));
+  rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)pgsz));
   if( rc!=SQLITE_OK ) goto out;
 
   /* Sync the database file. If successful, update the wal-index. */
   if( sync_flags ){
-    rc = sqlite3OsSync(pFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
     if( rc!=SQLITE_OK ) goto out;
   }
   pWal->hdr.iLastPg = 0;
@@ -876,9 +878,9 @@ static int walCheckpoint(
   */
 #if 0 
   memset(zBuf, 0, WAL_FRAME_HDRSIZE);
-  rc = sqlite3OsWrite(pWal->pFd, zBuf, WAL_FRAME_HDRSIZE, 0);
+  rc = sqlite3OsWrite(pWal->pWalFd, zBuf, WAL_FRAME_HDRSIZE, 0);
   if( rc!=SQLITE_OK ) goto out;
-  rc = sqlite3OsSync(pWal->pFd, pWal->sync_flags);
+  rc = sqlite3OsSync(pWal->pWalFd, pWal->sync_flags);
 #endif
 
  out:
@@ -891,7 +893,6 @@ static int walCheckpoint(
 */
 int sqlite3WalClose(
   Wal *pWal,                      /* Wal to close */
-  sqlite3_file *pFd,              /* Database file */
   int sync_flags,                 /* Flags to pass to OsSync() (or 0) */
   int nBuf,
   u8 *zBuf                        /* Buffer of at least nBuf bytes */
@@ -908,9 +909,9 @@ int sqlite3WalClose(
     **
     ** The EXCLUSIVE lock is not released before returning.
     */
-    rc = sqlite3OsLock(pFd, SQLITE_LOCK_EXCLUSIVE);
+    rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf, 0, 0);
+      rc = sqlite3WalCheckpoint(pWal, sync_flags, nBuf, zBuf, 0, 0);
       if( rc==SQLITE_OK ){
         isDelete = 1;
       }
@@ -918,9 +919,9 @@ int sqlite3WalClose(
     }
 
     walIndexClose(pWal, isDelete);
-    sqlite3OsClose(pWal->pFd);
+    sqlite3OsClose(pWal->pWalFd);
     if( isDelete ){
-      sqlite3OsDelete(pWal->pVfs, pWal->zName, 0);
+      sqlite3OsDelete(pWal->pVfs, pWal->zWalName, 0);
     }
     sqlite3_free(pWal);
   }
@@ -1191,7 +1192,7 @@ int sqlite3WalRead(
   if( iRead ){
     i64 iOffset = walFrameOffset(iRead, pWal->hdr.pgsz) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
-    return sqlite3OsRead(pWal->pFd, pOut, nOut, iOffset);
+    return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
   }
 
   *pInWal = 0;
@@ -1290,7 +1291,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   pWal->hdr.iLastPg = iFrame;
   if( iFrame>0 ){
     i64 iOffset = walFrameOffset(iFrame, pWal->hdr.pgsz) + sizeof(u32)*2;
-    rc = sqlite3OsRead(pWal->pFd, aCksum, sizeof(aCksum), iOffset);
+    rc = sqlite3OsRead(pWal->pWalFd, aCksum, sizeof(aCksum), iOffset);
     pWal->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
     pWal->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
   }
@@ -1334,7 +1335,7 @@ int sqlite3WalFrames(
     sqlite3_randomness(8, &aFrame[4]);
     pWal->hdr.iCheck1 = sqlite3Get4byte(&aFrame[4]);
     pWal->hdr.iCheck2 = sqlite3Get4byte(&aFrame[8]);
-    rc = sqlite3OsWrite(pWal->pFd, aFrame, WAL_HDRSIZE, 0);
+    rc = sqlite3OsWrite(pWal->pWalFd, aFrame, WAL_HDRSIZE, 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1353,13 +1354,13 @@ int sqlite3WalFrames(
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
     walEncodeFrame(aCksum, p->pgno, nDbsize, nPgsz, p->pData, aFrame);
-    rc = sqlite3OsWrite(pWal->pFd, aFrame, sizeof(aFrame), iOffset);
+    rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pFd, p->pData, nPgsz, iOffset + sizeof(aFrame));
+    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, nPgsz, iOffset + sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1368,7 +1369,7 @@ int sqlite3WalFrames(
 
   /* Sync the log file if the 'isSync' flag was specified. */
   if( sync_flags ){
-    i64 iSegment = sqlite3OsSectorSize(pWal->pFd);
+    i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
     i64 iOffset = walFrameOffset(iFrame+1, nPgsz);
 
     assert( isCommit );
@@ -1379,13 +1380,13 @@ int sqlite3WalFrames(
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
       walEncodeFrame(aCksum,pLast->pgno,nTruncate,nPgsz,pLast->pData,aFrame);
-      rc = sqlite3OsWrite(pWal->pFd, aFrame, sizeof(aFrame), iOffset);
+      rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
 
       iOffset += WAL_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pWal->pFd, pLast->pData, nPgsz, iOffset); 
+      rc = sqlite3OsWrite(pWal->pWalFd, pLast->pData, nPgsz, iOffset); 
       if( rc!=SQLITE_OK ){
         return rc;
       }
@@ -1393,7 +1394,7 @@ int sqlite3WalFrames(
       iOffset += nPgsz;
     }
 
-    rc = sqlite3OsSync(pWal->pFd, sync_flags);
+    rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
   }
   assert( pWal->pWiData==0 );
 
@@ -1445,7 +1446,6 @@ int sqlite3WalFrames(
 */
 int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Wal connection */
-  sqlite3_file *pFd,              /* File descriptor open on db file */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   int nBuf,                       /* Size of temporary buffer */
   u8 *zBuf,                       /* Temporary buffer to use */
@@ -1479,7 +1479,7 @@ int sqlite3WalCheckpoint(
   /* Copy data from the log to the database file. */
   rc = walIndexReadHdr(pWal, &isChanged);
   if( rc==SQLITE_OK ){
-    rc = walCheckpoint(pWal, pFd, sync_flags, nBuf, zBuf);
+    rc = walCheckpoint(pWal, sync_flags, nBuf, zBuf);
   }
   if( isChanged ){
     /* If a new wal-index header was loaded before the checkpoint was 
