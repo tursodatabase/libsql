@@ -50,6 +50,12 @@ static int devsymCheckReservedLock(sqlite3_file*, int *);
 static int devsymFileControl(sqlite3_file*, int op, void *pArg);
 static int devsymSectorSize(sqlite3_file*);
 static int devsymDeviceCharacteristics(sqlite3_file*);
+static int devsymShmOpen(sqlite3_file*);
+static int devsymShmSize(sqlite3_file*,int,int*);
+static int devsymShmGet(sqlite3_file*,int,int*,void**);
+static int devsymShmRelease(sqlite3_file*);
+static int devsymShmLock(sqlite3_file*,int,int*);
+static int devsymShmClose(sqlite3_file*,int);
 
 /*
 ** Method declarations for devsym_vfs.
@@ -112,12 +118,12 @@ static sqlite3_io_methods devsym_io_methods = {
   devsymFileControl,                /* xFileControl */
   devsymSectorSize,                 /* xSectorSize */
   devsymDeviceCharacteristics,      /* xDeviceCharacteristics */
-  0,                                /* xShmOpen */
-  0,                                /* xShmSize */
-  0,                                /* xShmGet */
-  0,                                /* xShmRelease */
-  0,                                /* xShmLock */
-  0                                 /* xShmClose */
+  devsymShmOpen,                    /* xShmOpen */
+  devsymShmSize,                    /* xShmSize */
+  devsymShmGet,                     /* xShmGet */
+  devsymShmRelease,                 /* xShmRelease */
+  devsymShmLock,                    /* xShmLock */
+  devsymShmClose                    /* xShmClose */
 };
 
 struct DevsymGlobal {
@@ -230,6 +236,36 @@ static int devsymSectorSize(sqlite3_file *pFile){
 static int devsymDeviceCharacteristics(sqlite3_file *pFile){
   return g.iDeviceChar;
 }
+
+/*
+** Shared-memory methods are all pass-thrus.
+*/
+static int devsymShmOpen(sqlite3_file *pFile){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmOpen(p->pReal);
+}
+static int devsymShmSize(sqlite3_file *pFile, int reqSize, int *pSize){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmSize(p->pReal, reqSize, pSize);
+}
+static int devsymShmGet(sqlite3_file *pFile, int reqSz, int *pSize, void **pp){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmGet(p->pReal, reqSz, pSize, pp);
+}
+static int devsymShmRelease(sqlite3_file *pFile){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmRelease(p->pReal);
+}
+static int devsymShmLock(sqlite3_file *pFile, int desired, int *pGot){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmLock(p->pReal, desired, pGot);
+}
+static int devsymShmClose(sqlite3_file *pFile, int delFlag){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmClose(p->pReal, delFlag);
+}
+
+
 
 /*
 ** Open an devsym file handle.
