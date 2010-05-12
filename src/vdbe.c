@@ -989,38 +989,23 @@ case OP_Blob: {                /* out2-prerelease */
   break;
 }
 
-/* Opcode: Variable P1 P2 P3 P4 *
+/* Opcode: Variable P1 P2 * P4 *
 **
-** Transfer the values of bound parameters P1..P1+P3-1 into registers
-** P2..P2+P3-1.
+** Transfer the values of bound parameter P1 into register P2
 **
 ** If the parameter is named, then its name appears in P4 and P3==1.
 ** The P4 value is used by sqlite3_bind_parameter_name().
 */
-case OP_Variable: {
-  int p1;          /* Variable to copy from */
-  int p2;          /* Register to copy to */
-  int n;           /* Number of values left to copy */
+case OP_Variable: {            /* out2-prerelease */
   Mem *pVar;       /* Value being transferred */
 
-  p1 = pOp->p1 - 1;
-  p2 = pOp->p2;
-  n = pOp->p3;
-  assert( p1>=0 && p1+n<=p->nVar );
-  assert( p2>=1 && p2+n-1<=p->nMem );
-  assert( pOp->p4.z==0 || pOp->p3==1 || pOp->p3==0 );
-
-  while( n-- > 0 ){
-    pVar = &p->aVar[p1++];
-    if( sqlite3VdbeMemTooBig(pVar) ){
-      goto too_big;
-    }
-    pOut = &aMem[p2++];
-    sqlite3VdbeMemReleaseExternal(pOut);
-    pOut->flags = MEM_Null;
-    sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
-    UPDATE_MAX_BLOBSIZE(pOut);
+  assert( pOp->p1>0 && pOp->p1<=p->nVar );
+  pVar = &p->aVar[pOp->p1 - 1];
+  if( sqlite3VdbeMemTooBig(pVar) ){
+    goto too_big;
   }
+  sqlite3VdbeMemShallowCopy(pOut, pVar, MEM_Static);
+  UPDATE_MAX_BLOBSIZE(pOut);
   break;
 }
 
