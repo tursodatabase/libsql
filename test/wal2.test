@@ -575,6 +575,20 @@ do_test wal2-6.4.7 {
   set ::locks
 } {READ WRITE READ UNLOCK}
 db close
+tvfs delete
+
+do_test wal2-6.5.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA journal_mode = wal;
+    PRAGMA locking_mode = exclusive;
+    CREATE TABLE t2(a, b);
+    PRAGMA wal_checkpoint;
+    INSERT INTO t2 VALUES('I', 'II');
+    PRAGMA journal_mode;
+  }
+} {wal exclusive wal}
+db close
 
 finish_test
 

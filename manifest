@@ -1,5 +1,5 @@
-C Have\sos_unix.c\suse\sthe\ssuffix\s"-wal-index"\sfor\swal-index\sfiles\sinstead\sof\s"-wal-inde".
-D 2010-05-11T16:29:55
+C Remove\sa\sbranch\smade\sredundant\sby\sthe\searlier\sexclusive-mode\schanges.
+D 2010-05-12T06:54:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 7042647fd4c89b789da6dc934550effdf573a290
+F src/wal.c 2f747b6a6bfd9b75b837a1e31176235a21342e0f
 F src/wal.h 32f36b2a827b78373658dac5521291485dfa52b6
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -762,7 +762,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 7a100918c45872fa19cfb4413299b9afb08727b6
-F test/wal2.test 913fc65e533593e3b5dfb193340ac32368da1914
+F test/wal2.test 2eba114ff58f0688278ad45249625af89a0bc9fa
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walfault.test 98df47444944a6db2161eed5cef71d6c00bcb8c3
@@ -813,7 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cf3d1e0b8a739302cf2848ac3e6eaaae04e6a44c
-R 9e8678dd913fdf27b972a0d8a71d71aa
+P 885e854e7cdc79ecc9d5772d563ddc0f61753ab6
+R 553f0583effedb8a6b18aad4ae4a7180
 U dan
-Z 7c26350aa029a41cf2e5094ee69988d0
+Z 0b1417804855301381cb367f89f39da0

@@ -1216,7 +1216,7 @@ void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
 int sqlite3WalWriteLock(Wal *pWal, int op){
   int rc = SQLITE_OK;
   if( op ){
-    assert( pWal->lockState == SQLITE_SHM_READ );
+    assert( pWal->lockState==SQLITE_SHM_READ );
     rc = walSetLock(pWal, SQLITE_SHM_WRITE);
 
     /* If this connection is not reading the most recent database snapshot,
@@ -1457,13 +1457,17 @@ int sqlite3WalCheckpoint(
 
   assert( pWal->pWiData==0 );
 
-  /* Get the CHECKPOINT lock */
-  if( pWal->lockState!=SQLITE_SHM_UNLOCK ){
-    /* This can occur when locking_mode=EXCLUSIVE */
-    assert( pWal->lockState==SQLITE_SHM_READ
-         || pWal->lockState==SQLITE_SHM_READ_FULL );
-    walSetLock(pWal, SQLITE_SHM_UNLOCK);
-  }
+  /* Get the CHECKPOINT lock. 
+  **
+  ** Normally, the connection will be in UNLOCK state at this point. But
+  ** if the connection is in exclusive-mode it may still be in READ state
+  ** even though the upper layer has no active read-transaction (because
+  ** WalCloseSnapshot() is not called in exclusive mode). The state will
+  ** be set to UNLOCK when this function returns. This is Ok.
+  */
+  assert( (pWal->lockState==SQLITE_SHM_UNLOCK)
+       || (pWal->exclusiveMode && pWal->lockState==SQLITE_SHM_READ)
+  );
   do {
     rc = walSetLock(pWal, SQLITE_SHM_CHECKPOINT);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
