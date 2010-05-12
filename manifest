@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sthe\sOP_Variable\soptimization\sof\scheck-in\s[48b77b04935d894]\ssince\sit\ncan\slead\sto\smalfunctions\sas\sdescribed\sin\sticket\s[26ff0c82d1e90].
-D 2010-05-12T13:50:23
+C Change\sthe\svfs\sinstrumentation\scode\sin\stest_osinst.c\sto\smake\sit\seasier\sto\sdeploy.\sAdd\sa\svtab\simplementation\sfor\sreading\sthe\sbinary\slog\sfile\sformat.
+D 2010-05-12T19:02:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,7 +201,7 @@ F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c d9585f6e2056868f208b0c21378a05b68c9ceae2
-F src/test_osinst.c f5d1a4ee8b80fc58d1430c56146de748584013a9
+F src/test_osinst.c 4efab33366375f4e1006bc6d87782baaa4a96845
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -609,7 +606,7 @@ F test/tclsqlite.test 013133fa83128569c6fb8a7a48dc7c4507e6ff1c
 F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl f6b79073ad3a18439ad3a643f812e1d0c47dbb7b
+F test/tester.tcl 7cc3517ad2158c5b72b90684116a400404a3b66f
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -817,14 +814,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c501b2ede6aad123bef0aa7ce8b356a134eb6d26
-R f34b360b99a8eca6d2a66ca5009c7cf8
-U drh
-Z ec71604d99e1c3eded3bf24db26ac01b
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL6rIioxKgR168RlERArxoAJ96khmiBmpRdJSt374I6oMPRFYeDgCeJaEi
-RMst0QQ2MlMNKv1/iZMvQcE=
-=vEcN
------END PGP SIGNATURE-----
+P 7838163d087780a6fb403a17641b96f71baec088
+R 920eee8703b54c6b300b0f18115e11ca
+U dan
+Z 3c156be6096696ce4719819cb6c218b7
