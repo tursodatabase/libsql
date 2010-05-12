@@ -924,8 +924,8 @@ static int winLock(sqlite3_file *id, int locktype){
   DWORD error = NO_ERROR;
 
   assert( id!=0 );
-  OSTRACE5("LOCK %d %d was %d(%d)\n",
-          pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
+  OSTRACE(("LOCK %d %d was %d(%d)\n",
+           pFile->h, locktype, pFile->locktype, pFile->sharedLockByte));
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -1413,7 +1413,9 @@ static int winOpen(
     );
 #endif
   }
-  OSTRACE4("OPEN %d %s 0x%lx\n", h, zName, dwDesiredAccess);
+  OSTRACE(("OPEN %d %s 0x%lx %s\n", 
+           h, zName, dwDesiredAccess, 
+           h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
   if( h==INVALID_HANDLE_VALUE ){
     free(zConverted);
     if( flags & SQLITE_OPEN_READWRITE ){
@@ -2087,10 +2089,15 @@ static int winShmSystemLock(
   /* Initialize the locking parameters */
   if( lockMask==WIN_SHM_C && lockType!=_SHM_UNLCK ){
     dwFlags = 0;
-    OSTRACE(("SHM-LOCK requesting blocking lock %s\n", winShmLockString(lockMask)));
+    OSTRACE(("SHM-LOCK %d requesting blocking lock %s\n", 
+             pFile->hFile.h,
+             winShmLockString(lockMask)));
   }else{
     dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
-    OSTRACE(("SHM-LOCK requesting %s %s\n", lockType!=_SHM_UNLCK ? "unlock" : "lock", winShmLockString(lockMask)));
+    OSTRACE(("SHM-LOCK %d requesting %s %s\n", 
+             pFile->hFile.h,
+             lockType!=_SHM_UNLCK ? "lock" : "unlock", 
+             winShmLockString(lockMask)));
   }
   if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
 
@@ -2099,7 +2106,6 @@ static int winShmSystemLock(
   assert( mask!=0 );
   memset(&ovlp, 0, sizeof(OVERLAPPED));
   ovlp.Offset = i+WIN_SHM_BASE;
-  ovlp.OffsetHigh = 0;
   nBytes = 1;
 
   /* Extend the locking range for each additional bit that is set */
@@ -2118,31 +2124,23 @@ static int winShmSystemLock(
       rc = UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
       if( !rc ) break;
     }
-    if( !rc ){
-      OSTRACE(("SHM-LOCK UnlockFileEx ERROR %d - 0x%08lx\n", rc, GetLastError()));
-      /* continue to release individual byte locks (if any) */
-      for(; i<nBytes; i++, ovlp.Offset++){
-        UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-      }
-    }
   }else{
-    /* release old individual byte locks (if any). */
+    /* release old individual byte locks (if any)
+    ** and set new individual byte locks */
     for(i=0; i<nBytes; i++, ovlp.Offset++){
       UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-    }
-    ovlp.Offset-=nBytes;
-    /* set new individual byte locks */
-    for(i=0; i<(int)nBytes; i++, ovlp.Offset++){
       rc = LockFileEx(pFile->hFile.h, dwFlags, 0, 1, 0, &ovlp);
       if( !rc ) break;
     }
-    if( !rc ){
-      OSTRACE(("SHM-LOCK LockFileEx ERROR %d - 0x%08lx\n", rc, GetLastError()));
-      /* release individual byte locks (if any) */
-      ovlp.Offset-=i;
-      for(i=0; i<nBytes; i++, ovlp.Offset++){
-        UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-      }
+  }
+  if( !rc ){
+    OSTRACE(("SHM-LOCK %d %s ERROR 0x%08lx\n", 
+             pFile->hFile.h,
+             lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx", GetLastError()));
+    /* release individual byte locks (if any) */
+    ovlp.Offset-=i;
+    for(i=0; i<nBytes; i++, ovlp.Offset++){
+      UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
     }
   }
   rc = (rc!=0) ? SQLITE_OK : SQLITE_BUSY;
@@ -2202,7 +2200,8 @@ static int winShmUnlock(
 
   /* don't attempt to unlock anything we don't have locks for */
   if( (unlockMask & (p->exclMask|p->sharedMask)) != unlockMask ){
-    OSTRACE(("SHM-UNLOCKING more than we have locked - requested %s - have %s\n",
+    OSTRACE(("SHM-LOCK %d unlocking more than we have locked - requested %s - have %s\n",
+             pFile->hFile.h,
              winShmLockString(unlockMask),
              winShmLockString(p->exclMask|p->sharedMask)));
     unlockMask &= (p->exclMask|p->sharedMask);
@@ -2358,11 +2357,15 @@ static int winShmOpen(
   const char *zName,    /* Name of the corresponding database file */
   sqlite3_shm **pShm    /* Write the winShm object created here */
 ){
-  struct winShm *p = 0;              /* The connection to be opened */
+  struct winShm *p;                  /* The connection to be opened */
   struct winShmFile *pFile = 0;      /* The underlying mmapped file */
   int rc;                            /* Result code */
   struct winShmFile *pNew;           /* Newly allocated pFile */
   int nName;                         /* Size of zName in bytes */
+  char zFullpath[MAX_PATH+1];        /* Temp buffer for full file name */
+
+  rc = winFullPathname(pVfs, zName, MAX_PATH, zFullpath);
+  if( rc ) return rc;
 
   /* Allocate space for the new sqlite3_shm object.  Also speculatively
   ** allocate space for a new winShmFile and filename.
@@ -2370,7 +2373,7 @@ static int winShmOpen(
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
-  nName = strlen(zName);
+  nName = sqlite3Strlen30(zFullpath);
   pNew = sqlite3_malloc( sizeof(*pFile) + nName + 15 );
   if( pNew==0 ){
     sqlite3_free(p);
@@ -2378,7 +2381,7 @@ static int winShmOpen(
   }
   memset(pNew, 0, sizeof(*pNew));
   pNew->zFilename = (char*)&pNew[1];
-  sqlite3_snprintf(nName+11, pNew->zFilename, "%s-wal-index", zName);
+  sqlite3_snprintf(nName+12, pNew->zFilename, "%s-wal-index", zFullpath);
 
   /* Look to see if there is an existing winShmFile that can be used.
   ** If no matching winShmFile currently exists, create a new one.
@@ -2386,9 +2389,9 @@ static int winShmOpen(
   winShmEnterMutex();
   for(pFile = winShmFileList; pFile; pFile=pFile->pNext){
     /* TBD need to come up with better match here.  Perhaps
-    ** use winFullPathname() or FILE_ID_BOTH_DIR_INFO Structure.
+    ** use FILE_ID_BOTH_DIR_INFO Structure.
     */
-    if( strcmp(pFile->zFilename, pNew->zFilename)==0 ) break;
+    if( sqlite3StrICmp(pFile->zFilename, pNew->zFilename)==0 ) break;
   }
   if( pFile ){
     sqlite3_free(pNew);
@@ -2411,7 +2414,6 @@ static int winShmOpen(
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-
     rc = winOpen(pVfs,
                  pFile->zFilename,                  /* Name of the file (UTF-8) */
                  (sqlite3_file *)&pFile->hFile, /* Write the SQLite file handle here */
@@ -2720,14 +2722,16 @@ static int winShmLock(
   if( desiredLock==p->lockState
    || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
   ){
-    OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s and got %s\n",
+    OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d request %s and got %s\n",
+             pFile->hFile.h,
              p->id, (int)GetCurrentProcessId(), azLkName[desiredLock], azLkName[p->lockState]));
     if( pGotLock ) *pGotLock = p->lockState;
     return SQLITE_OK;
   }
 
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d request %s->%s\n",
-            p->id, (int)GetCurrentProcessId(), azLkName[p->lockState], azLkName[desiredLock]));
+  OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d request %s->%s\n",
+           pFile->hFile.h,
+           p->id, (int)GetCurrentProcessId(), azLkName[p->lockState], azLkName[desiredLock]));
   
   if( desiredLock==SQLITE_SHM_RECOVER && !p->hasMutexBuf ){
     assert( sqlite3_mutex_notheld(pFile->mutex) );
@@ -2810,7 +2814,8 @@ static int winShmLock(
     }
   }
   sqlite3_mutex_leave(pFile->mutex);
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %s\n",
+  OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d got %s\n",
+           pFile->hFile.h, 
            p->id, (int)GetCurrentProcessId(), azLkName[p->lockState]));
   if( pGotLock ) *pGotLock = p->lockState;
   return rc;

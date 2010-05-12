@@ -1,5 +1,5 @@
-C Initial\sport\sof\sWAL\sVFS\ssupport\sfrom\sos_unix.c\sto\sos_win.c.
-D 2010-05-11T02:49:40
+C Updates\sto\sWAL\ssupport\sin\sos_win.c:\spulled\sin\slatest\schanges\sfrom\ssrc/os_unix.c;\supdated\stracing;\smisc.\simprovements.
+D 2010-05-12T17:14:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +153,7 @@ F src/os.h b389844e5469a2918e8a45fe6ae52b4c28dfb2b2
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
 F src/os_unix.c 34fe71c67fce72360411d60fe069c7f0dc612dd0
-F src/os_win.c 0bd6984370374b0bbd374e9109bac13c6abdaae8
+F src/os_win.c 858e38344cab4b8c82be3263dd997c8f0f07ee0c
 F src/pager.c a47af9c2c9ca425bd68642d61764266331a3323f
 F src/pager.h 934b598583a9d936bb13c37d62a2fe68ac48781c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -813,11 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a5630806c87b0f4e5632c37c357f98effd9608a
-R c58b69cb1a4b14b3d6dec9bb095f2635
-T *bgcolor * #c0f0ff
-T *branch * wal-win32
-T *sym-wal-win32 *
-T -sym-trunk *
+P 111ad59f21d53d1ec63c084ca5f98f2aaf7cd070
+R dbc78c75ab3394a3992dedd59d6e1ec0
 U shaneh
-Z f2e493f04213be36370a416f3e148539
+Z 1406477810564323a0dea454027b6d3a
