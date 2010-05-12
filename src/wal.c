@@ -224,7 +224,7 @@ static int walSetLock(Wal *pWal, int desiredStatus){
     pWal->lockState = desiredStatus;
   }else{
     int got = pWal->lockState;
-    rc = sqlite3OsShmLock(pWal->pWalFd, desiredStatus, &got);
+    rc = sqlite3OsShmLock(pWal->pDbFd, desiredStatus, &got);
     pWal->lockState = got;
     if( got==SQLITE_SHM_READ_FULL || got==SQLITE_SHM_READ ){
       pWal->readerType = got;
@@ -690,7 +690,7 @@ int sqlite3WalOpen(
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
-  nWal = sqlite3Strlen30(zWal) + 5;
+  nWal = sqlite3Strlen30(zDbName) + 5;
   pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal);
   if( !pRet ){
     return SQLITE_NOMEM;
