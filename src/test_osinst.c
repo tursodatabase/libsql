@@ -15,11 +15,6 @@
 ** are provided to control the instrumentation.
 */
 
-/* Public API: */
-int sqlite3_vfslog_new(const char *, const char *, const char *);
-int sqlite3_vfslog_finalize(const char *);
-int sqlite3_vfslog_register(sqlite3 *)
-
 /*
 ** This module contains code for a wrapper VFS that causes a log of
 ** all (well, technically "most") VFS calls to be written into a nominated
