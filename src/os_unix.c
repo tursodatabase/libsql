@@ -3957,16 +3957,25 @@ static int unixShmSize(
   int rc = SQLITE_OK;
   struct stat sStat;
 
-  if( reqSize>=0 ){
+  /* On a query, this loop runs once.  When reqSize>=0, the loop potentially
+  ** runs twice, except if the actual size is already greater than or equal
+  ** to the requested size, reqSize is set to -1 on the first iteration and
+  ** the loop only runs once.
+  */
+  while( 1 ){
+    if( fstat(pFile->h, &sStat)==0 ){
+      *pNewSize = (int)sStat.st_size;
+      if( reqSize>=0 && reqSize<=(int)sStat.st_size ) break;
+    }else{
+      *pNewSize = 0;
+      rc = SQLITE_IOERR;
+      break;
+    }
+    if( reqSize<0 ) break;
     reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
     reqSize *= SQLITE_UNIX_SHM_INCR;
     rc = ftruncate(pFile->h, reqSize);
-  }
-  if( fstat(pFile->h, &sStat)==0 ){
-    *pNewSize = (int)sStat.st_size;
-  }else{
-    *pNewSize = 0;
-    rc = SQLITE_IOERR;
+    reqSize = -1;
   }
   return rc;
 }

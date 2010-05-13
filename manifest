@@ -1,5 +1,8 @@
-C Fix\sfor\sa\ssegfault\sthat\scan\sfollow\sa\smalloc\sfailure.
-D 2010-05-13T07:08:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sxShmSize()\simplementation\sin\sos_unix.c\sso\sthat\sit\swill\sonly\nincrease\sand\snever\sdecrease\sthe\ssize\sof\sa\sshared-memory\ssegment.
+D 2010-05-13T08:33:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os.c c0a5dfce2a214dacb679425632d04f8a2021f364
 F src/os.h 8a7e2456237ecf3a2e55b02f9fe6091f1ad36902
 F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
 F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c c7ff5a947fc0a09de1c9c2008e3646551a1a8137
+F src/os_unix.c a65eb0c527306fbf8d5818c068cccb4179e2c187
 F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
 F src/pager.c 1e163a82ae8405433dca559831caa06aafbba3b0
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -814,7 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 25e72f81561575051c63e9bf5d2c8e76f9fcf5c6
-R d6f93e9926f16286e5aafb3fc350bd84
-U dan
-Z c60bce3aa77615040a5ca2d947852fe0
+P 3cab9022457ce50f82c5822d8ba6c04a3a85cb6a
+R 8a7d44076bf0e05c11800be3998eddd6
+U drh
+Z 3a36caf9fe5b6632b303e603e184218b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL67ljoxKgR168RlERAvKRAJ9jAZ2qvV6Q9GpsBE6wLhS3nq7pbACfcnYP
+hXJABDPCTP9dztwWLTfVSAc=
+=rTx0
+-----END PGP SIGNATURE-----
