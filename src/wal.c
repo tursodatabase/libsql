@@ -419,6 +419,7 @@ static void walIndexUnmap(Wal *pWal){
 static int walIndexMap(Wal *pWal, int reqSize){
   int rc = SQLITE_OK;
   if( pWal->pWiData==0 || reqSize>pWal->szWIndex ){
+    walIndexUnmap(pWal);
     rc = sqlite3OsShmGet(pWal->pDbFd, reqSize, &pWal->szWIndex,
                              (void**)(char*)&pWal->pWiData);
     if( rc==SQLITE_OK && pWal->pWiData==0 ){

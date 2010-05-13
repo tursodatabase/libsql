@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C The\srefactored\sof\sVFS\sSHM\sprimitives\sare\snow\sworking\sso\smerge\sthe\s\nwal-refactor\sbranch\sback\sinto\sthe\strunk.
-D 2010-05-13T08:53:42
+C Make\ssure\sxShmGet\sis\snever\scalled\swhile\salready\sholding\sthe\sshared-memory\nsegment.
+D 2010-05-13T09:11:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 3806c5ed7047debc408665b3576f17bab05b2be6
+F src/wal.c ec1a6f944c65123c43bca2ddff466ea4d8a7f8b7
 F src/wal.h 434f76f51225bb614e43ccb6bd2341541ba6a06e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -817,14 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7838163d087780a6fb403a17641b96f71baec088 149d2ae4a6fe2f86822f286d2a7092c51bec7ebb
-R 8a7d44076bf0e05c11800be3998eddd6
+P bce21c18380715e894eac9c173c97315e0d69d93
+R 97470d84516226b34ff3ad765b139d27
 U drh
-Z ffd3a6c6136965defa15e38ab4e7a314
+Z 53d0730fb4b18e23e171424c8f97f73d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL674ZoxKgR168RlERAsK5AJ4haW8eDmlcRUUp3Yf+C8gRnJAr1gCeNdrT
-0Fo99N7uchNWHAmE6yfdaFc=
-=KgrW
+iD8DBQFL68JHoxKgR168RlERAqmEAJsHUai08zWM/gjxEILLsvXzMhLccQCfUQaZ
+MSk/bOBCdiASi1PqRIe2N4k=
+=XwOG
 -----END PGP SIGNATURE-----
