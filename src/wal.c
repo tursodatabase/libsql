@@ -702,10 +702,10 @@ int sqlite3WalOpen(
   pRet->zWalName = zWal = pVfs->szOsFile + (char*)pRet->pWalFd;
   sqlite3_snprintf(nWal, zWal, "%s-wal", zDbName);
   rc = sqlite3OsShmOpen(pDbFd);
-  pRet->isWindexOpen = 1;
 
   /* Open file handle on the write-ahead log file. */
   if( rc==SQLITE_OK ){
+    pRet->isWindexOpen = 1;
     flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
     rc = sqlite3OsOpen(pVfs, zWal, pRet->pWalFd, flags, &flags);
   }
