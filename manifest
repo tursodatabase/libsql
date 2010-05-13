@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Allow\ssqlite3WalCheckpoint()\sto\sbe\scalled\seven\sif\sthe\sWAL\sis\sin\sthe\nSQLITE_SHM_READ\sstate,\sas\ssometimes\shappens\safter\san\serror.
-D 2010-05-13T15:44:00
+C Make\sdebugging\selements\sof\sthe\ssqlite3_mutex\sobject\svolatile\sand\smake\sthem\nonly\sappear\swhen\scompiling\swith\sSQLITE_DEBUG.\s\sTicket\s[51914f6acd2cb462].
+D 2010-05-13T20:19:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -148,8 +148,8 @@ F src/mutex.c e2358d8f9a9021ab0bba4d511bb701e471e6e5f6
 F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
 F src/mutex_noop.c 10ae943d26ba86ea92319f72adbb501a89c563e0
 F src/mutex_os2.c 20477db50cf3817c2f1cd3eb61e5c177e50231db
-F src/mutex_unix.c 04a25238abce7e3d06b358dcf706e26624270809
-F src/mutex_w32.c 4cc201c1bfd11d1562810554ff5500e735559d7e
+F src/mutex_unix.c becb8c4e07616abf84650d3687d62a1461d5d9cd
+F src/mutex_w32.c fb1cf87c5a88b56c7df0d9ddb796ed9641046c3d
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
 F src/os.c c0a5dfce2a214dacb679425632d04f8a2021f364
 F src/os.h 8a7e2456237ecf3a2e55b02f9fe6091f1ad36902
@@ -817,14 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e8c10d3cf601cc81a620f6c0ba5f195945a3f725
-R c616cb93d23b0cdfd59e536067b43dbd
+P 175b296f9b9680f605537f52a8a53944deaa5391
+R d5299c39eacf8ef75cb22ef8e896c85b
 U drh
-Z c6979d7b9231c984649ced9e5922d0be
+Z c4de85f29400b70f3ccfc19d9b6ef1ea
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL7B5DoxKgR168RlERAqIyAJ94od8cLks28tVsbhFMyAj89ZqJdwCfYpyj
-EkxyMfbMhJhN1sSlNDztuWo=
-=g0yE
+iD8DBQFL7F7IoxKgR168RlERAl/rAKCJQmVtoXSuuKkoZ5WmLfYvUU8Y6QCePanm
+qTdCHBH6Ih1hf+/7njgzXD0=
+=TMY3
 -----END PGP SIGNATURE-----
