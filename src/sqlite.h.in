@@ -653,6 +653,14 @@ struct sqlite3_io_methods {
   int (*xFileControl)(sqlite3_file*, int op, void *pArg);
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
+  /* Methods above are valid for version 1 */
+  int (*xShmOpen)(sqlite3_file*);
+  int (*xShmSize)(sqlite3_file*, int reqSize, int *pNewSize);
+  int (*xShmGet)(sqlite3_file*, int reqSize, int *pSize, void**);
+  int (*xShmRelease)(sqlite3_file*);
+  int (*xShmLock)(sqlite3_file*, int desiredLock, int *gotLock);
+  int (*xShmClose)(sqlite3_file*, int deleteFlag);
+  /* Methods above are valid for version 2 */
   /* Additional methods may be added in future releases */
 };
 
@@ -818,7 +826,6 @@ typedef struct sqlite3_mutex sqlite3_mutex;
 **
 */
 typedef struct sqlite3_vfs sqlite3_vfs;
-typedef struct sqlite3_shm sqlite3_shm;
 struct sqlite3_vfs {
   int iVersion;            /* Structure version number (currently 2) */
   int szOsFile;            /* Size of subclassed sqlite3_file */
@@ -843,12 +850,6 @@ struct sqlite3_vfs {
   ** The methods above are in version 1 of the sqlite_vfs object
   ** definition.  Those that follow are added in version 2 or later
   */
-  int (*xShmOpen)(sqlite3_vfs*, const char *zName, sqlite3_shm**);
-  int (*xShmSize)(sqlite3_vfs*, sqlite3_shm*, int reqSize, int *pNewSize);
-  int (*xShmGet)(sqlite3_vfs*, sqlite3_shm*, int reqSize, int *pSize, void**);
-  int (*xShmRelease)(sqlite3_vfs*, sqlite3_shm*);
-  int (*xShmLock)(sqlite3_vfs*, sqlite3_shm*, int desiredLock, int *gotLock);
-  int (*xShmClose)(sqlite3_vfs*, sqlite3_shm*, int deleteFlag);
   int (*xRename)(sqlite3_vfs*, const char *zOld, const char *zNew, int dirSync);
   int (*xCurrentTimeInt64)(sqlite3_vfs*, sqlite3_int64*);
   /*

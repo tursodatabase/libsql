@@ -98,6 +98,24 @@ int sqlite3OsSectorSize(sqlite3_file *id){
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
+int sqlite3OsShmOpen(sqlite3_file *id){
+  return id->pMethods->xShmOpen(id);
+}
+int sqlite3OsShmSize(sqlite3_file *id, int reqSize, int *pNewSize){
+  return id->pMethods->xShmSize(id, reqSize, pNewSize);
+}
+int sqlite3OsShmGet(sqlite3_file *id, int reqSize, int *pSize, void **pp){
+  return id->pMethods->xShmGet(id, reqSize, pSize, pp);
+}
+int sqlite3OsShmRelease(sqlite3_file *id){
+  return id->pMethods->xShmRelease(id);
+}
+int sqlite3OsShmLock(sqlite3_file *id, int desiredLock, int *pGotLock){
+  return id->pMethods->xShmLock(id, desiredLock, pGotLock);
+}
+int sqlite3OsShmClose(sqlite3_file *id, int deleteFlag){
+  return id->pMethods->xShmClose(id, deleteFlag);
+}
 
 /*
 ** The next group of routines are convenience wrappers around the
