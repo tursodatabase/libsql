@@ -1467,8 +1467,8 @@ int sqlite3WalCheckpoint(
   ** be set to UNLOCK when this function returns. This is Ok.
   */
   assert( (pWal->lockState==SQLITE_SHM_UNLOCK)
-       || (pWal->exclusiveMode && pWal->lockState==SQLITE_SHM_READ)
-  );
+       || (pWal->lockState==SQLITE_SHM_READ) );
+  walSetLock(pWal, SQLITE_SHM_UNLOCK);
   do {
     rc = walSetLock(pWal, SQLITE_SHM_CHECKPOINT);
   }while( rc==SQLITE_BUSY && xBusyHandler(pBusyHandlerArg) );
