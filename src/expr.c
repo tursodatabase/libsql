@@ -2083,6 +2083,27 @@ static void sqlite3ExprCachePinRegister(Parse *pParse, int iReg){
 }
 
 /*
+** Generate code to extract the value of the iCol-th column of a table.
+*/
+void sqlite3ExprCodeGetColumnOfTable(
+  Vdbe *v,        /* The VDBE under construction */
+  Table *pTab,    /* The table containing the value */
+  int iTabCur,    /* The cursor for this table */
+  int iCol,       /* Index of the column to extract */
+  int regOut      /* Extract the valud into this register */
+){
+  if( iCol<0 || iCol==pTab->iPKey ){
+    sqlite3VdbeAddOp2(v, OP_Rowid, iTabCur, regOut);
+  }else{
+    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
+    sqlite3VdbeAddOp3(v, op, iTabCur, iCol, regOut);
+  }
+  if( iCol>=0 ){
+    sqlite3ColumnDefault(v, pTab, iCol, regOut);
+  }
+}
+
+/*
 ** Generate code that will extract the iColumn-th column from
 ** table pTab and store the column value in a register.  An effort
 ** is made to store the column value in register iReg, but this is
@@ -2110,13 +2131,7 @@ int sqlite3ExprCodeGetColumn(
     }
   }  
   assert( v!=0 );
-  if( iColumn<0 ){
-    sqlite3VdbeAddOp2(v, OP_Rowid, iTable, iReg);
-  }else if( ALWAYS(pTab!=0) ){
-    int op = IsVirtual(pTab) ? OP_VColumn : OP_Column;
-    sqlite3VdbeAddOp3(v, op, iTable, iColumn, iReg);
-    sqlite3ColumnDefault(v, pTab, iColumn, iReg);
-  }
+  sqlite3ExprCodeGetColumnOfTable(v, pTab, iTable, iColumn, iReg);
   sqlite3ExprCacheStore(pParse, iTable, iColumn, iReg);
   return iReg;
 }

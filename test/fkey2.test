@@ -77,6 +77,9 @@ ifcapable {!foreignkey||!trigger} {
 # fkey2-genfkey.*: Tests that were used with the shell tool .genfkey
 #            command. Recycled to test the built-in implementation.
 #
+# fkey2-dd08e5.*:  Tests to verify that ticket dd08e5a988d00decc4a543daa8d
+#                  has been fixed.
+#
 
 
 execsql { PRAGMA foreign_keys = on }
@@ -1799,5 +1802,47 @@ do_test fkey2-genfkey.3.6 {
     SELECT * FROM t3;
   }
 } {hello {} {}}
+
+#-------------------------------------------------------------------------
+# Verify that ticket dd08e5a988d00decc4a543daa8dbbfab9c577ad8 has been
+# fixed.
+#
+do_test fkey2-dd08e5.1.1 {
+  execsql {
+    PRAGMA foreign_keys=ON;
+    CREATE TABLE tdd08(a INTEGER PRIMARY KEY, b);
+    CREATE UNIQUE INDEX idd08 ON tdd08(a,b);
+    INSERT INTO tdd08 VALUES(200,300);
+
+    CREATE TABLE tdd08_b(w,x,y, FOREIGN KEY(x,y) REFERENCES tdd08(a,b));
+    INSERT INTO tdd08_b VALUES(100,200,300);
+  }
+} {}
+do_test fkey2-dd08e5.1.2 {
+  catchsql {
+    DELETE FROM tdd08;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.3 {
+  execsql {
+    SELECT * FROM tdd08;
+  }
+} {200 300}
+do_test fkey2-dd08e5.1.4 {
+  catchsql {
+    INSERT INTO tdd08_b VALUES(400,500,300);
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.5 {
+  catchsql {
+    UPDATE tdd08_b SET x=x+1;
+  }
+} {1 {foreign key constraint failed}}
+do_test fkey2-dd08e5.1.6 {
+  catchsql {
+    UPDATE tdd08 SET a=a+1;
+  }
+} {1 {foreign key constraint failed}}
+
 
 finish_test

@@ -508,9 +508,7 @@ void sqlite3GenerateRowDelete(
     sqlite3VdbeAddOp2(v, OP_Copy, iRowid, iOld);
     for(iCol=0; iCol<pTab->nCol; iCol++){
       if( mask==0xffffffff || mask&(1<<iCol) ){
-        int iTarget = iOld + iCol + 1;
-        sqlite3VdbeAddOp3(v, OP_Column, iCur, iCol, iTarget);
-        sqlite3ColumnDefault(v, pTab, iCol, iTarget);
+        sqlite3ExprCodeGetColumnOfTable(v, pTab, iCur, iCol, iOld+iCol+1);
       }
     }
 
