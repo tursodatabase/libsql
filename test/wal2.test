@@ -588,6 +588,18 @@ do_test wal2-6.5.1 {
     PRAGMA journal_mode;
   }
 } {wal exclusive wal}
+do_test wal2-6.5.2 {
+  execsql {
+    PRAGMA locking_mode = normal;
+    INSERT INTO t2 VALUES('III', 'IV');
+    PRAGMA locking_mode = exclusive;
+    SELECT * FROM t2;
+  }
+} {normal exclusive I II III IV}
+do_test wal2-6.5.3 {
+  execsql { PRAGMA wal_checkpoint }
+} {}
+
 db close
 
 finish_test

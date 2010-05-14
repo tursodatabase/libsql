@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\sdebugging\selements\sof\sthe\ssqlite3_mutex\sobject\svolatile\sand\smake\sthem\nonly\sappear\swhen\scompiling\swith\sSQLITE_DEBUG.\s\sTicket\s[51914f6acd2cb462].
-D 2010-05-13T20:19:17
+C Add\sxShmXXX\smethods\sto\stest_osinst.c.
+D 2010-05-14T08:39:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,7 +201,7 @@ F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c df4d7858b5cd1dffe92d36ec9dbad11f0037ffd1
-F src/test_osinst.c 1a8074514af1ad5154f010ce87776981558bcfd7
+F src/test_osinst.c 06ccd1bcf8193bd80bccbea07c0b2f40ea48bfdb
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -766,7 +763,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 7a100918c45872fa19cfb4413299b9afb08727b6
-F test/wal2.test 2eba114ff58f0688278ad45249625af89a0bc9fa
+F test/wal2.test 03059bc4d450c37f4b53278ddc3e2c7d53ac2d3f
 F test/walbak.test a0e45187c7d8928df035dfea29b99b016b21ca3c
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walfault.test 98df47444944a6db2161eed5cef71d6c00bcb8c3
@@ -817,14 +814,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 175b296f9b9680f605537f52a8a53944deaa5391
-R d5299c39eacf8ef75cb22ef8e896c85b
-U drh
-Z c4de85f29400b70f3ccfc19d9b6ef1ea
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL7F7IoxKgR168RlERAl/rAKCJQmVtoXSuuKkoZ5WmLfYvUU8Y6QCePanm
-qTdCHBH6Ih1hf+/7njgzXD0=
-=TMY3
------END PGP SIGNATURE-----
+P e823c60ca4c3d515b8b12dada4631fe8f44975e9
+R 688705eb72656d22ec89aa9c72974093
+U dan
+Z 7259351bee10f369f829692c8f5e1054
