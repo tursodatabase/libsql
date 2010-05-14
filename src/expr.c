@@ -2353,27 +2353,12 @@ int sqlite3ExprCodeTarget(Parse *pParse, Expr *pExpr, int target){
     }
 #endif
     case TK_VARIABLE: {
-      VdbeOp *pOp;
       assert( !ExprHasProperty(pExpr, EP_IntValue) );
       assert( pExpr->u.zToken!=0 );
       assert( pExpr->u.zToken[0]!=0 );
-      if( pExpr->u.zToken[1]==0
-         && (pOp = sqlite3VdbeGetOp(v, -1))->opcode==OP_Variable
-         && pOp->p1+pOp->p3==pExpr->iColumn
-         && pOp->p2+pOp->p3==target
-         && pOp->p4.z==0
-      ){
-        /* If the previous instruction was a copy of the previous unnamed
-        ** parameter into the previous register, then simply increment the
-        ** repeat count on the prior instruction rather than making a new
-        ** instruction.
-        */
-        pOp->p3++;
-      }else{
-        sqlite3VdbeAddOp3(v, OP_Variable, pExpr->iColumn, target, 1);
-        if( pExpr->u.zToken[1]!=0 ){
-          sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
-        }
+      sqlite3VdbeAddOp2(v, OP_Variable, pExpr->iColumn, target);
+      if( pExpr->u.zToken[1]!=0 ){
+        sqlite3VdbeChangeP4(v, -1, pExpr->u.zToken, 0);
       }
       break;
     }

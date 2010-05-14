@@ -1404,8 +1404,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
       }
       pPager->journalOff = 0;
       pPager->journalStarted = 0;
-    }else if( pPager->exclusiveMode 
-     || pPager->journalMode==PAGER_JOURNALMODE_PERSIST
+    }else if( pPager->journalMode==PAGER_JOURNALMODE_PERSIST
+      || (pPager->exclusiveMode && pPager->journalMode!=PAGER_JOURNALMODE_WAL)
     ){
       rc = zeroJournalHdr(pPager, hasMaster);
       pager_error(pPager, rc);
@@ -1439,6 +1439,17 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   if( pagerUseWal(pPager) ){
     rc2 = sqlite3WalWriteLock(pPager->pWal, 0);
     pPager->state = PAGER_SHARED;
+
+    /* If the connection was in locking_mode=exclusive mode but is no longer,
+    ** drop the EXCLUSIVE lock held on the database file.
+    */
+    if( rc2==SQLITE_OK 
+     && !pPager->exclusiveMode 
+     && sqlite3WalExclusiveMode(pPager->pWal, -1) 
+    ){
+      sqlite3WalExclusiveMode(pPager->pWal, 0);
+      rc2 = osUnlock(pPager->fd, SHARED_LOCK);
+    }
   }else if( !pPager->exclusiveMode ){
     rc2 = osUnlock(pPager->fd, SHARED_LOCK);
     pPager->state = PAGER_SHARED;
@@ -3066,7 +3077,7 @@ int sqlite3PagerClose(Pager *pPager){
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
 #ifndef SQLITE_OMIT_WAL
-  sqlite3WalClose(pPager->pWal, pPager->fd, 
+  sqlite3WalClose(pPager->pWal,
     (pPager->noSync ? 0 : pPager->sync_flags), 
     pPager->pageSize, pTmp
   );
@@ -4509,15 +4520,34 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
   int rc = SQLITE_OK;
   assert( pPager->state!=PAGER_UNLOCK );
   pPager->subjInMemory = (u8)subjInMemory;
+
   if( pPager->state==PAGER_SHARED ){
     assert( pPager->pInJournal==0 );
     assert( !MEMDB && !pPager->tempFile );
 
     if( pagerUseWal(pPager) ){
+      /* If the pager is configured to use locking_mode=exclusive, and an
+      ** exclusive lock on the database is not already held, obtain it now.
+      */
+      if( pPager->exclusiveMode && !sqlite3WalExclusiveMode(pPager->pWal, -1) ){
+        rc = sqlite3OsLock(pPager->fd, EXCLUSIVE_LOCK);
+        pPager->state = PAGER_SHARED;
+        if( rc!=SQLITE_OK ){
+          return rc;
+        }
+        sqlite3WalExclusiveMode(pPager->pWal, 1);
+      }
+
       /* Grab the write lock on the log file. If successful, upgrade to
-      ** PAGER_EXCLUSIVE state. Otherwise, return an error code to the caller.
+      ** PAGER_RESERVED state. Otherwise, return an error code to the caller.
       ** The busy-handler is not invoked if another connection already
       ** holds the write-lock. If possible, the upper layer will call it.
+      **
+      ** WAL mode sets Pager.state to PAGER_RESERVED when it has an open
+      ** transaction, but never to PAGER_EXCLUSIVE. This is because in 
+      ** PAGER_EXCLUSIVE state the code to roll back savepoint transactions
+      ** may copy data from the sub-journal into the database file as well
+      ** as into the page cache. Which would be incorrect in WAL mode.
       */
       rc = sqlite3WalWriteLock(pPager->pWal, 1);
       if( rc==SQLITE_OK ){
@@ -4525,6 +4555,9 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
         pPager->state = PAGER_RESERVED;
         pPager->journalOff = 0;
       }
+
+      assert( rc!=SQLITE_OK || pPager->state==PAGER_RESERVED );
+      assert( rc==SQLITE_OK || pPager->state==PAGER_SHARED );
     }else{
       /* Obtain a RESERVED lock on the database file. If the exFlag parameter
       ** is true, then immediately upgrade this to an EXCLUSIVE lock. The
@@ -5845,7 +5878,7 @@ int sqlite3PagerCheckpoint(Pager *pPager){
   int rc = SQLITE_OK;
   if( pPager->pWal ){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
-    rc = sqlite3WalCheckpoint(pPager->pWal, pPager->fd, 
+    rc = sqlite3WalCheckpoint(pPager->pWal,
         (pPager->noSync ? 0 : pPager->sync_flags),
         pPager->pageSize, zBuf, 
         pPager->xBusyHandler, pPager->pBusyHandlerArg
@@ -5856,6 +5889,15 @@ int sqlite3PagerCheckpoint(Pager *pPager){
 
 int sqlite3PagerWalCallback(Pager *pPager){
   return sqlite3WalCallback(pPager->pWal);
+}
+
+/*
+** Return true if the underlying VFS for the given pager supports the
+** primitives necessary for write-ahead logging.
+*/
+int sqlite3PagerWalSupported(Pager *pPager){
+  const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
+  return pMethods->iVersion>=2 && pMethods->xShmOpen!=0;
 }
 
 /*
@@ -5870,12 +5912,14 @@ int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen){
 
   assert( pPager->state>=PAGER_SHARED );
   if( !pPager->pWal ){
+    if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
 
     /* Open the connection to the log file. If this operation fails, 
     ** (e.g. due to malloc() failure), unlock the database file and 
     ** return an error code.
     */
-    rc = sqlite3WalOpen(pPager->pVfs, pPager->zFilename, &pPager->pWal);
+    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
+                        pPager->zFilename, &pPager->pWal);
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
     }
@@ -5911,7 +5955,8 @@ int sqlite3PagerCloseWal(Pager *pPager){
       rc = pagerHasWAL(pPager, &logexists);
     }
     if( rc==SQLITE_OK && logexists ){
-      rc = sqlite3WalOpen(pPager->pVfs, pPager->zFilename, &pPager->pWal);
+      rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
+                          pPager->zFilename, &pPager->pWal);
     }
   }
     
@@ -5921,11 +5966,15 @@ int sqlite3PagerCloseWal(Pager *pPager){
   if( rc==SQLITE_OK && pPager->pWal ){
     rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
-      rc = sqlite3WalClose(pPager->pWal, pPager->fd,
-        (pPager->noSync ? 0 : pPager->sync_flags), 
+      rc = sqlite3WalClose(pPager->pWal,
+                           (pPager->noSync ? 0 : pPager->sync_flags), 
         pPager->pageSize, (u8*)pPager->pTmpSpace
       );
       pPager->pWal = 0;
+    }else{
+      /* If we cannot get an EXCLUSIVE lock, downgrade the PENDING lock
+      ** that we did get back to SHARED. */
+      sqlite3OsUnlock(pPager->fd, SQLITE_LOCK_SHARED);
     }
   }
   return rc;

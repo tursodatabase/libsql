@@ -78,20 +78,6 @@ proc ostrace_call {zCall nClick zFile i32 i64} {
 }
 
 for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[lindex $argv $i] eq "--ossummary" || [lindex $argv $i] eq "--ostrace"} {
-    sqlite3_instvfs create -default ostrace
-    set tester_do_ostrace 1
-    set ostrace_fd [open ostrace.sql w]
-    puts $ostrace_fd "BEGIN;"
-    if {[lindex $argv $i] eq "--ostrace"} {
-      set    s "CREATE TABLE ostrace"
-      append s "(method TEXT, clicks INT, file TEXT, i32 INT, i64 INT);"
-      puts $ostrace_fd $s
-      sqlite3_instvfs configure ostrace ostrace_call
-      sqlite3_instvfs configure ostrace ostrace_call
-    }
-    set argv [lreplace $argv $i $i]
-  }
   if {[lindex $argv $i] eq "--binarylog"} {
     set tester_do_binarylog 1
     set argv [lreplace $argv $i $i]
@@ -134,8 +120,8 @@ if {![info exists nTest]} {
   sqlite3_initialize
   autoinstall_test_functions
   if {[info exists tester_do_binarylog]} {
-    sqlite3_instvfs binarylog -default binarylog ostrace.bin
-    sqlite3_instvfs marker binarylog "$argv0 $argv"
+    vfslog new binarylog {} vfslog.bin
+    #sqlite3_instvfs marker binarylog "$argv0 $argv"
   }
 }
 
@@ -180,7 +166,7 @@ proc do_test {name cmd expected} {
   global argv nErr nTest skip_test maxErr
   sqlite3_memdebug_settitle $name
   if {[info exists ::tester_do_binarylog]} {
-    sqlite3_instvfs marker binarylog "Start of $name"
+    #sqlite3_instvfs marker binarylog "Start of $name"
   }
   if {$skip_test} {
     set skip_test 0
@@ -216,7 +202,7 @@ proc do_test {name cmd expected} {
   }
   flush stdout
   if {[info exists ::tester_do_binarylog]} {
-    sqlite3_instvfs marker binarylog "End of $name"
+    #sqlite3_instvfs marker binarylog "End of $name"
   }
 }
 
@@ -311,25 +297,11 @@ proc finalize_testing {} {
     puts "******************************************************************"
   }
   if {[info exists ::tester_do_binarylog]} {
-    sqlite3_instvfs destroy binarylog
+    vfslog finalize binarylog
   }
   if {$sqlite_open_file_count} {
     puts "$sqlite_open_file_count files were left open"
     incr nErr
-  }
-  if {[info exists ::tester_do_ostrace]} {
-    puts "Writing ostrace.sql..."
-    set fd $::ostrace_fd
-
-    puts -nonewline $fd "CREATE TABLE ossummary"
-    puts $fd "(method TEXT, clicks INTEGER, count INTEGER);"
-    foreach row [sqlite3_instvfs report ostrace] {
-      foreach {method count clicks} $row break
-      puts $fd "INSERT INTO ossummary VALUES('$method', $clicks, $count);"
-    }
-    puts $fd "COMMIT;"
-    close $fd
-    sqlite3_instvfs destroy ostrace
   }
   if {[sqlite3_memory_used]>0} {
     puts "Unfreed memory: [sqlite3_memory_used] bytes"
