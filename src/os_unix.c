@@ -203,7 +203,7 @@ struct unixFile {
   struct unixLockInfo *pLock;      /* Info about locks on this inode */
   int h;                           /* The file descriptor */
   int dirfd;                       /* File descriptor for the directory */
-  unsigned char locktype;          /* The type of lock held on this fd */
+  unsigned char eFileLock;          /* The type of lock held on this fd */
   int lastErrno;                   /* The unix errno from the last I/O error */
   void *lockingContext;            /* Locking style specific state */
   UnixUnusedFd *pUnused;           /* Pre-allocated UnixUnusedFd */
@@ -324,8 +324,8 @@ static int unixMutexHeld(void) {
 ** binaries. This returns the string represetation of the supplied
 ** integer lock-type.
 */
-static const char *locktypeName(int locktype){
-  switch( locktype ){
+static const char *azFileLock(int eFileLock){
+  switch( eFileLock ){
     case NO_LOCK: return "NONE";
     case SHARED_LOCK: return "SHARED";
     case RESERVED_LOCK: return "RESERVED";
@@ -761,8 +761,8 @@ struct unixLockKey {
 */
 struct unixLockInfo {
   struct unixLockKey lockKey;     /* The lookup key */
-  int cnt;                        /* Number of SHARED locks held */
-  int locktype;                   /* One of SHARED_LOCK, RESERVED_LOCK etc. */
+  int nShared;                    /* Number of SHARED locks held */
+  int eFileLock;                   /* One of SHARED_LOCK, RESERVED_LOCK etc. */
   int nRef;                       /* Number of pointers to this structure */
 #if defined(SQLITE_ENABLE_LOCKING_STYLE)
   unsigned long long sharedByte;  /* for AFP simulated shared lock */
@@ -1051,8 +1051,8 @@ static int findLockInfo(
       }
       memcpy(&pLock->lockKey,&lockKey,sizeof(lockKey));
       pLock->nRef = 1;
-      pLock->cnt = 0;
-      pLock->locktype = 0;
+      pLock->nShared = 0;
+      pLock->eFileLock = 0;
 #if defined(SQLITE_ENABLE_LOCKING_STYLE)
       pLock->sharedByte = 0;
 #endif
@@ -1115,22 +1115,22 @@ static int transferOwnership(unixFile *pFile){
   hSelf = pthread_self();
   if( pthread_equal(pFile->tid, hSelf) ){
     /* We are still in the same thread */
-    OSTRACE1("No-transfer, same thread\n");
+    OSTRACE(("No-transfer, same thread\n"));
     return SQLITE_OK;
   }
-  if( pFile->locktype!=NO_LOCK ){
+  if( pFile->eFileLock!=NO_LOCK ){
     /* We cannot change ownership while we are holding a lock! */
     return SQLITE_MISUSE_BKPT;
   }
-  OSTRACE4("Transfer ownership of %d from %d to %d\n",
-            pFile->h, pFile->tid, hSelf);
+  OSTRACE(("Transfer ownership of %d from %d to %d\n",
+            pFile->h, pFile->tid, hSelf));
   pFile->tid = hSelf;
   if (pFile->pLock != NULL) {
     releaseLockInfo(pFile->pLock);
     rc = findLockInfo(pFile, &pFile->pLock, 0);
-    OSTRACE5("LOCK    %d is now %s(%s,%d)\n", pFile->h,
-           locktypeName(pFile->locktype),
-           locktypeName(pFile->pLock->locktype), pFile->pLock->cnt);
+    OSTRACE(("LOCK    %d is now %s(%s,%d)\n", pFile->h,
+           azFileLock(pFile->eFileLock),
+           azFileLock(pFile->pLock->eFileLock), pFile->pLock->nShared));
     return rc;
   } else {
     return SQLITE_OK;
@@ -1159,7 +1159,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   unixEnterMutex(); /* Because pFile->pLock is shared across threads */
 
   /* Check if a thread in this process holds such a lock */
-  if( pFile->pLock->locktype>SHARED_LOCK ){
+  if( pFile->pLock->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
 
@@ -1183,14 +1183,14 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 #endif
   
   unixLeaveMutex();
-  OSTRACE4("TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved);
+  OSTRACE(("TEST WR-LOCK %d %d %d (unix)\n", pFile->h, rc, reserved));
 
   *pResOut = reserved;
   return rc;
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -1213,7 +1213,7 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int unixLock(sqlite3_file *id, int locktype){
+static int unixLock(sqlite3_file *id, int eFileLock){
   /* The following describes the implementation of the various locks and
   ** lock transitions in terms of the POSIX advisory shared and exclusive
   ** lock primitives (called read-locks and write-locks below, to avoid
@@ -1260,17 +1260,17 @@ static int unixLock(sqlite3_file *id, int locktype){
   int tErrno = 0;
 
   assert( pFile );
-  OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
-      locktypeName(locktype), locktypeName(pFile->locktype),
-      locktypeName(pLock->locktype), pLock->cnt , getpid());
+  OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
+      azFileLock(eFileLock), azFileLock(pFile->eFileLock),
+      azFileLock(pLock->eFileLock), pLock->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
   ** unixEnterMutex() hasn't been called yet.
   */
-  if( pFile->locktype>=locktype ){
-    OSTRACE3("LOCK    %d %s ok (already held) (unix)\n", pFile->h,
-            locktypeName(locktype));
+  if( pFile->eFileLock>=eFileLock ){
+    OSTRACE(("LOCK    %d %s ok (already held) (unix)\n", pFile->h,
+            azFileLock(eFileLock)));
     return SQLITE_OK;
   }
 
@@ -1279,9 +1279,9 @@ static int unixLock(sqlite3_file *id, int locktype){
   **  (2) SQLite never explicitly requests a pendig lock.
   **  (3) A shared lock is always held when a reserve lock is requested.
   */
-  assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );
-  assert( locktype!=PENDING_LOCK );
-  assert( locktype!=RESERVED_LOCK || pFile->locktype==SHARED_LOCK );
+  assert( pFile->eFileLock!=NO_LOCK || eFileLock==SHARED_LOCK );
+  assert( eFileLock!=PENDING_LOCK );
+  assert( eFileLock!=RESERVED_LOCK || pFile->eFileLock==SHARED_LOCK );
 
   /* This mutex is needed because pFile->pLock is shared across threads
   */
@@ -1299,8 +1299,8 @@ static int unixLock(sqlite3_file *id, int locktype){
   /* If some thread using this PID has a lock via a different unixFile*
   ** handle that precludes the requested lock, return BUSY.
   */
-  if( (pFile->locktype!=pLock->locktype && 
-          (pLock->locktype>=PENDING_LOCK || locktype>SHARED_LOCK))
+  if( (pFile->eFileLock!=pLock->eFileLock && 
+          (pLock->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
   ){
     rc = SQLITE_BUSY;
     goto end_lock;
@@ -1310,13 +1310,13 @@ static int unixLock(sqlite3_file *id, int locktype){
   ** has a SHARED or RESERVED lock, then increment reference counts and
   ** return SQLITE_OK.
   */
-  if( locktype==SHARED_LOCK && 
-      (pLock->locktype==SHARED_LOCK || pLock->locktype==RESERVED_LOCK) ){
-    assert( locktype==SHARED_LOCK );
-    assert( pFile->locktype==0 );
-    assert( pLock->cnt>0 );
-    pFile->locktype = SHARED_LOCK;
-    pLock->cnt++;
+  if( eFileLock==SHARED_LOCK && 
+      (pLock->eFileLock==SHARED_LOCK || pLock->eFileLock==RESERVED_LOCK) ){
+    assert( eFileLock==SHARED_LOCK );
+    assert( pFile->eFileLock==0 );
+    assert( pLock->nShared>0 );
+    pFile->eFileLock = SHARED_LOCK;
+    pLock->nShared++;
     pFile->pOpen->nLock++;
     goto end_lock;
   }
@@ -1328,10 +1328,10 @@ static int unixLock(sqlite3_file *id, int locktype){
   */
   lock.l_len = 1L;
   lock.l_whence = SEEK_SET;
-  if( locktype==SHARED_LOCK 
-      || (locktype==EXCLUSIVE_LOCK && pFile->locktype<PENDING_LOCK)
+  if( eFileLock==SHARED_LOCK 
+      || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock<PENDING_LOCK)
   ){
-    lock.l_type = (locktype==SHARED_LOCK?F_RDLCK:F_WRLCK);
+    lock.l_type = (eFileLock==SHARED_LOCK?F_RDLCK:F_WRLCK);
     lock.l_start = PENDING_BYTE;
     s = fcntl(pFile->h, F_SETLK, &lock);
     if( s==(-1) ){
@@ -1348,9 +1348,9 @@ static int unixLock(sqlite3_file *id, int locktype){
   /* If control gets to this point, then actually go ahead and make
   ** operating system calls for the specified lock.
   */
-  if( locktype==SHARED_LOCK ){
-    assert( pLock->cnt==0 );
-    assert( pLock->locktype==0 );
+  if( eFileLock==SHARED_LOCK ){
+    assert( pLock->nShared==0 );
+    assert( pLock->eFileLock==0 );
 
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
@@ -1379,11 +1379,11 @@ static int unixLock(sqlite3_file *id, int locktype){
         pFile->lastErrno = tErrno;
       }
     }else{
-      pFile->locktype = SHARED_LOCK;
+      pFile->eFileLock = SHARED_LOCK;
       pFile->pOpen->nLock++;
-      pLock->cnt = 1;
+      pLock->nShared = 1;
     }
-  }else if( locktype==EXCLUSIVE_LOCK && pLock->cnt>1 ){
+  }else if( eFileLock==EXCLUSIVE_LOCK && pLock->nShared>1 ){
     /* We are trying for an exclusive lock but another thread in this
     ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -1392,9 +1392,9 @@ static int unixLock(sqlite3_file *id, int locktype){
     ** assumed that there is a SHARED or greater lock on the file
     ** already.
     */
-    assert( 0!=pFile->locktype );
+    assert( 0!=pFile->eFileLock );
     lock.l_type = F_WRLCK;
-    switch( locktype ){
+    switch( eFileLock ){
       case RESERVED_LOCK:
         lock.l_start = RESERVED_BYTE;
         break;
@@ -1423,8 +1423,8 @@ static int unixLock(sqlite3_file *id, int locktype){
   ** write operation (not a hot journal rollback).
   */
   if( rc==SQLITE_OK
-   && pFile->locktype<=SHARED_LOCK
-   && locktype==RESERVED_LOCK
+   && pFile->eFileLock<=SHARED_LOCK
+   && eFileLock==RESERVED_LOCK
   ){
     pFile->transCntrChng = 0;
     pFile->dbUpdate = 0;
@@ -1434,17 +1434,17 @@ static int unixLock(sqlite3_file *id, int locktype){
 
 
   if( rc==SQLITE_OK ){
-    pFile->locktype = locktype;
-    pLock->locktype = locktype;
-  }else if( locktype==EXCLUSIVE_LOCK ){
-    pFile->locktype = PENDING_LOCK;
-    pLock->locktype = PENDING_LOCK;
+    pFile->eFileLock = eFileLock;
+    pLock->eFileLock = eFileLock;
+  }else if( eFileLock==EXCLUSIVE_LOCK ){
+    pFile->eFileLock = PENDING_LOCK;
+    pLock->eFileLock = PENDING_LOCK;
   }
 
 end_lock:
   unixLeaveMutex();
-  OSTRACE4("LOCK    %d %s %s (unix)\n", pFile->h, locktypeName(locktype), 
-      rc==SQLITE_OK ? "ok" : "failed");
+  OSTRACE(("LOCK    %d %s %s (unix)\n", pFile->h, azFileLock(eFileLock), 
+      rc==SQLITE_OK ? "ok" : "failed"));
   return rc;
 }
 
@@ -1492,7 +1492,7 @@ static void setPendingFd(unixFile *pFile){
 }
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
@@ -1504,7 +1504,7 @@ static void setPendingFd(unixFile *pFile){
 ** around a bug in BSD NFS lockd (also seen on MacOSX 10.3+) that fails to 
 ** remove the write lock on a region when a read lock is set.
 */
-static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
+static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixFile *pFile = (unixFile*)id;
   struct unixLockInfo *pLock;
   struct flock lock;
@@ -1513,11 +1513,12 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
   int tErrno;                      /* Error code from system call errors */
 
   assert( pFile );
-  OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, locktype,
-      pFile->locktype, pFile->pLock->locktype, pFile->pLock->cnt, getpid());
+  OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
+      pFile->eFileLock, pFile->pLock->eFileLock, pFile->pLock->nShared,
+      getpid()));
 
-  assert( locktype<=SHARED_LOCK );
-  if( pFile->locktype<=locktype ){
+  assert( eFileLock<=SHARED_LOCK );
+  if( pFile->eFileLock<=eFileLock ){
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
@@ -1526,9 +1527,9 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
   unixEnterMutex();
   h = pFile->h;
   pLock = pFile->pLock;
-  assert( pLock->cnt!=0 );
-  if( pFile->locktype>SHARED_LOCK ){
-    assert( pLock->locktype==pFile->locktype );
+  assert( pLock->nShared!=0 );
+  if( pFile->eFileLock>SHARED_LOCK ){
+    assert( pLock->eFileLock==pFile->eFileLock );
     SimulateIOErrorBenign(1);
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
@@ -1559,7 +1560,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
     **  3:   [RRRRW]
     **  4:   [RRRR.]
     */
-    if( locktype==SHARED_LOCK ){
+    if( eFileLock==SHARED_LOCK ){
       if( handleNFSUnlock ){
         off_t divSize = SHARED_SIZE - 1;
         
@@ -1619,7 +1620,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
     if( fcntl(h, F_SETLK, &lock)!=(-1) ){
-      pLock->locktype = SHARED_LOCK;
+      pLock->eFileLock = SHARED_LOCK;
     }else{
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
@@ -1629,15 +1630,15 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
       goto end_unlock;
     }
   }
-  if( locktype==NO_LOCK ){
+  if( eFileLock==NO_LOCK ){
     struct unixOpenCnt *pOpen;
 
     /* Decrement the shared lock counter.  Release the lock using an
     ** OS call only when all threads in this same process have released
     ** the lock.
     */
-    pLock->cnt--;
-    if( pLock->cnt==0 ){
+    pLock->nShared--;
+    if( pLock->nShared==0 ){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
@@ -1645,15 +1646,15 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
       if( fcntl(h, F_SETLK, &lock)!=(-1) ){
-        pLock->locktype = NO_LOCK;
+        pLock->eFileLock = NO_LOCK;
       }else{
         tErrno = errno;
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
         }
-        pLock->locktype = NO_LOCK;
-        pFile->locktype = NO_LOCK;
+        pLock->eFileLock = NO_LOCK;
+        pFile->eFileLock = NO_LOCK;
       }
     }
 
@@ -1674,19 +1675,19 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
 	
 end_unlock:
   unixLeaveMutex();
-  if( rc==SQLITE_OK ) pFile->locktype = locktype;
+  if( rc==SQLITE_OK ) pFile->eFileLock = eFileLock;
   return rc;
 }
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int unixUnlock(sqlite3_file *id, int locktype){
-  return _posixUnlock(id, locktype, 0);
+static int unixUnlock(sqlite3_file *id, int eFileLock){
+  return _posixUnlock(id, eFileLock, 0);
 }
 
 /*
@@ -1727,10 +1728,10 @@ static int closeUnixFile(sqlite3_file *id){
       pFile->pId = 0;
     }
 #endif
-    OSTRACE2("CLOSE   %-3d\n", pFile->h);
+    OSTRACE(("CLOSE   %-3d\n", pFile->h);
     OpenCounter(-1);
     sqlite3_free(pFile->pUnused);
-    memset(pFile, 0, sizeof(unixFile));
+    memset(pFile, 0, sizeof(unixFile)));
   }
   return SQLITE_OK;
 }
@@ -1852,7 +1853,7 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
   assert( pFile );
 
   /* Check if a thread in this process holds such a lock */
-  if( pFile->locktype>SHARED_LOCK ){
+  if( pFile->eFileLock>SHARED_LOCK ){
     /* Either this connection or some other connection in the same process
     ** holds a lock on the file.  No need to check further. */
     reserved = 1;
@@ -1861,13 +1862,13 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
     const char *zLockFile = (const char*)pFile->lockingContext;
     reserved = access(zLockFile, 0)==0;
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved);
+  OSTRACE(("TEST WR-LOCK %d %d %d (dotlock)\n", pFile->h, rc, reserved));
   *pResOut = reserved;
   return rc;
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -1893,7 +1894,7 @@ static int dotlockCheckReservedLock(sqlite3_file *id, int *pResOut) {
 ** With dotfile locking, we really only support state (4): EXCLUSIVE.
 ** But we track the other locking levels internally.
 */
-static int dotlockLock(sqlite3_file *id, int locktype) {
+static int dotlockLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   int fd;
   char *zLockFile = (char *)pFile->lockingContext;
@@ -1903,8 +1904,8 @@ static int dotlockLock(sqlite3_file *id, int locktype) {
   /* If we have any lock, then the lock file already exists.  All we have
   ** to do is adjust our internal record of the lock level.
   */
-  if( pFile->locktype > NO_LOCK ){
-    pFile->locktype = locktype;
+  if( pFile->eFileLock > NO_LOCK ){
+    pFile->eFileLock = eFileLock;
 #if !OS_VXWORKS
     /* Always update the timestamp on the old file */
     utimes(zLockFile, NULL);
@@ -1933,12 +1934,12 @@ static int dotlockLock(sqlite3_file *id, int locktype) {
   }
   
   /* got it, set the type and return ok */
-  pFile->locktype = locktype;
+  pFile->eFileLock = eFileLock;
   return rc;
 }
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
@@ -1946,30 +1947,30 @@ static int dotlockLock(sqlite3_file *id, int locktype) {
 **
 ** When the locking level reaches NO_LOCK, delete the lock file.
 */
-static int dotlockUnlock(sqlite3_file *id, int locktype) {
+static int dotlockUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   char *zLockFile = (char *)pFile->lockingContext;
 
   assert( pFile );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, locktype,
-	   pFile->locktype, getpid());
-  assert( locktype<=SHARED_LOCK );
+  OSTRACE(("UNLOCK  %d %d was %d pid=%d (dotlock)\n", pFile->h, eFileLock,
+	   pFile->eFileLock, getpid()));
+  assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
-  if( pFile->locktype==locktype ){
+  if( pFile->eFileLock==eFileLock ){
     return SQLITE_OK;
   }
 
   /* To downgrade to shared, simply update our internal notion of the
   ** lock state.  No need to mess with the file on disk.
   */
-  if( locktype==SHARED_LOCK ){
-    pFile->locktype = SHARED_LOCK;
+  if( eFileLock==SHARED_LOCK ){
+    pFile->eFileLock = SHARED_LOCK;
     return SQLITE_OK;
   }
   
   /* To fully unlock the database, delete the lock file */
-  assert( locktype==NO_LOCK );
+  assert( eFileLock==NO_LOCK );
   if( unlink(zLockFile) ){
     int rc = 0;
     int tErrno = errno;
@@ -1981,7 +1982,7 @@ static int dotlockUnlock(sqlite3_file *id, int locktype) {
     }
     return rc; 
   }
-  pFile->locktype = NO_LOCK;
+  pFile->eFileLock = NO_LOCK;
   return SQLITE_OK;
 }
 
@@ -2034,7 +2035,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
   assert( pFile );
   
   /* Check if a thread in this process holds such a lock */
-  if( pFile->locktype>SHARED_LOCK ){
+  if( pFile->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
   
@@ -2065,7 +2066,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
       }
     }
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved);
+  OSTRACE(("TEST WR-LOCK %d %d %d (flock)\n", pFile->h, rc, reserved));
 
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
@@ -2078,7 +2079,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -2106,7 +2107,7 @@ static int flockCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int flockLock(sqlite3_file *id, int locktype) {
+static int flockLock(sqlite3_file *id, int eFileLock) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
 
@@ -2114,8 +2115,8 @@ static int flockLock(sqlite3_file *id, int locktype) {
 
   /* if we already have a lock, it is exclusive.  
   ** Just adjust level and punt on outta here. */
-  if (pFile->locktype > NO_LOCK) {
-    pFile->locktype = locktype;
+  if (pFile->eFileLock > NO_LOCK) {
+    pFile->eFileLock = eFileLock;
     return SQLITE_OK;
   }
   
@@ -2130,10 +2131,10 @@ static int flockLock(sqlite3_file *id, int locktype) {
     }
   } else {
     /* got it, set the type and return ok */
-    pFile->locktype = locktype;
+    pFile->eFileLock = eFileLock;
   }
-  OSTRACE4("LOCK    %d %s %s (flock)\n", pFile->h, locktypeName(locktype), 
-           rc==SQLITE_OK ? "ok" : "failed");
+  OSTRACE(("LOCK    %d %s %s (flock)\n", pFile->h, azFileLock(eFileLock), 
+           rc==SQLITE_OK ? "ok" : "failed"));
 #ifdef SQLITE_IGNORE_FLOCK_LOCK_ERRORS
   if( (rc & SQLITE_IOERR) == SQLITE_IOERR ){
     rc = SQLITE_BUSY;
@@ -2144,28 +2145,28 @@ static int flockLock(sqlite3_file *id, int locktype) {
 
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int flockUnlock(sqlite3_file *id, int locktype) {
+static int flockUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   
   assert( pFile );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d (flock)\n", pFile->h, locktype,
-           pFile->locktype, getpid());
-  assert( locktype<=SHARED_LOCK );
+  OSTRACE(("UNLOCK  %d %d was %d pid=%d (flock)\n", pFile->h, eFileLock,
+           pFile->eFileLock, getpid()));
+  assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
-  if( pFile->locktype==locktype ){
+  if( pFile->eFileLock==eFileLock ){
     return SQLITE_OK;
   }
   
   /* shared can just be set because we always have an exclusive */
-  if (locktype==SHARED_LOCK) {
-    pFile->locktype = locktype;
+  if (eFileLock==SHARED_LOCK) {
+    pFile->eFileLock = eFileLock;
     return SQLITE_OK;
   }
   
@@ -2185,7 +2186,7 @@ static int flockUnlock(sqlite3_file *id, int locktype) {
     
     return r;
   } else {
-    pFile->locktype = NO_LOCK;
+    pFile->eFileLock = NO_LOCK;
     return SQLITE_OK;
   }
 }
@@ -2233,7 +2234,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
   assert( pFile );
 
   /* Check if a thread in this process holds such a lock */
-  if( pFile->locktype>SHARED_LOCK ){
+  if( pFile->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
   
@@ -2249,21 +2250,21 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
         pFile->lastErrno = tErrno;
       } else {
         /* someone else has the lock when we are in NO_LOCK */
-        reserved = (pFile->locktype < SHARED_LOCK);
+        reserved = (pFile->eFileLock < SHARED_LOCK);
       }
     }else{
       /* we could have it if we want it */
       sem_post(pSem);
     }
   }
-  OSTRACE4("TEST WR-LOCK %d %d %d (sem)\n", pFile->h, rc, reserved);
+  OSTRACE(("TEST WR-LOCK %d %d %d (sem)\n", pFile->h, rc, reserved));
 
   *pResOut = reserved;
   return rc;
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -2291,7 +2292,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int semLock(sqlite3_file *id, int locktype) {
+static int semLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   int fd;
   sem_t *pSem = pFile->pOpen->pSem;
@@ -2299,8 +2300,8 @@ static int semLock(sqlite3_file *id, int locktype) {
 
   /* if we already have a lock, it is exclusive.  
   ** Just adjust level and punt on outta here. */
-  if (pFile->locktype > NO_LOCK) {
-    pFile->locktype = locktype;
+  if (pFile->eFileLock > NO_LOCK) {
+    pFile->eFileLock = eFileLock;
     rc = SQLITE_OK;
     goto sem_end_lock;
   }
@@ -2312,37 +2313,37 @@ static int semLock(sqlite3_file *id, int locktype) {
   }
 
   /* got it, set the type and return ok */
-  pFile->locktype = locktype;
+  pFile->eFileLock = eFileLock;
 
  sem_end_lock:
   return rc;
 }
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int semUnlock(sqlite3_file *id, int locktype) {
+static int semUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   sem_t *pSem = pFile->pOpen->pSem;
 
   assert( pFile );
   assert( pSem );
-  OSTRACE5("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, locktype,
-	   pFile->locktype, getpid());
-  assert( locktype<=SHARED_LOCK );
+  OSTRACE(("UNLOCK  %d %d was %d pid=%d (sem)\n", pFile->h, eFileLock,
+	   pFile->eFileLock, getpid()));
+  assert( eFileLock<=SHARED_LOCK );
   
   /* no-op if possible */
-  if( pFile->locktype==locktype ){
+  if( pFile->eFileLock==eFileLock ){
     return SQLITE_OK;
   }
   
   /* shared can just be set because we always have an exclusive */
-  if (locktype==SHARED_LOCK) {
-    pFile->locktype = locktype;
+  if (eFileLock==SHARED_LOCK) {
+    pFile->eFileLock = eFileLock;
     return SQLITE_OK;
   }
   
@@ -2355,7 +2356,7 @@ static int semUnlock(sqlite3_file *id, int locktype) {
     }
     return rc; 
   }
-  pFile->locktype = NO_LOCK;
+  pFile->eFileLock = NO_LOCK;
   return SQLITE_OK;
 }
 
@@ -2438,15 +2439,15 @@ static int afpSetLock(
   pb.length = length; 
   pb.fd = pFile->h;
   
-  OSTRACE6("AFPSETLOCK [%s] for %d%s in range %llx:%llx\n", 
+  OSTRACE(("AFPSETLOCK [%s] for %d%s in range %llx:%llx\n", 
     (setLockFlag?"ON":"OFF"), pFile->h, (pb.fd==-1?"[testval-1]":""),
-    offset, length);
+    offset, length));
   err = fsctl(path, afpfsByteRangeLock2FSCTL, &pb, 0);
   if ( err==-1 ) {
     int rc;
     int tErrno = errno;
-    OSTRACE4("AFPSETLOCK failed to fsctl() '%s' %d %s\n",
-             path, tErrno, strerror(tErrno));
+    OSTRACE(("AFPSETLOCK failed to fsctl() '%s' %d %s\n",
+             path, tErrno, strerror(tErrno)));
 #ifdef SQLITE_IGNORE_AFP_LOCK_ERRORS
     rc = SQLITE_BUSY;
 #else
@@ -2484,7 +2485,7 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
   unixEnterMutex(); /* Because pFile->pLock is shared across threads */
   
   /* Check if a thread in this process holds such a lock */
-  if( pFile->pLock->locktype>SHARED_LOCK ){
+  if( pFile->pLock->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
   
@@ -2507,14 +2508,14 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
   }
   
   unixLeaveMutex();
-  OSTRACE4("TEST WR-LOCK %d %d %d (afp)\n", pFile->h, rc, reserved);
+  OSTRACE(("TEST WR-LOCK %d %d %d (afp)\n", pFile->h, rc, reserved));
   
   *pResOut = reserved;
   return rc;
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -2537,24 +2538,24 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int afpLock(sqlite3_file *id, int locktype){
+static int afpLock(sqlite3_file *id, int eFileLock){
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
   struct unixLockInfo *pLock = pFile->pLock;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   
   assert( pFile );
-  OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d (afp)\n", pFile->h,
-           locktypeName(locktype), locktypeName(pFile->locktype),
-           locktypeName(pLock->locktype), pLock->cnt , getpid());
+  OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (afp)\n", pFile->h,
+           azFileLock(eFileLock), azFileLock(pFile->eFileLock),
+           azFileLock(pLock->eFileLock), pLock->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the afp_end_lock: exit path, as
   ** unixEnterMutex() hasn't been called yet.
   */
-  if( pFile->locktype>=locktype ){
-    OSTRACE3("LOCK    %d %s ok (already held) (afp)\n", pFile->h,
-           locktypeName(locktype));
+  if( pFile->eFileLock>=eFileLock ){
+    OSTRACE(("LOCK    %d %s ok (already held) (afp)\n", pFile->h,
+           azFileLock(eFileLock)));
     return SQLITE_OK;
   }
 
@@ -2563,9 +2564,9 @@ static int afpLock(sqlite3_file *id, int locktype){
   **  (2) SQLite never explicitly requests a pendig lock.
   **  (3) A shared lock is always held when a reserve lock is requested.
   */
-  assert( pFile->locktype!=NO_LOCK || locktype==SHARED_LOCK );
-  assert( locktype!=PENDING_LOCK );
-  assert( locktype!=RESERVED_LOCK || pFile->locktype==SHARED_LOCK );
+  assert( pFile->eFileLock!=NO_LOCK || eFileLock==SHARED_LOCK );
+  assert( eFileLock!=PENDING_LOCK );
+  assert( eFileLock!=RESERVED_LOCK || pFile->eFileLock==SHARED_LOCK );
   
   /* This mutex is needed because pFile->pLock is shared across threads
   */
@@ -2583,8 +2584,8 @@ static int afpLock(sqlite3_file *id, int locktype){
   /* If some thread using this PID has a lock via a different unixFile*
   ** handle that precludes the requested lock, return BUSY.
   */
-  if( (pFile->locktype!=pLock->locktype && 
-       (pLock->locktype>=PENDING_LOCK || locktype>SHARED_LOCK))
+  if( (pFile->eFileLock!=pLock->eFileLock && 
+       (pLock->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
      ){
     rc = SQLITE_BUSY;
     goto afp_end_lock;
@@ -2594,13 +2595,13 @@ static int afpLock(sqlite3_file *id, int locktype){
   ** has a SHARED or RESERVED lock, then increment reference counts and
   ** return SQLITE_OK.
   */
-  if( locktype==SHARED_LOCK && 
-     (pLock->locktype==SHARED_LOCK || pLock->locktype==RESERVED_LOCK) ){
-    assert( locktype==SHARED_LOCK );
-    assert( pFile->locktype==0 );
-    assert( pLock->cnt>0 );
-    pFile->locktype = SHARED_LOCK;
-    pLock->cnt++;
+  if( eFileLock==SHARED_LOCK && 
+     (pLock->eFileLock==SHARED_LOCK || pLock->eFileLock==RESERVED_LOCK) ){
+    assert( eFileLock==SHARED_LOCK );
+    assert( pFile->eFileLock==0 );
+    assert( pLock->nShared>0 );
+    pFile->eFileLock = SHARED_LOCK;
+    pLock->nShared++;
     pFile->pOpen->nLock++;
     goto afp_end_lock;
   }
@@ -2609,8 +2610,8 @@ static int afpLock(sqlite3_file *id, int locktype){
   ** acquiring an EXCLUSIVE lock.  For the SHARED lock, the PENDING will
   ** be released.
   */
-  if( locktype==SHARED_LOCK 
-      || (locktype==EXCLUSIVE_LOCK && pFile->locktype<PENDING_LOCK)
+  if( eFileLock==SHARED_LOCK 
+      || (eFileLock==EXCLUSIVE_LOCK && pFile->eFileLock<PENDING_LOCK)
   ){
     int failed;
     failed = afpSetLock(context->dbPath, pFile, PENDING_BYTE, 1, 1);
@@ -2623,12 +2624,12 @@ static int afpLock(sqlite3_file *id, int locktype){
   /* If control gets to this point, then actually go ahead and make
   ** operating system calls for the specified lock.
   */
-  if( locktype==SHARED_LOCK ){
+  if( eFileLock==SHARED_LOCK ){
     int lrc1, lrc2, lrc1Errno;
     long lk, mask;
     
-    assert( pLock->cnt==0 );
-    assert( pLock->locktype==0 );
+    assert( pLock->nShared==0 );
+    assert( pLock->eFileLock==0 );
         
     mask = (sizeof(long)==8) ? LARGEST_INT64 : 0x7fffffff;
     /* Now get the read-lock SHARED_LOCK */
@@ -2653,11 +2654,11 @@ static int afpLock(sqlite3_file *id, int locktype){
     } else if( lrc1 != SQLITE_OK ) {
       rc = lrc1;
     } else {
-      pFile->locktype = SHARED_LOCK;
+      pFile->eFileLock = SHARED_LOCK;
       pFile->pOpen->nLock++;
-      pLock->cnt = 1;
+      pLock->nShared = 1;
     }
-  }else if( locktype==EXCLUSIVE_LOCK && pLock->cnt>1 ){
+  }else if( eFileLock==EXCLUSIVE_LOCK && pLock->nShared>1 ){
     /* We are trying for an exclusive lock but another thread in this
      ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -2667,15 +2668,15 @@ static int afpLock(sqlite3_file *id, int locktype){
     ** already.
     */
     int failed = 0;
-    assert( 0!=pFile->locktype );
-    if (locktype >= RESERVED_LOCK && pFile->locktype < RESERVED_LOCK) {
+    assert( 0!=pFile->eFileLock );
+    if (eFileLock >= RESERVED_LOCK && pFile->eFileLock < RESERVED_LOCK) {
         /* Acquire a RESERVED lock */
         failed = afpSetLock(context->dbPath, pFile, RESERVED_BYTE, 1,1);
       if( !failed ){
         context->reserved = 1;
       }
     }
-    if (!failed && locktype == EXCLUSIVE_LOCK) {
+    if (!failed && eFileLock == EXCLUSIVE_LOCK) {
       /* Acquire an EXCLUSIVE lock */
         
       /* Remove the shared lock before trying the range.  we'll need to 
@@ -2706,28 +2707,28 @@ static int afpLock(sqlite3_file *id, int locktype){
   }
   
   if( rc==SQLITE_OK ){
-    pFile->locktype = locktype;
-    pLock->locktype = locktype;
-  }else if( locktype==EXCLUSIVE_LOCK ){
-    pFile->locktype = PENDING_LOCK;
-    pLock->locktype = PENDING_LOCK;
+    pFile->eFileLock = eFileLock;
+    pLock->eFileLock = eFileLock;
+  }else if( eFileLock==EXCLUSIVE_LOCK ){
+    pFile->eFileLock = PENDING_LOCK;
+    pLock->eFileLock = PENDING_LOCK;
   }
   
 afp_end_lock:
   unixLeaveMutex();
-  OSTRACE4("LOCK    %d %s %s (afp)\n", pFile->h, locktypeName(locktype), 
-         rc==SQLITE_OK ? "ok" : "failed");
+  OSTRACE(("LOCK    %d %s %s (afp)\n", pFile->h, azFileLock(eFileLock), 
+         rc==SQLITE_OK ? "ok" : "failed"));
   return rc;
 }
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int afpUnlock(sqlite3_file *id, int locktype) {
+static int afpUnlock(sqlite3_file *id, int eFileLock) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
   struct unixLockInfo *pLock;
@@ -2738,11 +2739,12 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
 #endif
 
   assert( pFile );
-  OSTRACE7("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, locktype,
-           pFile->locktype, pFile->pLock->locktype, pFile->pLock->cnt, getpid());
+  OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, eFileLock,
+           pFile->eFileLock, pFile->pLock->eFileLock, pFile->pLock->nShared,
+           getpid()));
 
-  assert( locktype<=SHARED_LOCK );
-  if( pFile->locktype<=locktype ){
+  assert( eFileLock<=SHARED_LOCK );
+  if( pFile->eFileLock<=eFileLock ){
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
@@ -2750,9 +2752,9 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
   }
   unixEnterMutex();
   pLock = pFile->pLock;
-  assert( pLock->cnt!=0 );
-  if( pFile->locktype>SHARED_LOCK ){
-    assert( pLock->locktype==pFile->locktype );
+  assert( pLock->nShared!=0 );
+  if( pFile->eFileLock>SHARED_LOCK ){
+    assert( pLock->eFileLock==pFile->eFileLock );
     SimulateIOErrorBenign(1);
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
@@ -2772,9 +2774,9 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     pFile->inNormalWrite = 0;
 #endif
     
-    if( pFile->locktype==EXCLUSIVE_LOCK ){
+    if( pFile->eFileLock==EXCLUSIVE_LOCK ){
       rc = afpSetLock(context->dbPath, pFile, SHARED_FIRST, SHARED_SIZE, 0);
-      if( rc==SQLITE_OK && (locktype==SHARED_LOCK || pLock->cnt>1) ){
+      if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pLock->nShared>1) ){
         /* only re-establish the shared lock if necessary */
         int sharedLockByte = SHARED_FIRST+pLock->sharedByte;
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 1);
@@ -2782,28 +2784,28 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
         skipShared = 1;
       }
     }
-    if( rc==SQLITE_OK && pFile->locktype>=PENDING_LOCK ){
+    if( rc==SQLITE_OK && pFile->eFileLock>=PENDING_LOCK ){
       rc = afpSetLock(context->dbPath, pFile, PENDING_BYTE, 1, 0);
     } 
-    if( rc==SQLITE_OK && pFile->locktype>=RESERVED_LOCK && context->reserved ){
+    if( rc==SQLITE_OK && pFile->eFileLock>=RESERVED_LOCK && context->reserved ){
       rc = afpSetLock(context->dbPath, pFile, RESERVED_BYTE, 1, 0);
       if( !rc ){ 
         context->reserved = 0; 
       }
     }
-    if( rc==SQLITE_OK && (locktype==SHARED_LOCK || pLock->cnt>1)){
-      pLock->locktype = SHARED_LOCK;
+    if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pLock->nShared>1)){
+      pLock->eFileLock = SHARED_LOCK;
     }
   }
-  if( rc==SQLITE_OK && locktype==NO_LOCK ){
+  if( rc==SQLITE_OK && eFileLock==NO_LOCK ){
 
     /* Decrement the shared lock counter.  Release the lock using an
     ** OS call only when all threads in this same process have released
     ** the lock.
     */
     unsigned long long sharedLockByte = SHARED_FIRST+pLock->sharedByte;
-    pLock->cnt--;
-    if( pLock->cnt==0 ){
+    pLock->nShared--;
+    if( pLock->nShared==0 ){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
@@ -2811,8 +2813,8 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 0);
       }
       if( !rc ){
-        pLock->locktype = NO_LOCK;
-        pFile->locktype = NO_LOCK;
+        pLock->eFileLock = NO_LOCK;
+        pFile->eFileLock = NO_LOCK;
       }
     }
     if( rc==SQLITE_OK ){
@@ -2827,7 +2829,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
   }
   
   unixLeaveMutex();
-  if( rc==SQLITE_OK ) pFile->locktype = locktype;
+  if( rc==SQLITE_OK ) pFile->eFileLock = eFileLock;
   return rc;
 }
 
@@ -2872,14 +2874,14 @@ static int afpClose(sqlite3_file *id) {
 
 #if defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE
 /*
- ** Lower the locking level on file descriptor pFile to locktype.  locktype
+ ** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
  ** must be either NO_LOCK or SHARED_LOCK.
  **
  ** If the locking level of the file descriptor is already at or below
  ** the requested locking level, this routine is a no-op.
  */
-static int nfsUnlock(sqlite3_file *id, int locktype){
-  return _posixUnlock(id, locktype, 1);
+static int nfsUnlock(sqlite3_file *id, int eFileLock){
+  return _posixUnlock(id, eFileLock, 1);
 }
 
 #endif /* defined(__APPLE__) && SQLITE_ENABLE_LOCKING_STYLE */
@@ -2943,7 +2945,7 @@ static int seekAndRead(unixFile *id, sqlite3_int64 offset, void *pBuf, int cnt){
   if( got<0 ){
     ((unixFile*)id)->lastErrno = errno;
   }
-  OSTRACE5("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
+  OSTRACE(("READ    %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED));
   return got;
 }
 
@@ -3019,7 +3021,7 @@ static int seekAndWrite(unixFile *id, i64 offset, const void *pBuf, int cnt){
     ((unixFile*)id)->lastErrno = errno;
   }
 
-  OSTRACE5("WRITE   %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED);
+  OSTRACE(("WRITE   %-3d %5d %7lld %llu\n", id->h, got, offset, TIMER_ELAPSED));
   return got;
 }
 
@@ -3245,7 +3247,7 @@ static int unixSync(sqlite3_file *id, int flags){
   SimulateDiskfullError( return SQLITE_FULL );
 
   assert( pFile );
-  OSTRACE2("SYNC    %-3d\n", pFile->h);
+  OSTRACE(("SYNC    %-3d\n", pFile->h));
   rc = full_fsync(pFile->h, isFullsync, isDataOnly);
   SimulateIOError( rc=1 );
   if( rc ){
@@ -3254,8 +3256,8 @@ static int unixSync(sqlite3_file *id, int flags){
   }
   if( pFile->dirfd>=0 ){
     int err;
-    OSTRACE4("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
-            HAVE_FULLFSYNC, isFullsync);
+    OSTRACE(("DIRSYNC %-3d (have_fullfsync=%d fullsync=%d)\n", pFile->dirfd,
+            HAVE_FULLFSYNC, isFullsync));
 #ifndef SQLITE_DISABLE_DIRSYNC
     /* The directory sync is only attempted if full_fsync is
     ** turned off or unavailable.  If a full_fsync occurred above,
@@ -3354,7 +3356,7 @@ static int proxyFileControl(sqlite3_file*,int,void*);
 static int unixFileControl(sqlite3_file *id, int op, void *pArg){
   switch( op ){
     case SQLITE_FCNTL_LOCKSTATE: {
-      *(int*)pArg = ((unixFile*)id)->locktype;
+      *(int*)pArg = ((unixFile*)id)->eFileLock;
       return SQLITE_OK;
     }
     case SQLITE_LAST_ERRNO: {
@@ -4533,7 +4535,7 @@ static int fillInUnixFile(
   */
   UNUSED_PARAMETER(isDelete);
 
-  OSTRACE3("OPEN    %-3d %s\n", h, zFilename);    
+  OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->dirfd = dirfd;
   SET_THREADID(pNew);
@@ -4705,7 +4707,7 @@ static int openDirectory(const char *zFilename, int *pFd){
 #ifdef FD_CLOEXEC
       fcntl(fd, F_SETFD, fcntl(fd, F_GETFD, 0) | FD_CLOEXEC);
 #endif
-      OSTRACE3("OPENDIR %-3d %s\n", fd, zDirname);
+      OSTRACE(("OPENDIR %-3d %s\n", fd, zDirname));
     }
   }
   *pFd = fd;
@@ -4962,7 +4964,7 @@ static int unixOpen(
   if( fd<0 ){
     mode_t openMode = (isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
     fd = open(zName, openFlags, openMode);
-    OSTRACE4("OPENX   %-3d %s 0%o\n", fd, zName, openFlags);
+    OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){
       /* Failed to open the file for read/write access. Try read-only. */
       flags &= ~(SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE);
@@ -5598,8 +5600,8 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
 # ifdef _CS_DARWIN_USER_TEMP_DIR
   {
     if( !confstr(_CS_DARWIN_USER_TEMP_DIR, lPath, maxLen) ){
-      OSTRACE4("GETLOCKPATH  failed %s errno=%d pid=%d\n",
-               lPath, errno, getpid());
+      OSTRACE(("GETLOCKPATH  failed %s errno=%d pid=%d\n",
+               lPath, errno, getpid()));
       return SQLITE_IOERR_LOCK;
     }
     len = strlcat(lPath, "sqliteplocks", maxLen);    
@@ -5621,7 +5623,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   }
   lPath[i+len]='\0';
   strlcat(lPath, ":auto:", maxLen);
-  OSTRACE3("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, getpid());
+  OSTRACE(("GETLOCKPATH  proxy lock path=%s pid=%d\n", lPath, getpid()));
   return SQLITE_OK;
 }
 
@@ -5646,9 +5648,9 @@ static int proxyCreateLockPath(const char *lockPath){
         if( mkdir(buf, SQLITE_DEFAULT_PROXYDIR_PERMISSIONS) ){
           int err=errno;
           if( err!=EEXIST ) {
-            OSTRACE5("CREATELOCKPATH  FAILED creating %s, "
+            OSTRACE(("CREATELOCKPATH  FAILED creating %s, "
                      "'%s' proxy lock path=%s pid=%d\n",
-                     buf, strerror(err), lockPath, getpid());
+                     buf, strerror(err), lockPath, getpid()));
             return err;
           }
         }
@@ -5657,7 +5659,7 @@ static int proxyCreateLockPath(const char *lockPath){
     }
     buf[i] = lockPath[i];
   }
-  OSTRACE3("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, getpid());
+  OSTRACE(("CREATELOCKPATH  proxy lock path=%s pid=%d\n", lockPath, getpid()));
   return 0;
 }
 
@@ -5949,8 +5951,8 @@ static int proxyTakeConch(unixFile *pFile){
     int tryOldLockPath = 0;
     int forceNewLockPath = 0;
     
-    OSTRACE4("TAKECONCH  %d for %s pid=%d\n", conchFile->h,
-             (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), getpid());
+    OSTRACE(("TAKECONCH  %d for %s pid=%d\n", conchFile->h,
+             (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), getpid()));
 
     rc = proxyGetHostID(myHostID, &pError);
     if( (rc&0xff)==SQLITE_IOERR ){
@@ -6030,7 +6032,7 @@ static int proxyTakeConch(unixFile *pFile){
       */
       futimes(conchFile->h, NULL);
       if( hostIdMatch && !createConch ){
-        if( conchFile->pLock && conchFile->pLock->cnt>1 ){
+        if( conchFile->pLock && conchFile->pLock->nShared>1 ){
           /* We are trying for an exclusive lock but another thread in this
            ** same process is still holding a shared lock. */
           rc = SQLITE_BUSY;
@@ -6086,7 +6088,7 @@ static int proxyTakeConch(unixFile *pFile){
       conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, SHARED_LOCK);
       
     end_takeconch:
-      OSTRACE2("TRANSPROXY: CLOSE  %d\n", pFile->h);
+      OSTRACE(("TRANSPROXY: CLOSE  %d\n", pFile->h));
       if( rc==SQLITE_OK && pFile->openFlags ){
         if( pFile->h>=0 ){
 #ifdef STRICT_CLOSE_ERROR
@@ -6101,7 +6103,7 @@ static int proxyTakeConch(unixFile *pFile){
         pFile->h = -1;
         int fd = open(pCtx->dbPath, pFile->openFlags,
                       SQLITE_DEFAULT_FILE_PERMISSIONS);
-        OSTRACE2("TRANSPROXY: OPEN  %d\n", fd);
+        OSTRACE(("TRANSPROXY: OPEN  %d\n", fd));
         if( fd>=0 ){
           pFile->h = fd;
         }else{
@@ -6143,9 +6145,11 @@ static int proxyTakeConch(unixFile *pFile){
       } else {
         conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
       }
-      OSTRACE3("TAKECONCH  %d %s\n", conchFile->h, rc==SQLITE_OK?"ok":"failed");
+      OSTRACE(("TAKECONCH  %d %s\n", conchFile->h,
+               rc==SQLITE_OK?"ok":"failed"));
       return rc;
-    } while (1); /* in case we need to retry the :auto: lock file - we should never get here except via the 'continue' call. */
+    } while (1); /* in case we need to retry the :auto: lock file - 
+                 ** we should never get here except via the 'continue' call. */
   }
 }
 
@@ -6159,15 +6163,15 @@ static int proxyReleaseConch(unixFile *pFile){
 
   pCtx = (proxyLockingContext *)pFile->lockingContext;
   conchFile = pCtx->conchFile;
-  OSTRACE4("RELEASECONCH  %d for %s pid=%d\n", conchFile->h,
+  OSTRACE(("RELEASECONCH  %d for %s pid=%d\n", conchFile->h,
            (pCtx->lockProxyPath ? pCtx->lockProxyPath : ":auto:"), 
-           getpid());
+           getpid()));
   if( pCtx->conchHeld>0 ){
     rc = conchFile->pMethod->xUnlock((sqlite3_file*)conchFile, NO_LOCK);
   }
   pCtx->conchHeld = 0;
-  OSTRACE3("RELEASECONCH  %d %s\n", conchFile->h,
-           (rc==SQLITE_OK ? "ok" : "failed"));
+  OSTRACE(("RELEASECONCH  %d %s\n", conchFile->h,
+           (rc==SQLITE_OK ? "ok" : "failed")));
   return rc;
 }
 
@@ -6224,7 +6228,7 @@ static int switchLockProxyPath(unixFile *pFile, const char *path) {
   char *oldPath = pCtx->lockProxyPath;
   int rc = SQLITE_OK;
 
-  if( pFile->locktype!=NO_LOCK ){
+  if( pFile->eFileLock!=NO_LOCK ){
     return SQLITE_BUSY;
   }  
 
@@ -6291,7 +6295,7 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
   char *lockPath=NULL;
   int rc = SQLITE_OK;
   
-  if( pFile->locktype!=NO_LOCK ){
+  if( pFile->eFileLock!=NO_LOCK ){
     return SQLITE_BUSY;
   }
   proxyGetDbPathForUnixFile(pFile, dbPath);
@@ -6301,8 +6305,8 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
     lockPath=(char *)path;
   }
   
-  OSTRACE4("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
-           (lockPath ? lockPath : ":auto:"), getpid());
+  OSTRACE(("TRANSPROXY  %d for %s pid=%d\n", pFile->h,
+           (lockPath ? lockPath : ":auto:"), getpid()));
 
   pCtx = sqlite3_malloc( sizeof(*pCtx) );
   if( pCtx==0 ){
@@ -6362,8 +6366,8 @@ static int proxyTransformUnixFile(unixFile *pFile, const char *path) {
     sqlite3_free(pCtx->conchFilePath); 
     sqlite3_free(pCtx);
   }
-  OSTRACE3("TRANSPROXY  %d %s\n", pFile->h,
-           (rc==SQLITE_OK ? "ok" : "failed"));
+  OSTRACE(("TRANSPROXY  %d %s\n", pFile->h,
+           (rc==SQLITE_OK ? "ok" : "failed")));
   return rc;
 }
 
@@ -6458,7 +6462,7 @@ static int proxyCheckReservedLock(sqlite3_file *id, int *pResOut) {
 }
 
 /*
-** Lock the file with the lock specified by parameter locktype - one
+** Lock the file with the lock specified by parameter eFileLock - one
 ** of the following:
 **
 **     (1) SHARED_LOCK
@@ -6481,15 +6485,15 @@ static int proxyCheckReservedLock(sqlite3_file *id, int *pResOut) {
 ** This routine will only increase a lock.  Use the sqlite3OsUnlock()
 ** routine to lower a locking level.
 */
-static int proxyLock(sqlite3_file *id, int locktype) {
+static int proxyLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   int rc = proxyTakeConch(pFile);
   if( rc==SQLITE_OK ){
     proxyLockingContext *pCtx = (proxyLockingContext *)pFile->lockingContext;
     if( pCtx->conchHeld>0 ){
       unixFile *proxy = pCtx->lockProxy;
-      rc = proxy->pMethod->xLock((sqlite3_file*)proxy, locktype);
-      pFile->locktype = proxy->locktype;
+      rc = proxy->pMethod->xLock((sqlite3_file*)proxy, eFileLock);
+      pFile->eFileLock = proxy->eFileLock;
     }else{
       /* conchHeld < 0 is lockless */
     }
@@ -6499,21 +6503,21 @@ static int proxyLock(sqlite3_file *id, int locktype) {
 
 
 /*
-** Lower the locking level on file descriptor pFile to locktype.  locktype
+** Lower the locking level on file descriptor pFile to eFileLock.  eFileLock
 ** must be either NO_LOCK or SHARED_LOCK.
 **
 ** If the locking level of the file descriptor is already at or below
 ** the requested locking level, this routine is a no-op.
 */
-static int proxyUnlock(sqlite3_file *id, int locktype) {
+static int proxyUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   int rc = proxyTakeConch(pFile);
   if( rc==SQLITE_OK ){
     proxyLockingContext *pCtx = (proxyLockingContext *)pFile->lockingContext;
     if( pCtx->conchHeld>0 ){
       unixFile *proxy = pCtx->lockProxy;
-      rc = proxy->pMethod->xUnlock((sqlite3_file*)proxy, locktype);
-      pFile->locktype = proxy->locktype;
+      rc = proxy->pMethod->xUnlock((sqlite3_file*)proxy, eFileLock);
+      pFile->eFileLock = proxy->eFileLock;
     }else{
       /* conchHeld < 0 is lockless */
     }

@@ -1,5 +1,8 @@
-C Fix\stest_osinst.c\sso\sthat\sit\sdoes\snot\sdepend\son\sgettimeofday()\sunless\sSQLITE_OS_UNIX\sis\sdefined\sand\sNO_GETTOD\sis\snot\sdefined.
-D 2010-05-14T10:43:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sOSTRACEn()\smacro\sto\sOSTRACE(()).\s\sAlso\srename\ssome\sinternal\sfields\nand\svariables\sin\sos_unix.c\sto\sbe\smore\smeaningful\sand\ssearchable.
+D 2010-05-14T11:30:18
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,10 +153,10 @@ F src/mutex_w32.c fb1cf87c5a88b56c7df0d9ddb796ed9641046c3d
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
 F src/os.c c0a5dfce2a214dacb679425632d04f8a2021f364
 F src/os.h 8a7e2456237ecf3a2e55b02f9fe6091f1ad36902
-F src/os_common.h 0d6ee583b6ee3185eb9d951f890c6dd03021a08d
-F src/os_os2.c 8ad77a418630d7dee91d1bb04f79c2096301d3a0
-F src/os_unix.c a65eb0c527306fbf8d5818c068cccb4179e2c187
-F src/os_win.c a8fc01d8483be472e495793c01064fd87e56a5c1
+F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
+F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
+F src/os_unix.c 1a02adfbc4d85256ca29abfd8015ba2d481f44a6
+F src/os_win.c 70c4a3327716213b59adf3a8adf2d5318b044a19
 F src/pager.c 1e163a82ae8405433dca559831caa06aafbba3b0
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -814,7 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b8a9b37a3c8d1005a16185c1fc4c414ca11d736a
-R 22a19b365180f3219e9e4c395814c904
-U dan
-Z 35e6a22ba40a68ef7fff9e464f5954e1
+P 2a4014b79b852d8b62b4941495b826f154308d86
+R 37128756c9dce53457df39613b6f4fe3
+U drh
+Z 94b2ef715590f7f65178f2a83c78e9cb
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL7TROoxKgR168RlERAjiXAJ9QoT0+dwOK4gOsVkqzwjqmA09v6gCfeR9r
+KFFM3J+na6f57UCJeDctbVQ=
+=G13l
+-----END PGP SIGNATURE-----

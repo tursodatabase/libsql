@@ -629,7 +629,7 @@ static int winClose(sqlite3_file *id){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
-  OSTRACE2("CLOSE %d\n", pFile->h);
+  OSTRACE(("CLOSE %d\n", pFile->h));
   do{
     rc = CloseHandle(pFile->h);
   }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
@@ -679,7 +679,7 @@ static int winRead(
 
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_READ);
-  OSTRACE3("READ %d lock=%d\n", pFile->h, pFile->locktype);
+  OSTRACE(("READ %d lock=%d\n", pFile->h, pFile->locktype));
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
@@ -718,7 +718,7 @@ static int winWrite(
   assert( id!=0 );
   SimulateIOError(return SQLITE_IOERR_WRITE);
   SimulateDiskfullError(return SQLITE_FULL);
-  OSTRACE3("WRITE %d lock=%d\n", pFile->h, pFile->locktype);
+  OSTRACE(("WRITE %d lock=%d\n", pFile->h, pFile->locktype));
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
@@ -751,7 +751,7 @@ static int winTruncate(sqlite3_file *id, sqlite3_int64 nByte){
   DWORD error;
 
   assert( id!=0 );
-  OSTRACE3("TRUNCATE %d %lld\n", pFile->h, nByte);
+  OSTRACE(("TRUNCATE %d %lld\n", pFile->h, nByte));
   SimulateIOError(return SQLITE_IOERR_TRUNCATE);
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
@@ -783,7 +783,7 @@ static int winSync(sqlite3_file *id, int flags){
   winFile *pFile = (winFile*)id;
 
   assert( id!=0 );
-  OSTRACE3("SYNC %d lock=%d\n", pFile->h, pFile->locktype);
+  OSTRACE(("SYNC %d lock=%d\n", pFile->h, pFile->locktype));
 #else
   UNUSED_PARAMETER(id);
 #endif
@@ -924,8 +924,8 @@ static int winLock(sqlite3_file *id, int locktype){
   DWORD error = NO_ERROR;
 
   assert( id!=0 );
-  OSTRACE5("LOCK %d %d was %d(%d)\n",
-          pFile->h, locktype, pFile->locktype, pFile->sharedLockByte);
+  OSTRACE(("LOCK %d %d was %d(%d)\n",
+          pFile->h, locktype, pFile->locktype, pFile->sharedLockByte));
 
   /* If there is already a lock of this type or more restrictive on the
   ** OsFile, do nothing. Don't use the end_lock: exit path, as
@@ -955,7 +955,7 @@ static int winLock(sqlite3_file *id, int locktype){
       /* Try 3 times to get the pending lock.  The pending lock might be
       ** held by another reader process who will release it momentarily.
       */
-      OSTRACE2("could not get a PENDING lock. cnt=%d\n", cnt);
+      OSTRACE(("could not get a PENDING lock. cnt=%d\n", cnt));
       Sleep(1);
     }
     gotPendingLock = res;
@@ -1000,13 +1000,13 @@ static int winLock(sqlite3_file *id, int locktype){
   if( locktype==EXCLUSIVE_LOCK && res ){
     assert( pFile->locktype>=SHARED_LOCK );
     res = unlockReadLock(pFile);
-    OSTRACE2("unreadlock = %d\n", res);
+    OSTRACE(("unreadlock = %d\n", res));
     res = LockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
     if( res ){
       newLocktype = EXCLUSIVE_LOCK;
     }else{
       error = GetLastError();
-      OSTRACE2("error-code = %d\n", error);
+      OSTRACE(("error-code = %d\n", error));
       getReadLock(pFile);
     }
   }
@@ -1024,8 +1024,8 @@ static int winLock(sqlite3_file *id, int locktype){
   if( res ){
     rc = SQLITE_OK;
   }else{
-    OSTRACE4("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
-           locktype, newLocktype);
+    OSTRACE(("LOCK FAILED %d trying for %d but got %d\n", pFile->h,
+           locktype, newLocktype));
     pFile->lastErrno = error;
     rc = SQLITE_BUSY;
   }
@@ -1045,14 +1045,14 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   assert( id!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
-    OSTRACE3("TEST WR-LOCK %d %d (local)\n", pFile->h, rc);
+    OSTRACE(("TEST WR-LOCK %d %d (local)\n", pFile->h, rc));
   }else{
     rc = LockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     if( rc ){
       UnlockFile(pFile->h, RESERVED_BYTE, 0, 1, 0);
     }
     rc = !rc;
-    OSTRACE3("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc);
+    OSTRACE(("TEST WR-LOCK %d %d (remote)\n", pFile->h, rc));
   }
   *pResOut = rc;
   return SQLITE_OK;
@@ -1075,8 +1075,8 @@ static int winUnlock(sqlite3_file *id, int locktype){
   int rc = SQLITE_OK;
   assert( pFile!=0 );
   assert( locktype<=SHARED_LOCK );
-  OSTRACE5("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
-          pFile->locktype, pFile->sharedLockByte);
+  OSTRACE(("UNLOCK %d to %d was %d(%d)\n", pFile->h, locktype,
+          pFile->locktype, pFile->sharedLockByte));
   type = pFile->locktype;
   if( type>=EXCLUSIVE_LOCK ){
     UnlockFile(pFile->h, SHARED_FIRST, 0, SHARED_SIZE, 0);
@@ -1238,7 +1238,7 @@ static int getTempname(int nBuf, char *zBuf){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
-  OSTRACE2("TEMP FILENAME: %s\n", zBuf);
+  OSTRACE(("TEMP FILENAME: %s\n", zBuf));
   return SQLITE_OK; 
 }
 
@@ -1502,7 +1502,7 @@ static int winDelete(
 #endif
   }
   free(zConverted);
-  OSTRACE2("DELETE \"%s\"\n", zFilename);
+  OSTRACE(("DELETE \"%s\"\n", zFilename));
   return (   (rc == INVALID_FILE_ATTRIBUTES) 
           && (error == ERROR_FILE_NOT_FOUND)) ? SQLITE_OK : SQLITE_IOERR_DELETE;
 }
