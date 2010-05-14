@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sthe\svalue\sof\san\sINTEGER\sPRIMARY\sKEY\scolumn\ssupplied\sto\striggers\nand\sespecially\sto\sFK\sconstraints\sreally\scontains\sthe\sROWID\sand\snot\sthe\nNULL\sthat\sis\sstored\sin\sthe\scolumn\sitself.\s\sTicket\s[dd08e5a988d00dec].
-D 2010-05-14T19:24:02
+C Fix\sa\stypo\sthat\s(by\sbad\sluck)\swas\snot\sa\ssyntax\serror\sbut\swhich\scaused\ssome\s\nimportant\slines\sof\scode\sto\sbe\sskipped\swhen\sSQLITE_DEBUG\swas\snot\sused.
+D 2010-05-14T20:15:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os.c c0a5dfce2a214dacb679425632d04f8a2021f364
 F src/os.h 8a7e2456237ecf3a2e55b02f9fe6091f1ad36902
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 025da44ba18d91c2d0205e667bae4dd47be13639
+F src/os_unix.c 28caddcd74e6f0ded69476de5cf3f3b670ed840a
 F src/os_win.c 70c4a3327716213b59adf3a8adf2d5318b044a19
 F src/pager.c 1e163a82ae8405433dca559831caa06aafbba3b0
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d1debe5def82a6bc72f11b8787176ac60259630f
-R 050c60fa4d892a7b2d52c45498e15391
+P 636f86095eb1f4bdcfb0c9ed846c4c6b3589c10b
+R 558bf448fe44d9f4c7e50674a4eb1b9a
 U drh
-Z 800f87a99cec58a270644d7a36670051
+Z 49cd06a7ecd237b4b83de5a297f735b7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL7aNWoxKgR168RlERAhV/AJ99pDB7OqRYPjLFIkwJw1HsJ/f2MACfX7vp
-okTP4QL6PRs5aDsOujLqck0=
-=rg7a
+iD8DBQFL7a96oxKgR168RlERAlBFAJ4gQzTgKsFA7Kf8x9yz/aJ+mNirnACeONZz
+cbmZZNbwKdAsItvtiumzqH0=
+=2ueH
 -----END PGP SIGNATURE-----

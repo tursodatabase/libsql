@@ -1426,10 +1426,10 @@ static int closeUnixFile(sqlite3_file *id){
       pFile->pId = 0;
     }
 #endif
-    OSTRACE(("CLOSE   %-3d\n", pFile->h);
+    OSTRACE(("CLOSE   %-3d\n", pFile->h));
     OpenCounter(-1);
     sqlite3_free(pFile->pUnused);
-    memset(pFile, 0, sizeof(unixFile)));
+    memset(pFile, 0, sizeof(unixFile));
   }
   return SQLITE_OK;
 }
