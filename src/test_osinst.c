@@ -68,12 +68,6 @@
 #include <string.h>
 #include <assert.h>
 
-/* 
-** hwtime.h contains inline assembler code for implementing 
-** high-performance timing routines.
-*/
-#include "hwtime.h"
-
 
 /*
 ** Maximum pathname length supported by the vfslog backend.
@@ -215,17 +209,18 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogShmClose                  /* xShmClose */
 };
 
+#if defined(SQLITE_OS_UNIX) && !defined(NO_GETTOD)
 #include <sys/time.h>
-
 static sqlite3_uint64 vfslog_time(){
-#if 0
-  return sqlite3Hwtime();
-#else
   struct timeval sTime;
   gettimeofday(&sTime, 0);
   return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
-#endif
 }
+#else
+static sqlite3_uint64 vfslog_time(){
+  return 0;
+}
+#endif
 
 static void vfslog_call(sqlite3_vfs *, int, int, int, int, int, int);
 static void vfslog_string(sqlite3_vfs *, const char *);
