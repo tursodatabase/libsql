@@ -199,29 +199,25 @@ struct UnixUnusedFd {
 typedef struct unixFile unixFile;
 struct unixFile {
   sqlite3_io_methods const *pMethod;  /* Always the first entry */
-  struct unixOpenCnt *pOpen;       /* Info about all open fd's on this inode */
-  struct unixLockInfo *pLock;      /* Info about locks on this inode */
-  int h;                           /* The file descriptor */
-  int dirfd;                       /* File descriptor for the directory */
-  unsigned char eFileLock;          /* The type of lock held on this fd */
-  int lastErrno;                   /* The unix errno from the last I/O error */
-  void *lockingContext;            /* Locking style specific state */
-  UnixUnusedFd *pUnused;           /* Pre-allocated UnixUnusedFd */
-  int fileFlags;                   /* Miscellanous flags */
-  const char *zPath;               /* Name of the file */
-  unixShm *pShm;                   /* Shared memory segment information */
+  struct unixInodeInfo *pInode;       /* Info about locks on this inode */
+  int h;                              /* The file descriptor */
+  int dirfd;                          /* File descriptor for the directory */
+  unsigned char eFileLock;            /* The type of lock held on this fd */
+  int lastErrno;                      /* The unix errno from last I/O error */
+  void *lockingContext;               /* Locking style specific state */
+  UnixUnusedFd *pUnused;              /* Pre-allocated UnixUnusedFd */
+  int fileFlags;                      /* Miscellanous flags */
+  const char *zPath;                  /* Name of the file */
+  unixShm *pShm;                      /* Shared memory segment information */
 #if SQLITE_ENABLE_LOCKING_STYLE
-  int openFlags;                   /* The flags specified at open() */
+  int openFlags;                      /* The flags specified at open() */
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE || defined(__APPLE__)
-  unsigned fsFlags;                 /* cached details from statfs() */
-#endif
-#if SQLITE_THREADSAFE && defined(__linux__)
-  pthread_t tid;                   /* The thread that "owns" this unixFile */
+  unsigned fsFlags;                   /* cached details from statfs() */
 #endif
 #if OS_VXWORKS
-  int isDelete;                    /* Delete on close if true */
-  struct vxworksFileId *pId;       /* Unique file ID */
+  int isDelete;                       /* Delete on close if true */
+  struct vxworksFileId *pId;          /* Unique file ID */
 #endif
 #ifndef NDEBUG
   /* The next group of variables are used to track whether or not the
@@ -293,7 +289,7 @@ struct unixFile {
 
 /*
 ** Helper functions to obtain and relinquish the global mutex. The
-** global mutex is used to protect the unixOpenCnt, unixLockInfo and
+** global mutex is used to protect the unixInodeInfo and
 ** vxworksFileId objects used by this file, all of which may be 
 ** shared by multiple threads.
 **
@@ -662,13 +658,12 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 **
 ** If you close a file descriptor that points to a file that has locks,
 ** all locks on that file that are owned by the current process are
-** released.  To work around this problem, each unixFile structure contains
-** a pointer to an unixOpenCnt structure.  There is one unixOpenCnt structure
-** per open inode, which means that multiple unixFile can point to a single
-** unixOpenCnt.  When an attempt is made to close an unixFile, if there are
+** released.  To work around this problem, each unixInodeInfo object
+** maintains a count of the number of pending locks on tha inode.
+** When an attempt is made to close an unixFile, if there are
 ** other unixFile open on the same inode that are holding locks, the call
 ** to close() the file descriptor is deferred until all of the locks clear.
-** The unixOpenCnt structure keeps a list of file descriptors that need to
+** The unixInodeInfo structure keeps a list of file descriptors that need to
 ** be closed and that list is walked (and cleared) when the last lock
 ** clears.
 **
@@ -683,46 +678,19 @@ static void vxworksReleaseFileId(struct vxworksFileId *pId){
 ** in thread B.  But there is no way to know at compile-time which
 ** threading library is being used.  So there is no way to know at
 ** compile-time whether or not thread A can override locks on thread B.
-** We have to do a run-time check to discover the behavior of the
+** One has to do a run-time check to discover the behavior of the
 ** current process.
 **
-** On systems where thread A is unable to modify locks created by
-** thread B, we have to keep track of which thread created each
-** lock.  Hence there is an extra field in the key to the unixLockInfo
-** structure to record this information.  And on those systems it
-** is illegal to begin a transaction in one thread and finish it
-** in another.  For this latter restriction, there is no work-around.
-** It is a limitation of LinuxThreads.
+** SQLite used to support LinuxThreads.  But support for LinuxThreads
+** was dropped beginning with version 3.7.0.  SQLite will still work with
+** LinuxThreads provided that (1) there is no more than one connection 
+** per database file in the same process and (2) database connections
+** do not move across threads.
 */
-
-/*
-** Set or check the unixFile.tid field.  This field is set when an unixFile
-** is first opened.  All subsequent uses of the unixFile verify that the
-** same thread is operating on the unixFile.  Some operating systems do
-** not allow locks to be overridden by other threads and that restriction
-** means that sqlite3* database handles cannot be moved from one thread
-** to another while locks are held.
-**
-** Version 3.3.1 (2006-01-15):  unixFile can be moved from one thread to
-** another as long as we are running on a system that supports threads
-** overriding each others locks (which is now the most common behavior)
-** or if no locks are held.  But the unixFile.pLock field needs to be
-** recomputed because its key includes the thread-id.  See the 
-** transferOwnership() function below for additional information
-*/
-#if SQLITE_THREADSAFE && defined(__linux__)
-# define SET_THREADID(X)   (X)->tid = pthread_self()
-# define CHECK_THREADID(X) (threadsOverrideEachOthersLocks==0 && \
-                            !pthread_equal((X)->tid, pthread_self()))
-#else
-# define SET_THREADID(X)
-# define CHECK_THREADID(X) 0
-#endif
 
 /*
 ** An instance of the following structure serves as the key used
-** to locate a particular unixOpenCnt structure given its inode.  This
-** is the same as the unixLockKey except that the thread ID is omitted.
+** to locate a particular unixInodeInfo object.
 */
 struct unixFileId {
   dev_t dev;                  /* Device number */
@@ -730,23 +698,6 @@ struct unixFileId {
   struct vxworksFileId *pId;  /* Unique file ID for vxworks. */
 #else
   ino_t ino;                  /* Inode number */
-#endif
-};
-
-/*
-** An instance of the following structure serves as the key used
-** to locate a particular unixLockInfo structure given its inode.
-**
-** If threads cannot override each others locks (LinuxThreads), then we
-** set the unixLockKey.tid field to the thread ID.  If threads can override
-** each others locks (Posix and NPTL) then tid is always set to zero.
-** tid is omitted if we compile without threading support or on an OS
-** other than linux.
-*/
-struct unixLockKey {
-  struct unixFileId fid;  /* Unique identifier for the file */
-#if SQLITE_THREADSAFE && defined(__linux__)
-  pthread_t tid;  /* Thread ID of lock owner. Zero if not using LinuxThreads */
 #endif
 };
 
@@ -759,230 +710,75 @@ struct unixLockKey {
 ** structure contains a pointer to an instance of this object and this
 ** object keeps a count of the number of unixFile pointing to it.
 */
-struct unixLockInfo {
-  struct unixLockKey lockKey;     /* The lookup key */
+struct unixInodeInfo {
+  struct unixFileId fileId;       /* The lookup key */
   int nShared;                    /* Number of SHARED locks held */
-  int eFileLock;                   /* One of SHARED_LOCK, RESERVED_LOCK etc. */
+  int eFileLock;                  /* One of SHARED_LOCK, RESERVED_LOCK etc. */
   int nRef;                       /* Number of pointers to this structure */
 #if defined(SQLITE_ENABLE_LOCKING_STYLE)
   unsigned long long sharedByte;  /* for AFP simulated shared lock */
 #endif
-  struct unixLockInfo *pNext;     /* List of all unixLockInfo objects */
-  struct unixLockInfo *pPrev;     /*    .... doubly linked */
-};
-
-/*
-** An instance of the following structure is allocated for each open
-** inode.  This structure keeps track of the number of locks on that
-** inode.  If a close is attempted against an inode that is holding
-** locks, the close is deferred until all locks clear by adding the
-** file descriptor to be closed to the pending list.
-**
-** TODO:  Consider changing this so that there is only a single file
-** descriptor for each open file, even when it is opened multiple times.
-** The close() system call would only occur when the last database
-** using the file closes.
-*/
-struct unixOpenCnt {
-  struct unixFileId fileId;   /* The lookup key */
-  int nRef;                   /* Number of pointers to this structure */
-  int nLock;                  /* Number of outstanding locks */
-  UnixUnusedFd *pUnused;      /* Unused file descriptors to close */
+  int nLock;                      /* Number of outstanding file locks */
+  UnixUnusedFd *pUnused;          /* Unused file descriptors to close */
 #if OS_VXWORKS
-  sem_t *pSem;                     /* Named POSIX semaphore */
-  char aSemName[MAX_PATHNAME+2];   /* Name of that semaphore */
+  sem_t *pSem;                    /* Named POSIX semaphore */
+  char aSemName[MAX_PATHNAME+2];  /* Name of that semaphore */
 #endif
-  struct unixOpenCnt *pNext, *pPrev;   /* List of all unixOpenCnt objects */
+  struct unixInodeInfo *pNext;    /* List of all unixInodeInfo objects */
+  struct unixInodeInfo *pPrev;    /*    .... doubly linked */
 };
 
 /*
-** Lists of all unixLockInfo and unixOpenCnt objects.  These used to be hash
-** tables.  But the number of objects is rarely more than a dozen and
-** never exceeds a few thousand.  And lookup is not on a critical
-** path so a simple linked list will suffice.
+** A lists of all unixInodeInfo objects.
 */
-static struct unixLockInfo *lockList = 0;
-static struct unixOpenCnt *openList = 0;
+static struct unixInodeInfo *inodeList = 0;
 
 /*
-** This variable remembers whether or not threads can override each others
-** locks.
-**
-**    0:  No.  Threads cannot override each others locks.  (LinuxThreads)
-**    1:  Yes.  Threads can override each others locks.  (Posix & NLPT)
-**   -1:  We don't know yet.
-**
-** On some systems, we know at compile-time if threads can override each
-** others locks.  On those systems, the SQLITE_THREAD_OVERRIDE_LOCK macro
-** will be set appropriately.  On other systems, we have to check at
-** runtime.  On these latter systems, SQLTIE_THREAD_OVERRIDE_LOCK is
-** undefined.
-**
-** This variable normally has file scope only.  But during testing, we make
-** it a global so that the test code can change its value in order to verify
-** that the right stuff happens in either case.
-*/
-#if SQLITE_THREADSAFE && defined(__linux__)
-#  ifndef SQLITE_THREAD_OVERRIDE_LOCK
-#    define SQLITE_THREAD_OVERRIDE_LOCK -1
-#  endif
-#  ifdef SQLITE_TEST
-int threadsOverrideEachOthersLocks = SQLITE_THREAD_OVERRIDE_LOCK;
-#  else
-static int threadsOverrideEachOthersLocks = SQLITE_THREAD_OVERRIDE_LOCK;
-#  endif
-#endif
-
-/*
-** This structure holds information passed into individual test
-** threads by the testThreadLockingBehavior() routine.
-*/
-struct threadTestData {
-  int fd;                /* File to be locked */
-  struct flock lock;     /* The locking operation */
-  int result;            /* Result of the locking operation */
-};
-
-#if SQLITE_THREADSAFE && defined(__linux__)
-/*
-** This function is used as the main routine for a thread launched by
-** testThreadLockingBehavior(). It tests whether the shared-lock obtained
-** by the main thread in testThreadLockingBehavior() conflicts with a
-** hypothetical write-lock obtained by this thread on the same file.
-**
-** The write-lock is not actually acquired, as this is not possible if 
-** the file is open in read-only mode (see ticket #3472).
-*/ 
-static void *threadLockingTest(void *pArg){
-  struct threadTestData *pData = (struct threadTestData*)pArg;
-  pData->result = fcntl(pData->fd, F_GETLK, &pData->lock);
-  return pArg;
-}
-#endif /* SQLITE_THREADSAFE && defined(__linux__) */
-
-
-#if SQLITE_THREADSAFE && defined(__linux__)
-/*
-** This procedure attempts to determine whether or not threads
-** can override each others locks then sets the 
-** threadsOverrideEachOthersLocks variable appropriately.
-*/
-static void testThreadLockingBehavior(int fd_orig){
-  int fd;
-  int rc;
-  struct threadTestData d;
-  struct flock l;
-  pthread_t t;
-
-  fd = dup(fd_orig);
-  if( fd<0 ) return;
-  memset(&l, 0, sizeof(l));
-  l.l_type = F_RDLCK;
-  l.l_len = 1;
-  l.l_start = 0;
-  l.l_whence = SEEK_SET;
-  rc = fcntl(fd_orig, F_SETLK, &l);
-  if( rc!=0 ) return;
-  memset(&d, 0, sizeof(d));
-  d.fd = fd;
-  d.lock = l;
-  d.lock.l_type = F_WRLCK;
-  if( pthread_create(&t, 0, threadLockingTest, &d)==0 ){
-    pthread_join(t, 0);
-  }
-  close(fd);
-  if( d.result!=0 ) return;
-  threadsOverrideEachOthersLocks = (d.lock.l_type==F_UNLCK);
-}
-#endif /* SQLITE_THREADSAFE && defined(__linux__) */
-
-/*
-** Release a unixLockInfo structure previously allocated by findLockInfo().
+** Release a unixInodeInfo structure previously allocated by findInodeInfo().
 **
 ** The mutex entered using the unixEnterMutex() function must be held
 ** when this function is called.
 */
-static void releaseLockInfo(struct unixLockInfo *pLock){
+static void releaseInodeInfo(struct unixInodeInfo *pInode){
   assert( unixMutexHeld() );
-  if( pLock ){
-    pLock->nRef--;
-    if( pLock->nRef==0 ){
-      if( pLock->pPrev ){
-        assert( pLock->pPrev->pNext==pLock );
-        pLock->pPrev->pNext = pLock->pNext;
+  if( pInode ){
+    pInode->nRef--;
+    if( pInode->nRef==0 ){
+      if( pInode->pPrev ){
+        assert( pInode->pPrev->pNext==pInode );
+        pInode->pPrev->pNext = pInode->pNext;
       }else{
-        assert( lockList==pLock );
-        lockList = pLock->pNext;
+        assert( inodeList==pInode );
+        inodeList = pInode->pNext;
       }
-      if( pLock->pNext ){
-        assert( pLock->pNext->pPrev==pLock );
-        pLock->pNext->pPrev = pLock->pPrev;
+      if( pInode->pNext ){
+        assert( pInode->pNext->pPrev==pInode );
+        pInode->pNext->pPrev = pInode->pPrev;
       }
-      sqlite3_free(pLock);
+      sqlite3_free(pInode);
     }
   }
 }
 
 /*
-** Release a unixOpenCnt structure previously allocated by findLockInfo().
-**
-** The mutex entered using the unixEnterMutex() function must be held
-** when this function is called.
-*/
-static void releaseOpenCnt(struct unixOpenCnt *pOpen){
-  assert( unixMutexHeld() );
-  if( pOpen ){
-    pOpen->nRef--;
-    if( pOpen->nRef==0 ){
-      if( pOpen->pPrev ){
-        assert( pOpen->pPrev->pNext==pOpen );
-        pOpen->pPrev->pNext = pOpen->pNext;
-      }else{
-        assert( openList==pOpen );
-        openList = pOpen->pNext;
-      }
-      if( pOpen->pNext ){
-        assert( pOpen->pNext->pPrev==pOpen );
-        pOpen->pNext->pPrev = pOpen->pPrev;
-      }
-#if SQLITE_THREADSAFE && defined(__linux__)
-      assert( !pOpen->pUnused || threadsOverrideEachOthersLocks==0 );
-#endif
-
-      /* If pOpen->pUnused is not null, then memory and file-descriptors
-      ** are leaked.
-      **
-      ** This will only happen if, under Linuxthreads, the user has opened
-      ** a transaction in one thread, then attempts to close the database
-      ** handle from another thread (without first unlocking the db file).
-      ** This is a misuse.  */
-      sqlite3_free(pOpen);
-    }
-  }
-}
-
-/*
-** Given a file descriptor, locate unixLockInfo and unixOpenCnt structures that
-** describes that file descriptor.  Create new ones if necessary.  The
-** return values might be uninitialized if an error occurs.
+** Given a file descriptor, locate the unixInodeInfo object that
+** describes that file descriptor.  Create a new one if necessary.  The
+** return value might be uninitialized if an error occurs.
 **
 ** The mutex entered using the unixEnterMutex() function must be held
 ** when this function is called.
 **
 ** Return an appropriate error code.
 */
-static int findLockInfo(
+static int findInodeInfo(
   unixFile *pFile,               /* Unix file with file desc used in the key */
-  struct unixLockInfo **ppLock,  /* Return the unixLockInfo structure here */
-  struct unixOpenCnt **ppOpen    /* Return the unixOpenCnt structure here */
+  struct unixInodeInfo **ppInode /* Return the unixInodeInfo object here */
 ){
   int rc;                        /* System call return code */
   int fd;                        /* The file descriptor for pFile */
-  struct unixLockKey lockKey;    /* Lookup key for the unixLockInfo structure */
-  struct unixFileId fileId;      /* Lookup key for the unixOpenCnt struct */
-  struct stat statbuf;           /* Low-level file information */
-  struct unixLockInfo *pLock = 0;/* Candidate unixLockInfo object */
-  struct unixOpenCnt *pOpen;     /* Candidate unixOpenCnt object */
+  struct unixFileId fileId;          /* Lookup key for the unixInodeInfo */
+  struct stat statbuf;               /* Low-level file information */
+  struct unixInodeInfo *pInode = 0;  /* Candidate unixInodeInfo object */
 
   assert( unixMutexHeld() );
 
@@ -1024,122 +820,35 @@ static int findLockInfo(
   }
 #endif
 
-  memset(&lockKey, 0, sizeof(lockKey));
-  lockKey.fid.dev = statbuf.st_dev;
+  memset(&fileId, 0, sizeof(fileId));
+  fileId.dev = statbuf.st_dev;
 #if OS_VXWORKS
-  lockKey.fid.pId = pFile->pId;
+  fileId.pId = pFile->pId;
 #else
-  lockKey.fid.ino = statbuf.st_ino;
+  fileId.ino = statbuf.st_ino;
 #endif
-#if SQLITE_THREADSAFE && defined(__linux__)
-  if( threadsOverrideEachOthersLocks<0 ){
-    testThreadLockingBehavior(fd);
+  pInode = inodeList;
+  while( pInode && memcmp(&fileId, &pInode->fileId, sizeof(fileId)) ){
+    pInode = pInode->pNext;
   }
-  lockKey.tid = threadsOverrideEachOthersLocks ? 0 : pthread_self();
-#endif
-  fileId = lockKey.fid;
-  if( ppLock!=0 ){
-    pLock = lockList;
-    while( pLock && memcmp(&lockKey, &pLock->lockKey, sizeof(lockKey)) ){
-      pLock = pLock->pNext;
+  if( pInode==0 ){
+    pInode = sqlite3_malloc( sizeof(*pInode) );
+    if( pInode==0 ){
+      return SQLITE_NOMEM;
     }
-    if( pLock==0 ){
-      pLock = sqlite3_malloc( sizeof(*pLock) );
-      if( pLock==0 ){
-        rc = SQLITE_NOMEM;
-        goto exit_findlockinfo;
-      }
-      memcpy(&pLock->lockKey,&lockKey,sizeof(lockKey));
-      pLock->nRef = 1;
-      pLock->nShared = 0;
-      pLock->eFileLock = 0;
-#if defined(SQLITE_ENABLE_LOCKING_STYLE)
-      pLock->sharedByte = 0;
-#endif
-      pLock->pNext = lockList;
-      pLock->pPrev = 0;
-      if( lockList ) lockList->pPrev = pLock;
-      lockList = pLock;
-    }else{
-      pLock->nRef++;
-    }
-    *ppLock = pLock;
+    memset(pInode, 0, sizeof(*pInode));
+    memcpy(&pInode->fileId, &fileId, sizeof(fileId));
+    pInode->nRef = 1;
+    pInode->pNext = inodeList;
+    pInode->pPrev = 0;
+    if( inodeList ) inodeList->pPrev = pInode;
+    inodeList = pInode;
+  }else{
+    pInode->nRef++;
   }
-  if( ppOpen!=0 ){
-    pOpen = openList;
-    while( pOpen && memcmp(&fileId, &pOpen->fileId, sizeof(fileId)) ){
-      pOpen = pOpen->pNext;
-    }
-    if( pOpen==0 ){
-      pOpen = sqlite3_malloc( sizeof(*pOpen) );
-      if( pOpen==0 ){
-        releaseLockInfo(pLock);
-        rc = SQLITE_NOMEM;
-        goto exit_findlockinfo;
-      }
-      memset(pOpen, 0, sizeof(*pOpen));
-      pOpen->fileId = fileId;
-      pOpen->nRef = 1;
-      pOpen->pNext = openList;
-      if( openList ) openList->pPrev = pOpen;
-      openList = pOpen;
-    }else{
-      pOpen->nRef++;
-    }
-    *ppOpen = pOpen;
-  }
-
-exit_findlockinfo:
-  return rc;
+  *ppInode = pInode;
+  return SQLITE_OK;
 }
-
-/*
-** If we are currently in a different thread than the thread that the
-** unixFile argument belongs to, then transfer ownership of the unixFile
-** over to the current thread.
-**
-** A unixFile is only owned by a thread on systems that use LinuxThreads.
-**
-** Ownership transfer is only allowed if the unixFile is currently unlocked.
-** If the unixFile is locked and an ownership is wrong, then return
-** SQLITE_MISUSE.  SQLITE_OK is returned if everything works.
-*/
-#if SQLITE_THREADSAFE && defined(__linux__)
-static int transferOwnership(unixFile *pFile){
-  int rc;
-  pthread_t hSelf;
-  if( threadsOverrideEachOthersLocks ){
-    /* Ownership transfers not needed on this system */
-    return SQLITE_OK;
-  }
-  hSelf = pthread_self();
-  if( pthread_equal(pFile->tid, hSelf) ){
-    /* We are still in the same thread */
-    OSTRACE(("No-transfer, same thread\n"));
-    return SQLITE_OK;
-  }
-  if( pFile->eFileLock!=NO_LOCK ){
-    /* We cannot change ownership while we are holding a lock! */
-    return SQLITE_MISUSE_BKPT;
-  }
-  OSTRACE(("Transfer ownership of %d from %d to %d\n",
-            pFile->h, pFile->tid, hSelf));
-  pFile->tid = hSelf;
-  if (pFile->pLock != NULL) {
-    releaseLockInfo(pFile->pLock);
-    rc = findLockInfo(pFile, &pFile->pLock, 0);
-    OSTRACE(("LOCK    %d is now %s(%s,%d)\n", pFile->h,
-           azFileLock(pFile->eFileLock),
-           azFileLock(pFile->pLock->eFileLock), pFile->pLock->nShared));
-    return rc;
-  } else {
-    return SQLITE_OK;
-  }
-}
-#else  /* if not SQLITE_THREADSAFE */
-  /* On single-threaded builds, ownership transfer is a no-op */
-# define transferOwnership(X) SQLITE_OK
-#endif /* SQLITE_THREADSAFE */
 
 
 /*
@@ -1156,10 +865,10 @@ static int unixCheckReservedLock(sqlite3_file *id, int *pResOut){
   SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
 
   assert( pFile );
-  unixEnterMutex(); /* Because pFile->pLock is shared across threads */
+  unixEnterMutex(); /* Because pFile->pInode is shared across threads */
 
   /* Check if a thread in this process holds such a lock */
-  if( pFile->pLock->eFileLock>SHARED_LOCK ){
+  if( pFile->pInode->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
 
@@ -1254,7 +963,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixLockInfo *pLock = pFile->pLock;
+  struct unixInodeInfo *pInode = pFile->pInode;
   struct flock lock;
   int s = 0;
   int tErrno = 0;
@@ -1262,7 +971,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
       azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-      azFileLock(pLock->eFileLock), pLock->nShared , getpid()));
+      azFileLock(pInode->eFileLock), pInode->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the end_lock: exit path, as
@@ -1283,24 +992,16 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   assert( eFileLock!=PENDING_LOCK );
   assert( eFileLock!=RESERVED_LOCK || pFile->eFileLock==SHARED_LOCK );
 
-  /* This mutex is needed because pFile->pLock is shared across threads
+  /* This mutex is needed because pFile->pInode is shared across threads
   */
   unixEnterMutex();
-
-  /* Make sure the current thread owns the pFile.
-  */
-  rc = transferOwnership(pFile);
-  if( rc!=SQLITE_OK ){
-    unixLeaveMutex();
-    return rc;
-  }
-  pLock = pFile->pLock;
+  pInode = pFile->pInode;
 
   /* If some thread using this PID has a lock via a different unixFile*
   ** handle that precludes the requested lock, return BUSY.
   */
-  if( (pFile->eFileLock!=pLock->eFileLock && 
-          (pLock->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
+  if( (pFile->eFileLock!=pInode->eFileLock && 
+          (pInode->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
   ){
     rc = SQLITE_BUSY;
     goto end_lock;
@@ -1311,13 +1012,13 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** return SQLITE_OK.
   */
   if( eFileLock==SHARED_LOCK && 
-      (pLock->eFileLock==SHARED_LOCK || pLock->eFileLock==RESERVED_LOCK) ){
+      (pInode->eFileLock==SHARED_LOCK || pInode->eFileLock==RESERVED_LOCK) ){
     assert( eFileLock==SHARED_LOCK );
     assert( pFile->eFileLock==0 );
-    assert( pLock->nShared>0 );
+    assert( pInode->nShared>0 );
     pFile->eFileLock = SHARED_LOCK;
-    pLock->nShared++;
-    pFile->pOpen->nLock++;
+    pInode->nShared++;
+    pInode->nLock++;
     goto end_lock;
   }
 
@@ -1349,8 +1050,8 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   ** operating system calls for the specified lock.
   */
   if( eFileLock==SHARED_LOCK ){
-    assert( pLock->nShared==0 );
-    assert( pLock->eFileLock==0 );
+    assert( pInode->nShared==0 );
+    assert( pInode->eFileLock==0 );
 
     /* Now get the read-lock */
     lock.l_start = SHARED_FIRST;
@@ -1380,10 +1081,10 @@ static int unixLock(sqlite3_file *id, int eFileLock){
       }
     }else{
       pFile->eFileLock = SHARED_LOCK;
-      pFile->pOpen->nLock++;
-      pLock->nShared = 1;
+      pInode->nLock++;
+      pInode->nShared = 1;
     }
-  }else if( eFileLock==EXCLUSIVE_LOCK && pLock->nShared>1 ){
+  }else if( eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1 ){
     /* We are trying for an exclusive lock but another thread in this
     ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -1435,10 +1136,10 @@ static int unixLock(sqlite3_file *id, int eFileLock){
 
   if( rc==SQLITE_OK ){
     pFile->eFileLock = eFileLock;
-    pLock->eFileLock = eFileLock;
+    pInode->eFileLock = eFileLock;
   }else if( eFileLock==EXCLUSIVE_LOCK ){
     pFile->eFileLock = PENDING_LOCK;
-    pLock->eFileLock = PENDING_LOCK;
+    pInode->eFileLock = PENDING_LOCK;
   }
 
 end_lock:
@@ -1449,7 +1150,7 @@ end_lock:
 }
 
 /*
-** Close all file descriptors accumuated in the unixOpenCnt->pUnused list.
+** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
 ** If all such file descriptors are closed without error, the list is
 ** cleared and SQLITE_OK returned.
 **
@@ -1459,11 +1160,11 @@ end_lock:
 */ 
 static int closePendingFds(unixFile *pFile){
   int rc = SQLITE_OK;
-  struct unixOpenCnt *pOpen = pFile->pOpen;
+  struct unixInodeInfo *pInode = pFile->pInode;
   UnixUnusedFd *pError = 0;
   UnixUnusedFd *p;
   UnixUnusedFd *pNext;
-  for(p=pOpen->pUnused; p; p=pNext){
+  for(p=pInode->pUnused; p; p=pNext){
     pNext = p->pNext;
     if( close(p->fd) ){
       pFile->lastErrno = errno;
@@ -1474,7 +1175,7 @@ static int closePendingFds(unixFile *pFile){
       sqlite3_free(p);
     }
   }
-  pOpen->pUnused = pError;
+  pInode->pUnused = pError;
   return rc;
 }
 
@@ -1483,10 +1184,10 @@ static int closePendingFds(unixFile *pFile){
 ** pUnused list.
 */
 static void setPendingFd(unixFile *pFile){
-  struct unixOpenCnt *pOpen = pFile->pOpen;
+  struct unixInodeInfo *pInode = pFile->pInode;
   UnixUnusedFd *p = pFile->pUnused;
-  p->pNext = pOpen->pUnused;
-  pOpen->pUnused = p;
+  p->pNext = pInode->pUnused;
+  pInode->pUnused = p;
   pFile->h = -1;
   pFile->pUnused = 0;
 }
@@ -1506,7 +1207,7 @@ static void setPendingFd(unixFile *pFile){
 */
 static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixFile *pFile = (unixFile*)id;
-  struct unixLockInfo *pLock;
+  struct unixInodeInfo *pInode;
   struct flock lock;
   int rc = SQLITE_OK;
   int h;
@@ -1514,22 +1215,19 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (unix)\n", pFile->h, eFileLock,
-      pFile->eFileLock, pFile->pLock->eFileLock, pFile->pLock->nShared,
+      pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
       getpid()));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
     return SQLITE_OK;
   }
-  if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE_BKPT;
-  }
   unixEnterMutex();
   h = pFile->h;
-  pLock = pFile->pLock;
-  assert( pLock->nShared!=0 );
+  pInode = pFile->pInode;
+  assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
-    assert( pLock->eFileLock==pFile->eFileLock );
+    assert( pInode->eFileLock==pFile->eFileLock );
     SimulateIOErrorBenign(1);
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
@@ -1620,7 +1318,7 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     lock.l_start = PENDING_BYTE;
     lock.l_len = 2L;  assert( PENDING_BYTE+1==RESERVED_BYTE );
     if( fcntl(h, F_SETLK, &lock)!=(-1) ){
-      pLock->eFileLock = SHARED_LOCK;
+      pInode->eFileLock = SHARED_LOCK;
     }else{
       tErrno = errno;
       rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
@@ -1631,14 +1329,12 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     }
   }
   if( eFileLock==NO_LOCK ){
-    struct unixOpenCnt *pOpen;
-
     /* Decrement the shared lock counter.  Release the lock using an
     ** OS call only when all threads in this same process have released
     ** the lock.
     */
-    pLock->nShared--;
-    if( pLock->nShared==0 ){
+    pInode->nShared--;
+    if( pInode->nShared==0 ){
       lock.l_type = F_UNLCK;
       lock.l_whence = SEEK_SET;
       lock.l_start = lock.l_len = 0L;
@@ -1646,14 +1342,14 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
       if( fcntl(h, F_SETLK, &lock)!=(-1) ){
-        pLock->eFileLock = NO_LOCK;
+        pInode->eFileLock = NO_LOCK;
       }else{
         tErrno = errno;
         rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
         if( IS_LOCK_ERROR(rc) ){
           pFile->lastErrno = tErrno;
         }
-        pLock->eFileLock = NO_LOCK;
+        pInode->eFileLock = NO_LOCK;
         pFile->eFileLock = NO_LOCK;
       }
     }
@@ -1662,10 +1358,9 @@ static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
     ** count reaches zero, close any other file descriptors whose close
     ** was deferred because of outstanding locks.
     */
-    pOpen = pFile->pOpen;
-    pOpen->nLock--;
-    assert( pOpen->nLock>=0 );
-    if( pOpen->nLock==0 ){
+    pInode->nLock--;
+    assert( pInode->nLock>=0 );
+    if( pInode->nLock==0 ){
       int rc2 = closePendingFds(pFile);
       if( rc==SQLITE_OK ){
         rc = rc2;
@@ -1745,16 +1440,15 @@ static int unixClose(sqlite3_file *id){
     unixFile *pFile = (unixFile *)id;
     unixUnlock(id, NO_LOCK);
     unixEnterMutex();
-    if( pFile->pOpen && pFile->pOpen->nLock ){
+    if( pFile->pInode && pFile->pInode->nLock ){
       /* If there are outstanding locks, do not actually close the file just
       ** yet because that would clear those locks.  Instead, add the file
-      ** descriptor to pOpen->pUnused list.  It will be automatically closed 
+      ** descriptor to pInode->pUnused list.  It will be automatically closed 
       ** when the last lock is cleared.
       */
       setPendingFd(pFile);
     }
-    releaseLockInfo(pFile->pLock);
-    releaseOpenCnt(pFile->pOpen);
+    releaseInodeInfo(pFile->pInode);
     rc = closeUnixFile(id);
     unixLeaveMutex();
   }
@@ -2240,7 +1934,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
   
   /* Otherwise see if some other process holds it. */
   if( !reserved ){
-    sem_t *pSem = pFile->pOpen->pSem;
+    sem_t *pSem = pFile->pInode->pSem;
     struct stat statBuf;
 
     if( sem_trywait(pSem)==-1 ){
@@ -2295,7 +1989,7 @@ static int semCheckReservedLock(sqlite3_file *id, int *pResOut) {
 static int semLock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
   int fd;
-  sem_t *pSem = pFile->pOpen->pSem;
+  sem_t *pSem = pFile->pInode->pSem;
   int rc = SQLITE_OK;
 
   /* if we already have a lock, it is exclusive.  
@@ -2328,7 +2022,7 @@ static int semLock(sqlite3_file *id, int eFileLock) {
 */
 static int semUnlock(sqlite3_file *id, int eFileLock) {
   unixFile *pFile = (unixFile*)id;
-  sem_t *pSem = pFile->pOpen->pSem;
+  sem_t *pSem = pFile->pInode->pSem;
 
   assert( pFile );
   assert( pSem );
@@ -2369,8 +2063,7 @@ static int semClose(sqlite3_file *id) {
     semUnlock(id, NO_LOCK);
     assert( pFile );
     unixEnterMutex();
-    releaseLockInfo(pFile->pLock);
-    releaseOpenCnt(pFile->pOpen);
+    releaseLockInfo(pFile->pInode);
     unixLeaveMutex();
     closeUnixFile(id);
   }
@@ -2482,10 +2175,10 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
     *pResOut = 1;
     return SQLITE_OK;
   }
-  unixEnterMutex(); /* Because pFile->pLock is shared across threads */
+  unixEnterMutex(); /* Because pFile->pInode is shared across threads */
   
   /* Check if a thread in this process holds such a lock */
-  if( pFile->pLock->eFileLock>SHARED_LOCK ){
+  if( pFile->pInode->eFileLock>SHARED_LOCK ){
     reserved = 1;
   }
   
@@ -2541,13 +2234,13 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
 static int afpLock(sqlite3_file *id, int eFileLock){
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixLockInfo *pLock = pFile->pLock;
+  struct unixInodeInfo *pInode = pFile->pInode;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   
   assert( pFile );
   OSTRACE(("LOCK    %d %s was %s(%s,%d) pid=%d (afp)\n", pFile->h,
            azFileLock(eFileLock), azFileLock(pFile->eFileLock),
-           azFileLock(pLock->eFileLock), pLock->nShared , getpid()));
+           azFileLock(pInode->eFileLock), pInode->nShared , getpid()));
 
   /* If there is already a lock of this type or more restrictive on the
   ** unixFile, do nothing. Don't use the afp_end_lock: exit path, as
@@ -2568,24 +2261,16 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   assert( eFileLock!=PENDING_LOCK );
   assert( eFileLock!=RESERVED_LOCK || pFile->eFileLock==SHARED_LOCK );
   
-  /* This mutex is needed because pFile->pLock is shared across threads
+  /* This mutex is needed because pFile->pInode is shared across threads
   */
   unixEnterMutex();
-
-  /* Make sure the current thread owns the pFile.
-  */
-  rc = transferOwnership(pFile);
-  if( rc!=SQLITE_OK ){
-    unixLeaveMutex();
-    return rc;
-  }
-  pLock = pFile->pLock;
+  pInode = pFile->pInode;
 
   /* If some thread using this PID has a lock via a different unixFile*
   ** handle that precludes the requested lock, return BUSY.
   */
-  if( (pFile->eFileLock!=pLock->eFileLock && 
-       (pLock->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
+  if( (pFile->eFileLock!=pInode->eFileLock && 
+       (pInode->eFileLock>=PENDING_LOCK || eFileLock>SHARED_LOCK))
      ){
     rc = SQLITE_BUSY;
     goto afp_end_lock;
@@ -2596,13 +2281,13 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   ** return SQLITE_OK.
   */
   if( eFileLock==SHARED_LOCK && 
-     (pLock->eFileLock==SHARED_LOCK || pLock->eFileLock==RESERVED_LOCK) ){
+     (pInode->eFileLock==SHARED_LOCK || pInode->eFileLock==RESERVED_LOCK) ){
     assert( eFileLock==SHARED_LOCK );
     assert( pFile->eFileLock==0 );
-    assert( pLock->nShared>0 );
+    assert( pInode->nShared>0 );
     pFile->eFileLock = SHARED_LOCK;
-    pLock->nShared++;
-    pFile->pOpen->nLock++;
+    pInode->nShared++;
+    pInode->nLock++;
     goto afp_end_lock;
   }
     
@@ -2628,16 +2313,16 @@ static int afpLock(sqlite3_file *id, int eFileLock){
     int lrc1, lrc2, lrc1Errno;
     long lk, mask;
     
-    assert( pLock->nShared==0 );
-    assert( pLock->eFileLock==0 );
+    assert( pInode->nShared==0 );
+    assert( pInode->eFileLock==0 );
         
     mask = (sizeof(long)==8) ? LARGEST_INT64 : 0x7fffffff;
     /* Now get the read-lock SHARED_LOCK */
     /* note that the quality of the randomness doesn't matter that much */
     lk = random(); 
-    pLock->sharedByte = (lk & mask)%(SHARED_SIZE - 1);
+    pInode->sharedByte = (lk & mask)%(SHARED_SIZE - 1);
     lrc1 = afpSetLock(context->dbPath, pFile, 
-          SHARED_FIRST+pLock->sharedByte, 1, 1);
+          SHARED_FIRST+pInode->sharedByte, 1, 1);
     if( IS_LOCK_ERROR(lrc1) ){
       lrc1Errno = pFile->lastErrno;
     }
@@ -2655,10 +2340,10 @@ static int afpLock(sqlite3_file *id, int eFileLock){
       rc = lrc1;
     } else {
       pFile->eFileLock = SHARED_LOCK;
-      pFile->pOpen->nLock++;
-      pLock->nShared = 1;
+      pInode->nLock++;
+      pInode->nShared = 1;
     }
-  }else if( eFileLock==EXCLUSIVE_LOCK && pLock->nShared>1 ){
+  }else if( eFileLock==EXCLUSIVE_LOCK && pInode->nShared>1 ){
     /* We are trying for an exclusive lock but another thread in this
      ** same process is still holding a shared lock. */
     rc = SQLITE_BUSY;
@@ -2683,13 +2368,13 @@ static int afpLock(sqlite3_file *id, int eFileLock){
       ** reestablish the shared lock if we can't get the  afpUnlock
       */
       if( !(failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST +
-                         pLock->sharedByte, 1, 0)) ){
+                         pInode->sharedByte, 1, 0)) ){
         int failed2 = SQLITE_OK;
         /* now attemmpt to get the exclusive lock range */
         failed = afpSetLock(context->dbPath, pFile, SHARED_FIRST, 
                                SHARED_SIZE, 1);
         if( failed && (failed2 = afpSetLock(context->dbPath, pFile, 
-                       SHARED_FIRST + pLock->sharedByte, 1, 1)) ){
+                       SHARED_FIRST + pInode->sharedByte, 1, 1)) ){
           /* Can't reestablish the shared lock.  Sqlite can't deal, this is
           ** a critical I/O error
           */
@@ -2708,10 +2393,10 @@ static int afpLock(sqlite3_file *id, int eFileLock){
   
   if( rc==SQLITE_OK ){
     pFile->eFileLock = eFileLock;
-    pLock->eFileLock = eFileLock;
+    pInode->eFileLock = eFileLock;
   }else if( eFileLock==EXCLUSIVE_LOCK ){
     pFile->eFileLock = PENDING_LOCK;
-    pLock->eFileLock = PENDING_LOCK;
+    pInode->eFileLock = PENDING_LOCK;
   }
   
 afp_end_lock:
@@ -2731,7 +2416,7 @@ afp_end_lock:
 static int afpUnlock(sqlite3_file *id, int eFileLock) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixLockInfo *pLock;
+  struct unixInodeInfo *pInode;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   int skipShared = 0;
 #ifdef SQLITE_TEST
@@ -2740,21 +2425,18 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
 
   assert( pFile );
   OSTRACE(("UNLOCK  %d %d was %d(%d,%d) pid=%d (afp)\n", pFile->h, eFileLock,
-           pFile->eFileLock, pFile->pLock->eFileLock, pFile->pLock->nShared,
+           pFile->eFileLock, pFile->pInode->eFileLock, pFile->pInode->nShared,
            getpid()));
 
   assert( eFileLock<=SHARED_LOCK );
   if( pFile->eFileLock<=eFileLock ){
     return SQLITE_OK;
   }
-  if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE_BKPT;
-  }
   unixEnterMutex();
-  pLock = pFile->pLock;
-  assert( pLock->nShared!=0 );
+  pInode = pFile->pInode;
+  assert( pInode->nShared!=0 );
   if( pFile->eFileLock>SHARED_LOCK ){
-    assert( pLock->eFileLock==pFile->eFileLock );
+    assert( pInode->eFileLock==pFile->eFileLock );
     SimulateIOErrorBenign(1);
     SimulateIOError( h=(-1) )
     SimulateIOErrorBenign(0);
@@ -2776,9 +2458,9 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     
     if( pFile->eFileLock==EXCLUSIVE_LOCK ){
       rc = afpSetLock(context->dbPath, pFile, SHARED_FIRST, SHARED_SIZE, 0);
-      if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pLock->nShared>1) ){
+      if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pInode->nShared>1) ){
         /* only re-establish the shared lock if necessary */
-        int sharedLockByte = SHARED_FIRST+pLock->sharedByte;
+        int sharedLockByte = SHARED_FIRST+pInode->sharedByte;
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 1);
       } else {
         skipShared = 1;
@@ -2793,8 +2475,8 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
         context->reserved = 0; 
       }
     }
-    if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pLock->nShared>1)){
-      pLock->eFileLock = SHARED_LOCK;
+    if( rc==SQLITE_OK && (eFileLock==SHARED_LOCK || pInode->nShared>1)){
+      pInode->eFileLock = SHARED_LOCK;
     }
   }
   if( rc==SQLITE_OK && eFileLock==NO_LOCK ){
@@ -2803,9 +2485,9 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
     ** OS call only when all threads in this same process have released
     ** the lock.
     */
-    unsigned long long sharedLockByte = SHARED_FIRST+pLock->sharedByte;
-    pLock->nShared--;
-    if( pLock->nShared==0 ){
+    unsigned long long sharedLockByte = SHARED_FIRST+pInode->sharedByte;
+    pInode->nShared--;
+    if( pInode->nShared==0 ){
       SimulateIOErrorBenign(1);
       SimulateIOError( h=(-1) )
       SimulateIOErrorBenign(0);
@@ -2813,16 +2495,14 @@ static int afpUnlock(sqlite3_file *id, int eFileLock) {
         rc = afpSetLock(context->dbPath, pFile, sharedLockByte, 1, 0);
       }
       if( !rc ){
-        pLock->eFileLock = NO_LOCK;
+        pInode->eFileLock = NO_LOCK;
         pFile->eFileLock = NO_LOCK;
       }
     }
     if( rc==SQLITE_OK ){
-      struct unixOpenCnt *pOpen = pFile->pOpen;
-        
-      pOpen->nLock--;
-      assert( pOpen->nLock>=0 );
-      if( pOpen->nLock==0 ){
+      pInode->nLock--;
+      assert( pInode->nLock>=0 );
+      if( pInode->nLock==0 ){
         rc = closePendingFds(pFile);
       }
     }
@@ -2842,16 +2522,15 @@ static int afpClose(sqlite3_file *id) {
     unixFile *pFile = (unixFile*)id;
     afpUnlock(id, NO_LOCK);
     unixEnterMutex();
-    if( pFile->pOpen && pFile->pOpen->nLock ){
+    if( pFile->pInode && pFile->pInode->nLock ){
       /* If there are outstanding locks, do not actually close the file just
       ** yet because that would clear those locks.  Instead, add the file
-      ** descriptor to pOpen->aPending.  It will be automatically closed when
+      ** descriptor to pInode->aPending.  It will be automatically closed when
       ** the last lock is cleared.
       */
       setPendingFd(pFile);
     }
-    releaseLockInfo(pFile->pLock);
-    releaseOpenCnt(pFile->pOpen);
+    releaseLockInfo(pFile->pInode);
     sqlite3_free(pFile->lockingContext);
     rc = closeUnixFile(id);
     unixLeaveMutex();
@@ -3329,7 +3008,7 @@ static int unixFileSize(sqlite3_file *id, i64 *pSize){
   }
   *pSize = buf.st_size;
 
-  /* When opening a zero-size database, the findLockInfo() procedure
+  /* When opening a zero-size database, the findInodeInfo() procedure
   ** writes a single byte into that file in order to work around a bug
   ** in the OS-X msdos filesystem.  In order to avoid problems with upper
   ** layers, we need to report this file size as zero even though it is
@@ -4527,8 +4206,7 @@ static int fillInUnixFile(
   unixFile *pNew = (unixFile *)pId;
   int rc = SQLITE_OK;
 
-  assert( pNew->pLock==NULL );
-  assert( pNew->pOpen==NULL );
+  assert( pNew->pInode==NULL );
 
   /* Parameter isDelete is only used on vxworks. Express this explicitly 
   ** here to prevent compiler warnings about unused parameters.
@@ -4538,7 +4216,6 @@ static int fillInUnixFile(
   OSTRACE(("OPEN    %-3d %s\n", h, zFilename));
   pNew->h = h;
   pNew->dirfd = dirfd;
-  SET_THREADID(pNew);
   pNew->fileFlags = 0;
   assert( zFilename==0 || zFilename[0]=='/' );  /* Never a relative pathname */
   pNew->zPath = zFilename;
@@ -4569,10 +4246,10 @@ static int fillInUnixFile(
 #endif
   ){
     unixEnterMutex();
-    rc = findLockInfo(pNew, &pNew->pLock, &pNew->pOpen);
+    rc = findInodeInfo(pNew, &pNew->pInode);
     if( rc!=SQLITE_OK ){
-      /* If an error occured in findLockInfo(), close the file descriptor
-      ** immediately, before releasing the mutex. findLockInfo() may fail
+      /* If an error occured in findInodeInfo(), close the file descriptor
+      ** immediately, before releasing the mutex. findInodeInfo() may fail
       ** in two scenarios:
       **
       **   (a) A call to fstat() failed.
@@ -4581,7 +4258,7 @@ static int fillInUnixFile(
       ** Scenario (b) may only occur if the process is holding no other
       ** file descriptors open on the same file. If there were other file
       ** descriptors on this file, then no malloc would be required by
-      ** findLockInfo(). If this is the case, it is quite safe to close
+      ** findInodeInfo(). If this is the case, it is quite safe to close
       ** handle h - as it is guaranteed that no posix locks will be released
       ** by doing so.
       **
@@ -4612,7 +4289,7 @@ static int fillInUnixFile(
       pCtx->reserved = 0;
       srandomdev();
       unixEnterMutex();
-      rc = findLockInfo(pNew, &pNew->pLock, &pNew->pOpen);
+      rc = findInodeInfo(pNew, &pNew->pInode);
       if( rc!=SQLITE_OK ){
         sqlite3_free(pNew->lockingContext);
         close(h);
@@ -4645,18 +4322,18 @@ static int fillInUnixFile(
     ** included in the semLockingContext
     */
     unixEnterMutex();
-    rc = findLockInfo(pNew, &pNew->pLock, &pNew->pOpen);
-    if( (rc==SQLITE_OK) && (pNew->pOpen->pSem==NULL) ){
-      char *zSemName = pNew->pOpen->aSemName;
+    rc = findInodeInfo(pNew, &pNew->pInode);
+    if( (rc==SQLITE_OK) && (pNew->pInode->pSem==NULL) ){
+      char *zSemName = pNew->pInode->aSemName;
       int n;
       sqlite3_snprintf(MAX_PATHNAME, zSemName, "/%s.sem",
                        pNew->pId->zCanonicalName);
       for( n=1; zSemName[n]; n++ )
         if( zSemName[n]=='/' ) zSemName[n] = '_';
-      pNew->pOpen->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
-      if( pNew->pOpen->pSem == SEM_FAILED ){
+      pNew->pInode->pSem = sem_open(zSemName, O_CREAT, 0666, 1);
+      if( pNew->pInode->pSem == SEM_FAILED ){
         rc = SQLITE_NOMEM;
-        pNew->pOpen->aSemName[0] = '\0';
+        pNew->pInode->aSemName[0] = '\0';
       }
     }
     unixLeaveMutex();
@@ -4820,17 +4497,17 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a resusable file descriptor are not dire.  */
   if( 0==stat(zPath, &sStat) ){
-    struct unixOpenCnt *pOpen;
+    struct unixInodeInfo *pInode;
 
     unixEnterMutex();
-    pOpen = openList;
-    while( pOpen && (pOpen->fileId.dev!=sStat.st_dev
-                     || pOpen->fileId.ino!=sStat.st_ino) ){
-       pOpen = pOpen->pNext;
+    pInode = inodeList;
+    while( pInode && (pInode->fileId.dev!=sStat.st_dev
+                     || pInode->fileId.ino!=sStat.st_ino) ){
+       pInode = pInode->pNext;
     }
-    if( pOpen ){
+    if( pInode ){
       UnixUnusedFd **pp;
-      for(pp=&pOpen->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
+      for(pp=&pInode->pUnused; *pp && (*pp)->flags!=flags; pp=&((*pp)->pNext));
       pUnused = *pp;
       if( pUnused ){
         *pp = pUnused->pNext;
@@ -6032,7 +5709,7 @@ static int proxyTakeConch(unixFile *pFile){
       */
       futimes(conchFile->h, NULL);
       if( hostIdMatch && !createConch ){
-        if( conchFile->pLock && conchFile->pLock->nShared>1 ){
+        if( conchFile->pInode && conchFile->pInode->nShared>1 ){
           /* We are trying for an exclusive lock but another thread in this
            ** same process is still holding a shared lock. */
           rc = SQLITE_BUSY;

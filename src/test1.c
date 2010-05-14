@@ -5129,9 +5129,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3_pager_readdb_count;
   extern int sqlite3_pager_writedb_count;
   extern int sqlite3_pager_writej_count;
-#if defined(__linux__) && defined(SQLITE_TEST) && SQLITE_THREADSAFE
-  extern int threadsOverrideEachOthersLocks;
-#endif
 #if SQLITE_OS_WIN
   extern int sqlite3_os_type;
 #endif
@@ -5186,10 +5183,6 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
 #ifndef SQLITE_OMIT_UTF16
   Tcl_LinkVar(interp, "unaligned_string_counter",
       (char*)&unaligned_string_counter, TCL_LINK_INT);
-#endif
-#if defined(__linux__) && defined(SQLITE_TEST) && SQLITE_THREADSAFE
-  Tcl_LinkVar(interp, "threadsOverrideEachOthersLocks",
-      (char*)&threadsOverrideEachOthersLocks, TCL_LINK_INT);
 #endif
 #ifndef SQLITE_OMIT_UTF16
   Tcl_LinkVar(interp, "sqlite_last_needed_collation",
