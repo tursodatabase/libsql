@@ -175,9 +175,11 @@
 */
 #define IS_LOCK_ERROR(x)  ((x != SQLITE_OK) && (x != SQLITE_BUSY))
 
-/* Forward reference */
-typedef struct unixShm unixShm;
-typedef struct unixShmFile unixShmFile;
+/* Forward references */
+typedef struct unixShm unixShm;               /* Connection shared memory */
+typedef struct unixShmNode unixShmNode;       /* Shared memory instance */
+typedef struct unixInodeInfo unixInodeInfo;   /* An i-node */
+typedef struct UnixUnusedFd UnixUnusedFd;     /* An unused file descriptor */
 
 /*
 ** Sometimes, after a file handle is closed by SQLite, the file descriptor
@@ -185,7 +187,6 @@ typedef struct unixShmFile unixShmFile;
 ** structure are used to store the file descriptor while waiting for an
 ** opportunity to either close or reuse it.
 */
-typedef struct UnixUnusedFd UnixUnusedFd;
 struct UnixUnusedFd {
   int fd;                   /* File descriptor to close */
   int flags;                /* Flags this file descriptor was opened with */
@@ -199,7 +200,7 @@ struct UnixUnusedFd {
 typedef struct unixFile unixFile;
 struct unixFile {
   sqlite3_io_methods const *pMethod;  /* Always the first entry */
-  struct unixInodeInfo *pInode;       /* Info about locks on this inode */
+  unixInodeInfo *pInode;              /* Info about locks on this inode */
   int h;                              /* The file descriptor */
   int dirfd;                          /* File descriptor for the directory */
   unsigned char eFileLock;            /* The type of lock held on this fd */
@@ -715,23 +716,24 @@ struct unixInodeInfo {
   int nShared;                    /* Number of SHARED locks held */
   int eFileLock;                  /* One of SHARED_LOCK, RESERVED_LOCK etc. */
   int nRef;                       /* Number of pointers to this structure */
+  unixShmNode *pShmNode;          /* Shared memory associated with this inode */
+  int nLock;                      /* Number of outstanding file locks */
+  UnixUnusedFd *pUnused;          /* Unused file descriptors to close */
+  unixInodeInfo *pNext;           /* List of all unixInodeInfo objects */
+  unixInodeInfo *pPrev;           /*    .... doubly linked */
 #if defined(SQLITE_ENABLE_LOCKING_STYLE)
   unsigned long long sharedByte;  /* for AFP simulated shared lock */
 #endif
-  int nLock;                      /* Number of outstanding file locks */
-  UnixUnusedFd *pUnused;          /* Unused file descriptors to close */
 #if OS_VXWORKS
   sem_t *pSem;                    /* Named POSIX semaphore */
   char aSemName[MAX_PATHNAME+2];  /* Name of that semaphore */
 #endif
-  struct unixInodeInfo *pNext;    /* List of all unixInodeInfo objects */
-  struct unixInodeInfo *pPrev;    /*    .... doubly linked */
 };
 
 /*
 ** A lists of all unixInodeInfo objects.
 */
-static struct unixInodeInfo *inodeList = 0;
+static unixInodeInfo *inodeList = 0;
 
 /*
 ** Release a unixInodeInfo structure previously allocated by findInodeInfo().
@@ -739,11 +741,12 @@ static struct unixInodeInfo *inodeList = 0;
 ** The mutex entered using the unixEnterMutex() function must be held
 ** when this function is called.
 */
-static void releaseInodeInfo(struct unixInodeInfo *pInode){
+static void releaseInodeInfo(unixInodeInfo *pInode){
   assert( unixMutexHeld() );
   if( pInode ){
     pInode->nRef--;
     if( pInode->nRef==0 ){
+      assert( pInode->pShmNode==0 );
       if( pInode->pPrev ){
         assert( pInode->pPrev->pNext==pInode );
         pInode->pPrev->pNext = pInode->pNext;
@@ -772,13 +775,13 @@ static void releaseInodeInfo(struct unixInodeInfo *pInode){
 */
 static int findInodeInfo(
   unixFile *pFile,               /* Unix file with file desc used in the key */
-  struct unixInodeInfo **ppInode /* Return the unixInodeInfo object here */
+  unixInodeInfo **ppInode        /* Return the unixInodeInfo object here */
 ){
   int rc;                        /* System call return code */
   int fd;                        /* The file descriptor for pFile */
-  struct unixFileId fileId;          /* Lookup key for the unixInodeInfo */
-  struct stat statbuf;               /* Low-level file information */
-  struct unixInodeInfo *pInode = 0;  /* Candidate unixInodeInfo object */
+  struct unixFileId fileId;      /* Lookup key for the unixInodeInfo */
+  struct stat statbuf;           /* Low-level file information */
+  unixInodeInfo *pInode = 0;     /* Candidate unixInodeInfo object */
 
   assert( unixMutexHeld() );
 
@@ -963,7 +966,7 @@ static int unixLock(sqlite3_file *id, int eFileLock){
   */
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode = pFile->pInode;
   struct flock lock;
   int s = 0;
   int tErrno = 0;
@@ -1160,7 +1163,7 @@ end_lock:
 */ 
 static int closePendingFds(unixFile *pFile){
   int rc = SQLITE_OK;
-  struct unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode = pFile->pInode;
   UnixUnusedFd *pError = 0;
   UnixUnusedFd *p;
   UnixUnusedFd *pNext;
@@ -1184,7 +1187,7 @@ static int closePendingFds(unixFile *pFile){
 ** pUnused list.
 */
 static void setPendingFd(unixFile *pFile){
-  struct unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode = pFile->pInode;
   UnixUnusedFd *p = pFile->pUnused;
   p->pNext = pInode->pUnused;
   pInode->pUnused = p;
@@ -1207,7 +1210,7 @@ static void setPendingFd(unixFile *pFile){
 */
 static int _posixUnlock(sqlite3_file *id, int eFileLock, int handleNFSUnlock){
   unixFile *pFile = (unixFile*)id;
-  struct unixInodeInfo *pInode;
+  unixInodeInfo *pInode;
   struct flock lock;
   int rc = SQLITE_OK;
   int h;
@@ -2234,7 +2237,7 @@ static int afpCheckReservedLock(sqlite3_file *id, int *pResOut){
 static int afpLock(sqlite3_file *id, int eFileLock){
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixInodeInfo *pInode = pFile->pInode;
+  unixInodeInfo *pInode = pFile->pInode;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   
   assert( pFile );
@@ -2416,7 +2419,7 @@ afp_end_lock:
 static int afpUnlock(sqlite3_file *id, int eFileLock) {
   int rc = SQLITE_OK;
   unixFile *pFile = (unixFile*)id;
-  struct unixInodeInfo *pInode;
+  unixInodeInfo *pInode;
   afpLockingContext *context = (afpLockingContext *) pFile->lockingContext;
   int skipShared = 0;
 #ifdef SQLITE_TEST
@@ -3090,24 +3093,31 @@ static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
 
 
 /*
-** Object used to represent a single file opened and mmapped to provide
-** shared memory.  When multiple threads all reference the same
-** log-summary, each thread has its own unixFile object, but they all
-** point to a single instance of this object.  In other words, each
-** log-summary is opened only once per process.
+** Object used to represent an shared memory buffer.  
+**
+** When multiple threads all reference the same wal-index, each thread
+** has its own unixShm object, but they all point to a single instance
+** of this unixShmNode object.  In other words, each wal-index is opened
+** only once per process.
+**
+** Each unixShmNode object is connected to a single unixInodeInfo object.
+** We could coalesce this object into unixInodeInfo, but that would mean
+** every open file that does not use shared memory (in other words, most
+** open files) would have to carry around this extra information.  So
+** the unixInodeInfo object contains a pointer to this unixShmNode object
+** and the unixShmNode object is created only when needed.
 **
 ** unixMutexHeld() must be true when creating or destroying
 ** this object or while reading or writing the following fields:
 **
 **      nRef
-**      pNext 
 **
 ** The following fields are read-only after the object is created:
 ** 
 **      fid
 **      zFilename
 **
-** Either unixShmFile.mutex must be held or unixShmFile.nRef==0 and
+** Either unixShmNode.mutex must be held or unixShmNode.nRef==0 and
 ** unixMutexHeld() is true when reading or writing any other field
 ** in this structure.
 **
@@ -3117,17 +3127,16 @@ static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
 ** sqlite3_mutex_notheld() on mutex whenever mutexBuf is acquired or
 ** released.
 */
-struct unixShmFile {
-  struct unixFileId fid;     /* Unique file identifier */
+struct unixShmNode {
+  unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
   sqlite3_mutex *mutex;      /* Mutex to access this object */
   sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
-  int szMap;                 /* Size of the mapping of file into memory */
+  int szMap;                 /* Size of the mapping into memory */
   char *pMMapBuf;            /* Where currently mmapped().  NULL if unmapped */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
-  unixShmFile *pNext;        /* Next in list of all unixShmFile objects */
 #ifdef SQLITE_DEBUG
   u8 exclMask;               /* Mask of exclusive locks held */
   u8 sharedMask;             /* Mask of shared locks held */
@@ -3136,32 +3145,28 @@ struct unixShmFile {
 };
 
 /*
-** A global array of all unixShmFile objects.
-**
-** The unixMutexHeld() must be true while reading or writing this list.
-*/
-static unixShmFile *unixShmFileList = 0;
-
-/*
 ** Structure used internally by this VFS to record the state of an
 ** open shared memory connection.
 **
-** unixShm.pFile->mutex must be held while reading or writing the
-** unixShm.pNext and unixShm.locks[] elements.
+** The following fields are initialized when this object is created and
+** are read-only thereafter:
 **
-** The unixShm.pFile element is initialized when the object is created
-** and is read-only thereafter.
+**    unixShm.pFile
+**    unixShm.id
+**
+** All other fields are read/write.  The unixShm.pFile->mutex must be held
+** while accessing any read/write fields.
 */
 struct unixShm {
-  unixShmFile *pFile;        /* The underlying unixShmFile object */
-  unixShm *pNext;            /* Next unixShm with the same unixShmFile */
+  unixShmNode *pShmNode;     /* The underlying unixShmNode object */
+  unixShm *pNext;            /* Next unixShm with the same unixShmNode */
   u8 lockState;              /* Current lock state */
-  u8 hasMutex;               /* True if holding the unixShmFile mutex */
+  u8 hasMutex;               /* True if holding the unixShmNode mutex */
   u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
   u8 sharedMask;             /* Mask of shared locks held */
   u8 exclMask;               /* Mask of exclusive locks held */
 #ifdef SQLITE_DEBUG
-  u8 id;                     /* Id of this connection with its unixShmFile */
+  u8 id;                     /* Id of this connection within its unixShmNode */
 #endif
 };
 
@@ -3221,9 +3226,9 @@ static const char *unixShmLockString(u8 mask){
 ** otherwise.
 */
 static int unixShmSystemLock(
-  unixShmFile *pFile,   /* Apply locks to this open shared-memory segment */
-  int lockType,         /* F_UNLCK, F_RDLCK, or F_WRLCK */
-  u8 lockMask           /* Which bytes to lock or unlock */
+  unixShmNode *pShmNode, /* Apply locks to this open shared-memory segment */
+  int lockType,          /* F_UNLCK, F_RDLCK, or F_WRLCK */
+  u8 lockMask            /* Which bytes to lock or unlock */
 ){
   struct flock f;       /* The posix advisory locking structure */
   int lockOp;           /* The opcode for fcntl() */
@@ -3231,8 +3236,8 @@ static int unixShmSystemLock(
   int rc;               /* Result code form fcntl() */
   u8 mask;              /* Mask of bits in lockMask */
 
-  /* Access to the unixShmFile object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
+  /* Access to the unixShmNode object is serialized by the caller */
+  assert( sqlite3_mutex_held(pShmNode->mutex) || pShmNode->nRef==0 );
 
   /* Initialize the locking parameters */
   memset(&f, 0, sizeof(f));
@@ -3262,7 +3267,7 @@ static int unixShmSystemLock(
   assert( mask==0 || (lockMask & ~(mask | (mask-1)))==0 );
 
   /* Acquire the system-level lock */
-  rc = fcntl(pFile->h, lockOp, &f);
+  rc = fcntl(pShmNode->h, lockOp, &f);
   rc = (rc!=(-1)) ? SQLITE_OK : SQLITE_BUSY;
 
   /* Update the global lock state and do debug tracing */
@@ -3271,17 +3276,17 @@ static int unixShmSystemLock(
   if( rc==SQLITE_OK ){
     if( lockType==F_UNLCK ){
       OSTRACE(("unlock ok"));
-      pFile->exclMask &= ~lockMask;
-      pFile->sharedMask &= ~lockMask;
+      pShmNode->exclMask &= ~lockMask;
+      pShmNode->sharedMask &= ~lockMask;
     }else if( lockType==F_RDLCK ){
       OSTRACE(("read-lock ok"));
-      pFile->exclMask &= ~lockMask;
-      pFile->sharedMask |= lockMask;
+      pShmNode->exclMask &= ~lockMask;
+      pShmNode->sharedMask |= lockMask;
     }else{
       assert( lockType==F_WRLCK );
       OSTRACE(("write-lock ok"));
-      pFile->exclMask |= lockMask;
-      pFile->sharedMask &= ~lockMask;
+      pShmNode->exclMask |= lockMask;
+      pShmNode->sharedMask &= ~lockMask;
     }
   }else{
     if( lockType==F_UNLCK ){
@@ -3295,8 +3300,8 @@ static int unixShmSystemLock(
   }
   OSTRACE((" - change requested %s - afterwards %s:%s\n",
            unixShmLockString(lockMask),
-           unixShmLockString(pFile->sharedMask),
-           unixShmLockString(pFile->exclMask)));
+           unixShmLockString(pShmNode->sharedMask),
+           unixShmLockString(pShmNode->exclMask)));
 #endif
 
   return rc;        
@@ -3307,20 +3312,20 @@ static int unixShmSystemLock(
 ** parameter.
 */
 static int unixShmUnlock(
-  unixShmFile *pFile,   /* The underlying shared-memory file */
-  unixShm *p,           /* The connection to be unlocked */
-  u8 unlockMask         /* Mask of locks to be unlocked */
+  unixShmNode *pShmNode,   /* The underlying shared-memory file */
+  unixShm *p,              /* The connection to be unlocked */
+  u8 unlockMask            /* Mask of locks to be unlocked */
 ){
   int rc;      /* Result code */
   unixShm *pX; /* For looping over all sibling connections */
   u8 allMask;  /* Union of locks held by connections other than "p" */
 
-  /* Access to the unixShmFile object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
+  /* Access to the unixShmNode object is serialized by the caller */
+  assert( sqlite3_mutex_held(pShmNode->mutex) );
 
   /* Compute locks held by sibling connections */
   allMask = 0;
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
+  for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
     assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
     allMask |= pX->sharedMask;
@@ -3328,7 +3333,7 @@ static int unixShmUnlock(
 
   /* Unlock the system-level locks */
   if( (unlockMask & allMask)!=unlockMask ){
-    rc = unixShmSystemLock(pFile, F_UNLCK, unlockMask & ~allMask);
+    rc = unixShmSystemLock(pShmNode, F_UNLCK, unlockMask & ~allMask);
   }else{
     rc = SQLITE_OK;
   }
@@ -3345,23 +3350,23 @@ static int unixShmUnlock(
 ** Get reader locks for connection p on all locks in the readMask parameter.
 */
 static int unixShmSharedLock(
-  unixShmFile *pFile,   /* The underlying shared-memory file */
-  unixShm *p,           /* The connection to get the shared locks */
-  u8 readMask           /* Mask of shared locks to be acquired */
+  unixShmNode *pShmNode,   /* The underlying shared-memory file */
+  unixShm *p,              /* The connection to get the shared locks */
+  u8 readMask              /* Mask of shared locks to be acquired */
 ){
   int rc;        /* Result code */
   unixShm *pX;   /* For looping over all sibling connections */
   u8 allShared;  /* Union of locks held by connections other than "p" */
 
-  /* Access to the unixShmFile object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
+  /* Access to the unixShmNode object is serialized by the caller */
+  assert( sqlite3_mutex_held(pShmNode->mutex) );
 
   /* Find out which shared locks are already held by sibling connections.
   ** If any sibling already holds an exclusive lock, go ahead and return
   ** SQLITE_BUSY.
   */
   allShared = 0;
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
+  for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
     if( (pX->exclMask & readMask)!=0 ) return SQLITE_BUSY;
     allShared |= pX->sharedMask;
@@ -3369,7 +3374,7 @@ static int unixShmSharedLock(
 
   /* Get shared locks at the system level, if necessary */
   if( (~allShared) & readMask ){
-    rc = unixShmSystemLock(pFile, F_RDLCK, readMask);
+    rc = unixShmSystemLock(pShmNode, F_RDLCK, readMask);
   }else{
     rc = SQLITE_OK;
   }
@@ -3386,20 +3391,20 @@ static int unixShmSharedLock(
 ** the writeMask parameter.
 */
 static int unixShmExclusiveLock(
-  unixShmFile *pFile,    /* The underlying shared-memory file */
-  unixShm *p,            /* The connection to get the exclusive locks */
-  u8 writeMask           /* Mask of exclusive locks to be acquired */
+  unixShmNode *pShmNode,    /* The underlying shared-memory file */
+  unixShm *p,               /* The connection to get the exclusive locks */
+  u8 writeMask              /* Mask of exclusive locks to be acquired */
 ){
   int rc;        /* Result code */
   unixShm *pX;   /* For looping over all sibling connections */
 
-  /* Access to the unixShmFile object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
+  /* Access to the unixShmNode object is serialized by the caller */
+  assert( sqlite3_mutex_held(pShmNode->mutex) );
 
   /* Make sure no sibling connections hold locks that will block this
   ** lock.  If any do, return SQLITE_BUSY right away.
   */
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
+  for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
     if( pX==p ) continue;
     if( (pX->exclMask & writeMask)!=0 ) return SQLITE_BUSY;
     if( (pX->sharedMask & writeMask)!=0 ) return SQLITE_BUSY;
@@ -3408,7 +3413,7 @@ static int unixShmExclusiveLock(
   /* Get the exclusive locks at the system level.  Then if successful
   ** also mark the local connection as being locked.
   */
-  rc = unixShmSystemLock(pFile, F_WRLCK, writeMask);
+  rc = unixShmSystemLock(pShmNode, F_WRLCK, writeMask);
   if( rc==SQLITE_OK ){
     p->sharedMask &= ~writeMask;
     p->exclMask |= writeMask;
@@ -3417,26 +3422,21 @@ static int unixShmExclusiveLock(
 }
 
 /*
-** Purge the unixShmFileList list of all entries with unixShmFile.nRef==0.
+** Purge the unixShmNodeList list of all entries with unixShmNode.nRef==0.
 **
 ** This is not a VFS shared-memory method; it is a utility function called
 ** by VFS shared-memory methods.
 */
-static void unixShmPurge(void){
-  unixShmFile **pp;
-  unixShmFile *p;
+static void unixShmPurge(unixFile *pFd){
+  unixShmNode *p = pFd->pInode->pShmNode;
   assert( unixMutexHeld() );
-  pp = &unixShmFileList;
-  while( (p = *pp)!=0 ){
-    if( p->nRef==0 ){
-      if( p->mutex ) sqlite3_mutex_free(p->mutex);
-      if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
-      if( p->h>=0 ) close(p->h);
-      *pp = p->pNext;
-      sqlite3_free(p);
-    }else{
-      pp = &p->pNext;
-    }
+  if( p && p->nRef==0 ){
+    assert( p->pInode==pFd->pInode );
+    if( p->mutex ) sqlite3_mutex_free(p->mutex);
+    if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
+    if( p->h>=0 ) close(p->h);
+    p->pInode->pShmNode = 0;
+    sqlite3_free(p);
   }
 }
 
@@ -3459,110 +3459,86 @@ static int unixShmOpen(
   sqlite3_file *fd      /* The file descriptor of the associated database */
 ){
   struct unixShm *p = 0;             /* The connection to be opened */
-  struct unixShmFile *pFile = 0;     /* The underlying mmapped file */
+  struct unixShmNode *pShmNode = 0;  /* The underlying mmapped file */
   int rc;                            /* Result code */
-  struct unixFileId fid;             /* Unix file identifier */
-  struct unixShmFile *pNew;          /* Newly allocated pFile */
-  struct stat sStat;                 /* Result from stat() an fstat() */
   struct unixFile *pDbFd;            /* Underlying database file */
   int nPath;                         /* Size of pDbFd->zPath in bytes */
 
-  /* Allocate space for the new sqlite3_shm object.  Also speculatively
-  ** allocate space for a new unixShmFile and filename.
+  /* Allocate space for the new sqlite3_shm object.
   */
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
   pDbFd = (struct unixFile*)fd;
   assert( pDbFd->pShm==0 );
-  nPath = strlen(pDbFd->zPath);
-  pNew = sqlite3_malloc( sizeof(*pFile) + nPath + 15 );
-  if( pNew==0 ){
-    sqlite3_free(p);
-    return SQLITE_NOMEM;
-  }
-  memset(pNew, 0, sizeof(*pNew));
-  pNew->zFilename = (char*)&pNew[1];
-  sqlite3_snprintf(nPath+15, pNew->zFilename, "%s-wal-index", pDbFd->zPath);
 
-  /* Look to see if there is an existing unixShmFile that can be used.
-  ** If no matching unixShmFile currently exists, create a new one.
+  /* Check to see if a unixShmNode object already exists.  Reuse an existing
+  ** one if present.  Create a new one if necessary.
   */
   unixEnterMutex();
-  rc = stat(pNew->zFilename, &sStat);
-  if( rc==0 ){
-    memset(&fid, 0, sizeof(fid));
-    fid.dev = sStat.st_dev;
-    fid.ino = sStat.st_ino;
-    for(pFile = unixShmFileList; pFile; pFile=pFile->pNext){
-      if( memcmp(&pFile->fid, &fid, sizeof(fid))==0 ) break;
-    }
-  }
-  if( pFile ){
-    sqlite3_free(pNew);
-  }else{
-    pFile = pNew;
-    pNew = 0;
-    pFile->h = -1;
-    pFile->pNext = unixShmFileList;
-    unixShmFileList = pFile;
-
-    pFile->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pFile->mutex==0 ){
+  pShmNode = pDbFd->pInode->pShmNode;
+  if( pShmNode==0 ){
+    nPath = strlen(pDbFd->zPath);
+    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nPath + 15 );
+    if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-    pFile->mutexBuf = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pFile->mutexBuf==0 ){
+    memset(pShmNode, 0, sizeof(*pShmNode));
+    pShmNode->zFilename = (char*)&pShmNode[1];
+    sqlite3_snprintf(nPath+15, pShmNode->zFilename,
+                     "%s-wal-index", pDbFd->zPath);
+    pShmNode->h = -1;
+    pDbFd->pInode->pShmNode = pShmNode;
+    pShmNode->pInode = pDbFd->pInode;
+    pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if( pShmNode->mutex==0 ){
+      rc = SQLITE_NOMEM;
+      goto shm_open_err;
+    }
+    pShmNode->mutexBuf = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
+    if( pShmNode->mutexBuf==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
 
-    pFile->h = open(pFile->zFilename, O_RDWR|O_CREAT, 0664);
-    if( pFile->h<0 ){
+    pShmNode->h = open(pShmNode->zFilename, O_RDWR|O_CREAT, 0664);
+    if( pShmNode->h<0 ){
       rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
     }
-
-    rc = fstat(pFile->h, &sStat);
-    if( rc ){
-      rc = SQLITE_CANTOPEN_BKPT;
-      goto shm_open_err;
-    }
-    pFile->fid.dev = sStat.st_dev;
-    pFile->fid.ino = sStat.st_ino;
 
     /* Check to see if another process is holding the dead-man switch.
     ** If not, truncate the file to zero length. 
     */
-    if( unixShmSystemLock(pFile, F_WRLCK, UNIX_SHM_DMS)==SQLITE_OK ){
-      if( ftruncate(pFile->h, 0) ){
+    rc = SQLITE_OK;
+    if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS)==SQLITE_OK ){
+      if( ftruncate(pShmNode->h, 0) ){
         rc = SQLITE_IOERR;
       }
     }
     if( rc==SQLITE_OK ){
-      rc = unixShmSystemLock(pFile, F_RDLCK, UNIX_SHM_DMS);
+      rc = unixShmSystemLock(pShmNode, F_RDLCK, UNIX_SHM_DMS);
     }
     if( rc ) goto shm_open_err;
   }
 
-  /* Make the new connection a child of the unixShmFile */
-  p->pFile = pFile;
-  p->pNext = pFile->pFirst;
+  /* Make the new connection a child of the unixShmNode */
+  p->pShmNode = pShmNode;
+  p->pNext = pShmNode->pFirst;
 #ifdef SQLITE_DEBUG
-  p->id = pFile->nextShmId++;
+  p->id = pShmNode->nextShmId++;
 #endif
-  pFile->pFirst = p;
-  pFile->nRef++;
+  pShmNode->pFirst = p;
+  pShmNode->nRef++;
   pDbFd->pShm = p;
   unixLeaveMutex();
   return SQLITE_OK;
 
   /* Jump here on any error */
 shm_open_err:
-  unixShmPurge();                 /* This call frees pFile if required */
+  unixShmPurge(pDbFd);       /* This call frees pShmNode if required */
   sqlite3_free(p);
-  sqlite3_free(pNew);
   unixLeaveMutex();
   return rc;
 }
@@ -3576,37 +3552,41 @@ static int unixShmClose(
   int deleteFlag             /* Delete shared-memory if true */
 ){
   unixShm *p;            /* The connection to be closed */
-  unixShmFile *pFile;    /* The underlying shared-memory file */
+  unixShmNode *pShmNode; /* The underlying shared-memory file */
   unixShm **pp;          /* For looping over sibling connections */
   unixFile *pDbFd;       /* The underlying database file */
 
   pDbFd = (unixFile*)fd;
   p = pDbFd->pShm;
   if( p==0 ) return SQLITE_OK;
-  pFile = p->pFile;
+  pShmNode = p->pShmNode;
+
+  assert( pShmNode==pDbFd->pInode->pShmNode );
+  assert( pShmNode->pInode==pDbFd->pInode );
 
   /* Verify that the connection being closed holds no locks */
   assert( p->exclMask==0 );
   assert( p->sharedMask==0 );
 
-  /* Remove connection p from the set of connections associated with pFile */
-  sqlite3_mutex_enter(pFile->mutex);
-  for(pp=&pFile->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
+  /* Remove connection p from the set of connections associated
+  ** with pShmNode */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
   *pp = p->pNext;
 
   /* Free the connection p */
   sqlite3_free(p);
   pDbFd->pShm = 0;
-  sqlite3_mutex_leave(pFile->mutex);
+  sqlite3_mutex_leave(pShmNode->mutex);
 
-  /* If pFile->nRef has reached 0, then close the underlying
+  /* If pShmNode->nRef has reached 0, then close the underlying
   ** shared-memory file, too */
   unixEnterMutex();
-  assert( pFile->nRef>0 );
-  pFile->nRef--;
-  if( pFile->nRef==0 ){
-    if( deleteFlag ) unlink(pFile->zFilename);
-    unixShmPurge();
+  assert( pShmNode->nRef>0 );
+  pShmNode->nRef--;
+  if( pShmNode->nRef==0 ){
+    if( deleteFlag ) unlink(pShmNode->zFilename);
+    unixShmPurge(pDbFd);
   }
   unixLeaveMutex();
 
@@ -3634,9 +3614,12 @@ static int unixShmSize(
 ){
   unixFile *pDbFd = (unixFile*)fd;
   unixShm *p = pDbFd->pShm;
-  unixShmFile *pFile = p->pFile;
+  unixShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_OK;
   struct stat sStat;
+
+  assert( pShmNode==pDbFd->pInode->pShmNode );
+  assert( pShmNode->pInode==pDbFd->pInode );
 
   /* On a query, this loop runs once.  When reqSize>=0, the loop potentially
   ** runs twice, except if the actual size is already greater than or equal
@@ -3644,7 +3627,7 @@ static int unixShmSize(
   ** the loop only runs once.
   */
   while( 1 ){
-    if( fstat(pFile->h, &sStat)==0 ){
+    if( fstat(pShmNode->h, &sStat)==0 ){
       *pNewSize = (int)sStat.st_size;
       if( reqSize>=0 && reqSize<=(int)sStat.st_size ) break;
     }else{
@@ -3655,7 +3638,7 @@ static int unixShmSize(
     if( reqSize<0 ) break;
     reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
     reqSize *= SQLITE_UNIX_SHM_INCR;
-    rc = ftruncate(pFile->h, reqSize);
+    rc = ftruncate(pShmNode->h, reqSize);
     reqSize = -1;
   }
   return rc;
@@ -3696,32 +3679,35 @@ static int unixShmGet(
 ){
   unixFile *pDbFd = (unixFile*)fd;
   unixShm *p = pDbFd->pShm;
-  unixShmFile *pFile = p->pFile;
+  unixShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_OK;
 
+  assert( pShmNode==pDbFd->pInode->pShmNode );
+  assert( pShmNode->pInode==pDbFd->pInode );
+
   if( p->lockState!=SQLITE_SHM_CHECKPOINT && p->hasMutexBuf==0 ){
-    assert( sqlite3_mutex_notheld(pFile->mutex) );
-    sqlite3_mutex_enter(pFile->mutexBuf);
+    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
+    sqlite3_mutex_enter(pShmNode->mutexBuf);
     p->hasMutexBuf = 1;
   }
-  sqlite3_mutex_enter(pFile->mutex);
-  if( pFile->szMap==0 || reqMapSize>pFile->szMap ){
+  sqlite3_mutex_enter(pShmNode->mutex);
+  if( pShmNode->szMap==0 || reqMapSize>pShmNode->szMap ){
     int actualSize;
     if( unixShmSize(fd, -1, &actualSize)==SQLITE_OK
      && reqMapSize<actualSize
     ){
       reqMapSize = actualSize;
     }
-    if( pFile->pMMapBuf ){
-      munmap(pFile->pMMapBuf, pFile->szMap);
+    if( pShmNode->pMMapBuf ){
+      munmap(pShmNode->pMMapBuf, pShmNode->szMap);
     }
-    pFile->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
-                           pFile->h, 0);
-    pFile->szMap = pFile->pMMapBuf ? reqMapSize : 0;
+    pShmNode->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
+                           pShmNode->h, 0);
+    pShmNode->szMap = pShmNode->pMMapBuf ? reqMapSize : 0;
   }
-  *pNewMapSize = pFile->szMap;
-  *ppBuf = pFile->pMMapBuf;
-  sqlite3_mutex_leave(pFile->mutex);
+  *pNewMapSize = pShmNode->szMap;
+  *ppBuf = pShmNode->pMMapBuf;
+  sqlite3_mutex_leave(pShmNode->mutex);
   return rc;
 }
 
@@ -3740,8 +3726,8 @@ static int unixShmRelease(sqlite3_file *fd){
   unixShm *p = pDbFd->pShm;
 
   if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
-    assert( sqlite3_mutex_notheld(p->pFile->mutex) );
-    sqlite3_mutex_leave(p->pFile->mutexBuf);
+    assert( sqlite3_mutex_notheld(p->pShmNode->mutex) );
+    sqlite3_mutex_leave(p->pShmNode->mutexBuf);
     p->hasMutexBuf = 0;
   }
   return SQLITE_OK;
@@ -3773,8 +3759,11 @@ static int unixShmLock(
 ){
   unixFile *pDbFd = (unixFile*)fd;
   unixShm *p = pDbFd->pShm;
-  unixShmFile *pFile = p->pFile;
+  unixShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_PROTOCOL;
+
+  assert( pShmNode==pDbFd->pInode->pShmNode );
+  assert( pShmNode->pInode==pDbFd->pInode );
 
   /* Note that SQLITE_SHM_READ_FULL and SQLITE_SHM_PENDING are never
   ** directly requested; they are side effects from requesting
@@ -3802,15 +3791,15 @@ static int unixShmLock(
             p->id, getpid(), azLkName[p->lockState], azLkName[desiredLock]));
   
   if( desiredLock==SQLITE_SHM_RECOVER && !p->hasMutexBuf ){
-    assert( sqlite3_mutex_notheld(pFile->mutex) );
-    sqlite3_mutex_enter(pFile->mutexBuf);
+    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
+    sqlite3_mutex_enter(pShmNode->mutexBuf);
     p->hasMutexBuf = 1;
   }
-  sqlite3_mutex_enter(pFile->mutex);
+  sqlite3_mutex_enter(pShmNode->mutex);
   switch( desiredLock ){
     case SQLITE_SHM_UNLOCK: {
       assert( p->lockState!=SQLITE_SHM_RECOVER );
-      unixShmUnlock(pFile, p, UNIX_SHM_A|UNIX_SHM_B|UNIX_SHM_C|UNIX_SHM_D);
+      unixShmUnlock(pShmNode, p, UNIX_SHM_A|UNIX_SHM_B|UNIX_SHM_C|UNIX_SHM_D);
       rc = SQLITE_OK;
       p->lockState = SQLITE_SHM_UNLOCK;
       break;
@@ -3821,22 +3810,22 @@ static int unixShmLock(
         rc = SQLITE_BUSY;
         assert( p->lockState==SQLITE_SHM_UNLOCK );
         for(nAttempt=0; nAttempt<5 && rc==SQLITE_BUSY; nAttempt++){
-          rc = unixShmSharedLock(pFile, p, UNIX_SHM_A|UNIX_SHM_B);
+          rc = unixShmSharedLock(pShmNode, p, UNIX_SHM_A|UNIX_SHM_B);
           if( rc==SQLITE_BUSY ){
-            rc = unixShmSharedLock(pFile, p, UNIX_SHM_D);
+            rc = unixShmSharedLock(pShmNode, p, UNIX_SHM_D);
             if( rc==SQLITE_OK ){
               p->lockState = SQLITE_SHM_READ_FULL;
             }
           }else{
-            unixShmUnlock(pFile, p, UNIX_SHM_B);
+            unixShmUnlock(pShmNode, p, UNIX_SHM_B);
             p->lockState = SQLITE_SHM_READ;
           }
         }
       }else{
        assert( p->lockState==SQLITE_SHM_WRITE
                || p->lockState==SQLITE_SHM_RECOVER );
-        rc = unixShmSharedLock(pFile, p, UNIX_SHM_A);
-        unixShmUnlock(pFile, p, UNIX_SHM_C|UNIX_SHM_D);
+        rc = unixShmSharedLock(pShmNode, p, UNIX_SHM_A);
+        unixShmUnlock(pShmNode, p, UNIX_SHM_C|UNIX_SHM_D);
         p->lockState = SQLITE_SHM_READ;
       }
       break;
@@ -3844,7 +3833,7 @@ static int unixShmLock(
     case SQLITE_SHM_WRITE: {
       assert( p->lockState==SQLITE_SHM_READ 
               || p->lockState==SQLITE_SHM_READ_FULL );
-      rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_C|UNIX_SHM_D);
+      rc = unixShmExclusiveLock(pShmNode, p, UNIX_SHM_C|UNIX_SHM_D);
       if( rc==SQLITE_OK ){
         p->lockState = SQLITE_SHM_WRITE;
       }
@@ -3855,13 +3844,13 @@ static int unixShmLock(
            || p->lockState==SQLITE_SHM_PENDING
       );
       if( p->lockState==SQLITE_SHM_UNLOCK ){
-        rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_B|UNIX_SHM_C);
+        rc = unixShmExclusiveLock(pShmNode, p, UNIX_SHM_B|UNIX_SHM_C);
         if( rc==SQLITE_OK ){
           p->lockState = SQLITE_SHM_PENDING;
         }
       }
       if( p->lockState==SQLITE_SHM_PENDING ){
-        rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_A);
+        rc = unixShmExclusiveLock(pShmNode, p, UNIX_SHM_A);
         if( rc==SQLITE_OK ){
           p->lockState = SQLITE_SHM_CHECKPOINT;
         }
@@ -3873,15 +3862,15 @@ static int unixShmLock(
       assert( p->lockState==SQLITE_SHM_READ
            || p->lockState==SQLITE_SHM_READ_FULL
       );
-      assert( sqlite3_mutex_held(pFile->mutexBuf) );
-      rc = unixShmExclusiveLock(pFile, p, UNIX_SHM_C);
+      assert( sqlite3_mutex_held(pShmNode->mutexBuf) );
+      rc = unixShmExclusiveLock(pShmNode, p, UNIX_SHM_C);
       if( rc==SQLITE_OK ){
         p->lockState = SQLITE_SHM_RECOVER;
       }
       break;
     }
   }
-  sqlite3_mutex_leave(pFile->mutex);
+  sqlite3_mutex_leave(pShmNode->mutex);
   OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %s\n",
            p->id, getpid(), azLkName[p->lockState]));
   if( pGotLock ) *pGotLock = p->lockState;
@@ -4497,7 +4486,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
   ** Even if a subsequent open() call does succeed, the consequences of
   ** not searching for a resusable file descriptor are not dire.  */
   if( 0==stat(zPath, &sStat) ){
-    struct unixInodeInfo *pInode;
+    unixInodeInfo *pInode;
 
     unixEnterMutex();
     pInode = inodeList;
