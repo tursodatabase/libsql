@@ -5293,7 +5293,8 @@ case OP_JournalMode: {    /* out2-prerelease */
           rc = sqlite3BtreeSetVersion(pBt, 
                                       (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
           if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
-        }else if( rc==SQLITE_BUSY ){
+        }
+        if( rc==SQLITE_BUSY ){
           eNew = PAGER_JOURNALMODE_QUERY;
           rc = SQLITE_OK;
         }
