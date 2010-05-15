@@ -5784,7 +5784,10 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** The callback function should normally return SQLITE_OK.  ^If an error
 ** code is returned, that error will propagate back up through the
 ** SQLite code base to cause the statement that provoked the callback
-** to report an error, though the commit will have still occurred.
+** to report an error, though the commit will have still occurred. If the
+** callback returns SQLITE_ROW or SQLITE_DONE, or if it returns a value
+** that does not correspond to any valid SQLite error code, the results
+** are undefined.
 **
 ** A single database handle may have at most a single write-ahead log callback 
 ** registered at one time. ^Calling [sqlite3_wal_hook()] replaces any
