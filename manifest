@@ -1,5 +1,8 @@
-C Fix\ssome\sextra\sinstances\sof\sthe\sproblematic\sconstant\sin\sutil.c\son\sthe\s3.6.1\sbranch.
-D 2010-03-03T15:49:18
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Invoke\sthe\sSQLITE_FCNTL_SIZE_HINT\sopcode\son\sthe\ssqlite3_file_control()\ninterface\sfor\sdatabase\sfiles\sbefore\sextending\sthe\ssize\sof\sthe\sfile.\s\sThe\nVFS\scan\suse\sthis\shint\sto\spreallocate\sspace.
+D 2010-05-17T15:33:24
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,9 +136,9 @@ F src/os.c 939ae7690a01d9401685ba124b4ba45fd4a7a2ad
 F src/os.h ef8abeb9afc694b82dbd169a91c9b7e26db3c892
 F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
-F src/os_unix.c fe0dbc35bcd3de49e46b132abfc0f45d6dd6a864
+F src/os_unix.c 23b64faec0762bdc878c8ea61ab38d4ae9575318
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c 0e7b4ddc5ffddd8cc369058606b4dcb714e08456
+F src/pager.c a7470e877d927f708e93b031c90aacde57bf08a2
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y d962e544d9953289db23c1d4cc2dab514c7136fa
 F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
@@ -144,7 +147,7 @@ F src/printf.c fd40f2fe2951b34290ad1c2d8b65a375b7ea2194
 F src/random.c 5c754319d38abdd6acd74601ee0105504adc508a
 F src/select.c c5d15b97a5a26b34f83b0109e4bca398b703164b
 F src/shell.c 4b835fe734304ac22a3385868cd3790c1e4f7aa1
-F src/sqlite.h.in 157cd9932c2747a6ef3cb091e006185f4f9105d3
+F src/sqlite.h.in b6f0bb400e82d271709412ab59ee898d6a4c196a
 F src/sqlite3ext.h 1e3887c9bd3ae66cb599e922824b04cd0d0f2c3e
 F src/sqliteInt.h 685b9cf6537e59e4453269b43acb33c59b566346
 F src/sqliteLimit.h f435e728c6b620ef7312814d660a81f9356eb5c8
@@ -283,7 +286,7 @@ F test/exclusive2.test d13bf66753dca46e61241d35d36ab7c868b0d313
 F test/exec.test e949714dc127eaa5ecc7d723efec1ec27118fdd7
 F test/expr.test a47d304a90c75def083cce3b1cd6c282842e6bbe
 F test/filectrl.test 524853082d5d7fb442599730ec3a0f3f84a3a936
-F test/filefmt.test 053b622009fbbb74dd37921ffad374d852c13cd8
+F test/filefmt.test f0e14d428fe33c5199de59a7b640041bd4fc6082
 F test/fkey1.test dcb4f28eb22d5141f15161d6bdca9a4f58c95729
 F test/format4.test 1f0cac8ff3895e9359ed87e41aaabee982a812eb
 F test/fts1a.test 46090311f85da51bb33bd5ce84f7948359c6d8d7
@@ -368,7 +371,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test 23c52939ebf90f00d9cbd819ced6daa9f21445fa
+F test/io.test fb8b310ff1bb9bedf2b66f7e8c01b48cf980b28f
 F test/ioerr.test b42f249c9181b5864e53fdae38ef75475d71c66f
 F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -617,7 +620,14 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 96bfaf9c8c26e24d72111ed970f85f25f5b1b62e
-R 4818a50baadc1a49a234a4950db55fa4
-U dan
-Z 649e0101dc5198168db8b8ffff4b24c3
+P 527c71d54e32ea022231af67ce437faa60acb14a
+R 0717702a9a1a1a5e4f623dea107fa5c2
+U drh
+Z fc5ea82c1897889c855a0d6e1b3eaced
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL8WHHoxKgR168RlERAnZ/AJ4yqYIu4O9DRo4Y9BOXBUAfReooTwCaAlA2
+FNT4KuePHuznPUtcBjwqcxY=
+=c3j0
+-----END PGP SIGNATURE-----

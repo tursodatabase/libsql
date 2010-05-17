@@ -63,7 +63,7 @@ ifcapable pager_pragmas {
        db eval "PRAGMA page_size=$pagesize"
        db eval {CREATE TABLE t1(x)}
        file size test.db
-     } [expr $pagesize*2]
+     } [expr {$pagesize*2<$sqlite_pending_byte ? $pagesize*2 : $pagesize*3}]
      do_test filefmt-1.5.$pagesize.2 {
        hexio_get_int [hexio_read test.db 16 2]
      } $pagesize

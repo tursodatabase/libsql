@@ -2055,6 +2055,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = ((unixFile*)id)->locktype;
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SIZE_HINT: {
+      sqlite3_int64 szFile = *(sqlite3_int64*)pArg;
+      unixFile *pFile = (unixFile*)id;
+      ftruncate(pFile->h, szFile);
+      return SQLITE_OK;
+    }
   }
   return SQLITE_ERROR;
 }

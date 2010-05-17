@@ -401,7 +401,7 @@ ifcapable pager_pragmas {
     # File has grown - showing there was a cache-spill - but there 
     # have been no calls to fsync():
     list [file size test.db] [nSync]
-  } {31744 0}
+  } {38912 0}
   do_test io-3.3 {
     # The COMMIT requires a single fsync() - to the database file.
     execsql { COMMIT }
