@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Invoke\sthe\sSQLITE_FCNTL_SIZE_HINT\sopcode\son\sthe\ssqlite3_file_control()\ninterface\sfor\sdatabase\sfiles\sbefore\sextending\sthe\ssize\sof\sthe\sfile.\s\sThe\nVFS\scan\suse\sthis\shint\sto\spreallocate\sspace.
-D 2010-05-17T15:33:24
+C An\simprovement\sto\sthe\sSQLITE_FCNTL_SIZE_HINT\schange\sthat\sinvokes\sthe\shint\nless\soften\sand\sonly\swhen\sreally\sneeded.
+D 2010-05-17T15:52:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
 F src/os_unix.c 23b64faec0762bdc878c8ea61ab38d4ae9575318
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c a7470e877d927f708e93b031c90aacde57bf08a2
+F src/pager.c e6b49d1b0116c186694093169d3c7199b0a72e4d
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y d962e544d9953289db23c1d4cc2dab514c7136fa
 F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
@@ -620,14 +620,14 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 527c71d54e32ea022231af67ce437faa60acb14a
-R 0717702a9a1a1a5e4f623dea107fa5c2
+P 9a083711712d652613c93b3ad96d4f7361376c7f
+R aea3444cc6c24b1c4506b5c6f93e797e
 U drh
-Z fc5ea82c1897889c855a0d6e1b3eaced
+Z 528ef0641d2748215fd8a1354579cc0a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL8WHHoxKgR168RlERAnZ/AJ4yqYIu4O9DRo4Y9BOXBUAfReooTwCaAlA2
-FNT4KuePHuznPUtcBjwqcxY=
-=c3j0
+iD4DBQFL8WZPoxKgR168RlERAsElAJdzpp/0CbCiHpVVmJdP1OrACx5BAJ9I1u53
+hQ/7mwNPgaNvk1lSyt7EQQ==
+=34QZ
 -----END PGP SIGNATURE-----

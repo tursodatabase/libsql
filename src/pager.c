@@ -3032,7 +3032,6 @@ static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
   PgHdr *p;
   int rc;
-  sqlite3_int64 szFile;          /* Final size of databsae file */
 
   if( pList==0 ) return SQLITE_OK;
   pPager = pList->pPager;
@@ -3063,24 +3062,23 @@ static int pager_write_pagelist(PgHdr *pList){
     assert( p->dirty );
     p->dirty = 0;
   }
-  szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+
+  /* If the file has not yet been opened, open it now. */
+  if( !pPager->fd->pMethods ){
+    assert(pPager->tempFile);
+    rc = sqlite3PagerOpentemp(pPager, pPager->fd, pPager->vfsFlags);
+    if( rc ) return rc;
+  }
+
+  /* Before the first write, give the VFS a hint of what the final
+  ** file size will be.
+  */
+  if( pPager->dbSize > (pPager->origDbSize+1) ){
+    sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+  }
+
   while( pList ){
-
-    /* If the file has not yet been opened, open it now. */
-    if( !pPager->fd->pMethods ){
-      assert(pPager->tempFile);
-      rc = sqlite3PagerOpentemp(pPager, pPager->fd, pPager->vfsFlags);
-      if( rc ) return rc;
-    }
-
-    /* Before the first write, give the VFS a hint of what the final
-    ** file size will be.
-    */
-    if( szFile>0 ){
-      sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
-      szFile = 0;
-    }
-
     /* If there are dirty pages in the page cache with page numbers greater
     ** than Pager.dbSize, this means sqlite3PagerTruncate() was called to
     ** make the file smaller (presumably by auto-vacuum code). Do not write
