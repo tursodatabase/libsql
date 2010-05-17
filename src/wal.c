@@ -1374,10 +1374,8 @@ int sqlite3WalFrames(
     i64 iOffset = walFrameOffset(iFrame+1, nPgsz);
 
     assert( isCommit );
+    assert( iSegment>0 );
 
-    if( iSegment<SQLITE_DEFAULT_SECTOR_SIZE ){
-      iSegment = SQLITE_DEFAULT_SECTOR_SIZE;
-    }
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
       walEncodeFrame(aCksum,pLast->pgno,nTruncate,nPgsz,pLast->pData,aFrame);
