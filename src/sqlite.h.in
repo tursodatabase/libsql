@@ -656,7 +656,7 @@ struct sqlite3_io_methods {
   /* Methods above are valid for version 1 */
   int (*xShmOpen)(sqlite3_file*);
   int (*xShmSize)(sqlite3_file*, int reqSize, int *pNewSize);
-  int (*xShmGet)(sqlite3_file*, int reqSize, int *pSize, void**);
+  int (*xShmGet)(sqlite3_file*, int reqSize, int *pSize, void volatile**);
   int (*xShmRelease)(sqlite3_file*);
   int (*xShmLock)(sqlite3_file*, int desiredLock, int *gotLock);
   int (*xShmClose)(sqlite3_file*, int deleteFlag);

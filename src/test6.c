@@ -529,7 +529,12 @@ static int cfShmOpen(sqlite3_file *pFile){
 static int cfShmSize(sqlite3_file *pFile, int reqSize, int *pNew){
   return sqlite3OsShmSize(((CrashFile*)pFile)->pRealFile, reqSize, pNew);
 }
-static int cfShmGet(sqlite3_file *pFile, int reqSize, int *pSize, void **pp){
+static int cfShmGet(
+  sqlite3_file *pFile,
+  int reqSize,
+  int *pSize,
+  void volatile **pp
+){
   return sqlite3OsShmGet(((CrashFile*)pFile)->pRealFile, reqSize, pSize, pp);
 }
 static int cfShmRelease(sqlite3_file *pFile){

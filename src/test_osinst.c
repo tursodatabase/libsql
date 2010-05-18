@@ -147,7 +147,7 @@ static int vfslogDeviceCharacteristics(sqlite3_file*);
 
 static int vfslogShmOpen(sqlite3_file *pFile);
 static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize);
-static int vfslogShmGet(sqlite3_file *pFile, int req, int *pSize, void **pp);
+static int vfslogShmGet(sqlite3_file *pFile, int,int*,volatile void **);
 static int vfslogShmRelease(sqlite3_file *pFile);
 static int vfslogShmLock(sqlite3_file *pFile, int desiredLock, int *gotLock);
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
@@ -420,7 +420,12 @@ static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize){
   vfslog_call(p->pVfslog, OS_SHMSIZE, p->iFileId, t, rc, 0, 0);
   return rc;
 }
-static int vfslogShmGet(sqlite3_file *pFile, int req, int *pSize, void **pp){
+static int vfslogShmGet(
+  sqlite3_file *pFile,
+  int req,
+  int *pSize,
+  volatile void **pp
+){
   int rc;
   sqlite3_uint64 t;
   VfslogFile *p = (VfslogFile *)pFile;
@@ -1193,4 +1198,3 @@ int SqlitetestOsinst_Init(Tcl_Interp *interp){
 }
 
 #endif /* SQLITE_TEST */
-

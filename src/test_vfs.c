@@ -100,7 +100,7 @@ static int tvfsCurrentTime(sqlite3_vfs*, double*);
 
 static int tvfsShmOpen(sqlite3_file*);
 static int tvfsShmSize(sqlite3_file*, int , int *);
-static int tvfsShmGet(sqlite3_file*, int , int *, void **);
+static int tvfsShmGet(sqlite3_file*, int , int *, volatile void **);
 static int tvfsShmRelease(sqlite3_file*);
 static int tvfsShmLock(sqlite3_file*, int , int *);
 static int tvfsShmClose(sqlite3_file*, int);
@@ -509,7 +509,7 @@ static int tvfsShmGet(
   sqlite3_file *pFile, 
   int reqMapSize, 
   int *pMapSize, 
-  void **pp
+  volatile void **pp
 ){
   int rc = SQLITE_OK;
   TestvfsFile *pFd = (TestvfsFile *)pFile;

@@ -245,7 +245,7 @@ int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
 int sqlite3OsShmOpen(sqlite3_file *id);
 int sqlite3OsShmSize(sqlite3_file *id, int, int*);
-int sqlite3OsShmGet(sqlite3_file *id, int, int*, void**);
+int sqlite3OsShmGet(sqlite3_file *id, int, int*, void volatile**);
 int sqlite3OsShmRelease(sqlite3_file *id);
 int sqlite3OsShmLock(sqlite3_file *id, int, int*);
 int sqlite3OsShmClose(sqlite3_file *id, int);

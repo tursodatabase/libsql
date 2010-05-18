@@ -104,7 +104,7 @@ int sqlite3OsShmOpen(sqlite3_file *id){
 int sqlite3OsShmSize(sqlite3_file *id, int reqSize, int *pNewSize){
   return id->pMethods->xShmSize(id, reqSize, pNewSize);
 }
-int sqlite3OsShmGet(sqlite3_file *id, int reqSize, int *pSize, void **pp){
+int sqlite3OsShmGet(sqlite3_file *id,int reqSize,int *pSize,void volatile **pp){
   return id->pMethods->xShmGet(id, reqSize, pSize, pp);
 }
 int sqlite3OsShmRelease(sqlite3_file *id){

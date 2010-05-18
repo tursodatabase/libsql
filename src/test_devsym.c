@@ -52,7 +52,7 @@ static int devsymSectorSize(sqlite3_file*);
 static int devsymDeviceCharacteristics(sqlite3_file*);
 static int devsymShmOpen(sqlite3_file*);
 static int devsymShmSize(sqlite3_file*,int,int*);
-static int devsymShmGet(sqlite3_file*,int,int*,void**);
+static int devsymShmGet(sqlite3_file*,int,int*,volatile void**);
 static int devsymShmRelease(sqlite3_file*);
 static int devsymShmLock(sqlite3_file*,int,int*);
 static int devsymShmClose(sqlite3_file*,int);
@@ -248,7 +248,12 @@ static int devsymShmSize(sqlite3_file *pFile, int reqSize, int *pSize){
   devsym_file *p = (devsym_file *)pFile;
   return sqlite3OsShmSize(p->pReal, reqSize, pSize);
 }
-static int devsymShmGet(sqlite3_file *pFile, int reqSz, int *pSize, void **pp){
+static int devsymShmGet(
+  sqlite3_file *pFile,
+  int reqSz,
+  int *pSize,
+  void volatile **pp
+){
   devsym_file *p = (devsym_file *)pFile;
   return sqlite3OsShmGet(p->pReal, reqSz, pSize, pp);
 }

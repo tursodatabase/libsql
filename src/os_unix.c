@@ -3675,7 +3675,7 @@ static int unixShmGet(
   sqlite3_file *fd,        /* Database file holding shared memory */
   int reqMapSize,          /* Requested size of mapping. -1 means don't care */
   int *pNewMapSize,        /* Write new size of mapping here */
-  void **ppBuf             /* Write mapping buffer origin here */
+  void volatile **ppBuf    /* Write mapping buffer origin here */
 ){
   unixFile *pDbFd = (unixFile*)fd;
   unixShm *p = pDbFd->pShm;
