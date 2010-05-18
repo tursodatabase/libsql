@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Refactoring\sof\sthe\sWalIterator\simplementation.
-D 2010-05-18T18:01:09
+C Update\sthe\swal-index\shash\sformat\sso\sthat\shash-table\sspace\sis\sreused\sfollowing\na\srollback,\sthus\spreventing\shash\stable\soverflows.\s\sAdd\sassert()s\sto\sverify\nthat\shash\stables\sdo\snot\soverfill.\s\sFurther\srefactoring\sof\sthe\swal-index\scode.
+D 2010-05-18T23:29:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c cfbb818b50bec82675aa5322d7ee0e2b2c2a7386
+F src/wal.c 6ef6731346daf2461462ea20d5fc44682feb1a28
 F src/wal.h 434f76f51225bb614e43ccb6bd2341541ba6a06e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0a6787908e989bd5e6af25acbdc59ebc8fa61d6d
-R 70b31773a620515609c56c14086245f3
+P b5b60fdcc5dcf41f2c79912075ac241f7ce220d6
+R 4929b4583dfb4e1eb01782532f6827c1
 U drh
-Z 7b37c77bed71cbc8c1a6f26dcf7b1090
+Z d3a6efc94e4a817e6e627477c12bae31
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL8tXooxKgR168RlERAkToAJ4sc1mZ1q5W9au06n2/yU3i2HlYxwCdEuup
-sJTTs22gXenKu7GRNzIKGS0=
-=4glP
+iD8DBQFL8yL1oxKgR168RlERAvCcAJ9c+PHCm9rZ4hPCfVE6HbCjS/YEFgCdF7L6
+bHpr3zEADy01V3PS/VC1PCE=
+=u4O9
 -----END PGP SIGNATURE-----

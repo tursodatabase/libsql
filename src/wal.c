@@ -12,17 +12,26 @@
 **
 ** This file contains the implementation of a write-ahead log file used in 
 ** "journal_mode=wal" mode.
-*/
-#ifndef SQLITE_OMIT_WAL
-
-#include "wal.h"
-
-
-/*
+**
 ** WRITE-AHEAD LOG (WAL) FILE FORMAT
 **
 ** A wal file consists of a header followed by zero or more "frames".
-** The file header is 12 bytes in size and consists of the following three
+** Each frame records the revised content of a single page within the
+** database file.  All changes to the database are recorded by writing
+** frames into the WAL.  Transactions commit when a frame is written that
+** contains a commit marker.  A single WAL can and usually does record 
+** multiple transactions.  Periodically, the content of the WAL is
+** transferred back into the database file in an operation called a
+** "checkpoint".
+**
+** A single WAL file can be used multiple times.  In other words, the
+** WAL can fill up with frames and then be checkpointed.  Then new
+** frames can overwrite the old ones.  A WAL always grows from beginning
+** toward the end.  Checksums and counters attached to each frame are
+** used to determine which frames within the WAL are valid and which
+** are leftovers from prior checkpoints.
+**
+** The WAL header is 12 bytes in size and consists of the following three
 ** big-endian 32-bit unsigned integer values:
 **
 **     0: Database page size,
@@ -39,32 +48,54 @@
 **        after the commit. For all other records, zero.
 **     8: Checksum value 1.
 **    12: Checksum value 2.
+**
+** READER ALGORITHM
+**
+** To read a page from the database (call it page number P), a reader
+** first checks the WAL to see if it contains page P.  If so, then the
+** last valid instance of page P that is or is followed by a commit frame
+** become the value read.  If the WAL contains no copies of page P that
+** are valid and which are or are followed by a commit frame, then page
+** P is read from the database file.
+**
+** The reader algorithm in the previous paragraph works correctly, but 
+** because frames for page P can appear anywhere within the WAL, the
+** reader has to scan the either WAL looking for page P frames.  If the
+** WAL is large (multiple megabytes is typical) that scan can be slow,
+** and read performanc suffers.  To overcome this problem, a separate
+** datastructure called the wal-index is maintained to expedite the
+** search for frames of a particular page.
+** 
+** WAL-INDEX FORMAT
+**
+** Conceptually, the wal-index is shared memory, though VFS implementations
+** might choose to implement the wal-index using a mmapped file.  Because
+** the wal-index is shared memory, SQLite does not support journal_mode=WAL 
+** on a network filesystem.  All users of the database must be able to
+** share memory.
+**
+** The wal-index is transient.  After a crash, the wal-index can (and should
+** be) reconstructed from the original WAL file.  In fact, the VFS is required
+** to either truncate or zero the header of the wal-index when the last
+** connection to it closes.  Because the wal-index is transient, it can
+** use an architecture-specific format; it does not have to be cross-platform.
+** Hence, unlike the database and WAL file formats which store all values
+** as big endian, the wal-index can store multi-byte values in the native
+** byte order of the host computer.
+**
+** The purpose of the wal-index is to answer this question quickly:  Given
+** a page number P, return the index of the last frame for page P in the WAL,
+** or return NULL if there are no frames for page P in the WAL.
+**
+** The wal-index consists of a header region, followed by an one or
+** more index blocks.  
+**
+** To be completed....
 */
+#ifndef SQLITE_OMIT_WAL
 
-/* 
-** WAL-INDEX FILE FORMAT
-**
-** The wal-index consists of a header region, followed by an 
-** 8-byte region that contains no useful data (used to apply byte-range locks
-** in some implementations), followed by the data region. 
-**
-** The contents of both the header and data region are specified in terms
-** of 1, 2 and 4 byte unsigned integers. All integers are stored in 
-** machine-endian order.  The wal-index is not a persistent file and
-** so it does not need to be portable across archtectures.
-**
-** A wal-index file is essentially a shadow-pager map. It contains a
-** mapping from database page number to the set of locations in the wal
-** file that contain versions of the database page. When a database 
-** client needs to read a page of data, it first queries the wal-index
-** to determine if the required version of the page is stored in
-** the wal. If so, the page is read from the wal. If not, the page is
-** read from the database file.
-**
-** Whenever a transaction is appended to the wal or a checkpoint transfers
-** data from the wal into the database file, the wal-index is 
-** updated accordingly.
-*/
+#include "wal.h"
+
 
 /* Object declarations */
 typedef struct WalIndexHdr WalIndexHdr;
@@ -81,7 +112,7 @@ typedef struct WalIterator WalIterator;
 struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u32 pgsz;                       /* Database page size in bytes */
-  u32 iLastPg;                    /* Address of last valid frame in log */
+  u32 iLastPg;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 iCheck1;                    /* Checkpoint value 1 */
   u32 iCheck2;                    /* Checkpoint value 2 */
@@ -305,15 +336,18 @@ static int walDecodeFrame(
 }
 
 /*
-** Define the size of the hash tables in the wal-index file. There
+** Define the parameters of the hash tables in the wal-index file. There
 ** is a hash-table following every HASHTABLE_NPAGE page numbers in the
 ** wal-index.
+**
+** Changing any of these constants will alter the wal-index format and
+** create incompatibilities.
 */
-#define HASHTABLE_NPAGE      4096
+#define HASHTABLE_NPAGE      4096  /* Must be power of 2 and multiple of 256 */
 #define HASHTABLE_DATATYPE   u16
-
-#define HASHTABLE_NSLOT     (HASHTABLE_NPAGE*2)
-#define HASHTABLE_NBYTE     (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
+#define HASHTABLE_HASH_1     383                  /* Should be prime */
+#define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
+#define HASHTABLE_NBYTE      (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
 
 /*
 ** Return the index in the Wal.pWiData array that corresponds to 
@@ -410,8 +444,18 @@ static int walIndexRemap(Wal *pWal, int enlargeTo){
 */
 #define WALINDEX_MMAP_INCREMENT (64*1024)
 
-static int walHashKey(u32 iPage){
-  return (iPage*2) % (HASHTABLE_NSLOT-1);
+
+/*
+** Compute a hash on a page number.  The resulting hash value must land
+** between 0 and (HASHTABLE_NSLOT-1).
+*/
+static int walHash(u32 iPage){
+  assert( iPage>0 );
+  assert( (HASHTABLE_NSLOT & (HASHTABLE_NSLOT-1))==0 );
+  return (iPage*HASHTABLE_HASH_1) & (HASHTABLE_NSLOT-1);
+}
+static int walNextHash(int iPriorHash){
+  return (iPriorHash+1)&(HASHTABLE_NSLOT-1);
 }
 
 
@@ -461,11 +505,8 @@ static void walHashFind(
 
 
 /*
-** Set an entry in the wal-index map to map log frame iFrame to db 
-** page iPage. Values are always appended to the wal-index (i.e. the
-** value of iFrame is always exactly one more than the value passed to
-** the previous call), but that restriction is not enforced or asserted
-** here.
+** Set an entry in the wal-index that will map database page number
+** pPage into WAL frame iFrame.
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   int rc;                         /* Return code */
@@ -490,12 +531,16 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     volatile u32 *aPgno;                 /* Page number array */
     volatile HASHTABLE_DATATYPE *aHash;  /* Hash table */
     int idx;                             /* Value to write to hash-table slot */
+    TESTONLY( int nCollide = 0;          /* Number of hash collisions */ )
 
     walHashFind(pWal, iFrame, &aHash, &aPgno, &iZero);
     idx = iFrame - iZero;
-    if( idx==1 ) memset((void*)aHash, 0, HASHTABLE_NBYTE);
+    if( idx==1 ) memset((void*)aHash, 0xff, HASHTABLE_NBYTE);
+    assert( idx <= HASHTABLE_NSLOT/2 + 1 );
     aPgno[iFrame] = iPage;
-    for(iKey=walHashKey(iPage); aHash[iKey]; iKey=(iKey+1)%HASHTABLE_NSLOT);
+    for(iKey=walHash(iPage); aHash[iKey]<idx; iKey=walNextHash(iKey)){
+      assert( nCollide++ < idx );
+    }
     aHash[iKey] = idx;
   }
 
@@ -1233,11 +1278,14 @@ int sqlite3WalRead(
     volatile u32 *aPgno;                 /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
     int iKey;                     /* Hash slot index */
+    int mxHash;                   /* upper bound on aHash[] values */
 
     walHashFind(pWal, iHash, &aHash, &aPgno, &iZero);
-    for(iKey=walHashKey(pgno); aHash[iKey]; iKey=(iKey+1)%HASHTABLE_NSLOT){
+    mxHash = iLast - iZero;
+    if( mxHash > HASHTABLE_NPAGE )  mxHash = HASHTABLE_NPAGE;
+    for(iKey=walHash(pgno); aHash[iKey]<=mxHash; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[iFrame]==pgno && iFrame>iRead ){
+      if( ALWAYS(iFrame<=iLast) && aPgno[iFrame]==pgno && iFrame>iRead ){
         iRead = iFrame;
       }
     }
