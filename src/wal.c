@@ -22,7 +22,7 @@
 ** WRITE-AHEAD LOG (WAL) FILE FORMAT
 **
 ** A wal file consists of a header followed by zero or more "frames".
-** The header is 12 bytes in size and consists of the following three
+** The file header is 12 bytes in size and consists of the following three
 ** big-endian 32-bit unsigned integer values:
 **
 **     0: Database page size,
@@ -44,9 +44,9 @@
 /* 
 ** WAL-INDEX FILE FORMAT
 **
-** The wal-index file consists of a 32-byte header region, followed by an 
+** The wal-index consists of a 32-byte header region, followed by an 
 ** 8-byte region that contains no useful data (used to apply byte-range locks
-** to), followed by the data region. 
+** in some implementations), followed by the data region. 
 **
 ** The contents of both the header and data region are specified in terms
 ** of 1, 2 and 4 byte unsigned integers. All integers are stored in 
@@ -57,19 +57,13 @@
 ** mapping from database page number to the set of locations in the wal
 ** file that contain versions of the database page. When a database 
 ** client needs to read a page of data, it first queries the wal-index
-** file to determine if the required version of the page is stored in
+** to determine if the required version of the page is stored in
 ** the wal. If so, the page is read from the wal. If not, the page is
 ** read from the database file.
 **
 ** Whenever a transaction is appended to the wal or a checkpoint transfers
 ** data from the wal into the database file, the wal-index is 
 ** updated accordingly.
-**
-** The fields in the wal-index file header are described in the comment 
-** directly above the definition of struct WalIndexHdr (see below). 
-** Immediately following the fields in the WalIndexHdr structure is
-** an 8 byte checksum based on the contents of the header. This field is
-** not the same as the iCheck1 and iCheck2 fields of the WalIndexHdr.
 */
 
 /* Object declarations */
@@ -1397,7 +1391,7 @@ int sqlite3WalFrames(
   }
   assert( pWal->pWiData==0 );
 
-  /* Append data to the log summary. It is not necessary to lock the 
+  /* Append data to the wal-index. It is not necessary to lock the 
   ** wal-index to do this as the RESERVED lock held on the db file
   ** guarantees that there are no other writers, and no data that may
   ** be in use by existing readers is being overwritten.
