@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C An\simprovement\sto\sthe\sSQLITE_FCNTL_SIZE_HINT\schange\sthat\sinvokes\sthe\shint\nless\soften\sand\sonly\swhen\sreally\sneeded.
-D 2010-05-17T15:52:44
+C Keep\sadditional\sstate\sinformation\sin\sthe\spager\sin\san\seffort\sto\sreduce\sthe\nnumber\sof\sSQLITE_FCNTL_SIZE_HINTs.
+D 2010-05-18T12:37:05
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 2713ea64947be3b35f35d9a3158bb8299c90b019
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -138,7 +138,7 @@ F src/os_common.h 24525d8b7bce66c374dfc1810a6c9043f3359b60
 F src/os_os2.c 676ed273b17bd260f905df81375c9f9950d85517
 F src/os_unix.c 23b64faec0762bdc878c8ea61ab38d4ae9575318
 F src/os_win.c aefe9ee26430678a19a058a874e4e2bd91398142
-F src/pager.c e6b49d1b0116c186694093169d3c7199b0a72e4d
+F src/pager.c c78c9558060ca045eb973f9b87da70a0ac28992a
 F src/pager.h 588c1ac195228b2da45c4e5f7ab6c2fd253d1751
 F src/parse.y d962e544d9953289db23c1d4cc2dab514c7136fa
 F src/pragma.c 6e207b4f69901089758c02c02e0bf86ed12a4d8f
@@ -371,7 +371,7 @@ F test/insert4.test 6e382eaf7295a4463e6f29ea20fcd8e63d097eeb
 F test/insert5.test 1f93cbe9742110119133d7e8e3ccfe6d7c249766
 F test/interrupt.test 42e7cf98646fd9cb4a3b131a93ed3c50b9e149f1
 F test/intpkey.test 537669fd535f62632ca64828e435b9e54e8d677f
-F test/io.test fb8b310ff1bb9bedf2b66f7e8c01b48cf980b28f
+F test/io.test b9d9d627db72ded2227e23bf03b45067047f9d8b
 F test/ioerr.test b42f249c9181b5864e53fdae38ef75475d71c66f
 F test/ioerr2.test 5598405c48842c6c0187daad9eb49eff2c54f80d
 F test/ioerr3.test d3cec5e1a11ad6d27527d0d38573fbff14c71bdd
@@ -620,14 +620,14 @@ F tool/speedtest16.c c8a9c793df96db7e4933f0852abb7a03d48f2e81
 F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 1dbced29de5f59ba2ebf877edcadf171540374d1
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
-P 9a083711712d652613c93b3ad96d4f7361376c7f
-R aea3444cc6c24b1c4506b5c6f93e797e
+P a1d20ceb9c195ea96f09c2a40c898ca75f504ee1
+R c259aebb9828e6f7d53c890c0f40fdc0
 U drh
-Z 528ef0641d2748215fd8a1354579cc0a
+Z 4822e36c81dd65a9c9827d7899fd3725
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD4DBQFL8WZPoxKgR168RlERAsElAJdzpp/0CbCiHpVVmJdP1OrACx5BAJ9I1u53
-hQ/7mwNPgaNvk1lSyt7EQQ==
-=34QZ
+iD8DBQFL8on0oxKgR168RlERAth0AJ9D0mKQbfnHqPlltZbvAMr/uU7AwgCfdTA5
+llbwG9OuQTdAiZSIr/wVN/w=
+=xMw6
 -----END PGP SIGNATURE-----

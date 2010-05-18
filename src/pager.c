@@ -358,6 +358,7 @@ struct Pager {
   int errCode;                /* One of several kinds of errors */
   int dbSize;                 /* Number of pages in the file */
   int origDbSize;             /* dbSize before the current change */
+  int hintDbSize;             /* dbSize sent to SQLITE_FCNTL_SIZE_HINT */
   int stmtSize;               /* Size of database (in pages) at stmt_begin() */
   int nRec;                   /* Number of pages written to the journal */
   u32 cksumInit;              /* Quasi-random value added to every checksum */
@@ -1358,6 +1359,7 @@ static void pager_unlock(Pager *pPager){
         pPager->journalStarted = 0;
         pPager->stmtAutoopen = 0;
         pPager->origDbSize = 0;
+        pPager->hintDbSize = 0;
       }
     }
 
@@ -1457,6 +1459,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     pPager->state = PAGER_EXCLUSIVE;
   }
   pPager->origDbSize = 0;
+  pPager->hintDbSize = 0;
   pPager->setMaster = 0;
   pPager->needSync = 0;
   lruListSetFirstSynced(pPager);
@@ -3032,6 +3035,8 @@ static int pager_write_pagelist(PgHdr *pList){
   Pager *pPager;
   PgHdr *p;
   int rc;
+  Pgno mxPgno;           /* Maximum page number to be written */
+  int nExtend = 0;       /* Number of pages on pList that extend the file */
 
   if( pList==0 ) return SQLITE_OK;
   pPager = pList->pPager;
@@ -3061,6 +3066,8 @@ static int pager_write_pagelist(PgHdr *pList){
   for(p=pList; p; p=p->pDirty){
     assert( p->dirty );
     p->dirty = 0;
+    mxPgno = p->pgno;
+    if( p->pgno>pPager->hintDbSize ) nExtend++;
   }
 
   /* If the file has not yet been opened, open it now. */
@@ -3073,9 +3080,13 @@ static int pager_write_pagelist(PgHdr *pList){
   /* Before the first write, give the VFS a hint of what the final
   ** file size will be.
   */
-  if( pPager->dbSize > (pPager->origDbSize+1) ){
-    sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+  if( nExtend>1 || (nExtend==1 && pPager->dbSize>mxPgno) ){
+    sqlite3_int64 szFile;
+    assert( pPager->hintDbSize<mxPgno );
+    assert( mxPgno<=pPager->dbSize );
+    szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
     sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+    pPager->hintDbSize = pPager->dbSize;
   }
 
   while( pList ){
@@ -4025,7 +4036,7 @@ static int pager_open_journal(Pager *pPager){
     rc = pPager->errCode;
     goto failed_to_open_journal;
   }
-  pPager->origDbSize = pPager->dbSize;
+  pPager->hintDbSize = pPager->origDbSize = pPager->dbSize;
 
   rc = writeJournalHdr(pPager);
 
@@ -4083,7 +4094,7 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     assert( pPager->pInJournal==0 );
     if( MEMDB ){
       pPager->state = PAGER_EXCLUSIVE;
-      pPager->origDbSize = pPager->dbSize;
+      pPager->hintDbSize = pPager->origDbSize = pPager->dbSize;
     }else{
       rc = sqlite3OsLock(pPager->fd, RESERVED_LOCK);
       if( rc==SQLITE_OK ){
@@ -4112,6 +4123,7 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     */
     assert( pPager->nRec==0 );
     assert( pPager->origDbSize==0 );
+    assert( pPager->hintDbSize==0 );
     assert( pPager->pInJournal==0 );
     sqlite3PagerPagecount(pPager, 0);
     pagerLeave(pPager);
@@ -4120,7 +4132,7 @@ int sqlite3PagerBegin(DbPage *pPg, int exFlag){
     if( !pPager->pInJournal ){
       rc = SQLITE_NOMEM;
     }else{
-      pPager->origDbSize = pPager->dbSize;
+      pPager->hintDbSize = pPager->origDbSize = pPager->dbSize;
       rc = writeJournalHdr(pPager);
     }
   }
@@ -4915,7 +4927,7 @@ int sqlite3PagerRollback(Pager *pPager){
     }
     pPager->pDirty = 0;
     pPager->pStmt = 0;
-    pPager->dbSize = pPager->origDbSize;
+    pPager->dbSize = pPager->hintDbSize = pPager->origDbSize;
     pager_truncate_cache(pPager);
     pPager->stmtInUse = 0;
     pPager->state = PAGER_SHARED;
