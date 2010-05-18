@@ -44,7 +44,7 @@
 /* 
 ** WAL-INDEX FILE FORMAT
 **
-** The wal-index consists of a 32-byte header region, followed by an 
+** The wal-index consists of a header region, followed by an 
 ** 8-byte region that contains no useful data (used to apply byte-range locks
 ** in some implementations), followed by the data region. 
 **
@@ -134,10 +134,11 @@ struct Wal {
 
 
 /*
-** This structure is used to implement an iterator that iterates through
-** all frames in the log in database page order. Where two or more frames
+** This structure is used to implement an iterator that loops through
+** all frames in the WAL in database page order. Where two or more frames
 ** correspond to the same database page, the iterator visits only the 
-** frame most recently written to the log.
+** frame most recently written to the WAL (in other words, the frame with
+** the largest index).
 **
 ** The internals of this structure are only accessed by:
 **
@@ -148,13 +149,14 @@ struct Wal {
 ** This functionality is used by the checkpoint code (see walCheckpoint()).
 */
 struct WalIterator {
-  int nSegment;                   /* Size of WalIterator.aSegment[] array */
-  int nFinal;                     /* Elements in segment nSegment-1 */
+  int iPrior;           /* Last result returned from the iterator */
+  int nSegment;         /* Size of the aSegment[] array */
+  int nFinal;           /* Elements in aSegment[nSegment-1]  */
   struct WalSegment {
-    int iNext;                    /* Next aIndex index */
-    u8 *aIndex;                   /* Pointer to index array */
-    u32 *aDbPage;                 /* Pointer to db page array */
-  } aSegment[1];
+    int iNext;              /* Next slot in aIndex[] not previously returned */
+    u8 *aIndex;             /* i0, i1, i2... such that aPgno[iN] ascending */
+    u32 *aPgno;             /* 256 page numbers.  Pointer to Wal.pWiData */
+  } aSegment[1];        /* One for every 256 entries in the WAL */
 };
 
 
@@ -302,59 +304,6 @@ static int walDecodeFrame(
   return 1;
 }
 
-static void walMergesort8(
-  Pgno *aContent,                 /* Pages in wal */
-  u8 *aBuffer,                    /* Buffer of at least *pnList items to use */
-  u8 *aList,                      /* IN/OUT: List to sort */
-  int *pnList                     /* IN/OUT: Number of elements in aList[] */
-){
-  int nList = *pnList;
-  if( nList>1 ){
-    int nLeft = nList / 2;        /* Elements in left list */
-    int nRight = nList - nLeft;   /* Elements in right list */
-    u8 *aLeft = aList;            /* Left list */
-    u8 *aRight = &aList[nLeft];   /* Right list */
-    int iLeft = 0;                /* Current index in aLeft */
-    int iRight = 0;               /* Current index in aright */
-    int iOut = 0;                 /* Current index in output buffer */
-
-    /* TODO: Change to non-recursive version. */
-    walMergesort8(aContent, aBuffer, aLeft, &nLeft);
-    walMergesort8(aContent, aBuffer, aRight, &nRight);
-
-    while( iRight<nRight || iLeft<nLeft ){
-      u8 logpage;
-      Pgno dbpage;
-
-      if( (iLeft<nLeft) 
-       && (iRight>=nRight || aContent[aLeft[iLeft]]<aContent[aRight[iRight]])
-      ){
-        logpage = aLeft[iLeft++];
-      }else{
-        logpage = aRight[iRight++];
-      }
-      dbpage = aContent[logpage];
-
-      aBuffer[iOut++] = logpage;
-      if( iLeft<nLeft && aContent[aLeft[iLeft]]==dbpage ) iLeft++;
-
-      assert( iLeft>=nLeft || aContent[aLeft[iLeft]]>dbpage );
-      assert( iRight>=nRight || aContent[aRight[iRight]]>dbpage );
-    }
-    memcpy(aList, aBuffer, sizeof(aList[0])*iOut);
-    *pnList = iOut;
-  }
-
-#ifdef SQLITE_DEBUG
-  {
-    int i;
-    for(i=1; i<*pnList; i++){
-      assert( aContent[aList[i]] > aContent[aList[i-1]] );
-    }
-  }
-#endif
-}
-
 /*
 ** Define the size of the hash tables in the wal-index file. There
 ** is a hash-table following every HASHTABLE_NPAGE page numbers in the
@@ -367,9 +316,18 @@ static void walMergesort8(
 #define HASHTABLE_NBYTE     (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
 
 /*
-** Return the index in the WalIndex.aData array that corresponds to 
-** frame iFrame. The wal-index file consists of a header, followed by
-** alternating "map" and "index" blocks.
+** Return the index in the Wal.pWiData array that corresponds to 
+** frame iFrame.
+**
+** Wal.pWiData is an array of u32 elements that is the wal-index.
+** The array begins with a header and is then followed by alternating
+** "map" and "hash-table" blocks.  Each "map" block consists of
+** HASHTABLE_NPAGE u32 elements which are page numbers corresponding
+** to frames in the WAL file.  
+**
+** This routine returns an index X such that Wal.pWiData[X] is part
+** of a "map" block that contains the page number of the iFrame-th
+** frame in the WAL file.
 */
 static int walIndexEntry(u32 iFrame){
   return (
@@ -715,20 +673,32 @@ int sqlite3WalOpen(
   return rc;
 }
 
+/*
+** Find the smallest page number out of all pages held in the WAL that
+** has not been returned by any prior invocation of this method on the
+** same WalIterator object.   Write into *piFrame the frame index where
+** that page was last written into the WAL.  Write into *piPage the page
+** number.
+**
+** Return 0 on success.  If there are no pages in the WAL with a page
+** number larger than *piPage, then return 1.
+*/
 static int walIteratorNext(
   WalIterator *p,               /* Iterator */
-  u32 *piPage,                  /* OUT: Next db page to write */
-  u32 *piFrame                  /* OUT: Wal frame to read from */
+  u32 *piPage,                  /* OUT: The page number of the next page */
+  u32 *piFrame                  /* OUT: Wal frame index of next page */
 ){
-  u32 iMin = *piPage;
-  u32 iRet = 0xFFFFFFFF;
-  int i;
-  int nBlock = p->nFinal;
+  u32 iMin;                     /* Result pgno must be greater than iMin */
+  u32 iRet = 0xFFFFFFFF;        /* 0xffffffff is never a valid page number */
+  int i;                        /* For looping through segments */
+  int nBlock = p->nFinal;       /* Number of entries in current segment */
 
+  iMin = p->iPrior;
+  assert( iMin<0xffffffff );
   for(i=p->nSegment-1; i>=0; i--){
     struct WalSegment *pSegment = &p->aSegment[i];
     while( pSegment->iNext<nBlock ){
-      u32 iPg = pSegment->aDbPage[pSegment->aIndex[pSegment->iNext]];
+      u32 iPg = pSegment->aPgno[pSegment->aIndex[pSegment->iNext]];
       if( iPg>iMin ){
         if( iPg<iRet ){
           iRet = iPg;
@@ -741,62 +711,143 @@ static int walIteratorNext(
     nBlock = 256;
   }
 
-  *piPage = iRet;
+  *piPage = p->iPrior = iRet;
   return (iRet==0xFFFFFFFF);
 }
 
-static int walIteratorInit(Wal *pWal, WalIterator **pp){
-  u32 *aData;                     /* Content of the wal-index file */
-  WalIterator *p;                 /* Return value */
-  int nSegment;                   /* Number of segments to merge */
-  u32 iLast;                      /* Last frame in log */
-  int nByte;                      /* Number of bytes to allocate */
-  int i;                          /* Iterator variable */
-  int nFinal;                     /* Number of unindexed entries */
-  u8 *aTmp;                       /* Temp space used by merge-sort */
-  int rc;                         /* Return code of walIndexMap() */
 
+static void walMergesort8(
+  Pgno *aContent,                 /* Pages in wal */
+  u8 *aBuffer,                    /* Buffer of at least *pnList items to use */
+  u8 *aList,                      /* IN/OUT: List to sort */
+  int *pnList                     /* IN/OUT: Number of elements in aList[] */
+){
+  int nList = *pnList;
+  if( nList>1 ){
+    int nLeft = nList / 2;        /* Elements in left list */
+    int nRight = nList - nLeft;   /* Elements in right list */
+    u8 *aLeft = aList;            /* Left list */
+    u8 *aRight = &aList[nLeft];   /* Right list */
+    int iLeft = 0;                /* Current index in aLeft */
+    int iRight = 0;               /* Current index in aright */
+    int iOut = 0;                 /* Current index in output buffer */
+
+    /* TODO: Change to non-recursive version. */
+    walMergesort8(aContent, aBuffer, aLeft, &nLeft);
+    walMergesort8(aContent, aBuffer, aRight, &nRight);
+
+    while( iRight<nRight || iLeft<nLeft ){
+      u8 logpage;
+      Pgno dbpage;
+
+      if( (iLeft<nLeft) 
+       && (iRight>=nRight || aContent[aLeft[iLeft]]<aContent[aRight[iRight]])
+      ){
+        logpage = aLeft[iLeft++];
+      }else{
+        logpage = aRight[iRight++];
+      }
+      dbpage = aContent[logpage];
+
+      aBuffer[iOut++] = logpage;
+      if( iLeft<nLeft && aContent[aLeft[iLeft]]==dbpage ) iLeft++;
+
+      assert( iLeft>=nLeft || aContent[aLeft[iLeft]]>dbpage );
+      assert( iRight>=nRight || aContent[aRight[iRight]]>dbpage );
+    }
+    memcpy(aList, aBuffer, sizeof(aList[0])*iOut);
+    *pnList = iOut;
+  }
+
+#ifdef SQLITE_DEBUG
+  {
+    int i;
+    for(i=1; i<*pnList; i++){
+      assert( aContent[aList[i]] > aContent[aList[i-1]] );
+    }
+  }
+#endif
+}
+
+/*
+** Map the wal-index into memory owned by this thread, if it is not
+** mapped already.  Then construct a WalInterator object that can be
+** used to loop over all pages in the WAL in ascending order.  
+**
+** On success, make *pp point to the newly allocated WalInterator object
+** return SQLITE_OK.  Otherwise, leave *pp unchanged and return an error
+** code.
+**
+** The calling routine should invoke walIteratorFree() to destroy the
+** WalIterator object when it has finished with it.  The caller must
+** also unmap the wal-index.  But the wal-index must not be unmapped
+** prior to the WalIterator object being destroyed.
+*/
+static int walIteratorInit(Wal *pWal, WalIterator **pp){
+  u32 *aData;           /* Content of the wal-index file */
+  WalIterator *p;       /* Return value */
+  int nSegment;         /* Number of segments to merge */
+  u32 iLast;            /* Last frame in log */
+  int nByte;            /* Number of bytes to allocate */
+  int i;                /* Iterator variable */
+  int nFinal;           /* Number of unindexed entries */
+  u8 *aTmp;             /* Temp space used by merge-sort */
+  int rc;               /* Return code of walIndexMap() */
+  u8 *aSpace;           /* Surplus space on the end of the allocation */
+
+  /* Make sure the wal-index is mapped into local memory */
   rc = walIndexMap(pWal, walMappingSize(pWal->hdr.iLastPg));
   if( rc!=SQLITE_OK ){
     return rc;
   }
+
+  /* This routine only runs while holding SQLITE_SHM_CHECKPOINT.  No other
+  ** thread is able to write to shared memory while this routine is
+  ** running (or, indeed, while the WalIterator object exists).  Hence,
+  ** we can cast off the volatile qualifacation from shared memory
+  */
+  assert( pWal->lockState==SQLITE_SHM_CHECKPOINT );
   aData = (u32*)pWal->pWiData;
+
+  /* Allocate space for the WalIterator object */
   iLast = pWal->hdr.iLastPg;
   nSegment = (iLast >> 8) + 1;
   nFinal = (iLast & 0x000000FF);
-
   nByte = sizeof(WalIterator) + (nSegment+1)*(sizeof(struct WalSegment)+256);
   p = (WalIterator *)sqlite3_malloc(nByte);
   if( !p ){
-    rc = SQLITE_NOMEM;
-  }else{
-    u8 *aSpace;
-    memset(p, 0, nByte);
-    p->nSegment = nSegment;
+    return SQLITE_NOMEM;
+  }
+  memset(p, 0, nByte);
 
-    aSpace = (u8 *)&p->aSegment[nSegment];
-    aTmp = &aSpace[nSegment*256];
-    for(i=0; i<nSegment; i++){
-      int j;
-      int nIndex = (i==nSegment-1) ? nFinal : 256;
-      p->aSegment[i].aDbPage = &aData[walIndexEntry(i*256+1)];
-      p->aSegment[i].aIndex = aSpace;
-      for(j=0; j<nIndex; j++){
-        aSpace[j] = j;
-      }
-      walMergesort8(p->aSegment[i].aDbPage, aTmp, aSpace, &nIndex);
-      memset(&aSpace[nIndex], aSpace[nIndex-1], 256-nIndex);
-      aSpace += 256;
-      p->nFinal = nIndex;
+  /* Initialize the WalIterator object.  Each 256-entry segment is
+  ** presorted in order to make iterating through all entries much
+  ** faster.
+  */
+  p->nSegment = nSegment;
+  aSpace = (u8 *)&p->aSegment[nSegment];
+  aTmp = &aSpace[nSegment*256];
+  for(i=0; i<nSegment; i++){
+    int j;
+    int nIndex = (i==nSegment-1) ? nFinal : 256;
+    p->aSegment[i].aPgno = &aData[walIndexEntry(i*256+1)];
+    p->aSegment[i].aIndex = aSpace;
+    for(j=0; j<nIndex; j++){
+      aSpace[j] = j;
     }
+    walMergesort8(p->aSegment[i].aPgno, aTmp, aSpace, &nIndex);
+    memset(&aSpace[nIndex], aSpace[nIndex-1], 256-nIndex);
+    aSpace += 256;
+    p->nFinal = nIndex;
   }
 
+  /* Return the fully initializd WalIterator object */
   *pp = p;
-  return rc;
+  return SQLITE_OK ;
 }
 
 /* 
-** Free a log iterator allocated by walIteratorInit().
+** Free an iterator allocated by walIteratorInit().
 */
 static void walIteratorFree(WalIterator *p){
   sqlite3_free(p);
@@ -924,16 +975,24 @@ int sqlite3WalClose(
 }
 
 /*
-** Try to read the wal-index header. Attempt to verify the header
-** checksum. If the checksum can be verified, copy the wal-index
-** header into structure pWal->hdr. If the contents of pWal->hdr are
-** modified by this and pChanged is not NULL, set *pChanged to 1. 
-** Otherwise leave *pChanged unmodified.
+** Try to read the wal-index header.  Return 0 on success and 1 if
+** there is a problem.
+**
+** The wal-index is in shared memory.  Another thread or process might
+** be writing the header at the same time this procedure is trying to
+** read it, which might result in inconsistency.  A dirty read is detected
+** by verifying a checksum on the header.
+**
+** If and only if the read is consistent and the header is different from
+** pWal->hdr, then pWal->hdr is updated to the content of the new header
+** and *pChanged is set to 1.
 **
 ** If the checksum cannot be verified return non-zero. If the header
 ** is read successfully and the checksum verified, return zero.
 */
 int walIndexTryHdr(Wal *pWal, int *pChanged){
+  int i;
+  volatile u32 *aWiData;
   u32 aCksum[2] = {1, 1};
   u32 aHdr[WALINDEX_HDR_NFIELD+2];
 
@@ -951,7 +1010,10 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
   */
-  memcpy(aHdr, (void*)pWal->pWiData, sizeof(aHdr));
+  aWiData = pWal->pWiData;
+  for(i=0; i<WALINDEX_HDR_NFIELD+2; i++){
+    aHdr[i] = aWiData[i];
+  }
   walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);
   if( aCksum[0]!=aHdr[WALINDEX_HDR_NFIELD]
    || aCksum[1]!=aHdr[WALINDEX_HDR_NFIELD+1]
@@ -969,9 +1031,19 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 }
 
 /*
-** Read the wal-index header from the wal-index file into structure 
-** pWal->hdr. If attempting to verify the header checksum fails, try
-** to recover the log before returning.
+** Read the wal-index header from the wal-index and into pWal->hdr.
+** If the wal-header appears to be corrupt, try to recover the log
+** before returning.
+**
+** Set *pChanged to 1 if the wal-index header value in pWal->hdr is
+** changed by this opertion.  If pWal->hdr is unchanged, set *pChanged
+** to 0.
+**
+** This routine also maps the wal-index content into memory and assigns
+** ownership of that mapping to the current thread.  In some implementations,
+** only one thread at a time can hold a mapping of the wal-index.  Hence,
+** the caller should strive to invoke walIndexUnmap() as soon as possible
+** after this routine returns.
 **
 ** If the wal-index header is successfully read, return SQLITE_OK. 
 ** Otherwise an SQLite error code.
@@ -1032,7 +1104,16 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 }
 
 /*
-** Lock a snapshot.
+** Take a snapshot of the state of the WAL and wal-index for the current
+** instant in time.  The current thread will continue to use this snapshot.
+** Other threads might containing appending to the WAL and wal-index but
+** the extra content appended will be ignored by the current thread.
+**
+** A snapshot is like a read transaction.
+**
+** No other threads are allowed to run a checkpoint while this thread is
+** holding the snapshot since a checkpoint would remove data out from under
+** this thread.
 **
 ** If this call obtains a new read-lock and the database contents have been
 ** modified since the most recent call to WalCloseSnapshot() on this Wal
@@ -1319,9 +1400,9 @@ int sqlite3WalFrames(
   assert( pWal->lockState==SQLITE_SHM_WRITE );
   assert( pWal->pWiData==0 );
 
-  /* If this is the first frame written into the log, write the log 
-  ** header to the start of the log file. See comments at the top of
-  ** this file for a description of the log-header format.
+  /* If this is the first frame written into the log, write the WAL
+  ** header to the start of the WAL file. See comments at the top of
+  ** this source file for a description of the WAL header format.
   */
   assert( WAL_FRAME_HDRSIZE>=WAL_HDRSIZE );
   iFrame = pWal->hdr.iLastPg;
@@ -1355,7 +1436,7 @@ int sqlite3WalFrames(
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, nPgsz, iOffset + sizeof(aFrame));
+    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, nPgsz, iOffset+sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1392,7 +1473,7 @@ int sqlite3WalFrames(
   assert( pWal->pWiData==0 );
 
   /* Append data to the wal-index. It is not necessary to lock the 
-  ** wal-index to do this as the RESERVED lock held on the db file
+  ** wal-index to do this as the SQLITE_SHM_WRITE lock held on the wal-index
   ** guarantees that there are no other writers, and no data that may
   ** be in use by existing readers is being overwritten.
   */
@@ -1476,7 +1557,7 @@ int sqlite3WalCheckpoint(
   }
   if( isChanged ){
     /* If a new wal-index header was loaded before the checkpoint was 
-    ** performed, then the pager-cache associated with log pWal is now
+    ** performed, then the pager-cache associated with pWal is now
     ** out of date. So zero the cached wal-index header to ensure that
     ** next time the pager opens a snapshot on this database it knows that
     ** the cache needs to be reset.

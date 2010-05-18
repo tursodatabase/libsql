@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Mark\sthe\sshared-memory\sin\sthe\sWAL\simplementation\sas\svolatile.
-D 2010-05-18T13:27:13
+C Refactoring\sof\sthe\sWalIterator\simplementation.
+D 2010-05-18T18:01:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 03c150ff23332a58dd0cf313c7b7defdd9ec6275
+F src/wal.c cfbb818b50bec82675aa5322d7ee0e2b2c2a7386
 F src/wal.h 434f76f51225bb614e43ccb6bd2341541ba6a06e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a029be10172e2e6a2ef4e3eb2ea1bd0ca85b16ed
-R c3edbc896fce7d9f6c83f7337ac02298
+P 0a6787908e989bd5e6af25acbdc59ebc8fa61d6d
+R 70b31773a620515609c56c14086245f3
 U drh
-Z 88ded0b14b6354cb7517528585f793ca
+Z 7b37c77bed71cbc8c1a6f26dcf7b1090
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL8pW0oxKgR168RlERAoCBAJ9VXFufUgFrlJ8vv69PNeEYGWy/IgCcD99s
-/C+oicnjvVyzr2OBGGMkk9c=
-=CSoB
+iD8DBQFL8tXooxKgR168RlERAkToAJ4sc1mZ1q5W9au06n2/yU3i2HlYxwCdEuup
+sJTTs22gXenKu7GRNzIKGS0=
+=4glP
 -----END PGP SIGNATURE-----
