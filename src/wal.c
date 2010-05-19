@@ -10,13 +10,13 @@
 **
 *************************************************************************
 **
-** This file contains the implementation of a write-ahead log file used in 
-** "journal_mode=wal" mode.
+** This file contains the implementation of a write-ahead log (WAL) used in 
+** "journal_mode=WAL" mode.
 **
 ** WRITE-AHEAD LOG (WAL) FILE FORMAT
 **
 ** A wal file consists of a header followed by zero or more "frames".
-** Each frame records the revised content of a single page within the
+** Each frame records the revised content of a single page from the
 ** database file.  All changes to the database are recorded by writing
 ** frames into the WAL.  Transactions commit when a frame is written that
 ** contains a commit marker.  A single WAL can and usually does record 
@@ -25,7 +25,7 @@
 ** "checkpoint".
 **
 ** A single WAL file can be used multiple times.  In other words, the
-** WAL can fill up with frames and then be checkpointed.  Then new
+** WAL can fill up with frames and then be checkpointed and then new
 ** frames can overwrite the old ones.  A WAL always grows from beginning
 ** toward the end.  Checksums and counters attached to each frame are
 ** used to determine which frames within the WAL are valid and which
@@ -39,7 +39,7 @@
 **     8: Randomly selected salt value 2.
 **
 ** Immediately following the header are zero or more frames. Each
-** frame itself consists of a 16-byte header followed by a <page-size> bytes
+** frame consists of a 16-byte header followed by a <page-size> bytes
 ** of page data. The header is broken into 4 big-endian 32-bit unsigned 
 ** integer values, as follows:
 **
@@ -60,10 +60,10 @@
 **
 ** The reader algorithm in the previous paragraph works correctly, but 
 ** because frames for page P can appear anywhere within the WAL, the
-** reader has to scan the either WAL looking for page P frames.  If the
+** reader has to scan the entire WAL looking for page P frames.  If the
 ** WAL is large (multiple megabytes is typical) that scan can be slow,
-** and read performanc suffers.  To overcome this problem, a separate
-** datastructure called the wal-index is maintained to expedite the
+** and read performance suffers.  To overcome this problem, a separate
+** data structure called the wal-index is maintained to expedite the
 ** search for frames of a particular page.
 ** 
 ** WAL-INDEX FORMAT
@@ -90,7 +90,84 @@
 ** The wal-index consists of a header region, followed by an one or
 ** more index blocks.  
 **
-** To be completed....
+** The wal-index header contains the total number of frames within the WAL
+** in the the mxFrame field.  Each index block contains information on
+** HASHTABLE_NPAGE frames.  Each index block contains two sections, a
+** mapping which is a database page number for each frame, and a hash
+** table used to look up frames by page number.  The mapping section is
+** an array of HASHTABLE_NPAGE 32-bit page numbers.  The first entry on the
+** array is the page number for the first frame; the second entry is the
+** page number for the second frame; and so forth.  The last index block
+** holds a total of (mxFrame%HASHTABLE_NPAGE) page numbers.  All index
+** blocks other than the last are completely full with HASHTABLE_NPAGE
+** page numbers.  All index blocks are the same size; the mapping section
+** of the last index block merely contains unused entries if mxFrame is
+** not an even multiple of HASHTABLE_NPAGE.
+**
+** Even without using the hash table, the last frame for page P
+** can be found by scanning the mapping sections of each index block
+** starting with the last index block and moving toward the first, and
+** within each index block, starting at the end and moving toward the
+** beginning.  The first entry that equals P corresponds to the frame
+** holding the content for that page.
+**
+** The hash table consists of HASHTABLE_NSLOT 16-bit unsigned integers.
+** HASHTABLE_NSLOT = 2*HASHTABLE_NPAGE, and there is one entry in the
+** hash table for each page number in the mapping section, so the hash 
+** table is never more than half full.  The expected number of collisions 
+** prior to finding a match is 1.  Each entry of the hash table is an
+** 1-based index of an entry in the mapping section of the same
+** index block.   Let K be the 1-based index of the largest entry in
+** the mapping section.  (For index blocks other than the last, K will
+** always be exactly HASHTABLE_NPAGE (4096) and for the last index block
+** K will be (mxFrame%HASHTABLE_NPAGE).)  Unused slots of the hash table
+** contain a value greater than K.  Note that no hash table slot ever
+** contains a zero value.
+**
+** To look for page P in the hash table, first compute a hash iKey on
+** P as follows:
+**
+**      iKey = (P * 383) % HASHTABLE_NSLOT
+**
+** Then start scanning entries of the hash table, starting with iKey
+** (wrapping around to the beginning when the end of the hash table is
+** reached) until an unused hash slot is found. Let the first unused slot
+** be at index iUnused.  (iUnused might be less than iKey if there was
+** wrap-around.) Because the hash table is never more than half full,
+** the search is guaranteed to eventually hit an unused entry.  Let 
+** iMax be the value between iKey and iUnused, closest to iUnused,
+** where aHash[iMax]==P.  If there is no iMax entry (if there exists
+** no hash slot such that aHash[i]==p) then page P is not in the
+** current index block.  Otherwise the iMax-th mapping entry of the
+** current index block corresponds to the last entry that references 
+** page P.
+**
+** A hash search begins with the last index block and moves toward the
+** first index block, looking for entries corresponding to page P.  On
+** average, only two or three slots in each index block need to be
+** examined in order to either find the last entry for page P, or to
+** establish that no such entry exists in the block.  Each index block
+** holds over 4000 entries.  So two or three index blocks are sufficient
+** to cover a typical 10 megabyte WAL file, assuming 1K pages.  8 or 10
+** comparisons (on average) suffice to either locate a frame in the
+** WAL or to establish that the frame does not exist in the WAL.  This
+** is much faster than scanning the entire 10MB WAL.
+**
+** Note that entries are added in order of increasing K.  Hence, one
+** reader might be using some value K0 and a second reader that started
+** at a later time (after additional transactions were added to the WAL
+** and to the wal-index) might be using a different value K1, where K1>K0.
+** Both readers can use the same hash table and mapping section to get
+** the correct result.  There may be entries in the hash table with
+** K>K0 but to the first reader, those entries will appear to be unused
+** slots in the hash table and so the first reader will get an answer as
+** if no values greater than K0 had ever been inserted into the hash table
+** in the first place - which is what reader one wants.  Meanwhile, the
+** second reader using K1 will see additional values that were inserted
+** later, which is exactly what reader two wants.  
+**
+** When a rollback occurs, the value of K is decreased.  This has the
+** effect of automatically removing entries from the hash table.
 */
 #ifndef SQLITE_OMIT_WAL
 
@@ -112,7 +189,7 @@ typedef struct WalIterator WalIterator;
 struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u32 pgsz;                       /* Database page size in bytes */
-  u32 iLastPg;                    /* Index of last valid frame in the WAL */
+  u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 iCheck1;                    /* Checkpoint value 1 */
   u32 iCheck2;                    /* Checkpoint value 2 */
@@ -620,7 +697,7 @@ static int walIndexRecover(Wal *pWal){
       if( nTruncate ){
         hdr.iCheck1 = aCksum[0];
         hdr.iCheck2 = aCksum[1];
-        hdr.iLastPg = iFrame;
+        hdr.mxFrame = iFrame;
         hdr.nPage = nTruncate;
         hdr.pgsz = nPgsz;
       }
@@ -633,7 +710,7 @@ static int walIndexRecover(Wal *pWal){
   }
 
 finished:
-  if( rc==SQLITE_OK && hdr.iLastPg==0 ){
+  if( rc==SQLITE_OK && hdr.mxFrame==0 ){
     rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
   }
   if( rc==SQLITE_OK ){
@@ -841,7 +918,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   u8 *aSpace;           /* Surplus space on the end of the allocation */
 
   /* Make sure the wal-index is mapped into local memory */
-  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.iLastPg));
+  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -855,7 +932,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   aData = (u32*)pWal->pWiData;
 
   /* Allocate space for the WalIterator object */
-  iLast = pWal->hdr.iLastPg;
+  iLast = pWal->hdr.mxFrame;
   nSegment = (iLast >> 8) + 1;
   nFinal = (iLast & 0x000000FF);
   nByte = sizeof(WalIterator) + (nSegment+1)*(sizeof(struct WalSegment)+256);
@@ -915,7 +992,7 @@ static int walCheckpoint(
 
   /* Allocate the iterator */
   rc = walIteratorInit(pWal, &pIter);
-  if( rc!=SQLITE_OK || pWal->hdr.iLastPg==0 ){
+  if( rc!=SQLITE_OK || pWal->hdr.mxFrame==0 ){
     goto out;
   }
 
@@ -949,7 +1026,7 @@ static int walCheckpoint(
     rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
     if( rc!=SQLITE_OK ) goto out;
   }
-  pWal->hdr.iLastPg = 0;
+  pWal->hdr.mxFrame = 0;
   pWal->hdr.iCheck1 = 2;
   pWal->hdr.iCheck2 = 3;
   walIndexWriteHdr(pWal, &pWal->hdr);
@@ -1206,7 +1283,7 @@ int sqlite3WalRead(
 ){
   int rc;                         /* Return code */
   u32 iRead = 0;                  /* If !=0, WAL frame to return data from */
-  u32 iLast = pWal->hdr.iLastPg;  /* Last page in WAL for this reader */
+  u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
 
   /* If the "last page" field of the wal-index header snapshot is 0, then
@@ -1382,12 +1459,12 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
   if( pWal->lockState==SQLITE_SHM_WRITE ){
     int unused;
-    Pgno iMax = pWal->hdr.iLastPg;
+    Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
     assert( pWal->pWiData==0 );
     rc = walIndexReadHdr(pWal, &unused);
-    for(iFrame=pWal->hdr.iLastPg+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
+    for(iFrame=pWal->hdr.mxFrame+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
       assert( pWal->lockState==SQLITE_SHM_WRITE );
       rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
     }
@@ -1401,7 +1478,7 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
 */
 u32 sqlite3WalSavepoint(Wal *pWal){
   assert( pWal->lockState==SQLITE_SHM_WRITE );
-  return pWal->hdr.iLastPg;
+  return pWal->hdr.mxFrame;
 }
 
 /* Move the write position of the WAL back to iFrame.  Called in
@@ -1412,7 +1489,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   u8 aCksum[8];
   assert( pWal->lockState==SQLITE_SHM_WRITE );
 
-  pWal->hdr.iLastPg = iFrame;
+  pWal->hdr.mxFrame = iFrame;
   if( iFrame>0 ){
     i64 iOffset = walFrameOffset(iFrame, pWal->hdr.pgsz) + sizeof(u32)*2;
     rc = sqlite3OsRead(pWal->pWalFd, aCksum, sizeof(aCksum), iOffset);
@@ -1453,7 +1530,7 @@ int sqlite3WalFrames(
   ** this source file for a description of the WAL header format.
   */
   assert( WAL_FRAME_HDRSIZE>=WAL_HDRSIZE );
-  iFrame = pWal->hdr.iLastPg;
+  iFrame = pWal->hdr.mxFrame;
   if( iFrame==0 ){
     sqlite3Put4byte(aFrame, nPgsz);
     sqlite3_randomness(8, &aFrame[4]);
@@ -1525,7 +1602,7 @@ int sqlite3WalFrames(
   ** guarantees that there are no other writers, and no data that may
   ** be in use by existing readers is being overwritten.
   */
-  iFrame = pWal->hdr.iLastPg;
+  iFrame = pWal->hdr.mxFrame;
   for(p=pList; p && rc==SQLITE_OK; p=p->pDirty){
     iFrame++;
     rc = walIndexAppend(pWal, iFrame, p->pgno);
@@ -1539,7 +1616,7 @@ int sqlite3WalFrames(
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
     pWal->hdr.pgsz = nPgsz;
-    pWal->hdr.iLastPg = iFrame;
+    pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;
       pWal->hdr.nPage = nTruncate;
