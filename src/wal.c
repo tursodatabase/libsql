@@ -270,49 +270,24 @@ struct WalIterator {
 
 /*
 ** Generate an 8 byte checksum based on the data in array aByte[] and the
-** initial values of aCksum[0] and aCksum[1]. The checksum is written into
-** aCksum[] before returning.
-**
-** The range of bytes to checksum is treated as an array of 32-bit 
-** little-endian unsigned integers. For each integer X in the array, from
-** start to finish, do the following:
-**
-**   aCksum[0] += X;
-**   aCksum[1] += aCksum[0];
-**
-** For the calculation above, use 64-bit unsigned accumulators. Before
-** returning, truncate the values to 32-bits as follows: 
-**
-**   aCksum[0] = (u32)(aCksum[0] + (aCksum[0]>>24));
-**   aCksum[1] = (u32)(aCksum[1] + (aCksum[1]>>24));
+** initial values of aCksum[0] and aCksum[1]. The checksum is written 
+** back into aCksum[] before returning.
 */
-static void walChecksumBytes(u8 *aByte, int nByte, u32 *aCksum){
-  u64 sum1 = aCksum[0];
-  u64 sum2 = aCksum[1];
-  u32 *a32 = (u32 *)aByte;
-  u32 *aEnd = (u32 *)&aByte[nByte];
+static void walChecksumBytes(u8 *a, int nByte, u32 *aCksum){
+  u32 s1 = aCksum[0];
+  u32 s2 = aCksum[1];
+  u8 *aEnd = (u8*)&a[nByte];
 
+  assert( nByte>=8 );
   assert( (nByte&0x00000003)==0 );
 
-  if( SQLITE_LITTLEENDIAN ){
-#ifdef SQLITE_DEBUG
-    u8 *a = (u8 *)a32;
-    assert( *a32==(a[0] + (a[1]<<8) + (a[2]<<16) + (a[3]<<24)) );
-#endif
-    do {
-      sum1 += *a32;
-      sum2 += sum1;
-    } while( ++a32<aEnd );
-  }else{
-    do {
-      u8 *a = (u8*)a32;
-      sum1 += a[0] + (a[1]<<8) + (a[2]<<16) + (a[3]<<24);
-      sum2 += sum1;
-    } while( ++a32<aEnd );
-  }
-
-  aCksum[0] = sum1 + (sum1>>24);
-  aCksum[1] = sum2 + (sum2>>24);
+  do {
+    s1 += (a[0]<<24) + (a[2]<<16) + (a[2]<<8) + a[3] + s2;
+    s2 += (a[3]<<24) + (a[5]<<16) + (a[6]<<8) + a[7] + s1;
+    a += 8;
+  }while( a<aEnd );
+  aCksum[0] = s1;
+  aCksum[1] = s2;
 }
 
 /*
@@ -645,7 +620,7 @@ static int walIndexRecover(Wal *pWal){
   if( nSize>WAL_FRAME_HDRSIZE ){
     u8 aBuf[WAL_FRAME_HDRSIZE];   /* Buffer to load first frame header into */
     u8 *aFrame = 0;               /* Malloc'd buffer to load entire frame */
-    int nFrame;                   /* Number of bytes at aFrame */
+    int szFrame;                  /* Number of bytes in buffer aFrame[] */
     u8 *aData;                    /* Pointer to data part of aFrame buffer */
     int iFrame;                   /* Index of last frame read */
     i64 iOffset;                  /* Next offset to read from log file */
@@ -671,8 +646,8 @@ static int walIndexRecover(Wal *pWal){
     aCksum[1] = sqlite3Get4byte(&aBuf[8]);
 
     /* Malloc a buffer to read frames into. */
-    nFrame = szPage + WAL_FRAME_HDRSIZE;
-    aFrame = (u8 *)sqlite3_malloc(nFrame);
+    szFrame = szPage + WAL_FRAME_HDRSIZE;
+    aFrame = (u8 *)sqlite3_malloc(szFrame);
     if( !aFrame ){
       return SQLITE_NOMEM;
     }
@@ -680,13 +655,13 @@ static int walIndexRecover(Wal *pWal){
 
     /* Read all frames from the log file. */
     iFrame = 0;
-    for(iOffset=WAL_HDRSIZE; (iOffset+nFrame)<=nSize; iOffset+=nFrame){
+    for(iOffset=WAL_HDRSIZE; (iOffset+szFrame)<=nSize; iOffset+=szFrame){
       u32 pgno;                   /* Database page number for frame */
       u32 nTruncate;              /* dbsize field from frame header */
       int isValid;                /* True if this frame is valid */
 
       /* Read and decode the next log frame. */
-      rc = sqlite3OsRead(pWal->pWalFd, aFrame, nFrame, iOffset);
+      rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
       isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, szPage, aData, aFrame);
       if( !isValid ) break;

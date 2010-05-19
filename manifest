@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Refactoring\ssome\svariable\snames\sin\swal.c.
-D 2010-05-19T17:49:50
+C Revise\sthe\schecksumming\salgorithm\sin\swal.c.\s\sMore\svariable\srefactoring.
+D 2010-05-19T18:08:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 105bad789a23a495fe134f5ef9dac6d8c06f971d
+F src/wal.c 5fd5853973652f8a8d81ab1ab7577559f46f3622
 F src/wal.h 434f76f51225bb614e43ccb6bd2341541ba6a06e
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a71a22b52f4570e934063553a81b39268127dc44
-R 1c999fd53b1df4ca8173c8fb4d6b6989
+P 1d201ff51f7c5ecdf71a91ed25204b7130894282
+R d0346b793d27da12b31b3a8952af1c86
 U drh
-Z cc4a12a1a16f8ebec7597d63ade72388
+Z 747ef9a34e0e8619bf7584ee288d56f6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL9CTBoxKgR168RlERAlCKAJ4zOxPBD9LXWpD6J1dW7wmEg9tn5QCfTw1j
-bOeNi5aQREq9/zvmCMu2nsA=
-=EdxO
+iD8DBQFL9CkOoxKgR168RlERApEDAJ9DtZ/mpw6bX3TwJ7fVkL3EMPB9pACdF5w5
+cV3Imcsdjc3PNTWb9PaNKzw=
+=YSri
 -----END PGP SIGNATURE-----
