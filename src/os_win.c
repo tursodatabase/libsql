@@ -1112,6 +1112,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = (int)((winFile*)id)->lastErrno;
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SIZE_HINT: {
+      sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+      winTruncate(id, sz);
+      return SQLITE_OK;
+    }
   }
   return SQLITE_ERROR;
 }

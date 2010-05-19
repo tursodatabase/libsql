@@ -2869,6 +2869,17 @@ static int pager_write_pagelist(PgHdr *pList){
     rc = pagerOpentemp(pPager, pPager->fd, pPager->vfsFlags);
   }
 
+  /* Before the first write, give the VFS a hint of what the final
+  ** file size will be.
+  */
+  if( rc==SQLITE_OK
+   && pPager->dbSize>(pPager->dbFileSize+1)
+   && isOpen(pPager->fd)
+  ){
+    sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+  }
+
   while( rc==SQLITE_OK && pList ){
     Pgno pgno = pList->pgno;
 
@@ -4660,7 +4671,7 @@ int sqlite3PagerCommitPhaseOne(
           sqlite3PagerUnref(pPage);
           if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
         }
-      } 
+      }
       pPager->dbSize = dbSize;
     }
 #endif
