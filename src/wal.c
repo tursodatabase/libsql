@@ -282,8 +282,8 @@ static void walChecksumBytes(u8 *a, int nByte, u32 *aCksum){
   assert( (nByte&0x00000003)==0 );
 
   do {
-    s1 += (a[0]<<24) + (a[2]<<16) + (a[2]<<8) + a[3] + s2;
-    s2 += (a[3]<<24) + (a[5]<<16) + (a[6]<<8) + a[7] + s1;
+    s1 += (a[0]<<24) + (a[1]<<16) + (a[2]<<8) + a[3] + s2;
+    s2 += (a[4]<<24) + (a[5]<<16) + (a[6]<<8) + a[7] + s1;
     a += 8;
   }while( a<aEnd );
   aCksum[0] = s1;

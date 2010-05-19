@@ -1285,15 +1285,12 @@ proc logcksum {ckv1 ckv2 blob} {
   upvar $ckv1 c1
   upvar $ckv2 c2
 
-  binary scan $blob i* values
-  foreach v $values {
-    set v [expr {$v & 0xFFFFFFFF}]
-    incr c1 $v
-    incr c2 $c1
-  }
 
-  set c1 [expr ($c1 + ($c1>>24))&0xFFFFFFFF]
-  set c2 [expr ($c2 + ($c2>>24))&0xFFFFFFFF]
+  binary scan $blob I* values
+  foreach {v1 v2} $values {
+    set c1 [expr {($c1 + $v1 + $c2)&0xFFFFFFFF}]
+    set c2 [expr {($c2 + $v2 + $c1)&0xFFFFFFFF}]
+  }
 }
 
 file copy -force test.db testX.db
@@ -1308,7 +1305,7 @@ foreach {tn pgsz works} {
   8  16384    1
   9  32768    1
  10  65536    0
- 11   1020    0
+ 11   1016    0
 } {
 
   if {$::SQLITE_MAX_PAGE_SIZE < $pgsz} {
@@ -1479,4 +1476,3 @@ catch { db2 close }
 catch { db close }
 
 finish_test
-
