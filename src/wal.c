@@ -187,12 +187,12 @@ typedef struct WalIterator WalIterator;
 ** is currently empty.
 */
 struct WalIndexHdr {
-  u32 iChange;                    /* Counter incremented each transaction */
-  u32 pgsz;                       /* Database page size in bytes */
-  u32 mxFrame;                    /* Index of last valid frame in the WAL */
-  u32 nPage;                      /* Size of database in pages */
-  u32 iCheck1;                    /* Checkpoint value 1 */
-  u32 iCheck2;                    /* Checkpoint value 2 */
+  u32 iChange;          /* Counter incremented each transaction */
+  u32 szPage;           /* Database page size in bytes */
+  u32 mxFrame;          /* Index of last valid frame in the WAL */
+  u32 nPage;            /* Size of database in pages */
+  u32 iCheck1;          /* Checksum value 1 */
+  u32 iCheck2;          /* Checksum value 2 */
 };
 
 /* Size of serialized WalIndexHdr object. */
@@ -214,11 +214,11 @@ struct WalIndexHdr {
 
 /*
 ** Return the offset of frame iFrame in the write-ahead log file, 
-** assuming a database page size of pgsz bytes. The offset returned
+** assuming a database page size of szPage bytes. The offset returned
 ** is to the start of the write-ahead log frame-header.
 */
-#define walFrameOffset(iFrame, pgsz) (                               \
-  WAL_HDRSIZE + ((iFrame)-1)*((pgsz)+WAL_FRAME_HDRSIZE)        \
+#define walFrameOffset(iFrame, szPage) (                               \
+  WAL_HDRSIZE + ((iFrame)-1)*((szPage)+WAL_FRAME_HDRSIZE)        \
 )
 
 /*
@@ -649,7 +649,7 @@ static int walIndexRecover(Wal *pWal){
     u8 *aData;                    /* Pointer to data part of aFrame buffer */
     int iFrame;                   /* Index of last frame read */
     i64 iOffset;                  /* Next offset to read from log file */
-    int nPgsz;                    /* Page size according to the log */
+    int szPage;                   /* Page size according to the log */
     u32 aCksum[2];                /* Running checksum */
 
     /* Read in the first frame header in the file (to determine the 
@@ -661,17 +661,17 @@ static int walIndexRecover(Wal *pWal){
     }
 
     /* If the database page size is not a power of two, or is greater than
-    ** SQLITE_MAX_PAGE_SIZE, conclude that the log file contains no valid data.
+    ** SQLITE_MAX_PAGE_SIZE, conclude that the WAL file contains no valid data.
     */
-    nPgsz = sqlite3Get4byte(&aBuf[0]);
-    if( nPgsz&(nPgsz-1) || nPgsz>SQLITE_MAX_PAGE_SIZE || nPgsz<512 ){
+    szPage = sqlite3Get4byte(&aBuf[0]);
+    if( szPage&(szPage-1) || szPage>SQLITE_MAX_PAGE_SIZE || szPage<512 ){
       goto finished;
     }
     aCksum[0] = sqlite3Get4byte(&aBuf[4]);
     aCksum[1] = sqlite3Get4byte(&aBuf[8]);
 
     /* Malloc a buffer to read frames into. */
-    nFrame = nPgsz + WAL_FRAME_HDRSIZE;
+    nFrame = szPage + WAL_FRAME_HDRSIZE;
     aFrame = (u8 *)sqlite3_malloc(nFrame);
     if( !aFrame ){
       return SQLITE_NOMEM;
@@ -688,7 +688,7 @@ static int walIndexRecover(Wal *pWal){
       /* Read and decode the next log frame. */
       rc = sqlite3OsRead(pWal->pWalFd, aFrame, nFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
-      isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, nPgsz, aData, aFrame);
+      isValid = walDecodeFrame(aCksum, &pgno, &nTruncate, szPage, aData, aFrame);
       if( !isValid ) break;
       rc = walIndexAppend(pWal, ++iFrame, pgno);
       if( rc!=SQLITE_OK ) break;
@@ -699,7 +699,7 @@ static int walIndexRecover(Wal *pWal){
         hdr.iCheck2 = aCksum[1];
         hdr.mxFrame = iFrame;
         hdr.nPage = nTruncate;
-        hdr.pgsz = nPgsz;
+        hdr.szPage = szPage;
       }
     }
 
@@ -985,7 +985,7 @@ static int walCheckpoint(
   u8 *zBuf                        /* Temporary buffer to use */
 ){
   int rc;                         /* Return code */
-  int pgsz = pWal->hdr.pgsz;      /* Database page-size */
+  int szPage = pWal->hdr.szPage;  /* Database page-size */
   WalIterator *pIter = 0;         /* Wal iterator context */
   u32 iDbpage = 0;                /* Next database page to write */
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
@@ -996,7 +996,7 @@ static int walCheckpoint(
     goto out;
   }
 
-  if( pWal->hdr.pgsz!=nBuf ){
+  if( pWal->hdr.szPage!=nBuf ){
     rc = SQLITE_CORRUPT_BKPT;
     goto out;
   }
@@ -1009,16 +1009,16 @@ static int walCheckpoint(
 
   /* Iterate through the contents of the log, copying data to the db file. */
   while( 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
-    rc = sqlite3OsRead(pWal->pWalFd, zBuf, pgsz, 
-        walFrameOffset(iFrame, pgsz) + WAL_FRAME_HDRSIZE
+    rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, 
+        walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE
     );
     if( rc!=SQLITE_OK ) goto out;
-    rc = sqlite3OsWrite(pWal->pDbFd, zBuf, pgsz, (iDbpage-1)*pgsz);
+    rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, (iDbpage-1)*szPage);
     if( rc!=SQLITE_OK ) goto out;
   }
 
   /* Truncate the database file */
-  rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)pgsz));
+  rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)szPage));
   if( rc!=SQLITE_OK ) goto out;
 
   /* Sync the database file. If successful, update the wal-index. */
@@ -1308,7 +1308,7 @@ int sqlite3WalRead(
   **
   ** This code may run concurrently to the code in walIndexAppend()
   ** that adds entries to the wal-index (and possibly to this hash 
-  ** table). This means the non-zero value just read from the hash 
+  ** table). This means the value just read from the hash 
   ** slot (aHash[iKey]) may have been added before or after the 
   ** current read transaction was opened. Values added after the
   ** read transaction was opened may have been written incorrectly -
@@ -1331,17 +1331,17 @@ int sqlite3WalRead(
   **     This filters out a dangerous class of garbage data. The 
   **     garbage hash slot may refer to a frame with the correct page 
   **     number, but not the most recent version of the frame. For
-  **     example, if at the start of the read-transaction the log 
+  **     example, if at the start of the read-transaction the WAL
   **     contains three copies of the desired page in frames 2, 3 and 4,
   **     the hash table may contain the following:
   **
-  **       { ..., 2, 3, 4, 0, 0, ..... }
+  **       { ..., 2, 3, 4, 99, 99, ..... }
   **
   **     The correct answer is to read data from frame 4. But a 
   **     dirty-read may potentially cause the hash-table to appear as 
   **     follows to the reader:
   **
-  **       { ..., 2, 3, 4, 3, 0, ..... }
+  **       { ..., 2, 3, 4, 3, 99, ..... }
   **
   **     Without this part of the if(...) clause, the reader might
   **     incorrectly read data from frame 3 instead of 4. This would be
@@ -1391,7 +1391,7 @@ int sqlite3WalRead(
   */
   walIndexUnmap(pWal);
   if( iRead ){
-    i64 iOffset = walFrameOffset(iRead, pWal->hdr.pgsz) + WAL_FRAME_HDRSIZE;
+    i64 iOffset = walFrameOffset(iRead, pWal->hdr.szPage) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
     return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
   }
@@ -1491,7 +1491,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
 
   pWal->hdr.mxFrame = iFrame;
   if( iFrame>0 ){
-    i64 iOffset = walFrameOffset(iFrame, pWal->hdr.pgsz) + sizeof(u32)*2;
+    i64 iOffset = walFrameOffset(iFrame, pWal->hdr.szPage) + sizeof(u32)*2;
     rc = sqlite3OsRead(pWal->pWalFd, aCksum, sizeof(aCksum), iOffset);
     pWal->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
     pWal->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
@@ -1506,7 +1506,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
 */
 int sqlite3WalFrames(
   Wal *pWal,                      /* Wal handle to write to */
-  int nPgsz,                      /* Database page-size in bytes */
+  int szPage,                     /* Database page-size in bytes */
   PgHdr *pList,                   /* List of dirty pages to write */
   Pgno nTruncate,                 /* Database size after this commit */
   int isCommit,                   /* True if this is a commit */
@@ -1532,7 +1532,7 @@ int sqlite3WalFrames(
   assert( WAL_FRAME_HDRSIZE>=WAL_HDRSIZE );
   iFrame = pWal->hdr.mxFrame;
   if( iFrame==0 ){
-    sqlite3Put4byte(aFrame, nPgsz);
+    sqlite3Put4byte(aFrame, szPage);
     sqlite3_randomness(8, &aFrame[4]);
     pWal->hdr.iCheck1 = sqlite3Get4byte(&aFrame[4]);
     pWal->hdr.iCheck2 = sqlite3Get4byte(&aFrame[8]);
@@ -1550,18 +1550,18 @@ int sqlite3WalFrames(
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
 
-    iOffset = walFrameOffset(++iFrame, nPgsz);
+    iOffset = walFrameOffset(++iFrame, szPage);
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
-    walEncodeFrame(aCksum, p->pgno, nDbsize, nPgsz, p->pData, aFrame);
+    walEncodeFrame(aCksum, p->pgno, nDbsize, szPage, p->pData, aFrame);
     rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, nPgsz, iOffset+sizeof(aFrame));
+    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, szPage, iOffset+sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -1571,26 +1571,26 @@ int sqlite3WalFrames(
   /* Sync the log file if the 'isSync' flag was specified. */
   if( sync_flags ){
     i64 iSegment = sqlite3OsSectorSize(pWal->pWalFd);
-    i64 iOffset = walFrameOffset(iFrame+1, nPgsz);
+    i64 iOffset = walFrameOffset(iFrame+1, szPage);
 
     assert( isCommit );
     assert( iSegment>0 );
 
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
-      walEncodeFrame(aCksum,pLast->pgno,nTruncate,nPgsz,pLast->pData,aFrame);
+      walEncodeFrame(aCksum,pLast->pgno,nTruncate,szPage,pLast->pData,aFrame);
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
 
       iOffset += WAL_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pWal->pWalFd, pLast->pData, nPgsz, iOffset); 
+      rc = sqlite3OsWrite(pWal->pWalFd, pLast->pData, szPage, iOffset); 
       if( rc!=SQLITE_OK ){
         return rc;
       }
       nLast++;
-      iOffset += nPgsz;
+      iOffset += szPage;
     }
 
     rc = sqlite3OsSync(pWal->pWalFd, sync_flags);
@@ -1615,7 +1615,7 @@ int sqlite3WalFrames(
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
-    pWal->hdr.pgsz = nPgsz;
+    pWal->hdr.szPage = szPage;
     pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;
