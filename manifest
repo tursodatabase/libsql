@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\sa\sbug\sin\sthe\snew\scheckpoint\scomputation.\s\sAlso\supdate\sthe\scheckpoint\nalgorithm\sin\sthe\stest\sscripts\sto\salign\swith\sthe\snew\simplementation.
-D 2010-05-19T19:09:38
+C Add\sthe\sSQLITE_FCNTL_SIZE_HINT\soperator\sto\ssqlite3_file_control()\sand\suse\sit\nto\sgive\sthe\sVFS\shints\sabout\sthe\sultimate\ssize\sof\sa\sdatabase\sfile\swhen\sthe\nfile\sis\sgrowing.
+D 2010-05-19T19:26:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,9 +155,9 @@ F src/os.c b994b2f4c9a2c406a20d43b59c22ed39a1e704d1
 F src/os.h 207c26793c9b518aa670480a3a262250dd3c98b1
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 6db3289dcfe8f2ec0277ad025e072254252a00c9
+F src/os_unix.c 6db01eb2c87856f9c9ea40d497941c54ae1b27ff
 F src/os_win.c 70c4a3327716213b59adf3a8adf2d5318b044a19
-F src/pager.c 1e163a82ae8405433dca559831caa06aafbba3b0
+F src/pager.c d3284a6bbedeaa4ef3f5668af309d4381df97618
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -171,7 +171,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in aa9086ea3a365843d62ce120cba458ecad6edd63
+F src/sqlite.h.in ef766c813d377a0f3f5e6131d0a2667ecd6301c1
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h c1ca9bed7c963343f90edaf0ec31b8ff4b43fb01
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -816,14 +816,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 542b90eba6440a0bccef329788fd17a2d3fbeee6
-R 3eb344e252de7dd1dcb6df3f04c8046c
+P 8b6056f2ee596f31b157a792fac05d11f7cb63bb
+R 18ea315c422c82833ce8122e2306d4ce
 U drh
-Z d2ea1596a81ca8239241be44d26189c8
+Z 204bb976d5ca23f2c6c61215e8a1c9fe
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL9Dd1oxKgR168RlERAuuiAJ9n+tHe+QFxU832Z1mkHlHx1uXUYACgiZMB
-lhsmxWXcBlXcHZC8UqPgebk=
-=rNW0
+iD8DBQFL9DtSoxKgR168RlERAmxLAJ98+Vtb2PlSxySCRsTorv5kr6aYygCeMNAv
+J3U/IsRR11K0QbjTkOY7/vU=
+=+Q9Y
 -----END PGP SIGNATURE-----
