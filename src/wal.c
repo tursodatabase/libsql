@@ -15,7 +15,7 @@
 **
 ** WRITE-AHEAD LOG (WAL) FILE FORMAT
 **
-** A wal file consists of a header followed by zero or more "frames".
+** A WAL file consists of a header followed by zero or more "frames".
 ** Each frame records the revised content of a single page from the
 ** database file.  All changes to the database are recorded by writing
 ** frames into the WAL.  Transactions commit when a frame is written that
@@ -38,8 +38,8 @@
 **     4: File format version.  Currently 3007000
 **     8: Database page size.  Example: 1024
 **    12: Checkpoint sequence number
-**    16: Salt-1, random integer that changes with each checkpoint
-**    20: Salt-2, a different random integer changing with salt-1
+**    16: Salt-1, random integer incremented with each checkpoint
+**    20: Salt-2, a different random integer changing with each ckpt
 **
 ** Immediately following the wal-header are zero or more frames. Each
 ** frame consists of a 24-byte frame-header followed by a <page-size> bytes
@@ -49,10 +49,32 @@
 **     0: Page number.
 **     4: For commit records, the size of the database image in pages 
 **        after the commit. For all other records, zero.
-**     8: Checkpoint sequence number (copied from the header)
-**    12: Salt-1 (copied from the header)
+**     8: Salt-1 (copied from the header)
+**    12: Salt-2 (copied from the header)
 **    16: Checksum-1.
 **    20: Checksum-2.
+**
+** A frame is considered valid if and only if the following conditions are
+** true:
+**
+**    (1) The salt-1 and salt-2 values in the frame-header match
+**        salt values in the wal-header
+**
+**    (2) The checksum values in the final 8 bytes of the frame-header
+**        exactly match the checksum computed consecutively on
+**        (a) the first 16 bytes of the frame-header, and
+**        (b) the frame data.
+**
+** On a checkpoint, the WAL is first VFS.xSync-ed, then valid content of the
+** WAL is transferred into the database, then the database is VFS.xSync-ed.
+** The VFS.xSync operations server as write barriers - all writes launched
+** before the xSync must complete before any write that launches after the
+** xSync begins.
+**
+** After each checkpoint, the salt-1 value is incremented and the salt-2
+** value is randomized.  This prevents old and new frames in the WAL from
+** being considered valid at the same time and being checkpointing together
+** following a crash.
 **
 ** READER ALGORITHM
 **
@@ -185,32 +207,23 @@ typedef struct WalIterator WalIterator;
 
 
 /*
-** The following object stores information from the wal-index header.
-**
-** This object is *not* a copy of the wal-index header.
-**
-** Member variables iCheck1 and iCheck2 contain the checksum for the
-** last frame written to the wal, or 2 and 3 respectively if the log 
-** is currently empty.
+** The following object holds an exact copy of the wal-index header.
 */
 struct WalIndexHdr {
-  u32 iChange;          /* Counter incremented each transaction */
-  u32 szPage;           /* Database page size in bytes */
-  u32 mxFrame;          /* Index of last valid frame in the WAL */
-  u32 nPage;            /* Size of database in pages */
-  u32 iCheck1;          /* Checksum value 1 */
-  u32 iCheck2;          /* Checksum value 2 */
+  u32 iChange;      /* Counter incremented each transaction */
+  u32 szPage;       /* Database page size in bytes */
+  u32 mxFrame;      /* Index of last valid frame in the WAL */
+  u32 nPage;        /* Size of database in pages */
+  u32 aSalt[2];     /* Salt-1 and salt-2 values copied from WAL header */
+  u32 aCksum[2];    /* Checksum over all prior fields */
 };
 
-/* Size of serialized WalIndexHdr object. */
-#define WALINDEX_HDR_NFIELD (sizeof(WalIndexHdr) / sizeof(u32))
-
-/* A block of 16 bytes beginning at WALINDEX_LOCK_OFFSET is reserved
-** for locks. Since some systems only feature mandatory file-locks, we
-** do not read or write data from the region of the file on which locks
-** are applied.
+/* A block of WALINDEX_LOCK_RESERVED bytes beginning at
+** WALINDEX_LOCK_OFFSET is reserved for locks. Since some systems
+** only support mandatory file-locks, we do not read or write data
+** from the region of the file on which locks are applied.
 */
-#define WALINDEX_LOCK_OFFSET   ((sizeof(WalIndexHdr))+2*sizeof(u32))
+#define WALINDEX_LOCK_OFFSET   (sizeof(WalIndexHdr))
 #define WALINDEX_LOCK_RESERVED 8
 
 /* Size of header before each frame in wal */
@@ -245,8 +258,8 @@ struct Wal {
   u8 isWindexOpen;           /* True if ShmOpen() called on pDbFd */
   WalIndexHdr hdr;           /* Wal-index for current snapshot */
   char *zWalName;            /* Name of WAL file */
-  u32 nCkpt;                 /* Checkpoint sequence number */
-  u32 iSalt1, iSalt2;        /* Two random salt values */
+  int szPage;                /* Database page size */
+  u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 };
 
 
@@ -278,13 +291,27 @@ struct WalIterator {
 
 
 /*
-** Generate an 8 byte checksum based on the data in array aByte[] and the
-** initial values of aCksum[0] and aCksum[1]. The checksum is written 
-** back into aCksum[] before returning.
+** Generate or extend an 8 byte checksum based on the data in 
+** array aByte[] and the initial values of aIn[0] and aIn[1] (or
+** initial values of 0 and 0 if aIn==NULL).
+**
+** The checksum is written back into aOut[] before returning.
+**
+** nByte must be a positive multiple of 8.
 */
-static void walChecksumBytes(u8 *a, int nByte, u32 *aCksum){
-  u32 s1 = aCksum[0];
-  u32 s2 = aCksum[1];
+static void walChecksumBytes(
+  u8 *a,           /* Content to be checksummed */
+  int nByte,       /* Bytes of content in a[].  Must be a multiple of 8. */
+  const u32 *aIn,  /* Initial checksum value input */
+  u32 *aOut        /* OUT: Final checksum value output */
+){
+  u32 s1, s2;
+  if( aIn ){
+    s1 = aIn[0];
+    s2 = aIn[1];
+  }else{
+    s1 = s2 = 0;
+  }
   u8 *aEnd = (u8*)&a[nByte];
 
   assert( nByte>=8 );
@@ -295,8 +322,8 @@ static void walChecksumBytes(u8 *a, int nByte, u32 *aCksum){
     s2 += (a[4]<<24) + (a[5]<<16) + (a[6]<<8) + a[7] + s1;
     a += 8;
   }while( a<aEnd );
-  aCksum[0] = s1;
-  aCksum[1] = s2;
+  aOut[0] = s1;
+  aOut[1] = s2;
 }
 
 /*
@@ -323,17 +350,15 @@ static int walSetLock(Wal *pWal, int desiredStatus){
 }
 
 /*
-** Update the header of the wal-index file.
+** Write the header information in pWal->hdr into the wal-index.
+**
+** The checksum on pWal->hdr is updated before it is written.
 */
-static void walIndexWriteHdr(Wal *pWal, WalIndexHdr *pHdr){
-  volatile u32 *aHdr = pWal->pWiData;                 /* Write header here */
-  volatile u32 *aCksum = &aHdr[WALINDEX_HDR_NFIELD];  /* Write cksum here */
-
-  assert( WALINDEX_HDR_NFIELD==sizeof(WalIndexHdr)/4 );
-  assert( aHdr!=0 );
-  memcpy((void*)aHdr, pHdr, sizeof(WalIndexHdr));
-  aCksum[0] = aCksum[1] = 1;
-  walChecksumBytes((u8*)aHdr, sizeof(WalIndexHdr), (u32*)aCksum);
+static void walIndexWriteHdr(Wal *pWal){
+  walChecksumBytes((u8*)&pWal->hdr,
+                   sizeof(pWal->hdr) - sizeof(pWal->hdr.aCksum),
+                   0, pWal->hdr.aCksum);
+  memcpy((void*)pWal->pWiData, &pWal->hdr, sizeof(pWal->hdr));
 }
 
 /*
@@ -344,60 +369,59 @@ static void walIndexWriteHdr(Wal *pWal, WalIndexHdr *pHdr){
 **     0: Page number.
 **     4: For commit records, the size of the database image in pages 
 **        after the commit. For all other records, zero.
-**     8: Checkpoint sequence number (copied from the header)
-**    12: Salt-1 (copied from the header)
+**     8: Salt-1 (copied from the wal-header)
+**    12: Salt-2 (copied from the wal-header)
 **    16: Checksum-1.
 **    20: Checksum-2.
 */
 static void walEncodeFrame(
   Wal *pWal,                      /* The write-ahead log */
-  u32 *aCksum,                    /* IN/OUT: Checksum values */
   u32 iPage,                      /* Database page number for frame */
   u32 nTruncate,                  /* New db size (or 0 for non-commit frames) */
-  int nData,                      /* Database page size (size of aData[]) */
-  u8 *aData,                      /* Pointer to page data (for checksum) */
+  u8 *aData,                      /* Pointer to page data */
   u8 *aFrame                      /* OUT: Write encoded frame here */
 ){
+  u32 aCksum[2];
   assert( WAL_FRAME_HDRSIZE==24 );
-
   sqlite3Put4byte(&aFrame[0], iPage);
   sqlite3Put4byte(&aFrame[4], nTruncate);
-  sqlite3Put4byte(&aFrame[8], pWal->nCkpt);
-  sqlite3Put4byte(&aFrame[12], pWal->iSalt1);
+  memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
 
-  walChecksumBytes(aFrame, 8, aCksum);
-  walChecksumBytes(aData, nData, aCksum);
+  walChecksumBytes(aFrame, 16, 0, aCksum);
+  walChecksumBytes(aData, pWal->szPage, aCksum, aCksum);
 
   sqlite3Put4byte(&aFrame[16], aCksum[0]);
   sqlite3Put4byte(&aFrame[20], aCksum[1]);
 }
 
 /*
-** Return 1 and populate *piPage, *pnTruncate and aCksum if the 
-** frame checksum looks Ok. Otherwise return 0.
+** Check to see if the frame with header in aFrame[] and content
+** in aData[] is valid.  If it is a valid frame, fill *piPage and
+** *pnTruncate and return true.  Return if the frame is not valid.
 */
 static int walDecodeFrame(
   Wal *pWal,                      /* The write-ahead log */
-  u32 *aCksum,                    /* IN/OUT: Checksum values */
   u32 *piPage,                    /* OUT: Database page number for frame */
   u32 *pnTruncate,                /* OUT: New db size (or 0 if not commit) */
-  int nData,                      /* Database page size (size of aData[]) */
   u8 *aData,                      /* Pointer to page data (for checksum) */
   u8 *aFrame                      /* Frame data */
 ){
+  u32 aCksum[2];
   assert( WAL_FRAME_HDRSIZE==24 );
 
-#if 0
-  if( pWal->nCkpt!=sqlite3Get4byte(&aFrame[8]) ){
+  /* A frame is only valid if the salt values in the frame-header
+  ** match the salt values in the wal-header. 
+  */
+  if( memcmp(&pWal->hdr.aSalt, &aFrame[8], 8)!=0 ){
     return 0;
   }
-  if( pWal->iSalt1!=sqlite3Get4byte(&aFrame[12]) ){
-    return 0;
-  }
-#endif
 
-  walChecksumBytes(aFrame, 8, aCksum);
-  walChecksumBytes(aData, nData, aCksum);
+  /* A frame is only valid if a checksum of the first 16 bytes
+  ** of the frame-header, and the frame-data matches
+  ** the checksum in the last 8 bytes of the frame-header.
+  */
+  walChecksumBytes(aFrame, 16, 0, aCksum);
+  walChecksumBytes(aData, pWal->szPage, aCksum, aCksum);
   if( aCksum[0]!=sqlite3Get4byte(&aFrame[16]) 
    || aCksum[1]!=sqlite3Get4byte(&aFrame[20]) 
   ){
@@ -405,6 +429,9 @@ static int walDecodeFrame(
     return 0;
   }
 
+  /* If we reach this point, the frame is valid.  Return the page number
+  ** and the new database size.
+  */
   *piPage = sqlite3Get4byte(&aFrame[0]);
   *pnTruncate = sqlite3Get4byte(&aFrame[4]);
   return 1;
@@ -648,7 +675,6 @@ static int walIndexRecover(Wal *pWal){
     int iFrame;                   /* Index of last frame read */
     i64 iOffset;                  /* Next offset to read from log file */
     int szPage;                   /* Page size according to the log */
-    u32 aCksum[2];                /* Running checksum */
 
     /* Read in the first frame header in the file (to determine the 
     ** database page size).
@@ -665,9 +691,9 @@ static int walIndexRecover(Wal *pWal){
     if( szPage&(szPage-1) || szPage>SQLITE_MAX_PAGE_SIZE || szPage<512 ){
       goto finished;
     }
+    pWal->szPage = szPage;
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
-    aCksum[0] = sqlite3Get4byte(&aBuf[16]);
-    aCksum[1] = sqlite3Get4byte(&aBuf[20]);
+    memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
@@ -687,16 +713,13 @@ static int walIndexRecover(Wal *pWal){
       /* Read and decode the next log frame. */
       rc = sqlite3OsRead(pWal->pWalFd, aFrame, szFrame, iOffset);
       if( rc!=SQLITE_OK ) break;
-      isValid = walDecodeFrame(pWal, aCksum, &pgno, &nTruncate, szPage,
-                               aData, aFrame);
+      isValid = walDecodeFrame(pWal, &pgno, &nTruncate, aData, aFrame);
       if( !isValid ) break;
       rc = walIndexAppend(pWal, ++iFrame, pgno);
       if( rc!=SQLITE_OK ) break;
 
       /* If nTruncate is non-zero, this is a commit record. */
       if( nTruncate ){
-        hdr.iCheck1 = aCksum[0];
-        hdr.iCheck2 = aCksum[1];
         hdr.mxFrame = iFrame;
         hdr.nPage = nTruncate;
         hdr.szPage = szPage;
@@ -705,8 +728,7 @@ static int walIndexRecover(Wal *pWal){
 
     sqlite3_free(aFrame);
   }else{
-    hdr.iCheck1 = 2;
-    hdr.iCheck2 = 3;
+    memset(&hdr, 0, sizeof(hdr));
   }
 
 finished:
@@ -714,8 +736,8 @@ finished:
     rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
   }
   if( rc==SQLITE_OK ){
-    walIndexWriteHdr(pWal, &hdr);
     memcpy(&pWal->hdr, &hdr, sizeof(hdr));
+    walIndexWriteHdr(pWal);
   }
   return rc;
 }
@@ -774,6 +796,7 @@ int sqlite3WalOpen(
   pRet->pVfs = pVfs;
   pRet->pWalFd = (sqlite3_file *)&pRet[1];
   pRet->pDbFd = pDbFd;
+  sqlite3_randomness(8, &pRet->hdr.aSalt);
   pRet->zWalName = zWal = pVfs->szOsFile + (char*)pRet->pWalFd;
   sqlite3_snprintf(nWal, zWal, "%s-wal", zDbName);
   rc = sqlite3OsShmOpen(pDbFd);
@@ -1027,30 +1050,11 @@ static int walCheckpoint(
     if( rc!=SQLITE_OK ) goto out;
   }
   pWal->hdr.mxFrame = 0;
-  pWal->hdr.iCheck1 = 2;
-  pWal->hdr.iCheck2 = 3;
-  walIndexWriteHdr(pWal, &pWal->hdr);
   pWal->nCkpt++;
-
-  /* TODO: If a crash occurs and the current log is copied into the 
-  ** database there is no problem. However, if a crash occurs while
-  ** writing the next transaction into the start of the log, such that:
-  **
-  **   * The first transaction currently in the log is left intact, but
-  **   * The second (or subsequent) transaction is damaged,
-  **
-  ** then the database could become corrupt.
-  **
-  ** The easiest thing to do would be to write and sync a dummy header
-  ** into the log at this point. Unfortunately, that turns out to be
-  ** an unwelcome performance hit. Alternatives are...
-  */
-#if 0 
-  memset(zBuf, 0, WAL_FRAME_HDRSIZE);
-  rc = sqlite3OsWrite(pWal->pWalFd, zBuf, WAL_FRAME_HDRSIZE, 0);
-  if( rc!=SQLITE_OK ) goto out;
-  rc = sqlite3OsSync(pWal->pWalFd, pWal->sync_flags);
-#endif
+  sqlite3Put4byte((u8*)pWal->hdr.aSalt,
+                   1 + sqlite3Get4byte((u8*)pWal->hdr.aSalt));
+  sqlite3_randomness(4, &pWal->hdr.aSalt[1]);
+  walIndexWriteHdr(pWal);
 
  out:
   walIteratorFree(pIter);
@@ -1114,10 +1118,8 @@ int sqlite3WalClose(
 ** is read successfully and the checksum verified, return zero.
 */
 int walIndexTryHdr(Wal *pWal, int *pChanged){
-  int i;
-  volatile u32 *aWiData;
-  u32 aCksum[2] = {1, 1};
-  u32 aHdr[WALINDEX_HDR_NFIELD+2];
+  u32 aCksum[2];
+  WalIndexHdr hdr;
 
   assert( pWal->pWiData );
   if( pWal->szWIndex==0 ){
@@ -1133,20 +1135,16 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
   */
-  aWiData = pWal->pWiData;
-  for(i=0; i<WALINDEX_HDR_NFIELD+2; i++){
-    aHdr[i] = aWiData[i];
-  }
-  walChecksumBytes((u8*)aHdr, sizeof(u32)*WALINDEX_HDR_NFIELD, aCksum);
-  if( aCksum[0]!=aHdr[WALINDEX_HDR_NFIELD]
-   || aCksum[1]!=aHdr[WALINDEX_HDR_NFIELD+1]
-  ){
+  memcpy(&hdr, (void*)pWal->pWiData, sizeof(hdr));
+  walChecksumBytes((u8*)&hdr, sizeof(hdr)-sizeof(hdr.aCksum), 0, aCksum);
+  if( aCksum[0]!=hdr.aCksum[0] || aCksum[1]!=hdr.aCksum[1] ){
     return 1;
   }
 
-  if( memcmp(&pWal->hdr, aHdr, sizeof(WalIndexHdr)) ){
+  if( memcmp(&pWal->hdr, &hdr, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
-    memcpy(&pWal->hdr, aHdr, sizeof(WalIndexHdr));
+    memcpy(&pWal->hdr, &hdr, sizeof(WalIndexHdr));
+    pWal->szPage = pWal->hdr.szPage;
   }
 
   /* The header was successfully read. Return zero. */
@@ -1487,17 +1485,9 @@ u32 sqlite3WalSavepoint(Wal *pWal){
 */
 int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   int rc = SQLITE_OK;
-  u8 aCksum[8];
   assert( pWal->lockState==SQLITE_SHM_WRITE );
 
   pWal->hdr.mxFrame = iFrame;
-  if( iFrame>0 ){
-    i64 iOffset = walFrameOffset(iFrame, pWal->hdr.szPage) + sizeof(u32)*4;
-    rc = sqlite3OsRead(pWal->pWalFd, aCksum, sizeof(aCksum), iOffset);
-    pWal->hdr.iCheck1 = sqlite3Get4byte(&aCksum[0]);
-    pWal->hdr.iCheck2 = sqlite3Get4byte(&aCksum[4]);
-  }
-
   return rc;
 }
 
@@ -1517,7 +1507,6 @@ int sqlite3WalFrames(
   u32 iFrame;                     /* Next frame address */
   u8 aFrame[WAL_FRAME_HDRSIZE];   /* Buffer to assemble frame-header in */
   PgHdr *p;                       /* Iterator to run through pList with. */
-  u32 aCksum[2];                  /* Checksums */
   PgHdr *pLast = 0;               /* Last frame in list */
   int nLast = 0;                  /* Number of extra copies of last page */
 
@@ -1535,20 +1524,17 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[0], 0x377f0682);
     sqlite3Put4byte(&aWalHdr[4], 3007000);
     sqlite3Put4byte(&aWalHdr[8], szPage);
+    pWal->szPage = szPage;
     sqlite3Put4byte(&aWalHdr[12], pWal->nCkpt);
-    sqlite3_randomness(8, &aWalHdr[16]);
-    pWal->hdr.iCheck1 = pWal->iSalt1 = sqlite3Get4byte(&aWalHdr[16]);
-    pWal->hdr.iCheck2 = pWal->iSalt2 = sqlite3Get4byte(&aWalHdr[20]);
+    memcpy(&aWalHdr[16], pWal->hdr.aSalt, 8);
     rc = sqlite3OsWrite(pWal->pWalFd, aWalHdr, sizeof(aWalHdr), 0);
     if( rc!=SQLITE_OK ){
       return rc;
     }
   }
+  assert( pWal->szPage==szPage );
 
-  aCksum[0] = pWal->hdr.iCheck1;
-  aCksum[1] = pWal->hdr.iCheck2;
-
-  /* Write the log file. */
+    /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
@@ -1557,7 +1543,7 @@ int sqlite3WalFrames(
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
-    walEncodeFrame(pWal, aCksum, p->pgno, nDbsize, szPage, p->pData, aFrame);
+    walEncodeFrame(pWal, p->pgno, nDbsize, p->pData, aFrame);
     rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
@@ -1581,8 +1567,7 @@ int sqlite3WalFrames(
 
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
-      walEncodeFrame(pWal, aCksum, pLast->pgno, nTruncate, szPage,
-                     pLast->pData, aFrame);
+      walEncodeFrame(pWal, pLast->pgno, nTruncate, pLast->pData, aFrame);
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
@@ -1625,12 +1610,9 @@ int sqlite3WalFrames(
       pWal->hdr.iChange++;
       pWal->hdr.nPage = nTruncate;
     }
-    pWal->hdr.iCheck1 = aCksum[0];
-    pWal->hdr.iCheck2 = aCksum[1];
-
     /* If this is a commit, update the wal-index header too. */
     if( isCommit ){
-      walIndexWriteHdr(pWal, &pWal->hdr);
+      walIndexWriteHdr(pWal);
       pWal->iCallback = iFrame;
     }
   }

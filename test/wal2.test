@@ -115,6 +115,7 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} {
       return SQLITE_OK
     }
 
+breakpoint
     execsql { SELECT count(a), sum(a) FROM t1 } db2
   } $res
 
@@ -178,7 +179,7 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
          8   11   {10 55}  {11 66}   6
          9   12   {11 66}  {12 78}   7
 } {
-  do_test wal2-1.$tn.1 {
+  do_test wal2-2.$tn.1 {
     set oldhdr [set_tvfs_hdr $::shm_file]
     execsql { INSERT INTO t1 VALUES($iInsert) }
     execsql { SELECT count(a), sum(a) FROM t1 }
@@ -603,4 +604,3 @@ do_test wal2-6.5.3 {
 db close
 
 finish_test
-
