@@ -41,7 +41,7 @@ proc sqlite3_wal {args} {
 }
 
 proc log_file_size {nFrame pgsz} {
-  expr {12 + ($pgsz+16)*$nFrame}
+  expr {24 + ($pgsz+24)*$nFrame}
 }
 
 proc log_deleted {logfile} {
@@ -1160,7 +1160,7 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
 # a transaction that modifies 171 pages. In synchronous=NORMAL mode, this
 # produces a log file of:
 #
-#   12 + (16+512)*171 = 90300 bytes.
+#   24 + (24+512)*171 = 90312 bytes.
 #
 # Slightly larger than 11*8192 = 90112 bytes.
 #
@@ -1173,13 +1173,13 @@ foreach {tn ckpt_cmd ckpt_res ckpt_main ckpt_aux} {
 set old_pending_byte [sqlite3_test_control_pending_byte 0x10000000]
 catch { db close }
 foreach {tn sectorsize logsize} {
-  1   128  90828
-  2   256  90828
-  3   512  90828 
-  4  1024  91356
-  5  2048  92412
-  6  4096  94524
-  7  8192  98748
+  1   128  92216
+  2   256  92216
+  3   512  92216 
+  4  1024  92216
+  5  2048  92216
+  6  4096  94360
+  7  8192  98648
 } {
   file delete -force test.db test.db-wal test.db-journal
   sqlite3_simulate_device -sectorsize $sectorsize
@@ -1263,7 +1263,7 @@ foreach {nFrame result} {
     file copy -force testX.db test.db
     file copy -force testX.db-wal test.db-wal
 
-    hexio_write test.db-wal [expr 12 + $nFrame*(16+1024) + 12] 00000000
+    hexio_write test.db-wal [expr 24 + $nFrame*(24+1024) + 20] 00000000
 
     sqlite3 db test.db
     execsql { 
@@ -1338,12 +1338,13 @@ foreach {tn pgsz works} {
       #
       set c1 22
       set c2 23
-      set walhdr [binary format III $pgsz $c1 $c2]
+      set walhdr [binary format IIIIII 931071618 3007000 $pgsz 1234 $c1 $c2]
+      set salt1 $c1
       set framebody [randomblob $pgsz]
       set framehdr  [binary format II $pg 5]
       logcksum c1 c2 $framehdr
       logcksum c1 c2 $framebody
-      set framehdr [binary format IIII $pg 5 $c1 $c2]
+      set framehdr [binary format IIIIII $pg 5 1234 $salt1 $c1 $c2]
       set fd [open test.db-wal w]
       fconfigure $fd -encoding binary -translation binary
       puts -nonewline $fd $walhdr

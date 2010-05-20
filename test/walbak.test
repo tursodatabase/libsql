@@ -19,7 +19,7 @@ source $testdir/tester.tcl
 ifcapable !wal {finish_test ; return }
 
 proc log_file_size {nFrame pgsz} {
-  expr {12 + ($pgsz+16)*$nFrame}
+  expr {24 + ($pgsz+24)*$nFrame}
 }
 
 # Test organization:
@@ -183,4 +183,3 @@ do_test walbak-2.12 {
 db2 close
 
 finish_test
-
