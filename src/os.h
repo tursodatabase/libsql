@@ -248,6 +248,7 @@ int sqlite3OsShmSize(sqlite3_file *id, int, int*);
 int sqlite3OsShmGet(sqlite3_file *id, int, int*, void volatile**);
 int sqlite3OsShmRelease(sqlite3_file *id);
 int sqlite3OsShmLock(sqlite3_file *id, int, int*);
+void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmClose(sqlite3_file *id, int);
 
 /* 

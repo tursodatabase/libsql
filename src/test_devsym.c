@@ -55,6 +55,7 @@ static int devsymShmSize(sqlite3_file*,int,int*);
 static int devsymShmGet(sqlite3_file*,int,int*,volatile void**);
 static int devsymShmRelease(sqlite3_file*);
 static int devsymShmLock(sqlite3_file*,int,int*);
+static void devsymShmBarrier(sqlite3_file*);
 static int devsymShmClose(sqlite3_file*,int);
 
 /*
@@ -123,6 +124,7 @@ static sqlite3_io_methods devsym_io_methods = {
   devsymShmGet,                     /* xShmGet */
   devsymShmRelease,                 /* xShmRelease */
   devsymShmLock,                    /* xShmLock */
+  devsymShmBarrier,                 /* xShmBarrier */
   devsymShmClose                    /* xShmClose */
 };
 
@@ -264,6 +266,10 @@ static int devsymShmRelease(sqlite3_file *pFile){
 static int devsymShmLock(sqlite3_file *pFile, int desired, int *pGot){
   devsym_file *p = (devsym_file *)pFile;
   return sqlite3OsShmLock(p->pReal, desired, pGot);
+}
+static void devsymShmBarrier(sqlite3_file *pFile){
+  devsym_file *p = (devsym_file *)pFile;
+  sqlite3OsShmBarrier(p->pReal);
 }
 static int devsymShmClose(sqlite3_file *pFile, int delFlag){
   devsym_file *p = (devsym_file *)pFile;

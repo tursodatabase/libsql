@@ -207,7 +207,10 @@ typedef struct WalIterator WalIterator;
 
 
 /*
-** The following object holds an exact copy of the wal-index header.
+** The following object holds a copy of the wal-index header content.
+**
+** The actual header in the wal-index consists of two copies of this
+** object.
 */
 struct WalIndexHdr {
   u32 iChange;      /* Counter incremented each transaction */
@@ -223,7 +226,7 @@ struct WalIndexHdr {
 ** only support mandatory file-locks, we do not read or write data
 ** from the region of the file on which locks are applied.
 */
-#define WALINDEX_LOCK_OFFSET   (sizeof(WalIndexHdr))
+#define WALINDEX_LOCK_OFFSET   (sizeof(WalIndexHdr)*2)
 #define WALINDEX_LOCK_RESERVED 8
 
 /* Size of header before each frame in wal */
@@ -306,13 +309,13 @@ static void walChecksumBytes(
   u32 *aOut        /* OUT: Final checksum value output */
 ){
   u32 s1, s2;
+  u8 *aEnd = (u8*)&a[nByte];
   if( aIn ){
     s1 = aIn[0];
     s2 = aIn[1];
   }else{
     s1 = s2 = 0;
   }
-  u8 *aEnd = (u8*)&a[nByte];
 
   assert( nByte>=8 );
   assert( (nByte&0x00000003)==0 );
@@ -355,10 +358,14 @@ static int walSetLock(Wal *pWal, int desiredStatus){
 ** The checksum on pWal->hdr is updated before it is written.
 */
 static void walIndexWriteHdr(Wal *pWal){
+  WalIndexHdr *aHdr;
   walChecksumBytes((u8*)&pWal->hdr,
                    sizeof(pWal->hdr) - sizeof(pWal->hdr.aCksum),
                    0, pWal->hdr.aCksum);
-  memcpy((void*)pWal->pWiData, &pWal->hdr, sizeof(pWal->hdr));
+  aHdr = (WalIndexHdr*)pWal->pWiData;
+  memcpy(&aHdr[1], &pWal->hdr, sizeof(pWal->hdr));
+  sqlite3OsShmBarrier(pWal->pDbFd);
+  memcpy(&aHdr[0], &pWal->hdr, sizeof(pWal->hdr));
 }
 
 /*
@@ -1118,8 +1125,9 @@ int sqlite3WalClose(
 ** is read successfully and the checksum verified, return zero.
 */
 int walIndexTryHdr(Wal *pWal, int *pChanged){
-  u32 aCksum[2];
-  WalIndexHdr hdr;
+  u32 aCksum[2];               /* Checksum on the header content */
+  WalIndexHdr hdr1, hdr2;      /* Two copies of the header content */
+  WalIndexHdr *aHdr;           /* Header in shared memory */
 
   assert( pWal->pWiData );
   if( pWal->szWIndex==0 ){
@@ -1135,15 +1143,24 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
   */
-  memcpy(&hdr, (void*)pWal->pWiData, sizeof(hdr));
-  walChecksumBytes((u8*)&hdr, sizeof(hdr)-sizeof(hdr.aCksum), 0, aCksum);
-  if( aCksum[0]!=hdr.aCksum[0] || aCksum[1]!=hdr.aCksum[1] ){
+  aHdr = (WalIndexHdr*)pWal->pWiData;
+  memcpy(&hdr1, &aHdr[0], sizeof(hdr1));
+  sqlite3OsShmBarrier(pWal->pDbFd);
+  memcpy(&hdr2, &aHdr[1], sizeof(hdr2));
+
+  if( memcmp(&hdr1, &hdr2, sizeof(hdr1))!=0 ){
+    /* Dirty read */
+    return 1;
+  }  
+  walChecksumBytes((u8*)&hdr1, sizeof(hdr1)-sizeof(hdr1.aCksum), 0, aCksum);
+  if( aCksum[0]!=hdr1.aCksum[0] || aCksum[1]!=hdr1.aCksum[1] ){
+    /* Malformed header */
     return 1;
   }
 
-  if( memcmp(&pWal->hdr, &hdr, sizeof(WalIndexHdr)) ){
+  if( memcmp(&pWal->hdr, &hdr1, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
-    memcpy(&pWal->hdr, &hdr, sizeof(WalIndexHdr));
+    memcpy(&pWal->hdr, &hdr1, sizeof(WalIndexHdr));
     pWal->szPage = pWal->hdr.szPage;
   }
 

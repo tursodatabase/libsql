@@ -98,10 +98,11 @@
 #define OS_SHMGET            23
 #define OS_SHMRELEASE        24
 #define OS_SHMLOCK           25
-#define OS_SHMSIZE           26
-#define OS_ANNOTATE          27
+#define OS_SHMBARRIER        26
+#define OS_SHMSIZE           27
+#define OS_ANNOTATE          28
 
-#define OS_NUMEVENTS         28
+#define OS_NUMEVENTS         29
 
 #define VFSLOG_BUFFERSIZE 8192
 
@@ -150,6 +151,7 @@ static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize);
 static int vfslogShmGet(sqlite3_file *pFile, int,int*,volatile void **);
 static int vfslogShmRelease(sqlite3_file *pFile);
 static int vfslogShmLock(sqlite3_file *pFile, int desiredLock, int *gotLock);
+static void vfslogShmBarrier(sqlite3_file*);
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
 
 /*
@@ -206,6 +208,7 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogShmGet,                   /* xShmGet */
   vfslogShmRelease,               /* xShmRelease */
   vfslogShmLock,                  /* xShmLock */
+  vfslogShmBarrier,               /* xShmBarrier */
   vfslogShmClose                  /* xShmClose */
 };
 
@@ -454,6 +457,14 @@ static int vfslogShmLock(sqlite3_file *pFile, int desiredLock, int *gotLock){
   t = vfslog_time() - t;
   vfslog_call(p->pVfslog, OS_SHMLOCK, p->iFileId, t, rc, 0, 0);
   return rc;
+}
+static void vfslogShmBarrier(sqlite3_file *pFile){
+  sqlite3_uint64 t;
+  VfslogFile *p = (VfslogFile *)pFile;
+  t = vfslog_time();
+  p->pReal->pMethods->xShmBarrier(p->pReal);
+  t = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMBARRIER, p->iFileId, t, SQLITE_OK, 0, 0);
 }
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag){
   int rc;
@@ -781,6 +792,7 @@ static const char *vfslog_eventname(int eEvent){
     case OS_SHMSIZE:           zEvent = "xShmSize"; break;
     case OS_SHMRELEASE:        zEvent = "xShmRelease"; break;
     case OS_SHMLOCK:           zEvent = "xShmLock"; break;
+    case OS_SHMBARRIER:        zEvent = "xShmBarrier"; break;
 
     case OS_ANNOTATE:          zEvent = "annotation"; break;
   }

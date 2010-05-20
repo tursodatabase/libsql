@@ -3883,12 +3883,31 @@ static int unixShmLock(
   return rc;
 }
 
+/*
+** Implement a memory barrier or memory fence on shared memory.  
+**
+** All loads and stores begun before the barrier must complete before
+** any load or store begun after the barrier.
+*/
+static void unixShmBarrier(
+  sqlite3_file *fd           /* Database file holding the shared memory */
+){
+#ifdef __GNUC__
+  __sync_synchronize();
+#else
+  unixMutexEnter();
+  unixMutexLeave();
+#endif
+}
+
+
 #else
 # define unixShmOpen    0
 # define unixShmSize    0
 # define unixShmGet     0
 # define unixShmRelease 0
 # define unixShmLock    0
+# define unixShmBarrier 0
 # define unixShmClose   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
@@ -3952,6 +3971,7 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmGet,                 /* xShmGet */                                 \
    unixShmRelease,             /* xShmRelease */                             \
    unixShmLock,                /* xShmLock */                                \
+   unixShmBarrier,             /* xShmBarrier */                             \
    unixShmClose                /* xShmClose */                               \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \

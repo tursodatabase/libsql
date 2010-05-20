@@ -223,8 +223,8 @@ static sqlite3_io_methods fs_io_methods = {
   0,                            /* xShmOpen */
   0,                            /* xShmSize */
   0,                            /* xShmLock */
-  0,                            /* xShmClose */
-  0,                            /* xShmDelete */
+  0,                            /* xShmBarrier */
+  0                             /* xShmClose */
 };
 
 
@@ -245,8 +245,8 @@ static sqlite3_io_methods tmp_io_methods = {
   0,                            /* xShmOpen */
   0,                            /* xShmSize */
   0,                            /* xShmLock */
-  0,                            /* xShmClose */
-  0,                            /* xShmDelete */
+  0,                            /* xShmBarrier */
+  0                             /* xShmClose */
 };
 
 /* Useful macros used in several places */

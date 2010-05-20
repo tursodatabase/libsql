@@ -113,6 +113,9 @@ int sqlite3OsShmRelease(sqlite3_file *id){
 int sqlite3OsShmLock(sqlite3_file *id, int desiredLock, int *pGotLock){
   return id->pMethods->xShmLock(id, desiredLock, pGotLock);
 }
+void sqlite3OsShmBarrier(sqlite3_file *id){
+  id->pMethods->xShmBarrier(id);
+}
 int sqlite3OsShmClose(sqlite3_file *id, int deleteFlag){
   return id->pMethods->xShmClose(id, deleteFlag);
 }

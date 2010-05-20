@@ -2078,12 +2078,27 @@ static int winShmLock(
   return rc;
 }
 
+/*
+** Implement a memory barrier or memory fence on shared memory.  
+**
+** All loads and stores begun before the barrier must complete before
+** any load or store begun after the barrier.
+*/
+static void winShmBarrier(
+  sqlite3_file *fd          /* Database holding the shared memory */
+){
+  /* MemoryBarrier(); // does not work -- do not know why not */
+  winShmEnterMutex();
+  winShmLeaveMutex();
+}
+
 #else
 # define winShmOpen    0
 # define winShmSize    0
 # define winShmGet     0
 # define winShmRelease 0
 # define winShmLock    0
+# define winShmBarrier 0
 # define winShmClose   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 /*
@@ -2113,6 +2128,7 @@ static const sqlite3_io_methods winIoMethod = {
   winShmGet,               /* xShmGet */
   winShmRelease,           /* xShmRelease */
   winShmLock,              /* xShmLock */
+  winShmBarrier,           /* xShmBarrier */
   winShmClose              /* xShmClose */
 };
 

@@ -25,11 +25,11 @@ proc set_tvfs_hdr {file args} {
 
   set blob [tvfs shm $file]
   if {[llength $args]} {
-    set blob [binary format i8a* [lindex $args 0] [string range $blob 32 end]]
+    set blob [binary format i16a* [lindex $args 0] [string range $blob 64 end]]
     tvfs shm $file $blob
   }
 
-  binary scan $blob i8 ints
+  binary scan $blob i16 ints
   return $ints
 }
 

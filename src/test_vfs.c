@@ -103,6 +103,7 @@ static int tvfsShmSize(sqlite3_file*, int , int *);
 static int tvfsShmGet(sqlite3_file*, int , int *, volatile void **);
 static int tvfsShmRelease(sqlite3_file*);
 static int tvfsShmLock(sqlite3_file*, int , int *);
+static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
 
 static sqlite3_io_methods tvfs_io_methods = {
@@ -124,6 +125,7 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsShmGet,                     /* xShmGet */
   tvfsShmRelease,                 /* xShmRelease */
   tvfsShmLock,                    /* xShmLock */
+  tvfsShmBarrier,                 /* xShmBarrier */
   tvfsShmClose                    /* xShmClose */
 };
 
@@ -269,6 +271,7 @@ static int tvfsOpen(
       pMethods->xShmRelease = 0;
       pMethods->xShmClose = 0;
       pMethods->xShmLock = 0;
+      pMethods->xShmBarrier = 0;
     }
     pFile->pMethods = pMethods;
   }
@@ -567,6 +570,17 @@ static int tvfsShmLock(
   }
 
   return rc;
+}
+
+static void tvfsShmBarrier(sqlite3_file *pFile){
+  int rc = SQLITE_OK;
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
+
+  tvfsExecTcl(p, "xShmBarrier", 
+      Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
+  );
+  tvfsResultCode(p, &rc);
 }
 
 static int tvfsShmClose(
