@@ -3046,9 +3046,11 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       return SQLITE_OK;
     }
     case SQLITE_FCNTL_SIZE_HINT: {
+#if 0 /* No performance advantage seen on Linux */
       sqlite3_int64 szFile = *(sqlite3_int64*)pArg;
       unixFile *pFile = (unixFile*)id;
       ftruncate(pFile->h, szFile);
+#endif
       return SQLITE_OK;
     }
 #ifndef NDEBUG
