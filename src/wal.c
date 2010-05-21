@@ -1126,7 +1126,7 @@ int sqlite3WalClose(
 */
 int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2];               /* Checksum on the header content */
-  WalIndexHdr hdr1, hdr2;      /* Two copies of the header content */
+  WalIndexHdr h1, h2;          /* Two copies of the header content */
   WalIndexHdr *aHdr;           /* Header in shared memory */
 
   assert( pWal->pWiData );
@@ -1142,25 +1142,31 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** (WRITE, PENDING, CHECKPOINT or RECOVER) lock on the wal-index
   ** file, meaning it is possible that an inconsistent snapshot is read
   ** from the file. If this happens, return non-zero.
+  **
+  ** There are two copies of the header at the beginning of the wal-index.
+  ** When reading, read [0] first then [1].  Writes are in the reverse order.
+  ** Memory barriers are used to prevent the compiler or the hardware from
+  ** reordering the reads and writes.
   */
   aHdr = (WalIndexHdr*)pWal->pWiData;
-  memcpy(&hdr1, &aHdr[0], sizeof(hdr1));
+  memcpy(&h1, &aHdr[0], sizeof(h1));
   sqlite3OsShmBarrier(pWal->pDbFd);
-  memcpy(&hdr2, &aHdr[1], sizeof(hdr2));
+  memcpy(&h2, &aHdr[1], sizeof(h2));
 
-  if( memcmp(&hdr1, &hdr2, sizeof(hdr1))!=0 ){
-    /* Dirty read */
-    return 1;
+  if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
+    return 1;   /* Dirty read */
   }  
-  walChecksumBytes((u8*)&hdr1, sizeof(hdr1)-sizeof(hdr1.aCksum), 0, aCksum);
-  if( aCksum[0]!=hdr1.aCksum[0] || aCksum[1]!=hdr1.aCksum[1] ){
-    /* Malformed header */
-    return 1;
+  if( h1.szPage==0 ){
+    return 1;   /* Malformed header - probably all zeros */
+  }
+  walChecksumBytes((u8*)&h1, sizeof(h1)-sizeof(h1.aCksum), 0, aCksum);
+  if( aCksum[0]!=h1.aCksum[0] || aCksum[1]!=h1.aCksum[1] ){
+    return 1;   /* Checksum does not match */
   }
 
-  if( memcmp(&pWal->hdr, &hdr1, sizeof(WalIndexHdr)) ){
+  if( memcmp(&pWal->hdr, &h1, sizeof(WalIndexHdr)) ){
     *pChanged = 1;
-    memcpy(&pWal->hdr, &hdr1, sizeof(WalIndexHdr));
+    memcpy(&pWal->hdr, &h1, sizeof(WalIndexHdr));
     pWal->szPage = pWal->hdr.szPage;
   }
 
