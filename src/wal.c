@@ -1491,7 +1491,7 @@ static void walClearHash(Wal *pWal, u32 iOldMx, u32 iNewMx){
     iLimit = iNewMx - iZero;
     if( iLimit>0 ){
       int i;                      /* Used to iterate through aHash[] */
-      for(i=1; i<=HASHTABLE_NPAGE; i++){
+      for(i=0; i<HASHTABLE_NPAGE; i++){
         if( aHash[i]>iLimit ){
           aHash[i] = 0;
         }
