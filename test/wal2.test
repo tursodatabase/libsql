@@ -600,7 +600,32 @@ do_test wal2-6.5.2 {
 do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
 } {}
-
 db close
 
+#-------------------------------------------------------------------------
+# Test a theory about the checksum algorithm. Theory was false and this
+# test did not provoke a bug.
+file delete -force test.db test.db-wal test.db-journal
+do_test wal2-7.1.1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA page_size = 4096;
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b);
+  }
+  file size test.db
+} {4096}
+do_test wal2-7.1.2 {
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  hexio_write test2.db-wal 48 FF
+} {1}
+do_test wal2-7.1.3 {
+  sqlite3 db2 test2.db
+  execsql { PRAGMA wal_checkpoint } db2
+  execsql { SELECT * FROM sqlite_master } db2
+} {}
+db2 close
+
 finish_test
+

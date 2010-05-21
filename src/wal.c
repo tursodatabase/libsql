@@ -193,8 +193,9 @@
 ** second reader using K1 will see additional values that were inserted
 ** later, which is exactly what reader two wants.  
 **
-** When a rollback occurs, the value of K is decreased.  This has the
-** effect of automatically removing entries from the hash table.
+** When a rollback occurs, the value of K is decreased. Hash table entries
+** that correspond to frames greater than the new K value are removed
+** from the hash table at this point.
 */
 #ifndef SQLITE_OMIT_WAL
 
@@ -644,10 +645,10 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
 
     walHashFind(pWal, iFrame, &aHash, &aPgno, &iZero);
     idx = iFrame - iZero;
-    if( idx==1 ) memset((void*)aHash, 0xff, HASHTABLE_NBYTE);
+    if( idx==1 ) memset((void*)aHash, 0, HASHTABLE_NBYTE);
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
     aPgno[iFrame] = iPage;
-    for(iKey=walHash(iPage); aHash[iKey]<idx; iKey=walNextHash(iKey)){
+    for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
       assert( nCollide++ < idx );
     }
     aHash[iKey] = idx;
@@ -1382,9 +1383,9 @@ int sqlite3WalRead(
     walHashFind(pWal, iHash, &aHash, &aPgno, &iZero);
     mxHash = iLast - iZero;
     if( mxHash > HASHTABLE_NPAGE )  mxHash = HASHTABLE_NPAGE;
-    for(iKey=walHash(pgno); aHash[iKey]<=mxHash; iKey=walNextHash(iKey)){
+    for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( ALWAYS(iFrame<=iLast) && aPgno[iFrame]==pgno && iFrame>iRead ){
+      if( iFrame<=iLast && aPgno[iFrame]==pgno && iFrame>iRead ){
         iRead = iFrame;
       }
     }
@@ -1466,6 +1467,40 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 }
 
 /*
+** Remove entries from zero or more hash-table indexes in the wal-index 
+** file.
+**
+** This function is called when rolling back a transaction or savepoint
+** transaction in WAL mode. Argument iNewMx is the value that 
+** Wal.hdr.mxFrame will be set to following the rollback. Argument iOldMx
+** is the value that it had before the rollback. This function removes 
+** entries that refer to frames with frame numbers greater than iNewMx 
+** from the hash table that contains the entry associated with iNewMx.
+** It is not necessary to remove any entries from any subsequent hash
+** tables, as they will be zeroed by walIndexAppend() before they are
+** next used.
+*/
+static void walClearHash(Wal *pWal, u32 iOldMx, u32 iNewMx){
+  if( iOldMx>iNewMx ){
+    volatile HASHTABLE_DATATYPE *aHash;     /* Pointer to hash table to clear */
+    volatile u32 *unused1;                  /* Only to satisfy walHashFind() */
+    u32 iZero;                              /* frame == (aHash[x]+iZero) */
+    int iLimit;                             /* Zero values greater than this */
+
+    walHashFind(pWal, iNewMx+1, &aHash, &unused1, &iZero);
+    iLimit = iNewMx - iZero;
+    if( iLimit>0 ){
+      int i;                      /* Used to iterate through aHash[] */
+      for(i=1; i<=HASHTABLE_NPAGE; i++){
+        if( aHash[i]>iLimit ){
+          aHash[i] = 0;
+        }
+      }
+    }
+  }
+}
+
+/*
 ** If any data has been written (but not committed) to the log file, this
 ** function moves the write-pointer back to the start of the transaction.
 **
@@ -1490,6 +1525,9 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       assert( pWal->lockState==SQLITE_SHM_WRITE );
       rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
     }
+    if( rc==SQLITE_OK ){
+      walClearHash(pWal, iMax, pWal->hdr.mxFrame);
+    }
     walIndexUnmap(pWal);
   }
   return rc;
@@ -1510,6 +1548,11 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
   int rc = SQLITE_OK;
   assert( pWal->lockState==SQLITE_SHM_WRITE );
 
+  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
+  if( rc==SQLITE_OK ){
+    walClearHash(pWal, pWal->hdr.mxFrame, iFrame);
+    walIndexUnmap(pWal);
+  }
   pWal->hdr.mxFrame = iFrame;
   return rc;
 }
