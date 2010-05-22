@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sseveral\sEXPENSIVE_ASSERT\scode\sblocks\sto\svalidate\sthe\swal-index\shash\stable.\nFix\sthe\sbugs\sthat\sthese\scode\sblocks\sfine.\s\sRename\swalClearHash()\sto\s\nwalCleanupHash()\sand\ssimplify\sits\sinterface.
-D 2010-05-22T00:55:40
+C Add\sa\scouple\sof\smissing\smethods\sto\stest_osinst.c..
+D 2010-05-22T08:22:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -204,7 +201,7 @@ F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 4ce8c753c0240f010f0f2af89604875967d20945
-F src/test_osinst.c 9cac3f764c065a0ef9d341fffae0c29d6373dc82
+F src/test_osinst.c 77e9fc304bc9c825fb4b6c7e396d4d3f23c101b4
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -816,14 +813,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 40f80ffe70ca691dfa146f6d84956ed0784fc63d
-R 524fa1e4249768664dfa82575a2741a4
-U drh
-Z 028b5cd7fb9973ef295584c4a0b1ec8f
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL9yuPoxKgR168RlERAnVbAJ48JgsskKwH9nQ/ST9nadbql9iCqQCggJCz
-rLTdl7W6OQ9+Vg0rmcQfA+4=
-=Wnao
------END PGP SIGNATURE-----
+P 7aade899e55f4565f02d301e1e83fb0bac2ea500
+R cf1514dd18e6972433d06e5339115fa6
+U dan
+Z 8423981b7570a11d3c3148c90911df31

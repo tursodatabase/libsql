@@ -17,10 +17,15 @@
 
 /*
 ** This module contains code for a wrapper VFS that causes a log of
-** all (well, technically "most") VFS calls to be written into a nominated
-** file on disk. The log is stored in a compressed binary format to 
-** reduce the amount of IO overhead introduced into the application
-** by logging.
+** most VFS calls to be written into a nominated file on disk. The log 
+** is stored in a compressed binary format to reduce the amount of IO 
+** overhead introduced into the application by logging.
+**
+** All calls on sqlite3_file objects except xFileControl() are logged.
+** Additionally, calls to the xAccess(), xOpen(), xDelete() and xRename() 
+** methods are logged. The other sqlite3_vfs object methods (xDlXXX,
+** xRandomness, xSleep, xCurrentTime, xGetLastError and xCurrentTimeInt64) 
+** are not logged.
 **
 ** The binary log files are read using a virtual table implementation
 ** also contained in this file. 
@@ -169,6 +174,10 @@ static int vfslogRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int vfslogSleep(sqlite3_vfs*, int microseconds);
 static int vfslogCurrentTime(sqlite3_vfs*, double*);
 
+static int vfslogGetLastError(sqlite3_vfs*, int, char *);
+static int vfslogRename(sqlite3_vfs*, const char *, const char *, int);
+static int vfslogCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
+
 static sqlite3_vfs vfslog_vfs = {
   1,                              /* iVersion */
   sizeof(VfslogFile),             /* szOsFile */
@@ -187,6 +196,9 @@ static sqlite3_vfs vfslog_vfs = {
   vfslogRandomness,               /* xRandomness */
   vfslogSleep,                    /* xSleep */
   vfslogCurrentTime,              /* xCurrentTime */
+  vfslogGetLastError,             /* xGetLastError */
+  vfslogRename,                   /* xRename */
+  vfslogCurrentTimeInt64          /* xCurrentTime */
 };
 
 static sqlite3_io_methods vfslog_io_methods = {
@@ -608,6 +620,16 @@ static int vfslogSleep(sqlite3_vfs *pVfs, int nMicro){
 */
 static int vfslogCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return REALVFS(pVfs)->xCurrentTime(REALVFS(pVfs), pTimeOut);
+}
+
+static int vfslogGetLastError(sqlite3_vfs *pVfs, int a, char *b){
+  return REALVFS(pVfs)->xGetLastError(REALVFS(pVfs), a, b);
+}
+static int vfslogRename(sqlite3_vfs *pVfs, const char *a, const char *b, int c){
+  return REALVFS(pVfs)->xRename(REALVFS(pVfs), a, b, c);
+}
+static int vfslogCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *p){
+  return REALVFS(pVfs)->xCurrentTimeInt64(REALVFS(pVfs), p);
 }
 
 static void vfslog_flush(VfslogVfs *p){
