@@ -877,6 +877,7 @@ static void dequote(char *z){
   }
 }
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
 /*
 ** Connect to or create a vfslog virtual table.
 */
@@ -1115,7 +1116,7 @@ int sqlite3_vfslog_register(sqlite3 *db){
   sqlite3_create_module(db, "vfslog", &vfslog_module, 0);
   return SQLITE_OK;
 }
-
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
 
 /**************************************************************************
 ***************************************************************************
@@ -1210,17 +1211,23 @@ static int test_vfslog(
         Tcl_WrongNumArgs(interp, 2, objv, "DB");
         return TCL_ERROR;
       }
+#ifdef SQLITE_OMIT_VIRTUALTABLE
+      Tcl_AppendResult(interp, "vfslog not available because of "
+                               "SQLITE_OMIT_VIRTUALTABLE", (void*)0);
+      return TCL_ERROR;
+#else
       zDb = Tcl_GetString(objv[2]);
       if( Tcl_GetCommandInfo(interp, zDb, &cmdInfo) ){
         db = ((struct SqliteDb*)cmdInfo.objClientData)->db;
         rc = sqlite3_vfslog_register(db);
       }
       if( rc!=SQLITE_OK ){
-        Tcl_AppendResult(interp, "Bad sqlite3 handle: ", zDb, 0);
+        Tcl_AppendResult(interp, "bad sqlite3 handle: ", zDb, (void*)0);
         return TCL_ERROR;
       }
       break;
-    };
+#endif
+    }
   }
 
   return TCL_OK;
