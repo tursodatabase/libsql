@@ -221,7 +221,7 @@ struct PagerSavepoint {
   Bitvec *pInSavepoint;        /* Set of pages in this savepoint */
   Pgno nOrig;                  /* Original number of pages in file */
   Pgno iSubRec;                /* Index of first record in sub-journal */
-  u32 iFrame;                  /* Last frame in WAL when savepoint opened */
+  u32 aWalData[WAL_SAVEPOINT_NDATA];        /* WAL savepoint context */
 };
 
 /*
@@ -2567,7 +2567,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     i64 offset = pSavepoint->iSubRec*(4+pPager->pageSize);
 
     if( pagerUseWal(pPager) ){
-      rc = sqlite3WalSavepointUndo(pPager->pWal, pSavepoint->iFrame);
+      rc = sqlite3WalSavepointUndo(pPager->pWal, pSavepoint->aWalData);
     }
     for(ii=pSavepoint->iSubRec; rc==SQLITE_OK && ii<pPager->nSubRec; ii++){
       assert( offset==ii*(4+pPager->pageSize) );
@@ -5448,7 +5448,7 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
         return SQLITE_NOMEM;
       }
       if( pagerUseWal(pPager) ){
-        aNew[ii].iFrame = sqlite3WalSavepoint(pPager->pWal);
+        sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
       }
     }
 

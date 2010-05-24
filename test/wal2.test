@@ -19,17 +19,24 @@ source $testdir/lock_common.tcl
 ifcapable !wal {finish_test ; return }
 
 proc set_tvfs_hdr {file args} {
+
+  # Set $nHdr to the number of bytes in the wal-index header:
+  set nHdr 80
+  set nInt [expr {$nHdr/4}]
+
   if {[llength $args]>1} {
     return -code error {wrong # args: should be "set_tvfs_hdr fileName ?val?"}
   }
 
   set blob [tvfs shm $file]
   if {[llength $args]} {
-    set blob [binary format i16a* [lindex $args 0] [string range $blob 64 end]]
+    set blob [
+      binary format i${nInt}a* [lindex $args 0] [string range $blob $nHdr end]
+    ]
     tvfs shm $file $blob
   }
 
-  binary scan $blob i16 ints
+  binary scan $blob i${nInt} ints
   return $ints
 }
 

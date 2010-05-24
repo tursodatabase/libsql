@@ -28,12 +28,14 @@
 # define sqlite3WalDbsize(y,z)
 # define sqlite3WalWriteLock(y,z)          0
 # define sqlite3WalUndo(x,y,z)             0
-# define sqlite3WalSavepoint(z)            0
+# define sqlite3WalSavepoint(y,z)
 # define sqlite3WalSavepointUndo(y,z)      0
 # define sqlite3WalFrames(u,v,w,x,y,z)     0
 # define sqlite3WalCheckpoint(u,v,w,x,y,z) 0
 # define sqlite3WalCallback(z)             0
 #else
+
+#define WAL_SAVEPOINT_NDATA 3
 
 /* Connection to a write-ahead log (WAL) file. 
 ** There is one object of this type for each pager. 
@@ -69,11 +71,11 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx);
 
 /* Return an integer that records the current (uncommitted) write
 ** position in the WAL */
-u32 sqlite3WalSavepoint(Wal *pWal);
+void sqlite3WalSavepoint(Wal *pWal, u32 *aWalData);
 
 /* Move the write position of the WAL back to iFrame.  Called in
 ** response to a ROLLBACK TO command. */
-int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame);
+int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData);
 
 /* Write a frame or frames to the log. */
 int sqlite3WalFrames(Wal *pWal, int, PgHdr *, Pgno, int, int);

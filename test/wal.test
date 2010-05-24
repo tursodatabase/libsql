@@ -1348,7 +1348,8 @@ foreach {tn pgsz works} {
       set framehdr  [binary format IIII $pg 5 22 23]
       set c1 0
       set c2 0
-      logcksum c1 c2 $framehdr
+      logcksum c1 c2 $walhdr
+      logcksum c1 c2 [string range $framehdr 0 7]
       logcksum c1 c2 $framebody
       set framehdr [binary format IIIIII $pg 5 22 23 $c1 $c2]
 

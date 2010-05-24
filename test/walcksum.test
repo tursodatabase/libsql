@@ -62,18 +62,13 @@ proc readfile {filename} {
 #
 proc log_checksum_verify {filename iFrame endian} {
   set data [readfile $filename]
-  set c1 0
-  set c2 0
-  
-  binary scan [string range $data 8 11] I pgsz
 
-  set n [log_file_size [expr $iFrame-1] $pgsz]
-  binary scan [string range $data [expr $n+16] [expr $n+23]] II expect1 expect2
-  log_cksum $endian c1 c2 [string range $data $n [expr $n+15]]
-  log_cksum $endian c1 c2 [string range $data [expr $n+24] [expr $n+24+$pgsz-1]]
+  foreach {offset c1 c2} [log_checksum_calc $data $iFrame $endian] {}
 
+  binary scan [string range $data $offset [expr $offset+7]] II expect1 expect2
   set expect1 [expr $expect1&0xFFFFFFFF]
   set expect2 [expr $expect2&0xFFFFFFFF]
+
   expr {$c1==$expect1 && $c2==$expect2}
 }
 
@@ -85,22 +80,35 @@ proc log_checksum_verify {filename iFrame endian} {
 #
 proc log_checksum_write {filename iFrame endian} {
   set data [readfile $filename]
-  set c1 0
-  set c2 0
-  
-  binary scan [string range $data 8 11] I pgsz
 
-  set n [log_file_size [expr $iFrame-1] $pgsz]
-  log_cksum $endian c1 c2 [string range $data $n [expr $n+15]]
-  log_cksum $endian c1 c2 [string range $data [expr $n+24] [expr $n+24+$pgsz-1]]
+  foreach {offset c1 c2} [log_checksum_calc $data $iFrame $endian] {}
 
   set bin [binary format II $c1 $c2]
   set fd [open $filename r+]
   fconfigure $fd -encoding binary
   fconfigure $fd -translation binary
-  seek $fd [expr $n+16]
+  seek $fd $offset
   puts -nonewline $fd $bin
   close $fd
+}
+
+proc log_checksum_calc {data iFrame endian} {
+  
+  binary scan [string range $data 8 11] I pgsz
+  if {$iFrame > 1} {
+    set n [log_file_size [expr $iFrame-2] $pgsz]
+    binary scan [string range $data [expr $n+16] [expr $n+23]] II c1 c2
+  } else {
+    set c1 0
+    set c2 0
+    log_cksum $endian c1 c2 [string range $data 0 23]
+  }
+
+  set n [log_file_size [expr $iFrame-1] $pgsz]
+  log_cksum $endian c1 c2 [string range $data $n [expr $n+7]]
+  log_cksum $endian c1 c2 [string range $data [expr $n+24] [expr $n+24+$pgsz-1]]
+
+  list [expr $n+16] $c1 $c2
 }
 
 #
@@ -180,6 +188,7 @@ foreach endian {big little} {
   # Replace all checksums in the current WAL file with $endian versions.
   # Then check that it is still possible to recover and read the database.
   #
+  log_checksum_writemagic test2.db-wal $endian
   for {set f 1} {$f <= 6} {incr f} {
     do_test walcksum-1.$endian.3.$f {
       log_checksum_write test2.db-wal $f $endian
@@ -187,7 +196,6 @@ foreach endian {big little} {
     } {1}
   }
   do_test walcksum-1.$endian.4.1 {
-    log_checksum_writemagic test2.db-wal $endian
     file copy -force test2.db test.db
     file copy -force test2.db-wal test.db-wal
     sqlite3 db test.db
@@ -263,7 +271,7 @@ foreach endian {big little} {
   } {1}
   do_test walcksum-1.$endian.8.3 {
     log_checksum_verify test.db-wal 3 $native
-  } [expr {$native == $endian}]
+  } {0}
 
   do_test walcksum-1.$endian.9 {
     execsql { 
@@ -275,5 +283,46 @@ foreach endian {big little} {
   catch { db close }
   catch { db2 close }
 }
+
+do_test walcksum-2.1 {
+  file delete -force test.db test.db-wal test.db-journal
+  sqlite3 db test.db
+  execsql {
+    PRAGMA synchronous = NORMAL;
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+    PRAGMA cache_size = 10;
+    CREATE TABLE t1(x PRIMARY KEY);
+    PRAGMA wal_checkpoint;
+    INSERT INTO t1 VALUES(randomblob(800));
+    BEGIN;
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*   2 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*   4 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*   8 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*  16 */
+      SAVEPOINT one;
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*  32 */
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*  64 */
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   /* 128 */
+        INSERT INTO t1 SELECT randomblob(800) FROM t1;   /* 256 */
+      ROLLBACK TO one;
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*  32 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /*  64 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /* 128 */
+      INSERT INTO t1 SELECT randomblob(800) FROM t1;   /* 256 */
+    COMMIT;
+  }
+
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+
+  sqlite3 db2 test2.db
+  execsql {
+    PRAGMA integrity_check;
+    SELECT count(*) FROM t1;
+  } db2
+} {ok 256}
+catch { db close }
+catch { db2 close }
 
 finish_test

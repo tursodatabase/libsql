@@ -214,13 +214,14 @@ typedef struct WalIterator WalIterator;
 ** object.
 */
 struct WalIndexHdr {
-  u32 iChange;      /* Counter incremented each transaction */
-  u16 bigEndCksum;  /* True if checksums in WAL are big-endian */
-  u16 szPage;       /* Database page size in bytes */
-  u32 mxFrame;      /* Index of last valid frame in the WAL */
-  u32 nPage;        /* Size of database in pages */
-  u32 aSalt[2];     /* Salt-1 and salt-2 values copied from WAL header */
-  u32 aCksum[2];    /* Checksum over all prior fields */
+  u32 iChange;                    /* Counter incremented each transaction */
+  u16 bigEndCksum;                /* True if checksums in WAL are big-endian */
+  u16 szPage;                     /* Database page size in bytes */
+  u32 mxFrame;                    /* Index of last valid frame in the WAL */
+  u32 nPage;                      /* Size of database in pages */
+  u32 aFrameCksum[2];             /* Checksum of last frame in log */
+  u32 aSalt[2];                   /* Two salt values copied from WAL header */
+  u32 aCksum[2];                  /* Checksum over all prior fields */
 };
 
 /* A block of WALINDEX_LOCK_RESERVED bytes beginning at
@@ -424,14 +425,14 @@ static void walEncodeFrame(
   u8 *aFrame                      /* OUT: Write encoded frame here */
 ){
   int nativeCksum;                /* True for native byte-order checksums */
-  u32 aCksum[2];
+  u32 *aCksum = pWal->hdr.aFrameCksum;
   assert( WAL_FRAME_HDRSIZE==24 );
   sqlite3Put4byte(&aFrame[0], iPage);
   sqlite3Put4byte(&aFrame[4], nTruncate);
   memcpy(&aFrame[8], pWal->hdr.aSalt, 8);
 
   nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
-  walChecksumBytes(nativeCksum, aFrame, 16, 0, aCksum);
+  walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
   walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
 
   sqlite3Put4byte(&aFrame[16], aCksum[0]);
@@ -451,8 +452,8 @@ static int walDecodeFrame(
   u8 *aFrame                      /* Frame data */
 ){
   int nativeCksum;                /* True for native byte-order checksums */
+  u32 *aCksum = pWal->hdr.aFrameCksum;
   u32 pgno;                       /* Page number of the frame */
-  u32 aCksum[2];
   assert( WAL_FRAME_HDRSIZE==24 );
 
   /* A frame is only valid if the salt values in the frame-header
@@ -474,7 +475,7 @@ static int walDecodeFrame(
   ** the checksum in the last 8 bytes of the frame-header.
   */
   nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
-  walChecksumBytes(nativeCksum, aFrame, 16, 0, aCksum);
+  walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
   walChecksumBytes(nativeCksum, aData, pWal->szPage, aCksum, aCksum);
   if( aCksum[0]!=sqlite3Get4byte(&aFrame[16]) 
    || aCksum[1]!=sqlite3Get4byte(&aFrame[20]) 
@@ -739,10 +740,10 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
 static int walIndexRecover(Wal *pWal){
   int rc;                         /* Return Code */
   i64 nSize;                      /* Size of log file */
-  WalIndexHdr hdr;                /* Recovered wal-index header */
+  u32 aFrameCksum[2] = {0, 0};
 
   assert( pWal->lockState>SQLITE_SHM_READ );
-  memset(&hdr, 0, sizeof(hdr));
+  memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
 
   rc = sqlite3OsFileSize(pWal->pWalFd, &nSize);
   if( rc!=SQLITE_OK ){
@@ -779,10 +780,13 @@ static int walIndexRecover(Wal *pWal){
     ){
       goto finished;
     }
-    hdr.bigEndCksum = pWal->hdr.bigEndCksum = (magic&0x00000001);
+    pWal->hdr.bigEndCksum = (magic&0x00000001);
     pWal->szPage = szPage;
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
     memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
+    walChecksumBytes(pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN, 
+        aBuf, WAL_HDRSIZE, 0, pWal->hdr.aFrameCksum
+    );
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
@@ -809,23 +813,24 @@ static int walIndexRecover(Wal *pWal){
 
       /* If nTruncate is non-zero, this is a commit record. */
       if( nTruncate ){
-        hdr.mxFrame = iFrame;
-        hdr.nPage = nTruncate;
-        hdr.szPage = szPage;
+        pWal->hdr.mxFrame = iFrame;
+        pWal->hdr.nPage = nTruncate;
+        pWal->hdr.szPage = szPage;
+        aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
+        aFrameCksum[1] = pWal->hdr.aFrameCksum[1];
       }
     }
 
     sqlite3_free(aFrame);
-  }else{
-    memset(&hdr, 0, sizeof(hdr));
   }
 
 finished:
-  if( rc==SQLITE_OK && hdr.mxFrame==0 ){
+  if( rc==SQLITE_OK && pWal->hdr.mxFrame==0 ){
     rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
   }
   if( rc==SQLITE_OK ){
-    memcpy(&pWal->hdr, &hdr, sizeof(hdr));
+    pWal->hdr.aFrameCksum[0] = aFrameCksum[0];
+    pWal->hdr.aFrameCksum[1] = aFrameCksum[1];
     walIndexWriteHdr(pWal);
   }
   return rc;
@@ -1626,25 +1631,35 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   return rc;
 }
 
-/* Return an integer that records the current (uncommitted) write
-** position in the WAL
+/* 
+** Argument aWalData must point to an array of WAL_SAVEPOINT_NDATA u32 
+** values. This function populates the array with values required to 
+** "rollback" the write position of the WAL handle back to the current 
+** point in the event of a savepoint rollback (via WalSavepointUndo()).
 */
-u32 sqlite3WalSavepoint(Wal *pWal){
+void sqlite3WalSavepoint(Wal *pWal, u32 *aWalData){
   assert( pWal->lockState==SQLITE_SHM_WRITE );
-  return pWal->hdr.mxFrame;
+  aWalData[0] = pWal->hdr.mxFrame;
+  aWalData[1] = pWal->hdr.aFrameCksum[0];
+  aWalData[2] = pWal->hdr.aFrameCksum[1];
 }
 
-/* Move the write position of the WAL back to iFrame.  Called in
-** response to a ROLLBACK TO command.
+/* 
+** Move the write position of the WAL back to the point identified by
+** the values in the aWalData[] array. aWalData must point to an array
+** of WAL_SAVEPOINT_NDATA u32 values that has been previously populated
+** by a call to WalSavepoint().
 */
-int sqlite3WalSavepointUndo(Wal *pWal, u32 iFrame){
+int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
   int rc = SQLITE_OK;
   assert( pWal->lockState==SQLITE_SHM_WRITE );
 
-  assert( iFrame<=pWal->hdr.mxFrame );
-  if( iFrame<pWal->hdr.mxFrame ){
+  assert( aWalData[0]<=pWal->hdr.mxFrame );
+  if( aWalData[0]<pWal->hdr.mxFrame ){
     rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
-    pWal->hdr.mxFrame = iFrame;
+    pWal->hdr.mxFrame = aWalData[0];
+    pWal->hdr.aFrameCksum[0] = aWalData[1];
+    pWal->hdr.aFrameCksum[1] = aWalData[2];
     if( rc==SQLITE_OK ){
       walCleanupHash(pWal);
       walIndexUnmap(pWal);
@@ -1694,6 +1709,7 @@ int sqlite3WalFrames(
     if( rc!=SQLITE_OK ){
       return rc;
     }
+    walChecksumBytes(1, aWalHdr, sizeof(aWalHdr), 0, pWal->hdr.aFrameCksum);
   }
   assert( pWal->szPage==szPage );
 
