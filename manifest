@@ -1,5 +1,8 @@
-C Change\sthe\schecksum\sused\sin\sWAL\sfiles\sso\sthat\seach\sframes\schecksum\sdepends\son\sthe\scontent\sof\sthe\sWAL\sheader\sand\sall\sframe\sheaders\sand\scontent\sup\sto\sand\sincluding\sthe\sframe\sto\swhich\sthe\schecksum\sis\sattached.
-D 2010-05-24T13:57:43
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sthe\swal2.test\sscript\sso\sthat\sit\sworks\sin\sauto_vacuum\smode.
+D 2010-05-24T17:00:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -762,7 +765,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test be8ef043253ca735ffcabb92a7dac2d79ebfe8c1
-F test/wal2.test d9a50d1b2e0f0735b8a21538631100eaf845364f
+F test/wal2.test a10f52b403117c2b9a1f7a11db527c53bb684a25
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test a0712107b6a73397fc7e3f92d5b16e206caa7d3d
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
@@ -814,7 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 02d99ad4b51065c67cc7689916130774be1c4c87
-R 0b567cb4cfa023970e21a7a28609c3b9
-U dan
-Z fafe9597e653734ba29a55af1088e0f3
+P 8a53f12c83a107684b99f4a9de371b5ea3ca810a
+R 058f4e228962262c719967e3beb92a83
+U drh
+Z 666895677d7237f83acb29401d8e3c5c
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFL+rCnoxKgR168RlERAqzhAJ4jXYZS26VtMTfEllII2BV5jP7hLACfad+T
+Y2aT+rH06TqTxVoNUPVrUss=
+=wBYJ
+-----END PGP SIGNATURE-----

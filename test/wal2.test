@@ -638,6 +638,7 @@ file delete -force test.db test.db-wal test.db-journal
 do_test wal2-8.1.2 {
   sqlite3 db test.db
   execsql {
+    PRAGMA auto_vacuum=OFF;
     PRAGMA page_size = 1024;
     PRAGMA journal_mode = WAL;
     CREATE TABLE t1(x);
@@ -679,4 +680,3 @@ db2 close
 
 
 finish_test
-
