@@ -451,6 +451,7 @@ static int walDecodeFrame(
   u8 *aFrame                      /* Frame data */
 ){
   int nativeCksum;                /* True for native byte-order checksums */
+  u32 pgno;                       /* Page number of the frame */
   u32 aCksum[2];
   assert( WAL_FRAME_HDRSIZE==24 );
 
@@ -458,6 +459,13 @@ static int walDecodeFrame(
   ** match the salt values in the wal-header. 
   */
   if( memcmp(&pWal->hdr.aSalt, &aFrame[8], 8)!=0 ){
+    return 0;
+  }
+
+  /* A frame is only valid if the page number is creater than zero.
+  */
+  pgno = sqlite3Get4byte(&aFrame[0]);
+  if( pgno==0 ){
     return 0;
   }
 
@@ -478,7 +486,7 @@ static int walDecodeFrame(
   /* If we reach this point, the frame is valid.  Return the page number
   ** and the new database size.
   */
-  *piPage = sqlite3Get4byte(&aFrame[0]);
+  *piPage = pgno;
   *pnTruncate = sqlite3Get4byte(&aFrame[4]);
   return 1;
 }
