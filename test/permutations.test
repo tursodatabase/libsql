@@ -479,6 +479,9 @@ run_tests "inmemory_journal" -description {
 
   # Exclude stmt.test, which expects sub-journals to use temporary files.
   stmt.test
+
+  # WAL mode is different.
+  walmode.test
 }
 
 ifcapable mem3 {
