@@ -1200,7 +1200,9 @@ int sqlite3WalDefaultHook(
   int nFrame             /* Size of WAL */
 ){
   if( nFrame>=SQLITE_PTR_TO_INT(pClientData) ){
+    sqlite3BeginBenignMalloc();
     sqlite3_wal_checkpoint(db, zDb);
+    sqlite3EndBenignMalloc();
   }
   return SQLITE_OK;
 }

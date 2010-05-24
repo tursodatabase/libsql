@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sthe\swalmode.test\scase\sfrom\sthe\sinmemory_journal\stest\sof\s\npermutations.test.
-D 2010-05-24T20:24:39
+C OOM\serrors\sduring\san\sauto-checkpoint\sare\sbenign.
+D 2010-05-24T20:27:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -136,7 +136,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c cc62a14dd4a4e4f95ea21e762c87da14fe72e63c
+F src/main.c 5f857e9fc62cc4e39f31fecc894e43ee2498b7e0
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
@@ -817,14 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6a818afb93ca8383abb55e3835e14c74c3e3de23
-R 4f8b9552fc8c31a25dbe79657d35dcb6
+P 27ba9c21fb591190b73010ced394cc62c1edff54
+R 3195c6c6b7b2983748f5a54772528c4d
 U drh
-Z bf3f5d030faff03ab14243b2f5591f0f
+Z 3bc713b958a241bcdc7c302c193ca83a
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL+uCKoxKgR168RlERAjleAJ4w+s0N0/3AwPGQykPA0S02+4NwhQCfdKwl
-BBE5WGTbI3IE8ijYEFZix7I=
-=zcxK
+iD8DBQFL+uFDoxKgR168RlERAkYQAKCH/eoffbdqZTBhYb3dIvMptV/aiQCgixZm
+mwEmqvNEPgCoaWCLa1ms7Jg=
+=DlGb
 -----END PGP SIGNATURE-----
