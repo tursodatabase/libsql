@@ -1,5 +1,5 @@
-C Modify\swalcrash2.test\sso\sthat\sit\sworks\swith\sDEFAULT_AUTOVACUUM=1.
-D 2010-05-25T13:49:10
+C Add\sa\sbusy-handler\sto\sa\stest\scase\sin\swalthread.test\sto\sprevent\serrors.
+D 2010-05-25T15:23:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -771,7 +771,7 @@ F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
-F test/walthread.test 1a8c55cd9e3272ba0caa028d8f0ead04989a3378
+F test/walthread.test 91ccfe5e04192d2c3fc252d82b28e110a81d0d2e
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test aa44a9b29e8c9f3d7bb94a3bb3a95b31627d520d
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 40030c0739f821ea8ee188c28c579507f10448bc
-R 0090eb2cf7ec1d81115b9d5cbc667255
+P 77438882dd53ac4d98b24e2846c87a2418b4e3d8
+R 23aa9622ccc545edb898221f105012e2
 U dan
-Z 59c7b20961fbbfcd93c91e8e8f8f9d64
+Z c7d8c33ddd8471f219d4b7cf868e8343

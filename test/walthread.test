@@ -220,7 +220,6 @@ proc do_thread_test2 {args} {
   uplevel [lreplace $args 0 0 do_thread_test "$name-processes" -processes 1]
 }
 
-
 #--------------------------------------------------------------------------
 # Start 10 threads. Each thread performs both read and write 
 # transactions. Each read transaction consists of:
@@ -437,8 +436,14 @@ do_thread_test2 walthread-4 -seconds $seconds(walthread-4) -init {
 } -thread r 1 {
   # This connection only ever reads the database. Therefore the 
   # busy-handler is not required. Disable it to check that this is true.
-  db busy {}
-  while {[tt_continue]} integrity_check
+  #
+  # UPDATE: That is no longer entirely true - as we don't use a blocking
+  # lock to enter RECOVER state. Which means there is a small chance a
+  # reader can see an SQLITE_BUSY.
+  #
+  while {[tt_continue]} {
+    integrity_check
+  }
   set {} ok
 } -thread w 1 {
 
