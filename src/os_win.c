@@ -1271,7 +1271,7 @@ struct winShm {
 /*
 ** Constants used for locking
 */
-#define WIN_SHM_BASE      32        /* Byte offset of the first lock byte */
+#define WIN_SHM_BASE      80        /* Byte offset of the first lock byte */
 #define WIN_SHM_DMS       0x01      /* Mask for Dead-Man-Switch lock */
 #define WIN_SHM_A         0x10      /* Mask for region locks... */
 #define WIN_SHM_B         0x20

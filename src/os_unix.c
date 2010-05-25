@@ -3186,7 +3186,7 @@ struct unixShm {
 /*
 ** Constants used for locking
 */
-#define UNIX_SHM_BASE      32        /* Byte offset of the first lock byte */
+#define UNIX_SHM_BASE      80        /* Byte offset of the first lock byte */
 #define UNIX_SHM_DMS       0x01      /* Mask for Dead-Man-Switch lock */
 #define UNIX_SHM_A         0x10      /* Mask for region locks... */
 #define UNIX_SHM_B         0x20

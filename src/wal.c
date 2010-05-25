@@ -34,7 +34,7 @@
 ** The WAL header is 24 bytes in size and consists of the following six
 ** big-endian 32-bit unsigned integer values:
 **
-**     0: Magic number.  0x377f0682 (big endian)
+**     0: Magic number.  0x377f0682 or 0x377f0683
 **     4: File format version.  Currently 3007000
 **     8: Database page size.  Example: 1024
 **    12: Checkpoint sequence number
@@ -61,9 +61,13 @@
 **        salt values in the wal-header
 **
 **    (2) The checksum values in the final 8 bytes of the frame-header
-**        exactly match the checksum computed consecutively on
-**        (a) the first 16 bytes of the frame-header, and
-**        (b) the frame data.
+**        exactly match the checksum computed consecutively on the
+**        WAL header and the first 8 bytes and the content of all frames
+**        up to and including the current frame.
+**
+** The checksum is computed using 32-bit big-endian integers if the
+** magic number in the first 4 bytes of the WAL is 0x377f0683 and it
+** is computed using little-endian if the magic number is 0x377f0682.
 **
 ** On a checkpoint, the WAL is first VFS.xSync-ed, then valid content of the
 ** WAL is transferred into the database, then the database is VFS.xSync-ed.
@@ -946,6 +950,18 @@ int sqlite3WalOpen(
 
   assert( zDbName && zDbName[0] );
   assert( pDbFd );
+
+  /* In the amalgamation, the os_unix.c and os_win.c source files come before
+  ** this source file.  Verify that the #defines of the locking byte offsets
+  ** in os_unix.c and os_win.c agree with the WALINDEX_LOCK_OFFSET value.
+  */
+#ifdef WIN_SHM_BASE
+  assert( WIN_SHM_BASE==WALINDEX_LOCK_OFFSET );
+#endif
+#ifdef UNIX_SHM_BASE
+  assert( UNIX_SHM_BASE==WALINDEX_LOCK_OFFSET );
+#endif
+
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
