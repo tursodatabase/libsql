@@ -56,6 +56,7 @@ proc wal_file_size {nFrame pgsz} {
 do_test walcrash2-1.1 {
   execsql {
     PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = off;
     PRAGMA journal_mode = WAL;
     PRAGMA synchronous = NORMAL;
     BEGIN;

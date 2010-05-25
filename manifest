@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Update\sheader\scomments\sin\swal.c\sto\scorrectly\sdescribe\sthe\sWAL\sfile\sformat.\nUpdate\sthe\slocking\sregion\soffsets\sin\sos_unix.c\sand\sos_win.c\sand\sadd\sassert()\nstatement\sto\sverify\sthat\sthe\slocking\sregion\soffsets\sare\scorrect.
-D 2010-05-25T13:40:04
+C Modify\swalcrash2.test\sso\sthat\sit\sworks\swith\sDEFAULT_AUTOVACUUM=1.
+D 2010-05-25T13:49:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -769,7 +766,7 @@ F test/wal2.test a10f52b403117c2b9a1f7a11db527c53bb684a25
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test a0712107b6a73397fc7e3f92d5b16e206caa7d3d
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
-F test/walcrash2.test 22a3a71a83153c306f1fa2b51f98588541d5b842
+F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
 F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ed77556adcdf7011b95b9969b360269fb2ebe4e5
-R d1d0d5bbdebcfd93e05be5bb82cdf6b0
-U drh
-Z 63d8bb07d3b847ec0a884fd3ce5b83ec
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL+9M3oxKgR168RlERAp9EAJ9sX7O50F3hu2LSBgFSErDe7ZDCeQCdGj/h
-+YdECuKggMpxgNPvINVevPU=
-=HX/i
------END PGP SIGNATURE-----
+P 40030c0739f821ea8ee188c28c579507f10448bc
+R 0090eb2cf7ec1d81115b9d5cbc667255
+U dan
+Z 59c7b20961fbbfcd93c91e8e8f8f9d64
