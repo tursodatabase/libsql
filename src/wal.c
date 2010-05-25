@@ -68,6 +68,15 @@
 ** The checksum is computed using 32-bit big-endian integers if the
 ** magic number in the first 4 bytes of the WAL is 0x377f0683 and it
 ** is computed using little-endian if the magic number is 0x377f0682.
+** The checksum values are always stored in the frame header in a
+** big-endian format regardless of which byte order is used to compute
+** the checksum.  The checksum is computed by interpreting the input as
+** an even number of unsigned 32-bit integers: x[0] through x[N].  The
+** 
+**   for i from 0 to n-1 step 2:
+**     s0 += x[i] + s1;
+**     s1 += x[i+1] + s0;
+**   endfor
 **
 ** On a checkpoint, the WAL is first VFS.xSync-ed, then valid content of the
 ** WAL is transferred into the database, then the database is VFS.xSync-ed.
