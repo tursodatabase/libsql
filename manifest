@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sunreachable\scode\sassociated\swith\sWAL\sfrom\sthe\spager.
-D 2010-05-25T02:24:01
+C If\sa\swriter\sexits\sunexpectedly\sin\sthe\smiddle\sof\sa\stransaction,\shave\sthe\sfollowing\swriter\sremove\sany\swal-index\shash-table\sentries\sleft\sby\sthe\sinterrupted\stransaction.
+D 2010-05-25T10:50:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c c09f4e33aad4ec3822ef3e9626f8bd7c273542af
+F src/wal.c d75a06a34fbe9106a839f2c1d4d775d2f37f4a97
 F src/wal.h 111c6f3efd83fe2fc707b29e26431e8eff4c6f28
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -769,6 +766,7 @@ F test/wal2.test a10f52b403117c2b9a1f7a11db527c53bb684a25
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test a0712107b6a73397fc7e3f92d5b16e206caa7d3d
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
+F test/walcrash2.test 22a3a71a83153c306f1fa2b51f98588541d5b842
 F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
@@ -817,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3d252ce5d0d843e4e65beed672598e65c5745129
-R ac14f5ddc7bfde994fc5d9b9840c3b63
-U drh
-Z cf8997a16115d390b555f7bd6076c97d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFL+zTEoxKgR168RlERAggGAJwON3XhIyWJUiH+/N6YqZBaIRwrXQCbBrgM
-la8oM5lf1RPWOhEYr/CldiE=
-=tulc
------END PGP SIGNATURE-----
+P 54c1718e6d15a20414cae15895eb5e83217722e2
+R 5c5f25e7e1cef98008c39244dc94b13e
+U dan
+Z b5e4f418b379e4c3437beb0f2d82e4a1

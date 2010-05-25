@@ -660,6 +660,60 @@ static void walHashFind(
   *piZero = iZero;
 }
 
+/*
+** Remove entries from the hash table that point to WAL slots greater
+** than pWal->hdr.mxFrame.
+**
+** This function is called whenever pWal->hdr.mxFrame is decreased due
+** to a rollback or savepoint.
+**
+** At most only the very last hash table needs to be updated.  Any
+** later hash tables will be automatically cleared when pWal->hdr.mxFrame
+** advances to the point where those hash tables are actually needed.
+*/
+static void walCleanupHash(Wal *pWal){
+  volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
+  volatile u32 *aPgno;                 /* Unused return from walHashFind() */
+  u32 iZero;                           /* frame == (aHash[x]+iZero) */
+  int iLimit;                          /* Zero values greater than this */
+
+  assert( pWal->lockState==SQLITE_SHM_WRITE );
+  walHashFind(pWal, pWal->hdr.mxFrame+1, &aHash, &aPgno, &iZero);
+  iLimit = pWal->hdr.mxFrame - iZero;
+  if( iLimit>0 ){
+    int nByte;                    /* Number of bytes to zero in aPgno[] */
+    int i;                        /* Used to iterate through aHash[] */
+    for(i=0; i<HASHTABLE_NSLOT; i++){
+      if( aHash[i]>iLimit ){
+        aHash[i] = 0;
+      }
+    }
+
+    /* Zero the entries in the aPgno array that correspond to frames with
+    ** frame numbers greater than pWal->hdr.mxFrame. 
+    */
+    nByte = sizeof(u32) * (HASHTABLE_NPAGE-iLimit);
+    memset((void *)&aPgno[iZero+iLimit+1], 0, nByte);
+    assert( &((u8 *)&aPgno[iZero+iLimit+1])[nByte]==(u8 *)aHash );
+  }
+
+#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
+  /* Verify that the every entry in the mapping region is still reachable
+  ** via the hash table even after the cleanup.
+  */
+  {
+    int i;           /* Loop counter */
+    int iKey;        /* Hash key */
+    for(i=1; i<=iLimit; i++){
+      for(iKey=walHash(aPgno[i+iZero]); aHash[iKey]; iKey=walNextHash(iKey)){
+        if( aHash[iKey]==i ) break;
+      }
+      assert( aHash[iKey]==i );
+    }
+  }
+#endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
+}
+
 
 /*
 ** Set an entry in the wal-index that will map database page number
@@ -692,8 +746,22 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
 
     walHashFind(pWal, iFrame, &aHash, &aPgno, &iZero);
     idx = iFrame - iZero;
-    if( idx==1 ) memset((void*)aHash, 0, HASHTABLE_NBYTE);
+    if( idx==1 ){
+      memset((void*)&aPgno[iZero+1], 0, HASHTABLE_NPAGE*sizeof(u32));
+      memset((void*)aHash, 0, HASHTABLE_NBYTE);
+    }
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
+
+    if( aPgno[iFrame] ){
+      /* If the entry in aPgno[] is already set, then the previous writer
+      ** must have exited unexpectedly in the middle of a transaction (after
+      ** writing one or more dirty pages to the WAL to free up memory). 
+      ** Remove the remnants of that writers uncommitted transaction from 
+      ** the hash-table before writing any new entries.
+      */
+      walCleanupHash(pWal);
+      assert( !aPgno[iFrame] );
+    }
     aPgno[iFrame] = iPage;
     for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
       assert( nCollide++ < idx );
@@ -1553,52 +1621,6 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
 }
 
 /*
-** Remove entries from the hash table that point to WAL slots greater
-** than pWal->hdr.mxFrame.
-**
-** This function is called whenever pWal->hdr.mxFrame is decreased due
-** to a rollback or savepoint.
-**
-** At most only the very last hash table needs to be updated.  Any
-** later hash tables will be automatically cleared when pWal->hdr.mxFrame
-** advances to the point where those hash tables are actually needed.
-*/
-static void walCleanupHash(Wal *pWal){
-  volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
-  volatile u32 *aPgno;                 /* Unused return from walHashFind() */
-  u32 iZero;                           /* frame == (aHash[x]+iZero) */
-  int iLimit;                          /* Zero values greater than this */
-
-  assert( pWal->lockState==SQLITE_SHM_WRITE );
-  walHashFind(pWal, pWal->hdr.mxFrame+1, &aHash, &aPgno, &iZero);
-  iLimit = pWal->hdr.mxFrame - iZero;
-  if( iLimit>0 ){
-    int i;                      /* Used to iterate through aHash[] */
-    for(i=0; i<HASHTABLE_NSLOT; i++){
-      if( aHash[i]>iLimit ){
-        aHash[i] = 0;
-      }
-    }
-  }
-
-#ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
-  /* Verify that the every entry in the mapping region is still reachable
-  ** via the hash table even after the cleanup.
-  */
-  {
-    int i;           /* Loop counter */
-    int iKey;        /* Hash key */
-    for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i+iZero]); aHash[iKey]; iKey=walNextHash(iKey)){
-        if( aHash[iKey]==i ) break;
-      }
-      assert( aHash[iKey]==i );
-    }
-  }
-#endif /* SQLITE_ENABLE_EXPENSIVE_ASSERT */
-}
-
-/*
 ** If any data has been written (but not committed) to the log file, this
 ** function moves the write-pointer back to the start of the transaction.
 **
@@ -1620,11 +1642,11 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     assert( pWal->pWiData==0 );
     rc = walIndexReadHdr(pWal, &unused);
     if( rc==SQLITE_OK ){
-      walCleanupHash(pWal);
       for(iFrame=pWal->hdr.mxFrame+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
         assert( pWal->lockState==SQLITE_SHM_WRITE );
         rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
       }
+      walCleanupHash(pWal);
     }
     walIndexUnmap(pWal);
   }
