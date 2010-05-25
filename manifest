@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C OOM\serrors\sduring\san\sauto-checkpoint\sare\sbenign.
-D 2010-05-24T20:27:44
+C Remove\sunreachable\scode\sassociated\swith\sWAL\sfrom\sthe\spager.
+D 2010-05-25T02:24:01
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 35ace483789db8ede92acc46134930c2c4267645
 F src/os_win.c 1e44ee84210b59db1e098bbbc66f6dee68e20d5f
-F src/pager.c 0fbfe2ccd98cd893f3b5254a9297e153440e5e37
+F src/pager.c 5d693cc6273c5406a21f1a2afa18309457273549
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -817,14 +817,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 27ba9c21fb591190b73010ced394cc62c1edff54
-R 3195c6c6b7b2983748f5a54772528c4d
+P 3d252ce5d0d843e4e65beed672598e65c5745129
+R ac14f5ddc7bfde994fc5d9b9840c3b63
 U drh
-Z 3bc713b958a241bcdc7c302c193ca83a
+Z cf8997a16115d390b555f7bd6076c97d
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL+uFDoxKgR168RlERAkYQAKCH/eoffbdqZTBhYb3dIvMptV/aiQCgixZm
-mwEmqvNEPgCoaWCLa1ms7Jg=
-=DlGb
+iD8DBQFL+zTEoxKgR168RlERAggGAJwON3XhIyWJUiH+/N6YqZBaIRwrXQCbBrgM
+la8oM5lf1RPWOhEYr/CldiE=
+=tulc
 -----END PGP SIGNATURE-----

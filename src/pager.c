@@ -2392,18 +2392,15 @@ static int pagerOpenSnapshot(Pager *pPager){
 */
 static int pagerHasWAL(Pager *pPager, int *pExists){
   int rc;                         /* Return code */
+  char *zWal;                     /* Name of the WAL file */
 
-  if( !pPager->tempFile ){
-    char *zWal = sqlite3_mprintf("%s-wal", pPager->zFilename);
-    if( !zWal ){
-      rc = SQLITE_NOMEM;
-    }else{
-      rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
-      sqlite3_free(zWal);
-    }
+  assert( !pPager->tempFile );
+  zWal = sqlite3_mprintf("%s-wal", pPager->zFilename);
+  if( !zWal ){
+    rc = SQLITE_NOMEM;
   }else{
-    rc = SQLITE_OK;
-    *pExists = 0;
+    rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
+    sqlite3_free(zWal);
   }
   return rc;
 }
@@ -2847,6 +2844,12 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
   memset(pDest, 0, N);
   assert( isOpen(pPager->fd) || pPager->tempFile );
 
+  /* This routine is only called by btree immediately after creating
+  ** the Pager object.  There has not been an opportunity to transition
+  ** to WAL mode yet.
+  */
+  assert( !pagerUseWal(pPager) );
+#if 0
   if( pagerUseWal(pPager) ){
     int isInWal = 0;
     rc = sqlite3WalRead(pPager->pWal, 1, &isInWal, N, pDest);
@@ -2854,6 +2857,7 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
       return rc;
     }
   }
+#endif
 
   if( isOpen(pPager->fd) ){
     IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
