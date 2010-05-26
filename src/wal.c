@@ -1388,32 +1388,39 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** possible that an inconsistent header is read (which is detected
   ** using the header checksum mechanism).
   */
-  if( walIndexTryHdr(pWal, pChanged)==0 ){
-    return SQLITE_OK;
+  if( walIndexTryHdr(pWal, pChanged)!=0 ){
+
+    /* If the first attempt to read the header failed, lock the wal-index
+    ** file with an exclusive lock and try again. If the header checksum 
+    ** verification fails again, we can be sure that it is not simply a
+    ** dirty read, but that the wal-index really does need to be 
+    ** reconstructed by running log recovery.
+    **
+    ** In the paragraph above, an "exclusive lock" may be any of WRITE,
+    ** PENDING, CHECKPOINT or RECOVER. If any of these are already held,
+    ** no locking operations are required. If the caller currently holds
+    ** a READ lock, then upgrade to a RECOVER lock before re-reading the
+    ** wal-index header and revert to a READ lock before returning.
+    */
+    lockState = pWal->lockState;
+    if( lockState>SQLITE_SHM_READ
+     || SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) 
+    ){
+      if( walIndexTryHdr(pWal, pChanged) ){
+        *pChanged = 1;
+        rc = walIndexRecover(pWal);
+      }
+      if( lockState==SQLITE_SHM_READ ){
+        walSetLock(pWal, SQLITE_SHM_READ);
+      }
+    }
   }
 
-  /* If the first attempt to read the header failed, lock the wal-index
-  ** file with an exclusive lock and try again. If the header checksum 
-  ** verification fails again, we can be sure that it is not simply a
-  ** dirty read, but that the wal-index really does need to be 
-  ** reconstructed by running log recovery.
-  **
-  ** In the paragraph above, an "exclusive lock" may be any of WRITE,
-  ** PENDING, CHECKPOINT or RECOVER. If any of these are already held,
-  ** no locking operations are required. If the caller currently holds
-  ** a READ lock, then upgrade to a RECOVER lock before re-reading the
-  ** wal-index header and revert to a READ lock before returning.
-  */
-  lockState = pWal->lockState;
-  if( lockState>SQLITE_SHM_READ
-   || SQLITE_OK==(rc = walSetLock(pWal, SQLITE_SHM_RECOVER)) 
-  ){
-    if( walIndexTryHdr(pWal, pChanged) ){
-      *pChanged = 1;
-      rc = walIndexRecover(pWal);
-    }
-    if( lockState==SQLITE_SHM_READ ){
-      walSetLock(pWal, SQLITE_SHM_READ);
+  /* Make sure the mapping is large enough to cover the entire wal-index */
+  if( rc==SQLITE_OK ){
+    int szWanted = walMappingSize(pWal->hdr.mxFrame);
+    if( pWal->szWIndex<szWanted ){
+      rc = walIndexMap(pWal, szWanted);
     }
   }
 
@@ -1660,6 +1667,9 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   
     assert( pWal->pWiData==0 );
     rc = walIndexReadHdr(pWal, &unused);
+    if( rc==SQLITE_OK ){
+      rc = walIndexMap(pWal, walMappingSize(iMax));
+    }
     if( rc==SQLITE_OK ){
       for(iFrame=pWal->hdr.mxFrame+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
         assert( pWal->lockState==SQLITE_SHM_WRITE );
