@@ -1758,18 +1758,15 @@ static int winShmClose(
 }
 
 /*
-** Query and/or changes the size of the underlying storage for
-** a shared-memory segment.  The reqSize parameter is the new size
-** of the underlying storage, or -1 to do just a query.  The size
-** of the underlying storage (after resizing if resizing occurs) is
-** written into pNewSize.
+** Increase the size of the underlying storage for a shared-memory segment.
 **
-** This routine does not (necessarily) change the size of the mapping 
-** of the underlying storage into memory.  Use xShmGet() to change
-** the mapping size.
+** The reqSize parameter is the new requested minimum size of the underlying
+** shared memory.  This routine may choose to make the shared memory larger
+** than this value (for example to round the shared memory size up to an
+** operating-system dependent page size.)
 **
-** The reqSize parameter is the minimum size requested.  The implementation
-** is free to expand the storage to some larger amount if it chooses.
+** This routine will only grow the size of shared memory.  A request for
+** a smaller size is a no-op.
 */
 static int winShmSize(
   sqlite3_file *fd,         /* Database holding the shared memory */

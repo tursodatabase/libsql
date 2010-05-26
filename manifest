@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Updated\sheader\scomments\sin\swal.c.\s\sNo\sfunctional\scode\schanges.
-D 2010-05-25T15:53:32
+C Change\sthe\ssemantics\sof\sxShmGet()\ssuch\sthat\sit\swill\snever\sincrease\sthe\ssize\nof\sshared\smemory.\s\sxShmSize()\smust\sbe\sused\sto\sgrow\sthe\ssize\sof\sshared\smemory.\nA\sshared\smemory\ssegment\ssize\scannot\sbe\sshrunk\s(except\sby\sdropping\sit).
+D 2010-05-26T15:06:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,8 +155,8 @@ F src/os.c 2285265f7e8035ba77e8e8ec93adf3c3c61fc60e
 F src/os.h efcc7f0072ae362b44eab8588b43a943da61504e
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c a5771c3fcf78d0f2f5f547accff662c9bda8a32e
-F src/os_win.c e300c8f85c1be853f977e50f9292e61a396e6a33
+F src/os_unix.c 683ba91de68419771b13f2b9a3dc0e439147e199
+F src/os_win.c 81dd8f5434b3b73b1f1567a784811601b6437ce3
 F src/pager.c 5d693cc6273c5406a21f1a2afa18309457273549
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -227,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 910ec66f5ecaa5ddf11c2d621c41402c585844ad
+F src/wal.c 603f6ad6fa9a1ff400042a2aafe26ade7a2460a9
 F src/wal.h 111c6f3efd83fe2fc707b29e26431e8eff4c6f28
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -818,14 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d3d348aa975c58c37088eb2830081880896b85e7
-R 0260887750a4ff2568ebba7befa4c293
+P 687632a6b3a0aeb006c1eda5c27d5489f08c230e
+R 10265da0d50a2ddb803b6a733956f1ed
 U drh
-Z b37d90009a6b0e9be74143cbddd6561b
+Z 8953a9a318d02ec6ed8374658e58a902
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFL+/J+oxKgR168RlERAs9wAJwJ+gskjCIcTQjaf9yUnO8hh8VQAACgjW95
-h2OPmMbpiQ7QHTW3OKLS5Hc=
-=mxeE
+iD8DBQFL/TkBoxKgR168RlERAviGAJ4+8lzL8Zi3Jko72hinaOLrZV5mAgCePzCx
+pZpI8grIC+ipxJIOxg4scYk=
+=Hslv
 -----END PGP SIGNATURE-----

@@ -3602,15 +3602,12 @@ static int unixShmClose(
 }
 
 /*
-** Query and/or changes the size of the underlying storage for
-** a shared-memory segment.  The reqSize parameter is the new size
-** of the underlying storage, or -1 to do just a query.  The size
-** of the underlying storage (after resizing if resizing occurs) is
-** written into pNewSize.
+** Changes the size of the underlying storage for  a shared-memory segment.
 **
-** This routine does not (necessarily) change the size of the mapping 
-** of the underlying storage into memory.  Use xShmGet() to change
-** the mapping size.
+** The reqSize parameter is the new requested size of the shared memory.
+** This implementation is free to increase the shared memory size to
+** any amount greater than or equal to reqSize.  If the shared memory is
+** already as big or bigger as reqSize, this routine is a no-op.
 **
 ** The reqSize parameter is the minimum size requested.  The implementation
 ** is free to expand the storage to some larger amount if it chooses.
@@ -3629,23 +3626,15 @@ static int unixShmSize(
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
 
-  /* On a query, this loop runs once.  When reqSize>=0, the loop potentially
-  ** runs twice, except if the actual size is already greater than or equal
-  ** to the requested size, reqSize is set to -1 on the first iteration and
-  ** the loop only runs once.
-  */
   while( 1 ){
     if( fstat(pShmNode->h, &sStat)==0 ){
       *pNewSize = (int)sStat.st_size;
-      if( reqSize>=0 && reqSize<=(int)sStat.st_size ) break;
+      if( reqSize<=(int)sStat.st_size ) break;
     }else{
       *pNewSize = 0;
       rc = SQLITE_IOERR;
       break;
     }
-    if( reqSize<0 ) break;
-    reqSize = (reqSize + SQLITE_UNIX_SHM_INCR - 1)/SQLITE_UNIX_SHM_INCR;
-    reqSize *= SQLITE_UNIX_SHM_INCR;
     rc = ftruncate(pShmNode->h, reqSize);
     reqSize = -1;
   }
@@ -3654,10 +3643,12 @@ static int unixShmSize(
 
 
 /*
-** Map the shared storage into memory.  The minimum size of the
-** mapping should be reqMapSize if reqMapSize is positive.  If
-** reqMapSize is zero or negative, the implementation can choose
-** whatever mapping size is convenient.
+** Map the shared storage into memory. 
+**
+** If reqMapSize is positive, then an attempt is made to make the
+** mapping at least reqMapSize bytes in size.  However, the mapping
+** will never be larger than the size of the underlying shared memory
+** as set by prior calls to xShmSize().  
 **
 ** *ppBuf is made to point to the memory which is a mapping of the
 ** underlying storage.  A mutex is acquired to prevent other threads
@@ -3674,9 +3665,12 @@ static int unixShmSize(
 ** To prevent RECOVER from losing its lock while remapping, the
 ** mutex is not released by unixShmRelease() when in RECOVER.
 **
-** *pNewMapSize is set to the size of the mapping.
+** *pNewMapSize is set to the size of the mapping.  Usually *pNewMapSize
+** will be reqMapSize or larger, though it could be smaller if the
+** underlying shared memory has never been enlarged to reqMapSize bytes
+** by prior calls to xShmSize().
 **
-** *ppBuf and *pNewMapSize might be NULL and zero if no space has
+** *ppBuf might be NULL and zero if no space has
 ** yet been allocated to the underlying storage.
 */
 static int unixShmGet(
@@ -3701,17 +3695,21 @@ static int unixShmGet(
   sqlite3_mutex_enter(pShmNode->mutex);
   if( pShmNode->szMap==0 || reqMapSize>pShmNode->szMap ){
     int actualSize;
-    if( unixShmSize(fd, -1, &actualSize)==SQLITE_OK
-     && reqMapSize<actualSize
-    ){
-      reqMapSize = actualSize;
+    if( unixShmSize(fd, -1, &actualSize)!=SQLITE_OK ){
+      actualSize = 0;
     }
-    if( pShmNode->pMMapBuf ){
+    reqMapSize = actualSize;
+    if( pShmNode->pMMapBuf || reqMapSize<=0 ){
       munmap(pShmNode->pMMapBuf, pShmNode->szMap);
     }
-    pShmNode->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
-                           pShmNode->h, 0);
-    pShmNode->szMap = pShmNode->pMMapBuf ? reqMapSize : 0;
+    if( reqMapSize>0 ){
+      pShmNode->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
+                             pShmNode->h, 0);
+      pShmNode->szMap = pShmNode->pMMapBuf ? reqMapSize : 0;
+    }else{
+      pShmNode->pMMapBuf = 0;
+      pShmNode->szMap = 0;
+    }
   }
   *pNewMapSize = pShmNode->szMap;
   *ppBuf = pShmNode->pMMapBuf;

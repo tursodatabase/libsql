@@ -244,6 +244,7 @@ struct WalIndexHdr {
 */
 #define WALINDEX_LOCK_OFFSET   (sizeof(WalIndexHdr)*2)
 #define WALINDEX_LOCK_RESERVED 8
+#define WALINDEX_HDR_SIZE      (WALINDEX_LOCK_OFFSET+WALINDEX_LOCK_RESERVED)
 
 /* Size of header before each frame in wal */
 #define WAL_FRAME_HDRSIZE 24
@@ -562,15 +563,18 @@ static int walMappingSize(u32 iFrame){
 static void walIndexUnmap(Wal *pWal){
   if( pWal->pWiData ){
     sqlite3OsShmRelease(pWal->pDbFd);
-    pWal->pWiData = 0;
   }
+  pWal->pWiData = 0;
+  pWal->szWIndex = -1;
 }
 
 /*
 ** Map the wal-index file into memory if it isn't already. 
 **
-** The reqSize parameter is the minimum required size of the mapping.
-** A value of -1 means "don't care".
+** The reqSize parameter is the requested size of the mapping.  The
+** mapping will be at least this big if the underlying storage is
+** that big.  But the mapping will never grow larger than the underlying
+** storage.  Use the walIndexRemap() to enlarget the storage space.
 */
 static int walIndexMap(Wal *pWal, int reqSize){
   int rc = SQLITE_OK;
@@ -578,12 +582,6 @@ static int walIndexMap(Wal *pWal, int reqSize){
     walIndexUnmap(pWal);
     rc = sqlite3OsShmGet(pWal->pDbFd, reqSize, &pWal->szWIndex,
                              (void volatile**)(char volatile*)&pWal->pWiData);
-    if( rc==SQLITE_OK && pWal->pWiData==0 ){
-      /* Make sure pWal->pWiData is not NULL while we are holding the
-      ** lock on the mapping. */
-      assert( pWal->szWIndex==0 );
-      pWal->pWiData = &pWal->iCallback;
-    }
     if( rc!=SQLITE_OK ){
       walIndexUnmap(pWal);
     }
@@ -592,6 +590,7 @@ static int walIndexMap(Wal *pWal, int reqSize){
 }
 
 /*
+** Enlarge the wal-index to be at least enlargeTo bytes in size and
 ** Remap the wal-index so that the mapping covers the full size
 ** of the underlying file.
 **
@@ -601,19 +600,15 @@ static int walIndexMap(Wal *pWal, int reqSize){
 static int walIndexRemap(Wal *pWal, int enlargeTo){
   int rc;
   int sz;
+  assert( pWal->lockState>=SQLITE_SHM_WRITE );
   rc = sqlite3OsShmSize(pWal->pDbFd, enlargeTo, &sz);
   if( rc==SQLITE_OK && sz>pWal->szWIndex ){
     walIndexUnmap(pWal);
     rc = walIndexMap(pWal, sz);
   }
+  assert( pWal->szWIndex>=enlargeTo || rc!=SQLITE_OK );
   return rc;
 }
-
-/*
-** Increment by which to increase the wal-index file size.
-*/
-#define WALINDEX_MMAP_INCREMENT (64*1024)
-
 
 /*
 ** Compute a hash on a page number.  The resulting hash value must land
@@ -738,10 +733,9 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   
   /* Make sure the wal-index is mapped. Enlarge the mapping if required. */
   nMapping = walMappingSize(iFrame);
-  rc = walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, nMapping);
   while( rc==SQLITE_OK && nMapping>pWal->szWIndex ){
-    int nByte = pWal->szWIndex + WALINDEX_MMAP_INCREMENT;
-    rc = walIndexRemap(pWal, nByte);
+    rc = walIndexRemap(pWal, nMapping);
   }
 
   /* Assuming the wal-index file was successfully mapped, find the hash 
@@ -907,7 +901,7 @@ static int walIndexRecover(Wal *pWal){
 
 finished:
   if( rc==SQLITE_OK && pWal->hdr.mxFrame==0 ){
-    rc = walIndexRemap(pWal, WALINDEX_MMAP_INCREMENT);
+    rc = walIndexRemap(pWal, walMappingSize(1));
   }
   if( rc==SQLITE_OK ){
     pWal->hdr.aFrameCksum[0] = aFrameCksum[0];
@@ -983,6 +977,7 @@ int sqlite3WalOpen(
   pRet->pVfs = pVfs;
   pRet->pWalFd = (sqlite3_file *)&pRet[1];
   pRet->pDbFd = pDbFd;
+  pRet->szWIndex = -1;
   sqlite3_randomness(8, &pRet->hdr.aSalt);
   pRet->zWalName = zWal = pVfs->szOsFile + (char*)pRet->pWalFd;
   sqlite3_snprintf(nWal, zWal, "%s-wal", zDbName);
@@ -1309,14 +1304,12 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   WalIndexHdr h1, h2;          /* Two copies of the header content */
   WalIndexHdr *aHdr;           /* Header in shared memory */
 
-  assert( pWal->pWiData );
-  if( pWal->szWIndex==0 ){
-    /* The wal-index is of size 0 bytes. This is handled in the same way
-    ** as an invalid header. The caller will run recovery to construct
-    ** a valid wal-index file before accessing the database.
-    */
+  if( pWal->szWIndex < WALINDEX_HDR_SIZE ){
+    /* The wal-index is not large enough to hold the header, then assume
+    ** header is invalid. */
     return 1;
   }
+  assert( pWal->pWiData );
 
   /* Read the header. The caller may or may not have an exclusive 
   ** (WRITE, PENDING, CHECKPOINT or RECOVER) lock on the wal-index
@@ -1378,7 +1371,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 
   assert( pWal->lockState>=SQLITE_SHM_READ );
   assert( pChanged );
-  rc = walIndexMap(pWal, -1);
+  rc = walIndexMap(pWal, walMappingSize(1));
   if( rc!=SQLITE_OK ){
     return rc;
   }
@@ -1628,7 +1621,8 @@ int sqlite3WalWriteLock(Wal *pWal, int op){
     ** the write locks and return SQLITE_BUSY.
     */
     if( rc==SQLITE_OK ){
-      rc = walIndexMap(pWal, sizeof(WalIndexHdr));
+      rc = walIndexMap(pWal, walMappingSize(1));
+      assert( pWal->szWIndex>=WALINDEX_HDR_SIZE || rc!=SQLITE_OK );
       if( rc==SQLITE_OK
        && memcmp(&pWal->hdr, (void*)pWal->pWiData, sizeof(WalIndexHdr))
       ){
