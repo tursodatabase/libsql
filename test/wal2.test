@@ -30,9 +30,9 @@ proc set_tvfs_hdr {file args} {
 
   set blob [tvfs shm $file]
   if {[llength $args]} {
-    set blob [
-      binary format i${nInt}a* [lindex $args 0] [string range $blob $nHdr end]
-    ]
+    set ia [lindex $args 0]
+    set tail [string range $blob [expr $nHdr*2] end]
+    set blob [binary format i${nInt}i${nInt}a* $ia $ia $tail]
     tvfs shm $file $blob
   }
 
@@ -101,7 +101,9 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} {
          7   10   {10 55}   5             {READ RECOVER READ UNLOCK}
          8   11   {11 66}   6             {READ RECOVER READ UNLOCK}
          9   12   {12 78}   7             {READ RECOVER READ UNLOCK}
-        10   13   {13 91}   -1            {READ UNLOCK}
+        10   13   {13 91}   8             {READ RECOVER READ UNLOCK}
+        11   14   {14 105}  9             {READ RECOVER READ UNLOCK}
+        12   15   {15 120}  -1            {READ UNLOCK}
 } {
 
   do_test wal2-1.$tn.1 {

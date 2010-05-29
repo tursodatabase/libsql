@@ -360,7 +360,9 @@ do_test walcksum-3.2 {
 } {1 2 3}
 db2 close
 file copy -force test.db test2.db
-for {set incr 1} {$incr <= 255} {incr incr 21} {
+
+
+foreach incr {1 2 3 20 40 60 80 100 120 140 160 180 200 220 240 253 254 255} {
   do_test walcksum-3.3.$incr {
     set FAIL 0
     for {set iOff 0} {$iOff < [log_file_size 1 1024]} {incr iOff} {
@@ -373,7 +375,7 @@ for {set incr 1} {$incr <= 255} {incr incr 21} {
       seek $fd $iOff
       binary scan [read $fd 1] c x
       seek $fd $iOff
-      puts -nonewline $fd [binary format c [expr {$x+$incr}]]
+      puts -nonewline $fd [binary format c [expr {($x+$incr)&0xFF}]]
       close $fd
     
       sqlite3 db2 test2.db

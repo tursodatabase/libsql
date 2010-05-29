@@ -1,5 +1,5 @@
-C Add\sa\stest\sto\swalcksum.test\sto\sstress\sthe\schecksum\scalculation.
-D 2010-05-28T04:16:28
+C i\ni\nMinor\schanges\sto\schecksum\srelated\stest\scases.
+D 2010-05-29T06:18:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -762,9 +762,9 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test be8ef043253ca735ffcabb92a7dac2d79ebfe8c1
-F test/wal2.test a10f52b403117c2b9a1f7a11db527c53bb684a25
+F test/wal2.test c58bb5b2fac48b8393909038ced730df5ad973b0
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
-F test/walcksum.test a710d2c5c3f4e786d37d099790d8df8c47e270a3
+F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
 F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 42705babba0e9d2ef078845854bebbd168f23366
-R 9d2a3bc8fc2778c92116dc9b4d28847f
+P 778d0c1768f73057be912793631e0cf0575858fb
+R 3de33148905a50194902720ee6b775bd
 U dan
-Z 0d53d36af3414df9e04c32dec264ddf0
+Z b74577b9b52063fe6c9dd6e69ac9a2e9
