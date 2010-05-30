@@ -1203,7 +1203,7 @@ static int pagerUseWal(Pager *pPager){
 # define pagerRollbackWal(x) 0
 # define pagerWalFrames(v,w,x,y,z) 0
 # define pagerOpenWalIfPresent(z) SQLITE_OK
-# define pagerOpenSnapshot(z) SQLITE_OK
+# define pagerBeginReadTransaction(z) SQLITE_OK
 #endif
 
 /*
@@ -1238,7 +1238,7 @@ static void pager_unlock(Pager *pPager){
     pPager->dbSizeValid = 0;
 
     if( pagerUseWal(pPager) ){
-      sqlite3WalCloseSnapshot(pPager->pWal);
+      sqlite3WalEndReadTransaction(pPager->pWal);
     }else{
       rc = osUnlock(pPager->fd, NO_LOCK);
     }
@@ -1437,7 +1437,7 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
   sqlite3PcacheCleanAll(pPager->pPCache);
 
   if( pagerUseWal(pPager) ){
-    rc2 = sqlite3WalWriteLock(pPager->pWal, 0);
+    rc2 = sqlite3WalEndWriteTransaction(pPager->pWal);
     pPager->state = PAGER_SHARED;
 
     /* If the connection was in locking_mode=exclusive mode but is no longer,
@@ -2362,15 +2362,20 @@ static int pagerWalFrames(
 }
 
 /*
-** Open a WAL snapshot on the log file this pager is connected to.
+** Begin a read transaction on the WAL.
+**
+** This routine used to be called "pagerOpenSnapshot()" because it essentially
+** makes a snapshot of the database at the current point in time and preserves
+** that snapshot for use by the reader in spite of concurrently changes by
+** other writers or checkpointers.
 */
-static int pagerOpenSnapshot(Pager *pPager){
+static int pagerBeginReadTransaction(Pager *pPager){
   int rc;                         /* Return code */
   int changed = 0;                /* True if cache must be reset */
 
   assert( pagerUseWal(pPager) );
 
-  rc = sqlite3WalOpenSnapshot(pPager->pWal, &changed);
+  rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc==SQLITE_OK ){
     int dummy;
     if( changed ){
@@ -2428,7 +2433,7 @@ static int pagerOpenWalIfPresent(Pager *pPager){
         pager_reset(pPager);
         rc = sqlite3PagerOpenWal(pPager, 0);
         if( rc==SQLITE_OK ){
-          rc = pagerOpenSnapshot(pPager);
+          rc = pagerBeginReadTransaction(pPager);
         }
       }else if( pPager->journalMode==PAGER_JOURNALMODE_WAL ){
         pPager->journalMode = PAGER_JOURNALMODE_DELETE;
@@ -4002,7 +4007,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
   }
 
   if( pagerUseWal(pPager) ){
-    rc = pagerOpenSnapshot(pPager);
+    rc = pagerBeginReadTransaction(pPager);
   }else if( pPager->state==PAGER_UNLOCK || isErrorReset ){
     sqlite3_vfs * const pVfs = pPager->pVfs;
     int isHotJournal = 0;
@@ -4561,7 +4566,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       ** may copy data from the sub-journal into the database file as well
       ** as into the page cache. Which would be incorrect in WAL mode.
       */
-      rc = sqlite3WalWriteLock(pPager->pWal, 1);
+      rc = sqlite3WalBeginWriteTransaction(pPager->pWal);
       if( rc==SQLITE_OK ){
         pPager->dbOrigSize = pPager->dbSize;
         pPager->state = PAGER_RESERVED;
@@ -5892,8 +5897,7 @@ int sqlite3PagerCheckpoint(Pager *pPager){
     u8 *zBuf = (u8 *)pPager->pTmpSpace;
     rc = sqlite3WalCheckpoint(pPager->pWal,
         (pPager->noSync ? 0 : pPager->sync_flags),
-        pPager->pageSize, zBuf, 
-        pPager->xBusyHandler, pPager->pBusyHandlerArg
+        pPager->pageSize, zBuf
     );
   }
   return rc;

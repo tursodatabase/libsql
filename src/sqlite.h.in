@@ -444,7 +444,8 @@ int sqlite3_exec(
 #define SQLITE_IOERR_LOCK              (SQLITE_IOERR | (15<<8))
 #define SQLITE_IOERR_CLOSE             (SQLITE_IOERR | (16<<8))
 #define SQLITE_IOERR_DIR_CLOSE         (SQLITE_IOERR | (17<<8))
-#define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED | (1<<8) )
+#define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
+#define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
 
 /*
 ** CAPI3REF: Flags For File Open Operations
@@ -658,7 +659,7 @@ struct sqlite3_io_methods {
   int (*xShmSize)(sqlite3_file*, int reqSize, int *pNewSize);
   int (*xShmGet)(sqlite3_file*, int reqSize, int *pSize, void volatile**);
   int (*xShmRelease)(sqlite3_file*);
-  int (*xShmLock)(sqlite3_file*, int desiredLock, int *gotLock);
+  int (*xShmLock)(sqlite3_file*, int offset, int n, int flags);
   void (*xShmBarrier)(sqlite3_file*);
   int (*xShmClose)(sqlite3_file*, int deleteFlag);
   /* Methods above are valid for version 2 */
@@ -888,16 +889,40 @@ struct sqlite3_vfs {
 /*
 ** CAPI3REF: Flags for the xShmLock VFS method
 **
-** These integer constants define the various locking states that
-** an sqlite3_shm object can be in.
+** These integer constants define the various locking operations
+** allowed by the xShmLock method of [sqlite3_io_methods].  The
+** following are the only legal combinations of flags to the
+** xShmLock method:
+**
+** <ul>
+** <li>  SQLITE_SHM_LOCK | SQLITE_SHM_SHARED
+** <li>  SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE
+** <li>  SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED
+** <li>  SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE
+** </ul>
+**
+** When unlocking, the same SHARED or EXCLUSIVE flag must be supplied as
+** was given no the corresponding lock.  
+**
+** The xShmLock method can transition between unlocked and SHARED or
+** between unlocked and EXCLUSIVE.  It cannot transition between SHARED
+** and EXCLUSIVE.
 */
-#define SQLITE_SHM_UNLOCK       0
-#define SQLITE_SHM_READ         1
-#define SQLITE_SHM_READ_FULL    2
-#define SQLITE_SHM_WRITE        3
-#define SQLITE_SHM_PENDING      4
-#define SQLITE_SHM_CHECKPOINT   5
-#define SQLITE_SHM_RECOVER      6
+#define SQLITE_SHM_UNLOCK       1
+#define SQLITE_SHM_LOCK         2
+#define SQLITE_SHM_SHARED       4
+#define SQLITE_SHM_EXCLUSIVE    8
+
+/*
+** CAPI3REF: Maximum xShmLock index
+**
+** The xShmLock method on [sqlite3_io_methods] may use values
+** between 0 and this upper bound as its "offset" argument.
+** The SQLite core will never attempt to acquire or release a
+** lock outside of this range
+*/
+#define SQLITE_SHM_NLOCK        8
+
 
 /*
 ** CAPI3REF: Initialize The SQLite Library

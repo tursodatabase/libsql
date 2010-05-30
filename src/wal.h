@@ -20,19 +20,20 @@
 #include "sqliteInt.h"
 
 #ifdef SQLITE_OMIT_WAL
-# define sqlite3WalOpen(x,y,z)             0
-# define sqlite3WalClose(w,x,y,z)          0
-# define sqlite3WalOpenSnapshot(y,z)       0
-# define sqlite3WalCloseSnapshot(z) 
-# define sqlite3WalRead(v,w,x,y,z)         0
+# define sqlite3WalOpen(x,y,z)                 0
+# define sqlite3WalClose(w,x,y,z)              0
+# define sqlite3WalBeginReadTransaction(y,z)   0
+# define sqlite3WalEndReadTransaction(z)
+# define sqlite3WalRead(v,w,x,y,z)             0
 # define sqlite3WalDbsize(y,z)
-# define sqlite3WalWriteLock(y,z)          0
-# define sqlite3WalUndo(x,y,z)             0
+# define sqlite3WalBeginWriteTransaction(y)    0
+# define sqlite3WalEndWRiteTransaction(x)      0
+# define sqlite3WalUndo(x,y,z)                 0
 # define sqlite3WalSavepoint(y,z)
-# define sqlite3WalSavepointUndo(y,z)      0
-# define sqlite3WalFrames(u,v,w,x,y,z)     0
-# define sqlite3WalCheckpoint(u,v,w,x,y,z) 0
-# define sqlite3WalCallback(z)             0
+# define sqlite3WalSavepointUndo(y,z)          0
+# define sqlite3WalFrames(u,v,w,x,y,z)         0
+# define sqlite3WalCheckpoint(u,v,w,x)         0
+# define sqlite3WalCallback(z)                 0
 #else
 
 #define WAL_SAVEPOINT_NDATA 3
@@ -53,8 +54,8 @@ int sqlite3WalClose(Wal *pWal, int sync_flags, int, u8 *);
 ** write to or checkpoint the WAL.  sqlite3WalCloseSnapshot() closes the
 ** transaction and releases the lock.
 */
-int sqlite3WalOpenSnapshot(Wal *pWal, int *);
-void sqlite3WalCloseSnapshot(Wal *pWal);
+int sqlite3WalBeginReadTransaction(Wal *pWal, int *);
+void sqlite3WalEndReadTransaction(Wal *pWal);
 
 /* Read a page from the write-ahead log, if it is present. */
 int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
@@ -64,7 +65,8 @@ int sqlite3WalRead(Wal *pWal, Pgno pgno, int *pInWal, int nOut, u8 *pOut);
 void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno);
 
 /* Obtain or release the WRITER lock. */
-int sqlite3WalWriteLock(Wal *pWal, int op);
+int sqlite3WalBeginWriteTransaction(Wal *pWal);
+int sqlite3WalEndWriteTransaction(Wal *pWal);
 
 /* Undo any frames written (but not committed) to the log */
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx);
@@ -85,9 +87,7 @@ int sqlite3WalCheckpoint(
   Wal *pWal,                      /* Write-ahead log connection */
   int sync_flags,                 /* Flags to sync db file with (or 0) */
   int nBuf,                       /* Size of buffer nBuf */
-  u8 *zBuf,                       /* Temporary buffer to use */
-  int (*xBusyHandler)(void *),    /* Pointer to busy-handler function */
-  void *pBusyHandlerArg           /* Argument to pass to xBusyHandler */
+  u8 *zBuf                        /* Temporary buffer to use */
 );
 
 /* Return the value to pass to a sqlite3_wal_hook callback, the

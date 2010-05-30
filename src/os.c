@@ -110,8 +110,8 @@ int sqlite3OsShmGet(sqlite3_file *id,int reqSize,int *pSize,void volatile **pp){
 int sqlite3OsShmRelease(sqlite3_file *id){
   return id->pMethods->xShmRelease(id);
 }
-int sqlite3OsShmLock(sqlite3_file *id, int desiredLock, int *pGotLock){
-  return id->pMethods->xShmLock(id, desiredLock, pGotLock);
+int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
+  return id->pMethods->xShmLock(id, offset, n, flags);
 }
 void sqlite3OsShmBarrier(sqlite3_file *id){
   id->pMethods->xShmBarrier(id);
