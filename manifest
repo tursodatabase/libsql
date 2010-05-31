@@ -1,5 +1,5 @@
-C Zero\sthe\scheckpoint\sheader\sas\sthe\slast\sstep\sof\ssuccessful\sWAL\srecovery.\sAvoid\san\sunnecessary\slock/unlock\sin\sWalBeginReadTransaction.
-D 2010-05-31T16:17:55
+C Avoid\sdropping\sthe\scheckpoint\slock\safter\sa\srecovery\srun\sas\sa\sprecursor\sto\sa\scheckpoint\soperation.
+D 2010-05-31T16:41:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 85d6de5b32e19550a74ce266aee838b372a27bde
+F src/wal.c fa5f1784e9189531814dc67fa6461282592acb4b
 F src/wal.h 1c1c9feb629b7f4afcbe0b47f80f47c5551d3a02
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -762,7 +762,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test a54d9be9e82eede1653f7998723ead8ce8a1a580
-F test/wal2.test c58bb5b2fac48b8393909038ced730df5ad973b0
+F test/wal2.test 6c1596e2fa9944eb6ed562f5fadc94d6da0beee6
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 149a7082e266edf0dc25c23823a9e240f5285215
-R 1637bb46f16c01a65f1f93a814d17297
+P db3509c55dfe288650b803622e3a0828c6e59aea
+R d089df4f4060e25697a3c07428a29882
 U dan
-Z e5f9151081201617db6cdf2f1fd63c05
+Z 14dfbc0870be522424bf1d08866a3ca4

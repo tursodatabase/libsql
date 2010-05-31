@@ -264,7 +264,7 @@ struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u16 bigEndCksum;                /* True if checksums in WAL are big-endian */
   u16 szPage;                     /* Database page size in bytes */
-    u32 mxFrame;                    /* Index of last valid frame in the WAL */
+  u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 aFrameCksum[2];             /* Checksum of last frame in log */
   u32 aSalt[2];                   /* Two salt values copied from WAL header */
@@ -953,8 +953,22 @@ static int walIndexRecover(Wal *pWal){
   int rc;                         /* Return Code */
   i64 nSize;                      /* Size of log file */
   u32 aFrameCksum[2] = {0, 0};
+  int iLock;                      /* Lock offset to lock for checkpoint */
+  int nLock;                      /* Number of locks to hold */
 
-  rc = walLockExclusive(pWal, WAL_ALL_BUT_WRITE, SQLITE_SHM_NLOCK-1);
+  /* Obtain an exclusive lock on all byte in the locking range not already
+  ** locked by the caller. The caller is guaranteed to have locked the
+  ** WAL_WRITE_LOCK byte, and may have also locked the WAL_CKPT_LOCK byte.
+  ** If successful, the same bytes that are locked here are unlocked before
+  ** this function returns.
+  */
+  assert( pWal->ckptLock==1 || pWal->ckptLock==0 );
+  assert( WAL_ALL_BUT_WRITE==WAL_WRITE_LOCK+1 );
+  assert( WAL_CKPT_LOCK==WAL_ALL_BUT_WRITE );
+  assert( pWal->writeLock );
+  iLock = WAL_ALL_BUT_WRITE + pWal->ckptLock;
+  nLock = SQLITE_SHM_NLOCK - iLock;
+  rc = walLockExclusive(pWal, iLock, nLock);
   if( rc ){
     return rc;
   }
@@ -1060,7 +1074,7 @@ finished:
 
 recovery_error:
   WALTRACE(("WAL%p: recovery %s\n", pWal, rc ? "failed" : "ok"));
-  walUnlockExclusive(pWal, WAL_ALL_BUT_WRITE, SQLITE_SHM_NLOCK-1);
+  walUnlockExclusive(pWal, iLock, nLock);
   return rc;
 }
 

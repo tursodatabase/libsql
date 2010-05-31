@@ -21,7 +21,7 @@ ifcapable !wal {finish_test ; return }
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:
-  set nHdr 80
+  set nHdr 40
   set nInt [expr {$nHdr/4}]
 
   if {[llength $args]>1} {
@@ -29,9 +29,10 @@ proc set_tvfs_hdr {file args} {
   }
 
   set blob [tvfs shm $file]
+
   if {[llength $args]} {
     set ia [lindex $args 0]
-    set tail [string range $blob [expr $nHdr*2] end]
+    binary scan $blob a[expr $nHdr*2]a* dummy tail
     set blob [binary format i${nInt}i${nInt}a* $ia $ia $tail]
     tvfs shm $file $blob
   }
@@ -92,19 +93,28 @@ do_test wal2-1.1 {
   execsql { SELECT count(a), sum(a) FROM t1 } db2
 } {4 10}
 
-foreach {tn iInsert res wal_index_hdr_mod wal_locks} {
-         2    5   {5 15}    0             {READ RECOVER READ UNLOCK}
-         3    6   {6 21}    1             {READ RECOVER READ UNLOCK}
-         4    7   {7 28}    2             {READ RECOVER READ UNLOCK}
-         5    8   {8 36}    3             {READ RECOVER READ UNLOCK}
-         6    9   {9 45}    4             {READ RECOVER READ UNLOCK}
-         7   10   {10 55}   5             {READ RECOVER READ UNLOCK}
-         8   11   {11 66}   6             {READ RECOVER READ UNLOCK}
-         9   12   {12 78}   7             {READ RECOVER READ UNLOCK}
-        10   13   {13 91}   8             {READ RECOVER READ UNLOCK}
-        11   14   {14 105}  9             {READ RECOVER READ UNLOCK}
-        12   15   {15 120}  -1            {READ UNLOCK}
-} {
+set RECOVER [list                                      \
+  {0 1 lock exclusive}   {1 7 lock exclusive}          \
+  {1 7 unlock exclusive} {0 1 unlock exclusive}        \
+]
+set READ [list                                         \
+  {4 1 lock exclusive} {4 1 unlock exclusive}          \
+  {4 1 lock shared}    {4 1 unlock shared}             \
+]
+
+foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
+         2    5   {5 15}    0             {$RECOVER $READ}
+         3    6   {6 21}    1             {$RECOVER $READ}
+         4    7   {7 28}    2             {$RECOVER $READ}
+         5    8   {8 36}    3             {$RECOVER $READ}
+         6    9   {9 45}    4             {$RECOVER $READ}
+         7   10   {10 55}   5             {$RECOVER $READ}
+         8   11   {11 66}   6             {$RECOVER $READ}
+         9   12   {12 78}   7             {$RECOVER $READ}
+        10   13   {13 91}   8             {$RECOVER $READ}
+        11   14   {14 105}  9             {$RECOVER $READ}
+        12   15   {15 120}  -1            {$READ}
+" {
 
   do_test wal2-1.$tn.1 {
     execsql { INSERT INTO t1 VALUES($iInsert) }
@@ -119,7 +129,6 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} {
           incr_tvfs_hdr [lindex $args 0] $::wal_index_hdr_mod 1
         }
       }
-
       if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
       return SQLITE_OK
     }
@@ -150,6 +159,11 @@ file delete -force test.db test.db-wal test.db-journal
 # to run recovery. This time, it sees an up-to-date snapshot of the
 # database file.
 #
+set WRITER [list 0 1 lock exclusive]
+set LOCKS  [list \
+  {0 1 lock exclusive} {0 1 unlock exclusive} \
+  {4 1 lock shared}    {4 1 unlock shared}    \
+]
 do_test wal2-2.0 {
 
   testvfs tvfs tvfs_cb
@@ -206,7 +220,7 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
       if {$method == "xShmLock"} {
         set lock [lindex $args 2]
         lappend ::locks $lock
-        if {$lock == "RECOVER"} {
+        if {$lock == $::WRITER} {
           set_tvfs_hdr $::shm_file $::oldhdr
         }
       }
@@ -218,7 +232,7 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
 
   do_test wal2-2.$tn.3 {
     set ::locks
-  } {READ RECOVER READ UNLOCK}
+  } $LOCKS
 
   do_test wal2-2.$tn.4 {
     set ::locks [list]
@@ -245,6 +259,8 @@ db2 close
 tvfs delete
 file delete -force test.db test.db-wal test.db-journal
 
+
+if 0 {
 #-------------------------------------------------------------------------
 # This test case - wal2-3.* - tests the response of the library to an
 # SQLITE_BUSY when attempting to obtain a READ or RECOVER lock.
@@ -315,6 +331,8 @@ db close
 tvfs delete
 file delete -force test.db test.db-wal test.db-journal
 
+}
+
 #-------------------------------------------------------------------------
 # Test that a database connection using a VFS that does not support the
 # xShmXXX interfaces cannot open a WAL database.
@@ -348,6 +366,10 @@ tvfs delete
 #-------------------------------------------------------------------------
 # Test that if a database connection is forced to run recovery before it
 # can perform a checkpoint, it does not transition into RECOVER state.
+#
+# UPDATE: This has now changed. When running a checkpoint, if recovery is
+# required the client grabs all exclusive locks (just as it would for a
+# recovery performed as a pre-cursor to a normal database transaction).
 #
 do_test wal2-5.1 {
   proc tvfs_cb {method args} {
