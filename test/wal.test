@@ -571,26 +571,17 @@ foreach code [list {
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {1 {database is locked}}
+  } {0 {}}   ;# Reader no longer block checkpoints
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
   } {1 2 3 4 5 6 7 8 9 10}
 
-  # Connection [db2] is holding a lock on a snapshot, preventing [db] from
-  # checkpointing the database. Add a busy-handler to [db]. If [db2] completes
-  # its transaction from within the busy-handler, [db] is able to complete
-  # the checkpoint operation.
+  # Writers do not block checkpoints any more either.
   #
-  proc busyhandler x {
-    if {$x==4} { sql2 COMMIT }
-    if {$x<5} { return 0 }
-    return 1
-  }
-  db busy busyhandler
   do_test wal-10.$tn.14 {
-    execsql { PRAGMA wal_checkpoint } 
-  } {}
+    catchsql { PRAGMA wal_checkpoint } 
+  } {0 {}}
 
   # Similar to the test above. Except this time, a new read transaction is
   # started (db3) while the checkpointer is waiting for an old one (db2) to 
@@ -598,9 +589,8 @@ foreach code [list {
   # must wait until after db3 has closed the read transaction, as db3 is a
   # "region D" writer.
   #
-  db busy {}
   do_test wal-10.$tn.15 {
-    sql2 { BEGIN; SELECT * FROM t1; }
+    sql2 { COMMIT; BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
     catchsql { PRAGMA wal_checkpoint } 

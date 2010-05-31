@@ -1445,6 +1445,11 @@ static int walCheckpoint(
 
     /* Release the reader lock held while backfilling */
     walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
+  }else{
+    /* Reset the return code so as not to report a checkpoint failure
+    ** just because active readers prevent any backfill.
+    */
+    rc = SQLITE_OK;
   }
 
   walIteratorFree(pIter);
