@@ -5136,6 +5136,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3WhereTrace;
   extern int sqlite3OSTrace;
   extern int sqlite3VdbeAddopTrace;
+  extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
   extern char sqlite3_query_plan[];
@@ -5203,6 +5204,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3OSTrace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_wal_trace",
+      (char*)&sqlite3WalTrace, TCL_LINK_INT);
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

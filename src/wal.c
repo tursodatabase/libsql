@@ -224,6 +224,19 @@
 #include "wal.h"
 
 /*
+** Trace output macros
+*/
+#if defined(SQLITE_TEST) || defined(SQLITE_DEBUG)
+int sqlite3WalTrace = 0;
+#endif
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+# define WALTRACE(X)  if(sqlite3WalTrace) sqlite3DebugPrintf X
+#else
+# define WALTRACE(X)
+#endif
+
+
+/*
 ** Indices of various locking bytes.   WAL_NREADER is the number
 ** of available reader locks and should be at least 3.
 */
@@ -580,30 +593,62 @@ static int walDecodeFrame(
 #define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
 #define HASHTABLE_NBYTE      (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
 
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+/*
+** Names of locks.
+*/
+static const char *walLockName(int lockIdx){
+  if( lockIdx==WAL_WRITE_LOCK ){
+    return "WRITE-LOCK";
+  }else if( lockIdx==WAL_CKPT_LOCK ){
+    return "CKPT-LOCK";
+  }else if( lockIdx==WAL_RECOVER_LOCK ){
+    return "RECOVER-LOCK";
+  }else{
+    static char zName[15];
+    sqlite3_snprintf(sizeof(zName), zName, "READ-LOCK[%d]",
+                     lockIdx-WAL_READ_LOCK(0));
+    return zName;
+  }
+}
+#endif /*defined(SQLITE_TEST) || defined(SQLITE_DEBUG) */
+    
+
 /*
 ** Set or release locks.
 **
 ** In locking_mode=EXCLUSIVE, all of these routines become no-ops.
 */
 static int walLockShared(Wal *pWal, int lockIdx){
+  int rc;
   if( pWal->exclusiveMode ) return SQLITE_OK;
-  return sqlite3OsShmLock(pWal->pDbFd, lockIdx, 1,
-                          SQLITE_SHM_LOCK | SQLITE_SHM_SHARED);
+  rc = sqlite3OsShmLock(pWal->pDbFd, lockIdx, 1,
+                        SQLITE_SHM_LOCK | SQLITE_SHM_SHARED);
+  WALTRACE(("WAL%p: acquire SHARED-%s %s\n", pWal,
+            walLockName(lockIdx), rc ? "failed" : "ok"));
+  return rc;
 }
 static void walUnlockShared(Wal *pWal, int lockIdx){
   if( pWal->exclusiveMode ) return;
   (void)sqlite3OsShmLock(pWal->pDbFd, lockIdx, 1,
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED);
+  WALTRACE(("WAL%p: release SHARED-%s\n", pWal, walLockName(lockIdx)));
 }
 static int walLockExclusive(Wal *pWal, int lockIdx, int n){
+  int rc;
   if( pWal->exclusiveMode ) return SQLITE_OK;
-  return sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
-                          SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
+  rc = sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
+                        SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
+  WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
+            walLockName(lockIdx), n, rc ? "failed" : "ok"));
+  return rc;
 }
 static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
   if( pWal->exclusiveMode ) return;
   (void)sqlite3OsShmLock(pWal->pDbFd, lockIdx, n,
                          SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE);
+  WALTRACE(("WAL%p: release EXCLUSIVE-%s cnt=%d\n", pWal,
+             walLockName(lockIdx), n));
 }
 
 /*
@@ -913,6 +958,7 @@ static int walIndexRecover(Wal *pWal){
   if( rc ){
     return rc;
   }
+  WALTRACE(("WAL%p: recovery begin...\n", pWal));
 
   memset(&pWal->hdr, 0, sizeof(WalIndexHdr));
 
@@ -1007,6 +1053,7 @@ finished:
   }
 
 recovery_error:
+  WALTRACE(("WAL%p: recovery %s\n", pWal, rc ? "failed" : "ok"));
   walUnlockExclusive(pWal, WAL_ALL_BUT_WRITE, SQLITE_SHM_NLOCK-1);
   return rc;
 }
@@ -1095,6 +1142,7 @@ int sqlite3WalOpen(
     sqlite3_free(pRet);
   }else{
     *ppWal = pRet;
+    WALTRACE(("WAL%d: opened\n", pRet));
   }
   return rc;
 }
@@ -1439,6 +1487,7 @@ int sqlite3WalClose(
     if( isDelete ){
       sqlite3OsDelete(pWal->pVfs, pWal->zWalName, 0);
     }
+    WALTRACE(("WAL%p: closed\n", pWal));
     sqlite3_free(pWal);
   }
   return rc;
@@ -2092,6 +2141,13 @@ int sqlite3WalFrames(
   assert( pWal->writeLock );
   assert( pWal->pWiData==0 );
 
+#if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
+  { int cnt; for(cnt=0, p=pList; p; p=p->pDirty, cnt++){}
+    WALTRACE(("WAL%p: frame write begin. %d frames. mxFrame=%d. %s\n",
+              pWal, cnt, pWal->hdr.mxFrame, isCommit ? "Commit" : "Spill"));
+  }
+#endif
+
   /* If this is the first frame written into the log, write the WAL
   ** header to the start of the WAL file. See comments at the top of
   ** this source file for a description of the WAL header format.
@@ -2107,6 +2163,7 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[12], pWal->nCkpt);
     memcpy(&aWalHdr[16], pWal->hdr.aSalt, 8);
     rc = sqlite3OsWrite(pWal->pWalFd, aWalHdr, sizeof(aWalHdr), 0);
+    WALTRACE(("WAL%p: wal-header write %s\n", pWal, rc ? "failed" : "ok"));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2198,6 +2255,7 @@ int sqlite3WalFrames(
   }
 
   walIndexUnmap(pWal);
+  WALTRACE(("WAL%p: frame write %s\n", pWal, rc ? "failed" : "ok"));
   return rc;
 }
 
@@ -2220,6 +2278,7 @@ int sqlite3WalCheckpoint(
   assert( pWal->pWiData==0 );
   assert( pWal->ckptLock==0 );
 
+  WALTRACE(("WAL%p: checkpoint begins\n", pWal));
   rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
   if( rc ){
     /* Usually this is SQLITE_BUSY meaning that another thread or process
@@ -2248,6 +2307,7 @@ int sqlite3WalCheckpoint(
   walIndexUnmap(pWal);
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
   pWal->ckptLock = 0;
+  WALTRACE(("WAL%p: checkpoint %s\n", pWal, rc ? "failed" : "ok"));
   return rc;
 }
 
