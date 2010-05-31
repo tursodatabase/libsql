@@ -3180,8 +3180,8 @@ struct unixShm {
 /*
 ** Constants used for locking
 */
-#define UNIX_SHM_BASE      81        /* Byte offset of the first lock byte */
-#define UNIX_SHM_DMS       80        /* The deadman switch lock */
+#define UNIX_SHM_BASE   ((18+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
+#define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
 #ifdef SQLITE_DEBUG
 /*

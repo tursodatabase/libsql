@@ -1,5 +1,8 @@
-C Update\sanother\stest\scase\sin\swal.test.
-D 2010-05-31T14:18:46
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sthe\stests\sthat\senable\stracing\sbased\son\sthe\sexistance\sof\sthe\s"vdbe_*"\nfiles\swhen\sin\sSQLITE_DEBUG\smode.
+D 2010-05-31T14:28:25
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c f95ffaf6874cbd3432ffad6fb49c86a084a2db72
+F src/os_unix.c 824dc63f6732bdb1b4d38cc3a3ea22ffcd114a34
 F src/os_win.c 81dd8f5434b3b73b1f1567a784811601b6437ce3
 F src/pager.c f7128f02623beab9462ca6e73516cf73c49186f8
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -215,7 +218,7 @@ F src/update.c 9859f2056c7739a1db0d9774ccb6c2f0cee6d1de
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c b17355fc10cef0875626932ec2f1fa1deb0daa48
-F src/vdbe.c 950cd4e9dfeec3066251897c1ff89331df38b625
+F src/vdbe.c 965247d966bb5bc9db819e27c076c8acd43ea4fd
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -815,7 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2d6f2485053e6d2a67abda9a80693ca68f4556d2
-R 96c973c2add1d959c0397175c45f8914
-U dan
-Z f8f8c662a8539b2774c212781e3c8a24
+P 99fde69e61d12cf95b47db70c4647c30be2d2f45
+R bc84b1625879662df25035180d9a6b40
+U drh
+Z 557b084a9cedee49fe71bb7313d705d2
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMA8eMoxKgR168RlERAtMlAJ9Lk1hI3pjjh9vYYjXEq7GFOZUibgCeKF7o
+Jwb3xNe+tD2TRgoN2h0MCQk=
+=zEvj
+-----END PGP SIGNATURE-----

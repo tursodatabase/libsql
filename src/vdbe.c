@@ -480,22 +480,6 @@ static void registerTrace(FILE *out, int iReg, Mem *p){
 #define CHECK_FOR_INTERRUPT \
    if( db->u1.isInterrupted ) goto abort_due_to_interrupt;
 
-#ifdef SQLITE_DEBUG
-static int fileExists(sqlite3 *db, const char *zFile){
-  int res = 0;
-  int rc = SQLITE_OK;
-#ifdef SQLITE_TEST
-  /* If we are currently testing IO errors, then do not call OsAccess() to
-  ** test for the presence of zFile. This is because any IO error that
-  ** occurs here will not be reported, causing the test to fail.
-  */
-  extern int sqlite3_io_error_pending;
-  if( sqlite3_io_error_pending<=0 )
-#endif
-    rc = sqlite3OsAccess(db->pVfs, zFile, SQLITE_ACCESS_EXISTS, &res);
-  return (res && rc==SQLITE_OK);
-}
-#endif
 
 #ifndef NDEBUG
 /*
@@ -594,18 +578,13 @@ int sqlite3VdbeExec(
 #endif
 #ifdef SQLITE_DEBUG
   sqlite3BeginBenignMalloc();
-  if( p->pc==0 
-   && ((p->db->flags & SQLITE_VdbeListing) || fileExists(db, "vdbe_explain"))
-  ){
+  if( p->pc==0  && (p->db->flags & SQLITE_VdbeListing)!=0 ){
     int i;
     printf("VDBE Program Listing:\n");
     sqlite3VdbePrintSql(p);
     for(i=0; i<p->nOp; i++){
       sqlite3VdbePrintOp(stdout, i, &aOp[i]);
     }
-  }
-  if( fileExists(db, "vdbe_trace") ){
-    p->trace = stdout;
   }
   sqlite3EndBenignMalloc();
 #endif
@@ -627,13 +606,6 @@ int sqlite3VdbeExec(
         sqlite3VdbePrintSql(p);
       }
       sqlite3VdbePrintOp(p->trace, pc, pOp);
-    }
-    if( p->trace==0 && pc==0 ){
-      sqlite3BeginBenignMalloc();
-      if( fileExists(db, "vdbe_sqltrace") ){
-        sqlite3VdbePrintSql(p);
-      }
-      sqlite3EndBenignMalloc();
     }
 #endif
       
