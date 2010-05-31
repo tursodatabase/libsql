@@ -1933,6 +1933,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   if( rc ){
     return rc;
   }
+  pWal->writeLock = 1;
 
   /* If another connection has written to the database file since the
   ** time the read transaction on this connection was started, then
@@ -1941,10 +1942,12 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   rc = walIndexMap(pWal, pWal->hdr.mxFrame);
   if( rc ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    pWal->writeLock = 0;
     return rc;
   }
   if( memcmp(&pWal->hdr, (void*)pWal->pWiData, sizeof(WalIndexHdr))!=0 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    pWal->writeLock = 0;
     walIndexUnmap(pWal);
     return SQLITE_BUSY;
   }
@@ -1968,6 +1971,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
       walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
     }
     walUnlockShared(pWal, WAL_READ_LOCK(0));
+    pWal->readLock = -1;
     do{
       int notUsed;
       rc = walTryBeginRead(pWal, &notUsed, 1);

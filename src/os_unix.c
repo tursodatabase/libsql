@@ -3180,7 +3180,7 @@ struct unixShm {
 /*
 ** Constants used for locking
 */
-#define UNIX_SHM_BASE      80        /* Byte offset of the first lock byte */
+#define UNIX_SHM_BASE      81        /* Byte offset of the first lock byte */
 #define UNIX_SHM_DMS       80        /* The deadman switch lock */
 
 #ifdef SQLITE_DEBUG
@@ -3241,13 +3241,13 @@ static int unixShmSystemLock(
   assert( n==1 || lockType!=F_RDLCK );
 
   /* Locks are within range */
-  assert( n>=1 && ofst>=0 && ofst+n<SQLITE_SHM_NLOCK );
+  assert( n>=1 && n<SQLITE_SHM_NLOCK );
 
   /* Initialize the locking parameters */
   memset(&f, 0, sizeof(f));
   f.l_type = lockType;
   f.l_whence = SEEK_SET;
-  f.l_start = ofst+UNIX_SHM_BASE;
+  f.l_start = ofst;
   f.l_len = n;
 
   rc = fcntl(pShmNode->h, F_SETLK, &f);
@@ -3621,7 +3621,7 @@ static int unixShmLock(
 
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
-  assert( ofst>=0 && ofst+n<SQLITE_SHM_NLOCK );
+  assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
   assert( n>=1 );
   assert( flags==(SQLITE_SHM_LOCK | SQLITE_SHM_SHARED)
        || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
@@ -3629,7 +3629,7 @@ static int unixShmLock(
        || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
   assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
 
-  mask = (1<<(ofst+n+1)) - (1<<(ofst+1));
+  mask = (1<<(ofst+n)) - (1<<ofst);
   assert( n>1 || mask==(1<<ofst) );
   sqlite3_mutex_enter(pShmNode->mutex);
   if( flags & SQLITE_SHM_UNLOCK ){
@@ -3644,7 +3644,7 @@ static int unixShmLock(
 
     /* Unlock the system-level locks */
     if( (mask & allMask)==0 ){
-      rc = unixShmSystemLock(pShmNode, F_UNLCK, ofst+1, n);
+      rc = unixShmSystemLock(pShmNode, F_UNLCK, ofst+UNIX_SHM_BASE, n);
     }else{
       rc = SQLITE_OK;
     }
@@ -3673,7 +3673,7 @@ static int unixShmLock(
     /* Get shared locks at the system level, if necessary */
     if( rc==SQLITE_OK ){
       if( (allShared & mask)==0 ){
-        rc = unixShmSystemLock(pShmNode, F_RDLCK, ofst+1, n);
+        rc = unixShmSystemLock(pShmNode, F_RDLCK, ofst+UNIX_SHM_BASE, n);
       }else{
         rc = SQLITE_OK;
       }
@@ -3699,7 +3699,7 @@ static int unixShmLock(
     ** also mark the local connection as being locked.
     */
     if( rc==SQLITE_OK ){
-      rc = unixShmSystemLock(pShmNode, F_WRLCK, ofst+1, n);
+      rc = unixShmSystemLock(pShmNode, F_WRLCK, ofst+UNIX_SHM_BASE, n);
       if( rc==SQLITE_OK ){
         p->sharedMask &= ~mask;
         p->exclMask |= mask;
