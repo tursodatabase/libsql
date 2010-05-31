@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Get\sthe\snew\sxShmLock\sinterface\sdesign\sworking\son\sos_win.c.
-D 2010-05-31T16:10:12
+C Zero\sthe\scheckpoint\sheader\sas\sthe\slast\sstep\sof\ssuccessful\sWAL\srecovery.\sAvoid\san\sunnecessary\slock/unlock\sin\sWalBeginReadTransaction.
+D 2010-05-31T16:17:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -227,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 07896216f11be3ebcf157af787f365dd0dfd8d5b
+F src/wal.c 85d6de5b32e19550a74ce266aee838b372a27bde
 F src/wal.h 1c1c9feb629b7f4afcbe0b47f80f47c5551d3a02
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 138f128317b6695530ca3fde7be4cdf22548cd22
-R 7584a8108fdae700d6960253d9b47a79
-U drh
-Z 5881487644f0f020a550e6de04f99bce
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMA99noxKgR168RlERAv/LAJ9dsS3ANKFudhEPF8S1qwdmINbEKACfbwG4
-98NkRuZ55m2VyPR7Ra2saoY=
-=gfWw
------END PGP SIGNATURE-----
+P 149a7082e266edf0dc25c23823a9e240f5285215
+R 1637bb46f16c01a65f1f93a814d17297
+U dan
+Z e5f9151081201617db6cdf2f1fd63c05

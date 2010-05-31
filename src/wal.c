@@ -264,7 +264,7 @@ struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
   u16 bigEndCksum;                /* True if checksums in WAL are big-endian */
   u16 szPage;                     /* Database page size in bytes */
-  u32 mxFrame;                    /* Index of last valid frame in the WAL */
+    u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
   u32 aFrameCksum[2];             /* Checksum of last frame in log */
   u32 aSalt[2];                   /* Two salt values copied from WAL header */
@@ -1050,6 +1050,12 @@ finished:
     pWal->hdr.aFrameCksum[0] = aFrameCksum[0];
     pWal->hdr.aFrameCksum[1] = aFrameCksum[1];
     walIndexWriteHdr(pWal);
+
+    /* Zero the checkpoint-header. This is safe because this thread is 
+    ** currently holding locks that exclude all other readers, writers and
+    ** checkpointers.
+    */
+    memset((void *)walCkptInfo(pWal), 0, sizeof(WalCkptInfo));
   }
 
 recovery_error:
@@ -1613,6 +1619,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         ** needs to be reconstructed.  So run recovery to do exactly that.
         */
         rc = walIndexRecover(pWal);
+        *pChanged = 1;
       }
       walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
       pWal->writeLock = 0;
@@ -1752,8 +1759,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
-          pInfo->aReadMark[i] = pWal->hdr.mxFrame+1;
-          mxReadMark = pWal->hdr.mxFrame;
+          mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame+1;
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
