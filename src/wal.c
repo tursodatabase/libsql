@@ -1352,7 +1352,7 @@ static int walCheckpoint(
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
     if( y>0 && (mxSafeFrame==0 || mxSafeFrame>=y) ){
-      if( y<pWal->hdr.mxFrame
+      if( y<=pWal->hdr.mxFrame
        && (rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1))==SQLITE_OK
       ){
         pInfo->aReadMark[i] = 0;
