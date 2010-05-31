@@ -1232,7 +1232,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   ** running (or, indeed, while the WalIterator object exists).  Hence,
   ** we can cast off the volatile qualifacation from shared memory
   */
-  assert( pWal->ckptLock );
+  assert( pWal->ckptLock || pWal->exclusiveMode );
   aData = (u32*)pWal->pWiData;
 
   /* Allocate space for the WalIterator object */
@@ -1345,20 +1345,20 @@ static int walCheckpoint(
   ** overwrite database pages that are in use by active readers and thus
   ** cannot be backfilled from the WAL.
   */
-  mxSafeFrame = 0;
+  mxSafeFrame = pWal->hdr.mxFrame;
   pHdr = (volatile WalIndexHdr*)pWal->pWiData;
   pInfo = (volatile WalCkptInfo*)&pHdr[2];
   assert( pInfo==walCkptInfo(pWal) );
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
-    if( y>0 && (mxSafeFrame==0 || mxSafeFrame<y) ){
+    if( y>0 && (mxSafeFrame==0 || mxSafeFrame>=y) ){
       if( y<pWal->hdr.mxFrame
        && (rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1))==SQLITE_OK
       ){
         pInfo->aReadMark[i] = 0;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
       }else{
-        mxSafeFrame = y;
+        mxSafeFrame = y-1;
       }
     }
   }
@@ -1545,7 +1545,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
   */
-  assert( pWal->writeLock==0 );
+  assert( badHdr==0 || pWal->writeLock==0 );
   if( badHdr ){
     rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
     if( rc==SQLITE_OK ){
@@ -1687,16 +1687,16 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
     */
     rc = walLockExclusive(pWal, WAL_READ_LOCK(1), 1);
     if( rc==SQLITE_OK ){
-      pInfo->aReadMark[1] = pWal->hdr.mxFrame;
+      pInfo->aReadMark[1] = pWal->hdr.mxFrame+1;
       walUnlockExclusive(pWal, WAL_READ_LOCK(1), 1);
     }
     return WAL_RETRY;
   }else{
     if( mxReadMark < pWal->hdr.mxFrame ){
-      for(i=0; i<WAL_NREADER; i++){
+      for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
-          pInfo->aReadMark[i] = pWal->hdr.mxFrame;
+          pInfo->aReadMark[i] = pWal->hdr.mxFrame+1;
           mxReadMark = pWal->hdr.mxFrame;
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
@@ -1953,22 +1953,25 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   }
 
   pInfo = walCkptInfo(pWal);
-  if( pWal->readLock==0 && pInfo->nBackfill==pWal->hdr.mxFrame ){
-    rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
-    if( rc==SQLITE_OK ){
-      /* If all readers are using WAL_READ_LOCK(0) (in other words if no
-      ** readers are currently using the WAL) */
-      pWal->nCkpt++;
-      pWal->hdr.mxFrame = 0;
-      sqlite3Put4byte((u8*)pWal->hdr.aSalt,
-                       1 + sqlite3Get4byte((u8*)pWal->hdr.aSalt));
-      sqlite3_randomness(4, &pWal->hdr.aSalt[1]);
-      walIndexWriteHdr(pWal);
-      pInfo->nBackfill = 0;
-      memset(&pInfo->aReadMark[1], 0, sizeof(pInfo->aReadMark)-sizeof(u32));
-      rc = sqlite3OsTruncate(pWal->pDbFd, 
-                             ((i64)pWal->hdr.nPage*(i64)pWal->szPage));
-      walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+  if( pWal->readLock==0 ){
+    assert( pInfo->nBackfill==pWal->hdr.mxFrame );
+    if( pInfo->nBackfill>0 ){
+      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      if( rc==SQLITE_OK ){
+        /* If all readers are using WAL_READ_LOCK(0) (in other words if no
+        ** readers are currently using the WAL) */
+        pWal->nCkpt++;
+        pWal->hdr.mxFrame = 0;
+        sqlite3Put4byte((u8*)pWal->hdr.aSalt,
+                         1 + sqlite3Get4byte((u8*)pWal->hdr.aSalt));
+        sqlite3_randomness(4, &pWal->hdr.aSalt[1]);
+        walIndexWriteHdr(pWal);
+        pInfo->nBackfill = 0;
+        memset(&pInfo->aReadMark[1], 0, sizeof(pInfo->aReadMark)-sizeof(u32));
+        rc = sqlite3OsTruncate(pWal->pDbFd, 
+                               ((i64)pWal->hdr.nPage*(i64)pWal->szPage));
+        walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      }
     }
     walUnlockShared(pWal, WAL_READ_LOCK(0));
     pWal->readLock = -1;
@@ -1977,6 +1980,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
       rc = walTryBeginRead(pWal, &notUsed, 1);
     }while( rc==WAL_RETRY );
   }
+  walIndexUnmap(pWal);
   return rc;
 }
 
@@ -1986,6 +1990,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 */
 int sqlite3WalEndWriteTransaction(Wal *pWal){
   walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+  pWal->writeLock = 0;
   return SQLITE_OK;
 }
 
@@ -2211,6 +2216,7 @@ int sqlite3WalCheckpoint(
   int isChanged = 0;              /* True if a new wal-index header is loaded */
 
   assert( pWal->pWiData==0 );
+  assert( pWal->ckptLock==0 );
 
   rc = walLockExclusive(pWal, WAL_CKPT_LOCK, 1);
   if( rc ){
@@ -2219,6 +2225,7 @@ int sqlite3WalCheckpoint(
     ** also be SQLITE_IOERR. */
     return rc;
   }
+  pWal->ckptLock = 1;
 
   /* Copy data from the log to the database file. */
   rc = walIndexReadHdr(pWal, &isChanged);
@@ -2238,6 +2245,7 @@ int sqlite3WalCheckpoint(
   /* Release the locks. */
   walIndexUnmap(pWal);
   walUnlockExclusive(pWal, WAL_CKPT_LOCK, 1);
+  pWal->ckptLock = 0;
   return rc;
 }
 
