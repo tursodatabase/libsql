@@ -1696,7 +1696,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
       }
     }
   }else{
-    rc = walIndexMap(pWal, pWal->hdr.mxFrame);
+    rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
   }
   if( rc!=SQLITE_OK ){
     return rc;
@@ -1995,7 +1995,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   ** time the read transaction on this connection was started, then
   ** the write is disallowed.
   */
-  rc = walIndexMap(pWal, pWal->hdr.mxFrame);
+  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
   if( rc ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
