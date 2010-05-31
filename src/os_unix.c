@@ -3569,6 +3569,11 @@ static int unixShmRelease(sqlite3_file *fd){
 
 /*
 ** Change the lock state for a shared-memory segment.
+**
+** Note that the relationship between SHAREd and EXCLUSIVE locks is a little
+** different here than in posix.  In xShmLock(), one can go from unlocked
+** to shared and back or from unlocked to exclusive and back.  But one may
+** not go from shared to exclusive or from exclusive to shared.
 */
 static int unixShmLock(
   sqlite3_file *fd,          /* Database file holding the shared memory */
@@ -3626,7 +3631,6 @@ static int unixShmLock(
     ** SQLITE_BUSY.
     */
     for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
-      if( pX==p ) continue;
       if( (pX->exclMask & mask)!=0 ){
         rc = SQLITE_BUSY;
         break;
@@ -3652,7 +3656,6 @@ static int unixShmLock(
     ** lock.  If any do, return SQLITE_BUSY right away.
     */
     for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
-      if( pX==p ) continue;
       if( (pX->exclMask & mask)!=0 || (pX->sharedMask & mask)!=0 ){
         rc = SQLITE_BUSY;
         break;
@@ -3665,7 +3668,7 @@ static int unixShmLock(
     if( rc==SQLITE_OK ){
       rc = unixShmSystemLock(pShmNode, F_WRLCK, ofst+UNIX_SHM_BASE, n);
       if( rc==SQLITE_OK ){
-        p->sharedMask &= ~mask;
+        assert( (p->sharedMask & mask)==0 );
         p->exclMask |= mask;
       }
     }

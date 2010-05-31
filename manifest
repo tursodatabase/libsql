@@ -1,5 +1,8 @@
-C Avoid\sdropping\sthe\scheckpoint\slock\safter\sa\srecovery\srun\sas\sa\sprecursor\sto\sa\scheckpoint\soperation.
-D 2010-05-31T16:41:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\san\sinconsistent\s#ifdef\sin\swal.c.\s\sFix\sos_unix.c\sso\sthat\sit\sdoes\snot\sallow\nmoving\san\sSHM\slock\sdirectly\sexclusive\sto\sshared\swithout\sgoing\sthrough\sunlocked.
+D 2010-05-31T16:56:15
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 833dbeae0072d4574801f29873594fc988ba3c3a
+F src/os_unix.c 18ed6016685593e23c0e559804dd391a030dfb62
 F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
 F src/pager.c f7128f02623beab9462ca6e73516cf73c49186f8
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -224,7 +227,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c fa5f1784e9189531814dc67fa6461282592acb4b
+F src/wal.c 0ccac00186c45061315676b1a17f68ec181606a2
 F src/wal.h 1c1c9feb629b7f4afcbe0b47f80f47c5551d3a02
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -815,7 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P db3509c55dfe288650b803622e3a0828c6e59aea
-R d089df4f4060e25697a3c07428a29882
-U dan
-Z 14dfbc0870be522424bf1d08866a3ca4
+P cc25cfa04630a43c1de26f2dbdacbe46c110a2b5
+R 12262d82072f7c372f85b91e7ec97bb1
+U drh
+Z b2a5a03b4797272b0d03b889e6006ebd
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMA+oyoxKgR168RlERAv5qAJwI2G0xWyNj/habBep9Ebm7jU70XgCfTTIK
+D6l/MUB5JLrcq4YPmXmA4L0=
+=jHvO
+-----END PGP SIGNATURE-----
