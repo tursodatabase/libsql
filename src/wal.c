@@ -1232,7 +1232,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   ** running (or, indeed, while the WalIterator object exists).  Hence,
   ** we can cast off the volatile qualifacation from shared memory
   */
-  assert( pWal->ckptLock || pWal->exclusiveMode );
+  assert( pWal->ckptLock );
   aData = (u32*)pWal->pWiData;
 
   /* Allocate space for the WalIterator object */
@@ -1427,7 +1427,7 @@ int sqlite3WalClose(
     rc = sqlite3OsLock(pWal->pDbFd, SQLITE_LOCK_EXCLUSIVE);
     if( rc==SQLITE_OK ){
       pWal->exclusiveMode = 1;
-      rc = walCheckpoint(pWal, sync_flags, nBuf, zBuf);
+      rc = sqlite3WalCheckpoint(pWal, sync_flags, nBuf, zBuf);
       if( rc==SQLITE_OK ){
         isDelete = 1;
       }
@@ -1491,9 +1491,11 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
     return 1;   /* Dirty read */
   }  
+#if 0
   if( h1.szPage==0 ){
     return 1;   /* Malformed header - probably all zeros */
   }
+#endif
   walChecksumBytes(1, (u8*)&h1, sizeof(h1)-sizeof(h1.aCksum), 0, aCksum);
   if( aCksum[0]!=h1.aCksum[0] || aCksum[1]!=h1.aCksum[1] ){
     return 1;   /* Checksum does not match */
