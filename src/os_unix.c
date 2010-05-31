@@ -3399,10 +3399,6 @@ static int unixShmClose(
   assert( pShmNode==pDbFd->pInode->pShmNode );
   assert( pShmNode->pInode==pDbFd->pInode );
 
-  /* Verify that the connection being closed holds no locks */
-  assert( p->exclMask==0 );
-  assert( p->sharedMask==0 );
-
   /* Remove connection p from the set of connections associated
   ** with pShmNode */
   sqlite3_mutex_enter(pShmNode->mutex);

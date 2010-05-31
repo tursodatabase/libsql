@@ -1693,7 +1693,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
   int i;                          /* Loop counter */
   int rc;                         /* Return code  */
 
-  assert( pWal->readLock<0 );  /* No read lock held on entry */
+  assert( pWal->readLock<0 );     /* Not currently locked */
 
   if( !useWal ){
     rc = walIndexReadHdr(pWal, pChanged);
@@ -2350,29 +2350,54 @@ int sqlite3WalCallback(Wal *pWal){
 }
 
 /*
-** This function is called to set or query the exclusive-mode flag 
-** associated with the WAL connection passed as the first argument. The
-** exclusive-mode flag should be set to indicate that the caller is
-** holding an EXCLUSIVE lock on the database file (it does this in
-** locking_mode=exclusive mode). If the EXCLUSIVE lock is to be dropped,
-** the flag set by this function should be cleared before doing so.
+** This function is called to change the WAL subsystem into or out
+** of locking_mode=EXCLUSIVE.
 **
-** When the flag is set, this module does not call the VFS xShmLock()
-** method to obtain any locks on the wal-index (as it assumes it
-** has exclusive access to the wal and wal-index files anyhow). It
-** continues to hold (and does not drop) the existing READ lock on
-** the wal-index.
+** If op is zero, then attempt to change from locking_mode=EXCLUSIVE
+** into locking_mode=NORMAL.  This means that we must acquire a lock
+** on the pWal->readLock byte.  If the WAL is already in locking_mode=NORMAL
+** or if the acquisition of the lock fails, then return 0.  If the
+** transition out of exclusive-mode is successful, return 1.  This
+** operation must occur while the pager is still holding the exclusive
+** lock on the main database file.
 **
-** To set or clear the flag, the "op" parameter is passed 1 or 0,
-** respectively. To query the flag, pass -1. In all cases, the value
-** returned is the value of the exclusive-mode flag (after its value
-** has been modified, if applicable).
+** If op is one, then change from locking_mode=NORMAL into 
+** locking_mode=EXCLUSIVE.  This means that the pWal->readLock must
+** be released.  Return 1 if the transition is made and 0 if the
+** WAL is already in exclusive-locking mode - meaning that this
+** routine is a no-op.  The pager must already hold the exclusive lock
+** on the main database file before invoking this operation.
+**
+** If op is negative, then do a dry-run of the op==1 case but do
+** not actually change anything.  The pager uses this to see if it
+** should acquire the database exclusive lock prior to invoking
+** the op==1 case.
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
-  if( op>=0 ){
-    pWal->exclusiveMode = (u8)op;
+  int rc;
+  assert( pWal->writeLock==0 && pWal->readLock>=0 );
+  if( op==0 ){
+    if( pWal->exclusiveMode ){
+      pWal->exclusiveMode = 0;
+      if( walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK ){
+        pWal->exclusiveMode = 1;
+      }
+      rc = pWal->exclusiveMode==0;
+    }else{
+      /* No changes.  Either already in locking_mode=NORMAL or else the 
+      ** acquisition of the read-lock failed.  The pager must continue to
+      ** hold the database exclusive lock. */
+      rc = 0;
+    }
+  }else if( op>0 ){
+    assert( pWal->exclusiveMode==0 );
+    walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
+    pWal->exclusiveMode = 1;
+    rc = 1;
+  }else{
+    rc = pWal->exclusiveMode==0;
   }
-  return pWal->exclusiveMode;
+  return rc;
 }
 
 #endif /* #ifndef SQLITE_OMIT_WAL */

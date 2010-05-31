@@ -1445,9 +1445,8 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
     */
     if( rc2==SQLITE_OK 
      && !pPager->exclusiveMode 
-     && sqlite3WalExclusiveMode(pPager->pWal, -1) 
+     && sqlite3WalExclusiveMode(pPager->pWal, 0) 
     ){
-      sqlite3WalExclusiveMode(pPager->pWal, 0);
       rc2 = osUnlock(pPager->fd, SHARED_LOCK);
     }
   }else if( !pPager->exclusiveMode ){
@@ -2374,6 +2373,13 @@ static int pagerBeginReadTransaction(Pager *pPager){
   int changed = 0;                /* True if cache must be reset */
 
   assert( pagerUseWal(pPager) );
+
+  /* sqlite3WalEndReadTransaction() was not called for the previous
+  ** transaction in locking_mode=EXCLUSIVE.  So call it now.  If we
+  ** are in locking_mode=NORMAL and EndRead() was previously called,
+  ** the duplicate call is harmless.
+  */
+  sqlite3WalEndReadTransaction(pPager->pWal);
 
   rc = sqlite3WalBeginReadTransaction(pPager->pWal, &changed);
   if( rc==SQLITE_OK ){
@@ -4546,7 +4552,7 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
       /* If the pager is configured to use locking_mode=exclusive, and an
       ** exclusive lock on the database is not already held, obtain it now.
       */
-      if( pPager->exclusiveMode && !sqlite3WalExclusiveMode(pPager->pWal, -1) ){
+      if( pPager->exclusiveMode && sqlite3WalExclusiveMode(pPager->pWal, -1) ){
         rc = sqlite3OsLock(pPager->fd, EXCLUSIVE_LOCK);
         pPager->state = PAGER_SHARED;
         if( rc!=SQLITE_OK ){
