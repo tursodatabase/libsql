@@ -2023,7 +2023,8 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
         sqlite3_randomness(4, &pWal->hdr.aSalt[1]);
         walIndexWriteHdr(pWal);
         pInfo->nBackfill = 0;
-        memset(&pInfo->aReadMark[1], 0, sizeof(pInfo->aReadMark)-sizeof(u32));
+        memset((void*)&pInfo->aReadMark[1], 0,
+               sizeof(pInfo->aReadMark)-sizeof(u32));
         rc = sqlite3OsTruncate(pWal->pDbFd, 
                                ((i64)pWal->hdr.nPage*(i64)pWal->szPage));
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);

@@ -3183,42 +3183,6 @@ struct unixShm {
 #define UNIX_SHM_BASE   ((18+SQLITE_SHM_NLOCK)*4)         /* first lock byte */
 #define UNIX_SHM_DMS    (UNIX_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
-#ifdef SQLITE_DEBUG
-/*
-** Return a pointer to a nul-terminated string in static memory that
-** describes a locking mask.  The string is of the form "MSABCD" with
-** each character representing a lock.  "M" for MUTEX, "S" for DMS, 
-** and "A" through "D" for the region locks.  If a lock is held, the
-** letter is shown.  If the lock is not held, the letter is converted
-** to ".".
-**
-** This routine is for debugging purposes only and does not appear
-** in a production build.
-*/
-static const char *unixShmLockString(u16 maskShared, u16 maskExclusive){
-  static char zBuf[52];
-  static int iBuf = 0;
-  int i;
-  u16 mask;
-  char *z;
-
-  z = &zBuf[iBuf];
-  iBuf += 16;
-  if( iBuf>=sizeof(zBuf) ) iBuf = 0;
-  for(i=0, mask=1; i<SQLITE_SHM_NLOCK; i++, mask += mask){
-    if( mask & maskShared ){
-      z[i] = 's';
-    }else if( mask & maskExclusive ){
-      z[i] = 'E';
-    }else{
-      z[i] = '.';
-    }
-  }
-  z[i] = 0;
-  return z;
-}
-#endif /* SQLITE_DEBUG */
-
 /*
 ** Apply posix advisory locks for all bytes from ofst through ofst+n-1.
 **
@@ -3283,8 +3247,8 @@ static int unixShmSystemLock(
       OSTRACE(("write-lock %d failed", ofst));
     }
   }
-  OSTRACE((" - afterwards %s\n",
-           unixShmLockString(pShmNode->sharedMask, pShmNode->exclMask)));
+  OSTRACE((" - afterwards %03x,%03x\n",
+           pShmNode->sharedMask, pShmNode->exclMask));
   }
 #endif
 
@@ -3707,8 +3671,8 @@ static int unixShmLock(
     }
   }
   sqlite3_mutex_leave(pShmNode->mutex);
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %s\n",
-           p->id, getpid(), unixShmLockString(p->sharedMask, p->exclMask)));
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x\n",
+           p->id, getpid(), p->sharedMask, p->exclMask));
   return rc;
 }
 

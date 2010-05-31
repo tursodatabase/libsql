@@ -1227,8 +1227,6 @@ struct winShmNode {
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
 #ifdef SQLITE_DEBUG
-  u8 exclMask;               /* Mask of exclusive locks held */
-  u8 sharedMask;             /* Mask of shared locks held */
   u8 nextShmId;              /* Next available winShm.id value */
 #endif
 };
@@ -1253,70 +1251,21 @@ static winShmNode *winShmNodeList = 0;
 struct winShm {
   winShmNode *pShmNode;      /* The underlying winShmNode object */
   winShm *pNext;             /* Next winShm with the same winShmNode */
-  u8 lockState;              /* Current lock state */
   u8 hasMutex;               /* True if holding the winShmNode mutex */
   u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
-  u8 sharedMask;             /* Mask of shared locks held */
-  u8 exclMask;               /* Mask of exclusive locks held */
 #ifdef SQLITE_DEBUG
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
 };
 
 /*
-** Size increment by which shared memory grows
-*/
-#define SQLITE_WIN_SHM_INCR  4096
-
-/*
 ** Constants used for locking
 */
-#define WIN_SHM_BASE      80        /* Byte offset of the first lock byte */
-#define WIN_SHM_DMS       0x01      /* Mask for Dead-Man-Switch lock */
-#define WIN_SHM_A         0x10      /* Mask for region locks... */
-#define WIN_SHM_B         0x20
-#define WIN_SHM_C         0x40
-#define WIN_SHM_D         0x80
-
-#ifdef SQLITE_DEBUG
-/*
-** Return a pointer to a nul-terminated string in static memory that
-** describes a locking mask.  The string is of the form "MSABCD" with
-** each character representing a lock.  "M" for MUTEX, "S" for DMS, 
-** and "A" through "D" for the region locks.  If a lock is held, the
-** letter is shown.  If the lock is not held, the letter is converted
-** to ".".
-**
-** This routine is for debugging purposes only and does not appear
-** in a production build.
-*/
-static const char *winShmLockString(u8 mask){
-  static char zBuf[48];
-  static int iBuf = 0;
-  char *z;
-
-  z = &zBuf[iBuf];
-  iBuf += 8;
-  if( iBuf>=sizeof(zBuf) ) iBuf = 0;
-
-  z[0] = (mask & WIN_SHM_DMS)   ? 'S' : '.';
-  z[1] = (mask & WIN_SHM_A)     ? 'A' : '.';
-  z[2] = (mask & WIN_SHM_B)     ? 'B' : '.';
-  z[3] = (mask & WIN_SHM_C)     ? 'C' : '.';
-  z[4] = (mask & WIN_SHM_D)     ? 'D' : '.';
-  z[5] = 0;
-  return z;
-}
-#endif /* SQLITE_DEBUG */
+#define WIN_SHM_BASE   ((18+SQLITE_SHM_NLOCK)*4)        /* first lock byte */
+#define WIN_SHM_DMS    (WIN_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
 /*
-** Apply posix advisory locks for all bytes identified in lockMask.
-**
-** lockMask might contain multiple bits but all bits are guaranteed
-** to be contiguous.
-**
-** Locks block if the mask is exactly WIN_SHM_C and are non-blocking
-** otherwise.
+** Apply advisory locks for all n bytes beginning at ofst.
 */
 #define _SHM_UNLCK  1
 #define _SHM_RDLCK  2
@@ -1324,235 +1273,38 @@ static const char *winShmLockString(u8 mask){
 static int winShmSystemLock(
   winShmNode *pFile,    /* Apply locks to this open shared-memory segment */
   int lockType,         /* _SHM_UNLCK, _SHM_RDLCK, or _SHM_WRLCK */
-  u8 lockMask           /* Which bytes to lock or unlock */
+  int ofst,             /* Offset to first byte to be locked/unlocked */
+  int nByte             /* Number of bytes to lock or unlock */
 ){
   OVERLAPPED ovlp;
   DWORD dwFlags;
-  int nBytes;           /* Number of bytes to lock */
-  int i;                /* Offset into the locking byte range */
   int rc = 0;           /* Result code form Lock/UnlockFileEx() */
-  u8 mask;              /* Mask of bits in lockMask */
 
   /* Access to the winShmNode object is serialized by the caller */
   assert( sqlite3_mutex_held(pFile->mutex) || pFile->nRef==0 );
 
   /* Initialize the locking parameters */
-  if( lockMask==WIN_SHM_C && lockType!=_SHM_UNLCK ){
-    dwFlags = 0;
-    OSTRACE(("SHM-LOCK %d requesting blocking lock %s\n", 
-             pFile->hFile.h,
-             winShmLockString(lockMask)));
-  }else{
-    dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
-    OSTRACE(("SHM-LOCK %d requesting %s %s\n", 
-             pFile->hFile.h,
-             lockType!=_SHM_UNLCK ? "lock" : "unlock", 
-             winShmLockString(lockMask)));
-  }
+  dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
   if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
 
   /* Find the first bit in lockMask that is set */
-  for(i=0, mask=0x01; mask!=0 && (lockMask&mask)==0; mask <<= 1, i++){}
-  assert( mask!=0 );
   memset(&ovlp, 0, sizeof(OVERLAPPED));
-  ovlp.Offset = i+WIN_SHM_BASE;
-  nBytes = 1;
-
-  /* Extend the locking range for each additional bit that is set */
-  mask <<= 1;
-  while( mask!=0 && (lockMask & mask)!=0 ){
-    nBytes++;
-    mask <<= 1;
-  }
-
-  /* Verify that all bits set in lockMask are contiguous */
-  assert( mask==0 || (lockMask & ~(mask | (mask-1)))==0 );
+  ovlp.Offset = ofst;
 
   /* Release/Acquire the system-level lock */
   if( lockType==_SHM_UNLCK ){
-    for(i=0; i<nBytes; i++, ovlp.Offset++){
-      rc = UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-      if( !rc ) break;
-    }
+    rc = UnlockFileEx(pFile->hFile.h, 0, nByte, 0, &ovlp);
   }else{
-    /* release old individual byte locks (if any)
-    ** and set new individual byte locks */
-    for(i=0; i<nBytes; i++, ovlp.Offset++){
-      UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-      rc = LockFileEx(pFile->hFile.h, dwFlags, 0, 1, 0, &ovlp);
-      if( !rc ) break;
-    }
+    rc = LockFileEx(pFile->hFile.h, dwFlags, 0, nByte, 0, &ovlp);
   }
   if( !rc ){
     OSTRACE(("SHM-LOCK %d %s ERROR 0x%08lx\n", 
              pFile->hFile.h,
              lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx",
              GetLastError()));
-    /* release individual byte locks (if any) */
-    ovlp.Offset-=i;
-    for(i=0; i<nBytes; i++, ovlp.Offset++){
-      UnlockFileEx(pFile->hFile.h, 0, 1, 0, &ovlp);
-    }
   }
   rc = (rc!=0) ? SQLITE_OK : SQLITE_BUSY;
 
-  /* Update the global lock state and do debug tracing */
-#ifdef SQLITE_DEBUG
-  OSTRACE(("SHM-LOCK %d ", pFile->hFile.h));
-  if( rc==SQLITE_OK ){
-    if( lockType==_SHM_UNLCK ){
-      OSTRACE(("unlock ok"));
-      pFile->exclMask &= ~lockMask;
-      pFile->sharedMask &= ~lockMask;
-    }else if( lockType==_SHM_RDLCK ){
-      OSTRACE(("read-lock ok"));
-      pFile->exclMask &= ~lockMask;
-      pFile->sharedMask |= lockMask;
-    }else{
-      assert( lockType==_SHM_WRLCK );
-      OSTRACE(("write-lock ok"));
-      pFile->exclMask |= lockMask;
-      pFile->sharedMask &= ~lockMask;
-    }
-  }else{
-    if( lockType==_SHM_UNLCK ){
-      OSTRACE(("unlock failed"));
-    }else if( lockType==_SHM_RDLCK ){
-      OSTRACE(("read-lock failed"));
-    }else{
-      assert( lockType==_SHM_WRLCK );
-      OSTRACE(("write-lock failed"));
-    }
-  }
-  OSTRACE((" - change requested %s - afterwards %s:%s\n",
-           winShmLockString(lockMask),
-           winShmLockString(pFile->sharedMask),
-           winShmLockString(pFile->exclMask)));
-#endif
-
-  return rc;
-}
-
-/*
-** For connection p, unlock all of the locks identified by the unlockMask
-** parameter.
-*/
-static int winShmUnlock(
-  winShmNode *pFile,   /* The underlying shared-memory file */
-  winShm *p,           /* The connection to be unlocked */
-  u8 unlockMask         /* Mask of locks to be unlocked */
-){
-  int rc;      /* Result code */
-  winShm *pX; /* For looping over all sibling connections */
-  u8 allMask;  /* Union of locks held by connections other than "p" */
-
-  /* Access to the winShmNode object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
-
-  /* don't attempt to unlock anything we don't have locks for */
-  if( (unlockMask & (p->exclMask|p->sharedMask)) != unlockMask ){
-    OSTRACE(("SHM-LOCK %d unlocking more than we have locked - requested %s - have %s\n",
-             pFile->hFile.h,
-             winShmLockString(unlockMask),
-             winShmLockString(p->exclMask|p->sharedMask)));
-    unlockMask &= (p->exclMask|p->sharedMask);
-  }
-
-  /* Compute locks held by sibling connections */
-  allMask = 0;
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
-    if( pX==p ) continue;
-    assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
-    allMask |= pX->sharedMask;
-  }
-
-  /* Unlock the system-level locks */
-  if( (unlockMask & allMask)!=unlockMask ){
-    rc = winShmSystemLock(pFile, _SHM_UNLCK, unlockMask & ~allMask);
-  }else{
-    rc = SQLITE_OK;
-  }
-
-  /* Undo the local locks */
-  if( rc==SQLITE_OK ){
-    p->exclMask &= ~unlockMask;
-    p->sharedMask &= ~unlockMask;
-  } 
-  return rc;
-}
-
-/*
-** Get reader locks for connection p on all locks in the readMask parameter.
-*/
-static int winShmSharedLock(
-  winShmNode *pFile,   /* The underlying shared-memory file */
-  winShm *p,           /* The connection to get the shared locks */
-  u8 readMask           /* Mask of shared locks to be acquired */
-){
-  int rc;        /* Result code */
-  winShm *pX;   /* For looping over all sibling connections */
-  u8 allShared;  /* Union of locks held by connections other than "p" */
-
-  /* Access to the winShmNode object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
-
-  /* Find out which shared locks are already held by sibling connections.
-  ** If any sibling already holds an exclusive lock, go ahead and return
-  ** SQLITE_BUSY.
-  */
-  allShared = 0;
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
-    if( pX==p ) continue;
-    if( (pX->exclMask & readMask)!=0 ) return SQLITE_BUSY;
-    allShared |= pX->sharedMask;
-  }
-
-  /* Get shared locks at the system level, if necessary */
-  if( (~allShared) & readMask ){
-    rc = winShmSystemLock(pFile, _SHM_RDLCK, readMask);
-  }else{
-    rc = SQLITE_OK;
-  }
-
-  /* Get the local shared locks */
-  if( rc==SQLITE_OK ){
-    p->sharedMask |= readMask;
-  }
-  return rc;
-}
-
-/*
-** For connection p, get an exclusive lock on all locks identified in
-** the writeMask parameter.
-*/
-static int winShmExclusiveLock(
-  winShmNode *pFile,    /* The underlying shared-memory file */
-  winShm *p,            /* The connection to get the exclusive locks */
-  u8 writeMask           /* Mask of exclusive locks to be acquired */
-){
-  int rc;        /* Result code */
-  winShm *pX;   /* For looping over all sibling connections */
-
-  /* Access to the winShmNode object is serialized by the caller */
-  assert( sqlite3_mutex_held(pFile->mutex) );
-
-  /* Make sure no sibling connections hold locks that will block this
-  ** lock.  If any do, return SQLITE_BUSY right away.
-  */
-  for(pX=pFile->pFirst; pX; pX=pX->pNext){
-    if( pX==p ) continue;
-    if( (pX->exclMask & writeMask)!=0 ) return SQLITE_BUSY;
-    if( (pX->sharedMask & writeMask)!=0 ) return SQLITE_BUSY;
-  }
-
-  /* Get the exclusive locks at the system level.  Then if successful
-  ** also mark the local connection as being locked.
-  */
-  rc = winShmSystemLock(pFile, _SHM_WRLCK, writeMask);
-  if( rc==SQLITE_OK ){
-    p->sharedMask &= ~writeMask;
-    p->exclMask |= writeMask;
-  }
   return rc;
 }
 
@@ -1680,11 +1432,12 @@ static int winShmOpen(
     /* Check to see if another process is holding the dead-man switch.
     ** If not, truncate the file to zero length. 
     */
-    if( winShmSystemLock(pShmNode, _SHM_WRLCK, WIN_SHM_DMS)==SQLITE_OK ){
+    if( winShmSystemLock(pShmNode, _SHM_WRLCK, WIN_SHM_DMS, 1)==SQLITE_OK ){
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
     }
     if( rc==SQLITE_OK ){
-      rc = winShmSystemLock(pShmNode, _SHM_RDLCK, WIN_SHM_DMS);
+      winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
+      rc = winShmSystemLock(pShmNode, _SHM_RDLCK, WIN_SHM_DMS, 1);
     }
     if( rc ) goto shm_open_err;
   }
@@ -1703,7 +1456,7 @@ static int winShmOpen(
 
   /* Jump here on any error */
 shm_open_err:
-  winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS);
+  winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
   winShmPurge();                 /* This call frees pShmNode if required */
   sqlite3_free(p);
   sqlite3_free(pNew);
@@ -1727,10 +1480,6 @@ static int winShmClose(
   pDbFd = (winFile*)fd;
   p = pDbFd->pShm;
   pShmNode = p->pShmNode;
-
-  /* Verify that the connection being closed holds no locks */
-  assert( p->exclMask==0 );
-  assert( p->sharedMask==0 );
 
   /* Remove connection p from the set of connections associated
   ** with pShmNode */
@@ -1782,12 +1531,8 @@ static int winShmSize(
   if( reqSize>=0 ){
     sqlite3_int64 sz;
     rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
-    if( SQLITE_OK==rc ){
-      reqSize = (reqSize + SQLITE_WIN_SHM_INCR - 1)/SQLITE_WIN_SHM_INCR;
-      reqSize *= SQLITE_WIN_SHM_INCR;
-      if( reqSize>sz ){
-        rc = winTruncate((sqlite3_file *)&pShmNode->hFile, reqSize);
-      }
+    if( SQLITE_OK==rc && reqSize>sz ){
+      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, reqSize);
     }
   }
   if( SQLITE_OK==rc ){
@@ -1833,14 +1578,14 @@ static int winShmGet(
   sqlite3_file *fd,        /* The database file holding the shared memory */
   int reqMapSize,          /* Requested size of mapping. -1 means don't care */
   int *pNewMapSize,        /* Write new size of mapping here */
-  void **ppBuf             /* Write mapping buffer origin here */
+  void volatile **ppBuf    /* Write mapping buffer origin here */
 ){
   winFile *pDbFd = (winFile*)fd;
   winShm *p = pDbFd->pShm;
   winShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_OK;
 
-  if( p->lockState!=SQLITE_SHM_CHECKPOINT && p->hasMutexBuf==0 ){
+  if( p->hasMutexBuf==0 ){
     assert( sqlite3_mutex_notheld(pShmNode->mutex) );
     sqlite3_mutex_enter(pShmNode->mutexBuf);
     p->hasMutexBuf = 1;
@@ -1920,7 +1665,7 @@ static int winShmGet(
 static int winShmRelease(sqlite3_file *fd){
   winFile *pDbFd = (winFile*)fd;
   winShm *p = pDbFd->pShm;
-  if( p->hasMutexBuf && p->lockState!=SQLITE_SHM_RECOVER ){
+  if( p->hasMutexBuf ){
     winShmNode *pShmNode = p->pShmNode;
     assert( sqlite3_mutex_notheld(pShmNode->mutex) );
     sqlite3_mutex_leave(pShmNode->mutexBuf);
@@ -1930,148 +1675,38 @@ static int winShmRelease(sqlite3_file *fd){
 }
 
 /*
-** Symbolic names for LOCK states used for debugging.
-*/
-#ifdef SQLITE_DEBUG
-static const char *azLkName[] = {
-  "UNLOCK",
-  "READ",
-  "READ_FULL",
-  "WRITE",
-  "PENDING",
-  "CHECKPOINT",
-  "RECOVER"
-};
-#endif
-
-
-/*
 ** Change the lock state for a shared-memory segment.
 */
 static int winShmLock(
-  sqlite3_file *fd,          /* Database holding the shared memory */
-  int desiredLock,           /* One of SQLITE_SHM_xxxxx locking states */
-  int *pGotLock              /* The lock you actually got */
+  sqlite3_file *fd,          /* Database file holding the shared memory */
+  int ofst,                  /* First lock to acquire or release */
+  int n,                     /* Number of locks to acquire or release */
+  int flags                  /* What to do with the lock */
 ){
   winFile *pDbFd = (winFile*)fd;
   winShm *p = pDbFd->pShm;
   winShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_PROTOCOL;
 
-  /* Note that SQLITE_SHM_READ_FULL and SQLITE_SHM_PENDING are never
-  ** directly requested; they are side effects from requesting
-  ** SQLITE_SHM_READ and SQLITE_SHM_CHECKPOINT, respectively.
-  */
-  assert( desiredLock==SQLITE_SHM_UNLOCK
-       || desiredLock==SQLITE_SHM_READ
-       || desiredLock==SQLITE_SHM_WRITE
-       || desiredLock==SQLITE_SHM_CHECKPOINT
-       || desiredLock==SQLITE_SHM_RECOVER );
+  assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
+  assert( n>=1 );
+  assert( flags==(SQLITE_SHM_LOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
+  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
 
-  /* Return directly if this is just a lock state query, or if
-  ** the connection is already in the desired locking state.
-  */
-  if( desiredLock==p->lockState
-   || (desiredLock==SQLITE_SHM_READ && p->lockState==SQLITE_SHM_READ_FULL)
-  ){
-    OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d request %s and got %s\n",
-             pShmNode->hFile.h,
-             p->id, (int)GetCurrentProcessId(), azLkName[desiredLock],
-             azLkName[p->lockState]));
-    if( pGotLock ) *pGotLock = p->lockState;
-    return SQLITE_OK;
-  }
-
-  OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d request %s->%s\n",
-           pShmNode->hFile.h,
-           p->id, (int)GetCurrentProcessId(), azLkName[p->lockState], 
-           azLkName[desiredLock]));
-  
-  if( desiredLock==SQLITE_SHM_RECOVER && !p->hasMutexBuf ){
-    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
-    sqlite3_mutex_enter(pShmNode->mutexBuf);
-    p->hasMutexBuf = 1;
-  }
   sqlite3_mutex_enter(pShmNode->mutex);
-  switch( desiredLock ){
-    case SQLITE_SHM_UNLOCK: {
-      assert( p->lockState!=SQLITE_SHM_RECOVER );
-      winShmUnlock(pShmNode, p, WIN_SHM_A|WIN_SHM_B|WIN_SHM_C|WIN_SHM_D);
-      rc = SQLITE_OK;
-      p->lockState = SQLITE_SHM_UNLOCK;
-      break;
-    }
-    case SQLITE_SHM_READ: {
-      if( p->lockState==SQLITE_SHM_UNLOCK ){
-        int nAttempt;
-        rc = SQLITE_BUSY;
-        assert( p->lockState==SQLITE_SHM_UNLOCK );
-        for(nAttempt=0; nAttempt<5 && rc==SQLITE_BUSY; nAttempt++){
-          rc = winShmSharedLock(pShmNode, p, WIN_SHM_A|WIN_SHM_B);
-          if( rc==SQLITE_BUSY ){
-            rc = winShmSharedLock(pShmNode, p, WIN_SHM_D);
-            if( rc==SQLITE_OK ){
-              p->lockState = SQLITE_SHM_READ_FULL;
-            }
-          }else{
-            winShmUnlock(pShmNode, p, WIN_SHM_B);
-            p->lockState = SQLITE_SHM_READ;
-          }
-        }
-      }else{
-       assert( p->lockState==SQLITE_SHM_WRITE
-               || p->lockState==SQLITE_SHM_RECOVER );
-        rc = winShmSharedLock(pShmNode, p, WIN_SHM_A);
-        winShmUnlock(pShmNode, p, WIN_SHM_C|WIN_SHM_D);
-        p->lockState = SQLITE_SHM_READ;
-      }
-      break;
-    }
-    case SQLITE_SHM_WRITE: {
-      assert( p->lockState==SQLITE_SHM_READ 
-              || p->lockState==SQLITE_SHM_READ_FULL );
-      rc = winShmExclusiveLock(pShmNode, p, WIN_SHM_C|WIN_SHM_D);
-      if( rc==SQLITE_OK ){
-        p->lockState = SQLITE_SHM_WRITE;
-      }
-      break;
-    }
-    case SQLITE_SHM_CHECKPOINT: {
-      assert( p->lockState==SQLITE_SHM_UNLOCK
-           || p->lockState==SQLITE_SHM_PENDING
-      );
-      if( p->lockState==SQLITE_SHM_UNLOCK ){
-        rc = winShmExclusiveLock(pShmNode, p, WIN_SHM_B|WIN_SHM_C);
-        if( rc==SQLITE_OK ){
-          p->lockState = SQLITE_SHM_PENDING;
-        }
-      }
-      if( p->lockState==SQLITE_SHM_PENDING ){
-        rc = winShmExclusiveLock(pShmNode, p, WIN_SHM_A);
-        if( rc==SQLITE_OK ){
-          p->lockState = SQLITE_SHM_CHECKPOINT;
-        }
-      }
-      break;
-    }
-    default: {
-      assert( desiredLock==SQLITE_SHM_RECOVER );
-      assert( p->lockState==SQLITE_SHM_READ
-           || p->lockState==SQLITE_SHM_READ_FULL
-      );
-      assert( sqlite3_mutex_held(pShmNode->mutexBuf) );
-      rc = winShmExclusiveLock(pShmNode, p, WIN_SHM_C);
-      if( rc==SQLITE_OK ){
-        p->lockState = SQLITE_SHM_RECOVER;
-      }
-      break;
-    }
+  if( flags & SQLITE_SHM_UNLOCK ){
+    rc = winShmSystemLock(pShmNode, _SHM_UNLCK, ofst+WIN_SHM_BASE, n);
+  }else if( flags & SQLITE_SHM_SHARED ){
+    rc = winShmSystemLock(pShmNode, _SHM_RDLCK, ofst+WIN_SHM_BASE, n);
+  }else{
+    rc = winShmSystemLock(pShmNode, _SHM_WRLCK, ofst+WIN_SHM_BASE, n);
   }
   sqlite3_mutex_leave(pShmNode->mutex);
-  OSTRACE(("SHM-LOCK %d shmid-%d, pid-%d got %s\n",
-           pShmNode->hFile.h, 
-           p->id, (int)GetCurrentProcessId(), azLkName[p->lockState]));
-  if( pGotLock ) *pGotLock = p->lockState;
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d %s\n",
+           p->id, (int)GetCurrentProcessId(), rc ? "failed" : "ok"));
   return rc;
 }
 
