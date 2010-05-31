@@ -1035,8 +1035,9 @@ do_test wal-15.3.3 {
   sqlite3_errmsg db
 } {database table is locked}
 
-# Also test that an error is returned if the db cannot be checkpointed
-# because of locks held by another connection.
+# Earlier versions returned an error is returned if the db cannot be 
+# checkpointed because of locks held by another connection. Check that
+# this is no longer the case.
 #
 sqlite3 db2 test.db
 do_test wal-15.4.1 {
@@ -1048,10 +1049,10 @@ do_test wal-15.4.1 {
 do_test wal-15.4.2 {
   execsql { COMMIT }
   sqlite3_wal_checkpoint db
-} {SQLITE_BUSY}
+} {SQLITE_OK}
 do_test wal-15.4.3 {
   sqlite3_errmsg db
-} {database is locked}
+} {not an error}
 
 # After [db2] drops its lock, [db] may checkpoint the db.
 #

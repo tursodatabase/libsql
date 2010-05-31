@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Change\sWAL\stest\scases\sto\saccount\sfor\sthe\simproved\sconcurrency\sin\sthe\snew\ncheckpoint\slogic.
-D 2010-05-31T13:11:49
+C Update\sanother\stest\scase\sin\swal.test.
+D 2010-05-31T14:18:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -764,7 +761,7 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 24fb9f0e7eb7fc30b6ae216d59e31a6a21648b07
+F test/wal.test a54d9be9e82eede1653f7998723ead8ce8a1a580
 F test/wal2.test c58bb5b2fac48b8393909038ced730df5ad973b0
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9aa4243e0cedcc9204994d04af1b2b7a80c048bd
-R 72bbbb4220e5d5ecf9016be13b6d8c95
-U drh
-Z dd48911da91c10eed857c9b8bf3a4d73
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMA7WYoxKgR168RlERAkmEAKCAGuXlAbCYwPqWoxSSXRviFrwEIQCgiNnx
-saabtRhlvE/VE/M4AMJEkvk=
-=fgRj
------END PGP SIGNATURE-----
+P 2d6f2485053e6d2a67abda9a80693ca68f4556d2
+R 96c973c2add1d959c0397175c45f8914
+U dan
+Z f8f8c662a8539b2774c212781e3c8a24
