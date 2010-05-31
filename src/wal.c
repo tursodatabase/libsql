@@ -260,7 +260,8 @@ typedef struct WalCkptInfo WalCkptInfo;
 */
 struct WalIndexHdr {
   u32 iChange;                    /* Counter incremented each transaction */
-  u16 bigEndCksum;                /* True if checksums in WAL are big-endian */
+  u8 isInit;                      /* 1 when initialized */
+  u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
   u16 szPage;                     /* Database page size in bytes */
   u32 mxFrame;                    /* Index of last valid frame in the WAL */
   u32 nPage;                      /* Size of database in pages */
@@ -481,6 +482,7 @@ static void walIndexWriteHdr(Wal *pWal){
   WalIndexHdr *aHdr;
 
   assert( pWal->writeLock );
+  pWal->hdr.isInit = 1;
   walChecksumBytes(1, (u8*)&pWal->hdr, offsetof(WalIndexHdr, aCksum),
                    0, pWal->hdr.aCksum);
   aHdr = (WalIndexHdr*)pWal->pWiData;
@@ -1563,11 +1565,9 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
     return 1;   /* Dirty read */
   }  
-#if 0
-  if( h1.szPage==0 ){
+  if( h1.isInit==0 ){
     return 1;   /* Malformed header - probably all zeros */
   }
-#endif
   walChecksumBytes(1, (u8*)&h1, sizeof(h1)-sizeof(h1.aCksum), 0, aCksum);
   if( aCksum[0]!=h1.aCksum[0] || aCksum[1]!=h1.aCksum[1] ){
     return 1;   /* Checksum does not match */
