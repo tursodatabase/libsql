@@ -2066,7 +2066,7 @@ static int semClose(sqlite3_file *id) {
     semUnlock(id, NO_LOCK);
     assert( pFile );
     unixEnterMutex();
-    releaseLockInfo(pFile->pInode);
+    releaseInodeInfo(pFile->pInode);
     unixLeaveMutex();
     closeUnixFile(id);
   }
@@ -2533,7 +2533,7 @@ static int afpClose(sqlite3_file *id) {
       */
       setPendingFd(pFile);
     }
-    releaseLockInfo(pFile->pInode);
+    releaseInodeInfo(pFile->pInode);
     sqlite3_free(pFile->lockingContext);
     rc = closeUnixFile(id);
     unixLeaveMutex();
@@ -3684,12 +3684,8 @@ static int unixShmLock(
 static void unixShmBarrier(
   sqlite3_file *fd           /* Database file holding the shared memory */
 ){
-#ifdef __GNUC__
-  __sync_synchronize();
-#else
-  unixMutexEnter();
-  unixMutexLeave();
-#endif
+  unixEnterMutex();
+  unixLeaveMutex();
 }
 
 

@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sissues\swith\slocking_mode=EXCLUSIVE\sin\sWAL.
-D 2010-05-31T20:28:38
+C Fix\sos_unix.c\sso\sthat\sit\swill\scompile\sand\sbuild\son\sa\sMac.
+D 2010-06-01T00:03:57
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +152,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 129e60ccca3abe59ca4374e28138c540c1069a09
+F src/os_unix.c fe672ba65f15599b2940fd65613df59ce657ad3b
 F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
 F src/pager.c acbef227bf158776449907c275c5d9332e4e52f9
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a16fde190183d1ae252d1aa305b23fdb88c603dc
-R 7ca4bba7f34b45ef2eb156ca8f31e257
+P 8deba0cebd135a18da68530fab9e7d19dc21ddcb
+R 9f04a6c8c3855aa2715f2066a0bb6a2a
 U drh
-Z 95075c06905af9e6fca1be95088ee79b
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMBBv5oxKgR168RlERAmKCAJ953sKjjyeIhzGjYESyG8xuJ6EZyQCfcwsk
-dvi+rRNsOxQx96r9i6h2uoU=
-=APx0
------END PGP SIGNATURE-----
+Z 4cbd37d85a5a7f671b8f563aa4494f83
