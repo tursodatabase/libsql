@@ -1,5 +1,5 @@
-C Attempt\sto\sget\sthe\sfilectrl.test\sscript\srunning.
-D 2010-06-01T00:28:43
+C Comment\sedits\sand\scleanup\sin\swal.c.\s\sNo\sfunctional\scode\schanges.
+D 2010-06-01T01:08:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c b3f312fe54d298f965de98870af9eae0c5829310
+F src/wal.c d03eebb92e496ef6d4bd15d366bea2ee28e7fd8c
 F src/wal.h 1c1c9feb629b7f4afcbe0b47f80f47c5551d3a02
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bc707c83e5f9849d9d201d695d0d071ca9ed93cb
-R ae102866b2fd164e7001ff9fe230b9d8
+P e46a8f2b752f86c4d8942ee125210516026ffdc2
+R 09bc5e191ce3f59e21c41c3724d44527
 U drh
-Z ebdd27e86d236f32028490bc4dcd2173
+Z 50c2b0464eb7589c438f6f5d9973cb2c

@@ -595,7 +595,8 @@ static int walDecodeFrame(
 
 #if defined(SQLITE_TEST) && defined(SQLITE_DEBUG)
 /*
-** Names of locks.
+** Names of locks.  This routine is used to provide debugging output and is not
+** a part of an ordinary build.
 */
 static const char *walLockName(int lockIdx){
   if( lockIdx==WAL_WRITE_LOCK ){
@@ -615,7 +616,9 @@ static const char *walLockName(int lockIdx){
     
 
 /*
-** Set or release locks.
+** Set or release locks on the WAL.  Locks are either shared or exclusive.
+** A lock cannot be moved directly between shared and exclusive - it must go
+** through the unlocked state first.
 **
 ** In locking_mode=EXCLUSIVE, all of these routines become no-ops.
 */
@@ -674,10 +677,10 @@ static int walIndexEntry(u32 iFrame){
 }
 
 /*
-** Return the minimum mapping size in bytes that can be used to read the
-** wal-index up to and including frame iFrame. If iFrame is the last frame
-** in a block of 256 frames, the returned byte-count includes the space
-** required by the 256-byte index block.
+** Return the minimum size of the shared-memory, in bytes, that is needed
+** to support a wal-index containing frame iFrame.  The value returned
+** includes the wal-index header and the complete "block" containing iFrame,
+** including the hash table segment that follows the block.
 */
 static int walMappingSize(u32 iFrame){
   const int nByte = (sizeof(u32)*HASHTABLE_NPAGE + HASHTABLE_NBYTE) ;
@@ -743,7 +746,8 @@ static int walIndexRemap(Wal *pWal, int enlargeTo){
 
 /*
 ** Compute a hash on a page number.  The resulting hash value must land
-** between 0 and (HASHTABLE_NSLOT-1).
+** between 0 and (HASHTABLE_NSLOT-1).  The walHashNext() function advances
+** the hash to the next value in the event of a collision.
 */
 static int walHash(u32 iPage){
   assert( iPage>0 );
@@ -806,9 +810,10 @@ static void walHashFind(
 ** This function is called whenever pWal->hdr.mxFrame is decreased due
 ** to a rollback or savepoint.
 **
-** At most only the very last hash table needs to be updated.  Any
-** later hash tables will be automatically cleared when pWal->hdr.mxFrame
-** advances to the point where those hash tables are actually needed.
+** At most only the hash table containing pWal->hdr.mxFrame needs to be
+** updated.  Any later hash tables will be automatically cleared when
+** pWal->hdr.mxFrame advances to the point where those hash tables are
+** actually needed.
 */
 static void walCleanupHash(Wal *pWal){
   volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
@@ -1089,14 +1094,12 @@ static void walIndexClose(Wal *pWal, int isDelete){
 }
 
 /* 
-** Open a connection to the log file associated with database zDb. The
-** database file does not actually have to exist. zDb is used only to
-** figure out the name of the log file to open. If the log file does not 
-** exist it is created by this call.
+** Open a connection to the WAL file associated with database zDbName.
+** The database file must already be opened on connection pDbFd.
 **
 ** A SHARED lock should be held on the database file when this function
 ** is called. The purpose of this SHARED lock is to prevent any other
-** client from unlinking the log or wal-index file. If another process
+** client from unlinking the WAL or wal-index file. If another process
 ** were to do this just after this client opened one of these files, the
 ** system would be badly broken.
 **
