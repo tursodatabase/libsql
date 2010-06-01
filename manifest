@@ -1,5 +1,8 @@
-C Changes\sto\sthe\sway\sfaults\sare\sinjected\sinto\sxShmXXX\sVFS\scalls.
-D 2010-06-01T19:15:19
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C The\sshared-memory\sused\sby\sWAL\son\slinux\snow\sreally\sis\sshared\smemory\sin\s/dev/shm.\nOn\sother\sunix\sflavors,\sthe\sfile\sis\sin\sa\stemporary\sdirectory\srather\sthan\sin\sthe\nsame\sdirectory\sas\sthe\sdatabase.
+D 2010-06-01T21:02:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +155,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 29dd06f4850672326765218e75cb49d7d618c254
+F src/os_unix.c 31511480da88947d39c9e12560a11d4495e19832
 F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
 F src/pager.c acbef227bf158776449907c275c5d9332e4e52f9
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -168,7 +171,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in c77dd6f7391c7d780622abd221c49d926d32b3b6
+F src/sqlite.h.in 4f72e39f1edeccaf2a5913483bce2f704492b892
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h c1ca9bed7c963343f90edaf0ec31b8ff4b43fb01
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -815,7 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b627e1536822bb7e3ef91867661a53be0efc13ef
-R 61962739bee4b134d51f0c50b54806e9
-U dan
-Z 398c600fb787a366135f57477d6a61d0
+P 716d99f3929b466c7a17190e0f18de8ab0e7f1fa
+R b3414260e40f837bf1c8d956dc6a26ad
+U drh
+Z 80c5ba01de50121a690a7f5cd9c5e6cc
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMBXV/oxKgR168RlERAimSAJ4rYYH4hdiefDukk1w3PgpCHNzTdQCfanYl
+zzhyiYRjebOZPSJO3xolVfs=
+=lQ6P
+-----END PGP SIGNATURE-----

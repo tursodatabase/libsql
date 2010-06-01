@@ -3275,6 +3275,9 @@ static void unixShmPurge(unixFile *pFd){
   }
 }
 
+/* Forward reference */
+static const char *unixTempFileDir(int);
+
 /*
 ** Open a shared-memory area.  This particular implementation uses
 ** mmapped files.
@@ -3297,7 +3300,9 @@ static int unixShmOpen(
   struct unixShmNode *pShmNode = 0;  /* The underlying mmapped file */
   int rc;                            /* Result code */
   struct unixFile *pDbFd;            /* Underlying database file */
-  int nPath;                         /* Size of pDbFd->zPath in bytes */
+  unixInodeInfo *pInode;             /* The inode of fd */
+  const char *zTempDir;              /* Directory for temporary files */
+  int nTempDir;                      /* Size of the zTempDir string */
 
   /* Allocate space for the new sqlite3_shm object.
   */
@@ -3311,18 +3316,26 @@ static int unixShmOpen(
   ** one if present.  Create a new one if necessary.
   */
   unixEnterMutex();
-  pShmNode = pDbFd->pInode->pShmNode;
+  pInode = pDbFd->pInode;
+  pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
-    nPath = strlen(pDbFd->zPath);
-    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nPath + 15 );
+    zTempDir = unixTempFileDir(1);
+    if( zTempDir==0 ){
+      unixLeaveMutex();
+      sqlite3_free(p);
+      return SQLITE_CANTOPEN_NOTEMPDIR;
+    }
+    nTempDir = strlen(zTempDir);
+    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nTempDir + 50 );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
     memset(pShmNode, 0, sizeof(*pShmNode));
     pShmNode->zFilename = (char*)&pShmNode[1];
-    sqlite3_snprintf(nPath+15, pShmNode->zFilename,
-                     "%s-wal-index", pDbFd->zPath);
+    sqlite3_snprintf(nTempDir+50, pShmNode->zFilename,
+                     "%s/sqlite-wi-%x-%x", zTempDir,
+                     (u32)pInode->fileId.dev, (u32)pInode->fileId.ino);
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
@@ -4199,26 +4212,54 @@ static int openDirectory(const char *zFilename, int *pFd){
 }
 
 /*
-** Create a temporary file name in zBuf.  zBuf must be allocated
-** by the calling process and must be big enough to hold at least
-** pVfs->mxPathname bytes.
+** Return the name of a directory in which to put temporary files.
+** If no suitable temporary file directory can be found, return NULL.
 */
-static int getTempname(int nBuf, char *zBuf){
+static const char *unixTempFileDir(int allowShm){
   static const char *azDirs[] = {
      0,
      0,
      "/var/tmp",
      "/usr/tmp",
      "/tmp",
-     ".",
+     0        /* List terminator */
   };
+  unsigned int i;
+  struct stat buf;
+  const char *zDir = 0;
+
+  azDirs[0] = sqlite3_temp_directory;
+  if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
+  
+  if( allowShm ){
+    zDir = "/dev/shm";
+    i = 0;
+  }else{
+    zDir = azDirs[0];
+    i = 1;
+  }
+  for(; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
+    if( zDir==0 ) continue;
+    if( stat(zDir, &buf) ) continue;
+    if( !S_ISDIR(buf.st_mode) ) continue;
+    if( access(zDir, 07) ) continue;
+    break;
+  }
+  return zDir;
+}
+
+/*
+** Create a temporary file name in zBuf.  zBuf must be allocated
+** by the calling process and must be big enough to hold at least
+** pVfs->mxPathname bytes.
+*/
+static int unixGetTempname(int nBuf, char *zBuf){
   static const unsigned char zChars[] =
     "abcdefghijklmnopqrstuvwxyz"
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "0123456789";
   unsigned int i, j;
-  struct stat buf;
-  const char *zDir = ".";
+  const char *zDir;
 
   /* It's odd to simulate an io-error here, but really this is just
   ** using the io-error infrastructure to test that SQLite handles this
@@ -4226,19 +4267,8 @@ static int getTempname(int nBuf, char *zBuf){
   */
   SimulateIOError( return SQLITE_IOERR );
 
-  azDirs[0] = sqlite3_temp_directory;
-  if (NULL == azDirs[1]) {
-    azDirs[1] = getenv("TMPDIR");
-  }
-  
-  for(i=0; i<sizeof(azDirs)/sizeof(azDirs[0]); i++){
-    if( azDirs[i]==0 ) continue;
-    if( stat(azDirs[i], &buf) ) continue;
-    if( !S_ISDIR(buf.st_mode) ) continue;
-    if( access(azDirs[i], 07) ) continue;
-    zDir = azDirs[i];
-    break;
-  }
+  zDir = unixTempFileDir(0);
+  if( zDir==0 ) zDir = ".";
 
   /* Check that the output buffer is large enough for the temporary file 
   ** name. If it is not, return SQLITE_ERROR.
@@ -4428,7 +4458,7 @@ static int unixOpen(
   }else if( !zName ){
     /* If zName is NULL, the upper layer is requesting a temp file. */
     assert(isDelete && !isOpenDirectory);
-    rc = getTempname(MAX_PATHNAME+1, zTmpname);
+    rc = unixGetTempname(MAX_PATHNAME+1, zTmpname);
     if( rc!=SQLITE_OK ){
       return rc;
     }
