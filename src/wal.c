@@ -819,7 +819,7 @@ static void walCleanupHash(Wal *pWal){
   volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
   volatile u32 *aPgno;                 /* Unused return from walHashFind() */
   u32 iZero;                           /* frame == (aHash[x]+iZero) */
-  int iLimit;                          /* Zero values greater than this */
+  int iLimit = 0;                      /* Zero values greater than this */
 
   assert( pWal->writeLock );
   testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE-1 );
@@ -850,7 +850,7 @@ static void walCleanupHash(Wal *pWal){
   /* Verify that the every entry in the mapping region is still reachable
   ** via the hash table even after the cleanup.
   */
-  {
+  if( iLimit ){
     int i;           /* Loop counter */
     int iKey;        /* Hash key */
     for(i=1; i<=iLimit; i++){
