@@ -3406,6 +3406,7 @@ static int unixShmClose(
   *pp = p->pNext;
 
   /* Free the connection p */
+  assert( p->hasMutexBuf==0 );
   sqlite3_free(p);
   pDbFd->pShm = 0;
   sqlite3_mutex_leave(pShmNode->mutex);
@@ -3464,6 +3465,27 @@ static int unixShmSize(
   return rc;
 }
 
+/*
+** Release the lock held on the shared memory segment to that other
+** threads are free to resize it if necessary.
+**
+** If the lock is not currently held, this routine is a harmless no-op.
+**
+** If the shared-memory object is in lock state RECOVER, then we do not
+** really want to release the lock, so in that case too, this routine
+** is a no-op.
+*/
+static int unixShmRelease(sqlite3_file *fd){
+  unixFile *pDbFd = (unixFile*)fd;
+  unixShm *p = pDbFd->pShm;
+
+  if( p->hasMutexBuf ){
+    assert( sqlite3_mutex_notheld(p->pShmNode->mutex) );
+    sqlite3_mutex_leave(p->pShmNode->mutexBuf);
+    p->hasMutexBuf = 0;
+  }
+  return SQLITE_OK;
+}
 
 /*
 ** Map the shared storage into memory. 
@@ -3537,29 +3559,11 @@ static int unixShmGet(
   *pNewMapSize = pShmNode->szMap;
   *ppBuf = pShmNode->pMMapBuf;
   sqlite3_mutex_leave(pShmNode->mutex);
-  return rc;
-}
-
-/*
-** Release the lock held on the shared memory segment to that other
-** threads are free to resize it if necessary.
-**
-** If the lock is not currently held, this routine is a harmless no-op.
-**
-** If the shared-memory object is in lock state RECOVER, then we do not
-** really want to release the lock, so in that case too, this routine
-** is a no-op.
-*/
-static int unixShmRelease(sqlite3_file *fd){
-  unixFile *pDbFd = (unixFile*)fd;
-  unixShm *p = pDbFd->pShm;
-
-  if( p->hasMutexBuf ){
-    assert( sqlite3_mutex_notheld(p->pShmNode->mutex) );
-    sqlite3_mutex_leave(p->pShmNode->mutexBuf);
-    p->hasMutexBuf = 0;
+  if( *ppBuf==0 ){
+    /* Do not hold the mutex if a NULL pointer is being returned. */
+    unixShmRelease(fd);
   }
-  return SQLITE_OK;
+  return rc;
 }
 
 
