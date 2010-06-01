@@ -23,6 +23,105 @@ ifcapable builtin_test {
   return 0
 }
 
+
+#--------------------------------------------------------------------------
+# Usage do_faultsim_test NAME ?OPTIONS...? 
+#
+#     -faults           List of fault types to simulate.
+#
+#     -prep             Script to execute before -body.
+#
+#     -body             Script to execute (with fault injection).
+#
+#     -test             Script to execute after -body.
+#
+proc do_faultsim_test {name args} {
+  set DEFAULT(-faults)        [list       \
+    oom-transient     oom-persistent      \
+    ioerr-transient   ioerr-persistent    \
+  ]
+  set DEFAULT(-prep)          ""
+  set DEFAULT(-body)          ""
+  set DEFAULT(-test)          ""
+
+  array set O [array get DEFAULT]
+  array set O $args
+  foreach o [array names O] {
+    if {[info exists DEFAULT($o)]==0} { error "unknown option: $o" }
+  }
+
+  set A(oom-transient) [list                 \
+    -injectstart   {oom_injectstart 0}       \
+    -injectstop    oom_injectstop            \
+    -injecterrlist {{1 {out of memory}}}     \
+  ]
+  set A(oom-persistent) [list                \
+    -injectstart {oom_injectstart 1000000}   \
+    -injectstop oom_injectstop               \
+    -injecterrlist {{1 {out of memory}}}     \
+  ]
+  
+  set A(ioerr-transient) [list               \
+    -injectstart   {ioerr_injectstart 0}     \
+    -injectstop    ioerr_injectstop          \
+    -injecterrlist {{1 {disk I/O error}}}    \
+  ]
+
+  set A(ioerr-persistent) [list              \
+    -injectstart   {ioerr_injectstart 1}     \
+    -injectstop    ioerr_injectstop          \
+    -injecterrlist {{1 {disk I/O error}}}    \
+  ]
+
+  foreach f $O(-faults) {
+    if {[info exists A($f)]==0} { error "unknown fault: $f" }
+  }
+  set testspec [list -prep $O(-prep) -body $O(-body) -test $O(-test)]
+  foreach f $O(-faults) {
+    eval do_one_faultsim_test "$name-$f" $A($f) $testspec
+  }
+}
+
+#-------------------------------------------------------------------------
+# Procedures to save and restore the current file-system state:
+#
+#   faultsim_save_and_close
+#   faultsim_restore_and_reopen
+#
+proc faultsim_save_and_close {} {
+  foreach {a => b} {
+      test.db          =>  testX.db 
+      test.db-wal      =>  testX.db-wal 
+      test.db-journal  =>  testX.db-journal
+  } {
+    if {[file exists $a]} {
+      file copy -force $a $b
+    } else {
+      file delete -force $b
+    }
+  }
+  catch { db close }
+  return ""
+}
+proc faultsim_restore_and_reopen {} {
+  catch { db close }
+  foreach {a => b} {
+      testX.db          =>  test.db 
+      testX.db-wal      =>  test.db-wal 
+      testX.db-journal  =>  test.db-journal
+  } {
+    if {[file exists $a]} {
+      file copy -force $a $b
+    } else {
+      file delete -force $b
+    }
+  }
+  sqlite3 db test.db
+  sqlite3_extended_result_codes db 1
+  sqlite3_db_config_lookaside db 0 0 0
+}
+
+
 # The following procs are used as [do_faultsim_test] when injecting OOM
 # faults into test cases.
 #
@@ -33,19 +132,35 @@ proc oom_injectstop {} {
   sqlite3_memdebug_fail -1
 }
 
-# This command is only useful when used by the -test script of a 
-# [do_faultsim_test] test case.
+proc ioerr_injectstart {persist iFail} {
+  set ::sqlite_io_error_persist $persist
+  set ::sqlite_io_error_pending $iFail
+}
+proc ioerr_injectstop {} {
+  set sv $::sqlite_io_error_hit
+  set ::sqlite_io_error_persist 0
+  set ::sqlite_io_error_pending 0
+  set ::sqlite_io_error_hardhit 0
+  set ::sqlite_io_error_hit     0
+  set ::sqlite_io_error_pending 0
+  return $sv
+}
+
+# This command is not called directly. It is used by the 
+# [faultsim_test_result] command created by [do_faultsim_test] and used
+# by -test scripts.
 #
-proc faultsim_test_result {args} {
+proc faultsim_test_result_int {args} {
   upvar testrc testrc testresult testresult testnfail testnfail
   set t [list $testrc $testresult]
-  set r [concat $args [list {1 {out of memory}}]]
+  set r $args
   if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch $r $t]<0 } {
     error "nfail=$testnfail rc=$testrc result=$testresult"
   }
 }
 
-# Usage do_faultsim_test NAME ?OPTIONS...? 
+#--------------------------------------------------------------------------
+# Usage do_one_faultsim_test NAME ?OPTIONS...? 
 #
 # The first argument, <test number>, is used as a prefix of the test names
 # taken by tests executed by this command. Options are as follows. All
@@ -55,19 +170,23 @@ proc faultsim_test_result {args} {
 #
 #     -injectstop       Script to disable fault-injection.
 #
+#     -injecterrlist    List of generally acceptable test results (i.e. error
+#                       messages). Example: [list {1 {out of memory}}]
+#
 #     -prep             Script to execute before -body.
 #
 #     -body             Script to execute (with fault injection).
 #
 #     -test             Script to execute after -body.
 #
-proc do_faultsim_test {testname args} {
+proc do_one_faultsim_test {testname args} {
 
-  set DEFAULT(-injectstart) {oom_injectstart 0}
-  set DEFAULT(-injectstop)  {oom_injectstop}
-  set DEFAULT(-prep)        ""
-  set DEFAULT(-body)        ""
-  set DEFAULT(-test)        ""
+  set DEFAULT(-injectstart)   {oom_injectstart 0}
+  set DEFAULT(-injectstop)    {oom_injectstop}
+  set DEFAULT(-injecterrlist) [list {1 {out of memory}}]
+  set DEFAULT(-prep)          ""
+  set DEFAULT(-body)          ""
+  set DEFAULT(-test)          ""
 
   array set O [array get DEFAULT]
   array set O $args
@@ -76,6 +195,9 @@ proc do_faultsim_test {testname args} {
   }
 
   proc faultsim_test_proc {testrc testresult testnfail} $O(-test)
+  proc faultsim_test_result {args} "
+    uplevel faultsim_test_result_int \$args [list $O(-injecterrlist)]
+  "
 
   set stop 0
   for {set iFail 1} {!$stop} {incr iFail} {

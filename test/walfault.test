@@ -19,10 +19,20 @@ source $testdir/malloc_common.tcl
 
 ifcapable !wal {finish_test ; return }
 
-do_faultsim_test walfault-oom-1 -prep {
-  catch { db close }
+#-------------------------------------------------------------------------
+# This test case, walfault-1-*, simulates faults while executing a
+#
+#   PRAGMA journal_mode = WAL;
+#
+# statement immediately after creating a new database.
+#
+do_test walfault-1-pre-1 {
+  db close
   file delete -force test.db test.db-wal test.db-journal
-  sqlite3 db test.db
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-1 -prep {
+  faultsim_restore_and_reopen
 } -body {
   db eval { PRAGMA main.journal_mode = WAL }
 } -test {
@@ -49,7 +59,12 @@ do_faultsim_test walfault-oom-1 -prep {
   if { $testrc==0 && $jm!="wal" } { error "Journal mode is not WAL" }
 }
 
-do_malloc_test walfault-oom-2 -tclprep {
+#--------------------------------------------------------------------------
+# Test case walfault-2-* tests fault injection during recovery of a 
+# short WAL file (a dozen frames or thereabouts).
+#
+do_test walfault-2-pre-1 {
+  sqlite3 db test.db
   execsql {
     PRAGMA journal_mode = WAL;
     BEGIN;
@@ -62,29 +77,54 @@ do_malloc_test walfault-oom-2 -tclprep {
     INSERT INTO x SELECT randomblob(100), randomblob(100) FROM x;
     INSERT INTO x SELECT randomblob(100), randomblob(100) FROM x;
   }
-  file copy -force test.db testX.db
-  file copy -force test.db-wal testX.db-wal
-  db close
-  file rename -force testX.db test.db
-  file rename -force testX.db-wal test.db-wal
+  execsql {
+    SELECT count(*) FROM x
+  }
+} {8}
+do_test walfault-2-pre-2 {
+  faultsim_save_and_close
+  faultsim_restore_and_reopen
+  execsql { SELECT count(*) FROM x }
+} {8}
+do_faultsim_test walfault-2 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT count(*) FROM x }
+} -test {
 
+  # Test that all the rows in the WAL were recovered.
+  faultsim_test_result {0 8}
+
+  # Run the integrity_check to make sure nothing strange has occurred.
+  set ic [db eval { PRAGMA integrity_check }]
+  if {$ic != "ok"} { error "Integrity check: $ic" }
+}
+
+#--------------------------------------------------------------------------
+# Test fault injection while writing and checkpointing a small WAL file.
+#
+do_test walfault-3-pre-1 {
   sqlite3 db test.db
-  sqlite3_extended_result_codes db 1
-  sqlite3_db_config_lookaside db 0 0 0
-} -sqlbody {
-  SELECT count(*) FROM x;
-}
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE abc(a PRIMARY KEY);
+    INSERT INTO abc VALUES(randomblob(1500));
+  }
+  db close
+  faultsim_save_and_close
+} {}
 
-do_ioerr_test walfault-ioerr-1 -sqlprep {
-  PRAGMA auto_vacuum = 1;
-  PRAGMA journal_mode = WAL;
-  CREATE TABLE abc(a PRIMARY KEY);
-  INSERT INTO abc VALUES(randomblob(1500));
-} -sqlbody {
-  DELETE FROM abc;
-  PRAGMA wal_checkpoint;
+do_faultsim_test walfault-3 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval {
+    DELETE FROM abc;
+    PRAGMA wal_checkpoint;
+  }
+} -test {
+  faultsim_test_result {0 {}}
 }
-catch {db close}
 
 # A [testvfs] callback for the VFS created by [do_shmfault_test]. This
 # callback injects SQLITE_IOERR faults into methods for which an entry
