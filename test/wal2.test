@@ -371,6 +371,15 @@ tvfs delete
 # required the client grabs all exclusive locks (just as it would for a
 # recovery performed as a pre-cursor to a normal database transaction).
 #
+set expected_locks [list]
+lappend expected_locks {1 1 lock exclusive}   ;# Lock checkpoint
+lappend expected_locks {0 1 lock exclusive}   ;# Lock writer
+lappend expected_locks {2 6 lock exclusive}   ;# Lock recovery & all aReadMark[]
+lappend expected_locks {2 6 unlock exclusive} ;# Unlock recovery & aReadMark[]
+lappend expected_locks {0 1 unlock exclusive} ;# Unlock writer
+lappend expected_locks {3 1 lock exclusive}   ;# Lock aReadMark[0]
+lappend expected_locks {3 1 unlock exclusive} ;# Unlock aReadMark[0]
+lappend expected_locks {1 1 unlock exclusive} ;# Unlock checkpoint
 do_test wal2-5.1 {
   proc tvfs_cb {method args} {
     set ::shm_file [lindex $args 0]
@@ -392,7 +401,7 @@ do_test wal2-5.1 {
   set ::locks [list]
   execsql { PRAGMA wal_checkpoint }
   set ::locks
-} {CHECKPOINT UNLOCK}
+} $expected_locks
 db close
 tvfs delete
 
@@ -557,6 +566,11 @@ do_test wal2-6.3.7 {
 } {main exclusive temp closed}
 db close
 
+
+# This test - wal2-6.4.* - uses a single database connection and the
+# [testvfs] instrumentation to test that xShmLock() is being called
+# as expected when a WAL database is used with locking_mode=exclusive.
+#
 do_test wal2-6.4.1 {
   file delete -force test.db test.db-wal test.db-journal
   proc tvfs_cb {method args} {
@@ -566,45 +580,114 @@ do_test wal2-6.4.1 {
   }
   testvfs tvfs tvfs_cb
   sqlite3 db test.db -vfs tvfs
+} {}
 
-  execsql {
+set RECOVERY {
+  {0 1 lock exclusive} {1 7 lock exclusive} 
+  {1 7 unlock exclusive} {0 1 unlock exclusive}
+}
+set READMARK0_READ {
+  {3 1 lock shared} {3 1 unlock shared}
+}
+set READMARK0_WRITE {
+  {3 1 lock shared} 
+  {0 1 lock exclusive} {3 1 unlock shared} 
+  {4 1 lock exclusive} {4 1 unlock exclusive} {4 1 lock shared} 
+  {0 1 unlock exclusive} {4 1 unlock shared}
+}
+set READMARK1_SET {
+  {4 1 lock exclusive} {4 1 unlock exclusive}
+}
+set READMARK1_READ {
+  {4 1 lock shared} {4 1 unlock shared}
+}
+
+foreach {tn sql res expected_locks} {
+  2 {
     PRAGMA journal_mode = WAL;
-    CREATE TABLE t1(x);
-    INSERT INTO t1 VALUES('Leonard');
-    INSERT INTO t1 VALUES('Arthur');
+    BEGIN;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES('Leonard');
+      INSERT INTO t1 VALUES('Arthur');
+    COMMIT;
+  } {wal} {
+    $RECOVERY 
+    $READMARK0_READ 
+    $READMARK0_WRITE
   }
 
-  set ::locks [list]
-  execsql { PRAGMA locking_mode = exclusive }
-  set ::locks
-} {}
-do_test wal2-6.4.2 {
-  execsql { SELECT * FROM t1 }
-} {Leonard Arthur}
-do_test wal2-6.4.3 {
-  set ::locks
-} {READ}
-do_test wal2-6.4.4 {
-  execsql { 
+  3 {
+    # This test should do the READMARK1_SET locking to populate the 
+    # aReadMark[1] slot with the current mxFrame value. Followed by
+    # READMARK1_READ to read the database.
+    #
+    SELECT * FROM t1
+  } {Leonard Arthur} {
+    $READMARK1_SET
+    $READMARK1_READ
+  }
+
+  4 {
+    # aReadMark[1] is already set to mxFrame. So just READMARK1_READ
+    # this time, not READMARK1_SET.
+    #
+    SELECT * FROM t1 ORDER BY x
+  } {Arthur Leonard} { 
+    $READMARK1_READ 
+  }
+
+  5 {
+    PRAGMA locking_mode = exclusive
+  } {exclusive} { } 
+
+  6 {
     INSERT INTO t1 VALUES('Julius Henry');
     SELECT * FROM t1;
+  } {Leonard Arthur {Julius Henry}} {
+    $READMARK1_READ
   }
-} {Leonard Arthur {Julius Henry}}
-do_test wal2-6.4.5 {
-  set ::locks
-} {READ}
-do_test wal2-6.4.6 {
-  execsql {
-    PRAGMA locking_mode = NORMAL;
-    DELETE FROM t1;
+
+  7 {
+    INSERT INTO t1 VALUES('Karl');
+    SELECT * FROM t1;
+  } {Leonard Arthur {Julius Henry} Karl} { }
+
+  8 {
+    PRAGMA locking_mode = normal
+  } {normal} { }
+
+  9 {
+    SELECT * FROM t1 ORDER BY x
+  } {Arthur {Julius Henry} Karl Leonard} { }
+
+  10 {
+    DELETE FROM t1
+  } {} {
+    $READMARK1_READ
   }
-  set ::locks
-} {READ UNLOCK}
-do_test wal2-6.4.7 {
+
+  11 {
+    SELECT * FROM t1
+  } {} {
+    $READMARK1_SET
+    $READMARK1_READ
+  }
+} {
+
+  set L [list]
+  foreach el [subst $expected_locks] { lappend L $el }
+
+  set S ""
+  foreach sq [split $sql "\n"] { 
+    set sq [string trim $sq]
+    if {[string match {#*} $sq]==0} {append S "$sq\n"}
+  }
+
   set ::locks [list]
-  execsql { INSERT INTO t1 VALUES('Karl') }
-  set ::locks
-} {READ WRITE READ UNLOCK}
+  do_test wal2-6.4.$tn.1 { execsql $S } $res
+  do_test wal2-6.4.$tn.2 { set ::locks  } $L
+}
+
 db close
 tvfs delete
 
