@@ -2002,7 +2002,6 @@ void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
 */
 int sqlite3WalBeginWriteTransaction(Wal *pWal){
   int rc;
-  volatile WalCkptInfo *pInfo;
 
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
@@ -2030,39 +2029,9 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   if( memcmp(&pWal->hdr, (void*)pWal->pWiData, sizeof(WalIndexHdr))!=0 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
-    walIndexUnmap(pWal);
-    return SQLITE_BUSY;
+    rc = SQLITE_BUSY;
   }
 
-  pInfo = walCkptInfo(pWal);
-  if( pWal->readLock==0 ){
-    assert( pInfo->nBackfill==pWal->hdr.mxFrame );
-    if( pInfo->nBackfill>0 ){
-      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
-      if( rc==SQLITE_OK ){
-        /* If all readers are using WAL_READ_LOCK(0) (in other words if no
-        ** readers are currently using the WAL) */
-        pWal->nCkpt++;
-        pWal->hdr.mxFrame = 0;
-        sqlite3Put4byte((u8*)pWal->hdr.aSalt,
-                         1 + sqlite3Get4byte((u8*)pWal->hdr.aSalt));
-        sqlite3_randomness(4, &pWal->hdr.aSalt[1]);
-        walIndexWriteHdr(pWal);
-        pInfo->nBackfill = 0;
-        memset((void*)&pInfo->aReadMark[1], 0,
-               sizeof(pInfo->aReadMark)-sizeof(u32));
-        rc = sqlite3OsTruncate(pWal->pDbFd, 
-                               ((i64)pWal->hdr.nPage*(i64)pWal->szPage));
-        walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
-      }
-    }
-    walUnlockShared(pWal, WAL_READ_LOCK(0));
-    pWal->readLock = -1;
-    do{
-      int notUsed;
-      rc = walTryBeginRead(pWal, &notUsed, 1);
-    }while( rc==WAL_RETRY );
-  }
   walIndexUnmap(pWal);
   return rc;
 }
@@ -2150,9 +2119,66 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
   return rc;
 }
 
+/*
+** This function is called just before writing a set of frames to the log
+** file (see sqlite3WalFrames()). It checks to see if, instead of appending
+** to the current log file, it is possible to overwrite the start of the
+** existing log file with the new frames (i.e. "reset" the log). If so,
+** it sets pWal->hdr.mxFrame to 0. Otherwise, pWal->hdr.mxFrame is left
+** unchanged.
+**
+** SQLITE_OK is returned if no error is encountered (regardless of whether
+** or not pWal->hdr.mxFrame is modified). An SQLite error code is returned
+** if some error 
+*/
+static int walRestartLog(Wal *pWal){
+  int rc = SQLITE_OK;
+  if( pWal->readLock==0 
+   && SQLITE_OK==(rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame)))
+  ){
+    volatile WalCkptInfo *pInfo = walCkptInfo(pWal);
+    assert( pInfo->nBackfill==pWal->hdr.mxFrame );
+    if( pInfo->nBackfill>0 ){
+      rc = walLockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      if( rc==SQLITE_OK ){
+        /* If all readers are using WAL_READ_LOCK(0) (in other words if no
+        ** readers are currently using the WAL), then the transactions
+        ** frames will overwrite the start of the existing log. Update the
+        ** wal-index header to reflect this.
+        **
+        ** In theory it would be Ok to update the cache of the header only
+        ** at this point. But updating the actual wal-index header is also
+        ** safe and means there is no special case for sqlite3WalUndo()
+        ** to handle if this transaction is rolled back.
+        */
+        u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
+        pWal->nCkpt++;
+        pWal->hdr.mxFrame = 0;
+        sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
+        sqlite3_randomness(4, &aSalt[1]);
+        walIndexWriteHdr(pWal);
+        memset((void*)pInfo, 0, sizeof(*pInfo));
+        walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
+      }
+    }
+    walUnlockShared(pWal, WAL_READ_LOCK(0));
+    pWal->readLock = -1;
+    do{
+      int notUsed;
+      rc = walTryBeginRead(pWal, &notUsed, 1);
+    }while( rc==WAL_RETRY );
+
+    /* Unmap the wal-index before returning. Otherwise the VFS layer may
+    ** hold a mutex for the duration of the IO performed by WalFrames().
+    */
+    walIndexUnmap(pWal);
+  }
+  return rc;
+}
+
 /* 
 ** Write a set of frames to the log. The caller must hold the write-lock
-** on the log file (obtained using sqlite3WalWriteLock()).
+** on the log file (obtained using sqlite3WalBeginWriteTransaction()).
 */
 int sqlite3WalFrames(
   Wal *pWal,                      /* Wal handle to write to */
@@ -2180,6 +2206,15 @@ int sqlite3WalFrames(
   }
 #endif
 
+  /* See if it is possible to write these frames into the start of the
+  ** log file, instead of appending to it at pWal->hdr.mxFrame.
+  */
+  if( SQLITE_OK!=(rc = walRestartLog(pWal)) ){
+    assert( pWal->pWiData==0 );
+    return rc;
+  }
+  assert( pWal->pWiData==0 && pWal->readLock>0 );
+
   /* If this is the first frame written into the log, write the WAL
   ** header to the start of the WAL file. See comments at the top of
   ** this source file for a description of the WAL header format.
@@ -2203,7 +2238,7 @@ int sqlite3WalFrames(
   }
   assert( pWal->szPage==szPage );
 
-    /* Write the log file. */
+  /* Write the log file. */
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
