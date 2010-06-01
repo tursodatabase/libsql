@@ -1,5 +1,5 @@
-C If\san\sattempt\sto\sget\sa\sread-lock\son\sthe\sWAL\sfails\swith\sSQLITE_BUSY_RECOVER,\scall\sthe\sbusy-handler\sat\sthe\sbtree\slevel.
-D 2010-06-01T14:12:45
+C Merge\swith\s[15abbc3416].
+D 2010-06-01T14:30:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -506,7 +506,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test e3ea401904d010cb7c1e4b2ee8803f4a9f5b999d
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl f95c4d3459877e64c2d856b8a9c39210f9968ddf
+F test/malloc_common.tcl d92de40a5583f977a7c1bd3a25d8f66d75e55263
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test d2d2a1ff7105d32dc3fdf691458cf6cba58c7217
@@ -767,7 +767,7 @@ F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
-F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
+F test/walfault.test 690350d02057409b695a3694f048780f2c5e21f4
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9c9ec8994bf701249efce6c7bb911de4525808c8
-R 2b521b04f3b51086c8477471cd905ca9
+P ce64496509a213c08c9dedae2a7a456b393d22e5 15abbc34168f7a5bd418254c2b16aac97029e6ea
+R 858d8d9dc0b3efa473b8ec6d14fcb8f5
 U dan
-Z 5cf352c78c887b69611dfdbc185b73d6
+Z 93dba21d700df76a7de6004be75fceac

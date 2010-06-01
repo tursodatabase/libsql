@@ -23,6 +23,91 @@ ifcapable builtin_test {
   return 0
 }
 
+# The following procs are used as [do_faultsim_test] when injecting OOM
+# faults into test cases.
+#
+proc oom_injectstart {nRepeat iFail} {
+  sqlite3_memdebug_fail $iFail -repeat $nRepeat
+}
+proc oom_injectstop {} {
+  sqlite3_memdebug_fail -1
+}
+
+# This command is only useful when used by the -test script of a 
+# [do_faultsim_test] test case.
+#
+proc faultsim_test_result {args} {
+  upvar testrc testrc testresult testresult testnfail testnfail
+  set t [list $testrc $testresult]
+  set r [concat $args [list {1 {out of memory}}]]
+  if { ($testnfail==0 && $t != [lindex $r 0]) || [lsearch $r $t]<0 } {
+    error "nfail=$testnfail rc=$testrc result=$testresult"
+  }
+}
+
+# Usage do_faultsim_test NAME ?OPTIONS...? 
+#
+# The first argument, <test number>, is used as a prefix of the test names
+# taken by tests executed by this command. Options are as follows. All
+# options take a single argument.
+#
+#     -injectstart      Script to enable fault-injection.
+#
+#     -injectstop       Script to disable fault-injection.
+#
+#     -prep             Script to execute before -body.
+#
+#     -body             Script to execute (with fault injection).
+#
+#     -test             Script to execute after -body.
+#
+proc do_faultsim_test {testname args} {
+
+  set DEFAULT(-injectstart) {oom_injectstart 0}
+  set DEFAULT(-injectstop)  {oom_injectstop}
+  set DEFAULT(-prep)        ""
+  set DEFAULT(-body)        ""
+  set DEFAULT(-test)        ""
+
+  array set O [array get DEFAULT]
+  array set O $args
+  foreach o [array names O] {
+    if {[info exists DEFAULT($o)]==0} { error "unknown option: $o" }
+  }
+
+  proc faultsim_test_proc {testrc testresult testnfail} $O(-test)
+
+  set stop 0
+  for {set iFail 1} {!$stop} {incr iFail} {
+
+    # Evaluate the -prep script.
+    #
+    eval $O(-prep)
+
+    # Start the fault-injection. Run the -body script. Stop the fault
+    # injection. Local var $nfail is set to the total number of faults 
+    # injected into the system this trial.
+    #
+    eval $O(-injectstart) $iFail
+    set rc [catch $O(-body) res]
+    set nfail [eval $O(-injectstop)]
+
+    # Run the -test script. If it throws no error, consider this trial
+    # sucessful. If it does throw an error, cause a [do_test] test to
+    # fail (and print out the unexpected exception thrown by the -test
+    # script at the same time).
+    #
+    set rc [catch [list faultsim_test_proc $rc $res $nfail] res]
+    if {$rc == 0} {set res ok}
+    do_test $testname.$iFail [list list $rc $res] {0 ok}
+
+    # If no faults where injected this trial, don't bother running
+    # any more. This test is finished.
+    #
+    if {$nfail==0} { set stop 1 }
+  }
+}
+
 # Usage: do_malloc_test <test number> <options...>
 #
 # The first argument, <test number>, is an integer used to name the

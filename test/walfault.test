@@ -19,11 +19,34 @@ source $testdir/malloc_common.tcl
 
 ifcapable !wal {finish_test ; return }
 
-do_malloc_test walfault-oom-1 -sqlbody {
-  PRAGMA journal_mode = WAL;
-  CREATE TABLE t1(a, b);
-  INSERT INTO t1 VALUES(1, 2);
-  PRAGMA wal_checkpoint;
+do_faultsim_test walfault-oom-1 -prep {
+  catch { db close }
+  file delete -force test.db test.db-wal test.db-journal
+  sqlite3 db test.db
+} -body {
+  db eval { PRAGMA main.journal_mode = WAL }
+} -test {
+
+  faultsim_test_result {0 wal}
+
+  # Test that the connection that encountered an error as part of 
+  # "PRAGMA journal_mode = WAL" and a new connection use the same
+  # journal mode when accessing the database.
+  #
+  # If "PRAGMA journal_mode" is executed immediately, connection [db] (the 
+  # one that hit the error in journal_mode="WAL") might return "wal" even 
+  # if it failed to switch the database to WAL mode. This is not considered 
+  # a problem. When it tries to read the database, connection [db] correctly 
+  # recognizes that it is a rollback database and switches back to a 
+  # rollback compatible journal mode.
+  #
+  set jm  [db one  {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
+  sqlite3 db2 test.db
+  set jm2 [db2 one {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
+  db2 close
+
+  if { $jm!=$jm2 } { error "Journal modes do not match: $jm $jm2" }
+  if { $testrc==0 && $jm!="wal" } { error "Journal mode is not WAL" }
 }
 
 do_malloc_test walfault-oom-2 -tclprep {
