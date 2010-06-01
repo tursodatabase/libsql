@@ -822,11 +822,16 @@ static void walCleanupHash(Wal *pWal){
   int iLimit;                          /* Zero values greater than this */
 
   assert( pWal->writeLock );
-  walHashFind(pWal, pWal->hdr.mxFrame+1, &aHash, &aPgno, &iZero);
-  iLimit = pWal->hdr.mxFrame - iZero;
-  if( iLimit>0 ){
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE-1 );
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE );
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE+1 );
+  if( (pWal->hdr.mxFrame % HASHTABLE_NPAGE)>0 ){
     int nByte;                    /* Number of bytes to zero in aPgno[] */
     int i;                        /* Used to iterate through aHash[] */
+
+    walHashFind(pWal, pWal->hdr.mxFrame+1, &aHash, &aPgno, &iZero);
+    iLimit = pWal->hdr.mxFrame - iZero;
+    assert( iLimit>0 );
     for(i=0; i<HASHTABLE_NSLOT; i++){
       if( aHash[i]>iLimit ){
         aHash[i] = 0;
