@@ -540,8 +540,8 @@ static int cfShmGet(
 static int cfShmRelease(sqlite3_file *pFile){
   return sqlite3OsShmRelease(((CrashFile*)pFile)->pRealFile);
 }
-static int cfShmLock(sqlite3_file *pFile, int desired, int *pGot){
-  return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, desired, pGot);
+static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
+  return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, ofst, n, flags);
 }
 static void cfShmBarrier(sqlite3_file *pFile){
   sqlite3OsShmBarrier(((CrashFile*)pFile)->pRealFile);

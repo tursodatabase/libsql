@@ -155,7 +155,7 @@ static int vfslogShmOpen(sqlite3_file *pFile);
 static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize);
 static int vfslogShmGet(sqlite3_file *pFile, int,int*,volatile void **);
 static int vfslogShmRelease(sqlite3_file *pFile);
-static int vfslogShmLock(sqlite3_file *pFile, int desiredLock, int *gotLock);
+static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags);
 static void vfslogShmBarrier(sqlite3_file*);
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
 
@@ -460,12 +460,12 @@ static int vfslogShmRelease(sqlite3_file *pFile){
   vfslog_call(p->pVfslog, OS_SHMRELEASE, p->iFileId, t, rc, 0, 0);
   return rc;
 }
-static int vfslogShmLock(sqlite3_file *pFile, int desiredLock, int *gotLock){
+static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   int rc;
   sqlite3_uint64 t;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
-  rc = p->pReal->pMethods->xShmLock(p->pReal, desiredLock, gotLock);
+  rc = p->pReal->pMethods->xShmLock(p->pReal, ofst, n, flags);
   t = vfslog_time() - t;
   vfslog_call(p->pVfslog, OS_SHMLOCK, p->iFileId, t, rc, 0, 0);
   return rc;

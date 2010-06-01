@@ -34,7 +34,7 @@ do_test filectrl-1.4 {
 do_test filectrl-1.5 {
   db close
   sqlite3 db test_control_lockproxy.db
-  file_control_lockproxy_test db
+  file_control_lockproxy_test db [pwd]
 } {}
 db close
 file delete -force .test_control_lockproxy.db-conch test.proxy

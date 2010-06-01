@@ -102,7 +102,7 @@ static int tvfsShmOpen(sqlite3_file*);
 static int tvfsShmSize(sqlite3_file*, int , int *);
 static int tvfsShmGet(sqlite3_file*, int , int *, volatile void **);
 static int tvfsShmRelease(sqlite3_file*);
-static int tvfsShmLock(sqlite3_file*, int , int *);
+static int tvfsShmLock(sqlite3_file*, int , int, int);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
 
@@ -544,31 +544,34 @@ static int tvfsShmRelease(sqlite3_file *pFile){
 
 static int tvfsShmLock(
   sqlite3_file *pFile,
-  int desiredLock,
-  int *gotLock
+  int ofst,
+  int n,
+  int flags
 ){
   int rc = SQLITE_OK;
   TestvfsFile *pFd = (TestvfsFile *)pFile;
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
-  char *zLock = "";
+  int nLock;
+  char zLock[80];
 
-  switch( desiredLock ){
-    case SQLITE_SHM_READ:         zLock = "READ";       break;
-    case SQLITE_SHM_WRITE:        zLock = "WRITE";      break;
-    case SQLITE_SHM_CHECKPOINT:   zLock = "CHECKPOINT"; break;
-    case SQLITE_SHM_RECOVER:      zLock = "RECOVER";    break;
-    case SQLITE_SHM_PENDING:      zLock = "PENDING";    break;
-    case SQLITE_SHM_UNLOCK:       zLock = "UNLOCK";     break;
+  sqlite3_snprintf(sizeof(zLock), zLock, "%d %d", ofst, n);
+  nLock = strlen(zLock);
+  if( flags & SQLITE_SHM_LOCK ){
+    strcpy(&zLock[nLock], " lock");
+  }else{
+    strcpy(&zLock[nLock], " unlock");
+  }
+  nLock += strlen(&zLock[nLock]);
+  if( flags & SQLITE_SHM_SHARED ){
+    strcpy(&zLock[nLock], " shared");
+  }else{
+    strcpy(&zLock[nLock], " exclusive");
   }
   tvfsExecTcl(p, "xShmLock", 
       Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId,
       Tcl_NewStringObj(zLock, -1)
   );
   tvfsResultCode(p, &rc);
-  if( rc==SQLITE_OK ){
-    *gotLock = desiredLock;
-  }
-
   return rc;
 }
 
@@ -716,9 +719,7 @@ static void testvfs_obj_del(ClientData cd){
 **
 **   SCRIPT xShmLock    FILENAME ID LOCK
 **
-** where LOCK is one of "UNLOCK", "READ", "READ_FULL", "WRITE", "PENDING",
-** "CHECKPOINT" or "RECOVER". The script should return an SQLite error
-** code.
+** where LOCK is of the form "OFFSET NBYTE lock/unlock shared/exclusive"
 */
 static int testvfs_cmd(
   ClientData cd,

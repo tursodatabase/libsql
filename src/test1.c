@@ -4609,7 +4609,7 @@ static int file_control_lasterrno_test(
 }
 
 /*
-** tclcmd:   file_control_lockproxy_test DB
+** tclcmd:   file_control_lockproxy_test DB PWD
 **
 ** This TCL command runs the sqlite3_file_control interface and
 ** verifies correct operation of the SQLITE_GET_LOCKPROXYFILE and
@@ -4622,15 +4622,18 @@ static int file_control_lockproxy_test(
   Tcl_Obj *CONST objv[]  /* Command arguments */
 ){
   sqlite3 *db;
+  const char *zPwd;
+  int nPwd;
   
-  if( objc!=2 ){
+  if( objc!=3 ){
     Tcl_AppendResult(interp, "wrong # args: should be \"",
-                     Tcl_GetStringFromObj(objv[0], 0), " DB", 0);
+                     Tcl_GetStringFromObj(objv[0], 0), " DB PWD", 0);
     return TCL_ERROR;
   }
   if( getDbPointer(interp, Tcl_GetString(objv[1]), &db) ){
    return TCL_ERROR;
   }
+  zPwd = Tcl_GetStringFromObj(objv[2], &nPwd);
   
 #if !defined(SQLITE_ENABLE_LOCKING_STYLE)
 #  if defined(__APPLE__)
@@ -4641,9 +4644,15 @@ static int file_control_lockproxy_test(
 #endif
 #if SQLITE_ENABLE_LOCKING_STYLE && defined(__APPLE__)
   {
-    char *proxyPath = "test.proxy";
     char *testPath;
     int rc;
+    char proxyPath[400];
+    
+    if( sizeof(proxyPath)<nPwd+20 ){
+      Tcl_AppendResult(interp, "PWD too big", (void*)0);
+      return TCL_ERROR;
+    }
+    sprintf(proxyPath, "%s/test.proxy", zPwd);
     rc = sqlite3_file_control(db, NULL, SQLITE_SET_LOCKPROXYFILE, proxyPath);
     if( rc ){
       Tcl_SetObjResult(interp, Tcl_NewIntObj(rc)); 
@@ -5136,6 +5145,7 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
   extern int sqlite3WhereTrace;
   extern int sqlite3OSTrace;
   extern int sqlite3VdbeAddopTrace;
+  extern int sqlite3WalTrace;
 #endif
 #ifdef SQLITE_TEST
   extern char sqlite3_query_plan[];
@@ -5203,6 +5213,8 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3OSTrace, TCL_LINK_INT);
+  Tcl_LinkVar(interp, "sqlite_wal_trace",
+      (char*)&sqlite3WalTrace, TCL_LINK_INT);
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

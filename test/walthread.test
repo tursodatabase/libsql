@@ -284,6 +284,12 @@ do_thread_test2 walthread-1 -seconds $seconds(walthread-1) -init {
     }
   }
 
+  # Turn off auto-checkpoint. Otherwise, an auto-checkpoint run by a
+  # writer may cause the dedicated checkpoint thread to return an
+  # SQLITE_BUSY error.
+  #
+  db eval { PRAGMA wal_autocheckpoint = 0 }
+
   set nRun 0
   while {[tt_continue]} {
     read_transaction
@@ -389,7 +395,10 @@ do_thread_test walthread-3 -seconds $seconds(walthread-3) -init {
   set nextwrite $E(pid)
 
   proc wal_hook {zDb nEntry} {
-    if {$nEntry>10} {db eval {PRAGMA wal_checkpoint}}
+    if {$nEntry>10} { 
+      set rc [catch { db eval {PRAGMA wal_checkpoint} } msg]
+      if {$rc && $msg != "database is locked"} { error $msg }
+    }
     return 0
   }
   db wal_hook wal_hook

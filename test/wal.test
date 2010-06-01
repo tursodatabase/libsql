@@ -571,70 +571,49 @@ foreach code [list {
   } {1 2 3 4 5 6 7 8 9 10}
   do_test wal-10.$tn.12 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {1 {database is locked}}
+  } {0 {}}   ;# Reader no longer block checkpoints
   do_test wal-10.$tn.13 {
     execsql { INSERT INTO t1 VALUES(11, 12) }
     sql2 {SELECT * FROM t1}
   } {1 2 3 4 5 6 7 8 9 10}
 
-  # Connection [db2] is holding a lock on a snapshot, preventing [db] from
-  # checkpointing the database. Add a busy-handler to [db]. If [db2] completes
-  # its transaction from within the busy-handler, [db] is able to complete
-  # the checkpoint operation.
+  # Writers do not block checkpoints any more either.
   #
-  proc busyhandler x {
-    if {$x==4} { sql2 COMMIT }
-    if {$x<5} { return 0 }
-    return 1
-  }
-  db busy busyhandler
   do_test wal-10.$tn.14 {
-    execsql { PRAGMA wal_checkpoint } 
-  } {}
+    catchsql { PRAGMA wal_checkpoint } 
+  } {0 {}}
 
-  # Similar to the test above. Except this time, a new read transaction is
-  # started (db3) while the checkpointer is waiting for an old one (db2) to 
-  # finish. The checkpointer can finish, but any subsequent write operations 
-  # must wait until after db3 has closed the read transaction, as db3 is a
-  # "region D" writer.
+  # The following series of test cases used to verify another blocking
+  # case in WAL - a case which no longer blocks.
   #
-  db busy {}
   do_test wal-10.$tn.15 {
-    sql2 { BEGIN; SELECT * FROM t1; }
+    sql2 { COMMIT; BEGIN; SELECT * FROM t1; }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.16 {
     catchsql { PRAGMA wal_checkpoint } 
-  } {1 {database is locked}}
-  proc busyhandler x {
-    if {$x==3} { sql3 { BEGIN; SELECT * FROM t1 } }
-    if {$x==4} { sql2 COMMIT }
-    if {$x<5}  { return 0 }
-    return 1
-  }
-  db busy busyhandler
+  } {0 {}}
   do_test wal-10.$tn.17 {
     execsql { PRAGMA wal_checkpoint } 
   } {}
   do_test wal-10.$tn.18 {
-    sql3 { SELECT * FROM t1 }
+    sql3 { BEGIN; SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12}
   do_test wal-10.$tn.19 {
     catchsql { INSERT INTO t1 VALUES(13, 14) }
-  } {1 {database is locked}}
+  } {0 {}}
   do_test wal-10.$tn.20 {
     execsql { SELECT * FROM t1 }
-  } {1 2 3 4 5 6 7 8 9 10 11 12}
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
   do_test wal-10.$tn.21 {
     sql3 COMMIT
+    sql2 COMMIT
   } {}
   do_test wal-10.$tn.22 {
-    execsql { INSERT INTO t1 VALUES(13, 14) }
     execsql { SELECT * FROM t1 }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14}
 
-  # Set [db3] up as a "region D" reader again. Then upgrade it to a writer
-  # and back down to a reader. Then, check that a checkpoint is not possible
-  # (as [db3] still has a snapshot locked).
+  # Another series of tests that used to demonstrate blocking behavior
+  # but which now work.
   #
   do_test wal-10.$tn.23 {
     execsql { PRAGMA wal_checkpoint }
@@ -647,23 +626,21 @@ foreach code [list {
   } {}
   do_test wal-10.$tn.26 {
     catchsql { INSERT INTO t1 VALUES(15, 16) }
-  } {1 {database is locked}}
+  } {0 {}}
   do_test wal-10.$tn.27 {
-    sql3 { INSERT INTO t1 VALUES(15, 16) }
+    sql3 { INSERT INTO t1 VALUES(17, 18) }
   } {}
   do_test wal-10.$tn.28 {
     code3 {
       set ::STMT [sqlite3_prepare db3 "SELECT * FROM t1" -1 TAIL]
       sqlite3_step $::STMT
     }
-    sql3 COMMIT
     execsql { SELECT * FROM t1 }
-  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
-  db busy {}
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
   do_test wal-10.$tn.29 {
-    execsql { INSERT INTO t1 VALUES(17, 18) }
+    execsql { INSERT INTO t1 VALUES(19, 20) }
     catchsql { PRAGMA wal_checkpoint }
-  } {1 {database is locked}}
+  } {0 {}}
   do_test wal-10.$tn.30 {
     code3 { sqlite3_finalize $::STMT }
     execsql { PRAGMA wal_checkpoint }
@@ -674,20 +651,21 @@ foreach code [list {
   # Test that this bug has been fixed.
   #
   do_test wal-10.$tn.31 {
+    sql2 COMMIT
     execsql { BEGIN ; SELECT * FROM t1 }
-    sql2 { INSERT INTO t1 VALUES(19, 20) }
-    catchsql { INSERT INTO t1 VALUES(21, 22) }
+    sql2 { INSERT INTO t1 VALUES(21, 22) }
+    catchsql { INSERT INTO t1 VALUES(23, 24) }
   } {1 {database is locked}}
   do_test wal-10.$tn.32 {
     # This statement would fail when the bug was present.
-    sql2 { INSERT INTO t1 VALUES(21, 22) }
+    sql2 { INSERT INTO t1 VALUES(23, 24) }
   } {}
   do_test wal-10.$tn.33 {
     execsql { SELECT * FROM t1 ; COMMIT }
-  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18}
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20}
   do_test wal-10.$tn.34 {
     execsql { SELECT * FROM t1 }
-  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22}
+  } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24}
 
   # Test that if a checkpointer cannot obtain the required locks, it
   # releases all locks before returning a busy error.
@@ -703,11 +681,9 @@ foreach code [list {
         SELECT * FROM t1;
     }
   } {a b c d}
-  proc busyhandler x { return 1 }
-  db busy busyhandler
   do_test wal-10.$tn.36 {
     catchsql { PRAGMA wal_checkpoint }
-  } {1 {database is locked}}
+  } {0 {}}
   do_test wal-10.$tn.36 {
     sql3 { INSERT INTO t1 VALUES('e', 'f') }
     sql2 { SELECT * FROM t1 }
@@ -1059,8 +1035,9 @@ do_test wal-15.3.3 {
   sqlite3_errmsg db
 } {database table is locked}
 
-# Also test that an error is returned if the db cannot be checkpointed
-# because of locks held by another connection.
+# Earlier versions returned an error is returned if the db cannot be 
+# checkpointed because of locks held by another connection. Check that
+# this is no longer the case.
 #
 sqlite3 db2 test.db
 do_test wal-15.4.1 {
@@ -1072,10 +1049,10 @@ do_test wal-15.4.1 {
 do_test wal-15.4.2 {
   execsql { COMMIT }
   sqlite3_wal_checkpoint db
-} {SQLITE_BUSY}
+} {SQLITE_OK}
 do_test wal-15.4.3 {
   sqlite3_errmsg db
-} {database is locked}
+} {not an error}
 
 # After [db2] drops its lock, [db] may checkpoint the db.
 #

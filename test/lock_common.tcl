@@ -47,7 +47,13 @@ proc testfixture {chan cmd} {
 }
 
 proc testfixture_nb_cb {varname chan} {
-  set line [gets $chan]
+  if {[eof $chan]} {
+    append ::tfnb($chan) "ERROR: Child process hung up"
+    set line "OVER"
+  } else {
+    set line [gets $chan]
+  }
+
   if { $line == "OVER" } {
     set $varname $::tfnb($chan)
     unset ::tfnb($chan)
