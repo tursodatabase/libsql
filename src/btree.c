@@ -2546,7 +2546,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
     if( rc!=SQLITE_OK ){
       unlockBtreeIfUnused(pBt);
     }
-  }while( rc==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
+  }while( (rc&0xFF)==SQLITE_BUSY && pBt->inTransaction==TRANS_NONE &&
           btreeInvokeBusyHandler(pBt) );
 
   if( rc==SQLITE_OK ){

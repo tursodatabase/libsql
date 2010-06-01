@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\sbug\sintroduced\sby\sthe\sprevious\scheck-in\sbut\sonly\sseen\sif\nSQLITE_ENABLE_EXPENSIVE_ASSERTS\sis\sturned\son.
-D 2010-06-01T13:17:44
+C If\san\sattempt\sto\sget\sa\sread-lock\son\sthe\sWAL\sfails\swith\sSQLITE_BUSY_RECOVER,\scall\sthe\sbusy-handler\sat\sthe\sbtree\slevel.
+D 2010-06-01T14:12:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -114,7 +111,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c de9809091b3b99f69e37261c133f7f8b19f6eca6
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c d0414a5f09b0cacb64bd60b91c5a3720585925aa
+F src/btree.c 5934a9f5a328488cca392766bb841ff41c9083a9
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 11100b66fb97638d2d874c1d34d8db90650bb1d7
@@ -485,7 +482,7 @@ F test/lock4.test f4f36271aa5ae1da449646bf43c7341f6b2b4c4e
 F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test 862aa71e97b288d6b3f92ba3313f51bd0b003776
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl bbc4e15ee5334cc4d01fcac08d7c9de7d8906e55
+F test/lock_common.tcl 69d6b67f2ba63968ec2173bcd7310c5c7eca00a2
 F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
 F test/main.test 2be2352ac77ac5b238c6337a5469aeeef57677e6
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -774,7 +771,7 @@ F test/walfault.test f71d4c9a13d4e27086aef55f1e0e94734ffa2f6a
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
-F test/walthread.test 91ccfe5e04192d2c3fc252d82b28e110a81d0d2e
+F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
 F test/where2.test 43d4becaf5a5df854e6c21d624a1cb84c6904554
 F test/where3.test aa44a9b29e8c9f3d7bb94a3bb3a95b31627d520d
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f039552e6330b6a04281748f985b41937f534bd0
-R 6598ae3f99b7aa3625a351066760e43c
-U drh
-Z 46dc844402f0088130b5572c3b57f1cf
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMBQh7oxKgR168RlERAkq1AJ9w0OmI7L6S4kifZ38AIWx8+iYOqACeJ/Es
-6ulVh2nHwt7VRotuY8c8O6c=
-=6tyV
------END PGP SIGNATURE-----
+P 9c9ec8994bf701249efce6c7bb911de4525808c8
+R 2b521b04f3b51086c8477471cd905ca9
+U dan
+Z 5cf352c78c887b69611dfdbc185b73d6
