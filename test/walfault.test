@@ -92,10 +92,10 @@ do_faultsim_test walfault-2 -prep {
   execsql { SELECT count(*) FROM x }
 } -test {
 
-  # Test that all the rows in the WAL were recovered.
   faultsim_test_result {0 8}
 
   # Run the integrity_check to make sure nothing strange has occurred.
+  #
   set ic [db eval { PRAGMA integrity_check }]
   if {$ic != "ok"} { error "Integrity check: $ic" }
 }
@@ -138,7 +138,6 @@ do_faultsim_test walfault-3 -prep {
 #
 #   $::shmfault_ioerr_countdown
 #   $::shmfault_ioerr_persist
-#   $::shmfault_ioerr_methods
 #
 proc shmfault_vfs_cb {method args} {
 
@@ -146,13 +145,11 @@ proc shmfault_vfs_cb {method args} {
   #
   if {[info exists ::shmfault_ioerr_countdown]==0} { return SQLITE_OK }
 
-  if {[info exists ::shmfault_ioerr_methods($method)]} {
-    incr ::shmfault_ioerr_countdown -1
-    if { ($::shmfault_ioerr_countdown==0)
-      || ($::shmfault_ioerr_countdown<=0 && $::shmfault_ioerr_persist)
-    } {
-      return SQLITE_IOERR
-    }
+  incr ::shmfault_ioerr_countdown -1
+  if { ($::shmfault_ioerr_countdown==0)
+    || ($::shmfault_ioerr_countdown<=0 && $::shmfault_ioerr_persist)
+  } {
+    return SQLITE_IOERR
   }
   return SQLITE_OK
 }
@@ -174,9 +171,7 @@ proc do_shmfault_test {name args} {
 
   # Create a VFS to use:
   testvfs shmfault shmfault_vfs_cb
-
-  unset -nocomplain ::shmfault_ioerr_methods
-  foreach m $A(-methods) { set ::shmfault_ioerr_methods($m) 1 }
+  shmfault filter $A(-methods)
   
   foreach mode {transient persistent} {
     set ::shmfault_ioerr_persist [expr {$mode == "persistent"}]
@@ -239,7 +234,7 @@ do_shmfault_test walfault-shm-2 -methods xShmSize -sqlprep {
 
 do_shmfault_test walfault-shm-3 -methods xShmSize -tclprep {
   sqlite3 db test.db -vfs shmfault
-  unset -nocomplain ::shmfault_ioerr_countdown
+  shmfault filter {}
   db eval {
     PRAGMA page_size = 512;
     PRAGMA journal_mode = WAL;
@@ -265,9 +260,9 @@ do_shmfault_test walfault-shm-3 -methods xShmSize -tclprep {
   }
 
   set ::shmfault_ioerr_countdown 1
-  set ::shmfault_ioerr_methods(xShmGet) 1
+  shmfault filter xShmGet
   db close
-  unset ::shmfault_ioerr_methods(xShmGet)
+  shmfault filter {}
   if {[file exists test.db-wal]==0} {error "Failed to create WAL file!"}
 
   sqlite3 db test.db -vfs shmfault
@@ -291,9 +286,9 @@ do_shmfault_test walfault-shm-4 -tclprep {
   }
 
   set ::shmfault_ioerr_countdown 1
-  set ::shmfault_ioerr_methods(xShmGet) 1
+  shmfault filter xShmGet
   db close
-  unset ::shmfault_ioerr_methods(xShmGet)
+  shmfault filter {}
   if {[file exists test.db-wal]==0} {error "Failed to create WAL file!"}
   sqlite3 db test.db -vfs shmfault
 } -sqlbody {
