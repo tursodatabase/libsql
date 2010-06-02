@@ -4233,7 +4233,7 @@ static const char *unixTempFileDir(int allowShm){
   
   if( allowShm ){
     zDir = "/dev/shm";
-    i = 0;
+    i = 2;  /* Skip the app-defined temp locations for shared-memory */
   }else{
     zDir = azDirs[0];
     i = 1;
@@ -4242,7 +4242,7 @@ static const char *unixTempFileDir(int allowShm){
     if( zDir==0 ) continue;
     if( stat(zDir, &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
-    if( access(zDir, 07) ) continue;
+    if( !allowShm && access(zDir, 07) ) continue;
     break;
   }
   return zDir;

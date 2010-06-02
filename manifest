@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C When\swalTryBeginRead()\sencounters\san\sI/O\serror\strying\sto\sset\sa\slock\n(as\sopposed\sto\sSQLITE_BUSY)\sbe\ssure\sto\spropagate\sthat\serror\sback\sup\nthe\scall\sstack.
-D 2010-06-02T15:43:19
+C Make\ssure\sthe\sdirectory\sused\sby\sos_unix.c\sfor\sshared-memory\sfiles\sis\salways\nthe\ssame,\sregardless\sof\sindividual\sclient\spermissions\sand\senvironment\nvariable\ssettings.
+D 2010-06-02T15:59:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 7ae9257f65b32f20d777e880700a84e7dac8051e
+F src/os_unix.c 8fa4eeb27c54f26e9ce01bead2fa117fadea1526
 F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
 F src/pager.c acbef227bf158776449907c275c5d9332e4e52f9
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -818,14 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ebf4041383c3cdddb5861960359abd209d4a1028
-R 146e415727264052c9d4dd27cc8edf23
+P aa2c2b67a7f50c97a44cca1af5c437bf5410869c
+R 41a926d67bcf6ee5c15227d34345c074
 U drh
-Z f52d8b5f69dae5d7205fbd3555d1baba
+Z 41067fd4ff44062351f21406e1ef7815
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMBnwaoxKgR168RlERAsy1AJ9m3DJr8tnAvh2cVk36fUctAyoRTgCcCxt0
-SdrFAsrnYtTR4pEkGlu1qY8=
-=bO80
+iD8DBQFMBn/QoxKgR168RlERAuKeAJ0bWARuk5HoZL68JeCNhiHzIHSzSQCgiUQ/
+0sAZj0bDlJlTptZJN4xaCww=
+=tmD/
 -----END PGP SIGNATURE-----
