@@ -739,6 +739,7 @@ do_test wal2-7.1.3 {
   execsql { PRAGMA wal_checkpoint } db2
   execsql { SELECT * FROM sqlite_master } db2
 } {}
+db close
 db2 close
 
 file delete -force test.db test.db-wal test.db-journal
