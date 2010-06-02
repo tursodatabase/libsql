@@ -2536,8 +2536,8 @@ const sqlite3_mem_methods *sqlite3MemGetMemsys5(void);
 
 
 #ifndef SQLITE_MUTEX_OMIT
-  sqlite3_mutex_methods *sqlite3DefaultMutex(void);
-  sqlite3_mutex_methods *sqlite3NoopMutex(void);
+  sqlite3_mutex_methods const *sqlite3DefaultMutex(void);
+  sqlite3_mutex_methods const *sqlite3NoopMutex(void);
   sqlite3_mutex *sqlite3MutexAlloc(int);
   int sqlite3MutexInit(void);
   int sqlite3MutexEnd(void);

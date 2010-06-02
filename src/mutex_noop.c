@@ -43,8 +43,8 @@ static void noopMutexEnter(sqlite3_mutex *p){ return; }
 static int noopMutexTry(sqlite3_mutex *p){ return SQLITE_OK; }
 static void noopMutexLeave(sqlite3_mutex *p){ return; }
 
-sqlite3_mutex_methods *sqlite3NoopMutex(void){
-  static sqlite3_mutex_methods sMutex = {
+sqlite3_mutex_methods const *sqlite3NoopMutex(void){
+  static const sqlite3_mutex_methods sMutex = {
     noopMutexInit,
     noopMutexEnd,
     noopMutexAlloc,
@@ -170,8 +170,8 @@ static void debugMutexLeave(sqlite3_mutex *pX){
   assert( p->id==SQLITE_MUTEX_RECURSIVE || debugMutexNotheld(pX) );
 }
 
-sqlite3_mutex_methods *sqlite3NoopMutex(void){
-  static sqlite3_mutex_methods sMutex = {
+sqlite3_mutex_methods const *sqlite3NoopMutex(void){
+  static const sqlite3_mutex_methods sMutex = {
     debugMutexInit,
     debugMutexEnd,
     debugMutexAlloc,
@@ -193,7 +193,7 @@ sqlite3_mutex_methods *sqlite3NoopMutex(void){
 ** is used regardless of the run-time threadsafety setting.
 */
 #ifdef SQLITE_MUTEX_NOOP
-sqlite3_mutex_methods *sqlite3DefaultMutex(void){
+sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
   return sqliteNoopMutex();
 }
 #endif /* SQLITE_MUTEX_NOOP */

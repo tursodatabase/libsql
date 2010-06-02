@@ -251,8 +251,8 @@ static void os2MutexLeave(sqlite3_mutex *p){
   DosReleaseMutexSem(p->mutex);
 }
 
-sqlite3_mutex_methods *sqlite3DefaultMutex(void){
-  static sqlite3_mutex_methods sMutex = {
+sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
+  static const sqlite3_mutex_methods sMutex = {
     os2MutexInit,
     os2MutexEnd,
     os2MutexAlloc,

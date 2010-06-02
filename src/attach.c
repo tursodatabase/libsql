@@ -289,7 +289,7 @@ detach_error:
 static void codeAttach(
   Parse *pParse,       /* The parser context */
   int type,            /* Either SQLITE_ATTACH or SQLITE_DETACH */
-  FuncDef *pFunc,      /* FuncDef wrapper for detachFunc() or attachFunc() */
+  FuncDef const *pFunc,/* FuncDef wrapper for detachFunc() or attachFunc() */
   Expr *pAuthArg,      /* Expression to pass to authorization callback */
   Expr *pFilename,     /* Name of database file */
   Expr *pDbname,       /* Name of the database to use internally */
@@ -370,7 +370,7 @@ attach_end:
 **     DETACH pDbname
 */
 void sqlite3Detach(Parse *pParse, Expr *pDbname){
-  static FuncDef detach_func = {
+  static const FuncDef detach_func = {
     1,                /* nArg */
     SQLITE_UTF8,      /* iPrefEnc */
     0,                /* flags */
@@ -391,7 +391,7 @@ void sqlite3Detach(Parse *pParse, Expr *pDbname){
 **     ATTACH p AS pDbname KEY pKey
 */
 void sqlite3Attach(Parse *pParse, Expr *p, Expr *pDbname, Expr *pKey){
-  static FuncDef attach_func = {
+  static const FuncDef attach_func = {
     3,                /* nArg */
     SQLITE_UTF8,      /* iPrefEnc */
     0,                /* flags */

@@ -37,7 +37,7 @@ int sqlite3MutexInit(void){
     ** sqlite3_initialize() being called. This block copies pointers to
     ** the default implementation into the sqlite3GlobalConfig structure.
     */
-    sqlite3_mutex_methods *pFrom;
+    sqlite3_mutex_methods const *pFrom;
     sqlite3_mutex_methods *pTo = &sqlite3GlobalConfig.mutex;
 
     if( sqlite3GlobalConfig.bCoreMutex ){
