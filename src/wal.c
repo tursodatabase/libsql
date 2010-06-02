@@ -1783,8 +1783,11 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     if( rc==SQLITE_OK ){
       pInfo->aReadMark[1] = pWal->hdr.mxFrame+1;
       walUnlockExclusive(pWal, WAL_READ_LOCK(1), 1);
+      rc = WAL_RETRY;
+    }else if( rc==SQLITE_BUSY ){
+      rc = WAL_RETRY;
     }
-    return WAL_RETRY;
+    return rc;
   }else{
     if( mxReadMark < pWal->hdr.mxFrame ){
       for(i=1; i<WAL_NREADER; i++){
@@ -1794,6 +1797,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
+        }else if( rc!=SQLITE_BUSY ){
+          return rc;
         }
       }
     }
