@@ -1438,8 +1438,11 @@ static int walCheckpoint(
       ){
         pInfo->aReadMark[i] = 0;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
-      }else{
+      }else if( rc==SQLITE_BUSY ){
         mxSafeFrame = y-1;
+      }else{
+        walIteratorFree(pIter);
+        return rc;
       }
     }
   }
@@ -1478,7 +1481,7 @@ static int walCheckpoint(
 
     /* Release the reader lock held while backfilling */
     walUnlockExclusive(pWal, WAL_READ_LOCK(0), 1);
-  }else{
+  }else if( rc==SQLITE_BUSY ){
     /* Reset the return code so as not to report a checkpoint failure
     ** just because active readers prevent any backfill.
     */
