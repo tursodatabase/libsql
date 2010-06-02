@@ -3362,7 +3362,7 @@ static int unixShmOpen(
     rc = SQLITE_OK;
     if( unixShmSystemLock(pShmNode, F_WRLCK, UNIX_SHM_DMS, 1)==SQLITE_OK ){
       if( ftruncate(pShmNode->h, 0) ){
-        rc = SQLITE_IOERR;
+        rc = SQLITE_IOERR_SHMOPEN;
       }
     }
     if( rc==SQLITE_OK ){
@@ -3469,7 +3469,7 @@ static int unixShmSize(
       if( reqSize<=(int)sStat.st_size ) break;
     }else{
       *pNewSize = 0;
-      rc = SQLITE_IOERR;
+      rc = SQLITE_IOERR_SHMSIZE;
       break;
     }
     rc = ftruncate(pShmNode->h, reqSize);

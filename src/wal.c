@@ -377,6 +377,9 @@ struct Wal {
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
   char *zWalName;            /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
+#ifdef SQLITE_DEBUG
+  u8 lockError;              /* True if a locking error has occurred */
+#endif
 };
 
 /*
@@ -629,6 +632,7 @@ static int walLockShared(Wal *pWal, int lockIdx){
                         SQLITE_SHM_LOCK | SQLITE_SHM_SHARED);
   WALTRACE(("WAL%p: acquire SHARED-%s %s\n", pWal,
             walLockName(lockIdx), rc ? "failed" : "ok"));
+  VVA_ONLY( pWal->lockError = (rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockShared(Wal *pWal, int lockIdx){
@@ -644,6 +648,7 @@ static int walLockExclusive(Wal *pWal, int lockIdx, int n){
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
             walLockName(lockIdx), n, rc ? "failed" : "ok"));
+  VVA_ONLY( pWal->lockError = (rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
@@ -1693,7 +1698,7 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** so it takes care to hold an exclusive lock on the corresponding
 ** WAL_READ_LOCK() while changing values.
 */
-static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
+static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   volatile WalIndexHdr *pHdr;     /* Header of the wal-index */
   volatile WalCkptInfo *pInfo;    /* Checkpoint information in wal-index */
   u32 mxReadMark;                 /* Largest aReadMark[] value */
@@ -1702,6 +1707,12 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
   int rc;                         /* Return code  */
 
   assert( pWal->readLock<0 );     /* Not currently locked */
+
+  /* Take steps to avoid spinning forever if there is a protocol error. */
+  if( cnt>5 ){
+    if( cnt>100 ) return SQLITE_PROTOCOL;
+    sqlite3OsSleep(pWal->pVfs, 1);
+  }
 
   if( !useWal ){
     rc = walIndexReadHdr(pWal, pChanged);
@@ -1820,9 +1831,10 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal){
 */
 int sqlite3WalBeginReadTransaction(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
+  int cnt = 0;                    /* Number of TryBeginRead attempts */
 
   do{
-    rc = walTryBeginRead(pWal, pChanged, 0);
+    rc = walTryBeginRead(pWal, pChanged, 0, ++cnt);
   }while( rc==WAL_RETRY );
   walIndexUnmap(pWal);
   return rc;
@@ -1859,8 +1871,8 @@ int sqlite3WalRead(
   u32 iLast = pWal->hdr.mxFrame;  /* Last page in WAL for this reader */
   int iHash;                      /* Used to loop through N hash tables */
 
-  /* This routine is only called from within a read transaction */
-  assert( pWal->readLock>=0 );
+  /* This routine is only be called from within a read transaction. */
+  assert( pWal->readLock>=0 || pWal->lockError );
 
   /* If the "last page" field of the wal-index header snapshot is 0, then
   ** no data will be read from the wal under any circumstances. Return early
@@ -1982,7 +1994,7 @@ int sqlite3WalRead(
 ** Set *pPgno to the size of the database file (or zero, if unknown).
 */
 void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
-  assert( pWal->readLock>=0 );
+  assert( pWal->readLock>=0 || pWal->lockError );
   *pPgno = pWal->hdr.nPage;
 }
 
@@ -2133,6 +2145,8 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
 */
 static int walRestartLog(Wal *pWal){
   int rc = SQLITE_OK;
+  int cnt;
+
   if( pWal->readLock==0 
    && SQLITE_OK==(rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame)))
   ){
@@ -2163,9 +2177,10 @@ static int walRestartLog(Wal *pWal){
     }
     walUnlockShared(pWal, WAL_READ_LOCK(0));
     pWal->readLock = -1;
+    cnt = 0;
     do{
       int notUsed;
-      rc = walTryBeginRead(pWal, &notUsed, 1);
+      rc = walTryBeginRead(pWal, &notUsed, 1, ++cnt);
     }while( rc==WAL_RETRY );
 
     /* Unmap the wal-index before returning. Otherwise the VFS layer may
@@ -2418,22 +2433,25 @@ int sqlite3WalCallback(Wal *pWal){
 */
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
-  assert( pWal->writeLock==0 && pWal->readLock>=0 );
+  assert( pWal->writeLock==0 );
+  /* pWal->readLock is usually set, but might be -1 if there was a prior OOM */
+  assert( pWal->readLock>=0 || pWal->lockError );
   if( op==0 ){
     if( pWal->exclusiveMode ){
       pWal->exclusiveMode = 0;
-      if( walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK ){
+      if( pWal->readLock>=0 
+       && walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK
+      ){
         pWal->exclusiveMode = 1;
       }
       rc = pWal->exclusiveMode==0;
     }else{
-      /* No changes.  Either already in locking_mode=NORMAL or else the 
-      ** acquisition of the read-lock failed.  The pager must continue to
-      ** hold the database exclusive lock. */
+      /* Already in locking_mode=NORMAL */
       rc = 0;
     }
   }else if( op>0 ){
     assert( pWal->exclusiveMode==0 );
+    assert( pWal->readLock>=0 );
     walUnlockShared(pWal, WAL_READ_LOCK(pWal->readLock));
     pWal->exclusiveMode = 1;
     rc = 1;
