@@ -36,7 +36,7 @@
 # define sqlite3WalCallback(z)                 0
 #else
 
-#define WAL_SAVEPOINT_NDATA 3
+#define WAL_SAVEPOINT_NDATA 4
 
 /* Connection to a write-ahead log (WAL) file. 
 ** There is one object of this type for each pager. 

@@ -2110,6 +2110,7 @@ void sqlite3WalSavepoint(Wal *pWal, u32 *aWalData){
   aWalData[0] = pWal->hdr.mxFrame;
   aWalData[1] = pWal->hdr.aFrameCksum[0];
   aWalData[2] = pWal->hdr.aFrameCksum[1];
+  aWalData[3] = pWal->nCkpt;
 }
 
 /* 
@@ -2120,9 +2121,19 @@ void sqlite3WalSavepoint(Wal *pWal, u32 *aWalData){
 */
 int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
   int rc = SQLITE_OK;
-  assert( pWal->writeLock );
 
-  assert( aWalData[0]<=pWal->hdr.mxFrame );
+  assert( pWal->writeLock );
+  assert( aWalData[3]!=pWal->nCkpt || aWalData[0]<=pWal->hdr.mxFrame );
+
+  if( aWalData[3]!=pWal->nCkpt ){
+    /* This savepoint was opened immediately after the write-transaction
+    ** was started. Right after that, the writer decided to wrap around
+    ** to the start of the log. Update the savepoint values to match.
+    */
+    aWalData[0] = 0;
+    aWalData[3] = pWal->nCkpt;
+  }
+
   if( aWalData[0]<pWal->hdr.mxFrame ){
     rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
     pWal->hdr.mxFrame = aWalData[0];
@@ -2130,9 +2141,10 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
     pWal->hdr.aFrameCksum[1] = aWalData[2];
     if( rc==SQLITE_OK ){
       walCleanupHash(pWal);
-      walIndexUnmap(pWal);
     }
   }
+
+  walIndexUnmap(pWal);
   return rc;
 }
 
