@@ -5082,7 +5082,9 @@ int sqlite3PagerCommitPhaseOne(
             (pPager->fullSync ? pPager->sync_flags : 0)
         );
       }
-      sqlite3PcacheCleanAll(pPager->pPCache);
+      if( rc==SQLITE_OK ){
+        sqlite3PcacheCleanAll(pPager->pPCache);
+      }
     }else{
       /* The following block updates the change-counter. Exactly how it
       ** does this depends on whether or not the atomic-update optimization
