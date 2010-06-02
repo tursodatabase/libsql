@@ -1,5 +1,5 @@
-C Updated\swal2.test\sfor\swindows\stesting.
-D 2010-06-02T16:39:54
+C Added\simplementation\sof\svfslog_time()\sfor\sWindows\stesting.
+D 2010-06-02T16:40:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -201,7 +201,7 @@ F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c 4ce8c753c0240f010f0f2af89604875967d20945
-F src/test_osinst.c 280876b040c19d0a8fcd1852cb94e2f630c59bac
+F src/test_osinst.c a0df974ab32f9aae97da5ce094301926cffcdc17
 F src/test_pcache.c 7bf828972ac0d2403f5cfa4cd14da41f8ebe73d8
 F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f97bd520f06a16c61ccdd9ebeda7e138896b9ac2
-R 753b6e0ee328a247a54f9e41e715ea88
+P c3606f3985e4ab38479409c13f3a01d1be4f8189
+R 713c6c4f6edb5a9fc8fea5e21eed458c
 U shaneh
-Z f4578e55a96b3261478a3707dbcafc0d
+Z 68efeee2b3c24d365a6309078d4fa333

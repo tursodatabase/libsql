@@ -231,6 +231,22 @@ static sqlite3_uint64 vfslog_time(){
   gettimeofday(&sTime, 0);
   return sTime.tv_usec + (sqlite3_uint64)sTime.tv_sec * 1000000;
 }
+#elif defined(SQLITE_OS_WIN)
+#include <windows.h>
+#include <time.h>
+static sqlite3_uint64 vfslog_time(){
+  FILETIME ft;
+  sqlite3_uint64 u64time = 0;
+ 
+  GetSystemTimeAsFileTime(&ft);
+
+  u64time |= ft.dwHighDateTime;
+  u64time <<= 32;
+  u64time |= ft.dwLowDateTime;
+
+  /* ft is 100-nanosecond intervals, we want microseconds */
+  return u64time /(sqlite3_uint64)10;
+}
 #else
 static sqlite3_uint64 vfslog_time(){
   return 0;
