@@ -1,0 +1,113 @@
+# 2010 April 13
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library.  The
+# focus of this file is testing the operation of the library in
+# "PRAGMA journal_mode=WAL" mode.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
+source $testdir/malloc_common.tcl
+ifcapable !wal {finish_test ; return }
+
+set a_string_counter 1
+proc a_string {n} {
+  global a_string_counter
+  incr a_string_counter
+  string range [string repeat "${a_string_counter}." $n] 1 $n
+}
+db func a_string a_string
+
+#-------------------------------------------------------------------------
+# When a rollback or savepoint rollback occurs, the client may remove
+# elements from one of the hash tables in the wal-index. This block
+# of test cases tests that nothing appears to go wrong when this is
+# done.
+#
+do_test wal3-1.0 {
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA auto_vacuum = off;
+    PRAGMA synchronous = normal;
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    BEGIN;
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES( a_string(800) );                  /*    1 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    2 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    4 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*    8 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   16 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   32 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*   64 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  128*/
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  256 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  512 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 1024 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 2048 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 2000;  /* 4048 */
+    COMMIT;
+    PRAGMA cache_size = 10;
+  }
+  wal_frame_count test.db-wal 1024
+} 4086
+
+for {set i 1} {$i < 20} {incr i} {
+
+  do_test wal3-1.$i.1 {
+    set str [a_string 800]
+    execsql { UPDATE t1 SET x = $str WHERE rowid = $i }
+    lappend L [wal_frame_count test.db-wal 1024]
+    execsql {
+      BEGIN;
+        INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 100;
+      ROLLBACK;
+      PRAGMA integrity_check;
+    }
+  } {ok}
+
+  # Check that everything looks OK from the point of view of an 
+  # external connection.
+  #
+  sqlite3 db2 test.db
+  do_test wal3-1.$i.2 {
+    execsql { SELECT count(*) FROM t1 } db2
+  } 4048
+  do_test wal3-1.$i.3 {
+    execsql { SELECT x FROM t1 WHERE rowid = $i }
+  } $str
+  do_test wal3-1.$i.4 {
+    execsql { PRAGMA integrity_check } db2
+  } {ok}
+  db2 close
+  
+  # Check that the file-system in its current state can be recovered.
+  # 
+  file copy -force test.db test2.db
+  file copy -force test.db-wal test2.db-wal
+  file delete -force test2.db-journal
+  sqlite3 db2 test2.db
+  do_test wal3-1.$i.5 {
+    execsql { SELECT count(*) FROM t1 } db2
+  } 4048
+  do_test wal3-1.$i.6 {
+    execsql { SELECT x FROM t1 WHERE rowid = $i }
+  } $str
+  do_test wal3-1.$i.7 {
+    execsql { PRAGMA integrity_check } db2
+  } {ok}
+  db2 close
+}
+
+finish_test
+
