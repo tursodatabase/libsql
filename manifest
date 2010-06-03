@@ -1,5 +1,8 @@
-C Enhancements\sto\stest_vfs.c\sand\swalfault.test.
-D 2010-06-03T09:25:10
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sglobal\svariables\swhen\scompiled\swith\sSQLITE_OMIT_WSD
+D 2010-06-03T12:09:52
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -124,7 +127,7 @@ F src/expr.c 7b1df28226b8a2bb2b9d7c794a42818a81f5edd8
 F src/fault.c 160a0c015b6c2629d3899ed2daf63d75754a32bb
 F src/fkey.c e2116672a6bd610dc888e27df292ebc7999c9bb0
 F src/func.c 0c28599430856631216b6c0131c51c89bf516026
-F src/global.c 5a9c1e3c93213ca574786ac1caa976ce8f709105
+F src/global.c 3fedfe02f1b2b1f6118455c881d132b804a1f0a7
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
@@ -133,14 +136,14 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c 5f857e9fc62cc4e39f31fecc894e43ee2498b7e0
+F src/main.c 34d9fc068b331e7d13206c26490c42f90c83d893
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
-F src/memjournal.c f3be374af30588de297dcf678925b2a4758e4135
+F src/memjournal.c b6c760f64e3c784deeb56bb2b9e8a955563c80bc
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
 F src/mutex_noop.c e6c3e448ac0514b27af1f8949f0347e4340f7af3
@@ -149,7 +152,7 @@ F src/mutex_unix.c cf84466b4fdd2baa0d5a10bb19f08b2abc1ce42e
 F src/mutex_w32.c 1fe0e735897be20e09dd6f53c3fb516c6b48c0eb
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
 F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
-F src/os.h 6f604986f0ef0ca288c2330b16051ff70b431e8c
+F src/os.h 6f529984a29511c7a3479cfe549c10bfa131532f
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 8fa4eeb27c54f26e9ce01bead2fa117fadea1526
@@ -170,13 +173,13 @@ F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
 F src/sqlite.h.in 60f4fcfe18bcb53ed0002989837b68aeeba79a5e
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 4e26920ede6da1b6f154251fb4f89f65f78979e0
+F src/sqliteInt.h 242987ebd2366ea36650a09cdab04a9163c62109
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c 6bc5fbde634b9cb42b3d29d674fa6cd0c22c0881
 F src/test1.c e3e0ad1f0763a1aa6adf7e1c50727718eaa4bd32
-F src/test2.c 31f1b9d076b4774a22d2605d0af1f34e14a9a7bd
+F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
 F src/test5.c cc55900118fa4add8ec9cf69fc4225a4662f76b1
@@ -219,7 +222,7 @@ F src/vdbe.c 965247d966bb5bc9db819e27c076c8acd43ea4fd
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
-F src/vdbeaux.c 834a551950e8b2b5bdca7bb353ac04f87dade03f
+F src/vdbeaux.c 4e96a5169b988a8697d4a417f902277b4152e43e
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -815,7 +818,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P eb80ddc665132c607c258b59131025a296269dad
-R b8571e46e77ae4334ee4b99c40b16506
-U dan
-Z a97b394e32c2defcb9f264e6738c31ca
+P ac0de2f39e948f3b00e96eebf56ebee70472020d
+R 2471c301986d2b1b4e5a7fb5b19f3e34
+U drh
+Z ad4e60ef77cb53f3a930937718481e1b
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMB5uToxKgR168RlERAtsiAJ0VpOsSRORCjjWUhDUeQ1w5dXjvDwCfU7hM
+XwNgzrRAo3TBeSKSA2lj8rY=
+=avrR
+-----END PGP SIGNATURE-----

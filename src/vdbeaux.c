@@ -814,9 +814,12 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 **
 ** If a memory allocation error has occurred prior to the calling of this
 ** routine, then a pointer to a dummy VdbeOp will be returned.  That opcode
-** is readable and writable, but it has no effect.  The return of a dummy
-** opcode allows the call to continue functioning after a OOM fault without
-** having to check to see if the return from this routine is a valid pointer.
+** is readable but not writable, though it is cast to a writable value.
+** The return of a dummy opcode allows the call to continue functioning
+** after a OOM fault without having to check to see if the return from 
+** this routine is a valid pointer.  But because the dummy.opcode is 0,
+** dummy will never be written to.  This is verified by code inspection and
+** by running with Valgrind.
 **
 ** About the #ifdef SQLITE_OMIT_TRACE:  Normally, this routine is never called
 ** unless p->nOp>0.  This is because in the absense of SQLITE_OMIT_TRACE,
@@ -827,17 +830,17 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
-  static VdbeOp dummy;
+  static const VdbeOp dummy;
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
 #ifdef SQLITE_OMIT_TRACE
-    if( p->nOp==0 ) return &dummy;
+    if( p->nOp==0 ) return (VdbeOp*)&dummy;
 #endif
     addr = p->nOp - 1;
   }
   assert( (addr>=0 && addr<p->nOp) || p->db->mallocFailed );
   if( p->db->mallocFailed ){
-    return &dummy;
+    return (VdbeOp*)&dummy;
   }else{
     return &p->aOp[addr];
   }

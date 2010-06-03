@@ -2886,7 +2886,9 @@ extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
+#ifndef SQLITE_OMIT_WSD
 extern int sqlite3PendingByte;
+#endif
 #endif
 void sqlite3RootPageMoved(Db*, int, int);
 void sqlite3Reindex(Parse*, Token*, Token*);

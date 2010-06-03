@@ -675,7 +675,9 @@ int Sqlitetest2_Init(Tcl_Interp *interp){
      (char*)&sqlite3_diskfull_pending, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_diskfull",
      (char*)&sqlite3_diskfull, TCL_LINK_INT);
+#ifndef SQLITE_OMIT_WSD
   Tcl_LinkVar(interp, "sqlite_pending_byte",
      (char*)&sqlite3PendingByte, TCL_LINK_INT | TCL_LINK_READ_ONLY);
+#endif
   return TCL_OK;
 }

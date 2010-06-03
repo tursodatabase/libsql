@@ -194,7 +194,9 @@ SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
 ** Changing the pending byte during operating results in undefined
 ** and dileterious behavior.
 */
+#ifndef SQLITE_OMIT_WSD
 int sqlite3PendingByte = 0x40000000;
+#endif
 
 #include "opcodes.h"
 /*

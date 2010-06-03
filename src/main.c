@@ -2381,9 +2381,13 @@ int sqlite3_test_control(int op, ...){
     ** dileterious behavior.
     */
     case SQLITE_TESTCTRL_PENDING_BYTE: {
-      unsigned int newVal = va_arg(ap, unsigned int);
-      rc = sqlite3PendingByte;
-      if( newVal ) sqlite3PendingByte = newVal;
+      rc = PENDING_BYTE;
+#ifndef SQLITE_OMIT_WSD
+      {
+        unsigned int newVal = va_arg(ap, unsigned int);
+        if( newVal ) sqlite3PendingByte = newVal;
+      }
+#endif
       break;
     }
 

@@ -213,7 +213,7 @@ static int memjrnlFileSize(sqlite3_file *pJfd, sqlite_int64 *pSize){
 /*
 ** Table of methods for MemJournal sqlite3_file object.
 */
-static struct sqlite3_io_methods MemJournalMethods = {
+static const struct sqlite3_io_methods MemJournalMethods = {
   1,                /* iVersion */
   memjrnlClose,     /* xClose */
   memjrnlRead,      /* xRead */
@@ -236,7 +236,7 @@ void sqlite3MemJournalOpen(sqlite3_file *pJfd){
   MemJournal *p = (MemJournal *)pJfd;
   assert( EIGHT_BYTE_ALIGNMENT(p) );
   memset(p, 0, sqlite3MemJournalSize());
-  p->pMethod = &MemJournalMethods;
+  p->pMethod = (sqlite3_io_methods*)&MemJournalMethods;
 }
 
 /*
