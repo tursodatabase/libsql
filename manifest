@@ -1,5 +1,5 @@
-C If\sa\smalloc\sfails\swhile\sallocating\sa\ssavepoint\sobject\sat\sthe\spager\slevel,\sdo\snot\stry\sto\sroll\sthat\ssavepoint\sback\slater\son.
-D 2010-06-03T09:01:11
+C If\san\serror\s(OOM\sor\sSQLITE_FULL\serror)\soccurs\swhile\sexecuting\san\sSQL\sstatement\sand\sa\sstatement-transaction\sis\sautomatically\srolled\sback\sas\sa\sresult,\sif\sa\ssecond\serror\soccurs\sduring\sthe\sstatement\srollback\sdo\sa\sfull\stransaction\srollback\sinstead.\sOtherwise\sthe\sclient\scan\sbe\sleft\swith\san\sinconsistent\scache.
+D 2010-06-03T09:17:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -219,7 +219,7 @@ F src/vdbe.c 965247d966bb5bc9db819e27c076c8acd43ea4fd
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
-F src/vdbeaux.c 69f5887979504b464b8dda565816541adab3e2df
+F src/vdbeaux.c 834a551950e8b2b5bdca7bb353ac04f87dade03f
 F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -815,7 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c6eb0a27270df69018576232d8f97c16d63d8f6e
-R 73f30283983a54a2ac76ec9e924b342e
+P 91cb08ffb6332a142542c012b58aa49206ee5704
+R efb6b25ebd6ed72f29b742d935423851
 U dan
-Z 34e0f24dbde51f432bdf60db64ca02da
+Z 0bec386ab07ce5c674d40d75eae0944a
