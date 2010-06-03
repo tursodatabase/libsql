@@ -27,8 +27,7 @@ ifcapable !wal {finish_test ; return }
 # statement immediately after creating a new database.
 #
 do_test walfault-1-pre-1 {
-  db close
-  file delete -force test.db test.db-wal test.db-journal
+  faultsim_delete_and_reopen
   faultsim_save_and_close
 } {}
 do_faultsim_test walfault-1 -prep {
@@ -109,7 +108,6 @@ do_test walfault-3-pre-1 {
   db close
   faultsim_save_and_close
 } {}
-
 do_faultsim_test walfault-3 -prep {
   faultsim_restore_and_reopen
 } -body {
@@ -121,7 +119,9 @@ do_faultsim_test walfault-3 -prep {
   faultsim_test_result {0 {}}
 }
 
-file delete -force test.db test.db-wal test.db-journal
+#--------------------------------------------------------------------------
+#
+faultsim_delete_and_reopen
 faultsim_save_and_close
 do_faultsim_test walfault-4 -prep {
   faultsim_restore_and_reopen
@@ -138,10 +138,10 @@ do_faultsim_test walfault-4 -prep {
   faultsim_integrity_check
 } 
 
+#--------------------------------------------------------------------------
+#
 do_test walfault-5-pre-1 {
-  catch { db close }
-  file delete -force test.db test.db-wal test.db-journal
-  sqlite3 db test.db
+  faultsim_delete_and_reopen
   execsql {
     PRAGMA page_size = 512;
     PRAGMA journal_mode = WAL;
@@ -179,11 +179,10 @@ do_faultsim_test walfault-5 -faults shmerr* -prep {
   faultsim_integrity_check
 }
 
-
+#--------------------------------------------------------------------------
+#
 do_test walfault-6-pre-1 {
-  catch { db close }
-  file delete -force test.db test.db-wal test.db-journal
-  sqlite3 db test.db
+  faultsim_delete_and_reopen
   execsql {
     PRAGMA page_size = 512;
     PRAGMA journal_mode = WAL;
@@ -221,6 +220,8 @@ do_faultsim_test walfault-6 -faults shmerr* -prep {
   if {$n != 16384 && $n != 0} { error "Incorrect number of rows: $n" }
 }
 
+#--------------------------------------------------------------------------
+#
 do_test walfault-7-pre-1 {
   faultsim_delete_and_reopen
   execsql {
@@ -246,6 +247,8 @@ do_faultsim_test walfault-7 -prep {
   if {$n != 4 && $n != 0} { error "Incorrect number of rows: $n" }
 }
 
+#--------------------------------------------------------------------------
+#
 do_test walfault-8-pre-1 {
   faultsim_delete_and_reopen
   execsql {
@@ -279,6 +282,8 @@ do_faultsim_test walfault-8 -prep {
   if {$n != 1} { error "Incorrect number of rows: $n" }
 }
 
+#--------------------------------------------------------------------------
+#
 do_test walfault-9-pre-1 {
   faultsim_delete_and_reopen
   execsql {
@@ -328,7 +333,7 @@ do_faultsim_test walfault-9 -prep {
 #
 # This test case tests the outcome of an IO error in step 2.
 #
-proc shmfault_vfs_cb_6 {method args} {
+proc walfault_10_vfs_cb {method args} {
   switch -- $::shm_state {
     0 { return SQLITE_OK }
     1 {
@@ -347,10 +352,10 @@ proc shmfault_vfs_cb_6 {method args} {
   }
   return SQLITE_OK
 }
-do_test walfault-shm-6.1 {
+do_test walfault-10.1 {
   set ::shm_state 0
   testvfs tvfs 
-  tvfs script shmfault_vfs_cb_6
+  tvfs script walfault_10_vfs_cb
 
   sqlite3 db  test.db -vfs tvfs
   sqlite3 db2 test.db -vfs tvfs
@@ -362,7 +367,7 @@ do_test walfault-shm-6.1 {
     INSERT INTO t1 VALUES(randomblob(900));
   }
 } {wal 0}
-do_test walfault-shm-6.2 {
+do_test walfault-10.2 {
   execsql {
     PRAGMA wal_autocheckpoint = 0;
     BEGIN;
@@ -383,7 +388,7 @@ do_test walfault-shm-6.2 {
     COMMIT;
   } db2
 } {0}
-do_test walfault-shm-6.3 {
+do_test walfault-10.3 {
   set ::shm_state 1
   catchsql { PRAGMA wal_checkpoint } db2
 } {1 {disk I/O error}}

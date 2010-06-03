@@ -74,6 +74,7 @@ do_test tempdb-2.2 {
     BEGIN;
       INSERT INTO t1 VALUES(1, 2, 3);
       INSERT INTO t1 VALUES(4, 5, 6);
+      INSERT INTO t2 VALUES(7, 8, 9);
       INSERT INTO t2 SELECT * FROM t1;
   }
   catchsql { INSERT INTO t1 SELECT * FROM t2 }

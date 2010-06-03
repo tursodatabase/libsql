@@ -50,11 +50,15 @@ do_test stmt-1.5 {
   execsql COMMIT
   set sqlite_open_file_count
 } {1}
-do_test stmt-1.6 {
+do_test stmt-1.6.1 {
   execsql {
     BEGIN;
       INSERT INTO t1 SELECT a+2, b+2 FROM t1;
   }
+  set sqlite_open_file_count
+} {2}
+do_test stmt-1.6.2 {
+  execsql { INSERT INTO t1 SELECT a+4, b+4 FROM t1 }
   set sqlite_open_file_count
 } {3}
 do_test stmt-1.7 {
@@ -73,13 +77,20 @@ proc filecount {testname sql expected} {
   }] $expected]
 }
 
-filecount stmt-2.1 { INSERT INTO t1 VALUES(5, 5)  } 2
-filecount stmt-2.2 { REPLACE INTO t1 VALUES(5, 5) } 2
-filecount stmt-2.3 { INSERT INTO t1 SELECT 5, 5   } 3
+filecount stmt-2.1 { INSERT INTO t1 VALUES(9, 9)  } 2
+filecount stmt-2.2 { REPLACE INTO t1 VALUES(9, 9) } 2
+filecount stmt-2.3 { INSERT INTO t1 SELECT 9, 9   } 2
+filecount stmt-2.4 { 
+    INSERT INTO t1 SELECT 9, 9;
+    INSERT INTO t1 SELECT 10, 10;
+} 3
 
-do_test stmt-2.4 {
+do_test stmt-2.5 {
   execsql { CREATE INDEX i1 ON t1(b) }
 } {}
-filecount stmt-2.5 { REPLACE INTO t1 VALUES(5, 5) } 3
+filecount stmt-2.6 { 
+  REPLACE INTO t1 VALUES(5, 5);
+  REPLACE INTO t1 VALUES(5, 5); 
+} 3
 
 finish_test

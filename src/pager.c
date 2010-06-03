@@ -3408,6 +3408,26 @@ static int pager_write_pagelist(PgHdr *pList){
 }
 
 /*
+** Ensure that the sub-journal file is open. If it is already open, this 
+** function is a no-op.
+**
+** SQLITE_OK is returned if everything goes according to plan. An 
+** SQLITE_IOERR_XXX error code is returned if a call to sqlite3OsOpen() 
+** fails.
+*/
+static int openSubJournal(Pager *pPager){
+  int rc = SQLITE_OK;
+  if( !isOpen(pPager->sjfd) ){
+    if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY || pPager->subjInMemory ){
+      sqlite3MemJournalOpen(pPager->sjfd);
+    }else{
+      rc = pagerOpentemp(pPager, pPager->sjfd, SQLITE_OPEN_SUBJOURNAL);
+    }
+  }
+  return rc;
+}
+
+/*
 ** Append a record of the current state of page pPg to the sub-journal. 
 ** It is the callers responsibility to use subjRequiresPage() to check 
 ** that it is really required before calling this function.
@@ -3423,21 +3443,31 @@ static int pager_write_pagelist(PgHdr *pList){
 static int subjournalPage(PgHdr *pPg){
   int rc = SQLITE_OK;
   Pager *pPager = pPg->pPager;
-  if( isOpen(pPager->sjfd) ){
-    void *pData = pPg->pData;
-    i64 offset = pPager->nSubRec*(4+pPager->pageSize);
-    char *pData2;
+  if( pPager->journalMode!=PAGER_JOURNALMODE_OFF ){
 
-    CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
-    PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
-  
+    /* Open the sub-journal, if it has not already been opened */
+    assert( pPager->useJournal );
+    assert( isOpen(pPager->jfd) || pagerUseWal(pPager) );
+    assert( isOpen(pPager->sjfd) || pPager->nSubRec==0 );
     assert( pagerUseWal(pPager) 
          || pageInJournal(pPg) 
          || pPg->pgno>pPager->dbOrigSize 
     );
-    rc = write32bits(pPager->sjfd, offset, pPg->pgno);
+    rc = openSubJournal(pPager);
+
+    /* If the sub-journal was opened successfully (or was already open),
+    ** write the journal record into the file.  */
     if( rc==SQLITE_OK ){
-      rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
+      void *pData = pPg->pData;
+      i64 offset = pPager->nSubRec*(4+pPager->pageSize);
+      char *pData2;
+  
+      CODEC2(pPager, pData, pPg->pgno, 7, return SQLITE_NOMEM, pData2);
+      PAGERTRACE(("STMT-JOURNAL %d page %d\n", PAGERID(pPager), pPg->pgno));
+      rc = write32bits(pPager->sjfd, offset, pPg->pgno);
+      if( rc==SQLITE_OK ){
+        rc = sqlite3OsWrite(pPager->sjfd, pData2, pPager->pageSize, offset+4);
+      }
     }
   }
   if( rc==SQLITE_OK ){
@@ -4401,27 +4431,6 @@ void sqlite3PagerUnref(DbPage *pPg){
 }
 
 /*
-** If the main journal file has already been opened, ensure that the
-** sub-journal file is open too. If the main journal is not open,
-** this function is a no-op.
-**
-** SQLITE_OK is returned if everything goes according to plan. 
-** An SQLITE_IOERR_XXX error code is returned if a call to 
-** sqlite3OsOpen() fails.
-*/
-static int openSubJournal(Pager *pPager){
-  int rc = SQLITE_OK;
-  if( (pagerUseWal(pPager) || isOpen(pPager->jfd)) && !isOpen(pPager->sjfd) ){
-    if( pPager->journalMode==PAGER_JOURNALMODE_MEMORY || pPager->subjInMemory ){
-      sqlite3MemJournalOpen(pPager->sjfd);
-    }else{
-      rc = pagerOpentemp(pPager, pPager->sjfd, SQLITE_OPEN_SUBJOURNAL);
-    }
-  }
-  return rc;
-}
-
-/*
 ** This function is called at the start of every write transaction.
 ** There must already be a RESERVED or EXCLUSIVE lock on the database 
 ** file when this routine is called.
@@ -4502,9 +4511,6 @@ static int pager_open_journal(Pager *pPager){
     pPager->setMaster = 0;
     pPager->journalHdr = 0;
     rc = writeJournalHdr(pPager);
-  }
-  if( rc==SQLITE_OK && pPager->nSavepoint ){
-    rc = openSubJournal(pPager);
   }
 
   if( rc!=SQLITE_OK ){
@@ -5469,9 +5475,6 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
       pPager->nSavepoint = ii+1;
     }
     assert( pPager->nSavepoint==nSavepoint );
-
-    /* Open the sub-journal, if it is not already opened. */
-    rc = openSubJournal(pPager);
     assertTruncateConstraint(pPager);
   }
 

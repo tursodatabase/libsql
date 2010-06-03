@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sglobal\svariables\swhen\scompiled\swith\sSQLITE_OMIT_WSD
-D 2010-06-03T12:09:52
+C Delay\sopening\sthe\ssub-journal\suntil\sSQLite\sactually\sneeds\sto\swrite\sdata\sto\sit.
+D 2010-06-03T12:35:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +154,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 8fa4eeb27c54f26e9ce01bead2fa117fadea1526
 F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
-F src/pager.c 1eca1ede7d455a356524834f590546110c3b1a64
+F src/pager.c bd9647a741d1905a2a46cc79126ca2d720f33f5d
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -598,7 +595,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test e90a0ed94452076f6a10209d378e06b5f75ef0a0
-F test/stmt.test ac97e59879fd3bd52ecd60ef4efb03ba16292829
+F test/stmt.test 7915bd3e8380b956c095f40f41a775a30716e649
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
 F test/substr.test 18f57c4ca8a598805c4d64e304c418734d843c1a
@@ -606,7 +603,7 @@ F test/sync.test ded6b39d8d8ca3c0c5518516c6371b3316d3e3a3
 F test/table.test 04ba066432430657712d167ebf28080fe878d305
 F test/tableapi.test 7262a8cbaa9965d429f1cbd2747edc185fa56516
 F test/tclsqlite.test 013133fa83128569c6fb8a7a48dc7c4507e6ff1c
-F test/tempdb.test 1bf52da28a9c24e29717362a87722dff08feb72b
+F test/tempdb.test a1182f2b9a8bd7b208ba9797f9e9a2bcdd811ae8
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
 F test/tester.tcl 7cc3517ad2158c5b72b90684116a400404a3b66f
@@ -770,7 +767,7 @@ F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
-F test/walfault.test 058c9e2829fc5e3e01ae4984980a6da9af15368a
+F test/walfault.test 0cd672eb059d98ef07714f64371fd7d4d1ebb642
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -818,14 +815,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ac0de2f39e948f3b00e96eebf56ebee70472020d
-R 2471c301986d2b1b4e5a7fb5b19f3e34
-U drh
-Z ad4e60ef77cb53f3a930937718481e1b
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMB5uToxKgR168RlERAtsiAJ0VpOsSRORCjjWUhDUeQ1w5dXjvDwCfU7hM
-XwNgzrRAo3TBeSKSA2lj8rY=
-=avrR
------END PGP SIGNATURE-----
+P dd10a547f10364058025c48b28d8fd240bf46aff
+R 5a3453abb346b5d651cf46a168ba79fc
+U dan
+Z ad1006f09932fe90a8f3d7feb00d5c69
