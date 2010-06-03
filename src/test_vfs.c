@@ -603,10 +603,9 @@ static int tvfsShmGet(
   if( rc==SQLITE_OK && p->mask&TESTVFS_SHMGET_MASK && tvfsInjectIoerr(p) ){
     rc = SQLITE_IOERR;
   }
-  if( rc==SQLITE_OK ){
-    tvfsGrowBuffer(pFd, reqMapSize, pMapSize);
-    *pp = pFd->pShm->a;
-  }
+
+  *pMapSize = pFd->pShm->n;
+  *pp = pFd->pShm->a;
   return rc;
 }
 
