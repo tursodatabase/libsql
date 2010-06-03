@@ -5449,7 +5449,6 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
     }
     memset(&aNew[nCurrent], 0, (nSavepoint-nCurrent) * sizeof(PagerSavepoint));
     pPager->aSavepoint = aNew;
-    pPager->nSavepoint = nSavepoint;
 
     /* Populate the PagerSavepoint structures just allocated. */
     for(ii=nCurrent; ii<nSavepoint; ii++){
@@ -5467,7 +5466,9 @@ int sqlite3PagerOpenSavepoint(Pager *pPager, int nSavepoint){
       if( pagerUseWal(pPager) ){
         sqlite3WalSavepoint(pPager->pWal, aNew[ii].aWalData);
       }
+      pPager->nSavepoint = ii+1;
     }
+    assert( pPager->nSavepoint==nSavepoint );
 
     /* Open the sub-journal, if it is not already opened. */
     rc = openSubJournal(pPager);
