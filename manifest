@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Performance\sfix\sfor\swinShmClose().
-D 2010-06-03T18:02:48
+C Have\stest_vfs.c\ssimulate\sIO\serrors\sin\sxShmLock.
+D 2010-06-03T18:20:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -210,7 +207,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c bae03f62556a11cf5c7c3ea1211a604a3834263a
+F src/test_vfs.c dd2134246d06baa1c8577468d99ea0e82fff0f84
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -609,7 +606,7 @@ F test/tclsqlite.test 013133fa83128569c6fb8a7a48dc7c4507e6ff1c
 F test/tempdb.test a1182f2b9a8bd7b208ba9797f9e9a2bcdd811ae8
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 7cc3517ad2158c5b72b90684116a400404a3b66f
+F test/tester.tcl 663cf9ab1b3716b5f253d03cab46fee51e767ec7
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -767,6 +764,7 @@ F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test bfec61450b47cdf09f7d2269f9e9967683b8b0fc
 F test/wal2.test 1dcbbe59ab662bebb859bb1ede83143f8a39814e
 F test/wal3.test cac89168c8f8a8679f1fb5234624d5699a84b2f0
+F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
@@ -819,14 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P af3e598ad9315a4642dd8fa098dfdbd727770aed
-R 84e8dd60722f5c7f056bec1a458ef266
-U drh
-Z ba1bb4a00acdd985ef42edfe4d95281d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMB+5LoxKgR168RlERAm0WAJ9Nh/GrqRnqQwW6S93H+lW2vTWFVACeKmqx
-7OhVIY2JdtudnYpFSeoVF5M=
-=nbwb
------END PGP SIGNATURE-----
+P ed7774de04978803e979580240148eba1de9166d
+R d0d2a13b20b83bfc33527d4cfc64e20d
+U dan
+Z 864d76f976dcce27bb2708f49a43c609

@@ -657,6 +657,10 @@ static int tvfsShmLock(
     );
     tvfsResultCode(p, &rc);
   }
+
+  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMLOCK_MASK && tvfsInjectIoerr(p) ){
+    rc = SQLITE_IOERR;
+  }
   return rc;
 }
 
