@@ -72,7 +72,8 @@ proc incr_tvfs_hdr {file idx incrval} {
 #
 do_test wal2-1.0 {
   proc tvfs_cb {method args} { return SQLITE_OK }
-  testvfs tvfs tvfs_cb
+  testvfs tvfs
+  tvfs script tvfs_cb
 
   sqlite3 db  test.db -vfs tvfs
   sqlite3 db2 test.db -vfs tvfs
@@ -166,7 +167,8 @@ set LOCKS  [list \
 ]
 do_test wal2-2.0 {
 
-  testvfs tvfs tvfs_cb
+  testvfs tvfs
+  tvfs script tvfs_cb
   proc tvfs_cb {method args} {
     if {$method == "xShmOpen"} { set ::shm_file [lindex $args 0] }
     return SQLITE_OK
@@ -281,7 +283,8 @@ do_test wal2-3.0 {
     return 0
   }
 
-  testvfs tvfs tvfs_cb
+  testvfs tvfs
+  tvfs script tvfs_cb
   sqlite3 db test.db -vfs tvfs
   db busy busyhandler
 
@@ -348,15 +351,13 @@ do_test wal2-4.1 {
 } {wal}
 do_test wal2-4.2 {
   db close
-  proc ok {args} {return SQLITE_OK}
-  testvfs -noshm tvfs ok
+  testvfs tvfs -noshm 1
   sqlite3 db test.db -vfs tvfs
   catchsql { SELECT * FROM data }
 } {1 {unable to open database file}}
 do_test wal2-4.3 {
   db close
-  proc ok {args} {return SQLITE_OK}
-  testvfs tvfs ok
+  testvfs tvfs
   sqlite3 db test.db -vfs tvfs
   catchsql { SELECT * FROM data }
 } {0 {{need xShmOpen to see this}}}
@@ -388,7 +389,8 @@ do_test wal2-5.1 {
   }
   set tvfs_cb_return SQLITE_OK
 
-  testvfs tvfs tvfs_cb
+  testvfs tvfs
+  tvfs script tvfs_cb
 
   sqlite3 db test.db -vfs tvfs
   execsql {
@@ -578,7 +580,8 @@ do_test wal2-6.4.1 {
     if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
     return "SQLITE_OK"
   }
-  testvfs tvfs tvfs_cb
+  testvfs tvfs
+  tvfs script tvfs_cb
   sqlite3 db test.db -vfs tvfs
 } {}
 

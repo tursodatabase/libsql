@@ -23,6 +23,50 @@ ifcapable builtin_test {
   return 0
 }
 
+# Transient and persistent OOM errors:
+#
+set FAULTSIM(oom-transient) [list          \
+  -injectstart   {oom_injectstart 0}       \
+  -injectstop    oom_injectstop            \
+  -injecterrlist {{1 {out of memory}}}     \
+]
+set FAULTSIM(oom-persistent) [list         \
+  -injectstart {oom_injectstart 1000000}   \
+  -injectstop oom_injectstop               \
+  -injecterrlist {{1 {out of memory}}}     \
+]
+  
+# Transient and persistent IO errors:
+#
+set FAULTSIM(ioerr-transient) [list        \
+  -injectstart   {ioerr_injectstart 0}     \
+  -injectstop    ioerr_injectstop          \
+  -injecterrlist {{1 {disk I/O error}}}    \
+]
+set FAULTSIM(ioerr-persistent) [list       \
+  -injectstart   {ioerr_injectstart 1}     \
+  -injectstop    ioerr_injectstop          \
+  -injecterrlist {{1 {disk I/O error}}}    \
+]
+
+# Transient and persistent SHM errors:
+#
+set FAULTSIM(shmerr-transient) [list       \
+  -injectinstall   shmerr_injectinstall    \
+  -injectstart     {shmerr_injectstart 0}  \
+  -injectstop      shmerr_injectstop       \
+  -injecterrlist   {{1 {disk I/O error}}}  \
+  -injectuninstall shmerr_injectuninstall  \
+]
+set FAULTSIM(shmerr-persistent) [list      \
+  -injectinstall   shmerr_injectinstall    \
+  -injectstart     {shmerr_injectstart 1}  \
+  -injectstop      shmerr_injectstop       \
+  -injecterrlist   {{1 {disk I/O error}}}  \
+  -injectuninstall shmerr_injectuninstall  \
+]
+
+
 
 #--------------------------------------------------------------------------
 # Usage do_faultsim_test NAME ?OPTIONS...? 
@@ -36,10 +80,9 @@ ifcapable builtin_test {
 #     -test             Script to execute after -body.
 #
 proc do_faultsim_test {name args} {
-  set DEFAULT(-faults)        [list       \
-    oom-transient     oom-persistent      \
-    ioerr-transient   ioerr-persistent    \
-  ]
+  global FAULTSIM
+  
+  set DEFAULT(-faults)        [array names FAULTSIM]
   set DEFAULT(-prep)          ""
   set DEFAULT(-body)          ""
   set DEFAULT(-test)          ""
@@ -50,35 +93,16 @@ proc do_faultsim_test {name args} {
     if {[info exists DEFAULT($o)]==0} { error "unknown option: $o" }
   }
 
-  set A(oom-transient) [list                 \
-    -injectstart   {oom_injectstart 0}       \
-    -injectstop    oom_injectstop            \
-    -injecterrlist {{1 {out of memory}}}     \
-  ]
-  set A(oom-persistent) [list                \
-    -injectstart {oom_injectstart 1000000}   \
-    -injectstop oom_injectstop               \
-    -injecterrlist {{1 {out of memory}}}     \
-  ]
-  
-  set A(ioerr-transient) [list               \
-    -injectstart   {ioerr_injectstart 0}     \
-    -injectstop    ioerr_injectstop          \
-    -injecterrlist {{1 {disk I/O error}}}    \
-  ]
-
-  set A(ioerr-persistent) [list              \
-    -injectstart   {ioerr_injectstart 1}     \
-    -injectstop    ioerr_injectstop          \
-    -injecterrlist {{1 {disk I/O error}}}    \
-  ]
-
+  set faultlist [list]
   foreach f $O(-faults) {
-    if {[info exists A($f)]==0} { error "unknown fault: $f" }
+    set flist [array names FAULTSIM $f]
+    if {[llength $flist]==0} { error "unknown fault: $f" }
+    set faultlist [concat $faultlist $flist]
   }
+
   set testspec [list -prep $O(-prep) -body $O(-body) -test $O(-test)]
-  foreach f $O(-faults) {
-    eval do_one_faultsim_test "$name-$f" $A($f) $testspec
+  foreach f [lsort -unique $faultlist] {
+    eval do_one_faultsim_test "$name-$f" $FAULTSIM($f) $testspec
   }
 }
 
@@ -121,9 +145,20 @@ proc faultsim_restore_and_reopen {} {
   sqlite3_db_config_lookaside db 0 0 0
 }
 
+proc faultsim_integrity_check {{db db}} {
+  set ic [$db eval { PRAGMA integrity_check }]
+  if {$ic != "ok"} { error "Integrity check: $ic" }
+}
 
-# The following procs are used as [do_faultsim_test] when injecting OOM
-# faults into test cases.
+proc faultsim_delete_and_reopen {{file test.db}} {
+  catch { db close }
+  file delete -force test.db test.db-wal test.db-journal
+  sqlite3 db test.db
+}
+
+
+# The following procs are used as [do_one_faultsim_test] callbacks when 
+# injecting OOM faults into test cases.
 #
 proc oom_injectstart {nRepeat iFail} {
   sqlite3_memdebug_fail $iFail -repeat $nRepeat
@@ -132,6 +167,9 @@ proc oom_injectstop {} {
   sqlite3_memdebug_fail -1
 }
 
+# The following procs are used as [do_one_faultsim_test] callbacks when 
+# injecting IO error faults into test cases.
+#
 proc ioerr_injectstart {persist iFail} {
   set ::sqlite_io_error_persist $persist
   set ::sqlite_io_error_pending $iFail
@@ -144,6 +182,24 @@ proc ioerr_injectstop {} {
   set ::sqlite_io_error_hit     0
   set ::sqlite_io_error_pending 0
   return $sv
+}
+
+# The following procs are used as [do_one_faultsim_test] callbacks when 
+# injecting shared-memory related error faults into test cases.
+#
+proc shmerr_injectinstall {} {
+  testvfs shmfault -default true
+}
+proc shmerr_injectuninstall {} {
+  catch {db  close}
+  catch {db2 close}
+  shmfault delete
+}
+proc shmerr_injectstart {persist iFail} {
+  shmfault ioerr $iFail $persist
+}
+proc shmerr_injectstop {} {
+  shmfault ioerr 0 0
 }
 
 # This command is not called directly. It is used by the 
@@ -173,6 +229,10 @@ proc faultsim_test_result_int {args} {
 #     -injecterrlist    List of generally acceptable test results (i.e. error
 #                       messages). Example: [list {1 {out of memory}}]
 #
+#     -injectinstall
+#
+#     -injectuninstall
+#
 #     -prep             Script to execute before -body.
 #
 #     -body             Script to execute (with fault injection).
@@ -181,12 +241,14 @@ proc faultsim_test_result_int {args} {
 #
 proc do_one_faultsim_test {testname args} {
 
-  set DEFAULT(-injectstart)   {oom_injectstart 0}
-  set DEFAULT(-injectstop)    {oom_injectstop}
-  set DEFAULT(-injecterrlist) [list {1 {out of memory}}]
-  set DEFAULT(-prep)          ""
-  set DEFAULT(-body)          ""
-  set DEFAULT(-test)          ""
+  set DEFAULT(-injectstart)     "expr"
+  set DEFAULT(-injectstop)      "expr 0"
+  set DEFAULT(-injecterrlist)   [list]
+  set DEFAULT(-injectinstall)   ""
+  set DEFAULT(-injectuninstall) ""
+  set DEFAULT(-prep)            ""
+  set DEFAULT(-body)            ""
+  set DEFAULT(-test)            ""
 
   array set O [array get DEFAULT]
   array set O $args
@@ -198,6 +260,8 @@ proc do_one_faultsim_test {testname args} {
   proc faultsim_test_result {args} "
     uplevel faultsim_test_result_int \$args [list $O(-injecterrlist)]
   "
+
+  eval $O(-injectinstall)
 
   set stop 0
   for {set iFail 1} {!$stop} {incr iFail} {
@@ -228,6 +292,8 @@ proc do_one_faultsim_test {testname args} {
     #
     if {$nfail==0} { set stop 1 }
   }
+
+  eval $O(-injectuninstall)
 }
 
 # Usage: do_malloc_test <test number> <options...>
