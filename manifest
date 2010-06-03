@@ -1,5 +1,8 @@
-C Add\sextra\stests\sfor\sremoving\selements\sfrom\swal-index\shash\stables\sas\spart\sof\sa\srollback.
-D 2010-06-03T16:58:46
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Performance\sfix\sfor\swinShmClose().
+D 2010-06-03T18:02:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +156,7 @@ F src/os.h 6f529984a29511c7a3479cfe549c10bfa131532f
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 8fa4eeb27c54f26e9ce01bead2fa117fadea1526
-F src/os_win.c f815403c51a2adad30244374c801dd7fd2734567
+F src/os_win.c 0cf1f571546f165001e2391b5d4a4a16d86977d3
 F src/pager.c bd9647a741d1905a2a46cc79126ca2d720f33f5d
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -816,7 +819,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c43deb33ae5f191ea2e054181759beeeb9ea71bf
-R 6efb1bc5c3a6c45935bda4dcd092139b
-U dan
-Z bc55eed97c9dec0f32cd0a5d524e87aa
+P af3e598ad9315a4642dd8fa098dfdbd727770aed
+R 84e8dd60722f5c7f056bec1a458ef266
+U drh
+Z ba1bb4a00acdd985ef42edfe4d95281d
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMB+5LoxKgR168RlERAm0WAJ9Nh/GrqRnqQwW6S93H+lW2vTWFVACeKmqx
+7OhVIY2JdtudnYpFSeoVF5M=
+=nbwb
+-----END PGP SIGNATURE-----

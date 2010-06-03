@@ -1308,13 +1308,17 @@ static int winShmSystemLock(
   return rc;
 }
 
+/* Forward references to VFS methods */
+static int winOpen(sqlite3_vfs*,const char*,sqlite3_file*,int,int*);
+static int winDelete(sqlite3_vfs *,const char*,int);
+
 /*
 ** Purge the winShmNodeList list of all entries with winShmNode.nRef==0.
 **
 ** This is not a VFS shared-memory method; it is a utility function called
 ** by VFS shared-memory methods.
 */
-static void winShmPurge(void){
+static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   winShmNode **pp;
   winShmNode *p;
   assert( winShmMutexHeld() );
@@ -1332,6 +1336,7 @@ static void winShmPurge(void){
       if( p->hFile.h != INVALID_HANDLE_VALUE ) {
         winClose((sqlite3_file *)&p->hFile);
       }
+      if( deleteFlag ) winDelete(pVfs, p->zFilename, 0);
       *pp = p->pNext;
       sqlite3_free(p);
     }else{
@@ -1339,10 +1344,6 @@ static void winShmPurge(void){
     }
   }
 }
-
-/* Forward references to VFS methods */
-static int winOpen(sqlite3_vfs*,const char*,sqlite3_file*,int,int*);
-static int winDelete(sqlite3_vfs *,const char*,int);
 
 /*
 ** Open a shared-memory area.  This particular implementation uses
@@ -1457,7 +1458,7 @@ static int winShmOpen(
   /* Jump here on any error */
 shm_open_err:
   winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
-  winShmPurge();                 /* This call frees pShmNode if required */
+  winShmPurge(pDbFd->pVfs, 0);      /* This call frees pShmNode if required */
   sqlite3_free(p);
   sqlite3_free(pNew);
   winShmLeaveMutex();
@@ -1498,8 +1499,7 @@ static int winShmClose(
   assert( pShmNode->nRef>0 );
   pShmNode->nRef--;
   if( pShmNode->nRef==0 ){
-    if( deleteFlag ) winDelete(pDbFd->pVfs, pShmNode->zFilename, 0);
-    winShmPurge();
+    winShmPurge(pDbFd->pVfs, deleteFlag);
   }
   winShmLeaveMutex();
 
