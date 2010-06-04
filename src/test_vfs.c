@@ -596,7 +596,8 @@ static int tvfsShmGet(
 
   if( p->pScript && p->mask&TESTVFS_SHMGET_MASK ){
     tvfsExecTcl(p, "xShmGet", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
+        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 
+        Tcl_NewIntObj(reqMapSize)
     );
     tvfsResultCode(p, &rc);
   }

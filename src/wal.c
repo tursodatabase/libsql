@@ -1299,14 +1299,10 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   int i;                /* Iterator variable */
   int nFinal;           /* Number of unindexed entries */
   u8 *aTmp;             /* Temp space used by merge-sort */
-  int rc;               /* Return code of walIndexMap() */
   u8 *aSpace;           /* Surplus space on the end of the allocation */
 
   /* Make sure the wal-index is mapped into local memory */
-  rc = walIndexMap(pWal, walMappingSize(pWal->hdr.mxFrame));
-  if( rc!=SQLITE_OK ){
-    return rc;
-  }
+  assert( pWal->pWiData && pWal->szWIndex>=walMappingSize(pWal->hdr.mxFrame) );
 
   /* This routine only runs while holding SQLITE_SHM_CHECKPOINT.  No other
   ** thread is able to write to shared memory while this routine is
@@ -1360,7 +1356,6 @@ static void walIteratorFree(WalIterator *p){
   sqlite3_free(p);
 }
 
-
 /*
 ** Copy as much content as we can from the WAL back into the database file
 ** in response to an sqlite3_wal_checkpoint() request or the equivalent.
@@ -1411,14 +1406,13 @@ static int walCheckpoint(
   /* Allocate the iterator */
   rc = walIteratorInit(pWal, &pIter);
   if( rc!=SQLITE_OK || pWal->hdr.mxFrame==0 ){
-    walIteratorFree(pIter);
-    return rc;
+    goto walcheckpoint_out;
   }
 
   /*** TODO:  Move this test out to the caller.  Make it an assert() here ***/
   if( pWal->hdr.szPage!=nBuf ){
-    walIteratorFree(pIter);
-    return SQLITE_CORRUPT_BKPT;
+    rc = SQLITE_CORRUPT_BKPT;
+    goto walcheckpoint_out;
   }
 
   /* Compute in mxSafeFrame the index of the last frame of the WAL that is
@@ -1432,17 +1426,16 @@ static int walCheckpoint(
   assert( pInfo==walCkptInfo(pWal) );
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
-    if( y>0 && (mxSafeFrame==0 || mxSafeFrame>=y) ){
-      if( y<=pWal->hdr.mxFrame
-       && walLockExclusive(pWal, WAL_READ_LOCK(i), 1)==SQLITE_OK
-      ){
+    if( y>0 && mxSafeFrame>=y ){
+      assert( y<=pWal->hdr.mxFrame );
+      rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
+      if( rc==SQLITE_OK ){
         pInfo->aReadMark[i] = 0;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
       }else if( rc==SQLITE_BUSY ){
         mxSafeFrame = y-1;
       }else{
-        walIteratorFree(pIter);
-        return rc;
+        goto walcheckpoint_out;
       }
     }
   }
@@ -1488,6 +1481,7 @@ static int walCheckpoint(
     rc = SQLITE_OK;
   }
 
+ walcheckpoint_out:
   walIteratorFree(pIter);
   return rc;
 }

@@ -109,5 +109,88 @@ for {set i 1} {$i < 20} {incr i} {
   db2 close
 }
 
+db close
+foreach code [list {
+  proc code2 {tcl} { uplevel #0 $tcl }
+  proc code3 {tcl} { uplevel #0 $tcl }
+  set tn singleproc
+} {
+  set ::code2_chan [launch_testfixture]
+  set ::code3_chan [launch_testfixture]
+  proc code2 {tcl} { testfixture $::code2_chan $tcl }
+  proc code3 {tcl} { testfixture $::code3_chan $tcl }
+  set tn multiproc
+}] {
+  file delete -force test.db test.db-wal test.db-journal
+  sqlite3 db test.db
+  eval $code
+
+  # Open connections [db2] and [db3]. Depending on which iteration this
+  # is, the connections may be created in this interpreter, or in 
+  # interpreters running in other OS processes. As such, the [db2] and [db3]
+  # commands should only be accessed within [code2] and [code3] blocks,
+  # respectively.
+  #
+  code2 { sqlite3 db2 test.db ; db2 eval { PRAGMA journal_mode = WAL } }
+  code3 { sqlite3 db3 test.db ; db3 eval { PRAGMA journal_mode = WAL } }
+
+  # Shorthand commands. Execute SQL using database connection [db], [db2] 
+  # or [db3]. Return the results.
+  #
+  proc sql  {sql} { db eval $sql }
+  proc sql2 {sql} { code2 [list db2 eval $sql] }
+  proc sql3 {sql} { code3 [list db3 eval $sql] }
+
+  do_test wal3-2.$tn.1 {
+    sql { 
+      PRAGMA page_size = 1024;
+      PRAGMA auto_vacuum = OFF; 
+      PRAGMA journal_mode = WAL;
+    }
+    sql {
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 'one');
+      BEGIN;
+        SELECT * FROM t1;
+    }
+  } {1 one}
+  do_test wal3-2.$tn.2 {
+    sql2 {
+      CREATE TABLE t2(a, b);
+      INSERT INTO t2 VALUES(2, 'two');
+      BEGIN;
+        SELECT * FROM t2;
+    }
+  } {2 two}
+  do_test wal3-2.$tn.3 {
+    sql3 {
+      CREATE TABLE t3(a, b);
+      INSERT INTO t3 VALUES(3, 'three');
+      BEGIN;
+        SELECT * FROM t3;
+    }
+  } {3 three}
+
+  # Try to checkpoint the database using [db]. It should be possible to
+  # checkpoint everything except the frames added by [db3] (checkpointing
+  # these frames would clobber the snapshot currently being used by [db2]).
+  #
+  do_test wal3-2.$tn.4 {
+    sql {
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    }
+  } {}
+  do_test wal3-2.$tn.5 {
+    file size test.db
+  } [expr 3*1024]
+
+
+  catch { db close }
+  catch { code2 { db2 close } }
+  catch { code3 { db3 close } }
+  catch { close $::code2_chan }
+  catch { close $::code3_chan }
+}
 finish_test
 
