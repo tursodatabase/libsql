@@ -421,6 +421,12 @@ tvfs delete
 #   wal2-6.4.*: Check that xShmLock calls are omitted in exclusive locking
 #               mode.
 #
+#   wal2-6.5.*: 
+#
+#   wal2-6.6.*: Check that if the xShmLock() to reaquire a WAL read-lock when
+#               exiting exclusive mode fails (i.e. SQLITE_IOERR), then the
+#               connection silently remains in exclusive mode.
+#
 do_test wal2-6.1.1 {
   file delete -force test.db test.db-wal test.db-journal
   sqlite3 db test.db
@@ -717,6 +723,50 @@ do_test wal2-6.5.3 {
   execsql { PRAGMA wal_checkpoint }
 } {}
 db close
+
+proc lock_control {method filename handle spec} {
+  foreach {start n op type} $spec break
+  if {$op == "lock"} { return SQLITE_IOERR }
+  return SQLITE_OK
+}
+do_test wal2-6.6.1 {
+  testvfs T
+  T script lock_control
+  T filter {}
+  sqlite3 db test.db -vfs T
+  execsql { PRAGMA locking_mode = exclusive }
+  execsql { INSERT INTO t2 VALUES('V', 'VI') }
+} {}
+do_test wal2-6.6.2 {
+  execsql { PRAGMA locking_mode = normal }
+  T filter xShmLock
+  execsql { INSERT INTO t2 VALUES('VII', 'VIII') }
+} {}
+do_test wal2-6.6.3 {
+  # At this point the connection should still be in exclusive-mode, even
+  # though it tried to exit exclusive-mode when committing the INSERT
+  # statement above. To exit exclusive mode, SQLite has to take a read-lock 
+  # on the WAL file using xShmLock(). Since that call failed, it remains
+  # in exclusive mode.
+  #
+  sqlite3 db2 test.db -vfs T
+  catchsql { SELECT * FROM t2 } db2
+} {1 {database is locked}}
+do_test wal2-6.6.2 {
+  db2 close
+  T filter {}
+  execsql { INSERT INTO t2 VALUES('IX', 'X') }
+} {}
+do_test wal2-6.6.3 {
+  # This time, we have successfully exited exclusive mode. So the second
+  # connection can read the database.
+  sqlite3 db2 test.db -vfs T
+  catchsql { SELECT * FROM t2 } db2
+} {0 {I II III IV V VI VII VIII IX X}}
+
+db close
+db2 close
+T delete
 
 #-------------------------------------------------------------------------
 # Test a theory about the checksum algorithm. Theory was false and this

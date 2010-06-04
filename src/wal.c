@@ -2448,14 +2448,20 @@ int sqlite3WalCallback(Wal *pWal){
 int sqlite3WalExclusiveMode(Wal *pWal, int op){
   int rc;
   assert( pWal->writeLock==0 );
-  /* pWal->readLock is usually set, but might be -1 if there was a prior OOM */
+
+  /* pWal->readLock is usually set, but might be -1 if there was a 
+  ** prior error while attempting to acquire are read-lock. This cannot 
+  ** happen if the connection is actually in exclusive mode (as no xShmLock
+  ** locks are taken in this case). Nor should the pager attempt to
+  ** upgrade to exclusive-mode following such an error.
+  */
   assert( pWal->readLock>=0 || pWal->lockError );
+  assert( pWal->readLock>=0 || (op<=0 && pWal->exclusiveMode==0) );
+
   if( op==0 ){
     if( pWal->exclusiveMode ){
       pWal->exclusiveMode = 0;
-      if( pWal->readLock>=0 
-       && walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK
-      ){
+      if( walLockShared(pWal, WAL_READ_LOCK(pWal->readLock))!=SQLITE_OK ){
         pWal->exclusiveMode = 1;
       }
       rc = pWal->exclusiveMode==0;
