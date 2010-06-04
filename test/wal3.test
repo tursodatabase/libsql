@@ -262,7 +262,11 @@ foreach {tn syncmode synccount} {
 # When recovering the contents of a WAL file, a process obtains the WRITER
 # lock, then locks all other bytes before commencing recovery. If it fails
 # to lock all other bytes (because some other process is holding a read
-# lock) it should return SQLITE_BUSY to the caller. Test this.
+# lock) it should retry up to 100 times. Then return SQLITE_PROTOCOL to the 
+# caller. Test this (test case wal3-4.3).
+#
+# Also test the effect of hitting an SQLITE_BUSY while attempting to obtain
+# the WRITER lock (should be the same). Test case wal3-4.4.
 # 
 proc lock_callback {method filename handle lock} {
   lappend ::locks $lock
@@ -295,6 +299,18 @@ puts "  Warning: This next test case causes SQLite to call xSleep(1) 100 times."
 puts "  Normally this equates to a 100ms delay, but if SQLite is built on unix"
 puts "  without HAVE_USLEEP defined, it may be 100 seconds."
 do_test wal3-4.3 {
+  db close
+  set ::locks [list]
+  sqlite3 db test.db -vfs T
+  catchsql { SELECT * FROM x }
+} {1 {locking protocol}}
+
+puts "  Warning: Same again!"
+proc lock_callback {method filename handle lock} {
+  if {$lock == "0 1 lock exclusive"} { return SQLITE_BUSY }
+  return SQLITE_OK
+}
+do_test wal3-4.4 {
   db close
   set ::locks [list]
   sqlite3 db test.db -vfs T

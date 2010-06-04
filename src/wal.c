@@ -1647,8 +1647,6 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
       }
       walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
       pWal->writeLock = 0;
-    }else if( rc!=SQLITE_BUSY ){
-      return rc;
     }
   }
 
