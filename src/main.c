@@ -776,7 +776,7 @@ const char *sqlite3ErrStr(int rc){
     /* SQLITE_NOTFOUND    */ 0,
     /* SQLITE_FULL        */ "database or disk is full",
     /* SQLITE_CANTOPEN    */ "unable to open database file",
-    /* SQLITE_PROTOCOL    */ 0,
+    /* SQLITE_PROTOCOL    */ "locking protocol",
     /* SQLITE_EMPTY       */ "table contains no data",
     /* SQLITE_SCHEMA      */ "database schema has changed",
     /* SQLITE_TOOBIG      */ "string or blob too big",

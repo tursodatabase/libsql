@@ -1,5 +1,5 @@
-C Add\stest\sfor\sthe\scode\sthat\sdetects\san\sinconsistent\spair\sof\swal-index\sheaders\sto\swal2.test.
-D 2010-06-04T12:22:35
+C Add\san\sEnglish\slanguage\serror\smessage\sto\scorresponding\sto\sSQLITE_PROTOCOL.\s"locking\sprotocol".
+D 2010-06-04T15:59:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -133,7 +133,7 @@ F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c 34d9fc068b331e7d13206c26490c42f90c83d893
+F src/main.c 0939e4b49e5b7e2dc0669bc3ac98963e1b599996
 F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
@@ -763,7 +763,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test bfec61450b47cdf09f7d2269f9e9967683b8b0fc
 F test/wal2.test c90d20363f17373cbf5bdfcee3571b43e8fa597b
-F test/wal3.test a4b46d20010613e56c8fbb401bc0b370ff838b34
+F test/wal3.test 5436fdc7fc835d78a7e39ca863dee99b02965e8e
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b813233d7604a5fd91e1af91d5d812032eec700a
-R 1e5bd682c632ede77eea9d55939c1701
+P 157feba10f7ac01eecf79715c44bb16c98958280
+R 4b9fd9c8da46e38cbcd3302995ecbb78
 U dan
-Z e80075d9a3d96ac30cbd1496fdd7f512
+Z 8c3b48407d3b3e089791e93b7d98c5de
