@@ -1,5 +1,5 @@
-C If\san\sattempt\sto\ssync\sthe\sdatabase\sfile\sas\spart\sof\sa\scheckpoint\sfails,\sdo\snot\supdate\sthe\sshared\s"nBackfill"\svariable.\sOtherwise,\sanother\sprocess\scould\swrap\sthe\slog\sand\soverwrite\scontent\sbefore\sit\sis\ssynced\sinto\sthe\sdatabase.
-D 2010-06-04T11:56:22
+C Add\stest\sfor\sthe\scode\sthat\sdetects\san\sinconsistent\spair\sof\swal-index\sheaders\sto\swal2.test.
+D 2010-06-04T12:22:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -762,7 +762,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test bfec61450b47cdf09f7d2269f9e9967683b8b0fc
-F test/wal2.test 1dcbbe59ab662bebb859bb1ede83143f8a39814e
+F test/wal2.test c90d20363f17373cbf5bdfcee3571b43e8fa597b
 F test/wal3.test a4b46d20010613e56c8fbb401bc0b370ff838b34
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 02c4040ce2b4c970b3dee09f7c9ad5a2a3a9aa49
-R b9a44acd0cef367d5b42a5c1bc8eb14e
+P b813233d7604a5fd91e1af91d5d812032eec700a
+R 1e5bd682c632ede77eea9d55939c1701
 U dan
-Z 578069c872fb1326c91198755fc8278a
+Z e80075d9a3d96ac30cbd1496fdd7f512

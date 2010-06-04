@@ -744,7 +744,6 @@ do_test wal2-7.1.3 {
 } {}
 db close
 db2 close
-
 file delete -force test.db test.db-wal test.db-journal
 do_test wal2-8.1.2 {
   sqlite3 db test.db
@@ -788,6 +787,64 @@ do_test wal2-8.1.4 {
   execsql { SELECT * FROM t2 }
 } {goodbye}
 db2 close
+db close
 
+#-------------------------------------------------------------------------
+# Test that even if the checksums for both are valid, if the two copies
+# of the wal-index header in the wal-index do not match, the client
+# runs (or at least tries to run) database recovery.
+#
+
+proc get_name {method args} { set ::filename [lindex $args 0] }
+testvfs tvfs
+tvfs script get_name
+tvfs filter xShmOpen
+
+file delete -force test.db test.db-wal test.db-journal
+do_test wal2-9.1 {
+  sqlite3 db test.db -vfs tvfs
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE x(y);
+    INSERT INTO x VALUES('Barton');
+    INSERT INTO x VALUES('Deakin');
+  }
+  set wal_index_hdr1 [string range [tvfs shm $::filename] 0 39]
+  execsql { INSERT INTO x VALUES('Watson') }
+} {}
+do_test wal2-9.2 {
+  sqlite3 db2 test.db -vfs tvfs
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin Watson}
+do_test wal2-9.3 {
+  set wal_index_hdr2 [string range [tvfs shm $::filename] 0 39]
+  set content [string range [tvfs shm $::filename] 80 end]
+  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr1 $content]
+  tvfs shm $::filename $w
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin}
+do_test wal2-9.4 {
+  set w [binary format a*a*a* $wal_index_hdr2 $wal_index_hdr2 $content]
+  tvfs shm $::filename $w
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin Watson}
+do_test wal2-9.5 {
+  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr2 $content]
+  tvfs shm $::filename $w
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin Watson}
+do_test wal2-9.6 {
+  set w [binary format a*a*a* $wal_index_hdr2 $wal_index_hdr1 $content]
+  tvfs shm $::filename $w
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin Watson}
+do_test wal2-9.7 {
+  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr1 $content]
+  tvfs shm $::filename $w
+  execsql { SELECT * FROM x } db2
+} {Barton Deakin}
+
+db2 close
+db close
 
 finish_test
