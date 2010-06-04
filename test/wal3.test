@@ -172,19 +172,34 @@ foreach code [list {
   } {3 three}
 
   # Try to checkpoint the database using [db]. It should be possible to
-  # checkpoint everything except the frames added by [db3] (checkpointing
+  # checkpoint everything except the table added by [db3] (checkpointing
   # these frames would clobber the snapshot currently being used by [db2]).
+  #
+  # After [db2] has committed, a checkpoint can copy the entire log to the
+  # database file. Checkpointing after [db3] has committed is therefore a
+  # no-op, as the entire log has already been backfilled.
   #
   do_test wal3-2.$tn.4 {
     sql {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
-  } {}
-  do_test wal3-2.$tn.5 {
     file size test.db
   } [expr 3*1024]
-
+  do_test wal3-2.$tn.5 {
+    sql2 {
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    }
+    file size test.db
+  } [expr 4*1024]
+  do_test wal3-2.$tn.6 {
+    sql3 {
+      COMMIT;
+      PRAGMA wal_checkpoint;
+    }
+    file size test.db
+  } [expr 4*1024]
 
   catch { db close }
   catch { code2 { db2 close } }
@@ -192,5 +207,57 @@ foreach code [list {
   catch { close $::code2_chan }
   catch { close $::code3_chan }
 }
+catch {db close}
+
+#-------------------------------------------------------------------------
+# Test that that for the simple test:
+#
+#   CREATE TABLE x(y);
+#   INSERT INTO x VALUES('z');
+#   PRAGMA wal_checkpoint;
+#
+# in WAL mode the xSync method is invoked as expected for each of
+# synchronous=off, synchronous=normal and synchronous=full.
+#
+foreach {tn syncmode synccount} {
+  1 off     
+    {}
+  2 normal  
+    {test.db-wal normal test.db normal}
+  3 full    
+    {test.db-wal normal test.db-wal normal test.db-wal normal test.db normal}
+} {
+
+  proc sync_counter {args} { 
+    foreach {method filename id flags} $args break
+    lappend ::syncs [file tail $filename] $flags
+  }
+  do_test wal3-3.$tn {
+    file delete -force test.db test.db-wal test.db-journal
+  
+    testvfs T
+    T filter {} 
+    T script sync_counter
+    sqlite3 db test.db -vfs T
+  
+    execsql "PRAGMA synchronous = $syncmode"
+    execsql { PRAGMA journal_mode = WAL }
+
+    set ::syncs [list]
+    T filter xSync
+    execsql {
+      CREATE TABLE x(y);
+      INSERT INTO x VALUES('z');
+      PRAGMA wal_checkpoint;
+    }
+    T filter {}
+    set ::syncs
+  } $synccount
+
+  db close
+  T delete
+}
+
 finish_test
+
 

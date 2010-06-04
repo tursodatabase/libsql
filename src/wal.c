@@ -1462,13 +1462,15 @@ static int walCheckpoint(
     }
 
     /* If work was actually accomplished... */
-    if( rc==SQLITE_OK && pInfo->nBackfill<mxSafeFrame ){
-      pInfo->nBackfill = mxSafeFrame;
-      if( mxSafeFrame==pHdr[0].mxFrame && sync_flags ){
+    if( rc==SQLITE_OK ){
+      if( mxSafeFrame==pHdr[0].mxFrame ){
         rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)szPage));
         if( rc==SQLITE_OK && sync_flags ){
           rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
         }
+      }
+      if( rc==SQLITE_OK ){
+        pInfo->nBackfill = mxSafeFrame;
       }
     }
 

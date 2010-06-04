@@ -1,5 +1,5 @@
-C Fix\sa\sproblem\swhere\san\sSQLITE_BUSY\sin\sthe\scheckpoint\scode\swas\sbeing\streated\sas\san\sIO\serror\s(abandoning,\sinstead\sof\sjust\slimiting,\sthe\scheckpoint).
-D 2010-06-04T10:37:06
+C If\san\sattempt\sto\ssync\sthe\sdatabase\sfile\sas\spart\sof\sa\scheckpoint\sfails,\sdo\snot\supdate\sthe\sshared\s"nBackfill"\svariable.\sOtherwise,\sanother\sprocess\scould\swrap\sthe\slog\sand\soverwrite\scontent\sbefore\sit\sis\ssynced\sinto\sthe\sdatabase.
+D 2010-06-04T11:56:22
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -207,7 +207,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c 6203bc7d88a95a093ceb2c372252317b3154b315
+F src/test_vfs.c d3338794b50d1c777d583fbfa71b41a273684ced
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -224,7 +224,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 453811af926fe12eacea41b4ea02ee1a2d2f004b
+F src/wal.c f34425da57038645102bae4ba1ee2b4a87a06557
 F src/wal.h 4ace25262452d17e7d3ec970c89ee17794004008
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 75fee9e255b62f773fcadd1d1f25b6f63ac7a356
@@ -763,7 +763,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test bfec61450b47cdf09f7d2269f9e9967683b8b0fc
 F test/wal2.test 1dcbbe59ab662bebb859bb1ede83143f8a39814e
-F test/wal3.test 535867201f4e5eccc459dbfdbb43e1b9555fd30a
+F test/wal3.test a4b46d20010613e56c8fbb401bc0b370ff838b34
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P df7d59899ceb2743764b0433cb68f4bc33f16344
-R 1a3cb251079fbc88fab0e8991c692f47
+P 02c4040ce2b4c970b3dee09f7c9ad5a2a3a9aa49
+R b9a44acd0cef367d5b42a5c1bc8eb14e
 U dan
-Z 13abdffaf01f3e682d39faa8c6e78666
+Z 578069c872fb1326c91198755fc8278a
