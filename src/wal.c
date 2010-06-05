@@ -2085,8 +2085,23 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       rc = walIndexMap(pWal, walMappingSize(iMax));
     }
     if( rc==SQLITE_OK ){
-      for(iFrame=pWal->hdr.mxFrame+1; rc==SQLITE_OK && iFrame<=iMax; iFrame++){
+      for(iFrame=pWal->hdr.mxFrame+1; 
+          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
+          iFrame++
+      ){
+        /* This call cannot fail. Unless the page for which the page number
+        ** is passed as the second argument is (a) in the cache and 
+        ** (b) has an outstanding reference, then xUndo is either a no-op
+        ** (if (a) is false) or simply expels the page from the cache (if (b)
+        ** is false).
+        **
+        ** If the upper layer is doing a rollback, it is guaranteed that there
+        ** are no outstanding references to any page other than page 1. And
+        ** page 1 is never written to the log until the transaction is
+        ** committed. As a result, the call to xUndo may not fail.
+        */
         assert( pWal->writeLock );
+        assert( pWal->pWiData[walIndexEntry(iFrame)]!=1 );
         rc = xUndo(pUndoCtx, pWal->pWiData[walIndexEntry(iFrame)]);
       }
       walCleanupHash(pWal);
