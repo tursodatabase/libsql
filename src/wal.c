@@ -1745,6 +1745,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** and can be safely ignored.
     */
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
+    sqlite3OsShmBarrier(pWal->pDbFd);
     if( rc==SQLITE_OK ){
       if( memcmp(pHdr, &pWal->hdr, sizeof(WalIndexHdr)) ){
         /* It is not safe to allow the reader to continue here if frames
@@ -1817,9 +1818,29 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     if( rc ){
       return rc==SQLITE_BUSY ? WAL_RETRY : rc;
     }
+    /* Now that the read-lock has been obtained, check that neither the
+    ** value in the aReadMark[] array or the contents of the wal-index
+    ** header have changed.
+    **
+    ** It is necessary to check that the wal-index header did not change
+    ** between the time it was read and when the shared-lock was obtained
+    ** on WAL_READ_LOCK(mxI) was obtained to account for the possibility
+    ** that the log file may have been wrapped by a writer, or that frames
+    ** that occur later in the log than pWal->hdr.mxFrame may have been
+    ** copied into the database by a checkpointer. If either of these things
+    ** happened, then reading the database with the current value of
+    ** pWal->hdr.mxFrame risks reading a corrupted snapshot. So, retry
+    ** instead.
+    **
+    ** This does not guarantee that the copy wal-index header is up to
+    ** date before proceeding. This would not be possible without somehow
+    ** blocking writers. It only guarantees that a damaging checkpoint or 
+    ** log-wrap (either of which would require an exclusive lock on
+    ** WAL_READ_LOCK(mxI)) has not occurred since the snapshot was valid.
+    */
+    sqlite3OsShmBarrier(pWal->pDbFd);
     if( pInfo->aReadMark[mxI]!=mxReadMark
-     || pHdr[0].mxFrame!=pWal->hdr.mxFrame
-     || (sqlite3OsShmBarrier(pWal->pDbFd), pHdr[1].mxFrame!=pWal->hdr.mxFrame)
+     || memcmp(pHdr, &pWal->hdr, sizeof(WalIndexHdr))
     ){
       walUnlockShared(pWal, WAL_READ_LOCK(mxI));
       return WAL_RETRY;
