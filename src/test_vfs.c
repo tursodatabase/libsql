@@ -30,7 +30,11 @@ struct TestvfsFile {
   const char *zFilename;          /* Filename as passed to xOpen() */
   sqlite3_file *pReal;            /* The real, underlying file descriptor */
   Tcl_Obj *pShmId;                /* Shared memory id for Tcl callbacks */
+
   TestvfsBuffer *pShm;            /* Shared memory buffer */
+  u32 excllock;                   /* Mask of exclusive locks */
+  u32 sharedlock;                 /* Mask of shared locks */
+  TestvfsFile *pNext;             /* Next handle opened on the same file */
 };
 
 
@@ -77,13 +81,15 @@ struct Testvfs {
 #define TESTVFS_ALL_MASK        0x000001FF
 
 /*
-** A shared-memory buffer.
+** A shared-memory buffer. There is one of these objects for each shared
+** memory region opened by clients. If two clients open the same file,
+** there are two TestvfsFile structures but only one TestvfsBuffer structure.
 */
 struct TestvfsBuffer {
   char *zFile;                    /* Associated file name */
   int n;                          /* Size of allocated buffer in bytes */
   u8 *a;                          /* Buffer allocated using ckalloc() */
-  int nRef;                       /* Number of references to this object */
+  TestvfsFile *pFile;             /* List of open handles */
   TestvfsBuffer *pNext;           /* Next in linked list of all buffers */
 };
 
@@ -573,7 +579,7 @@ static int tvfsShmOpen(
 
   pFd = (TestvfsFile*)pFileDes;
   p = (Testvfs *)pFd->pVfs->pAppData;
-  assert( pFd->pShmId && pFd->pShm==0 );
+  assert( pFd->pShmId && pFd->pShm==0 && pFd->pNext==0 );
 
   /* Evaluate the Tcl script: 
   **
@@ -607,7 +613,8 @@ static int tvfsShmOpen(
   }
 
   /* Connect the TestvfsBuffer to the new TestvfsShm handle and return. */
-  pBuffer->nRef++;
+  pFd->pNext = pBuffer->pFile;
+  pBuffer->pFile = pFd;
   pFd->pShm = pBuffer;
   return SQLITE_OK;
 }
@@ -713,6 +720,30 @@ static int tvfsShmLock(
   if( rc==SQLITE_OK && p->mask&TESTVFS_SHMLOCK_MASK && tvfsInjectIoerr(p) ){
     rc = SQLITE_IOERR;
   }
+
+  if( rc==SQLITE_OK ){
+    int isLock = (flags & SQLITE_SHM_LOCK);
+    int isExcl = (flags & SQLITE_SHM_EXCLUSIVE);
+    u32 mask = (((1<<n)-1) << ofst);
+    if( isLock ){
+      TestvfsFile *p2;
+      for(p2=pFd->pShm->pFile; p2; p2=p2->pNext){
+        if( p2==pFd ) continue;
+        if( (p2->excllock&mask) || (isExcl && p2->sharedlock&mask) ){
+          rc = SQLITE_BUSY;
+          break;
+        }
+      }
+      if( rc==SQLITE_OK ){
+        if( isExcl )  pFd->excllock |= mask;
+        if( !isExcl ) pFd->sharedlock |= mask;
+      }
+    }else{
+      if( isExcl )  pFd->excllock &= (~mask);
+      if( !isExcl ) pFd->sharedlock &= (~mask);
+    }
+  }
+
   return rc;
 }
 
@@ -735,11 +766,9 @@ static int tvfsShmClose(
   TestvfsFile *pFd = (TestvfsFile *)pFile;
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
   TestvfsBuffer *pBuffer = pFd->pShm;
+  TestvfsFile **ppFd;
 
   assert( pFd->pShmId && pFd->pShm );
-#if 0
-  assert( (deleteFlag!=0)==(pBuffer->nRef==1) );
-#endif
 
   if( p->pScript && p->mask&TESTVFS_SHMCLOSE_MASK ){
     tvfsExecTcl(p, "xShmClose", 
@@ -748,8 +777,11 @@ static int tvfsShmClose(
     tvfsResultCode(p, &rc);
   }
 
-  pBuffer->nRef--;
-  if( pBuffer->nRef==0 ){
+  for(ppFd=&pBuffer->pFile; *ppFd!=pFd; ppFd=&((*ppFd)->pNext));
+  assert( (*ppFd)==pFd );
+  *ppFd = pFd->pNext;
+
+  if( pBuffer->pFile==0 ){
     TestvfsBuffer **pp;
     for(pp=&p->pBuffer; *pp!=pBuffer; pp=&((*pp)->pNext));
     *pp = (*pp)->pNext;

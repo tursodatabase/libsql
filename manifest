@@ -1,5 +1,5 @@
-C Clarify\san\sassert\sin\ssqlite3WalExclusiveMode().
-D 2010-06-04T18:38:00
+C Add\sextra\scoverage\stest\scases\sfor\swal.c.\sNo\schanges\sto\sproduction\scode.
+D 2010-06-05T11:53:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -207,7 +207,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c d3338794b50d1c777d583fbfa71b41a273684ced
+F src/test_vfs.c d329e3ea93624f65d7b6a46209861ddecea4e21d
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -763,13 +763,13 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test bfec61450b47cdf09f7d2269f9e9967683b8b0fc
 F test/wal2.test 743d9b86041e57ba986dd7e3891c67725f9e2b2b
-F test/wal3.test 08626ca06bc87f34179258515c2d674b56b7e150
+F test/wal3.test 91243bd815e35cfda977df071f95ee2be3cfe236
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
-F test/walfault.test 4c412eae947aea5f58d5c616a4d8740f034e49d1
+F test/walfault.test 0f9524cedbba0e5d48b58cabdc2dd7ae2c375476
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8e54786c9a0c5c399f228f56c73271f84d75694b
-R 723b0db73791affd894a1e0706a506aa
+P 255850699ddbf4aad8cc3223aefbada35daa0703
+R 7ac85a4afc11bde0cbb8862c4d4688fc
 U dan
-Z 1b6d1f85256b6057d423f1cf677d1ba1
+Z 575989e6baec836caf7d32e1a4d39d95

@@ -316,10 +316,110 @@ do_test wal3-4.4 {
   sqlite3 db test.db -vfs T
   catchsql { SELECT * FROM x }
 } {1 {locking protocol}}
+db close
+T delete
+
+
+#-------------------------------------------------------------------------
+# Only one client may run recovery at a time. Test this mechanism.
+#
+# When client-2 tries to open a read transaction while client-1 is 
+# running recovery, it fails to obtain a lock on an aReadMark[] slot
+# (because they are all locked by recovery). It then tries to obtain
+# a shared lock on the RECOVER lock to see if there really is a
+# recovery running or not.
+#
+# This block of tests checks the effect of an SQLITE_BUSY or SQLITE_IOERR
+# being returned when client-2 attempts a shared lock on the RECOVER byte.
+#
+# An SQLITE_BUSY should be converted to an SQLITE_BUSY_RECOVERY. An
+# SQLITE_IOERR should be returned to the caller.
+#
+do_test wal3-5.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  faultsim_save_and_close
+} {}
+
+testvfs T -default 1
+T script method_callback
+
+proc method_callback {method args} {
+  if {$method == "xShmBarrier"} {
+    incr ::barrier_count
+    if {$::barrier_count == 1} {
+      # This code is executed within the xShmBarrier() callback invoked
+      # by the client running recovery as part of writing the recovered
+      # wal-index header. If a second client attempts to access the 
+      # database now, it reads a corrupt (partially written) wal-index
+      # header. But it cannot even get that far, as the first client
+      # is still holding all the locks (recovery takes an exclusive lock
+      # on *all* db locks, preventing access by any other client).
+      #
+      # If global variable ::wal3_do_lockfailure is non-zero, then set
+      # things up so that an IO error occurs within an xShmLock() callback
+      # made by the second client (aka [db2]).
+      #
+      sqlite3 db2 test.db
+      if { $::wal3_do_lockfailure } { T filter xShmLock }
+      set ::testrc [ catch { db2 eval "SELECT * FROM t1" } ::testmsg ]
+      T filter {}
+      db2 close
+    }
+  }
+
+  if {$method == "xShmLock"} {
+    foreach {file handle spec} $args break
+    if { $spec == "2 1 lock shared" } {
+      return SQLITE_IOERR
+    }
+  }
+
+  return SQLITE_OK
+}
+
+# Test a normal SQLITE_BUSY return.
+#
+T filter xShmBarrier
+set testrc ""
+set testmsg ""
+set barrier_count 0
+set wal3_do_lockfailure 0
+do_test wal3-5.2 {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal3-5.3 {
+  list $::testrc $::testmsg
+} {1 {database is locked}}
+db close
+
+# Test an SQLITE_IOERR return.
+#
+T filter xShmBarrier
+set barrier_count 0
+set wal3_do_lockfailure 1
+set testrc ""
+set testmsg ""
+do_test wal3-5.4 {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal3-5.5 {
+  list $::testrc $::testmsg
+} {1 {disk I/O error}}
 
 db close
 T delete
 
-finish_test
+#-------------------------------------------------------------------------
+# When opening a read-transaction on a database 
+#
 
+finish_test
 

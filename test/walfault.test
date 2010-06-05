@@ -322,5 +322,46 @@ do_faultsim_test walfault-9 -prep {
   if {$n != 1 && $n != 2} { error "Incorrect number of rows: $n" }
 }
 
+do_test walfault-10-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_checkpoint = 0;
+    CREATE TABLE z(zz INTEGER PRIMARY KEY, zzz BLOB);
+    CREATE INDEX zzzz ON z(zzz);
+    INSERT INTO z VALUES(NULL, randomblob(800));
+    INSERT INTO z VALUES(NULL, randomblob(800));
+    INSERT INTO z SELECT NULL, randomblob(800) FROM z;
+    INSERT INTO z SELECT NULL, randomblob(800) FROM z;
+    INSERT INTO z SELECT NULL, randomblob(800) FROM z;
+    INSERT INTO z SELECT NULL, randomblob(800) FROM z;
+    INSERT INTO z SELECT NULL, randomblob(800) FROM z;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-10 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+      UPDATE z SET zzz = randomblob(799);
+  }
+
+  set ::stmt [sqlite3_prepare db "SELECT zzz FROM z WHERE zz IN (1, 2, 3)" -1]
+  sqlite3_step $::stmt
+} -body {
+  execsql { INSERT INTO z VALUES(NULL, NULL) }
+} -test {
+  sqlite3_finalize $::stmt
+  faultsim_integrity_check
+
+  faultsim_test_result {0 {}}
+  catch { db eval { ROLLBACK } }
+  faultsim_integrity_check
+
+  set n [db eval {SELECT count(*), sum(length(zzz)) FROM z}]
+  if {$n != "64 51200"} { error "Incorrect data: $n" }
+}
+
 finish_test
 
