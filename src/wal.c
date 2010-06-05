@@ -1747,7 +1747,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
     sqlite3OsShmBarrier(pWal->pDbFd);
     if( rc==SQLITE_OK ){
-      if( memcmp(pHdr, &pWal->hdr, sizeof(WalIndexHdr)) ){
+      if( memcmp((void *)pHdr, &pWal->hdr, sizeof(WalIndexHdr)) ){
         /* It is not safe to allow the reader to continue here if frames
         ** may have been appended to the log before READ_LOCK(0) was obtained.
         ** When holding READ_LOCK(0), the reader ignores the entire log file,
@@ -1832,15 +1832,15 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     ** pWal->hdr.mxFrame risks reading a corrupted snapshot. So, retry
     ** instead.
     **
-    ** This does not guarantee that the copy wal-index header is up to
-    ** date before proceeding. This would not be possible without somehow
-    ** blocking writers. It only guarantees that a damaging checkpoint or 
+    ** This does not guarantee that the copy of the wal-index header is up to
+    ** date before proceeding. That would not be possible without somehow
+    ** blocking writers. It only guarantees that a dangerous checkpoint or 
     ** log-wrap (either of which would require an exclusive lock on
     ** WAL_READ_LOCK(mxI)) has not occurred since the snapshot was valid.
     */
     sqlite3OsShmBarrier(pWal->pDbFd);
     if( pInfo->aReadMark[mxI]!=mxReadMark
-     || memcmp(pHdr, &pWal->hdr, sizeof(WalIndexHdr))
+     || memcmp((void *)pHdr, &pWal->hdr, sizeof(WalIndexHdr))
     ){
       walUnlockShared(pWal, WAL_READ_LOCK(mxI));
       return WAL_RETRY;
