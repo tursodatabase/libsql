@@ -1746,7 +1746,20 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     */
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
     if( rc==SQLITE_OK ){
-      if( pHdr->mxFrame!=pWal->hdr.mxFrame ){
+      if( memcmp(pHdr, &pWal->hdr, sizeof(WalIndexHdr)) ){
+        /* It is not safe to allow the reader to continue here if frames
+        ** may have been appended to the log before READ_LOCK(0) was obtained.
+        ** When holding READ_LOCK(0), the reader ignores the entire log file,
+        ** which implies that the database file contains a trustworthy
+        ** snapshoT. Since holding READ_LOCK(0) prevents a checkpoint from
+        ** happening, this is usually correct.
+        **
+        ** However, if frames have been appended to the log (or if the log 
+        ** is wrapped and written for that matter) before the READ_LOCK(0)
+        ** is obtained, that is not necessarily true. A checkpointer may
+        ** have started to backfill the appended frames but crashed before
+        ** it finished. Leaving a corrupt image in the database file.
+        */
         walUnlockShared(pWal, WAL_READ_LOCK(0));
         return WAL_RETRY;
       }
@@ -1917,29 +1930,6 @@ int sqlite3WalRead(
   **   (iFrame<=iLast): 
   **     This condition filters out entries that were added to the hash
   **     table after the current read-transaction had started.
-  **
-  **   (iFrame>iRead): 
-  **     This filters out a dangerous class of garbage data. The 
-  **     garbage hash slot may refer to a frame with the correct page 
-  **     number, but not the most recent version of the frame. For
-  **     example, if at the start of the read-transaction the WAL
-  **     contains three copies of the desired page in frames 2, 3 and 4,
-  **     the hash table may contain the following:
-  **
-  **       { ..., 2, 3, 4, 99, 99, ..... }
-  **
-  **     The correct answer is to read data from frame 4. But a 
-  **     dirty-read may potentially cause the hash-table to appear as 
-  **     follows to the reader:
-  **
-  **       { ..., 2, 3, 4, 3, 99, ..... }
-  **
-  **     Without this part of the if(...) clause, the reader might
-  **     incorrectly read data from frame 3 instead of 4. This would be
-  **     an error.
-  **
-  ** It is not actually clear to the developers that such a dirty-read
-  ** can occur. But if it does, it should not cause any problems.
   */
   for(iHash=iLast; iHash>0 && iRead==0; iHash-=HASHTABLE_NPAGE){
     volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table */
@@ -1953,7 +1943,8 @@ int sqlite3WalRead(
     if( mxHash > HASHTABLE_NPAGE )  mxHash = HASHTABLE_NPAGE;
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[iFrame]==pgno && iFrame>iRead ){
+      if( iFrame<=iLast && aPgno[iFrame]==pgno ){
+        assert( iFrame>iRead );
         iRead = iFrame;
       }
     }

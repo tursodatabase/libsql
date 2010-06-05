@@ -418,8 +418,151 @@ db close
 T delete
 
 #-------------------------------------------------------------------------
-# When opening a read-transaction on a database 
+# When opening a read-transaction on a database, if the entire log has
+# already been copied to the database file, the reader grabs a special
+# kind of read lock (on aReadMark[0]). This test case tests the outcome
+# of the following:
 #
+#   + The reader discovering that between the time when it determined 
+#     that the log had been completely backfilled and the lock is obtained
+#     that a writer has written to the log. In this case the reader should
+#     acquire a different read-lock (not aReadMark[0]) and read the new
+#     snapshot.
+#
+#   + The attempt to obtain the lock on aReadMark[0] fails with SQLITE_BUSY.
+#     This can happen if a checkpoint is ongoing. In this case also simply
+#     obtain a different read-lock.
+#
+catch {db close}
+testvfs T -default 1
+do_test wal3-6.1.1 {
+  file delete -force test.db test.db-journal test.db wal
+  sqlite3 db test.db
+  execsql { PRAGMA journal_mode = WAL }
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES('o', 't');
+    INSERT INTO t1 VALUES('t', 'f');
+  }
+} {}
+do_test wal3-6.1.2 {
+  sqlite3 db2 test.db
+  sqlite3 db3 test.db
+  execsql { BEGIN ; SELECT * FROM t1 } db3
+} {o t t f}
+do_test wal3-6.1.3 {
+  execsql { PRAGMA wal_checkpoint } db2
+} {}
+
+# At this point the log file has been fully checkpointed. However, 
+# connection [db3] holds a lock that prevents the log from being wrapped.
+# Test case 3.6.1.4 has [db] attempt a read-lock on aReadMark[0]. But
+# as it is obtaining the lock, [db2] appends to the log file.
+#
+T filter xShmLock
+T script lock_callback
+proc lock_callback {method file handle spec} {
+  if {$spec == "3 1 lock shared"} {
+    # This is the callback for [db] to obtain the read lock on aReadMark[0].
+    # Disable future callbacks using [T filter {}] and write to the log
+    # file using [db2]. [db3] is preventing [db2] from wrapping the log
+    # here, so this is an append.
+    T filter {}
+    db2 eval { INSERT INTO t1 VALUES('f', 's') }
+  }
+  return SQLITE_OK
+}
+do_test wal3-6.1.4 {
+  execsql {
+    BEGIN;
+    SELECT * FROM t1;
+  }
+} {o t t f f s}
+
+# [db] should be left holding a read-lock on some slot other than 
+# aReadMark[0]. Test this by demonstrating that the read-lock is preventing
+# the log from being wrapped.
+#
+do_test wal3-6.1.5 {
+  db3 eval COMMIT
+  db2 eval { PRAGMA wal_checkpoint }
+  set sz1 [file size test.db-wal]
+  db2 eval { INSERT INTO t1 VALUES('s', 'e') }
+  set sz2 [file size test.db-wal]
+  expr {$sz2>$sz1}
+} {1}
+
+# Test that if [db2] had not interfered when [db] was trying to grab
+# aReadMark[0], it would have been possible to wrap the log in 3.6.1.5.
+#
+do_test wal3-6.1.6 {
+  execsql { COMMIT }
+  execsql { PRAGMA wal_checkpoint } db2
+  execsql {
+    BEGIN;
+    SELECT * FROM t1;
+  }
+} {o t t f f s s e}
+do_test wal3-6.1.7 {
+  db2 eval { PRAGMA wal_checkpoint }
+  set sz1 [file size test.db-wal]
+  db2 eval { INSERT INTO t1 VALUES('n', 't') }
+  set sz2 [file size test.db-wal]
+  expr {$sz2==$sz1}
+} {1}
+
+db3 close
+db2 close
+db close
+
+do_test wal3-6.2.1 {
+  file delete -force test.db test.db-journal test.db wal
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql { PRAGMA journal_mode = WAL }
+  execsql {
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES('h', 'h');
+    INSERT INTO t1 VALUES('l', 'b');
+  }
+} {}
+
+T filter xShmLock
+T script lock_callback
+proc lock_callback {method file handle spec} {
+  if {$spec == "3 1 unlock exclusive"} {
+    T filter {}
+    set ::R [db2 eval {
+      BEGIN;
+      SELECT * FROM t1;
+    }]
+  }
+}
+do_test wal3-6.2.2 {
+  execsql { PRAGMA wal_checkpoint }
+} {}
+do_test wal3-6.2.3 {
+  set ::R
+} {h h l b}
+do_test wal3-6.2.4 {
+  set sz1 [file size test.db-wal]
+  execsql { INSERT INTO t1 VALUES('b', 'c'); }
+  set sz2 [file size test.db-wal]
+  expr {$sz2 > $sz1}
+} {1}
+do_test wal3-6.2.5 {
+  db2 eval { COMMIT }
+  execsql { PRAGMA wal_checkpoint }
+  set sz1 [file size test.db-wal]
+  execsql { INSERT INTO t1 VALUES('n', 'o'); }
+  set sz2 [file size test.db-wal]
+  expr {$sz2 == $sz1}
+} {1}
+ 
+db2 close
+db close
+T delete
+
 
 finish_test
 
