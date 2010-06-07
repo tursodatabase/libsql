@@ -1,5 +1,5 @@
-C Change\sall.test,\squick.test\sand\spermutations.test\sso\sthat\sthey\suse\sa\sseparate\sinterpreter\sfor\seach\stest\sfile.
-D 2010-06-07T17:47:27
+C In\sos_unix.c,\scall\smunmap()\sto\sunmap\sa\sshared-memory\sregion\sprior\sto\sclosing\sthe\sassociated\sfile\sdescriptor.
+D 2010-06-07T19:26:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -152,7 +152,7 @@ F src/os.c 1516984144e26734f97748f891f1a04f9e294c2e
 F src/os.h 6f529984a29511c7a3479cfe549c10bfa131532f
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 8fa4eeb27c54f26e9ce01bead2fa117fadea1526
+F src/os_unix.c 12051d37e533cdaa8bb13c9d9fe2a13e08552187
 F src/os_win.c 0cf1f571546f165001e2391b5d4a4a16d86977d3
 F src/pager.c bd9647a741d1905a2a46cc79126ca2d720f33f5d
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c2edf8e17f874d0ca4e94b75575bf6e14eea1f05
-R ce692aab008107eab9ae250eae0cd9f3
+P 7c33eb5a5add8fe76dd412ecab5b6ff8cd78a98d
+R 5fabbd488e57776162623cce41a4cd2d
 U dan
-Z d36c5afeb06c8bfd7f4cb398a6671d90
+Z fcc22f8b3c04ea5c24692f33ce5cbe21

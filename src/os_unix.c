@@ -3269,6 +3269,7 @@ static void unixShmPurge(unixFile *pFd){
     assert( p->pInode==pFd->pInode );
     if( p->mutex ) sqlite3_mutex_free(p->mutex);
     if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
+    if( p->pMMapBuf ) munmap(p->pMMapBuf, p->szMap);
     if( p->h>=0 ) close(p->h);
     p->pInode->pShmNode = 0;
     sqlite3_free(p);
