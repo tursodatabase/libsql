@@ -454,7 +454,7 @@ ifcapable pragma {
 ifcapable pragma {
   # These tests are not run as part of the "journaltest" permutation,
   # as the test_journal.c layer is incompatible with in-memory journaling.
-  if {[catch {set ::permutations_test_prefix} z] || $z ne "journaltest"} {
+  if {[permutation] ne "journaltest"} {
 
     do_test jrnlmode-6.1 {
       execsql {

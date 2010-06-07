@@ -65,7 +65,7 @@ set SOAKTESTS {
   corruptC.test
 }
 
-set ISQUICK 1
+set G(isquick) 1
 
 set soak_starttime  [clock seconds]
 set soak_finishtime [expr {$soak_starttime + $TIMEOUT}]

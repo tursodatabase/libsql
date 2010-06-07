@@ -27,8 +27,8 @@ source $testdir/tester.tcl
 set ::REPEATS 5000
 
 # If running quick.test, don't do so many iterations.
-if {[info exists ::ISQUICK]} {
-  if {$::ISQUICK} { set ::REPEATS 20 }
+if {[info exists ::G(isquick)]} {
+  if {$::G(isquick)} { set ::REPEATS 20 }
 }
 
 source $testdir/fuzz_common.tcl

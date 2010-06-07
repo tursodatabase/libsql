@@ -6,7 +6,10 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: quick.test,v 1.95 2009/03/16 14:48:19 danielk1977 Exp $
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+db close
 
 proc lshift {lvar} {
   upvar $lvar l
@@ -20,7 +23,7 @@ while {[set arg [lshift argv]] != ""} {
       sqlite3_enable_shared_cache 1
     }
     -soak {
-       set SOAKTEST 1
+       set G(issoak) 1
     }
     -start {
        set STARTAT "[lshift argv]*"
@@ -32,14 +35,7 @@ while {[set arg [lshift argv]] != ""} {
   }
 }
 
-set testdir [file dirname $argv0]
-source $testdir/tester.tcl
-rename finish_test really_finish_test
-proc finish_test {} {
-  catch {db close}
-  show_memstats
-}
-set ISQUICK 1
+set G(isquick) 1
 
 set EXCLUDE {
   all.test
@@ -127,33 +123,34 @@ set INCLUDE {
 set QUICKTEST_INCLUDE {}
 catch { set QUICKTEST_INCLUDE $env(QUICKTEST_INCLUDE) }
 
+# Run all test files in directory $testdir, subject to the following:
+#
+#   1. If a test file is specified as part of the $INCLUDE or 
+#      $QUICKTEST_INCLUDE list variables, run it.
+#
+#   2. If $INCLUDE is non-empty, and rule 1 does not apply to it, do not run it.
+#
+#   3. If a test file is specified as part of $EXCLUDE, and rule 1 does not
+#      apply, do not run it.
+#
 foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
   set tail [file tail $testfile]
-  if { [lsearch $QUICKTEST_INCLUDE $tail]<0 } {
-    # If this is "veryquick.test", do not run any of the malloc or 
-    # IO error simulations.
-    if {[info exists ISVERYQUICK] && (
-      [string match *malloc* $testfile] || [string match *ioerr* $testfile]
-    ) } {
-      continue
-    }
-    if {[lsearch -exact $EXCLUDE $tail]>=0} continue
-  }
-  if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
+
   if {[info exists STARTAT] && [string match $STARTAT $tail]} {unset STARTAT}
   if {[info exists STARTAT]} continue
-  source $testfile
-  catch {db close}
-  if {$sqlite_open_file_count>0} {
-    puts "$tail did not close all files: $sqlite_open_file_count"
-    fail_test $tail
-    set sqlite_open_file_count 0
+
+  set run [expr {[llength $INCLUDE]==0}]
+  if {[info exists ISVERYQUICK] && [string match *malloc* $tail]} { set run 0 }
+  if {[info exists ISVERYQUICK] && [string match *ioerr* $tail]}  { set run 0 }
+  if {[lsearch -exact $EXCLUDE $tail]>=0}                         { set run 0 }
+  if {[lsearch -exact $INCLUDE $tail]>=0}                         { set run 1 }
+  if {[lsearch -exact $QUICKTEST_INCLUDE $tail]>=0}               { set run 1 }
+
+  if {$run} {
+    slave_test_file $testfile
   }
 }
-#set argv quick
-#source $testdir/permutations.test
-#set argv ""
-source $testdir/misuse.test
+slave_test_file $testdir/misuse.test
 
-set sqlite_open_file_count 0
-really_finish_test
+finish_test
+

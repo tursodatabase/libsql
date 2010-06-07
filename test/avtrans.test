@@ -857,7 +857,7 @@ proc signature {} {
 # t3 a little larger, and thus takes a little longer, so doing 40 tests
 # is more than 2.0 times slower than doing 20 tests.  Considerably more.
 #
-if {[info exists ISQUICK]} {
+if {[info exists G(isquick)]} {
   set limit 20
 } else {
   set limit 40

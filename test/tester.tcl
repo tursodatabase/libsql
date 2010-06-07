@@ -50,7 +50,7 @@
 #      integrity_check        TESTNAME ?DB?
 #      do_test                TESTNAME SCRIPT EXPECTED
 #
-# Commands providing a lower level interface to the test counters:
+# Commands providing a lower level interface to the global test counters:
 #
 #      set_test_counter       COUNTER ?VALUE?
 #      omit_test              TESTNAME REASON
@@ -61,11 +61,13 @@
 #
 #      finish_test
 #
-# Commands to help create test files that run with the "WAL" permutation:
+# Commands to help create test files that run with the "WAL" and other
+# permutations (see file permutations.test):
 #
 #      wal_is_wal_mode
 #      wal_set_journal_mode   ?DB?
 #      wal_check_journal_mode TESTNAME?DB?
+#      permutation
 #
 
 # Set the precision of FP arithmatic used by the interpreter. And 
@@ -87,17 +89,36 @@ sqlite3_test_control_pending_byte 0x0010000
 #
 #     sqlite3 db test.db -key {xyzzy}
 #
-if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
+if {[info command sqlite_orig]==""} {
   rename sqlite3 sqlite_orig
   proc sqlite3 {args} {
     if {[llength $args]==2 && [string index [lindex $args 0] 0]!="-"} {
-      lappend args -key {xyzzy}
+      # This command is opening a new database connection.
+      #
+      if {[info exists ::G(perm:sqlite3_args)]} {
+        set args [concat $args $::G(perm:sqlite3_args)]
+      }
+      if {[sqlite_orig -has-codec]} {
+        lappend args -key {xyzzy}
+      }
+
+      uplevel 1 sqlite_orig $args
+
+      if {[info exists ::G(perm:presql)]} {
+        [lindex $args 0] eval $::G(perm:presql)
+      }
+    } else {
+      # This command is not opening a new database connection. Pass the 
+      # arguments through to the C implemenation as the are.
+      #
+      uplevel 1 sqlite_orig $args
     }
-    uplevel 1 sqlite_orig $args
   }
 }
 
-# The following block only runs the first time this file is sourced.
+# The following block only runs the first time this file is sourced. It
+# does not run in slave interpreters (since the ::cmdlinearg array is
+# populated before the test script is run in slave interpreters).
 #
 if {[info exists cmdlinearg]==0} {
 
@@ -153,11 +174,17 @@ if {[info exists cmdlinearg]==0} {
   }
   set argv $leftover
 
+  # Install the malloc layer used to inject OOM errors. And the 'automatic'
+  # extensions. This only needs to be done once for the process.
+  #
   sqlite3_shutdown 
   install_malloc_faultsim 1 
   sqlite3_initialize
   autoinstall_test_functions
 
+  # If the --binarylog option was specified, create the logging VFS. This
+  # call installs the new VFS as the default for all SQLite connections.
+  #
   if {$cmdlinearg(binarylog)} {
     vfslog new binarylog {} vfslog.bin
   }
@@ -262,6 +289,11 @@ proc do_test {name cmd expected} {
     }
   }
   if {!$go} return
+
+  if {[info exists ::G(perm:name)]} {
+    set name "$::G(perm:name)-$name"
+  }
+
   incr_ntest
   puts -nonewline $name...
   flush stdout
@@ -1029,10 +1061,10 @@ proc drop_all_tables {{db db}} {
 }
 
 #-------------------------------------------------------------------------
-# If a test script is executed with global variable 
-# $::permutations_test_prefix set to "wal", then the tests are run
-# in WAL mode. Otherwise, they should be run in rollback mode. The 
-# following Tcl procs are used to make this less intrusive:
+# If a test script is executed with global variable $::G(perm:name) set to
+# "wal", then the tests are run in WAL mode. Otherwise, they should be run 
+# in rollback mode. The following Tcl procs are used to make this less 
+# intrusive:
 #
 #   wal_set_journal_mode ?DB?
 #
@@ -1050,7 +1082,7 @@ proc drop_all_tables {{db db}} {
 #     Returns true if this test should be run in WAL mode. False otherwise.
 # 
 proc wal_is_wal_mode {} {
-  expr { [catch {set ::permutations_test_prefix} v]==0 && $v == "wal" }
+  expr {[permutation] eq "wal"}
 }
 proc wal_set_journal_mode {{db db}} {
   if { [wal_is_wal_mode] } {
@@ -1062,6 +1094,12 @@ proc wal_check_journal_mode {testname {db db}} {
     $db eval { SELECT * FROM sqlite_master }
     do_test $testname [list $db eval "PRAGMA main.journal_mode"] {wal}
   }
+}
+
+proc permutation {} {
+  set perm ""
+  catch {set perm $::G(perm:name)}
+  set perm
 }
 
 #-------------------------------------------------------------------------
@@ -1086,6 +1124,9 @@ proc slave_test_script {script} {
   # Set up the ::cmdlinearg array in the slave.
   interp eval tinterp [list array set ::cmdlinearg [array get ::cmdlinearg]]
 
+  # Set up the ::G array in the slave.
+  interp eval tinterp [list array set ::G [array get ::G]]
+
   # Load the various test interfaces implemented in C.
   load_testfixture_extensions tinterp
 
@@ -1096,12 +1137,24 @@ proc slave_test_script {script} {
   interp delete tinterp
 }
 
-proc slave_test_file {file} {
-  set zFile [file join $::testdir $file]
+proc slave_test_file {zFile} {
+
+  set ::sqlite_open_file_count 0
+
   set time [time {
     slave_test_script [list source $zFile]
   }]
-  puts "time $file [lrange $time 0 1]"
+
+  set tail [file tail $zFile]
+  if {$::sqlite_open_file_count>0} {
+    puts "$tail did not close all files: $::sqlite_open_file_count"
+    fail_test $tail
+    set ::sqlite_open_file_count 0
+    exit
+  }
+  puts "time $tail [lrange $time 0 1]"
+
+  show_memstats
 }
 
 

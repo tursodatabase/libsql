@@ -14,11 +14,6 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
-rename finish_test really_finish_test
-proc finish_test {} {
-  catch {db close}
-  show_memstats
-}
 
 if {[file exists ./sqlite_test_count]} {
   set COUNT [exec cat ./sqlite_test_count]
@@ -33,10 +28,10 @@ if {[llength $argv]>0} {
          set COUNT $value
       }
       -quick {
-         set ISQUICK $value
+         set G(isquick) $value
       }
       -soak {
-         set SOAKTEST $value
+         set G(issoak) $value
       }
       default {
          puts stderr "Unknown option: $name"
@@ -47,12 +42,6 @@ if {[llength $argv]>0} {
 }
 set argv {}
 
-# LeakList will hold a list of the number of unfreed mallocs after
-# each round of the test.  This number should be constant.  If it
-# grows, it may mean there is a memory leak in the library.
-#
-set LeakList {}
-
 set EXCLUDE {}
 lappend EXCLUDE all.test               ;# This file
 lappend EXCLUDE async.test
@@ -60,7 +49,6 @@ lappend EXCLUDE crash.test             ;# Run separately later.
 lappend EXCLUDE crash2.test            ;# Run separately later.
 lappend EXCLUDE quick.test             ;# Alternate test driver script
 lappend EXCLUDE veryquick.test         ;# Alternate test driver script
-lappend EXCLUDE malloc.test            ;# Run separately later.
 lappend EXCLUDE misuse.test            ;# Run separately later.
 lappend EXCLUDE memleak.test           ;# Alternate test driver script
 lappend EXCLUDE permutations.test      ;# Run separately later.
@@ -80,16 +68,7 @@ for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
     if {[lsearch -exact $EXCLUDE $tail]>=0} continue
     if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
     reset_prng_state
-    source $testfile
-    catch {db close}
-    if {$sqlite_open_file_count>0} {
-      puts "$tail did not close all files: $sqlite_open_file_count"
-      fail_test $tail
-      set sqlite_open_file_count 0
-    }
-  }
-  if {[info exists Leak]} {
-    lappend LeakList $Leak
+    slave_test_file $testfile
   }
 
   if {[set_test_counter errors]} break
@@ -98,30 +77,13 @@ set argv all
 source $testdir/permutations.test
 set argv ""
 
-# Do one last test to look for a memory leak in the library.  This will
-# only work if SQLite is compiled with the -DSQLITE_DEBUG=1 flag.
-#
-if {$LeakList!=""} {
-  puts -nonewline memory-leak-test...
-  incr_ntest
-  foreach x $LeakList {
-    if {$x!=[lindex $LeakList 0]} {
-       puts " failed!"
-       puts "Expected: all values to be the same"
-       puts "     Got: $LeakList"
-       fail_test memory-leak-test
-       break
-    }
-  }
-  puts " Ok"
-}
-
 # Run the crashtest only on unix and only once. If the library does not
 # always create auto-vacuum databases, also run autovacuum_crash.test.
 #
 if {$::tcl_platform(platform)=="unix"} {
-  source $testdir/crash.test
-  source $testdir/crash2.test
+  slave_test_file [file join $testdir crash.test]
+  slave_test_file [file join $testdir crash2.test]
+
   ifcapable !default_autovacuum {
     set argv autovacuum_crash
     source $testdir/permutations.test
@@ -129,16 +91,10 @@ if {$::tcl_platform(platform)=="unix"} {
   }
 }
 
-# Run the malloc tests and the misuse test after memory leak detection.
-# Both tests leak memory. Currently, misuse.test also leaks a handful of
-# file descriptors. This is not considered a problem, but can cause tests
-# in malloc.test to fail. So set the open-file count to zero before running
-# malloc.test to get around this.
+# Run the misuse test after memory leak detection. It may leak memory. 
+# Currently, misuse.test also leaks a handful of file descriptors. This is 
+# not considered a problem.
 #
-catch {source $testdir/misuse.test}
-set sqlite_open_file_count 0
-catch {source $testdir/malloc.test}
+slave_test_file [file join $testdir misuse.test]
+finish_test
 
-catch {db close}
-set sqlite_open_file_count 0
-really_finish_test

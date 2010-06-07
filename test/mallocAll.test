@@ -30,7 +30,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 rename finish_test really_finish_test
 proc finish_test {} {}
-set ISQUICK 1
+set G(isquick) 1
 
 set EXCLUDE {
   mallocAll.test

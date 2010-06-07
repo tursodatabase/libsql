@@ -23,8 +23,8 @@ proc finish_test {} {
   catch {db2 close}
   catch {db3 close}
 }
-if {[info exists ISQUICK]} { set ASYNC_SAVE_ISQUICK $ISQUICK }
-set ISQUICK 1
+if {[info exists G(isquick)]} { set ASYNC_SAVE_ISQUICK $G(isquick) }
+set G(isquick) 1
 
 set ASYNC_INCLUDE {
   insert.test
@@ -83,5 +83,5 @@ rename async_really_do_test do_test
 rename finish_test {}
 rename async_really_finish_test finish_test
 
-if {[info exists ASYNC_SAVE_ISQUICK]} { set ISQUICK $ASYNC_SAVE_ISQUICK }
+if {[info exists ASYNC_SAVE_ISQUICK]} { set G(isquick) $ASYNC_SAVE_ISQUICK }
 finish_test

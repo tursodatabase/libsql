@@ -15,7 +15,7 @@ rename finish_test rtree_finish_test
 proc finish_test {} {}
 
 set RTREE_EXCLUDE { }
-if {[info exists ISQUICK] && $ISQUICK} { 
+if {[info exists G(isquick)] && $G(isquick)} { 
   set RTREE_EXCLUDE rtree3.test
 }
 

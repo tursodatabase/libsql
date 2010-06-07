@@ -883,12 +883,11 @@ proc signature {} {
 # is in use, only 20 iterations. Otherwise the test pcache runs out
 # of page slots and SQLite reports "out of memory".
 #
-if {[info exists ISQUICK] || (
-  $TEMP_STORE==3 && [catch {set ::permutations_test_prefix} val]==0 && 
-  [regexp {^pcache[[:digit:]]*$} $val]
+if {[info exists G(isquick)] || (
+  $TEMP_STORE==3 && [regexp {^pcache[[:digit:]]*$} [permutation]]
 ) } {
   set limit 20
-} elseif {[info exists SOAKTEST]} {
+} elseif {[info exists G(issoak)]} {
   set limit 100
 } else {
   set limit 40

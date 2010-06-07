@@ -67,7 +67,7 @@ sqlite3 db test.db
 set fsize [file size test.db]
 
 # Set a quasi-random random seed. 
-if {[info exists SOAKTEST]} {
+if {[info exists ::G(issoak)]} {
   # If we are doing SOAK tests, we want a different
   # random seed for each run.  Ideally we would like 
   # to use [clock clicks] or something like that here.

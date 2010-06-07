@@ -24,16 +24,13 @@ namespace eval ::perm {
 set argv [lrange $argv 2 end]
 #puts "PERM-DEBUG: testmode=$::perm::testmode tstfile=$::perm::testfile"
 
-set ::permutations_presql ""
-set ::permutations_test_prefix ""
-
 if {$::perm::testmode eq "veryquick"} {
   set ::perm::testmode [list persistent_journal no_journal]
-  set ISQUICK 1
+  set G(isquick) 1
 }
 if {$::perm::testmode eq "quick"} {
   set ::perm::testmode [list persistent_journal no_journal autovacuum_ioerr]
-  set ISQUICK 1
+  set G(isquick) 1
 }
 if {$::perm::testmode eq "all" || $::perm::testmode eq ""} {
   set ::perm::testmode {
@@ -85,45 +82,35 @@ foreach filename $ALLTESTS {
   if {[regexp {^wal} $filename]} {lappend WALTESTS $filename}
 }
 
-rename finish_test really_finish_test2
-proc finish_test {} {}
-
-rename do_test really_do_test
-
-proc do_test {name args} {
-  eval really_do_test [list "perm-$::permutations_test_prefix.$name"] $args
-}
-
-# Overload the [sqlite3] command
-rename sqlite3 really_sqlite3
-proc sqlite3 {args} {
-  set r [eval really_sqlite3 $args]
-  if { [llength $args] == 2 && $::permutations_presql ne "" } {
-    [lindex $args 0] eval $::permutations_presql
-  }
-  set r
-}
-
-# run_tests OPTIONS
+# run_tests NAME OPTIONS
 #
 # where available options are:  
 #
+#       -description TITLE                  (default "")
 #       -initialize  SCRIPT                 (default "")
 #       -shutdown    SCRIPT                 (default "")
 #       -include     LIST-OF-FILES          (default $::ALLTESTS)
 #       -exclude     LIST-OF-FILES          (default "")
 #       -presql      SQL                    (default "")
-#       -description TITLE                  (default "")
+#       -options     LIST                   (default "")
 #
 proc run_tests {name args} {
-  set ::permutations_test_prefix $name
-  set options(-shutdown) ""
-  set options(-initialize) ""
-  set options(-exclude) ""
-  set options(-include) $::ALLTESTS
-  set options(-presql) ""
-  set options(-description) "no description supplied (fixme)"
+
+  set default(-shutdown) ""
+  set default(-initialize) ""
+  set default(-exclude) ""
+  set default(-include) $::ALLTESTS
+  set default(-presql) ""
+  set default(-description) "no description supplied (fixme)"
+  set default(-options) ""
+
+  array set options [array get default]
   array set options $args
+  foreach k [array names options] {
+    if {[info exists default($k)]==0} {
+      error "Unknown option: $k"
+    }
+  }
   #puts "PERM-DEBUG: name=$name testfile=$::perm::testfile"
   #puts "PERM-DEBUG: [array get options]"
 
@@ -136,8 +123,12 @@ proc run_tests {name args} {
     return
   }
 
+
+  set ::G(perm:name)         $name
+  set ::G(perm:presql)       $options(-presql)
+  set ::G(perm:sqlite3_args) $options(-options)
+
   uplevel $options(-initialize)
-  set ::permutations_presql $options(-presql)
 
   foreach file [lsort $options(-include)] {
     if {[lsearch $options(-exclude) $file] < 0 &&
@@ -146,7 +137,9 @@ proc run_tests {name args} {
         "$::perm::testfile.test" eq $file )
     } {
       set ::perm::shared_cache_setting [shared_cache_setting]
-      uplevel source $::testdir/$file
+
+      slave_test_file $::testdir/$file
+
       if {$::perm::shared_cache_setting ne [shared_cache_setting]} {
         error "File $::testdir/$file changed the shared cache setting from $::perm::shared_cache_setting to [shared_cache_setting]"
       }
@@ -155,8 +148,12 @@ proc run_tests {name args} {
     }
   }
 
+
   uplevel $options(-shutdown)
-  set ::permutations_test_prefix ""
+
+  unset ::G(perm:name)
+  unset ::G(perm:presql)
+  unset ::G(perm:sqlite3_args)
 }
 
 proc shared_cache_setting {} {
@@ -731,7 +728,7 @@ run_tests "pcache100" -description {
 run_tests "journaltest" -description {
   Check that pages are synced before being written (test_journal.c).
 } -initialize {
-  set ISQUICK 1
+  set G(isquick) 1
   catch {db close}
   register_jt_vfs -default ""
   #sqlite3_instvfs binarylog -default binarylog ostrace.bin
@@ -750,7 +747,7 @@ run_tests "journaltest" -description {
 
 if {[info commands register_demovfs] != ""} {
   run_tests "demovfs" -description {
-    Check that pages are synced before being written (test_journal.c).
+    Check that the demovfs (code in test_demovfs.c) more or less works.
   } -initialize {
     register_demovfs
   } -shutdown {
@@ -764,9 +761,9 @@ if {[info commands register_demovfs] != ""} {
 run_tests "wal" -description {
   Run tests with journal_mode=WAL
 } -initialize {
-  set ::savepoint6_iterations 100
+  set ::G(savepoint6_iterations) 100
 } -shutdown {
-  unset -nocomplain ::savepoint6_iterations
+  unset -nocomplain ::G(savepoint6_iterations)
 } -include {
   savepoint.test     savepoint2.test     savepoint6.test
   trans.test         avtrans.test
@@ -776,20 +773,5 @@ run_tests "wal" -description {
 #############################################################################
 
 if {$::perm::testmode eq "targets"} { puts "" ; exit }
-
-# Restore the [sqlite3] command.
-#
-rename sqlite3 {}
-rename really_sqlite3 sqlite3
-
-# Restore the [finish_test] command.
-#
-rename finish_test ""
-rename really_finish_test2 finish_test
-
-# Restore the [do_test] command.
-#
-rename do_test ""
-rename really_do_test do_test
 
 finish_test

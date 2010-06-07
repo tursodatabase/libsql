@@ -58,10 +58,7 @@ do_test tempdb-2.1 {
   # to be in memory. These variables are used to calculate the expected
   # number of open files in the test cases below.
   #
-  set jrnl_in_memory [expr {
-    [info exists ::permutations_test_prefix] &&
-    $::permutations_test_prefix eq "inmemory_journal"
-  }]
+  set jrnl_in_memory [expr {[permutation] eq "inmemory_journal"}]
   set subj_in_memory [expr {$jrnl_in_memory || $TEMP_STORE == 3}]
 
   db close
