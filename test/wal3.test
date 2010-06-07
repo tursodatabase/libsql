@@ -635,5 +635,136 @@ db close
 db2 close
 T delete
 
+#-------------------------------------------------------------------------
+# 
+do_test wal3-8.1 {
+  file delete -force test.db test.db-journal test.db wal
+  sqlite3 db test.db
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE b(c);
+    INSERT INTO b VALUES('Tehran');
+    INSERT INTO b VALUES('Qom');
+    INSERT INTO b VALUES('Markazi');
+    PRAGMA wal_checkpoint;
+  }
+} {wal}
+do_test wal3-8.2 {
+  execsql { SELECT * FROM b }
+} {Tehran Qom Markazi}
+do_test wal3-8.3 {
+  db eval { SELECT * FROM b } {
+    db eval { INSERT INTO b VALUES('Qazvin') }
+    set r [db2 eval { SELECT * FROM b }]
+    break
+  }
+  set r
+} {Tehran Qom Markazi Qazvin}
+do_test wal3-8.4 {
+  execsql {
+    INSERT INTO b VALUES('Gilan');
+    INSERT INTO b VALUES('Ardabil');
+  }
+} {}
+db2 close
+
+faultsim_save_and_close
+testvfs T -default 1
+faultsim_restore_and_reopen
+T filter xShmLock
+T script lock_callback
+
+proc lock_callback {method file handle spec} {
+  if {$spec == "4 1 unlock exclusive"} {
+    T filter {}
+    set ::r [catchsql { SELECT * FROM b } db2]
+  }
+}
+sqlite3 db test.db
+sqlite3 db2 test.db
+do_test wal3-8.5 {
+  execsql { SELECT * FROM b }
+} {Tehran Qom Markazi Qazvin Gilan Ardabil}
+do_test wal3-8.6 {
+  set ::r
+} {1 {locking protocol}}
+
+db close
+db2 close
+
+faultsim_restore_and_reopen
+sqlite3 db2 test.db
+T filter xShmLock
+T script lock_callback
+proc lock_callback {method file handle spec} {
+  if {$spec == "1 7 unlock exclusive"} {
+    T filter {}
+    set ::r [catchsql { SELECT * FROM b } db2]
+  }
+}
+unset ::r
+do_test wal3-8.5 {
+  execsql { SELECT * FROM b }
+} {Tehran Qom Markazi Qazvin Gilan Ardabil}
+do_test wal3-8.6 {
+  set ::r
+} {1 {locking protocol}}
+
+db close
+db2 close
+T delete
+
+#-------------------------------------------------------------------------
+# When a connection opens a read-lock on the database, it searches for
+# an aReadMark[] slot that is already set to the mxFrame value for the
+# new transaction. If it cannot find one, it attempts to obtain an 
+# exclusive lock on an aReadMark[] slot for the purposes of modifying
+# the value, then drops back to a shared-lock for the duration of the
+# transaction.
+#
+# This test case verifies that if an exclusive lock cannot be obtained
+# on any aReadMark[] slot (because there are already several readers),
+# the client takes a shared-lock on a slot without modifying the value
+# and continues.
+#
+do_test wal3-9.0 {
+  file delete -force test.db test.db-journal test.db wal
+  sqlite3 db test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE whoami(x);
+    INSERT INTO whoami VALUES('nobody');
+  }
+} {wal}
+for {set i 0} {$i < 50} {incr i} {
+  set c db$i
+  do_test wal3-9.1.$i {
+    sqlite3 $c test.db
+    execsql { UPDATE whoami SET x = $c }
+    execsql {
+      BEGIN;
+      SELECT * FROM whoami
+    } $c
+  } $c
+}
+for {set i 0} {$i < 50} {incr i} {
+  set c db$i
+  do_test wal3-9.2.$i {
+    execsql { SELECT * FROM whoami } $c
+  } $c
+}
+do_test wal3-9.3 {
+  for {set i 0} {$i < 49} {incr i} { db$i close }
+  execsql { PRAGMA wal_checkpoint } 
+  set sz1 [file size test.db]
+  db49 close
+  execsql { PRAGMA wal_checkpoint } 
+  set sz2 [file size test.db]
+  expr {$sz2 > $sz1}
+} {1}
+
+db close
+
 finish_test
 

@@ -24,16 +24,20 @@ proc set_tvfs_hdr {file args} {
   set nHdr 40
   set nInt [expr {$nHdr/4}]
 
-  if {[llength $args]>1} {
-    return -code error {wrong # args: should be "set_tvfs_hdr fileName ?val?"}
+  if {[llength $args]>2} {
+    error {wrong # args: should be "set_tvfs_hdr fileName ?val1? ?val2?"}
   }
 
   set blob [tvfs shm $file]
 
   if {[llength $args]} {
     set ia [lindex $args 0]
+    set ib $ia
+    if {[llength $args]==2} {
+      set ib [lindex $args 1]
+    }
     binary scan $blob a[expr $nHdr*2]a* dummy tail
-    set blob [binary format i${nInt}i${nInt}a* $ia $ia $tail]
+    set blob [binary format i${nInt}i${nInt}a* $ia $ib $tail]
     tvfs shm $file $blob
   }
 
@@ -843,9 +847,9 @@ db close
 # Test that even if the checksums for both are valid, if the two copies
 # of the wal-index header in the wal-index do not match, the client
 # runs (or at least tries to run) database recovery.
+# 
 #
-
-proc get_name {method args} { set ::filename [lindex $args 0] }
+proc get_name {method args} { set ::filename [lindex $args 0] ; tvfs filter {} }
 testvfs tvfs
 tvfs script get_name
 tvfs filter xShmOpen
@@ -859,40 +863,39 @@ do_test wal2-9.1 {
     INSERT INTO x VALUES('Barton');
     INSERT INTO x VALUES('Deakin');
   }
-  set wal_index_hdr1 [string range [tvfs shm $::filename] 0 39]
+
+  # Set $wih(1) to the contents of the wal-index header after
+  # the frames associated with the first two rows in table 'x' have
+  # been inserted. Then insert one more row and set $wih(2)
+  # to the new value of the wal-index header.
+  #
+  # If the $wih(1) is written into the wal-index before running
+  # a read operation, the client will see only the first two rows. If
+  # $wih(2) is written into the wal-index, the client will see
+  # three rows. If an invalid header is written into the wal-index, then
+  # the client will run recovery and see three rows.
+  #
+  set wih(1) [set_tvfs_hdr $::filename]
   execsql { INSERT INTO x VALUES('Watson') }
-} {}
-do_test wal2-9.2 {
+  set wih(2) [set_tvfs_hdr $::filename]
+
   sqlite3 db2 test.db -vfs tvfs
   execsql { SELECT * FROM x } db2
 } {Barton Deakin Watson}
-do_test wal2-9.3 {
-  set wal_index_hdr2 [string range [tvfs shm $::filename] 0 39]
-  set content [string range [tvfs shm $::filename] 80 end]
-  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr1 $content]
-  tvfs shm $::filename $w
-  execsql { SELECT * FROM x } db2
-} {Barton Deakin}
-do_test wal2-9.4 {
-  set w [binary format a*a*a* $wal_index_hdr2 $wal_index_hdr2 $content]
-  tvfs shm $::filename $w
-  execsql { SELECT * FROM x } db2
-} {Barton Deakin Watson}
-do_test wal2-9.5 {
-  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr2 $content]
-  tvfs shm $::filename $w
-  execsql { SELECT * FROM x } db2
-} {Barton Deakin Watson}
-do_test wal2-9.6 {
-  set w [binary format a*a*a* $wal_index_hdr2 $wal_index_hdr1 $content]
-  tvfs shm $::filename $w
-  execsql { SELECT * FROM x } db2
-} {Barton Deakin Watson}
-do_test wal2-9.7 {
-  set w [binary format a*a*a* $wal_index_hdr1 $wal_index_hdr1 $content]
-  tvfs shm $::filename $w
-  execsql { SELECT * FROM x } db2
-} {Barton Deakin}
+
+foreach {tn hdr1 hdr2 res} [list                                            \
+  3  $wih(1)                $wih(1)                {Barton Deakin}          \
+  4  $wih(1)                $wih(2)                {Barton Deakin Watson}   \
+  5  $wih(2)                $wih(1)                {Barton Deakin Watson}   \
+  6  $wih(2)                $wih(2)                {Barton Deakin Watson}   \
+  7  $wih(1)                $wih(1)                {Barton Deakin}          \
+  8  {0 0 0 0 0 0 0 0 0 0} {0 0 0 0 0 0 0 0 0 0}   {Barton Deakin Watson}   \
+] {
+  do_test wal2-9.$tn {
+    set_tvfs_hdr $::filename $hdr1 $hdr2
+    execsql { SELECT * FROM x } db2
+  } $res
+}
 
 db2 close
 db close
