@@ -1491,5 +1491,4 @@ do_test wal-21.3 {
   execsql { PRAGMA integrity_check }
 } {ok}
 
-
 finish_test

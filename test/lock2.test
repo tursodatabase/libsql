@@ -105,6 +105,6 @@ do_test lock2-1.10 {
 
 catch {testfixture $::tf1 {db close}}
 catch {close $::tf1}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 finish_test

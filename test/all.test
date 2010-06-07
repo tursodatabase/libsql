@@ -56,14 +56,14 @@ set LeakList {}
 set EXCLUDE {}
 lappend EXCLUDE all.test               ;# This file
 lappend EXCLUDE async.test
-lappend EXCLUDE crash.test             ;# Run seperately later.
-lappend EXCLUDE crash2.test            ;# Run seperately later.
+lappend EXCLUDE crash.test             ;# Run separately later.
+lappend EXCLUDE crash2.test            ;# Run separately later.
 lappend EXCLUDE quick.test             ;# Alternate test driver script
 lappend EXCLUDE veryquick.test         ;# Alternate test driver script
-lappend EXCLUDE malloc.test            ;# Run seperately later.
-lappend EXCLUDE misuse.test            ;# Run seperately later.
+lappend EXCLUDE malloc.test            ;# Run separately later.
+lappend EXCLUDE misuse.test            ;# Run separately later.
 lappend EXCLUDE memleak.test           ;# Alternate test driver script
-lappend EXCLUDE permutations.test      ;# Run seperately later.
+lappend EXCLUDE permutations.test      ;# Run separately later.
 lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
 lappend EXCLUDE fts3.test              ;# Wrapper for muliple fts3*.tests
 lappend EXCLUDE mallocAll.test         ;# Wrapper for running all malloc tests
@@ -74,7 +74,7 @@ lappend EXCLUDE mallocAll.test         ;# Wrapper for running all malloc tests
 set INCLUDE {
 }
 
-for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
+for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
   foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
     set tail [file tail $testfile]
     if {[lsearch -exact $EXCLUDE $tail]>=0} continue
@@ -84,14 +84,15 @@ for {set Counter 0} {$Counter<$COUNT && $nErr==0} {incr Counter} {
     catch {db close}
     if {$sqlite_open_file_count>0} {
       puts "$tail did not close all files: $sqlite_open_file_count"
-      incr nErr
-      lappend ::failList $tail
+      fail_test $tail
       set sqlite_open_file_count 0
     }
   }
   if {[info exists Leak]} {
     lappend LeakList $Leak
   }
+
+  if {[set_test_counter errors]} break
 }
 set argv all
 source $testdir/permutations.test
@@ -102,14 +103,13 @@ set argv ""
 #
 if {$LeakList!=""} {
   puts -nonewline memory-leak-test...
-  incr ::nTest
+  incr_ntest
   foreach x $LeakList {
     if {$x!=[lindex $LeakList 0]} {
        puts " failed!"
        puts "Expected: all values to be the same"
        puts "     Got: $LeakList"
-       incr ::nErr
-       lappend ::failList memory-leak-test
+       fail_test memory-leak-test
        break
     }
   }

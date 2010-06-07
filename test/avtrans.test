@@ -165,7 +165,7 @@ do_test avtrans-3.14 {
   } db} msg]
   lappend v $msg
 } {0 {1 2 3 4}}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 integrity_check avtrans-3.15
 
 do_test avtrans-4.1 {

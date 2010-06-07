@@ -299,6 +299,6 @@ do_test exclusive2-3.6 {
   }
   readPagerChangeCounter test.db
 } {5}
-sqlite3_soft_heap_limit $soft_limit
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
 
 finish_test

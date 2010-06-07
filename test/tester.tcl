@@ -13,88 +13,79 @@
 #
 # $Id: tester.tcl,v 1.143 2009/04/09 01:23:49 drh Exp $
 
+#-------------------------------------------------------------------------
+# The commands provided by the code in this file to help with creating 
+# test cases are as follows:
 #
-# What for user input before continuing.  This gives an opportunity
-# to connect profiling tools to the process.
+# Commands to manipulate the db and the file-system at a high level:
 #
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[regexp {^-+pause$} [lindex $argv $i] all value]} {
-    puts -nonewline "Press RETURN to begin..."
-    flush stdout
-    gets stdin
-    set argv [lreplace $argv $i $i]
-  }
-}
+#      copy_file              FROM TO
+#      drop_all_table         ?DB?
+#      forcedelete            FILENAME
+#
+# Test the capability of the SQLite version built into the interpreter to
+# determine if a specific test can be run:
+#
+#      ifcapable              EXPR
+#
+# Calulate checksums based on database contents:
+#
+#      dbcksum                DB DBNAME
+#      allcksum               ?DB?
+#      cksum                  ?DB?
+#
+# Commands to execute/explain SQL statements:
+#
+#      stepsql                DB SQL
+#      execsql2               SQL
+#      explain_no_trace       SQL
+#      explain                SQL ?DB?
+#      catchsql               SQL ?DB?
+#      execsql                SQL ?DB?
+#
+# Commands to run test cases:
+#
+#      do_ioerr_test          TESTNAME ARGS...
+#      crashsql               ARGS...
+#      integrity_check        TESTNAME ?DB?
+#      do_test                TESTNAME SCRIPT EXPECTED
+#
+# Commands providing a lower level interface to the test counters:
+#
+#      set_test_counter       COUNTER ?VALUE?
+#      omit_test              TESTNAME REASON
+#      fail_test              TESTNAME
+#      incr_ntest
+#
+# Command run at the end of each test file:
+#
+#      finish_test
+#
+# Commands to help create test files that run with the "WAL" permutation:
+#
+#      wal_is_wal_mode
+#      wal_set_journal_mode   ?DB?
+#      wal_check_journal_mode TESTNAME?DB?
+#
 
+# Set the precision of FP arithmatic used by the interpreter. And 
+# configure SQLite to take database file locks on the page that begins
+# 64KB into the database file instead of the one 1GB in. This means
+# the code that handles that special case can be tested without creating
+# very large database files.
+#
 set tcl_precision 15
 sqlite3_test_control_pending_byte 0x0010000
 
-# 
-# Check the command-line arguments for a default soft-heap-limit.
-# Store this default value in the global variable ::soft_limit and
-# update the soft-heap-limit each time this script is run.  In that
-# way if an individual test file changes the soft-heap-limit, it
-# will be reset at the start of the next test file.
+
+# If the pager codec is available, create a wrapper for the [sqlite3] 
+# command that appends "-key {xyzzy}" to the command line. i.e. this:
 #
-if {![info exists soft_limit]} {
-  set soft_limit 0
-  for {set i 0} {$i<[llength $argv]} {incr i} {
-    if {[regexp {^--soft-heap-limit=(.+)$} [lindex $argv $i] all value]} {
-      if {$value!="off"} {
-        set soft_limit $value
-      }
-      set argv [lreplace $argv $i $i]
-    }
-  }
-}
-sqlite3_soft_heap_limit $soft_limit
-
-# 
-# Check the command-line arguments to set the memory debugger
-# backtrace depth.
+#     sqlite3 db test.db
 #
-# See the sqlite3_memdebug_backtrace() function in mem2.c or
-# test_malloc.c for additional information.
+# becomes
 #
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[lindex $argv $i] eq "--malloctrace"} {
-    set argv [lreplace $argv $i $i]
-    sqlite3_memdebug_backtrace 10
-    sqlite3_memdebug_log start
-    set tester_do_malloctrace 1
-  }
-}
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[regexp {^--backtrace=(\d+)$} [lindex $argv $i] all value]} {
-    sqlite3_memdebug_backtrace $value
-    set argv [lreplace $argv $i $i]
-  }
-}
-
-
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[lindex $argv $i] eq "--binarylog"} {
-    set tester_do_binarylog 1
-    set argv [lreplace $argv $i $i]
-  }
-}
-
-# 
-# Check the command-line arguments to set the maximum number of
-# errors tolerated before halting.
-#
-if {![info exists maxErr]} {
-  set maxErr 1000
-}
-for {set i 0} {$i<[llength $argv]} {incr i} {
-  if {[regexp {^--maxerror=(\d+)$} [lindex $argv $i] all maxErr]} {
-    set argv [lreplace $argv $i $i]
-  }
-}
-#puts "Max error = $maxErr"
-
-
-# Use the pager codec if it is available
+#     sqlite3 db test.db -key {xyzzy}
 #
 if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
   rename sqlite3 sqlite_orig
@@ -106,20 +97,86 @@ if {[sqlite3 -has-codec] && [info command sqlite_orig]==""} {
   }
 }
 
-
-# Create a test database
+# The following block only runs the first time this file is sourced.
 #
-if {![info exists nTest]} {
+if {[info exists cmdlinearg]==0} {
+
+  # Parse any options specified in the $argv array. This script accepts the 
+  # following options: 
+  #
+  #   --pause
+  #   --soft-heap-limit=NN
+  #   --maxerror=NN
+  #   --malloctrace=N
+  #   --backtrace=N
+  #   --binarylog=N
+  #
+  set cmdlinearg(soft-heap-limit)    0
+  set cmdlinearg(maxerror)        1000
+  set cmdlinearg(malloctrace)        0
+  set cmdlinearg(backtrace)         10
+  set cmdlinearg(binarylog)          0
+
+  set leftover [list]
+  foreach a $argv {
+    switch -regexp -- $a {
+      {^-+pause$} {
+        # Wait for user input before continuing. This is to give the user an 
+        # opportunity to connect profiling tools to the process.
+        puts -nonewline "Press RETURN to begin..."
+        flush stdout
+        gets stdin
+      }
+      {^-+soft-heap-limit=.+$} {
+        foreach {dummy cmdlinearg(soft-heap-limit)} [split $a =] break
+      }
+      {^-+maxerror=.+$} {
+        foreach {dummy cmdlinearg(maxerror)} [split $a =] break
+      }
+      {^-+malloctrace=.+$} {
+        foreach {dummy cmdlinearg(malloctrace)} [split $a =] break
+        if {$cmdlinearg(malloctrace)} {
+          sqlite3_memdebug_log start
+        }
+      }
+      {^-+backtrace=.+$} {
+        foreach {dummy cmdlinearg(backtrace)} [split $a =] break
+      }
+      sqlite3_memdebug_backtrace $value
+      {^-+binarylog=.+$} {
+        foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+      }
+      default {
+        lappend leftover $a
+      }
+    }
+  }
+  set argv $leftover
+
   sqlite3_shutdown 
   install_malloc_faultsim 1 
   sqlite3_initialize
   autoinstall_test_functions
-  if {[info exists tester_do_binarylog]} {
+
+  if {$cmdlinearg(binarylog)} {
     vfslog new binarylog {} vfslog.bin
-    #sqlite3_instvfs marker binarylog "$argv0 $argv"
+  }
+
+  # Set the backtrace depth, if malloc tracing is enabled.
+  #
+  if {$cmdlinearg(malloctrace)} {
+    sqlite3_memdebug_backtrace $cmdlinearg(backtrace)
   }
 }
 
+# Update the soft-heap-limit each time this script is run. In that
+# way if an individual test file changes the soft-heap-limit, it
+# will be reset at the start of the next test file.
+#
+sqlite3_soft_heap_limit $cmdlinearg(soft-heap-limit)
+
+# Create a test database
+#
 proc reset_db {} {
   catch {db close}
   file delete -force test.db
@@ -135,38 +192,64 @@ reset_db
 
 # Abort early if this script has been run before.
 #
-if {[info exists nTest]} return
+if {[info exists TC(count)]} return
 
-# Set the test counters to zero
+# Initialize the test counters and set up commands to access them.
+# Or, if this is a slave interpreter, set up aliases to write the
+# counters in the parent interpreter.
 #
-set nErr 0
-set nTest 0
-set skip_test 0
-set failList {}
-set omitList {}
-if {![info exists speedTest]} {
-  set speedTest 0
+if {0==[info exists ::SLAVE]} {
+  set TC(errors)    0
+  set TC(count)     0
+  set TC(fail_list) [list]
+  set TC(omit_list) [list]
+
+  proc set_test_counter {counter args} {
+    if {[llength $args]} {
+      set ::TC($counter) [lindex $args 0]
+    }
+    set ::TC($counter)
+  }
 }
 
 # Record the fact that a sequence of tests were omitted.
 #
 proc omit_test {name reason} {
-  global omitList
+  set omitList [set_test_counter omit_list]
   lappend omitList [list $name $reason]
+  set_test_counter omit_list $omitList
 }
+
+# Record the fact that a test failed.
+#
+proc fail_test {name} {
+  set f [set_test_counter fail_list]
+  lappend f $name
+  set_test_counter fail_list $f
+  set_test_counter errors [expr [set_test_counter errors] + 1]
+
+  set nFail [set_test_counter errors]
+  if {$nFail>=$::cmdlinearg(maxerror)} {
+    puts "*** Giving up..."
+    finalize_testing
+  }
+}
+
+# Increment the number of tests run
+#
+proc incr_ntest {} {
+  set_test_counter count [expr [set_test_counter count] + 1]
+}
+
 
 # Invoke the do_test procedure to run a single test 
 #
 proc do_test {name cmd expected} {
-  global argv nErr nTest skip_test maxErr
+
+  global argv cmdlinearg
+
   sqlite3_memdebug_settitle $name
-  if {[info exists ::tester_do_binarylog]} {
-    #sqlite3_instvfs marker binarylog "Start of $name"
-  }
-  if {$skip_test} {
-    set skip_test 0
-    return
-  }
+
   if {[llength $argv]==0} { 
     set go 1
   } else {
@@ -179,26 +262,19 @@ proc do_test {name cmd expected} {
     }
   }
   if {!$go} return
-  incr nTest
+  incr_ntest
   puts -nonewline $name...
   flush stdout
   if {[catch {uplevel #0 "$cmd;\n"} result]} {
     puts "\nError: $result"
-    incr nErr
-    lappend ::failList $name
-    if {$nErr>$maxErr} {puts "*** Giving up..."; finalize_testing}
+    fail_test $name
   } elseif {[string compare $result $expected]} {
     puts "\nExpected: \[$expected\]\n     Got: \[$result\]"
-    incr nErr
-    lappend ::failList $name
-    if {$nErr>=$maxErr} {puts "*** Giving up..."; finalize_testing}
+    fail_test $name
   } else {
     puts " Ok"
   }
   flush stdout
-  if {[info exists ::tester_do_binarylog]} {
-    #sqlite3_instvfs marker binarylog "End of $name"
-  }
 }
 
 # Run an SQL script.  
@@ -246,10 +322,15 @@ proc speed_trial_summary {name} {
 # Run this routine last
 #
 proc finish_test {} {
-  finalize_testing
+  catch {db close}
+  catch {db2 close}
+  catch {db3 close}
+  if {0==[info exists ::SLAVE]} { finalize_testing }
 }
 proc finalize_testing {} {
-  global nTest nErr sqlite_open_file_count omitList
+  global sqlite_open_file_count
+
+  set omitList [set_test_counter omit_list]
 
   catch {db close}
   catch {db2 close}
@@ -260,18 +341,14 @@ proc finalize_testing {} {
   # sqlite3_clear_tsd_memdebug
   db close
   sqlite3_reset_auto_extension
-  set heaplimit [sqlite3_soft_heap_limit]
-  if {$heaplimit!=$::soft_limit} {
-    puts "soft-heap-limit changed by this script\
-          from $::soft_limit to $heaplimit"
-  } elseif {$heaplimit!="" && $heaplimit>0} {
-    puts "soft-heap-limit set to $heaplimit"
-  }
+
   sqlite3_soft_heap_limit 0
-  incr nTest
+  set nTest [incr_ntest]
+  set nErr [set_test_counter errors]
+
   puts "$nErr errors out of $nTest tests"
   if {$nErr>0} {
-    puts "Failures on these tests: $::failList"
+    puts "Failures on these tests: [set_test_counter fail_list]"
   }
   run_thread_tests 1
   if {[llength $omitList]>0} {
@@ -291,7 +368,7 @@ proc finalize_testing {} {
     puts "in your TCL build."
     puts "******************************************************************"
   }
-  if {[info exists ::tester_do_binarylog]} {
+  if {$::cmdlinearg(binarylog)} {
     vfslog finalize binarylog
   }
   if {$sqlite_open_file_count} {
@@ -317,7 +394,7 @@ proc finalize_testing {} {
   if {[info commands sqlite3_memdebug_malloc_count] ne ""} {
     puts "Number of malloc()  : [sqlite3_memdebug_malloc_count] calls"
   }
-  if {[info exists ::tester_do_malloctrace]} {
+  if {$::cmdlinearg(malloctrace)} {
     puts "Writing mallocs.sql..."
     memdebug_log_sql
     sqlite3_memdebug_log stop
@@ -985,6 +1062,46 @@ proc wal_check_journal_mode {testname {db db}} {
     $db eval { SELECT * FROM sqlite_master }
     do_test $testname [list $db eval "PRAGMA main.journal_mode"] {wal}
   }
+}
+
+#-------------------------------------------------------------------------
+#
+proc slave_test_script {script} {
+
+  # Create the interpreter used to run the test script.
+  interp create tinterp
+
+  # Populate some global variables that tester.tcl expects to see.
+  foreach {var value} [list              \
+    ::argv0 $::argv0                     \
+    ::argv  {}                           \
+    ::SLAVE 1                            \
+  ] {
+    interp eval tinterp [list set $var $value]
+  }
+
+  # The alias used to access the global test counters.
+  tinterp alias set_test_counter set_test_counter
+
+  # Set up the ::cmdlinearg array in the slave.
+  interp eval tinterp [list array set ::cmdlinearg [array get ::cmdlinearg]]
+
+  # Load the various test interfaces implemented in C.
+  load_testfixture_extensions tinterp
+
+  # Run the test script.
+  interp eval tinterp $script
+
+  # Delete the interpreter used to run the test script.
+  interp delete tinterp
+}
+
+proc slave_test_file {file} {
+  set zFile [file join $::testdir $file]
+  set time [time {
+    slave_test_script [list source $zFile]
+  }]
+  puts "time $file [lrange $time 0 1]"
 }
 
 

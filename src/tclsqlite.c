@@ -3490,21 +3490,49 @@ static char zMainloop[] =
 ;
 #endif
 
-#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
-int TCLSH_MAIN(int argc, char **argv){
-  Tcl_Interp *interp;
-  
-  /* Call sqlite3_shutdown() once before doing anything else. This is to
-  ** test that sqlite3_shutdown() can be safely called by a process before
-  ** sqlite3_initialize() is. */
-  sqlite3_shutdown();
+#ifdef SQLITE_TEST
+static void init_all(Tcl_Interp *);
+static int init_all_cmd(
+  ClientData cd,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
 
-  Tcl_FindExecutable(argv[0]);
-  interp = Tcl_CreateInterp();
+  Tcl_Interp *slave;
+  if( objc!=2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "SLAVE");
+    return TCL_ERROR;
+  }
+
+  slave = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
+  if( !slave ){
+    return TCL_ERROR;
+  }
+
+  init_all(slave);
+  return TCL_OK;
+}
+#endif
+
+/*
+** Configure the interpreter passed as the first argument to have access
+** to the commands and linked variables that make up:
+**
+**   * the [sqlite3] extension itself, 
+**
+**   * If SQLITE_TCLMD5 or SQLITE_TEST is defined, the Md5 commands, and
+**
+**   * If SQLITE_TEST is set, the various test interfaces used by the Tcl
+**     test suite.
+*/
+static void init_all(Tcl_Interp *interp){
   Sqlite3_Init(interp);
+
 #if defined(SQLITE_TEST) || defined(SQLITE_TCLMD5)
   Md5_Init(interp);
 #endif
+
 #ifdef SQLITE_TEST
   {
     extern int Sqliteconfig_Init(Tcl_Interp*);
@@ -3562,11 +3590,28 @@ int TCLSH_MAIN(int argc, char **argv){
     Sqlitetestintarray_Init(interp);
     Sqlitetestvfs_Init(interp);
 
+    Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
+
 #ifdef SQLITE_SSE
     Sqlitetestsse_Init(interp);
 #endif
   }
 #endif
+}
+
+#define TCLSH_MAIN main   /* Needed to fake out mktclapp */
+int TCLSH_MAIN(int argc, char **argv){
+  Tcl_Interp *interp;
+  
+  /* Call sqlite3_shutdown() once before doing anything else. This is to
+  ** test that sqlite3_shutdown() can be safely called by a process before
+  ** sqlite3_initialize() is. */
+  sqlite3_shutdown();
+
+  Tcl_FindExecutable(argv[0]);
+
+  interp = Tcl_CreateInterp();
+  init_all(interp);
   if( argc>=2 ){
     int i;
     char zArgc[32];
