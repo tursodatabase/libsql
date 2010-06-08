@@ -36,6 +36,7 @@ db func a_string a_string
 #
 do_test wal3-1.0 {
   execsql {
+    PRAGMA cache_size = 2000;
     PRAGMA page_size = 1024;
     PRAGMA auto_vacuum = off;
     PRAGMA synchronous = normal;
@@ -185,21 +186,21 @@ foreach code [list {
       PRAGMA wal_checkpoint;
     }
     file size test.db
-  } [expr 3*1024]
+  } [expr $AUTOVACUUM ? 4*1024 : 3*1024]
   do_test wal3-2.$tn.5 {
     sql2 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
     file size test.db
-  } [expr 4*1024]
+  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
   do_test wal3-2.$tn.6 {
     sql3 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
     file size test.db
-  } [expr 4*1024]
+  } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
 
   catch { db close }
   catch { code2 { db2 close } }

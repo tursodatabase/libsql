@@ -1,5 +1,5 @@
-C In\sos_unix.c,\scall\smunmap()\sto\sunmap\sa\sshared-memory\sregion\sprior\sto\sclosing\sthe\sassociated\sfile\sdescriptor.
-D 2010-06-07T19:26:54
+C Changes\sto\swal3.test\sto\ssupport\ssmall\sdefault\scache\ssize\ssettings.\sAnd\sbuilds\sthat\screate\sautovacuum\sdatabases\sby\sdefault.
+D 2010-06-08T15:16:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -763,7 +763,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 0a599c3c4812ed92bc7ad9efcc2c4007fe4cc99a
 F test/wal2.test f70bbe268891a70cc40dce659efe617e548c7491
-F test/wal3.test 887737b05f0aa37962182bf8c5e86f7342e1d386
+F test/wal3.test ae876ff988af5b2b34d27474e0dd1a8c84e9bbcb
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
@@ -817,7 +817,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7c33eb5a5add8fe76dd412ecab5b6ff8cd78a98d
-R 5fabbd488e57776162623cce41a4cd2d
+P 95cc976f1520bdaedd8f93b0e9fbef94e4e2c8cc
+R c73a02e6bf7cc510df8eb3128a1510a7
 U dan
-Z fcc22f8b3c04ea5c24692f33ce5cbe21
+Z 26caf9d3f32e3e6d69bfee1d90be30ef
