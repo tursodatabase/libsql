@@ -1780,7 +1780,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   mxI = 0;
   for(i=1; i<WAL_NREADER; i++){
     u32 thisMark = pInfo->aReadMark[i];
-    if( mxReadMark<thisMark ){
+    if( mxReadMark<thisMark && thisMark<=(pWal->hdr.mxFrame+1) ){
       mxReadMark = thisMark;
       mxI = i;
     }
@@ -1845,6 +1845,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       walUnlockShared(pWal, WAL_READ_LOCK(mxI));
       return WAL_RETRY;
     }else{
+      assert( mxReadMark<=(pWal->hdr.mxFrame+1) );
       pWal->readLock = mxI;
     }
   }
