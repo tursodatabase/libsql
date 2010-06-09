@@ -3384,7 +3384,8 @@ static Bitmask codeOneLoopStart(
     int iIdxCur;         /* The VDBE cursor for the index */
     int nExtraReg = 0;   /* Number of extra registers needed */
     int op;              /* Instruction opcode */
-    char *zAff;
+    char *zStartAff;             /* Affinity for start of range constraint */
+    char *zEndAff;               /* Affinity for end of range constraint */
 
     pIdx = pLevel->plan.u.pIdx;
     iIdxCur = pLevel->iIdxCur;
@@ -3425,8 +3426,9 @@ static Bitmask codeOneLoopStart(
     ** starting at regBase.
     */
     regBase = codeAllEqualityTerms(
-        pParse, pLevel, pWC, notReady, nExtraReg, &zAff
+        pParse, pLevel, pWC, notReady, nExtraReg, &zStartAff
     );
+    zEndAff = sqlite3DbStrDup(pParse->db, zStartAff);
     addrNxt = pLevel->addrNxt;
 
     /* If we are doing a reverse order scan on an ascending index, or
@@ -3451,15 +3453,15 @@ static Bitmask codeOneLoopStart(
       Expr *pRight = pRangeStart->pExpr->pRight;
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
-      if( zAff ){
-        if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
+      if( zStartAff ){
+        if( sqlite3CompareAffinity(pRight, zStartAff[nEq])==SQLITE_AFF_NONE){
           /* Since the comparison is to be performed with no conversions
           ** applied to the operands, set the affinity to apply to pRight to 
           ** SQLITE_AFF_NONE.  */
-          zAff[nConstraint] = SQLITE_AFF_NONE;
+          zStartAff[nEq] = SQLITE_AFF_NONE;
         }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[nConstraint]) ){
-          zAff[nConstraint] = SQLITE_AFF_NONE;
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zStartAff[nEq]) ){
+          zStartAff[nEq] = SQLITE_AFF_NONE;
         }
       }  
       nConstraint++;
@@ -3469,7 +3471,7 @@ static Bitmask codeOneLoopStart(
       startEq = 0;
       start_constraints = 1;
     }
-    codeApplyAffinity(pParse, regBase, nConstraint, zAff);
+    codeApplyAffinity(pParse, regBase, nConstraint, zStartAff);
     op = aStartOp[(start_constraints<<2) + (startEq<<1) + bRev];
     assert( op!=0 );
     testcase( op==OP_Rewind );
@@ -3489,21 +3491,22 @@ static Bitmask codeOneLoopStart(
       sqlite3ExprCacheRemove(pParse, regBase+nEq, 1);
       sqlite3ExprCode(pParse, pRight, regBase+nEq);
       sqlite3ExprCodeIsNullJump(v, pRight, regBase+nEq, addrNxt);
-      if( zAff ){
-        if( sqlite3CompareAffinity(pRight, zAff[nConstraint])==SQLITE_AFF_NONE){
+      if( zEndAff ){
+        if( sqlite3CompareAffinity(pRight, zEndAff[nEq])==SQLITE_AFF_NONE){
           /* Since the comparison is to be performed with no conversions
           ** applied to the operands, set the affinity to apply to pRight to 
           ** SQLITE_AFF_NONE.  */
-          zAff[nConstraint] = SQLITE_AFF_NONE;
+          zEndAff[nEq] = SQLITE_AFF_NONE;
         }
-        if( sqlite3ExprNeedsNoAffinityChange(pRight, zAff[nConstraint]) ){
-          zAff[nConstraint] = SQLITE_AFF_NONE;
+        if( sqlite3ExprNeedsNoAffinityChange(pRight, zEndAff[nEq]) ){
+          zEndAff[nEq] = SQLITE_AFF_NONE;
         }
       }  
-      codeApplyAffinity(pParse, regBase, nEq+1, zAff);
+      codeApplyAffinity(pParse, regBase, nEq+1, zEndAff);
       nConstraint++;
     }
-    sqlite3DbFree(pParse->db, zAff);
+    sqlite3DbFree(pParse->db, zStartAff);
+    sqlite3DbFree(pParse->db, zEndAff);
 
     /* Top of the loop body */
     pLevel->p2 = sqlite3VdbeCurrentAddr(v);
