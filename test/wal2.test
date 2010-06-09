@@ -167,6 +167,7 @@ file delete -force test.db test.db-wal test.db-journal
 set WRITER [list 0 1 lock exclusive]
 set LOCKS  [list \
   {0 1 lock exclusive} {0 1 unlock exclusive} \
+  {4 1 lock exclusive} {4 1 unlock exclusive} \
   {4 1 lock shared}    {4 1 unlock shared}    \
 ]
 do_test wal2-2.0 {

@@ -285,9 +285,12 @@ struct WalIndexHdr {
 **
 ** There is one entry in aReadMark[] for each reader lock.  If a reader
 ** holds read-lock K, then the value in aReadMark[K] is no greater than
-** the mxFrame for that reader.  aReadMark[0] is a special case.  It
-** always holds zero.  Readers holding WAL_READ_LOCK(0) always ignore 
-** the entire WAL and read all content directly from the database.
+** the mxFrame for that reader.  The value READMARK_NOT_USED (0xffffffff)
+** for any aReadMark[] means that entry is unused.  aReadMark[0] is 
+** a special case; its value is never used and it exists as a place-holder
+** to avoid having to offset aReadMark[] indexs by one.  Readers holding
+** WAL_READ_LOCK(0) always ignore the entire WAL and read all content
+** directly from the database.
 **
 ** The value of aReadMark[K] may only be changed by a thread that
 ** is holding an exclusive lock on WAL_READ_LOCK(K).  Thus, the value of
@@ -320,6 +323,7 @@ struct WalCkptInfo {
   u32 nBackfill;                  /* Number of WAL frames backfilled into DB */
   u32 aReadMark[WAL_NREADER];     /* Reader marks */
 };
+#define READMARK_NOT_USED  0xffffffff
 
 
 /* A block of WALINDEX_LOCK_RESERVED bytes beginning at
@@ -1076,15 +1080,20 @@ finished:
     rc = walIndexRemap(pWal, walMappingSize(1));
   }
   if( rc==SQLITE_OK ){
+    volatile WalCkptInfo *pInfo;
+    int i;
     pWal->hdr.aFrameCksum[0] = aFrameCksum[0];
     pWal->hdr.aFrameCksum[1] = aFrameCksum[1];
     walIndexWriteHdr(pWal);
 
-    /* Zero the checkpoint-header. This is safe because this thread is 
+    /* Reset the checkpoint-header. This is safe because this thread is 
     ** currently holding locks that exclude all other readers, writers and
     ** checkpointers.
     */
-    memset((void *)walCkptInfo(pWal), 0, sizeof(WalCkptInfo));
+    pInfo = walCkptInfo(pWal);
+    pInfo->nBackfill = 0;
+    pInfo->aReadMark[0] = 0;
+    for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
   }
 
 recovery_error:
@@ -1426,14 +1435,14 @@ static int walCheckpoint(
   assert( pInfo==walCkptInfo(pWal) );
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
-    if( y>0 && mxSafeFrame>=y ){
+    if( mxSafeFrame>=y ){
       assert( y<=pWal->hdr.mxFrame );
       rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
       if( rc==SQLITE_OK ){
-        pInfo->aReadMark[i] = 0;
+        pInfo->aReadMark[i] = READMARK_NOT_USED;
         walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
       }else if( rc==SQLITE_BUSY ){
-        mxSafeFrame = y-1;
+        mxSafeFrame = y;
       }else{
         goto walcheckpoint_out;
       }
@@ -1780,7 +1789,8 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
   mxI = 0;
   for(i=1; i<WAL_NREADER; i++){
     u32 thisMark = pInfo->aReadMark[i];
-    if( mxReadMark<thisMark && thisMark<=(pWal->hdr.mxFrame+1) ){
+    if( mxReadMark<=thisMark && thisMark<=pWal->hdr.mxFrame ){
+      assert( thisMark!=READMARK_NOT_USED );
       mxReadMark = thisMark;
       mxI = i;
     }
@@ -1792,7 +1802,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     */
     rc = walLockExclusive(pWal, WAL_READ_LOCK(1), 1);
     if( rc==SQLITE_OK ){
-      pInfo->aReadMark[1] = pWal->hdr.mxFrame+1;
+      pInfo->aReadMark[1] = pWal->hdr.mxFrame;
       walUnlockExclusive(pWal, WAL_READ_LOCK(1), 1);
       rc = WAL_RETRY;
     }else if( rc==SQLITE_BUSY ){
@@ -1804,7 +1814,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       for(i=1; i<WAL_NREADER; i++){
         rc = walLockExclusive(pWal, WAL_READ_LOCK(i), 1);
         if( rc==SQLITE_OK ){
-          mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame+1;
+          mxReadMark = pInfo->aReadMark[i] = pWal->hdr.mxFrame;
           mxI = i;
           walUnlockExclusive(pWal, WAL_READ_LOCK(i), 1);
           break;
@@ -1845,7 +1855,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       walUnlockShared(pWal, WAL_READ_LOCK(mxI));
       return WAL_RETRY;
     }else{
-      assert( mxReadMark<=(pWal->hdr.mxFrame+1) );
+      assert( mxReadMark<=pWal->hdr.mxFrame );
       pWal->readLock = mxI;
     }
   }
