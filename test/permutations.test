@@ -478,7 +478,7 @@ run_tests "inmemory_journal" -description {
   stmt.test
 
   # WAL mode is different.
-  walmode.test
+  walmode.test walfault.test wal.test wal2.test wal3.test
 }
 
 ifcapable mem3 {

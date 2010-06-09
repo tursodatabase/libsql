@@ -102,11 +102,13 @@ if {[info command sqlite_orig]==""} {
         lappend args -key {xyzzy}
       }
 
-      uplevel 1 sqlite_orig $args
+      set res [uplevel 1 sqlite_orig $args]
 
       if {[info exists ::G(perm:presql)]} {
         [lindex $args 0] eval $::G(perm:presql)
       }
+
+      set res
     } else {
       # This command is not opening a new database connection. Pass the 
       # arguments through to the C implemenation as the are.
