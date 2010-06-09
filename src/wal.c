@@ -2217,13 +2217,16 @@ static int walRestartLog(Wal *pWal){
         ** safe and means there is no special case for sqlite3WalUndo()
         ** to handle if this transaction is rolled back.
         */
+        int i;                    /* Loop counter */
         u32 *aSalt = pWal->hdr.aSalt;       /* Big-endian salt values */
         pWal->nCkpt++;
         pWal->hdr.mxFrame = 0;
         sqlite3Put4byte((u8*)&aSalt[0], 1 + sqlite3Get4byte((u8*)&aSalt[0]));
         sqlite3_randomness(4, &aSalt[1]);
         walIndexWriteHdr(pWal);
-        memset((void*)pInfo, 0, sizeof(*pInfo));
+        pInfo->nBackfill = 0;
+        for(i=1; i<WAL_NREADER; i++) pInfo->aReadMark[i] = READMARK_NOT_USED;
+        assert( pInfo->aReadMark[0]==0 );
         walUnlockExclusive(pWal, WAL_READ_LOCK(1), WAL_NREADER-1);
       }
     }
