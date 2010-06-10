@@ -276,6 +276,17 @@ do_test corruptC-2.14 {
   catchsql {DELETE FROM t1 WHERE rowid = (SELECT max(rowid) FROM t1)}
 } {1 {database disk image is malformed}}
 
+# At one point this particular corrupt database was causing a buffer
+# overread. Which caused a crash in a run of all.test once.
+#
+do_test corruptC-2.15 {
+  db close
+  copy_file test.bu test.db
+  hexio_write test.db 986 b9
+  sqlite3 db test.db
+  catchsql {SELECT count(*) FROM sqlite_master;}
+} {1 {malformed database schema (t1i1) - no such table: main.t1}}
+
 #
 # Now test for a series of quasi-random seeds.
 # We loop over the entire file size and touch
