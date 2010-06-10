@@ -1,5 +1,8 @@
-C Store\sthe\sMemPage\sstructure\sin\smemory\sfollowing,\sinstead\sof\spreceding,\sthe\spage\sdata\sfor\scached\spages.\sThis\sreduces\sthe\slikelihood\sof\sa\scorrupt\sdatabase\spage\simage\scausing\sSQLite\sto\sread\spast\sthe\send\sof\sa\sbuffer.
-D 2010-06-10T06:53:27
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Update\sthe\stest\sVFS\sin\stest_journal.c\sso\sthat\sit\simplements\sthe\nxCurrentTimeInt64\smethod.
+D 2010-06-10T10:51:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -196,7 +199,7 @@ F src/test_hexio.c 1237f000ec7a491009b1233f5c626ea71bce1ea2
 F src/test_init.c 5d624ffd0409d424cf9adbfe1f056b200270077c
 F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
-F src/test_journal.c 51da4dd6118ee843349592fde29429fab84a6243
+F src/test_journal.c 044c1a53ec4dd6f0dde66727b154cd099f5f34d1
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
 F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
@@ -818,7 +821,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7abcd54ec09e8025193d1e0ea57775051d823801
-R 31070636553ae76b50ea1052e3aa5bdb
-U dan
-Z e8833716b224a38eb8684e00df026f78
+P 0ce42e76654d9ba52dac74c940d38b17866016ba
+R 0231deccb58b66a7f42390de50d754a2
+U drh
+Z ed04779b5d04855d224eb604c116e907
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMEMOzoxKgR168RlERAvo4AJ9qvdapbiEhrE9QM+cunPtPh/F5XACfcZRl
+A9HHJfwejiuEgon9WFsTIWc=
+=JQVb
+-----END PGP SIGNATURE-----

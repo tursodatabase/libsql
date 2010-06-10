@@ -161,9 +161,10 @@ static void jtDlClose(sqlite3_vfs*, void*);
 static int jtRandomness(sqlite3_vfs*, int nByte, char *zOut);
 static int jtSleep(sqlite3_vfs*, int microseconds);
 static int jtCurrentTime(sqlite3_vfs*, double*);
+static int jtCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
 static sqlite3_vfs jt_vfs = {
-  1,                             /* iVersion */
+  2,                             /* iVersion */
   sizeof(jt_file),               /* szOsFile */
   JT_MAX_PATHNAME,               /* mxPathname */
   0,                             /* pNext */
@@ -180,6 +181,9 @@ static sqlite3_vfs jt_vfs = {
   jtRandomness,                  /* xRandomness */
   jtSleep,                       /* xSleep */
   jtCurrentTime,                 /* xCurrentTime */
+  0,                             /* xGetLastError */
+  0,                             /* xRename */
+  jtCurrentTimeInt64             /* xCurrentTimeInt64 */
 };
 
 static sqlite3_io_methods jt_io_methods = {
@@ -803,6 +807,12 @@ static int jtSleep(sqlite3_vfs *pVfs, int nMicro){
 static int jtCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return g.pVfs->xCurrentTime(g.pVfs, pTimeOut);
 }
+/*
+** Return the current time as a Julian Day number in *pTimeOut.
+*/
+static int jtCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *pTimeOut){
+  return g.pVfs->xCurrentTimeInt64(g.pVfs, pTimeOut);
+}
 
 /**************************************************************************
 ** Start of public API.
@@ -821,6 +831,11 @@ int jt_register(char *zWrap, int isDefault){
     return SQLITE_ERROR;
   }
   jt_vfs.szOsFile = sizeof(jt_file) + g.pVfs->szOsFile;
+  if( g.pVfs->iVersion==1 ){
+    jt_vfs.iVersion = 1;
+  }else if( g.pVfs->xCurrentTimeInt64==0 ){
+    jt_vfs.xCurrentTimeInt64 = 0;
+  }
   sqlite3_vfs_register(&jt_vfs, isDefault);
   return SQLITE_OK;
 }
