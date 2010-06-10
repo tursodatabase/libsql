@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sSQLITE_TESTCTRL_PGHDRSZ\sverb\sfor\ssqlite3_test_control()\sused\sto\sget\nthe\ssize\sof\spcache\sheaders\sfor\stesting\spurposes.
-D 2010-06-10T14:07:40
+C Adding\soriginal\sart\sfor\sthe\snew\sSQLite\slogo.
+D 2010-06-10T16:25:55
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -18,6 +18,8 @@ F art/SQLiteLogo3.tiff b9e6bf022ae939bc986cddb8ab99583ca1b02cb3
 F art/SQLite_big.gif 2b8e4603b91ba2a2c7062a82ff570d945034bb30
 F art/nocopy.gif 716aa07d4bb7250d4e75756073bf8ef9f56bec8f
 F art/powered_by_sqlite.gif 7fbcd7d3675391fd3d21672c14c05f5999eb60d1
+F art/sqlite370.eps aa97a671332b432a54e1d74ff5e8775be34200c2
+F art/sqlite370.jpg d512473dae7e378a67e28ff96a34da7cb331def2
 F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
@@ -821,14 +823,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ec3b4a7e5d3d7bd737d356b8a09ce94f8f0f8ce0
-R 5f2583eb28458bacc394a71cd8410e2c
+P 5d694f04fecf47ca325e108d463c24f42def55d5
+R 10695bb8a15b034a4e06a10daf5b2617
 U drh
-Z 7820edb3e30c3452cb52c3f3c0c7b425
+Z 161ce96e4e9771649be68619f8c3c2db
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMEPGvoxKgR168RlERAj5CAJ9PF/oC4ZPpIPJgFi9WJQ0rwHJ+SQCeNpYh
-a8OEvjx4bNDteUxVRu7mPN0=
-=yAYU
+iD8DBQFMERIWoxKgR168RlERAqHeAKCF217UHq/n+fo3jhftqof1D81x0ACfYIyS
+Y/99t0MEsIlG4IyOHOkiOQk=
+=qrJ/
 -----END PGP SIGNATURE-----
