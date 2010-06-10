@@ -2491,6 +2491,15 @@ int sqlite3_test_control(int op, ...){
     }
 #endif 
 
+    /* sqlite3_test_control(SQLITE_TESTCTRL_PGHDRSZ)
+    **
+    ** Return the size of a pcache header in bytes.
+    */
+    case SQLITE_TESTCTRL_PGHDRSZ: {
+      rc = sizeof(PgHdr);
+      break;
+    }
+
   }
   va_end(ap);
 #endif /* SQLITE_OMIT_BUILTIN_TEST */
