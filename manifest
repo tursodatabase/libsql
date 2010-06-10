@@ -1,5 +1,8 @@
-C Fix\stest\sscript\sproblems\scausing\serrors\sin\sthe\s"inmemory_journal"\spermutations.
-D 2010-06-09T19:01:02
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remove\sa\scondition\sthat\smust\salways\sbe\strue.\s\sReplace\sit\swith\san\sassert().
+D 2010-06-10T01:07:42
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +157,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 12051d37e533cdaa8bb13c9d9fe2a13e08552187
 F src/os_win.c 0cf1f571546f165001e2391b5d4a4a16d86977d3
-F src/pager.c bd9647a741d1905a2a46cc79126ca2d720f33f5d
+F src/pager.c dde0b7447763299ebc4f27a7c3ab25b3b136c69f
 F src/pager.h 76466c3a5af56943537f68b1f16567101a0cd1d0
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c ace8f6a5ecd4711cc66a1b23053be7109bd437cf
@@ -818,7 +821,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0797b10c0cc08ae38e26685d1f8331e37d428781
-R 0f855307664cb1ca52575ec5a7405d2c
-U dan
-Z f5cf208a50969170a03db1999e99f274
+P ea05b7f929e4696175dbc3ded36dba8ed2a6b575
+R b2aa1ec382260251004c82b1180e6cb4
+U drh
+Z c9d9a3c8cddce25be30d2d7e79616c72
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMEDrhoxKgR168RlERAoNcAJ9ApOQLwNGdKX9r0AgpaNELEJ1wfgCcDI4V
+bkS2YGF3Gfz/u96PVSnmtbQ=
+=FCD6
+-----END PGP SIGNATURE-----

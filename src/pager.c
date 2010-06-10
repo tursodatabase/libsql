@@ -1438,15 +1438,13 @@ static int pager_end_transaction(Pager *pPager, int hasMaster){
 
   if( pagerUseWal(pPager) ){
     rc2 = sqlite3WalEndWriteTransaction(pPager->pWal);
+    assert( rc2==SQLITE_OK );
     pPager->state = PAGER_SHARED;
 
     /* If the connection was in locking_mode=exclusive mode but is no longer,
     ** drop the EXCLUSIVE lock held on the database file.
     */
-    if( rc2==SQLITE_OK 
-     && !pPager->exclusiveMode 
-     && sqlite3WalExclusiveMode(pPager->pWal, 0) 
-    ){
+    if( !pPager->exclusiveMode && sqlite3WalExclusiveMode(pPager->pWal, 0) ){
       rc2 = osUnlock(pPager->fd, SHARED_LOCK);
     }
   }else if( !pPager->exclusiveMode ){
