@@ -3141,8 +3141,14 @@ struct unixShmNode {
   sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
+
   int szMap;                 /* Size of the mapping into memory */
   char *pMMapBuf;            /* Where currently mmapped().  NULL if unmapped */
+
+  int pgsz;                  /* Size of shared-memory pages */
+  int nPage;                 /* Size of array apPage */
+  char **apPage;             /* Array of mapped shared-memory pages */
+
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
 #ifdef SQLITE_DEBUG
@@ -3266,10 +3272,15 @@ static void unixShmPurge(unixFile *pFd){
   unixShmNode *p = pFd->pInode->pShmNode;
   assert( unixMutexHeld() );
   if( p && p->nRef==0 ){
+    int i;
     assert( p->pInode==pFd->pInode );
     if( p->mutex ) sqlite3_mutex_free(p->mutex);
     if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
     if( p->pMMapBuf ) munmap(p->pMMapBuf, p->szMap);
+    for(i=0; i<p->nPage; i++){
+      munmap(p->apPage[i], p->pgsz);
+    }
+    sqlite3_free(p->apPage);
     if( p->h>=0 ) close(p->h);
     p->pInode->pShmNode = 0;
     sqlite3_free(p);
@@ -3706,6 +3717,71 @@ static void unixShmBarrier(
   unixLeaveMutex();
 }
 
+static int unixShmPage(
+  sqlite3_file *fd,               /* Handle open on database file */
+  int iPage,                      /* Page to retrieve */
+  int pgsz,                       /* Size of pages */
+  int isWrite,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
+){
+  unixFile *pDbFd = (unixFile*)fd;
+  unixShm *p = pDbFd->pShm;
+  unixShmNode *pShmNode = p->pShmNode;
+  int rc = SQLITE_OK;
+
+  assert( p->hasMutexBuf==0 );
+  sqlite3_mutex_enter(pShmNode->mutexBuf);
+  assert( pgsz==pShmNode->pgsz || pShmNode->nPage==0 );
+
+  if( pShmNode->nPage<=iPage ){
+    char **apNew;                 /* New apPage[] array */
+    int nByte = (iPage+1)*pgsz;   /* Minimum required file size */
+    struct stat sStat;
+
+    pShmNode->pgsz = pgsz;
+
+    /* Make sure the underlying file is large enough (or fail) */
+    if( fstat(pShmNode->h, &sStat) ){
+      rc = SQLITE_IOERR_SHMSIZE;
+      goto shmpage_out;
+    }else if( sStat.st_size<nByte ){
+      if( !isWrite ) goto shmpage_out;
+      if( ftruncate(pShmNode->h, nByte) ){
+        rc = SQLITE_IOERR_SHMSIZE;
+        goto shmpage_out;
+      }  
+    }
+
+    apNew = (char**)sqlite3_realloc(pShmNode->apPage, (iPage+1)*sizeof(char *));
+    if( !apNew ){
+      rc = SQLITE_IOERR_NOMEM;
+      goto shmpage_out;
+    }
+    pShmNode->apPage = apNew;
+
+    while(pShmNode->nPage<=iPage){
+      void *pMem = mmap(
+          0, pgsz, PROT_READ|PROT_WRITE, MAP_SHARED, pShmNode->h, iPage*pgsz
+      );
+      if( pMem==MAP_FAILED ){
+        assert(0);
+        rc = SQLITE_IOERR;
+        goto shmpage_out;
+      }
+      pShmNode->apPage[pShmNode->nPage] = pMem;
+      pShmNode->nPage++;
+    }
+  }
+
+shmpage_out:
+  if( pShmNode->nPage>iPage ){
+    *pp = pShmNode->apPage[iPage];
+  }else{
+    *pp = 0;
+  }
+  sqlite3_mutex_leave(pShmNode->mutexBuf);
+  return rc;
+}
 
 #else
 # define unixShmOpen    0
@@ -3715,6 +3791,7 @@ static void unixShmBarrier(
 # define unixShmLock    0
 # define unixShmBarrier 0
 # define unixShmClose   0
+# define unixShmPage    0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -3778,7 +3855,8 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmRelease,             /* xShmRelease */                             \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmClose                /* xShmClose */                               \
+   unixShmClose,               /* xShmClose */                               \
+   unixShmPage                 /* xShmPage */                                \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \

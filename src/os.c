@@ -119,6 +119,15 @@ void sqlite3OsShmBarrier(sqlite3_file *id){
 int sqlite3OsShmClose(sqlite3_file *id, int deleteFlag){
   return id->pMethods->xShmClose(id, deleteFlag);
 }
+int sqlite3OsShmPage(
+  sqlite3_file *id, 
+  int iPage, 
+  int pgsz, 
+  int isWrite, 
+  void volatile **pp
+){
+  return id->pMethods->xShmPage(id, iPage, pgsz, isWrite, pp);
+}
 
 /*
 ** The next group of routines are convenience wrappers around the

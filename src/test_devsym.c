@@ -57,6 +57,7 @@ static int devsymShmRelease(sqlite3_file*);
 static int devsymShmLock(sqlite3_file*,int,int,int);
 static void devsymShmBarrier(sqlite3_file*);
 static int devsymShmClose(sqlite3_file*,int);
+static int devsymShmPage(sqlite3_file*,int,int,int, void volatile **);
 
 /*
 ** Method declarations for devsym_vfs.
@@ -125,7 +126,8 @@ static sqlite3_io_methods devsym_io_methods = {
   devsymShmRelease,                 /* xShmRelease */
   devsymShmLock,                    /* xShmLock */
   devsymShmBarrier,                 /* xShmBarrier */
-  devsymShmClose                    /* xShmClose */
+  devsymShmClose,                   /* xShmClose */
+  devsymShmPage                     /* xShmPage */
 };
 
 struct DevsymGlobal {
@@ -274,6 +276,16 @@ static void devsymShmBarrier(sqlite3_file *pFile){
 static int devsymShmClose(sqlite3_file *pFile, int delFlag){
   devsym_file *p = (devsym_file *)pFile;
   return sqlite3OsShmClose(p->pReal, delFlag);
+}
+static int devsymShmPage(
+  sqlite3_file *pFile, 
+  int iPage, 
+  int pgsz, 
+  int isWrite, 
+  void volatile **pp
+){
+  devsym_file *p = (devsym_file *)pFile;
+  return sqlite3OsShmPage(p->pReal, iPage, pgsz, isWrite, pp);
 }
 
 

@@ -666,6 +666,7 @@ struct sqlite3_io_methods {
   int (*xShmLock)(sqlite3_file*, int offset, int n, int flags);
   void (*xShmBarrier)(sqlite3_file*);
   int (*xShmClose)(sqlite3_file*, int deleteFlag);
+  int (*xShmPage)(sqlite3_file*, int iPage, int pgsz, int, void volatile**);
   /* Methods above are valid for version 2 */
   /* Additional methods may be added in future releases */
 };

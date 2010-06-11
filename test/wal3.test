@@ -353,7 +353,7 @@ T script method_callback
 proc method_callback {method args} {
   if {$method == "xShmBarrier"} {
     incr ::barrier_count
-    if {$::barrier_count == 1} {
+    if {$::barrier_count == 2} {
       # This code is executed within the xShmBarrier() callback invoked
       # by the client running recovery as part of writing the recovered
       # wal-index header. If a second client attempts to access the 

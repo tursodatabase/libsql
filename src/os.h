@@ -254,6 +254,7 @@ int sqlite3OsShmRelease(sqlite3_file *id);
 int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmClose(sqlite3_file *id, int);
+int sqlite3OsShmPage(sqlite3_file *,int,int,int,void volatile **);
 
 /* 
 ** Functions for accessing sqlite3_vfs methods 
