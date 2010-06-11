@@ -3422,7 +3422,7 @@ int sqlite3OpenTempDatabase(Parse *pParse){
       db->mallocFailed = 1;
       return 1;
     }
-    sqlite3PagerJournalMode(sqlite3BtreePager(pBt), db->dfltJournalMode);
+    sqlite3PagerSetJournalMode(sqlite3BtreePager(pBt), db->dfltJournalMode);
   }
   return 0;
 }

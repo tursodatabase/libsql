@@ -68,9 +68,9 @@ typedef struct PgHdr DbPage;
 #define PAGER_LOCKINGMODE_EXCLUSIVE   1
 
 /*
-** Valid values for the second argument to sqlite3PagerJournalMode().
+** Numeric constants that encode the journalmode.  
 */
-#define PAGER_JOURNALMODE_QUERY      -1
+#define PAGER_JOURNALMODE_QUERY     (-1)  /* Query the value of journalmode */
 #define PAGER_JOURNALMODE_DELETE      0   /* Commit by deleting journal file */
 #define PAGER_JOURNALMODE_PERSIST     1   /* Commit by zeroing journal header */
 #define PAGER_JOURNALMODE_OFF         2   /* Journal omitted.  */
@@ -104,7 +104,9 @@ int sqlite3PagerMaxPageCount(Pager*, int);
 void sqlite3PagerSetCachesize(Pager*, int);
 void sqlite3PagerSetSafetyLevel(Pager*,int,int);
 int sqlite3PagerLockingMode(Pager *, int);
-int sqlite3PagerJournalMode(Pager *, int);
+int sqlite3PagerSetJournalMode(Pager *, int);
+int sqlite3PagerGetJournalMode(Pager*);
+int sqlite3PagerOkToChangeJournalMode(Pager*);
 i64 sqlite3PagerJournalSizeLimit(Pager *, i64);
 sqlite3_backup **sqlite3PagerBackupPtr(Pager*);
 

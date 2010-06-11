@@ -335,8 +335,7 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
     ** and the page sizes are different between source and destination */
     pgszSrc = sqlite3BtreeGetPageSize(p->pSrc);
     pgszDest = sqlite3BtreeGetPageSize(p->pDest);
-    destMode = sqlite3PagerJournalMode(sqlite3BtreePager(p->pDest),
-                                         PAGER_JOURNALMODE_QUERY);
+    destMode = sqlite3PagerGetJournalMode(sqlite3BtreePager(p->pDest));
     if( SQLITE_OK==rc && destMode==PAGER_JOURNALMODE_WAL && pgszSrc!=pgszDest ){
       rc = SQLITE_READONLY;
     }

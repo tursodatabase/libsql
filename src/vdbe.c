@@ -5176,7 +5176,6 @@ case OP_JournalMode: {    /* out2-prerelease */
   Pager *pPager;                  /* Pager associated with pBt */
   int eNew;                       /* New journal mode */
   int eOld;                       /* The old journal mode */
-  const sqlite3_vfs *pVfs;        /* The VFS of pPager */
   const char *zFilename;          /* Name of database file for pPager */
 
   eNew = pOp->p3;
@@ -5211,10 +5210,12 @@ case OP_JournalMode: {    /* out2-prerelease */
 
   pBt = db->aDb[pOp->p1].pBt;
   pPager = sqlite3BtreePager(pBt);
+  eOld = sqlite3PagerGetJournalMode(pPager);
+  if( eNew==PAGER_JOURNALMODE_QUERY ) eNew = eOld;
+  if( !sqlite3PagerOkToChangeJournalMode(pPager) ) eNew = eOld;
 
 #ifndef SQLITE_OMIT_WAL
   zFilename = sqlite3PagerFilename(pPager);
-  pVfs = sqlite3PagerVfs(pPager);
 
   /* Do not allow a transition to journal_mode=WAL for a database
   ** in temporary storage or if the VFS does not support xShmOpen.
@@ -5223,59 +5224,56 @@ case OP_JournalMode: {    /* out2-prerelease */
    && (zFilename[0]==0                         /* Temp file */
        || !sqlite3PagerWalSupported(pPager))   /* No xShmOpen support */
   ){
-    eNew = PAGER_JOURNALMODE_QUERY;
+    eNew = eOld;
   }
 
-  if( eNew!=PAGER_JOURNALMODE_QUERY ){
-    eOld = sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_QUERY);
-    if( (eNew!=eOld)
-     && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
-    ){
-      if( !db->autoCommit || db->activeVdbeCnt>1 ){
-        rc = SQLITE_ERROR;
-        sqlite3SetString(&p->zErrMsg, db, 
-            "cannot change %s wal mode from within a transaction",
-            (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
-        );
-        break;
-      }else{
-  
-        if( eOld==PAGER_JOURNALMODE_WAL ){
-          /* If leaving WAL mode, close the log file. If successful, the call
-          ** to PagerCloseWal() checkpoints and deletes the write-ahead-log 
-          ** file. An EXCLUSIVE lock may still be held on the database file 
-          ** after a successful return. 
-          */
-          rc = sqlite3PagerCloseWal(pPager);
-          if( rc==SQLITE_OK ){
-            sqlite3PagerJournalMode(pPager, eNew);
-          }else if( rc==SQLITE_BUSY && pOp->p5==0 ){
-            goto abort_due_to_error;
-          }
-        }else{
-          sqlite3PagerJournalMode(pPager, PAGER_JOURNALMODE_DELETE);
-          rc = SQLITE_OK;
-        }
-  
-        /* Open a transaction on the database file. Regardless of the journal
-        ** mode, this transaction always uses a rollback journal.
+  if( (eNew!=eOld)
+   && (eOld==PAGER_JOURNALMODE_WAL || eNew==PAGER_JOURNALMODE_WAL)
+  ){
+    if( !db->autoCommit || db->activeVdbeCnt>1 ){
+      rc = SQLITE_ERROR;
+      sqlite3SetString(&p->zErrMsg, db, 
+          "cannot change %s wal mode from within a transaction",
+          (eNew==PAGER_JOURNALMODE_WAL ? "into" : "out of")
+      );
+      break;
+    }else{
+ 
+      if( eOld==PAGER_JOURNALMODE_WAL ){
+        /* If leaving WAL mode, close the log file. If successful, the call
+        ** to PagerCloseWal() checkpoints and deletes the write-ahead-log 
+        ** file. An EXCLUSIVE lock may still be held on the database file 
+        ** after a successful return. 
         */
-        assert( sqlite3BtreeIsInTrans(pBt)==0 );
+        rc = sqlite3PagerCloseWal(pPager);
         if( rc==SQLITE_OK ){
-          rc = sqlite3BtreeSetVersion(pBt, 
-                                      (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
-          if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
+          sqlite3PagerSetJournalMode(pPager, eNew);
+        }else if( rc==SQLITE_BUSY && pOp->p5==0 ){
+          goto abort_due_to_error;
         }
-        if( rc==SQLITE_BUSY ){
-          eNew = PAGER_JOURNALMODE_QUERY;
-          rc = SQLITE_OK;
-        }
+      }else{
+        sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_DELETE);
+        rc = SQLITE_OK;
+      }
+  
+      /* Open a transaction on the database file. Regardless of the journal
+      ** mode, this transaction always uses a rollback journal.
+      */
+      assert( sqlite3BtreeIsInTrans(pBt)==0 );
+      if( rc==SQLITE_OK ){
+        rc = sqlite3BtreeSetVersion(pBt, 
+                                    (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
+        if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
+      }
+      if( rc==SQLITE_BUSY ){
+        eNew = eOld;
+        rc = SQLITE_OK;
       }
     }
   }
 #endif /* ifndef SQLITE_OMIT_WAL */
 
-  eNew = sqlite3PagerJournalMode(pPager, eNew);
+  eNew = sqlite3PagerSetJournalMode(pPager, eNew);
   pOut = &aMem[pOp->p2];
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
   pOut->z = (char *)sqlite3JournalModename(eNew);

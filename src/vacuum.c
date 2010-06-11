@@ -173,8 +173,8 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 #endif
 
   /* Do not attempt to change the page size for a WAL database */
-  if( sqlite3PagerJournalMode(sqlite3BtreePager(pMain),
-                              PAGER_JOURNALMODE_QUERY)==PAGER_JOURNALMODE_WAL ){
+  if( sqlite3PagerGetJournalMode(sqlite3BtreePager(pMain))
+                                               ==PAGER_JOURNALMODE_WAL ){
     db->nextPagesize = 0;
   }
 

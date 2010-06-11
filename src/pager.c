@@ -5815,9 +5815,8 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 }
 
 /*
-** Get/set the journal-mode for this pager. Parameter eMode must be one of:
+** Set the journal-mode for this pager. Parameter eMode must be one of:
 **
-**    PAGER_JOURNALMODE_QUERY
 **    PAGER_JOURNALMODE_DELETE
 **    PAGER_JOURNALMODE_TRUNCATE
 **    PAGER_JOURNALMODE_PERSIST
@@ -5825,53 +5824,92 @@ int sqlite3PagerLockingMode(Pager *pPager, int eMode){
 **    PAGER_JOURNALMODE_MEMORY
 **    PAGER_JOURNALMODE_WAL
 **
-** If the parameter is not _QUERY, then the journal_mode is set to the
-** value specified if the change is allowed. The change may be disallowed
-** for the following reasons:
+** The journalmode is set to the value specified if the change is allowed.
+** The change may be disallowed for the following reasons:
 **
 **   *  An in-memory database can only have its journal_mode set to _OFF
 **      or _MEMORY.
 **
-**   *  The journal mode may not be changed while a transaction is active.
+**   *  Temporary databases cannot have _WAL journalmode.
 **
 ** The returned indicate the current (possibly updated) journal-mode.
 */
-int sqlite3PagerJournalMode(Pager *pPager, int eMode){
-  assert( eMode==PAGER_JOURNALMODE_QUERY
-            || eMode==PAGER_JOURNALMODE_DELETE
+int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
+  u8 eOld = pPager->journalMode;    /* Prior journalmode */
+
+  /* The eMode parameter is always valid */
+  assert(      eMode==PAGER_JOURNALMODE_DELETE
             || eMode==PAGER_JOURNALMODE_TRUNCATE
             || eMode==PAGER_JOURNALMODE_PERSIST
             || eMode==PAGER_JOURNALMODE_OFF 
             || eMode==PAGER_JOURNALMODE_WAL 
             || eMode==PAGER_JOURNALMODE_MEMORY );
-  assert( PAGER_JOURNALMODE_QUERY<0 );
 
-  if( eMode==PAGER_JOURNALMODE_WAL 
-   && pPager->journalMode==PAGER_JOURNALMODE_DELETE
-  ){
-    pPager->journalMode = PAGER_JOURNALMODE_WAL;
-  }else if( eMode>=0
-   && (pPager->tempFile==0 || eMode!=PAGER_JOURNALMODE_WAL)
-   && (!MEMDB || eMode==PAGER_JOURNALMODE_MEMORY||eMode==PAGER_JOURNALMODE_OFF)
-   && !pPager->dbModified
-   && (!isOpen(pPager->jfd) || 0==pPager->journalOff)
-  ){
-    if( isOpen(pPager->jfd) ){
+  /* Do not allow the journalmode of a TEMP database to be changed to WAL
+  */
+  if( pPager->tempFile && eMode==PAGER_JOURNALMODE_WAL ){
+    assert( eOld!=PAGER_JOURNALMODE_WAL );
+    eMode = eOld;
+  }
+
+  /* Do allow the journalmode of an in-memory database to be set to
+  ** anything other than MEMORY or OFF
+  */
+  if( MEMDB ){
+    assert( eOld==PAGER_JOURNALMODE_MEMORY || eOld==PAGER_JOURNALMODE_OFF );
+    if( eMode!=PAGER_JOURNALMODE_MEMORY && eMode!=PAGER_JOURNALMODE_OFF ){
+      eMode = eOld;
+    }
+  }
+
+  if( eMode!=eOld ){
+    /* When changing between rollback modes, close the journal file prior
+    ** to the change.  But when changing from a rollback mode to WAL, keep
+    ** the journal open since there is a rollback-style transaction in play
+    ** used to convert the version numbers in the btree header.
+    */
+    if( isOpen(pPager->jfd) && eMode!=PAGER_JOURNALMODE_WAL ){
       sqlite3OsClose(pPager->jfd);
     }
-    assert( (PAGER_JOURNALMODE_TRUNCATE & 1)==1 );
-    assert( (PAGER_JOURNALMODE_PERSIST & 1)==1 );
-    assert( (PAGER_JOURNALMODE_DELETE & 1)==0 );
-    assert( (PAGER_JOURNALMODE_MEMORY & 1)==0 );
-    assert( (PAGER_JOURNALMODE_OFF & 1)==0 );
-    if( (pPager->journalMode & 1)==1 && (eMode & 1)==0
-         && !pPager->exclusiveMode ){
+
+    /* Change the journal mode. */
+    pPager->journalMode = (u8)eMode;
+
+    /* When transistioning from TRUNCATE or PERSIST to any other journal
+    ** mode (and we are not in locking_mode=EXCLUSIVE) then delete the
+    ** journal file.
+    */
+    assert( (PAGER_JOURNALMODE_TRUNCATE & 5)==1 );
+    assert( (PAGER_JOURNALMODE_PERSIST & 5)==1 );
+    assert( (PAGER_JOURNALMODE_DELETE & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_MEMORY & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_OFF & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_WAL & 5)!=1 );
+    if( (eOld & 5)==1 && (eMode & 5)!=1 && !pPager->exclusiveMode ){
       sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
     }
-
-    pPager->journalMode = (u8)eMode;
   }
+
+  /* Return the new journal mode */
   return (int)pPager->journalMode;
+}
+
+/*
+** Return the current journal mode.
+*/
+int sqlite3PagerGetJournalMode(Pager *pPager){
+  return (int)pPager->journalMode;
+}
+
+/*
+** Return TRUE if the pager is in a state where it is OK to change the
+** journalmode.  Journalmode changes can only happen when the database
+** is unmodified.
+*/
+int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
+  if( pPager->dbModified ) return 0;
+  if( isOpen(pPager->jfd) && pPager->journalOff>0 ) return 0;
+  return 1;
 }
 
 /*
