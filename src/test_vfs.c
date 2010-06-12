@@ -640,7 +640,7 @@ static int tvfsShmRelease(sqlite3_file *pFile){
 static void tvfsAllocPage(TestvfsBuffer *p, int iPage, int pgsz){
   assert( iPage<TESTVFS_MAX_PAGES );
   if( p->aPage[iPage]==0 ){
-    p->aPage[iPage] = ckalloc(pgsz);
+    p->aPage[iPage] = (u8 *)ckalloc(pgsz);
     memset(p->aPage[iPage], 0, pgsz);
     p->pgsz = pgsz;
   }

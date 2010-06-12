@@ -451,10 +451,16 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
 ** Return a pointer to the WalCkptInfo structure in the wal-index.
 */
 static volatile WalCkptInfo *walCkptInfo(Wal *pWal){
-  volatile u32 *page1 = 0;
-  walIndexPage(pWal, 0, &page1);
-  assert( page1 );
-  return (volatile WalCkptInfo*)&page1[sizeof(WalIndexHdr)/2];
+  assert( pWal->nWiData>0 && pWal->apWiData[0] );
+  return (volatile WalCkptInfo*)&(pWal->apWiData[0][sizeof(WalIndexHdr)/2]);
+}
+
+/*
+** Return a pointer to the WalIndexHdr structure in the wal-index.
+*/
+static volatile WalIndexHdr *walIndexHdr(Wal *pWal){
+  assert( pWal->nWiData>0 && pWal->apWiData[0] );
+  return (volatile WalIndexHdr*)pWal->apWiData[0];
 }
 
 /*
@@ -549,16 +555,15 @@ static void walChecksumBytes(
 ** The checksum on pWal->hdr is updated before it is written.
 */
 static void walIndexWriteHdr(Wal *pWal){
-  WalIndexHdr *aHdr;
+  volatile WalIndexHdr *aHdr = walIndexHdr(pWal);
+  const int nCksum = offsetof(WalIndexHdr, aCksum);
 
   assert( pWal->writeLock );
   pWal->hdr.isInit = 1;
-  walChecksumBytes(1, (u8*)&pWal->hdr, offsetof(WalIndexHdr, aCksum),
-                   0, pWal->hdr.aCksum);
-  walIndexPage(pWal, 0, (volatile u32 **)&aHdr);
-  memcpy(&aHdr[1], &pWal->hdr, sizeof(WalIndexHdr));
+  walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
+  memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
   sqlite3OsShmBarrier(pWal->pDbFd);
-  memcpy(&aHdr[0], &pWal->hdr, sizeof(WalIndexHdr));
+  memcpy((void *)&aHdr[0], (void *)&pWal->hdr, sizeof(WalIndexHdr));
 }
 
 /*
@@ -727,33 +732,60 @@ static int walNextHash(int iPriorHash){
   return (iPriorHash+1)&(HASHTABLE_NSLOT-1);
 }
 
-static void walHashGet(
+/* 
+** Return pointers to the hash table and page number array stored on
+** page iHash of the wal-index. The wal-index is broken into 32KB pages
+** numbered starting from 0.
+**
+** Set output variable *paHash to point to the start of the hash table
+** in the wal-index file. Set *piZero to one less than the frame 
+** number of the first frame indexed by this hash table. If a
+** slot in the hash table is set to N, it refers to frame number 
+** (*piZero+N) in the log.
+**
+** Finally, set *paPgno such that for all frames F between (*piZero+1) and 
+** (*piZero+HASHTABLE_NPAGE), (*paPgno)[F] is the database page number 
+** associated with frame F.
+*/
+static int walHashGet(
   Wal *pWal,                      /* WAL handle */
   int iHash,                      /* Find the iHash'th table */
   volatile HASHTABLE_DATATYPE **paHash,     /* OUT: Pointer to hash index */
   volatile u32 **paPgno,          /* OUT: Pointer to page number array */
   u32 *piZero                     /* OUT: Frame associated with *paPgno[0] */
 ){
-  u32 iZero;
+  int rc;                         /* Return code */
   volatile u32 *aPgno;
-  volatile HASHTABLE_DATATYPE *aHash;
 
-  walIndexPage(pWal, iHash, &aPgno);
-  aHash = (volatile HASHTABLE_DATATYPE *)&aPgno[HASHTABLE_NPAGE];
+  rc = walIndexPage(pWal, iHash, &aPgno);
+  assert( rc==SQLITE_OK || iHash>0 );
 
-  if( iHash==0 ){
-    aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)-1];
-    iZero = 0;
-  }else{
-    iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
-    aPgno = &aPgno[-1*iZero-1];
+  if( rc==SQLITE_OK ){
+    u32 iZero;
+    volatile HASHTABLE_DATATYPE *aHash;
+
+    aHash = (volatile HASHTABLE_DATATYPE *)&aPgno[HASHTABLE_NPAGE];
+    if( iHash==0 ){
+      aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)-1];
+      iZero = 0;
+    }else{
+      iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
+      aPgno = &aPgno[-1*iZero-1];
+    }
+  
+    *paPgno = aPgno;
+    *paHash = aHash;
+    *piZero = iZero;
   }
-
-  *paPgno = aPgno;
-  *paHash = aHash;
-  *piZero = iZero;
+  return rc;
 }
 
+/*
+** Return the number of the wal-index page that contains the hash-table
+** and page-number array that contain entries corresponding to WAL frame
+** iFrame. The wal-index is broken up into 32KB pages. Wal-index pages 
+** are numbered starting from 0.
+*/
 static int walFramePage(u32 iFrame){
   int iHash = (iFrame+HASHTABLE_NPAGE-HASHTABLE_NPAGE_ONE-1) / HASHTABLE_NPAGE;
   assert( (iHash==0 || iFrame>HASHTABLE_NPAGE_ONE)
@@ -776,31 +808,6 @@ static u32 walFramePgno(Wal *pWal, u32 iFrame){
   return pWal->apWiData[iHash][(iFrame-1-HASHTABLE_NPAGE_ONE)%HASHTABLE_NPAGE];
 }
 
-/* 
-** Find the hash table and (section of the) page number array used to
-** store data for WAL frame iFrame.
-**
-** Set output variable *paHash to point to the start of the hash table
-** in the wal-index file. Set *piZero to one less than the frame 
-** number of the first frame indexed by this hash table. If a
-** slot in the hash table is set to N, it refers to frame number 
-** (*piZero+N) in the log.
-**
-** Finally, set *paPgno such that for all frames F between (*piZero+1) and 
-** (*piZero+HASHTABLE_NPAGE), (*paPgno)[F] is the database page number 
-** associated with frame F.
-*/
-static void walHashFind(
-  Wal *pWal,                      /* WAL handle */
-  u32 iFrame,                     /* Find the hash table indexing this frame */
-  volatile HASHTABLE_DATATYPE **paHash,    /* OUT: Pointer to hash index */
-  volatile u32 **paPgno,          /* OUT: Pointer to page number array */
-  u32 *piZero                     /* OUT: Frame associated with *paPgno[0] */
-){
-  int iHash = walFramePage(iFrame);
-  walHashGet(pWal, iHash, paHash, paPgno, piZero);
-}
-
 /*
 ** Remove entries from the hash table that point to WAL slots greater
 ** than pWal->hdr.mxFrame.
@@ -815,7 +822,7 @@ static void walHashFind(
 */
 static void walCleanupHash(Wal *pWal){
   volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
-  volatile u32 *aPgno;                 /* Unused return from walHashFind() */
+  volatile u32 *aPgno;                 /* Page number array for hash table */
   u32 iZero;                           /* frame == (aHash[x]+iZero) */
   int iLimit = 0;                      /* Zero values greater than this */
   int nByte;                           /* Number of bytes to zero in aPgno[] */
@@ -826,22 +833,32 @@ static void walCleanupHash(Wal *pWal){
   testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE );
   testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE+1 );
 
-  walHashFind(pWal, pWal->hdr.mxFrame+1, &aHash, &aPgno, &iZero);
-  if( iZero!=pWal->hdr.mxFrame ){
-    iLimit = pWal->hdr.mxFrame - iZero;
-    assert( iLimit>0 );
-    for(i=0; i<HASHTABLE_NSLOT; i++){
-      if( aHash[i]>iLimit ){
-        aHash[i] = 0;
-      }
+  if( pWal->hdr.mxFrame==0 ) return;
+
+  /* Obtain pointers to the hash-table and page-number array containing 
+  ** the entry that corresponds to frame pWal->hdr.mxFrame. It is guaranteed
+  ** that the page said hash-table and array reside on is already mapped.
+  */
+  assert( pWal->nWiData>walFramePage(pWal->hdr.mxFrame) );
+  assert( pWal->apWiData[walFramePage(pWal->hdr.mxFrame)] );
+  walHashGet(pWal, walFramePage(pWal->hdr.mxFrame), &aHash, &aPgno, &iZero);
+
+  /* Zero all hash-table entries that correspond to frame numbers greater
+  ** than pWal->hdr.mxFrame.
+  */
+  iLimit = pWal->hdr.mxFrame - iZero;
+  assert( iLimit>0 );
+  for(i=0; i<HASHTABLE_NSLOT; i++){
+    if( aHash[i]>iLimit ){
+      aHash[i] = 0;
     }
-  
-    /* Zero the entries in the aPgno array that correspond to frames with
-    ** frame numbers greater than pWal->hdr.mxFrame. 
-    */
-    nByte = ((char *)aHash - (char *)&aPgno[pWal->hdr.mxFrame+1]);
-    memset((void *)&aPgno[pWal->hdr.mxFrame+1], 0, nByte);
   }
+  
+  /* Zero the entries in the aPgno array that correspond to frames with
+  ** frame numbers greater than pWal->hdr.mxFrame. 
+  */
+  nByte = ((char *)aHash - (char *)&aPgno[pWal->hdr.mxFrame+1]);
+  memset((void *)&aPgno[pWal->hdr.mxFrame+1], 0, nByte);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
   /* Verify that the every entry in the mapping region is still reachable
@@ -866,43 +883,48 @@ static void walCleanupHash(Wal *pWal){
 ** pPage into WAL frame iFrame.
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
-  int rc = SQLITE_OK;             /* Return code */
+  int rc;                         /* Return code */
+  u32 iZero;                      /* One less than frame number of aPgno[1] */
+  volatile u32 *aPgno;            /* Page number array */
+  volatile HASHTABLE_DATATYPE *aHash;   /* Hash table */
 
-  /* Assuming the wal-index file was successfully mapped, find the hash 
-  ** table and section of of the page number array that pertain to frame 
-  ** iFrame of the WAL. Then populate the page number array and the hash 
-  ** table entry.
+  rc = walHashGet(pWal, walFramePage(iFrame), &aHash, &aPgno, &iZero);
+
+  /* Assuming the wal-index file was successfully mapped, populate the
+  ** page number array and hash table entry.
   */
   if( rc==SQLITE_OK ){
     int iKey;                     /* Hash table key */
-    u32 iZero;                    /* One less than frame number of aPgno[1] */
-    volatile u32 *aPgno;                 /* Page number array */
-    volatile HASHTABLE_DATATYPE *aHash;  /* Hash table */
-    int idx;                             /* Value to write to hash-table slot */
-    TESTONLY( int nCollide = 0;          /* Number of hash collisions */ )
+    int idx;                      /* Value to write to hash-table slot */
+    TESTONLY( int nCollide = 0;   /* Number of hash collisions */ )
 
-    walHashFind(pWal, iFrame, &aHash, &aPgno, &iZero);
     idx = iFrame - iZero;
+    assert( idx <= HASHTABLE_NSLOT/2 + 1 );
+    
+    /* If this is the first entry to be added to this hash-table, zero the
+    ** entire hash table and aPgno[] array before proceding. 
+    */
     if( idx==1 ){
       int nByte = (u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1+iZero];
       memset((void*)&aPgno[1+iZero], 0, nByte);
     }
-    assert( idx <= HASHTABLE_NSLOT/2 + 1 );
 
+    /* If the entry in aPgno[] is already set, then the previous writer
+    ** must have exited unexpectedly in the middle of a transaction (after
+    ** writing one or more dirty pages to the WAL to free up memory). 
+    ** Remove the remnants of that writers uncommitted transaction from 
+    ** the hash-table before writing any new entries.
+    */
     if( aPgno[iFrame] ){
-      /* If the entry in aPgno[] is already set, then the previous writer
-      ** must have exited unexpectedly in the middle of a transaction (after
-      ** writing one or more dirty pages to the WAL to free up memory). 
-      ** Remove the remnants of that writers uncommitted transaction from 
-      ** the hash-table before writing any new entries.
-      */
       walCleanupHash(pWal);
       assert( !aPgno[iFrame] );
     }
-    aPgno[iFrame] = iPage;
+
+    /* Write the aPgno[] array entry and the hash-table slot. */
     for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
       assert( nCollide++ < idx );
     }
+    aPgno[iFrame] = iPage;
     aHash[iKey] = idx;
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
@@ -1306,20 +1328,19 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   aSpace = (HASHTABLE_DATATYPE *)&p->aSegment[nSegment];
   aTmp = &aSpace[HASHTABLE_NPAGE*nSegment];
   for(i=0; i<nSegment; i++){
-    volatile HASHTABLE_DATATYPE *pDummy;
+    volatile HASHTABLE_DATATYPE *aHash;
     int j;
     u32 iZero;
     int nEntry;
     volatile u32 *aPgno;
+    int rc;
 
-    walHashGet(pWal, i, &pDummy, &aPgno, &iZero);
-    if( i==(nSegment-1) ){
-      nEntry = iLast - iZero;
-    }else if( i==0 ){
-      nEntry = HASHTABLE_NPAGE_ONE;
-    }else{
-      nEntry = HASHTABLE_NPAGE;
+    rc = walHashGet(pWal, i, &aHash, &aPgno, &iZero);
+    if( rc!=SQLITE_OK ){
+      return rc;
     }
+    nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)&aPgno[iZero+1];
+
     iZero++;
     aPgno += iZero;
 
@@ -1391,7 +1412,6 @@ static int walCheckpoint(
   u32 iFrame = 0;                 /* Wal frame containing data for iDbpage */
   u32 mxSafeFrame;                /* Max frame that can be backfilled */
   int i;                          /* Loop counter */
-  volatile WalIndexHdr *pHdr;     /* The actual wal-index header in SHM */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
 
   /* Allocate the iterator */
@@ -1412,9 +1432,7 @@ static int walCheckpoint(
   ** cannot be backfilled from the WAL.
   */
   mxSafeFrame = pWal->hdr.mxFrame;
-  walIndexPage(pWal, 0, (volatile u32 **)&pHdr);
   pInfo = walCkptInfo(pWal);
-  assert( pInfo==walCkptInfo(pWal) );
   for(i=1; i<WAL_NREADER; i++){
     u32 y = pInfo->aReadMark[i];
     if( mxSafeFrame>=y ){
@@ -1455,7 +1473,7 @@ static int walCheckpoint(
 
     /* If work was actually accomplished... */
     if( rc==SQLITE_OK ){
-      if( mxSafeFrame==pHdr[0].mxFrame ){
+      if( mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
         rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)szPage));
         if( rc==SQLITE_OK && sync_flags ){
           rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
@@ -1540,17 +1558,12 @@ int sqlite3WalClose(
 ** is read successfully and the checksum verified, return zero.
 */
 int walIndexTryHdr(Wal *pWal, int *pChanged){
-  u32 aCksum[2];               /* Checksum on the header content */
-  WalIndexHdr h1, h2;          /* Two copies of the header content */
-  WalIndexHdr *aHdr;           /* Header in shared memory */
-  volatile u32 *page1 = 0;
+  u32 aCksum[2];                  /* Checksum on the header content */
+  WalIndexHdr h1, h2;             /* Two copies of the header content */
+  WalIndexHdr volatile *aHdr;     /* Header in shared memory */
 
-  walIndexPage(pWal, 0, &page1);
-  if( !page1 ){
-    /* The wal-index is not large enough to hold the header, then assume
-    ** header is invalid. */
-    return 1;
-  }
+  /* The first page of the wal-index must be mapped at this point. */
+  assert( pWal->nWiData>0 && pWal->apWiData[0] );
 
   /* Read the header. This might happen currently with a write to the
   ** same area of shared memory on a different CPU in a SMP,
@@ -1562,10 +1575,10 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
   ** Memory barriers are used to prevent the compiler or the hardware from
   ** reordering the reads and writes.
   */
-  aHdr = (WalIndexHdr*)page1;
-  memcpy(&h1, &aHdr[0], sizeof(h1));
+  aHdr = walIndexHdr(pWal);
+  memcpy(&h1, (void *)&aHdr[0], sizeof(h1));
   sqlite3OsShmBarrier(pWal->pDbFd);
-  memcpy(&h2, &aHdr[1], sizeof(h2));
+  memcpy(&h2, (void *)&aHdr[1], sizeof(h2));
 
   if( memcmp(&h1, &h2, sizeof(h1))!=0 ){
     return 1;   /* Dirty read */
@@ -1609,27 +1622,32 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int badHdr;                     /* True if a header read failed */
-  volatile u32 *dummy;
+  volatile u32 *page0;
 
+  /* Ensure that page 0 of the wal-index (the page that contains the 
+  ** wal-index header) is mapped. Return early if an error occurs here.
+  */
   assert( pChanged );
-  rc = walIndexPage(pWal, 0, &dummy);
+  rc = walIndexPage(pWal, 0, &page0);
   if( rc!=SQLITE_OK ){
     return rc;
-  }
+  };
+  assert( page0 || pWal->writeLock==0 );
 
-  /* Try once to read the header straight out.  This works most of the
-  ** time.
+  /* If the first page of the wal-index has been mapped, try to read the
+  ** wal-index header immediately, without holding any lock. This usually
+  ** works, but may fail if the wal-index header is corrupt or currently 
+  ** being modified by another user.
   */
-  badHdr = walIndexTryHdr(pWal, pChanged);
+  badHdr = (page0 ? walIndexTryHdr(pWal, pChanged) : 1);
 
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
   */
   assert( badHdr==0 || pWal->writeLock==0 );
-  if( badHdr ){
-    rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1);
-    if( rc==SQLITE_OK ){
-      pWal->writeLock = 1;
+  if( badHdr && SQLITE_OK==(rc = walLockExclusive(pWal, WAL_WRITE_LOCK, 1)) ){
+    pWal->writeLock = 1;
+    if( SQLITE_OK==(rc = walIndexPage(pWal, 0, &page0)) ){
       badHdr = walIndexTryHdr(pWal, pChanged);
       if( badHdr ){
         /* If the wal-index header is still malformed even while holding
@@ -1639,9 +1657,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
         rc = walIndexRecover(pWal);
         *pChanged = 1;
       }
-      walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
-      pWal->writeLock = 0;
     }
+    pWal->writeLock = 0;
+    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
   }
 
   return rc;
@@ -1682,7 +1700,6 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** WAL_READ_LOCK() while changing values.
 */
 static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
-  volatile WalIndexHdr *pHdr;     /* Header of the wal-index */
   volatile WalCkptInfo *pInfo;    /* Checkpoint information in wal-index */
   u32 mxReadMark;                 /* Largest aReadMark[] value */
   int mxI;                        /* Index of largest aReadMark[] value */
@@ -1721,9 +1738,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     return rc;
   }
 
-  walIndexPage(pWal, 0, (volatile u32 **)&pHdr);
   pInfo = walCkptInfo(pWal);
-  assert( pInfo==(volatile WalCkptInfo *)&pHdr[2] );
   if( !useWal && pInfo->nBackfill==pWal->hdr.mxFrame ){
     /* The WAL has been completely backfilled (or it is empty).
     ** and can be safely ignored.
@@ -1731,7 +1746,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     rc = walLockShared(pWal, WAL_READ_LOCK(0));
     sqlite3OsShmBarrier(pWal->pDbFd);
     if( rc==SQLITE_OK ){
-      if( memcmp((void *)pHdr, &pWal->hdr, sizeof(WalIndexHdr)) ){
+      if( memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr)) ){
         /* It is not safe to allow the reader to continue here if frames
         ** may have been appended to the log before READ_LOCK(0) was obtained.
         ** When holding READ_LOCK(0), the reader ignores the entire log file,
@@ -1825,7 +1840,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
     */
     sqlite3OsShmBarrier(pWal->pDbFd);
     if( pInfo->aReadMark[mxI]!=mxReadMark
-     || memcmp((void *)pHdr, &pWal->hdr, sizeof(WalIndexHdr))
+     || memcmp((void *)walIndexHdr(pWal), &pWal->hdr, sizeof(WalIndexHdr))
     ){
       walUnlockShared(pWal, WAL_READ_LOCK(mxI));
       return WAL_RETRY;
@@ -1935,8 +1950,12 @@ int sqlite3WalRead(
     volatile u32 *aPgno;                 /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
     int iKey;                     /* Hash slot index */
+    int rc;
 
-    walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
+    rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
       if( iFrame<=iLast && aPgno[iFrame]==pgno ){
@@ -2001,7 +2020,6 @@ void sqlite3WalDbsize(Wal *pWal, Pgno *pPgno){
 */
 int sqlite3WalBeginWriteTransaction(Wal *pWal){
   int rc;
-  volatile u32 *page1;
 
   /* Cannot start a write transaction without first holding a read
   ** transaction. */
@@ -2020,8 +2038,7 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
   ** time the read transaction on this connection was started, then
   ** the write is disallowed.
   */
-  walIndexPage(pWal, 0, &page1);
-  if( memcmp(&pWal->hdr, (void*)page1, sizeof(WalIndexHdr))!=0 ){
+  if( memcmp(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr))!=0 ){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
     pWal->writeLock = 0;
     rc = SQLITE_BUSY;
