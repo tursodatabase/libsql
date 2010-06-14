@@ -141,21 +141,33 @@
 ** more index blocks.  
 **
 ** The wal-index header contains the total number of frames within the WAL
-** in the the mxFrame field.  Each index block contains information on
-** HASHTABLE_NPAGE frames.  Each index block contains two sections, a
-** mapping which is a database page number for each frame, and a hash
-** table used to look up frames by page number.  The mapping section is
-** an array of HASHTABLE_NPAGE 32-bit page numbers.  The first entry on the
-** array is the page number for the first frame; the second entry is the
-** page number for the second frame; and so forth.  The last index block
-** holds a total of (mxFrame%HASHTABLE_NPAGE) page numbers.  All index
-** blocks other than the last are completely full with HASHTABLE_NPAGE
-** page numbers.  All index blocks are the same size; the mapping section
-** of the last index block merely contains unused entries if mxFrame is
-** not an even multiple of HASHTABLE_NPAGE.
+** in the the mxFrame field.  
+**
+** Each index block except for the first contains information on 
+** HASHTABLE_NPAGE frames. The first index block contains information on
+** HASHTABLE_NPAGE_ONE frames. The values of HASHTABLE_NPAGE_ONE and 
+** HASHTABLE_NPAGE are selected so that together the wal-index header and
+** first index block are the same size as all other index blocks in the
+** wal-index.
+**
+** Each index block contains two sections, a page-mapping that contains the
+** database page number associated with each wal frame, and a hash-table 
+** that allows users to query an index block for a specific page number.
+** The page-mapping is an array of HASHTABLE_NPAGE (or HASHTABLE_NPAGE_ONE
+** for the first index block) 32-bit page numbers. The first entry in the 
+** first index-block contains the database page number corresponding to the
+** first frame in the WAL file. The first entry in the second index block
+** in the WAL file corresponds to the (HASHTABLE_NPAGE_ONE+1)th frame in
+** the log, and so on.
+**
+** The last index block in a wal-index usually contains less than the full
+** complement of HASHTABLE_NPAGE (or HASHTABLE_NPAGE_ONE) page-numbers,
+** depending on the contents of the WAL file. This does not change the
+** allocated size of the page-mapping array - the page-mapping array merely
+** contains unused entries.
 **
 ** Even without using the hash table, the last frame for page P
-** can be found by scanning the mapping sections of each index block
+** can be found by scanning the page-mapping sections of each index block
 ** starting with the last index block and moving toward the first, and
 ** within each index block, starting at the end and moving toward the
 ** beginning.  The first entry that equals P corresponds to the frame
@@ -393,6 +405,33 @@ struct Wal {
 typedef u16 ht_slot;
 
 /*
+** This structure is used to implement an iterator that loops through
+** all frames in the WAL in database page order. Where two or more frames
+** correspond to the same database page, the iterator visits only the 
+** frame most recently written to the WAL (in other words, the frame with
+** the largest index).
+**
+** The internals of this structure are only accessed by:
+**
+**   walIteratorInit() - Create a new iterator,
+**   walIteratorNext() - Step an iterator,
+**   walIteratorFree() - Free an iterator.
+**
+** This functionality is used by the checkpoint code (see walCheckpoint()).
+*/
+struct WalIterator {
+  int iPrior;                     /* Last result returned from the iterator */
+  int nSegment;                   /* Size of the aSegment[] array */
+  struct WalSegment {
+    int iNext;                    /* Next slot in aIndex[] not yet returned */
+    ht_slot *aIndex;              /* i0, i1, i2... such that aPgno[iN] ascend */
+    u32 *aPgno;                   /* Array of page numbers. */
+    int nEntry;                   /* Max size of aPgno[] and aIndex[] arrays */
+    int iZero;                    /* Frame number associated with aPgno[0] */
+  } aSegment[1];                  /* One for every 32KB page in the WAL */
+};
+
+/*
 ** Define the parameters of the hash tables in the wal-index file. There
 ** is a hash-table following every HASHTABLE_NPAGE page numbers in the
 ** wal-index.
@@ -404,7 +443,8 @@ typedef u16 ht_slot;
 #define HASHTABLE_HASH_1     383                  /* Should be prime */
 #define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
 
-/* The block of page numbers associated with the first hash-table in a
+/* 
+** The block of page numbers associated with the first hash-table in a
 ** wal-index is smaller than usual. This is so that there is a complete
 ** hash-table on each aligned 32KB page of the wal-index.
 */
@@ -468,33 +508,6 @@ static volatile WalIndexHdr *walIndexHdr(Wal *pWal){
   assert( pWal->nWiData>0 && pWal->apWiData[0] );
   return (volatile WalIndexHdr*)pWal->apWiData[0];
 }
-
-/*
-** This structure is used to implement an iterator that loops through
-** all frames in the WAL in database page order. Where two or more frames
-** correspond to the same database page, the iterator visits only the 
-** frame most recently written to the WAL (in other words, the frame with
-** the largest index).
-**
-** The internals of this structure are only accessed by:
-**
-**   walIteratorInit() - Create a new iterator,
-**   walIteratorNext() - Step an iterator,
-**   walIteratorFree() - Free an iterator.
-**
-** This functionality is used by the checkpoint code (see walCheckpoint()).
-*/
-struct WalIterator {
-  int iPrior;                     /* Last result returned from the iterator */
-  int nSegment;                   /* Size of the aSegment[] array */
-  struct WalSegment {
-    int iNext;                    /* Next slot in aIndex[] not yet returned */
-    ht_slot *aIndex;              /* i0, i1, i2... such that aPgno[iN] ascend */
-    u32 *aPgno;                   /* Array of page numbers. */
-    int nEntry;                   /* Max size of aPgno[] and aIndex[] arrays */
-    int iZero;                    /* Frame number associated with aPgno[0] */
-  } aSegment[1];                  /* One for every 32KB page in the WAL */
-};
 
 /*
 ** The argument to this macro must be of type u32. On a little-endian
