@@ -549,6 +549,15 @@ static void cfShmBarrier(sqlite3_file *pFile){
 static int cfShmClose(sqlite3_file *pFile, int delFlag){
   return sqlite3OsShmClose(((CrashFile*)pFile)->pRealFile, delFlag);
 }
+static int cfShmPage(
+  sqlite3_file *pFile,            /* Handle open on database file */
+  int iPage,                      /* Page to retrieve */
+  int pgsz,                       /* Size of pages */
+  int w,                          /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
+){
+  return sqlite3OsShmPage(((CrashFile*)pFile)->pRealFile, iPage, pgsz, w, pp);
+}
 
 
 static const sqlite3_io_methods CrashFileVtab = {
@@ -571,7 +580,8 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfShmRelease,                 /* xShmRelease */
   cfShmLock,                    /* xShmLock */
   cfShmBarrier,                 /* xShmBarrier */
-  cfShmClose                    /* xShmClose */
+  cfShmClose,                   /* xShmClose */
+  cfShmPage                     /* xShmPage */
 };
 
 /*

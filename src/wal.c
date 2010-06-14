@@ -387,6 +387,12 @@ struct Wal {
 };
 
 /*
+** Each page of the wal-index mapping contains a hash-table made up of
+** an array of HASHTABLE_NSLOT elements of the following type.
+*/
+typedef u16 ht_slot;
+
+/*
 ** Define the parameters of the hash tables in the wal-index file. There
 ** is a hash-table following every HASHTABLE_NPAGE page numbers in the
 ** wal-index.
@@ -394,24 +400,24 @@ struct Wal {
 ** Changing any of these constants will alter the wal-index format and
 ** create incompatibilities.
 */
-#define HASHTABLE_NPAGE      4096  /* Must be power of 2 and multiple of 256 */
-#define HASHTABLE_DATATYPE   u16
+#define HASHTABLE_NPAGE      4096                 /* Must be power of 2 */
 #define HASHTABLE_HASH_1     383                  /* Should be prime */
 #define HASHTABLE_NSLOT      (HASHTABLE_NPAGE*2)  /* Must be a power of 2 */
-#define HASHTABLE_NBYTE      (sizeof(HASHTABLE_DATATYPE)*HASHTABLE_NSLOT)
 
 /* The block of page numbers associated with the first hash-table in a
 ** wal-index is smaller than usual. This is so that there is a complete
 ** hash-table on each aligned 32KB page of the wal-index.
 */
-#define HASHTABLE_NPAGE_ONE  (4096 - (WALINDEX_HDR_SIZE/sizeof(u32)))
+#define HASHTABLE_NPAGE_ONE  (HASHTABLE_NPAGE - (WALINDEX_HDR_SIZE/sizeof(u32)))
 
-/* The wal-index is divided into pages of HASHTABLE_PAGESIZE bytes each. */
-#define HASHTABLE_PAGESIZE   (HASHTABLE_NBYTE + HASHTABLE_NPAGE*sizeof(u32))
+/* The wal-index is divided into pages of WALINDEX_PGSZ bytes each. */
+#define WALINDEX_PGSZ   (                                         \
+    sizeof(ht_slot)*HASHTABLE_NSLOT + HASHTABLE_NPAGE*sizeof(u32) \
+)
 
 /*
 ** Obtain a pointer to the iPage'th page of the wal-index. The wal-index
-** is broken into pages of HASHTABLE_PAGESIZE bytes. Wal-index pages are
+** is broken into pages of WALINDEX_PGSZ bytes. Wal-index pages are
 ** numbered from zero.
 **
 ** If this call is successful, *ppPage is set to point to the wal-index
@@ -437,7 +443,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
 
   /* Request a pointer to the required page from the VFS */
   if( pWal->apWiData[iPage]==0 ){
-    rc = sqlite3OsShmPage(pWal->pDbFd, iPage, HASHTABLE_PAGESIZE, 
+    rc = sqlite3OsShmPage(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
         pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
     );
   }
@@ -479,15 +485,15 @@ static volatile WalIndexHdr *walIndexHdr(Wal *pWal){
 ** This functionality is used by the checkpoint code (see walCheckpoint()).
 */
 struct WalIterator {
-  int iPrior;           /* Last result returned from the iterator */
-  int nSegment;         /* Size of the aSegment[] array */
+  int iPrior;                     /* Last result returned from the iterator */
+  int nSegment;                   /* Size of the aSegment[] array */
   struct WalSegment {
     int iNext;                    /* Next slot in aIndex[] not yet returned */
-    HASHTABLE_DATATYPE *aIndex;   /* i0, i1, i2... such that aPgno[iN] ascend */
+    ht_slot *aIndex;              /* i0, i1, i2... such that aPgno[iN] ascend */
     u32 *aPgno;                   /* Array of page numbers. */
     int nEntry;                   /* Max size of aPgno[] and aIndex[] arrays */
     int iZero;                    /* Frame number associated with aPgno[0] */
-  } aSegment[1];        /* One for every 32KB page in the WAL */
+  } aSegment[1];                  /* One for every 32KB page in the WAL */
 };
 
 /*
@@ -750,7 +756,7 @@ static int walNextHash(int iPriorHash){
 static int walHashGet(
   Wal *pWal,                      /* WAL handle */
   int iHash,                      /* Find the iHash'th table */
-  volatile HASHTABLE_DATATYPE **paHash,     /* OUT: Pointer to hash index */
+  volatile ht_slot **paHash,      /* OUT: Pointer to hash index */
   volatile u32 **paPgno,          /* OUT: Pointer to page number array */
   u32 *piZero                     /* OUT: Frame associated with *paPgno[0] */
 ){
@@ -762,9 +768,9 @@ static int walHashGet(
 
   if( rc==SQLITE_OK ){
     u32 iZero;
-    volatile HASHTABLE_DATATYPE *aHash;
+    volatile ht_slot *aHash;
 
-    aHash = (volatile HASHTABLE_DATATYPE *)&aPgno[HASHTABLE_NPAGE];
+    aHash = (volatile ht_slot *)&aPgno[HASHTABLE_NPAGE];
     if( iHash==0 ){
       aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)-1];
       iZero = 0;
@@ -821,12 +827,12 @@ static u32 walFramePgno(Wal *pWal, u32 iFrame){
 ** actually needed.
 */
 static void walCleanupHash(Wal *pWal){
-  volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table to clear */
-  volatile u32 *aPgno;                 /* Page number array for hash table */
-  u32 iZero;                           /* frame == (aHash[x]+iZero) */
-  int iLimit = 0;                      /* Zero values greater than this */
-  int nByte;                           /* Number of bytes to zero in aPgno[] */
-  int i;                               /* Used to iterate through aHash[] */
+  volatile ht_slot *aHash;        /* Pointer to hash table to clear */
+  volatile u32 *aPgno;            /* Page number array for hash table */
+  u32 iZero;                      /* frame == (aHash[x]+iZero) */
+  int iLimit = 0;                 /* Zero values greater than this */
+  int nByte;                      /* Number of bytes to zero in aPgno[] */
+  int i;                          /* Used to iterate through aHash[] */
 
   assert( pWal->writeLock );
   testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE-1 );
@@ -886,7 +892,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   int rc;                         /* Return code */
   u32 iZero;                      /* One less than frame number of aPgno[1] */
   volatile u32 *aPgno;            /* Page number array */
-  volatile HASHTABLE_DATATYPE *aHash;   /* Hash table */
+  volatile ht_slot *aHash;        /* Hash table */
 
   rc = walHashGet(pWal, walFramePage(iFrame), &aHash, &aPgno, &iZero);
 
@@ -1230,8 +1236,8 @@ static int walIteratorNext(
 
 static void walMergesort(
   u32 *aContent,                  /* Pages in wal */
-  HASHTABLE_DATATYPE *aBuffer,    /* Buffer of at least *pnList items to use */
-  HASHTABLE_DATATYPE *aList,      /* IN/OUT: List to sort */
+  ht_slot *aBuffer,               /* Buffer of at least *pnList items to use */
+  ht_slot *aList,                 /* IN/OUT: List to sort */
   int *pnList                     /* IN/OUT: Number of elements in aList[] */
 ){
   int nList = *pnList;
@@ -1241,15 +1247,15 @@ static void walMergesort(
     int iLeft = 0;                /* Current index in aLeft */
     int iRight = 0;               /* Current index in aright */
     int iOut = 0;                 /* Current index in output buffer */
-    HASHTABLE_DATATYPE *aLeft = aList;           /* Left list */
-    HASHTABLE_DATATYPE *aRight = &aList[nLeft];  /* Right list */
+    ht_slot *aLeft = aList;       /* Left list */
+    ht_slot *aRight = aList+nLeft;/* Right list */
 
     /* TODO: Change to non-recursive version. */
     walMergesort(aContent, aBuffer, aLeft, &nLeft);
     walMergesort(aContent, aBuffer, aRight, &nRight);
 
     while( iRight<nRight || iLeft<nLeft ){
-      HASHTABLE_DATATYPE logpage;
+      ht_slot logpage;
       Pgno dbpage;
 
       if( (iLeft<nLeft) 
@@ -1303,13 +1309,13 @@ static void walIteratorFree(WalIterator *p){
 ** prior to the WalIterator object being destroyed.
 */
 static int walIteratorInit(Wal *pWal, WalIterator **pp){
-  WalIterator *p;       /* Return value */
-  int nSegment;         /* Number of segments to merge */
-  u32 iLast;            /* Last frame in log */
-  int nByte;            /* Number of bytes to allocate */
-  int i;                /* Iterator variable */
-  HASHTABLE_DATATYPE *aTmp;       /* Temp space used by merge-sort */
-  HASHTABLE_DATATYPE *aSpace;     /* Space at the end of the allocation */
+  WalIterator *p;                 /* Return value */
+  int nSegment;                   /* Number of segments to merge */
+  u32 iLast;                      /* Last frame in log */
+  int nByte;                      /* Number of bytes to allocate */
+  int i;                          /* Iterator variable */
+  ht_slot *aTmp;                  /* Temp space used by merge-sort */
+  ht_slot *aSpace;                /* Space at the end of the allocation */
 
   /* This routine only runs while holding SQLITE_SHM_CHECKPOINT.  No other
   ** thread is able to write to shared memory while this routine is
@@ -1323,7 +1329,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   nSegment = walFramePage(iLast) + 1;
   nByte = sizeof(WalIterator) 
         + nSegment*(sizeof(struct WalSegment))
-        + (nSegment+1)*(HASHTABLE_NPAGE * sizeof(HASHTABLE_DATATYPE));
+        + (nSegment+1)*(HASHTABLE_NPAGE * sizeof(ht_slot));
   p = (WalIterator *)sqlite3_malloc(nByte);
   if( !p ){
     return SQLITE_NOMEM;
@@ -1332,10 +1338,10 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
 
   /* Allocate space for the WalIterator object */
   p->nSegment = nSegment;
-  aSpace = (HASHTABLE_DATATYPE *)&p->aSegment[nSegment];
+  aSpace = (ht_slot *)&p->aSegment[nSegment];
   aTmp = &aSpace[HASHTABLE_NPAGE*nSegment];
   for(i=0; i<nSegment; i++){
-    volatile HASHTABLE_DATATYPE *aHash;
+    volatile ht_slot *aHash;
     int j;
     u32 iZero;
     int nEntry;
@@ -1947,8 +1953,8 @@ int sqlite3WalRead(
   **     table after the current read-transaction had started.
   */
   for(iHash=walFramePage(iLast); iHash>=0 && iRead==0; iHash--){
-    volatile HASHTABLE_DATATYPE *aHash;  /* Pointer to hash table */
-    volatile u32 *aPgno;                 /* Pointer to array of page numbers */
+    volatile ht_slot *aHash;      /* Pointer to hash table */
+    volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
     int iKey;                     /* Hash slot index */
     int rc;
@@ -2073,14 +2079,13 @@ int sqlite3WalEndWriteTransaction(Wal *pWal){
 int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
   int rc = SQLITE_OK;
   if( pWal->writeLock ){
-    int unused;
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
     /* Restore the clients cache of the wal-index header to the state it
     ** was in before the client began writing to the database. 
     */
-    memcpy(&pWal->hdr, walIndexHdr(pWal), sizeof(WalIndexHdr));
+    memcpy(&pWal->hdr, (void *)walIndexHdr(pWal), sizeof(WalIndexHdr));
 
     for(iFrame=pWal->hdr.mxFrame+1; 
         ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
@@ -2097,7 +2102,6 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
       ** page 1 is never written to the log until the transaction is
       ** committed. As a result, the call to xUndo may not fail.
       */
-      assert( pWal->writeLock );
       assert( walFramePgno(pWal, iFrame)!=1 );
       rc = xUndo(pUndoCtx, walFramePgno(pWal, iFrame));
     }
