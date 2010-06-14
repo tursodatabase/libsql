@@ -1216,13 +1216,17 @@ static int winShmMutexHeld(void) {
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
-  sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
   char *zFilename;           /* Name of the file */
   winFile hFile;             /* File handle from winOpen */
-  HANDLE hMap;               /* File handle from CreateFileMapping */
+
+  int szRegion;              /* Size of shared-memory regions */
+  int nRegion;               /* Size of array apRegion */
+  struct ShmRegion {
+    HANDLE hMap;             /* File handle from CreateFileMapping */
+    void *pMap;
+  } *aRegion;
   DWORD lastErrno;           /* The Windows errno from the last I/O error */
-  int szMap;                 /* Size of the mapping of file into memory */
-  char *pMMapBuf;            /* Where currently mmapped().  NULL if unmapped */
+
   int nRef;                  /* Number of winShm objects pointing to this */
   winShm *pFirst;            /* All winShm objects pointing to this */
   winShmNode *pNext;         /* Next in list of all winShmNode objects */
@@ -1325,19 +1329,18 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
   pp = &winShmNodeList;
   while( (p = *pp)!=0 ){
     if( p->nRef==0 ){
+      int i;
       if( p->mutex ) sqlite3_mutex_free(p->mutex);
-      if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
-      if( p->pMMapBuf ){
-        UnmapViewOfFile(p->pMMapBuf);
-      }
-      if( INVALID_HANDLE_VALUE != p->hMap ){
-        CloseHandle(p->hMap);
+      for(i=0; i<p->nRegion; i++){
+        UnmapViewOfFile(p->aRegion[i].pMap);
+        CloseHandle(p->aRegion[i].hMap);
       }
       if( p->hFile.h != INVALID_HANDLE_VALUE ) {
         winClose((sqlite3_file *)&p->hFile);
       }
       if( deleteFlag ) winDelete(pVfs, p->zFilename, 0);
       *pp = p->pNext;
+      sqlite3_free(p->aRegion);
       sqlite3_free(p);
     }else{
       pp = &p->pNext;
@@ -1404,19 +1407,12 @@ static int winShmOpen(
   }else{
     pShmNode = pNew;
     pNew = 0;
-    pShmNode->pMMapBuf = NULL;
-    pShmNode->hMap = INVALID_HANDLE_VALUE;
     ((winFile*)(&pShmNode->hFile))->h = INVALID_HANDLE_VALUE;
     pShmNode->pNext = winShmNodeList;
     winShmNodeList = pShmNode;
 
     pShmNode->mutex = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
     if( pShmNode->mutex==0 ){
-      rc = SQLITE_NOMEM;
-      goto shm_open_err;
-    }
-    pShmNode->mutexBuf = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pShmNode->mutexBuf==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
@@ -1507,171 +1503,113 @@ static int winShmClose(
 }
 
 /*
-** Increase the size of the underlying storage for a shared-memory segment.
+** This function is called to obtain a pointer to region iRegion of the 
+** shared-memory associated with the database file fd. Shared-memory regions 
+** are numbered starting from zero. Each shared-memory region is szRegion 
+** bytes in size.
 **
-** The reqSize parameter is the new requested minimum size of the underlying
-** shared memory.  This routine may choose to make the shared memory larger
-** than this value (for example to round the shared memory size up to an
-** operating-system dependent page size.)
+** If an error occurs, an error code is returned and *pp is set to NULL.
 **
-** This routine will only grow the size of shared memory.  A request for
-** a smaller size is a no-op.
+** Otherwise, if the isWrite parameter is 0 and the requested shared-memory
+** region has not been allocated (by any client, including one running in a
+** separate process), then *pp is set to NULL and SQLITE_OK returned. If 
+** isWrite is non-zero and the requested shared-memory region has not yet 
+** been allocated, it is allocated by this function.
+**
+** If the shared-memory region has already been allocated or is allocated by
+** this call as described above, then it is mapped into this processes 
+** address space (if it is not already), *pp is set to point to the mapped 
+** memory and SQLITE_OK returned.
 */
-static int winShmSize(
-  sqlite3_file *fd,         /* Database holding the shared memory */
-  int reqSize,              /* Requested size.  -1 for query only */
-  int *pNewSize             /* Write new size here */
+static int winShmMap(
+  sqlite3_file *fd,               /* Handle open on database file */
+  int iRegion,                    /* Region to retrieve */
+  int szRegion,                   /* Size of regions */
+  int isWrite,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
 ){
   winFile *pDbFd = (winFile*)fd;
   winShm *p = pDbFd->pShm;
   winShmNode *pShmNode = p->pShmNode;
   int rc = SQLITE_OK;
 
-  *pNewSize = 0;
-  if( reqSize>=0 ){
-    sqlite3_int64 sz;
-    rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
-    if( SQLITE_OK==rc && reqSize>sz ){
-      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, reqSize);
-    }
-  }
-  if( SQLITE_OK==rc ){
-    sqlite3_int64 sz;
-    rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
-    if( SQLITE_OK==rc ){
-      *pNewSize = (int)sz;
-    }else{
-      rc = SQLITE_IOERR;
-    }
-  }
-  return rc;
-}
-
-
-/*
-** Map the shared storage into memory.  The minimum size of the
-** mapping should be reqMapSize if reqMapSize is positive.  If
-** reqMapSize is zero or negative, the implementation can choose
-** whatever mapping size is convenient.
-**
-** *ppBuf is made to point to the memory which is a mapping of the
-** underlying storage.  A mutex is acquired to prevent other threads
-** from running while *ppBuf is in use in order to prevent other threads
-** remapping *ppBuf out from under this thread.  The winShmRelease()
-** call will release the mutex.  However, if the lock state is CHECKPOINT,
-** the mutex is not acquired because CHECKPOINT will never remap the
-** buffer.  RECOVER might remap, though, so CHECKPOINT will acquire
-** the mutex if and when it promotes to RECOVER.
-**
-** RECOVER needs to be atomic.  The same mutex that prevents *ppBuf from
-** being remapped also prevents more than one thread from being in
-** RECOVER at a time.  But, RECOVER sometimes wants to remap itself.
-** To prevent RECOVER from losing its lock while remapping, the
-** mutex is not released by winShmRelease() when in RECOVER.
-**
-** *pNewMapSize is set to the size of the mapping.
-**
-** *ppBuf and *pNewMapSize might be NULL and zero if no space has
-** yet been allocated to the underlying storage.
-*/
-static int winShmGet(
-  sqlite3_file *fd,        /* The database file holding the shared memory */
-  int reqMapSize,          /* Requested size of mapping. -1 means don't care */
-  int *pNewMapSize,        /* Write new size of mapping here */
-  void volatile **ppBuf    /* Write mapping buffer origin here */
-){
-  winFile *pDbFd = (winFile*)fd;
-  winShm *p = pDbFd->pShm;
-  winShmNode *pShmNode = p->pShmNode;
-  int rc = SQLITE_OK;
-
-  if( p->hasMutexBuf==0 ){
-    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
-    sqlite3_mutex_enter(pShmNode->mutexBuf);
-    p->hasMutexBuf = 1;
-  }
   sqlite3_mutex_enter(pShmNode->mutex);
-  if( pShmNode->szMap==0 || reqMapSize>pShmNode->szMap ){
-    int actualSize;
-    if( winShmSize(fd, -1, &actualSize)==SQLITE_OK
-     && reqMapSize<actualSize
-    ){
-      reqMapSize = actualSize;
+  assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
+
+  if( pShmNode->nRegion<=iRegion ){
+    struct ShmRegion *apNew;           /* New aRegion[] array */
+    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    sqlite3_int64 sz;                  /* Current size of wal-index file */
+
+    pShmNode->szRegion = szRegion;
+
+    /* The requested region is not mapped into this processes address space.
+    ** Check to see if it has been allocated (i.e. if the wal-index file is
+    ** large enough to contain the requested region).
+    */
+    rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
+    if( rc!=SQLITE_OK ){
+      goto shmpage_out;
     }
-    if( pShmNode->pMMapBuf ){
-      if( !UnmapViewOfFile(pShmNode->pMMapBuf) ){
+
+    if( sz<nByte ){
+      /* The requested memory region does not exist. If isWrite is set to
+      ** zero, exit early. *pp will be set to NULL and SQLITE_OK returned.
+      **
+      ** Alternatively, if isWrite is non-zero, use ftruncate() to allocate
+      ** the requested memory region.
+      */
+      if( !isWrite ) goto shmpage_out;
+      rc = winTruncate((sqlite3_file *)&pShmNode->hFile, nByte);
+      if( rc!=SQLITE_OK ){
+        goto shmpage_out;
+      }
+    }
+
+    /* Map the requested memory region into this processes address space. */
+    apNew = (struct ShmRegion *)sqlite3_realloc(
+        pShmNode->aRegion, (iRegion+1)*sizeof(apNew[0])
+    );
+    if( !apNew ){
+      rc = SQLITE_IOERR_NOMEM;
+      goto shmpage_out;
+    }
+    pShmNode->aRegion = apNew;
+
+    while( pShmNode->nRegion<=iRegion ){
+      HANDLE hMap;                /* file-mapping handle */
+      void *pMap = 0;             /* Mapped memory region */
+     
+      hMap = CreateFileMapping(pShmNode->hFile.h, 
+          NULL, PAGE_READWRITE, 0, nByte, NULL
+      );
+      if( hMap ){
+        pMap = MapViewOfFile(hMap, FILE_MAP_WRITE | FILE_MAP_READ,
+            0, 0, nByte
+        );
+      }
+      if( !pMap ){
         pShmNode->lastErrno = GetLastError();
         rc = SQLITE_IOERR;
+        if( hMap ) CloseHandle(hMap);
+        goto shmpage_out;
       }
-      CloseHandle(pShmNode->hMap);
-      pShmNode->hMap = INVALID_HANDLE_VALUE;
-    }
-    if( SQLITE_OK == rc ){
-      pShmNode->pMMapBuf = 0;
-      if( reqMapSize == 0 ){
-        /* can't create 0 byte file mapping in Windows */
-        pShmNode->szMap = 0;
-      }else{
-        /* create the file mapping object */
-        if( INVALID_HANDLE_VALUE == pShmNode->hMap ){
-          /* TBD provide an object name to each file
-          ** mapping so it can be re-used across processes.
-          */
-          pShmNode->hMap = CreateFileMapping(pShmNode->hFile.h,
-                                          NULL,
-                                          PAGE_READWRITE,
-                                          0,
-                                          reqMapSize,
-                                          NULL);
-        }
-        if( NULL==pShmNode->hMap ){
-          pShmNode->lastErrno = GetLastError();
-          rc = SQLITE_IOERR;
-          pShmNode->szMap = 0;
-          pShmNode->hMap = INVALID_HANDLE_VALUE;
-        }else{
-          pShmNode->pMMapBuf = MapViewOfFile(pShmNode->hMap,
-                                          FILE_MAP_WRITE | FILE_MAP_READ,
-                                          0,
-                                          0,
-                                          reqMapSize);
-          if( !pShmNode->pMMapBuf ){
-            pShmNode->lastErrno = GetLastError();
-            rc = SQLITE_IOERR;
-            pShmNode->szMap = 0;
-          }else{
-            pShmNode->szMap = reqMapSize;
-          }
-        }
-      }
+
+      pShmNode->aRegion[pShmNode->nRegion].pMap = pMap;
+      pShmNode->aRegion[pShmNode->nRegion].hMap = hMap;
+      pShmNode->nRegion++;
     }
   }
-  *pNewMapSize = pShmNode->szMap;
-  *ppBuf = pShmNode->pMMapBuf;
+
+shmpage_out:
+  if( pShmNode->nRegion>iRegion ){
+    char *p = (char *)pShmNode->aRegion[iRegion].pMap;
+    *pp = (void *)&p[iRegion*szRegion];
+  }else{
+    *pp = 0;
+  }
   sqlite3_mutex_leave(pShmNode->mutex);
   return rc;
-}
-
-/*
-** Release the lock held on the shared memory segment so that other
-** threads are free to resize it if necessary.
-**
-** If the lock is not currently held, this routine is a harmless no-op.
-**
-** If the shared-memory object is in lock state RECOVER, then we do not
-** really want to release the lock, so in that case too, this routine
-** is a no-op.
-*/
-static int winShmRelease(sqlite3_file *fd){
-  winFile *pDbFd = (winFile*)fd;
-  winShm *p = pDbFd->pShm;
-  if( p->hasMutexBuf ){
-    winShmNode *pShmNode = p->pShmNode;
-    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
-    sqlite3_mutex_leave(pShmNode->mutexBuf);
-    p->hasMutexBuf = 0;
-  }
-  return SQLITE_OK;
 }
 
 /*
@@ -1756,12 +1694,10 @@ static const sqlite3_io_methods winIoMethod = {
   winSectorSize,
   winDeviceCharacteristics,
   winShmOpen,              /* xShmOpen */
-  winShmSize,              /* xShmSize */
-  winShmGet,               /* xShmGet */
-  winShmRelease,           /* xShmRelease */
   winShmLock,              /* xShmLock */
   winShmBarrier,           /* xShmBarrier */
-  winShmClose              /* xShmClose */
+  winShmClose,             /* xShmClose */
+  winShmMap                /* xShmMap */
 };
 
 /***************************************************************************

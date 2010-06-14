@@ -75,9 +75,14 @@ proc incr_tvfs_hdr {file idx incrval} {
 #      database content.
 #
 do_test wal2-1.0 {
-  proc tvfs_cb {method args} { return SQLITE_OK }
+  proc tvfs_cb {method filename args} { 
+    set ::filename $filename
+    return SQLITE_OK 
+  }
+
   testvfs tvfs
   tvfs script tvfs_cb
+  tvfs filter xShmOpen
 
   sqlite3 db  test.db -vfs tvfs
   sqlite3 db2 test.db -vfs tvfs
@@ -123,21 +128,15 @@ foreach {tn iInsert res wal_index_hdr_mod wal_locks} "
 
   do_test wal2-1.$tn.1 {
     execsql { INSERT INTO t1 VALUES($iInsert) }
-
     set ::locks [list]
-    set ::cb_done 0
-
     proc tvfs_cb {method args} {
-      if {$::cb_done == 0 && $method == "xShmGet"} {
-        set ::cb_done 1
-        if {$::wal_index_hdr_mod >= 0} {
-          incr_tvfs_hdr [lindex $args 0] $::wal_index_hdr_mod 1
-        }
-      }
-      if {$method == "xShmLock"} { lappend ::locks [lindex $args 2] }
+      lappend ::locks [lindex $args 2]
       return SQLITE_OK
     }
-
+    tvfs filter xShmLock
+    if {$::wal_index_hdr_mod >= 0} {
+      incr_tvfs_hdr $::filename $::wal_index_hdr_mod 1
+    }
     execsql { SELECT count(a), sum(a) FROM t1 } db2
   } $res
 
@@ -174,8 +173,9 @@ do_test wal2-2.0 {
 
   testvfs tvfs
   tvfs script tvfs_cb
+  tvfs filter xShmOpen
   proc tvfs_cb {method args} {
-    if {$method == "xShmOpen"} { set ::shm_file [lindex $args 0] }
+    set ::filename [lindex $args 0]
     return SQLITE_OK
   }
 
@@ -208,32 +208,28 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
          8   11   {10 55}  {11 66}   6
          9   12   {11 66}  {12 78}   7
 } {
+  tvfs filter xShmLock
+
   do_test wal2-2.$tn.1 {
-    set oldhdr [set_tvfs_hdr $::shm_file]
+    set oldhdr [set_tvfs_hdr $::filename]
     execsql { INSERT INTO t1 VALUES($iInsert) }
     execsql { SELECT count(a), sum(a) FROM t1 }
   } $res1
 
   do_test wal2-2.$tn.2 {
     set ::locks [list]
-    set ::cb_done 0
     proc tvfs_cb {method args} {
-      if {$::cb_done == 0 && $method == "xShmGet"} {
-        set ::cb_done 1
-        if {$::wal_index_hdr_mod >= 0} {
-          incr_tvfs_hdr $::shm_file $::wal_index_hdr_mod 1
-        }
-      }
-      if {$method == "xShmLock"} {
-        set lock [lindex $args 2]
-        lappend ::locks $lock
-        if {$lock == $::WRITER} {
-          set_tvfs_hdr $::shm_file $::oldhdr
-        }
+      set lock [lindex $args 2]
+      lappend ::locks $lock
+      if {$lock == $::WRITER} {
+        set_tvfs_hdr $::filename $::oldhdr
       }
       return SQLITE_OK
     }
 
+    if {$::wal_index_hdr_mod >= 0} {
+      incr_tvfs_hdr $::filename $::wal_index_hdr_mod 1
+    }
     execsql { SELECT count(a), sum(a) FROM t1 } db2
   } $res0
 
@@ -243,21 +239,15 @@ foreach {tn iInsert res0 res1 wal_index_hdr_mod} {
 
   do_test wal2-2.$tn.4 {
     set ::locks [list]
-    set ::cb_done 0
     proc tvfs_cb {method args} {
-      if {$::cb_done == 0 && $method == "xShmGet"} {
-        set ::cb_done 1
-        if {$::wal_index_hdr_mod >= 0} {
-          incr_tvfs_hdr $::shm_file $::wal_index_hdr_mod 1
-        }
-      }
-      if {$method == "xShmLock"} {
-        set lock [lindex $args 2]
-        lappend ::locks $lock
-      }
+      set lock [lindex $args 2]
+      lappend ::locks $lock
       return SQLITE_OK
     }
 
+    if {$::wal_index_hdr_mod >= 0} {
+      incr_tvfs_hdr $::filename $::wal_index_hdr_mod 1
+    }
     execsql { SELECT count(a), sum(a) FROM t1 } db2
   } $res1
 }

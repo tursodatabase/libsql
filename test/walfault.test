@@ -120,6 +120,7 @@ do_faultsim_test walfault-3 -prep {
   faultsim_test_result {0 {}}
 }
 
+
 #--------------------------------------------------------------------------
 #
 faultsim_delete_and_reopen
@@ -152,7 +153,7 @@ do_test walfault-5-pre-1 {
 do_faultsim_test walfault-5 -faults shmerr* -prep {
   faultsim_restore_and_reopen
   execsql { PRAGMA wal_autocheckpoint = 0 }
-  shmfault filter xShmSize
+  shmfault filter xShmPage
 } -body {
   execsql {
     CREATE TABLE t1(x);
@@ -211,7 +212,7 @@ do_test walfault-6-pre-1 {
 } {}
 do_faultsim_test walfault-6 -faults shmerr* -prep {
   faultsim_restore_and_reopen
-  shmfault filter xShmSize
+  shmfault filter xShmPage
 } -body {
   execsql { SELECT count(*) FROM t1 }
 } -test {
@@ -326,7 +327,7 @@ do_test walfault-10-pre1 {
   faultsim_delete_and_reopen
   execsql {
     PRAGMA journal_mode = WAL;
-    PRAGMA wal_checkpoint = 0;
+    PRAGMA wal_autocheckpoint = 0;
     CREATE TABLE z(zz INTEGER PRIMARY KEY, zzz BLOB);
     CREATE INDEX zzzz ON z(zzz);
     INSERT INTO z VALUES(NULL, randomblob(800));
@@ -362,6 +363,85 @@ do_faultsim_test walfault-10 -prep {
   set n [db eval {SELECT count(*), sum(length(zzz)) FROM z}]
   if {$n != "64 51200"} { error "Incorrect data: $n" }
 }
+
+#--------------------------------------------------------------------------
+# Test fault injection while checkpointing a large WAL file, if the 
+# checkpoint is the first operation run after opening the database.
+# This means that some of the required wal-index pages are mapped as part of
+# the checkpoint process, which means there are a few more opportunities
+# for IO errors.
+#
+# To speed this up, IO errors are only simulated within xShmPage() calls.
+#
+do_test walfault-11-pre-1 {
+  sqlite3 db test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    BEGIN;
+      CREATE TABLE abc(a PRIMARY KEY);
+      INSERT INTO abc VALUES(randomblob(1500));
+      INSERT INTO abc VALUES(randomblob(1500));
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --    4
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --    8
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --   16
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --   32
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --   64
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --  128
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --  256
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   --  512
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   -- 1024
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   -- 2048
+      INSERT INTO abc SELECT randomblob(1500) FROM abc;   -- 4096
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-11 -faults shmerr* -prep {
+  catch { db2 close }
+  faultsim_restore_and_reopen
+  shmfault filter xShmPage
+} -body {
+  db eval { SELECT count(*) FROM abc }
+  sqlite3 db2 test.db -vfs shmfault
+  db2 eval { PRAGMA wal_checkpoint }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# Test the handling of the various IO/OOM/SHM errors that may occur during 
+# a log recovery operation undertaken as part of a call to 
+# sqlite3_wal_checkpoint().
+# 
+do_test walfault-12-pre-1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    PRAGMA wal_autocheckpoint = 0;
+    BEGIN;
+      CREATE TABLE abc(a PRIMARY KEY);
+      INSERT INTO abc VALUES(randomblob(1500));
+      INSERT INTO abc VALUES(randomblob(1500));
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test walfault-12 -prep {
+  if {[info commands shmfault] == ""} {
+    testvfs shmfault -default true
+  }
+  faultsim_restore_and_reopen
+  db eval { SELECT * FROM sqlite_master }
+  shmfault shm test.db [string repeat "\000" 40]
+} -body {
+  set rc [sqlite3_wal_checkpoint db]
+  if {$rc != "SQLITE_OK"} { error [sqlite3_errmsg db] }
+} -test {
+  db close
+  faultsim_test_result {0 {}}
+}
+
 
 finish_test
 

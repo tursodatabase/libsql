@@ -69,16 +69,17 @@ struct Testvfs {
 **   + Invoking the Tcl callback script.
 */
 #define TESTVFS_SHMOPEN_MASK    0x00000001
-#define TESTVFS_SHMSIZE_MASK    0x00000002
-#define TESTVFS_SHMGET_MASK     0x00000004
-#define TESTVFS_SHMRELEASE_MASK 0x00000008
 #define TESTVFS_SHMLOCK_MASK    0x00000010
 #define TESTVFS_SHMBARRIER_MASK 0x00000020
 #define TESTVFS_SHMCLOSE_MASK   0x00000040
+#define TESTVFS_SHMPAGE_MASK    0x00000080
 
-#define TESTVFS_OPEN_MASK       0x00000080
-#define TESTVFS_SYNC_MASK       0x00000100
-#define TESTVFS_ALL_MASK        0x000001FF
+#define TESTVFS_OPEN_MASK       0x00000100
+#define TESTVFS_SYNC_MASK       0x00000200
+#define TESTVFS_ALL_MASK        0x000003FF
+
+
+#define TESTVFS_MAX_PAGES 256
 
 /*
 ** A shared-memory buffer. There is one of these objects for each shared
@@ -87,8 +88,8 @@ struct Testvfs {
 */
 struct TestvfsBuffer {
   char *zFile;                    /* Associated file name */
-  int n;                          /* Size of allocated buffer in bytes */
-  u8 *a;                          /* Buffer allocated using ckalloc() */
+  int pgsz;                       /* Page size */
+  u8 *aPage[TESTVFS_MAX_PAGES];   /* Array of ckalloc'd pages */
   TestvfsFile *pFile;             /* List of open handles */
   TestvfsBuffer *pNext;           /* Next in linked list of all buffers */
 };
@@ -133,12 +134,10 @@ static int tvfsSleep(sqlite3_vfs*, int microseconds);
 static int tvfsCurrentTime(sqlite3_vfs*, double*);
 
 static int tvfsShmOpen(sqlite3_file*);
-static int tvfsShmSize(sqlite3_file*, int , int *);
-static int tvfsShmGet(sqlite3_file*, int , int *, volatile void **);
-static int tvfsShmRelease(sqlite3_file*);
 static int tvfsShmLock(sqlite3_file*, int , int, int);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
+static int tvfsShmPage(sqlite3_file*,int,int,int, void volatile **);
 
 static sqlite3_io_methods tvfs_io_methods = {
   2,                            /* iVersion */
@@ -155,12 +154,10 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsSectorSize,                 /* xSectorSize */
   tvfsDeviceCharacteristics,      /* xDeviceCharacteristics */
   tvfsShmOpen,                    /* xShmOpen */
-  tvfsShmSize,                    /* xShmSize */
-  tvfsShmGet,                     /* xShmGet */
-  tvfsShmRelease,                 /* xShmRelease */
   tvfsShmLock,                    /* xShmLock */
   tvfsShmBarrier,                 /* xShmBarrier */
-  tvfsShmClose                    /* xShmClose */
+  tvfsShmClose,                   /* xShmClose */
+  tvfsShmPage                     /* xShmPage */
 };
 
 static int tvfsResultCode(Testvfs *p, int *pRc){
@@ -443,12 +440,10 @@ static int tvfsOpen(
     memcpy(pMethods, &tvfs_io_methods, sizeof(sqlite3_io_methods));
     if( ((Testvfs *)pVfs->pAppData)->isNoshm ){
       pMethods->xShmOpen = 0;
-      pMethods->xShmGet = 0;
-      pMethods->xShmSize = 0;
-      pMethods->xShmRelease = 0;
       pMethods->xShmClose = 0;
       pMethods->xShmLock = 0;
       pMethods->xShmBarrier = 0;
+      pMethods->xShmMap = 0;
     }
     pFile->pMethods = pMethods;
   }
@@ -547,16 +542,6 @@ static int tvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return PARENTVFS(pVfs)->xCurrentTime(PARENTVFS(pVfs), pTimeOut);
 }
 
-static void tvfsGrowBuffer(TestvfsFile *pFd, int reqSize, int *pNewSize){
-  TestvfsBuffer *pBuffer = pFd->pShm;
-  if( reqSize>pBuffer->n ){
-    pBuffer->a = (u8 *)ckrealloc((char *)pBuffer->a, reqSize);
-    memset(&pBuffer->a[pBuffer->n], 0x55, reqSize-pBuffer->n);
-    pBuffer->n = reqSize;
-  }
-  *pNewSize = pBuffer->n;
-}
-
 static int tvfsInjectIoerr(Testvfs *p){
   int ret = 0;
   if( p->ioerr ){
@@ -619,70 +604,50 @@ static int tvfsShmOpen(
   return SQLITE_OK;
 }
 
-static int tvfsShmSize(
-  sqlite3_file *pFile,
-  int reqSize,
-  int *pNewSize
+static void tvfsAllocPage(TestvfsBuffer *p, int iPage, int pgsz){
+  assert( iPage<TESTVFS_MAX_PAGES );
+  if( p->aPage[iPage]==0 ){
+    p->aPage[iPage] = (u8 *)ckalloc(pgsz);
+    memset(p->aPage[iPage], 0, pgsz);
+    p->pgsz = pgsz;
+  }
+}
+
+static int tvfsShmPage(
+  sqlite3_file *pFile,            /* Handle open on database file */
+  int iPage,                      /* Page to retrieve */
+  int pgsz,                       /* Size of pages */
+  int isWrite,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
 ){
   int rc = SQLITE_OK;
   TestvfsFile *pFd = (TestvfsFile *)pFile;
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
-  if( p->pScript && p->mask&TESTVFS_SHMSIZE_MASK ){
-    tvfsExecTcl(p, "xShmSize", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
+  if( p->pScript && p->mask&TESTVFS_SHMPAGE_MASK ){
+    Tcl_Obj *pArg = Tcl_NewObj();
+    Tcl_IncrRefCount(pArg);
+    Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(iPage));
+    Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(pgsz));
+    Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(isWrite));
+    tvfsExecTcl(p, "xShmPage", 
+        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, pArg
     );
     tvfsResultCode(p, &rc);
+    Tcl_DecrRefCount(pArg);
   }
-  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMSIZE_MASK && tvfsInjectIoerr(p) ){
-    rc = SQLITE_IOERR;
-  }
-  if( rc==SQLITE_OK ){
-    tvfsGrowBuffer(pFd, reqSize, pNewSize);
-  }
-  return rc;
-}
-
-static int tvfsShmGet(
-  sqlite3_file *pFile, 
-  int reqMapSize, 
-  int *pMapSize, 
-  volatile void **pp
-){
-  int rc = SQLITE_OK;
-  TestvfsFile *pFd = (TestvfsFile *)pFile;
-  Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
-
-  if( p->pScript && p->mask&TESTVFS_SHMGET_MASK ){
-    tvfsExecTcl(p, "xShmGet", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 
-        Tcl_NewIntObj(reqMapSize)
-    );
-    tvfsResultCode(p, &rc);
-  }
-  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMGET_MASK && tvfsInjectIoerr(p) ){
+  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMPAGE_MASK && tvfsInjectIoerr(p) ){
     rc = SQLITE_IOERR;
   }
 
-  *pMapSize = pFd->pShm->n;
-  *pp = pFd->pShm->a;
-  return rc;
-}
-
-static int tvfsShmRelease(sqlite3_file *pFile){
-  int rc = SQLITE_OK;
-  TestvfsFile *pFd = (TestvfsFile *)pFile;
-  Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
-
-  if( p->pScript && p->mask&TESTVFS_SHMRELEASE_MASK ){
-    tvfsExecTcl(p, "xShmRelease", 
-        Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, 0
-    );
-    tvfsResultCode(p, &rc);
+  if( rc==SQLITE_OK && isWrite && !pFd->pShm->aPage[iPage] ){
+    tvfsAllocPage(pFd->pShm, iPage, pgsz);
   }
+  *pp = (void volatile *)pFd->pShm->aPage[iPage];
 
   return rc;
 }
+
 
 static int tvfsShmLock(
   sqlite3_file *pFile,
@@ -782,10 +747,13 @@ static int tvfsShmClose(
   *ppFd = pFd->pNext;
 
   if( pBuffer->pFile==0 ){
+    int i;
     TestvfsBuffer **pp;
     for(pp=&p->pBuffer; *pp!=pBuffer; pp=&((*pp)->pNext));
     *pp = (*pp)->pNext;
-    ckfree((char *)pBuffer->a);
+    for(i=0; pBuffer->aPage[i]; i++){
+      ckfree((char *)pBuffer->aPage[i]);
+    }
     ckfree((char *)pBuffer);
   }
   pFd->pShm = 0;
@@ -821,28 +789,46 @@ static int testvfs_obj_cmd(
 
   switch( (enum DB_enum)i ){
     case CMD_SHM: {
+      Tcl_Obj *pObj;
+      int i;
       TestvfsBuffer *pBuffer;
       char *zName;
       if( objc!=3 && objc!=4 ){
         Tcl_WrongNumArgs(interp, 2, objv, "FILE ?VALUE?");
         return TCL_ERROR;
       }
-      zName = Tcl_GetString(objv[2]);
+      zName = ckalloc(p->pParent->mxPathname);
+      p->pParent->xFullPathname(
+          p->pParent, Tcl_GetString(objv[2]), 
+          p->pParent->mxPathname, zName
+      );
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
       }
+      ckfree(zName);
       if( !pBuffer ){
-        Tcl_AppendResult(interp, "no such file: ", zName, 0);
+        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), 0);
         return TCL_ERROR;
       }
       if( objc==4 ){
         int n;
         u8 *a = Tcl_GetByteArrayFromObj(objv[3], &n);
-        pBuffer->a = (u8 *)ckrealloc((char *)pBuffer->a, n);
-        pBuffer->n = n;
-        memcpy(pBuffer->a, a, n);
+        assert( pBuffer->pgsz==0 || pBuffer->pgsz==32768 );
+        for(i=0; i*32768<n; i++){
+          int nByte = 32768;
+          tvfsAllocPage(pBuffer, i, 32768);
+          if( n-i*32768<32768 ){
+            nByte = n;
+          }
+          memcpy(pBuffer->aPage[i], &a[i*32768], nByte);
+        }
       }
-      Tcl_SetObjResult(interp, Tcl_NewByteArrayObj(pBuffer->a, pBuffer->n));
+
+      pObj = Tcl_NewObj();
+      for(i=0; pBuffer->aPage[i]; i++){
+        Tcl_AppendObjToObj(pObj, Tcl_NewByteArrayObj(pBuffer->aPage[i], 32768));
+      }
+      Tcl_SetObjResult(interp, pObj);
       break;
     }
 
@@ -852,12 +838,10 @@ static int testvfs_obj_cmd(
         int mask;
       } vfsmethod [] = {
         { "xShmOpen",    TESTVFS_SHMOPEN_MASK },
-        { "xShmSize",    TESTVFS_SHMSIZE_MASK },
-        { "xShmGet",     TESTVFS_SHMGET_MASK },
-        { "xShmRelease", TESTVFS_SHMRELEASE_MASK },
         { "xShmLock",    TESTVFS_SHMLOCK_MASK },
         { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
         { "xShmClose",   TESTVFS_SHMCLOSE_MASK },
+        { "xShmPage",    TESTVFS_SHMPAGE_MASK },
         { "xSync",       TESTVFS_SYNC_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
       };
@@ -899,6 +883,7 @@ static int testvfs_obj_cmd(
           ckfree((char *)p->apScript);
           p->apScript = 0;
           p->nScript = 0;
+          p->pScript = 0;
         }
         Tcl_GetStringFromObj(objv[2], &nByte);
         if( nByte>0 ){
@@ -1071,6 +1056,13 @@ static int testvfs_cmd(
   p = (Testvfs *)ckalloc(nByte);
   memset(p, 0, nByte);
 
+  /* Create the new object command before querying SQLite for a default VFS
+  ** to use for 'real' IO operations. This is because creating the new VFS
+  ** may delete an existing [testvfs] VFS of the same name. If such a VFS
+  ** is currently the default, the new [testvfs] may end up calling the 
+  ** methods of a deleted object.
+  */
+  Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   p->pParent = sqlite3_vfs_find(0);
   p->interp = interp;
 
@@ -1087,7 +1079,6 @@ static int testvfs_cmd(
   p->isNoshm = isNoshm;
   p->mask = TESTVFS_ALL_MASK;
 
-  Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   sqlite3_vfs_register(pVfs, isDefault);
 
   return TCL_OK;

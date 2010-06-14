@@ -3128,21 +3128,15 @@ static int unixDeviceCharacteristics(sqlite3_file *NotUsed){
 ** Either unixShmNode.mutex must be held or unixShmNode.nRef==0 and
 ** unixMutexHeld() is true when reading or writing any other field
 ** in this structure.
-**
-** To avoid deadlocks, mutex and mutexBuf are always released in the
-** reverse order that they are acquired.  mutexBuf is always acquired
-** first and released last.  This invariant is check by asserting
-** sqlite3_mutex_notheld() on mutex whenever mutexBuf is acquired or
-** released.
 */
 struct unixShmNode {
   unixInodeInfo *pInode;     /* unixInodeInfo that owns this SHM node */
   sqlite3_mutex *mutex;      /* Mutex to access this object */
-  sqlite3_mutex *mutexBuf;   /* Mutex to access zBuf[] */
   char *zFilename;           /* Name of the mmapped file */
   int h;                     /* Open file descriptor */
-  int szMap;                 /* Size of the mapping into memory */
-  char *pMMapBuf;            /* Where currently mmapped().  NULL if unmapped */
+  int szRegion;              /* Size of shared-memory regions */
+  int nRegion;               /* Size of array apRegion */
+  char **apRegion;           /* Array of mapped shared-memory regions */
   int nRef;                  /* Number of unixShm objects pointing to this */
   unixShm *pFirst;           /* All unixShm objects pointing to this */
 #ifdef SQLITE_DEBUG
@@ -3169,7 +3163,6 @@ struct unixShm {
   unixShmNode *pShmNode;     /* The underlying unixShmNode object */
   unixShm *pNext;            /* Next unixShm with the same unixShmNode */
   u8 hasMutex;               /* True if holding the unixShmNode mutex */
-  u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
   u16 sharedMask;            /* Mask of shared locks held */
   u16 exclMask;              /* Mask of exclusive locks held */
 #ifdef SQLITE_DEBUG
@@ -3266,10 +3259,13 @@ static void unixShmPurge(unixFile *pFd){
   unixShmNode *p = pFd->pInode->pShmNode;
   assert( unixMutexHeld() );
   if( p && p->nRef==0 ){
+    int i;
     assert( p->pInode==pFd->pInode );
     if( p->mutex ) sqlite3_mutex_free(p->mutex);
-    if( p->mutexBuf ) sqlite3_mutex_free(p->mutexBuf);
-    if( p->pMMapBuf ) munmap(p->pMMapBuf, p->szMap);
+    for(i=0; i<p->nRegion; i++){
+      munmap(p->apRegion[i], p->szRegion);
+    }
+    sqlite3_free(p->apRegion);
     if( p->h>=0 ) close(p->h);
     p->pInode->pShmNode = 0;
     sqlite3_free(p);
@@ -3345,11 +3341,6 @@ static int unixShmOpen(
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
-    pShmNode->mutexBuf = sqlite3_mutex_alloc(SQLITE_MUTEX_FAST);
-    if( pShmNode->mutexBuf==0 ){
-      rc = SQLITE_NOMEM;
-      goto shm_open_err;
-    }
 
     pShmNode->h = open(pShmNode->zFilename, O_RDWR|O_CREAT, 0664);
     if( pShmNode->h<0 ){
@@ -3420,7 +3411,6 @@ static int unixShmClose(
   *pp = p->pNext;
 
   /* Free the connection p */
-  assert( p->hasMutexBuf==0 );
   sqlite3_free(p);
   pDbFd->pShm = 0;
   sqlite3_mutex_leave(pShmNode->mutex);
@@ -3438,148 +3428,6 @@ static int unixShmClose(
 
   return SQLITE_OK;
 }
-
-/*
-** Changes the size of the underlying storage for  a shared-memory segment.
-**
-** The reqSize parameter is the new requested size of the shared memory.
-** This implementation is free to increase the shared memory size to
-** any amount greater than or equal to reqSize.  If the shared memory is
-** already as big or bigger as reqSize, this routine is a no-op.
-**
-** The reqSize parameter is the minimum size requested.  The implementation
-** is free to expand the storage to some larger amount if it chooses.
-*/
-static int unixShmSize(
-  sqlite3_file *fd,         /* The open database file holding SHM */
-  int reqSize,              /* Requested size.  -1 for query only */
-  int *pNewSize             /* Write new size here */
-){
-  unixFile *pDbFd = (unixFile*)fd;
-  unixShm *p = pDbFd->pShm;
-  unixShmNode *pShmNode = p->pShmNode;
-  int rc = SQLITE_OK;
-  struct stat sStat;
-
-  assert( pShmNode==pDbFd->pInode->pShmNode );
-  assert( pShmNode->pInode==pDbFd->pInode );
-
-  while( 1 ){
-    if( fstat(pShmNode->h, &sStat)==0 ){
-      *pNewSize = (int)sStat.st_size;
-      if( reqSize<=(int)sStat.st_size ) break;
-    }else{
-      *pNewSize = 0;
-      rc = SQLITE_IOERR_SHMSIZE;
-      break;
-    }
-    rc = ftruncate(pShmNode->h, reqSize);
-    reqSize = -1;
-  }
-  return rc;
-}
-
-/*
-** Release the lock held on the shared memory segment to that other
-** threads are free to resize it if necessary.
-**
-** If the lock is not currently held, this routine is a harmless no-op.
-**
-** If the shared-memory object is in lock state RECOVER, then we do not
-** really want to release the lock, so in that case too, this routine
-** is a no-op.
-*/
-static int unixShmRelease(sqlite3_file *fd){
-  unixFile *pDbFd = (unixFile*)fd;
-  unixShm *p = pDbFd->pShm;
-
-  if( p->hasMutexBuf ){
-    assert( sqlite3_mutex_notheld(p->pShmNode->mutex) );
-    sqlite3_mutex_leave(p->pShmNode->mutexBuf);
-    p->hasMutexBuf = 0;
-  }
-  return SQLITE_OK;
-}
-
-/*
-** Map the shared storage into memory. 
-**
-** If reqMapSize is positive, then an attempt is made to make the
-** mapping at least reqMapSize bytes in size.  However, the mapping
-** will never be larger than the size of the underlying shared memory
-** as set by prior calls to xShmSize().  
-**
-** *ppBuf is made to point to the memory which is a mapping of the
-** underlying storage.  A mutex is acquired to prevent other threads
-** from running while *ppBuf is in use in order to prevent other threads
-** remapping *ppBuf out from under this thread.  The unixShmRelease()
-** call will release the mutex.  However, if the lock state is CHECKPOINT,
-** the mutex is not acquired because CHECKPOINT will never remap the
-** buffer.  RECOVER might remap, though, so CHECKPOINT will acquire
-** the mutex if and when it promotes to RECOVER.
-**
-** RECOVER needs to be atomic.  The same mutex that prevents *ppBuf from
-** being remapped also prevents more than one thread from being in
-** RECOVER at a time.  But, RECOVER sometimes wants to remap itself.
-** To prevent RECOVER from losing its lock while remapping, the
-** mutex is not released by unixShmRelease() when in RECOVER.
-**
-** *pNewMapSize is set to the size of the mapping.  Usually *pNewMapSize
-** will be reqMapSize or larger, though it could be smaller if the
-** underlying shared memory has never been enlarged to reqMapSize bytes
-** by prior calls to xShmSize().
-**
-** *ppBuf might be NULL and zero if no space has
-** yet been allocated to the underlying storage.
-*/
-static int unixShmGet(
-  sqlite3_file *fd,        /* Database file holding shared memory */
-  int reqMapSize,          /* Requested size of mapping. -1 means don't care */
-  int *pNewMapSize,        /* Write new size of mapping here */
-  void volatile **ppBuf    /* Write mapping buffer origin here */
-){
-  unixFile *pDbFd = (unixFile*)fd;
-  unixShm *p = pDbFd->pShm;
-  unixShmNode *pShmNode = p->pShmNode;
-  int rc = SQLITE_OK;
-
-  assert( pShmNode==pDbFd->pInode->pShmNode );
-  assert( pShmNode->pInode==pDbFd->pInode );
-
-  if( p->hasMutexBuf==0 ){
-    assert( sqlite3_mutex_notheld(pShmNode->mutex) );
-    sqlite3_mutex_enter(pShmNode->mutexBuf);
-    p->hasMutexBuf = 1;
-  }
-  sqlite3_mutex_enter(pShmNode->mutex);
-  if( pShmNode->szMap==0 || reqMapSize>pShmNode->szMap ){
-    int actualSize;
-    if( unixShmSize(fd, -1, &actualSize)!=SQLITE_OK ){
-      actualSize = 0;
-    }
-    reqMapSize = actualSize;
-    if( pShmNode->pMMapBuf || reqMapSize<=0 ){
-      munmap(pShmNode->pMMapBuf, pShmNode->szMap);
-    }
-    if( reqMapSize>0 ){
-      pShmNode->pMMapBuf = mmap(0, reqMapSize, PROT_READ|PROT_WRITE, MAP_SHARED,
-                             pShmNode->h, 0);
-      pShmNode->szMap = pShmNode->pMMapBuf ? reqMapSize : 0;
-    }else{
-      pShmNode->pMMapBuf = 0;
-      pShmNode->szMap = 0;
-    }
-  }
-  *pNewMapSize = pShmNode->szMap;
-  *ppBuf = pShmNode->pMMapBuf;
-  sqlite3_mutex_leave(pShmNode->mutex);
-  if( *ppBuf==0 ){
-    /* Do not hold the mutex if a NULL pointer is being returned. */
-    unixShmRelease(fd);
-  }
-  return rc;
-}
-
 
 /*
 ** Change the lock state for a shared-memory segment.
@@ -3700,21 +3548,114 @@ static int unixShmLock(
 ** any load or store begun after the barrier.
 */
 static void unixShmBarrier(
-  sqlite3_file *fd           /* Database file holding the shared memory */
+  sqlite3_file *fd                /* Database file holding the shared memory */
 ){
   unixEnterMutex();
   unixLeaveMutex();
 }
 
+/*
+** This function is called to obtain a pointer to region iRegion of the 
+** shared-memory associated with the database file fd. Shared-memory regions 
+** are numbered starting from zero. Each shared-memory region is szRegion 
+** bytes in size.
+**
+** If an error occurs, an error code is returned and *pp is set to NULL.
+**
+** Otherwise, if the isWrite parameter is 0 and the requested shared-memory
+** region has not been allocated (by any client, including one running in a
+** separate process), then *pp is set to NULL and SQLITE_OK returned. If 
+** isWrite is non-zero and the requested shared-memory region has not yet 
+** been allocated, it is allocated by this function.
+**
+** If the shared-memory region has already been allocated or is allocated by
+** this call as described above, then it is mapped into this processes 
+** address space (if it is not already), *pp is set to point to the mapped 
+** memory and SQLITE_OK returned.
+*/
+static int unixShmMap(
+  sqlite3_file *fd,               /* Handle open on database file */
+  int iRegion,                    /* Region to retrieve */
+  int szRegion,                   /* Size of regions */
+  int isWrite,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
+){
+  unixFile *pDbFd = (unixFile*)fd;
+  unixShm *p = pDbFd->pShm;
+  unixShmNode *pShmNode = p->pShmNode;
+  int rc = SQLITE_OK;
+
+  sqlite3_mutex_enter(pShmNode->mutex);
+  assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
+
+  if( pShmNode->nRegion<=iRegion ){
+    char **apNew;                      /* New apRegion[] array */
+    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    struct stat sStat;                 /* Used by fstat() */
+
+    pShmNode->szRegion = szRegion;
+
+    /* The requested region is not mapped into this processes address space.
+    ** Check to see if it has been allocated (i.e. if the wal-index file is
+    ** large enough to contain the requested region).
+    */
+    if( fstat(pShmNode->h, &sStat) ){
+      rc = SQLITE_IOERR_SHMSIZE;
+      goto shmpage_out;
+    }
+
+    if( sStat.st_size<nByte ){
+      /* The requested memory region does not exist. If isWrite is set to
+      ** zero, exit early. *pp will be set to NULL and SQLITE_OK returned.
+      **
+      ** Alternatively, if isWrite is non-zero, use ftruncate() to allocate
+      ** the requested memory region.
+      */
+      if( !isWrite ) goto shmpage_out;
+      if( ftruncate(pShmNode->h, nByte) ){
+        rc = SQLITE_IOERR_SHMSIZE;
+        goto shmpage_out;
+      }  
+    }
+
+    /* Map the requested memory region into this processes address space. */
+    apNew = (char **)sqlite3_realloc(
+        pShmNode->apRegion, (iRegion+1)*sizeof(char *)
+    );
+    if( !apNew ){
+      rc = SQLITE_IOERR_NOMEM;
+      goto shmpage_out;
+    }
+    pShmNode->apRegion = apNew;
+    while(pShmNode->nRegion<=iRegion){
+      void *pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
+          MAP_SHARED, pShmNode->h, iRegion*szRegion
+      );
+      if( pMem==MAP_FAILED ){
+        rc = SQLITE_IOERR;
+        goto shmpage_out;
+      }
+      pShmNode->apRegion[pShmNode->nRegion] = pMem;
+      pShmNode->nRegion++;
+    }
+  }
+
+shmpage_out:
+  if( pShmNode->nRegion>iRegion ){
+    *pp = pShmNode->apRegion[iRegion];
+  }else{
+    *pp = 0;
+  }
+  sqlite3_mutex_leave(pShmNode->mutex);
+  return rc;
+}
 
 #else
 # define unixShmOpen    0
-# define unixShmSize    0
-# define unixShmGet     0
-# define unixShmRelease 0
 # define unixShmLock    0
 # define unixShmBarrier 0
 # define unixShmClose   0
+# define unixShmMap     0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -3773,12 +3714,10 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics,  /* xDeviceCapabilities */                     \
    unixShmOpen,                /* xShmOpen */                                \
-   unixShmSize,                /* xShmSize */                                \
-   unixShmGet,                 /* xShmGet */                                 \
-   unixShmRelease,             /* xShmRelease */                             \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmClose                /* xShmClose */                               \
+   unixShmClose,               /* xShmClose */                               \
+   unixShmMap                  /* xShmMap */                                 \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \

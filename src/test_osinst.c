@@ -100,11 +100,9 @@
 #define OS_WRITE             20
 #define OS_SHMOPEN           21
 #define OS_SHMCLOSE          22
-#define OS_SHMGET            23
-#define OS_SHMRELEASE        24
+#define OS_SHMMAP            23
 #define OS_SHMLOCK           25
 #define OS_SHMBARRIER        26
-#define OS_SHMSIZE           27
 #define OS_ANNOTATE          28
 
 #define OS_NUMEVENTS         29
@@ -152,12 +150,10 @@ static int vfslogSectorSize(sqlite3_file*);
 static int vfslogDeviceCharacteristics(sqlite3_file*);
 
 static int vfslogShmOpen(sqlite3_file *pFile);
-static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize);
-static int vfslogShmGet(sqlite3_file *pFile, int,int*,volatile void **);
-static int vfslogShmRelease(sqlite3_file *pFile);
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags);
 static void vfslogShmBarrier(sqlite3_file*);
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
+static int vfslogShmMap(sqlite3_file *pFile,int,int,int,volatile void **);
 
 /*
 ** Method declarations for vfslog_vfs.
@@ -216,12 +212,10 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogSectorSize,               /* xSectorSize */
   vfslogDeviceCharacteristics,    /* xDeviceCharacteristics */
   vfslogShmOpen,                  /* xShmOpen */
-  vfslogShmSize,                  /* xShmSize */
-  vfslogShmGet,                   /* xShmGet */
-  vfslogShmRelease,               /* xShmRelease */
   vfslogShmLock,                  /* xShmLock */
   vfslogShmBarrier,               /* xShmBarrier */
-  vfslogShmClose                  /* xShmClose */
+  vfslogShmClose,                 /* xShmClose */
+  vfslogShmMap                    /* xShmMap */
 };
 
 #if defined(SQLITE_OS_UNIX) && !defined(NO_GETTOD)
@@ -441,41 +435,6 @@ static int vfslogShmOpen(sqlite3_file *pFile){
   vfslog_call(p->pVfslog, OS_SHMOPEN, p->iFileId, t, rc, 0, 0);
   return rc;
 }
-static int vfslogShmSize(sqlite3_file *pFile, int reqSize, int *pNewSize){
-  int rc;
-  sqlite3_uint64 t;
-  VfslogFile *p = (VfslogFile *)pFile;
-  t = vfslog_time();
-  rc = p->pReal->pMethods->xShmSize(p->pReal, reqSize, pNewSize);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMSIZE, p->iFileId, t, rc, 0, 0);
-  return rc;
-}
-static int vfslogShmGet(
-  sqlite3_file *pFile,
-  int req,
-  int *pSize,
-  volatile void **pp
-){
-  int rc;
-  sqlite3_uint64 t;
-  VfslogFile *p = (VfslogFile *)pFile;
-  t = vfslog_time();
-  rc = p->pReal->pMethods->xShmGet(p->pReal, req, pSize, pp);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMGET, p->iFileId, t, rc, 0, 0);
-  return rc;
-}
-static int vfslogShmRelease(sqlite3_file *pFile){
-  int rc;
-  sqlite3_uint64 t;
-  VfslogFile *p = (VfslogFile *)pFile;
-  t = vfslog_time();
-  rc = p->pReal->pMethods->xShmRelease(p->pReal);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMRELEASE, p->iFileId, t, rc, 0, 0);
-  return rc;
-}
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   int rc;
   sqlite3_uint64 t;
@@ -502,6 +461,22 @@ static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag){
   rc = p->pReal->pMethods->xShmClose(p->pReal, deleteFlag);
   t = vfslog_time() - t;
   vfslog_call(p->pVfslog, OS_SHMCLOSE, p->iFileId, t, rc, 0, 0);
+  return rc;
+}
+static int vfslogShmMap(
+  sqlite3_file *pFile, 
+  int iRegion, 
+  int szRegion, 
+  int isWrite, 
+  volatile void **pp
+){
+  int rc;
+  sqlite3_uint64 t;
+  VfslogFile *p = (VfslogFile *)pFile;
+  t = vfslog_time();
+  rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
+  t = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMMAP, p->iFileId, t, rc, 0, 0);
   return rc;
 }
 
@@ -826,11 +801,9 @@ static const char *vfslog_eventname(int eEvent){
 
     case OS_SHMCLOSE:          zEvent = "xShmClose"; break;
     case OS_SHMOPEN:           zEvent = "xShmOpen"; break;
-    case OS_SHMGET:            zEvent = "xShmGet"; break;
-    case OS_SHMSIZE:           zEvent = "xShmSize"; break;
-    case OS_SHMRELEASE:        zEvent = "xShmRelease"; break;
     case OS_SHMLOCK:           zEvent = "xShmLock"; break;
     case OS_SHMBARRIER:        zEvent = "xShmBarrier"; break;
+    case OS_SHMMAP:            zEvent = "xShmMap"; break;
 
     case OS_ANNOTATE:          zEvent = "annotation"; break;
   }
