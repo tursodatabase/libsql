@@ -749,9 +749,8 @@ static int walNextHash(int iPriorHash){
 ** slot in the hash table is set to N, it refers to frame number 
 ** (*piZero+N) in the log.
 **
-** Finally, set *paPgno such that for all frames F between (*piZero+1) and 
-** (*piZero+HASHTABLE_NPAGE), (*paPgno)[F] is the database page number 
-** associated with frame F.
+** Finally, set *paPgno so that *paPgno[1] is the page number of the
+** first frame indexed by the hash table, frame (*piZero+1).
 */
 static int walHashGet(
   Wal *pWal,                      /* WAL handle */
@@ -772,14 +771,13 @@ static int walHashGet(
 
     aHash = (volatile ht_slot *)&aPgno[HASHTABLE_NPAGE];
     if( iHash==0 ){
-      aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)-1];
+      aPgno = &aPgno[WALINDEX_HDR_SIZE/sizeof(u32)];
       iZero = 0;
     }else{
       iZero = HASHTABLE_NPAGE_ONE + (iHash-1)*HASHTABLE_NPAGE;
-      aPgno = &aPgno[-1*iZero-1];
     }
   
-    *paPgno = aPgno;
+    *paPgno = &aPgno[-1];
     *paHash = aHash;
     *piZero = iZero;
   }
@@ -863,8 +861,8 @@ static void walCleanupHash(Wal *pWal){
   /* Zero the entries in the aPgno array that correspond to frames with
   ** frame numbers greater than pWal->hdr.mxFrame. 
   */
-  nByte = ((char *)aHash - (char *)&aPgno[pWal->hdr.mxFrame+1]);
-  memset((void *)&aPgno[pWal->hdr.mxFrame+1], 0, nByte);
+  nByte = ((char *)aHash - (char *)&aPgno[iLimit+1]);
+  memset((void *)&aPgno[iLimit+1], 0, nByte);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
   /* Verify that the every entry in the mapping region is still reachable
@@ -874,7 +872,7 @@ static void walCleanupHash(Wal *pWal){
     int i;           /* Loop counter */
     int iKey;        /* Hash key */
     for(i=1; i<=iLimit; i++){
-      for(iKey=walHash(aPgno[i+iZero]); aHash[iKey]; iKey=walNextHash(iKey)){
+      for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
         if( aHash[iKey]==i ) break;
       }
       assert( aHash[iKey]==i );
@@ -911,8 +909,8 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     ** entire hash table and aPgno[] array before proceding. 
     */
     if( idx==1 ){
-      int nByte = (u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1+iZero];
-      memset((void*)&aPgno[1+iZero], 0, nByte);
+      int nByte = (u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1];
+      memset((void*)&aPgno[1], 0, nByte);
     }
 
     /* If the entry in aPgno[] is already set, then the previous writer
@@ -921,16 +919,16 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     ** Remove the remnants of that writers uncommitted transaction from 
     ** the hash-table before writing any new entries.
     */
-    if( aPgno[iFrame] ){
+    if( aPgno[idx] ){
       walCleanupHash(pWal);
-      assert( !aPgno[iFrame] );
+      assert( !aPgno[idx] );
     }
 
     /* Write the aPgno[] array entry and the hash-table slot. */
     for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
       assert( nCollide++ < idx );
     }
-    aPgno[iFrame] = iPage;
+    aPgno[idx] = iPage;
     aHash[iKey] = idx;
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
@@ -952,7 +950,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     if( (idx&0x3ff)==0 ){
       int i;           /* Loop counter */
       for(i=1; i<=idx; i++){
-        for(iKey=walHash(aPgno[i+iZero]); aHash[iKey]; iKey=walNextHash(iKey)){
+        for(iKey=walHash(aPgno[i]); aHash[iKey]; iKey=walNextHash(iKey)){
           if( aHash[iKey]==i ) break;
         }
         assert( aHash[iKey]==i );
@@ -1353,10 +1351,9 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       walIteratorFree(p);
       return rc;
     }
-    nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)&aPgno[iZero+1];
-
+    aPgno++;
+    nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)aPgno;
     iZero++;
-    aPgno += iZero;
 
     for(j=0; j<nEntry; j++){
       aSpace[j] = j;
@@ -1965,7 +1962,7 @@ int sqlite3WalRead(
     }
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
-      if( iFrame<=iLast && aPgno[iFrame]==pgno ){
+      if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
         assert( iFrame>iRead );
         iRead = iFrame;
       }
