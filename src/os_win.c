@@ -1664,9 +1664,7 @@ static void winShmBarrier(
 
 #else
 # define winShmOpen    0
-# define winShmSize    0
-# define winShmGet     0
-# define winShmRelease 0
+# define winShmMap     0
 # define winShmLock    0
 # define winShmBarrier 0
 # define winShmClose   0
@@ -1695,9 +1693,9 @@ static const sqlite3_io_methods winIoMethod = {
   winDeviceCharacteristics,
   winShmOpen,              /* xShmOpen */
   winShmLock,              /* xShmLock */
+  winShmMap,               /* xShmMap */
   winShmBarrier,           /* xShmBarrier */
-  winShmClose,             /* xShmClose */
-  winShmMap                /* xShmMap */
+  winShmClose              /* xShmClose */
 };
 
 /***************************************************************************

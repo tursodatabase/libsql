@@ -151,9 +151,9 @@ static int vfslogDeviceCharacteristics(sqlite3_file*);
 
 static int vfslogShmOpen(sqlite3_file *pFile);
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags);
+static int vfslogShmMap(sqlite3_file *pFile,int,int,int,volatile void **);
 static void vfslogShmBarrier(sqlite3_file*);
 static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
-static int vfslogShmMap(sqlite3_file *pFile,int,int,int,volatile void **);
 
 /*
 ** Method declarations for vfslog_vfs.
@@ -213,9 +213,9 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogDeviceCharacteristics,    /* xDeviceCharacteristics */
   vfslogShmOpen,                  /* xShmOpen */
   vfslogShmLock,                  /* xShmLock */
+  vfslogShmMap,                   /* xShmMap */
   vfslogShmBarrier,               /* xShmBarrier */
-  vfslogShmClose,                 /* xShmClose */
-  vfslogShmMap                    /* xShmMap */
+  vfslogShmClose                  /* xShmClose */
 };
 
 #if defined(SQLITE_OS_UNIX) && !defined(NO_GETTOD)
@@ -445,6 +445,22 @@ static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   vfslog_call(p->pVfslog, OS_SHMLOCK, p->iFileId, t, rc, 0, 0);
   return rc;
 }
+static int vfslogShmMap(
+  sqlite3_file *pFile, 
+  int iRegion, 
+  int szRegion, 
+  int isWrite, 
+  volatile void **pp
+){
+  int rc;
+  sqlite3_uint64 t;
+  VfslogFile *p = (VfslogFile *)pFile;
+  t = vfslog_time();
+  rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
+  t = vfslog_time() - t;
+  vfslog_call(p->pVfslog, OS_SHMMAP, p->iFileId, t, rc, 0, 0);
+  return rc;
+}
 static void vfslogShmBarrier(sqlite3_file *pFile){
   sqlite3_uint64 t;
   VfslogFile *p = (VfslogFile *)pFile;
@@ -461,22 +477,6 @@ static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag){
   rc = p->pReal->pMethods->xShmClose(p->pReal, deleteFlag);
   t = vfslog_time() - t;
   vfslog_call(p->pVfslog, OS_SHMCLOSE, p->iFileId, t, rc, 0, 0);
-  return rc;
-}
-static int vfslogShmMap(
-  sqlite3_file *pFile, 
-  int iRegion, 
-  int szRegion, 
-  int isWrite, 
-  volatile void **pp
-){
-  int rc;
-  sqlite3_uint64 t;
-  VfslogFile *p = (VfslogFile *)pFile;
-  t = vfslog_time();
-  rc = p->pReal->pMethods->xShmMap(p->pReal, iRegion, szRegion, isWrite, pp);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMMAP, p->iFileId, t, rc, 0, 0);
   return rc;
 }
 

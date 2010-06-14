@@ -3653,9 +3653,9 @@ shmpage_out:
 #else
 # define unixShmOpen    0
 # define unixShmLock    0
+# define unixShmMap     0
 # define unixShmBarrier 0
 # define unixShmClose   0
-# define unixShmMap     0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -3715,9 +3715,9 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixDeviceCharacteristics,  /* xDeviceCapabilities */                     \
    unixShmOpen,                /* xShmOpen */                                \
    unixShmLock,                /* xShmLock */                                \
+   unixShmMap,                 /* xShmMap */                                 \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmClose,               /* xShmClose */                               \
-   unixShmMap                  /* xShmMap */                                 \
+   unixShmClose                /* xShmClose */                               \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \

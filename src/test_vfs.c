@@ -70,9 +70,9 @@ struct Testvfs {
 */
 #define TESTVFS_SHMOPEN_MASK    0x00000001
 #define TESTVFS_SHMLOCK_MASK    0x00000010
-#define TESTVFS_SHMBARRIER_MASK 0x00000020
-#define TESTVFS_SHMCLOSE_MASK   0x00000040
-#define TESTVFS_SHMPAGE_MASK    0x00000080
+#define TESTVFS_SHMMAP_MASK     0x00000020
+#define TESTVFS_SHMBARRIER_MASK 0x00000040
+#define TESTVFS_SHMCLOSE_MASK   0x00000080
 
 #define TESTVFS_OPEN_MASK       0x00000100
 #define TESTVFS_SYNC_MASK       0x00000200
@@ -135,9 +135,9 @@ static int tvfsCurrentTime(sqlite3_vfs*, double*);
 
 static int tvfsShmOpen(sqlite3_file*);
 static int tvfsShmLock(sqlite3_file*, int , int, int);
+static int tvfsShmMap(sqlite3_file*,int,int,int, void volatile **);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
-static int tvfsShmPage(sqlite3_file*,int,int,int, void volatile **);
 
 static sqlite3_io_methods tvfs_io_methods = {
   2,                            /* iVersion */
@@ -155,9 +155,9 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsDeviceCharacteristics,      /* xDeviceCharacteristics */
   tvfsShmOpen,                    /* xShmOpen */
   tvfsShmLock,                    /* xShmLock */
+  tvfsShmMap,                     /* xShmMap */
   tvfsShmBarrier,                 /* xShmBarrier */
-  tvfsShmClose,                   /* xShmClose */
-  tvfsShmPage                     /* xShmPage */
+  tvfsShmClose                    /* xShmClose */
 };
 
 static int tvfsResultCode(Testvfs *p, int *pRc){
@@ -613,7 +613,7 @@ static void tvfsAllocPage(TestvfsBuffer *p, int iPage, int pgsz){
   }
 }
 
-static int tvfsShmPage(
+static int tvfsShmMap(
   sqlite3_file *pFile,            /* Handle open on database file */
   int iPage,                      /* Page to retrieve */
   int pgsz,                       /* Size of pages */
@@ -624,19 +624,19 @@ static int tvfsShmPage(
   TestvfsFile *pFd = (TestvfsFile *)pFile;
   Testvfs *p = (Testvfs *)(pFd->pVfs->pAppData);
 
-  if( p->pScript && p->mask&TESTVFS_SHMPAGE_MASK ){
+  if( p->pScript && p->mask&TESTVFS_SHMMAP_MASK ){
     Tcl_Obj *pArg = Tcl_NewObj();
     Tcl_IncrRefCount(pArg);
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(iPage));
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(pgsz));
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(isWrite));
-    tvfsExecTcl(p, "xShmPage", 
+    tvfsExecTcl(p, "xShmMap", 
         Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, pArg
     );
     tvfsResultCode(p, &rc);
     Tcl_DecrRefCount(pArg);
   }
-  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMPAGE_MASK && tvfsInjectIoerr(p) ){
+  if( rc==SQLITE_OK && p->mask&TESTVFS_SHMMAP_MASK && tvfsInjectIoerr(p) ){
     rc = SQLITE_IOERR;
   }
 
@@ -841,7 +841,7 @@ static int testvfs_obj_cmd(
         { "xShmLock",    TESTVFS_SHMLOCK_MASK },
         { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
         { "xShmClose",   TESTVFS_SHMCLOSE_MASK },
-        { "xShmPage",    TESTVFS_SHMPAGE_MASK },
+        { "xShmMap",     TESTVFS_SHMMAP_MASK },
         { "xSync",       TESTVFS_SYNC_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
       };
@@ -962,12 +962,10 @@ static void testvfs_obj_del(ClientData cd){
 **
 ** The VFS passes all file I/O calls through to the underlying VFS.
 **
-** Whenever one of the xShmSize, xShmGet or xShmRelease methods of the VFS
-** are invoked, the SCRIPT is executed as follows:
+** Whenever the xShmMap method of the VFS
+** is invoked, the SCRIPT is executed as follows:
 **
-**   SCRIPT xShmSize    FILENAME ID
-**   SCRIPT xShmGet     FILENAME ID
-**   SCRIPT xShmRelease FILENAME ID
+**   SCRIPT xShmMap    FILENAME ID
 **
 ** The value returned by the invocation of SCRIPT above is interpreted as
 ** an SQLite error code and returned to SQLite. Either a symbolic 

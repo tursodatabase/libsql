@@ -561,9 +561,9 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfDeviceCharacteristics,      /* xDeviceCharacteristics */
   cfShmOpen,                    /* xShmOpen */
   cfShmLock,                    /* xShmLock */
+  cfShmMap,                     /* xShmMap */
   cfShmBarrier,                 /* xShmBarrier */
-  cfShmClose,                   /* xShmClose */
-  cfShmMap                      /* xShmMap */
+  cfShmClose                    /* xShmClose */
 };
 
 /*
