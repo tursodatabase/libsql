@@ -1,5 +1,5 @@
-C Remove\sxShmGet/Size/Release\sfrom\sthe\ssqlite3_vfs\sstructure.\sChange\sthe\sname\sof\sxShmPage\sto\sxShmMap.\sRemove\ssome\scode\sthat\sis\snow\sunused\sfrom\sos_unix.c\sand\ssome\sof\sthe\stest\sVFS\simplementations.
-D 2010-06-14T14:07:51
+C Add\sthe\snew\sxShmMap\s(formerly\sxShmPage)\sto\sos_win.c.
+D 2010-06-14T16:16:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,8 +154,8 @@ F src/os.c 9c4a2f82a50306a33907678ec0187b6ad1486bfe
 F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 0a57b86241011ca25f2fb83e4825b7af7fe6d920
-F src/os_win.c 0cf1f571546f165001e2391b5d4a4a16d86977d3
+F src/os_unix.c 710418915cc3b59e596ee7ae916deca5dc740ca7
+F src/os_win.c 3d761e33687cb24645fe66e5efd11244390e8e9c
 F src/pager.c 2964185d4356d0dc159b8340e52d2538d32394e5
 F src/pager.h ca1f23c0cf137ac26f8908df2427c8b308361efd
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -820,7 +820,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1ce9c92bffa5d7f8431c005b29d698b0f5b95875
-R 8ee76bbe532e6db3f47bf2104ddf1a48
+P fc0cabc15c97dde6a852b4f07df6d30f1d2c04bc
+R 25e35232d2e784a0633c25f463199a04
 U dan
-Z 95a9a1111fae03b142846d91ecde0c57
+Z 06f3bcfd0aba7d97df7e9b4406c194ab

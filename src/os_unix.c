@@ -3573,7 +3573,7 @@ static void unixShmBarrier(
 ** address space (if it is not already), *pp is set to point to the mapped 
 ** memory and SQLITE_OK returned.
 */
-static int unixShmPage(
+static int unixShmMap(
   sqlite3_file *fd,               /* Handle open on database file */
   int iRegion,                    /* Region to retrieve */
   int szRegion,                   /* Size of regions */
@@ -3655,7 +3655,7 @@ shmpage_out:
 # define unixShmLock    0
 # define unixShmBarrier 0
 # define unixShmClose   0
-# define unixShmPage    0
+# define unixShmMap     0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -3717,7 +3717,7 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
    unixShmClose,               /* xShmClose */                               \
-   unixShmPage                 /* xShmPage */                                \
+   unixShmMap                  /* xShmMap */                                 \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
