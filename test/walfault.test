@@ -153,7 +153,7 @@ do_test walfault-5-pre-1 {
 do_faultsim_test walfault-5 -faults shmerr* -prep {
   faultsim_restore_and_reopen
   execsql { PRAGMA wal_autocheckpoint = 0 }
-  shmfault filter xShmPage
+  shmfault filter xShmMap
 } -body {
   execsql {
     CREATE TABLE t1(x);
@@ -212,7 +212,7 @@ do_test walfault-6-pre-1 {
 } {}
 do_faultsim_test walfault-6 -faults shmerr* -prep {
   faultsim_restore_and_reopen
-  shmfault filter xShmPage
+  shmfault filter xShmMap
 } -body {
   execsql { SELECT count(*) FROM t1 }
 } -test {
@@ -371,7 +371,7 @@ do_faultsim_test walfault-10 -prep {
 # the checkpoint process, which means there are a few more opportunities
 # for IO errors.
 #
-# To speed this up, IO errors are only simulated within xShmPage() calls.
+# To speed this up, IO errors are only simulated within xShmMap() calls.
 #
 do_test walfault-11-pre-1 {
   sqlite3 db test.db
@@ -400,7 +400,7 @@ do_test walfault-11-pre-1 {
 do_faultsim_test walfault-11 -faults shmerr* -prep {
   catch { db2 close }
   faultsim_restore_and_reopen
-  shmfault filter xShmPage
+  shmfault filter xShmMap
 } -body {
   db eval { SELECT count(*) FROM abc }
   sqlite3 db2 test.db -vfs shmfault
@@ -444,4 +444,3 @@ do_faultsim_test walfault-12 -prep {
 
 
 finish_test
-

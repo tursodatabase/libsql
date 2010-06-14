@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Move\sthe\sxShmMap\smethod\sto\sin\sbetween\sxShmLock\sand\sxShmBarrier,\ssince\sit\sseems\nto\sfit\sin\sthere\slogically.
-D 2010-06-14T18:01:47
+C Fix\san\serror\sin\sthe\swalfault.test\sscript\sintroduced\sby\sthe\sprevious\scheck-in.
+D 2010-06-14T18:06:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -775,7 +775,7 @@ F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
-F test/walfault.test f6c1d0eade34fd0102e083726092d9bebd48bf7b
+F test/walfault.test c2b524299dede269282a0795e11396cc446ca9af
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -823,14 +823,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f295e7ed5f04f6b8bffdaff8b565be3836ce4e80
-R 35a4e87593b0bc9655f2a4469c646d85
+P 58dfd83d8b7905391e2a06bb918ffa209c6de6b5
+R 4f3db6f7e5f49d281298da654be5747c
 U drh
-Z 756186848e2cf008caf07f5485ff8d21
+Z d6eef7948b6d2db515c6c316940ff333
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMFm6OoxKgR168RlERAsLQAJwKJ+ZFUqfvyXHQFBi5TZjmWwLZ0wCgjUxf
-Nnihq1LdFY/IzbBJJRSCfi8=
-=JYW4
+iD8DBQFMFm+hoxKgR168RlERAozTAJ9OR+HzdHW0lOPqGOxHaVRg71dtTQCbBMmJ
+e2DOFvD2aJhVnBVlQcph2cU=
+=VNCZ
 -----END PGP SIGNATURE-----
