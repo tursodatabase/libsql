@@ -526,20 +526,6 @@ static int cfDeviceCharacteristics(sqlite3_file *pFile){
 static int cfShmOpen(sqlite3_file *pFile){
   return sqlite3OsShmOpen(((CrashFile*)pFile)->pRealFile);
 }
-static int cfShmSize(sqlite3_file *pFile, int reqSize, int *pNew){
-  return sqlite3OsShmSize(((CrashFile*)pFile)->pRealFile, reqSize, pNew);
-}
-static int cfShmGet(
-  sqlite3_file *pFile,
-  int reqSize,
-  int *pSize,
-  void volatile **pp
-){
-  return sqlite3OsShmGet(((CrashFile*)pFile)->pRealFile, reqSize, pSize, pp);
-}
-static int cfShmRelease(sqlite3_file *pFile){
-  return sqlite3OsShmRelease(((CrashFile*)pFile)->pRealFile);
-}
 static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, ofst, n, flags);
 }
@@ -549,16 +535,15 @@ static void cfShmBarrier(sqlite3_file *pFile){
 static int cfShmClose(sqlite3_file *pFile, int delFlag){
   return sqlite3OsShmClose(((CrashFile*)pFile)->pRealFile, delFlag);
 }
-static int cfShmPage(
+static int cfShmMap(
   sqlite3_file *pFile,            /* Handle open on database file */
-  int iPage,                      /* Page to retrieve */
-  int pgsz,                       /* Size of pages */
+  int iRegion,                    /* Region to retrieve */
+  int sz,                         /* Size of regions */
   int w,                          /* True to extend file if necessary */
   void volatile **pp              /* OUT: Mapped memory */
 ){
-  return sqlite3OsShmPage(((CrashFile*)pFile)->pRealFile, iPage, pgsz, w, pp);
+  return sqlite3OsShmMap(((CrashFile*)pFile)->pRealFile, iRegion, sz, w, pp);
 }
-
 
 static const sqlite3_io_methods CrashFileVtab = {
   2,                            /* iVersion */
@@ -575,13 +560,10 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfSectorSize,                 /* xSectorSize */
   cfDeviceCharacteristics,      /* xDeviceCharacteristics */
   cfShmOpen,                    /* xShmOpen */
-  cfShmSize,                    /* xShmSize */
-  cfShmGet,                     /* xShmGet */
-  cfShmRelease,                 /* xShmRelease */
   cfShmLock,                    /* xShmLock */
   cfShmBarrier,                 /* xShmBarrier */
   cfShmClose,                   /* xShmClose */
-  cfShmPage                     /* xShmPage */
+  cfShmMap                      /* xShmMap */
 };
 
 /*

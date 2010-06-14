@@ -483,7 +483,7 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
 
   /* Request a pointer to the required page from the VFS */
   if( pWal->apWiData[iPage]==0 ){
-    rc = sqlite3OsShmPage(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
+    rc = sqlite3OsShmMap(pWal->pDbFd, iPage, WALINDEX_PGSZ, 
         pWal->writeLock, (void volatile **)&pWal->apWiData[iPage]
     );
   }

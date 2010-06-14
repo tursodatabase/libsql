@@ -69,9 +69,6 @@ struct Testvfs {
 **   + Invoking the Tcl callback script.
 */
 #define TESTVFS_SHMOPEN_MASK    0x00000001
-#define TESTVFS_SHMSIZE_MASK    0x00000002
-#define TESTVFS_SHMGET_MASK     0x00000004
-#define TESTVFS_SHMRELEASE_MASK 0x00000008
 #define TESTVFS_SHMLOCK_MASK    0x00000010
 #define TESTVFS_SHMBARRIER_MASK 0x00000020
 #define TESTVFS_SHMCLOSE_MASK   0x00000040
@@ -137,9 +134,6 @@ static int tvfsSleep(sqlite3_vfs*, int microseconds);
 static int tvfsCurrentTime(sqlite3_vfs*, double*);
 
 static int tvfsShmOpen(sqlite3_file*);
-static int tvfsShmSize(sqlite3_file*, int , int *);
-static int tvfsShmGet(sqlite3_file*, int , int *, volatile void **);
-static int tvfsShmRelease(sqlite3_file*);
 static int tvfsShmLock(sqlite3_file*, int , int, int);
 static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
@@ -160,9 +154,6 @@ static sqlite3_io_methods tvfs_io_methods = {
   tvfsSectorSize,                 /* xSectorSize */
   tvfsDeviceCharacteristics,      /* xDeviceCharacteristics */
   tvfsShmOpen,                    /* xShmOpen */
-  tvfsShmSize,                    /* xShmSize */
-  tvfsShmGet,                     /* xShmGet */
-  tvfsShmRelease,                 /* xShmRelease */
   tvfsShmLock,                    /* xShmLock */
   tvfsShmBarrier,                 /* xShmBarrier */
   tvfsShmClose,                   /* xShmClose */
@@ -449,12 +440,10 @@ static int tvfsOpen(
     memcpy(pMethods, &tvfs_io_methods, sizeof(sqlite3_io_methods));
     if( ((Testvfs *)pVfs->pAppData)->isNoshm ){
       pMethods->xShmOpen = 0;
-      pMethods->xShmGet = 0;
-      pMethods->xShmSize = 0;
-      pMethods->xShmRelease = 0;
       pMethods->xShmClose = 0;
       pMethods->xShmLock = 0;
       pMethods->xShmBarrier = 0;
+      pMethods->xShmMap = 0;
     }
     pFile->pMethods = pMethods;
   }
@@ -612,28 +601,6 @@ static int tvfsShmOpen(
   pFd->pNext = pBuffer->pFile;
   pBuffer->pFile = pFd;
   pFd->pShm = pBuffer;
-  return SQLITE_OK;
-}
-
-static int tvfsShmSize(
-  sqlite3_file *pFile,
-  int reqSize,
-  int *pNewSize
-){
-  assert(0);
-  return SQLITE_OK;
-}
-static int tvfsShmGet(
-  sqlite3_file *pFile, 
-  int reqMapSize, 
-  int *pMapSize, 
-  volatile void **pp
-){
-  assert(0);
-  return SQLITE_OK;
-}
-static int tvfsShmRelease(sqlite3_file *pFile){
-  assert(0);
   return SQLITE_OK;
 }
 
@@ -871,9 +838,6 @@ static int testvfs_obj_cmd(
         int mask;
       } vfsmethod [] = {
         { "xShmOpen",    TESTVFS_SHMOPEN_MASK },
-        { "xShmSize",    TESTVFS_SHMSIZE_MASK },
-        { "xShmGet",     TESTVFS_SHMGET_MASK },
-        { "xShmRelease", TESTVFS_SHMRELEASE_MASK },
         { "xShmLock",    TESTVFS_SHMLOCK_MASK },
         { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
         { "xShmClose",   TESTVFS_SHMCLOSE_MASK },
