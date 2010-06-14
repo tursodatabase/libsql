@@ -1,5 +1,5 @@
-C Fix\ssome\sproblems\swith\shandling\sIO\serrors\son\sthe\sexperimental\sbranch.
-D 2010-06-12T12:02:36
+C Add\ssome\sfault-injection\stests\sto\simprove\scoverage.
+D 2010-06-14T07:53:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +209,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c c3643e985b000e1f7555bd843a508512a33ab60e
+F src/test_vfs.c 15bddcddf6b1bf6360130e09aee950f5f563d5f3
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -226,7 +226,7 @@ F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c ca3e0bf68c78005dee4e0d44d112e26975476d10
+F src/wal.c 75c55049c0923418f10bbef842b846374637b595
 F src/wal.h 4ace25262452d17e7d3ec970c89ee17794004008
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 1c895bef33d0dfc7ed90fb1f74120435d210ea56
@@ -772,7 +772,7 @@ F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
-F test/walfault.test 0f9524cedbba0e5d48b58cabdc2dd7ae2c375476
+F test/walfault.test f6c1d0eade34fd0102e083726092d9bebd48bf7b
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
 F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -820,7 +820,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ca68472db01c14a899892007d1cbaff5e86ae193
-R 8c9eec4fce430c14365187b617d56771
+P eade8bc238df580412f5cf1b91a91532ae671e46
+R d24014573c5813c3e5f096c2f4031503
 U dan
-Z 808594079cf8cc56f07144318e40eca2
+Z e43653a42fa5b8fa5bb9c7db25e1bbd8

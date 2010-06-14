@@ -1281,6 +1281,13 @@ static void walMergesort(
 #endif
 }
 
+/* 
+** Free an iterator allocated by walIteratorInit().
+*/
+static void walIteratorFree(WalIterator *p){
+  sqlite3_free(p);
+}
+
 /*
 ** Map the wal-index into memory owned by this thread, if it is not
 ** mapped already.  Then construct a WalInterator object that can be
@@ -1337,6 +1344,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
 
     rc = walHashGet(pWal, i, &aHash, &aPgno, &iZero);
     if( rc!=SQLITE_OK ){
+      walIteratorFree(p);
       return rc;
     }
     nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)&aPgno[iZero+1];
@@ -1359,13 +1367,6 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Return the fully initialized WalIterator object */
   *pp = p;
   return SQLITE_OK ;
-}
-
-/* 
-** Free an iterator allocated by walIteratorInit().
-*/
-static void walIteratorFree(WalIterator *p){
-  sqlite3_free(p);
 }
 
 /*
@@ -2076,30 +2077,33 @@ int sqlite3WalUndo(Wal *pWal, int (*xUndo)(void *, Pgno), void *pUndoCtx){
     Pgno iMax = pWal->hdr.mxFrame;
     Pgno iFrame;
   
-    rc = walIndexReadHdr(pWal, &unused);
-    if( rc==SQLITE_OK ){
-      for(iFrame=pWal->hdr.mxFrame+1; 
-          ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
-          iFrame++
-      ){
-        /* This call cannot fail. Unless the page for which the page number
-        ** is passed as the second argument is (a) in the cache and 
-        ** (b) has an outstanding reference, then xUndo is either a no-op
-        ** (if (a) is false) or simply expels the page from the cache (if (b)
-        ** is false).
-        **
-        ** If the upper layer is doing a rollback, it is guaranteed that there
-        ** are no outstanding references to any page other than page 1. And
-        ** page 1 is never written to the log until the transaction is
-        ** committed. As a result, the call to xUndo may not fail.
-        */
-        assert( pWal->writeLock );
-        assert( walFramePgno(pWal, iFrame)!=1 );
-        rc = xUndo(pUndoCtx, walFramePgno(pWal, iFrame));
-      }
-      walCleanupHash(pWal);
+    /* Restore the clients cache of the wal-index header to the state it
+    ** was in before the client began writing to the database. 
+    */
+    memcpy(&pWal->hdr, walIndexHdr(pWal), sizeof(WalIndexHdr));
+
+    for(iFrame=pWal->hdr.mxFrame+1; 
+        ALWAYS(rc==SQLITE_OK) && iFrame<=iMax; 
+        iFrame++
+    ){
+      /* This call cannot fail. Unless the page for which the page number
+      ** is passed as the second argument is (a) in the cache and 
+      ** (b) has an outstanding reference, then xUndo is either a no-op
+      ** (if (a) is false) or simply expels the page from the cache (if (b)
+      ** is false).
+      **
+      ** If the upper layer is doing a rollback, it is guaranteed that there
+      ** are no outstanding references to any page other than page 1. And
+      ** page 1 is never written to the log until the transaction is
+      ** committed. As a result, the call to xUndo may not fail.
+      */
+      assert( pWal->writeLock );
+      assert( walFramePgno(pWal, iFrame)!=1 );
+      rc = xUndo(pUndoCtx, walFramePgno(pWal, iFrame));
     }
+    walCleanupHash(pWal);
   }
+  assert( rc==SQLITE_OK );
   return rc;
 }
 
@@ -2142,9 +2146,7 @@ int sqlite3WalSavepointUndo(Wal *pWal, u32 *aWalData){
     pWal->hdr.mxFrame = aWalData[0];
     pWal->hdr.aFrameCksum[0] = aWalData[1];
     pWal->hdr.aFrameCksum[1] = aWalData[2];
-    if( rc==SQLITE_OK ){
-      walCleanupHash(pWal);
-    }
+    walCleanupHash(pWal);
   }
 
   return rc;

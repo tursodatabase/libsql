@@ -659,6 +659,7 @@ static int tvfsShmPage(
 
   if( p->pScript && p->mask&TESTVFS_SHMPAGE_MASK ){
     Tcl_Obj *pArg = Tcl_NewObj();
+    Tcl_IncrRefCount(pArg);
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(iPage));
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(pgsz));
     Tcl_ListObjAppendElement(p->interp, pArg, Tcl_NewIntObj(isWrite));
@@ -666,6 +667,7 @@ static int tvfsShmPage(
         Tcl_NewStringObj(pFd->pShm->zFile, -1), pFd->pShmId, pArg
     );
     tvfsResultCode(p, &rc);
+    Tcl_DecrRefCount(pArg);
   }
   if( rc==SQLITE_OK && p->mask&TESTVFS_SHMPAGE_MASK && tvfsInjectIoerr(p) ){
     rc = SQLITE_IOERR;
@@ -828,12 +830,17 @@ static int testvfs_obj_cmd(
         Tcl_WrongNumArgs(interp, 2, objv, "FILE ?VALUE?");
         return TCL_ERROR;
       }
-      zName = Tcl_GetString(objv[2]);
+      zName = ckalloc(p->pParent->mxPathname);
+      p->pParent->xFullPathname(
+          p->pParent, Tcl_GetString(objv[2]), 
+          p->pParent->mxPathname, zName
+      );
       for(pBuffer=p->pBuffer; pBuffer; pBuffer=pBuffer->pNext){
         if( 0==strcmp(pBuffer->zFile, zName) ) break;
       }
+      ckfree(zName);
       if( !pBuffer ){
-        Tcl_AppendResult(interp, "no such file: ", zName, 0);
+        Tcl_AppendResult(interp, "no such file: ", Tcl_GetString(objv[2]), 0);
         return TCL_ERROR;
       }
       if( objc==4 ){
@@ -870,6 +877,7 @@ static int testvfs_obj_cmd(
         { "xShmLock",    TESTVFS_SHMLOCK_MASK },
         { "xShmBarrier", TESTVFS_SHMBARRIER_MASK },
         { "xShmClose",   TESTVFS_SHMCLOSE_MASK },
+        { "xShmPage",    TESTVFS_SHMPAGE_MASK },
         { "xSync",       TESTVFS_SYNC_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
       };
@@ -911,6 +919,7 @@ static int testvfs_obj_cmd(
           ckfree((char *)p->apScript);
           p->apScript = 0;
           p->nScript = 0;
+          p->pScript = 0;
         }
         Tcl_GetStringFromObj(objv[2], &nByte);
         if( nByte>0 ){
@@ -1083,6 +1092,13 @@ static int testvfs_cmd(
   p = (Testvfs *)ckalloc(nByte);
   memset(p, 0, nByte);
 
+  /* Create the new object command before querying SQLite for a default VFS
+  ** to use for 'real' IO operations. This is because creating the new VFS
+  ** may delete an existing [testvfs] VFS of the same name. If such a VFS
+  ** is currently the default, the new [testvfs] may end up calling the 
+  ** methods of a deleted object.
+  */
+  Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   p->pParent = sqlite3_vfs_find(0);
   p->interp = interp;
 
@@ -1099,7 +1115,6 @@ static int testvfs_cmd(
   p->isNoshm = isNoshm;
   p->mask = TESTVFS_ALL_MASK;
 
-  Tcl_CreateObjCommand(interp, zVfs, testvfs_obj_cmd, p, testvfs_obj_del);
   sqlite3_vfs_register(pVfs, isDefault);
 
   return TCL_OK;
