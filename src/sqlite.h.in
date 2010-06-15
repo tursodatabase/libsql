@@ -5814,21 +5814,21 @@ void sqlite3_log(int iErrCode, const char *zFormat, ...);
 ** is a copy of the third parameter passed to sqlite3_wal_hook() when
 ** registering the callback. ^The second is a copy of the database handle.
 ** ^The third parameter is the name of the database that was written to -
-** either "main" or the name of an ATTACHed database. ^The fourth parameter
+** either "main" or the name of an [ATTACH]-ed database. ^The fourth parameter
 ** is the number of pages currently in the write-ahead log file,
 ** including those that were just committed.
 **
-** The callback function should normally return SQLITE_OK.  ^If an error
+** The callback function should normally return [SQLITE_OK].  ^If an error
 ** code is returned, that error will propagate back up through the
 ** SQLite code base to cause the statement that provoked the callback
 ** to report an error, though the commit will have still occurred. If the
-** callback returns SQLITE_ROW or SQLITE_DONE, or if it returns a value
+** callback returns [SQLITE_ROW] or [SQLITE_DONE], or if it returns a value
 ** that does not correspond to any valid SQLite error code, the results
 ** are undefined.
 **
 ** A single database handle may have at most a single write-ahead log callback 
 ** registered at one time. ^Calling [sqlite3_wal_hook()] replaces any
-** previously registered write-ahead log callback. Note that the
+** previously registered write-ahead log callback. ^Note that the
 ** [sqlite3_wal_autocheckpoint()] interface and the
 ** [wal_autocheckpoint pragma] both invoke [sqlite3_wal_hook()] and will
 ** those overwrite any prior [sqlite3_wal_hook()] settings.

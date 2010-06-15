@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Updates\sto\scomments\sand\stestcase()\smacros\sin\swal.c.
-D 2010-06-15T11:21:54
+C Minor\stweaks\sto\sthe\sinterface\sdocumentation\s-\sadding\shyperlinks.
+D 2010-06-15T12:09:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -173,7 +173,7 @@ F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in 2c084e205661f04b8e5a0367c87d9877e8aea268
+F src/sqlite.h.in 46c01e55cea31b91565ae41276c6310ee4032be8
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 242987ebd2366ea36650a09cdab04a9163c62109
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -823,14 +823,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a2b9374fc6f0aba2d465d432e1124bd957aab548
-R b8eef250f5caed4a924f16a77af9cdc6
+P 4d90cc0bc07e791b2838fc384866bd5c2282f681
+R b20cc7941b129f7c6e9900cc5e97f6f7
 U drh
-Z 605208b22e0624f098357d577c5e0992
+Z da4c20a8b2ba3382af678dfac4118096
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMF2JVoxKgR168RlERAth9AJ9lwylEfM0j4jEYjOmIUA5/QL1cowCfcwM8
-3EixOPtKo5P3pdMwt8qjl2M=
-=IOSP
+iD8DBQFMF21loxKgR168RlERAuaCAJ4r5SsgyuvojtLe75yRe+q/0btQRACdH9jE
+q55l7VL0HSgtkFfs0xpMX3U=
+=Mg18
 -----END PGP SIGNATURE-----
