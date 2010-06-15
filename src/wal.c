@@ -72,6 +72,7 @@
 ** big-endian format regardless of which byte order is used to compute
 ** the checksum.  The checksum is computed by interpreting the input as
 ** an even number of unsigned 32-bit integers: x[0] through x[N].  The
+** algorithm used for the checksum is as follows:
 ** 
 **   for i from 0 to n-1 step 2:
 **     s0 += x[i] + s1;
@@ -80,7 +81,7 @@
 **
 ** On a checkpoint, the WAL is first VFS.xSync-ed, then valid content of the
 ** WAL is transferred into the database, then the database is VFS.xSync-ed.
-** The VFS.xSync operations server as write barriers - all writes launched
+** The VFS.xSync operations serve as write barriers - all writes launched
 ** before the xSync must complete before any write that launches after the
 ** xSync begins.
 **
@@ -152,7 +153,7 @@
 **
 ** Each index block contains two sections, a page-mapping that contains the
 ** database page number associated with each wal frame, and a hash-table 
-** that allows users to query an index block for a specific page number.
+** that allows readers to query an index block for a specific page number.
 ** The page-mapping is an array of HASHTABLE_NPAGE (or HASHTABLE_NPAGE_ONE
 ** for the first index block) 32-bit page numbers. The first entry in the 
 ** first index-block contains the database page number corresponding to the
@@ -846,9 +847,9 @@ static void walCleanupHash(Wal *pWal){
   int i;                          /* Used to iterate through aHash[] */
 
   assert( pWal->writeLock );
-  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE-1 );
-  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE );
-  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE+1 );
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE_ONE-1 );
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE_ONE );
+  testcase( pWal->hdr.mxFrame==HASHTABLE_NPAGE_ONE+1 );
 
   if( pWal->hdr.mxFrame==0 ) return;
 
