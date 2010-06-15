@@ -10,92 +10,40 @@
 #***********************************************************************
 # This file runs all tests.
 #
-# $Id: all.test,v 1.62 2009/01/06 18:43:51 drh Exp $
 
 set testdir [file dirname $argv0]
-source $testdir/tester.tcl
-db close
-
-if {[file exists ./sqlite_test_count]} {
-  set COUNT [exec cat ./sqlite_test_count]
-} else {
-  set COUNT 1
-}
-
-if {[llength $argv]>0} {
-  foreach {name value} $argv {
-    switch -- $name {
-      -count {
-         set COUNT $value
-      }
-      -quick {
-         set G(isquick) $value
-      }
-      -soak {
-         set G(issoak) $value
-      }
-      default {
-         puts stderr "Unknown option: $name"
-         exit
-      }
-    }
-  }
-}
-set argv {}
-
-set EXCLUDE {}
-lappend EXCLUDE all.test               ;# This file
-lappend EXCLUDE async.test
-lappend EXCLUDE crash.test             ;# Run separately later.
-lappend EXCLUDE crash2.test            ;# Run separately later.
-lappend EXCLUDE quick.test             ;# Alternate test driver script
-lappend EXCLUDE veryquick.test         ;# Alternate test driver script
-lappend EXCLUDE misuse.test            ;# Run separately later.
-lappend EXCLUDE memleak.test           ;# Alternate test driver script
-lappend EXCLUDE permutations.test      ;# Run separately later.
-lappend EXCLUDE soak.test              ;# Takes a very long time (default 1 hr)
-lappend EXCLUDE fts3.test              ;# Wrapper for muliple fts3*.tests
-lappend EXCLUDE mallocAll.test         ;# Wrapper for running all malloc tests
-
-# Files to include in the test.  If this list is empty then everything
-# that is not in the EXCLUDE list is run.
-#
-set INCLUDE {
-}
-
-for {set Counter 0} {$Counter<$COUNT} {incr Counter} {
-  foreach testfile [lsort -dictionary [glob $testdir/*.test]] {
-    set tail [file tail $testfile]
-    if {[lsearch -exact $EXCLUDE $tail]>=0} continue
-    if {[llength $INCLUDE]>0 && [lsearch -exact $INCLUDE $tail]<0} continue
-    reset_prng_state
-    slave_test_file $testfile
-  }
-
-  if {[set_test_counter errors]} break
-}
-set argv all
 source $testdir/permutations.test
-set argv ""
 
-# Run the crashtest only on unix and only once. If the library does not
-# always create auto-vacuum databases, also run autovacuum_crash.test.
-#
+run_test_suite full
+
+run_test_suite memsubsys1 
+run_test_suite memsubsys2 
+run_test_suite singlethread 
+run_test_suite multithread 
+run_test_suite onefile 
+run_test_suite utf16 
+run_test_suite exclusive
+run_test_suite persistent_journal 
+run_test_suite persistent_journal_error 
+run_test_suite no_journal 
+run_test_suite no_journal_error
+run_test_suite autovacuum_ioerr 
+run_test_suite no_mutex_try 
+run_test_suite fullmutex 
+run_test_suite journaltest 
+run_test_suite inmemory_journal
+run_test_suite pcache0 
+run_test_suite pcache10 
+run_test_suite pcache50 
+run_test_suite pcache90 
+run_test_suite pcache100
+
 if {$::tcl_platform(platform)=="unix"} {
-  slave_test_file [file join $testdir crash.test]
-  slave_test_file [file join $testdir crash2.test]
-
   ifcapable !default_autovacuum {
-    set argv autovacuum_crash
-    source $testdir/permutations.test
-    set argv ""
+    run_test_suite autovacuum_crash
   }
 }
 
-# Run the misuse test after memory leak detection. It may leak memory. 
-# Currently, misuse.test also leaks a handful of file descriptors. This is 
-# not considered a problem.
-#
-slave_test_file [file join $testdir misuse.test]
 finish_test
+
 
