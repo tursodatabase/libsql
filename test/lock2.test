@@ -59,9 +59,8 @@ do_test lock2-1.3 {
 } {}
 do_test lock2-1.4 {
   testfixture $::tf1 {
-    db eval {
-      CREATE TABLE def(d, e, f)
-    }
+    catch { db eval { CREATE TABLE def(d, e, f) } } msg
+    set msg
   }
 } {database is locked}
 do_test lock2-1.5 {
@@ -79,10 +78,11 @@ do_test lock2-1.6 {
 } {}
 do_test lock2-1.7 {
   testfixture $::tf1 {
-    db eval {
+    catch { db eval {
       BEGIN;
       SELECT * FROM sqlite_master;
-    }
+    } } msg 
+    set msg
   }
 } {database is locked}
 do_test lock2-1.8 {

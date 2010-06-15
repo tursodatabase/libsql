@@ -24,7 +24,7 @@ db close
 #       -shutdown    SCRIPT                 (default "")
 #       -presql      SQL                    (default "")
 #       -files       LIST-OF-FILES          (default $::ALLTESTS)
-#
+#       -prefix      NAME                   (default "$::NAME.")
 #
 proc test_suite {name args} {
 
@@ -32,7 +32,8 @@ proc test_suite {name args} {
   set default(-initialize)  ""
   set default(-presql)      ""
   set default(-description) "no description supplied (fixme)"
-  set default(-files)     ""
+  set default(-files)       ""
+  set default(-prefix)      "${name}."
 
   array set options [array get default]
   if {[llength $args]%2} {
@@ -79,9 +80,8 @@ proc test_set {args} {
 # various test scripts:
 #
 #   $alltests
-#   $slowtests
+#   $allquicktests
 #
-
 set alltests [list]
 foreach f [glob $testdir/*.test] { lappend alltests [file tail $f] }
 if {$::tcl_platform(platform)!="unix"} {
@@ -122,7 +122,7 @@ set allquicktests [test_set $alltests -exclude {
 #
 lappend ::testsuitelist xxx
 
-test_suite "veryquick" -description {
+test_suite "veryquick" -prefix "" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
   This test suite is the same as the "quick" tests, except that some files
   that test malloc and IO errors are omitted.
@@ -130,20 +130,20 @@ test_suite "veryquick" -description {
   test_set $allquicktests -exclude *malloc* *ioerr* *fault*
 ]
 
-test_suite "quick" -description {
+test_suite "quick" -prefix "" -description {
   Quick test suite. Runs in around 10 minutes on a workstation.
 } -files [
   test_set $allquicktests
 ]
 
-test_suite "veryquick_plus_notify2" -description {
+test_suite "veryquick_plus_notify2" -prefix "" -description {
   Very quick test suite + file notify2.test. This is used by one of the 
   sqlite.org release test configurations.
 } -files [ 
   test_set $allquicktests notify2.test -exclude *malloc* *ioerr* *fault*
 ]
 
-test_suite "full" -description {
+test_suite "full" -prefix "" -description {
   Full test suite. Takes a long time.
 } -files [ 
   test_set $alltests 
@@ -777,16 +777,17 @@ test_suite "wal" -description {
 #
 # where available options are:  
 #
-#       -description TITLE                  (default "")
-#       -initialize  SCRIPT                 (default "")
-#       -shutdown    SCRIPT                 (default "")
-#       -presql      SQL                    (default "")
-#       -files       LIST-OF-FILES          (default "")
+#       -description TITLE
+#       -initialize  SCRIPT
+#       -shutdown    SCRIPT
+#       -presql      SQL
+#       -files       LIST-OF-FILES
+#       -prefix      NAME
 #
 proc run_tests {name args} {
   array set options $args
 
-  set ::G(perm:name)         $name
+  set ::G(perm:name)         $options(-prefix)
   set ::G(perm:presql)       $options(-presql)
   set ::G(isquick)           1
 
