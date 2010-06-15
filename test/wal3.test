@@ -56,14 +56,14 @@ do_test wal3-1.0 {
       INSERT INTO t1 SELECT a_string(800) FROM t1;             /*  512 */
       INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 1024 */
       INSERT INTO t1 SELECT a_string(800) FROM t1;             /* 2048 */
-      INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 2000;  /* 4048 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1 LIMIT 1970;  /* 4018 */
     COMMIT;
     PRAGMA cache_size = 10;
   }
   wal_frame_count test.db-wal 1024
-} 4086
+} 4056
 
-for {set i 1} {$i < 20} {incr i} {
+for {set i 1} {$i < 50} {incr i} {
 
   do_test wal3-1.$i.1 {
     set str [a_string 800]
@@ -83,7 +83,7 @@ for {set i 1} {$i < 20} {incr i} {
   sqlite3 db2 test.db
   do_test wal3-1.$i.2 {
     execsql { SELECT count(*) FROM t1 } db2
-  } 4048
+  } 4018
   do_test wal3-1.$i.3 {
     execsql { SELECT x FROM t1 WHERE rowid = $i }
   } $str
@@ -100,7 +100,7 @@ for {set i 1} {$i < 20} {incr i} {
   sqlite3 db2 test2.db
   do_test wal3-1.$i.5 {
     execsql { SELECT count(*) FROM t1 } db2
-  } 4048
+  } 4018
   do_test wal3-1.$i.6 {
     execsql { SELECT x FROM t1 WHERE rowid = $i }
   } $str

@@ -1,5 +1,5 @@
-C Merge\sin\s[2c5e48a485].\nMerge\sin\s[2c5e48a485].\nMerge\sin\s[2c5e48a485].
-D 2010-06-15T14:06:07
+C Run\sextra\siterations\sin\swal3.test\sto\sensure\stest\scoverage.
+D 2010-06-15T14:21:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -766,7 +766,7 @@ F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 0a599c3c4812ed92bc7ad9efcc2c4007fe4cc99a
 F test/wal2.test f9dce93acecff697fc1935869b1ae4cb7dc14587
-F test/wal3.test 1d3aee1a0295db941a0323c0ce5ac16bd5b7689d
+F test/wal3.test 19ab7f6b932f6a9189fcac681123a4decb0a4243
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
 F test/walcksum.test 4efa8fb88c32bed8288ea4385a9cc113a5c8f0bf
@@ -820,7 +820,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 07b2fdd1cebbdbde5098a662eea65a0c9e8b5442 2c5e48a4855e2ec4572697c8fcfe4433e302ef33
-R bd19afd3541624c4c2145c17bdfe85e5
+P 03c0f4fd9cbb655477b63ebbb6af7822715644aa
+R a2075e9740cf75b8937129b9cbcda629
 U dan
-Z e29c0dcc0ec4a48b85a1432cde6c25fb
+Z 73996e320eea715ffc64316616623fba
