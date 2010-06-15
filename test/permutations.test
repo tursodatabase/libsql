@@ -9,7 +9,6 @@
 #
 #***********************************************************************
 #
-# $Id: permutations.test,v 1.51 2009/07/01 18:09:02 danielk1977 Exp $
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
@@ -48,6 +47,7 @@ proc test_suite {name args} {
 
   set     ::testspec($name) [array get options]
   lappend ::testsuitelist $name
+
 }
 
 #-------------------------------------------------------------------------
@@ -120,6 +120,7 @@ set allquicktests [test_set $alltests -exclude {
 #   full
 #   veryquick_plus_notify2
 #
+lappend ::testsuitelist xxx
 
 test_suite "veryquick" -description {
   "Very" quick test suite. Runs in less than 5 minutes on a workstation. 
@@ -150,11 +151,11 @@ test_suite "full" -description {
   unset -nocomplain ::G(isquick)
 }
 
+lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the coverage related test suites:
 #
 #   coverage-wal
-#   coverage-fkey
 #
 test_suite "coverage-wal" -description {
   Coverage tests for file wal.c.
@@ -164,8 +165,14 @@ test_suite "coverage-wal" -description {
   walfault.test
 } 
 
+test_suite "coverage-pager" -description {
+  Coverage tests for file pager.c.
+} -files {
+  pager1.test
+} 
 
 
+lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------
 # Define the permutation test suites:
 #
@@ -803,13 +810,21 @@ proc run_test_suite {name} {
 }
 
 proc help {} {
+  puts "Usage: $::argv0 TESTSUITE ?TESTFILE?"
+  puts ""
+  puts "Available test-suites are:"
   foreach k $::testsuitelist {
-    array set o $::testspec($k)
-    puts "Test suite: \"$k\""
-    set d [string trim $o(-description)]
-    set d [regsub {\n *} $d "\n  "]
-    puts "  $d"
-    puts ""
+    if {[info exists ::testspec($k)]==0} {
+      puts "         ----------------------------------------"
+      puts ""
+    } else {
+      array set o $::testspec($k)
+      puts "Test suite: \"$k\""
+      set d [string trim $o(-description)]
+      set d [regsub {\n *} $d "\n  "]
+      puts "  $d"
+      puts ""
+    }
   }
   exit -1
 }

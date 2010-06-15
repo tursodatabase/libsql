@@ -10,11 +10,6 @@
 set testdir [file dirname $argv0]
 source $testdir/permutations.test
 
-if {[info exists env(QUICKTEST_INCLUDE]} {
-  # A hack so that releasetest.tcl keeps working.
-  run_test_suite quick_plus_notify2
-} else {
-  run_test_suite quick
-}
+run_test_suite quick
 
 finish_test

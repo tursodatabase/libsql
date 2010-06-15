@@ -1,0 +1,194 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+foreach code [list {
+  set ::code2_chan [launch_testfixture]
+  set ::code3_chan [launch_testfixture]
+  proc code2 {tcl} { testfixture $::code2_chan $tcl }
+  proc code3 {tcl} { testfixture $::code3_chan $tcl }
+  set tn 1
+} {
+  proc code2 {tcl} { uplevel #0 $tcl }
+  proc code3 {tcl} { uplevel #0 $tcl }
+  set tn 2
+}] {
+
+  faultsim_delete_and_reopen
+
+  # Open connections [db2] and [db3]. Depending on which iteration this
+  # is, the connections may be created in this interpreter, or in 
+  # interpreters running in other OS processes. As such, the [db2] and [db3]
+  # commands should only be accessed within [code2] and [code3] blocks,
+  # respectively.
+  #
+  eval $code
+  code2 { sqlite3 db2 test.db }
+  code3 { sqlite3 db3 test.db }
+  
+  # Shorthand commands. Execute SQL using database connection [db2] or 
+  # [db3]. Return the results.
+  #
+  proc sql1 {sql} { db eval $sql }
+  proc sql2 {sql} { code2 [list db2 eval $sql] }
+  proc sql3 {sql} { code3 [list db3 eval $sql] }
+
+  proc csql1 {sql} { list [catch { sql1 $sql } msg] $msg }
+  proc csql2 {sql} { list [catch { sql2 $sql } msg] $msg }
+  proc csql3 {sql} { list [catch { sql3 $sql } msg] $msg }
+
+  # Create and populate a database table using connection [db]. Check 
+  # that connections [db2] and [db3] can see the schema and content.
+  #
+  do_test pager1-$tn.1 {
+    sql1 {
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      CREATE INDEX i1 ON t1(b);
+      INSERT INTO t1 VALUES(1, 'one');
+      INSERT INTO t1 VALUES(2, 'two');
+    }
+  } {}
+  do_test pager1-$tn.2 { sql2 { SELECT * FROM t1 } } {1 one 2 two}
+  do_test pager1-$tn.3 { sql3 { SELECT * FROM t1 } } {1 one 2 two}
+
+  # Open a transaction and add a row using [db]. This puts [db] in
+  # RESERVED state. Check that connections [db2] and [db3] can still
+  # read the database content as it was before the transaction was
+  # opened. [db] should see the inserted row.
+  #
+  do_test pager1-$tn.4 {
+    sql1 {
+      BEGIN;
+        INSERT INTO t1 VALUES(3, 'three');
+    }
+  } {}
+  do_test pager1-$tn.5 { sql2 { SELECT * FROM t1 } } {1 one 2 two}
+  do_test pager1-$tn.6 { sql3 { SELECT * FROM t1 } } {1 one 2 two}
+  do_test pager1-$tn.7 { sql1 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+
+  # [db] still has an open write transaction. Check that this prevents
+  # other connections (specifically [db2]) from writing to the database.
+  #
+  # Even if [db2] opens a transaction first, it may not write to the
+  # database. After the attempt to write the db within a transaction, 
+  # [db2] is left with an open transaction, but not a read-lock on
+  # the main database. So it does not prevent [db] from committing.
+  #
+  do_test pager1-$tn.8 { 
+    csql2 { UPDATE t1 SET a = a + 10 }
+  } {1 {database is locked}}
+  do_test pager1-$tn.9 { 
+    csql2 { 
+      BEGIN;
+      UPDATE t1 SET a = a + 10;
+    }
+  } {1 {database is locked}}
+
+  # Have [db] commit its transactions. Check the other connections can
+  # now see the new database content.
+  #
+  do_test pager1-$tn.10 { sql1 { COMMIT } } {}
+  do_test pager1-$tn.11 { sql1 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+  do_test pager1-$tn.12 { sql2 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+  do_test pager1-$tn.13 { sql3 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+
+  # Check that, as noted above, [db2] really did keep an open transaction
+  # after the attempt to write the database failed.
+  #
+  do_test pager1-$tn.14 { 
+    csql2 { BEGIN } 
+  } {1 {cannot start a transaction within a transaction}}
+  do_test pager1-$tn.15 { sql2 { ROLLBACK } } {}
+
+  # Have [db2] open a transaction and take a read-lock on the database.
+  # Check that this prevents [db] from writing to the database (outside
+  # of any transaction). After this fails, check that [db3] can read
+  # the db (showing that [db] did not take a PENDING lock etc.)
+  #
+  do_test pager1-$tn.15 { 
+    sql2 { BEGIN; SELECT * FROM t1; }
+  } {1 one 2 two 3 three}
+  do_test pager1-$tn.16 { 
+    csql1 { UPDATE t1 SET a = a + 10 }
+  } {1 {database is locked}}
+  do_test pager1-$tn.17 { sql3 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+
+  # This time, have [db] open a transaction before writing the database.
+  # This works - [db] gets a RESERVED lock which does not conflict with
+  # the SHARED lock [db2] is holding.
+  #
+  do_test pager1-$tn.18 { 
+    sql1 { 
+      BEGIN;  
+      UPDATE t1 SET a = a + 10; 
+    }
+  } {}
+  do_test pager1-$tn-19 { 
+    sql1 { PRAGMA lock_status } 
+  } {main reserved temp closed}
+  do_test pager1-$tn-20 { 
+    sql2 { PRAGMA lock_status } 
+  } {main shared temp closed}
+
+  # Check that all connections can still read the database. Only [db] sees
+  # the updated content (as the transaction has not been committed yet).
+  #
+  do_test pager1-$tn.21 { sql1 { SELECT * FROM t1 } } {11 one 12 two 13 three}
+  do_test pager1-$tn.22 { sql2 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+  do_test pager1-$tn.23 { sql3 { SELECT * FROM t1 } } {1 one 2 two 3 three}
+
+  # Because [db2] still has the SHARED lock, [db] is unable to commit the
+  # transaction. If it tries, an error is returned and the connection 
+  # upgrades to a PENDING lock.
+  #
+  # Once this happens, [db] can read the database and see the new content,
+  # [db2] (still holding SHARED) can still read the old content, but [db3]
+  # (not holding any lock) is prevented by [db]'s PENDING from reading
+  # the database.
+  #
+  do_test pager1-$tn.24 { csql1 { COMMIT } } {1 {database is locked}}
+  do_test pager1-$tn-25 { 
+    sql1 { PRAGMA lock_status } 
+  } {main pending temp closed}
+  do_test pager1-$tn.26 { sql1 { SELECT * FROM t1  } } {11 one 12 two 13 three}
+  do_test pager1-$tn.27 { sql2 { SELECT * FROM t1  } } {1 one 2 two 3 three}
+  do_test pager1-$tn.28 { csql3 { SELECT * FROM t1 } } {1 {database is locked}}
+
+  # Have [db2] commit its read transaction, releasing the SHARED lock it
+  # is holding. Now, neither [db2] nor [db3] may read the database (as [db]
+  # is still holding a PENDING).
+  #
+  do_test pager1-$tn.29 { sql2 { COMMIT } } {}
+  do_test pager1-$tn.30 { csql2 { SELECT * FROM t1 } } {1 {database is locked}}
+  do_test pager1-$tn.31 { csql3 { SELECT * FROM t1 } } {1 {database is locked}}
+
+  # [db] is now able to commit the transaction. Once the transaction is 
+  # committed, all three connections can read the new content.
+  #
+  do_test pager1-$tn.25 { sql1 { UPDATE t1 SET a = a+10 } } {}
+  do_test pager1-$tn.26 { sql1 { COMMIT } } {}
+  do_test pager1-$tn.27 { sql1 { SELECT * FROM t1 } } {21 one 22 two 23 three}
+  do_test pager1-$tn.27 { sql2 { SELECT * FROM t1 } } {21 one 22 two 23 three}
+  do_test pager1-$tn.28 { sql3 { SELECT * FROM t1 } } {21 one 22 two 23 three}
+
+  code2 { db2 close }
+  code3 { db3 close }
+  catch { close $::code2_chan }
+  catch { close $::code3_chan }
+}
+
+finish_test
+

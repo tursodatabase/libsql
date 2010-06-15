@@ -30,6 +30,7 @@ proc launch_testfixture {} {
 
 # Execute a command in a child testfixture process, connected by two-way
 # channel $chan. Return the result of the command, or an error message.
+#
 proc testfixture {chan cmd} {
   puts $chan $cmd
   puts $chan OVER
@@ -37,7 +38,9 @@ proc testfixture {chan cmd} {
   while { 1 } {
     set line [gets $chan]
     if { $line == "OVER" } { 
-      return $r
+      set res [lindex $r 1]
+      if { [lindex $r 0] } { error $res }
+      return $res
     }
     if {[eof $chan]} {
       return "ERROR: Child process hung up"
@@ -55,7 +58,7 @@ proc testfixture_nb_cb {varname chan} {
   }
 
   if { $line == "OVER" } {
-    set $varname $::tfnb($chan)
+    set $varname [lindex $::tfnb($chan) 1]
     unset ::tfnb($chan)
     close $chan
   } else {
@@ -89,8 +92,8 @@ puts $f {
     puts $l "READ $line"
     if { $line == "OVER" } {
       set rc [catch {eval $script} result]
-      puts $result
-      puts $l "WRITE $result"
+      puts [list $rc $result]
+      puts $l "WRITE [list $rc $result]"
       puts OVER
       puts $l "WRITE OVER"
       flush stdout
