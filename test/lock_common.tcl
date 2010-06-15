@@ -13,6 +13,52 @@
 # processes) to test locking.
 #
 
+proc do_multiclient_test {varname script} {
+
+  foreach code [list {
+    set ::code2_chan [launch_testfixture]
+    set ::code3_chan [launch_testfixture]
+    proc code2 {tcl} { testfixture $::code2_chan $tcl }
+    proc code3 {tcl} { testfixture $::code3_chan $tcl }
+    set tn 1
+  } {
+    proc code2 {tcl} { uplevel #0 $tcl }
+    proc code3 {tcl} { uplevel #0 $tcl }
+    set tn 2
+  }] {
+    faultsim_delete_and_reopen
+  
+    # Open connections [db2] and [db3]. Depending on which iteration this
+    # is, the connections may be created in this interpreter, or in 
+    # interpreters running in other OS processes. As such, the [db2] and [db3]
+    # commands should only be accessed within [code2] and [code3] blocks,
+    # respectively.
+    #
+    eval $code
+    code2 { sqlite3 db2 test.db }
+    code3 { sqlite3 db3 test.db }
+    
+    # Shorthand commands. Execute SQL using database connection [db2] or 
+    # [db3]. Return the results.
+    #
+    proc sql1 {sql} { db eval $sql }
+    proc sql2 {sql} { code2 [list db2 eval $sql] }
+    proc sql3 {sql} { code3 [list db3 eval $sql] }
+  
+    proc csql1 {sql} { list [catch { sql1 $sql } msg] $msg }
+    proc csql2 {sql} { list [catch { sql2 $sql } msg] $msg }
+    proc csql3 {sql} { list [catch { sql3 $sql } msg] $msg }
+
+    uplevel set $varname $tn
+    uplevel $script
+
+    code2 { db2 close }
+    code3 { db3 close }
+    catch { close $::code2_chan }
+    catch { close $::code3_chan }
+  }
+}
+
 # Launch another testfixture process to be controlled by this one. A
 # channel name is returned that may be passed as the first argument to proc
 # 'testfixture' to execute a command. The child testfixture process is shut

@@ -15,40 +15,7 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
-foreach code [list {
-  set ::code2_chan [launch_testfixture]
-  set ::code3_chan [launch_testfixture]
-  proc code2 {tcl} { testfixture $::code2_chan $tcl }
-  proc code3 {tcl} { testfixture $::code3_chan $tcl }
-  set tn 1
-} {
-  proc code2 {tcl} { uplevel #0 $tcl }
-  proc code3 {tcl} { uplevel #0 $tcl }
-  set tn 2
-}] {
-
-  faultsim_delete_and_reopen
-
-  # Open connections [db2] and [db3]. Depending on which iteration this
-  # is, the connections may be created in this interpreter, or in 
-  # interpreters running in other OS processes. As such, the [db2] and [db3]
-  # commands should only be accessed within [code2] and [code3] blocks,
-  # respectively.
-  #
-  eval $code
-  code2 { sqlite3 db2 test.db }
-  code3 { sqlite3 db3 test.db }
-  
-  # Shorthand commands. Execute SQL using database connection [db2] or 
-  # [db3]. Return the results.
-  #
-  proc sql1 {sql} { db eval $sql }
-  proc sql2 {sql} { code2 [list db2 eval $sql] }
-  proc sql3 {sql} { code3 [list db3 eval $sql] }
-
-  proc csql1 {sql} { list [catch { sql1 $sql } msg] $msg }
-  proc csql2 {sql} { list [catch { sql2 $sql } msg] $msg }
-  proc csql3 {sql} { list [catch { sql3 $sql } msg] $msg }
+do_multiclient_test tn {
 
   # Create and populate a database table using connection [db]. Check 
   # that connections [db2] and [db3] can see the schema and content.
@@ -76,7 +43,6 @@ foreach code [list {
     }
   } {}
   do_test pager1-$tn.5 { sql2 { SELECT * FROM t1 } } {1 one 2 two}
-  do_test pager1-$tn.6 { sql3 { SELECT * FROM t1 } } {1 one 2 two}
   do_test pager1-$tn.7 { sql1 { SELECT * FROM t1 } } {1 one 2 two 3 three}
 
   # [db] still has an open write transaction. Check that this prevents
@@ -183,11 +149,6 @@ foreach code [list {
   do_test pager1-$tn.27 { sql1 { SELECT * FROM t1 } } {21 one 22 two 23 three}
   do_test pager1-$tn.27 { sql2 { SELECT * FROM t1 } } {21 one 22 two 23 three}
   do_test pager1-$tn.28 { sql3 { SELECT * FROM t1 } } {21 one 22 two 23 three}
-
-  code2 { db2 close }
-  code3 { db3 close }
-  catch { close $::code2_chan }
-  catch { close $::code3_chan }
 }
 
 finish_test

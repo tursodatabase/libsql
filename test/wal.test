@@ -16,6 +16,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
 
 ifcapable !wal {finish_test ; return }
 
@@ -459,45 +460,18 @@ unset handle
 # using multiple connections in the address space of the current process,
 # and once with all connections except one running in external processes.
 #
-foreach code [list {
-  set ::code2_chan [launch_testfixture]
-  set ::code3_chan [launch_testfixture]
-  proc code2 {tcl} { testfixture $::code2_chan $tcl }
-  proc code3 {tcl} { testfixture $::code3_chan $tcl }
-  set tn 1
-} {
-  proc code2 {tcl} { uplevel #0 $tcl }
-  proc code3 {tcl} { uplevel #0 $tcl }
-  set tn 2
-}] {
-
-  eval $code
-  reopen_db
-
-  # Open connections [db2] and [db3]. Depending on which iteration this
-  # is, the connections may be created in this interpreter, or in 
-  # interpreters running in other OS processes. As such, the [db2] and [db3]
-  # commands should only be accessed within [code2] and [code3] blocks,
-  # respectively.
-  #
-  code2 { sqlite3 db2 test.db ; db2 eval { PRAGMA journal_mode = WAL } }
-  code3 { sqlite3 db3 test.db ; db3 eval { PRAGMA journal_mode = WAL } }
-
-  # Shorthand commands. Execute SQL using database connection [db2] or 
-  # [db3]. Return the results.
-  #
-  proc sql2 {sql} { code2 [list db2 eval $sql] }
-  proc sql3 {sql} { code3 [list db3 eval $sql] }
+do_multiclient_test tn {
 
   # Initialize the database schema and contents.
   #
   do_test wal-10.$tn.1 {
     execsql {
+      PRAGMA journal_mode = wal;
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 2);
       SELECT * FROM t1;
     }
-  } {1 2}
+  } {wal 1 2}
 
   # Open a transaction and write to the database using [db]. Check that [db2]
   # is still able to read the snapshot before the transaction was opened.
@@ -692,12 +666,6 @@ foreach code [list {
     sql2 COMMIT
     execsql { PRAGMA wal_checkpoint }
   } {}
-
-  catch { db close }
-  catch { code2 { db2 close } }
-  catch { code3 { db3 close } }
-  catch { close $::code2_chan }
-  catch { close $::code3_chan }
 }
 
 #-------------------------------------------------------------------------
@@ -900,47 +868,33 @@ do_test wal-13.2.3 {
   expr [file size test.db-wal] > [log_file_size 33000 1024]
 } 1
 
-foreach code [list {
-  set tn 3
-  proc buddy {tcl} { uplevel #0 $tcl }
-} {
-  set tn 4
-  set ::buddy [launch_testfixture]
-  proc buddy {tcl} { testfixture $::buddy $tcl }
-}] {
-
-  eval $code
-  reopen_db
+do_multiclient_test tn {
+  incr tn 2
 
   do_test wal-13.$tn.0 {
-    buddy { sqlite3 db2 test.db }
-    execsql {
+    sql1 {
       PRAGMA journal_mode = WAL;
       CREATE TABLE t1(x);
       INSERT INTO t1 SELECT randomblob(800);
     }
-    execsql { SELECT count(*) FROM t1 }
+    sql1 { SELECT count(*) FROM t1 }
   } {1}
 
   for {set ii 1} {$ii<16} {incr ii} {
     do_test wal-13.$tn.$ii.a {
-      buddy { db2 eval { INSERT INTO t1 SELECT randomblob(800) FROM t1 } }
-      buddy { db2 eval { SELECT count(*) FROM t1 } }
+      sql2 { INSERT INTO t1 SELECT randomblob(800) FROM t1 }
+      sql2 { SELECT count(*) FROM t1 }
     } [expr (1<<$ii)]
     do_test wal-13.$tn.$ii.b {
-      db eval { SELECT count(*) FROM t1 }
+      sql1 { SELECT count(*) FROM t1 }
     } [expr (1<<$ii)]
     do_test wal-13.$tn.$ii.c {
-      db eval { SELECT count(*) FROM t1 }
+      sql1 { SELECT count(*) FROM t1 }
     } [expr (1<<$ii)]
     do_test wal-13.$tn.$ii.d {
-      db eval { PRAGMA integrity_check }
+      sql1 { PRAGMA integrity_check }
     } {ok}
   }
-
-  catch { db2 close }
-  catch { close $::buddy }
-  db close
 }
 
 #-------------------------------------------------------------------------

@@ -110,45 +110,19 @@ for {set i 1} {$i < 50} {incr i} {
   db2 close
 }
 
-db close
-foreach code [list {
-  proc code2 {tcl} { uplevel #0 $tcl }
-  proc code3 {tcl} { uplevel #0 $tcl }
-  set tn singleproc
-} {
-  set ::code2_chan [launch_testfixture]
-  set ::code3_chan [launch_testfixture]
-  proc code2 {tcl} { testfixture $::code2_chan $tcl }
-  proc code3 {tcl} { testfixture $::code3_chan $tcl }
-  set tn multiproc
-}] {
-  file delete -force test.db test.db-wal test.db-journal
-  sqlite3 db test.db
-  eval $code
+do_multiclient_test i {
 
-  # Open connections [db2] and [db3]. Depending on which iteration this
-  # is, the connections may be created in this interpreter, or in 
-  # interpreters running in other OS processes. As such, the [db2] and [db3]
-  # commands should only be accessed within [code2] and [code3] blocks,
-  # respectively.
-  #
-  code2 { sqlite3 db2 test.db ; db2 eval { PRAGMA journal_mode = WAL } }
-  code3 { sqlite3 db3 test.db ; db3 eval { PRAGMA journal_mode = WAL } }
-
-  # Shorthand commands. Execute SQL using database connection [db], [db2] 
-  # or [db3]. Return the results.
-  #
-  proc sql  {sql} { db eval $sql }
-  proc sql2 {sql} { code2 [list db2 eval $sql] }
-  proc sql3 {sql} { code3 [list db3 eval $sql] }
+  set testname(1) multiproc
+  set testname(2) singleproc
+  set tn $testname($i)
 
   do_test wal3-2.$tn.1 {
-    sql { 
+    sql1 { 
       PRAGMA page_size = 1024;
       PRAGMA auto_vacuum = OFF; 
       PRAGMA journal_mode = WAL;
     }
-    sql {
+    sql1 {
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 'one');
       BEGIN;
@@ -181,7 +155,7 @@ foreach code [list {
   # no-op, as the entire log has already been backfilled.
   #
   do_test wal3-2.$tn.4 {
-    sql {
+    sql1 {
       COMMIT;
       PRAGMA wal_checkpoint;
     }
@@ -201,12 +175,6 @@ foreach code [list {
     }
     file size test.db
   } [expr $AUTOVACUUM ? 5*1024 : 4*1024]
-
-  catch { db close }
-  catch { code2 { db2 close } }
-  catch { code3 { db3 close } }
-  catch { close $::code2_chan }
-  catch { close $::code3_chan }
 }
 catch {db close}
 
