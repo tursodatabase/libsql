@@ -11,5 +11,9 @@
 # $Id: veryquick.test,v 1.9 2008/07/12 14:52:21 drh Exp $
 
 set testdir [file dirname $argv0]
-set ISVERYQUICK 1
-source $testdir/quick.test
+source $testdir/permutations.test
+
+run_test_suite veryquick
+
+finish_test
+

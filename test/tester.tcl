@@ -133,12 +133,14 @@ if {[info exists cmdlinearg]==0} {
   #   --malloctrace=N
   #   --backtrace=N
   #   --binarylog=N
+  #   --soak=N
   #
   set cmdlinearg(soft-heap-limit)    0
   set cmdlinearg(maxerror)        1000
   set cmdlinearg(malloctrace)        0
   set cmdlinearg(backtrace)         10
   set cmdlinearg(binarylog)          0
+  set cmdlinearg(soak)               0
 
   set leftover [list]
   foreach a $argv {
@@ -164,10 +166,14 @@ if {[info exists cmdlinearg]==0} {
       }
       {^-+backtrace=.+$} {
         foreach {dummy cmdlinearg(backtrace)} [split $a =] break
+        sqlite3_memdebug_backtrace $value
       }
-      sqlite3_memdebug_backtrace $value
       {^-+binarylog=.+$} {
         foreach {dummy cmdlinearg(binarylog)} [split $a =] break
+      }
+      {^-+soak=.+$} {
+        foreach {dummy cmdlinearg(soak)} [split $a =] break
+        set ::G(issoak) $cmdlinearg(soak)
       }
       default {
         lappend leftover $a
@@ -1140,21 +1146,38 @@ proc slave_test_script {script} {
 }
 
 proc slave_test_file {zFile} {
+  set tail [file tail $zFile]
 
+  ifcapable shared_cache { 
+    set scs [sqlite3_enable_shared_cache] 
+  }
+
+  reset_prng_state
+  set ::sqlite_open_file_count 0
+  set time [time { slave_test_script [list source $zFile] }]
+  set ms [expr [lindex $time 0] / 1000]
+
+  # Test that all files opened by the test script were closed.
+  #
+  do_test ${tail}-closeallfiles {
+    expr {$::sqlite_open_file_count>0}
+  } {0}
   set ::sqlite_open_file_count 0
 
-  set time [time {
-    slave_test_script [list source $zFile]
-  }]
+  # Test that the global "shared-cache" setting was not altered by 
+  # the test script.
+  #
+  ifcapable shared_cache { 
+    set res [expr {[sqlite3_enable_shared_cache] == $scs}]
+    do_test ${tail}-sharedcachesetting [list set {} $res] 1
+  }
 
-  set tail [file tail $zFile]
   if {$::sqlite_open_file_count>0} {
     puts "$tail did not close all files: $::sqlite_open_file_count"
-    fail_test $tail
+    fail_test "$tail-closeallfiles"
     set ::sqlite_open_file_count 0
-    exit
   }
-  puts "time $tail [lrange $time 0 1]"
+  puts "Time: $tail $ms ms"
 
   show_memstats
 }
