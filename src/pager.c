@@ -2019,6 +2019,9 @@ end_playback:
     rc = readMasterJournal(pPager->jfd, zMaster, pPager->pVfs->mxPathname+1);
     testcase( rc!=SQLITE_OK );
   }
+  if( rc==SQLITE_OK && pPager->noSync==0 && pPager->state>=PAGER_EXCLUSIVE ){
+    rc = sqlite3OsSync(pPager->fd, pPager->sync_flags);
+  }
   if( rc==SQLITE_OK ){
     rc = pager_end_transaction(pPager, zMaster[0]!='\0');
     testcase( rc!=SQLITE_OK );
@@ -2866,6 +2869,17 @@ static int pager_write_pagelist(PgHdr *pList){
     rc = pagerOpentemp(pPager, pPager->fd, pPager->vfsFlags);
   }
 
+  /* Before the first write, give the VFS a hint of what the final
+  ** file size will be.
+  */
+  if( rc==SQLITE_OK
+   && pPager->dbSize>(pPager->dbFileSize+1)
+   && isOpen(pPager->fd)
+  ){
+    sqlite3_int64 szFile = pPager->pageSize * (sqlite3_int64)pPager->dbSize;
+    sqlite3OsFileControl(pPager->fd, SQLITE_FCNTL_SIZE_HINT, &szFile);
+  }
+
   while( rc==SQLITE_OK && pList ){
     Pgno pgno = pList->pgno;
 
@@ -3162,7 +3176,7 @@ int sqlite3PagerOpen(
       ** as it will not be possible to open the journal file or even
       ** check for a hot-journal before reading.
       */
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
     }
     if( rc!=SQLITE_OK ){
       sqlite3_free(zPathname);
@@ -3339,6 +3353,7 @@ int sqlite3PagerOpen(
   /* pPager->pBusyHandlerArg = 0; */
   pPager->xReiniter = xReinit;
   /* memset(pPager->aHash, 0, sizeof(pPager->aHash)); */
+
   *ppPager = pPager;
   return SQLITE_OK;
 }
@@ -3488,8 +3503,24 @@ static int readDbPage(PgHdr *pPg){
     rc = SQLITE_OK;
   }
   if( pgno==1 ){
-    u8 *dbFileVers = &((u8*)pPg->pData)[24];
-    memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
+    if( rc ){
+      /* If the read is unsuccessful, set the dbFileVers[] to something
+      ** that will never be a valid file version.  dbFileVers[] is a copy
+      ** of bytes 24..39 of the database.  Bytes 28..31 should always be
+      ** zero.  Bytes 32..35 and 35..39 should be page numbers which are
+      ** never 0xffffffff.  So filling pPager->dbFileVers[] with all 0xff
+      ** bytes should suffice.
+      **
+      ** For an encrypted database, the situation is more complex:  bytes
+      ** 24..39 of the database are white noise.  But the probability of
+      ** white noising equaling 16 bytes of 0xff is vanishingly small so
+      ** we should still be ok.
+      */
+      memset(pPager->dbFileVers, 0xff, sizeof(pPager->dbFileVers));
+    }else{
+      u8 *dbFileVers = &((u8*)pPg->pData)[24];
+      memcpy(&pPager->dbFileVers, dbFileVers, sizeof(pPager->dbFileVers));
+    }
   }
   CODEC1(pPager, pPg->pData, pgno, 3, rc = SQLITE_NOMEM);
 
@@ -3621,7 +3652,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
             rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &fout);
             assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
             if( rc==SQLITE_OK && fout&SQLITE_OPEN_READONLY ){
-              rc = SQLITE_CANTOPEN;
+              rc = SQLITE_CANTOPEN_BKPT;
               sqlite3OsClose(pPager->jfd);
             }
           }else{
@@ -3840,7 +3871,7 @@ int sqlite3PagerAcquire(
       goto pager_acquire_err;
     }
 
-    if( MEMDB || nMax<(int)pgno || noContent ){
+    if( MEMDB || nMax<(int)pgno || noContent || !isOpen(pPager->fd) ){
       if( pgno>pPager->mxPgno ){
 	rc = SQLITE_FULL;
 	goto pager_acquire_err;
@@ -4640,7 +4671,7 @@ int sqlite3PagerCommitPhaseOne(
           sqlite3PagerUnref(pPage);
           if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
         }
-      } 
+      }
       pPager->dbSize = dbSize;
     }
 #endif
@@ -4990,6 +5021,7 @@ int sqlite3PagerSavepoint(Pager *pPager, int op, int iSavepoint){
         /* Only truncate if it is an in-memory sub-journal. */
         if( sqlite3IsMemJournal(pPager->sjfd) ){
           rc = sqlite3OsTruncate(pPager->sjfd, 0);
+          assert( rc==SQLITE_OK );
         }
         pPager->nSubRec = 0;
       }

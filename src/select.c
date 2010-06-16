@@ -3327,18 +3327,19 @@ static int selectAddSubqueryTypeInfo(Walker *pWalker, Select *p){
   struct SrcList_item *pFrom;
 
   assert( p->selFlags & SF_Resolved );
-  assert( (p->selFlags & SF_HasTypeInfo)==0 );
-  p->selFlags |= SF_HasTypeInfo;
-  pParse = pWalker->pParse;
-  pTabList = p->pSrc;
-  for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
-    Table *pTab = pFrom->pTab;
-    if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
-      /* A sub-query in the FROM clause of a SELECT */
-      Select *pSel = pFrom->pSelect;
-      assert( pSel );
-      while( pSel->pPrior ) pSel = pSel->pPrior;
-      selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
+  if( (p->selFlags & SF_HasTypeInfo)==0 ){
+    p->selFlags |= SF_HasTypeInfo;
+    pParse = pWalker->pParse;
+    pTabList = p->pSrc;
+    for(i=0, pFrom=pTabList->a; i<pTabList->nSrc; i++, pFrom++){
+      Table *pTab = pFrom->pTab;
+      if( ALWAYS(pTab!=0) && (pTab->tabFlags & TF_Ephemeral)!=0 ){
+        /* A sub-query in the FROM clause of a SELECT */
+        Select *pSel = pFrom->pSelect;
+        assert( pSel );
+        while( pSel->pPrior ) pSel = pSel->pPrior;
+        selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSel);
+      }
     }
   }
   return WRC_Continue;

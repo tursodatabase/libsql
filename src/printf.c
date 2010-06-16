@@ -460,7 +460,9 @@ void sqlite3VXPrintf(
       case etEXP:
       case etGENERIC:
         realvalue = va_arg(ap,double);
-#ifndef SQLITE_OMIT_FLOATING_POINT
+#ifdef SQLITE_OMIT_FLOATING_POINT
+        length = 0;
+#else
         if( precision<0 ) precision = 6;         /* Set default precision */
         if( precision>etBUFSIZE/2-10 ) precision = etBUFSIZE/2-10;
         if( realvalue<0.0 ){
@@ -606,9 +608,7 @@ void sqlite3VXPrintf(
           while( nPad-- ) bufpt[i++] = '0';
           length = width;
         }
-#else
-        length = 0;
-#endif /* SQLITE_OMIT_FLOATING_POINT */
+#endif /* !defined(SQLITE_OMIT_FLOATING_POINT) */
         break;
       case etSIZE:
         *(va_arg(ap,int*)) = pAccum->nChar;
@@ -655,7 +655,7 @@ void sqlite3VXPrintf(
         isnull = escarg==0;
         if( isnull ) escarg = (xtype==etSQLESCAPE2 ? "NULL" : "(NULL)");
         k = precision;
-        for(i=n=0; (ch=escarg[i])!=0 && k!=0; i++, k--){
+        for(i=n=0; k!=0 && (ch=escarg[i])!=0; i++, k--){
           if( ch==q )  n++;
         }
         needQuote = !isnull && xtype==etSQLESCAPE2;
@@ -937,6 +937,38 @@ char *sqlite3_snprintf(int n, char *zBuf, const char *zFormat, ...){
   va_end(ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;
+}
+
+/*
+** This is the routine that actually formats the sqlite3_log() message.
+** We house it in a separate routine from sqlite3_log() to avoid using
+** stack space on small-stack systems when logging is disabled.
+**
+** sqlite3_log() must render into a static buffer.  It cannot dynamically
+** allocate memory because it might be called while the memory allocator
+** mutex is held.
+*/
+static void renderLogMsg(int iErrCode, const char *zFormat, va_list ap){
+  StrAccum acc;                          /* String accumulator */
+  char zMsg[SQLITE_PRINT_BUF_SIZE*3];    /* Complete log message */
+
+  sqlite3StrAccumInit(&acc, zMsg, sizeof(zMsg), 0);
+  acc.useMalloc = 0;
+  sqlite3VXPrintf(&acc, 0, zFormat, ap);
+  sqlite3GlobalConfig.xLog(sqlite3GlobalConfig.pLogArg, iErrCode,
+                           sqlite3StrAccumFinish(&acc));
+}
+
+/*
+** Format and write a message to the log if logging is enabled.
+*/
+void sqlite3_log(int iErrCode, const char *zFormat, ...){
+  va_list ap;                             /* Vararg list */
+  if( sqlite3GlobalConfig.xLog ){
+    va_start(ap, zFormat);
+    renderLogMsg(iErrCode, zFormat, ap);
+    va_end(ap);
+  }
 }
 
 #if defined(SQLITE_DEBUG)

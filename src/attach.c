@@ -147,8 +147,12 @@ static void attachFunc(
     sqlite3BtreeSecureDelete(aNew->pBt,
                              sqlite3BtreeSecureDelete(db->aDb[0].pBt,-1) );
   }
-  aNew->zName = sqlite3DbStrDup(db, zName);
   aNew->safety_level = 3;
+  aNew->zName = sqlite3DbStrDup(db, zName);
+  if( rc==SQLITE_OK && aNew->zName==0 ){
+    rc = SQLITE_NOMEM;
+  }
+
 
 #ifdef SQLITE_HAS_CODEC
   if( rc==SQLITE_OK ){
@@ -186,11 +190,9 @@ static void attachFunc(
   ** we found it.
   */
   if( rc==SQLITE_OK ){
-    (void)sqlite3SafetyOn(db);
     sqlite3BtreeEnterAll(db);
     rc = sqlite3Init(db, &zErrDyn);
     sqlite3BtreeLeaveAll(db);
-    (void)sqlite3SafetyOff(db);
   }
   if( rc ){
     int iDb = db->nDb - 1;

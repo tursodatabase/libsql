@@ -89,7 +89,7 @@ Corruption detected in cell 15 on page 2}}
     sqlite3 db test.db
     db eval {PRAGMA integrity_check(1)}
   } {{*** in database main ***
-Corruption detected in cell 15 on page 2}}
+On tree page 2 cell 15: Rowid 0 out of order (previous was 15)}}
 }
   
 # The code path that was causing the buffer overrun that this test

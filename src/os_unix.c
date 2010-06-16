@@ -128,9 +128,12 @@
 # else
 #  include <sys/file.h>
 #  include <sys/param.h>
-#  include <sys/mount.h>
 # endif
 #endif /* SQLITE_ENABLE_LOCKING_STYLE */
+
+#if defined(__APPLE__) || (SQLITE_ENABLE_LOCKING_STYLE && !OS_VXWORKS)
+# include <sys/mount.h>
+#endif
 
 /*
 ** Allowed values of unixFile.fsFlags
@@ -1111,7 +1114,7 @@ static int transferOwnership(unixFile *pFile){
   }
   if( pFile->locktype!=NO_LOCK ){
     /* We cannot change ownership while we are holding a lock! */
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   OSTRACE4("Transfer ownership of %d from %d to %d\n",
             pFile->h, pFile->tid, hSelf);
@@ -1248,7 +1251,7 @@ static int unixLock(sqlite3_file *id, int locktype){
   struct unixLockInfo *pLock = pFile->pLock;
   struct flock lock;
   int s = 0;
-  int tErrno;
+  int tErrno = 0;
 
   assert( pFile );
   OSTRACE7("LOCK    %d %s was %s(%s,%d) pid=%d (unix)\n", pFile->h,
@@ -1512,7 +1515,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   h = pFile->h;
@@ -1557,7 +1560,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1569,7 +1572,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1581,7 +1584,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST+divSize;
         lock.l_len = SHARED_SIZE-divSize;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_UNLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -1594,7 +1597,7 @@ static int _posixUnlock(sqlite3_file *id, int locktype, int handleNFSUnlock){
         lock.l_start = SHARED_FIRST;
         lock.l_len = SHARED_SIZE;
         if( fcntl(h, F_SETLK, &lock)==(-1) ){
-          int tErrno = errno;
+          tErrno = errno;
           rc = sqliteErrorFromPosixError(tErrno, SQLITE_IOERR_RDLOCK);
           if( IS_LOCK_ERROR(rc) ){
             pFile->lastErrno = tErrno;
@@ -2735,7 +2738,7 @@ static int afpUnlock(sqlite3_file *id, int locktype) {
     return SQLITE_OK;
   }
   if( CHECK_THREADID(pFile) ){
-    return SQLITE_MISUSE;
+    return SQLITE_MISUSE_BKPT;
   }
   unixEnterMutex();
   pLock = pFile->pLock;
@@ -3346,6 +3349,12 @@ static int unixFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = ((unixFile*)id)->lastErrno;
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SIZE_HINT: {
+      sqlite3_int64 szFile = *(sqlite3_int64*)pArg;
+      unixFile *pFile = (unixFile*)id;
+      ftruncate(pFile->h, szFile);
+      return SQLITE_OK;
+    }
 #ifndef NDEBUG
     /* The pager calls this method to signal that it has done
     ** a rollback and that the database is therefore unchanged and
@@ -3867,7 +3876,7 @@ static int openDirectory(const char *zFilename, int *pFd){
     }
   }
   *pFd = fd;
-  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN);
+  return (fd>=0?SQLITE_OK:SQLITE_CANTOPEN_BKPT);
 }
 
 /*
@@ -4130,7 +4139,7 @@ static int unixOpen(
       fd = open(zName, openFlags, openMode);
     }
     if( fd<0 ){
-      rc = SQLITE_CANTOPEN;
+      rc = SQLITE_CANTOPEN_BKPT;
       goto open_finished;
     }
   }
@@ -4354,7 +4363,7 @@ static int unixFullPathname(
   }else{
     int nCwd;
     if( getcwd(zOut, nOut-1)==0 ){
-      return SQLITE_CANTOPEN;
+      return SQLITE_CANTOPEN_BKPT;
     }
     nCwd = (int)strlen(zOut);
     sqlite3_snprintf(nOut-nCwd, &zOut[nCwd], "/%s", zPath);
@@ -4865,7 +4874,7 @@ static int proxyCreateUnixFile(
       case EIO: 
         return SQLITE_IOERR_LOCK; /* even though it is the conch */
       default:
-        return SQLITE_CANTOPEN;
+        return SQLITE_CANTOPEN_BKPT;
     }
   }
   
@@ -5249,7 +5258,7 @@ static int proxyTakeConch(unixFile *pFile){
         if( fd>=0 ){
           pFile->h = fd;
         }else{
-          rc=SQLITE_CANTOPEN; /* SQLITE_BUSY? proxyTakeConch called
+          rc=SQLITE_CANTOPEN_BKPT; /* SQLITE_BUSY? proxyTakeConch called
            during locking */
         }
       }

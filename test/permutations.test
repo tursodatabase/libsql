@@ -472,6 +472,9 @@ run_tests "inmemory_journal" -description {
   # the number of fsync() calls.
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
+
+  # Exclude stmt.test, which expects sub-journals to use temporary files.
+  stmt.test
 }
 
 ifcapable mem3 {

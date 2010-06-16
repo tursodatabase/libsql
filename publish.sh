@@ -34,19 +34,6 @@ gzip sqlite3-$VERS.bin
 chmod 644 sqlite3-$VERS.bin.gz
 mv sqlite3-$VERS.bin.gz doc
 
-# Build a source archive useful for windows.
-#
-make target_source
-cd tsrc
-echo '***** BUILDING preprocessed source archives'
-rm fts[12]* icu*
-rm -f ../doc/sqlite-source-$VERSW.zip
-zip ../doc/sqlite-source-$VERSW.zip *
-cd ..
-cp tsrc/sqlite3.h tsrc/sqlite3ext.h .
-pwd
-zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h sqlite3ext.h
-
 # Build the sqlite.so and tclsqlite.so shared libraries
 # under Linux
 #
@@ -86,6 +73,20 @@ OPTS="$OPTS -DSQLITE_ENABLE_FTS3=1 -DSQLITE_ENABLE_RTREE=1"
 i386-mingw32msvc-gcc -Os $OPTS -Itsrc -I$TCLDIR sqlite3.c tsrc/shell.c \
       -o sqlite3.exe
 zip doc/sqlite-$VERSW.zip sqlite3.exe
+
+# Build a source archive useful for windows.
+#
+make target_source
+cd tsrc
+echo '***** BUILDING preprocessed source archives'
+rm fts[12]* icu*
+rm -f ../doc/sqlite-source-$VERSW.zip
+zip ../doc/sqlite-source-$VERSW.zip *
+cd ..
+cp tsrc/sqlite3.h tsrc/sqlite3ext.h .
+cp tsrc/shell.c .
+pwd
+zip doc/sqlite-amalgamation-$VERSW.zip sqlite3.c sqlite3.h sqlite3ext.h shell.c sqlite3.def
 
 # Construct a tarball of the source tree
 #

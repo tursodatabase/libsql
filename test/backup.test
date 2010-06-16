@@ -956,10 +956,11 @@ foreach {tn file rc} {
     B step 50
   } $rc
 
-  do_test backup-10.6 {
+  do_test backup-10.$tn.6 {
     B finish
   } {SQLITE_OK}
+
+  db2 close
 }
 
-db2 close
 finish_test

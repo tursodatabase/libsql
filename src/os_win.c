@@ -1112,6 +1112,11 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
       *(int*)pArg = (int)((winFile*)id)->lastErrno;
       return SQLITE_OK;
     }
+    case SQLITE_FCNTL_SIZE_HINT: {
+      sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+      winTruncate(id, sz);
+      return SQLITE_OK;
+    }
   }
   return SQLITE_ERROR;
 }
@@ -1417,7 +1422,7 @@ static int winOpen(
       return winOpen(pVfs, zName, id, 
              ((flags|SQLITE_OPEN_READONLY)&~SQLITE_OPEN_READWRITE), pOutFlags);
     }else{
-      return SQLITE_CANTOPEN;
+      return SQLITE_CANTOPEN_BKPT;
     }
   }
   if( pOutFlags ){
@@ -1439,7 +1444,7 @@ static int winOpen(
   ){
     CloseHandle(h);
     free(zConverted);
-    return SQLITE_CANTOPEN;
+    return SQLITE_CANTOPEN_BKPT;
   }
   if( isTemp ){
     pFile->zDeleteOnClose = zConverted;

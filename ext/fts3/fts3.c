@@ -601,6 +601,14 @@ static int fts3CreateTables(Fts3Table *p){
 }
 
 /*
+** An sqlite3_exec() callback for fts3TableExists.
+*/
+static int fts3TableExistsCallback(void *pArg, int n, char **pp1, char **pp2){
+  *(int*)pArg = 1;
+  return 1;
+}
+
+/*
 ** Determine if a table currently exists in the database.
 */
 static void fts3TableExists(
@@ -612,10 +620,17 @@ static void fts3TableExists(
   u8 *pResult           /* Write results here */
 ){
   int rc = SQLITE_OK;
+  int res = 0;
+  char *zSql;
   if( *pRc ) return;
-  fts3DbExec(&rc, db, "SELECT 1 FROM %Q.'%q%s'", zDb, zName, zSuffix);
-  *pResult = (rc==SQLITE_OK) ? 1 : 0;
-  if( rc!=SQLITE_ERROR ) *pRc = rc;
+  zSql = sqlite3_mprintf(
+    "SELECT 1 FROM %Q.sqlite_master WHERE name='%q%s'",
+    zDb, zName, zSuffix
+  );    
+  rc = sqlite3_exec(db, zSql, fts3TableExistsCallback, &res, 0);
+  sqlite3_free(zSql);
+  *pResult = res & 0xff;
+  if( rc!=SQLITE_ABORT ) *pRc = rc;
 }
 
 /*
@@ -1037,7 +1052,12 @@ static void fts3PutDeltaVarint(
 
 /*
 ** When this function is called, *ppPoslist is assumed to point to the 
-** start of a position-list.
+** start of a position-list. After it returns, *ppPoslist points to the
+** first byte after the position-list.
+**
+** If pp is not NULL, then the contents of the position list are copied
+** to *pp. *pp is set to point to the first byte past the last byte copied
+** before this function returns.
 */
 static void fts3PoslistCopy(char **pp, char **ppPoslist){
   char *pEnd = *ppPoslist;
@@ -2028,7 +2048,13 @@ static int fts3FilterMethod(
     rc = sqlite3Fts3ExprParse(p->pTokenizer, p->azColumn, p->nColumn, 
         iCol, zQuery, -1, &pCsr->pExpr
     );
-    if( rc!=SQLITE_OK ) return rc;
+    if( rc!=SQLITE_OK ){
+      if( rc==SQLITE_ERROR ){
+        p->base.zErrMsg = sqlite3_mprintf("malformed MATCH expression: [%s]",
+                                          zQuery);
+      }
+      return rc;
+    }
 
     rc = evalFts3Expr(p, pCsr->pExpr, &pCsr->aDoclist, &pCsr->nDoclist, 0);
     pCsr->pNextId = pCsr->aDoclist;
@@ -2181,7 +2207,9 @@ char *sqlite3Fts3FindPositions(
     while( pCsr<pEnd ){
       if( pExpr->iCurrent<iDocid ){
         fts3PoslistCopy(0, &pCsr);
-        fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+        if( pCsr<pEnd ){
+          fts3GetDeltaVarint(&pCsr, &pExpr->iCurrent);
+        }
         pExpr->pCurrent = pCsr;
       }else{
         if( pExpr->iCurrent==iDocid ){

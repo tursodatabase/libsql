@@ -213,6 +213,8 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
   int rc = SQLITE_OK;
   LoadDoclistCtx *p = (LoadDoclistCtx *)ctx;
 
+  UNUSED_PARAMETER(iPhrase);
+
   p->nPhrase++;
   p->nToken += pExpr->pPhrase->nToken;
 
@@ -233,6 +235,8 @@ static int fts3ExprLoadDoclistsCb1(Fts3Expr *pExpr, int iPhrase, void *ctx){
 ** fts3ExprLoadDoclists().
 */
 static int fts3ExprLoadDoclistsCb2(Fts3Expr *pExpr, int iPhrase, void *ctx){
+  UNUSED_PARAMETER(iPhrase);
+  UNUSED_PARAMETER(ctx);
   if( pExpr->aDoclist ){
     pExpr->pCurrent = pExpr->aDoclist;
     pExpr->iCurrent = 0;
@@ -522,7 +526,7 @@ static int fts3StringAppend(
   int nAppend                     /* Size of zAppend in bytes (or -1) */
 ){
   if( nAppend<0 ){
-    nAppend = strlen(zAppend);
+    nAppend = (int)strlen(zAppend);
   }
 
   /* If there is insufficient space allocated at StrBuffer.z, use realloc()
@@ -1024,6 +1028,7 @@ static int fts3ExprTermOffsetInit(Fts3Expr *pExpr, int iPhrase, void *ctx){
   char *pList;                    /* Pointer to position list for phrase */
   int iPos = 0;                   /* First position in position-list */
 
+  UNUSED_PARAMETER(iPhrase);
   pList = sqlite3Fts3FindPositions(pExpr, p->iDocid, p->iCol);
   nTerm = pExpr->pPhrase->nToken;
   if( pList ){
@@ -1151,11 +1156,13 @@ void sqlite3Fts3Offsets(
               "%d %d %d %d ", iCol, pTerm-sCtx.aTerm, iStart, iEnd-iStart
           );
           rc = fts3StringAppend(&res, aBuffer, -1);
+        }else if( rc==SQLITE_DONE ){
+          rc = SQLITE_CORRUPT;
         }
       }
     }
     if( rc==SQLITE_DONE ){
-      rc = SQLITE_CORRUPT;
+      rc = SQLITE_OK;
     }
 
     pMod->xClose(pC);

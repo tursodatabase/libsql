@@ -19,27 +19,41 @@
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /*
+** Finalize a prepared statement.  If there was an error, store the
+** text of the error message in *pzErrMsg.  Return the result code.
+*/
+static int vacuumFinalize(sqlite3 *db, sqlite3_stmt *pStmt, char **pzErrMsg){
+  int rc;
+  rc = sqlite3VdbeFinalize((Vdbe*)pStmt);
+  if( rc ){
+    sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
+  }
+  return rc;
+}
+
+/*
 ** Execute zSql on database db. Return an error code.
 */
-static int execSql(sqlite3 *db, const char *zSql){
+static int execSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   sqlite3_stmt *pStmt;
   VVA_ONLY( int rc; )
   if( !zSql ){
     return SQLITE_NOMEM;
   }
   if( SQLITE_OK!=sqlite3_prepare(db, zSql, -1, &pStmt, 0) ){
+    sqlite3SetString(pzErrMsg, db, sqlite3_errmsg(db));
     return sqlite3_errcode(db);
   }
   VVA_ONLY( rc = ) sqlite3_step(pStmt);
   assert( rc!=SQLITE_ROW );
-  return sqlite3_finalize(pStmt);
+  return vacuumFinalize(db, pStmt, pzErrMsg);
 }
 
 /*
 ** Execute zSql on database db. The statement returns exactly
 ** one column. Execute this as SQL on the same database.
 */
-static int execExecSql(sqlite3 *db, const char *zSql){
+static int execExecSql(sqlite3 *db, char **pzErrMsg, const char *zSql){
   sqlite3_stmt *pStmt;
   int rc;
 
@@ -47,14 +61,14 @@ static int execExecSql(sqlite3 *db, const char *zSql){
   if( rc!=SQLITE_OK ) return rc;
 
   while( SQLITE_ROW==sqlite3_step(pStmt) ){
-    rc = execSql(db, (char*)sqlite3_column_text(pStmt, 0));
+    rc = execSql(db, pzErrMsg, (char*)sqlite3_column_text(pStmt, 0));
     if( rc!=SQLITE_OK ){
-      sqlite3_finalize(pStmt);
+      vacuumFinalize(db, pStmt, pzErrMsg);
       return rc;
     }
   }
 
-  return sqlite3_finalize(pStmt);
+  return vacuumFinalize(db, pStmt, pzErrMsg);
 }
 
 /*
@@ -124,8 +138,12 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** time to parse and run the PRAGMA to turn journalling off than it does
   ** to write the journal header file.
   */
-  zSql = "ATTACH '' AS vacuum_db;";
-  rc = execSql(db, zSql);
+  if( sqlite3TempInMemory(db) ){
+    zSql = "ATTACH ':memory:' AS vacuum_db;";
+  }else{
+    zSql = "ATTACH '' AS vacuum_db;";
+  }
+  rc = execSql(db, pzErrMsg, zSql);
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
   pDb = &db->aDb[db->nDb-1];
   assert( strcmp(db->aDb[db->nDb-1].zName,"vacuum_db")==0 );
@@ -157,7 +175,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
     rc = SQLITE_NOMEM;
     goto end_of_vacuum;
   }
-  rc = execSql(db, "PRAGMA vacuum_db.synchronous=OFF");
+  rc = execSql(db, pzErrMsg, "PRAGMA vacuum_db.synchronous=OFF");
   if( rc!=SQLITE_OK ){
     goto end_of_vacuum;
   }
@@ -168,23 +186,23 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
 #endif
 
   /* Begin a transaction */
-  rc = execSql(db, "BEGIN EXCLUSIVE;");
+  rc = execSql(db, pzErrMsg, "BEGIN EXCLUSIVE;");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Query the schema of the main database. Create a mirror schema
   ** in the temporary database.
   */
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'CREATE TABLE vacuum_db.' || substr(sql,14) "
       "  FROM sqlite_master WHERE type='table' AND name!='sqlite_sequence'"
       "   AND rootpage>0"
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'CREATE INDEX vacuum_db.' || substr(sql,14)"
       "  FROM sqlite_master WHERE sql LIKE 'CREATE INDEX %' ");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'CREATE UNIQUE INDEX vacuum_db.' || substr(sql,21) "
       "  FROM sqlite_master WHERE sql LIKE 'CREATE UNIQUE INDEX %'");
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
@@ -193,24 +211,23 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** an "INSERT INTO vacuum_db.xxx SELECT * FROM main.xxx;" to copy
   ** the contents to the temporary database.
   */
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM main.' || quote(name) || ';'"
       "FROM main.sqlite_master "
       "WHERE type = 'table' AND name!='sqlite_sequence' "
       "  AND rootpage>0"
-
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
 
   /* Copy over the sequence table
   */
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'DELETE FROM vacuum_db.' || quote(name) || ';' "
       "FROM vacuum_db.sqlite_master WHERE name='sqlite_sequence' "
   );
   if( rc!=SQLITE_OK ) goto end_of_vacuum;
-  rc = execExecSql(db, 
+  rc = execExecSql(db, pzErrMsg,
       "SELECT 'INSERT INTO vacuum_db.' || quote(name) "
       "|| ' SELECT * FROM main.' || quote(name) || ';' "
       "FROM vacuum_db.sqlite_master WHERE name=='sqlite_sequence';"
@@ -223,7 +240,7 @@ int sqlite3RunVacuum(char **pzErrMsg, sqlite3 *db){
   ** associated storage, so all we have to do is copy their entries
   ** from the SQLITE_MASTER table.
   */
-  rc = execSql(db,
+  rc = execSql(db, pzErrMsg,
       "INSERT INTO vacuum_db.sqlite_master "
       "  SELECT type, name, tbl_name, rootpage, sql"
       "    FROM main.sqlite_master"

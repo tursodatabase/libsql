@@ -183,7 +183,11 @@ static void set_options(Tcl_Interp *interp){
               TCL_GLOBAL_ONLY);
 #endif
 
-
+#ifdef SQLITE_OMIT_COMPILEOPTION_DIAGS
+  Tcl_SetVar2(interp, "sqlite_options", "compileoption_diags", "0", TCL_GLOBAL_ONLY);
+#else
+  Tcl_SetVar2(interp, "sqlite_options", "compileoption_diags", "1", TCL_GLOBAL_ONLY);
+#endif
 
 #ifdef SQLITE_OMIT_COMPLETE
   Tcl_SetVar2(interp, "sqlite_options", "complete", "0", TCL_GLOBAL_ONLY);

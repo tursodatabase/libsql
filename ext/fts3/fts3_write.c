@@ -186,9 +186,9 @@ static int fts3SqlStmt(
 /* 5  */  "DELETE FROM %Q.'%q_docsize'",
 /* 6  */  "DELETE FROM %Q.'%q_stat'",
 /* 7  */  "SELECT * FROM %Q.'%q_content' WHERE rowid=?",
-/* 8  */  "SELECT coalesce(max(idx)+1, 0) FROM %Q.'%q_segdir' WHERE level=?",
+/* 8  */  "SELECT (SELECT max(idx) FROM %Q.'%q_segdir' WHERE level = ?) + 1",
 /* 9  */  "INSERT INTO %Q.'%q_segments'(blockid, block) VALUES(?, ?)",
-/* 10 */  "SELECT coalesce(max(blockid)+1, 1) FROM %Q.'%q_segments'",
+/* 10 */  "SELECT coalesce((SELECT max(blockid) FROM %Q.'%q_segments') + 1, 1)",
 /* 11 */  "INSERT INTO %Q.'%q_segdir' VALUES(?,?,?,?,?,?)",
 
           /* Return segments in order from oldest to newest.*/ 
@@ -2274,9 +2274,11 @@ static void fts3DecodeIntArray(
   int nBuf           /* size of the BLOB */
 ){
   int i, j;
+  UNUSED_PARAMETER(nBuf);
   for(i=j=0; i<N; i++){
     sqlite3_int64 x;
     j += sqlite3Fts3GetVarint(&zBuf[j], &x);
+    assert(j<=nBuf);
     a[i] = (u32)(x & 0xffffffff);
   }
 }
@@ -2421,10 +2423,10 @@ static void fts3UpdateDocTotals(
          sqlite3_column_blob(pStmt, 0),
          sqlite3_column_bytes(pStmt, 0));
   }else{
-    memset(a, 0, sizeof(int)*(p->nColumn+1) );
+    memset(a, 0, sizeof(u32)*(p->nColumn+1) );
   }
   sqlite3_reset(pStmt);
-  if( nChng<0 && a[0]<-nChng ){
+  if( nChng<0 && a[0]<(u32)(-nChng) ){
     a[0] = 0;
   }else{
     a[0] += nChng;
