@@ -76,7 +76,8 @@ struct Testvfs {
 
 #define TESTVFS_OPEN_MASK       0x00000100
 #define TESTVFS_SYNC_MASK       0x00000200
-#define TESTVFS_ALL_MASK        0x000003FF
+#define TESTVFS_DELETE_MASK     0x00000400
+#define TESTVFS_ALL_MASK        0x000007FF
 
 
 #define TESTVFS_MAX_PAGES 256
@@ -457,7 +458,19 @@ static int tvfsOpen(
 ** returning.
 */
 static int tvfsDelete(sqlite3_vfs *pVfs, const char *zPath, int dirSync){
-  return sqlite3OsDelete(PARENTVFS(pVfs), zPath, dirSync);
+  int rc = SQLITE_OK;
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+
+  if( p->pScript && p->mask&TESTVFS_DELETE_MASK ){
+    tvfsExecTcl(p, "xDelete", 
+        Tcl_NewStringObj(zPath, -1), Tcl_NewIntObj(dirSync), 0
+    );
+    tvfsResultCode(p, &rc);
+  }
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsDelete(PARENTVFS(pVfs), zPath, dirSync);
+  }
+  return rc;
 }
 
 /*
@@ -843,6 +856,7 @@ static int testvfs_obj_cmd(
         { "xShmClose",   TESTVFS_SHMCLOSE_MASK },
         { "xShmMap",     TESTVFS_SHMMAP_MASK },
         { "xSync",       TESTVFS_SYNC_MASK },
+        { "xDelete",     TESTVFS_DELETE_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
       };
       Tcl_Obj **apElem = 0;

@@ -1,0 +1,119 @@
+# 2010 June 15
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+set a_string_counter 1
+proc a_string {n} {
+  global a_string_counter
+  incr a_string_counter
+  string range [string repeat "${a_string_counter}." $n] 1 $n
+}
+db func a_string a_string
+
+#-------------------------------------------------------------------------
+# Test fault-injection while rolling back a hot-journal file.
+#
+do_test pagerfault-1-pre1 {
+  execsql {
+    PRAGMA journal_mode = DELETE;
+    PRAGMA cache_size = 10;
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    BEGIN;
+      INSERT INTO t1 SELECT a_string(201), a_string(301) FROM t1;
+      INSERT INTO t1 SELECT a_string(202), a_string(302) FROM t1;
+      INSERT INTO t1 SELECT a_string(203), a_string(303) FROM t1;
+      INSERT INTO t1 SELECT a_string(204), a_string(304) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-1 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT count(*) FROM t1 }
+} -test {
+  faultsim_test_result {0 4}
+  faultsim_integrity_check
+  if {[db one { SELECT count(*) FROM t1 }] != 4} {
+    error "Database content appears incorrect"
+  }
+}
+
+#-------------------------------------------------------------------------
+# Test fault-injection while rolling back hot-journals that were created
+# as part of a multi-file transaction.
+#
+do_test pagerfault-2-pre1 {
+  testvfs tstvfs -default 1
+  tstvfs filter xDelete
+  tstvfs script xDeleteCallback
+
+  proc xDeleteCallback {method file args} {
+    set file [file tail $file]
+    if { [string match *mj* $file] } { faultsim_save }
+  }
+
+  faultsim_delete_and_reopen
+  db func a_string a_string
+
+  execsql {
+    ATTACH 'test.db2' AS aux;
+    PRAGMA journal_mode = DELETE;
+    PRAGMA main.cache_size = 10;
+    PRAGMA aux.cache_size = 10;
+
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    CREATE TABLE aux.t2(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t2 SELECT * FROM t1;
+
+    BEGIN;
+      INSERT INTO t1 SELECT a_string(201), a_string(301) FROM t1;
+      INSERT INTO t1 SELECT a_string(202), a_string(302) FROM t1;
+      INSERT INTO t1 SELECT a_string(203), a_string(303) FROM t1;
+      INSERT INTO t1 SELECT a_string(204), a_string(304) FROM t1;
+      REPLACE INTO t2 SELECT * FROM t1;
+    COMMIT;
+  }
+
+  db close
+  tstvfs delete
+} {}
+do_faultsim_test pagerfault-2 -faults ioerr-persistent -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    ATTACH 'test.db2' AS aux;
+    SELECT count(*) FROM t2;
+    SELECT count(*) FROM t1;
+  }
+} -test {
+  faultsim_test_result {0 {4 4}} {1 {unable to open database: test.db2}}
+  faultsim_integrity_check
+
+  catchsql { ATTACH 'test.db2' AS aux }
+  if {[db one { SELECT count(*) FROM t1 }] != 4
+   || [db one { SELECT count(*) FROM t2 }] != 4
+  } {
+    error "Database content appears incorrect"
+  }
+}
+
+finish_test

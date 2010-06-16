@@ -15,6 +15,21 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
+#
+# pager1-1.*: Test inter-process locking (clients in multiple processes).
+#
+# pager1-2.*: Test intra-process locking (multiple clients in this process).
+#
+# pager1-3.*: Savepoint related tests.
+#
+
+proc do_execsql_test {testname sql result} {
+  uplevel do_test $testname [list "execsql {$sql}"] [list $result]
+}
+proc do_catchsql_test {testname sql result} {
+  uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
+}
+
 do_multiclient_test tn {
 
   # Create and populate a database table using connection [db]. Check 
@@ -150,6 +165,39 @@ do_multiclient_test tn {
   do_test pager1-$tn.27 { sql2 { SELECT * FROM t1 } } {21 one 22 two 23 three}
   do_test pager1-$tn.28 { sql3 { SELECT * FROM t1 } } {21 one 22 two 23 three}
 }
+
+do_test pager1-3.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    CREATE TABLE counter(
+      i CHECK (i<5), 
+      u CHECK (u<10)
+    );
+    INSERT INTO counter VALUES(0, 0);
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 BEGIN
+      UPDATE counter SET i = i+1;
+    END;
+    CREATE TRIGGER tr2 AFTER UPDATE ON t1 BEGIN
+      UPDATE counter SET u = u+1;
+    END;
+  }
+  execsql { SELECT * FROM counter }
+} {0 0}
+
+do_execsql_test pager1-3.2 {
+  BEGIN;
+    INSERT INTO t1 VALUES(1, randomblob(1500));
+    INSERT INTO t1 VALUES(2, randomblob(1500));
+    INSERT INTO t1 VALUES(3, randomblob(1500));
+    SELECT * FROM counter;
+} {3 0}
+do_catchsql_test pager1-3.3 {
+    INSERT INTO t1 SELECT a+3, randomblob(1500) FROM t1
+} {1 {constraint failed}}
+do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
+do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
+do_execsql_test pager1-3.6 { COMMIT } {}
 
 finish_test
 

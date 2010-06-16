@@ -736,17 +736,49 @@ struct unixInodeInfo {
 static unixInodeInfo *inodeList = 0;
 
 /*
+** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
+** If all such file descriptors are closed without error, the list is
+** cleared and SQLITE_OK returned.
+**
+** Otherwise, if an error occurs, then successfully closed file descriptor
+** entries are removed from the list, and SQLITE_IOERR_CLOSE returned. 
+** not deleted and SQLITE_IOERR_CLOSE returned.
+*/ 
+static int closePendingFds(unixFile *pFile){
+  int rc = SQLITE_OK;
+  unixInodeInfo *pInode = pFile->pInode;
+  UnixUnusedFd *pError = 0;
+  UnixUnusedFd *p;
+  UnixUnusedFd *pNext;
+  for(p=pInode->pUnused; p; p=pNext){
+    pNext = p->pNext;
+    if( close(p->fd) ){
+      pFile->lastErrno = errno;
+      rc = SQLITE_IOERR_CLOSE;
+      p->pNext = pError;
+      pError = p;
+    }else{
+      sqlite3_free(p);
+    }
+  }
+  pInode->pUnused = pError;
+  return rc;
+}
+
+/*
 ** Release a unixInodeInfo structure previously allocated by findInodeInfo().
 **
 ** The mutex entered using the unixEnterMutex() function must be held
 ** when this function is called.
 */
-static void releaseInodeInfo(unixInodeInfo *pInode){
+static void releaseInodeInfo(unixFile *pFile){
+  unixInodeInfo *pInode = pFile->pInode;
   assert( unixMutexHeld() );
   if( pInode ){
     pInode->nRef--;
     if( pInode->nRef==0 ){
       assert( pInode->pShmNode==0 );
+      closePendingFds(pFile);
       if( pInode->pPrev ){
         assert( pInode->pPrev->pNext==pInode );
         pInode->pPrev->pNext = pInode->pNext;
@@ -1153,36 +1185,6 @@ end_lock:
 }
 
 /*
-** Close all file descriptors accumuated in the unixInodeInfo->pUnused list.
-** If all such file descriptors are closed without error, the list is
-** cleared and SQLITE_OK returned.
-**
-** Otherwise, if an error occurs, then successfully closed file descriptor
-** entries are removed from the list, and SQLITE_IOERR_CLOSE returned. 
-** not deleted and SQLITE_IOERR_CLOSE returned.
-*/ 
-static int closePendingFds(unixFile *pFile){
-  int rc = SQLITE_OK;
-  unixInodeInfo *pInode = pFile->pInode;
-  UnixUnusedFd *pError = 0;
-  UnixUnusedFd *p;
-  UnixUnusedFd *pNext;
-  for(p=pInode->pUnused; p; p=pNext){
-    pNext = p->pNext;
-    if( close(p->fd) ){
-      pFile->lastErrno = errno;
-      rc = SQLITE_IOERR_CLOSE;
-      p->pNext = pError;
-      pError = p;
-    }else{
-      sqlite3_free(p);
-    }
-  }
-  pInode->pUnused = pError;
-  return rc;
-}
-
-/*
 ** Add the file descriptor used by file handle pFile to the corresponding
 ** pUnused list.
 */
@@ -1451,7 +1453,7 @@ static int unixClose(sqlite3_file *id){
       */
       setPendingFd(pFile);
     }
-    releaseInodeInfo(pFile->pInode);
+    releaseInodeInfo(pFile);
     rc = closeUnixFile(id);
     unixLeaveMutex();
   }
@@ -2066,7 +2068,7 @@ static int semClose(sqlite3_file *id) {
     semUnlock(id, NO_LOCK);
     assert( pFile );
     unixEnterMutex();
-    releaseInodeInfo(pFile->pInode);
+    releaseInodeInfo(pFile);
     unixLeaveMutex();
     closeUnixFile(id);
   }
@@ -2533,7 +2535,7 @@ static int afpClose(sqlite3_file *id) {
       */
       setPendingFd(pFile);
     }
-    releaseInodeInfo(pFile->pInode);
+    releaseInodeInfo(pFile);
     sqlite3_free(pFile->lockingContext);
     rc = closeUnixFile(id);
     unixLeaveMutex();
