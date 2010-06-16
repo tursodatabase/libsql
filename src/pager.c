@@ -336,6 +336,7 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
+  u8 safeJrnlHandle;          /* True if jrnl may be held open with no lock */
 
   /* The following block contains those class members that are dynamically
   ** modified during normal operations. The other variables in this structure
@@ -1224,7 +1225,13 @@ static void pager_unlock(Pager *pPager){
     ** Otherwise, another connection with journal_mode=delete might
     ** delete the file out from under us.
     */
-    sqlite3OsClose(pPager->jfd);
+    if( pPager->safeJrnlHandle==0 
+     || (pPager->journalMode!=PAGER_JOURNALMODE_TRUNCATE 
+      && pPager->journalMode!=PAGER_JOURNALMODE_PERSIST)
+    ){
+      sqlite3OsClose(pPager->jfd);
+    }
+
     sqlite3BitvecDestroy(pPager->pInJournal);
     pPager->pInJournal = 0;
     releaseAllSavepoints(pPager);
@@ -3089,6 +3096,7 @@ int sqlite3PagerClose(Pager *pPager){
   sqlite3BeginBenignMalloc();
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
+  pPager->safeJrnlHandle = 0;
 #ifndef SQLITE_OMIT_WAL
   sqlite3WalClose(pPager->pWal,
     (pPager->noSync ? 0 : pPager->sync_flags), 
@@ -3908,17 +3916,22 @@ int sqlite3PagerOpen(
 */
 static int hasHotJournal(Pager *pPager, int *pExists){
   sqlite3_vfs * const pVfs = pPager->pVfs;
-  int rc;                       /* Return code */
-  int exists;                   /* True if a journal file is present */
+  int rc = SQLITE_OK;           /* Return code */
+  int exists = 1;               /* True if a journal file is present */
+  int jrnlOpen = !!isOpen(pPager->jfd);
 
   assert( pPager!=0 );
   assert( pPager->useJournal );
   assert( isOpen(pPager->fd) );
-  assert( !isOpen(pPager->jfd) );
   assert( pPager->state <= PAGER_SHARED );
+  assert( jrnlOpen==0
+       || sqlite3OsDeviceCharacteristics(pPager->jfd)&SQLITE_IOCAP_SAFE_DELETE
+  );
 
   *pExists = 0;
-  rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
+  if( !jrnlOpen ){
+    rc = sqlite3OsAccess(pVfs, pPager->zJournal, SQLITE_ACCESS_EXISTS, &exists);
+  }
   if( rc==SQLITE_OK && exists ){
     int locked;                 /* True if some process holds a RESERVED lock */
 
@@ -3956,15 +3969,19 @@ static int hasHotJournal(Pager *pPager, int *pExists){
           ** If there is, then we consider this journal to be hot. If not, 
           ** it can be ignored.
           */
-          int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
-          rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &f);
+          if( !jrnlOpen ){
+            int f = SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL;
+            rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, f, &f);
+          }
           if( rc==SQLITE_OK ){
             u8 first = 0;
             rc = sqlite3OsRead(pPager->jfd, (void *)&first, 1, 0);
             if( rc==SQLITE_IOERR_SHORT_READ ){
               rc = SQLITE_OK;
             }
-            sqlite3OsClose(pPager->jfd);
+            if( !jrnlOpen ){
+              sqlite3OsClose(pPager->jfd);
+            }
             *pExists = (first!=0);
           }else if( rc==SQLITE_CANTOPEN ){
             /* If we cannot open the rollback journal file in order to see if
@@ -4490,6 +4507,10 @@ static int pager_open_journal(Pager *pPager){
       );
 #else
       rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
+      if( rc==SQLITE_OK ){
+        int iDc = sqlite3OsDeviceCharacteristics(pPager->jfd);
+        pPager->safeJrnlHandle = (iDc&SQLITE_IOCAP_SAFE_DELETE)!=0;
+      }
 #endif
     }
     assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );
