@@ -1,5 +1,5 @@
-C Fix\sa\smemory\sleak\sthat\scan\soccur\sin\sos_unix.c\sif\san\sIO\serror\soccurs\swithin\sthe\sxUnlock\smethod.
-D 2010-06-16T10:55:43
+C Add\sextra\stest\scases\sto\spager1.test.
+D 2010-06-16T12:30:11
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -533,7 +533,7 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 4e75fc0ebe91d3f96d929098048dedbd67fdc16f
+F test/pager1.test 60dec408563461f9fbf04d4d301b1b4db23f7525
 F test/pagerfault.test 16e560bc4332d5b089b369d82ae4b65b8805b5eb
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -822,7 +822,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P efe44564983f115017658dd8a130226366d42bab
-R b69e2f7f93141c1bf41706b2581f08b9
+P 6c5c04eea1f0e8d61883ee8675c249fbf895dc01
+R d490808417f08b44a0b162eb48b4aec9
 U dan
-Z cce4c5d034089301ab79e2d9334d049f
+Z 861e5ff117287c588eecf635e107e097

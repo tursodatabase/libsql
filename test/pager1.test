@@ -30,6 +30,14 @@ proc do_catchsql_test {testname sql result} {
   uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
 }
 
+set a_string_counter 1
+proc a_string {n} {
+  global a_string_counter
+  incr a_string_counter
+  string range [string repeat "${a_string_counter}." $n] 1 $n
+}
+db func a_string a_string
+
 do_multiclient_test tn {
 
   # Create and populate a database table using connection [db]. Check 
@@ -166,6 +174,9 @@ do_multiclient_test tn {
   do_test pager1-$tn.28 { sql3 { SELECT * FROM t1 } } {21 one 22 two 23 three}
 }
 
+#-------------------------------------------------------------------------
+# Savepoint related test cases.
+# 
 do_test pager1-3.1 {
   faultsim_delete_and_reopen
   execsql {
@@ -198,6 +209,104 @@ do_catchsql_test pager1-3.3 {
 do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
+
+#-------------------------------------------------------------------------
+# Hot journal rollback related test cases.
+#
+# pager1.4.1.*: Test that the pager module deletes very small invalid
+#               journal files.
+#
+# pager1.4.2.*: Test that if the master journal pointer at the end of a
+#               hot-journal file appears to be corrupt (checksum does not
+#               compute) the associated journal is rolled back (and no
+#               xAccess() call to check for the presence of any master 
+#               journal file is made).
+# 
+do_test pager1.4.1.1 {
+  faultsim_delete_and_reopen
+  execsql { 
+    CREATE TABLE x(y, z);
+    INSERT INTO x VALUES(1, 2);
+  }
+  set fd [open test.db-journal w]
+  puts -nonewline $fd "helloworld"
+  close $fd
+  file exists test.db-journal
+} {1}
+do_test pager1.4.1.2 { execsql { SELECT * FROM x } } {1 2}
+do_test pager1.4.1.3 { file exists test.db-journal } {0}
+
+# Set up a [testvfs] to snapshot the file-system just before SQLite
+# deletes the master-journal to commit a multi-file transaction.
+#
+# In subsequent test cases, invoking [faultsim_restore_and_reopen] sets
+# up the file system to contain two databases, two hot-journal files and
+# a master-journal.
+#
+do_test pager1.4.2.1 {
+  testvfs tstvfs -default 1
+  tstvfs filter xDelete
+  tstvfs script xDeleteCallback
+  proc xDeleteCallback {method file args} {
+    set file [file tail $file]
+    if { [string match *mj* $file] } { faultsim_save }
+  }
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    ATTACH 'test.db2' AS aux;
+    PRAGMA journal_mode = DELETE;
+    PRAGMA main.cache_size = 10;
+    PRAGMA aux.cache_size = 10;
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    CREATE TABLE aux.t2(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t2 SELECT * FROM t1;
+    BEGIN;
+      INSERT INTO t1 SELECT a_string(201), a_string(301) FROM t1;
+      INSERT INTO t1 SELECT a_string(202), a_string(302) FROM t1;
+      INSERT INTO t1 SELECT a_string(203), a_string(303) FROM t1;
+      INSERT INTO t1 SELECT a_string(204), a_string(304) FROM t1;
+      REPLACE INTO t2 SELECT * FROM t1;
+    COMMIT;
+  }
+  db close
+  tstvfs delete
+} {}
+do_test pager1.4.2.2 {
+  faultsim_restore_and_reopen
+  execsql {
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {4 ok}
+do_test pager1.4.2.3 {
+  faultsim_restore_and_reopen
+  foreach f [glob test.db-mj*] { file delete -force $f }
+  execsql {
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {64 ok}
+do_test pager1.4.2.4 {
+  faultsim_restore_and_reopen
+  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
+  execsql {
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {4 ok}
+do_test pager1.4.2.5 {
+  faultsim_restore_and_reopen
+  hexio_write test.db-journal [expr [file size test.db-journal]-20] 123456
+  foreach f [glob test.db-mj*] { file delete -force $f }
+  execsql {
+    SELECT count(*) FROM t1;
+    PRAGMA integrity_check;
+  }
+} {4 ok}
 
 finish_test
 
