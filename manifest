@@ -1,5 +1,8 @@
-C Add\sextra\stest\scases\sto\spager1.test.
-D 2010-06-16T12:30:11
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Bug\sfix:\s\sOnly\strust\sthe\sdatabase\ssize\snumber\sat\soffset\s28\sif\sthe\schange\ncounter\sat\soffset\s24\smatches\sthe\sversion\snumber\scounter\sat\soffset\s92.\nThis\sprevents\scorruption\sin\sthe\scase\sof\stwo\sapplications\swriting\sto\sthe\ndatabase\swhere\sone\sis\san\solder\sversion\sof\sSQLite\sand\sthe\sother\sis\sa\snewer\nversion.
+D 2010-06-17T02:13:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -113,7 +116,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 3dc89da1da8b948554d5daedab5fec1097188a2d
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 5934a9f5a328488cca392766bb841ff41c9083a9
+F src/btree.c 9806fb4030d0af907cf5cd7d4b9c8fd939eccfef
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 9d48f4023d5e3d0a6807f1f531d8d7187d252c57
@@ -156,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c ae173c9f6afaa58b2833a1c95c6cd32021755c42
 F src/os_win.c dfde7d33c446e89dd9a277c036f2c4cc564b3138
-F src/pager.c 2964185d4356d0dc159b8340e52d2538d32394e5
+F src/pager.c 7f0ebd5dca02cda61a5ee2cc8d6877286592abda
 F src/pager.h ca1f23c0cf137ac26f8908df2427c8b308361efd
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -811,7 +814,7 @@ F tool/restore_jrnl.tcl 6957a34f8f1f0f8285e07536225ec3b292a9024a
 F tool/shell1.test ef08a3e738b9fee4fc228920956950bc35db0575
 F tool/shell2.test 8f51f61c13b88618e71c17439fe0847c2421c5d1
 F tool/shell3.test ff663e83100670a295d473515c12beb8103a78b6
-F tool/showdb.c 12fbece85695e3a61bdb4f7607b61f264120c4b6
+F tool/showdb.c 01c20e8181941b714fe07f72c64a7560fee17ff9
 F tool/showjournal.c ec3b171be148656827c4949fbfb8ab4370822f87
 F tool/soak1.tcl 8d407956e1a45b485a8e072470a3e629a27037fe
 F tool/space_used.tcl f714c41a59e326b8b9042f415b628b561bafa06b
@@ -822,7 +825,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6c5c04eea1f0e8d61883ee8675c249fbf895dc01
-R d490808417f08b44a0b162eb48b4aec9
-U dan
-Z 861e5ff117287c588eecf635e107e097
+P ad3209572d0e6afe5c8b52313e334509661045e2
+R ad508c111bfac4ef56e6dd1a72cf9f53
+U drh
+Z 1cb6e747168ed02cf4bf3371c6ee48c5
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMGYTXoxKgR168RlERAgMoAKCCbW2c14E1x3NYvkGGyBe/EgKS5QCeL5Cg
+CUKdqaE7t6fQ84lCcJEMBaQ=
+=hOmP
+-----END PGP SIGNATURE-----
