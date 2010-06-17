@@ -215,16 +215,11 @@ ifcapable wal {
   do_test journal2-2.3 {
     expr {[file size test.db-journal] > 512}
   } {1}
-  do_test journal2-2.3 {
+  do_test journal2-2.4 {
     set ::oplog [list]
     execsql { PRAGMA journal_mode = WAL }
     set ::oplog
-  } [list                                              \
-      xClose test.db-journal                           \
-      xOpen test.db-journal xClose test.db-journal     \
-      xOpen test.db-journal xClose test.db-journal     \
-      xDelete test.db-journal                          \
-  ]
+  } {xClose test.db-journal xDelete test.db-journal}
   db close
 }
 

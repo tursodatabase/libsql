@@ -5898,6 +5898,48 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
 
     /* Change the journal mode. */
     pPager->journalMode = (u8)eMode;
+
+    /* When transistioning from TRUNCATE or PERSIST to any other journal
+    ** mode except WAL (and we are not in locking_mode=EXCLUSIVE) then 
+    ** delete the journal file.
+    */
+    assert( (PAGER_JOURNALMODE_TRUNCATE & 5)==1 );
+    assert( (PAGER_JOURNALMODE_PERSIST & 5)==1 );
+    assert( (PAGER_JOURNALMODE_DELETE & 5)==0 );
+    assert( (PAGER_JOURNALMODE_MEMORY & 5)==4 );
+    assert( (PAGER_JOURNALMODE_OFF & 5)==0 );
+    assert( (PAGER_JOURNALMODE_WAL & 5)==5 );
+
+    assert( isOpen(pPager->fd) || pPager->exclusiveMode );
+    if( !pPager->exclusiveMode && (eOld & 5)==1 && (eMode & 1)==0 ){
+
+      /* In this case we would like to delete the journal file. If it is
+      ** not possible, then that is not a problem. Deleting the journal file
+      ** here is an optimization only.
+      **
+      ** Before deleting the journal file, obtain a RESERVED lock on the
+      ** database file. This ensures that the journal file is not deleted
+      ** while it is in use by some other client.
+      */
+      int rc = SQLITE_OK;
+      int state = pPager->state;
+      if( state<PAGER_SHARED ){
+        rc = sqlite3PagerSharedLock(pPager);
+      }
+      if( pPager->state==PAGER_SHARED ){
+        assert( rc==SQLITE_OK );
+        rc = sqlite3OsLock(pPager->fd, RESERVED_LOCK);
+      }
+      if( rc==SQLITE_OK ){
+        sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
+      }
+      if( rc==SQLITE_OK && state==PAGER_SHARED ){
+        sqlite3OsUnlock(pPager->fd, SHARED_LOCK);
+      }else if( state==PAGER_UNLOCK ){
+        pager_unlock(pPager);
+      }
+      assert( state==pPager->state );
+    }
   }
 
   /* Return the new journal mode */

@@ -484,7 +484,7 @@ ifcapable pragma {
           INSERT INTO t4 VALUES(3, 4);
       }
       file exists test.db-journal
-    } {1}
+    } {0}
     do_test jrnlmode-6.7 {
       execsql {
         COMMIT;
@@ -493,7 +493,7 @@ ifcapable pragma {
     } {1 2 3 4}
     do_test jrnlmode-6.8 {
       file exists test.db-journal
-    } {1}
+    } {0}
     do_test jrnlmode-6.9 {
       execsql {
         PRAGMA journal_mode = DELETE;
