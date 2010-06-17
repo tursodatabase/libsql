@@ -1,5 +1,5 @@
-C Merge\strunk\supdates\swith\sexperimental\sbranch.
-D 2010-06-17T10:52:07
+C Fix\sbug\sin\sjournal2.test.
+D 2010-06-17T11:36:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -466,7 +466,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/join6.test bf82cf3f979e9eade83ad0d056a66c5ed71d1901
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/journal2.test 92653f42868b32272a9913c767324b0b3992a60b
+F test/journal2.test 61c60f287d2d5f4d3d62af0a0d97100c90e055a6
 F test/jrnlmode.test cd0c9c5b2555f3d5bb72ed8aa8d0ad16ecf77e7c
 F test/jrnlmode2.test fe79ea1f0375c926b8de0362ddf94f34a64135fd
 F test/jrnlmode3.test cfcdb12b90e640a23b92785a002d96c0624c8710
@@ -824,7 +824,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 20133e9ca98f5e6c42051ed3d65e4eb71d5366a5 1ec74591a93e8b27ad3ac739914a48a91972e82c
-R 4f7b82137af7b10bc7d2278f04c82c2f
+P 9f6ea1de5abab0ca28688e257ddf03c66413cf6e
+R 07d7ad85696711a45c0b4b5690681a45
 U dan
-Z 03dc90f484cb38d112214ba72ea54330
+Z b6a1325b7da2976f7858122f03070f50

@@ -47,7 +47,6 @@ proc journal_op_catcher {method filename args} {
     if {[lsearch {xDelete xWrite xTruncate} $method]>=0} {
       return SQLITE_IOERR 
     }
-    return SQLITE_OK
   }
 
   # The rest of this command only deals with xOpen(), xClose() and xDelete()
@@ -70,7 +69,7 @@ proc journal_op_catcher {method filename args} {
   switch -- $method {
     xOpen   { incr ::open_journals($f) +1 }
     xClose  { incr ::open_journals($f) -1 }
-    xDelete { if {$::open_journals($f)>0} { puts EEE;return SQLITE_IOERR } }
+    xDelete { if {$::open_journals($f)>0} { return SQLITE_IOERR } }
   }
 
   return ""
@@ -220,7 +219,12 @@ ifcapable wal {
     set ::oplog [list]
     execsql { PRAGMA journal_mode = WAL }
     set ::oplog
-  } {xClose test.db-journal xDelete test.db-journal}
+  } [list                                              \
+      xClose test.db-journal                           \
+      xOpen test.db-journal xClose test.db-journal     \
+      xOpen test.db-journal xClose test.db-journal     \
+      xDelete test.db-journal                          \
+  ]
   db close
 }
 
