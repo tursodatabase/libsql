@@ -5898,20 +5898,6 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
 
     /* Change the journal mode. */
     pPager->journalMode = (u8)eMode;
-
-    /* When transistioning from TRUNCATE or PERSIST to any other journal
-    ** mode (and we are not in locking_mode=EXCLUSIVE) then delete the
-    ** journal file.
-    */
-    assert( (PAGER_JOURNALMODE_TRUNCATE & 5)==1 );
-    assert( (PAGER_JOURNALMODE_PERSIST & 5)==1 );
-    assert( (PAGER_JOURNALMODE_DELETE & 5)!=1 );
-    assert( (PAGER_JOURNALMODE_MEMORY & 5)!=1 );
-    assert( (PAGER_JOURNALMODE_OFF & 5)!=1 );
-    assert( (PAGER_JOURNALMODE_WAL & 5)!=1 );
-    if( (eOld & 5)==1 && (eMode & 5)!=1 && !pPager->exclusiveMode ){
-      sqlite3OsDelete(pPager->pVfs, pPager->zJournal, 0);
-    }
   }
 
   /* Return the new journal mode */

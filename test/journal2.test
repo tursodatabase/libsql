@@ -37,7 +37,6 @@ tvfs devchar safe_delete
 #
 tvfs filter {xOpen xClose xDelete}
 tvfs script journal_op_catcher
-
 proc journal_op_catcher {method filename args} {
 
   # If global variable ::tvfs_error_on_write is defined, then return an
@@ -45,31 +44,36 @@ proc journal_op_catcher {method filename args} {
   # SQLITE_OK.
   #
   if {[info exists ::tvfs_error_on_write]} {
-    if {$method == "xDelete" || $method == "xWrite" || $method == "xTruncate"} {
+    if {[lsearch {xDelete xWrite xTruncate} $method]>=0} {
       return SQLITE_IOERR 
     }
     return SQLITE_OK
   }
 
-  if {[string match *journal* $filename]==0} return
-
+  # The rest of this command only deals with xOpen(), xClose() and xDelete()
+  # operations on journal files. If this invocation does not represent such
+  # an operation, return with no further ado.
+  #
   set f [file tail $filename]
+  if {[string match *journal $f]==0} return
+  if {[lsearch {xOpen xDelete xClose} $method]<0} return
+
+  # Append a record of this operation to global list variable $::oplog.
+  #
   lappend ::oplog $method $f
 
+  # If this is an attempt to delete a journal file for which there exists
+  # one ore more open handles, return an error. The code in test_vfs.c
+  # will not invoke the xDelete method of the "real" VFS in this case.
+  #
   if {[info exists ::open_journals($f)]==0} { set ::open_journals($f) 0 }
   switch -- $method {
-    xOpen {
-      incr ::open_journals($f) +1
-    }
-    xClose {
-      incr ::open_journals($f) -1
-    }
-    xDelete {
-      if {$::open_journals($f)>0} { return SQLITE_IOERR }
-    }
+    xOpen   { incr ::open_journals($f) +1 }
+    xClose  { incr ::open_journals($f) -1 }
+    xDelete { if {$::open_journals($f)>0} { puts EEE;return SQLITE_IOERR } }
   }
 
-  return
+  return ""
 }
 
 
@@ -112,10 +116,7 @@ do_test journal2-1.8 {
 } {}
 do_test journal2-1.9 { execsql { SELECT * FROM t1 } } {1 2 3 4 5 6}
 
-# Grow the database until it is reasonably large. Then, from a 
-# journal_mode=DELETE connection, attempt to commit a large transaction (one
-# that involves upgrading to an exclusive lock and writing the database
-# before the transaction is committed).
+# Grow the database until it is reasonably large.
 #
 do_test journal2-1.10 {
   db2 close
@@ -137,6 +138,15 @@ do_test journal2-1.11 {
   expr {$sz>120 && $sz<200}
 } 1
 
+# Using new connection [db2] (with journal_mode=DELETE), write a lot of
+# data to the database. So that many pages within the database file are
+# modified before the transaction is committed.
+#
+# Then, enable simulated IO errors in all calls to xDelete, xWrite
+# and xTruncate before committing the transaction and closing the 
+# database file. From the point of view of other file-system users, it
+# appears as if the process hosting [db2] unexpectedly exited.
+# 
 do_test journal2-1.12 {
   sqlite3 db2 test.db
   execsql {
@@ -181,8 +191,39 @@ do_test journal2-1.20 {
 do_test journal2-1.21 {
   db2 close
 } {}
-
 db close
+
+#-------------------------------------------------------------------------
+# Test that it is possible to switch from journal_mode=truncate to
+# journal_mode=WAL on a SAFE_DELETE file-system. SQLite should close and
+# delete the journal file when committing the transaction that switches
+# the system to WAL mode.
+#
+ifcapable wal {
+  do_test journal2-2.1 {
+    faultsim_delete_and_reopen
+    set ::oplog [list]
+    execsql { PRAGMA journal_mode = persist }
+    set ::oplog
+  } {}
+  do_test journal2-2.2 {
+    execsql { 
+      CREATE TABLE t1(x);
+      INSERT INTO t1 VALUES(3.14159);
+    }
+    set ::oplog
+  } {xOpen test.db-journal}
+  do_test journal2-2.3 {
+    expr {[file size test.db-journal] > 512}
+  } {1}
+  do_test journal2-2.3 {
+    set ::oplog [list]
+    execsql { PRAGMA journal_mode = WAL }
+    set ::oplog
+  } {xClose test.db-journal xDelete test.db-journal}
+  db close
+}
+
 tvfs delete
 finish_test
 
