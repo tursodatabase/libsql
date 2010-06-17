@@ -5251,9 +5251,6 @@ case OP_JournalMode: {    /* out2-prerelease */
         }else if( rc==SQLITE_BUSY && pOp->p5==0 ){
           goto abort_due_to_error;
         }
-      }else{
-        sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_DELETE);
-        rc = SQLITE_OK;
       }
   
       /* Open a transaction on the database file. Regardless of the journal
@@ -5261,8 +5258,7 @@ case OP_JournalMode: {    /* out2-prerelease */
       */
       assert( sqlite3BtreeIsInTrans(pBt)==0 );
       if( rc==SQLITE_OK ){
-        rc = sqlite3BtreeSetVersion(pBt, 
-                                    (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
+        rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
         if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
       }
       if( rc==SQLITE_BUSY ){
@@ -5274,6 +5270,7 @@ case OP_JournalMode: {    /* out2-prerelease */
 #endif /* ifndef SQLITE_OMIT_WAL */
 
   eNew = sqlite3PagerSetJournalMode(pPager, eNew);
+
   pOut = &aMem[pOp->p2];
   pOut->flags = MEM_Str|MEM_Static|MEM_Term;
   pOut->z = (char *)sqlite3JournalModename(eNew);
