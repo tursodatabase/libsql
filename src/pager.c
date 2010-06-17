@@ -2241,9 +2241,9 @@ static int readDbPage(PgHdr *pPg){
       /* If the read is unsuccessful, set the dbFileVers[] to something
       ** that will never be a valid file version.  dbFileVers[] is a copy
       ** of bytes 24..39 of the database.  Bytes 28..31 should always be
-      ** zero.  Bytes 32..35 and 35..39 should be page numbers which are
-      ** never 0xffffffff.  So filling pPager->dbFileVers[] with all 0xff
-      ** bytes should suffice.
+      ** zero or the size of the database in page. Bytes 32..35 and 35..39
+      ** should be page numbers which are never 0xffffffff.  So filling
+      ** pPager->dbFileVers[] with all 0xff bytes should suffice.
       **
       ** For an encrypted database, the situation is more complex:  bytes
       ** 24..39 of the database are white noise.  But the probability of
@@ -5011,7 +5011,10 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
       change_counter++;
       put32bits(((char*)pPgHdr->pData)+24, change_counter);
 
-      /* Also store the SQLite version number in bytes 96..99 */
+      /* Also store the SQLite version number in bytes 96..99 and in
+      ** bytes 92..95 store the change counter for which the version number
+      ** is valid. */
+      put32bits(((char*)pPgHdr->pData)+92, change_counter);
       put32bits(((char*)pPgHdr->pData)+96, SQLITE_VERSION_NUMBER);
 
       /* If running in direct mode, write the contents of page 1 to the file. */
