@@ -1,5 +1,5 @@
-C A\sdifferent\sfix\sto\s[fc62af4523].\sWhen\schanging\sfrom\sjournal_mode=PERSIST\sor\sTRINCATE\sto\ssome\sother\srollback\smode,\sdelete\sthe\sjournal\sfile\sonly\sif\sa\sRESERVED\slock\scan\sbe\sobtained\son\sthe\sdatabase\sfile\sfirst.
-D 2010-06-17T16:44:22
+C Merge\strunk\schange\s[7c3a86b9c7].
+D 2010-06-17T16:44:53
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -636,7 +636,7 @@ F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
 F test/tkt-d82e3f3721.test 731359dfdcdb36fea0559cd33fec39dd0ceae8e6
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
 F test/tkt-f973c7ac31.test 1da0ed15ec2c7749fb5ce2828cd69d07153ad9f4
-F test/tkt-fc62af4523.test 7db6d6bddcf5b2da60a7e242311fdb6f3a2d27b1
+F test/tkt-fc62af4523.test 72825d3febdedcd5593a27989fc05accdbfc2bb4
 F test/tkt1435.test f8c52c41de6e5ca02f1845f3a46e18e25cadac00
 F test/tkt1443.test bacc311da5c96a227bf8c167e77a30c99f8e8368
 F test/tkt1444.test a9d72f9e942708bd82dde6c707da61c489e213e9
@@ -824,7 +824,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c1e04f1d4e8575ebc41b5b4403dbfe3f60d578dc
-R c1f8308c51de4402b52d191c23c2aef4
+P b9b11855e8a9522309dd30e5256bb67d67e1353a 7c3a86b9c7e2a35ce755c32b38e911e79d843fad
+R 9b3c0e89ee34bf70754dc9094b410e06
 U dan
-Z 10be27f6ff328697757cba4d76703f36
+Z cddd2246fd2d00b78e84c3f7e0542efe

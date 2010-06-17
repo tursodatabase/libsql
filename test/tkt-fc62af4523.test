@@ -48,7 +48,7 @@ do_test tkt-fc62af4523.2 {
       PRAGMA cache_size = 10;
       BEGIN;
         UPDATE t1 SET b = randomblob(400);
-        UPDATE t1 SET a = randomblob(200);
+        UPDATE t1 SET a = randomblob(201);
     }
   }
   file exists test.db-journal
@@ -82,4 +82,3 @@ do_test tkt-fc62af4523.6 {
 
 catch { close $::chan }
 finish_test
-
