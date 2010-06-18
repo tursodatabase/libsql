@@ -1,5 +1,5 @@
-C Change\sthe\simplementation\sof\sthe\sunix\simplementation\sof\sxAccess()\sso\sthat\sit\sreturns\s0\s(does\snot\sexist)\sto\san\sSQLITE_ACCESS_EXISTS\squery\son\sa\sfile\sthat\sexists\sbut\sis\szero\sbytes\sin\ssize.
-D 2010-06-18T11:10:07
+C Rearrange\ssome\scode\sin\sOP_JournalMode\sto\savoid\sincorrect\sreturns\sfrom\ssubsequent\sinvocations\sof\s"PRAGMA\sjournal_mode"\sfollowing\san\sIO\serror.
+D 2010-06-18T16:13:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -217,7 +217,7 @@ F src/update.c 9859f2056c7739a1db0d9774ccb6c2f0cee6d1de
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
-F src/vdbe.c e115585b14d2cc4128cb53a7e42f207750e80f55
+F src/vdbe.c 290d20ed92b560dc0b602ac50b252f9553a2d8e8
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -778,7 +778,7 @@ F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 14585ad1a2c85da2de721caa3b4deeea55213008
 F test/walfault.test c2b524299dede269282a0795e11396cc446ca9af
 F test/walhook.test 67e675127f4acb72f061a12667ce6e5460b06b78
-F test/walmode.test 6ca9d710cc9f6545b913abcded6d6b0b15641048
+F test/walmode.test b54e2f91f34179c65cab02a6916578617a33eef0
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
@@ -824,7 +824,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bd7bc4e0e28bc749034ff1a9290a69330c5d8ca4
-R 2b113c40a63b7748c0ad882d1483f64f
+P 077b0e5bcd849130c8df373fc2134c4b44351882
+R 54f97d60c6d719c202a2c47c8f5392d5
 U dan
-Z 8ecd2203ce71c16c5fd05e7fedfa658b
+Z fff7f7ea627d7c4a7f85eb236bd967cc
