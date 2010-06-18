@@ -1,5 +1,5 @@
-C Rearrange\ssome\scode\sin\sOP_JournalMode\sto\savoid\sincorrect\sreturns\sfrom\ssubsequent\sinvocations\sof\s"PRAGMA\sjournal_mode"\sfollowing\san\sIO\serror.
-D 2010-06-18T16:13:45
+C Add\stests\sto\spager1.test.
+D 2010-06-18T18:59:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -534,7 +534,7 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 60dec408563461f9fbf04d4d301b1b4db23f7525
+F test/pager1.test f2806eeba269efbe0132302b789f9fb4abf62264
 F test/pagerfault.test 16e560bc4332d5b089b369d82ae4b65b8805b5eb
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -824,7 +824,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 077b0e5bcd849130c8df373fc2134c4b44351882
-R 54f97d60c6d719c202a2c47c8f5392d5
+P ce0a4a9b5f981d066822a9ae63740c91b35bfc60
+R 43f6c397d741ef10ef5d1aeb6e2ade8c
 U dan
-Z fff7f7ea627d7c4a7f85eb236bd967cc
+Z 6cf151c823519ced3c5ca7c23ec3a1bb
