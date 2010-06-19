@@ -1,5 +1,5 @@
-C Change\sthe\sname\sof\sIOCAP_SAFE_DELETE\sto\sIOCAP_UNDELETABLE_WHEN_OPEN.\sHave\sthe\sxDeviceCharacteristics()\smethod\sof\sthe\swin32\sVFS\sreturn\sthis\sflag.
-D 2010-06-19T18:12:03
+C Fix\san\sassert()\sfailure\sthat\scould\soccur\sif\scompiling\swith\sOMIT_SHARED_CACHE.
+D 2010-06-19T19:06:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -222,7 +222,7 @@ F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
 F src/vdbeaux.c 4e96a5169b988a8697d4a417f902277b4152e43e
-F src/vdbeblob.c 5327132a42a91e8b7acfb60b9d2c3b1c5c863e0e
+F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
@@ -824,7 +824,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f5df83fd875073eee8e2269e87e2a8c9c7abc981
-R 71fe53986b1289fd437e53aa98b15675
+P 5a5ff4e3e4c707464f227907d0aefb8ef42180dd
+R 0e23e267b3b82742ffd6ce332fce696f
 U dan
-Z aadd8ae68501aa286ffeda96be308372
+Z 610fee2a443c81bfcb467b2cb6ae3598
