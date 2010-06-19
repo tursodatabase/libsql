@@ -3924,9 +3924,9 @@ static int hasHotJournal(Pager *pPager, int *pExists){
   assert( pPager->useJournal );
   assert( isOpen(pPager->fd) );
   assert( pPager->state <= PAGER_SHARED );
-  assert( jrnlOpen==0
-       || sqlite3OsDeviceCharacteristics(pPager->jfd)&SQLITE_IOCAP_SAFE_DELETE
-  );
+  assert( jrnlOpen==0 || ( sqlite3OsDeviceCharacteristics(pPager->jfd) &
+    SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN
+  ));
 
   *pExists = 0;
   if( !jrnlOpen ){
@@ -4509,7 +4509,7 @@ static int pager_open_journal(Pager *pPager){
       rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
       if( rc==SQLITE_OK ){
         int iDc = sqlite3OsDeviceCharacteristics(pPager->jfd);
-        pPager->safeJrnlHandle = (iDc&SQLITE_IOCAP_SAFE_DELETE)!=0;
+        pPager->safeJrnlHandle = (iDc&SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN)!=0;
       }
 #endif
     }
