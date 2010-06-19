@@ -24,6 +24,8 @@ source $testdir/malloc_common.tcl
 #
 # pager1-4.*: Hot-journal related tests.
 #
+# pager1-5.*: Cases related to multi-file commits.
+#
 
 proc do_execsql_test {testname sql result} {
   uplevel do_test $testname [list "execsql {$sql}"] [list $result]
@@ -212,10 +214,10 @@ do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
 
+set otn 0
 testvfs tv -default 1
 foreach code [list {
   set s 512
-  set sql { PRAGMA synchronous = off }
 } {
   set s 1024
   set sql { PRAGMA journal_mode = memory }
@@ -224,12 +226,21 @@ foreach code [list {
   tv devchar safe_append
 } {
   set s 4096
+} {
+  set s 4096
   set sql { PRAGMA journal_mode = WAL }
+} {
+  set s 8192
+  set sql { PRAGMA synchronous = off }
 }] {
+
+  incr otn
+  set sql ""
+  tv devchar {}
   eval $code
   tv sectorsize $s
   
-  do_test pager1-3.7.$s.1 {
+  do_test pager1-3.7.$otn.0 {
     faultsim_delete_and_reopen
     execsql $sql
     execsql {
@@ -241,6 +252,8 @@ foreach code [list {
   set tn 0
   set lowpoint 0
   foreach x {
+    100 x 0 100
+  x
     70 22 96 59 96 50 22 56 21 16 37 64 43 40  0 38 22 38 55  0  6   
     43 62 32 93 54 18 13 29 45 66 29 25 61 31 53 82 75 25 96 86 10 69   
      2 29  6 60 80 95 42 82 85 50 68 96 90 39 78 69 87 97 48 74 65 43   
@@ -255,25 +268,13 @@ foreach code [list {
      8 41 98  5 60 26 92 29 91 90  2 62 40  4  5 22 80 15 83 76 52 88   
     29  5 68 73 72  7 54 17 89 32 81 94 51 28 53 71  8 42 54 59 70 79   
   x
-    35 59 37 22  8 72 10 48 79  6 87 96 59 95 45 56  6  4 86 68 25 28   
-    43 75 47  9 53 18 69 51 11 94 86 65 23 87 49 19 20 20 33 14 11 86   
-    42 23  8 40 94 55  4 38 52 30  6 25 44 79 57 82 30 87 86 75 40 92   
-    29 26 82 91 67 64 15 51 17 11 15 27 32  7 38  1 52 82 26 99 17 18   
-    38 13 20 65 91 98 50 81 49 15 94 45 84 35 31 67 13 43 78  3 94 77   
-    47 18 96 66 99 77 11 11 70 18  1 29 79 57 59 86 94 34 91 15 24 53   
-    61 73 58 46 36 79 90 89 12  0 91  0 86 44 71 83 75 76 97 65 13 80   
-    42 39 15 44 90 18 67 69  1 72 17 99 12 72 77 17  3 34 75 59 92 76   
-    18 86 60 12 20 98 48 14 12 67 45 44 10  2  5 88  7 45  5 47 45 75   
-    19 25 42 62 66 17 94 63  0 53 38 81 26 11 97 33 13 36 81 82 73 26   
-    78 90 28 78 26 61  9 74 70 53 17 86 51 90  3 30 99  5 25 44  6 72   
-    84 32 74 46 16 44 74 82 84  9 58 90 85 82 53 40 37 
   } {
     incr tn
     set now [db one {SELECT count(i) FROM t1}]
     if {$x == "x"} {
       execsql { COMMIT ; BEGIN }
       set lowpoint $now
-      do_test pager1.3.7.$s.2.$tn { 
+      do_test pager1.3.7.$otn.$tn { 
         sqlite3 db2 test.db
         execsql {
           SELECT COALESCE(max(i), 0) FROM t1;
@@ -295,7 +296,7 @@ foreach code [list {
           execsql { INSERT INTO t1(j) VALUES(randomblob(1500)) }
         }
       }
-      do_execsql_test pager1.3.7.$s.2.$tn { 
+      do_execsql_test pager1.3.7.$otn.$tn { 
         SELECT COALESCE(max(i), 0) FROM t1;
         PRAGMA integrity_check;
       } [list $x ok]
@@ -316,6 +317,10 @@ tv delete
 #               compute) the associated journal is rolled back (and no
 #               xAccess() call to check for the presence of any master 
 #               journal file is made).
+#
+# pager1.4.3.*: Test that the contents of a hot-journal are ignored if the
+#               page-size or sector-size in the journal header appear to
+#               be invalid (too large, too small or not a power of 2).
 # 
 do_test pager1.4.1.1 {
   faultsim_delete_and_reopen
@@ -402,6 +407,49 @@ do_test pager1.4.2.5 {
     PRAGMA integrity_check;
   }
 } {4 ok}
+
+do_test pager1.4.3.1 {
+  testvfs tstvfs -default 1
+  tstvfs filter xSync
+  tstvfs script xSyncCallback
+  proc xSyncCallback {method file args} {
+    set file [file tail $file]
+    if { 0==[string match *journal $file] } { faultsim_save }
+  }
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = DELETE;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  db close
+  tstvfs delete
+} {}
+
+foreach {tn ofst value result} {
+          2   20    31       {1 2 3 4}
+          3   20    32       {1 2 3 4}
+          4   20    33       {1 2 3 4}
+          5   20    65536    {1 2 3 4}
+          6   20    131072   {1 2 3 4}
+
+          7   24    511      {1 2 3 4}
+          8   24    513      {1 2 3 4}
+          9   24    65536    {1 2 3 4}
+
+         10   32    65536    {1 2}
+} {
+  do_test pager1.4.3.$tn {
+    faultsim_restore_and_reopen
+    hexio_write test.db-journal $ofst [format %.8x $value]
+    execsql { SELECT * FROM t1 }
+  } $result
+}
+db close
+
+#-------------------------------------------------------------------------
+#
 
 finish_test
 
