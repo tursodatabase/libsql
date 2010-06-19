@@ -1,5 +1,8 @@
-C Apply\s[b9b11855e8]\s(the\salternate\sfix\sto\s[fc62af4523])\sto\sthe\strunk.
-D 2010-06-17T17:05:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sunix\sVFS\sto\salways\sallocate\sshared-memory\susing\sa\sfile\sin\sthe\nsame\sdirectory\sas\sthe\sdatabase.\s\sOtherwise,\sa\schroot\smight\scause\sdifferent\nprocesses\sto\suse\sdifferent\sshared\smemory\sfiles\sresulting\sin\sdatabase\ncorruption.
+D 2010-06-19T15:10:10
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +157,7 @@ F src/os.c 9c4a2f82a50306a33907678ec0187b6ad1486bfe
 F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c ae173c9f6afaa58b2833a1c95c6cd32021755c42
+F src/os_unix.c a76d1952ac7984574701c48b665220b871c5c9a5
 F src/os_win.c dfde7d33c446e89dd9a277c036f2c4cc564b3138
 F src/pager.c 4fe451d68950002eb985e6325d666ab54956a37f
 F src/pager.h ca1f23c0cf137ac26f8908df2427c8b308361efd
@@ -823,7 +826,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 7c3a86b9c7e2a35ce755c32b38e911e79d843fad
-R 1e4481b965cd36ec30ba83a04296f9cc
-U dan
-Z b00e14e0e21b5f60f6931c141403c159
+P 9a949a3a5c32b8bfbb94e10e18d050ec80a25553
+R acdbeeb43afddd9408962cb351e87aec
+U drh
+Z 2d4cd5d2db2524a9b5137cfeafb22e1e
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMHN3WoxKgR168RlERApgaAJ48Uha0kqQFVEwHVS03zg+AKsjJKwCfSU8L
+jmliKcE06t2NitzknAIS5tM=
+=X+y+
+-----END PGP SIGNATURE-----

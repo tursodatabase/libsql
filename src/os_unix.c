@@ -3274,19 +3274,21 @@ static void unixShmPurge(unixFile *pFd){
   }
 }
 
-/* Forward reference */
-static const char *unixTempFileDir(int);
-
 /*
-** Open a shared-memory area.  This particular implementation uses
-** mmapped files.
+** Open a shared-memory area associated with open database file fd.  
+** This particular implementation uses mmapped files.
 **
-** zName is a filename used to identify the shared-memory area.  The
-** implementation does not (and perhaps should not) use this name
-** directly, but rather use it as a template for finding an appropriate
-** name for the shared-memory storage.  In this implementation, the
-** string "-index" is appended to zName and used as the name of the
-** mmapped file.
+** The file used to implement shared-memory is in the same directory
+** as the open database file and has the same name as the open database
+** file with the "-shm" suffix added.  For example, if the database file
+** is "/home/user1/config.db" then the file that is created and mmapped
+** for shared memory will be called "/home/user1/config.db-shm".  We
+** experimented with using files in /dev/tmp or an some other tmpfs mount.
+** But if a file in a different directory from the database file is used,
+** then differing access permissions or a chroot() might cause two different 
+** processes on the same database to end up using different files for 
+** shared memory - meaning that their memory would not really be shared - 
+** resulting in database corruption.
 **
 ** When opening a new shared-memory file, if no other instances of that
 ** file are currently open, in this process or in other processes, then
@@ -3300,8 +3302,8 @@ static int unixShmOpen(
   int rc;                            /* Result code */
   struct unixFile *pDbFd;            /* Underlying database file */
   unixInodeInfo *pInode;             /* The inode of fd */
-  const char *zTempDir;              /* Directory for temporary files */
-  int nTempDir;                      /* Size of the zTempDir string */
+  char *zShmFilename;                /* Name of the file used for SHM */
+  int nShmFilename;                  /* Size of the SHM filename in bytes */
 
   /* Allocate space for the new sqlite3_shm object.
   */
@@ -3318,23 +3320,15 @@ static int unixShmOpen(
   pInode = pDbFd->pInode;
   pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
-    zTempDir = unixTempFileDir(1);
-    if( zTempDir==0 ){
-      unixLeaveMutex();
-      sqlite3_free(p);
-      return SQLITE_CANTOPEN_NOTEMPDIR;
-    }
-    nTempDir = strlen(zTempDir);
-    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nTempDir + 50 );
+    nShmFilename = 5 + (int)strlen(pDbFd->zPath);
+    pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
       goto shm_open_err;
     }
     memset(pShmNode, 0, sizeof(*pShmNode));
-    pShmNode->zFilename = (char*)&pShmNode[1];
-    sqlite3_snprintf(nTempDir+50, pShmNode->zFilename,
-                     "%s/sqlite-wi-%x-%x", zTempDir,
-                     (u32)pInode->fileId.dev, (u32)pInode->fileId.ino);
+    zShmFilename = pShmNode->zFilename = (char*)&pShmNode[1];
+    sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", pDbFd->zPath);
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
@@ -3344,7 +3338,7 @@ static int unixShmOpen(
       goto shm_open_err;
     }
 
-    pShmNode->h = open(pShmNode->zFilename, O_RDWR|O_CREAT, 0664);
+    pShmNode->h = open(zShmFilename, O_RDWR|O_CREAT, 0664);
     if( pShmNode->h<0 ){
       rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
@@ -4157,7 +4151,7 @@ static int openDirectory(const char *zFilename, int *pFd){
 ** Return the name of a directory in which to put temporary files.
 ** If no suitable temporary file directory can be found, return NULL.
 */
-static const char *unixTempFileDir(int allowShm){
+static const char *unixTempFileDir(void){
   static const char *azDirs[] = {
      0,
      0,
@@ -4172,19 +4166,11 @@ static const char *unixTempFileDir(int allowShm){
 
   azDirs[0] = sqlite3_temp_directory;
   if( !azDirs[1] ) azDirs[1] = getenv("TMPDIR");
-  
-  if( allowShm ){
-    zDir = "/dev/shm";
-    i = 2;  /* Skip the app-defined temp locations for shared-memory */
-  }else{
-    zDir = azDirs[0];
-    i = 1;
-  }
-  for(; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
+  for(i==0; i<sizeof(azDirs)/sizeof(azDirs[0]); zDir=azDirs[i++]){
     if( zDir==0 ) continue;
     if( stat(zDir, &buf) ) continue;
     if( !S_ISDIR(buf.st_mode) ) continue;
-    if( !allowShm && access(zDir, 07) ) continue;
+    if( access(zDir, 07) ) continue;
     break;
   }
   return zDir;
@@ -4209,7 +4195,7 @@ static int unixGetTempname(int nBuf, char *zBuf){
   */
   SimulateIOError( return SQLITE_IOERR );
 
-  zDir = unixTempFileDir(0);
+  zDir = unixTempFileDir();
   if( zDir==0 ) zDir = ".";
 
   /* Check that the output buffer is large enough for the temporary file 
