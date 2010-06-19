@@ -170,6 +170,7 @@ test_suite "coverage-pager" -description {
 } -files {
   pager1.test
   pagerfault.test
+  journal2.test
 } 
 
 

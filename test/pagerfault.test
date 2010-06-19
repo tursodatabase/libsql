@@ -179,6 +179,12 @@ do_faultsim_test pagerfault-4 -prep {
 
 #-------------------------------------------------------------------------
 # Test fault-injection as part of a commit when using journal_mode=PERSIST.
+# Three different cases:
+#
+#    pagerfault-5.1: With no journal_size_limit configured.
+#    pagerfault-5.2: With a journal_size_limit configured.
+#    pagerfault-5.4: Multi-file transaction. One connection has a 
+#                    journal_size_limit of 0, the other has no limit.
 #
 do_test pagerfault-5-pre1 {
   faultsim_delete_and_reopen
@@ -214,7 +220,6 @@ do_faultsim_test pagerfault-5.2 -prep {
   faultsim_test_result {0 {}}
   faultsim_integrity_check
 }
-
 do_faultsim_test pagerfault-5.3 -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
@@ -235,5 +240,47 @@ do_faultsim_test pagerfault-5.3 -prep {
 } -test {
   faultsim_test_result {0 {}}
 }
+
+# The following was an attempt to get a bitvec malloc to fail. Didn't work.
+#
+# do_test pagerfault-6-pre1 {
+#   faultsim_delete_and_reopen
+#   execsql {
+#     CREATE TABLE t1(x, y, UNIQUE(x, y));
+#     INSERT INTO t1 VALUES(1, randomblob(1501));
+#     INSERT INTO t1 VALUES(2, randomblob(1502));
+#     INSERT INTO t1 VALUES(3, randomblob(1503));
+#     INSERT INTO t1 VALUES(4, randomblob(1504));
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#   }
+#   faultsim_save_and_close
+# } {}
+# do_faultsim_test pagerfault-6 -prep {
+#   faultsim_restore_and_reopen
+# } -body {
+#   execsql { 
+#     BEGIN;
+#       UPDATE t1 SET x=x+4 WHERE x=1;
+#       SAVEPOINT one;
+#         UPDATE t1 SET x=x+4 WHERE x=2;
+#         SAVEPOINT three;
+#           UPDATE t1 SET x=x+4 WHERE x=3;
+#           SAVEPOINT four;
+#             UPDATE t1 SET x=x+4 WHERE x=4;
+#         RELEASE three;
+#     COMMIT;
+#     SELECT DISTINCT x FROM t1;
+#   }
+# } -test {
+#   faultsim_test_result {0 {5 6 7 8}}
+#   faultsim_integrity_check
+# }
 
 finish_test

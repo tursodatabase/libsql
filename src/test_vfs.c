@@ -59,6 +59,10 @@ struct Testvfs {
   int ioerr;
   int nIoerrFail;
 
+  int iFullCnt;
+  int fullerr;
+  int nFullFail;
+
   int iDevchar;
   int iSectorsize;
 };
@@ -193,6 +197,30 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
   return 0;
 }
 
+static int tvfsInjectIoerr(Testvfs *p){
+  int ret = 0;
+  if( p->ioerr ){
+    p->iIoerrCnt--;
+    if( p->iIoerrCnt==0 || (p->iIoerrCnt<0 && p->ioerr==2) ){
+      ret = 1;
+      p->nIoerrFail++;
+    }
+  }
+  return ret;
+}
+
+static int tvfsInjectFullerr(Testvfs *p){
+  int ret = 0;
+  if( p->fullerr ){
+    p->iFullCnt--;
+    if( p->iFullCnt<=0 ){
+      ret = 1;
+      p->nFullFail++;
+    }
+  }
+  return ret;
+}
+
 
 static void tvfsExecTcl(
   Testvfs *p, 
@@ -302,6 +330,8 @@ static int tvfsWrite(
     );
     tvfsResultCode(p, &rc);
   }
+
+  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ) rc = SQLITE_FULL;
   
   if( rc==SQLITE_OK ){
     rc = sqlite3OsWrite(pFd->pReal, zBuf, iAmt, iOfst);
@@ -364,6 +394,8 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
     );
     tvfsResultCode(p, &rc);
   }
+
+  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ) rc = SQLITE_FULL;
 
   if( rc==SQLITE_OK ){
     rc = sqlite3OsSync(pFd->pReal, flags);
@@ -603,18 +635,6 @@ static int tvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return PARENTVFS(pVfs)->xCurrentTime(PARENTVFS(pVfs), pTimeOut);
 }
 
-static int tvfsInjectIoerr(Testvfs *p){
-  int ret = 0;
-  if( p->ioerr ){
-    p->iIoerrCnt--;
-    if( p->iIoerrCnt==0 || (p->iIoerrCnt<0 && p->ioerr==2) ){
-      ret = 1;
-      p->nIoerrFail++;
-    }
-  }
-  return ret;
-}
-
 static int tvfsShmOpen(
   sqlite3_file *pFileDes
 ){
@@ -832,7 +852,7 @@ static int testvfs_obj_cmd(
 
   enum DB_enum { 
     CMD_SHM, CMD_DELETE, CMD_FILTER, CMD_IOERR, CMD_SCRIPT, 
-    CMD_DEVCHAR, CMD_SECTORSIZE
+    CMD_DEVCHAR, CMD_SECTORSIZE, CMD_FULLERR
   };
   struct TestvfsSubcmd {
     char *zName;
@@ -842,6 +862,7 @@ static int testvfs_obj_cmd(
     { "delete",     CMD_DELETE     },
     { "filter",     CMD_FILTER     },
     { "ioerr",      CMD_IOERR      },
+    { "fullerr",    CMD_FULLERR    },
     { "script",     CMD_SCRIPT     },
     { "devchar",    CMD_DEVCHAR    },
     { "sectorsize", CMD_SECTORSIZE },
@@ -975,6 +996,34 @@ static int testvfs_obj_cmd(
       Tcl_ResetResult(interp);
       if( p->pScript ) Tcl_SetObjResult(interp, p->pScript);
 
+      break;
+    }
+
+    /*
+    ** TESTVFS fullerr ?IFAIL?
+    **
+    **   Where IFAIL is an integer.
+    */
+    case CMD_FULLERR: {
+      int iRet = p->nFullFail;
+
+      p->nFullFail = 0;
+      p->fullerr = 0;
+      p->iFullCnt = 0;
+
+      if( objc==3 ){
+        int iCnt;
+        if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iCnt) ){
+          return TCL_ERROR;
+        }
+        p->fullerr = (iCnt>0);
+        p->iFullCnt = iCnt;
+      }else if( objc!=2 ){
+        Tcl_AppendResult(interp, "Bad args", 0);
+        return TCL_ERROR;
+      }
+
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(iRet));
       break;
     }
 

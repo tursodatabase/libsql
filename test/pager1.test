@@ -26,6 +26,8 @@ source $testdir/malloc_common.tcl
 #
 # pager1-5.*: Cases related to multi-file commits.
 #
+# pager1-6.*: Cases related to "PRAGMA max_page_count"
+#
 
 proc do_execsql_test {testname sql result} {
   uplevel do_test $testname [list "execsql {$sql}"] [list $result]
@@ -221,6 +223,12 @@ foreach code [list {
 } {
   set s 1024
   set sql { PRAGMA journal_mode = memory }
+} {
+  set s 1024
+  set sql { 
+    PRAGMA journal_mode = memory;
+    PRAGMA locking_mode = exclusive;
+  }
 } {
   set s 2048
   tv devchar safe_append
@@ -449,7 +457,168 @@ foreach {tn ofst value result} {
 db close
 
 #-------------------------------------------------------------------------
+# The following tests deal with multi-file commits.
 #
+# pager1-5.1.*: The case where a multi-file cannot be committed because
+#               another connection is holding a SHARED lock on one of the
+#               files. After the SHARED lock is removed, the COMMIT succeeds.
+#
+# pager1-5.2.*: Multi-file commits with journal_mode=memory.
+#
+# pager1-5.3.*: Multi-file commits with journal_mode=memory.
+#
+# pager1-5.4.*: Check that with synchronous=normal, the master-journal file
+#               name is added to a journal file immediately after the last
+#               journal record. But with synchronous=full, extra unused space
+#               is allocated between the last journal record and the 
+#               master-journal file name so that the master-journal file
+#               name does not lie on the same sector as the last journal file
+#               record.
+#
+# pager1-5.5.*: 
+#
+do_test pager1-5.1.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE aux.t2(a, b);
+    INSERT INTO t1 VALUES(17, 'Lenin');
+    INSERT INTO t1 VALUES(22, 'Stalin');
+    INSERT INTO t1 VALUES(53, 'Khrushchev');
+  }
+} {}
+do_test pager1-5.1.2 {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES(64, 'Brezhnev');
+      INSERT INTO t2 SELECT * FROM t1;
+  }
+  sqlite3 db2 test.db2
+  execsql {
+    BEGIN;
+      SELECT * FROM t2;
+  } db2
+} {}
+do_test pager1-5.1.3 {
+  catchsql COMMIT
+} {1 {database is locked}}
+do_test pager1-5.1.4 {
+  execsql COMMIT db2
+  execsql COMMIT
+  execsql { SELECT * FROM t2 } db2
+} {17 Lenin 22 Stalin 53 Khrushchev 64 Brezhnev}
+do_test pager1-5.1.5 {
+  db2 close
+} {}
+
+do_test pager1-5.2.1 {
+  execsql {
+    PRAGMA journal_mode = memory;
+    BEGIN;
+      INSERT INTO t1 VALUES(84, 'Andropov');
+      INSERT INTO t2 VALUES(84, 'Andropov');
+    COMMIT;
+  }
+} {memory}
+do_test pager1-5.3.1 {
+  execsql {
+    PRAGMA journal_mode = off;
+    BEGIN;
+      INSERT INTO t1 VALUES(85, 'Gorbachev');
+      INSERT INTO t2 VALUES(85, 'Gorbachev');
+    COMMIT;
+  }
+} {off}
+
+do_test pager1-5.4.1 {
+  db close
+  testvfs tv
+  sqlite3 db test.db -vfs tv
+  execsql { ATTACH 'test.db2' AS aux }
+
+  tv filter xDelete
+  tv script max_journal_size
+  tv sectorsize 512
+  set ::max_journal 0
+  proc max_journal_size {method args} {
+    set sz 0
+    catch { set sz [file size test.db-journal] }
+    if {$sz > $::max_journal} {
+      set ::max_journal $sz
+    }
+    return SQLITE_OK
+  }
+  execsql {
+    PRAGMA journal_mode = DELETE;
+    PRAGMA synchronous = NORMAL;
+    BEGIN;
+      INSERT INTO t1 VALUES(85, 'Gorbachev');
+      INSERT INTO t2 VALUES(85, 'Gorbachev');
+    COMMIT;
+  }
+  set ::max_journal
+} [expr 2615+[string length [pwd]]]
+do_test pager1-5.4.2 {
+  set ::max_journal 0
+  execsql {
+    PRAGMA synchronous = full;
+    BEGIN;
+      DELETE FROM t1 WHERE b = 'Lenin';
+      DELETE FROM t2 WHERE b = 'Lenin';
+    COMMIT;
+  }
+  set ::max_journal
+} [expr 3111+[string length [pwd]]]
+db close
+tv delete
+
+do_test pager1-5.5.1 {
+  sqlite3 db test.db
+  execsql { 
+    ATTACH 'test.db2' AS aux;
+    PRAGMA journal_mode = PERSIST;
+    CREATE TABLE t3(a, b);
+    INSERT INTO t3 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    UPDATE t3 SET b = randomblob(1500);
+  }
+  expr [file size test.db-journal] > 15000
+} {1}
+do_test pager1-5.5.2 {
+  execsql {
+    PRAGMA synchronous = full;
+    BEGIN;
+      DELETE FROM t1 WHERE b = 'Stalin';
+      DELETE FROM t2 WHERE b = 'Stalin';
+    COMMIT;
+  }
+  file size test.db-journal
+} {0}
+
+
+#-------------------------------------------------------------------------
+# The following tests work with "PRAGMA max_page_count"
+#
+do_test pager1-6.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA max_page_count = 10;
+    CREATE TABLE t2(a, b);
+    CREATE TABLE t3(a, b);
+    CREATE TABLE t4(a, b);
+    CREATE TABLE t5(a, b);
+    CREATE TABLE t6(a, b);
+    CREATE TABLE t7(a, b);
+    CREATE TABLE t8(a, b);
+    CREATE TABLE t9(a, b);
+    CREATE TABLE t10(a, b);
+  }
+} {10}
+do_test pager1-6.2 {
+  catchsql {
+    CREATE TABLE t11(a, b);
+  }
+} {1 {database or disk is full}}
 
 finish_test
 
