@@ -14,6 +14,7 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
 
 #
 # pager1-1.*: Test inter-process locking (clients in multiple processes).
@@ -22,13 +23,14 @@ source $testdir/malloc_common.tcl
 #
 # pager1-3.*: Savepoint related tests.
 #
-
-proc do_execsql_test {testname sql result} {
-  uplevel do_test $testname [list "execsql {$sql}"] [list $result]
-}
-proc do_catchsql_test {testname sql result} {
-  uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
-}
+# pager1-4.*: Hot-journal related tests.
+#
+# pager1-5.*: Cases related to multi-file commits.
+#
+# pager1-6.*: Cases related to "PRAGMA max_page_count"
+#
+# pager1-7.*: Cases specific to "PRAGMA journal_mode=TRUNCATE"
+#
 
 set a_string_counter 1
 proc a_string {n} {
@@ -221,6 +223,17 @@ do_execsql_test pager1-3.6 { COMMIT } {}
 #               compute) the associated journal is rolled back (and no
 #               xAccess() call to check for the presence of any master 
 #               journal file is made).
+#
+# pager1.4.3.*: Test that the contents of a hot-journal are ignored if the
+#               page-size or sector-size in the journal header appear to
+#               be invalid (too large, too small or not a power of 2).
+#
+# pager1.4.4.*: Test hot-journal rollback of journal file with a master
+#               journal pointer generated in various "PRAGMA synchronous"
+#               modes.
+#
+# pager1.4.5.*: Test that hot-journal rollback stops if it encounters a
+#               journal-record for which the checksum fails.
 # 
 do_test pager1.4.1.1 {
   faultsim_delete_and_reopen
@@ -307,6 +320,427 @@ do_test pager1.4.2.5 {
     PRAGMA integrity_check;
   }
 } {4 ok}
+
+do_test pager1.4.3.1 {
+  testvfs tstvfs -default 1
+  tstvfs filter xSync
+  tstvfs script xSyncCallback
+  proc xSyncCallback {method file args} {
+    set file [file tail $file]
+    if { 0==[string match *journal $file] } { faultsim_save }
+  }
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = DELETE;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  db close
+  tstvfs delete
+} {}
+
+foreach {tn ofst value result} {
+          2   20    31       {1 2 3 4}
+          3   20    32       {1 2 3 4}
+          4   20    33       {1 2 3 4}
+          5   20    65536    {1 2 3 4}
+          6   20    131072   {1 2 3 4}
+
+          7   24    511      {1 2 3 4}
+          8   24    513      {1 2 3 4}
+          9   24    65536    {1 2 3 4}
+
+         10   32    65536    {1 2}
+} {
+  do_test pager1.4.3.$tn {
+    faultsim_restore_and_reopen
+    hexio_write test.db-journal $ofst [format %.8x $value]
+    execsql { SELECT * FROM t1 }
+  } $result
+}
+db close
+
+# Set up a VFS that snapshots the file-system just before a master journal
+# file is deleted to commit a multi-file transaction. Specifically, the
+# file-system is saved just before the xDelete() call to remove the 
+# master journal file from the file-system.
+#
+testvfs tv -default 1
+tv script copy_on_mj_delete
+set ::mj_filename_length 0
+proc copy_on_mj_delete {method filename args} {
+  if {[string match *mj* [file tail $filename]]} { 
+    set ::mj_filename_length [string length $filename]
+    faultsim_save 
+  }
+  return SQLITE_OK
+}
+
+set pwd [pwd]
+foreach {tn1 tcl} {
+  1 { set prefix "test.db" }
+  2 { 
+    # This test depends on the underlying VFS being able to open paths
+    # 512 bytes in length. The idea is to create a hot-journal file that
+    # contains a master-journal pointer so large that it could contain
+    # a valid page record (if the file page-size is 512 bytes). So as to
+    # make sure SQLite doesn't get confused by this.
+    #
+    set nPadding [expr 511 - $::mj_filename_length]
+
+    # We cannot just create a really long database file name to open, as
+    # Linux limits a single component of a path to 255 bytes by default
+    # (and presumably other systems have limits too). So create a directory
+    # hierarchy to work in.
+    #
+    set dirname "d123456789012345678901234567890/"
+    set nDir [expr $nPadding / 32]
+    if { $nDir } {
+      set p [string repeat $dirname $nDir]
+      file mkdir $p
+      cd $p
+    }
+
+    set padding [string repeat x [expr $nPadding %32]]
+    set prefix "test.db${padding}"
+  }
+} {
+  eval $tcl
+  foreach {tn2 sql} {
+    o { 
+      PRAGMA main.synchronous=OFF;
+      PRAGMA aux.synchronous=OFF;
+    }
+    o512 { 
+      PRAGMA main.synchronous=OFF;
+      PRAGMA aux.synchronous=OFF;
+      PRAGMA main.page_size = 512;
+      PRAGMA aux.page_size = 512;
+    }
+    n { 
+      PRAGMA main.synchronous=NORMAL;
+      PRAGMA aux.synchronous=NORMAL;
+    }
+    f { 
+      PRAGMA main.synchronous=FULL;
+      PRAGMA aux.synchronous=FULL;
+    }
+  } {
+
+    set tn "${tn1}.${tn2}"
+  
+    # Set up a connection to have two databases, test.db (main) and 
+    # test.db2 (aux). Then run a multi-file transaction on them. The
+    # VFS will snapshot the file-system just before the master-journal
+    # file is deleted to commit the transaction.
+    #
+    tv filter xDelete
+    do_test pager1-4.4.$tn.1 {
+      faultsim_delete_and_reopen $prefix
+      execsql "
+        ATTACH '${prefix}2' AS aux;
+        $sql
+        CREATE TABLE a(x);
+        CREATE TABLE aux.b(x);
+        INSERT INTO a VALUES('double-you');
+        INSERT INTO a VALUES('why');
+        INSERT INTO a VALUES('zed');
+        INSERT INTO b VALUES('won');
+        INSERT INTO b VALUES('too');
+        INSERT INTO b VALUES('free');
+      "
+      execsql {
+        BEGIN;
+          INSERT INTO a SELECT * FROM b WHERE rowid<=3;
+          INSERT INTO b SELECT * FROM a WHERE rowid<=3;
+        COMMIT;
+      }
+    } {}
+    tv filter {}
+    
+    # Check that the transaction was committed successfully.
+    #
+    do_execsql_test pager1-4.4.$tn.2 {
+      SELECT * FROM a
+    } {double-you why zed won too free}
+    do_execsql_test pager1-4.4.$tn.3 {
+      SELECT * FROM b
+    } {won too free double-you why zed}
+    
+    # Restore the file-system and reopen the databases. Check that it now
+    # appears that the transaction was not committed (because the file-system
+    # was restored to the state where it had not been).
+    #
+    do_test pager1-4.4.$tn.4 {
+      faultsim_restore_and_reopen $prefix
+      execsql "ATTACH '${prefix}2' AS aux"
+    } {}
+    do_execsql_test pager1-4.4.$tn.5 {SELECT * FROM a} {double-you why zed}
+    do_execsql_test pager1-4.4.$tn.6 {SELECT * FROM b} {won too free}
+    
+    # Restore the file-system again. This time, before reopening the databases,
+    # delete the master-journal file from the file-system. It now appears that
+    # the transaction was committed (no master-journal file == no rollback).
+    #
+    do_test pager1-4.4.$tn.7 {
+      faultsim_restore_and_reopen $prefix
+      foreach f [glob ${prefix}-mj*] { file delete -force $f }
+      execsql "ATTACH '${prefix}2' AS aux"
+    } {}
+    do_execsql_test pager1-4.4.$tn.8 {
+      SELECT * FROM a
+    } {double-you why zed won too free}
+    do_execsql_test pager1-4.4.$tn.9 {
+      SELECT * FROM b
+    } {won too free double-you why zed}
+  }
+
+  cd $pwd
+}
+db close
+tv delete
+
+#-------------------------------------------------------------------------
+# The following tests deal with multi-file commits.
+#
+# pager1-5.1.*: The case where a multi-file cannot be committed because
+#               another connection is holding a SHARED lock on one of the
+#               files. After the SHARED lock is removed, the COMMIT succeeds.
+#
+# pager1-5.2.*: Multi-file commits with journal_mode=memory.
+#
+# pager1-5.3.*: Multi-file commits with journal_mode=memory.
+#
+# pager1-5.4.*: Check that with synchronous=normal, the master-journal file
+#               name is added to a journal file immediately after the last
+#               journal record. But with synchronous=full, extra unused space
+#               is allocated between the last journal record and the 
+#               master-journal file name so that the master-journal file
+#               name does not lie on the same sector as the last journal file
+#               record.
+#
+# pager1-5.5.*: Check that in journal_mode=PERSIST mode, a journal file is
+#               truncated to zero bytes when a multi-file transaction is 
+#               committed (instead of the first couple of bytes being zeroed).
+#
+#
+do_test pager1-5.1.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    ATTACH 'test.db2' AS aux;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE aux.t2(a, b);
+    INSERT INTO t1 VALUES(17, 'Lenin');
+    INSERT INTO t1 VALUES(22, 'Stalin');
+    INSERT INTO t1 VALUES(53, 'Khrushchev');
+  }
+} {}
+do_test pager1-5.1.2 {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 VALUES(64, 'Brezhnev');
+      INSERT INTO t2 SELECT * FROM t1;
+  }
+  sqlite3 db2 test.db2
+  execsql {
+    BEGIN;
+      SELECT * FROM t2;
+  } db2
+} {}
+do_test pager1-5.1.3 {
+  catchsql COMMIT
+} {1 {database is locked}}
+do_test pager1-5.1.4 {
+  execsql COMMIT db2
+  execsql COMMIT
+  execsql { SELECT * FROM t2 } db2
+} {17 Lenin 22 Stalin 53 Khrushchev 64 Brezhnev}
+do_test pager1-5.1.5 {
+  db2 close
+} {}
+
+do_test pager1-5.2.1 {
+  execsql {
+    PRAGMA journal_mode = memory;
+    BEGIN;
+      INSERT INTO t1 VALUES(84, 'Andropov');
+      INSERT INTO t2 VALUES(84, 'Andropov');
+    COMMIT;
+  }
+} {memory}
+do_test pager1-5.3.1 {
+  execsql {
+    PRAGMA journal_mode = off;
+    BEGIN;
+      INSERT INTO t1 VALUES(85, 'Gorbachev');
+      INSERT INTO t2 VALUES(85, 'Gorbachev');
+    COMMIT;
+  }
+} {off}
+
+do_test pager1-5.4.1 {
+  db close
+  testvfs tv
+  sqlite3 db test.db -vfs tv
+  execsql { ATTACH 'test.db2' AS aux }
+
+  tv filter xDelete
+  tv script max_journal_size
+  tv sectorsize 512
+  set ::max_journal 0
+  proc max_journal_size {method args} {
+    set sz 0
+    catch { set sz [file size test.db-journal] }
+    if {$sz > $::max_journal} {
+      set ::max_journal $sz
+    }
+    return SQLITE_OK
+  }
+  execsql {
+    PRAGMA journal_mode = DELETE;
+    PRAGMA synchronous = NORMAL;
+    BEGIN;
+      INSERT INTO t1 VALUES(85, 'Gorbachev');
+      INSERT INTO t2 VALUES(85, 'Gorbachev');
+    COMMIT;
+  }
+  set ::max_journal
+} [expr 2615+[string length [pwd]]]
+do_test pager1-5.4.2 {
+  set ::max_journal 0
+  execsql {
+    PRAGMA synchronous = full;
+    BEGIN;
+      DELETE FROM t1 WHERE b = 'Lenin';
+      DELETE FROM t2 WHERE b = 'Lenin';
+    COMMIT;
+  }
+  set ::max_journal
+} [expr 3111+[string length [pwd]]]
+db close
+tv delete
+
+do_test pager1-5.5.1 {
+  sqlite3 db test.db
+  execsql { 
+    ATTACH 'test.db2' AS aux;
+    PRAGMA journal_mode = PERSIST;
+    CREATE TABLE t3(a, b);
+    INSERT INTO t3 SELECT randomblob(1500), randomblob(1500) FROM t1;
+    UPDATE t3 SET b = randomblob(1500);
+  }
+  expr [file size test.db-journal] > 15000
+} {1}
+do_test pager1-5.5.2 {
+  execsql {
+    PRAGMA synchronous = full;
+    BEGIN;
+      DELETE FROM t1 WHERE b = 'Stalin';
+      DELETE FROM t2 WHERE b = 'Stalin';
+    COMMIT;
+  }
+  file size test.db-journal
+} {0}
+
+
+#-------------------------------------------------------------------------
+# The following tests work with "PRAGMA max_page_count"
+#
+do_test pager1-6.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA max_page_count = 10;
+    CREATE TABLE t2(a, b);
+    CREATE TABLE t3(a, b);
+    CREATE TABLE t4(a, b);
+    CREATE TABLE t5(a, b);
+    CREATE TABLE t6(a, b);
+    CREATE TABLE t7(a, b);
+    CREATE TABLE t8(a, b);
+    CREATE TABLE t9(a, b);
+    CREATE TABLE t10(a, b);
+  }
+} {10}
+do_test pager1-6.2 {
+  catchsql {
+    CREATE TABLE t11(a, b);
+  }
+} {1 {database or disk is full}}
+
+
+#-------------------------------------------------------------------------
+# The following tests work with "PRAGMA journal_mode=TRUNCATE" and
+# "PRAGMA locking_mode=EXCLUSIVE".
+#
+# Each test is specified with 5 variables. As follows:
+#
+#   $tn:  Test Number. Used as part of the [do_test] test names.
+#   $sql: SQL to execute.
+#   $res: Expected result of executing $sql.
+#   $js:  The expected size of the journal file, in bytes, after executing
+#         the SQL script. Or -1 if the journal is not expected to exist.
+#   $ws:  The expected size of the WAL file, in bytes, after executing
+#         the SQL script. Or -1 if the WAL is not expected to exist.
+#
+faultsim_delete_and_reopen
+foreach {tn sql res js ws} [subst {
+
+  1  {
+    CREATE TABLE t1(a, b);
+    PRAGMA auto_vacuum=OFF;
+    PRAGMA synchronous=NORMAL;
+    PRAGMA page_size=1024;
+    PRAGMA locking_mode=EXCLUSIVE;
+    PRAGMA journal_mode=TRUNCATE;
+    INSERT INTO t1 VALUES(1, 2);
+  } {exclusive truncate} 0 -1
+
+  2  {
+    BEGIN IMMEDIATE;
+      SELECT * FROM t1;
+    COMMIT;
+  } {1 2} 0 -1
+
+  3  {
+    BEGIN;
+      SELECT * FROM t1;
+    COMMIT;
+  } {1 2} 0 -1
+
+  4  { PRAGMA journal_mode = WAL }    wal    -1 -1
+  5  { INSERT INTO t1 VALUES(3, 4) }  {}     -1 [wal_file_size 1 1024]
+  6  { PRAGMA locking_mode = NORMAL } normal -1 [wal_file_size 1 1024]
+  7  { INSERT INTO t1 VALUES(5, 6); } {}     -1 [wal_file_size 2 1024]
+
+  8  { PRAGMA journal_mode = TRUNCATE } truncate          0 -1
+  9  { INSERT INTO t1 VALUES(7, 8) }    {}                0 -1
+  10 { SELECT * FROM t1 }               {1 2 3 4 5 6 7 8} 0 -1
+
+}] {
+  do_execsql_test pager1-7.1.$tn.1 $sql $res
+  catch { set J -1 ; set J [file size test.db-journal] }
+  catch { set W -1 ; set W [file size test.db-wal] }
+  do_test pager1-7.1.$tn.2 { list $J $W } [list $js $ws]
+}
+
+do_test pager1-8.1 {
+  faultsim_delete_and_reopen
+  db close
+  sqlite3 db :memory:
+  execsql {
+    CREATE TABLE x1(x);
+    INSERT INTO x1 VALUES('Charles');
+    INSERT INTO x1 VALUES('James');
+    INSERT INTO x1 VALUES('Mary');
+    SELECT * FROM x1;
+  }
+} {Charles James Mary}
+do_test pager1-8.2 {
+  db close
+  sqlite3 db :memory:
+  catchsql { SELECT * FROM x1 }
+} {1 {no such table: x1}}
 
 finish_test
 

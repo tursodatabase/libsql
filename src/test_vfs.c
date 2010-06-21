@@ -58,6 +58,13 @@ struct Testvfs {
   int iIoerrCnt;
   int ioerr;
   int nIoerrFail;
+
+  int iFullCnt;
+  int fullerr;
+  int nFullFail;
+
+  int iDevchar;
+  int iSectorsize;
 };
 
 /*
@@ -77,7 +84,10 @@ struct Testvfs {
 #define TESTVFS_OPEN_MASK       0x00000100
 #define TESTVFS_SYNC_MASK       0x00000200
 #define TESTVFS_DELETE_MASK     0x00000400
-#define TESTVFS_ALL_MASK        0x000007FF
+#define TESTVFS_CLOSE_MASK      0x00000800
+#define TESTVFS_WRITE_MASK      0x00001000
+#define TESTVFS_TRUNCATE_MASK   0x00002000
+#define TESTVFS_ALL_MASK        0x00003FFF
 
 
 #define TESTVFS_MAX_PAGES 256
@@ -187,6 +197,30 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
   return 0;
 }
 
+static int tvfsInjectIoerr(Testvfs *p){
+  int ret = 0;
+  if( p->ioerr ){
+    p->iIoerrCnt--;
+    if( p->iIoerrCnt==0 || (p->iIoerrCnt<0 && p->ioerr==2) ){
+      ret = 1;
+      p->nIoerrFail++;
+    }
+  }
+  return ret;
+}
+
+static int tvfsInjectFullerr(Testvfs *p){
+  int ret = 0;
+  if( p->fullerr ){
+    p->iFullCnt--;
+    if( p->iFullCnt<=0 ){
+      ret = 1;
+      p->nFullFail++;
+    }
+  }
+  return ret;
+}
+
 
 static void tvfsExecTcl(
   Testvfs *p, 
@@ -245,15 +279,23 @@ static void tvfsExecTcl(
 ** Close an tvfs-file.
 */
 static int tvfsClose(sqlite3_file *pFile){
-  TestvfsFile *p = (TestvfsFile *)pFile;
-  if( p->pShmId ){
-    Tcl_DecrRefCount(p->pShmId);
-    p->pShmId = 0;
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+
+  if( p->pScript && p->mask&TESTVFS_CLOSE_MASK ){
+    tvfsExecTcl(p, "xClose", 
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+    );
+  }
+
+  if( pFd->pShmId ){
+    Tcl_DecrRefCount(pFd->pShmId);
+    pFd->pShmId = 0;
   }
   if( pFile->pMethods ){
     ckfree((char *)pFile->pMethods);
   }
-  return sqlite3OsClose(p->pReal);
+  return sqlite3OsClose(pFd->pReal);
 }
 
 /*
@@ -278,16 +320,44 @@ static int tvfsWrite(
   int iAmt, 
   sqlite_int64 iOfst
 ){
-  TestvfsFile *p = (TestvfsFile *)pFile;
-  return sqlite3OsWrite(p->pReal, zBuf, iAmt, iOfst);
+  int rc = SQLITE_OK;
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+
+  if( p->pScript && p->mask&TESTVFS_WRITE_MASK ){
+    tvfsExecTcl(p, "xWrite", 
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+    );
+    tvfsResultCode(p, &rc);
+  }
+
+  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ) rc = SQLITE_FULL;
+  
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsWrite(pFd->pReal, zBuf, iAmt, iOfst);
+  }
+  return rc;
 }
 
 /*
 ** Truncate an tvfs-file.
 */
 static int tvfsTruncate(sqlite3_file *pFile, sqlite_int64 size){
-  TestvfsFile *p = (TestvfsFile *)pFile;
-  return sqlite3OsTruncate(p->pReal, size);
+  int rc = SQLITE_OK;
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+
+  if( p->pScript && p->mask&TESTVFS_TRUNCATE_MASK ){
+    tvfsExecTcl(p, "xTruncate", 
+        Tcl_NewStringObj(pFd->zFilename, -1), pFd->pShmId, 0
+    );
+    tvfsResultCode(p, &rc);
+  }
+  
+  if( rc==SQLITE_OK ){
+    rc = sqlite3OsTruncate(pFd->pReal, size);
+  }
+  return rc;
 }
 
 /*
@@ -324,6 +394,8 @@ static int tvfsSync(sqlite3_file *pFile, int flags){
     );
     tvfsResultCode(p, &rc);
   }
+
+  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ) rc = SQLITE_FULL;
 
   if( rc==SQLITE_OK ){
     rc = sqlite3OsSync(pFd->pReal, flags);
@@ -376,16 +448,24 @@ static int tvfsFileControl(sqlite3_file *pFile, int op, void *pArg){
 ** Return the sector-size in bytes for an tvfs-file.
 */
 static int tvfsSectorSize(sqlite3_file *pFile){
-  TestvfsFile *p = (TestvfsFile *)pFile;
-  return sqlite3OsSectorSize(p->pReal);
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->iSectorsize>=0 ){
+    return p->iSectorsize;
+  }
+  return sqlite3OsSectorSize(pFd->pReal);
 }
 
 /*
 ** Return the device characteristic flags supported by an tvfs-file.
 */
 static int tvfsDeviceCharacteristics(sqlite3_file *pFile){
-  TestvfsFile *p = (TestvfsFile *)pFile;
-  return sqlite3OsDeviceCharacteristics(p->pReal);
+  TestvfsFile *pFd = (TestvfsFile *)pFile;
+  Testvfs *p = (Testvfs *)pFd->pVfs->pAppData;
+  if( p->iDevchar>=0 ){
+    return p->iDevchar;
+  }
+  return sqlite3OsDeviceCharacteristics(pFd->pReal);
 }
 
 /*
@@ -553,18 +633,6 @@ static int tvfsSleep(sqlite3_vfs *pVfs, int nMicro){
 */
 static int tvfsCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
   return PARENTVFS(pVfs)->xCurrentTime(PARENTVFS(pVfs), pTimeOut);
-}
-
-static int tvfsInjectIoerr(Testvfs *p){
-  int ret = 0;
-  if( p->ioerr ){
-    p->iIoerrCnt--;
-    if( p->iIoerrCnt==0 || (p->iIoerrCnt<0 && p->ioerr==2) ){
-      ret = 1;
-      p->nIoerrFail++;
-    }
-  }
-  return ret;
 }
 
 static int tvfsShmOpen(
@@ -782,25 +850,38 @@ static int testvfs_obj_cmd(
 ){
   Testvfs *p = (Testvfs *)cd;
 
-  static const char *CMD_strs[] = { 
-    "shm",   "delete",   "filter",   "ioerr",   "script", 0 
-  };
   enum DB_enum { 
-    CMD_SHM, CMD_DELETE, CMD_FILTER, CMD_IOERR, CMD_SCRIPT
+    CMD_SHM, CMD_DELETE, CMD_FILTER, CMD_IOERR, CMD_SCRIPT, 
+    CMD_DEVCHAR, CMD_SECTORSIZE, CMD_FULLERR
   };
-
+  struct TestvfsSubcmd {
+    char *zName;
+    enum DB_enum eCmd;
+  } aSubcmd[] = {
+    { "shm",        CMD_SHM        },
+    { "delete",     CMD_DELETE     },
+    { "filter",     CMD_FILTER     },
+    { "ioerr",      CMD_IOERR      },
+    { "fullerr",    CMD_FULLERR    },
+    { "script",     CMD_SCRIPT     },
+    { "devchar",    CMD_DEVCHAR    },
+    { "sectorsize", CMD_SECTORSIZE },
+    { 0, 0 }
+  };
   int i;
   
   if( objc<2 ){
     Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
     return TCL_ERROR;
   }
-  if( Tcl_GetIndexFromObj(interp, objv[1], CMD_strs, "subcommand", 0, &i) ){
+  if( Tcl_GetIndexFromObjStruct(
+        interp, objv[1], aSubcmd, sizeof(aSubcmd[0]), "subcommand", 0, &i) 
+  ){
     return TCL_ERROR;
   }
   Tcl_ResetResult(interp);
 
-  switch( (enum DB_enum)i ){
+  switch( aSubcmd[i].eCmd ){
     case CMD_SHM: {
       Tcl_Obj *pObj;
       int i;
@@ -857,7 +938,10 @@ static int testvfs_obj_cmd(
         { "xShmMap",     TESTVFS_SHMMAP_MASK },
         { "xSync",       TESTVFS_SYNC_MASK },
         { "xDelete",     TESTVFS_DELETE_MASK },
+        { "xWrite",      TESTVFS_WRITE_MASK },
+        { "xTruncate",   TESTVFS_TRUNCATE_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
+        { "xClose",      TESTVFS_CLOSE_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
@@ -916,6 +1000,34 @@ static int testvfs_obj_cmd(
     }
 
     /*
+    ** TESTVFS fullerr ?IFAIL?
+    **
+    **   Where IFAIL is an integer.
+    */
+    case CMD_FULLERR: {
+      int iRet = p->nFullFail;
+
+      p->nFullFail = 0;
+      p->fullerr = 0;
+      p->iFullCnt = 0;
+
+      if( objc==3 ){
+        int iCnt;
+        if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iCnt) ){
+          return TCL_ERROR;
+        }
+        p->fullerr = (iCnt>0);
+        p->iFullCnt = iCnt;
+      }else if( objc!=2 ){
+        Tcl_AppendResult(interp, "Bad args", 0);
+        return TCL_ERROR;
+      }
+
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(iRet));
+      break;
+    }
+
+    /*
     ** TESTVFS ioerr ?IFAIL PERSIST?
     **
     **   Where IFAIL is an integer and PERSIST is boolean.
@@ -946,6 +1058,89 @@ static int testvfs_obj_cmd(
 
     case CMD_DELETE: {
       Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
+      break;
+    }
+
+    case CMD_DEVCHAR: {
+      struct DeviceFlag {
+        char *zName;
+        int iValue;
+      } aFlag[] = {
+        { "default",               -1 },
+        { "atomic",                SQLITE_IOCAP_ATOMIC      },
+        { "atomic512",             SQLITE_IOCAP_ATOMIC512   },
+        { "atomic1k",              SQLITE_IOCAP_ATOMIC1K    },
+        { "atomic2k",              SQLITE_IOCAP_ATOMIC2K    },
+        { "atomic4k",              SQLITE_IOCAP_ATOMIC4K    },
+        { "atomic8k",              SQLITE_IOCAP_ATOMIC8K    },
+        { "atomic16k",             SQLITE_IOCAP_ATOMIC16K   },
+        { "atomic32k",             SQLITE_IOCAP_ATOMIC32K   },
+        { "atomic64k",             SQLITE_IOCAP_ATOMIC64K   },
+        { "sequential",            SQLITE_IOCAP_SEQUENTIAL  },
+        { "safe_append",           SQLITE_IOCAP_SAFE_APPEND },
+        { "undeletable_when_open", SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN },
+        { 0, 0 }
+      };
+      Tcl_Obj *pRet;
+      int iFlag;
+
+      if( objc>3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "?ATTR-LIST?");
+        return TCL_ERROR;
+      }
+      if( objc==3 ){
+        int j;
+        int iNew = 0;
+        Tcl_Obj **flags = 0;
+        int nFlags = 0;
+
+        if( Tcl_ListObjGetElements(interp, objv[2], &nFlags, &flags) ){
+          return TCL_ERROR;
+        }
+
+        for(j=0; j<nFlags; j++){
+          int idx = 0;
+          if( Tcl_GetIndexFromObjStruct(interp, flags[j], aFlag, 
+                sizeof(aFlag[0]), "flag", 0, &idx) 
+          ){
+            return TCL_ERROR;
+          }
+          if( aFlag[idx].iValue<0 && nFlags>1 ){
+            Tcl_AppendResult(interp, "bad flags: ", Tcl_GetString(objv[2]), 0);
+            return TCL_ERROR;
+          }
+          iNew |= aFlag[idx].iValue;
+        }
+
+        p->iDevchar = iNew;
+      }
+
+      pRet = Tcl_NewObj();
+      for(iFlag=0; iFlag<sizeof(aFlag)/sizeof(aFlag[0]); iFlag++){
+        if( p->iDevchar & aFlag[iFlag].iValue ){
+          Tcl_ListObjAppendElement(
+              interp, pRet, Tcl_NewStringObj(aFlag[iFlag].zName, -1)
+          );
+        }
+      }
+      Tcl_SetObjResult(interp, pRet);
+
+      break;
+    }
+
+    case CMD_SECTORSIZE: {
+      if( objc>3 ){
+        Tcl_WrongNumArgs(interp, 2, objv, "?VALUE?");
+        return TCL_ERROR;
+      }
+      if( objc==3 ){
+        int iNew = 0;
+        if( Tcl_GetIntFromObj(interp, objv[2], &iNew) ){
+          return TCL_ERROR;
+        }
+        p->iSectorsize = iNew;
+      }
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(p->iSectorsize));
       break;
     }
   }
@@ -1067,6 +1262,8 @@ static int testvfs_cmd(
   nByte = sizeof(Testvfs) + strlen(zVfs)+1;
   p = (Testvfs *)ckalloc(nByte);
   memset(p, 0, nByte);
+  p->iDevchar = -1;
+  p->iSectorsize = -1;
 
   /* Create the new object command before querying SQLite for a default VFS
   ** to use for 'real' IO operations. This is because creating the new VFS

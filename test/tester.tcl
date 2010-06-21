@@ -49,6 +49,8 @@
 #      crashsql               ARGS...
 #      integrity_check        TESTNAME ?DB?
 #      do_test                TESTNAME SCRIPT EXPECTED
+#      do_execsql_test        TESTNAME SQL EXPECTED
+#      do_catchsql_test       TESTNAME SQL EXPECTED
 #
 # Commands providing a lower level interface to the global test counters:
 #
@@ -316,6 +318,14 @@ proc do_test {name cmd expected} {
   }
   flush stdout
 }
+    
+proc do_execsql_test {testname sql result} {
+  uplevel do_test $testname [list "execsql {$sql}"] [list $result]
+}
+proc do_catchsql_test {testname sql result} {
+  uplevel do_test $testname [list "catchsql {$sql}"] [list $result]
+}
+
 
 # Run an SQL script.  
 # Return the number of microseconds per statement.

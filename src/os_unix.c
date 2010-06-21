@@ -4604,6 +4604,12 @@ static int unixAccess(
       assert(!"Invalid flags argument");
   }
   *pResOut = (access(zPath, amode)==0);
+  if( flags==SQLITE_ACCESS_EXISTS && *pResOut ){
+    struct stat buf;
+    if( 0==stat(zPath, &buf) && buf.st_size==0 ){
+      *pResOut = 0;
+    }
+  }
   return SQLITE_OK;
 }
 

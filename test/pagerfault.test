@@ -55,10 +55,55 @@ do_faultsim_test pagerfault-1 -prep {
 }
 
 #-------------------------------------------------------------------------
+# Test fault-injection while rolling back a hot-journal file with a 
+# page-size different from the current value stored on page 1 of the
+# database file.
+#
+do_test pagerfault-2-pre1 {
+  testvfs tv -default 1
+  tv filter xSync
+  tv script xSyncCb
+  proc xSyncCb {filename args} {
+    if {[string match *journal filename]==0} faultsim_save
+  }
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 4096;
+    BEGIN;
+      CREATE TABLE abc(a, b, c);
+      INSERT INTO abc VALUES('o', 't', 't'); 
+      INSERT INTO abc VALUES('f', 'f', 's'); 
+      INSERT INTO abc SELECT * FROM abc; -- 4
+      INSERT INTO abc SELECT * FROM abc; -- 8
+      INSERT INTO abc SELECT * FROM abc; -- 16
+      INSERT INTO abc SELECT * FROM abc; -- 32
+      INSERT INTO abc SELECT * FROM abc; -- 64
+      INSERT INTO abc SELECT * FROM abc; -- 128
+      INSERT INTO abc SELECT * FROM abc; -- 256
+    COMMIT;
+    PRAGMA page_size = 1024;
+    VACUUM;
+  }
+  db close
+  tv delete
+} {}
+do_faultsim_test pagerfault-2 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { SELECT * FROM abc }
+} -test {
+  set answer [split [string repeat "ottffs" 128] ""]
+  faultsim_test_result [list 0 $answer]
+  faultsim_integrity_check
+  set res [db eval { SELECT * FROM abc }]
+  if {$res != $answer} { error "Database content appears incorrect ($res)" }
+} -faults oom-transient
+
+#-------------------------------------------------------------------------
 # Test fault-injection while rolling back hot-journals that were created
 # as part of a multi-file transaction.
 #
-do_test pagerfault-2-pre1 {
+do_test pagerfault-3-pre1 {
   testvfs tstvfs -default 1
   tstvfs filter xDelete
   tstvfs script xDeleteCallback
@@ -96,7 +141,7 @@ do_test pagerfault-2-pre1 {
   db close
   tstvfs delete
 } {}
-do_faultsim_test pagerfault-2 -faults ioerr-persistent -prep {
+do_faultsim_test pagerfault-3 -faults ioerr-persistent -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { 
@@ -107,7 +152,6 @@ do_faultsim_test pagerfault-2 -faults ioerr-persistent -prep {
 } -test {
   faultsim_test_result {0 {4 4}} {1 {unable to open database: test.db2}}
   faultsim_integrity_check
-
   catchsql { ATTACH 'test.db2' AS aux }
   if {[db one { SELECT count(*) FROM t1 }] != 4
    || [db one { SELECT count(*) FROM t2 }] != 4
@@ -115,5 +159,152 @@ do_faultsim_test pagerfault-2 -faults ioerr-persistent -prep {
     error "Database content appears incorrect"
   }
 }
+
+#-------------------------------------------------------------------------
+# Test fault-injection as part of a vanilla, no-transaction, INSERT
+# statement.
+#
+do_faultsim_test pagerfault-4 -prep {
+  faultsim_delete_and_reopen
+} -body {
+  execsql { 
+    CREATE TABLE x(y);
+    INSERT INTO x VALUES('z');
+    SELECT * FROM x;
+  }
+} -test {
+  faultsim_test_result {0 z}
+  faultsim_integrity_check
+}
+
+#-------------------------------------------------------------------------
+# Test fault-injection as part of a commit when using journal_mode=PERSIST.
+# Three different cases:
+#
+#    pagerfault-5.1: With no journal_size_limit configured.
+#    pagerfault-5.2: With a journal_size_limit configured.
+#    pagerfault-5.4: Multi-file transaction. One connection has a 
+#                    journal_size_limit of 0, the other has no limit.
+#
+do_test pagerfault-5-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+    INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-5.1 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { PRAGMA journal_mode = PERSIST }
+} -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-5.2 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { 
+    PRAGMA journal_mode = PERSIST;
+    PRAGMA journal_size_limit = 2048;
+  }
+} -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-5.3 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  file delete -force test2.db test2.db-journal test2.db-wal
+  execsql { 
+    PRAGMA journal_mode = PERSIST;
+    ATTACH 'test2.db' AS aux;
+    PRAGMA aux.journal_mode = PERSIST;
+    PRAGMA aux.journal_size_limit = 0;
+  }
+} -body {
+  execsql {
+    BEGIN;
+      INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1;
+      CREATE TABLE aux.t2 AS SELECT * FROM t1;
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+#-------------------------------------------------------------------------
+# Test fault-injection as part of a commit when using 
+# journal_mode=TRUNCATE.
+#
+do_test pagerfault-6-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-6.1 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { PRAGMA journal_mode = TRUNCATE }
+} -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+# The following was an attempt to get a bitvec malloc to fail. Didn't work.
+#
+# do_test pagerfault-6-pre1 {
+#   faultsim_delete_and_reopen
+#   execsql {
+#     CREATE TABLE t1(x, y, UNIQUE(x, y));
+#     INSERT INTO t1 VALUES(1, randomblob(1501));
+#     INSERT INTO t1 VALUES(2, randomblob(1502));
+#     INSERT INTO t1 VALUES(3, randomblob(1503));
+#     INSERT INTO t1 VALUES(4, randomblob(1504));
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#     INSERT INTO t1 
+#       SELECT x, randomblob(1500+oid+(SELECT max(oid) FROM t1)) FROM t1;
+#   }
+#   faultsim_save_and_close
+# } {}
+# do_faultsim_test pagerfault-6 -prep {
+#   faultsim_restore_and_reopen
+# } -body {
+#   execsql { 
+#     BEGIN;
+#       UPDATE t1 SET x=x+4 WHERE x=1;
+#       SAVEPOINT one;
+#         UPDATE t1 SET x=x+4 WHERE x=2;
+#         SAVEPOINT three;
+#           UPDATE t1 SET x=x+4 WHERE x=3;
+#           SAVEPOINT four;
+#             UPDATE t1 SET x=x+4 WHERE x=4;
+#         RELEASE three;
+#     COMMIT;
+#     SELECT DISTINCT x FROM t1;
+#   }
+# } -test {
+#   faultsim_test_result {0 {5 6 7 8}}
+#   faultsim_integrity_check
+# }
 
 finish_test

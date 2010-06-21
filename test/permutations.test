@@ -169,7 +169,9 @@ test_suite "coverage-pager" -description {
   Coverage tests for file pager.c.
 } -files {
   pager1.test
+  pager2.test
   pagerfault.test
+  journal2.test
 } 
 
 

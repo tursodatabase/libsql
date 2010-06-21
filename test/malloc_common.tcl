@@ -49,6 +49,16 @@ set FAULTSIM(ioerr-persistent) [list       \
   -injecterrlist {{1 {disk I/O error}}}    \
 ]
 
+# SQLITE_FULL errors (always persistent):
+#
+set FAULTSIM(full) [list                   \
+  -injectinstall   fullerr_injectinstall   \
+  -injectstart     fullerr_injectstart     \
+  -injectstop      fullerr_injectstop      \
+  -injecterrlist   {{1 {database or disk is full}}} \
+  -injectuninstall fullerr_injectuninstall \
+]
+
 # Transient and persistent SHM errors:
 #
 set FAULTSIM(shmerr-transient) [list       \
@@ -126,14 +136,14 @@ proc faultsim_save_and_close {} {
   catch { db close }
   return ""
 }
-proc faultsim_restore_and_reopen {} {
+proc faultsim_restore_and_reopen {{dbfile test.db}} {
   catch { db close }
   foreach f [glob -nocomplain test.db*] { file delete -force $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
     file copy -force $f2 $f
   }
-  sqlite3 db test.db
+  sqlite3 db $dbfile
   sqlite3_extended_result_codes db 1
   sqlite3_db_config_lookaside db 0 0 0
 }
@@ -146,7 +156,7 @@ proc faultsim_integrity_check {{db db}} {
 proc faultsim_delete_and_reopen {{file test.db}} {
   catch { db close }
   foreach f [glob -nocomplain test.db*] { file delete -force $f }
-  sqlite3 db test.db
+  sqlite3 db $file
 }
 
 
@@ -177,6 +187,7 @@ proc ioerr_injectstop {} {
   return $sv
 }
 
+
 # The following procs are used as [do_one_faultsim_test] callbacks when 
 # injecting shared-memory related error faults into test cases.
 #
@@ -194,6 +205,22 @@ proc shmerr_injectstart {persist iFail} {
 proc shmerr_injectstop {} {
   shmfault ioerr 0 0
 }
+
+proc fullerr_injectinstall {} {
+  testvfs shmfault -default true
+}
+proc fullerr_injectuninstall {} {
+  catch {db  close}
+  catch {db2 close}
+  shmfault delete
+}
+proc fullerr_injectstart {iFail} {
+  shmfault full $iFail
+}
+proc fullerr_injectstop {} {
+  shmfault full 0
+}
+
 
 # This command is not called directly. It is used by the 
 # [faultsim_test_result] command created by [do_faultsim_test] and used

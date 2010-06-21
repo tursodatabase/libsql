@@ -5248,8 +5248,6 @@ case OP_JournalMode: {    /* out2-prerelease */
         rc = sqlite3PagerCloseWal(pPager);
         if( rc==SQLITE_OK ){
           sqlite3PagerSetJournalMode(pPager, eNew);
-        }else if( rc==SQLITE_BUSY && pOp->p5==0 ){
-          goto abort_due_to_error;
         }
       }
   
@@ -5259,16 +5257,15 @@ case OP_JournalMode: {    /* out2-prerelease */
       assert( sqlite3BtreeIsInTrans(pBt)==0 );
       if( rc==SQLITE_OK ){
         rc = sqlite3BtreeSetVersion(pBt, (eNew==PAGER_JOURNALMODE_WAL ? 2 : 1));
-        if( rc==SQLITE_BUSY && pOp->p5==0 ) goto abort_due_to_error;
-      }
-      if( rc==SQLITE_BUSY ){
-        eNew = eOld;
-        rc = SQLITE_OK;
       }
     }
   }
 #endif /* ifndef SQLITE_OMIT_WAL */
 
+  if( rc ){
+    if( rc==SQLITE_BUSY && pOp->p5!=0 ) rc = SQLITE_OK;
+    eNew = eOld;
+  }
   eNew = sqlite3PagerSetJournalMode(pPager, eNew);
 
   pOut = &aMem[pOp->p2];
