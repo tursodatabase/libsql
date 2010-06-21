@@ -90,7 +90,7 @@ struct Testvfs {
 #define TESTVFS_ALL_MASK        0x00003FFF
 
 
-#define TESTVFS_MAX_PAGES 256
+#define TESTVFS_MAX_PAGES 1024
 
 /*
 ** A shared-memory buffer. There is one of these objects for each shared
@@ -907,20 +907,23 @@ static int testvfs_obj_cmd(
       if( objc==4 ){
         int n;
         u8 *a = Tcl_GetByteArrayFromObj(objv[3], &n);
-        assert( pBuffer->pgsz==0 || pBuffer->pgsz==32768 );
-        for(i=0; i*32768<n; i++){
-          int nByte = 32768;
-          tvfsAllocPage(pBuffer, i, 32768);
-          if( n-i*32768<32768 ){
+        int pgsz = pBuffer->pgsz;
+        if( pgsz==0 ) pgsz = 32768;
+        for(i=0; i*pgsz<n; i++){
+          int nByte = pgsz;
+          tvfsAllocPage(pBuffer, i, pgsz);
+          if( n-i*pgsz<pgsz ){
             nByte = n;
           }
-          memcpy(pBuffer->aPage[i], &a[i*32768], nByte);
+          memcpy(pBuffer->aPage[i], &a[i*pgsz], nByte);
         }
       }
 
       pObj = Tcl_NewObj();
       for(i=0; pBuffer->aPage[i]; i++){
-        Tcl_AppendObjToObj(pObj, Tcl_NewByteArrayObj(pBuffer->aPage[i], 32768));
+        int pgsz = pBuffer->pgsz;
+        if( pgsz==0 ) pgsz = 32768;
+        Tcl_AppendObjToObj(pObj, Tcl_NewByteArrayObj(pBuffer->aPage[i], pgsz));
       }
       Tcl_SetObjResult(interp, pObj);
       break;

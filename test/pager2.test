@@ -37,6 +37,9 @@ foreach code [list {
   set s 4096
   set sql { PRAGMA journal_mode = WAL }
 } {
+  set s 4096
+  set sql { PRAGMA auto_vacuum = 1 }
+} {
   set s 8192
   set sql { PRAGMA synchronous = off }
 }] {
@@ -112,6 +115,5 @@ foreach code [list {
 }
 db close
 tv delete
-
 
 finish_test

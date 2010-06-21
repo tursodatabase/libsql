@@ -31,6 +31,8 @@ source $testdir/wal_common.tcl
 #
 # pager1-7.*: Cases specific to "PRAGMA journal_mode=TRUNCATE"
 #
+# pager1-8.*: Cases using temporary and in-memory databases.
+#
 
 set a_string_counter 1
 proc a_string {n} {
@@ -179,7 +181,7 @@ do_multiclient_test tn {
 #-------------------------------------------------------------------------
 # Savepoint related test cases.
 # 
-do_test pager1-3.1 {
+do_test pager1-3.1.1 {
   faultsim_delete_and_reopen
   execsql {
     CREATE TABLE t1(a PRIMARY KEY, b);
@@ -198,14 +200,14 @@ do_test pager1-3.1 {
   execsql { SELECT * FROM counter }
 } {0 0}
 
-do_execsql_test pager1-3.2 {
+do_execsql_test pager1-3.1.2 {
   BEGIN;
     INSERT INTO t1 VALUES(1, randomblob(1500));
     INSERT INTO t1 VALUES(2, randomblob(1500));
     INSERT INTO t1 VALUES(3, randomblob(1500));
     SELECT * FROM counter;
 } {3 0}
-do_catchsql_test pager1-3.3 {
+do_catchsql_test pager1-3.1.3 {
     INSERT INTO t1 SELECT a+3, randomblob(1500) FROM t1
 } {1 {constraint failed}}
 do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
@@ -500,6 +502,75 @@ foreach {tn1 tcl} {
 }
 db close
 tv delete
+file delete -force $dirname
+
+
+# Set up a VFS to make a copy of the file-system just before deleting a
+# journal file to commit a transaction. The transaction modifies exactly
+# two database pages (and page 1 - the change counter).
+#
+testvfs tv -default 1
+tv sectorsize 512
+tv script copy_on_journal_delete
+tv filter xDelete
+set ::mj_filename_length 0
+proc copy_on_journal_delete {method filename args} {
+  if {[string match *journal $filename]} faultsim_save 
+  return SQLITE_OK
+}
+faultsim_delete_and_reopen
+do_execsql_test pager1.4.5.1 {
+  PRAGMA page_size = 1024;
+  CREATE TABLE t1(a, b);
+  CREATE TABLE t2(a, b);
+  INSERT INTO t1 VALUES('I', 'II');
+  INSERT INTO t2 VALUES('III', 'IV');
+  BEGIN;
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t2 VALUES(3, 4);
+  COMMIT;
+} {}
+tv filter {}
+
+# Check the transaction was committed:
+#
+do_execsql_test pager1.4.5.2 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {I II 1 2 III IV 3 4}
+
+# Now try three tests:
+#
+#  pager1-4.5.3: Restore the file-system. Check that the whole transaction 
+#                is rolled back.
+#
+#  pager1-4.5.4: Restore the file-system. Corrupt the first record in the
+#                journal. Check the transaction is not rolled back.
+#
+#  pager1-4.5.5: Restore the file-system. Corrupt the second record in the
+#                journal. Check that the first record in the transaction is 
+#                played back, but not the second.
+#
+faultsim_restore_and_reopen
+do_execsql_test pager1.4.5.3 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {I II III IV}
+faultsim_restore_and_reopen
+hexio_write test.db-journal [expr 512+4+1024 - 202] 0123456789ABCDEF
+do_execsql_test pager1.4.5.4 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {I II 1 2 III IV 3 4}
+faultsim_restore_and_reopen
+hexio_write test.db-journal [expr 512+4+1024+4+4+1024 - 202] 0123456789ABCDEF
+do_execsql_test pager1.4.5.5 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {I II III IV 3 4}
+
+db close
+tv delete
 
 #-------------------------------------------------------------------------
 # The following tests deal with multi-file commits.
@@ -724,23 +795,35 @@ foreach {tn sql res js ws} [subst {
   do_test pager1-7.1.$tn.2 { list $J $W } [list $js $ws]
 }
 
-do_test pager1-8.1 {
-  faultsim_delete_and_reopen
-  db close
-  sqlite3 db :memory:
-  execsql {
-    CREATE TABLE x1(x);
-    INSERT INTO x1 VALUES('Charles');
-    INSERT INTO x1 VALUES('James');
-    INSERT INTO x1 VALUES('Mary');
-    SELECT * FROM x1;
-  }
-} {Charles James Mary}
-do_test pager1-8.2 {
-  db close
-  sqlite3 db :memory:
-  catchsql { SELECT * FROM x1 }
-} {1 {no such table: x1}}
+foreach {tn filename} {
+  1 :memory:
+  2 ""
+} {
+  do_test pager1-8.$tn.1 {
+    faultsim_delete_and_reopen
+    db close
+    sqlite3 db $filename
+    execsql {
+      CREATE TABLE x1(x);
+      INSERT INTO x1 VALUES('Charles');
+      INSERT INTO x1 VALUES('James');
+      INSERT INTO x1 VALUES('Mary');
+      SELECT * FROM x1;
+    }
+  } {Charles James Mary}
+
+  do_test pager1-8.$tn.2 {
+    sqlite3 db2 $filename
+    catchsql { SELECT * FROM x1 } db2
+  } {1 {no such table: x1}}
+
+  do_execsql_test pager1-8.$tn.3 {
+    BEGIN;
+      INSERT INTO x1 VALUES('William');
+      INSERT INTO x1 VALUES('Anne');
+    ROLLBACK;
+  } {}
+}
 
 finish_test
 
