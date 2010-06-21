@@ -241,6 +241,30 @@ do_faultsim_test pagerfault-5.3 -prep {
   faultsim_test_result {0 {}}
 }
 
+#-------------------------------------------------------------------------
+# Test fault-injection as part of a commit when using 
+# journal_mode=TRUNCATE.
+#
+do_test pagerfault-6-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    CREATE TABLE t1(a UNIQUE, b UNIQUE);
+    INSERT INTO t1 VALUES(a_string(200), a_string(300));
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-6.1 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { PRAGMA journal_mode = TRUNCATE }
+} -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
 # The following was an attempt to get a bitvec malloc to fail. Didn't work.
 #
 # do_test pagerfault-6-pre1 {
