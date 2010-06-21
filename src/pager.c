@@ -336,7 +336,6 @@ struct Pager {
   u8 tempFile;                /* zFilename is a temporary file */
   u8 readOnly;                /* True for a read-only database */
   u8 memDb;                   /* True to inhibit all file I/O */
-  u8 safeJrnlHandle;          /* True if jrnl may be held open with no lock */
 
   /* The following block contains those class members that are dynamically
   ** modified during normal operations. The other variables in this structure
@@ -1220,14 +1219,20 @@ static int pagerUseWal(Pager *pPager){
 static void pager_unlock(Pager *pPager){
   if( !pPager->exclusiveMode ){
     int rc = SQLITE_OK;          /* Return code */
+    int iDc = isOpen(pPager->fd)?sqlite3OsDeviceCharacteristics(pPager->fd):0;
 
     /* Always close the journal file when dropping the database lock.
     ** Otherwise, another connection with journal_mode=delete might
     ** delete the file out from under us.
     */
-    if( pPager->safeJrnlHandle==0 
-     || (pPager->journalMode!=PAGER_JOURNALMODE_TRUNCATE 
-      && pPager->journalMode!=PAGER_JOURNALMODE_PERSIST)
+    assert( (PAGER_JOURNALMODE_MEMORY   & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_OFF      & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_WAL      & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_DELETE   & 5)!=1 );
+    assert( (PAGER_JOURNALMODE_TRUNCATE & 5)==1 );
+    assert( (PAGER_JOURNALMODE_PERSIST  & 5)==1 );
+    if( 0==(iDc & SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN)
+     || 1!=(pPager->journalMode & 5)
     ){
       sqlite3OsClose(pPager->jfd);
     }
@@ -3096,7 +3101,6 @@ int sqlite3PagerClose(Pager *pPager){
   sqlite3BeginBenignMalloc();
   pPager->errCode = 0;
   pPager->exclusiveMode = 0;
-  pPager->safeJrnlHandle = 0;
 #ifndef SQLITE_OMIT_WAL
   sqlite3WalClose(pPager->pWal,
     (pPager->noSync ? 0 : pPager->sync_flags), 
@@ -3123,6 +3127,7 @@ int sqlite3PagerClose(Pager *pPager){
   enable_simulated_io_errors();
   PAGERTRACE(("CLOSE %d\n", PAGERID(pPager)));
   IOTRACE(("CLOSE %p\n", pPager))
+  sqlite3OsClose(pPager->jfd);
   sqlite3OsClose(pPager->fd);
   sqlite3PageFree(pTmp);
   sqlite3PcacheClose(pPager->pPCache);
@@ -4507,10 +4512,6 @@ static int pager_open_journal(Pager *pPager){
       );
 #else
       rc = sqlite3OsOpen(pVfs, pPager->zJournal, pPager->jfd, flags, 0);
-      if( rc==SQLITE_OK ){
-        int iDc = sqlite3OsDeviceCharacteristics(pPager->jfd);
-        pPager->safeJrnlHandle = (iDc&SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN)!=0;
-      }
 #endif
     }
     assert( rc!=SQLITE_OK || isOpen(pPager->jfd) );

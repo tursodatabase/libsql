@@ -136,14 +136,14 @@ proc faultsim_save_and_close {} {
   catch { db close }
   return ""
 }
-proc faultsim_restore_and_reopen {} {
+proc faultsim_restore_and_reopen {{dbfile test.db}} {
   catch { db close }
   foreach f [glob -nocomplain test.db*] { file delete -force $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
     file copy -force $f2 $f
   }
-  sqlite3 db test.db
+  sqlite3 db $dbfile
   sqlite3_extended_result_codes db 1
   sqlite3_db_config_lookaside db 0 0 0
 }
@@ -156,7 +156,7 @@ proc faultsim_integrity_check {{db db}} {
 proc faultsim_delete_and_reopen {{file test.db}} {
   catch { db close }
   foreach f [glob -nocomplain test.db*] { file delete -force $f }
-  sqlite3 db test.db
+  sqlite3 db $file
 }
 
 
