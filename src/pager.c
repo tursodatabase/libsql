@@ -1221,9 +1221,10 @@ static void pager_unlock(Pager *pPager){
     int rc = SQLITE_OK;          /* Return code */
     int iDc = isOpen(pPager->fd)?sqlite3OsDeviceCharacteristics(pPager->fd):0;
 
-    /* Always close the journal file when dropping the database lock.
-    ** Otherwise, another connection with journal_mode=delete might
-    ** delete the file out from under us.
+    /* If the operating system support deletion of open files, then
+    ** close the journal file when dropping the database lock.  Otherwise
+    ** another connection with journal_mode=delete might delete the file
+    ** out from under us.
     */
     assert( (PAGER_JOURNALMODE_MEMORY   & 5)!=1 );
     assert( (PAGER_JOURNALMODE_OFF      & 5)!=1 );
@@ -1864,7 +1865,8 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
       zJournal += (sqlite3Strlen30(zJournal)+1);
     }
   }
-  
+ 
+  sqlite3OsClose(pMaster);
   rc = sqlite3OsDelete(pVfs, zMaster, 0);
 
 delmaster_out:
@@ -1874,8 +1876,8 @@ delmaster_out:
   if( pMaster ){
     sqlite3OsClose(pMaster);
     assert( !isOpen(pJournal) );
+    sqlite3_free(pMaster);
   }
-  sqlite3_free(pMaster);
   return rc;
 }
 
