@@ -2576,7 +2576,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
     }
     assert( rc!=SQLITE_DONE );
   }
-  assert( rc!=SQLITE_OK || pPager->journalOff==szJ );
+  assert( rc!=SQLITE_OK || pPager->journalOff>=szJ );
 
   /* Finally,  rollback pages from the sub-journal.  Page that were
   ** previously rolled back out of the main journal (and are hence in pDone)
@@ -4707,7 +4707,7 @@ static int pager_write(PgHdr *pPg){
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    if( !isOpen(pPager->jfd) 
+    if( pPager->pInJournal==0
      && pPager->journalMode!=PAGER_JOURNALMODE_OFF 
      && !pagerUseWal(pPager)
     ){

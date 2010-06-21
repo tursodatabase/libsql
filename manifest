@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Fix\scomment\sinside\sthe\spager_unlock()\sroutine.\s\sAlways\sclose\sthe\smaster\njournal\sfile\sbefore\strying\sto\sdelete\sit.
-D 2010-06-21T20:19:25
+C Minor\stweaks\sto\sget\sthe\spager\sworking\sfor\scorner\scases\swhen\sthe\nSQLITE_IOCAP_UNDELETABLE_WHEN_OPEN\sflag\sis\sset.
+D 2010-06-21T21:45:37
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 5231a75a3799872b1250bc70c0e6a1a5960bc865
 F src/os_win.c 73608839342de32280cb378d3c2fc85a5dd80bd2
-F src/pager.c 50659082fb56c0cda9e8902b998786b6ea5403c4
+F src/pager.c 4afcd7027c53990e67878f50df9ff769ff619923
 F src/pager.h ca1f23c0cf137ac26f8908df2427c8b308361efd
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -828,14 +828,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cc9ddae6d72b214f52b8949e644b91f4ab340a28
-R c5ccd1948c0c334bd6a1ed7f02abbdee
+P f820b815c9bff368eb1ccb850966a812151e610e
+R 878a70661ae0b8adde3dc51f9d817d9c
 U drh
-Z 8f5880ea853084ff86e604f4db1b6c3e
+Z 11c18e188b39b305a9c468a9d25ead77
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMH8lQoxKgR168RlERApKRAJ9SPWJEFbmQKR6sihCEP+Zoix7qTwCfZKqE
-6//AcgL4bQctlb6kAqmxWFE=
-=6D6c
+iD8DBQFMH92EoxKgR168RlERArg+AJ9sqm75dQyHJjwM9dHjy+SyIyobBQCdG0GC
+Mw98Pt2A0fr+ma7hk2z+UGQ=
+=pPm8
 -----END PGP SIGNATURE-----
