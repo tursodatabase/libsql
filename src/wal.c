@@ -2293,7 +2293,11 @@ int sqlite3WalFrames(
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
+#if defined(SQLITE_HAS_CODEC)
     if( (pData = sqlite3PagerCodec(p))==0 ) return SQLITE_NOMEM;
+#else
+    pData = p->pData;
+#endif
     walEncodeFrame(pWal, p->pgno, nDbsize, pData, aFrame);
     rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
@@ -2319,7 +2323,11 @@ int sqlite3WalFrames(
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
       void *pData;
+#if defined(SQLITE_HAS_CODEC)
       if( (pData = sqlite3PagerCodec(pLast))==0 ) return SQLITE_NOMEM;
+#else
+      pData = pLast->pData;
+#endif
       walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){

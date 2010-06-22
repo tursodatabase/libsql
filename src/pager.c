@@ -6115,8 +6115,8 @@ void *sqlite3PagerCodec(PgHdr *pPg){
   CODEC2(pPg->pPager, pPg->pData, pPg->pgno, 6, return 0, aData);
   return aData;
 }
-#endif
+#endif /* SQLITE_HAS_CODEC */
 
-#endif
+#endif /* !SQLITE_OMIT_WAL */
 
 #endif /* SQLITE_OMIT_DISKIO */
