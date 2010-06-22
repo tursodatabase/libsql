@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Minor\stweaks\sto\sget\sthe\spager\sworking\sfor\scorner\scases\swhen\sthe\nSQLITE_IOCAP_UNDELETABLE_WHEN_OPEN\sflag\sis\sset.
-D 2010-06-21T21:45:37
+C i\nFix\sproblem\swith\shandling\sof\s-vfs\soption\sin\stcl\sinterface.
+D 2010-06-22T11:10:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -179,7 +176,7 @@ F src/sqliteInt.h 242987ebd2366ea36650a09cdab04a9163c62109
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
-F src/tclsqlite.c 6355a8b95008e99e01b0c08e92bd3ff317c0e60f
+F src/tclsqlite.c b898ab058f51ee57e6b54aa8de902526a5376959
 F src/test1.c e3e0ad1f0763a1aa6adf7e1c50727718eaa4bd32
 F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
@@ -828,14 +825,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f820b815c9bff368eb1ccb850966a812151e610e
-R 878a70661ae0b8adde3dc51f9d817d9c
-U drh
-Z 11c18e188b39b305a9c468a9d25ead77
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMH92EoxKgR168RlERArg+AJ9sqm75dQyHJjwM9dHjy+SyIyobBQCdG0GC
-Mw98Pt2A0fr+ma7hk2z+UGQ=
-=pPm8
------END PGP SIGNATURE-----
+P 82b38fca1aea345ade954517661145f1859e701c
+R 531bc07ae54062e10db747fc280011ca
+U dan
+Z a9972d2b530eab48dba04001af078a38

@@ -2897,8 +2897,7 @@ static int DbMain(void *cd, Tcl_Interp *interp, int objc,Tcl_Obj *const*objv){
     if( strcmp(zArg,"-key")==0 ){
       pKey = Tcl_GetByteArrayFromObj(objv[i+1], &nKey);
     }else if( strcmp(zArg, "-vfs")==0 ){
-      i++;
-      zVfs = Tcl_GetString(objv[i]);
+      zVfs = Tcl_GetString(objv[i+1]);
     }else if( strcmp(zArg, "-readonly")==0 ){
       int b;
       if( Tcl_GetBooleanFromObj(interp, objv[i+1], &b) ) return TCL_ERROR;
