@@ -13,6 +13,8 @@
 # processes) to test locking.
 #
 
+do_not_use_codec
+
 proc do_multiclient_test {varname script} {
 
   foreach code [list {

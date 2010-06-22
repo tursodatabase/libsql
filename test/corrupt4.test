@@ -18,6 +18,11 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 # We must have the page_size pragma for these tests to work.
 #
 ifcapable !pager_pragmas {

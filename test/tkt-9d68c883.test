@@ -15,7 +15,7 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
-do_test tkt-XYZ-1.1 {
+do_test tkt-9d68c88-1.1 {
   execsql {
     PRAGMA page_size = 1024;
     PRAGMA auto_vacuum = 2;
@@ -34,7 +34,7 @@ for {set i 0} {$i < 100} {incr i} {
   sqlite3_simulate_device -sectorsize 8192
   sqlite3 db test.db -vfs devsym
 
-  do_test tkt-XYZ-2.$i {
+  do_test tkt-9d68c88-2.$i {
     execsql {
       BEGIN;
         DELETE FROM t5;

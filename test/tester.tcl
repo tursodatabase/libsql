@@ -94,13 +94,13 @@ sqlite3_test_control_pending_byte 0x0010000
 if {[info command sqlite_orig]==""} {
   rename sqlite3 sqlite_orig
   proc sqlite3 {args} {
-    if {[llength $args]==2 && [string index [lindex $args 0] 0]!="-"} {
+    if {[llength $args]>=2 && [string index [lindex $args 0] 0]!="-"} {
       # This command is opening a new database connection.
       #
       if {[info exists ::G(perm:sqlite3_args)]} {
         set args [concat $args $::G(perm:sqlite3_args)]
       }
-      if {[sqlite_orig -has-codec]} {
+      if {[sqlite_orig -has-codec] && ![info exists ::do_not_use_codec]} {
         lappend args -key {xyzzy}
       }
 
@@ -118,6 +118,14 @@ if {[info command sqlite_orig]==""} {
       uplevel 1 sqlite_orig $args
     }
   }
+}
+
+# This command should be called after loading tester.tcl from within
+# all test scripts that are incompatible with encryption codecs.
+#
+proc do_not_use_codec {} {
+  set ::do_not_use_codec 1
+  reset_db
 }
 
 # The following block only runs the first time this file is sourced. It

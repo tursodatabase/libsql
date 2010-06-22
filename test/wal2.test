@@ -18,6 +18,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 ifcapable !wal {finish_test ; return }
 
+# Do not use a codec for tests in this file, as the database file is
+# manipulated directly using tcl scripts (using the [hexio_write] command).
+#
+do_not_use_codec
+
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:

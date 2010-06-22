@@ -5022,9 +5022,12 @@ static int pager_incr_changecounter(Pager *pPager, int isDirectMode){
 
       /* If running in direct mode, write the contents of page 1 to the file. */
       if( DIRECT_MODE ){
-        const void *zBuf = pPgHdr->pData;
+        const void *zBuf;
         assert( pPager->dbFileSize>0 );
-        rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
+        CODEC2(pPager, pPgHdr->pData, 1, 6, rc=SQLITE_NOMEM, zBuf);
+        if( rc==SQLITE_OK ){
+          rc = sqlite3OsWrite(pPager->fd, zBuf, pPager->pageSize, 0);
+        }
         if( rc==SQLITE_OK ){
           pPager->changeCountDone = 1;
         }
