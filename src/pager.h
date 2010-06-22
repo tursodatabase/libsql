@@ -157,6 +157,12 @@ int sqlite3PagerIsMemdb(Pager*);
 /* Functions used to truncate the database file. */
 void sqlite3PagerTruncateImage(Pager*,Pgno);
 
+#if defined(SQLITE_HAS_CODEC) && !defined(SQLITE_OMIT_WAL)
+void *sqlite3PagerCodec(DbPage *);
+#else
+#define sqlite3PagerCodec(x) (x->pData)
+#endif
+
 /* Functions to support testing and debugging. */
 #if !defined(NDEBUG) || defined(SQLITE_TEST)
   Pgno sqlite3PagerPagenumber(DbPage*);

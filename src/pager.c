@@ -6101,6 +6101,22 @@ int sqlite3PagerCloseWal(Pager *pPager){
   }
   return rc;
 }
+
+#ifdef SQLITE_HAS_CODEC
+/*
+** This function is called by the wal module when writing page content
+** into the log file.
+**
+** This function returns a pointer to a buffer containing the encrypted
+** page content. If a malloc fails, this function may return NULL.
+*/
+void *sqlite3PagerCodec(PgHdr *pPg){
+  void *aData = 0;
+  CODEC2(pPg->pPager, pPg->pData, pPg->pgno, 6, return 0, aData);
+  return aData;
+}
+#endif
+
 #endif
 
 #endif /* SQLITE_OMIT_DISKIO */

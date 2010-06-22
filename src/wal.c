@@ -2286,19 +2286,22 @@ int sqlite3WalFrames(
   for(p=pList; p; p=p->pDirty){
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
-
+    void *pData;
+   
+   
     iOffset = walFrameOffset(++iFrame, szPage);
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
-    walEncodeFrame(pWal, p->pgno, nDbsize, p->pData, aFrame);
+    if( (pData = sqlite3PagerCodec(p))==0 ) return SQLITE_NOMEM;
+    walEncodeFrame(pWal, p->pgno, nDbsize, pData, aFrame);
     rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
     if( rc!=SQLITE_OK ){
       return rc;
     }
 
     /* Write the page data */
-    rc = sqlite3OsWrite(pWal->pWalFd, p->pData, szPage, iOffset+sizeof(aFrame));
+    rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset+sizeof(aFrame));
     if( rc!=SQLITE_OK ){
       return rc;
     }
@@ -2315,14 +2318,15 @@ int sqlite3WalFrames(
 
     iSegment = (((iOffset+iSegment-1)/iSegment) * iSegment);
     while( iOffset<iSegment ){
-      walEncodeFrame(pWal, pLast->pgno, nTruncate, pLast->pData, aFrame);
+      void *pData;
+      if( (pData = sqlite3PagerCodec(pLast))==0 ) return SQLITE_NOMEM;
+      walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
       }
-
       iOffset += WAL_FRAME_HDRSIZE;
-      rc = sqlite3OsWrite(pWal->pWalFd, pLast->pData, szPage, iOffset); 
+      rc = sqlite3OsWrite(pWal->pWalFd, pData, szPage, iOffset); 
       if( rc!=SQLITE_OK ){
         return rc;
       }

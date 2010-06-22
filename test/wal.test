@@ -18,11 +18,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
-# Do not use a codec for tests in this file, as the database file is
-# manipulated directly using tcl scripts (using the [hexio_write] command).
-#
-do_not_use_codec
-
 ifcapable !wal {finish_test ; return }
 
 proc reopen_db {} {

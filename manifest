@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C When\strying\sto\stransition\sfrom\sjournal_mode\sMEMORY\sto\sWAL,\suse\sOFF\sas\san\nintermediate\sjournal\smode.
-D 2010-06-22T14:49:40
+C Add\scodec\ssupport\sto\swal\smode.
+D 2010-06-22T15:18:44
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,8 +156,8 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 5231a75a3799872b1250bc70c0e6a1a5960bc865
 F src/os_win.c 73608839342de32280cb378d3c2fc85a5dd80bd2
-F src/pager.c 3c269ecaabae139307448a99d08679ec9aab0aba
-F src/pager.h ca1f23c0cf137ac26f8908df2427c8b308361efd
+F src/pager.c 0517562e70c2a4bc2f3ff0762e4e19f94ed24c24
+F src/pager.h 051ed521fb0ecac631d60e9ad4b40b829639aabf
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
@@ -229,7 +226,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 2a82f455f6ca6f78b59fb312f96054c04ae0ead1
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 4ea519e6d6680b2fb504268733c09df7c20ae823
+F src/wal.c dcc18b615711353f4ff872a9428e9a249427da93
 F src/wal.h 4ace25262452d17e7d3ec970c89ee17794004008
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 1c895bef33d0dfc7ed90fb1f74120435d210ea56
@@ -488,7 +485,7 @@ F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test 8df56060f396151777390982422c800d026e1722
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
-F test/lock_common.tcl a3cebc3de03a2bffe1fb02843ccaabeb7b263874
+F test/lock_common.tcl e7013c6208f5fa818735c324eb0249b4c0f317cf
 F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
 F test/main.test 2be2352ac77ac5b238c6337a5469aeeef57677e6
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
@@ -772,8 +769,8 @@ F test/vtabE.test 7c4693638d7797ce2eda17af74292b97e705cc61
 F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
-F test/wal.test 621a61aeec0fb43a4012ad8774a09ad00a692ea0
-F test/wal2.test fac65993f633e1ecc17db124a72c30707404d1a0
+F test/wal.test 55c3fae8a03437d52518e61ef115544fac108582
+F test/wal2.test 7ea1426f71fd29566ec8be818f3c2681125dd462
 F test/wal3.test bb3bc0be06411c2d147c1d1d636b6208fbe0349d
 F test/wal_common.tcl 3e953ae60919281688ea73e4d0aa0e1bc94becd9
 F test/walbak.test e7650a26eb4b8abeca9b145b1af1e63026dde432
@@ -828,14 +825,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 85dd51a75c75b2a123744f646e04538e4e5d89b3
-R 5187a667a2f982bcc127f4eb79a46f4d
-U drh
-Z a66a2fcdf8ebb147f6f17490b97d943d
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMIM2IoxKgR168RlERAvClAJ4w+nEzZOGGveDZxn4kNKnrISQYLQCfSwak
-b1gUNaLhd+E4LdRSHkfuC7I=
-=xvI6
------END PGP SIGNATURE-----
+P 4775b8f9a9d9b66fcd5abf3af111fcad249e662e
+R 2ecd2087dd0de003ea8ae917ed134748
+U dan
+Z f5174ae54201a5e81880758a2f3085e2

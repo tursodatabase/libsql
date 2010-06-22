@@ -13,8 +13,6 @@
 # processes) to test locking.
 #
 
-do_not_use_codec
-
 proc do_multiclient_test {varname script} {
 
   foreach code [list {
@@ -66,6 +64,7 @@ proc do_multiclient_test {varname script} {
 # 'testfixture' to execute a command. The child testfixture process is shut
 # down by closing the channel.
 proc launch_testfixture {} {
+  write_main_loop
   set prg [info nameofexec]
   if {$prg eq ""} {
     set prg [file join . testfixture]
@@ -130,27 +129,38 @@ proc testfixture_nb {varname cmd} {
 # process, followed by the word "OVER" on a line of its own. The child
 # process evaluates the script and writes the results to stdout, followed
 # by an "OVER" of its own.
-set f [open tf_main.tcl w]
-puts $f {
-  set l [open log w]
-  set script ""
-  while {![eof stdin]} {
-    flush stdout
-    set line [gets stdin]
-    puts $l "READ $line"
-    if { $line == "OVER" } {
-      set rc [catch {eval $script} result]
-      puts [list $rc $result]
-      puts $l "WRITE [list $rc $result]"
-      puts OVER
-      puts $l "WRITE OVER"
-      flush stdout
-      set script ""
-    } else {
-      append script $line
-      append script "\n"
-    }
+#
+set main_loop_written 0
+proc write_main_loop {} {
+  if {$::main_loop_written} return
+  set wrapper ""
+  if {[sqlite3 -has-codec] && [info exists ::do_not_use_codec]==0} {
+    set wrapper "
+      rename sqlite3 sqlite_orig
+      proc sqlite3 {args} {[info body sqlite3]}
+    "
   }
-  close $l
+
+  set fd [open tf_main.tcl w]
+  puts $fd [string map [list %WRAPPER% $wrapper] {
+    %WRAPPER%
+    set script ""
+    while {![eof stdin]} {
+      flush stdout
+      set line [gets stdin]
+      if { $line == "OVER" } {
+        set rc [catch {eval $script} result]
+        puts [list $rc $result]
+        puts OVER
+        flush stdout
+        set script ""
+      } else {
+        append script $line
+        append script "\n"
+      }
+    }
+  }]
+  close $fd
+  set main_loop_written 1
 }
-close $f
+

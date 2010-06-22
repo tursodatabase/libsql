@@ -18,11 +18,6 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 ifcapable !wal {finish_test ; return }
 
-# Do not use a codec for tests in this file, as the database file is
-# manipulated directly using tcl scripts (using the [hexio_write] command).
-#
-do_not_use_codec
-
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:
@@ -807,9 +802,9 @@ do_test wal2-8.1.2 {
   }
   execsql {
     PRAGMA wal_checkpoint;
-    SELECT rootpage FROM sqlite_master WHERE tbl_name = 't2';
+    SELECT rootpage>=8192 FROM sqlite_master WHERE tbl_name = 't2';
   }
-} {8192}
+} {1}
 do_test wal2-8.1.3 {
   execsql {
     PRAGMA cache_size = 10;
