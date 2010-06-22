@@ -5249,6 +5249,10 @@ case OP_JournalMode: {    /* out2-prerelease */
         if( rc==SQLITE_OK ){
           sqlite3PagerSetJournalMode(pPager, eNew);
         }
+      }else if( eOld==PAGER_JOURNALMODE_MEMORY ){
+        /* Cannot transition directly from MEMORY to WAL.  Use mode OFF
+        ** as an intermediate */
+        sqlite3PagerSetJournalMode(pPager, PAGER_JOURNALMODE_OFF);
       }
   
       /* Open a transaction on the database file. Regardless of the journal
