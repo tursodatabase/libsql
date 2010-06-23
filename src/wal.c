@@ -31,7 +31,7 @@
 ** used to determine which frames within the WAL are valid and which
 ** are leftovers from prior checkpoints.
 **
-** The WAL header is 24 bytes in size and consists of the following six
+** The WAL header is 32 bytes in size and consists of the following eight
 ** big-endian 32-bit unsigned integer values:
 **
 **     0: Magic number.  0x377f0682 or 0x377f0683
@@ -45,7 +45,7 @@
 **
 ** Immediately following the wal-header are zero or more frames. Each
 ** frame consists of a 24-byte frame-header followed by a <page-size> bytes
-** of page data. The frame-header is broken into 6 big-endian 32-bit unsigned 
+** of page data. The frame-header is six big-endian 32-bit unsigned 
 ** integer values, as follows:
 **
 **     0: Page number.
@@ -80,6 +80,11 @@
 **     s0 += x[i] + s1;
 **     s1 += x[i+1] + s0;
 **   endfor
+**
+** Note that s0 and s1 are both weighted checksums using fibonacci weights
+** in reverse order (the largest fibonacci weight occurs on the first element
+** of the sequence being summed.)  The s1 value spans all 32-bit 
+** terms of the sequence whereas s0 omits the final term.
 **
 ** On a checkpoint, the WAL is first VFS.xSync-ed, then valid content of the
 ** WAL is transferred into the database, then the database is VFS.xSync-ed.
@@ -1076,16 +1081,19 @@ static int walIndexRecover(Wal *pWal){
     pWal->szPage = szPage;
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
     memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
+
+    /* Verify that the WAL header checksum is correct */
     walChecksumBytes(pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN, 
         aBuf, WAL_HDRSIZE-2*4, 0, pWal->hdr.aFrameCksum
     );
-
     if( pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[24])
      || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[28])
     ){
       goto finished;
     }
 
+    /* Verify that the version number on the WAL format is one that
+    ** are able to understand */
     version = sqlite3Get4byte(&aBuf[4]);
     if( version!=WAL_MAX_VERSION ){
       rc = SQLITE_CANTOPEN_BKPT;
