@@ -2388,7 +2388,7 @@ static int winCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *piNow){
 
   *piNow = winFiletimeEpoch +
             ((((sqlite3_int64)ft.dwHighDateTime)*max32BitValue) + 
-               (sqlite3_int64)ft.dwLowDateTime)/(sqlite3_int64)1000;
+               (sqlite3_int64)ft.dwLowDateTime)/(sqlite3_int64)10000;
 
 #ifdef SQLITE_TEST
   if( sqlite3_current_time ){
