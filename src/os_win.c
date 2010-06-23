@@ -1265,7 +1265,7 @@ struct winShm {
 /*
 ** Constants used for locking
 */
-#define WIN_SHM_BASE   ((18+SQLITE_SHM_NLOCK)*4)        /* first lock byte */
+#define WIN_SHM_BASE   ((22+SQLITE_SHM_NLOCK)*4)        /* first lock byte */
 #define WIN_SHM_DMS    (WIN_SHM_BASE+SQLITE_SHM_NLOCK)  /* deadman switch */
 
 /*

@@ -1,5 +1,8 @@
-C Add\sa\sversion\snumber\sto\sthe\swal-index\sheader.\sIf\sSQLite\sencounters\sa\sversion\snumber\sin\seither\sthe\swal\sor\swal-index\sfiles\sthat\sit\sdoes\snot\sunderstand,\sthe\soperation\sis\sabandoned\sand\sSQLITE_CANTOPEN\sreturned.
-D 2010-06-23T15:55:43
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Adjust\sthe\sshared-memory\slocking\srange\sto\saccount\sfor\sthe\snew\sversion\snumber\nvalues\sin\sthe\swal-index\sheader.
+D 2010-06-23T17:58:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,8 +157,8 @@ F src/os.c 9c4a2f82a50306a33907678ec0187b6ad1486bfe
 F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 5231a75a3799872b1250bc70c0e6a1a5960bc865
-F src/os_win.c e5b62352d7a3a2fb486c6b58b56d12feca21951d
+F src/os_unix.c 4b03e5a8a353b51af64ba11ffec85160818b4d89
+F src/os_win.c 00385a839d54f951a73ceb98ddea29112adea05c
 F src/pager.c f16d9f21c4c715ed3d8e6318f50036c93afae224
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -825,7 +828,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 51ef43b9f7db8fabf73d9c8a76dae6c275e50d58
-R e307cca35ebca5b482c8b5d8cba99105
-U dan
-Z a33770995e057029bfccdeb012e41a17
+P 8d0f8a7f70d6fb42369411a934b30f8c8ca8322f
+R b7911d382713bc280913044ea85d74ac
+U drh
+Z c02c3c722b92c74f8ca12e8b8b09f756
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMIktRoxKgR168RlERAtsxAJ0cxHA2orCkfndfRThPZzc2MckIXwCfWbUY
+HRJ9VxvoUAPVm7Tk8RvSPVM=
+=Ypdt
+-----END PGP SIGNATURE-----
