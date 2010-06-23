@@ -2099,17 +2099,22 @@ int sqlite3_get_autocommit(sqlite3 *db){
 int sqlite3CorruptError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
   sqlite3_log(SQLITE_CORRUPT,
-              "database corruption found by source line %d", lineno);
+              "database corruption at line %d of [%.10s]",
+              lineno, 20+sqlite3_sourceid());
   return SQLITE_CORRUPT;
 }
 int sqlite3MisuseError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3_log(SQLITE_MISUSE, "misuse detected by source line %d", lineno);
+  sqlite3_log(SQLITE_MISUSE, 
+              "misuse at line %d of [%.10s]",
+              lineno, 20+sqlite3_sourceid());
   return SQLITE_MISUSE;
 }
 int sqlite3CantopenError(int lineno){
   testcase( sqlite3GlobalConfig.xLog!=0 );
-  sqlite3_log(SQLITE_CANTOPEN, "cannot open file at source line %d", lineno);
+  sqlite3_log(SQLITE_CANTOPEN, 
+              "cannot open file at line %d of [%.10s]",
+              lineno, 20+sqlite3_sourceid());
   return SQLITE_CANTOPEN;
 }
 
