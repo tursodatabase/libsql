@@ -1796,6 +1796,9 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   sqlite3_file *pJournal;   /* Malloc'd child-journal file descriptor */
   char *zMasterJournal = 0; /* Contents of master journal file */
   i64 nMasterJournal;       /* Size of master journal file */
+  char *zJournal;           /* Pointer to one journal within MJ file */
+  char *zMasterPtr;         /* Space to hold MJ filename from a journal file */
+  int nMasterPtr;           /* Amount of space allocated to zMasterPtr[] */
 
   /* Allocate space for both the pJournal and pMaster file descriptors.
   ** If successful, open the master journal file for reading.
@@ -1810,69 +1813,63 @@ static int pager_delmaster(Pager *pPager, const char *zMaster){
   }
   if( rc!=SQLITE_OK ) goto delmaster_out;
 
+  /* Load the entire master journal file into space obtained from
+  ** sqlite3_malloc() and pointed to by zMasterJournal.   Also obtain
+  ** sufficient space (in zMasterPtr) to hold the names of master
+  ** journal files extracted from regular rollback-journals.
+  */
   rc = sqlite3OsFileSize(pMaster, &nMasterJournal);
   if( rc!=SQLITE_OK ) goto delmaster_out;
+  nMasterPtr = pVfs->mxPathname+1;
+  zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
+  if( !zMasterJournal ){
+    rc = SQLITE_NOMEM;
+    goto delmaster_out;
+  }
+  zMasterPtr = &zMasterJournal[nMasterJournal+1];
+  rc = sqlite3OsRead(pMaster, zMasterJournal, (int)nMasterJournal, 0);
+  if( rc!=SQLITE_OK ) goto delmaster_out;
+  zMasterJournal[nMasterJournal] = 0;
 
-  if( nMasterJournal>0 ){
-    char *zJournal;
-    char *zMasterPtr = 0;
-    int nMasterPtr = pVfs->mxPathname+1;
-
-    /* Load the entire master journal file into space obtained from
-    ** sqlite3_malloc() and pointed to by zMasterJournal. 
-    */
-    zMasterJournal = sqlite3Malloc((int)nMasterJournal + nMasterPtr + 1);
-    if( !zMasterJournal ){
-      rc = SQLITE_NOMEM;
+  zJournal = zMasterJournal;
+  while( (zJournal-zMasterJournal)<nMasterJournal ){
+    int exists;
+    rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
+    if( rc!=SQLITE_OK ){
       goto delmaster_out;
     }
-    zMasterPtr = &zMasterJournal[nMasterJournal+1];
-    rc = sqlite3OsRead(pMaster, zMasterJournal, (int)nMasterJournal, 0);
-    if( rc!=SQLITE_OK ) goto delmaster_out;
-    zMasterJournal[nMasterJournal] = 0;
-
-    zJournal = zMasterJournal;
-    while( (zJournal-zMasterJournal)<nMasterJournal ){
-      int exists;
-      rc = sqlite3OsAccess(pVfs, zJournal, SQLITE_ACCESS_EXISTS, &exists);
+    if( exists ){
+      /* One of the journals pointed to by the master journal exists.
+      ** Open it and check if it points at the master journal. If
+      ** so, return without deleting the master journal file.
+      */
+      int c;
+      int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
+      rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
       if( rc!=SQLITE_OK ){
         goto delmaster_out;
       }
-      if( exists ){
-        /* One of the journals pointed to by the master journal exists.
-        ** Open it and check if it points at the master journal. If
-        ** so, return without deleting the master journal file.
-        */
-        int c;
-        int flags = (SQLITE_OPEN_READONLY|SQLITE_OPEN_MAIN_JOURNAL);
-        rc = sqlite3OsOpen(pVfs, zJournal, pJournal, flags, 0);
-        if( rc!=SQLITE_OK ){
-          goto delmaster_out;
-        }
 
-        rc = readMasterJournal(pJournal, zMasterPtr, nMasterPtr);
-        sqlite3OsClose(pJournal);
-        if( rc!=SQLITE_OK ){
-          goto delmaster_out;
-        }
-
-        c = zMasterPtr[0]!=0 && strcmp(zMasterPtr, zMaster)==0;
-        if( c ){
-          /* We have a match. Do not delete the master journal file. */
-          goto delmaster_out;
-        }
+      rc = readMasterJournal(pJournal, zMasterPtr, nMasterPtr);
+      sqlite3OsClose(pJournal);
+      if( rc!=SQLITE_OK ){
+        goto delmaster_out;
       }
-      zJournal += (sqlite3Strlen30(zJournal)+1);
+
+      c = zMasterPtr[0]!=0 && strcmp(zMasterPtr, zMaster)==0;
+      if( c ){
+        /* We have a match. Do not delete the master journal file. */
+        goto delmaster_out;
+      }
     }
+    zJournal += (sqlite3Strlen30(zJournal)+1);
   }
  
   sqlite3OsClose(pMaster);
   rc = sqlite3OsDelete(pVfs, zMaster, 0);
 
 delmaster_out:
-  if( zMasterJournal ){
-    sqlite3_free(zMasterJournal);
-  }  
+  sqlite3_free(zMasterJournal);
   if( pMaster ){
     sqlite3OsClose(pMaster);
     assert( !isOpen(pJournal) );

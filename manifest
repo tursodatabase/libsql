@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Disable\scode\sused\sonly\sby\sthe\scodec\swhen\sthe\scodec\sis\snot\sdeployed.
-D 2010-06-22T21:15:50
+C Simplifications\sto\sthe\spager_delmaster()\simplementation.
+D 2010-06-23T15:04:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 5231a75a3799872b1250bc70c0e6a1a5960bc865
 F src/os_win.c 73608839342de32280cb378d3c2fc85a5dd80bd2
-F src/pager.c 54719676081c6ffe48d333698c3fc4ec2cb184f3
+F src/pager.c f16d9f21c4c715ed3d8e6318f50036c93afae224
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -828,14 +828,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 393741eba353d5d242b8e3c96db3ea2b92228036
-R a98e0c1a959f76ef6bea94ee96e38ea8
+P 2c90276e340aa19d78d2e33c9f759f8eda0b82a3
+R bf609900200a14a42c360ea6940da933
 U drh
-Z c41882a67704e43aa1f9a5f9eff0a10d
+Z 1f39d78260e4e9f5fdcb6d571e456a29
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMISgJoxKgR168RlERAqKAAJ4lHvGOXiCW0m/XZuzHlM4sH/bgLQCbB6c7
-O+DRDmTpPwGjNikY9THJ3Z0=
-=I8ep
+iD8DBQFMIiJ+oxKgR168RlERAmbHAJ99tepdo1EpKH9wYkdaD//e1LgiJwCfZhIU
+qi6cM1OvlcvjNuhNM77GvtA=
+=aMLO
 -----END PGP SIGNATURE-----
