@@ -331,7 +331,12 @@ static int tvfsWrite(
     tvfsResultCode(p, &rc);
   }
 
-  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ) rc = SQLITE_FULL;
+  if( rc==SQLITE_OK && tvfsInjectFullerr(p) ){
+    rc = SQLITE_FULL;
+  }
+  if( rc==SQLITE_OK && p->mask&TESTVFS_WRITE_MASK && tvfsInjectIoerr(p) ){
+    rc = SQLITE_IOERR;
+  }
   
   if( rc==SQLITE_OK ){
     rc = sqlite3OsWrite(pFd->pReal, zBuf, iAmt, iOfst);

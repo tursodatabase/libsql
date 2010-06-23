@@ -193,6 +193,7 @@ proc ioerr_injectstop {} {
 #
 proc shmerr_injectinstall {} {
   testvfs shmfault -default true
+  shmfault filter {xShmOpen xShmMap xShmLock}
 }
 proc shmerr_injectuninstall {} {
   catch {db  close}
@@ -220,7 +221,6 @@ proc fullerr_injectstart {iFail} {
 proc fullerr_injectstop {} {
   shmfault full 0
 }
-
 
 # This command is not called directly. It is used by the 
 # [faultsim_test_result] command created by [do_faultsim_test] and used

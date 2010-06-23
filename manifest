@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Include\sthe\sSOURCE_ID\svalue\sin\sthe\slog\smessages\soutput\sfor\scorruption,\smisuse,\nand\sCANTOPEN\serrors.
-D 2010-06-23T17:59:51
+C Add\stest\scase\sfor\sSQLITE_FULL\serrors\sto\spagerfault.test.\sRemove\sa\sNEVER\smacro\sin\spager.c\sthat\sthis\shits.
+D 2010-06-23T19:27:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -159,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 4b03e5a8a353b51af64ba11ffec85160818b4d89
 F src/os_win.c 00385a839d54f951a73ceb98ddea29112adea05c
-F src/pager.c f16d9f21c4c715ed3d8e6318f50036c93afae224
+F src/pager.c e42b2e21c825c4110206bec357b53a35dda27416
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -212,7 +209,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c f1b4398e7e2daf0f16ddff41f04135084fce9b2f
+F src/test_vfs.c d001a4e64ceed35e480f1cb1aa7cc8b48eab1c29
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -512,7 +509,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test e3ea401904d010cb7c1e4b2ee8803f4a9f5b999d
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl 58caffc4be307b56c5b1438b5eba3eb278bd81f5
+F test/malloc_common.tcl 0bb7fd59dfc7220de4dac37582fdb8acf7092c7b
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
@@ -539,7 +536,7 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 31478e94375cb3725a2ffe8b84196520a8248c36
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test e67e9c18bf7b4bb8cc8d458d3a5ecc980f18a225
+F test/pagerfault.test 4e85adb13fde0c41a3c56b5bdbab6ee8a7fd8571
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
@@ -828,14 +825,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a6dc0df304876b51cef5402b0e21330f10aabccf
-R 3c7f9d599e64d6dec70bc7c57170c180
-U drh
-Z 9244a95073f7520d36ae60a889c580c8
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMIkuaoxKgR168RlERAieUAJ46609sl3q/ImzO0GN3QRFseZ54QwCfWgHD
-aojoUv0EOVG9VxDCwrmvb2I=
-=/HR/
------END PGP SIGNATURE-----
+P 1727a81fed65bebfea43e0bda271584096d82785
+R 7a852c823aafd5a6b2955a7dd5f8280a
+U dan
+Z 7f4e2d2171817ab7dccd91b04d1a7459

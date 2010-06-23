@@ -1285,7 +1285,7 @@ static void pager_unlock(Pager *pPager){
 ** to this function. 
 **
 ** If the second argument is SQLITE_IOERR, SQLITE_CORRUPT, or SQLITE_FULL
-** the error becomes persistent. Until the persisten error is cleared,
+** the error becomes persistent. Until the persistent error is cleared,
 ** subsequent API calls on this Pager will immediately return the same 
 ** error code.
 **
@@ -3537,9 +3537,7 @@ static int pagerStress(void *p, PgHdr *pPg){
     ** Similarly, if the pager has already entered the error state, do not
     ** try to write the contents of pPg to disk.
     */
-    if( NEVER(pPager->errCode)
-     || (pPager->doNotSync && pPg->flags&PGHDR_NEED_SYNC)
-    ){
+    if( pPager->errCode || (pPager->doNotSync && pPg->flags&PGHDR_NEED_SYNC) ){
       return SQLITE_OK;
     }
   
@@ -5324,7 +5322,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
 **   (i.e. either SQLITE_IOERR or SQLITE_CORRUPT).
 **
 ** * If the pager is in PAGER_RESERVED state, then attempt (1). Whether
-**   or not (1) is succussful, also attempt (2). If successful, return
+**   or not (1) is successful, also attempt (2). If successful, return
 **   SQLITE_OK. Otherwise, enter the error state and return the first 
 **   error code encountered. 
 **

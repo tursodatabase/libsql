@@ -306,5 +306,39 @@ do_faultsim_test pagerfault-6.1 -prep {
 #   faultsim_test_result {0 {5 6 7 8}}
 #   faultsim_integrity_check
 # }
+#
+do_test pagerfault-7-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t2(a INTEGER PRIMARY KEY, b);
+    BEGIN;
+      INSERT INTO t2 VALUES(NULL, randomblob(1500));
+      INSERT INTO t2 VALUES(NULL, randomblob(1500));
+      INSERT INTO t2 SELECT NULL, randomblob(1500) FROM t2;    --  4
+      INSERT INTO t2 SELECT NULL, randomblob(1500) FROM t2;    --  8
+      INSERT INTO t2 SELECT NULL, randomblob(1500) FROM t2;    -- 16
+      INSERT INTO t2 SELECT NULL, randomblob(1500) FROM t2;    -- 32
+      INSERT INTO t2 SELECT NULL, randomblob(1500) FROM t2;    -- 64
+    COMMIT;
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 SELECT * FROM t2;
+    DROP TABLE t2;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-7 -faults full -prep {
+  faultsim_restore_and_reopen
+  execsql { 
+    PRAGMA cache_size = 10;
+    BEGIN;
+      UPDATE t1 SET b = randomblob(1500);
+  }
+} -body {
+  execsql { UPDATE t1 SET a = 65, b = randomblob(1500) WHERE (a+1)>200 }
+  execsql COMMIT
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
 
 finish_test
