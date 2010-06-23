@@ -14,11 +14,9 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+source $testdir/wal_common.tcl
 ifcapable !wal {finish_test ; return }
 
-proc wal_file_size {nFrame pgsz} { 
-  expr {24 + ($pgsz+24)*$nFrame} 
-}
 
 #-------------------------------------------------------------------------
 # This test case demonstrates a flaw in the wal-index manipulation that

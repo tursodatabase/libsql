@@ -16,12 +16,15 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+source $testdir/wal_common.tcl
+
 ifcapable !wal {finish_test ; return }
 
 proc set_tvfs_hdr {file args} {
 
   # Set $nHdr to the number of bytes in the wal-index header:
-  set nHdr 40
+  set nHdr 48
   set nInt [expr {$nHdr/4}]
 
   if {[llength $args]>2} {
@@ -880,7 +883,7 @@ foreach {tn hdr1 hdr2 res} [list                                            \
   5  $wih(2)                $wih(1)                {Barton Deakin Watson}   \
   6  $wih(2)                $wih(2)                {Barton Deakin Watson}   \
   7  $wih(1)                $wih(1)                {Barton Deakin}          \
-  8  {0 0 0 0 0 0 0 0 0 0} {0 0 0 0 0 0 0 0 0 0}   {Barton Deakin Watson}   \
+  8  {0 0 0 0 0 0 0 0 0 0 0 0} {0 0 0 0 0 0 0 0 0 0 0 0} {Barton Deakin Watson}
 ] {
   do_test wal2-9.$tn {
     set_tvfs_hdr $::filename $hdr1 $hdr2
@@ -891,4 +894,62 @@ foreach {tn hdr1 hdr2 res} [list                                            \
 db2 close
 db close
 
+#-------------------------------------------------------------------------
+# This block of tests - wal2-10.* - focus on the libraries response to
+# new versions of the wal or wal-index formats. 
+#
+#   wal2-10.1.*: Test that the library refuses to "recover" a new WAL 
+#                format.
+#
+#   wal2-10.2.*: Test that the library refuses to read or write a database
+#                if the wal-index version is newer than it understands.
+#
+# At time of writing, the only versions of the wal and wal-index formats
+# that exist are versions 3007000 (corresponding to SQLite version 3.7.0,
+# the first version of SQLite to feature wal mode).
+#
+do_test wal2-10.1.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b);
+    PRAGMA wal_checkpoint;
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+  }
+  faultsim_save_and_close
+} {}
+do_test wal2-10.1.2 {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal2-10.1.3 {
+  faultsim_restore_and_reopen
+  set hdr [wal_set_walhdr test.db-wal]
+  lindex $hdr 1
+} {3007000}
+do_test wal2-10.1.4 {
+  lset hdr 1 3007001
+  wal_set_walhdr test.db-wal $hdr
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+
+testvfs tvfs -default 1
+do_test wal2-10.2.1 {
+  faultsim_restore_and_reopen
+  execsql { SELECT * FROM t1 }
+} {1 2 3 4}
+do_test wal2-10.2.2 { 
+  set hdr [set_tvfs_hdr $::filename] 
+  lindex $hdr 0 
+} {3007000}
+breakpoint
+do_test wal2-10.2.3 { 
+  lset hdr 0 3007001
+  wal_fix_walindex_cksum hdr 
+  set_tvfs_hdr $::filename $hdr
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+
 finish_test
+

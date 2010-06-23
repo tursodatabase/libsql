@@ -556,6 +556,10 @@ do_execsql_test pager1.4.5.2 {
 #                journal. Check that the first record in the transaction is 
 #                played back, but not the second.
 #
+#  pager1-4.5.6: Restore the file-system. Try to open the database with a
+#                readonly connection. This should fail, as a read-only
+#                connection cannot roll back the database file.
+#
 faultsim_restore_and_reopen
 do_execsql_test pager1.4.5.3 {
   SELECT * FROM t1;
@@ -573,6 +577,14 @@ do_execsql_test pager1.4.5.5 {
   SELECT * FROM t1;
   SELECT * FROM t2;
 } {I II III IV 3 4}
+
+faultsim_restore_and_reopen
+db close
+sqlite3 db test.db -readonly 1
+do_catchsql_test pager1.4.5.6 {
+  SELECT * FROM t1;
+  SELECT * FROM t2;
+} {1 {disk I/O error}}
 
 db close
 tv delete

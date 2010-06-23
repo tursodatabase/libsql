@@ -19,12 +19,9 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/wal_common.tcl
 
 ifcapable !wal {finish_test ; return }
-
-proc log_file_size {nFrame pgsz} {
-  expr {24 + ($pgsz+24)*$nFrame}
-}
 
 set ::wal_hook [list]
 proc wal_hook {zDb nEntry} {
@@ -104,7 +101,7 @@ foreach {tn sql dbpages logpages} {
   do_test walhook-2.$tn {
     execsql $sql
     list [file size test.db] [file size test.db-wal]
-  } [list [expr $dbpages*1024] [log_file_size $logpages 1024]]
+  } [list [expr $dbpages*1024] [wal_file_size $logpages 1024]]
 }
 
 catch { db2 close }

@@ -18,6 +18,8 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+do_not_use_codec
+
 ifcapable !trigger||!view { finish_test ; return }
 
 # Fill a database with test data.

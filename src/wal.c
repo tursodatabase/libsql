@@ -40,6 +40,8 @@
 **    12: Checkpoint sequence number
 **    16: Salt-1, random integer incremented with each checkpoint
 **    20: Salt-2, a different random integer changing with each ckpt
+**    24: Checksum-1 (first part of checksum for first 24 bytes of header).
+**    28: Checksum-2 (second part of checksum for first 24 bytes of header).
 **
 ** Immediately following the wal-header are zero or more frames. Each
 ** frame consists of a 24-byte frame-header followed by a <page-size> bytes
@@ -246,6 +248,21 @@ int sqlite3WalTrace = 0;
 # define WALTRACE(X)
 #endif
 
+/*
+** The maximum (and only) versions of the wal and wal-index formats
+** that may be interpreted by this version of SQLite.
+**
+** If a client begins recovering a WAL file and finds that (a) the checksum
+** values in the wal-header are correct and (b) the version field is not
+** WAL_MAX_VERSION, recovery fails and SQLite returns SQLITE_CANTOPEN.
+**
+** Similarly, if a client successfully reads a wal-index header (i.e. the 
+** checksum test is successful) and finds that the version field is not
+** WALINDEX_MAX_VERSION, then no read-transaction is opened and SQLite
+** returns SQLITE_CANTOPEN.
+*/
+#define WAL_MAX_VERSION      3007000
+#define WALINDEX_MAX_VERSION 3007000
 
 /*
 ** Indices of various locking bytes.   WAL_NREADER is the number
@@ -272,6 +289,8 @@ typedef struct WalCkptInfo WalCkptInfo;
 ** object.
 */
 struct WalIndexHdr {
+  u32 iVersion;                   /* Wal-index version */
+  u32 unused;                     /* Unused (padding) field */
   u32 iChange;                    /* Counter incremented each transaction */
   u8 isInit;                      /* 1 when initialized */
   u8 bigEndCksum;                 /* True if checksums in WAL are big-endian */
@@ -351,8 +370,9 @@ struct WalCkptInfo {
 /* Size of header before each frame in wal */
 #define WAL_FRAME_HDRSIZE 24
 
-/* Size of write ahead log header */
-#define WAL_HDRSIZE 24
+/* Size of write ahead log header, including checksum. */
+/* #define WAL_HDRSIZE 24 */
+#define WAL_HDRSIZE 32
 
 /* WAL magic value. Either this value, or the same value with the least
 ** significant bit also set (WAL_MAGIC | 0x00000001) is stored in 32-bit
@@ -580,6 +600,7 @@ static void walIndexWriteHdr(Wal *pWal){
 
   assert( pWal->writeLock );
   pWal->hdr.isInit = 1;
+  pWal->hdr.iVersion = WALINDEX_MAX_VERSION;
   walChecksumBytes(1, (u8*)&pWal->hdr, nCksum, 0, pWal->hdr.aCksum);
   memcpy((void *)&aHdr[1], (void *)&pWal->hdr, sizeof(WalIndexHdr));
   sqlite3OsShmBarrier(pWal->pDbFd);
@@ -1029,6 +1050,7 @@ static int walIndexRecover(Wal *pWal){
     i64 iOffset;                  /* Next offset to read from log file */
     int szPage;                   /* Page size according to the log */
     u32 magic;                    /* Magic value read from WAL header */
+    u32 version;                  /* Magic value read from WAL header */
 
     /* Read in the WAL header. */
     rc = sqlite3OsRead(pWal->pWalFd, aBuf, WAL_HDRSIZE, 0);
@@ -1055,8 +1077,20 @@ static int walIndexRecover(Wal *pWal){
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
     memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
     walChecksumBytes(pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN, 
-        aBuf, WAL_HDRSIZE, 0, pWal->hdr.aFrameCksum
+        aBuf, WAL_HDRSIZE-2*4, 0, pWal->hdr.aFrameCksum
     );
+
+    if( pWal->hdr.aFrameCksum[0]!=sqlite3Get4byte(&aBuf[24])
+     || pWal->hdr.aFrameCksum[1]!=sqlite3Get4byte(&aBuf[28])
+    ){
+      goto finished;
+    }
+
+    version = sqlite3Get4byte(&aBuf[4]);
+    if( version!=WAL_MAX_VERSION ){
+      rc = SQLITE_CANTOPEN_BKPT;
+      goto finished;
+    }
 
     /* Malloc a buffer to read frames into. */
     szFrame = szPage + WAL_FRAME_HDRSIZE;
@@ -1658,6 +1692,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   ** being modified by another user.
   */
   badHdr = (page0 ? walIndexTryHdr(pWal, pChanged) : 1);
+  if( badHdr==0 && pWal->hdr.iVersion!=WALINDEX_MAX_VERSION ){
+    rc = SQLITE_CANTOPEN_BKPT;
+  }
 
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
@@ -2265,20 +2302,28 @@ int sqlite3WalFrames(
   */
   iFrame = pWal->hdr.mxFrame;
   if( iFrame==0 ){
-    u8 aWalHdr[WAL_HDRSIZE];        /* Buffer to assembly wal-header in */
+    u8 aWalHdr[WAL_HDRSIZE];      /* Buffer to assemble wal-header in */
+    u32 aCksum[2];                /* Checksum for wal-header */
+
     sqlite3Put4byte(&aWalHdr[0], (WAL_MAGIC | SQLITE_BIGENDIAN));
-    sqlite3Put4byte(&aWalHdr[4], 3007000);
+    sqlite3Put4byte(&aWalHdr[4], WAL_MAX_VERSION);
     sqlite3Put4byte(&aWalHdr[8], szPage);
-    pWal->szPage = szPage;
-    pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
     sqlite3Put4byte(&aWalHdr[12], pWal->nCkpt);
     memcpy(&aWalHdr[16], pWal->hdr.aSalt, 8);
+    walChecksumBytes(1, aWalHdr, WAL_HDRSIZE-2*4, 0, aCksum);
+    sqlite3Put4byte(&aWalHdr[24], aCksum[0]);
+    sqlite3Put4byte(&aWalHdr[28], aCksum[1]);
+    
+    pWal->szPage = szPage;
+    pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
+    pWal->hdr.aFrameCksum[0] = aCksum[0];
+    pWal->hdr.aFrameCksum[1] = aCksum[1];
+
     rc = sqlite3OsWrite(pWal->pWalFd, aWalHdr, sizeof(aWalHdr), 0);
     WALTRACE(("WAL%p: wal-header write %s\n", pWal, rc ? "failed" : "ok"));
     if( rc!=SQLITE_OK ){
       return rc;
     }
-    walChecksumBytes(1, aWalHdr, sizeof(aWalHdr), 0, pWal->hdr.aFrameCksum);
   }
   assert( pWal->szPage==szPage );
 
