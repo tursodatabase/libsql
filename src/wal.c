@@ -1663,18 +1663,12 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 
 /*
 ** Read the wal-index header from the wal-index and into pWal->hdr.
-** If the wal-header appears to be corrupt, try to recover the log
-** before returning.
+** If the wal-header appears to be corrupt, try to reconstruct the
+** wal-index from the WAL before returning.
 **
 ** Set *pChanged to 1 if the wal-index header value in pWal->hdr is
 ** changed by this opertion.  If pWal->hdr is unchanged, set *pChanged
 ** to 0.
-**
-** This routine also maps the wal-index content into memory and assigns
-** ownership of that mapping to the current thread.  In some implementations,
-** only one thread at a time can hold a mapping of the wal-index.  Hence,
-** the caller should strive to invoke walIndexUnmap() as soon as possible
-** after this routine returns.
 **
 ** If the wal-index header is successfully read, return SQLITE_OK. 
 ** Otherwise an SQLite error code.
@@ -1682,7 +1676,7 @@ int walIndexTryHdr(Wal *pWal, int *pChanged){
 static int walIndexReadHdr(Wal *pWal, int *pChanged){
   int rc;                         /* Return code */
   int badHdr;                     /* True if a header read failed */
-  volatile u32 *page0;
+  volatile u32 *page0;            /* Chunk of wal-index containing header */
 
   /* Ensure that page 0 of the wal-index (the page that contains the 
   ** wal-index header) is mapped. Return early if an error occurs here.
@@ -1697,12 +1691,9 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
   /* If the first page of the wal-index has been mapped, try to read the
   ** wal-index header immediately, without holding any lock. This usually
   ** works, but may fail if the wal-index header is corrupt or currently 
-  ** being modified by another user.
+  ** being modified by another thread or process.
   */
   badHdr = (page0 ? walIndexTryHdr(pWal, pChanged) : 1);
-  if( badHdr==0 && pWal->hdr.iVersion!=WALINDEX_MAX_VERSION ){
-    rc = SQLITE_CANTOPEN_BKPT;
-  }
 
   /* If the first attempt failed, it might have been due to a race
   ** with a writer.  So get a WRITE lock and try again.
@@ -1725,6 +1716,14 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
     walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
   }
 
+  /* If the header is read successfully, check the version number to make
+  ** sure the wal-index was not constructed with some future format that
+  ** this version of SQLite cannot understand.
+  */
+  if( badHdr==0 && pWal->hdr.iVersion!=WALINDEX_MAX_VERSION ){
+    rc = SQLITE_CANTOPEN_BKPT;
+  }
+
   return rc;
 }
 
@@ -1739,9 +1738,29 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** other transient condition.  When that happens, it returns WAL_RETRY to
 ** indicate to the caller that it is safe to retry immediately.
 **
-** On success return SQLITE_OK.  On a permantent failure (such an
+** On success return SQLITE_OK.  On a permanent failure (such an
 ** I/O error or an SQLITE_BUSY because another process is running
 ** recovery) return a positive error code.
+**
+** The useWal parameter is true to force the use of the WAL and disable
+** the case where the WAL is bypassed because it has been completely
+** checkpointed.  If useWal==0 then this routine calls walIndexReadHdr() 
+** to make a copy of the wal-index header into pWal->hdr.  If the 
+** wal-index header has changed, *pChanged is set to 1 (as an indication 
+** to the caller that the local paget cache is obsolete and needs to be 
+** flushed.)  When useWal==1, the wal-index header is assumed to already
+** be loaded and the pChanged parameter is unused.
+**
+** The caller must set the cnt parameter to the number of prior calls to
+** this routine during the current read attempt that returned WAL_RETRY.
+** This routine will start taking more aggressive measures to clear the
+** race conditions after multiple WAL_RETRY returns, and after an excessive
+** number of errors will ultimately return SQLITE_PROTOCOL.  The
+** SQLITE_PROTOCOL return indicates that some other process has gone rogue
+** and is not honoring the locking protocol.  There is a vanishingly small
+** chance that SQLITE_PROTOCOL could be returned because of a run of really
+** bad luck when there is lots of contention for the wal-index, but that
+** possibility is so small that it can be safely neglected, we believe.
 **
 ** On success, this routine obtains a read lock on 
 ** WAL_READ_LOCK(pWal->readLock).  The pWal->readLock integer is
@@ -1752,6 +1771,8 @@ static int walIndexReadHdr(Wal *pWal, int *pChanged){
 ** use WAL frames up to and including pWal->hdr.mxFrame if pWal->readLock>0
 ** Or if pWal->readLock==0, then the reader will ignore the WAL
 ** completely and get all content directly from the database file.
+** If the useWal parameter is 1 then the WAL will never be ignored and
+** this routine will always set pWal->readLock>0 on success.
 ** When the read transaction is completed, the caller must release the
 ** lock on WAL_READ_LOCK(pWal->readLock) and set pWal->readLock to -1.
 **
@@ -1796,9 +1817,9 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
         rc = SQLITE_BUSY_RECOVERY;
       }
     }
-  }
-  if( rc!=SQLITE_OK ){
-    return rc;
+    if( rc!=SQLITE_OK ){
+      return rc;
+    }
   }
 
   pInfo = walCkptInfo(pWal);
@@ -1974,9 +1995,9 @@ int sqlite3WalRead(
 
   /* If the "last page" field of the wal-index header snapshot is 0, then
   ** no data will be read from the wal under any circumstances. Return early
-  ** in this case to avoid the walIndexMap/Unmap overhead.  Likewise, if
-  ** pWal->readLock==0, then the WAL is ignored by the reader so
-  ** return early, as if the WAL were empty.
+  ** in this case as an optimization.  Likewise, if pWal->readLock==0, 
+  ** then the WAL is ignored by the reader so return early, as if the 
+  ** WAL were empty.
   */
   if( iLast==0 || pWal->readLock==0 ){
     *pInWal = 0;
@@ -1987,7 +2008,7 @@ int sqlite3WalRead(
   ** pgno. Each iteration of the following for() loop searches one
   ** hash table (each hash table indexes up to HASHTABLE_NPAGE frames).
   **
-  ** This code may run concurrently to the code in walIndexAppend()
+  ** This code might run concurrently to the code in walIndexAppend()
   ** that adds entries to the wal-index (and possibly to this hash 
   ** table). This means the value just read from the hash 
   ** slot (aHash[iKey]) may have been added before or after the 
