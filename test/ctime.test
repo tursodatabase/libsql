@@ -86,8 +86,11 @@ do_test ctime-1.5 {
   set ans2 [ catchsql {
     SELECT sqlite_compileoption_used('THREADSAFE=1');
   } ]
-  lsort [ list $ans1 $ans2 ]
-} {{0 0} {0 1}}
+  set ans3 [ catchsql {
+    SELECT sqlite_compileoption_used('THREADSAFE=2');
+  } ]
+  lsort [ list $ans1 $ans2 $ans3 ]
+} {{0 0} {0 0} {0 1}}
 
 do_test ctime-1.6 {
   execsql {
