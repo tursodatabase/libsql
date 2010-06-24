@@ -305,12 +305,13 @@ struct PagerSavepoint {
 **   master journal name is only written to the journal file the first
 **   time CommitPhaseOne() is called.
 **
-** doNotSync
+** doNotSpill
 **
 **   When enabled, cache spills are prohibited and the journal file cannot
 **   be synced.  This variable is set and cleared by sqlite3PagerWrite() 
 **   in order to prevent a journal sync from happening in between the
-**   journalling of two pages on the same sector.
+**   journalling of two pages on the same sector.  It is also set to prevent
+**   pagerStress() from trying to use the journal during a rollback.
 **
 ** needSync
 **
@@ -354,7 +355,7 @@ struct Pager {
   u8 journalStarted;          /* True if header of journal is synced */
   u8 changeCountDone;         /* Set after incrementing the change-counter */
   u8 setMaster;               /* True if a m-j name has been written to jrnl */
-  u8 doNotSync;               /* Boolean. While true, do not spill the cache */
+  u8 doNotSpill;              /* Do not spill the cache when non-zero */
   u8 dbSizeValid;             /* Set when dbSize is correct */
   u8 subjInMemory;            /* True to use in-memory sub-journals */
   Pgno dbSize;                /* Number of pages in the database */
@@ -1690,9 +1691,12 @@ static int pager_playback_one_page(
     ** requiring a journal-sync before it is written.
     */
     assert( isSavepnt );
-    if( (rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1))!=SQLITE_OK ){
-      return rc;
-    }
+    assert( pPager->doNotSpill==0 );
+    pPager->doNotSpill++;
+    rc = sqlite3PagerAcquire(pPager, pgno, &pPg, 1);
+    assert( pPager->doNotSpill==1 );
+    pPager->doNotSpill--;
+    if( rc!=SQLITE_OK ) return rc;
     pPg->flags &= ~PGHDR_NEED_READ;
     sqlite3PcacheMakeDirty(pPg);
   }
@@ -3514,6 +3518,18 @@ static int pagerStress(void *p, PgHdr *pPg){
   assert( pPg->pPager==pPager );
   assert( pPg->flags&PGHDR_DIRTY );
 
+  /* The doNotSpill flag is set during times when writing to the journal
+  ** is disallowed:  (1) during calls to sqlite3PagerWrite() while it
+  ** is journalling a set of two or more database pages that are stored
+  ** on the same disk sector, and (2) while performing a rollback.
+  **
+  ** Similarly, if the pager has already entered the error state, do not
+  ** try to write the contents of pPg to disk.
+  */
+  if( pPager->errCode || pPager->doNotSpill ){
+    return SQLITE_OK;
+  }
+
   pPg->pDirty = 0;
   if( pagerUseWal(pPager) ){
     /* Write a single frame for this page to the log. */
@@ -3524,22 +3540,6 @@ static int pagerStress(void *p, PgHdr *pPg){
       rc = pagerWalFrames(pPager, pPg, 0, 0, 0);
     }
   }else{
-    /* The doNotSync flag is set by the sqlite3PagerWrite() function while it
-    ** is journalling a set of two or more database pages that are stored
-    ** on the same disk sector. Syncing the journal is not allowed while
-    ** this is happening as it is important that all members of such a
-    ** set of pages are synced to disk together. So, if the page this function
-    ** is trying to make clean will require a journal sync and the doNotSync
-    ** flag is set, return without doing anything. The pcache layer will
-    ** just have to go ahead and allocate a new page buffer instead of
-    ** reusing pPg.
-    **
-    ** Similarly, if the pager has already entered the error state, do not
-    ** try to write the contents of pPg to disk.
-    */
-    if( pPager->errCode || (pPager->doNotSync && pPg->flags&PGHDR_NEED_SYNC) ){
-      return SQLITE_OK;
-    }
   
     /* Sync the journal file if required. */
     if( pPg->flags&PGHDR_NEED_SYNC ){
@@ -4834,12 +4834,12 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     int ii;                   /* Loop counter */
     int needSync = 0;         /* True if any page has PGHDR_NEED_SYNC */
 
-    /* Set the doNotSync flag to 1. This is because we cannot allow a journal
+    /* Set the doNotSpill flag to 1. This is because we cannot allow a journal
     ** header to be written between the pages journaled by this function.
     */
     assert( !MEMDB );
-    assert( pPager->doNotSync==0 );
-    pPager->doNotSync = 1;
+    assert( pPager->doNotSpill==0 );
+    pPager->doNotSpill++;
 
     /* This trick assumes that both the page-size and sector-size are
     ** an integer power of 2. It sets variable pg1 to the identifier
@@ -4901,8 +4901,8 @@ int sqlite3PagerWrite(DbPage *pDbPage){
       assert(pPager->needSync);
     }
 
-    assert( pPager->doNotSync==1 );
-    pPager->doNotSync = 0;
+    assert( pPager->doNotSpill==1 );
+    pPager->doNotSpill--;
   }else{
     rc = pager_write(pDbPage);
   }
