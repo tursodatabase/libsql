@@ -378,7 +378,6 @@ do_test pagerfault-8-pre2 {
   execsql { DELETE FROM t1 WHERE a>32 }
   expr {[file size test.db] < $filesize}
 } {1}
-breakpoint
 do_faultsim_test pagerfault-8 -prep {
   faultsim_restore_and_reopen
   execsql { 
@@ -390,6 +389,48 @@ do_faultsim_test pagerfault-8 -prep {
 } -test {
   faultsim_test_result {0 {}}
   faultsim_integrity_check
+}
+
+do_test pagerfault-9-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA auto_vacuum = incremental;
+    CREATE TABLE t1(x);
+    CREATE TABLE t2(y);
+    CREATE TABLE t3(z);
+
+    INSERT INTO t1 VALUES(randomblob(900));
+    INSERT INTO t1 VALUES(randomblob(900));
+    DELETE FROM t1;
+  }
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test pagerfault-9 -faults oom-transient -prep {
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+      INSERT INTO t1 VALUES(randomblob(900));
+      INSERT INTO t1 VALUES(randomblob(900));
+      DROP TABLE t3;
+      DROP TABLE t2;
+      SAVEPOINT abc;
+        PRAGMA incremental_vacuum;
+  }
+} -body {
+  execsql {
+    ROLLBACK TO abc;
+    COMMIT;
+    PRAGMA freelist_count
+  }
+} -test {
+  faultsim_test_result {0 2}
+  faultsim_integrity_check
+
+  set sl [db one { SELECT COALESCE(sum(length(x)), 'null') FROM t1 }]
+  if {$sl!="null" && $sl!=1800} { 
+    error "Content looks no good... ($sl)" 
+  }
 }
 
 finish_test

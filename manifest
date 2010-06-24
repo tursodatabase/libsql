@@ -1,5 +1,5 @@
-C Add\scoverage\stests.\sRemove\sa\sNEVER\smacro\sfrom\spager.c,\sas\sthe\scondition\scan\snow\sbe\strue\sin\swal\smode.
-D 2010-06-24T10:50:18
+C Add\sa\scoverage\stest\sto\spagerfault.test.
+D 2010-06-24T13:24:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -536,7 +536,7 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 2fb769a4f121b4e27525ea7e38d6d0176a0c2a9f
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test d0112f04b2759d74dda4c2ff1352e344a6d162f9
+F test/pagerfault.test 07675504c11afc17aaad80e29eb52280410b32fd
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
@@ -825,7 +825,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2e6a462cebc05bfd4648d26dd5ae70b68844aa5f
-R 6f0d6e2596113b96c1a8578d8b29dee5
+P 7aac9ad6dd14b1c56eb8e4750ac769c6197c30bd
+R 6bfdd9c466b6b731b932420ffb1520cb
 U dan
-Z e559ebbb3187a59709a564e36f19cc0a
+Z 5231888a9214ebb7e83363a5d8c6dab6
