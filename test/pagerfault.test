@@ -97,7 +97,7 @@ do_faultsim_test pagerfault-2 -prep {
   faultsim_integrity_check
   set res [db eval { SELECT * FROM abc }]
   if {$res != $answer} { error "Database content appears incorrect ($res)" }
-} -faults oom-transient
+} 
 
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back hot-journals that were created
@@ -141,7 +141,7 @@ do_test pagerfault-3-pre1 {
   db close
   tstvfs delete
 } {}
-do_faultsim_test pagerfault-3 -faults ioerr-persistent -prep {
+do_faultsim_test pagerfault-3 -prep {
   faultsim_restore_and_reopen
 } -body {
   execsql { 
@@ -220,7 +220,7 @@ do_faultsim_test pagerfault-5.2 -prep {
   faultsim_test_result {0 {}}
   faultsim_integrity_check
 }
-do_faultsim_test pagerfault-5.3 -prep {
+do_faultsim_test pagerfault-5.3 -faults oom-transient -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
   file delete -force test2.db test2.db-journal test2.db-wal
@@ -239,7 +239,13 @@ do_faultsim_test pagerfault-5.3 -prep {
   }
 } -test {
   faultsim_test_result {0 {}}
+  faultsim_integrity_check
+
+  set res ""
+  set rc [catch { set res [db one { PRAGMA aux.integrity_check }] }]
+  if {$rc!=0 || $res != "ok"} {error "integrity-check problem:$rc $res"}
 }
+
 
 #-------------------------------------------------------------------------
 # Test fault-injection as part of a commit when using 
@@ -339,7 +345,7 @@ do_test pagerfault-7-pre1 {
   }
   faultsim_save_and_close
 } {}
-do_faultsim_test pagerfault-7 -faults full -prep {
+do_faultsim_test pagerfault-7 -prep {
   faultsim_restore_and_reopen
   execsql { 
     PRAGMA cache_size = 10;
@@ -406,7 +412,7 @@ do_test pagerfault-9-pre1 {
   faultsim_save_and_close
 } {}
 
-do_faultsim_test pagerfault-9 -faults oom-transient -prep {
+do_faultsim_test pagerfault-9 -prep {
   faultsim_restore_and_reopen
   execsql { 
     BEGIN;

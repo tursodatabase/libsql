@@ -40,6 +40,10 @@ do_not_use_codec
 #
 # pager1-9.*: Tests related to the backup API.
 #
+# pager1-10.*: Test that the assumed file-system sector-size is limited to
+#              64KB.
+#              
+#
 
 set a_string_counter 1
 proc a_string {n} {
@@ -279,6 +283,10 @@ do_execsql_test pager1-3.2.2 {
 #
 # pager1.4.5.*: Test that hot-journal rollback stops if it encounters a
 #               journal-record for which the checksum fails.
+#
+# pager1.4.6.*: Test that when rolling back a hot-journal that contains a
+#               master journal pointer, the master journal file is deleted
+#               after all the hot-journals that refer to it are deleted.
 # 
 do_test pager1.4.1.1 {
   faultsim_delete_and_reopen
@@ -582,7 +590,7 @@ do_execsql_test pager1.4.5.2 {
   SELECT * FROM t2;
 } {I II 1 2 III IV 3 4}
 
-# Now try three tests:
+# Now try four tests:
 #
 #  pager1-4.5.3: Restore the file-system. Check that the whole transaction 
 #                is rolled back.
@@ -623,6 +631,106 @@ do_catchsql_test pager1.4.5.6 {
   SELECT * FROM t1;
   SELECT * FROM t2;
 } {1 {disk I/O error}}
+db close
+
+# Snapshot the file-system just before multi-file commit. Save the name
+# of the master journal file in $::mj_filename.
+#
+tv script copy_on_mj_delete
+tv filter xDelete
+proc copy_on_mj_delete {method filename args} {
+  if {[string match *mj* [file tail $filename]]} { 
+    set ::mj_filename $filename
+    faultsim_save 
+  }
+  return SQLITE_OK
+}
+do_test pager1.4.6.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    ATTACH 'test.db2' AS two;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE two.t2(a, b);
+    INSERT INTO t1 VALUES(1, 't1.1');
+    INSERT INTO t2 VALUES(1, 't2.1');
+    BEGIN;
+      UPDATE t1 SET b = 't1.2';
+      UPDATE t2 SET b = 't2.2';
+    COMMIT;
+  }
+  tv filter {}
+  db close
+} {}
+
+faultsim_restore_and_reopen
+do_execsql_test pager1.4.6.2 { SELECT * FROM t1 }           {1 t1.1}
+do_test         pager1.4.6.3 { file exists $::mj_filename } {1}
+do_execsql_test pager1.4.6.4 {
+  ATTACH 'test.db2' AS two;
+  SELECT * FROM t2;
+} {1 t2.1}
+do_test pager1.4.6.5 { file exists $::mj_filename } {0}
+
+faultsim_restore_and_reopen
+db close
+do_test pager1.4.6.8 {
+  set ::mj_filename1 $::mj_filename
+  tv filter xDelete
+  sqlite3 db test.db2
+  execsql {
+    ATTACH 'test.db3' AS three;
+    CREATE TABLE three.t3(a, b);
+    INSERT INTO t3 VALUES(1, 't3.1');
+    BEGIN;
+      UPDATE t2 SET b = 't2.3';
+      UPDATE t3 SET b = 't3.3';
+    COMMIT;
+  }
+  expr {$::mj_filename1 != $::mj_filename}
+} {1}
+faultsim_restore_and_reopen
+tv filter {}
+
+# The file-system now contains:
+#
+#   * three databases
+#   * three hot-journal files
+#   * two master-journal files.
+#
+# The hot-journals associated with test.db2 and test.db3 point to
+# master journal $::mj_filename. The hot-journal file associated with
+# test.db points to master journal $::mj_filename1. So reading from
+# test.db should delete $::mj_filename1.
+#
+do_test pager1.4.6.9 {
+  lsort [glob test.db*]
+} [lsort [list                                           \
+  test.db test.db2 test.db3                              \
+  test.db-journal test.db2-journal test.db3-journal      \
+  [file tail $::mj_filename] [file tail $::mj_filename1]
+]]
+
+# The master-journal $::mj_filename1 contains pointers to test.db and 
+# test.db2. However the hot-journal associated with test.db2 points to
+# a different master-journal. Therefore, reading from test.db only should
+# be enough to cause SQLite to delete $::mj_filename1.
+#
+do_test         pager1.4.6.10 { file exists $::mj_filename  } {1}
+do_test         pager1.4.6.11 { file exists $::mj_filename1 } {1}
+do_execsql_test pager1.4.6.12 { SELECT * FROM t1 } {1 t1.1}
+do_test         pager1.4.6.13 { file exists $::mj_filename  } {1}
+do_test         pager1.4.6.14 { file exists $::mj_filename1 } {0}
+
+do_execsql_test pager1.4.6.12 {
+  ATTACH 'test.db2' AS two;
+  SELECT * FROM t2;
+} {1 t2.1}
+do_test         pager1.4.6.13 { file exists $::mj_filename }  {1}
+do_execsql_test pager1.4.6.14 {
+  ATTACH 'test.db3' AS three;
+  SELECT * FROM t3;
+} {1 t3.1}
+do_test         pager1.4.6.15 { file exists $::mj_filename }  {0}
 
 db close
 tv delete
@@ -950,6 +1058,74 @@ do_test pager1-9.2.3 {
  db one {SELECT md5sum(a, b) FROM ab}
 } [db2 one {SELECT md5sum(a, b) FROM ab}]
 do_test pager1-9.2.4 { execsql { SELECT count(*) FROM ab } } {128}
+db close
+db2 close
+
+#-------------------------------------------------------------------------
+# Test that regardless of the value returned by xSectorSize(), the
+# minimum effective sector-size is 512 and the maximum 65536 bytes.
+#
+testvfs tv -default 1
+foreach sectorsize {
+    32   64   128   256   512   1024   2048 
+    4096 8192 16384 32768 65536 131072 262144
+} {
+  tv sectorsize $sectorsize
+  set eff $sectorsize
+  if {$sectorsize < 512}   { set eff 512 }
+  if {$sectorsize > 65536} { set eff 65536 }
+
+  do_test pager1-10.$sectorsize {
+    faultsim_delete_and_reopen
+    execsql {
+      PRAGMA journal_mode = PERSIST;
+      PRAGMA page_size = 1024;
+      CREATE TABLE t1(a, b);
+    }
+    file size test.db-journal
+  } [expr $sectorsize > 65536 ? 65536 : $sectorsize]
+}
+db close
+tv delete
+
+testvfs tv -default 1
+faultsim_delete_and_reopen
+db func a_string a_string
+do_execsql_test pager1-11.1 {
+  PRAGMA cache_size = 10;
+  BEGIN;
+    CREATE TABLE zz(top PRIMARY KEY);
+    INSERT INTO zz VALUES(a_string(222));
+    INSERT INTO zz SELECT a_string((SELECT 222+max(rowid) FROM zz)) FROM zz;
+    INSERT INTO zz SELECT a_string((SELECT 222+max(rowid) FROM zz)) FROM zz;
+    INSERT INTO zz SELECT a_string((SELECT 222+max(rowid) FROM zz)) FROM zz;
+    INSERT INTO zz SELECT a_string((SELECT 222+max(rowid) FROM zz)) FROM zz;
+    INSERT INTO zz SELECT a_string((SELECT 222+max(rowid) FROM zz)) FROM zz;
+  COMMIT;
+  BEGIN;
+    UPDATE zz SET top = a_string(345);
+} {}
+
+proc lockout {method args} { return SQLITE_IOERR }
+tv script lockout
+tv filter {xWrite xTruncate xSync}
+do_catchsql_test pager1-11.2 { COMMIT } {1 {disk I/O error}}
+
+tv script {}
+do_test pager1-11.3 {
+  sqlite3 db2 test.db
+  execsql {
+    PRAGMA journal_mode = TRUNCATE;
+    PRAGMA integrity_check;
+  } db2
+} {truncate ok}
+do_test pager1-11.4 {
+  db2 close
+  file size test.db-journal
+} {0}
+breakpoint
+do_execsql_test pager1-11.5 { SELECT count(*) FROM zz } {32}
+  
 
 finish_test
 
