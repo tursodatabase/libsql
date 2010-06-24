@@ -38,6 +38,8 @@ do_not_use_codec
 #
 # pager1-8.*: Cases using temporary and in-memory databases.
 #
+# pager1-9.*: Tests related to the backup API.
+#
 
 set a_string_counter 1
 proc a_string {n} {
@@ -185,6 +187,9 @@ do_multiclient_test tn {
 
 #-------------------------------------------------------------------------
 # Savepoint related test cases.
+#
+# pager1-3.1.2.*: Force a savepoint rollback to cause the database file
+#                 to grow.
 # 
 do_test pager1-3.1.1 {
   faultsim_delete_and_reopen
@@ -218,6 +223,39 @@ do_catchsql_test pager1-3.1.3 {
 do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
+
+do_test pager1-3.2.1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA auto_vacuum = 2;
+    PRAGMA cache_size = 10;
+    CREATE TABLE z(x INTEGER PRIMARY KEY, y);
+    BEGIN;
+      INSERT INTO z VALUES(NULL, a_string(800));
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   2
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   4
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   8
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  16
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  32
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  64
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 128
+      INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 256
+    COMMIT;
+  }
+  execsql { PRAGMA auto_vacuum }
+} {2}
+do_execsql_test pager1-3.2.2 {
+  BEGIN;
+    INSERT INTO z VALUES(NULL, a_string(800));
+    INSERT INTO z VALUES(NULL, a_string(800));
+    SAVEPOINT one;
+      DELETE FROM z WHERE x>256;
+      PRAGMA incremental_vacuum;
+      SELECT count(*) FROM z WHERE x < 100;
+    ROLLBACK TO one;
+  COMMIT;
+} {99}
 
 #-------------------------------------------------------------------------
 # Hot journal rollback related test cases.
@@ -841,6 +879,77 @@ foreach {tn filename} {
     ROLLBACK;
   } {}
 }
+
+#-------------------------------------------------------------------------
+# The next block of tests - pager1-9.* - deal with interactions between
+# the pager and the backup API. Test cases:
+#
+#   pager1-9.1.*: Test that a backup completes successfully even if the
+#                 source db is written to during the backup op.
+#
+#   pager1-9.2.*: Test that a backup completes successfully even if the
+#                 source db is written to and then rolled back during a 
+#                 backup operation.
+#
+do_test pager1-9.0.1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+      CREATE TABLE ab(a, b, UNIQUE(a, b));
+      INSERT INTO ab VALUES( a_string(200), a_string(300) );
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+      INSERT INTO ab SELECT a_string(200), a_string(300) FROM ab;
+    COMMIT;
+  }
+} {}
+do_test pager1-9.0.2 {
+  sqlite3 db2 test.db2
+  db2 eval { PRAGMA cache_size = 10 }
+  sqlite3_backup B db2 main db main
+  list [B step 10000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test pager1-9.0.3 {
+ db one {SELECT md5sum(a, b) FROM ab}
+} [db2 one {SELECT md5sum(a, b) FROM ab}]
+
+do_test pager1-9.1.1 {
+  execsql { UPDATE ab SET a = a_string(201) }
+  sqlite3_backup B db2 main db main
+  B step 30
+} {SQLITE_OK}
+do_test pager1-9.1.2 {
+  execsql { UPDATE ab SET b = a_string(301) }
+  list [B step 10000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test pager1-9.1.3 {
+ db one {SELECT md5sum(a, b) FROM ab}
+} [db2 one {SELECT md5sum(a, b) FROM ab}]
+do_test pager1-9.1.4 { execsql { SELECT count(*) FROM ab } } {128}
+
+do_test pager1-9.2.1 {
+  execsql { UPDATE ab SET a = a_string(202) }
+  sqlite3_backup B db2 main db main
+  B step 30
+} {SQLITE_OK}
+do_test pager1-9.2.2 {
+  execsql { 
+    BEGIN;
+      UPDATE ab SET b = a_string(301);
+    ROLLBACK;
+  }
+  list [B step 10000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test pager1-9.2.3 {
+ db one {SELECT md5sum(a, b) FROM ab}
+} [db2 one {SELECT md5sum(a, b) FROM ab}]
+do_test pager1-9.2.4 { execsql { SELECT count(*) FROM ab } } {128}
 
 finish_test
 

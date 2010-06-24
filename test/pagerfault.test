@@ -307,6 +307,19 @@ do_faultsim_test pagerfault-6.1 -prep {
 #   faultsim_integrity_check
 # }
 #
+
+# This is designed to provoke a special case in the pager code:
+#
+# If an error (specifically, a FULL or IOERR error) occurs while writing a
+# dirty page to the file-system in order to free up memory, the pager enters
+# the "error state". An IO error causes SQLite to roll back the current
+# transaction (exiting the error state). A FULL error, however, may only
+# rollback the current statement.
+#
+# This block tests that nothing goes wrong if a FULL error occurs while
+# writing a dirty page out to free memory from within a statement that has
+# opened a statement transaction.
+#
 do_test pagerfault-7-pre1 {
   faultsim_delete_and_reopen
   execsql {
@@ -335,6 +348,44 @@ do_faultsim_test pagerfault-7 -faults full -prep {
   }
 } -body {
   execsql { UPDATE t1 SET a = 65, b = randomblob(1500) WHERE (a+1)>200 }
+  execsql COMMIT
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+do_test pagerfault-8-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA auto_vacuum = 1;
+    CREATE TABLE t1(a INTEGER PRIMARY KEY, b);
+    BEGIN;
+      INSERT INTO t1 VALUES(NULL, randomblob(1500));
+      INSERT INTO t1 VALUES(NULL, randomblob(1500));
+      INSERT INTO t1 SELECT NULL, randomblob(1500) FROM t1;    --  4
+      INSERT INTO t1 SELECT NULL, randomblob(1500) FROM t1;    --  8
+      INSERT INTO t1 SELECT NULL, randomblob(1500) FROM t1;    -- 16
+      INSERT INTO t1 SELECT NULL, randomblob(1500) FROM t1;    -- 32
+      INSERT INTO t1 SELECT NULL, randomblob(1500) FROM t1;    -- 64
+    COMMIT;
+  }
+  faultsim_save_and_close
+  set filesize [file size test.db]
+  set {} {}
+} {}
+do_test pagerfault-8-pre2 {
+  faultsim_restore_and_reopen
+  execsql { DELETE FROM t1 WHERE a>32 }
+  expr {[file size test.db] < $filesize}
+} {1}
+breakpoint
+do_faultsim_test pagerfault-8 -prep {
+  faultsim_restore_and_reopen
+  execsql { 
+    BEGIN;
+    DELETE FROM t1 WHERE a>32;
+  }
+} -body {
   execsql COMMIT
 } -test {
   faultsim_test_result {0 {}}

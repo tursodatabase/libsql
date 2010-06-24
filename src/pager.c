@@ -5092,7 +5092,7 @@ int sqlite3PagerCommitPhaseOne(
   assert( pPager->journalMode!=PAGER_JOURNALMODE_OFF || pPager->dbOrigSize==0 );
 
   /* If a prior error occurred, report that error again. */
-  if( NEVER(pPager->errCode) ) return pPager->errCode;
+  if( pPager->errCode ) return pPager->errCode;
 
   PAGERTRACE(("DATABASE SYNC: File=%s zMaster=%s nSize=%d\n", 
       pPager->zFilename, zMaster, pPager->dbSize));

@@ -187,7 +187,6 @@ proc ioerr_injectstop {} {
   return $sv
 }
 
-
 # The following procs are used as [do_one_faultsim_test] callbacks when 
 # injecting shared-memory related error faults into test cases.
 #
@@ -207,6 +206,9 @@ proc shmerr_injectstop {} {
   shmfault ioerr 0 0
 }
 
+# The following procs are used as [do_one_faultsim_test] callbacks when 
+# injecting SQLITE_FULL error faults into test cases.
+#
 proc fullerr_injectinstall {} {
   testvfs shmfault -default true
 }
