@@ -1287,49 +1287,95 @@ static int walIteratorNext(
   return (iRet==0xFFFFFFFF);
 }
 
+/*
+** This function merges two sorted lists into a single sorted list.
+*/
+static void walMerge(
+  u32 *aContent,                  /* Pages in wal */
+  ht_slot *aLeft,                 /* IN: Left hand input list */
+  int nLeft,                      /* IN: Elements in array *paLeft */
+  ht_slot **paRight,              /* IN/OUT: Right hand input list */
+  int *pnRight,                   /* IN/OUT: Elements in *paRight */
+  ht_slot *aTmp                   /* Temporary buffer */
+){
+  int iLeft = 0;                  /* Current index in aLeft */
+  int iRight = 0;                 /* Current index in aRight */
+  int iOut = 0;                   /* Current index in output buffer */
+  int nRight = *pnRight;
+  ht_slot *aRight = *paRight;
 
+  assert( nLeft>0 && nRight>0 );
+  while( iRight<nRight || iLeft<nLeft ){
+    ht_slot logpage;
+    Pgno dbpage;
+
+    if( (iLeft<nLeft) 
+     && (iRight>=nRight || aContent[aLeft[iLeft]]<aContent[aRight[iRight]])
+    ){
+      logpage = aLeft[iLeft++];
+    }else{
+      logpage = aRight[iRight++];
+    }
+    dbpage = aContent[logpage];
+
+    aTmp[iOut++] = logpage;
+    if( iLeft<nLeft && aContent[aLeft[iLeft]]==dbpage ) iLeft++;
+
+    assert( iLeft>=nLeft || aContent[aLeft[iLeft]]>dbpage );
+    assert( iRight>=nRight || aContent[aRight[iRight]]>dbpage );
+  }
+
+  *paRight = aLeft;
+  *pnRight = iOut;
+  memcpy(aLeft, aTmp, sizeof(aTmp[0])*iOut);
+}
+
+/*
+** Sort the elements in list aList, removing any duplicates.
+*/
 static void walMergesort(
   u32 *aContent,                  /* Pages in wal */
   ht_slot *aBuffer,               /* Buffer of at least *pnList items to use */
   ht_slot *aList,                 /* IN/OUT: List to sort */
   int *pnList                     /* IN/OUT: Number of elements in aList[] */
 ){
-  int nList = *pnList;
-  if( nList>1 ){
-    int nLeft = nList / 2;        /* Elements in left list */
-    int nRight = nList - nLeft;   /* Elements in right list */
-    int iLeft = 0;                /* Current index in aLeft */
-    int iRight = 0;               /* Current index in aright */
-    int iOut = 0;                 /* Current index in output buffer */
-    ht_slot *aLeft = aList;       /* Left list */
-    ht_slot *aRight = aList+nLeft;/* Right list */
+  struct Sublist {
+    int nList;                    /* Number of elements in aList */
+    ht_slot *aList;               /* Pointer to sub-list content */
+  };
 
-    /* TODO: Change to non-recursive version. */
-    walMergesort(aContent, aBuffer, aLeft, &nLeft);
-    walMergesort(aContent, aBuffer, aRight, &nRight);
+  const int nList = *pnList;      /* Size of input list */
+  int nMerge;                     /* Number of elements in list aMerge */
+  ht_slot *aMerge;                /* List to be merged */
+  int iList;                      /* Index into input list */
+  int iSub;                       /* Index into aSub array */
+  struct Sublist aSub[13];        /* Array of sub-lists */
 
-    while( iRight<nRight || iLeft<nLeft ){
-      ht_slot logpage;
-      Pgno dbpage;
+  memset(aSub, 0, sizeof(aSub));
+  assert( nList<=HASHTABLE_NPAGE && nList>0 );
+  assert( HASHTABLE_NPAGE==(1<<(ArraySize(aSub)-1)) );
 
-      if( (iLeft<nLeft) 
-       && (iRight>=nRight || aContent[aLeft[iLeft]]<aContent[aRight[iRight]])
-      ){
-        logpage = aLeft[iLeft++];
-      }else{
-        logpage = aRight[iRight++];
-      }
-      dbpage = aContent[logpage];
-
-      aBuffer[iOut++] = logpage;
-      if( iLeft<nLeft && aContent[aLeft[iLeft]]==dbpage ) iLeft++;
-
-      assert( iLeft>=nLeft || aContent[aLeft[iLeft]]>dbpage );
-      assert( iRight>=nRight || aContent[aRight[iRight]]>dbpage );
+  for(iList=0; iList<nList; iList++){
+    nMerge = 1;
+    aMerge = &aList[iList];
+    for(iSub=0; iList & (1<<iSub); iSub++){
+      struct Sublist *p = &aSub[iSub];
+      assert( p->aList && p->nList<=(1<<iSub) );
+      walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
     }
-    memcpy(aList, aBuffer, sizeof(aList[0])*iOut);
-    *pnList = iOut;
+    aSub[iSub].aList = aMerge;
+    aSub[iSub].nList = nMerge;
   }
+
+  for(iSub++; iSub<ArraySize(aSub); iSub++){
+    if( nList & (1<<iSub) ){
+      struct Sublist *p = &aSub[iSub];
+      assert( p->nList<=(2<<iSub) );
+      walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
+    }
+  }
+  assert( aMerge==aList );
+  *pnList = nMerge;
 
 #ifdef SQLITE_DEBUG
   {
@@ -1474,11 +1520,14 @@ static int walCheckpoint(
   int i;                          /* Loop counter */
   volatile WalCkptInfo *pInfo;    /* The checkpoint status information */
 
+  if( pWal->hdr.mxFrame==0 ) return SQLITE_OK;
+
   /* Allocate the iterator */
   rc = walIteratorInit(pWal, &pIter);
-  if( rc!=SQLITE_OK || pWal->hdr.mxFrame==0 ){
+  if( rc!=SQLITE_OK ){
     goto walcheckpoint_out;
   }
+  assert( pIter );
 
   /*** TODO:  Move this test out to the caller.  Make it an assert() here ***/
   if( pWal->hdr.szPage!=nBuf ){
