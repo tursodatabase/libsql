@@ -1425,8 +1425,8 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Allocate space for the WalIterator object. */
   nSegment = walFramePage(iLast) + 1;
   nByte = sizeof(WalIterator) 
-        + (nSegment-1)*(sizeof(struct WalSegment))
-        + nSegment*(HASHTABLE_NPAGE * sizeof(ht_slot));
+        + (nSegment-1)*sizeof(struct WalSegment)
+        + iLast*sizeof(ht_slot);
   p = (WalIterator *)sqlite3ScratchMalloc(nByte);
   if( !p ){
     return SQLITE_NOMEM;
@@ -1437,26 +1437,29 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   /* Allocate temporary space used by the merge-sort routine. This block
   ** of memory will be freed before this function returns.
   */
-  aTmp = (ht_slot *)sqlite3ScratchMalloc(HASHTABLE_NPAGE * sizeof(ht_slot));
+  aTmp = (ht_slot *)sqlite3ScratchMalloc(
+      sizeof(ht_slot) * (iLast>HASHTABLE_NPAGE?HASHTABLE_NPAGE:iLast)
+  );
   if( !aTmp ){
     rc = SQLITE_NOMEM;
   }
 
   for(i=0; rc==SQLITE_OK && i<nSegment; i++){
     volatile ht_slot *aHash;
-    int j;
     u32 iZero;
-    int nEntry;
     volatile u32 *aPgno;
-    ht_slot *aIndex;
 
     rc = walHashGet(pWal, i, &aHash, &aPgno, &iZero);
     if( rc==SQLITE_OK ){
+      int j;                      /* Counter variable */
+      int nEntry;                 /* Number of entries in this segment */
+      ht_slot *aIndex;            /* Sorted index for this segment */
+
       aPgno++;
       nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)aPgno;
+      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
       iZero++;
   
-      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[i*HASHTABLE_NPAGE];
       for(j=0; j<nEntry; j++){
         aIndex[j] = j;
       }
