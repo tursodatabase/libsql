@@ -1,5 +1,8 @@
-C Modify\sthe\smerge-sort\sin\swal.c\sso\sthat\sit\sdoes\snot\suse\srecursion.
-D 2010-06-25T11:35:52
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Change\sthe\sname\sof\sthe\sshared-memory\sfile\son\swindows\sfrom\s*-wal-index\sto\n*-shm,\sfor\sconsistency\swith\sunix.
+D 2010-06-25T12:52:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +158,7 @@ F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 4b03e5a8a353b51af64ba11ffec85160818b4d89
-F src/os_win.c 00385a839d54f951a73ceb98ddea29112adea05c
+F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
 F src/pager.c edf1f8b02b5c106bd3a3add0d06f28859195a0f8
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -825,7 +828,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4941e437d2638f36ac8510d4a5b4c780afc798bb
-R 758d45a862d61942569f7b92d886b198
-U dan
-Z 787d6dd7a1ce6e802a68550ea5002b17
+P daea6c054cee3564d8460d876b78a325ebc382dd
+R 4354913e444fd82168be80b3bdcdc646
+U drh
+Z a36a85791020dd7903c25fa65a26078e
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMJKaioxKgR168RlERAgyzAJ4t9rMtvmHDwyWrnMVHVYaI1Ao/rgCfdA+H
+fjjllhGtv+TwuqIzTAvwBAw=
+=QxW5
+-----END PGP SIGNATURE-----
