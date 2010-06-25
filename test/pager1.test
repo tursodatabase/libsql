@@ -1125,7 +1125,40 @@ do_test pager1-11.4 {
 } {0}
 breakpoint
 do_execsql_test pager1-11.5 { SELECT count(*) FROM zz } {32}
+db close
+tv delete
   
+#-------------------------------------------------------------------------
+# Test "PRAGMA page_size"
+#
+foreach pagesize {
+    512   1024   2048 4096 8192 16384 32768 
+} {
+  faultsim_delete_and_reopen
+
+  do_test pager1-12.$pagesize.1 {
+    sqlite3 db2 test.db
+    execsql "
+      PRAGMA page_size = $pagesize;
+      CREATE VIEW v AS SELECT * FROM sqlite_master;
+    " db2
+    file size test.db
+  } $pagesize
+  do_test pager1-12.$pagesize.2 {
+    sqlite3 db2 test.db
+    execsql { 
+      SELECT count(*) FROM v;
+      PRAGMA main.page_size;
+    } db2
+  } [list 1 $pagesize]
+  do_test pager1-12.$pagesize.3 {
+    execsql { 
+      SELECT count(*) FROM v;
+      PRAGMA main.page_size;
+    }
+  } [list 1 $pagesize]
+  db2 close
+}
 
 finish_test
 

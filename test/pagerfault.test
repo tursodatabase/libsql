@@ -246,7 +246,6 @@ do_faultsim_test pagerfault-5.3 -faults oom-transient -prep {
   if {$rc!=0 || $res != "ok"} {error "integrity-check problem:$rc $res"}
 }
 
-
 #-------------------------------------------------------------------------
 # Test fault-injection as part of a commit when using 
 # journal_mode=TRUNCATE.
@@ -260,11 +259,36 @@ do_test pagerfault-6-pre1 {
   }
   faultsim_save_and_close
 } {}
+
 do_faultsim_test pagerfault-6.1 -prep {
   faultsim_restore_and_reopen
   db func a_string a_string
   execsql { PRAGMA journal_mode = TRUNCATE }
 } -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+# The unix vfs xAccess() method considers a file zero bytes in size to
+# "not exist". This proc overrides that behaviour so that a zero length
+# file is considered to exist.
+#
+proc xAccess {method filename op args} {
+  if {$op != "SQLITE_ACCESS_EXISTS"} { return "" }
+  return [file exists $filename]
+}
+do_faultsim_test pagerfault-6.2 -faults cantopen-* -prep {
+  shmfault filter xAccess
+  shmfault script xAccess
+
+  faultsim_restore_and_reopen
+  db func a_string a_string
+  execsql { PRAGMA journal_mode = TRUNCATE }
+} -body {
+  execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
   execsql { INSERT INTO t1 SELECT a_string(200), a_string(300) FROM t1 }
 } -test {
   faultsim_test_result {0 {}}

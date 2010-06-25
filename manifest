@@ -1,5 +1,5 @@
-C Reduce\sthe\saverage\s(but\snot\smaximum)\ssize\sof\sthe\sallocations\smade\sas\spart\sof\sa\scheckpoint.
-D 2010-06-25T16:34:32
+C Further\stest\scases\sfor\spager1.test\sand\spagerfault.test.
+D 2010-06-25T19:09:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +209,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c d001a4e64ceed35e480f1cb1aa7cc8b48eab1c29
+F src/test_vfs.c 90d51963dfe2aa28a9408b461cb06f48921be8e8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
@@ -509,7 +509,7 @@ F test/mallocH.test 79b65aed612c9b3ed2dcdaa727c85895fd1bfbdb
 F test/mallocI.test e3ea401904d010cb7c1e4b2ee8803f4a9f5b999d
 F test/mallocJ.test b5d1839da331d96223e5f458856f8ffe1366f62e
 F test/mallocK.test d79968641d1b70d88f6c01bdb9a7eb4a55582cc9
-F test/malloc_common.tcl c5a4688c3744f69450d88909d2a6cd2644f76803
+F test/malloc_common.tcl d5cf479545104c0aa2e60a3a94802e128a57ebb7
 F test/manydb.test b3d3bc4c25657e7f68d157f031eb4db7b3df0d3c
 F test/memdb.test 0825155b2290e900264daaaf0334b6dfe69ea498
 F test/memleak.test 10b9c6c57e19fc68c32941495e9ba1c50123f6e2
@@ -534,9 +534,9 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test b7099656ae9162fd192b13fafab0361c2a910022
+F test/pager1.test dfb695c91652559302530319cccb608c4ed23a59
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test a48c4ed81ab7ebb11a65d97a7332026d19beb2a4
+F test/pagerfault.test d90859967eda59b53074498846d142a81d7e29ff
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
@@ -825,7 +825,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 29887487ed549f97c3c9b37f852bae179b6ea9a9
-R 0d354ce5ca0d0be1f06510bbeac66ab5
+P 4a7fd91b7ab2c5d21fbac7f6f123820c8f4ec7f6
+R ecb04b890fe63f676fa227ca5f46f9c3
 U dan
-Z 4ef8c49b4f2e94b4894a55fae3b39c83
+Z 46acbd8eac91574d70d09df9d19b8578

@@ -76,6 +76,23 @@ set FAULTSIM(shmerr-persistent) [list      \
   -injectuninstall shmerr_injectuninstall  \
 ]
 
+# Transient and persistent CANTOPEN errors:
+#
+set FAULTSIM(cantopen-transient) [list       \
+  -injectinstall   cantopen_injectinstall    \
+  -injectstart     {cantopen_injectstart 0}  \
+  -injectstop      cantopen_injectstop       \
+  -injecterrlist   {{1 {unable to open database file}}}  \
+  -injectuninstall cantopen_injectuninstall  \
+]
+set FAULTSIM(cantopen-persistent) [list      \
+  -injectinstall   cantopen_injectinstall    \
+  -injectstart     {cantopen_injectstart 1}  \
+  -injectstop      cantopen_injectstop       \
+  -injecterrlist   {{1 {unable to open database file}}}  \
+  -injectuninstall cantopen_injectuninstall  \
+]
+
 
 
 #--------------------------------------------------------------------------
@@ -203,7 +220,7 @@ proc shmerr_injectstart {persist iFail} {
   shmfault ioerr $iFail $persist
 }
 proc shmerr_injectstop {} {
-  shmfault ioerr 0 0
+  shmfault ioerr
 }
 
 # The following procs are used as [do_one_faultsim_test] callbacks when 
@@ -218,10 +235,28 @@ proc fullerr_injectuninstall {} {
   shmfault delete
 }
 proc fullerr_injectstart {iFail} {
-  shmfault full $iFail
+  shmfault full $iFail 1
 }
 proc fullerr_injectstop {} {
-  shmfault full 0
+  shmfault full
+}
+
+# The following procs are used as [do_one_faultsim_test] callbacks when 
+# injecting SQLITE_CANTOPEN error faults into test cases.
+#
+proc cantopen_injectinstall {} {
+  testvfs shmfault -default true
+}
+proc cantopen_injectuninstall {} {
+  catch {db  close}
+  catch {db2 close}
+  shmfault delete
+}
+proc cantopen_injectstart {persist iFail} {
+  shmfault cantopen $iFail $persist
+}
+proc cantopen_injectstop {} {
+  shmfault cantopen
 }
 
 # This command is not called directly. It is used by the 

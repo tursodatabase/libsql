@@ -37,6 +37,16 @@ struct TestvfsFile {
   TestvfsFile *pNext;             /* Next handle opened on the same file */
 };
 
+#define FAULT_INJECT_NONE       0
+#define FAULT_INJECT_TRANSIENT  1
+#define FAULT_INJECT_PERSISTENT 2
+
+typedef struct TestFaultInject TestFaultInject;
+struct TestFaultInject {
+  int iCnt;                       /* Remaining calls before fault injection */
+  int eFault;                     /* A FAULT_INJECT_* value */
+  int nFail;                      /* Number of faults injected */
+};
 
 /*
 ** An instance of this structure is allocated for each VFS created. The
@@ -54,14 +64,20 @@ struct Testvfs {
   TestvfsBuffer *pBuffer;         /* List of shared buffers */
   int isNoshm;
 
-  int mask;
+  int mask;                       /* Mask controlling [script] and [ioerr] */
+
+  TestFaultInject ioerr_err;
+  TestFaultInject full_err;
+  TestFaultInject cantopen_err;
+
+#if 0
   int iIoerrCnt;
   int ioerr;
   int nIoerrFail;
-
   int iFullCnt;
   int fullerr;
   int nFullFail;
+#endif
 
   int iDevchar;
   int iSectorsize;
@@ -87,7 +103,8 @@ struct Testvfs {
 #define TESTVFS_CLOSE_MASK      0x00000800
 #define TESTVFS_WRITE_MASK      0x00001000
 #define TESTVFS_TRUNCATE_MASK   0x00002000
-#define TESTVFS_ALL_MASK        0x00003FFF
+#define TESTVFS_ACCESS_MASK     0x00004000
+#define TESTVFS_ALL_MASK        0x00007FFF
 
 
 #define TESTVFS_MAX_PAGES 1024
@@ -197,28 +214,28 @@ static int tvfsResultCode(Testvfs *p, int *pRc){
   return 0;
 }
 
-static int tvfsInjectIoerr(Testvfs *p){
+static int tvfsInjectFault(TestFaultInject *p){
   int ret = 0;
-  if( p->ioerr ){
-    p->iIoerrCnt--;
-    if( p->iIoerrCnt==0 || (p->iIoerrCnt<0 && p->ioerr==2) ){
+  if( p->eFault ){
+    p->iCnt--;
+    if( p->iCnt==0 || (p->iCnt<0 && p->eFault==FAULT_INJECT_PERSISTENT ) ){
       ret = 1;
-      p->nIoerrFail++;
+      p->nFail++;
     }
   }
   return ret;
 }
 
+
+static int tvfsInjectIoerr(Testvfs *p){
+  return tvfsInjectFault(&p->ioerr_err);
+}
+
 static int tvfsInjectFullerr(Testvfs *p){
-  int ret = 0;
-  if( p->fullerr ){
-    p->iFullCnt--;
-    if( p->iFullCnt<=0 ){
-      ret = 1;
-      p->nFullFail++;
-    }
-  }
-  return ret;
+  return tvfsInjectFault(&p->full_err);
+}
+static int tvfsInjectCantopenerr(Testvfs *p){
+  return tvfsInjectFault(&p->cantopen_err);
 }
 
 
@@ -512,12 +529,18 @@ static int tvfsOpen(
       pId = Tcl_GetObjResult(p->interp);
     }
   }
+
+  if( (p->mask&TESTVFS_OPEN_MASK) &&  tvfsInjectIoerr(p) ) return SQLITE_IOERR;
+  if( tvfsInjectCantopenerr(p) ) return SQLITE_CANTOPEN;
+  if( tvfsInjectFullerr(p) ) return SQLITE_FULL;
+
   if( !pId ){
     pId = Tcl_NewStringObj("anon", -1);
   }
   Tcl_IncrRefCount(pId);
   pFd->pShmId = pId;
   Tcl_ResetResult(p->interp);
+
 
   rc = sqlite3OsOpen(PARENTVFS(pVfs), zName, pFd->pReal, flags, pOutFlags);
   if( pFd->pReal->pMethods ){
@@ -568,6 +591,25 @@ static int tvfsAccess(
   int flags, 
   int *pResOut
 ){
+  Testvfs *p = (Testvfs *)pVfs->pAppData;
+  if( p->pScript && p->mask&TESTVFS_ACCESS_MASK ){
+    int rc;
+    char *zArg = 0;
+    if( flags==SQLITE_ACCESS_EXISTS ) zArg = "SQLITE_ACCESS_EXISTS";
+    if( flags==SQLITE_ACCESS_READWRITE ) zArg = "SQLITE_ACCESS_READWRITE";
+    if( flags==SQLITE_ACCESS_READ ) zArg = "SQLITE_ACCESS_READ";
+    tvfsExecTcl(p, "xAccess", 
+        Tcl_NewStringObj(zPath, -1), Tcl_NewStringObj(zArg, -1), 0
+    );
+    if( tvfsResultCode(p, &rc) ){
+      if( rc!=SQLITE_OK ) return rc;
+    }else{
+      Tcl_Interp *interp = p->interp;
+      if( TCL_OK==Tcl_GetBooleanFromObj(0, Tcl_GetObjResult(interp), pResOut) ){
+        return SQLITE_OK;
+      }
+    }
+  }
   return sqlite3OsAccess(PARENTVFS(pVfs), zPath, flags, pResOut);
 }
 
@@ -857,20 +899,21 @@ static int testvfs_obj_cmd(
 
   enum DB_enum { 
     CMD_SHM, CMD_DELETE, CMD_FILTER, CMD_IOERR, CMD_SCRIPT, 
-    CMD_DEVCHAR, CMD_SECTORSIZE, CMD_FULLERR
+    CMD_DEVCHAR, CMD_SECTORSIZE, CMD_FULLERR, CMD_CANTOPENERR
   };
   struct TestvfsSubcmd {
     char *zName;
     enum DB_enum eCmd;
   } aSubcmd[] = {
-    { "shm",        CMD_SHM        },
-    { "delete",     CMD_DELETE     },
-    { "filter",     CMD_FILTER     },
-    { "ioerr",      CMD_IOERR      },
-    { "fullerr",    CMD_FULLERR    },
-    { "script",     CMD_SCRIPT     },
-    { "devchar",    CMD_DEVCHAR    },
-    { "sectorsize", CMD_SECTORSIZE },
+    { "shm",         CMD_SHM         },
+    { "delete",      CMD_DELETE      },
+    { "filter",      CMD_FILTER      },
+    { "ioerr",       CMD_IOERR       },
+    { "fullerr",     CMD_FULLERR     },
+    { "cantopenerr", CMD_CANTOPENERR },
+    { "script",      CMD_SCRIPT      },
+    { "devchar",     CMD_DEVCHAR     },
+    { "sectorsize",  CMD_SECTORSIZE  },
     { 0, 0 }
   };
   int i;
@@ -950,6 +993,7 @@ static int testvfs_obj_cmd(
         { "xTruncate",   TESTVFS_TRUNCATE_MASK },
         { "xOpen",       TESTVFS_OPEN_MASK },
         { "xClose",      TESTVFS_CLOSE_MASK },
+        { "xAccess",     TESTVFS_ACCESS_MASK },
       };
       Tcl_Obj **apElem = 0;
       int nElem = 0;
@@ -1008,44 +1052,26 @@ static int testvfs_obj_cmd(
     }
 
     /*
-    ** TESTVFS fullerr ?IFAIL?
-    **
-    **   Where IFAIL is an integer.
-    */
-    case CMD_FULLERR: {
-      int iRet = p->nFullFail;
-
-      p->nFullFail = 0;
-      p->fullerr = 0;
-      p->iFullCnt = 0;
-
-      if( objc==3 ){
-        int iCnt;
-        if( TCL_OK!=Tcl_GetIntFromObj(interp, objv[2], &iCnt) ){
-          return TCL_ERROR;
-        }
-        p->fullerr = (iCnt>0);
-        p->iFullCnt = iCnt;
-      }else if( objc!=2 ){
-        Tcl_AppendResult(interp, "Bad args", 0);
-        return TCL_ERROR;
-      }
-
-      Tcl_SetObjResult(interp, Tcl_NewIntObj(iRet));
-      break;
-    }
-
-    /*
     ** TESTVFS ioerr ?IFAIL PERSIST?
     **
     **   Where IFAIL is an integer and PERSIST is boolean.
     */
-    case CMD_IOERR: {
-      int iRet = p->nIoerrFail;
+    case CMD_CANTOPENERR:
+    case CMD_IOERR:
+    case CMD_FULLERR: {
+      TestFaultInject *pTest;
+      int iRet;
 
-      p->nIoerrFail = 0;
-      p->ioerr = 0;
-      p->iIoerrCnt = 0;
+      switch( aSubcmd[i].eCmd ){
+        case CMD_IOERR: pTest = &p->ioerr_err; break;
+        case CMD_FULLERR: pTest = &p->full_err; break;
+        case CMD_CANTOPENERR: pTest = &p->cantopen_err; break;
+        default: assert(0);
+      }
+      iRet = pTest->nFail;
+      pTest->nFail = 0;
+      pTest->eFault = 0;
+      pTest->iCnt = 0;
 
       if( objc==4 ){
         int iCnt, iPersist;
@@ -1054,10 +1080,10 @@ static int testvfs_obj_cmd(
         ){
           return TCL_ERROR;
         }
-        p->ioerr = (iCnt>0) + iPersist;
-        p->iIoerrCnt = iCnt;
+        pTest->eFault = iPersist?FAULT_INJECT_PERSISTENT:FAULT_INJECT_TRANSIENT;
+        pTest->iCnt = iCnt;
       }else if( objc!=2 ){
-        Tcl_AppendResult(interp, "Bad args", 0);
+        Tcl_WrongNumArgs(interp, 2, objv, "?CNT PERSIST?");
         return TCL_ERROR;
       }
       Tcl_SetObjResult(interp, Tcl_NewIntObj(iRet));
