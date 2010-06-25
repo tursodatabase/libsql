@@ -1361,6 +1361,7 @@ static void walMergesort(
     for(iSub=0; iList & (1<<iSub); iSub++){
       struct Sublist *p = &aSub[iSub];
       assert( p->aList && p->nList<=(1<<iSub) );
+      assert( p->aList==&aList[iList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
     }
     aSub[iSub].aList = aMerge;
@@ -1370,7 +1371,8 @@ static void walMergesort(
   for(iSub++; iSub<ArraySize(aSub); iSub++){
     if( nList & (1<<iSub) ){
       struct Sublist *p = &aSub[iSub];
-      assert( p->nList<=(2<<iSub) );
+      assert( p->nList<=(1<<iSub) );
+      assert( p->aList==&aList[nList&~((2<<iSub)-1)] );
       walMerge(aContent, p->aList, p->nList, &aMerge, &nMerge, aBuffer);
     }
   }
@@ -1391,22 +1393,19 @@ static void walMergesort(
 ** Free an iterator allocated by walIteratorInit().
 */
 static void walIteratorFree(WalIterator *p){
-  sqlite3_free(p);
+  sqlite3ScratchFree(p);
 }
 
 /*
-** Map the wal-index into memory owned by this thread, if it is not
-** mapped already.  Then construct a WalInterator object that can be
-** used to loop over all pages in the WAL in ascending order.  
+** Construct a WalInterator object that can be used to loop over all 
+** pages in the WAL in ascending order. The caller must hold the checkpoint
 **
 ** On success, make *pp point to the newly allocated WalInterator object
-** return SQLITE_OK.  Otherwise, leave *pp unchanged and return an error
-** code.
+** return SQLITE_OK. Otherwise, return an error code. If this routine
+** returns an error, the value of *pp is undefined.
 **
 ** The calling routine should invoke walIteratorFree() to destroy the
-** WalIterator object when it has finished with it.  The caller must
-** also unmap the wal-index.  But the wal-index must not be unmapped
-** prior to the WalIterator object being destroyed.
+** WalIterator object when it has finished with it.
 */
 static int walIteratorInit(Wal *pWal, WalIterator **pp){
   WalIterator *p;                 /* Return value */
@@ -1415,63 +1414,66 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
   int nByte;                      /* Number of bytes to allocate */
   int i;                          /* Iterator variable */
   ht_slot *aTmp;                  /* Temp space used by merge-sort */
-  ht_slot *aSpace;                /* Space at the end of the allocation */
+  int rc = SQLITE_OK;             /* Return Code */
 
-  /* This routine only runs while holding SQLITE_SHM_CHECKPOINT.  No other
-  ** thread is able to write to shared memory while this routine is
-  ** running (or, indeed, while the WalIterator object exists).  Hence,
-  ** we can cast off the volatile qualification from shared memory
+  /* This routine only runs while holding the checkpoint lock. And
+  ** it only runs if there is actually content in the log (mxFrame>0).
   */
-  assert( pWal->ckptLock );
+  assert( pWal->ckptLock && pWal->hdr.mxFrame>0 );
   iLast = pWal->hdr.mxFrame;
 
-  /* Allocate space for the WalIterator object */
+  /* Allocate space for the WalIterator object. */
   nSegment = walFramePage(iLast) + 1;
   nByte = sizeof(WalIterator) 
-        + nSegment*(sizeof(struct WalSegment))
-        + (nSegment+1)*(HASHTABLE_NPAGE * sizeof(ht_slot));
-  p = (WalIterator *)sqlite3_malloc(nByte);
+        + (nSegment-1)*(sizeof(struct WalSegment))
+        + nSegment*(HASHTABLE_NPAGE * sizeof(ht_slot));
+  p = (WalIterator *)sqlite3ScratchMalloc(nByte);
   if( !p ){
     return SQLITE_NOMEM;
   }
   memset(p, 0, nByte);
-
-  /* Allocate space for the WalIterator object */
   p->nSegment = nSegment;
-  aSpace = (ht_slot *)&p->aSegment[nSegment];
-  aTmp = &aSpace[HASHTABLE_NPAGE*nSegment];
-  for(i=0; i<nSegment; i++){
+
+  /* Allocate temporary space used by the merge-sort routine. This block
+  ** of memory will be freed before this function returns.
+  */
+  aTmp = (ht_slot *)sqlite3ScratchMalloc(HASHTABLE_NPAGE * sizeof(ht_slot));
+  if( !aTmp ){
+    rc = SQLITE_NOMEM;
+  }
+
+  for(i=0; rc==SQLITE_OK && i<nSegment; i++){
     volatile ht_slot *aHash;
     int j;
     u32 iZero;
     int nEntry;
     volatile u32 *aPgno;
-    int rc;
+    ht_slot *aIndex;
 
     rc = walHashGet(pWal, i, &aHash, &aPgno, &iZero);
-    if( rc!=SQLITE_OK ){
-      walIteratorFree(p);
-      return rc;
+    if( rc==SQLITE_OK ){
+      aPgno++;
+      nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)aPgno;
+      iZero++;
+  
+      aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[i*HASHTABLE_NPAGE];
+      for(j=0; j<nEntry; j++){
+        aIndex[j] = j;
+      }
+      walMergesort((u32 *)aPgno, aTmp, aIndex, &nEntry);
+      p->aSegment[i].iZero = iZero;
+      p->aSegment[i].nEntry = nEntry;
+      p->aSegment[i].aIndex = aIndex;
+      p->aSegment[i].aPgno = (u32 *)aPgno;
     }
-    aPgno++;
-    nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)aPgno;
-    iZero++;
-
-    for(j=0; j<nEntry; j++){
-      aSpace[j] = j;
-    }
-    walMergesort((u32 *)aPgno, aTmp, aSpace, &nEntry);
-    p->aSegment[i].iZero = iZero;
-    p->aSegment[i].nEntry = nEntry;
-    p->aSegment[i].aIndex = aSpace;
-    p->aSegment[i].aPgno = (u32 *)aPgno;
-    aSpace += HASHTABLE_NPAGE;
   }
-  assert( aSpace==aTmp );
+  sqlite3ScratchFree(aTmp);
 
-  /* Return the fully initialized WalIterator object */
+  if( rc!=SQLITE_OK ){
+    walIteratorFree(p);
+  }
   *pp = p;
-  return SQLITE_OK ;
+  return rc;
 }
 
 /*
@@ -1525,7 +1527,7 @@ static int walCheckpoint(
   /* Allocate the iterator */
   rc = walIteratorInit(pWal, &pIter);
   if( rc!=SQLITE_OK ){
-    goto walcheckpoint_out;
+    return rc;
   }
   assert( pIter );
 
