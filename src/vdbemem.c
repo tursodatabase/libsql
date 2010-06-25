@@ -1015,9 +1015,16 @@ int sqlite3ValueFromExpr(
     return SQLITE_OK;
   }
   op = pExpr->op;
-  if( op==TK_REGISTER ){
-    op = pExpr->op2;  /* This only happens with SQLITE_ENABLE_STAT2 */
-  }
+
+  /* op can only be TK_REGISTER is we have compiled with SQLITE_ENABLE_STAT2.
+  ** The ifdef here is to enable us to achieve 100% branch test coverage even
+  ** when SQLITE_ENABLE_STAT2 is omitted.
+  */
+#ifdef SQLITE_ENABLE_STAT2
+  if( op==TK_REGISTER ) op = pExpr->op2;
+#else
+  if( NEVER(op==TK_REGISTER) ) op = pExpr->op2;
+#endif
 
   if( op==TK_STRING || op==TK_FLOAT || op==TK_INTEGER ){
     pVal = sqlite3ValueNew(db);
