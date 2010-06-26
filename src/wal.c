@@ -865,9 +865,9 @@ static u32 walFramePgno(Wal *pWal, u32 iFrame){
 ** actually needed.
 */
 static void walCleanupHash(Wal *pWal){
-  volatile ht_slot *aHash;        /* Pointer to hash table to clear */
-  volatile u32 *aPgno;            /* Page number array for hash table */
-  u32 iZero;                      /* frame == (aHash[x]+iZero) */
+  volatile ht_slot *aHash = 0;    /* Pointer to hash table to clear */
+  volatile u32 *aPgno = 0;        /* Page number array for hash table */
+  u32 iZero = 0;                  /* frame == (aHash[x]+iZero) */
   int iLimit = 0;                 /* Zero values greater than this */
   int nByte;                      /* Number of bytes to zero in aPgno[] */
   int i;                          /* Used to iterate through aHash[] */
@@ -928,9 +928,9 @@ static void walCleanupHash(Wal *pWal){
 */
 static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   int rc;                         /* Return code */
-  u32 iZero;                      /* One less than frame number of aPgno[1] */
-  volatile u32 *aPgno;            /* Page number array */
-  volatile ht_slot *aHash;        /* Hash table */
+  u32 iZero = 0;                  /* One less than frame number of aPgno[1] */
+  volatile u32 *aPgno = 0;        /* Page number array */
+  volatile ht_slot *aHash = 0;    /* Hash table */
 
   rc = walHashGet(pWal, walFramePage(iFrame), &aHash, &aPgno, &iZero);
 
@@ -1345,8 +1345,8 @@ static void walMergesort(
   };
 
   const int nList = *pnList;      /* Size of input list */
-  int nMerge;                     /* Number of elements in list aMerge */
-  ht_slot *aMerge;                /* List to be merged */
+  int nMerge = 0;                 /* Number of elements in list aMerge */
+  ht_slot *aMerge = 0;            /* List to be merged */
   int iList;                      /* Index into input list */
   int iSub = 0;                   /* Index into aSub array */
   struct Sublist aSub[13];        /* Array of sub-lists */
@@ -1456,7 +1456,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       ht_slot *aIndex;            /* Sorted index for this segment */
 
       aPgno++;
-      nEntry = ((i+1)==nSegment)?iLast-iZero:(u32 *)aHash-(u32 *)aPgno;
+      nEntry = ((i+1)==nSegment)?(int)(iLast-iZero):(u32 *)aHash-(u32 *)aPgno;
       aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
       iZero++;
   

@@ -4201,7 +4201,7 @@ int sqlite3PagerSharedLock(Pager *pPager){
       ** detected.  The chance of an undetected change is so small that
       ** it can be neglected.
       */
-      int nPage;
+      int nPage = 0;
       char dbFileVers[sizeof(pPager->dbFileVers)];
       sqlite3PagerPagecount(pPager, &nPage);
 

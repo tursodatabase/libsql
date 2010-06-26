@@ -37,11 +37,17 @@
 */
 static int noopMutexInit(void){ return SQLITE_OK; }
 static int noopMutexEnd(void){ return SQLITE_OK; }
-static sqlite3_mutex *noopMutexAlloc(int id){ return (sqlite3_mutex*)8; }
-static void noopMutexFree(sqlite3_mutex *p){ return; }
-static void noopMutexEnter(sqlite3_mutex *p){ return; }
-static int noopMutexTry(sqlite3_mutex *p){ return SQLITE_OK; }
-static void noopMutexLeave(sqlite3_mutex *p){ return; }
+static sqlite3_mutex *noopMutexAlloc(int id){ 
+  UNUSED_PARAMETER(id);
+  return (sqlite3_mutex*)8; 
+}
+static void noopMutexFree(sqlite3_mutex *p){ UNUSED_PARAMETER(p); return; }
+static void noopMutexEnter(sqlite3_mutex *p){ UNUSED_PARAMETER(p); return; }
+static int noopMutexTry(sqlite3_mutex *p){
+  UNUSED_PARAMETER(p);
+  return SQLITE_OK;
+}
+static void noopMutexLeave(sqlite3_mutex *p){ UNUSED_PARAMETER(p); return; }
 
 sqlite3_mutex_methods const *sqlite3NoopMutex(void){
   static const sqlite3_mutex_methods sMutex = {
