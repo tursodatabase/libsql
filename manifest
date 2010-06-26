@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Suppress\sa\scouple\suninitialized\svariable\swarnings.
-D 2010-06-26T20:00:54
+C Fix\stwo\sasserts\son\sthe\sscratch\sallocator\sto\sallow\sfor\sup\sto\stwo\soutstanding\nscratch\sallocations\sper\sthread.
+D 2010-06-26T20:25:31
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c a667105394a7e7d173727b96affd35f65b28e608
-F src/malloc.c a08f16d134f0bfab6b20c3cd142ebf3e58235a6a
+F src/malloc.c 09c3777bf733a387bec6aa344e455eb4e8ecf47e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
@@ -830,14 +830,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6e469b63fab3cd63b23110aaceccfed0587c6a87
-R f19744d44e83a56d0757a0d7ef8f0ac1
+P 29571e228cc85f7768c3ad57d0c7af96b5a54983
+R 00c2bd7be8afec6a59e72273f1ab30d7
 U drh
-Z 3036ef0769593a4e1a46673060ced0e2
+Z c4f982247ffd1c88f48964d76577348b
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMJlx4oxKgR168RlERAuBYAJ9WkkjMIgkcn6fHBpcilaFS4a0qrQCfTpQr
-o0q3NRNiRbFh9yLnn60i+gc=
-=97YZ
+iD8DBQFMJmI+oxKgR168RlERAoSpAJ4l+KyJaanezMkkYJxgloKn2XhHHACaA8eh
+0xUkb3C+vMD00reqw7dY0CA=
+=BMJ5
 -----END PGP SIGNATURE-----
