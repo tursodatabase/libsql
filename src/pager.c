@@ -5280,10 +5280,11 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   if( NEVER(pPager->errCode) ) return pPager->errCode;
 
   /* This function should not be called if the pager is not in at least
-  ** PAGER_RESERVED state. And indeed SQLite never does this. But it is
-  ** nice to have this defensive test here anyway.
+  ** PAGER_RESERVED state. **FIXME**: Make it so that this test always
+  ** fails - make it so that we never reach this point if we do not hold
+  ** all necessary locks.
   */
-  if( NEVER(pPager->state<PAGER_RESERVED) ) return SQLITE_ERROR;
+  if( pPager->state<PAGER_RESERVED ) return SQLITE_ERROR;
 
   /* An optimization. If the database was not actually modified during
   ** this transaction, the pager is running in exclusive-mode and is
