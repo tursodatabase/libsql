@@ -4857,17 +4857,18 @@ int sqlite3PagerWrite(DbPage *pDbPage){
     pg1 = ((pPg->pgno-1) & ~(nPagePerSector-1)) + 1;
 
     rc = sqlite3PagerPagecount(pPager, (int *)&nPageCount);
-    if( rc ) return rc;
-    if( pPg->pgno>nPageCount ){
-      nPage = (pPg->pgno - pg1)+1;
-    }else if( (pg1+nPagePerSector-1)>nPageCount ){
-      nPage = nPageCount+1-pg1;
-    }else{
-      nPage = nPagePerSector;
+    if( rc==SQLITE_OK ){
+      if( pPg->pgno>nPageCount ){
+        nPage = (pPg->pgno - pg1)+1;
+      }else if( (pg1+nPagePerSector-1)>nPageCount ){
+        nPage = nPageCount+1-pg1;
+      }else{
+        nPage = nPagePerSector;
+      }
+      assert(nPage>0);
+      assert(pg1<=pPg->pgno);
+      assert((pg1+nPage)>pPg->pgno);
     }
-    assert(nPage>0);
-    assert(pg1<=pPg->pgno);
-    assert((pg1+nPage)>pPg->pgno);
 
     for(ii=0; ii<nPage && rc==SQLITE_OK; ii++){
       Pgno pg = pg1+ii;

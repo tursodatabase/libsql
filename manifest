@@ -1,5 +1,5 @@
-C When\ssynchronous=NORMAL,\suse\sthe\ssame\sjournal\sfile\sformat\sas\swith\ssynchronous=FULL\s(i.e.\smultiple\sjournal\sheaders\swithin\sthe\sone\sjournal).\sFix\sfor\s[d11f09d36e].
-D 2010-06-26T15:42:34
+C Fix\sa\scase\swhere\sthe\sdoNotSyncSpill\sflag\smay\sremain\spermanently\sset\sfollowing\saIO\serror.
+D 2010-06-26T17:15:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 4b03e5a8a353b51af64ba11ffec85160818b4d89
 F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
-F src/pager.c db0de9e04795c43a5fbedb0472a78421d295a2e2
+F src/pager.c 926ca1019334d53e2c0cf9e44d32ad4564cf8948
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -826,7 +826,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bfd563c4714d86805fa09ce9f4f807e5d502a99b
-R 62f97e4de0e91c38030c931babbba997
+P 2eaf5ee0d9338de8a77fb3e06ad2f2b0daa6fcbe
+R e260e1abd33bd4071d904573555c1cd1
 U dan
-Z 9480f3d1537574931a028c718842710f
+Z c6f4d6d31a651c819ae2c4f1cd30dd52
