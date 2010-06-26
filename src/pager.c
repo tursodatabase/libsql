@@ -4838,7 +4838,7 @@ int sqlite3PagerWrite(DbPage *pDbPage){
   if( nPagePerSector>1 ){
     Pgno nPageCount;          /* Total number of pages in database file */
     Pgno pg1;                 /* First page of the sector pPg is located on. */
-    int nPage;                /* Number of pages starting at pg1 to journal */
+    int nPage = 0;            /* Number of pages starting at pg1 to journal */
     int ii;                   /* Loop counter */
     int needSync = 0;         /* True if any page has PGHDR_NEED_SYNC */
 

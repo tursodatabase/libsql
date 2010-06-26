@@ -1348,7 +1348,7 @@ static void walMergesort(
   int nMerge;                     /* Number of elements in list aMerge */
   ht_slot *aMerge;                /* List to be merged */
   int iList;                      /* Index into input list */
-  int iSub;                       /* Index into aSub array */
+  int iSub = 0;                   /* Index into aSub array */
   struct Sublist aSub[13];        /* Array of sub-lists */
 
   memset(aSub, 0, sizeof(aSub));
