@@ -1,5 +1,5 @@
-C Further\stest\scases\sfor\spager1.test\sand\spagerfault.test.
-D 2010-06-25T19:09:48
+C When\ssynchronous=NORMAL,\suse\sthe\ssame\sjournal\sfile\sformat\sas\swith\ssynchronous=FULL\s(i.e.\smultiple\sjournal\sheaders\swithin\sthe\sone\sjournal).\sFix\sfor\s[d11f09d36e].
+D 2010-06-26T15:42:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c 4b03e5a8a353b51af64ba11ffec85160818b4d89
 F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
-F src/pager.c edf1f8b02b5c106bd3a3add0d06f28859195a0f8
+F src/pager.c db0de9e04795c43a5fbedb0472a78421d295a2e2
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -534,14 +534,15 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test dfb695c91652559302530319cccb608c4ed23a59
+F test/pager1.test 18d3546658573ed7fffd32f482f7447f814f16d7
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test d90859967eda59b53074498846d142a81d7e29ff
+F test/pagerfault.test a6b0ef0f9e678aea5a649c78efee284516abaf83
+F test/pagerfault2.test 1287f123bd5d20452113739ed7755fd254e502f1
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 708a2e3ac5451c45189546a5f3814937ca2aab97
+F test/permutations.test 81d93c4650073c332f9e4406e4b5d1e7f52c097f
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -825,7 +826,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4a7fd91b7ab2c5d21fbac7f6f123820c8f4ec7f6
-R ecb04b890fe63f676fa227ca5f46f9c3
+P bfd563c4714d86805fa09ce9f4f807e5d502a99b
+R 62f97e4de0e91c38030c931babbba997
 U dan
-Z 46acbd8eac91574d70d09df9d19b8578
+Z 9480f3d1537574931a028c718842710f

@@ -23,6 +23,8 @@ proc a_string {n} {
 }
 db func a_string a_string
 
+if 1 {
+
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back a hot-journal file.
 #
@@ -421,6 +423,12 @@ do_faultsim_test pagerfault-8 -prep {
   faultsim_integrity_check
 }
 
+#-------------------------------------------------------------------------
+# This test case is specially designed so that during a savepoint 
+# rollback, a new cache entry must be allocated (see comments surrounding
+# the call to sqlite3PagerAcquire() from within pager_playback_one_page()
+# for details). Test the effects of injecting an OOM at this point.
+#
 do_test pagerfault-9-pre1 {
   faultsim_delete_and_reopen
   execsql {
@@ -435,8 +443,7 @@ do_test pagerfault-9-pre1 {
   }
   faultsim_save_and_close
 } {}
-
-do_faultsim_test pagerfault-9 -prep {
+do_faultsim_test pagerfault-9.1 -prep {
   faultsim_restore_and_reopen
   execsql { 
     BEGIN;
@@ -462,5 +469,80 @@ do_faultsim_test pagerfault-9 -prep {
     error "Content looks no good... ($sl)" 
   }
 }
+
+#-------------------------------------------------------------------------
+# Test fault injection with a temporary database file.
+#
+do_faultsim_test pagerfault-10 -prep {
+  sqlite3 db ""
+  db func a_string a_string;
+  execsql {
+    PRAGMA cache_size = 10;
+    BEGIN;
+      CREATE TABLE xx(a, b, UNIQUE(a, b));
+      INSERT INTO xx VALUES(a_string(200), a_string(200));
+      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+    COMMIT;
+  }
+} -body {
+  execsql { UPDATE xx SET a = a_string(300) }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+  faultsim_integrity_check
+}
+
+}
+
+#-------------------------------------------------------------------------
+# Test fault injection with transaction savepoints (savepoints created
+# when a SAVEPOINT command is executed outside of any other savepoint
+# or transaction context).
+#
+do_test pagerfault-9-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string;
+  execsql {
+    PRAGMA auto_vacuum = on;
+    CREATE TABLE t1(x UNIQUE);
+    CREATE TABLE t2(y UNIQUE);
+    CREATE TABLE t3(z UNIQUE);
+    BEGIN;
+      INSERT INTO t1 VALUES(a_string(202));
+      INSERT INTO t2 VALUES(a_string(203));
+      INSERT INTO t3 VALUES(a_string(204));
+      INSERT INTO t1 SELECT a_string(202) FROM t1;
+      INSERT INTO t1 SELECT a_string(203) FROM t1;
+      INSERT INTO t1 SELECT a_string(204) FROM t1;
+      INSERT INTO t1 SELECT a_string(205) FROM t1;
+      INSERT INTO t2 SELECT a_string(length(x)) FROM t1;
+      INSERT INTO t3 SELECT a_string(length(x)) FROM t1;
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-11 -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA cache_size = 10 }
+} -body {
+  execsql {
+    SAVEPOINT trans;
+      UPDATE t2 SET y = y||'2';
+      INSERT INTO t3 SELECT * FROM t2;
+      DELETE FROM t1;
+    ROLLBACK TO trans;
+    UPDATE t1 SET x = x||'3';
+    INSERT INTO t2 SELECT * FROM t1;
+    DELETE FROM t3;
+    RELEASE trans;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
 
 finish_test

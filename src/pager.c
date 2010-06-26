@@ -3550,8 +3550,9 @@ static int pagerStress(void *p, PgHdr *pPg){
   
     /* Sync the journal file if required. */
     if( pPg->flags&PGHDR_NEED_SYNC ){
+      assert( !pPager->noSync );
       rc = syncJournal(pPager);
-      if( rc==SQLITE_OK && pPager->fullSync && 
+      if( rc==SQLITE_OK && 
         !(pPager->journalMode==PAGER_JOURNALMODE_MEMORY) &&
         !(sqlite3OsDeviceCharacteristics(pPager->fd)&SQLITE_IOCAP_SAFE_APPEND)
       ){

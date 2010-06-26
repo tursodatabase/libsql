@@ -194,6 +194,9 @@ do_multiclient_test tn {
 #
 # pager1-3.1.2.*: Force a savepoint rollback to cause the database file
 #                 to grow.
+#
+# pager1-3.1.3.*: Use a journal created in synchronous=off mode as part
+#                 of a savepoint rollback.
 # 
 do_test pager1-3.1.1 {
   faultsim_delete_and_reopen
@@ -228,38 +231,75 @@ do_execsql_test pager1-3.4 { SELECT * FROM counter } {3 0}
 do_execsql_test pager1-3.5 { SELECT a FROM t1 } {1 2 3}
 do_execsql_test pager1-3.6 { COMMIT } {}
 
-do_test pager1-3.2.1 {
-  faultsim_delete_and_reopen
-  db func a_string a_string
-  execsql {
-    PRAGMA auto_vacuum = 2;
-    PRAGMA cache_size = 10;
-    CREATE TABLE z(x INTEGER PRIMARY KEY, y);
+foreach {tn sql tcl} {
+  9  { PRAGMA synchronous = NORMAL } { }
+
+  7  { PRAGMA synchronous = NORMAL } {
+    testvfs tv -default 1
+    tv devchar safe_append
+  }
+  8  { PRAGMA synchronous = FULL } { }
+  10 { PRAGMA synchronous = OFF } { }
+  11 { PRAGMA synchronous = FULL ; PRAGMA fullfsync = 1 } { }
+} {
+  do_test pager1-3.$tn.1 {
+    eval $tcl
+    faultsim_delete_and_reopen
+    db func a_string a_string
+    execsql $sql
+    execsql {
+      PRAGMA auto_vacuum = 2;
+      PRAGMA cache_size = 10;
+      CREATE TABLE z(x INTEGER PRIMARY KEY, y);
+      BEGIN;
+        INSERT INTO z VALUES(NULL, a_string(800));
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   2
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   4
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   8
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  16
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  32
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  64
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 128
+        INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 256
+      COMMIT;
+    }
+    execsql { PRAGMA auto_vacuum }
+  } {2}
+  do_execsql_test pager1-3.$tn.2 {
     BEGIN;
       INSERT INTO z VALUES(NULL, a_string(800));
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   2
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   4
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --   8
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  16
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  32
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     --  64
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 128
-      INSERT INTO z SELECT NULL, a_string(800) FROM z;     -- 256
+      INSERT INTO z VALUES(NULL, a_string(800));
+      SAVEPOINT one;
+        UPDATE z SET y = NULL WHERE x>256;
+        PRAGMA incremental_vacuum;
+        SELECT count(*) FROM z WHERE x < 100;
+      ROLLBACK TO one;
     COMMIT;
-  }
-  execsql { PRAGMA auto_vacuum }
-} {2}
-do_execsql_test pager1-3.2.2 {
-  BEGIN;
-    INSERT INTO z VALUES(NULL, a_string(800));
-    INSERT INTO z VALUES(NULL, a_string(800));
+  } {99}
+
+  do_execsql_test pager1-3.$tn.3 {
+    BEGIN;
+      SAVEPOINT one;
+        UPDATE z SET y = y||x;
+      ROLLBACK TO one;
+    COMMIT;
+    SELECT count(*) FROM z;
+  } {258}
+
+  do_execsql_test pager1-3.$tn.4 {
     SAVEPOINT one;
-      DELETE FROM z WHERE x>256;
-      PRAGMA incremental_vacuum;
-      SELECT count(*) FROM z WHERE x < 100;
+      UPDATE z SET y = y||x;
     ROLLBACK TO one;
-  COMMIT;
-} {99}
+  } {}
+  do_execsql_test pager1-3.$tn.5 {
+    SELECT count(*) FROM z;
+    RELEASE one;
+    PRAGMA integrity_check;
+  } {258 ok}
+
+  db close
+  catch { tv delete }
+}
 
 #-------------------------------------------------------------------------
 # Hot journal rollback related test cases.
