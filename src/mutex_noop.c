@@ -200,7 +200,7 @@ sqlite3_mutex_methods const *sqlite3NoopMutex(void){
 */
 #ifdef SQLITE_MUTEX_NOOP
 sqlite3_mutex_methods const *sqlite3DefaultMutex(void){
-  return sqliteNoopMutex();
+  return sqlite3NoopMutex();
 }
 #endif /* SQLITE_MUTEX_NOOP */
 #endif /* SQLITE_MUTEX_OMIT */

@@ -1671,7 +1671,7 @@ int sqlite3WalClose(
 ** If the checksum cannot be verified return non-zero. If the header
 ** is read successfully and the checksum verified, return zero.
 */
-int walIndexTryHdr(Wal *pWal, int *pChanged){
+static int walIndexTryHdr(Wal *pWal, int *pChanged){
   u32 aCksum[2];                  /* Checksum on the header content */
   WalIndexHdr h1, h2;             /* Two copies of the header content */
   WalIndexHdr volatile *aHdr;     /* Header in shared memory */
