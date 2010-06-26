@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remove\sa\sNEVER()\sin\spager\sthat\scan\sin\sfact\sbe\sreached\sin\sobscure\sfailure\ncases.
-D 2010-06-26T19:02:34
+C Add\stest\sfile\stkt-d11f09d36e.test.
+D 2010-06-26T19:03:30
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -638,6 +635,7 @@ F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
+F test/tkt-d11f09d36e.test a08ecb8a9f05f609890ef5246a58a5987c8a54b0
 F test/tkt-d82e3f3721.test 731359dfdcdb36fea0559cd33fec39dd0ceae8e6
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
 F test/tkt-f973c7ac31.test 1da0ed15ec2c7749fb5ce2828cd69d07153ad9f4
@@ -829,14 +827,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 56c7d111bf7013be95a4c2a657a4861eee91db91
-R d3e536e677793dc4a2d6a3e72b49ed5c
-U drh
-Z 3a3341ce7f6b879feb63d940af647551
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMJk7NoxKgR168RlERAtsmAJsFB8BshxWkpEe/vHKKE3VzJeSzBACeLGMB
-KYcDVbjYliWmZ/AC8XpsXyw=
-=Hcc0
------END PGP SIGNATURE-----
+P 42b8bd1c70d8dbbc4a59e2fdee8654c4fe84f979
+R 97774bf066bbd0310ef632271faaf68f
+U dan
+Z 51a647aba651ede5c820d21b44089120
