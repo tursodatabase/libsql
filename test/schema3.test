@@ -80,6 +80,12 @@ do_multiclient_test tn {
           DROP TRIGGER IF EXISTS tr3;
           CREATE TRIGGER tr3 AFTER INSERT ON t7 BEGIN SELECT 1, 2, 3 ; END 
     }
+
+    22  { CREATE TABLE t8(a, b) }       {
+         CREATE TRIGGER tr4 AFTER UPDATE OF a ON t8 BEGIN
+           SELECT 1, 2, 3;
+         END;
+    }
   } {
     do_test schema3-1.$tn.$tn2 {
       sql1 $c1

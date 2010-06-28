@@ -1,5 +1,5 @@
-C Currently,\sif\sSQLite\scannot\sfind\sa\stable\sor\sindex\sreferred\sto\sby\sa\squery,\sit\sreloads\sthe\sdatabase\sschema\sfrom\sdisk\sto\ssee\sif\sthe\stable\sor\sindex\shas\sbeen\sadded\ssince\sthe\sschema\swas\scached\sin\smemory.\sExtend\sthis\sbehaviour\sto\scolumns\s(which\smay\shave\sbeen\sadded\susing\sALTER\sTABLE)\sand\sfix\ssome\sobscure\scases\srelated\sto\stables\sand\sindexes\s(INDEXED\sBY,\sDROP\sTABLE\setc.).
-D 2010-06-28T10:15:20
+C Remove\sdebugging\scode\sfrom\stest\sscript.
+D 2010-06-28T11:06:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -566,7 +566,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test 76d3948568b2cdc0c13a671cadcae75009b183d6
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
-F test/schema3.test 5d0e3b93bd56dd70be3ca340871cdbe74f812de3
+F test/schema3.test 1bc1008e1f8cb5654b248c55f27249366eb7ed38
 F test/securedel.test 328d2921c0ca49bdd3352e516b0377fc07143254
 F test/select1.test f67ca2dfc05df41c7b86eb32ca409b427a5f43b0
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -636,7 +636,7 @@ F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
-F test/tkt-d11f09d36e.test a08ecb8a9f05f609890ef5246a58a5987c8a54b0
+F test/tkt-d11f09d36e.test fb44f7961aa6d4b632fb7b9768239832210b5fc7
 F test/tkt-d82e3f3721.test 731359dfdcdb36fea0559cd33fec39dd0ceae8e6
 F test/tkt-f777251dc7a.test 6f24c053bc5cdb7e1e19be9a72c8887cf41d5e87
 F test/tkt-f973c7ac31.test 1da0ed15ec2c7749fb5ce2828cd69d07153ad9f4
@@ -828,7 +828,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ec65bbd06bdd3bf16a742c5bb1fab0dce756c01a
-R b9e500f7ddaf53f7185bc0d73d249ff0
+P 4932f22848b3d15a2b6dc5fa2cd69ce19182e2a4
+R 4a625949f25b07f36138336c0af273e0
 U dan
-Z cda19ee0469f27bd539b5c60bd39f17a
+Z 4030868382f7f112c3c45080ad69e4cc

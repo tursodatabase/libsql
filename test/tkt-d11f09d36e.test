@@ -13,10 +13,7 @@
 # been fixed.
 #
 
-#set testdir [file dirname $argv0]
-#source $testdir/tester.tcl
-
-set testdir ../sqlite/test/
+set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
 set a_string_counter 1
