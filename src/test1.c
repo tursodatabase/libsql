@@ -5213,8 +5213,10 @@ int Sqlitetest1_Init(Tcl_Interp *interp){
       (char*)&sqlite3WhereTrace, TCL_LINK_INT);
   Tcl_LinkVar(interp, "sqlite_os_trace",
       (char*)&sqlite3OSTrace, TCL_LINK_INT);
+#ifndef SQLITE_OMIT_WAL
   Tcl_LinkVar(interp, "sqlite_wal_trace",
       (char*)&sqlite3WalTrace, TCL_LINK_INT);
+#endif
 #endif
 #ifndef SQLITE_OMIT_DISKIO
   Tcl_LinkVar(interp, "sqlite_opentemp_count",

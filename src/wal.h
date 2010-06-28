@@ -27,13 +27,14 @@
 # define sqlite3WalRead(v,w,x,y,z)             0
 # define sqlite3WalDbsize(y,z)
 # define sqlite3WalBeginWriteTransaction(y)    0
-# define sqlite3WalEndWRiteTransaction(x)      0
+# define sqlite3WalEndWriteTransaction(x)      0
 # define sqlite3WalUndo(x,y,z)                 0
 # define sqlite3WalSavepoint(y,z)
 # define sqlite3WalSavepointUndo(y,z)          0
 # define sqlite3WalFrames(u,v,w,x,y,z)         0
 # define sqlite3WalCheckpoint(u,v,w,x)         0
 # define sqlite3WalCallback(z)                 0
+# define sqlite3WalExclusiveMode(y,z)          0
 #else
 
 #define WAL_SAVEPOINT_NDATA 4

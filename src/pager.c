@@ -221,7 +221,9 @@ struct PagerSavepoint {
   Bitvec *pInSavepoint;        /* Set of pages in this savepoint */
   Pgno nOrig;                  /* Original number of pages in file */
   Pgno iSubRec;                /* Index of first record in sub-journal */
+#ifndef SQLITE_OMIT_WAL
   u32 aWalData[WAL_SAVEPOINT_NDATA];        /* WAL savepoint context */
+#endif
 };
 
 /*
