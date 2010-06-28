@@ -495,8 +495,6 @@ do_faultsim_test pagerfault-10 -prep {
   faultsim_integrity_check
 }
 
-}
-
 #-------------------------------------------------------------------------
 # Test fault injection with transaction savepoints (savepoints created
 # when a SAVEPOINT command is executed outside of any other savepoint
@@ -543,6 +541,44 @@ do_faultsim_test pagerfault-11 -prep {
   faultsim_test_result {0 {}}
   faultsim_integrity_check
 }
+
+}
+
+do_test pagerfault-12-pre1 {
+  testvfs ss_layer -default 1
+  ss_layer sectorsize 4096
+  faultsim_delete_and_reopen
+  db func a_string a_string;
+
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = PERSIST;
+    PRAGMA cache_size = 10;
+    BEGIN;
+      CREATE TABLE t1(x, y UNIQUE);
+      INSERT INTO t1 VALUES(a_string(333), a_string(444));
+      INSERT INTO t1 SELECT a_string(333+rowid), a_string(444+rowid) FROM t1;
+      INSERT INTO t1 SELECT a_string(333+rowid), a_string(444+rowid) FROM t1;
+      INSERT INTO t1 SELECT a_string(333+rowid), a_string(444+rowid) FROM t1;
+      INSERT INTO t1 SELECT a_string(333+rowid), a_string(444+rowid) FROM t1;
+      INSERT INTO t1 SELECT a_string(44), a_string(55) FROM t1 LIMIT 13;
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-12 -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA cache_size = 10 }
+  db func a_string a_string;
+} -body {
+  execsql {
+    UPDATE t1 SET x = a_string(length(x)), y = a_string(length(y));
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
 
 
 finish_test
