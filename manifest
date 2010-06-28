@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Make\swalIndexTryHdr()\sa\sprivate\sfunction.\s\sFix\san\sissue\swith\sSQLITE_MUTEX_NOOP.
-D 2010-06-26T22:16:03
+C Currently,\sif\sSQLite\scannot\sfind\sa\stable\sor\sindex\sreferred\sto\sby\sa\squery,\sit\sreloads\sthe\sdatabase\sschema\sfrom\sdisk\sto\ssee\sif\sthe\stable\sor\sindex\shas\sbeen\sadded\ssince\sthe\sschema\swas\scached\sin\smemory.\sExtend\sthis\sbehaviour\sto\scolumns\s(which\smay\shave\sbeen\sadded\susing\sALTER\sTABLE)\sand\sfix\ssome\sobscure\scases\srelated\sto\stables\sand\sindexes\s(INDEXED\sBY,\sDROP\sTABLE\setc.).
+D 2010-06-28T10:15:20
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +116,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c 9806fb4030d0af907cf5cd7d4b9c8fd939eccfef
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
-F src/build.c 9d48f4023d5e3d0a6807f1f531d8d7187d252c57
+F src/build.c 31830208adbd6f97bef2517531ed70954a306fde
 F src/callback.c 01843bdf4b0420fd28046525d150fcd9802931a9
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 51553a859994d01d8bf3500747f66a890c459774
@@ -133,7 +130,7 @@ F src/global.c 3fedfe02f1b2b1f6118455c881d132b804a1f0a7
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c 3a9567687f6b84ab9a41448e3d2ce20424f4743c
+F src/insert.c d9476f23f85a20eea3cc25a4b9f9cbae77a33bf2
 F src/journal.c b0ea6b70b532961118ab70301c00a33089f9315c
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
@@ -169,9 +166,9 @@ F src/pragma.c 423865323a4074f1e0d4ab02af0be014653e8863
 F src/prepare.c fd1398cb1da54385ba5bd68d93928f10d10a1d9c
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
-F src/resolve.c ac5f1a713cd1ae77f08b83cc69581e11bf5ae6f9
+F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c c03d8a0565febcde8c6a12c5d77d065fddae889b
+F src/select.c 4903ff1bbd08b55cbce00ea43c645530de41b362
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
 F src/sqlite.h.in 301476d8556cbb1c5d4bc906370b2dafe4d98a44
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
@@ -215,8 +212,8 @@ F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
 F src/test_vfs.c 90d51963dfe2aa28a9408b461cb06f48921be8e8
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
-F src/trigger.c 8927588cb9e6d47f933b53bfe74200fbb504100d
-F src/update.c 9859f2056c7739a1db0d9774ccb6c2f0cee6d1de
+F src/trigger.c 67e95c76d625b92d43409ace771c8e0d02a09ac2
+F src/update.c 19c899c23cd29fd102c9068e0b0ff5b087204beb
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
@@ -569,6 +566,7 @@ F test/savepoint5.test 0735db177e0ebbaedc39812c8d065075d563c4fd
 F test/savepoint6.test 76d3948568b2cdc0c13a671cadcae75009b183d6
 F test/schema.test 8f7999be894260f151adf15c2c7540f1c6d6a481
 F test/schema2.test 906408621ea881fdb496d878b1822572a34e32c5
+F test/schema3.test 5d0e3b93bd56dd70be3ca340871cdbe74f812de3
 F test/securedel.test 328d2921c0ca49bdd3352e516b0377fc07143254
 F test/select1.test f67ca2dfc05df41c7b86eb32ca409b427a5f43b0
 F test/select2.test 352480e0e9c66eda9c3044e412abdf5be0215b56
@@ -830,14 +828,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e82d008eaffb5522080cad6c69c1b194b78eadbd
-R 4571797951f4ab0ab98573ca3fe9c307
-U drh
-Z bf87b4bd0a568f47cbc6bbfb396cf7d8
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMJnwmoxKgR168RlERAnB3AJ9WmFDjS4Mogutm6tqMf4TXdZMPZQCfcfy3
-WxCV4jYOGkRTKW5Witg+E/w=
-=dfOb
------END PGP SIGNATURE-----
+P ec65bbd06bdd3bf16a742c5bb1fab0dce756c01a
+R b9e500f7ddaf53f7185bc0d73d249ff0
+U dan
+Z cda19ee0469f27bd539b5c60bd39f17a

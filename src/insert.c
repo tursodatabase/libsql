@@ -727,7 +727,7 @@ void sqlite3Insert(
         }else{
           sqlite3ErrorMsg(pParse, "table %S has no column named %s",
               pTabList, 0, pColumn->a[i].zName);
-          pParse->nErr++;
+          pParse->checkSchema = 1;
           goto insert_cleanup;
         }
       }

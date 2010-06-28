@@ -2614,6 +2614,7 @@ Index *sqlite3CreateIndex(
     if( j>=pTab->nCol ){
       sqlite3ErrorMsg(pParse, "table %s has no column named %s",
         pTab->zName, zColName);
+      pParse->checkSchema = 1;
       goto exit_create_index;
     }
     pIndex->aiColumn[i] = j;

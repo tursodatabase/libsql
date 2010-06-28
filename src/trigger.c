@@ -496,6 +496,7 @@ void sqlite3DropTrigger(Parse *pParse, SrcList *pName, int noErr){
     if( !noErr ){
       sqlite3ErrorMsg(pParse, "no such trigger: %S", pName, 0);
     }
+    pParse->checkSchema = 1;
     goto drop_trigger_cleanup;
   }
   sqlite3DropTriggerPtr(pParse, pTrigger);

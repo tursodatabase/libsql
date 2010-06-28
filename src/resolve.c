@@ -357,6 +357,7 @@ static int lookupName(
     }else{
       sqlite3ErrorMsg(pParse, "%s: %s", zErr, zCol);
     }
+    pParse->checkSchema = 1;
     pTopNC->nErr++;
   }
 

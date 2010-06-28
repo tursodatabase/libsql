@@ -212,6 +212,7 @@ void sqlite3Update(
         pRowidExpr = pChanges->a[i].pExpr;
       }else{
         sqlite3ErrorMsg(pParse, "no such column: %s", pChanges->a[i].zName);
+        pParse->checkSchema = 1;
         goto update_cleanup;
       }
     }
