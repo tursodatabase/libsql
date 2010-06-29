@@ -473,26 +473,29 @@ do_faultsim_test pagerfault-9.1 -prep {
 #-------------------------------------------------------------------------
 # Test fault injection with a temporary database file.
 #
-do_faultsim_test pagerfault-10 -prep {
-  sqlite3 db ""
-  db func a_string a_string;
-  execsql {
-    PRAGMA cache_size = 10;
-    BEGIN;
-      CREATE TABLE xx(a, b, UNIQUE(a, b));
-      INSERT INTO xx VALUES(a_string(200), a_string(200));
-      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
-      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
-      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
-      INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
-    COMMIT;
+foreach v {a b} {
+  do_faultsim_test pagerfault-10$v -prep {
+    sqlite3 db ""
+    db func a_string a_string;
+    execsql {
+      PRAGMA cache_size = 10;
+      BEGIN;
+        CREATE TABLE xx(a, b, UNIQUE(a, b));
+        INSERT INTO xx VALUES(a_string(200), a_string(200));
+        INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+        INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+        INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+        INSERT INTO xx SELECT a_string(200), a_string(200) FROM xx;
+      COMMIT;
+    }
+  } -body {
+    execsql { UPDATE xx SET a = a_string(300) }
+  } -test {
+    faultsim_test_result {0 {}}
+    if {$::v == "b"} { execsql { PRAGMA journal_mode = TRUNCATE } }
+    faultsim_integrity_check
+    faultsim_integrity_check
   }
-} -body {
-  execsql { UPDATE xx SET a = a_string(300) }
-} -test {
-  faultsim_test_result {0 {}}
-  faultsim_integrity_check
-  faultsim_integrity_check
 }
 
 #-------------------------------------------------------------------------
@@ -542,8 +545,10 @@ do_faultsim_test pagerfault-11 -prep {
   faultsim_integrity_check
 }
 
-}
-
+#-------------------------------------------------------------------------
+# Test fault injection when writing to a database file that resides on
+# a file-system with a sector-size larger than the database page-size.
+#
 do_test pagerfault-12-pre1 {
   testvfs ss_layer -default 1
   ss_layer sectorsize 4096
@@ -579,6 +584,32 @@ do_faultsim_test pagerfault-12 -prep {
   faultsim_integrity_check
 }
 
+
+#-------------------------------------------------------------------------
+#
+do_test pagerfault-13-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string;
+  execsql {
+    PRAGMA journal_mode = PERSIST;
+    BEGIN;
+      CREATE TABLE t1(x, y UNIQUE);
+      INSERT INTO t1 VALUES(a_string(333), a_string(444));
+    COMMIT;
+  }
+  db close
+  file delete -force test.db
+  faultsim_save
+} {}
+do_faultsim_test pagerfault-13 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { CREATE TABLE xx(a, b) }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+}
 
 
 finish_test

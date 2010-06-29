@@ -49,6 +49,15 @@ do_not_use_codec
 #
 # pager1-14.*: Cases specific to "PRAGMA journal_mode=OFF"
 #
+# pager1-15.*: Varying sqlite3_vfs.szOsFile
+#
+# pager1-16.*: Varying sqlite3_vfs.mxPathname
+#
+# pager1-17.*: Tests related to "PRAGMA omit_readlock"
+#
+# pager1-18.*: Test that the pager layer responds correctly if the b-tree
+#              requests an invalid page number (due to db corruption).
+#
 
 set a_string_counter 1
 proc a_string {n} {
@@ -358,6 +367,10 @@ foreach {tn sql tcl} {
 # pager1.4.6.*: Test that when rolling back a hot-journal that contains a
 #               master journal pointer, the master journal file is deleted
 #               after all the hot-journals that refer to it are deleted.
+#
+# pager1.4.7.*: Test that if a hot-journal file exists but a client can
+#               open it for reading only, the database cannot be accessed and
+#               SQLITE_CANTOPEN is returned.
 # 
 do_test pager1.4.1.1 {
   faultsim_delete_and_reopen
@@ -635,7 +648,6 @@ testvfs tv -default 1
 tv sectorsize 512
 tv script copy_on_journal_delete
 tv filter xDelete
-set ::mj_filename_length 0
 proc copy_on_journal_delete {method filename args} {
   if {[string match *journal $filename]} faultsim_save 
   return SQLITE_OK
@@ -805,6 +817,43 @@ do_test         pager1.4.6.15 { file exists $::mj_filename }  {0}
 
 db close
 tv delete
+
+testvfs tv -default 1
+tv sectorsize 512
+tv script copy_on_journal_delete
+tv filter xDelete
+proc copy_on_journal_delete {method filename args} {
+  if {[string match *journal $filename]} faultsim_save 
+  return SQLITE_OK
+}
+faultsim_delete_and_reopen
+do_execsql_test pager1.4.7.1 {
+  CREATE TABLE t1(x PRIMARY KEY, y);
+  CREATE INDEX i1 ON t1(y);
+  INSERT INTO t1 VALUES('I',   'one');
+  INSERT INTO t1 VALUES('II',  'four');
+  INSERT INTO t1 VALUES('III', 'nine');
+  BEGIN;
+    INSERT INTO t1 VALUES('IV', 'sixteen');
+    INSERT INTO t1 VALUES('V' , 'twentyfive');
+  COMMIT;
+} {}
+tv filter {}
+db close
+tv delete 
+do_test pager1.4.7.2 {
+  faultsim_restore_and_reopen
+  catch {file attributes test.db-journal -permissions r--------}
+  catch {file attributes test.db-journal -readonly 1}
+  catchsql { SELECT * FROM t1 }
+} {1 {unable to open database file}}
+do_test pager1.4.7.3 {
+  db close
+  catch {file attributes test.db-journal -permissions rw-rw-rw-}
+  catch {file attributes test.db-journal -readonly 0}
+  file delete test.db-journal
+  file exists test.db-journal
+} {0}
 
 #-------------------------------------------------------------------------
 # The following tests deal with multi-file commits.
@@ -1055,6 +1104,7 @@ foreach {tn filename} {
     db close
     sqlite3 db $filename
     execsql {
+      PRAGMA auto_vacuum = 1;
       CREATE TABLE x1(x);
       INSERT INTO x1 VALUES('Charles');
       INSERT INTO x1 VALUES('James');
@@ -1378,4 +1428,197 @@ do_execsql_test pager1-14.1.5 {
   SELECT * FROM t1;
 } {1 2 3 4 2 2 4 4}
 
+#-------------------------------------------------------------------------
+# Test opening and closing the pager sub-system with different values
+# for the sqlite3_vfs.szOsFile variable.
+#
+faultsim_delete_and_reopen
+do_execsql_test pager1-15.0 {
+  CREATE TABLE tx(y, z);
+  INSERT INTO tx VALUES('Ayutthaya', 'Beijing');
+  INSERT INTO tx VALUES('London', 'Tokyo');
+} {}
+db close
+for {set i 0} {$i<513} {incr i 3} {
+  testvfs tv -default 1 -szosfile $i
+  sqlite3 db test.db
+  do_execsql_test pager1-15.$i.1 {
+    SELECT * FROM tx;
+  } {Ayutthaya Beijing London Tokyo}
+  db close
+  tv delete
+}
+
+#-------------------------------------------------------------------------
+# Check that it is not possible to open a database file if the full path
+# to the associated journal file will be longer than sqlite3_vfs.mxPathname.
+#
+testvfs tv -default 1
+tv script xOpenCb
+tv filter xOpen
+proc xOpenCb {method filename} {
+  set ::file_len [string length $filename]
+}
+sqlite3 db test.db
+db close
+tv delete
+
+for {set ii [expr $::file_len-5]} {$ii < [expr $::file_len+20]} {incr ii} {
+  testvfs tv -default 1 -mxpathname $ii
+
+  # The length of the full path to file "test.db-journal" is ($::file_len+8).
+  # If the configured sqlite3_vfs.mxPathname value greater than or equal to
+  # this, then the file can be opened. Otherwise, it cannot.
+  #
+  if {$ii >= [expr $::file_len+8]} {
+    set res {0 {}}
+  } else {
+    set res {1 {unable to open database file}}
+  }
+
+  do_test pager1-16.1.$ii {
+    list [catch { sqlite3 db test.db } msg] $msg
+  } $res
+
+  catch {db close}
+  tv delete
+}
+
+#-------------------------------------------------------------------------
+# Test "PRAGMA omit_readlock". 
+#
+#   pager1-17.$tn.1.*: Test that if a second connection has an open 
+#                      read-transaction, it is not usually possible to write 
+#                      the database.
+#
+#   pager1-17.$tn.2.*: Test that if the second connection was opened with
+#                      the SQLITE_OPEN_READONLY flag, and 
+#                      "PRAGMA omit_readlock = 1" is executed before attaching
+#                      the database and opening a read-transaction on it, it is
+#                      possible to write the db.
+#
+#   pager1-17.$tn.3.*: Test that if the second connection was *not* opened with
+#                      the SQLITE_OPEN_READONLY flag, executing 
+#                      "PRAGMA omit_readlock = 1" has no effect.
+#
+do_multiclient_test tn {
+  do_test pager1-17.$tn.1.1 {
+    sql1 { 
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(1, 2);
+    }
+    sql2 {
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2}
+  do_test pager1-17.$tn.1.2 {
+    csql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {1 {database is locked}}
+  do_test pager1-17.$tn.1.3 {
+    sql2 { COMMIT }
+    sql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {}
+
+  do_test pager1-17.$tn.2.1 {
+    code2 {
+      db2 close
+      sqlite3 db2 :memory: -readonly 1
+    }
+    sql2 { 
+      PRAGMA omit_readlock = 1;
+      ATTACH 'test.db' AS two;
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2 3 4}
+  do_test pager1-17.$tn.2.2 { sql1 "INSERT INTO t1 VALUES(5, 6)" } {}
+  do_test pager1-17.$tn.2.3 { sql2 "SELECT * FROM t1" }            {1 2 3 4}
+  do_test pager1-17.$tn.2.4 { sql2 "COMMIT ; SELECT * FROM t1" }   {1 2 3 4 5 6}
+
+  do_test pager1-17.$tn.3.1 {
+    code2 {
+      db2 close
+      sqlite3 db2 :memory:
+    }
+    sql2 { 
+      PRAGMA omit_readlock = 1;
+      ATTACH 'test.db' AS two;
+      BEGIN;
+      SELECT * FROM t1;
+    }
+  } {1 2 3 4 5 6}
+  do_test pager1-17.$tn.3.2 {
+    csql1 { INSERT INTO t1 VALUES(3, 4) }
+  } {1 {database is locked}}
+  do_test pager1-17.$tn.3.3 { sql2 COMMIT } {}
+}
+
+#-------------------------------------------------------------------------
+# Test the pagers response to the b-tree layer requesting illegal page 
+# numbers:
+#
+#   + The locking page,
+#   + Page 0,
+#   + A page with a page number greater than (2^31-1).
+#
+do_test pager1-18.1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql { 
+    PRAGMA page_size = 1024;
+    CREATE TABLE t1(a, b);
+    INSERT INTO t1 VALUES(a_string(500), a_string(200));
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+    INSERT INTO t1 SELECT a_string(500), a_string(200) FROM t1;
+  }
+} {}
+do_test pager1-18.2 {
+  set root [db one "SELECT rootpage FROM sqlite_master"]
+  set lockingpage [expr (0x10000/1024) + 1]
+  execsql {
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_master SET rootpage = $lockingpage;
+  }
+  sqlite3 db2 test.db
+  catchsql { SELECT count(*) FROM t1 } db2
+} {1 {database disk image is malformed}}
+db2 close
+do_test pager1-18.3 {
+  execsql {
+    CREATE TABLE t2(x);
+    INSERT INTO t2 VALUES(a_string(5000));
+  }
+  set pgno [expr ([file size test.db] / 1024)-2]
+  hexio_write test.db [expr ($pgno-1)*1024] 00000000
+  sqlite3 db2 test.db
+  catchsql { SELECT length(x) FROM t2 } db2
+} {1 {database disk image is malformed}}
+db2 close
+do_test pager1-18.4 {
+  hexio_write test.db [expr ($pgno-1)*1024] 90000000
+  sqlite3 db2 test.db
+  catchsql { SELECT length(x) FROM t2 } db2
+} {1 {database disk image is malformed}}
+db2 close
+do_test pager1-18.5 {
+  sqlite3 db ""
+  execsql {
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a, b);
+    PRAGMA writable_schema = 1;
+    UPDATE sqlite_master SET rootpage=5 WHERE tbl_name = 't1';
+    PRAGMA writable_schema = 0;
+    ALTER TABLE t1 RENAME TO x1;
+  }
+  catchsql { SELECT * FROM x1 }
+} {}
+db close
+
 finish_test
+
