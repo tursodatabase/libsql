@@ -4634,30 +4634,19 @@ int sqlite3PagerBegin(Pager *pPager, int exFlag, int subjInMemory){
     ** we might save the work of creating a file if the transaction
     ** ends up being a no-op.
     */
-  }else if( isOpen(pPager->jfd) && pPager->journalOff==0 ){
-    /* This happens when the pager was in exclusive-access mode the last
-    ** time a (read or write) transaction was successfully concluded
-    ** by this connection. Instead of deleting the journal file it was 
-    ** kept open and either was truncated to 0 bytes or its header was
-    ** overwritten with zeros.
-    */
-    assert( pagerUseWal(pPager)==0 );
-    assert( pPager->nRec==0 );
-    assert( pPager->dbOrigSize==0 );
-    assert( pPager->pInJournal==0 );
-    rc = pager_open_journal(pPager);
+
+    if( rc!=SQLITE_OK ){
+      assert( !pPager->dbModified );
+      /* Ignore any IO error that occurs within pager_end_transaction(). The
+      ** purpose of this call is to reset the internal state of the pager
+      ** sub-system. It doesn't matter if the journal-file is not properly
+      ** finalized at this point (since it is not a valid journal file anyway).
+      */
+      pager_end_transaction(pPager, 0);
+    }
   }
 
   PAGERTRACE(("TRANSACTION %d\n", PAGERID(pPager)));
-  if( rc!=SQLITE_OK ){
-    assert( !pPager->dbModified );
-    /* Ignore any IO error that occurs within pager_end_transaction(). The
-    ** purpose of this call is to reset the internal state of the pager
-    ** sub-system. It doesn't matter if the journal-file is not properly
-    ** finalized at this point (since it is not a valid journal file anyway).
-    */
-    pager_end_transaction(pPager, 0);
-  }
   return rc;
 }
 
@@ -4708,7 +4697,6 @@ static int pager_write(PgHdr *pPg){
     ** which means they have acquired the necessary locks but the rollback
     ** journal might not yet be open.
     */
-    assert( pPager->state>PAGER_SHARED );
     rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
     if( rc!=SQLITE_OK ){
       return rc;
