@@ -1,5 +1,5 @@
-C Add\stests\sto\spager1.test\sand\spagerfault.test.
-D 2010-06-29T10:30:24
+C Add\scoverage\stest\scases.\sHave\ssqlite3_backup_step()\stransform\sSQLITE_IOERR_NOMEM\sto\sSQLITE_NOMEM\sbefore\sreturning.
+D 2010-06-30T04:29:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -110,10 +110,10 @@ F src/alter.c a9ff6f14b3935502537e90194b66c7bc79bed317
 F src/analyze.c 3457a2af126eb78f20ad239c225a2c8ed61b78b6
 F src/attach.c 47b230972b52580e3b3bd6ee69e55f3a043b615b
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
-F src/backup.c 3dc89da1da8b948554d5daedab5fec1097188a2d
+F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c 9806fb4030d0af907cf5cd7d4b9c8fd939eccfef
+F src/btree.c ac51d077487df990de502cd0649e486a1a6cc458
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 31830208adbd6f97bef2517531ed70954a306fde
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c ec7c7f7ca224ce2ff58736eebf804b48a75f9946
 F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
-F src/pager.c 57713740025de859972c81104c27d57ed9c551c6
+F src/pager.c c7cf3aa7d9bdb4803bc65a35b1f714fe0a77f55e
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -177,7 +177,7 @@ F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b898ab058f51ee57e6b54aa8de902526a5376959
-F src/test1.c 812467c6cb8af8604e912314b7cd68598a024e79
+F src/test1.c 1ddb761b09342fbf3e81c7027332f2522673a6fc
 F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -534,9 +534,9 @@ F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 28709653e83ce9557a983cce251ff02112d5ecca
+F test/pager1.test 4d83d4ac53cb4a5d71a2edaa1c08e783871a3012
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test e7fd4e54fb362ec16ce3474842ed7af390d88de0
+F test/pagerfault.test 382bc68bfd92342c1d7608b5a2caeb706ca4fb9a
 F test/pagerfault2.test 1287f123bd5d20452113739ed7755fd254e502f1
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -828,7 +828,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6b7e419ddc241f457dd69878f09f5c51c70aa379
-R d8452c9c3029633c6ea47d4358dc9dd2
+P 008513ee6115f8d6f4b4e1428c1c638282b971a3
+R 4d038e637f507e57a7e7904b3d6eb6a6
 U dan
-Z 673ae6c021fa890a23c09b0dc8b30087
+Z ec59b3b431545b36d61a7ff1dc492de7

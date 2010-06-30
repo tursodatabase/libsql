@@ -1585,16 +1585,20 @@ static int getAndInitPage(
   int rc;
   assert( sqlite3_mutex_held(pBt->mutex) );
 
-  if( pgno<=0 || pgno>btreePagecount(pBt) ){
-    return SQLITE_CORRUPT_BKPT;
-  }
-  rc = btreeGetPage(pBt, pgno, ppPage, 0);
-  if( rc==SQLITE_OK ){
-    rc = btreeInitPage(*ppPage);
-    if( rc!=SQLITE_OK ){
-      releasePage(*ppPage);
+  if( pgno>btreePagecount(pBt) ){
+    rc = SQLITE_CORRUPT_BKPT;
+  }else{
+    rc = btreeGetPage(pBt, pgno, ppPage, 0);
+    if( rc==SQLITE_OK ){
+      rc = btreeInitPage(*ppPage);
+      if( rc!=SQLITE_OK ){
+        releasePage(*ppPage);
+      }
     }
   }
+
+  testcase( pgno==0 );
+  assert( pgno!=0 || rc==SQLITE_CORRUPT );
   return rc;
 }
 

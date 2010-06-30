@@ -469,6 +469,9 @@ int sqlite3_backup_step(sqlite3_backup *p, int nPage){
       assert( rc2==SQLITE_OK );
     }
   
+    if( rc==SQLITE_IOERR_NOMEM ){
+      rc = SQLITE_NOMEM;
+    }
     p->rc = rc;
   }
   if( p->pDestDb ){

@@ -2626,7 +2626,7 @@ bad_args:
 }
 
 /*
-** Usage:         test_errstr <err code>
+** Usage:         sqlite3_test_errstr <err code>
 **
 ** Test that the english language string equivalents for sqlite error codes
 ** are sane. The parameter is an integer representing an sqlite error code.

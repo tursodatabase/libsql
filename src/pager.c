@@ -4708,6 +4708,7 @@ static int pager_write(PgHdr *pPg){
     ** which means they have acquired the necessary locks but the rollback
     ** journal might not yet be open.
     */
+    assert( pPager->state>PAGER_SHARED );
     rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
     if( rc!=SQLITE_OK ){
       return rc;

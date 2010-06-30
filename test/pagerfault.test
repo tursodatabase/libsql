@@ -586,6 +586,11 @@ do_faultsim_test pagerfault-12 -prep {
 
 
 #-------------------------------------------------------------------------
+# Test fault injection when SQLite opens a database where the size of the
+# database file is zero bytes but the accompanying journal file is larger
+# than that. In this scenario SQLite should delete the journal file 
+# without rolling it back, even if it is in all other respects a valid
+# hot-journal file.
 #
 do_test pagerfault-13-pre1 {
   faultsim_delete_and_reopen
@@ -609,7 +614,86 @@ do_faultsim_test pagerfault-13 -prep {
   faultsim_test_result {0 {}}
 }
 
+#---------------------------------------------------------------------------
+# Test fault injection into a small backup operation.
+#
+do_test pagerfault-14-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string;
+  execsql {
+    PRAGMA journal_mode = PERSIST;
+    ATTACH 'test.db2' AS two;
+    BEGIN;
+      CREATE TABLE t1(x, y UNIQUE);
+      CREATE TABLE two.t2(x, y UNIQUE);
+      INSERT INTO t1 VALUES(a_string(333), a_string(444));
+      INSERT INTO t2 VALUES(a_string(333), a_string(444));
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-14 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  if {[catch {db backup test.db2} msg]} { error [regsub {.*: } $msg {}] }
+} -test {
+  faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
 }
+
+do_test pagerfault-15-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string;
+  execsql {
+    BEGIN;
+      CREATE TABLE t1(x, y UNIQUE);
+      INSERT INTO t1 VALUES(a_string(11), a_string(22));
+      INSERT INTO t1 VALUES(a_string(11), a_string(22));
+    COMMIT;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-15 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string;
+} -body {
+  db eval { SELECT * FROM t1 LIMIT 1 } {
+    execsql {
+      BEGIN; INSERT INTO t1 VALUES(a_string(333), a_string(555)); COMMIT;
+      BEGIN; INSERT INTO t1 VALUES(a_string(333), a_string(555)); COMMIT;
+    }
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+}
+
+do_test pagerfault-16-pre1 {
+  faultsim_delete_and_reopen
+  execsql { CREATE TABLE t1(x, y UNIQUE) }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-16 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    PRAGMA locking_mode = exclusive;
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(1, 2);
+    INSERT INTO t1 VALUES(3, 4);
+    PRAGMA journal_mode = delete;
+    INSERT INTO t1 VALUES(4, 5);
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(6, 7);
+    PRAGMA journal_mode = persist;
+    INSERT INTO t1 VALUES(8, 9);
+  }
+} -test {
+  faultsim_test_result {0 {exclusive wal delete wal persist}}
+  faultsim_integrity_check
+}
+
 
 
 finish_test
