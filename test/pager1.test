@@ -281,6 +281,8 @@ foreach {tn sql tcl} {
     testvfs tv -default 1
     tv devchar sequential
   }
+  14 { PRAGMA locking_mode = EXCLUSIVE } {
+  }
 } {
   do_test pager1-3.$tn.1 {
     eval $tcl
@@ -1677,6 +1679,84 @@ do_test pager1-19.1 {
     VACUUM;
   }
 } {}
+
+#-------------------------------------------------------------------------
+# Test a couple of special cases that come up while committing 
+# transactions:
+#
+#   pager1-20.1.*: Committing an in-memory database transaction when the 
+#                  database has not been modified at all.
+#
+#   pager1-20.2.*: As above, but with a normal db in exclusive-locking mode.
+#
+#   pager1-20.3.*: Committing a transaction in WAL mode where the database has
+#                  been modified, but all dirty pages have been flushed to 
+#                  disk before the commit.
+#
+do_test pager1-20.1.1 {
+  catch {db close}
+  sqlite3 db :memory:
+  execsql {
+    CREATE TABLE one(two, three);
+    INSERT INTO one VALUES('a', 'b');
+  }
+} {}
+do_test pager1-20.1.2 {
+  execsql {
+    BEGIN EXCLUSIVE;
+    COMMIT;
+  }
+} {}
+
+do_test pager1-20.2.1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA locking_mode = exclusive;
+    PRAGMA journal_mode = persist;
+    CREATE TABLE one(two, three);
+    INSERT INTO one VALUES('a', 'b');
+  }
+} {exclusive persist}
+do_test pager1-20.2.2 {
+  execsql {
+    BEGIN EXCLUSIVE;
+    COMMIT;
+  }
+} {}
+
+do_test pager1-20.3.1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    PRAGMA cache_size = 10;
+    PRAGMA journal_mode = wal;
+    BEGIN;
+      CREATE TABLE t1(x);
+      CREATE TABLE t2(y);
+      INSERT INTO t1 VALUES(a_string(800));
+      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   2 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   4 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*   8 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  16 */
+      INSERT INTO t1 SELECT a_string(800) FROM t1;         /*  32 */
+    COMMIT;
+  }
+} {wal}
+do_test pager1-20.3.2 {
+  proc recursive_select {id} {
+    db eval {SELECT rowid, x FROM t1 WHERE rowid = ($id-1)} {
+      recursive_select $rowid
+    }
+  }
+  execsql {
+    BEGIN;
+    INSERT INTO t2 VALUES('xxxx');
+  }
+  recursive_select 32
+  execsql COMMIT
+} {}
+
+  
 
 finish_test
 

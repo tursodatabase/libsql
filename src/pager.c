@@ -5291,7 +5291,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   if( pPager->dbModified==0 && pPager->exclusiveMode 
    && pPager->journalMode==PAGER_JOURNALMODE_PERSIST
   ){
-    assert( pPager->journalOff==JOURNAL_HDR_SZ(pPager) );
+    assert( pPager->journalOff==JOURNAL_HDR_SZ(pPager) || !pPager->journalOff );
     return SQLITE_OK;
   }
 

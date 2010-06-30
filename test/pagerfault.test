@@ -614,6 +614,9 @@ do_faultsim_test pagerfault-13 -prep {
   faultsim_test_result {0 {}}
 }
 
+}
+
+
 #---------------------------------------------------------------------------
 # Test fault injection into a small backup operation.
 #
@@ -632,12 +635,27 @@ do_test pagerfault-14-pre1 {
   }
   faultsim_save_and_close
 } {}
-do_faultsim_test pagerfault-14 -prep {
+
+do_faultsim_test pagerfault-14a -prep {
   faultsim_restore_and_reopen
 } -body {
   if {[catch {db backup test.db2} msg]} { error [regsub {.*: } $msg {}] }
 } -test {
   faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
+}
+do_faultsim_test pagerfault-14b -prep {
+  faultsim_restore_and_reopen
+  sqlite3 db2 ""
+  db2 eval { PRAGMA page_size = 4096; CREATE TABLE xx(a) }
+} -body {
+  sqlite3_backup B db2 main db main
+  B step 200
+  set rc [B finish]
+  if {[string match SQLITE_IOERR_* $rc]} {set rc SQLITE_IOERR}
+  if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}}
 }
 
 do_test pagerfault-15-pre1 {
@@ -667,7 +685,6 @@ do_faultsim_test pagerfault-15 -prep {
   faultsim_integrity_check
 }
 
-}
 
 do_test pagerfault-16-pre1 {
   faultsim_delete_and_reopen
