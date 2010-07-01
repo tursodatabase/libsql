@@ -614,7 +614,6 @@ do_faultsim_test pagerfault-13 -prep {
   faultsim_test_result {0 {}}
 }
 
-
 #---------------------------------------------------------------------------
 # Test fault injection into a small backup operation.
 #
@@ -645,6 +644,24 @@ do_faultsim_test pagerfault-14b -prep {
   faultsim_restore_and_reopen
   sqlite3 db2 ""
   db2 eval { PRAGMA page_size = 4096; CREATE TABLE xx(a) }
+} -body {
+  sqlite3_backup B db2 main db main
+  B step 200
+  set rc [B finish]
+  if {[string match SQLITE_IOERR_* $rc]} {set rc SQLITE_IOERR}
+  if {$rc != "SQLITE_OK"} { error [sqlite3_test_errstr $rc] }
+  set {} {}
+} -test {
+  faultsim_test_result {0 {}}
+}
+do_faultsim_test pagerfault-14c -prep {
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db2
+  db2 eval { 
+    PRAGMA synchronous = off; 
+    PRAGMA page_size = 4096; 
+    CREATE TABLE xx(a);
+  }
 } -body {
   sqlite3_backup B db2 main db main
   B step 200
@@ -819,8 +836,6 @@ do_faultsim_test pagerfault-18 -prep {
   faultsim_integrity_check
 }
 
-}
-
 do_faultsim_test pagerfault-19a -prep {
   sqlite3 db :memory:
   db func a_string a_string
@@ -875,36 +890,53 @@ do_faultsim_test pagerfault-19b -prep {
   faultsim_test_result {0 {3 5 7}}
 }
 
+#-------------------------------------------------------------------------
+# This tests fault-injection in a special case in the auto-vacuum code.
+#
 do_test pagerfault-20-pre1 {
   faultsim_delete_and_reopen
-  db func a_string a_string
   execsql {
-    CREATE TABLE x1(x, y, z, PRIMARY KEY(y, z));
-    INSERT INTO x1 VALUES(a_string(400), a_string(500), a_string(600));
-    INSERT INTO x1 SELECT a_string(600), a_string(400), a_string(500) FROM x1;
-    INSERT INTO x1 SELECT a_string(500), a_string(600), a_string(400) FROM x1;
-    INSERT INTO x1 SELECT a_string(400), a_string(500), a_string(600) FROM x1;
-    INSERT INTO x1 SELECT a_string(600), a_string(400), a_string(500) FROM x1;
-    INSERT INTO x1 SELECT a_string(500), a_string(600), a_string(400) FROM x1;
-    INSERT INTO x1 SELECT a_string(400), a_string(500), a_string(600) FROM x1;
+    PRAGMA cache_size = 10;
+    PRAGMA auto_vacuum = FULL;
+    CREATE TABLE t0(a, b);
   }
   faultsim_save_and_close
 } {}
 do_faultsim_test pagerfault-20 -prep {
   faultsim_restore_and_reopen
-  db func a_string a_string
 } -body {
   execsql { 
     BEGIN;
-    UPDATE x1 SET z = a_string(300);
-    DELETE FROM x1 WHERE rowid<32;
+      CREATE TABLE t1(a, b);
+      CREATE TABLE t2(a, b);
+      DROP TABLE t1;
     COMMIT;
   }
 } -test {
   faultsim_test_result {0 {}}
-  faultsim_integrity_check
-  set nRow [db one {SELECT count(*) FROM x1}]
-  if {$nRow!=33 && $nRow!=64} {error "Wrong number of rows $nRow"}
 }
+
+do_test pagerfault-21-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA cache_size = 10;
+    CREATE TABLE t0(a PRIMARY KEY, b);
+    INSERT INTO t0 VALUES(1, 2);
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-21 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  db eval { SELECT * FROM t0 LIMIT 1 } {
+    db eval { INSERT INTO t0 SELECT a+1, b FROM t0 }
+    db eval { INSERT INTO t0 SELECT a+2, b FROM t0 }
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+}
+
 
 finish_test

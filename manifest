@@ -1,5 +1,5 @@
-C Add\spager\stest\scases.\sChange\sa\scondition\sin\spager.c\sto\sNEVER().
-D 2010-07-01T15:09:48
+C Add\stests\sto\spager1.test\sand\spagerfault.test.
+D 2010-07-01T19:01:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -535,9 +535,9 @@ F test/notify3.test b923ff67728f363378698fb27b5f41a5a1b4d9e0
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test f00c701b29a37a08f084a0183b4901a3a57e6673
+F test/pager1.test 67de7de48695203bab435eca9e650fb5ec634da6
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test 6d5bf244d171e808e3b642ab830f5cd159af8f7b
+F test/pagerfault.test 6ece6ceb6384e90ec526a65c4f4e8cd9b6dc7d61
 F test/pagerfault2.test 1287f123bd5d20452113739ed7755fd254e502f1
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -829,7 +829,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8e65c0e3dac400f6a0ec3b7494fba62c14ed6182
-R ce36b405629391c76b6369dbfd427fc7
+P a8f6341d3b12d64ef56ed05226e3b4f183b8957d
+R b06840e637f43962c2afd5444d532e11
 U dan
-Z 6dd5024e4de43ce2f67cf29dfaba34f2
+Z fe3e1bcbb9bcaec1df9d747e7acac3b7
