@@ -1,5 +1,5 @@
-C Add\sfurther\stest\scases.\sFix\san\sassert()\sin\spager.c.
-D 2010-06-30T10:36:19
+C Add\spager\stest\scases.\sChange\sa\scondition\sin\spager.c\sto\sNEVER().
+D 2010-07-01T15:09:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c ec7c7f7ca224ce2ff58736eebf804b48a75f9946
 F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
-F src/pager.c 778df1ad25b679e836e480e62767c625448fb6af
+F src/pager.c 19975354882e9ac8d361bb3c1c434fd3aa9b0928
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -177,7 +177,7 @@ F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b898ab058f51ee57e6b54aa8de902526a5376959
-F src/test1.c 1ddb761b09342fbf3e81c7027332f2522673a6fc
+F src/test1.c 5f813ce9d9e9070379ed910d7ea2af0863056be5
 F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -209,7 +209,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c 2291fd22726e499830e9958563e760effaf9e9af
+F src/test_vfs.c 88ca1326c124cc81396dd3ad752018c0e68711df
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 67e95c76d625b92d43409ace771c8e0d02a09ac2
@@ -535,9 +535,9 @@ F test/notify3.test b923ff67728f363378698fb27b5f41a5a1b4d9e0
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test a87a7dffe28d2940fdea2bac3b3354317f358d3f
+F test/pager1.test f00c701b29a37a08f084a0183b4901a3a57e6673
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test 03160cec962526ee46f57e8fb984065fe7748b69
+F test/pagerfault.test 6d5bf244d171e808e3b642ab830f5cd159af8f7b
 F test/pagerfault2.test 1287f123bd5d20452113739ed7755fd254e502f1
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -829,7 +829,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cdf2c5c2dd2e4404ffb85a680d31307afea266eb
-R aeea8d6e6bedd1415172495b05353710
+P 8e65c0e3dac400f6a0ec3b7494fba62c14ed6182
+R ce36b405629391c76b6369dbfd427fc7
 U dan
-Z 2bc1bd3da71e890911d4e52601f27027
+Z 6dd5024e4de43ce2f67cf29dfaba34f2

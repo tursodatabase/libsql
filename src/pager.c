@@ -5963,7 +5963,7 @@ int sqlite3PagerGetJournalMode(Pager *pPager){
 */
 int sqlite3PagerOkToChangeJournalMode(Pager *pPager){
   if( pPager->dbModified ) return 0;
-  if( isOpen(pPager->jfd) && pPager->journalOff>0 ) return 0;
+  if( NEVER(isOpen(pPager->jfd) && pPager->journalOff>0) ) return 0;
   return 1;
 }
 

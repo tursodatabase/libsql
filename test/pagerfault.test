@@ -614,8 +614,6 @@ do_faultsim_test pagerfault-13 -prep {
   faultsim_test_result {0 {}}
 }
 
-}
-
 
 #---------------------------------------------------------------------------
 # Test fault injection into a small backup operation.
@@ -712,5 +710,201 @@ do_faultsim_test pagerfault-16 -prep {
 }
 
 
+#-------------------------------------------------------------------------
+# Test fault injection while changing into and out of WAL mode.
+#
+do_test pagerfault-17-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE t1(a PRIMARY KEY, b);
+    INSERT INTO t1 VALUES(1862, 'Botha');
+    INSERT INTO t1 VALUES(1870, 'Smuts');
+    INSERT INTO t1 VALUES(1866, 'Hertzog');
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-17a -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql {
+    PRAGMA journal_mode = wal;
+    PRAGMA journal_mode = delete;
+  }
+} -test {
+  faultsim_test_result {0 {wal delete}}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-17b -prep {
+  faultsim_restore_and_reopen
+  execsql { PRAGMA synchronous = OFF }
+} -body {
+  execsql {
+    PRAGMA journal_mode = wal;
+    INSERT INTO t1 VALUES(22, 'Clarke');
+    PRAGMA journal_mode = delete;
+  }
+} -test {
+  faultsim_test_result {0 {wal delete}}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-17c -prep {
+  faultsim_restore_and_reopen
+  execsql { 
+    PRAGMA locking_mode = exclusive;
+    PRAGMA journal_mode = wal;
+  }
+} -body {
+  execsql { PRAGMA journal_mode = delete }
+} -test {
+  faultsim_test_result {0 delete}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-17d -prep {
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db
+  execsql { PRAGMA journal_mode = delete }
+  execsql { PRAGMA journal_mode = wal }
+  execsql { INSERT INTO t1 VALUES(99, 'Bradman') } db2
+} -body {
+  execsql { PRAGMA journal_mode = delete }
+} -test {
+  faultsim_test_result {1 {database is locked}}
+  faultsim_integrity_check
+}
+do_faultsim_test pagerfault-17e -prep {
+  faultsim_restore_and_reopen
+  sqlite3 db2 test.db
+  execsql { PRAGMA journal_mode = delete }
+  execsql { PRAGMA journal_mode = wal }
+  set ::chan [launch_testfixture]
+  testfixture $::chan {
+    sqlite3 db test.db
+    db eval { INSERT INTO t1 VALUES(101, 'Latham') }
+  }
+  catch { testfixture $::chan sqlite_abort }
+  catch { close $::chan }
+} -body {
+  execsql { PRAGMA journal_mode = delete }
+} -test {
+  faultsim_test_result {0 delete}
+  faultsim_integrity_check
+}
+
+#-------------------------------------------------------------------------
+# Test fault-injection when changing from journal_mode=persist to 
+# journal_mode=delete (this involves deleting the journal file).
+#
+do_test pagerfault-18-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    CREATE TABLE qq(x);
+    INSERT INTO qq VALUES('Herbert');
+    INSERT INTO qq VALUES('Macalister');
+    INSERT INTO qq VALUES('Mackenzie');
+    INSERT INTO qq VALUES('Lilley');
+    INSERT INTO qq VALUES('Palmer');
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-18 -prep {
+  faultsim_restore_and_reopen
+  execsql {
+    PRAGMA journal_mode = PERSIST;
+    INSERT INTO qq VALUES('Beatty');
+  }
+} -body {
+  execsql { PRAGMA journal_mode = delete }
+} -test {
+  faultsim_test_result {0 delete}
+  faultsim_integrity_check
+}
+
+}
+
+do_faultsim_test pagerfault-19a -prep {
+  sqlite3 db :memory:
+  db func a_string a_string
+  execsql {
+    PRAGMA auto_vacuum = FULL;
+    BEGIN;
+      CREATE TABLE t1(a, b);
+      INSERT INTO t1 VALUES(a_string(5000), a_string(6000));
+    COMMIT;
+  }
+} -body {
+  execsql { 
+    CREATE TABLE t2(a, b);
+    INSERT INTO t2 SELECT * FROM t1; 
+    DELETE FROM t1;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+}
+
+do_test pagerfault-19-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA auto_vacuum = FULL;
+    CREATE TABLE t1(x); INSERT INTO t1 VALUES(1);
+    CREATE TABLE t2(x); INSERT INTO t2 VALUES(2);
+    CREATE TABLE t3(x); INSERT INTO t3 VALUES(3);
+    CREATE TABLE t4(x); INSERT INTO t4 VALUES(4);
+    CREATE TABLE t5(x); INSERT INTO t5 VALUES(5);
+    CREATE TABLE t6(x); INSERT INTO t6 VALUES(6);
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-19b -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { 
+    BEGIN;
+      UPDATE t4 SET x = x+1;
+      UPDATE t6 SET x = x+1;
+      SAVEPOINT one;
+        UPDATE t3 SET x = x+1;
+        SAVEPOINT two;
+          DROP TABLE t2;
+      ROLLBACK TO one;
+    COMMIT;
+    SELECT * FROM t3;
+    SELECT * FROM t4;
+    SELECT * FROM t6;
+  }
+} -test {
+  faultsim_test_result {0 {3 5 7}}
+}
+
+do_test pagerfault-20-pre1 {
+  faultsim_delete_and_reopen
+  db func a_string a_string
+  execsql {
+    CREATE TABLE x1(x, y, z, PRIMARY KEY(y, z));
+    INSERT INTO x1 VALUES(a_string(400), a_string(500), a_string(600));
+    INSERT INTO x1 SELECT a_string(600), a_string(400), a_string(500) FROM x1;
+    INSERT INTO x1 SELECT a_string(500), a_string(600), a_string(400) FROM x1;
+    INSERT INTO x1 SELECT a_string(400), a_string(500), a_string(600) FROM x1;
+    INSERT INTO x1 SELECT a_string(600), a_string(400), a_string(500) FROM x1;
+    INSERT INTO x1 SELECT a_string(500), a_string(600), a_string(400) FROM x1;
+    INSERT INTO x1 SELECT a_string(400), a_string(500), a_string(600) FROM x1;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-20 -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string
+} -body {
+  execsql { 
+    BEGIN;
+    UPDATE x1 SET z = a_string(300);
+    DELETE FROM x1 WHERE rowid<32;
+    COMMIT;
+  }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+  set nRow [db one {SELECT count(*) FROM x1}]
+  if {$nRow!=33 && $nRow!=64} {error "Wrong number of rows $nRow"}
+}
 
 finish_test

@@ -1902,6 +1902,7 @@ static int sqlite_abort(
   char **argv            /* Text of each argument */
 ){
   assert( interp==0 );   /* This will always fail */
+  abort();
   return TCL_OK;
 }
 

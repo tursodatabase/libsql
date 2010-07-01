@@ -190,7 +190,7 @@ static void tvfsShmBarrier(sqlite3_file*);
 static int tvfsShmClose(sqlite3_file*, int);
 
 static sqlite3_io_methods tvfs_io_methods = {
-  2,                            /* iVersion */
+  2,                              /* iVersion */
   tvfsClose,                      /* xClose */
   tvfsRead,                       /* xRead */
   tvfsWrite,                      /* xWrite */
@@ -575,9 +575,18 @@ static int tvfsOpen(
   rc = sqlite3OsOpen(PARENTVFS(pVfs), zName, pFd->pReal, flags, pOutFlags);
   if( pFd->pReal->pMethods ){
     sqlite3_io_methods *pMethods;
-    pMethods = (sqlite3_io_methods *)ckalloc(sizeof(sqlite3_io_methods));
-    memcpy(pMethods, &tvfs_io_methods, sizeof(sqlite3_io_methods));
-    if( ((Testvfs *)pVfs->pAppData)->isNoshm ){
+    int nByte;
+
+    if( pVfs->iVersion>1 ){
+      nByte = sizeof(sqlite3_io_methods);
+    }else{
+      nByte = offsetof(sqlite3_io_methods, xShmOpen);
+    }
+
+    pMethods = (sqlite3_io_methods *)ckalloc(nByte);
+    memcpy(pMethods, &tvfs_io_methods, nByte);
+    pMethods->iVersion = pVfs->iVersion;
+    if( pVfs->iVersion>1 && ((Testvfs *)pVfs->pAppData)->isNoshm ){
       pMethods->xShmOpen = 0;
       pMethods->xShmClose = 0;
       pMethods->xShmLock = 0;
@@ -1300,6 +1309,7 @@ static int testvfs_cmd(
   int isDefault = 0;              /* True if -default is passed */
   int szOsFile = 0;               /* Value passed to -szosfile */
   int mxPathname = -1;            /* Value passed to -mxpathname */
+  int iVersion = 2;               /* Value passed to -iversion */
 
   if( objc<2 || 0!=(objc%2) ) goto bad_args;
   for(i=2; i<objc; i += 2){
@@ -1324,6 +1334,11 @@ static int testvfs_cmd(
     }
     else if( nSwitch>2 && 0==strncmp("-mxpathname", zSwitch, nSwitch) ){
       if( Tcl_GetIntFromObj(interp, objv[i+1], &mxPathname) ){
+        return TCL_ERROR;
+      }
+    }
+    else if( nSwitch>2 && 0==strncmp("-iversion", zSwitch, nSwitch) ){
+      if( Tcl_GetIntFromObj(interp, objv[i+1], &iVersion) ){
         return TCL_ERROR;
       }
     }
@@ -1359,6 +1374,7 @@ static int testvfs_cmd(
   pVfs = (sqlite3_vfs *)ckalloc(sizeof(sqlite3_vfs));
   memcpy(pVfs, &tvfs_vfs, sizeof(sqlite3_vfs));
   pVfs->pAppData = (void *)p;
+  pVfs->iVersion = iVersion;
   pVfs->zName = p->zName;
   pVfs->mxPathname = p->pParent->mxPathname;
   if( mxPathname>=0 && mxPathname<pVfs->mxPathname ){
@@ -1374,7 +1390,7 @@ static int testvfs_cmd(
   return TCL_OK;
 
  bad_args:
-  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT?");
+  Tcl_WrongNumArgs(interp, 1, objv, "VFSNAME ?-noshm BOOL? ?-default BOOL? ?-mxpathname INT? ?-szosfile INT? ?-iversion INT?");
   return TCL_ERROR;
 }
 
