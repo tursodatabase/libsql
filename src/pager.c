@@ -2414,12 +2414,19 @@ static int pagerBeginReadTransaction(Pager *pPager){
 }
 
 /*
-** Check if the *-wal file that corresponds to the database opened by pPager
-** exists. Assuming no error occurs, set *pExists to 1 if the file exists,
-** or 0 otherwise and return SQLITE_OK. If an IO or OOM error occurs, return
+** Check for the existence of or delete the *-wal file that corresponds to
+** the database opened by pPager.
+**
+** When pExists!=NULL, set *pExists to 1 if the *-wal file exists, or 0
+** if the *-wal file does not exist.
+**
+** When pExists==NULL, delete the *-wal file if it exists, or the do
+** nothing if the *-wal file does not exist.
+**
+** Return SQLITE_OK on success. If on an IO or OOM error occurs, return
 ** an SQLite error code.
 */
-static int pagerHasWAL(Pager *pPager, int *pExists){
+static int pagerCheckForOrDeleteWAL(Pager *pPager, int *pExists){
   int rc;                         /* Return code */
   char *zWal;                     /* Name of the WAL file */
 
@@ -2428,7 +2435,11 @@ static int pagerHasWAL(Pager *pPager, int *pExists){
   if( !zWal ){
     rc = SQLITE_NOMEM;
   }else{
-    rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
+    if( pExists ){
+      rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
+    }else{
+      rc = sqlite3OsDelete(pPager->pVfs, zWal, 0);
+    }
     sqlite3_free(zWal);
   }
   return rc;
@@ -2436,22 +2447,38 @@ static int pagerHasWAL(Pager *pPager, int *pExists){
 
 /*
 ** Check if the *-wal file that corresponds to the database opened by pPager
-** exists. If it does, open the pager in WAL mode. Otherwise, if no error
-** occurs, make sure Pager.journalMode is not set to PAGER_JOURNALMODE_WAL.
-** If an IO or OOM error occurs, return an SQLite error code.
+** exists if the database is not empy, or verify that the *-wal file does
+** not exist (by deleting it) if the database file is empty.
+**
+** If the database is not empty and the *-wal file exists, open the pager
+** in WAL mode.  If the database is empty or if no *-wal file exists and
+** if no error occurs, make sure Pager.journalMode is not set to
+** PAGER_JOURNALMODE_WAL.
+**
+** Return SQLITE_OK or an error code.
 **
 ** If the WAL file is opened, also open a snapshot (read transaction).
 **
 ** The caller must hold a SHARED lock on the database file to call this
 ** function. Because an EXCLUSIVE lock on the db file is required to delete 
-** a WAL, this ensures there is no race condition between the xAccess() 
-** below and an xDelete() being executed by some other connection.
+** a WAL on a none-empty database, this ensures there is no race condition 
+** between the xAccess() below and an xDelete() being executed by some 
+** other connection.
 */
 static int pagerOpenWalIfPresent(Pager *pPager){
   int rc = SQLITE_OK;
   if( !pPager->tempFile ){
     int isWal;                    /* True if WAL file exists */
-    rc = pagerHasWAL(pPager, &isWal);
+    int nPage;                    /* Size of the database file */
+    assert( pPager->state>=SHARED_LOCK );
+    rc = sqlite3PagerPagecount(pPager, &nPage);
+    if( rc ) return rc;
+    if( nPage==0 ){
+      rc = pagerCheckForOrDeleteWAL(pPager, 0);
+      isWal = 0;
+    }else{
+      rc = pagerCheckForOrDeleteWAL(pPager, &isWal);
+    }
     if( rc==SQLITE_OK ){
       if( isWal ){
         pager_reset(pPager);
@@ -6071,7 +6098,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
     int logexists = 0;
     rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_SHARED);
     if( rc==SQLITE_OK ){
-      rc = pagerHasWAL(pPager, &logexists);
+      rc = pagerCheckForOrDeleteWAL(pPager, &logexists);
     }
     if( rc==SQLITE_OK && logexists ){
       rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,

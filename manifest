@@ -1,5 +1,8 @@
-C Add\stests\sto\spager1.test\sand\spagerfault.test.
-D 2010-07-01T19:01:56
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C If\syou\sdelete\sa\sdatabase\sfile\sbut\snot\sits\s*-wal\sfile,\sthen\sopen\sthe\sdatabase\n(thus\screating\sa\snew\sempty\sdatabase\sfile)\sthe\s*-wal\sfile\sis\sautomatically\ndeleted.
+D 2010-07-01T19:45:35
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c ec7c7f7ca224ce2ff58736eebf804b48a75f9946
 F src/os_win.c 48f67798969ba983487fed5691059ade7fff2ef7
-F src/pager.c 19975354882e9ac8d361bb3c1c434fd3aa9b0928
+F src/pager.c 2ce3612ab02a87b3c59c30bd412facc0bcc76ee9
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -776,6 +779,7 @@ F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
 F test/wal2.test 9f2c2a00358b1466bc38feda85f105a4fb52f251
 F test/wal3.test bb3bc0be06411c2d147c1d1d636b6208fbe0349d
+F test/wal4.test 640be93f5422df37203aa5e7c06b24fb5e4a2439
 F test/wal_common.tcl 875ee2118cd7b292ba22fb9bfa66a984b5226b13
 F test/walbak.test e5632adde03fbb0533b9928a89468566ef78a710
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
@@ -829,7 +833,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a8f6341d3b12d64ef56ed05226e3b4f183b8957d
-R b06840e637f43962c2afd5444d532e11
-U dan
-Z fe3e1bcbb9bcaec1df9d747e7acac3b7
+P c6e75950928954fbb1590f952e3cdbcb0753b745
+R f7186a46c1dcd52609a2789564f69cd8
+U drh
+Z 3a354030eb2816ac63480d6e68d82e49
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMLPBjoxKgR168RlERAqIFAJ9cSOQ6YZOm/Gu4IvyKKa1xG8xpCgCggbR1
+xxpDAqZSMt9gn5sgaTshVfc=
+=eCFs
+-----END PGP SIGNATURE-----
