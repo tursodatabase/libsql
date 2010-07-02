@@ -1841,7 +1841,7 @@ static void constructAutomaticIndex(
       }
     }
   }
-  assert( n==pLevel->plan.nEq );
+  assert( (u32)n==pLevel->plan.nEq );
 
   /* Add additional columns needed to make the automatic index into
   ** a covering index */
