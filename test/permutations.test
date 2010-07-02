@@ -175,6 +175,7 @@ test_suite "coverage-pager" -description {
   walfault.test
   walbak.test
   journal2.test
+  tkt-9d68c883.test
 } 
 
 

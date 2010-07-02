@@ -1242,6 +1242,7 @@ do_test pager1-9.3.1 {
 } {}
 do_test pager1-9.3.2 {
   sqlite3 db2 test.db2
+
   execsql {
     PRAGMA page_size = 4096;
     PRAGMA synchronous = OFF;
@@ -1260,7 +1261,20 @@ do_test pager1-9.3.3 {
   file size test.db2
 } [file size test.db]
 
-
+do_test pager1-9.4.1 {
+  faultsim_delete_and_reopen
+  sqlite3 db2 test.db2
+  execsql {
+    PRAGMA page_size = 4096;
+    CREATE TABLE t1(a, b);
+    CREATE TABLE t2(a, b);
+  } db2
+  sqlite3_backup B db2 main db main
+  list [B step 10000] [B finish]
+} {SQLITE_DONE SQLITE_OK}
+do_test pager1-9.4.2 {
+  list [file size test.db2] [file size test.db]
+} {0 0}
 
 #-------------------------------------------------------------------------
 # Test that regardless of the value returned by xSectorSize(), the

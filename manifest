@@ -1,5 +1,5 @@
-C Additional\stest\scases\sto\scover\sbranches\sin\spager.c.
-D 2010-07-02T11:27:43
+C Run\stkt-9d68c883.test\salong\swith\sthe\sother\spager.c\scoverage\stests.\sAdd\sa\stest\scase\sto\spager1.test.
+D 2010-07-02T13:49:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -535,7 +535,7 @@ F test/notify3.test b923ff67728f363378698fb27b5f41a5a1b4d9e0
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 4984a90b28abb4dca597b92912558c36ea87350b
+F test/pager1.test 14c8e43287b0f241745cd08fa74631f71303f688
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
 F test/pagerfault.test 743952c5509244a71d66d67bf960d920793bb847
 F test/pagerfault2.test be9088b0daff0e63983138e0bde2311eb734f900
@@ -543,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test e0f281e97b5d0064a04b9ceb48be27c57a0a35b5
+F test/permutations.test 66cd9a3d17753e74a2dc1a791af2ddf5edb08af7
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6ae7617298c70f8e03dd0ed73b8153d4871fb023
-R 83a0c7d4f2d6c19f7630fe52766d7d11
+P eddfb2b4062f8a8b907f0c7bc08a05c16692e900
+R cbcbb94acbf46b2c6e4f187c138fdd3d
 U dan
-Z 7699ffebb24a4e13d73e3bdae384a3cd
+Z f230db57535217f8f5a9d88d4de4baa6
