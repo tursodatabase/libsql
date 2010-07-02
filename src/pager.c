@@ -4724,10 +4724,7 @@ static int pager_write(PgHdr *pPg){
     ** which means they have acquired the necessary locks but the rollback
     ** journal might not yet be open.
     */
-    rc = sqlite3PagerBegin(pPager, 0, pPager->subjInMemory);
-    if( rc!=SQLITE_OK ){
-      return rc;
-    }
+    assert( pPager->state>=RESERVED_LOCK );
     if( pPager->pInJournal==0
      && pPager->journalMode!=PAGER_JOURNALMODE_OFF 
      && !pagerUseWal(pPager)
