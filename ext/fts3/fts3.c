@@ -607,6 +607,9 @@ static int fts3CreateTables(Fts3Table *p){
 ** An sqlite3_exec() callback for fts3TableExists.
 */
 static int fts3TableExistsCallback(void *pArg, int n, char **pp1, char **pp2){
+  UNUSED_PARAMETER(n);
+  UNUSED_PARAMETER(pp1);
+  UNUSED_PARAMETER(pp2);
   *(int*)pArg = 1;
   return 1;
 }
@@ -632,7 +635,7 @@ static void fts3TableExists(
   );    
   rc = sqlite3_exec(db, zSql, fts3TableExistsCallback, &res, 0);
   sqlite3_free(zSql);
-  *pResult = res & 0xff;
+  *pResult = (u8)(res & 0xff);
   if( rc!=SQLITE_ABORT ) *pRc = rc;
 }
 
