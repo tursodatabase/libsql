@@ -910,6 +910,7 @@ static int tvfsShmClose(
   for(ppFd=&pBuffer->pFile; *ppFd!=pFd; ppFd=&((*ppFd)->pNext));
   assert( (*ppFd)==pFd );
   *ppFd = pFd->pNext;
+  pFd->pNext = 0;
 
   if( pBuffer->pFile==0 ){
     int i;

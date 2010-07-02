@@ -1,5 +1,5 @@
-C Do\snot\srun\sthe\stests\sin\snotify3.test\sunless\sthe\sunlock-notify\sAPI\sis\savailable.
-D 2010-07-02T18:58:02
+C Fix\sa\sbug\sin\stest_vfs.c\scausing\san\sassert\sto\sfail.\sChanges\sto\stest\scode\sonly.
+D 2010-07-02T19:04:59
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -209,7 +209,7 @@ F src/test_schema.c 8c06ef9ddb240c7a0fcd31bc221a6a2aade58bf0
 F src/test_server.c bbba05c144b5fc4b52ff650a4328027b3fa5fcc6
 F src/test_tclvar.c f4dc67d5f780707210d6bb0eb6016a431c04c7fa
 F src/test_thread.c aa9919c885a1fe53eafc73492f0898ee6c0a0726
-F src/test_vfs.c 88ca1326c124cc81396dd3ad752018c0e68711df
+F src/test_vfs.c f7e4d92be80bcc885123f0b1733672c71d1708ac
 F src/test_wsd.c 41cadfd9d97fe8e3e4e44f61a4a8ccd6f7ca8fe9
 F src/tokenize.c 25ceb0f0a746ea1d0f9553787f3f0a56853cfaeb
 F src/trigger.c 67e95c76d625b92d43409ace771c8e0d02a09ac2
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 452ccaa9080e42657b5f0908bf40dbd834cd39f6
-R 40887fc29c24ad9456da9ff6516cbd8d
+P 0d7fd6fe9deeddbec8dff1393beed126ae44c0ee
+R b39cd06fbf137c8f12d334c514034846
 U dan
-Z eb8e152669f337310aab0bb2546fe4ea
+Z bf1fb8ff8a6d2977f4a54ef75249d7c6
