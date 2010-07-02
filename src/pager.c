@@ -5302,7 +5302,7 @@ int sqlite3PagerCommitPhaseTwo(Pager *pPager){
   ** fails - make it so that we never reach this point if we do not hold
   ** all necessary locks.
   */
-  if( pPager->state<PAGER_RESERVED ) return SQLITE_ERROR;
+  if( NEVER(pPager->state<PAGER_RESERVED) ) return SQLITE_ERROR;
 
   /* An optimization. If the database was not actually modified during
   ** this transaction, the pager is running in exclusive-mode and is
