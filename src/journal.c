@@ -182,7 +182,12 @@ static struct sqlite3_io_methods JournalFileMethods = {
   0,             /* xCheckReservedLock */
   0,             /* xFileControl */
   0,             /* xSectorSize */
-  0              /* xDeviceCharacteristics */
+  0,             /* xDeviceCharacteristics */
+  0,             /* xShmOpen */
+  0,             /* xShmLock */
+  0,             /* xShmMap */
+  0,             /* xShmBarrier */
+  0              /* xShmClose */
 };
 
 /* 
