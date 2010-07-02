@@ -1431,6 +1431,9 @@ static int winShmOpen(
     */
     if( winShmSystemLock(pShmNode, _SHM_WRLCK, WIN_SHM_DMS, 1)==SQLITE_OK ){
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, 0);
+      if( rc!=SQLITE_OK ){
+        rc = SQLITE_IOERR_SHMOPEN;
+      }
     }
     if( rc==SQLITE_OK ){
       winShmSystemLock(pShmNode, _SHM_UNLCK, WIN_SHM_DMS, 1);
