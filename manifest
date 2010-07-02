@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Add\sa\sNEVER\sto\ssqlite3PagerCommitPhaseTwo()\sbecause\sit\sis\snow\sno\slonger\npossible\sto\sinvoke\sthat\sfunction\swithout\sholding\sa\sRESERVED\slock.
-D 2010-07-02T01:18:12
+C Additional\stest\scases\sto\scover\sbranches\sin\spager.c.
+D 2010-07-02T11:27:43
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -153,7 +150,7 @@ F src/mutex_os2.c 6a62583e374ba3ac1a3fcc0da2bfdac7d3942689
 F src/mutex_unix.c cf84466b4fdd2baa0d5a10bb19f08b2abc1ce42e
 F src/mutex_w32.c 1fe0e735897be20e09dd6f53c3fb516c6b48c0eb
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
-F src/os.c 9c4a2f82a50306a33907678ec0187b6ad1486bfe
+F src/os.c 1b3a1edf20587639d9d88bfebe018f7a6e7ba0ec
 F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
@@ -203,7 +200,7 @@ F src/test_intarray.c d879bbf8e4ce085ab966d1f3c896a7c8b4f5fc99
 F src/test_intarray.h 489edb9068bb926583445cb02589344961054207
 F src/test_journal.c 044c1a53ec4dd6f0dde66727b154cd099f5f34d1
 F src/test_loadext.c df586c27176e3c2cb2e099c78da67bf14379a56e
-F src/test_malloc.c 2842c922b8e8d992aba722214952204ca025b411
+F src/test_malloc.c 4ab85f2b8ae3a237f4e6557b0a641181a19ffab1
 F src/test_mutex.c ce06b59aca168cd8c520b77159a24352a7469bd3
 F src/test_onefile.c fb979cecd57217fd49023ed5468d8c93429c4fbe
 F src/test_osinst.c f1e4194860aa7e2f2ed7375c6b1f23a4290dd98c
@@ -538,15 +535,15 @@ F test/notify3.test b923ff67728f363378698fb27b5f41a5a1b4d9e0
 F test/notnull.test cc7c78340328e6112a13c3e311a9ab3127114347
 F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
-F test/pager1.test 67de7de48695203bab435eca9e650fb5ec634da6
+F test/pager1.test 4984a90b28abb4dca597b92912558c36ea87350b
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test 6ece6ceb6384e90ec526a65c4f4e8cd9b6dc7d61
-F test/pagerfault2.test 1287f123bd5d20452113739ed7755fd254e502f1
+F test/pagerfault.test 743952c5509244a71d66d67bf960d920793bb847
+F test/pagerfault2.test be9088b0daff0e63983138e0bde2311eb734f900
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 81d93c4650073c332f9e4406e4b5d1e7f52c097f
+F test/permutations.test e0f281e97b5d0064a04b9ceb48be27c57a0a35b5
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -833,14 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 95c69dfbddaf4367cd699dfe8fcf8e06030c1f53
-R 930bbf4b4a963aec35ed6b03fae686d4
-U drh
-Z 540bd39ddc7176815db98ecf80c42f23
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMLT5joxKgR168RlERAlVIAJ42G6HI9TMCYeZcCnG5KLimD/q0MwCfUMqn
-uE0Yc+lcE/Y/v45SPR8cU9U=
-=OxES
------END PGP SIGNATURE-----
+P 6ae7617298c70f8e03dd0ed73b8153d4871fb023
+R 83a0c7d4f2d6c19f7630fe52766d7d11
+U dan
+Z 7699ffebb24a4e13d73e3bdae384a3cd

@@ -1359,6 +1359,25 @@ static int test_install_memsys3(
   return TCL_OK;
 }
 
+static int test_vfs_oom_test(
+  void * clientData,
+  Tcl_Interp *interp,
+  int objc,
+  Tcl_Obj *CONST objv[]
+){
+  extern int sqlite3_memdebug_vfs_oom_test;
+  if( objc>2 ){
+    Tcl_WrongNumArgs(interp, 1, objv, "?INTEGER?");
+    return TCL_ERROR;
+  }else if( objc==2 ){
+    int iNew;
+    if( Tcl_GetIntFromObj(interp, objv[1], &iNew) ) return TCL_ERROR;
+    sqlite3_memdebug_vfs_oom_test = iNew;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(sqlite3_memdebug_vfs_oom_test));
+  return TCL_OK;
+}
+
 /*
 ** Register commands with the TCL interpreter.
 */
@@ -1396,6 +1415,7 @@ int Sqlitetest_malloc_Init(Tcl_Interp *interp){
      { "sqlite3_dump_memsys3",       test_dump_memsys3             ,3 },
      { "sqlite3_dump_memsys5",       test_dump_memsys3             ,5 },
      { "sqlite3_install_memsys3",    test_install_memsys3          ,0 },
+     { "sqlite3_memdebug_vfs_oom_test", test_vfs_oom_test          ,0 },
   };
   int i;
   for(i=0; i<sizeof(aObjCmd)/sizeof(aObjCmd[0]); i++){

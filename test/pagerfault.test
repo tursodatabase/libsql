@@ -545,6 +545,9 @@ do_faultsim_test pagerfault-11 -prep {
   faultsim_integrity_check
 }
 
+}
+
+
 #-------------------------------------------------------------------------
 # Test fault injection when writing to a database file that resides on
 # a file-system with a sector-size larger than the database page-size.
@@ -571,7 +574,8 @@ do_test pagerfault-12-pre1 {
   }
   faultsim_save_and_close
 } {}
-do_faultsim_test pagerfault-12 -prep {
+
+do_faultsim_test pagerfault-12a -prep {
   faultsim_restore_and_reopen
   execsql { PRAGMA cache_size = 10 }
   db func a_string a_string;
@@ -583,6 +587,31 @@ do_faultsim_test pagerfault-12 -prep {
   faultsim_test_result {0 {}}
   faultsim_integrity_check
 }
+
+do_test pagerfault-12-pre2 {
+  faultsim_restore_and_reopen
+  execsql {
+    CREATE TABLE t2 AS SELECT * FROM t1 LIMIT 10;
+  }
+  faultsim_save_and_close
+} {}
+do_faultsim_test pagerfault-12b -prep {
+  faultsim_restore_and_reopen
+  db func a_string a_string;
+  execsql { SELECT * FROM t1 }
+} -body {
+  set sql(1) { UPDATE t2 SET x = a_string(280) }
+  set sql(2) { UPDATE t1 SET x = a_string(280) WHERE rowid = 5 }
+
+  db eval { SELECT rowid FROM t1 LIMIT 2 } { db eval $sql($rowid) }
+
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+
+catch { db close }
+ss_layer delete
 
 
 #-------------------------------------------------------------------------
@@ -934,8 +963,6 @@ do_faultsim_test pagerfault-21 -prep {
   }
 } -test {
   faultsim_test_result {0 {}}
-}
-
 }
 
 

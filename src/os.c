@@ -35,7 +35,9 @@
 **
 */
 #if defined(SQLITE_TEST) && (SQLITE_OS_WIN==0)
-  #define DO_OS_MALLOC_TEST(x) if (!x || !sqlite3IsMemJournal(x)) {     \
+int sqlite3_memdebug_vfs_oom_test = 1;
+  #define DO_OS_MALLOC_TEST(x)                                       \
+  if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3IsMemJournal(x))) {  \
     void *pTstAlloc = sqlite3Malloc(10);                             \
     if (!pTstAlloc) return SQLITE_IOERR_NOMEM;                       \
     sqlite3_free(pTstAlloc);                                         \

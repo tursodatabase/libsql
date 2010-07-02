@@ -171,6 +171,7 @@ test_suite "coverage-pager" -description {
   pager1.test
   pager2.test
   pagerfault.test
+  pagerfault2.test
   walfault.test
   walbak.test
   journal2.test
