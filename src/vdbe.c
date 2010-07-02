@@ -5155,6 +5155,7 @@ case OP_Checkpoint: {
 };  
 #endif
 
+#ifndef SQLITE_OMIT_PRAGMA
 /* Opcode: JournalMode P1 P2 P3 * P5
 **
 ** Change the journal mode of database P1 to P3. P3 must be one of the
@@ -5279,7 +5280,8 @@ case OP_JournalMode: {    /* out2-prerelease */
   pOut->enc = SQLITE_UTF8;
   sqlite3VdbeChangeEncoding(pOut, encoding);
   break;
-};  
+};
+#endif /* SQLITE_OMIT_PRAGMA */
 
 #if !defined(SQLITE_OMIT_VACUUM) && !defined(SQLITE_OMIT_ATTACH)
 /* Opcode: Vacuum * * * * *
