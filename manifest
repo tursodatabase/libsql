@@ -1,5 +1,8 @@
-C Changes\sto\sos_win.c\sto\shave\sit\sreturn\ssame\serror\scode\sas\sos_unix.c.
-D 2010-07-02T19:49:38
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Fix\sa\sbuffer\soverrun\sin\sthe\swhere.c.\s\sProblem\sdetected\sby\svalgrind.
+D 2010-07-03T01:44:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -229,7 +232,7 @@ F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/wal.c 737408e8e6f2386e6318cd01dfaa534c45ffe3ed
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 9c642e4f74605039a6881d671e23471e6805322c
+F src/where.c 926c83c6394e132a1c62b6b12ceeba7d55a34c19
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -830,7 +833,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 565ff65c61c85c9b2122b31bd9792692aa1e9cda
-R da14ba65ec280d46099ad324e3b311d2
-U shaneh
-Z 995cb31c85f10b4e6d92cd3197cabb46
+P 33b6f069d8059903312282962181839ff983e5c4
+R 8440a61d09d2b3af18cf3388d8d81114
+U drh
+Z 1af09e52711701599d89cedff91313ab
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMLpYBoxKgR168RlERAsDcAJ4nEo/I1o9EXuqw+DXEFtpRKTUMoACfejOH
+Txx3nllLPClmlvc7IlkNR2w=
+=Vcnx
+-----END PGP SIGNATURE-----
