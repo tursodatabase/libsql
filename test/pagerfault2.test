@@ -22,6 +22,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
+if {[permutation] == "inmemory_journal"} {
+  finish_test
+  return
+}
+
 sqlite3_memdebug_vfs_oom_test 0
 
 set a_string_counter 1

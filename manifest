@@ -1,5 +1,5 @@
-C Fix\sa\sbug\sin\sthe\spermutations.test\sscript.
-D 2010-07-03T13:59:01
+C Further\schanges\sto\stest\sscripts\sso\sthat\sthe\s"inmemory_journal"\spermutation\sworks.
+D 2010-07-03T16:37:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -466,7 +466,7 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/join6.test bf82cf3f979e9eade83ad0d056a66c5ed71d1901
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/journal2.test a08ea6545d987385e7cbb1d4e7dc2eaacd83b00b
+F test/journal2.test c59fec987580f74b94aa0b98f7f2402302424ba5
 F test/jrnlmode.test 17881937be86841ad80431699222bf84aa01172a
 F test/jrnlmode2.test a19e28de1a6ec898067e46a122f1b71c9323bf00
 F test/jrnlmode3.test cfcdb12b90e640a23b92785a002d96c0624c8710
@@ -486,7 +486,7 @@ F test/lock5.test 6b1f78f09ad1522843dad571b76b321e6f439bf7
 F test/lock6.test 8df56060f396151777390982422c800d026e1722
 F test/lock7.test 64006c84c1c616657e237c7ad6532b765611cf64
 F test/lock_common.tcl e7013c6208f5fa818735c324eb0249b4c0f317cf
-F test/lookaside.test 1dd350dc6dff015c47c07fcc5a727a72fc5bae02
+F test/lookaside.test 382e7bc2fab23d902c8eafb1b9ed7ababfff75a6
 F test/main.test 2be2352ac77ac5b238c6337a5469aeeef57677e6
 F test/make-where7.tcl 05c16b5d4f5d6512881dfec560cb793915932ef9
 F test/malloc.test 927e6c8668a1d48c23aa6189bda02aff5a1b83de
@@ -537,8 +537,8 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test 1fc67606e4c2e9cef17aa0c6f6fceae0fffaa9f3
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test 17e51d1570c00df4a1902e6d500387017c87e74a
-F test/pagerfault2.test 2d2d4373b1365d693ba185323d0766feeacdb4dd
+F test/pagerfault.test 7d16f91a88e79c369d59b019615f3472297213f9
+F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
@@ -782,7 +782,7 @@ F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
-F test/walfault.test c2b524299dede269282a0795e11396cc446ca9af
+F test/walfault.test 05c470688d742688e455dd56816bd6bcffa298f8
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
 F test/walmode.test cfca1207d725fb5bc25b3b9f9a7053c0277cad4a
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 622378dbe3941f06c717c1e272cd1190e4358428
-R 3349740f721b632b5d673d9f47cec129
+P 3b20ad03be55613d922d81aec5313327bf4098b9
+R c5dbcd1471973b071f8e3d38ae4f1982
 U dan
-Z ddf06d228265c756af2411d823f7066d
+Z a22d0cca6dbea15a214512ee92ecd989

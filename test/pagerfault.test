@@ -15,6 +15,11 @@ source $testdir/tester.tcl
 source $testdir/lock_common.tcl
 source $testdir/malloc_common.tcl
 
+if {[permutation] == "inmemory_journal"} {
+  finish_test
+  return
+}
+
 set a_string_counter 1
 proc a_string {n} {
   global a_string_counter
@@ -22,6 +27,7 @@ proc a_string {n} {
   string range [string repeat "${a_string_counter}." $n] 1 $n
 }
 db func a_string a_string
+
 
 if 1 {
 

@@ -50,13 +50,15 @@ do_faultsim_test walfault-1 -prep {
   # recognizes that it is a rollback database and switches back to a 
   # rollback compatible journal mode.
   #
-  set jm  [db one  {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
-  sqlite3 db2 test.db
-  set jm2 [db2 one {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
-  db2 close
-
-  if { $jm!=$jm2 } { error "Journal modes do not match: $jm $jm2" }
-  if { $testrc==0 && $jm!="wal" } { error "Journal mode is not WAL" }
+  if {[permutation] != "inmemory_journal"} {
+    set jm  [db one  {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
+    sqlite3 db2 test.db
+    set jm2 [db2 one {SELECT * FROM sqlite_master ; PRAGMA main.journal_mode}]
+    db2 close
+  
+    if { $jm!=$jm2 } { error "Journal modes do not match: $jm $jm2" }
+    if { $testrc==0 && $jm!="wal" } { error "Journal mode is not WAL" }
+  }
 }
 
 #--------------------------------------------------------------------------
@@ -123,22 +125,24 @@ do_faultsim_test walfault-3 -prep {
 
 #--------------------------------------------------------------------------
 #
-faultsim_delete_and_reopen
-faultsim_save_and_close
-do_faultsim_test walfault-4 -prep {
-  faultsim_restore_and_reopen
-} -body {
-  execsql {
-    PRAGMA journal_mode = WAL;
-    CREATE TABLE t1(a PRIMARY KEY, b);
-    INSERT INTO t1 VALUES('a', 'b');
-    PRAGMA wal_checkpoint;
-    SELECT * FROM t1;
-  }
-} -test {
-  faultsim_test_result {0 {wal a b}}
-  faultsim_integrity_check
-} 
+if {[permutation] != "inmemory_journal"} {
+  faultsim_delete_and_reopen
+  faultsim_save_and_close
+  do_faultsim_test walfault-4 -prep {
+    faultsim_restore_and_reopen
+  } -body {
+    execsql {
+      PRAGMA journal_mode = WAL;
+      CREATE TABLE t1(a PRIMARY KEY, b);
+      INSERT INTO t1 VALUES('a', 'b');
+      PRAGMA wal_checkpoint;
+      SELECT * FROM t1;
+    }
+  } -test {
+    faultsim_test_result {0 {wal a b}}
+    faultsim_integrity_check
+  } 
+}
 
 #--------------------------------------------------------------------------
 #
