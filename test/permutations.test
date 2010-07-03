@@ -788,7 +788,8 @@ test_suite "wal" -description {
 proc run_tests {name args} {
   array set options $args
 
-  set ::G(perm:name)         $options(-prefix)
+  set ::G(perm:name)         $name
+  set ::G(perm:prefix)       $options(-prefix)
   set ::G(perm:presql)       $options(-presql)
   set ::G(isquick)           1
 
@@ -801,6 +802,7 @@ proc run_tests {name args} {
   uplevel $options(-shutdown)
 
   unset ::G(perm:name)
+  unset ::G(perm:prefix)
   unset ::G(perm:presql)
 }
 

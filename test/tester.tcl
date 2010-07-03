@@ -308,8 +308,8 @@ proc do_test {name cmd expected} {
   }
   if {!$go} return
 
-  if {[info exists ::G(perm:name)]} {
-    set name "$::G(perm:name)$name"
+  if {[info exists ::G(perm:prefix)]} {
+    set name "$::G(perm:prefix)$name"
   }
 
   incr_ntest
