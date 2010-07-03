@@ -99,7 +99,6 @@ static sqlite3_vfs devsym_vfs = {
   devsymSleep,              /* xSleep */
   devsymCurrentTime,        /* xCurrentTime */
   0,                        /* xGetLastError */
-  0,                        /* xRename */
   0                         /* xCurrentTimeInt64 */
 };
 

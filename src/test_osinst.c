@@ -22,7 +22,7 @@
 ** overhead introduced into the application by logging.
 **
 ** All calls on sqlite3_file objects except xFileControl() are logged.
-** Additionally, calls to the xAccess(), xOpen(), xDelete() and xRename() 
+** Additionally, calls to the xAccess(), xOpen(), and xDelete()
 ** methods are logged. The other sqlite3_vfs object methods (xDlXXX,
 ** xRandomness, xSleep, xCurrentTime, xGetLastError and xCurrentTimeInt64) 
 ** are not logged.
@@ -171,7 +171,6 @@ static int vfslogSleep(sqlite3_vfs*, int microseconds);
 static int vfslogCurrentTime(sqlite3_vfs*, double*);
 
 static int vfslogGetLastError(sqlite3_vfs*, int, char *);
-static int vfslogRename(sqlite3_vfs*, const char *, const char *, int);
 static int vfslogCurrentTimeInt64(sqlite3_vfs*, sqlite3_int64*);
 
 static sqlite3_vfs vfslog_vfs = {
@@ -193,7 +192,6 @@ static sqlite3_vfs vfslog_vfs = {
   vfslogSleep,                    /* xSleep */
   vfslogCurrentTime,              /* xCurrentTime */
   vfslogGetLastError,             /* xGetLastError */
-  vfslogRename,                   /* xRename */
   vfslogCurrentTimeInt64          /* xCurrentTime */
 };
 
@@ -615,9 +613,6 @@ static int vfslogCurrentTime(sqlite3_vfs *pVfs, double *pTimeOut){
 
 static int vfslogGetLastError(sqlite3_vfs *pVfs, int a, char *b){
   return REALVFS(pVfs)->xGetLastError(REALVFS(pVfs), a, b);
-}
-static int vfslogRename(sqlite3_vfs *pVfs, const char *a, const char *b, int c){
-  return REALVFS(pVfs)->xRename(REALVFS(pVfs), a, b, c);
 }
 static int vfslogCurrentTimeInt64(sqlite3_vfs *pVfs, sqlite3_int64 *p){
   return REALVFS(pVfs)->xCurrentTimeInt64(REALVFS(pVfs), p);

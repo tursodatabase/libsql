@@ -6084,7 +6084,6 @@ int sqlite3_os_init(void){
     unixSleep,            /* xSleep */                      \
     unixCurrentTime,      /* xCurrentTime */                \
     unixGetLastError,     /* xGetLastError */               \
-    0,                    /* xRename */                     \
     unixCurrentTimeInt64, /* xCurrentTimeInt64 */           \
   }
 

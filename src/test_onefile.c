@@ -199,7 +199,6 @@ static fs_vfs_t fs_vfs = {
     fsRandomness,                               /* xRandomness */
     fsSleep,                                    /* xSleep */
     fsCurrentTime,                              /* xCurrentTime */
-    0,                                          /* xRename */
     0                                           /* xCurrentTimeInt64 */
   }, 
   0,                                            /* pFileList */

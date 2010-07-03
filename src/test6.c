@@ -813,7 +813,6 @@ static int crashEnableCmd(
     cfSleep,              /* xSleep */
     cfCurrentTime,        /* xCurrentTime */
     0,                    /* xGetlastError */
-    0,                    /* xRename */
     0,                    /* xCurrentTimeInt64 */
   };
 

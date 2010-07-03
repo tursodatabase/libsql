@@ -182,7 +182,6 @@ static sqlite3_vfs jt_vfs = {
   jtSleep,                       /* xSleep */
   jtCurrentTime,                 /* xCurrentTime */
   0,                             /* xGetLastError */
-  0,                             /* xRename */
   jtCurrentTimeInt64             /* xCurrentTimeInt64 */
 };
 

@@ -1296,8 +1296,7 @@ static int testvfs_cmd(
     tvfsSleep,                    /* xSleep */
     tvfsCurrentTime,              /* xCurrentTime */
     0,                            /* xGetLastError */
-    0,
-    0,
+    0,                            /* xCurrentTimeInt64 */
   };
 
   Testvfs *p;                     /* New object */

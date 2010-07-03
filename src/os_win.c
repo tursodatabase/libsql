@@ -2478,7 +2478,6 @@ int sqlite3_os_init(void){
     winSleep,            /* xSleep */
     winCurrentTime,      /* xCurrentTime */
     winGetLastError,     /* xGetLastError */
-    0,                   /* xRename */
     winCurrentTimeInt64, /* xCurrentTimeInt64 */
   };
 
