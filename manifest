@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\sbuffer\soverrun\sin\sthe\swhere.c.\s\sProblem\sdetected\sby\svalgrind.
-D 2010-07-03T01:44:27
+C Change\scode\sin\sOP_Rewind\sto\savoid\sa\svalgrind\swarning\sfollowing\san\serror\sin\sthe\sbtree\slayer.\sThis\schange\sdoes\snot\sfix\sany\sbug,\sjust\sa\swarning.
+D 2010-07-03T05:56:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -116,7 +113,7 @@ F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
 F src/bitvec.c 06ad2c36a9c3819c0b9cbffec7b15f58d5d834e0
 F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
-F src/btree.c c34267e8807ca89aefe3366b5c01656c8480c9b0
+F src/btree.c 9a214e6141555b183216b73ace058c7a499cdbe2
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 31830208adbd6f97bef2517531ed70954a306fde
@@ -220,7 +217,7 @@ F src/update.c 19c899c23cd29fd102c9068e0b0ff5b087204beb
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
-F src/vdbe.c 3a241b2148e91959df7232f6b5405fbb95a4d2c4
+F src/vdbe.c 046cd38df1ac63545ab1439eecf02d7b0222fb2c
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -833,14 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 33b6f069d8059903312282962181839ff983e5c4
-R 8440a61d09d2b3af18cf3388d8d81114
-U drh
-Z 1af09e52711701599d89cedff91313ab
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMLpYBoxKgR168RlERAsDcAJ4nEo/I1o9EXuqw+DXEFtpRKTUMoACfejOH
-Txx3nllLPClmlvc7IlkNR2w=
-=Vcnx
------END PGP SIGNATURE-----
+P 15bb62330681a5b2aad95a1d1fc9ab8f6f1bd6b9
+R 2daf67e2c97f2522d0a641db910c6230
+U dan
+Z d86c1d42297398b15e19f64ea94bb433
