@@ -160,22 +160,16 @@ lappend ::testsuitelist xxx
 test_suite "coverage-wal" -description {
   Coverage tests for file wal.c.
 } -files {
-  wal.test       wal2.test      wal3.test      walmode.test    
-  walbak.test    walhook.test   walcrash2.test walcksum.test
+  wal.test       wal2.test     wal3.test       walmode.test    
+  walbak.test    walhook.test  walcrash2.test  walcksum.test
   walfault.test
 } 
 
 test_suite "coverage-pager" -description {
   Coverage tests for file pager.c.
 } -files {
-  pager1.test
-  pager2.test
-  pagerfault.test
-  pagerfault2.test
-  walfault.test
-  walbak.test
-  journal2.test
-  tkt-9d68c883.test
+  pager1.test    pager2.test  pagerfault.test  pagerfault2.test
+  walfault.test  walbak.test  journal2.test    tkt-9d68c883.test
 } 
 
 

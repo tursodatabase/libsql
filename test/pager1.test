@@ -1015,6 +1015,7 @@ do_test pager1-5.5.2 {
 do_test pager1-6.1 {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA auto_vacuum = none;
     PRAGMA max_page_count = 10;
     CREATE TABLE t2(a, b);
     CREATE TABLE t3(a, b);
@@ -1357,6 +1358,7 @@ tv sectorsize 4096
 do_test pager1.10.x.1 {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA auto_vacuum = none;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(x);
   }
@@ -1429,10 +1431,20 @@ tv delete
 #-------------------------------------------------------------------------
 # Test "PRAGMA page_size"
 #
+testvfs tv -default 1
+tv sectorsize 1024
 foreach pagesize {
     512   1024   2048 4096 8192 16384 32768 
 } {
   faultsim_delete_and_reopen
+
+  # The sector-size (according to the VFS) is 1024 bytes. So if the
+  # page-size requested using "PRAGMA page_size" is greater than the
+  # compile time value of SQLITE_MAX_PAGE_SIZE, then the effective 
+  # page-size remains 1024 bytes.
+  #
+  set eff $pagesize
+  if {$eff > $::SQLITE_MAX_PAGE_SIZE} { set eff 1024 }
 
   do_test pager1-12.$pagesize.1 {
     sqlite3 db2 test.db
@@ -1441,22 +1453,24 @@ foreach pagesize {
       CREATE VIEW v AS SELECT * FROM sqlite_master;
     " db2
     file size test.db
-  } $pagesize
+  } $eff
   do_test pager1-12.$pagesize.2 {
     sqlite3 db2 test.db
     execsql { 
       SELECT count(*) FROM v;
       PRAGMA main.page_size;
     } db2
-  } [list 1 $pagesize]
+  } [list 1 $eff]
   do_test pager1-12.$pagesize.3 {
     execsql { 
       SELECT count(*) FROM v;
       PRAGMA main.page_size;
     }
-  } [list 1 $pagesize]
+  } [list 1 $eff]
   db2 close
 }
+db close
+tv delete
 
 #-------------------------------------------------------------------------
 # Test specal "PRAGMA journal_mode=PERSIST" test cases.

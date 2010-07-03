@@ -334,6 +334,7 @@ if {$tcl_platform(platform)!="windows"} {
     sqlite3 db2 test2.db
     sqlite3_extended_result_codes db2 1
     db2 eval {
+      PRAGMA journal_mode = DELETE;    /* For inmemory_journal permutation */
       PRAGMA synchronous = 0;
       CREATE TABLE t1(a, b);
       INSERT INTO t1 VALUES(1, 2);

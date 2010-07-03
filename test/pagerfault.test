@@ -241,8 +241,11 @@ do_faultsim_test pagerfault-5.3 -faults oom-transient -prep {
   }
 } -test {
   faultsim_test_result {0 {}}
-  faultsim_integrity_check
 
+  catchsql { COMMIT }
+  catchsql { ROLLBACK }
+
+  faultsim_integrity_check
   set res ""
   set rc [catch { set res [db one { PRAGMA aux.integrity_check }] }]
   if {$rc!=0 || $res != "ok"} {error "integrity-check problem:$rc $res"}
