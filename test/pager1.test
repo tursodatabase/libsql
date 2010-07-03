@@ -559,20 +559,24 @@ foreach {tn1 tcl} {
     o { 
       PRAGMA main.synchronous=OFF;
       PRAGMA aux.synchronous=OFF;
+      PRAGMA journal_mode = DELETE;
     }
     o512 { 
       PRAGMA main.synchronous=OFF;
       PRAGMA aux.synchronous=OFF;
       PRAGMA main.page_size = 512;
       PRAGMA aux.page_size = 512;
+      PRAGMA journal_mode = DELETE;
     }
     n { 
       PRAGMA main.synchronous=NORMAL;
       PRAGMA aux.synchronous=NORMAL;
+      PRAGMA journal_mode = DELETE;
     }
     f { 
       PRAGMA main.synchronous=FULL;
       PRAGMA aux.synchronous=FULL;
+      PRAGMA journal_mode = DELETE;
     }
   } {
 
@@ -665,6 +669,7 @@ proc copy_on_journal_delete {method filename args} {
 }
 faultsim_delete_and_reopen
 do_execsql_test pager1.4.5.1 {
+  PRAGMA journal_mode = DELETE;
   PRAGMA page_size = 1024;
   CREATE TABLE t1(a, b);
   CREATE TABLE t2(a, b);
@@ -674,7 +679,7 @@ do_execsql_test pager1.4.5.1 {
     INSERT INTO t1 VALUES(1, 2);
     INSERT INTO t2 VALUES(3, 4);
   COMMIT;
-} {}
+} {delete}
 tv filter {}
 
 # Check the transaction was committed:
@@ -742,6 +747,7 @@ proc copy_on_mj_delete {method filename args} {
 do_test pager1.4.6.1 {
   faultsim_delete_and_reopen
   execsql {
+    PRAGMA journal_mode = DELETE;
     ATTACH 'test.db2' AS two;
     CREATE TABLE t1(a, b);
     CREATE TABLE two.t2(a, b);
@@ -772,6 +778,7 @@ do_test pager1.4.6.8 {
   tv filter xDelete
   sqlite3 db test.db2
   execsql {
+    PRAGMA journal_mode = DELETE;
     ATTACH 'test.db3' AS three;
     CREATE TABLE three.t3(a, b);
     INSERT INTO t3 VALUES(1, 't3.1');
@@ -839,6 +846,7 @@ proc copy_on_journal_delete {method filename args} {
 }
 faultsim_delete_and_reopen
 do_execsql_test pager1.4.7.1 {
+  PRAGMA journal_mode = DELETE;
   CREATE TABLE t1(x PRIMARY KEY, y);
   CREATE INDEX i1 ON t1(y);
   INSERT INTO t1 VALUES('I',   'one');
@@ -848,7 +856,7 @@ do_execsql_test pager1.4.7.1 {
     INSERT INTO t1 VALUES('IV', 'sixteen');
     INSERT INTO t1 VALUES('V' , 'twentyfive');
   COMMIT;
-} {}
+} {delete}
 tv filter {}
 db close
 tv delete 
@@ -1339,7 +1347,6 @@ foreach sectorsize {
       DROP TABLE t6;
       DROP TABLE t7;
     }
-    if {$eff==65536} breakpoint
     execsql {
       BEGIN;
         CREATE TABLE t6(a, b);
@@ -1393,6 +1400,7 @@ testvfs tv -default 1
 faultsim_delete_and_reopen
 db func a_string a_string
 do_execsql_test pager1-11.1 {
+  PRAGMA journal_mode = DELETE;
   PRAGMA cache_size = 10;
   BEGIN;
     CREATE TABLE zz(top PRIMARY KEY);
@@ -1405,7 +1413,7 @@ do_execsql_test pager1-11.1 {
   COMMIT;
   BEGIN;
     UPDATE zz SET top = a_string(345);
-} {}
+} {delete}
 
 proc lockout {method args} { return SQLITE_IOERR }
 tv script lockout

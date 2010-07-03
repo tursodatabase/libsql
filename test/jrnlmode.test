@@ -504,4 +504,20 @@ ifcapable pragma {
   }
 }
 
+ifcapable pragma {
+  catch { db close }
+  do_test jrnlmode-7.1 {
+    foreach f [glob -nocomplain test.db*] { file delete -force $f }
+    sqlite3 db test.db
+    execsql {
+      PRAGMA journal_mode = memory;
+      PRAGMA auto_vacuum = 0;
+      PRAGMA page_size = 1024;
+      PRAGMA user_version = 5;
+      PRAGMA user_version;
+    }
+  } {memory 5}
+  do_test jrnlmode-7.2 { file size test.db } {1024}
+}
+
 finish_test
