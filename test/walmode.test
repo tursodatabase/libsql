@@ -15,6 +15,7 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/malloc_common.tcl
 
 # If the library was compiled without WAL support, check that the 
 # "PRAGMA journal_mode=WAL" treats "WAL" as an unrecognized mode.
@@ -266,5 +267,25 @@ do_test walmode-5.3.5 {
     PRAGMA temp.journal_mode;
   }
 } [list 1 2 3 4 $tempJrnlMode]
+
+
+#-------------------------------------------------------------------------
+# Test changing to WAL mode from journal_mode=off or journal_mode=memory
+#
+foreach {tn mode} {
+  3 persist
+  4 delete
+  5 truncate
+  2 memory
+  1 off
+} {
+  do_test walmode-6.$tn {
+    faultsim_delete_and_reopen
+    execsql "
+      PRAGMA journal_mode = $mode;
+      PRAGMA journal_mode = wal;
+    "
+  } [list $mode wal]
+}
 
 finish_test

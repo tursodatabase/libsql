@@ -5165,7 +5165,10 @@ int sqlite3PagerCommitPhaseOne(
       */
   #ifdef SQLITE_ENABLE_ATOMIC_WRITE
       PgHdr *pPg;
-      assert( isOpen(pPager->jfd) || pPager->journalMode==PAGER_JOURNALMODE_OFF );
+      assert( isOpen(pPager->jfd) 
+           || pPager->journalMode==PAGER_JOURNALMODE_OFF 
+           || pPager->journalMode==PAGER_JOURNALMODE_WAL 
+      );
       if( !zMaster && isOpen(pPager->jfd) 
        && pPager->journalOff==jrnlBufferSize(pPager) 
        && pPager->dbSize>=pPager->dbFileSize
