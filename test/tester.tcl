@@ -371,6 +371,10 @@ proc speed_trial_tcl {name numstmt units script} {
 proc speed_trial_init {name} {
   global total_time
   set total_time 0
+  sqlite3 versdb :memory:
+  set vers [versdb one {SELECT sqlite_source_id()}]
+  versdb close
+  puts "SQLite $vers"
 }
 proc speed_trial_summary {name} {
   global total_time
