@@ -830,7 +830,9 @@ void sqlite3VdbeNoopComment(Vdbe *p, const char *zFormat, ...){
 ** check the value of p->nOp-1 before continuing.
 */
 VdbeOp *sqlite3VdbeGetOp(Vdbe *p, int addr){
-  static const VdbeOp dummy;
+  /* C89 specifies that the constant "dummy" will be initialized to all
+  ** zeros, which is correct.  MSVC generates a warning, nevertheless. */
+  static const VdbeOp dummy;  /* Ignore the MSVC warning about no initializer */
   assert( p->magic==VDBE_MAGIC_INIT );
   if( addr<0 ){
 #ifdef SQLITE_OMIT_TRACE

@@ -1841,7 +1841,7 @@ static void constructAutomaticIndex(
       }
     }
   }
-  assert( n==pLevel->plan.nEq );
+  assert( (u32)n==pLevel->plan.nEq );
 
   /* Add additional columns needed to make the automatic index into
   ** a covering index */
@@ -3435,7 +3435,7 @@ static Bitmask codeOneLoopStart(
     ** a forward order scan on a descending index, interchange the 
     ** start and end terms (pRangeStart and pRangeEnd).
     */
-    if( bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC) ){
+    if( nEq<pIdx->nColumn && bRev==(pIdx->aSortOrder[nEq]==SQLITE_SO_ASC) ){
       SWAP(WhereTerm *, pRangeEnd, pRangeStart);
     }
 

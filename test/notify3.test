@@ -15,6 +15,13 @@
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 
+# This script only runs if shared-cache and unlock-notify are available.
+#
+ifcapable !unlock_notify||!shared_cache { 
+  finish_test 
+  return 
+}
+
 set esc [sqlite3_enable_shared_cache 1]
 
 sqlite3 db  test.db

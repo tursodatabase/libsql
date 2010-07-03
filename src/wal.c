@@ -497,12 +497,12 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
   if( pWal->nWiData<=iPage ){
     int nByte = sizeof(u32 *)*(iPage+1);
     volatile u32 **apNew;
-    apNew = (volatile u32 **)sqlite3_realloc(pWal->apWiData, nByte);
+    apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM;
     }
-    memset(&apNew[pWal->nWiData], 0, sizeof(u32 *)*(iPage+1-pWal->nWiData));
+    memset((void *)&apNew[pWal->nWiData], 0, sizeof(u32 *)*(iPage+1-pWal->nWiData));
     pWal->apWiData = apNew;
     pWal->nWiData = iPage+1;
   }
@@ -737,7 +737,7 @@ static int walLockShared(Wal *pWal, int lockIdx){
                         SQLITE_SHM_LOCK | SQLITE_SHM_SHARED);
   WALTRACE(("WAL%p: acquire SHARED-%s %s\n", pWal,
             walLockName(lockIdx), rc ? "failed" : "ok"));
-  VVA_ONLY( pWal->lockError = (rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
+  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockShared(Wal *pWal, int lockIdx){
@@ -753,7 +753,7 @@ static int walLockExclusive(Wal *pWal, int lockIdx, int n){
                         SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE);
   WALTRACE(("WAL%p: acquire EXCLUSIVE-%s cnt=%d %s\n", pWal,
             walLockName(lockIdx), n, rc ? "failed" : "ok"));
-  VVA_ONLY( pWal->lockError = (rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
+  VVA_ONLY( pWal->lockError = (u8)(rc!=SQLITE_OK && rc!=SQLITE_BUSY); )
   return rc;
 }
 static void walUnlockExclusive(Wal *pWal, int lockIdx, int n){
@@ -901,7 +901,7 @@ static void walCleanupHash(Wal *pWal){
   /* Zero the entries in the aPgno array that correspond to frames with
   ** frame numbers greater than pWal->hdr.mxFrame. 
   */
-  nByte = ((char *)aHash - (char *)&aPgno[iLimit+1]);
+  nByte = (int)((char *)aHash - (char *)&aPgno[iLimit+1]);
   memset((void *)&aPgno[iLimit+1], 0, nByte);
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
@@ -949,7 +949,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     ** entire hash table and aPgno[] array before proceding. 
     */
     if( idx==1 ){
-      int nByte = (u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1];
+      int nByte = (int)((u8 *)&aHash[HASHTABLE_NSLOT] - (u8 *)&aPgno[1]);
       memset((void*)&aPgno[1], 0, nByte);
     }
 
@@ -969,7 +969,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
       assert( nCollide++ < idx );
     }
     aPgno[idx] = iPage;
-    aHash[iKey] = idx;
+    aHash[iKey] = (ht_slot)idx;
 
 #ifdef SQLITE_ENABLE_EXPENSIVE_ASSERT
     /* Verify that the number of entries in the hash table exactly equals
@@ -1077,8 +1077,8 @@ static int walIndexRecover(Wal *pWal){
     ){
       goto finished;
     }
-    pWal->hdr.bigEndCksum = (magic&0x00000001);
-    pWal->szPage = szPage;
+    pWal->hdr.bigEndCksum = (u8)(magic&0x00000001);
+    pWal->szPage = (u16)szPage;
     pWal->nCkpt = sqlite3Get4byte(&aBuf[12]);
     memcpy(&pWal->hdr.aSalt, &aBuf[16], 8);
 
@@ -1128,7 +1128,7 @@ static int walIndexRecover(Wal *pWal){
       if( nTruncate ){
         pWal->hdr.mxFrame = iFrame;
         pWal->hdr.nPage = nTruncate;
-        pWal->hdr.szPage = szPage;
+        pWal->hdr.szPage = (u16)szPage;
         aFrameCksum[0] = pWal->hdr.aFrameCksum[0];
         aFrameCksum[1] = pWal->hdr.aFrameCksum[1];
       }
@@ -1456,12 +1456,12 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       ht_slot *aIndex;            /* Sorted index for this segment */
 
       aPgno++;
-      nEntry = ((i+1)==nSegment)?(int)(iLast-iZero):(u32 *)aHash-(u32 *)aPgno;
+      nEntry = (int)(((i+1)==nSegment)?(int)(iLast-iZero):(u32 *)aHash-(u32 *)aPgno);
       aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
       iZero++;
   
       for(j=0; j<nEntry; j++){
-        aIndex[j] = j;
+        aIndex[j] = (ht_slot)j;
       }
       walMergesort((u32 *)aPgno, aTmp, aIndex, &nEntry);
       p->aSegment[i].iZero = iZero;
@@ -1648,7 +1648,7 @@ int sqlite3WalClose(
       sqlite3OsDelete(pWal->pVfs, pWal->zWalName, 0);
     }
     WALTRACE(("WAL%p: closed\n", pWal));
-    sqlite3_free(pWal->apWiData);
+    sqlite3_free((void *)pWal->apWiData);
     sqlite3_free(pWal);
   }
   return rc;
@@ -1984,7 +1984,7 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       return WAL_RETRY;
     }else{
       assert( mxReadMark<=pWal->hdr.mxFrame );
-      pWal->readLock = mxI;
+      pWal->readLock = (i16)mxI;
     }
   }
   return rc;
@@ -2397,7 +2397,7 @@ int sqlite3WalFrames(
     sqlite3Put4byte(&aWalHdr[24], aCksum[0]);
     sqlite3Put4byte(&aWalHdr[28], aCksum[1]);
     
-    pWal->szPage = szPage;
+    pWal->szPage = (u16)szPage;
     pWal->hdr.bigEndCksum = SQLITE_BIGENDIAN;
     pWal->hdr.aFrameCksum[0] = aCksum[0];
     pWal->hdr.aFrameCksum[1] = aCksum[1];
@@ -2491,7 +2491,7 @@ int sqlite3WalFrames(
 
   if( rc==SQLITE_OK ){
     /* Update the private copy of the header. */
-    pWal->hdr.szPage = szPage;
+    pWal->hdr.szPage = (u16)szPage;
     pWal->hdr.mxFrame = iFrame;
     if( isCommit ){
       pWal->hdr.iChange++;

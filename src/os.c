@@ -34,7 +34,7 @@
 **     sqlite3OsLock()
 **
 */
-#if defined(SQLITE_TEST) && (SQLITE_OS_WIN==0)
+#if defined(SQLITE_TEST)
 int sqlite3_memdebug_vfs_oom_test = 1;
   #define DO_OS_MALLOC_TEST(x)                                       \
   if (sqlite3_memdebug_vfs_oom_test && (!x || !sqlite3IsMemJournal(x))) {  \

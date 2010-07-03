@@ -2525,7 +2525,7 @@ int sqlite3BtreeBeginTrans(Btree *p, int wrflag){
   rc = querySharedCacheTableLock(p, MASTER_ROOT, READ_LOCK);
   if( SQLITE_OK!=rc ) goto trans_begun;
 
-  pBt->initiallyEmpty = pBt->nPage==0;
+  pBt->initiallyEmpty = (u8)(pBt->nPage==0);
   do {
     /* Call lockBtree() until either pBt->pPage1 is populated or
     ** lockBtree() returns something other than SQLITE_OK. lockBtree()
@@ -4248,7 +4248,6 @@ int sqlite3BtreeFirst(BtCursor *pCur, int *pRes){
     if( pCur->eState==CURSOR_INVALID ){
       assert( pCur->apPage[pCur->iPage]->nCell==0 );
       *pRes = 1;
-      rc = SQLITE_OK;
     }else{
       assert( pCur->apPage[pCur->iPage]->nCell>0 );
       *pRes = 0;
@@ -8013,7 +8012,7 @@ int sqlite3BtreeSetVersion(Btree *pBtree, int iVersion){
   /* If setting the version fields to 1, do not automatically open the
   ** WAL connection, even if the version fields are currently set to 2.
   */
-  pBt->doNotUseWAL = (iVersion==1);
+  pBt->doNotUseWAL = (u8)(iVersion==1);
 
   rc = sqlite3BtreeBeginTrans(pBtree, 0);
   if( rc==SQLITE_OK ){

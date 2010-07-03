@@ -5067,7 +5067,7 @@ static int proxyGetLockPath(const char *dbPath, char *lPath, size_t maxLen){
   
   /* transform the db path to a unique cache name */
   dbLen = (int)strlen(dbPath);
-  for( i=0; i<dbLen && (i+len+7)<maxLen; i++){
+  for( i=0; i<dbLen && (i+len+7)<(int)maxLen; i++){
     char c = dbPath[i];
     lPath[i+len] = (c=='/')?'_':c;
   }
@@ -5208,6 +5208,9 @@ int sqlite3_hostid_num = 0;
 
 #define PROXY_HOSTIDLEN    16  /* conch file host id length */
 
+/* Not always defined in the headers as it ought to be */
+extern int gethostuuid(uuid_t id, const struct timespec *wait);
+
 /* get the host ID via gethostuuid(), pHostID must point to PROXY_HOSTIDLEN 
 ** bytes of writable memory.
 */
@@ -5257,6 +5260,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
   char errmsg[64] = "";
   int fd = -1;
   int rc = -1;
+  UNUSED_PARAMETER(myHostID);
 
   /* create a new path by replace the trailing '-conch' with '-break' */
   pathLen = strlcpy(tPath, cPath, MAXPATHLEN);
@@ -5277,7 +5281,7 @@ static int proxyBreakConchLock(unixFile *pFile, uuid_t myHostID){
     sprintf(errmsg, "create failed (%d)", errno);
     goto end_breaklock;
   }
-  if( pwrite(fd, buf, readLen, 0) != readLen ){
+  if( pwrite(fd, buf, readLen, 0) != (ssize_t)readLen ){
     sprintf(errmsg, "write failed (%d)", errno);
     goto end_breaklock;
   }

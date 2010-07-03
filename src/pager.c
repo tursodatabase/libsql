@@ -2852,7 +2852,7 @@ int sqlite3PagerMaxPageCount(Pager *pPager, int mxPage){
   }
   if( pPager->state!=PAGER_UNLOCK ){
     sqlite3PagerPagecount(pPager, &nPage);
-    assert( pPager->mxPgno>=nPage );
+    assert( (int)pPager->mxPgno>=nPage );
   }
   return pPager->mxPgno;
 }
@@ -5649,7 +5649,7 @@ int sqlite3PagerNosync(Pager *pPager){
 /*
 ** Set or retrieve the codec for this pager
 */
-static void sqlite3PagerSetCodec(
+void sqlite3PagerSetCodec(
   Pager *pPager,
   void *(*xCodec)(void*,void*,Pgno,int),
   void (*xCodecSizeChng)(void*,int,int),
@@ -5663,7 +5663,7 @@ static void sqlite3PagerSetCodec(
   pPager->pCodec = pCodec;
   pagerReportSize(pPager);
 }
-static void *sqlite3PagerGetCodec(Pager *pPager){
+void *sqlite3PagerGetCodec(Pager *pPager){
   return pPager->pCodec;
 }
 #endif
@@ -6044,17 +6044,30 @@ int sqlite3PagerWalSupported(Pager *pPager){
 }
 
 /*
-** Open a connection to the write-ahead log file for pager pPager. If
-** the log connection is already open, this function is a no-op.
-**
 ** The caller must be holding a SHARED lock on the database file to call
 ** this function.
+**
+** If the pager passed as the first argument is open on a real database
+** file (not a temp file or an in-memory database), and the WAL file
+** is not already open, make an attempt to open it now. If successful,
+** return SQLITE_OK. If an error occurs or the VFS used by the pager does 
+** not support the xShmXXX() methods, return an error code. *pisOpen is
+** not modified in either case.
+**
+** If the pager is open on a temp-file (or in-memory database), or if
+** the WAL file is already open, set *pisOpen to 1 and return SQLITE_OK
+** without doing anything.
 */
-int sqlite3PagerOpenWal(Pager *pPager, int *pisOpen){
+int sqlite3PagerOpenWal(
+  Pager *pPager,                  /* Pager object */
+  int *pisOpen                    /* OUT: Set to true if call is a no-op */
+){
   int rc = SQLITE_OK;             /* Return code */
 
   assert( pPager->state>=PAGER_SHARED );
-  if( !pPager->pWal ){
+  assert( (pisOpen==0 && !pPager->tempFile && !pPager->pWal) || *pisOpen==0 );
+
+  if( !pPager->tempFile && !pPager->pWal ){
     if( !sqlite3PagerWalSupported(pPager) ) return SQLITE_CANTOPEN;
 
     /* Open the connection to the log file. If this operation fails, 

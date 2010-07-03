@@ -36,6 +36,7 @@ do_test pagerfault2-1-pre1 {
   faultsim_delete_and_reopen
   db func a_string a_string
   execsql {
+    PRAGMA auto_vacuum = 0;
     PRAGMA journal_mode = DELETE;
     PRAGMA page_size = 1024;
     CREATE TABLE t1(a, b);
