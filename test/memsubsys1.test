@@ -17,6 +17,15 @@ set testdir [file dirname $argv0]
 source $testdir/tester.tcl
 sqlite3_reset_auto_extension
 
+# This test assumes that no page-cache or scratch buffers are installed
+# by default when a new database connection is opened. As a result, it
+# will not work with the "memsubsys1" permutation.
+#
+if {[permutation] == "memsubsys1"} {
+  finish_test
+  return
+}
+
 # This procedure constructs a new database in test.db.  It fills
 # this database with many small records (enough to force multiple
 # rebalance operations in the btree-layer and to require a large
