@@ -417,7 +417,7 @@ struct Wal {
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
-  char *zWalName;            /* Name of WAL file */
+  const char *zWalName;      /* Name of WAL file */
   u32 nCkpt;                 /* Checkpoint sequence counter in the wal-header */
 #ifdef SQLITE_DEBUG
   u8 lockError;              /* True if a locking error has occurred */
@@ -1172,8 +1172,9 @@ static void walIndexClose(Wal *pWal, int isDelete){
 }
 
 /* 
-** Open a connection to the WAL file associated with database zDbName.
-** The database file must already be opened on connection pDbFd.
+** Open a connection to the WAL file zWalName. The database file must 
+** already be opened on connection pDbFd. The buffer that zWalName points
+** to must remain valid for the lifetime of the returned Wal* handle.
 **
 ** A SHARED lock should be held on the database file when this function
 ** is called. The purpose of this SHARED lock is to prevent any other
@@ -1188,16 +1189,14 @@ static void walIndexClose(Wal *pWal, int isDelete){
 int sqlite3WalOpen(
   sqlite3_vfs *pVfs,              /* vfs module to open wal and wal-index */
   sqlite3_file *pDbFd,            /* The open database file */
-  const char *zDbName,            /* Name of the database file */
+  const char *zWalName,           /* Name of the WAL file */
   Wal **ppWal                     /* OUT: Allocated Wal handle */
 ){
   int rc;                         /* Return Code */
   Wal *pRet;                      /* Object to allocate and return */
   int flags;                      /* Flags passed to OsOpen() */
-  char *zWal;                     /* Name of write-ahead log file */
-  int nWal;                       /* Length of zWal in bytes */
 
-  assert( zDbName && zDbName[0] );
+  assert( zWalName && zWalName[0] );
   assert( pDbFd );
 
   /* In the amalgamation, the os_unix.c and os_win.c source files come before
@@ -1214,8 +1213,7 @@ int sqlite3WalOpen(
 
   /* Allocate an instance of struct Wal to return. */
   *ppWal = 0;
-  nWal = sqlite3Strlen30(zDbName) + 5;
-  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile + nWal);
+  pRet = (Wal*)sqlite3MallocZero(sizeof(Wal) + pVfs->szOsFile);
   if( !pRet ){
     return SQLITE_NOMEM;
   }
@@ -1225,15 +1223,14 @@ int sqlite3WalOpen(
   pRet->pDbFd = pDbFd;
   pRet->readLock = -1;
   sqlite3_randomness(8, &pRet->hdr.aSalt);
-  pRet->zWalName = zWal = pVfs->szOsFile + (char*)pRet->pWalFd;
-  sqlite3_snprintf(nWal, zWal, "%s-wal", zDbName);
+  pRet->zWalName = zWalName;
   rc = sqlite3OsShmOpen(pDbFd);
 
   /* Open file handle on the write-ahead log file. */
   if( rc==SQLITE_OK ){
     pRet->isWIndexOpen = 1;
     flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
-    rc = sqlite3OsOpen(pVfs, zWal, pRet->pWalFd, flags, &flags);
+    rc = sqlite3OsOpen(pVfs, zWalName, pRet->pWalFd, flags, &flags);
   }
 
   if( rc!=SQLITE_OK ){

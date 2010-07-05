@@ -407,6 +407,7 @@ struct Pager {
   sqlite3_backup *pBackup;    /* Pointer to list of ongoing backup processes */
 #ifndef SQLITE_OMIT_WAL
   Wal *pWal;                  /* Write-ahead log used by "journal_mode=wal" */
+  char *zWal;                 /* File name for write-ahead log */
 #endif
 };
 
@@ -2452,19 +2453,13 @@ static int pagerBeginReadTransaction(Pager *pPager){
 */
 static int pagerCheckForOrDeleteWAL(Pager *pPager, int *pExists){
   int rc;                         /* Return code */
-  char *zWal;                     /* Name of the WAL file */
+  char *zWal = pPager->zWal;      /* Name of the WAL file */
 
   assert( !pPager->tempFile );
-  zWal = sqlite3_mprintf("%s-wal", pPager->zFilename);
-  if( !zWal ){
-    rc = SQLITE_NOMEM;
+  if( pExists ){
+    rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
   }else{
-    if( pExists ){
-      rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
-    }else{
-      rc = sqlite3OsDelete(pPager->pVfs, zWal, 0);
-    }
-    sqlite3_free(zWal);
+    rc = sqlite3OsDelete(pPager->pVfs, zWal, 0);
   }
   return rc;
 }
@@ -3765,6 +3760,9 @@ int sqlite3PagerOpen(
     journalFileSize * 2 +          /* The two journal files */ 
     nPathname + 1 +                /* zFilename */
     nPathname + 8 + 1              /* zJournal */
+#ifndef SQLITE_OMIT_WAL
+    + nPathname + 4 + 1              /* zWal */
+#endif
   );
   assert( EIGHT_BYTE_ALIGNMENT(SQLITE_INT_TO_PTR(journalFileSize)) );
   if( !pPtr ){
@@ -3785,7 +3783,16 @@ int sqlite3PagerOpen(
     memcpy(pPager->zFilename, zPathname, nPathname);
     memcpy(pPager->zJournal, zPathname, nPathname);
     memcpy(&pPager->zJournal[nPathname], "-journal", 8);
-    if( pPager->zFilename[0]==0 ) pPager->zJournal[0] = 0;
+    if( pPager->zFilename[0]==0 ){
+      pPager->zJournal[0] = 0;
+    }
+#ifndef SQLITE_OMIT_WAL
+    else{
+      pPager->zWal = &pPager->zJournal[nPathname+8+1];
+      memcpy(pPager->zWal, zPathname, nPathname);
+      memcpy(&pPager->zWal[nPathname], "-wal", 4);
+    }
+#endif
     sqlite3_free(zPathname);
   }
   pPager->pVfs = pVfs;
@@ -6078,7 +6085,7 @@ int sqlite3PagerOpenWal(
     ** return an error code.
     */
     rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
-                        pPager->zFilename, &pPager->pWal);
+                        pPager->zWal, &pPager->pWal);
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
     }
@@ -6115,7 +6122,7 @@ int sqlite3PagerCloseWal(Pager *pPager){
     }
     if( rc==SQLITE_OK && logexists ){
       rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
-                          pPager->zFilename, &pPager->pWal);
+                          pPager->zWal, &pPager->pWal);
     }
   }
     
