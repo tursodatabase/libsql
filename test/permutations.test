@@ -107,6 +107,9 @@ set allquicktests [test_set $alltests -exclude {
   vtab_err.test walslow.test walcrash.test 
   walthread.test 
 }]
+if {[info exists ::env(QUICKTEST_INCLUDE)]} {
+  set allquicktests [concat $allquicktests $::env(QUICKTEST_INCLUDE)]
+}
 
 #############################################################################
 # Start of tests

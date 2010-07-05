@@ -1,5 +1,5 @@
-C Fix\stypos\sin\spermutations.test.
-D 2010-07-05T05:31:48
+C Add\sany\sfiles\sspecified\sas\spart\sof\sthe\sQUICKTEST_INCLUDE\senvironment\svariable\sto\sthe\sset\sof\stest\sfiles\srun\sas\spart\sof\s"make\stest".\sRelease\stesting\suses\sthis\strick.
+D 2010-07-05T05:54:56
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -543,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 6c13e67946426b47913fc9edb220c14bc0568d05
+F test/permutations.test e1fca39d728b8988581cebf6fe60d2d8435146db
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3a1a8c77a5c7b57755f18d84234faed1f16c2103
-R 0edaed14d2de387fb9cb51b5f15550b0
+P b6600ecb4ee8e4d0fe5e8399450ef25b15071a91
+R da8aed891b7f5d67281385c97a3b2615
 U dan
-Z 88c6c1d7ea1b74c9a571ddc21e6c35e7
+Z 923dd86af3faa026add005d8c4375f84
