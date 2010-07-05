@@ -84,6 +84,7 @@ static Tcl_ThreadCreateType tclWriterThread(ClientData pIsStarted){
   *((int *)pIsStarted) = 1;
   sqlite3async_run();
   Tcl_MutexUnlock(&testasync_g_writerMutex);
+  Tcl_ExitThread(0);
   TCL_THREAD_CREATE_RETURN;
 }
 
