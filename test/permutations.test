@@ -493,7 +493,7 @@ test_suite "inmemory_journal" -description {
 ifcapable mem3 {
   test_suite "memsys3" -description {
     Run tests using the allocator in mem3.c.
-  } [test_set $::allquicktests -exclude {
+  } -files [test_set $::allquicktests -exclude {
     autovacuum.test           delete3.test              manydb.test
     bigrow.test               incrblob2.test            memdb.test
     bitvec.test               index2.test               memsubsys1.test
@@ -531,7 +531,7 @@ ifcapable mem3 {
 ifcapable mem5 {
   test_suite "memsys5" -description {
     Run tests using the allocator in mem5.c.
-  } [test_set $::allquicktests -exclude {
+  } -files [test_set $::allquicktests -exclude {
     autovacuum.test           delete3.test              manydb.test
     bigrow.test               incrblob2.test            memdb.test
     bitvec.test               index2.test               memsubsys1.test
