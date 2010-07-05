@@ -2439,32 +2439,6 @@ static int pagerBeginReadTransaction(Pager *pPager){
 }
 
 /*
-** Check for the existence of or delete the *-wal file that corresponds to
-** the database opened by pPager.
-**
-** When pExists!=NULL, set *pExists to 1 if the *-wal file exists, or 0
-** if the *-wal file does not exist.
-**
-** When pExists==NULL, delete the *-wal file if it exists, or the do
-** nothing if the *-wal file does not exist.
-**
-** Return SQLITE_OK on success. If on an IO or OOM error occurs, return
-** an SQLite error code.
-*/
-static int pagerCheckForOrDeleteWAL(Pager *pPager, int *pExists){
-  int rc;                         /* Return code */
-  char *zWal = pPager->zWal;      /* Name of the WAL file */
-
-  assert( !pPager->tempFile );
-  if( pExists ){
-    rc = sqlite3OsAccess(pPager->pVfs, zWal, SQLITE_ACCESS_EXISTS, pExists);
-  }else{
-    rc = sqlite3OsDelete(pPager->pVfs, zWal, 0);
-  }
-  return rc;
-}
-
-/*
 ** Check if the *-wal file that corresponds to the database opened by pPager
 ** exists if the database is not empy, or verify that the *-wal file does
 ** not exist (by deleting it) if the database file is empty.
@@ -2493,10 +2467,12 @@ static int pagerOpenWalIfPresent(Pager *pPager){
     rc = sqlite3PagerPagecount(pPager, &nPage);
     if( rc ) return rc;
     if( nPage==0 ){
-      rc = pagerCheckForOrDeleteWAL(pPager, 0);
+      rc = sqlite3OsDelete(pPager->pVfs, pPager->zWal, 0);
       isWal = 0;
     }else{
-      rc = pagerCheckForOrDeleteWAL(pPager, &isWal);
+      rc = sqlite3OsAccess(
+          pPager->pVfs, pPager->zWal, SQLITE_ACCESS_EXISTS, &isWal
+      );
     }
     if( rc==SQLITE_OK ){
       if( isWal ){
@@ -6084,8 +6060,7 @@ int sqlite3PagerOpenWal(
     ** (e.g. due to malloc() failure), unlock the database file and 
     ** return an error code.
     */
-    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
-                        pPager->zWal, &pPager->pWal);
+    rc = sqlite3WalOpen(pPager->pVfs, pPager->fd, pPager->zWal, &pPager->pWal);
     if( rc==SQLITE_OK ){
       pPager->journalMode = PAGER_JOURNALMODE_WAL;
     }
@@ -6118,7 +6093,9 @@ int sqlite3PagerCloseWal(Pager *pPager){
     int logexists = 0;
     rc = sqlite3OsLock(pPager->fd, SQLITE_LOCK_SHARED);
     if( rc==SQLITE_OK ){
-      rc = pagerCheckForOrDeleteWAL(pPager, &logexists);
+      rc = sqlite3OsAccess(
+          pPager->pVfs, pPager->zWal, SQLITE_ACCESS_EXISTS, &logexists
+      );
     }
     if( rc==SQLITE_OK && logexists ){
       rc = sqlite3WalOpen(pPager->pVfs, pPager->fd,
