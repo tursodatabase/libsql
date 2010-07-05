@@ -295,18 +295,17 @@ proc do_test {name cmd expected} {
 
   sqlite3_memdebug_settitle $name
 
-  if {[llength $argv]==0} { 
-    set go 1
-  } else {
-    set go 0
-    foreach pattern $argv {
-      if {[string match $pattern $name]} {
-        set go 1
-        break
-      }
-    }
-  }
-  if {!$go} return
+#  if {[llength $argv]==0} { 
+#    set go 1
+#  } else {
+#    set go 0
+#    foreach pattern $argv {
+#      if {[string match $pattern $name]} {
+#        set go 1
+#        break
+#      }
+#    }
+#  }
 
   if {[info exists ::G(perm:prefix)]} {
     set name "$::G(perm:prefix)$name"
@@ -1170,20 +1169,25 @@ proc slave_test_script {script} {
 proc slave_test_file {zFile} {
   set tail [file tail $zFile]
 
-  ifcapable shared_cache { 
-    set scs [sqlite3_enable_shared_cache] 
-  }
+  # Remember the value of the shared-cache setting. So that it is possible
+  # to check afterwards that it was not modified by the test script.
+  #
+  ifcapable shared_cache { set scs [sqlite3_enable_shared_cache] }
 
+  # Run the test script in a slave interpreter.
+  #
   reset_prng_state
   set ::sqlite_open_file_count 0
   set time [time { slave_test_script [list source $zFile] }]
   set ms [expr [lindex $time 0] / 1000]
 
-  # Test that all files opened by the test script were closed.
+  # Test that all files opened by the test script were closed. Omit this
+  # if the test script has "thread" in its name. The open file counter
+  # is not thread-safe.
   #
-  do_test ${tail}-closeallfiles {
-    expr {$::sqlite_open_file_count>0}
-  } {0}
+  if {[string match *thread* $tail]==0} {
+    do_test ${tail}-closeallfiles { expr {$::sqlite_open_file_count>0} } {0}
+  }
   set ::sqlite_open_file_count 0
 
   # Test that the global "shared-cache" setting was not altered by 
@@ -1194,13 +1198,9 @@ proc slave_test_file {zFile} {
     do_test ${tail}-sharedcachesetting [list set {} $res] 1
   }
 
-  if {$::sqlite_open_file_count>0} {
-    puts "$tail did not close all files: $::sqlite_open_file_count"
-    fail_test "$tail-closeallfiles"
-    set ::sqlite_open_file_count 0
-  }
+  # Add some info to the output.
+  #
   puts "Time: $tail $ms ms"
-
   show_memstats
 }
 

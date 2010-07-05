@@ -1,5 +1,5 @@
-C Call\sTcl_ExitThread()\sfrom\swithin\sthreads\screated\susing\sTcl_CreateThread().\sNot\sdoing\sso\scauses\snotifier\srelated\serrors\son\sOSX.
-D 2010-07-05T12:54:08
+C Do\snot\sreport\san\serror\sif\sthe\sopen-file-count\sis\snot\sas\sit\sshould\sbe\safter\srunning\sa\smulti-threaded\stest.\sThe\scounter\sinstrumentation\sis\snot\sthread-safe.
+D 2010-07-05T14:54:49
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -615,7 +615,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 800c36623d67a2ad1f58784b9c5644e0405af6e6
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl 384eceb0736b84e178766b0876bcf4753eb4cb22
+F test/tester.tcl b316a5381e34bac3147fb7562b23a5598cdb2758
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a40a6e7df191ca10bc3aa504d374b9f5bfa33cbc
-R a97be07f4de569b32cbbfb8477867ef2
+P 684eae6623ef1d0336b7a734b17ed307c720b6f4
+R 63f603eae54aff0b7014e11adb19abba
 U dan
-Z 372b7ef74e3ef16e1a500de7d9db277c
+Z c2e1163608ea0fe576a6717534083382
