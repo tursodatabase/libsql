@@ -1518,6 +1518,21 @@ static u32 pager_cksum(Pager *pPager, const u8 *aData){
 }
 
 /*
+** Report the current page size and number of reserved bytes back
+** to the codec.
+*/
+#ifdef SQLITE_HAS_CODEC
+static void pagerReportSize(Pager *pPager){
+  if( pPager->xCodecSizeChng ){
+    pPager->xCodecSizeChng(pPager->pCodec, pPager->pageSize,
+                           (int)pPager->nReserve);
+  }
+}
+#else
+# define pagerReportSize(X)     /* No-op if we do not support a codec */
+#endif
+
+/*
 ** Read a single page from either the journal file (if isMainJrnl==1) or
 ** from the sub-journal (if isMainJrnl==0) and playback that page.
 ** The page begins at offset *pOffset into the file. The *pOffset
@@ -1609,11 +1624,20 @@ static int pager_playback_one_page(
     }
   }
 
+  /* If this page has already been played by before during the current
+  ** rollback, then don't bother to play it back again.
+  */
   if( pDone && (rc = sqlite3BitvecSet(pDone, pgno))!=SQLITE_OK ){
     return rc;
   }
-
   assert( pPager->state==PAGER_RESERVED || pPager->state>=PAGER_EXCLUSIVE );
+
+  /* When playing back page 1, restore the nReserve setting
+  */
+  if( pgno==1 && pPager->nReserve!=((u8*)aData)[20] ){
+    pPager->nReserve = ((u8*)aData)[20];
+    pagerReportSize(pPager);
+  }
 
   /* If the pager is in RESERVED state, then there must be a copy of this
   ** page in the pager cache. In this case just update the pager cache,
@@ -2752,21 +2776,6 @@ void sqlite3PagerSetBusyhandler(
 }
 
 /*
-** Report the current page size and number of reserved bytes back
-** to the codec.
-*/
-#ifdef SQLITE_HAS_CODEC
-static void pagerReportSize(Pager *pPager){
-  if( pPager->xCodecSizeChng ){
-    pPager->xCodecSizeChng(pPager->pCodec, pPager->pageSize,
-                           (int)pPager->nReserve);
-  }
-}
-#else
-# define pagerReportSize(X)     /* No-op if we do not support a codec */
-#endif
-
-/*
 ** Change the page size used by the Pager object. The new page size 
 ** is passed in *pPageSize.
 **
@@ -2905,15 +2914,6 @@ int sqlite3PagerReadFileheader(Pager *pPager, int N, unsigned char *pDest){
   ** to WAL mode yet.
   */
   assert( !pagerUseWal(pPager) );
-#if 0
-  if( pagerUseWal(pPager) ){
-    int isInWal = 0;
-    rc = sqlite3WalRead(pPager->pWal, 1, &isInWal, N, pDest);
-    if( rc!=SQLITE_OK || isInWal ){
-      return rc;
-    }
-  }
-#endif
 
   if( isOpen(pPager->fd) ){
     IOTRACE(("DBHDR %p 0 %d\n", pPager, N))
