@@ -1,5 +1,5 @@
-C Do\snot\sdo\sthe\s*-closeallfiles\stest\sfor\snotify2.test.\sIt\suses\smultiple\sthreads.
-D 2010-07-06T11:26:16
+C Modified\sthe\sxWrite()\smethod\son\sWindows\sto\sdifferentiate\sbetween\sIO\sand\sdisk\sfull\serror\sreturns.
+D 2010-07-06T20:33:48
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c c6112f0ae34f23ae5ca0189a685e084befbdcf26
-F src/os_win.c bdc058198ca969bcf745835e7ca5fadfeb2a51eb
+F src/os_win.c f0c975122ef078fc0e3754d794a9581aa77ed15d
 F src/pager.c 311571e62fe6a039d2a8dddea830981a6052239a
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b3399b40785d13754979203f15d71c95fec50282
-R 7b4071323ca9fc428c3be2522c59e3d1
-U dan
-Z c31411547616d30b10e66222845d8a4e
+P fb09152db879211986a7161a96a61da1425f79ef
+R 0b6dc6b694f3458c5bb423752bff8197
+U shaneh
+Z 47ae047b82aac3b6a4529d83b7b2a192

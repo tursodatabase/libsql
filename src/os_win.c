@@ -731,7 +731,11 @@ static int winWrite(
   rc = SetFilePointer(pFile->h, lowerBits, &upperBits, FILE_BEGIN);
   if( rc==INVALID_SET_FILE_POINTER && (error=GetLastError())!=NO_ERROR ){
     pFile->lastErrno = error;
-    return SQLITE_FULL;
+    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
+      return SQLITE_FULL;
+    }else{
+      return SQLITE_IOERR_WRITE;
+    }
   }
   assert( amt>0 );
   while(
@@ -744,7 +748,11 @@ static int winWrite(
   }
   if( !rc || amt>(int)wrote ){
     pFile->lastErrno = GetLastError();
-    return SQLITE_FULL;
+    if( pFile->lastErrno==ERROR_HANDLE_DISK_FULL ){
+      return SQLITE_FULL;
+    }else{
+      return SQLITE_IOERR_WRITE;
+    }
   }
   return SQLITE_OK;
 }
