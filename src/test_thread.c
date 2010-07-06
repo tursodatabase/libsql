@@ -150,6 +150,7 @@ static Tcl_ThreadCreateType tclScriptThread(ClientData pSqlThread){
   Tcl_DecrRefCount(pList);
   Tcl_DecrRefCount(pRes);
   Tcl_DeleteInterp(interp);
+  while( Tcl_DoOneEvent(TCL_ALL_EVENTS|TCL_DONT_WAIT) );
   Tcl_ExitThread(0);
   TCL_THREAD_CREATE_RETURN;
 }
