@@ -121,7 +121,6 @@ if {[info exists ::env(QUICKTEST_INCLUDE)]} {
 #   veryquick
 #   quick
 #   full
-#   veryquick_plus_notify2
 #
 lappend ::testsuitelist xxx
 
@@ -139,13 +138,6 @@ test_suite "quick" -prefix "" -description {
   test_set $allquicktests
 ]
 
-test_suite "veryquick_plus_notify2" -prefix "" -description {
-  Very quick test suite + file notify2.test. This is used by one of the 
-  sqlite.org release test configurations.
-} -files [ 
-  test_set $allquicktests notify2.test -exclude *malloc* *ioerr* *fault*
-]
-
 test_suite "full" -prefix "" -description {
   Full test suite. Takes a long time.
 } -files [ 
@@ -153,6 +145,14 @@ test_suite "full" -prefix "" -description {
 ] -initialize {
   unset -nocomplain ::G(isquick)
 }
+
+test_suite "threads" -prefix "" -description {
+  All multi-threaded tests.
+} -files {
+  notify2.test   thread001.test thread002.test thread003.test 
+  thread004.test thread005.test walthread.test
+}
+
 
 lappend ::testsuitelist xxx
 #-------------------------------------------------------------------------

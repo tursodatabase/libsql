@@ -1,5 +1,5 @@
-C Before\scalling\sTcl_ExitThread()\sin\sa\smulti-threaded\stest,\scall\sTcl_DoOneEvent()\sas\smany\stimes\sas\snecessary\sto\shandle\sany\squeued\sevents.
-D 2010-07-06T10:55:45
+C Do\snot\sdo\sthe\s*-closeallfiles\stest\sfor\snotify2.test.\sIt\suses\smultiple\sthreads.
+D 2010-07-06T11:26:16
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in a5cad1f8f3e021356bfcc6c77dc16f6f1952bbc3
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -543,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test e1fca39d728b8988581cebf6fe60d2d8435146db
+F test/permutations.test c4ecf4e106ccfdcfc1b14aaf35fcd8e5c0c55c3a
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -615,7 +615,7 @@ F test/tclsqlite.test 8c154101e704170c2be10f137a5499ac2c6da8d3
 F test/tempdb.test 800c36623d67a2ad1f58784b9c5644e0405af6e6
 F test/temptable.test f42121a0d29a62f00f93274464164177ab1cc24a
 F test/temptrigger.test b0273db072ce5f37cf19140ceb1f0d524bbe9f05
-F test/tester.tcl b316a5381e34bac3147fb7562b23a5598cdb2758
+F test/tester.tcl 9ddc36ee951a4b7aebee17f28e2880c8a6e57861
 F test/thread001.test a3e6a7254d1cb057836cb3145b60c10bf5b7e60f
 F test/thread002.test afd20095e6e845b405df4f2c920cb93301ca69db
 F test/thread003.test b824d4f52b870ae39fc5bae4d8070eca73085dca
@@ -623,7 +623,7 @@ F test/thread004.test f51dfc3936184aaf73ee85f315224baad272a87f
 F test/thread005.test bf5c374ca65dd89fd56c8fe511ccfb46875bda5e
 F test/thread1.test 862dd006d189e8b0946935db17399dcac2f8ef91
 F test/thread2.test e08034b83fe9693ade77049732518e5b3d2d700d
-F test/thread_common.tcl 0b07423d29ddb73d4bacbac69268c8d37b6cc5d2
+F test/thread_common.tcl 2aa6f2fdcd4d6e461169c3e5ca098eebf643b863
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
@@ -830,7 +830,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P d1fe8ab4a176180053d35300ad0540a27c6cd76d
-R 97bfdc0a377f0ce957229d33641b4877
+P b3399b40785d13754979203f15d71c95fec50282
+R 7b4071323ca9fc428c3be2522c59e3d1
 U dan
-Z 92b8b5bd1d6ad0f0b2c665129cd5c9e9
+Z c31411547616d30b10e66222845d8a4e

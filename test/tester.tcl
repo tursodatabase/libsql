@@ -1162,6 +1162,11 @@ proc slave_test_script {script} {
   # Run the test script.
   interp eval tinterp $script
 
+  # Check if the interpreter call [run_thread_tests]
+  if { [interp eval tinterp {info exists ::run_thread_tests_called}] } {
+    set ::run_thread_tests_called 1
+  }
+
   # Delete the interpreter used to run the test script.
   interp delete tinterp
 }
@@ -1176,6 +1181,7 @@ proc slave_test_file {zFile} {
 
   # Run the test script in a slave interpreter.
   #
+  unset -nocomplain ::run_thread_tests_called
   reset_prng_state
   set ::sqlite_open_file_count 0
   set time [time { slave_test_script [list source $zFile] }]
@@ -1185,7 +1191,7 @@ proc slave_test_file {zFile} {
   # if the test script has "thread" in its name. The open file counter
   # is not thread-safe.
   #
-  if {[string match *thread* $tail]==0} {
+  if {[info exists ::run_thread_tests_called]==0} {
     do_test ${tail}-closeallfiles { expr {$::sqlite_open_file_count>0} } {0}
   }
   set ::sqlite_open_file_count 0
