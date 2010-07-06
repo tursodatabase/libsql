@@ -256,18 +256,41 @@ TESTSRC = \
 #TESTSRC += $(TOP)/ext/fts3/fts3_tokenizer.c
 
 TESTSRC2 = \
-  $(TOP)/src/attach.c $(TOP)/src/backup.c $(TOP)/src/btree.c                   \
-  $(TOP)/src/build.c $(TOP)/src/date.c                                         \
-  $(TOP)/src/expr.c $(TOP)/src/func.c $(TOP)/src/insert.c $(TOP)/src/wal.c     \
-  $(TOP)/src/mem5.c $(TOP)/src/os.c                                            \
-  $(TOP)/src/os_os2.c $(TOP)/src/os_unix.c $(TOP)/src/os_win.c                 \
-  $(TOP)/src/pager.c $(TOP)/src/pragma.c $(TOP)/src/prepare.c                  \
-  $(TOP)/src/printf.c $(TOP)/src/random.c $(TOP)/src/pcache.c                  \
-  $(TOP)/src/pcache1.c $(TOP)/src/select.c $(TOP)/src/tokenize.c               \
-  $(TOP)/src/utf.c $(TOP)/src/util.c $(TOP)/src/vdbeapi.c $(TOP)/src/vdbeaux.c \
-  $(TOP)/src/vdbe.c $(TOP)/src/vdbemem.c $(TOP)/src/where.c parse.c            \
-  $(TOP)/ext/fts3/fts3.c $(TOP)/ext/fts3/fts3_expr.c                           \
-  $(TOP)/ext/fts3/fts3_tokenizer.c $(TOP)/ext/fts3/fts3_write.c                \
+  $(TOP)/src/attach.c \
+  $(TOP)/src/backup.c \
+  $(TOP)/src/btree.c \
+  $(TOP)/src/build.c \
+  $(TOP)/src/date.c \
+  $(TOP)/src/expr.c \
+  $(TOP)/src/func.c \
+  $(TOP)/src/insert.c \
+  $(TOP)/src/wal.c \
+  $(TOP)/src/mem5.c \
+  $(TOP)/src/os.c \
+  $(TOP)/src/os_os2.c \
+  $(TOP)/src/os_unix.c \
+  $(TOP)/src/os_win.c \
+  $(TOP)/src/pager.c \
+  $(TOP)/src/pragma.c \
+  $(TOP)/src/prepare.c \
+  $(TOP)/src/printf.c \
+  $(TOP)/src/random.c \
+  $(TOP)/src/pcache.c \
+  $(TOP)/src/pcache1.c \
+  $(TOP)/src/select.c \
+  $(TOP)/src/tokenize.c \
+  $(TOP)/src/utf.c \
+  $(TOP)/src/util.c \
+  $(TOP)/src/vdbeapi.c \
+  $(TOP)/src/vdbeaux.c \
+  $(TOP)/src/vdbe.c \
+  $(TOP)/src/vdbemem.c \
+  $(TOP)/src/where.c \
+  parse.c \
+  $(TOP)/ext/fts3/fts3.c \
+  $(TOP)/ext/fts3/fts3_expr.c \
+  $(TOP)/ext/fts3/fts3_tokenizer.c \
+  $(TOP)/ext/fts3/fts3_write.c \
   $(TOP)/ext/async/sqlite3async.c
 
 # Header files used by all library source files.
@@ -325,8 +348,6 @@ sqlite3$(EXE):	$(TOP)/src/shell.c libsqlite3.a sqlite3.h
 	$(TCCX) $(READLINE_FLAGS) -o sqlite3$(EXE)                  \
 		$(TOP)/src/shell.c                                  \
 		libsqlite3.a $(LIBREADLINE) $(TLIBS) $(THREADLIB)
-
-objects: $(LIBOBJ_ORIG)
 
 # This target creates a directory named "tsrc" and fills it with
 # copies of all of the C source code and header files needed to
@@ -397,7 +418,7 @@ parse.c:	$(TOP)/src/parse.y lemon $(TOP)/addopcodes.awk
 	rm -f parse.h
 	./lemon $(OPTS) parse.y
 	mv parse.h parse.h.temp
-	awk -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
+	$(NAWK) -f $(TOP)/addopcodes.awk parse.h.temp >parse.h
 
 sqlite3.h:	$(TOP)/src/sqlite.h.in $(TOP)/manifest.uuid $(TOP)/VERSION
 	tclsh $(TOP)/tool/mksqlite3h.tcl $(TOP) >sqlite3.h
