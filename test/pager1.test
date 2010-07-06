@@ -536,6 +536,10 @@ foreach {tn1 tcl} {
     # make sure SQLite doesn't get confused by this.
     #
     set nPadding [expr 511 - $::mj_filename_length]
+    if {$tcl_platform(platform)=="windows"} {
+      # TBD need to figure out how to do this correctly for Windows!!!
+      set nPadding [expr 255 - $::mj_filename_length]
+    }
 
     # We cannot just create a really long database file name to open, as
     # Linux limits a single component of a path to 255 bytes by default
@@ -1284,6 +1288,7 @@ do_test pager1-9.4.1 {
 do_test pager1-9.4.2 {
   list [file size test.db2] [file size test.db]
 } {0 0}
+db2 close
 
 #-------------------------------------------------------------------------
 # Test that regardless of the value returned by xSectorSize(), the
