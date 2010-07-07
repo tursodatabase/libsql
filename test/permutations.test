@@ -165,7 +165,7 @@ test_suite "coverage-wal" -description {
 } -files {
   wal.test       wal2.test     wal3.test       walmode.test    
   walbak.test    walhook.test  walcrash2.test  walcksum.test
-  walfault.test
+  walfault.test  walbig.test
 } 
 
 test_suite "coverage-pager" -description {

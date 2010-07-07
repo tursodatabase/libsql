@@ -396,7 +396,7 @@ struct WalCkptInfo {
 ** is to the start of the write-ahead log frame-header.
 */
 #define walFrameOffset(iFrame, szPage) (                               \
-  WAL_HDRSIZE + ((iFrame)-1)*((szPage)+WAL_FRAME_HDRSIZE)        \
+  WAL_HDRSIZE + ((iFrame)-1)*(i64)((szPage)+WAL_FRAME_HDRSIZE)         \
 )
 
 /*
@@ -1577,9 +1577,11 @@ static int walCheckpoint(
       rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, 
           walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE
       );
-      if( rc!=SQLITE_OK ) break;
-      rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, (iDbpage-1)*szPage);
-      if( rc!=SQLITE_OK ) break;
+      if( rc==SQLITE_OK ){
+        i64 iOffset = (i64)(iDbpage-1)*szPage;
+        testcase( iOffset > (((i64)1)<<32) );
+        rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
+      }
     }
 
     /* If work was actually accomplished... */
@@ -2412,7 +2414,6 @@ int sqlite3WalFrames(
     u32 nDbsize;                  /* Db-size field for frame header */
     i64 iOffset;                  /* Write offset in log file */
     void *pData;
-   
    
     iOffset = walFrameOffset(++iFrame, szPage);
     

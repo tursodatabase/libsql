@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Remote\sthe\sSQLITE_OMIT_GLOBALRECOVER\smacro\s-\sit\sis\ssubsumed\sby\s\nSQLITE_OMIT_DEPRECATED.\s\sAdd\ssupport\sto\ssqlite3_compileoption_used()\nfor\sSQLITE_OMIT_WAL.
-D 2010-07-07T01:52:32
+C Fix\sa\sproblem\swith\swriting\sto\sdatabases\slarger\sthan\s2^32\sbytes\swith\sWAL\smode.
+D 2010-07-07T09:48:45
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -229,7 +226,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 585f37237e2621ddd32676bc577b995856267ac2
+F src/wal.c 480c42c699b31dfa91e2b464f2a8d998d1def61e
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 926c83c6394e132a1c62b6b12ceeba7d55a34c19
@@ -546,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test c4ecf4e106ccfdcfc1b14aaf35fcd8e5c0c55c3a
+F test/permutations.test b89aec8ac78fc12b5b538e5f3d5746be85675e65
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -782,6 +779,7 @@ F test/wal3.test d2ae7e66f973bd6b58ce49e546b2c00f44fe0485
 F test/wal4.test 640be93f5422df37203aa5e7c06b24fb5e4a2439
 F test/wal_common.tcl 875ee2118cd7b292ba22fb9bfa66a984b5226b13
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
+F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
 F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
@@ -833,14 +831,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5621862b0e2fc945ded51f5926a6b4c9f07d0ab7
-R 7f9bd6b95417a233f915f87ada337fcf
-U drh
-Z 4f9dbd05bcf05ab2c203e1ceb535b353
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMM93loxKgR168RlERAqzCAJ4i08vty2Z9JMTsc1nI2cKSM/hWtACeJFyR
-BNM+a/Qvc6rpcr3FevMBlMg=
-=UwWJ
------END PGP SIGNATURE-----
+P 21a2db908b9eeb7477fc9d8b2b54482db93cd76f
+R 81926a307a538e8a5e949c4942eae283
+U dan
+Z 71f63fe0495bde120b5099f0d4f6deb4
