@@ -1440,7 +1440,7 @@ do_test pager1-11.3 {
 } {truncate ok}
 do_test pager1-11.4 {
   db2 close
-  file size test.db-journal
+  file exists test.db-journal
 } {0}
 do_execsql_test pager1-11.5 { SELECT count(*) FROM zz } {32}
 db close

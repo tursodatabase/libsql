@@ -273,11 +273,11 @@ do_test walmode-5.3.5 {
 # Test changing to WAL mode from journal_mode=off or journal_mode=memory
 #
 foreach {tn mode} {
+  1 off
+  2 memory
   3 persist
   4 delete
   5 truncate
-  2 memory
-  1 off
 } {
   do_test walmode-6.$tn {
     faultsim_delete_and_reopen
@@ -287,5 +287,41 @@ foreach {tn mode} {
     "
   } [list $mode wal]
 }
+db close
+
+do_test walmode-7.0 {
+  file delete -force test.db
+  sqlite3 db test.db
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b);
+  }
+} {wal}
+foreach {tn sql result} {
+  1  "PRAGMA journal_mode"                delete
+  2  "PRAGMA main.journal_mode"           wal
+  3  "PRAGMA journal_mode = delete"       delete
+  4  "PRAGMA journal_mode"                delete
+  5  "PRAGMA main.journal_mode"           delete
+  6  "PRAGMA journal_mode = wal"          wal
+  7  "PRAGMA journal_mode"                delete
+  8  "PRAGMA main.journal_mode"           wal
+
+  9  "PRAGMA journal_mode"                delete
+ 10  "PRAGMA main.journal_mode"           wal
+ 11  "PRAGMA main.journal_mode = delete"  delete
+ 12  "PRAGMA journal_mode"                delete
+ 13  "PRAGMA main.journal_mode"           delete
+ 14  "PRAGMA main.journal_mode = wal"     wal
+ 15  "PRAGMA journal_mode"                delete
+ 16  "PRAGMA main.journal_mode"           wal
+} {
+  do_test walmode-7.$tn { 
+    db close
+    sqlite3 db test.db
+    execsql $sql
+  } $result
+}
+db close
 
 finish_test

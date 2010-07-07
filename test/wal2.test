@@ -619,7 +619,6 @@ foreach {tn sql res expected_locks} {
     COMMIT;
   } {wal} {
     $RECOVERY 
-    $READMARK0_READ 
     $READMARK0_WRITE
   }
 

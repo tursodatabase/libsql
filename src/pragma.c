@@ -537,6 +537,10 @@ void sqlite3Pragma(
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
     int eMode;                    /* One of the PAGER_JOURNALMODE_XXX symbols */
 
+    if( sqlite3ReadSchema(pParse) ){
+      goto pragma_out;
+    }
+
     sqlite3VdbeSetNumCols(v, 1);
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
 
