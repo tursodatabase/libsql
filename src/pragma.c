@@ -549,7 +549,7 @@ void sqlite3Pragma(
     }else{
       const char *zMode;
       int n = sqlite3Strlen30(zRight);
-      for(eMode=0; (zMode = sqlite3JournalModename(eMode)); eMode++){
+      for(eMode=0; (zMode = sqlite3JournalModename(eMode))!=0; eMode++){
         if( sqlite3StrNICmp(zRight, zMode, n)==0 ) break;
       }
       if( !zMode ){

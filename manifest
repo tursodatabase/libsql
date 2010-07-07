@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Avoid\sthe\sneed\sfor\sa\sNEVER()\sfrom\spager_write_pagelist()\sby\spassing\sin\npPager\sas\san\sextra\sparameter.
-D 2010-07-07T14:19:14
+C Fix\sa\scompiler\swarning\sin\sPRAGMA\sjournal_mode.
+D 2010-07-07T14:33:09
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -165,7 +165,7 @@ F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 3a7c28f46a61b43ff0b5c087a7983c154f4b264c
-F src/pragma.c 7d76fe052ed805e68226e4518c2e400e9e5345de
+F src/pragma.c ca1a5634806bf53de653b1fe207b6eeedf3e3aa7
 F src/prepare.c f045aeff869d6409a2eae2fe08f7dc2df9528195
 F src/printf.c 5f5b65a83e63f2096a541a340722a509fa0240a7
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
@@ -834,14 +834,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cdcf08cb18b1e290a4093454bebbd3e7094d6804
-R a1eb4884db4a3563f67a9bb6eab5fa2c
+P b3179379437dbcb1d8e7f1f8f631a3e7df1a5c9a
+R 63d7123310953a831ecd91dafe773275
 U drh
-Z b864d9add7808f5e75f10b52efcf8b3d
+Z 3728b520ea88514c29608bbf4e49b1f4
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMNIzloxKgR168RlERAlABAJ4vj1BnAG1oSSgE47MEpROxioLDtwCcClv6
-T5fcShlMyhP1jpxF/VDz3iE=
-=Wv86
+iD8DBQFMNJAooxKgR168RlERAkk7AJwKtT3fmVOeS/JebTj8uqMZeUXOrACeI6WH
+7rgZnrDOtF+4DmQygPlG3Bc=
+=/iv2
 -----END PGP SIGNATURE-----
