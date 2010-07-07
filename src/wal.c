@@ -1572,22 +1572,25 @@ static int walCheckpoint(
 
     /* Iterate through the contents of the WAL, copying data to the db file. */
     while( rc==SQLITE_OK && 0==walIteratorNext(pIter, &iDbpage, &iFrame) ){
+      i64 iOffset;
       assert( walFramePgno(pWal, iFrame)==iDbpage );
       if( iFrame<=nBackfill || iFrame>mxSafeFrame ) continue;
-      rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, 
-          walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE
-      );
-      if( rc==SQLITE_OK ){
-        i64 iOffset = (i64)(iDbpage-1)*szPage;
-        testcase( iOffset > (((i64)1)<<32) );
-        rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
-      }
+      iOffset = walFrameOffset(iFrame, szPage) + WAL_FRAME_HDRSIZE;
+      /* testcase( IS_BIG_INT(iOffset) ); -- would require a 4GB WAL file */
+      rc = sqlite3OsRead(pWal->pWalFd, zBuf, szPage, iOffset);
+      if( rc!=SQLITE_OK ) break;
+      iOffset = (iDbpage-1)*(i64)szPage;
+      testcase( IS_BIG_INT(iOffset) );
+      rc = sqlite3OsWrite(pWal->pDbFd, zBuf, szPage, iOffset);
+      if( rc!=SQLITE_OK ) break;
     }
 
     /* If work was actually accomplished... */
     if( rc==SQLITE_OK ){
       if( mxSafeFrame==walIndexHdr(pWal)->mxFrame ){
-        rc = sqlite3OsTruncate(pWal->pDbFd, ((i64)pWal->hdr.nPage*(i64)szPage));
+        i64 szDb = pWal->hdr.nPage*(i64)szPage;
+        testcase( IS_BIG_INT(szDb) );
+        rc = sqlite3OsTruncate(pWal->pDbFd, szDb);
         if( rc==SQLITE_OK && sync_flags ){
           rc = sqlite3OsSync(pWal->pDbFd, sync_flags);
         }
@@ -2125,6 +2128,7 @@ int sqlite3WalRead(
   if( iRead ){
     i64 iOffset = walFrameOffset(iRead, pWal->hdr.szPage) + WAL_FRAME_HDRSIZE;
     *pInWal = 1;
+    testcase( IS_BIG_INT(iOffset) );
     return sqlite3OsRead(pWal->pWalFd, pOut, nOut, iOffset);
   }
 
@@ -2416,6 +2420,7 @@ int sqlite3WalFrames(
     void *pData;
    
     iOffset = walFrameOffset(++iFrame, szPage);
+    testcase( IS_BIG_INT(iOffset) );
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
@@ -2455,6 +2460,7 @@ int sqlite3WalFrames(
       pData = pLast->pData;
 #endif
       walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
+      testcase( IS_BIG_INT(iOffset) );
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
