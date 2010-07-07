@@ -1,5 +1,5 @@
-C Change\sthe\sasync-IO\sextension\sto\sreturn\sSQLITE_IOERR_SHORT_READ\swhen\sappropriate.\sThis\sprevents\sa\svalgrind\swarning\sin\sthe\stest\ssuite.
-D 2010-07-07T11:05:22
+C Run\ssome\sfts3\stests\sas\spart\sof\sthe\s"wal"\spermutation.
+D 2010-07-07T11:43:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -543,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test b89aec8ac78fc12b5b538e5f3d5746be85675e65
+F test/permutations.test a540a4ede33a306e77a2945901f398ec518fd668
 F test/pragma.test a869b428b861f9dbbdb25461a104e8e830fc3026
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -831,7 +831,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b956ddca75d64ba662fa0b03b643822d836b6501
-R 9c7c5b45d47b292d4af0a2f4d824ff05
+P d9e3287900ae4aa7722ad0132bb8d6cd2755d3a6
+R 0ddb54b0814db4d6000bbba9d0ae3258
 U dan
-Z fc49fd51a41c6fcdb8270c334db1cd62
+Z 186fcbf213dd1289853884df2490f207
