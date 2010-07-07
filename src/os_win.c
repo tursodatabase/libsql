@@ -2088,14 +2088,21 @@ static int winAccess(
   if( isNT() ){
     WIN32_FILE_ATTRIBUTE_DATA sAttrData;
     memset(&sAttrData, 0, sizeof(sAttrData));
-    attr = GetFileAttributesExW((WCHAR*)zConverted,
-                               GetFileExInfoStandard, &sAttrData);
-    /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
-    ** as if it does not exist.
-    */
-    if( flags==SQLITE_ACCESS_EXISTS && attr!=INVALID_FILE_ATTRIBUTES
-        && sAttrData.nFileSizeHigh==0 && sAttrData.nFileSizeLow==0 ){
-            attr = INVALID_FILE_ATTRIBUTES;
+    if( GetFileAttributesExW((WCHAR*)zConverted,
+                             GetFileExInfoStandard, 
+                             &sAttrData) ){
+      /* For an SQLITE_ACCESS_EXISTS query, treat a zero-length file
+      ** as if it does not exist.
+      */
+      if(    flags==SQLITE_ACCESS_EXISTS
+          && sAttrData.nFileSizeHigh==0 
+          && sAttrData.nFileSizeLow==0 ){
+        attr = INVALID_FILE_ATTRIBUTES;
+      }else{
+        attr = sAttrData.dwFileAttributes;
+      }
+    }else{
+      return SQLITE_IOERR;
     }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,

@@ -1,5 +1,8 @@
-C Make\ssure\sthe\sschema\sis\sloaded\sbefore\spreparing\sa\s"PRAGMA\sjournal_mode"\scommand.\sThis\shelps\sit\sreturn\smeaningful\sresults\swhen\sit\sis\sthe\sfirst\scommand\sexecuted\sby\sa\snew\sdatabase\sconnection.
-D 2010-07-07T13:54:29
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Merge\stogether\sthe\saccident\sfork.
+D 2010-07-07T14:00:17
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +158,7 @@ F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c c6112f0ae34f23ae5ca0189a685e084befbdcf26
-F src/os_win.c f0c975122ef078fc0e3754d794a9581aa77ed15d
+F src/os_win.c c4b785547bbdf334f858c863c63177492e306c92
 F src/pager.c 311571e62fe6a039d2a8dddea830981a6052239a
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -831,7 +834,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8156b57ac33161ae6dd8a9413127ecce3c9eae83
-R e41ff6377e33eb60459569336ce5c4d2
-U dan
-Z 29f850eebea1ce7652ffcd737a108779
+P ef126e775a02d69a9cab53028513e8799e1b6044 4bfd46f1db41009a1b925d61c6f074b933caa4ec
+R 0c8a529c4c9b7567d05e53b5d178ef4a
+U drh
+Z 02f7d9abcf94e9acc7e188aaa1f39a23
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMNIh1oxKgR168RlERAn8CAJ9lOhOruvcEEpoiChXfr4dyf3+7bQCfR3mM
+6rdx06TSs03YdLMZBvDwVrU=
+=y4S/
+-----END PGP SIGNATURE-----
