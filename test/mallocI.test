@@ -57,6 +57,7 @@ do_malloc_test mallocI-4 -tclprep {
     # on the database file.
     catchsql { INSERT INTO t1 VALUES(1, 2, 3) } db2
   } {0 {}}
+  catch {db2 close}
 }
 catch { db2 close }
 
