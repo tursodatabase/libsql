@@ -2080,8 +2080,11 @@ static int winAccess(
 ){
   DWORD attr;
   int rc = 0;
-  void *zConverted = convertUtf8Filename(zFilename);
+  void *zConverted;
   UNUSED_PARAMETER(pVfs);
+
+  SimulateIOError( return SQLITE_IOERR_ACCESS; );
+  zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
@@ -2102,7 +2105,12 @@ static int winAccess(
         attr = sAttrData.dwFileAttributes;
       }
     }else{
-      return SQLITE_IOERR;
+      if( GetLastError()!=ERROR_FILE_NOT_FOUND ){
+        free(zConverted);
+        return SQLITE_IOERR_ACCESS;
+      }else{
+        attr = INVALID_FILE_ATTRIBUTES;
+      }
     }
 /* isNT() is 1 if SQLITE_OS_WINCE==1, so this else is never executed. 
 ** Since the ASCII version of these Windows API do not exist for WINCE,
