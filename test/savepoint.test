@@ -917,7 +917,6 @@ do_multiclient_test tn {
       INSERT INTO foo VALUES(1);
       INSERT INTO foo VALUES(2);
     }
-  
     sql2 {
       BEGIN;
         SELECT * FROM foo;
@@ -959,11 +958,65 @@ do_multiclient_test tn {
       RELEASE one;
     }
   } {}
-
   do_test savepoint-14.$tn.7 {
     sql2 { CREATE INDEX fooidx ON foo(x); }
     sql3 { PRAGMA integrity_check }
   } {ok}
+}
+
+do_multiclient_test tn {
+  do_test savepoint-15.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+    sql2 { BEGIN; SELECT * FROM foo; }
+  } {1 2}
+  do_test savepoint-15.$tn.2 {
+    sql1 {
+      PRAGMA locking_mode = EXCLUSIVE;
+      BEGIN;
+        INSERT INTO foo VALUES(3);
+    }
+    csql1 { COMMIT }
+  } {1 {database is locked}}
+  do_test savepoint-15.$tn.3 {
+    sql1 { ROLLBACK }
+    sql2 { COMMIT }
+    sql1 {
+      INSERT INTO foo VALUES(3);
+      PRAGMA locking_mode = NORMAL;
+      INSERT INTO foo VALUES(4);
+    }
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
+}
+
+do_multiclient_test tn {
+  do_test savepoint-16.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+  } {}
+  do_test savepoint-16.$tn.2 {
+
+    db eval {SELECT * FROM foo} {
+      sql1 { INSERT INTO foo VALUES(3) }
+      sql2 { SELECT * FROM foo }
+      sql1 { INSERT INTO foo VALUES(4) }
+      break
+    }
+
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
+  do_test savepoint-16.$tn.3 {
+    sql1 { SELECT * FROM foo }
+  } {1 2 3 4}
 }
 
 finish_test
