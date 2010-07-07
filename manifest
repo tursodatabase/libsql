@@ -1,5 +1,5 @@
-C Close\sthe\sfile\shandle\sbefore\sreturning.\s\sTCL\stest\sscript\sissue\sonly.
-D 2010-07-07T15:41:56
+C Do\snot\smake\sthe\sSQLITE_FCNTL_SIZE_HINT\scall\sif\san\serror\shas\salready\soccurred\sduring\stransaction\scommit.
+D 2010-07-07T16:18:46
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +156,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c c6112f0ae34f23ae5ca0189a685e084befbdcf26
 F src/os_win.c f0a56db57896466b25c82d224131a2b095352555
-F src/pager.c 23e3b0d774cbedf19dc8636088078e921af7f47f
+F src/pager.c 39f61b5161191bae00bdef32aab84338d3ab9342
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -831,7 +831,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8eefc287265443ec043bdab629597e79c9d22006
-R 2e58f8920f121373055c521fad88b101
-U shaneh
-Z da48c113bd9ab0797a611da948cdf8b0
+P f4076d8567243174c023b7aa7ae9ca7f8f73e33b
+R 423d72eb770aafb7bbf6d0a682f0a1aa
+U dan
+Z 166f981bc5447a4f377705e8e4c03a3f
