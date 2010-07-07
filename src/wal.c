@@ -2420,7 +2420,7 @@ int sqlite3WalFrames(
     void *pData;
    
     iOffset = walFrameOffset(++iFrame, szPage);
-    testcase( IS_BIG_INT(iOffset) );
+    /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
     
     /* Populate and write the frame header */
     nDbsize = (isCommit && p->pDirty==0) ? nTruncate : 0;
@@ -2460,7 +2460,7 @@ int sqlite3WalFrames(
       pData = pLast->pData;
 #endif
       walEncodeFrame(pWal, pLast->pgno, nTruncate, pData, aFrame);
-      testcase( IS_BIG_INT(iOffset) );
+      /* testcase( IS_BIG_INT(iOffset) ); // requires a 4GiB WAL */
       rc = sqlite3OsWrite(pWal->pWalFd, aFrame, sizeof(aFrame), iOffset);
       if( rc!=SQLITE_OK ){
         return rc;
