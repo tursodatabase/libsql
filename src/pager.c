@@ -2546,6 +2546,7 @@ static int pagerPlaybackSavepoint(Pager *pPager, PagerSavepoint *pSavepoint){
   ** being reverted was opened.
   */
   pPager->dbSize = pSavepoint ? pSavepoint->nOrig : pPager->dbOrigSize;
+  pPager->changeCountDone = pPager->tempFile;
 
   if( !pSavepoint && pagerUseWal(pPager) ){
     return pagerRollbackWal(pPager);

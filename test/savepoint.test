@@ -13,6 +13,8 @@
 
 set testdir [file dirname $argv0]
 source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
 
 #----------------------------------------------------------------------
 # The following tests - savepoint-1.* - test that the SAVEPOINT, RELEASE
@@ -904,6 +906,64 @@ if {[wal_is_wal_mode]==0} {
       SELECT * FROM t1;
     }
   } {1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16}
+}
+
+db close
+file delete test.db
+do_multiclient_test tn {
+  do_test savepoint-14.$tn.1 {
+    sql1 {
+      CREATE TABLE foo(x);
+      INSERT INTO foo VALUES(1);
+      INSERT INTO foo VALUES(2);
+    }
+  
+    sql2 {
+      BEGIN;
+        SELECT * FROM foo;
+    }
+  } {1 2}
+  do_test savepoint-14.$tn.2 {
+    sql1 {
+      SAVEPOINT one;
+      INSERT INTO foo VALUES(1);
+    }
+    csql1 { RELEASE one }
+  } {1 {database is locked}}
+  do_test savepoint-14.$tn.3 {
+    sql1 { ROLLBACK TO one }
+    sql2 { COMMIT }
+    sql1 { RELEASE one }
+  } {}
+
+  do_test savepoint-14.$tn.4 {
+    sql2 {
+      BEGIN;
+        SELECT * FROM foo;
+    }
+  } {1 2}
+  do_test savepoint-14.$tn.5 {
+    sql1 {
+      SAVEPOINT one;
+      INSERT INTO foo VALUES(1);
+    }
+    csql1 { RELEASE one }
+  } {1 {database is locked}}
+  do_test savepoint-14.$tn.6 {
+    sql2 { COMMIT }
+    sql1 {
+      ROLLBACK TO one;
+      INSERT INTO foo VALUES(3);
+      INSERT INTO foo VALUES(4);
+      INSERT INTO foo VALUES(5);
+      RELEASE one;
+    }
+  } {}
+
+  do_test savepoint-14.$tn.7 {
+    sql2 { CREATE INDEX fooidx ON foo(x); }
+    sql3 { PRAGMA integrity_check }
+  } {ok}
 }
 
 finish_test
