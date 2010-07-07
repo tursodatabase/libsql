@@ -690,7 +690,7 @@ static int asyncRead(
     }
     nRead = MIN(filesize - iOffset, iAmt64);
     if( nRead>0 ){
-      rc = pBase->pMethods->xRead(pBase, zOut, nRead, iOffset);
+      rc = pBase->pMethods->xRead(pBase, zOut, (int)nRead, iOffset);
       ASYNC_TRACE(("READ %s %d bytes at %d\n", p->zName, nRead, iOffset));
     }
   }
@@ -706,7 +706,6 @@ static int asyncRead(
       )){
         sqlite3_int64 nCopy;
         sqlite3_int64 nByte64 = (sqlite3_int64)pWrite->nByte;
-        filesize = MAX(filesize, pWrite->iOffset+nByte64);
 
         /* Set variable iBeginIn to the offset in buffer pWrite->zBuf[] from
         ** which data should be copied. Set iBeginOut to the offset within
@@ -718,9 +717,11 @@ static int asyncRead(
         if( iBeginIn<0 ) iBeginIn = 0;
         if( iBeginOut<0 ) iBeginOut = 0;
 
+        filesize = MAX(filesize, pWrite->iOffset+nByte64);
+
         nCopy = MIN(nByte64-iBeginIn, iAmt64-iBeginOut);
         if( nCopy>0 ){
-          memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], nCopy);
+          memcpy(&((char *)zOut)[iBeginOut], &pWrite->zBuf[iBeginIn], (size_t)nCopy);
           ASYNC_TRACE(("OVERREAD %d bytes at %d\n", nCopy, iBeginOut+iOffset));
         }
       }
@@ -1236,7 +1237,7 @@ static int asyncFullPathname(
   if( rc==SQLITE_OK ){
     int i, j;
     char *z = zPathOut;
-    int n = strlen(z);
+    int n = (int)strlen(z);
     while( n>1 && z[n-1]=='/' ){ n--; }
     for(i=j=0; i<n; i++){
       if( z[i]=='/' ){
