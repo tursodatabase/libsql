@@ -667,7 +667,7 @@ static int asyncRead(
 ){
   AsyncFileData *p = ((AsyncFile *)pFile)->pData;
   int rc = SQLITE_OK;
-  sqlite3_int64 filesize;
+  sqlite3_int64 filesize = 0;
   sqlite3_file *pBase = p->pBaseRead;
   sqlite3_int64 iAmt64 = (sqlite3_int64)iAmt;
 
@@ -706,6 +706,7 @@ static int asyncRead(
       )){
         sqlite3_int64 nCopy;
         sqlite3_int64 nByte64 = (sqlite3_int64)pWrite->nByte;
+        filesize = MAX(filesize, pWrite->iOffset+nByte64);
 
         /* Set variable iBeginIn to the offset in buffer pWrite->zBuf[] from
         ** which data should be copied. Set iBeginOut to the offset within
@@ -728,6 +729,9 @@ static int asyncRead(
 
 asyncread_out:
   async_mutex_leave(ASYNC_MUTEX_QUEUE);
+  if( rc==SQLITE_OK && filesize<(iOffset+iAmt) ){
+    rc = SQLITE_IOERR_SHORT_READ;
+  }
   return rc;
 }
 

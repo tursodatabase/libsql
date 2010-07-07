@@ -348,6 +348,11 @@ foreach {tn sql tcl} {
     PRAGMA integrity_check;
   } {258 ok}
 
+  do_execsql_test pager1-3.$tn.6 {
+    SAVEPOINT one;
+    RELEASE one;
+  } {}
+
   db close
   catch { tv delete }
 }
