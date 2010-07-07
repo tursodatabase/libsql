@@ -73,6 +73,7 @@ proc wal_set_walhdr {filename {intlist {}}} {
   fconfigure $fd -translation binary
   fconfigure $fd -encoding binary
   set blob [read $fd 24]
+  close $fd
 
   binary scan $blob I6 ints
   set ints
