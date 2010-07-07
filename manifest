@@ -1,5 +1,5 @@
-C Close\sthe\sfile\shandle\sbefore\sreturning.\s\sTCL\stest\sscript\sissue\sonly.
-D 2010-07-07T15:41:56
+C Fix\stest\snumbering\sissue\sin\snan.test.
+D 2010-07-07T16:20:39
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -528,7 +528,7 @@ F test/misc7.test c5f4e6a82e04e71820c0f9f64f6733f04c8ae0ae
 F test/misuse.test 30b3a458e5a70c31e74c291937b6c82204c59f33
 F test/mutex1.test 5b71777fc127509cd257910c8db799de557a02de
 F test/mutex2.test bfeaeac2e73095b2ac32285d2756e3a65e681660
-F test/nan.test f3a0bcc6ca1acaa370efc5a7571e89507fb5927d
+F test/nan.test a44e04df1486fcfb02d32468cbcd3c8e1e433723
 F test/notify1.test 8433bc74bd952fb8a6e3f8d7a4c2b28dfd69e310
 F test/notify2.test 195a467e021f74197be2c4fb02d6dee644b8d8db
 F test/notify3.test 7eeba3628c4e707c004b72a2489c48fbdbc5c2ee
@@ -831,7 +831,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 8eefc287265443ec043bdab629597e79c9d22006
-R 2e58f8920f121373055c521fad88b101
+P f4076d8567243174c023b7aa7ae9ca7f8f73e33b
+R c970a5b5dd2be1e9ca492d8af03b80ee
 U shaneh
-Z da48c113bd9ab0797a611da948cdf8b0
+Z d43b52294ca0a4f0a3b462dde9f23d6e
