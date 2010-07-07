@@ -2061,7 +2061,6 @@ int sqlite3_collation_needed16(
 }
 #endif /* SQLITE_OMIT_UTF16 */
 
-#ifndef SQLITE_OMIT_GLOBALRECOVER
 #ifndef SQLITE_OMIT_DEPRECATED
 /*
 ** This function is now an anachronism. It used to be used to recover from a
@@ -2070,7 +2069,6 @@ int sqlite3_collation_needed16(
 int sqlite3_global_recover(void){
   return SQLITE_OK;
 }
-#endif
 #endif
 
 /*

@@ -3901,7 +3901,6 @@ static int test_global_recover(
   int objc,
   Tcl_Obj *CONST objv[]
 ){
-#ifndef SQLITE_OMIT_GLOBALRECOVER
 #ifndef SQLITE_OMIT_DEPRECATED
   int rc;
   if( objc!=1 ){
@@ -3910,7 +3909,6 @@ static int test_global_recover(
   }
   rc = sqlite3_global_recover();
   Tcl_SetResult(interp, (char *)t1ErrorName(rc), TCL_STATIC);
-#endif
 #endif
   return TCL_OK;
 }

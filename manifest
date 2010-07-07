@@ -1,5 +1,8 @@
-C Minor\schanges\sto\sMakefile.in\sto\sbring\sit\smore\sinline\swith\smain.mk.
-D 2010-07-06T20:37:10
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Remote\sthe\sSQLITE_OMIT_GLOBALRECOVER\smacro\s-\sit\sis\ssubsumed\sby\s\nSQLITE_OMIT_DEPRECATED.\s\sAdd\ssupport\sto\ssqlite3_compileoption_used()\nfor\sSQLITE_OMIT_WAL.
+D 2010-07-07T01:52:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +122,7 @@ F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
 F src/build.c 31830208adbd6f97bef2517531ed70954a306fde
 F src/callback.c 01843bdf4b0420fd28046525d150fcd9802931a9
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
-F src/ctime.c 51553a859994d01d8bf3500747f66a890c459774
+F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
 F src/date.c 5dd8448a0bfea8d31fb14cff487d0c06ff8c8b20
 F src/delete.c 41cb4f78557810eecc167b7e2317de7e12d20929
 F src/expr.c 7b1df28226b8a2bb2b9d7c794a42818a81f5edd8
@@ -135,7 +138,7 @@ F src/journal.c cb9f12b6734a0b25aa60d3e093a27bccf46b4bc6
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
-F src/main.c a667105394a7e7d173727b96affd35f65b28e608
+F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
 F src/malloc.c 09c3777bf733a387bec6aa344e455eb4e8ecf47e
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
@@ -177,7 +180,7 @@ F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b898ab058f51ee57e6b54aa8de902526a5376959
-F src/test1.c 5f813ce9d9e9070379ed910d7ea2af0863056be5
+F src/test1.c 87a90fbb0a3191b90561f818590e9806dc0ef80d
 F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -190,7 +193,7 @@ F src/test_async.c 5193a69d0982096d64e56c9ff8b2ec6d4f446f82
 F src/test_autoext.c 30e7bd98ab6d70a62bb9ba572e4c7df347fe645e
 F src/test_backup.c c129c91127e9b46e335715ae2e75756e25ba27de
 F src/test_btree.c 47cd771250f09cdc6e12dda5bc71bc0b3abc96e2
-F src/test_config.c 6210f501d358bde619ae761f06f123529c6ba24f
+F src/test_config.c 5a11c51af2156e2d07186930b36f2b8239a4393f
 F src/test_demovfs.c da81a5f7785bb352bda7911c332a983ec4f17f27
 F src/test_devsym.c 5a99203fb7ff43047d7e493d1b159585983d4ea6
 F src/test_func.c 13b582345fb1185a93e46c53310fae8547dcce20
@@ -830,7 +833,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fce689ebe6165276598539779958407856e2f84f
-R 42a8f87a9b9f9536e21a004f4f11d381
-U shaneh
-Z cc73ba274c924ca4e5efa3999af53ac7
+P 5621862b0e2fc945ded51f5926a6b4c9f07d0ab7
+R 7f9bd6b95417a233f915f87ada337fcf
+U drh
+Z 4f9dbd05bcf05ab2c203e1ceb535b353
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMM93loxKgR168RlERAqzCAJ4i08vty2Z9JMTsc1nI2cKSM/hWtACeJFyR
+BNM+a/Qvc6rpcr3FevMBlMg=
+=UwWJ
+-----END PGP SIGNATURE-----
