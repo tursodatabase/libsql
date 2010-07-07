@@ -1,5 +1,5 @@
-C Fix\ssome\sMSVC\scompiler\swarnings\sin\sthe\sASYNC\sextension.
-D 2010-07-07T16:49:46
+C When\susing\sMSVC\sto\sbuild\stest\scode,\ssuppress\sthe\spopup\sdialog\swhen\sabort\sis\scalled\sfrom\sthe\ssqlite_abort()\stest\sfunction.
+D 2010-07-07T16:51:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -177,7 +177,7 @@ F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c b898ab058f51ee57e6b54aa8de902526a5376959
-F src/test1.c 87a90fbb0a3191b90561f818590e9806dc0ef80d
+F src/test1.c a48320a6481761c46b61ee1c1ee39177add8fccd
 F src/test2.c e3f564ab1e9fd0b47b0c9e23e7054e38bf0836cf
 F src/test3.c 4c21700c73a890a47fc685c1097bfb661346ac94
 F src/test4.c ad03bb987ddedce928f4258c1e7fa4109a73497d
@@ -831,7 +831,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c41f04edb20c0c8fc8c49a53d42cc0b8a0ff7fe3
-R 9b2126a4d9ad3dbdc4271d526f5c179a
+P b951c8675df3e719c30a1dd94200b7c04252a3ea
+R 43e991ee321ad55068675a2f623b21b2
 U shaneh
-Z 7cb7549bc8684ba00d1de05338b5a361
+Z 68697bcc7d9a7e89050452dac7565276

@@ -1901,6 +1901,12 @@ static int sqlite_abort(
   int argc,              /* Number of arguments */
   char **argv            /* Text of each argument */
 ){
+#if defined(_MSC_VER)
+  /* We do this, otherwise the test will halt with a popup message
+   * that we have to click away before the test will continue.
+   */
+  _set_abort_behavior( 0, _CALL_REPORTFAULT );
+#endif
   assert( interp==0 );   /* This will always fail */
   abort();
   return TCL_OK;
