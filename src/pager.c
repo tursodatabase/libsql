@@ -3328,12 +3328,8 @@ static int syncJournal(Pager *pPager){
 ** occurs, an IO error code is returned. Or, if the EXCLUSIVE lock cannot
 ** be obtained, SQLITE_BUSY is returned.
 */
-static int pager_write_pagelist(PgHdr *pList){
-  Pager *pPager;                       /* Pager object */
+static int pager_write_pagelist(Pager *pPager, PgHdr *pList){
   int rc;                              /* Return code */
-
-  if( NEVER(pList==0) ) return SQLITE_OK;
-  pPager = pList->pPager;
 
   /* At this point there may be either a RESERVED or EXCLUSIVE lock on the
   ** database file. If there is already an EXCLUSIVE lock, the following
@@ -3351,7 +3347,7 @@ static int pager_write_pagelist(PgHdr *pList){
   ** EXCLUSIVE, it means the database file has been changed and any rollback
   ** will require a journal playback.
   */
-  assert( !pagerUseWal(pList->pPager) );
+  assert( !pagerUseWal(pPager) );
   assert( pPager->state>=PAGER_RESERVED );
   rc = pager_wait_on_lock(pPager, EXCLUSIVE_LOCK);
 
@@ -3596,7 +3592,7 @@ static int pagerStress(void *p, PgHdr *pPg){
   
     /* Write the contents of the page out to the database file. */
     if( rc==SQLITE_OK ){
-      rc = pager_write_pagelist(pPg);
+      rc = pager_write_pagelist(pPager, pPg);
     }
   }
 
@@ -5225,7 +5221,7 @@ int sqlite3PagerCommitPhaseOne(
       if( rc!=SQLITE_OK ) goto commit_phase_one_exit;
   
       /* Write all dirty pages to the database file. */
-      rc = pager_write_pagelist(sqlite3PcacheDirtyList(pPager->pPCache));
+      rc = pager_write_pagelist(pPager,sqlite3PcacheDirtyList(pPager->pPCache));
       if( rc!=SQLITE_OK ){
         assert( rc!=SQLITE_IOERR_BLOCKED );
         goto commit_phase_one_exit;
