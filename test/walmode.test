@@ -289,6 +289,11 @@ foreach {tn mode} {
 }
 db close
 
+#-------------------------------------------------------------------------
+# Test the effect of a "PRAGMA journal_mode" command being the first 
+# thing executed by a new connection. This means that the schema is not
+# loaded when sqlite3_prepare_v2() is called to compile the statement.
+#
 do_test walmode-7.0 {
   file delete -force test.db
   sqlite3 db test.db
@@ -324,4 +329,44 @@ foreach {tn sql result} {
 }
 db close
 
+#-------------------------------------------------------------------------
+# Test the effect of a "PRAGMA journal_mode" command on an attached 
+# database.
+#
+faultsim_delete_and_reopen
+do_execsql_test walmode-8.1 {
+  CREATE TABLE t1(a, b);
+  PRAGMA journal_mode = WAL;
+  ATTACH 'test.db2' AS two;
+  CREATE TABLE two.t2(a, b);
+} {wal}
+do_execsql_test walmode-8.2 { PRAGMA main.journal_mode }         {wal}
+do_execsql_test walmode-8.3 { PRAGMA two.journal_mode  }         {wal}
+do_execsql_test walmode-8.4 { PRAGMA two.journal_mode = DELETE } {delete}
+
+db close
+sqlite3 db test.db
+do_execsql_test walmode-8.5  { ATTACH 'test.db2' AS two }          {}
+do_execsql_test walmode-8.6  { PRAGMA main.journal_mode }          {wal}
+do_execsql_test walmode-8.7  { PRAGMA two.journal_mode  }          {delete}
+do_execsql_test walmode-8.8  { INSERT INTO two.t2 DEFAULT VALUES } {}
+do_execsql_test walmode-8.9  { PRAGMA two.journal_mode  }          {delete}
+do_execsql_test walmode-8.10 { INSERT INTO t1 DEFAULT VALUES } {}
+do_execsql_test walmode-8.11 { PRAGMA main.journal_mode  }         {wal}
+do_execsql_test walmode-8.12 { PRAGMA journal_mode  }              {delete}
+
+db close
+sqlite3 db test.db
+do_execsql_test walmode-8.13 { PRAGMA journal_mode = WAL }         {wal}
+do_execsql_test walmode-8.14 { ATTACH 'test.db2' AS two  }         {}
+do_execsql_test walmode-8.15 { PRAGMA main.journal_mode  }         {wal}
+do_execsql_test walmode-8.16 { PRAGMA two.journal_mode   }         {wal}
+do_execsql_test walmode-8.17 { INSERT INTO two.t2 DEFAULT VALUES } {}
+do_execsql_test walmode-8.18 { PRAGMA two.journal_mode   }         {wal}
+ 
+sqlite3 db2 test.db2
+do_test walmode-8.19 { execsql { PRAGMA main.journal_mode } db2 }  {wal}
+db2 close
+
 finish_test
+

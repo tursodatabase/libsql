@@ -1,5 +1,5 @@
-C Changes\sto\sos_win.c\sto\shave\sit\ssimulate\sIO\serrors\slike\sos_unix.c.
-D 2010-07-08T03:13:33
+C Add\stests\sto\swalmode.test.
+D 2010-07-08T06:22:26
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -785,7 +785,7 @@ F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
 F test/walfault.test 05c470688d742688e455dd56816bd6bcffa298f8
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
-F test/walmode.test 463a730bc67990c08437616c2dd35a4e5dc82c30
+F test/walmode.test 0c0687ca696762e4fb5ede3a616d1991d1477614
 F test/walslow.test d21625e2e99e11c032ce949e8a94661576548933
 F test/walthread.test a25a393c068a2b42b44333fa3fdaae9072f1617c
 F test/where.test de337a3fe0a459ec7c93db16a519657a90552330
@@ -832,7 +832,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P baa5eddd0539342945c14a2793c2579efb7e3b26
-R 8a54ccb3e7c4dd33b01e301fc19bce15
-U shaneh
-Z 74994333182dfeeb327944a6c7be56de
+P 0d53da9451fe016adc57c7c077fdbbbdb1c8d6ee
+R b58a5775e3725a5f103ee1708fc4f9f4
+U dan
+Z 0c9a27a3186e4aa1ec68825ca3150943
