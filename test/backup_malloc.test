@@ -68,9 +68,10 @@ do_malloc_test backup_malloc-1 -tclprep {
   B finish
 } -cleanup {
   catch { B finish }
+  catch { db2 close }
 }
 
-do_malloc_test backup_malloc-1 -tclprep {
+do_malloc_test backup_malloc-2 -tclprep {
   sqlite3 db2 test2.db
 } -tclbody {
   set rc [catch {sqlite3_backup B db2 temp db main}]
