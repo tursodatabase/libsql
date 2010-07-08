@@ -654,9 +654,6 @@ proc ifcapable {expr code {else ""} {elsecode ""}} {
 #   crashsql -delay CRASHDELAY -file CRASHFILE ?-blocksize BLOCKSIZE? $sql
 #
 proc crashsql {args} {
-  if {$::tcl_platform(platform)!="unix"} {
-    error "crashsql should only be used on unix"
-  }
 
   set blocksize ""
   set crashdelay 1
@@ -684,7 +681,10 @@ proc crashsql {args} {
     error "Compulsory option -file missing"
   }
 
-  set cfile [file join [pwd] $crashfile]
+  # $crashfile gets compared to the native filename in 
+  # cfSync(), which can be different then what TCL uses by
+  # default, so here we force it to the "nativename" format.
+  set cfile [string map {\\ \\\\} [file nativename [file join [pwd] $crashfile]]]
 
   set f [open crash.tcl w]
   puts $f "sqlite3_crash_enable 1"
@@ -713,10 +713,20 @@ proc crashsql {args} {
     puts $f "}"
   }
   close $f
-
   set r [catch {
     exec [info nameofexec] crash.tcl >@stdout
   } msg]
+  
+  # Windows/ActiveState TCL returns a slightly different
+  # error message.  We map that to the expected message
+  # so that we don't have to change all of the test
+  # cases.
+  if {$::tcl_platform(platform)=="windows"} {
+    if {$msg=="child killed: unknown signal"} {
+      set msg "child process exited abnormally"
+    }
+  }
+  
   lappend r $msg
 }
 
