@@ -65,7 +65,7 @@ for {set i 1} {$i < $REPEATS} {incr i} {
     execsql { SELECT sum(a)==max(b) FROM t1 }
   } {1}
   integrity_check walcrash-1.$i.6
-  do_test walcrash-1.$i.5 {
+  do_test walcrash-1.$i.7 {
     execsql { PRAGMA main.journal_mode }
   } {wal}
   db close

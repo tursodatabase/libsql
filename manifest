@@ -1,5 +1,5 @@
-C Fix\sto\slock5.test\sso\sthat\sit\sruns\swith\sthe\sinmemory_journal\spermutation\son\sosx.
-D 2010-07-08T14:59:02
+C Fix\stest\scase\snumber\sissue\sin\swalcrash.test.
+D 2010-07-08T16:22:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -781,7 +781,7 @@ F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
 F test/walbak.test 4df1c7369da0301caeb9a48fa45997fd592380e4
 F test/walbig.test e882bc1d014afffbfa2b6ba36e0f07d30a633ad0
 F test/walcksum.test a37b36375c595e61bdb7e1ec49b5f0979b6fc7ce
-F test/walcrash.test f6d5fb2bb108876f04848720a488065d9deef69f
+F test/walcrash.test e763841551d6b23677ccb419797c1589dcbdbaf5
 F test/walcrash2.test 019d60b89d96c1937adb2b30b850ac7e86e5a142
 F test/walfault.test 05c470688d742688e455dd56816bd6bcffa298f8
 F test/walhook.test ed00a40ba7255da22d6b66433ab61fab16a63483
@@ -832,7 +832,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ffbdd954a05c003a213069e39ad0655e77983666
-R 376244331894da746096727d657ba405
-U dan
-Z 2deedcf77db8f02fa1e630386990141c
+P 948bb54568b5eb26644db78e8cd62381bdc22bac
+R 54413a55c28a629ad286ce3f123d8836
+U shaneh
+Z f4c5037d87f582388362814f40086e87
