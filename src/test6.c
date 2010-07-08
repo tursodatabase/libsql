@@ -171,7 +171,7 @@ static void *crash_realloc(void *p, int n){
 ** 512 byte block begining at offset PENDING_BYTE.
 */
 static int writeDbFile(CrashFile *p, u8 *z, i64 iAmt, i64 iOff){
-  int rc;
+  int rc = SQLITE_OK;
   int iSkip = 0;
   if( iOff==PENDING_BYTE && (p->flags&SQLITE_OPEN_MAIN_DB) ){
     iSkip = 512;
