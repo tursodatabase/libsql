@@ -640,6 +640,7 @@ static int winClose(sqlite3_file *id){
   OSTRACE(("CLOSE %d\n", pFile->h));
   do{
     rc = CloseHandle(pFile->h);
+    /* SimulateIOError( rc=0; cnt=MX_CLOSE_ATTEMPT; ); */
   }while( rc==0 && ++cnt < MX_CLOSE_ATTEMPT && (Sleep(100), 1) );
 #if SQLITE_OS_WINCE
 #define WINCE_DELETION_ATTEMPTS 3
@@ -797,14 +798,20 @@ int sqlite3_fullsync_count = 0;
 ** Make sure all writes to a particular file are committed to disk.
 */
 static int winSync(sqlite3_file *id, int flags){
-#ifndef SQLITE_NO_SYNC
+#if !defined(NDEBUG) || !defined(SQLITE_NO_SYNC) || defined(SQLITE_DEBUG)
   winFile *pFile = (winFile*)id;
-
-  assert( id!=0 );
-  OSTRACE(("SYNC %d lock=%d\n", pFile->h, pFile->locktype));
 #else
   UNUSED_PARAMETER(id);
 #endif
+
+  assert( pFile );
+  /* Check that one of SQLITE_SYNC_NORMAL or FULL was passed */
+  assert((flags&0x0F)==SQLITE_SYNC_NORMAL
+      || (flags&0x0F)==SQLITE_SYNC_FULL
+  );
+
+  OSTRACE(("SYNC %d lock=%d\n", pFile->h, pFile->locktype));
+
 #ifndef SQLITE_TEST
   UNUSED_PARAMETER(flags);
 #else
@@ -813,11 +820,18 @@ static int winSync(sqlite3_file *id, int flags){
   }
   sqlite3_sync_count++;
 #endif
+
+  /* Unix cannot, but some systems may return SQLITE_FULL from here. This
+  ** line is to test that doing so does not cause any problems.
+  */
+  SimulateDiskfullError( return SQLITE_FULL );
+  SimulateIOError( return SQLITE_IOERR; );
+
   /* If we compiled with the SQLITE_NO_SYNC flag, then syncing is a
   ** no-op
   */
 #ifdef SQLITE_NO_SYNC
-    return SQLITE_OK;
+  return SQLITE_OK;
 #else
   if( FlushFileBuffers(pFile->h) ){
     return SQLITE_OK;
@@ -1060,6 +1074,8 @@ static int winCheckReservedLock(sqlite3_file *id, int *pResOut){
   int rc;
   winFile *pFile = (winFile*)id;
 
+  SimulateIOError( return SQLITE_IOERR_CHECKRESERVEDLOCK; );
+
   assert( id!=0 );
   if( pFile->locktype>=RESERVED_LOCK ){
     rc = 1;
@@ -1132,7 +1148,9 @@ static int winFileControl(sqlite3_file *id, int op, void *pArg){
     }
     case SQLITE_FCNTL_SIZE_HINT: {
       sqlite3_int64 sz = *(sqlite3_int64*)pArg;
+      SimulateIOErrorBenign(1);
       winTruncate(id, sz);
+      SimulateIOErrorBenign(0);
       return SQLITE_OK;
     }
   }
@@ -1343,10 +1361,16 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
         UnmapViewOfFile(p->aRegion[i].pMap);
         CloseHandle(p->aRegion[i].hMap);
       }
-      if( p->hFile.h != INVALID_HANDLE_VALUE ) {
+      if( p->hFile.h != INVALID_HANDLE_VALUE ){
+        SimulateIOErrorBenign(1);
         winClose((sqlite3_file *)&p->hFile);
+        SimulateIOErrorBenign(0);
       }
-      if( deleteFlag ) winDelete(pVfs, p->zFilename, 0);
+      if( deleteFlag ){
+        SimulateIOErrorBenign(1);
+        winDelete(pVfs, p->zFilename, 0);
+        SimulateIOErrorBenign(0);
+      }
       *pp = p->pNext;
       sqlite3_free(p->aRegion);
       sqlite3_free(p);
@@ -1748,6 +1772,13 @@ static int getTempname(int nBuf, char *zBuf){
     "0123456789";
   size_t i, j;
   char zTempPath[MAX_PATH+1];
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. 
+  */
+  SimulateIOError( return SQLITE_IOERR );
+
   if( sqlite3_temp_directory ){
     sqlite3_snprintf(MAX_PATH-30, zTempPath, "%s", sqlite3_temp_directory);
   }else if( isNT() ){
@@ -1779,16 +1810,26 @@ static int getTempname(int nBuf, char *zBuf){
     }
 #endif
   }
+
+  /* Check that the output buffer is large enough for the temporary file 
+  ** name. If it is not, return SQLITE_ERROR.
+  */
+  if( (sqlite3Strlen30(zTempPath) + sqlite3Strlen30(SQLITE_TEMP_FILE_PREFIX) + 17) >= nBuf ){
+    return SQLITE_ERROR;
+  }
+
   for(i=sqlite3Strlen30(zTempPath); i>0 && zTempPath[i-1]=='\\'; i--){}
   zTempPath[i] = 0;
-  sqlite3_snprintf(nBuf-30, zBuf,
+
+  sqlite3_snprintf(nBuf-17, zBuf,
                    "%s\\"SQLITE_TEMP_FILE_PREFIX, zTempPath);
   j = sqlite3Strlen30(zBuf);
-  sqlite3_randomness(20, &zBuf[j]);
-  for(i=0; i<20; i++, j++){
+  sqlite3_randomness(15, &zBuf[j]);
+  for(i=0; i<15; i++, j++){
     zBuf[j] = (char)zChars[ ((unsigned char)zBuf[j])%(sizeof(zChars)-1) ];
   }
   zBuf[j] = 0;
+
   OSTRACE(("TEMP FILENAME: %s\n", zBuf));
   return SQLITE_OK; 
 }
@@ -2032,13 +2073,15 @@ static int winDelete(
   int cnt = 0;
   DWORD rc;
   DWORD error = 0;
-  void *zConverted = convertUtf8Filename(zFilename);
+  void *zConverted;
   UNUSED_PARAMETER(pVfs);
   UNUSED_PARAMETER(syncDir);
+
+  SimulateIOError(return SQLITE_IOERR_DELETE);
+  zConverted = convertUtf8Filename(zFilename);
   if( zConverted==0 ){
     return SQLITE_NOMEM;
   }
-  SimulateIOError(return SQLITE_IOERR_DELETE);
   if( isNT() ){
     do{
       DeleteFileW(zConverted);
@@ -2151,12 +2194,14 @@ static int winFullPathname(
 ){
   
 #if defined(__CYGWIN__)
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   cygwin_conv_to_full_win32_path(zRelative, zFull);
   return SQLITE_OK;
 #endif
 
 #if SQLITE_OS_WINCE
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   /* WinCE has no concept of a relative pathname, or so I am told. */
   sqlite3_snprintf(pVfs->mxPathname, zFull, "%s", zRelative);
@@ -2167,6 +2212,13 @@ static int winFullPathname(
   int nByte;
   void *zConverted;
   char *zOut;
+
+  /* It's odd to simulate an io-error here, but really this is just
+  ** using the io-error infrastructure to test that SQLite handles this
+  ** function failing. This function could fail if, for example, the
+  ** current working directory has been unlinked.
+  */
+  SimulateIOError( return SQLITE_ERROR );
   UNUSED_PARAMETER(nFull);
   zConverted = convertUtf8Filename(zRelative);
   if( isNT() ){
@@ -2234,7 +2286,9 @@ static int getSectorSize(
   ** to get the drive letter to look up the sector
   ** size.
   */
+  SimulateIOErrorBenign(1);
   rc = winFullPathname(pVfs, zRelative, MAX_PATH, zFullpath);
+  SimulateIOErrorBenign(0);
   if( rc == SQLITE_OK )
   {
     void *zConverted = convertUtf8Filename(zFullpath);
