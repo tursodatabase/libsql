@@ -5880,12 +5880,11 @@ int sqlite3PagerSetJournalMode(Pager *pPager, int eMode){
             || eMode==PAGER_JOURNALMODE_WAL 
             || eMode==PAGER_JOURNALMODE_MEMORY );
 
-  /* Do not allow the journalmode of a TEMP database to be changed to WAL
+  /* This routine is only called from the OP_JournalMode opcode, and
+  ** the logic there will never allow a temporary file to be changed
+  ** to WAL mode.
   */
-  if( pPager->tempFile && eMode==PAGER_JOURNALMODE_WAL ){
-    assert( eOld!=PAGER_JOURNALMODE_WAL );
-    eMode = eOld;
-  }
+  assert( pPager->tempFile==0 || eMode!=PAGER_JOURNALMODE_WAL );
 
   /* Do allow the journalmode of an in-memory database to be set to
   ** anything other than MEMORY or OFF

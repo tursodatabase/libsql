@@ -1,5 +1,8 @@
-C Fix\stest\scase\snumbering\sin\sbackup_malloc.test\sand\sissue\swhen\srunning\sunder\sWindows.
-D 2010-07-08T18:32:19
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sa\stest\scase\sto\scover\scode\sthat\swas\sleft\suntested\sby\sthe\sjournal_mode\nsimplification.
+D 2010-07-08T19:19:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -156,7 +159,7 @@ F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c c6112f0ae34f23ae5ca0189a685e084befbdcf26
 F src/os_win.c b39c2c26342d6d4ceaaa4a5e764284444ae6ce98
-F src/pager.c 1ef321efa5839ebc9e563ace6fce30bfa5bdb661
+F src/pager.c 1d42e2cdaa9b1765f7df8e350509318917cd651d
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
@@ -832,7 +835,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e396184cd3bdb96e29ac33af5d1f631cac553341
-R 966aba69597e896d62342073cd0a6e62
-U shaneh
-Z bb18339571c8cb820dbb70bcb1938116
+P aef26438523bccf1ea2c19205cd05799e4c69a1f
+R 95f7318feaa66a8b78205d887e6d1438
+U drh
+Z 04e790b790d53c3d8a934d95e1981b36
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMNiTboxKgR168RlERAkDBAJ0RhukLRTBMs1DtkngKJab4oKQ5ywCgg48P
+LJSpxRhRYLMurIbiJuDHwuo=
+=eiHk
+-----END PGP SIGNATURE-----
