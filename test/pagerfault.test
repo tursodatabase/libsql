@@ -679,6 +679,7 @@ do_faultsim_test pagerfault-14a -prep {
   faultsim_test_result {0 {}} {1 {}} {1 {SQL logic error or missing database}}
 }
 do_faultsim_test pagerfault-14b -prep {
+  catch { db2 close }
   faultsim_restore_and_reopen
   sqlite3 db2 ""
   db2 eval { PRAGMA page_size = 4096; CREATE TABLE xx(a) }
@@ -693,6 +694,7 @@ do_faultsim_test pagerfault-14b -prep {
   faultsim_test_result {0 {}}
 }
 do_faultsim_test pagerfault-14c -prep {
+  catch { db2 close }
   faultsim_restore_and_reopen
   sqlite3 db2 test.db2
   db2 eval { 
@@ -815,6 +817,7 @@ do_faultsim_test pagerfault-17c -prep {
   faultsim_integrity_check
 }
 do_faultsim_test pagerfault-17d -prep {
+  catch { db2 close }
   faultsim_restore_and_reopen
   sqlite3 db2 test.db
   execsql { PRAGMA journal_mode = delete }
@@ -827,6 +830,7 @@ do_faultsim_test pagerfault-17d -prep {
   faultsim_integrity_check
 }
 do_faultsim_test pagerfault-17e -prep {
+  catch { db2 close }
   faultsim_restore_and_reopen
   sqlite3 db2 test.db
   execsql { PRAGMA journal_mode = delete }

@@ -1,5 +1,5 @@
-C Changes\sto\stest\sscripts\sso\sthat\sthe\s"inmemory_journal"\spermutation\sworks\swith\s[ef126e775a].
-D 2010-07-08T09:44:42
+C Fixed\sa\sfew\stests\sin\spagerfault.test\sso\sthey\swork\scorrectly\son\sWindows.
+D 2010-07-08T13:33:47
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -537,7 +537,7 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test d8e4b2bc8164c920e6ea0572c9e13576d6e4f3fa
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test 7d16f91a88e79c369d59b019615f3472297213f9
+F test/pagerfault.test f61e7944aef431a23775f8c85599cb158875ad9b
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -832,7 +832,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5aa2bdb502d70ccbc249a6b38b8a07b91c4ccd26
-R 9dc833f21280e696a7395bd9db154b17
-U dan
-Z f94371008135c6c987152f6a482f93e2
+P f553c8ed04b4b2df8ff4929e0754e3ffd1d01ba4
+R bd274984df3fef92dd841137763ec680
+U shaneh
+Z 228c964fca82b25b0e486b35d26aa1d3
