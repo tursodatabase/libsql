@@ -303,22 +303,22 @@ do_test walmode-7.0 {
   }
 } {wal}
 foreach {tn sql result} {
-  1  "PRAGMA journal_mode"                delete
+  1  "PRAGMA journal_mode"                wal
   2  "PRAGMA main.journal_mode"           wal
   3  "PRAGMA journal_mode = delete"       delete
   4  "PRAGMA journal_mode"                delete
   5  "PRAGMA main.journal_mode"           delete
   6  "PRAGMA journal_mode = wal"          wal
-  7  "PRAGMA journal_mode"                delete
+  7  "PRAGMA journal_mode"                wal
   8  "PRAGMA main.journal_mode"           wal
 
-  9  "PRAGMA journal_mode"                delete
+  9  "PRAGMA journal_mode"                wal
  10  "PRAGMA main.journal_mode"           wal
  11  "PRAGMA main.journal_mode = delete"  delete
  12  "PRAGMA journal_mode"                delete
  13  "PRAGMA main.journal_mode"           delete
  14  "PRAGMA main.journal_mode = wal"     wal
- 15  "PRAGMA journal_mode"                delete
+ 15  "PRAGMA journal_mode"                wal
  16  "PRAGMA main.journal_mode"           wal
 } {
   do_test walmode-7.$tn { 
@@ -341,7 +341,7 @@ do_execsql_test walmode-8.1 {
   CREATE TABLE two.t2(a, b);
 } {wal}
 do_execsql_test walmode-8.2 { PRAGMA main.journal_mode }         {wal}
-do_execsql_test walmode-8.3 { PRAGMA two.journal_mode  }         {wal}
+do_execsql_test walmode-8.3 { PRAGMA two.journal_mode  }         {delete}
 do_execsql_test walmode-8.4 { PRAGMA two.journal_mode = DELETE } {delete}
 
 db close
@@ -353,7 +353,16 @@ do_execsql_test walmode-8.8  { INSERT INTO two.t2 DEFAULT VALUES } {}
 do_execsql_test walmode-8.9  { PRAGMA two.journal_mode  }          {delete}
 do_execsql_test walmode-8.10 { INSERT INTO t1 DEFAULT VALUES } {}
 do_execsql_test walmode-8.11 { PRAGMA main.journal_mode  }         {wal}
-do_execsql_test walmode-8.12 { PRAGMA journal_mode  }              {delete}
+do_execsql_test walmode-8.12 { PRAGMA journal_mode  }              {wal}
+
+# Change to WAL mode on test2.db and make sure (in the tests that follow)
+# that this mode change persists. 
+do_test walmode-8.x1 {
+  execsql {
+     PRAGMA two.journal_mode=WAL;
+     PRAGMA two.journal_mode;
+  }
+} {wal wal}
 
 db close
 sqlite3 db test.db
@@ -369,4 +378,3 @@ do_test walmode-8.19 { execsql { PRAGMA main.journal_mode } db2 }  {wal}
 db2 close
 
 finish_test
-

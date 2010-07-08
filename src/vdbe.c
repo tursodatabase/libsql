@@ -5165,11 +5165,6 @@ case OP_Checkpoint: {
 ** If changing into or out of WAL mode the procedure is more complicated.
 **
 ** Write a string containing the final journal-mode to register P2.
-**
-** If an attempt to change in to or out of WAL mode fails because another
-** connection also has the same database open, then an SQLITE_BUSY error
-** is raised if P5==0, or of P5!=0 the journal mode changed is skipped
-** without signaling the error.
 */
 case OP_JournalMode: {    /* out2-prerelease */
   Btree *pBt;                     /* Btree to change journal mode of */
@@ -5267,7 +5262,6 @@ case OP_JournalMode: {    /* out2-prerelease */
 #endif /* ifndef SQLITE_OMIT_WAL */
 
   if( rc ){
-    if( rc==SQLITE_BUSY && pOp->p5!=0 ) rc = SQLITE_OK;
     eNew = eOld;
   }
   eNew = sqlite3PagerSetJournalMode(pPager, eNew);

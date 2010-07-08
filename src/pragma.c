@@ -535,8 +535,11 @@ void sqlite3Pragma(
   **                      (delete|persist|off|truncate|memory|wal|off)
   */
   if( sqlite3StrICmp(zLeft,"journal_mode")==0 ){
-    int eMode;                    /* One of the PAGER_JOURNALMODE_XXX symbols */
+    int eMode;        /* One of the PAGER_JOURNALMODE_XXX symbols */
+    int ii;           /* Loop counter */
 
+    /* Force the schema to be loaded on all databases.  This cases all
+    ** database files to be opened and the journal_modes set. */
     if( sqlite3ReadSchema(pParse) ){
       goto pragma_out;
     }
@@ -545,6 +548,8 @@ void sqlite3Pragma(
     sqlite3VdbeSetColName(v, 0, COLNAME_NAME, "journal_mode", SQLITE_STATIC);
 
     if( zRight==0 ){
+      /* If there is no "=MODE" part of the pragma, do a query for the
+      ** current mode */
       eMode = PAGER_JOURNALMODE_QUERY;
     }else{
       const char *zMode;
@@ -553,40 +558,22 @@ void sqlite3Pragma(
         if( sqlite3StrNICmp(zRight, zMode, n)==0 ) break;
       }
       if( !zMode ){
+        /* If the "=MODE" part does not match any known journal mode,
+        ** then do a query */
         eMode = PAGER_JOURNALMODE_QUERY;
       }
     }
-    if( pId2->n==0 && eMode==PAGER_JOURNALMODE_QUERY ){
-      /* Simple "PRAGMA journal_mode;" statement. This is a query for
-      ** the current default journal mode (which may be different to
-      ** the journal-mode of the main database).
-      */
-      eMode = db->dfltJournalMode;
-      sqlite3VdbeAddOp2(v, OP_String8, 0, 1);
-      sqlite3VdbeChangeP4(v, -1, sqlite3JournalModename(eMode), P4_STATIC);
-    }else{
-      int ii;
-
-      if( pId2->n==0 ){
-        /* When there is no database name before the "journal_mode" keyword
-        ** in the PRAGMA, then the journal-mode will be set on
-        ** all attached databases, as well as the main db file.
-        **
-        ** Also, the sqlite3.dfltJournalMode variable is set so that
-        ** any subsequently attached databases also use the specified
-        ** journal mode.
-        */
-        db->dfltJournalMode = (u8)eMode;
-      }
-
-      for(ii=db->nDb-1; ii>=0; ii--){
-        if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
-          sqlite3VdbeUsesBtree(v, ii);
-          sqlite3VdbeAddOp3(v, OP_JournalMode, ii, 1, eMode);
-        }
+    if( eMode==PAGER_JOURNALMODE_QUERY && pId2->n==0 ){
+      /* Convert "PRAGMA journal_mode" into "PRAGMA main.journal_mode" */
+      iDb = 0;
+      pId2->n = 1;
+    }
+    for(ii=db->nDb-1; ii>=0; ii--){
+      if( db->aDb[ii].pBt && (ii==iDb || pId2->n==0) ){
+        sqlite3VdbeUsesBtree(v, ii);
+        sqlite3VdbeAddOp3(v, OP_JournalMode, ii, 1, eMode);
       }
     }
-
     sqlite3VdbeAddOp2(v, OP_ResultRow, 1, 1);
   }else
 

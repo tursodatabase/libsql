@@ -258,6 +258,7 @@ ifcapable pragma {
       INSERT INTO ab VALUES(6, NULL);
       UPDATE ab SET b = randstr(1000,1000);
       ATTACH 'test2.db' AS aux;
+      PRAGMA aux.journal_mode = persist;
       CREATE TABLE aux.ab(a, b);
       INSERT INTO aux.ab SELECT * FROM main.ab;
 

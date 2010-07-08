@@ -132,7 +132,7 @@ ifcapable attach {
     execsql {
       PRAGMA journal_mode;
     }
-  } {persist}
+  } {off}
   do_test jrnlmode-1.12 {
     execsql {
       ATTACH ':memory:' as aux2;
@@ -317,9 +317,10 @@ ifcapable pragma {
   do_test jrnlmode-5.3 {
     execsql { 
       ATTACH 'test2.db' AS aux;
+      PRAGMA aux.journal_mode=persist;
       PRAGMA aux.journal_size_limit;
     }
-  } {-1}
+  } {persist -1}
   do_test jrnlmode-5.4.1 {
     execsql { PRAGMA aux.journal_size_limit = 999999999999 }
   } {999999999999}
@@ -337,8 +338,11 @@ ifcapable pragma {
   } {10240}
 
   do_test jrnlmode-5.8 {
-    execsql { ATTACH 'test3.db' AS aux2 }
-  } {}
+    execsql {
+      ATTACH 'test3.db' AS aux2;
+      PRAGMA aux2.journal_mode=persist;
+    }
+  } {persist}
 
   do_test jrnlmode-5.9 {
     execsql {

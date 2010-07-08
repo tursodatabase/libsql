@@ -143,8 +143,6 @@ static void attachFunc(
     }
     pPager = sqlite3BtreePager(aNew->pBt);
     sqlite3PagerLockingMode(pPager, db->dfltLockMode);
-    /* journal_mode set by the OP_JournalMode opcode that will following
-    ** the OP_Function opcode that invoked this function. */
     sqlite3BtreeSecureDelete(aNew->pBt,
                              sqlite3BtreeSecureDelete(db->aDb[0].pBt,-1) );
   }
@@ -339,17 +337,6 @@ static void codeAttach(
     assert( pFunc->nArg==-1 || (pFunc->nArg&0xff)==pFunc->nArg );
     sqlite3VdbeChangeP5(v, (u8)(pFunc->nArg));
     sqlite3VdbeChangeP4(v, -1, (char *)pFunc, P4_FUNCDEF);
-
-    if( type==SQLITE_ATTACH ){
-      /* On an attach, also set the journal mode.  Note that
-      ** sqlite3VdbeUsesBtree() is not call here since the iDb index
-      ** will be out of range prior to the new database being attached.
-      ** The OP_JournalMode opcode will all sqlite3VdbeUsesBtree() for us.
-      */
-      sqlite3VdbeAddOp3(v, OP_JournalMode, db->nDb, regArgs+3, 
-                           db->dfltJournalMode);
-      sqlite3VdbeChangeP5(v, 1);
-    }
 
     /* Code an OP_Expire. For an ATTACH statement, set P1 to true (expire this
     ** statement only). For DETACH, set it to false (expire all existing
