@@ -105,11 +105,9 @@ if {[info command sqlite_orig]==""} {
       }
 
       set res [uplevel 1 sqlite_orig $args]
-
       if {[info exists ::G(perm:presql)]} {
         [lindex $args 0] eval $::G(perm:presql)
       }
-
       set res
     } else {
       # This command is not opening a new database connection. Pass the 
@@ -117,6 +115,13 @@ if {[info command sqlite_orig]==""} {
       #
       uplevel 1 sqlite_orig $args
     }
+  }
+}
+
+proc execpresql {handle args} {
+  trace remove execution $handle enter [list execpresql $handle]
+  if {[info exists ::G(perm:presql)]} {
+    $handle eval $::G(perm:presql)
   }
 }
 

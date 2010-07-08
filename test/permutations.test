@@ -486,6 +486,9 @@ test_suite "inmemory_journal" -description {
   pager.test exclusive.test jrnlmode.test sync.test misc1.test 
   journal1.test conflict.test crash8.test tkt3457.test io.test
 
+  pager1.test async4.test corrupt.test filefmt.test pager2.test
+  corrupt5.test corruptA.test pageropt.test
+
   # Exclude stmt.test, which expects sub-journals to use temporary files.
   stmt.test
 

@@ -511,17 +511,19 @@ ifcapable subquery {
 # Ticket #1370.  Do not overwrite small files (less than 1024 bytes)
 # when trying to open them as a database.
 #
-do_test misc5-4.1 {
-  db close
-  file delete -force test.db
-  set fd [open test.db w]
-  puts $fd "This is not really a database"
-  close $fd
-  sqlite3 db test.db
-  catchsql {
-    CREATE TABLE t1(a,b,c);
-  }
-} {1 {file is encrypted or is not a database}}
+if {[permutation] == ""} {
+  do_test misc5-4.1 {
+    db close
+    file delete -force test.db
+    set fd [open test.db w]
+    puts $fd "This is not really a database"
+    close $fd
+    sqlite3 db test.db
+    catchsql {
+      CREATE TABLE t1(a,b,c);
+    }
+  } {1 {file is encrypted or is not a database}}
+}
 
 # Ticket #1371.  Allow floating point numbers of the form .N  or N.
 #

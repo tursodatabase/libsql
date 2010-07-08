@@ -640,13 +640,15 @@ do_test pragma-7.1.2 {
 } {}
 } ;# ifcapable schema_pragmas
 ifcapable {utf16} {
-  do_test pragma-7.2 {
-    db close
-    sqlite3 db test.db
-    catchsql {
-      pragma encoding=bogus;
-    }
-  } {1 {unsupported encoding: bogus}}
+  if {[permutation] == ""} {
+    do_test pragma-7.2 {
+      db close
+      sqlite3 db test.db
+      catchsql {
+        pragma encoding=bogus;
+      }
+    } {1 {unsupported encoding: bogus}}
+  }
 }
 ifcapable tempdb {
   do_test pragma-7.3 {

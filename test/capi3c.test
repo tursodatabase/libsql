@@ -658,7 +658,7 @@ if {![sqlite3 -has-codec]} {
     set_file_format 5
   } {}
   do_test capi3c-7.2 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }
@@ -686,7 +686,7 @@ if {![sqlite3 -has-codec]} {
     db close
   } {}
   do_test capi3c-8.3 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }
@@ -705,7 +705,7 @@ if {![sqlite3 -has-codec]} {
     db close
   } {};
   do_test capi3c-8.5 {
-    sqlite3 db test.db
+    catch { sqlite3 db test.db }
     catchsql {
       SELECT * FROM sqlite_master;
     }

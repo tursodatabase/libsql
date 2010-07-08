@@ -28,9 +28,9 @@ proc pager_cache_size {db} {
   return $stats(page)
 }
 
-do_test cache-1.1 {
-  pager_cache_size db
-} {0}
+if {[permutation] == ""} { 
+  do_test cache-1.1 { pager_cache_size db } {0}
+}
 
 do_test cache-1.2 {
   execsql {
