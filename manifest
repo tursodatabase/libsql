@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Reformat\sWAL\scode\sfor\sclearer\spresentation.\s\sUpdate\scomments\sfor\scorrectness.\nAdd\schecks\sto\sensure\sthat\scorruption\sin\sshared-memory\sdoes\snot\sresult\sin\nan\sinfinite\sloop.
-D 2010-07-09T03:19:07
+C Fix\swarning\sunder\sMSVC.
+D 2010-07-09T12:57:54
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -229,7 +226,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 0cd5cd46df9237671def76abaf8152af4bd4128e
+F src/wal.c c1783e405f0ac19923fd1743ff7a3b29cb27709c
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 926c83c6394e132a1c62b6b12ceeba7d55a34c19
@@ -835,14 +832,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bcdddba4f011cf008d29918bcac59131007a8138
-R 5e19b5fcbb0a4bb30775e5e30106627d
-U drh
-Z 4cec72d41693a1e955d49c74ad6f997b
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMNpUuoxKgR168RlERAq/pAJ97NzUyxw7J6MN7JJON213vZ349xQCeOtGo
-gYdze9fjpunjGvwfhDWNebg=
-=jEhp
------END PGP SIGNATURE-----
+P 40eaada7ec45e70bdf64d060051f24c5c5e3faf3
+R 53cc4b184f0214da99dabc415572f388
+U shaneh
+Z 18ea918974c076935a3754e7b73cc412

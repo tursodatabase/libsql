@@ -1458,7 +1458,7 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       if( (i+1)==nSegment ){
         nEntry = (int)(iLast - iZero);
       }else{
-        nEntry = (u32*)aHash - (u32*)aPgno;
+        nEntry = (int)((u32*)aHash - (u32*)aPgno);
       }
       aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
       iZero++;
