@@ -495,14 +495,15 @@ static int walIndexPage(Wal *pWal, int iPage, volatile u32 **ppPage){
 
   /* Enlarge the pWal->apWiData[] array if required */
   if( pWal->nWiData<=iPage ){
-    int nByte = sizeof(u32 *)*(iPage+1);
+    int nByte = sizeof(u32*)*(iPage+1);
     volatile u32 **apNew;
     apNew = (volatile u32 **)sqlite3_realloc((void *)pWal->apWiData, nByte);
     if( !apNew ){
       *ppPage = 0;
       return SQLITE_NOMEM;
     }
-    memset((void *)&apNew[pWal->nWiData], 0, sizeof(u32 *)*(iPage+1-pWal->nWiData));
+    memset((void*)&apNew[pWal->nWiData], 0,
+           sizeof(u32*)*(iPage+1-pWal->nWiData));
     pWal->apWiData = apNew;
     pWal->nWiData = iPage+1;
   }
@@ -678,9 +679,10 @@ static int walDecodeFrame(
     return 0;
   }
 
-  /* A frame is only valid if a checksum of the first 16 bytes
-  ** of the frame-header, and the frame-data matches
-  ** the checksum in the last 8 bytes of the frame-header.
+  /* A frame is only valid if a checksum of the WAL header,
+  ** all prior frams, the first 16 bytes of this frame-header, 
+  ** and the frame-data matches the checksum in the last 8 
+  ** bytes of this frame-header.
   */
   nativeCksum = (pWal->hdr.bigEndCksum==SQLITE_BIGENDIAN);
   walChecksumBytes(nativeCksum, aFrame, 8, aCksum, aCksum);
@@ -940,7 +942,7 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
   if( rc==SQLITE_OK ){
     int iKey;                     /* Hash table key */
     int idx;                      /* Value to write to hash-table slot */
-    TESTONLY( int nCollide = 0;   /* Number of hash collisions */ )
+    int nCollide;                 /* Number of hash collisions */
 
     idx = iFrame - iZero;
     assert( idx <= HASHTABLE_NSLOT/2 + 1 );
@@ -965,8 +967,9 @@ static int walIndexAppend(Wal *pWal, u32 iFrame, u32 iPage){
     }
 
     /* Write the aPgno[] array entry and the hash-table slot. */
+    nCollide = idx;
     for(iKey=walHash(iPage); aHash[iKey]; iKey=walNextHash(iKey)){
-      assert( nCollide++ < idx );
+      if( (nCollide--)==0 ) return SQLITE_CORRUPT_BKPT;
     }
     aPgno[idx] = iPage;
     aHash[iKey] = (ht_slot)idx;
@@ -1452,7 +1455,11 @@ static int walIteratorInit(Wal *pWal, WalIterator **pp){
       ht_slot *aIndex;            /* Sorted index for this segment */
 
       aPgno++;
-      nEntry = (int)(((i+1)==nSegment)?(int)(iLast-iZero):(u32 *)aHash-(u32 *)aPgno);
+      if( (i+1)==nSegment ){
+        nEntry = (int)(iLast - iZero);
+      }else{
+        nEntry = (u32*)aHash - (u32*)aPgno;
+      }
       aIndex = &((ht_slot *)&p->aSegment[p->nSegment])[iZero];
       iZero++;
   
@@ -2089,17 +2096,22 @@ int sqlite3WalRead(
     volatile u32 *aPgno;          /* Pointer to array of page numbers */
     u32 iZero;                    /* Frame number corresponding to aPgno[0] */
     int iKey;                     /* Hash slot index */
-    int rc;
+    int nCollide;                 /* Number of hash collisions remaining */
+    int rc;                       /* Error code */
 
     rc = walHashGet(pWal, iHash, &aHash, &aPgno, &iZero);
     if( rc!=SQLITE_OK ){
       return rc;
     }
+    nCollide = HASHTABLE_NSLOT;
     for(iKey=walHash(pgno); aHash[iKey]; iKey=walNextHash(iKey)){
       u32 iFrame = aHash[iKey] + iZero;
       if( iFrame<=iLast && aPgno[aHash[iKey]]==pgno ){
         assert( iFrame>iRead );
         iRead = iFrame;
+      }
+      if( (nCollide--)==0 ){
+        return SQLITE_CORRUPT_BKPT;
       }
     }
   }
