@@ -1,5 +1,5 @@
-C Exclude\sfts3cov.test\sfrom\sthe\s"in\smemory"\spermutation\stest\ssuite\sto\savoid\sa\sfalse\spositive.
-D 2010-07-09T18:43:41
+C Exclude\sa\sfew\smore\sFTS\smodules\sfrom\sthe\s"in\smemory"\spermutation\stest\ssuite.
+D 2010-07-09T19:32:28
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in c4270a1cd7cd70a263b7e96a258aa90e9c3618eb
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -543,7 +543,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test 53326fc1f72a60f292c1ba88ac627e0387f9cfc9
+F test/permutations.test fb0db23c3a5fe2f168aa85dd93934cd672e47802
 F test/pragma.test ed78d200f65c6998df51196cb8c39d5300570f24
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -832,7 +832,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 0c32c4bbdd74297767dcf4ec4295f9cc72875af0
-R 311e4c2bcf27a0983558fc16dc3d7dd2
+P 6af6794cac5516f8cbc425cb8c73468ca371a1ad
+R 296bf4b92cd30dce2030d2dd3e08c3d8
 U shaneh
-Z 0e9b4c4b96c4a333ba94fc26abec6bfd
+Z 4214507f2db7672c59426bd44673cfd9
