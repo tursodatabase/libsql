@@ -621,9 +621,9 @@ proc do_write_test {name tbl sql} {
   if {$::DO_MALLOC_TEST } {
     set answers [list {1 {out of memory}} {0 {}}]
     if {$::DO_MALLOC_TEST==1} {
-      set modes {100000 transient}
+      set modes {100000 persistent}
     } else {
-      set modes {1 persistent}
+      set modes {1 transient}
     }
   } else {
     set answers [list {0 {}}]
