@@ -26,14 +26,14 @@ if {[file size $file_to_analyze]<512} {
   exit 1
 }
 
-# Maximum distance between pages before we consider it a "gap"
-#
-set MAXGAP 3
-
 # Open the database
 #
 sqlite3 db [lindex $argv 0]
-set DB [btree_open [lindex $argv 0] 1000 0]
+register_dbstat_vtab db
+
+set pageSize [db one {PRAGMA page_size}]
+
+#set DB [btree_open [lindex $argv 0] 1000 0]
 
 # In-memory database for collecting statistics. This script loops through
 # the tables and indices in the database being analyzed, adding a row for each
@@ -62,6 +62,87 @@ set tabledef\
 );}
 mem eval $tabledef
 
+# Create a temporary "dbstat" virtual table.
+#
+db eval { 
+  CREATE VIRTUAL TABLE temp.stat USING dbstat;
+  CREATE TEMP TABLE dbstat AS SELECT * FROM temp.stat ORDER BY name, path;
+  DROP TABLE temp.stat;
+}
+
+proc isleaf {pagetype is_index} {
+  return [expr {$pagetype == "leaf" || ($pagetype == "internal" && $is_index)}]
+}
+proc isoverflow {pagetype is_index} {
+  return [expr {$pagetype == "overflow"}]
+}
+proc isinternal {pagetype is_index} {
+  return [expr {$pagetype == "internal" && $is_index==0}]
+}
+
+db func isleaf isleaf
+db func isinternal isinternal
+db func isoverflow isoverflow
+
+set sql { SELECT name, tbl_name FROM sqlite_master WHERE rootpage>0 }
+foreach {name tblname} [concat sqlite_master sqlite_master [db eval $sql]] {
+
+  set is_index [expr {$name!=$tblname}]
+  db eval {
+    SELECT 
+      sum(ncell) AS nentry,
+      sum(isleaf(pagetype, $is_index) * ncell) AS leaf_entries,
+      sum(payload) AS payload,
+      sum(isoverflow(pagetype, $is_index) * payload) AS ovfl_payload,
+      sum(path LIKE '%+000000') AS ovfl_cnt,
+      max(mx_payload) AS mx_payload,
+      sum(isinternal(pagetype, $is_index)) AS int_pages,
+      sum(isleaf(pagetype, $is_index)) AS leaf_pages,
+      sum(isoverflow(pagetype, $is_index)) AS ovfl_pages,
+      sum(isinternal(pagetype, $is_index) * unused) AS int_unused,
+      sum(isleaf(pagetype, $is_index) * unused) AS leaf_unused,
+      sum(isoverflow(pagetype, $is_index) * unused) AS ovfl_unused
+    FROM temp.dbstat WHERE name = $name
+  } break
+
+  # Column 'gap_cnt' is set to the number of non-contiguous entries in the
+  # list of pages visited if the b-tree structure is traversed in a top-down
+  # fashion (each node visited before its child-tree is passed). Any overflow
+  # chains present are traversed from start to finish before any child-tree
+  # is.
+  #
+  set gap_cnt 0
+  set pglist [db eval {
+    SELECT pageno FROM temp.dbstat WHERE name = $name ORDER BY rowid
+  }]
+  set prev [lindex $pglist 0]
+  foreach pgno [lrange $pglist 1 end] {
+    if {$pgno != $prev+1} {incr gap_cnt}
+    set prev $pgno
+  }
+
+  mem eval {
+    INSERT INTO space_used VALUES(
+      $name,
+      $tblname,
+      $is_index,
+      $nentry,
+      $leaf_entries,
+      $payload,     
+      $ovfl_payload,
+      $ovfl_cnt,   
+      $mx_payload,
+      $int_pages,
+      $leaf_pages,  
+      $ovfl_pages, 
+      $int_unused, 
+      $leaf_unused,
+      $ovfl_unused,
+      $gap_cnt
+    );
+  }
+}
+
 proc integerify {real} {
   if {[string is double -strict $real]} {
     return [expr {int($real)}]
@@ -79,321 +160,6 @@ mem function int integerify
 proc quote {txt} {
   regsub -all ' $txt '' q
   return '$q'
-}
-
-# This proc is a wrapper around the btree_cursor_info command. The
-# second argument is an open btree cursor returned by [btree_cursor].
-# The first argument is the name of an array variable that exists in
-# the scope of the caller. If the third argument is non-zero, then
-# info is returned for the page that lies $up entries upwards in the
-# tree-structure. (i.e. $up==1 returns the parent page, $up==2 the 
-# grandparent etc.)
-#
-# The following entries in that array are filled in with information retrieved
-# using [btree_cursor_info]:
-#
-#   $arrayvar(page_no)             =  The page number
-#   $arrayvar(entry_no)            =  The entry number
-#   $arrayvar(page_entries)        =  Total number of entries on this page
-#   $arrayvar(cell_size)           =  Cell size (local payload + header)
-#   $arrayvar(page_freebytes)      =  Number of free bytes on this page
-#   $arrayvar(page_freeblocks)     =  Number of free blocks on the page
-#   $arrayvar(payload_bytes)       =  Total payload size (local + overflow)
-#   $arrayvar(header_bytes)        =  Header size in bytes
-#   $arrayvar(local_payload_bytes) =  Local payload size
-#   $arrayvar(parent)              =  Parent page number
-# 
-proc cursor_info {arrayvar csr {up 0}} {
-  upvar $arrayvar a
-  foreach [list a(page_no) \
-                a(entry_no) \
-                a(page_entries) \
-                a(cell_size) \
-                a(page_freebytes) \
-                a(page_freeblocks) \
-                a(payload_bytes) \
-                a(header_bytes) \
-                a(local_payload_bytes) \
-                a(parent) \
-                a(first_ovfl) ] [btree_cursor_info $csr $up] break
-}
-
-# Determine the page-size of the database. This global variable is used
-# throughout the script.
-#
-set pageSize [db eval {PRAGMA page_size}]
-
-# Analyze every table in the database, one at a time.
-#
-# The following query returns the name and root-page of each table in the
-# database, including the sqlite_master table.
-#
-set sql {
-  SELECT name, rootpage FROM sqlite_master
-   WHERE type='table' AND rootpage>0
-  UNION ALL
-  SELECT 'sqlite_master', 1
-  ORDER BY 1
-}
-set wideZero [expr {10000000000 - 10000000000}]
-foreach {name rootpage} [db eval $sql] {
-  puts stderr "Analyzing table $name..."
-
-  # Code below traverses the table being analyzed (table name $name), using the
-  # btree cursor $cursor. Statistics related to table $name are accumulated in
-  # the following variables:
-  #
-  set total_payload $wideZero        ;# Payload space used by all entries
-  set total_ovfl $wideZero           ;# Payload space on overflow pages
-  set unused_int $wideZero           ;# Unused space on interior nodes
-  set unused_leaf $wideZero          ;# Unused space on leaf nodes
-  set unused_ovfl $wideZero          ;# Unused space on overflow pages
-  set cnt_ovfl $wideZero             ;# Number of entries that use overflows
-  set cnt_leaf_entry $wideZero       ;# Number of leaf entries
-  set cnt_int_entry $wideZero        ;# Number of interor entries
-  set mx_payload $wideZero           ;# Maximum payload size
-  set ovfl_pages $wideZero           ;# Number of overflow pages used
-  set leaf_pages $wideZero           ;# Number of leaf pages
-  set int_pages $wideZero            ;# Number of interior pages
-  set gap_cnt 0                      ;# Number of holes in the page sequence
-  set prev_pgno 0                    ;# Last page number seen
-
-  # As the btree is traversed, the array variable $seen($pgno) is set to 1
-  # the first time page $pgno is encountered.
-  #
-  catch {unset seen}
-
-  # The following loop runs once for each entry in table $name. The table
-  # is traversed using the btree cursor stored in variable $csr
-  #
-  set csr [btree_cursor $DB $rootpage 0]
-  for {btree_first $csr} {![btree_eof $csr]} {btree_next $csr} {
-    incr cnt_leaf_entry
-
-    # Retrieve information about the entry the btree-cursor points to into
-    # the array variable $ci (cursor info).
-    #
-    cursor_info ci $csr
-
-    # Check if the payload of this entry is greater than the current 
-    # $mx_payload statistic for the table. Also increase the $total_payload
-    # statistic.
-    #
-    if {$ci(payload_bytes)>$mx_payload} {set mx_payload $ci(payload_bytes)}
-    incr total_payload $ci(payload_bytes)
-
-    # If this entry uses overflow pages, then update the $cnt_ovfl, 
-    # $total_ovfl, $ovfl_pages and $unused_ovfl statistics.
-    #
-    set ovfl [expr {$ci(payload_bytes)-$ci(local_payload_bytes)}]
-    if {$ovfl} {
-      incr cnt_ovfl
-      incr total_ovfl $ovfl
-      set n [expr {int(ceil($ovfl/($pageSize-4.0)))}]
-      incr ovfl_pages $n
-      incr unused_ovfl [expr {$n*($pageSize-4) - $ovfl}]
-      set pglist [btree_ovfl_info $DB $csr]
-    } else {
-      set pglist {}
-    }
-
-    # If this is the first table entry analyzed for the page, then update
-    # the page-related statistics $leaf_pages and $unused_leaf. Also, if
-    # this page has a parent page that has not been analyzed, retrieve
-    # info for the parent and update statistics for it too.
-    #
-    if {![info exists seen($ci(page_no))]} {
-      set seen($ci(page_no)) 1
-      incr leaf_pages
-      incr unused_leaf $ci(page_freebytes)
-      set pglist "$ci(page_no) $pglist"
-
-      # Now check if the page has a parent that has not been analyzed. If
-      # so, update the $int_pages, $cnt_int_entry and $unused_int statistics
-      # accordingly. Then check if the parent page has a parent that has
-      # not yet been analyzed etc.
-      #
-      # set parent $ci(parent_page_no)
-      for {set up 1} \
-          {$ci(parent)!=0 && ![info exists seen($ci(parent))]} {incr up} \
-      {
-        # Mark the parent as seen.
-        #
-        set seen($ci(parent)) 1
-
-        # Retrieve info for the parent and update statistics.
-        cursor_info ci $csr $up
-        incr int_pages
-        incr cnt_int_entry $ci(page_entries)
-        incr unused_int $ci(page_freebytes)
-
-        # parent pages come before their first child
-        set pglist "$ci(page_no) $pglist"
-      }
-    }
-
-    # Check the page list for fragmentation
-    #
-    foreach pg $pglist {
-      if {$pg!=$prev_pgno+1 && $prev_pgno>0} {
-        incr gap_cnt
-      }
-      set prev_pgno $pg
-    }
-  }
-  btree_close_cursor $csr
-
-  # Handle the special case where a table contains no data. In this case
-  # all statistics are zero, except for the number of leaf pages (1) and
-  # the unused bytes on leaf pages ($pageSize - 8).
-  #
-  # An exception to the above is the sqlite_master table. If it is empty
-  # then all statistics are zero except for the number of leaf pages (1),
-  # and the number of unused bytes on leaf pages ($pageSize - 112).
-  #
-  if {[llength [array names seen]]==0} {
-    set leaf_pages 1
-    if {$rootpage==1} {
-      set unused_leaf [expr {$pageSize-112}]
-    } else {
-      set unused_leaf [expr {$pageSize-8}]
-    }
-  }
-
-  # Insert the statistics for the table analyzed into the in-memory database.
-  #
-  set sql "INSERT INTO space_used VALUES("
-  append sql [quote $name]
-  append sql ",[quote $name]"
-  append sql ",0"
-  append sql ",[expr {$cnt_leaf_entry+$cnt_int_entry}]"
-  append sql ",$cnt_leaf_entry"
-  append sql ",$total_payload"
-  append sql ",$total_ovfl"
-  append sql ",$cnt_ovfl"
-  append sql ",$mx_payload"
-  append sql ",$int_pages"
-  append sql ",$leaf_pages"
-  append sql ",$ovfl_pages"
-  append sql ",$unused_int"
-  append sql ",$unused_leaf"
-  append sql ",$unused_ovfl"
-  append sql ",$gap_cnt"
-  append sql );
-  mem eval $sql
-}
-
-# Analyze every index in the database, one at a time.
-#
-# The query below returns the name, associated table and root-page number 
-# for every index in the database.
-#
-set sql {
-  SELECT name, tbl_name, rootpage FROM sqlite_master WHERE type='index'
-  ORDER BY 2, 1
-}
-foreach {name tbl_name rootpage} [db eval $sql] {
-  puts stderr "Analyzing index $name of table $tbl_name..."
-
-  # Code below traverses the index being analyzed (index name $name), using the
-  # btree cursor $cursor. Statistics related to index $name are accumulated in
-  # the following variables:
-  #
-  set total_payload $wideZero        ;# Payload space used by all entries
-  set total_ovfl $wideZero           ;# Payload space on overflow pages
-  set unused_leaf $wideZero          ;# Unused space on leaf nodes
-  set unused_ovfl $wideZero          ;# Unused space on overflow pages
-  set cnt_ovfl $wideZero             ;# Number of entries that use overflows
-  set cnt_leaf_entry $wideZero       ;# Number of leaf entries
-  set mx_payload $wideZero           ;# Maximum payload size
-  set ovfl_pages $wideZero           ;# Number of overflow pages used
-  set leaf_pages $wideZero           ;# Number of leaf pages
-  set gap_cnt 0                      ;# Number of holes in the page sequence
-  set prev_pgno 0                    ;# Last page number seen
-
-  # As the btree is traversed, the array variable $seen($pgno) is set to 1
-  # the first time page $pgno is encountered.
-  #
-  catch {unset seen}
-
-  # The following loop runs once for each entry in index $name. The index
-  # is traversed using the btree cursor stored in variable $csr
-  #
-  set csr [btree_cursor $DB $rootpage 0]
-  for {btree_first $csr} {![btree_eof $csr]} {btree_next $csr} {
-    incr cnt_leaf_entry
-
-    # Retrieve information about the entry the btree-cursor points to into
-    # the array variable $ci (cursor info).
-    #
-    cursor_info ci $csr
-
-    # Check if the payload of this entry is greater than the current 
-    # $mx_payload statistic for the table. Also increase the $total_payload
-    # statistic.
-    #
-    set payload [btree_keysize $csr]
-    if {$payload>$mx_payload} {set mx_payload $payload}
-    incr total_payload $payload
-
-    # If this entry uses overflow pages, then update the $cnt_ovfl, 
-    # $total_ovfl, $ovfl_pages and $unused_ovfl statistics.
-    #
-    set ovfl [expr {$payload-$ci(local_payload_bytes)}]
-    if {$ovfl} {
-      incr cnt_ovfl
-      incr total_ovfl $ovfl
-      set n [expr {int(ceil($ovfl/($pageSize-4.0)))}]
-      incr ovfl_pages $n
-      incr unused_ovfl [expr {$n*($pageSize-4) - $ovfl}]
-    }
-
-    # If this is the first table entry analyzed for the page, then update
-    # the page-related statistics $leaf_pages and $unused_leaf.
-    #
-    if {![info exists seen($ci(page_no))]} {
-      set seen($ci(page_no)) 1
-      incr leaf_pages
-      incr unused_leaf $ci(page_freebytes)
-      set pg $ci(page_no)
-      if {$prev_pgno>0 && $pg!=$prev_pgno+1} {
-        incr gap_cnt
-      }
-      set prev_pgno $ci(page_no)
-    }
-  }
-  btree_close_cursor $csr
-
-  # Handle the special case where a index contains no data. In this case
-  # all statistics are zero, except for the number of leaf pages (1) and
-  # the unused bytes on leaf pages ($pageSize - 8).
-  #
-  if {[llength [array names seen]]==0} {
-    set leaf_pages 1
-    set unused_leaf [expr {$pageSize-8}]
-  }
-
-  # Insert the statistics for the index analyzed into the in-memory database.
-  #
-  set sql "INSERT INTO space_used VALUES("
-  append sql [quote $name]
-  append sql ",[quote $tbl_name]"
-  append sql ",1"
-  append sql ",$cnt_leaf_entry"
-  append sql ",$cnt_leaf_entry"
-  append sql ",$total_payload"
-  append sql ",$total_ovfl"
-  append sql ",$cnt_ovfl"
-  append sql ",$mx_payload"
-  append sql ",0"
-  append sql ",$leaf_pages"
-  append sql ",$ovfl_pages"
-  append sql ",0"
-  append sql ",$unused_leaf"
-  append sql ",$unused_ovfl"
-  append sql ",$gap_cnt"
-  append sql );
-  mem eval $sql
 }
 
 # Generate a single line of output in the statistics section of the
@@ -548,15 +314,12 @@ proc subreport {title where} {
 # pages and the page size used by the database (in bytes).
 proc autovacuum_overhead {filePages pageSize} {
 
-  # Read the value of meta 4. If non-zero, then the database supports
-  # auto-vacuum. It would be possible to use "PRAGMA auto_vacuum" instead,
-  # but that would not work if the SQLITE_OMIT_PRAGMA macro was defined
-  # when the library was built.
-  set meta4 [lindex [btree_get_meta $::DB] 4]
+  # Set $autovacuum to non-zero for databases that support auto-vacuum.
+  set autovacuum [db one {PRAGMA auto_vacuum}]
 
   # If the database is not an auto-vacuum database or the file consists
   # of one page only then there is no overhead for auto-vacuum. Return zero.
-  if {0==$meta4 || $filePages==1} {
+  if {0==$autovacuum || $filePages==1} {
     return 0
   }
 
@@ -606,7 +369,7 @@ set inuse_percent [percent $inuse_pgcnt $file_pgcnt]
 
 set free_pgcnt    [expr $file_pgcnt-$inuse_pgcnt-$av_pgcnt]
 set free_percent  [percent $free_pgcnt $file_pgcnt]
-set free_pgcnt2   [lindex [btree_get_meta $DB] 0]
+set free_pgcnt2   [db one {PRAGMA freelist_count}]
 set free_percent2 [percent $free_pgcnt2 $file_pgcnt]
 
 set file_pgcnt2 [expr {$inuse_pgcnt+$free_pgcnt2+$av_pgcnt}]

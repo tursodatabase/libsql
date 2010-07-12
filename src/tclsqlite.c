@@ -3561,6 +3561,7 @@ static void init_all(Tcl_Interp *interp){
     extern int Sqlitetestbackup_Init(Tcl_Interp*);
     extern int Sqlitetestintarray_Init(Tcl_Interp*);
     extern int Sqlitetestvfs_Init(Tcl_Interp *);
+    extern int SqlitetestStat_Init(Tcl_Interp*);
 
     Sqliteconfig_Init(interp);
     Sqlitetest1_Init(interp);
@@ -3588,6 +3589,7 @@ static void init_all(Tcl_Interp *interp){
     Sqlitetestbackup_Init(interp);
     Sqlitetestintarray_Init(interp);
     Sqlitetestvfs_Init(interp);
+    SqlitetestStat_Init(interp);
 
     Tcl_CreateObjCommand(interp,"load_testfixture_extensions",init_all_cmd,0,0);
 

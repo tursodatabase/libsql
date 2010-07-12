@@ -369,6 +369,7 @@ TESTSRC = \
   $(TOP)/src/test_pcache.c \
   $(TOP)/src/test_schema.c \
   $(TOP)/src/test_server.c \
+  $(TOP)/src/test_stat.c \
   $(TOP)/src/test_tclvar.c \
   $(TOP)/src/test_thread.c \
   $(TOP)/src/test_vfs.c \
