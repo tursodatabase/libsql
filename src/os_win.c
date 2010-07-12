@@ -1180,11 +1180,6 @@ static int winDeviceCharacteristics(sqlite3_file *id){
   return SQLITE_IOCAP_UNDELETABLE_WHEN_OPEN;
 }
 
-/****************************************************************************
-********************************* Shared Memory *****************************
-**
-** The next subdivision of code manages the shared-memory primitives.
-*/
 #ifndef SQLITE_OMIT_WAL
 
 /*
@@ -1234,11 +1229,6 @@ static int winShmMutexHeld(void) {
 ** winShmMutexHeld() is true when reading or writing any other field
 ** in this structure.
 **
-** To avoid deadlocks, mutex and mutexBuf are always released in the
-** reverse order that they are acquired.  mutexBuf is always acquired
-** first and released last.  This invariant is check by asserting
-** sqlite3_mutex_notheld() on mutex whenever mutexBuf is acquired or
-** released.
 */
 struct winShmNode {
   sqlite3_mutex *mutex;      /* Mutex to access this object */
@@ -1272,17 +1262,21 @@ static winShmNode *winShmNodeList = 0;
 ** Structure used internally by this VFS to record the state of an
 ** open shared memory connection.
 **
-** winShm.pFile->mutex must be held while reading or writing the
-** winShm.pNext and winShm.locks[] elements.
+** The following fields are initialized when this object is created and
+** are read-only thereafter:
 **
-** The winShm.pFile element is initialized when the object is created
-** and is read-only thereafter.
+**    winShm.pShmNode
+**    winShm.id
+**
+** All other fields are read/write.  The winShm.pShmNode->mutex must be held
+** while accessing any read/write fields.
 */
 struct winShm {
   winShmNode *pShmNode;      /* The underlying winShmNode object */
   winShm *pNext;             /* Next winShm with the same winShmNode */
   u8 hasMutex;               /* True if holding the winShmNode mutex */
-  u8 hasMutexBuf;            /* True if holding pFile->mutexBuf */
+  u16 sharedMask;            /* Mask of shared locks held */
+  u16 exclMask;              /* Mask of exclusive locks held */
 #ifdef SQLITE_DEBUG
   u8 id;                     /* Id of this connection with its winShmNode */
 #endif
@@ -1317,7 +1311,6 @@ static int winShmSystemLock(
   dwFlags = LOCKFILE_FAIL_IMMEDIATELY;
   if( lockType == _SHM_WRLCK ) dwFlags |= LOCKFILE_EXCLUSIVE_LOCK;
 
-  /* Find the first bit in lockMask that is set */
   memset(&ovlp, 0, sizeof(OVERLAPPED));
   ovlp.Offset = ofst;
 
@@ -1327,13 +1320,13 @@ static int winShmSystemLock(
   }else{
     rc = LockFileEx(pFile->hFile.h, dwFlags, 0, nByte, 0, &ovlp);
   }
-  if( !rc ){
-    OSTRACE(("SHM-LOCK %d %s ERROR 0x%08lx\n", 
-             pFile->hFile.h,
-             lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx",
-             GetLastError()));
-  }
   rc = (rc!=0) ? SQLITE_OK : SQLITE_BUSY;
+
+  OSTRACE(("SHM-LOCK %d %s %s 0x%08lx\n", 
+           pFile->hFile.h,
+           rc==SQLITE_OK ? "ok" : "failed",
+           lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx",
+           GetLastError()));
 
   return rc;
 }
@@ -1511,6 +1504,7 @@ static int winShmClose(
 
   pDbFd = (winFile*)fd;
   p = pDbFd->pShm;
+  if( p==0 ) return SQLITE_OK;
   pShmNode = p->pShmNode;
 
   /* Remove connection p from the set of connections associated
@@ -1535,6 +1529,127 @@ static int winShmClose(
   winShmLeaveMutex();
 
   return SQLITE_OK;
+}
+
+/*
+** Change the lock state for a shared-memory segment.
+*/
+static int winShmLock(
+  sqlite3_file *fd,          /* Database file holding the shared memory */
+  int ofst,                  /* First lock to acquire or release */
+  int n,                     /* Number of locks to acquire or release */
+  int flags                  /* What to do with the lock */
+){
+  winFile *pDbFd = (winFile*)fd;        /* Connection holding shared memory */
+  winShm *p = pDbFd->pShm;              /* The shared memory being locked */
+  winShm *pX;                           /* For looping over all siblings */
+  winShmNode *pShmNode = p->pShmNode;
+  int rc = SQLITE_OK;                   /* Result code */
+  u16 mask;                             /* Mask of locks to take or release */
+
+  assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
+  assert( n>=1 );
+  assert( flags==(SQLITE_SHM_LOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
+       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
+  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
+
+  mask = (u16)((1U<<(ofst+n)) - (1U<<ofst));
+  assert( n>1 || mask==(1<<ofst) );
+  sqlite3_mutex_enter(pShmNode->mutex);
+  if( flags & SQLITE_SHM_UNLOCK ){
+    u16 allMask = 0; /* Mask of locks held by siblings */
+
+    /* See if any siblings hold this same lock */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( pX==p ) continue;
+      assert( (pX->exclMask & (p->exclMask|p->sharedMask))==0 );
+      allMask |= pX->sharedMask;
+    }
+
+    /* Unlock the system-level locks */
+    if( (mask & allMask)==0 ){
+      rc = winShmSystemLock(pShmNode, _SHM_UNLCK, ofst+WIN_SHM_BASE, n);
+    }else{
+      rc = SQLITE_OK;
+    }
+
+    /* Undo the local locks */
+    if( rc==SQLITE_OK ){
+      p->exclMask &= ~mask;
+      p->sharedMask &= ~mask;
+    } 
+  }else if( flags & SQLITE_SHM_SHARED ){
+    u16 allShared = 0;  /* Union of locks held by connections other than "p" */
+
+    /* Find out which shared locks are already held by sibling connections.
+    ** If any sibling already holds an exclusive lock, go ahead and return
+    ** SQLITE_BUSY.
+    */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( (pX->exclMask & mask)!=0 ){
+        rc = SQLITE_BUSY;
+        break;
+      }
+      allShared |= pX->sharedMask;
+    }
+
+    /* Get shared locks at the system level, if necessary */
+    if( rc==SQLITE_OK ){
+      if( (allShared & mask)==0 ){
+        rc = winShmSystemLock(pShmNode, _SHM_RDLCK, ofst+WIN_SHM_BASE, n);
+      }else{
+        rc = SQLITE_OK;
+      }
+    }
+
+    /* Get the local shared locks */
+    if( rc==SQLITE_OK ){
+      p->sharedMask |= mask;
+    }
+  }else{
+    /* Make sure no sibling connections hold locks that will block this
+    ** lock.  If any do, return SQLITE_BUSY right away.
+    */
+    for(pX=pShmNode->pFirst; pX; pX=pX->pNext){
+      if( (pX->exclMask & mask)!=0 || (pX->sharedMask & mask)!=0 ){
+        rc = SQLITE_BUSY;
+        break;
+      }
+    }
+  
+    /* Get the exclusive locks at the system level.  Then if successful
+    ** also mark the local connection as being locked.
+    */
+    if( rc==SQLITE_OK ){
+      rc = winShmSystemLock(pShmNode, _SHM_WRLCK, ofst+WIN_SHM_BASE, n);
+      if( rc==SQLITE_OK ){
+        assert( (p->sharedMask & mask)==0 );
+        p->exclMask |= mask;
+      }
+    }
+  }
+  sqlite3_mutex_leave(pShmNode->mutex);
+  OSTRACE(("SHM-LOCK shmid-%d, pid-%d got %03x,%03x %s\n",
+           p->id, (int)GetCurrentProcessId(), p->sharedMask, p->exclMask,
+           rc ? "failed" : "ok"));
+  return rc;
+}
+
+/*
+** Implement a memory barrier or memory fence on shared memory.  
+**
+** All loads and stores begun before the barrier must complete before
+** any load or store begun after the barrier.
+*/
+static void winShmBarrier(
+  sqlite3_file *fd          /* Database holding the shared memory */
+){
+  UNUSED_PARAMETER(fd);
+  /* MemoryBarrier(); // does not work -- do not know why not */
+  winShmEnterMutex();
+  winShmLeaveMutex();
 }
 
 /*
@@ -1584,6 +1699,7 @@ static int winShmMap(
     */
     rc = winFileSize((sqlite3_file *)&pShmNode->hFile, &sz);
     if( rc!=SQLITE_OK ){
+      rc = SQLITE_IOERR_SHMSIZE;
       goto shmpage_out;
     }
 
@@ -1597,6 +1713,7 @@ static int winShmMap(
       if( !isWrite ) goto shmpage_out;
       rc = winTruncate((sqlite3_file *)&pShmNode->hFile, nByte);
       if( rc!=SQLITE_OK ){
+        rc = SQLITE_IOERR_SHMSIZE;
         goto shmpage_out;
       }
     }
@@ -1647,67 +1764,19 @@ shmpage_out:
   return rc;
 }
 
-/*
-** Change the lock state for a shared-memory segment.
-*/
-static int winShmLock(
-  sqlite3_file *fd,          /* Database file holding the shared memory */
-  int ofst,                  /* First lock to acquire or release */
-  int n,                     /* Number of locks to acquire or release */
-  int flags                  /* What to do with the lock */
-){
-  winFile *pDbFd = (winFile*)fd;
-  winShm *p = pDbFd->pShm;
-  winShmNode *pShmNode = p->pShmNode;
-  int rc = SQLITE_PROTOCOL;
-
-  assert( ofst>=0 && ofst+n<=SQLITE_SHM_NLOCK );
-  assert( n>=1 );
-  assert( flags==(SQLITE_SHM_LOCK | SQLITE_SHM_SHARED)
-       || flags==(SQLITE_SHM_LOCK | SQLITE_SHM_EXCLUSIVE)
-       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_SHARED)
-       || flags==(SQLITE_SHM_UNLOCK | SQLITE_SHM_EXCLUSIVE) );
-  assert( n==1 || (flags & SQLITE_SHM_EXCLUSIVE)!=0 );
-
-  sqlite3_mutex_enter(pShmNode->mutex);
-  if( flags & SQLITE_SHM_UNLOCK ){
-    rc = winShmSystemLock(pShmNode, _SHM_UNLCK, ofst+WIN_SHM_BASE, n);
-  }else if( flags & SQLITE_SHM_SHARED ){
-    rc = winShmSystemLock(pShmNode, _SHM_RDLCK, ofst+WIN_SHM_BASE, n);
-  }else{
-    rc = winShmSystemLock(pShmNode, _SHM_WRLCK, ofst+WIN_SHM_BASE, n);
-  }
-  sqlite3_mutex_leave(pShmNode->mutex);
-  OSTRACE(("SHM-LOCK shmid-%d, pid-%d %s\n",
-           p->id, (int)GetCurrentProcessId(), rc ? "failed" : "ok"));
-  return rc;
-}
-
-/*
-** Implement a memory barrier or memory fence on shared memory.  
-**
-** All loads and stores begun before the barrier must complete before
-** any load or store begun after the barrier.
-*/
-static void winShmBarrier(
-  sqlite3_file *fd          /* Database holding the shared memory */
-){
-  UNUSED_PARAMETER(fd);
-  /* MemoryBarrier(); // does not work -- do not know why not */
-  winShmEnterMutex();
-  winShmLeaveMutex();
-}
-
 #else
 # define winShmOpen    0
-# define winShmMap     0
 # define winShmLock    0
+# define winShmMap     0
 # define winShmBarrier 0
 # define winShmClose   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
+
 /*
-***************************** End Shared Memory *****************************
-****************************************************************************/
+** Here ends the implementation of all sqlite3_file methods.
+**
+********************** End sqlite3_file Methods *******************************
+******************************************************************************/
 
 /*
 ** This vector defines all the methods that can operate on an
@@ -1734,11 +1803,12 @@ static const sqlite3_io_methods winIoMethod = {
   winShmClose              /* xShmClose */
 };
 
-/***************************************************************************
-** Here ends the I/O methods that form the sqlite3_io_methods object.
+/****************************************************************************
+**************************** sqlite3_vfs methods ****************************
 **
-** The next block of code implements the VFS methods.
-****************************************************************************/
+** This division contains the implementation of methods on the
+** sqlite3_vfs object.
+*/
 
 /*
 ** Convert a UTF-8 filename into whatever form the underlying

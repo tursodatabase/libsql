@@ -1,5 +1,5 @@
-C Fix\stest_stat.c\sso\sthat\sit\sdoes\snot\scause\scompilation\serrors\sif\sSQLITE_OMIT_VIRTUALTABLE\sis\sdefined.
-D 2010-07-12T18:12:41
+C Updates\sto\scomments\sand\scode\sorganization\sto\sreflect\schanges\sin\sos_unix.c;\s\s\nUpdated\swinShmLock()\swith\slogic\schanges\sfrom\sunixShmLock();\s\nModified\sIO\serror\sreturns\sin\swinShmMap()\sto\smatch\sthose\sin\sunixShmMap();
+D 2010-07-12T20:46:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -155,7 +155,7 @@ F src/os.h d7775504a51e6e0d40315aa427b3e229ff9ff9ca
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
 F src/os_unix.c c6112f0ae34f23ae5ca0189a685e084befbdcf26
-F src/os_win.c b39c2c26342d6d4ceaaa4a5e764284444ae6ce98
+F src/os_win.c 04c8828e4c5c2e7d5abcb9ce170ae6bfb02aa98d
 F src/pager.c 1d42e2cdaa9b1765f7df8e350509318917cd651d
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
 F src/parse.y ace5c7a125d9f2a410e431ee3209034105045f7e
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e6cd15451d8c47bfc86d07565655920134b494fe
-R 1f9d6ed2ba44f2915e3c41809f76e2bf
-U dan
-Z c74a18dab14d1190c93da6ff3459824a
+P bf4fc0888705108aab997e1cb491fc7f9c64c443
+R 1e9b9e9a767f3c74af22f298a155d2ee
+U shaneh
+Z 69258ba9752eb7fe9649055c47247468
