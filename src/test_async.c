@@ -229,7 +229,7 @@ static int testAsyncControl(
 ** of this module.
 */
 int Sqlitetestasync_Init(Tcl_Interp *interp){
-#if SQLITE_ENABLE_ASYNCIO
+#ifdef SQLITE_ENABLE_ASYNCIO
   Tcl_CreateObjCommand(interp,"sqlite3async_start",testAsyncStart,0,0);
   Tcl_CreateObjCommand(interp,"sqlite3async_wait",testAsyncWait,0,0);
 

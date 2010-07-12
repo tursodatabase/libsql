@@ -9,6 +9,13 @@
 **    May you share freely, never taking more than you give.
 **
 ******************************************************************************
+**
+** This file contains an implementation of the "dbstat" virtual table.
+**
+** The dbstat virtual table is used to extract low-level formatting
+** information from an SQLite database in order to implement the
+** "sqlite3_analyzer" utility.  See the ../tool/spaceanal.tcl script
+** for an example implementation.
 */
 
 #include "sqliteInt.h"
@@ -21,9 +28,11 @@
 **   root-node path is '/'.
 **
 **   The value of the path for the left-most child page of the root of
-**   a b-tree is '/000/'. The next to left-most child of the root page is
+**   a b-tree is '/000/'. (Btrees store content ordered from left to right
+**   so the pages to the left have smaller keys than the pages to the right.)
+**   The next to left-most child of the root page is
 **   '/001', and so on, each sibling page identified by a 3-digit hex 
-**   value. The children of the 450th left-most sibling have paths such
+**   value. The children of the 451st left-most sibling have paths such
 **   as '/1c2/000/, '/1c2/001/' etc.
 **
 **   Overflow pages are specified by appending a '+' character and a 
@@ -40,7 +49,7 @@
 **   the overflow pages associated with a cell will appear earlier in the
 **   sort-order than its child page:
 **
-**      '/1c2/000/'               // Left-most child of 450th child of root
+**      '/1c2/000/'               // Left-most child of 451st child of root
 */
 #define VTAB_SCHEMA                                                         \
   "CREATE TABLE xx( "                                                       \
@@ -348,13 +357,6 @@ static int statDecodePage(Btree *pBt, StatPage *p){
   return SQLITE_OK;
 }
 
-static void statSetPath(StatPage *p, StatPage *pParent){
-  if( pParent ){
-    p->zPath = sqlite3_mprintf("%s%.3x/", pParent->zPath, pParent->iCell);
-  }else{
-  }
-}
-
 /*
 ** Move a statvfs cursor to the next entry in the file.
 */
@@ -601,4 +603,3 @@ int SqlitetestStat_Init(Tcl_Interp *interp){
   return TCL_OK;
 }
 #endif
-

@@ -874,7 +874,7 @@ sqlite3_analyzer$(TEXE):	$(TESTFIXTURE_SRC) $(TOP)/tool/spaceanal.tcl
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
 	$(LTLINK) -DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1 \
 		-DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE \
-		$(TEMP_STORE) -o $@ $(TESTFIXTURE_SRC) $(LIBTCL)
+		$(TEMP_STORE) -o $@ $(TESTFIXTURE_SRC) $(LIBTCL) $(TLIBS)
 
 
 # Standard install and cleanup targets

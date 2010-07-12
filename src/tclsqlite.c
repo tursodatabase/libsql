@@ -3488,6 +3488,11 @@ static char zMainloop[] =
   "}\n"
 ;
 #endif
+#if TCLSH==2
+static char zMainloop[] = 
+#include "spaceanal_tcl.h"
+;
+#endif
 
 #ifdef SQLITE_TEST
 static void init_all(Tcl_Interp *);
@@ -3609,6 +3614,9 @@ int TCLSH_MAIN(int argc, char **argv){
   ** sqlite3_initialize() is. */
   sqlite3_shutdown();
 
+#if TCLSH==2
+  sqlite3_config(SQLITE_CONFIG_SINGLETHREAD);
+#endif
   Tcl_FindExecutable(argv[0]);
 
   interp = Tcl_CreateInterp();
@@ -3624,14 +3632,14 @@ int TCLSH_MAIN(int argc, char **argv){
       Tcl_SetVar(interp, "argv", argv[i],
           TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT | TCL_APPEND_VALUE);
     }
-    if( Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
+    if( TCLSH==1 && Tcl_EvalFile(interp, argv[1])!=TCL_OK ){
       const char *zInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
       if( zInfo==0 ) zInfo = Tcl_GetStringResult(interp);
       fprintf(stderr,"%s: %s\n", *argv, zInfo);
       return 1;
     }
   }
-  if( argc<=1 ){
+  if( TCLSH==2 || argc<=1 ){
     Tcl_GlobalEval(interp, zMainloop);
   }
   return 0;

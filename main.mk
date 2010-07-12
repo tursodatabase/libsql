@@ -493,21 +493,21 @@ tclsqlite3:	$(TOP)/src/tclsqlite.c libsqlite3.a
 
 # Rules to build the 'testfixture' application.
 #
-TESTFIXTURE_FLAGS  = -DTCLSH=1 -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
+TESTFIXTURE_FLAGS  = -DSQLITE_TEST=1 -DSQLITE_CRASH_TEST=1
 TESTFIXTURE_FLAGS += -DSQLITE_SERVER=1 -DSQLITE_PRIVATE="" -DSQLITE_CORE 
 
 testfixture$(EXE): $(TESTSRC2) libsqlite3.a $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TESTSRC2) $(TOP)/src/tclsqlite.c                \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB) libsqlite3.a
 
 amalgamation-testfixture$(EXE): sqlite3.c $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                  \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
 
 fts3-testfixture$(EXE): sqlite3.c fts3amal.c $(TESTSRC) $(TOP)/src/tclsqlite.c
-	$(TCCX) $(TCL_FLAGS) $(TESTFIXTURE_FLAGS)                            \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=1 $(TESTFIXTURE_FLAGS)                  \
 	-DSQLITE_ENABLE_FTS3=1                                               \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c fts3amal.c       \
 		-o testfixture$(EXE) $(LIBTCL) $(THREADLIB)
@@ -530,8 +530,8 @@ sqlite3_analyzer$(EXE):	$(TOP)/src/tclsqlite.c sqlite3.c $(TESTSRC) \
 	  -e 's,^,",' \
 	  -e 's,$$,\\n",' \
 	  $(TOP)/tool/spaceanal.tcl >spaceanal_tcl.h
-	$(TCCX) $(TCL_FLAGS)                  $(TESTFIXTURE_FLAGS)                                 \
-		-DTCLSH=2 -DSQLITE_TEST=1 -DSQLITE_DEBUG=1 -DSQLITE_PRIVATE="" \
+	$(TCCX) $(TCL_FLAGS) -DTCLSH=2 $(TESTFIXTURE_FLAGS)                    \
+		-DSQLITE_TEST=1 -DSQLITE_PRIVATE=""                            \
 		$(TESTSRC) $(TOP)/src/tclsqlite.c sqlite3.c                    \
 		-o sqlite3_analyzer$(EXE)                                      \
 		$(LIBTCL) $(THREADLIB)
