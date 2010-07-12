@@ -1143,7 +1143,6 @@ static int asyncOpen(
   async_mutex_leave(ASYNC_MUTEX_LOCK);
 
   if( rc==SQLITE_OK ){
-    incrOpenFileCount();
     pData->pLock = pLock;
   }
 
@@ -1160,7 +1159,10 @@ static int asyncOpen(
   }
   if( rc!=SQLITE_OK ){
     p->pMethod = 0;
+  }else{
+    incrOpenFileCount();
   }
+
   return rc;
 }
 

@@ -1,5 +1,5 @@
-C Changes\sso\sthat\sthe\sspace-analyzer\sscript\sworks\swith\s3.7.0.
-D 2010-07-12T08:39:38
+C In\sthe\sasync-IO\smodule,\sdo\snot\sincrement\sthe\sopen\sfile-counter\suntil\safter\san\s"open\sfile"\sevent\shas\sbeen\sadded\sto\sthe\sevent\squeue.\sOtherwise,\san\sOOM\smay\scause\sthe\ssystem\sto\sincrement\sthe\scounter\seven\sthough\sno\sfile\swas\ssuccessfully\sopened.
+D 2010-07-12T12:22:29
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in 3340503a02ffc70370f8308a484c99330589774d
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -29,7 +29,7 @@ F doc/pager-invariants.txt 870107036470d7c419e93768676fae2f8749cf9e
 F doc/vfs-shm.txt e101f27ea02a8387ce46a05be2b1a902a021d37a
 F ext/README.txt 913a7bd3f4837ab14d7e063304181787658b14e1
 F ext/async/README.txt 0c541f418b14b415212264cbaaf51c924ec62e5b
-F ext/async/sqlite3async.c d0f7e07c6a9757e45bb9b3e38211195c790a9d9d
+F ext/async/sqlite3async.c a7c6078c82c0bac3b7bea95bc52d5ce7ed58083a
 F ext/async/sqlite3async.h a21e1252deb14a2c211f0e165c4b9122a8f1f344
 F ext/fts1/README.txt 20ac73b006a70bcfd80069bdaf59214b6cf1db5e
 F ext/fts1/ft_hash.c 3927bd880e65329bdc6f506555b228b28924921b
@@ -833,7 +833,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 4e9d69cd5ac3cc4d12ccea3028cba73e3c3f2965
-R 43d1a2278532e5bb600b8e2f0d56817e
+P 86159cb3f00a380dc55be3affb01c433618f0683
+R 7615db4c5a55fdef05b6d83351ebc753
 U dan
-Z 2a147625d7ac5be213d9b0b32d458d0e
+Z f80c53af3756aa1578d0c9c79219d994
