@@ -20,6 +20,8 @@
 
 #include "sqliteInt.h"
 
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
 /*
 ** Page paths:
 ** 
@@ -565,6 +567,8 @@ int sqlite3_dbstat_register(sqlite3 *db){
   sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
   return SQLITE_OK;
 }
+
+#endif
 
 #ifdef SQLITE_TEST
 #include <tcl.h>
