@@ -247,11 +247,10 @@ int sqlite3OsFileControl(sqlite3_file*,int,void*);
 #define SQLITE_FCNTL_DB_UNCHANGED 0xca093fa0
 int sqlite3OsSectorSize(sqlite3_file *id);
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id);
-int sqlite3OsShmOpen(sqlite3_file *id);
+int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
 int sqlite3OsShmLock(sqlite3_file *id, int, int, int);
 void sqlite3OsShmBarrier(sqlite3_file *id);
 int sqlite3OsShmClose(sqlite3_file *id, int);
-int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
 
 /* 
 ** Functions for accessing sqlite3_vfs methods 

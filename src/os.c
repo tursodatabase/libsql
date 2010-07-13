@@ -100,9 +100,6 @@ int sqlite3OsSectorSize(sqlite3_file *id){
 int sqlite3OsDeviceCharacteristics(sqlite3_file *id){
   return id->pMethods->xDeviceCharacteristics(id);
 }
-int sqlite3OsShmOpen(sqlite3_file *id){
-  return id->pMethods->xShmOpen(id);
-}
 int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
   return id->pMethods->xShmLock(id, offset, n, flags);
 }
@@ -110,16 +107,16 @@ void sqlite3OsShmBarrier(sqlite3_file *id){
   id->pMethods->xShmBarrier(id);
 }
 int sqlite3OsShmClose(sqlite3_file *id, int deleteFlag){
-  return id->pMethods->xShmClose(id, deleteFlag);
+  return id->pMethods->xShmUnmap(id, deleteFlag);
 }
 int sqlite3OsShmMap(
-  sqlite3_file *id, 
-  int iPage, 
-  int pgsz, 
-  int isWrite, 
-  void volatile **pp
+  sqlite3_file *id,               /* Database file handle */
+  int iPage,
+  int pgsz,
+  int bExtend,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Pointer to mapping */
 ){
-  return id->pMethods->xShmMap(id, iPage, pgsz, isWrite, pp);
+  return id->pMethods->xShmMap(id, iPage, pgsz, bExtend, pp);
 }
 
 /*

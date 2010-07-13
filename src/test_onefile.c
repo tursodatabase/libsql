@@ -219,9 +219,8 @@ static sqlite3_io_methods fs_io_methods = {
   fsFileControl,                /* xFileControl */
   fsSectorSize,                 /* xSectorSize */
   fsDeviceCharacteristics,      /* xDeviceCharacteristics */
-  0,                            /* xShmOpen */
-  0,                            /* xShmLock */
   0,                            /* xShmMap */
+  0,                            /* xShmLock */
   0,                            /* xShmBarrier */
   0                             /* xShmClose */
 };
@@ -241,9 +240,8 @@ static sqlite3_io_methods tmp_io_methods = {
   tmpFileControl,               /* xFileControl */
   tmpSectorSize,                /* xSectorSize */
   tmpDeviceCharacteristics,     /* xDeviceCharacteristics */
-  0,                            /* xShmOpen */
-  0,                            /* xShmLock */
   0,                            /* xShmMap */
+  0,                            /* xShmLock */
   0,                            /* xShmBarrier */
   0                             /* xShmClose */
 };

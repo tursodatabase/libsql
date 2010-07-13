@@ -50,7 +50,6 @@ static int devsymCheckReservedLock(sqlite3_file*, int *);
 static int devsymFileControl(sqlite3_file*, int op, void *pArg);
 static int devsymSectorSize(sqlite3_file*);
 static int devsymDeviceCharacteristics(sqlite3_file*);
-static int devsymShmOpen(sqlite3_file*);
 static int devsymShmLock(sqlite3_file*,int,int,int);
 static int devsymShmMap(sqlite3_file*,int,int,int, void volatile **);
 static void devsymShmBarrier(sqlite3_file*);
@@ -116,9 +115,8 @@ static sqlite3_io_methods devsym_io_methods = {
   devsymFileControl,                /* xFileControl */
   devsymSectorSize,                 /* xSectorSize */
   devsymDeviceCharacteristics,      /* xDeviceCharacteristics */
-  devsymShmOpen,                    /* xShmOpen */
-  devsymShmLock,                    /* xShmLock */
   devsymShmMap,                     /* xShmMap */
+  devsymShmLock,                    /* xShmLock */
   devsymShmBarrier,                 /* xShmBarrier */
   devsymShmClose                    /* xShmClose */
 };
@@ -237,10 +235,6 @@ static int devsymDeviceCharacteristics(sqlite3_file *pFile){
 /*
 ** Shared-memory methods are all pass-thrus.
 */
-static int devsymShmOpen(sqlite3_file *pFile){
-  devsym_file *p = (devsym_file *)pFile;
-  return sqlite3OsShmOpen(p->pReal);
-}
 static int devsymShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   devsym_file *p = (devsym_file *)pFile;
   return sqlite3OsShmLock(p->pReal, ofst, n, flags);

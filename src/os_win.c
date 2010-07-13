@@ -1374,31 +1374,19 @@ static void winShmPurge(sqlite3_vfs *pVfs, int deleteFlag){
 }
 
 /*
-** Open a shared-memory area.  This particular implementation uses
-** mmapped files.
-**
-** zName is a filename used to identify the shared-memory area.  The
-** implementation does not (and perhaps should not) use this name
-** directly, but rather use it as a template for finding an appropriate
-** name for the shared-memory storage.  In this implementation, the
-** string "-index" is appended to zName and used as the name of the
-** mmapped file.
+** Open the shared-memory area associated with database file pDbFd.
 **
 ** When opening a new shared-memory file, if no other instances of that
 ** file are currently open, in this process or in other processes, then
 ** the file must be truncated to zero length or have its header cleared.
 */
-static int winShmOpen(
-  sqlite3_file *fd      /* The file to which to attach shared memory */
-){
-  struct winFile *pDbFd;             /* Database to which to attach SHM */
+static int winOpenSharedMemory(winFile *pDbFd){
   struct winShm *p;                  /* The connection to be opened */
   struct winShmNode *pShmNode = 0;   /* The underlying mmapped file */
   int rc;                            /* Result code */
   struct winShmNode *pNew;           /* Newly allocated winShmNode */
   int nName;                         /* Size of zName in bytes */
 
-  pDbFd = (winFile*)fd;
   assert( pDbFd->pShm==0 );    /* Not previously opened */
 
   /* Allocate space for the new sqlite3_shm object.  Also speculatively
@@ -1680,8 +1668,15 @@ static int winShmMap(
 ){
   winFile *pDbFd = (winFile*)fd;
   winShm *p = pDbFd->pShm;
-  winShmNode *pShmNode = p->pShmNode;
+  winShmNode *pShmNode;
   int rc = SQLITE_OK;
+
+  if( !p ){
+    rc = winOpenSharedMemory(pDbFd);
+    if( rc!=SQLITE_OK ) return rc;
+    p = pDbFd->pShm;
+  }
+  pShmNode = p->pShmNode;
 
   sqlite3_mutex_enter(pShmNode->mutex);
   assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
@@ -1765,9 +1760,8 @@ shmpage_out:
 }
 
 #else
-# define winShmOpen    0
-# define winShmLock    0
 # define winShmMap     0
+# define winShmLock    0
 # define winShmBarrier 0
 # define winShmClose   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
@@ -1783,24 +1777,23 @@ shmpage_out:
 ** sqlite3_file for win32.
 */
 static const sqlite3_io_methods winIoMethod = {
-  2,                        /* iVersion */
-  winClose,
-  winRead,
-  winWrite,
-  winTruncate,
-  winSync,
-  winFileSize,
-  winLock,
-  winUnlock,
-  winCheckReservedLock,
-  winFileControl,
-  winSectorSize,
-  winDeviceCharacteristics,
-  winShmOpen,              /* xShmOpen */
-  winShmLock,              /* xShmLock */
-  winShmMap,               /* xShmMap */
-  winShmBarrier,           /* xShmBarrier */
-  winShmClose              /* xShmClose */
+  2,                              /* iVersion */
+  winClose,                       /* xClose */
+  winRead,                        /* xRead */
+  winWrite,                       /* xWrite */
+  winTruncate,                    /* xTruncate */
+  winSync,                        /* xSync */
+  winFileSize,                    /* xFileSize */
+  winLock,                        /* xLock */
+  winUnlock,                      /* xUnlock */
+  winCheckReservedLock,           /* xCheckReservedLock */
+  winFileControl,                 /* xFileControl */
+  winSectorSize,                  /* xSectorSize */
+  winDeviceCharacteristics,       /* xDeviceCharacteristics */
+  winShmMap,                      /* xShmMap */
+  winShmLock,                     /* xShmLock */
+  winShmBarrier,                  /* xShmBarrier */
+  winShmClose                     /* xShmClose */
 };
 
 /****************************************************************************
