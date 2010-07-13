@@ -95,6 +95,7 @@ do_test lock2-1.9 {
     SELECT * FROM sqlite_master;
   }
 } "table abc abc [expr $AUTOVACUUM?3:2] {CREATE TABLE abc(a, b, c)}"
+catch flush_async_queue
 do_test lock2-1.10 {
   testfixture $::tf1 {
     db eval {

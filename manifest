@@ -1,5 +1,5 @@
-C Updates\sto\scomments\sand\scode\sorganization\sto\sreflect\schanges\sin\sos_unix.c;\s\s\nUpdated\swinShmLock()\swith\slogic\schanges\sfrom\sunixShmLock();\s\nModified\sIO\serror\sreturns\sin\swinShmMap()\sto\smatch\sthose\sin\sunixShmMap();
-D 2010-07-12T20:46:34
+C Fix\sproblems\swith\srunning\sthe\sasync.test\sscript.
+D 2010-07-13T07:38:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -242,7 +242,7 @@ F test/altermalloc.test e81ac9657ed25c6c5bb09bebfa5a047cd8e4acfc
 F test/analyze.test bf692e7db414f268a136bade16c03a1bdbb9240c
 F test/analyze2.test 59dac6c399c0c5d1a90a11ee7cc606743fb6db93
 F test/analyze3.test 506203875258ffd8ffa879b9c3c5432022d2b6d8
-F test/async.test 028bd42d4ff9c69b62953ea6f718e827f37e1d79
+F test/async.test ad4ba51b77cd118911a3fe1356b0809da9c108c3
 F test/async2.test bf5e2ca2c96763b4cba3d016249ad7259a5603b6
 F test/async3.test 93edaa9122f498e56ea98c36c72abc407f4fb11e
 F test/async4.test 1787e3952128aa10238bf39945126de7ca23685a
@@ -480,7 +480,7 @@ F test/limit.test 2db7b3b34fb925b8e847d583d2eb67531d0ce67e
 F test/loadext.test 0393ce12d9616aa87597dd0ec88181de181f6db0
 F test/loadext2.test 0bcaeb4d81cd5b6e883fdfea3c1bdbe1f173cbca
 F test/lock.test 842e80b6be816c79525a20b098cca066989feed7
-F test/lock2.test fd305c95b15a6be93416bddcfc923698fc56bd71
+F test/lock2.test 5242d8ac4e2d59c403aebff606af449b455aceff
 F test/lock3.test f271375930711ae044080f4fe6d6eda930870d00
 F test/lock4.test c82268c031d39345d05efa672f80b025481b3ae5
 F test/lock5.test b2abb5e711bc59b0eae00f6c97a36ec9f458fada
@@ -729,7 +729,7 @@ F test/tkt3997.test a335fa41ca3985660a139df7b734a26ef53284bd
 F test/tkt4018.test 7c2c9ba4df489c676a0a7a0e809a1fb9b2185bd1
 F test/tokenize.test ce430a7aed48fc98301611429595883fdfcab5d7
 F test/trace.test 4b36a41a3e9c7842151af6da5998f5080cdad9e5
-F test/trans.test 56087099d76e7292b5e918fcad49c4d9a8b14f8e
+F test/trans.test 6e1b4c6a42dba31bd65f8fa5e61a2708e08ddde6
 F test/trans2.test d5337e61de45e66b1fcbf9db833fa8c82e624b22
 F test/trans3.test d728abaa318ca364dc370e06576aa7e5fbed7e97
 F test/trigger1.test 2e18561f85e448bb633c9c9de792e9bbf7b2dd3e
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P bf4fc0888705108aab997e1cb491fc7f9c64c443
-R 1e9b9e9a767f3c74af22f298a155d2ee
-U shaneh
-Z 69258ba9752eb7fe9649055c47247468
+P b73fe2754b68af4c76a1788aa18b93359720d1f1
+R 866cdebd403f026bbc759dc714e10b2e
+U dan
+Z eb831fbf2f1d03728baf2844c2e1614f

@@ -932,6 +932,7 @@ for {set i 2} {$i<=$limit} {incr i} {
          INSERT INTO t3 SELECT randstr(10,400) FROM t3 WHERE random()%10==0;
        }
     } {}
+    catch flush_async_queue
     if {$tcl_platform(platform)=="unix"} {
       do_test trans-9.$i.4-$cnt {
          expr {$sqlite_sync_count>0}
