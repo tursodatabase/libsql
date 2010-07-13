@@ -1,5 +1,8 @@
-C Fix\sa\stypo\sin\sa\scomment\sin\ssqlite.h.in.
-D 2010-07-13T18:45:11
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Tweaks\sto\sthe\snew\sshared-memory\sinterface\sdesign\s-\smostly\scomment\schanges.
+D 2010-07-13T23:41:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -131,7 +134,7 @@ F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
 F src/insert.c d9476f23f85a20eea3cc25a4b9f9cbae77a33bf2
-F src/journal.c cb9f12b6734a0b25aa60d3e093a27bccf46b4bc6
+F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
@@ -142,7 +145,7 @@ F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
 F src/mem3.c 9b237d911ba9904142a804be727cc6664873f8a3
 F src/mem5.c eb7a5cb98915dd7a086fa415ce3a5a0f20d0acff
-F src/memjournal.c 6a81669d6fbf14813992f48a1a0e2bfe57ec66c6
+F src/memjournal.c 4a93a25ad9f76c40afa070ffd7187eb3a5fd7aee
 F src/mutex.c 6949180803ff05a7d0e2b9334a95b4fb5a00e23f
 F src/mutex.h 6fde601e55fa6c3fae768783c439797ab84c87c6
 F src/mutex_noop.c d5cfbca87168c661a0b118cd8e329a908e453151
@@ -154,7 +157,7 @@ F src/os.c a45484100b8e86718eb117d92feae082ac2530f8
 F src/os.h 93cb145b93bd971055cf4d55ac44eaaa51e148fc
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c abefe4129fe19f03232ecdbcf67f7cfa1d58e2a2
+F src/os_unix.c 53a84d8a2aeaf8fa721036f0336981f4ff5d8e82
 F src/os_win.c 3bb7e081045aa4c811197ead66febdf8d6209275
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
@@ -218,7 +221,7 @@ F src/update.c 19c899c23cd29fd102c9068e0b0ff5b087204beb
 F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
-F src/vdbe.c 14d3e04d13e1c79ab62674e06b0d0a8ed70f9e75
+F src/vdbe.c 6294de3327e09d14e9c06ecfd10e57c2d8e85307
 F src/vdbe.h 471f6a3dcec4817ca33596fe7f6654d56c0e75f3
 F src/vdbeInt.h 19ebc8c2a2e938340051ee65af3f377fb99102d1
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
@@ -834,7 +837,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f4780bde62c6c19146d2723c101540b8db898d38
-R 6a6e04ff2d14425bcb22d35e1f3f8059
-U dan
-Z ef39af3ddec02880c75a8492244fb164
+P 4a6c4b6605ddce59e586ab17024de5269191a823
+R 3ff2e4b2090261c584dc61be1d08bf07
+U drh
+Z 17027715e0d2ea3b3a9196f1e43adfc6
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMPPm3oxKgR168RlERAnryAJ9sVObmWBMDEQUPVfV3402PMfePOgCeIeML
+hGA0gHr75NFJ6p9J4Ro3ONY=
+=Btgx
+-----END PGP SIGNATURE-----
