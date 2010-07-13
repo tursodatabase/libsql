@@ -1,5 +1,5 @@
-C Fix\sproblems\swith\srunning\sthe\sasync.test\sscript.
-D 2010-07-13T07:38:51
+C Fixes\sto\sthe\spcache10\sand\spcache90\spermutations.
+D 2010-07-13T14:22:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -544,7 +544,7 @@ F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
 F test/pcache.test 4118a183908ecaed343a06fcef3ba82e87e0129d
 F test/pcache2.test 0d85f2ab6963aee28c671d4c71bec038c00a1d16
-F test/permutations.test fb0db23c3a5fe2f168aa85dd93934cd672e47802
+F test/permutations.test 89335d48dd350161cdc4a83ece83a54e9e5c6fc2
 F test/pragma.test ed78d200f65c6998df51196cb8c39d5300570f24
 F test/pragma2.test 5364893491b9231dd170e3459bfc2e2342658b47
 F test/printf.test 05970cde31b1a9f54bd75af60597be75a5c54fea
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P b73fe2754b68af4c76a1788aa18b93359720d1f1
-R 866cdebd403f026bbc759dc714e10b2e
+P 05ac2548652f3c9aa358289700b0b4c7fc22486d
+R d7ea8bae5d34f266c6513da1f61674ff
 U dan
-Z eb831fbf2f1d03728baf2844c2e1614f
+Z a4fee7d380a1fd69eda8299369e35825

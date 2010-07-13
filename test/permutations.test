@@ -661,87 +661,25 @@ set perm-alt-pcache-testset {
   update.test
 }
 
-test_suite "pcache0" -description {
-  Alternative pcache implementation without random discard
-} -initialize {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 1 0 1
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 0 0 0
-  sqlite3_config_lookaside 100 500
-  install_malloc_faultsim 1 
-  sqlite3_initialize
-  autoinstall_test_functions
-} -files ${perm-alt-pcache-testset}
-
-test_suite "pcache10" -description {
-  Alternative pcache implementation without 10% random discard
-} -initialize {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 1 50 1
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 0 0 0
-  sqlite3_initialize
-  autoinstall_test_functions
-} -files ${perm-alt-pcache-testset}
-
-test_suite "pcache50" -description {
-  Alternative pcache implementation without 50% random discard
-} -initialize {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 1 50 1
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 0 0 0
-  sqlite3_initialize
-  autoinstall_test_functions
-} -files ${perm-alt-pcache-testset}
-
-test_suite "pcache90" -description {
-  Alternative pcache implementation without 90% random discard
-} -initialize {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 1 50 1
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 0 0 0
-  sqlite3_initialize
-  autoinstall_test_functions
-} -files ${perm-alt-pcache-testset}
-
-test_suite "pcache100" -description {
-  Alternative pcache implementation that always discards when unpinning
-} -initialize {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 1 100 1
-  sqlite3_initialize
-  autoinstall_test_functions
-} -shutdown {
-  catch {db close}
-  sqlite3_shutdown
-  sqlite3_config_alt_pcache 0 0 0
-  sqlite3_initialize
-  autoinstall_test_functions
-} -files ${perm-alt-pcache-testset}
+foreach discard_rate {0 10 50 90 100} {
+  test_suite "pcache${discard_rate}" -description "
+    Alternative pcache implementation with ${discard_rate}% random discard
+  " -initialize "
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_alt_pcache 1 $discard_rate 1
+    sqlite3_initialize
+    autoinstall_test_functions
+  " -shutdown {
+    catch {db close}
+    sqlite3_shutdown
+    sqlite3_config_alt_pcache 0 0 0
+    sqlite3_config_lookaside 100 500
+    install_malloc_faultsim 1 
+    sqlite3_initialize
+    autoinstall_test_functions
+  } -files ${perm-alt-pcache-testset}
+}
 
 test_suite "journaltest" -description {
   Check that pages are synced before being written (test_journal.c).
