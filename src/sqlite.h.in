@@ -660,11 +660,10 @@ struct sqlite3_io_methods {
   int (*xSectorSize)(sqlite3_file*);
   int (*xDeviceCharacteristics)(sqlite3_file*);
   /* Methods above are valid for version 1 */
-  int (*xShmOpen)(sqlite3_file*);
+  int (*xShmMap)(sqlite3_file*, int iPg, int pgsz, int, int*, void volatile**);
   int (*xShmLock)(sqlite3_file*, int offset, int n, int flags);
-  int (*xShmMap)(sqlite3_file*, int iPage, int pgsz, int, void volatile**);
   void (*xShmBarrier)(sqlite3_file*);
-  int (*xShmClose)(sqlite3_file*, int deleteFlag);
+  int (*xShmUnmap)(sqlite3_file*, int deleteFlag);
   /* Methods above are valid for version 2 */
   /* Additional methods may be added in future releases */
 };
