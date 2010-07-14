@@ -6023,7 +6023,7 @@ int sqlite3PagerWalCallback(Pager *pPager){
 */
 int sqlite3PagerWalSupported(Pager *pPager){
   const sqlite3_io_methods *pMethods = pPager->fd->pMethods;
-  return pMethods->iVersion>=2 && pMethods->xShmOpen!=0;
+  return pMethods->iVersion>=2 && pMethods->xShmMap!=0;
 }
 
 /*

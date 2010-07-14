@@ -3275,7 +3275,7 @@ static void unixShmPurge(unixFile *pFd){
 }
 
 /*
-** Open a shared-memory area associated with open database file fd.  
+** Open a shared-memory area associated with open database file pDbFd.  
 ** This particular implementation uses mmapped files.
 **
 ** The file used to implement shared-memory is in the same directory
@@ -3294,27 +3294,22 @@ static void unixShmPurge(unixFile *pFd){
 ** file are currently open, in this process or in other processes, then
 ** the file must be truncated to zero length or have its header cleared.
 */
-static int unixShmOpen(
-  sqlite3_file *fd      /* The file descriptor of the associated database */
-){
-  struct unixShm *p = 0;             /* The connection to be opened */
-  struct unixShmNode *pShmNode = 0;  /* The underlying mmapped file */
-  int rc;                            /* Result code */
-  struct unixFile *pDbFd;            /* Underlying database file */
-  unixInodeInfo *pInode;             /* The inode of fd */
-  char *zShmFilename;                /* Name of the file used for SHM */
-  int nShmFilename;                  /* Size of the SHM filename in bytes */
+static int unixOpenSharedMemory(unixFile *pDbFd){
+  struct unixShm *p = 0;          /* The connection to be opened */
+  struct unixShmNode *pShmNode;   /* The underlying mmapped file */
+  int rc;                         /* Result code */
+  unixInodeInfo *pInode;          /* The inode of fd */
+  char *zShmFilename;             /* Name of the file used for SHM */
+  int nShmFilename;               /* Size of the SHM filename in bytes */
 
-  /* Allocate space for the new sqlite3_shm object.
-  */
+  /* Allocate space for the new unixShm object. */
   p = sqlite3_malloc( sizeof(*p) );
   if( p==0 ) return SQLITE_NOMEM;
   memset(p, 0, sizeof(*p));
-  pDbFd = (struct unixFile*)fd;
   assert( pDbFd->pShm==0 );
 
-  /* Check to see if a unixShmNode object already exists.  Reuse an existing
-  ** one if present.  Create a new one if necessary.
+  /* Check to see if a unixShmNode object already exists. Reuse an existing
+  ** one if present. Create a new one if necessary.
   */
   unixEnterMutex();
   pInode = pDbFd->pInode;
@@ -3380,49 +3375,107 @@ shm_open_err:
 }
 
 /*
-** Close a connection to shared-memory.  Delete the underlying 
-** storage if deleteFlag is true.
+** This function is called to obtain a pointer to region iRegion of the 
+** shared-memory associated with the database file fd. Shared-memory regions 
+** are numbered starting from zero. Each shared-memory region is szRegion 
+** bytes in size.
+**
+** If an error occurs, an error code is returned and *pp is set to NULL.
+**
+** Otherwise, if the bExtend parameter is 0 and the requested shared-memory
+** region has not been allocated (by any client, including one running in a
+** separate process), then *pp is set to NULL and SQLITE_OK returned. If 
+** bExtend is non-zero and the requested shared-memory region has not yet 
+** been allocated, it is allocated by this function.
+**
+** If the shared-memory region has already been allocated or is allocated by
+** this call as described above, then it is mapped into this processes 
+** address space (if it is not already), *pp is set to point to the mapped 
+** memory and SQLITE_OK returned.
 */
-static int unixShmClose(
-  sqlite3_file *fd,          /* The underlying database file */
-  int deleteFlag             /* Delete shared-memory if true */
+static int unixShmMap(
+  sqlite3_file *fd,               /* Handle open on database file */
+  int iRegion,                    /* Region to retrieve */
+  int szRegion,                   /* Size of regions */
+  int bExtend,                    /* True to extend file if necessary */
+  void volatile **pp              /* OUT: Mapped memory */
 ){
-  unixShm *p;            /* The connection to be closed */
-  unixShmNode *pShmNode; /* The underlying shared-memory file */
-  unixShm **pp;          /* For looping over sibling connections */
-  unixFile *pDbFd;       /* The underlying database file */
+  unixFile *pDbFd = (unixFile*)fd;
+  unixShm *p;
+  unixShmNode *pShmNode;
+  int rc = SQLITE_OK;
 
-  pDbFd = (unixFile*)fd;
-  p = pDbFd->pShm;
-  if( p==0 ) return SQLITE_OK;
-  pShmNode = p->pShmNode;
-
-  assert( pShmNode==pDbFd->pInode->pShmNode );
-  assert( pShmNode->pInode==pDbFd->pInode );
-
-  /* Remove connection p from the set of connections associated
-  ** with pShmNode */
-  sqlite3_mutex_enter(pShmNode->mutex);
-  for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
-  *pp = p->pNext;
-
-  /* Free the connection p */
-  sqlite3_free(p);
-  pDbFd->pShm = 0;
-  sqlite3_mutex_leave(pShmNode->mutex);
-
-  /* If pShmNode->nRef has reached 0, then close the underlying
-  ** shared-memory file, too */
-  unixEnterMutex();
-  assert( pShmNode->nRef>0 );
-  pShmNode->nRef--;
-  if( pShmNode->nRef==0 ){
-    if( deleteFlag ) unlink(pShmNode->zFilename);
-    unixShmPurge(pDbFd);
+  /* If the shared-memory file has not yet been opened, open it now. */
+  if( pDbFd->pShm==0 ){
+    rc = unixOpenSharedMemory(pDbFd);
+    if( rc!=SQLITE_OK ) return rc;
   }
-  unixLeaveMutex();
 
-  return SQLITE_OK;
+  p = pDbFd->pShm;
+  pShmNode = p->pShmNode;
+  sqlite3_mutex_enter(pShmNode->mutex);
+  assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
+
+  if( pShmNode->nRegion<=iRegion ){
+    char **apNew;                      /* New apRegion[] array */
+    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
+    struct stat sStat;                 /* Used by fstat() */
+
+    pShmNode->szRegion = szRegion;
+
+    /* The requested region is not mapped into this processes address space.
+    ** Check to see if it has been allocated (i.e. if the wal-index file is
+    ** large enough to contain the requested region).
+    */
+    if( fstat(pShmNode->h, &sStat) ){
+      rc = SQLITE_IOERR_SHMSIZE;
+      goto shmpage_out;
+    }
+
+    if( sStat.st_size<nByte ){
+      /* The requested memory region does not exist. If bExtend is set to
+      ** false, exit early. *pp will be set to NULL and SQLITE_OK returned.
+      **
+      ** Alternatively, if bExtend is true, use ftruncate() to allocate
+      ** the requested memory region.
+      */
+      if( !bExtend ) goto shmpage_out;
+      if( ftruncate(pShmNode->h, nByte) ){
+        rc = SQLITE_IOERR_SHMSIZE;
+        goto shmpage_out;
+      }
+    }
+
+    /* Map the requested memory region into this processes address space. */
+    apNew = (char **)sqlite3_realloc(
+        pShmNode->apRegion, (iRegion+1)*sizeof(char *)
+    );
+    if( !apNew ){
+      rc = SQLITE_IOERR_NOMEM;
+      goto shmpage_out;
+    }
+    pShmNode->apRegion = apNew;
+    while(pShmNode->nRegion<=iRegion){
+      void *pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
+          MAP_SHARED, pShmNode->h, iRegion*szRegion
+      );
+      if( pMem==MAP_FAILED ){
+        rc = SQLITE_IOERR;
+        goto shmpage_out;
+      }
+      pShmNode->apRegion[pShmNode->nRegion] = pMem;
+      pShmNode->nRegion++;
+    }
+  }
+
+shmpage_out:
+  if( pShmNode->nRegion>iRegion ){
+    *pp = pShmNode->apRegion[iRegion];
+  }else{
+    *pp = 0;
+  }
+  sqlite3_mutex_leave(pShmNode->mutex);
+  return rc;
 }
 
 /*
@@ -3552,107 +3605,60 @@ static void unixShmBarrier(
 }
 
 /*
-** This function is called to obtain a pointer to region iRegion of the 
-** shared-memory associated with the database file fd. Shared-memory regions 
-** are numbered starting from zero. Each shared-memory region is szRegion 
-** bytes in size.
+** Close a connection to shared-memory.  Delete the underlying 
+** storage if deleteFlag is true.
 **
-** If an error occurs, an error code is returned and *pp is set to NULL.
-**
-** Otherwise, if the isWrite parameter is 0 and the requested shared-memory
-** region has not been allocated (by any client, including one running in a
-** separate process), then *pp is set to NULL and SQLITE_OK returned. If 
-** isWrite is non-zero and the requested shared-memory region has not yet 
-** been allocated, it is allocated by this function.
-**
-** If the shared-memory region has already been allocated or is allocated by
-** this call as described above, then it is mapped into this processes 
-** address space (if it is not already), *pp is set to point to the mapped 
-** memory and SQLITE_OK returned.
+** If there is no shared memory associated with the connection then this
+** routine is a harmless no-op.
 */
-static int unixShmMap(
-  sqlite3_file *fd,               /* Handle open on database file */
-  int iRegion,                    /* Region to retrieve */
-  int szRegion,                   /* Size of regions */
-  int isWrite,                    /* True to extend file if necessary */
-  void volatile **pp              /* OUT: Mapped memory */
+static int unixShmUnmap(
+  sqlite3_file *fd,               /* The underlying database file */
+  int deleteFlag                  /* Delete shared-memory if true */
 ){
-  unixFile *pDbFd = (unixFile*)fd;
-  unixShm *p = pDbFd->pShm;
-  unixShmNode *pShmNode = p->pShmNode;
-  int rc = SQLITE_OK;
+  unixShm *p;                     /* The connection to be closed */
+  unixShmNode *pShmNode;          /* The underlying shared-memory file */
+  unixShm **pp;                   /* For looping over sibling connections */
+  unixFile *pDbFd;                /* The underlying database file */
 
+  pDbFd = (unixFile*)fd;
+  p = pDbFd->pShm;
+  if( p==0 ) return SQLITE_OK;
+  pShmNode = p->pShmNode;
+
+  assert( pShmNode==pDbFd->pInode->pShmNode );
+  assert( pShmNode->pInode==pDbFd->pInode );
+
+  /* Remove connection p from the set of connections associated
+  ** with pShmNode */
   sqlite3_mutex_enter(pShmNode->mutex);
-  assert( szRegion==pShmNode->szRegion || pShmNode->nRegion==0 );
+  for(pp=&pShmNode->pFirst; (*pp)!=p; pp = &(*pp)->pNext){}
+  *pp = p->pNext;
 
-  if( pShmNode->nRegion<=iRegion ){
-    char **apNew;                      /* New apRegion[] array */
-    int nByte = (iRegion+1)*szRegion;  /* Minimum required file size */
-    struct stat sStat;                 /* Used by fstat() */
-
-    pShmNode->szRegion = szRegion;
-
-    /* The requested region is not mapped into this processes address space.
-    ** Check to see if it has been allocated (i.e. if the wal-index file is
-    ** large enough to contain the requested region).
-    */
-    if( fstat(pShmNode->h, &sStat) ){
-      rc = SQLITE_IOERR_SHMSIZE;
-      goto shmpage_out;
-    }
-
-    if( sStat.st_size<nByte ){
-      /* The requested memory region does not exist. If isWrite is set to
-      ** zero, exit early. *pp will be set to NULL and SQLITE_OK returned.
-      **
-      ** Alternatively, if isWrite is non-zero, use ftruncate() to allocate
-      ** the requested memory region.
-      */
-      if( !isWrite ) goto shmpage_out;
-      if( ftruncate(pShmNode->h, nByte) ){
-        rc = SQLITE_IOERR_SHMSIZE;
-        goto shmpage_out;
-      }  
-    }
-
-    /* Map the requested memory region into this processes address space. */
-    apNew = (char **)sqlite3_realloc(
-        pShmNode->apRegion, (iRegion+1)*sizeof(char *)
-    );
-    if( !apNew ){
-      rc = SQLITE_IOERR_NOMEM;
-      goto shmpage_out;
-    }
-    pShmNode->apRegion = apNew;
-    while(pShmNode->nRegion<=iRegion){
-      void *pMem = mmap(0, szRegion, PROT_READ|PROT_WRITE, 
-          MAP_SHARED, pShmNode->h, iRegion*szRegion
-      );
-      if( pMem==MAP_FAILED ){
-        rc = SQLITE_IOERR;
-        goto shmpage_out;
-      }
-      pShmNode->apRegion[pShmNode->nRegion] = pMem;
-      pShmNode->nRegion++;
-    }
-  }
-
-shmpage_out:
-  if( pShmNode->nRegion>iRegion ){
-    *pp = pShmNode->apRegion[iRegion];
-  }else{
-    *pp = 0;
-  }
+  /* Free the connection p */
+  sqlite3_free(p);
+  pDbFd->pShm = 0;
   sqlite3_mutex_leave(pShmNode->mutex);
-  return rc;
+
+  /* If pShmNode->nRef has reached 0, then close the underlying
+  ** shared-memory file, too */
+  unixEnterMutex();
+  assert( pShmNode->nRef>0 );
+  pShmNode->nRef--;
+  if( pShmNode->nRef==0 ){
+    if( deleteFlag ) unlink(pShmNode->zFilename);
+    unixShmPurge(pDbFd);
+  }
+  unixLeaveMutex();
+
+  return SQLITE_OK;
 }
 
+
 #else
-# define unixShmOpen    0
-# define unixShmLock    0
 # define unixShmMap     0
+# define unixShmLock    0
 # define unixShmBarrier 0
-# define unixShmClose   0
+# define unixShmUnmap   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -3710,11 +3716,10 @@ static const sqlite3_io_methods METHOD = {                                   \
    unixFileControl,            /* xFileControl */                            \
    unixSectorSize,             /* xSectorSize */                             \
    unixDeviceCharacteristics,  /* xDeviceCapabilities */                     \
-   unixShmOpen,                /* xShmOpen */                                \
-   unixShmLock,                /* xShmLock */                                \
    unixShmMap,                 /* xShmMap */                                 \
+   unixShmLock,                /* xShmLock */                                \
    unixShmBarrier,             /* xShmBarrier */                             \
-   unixShmClose                /* xShmClose */                               \
+   unixShmUnmap                /* xShmUnmap */                               \
 };                                                                           \
 static const sqlite3_io_methods *FINDER##Impl(const char *z, unixFile *p){   \
   UNUSED_PARAMETER(z); UNUSED_PARAMETER(p);                                  \
@@ -3731,7 +3736,7 @@ static const sqlite3_io_methods *(*const FINDER)(const char*,unixFile *p)    \
 IOMETHODS(
   posixIoFinder,            /* Finder function name */
   posixIoMethods,           /* sqlite3_io_methods object name */
-  2,                        /* ShmOpen is enabled */
+  2,                        /* shared memory is enabled */
   unixClose,                /* xClose method */
   unixLock,                 /* xLock method */
   unixUnlock,               /* xUnlock method */
@@ -3740,7 +3745,7 @@ IOMETHODS(
 IOMETHODS(
   nolockIoFinder,           /* Finder function name */
   nolockIoMethods,          /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   nolockClose,              /* xClose method */
   nolockLock,               /* xLock method */
   nolockUnlock,             /* xUnlock method */
@@ -3749,7 +3754,7 @@ IOMETHODS(
 IOMETHODS(
   dotlockIoFinder,          /* Finder function name */
   dotlockIoMethods,         /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   dotlockClose,             /* xClose method */
   dotlockLock,              /* xLock method */
   dotlockUnlock,            /* xUnlock method */
@@ -3760,7 +3765,7 @@ IOMETHODS(
 IOMETHODS(
   flockIoFinder,            /* Finder function name */
   flockIoMethods,           /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   flockClose,               /* xClose method */
   flockLock,                /* xLock method */
   flockUnlock,              /* xUnlock method */
@@ -3772,7 +3777,7 @@ IOMETHODS(
 IOMETHODS(
   semIoFinder,              /* Finder function name */
   semIoMethods,             /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   semClose,                 /* xClose method */
   semLock,                  /* xLock method */
   semUnlock,                /* xUnlock method */
@@ -3784,7 +3789,7 @@ IOMETHODS(
 IOMETHODS(
   afpIoFinder,              /* Finder function name */
   afpIoMethods,             /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   afpClose,                 /* xClose method */
   afpLock,                  /* xLock method */
   afpUnlock,                /* xUnlock method */
@@ -3809,7 +3814,7 @@ static int proxyCheckReservedLock(sqlite3_file*, int*);
 IOMETHODS(
   proxyIoFinder,            /* Finder function name */
   proxyIoMethods,           /* sqlite3_io_methods object name */
-  1,                        /* ShmOpen is disabled */
+  1,                        /* shared memory is disabled */
   proxyClose,               /* xClose method */
   proxyLock,                /* xLock method */
   proxyUnlock,              /* xUnlock method */
@@ -3822,7 +3827,7 @@ IOMETHODS(
 IOMETHODS(
   nfsIoFinder,               /* Finder function name */
   nfsIoMethods,              /* sqlite3_io_methods object name */
-  1,                         /* ShmOpen is disabled */
+  1,                         /* shared memory is disabled */
   unixClose,                 /* xClose method */
   unixLock,                  /* xLock method */
   nfsUnlock,                 /* xUnlock method */

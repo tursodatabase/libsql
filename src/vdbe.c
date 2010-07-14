@@ -5213,11 +5213,11 @@ case OP_JournalMode: {    /* out2-prerelease */
   zFilename = sqlite3PagerFilename(pPager);
 
   /* Do not allow a transition to journal_mode=WAL for a database
-  ** in temporary storage or if the VFS does not support xShmOpen.
+  ** in temporary storage or if the VFS does not support shared memory 
   */
   if( eNew==PAGER_JOURNALMODE_WAL
    && (zFilename[0]==0                         /* Temp file */
-       || !sqlite3PagerWalSupported(pPager))   /* No xShmOpen support */
+       || !sqlite3PagerWalSupported(pPager))   /* No shared-memory support */
   ){
     eNew = eOld;
   }

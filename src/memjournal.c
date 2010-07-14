@@ -227,11 +227,10 @@ static const struct sqlite3_io_methods MemJournalMethods = {
   0,                /* xFileControl */
   0,                /* xSectorSize */
   0,                /* xDeviceCharacteristics */
-  0,                /* xShmOpen */
-  0,                /* xShmLock */
   0,                /* xShmMap */
+  0,                /* xShmLock */
   0,                /* xShmBarrier */
-  0                 /* xShmClose */
+  0                 /* xShmUnlock */
 };
 
 /* 

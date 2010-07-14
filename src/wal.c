@@ -413,7 +413,6 @@ struct Wal {
   u16 szPage;                /* Database page size */
   i16 readLock;              /* Which read lock is being held.  -1 for none */
   u8 exclusiveMode;          /* Non-zero if connection is in exclusive mode */
-  u8 isWIndexOpen;           /* True if ShmOpen() called on pDbFd */
   u8 writeLock;              /* True if in a write transaction */
   u8 ckptLock;               /* True if holding a checkpoint lock */
   WalIndexHdr hdr;           /* Wal-index header for current transaction */
@@ -1168,10 +1167,7 @@ recovery_error:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  if( pWal->isWIndexOpen ){
-    sqlite3OsShmClose(pWal->pDbFd, isDelete);
-    pWal->isWIndexOpen = 0;
-  }
+  sqlite3OsShmUnmap(pWal->pDbFd, isDelete);
 }
 
 /* 
@@ -1226,14 +1222,10 @@ int sqlite3WalOpen(
   pRet->pDbFd = pDbFd;
   pRet->readLock = -1;
   pRet->zWalName = zWalName;
-  rc = sqlite3OsShmOpen(pDbFd);
 
   /* Open file handle on the write-ahead log file. */
-  if( rc==SQLITE_OK ){
-    pRet->isWIndexOpen = 1;
-    flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
-    rc = sqlite3OsOpen(pVfs, zWalName, pRet->pWalFd, flags, &flags);
-  }
+  flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_MAIN_JOURNAL);
+  rc = sqlite3OsOpen(pVfs, zWalName, pRet->pWalFd, flags, &flags);
 
   if( rc!=SQLITE_OK ){
     walIndexClose(pRet, 0);
@@ -2204,8 +2196,10 @@ int sqlite3WalBeginWriteTransaction(Wal *pWal){
 ** routine merely releases the lock.
 */
 int sqlite3WalEndWriteTransaction(Wal *pWal){
-  walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
-  pWal->writeLock = 0;
+  if( pWal->writeLock ){
+    walUnlockExclusive(pWal, WAL_WRITE_LOCK, 1);
+    pWal->writeLock = 0;
+  }
   return SQLITE_OK;
 }
 

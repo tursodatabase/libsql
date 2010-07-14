@@ -523,17 +523,14 @@ static int cfDeviceCharacteristics(sqlite3_file *pFile){
 /*
 ** Pass-throughs for WAL support.
 */
-static int cfShmOpen(sqlite3_file *pFile){
-  return sqlite3OsShmOpen(((CrashFile*)pFile)->pRealFile);
-}
 static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   return sqlite3OsShmLock(((CrashFile*)pFile)->pRealFile, ofst, n, flags);
 }
 static void cfShmBarrier(sqlite3_file *pFile){
   sqlite3OsShmBarrier(((CrashFile*)pFile)->pRealFile);
 }
-static int cfShmClose(sqlite3_file *pFile, int delFlag){
-  return sqlite3OsShmClose(((CrashFile*)pFile)->pRealFile, delFlag);
+static int cfShmUnmap(sqlite3_file *pFile, int delFlag){
+  return sqlite3OsShmUnmap(((CrashFile*)pFile)->pRealFile, delFlag);
 }
 static int cfShmMap(
   sqlite3_file *pFile,            /* Handle open on database file */
@@ -559,11 +556,10 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfFileControl,                /* xFileControl */
   cfSectorSize,                 /* xSectorSize */
   cfDeviceCharacteristics,      /* xDeviceCharacteristics */
-  cfShmOpen,                    /* xShmOpen */
-  cfShmLock,                    /* xShmLock */
   cfShmMap,                     /* xShmMap */
+  cfShmLock,                    /* xShmLock */
   cfShmBarrier,                 /* xShmBarrier */
-  cfShmClose                    /* xShmClose */
+  cfShmUnmap                    /* xShmUnmap */
 };
 
 /*

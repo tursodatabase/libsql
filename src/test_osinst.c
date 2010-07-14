@@ -98,8 +98,7 @@
 #define OS_TRUNCATE          18
 #define OS_UNLOCK            19
 #define OS_WRITE             20
-#define OS_SHMOPEN           21
-#define OS_SHMCLOSE          22
+#define OS_SHMUNMAP          22
 #define OS_SHMMAP            23
 #define OS_SHMLOCK           25
 #define OS_SHMBARRIER        26
@@ -149,11 +148,10 @@ static int vfslogFileControl(sqlite3_file*, int op, void *pArg);
 static int vfslogSectorSize(sqlite3_file*);
 static int vfslogDeviceCharacteristics(sqlite3_file*);
 
-static int vfslogShmOpen(sqlite3_file *pFile);
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags);
 static int vfslogShmMap(sqlite3_file *pFile,int,int,int,volatile void **);
 static void vfslogShmBarrier(sqlite3_file*);
-static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag);
+static int vfslogShmUnmap(sqlite3_file *pFile, int deleteFlag);
 
 /*
 ** Method declarations for vfslog_vfs.
@@ -209,11 +207,10 @@ static sqlite3_io_methods vfslog_io_methods = {
   vfslogFileControl,              /* xFileControl */
   vfslogSectorSize,               /* xSectorSize */
   vfslogDeviceCharacteristics,    /* xDeviceCharacteristics */
-  vfslogShmOpen,                  /* xShmOpen */
-  vfslogShmLock,                  /* xShmLock */
   vfslogShmMap,                   /* xShmMap */
+  vfslogShmLock,                  /* xShmLock */
   vfslogShmBarrier,               /* xShmBarrier */
-  vfslogShmClose                  /* xShmClose */
+  vfslogShmUnmap                  /* xShmUnmap */
 };
 
 #if defined(SQLITE_OS_UNIX) && !defined(NO_GETTOD)
@@ -423,16 +420,6 @@ static int vfslogDeviceCharacteristics(sqlite3_file *pFile){
   return rc;
 }
 
-static int vfslogShmOpen(sqlite3_file *pFile){
-  int rc;
-  sqlite3_uint64 t;
-  VfslogFile *p = (VfslogFile *)pFile;
-  t = vfslog_time();
-  rc = p->pReal->pMethods->xShmOpen(p->pReal);
-  t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMOPEN, p->iFileId, t, rc, 0, 0);
-  return rc;
-}
 static int vfslogShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
   int rc;
   sqlite3_uint64 t;
@@ -467,14 +454,14 @@ static void vfslogShmBarrier(sqlite3_file *pFile){
   t = vfslog_time() - t;
   vfslog_call(p->pVfslog, OS_SHMBARRIER, p->iFileId, t, SQLITE_OK, 0, 0);
 }
-static int vfslogShmClose(sqlite3_file *pFile, int deleteFlag){
+static int vfslogShmUnmap(sqlite3_file *pFile, int deleteFlag){
   int rc;
   sqlite3_uint64 t;
   VfslogFile *p = (VfslogFile *)pFile;
   t = vfslog_time();
-  rc = p->pReal->pMethods->xShmClose(p->pReal, deleteFlag);
+  rc = p->pReal->pMethods->xShmUnmap(p->pReal, deleteFlag);
   t = vfslog_time() - t;
-  vfslog_call(p->pVfslog, OS_SHMCLOSE, p->iFileId, t, rc, 0, 0);
+  vfslog_call(p->pVfslog, OS_SHMUNMAP, p->iFileId, t, rc, 0, 0);
   return rc;
 }
 
@@ -794,8 +781,7 @@ static const char *vfslog_eventname(int eEvent){
     case OS_SLEEP:             zEvent = "xSleep"; break;
     case OS_CURRENTTIME:       zEvent = "xCurrentTime"; break;
 
-    case OS_SHMCLOSE:          zEvent = "xShmClose"; break;
-    case OS_SHMOPEN:           zEvent = "xShmOpen"; break;
+    case OS_SHMUNMAP:          zEvent = "xShmUnmap"; break;
     case OS_SHMLOCK:           zEvent = "xShmLock"; break;
     case OS_SHMBARRIER:        zEvent = "xShmBarrier"; break;
     case OS_SHMMAP:            zEvent = "xShmMap"; break;
