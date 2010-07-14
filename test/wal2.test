@@ -949,6 +949,54 @@ do_test wal2-10.2.3 {
   set_tvfs_hdr $::filename $hdr
   catchsql { SELECT * FROM t1 }
 } {1 {unable to open database file}}
+db close
+tvfs delete
+
+#-------------------------------------------------------------------------
+# This block of tests - wal2-11.* - tests that it is not possible to put
+# the library into an infinite loop by presenting it with a corrupt
+# hash table (one that appears to contain a single chain of infinite 
+# length).
+#
+#   wal2-11.1.*: While reading the hash-table.
+#
+#   wal2-11.2.*: While writing the hash-table.
+#
+testvfs tvfs -default 1
+do_test wal2-11.0 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE t1(a, b, c);
+    INSERT INTO t1 VALUES(1, 2, 3);
+    INSERT INTO t1 VALUES(4, 5, 6);
+    INSERT INTO t1 VALUES(7, 8, 9);
+    SELECT * FROM t1;
+  }
+} {wal 1 2 3 4 5 6 7 8 9}
+
+do_test wal2-11.1.1 {
+  sqlite3 db2 test.db
+  execsql { SELECT name FROM sqlite_master } db2
+} {t1}
+
+# Fill up the hash table on the first page of shared memory with 0x55 bytes.
+#
+set blob [string range [tvfs shm $::filename] 0 16383]
+append blob [string repeat [binary format c 0x55] 16384]
+tvfs shm $::filename $blob
+
+do_test wal2-11.2 {
+  catchsql { SELECT * FROM t1 } db2
+} {1 {database disk image is malformed}}
+
+do_test wal2-12.1 {
+  catchsql { INSERT INTO t1 VALUES(10, 11, 12) }
+} {1 {database disk image is malformed}}
+
+db close
+db2 close
+tvfs delete
 
 finish_test
 
