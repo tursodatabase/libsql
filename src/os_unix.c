@@ -4304,7 +4304,7 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 
 /*
 ** This function is called by unixOpen() to determine the unix permissions
-** to create new files with. If no error occurs, then SQLite is returned
+** to create new files with. If no error occurs, then SQLITE_OK is returned
 ** and a value suitable for passing as the third argument to open(2) is
 ** written to *pMode. If an IO error occurs, an SQLite error code is 
 ** returned and the value of *pMode is not modified.

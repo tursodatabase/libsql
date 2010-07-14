@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C The\sexpression\slist\son\sthe\sRHS\sof\san\sIN\soperator\scan\sno\slonger\sbe\sempty\nbecause\san\sempty\sexpression\slist\sis\snow\soptimized\sout\sby\schanges\sin\ncheck-in\s[c288ac644d0bf].\s\sTherefore\sadd\sALWAYS()\smacros\saround\stests\nfor\sthe\sexpression\slist\sbeing\snon-empty.
-D 2010-07-14T20:23:52
+C Fix\sa\stypo\sin\sa\scomment\sin\sos_unix.c.
+D 2010-07-14T20:51:34
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -157,7 +157,7 @@ F src/os.c 60178f518c4d6c0dcb59f7292232281d7bea2dcf
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 417a378a1941b9203d2613c082133fee85199f74
+F src/os_unix.c fd7706aaec6ad9e424c95f3fb2c7d2444507295d
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
@@ -838,14 +838,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6851c517ac7f80538aa5f3a1994fa1921c0ec3f4
-R eb80ad6bc168af8850aa72f4b25fe674
+P fd130ae56c0e23f2d5b4a82f1a09e89ed7ae1e85
+R 5fcf36dbaae8e359fe7f011673da14ee
 U drh
-Z aa17e908564fca2c36d1e57fa4d41f03
+Z 3c1e4ace237ca7b56512e476f5fbb3f7
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMPhzboxKgR168RlERAmQ7AJ9+2dhU717+AUWkF0vzL6qDVstVOwCfSTZZ
-2jqc+a7lH2MMOe7TbKwwRQk=
-=yFsM
+iD8DBQFMPiNaoxKgR168RlERAiTZAJsGTMQVRSh6p9V3owE8bt9sG6sSpQCdHT5b
+Z3/+c+Lx/Bx06rAxsFqRbtk=
+=DDX2
 -----END PGP SIGNATURE-----
