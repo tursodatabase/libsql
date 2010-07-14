@@ -959,14 +959,27 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   in_op(A) ::= IN.      {A = 0;}
   in_op(A) ::= NOT IN.  {A = 1;}
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
-    A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
-    if( A.pExpr ){
-      A.pExpr->x.pList = Y;
-      sqlite3ExprSetHeight(pParse, A.pExpr);
+    if( Y==0 ){
+      // Expressions of the form
+      //
+      //      expr1 IN ()
+      //      expr1 NOT IN ()
+      //
+      // simplify to constants 0 (false) and 1 (true), respectively,
+      // regardless of the value of expr1.
+      //
+      A.pExpr = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &sqlite3IntTokens[N]);
+      sqlite3ExprDelete(pParse->db, X.pExpr);
     }else{
-      sqlite3ExprListDelete(pParse->db, Y);
+      A.pExpr = sqlite3PExpr(pParse, TK_IN, X.pExpr, 0, 0);
+      if( A.pExpr ){
+        A.pExpr->x.pList = Y;
+        sqlite3ExprSetHeight(pParse, A.pExpr);
+      }else{
+        sqlite3ExprListDelete(pParse->db, Y);
+      }
+      if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
     }
-    if( N ) A.pExpr = sqlite3PExpr(pParse, TK_NOT, A.pExpr, 0, 0);
     A.zStart = X.zStart;
     A.zEnd = &E.z[E.n];
   }

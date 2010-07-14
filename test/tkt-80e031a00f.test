@@ -1,0 +1,49 @@
+# 2010 July 14
+#
+# The author disclaims copyright to this source code.  In place of
+# a legal notice, here is a blessing:
+#
+#    May you do good and not evil.
+#    May you find forgiveness for yourself and forgive others.
+#    May you share freely, never taking more than you give.
+#
+#***********************************************************************
+# This file implements regression tests for SQLite library. Specifically,
+# it tests that ticket [80e031a00f45dca877ed92b225209cfa09280f4f] has been
+# resolved.  That ticket is about IN and NOT IN operators with empty-set
+# right-hand sides.  Such expressions should always return TRUE or FALSE
+# even if the left-hand side is NULL.
+#
+
+set testdir [file dirname $argv0]
+source $testdir/tester.tcl
+source $testdir/lock_common.tcl
+source $testdir/malloc_common.tcl
+
+do_execsql_test tkt-80e031a00f.1 {SELECT 1 IN ()} 0
+do_execsql_test tkt-80e031a00f.2 {SELECT 1 NOT IN ()} 1
+do_execsql_test tkt-80e031a00f.3 {SELECT null IN ()} 0
+do_execsql_test tkt-80e031a00f.4 {SELECT null NOT IN ()} 1
+do_execsql_test tkt-80e031a00f.5 {
+  CREATE TABLE t1(x);
+  SELECT 1 IN t1;
+} 0
+do_execsql_test tkt-80e031a00f.6 {SELECT 1 NOT IN t1} 1
+do_execsql_test tkt-80e031a00f.7 {SELECT null IN t1} 0
+do_execsql_test tkt-80e031a00f.8 {SELECT null NOT IN t1} 1
+do_execsql_test tkt-80e031a00f.9 {
+  CREATE TABLE t2(y INTEGER PRIMARY KEY);
+  SELECT 1 IN t2;
+} 0
+do_execsql_test tkt-80e031a00f.10 {SELECT 1 NOT IN t2} 1
+do_execsql_test tkt-80e031a00f.11 {SELECT null IN t2} 0
+do_execsql_test tkt-80e031a00f.12 {SELECT null NOT IN t2} 1
+do_execsql_test tkt-80e031a00f.9 {
+  CREATE TABLE t3(z INT UNIQUE);
+  SELECT 1 IN t3;
+} 0
+do_execsql_test tkt-80e031a00f.13 {SELECT 1 NOT IN t3} 1
+do_execsql_test tkt-80e031a00f.14 {SELECT null IN t3} 0
+do_execsql_test tkt-80e031a00f.15 {SELECT null NOT IN t3} 1
+
+finish_test

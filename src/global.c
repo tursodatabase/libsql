@@ -177,6 +177,15 @@ SQLITE_WSD struct Sqlite3Config sqlite3Config = {
 SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
 
 /*
+** Constant tokens for values 0 and 1.
+*/
+const Token sqlite3IntTokens[] = {
+   { "0", 1 },
+   { "1", 1 }
+};
+
+
+/*
 ** The value of the "pending" byte must be 0x40000000 (1 byte past the
 ** 1-gibabyte boundary) in a compatible database.  SQLite never uses
 ** the database page that contains the pending byte.  It never attempts

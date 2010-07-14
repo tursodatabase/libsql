@@ -1705,7 +1705,6 @@ int sqlite3CodeSubselect(
       ** an integer 0 (not exists) or 1 (exists) into a memory cell
       ** and record that memory cell in iColumn.
       */
-      static const Token one = { "1", 1 };  /* Token for literal value 1 */
       Select *pSel;                         /* SELECT statement to encode */
       SelectDest dest;                      /* How to deal with SELECt result */
 
@@ -1726,7 +1725,8 @@ int sqlite3CodeSubselect(
         VdbeComment((v, "Init EXISTS result"));
       }
       sqlite3ExprDelete(pParse->db, pSel->pLimit);
-      pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &one);
+      pSel->pLimit = sqlite3PExpr(pParse, TK_INTEGER, 0, 0,
+                                  &sqlite3IntTokens[1]);
       if( sqlite3Select(pParse, pSel, &dest) ){
         return 0;
       }
@@ -1794,8 +1794,20 @@ static void sqlite3ExprCodeIN(
   sqlite3ExprCachePush(pParse);
   r1 = sqlite3GetTempReg(pParse);
   sqlite3ExprCode(pParse, pExpr->pLeft, r1);
-  sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
 
+  /* If the LHS is NULL, then the result is either false or NULL depending
+  ** on whether the RHS is empty or not, respectively.
+  */
+  if( destIfNull==destIfFalse ){
+    /* Shortcut for the common case where the false and NULL outcomes are
+    ** the same. */
+    sqlite3VdbeAddOp2(v, OP_IsNull, r1, destIfNull);
+  }else{
+    int addr1 = sqlite3VdbeAddOp1(v, OP_NotNull, r1);
+    sqlite3VdbeAddOp2(v, OP_Rewind, pExpr->iTable, destIfFalse);
+    sqlite3VdbeAddOp2(v, OP_Goto, 0, destIfNull);
+    sqlite3VdbeJumpHere(v, addr1);
+  }
 
   if( eType==IN_INDEX_ROWID ){
     /* In this case, the RHS is the ROWID of table b-tree

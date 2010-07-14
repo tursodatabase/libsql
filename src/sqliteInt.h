@@ -2890,6 +2890,7 @@ void sqlite3ValueApplyAffinity(sqlite3_value *, u8, u8);
 extern const unsigned char sqlite3OpcodeProperty[];
 extern const unsigned char sqlite3UpperToLower[];
 extern const unsigned char sqlite3CtypeMap[];
+extern const Token sqlite3IntTokens[];
 extern SQLITE_WSD struct Sqlite3Config sqlite3Config;
 extern SQLITE_WSD FuncDefHash sqlite3GlobalFunctions;
 #ifndef SQLITE_OMIT_WSD
