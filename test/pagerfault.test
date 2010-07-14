@@ -28,9 +28,6 @@ proc a_string {n} {
 }
 db func a_string a_string
 
-
-if 1 {
-
 #-------------------------------------------------------------------------
 # Test fault-injection while rolling back a hot-journal file.
 #
@@ -554,8 +551,6 @@ do_faultsim_test pagerfault-11 -prep {
   faultsim_integrity_check
 }
 
-}
-
 
 #-------------------------------------------------------------------------
 # Test fault injection when writing to a database file that resides on
@@ -978,5 +973,76 @@ do_faultsim_test pagerfault-21 -prep {
   faultsim_test_result {0 {}}
 }
 
+
+#-------------------------------------------------------------------------
+# Test fault-injection and rollback when the nReserve header value 
+# is non-zero.
+#
+do_test pagerfault-21-pre1 {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+    PRAGMA journal_mode = DELETE;
+  }
+  db close
+  hexio_write test.db 20    10
+  hexio_write test.db 105 03F0
+  sqlite3 db test.db
+  db func a_string a_string
+  execsql {
+    CREATE TABLE t0(a PRIMARY KEY, b UNIQUE);
+    INSERT INTO t0 VALUES(a_string(222), a_string(333));
+    INSERT INTO t0 VALUES(a_string(223), a_string(334));
+    INSERT INTO t0 VALUES(a_string(224), a_string(335));
+    INSERT INTO t0 VALUES(a_string(225), a_string(336));
+  }
+  faultsim_save_and_close
+} {}
+
+do_faultsim_test pagerfault-21 -prep {
+  faultsim_restore_and_reopen
+} -body {
+  execsql { INSERT INTO t0 SELECT a||'x', b||'x' FROM t0 }
+} -test {
+  faultsim_test_result {0 {}}
+  faultsim_integrity_check
+}
+ifcapable crashtest {
+  faultsim_delete_and_reopen
+  execsql {
+    PRAGMA page_size = 1024;
+    PRAGMA journal_mode = WAL;
+    PRAGMA journal_mode = DELETE;
+  }
+  db close
+  hexio_write test.db 20    10
+  hexio_write test.db 105 03F0
+
+  sqlite3 db test.db
+  db func a_string a_string
+  execsql {
+    CREATE TABLE t0(a PRIMARY KEY, b UNIQUE);
+    INSERT INTO t0 VALUES(a_string(222), a_string(333));
+    INSERT INTO t0 VALUES(a_string(223), a_string(334));
+  }
+  faultsim_save_and_close
+
+  for {set iTest 1} {$iTest<50} {incr iTest} {
+    do_test pagerfault-21.crash.$iTest.1 {
+      crashsql -delay 1 -file test.db -seed $iTest {
+        BEGIN;
+          CREATE TABLE t1(a PRIMARY KEY, b UNIQUE);
+          INSERT INTO t1 SELECT a, b FROM t0;
+        COMMIT;
+      }
+    } {1 {child process exited abnormally}}
+    do_test pagerfault-22.$iTest.2 {
+      sqlite3 db test.db
+      execsql { PRAGMA integrity_check }
+    } {ok}
+    db close
+  }
+}
 
 finish_test

@@ -1,5 +1,5 @@
-C Test\sthat\sa\scorrupted\sWAL\shash-table\sdoes\snot\sput\sthe\slibrary\sinto\san\sinfinite\sloop.
-D 2010-07-14T07:06:48
+C Add\stests\sto\spagerfault.test.
+D 2010-07-14T08:20:36
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -538,7 +538,7 @@ F test/null.test a8b09b8ed87852742343b33441a9240022108993
 F test/openv2.test af02ed0a9cbc0d2a61b8f35171d4d117e588e4ec
 F test/pager1.test d8e4b2bc8164c920e6ea0572c9e13576d6e4f3fa
 F test/pager2.test f5c757c271ce642d36a393ecbfb3aef1c240dcef
-F test/pagerfault.test f61e7944aef431a23775f8c85599cb158875ad9b
+F test/pagerfault.test a4c0bb8900b8dbf5fcbe41ee2a96148e22174bcb
 F test/pagerfault2.test 1f79ea40d1133b2683a2f811b00f2399f7ec2401
 F test/pageropt.test 8146bf448cf09e87bb1867c2217b921fb5857806
 F test/pagesize.test 76aa9f23ecb0741a4ed9d2e16c5fa82671f28efb
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5314ca3928dab1c76fa4ec5dbe110e3212c95e9f
-R 0b5ec8b4983e94c7c92570f220ab5e66
+P c73886ed7497c0daf798c3b02ca6f5a1c2addde3
+R 2b6e3a3412f1bfeb09d6b6b4e98d2ecb
 U dan
-Z 52c880220531a7798727e625d1f7aefa
+Z 5807910238b38b6913c9b3401b1c1e56
