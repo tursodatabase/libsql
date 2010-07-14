@@ -1481,7 +1481,7 @@ shm_open_err:
 ** Close a connection to shared-memory.  Delete the underlying 
 ** storage if deleteFlag is true.
 */
-static int winShmClose(
+static int winShmUnmap(
   sqlite3_file *fd,          /* Database holding shared memory */
   int deleteFlag             /* Delete after closing if true */
 ){
@@ -1763,7 +1763,7 @@ shmpage_out:
 # define winShmMap     0
 # define winShmLock    0
 # define winShmBarrier 0
-# define winShmClose   0
+# define winShmUnmap   0
 #endif /* #ifndef SQLITE_OMIT_WAL */
 
 /*
@@ -1793,7 +1793,7 @@ static const sqlite3_io_methods winIoMethod = {
   winShmMap,                      /* xShmMap */
   winShmLock,                     /* xShmLock */
   winShmBarrier,                  /* xShmBarrier */
-  winShmClose                     /* xShmClose */
+  winShmUnmap                     /* xShmUnmap */
 };
 
 /****************************************************************************

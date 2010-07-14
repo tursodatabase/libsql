@@ -222,7 +222,7 @@ static sqlite3_io_methods fs_io_methods = {
   0,                            /* xShmMap */
   0,                            /* xShmLock */
   0,                            /* xShmBarrier */
-  0                             /* xShmClose */
+  0                             /* xShmUnmap */
 };
 
 
@@ -243,7 +243,7 @@ static sqlite3_io_methods tmp_io_methods = {
   0,                            /* xShmMap */
   0,                            /* xShmLock */
   0,                            /* xShmBarrier */
-  0                             /* xShmClose */
+  0                             /* xShmUnmap */
 };
 
 /* Useful macros used in several places */

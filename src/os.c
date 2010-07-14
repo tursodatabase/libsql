@@ -106,7 +106,7 @@ int sqlite3OsShmLock(sqlite3_file *id, int offset, int n, int flags){
 void sqlite3OsShmBarrier(sqlite3_file *id){
   id->pMethods->xShmBarrier(id);
 }
-int sqlite3OsShmClose(sqlite3_file *id, int deleteFlag){
+int sqlite3OsShmUnmap(sqlite3_file *id, int deleteFlag){
   return id->pMethods->xShmUnmap(id, deleteFlag);
 }
 int sqlite3OsShmMap(

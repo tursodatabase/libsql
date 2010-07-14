@@ -1167,7 +1167,7 @@ recovery_error:
 ** Close an open wal-index.
 */
 static void walIndexClose(Wal *pWal, int isDelete){
-  sqlite3OsShmClose(pWal->pDbFd, isDelete);
+  sqlite3OsShmUnmap(pWal->pDbFd, isDelete);
 }
 
 /* 

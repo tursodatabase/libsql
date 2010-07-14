@@ -3607,6 +3607,9 @@ static void unixShmBarrier(
 /*
 ** Close a connection to shared-memory.  Delete the underlying 
 ** storage if deleteFlag is true.
+**
+** If there is no shared memory associated with the connection then this
+** routine is a harmless no-op.
 */
 static int unixShmUnmap(
   sqlite3_file *fd,               /* The underlying database file */

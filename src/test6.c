@@ -529,8 +529,8 @@ static int cfShmLock(sqlite3_file *pFile, int ofst, int n, int flags){
 static void cfShmBarrier(sqlite3_file *pFile){
   sqlite3OsShmBarrier(((CrashFile*)pFile)->pRealFile);
 }
-static int cfShmClose(sqlite3_file *pFile, int delFlag){
-  return sqlite3OsShmClose(((CrashFile*)pFile)->pRealFile, delFlag);
+static int cfShmUnmap(sqlite3_file *pFile, int delFlag){
+  return sqlite3OsShmUnmap(((CrashFile*)pFile)->pRealFile, delFlag);
 }
 static int cfShmMap(
   sqlite3_file *pFile,            /* Handle open on database file */
@@ -559,7 +559,7 @@ static const sqlite3_io_methods CrashFileVtab = {
   cfShmMap,                     /* xShmMap */
   cfShmLock,                    /* xShmLock */
   cfShmBarrier,                 /* xShmBarrier */
-  cfShmClose                    /* xShmClose */
+  cfShmUnmap                    /* xShmUnmap */
 };
 
 /*
