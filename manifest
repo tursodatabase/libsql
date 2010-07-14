@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\sthe\sresult\sof\san\sIN\sor\sNOT\sIN\sexpression\swith\san\sempty\sset\son\sthe\s\nright-hand\sside\salways\seither\sfalse\sor\strue,\srespectively,\seven\sif\sthe\nleft-hand\sside\sis\sNULL.\s\sTicket\s[80e031a00f45dc]
-D 2010-07-14T18:24:06
+C Additional\stest\scases\sand\sevidence\smarks\sfor\sthe\sempty\sRHS\sbug\son\sthe\sIN\noperator\s-\sticket\s[80e031a00f45dca877]
+D 2010-07-14T19:31:08
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -639,7 +639,7 @@ F test/tkt-3fe897352e.test 10de1a67bd5c66b238a4c96abe55531b37bb4f00
 F test/tkt-4a03edc4c8.test 2865e4edbc075b954daa82f8da7cc973033ec76e
 F test/tkt-5ee23731f.test 3581260f2a71e51db94e1506ba6b0f7311d002a9
 F test/tkt-78e04e52ea.test fb5430c675e708f5cbafdf3e7e5593da5145a527
-F test/tkt-80e031a00f.test ee36b2d166c413392d90b97a978754f762e3cc37
+F test/tkt-80e031a00f.test 9a154173461a4dbe2de49cda73963e04842d52f7
 F test/tkt-94c04eaadb.test be5ea61cb04dfdc047d19b5c5a9e75fa3da67a7f
 F test/tkt-9d68c883.test 458f7d82a523d7644b54b497c986378a7d8c8b67
 F test/tkt-cbd054fa6b.test f14f97ea43662e6f70c9e63287081e8be5d9d589
@@ -838,14 +838,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9f452514d96ab8d424eadc55c283c53fe831476d
-R 0696a4857e0fc2e6e3cb38528ebe2bf1
+P c288ac644d0bfda2b9bc204dc86df8e74d4f6843
+R 246cf40fb78a0338ef63702fffd8c58e
 U drh
-Z eaca9dffd50a6ab2db3b5e0788a52b1d
+Z 51a384c4e53cd04b3d869080ee1702db
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMPgDNoxKgR168RlERAodgAJ4kq+hDLacVgaUBEnEKpkM8L28pOgCfXevs
-u11vnZz3vLbMyWPx174qXyI=
-=mydy
+iD8DBQFMPhB/oxKgR168RlERAtNLAJwLm5FOsQcYhJ1tRbE7d8y+YL/I2ACfZMY5
+C5vZM2MptiZQyr+vM+YLgwE=
+=RSAs
 -----END PGP SIGNATURE-----
