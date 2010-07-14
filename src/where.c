@@ -2622,7 +2622,7 @@ static void bestBtreeIndex(
         if( ExprHasProperty(pExpr, EP_xIsSelect) ){
           nInMul *= 25;
           bInEst = 1;
-        }else if( pExpr->x.pList ){
+        }else if( ALWAYS(pExpr->x.pList) ){
           nInMul *= pExpr->x.pList->nExpr + 1;
         }
       }else if( pTerm->eOperator & WO_ISNULL ){
