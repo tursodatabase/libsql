@@ -1226,6 +1226,9 @@ int sqlite3WalOpen(
   /* Open file handle on the write-ahead log file. */
   flags = (SQLITE_OPEN_READWRITE|SQLITE_OPEN_CREATE|SQLITE_OPEN_WAL);
   rc = sqlite3OsOpen(pVfs, zWalName, pRet->pWalFd, flags, &flags);
+  if( rc==SQLITE_OK && flags&SQLITE_OPEN_READONLY ){
+    rc = SQLITE_CANTOPEN;
+  }
 
   if( rc!=SQLITE_OK ){
     walIndexClose(pRet, 0);

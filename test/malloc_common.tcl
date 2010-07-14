@@ -137,6 +137,7 @@ proc do_faultsim_test {name args} {
 # Procedures to save and restore the current file-system state:
 #
 #   faultsim_save
+#   faultsim_restore
 #   faultsim_save_and_close
 #   faultsim_restore_and_reopen
 #   faultsim_delete_and_reopen
@@ -153,13 +154,16 @@ proc faultsim_save_and_close {} {
   catch { db close }
   return ""
 }
-proc faultsim_restore_and_reopen {{dbfile test.db}} {
-  catch { db close }
+proc faultsim_restore {} {
   foreach f [glob -nocomplain test.db*] { file delete -force $f }
   foreach f2 [glob -nocomplain sv_test.db*] {
     set f [string range $f2 3 end]
     file copy -force $f2 $f
   }
+}
+proc faultsim_restore_and_reopen {{dbfile test.db}} {
+  catch { db close }
+  faultsim_restore
   sqlite3 db $dbfile
   sqlite3_extended_result_codes db 1
   sqlite3_db_config_lookaside db 0 0 0
