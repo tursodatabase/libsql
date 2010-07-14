@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sthe\sunix\sdriver\sto\sreturn\san\sI/O\serror\sif\sunlink\sfails\sfor\sany\sreason\nother\sthan\sthe\sfile\snot\sexisting\sin\sthe\sfirst\splace.
-D 2010-07-14T01:45:23
+C Fix\sa\stypo\sin\sthe\sIS_BIG_INT\smacro\sused\sby\scoverage\stest\sinstrumentation.
+D 2010-07-14T06:20:27
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -175,7 +172,7 @@ F src/select.c 4903ff1bbd08b55cbce00ea43c645530de41b362
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
 F src/sqlite.h.in 1bcca411e266054977ed2b149a242c5a71092904
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 8eb5d1c63fff70ed30f4b861aeaf8485e663129c
+F src/sqliteInt.h 8e3bc49a0e9217ff489a6b8f70cfcba0f5ad7437
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -837,14 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 2b68e50268412599576c86ae70b830d0388cb35c
-R dad5407613534d18615d6ce46938d2e2
-U drh
-Z d36b8c2e8666bd5e4a1f76283f4d1dc0
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMPRa1oxKgR168RlERArO5AJ9u9t4Gp9UxPBxDzic5qy4T060D+QCdE121
-Hm2QlfmIbUB3Sl1pvqw+w74=
-=nKd9
------END PGP SIGNATURE-----
+P 90d73c66bfa880cdeb688b3016c8b1c58bfcf35f
+R d25f37ac17323937dfd921db79d60eda
+U dan
+Z ff2d33ba3ce5ee4d6c12121b51ff3660

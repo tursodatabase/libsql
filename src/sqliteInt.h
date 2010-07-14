@@ -277,7 +277,7 @@
 ** to fit in 32-bits.  This macro is used inside of various testcase()
 ** macros to verify that we have tested SQLite for large-file support.
 */
-#define IS_BIG_INT(X)  (((X)&(i64)0xffffffff)!=0)
+#define IS_BIG_INT(X)  (((X)&~(i64)0xffffffff)!=0)
 
 /*
 ** The macro unlikely() is a hint that surrounds a boolean
