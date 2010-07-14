@@ -1,5 +1,5 @@
-C Test\sthe\slibaries\sresponse\sto\sread-only\sor\sunreadable\sdatabase,\sWAL\sand\swal-index\sfiles.\sIf\sa\sWAL\sfile\scannot\sbe\sopened\sin\sread/write\smode,\sreturn\sSQLITE_CANTOPEN\sto\sthe\scaller.
-D 2010-07-14T16:37:18
+C Fix\san\sassert()\sfailure\sin\swal2.test\scaused\sby\smessing\swith\sthe\scontents\sof\sshared\smemory.
+D 2010-07-14T18:10:03
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -776,7 +776,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
-F test/wal2.test 9a05210e52e92f375724809c6ee2878413323af1
+F test/wal2.test 7c50a38aa9f0b7c7144d5556d7f30b61febfc929
 F test/wal3.test d2ae7e66f973bd6b58ce49e546b2c00f44fe0485
 F test/wal4.test 640be93f5422df37203aa5e7c06b24fb5e4a2439
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e5d180eed245437b61bfb257ee01e2571c93afe7
-R 37ecab746321ec5b139df993c3f23915
+P 45bb84c6283d803fc29077fdc2d06fa50ec06a59
+R 6afba8a53d6303169f23fc8d1371e421
 U dan
-Z 80bc5a7b8b2ec2d9510d95559b42838d
+Z 85a69e887995213762e743af65322fda
