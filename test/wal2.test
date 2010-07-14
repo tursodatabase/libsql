@@ -998,5 +998,53 @@ db close
 db2 close
 tvfs delete
 
+#-------------------------------------------------------------------------
+# If a connection is required to create a WAL or SHM file, it creates 
+# the new files with the same file-system permissions as the database 
+# file itself. Test this.
+#
+if {$::tcl_platform(platform) == "unix"} {
+  faultsim_delete_and_reopen
+
+  set umask [exec /bin/sh -c umask]
+  do_test wal2-12.1 {
+    sqlite3 db test.db
+    execsql { 
+      CREATE TABLE tx(y, z);
+      PRAGMA journal_mode = WAL;
+    }
+    db close
+    list [file exists test.db-wal] [file exists test.db-shm]
+  } {0 0}
+  
+  foreach {tn permissions} {
+   1 00644
+   2 00666
+   3 00600
+   4 00755
+  } {
+    set effective [format %.5o [expr $permissions & ~$umask]]
+    do_test wal2-12.2.$tn.1 {
+      file attributes test.db -permissions $permissions
+      file attributes test.db -permissions
+    } $permissions
+    do_test wal2-12.2.$tn.2 {
+      list [file exists test.db-wal] [file exists test.db-shm]
+    } {0 0}
+    do_test wal2-12.2.$tn.3 {
+      sqlite3 db test.db
+      execsql { INSERT INTO tx DEFAULT VALUES }
+      list [file exists test.db-wal] [file exists test.db-shm]
+    } {1 1}
+    do_test wal2-12.2.$tn.4 {
+      list [file attr test.db-wal -perm] [file attr test.db-shm -perm]
+    } [list $effective $effective]
+    do_test wal2-12.2.$tn.5 {
+      db close
+      list [file exists test.db-wal] [file exists test.db-shm]
+    } {0 0}
+  }
+}
+
 finish_test
 

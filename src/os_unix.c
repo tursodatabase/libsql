@@ -3315,6 +3315,18 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
   pInode = pDbFd->pInode;
   pShmNode = pInode->pShmNode;
   if( pShmNode==0 ){
+    struct stat sStat;                 /* fstat() info for database file */
+
+    /* Call fstat() to figure out the permissions on the database file. If
+    ** a new *-shm file is created, an attempt will be made to create it
+    ** with the same permissions. The actual permissions the file is created
+    ** with are subject to the current umask setting.
+    */
+    if( fstat(pDbFd->h, &sStat) ){
+      rc = SQLITE_IOERR_FSTAT;
+      goto shm_open_err;
+    }
+
     nShmFilename = 5 + (int)strlen(pDbFd->zPath);
     pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
@@ -3333,7 +3345,7 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
-    pShmNode->h = open(zShmFilename, O_RDWR|O_CREAT, 0664);
+    pShmNode->h = open(zShmFilename, O_RDWR|O_CREAT, (sStat.st_mode & 0777));
     if( pShmNode->h<0 ){
       rc = SQLITE_CANTOPEN_BKPT;
       goto shm_open_err;
@@ -4291,6 +4303,50 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 }
 
 /*
+** This function is called by unixOpen() to determine the unix permissions
+** to create new files with. If no error occurs, then SQLite is returned
+** and a value suitable for passing as the third argument to open(2) is
+** written to *pMode. If an IO error occurs, an SQLite error code is 
+** returned and the value of *pMode is not modified.
+**
+** If the file being opened is a temporary file, it is always created with
+** the octal permissions 0600 (read/writable by owner only). If the file
+** is a database, journal or master journal file, it is created with the
+** permissions mask SQLITE_DEFAULT_FILE_PERMISSIONS.
+**
+** Finally, if the file being opened is a WAL file, then this function
+** queries the file-system for the permissions on the corresponding database
+** file and sets *pMode to this value. Whenever possible, WAL files are 
+** created using the same permissions as the associated database file.
+*/
+static int findCreateFileMode(
+  const char *zPath,              /* Path of file (possibly) being created */
+  int flags,                      /* Flags passed as 4th argument to xOpen() */
+  mode_t *pMode                   /* OUT: Permissions to open file with */
+){
+  int rc = SQLITE_OK;             /* Return Code */
+  if( flags & SQLITE_OPEN_WAL ){
+    char zDb[MAX_PATHNAME+1];     /* Database file path */
+    int nDb;                      /* Number of valid bytes in zDb */
+    struct stat sStat;            /* Output of stat() on database file */
+
+    nDb = sqlite3Strlen30(zPath) - 4;
+    memcpy(zDb, zPath, nDb);
+    zDb[nDb] = '\0';
+    if( 0==stat(zDb, &sStat) ){
+      *pMode = sStat.st_mode & 0777;
+    }else{
+      rc = SQLITE_IOERR_FSTAT;
+    }
+  }else if( flags & SQLITE_OPEN_DELETEONCLOSE ){
+    *pMode = 0600;
+  }else{
+    *pMode = SQLITE_DEFAULT_FILE_PERMISSIONS;
+  }
+  return rc;
+}
+
+/*
 ** Open the file zPath.
 ** 
 ** Previously, the SQLite OS layer used three functions in place of this
@@ -4340,9 +4396,11 @@ static int unixOpen(
   ** a file-descriptor on the directory too. The first time unixSync()
   ** is called the directory file descriptor will be fsync()ed and close()d.
   */
-  int isOpenDirectory = (isCreate && 
-      (eType==SQLITE_OPEN_MASTER_JOURNAL || eType==SQLITE_OPEN_MAIN_JOURNAL)
-  );
+  int isOpenDirectory = (isCreate && (
+        eType==SQLITE_OPEN_MASTER_JOURNAL 
+     || eType==SQLITE_OPEN_MAIN_JOURNAL 
+     || eType==SQLITE_OPEN_WAL
+  ));
 
   /* If argument zPath is a NULL pointer, this function is required to open
   ** a temporary file. Use this buffer to store the file name in.
@@ -4362,17 +4420,18 @@ static int unixOpen(
   assert(isExclusive==0 || isCreate);
   assert(isDelete==0 || isCreate);
 
-  /* The main DB, main journal, and master journal are never automatically
-  ** deleted. Nor are they ever temporary files.  */
+  /* The main DB, main journal, WAL file and master journal are never 
+  ** automatically deleted. Nor are they ever temporary files.  */
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_DB );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MAIN_JOURNAL );
   assert( (!isDelete && zName) || eType!=SQLITE_OPEN_MASTER_JOURNAL );
+  assert( (!isDelete && zName) || eType!=SQLITE_OPEN_WAL );
 
   /* Assert that the upper layer has set one of the "file-type" flags. */
   assert( eType==SQLITE_OPEN_MAIN_DB      || eType==SQLITE_OPEN_TEMP_DB 
        || eType==SQLITE_OPEN_MAIN_JOURNAL || eType==SQLITE_OPEN_TEMP_JOURNAL 
        || eType==SQLITE_OPEN_SUBJOURNAL   || eType==SQLITE_OPEN_MASTER_JOURNAL 
-       || eType==SQLITE_OPEN_TRANSIENT_DB
+       || eType==SQLITE_OPEN_TRANSIENT_DB || eType==SQLITE_OPEN_WAL
   );
 
   memset(p, 0, sizeof(unixFile));
@@ -4410,7 +4469,12 @@ static int unixOpen(
   openFlags |= (O_LARGEFILE|O_BINARY);
 
   if( fd<0 ){
-    mode_t openMode = (isDelete?0600:SQLITE_DEFAULT_FILE_PERMISSIONS);
+    mode_t openMode;              /* Permissions to create file with */
+    rc = findCreateFileMode(zName, flags, &openMode);
+    if( rc!=SQLITE_OK ){
+      assert( !p->pUnused );
+      return rc;
+    }
     fd = open(zName, openFlags, openMode);
     OSTRACE(("OPENX   %-3d %s 0%o\n", fd, zName, openFlags));
     if( fd<0 && errno!=EISDIR && isReadWrite && !isExclusive ){

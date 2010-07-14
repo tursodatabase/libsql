@@ -1,5 +1,5 @@
-C Add\stests\sto\spagerfault.test.
-D 2010-07-14T08:20:36
+C On\sunix,\stry\sto\screate\sthe\s*-wal\sand\s*-shm\sfiles\swith\sthe\ssame\spermissions\sas\sthe\sassociated\sdatabase\sfile.
+D 2010-07-14T14:48:58
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -150,11 +150,11 @@ F src/mutex_os2.c 6a62583e374ba3ac1a3fcc0da2bfdac7d3942689
 F src/mutex_unix.c cf84466b4fdd2baa0d5a10bb19f08b2abc1ce42e
 F src/mutex_w32.c 1fe0e735897be20e09dd6f53c3fb516c6b48c0eb
 F src/notify.c cbfa66a836da3a51567209636e6a94059c137930
-F src/os.c a0ecbd198b92e60a3e3b8887a668df3f80b4f62f
+F src/os.c 60178f518c4d6c0dcb59f7292232281d7bea2dcf
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c cfcb63d4aadadd75ef89c41563bf15332eef4e4e
+F src/os_unix.c 417a378a1941b9203d2613c082133fee85199f74
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
@@ -170,7 +170,7 @@ F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
 F src/select.c 4903ff1bbd08b55cbce00ea43c645530de41b362
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
-F src/sqlite.h.in 1bcca411e266054977ed2b149a242c5a71092904
+F src/sqlite.h.in c394e27c259dff2de8b5939ecddd30262eb901ad
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h 8e3bc49a0e9217ff489a6b8f70cfcba0f5ad7437
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
@@ -227,7 +227,7 @@ F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
 F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
-F src/wal.c 7dce9040d5ba6c575f337b298fce1a9c04eb2296
+F src/wal.c 60932f29302b978a5eb4c637dbbc2db1d70a536f
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
 F src/where.c 926c83c6394e132a1c62b6b12ceeba7d55a34c19
@@ -776,7 +776,7 @@ F test/vtab_alter.test 9e374885248f69e251bdaacf480b04a197f125e5
 F test/vtab_err.test 0d4d8eb4def1d053ac7c5050df3024fd47a3fbd8
 F test/vtab_shared.test 0eff9ce4f19facbe0a3e693f6c14b80711a4222d
 F test/wal.test 1891e6f72dd437a1c2a48091aa9182ba17a8f780
-F test/wal2.test 85775a7f68013f8734da8f5131c108e29cdbe868
+F test/wal2.test b26d04c36361a3dd99b9c5a43658f12e0d197c70
 F test/wal3.test d2ae7e66f973bd6b58ce49e546b2c00f44fe0485
 F test/wal4.test 640be93f5422df37203aa5e7c06b24fb5e4a2439
 F test/wal_common.tcl 895d76138043b86bdccf36494054bdabcf65837b
@@ -834,7 +834,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c73886ed7497c0daf798c3b02ca6f5a1c2addde3
-R 2b6e3a3412f1bfeb09d6b6b4e98d2ecb
+P b092f2a74bdc77c1f90ad3b4448cb68a891ecf63
+R c3e2391a3a0460d3db8727396fae83c1
 U dan
-Z 5807910238b38b6913c9b3401b1c1e56
+Z 33764ba68244566e69f565fd4aced7cc
