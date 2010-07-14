@@ -4553,7 +4553,9 @@ static int unixDelete(
   int rc = SQLITE_OK;
   UNUSED_PARAMETER(NotUsed);
   SimulateIOError(return SQLITE_IOERR_DELETE);
-  unlink(zPath);
+  if( unlink(zPath)==(-1) && errno!=ENOENT ){
+    return SQLITE_IOERR_DELETE;
+  }
 #ifndef SQLITE_DISABLE_DIRSYNC
   if( dirSync ){
     int fd;
