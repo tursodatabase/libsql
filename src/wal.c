@@ -1866,8 +1866,16 @@ static int walTryBeginRead(Wal *pWal, int *pChanged, int useWal, int cnt){
       ** WAL_RETRY this routine will be called again and will probably be
       ** right on the second iteration.
       */
-      rc = walLockShared(pWal, WAL_RECOVER_LOCK);
-      if( rc==SQLITE_OK ){
+      if( pWal->apWiData[0]==0 ){
+        /* This branch is taken when the xShmMap() method returns SQLITE_BUSY.
+        ** We assume this is a transient condition, so return WAL_RETRY. The
+        ** xShmMap() implementation used by the default unix and win32 VFS 
+        ** modules may return SQLITE_BUSY due to a race condition in the 
+        ** code that determines whether or not the shared-memory region 
+        ** must be zeroed before the requested page is returned.
+        */
+        rc = WAL_RETRY;
+      }else if( SQLITE_OK==(rc = walLockShared(pWal, WAL_RECOVER_LOCK)) ){
         walUnlockShared(pWal, WAL_RECOVER_LOCK);
         rc = WAL_RETRY;
       }else if( rc==SQLITE_BUSY ){
