@@ -1,5 +1,5 @@
-C Change\sa\scomment\sinside\sa\sblock\sof\scode\sin\sparse.y\sfrom\sC++\sto\sC\sstyle.
-D 2010-07-15T11:14:21
+C When\screating\sa\sjournal\sfile\son\sunix,\sattempt\sto\screate\sit\swith\sthe\ssame\spermissions\sas\sthe\sassociated\sdatabase\sfile.
+D 2010-07-15T14:59:38
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +154,7 @@ F src/os.c 60178f518c4d6c0dcb59f7292232281d7bea2dcf
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c fd7706aaec6ad9e424c95f3fb2c7d2444507295d
+F src/os_unix.c 73cce1696c0c9e27a6277946b016e4f2077e365e
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
@@ -467,7 +467,8 @@ F test/join4.test 1a352e4e267114444c29266ce79e941af5885916
 F test/join5.test 86675fc2919269aa923c84dd00ee4249b97990fe
 F test/join6.test bf82cf3f979e9eade83ad0d056a66c5ed71d1901
 F test/journal1.test 36f2d1bb9bf03f790f43fbdb439e44c0657fab19
-F test/journal2.test c59fec987580f74b94aa0b98f7f2402302424ba5
+F test/journal2.test 50a3604768494d4a337f194f0a9480e7c57dcb72
+F test/journal3.test ff175219be1b02d2f7e54297ad7e491b7533edb6
 F test/jrnlmode.test 2d5a8b6d68de8512f522532731d90ca96912f3b7
 F test/jrnlmode2.test a19e28de1a6ec898067e46a122f1b71c9323bf00
 F test/jrnlmode3.test cfcdb12b90e640a23b92785a002d96c0624c8710
@@ -835,7 +836,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P e1e7312580a8b19825b0c52fa8af6c9382f99f22
-R 84215f67e32b4dc7cd2cfa6cd094b1ee
+P dea7d33b2d7d25280a31a2b9c1573f4292b81187
+R 68b8490911573c353c565f7397abe3e4
 U dan
-Z 730d67b6e48588ae98c6eb9e72b28f71
+Z 3d98b70e949007093904a9e0327dbd7d

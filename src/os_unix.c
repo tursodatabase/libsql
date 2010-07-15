@@ -4311,13 +4311,14 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 **
 ** If the file being opened is a temporary file, it is always created with
 ** the octal permissions 0600 (read/writable by owner only). If the file
-** is a database, journal or master journal file, it is created with the
-** permissions mask SQLITE_DEFAULT_FILE_PERMISSIONS.
+** is a database or master journal file, it is created with the permissions 
+** mask SQLITE_DEFAULT_FILE_PERMISSIONS.
 **
-** Finally, if the file being opened is a WAL file, then this function
-** queries the file-system for the permissions on the corresponding database
-** file and sets *pMode to this value. Whenever possible, WAL files are 
-** created using the same permissions as the associated database file.
+** Finally, if the file being opened is a WAL or regular journal file, then 
+** this function queries the file-system for the permissions on the 
+** corresponding database file and sets *pMode to this value. Whenever 
+** possible, WAL and journal files are created using the same permissions 
+** as the associated database file.
 */
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
@@ -4325,12 +4326,12 @@ static int findCreateFileMode(
   mode_t *pMode                   /* OUT: Permissions to open file with */
 ){
   int rc = SQLITE_OK;             /* Return Code */
-  if( flags & SQLITE_OPEN_WAL ){
+  if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
     char zDb[MAX_PATHNAME+1];     /* Database file path */
     int nDb;                      /* Number of valid bytes in zDb */
     struct stat sStat;            /* Output of stat() on database file */
 
-    nDb = sqlite3Strlen30(zPath) - 4;
+    nDb = sqlite3Strlen30(zPath) - ((flags & SQLITE_OPEN_WAL) ? 4 : 8);
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
     if( 0==stat(zDb, &sStat) ){
@@ -4473,6 +4474,7 @@ static int unixOpen(
     rc = findCreateFileMode(zName, flags, &openMode);
     if( rc!=SQLITE_OK ){
       assert( !p->pUnused );
+      assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
     fd = open(zName, openFlags, openMode);

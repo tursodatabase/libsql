@@ -8,7 +8,8 @@
 #    May you share freely, never taking more than you give.
 #
 #***********************************************************************
-# This file implements regression tests for SQLite library.
+# This file implements regression tests for SQLite library. Specifically,
+# it tests SQLite when using a VFS that claims the SAFE_DELETE property.
 #
 
 set testdir [file dirname $argv0]
