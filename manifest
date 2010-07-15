@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Fix\sa\stypo\sin\sa\scomment\sin\sos_unix.c.
-D 2010-07-14T20:51:34
+C Change\sa\scomment\sinside\sa\sblock\sof\scode\sin\sparse.y\sfrom\sC++\sto\sC\sstyle.
+D 2010-07-15T11:14:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +158,7 @@ F src/os_unix.c fd7706aaec6ad9e424c95f3fb2c7d2444507295d
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
-F src/parse.y 3d7f529e00d621953af155d2bc64511710619745
+F src/parse.y 06a61a571f63e8c54581f0c2c5381a4cf21591c9
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 3a7c28f46a61b43ff0b5c087a7983c154f4b264c
@@ -838,14 +835,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fd130ae56c0e23f2d5b4a82f1a09e89ed7ae1e85
-R 5fcf36dbaae8e359fe7f011673da14ee
-U drh
-Z 3c1e4ace237ca7b56512e476f5fbb3f7
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMPiNaoxKgR168RlERAiTZAJsGTMQVRSh6p9V3owE8bt9sG6sSpQCdHT5b
-Z3/+c+Lx/Bx06rAxsFqRbtk=
-=DDX2
------END PGP SIGNATURE-----
+P e1e7312580a8b19825b0c52fa8af6c9382f99f22
+R 84215f67e32b4dc7cd2cfa6cd094b1ee
+U dan
+Z 730d67b6e48588ae98c6eb9e72b28f71

@@ -960,14 +960,14 @@ expr(A) ::= expr(W) between_op(N) expr(X) AND expr(Y). [BETWEEN] {
   in_op(A) ::= NOT IN.  {A = 1;}
   expr(A) ::= expr(X) in_op(N) LP exprlist(Y) RP(E). [IN] {
     if( Y==0 ){
-      // Expressions of the form
-      //
-      //      expr1 IN ()
-      //      expr1 NOT IN ()
-      //
-      // simplify to constants 0 (false) and 1 (true), respectively,
-      // regardless of the value of expr1.
-      //
+      /* Expressions of the form
+      **
+      **      expr1 IN ()
+      **      expr1 NOT IN ()
+      **
+      ** simplify to constants 0 (false) and 1 (true), respectively,
+      ** regardless of the value of expr1.
+      */
       A.pExpr = sqlite3PExpr(pParse, TK_INTEGER, 0, 0, &sqlite3IntTokens[N]);
       sqlite3ExprDelete(pParse->db, X.pExpr);
     }else{
