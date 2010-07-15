@@ -1,5 +1,8 @@
-C Changes\sto\swal.c\sso\sthat\sSQLite\scan\sread\seven\sif\sthe\sWAL\sfile\sis\sopened\sread-only,\sprovided\sthe\swal-index\s(shm\sfile)\sis\sopened\sread/write.
-D 2010-07-15T18:20:54
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Optionally\ssupport\sshared-memory\sin\s/dev/shm\sor\sother\stmpfs\sdirectory\nusing\san\sunsupported\scompile-time\soption.
+D 2010-07-15T18:32:41
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -154,7 +157,7 @@ F src/os.c 60178f518c4d6c0dcb59f7292232281d7bea2dcf
 F src/os.h 9dbed8c2b9c1f2f2ebabc09e49829d4777c26bf9
 F src/os_common.h a8f95b81eca8a1ab8593d23e94f8a35f35d4078f
 F src/os_os2.c 665876d5eec7585226b0a1cf5e18098de2b2da19
-F src/os_unix.c 73cce1696c0c9e27a6277946b016e4f2077e365e
+F src/os_unix.c d27404c02d3947737f8650ca4586afa7c1bec32a
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
@@ -836,7 +839,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 75f5354876c4300a8e53fe551dc837dd383d1e38
-R 5fdef461b56aef5e86f35d4620ab20d6
-U dan
-Z 679f6331e7be3f40e18fcb4456a4e594
+P 932d19da73c9673cdd4cc01289b17761c23d23cb
+R fdcb07e29996e92060dad2eee68d833c
+U drh
+Z 26a418d4204c9feaabc8860a4e746939
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMP1RMoxKgR168RlERAhh6AJ4umgQHctPd2gEiJRrgEectm89sNQCZAbaB
+OhN8MrDeGSxCC/JtQI6sM68=
+=f3eu
+-----END PGP SIGNATURE-----

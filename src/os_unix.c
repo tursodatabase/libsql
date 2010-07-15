@@ -3282,13 +3282,22 @@ static void unixShmPurge(unixFile *pFd){
 ** as the open database file and has the same name as the open database
 ** file with the "-shm" suffix added.  For example, if the database file
 ** is "/home/user1/config.db" then the file that is created and mmapped
-** for shared memory will be called "/home/user1/config.db-shm".  We
-** experimented with using files in /dev/tmp or an some other tmpfs mount.
-** But if a file in a different directory from the database file is used,
-** then differing access permissions or a chroot() might cause two different 
-** processes on the same database to end up using different files for 
-** shared memory - meaning that their memory would not really be shared - 
-** resulting in database corruption.
+** for shared memory will be called "/home/user1/config.db-shm".  
+**
+** Another approach to is to use files in /dev/shm or /dev/tmp or an
+** some other tmpfs mount. But if a file in a different directory
+** from the database file is used, then differing access permissions
+** or a chroot() might cause two different processes on the same
+** database to end up using different files for shared memory - 
+** meaning that their memory would not really be shared - resulting
+** in database corruption.  Nevertheless, this tmpfs file usage
+** can be enabled at compile-time using -DSQLITE_SHM_DIRECTORY="/dev/shm"
+** or the equivalent.  The use of the SQLITE_SHM_DIRECTORY compile-time
+** option results in an incompatible build of SQLite;  builds of SQLite
+** that with differing SQLITE_SHM_DIRECTORY settings attempt to use the
+** same database file at the same time, database corruption will likely
+** result. The SQLITE_SHM_DIRECTORY compile-time option is considered
+** "unsupported" and may go away in a future SQLite release.
 **
 ** When opening a new shared-memory file, if no other instances of that
 ** file are currently open, in this process or in other processes, then
@@ -3327,7 +3336,11 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
       goto shm_open_err;
     }
 
+#ifdef SQLITE_SHM_DIRECTORY
+    nShmFilename = sizeof(SQLITE_SHM_DIRECTORY) + 30;
+#else
     nShmFilename = 5 + (int)strlen(pDbFd->zPath);
+#endif
     pShmNode = sqlite3_malloc( sizeof(*pShmNode) + nShmFilename );
     if( pShmNode==0 ){
       rc = SQLITE_NOMEM;
@@ -3335,7 +3348,13 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
     }
     memset(pShmNode, 0, sizeof(*pShmNode));
     zShmFilename = pShmNode->zFilename = (char*)&pShmNode[1];
+#ifdef SQLITE_SHM_DIRECTORY
+    sqlite3_snprintf(nShmFilename, zShmFilename, 
+                     SQLITE_SHM_DIRECTORY "/sqlite-shm-%x-%x",
+                     (u32)sStat.st_ino, (u32)sStat.st_dev);
+#else
     sqlite3_snprintf(nShmFilename, zShmFilename, "%s-shm", pDbFd->zPath);
+#endif
     pShmNode->h = -1;
     pDbFd->pInode->pShmNode = pShmNode;
     pShmNode->pInode = pDbFd->pInode;
@@ -4311,14 +4330,13 @@ static UnixUnusedFd *findReusableFd(const char *zPath, int flags){
 **
 ** If the file being opened is a temporary file, it is always created with
 ** the octal permissions 0600 (read/writable by owner only). If the file
-** is a database or master journal file, it is created with the permissions 
-** mask SQLITE_DEFAULT_FILE_PERMISSIONS.
+** is a database, journal or master journal file, it is created with the
+** permissions mask SQLITE_DEFAULT_FILE_PERMISSIONS.
 **
-** Finally, if the file being opened is a WAL or regular journal file, then 
-** this function queries the file-system for the permissions on the 
-** corresponding database file and sets *pMode to this value. Whenever 
-** possible, WAL and journal files are created using the same permissions 
-** as the associated database file.
+** Finally, if the file being opened is a WAL file, then this function
+** queries the file-system for the permissions on the corresponding database
+** file and sets *pMode to this value. Whenever possible, WAL files are 
+** created using the same permissions as the associated database file.
 */
 static int findCreateFileMode(
   const char *zPath,              /* Path of file (possibly) being created */
@@ -4326,12 +4344,12 @@ static int findCreateFileMode(
   mode_t *pMode                   /* OUT: Permissions to open file with */
 ){
   int rc = SQLITE_OK;             /* Return Code */
-  if( flags & (SQLITE_OPEN_WAL|SQLITE_OPEN_MAIN_JOURNAL) ){
+  if( flags & SQLITE_OPEN_WAL ){
     char zDb[MAX_PATHNAME+1];     /* Database file path */
     int nDb;                      /* Number of valid bytes in zDb */
     struct stat sStat;            /* Output of stat() on database file */
 
-    nDb = sqlite3Strlen30(zPath) - ((flags & SQLITE_OPEN_WAL) ? 4 : 8);
+    nDb = sqlite3Strlen30(zPath) - 4;
     memcpy(zDb, zPath, nDb);
     zDb[nDb] = '\0';
     if( 0==stat(zDb, &sStat) ){
@@ -4474,7 +4492,6 @@ static int unixOpen(
     rc = findCreateFileMode(zName, flags, &openMode);
     if( rc!=SQLITE_OK ){
       assert( !p->pUnused );
-      assert( eType==SQLITE_OPEN_WAL || eType==SQLITE_OPEN_MAIN_JOURNAL );
       return rc;
     }
     fd = open(zName, openFlags, openMode);
