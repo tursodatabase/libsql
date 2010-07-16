@@ -421,6 +421,7 @@ proc do_malloc_test {tn args} {
         # with the handle [db].
         # 
         catch {db close} 
+        catch {db2 close} 
         catch {file delete -force test.db}
         catch {file delete -force test.db-journal}
         catch {file delete -force test.db-wal}
