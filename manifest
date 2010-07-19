@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\s-p\soption\sto\slemon\sto\scause\sconflicts\sresolved\sby\sprecedence\srules\nto\sappear\sin\sthe\sparse.out\sfile.
-D 2010-07-18T11:35:53
+C Improvements\sto\sthe\sformatting\sof\sparse.out\sfile\sfrom\sLemon.\s\sAdd\sthe\s-r\soption\nto\sLemon\sto\sdisable\sthe\sstate\ssorting,\smaking\sdebugging\seasier.
+D 2010-07-19T01:52:07
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -814,7 +814,7 @@ F tool/diffdb.c 7524b1b5df217c20cd0431f6789851a4e0cb191b
 F tool/fragck.tcl 5265a95126abcf6ab357f7efa544787e5963f439
 F tool/genfkey.README cf68fddd4643bbe3ff8e31b8b6d8b0a1b85e20f4
 F tool/genfkey.test 4196a8928b78f51d54ef58e99e99401ab2f0a7e5
-F tool/lemon.c c6b68d7a836ac4d354e5e9123d43a1a19b629ebd
+F tool/lemon.c fe890e2d8d2db1e3f57e2a22503dbb0f6843e517
 F tool/lempar.c 01ca97f87610d1dac6d8cd96ab109ab1130e76dc
 F tool/mkkeywordhash.c d2e6b4a5965e23afb80fbe74bb54648cd371f309
 F tool/mkopts.tcl 66ac10d240cc6e86abd37dc908d50382f84ff46e
@@ -840,14 +840,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P cbcf8abbb2cb3e603cc3da45075f6b076e5cad56
-R 09f5c2286bdd34eb2a3dded11c097670
+P fb6a59b0a905ddea071948f9a527483a1b1b219f
+R 51c841f76c69bf5e6556ec5daf09968e
 U drh
-Z aa387c903e18d67037182a72c6857c12
+Z 24cc80027c5e0d723abf48a04029c8ab
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMQuceoxKgR168RlERAtrXAJ91h/0ADiDZhUbyHiJKxfGJP7E3VwCdEnck
-SWnWkJuxuRRENtqIsvKGCdc=
-=7eTj
+iD8DBQFMQ6/KoxKgR168RlERAgAeAJ9Oh7vCPcQVE0i0ruNeTvg193wLIACePi9m
+uvJRIi8nuCTaVs/JJFjJ3W4=
+=hKG0
 -----END PGP SIGNATURE-----
