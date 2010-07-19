@@ -1621,9 +1621,57 @@ static int fts3DoclistMerge(
 typedef struct TermSelect TermSelect;
 struct TermSelect {
   int isReqPos;
-  char *aOutput;                  /* Malloc'd output buffer */
-  int nOutput;                    /* Size of output in bytes */
+  char *aaOutput[16];             /* Malloc'd output buffer */
+  int anOutput[16];               /* Size of output in bytes */
 };
+
+/*
+** Merge all doclists in the TermSelect.aaOutput[] array into a single
+** doclist stored in TermSelect.aaOutput[0]. If successful, delete all
+** other doclists (except the aaOutput[0] one) and return SQLITE_OK.
+**
+** If an OOM error occurs, return SQLITE_NOMEM. In this case it is
+** the responsibility of the caller to free any doclists left in the
+** TermSelect.aaOutput[] array.
+*/
+static int fts3TermSelectMerge(TermSelect *pTS){
+  int mergetype = (pTS->isReqPos ? MERGE_POS_OR : MERGE_OR);
+  char *aOut = 0;
+  int nOut = 0;
+  int i;
+
+  /* Loop through the doclists in the aaOutput[] array. Merge them all
+  ** into a single doclist.
+  */
+  for(i=0; i<SizeofArray(pTS->aaOutput); i++){
+    if( pTS->aaOutput[i] ){
+      if( !aOut ){
+        aOut = pTS->aaOutput[i];
+        nOut = pTS->anOutput[i];
+        pTS->aaOutput[0] = 0;
+      }else{
+        int nNew = nOut + pTS->anOutput[i];
+        char *aNew = sqlite3_malloc(nNew);
+        if( !aNew ){
+          sqlite3_free(aOut);
+          return SQLITE_NOMEM;
+        }
+        fts3DoclistMerge(mergetype, 0, 0,
+            aNew, &nNew, pTS->aaOutput[i], pTS->anOutput[i], aOut, nOut
+        );
+        sqlite3_free(pTS->aaOutput[i]);
+        sqlite3_free(aOut);
+        pTS->aaOutput[i] = 0;
+        aOut = aNew;
+        nOut = nNew;
+      }
+    }
+  }
+
+  pTS->aaOutput[0] = aOut;
+  pTS->anOutput[0] = nOut;
+  return SQLITE_OK;
+}
 
 /*
 ** This function is used as the sqlite3Fts3SegReaderIterate() callback when
@@ -1639,38 +1687,63 @@ static int fts3TermSelectCb(
   int nDoclist
 ){
   TermSelect *pTS = (TermSelect *)pContext;
-  int nNew = pTS->nOutput + nDoclist;
-  char *aNew = sqlite3_malloc(nNew);
 
   UNUSED_PARAMETER(p);
   UNUSED_PARAMETER(zTerm);
   UNUSED_PARAMETER(nTerm);
 
-  if( !aNew ){
-    return SQLITE_NOMEM;
-  }
-
-  if( pTS->nOutput==0 ){
+  if( pTS->aaOutput[0]==0 ){
     /* If this is the first term selected, copy the doclist to the output
     ** buffer using memcpy(). TODO: Add a way to transfer control of the
     ** aDoclist buffer from the caller so as to avoid the memcpy().
     */
-    memcpy(aNew, aDoclist, nDoclist);
+    pTS->aaOutput[0] = sqlite3_malloc(nDoclist);
+    pTS->anOutput[0] = nDoclist;
+    if( pTS->aaOutput[0] ){
+      memcpy(pTS->aaOutput[0], aDoclist, nDoclist);
+    }else{
+      return SQLITE_NOMEM;
+    }
   }else{
-    /* The output buffer is not empty. Merge doclist aDoclist with the
-    ** existing output. This can only happen with prefix-searches (as
-    ** searches for exact terms return exactly one doclist).
-    */
     int mergetype = (pTS->isReqPos ? MERGE_POS_OR : MERGE_OR);
-    fts3DoclistMerge(mergetype, 0, 0,
-        aNew, &nNew, pTS->aOutput, pTS->nOutput, aDoclist, nDoclist
-    );
+    char *aMerge = aDoclist;
+    int nMerge = nDoclist;
+    int iOut;
+
+    for(iOut=0; iOut<SizeofArray(pTS->aaOutput); iOut++){
+      char *aNew;
+      int nNew;
+      if( pTS->aaOutput[iOut]==0 ){
+        assert( iOut>0 );
+        pTS->aaOutput[iOut] = aMerge;
+        pTS->anOutput[iOut] = nMerge;
+        break;
+      }
+
+      nNew = nMerge + pTS->anOutput[iOut];
+      aNew = sqlite3_malloc(nNew);
+      if( !aNew ){
+        if( aMerge!=aDoclist ){
+          sqlite3_free(aMerge);
+        }
+        return SQLITE_NOMEM;
+      }
+      fts3DoclistMerge(mergetype, 0, 0,
+          aNew, &nNew, pTS->aaOutput[iOut], pTS->anOutput[iOut], aMerge, nMerge
+      );
+
+      if( iOut>0 ) sqlite3_free(aMerge);
+      sqlite3_free(pTS->aaOutput[iOut]);
+      pTS->aaOutput[iOut] = 0;
+
+      aMerge = aNew;
+      nMerge = nNew;
+      if( (iOut+1)==SizeofArray(pTS->aaOutput) ){
+        pTS->aaOutput[iOut] = aMerge;
+        pTS->anOutput[iOut] = nMerge;
+      }
+    }
   }
-
-  sqlite3_free(pTS->aOutput);
-  pTS->aOutput = aNew;
-  pTS->nOutput = nNew;
-
   return SQLITE_OK;
 }
 
@@ -1794,12 +1867,17 @@ static int fts3TermSelect(
   rc = sqlite3Fts3SegReaderIterate(p, apSegment, nSegment, &filter,
       fts3TermSelectCb, (void *)&tsc
   );
+  if( rc==SQLITE_OK ){
+    rc = fts3TermSelectMerge(&tsc);
+  }
 
   if( rc==SQLITE_OK ){
-    *ppOut = tsc.aOutput;
-    *pnOut = tsc.nOutput;
+    *ppOut = tsc.aaOutput[0];
+    *pnOut = tsc.anOutput[0];
   }else{
-    sqlite3_free(tsc.aOutput);
+    for(i=0; i<SizeofArray(tsc.aaOutput); i++){
+      sqlite3_free(tsc.aaOutput[i]);
+    }
   }
 
 finished:
