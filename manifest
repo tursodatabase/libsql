@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Improvements\sto\sthe\sformatting\sof\sparse.out\sfile\sfrom\sLemon.\s\sAdd\sthe\s-r\soption\nto\sLemon\sto\sdisable\sthe\sstate\ssorting,\smaking\sdebugging\seasier.
-D 2010-07-19T01:52:07
+C Fix\sa\sparser\sbug\sthat\swas\scausing\sthe\srelative\sprecedence\sof\sLIKE\sand\s<\noperators\sto\sbe\sincorrect.
+D 2010-07-19T02:30:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -161,7 +161,7 @@ F src/os_unix.c fa606537ade76f9779cc7ded8c8c4152ba689f3b
 F src/os_win.c 61734aad7f50b28f3c76eb4b19b63472f6d825d9
 F src/pager.c 78ca1e1f3315c8227431c403c04d791dccf242fb
 F src/pager.h 879fdde5a102d2f21a3135d6f647530b21c2796c
-F src/parse.y 06a61a571f63e8c54581f0c2c5381a4cf21591c9
+F src/parse.y 220a11ac72e2c9dffbf4cbe5fe462f328bd8d884
 F src/pcache.c 1e9aa2dbc0845b52e1b51cc39753b6d1e041cb07
 F src/pcache.h c683390d50f856d4cd8e24342ae62027d1bb6050
 F src/pcache1.c 3a7c28f46a61b43ff0b5c087a7983c154f4b264c
@@ -840,14 +840,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P fb6a59b0a905ddea071948f9a527483a1b1b219f
-R 51c841f76c69bf5e6556ec5daf09968e
+P a2eaf8294f6d3fb39548987d632e934bb5d71cc9
+R 3680b1404aa2a47c15810101407727f9
 U drh
-Z 24cc80027c5e0d723abf48a04029c8ab
+Z 036a396808eac88f29ab0c901a24a952
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMQ6/KoxKgR168RlERAgAeAJ9Oh7vCPcQVE0i0ruNeTvg193wLIACePi9m
-uvJRIi8nuCTaVs/JJFjJ3W4=
-=hKG0
+iD8DBQFMQ7jNoxKgR168RlERAqYgAKCD9FrSdpOxRXyGm2dHWmXrPnrs2gCeMGTK
+mT463GAODKMY6BLAq9Hgffk=
+=ALAu
 -----END PGP SIGNATURE-----
