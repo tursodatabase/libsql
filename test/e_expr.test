@@ -78,13 +78,6 @@ db func regexp -argcount 2 regexfunc
 # precedence as =.
 #
 
-
-# TODO: These tests are currently omitted because one or two cases
-# related to LIKE/GLOB/MATCH/REGEXP fail. After this case is fixed,
-# reinstate these tests.
-#
-if 0 {
-
 unset -nocomplain untested
 foreach op1 $oplist {
   foreach op2 $oplist {
@@ -126,9 +119,8 @@ foreach op1 $oplist {
       set a3 [db one $sql3]
 
       do_execsql_test $testname $sql1 [list [
-        expr {$opprec($op2) < $opprec($op1) ? $a3 : $a2}
+        if {$opprec($op2) < $opprec($op1)} {set a3} {set a2}
       ]]
-
       if {$a2 != $a3} { unset -nocomplain untested($op1,$op2) }
     }
   }
@@ -168,8 +160,6 @@ do_execsql_test e_expr-1.2.5 {
 do_execsql_test e_expr-1.6 { 
   SELECT 0 == 0 < 2,   (0 == 0) < 2,   0 == (0 < 2)
 } {0 1 0}
-
-}
 
 #-------------------------------------------------------------------------
 # Check that the four unary prefix operators mentioned in the 
