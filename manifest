@@ -1,5 +1,5 @@
-C Re-introduce\sthe\sprefix-search\soptimization\sof\s[feef1b15d6],\swhich\swas\slost\sin\sa\sreorganization\sof\sFTS3\scode.
-D 2010-07-19T11:16:37
+C Changes\sto\sstat.test\sso\sthat\sit\sworks\swith\sfile-format\s4.
+D 2010-07-19T12:05:33
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -607,7 +607,7 @@ F test/speed4.test abc0ad3399dcf9703abed2fff8705e4f8e416715
 F test/speed4p.explain 6b5f104ebeb34a038b2f714150f51d01143e59aa
 F test/speed4p.test 0e51908951677de5a969b723e03a27a1c45db38b
 F test/sqllimits1.test e90a0ed94452076f6a10209d378e06b5f75ef0a0
-F test/stat.test 16b170b62617c79e534ab482364255d2b7b0c3c8
+F test/stat.test 70fe540ffb285947aead5533dfd0c8c12f17f14e
 F test/stmt.test 7915bd3e8380b956c095f40f41a775a30716e649
 F test/subquery.test b524f57c9574b2c0347045b4510ef795d4686796
 F test/subselect.test d24fd8757daf97dafd2e889c73ea4c4272dcf4e4
@@ -837,7 +837,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 3d59c54a39c4c3149bf01063a91c3db35ec84b31
-R d482059365bac67fc30275f964ac7b3d
+P d692434b4935e8e7858230af1c126b0be8203077
+R 4e0f54f2884ee65c443010e4140d49fa
 U dan
-Z e89aa551deb152bbb2478c332f32e64d
+Z 29fef2e6e53e6d0ff29cb9bcae42ab06

@@ -40,8 +40,8 @@ do_test stat-1.0 {
   execsql {
     CREATE TABLE t1(a, b);
     CREATE INDEX i1 ON t1(b);
-    INSERT INTO t1 VALUES(1, 2);
-    INSERT INTO t1 VALUES(3, 4);
+    INSERT INTO t1(rowid, a, b) VALUES(2, 2, 3);
+    INSERT INTO t1(rowid, a, b) VALUES(3, 4, 5);
   }
 } {}
 do_test stat-1.1 {
@@ -67,12 +67,12 @@ do_test stat-1.4 {
 
 do_execsql_test stat-2.1 {
   CREATE TABLE t3(a PRIMARY KEY, b);
-  INSERT INTO t3 VALUES(a_string(111), a_string(222));
-  INSERT INTO t3 SELECT a_string(111+rowid), a_string(222+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(111+rowid), a_string(222+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(111+rowid), a_string(222+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(111+rowid), a_string(222+rowid) FROM t3;
-  INSERT INTO t3 SELECT a_string(111+rowid), a_string(222+rowid) FROM t3;
+  INSERT INTO t3(rowid, a, b) VALUES(2, a_string(111), a_string(222));
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
+  INSERT INTO t3 SELECT a_string(110+rowid), a_string(221+rowid) FROM t3;
   SELECT * FROM stat WHERE name != 'sqlite_master';
 } [list \
   sqlite_autoindex_t3_1 / 3 internal 3 368 623 125       \
@@ -103,7 +103,7 @@ do_execsql_test stat-2.2 { DROP TABLE t3 } {}
 do_execsql_test stat-3.1 {
   CREATE TABLE t4(x);
   CREATE INDEX i4 ON t4(x);
-  INSERT INTO t4 VALUES(a_string(7777));
+  INSERT INTO t4(rowid, x) VALUES(2, a_string(7777));
   SELECT * FROM stat WHERE name != 'sqlite_master';
 } [list \
   i4 / 3 leaf 1 103 905 7782                 \
