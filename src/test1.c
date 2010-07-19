@@ -1907,8 +1907,8 @@ static int sqlite_abort(
    */
   _set_abort_behavior( 0, _CALL_REPORTFAULT );
 #endif
+  exit(255);
   assert( interp==0 );   /* This will always fail */
-  abort();
   return TCL_OK;
 }
 
