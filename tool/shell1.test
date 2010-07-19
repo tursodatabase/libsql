@@ -195,7 +195,7 @@ do_test shell1-1.15.3 {
 # -version             show SQLite version
 do_test shell1-1.16.1 {
   catchcmd "-version test.db" "" 
-} {0 3.6.22}
+} {0 3.7.0}
 
 #----------------------------------------------------------------------------
 # Test cases shell1-2.*: Basic "dot" command token parsing.
@@ -369,18 +369,6 @@ do_test shell1-3.7.4 {
   catchcmd "test.db" ".explain OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "explain". Enter ".help" for help}}
 
-# .genfkey ?OPTIONS?     Options are:
-#                          --no-drop: Do not drop old fkey triggers.
-#                          --ignore-errors: Ignore tables with fkey errors
-#                          --exec: Execute generated SQL immediately
-#                        See file tool/genfkey.README in the source
-#                        distribution for further information.
-do_test shell1-3.8.1 {
-  catchcmd "test.db" ".genfkey"
-} {0 {}}
-do_test shell1-3.8.2 {
-  catchcmd "test.db" ".genfkey FOO"
-} {1 {unknown option: FOO}}
 
 # .header(s) ON|OFF      Turn display of headers on or off
 do_test shell1-3.9.1 {
@@ -702,5 +690,4 @@ do_test shell1-3.27.4 {
   catchcmd "test.db" ".timer OFF BAD"
 } {1 {Error: unknown command or invalid arguments:  "timer". Enter ".help" for help}}
 
-
-#
+puts "CLI tests completed successfully"
