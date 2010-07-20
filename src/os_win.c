@@ -1193,7 +1193,7 @@ static int winDeviceCharacteristics(sqlite3_file *id){
 **
 **   winShmEnterMutex()
 **     assert( winShmMutexHeld() );
-**   winEnterLeave()
+**   winShmLeaveMutex()
 */
 static void winShmEnterMutex(void){
   sqlite3_mutex_enter(sqlite3MutexAlloc(SQLITE_MUTEX_STATIC_MASTER));
@@ -1320,13 +1320,19 @@ static int winShmSystemLock(
   }else{
     rc = LockFileEx(pFile->hFile.h, dwFlags, 0, nByte, 0, &ovlp);
   }
-  rc = (rc!=0) ? SQLITE_OK : SQLITE_BUSY;
+  
+  if( rc!= 0 ){
+    rc = SQLITE_OK;
+  }else{
+    pFile->lastErrno =  GetLastError();
+    rc = SQLITE_BUSY;
+  }
 
   OSTRACE(("SHM-LOCK %d %s %s 0x%08lx\n", 
            pFile->hFile.h,
            rc==SQLITE_OK ? "ok" : "failed",
            lockType==_SHM_UNLCK ? "UnlockFileEx" : "LockFileEx",
-           GetLastError()));
+           pFile->lastErrno));
 
   return rc;
 }
@@ -1457,14 +1463,24 @@ static int winOpenSharedMemory(winFile *pDbFd){
 
   /* Make the new connection a child of the winShmNode */
   p->pShmNode = pShmNode;
-  p->pNext = pShmNode->pFirst;
 #ifdef SQLITE_DEBUG
   p->id = pShmNode->nextShmId++;
 #endif
-  pShmNode->pFirst = p;
   pShmNode->nRef++;
   pDbFd->pShm = p;
   winShmLeaveMutex();
+
+  /* The reference count on pShmNode has already been incremented under
+  ** the cover of the winShmEnterMutex() mutex and the pointer from the
+  ** new (struct winShm) object to the pShmNode has been set. All that is
+  ** left to do is to link the new object into the linked list starting
+  ** at pShmNode->pFirst. This must be done while holding the pShmNode->mutex 
+  ** mutex.
+  */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  p->pNext = pShmNode->pFirst;
+  pShmNode->pFirst = p;
+  sqlite3_mutex_leave(pShmNode->mutex);
   return SQLITE_OK;
 
   /* Jump here on any error */
@@ -2072,6 +2088,7 @@ static int winOpen(
            h, zName, dwDesiredAccess, 
            h==INVALID_HANDLE_VALUE ? "failed" : "ok"));
   if( h==INVALID_HANDLE_VALUE ){
+    pFile->lastErrno = GetLastError();
     free(zConverted);
     if( flags & SQLITE_OPEN_READWRITE ){
       return winOpen(pVfs, zName, id, 
