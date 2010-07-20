@@ -3387,14 +3387,24 @@ static int unixOpenSharedMemory(unixFile *pDbFd){
 
   /* Make the new connection a child of the unixShmNode */
   p->pShmNode = pShmNode;
-  p->pNext = pShmNode->pFirst;
 #ifdef SQLITE_DEBUG
   p->id = pShmNode->nextShmId++;
 #endif
-  pShmNode->pFirst = p;
   pShmNode->nRef++;
   pDbFd->pShm = p;
   unixLeaveMutex();
+
+  /* The reference count on pShmNode has already been incremented under
+  ** the cover of the unixEnterMutex() mutex and the pointer from the
+  ** new (struct unixShm) object to the pShmNode has been set. All that is
+  ** left to do is to link the new object into the linked list starting
+  ** at pShmNode->pFirst. This must be done while holding the pShmNode->mutex 
+  ** mutex.
+  */
+  sqlite3_mutex_enter(pShmNode->mutex);
+  p->pNext = pShmNode->pFirst;
+  pShmNode->pFirst = p;
+  sqlite3_mutex_leave(pShmNode->mutex);
   return SQLITE_OK;
 
   /* Jump here on any error */
