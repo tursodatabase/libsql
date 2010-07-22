@@ -635,7 +635,6 @@ static int isLikeOrGlob(
   int c;                     /* One character in z[] */
   int cnt;                   /* Number of non-wildcard prefix characters */
   char wc[3];                /* Wildcard characters */
-  CollSeq *pColl;            /* Collating sequence for LHS */
   sqlite3 *db = pParse->db;  /* Database connection */
   sqlite3_value *pVal = 0;
   int op;                    /* Opcode of pRight */
@@ -654,19 +653,6 @@ static int isLikeOrGlob(
     return 0;
   }
   assert( pLeft->iColumn!=(-1) ); /* Because IPK never has AFF_TEXT */
-  pColl = sqlite3ExprCollSeq(pParse, pLeft);
-  if( pColl==0 ) return 0;  /* Happens when LHS has an undefined collation */
-  if( (pColl->type!=SQLITE_COLL_BINARY || *pnoCase) &&
-      (pColl->type!=SQLITE_COLL_NOCASE || !*pnoCase) ){
-    /* IMP: R-09003-32046 For the GLOB operator, the column must use the
-    ** default BINARY collating sequence.
-    ** IMP: R-41408-28306 For the LIKE operator, if case_sensitive_like mode
-    ** is enabled then the column must use the default BINARY collating
-    ** sequence, or if case_sensitive_like mode is disabled then the column
-    ** must use the built-in NOCASE collating sequence.
-    */
-    return 0;
-  }
 
   pRight = pList->a[0].pExpr;
   op = pRight->op;
@@ -1246,6 +1232,7 @@ static void exprAnalyze(
     Expr *pNewExpr2;
     int idxNew1;
     int idxNew2;
+    CollSeq *pColl;    /* Collating sequence to use */
 
     pLeft = pExpr->x.pList->a[1].pExpr;
     pStr2 = sqlite3ExprDup(db, pStr1, 0);
@@ -1266,11 +1253,16 @@ static void exprAnalyze(
       }
       *pC = c + 1;
     }
-    pNewExpr1 = sqlite3PExpr(pParse, TK_GE, sqlite3ExprDup(db,pLeft,0),pStr1,0);
+    pColl = sqlite3FindCollSeq(db, SQLITE_UTF8, noCase ? "NOCASE" : "BINARY",0);
+    pNewExpr1 = sqlite3PExpr(pParse, TK_GE, 
+                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
+                     pStr1, 0);
     idxNew1 = whereClauseInsert(pWC, pNewExpr1, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew1==0 );
     exprAnalyze(pSrc, pWC, idxNew1);
-    pNewExpr2 = sqlite3PExpr(pParse, TK_LT, sqlite3ExprDup(db,pLeft,0),pStr2,0);
+    pNewExpr2 = sqlite3PExpr(pParse, TK_LT,
+                     sqlite3ExprSetColl(sqlite3ExprDup(db,pLeft,0), pColl),
+                     pStr2, 0);
     idxNew2 = whereClauseInsert(pWC, pNewExpr2, TERM_VIRTUAL|TERM_DYNAMIC);
     testcase( idxNew2==0 );
     exprAnalyze(pSrc, pWC, idxNew2);

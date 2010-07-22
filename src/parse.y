@@ -780,7 +780,7 @@ expr(A) ::= VARIABLE(X).     {
   spanSet(&A, &X, &X);
 }
 expr(A) ::= expr(E) COLLATE ids(C). {
-  A.pExpr = sqlite3ExprSetColl(pParse, E.pExpr, &C);
+  A.pExpr = sqlite3ExprSetCollByToken(pParse, E.pExpr, &C);
   A.zStart = E.zStart;
   A.zEnd = &C.z[C.n];
 }
@@ -1108,7 +1108,7 @@ idxlist(A) ::= idxlist(X) COMMA nm(Y) collate(C) sortorder(Z).  {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3Expr(pParse->db, TK_COLUMN, 0);
-    sqlite3ExprSetColl(pParse, p, &C);
+    sqlite3ExprSetCollByToken(pParse, p, &C);
   }
   A = sqlite3ExprListAppend(pParse,X, p);
   sqlite3ExprListSetName(pParse,A,&Y,1);
@@ -1119,7 +1119,7 @@ idxlist(A) ::= nm(Y) collate(C) sortorder(Z). {
   Expr *p = 0;
   if( C.n>0 ){
     p = sqlite3PExpr(pParse, TK_COLUMN, 0, 0, 0);
-    sqlite3ExprSetColl(pParse, p, &C);
+    sqlite3ExprSetCollByToken(pParse, p, &C);
   }
   A = sqlite3ExprListAppend(pParse,0, p);
   sqlite3ExprListSetName(pParse, A, &Y, 1);
