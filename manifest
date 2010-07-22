@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Try\sto\soptimize\sLIKE\sand\sGLOB\soperators\swhen\sRHS\scontains\sno\swildcard.\nTicket\s[e090183531fc274747]
-D 2010-07-22T12:33:57
+C Add\stest/threadtest3.c,\scontaining\smulti-thread\stests\simplemented\sin\sC.
+D 2010-07-22T15:44:06
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -633,6 +630,7 @@ F test/thread2.test e08034b83fe9693ade77049732518e5b3d2d700d
 F test/thread_common.tcl 2aa6f2fdcd4d6e461169c3e5ca098eebf643b863
 F test/threadtest1.c 6029d9c5567db28e6dc908a0c63099c3ba6c383b
 F test/threadtest2.c ace893054fa134af3fc8d6e7cfecddb8e3acefb9
+F test/threadtest3.c f7e21a9bcddff1499d46a1fc68d1ba31e4063be4
 F test/tkt-02a8e81d44.test 58494de77be2cf249228ada3f313fa399821c6ab
 F test/tkt-26ff0c2d1e.test 888324e751512972c6e0d1a09df740d8f5aaf660
 F test/tkt-2ea2425d34.test 1cf13e6f75d149b3209a0cb32927a82d3d79fb28
@@ -840,14 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P f5866d4723460e80814b8599e0b84ff4a924da6f
-R 49b64e8669411efcd75f08b06ee92d3f
-U drh
-Z 2fdd8f32952e23324d244fc4f334dd66
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMSDq6oxKgR168RlERArWNAJ45OYwaaRvdYeTtmBggQzReNzUYEQCdFJzy
-Vz7BIHIzGqjb389iZZfW0OQ=
-=tFz/
------END PGP SIGNATURE-----
+P 613a87d62fd1f8526d53136efae5adae91824bcf
+R 4eb5aa4fc422947226941c86eb780e48
+U dan
+Z cb1f88a7778fdc4813d9382ac4a0ad2a
