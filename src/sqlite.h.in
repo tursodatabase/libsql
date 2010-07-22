@@ -4320,7 +4320,8 @@ struct sqlite3_module {
 ** CAPI3REF: Virtual Table Indexing Information
 ** KEYWORDS: sqlite3_index_info
 **
-** The sqlite3_index_info structure and its substructures is used to
+** The sqlite3_index_info structure and its substructures is used as part
+** of the [virtual table] interface to
 ** pass information into and receive the reply from the [xBestIndex]
 ** method of a [virtual table module].  The fields under **Inputs** are the
 ** inputs to xBestIndex and are read-only.  xBestIndex inserts its
@@ -4328,10 +4329,12 @@ struct sqlite3_module {
 **
 ** ^(The aConstraint[] array records WHERE clause constraints of the form:
 **
-** <pre>column OP expr</pre>
+** <blockquote>column OP expr</blockquote>
 **
 ** where OP is =, &lt;, &lt;=, &gt;, or &gt;=.)^  ^(The particular operator is
-** stored in aConstraint[].op.)^  ^(The index of the column is stored in
+** stored in aConstraint[].op using one of the
+** [SQLITE_INDEX_CONSTRAINT_EQ | SQLITE_INDEX_CONSTRAINT_ values].)^
+** ^(The index of the column is stored in
 ** aConstraint[].iColumn.)^  ^(aConstraint[].usable is TRUE if the
 ** expr on the right-hand side can be evaluated (and thus the constraint
 ** is usable) and false if it cannot.)^
@@ -4391,6 +4394,15 @@ struct sqlite3_index_info {
   int orderByConsumed;       /* True if output is already ordered */
   double estimatedCost;      /* Estimated cost of using this index */
 };
+
+/*
+** CAPI3REF: Virtual Table Constraint Operator Codes
+**
+** These macros defined the allowed values for the
+** [sqlite3_index_info].aConstraint[].op field.  Each value represents
+** an operator that is part of a constraint term in the wHERE clause of
+** a query that uses a [virtual table].
+*/
 #define SQLITE_INDEX_CONSTRAINT_EQ    2
 #define SQLITE_INDEX_CONSTRAINT_GT    4
 #define SQLITE_INDEX_CONSTRAINT_LE    8
