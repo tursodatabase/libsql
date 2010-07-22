@@ -103,6 +103,8 @@ int sqlite3_db_status(
   int *pHighwater,      /* Write high-water mark here */
   int resetFlag         /* Reset high-water mark if true */
 ){
+  int rc = SQLITE_OK;   /* Return code */
+  sqlite3_mutex_enter(db->mutex);
   switch( op ){
     case SQLITE_DBSTATUS_LOOKASIDE_USED: {
       *pCurrent = db->lookaside.nOut;
@@ -121,6 +123,7 @@ int sqlite3_db_status(
     case SQLITE_DBSTATUS_CACHE_USED: {
       int totalUsed = 0;
       int i;
+      sqlite3BtreeEnterAll(db);
       for(i=0; i<db->nDb; i++){
         Btree *pBt = db->aDb[i].pBt;
         if( pBt ){
@@ -128,13 +131,15 @@ int sqlite3_db_status(
           totalUsed += sqlite3PagerMemUsed(pPager);
         }
       }
+      sqlite3BtreeLeaveAll(db);
       *pCurrent = totalUsed;
       *pHighwater = 0;
       break;
     }
     default: {
-      return SQLITE_ERROR;
+      rc = SQLITE_ERROR;
     }
   }
-  return SQLITE_OK;
+  sqlite3_mutex_leave(db->mutex);
+  return rc;
 }

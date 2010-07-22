@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Enhance\sthe\sLIKE/GLOB\squery\soptimization\sso\sthat\sit\sworks\sas\slong\sas\sthere\nis\san\sindex\swith\sthe\sappropriate\scollating\ssequence\sand\seven\sif\sthe\sdefault\ncollating\ssequence\sof\sthe\scolumn\sis\sdifferent.\nTicket\s[4711020446da7d93d99].
-D 2010-07-22T17:49:53
+C Make\sthe\ssqlite3_db_status()\sroutine\sthreadsafe.
+D 2010-07-22T17:55:40
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -177,7 +174,7 @@ F src/sqlite.h.in 2585fc82c922f2772e201e60a76d5fd1ca18370e
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h cb9ca3291acfd3f10859bcc4b2bb463e6e874939
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
-F src/status.c 4df6fe7dce2d256130b905847c6c60055882bdbe
+F src/status.c e2ad9f18c16209dab501e26020590fcebb2b751b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c ae1e4fb653c91ddad7e2534d209711a12604ccc4
 F src/test1.c ff3b4533fc4d78d1bff2ef831a5791db55096ed3
@@ -841,14 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P aad88cf54e9e55b757d2ece9e39d436e71dcaa9f
-R f3a265c1fe3510a6c260261e20607c66
-U drh
-Z 52104ed4afc95211e3a590b305b27931
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMSITIoxKgR168RlERAgzNAJ9cXNUZicxUW56VFjj2wMFHtrdPPwCffxG8
-buAvGUkBeiCRzv/I4BN3y5M=
-=lESR
------END PGP SIGNATURE-----
+P 9f932655f9eb9fdab16d7deed98b7cad414e0ca6
+R f4b6bdde71d0ed3e7ea8f2e2fea940cb
+U dan
+Z 79b01e4fa7fd5fb80263b4c4dd7b3da4
