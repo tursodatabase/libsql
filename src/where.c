@@ -327,6 +327,7 @@ static void whereClauseClear(WhereClause *pWC){
 static int whereClauseInsert(WhereClause *pWC, Expr *p, u8 wtFlags){
   WhereTerm *pTerm;
   int idx;
+  testcase( wtFlags & TERM_VIRTUAL );  /* EV: R-00211-15100 */
   if( pWC->nTerm>=pWC->nSlot ){
     WhereTerm *pOld = pWC->a;
     sqlite3 *db = pWC->pParse->db;
@@ -472,6 +473,13 @@ static Bitmask exprSelectTableUsage(WhereMaskSet *pMaskSet, Select *pS){
 ** Return TRUE if the given operator is one of the operators that is
 ** allowed for an indexable WHERE clause term.  The allowed operators are
 ** "=", "<", ">", "<=", ">=", and "IN".
+**
+** IMPLEMENTATION-OF: R-59926-26393 To be usable by an index a term must be
+** of one of the following forms: column = expression column > expression
+** column >= expression column < expression column <= expression
+** expression = column expression > column expression >= column
+** expression < column expression <= column column IN
+** (expression-list) column IN (subquery) column IS NULL
 */
 static int allowedOp(int op){
   assert( TK_GT>TK_EQ && TK_GT<TK_GE );
@@ -1016,6 +1024,8 @@ static void exprAnalyzeOrTerm(
     /* At this point, okToChngToIN is true if original pTerm satisfies
     ** case 1.  In that case, construct a new virtual term that is 
     ** pTerm converted into an IN operator.
+    **
+    ** EV: R-00211-15100
     */
     if( okToChngToIN ){
       Expr *pDup;            /* A transient duplicate expression */
@@ -1247,7 +1257,8 @@ static void exprAnalyze(
         ** inequality.  To avoid this, make sure to also run the full
         ** LIKE on all candidate expressions by clearing the isComplete flag
         */
-        if( c=='A'-1 ) isComplete = 0;
+        if( c=='A'-1 ) isComplete = 0;   /* EV: R-64339-08207 */
+
 
         c = sqlite3UpperToLower[c];
       }
@@ -2879,6 +2890,9 @@ static void bestIndex(
 ** in the ON clause.  The term is disabled in (3) because it is not part
 ** of a LEFT OUTER JOIN.  In (1), the term is not disabled.
 **
+** IMPLEMENTATION-OF: R-24597-58655 No tests are done for terms that are
+** completely satisfied by indices.
+**
 ** Disabling a term causes that term to not be tested in the inner loop
 ** of the join.  Disabling is an optimization.  When terms are satisfied
 ** by indices, we disable them to prevent redundant tests in the inner
@@ -3090,6 +3104,7 @@ static int codeAllEqualityTerms(
     /* The following true for indices with redundant columns. 
     ** Ex: CREATE INDEX i1 ON t1(a,b,a); SELECT * FROM t1 WHERE a=0 AND b=0; */
     testcase( (pTerm->wtFlags & TERM_CODED)!=0 );
+    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
     r1 = codeEqualityTerm(pParse, pTerm, pLevel, regBase+j);
     if( r1!=regBase+j ){
       if( nReg==1 ){
@@ -3233,6 +3248,7 @@ static Bitmask codeOneLoopStart(
     assert( pTerm->pExpr!=0 );
     assert( pTerm->leftCursor==iCur );
     assert( omitTable==0 );
+    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
     iRowidReg = codeEqualityTerm(pParse, pTerm, pLevel, iReleaseReg);
     addrNxt = pLevel->addrNxt;
     sqlite3VdbeAddOp2(v, OP_MustBeInt, iRowidReg, addrNxt);
@@ -3273,6 +3289,7 @@ static Bitmask codeOneLoopStart(
       assert( TK_LT==TK_GT+2 );      /*  ... of the TK_xx values... */
       assert( TK_GE==TK_GT+3 );      /*  ... is correcct. */
 
+      testcase( pStart->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
       pX = pStart->pExpr;
       assert( pX!=0 );
       assert( pStart->leftCursor==iCur );
@@ -3290,6 +3307,7 @@ static Bitmask codeOneLoopStart(
       pX = pEnd->pExpr;
       assert( pX!=0 );
       assert( pEnd->leftCursor==iCur );
+      testcase( pEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
       memEndValue = ++pParse->nMem;
       sqlite3ExprCode(pParse, pX->pRight, memEndValue);
       if( pX->op==TK_LT || pX->op==TK_GT ){
@@ -3457,6 +3475,7 @@ static Bitmask codeOneLoopStart(
         }
       }  
       nConstraint++;
+      testcase( pRangeStart->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
     }else if( isMinQuery ){
       sqlite3VdbeAddOp2(v, OP_Null, 0, regBase+nEq);
       nConstraint++;
@@ -3496,6 +3515,7 @@ static Bitmask codeOneLoopStart(
       }  
       codeApplyAffinity(pParse, regBase, nEq+1, zEndAff);
       nConstraint++;
+      testcase( pRangeEnd->wtFlags & TERM_VIRTUAL ); /* EV: R-30575-11662 */
     }
     sqlite3DbFree(pParse->db, zStartAff);
     sqlite3DbFree(pParse->db, zEndAff);
@@ -3702,11 +3722,15 @@ static Bitmask codeOneLoopStart(
 
   /* Insert code to test every subexpression that can be completely
   ** computed using the current set of tables.
+  **
+  ** IMPLEMENTATION-OF: R-49525-50935 Terms that cannot be satisfied through
+  ** the use of indices become tests that are evaluated against each row of
+  ** the relevant input tables.
   */
   k = 0;
   for(pTerm=pWC->a, j=pWC->nTerm; j>0; j--, pTerm++){
     Expr *pE;
-    testcase( pTerm->wtFlags & TERM_VIRTUAL );
+    testcase( pTerm->wtFlags & TERM_VIRTUAL ); /* IMP: R-30575-11662 */
     testcase( pTerm->wtFlags & TERM_CODED );
     if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
     if( (pTerm->prereqAll & notReady)!=0 ){
@@ -3734,7 +3758,7 @@ static Bitmask codeOneLoopStart(
     VdbeComment((v, "record LEFT JOIN hit"));
     sqlite3ExprCacheClear(pParse);
     for(pTerm=pWC->a, j=0; j<pWC->nTerm; j++, pTerm++){
-      testcase( pTerm->wtFlags & TERM_VIRTUAL );
+      testcase( pTerm->wtFlags & TERM_VIRTUAL );  /* IMP: R-30575-11662 */
       testcase( pTerm->wtFlags & TERM_CODED );
       if( pTerm->wtFlags & (TERM_VIRTUAL|TERM_CODED) ) continue;
       if( (pTerm->prereqAll & notReady)!=0 ){
@@ -3952,7 +3976,7 @@ WhereInfo *sqlite3WhereBegin(
   initMaskSet(pMaskSet);
   whereClauseInit(pWC, pParse, pMaskSet);
   sqlite3ExprCodeConstants(pParse, pWhere);
-  whereSplit(pWC, pWhere, TK_AND);
+  whereSplit(pWC, pWhere, TK_AND);   /* IMP: R-15842-53296 */
     
   /* Special case: a WHERE clause that is constant.  Evaluate the
   ** expression and either jump over all of the code or fall thru.

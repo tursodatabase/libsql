@@ -1,5 +1,8 @@
-C Make\sthe\ssqlite3_db_status()\sroutine\sthreadsafe.
-D 2010-07-22T17:55:40
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
+
+C Add\sevidence\smarks\sto\sthe\swhere.c\ssource\sfile.\s\sComment\sonly\s-\sno\scode\schanges.
+D 2010-07-22T22:40:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -230,7 +233,7 @@ F src/vtab.c a0f8a40274e4261696ef57aa806de2776ab72cda
 F src/wal.c 0925601f3299c2941a67c9cfff41ee710f70ca82
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 19a0f80a759ef288ed925e64944bbbbae3215abf
+F src/where.c 62262cee281c859ae136a40371f68a869b59ea1a
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -838,7 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 9f932655f9eb9fdab16d7deed98b7cad414e0ca6
-R f4b6bdde71d0ed3e7ea8f2e2fea940cb
-U dan
-Z 79b01e4fa7fd5fb80263b4c4dd7b3da4
+P 241f7bd190329fa02ca428651072a4a206132eab
+R 58c9336648eb3ce384b25cb1a31df81e
+U drh
+Z 05893823ee3052eca076f0070c9d2946
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.6 (GNU/Linux)
+
+iD8DBQFMSMjIoxKgR168RlERAotrAJwKX5P9bHGJ1mEEtboK6UGGgyWioQCgi8M5
+Adn9/cSJE8bR6eO9+n8ekCg=
+=4n2n
+-----END PGP SIGNATURE-----
