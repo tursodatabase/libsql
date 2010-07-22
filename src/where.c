@@ -689,9 +689,9 @@ static int isLikeOrGlob(
     while( (c=z[cnt])!=0 && c!=wc[0] && c!=wc[1] && c!=wc[2] ){
       cnt++;
     }
-    if( cnt!=0 && c!=0 && 255!=(u8)z[cnt-1] ){
+    if( cnt!=0 && 255!=(u8)z[cnt-1] ){
       Expr *pPrefix;
-      *pisComplete = z[cnt]==wc[0] && z[cnt+1]==0;
+      *pisComplete = c==wc[0] && z[cnt+1]==0;
       pPrefix = sqlite3Expr(db, TK_STRING, z);
       if( pPrefix ) pPrefix->u.zToken[cnt] = 0;
       *ppPrefix = pPrefix;

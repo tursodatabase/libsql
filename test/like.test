@@ -194,6 +194,31 @@ do_test like-3.4 {
   set sqlite_like_count
 } 0
 
+# The LIKE optimization still works when the RHS is a string with no
+# wildcard.  Ticket [e090183531fc2747]
+#
+do_test like-3.4.2 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'a' ORDER BY 1;
+  }
+} {a nosort {} i1}
+do_test like-3.4.3 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'ab' ORDER BY 1;
+  }
+} {ab nosort {} i1}
+do_test like-3.4.4 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abcd' ORDER BY 1;
+  }
+} {abcd nosort {} i1}
+do_test like-3.4.5 {
+  queryplan {
+    SELECT x FROM t1 WHERE x LIKE 'abcde' ORDER BY 1;
+  }
+} {nosort {} i1}
+
+
 # Partial optimization when the pattern does not end in '%'
 #
 do_test like-3.5 {
@@ -308,6 +333,26 @@ do_test like-3.23 {
 do_test like-3.24 {
   set sqlite_like_count
 } 6
+
+# GLOB optimization when there is no wildcard.  Ticket [e090183531fc2747]
+#
+do_test like-3.25 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'a' ORDER BY 1;
+  }
+} {a nosort {} i1}
+do_test like-3.26 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'abcd' ORDER BY 1;
+  }
+} {abcd nosort {} i1}
+do_test like-3.27 {
+  queryplan {
+    SELECT x FROM t1 WHERE x GLOB 'abcde' ORDER BY 1;
+  }
+} {nosort {} i1}
+
+
 
 # No optimization if the LHS of the LIKE is not a column name or
 # if the RHS is not a string.
