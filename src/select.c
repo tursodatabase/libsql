@@ -1300,14 +1300,13 @@ Table *sqlite3ResultSetOfSelect(Parse *pParse, Select *pSelect){
   /* The sqlite3ResultSetOfSelect() is only used n contexts where lookaside
   ** is disabled, so we might as well hard-code pTab->dbMem to NULL. */
   assert( db->lookaside.bEnabled==0 );
-  pTab->dbMem = 0;
   pTab->nRef = 1;
   pTab->zName = 0;
   selectColumnsFromExprList(pParse, pSelect->pEList, &pTab->nCol, &pTab->aCol);
   selectAddColumnTypeAndCollation(pParse, pTab->nCol, pTab->aCol, pSelect);
   pTab->iPKey = -1;
   if( db->mallocFailed ){
-    sqlite3DeleteTable(pTab);
+    sqlite3DeleteTable(db, pTab);
     return 0;
   }
   return pTab;
@@ -3096,7 +3095,6 @@ static int selectExpander(Walker *pWalker, Select *p){
       sqlite3WalkSelect(pWalker, pSel);
       pFrom->pTab = pTab = sqlite3DbMallocZero(db, sizeof(Table));
       if( pTab==0 ) return WRC_Abort;
-      pTab->dbMem = db->lookaside.bEnabled ? db : 0;
       pTab->nRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_subquery_%p_", (void*)pTab);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }

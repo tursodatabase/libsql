@@ -494,14 +494,13 @@ void sqlite3DeleteIndexSamples(Index *pIdx){
 #ifdef SQLITE_ENABLE_STAT2
   if( pIdx->aSample ){
     int j;
-    sqlite3 *dbMem = pIdx->pTable->dbMem;
     for(j=0; j<SQLITE_INDEX_SAMPLES; j++){
       IndexSample *p = &pIdx->aSample[j];
       if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
-        sqlite3DbFree(pIdx->pTable->dbMem, p->u.z);
+        sqlite3_free(p->u.z);
       }
     }
-    sqlite3DbFree(dbMem, pIdx->aSample);
+    sqlite3DbFree(0, pIdx->aSample);
     pIdx->aSample = 0;
   }
 #else
@@ -587,18 +586,17 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
         Index *pIdx = sqlite3FindIndex(db, zIndex, sInfo.zDatabase);
         if( pIdx ){
           int iSample = sqlite3_column_int(pStmt, 1);
-          sqlite3 *dbMem = pIdx->pTable->dbMem;
-          assert( dbMem==db || dbMem==0 );
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
             int eType = sqlite3_column_type(pStmt, 2);
 
             if( pIdx->aSample==0 ){
               static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3DbMallocZero(dbMem, sz);
+              pIdx->aSample = (IndexSample *)sqlite3Malloc(sz);
               if( pIdx->aSample==0 ){
                 db->mallocFailed = 1;
                 break;
               }
+	      memset(pIdx->aSample, 0, sz);
             }
 
             assert( pIdx->aSample );
@@ -621,7 +619,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( n < 1){
                   pSample->u.z = 0;
                 }else{
-                  pSample->u.z = sqlite3DbMallocRaw(dbMem, n);
+                  pSample->u.z = sqlite3Malloc(n);
                   if( pSample->u.z ){
                     memcpy(pSample->u.z, z, n);
                   }else{

@@ -221,14 +221,14 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 ** in the list are moved to the sqlite3.pDisconnect list of the associated 
 ** database connection.
 */
-void sqlite3VtabClear(Table *p){
+void sqlite3VtabClear(sqlite3 *db, Table *p){
   vtabDisconnectAll(0, p);
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
-      sqlite3DbFree(p->dbMem, p->azModuleArg[i]);
+      sqlite3DbFree(db, p->azModuleArg[i]);
     }
-    sqlite3DbFree(p->dbMem, p->azModuleArg);
+    sqlite3DbFree(db, p->azModuleArg);
   }
 }
 
@@ -681,7 +681,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
     if( pParse->pVdbe ){
       sqlite3VdbeFinalize(pParse->pVdbe);
     }
-    sqlite3DeleteTable(pParse->pNewTable);
+    sqlite3DeleteTable(db, pParse->pNewTable);
     sqlite3StackFree(db, pParse);
   }
 

@@ -1155,7 +1155,7 @@ void sqlite3FkActions(
 ** table pTab. Remove the deleted foreign keys from the Schema.fkeyHash
 ** hash table.
 */
-void sqlite3FkDelete(Table *pTab){
+void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   FKey *pFKey;                    /* Iterator variable */
   FKey *pNext;                    /* Copy of pFKey->pNextFrom */
 
@@ -1175,8 +1175,8 @@ void sqlite3FkDelete(Table *pTab){
 
     /* Delete any triggers created to implement actions for this FK. */
 #ifndef SQLITE_OMIT_TRIGGER
-    fkTriggerDelete(pTab->dbMem, pFKey->apTrigger[0]);
-    fkTriggerDelete(pTab->dbMem, pFKey->apTrigger[1]);
+    fkTriggerDelete(db, pFKey->apTrigger[0]);
+    fkTriggerDelete(db, pFKey->apTrigger[1]);
 #endif
 
     /* EV: R-30323-21917 Each foreign key constraint in SQLite is
@@ -1185,7 +1185,7 @@ void sqlite3FkDelete(Table *pTab){
     assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
 
     pNext = pFKey->pNextFrom;
-    sqlite3DbFree(pTab->dbMem, pFKey);
+    sqlite3DbFree(db, pFKey);
   }
 }
 #endif /* ifndef SQLITE_OMIT_FOREIGN_KEY */

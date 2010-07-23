@@ -1217,7 +1217,6 @@ struct VTable {
 ** of a SELECT statement.
 */
 struct Table {
-  sqlite3 *dbMem;      /* DB connection used for lookaside allocations. */
   char *zName;         /* Name of the table or view */
   int iPKey;           /* If not negative, use aCol[iPKey] as the primary key */
   int nCol;            /* Number of columns in this table */
@@ -2624,7 +2623,7 @@ void sqlite3CreateView(Parse*,Token*,Token*,Token*,Select*,int,int);
 #endif
 
 void sqlite3DropTable(Parse*, SrcList*, int, int);
-void sqlite3DeleteTable(Table*);
+void sqlite3DeleteTable(sqlite3*, Table*);
 #ifndef SQLITE_OMIT_AUTOINCREMENT
   void sqlite3AutoincrementBegin(Parse *pParse);
   void sqlite3AutoincrementEnd(Parse *pParse);
@@ -2971,7 +2970,7 @@ void sqlite3AutoLoadExtensions(sqlite3*);
 #  define sqlite3VtabUnlock(X)
 #  define sqlite3VtabUnlockList(X)
 #else
-   void sqlite3VtabClear(Table*);
+   void sqlite3VtabClear(sqlite3 *db, Table*);
    int sqlite3VtabSync(sqlite3 *db, char **);
    int sqlite3VtabRollback(sqlite3 *db);
    int sqlite3VtabCommit(sqlite3 *db);
@@ -3024,9 +3023,9 @@ int sqlite3WalDefaultHook(void*,sqlite3*,const char*,int);
   #define sqlite3FkRequired(a,b,c,d) 0
 #endif
 #ifndef SQLITE_OMIT_FOREIGN_KEY
-  void sqlite3FkDelete(Table*);
+  void sqlite3FkDelete(sqlite3 *, Table*);
 #else
-  #define sqlite3FkDelete(a)
+  #define sqlite3FkDelete(a,b)
 #endif
 
 
