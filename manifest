@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Remove\sadditional\straces\s(mostly\sin\scomments)\sof\sthe\sTable.dbMem\sfield.
-D 2010-07-23T17:06:32
+C Strenghten\san\sassert()\sin\smalloc.c\sthat\shelps\sto\sensure\sthat\sallocated\smemory\nis\sfreed\sby\sthe\sappropriate\sroutine.
+D 2010-07-23T17:32:23
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 1c7a61ce1281041f437333f366a96aa0d29bb581
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 09c3777bf733a387bec6aa344e455eb4e8ecf47e
+F src/malloc.c f8b9bcd134ebfc95103d6834882567e66176d455
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 2ee7bdacda8299b5a91cff9f7ee3e46573195c38
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 6eddc6e601cf8f585c6c2cf79f36fcbfe98a307e
-R f717f36084ea9a87f741a9b13ed6b688
+P 5c58f44aeb224e106497368d9290d75a08807761
+R 0737b55c191f07ae1ad4fa3bf1f755c1
 U drh
-Z 1d2dd398ba20f5074351d2d5fe9e494c
+Z 0a76b0c40d2f418cd9847132220ce5bf
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMScwboxKgR168RlERArt/AKCEG8hSMTg2C7Q9TxP/W8/julag/wCdEnuB
-uHRKBHei+vBtpU8kzB8UnBg=
-=E6Pn
+iD8DBQFMSdIwoxKgR168RlERApNcAJ410iFTmSjiaKEwT7N0SDbHgajjxQCfanYz
+ZoDT+tmH93pc0A6pOi4UbwA=
+=eycw
 -----END PGP SIGNATURE-----

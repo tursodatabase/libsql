@@ -461,7 +461,8 @@ void sqlite3DbFree(sqlite3 *db, void *p){
     db->lookaside.pFree = pBuf;
     db->lookaside.nOut--;
   }else{
-    assert( sqlite3MemdebugHasType(p, MEMTYPE_DB|MEMTYPE_HEAP) );
+    assert( sqlite3MemdebugHasType(p,
+                       db ? (MEMTYPE_DB|MEMTYPE_HEAP) : MEMTYPE_HEAP) );
     sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
     sqlite3_free(p);
   }
