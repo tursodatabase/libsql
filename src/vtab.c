@@ -393,7 +393,6 @@ void sqlite3VtabFinishParse(Parse *pParse, Token *pEnd){
       assert( pTab==pOld );  /* Malloc must have failed inside HashInsert() */
       return;
     }
-    pSchema->db = pParse->db;
     pParse->pNewTable = 0;
   }
 }
