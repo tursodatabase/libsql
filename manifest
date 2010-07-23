@@ -1,8 +1,5 @@
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
-
-C Strenghten\san\sassert()\sin\smalloc.c\sthat\shelps\sto\sensure\sthat\sallocated\smemory\nis\sfreed\sby\sthe\sappropriate\sroutine.
-D 2010-07-23T17:32:23
+C Merge\stwo\sleaves.
+D 2010-07-23T17:37:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -588,7 +585,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
 F test/selectC.test 33bb5673a8141df193c6fd56e6de7fea38b8d2ee
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
+F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test d6ba4ca1827ea36a1ac23a99e3c36eeac9165450
 F test/shared3.test d69bdd5f156580876c5345652d21dc2092e85962
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
@@ -841,14 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 5c58f44aeb224e106497368d9290d75a08807761
-R 0737b55c191f07ae1ad4fa3bf1f755c1
-U drh
-Z 0a76b0c40d2f418cd9847132220ce5bf
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.6 (GNU/Linux)
-
-iD8DBQFMSdIwoxKgR168RlERApNcAJ410iFTmSjiaKEwT7N0SDbHgajjxQCfanYz
-ZoDT+tmH93pc0A6pOi4UbwA=
-=eycw
------END PGP SIGNATURE-----
+P 80db61acca034a8edff0fd23a65a0bbc9206a7b3 bfb0dd3c2f7e1ffbdf236be4adc3e0d804ed5854
+R f64674fd73e928c91a12f4bbf3d016fe
+U dan
+Z 1404b8cebd331e440d4f17d98e1c840f
