@@ -1061,11 +1061,7 @@ static Trigger *fkActionTrigger(
       pWhere = 0;
     }
 
-    /* In the current implementation, pTab->dbMem==0 for all tables except
-    ** for temporary tables used to describe subqueries.  And temporary
-    ** tables do not have foreign key constraints.  Hence, pTab->dbMem
-    ** should always be 0 there.
-    */
+    /* Disable lookaside memory allocation */
     enableLookaside = db->lookaside.bEnabled;
     db->lookaside.bEnabled = 0;
 
