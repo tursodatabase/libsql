@@ -1018,6 +1018,44 @@ do_test shared-$av.14.3 {
   db close
 } {}
 
+# Populate a database schema using connection [db]. Then drop it using
+# [db2]. This is to try to find any points where shared-schema elements
+# are allocated using the lookaside buffer of [db].
+# 
+# Mutexes are enabled for this test as that activates a couple of useful
+# assert() statements in the C code.
+#
+do_test shared-$av-15.1 {
+  file delete -force test.db
+  sqlite3 db test.db -fullmutex 1
+  sqlite3 db2 test.db -fullmutex 1
+  execsql {
+    CREATE TABLE t1(a, b, c);
+    CREATE INDEX i1 ON t1(a, b);
+    CREATE VIEW v1 AS SELECT * FROM t1; 
+    CREATE VIEW v2 AS SELECT * FROM t1, v1 
+                      WHERE t1.c=v1.c GROUP BY t1.a ORDER BY v1.b; 
+    CREATE TRIGGER tr1 AFTER INSERT ON t1 
+      WHEN new.a!=1
+    BEGIN
+      DELETE FROM t1 WHERE a=5;
+      INSERT INTO t1 VALUES(1, 2, 3);
+      UPDATE t1 SET c=c+1;
+    END;
+
+    INSERT INTO t1 VALUES(5, 6, 7);
+    INSERT INTO t1 VALUES(8, 9, 10);
+    INSERT INTO t1 VALUES(11, 12, 13);
+    ANALYZE;
+    SELECT * FROM t1;
+  }
+} {1 2 6 8 9 12 1 2 5 11 12 14 1 2 4}
+do_test shared-$av-15.2 {
+  execsql { DROP TABLE t1 } db2
+} {}
+db close
+db2 close
+
 }
 
 sqlite3_enable_shared_cache $::enable_shared_cache

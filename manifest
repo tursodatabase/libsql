@@ -1,5 +1,5 @@
-C Remove\sthe\sTable.dbMem\svariable,\sas\sit\sis\sno\slonger\sbeing\sused\sfor\sits\soriginal\spurpose.
-D 2010-07-23T15:41:47
+C Add\sa\stest\scase\sto\sshared.test.\sNo\schanges\sto\sproduction\scode.
+D 2010-07-23T15:55:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -585,7 +585,7 @@ F test/selectA.test 06d1032fa9009314c95394f2ca2e60d9f7ae8532
 F test/selectB.test f305cc6660804cb239aab4e2f26b0e288b59958b
 F test/selectC.test 33bb5673a8141df193c6fd56e6de7fea38b8d2ee
 F test/server1.test f5b790d4c0498179151ca8a7715a65a7802c859c
-F test/shared.test 3b448dc0f7a9356e641894ed81c27599f39d809d
+F test/shared.test b9114eaea7e748a3a4c8ff7b9ca806c8f95cef3e
 F test/shared2.test d6ba4ca1827ea36a1ac23a99e3c36eeac9165450
 F test/shared3.test d69bdd5f156580876c5345652d21dc2092e85962
 F test/shared4.test d0fadacb50bb6981b2fb9dc6d1da30fa1edddf83
@@ -838,7 +838,7 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 430be657be68687c998f2f5f8dcd112bf26106be
-R b12985159a737efd8ea9a2927ba836e0
+P 6eddc6e601cf8f585c6c2cf79f36fcbfe98a307e
+R 78a69c10590c609851ce8c464e2ad62c
 U dan
-Z 048b116055cce95a3e484c5c3be793ac
+Z 6d496f6480db51a71cd50a034edef5d6
