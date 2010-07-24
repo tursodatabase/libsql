@@ -490,18 +490,17 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 ** If the Index.aSample variable is not NULL, delete the aSample[] array
 ** and its contents.
 */
-void sqlite3DeleteIndexSamples(Index *pIdx){
+void sqlite3DeleteIndexSamples(sqlite3 *db, Index *pIdx){
 #ifdef SQLITE_ENABLE_STAT2
   if( pIdx->aSample ){
     int j;
     for(j=0; j<SQLITE_INDEX_SAMPLES; j++){
       IndexSample *p = &pIdx->aSample[j];
       if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
-        sqlite3_free(p->u.z);
+        sqlite3DbFree(db, p->u.z);
       }
     }
-    sqlite3DbFree(0, pIdx->aSample);
-    pIdx->aSample = 0;
+    sqlite3DbFree(db, pIdx->aSample);
   }
 #else
   UNUSED_PARAMETER(pIdx);
@@ -542,7 +541,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     sqlite3DefaultRowEst(pIdx);
-    sqlite3DeleteIndexSamples(pIdx);
+    sqlite3DeleteIndexSamples(db, pIdx);
+    pIdx->aSample = 0;
   }
 
   /* Check to make sure the sqlite_stat1 table exists */

@@ -5252,7 +5252,9 @@ int sqlite3_db_status(sqlite3*, int op, int *pCur, int *pHiwtr, int resetFlg);
 */
 #define SQLITE_DBSTATUS_LOOKASIDE_USED     0
 #define SQLITE_DBSTATUS_CACHE_USED         1
-#define SQLITE_DBSTATUS_MAX                1   /* Largest defined DBSTATUS */
+#define SQLITE_DBSTATUS_SCHEMA_USED        2
+#define SQLITE_DBSTATUS_STMT_USED          3
+#define SQLITE_DBSTATUS_MAX                3   /* Largest defined DBSTATUS */
 
 
 /*

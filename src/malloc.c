@@ -455,7 +455,13 @@ void sqlite3_free(void *p){
 */
 void sqlite3DbFree(sqlite3 *db, void *p){
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db, p) ){
+  if( db && db->pnBytesFreed ){
+    if( isLookaside(db, p) ){
+      *db->pnBytesFreed += db->lookaside.sz;
+    }else{
+      *db->pnBytesFreed += sqlite3MallocSize(p);
+    }
+  }else if( isLookaside(db, p) ){
     LookasideSlot *pBuf = (LookasideSlot*)p;
     pBuf->pNext = db->lookaside.pFree;
     db->lookaside.pFree = pBuf;

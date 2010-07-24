@@ -222,7 +222,7 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 ** database connection.
 */
 void sqlite3VtabClear(sqlite3 *db, Table *p){
-  vtabDisconnectAll(0, p);
+  if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){

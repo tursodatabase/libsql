@@ -83,6 +83,7 @@ struct SubProgram {
   int nCsr;                     /* Number of cursors required */
   int nRef;                     /* Number of pointers to this structure */
   void *token;                  /* id that may be used to recursive triggers */
+  SubProgram *pNext;            /* Next sub-program already visited */
 };
 
 /*
@@ -184,6 +185,7 @@ VdbeOp *sqlite3VdbeGetOp(Vdbe*, int);
 int sqlite3VdbeMakeLabel(Vdbe*);
 void sqlite3VdbeRunOnlyOnce(Vdbe*);
 void sqlite3VdbeDelete(Vdbe*);
+void sqlite3VdbeDeleteObject(sqlite3*,Vdbe*);
 void sqlite3VdbeMakeReady(Vdbe*,int,int,int,int,int,int);
 int sqlite3VdbeFinalize(Vdbe*);
 void sqlite3VdbeResolveLabel(Vdbe*, int);

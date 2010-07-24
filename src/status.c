@@ -14,6 +14,7 @@
 ** functionality.
 */
 #include "sqliteInt.h"
+#include "vdbeInt.h"
 
 /*
 ** Variables in which to record status information.
@@ -136,6 +137,66 @@ int sqlite3_db_status(
       *pHighwater = 0;
       break;
     }
+
+    case SQLITE_DBSTATUS_SCHEMA_USED: {
+      int i;                      /* Used to iterate through schemas */
+      int nByte = 0;              /* Used to accumulate return value */
+
+      assert( db->pSubProgram==0 );
+      db->pnBytesFreed = &nByte;
+      for(i=0; i<db->nDb; i++){
+	Schema *pSchema = db->aDb[i].pSchema;
+	if( pSchema ){
+  	  HashElem *p;
+
+	  nByte += sizeof(HashElem) * (
+	      pSchema->tblHash.count 
+	    + pSchema->trigHash.count
+	    + pSchema->idxHash.count
+	    + pSchema->fkeyHash.count
+	  );
+	  nByte += sqlite3MallocSize(pSchema->tblHash.ht);
+	  nByte += sqlite3MallocSize(pSchema->trigHash.ht);
+	  nByte += sqlite3MallocSize(pSchema->idxHash.ht);
+	  nByte += sqlite3MallocSize(pSchema->fkeyHash.ht);
+
+          for(p=sqliteHashFirst(&pSchema->trigHash); p; p=sqliteHashNext(p)){
+            sqlite3DeleteTrigger(db, (Trigger*)sqliteHashData(p));
+          }
+          for(p=sqliteHashFirst(&pSchema->tblHash); p; p=sqliteHashNext(p)){
+            sqlite3DeleteTable(db, (Table *)sqliteHashData(p));
+          }
+	}
+      }
+      db->pnBytesFreed = 0;
+
+      *pHighwater = 0;
+      *pCurrent = nByte;
+      break;
+    }
+
+    case SQLITE_DBSTATUS_STMT_USED: {
+      struct Vdbe *pVdbe;         /* Used to iterate through VMs */
+      int nByte = 0;              /* Used to accumulate return value */
+
+      db->pnBytesFreed = &nByte;
+      for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
+        SubProgram *pSub, *pNext;
+	sqlite3VdbeDeleteObject(db, pVdbe);
+        for(pSub=db->pSubProgram; pSub; pSub=pNext){
+	  pNext = pSub->pNext;
+	  pSub->pNext = 0;
+        }
+	db->pSubProgram = 0;
+      }
+      db->pnBytesFreed = 0;
+
+      *pHighwater = 0;
+      *pCurrent = nByte;
+
+      break;
+    }
+
     default: {
       rc = SQLITE_ERROR;
     }

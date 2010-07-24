@@ -1288,6 +1288,8 @@ static int test_db_status(
   } aOp[] = {
     { "SQLITE_DBSTATUS_LOOKASIDE_USED",    SQLITE_DBSTATUS_LOOKASIDE_USED   },
     { "SQLITE_DBSTATUS_CACHE_USED",        SQLITE_DBSTATUS_CACHE_USED       },
+    { "SQLITE_DBSTATUS_SCHEMA_USED",       SQLITE_DBSTATUS_SCHEMA_USED      },
+    { "SQLITE_DBSTATUS_STMT_USED",         SQLITE_DBSTATUS_STMT_USED        }
   };
   Tcl_Obj *pResult;
   if( objc!=4 ){
