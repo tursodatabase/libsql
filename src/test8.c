@@ -485,7 +485,7 @@ static int echoCreate(
     rc = sqlite3_exec(db, zSql, 0, 0, 0);
     sqlite3_free(zSql);
     if( rc!=SQLITE_OK ){
-      *pzErr = sqlite3DbStrDup(0, sqlite3_errmsg(db));
+      *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
     }
   }
 

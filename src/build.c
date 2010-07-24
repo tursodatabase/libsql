@@ -1367,7 +1367,7 @@ static char *createTableStmt(sqlite3 *db, Table *p){
     zEnd = "\n)";
   }
   n += 35 + 6*p->nCol;
-  zStmt = sqlite3Malloc( n );
+  zStmt = sqlite3DbMallocRaw(0, n);
   if( zStmt==0 ){
     db->mallocFailed = 1;
     return 0;
@@ -2814,7 +2814,7 @@ Index *sqlite3CreateIndex(
   /* Clean up before exiting */
 exit_create_index:
   if( pIndex ){
-    sqlite3_free(pIndex->zColAff);
+    sqlite3DbFree(db, pIndex->zColAff);
     sqlite3DbFree(db, pIndex);
   }
   sqlite3ExprListDelete(db, pList);

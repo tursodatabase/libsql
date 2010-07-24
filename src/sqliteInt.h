@@ -2325,7 +2325,7 @@ struct StrAccum {
   int  nAlloc;         /* Amount of space allocated in zText */
   int  mxAlloc;        /* Maximum allowed string length */
   u8   mallocFailed;   /* Becomes true if any memory allocation fails */
-  u8   useMalloc;      /* True if zText is enlargeable using realloc */
+  u8   useMalloc;      /* 0: none,  1: sqlite3DbMalloc,  2: sqlite3_malloc */
   u8   tooBig;         /* Becomes true if string size exceeds limits */
 };
 
@@ -3140,9 +3140,10 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 # define sqlite3MemdebugSetType(X,Y)  /* no-op */
 # define sqlite3MemdebugHasType(X,Y)  1
 #endif
-#define MEMTYPE_HEAP     0x01    /* General heap allocations */
-#define MEMTYPE_DB       0x02    /* Associated with a database connection */
-#define MEMTYPE_SCRATCH  0x04    /* Scratch allocations */
-#define MEMTYPE_PCACHE   0x08    /* Page cache allocations */
+#define MEMTYPE_HEAP      0x01    /* General heap allocations */
+#define MEMTYPE_DB        0x02    /* Associated with a database connection */
+#define MEMTYPE_SCRATCH   0x04    /* Scratch allocations */
+#define MEMTYPE_PCACHE    0x08    /* Page cache allocations */
+#define MEMTYPE_RECURSIVE 0x10    /* Experimental */
 
 #endif /* _SQLITEINT_H_ */

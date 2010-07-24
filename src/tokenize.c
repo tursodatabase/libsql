@@ -496,7 +496,7 @@ abort_parse:
   }
 #endif
 #ifndef SQLITE_OMIT_VIRTUALTABLE
-  sqlite3DbFree(db, pParse->apVtabLock);
+  sqlite3_free(pParse->apVtabLock);
 #endif
 
   if( !IN_DECLARE_VTAB ){

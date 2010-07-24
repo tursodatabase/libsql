@@ -401,13 +401,7 @@ int sqlite3MemdebugHasType(void *p, u8 eType){
     struct MemBlockHdr *pHdr;
     pHdr = sqlite3MemsysGetHeader(p);
     assert( pHdr->iForeGuard==FOREGUARD );         /* Allocation is valid */
-    assert( (pHdr->eType & (pHdr->eType-1))==0 );  /* Only one type bit set */
     if( (pHdr->eType&eType)==0 ){
-      void **pBt;
-      pBt = (void**)pHdr;
-      pBt -= pHdr->nBacktraceSlots;
-      backtrace_symbols_fd(pBt, pHdr->nBacktrace, fileno(stderr));
-      fprintf(stderr, "\n");
       rc = 0;
     }
   }

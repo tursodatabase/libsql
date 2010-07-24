@@ -591,7 +591,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
             if( pIdx->aSample==0 ){
               static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3Malloc(sz);
+              pIdx->aSample = (IndexSample *)sqlite3DbMallocRaw(0, sz);
               if( pIdx->aSample==0 ){
                 db->mallocFailed = 1;
                 break;

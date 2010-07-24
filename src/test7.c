@@ -164,7 +164,7 @@ static int tcl_client_create(
   }
   threadset[i].busy = 1;
   sqlite3_free(threadset[i].zFilename);
-  threadset[i].zFilename = sqlite3DbStrDup(0, argv[2]);
+  threadset[i].zFilename = sqlite3_mprintf("%s", argv[2]);
   threadset[i].opnum = 1;
   threadset[i].completed = 0;
   rc = pthread_create(&x, 0, client_main, &threadset[i]);
@@ -507,7 +507,7 @@ static int tcl_client_compile(
   client_wait(&threadset[i]);
   threadset[i].xOp = do_compile;
   sqlite3_free(threadset[i].zArg);
-  threadset[i].zArg = sqlite3DbStrDup(0, argv[2]);
+  threadset[i].zArg = sqlite3_mprintf("%s", argv[2]);
   threadset[i].opnum++;
   return TCL_OK;
 }

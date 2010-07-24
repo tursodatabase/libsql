@@ -2025,7 +2025,7 @@ static int vtabBestIndex(Parse *pParse, Table *pTab, sqlite3_index_info *p){
       sqlite3ErrorMsg(pParse, "%s", pVtab->zErrMsg);
     }
   }
-  sqlite3DbFree(pParse->db, pVtab->zErrMsg);
+  sqlite3_free(pVtab->zErrMsg);
   pVtab->zErrMsg = 0;
 
   for(i=0; i<p->nConstraint; i++){

@@ -581,12 +581,15 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
     switch( p4type ){
       case P4_REAL:
       case P4_INT64:
-      case P4_MPRINTF:
       case P4_DYNAMIC:
       case P4_KEYINFO:
       case P4_INTARRAY:
       case P4_KEYINFO_HANDOFF: {
         sqlite3DbFree(db, p4);
+        break;
+      }
+      case P4_MPRINTF: {
+        sqlite3_free(p4);
         break;
       }
       case P4_VDBEFUNC: {
@@ -739,7 +742,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
 
     nField = ((KeyInfo*)zP4)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqlite3Malloc( nByte );
+    pKeyInfo = sqlite3DbMallocRaw(0, nByte);
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
       u8 *aSortOrder;
