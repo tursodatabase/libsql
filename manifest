@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\sall\smemory\sfrom\ssqlite3DbMalloc()\sis\sfreed\sby\ssqlite3DbFree()\sand\nall\smemory\sfrom\ssqlite3_malloc()\sis\sfreed\sby\ssqlite3_free().
-D 2010-07-24T16:34:38
+C Add\sinfrastructure\sto\ssupport\sa\shierarchy\sof\smemory\sallocations\swith\nautomatic\sdeallocation\sof\ssubstructure.
+D 2010-07-24T18:25:21
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 8394eba1c319a6d840ee411e23966d53a87f745a
+F src/malloc.c 2dbc736554431cc0efde4984fe07ae7a09d50001
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 716e62689d49b01ee742be6c745b1c3bbfbccd18
@@ -175,7 +175,7 @@ F src/select.c 74fef1334bec27e606ef0b19e5c41cd0a639e69c
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
 F src/sqlite.h.in 2585fc82c922f2772e201e60a76d5fd1ca18370e
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h e24b335bd57f673c39a9098fdc98d8ad2d5dc3da
+F src/sqliteInt.h 2e5a9ae356ea10b65922c720fb2de0e95293a0f2
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c e2ad9f18c16209dab501e26020590fcebb2b751b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -841,18 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a6bb2108bfb562a7067ef6150e43382736c0c4f5
-R 57ad848eef21f87b491f957007f9c787
-T *bgcolor * #a0c0f0
-T *branch * malloc-enhancement
-T *sym-malloc-enhancement *
-T -sym-trunk *
+P ac1f37a647e9ed1c00a901d26d9956a86c40117a
+R 8200e036f2297f3649990254ca64df15
 U drh
-Z 0e50e08d3aab5ed9a84c7eabe091b80c
+Z e772520594cdb03d289dcb1d7543238f
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMSxYioxKgR168RlERAgv5AJwKcCKth9vEcMrMziFc3bR3CMKXOgCeOwNK
-xsMH21OEzgn+77HK/85/56Q=
-=jlvX
+iD8DBQFMSzAVoxKgR168RlERArS9AJ9M/k0LPViOCHCXlKtw4x3doAYAbwCdHEUq
+R1H3Xkn1TDNmQFgxUCzSKtI=
+=NT+f
 -----END PGP SIGNATURE-----

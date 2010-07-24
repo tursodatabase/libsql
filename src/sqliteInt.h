@@ -2493,6 +2493,8 @@ void *sqlite3Realloc(void*, int);
 void *sqlite3DbReallocOrFree(sqlite3 *, void *, int);
 void *sqlite3DbRealloc(sqlite3 *, void *, int);
 void sqlite3DbFree(sqlite3*, void*);
+void sqlite3MemLink(void *pParent, void *pChild);
+void sqlite3MemUnlink(void *pParent, void *pChild);
 int sqlite3MallocSize(void*);
 int sqlite3DbMallocSize(sqlite3*, void*);
 void *sqlite3ScratchMalloc(int);

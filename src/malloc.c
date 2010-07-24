@@ -16,6 +16,84 @@
 #include <stdarg.h>
 
 /*
+** There are two general-purpose memory allocators:
+**
+** Simple:
+**
+**     sqlite3_malloc
+**     sqlite3_free
+**     sqlite3_realloc
+**     sqlite3Malloc
+**     sqlite3MallocSize
+**     sqlite3_mprintf
+**
+** Enhanced:
+**
+**     sqlite3DbMallocRaw
+**     sqlite3DbMallocZero
+**     sqlite3DbFree
+**     sqlite3DbRealloc
+**     sqlite3MPrintf
+**     sqlite3DbMalloc
+**
+** All external allocations use the simple memory allocator.
+** The enhanced allocator is used internally only, and is not
+** available to extensions or applications.
+**
+** The enhanced allocator is a wrapper around the simple allocator that
+** adds the following capabilities:
+**
+** (1) Access to lookaside memory associated with a database connection.
+**
+** (2) The ability to link allocations into a hierarchy with automatic
+**     deallocation of all elements of the subhierarchy whenever any
+**     element within the hierarchy is deallocated.
+**
+** The two allocators are incompatible in the sense that allocations that
+** originate from the simple allocator must be deallocated using the simple
+** deallocator and allocations that originate from the enhanced allocator must
+** be deallocated using the enhanced deallocator.  You cannot check-out 
+** memory from one allocator then return it to the other.
+*/
+
+/*
+** The automatic hierarchical deallocation feature of the enhanced allocator
+** is implemented by adding an instance of the following structure to the
+** header of each enhanced allocation.
+**
+** In order to preserve alignment, this structure must be a multiple of
+** 8 bytes in size.
+*/
+typedef struct EMemHdr EMemHdr;
+struct EMemHdr {
+  EMemHdr *pEChild;      /* List of children of this node */
+  EMemHdr *pESibling;    /* Other nodes that are children of the same parent */
+#ifdef SQLITE_MEMDEBUG
+  u32 iEMemMagic;        /* Magic number for sanity checking */
+  u32 isAChild;          /* True if this allocate is a child of another */
+#endif
+};
+
+/*
+** Macros for querying and setting debugging fields of the EMemHdr object.
+*/
+#ifdef SQLITE_MEMDEBUG
+# define isValidEMem(E)     ((E)->iEMemMagic==0xc0a43fad)
+# define setValidEMem(E)    (E)->iEMemMagic = 0xc0a43fad
+# define clearValidEMem(E)  (E)->iEMemMagic = 0x12345678
+# define isChildEMem(E)     ((E)->isAChild!=0)
+# define setChildEMem(E)    (E)->isAChild = 1
+# define clearChildEMem(E)  (E)->isAChild = 0
+#else
+# define isValidEMem(E)
+# define setValidEMem(E)
+# define clearValidEMem(E)
+# define isChildEMem(E)
+# define setChildEMem(E)
+# define clearChildEMem(E)
+#endif
+
+/*
 ** This routine runs when the memory allocator sees that the
 ** total memory allocation is about to exceed the soft heap
 ** limit.
@@ -32,6 +110,10 @@ static void softHeapLimitEnforcer(
 /*
 ** Set the soft heap-size limit for the library. Passing a zero or 
 ** negative value indicates no limit.
+**
+** If the total amount of memory allocated (by all threads) exceeds
+** the soft heap limit, then sqlite3_release_memory() is invoked to
+** try to free up some memory before proceeding.
 */
 void sqlite3_soft_heap_limit(int n){
   sqlite3_uint64 iLimit;
@@ -418,21 +500,29 @@ static int isLookaside(sqlite3 *db, void *p){
 /*
 ** Return the size of a memory allocation previously obtained from
 ** sqlite3Malloc() or sqlite3_malloc().
+**
+** The size returned is the usable size and does not include any
+** bookkeeping overhead or sentinals at the end of the allocation.
 */
 int sqlite3MallocSize(void *p){
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   assert( !sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
   return sqlite3GlobalConfig.m.xSize(p);
 }
-int sqlite3DbMallocSize(sqlite3 *db, void *p){
+int sqlite3DbMallocSize(sqlite3 *db, void *pObj){
+  EMemHdr *p = (EMemHdr*)pObj;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  if( p ){
+    p--;
+    assert( isValidEMem(p) );
+  }
   if( isLookaside(db, p) ){
-    return db->lookaside.sz;
+    return db->lookaside.sz - sizeof(EMemHdr);
   }else{
     assert( sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
     assert( sqlite3MemdebugHasType(p,
              db ? (MEMTYPE_DB|MEMTYPE_HEAP) : MEMTYPE_HEAP) );
-    return sqlite3GlobalConfig.m.xSize(p);
+    return sqlite3GlobalConfig.m.xSize(p) - sizeof(EMemHdr);
   }
 }
 
@@ -455,26 +545,39 @@ void sqlite3_free(void *p){
 
 /*
 ** Free memory that might be associated with a particular database
-** connection.
+** connection.  All child allocations are also freed.
 */
-void sqlite3DbFree(sqlite3 *db, void *p){
+void sqlite3DbFree(sqlite3 *db, void *pObj){
+  EMemHdr *p = (EMemHdr*)pObj;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
-  if( isLookaside(db, p) ){
-    LookasideSlot *pBuf = (LookasideSlot*)p;
-    pBuf->pNext = db->lookaside.pFree;
-    db->lookaside.pFree = pBuf;
-    db->lookaside.nOut--;
-  }else{
-    assert( sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
-    assert( sqlite3MemdebugHasType(p,
-                       db ? (MEMTYPE_DB|MEMTYPE_HEAP) : MEMTYPE_HEAP) );
-    sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-    sqlite3_free(p);
+  if( p ) p--;
+  while( p ){
+    EMemHdr *pNext = p->pESibling;
+    assert( isValidEMem(p) );
+    if( p->pEChild ) sqlite3DbFree(db, (void*)&p->pEChild[1]);
+    if( isLookaside(db, p) ){
+      LookasideSlot *pBuf = (LookasideSlot*)p;
+      clearValidEMem(p);
+      pBuf->pNext = db->lookaside.pFree;
+      db->lookaside.pFree = pBuf;
+      db->lookaside.nOut--;
+    }else{
+      assert( sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
+      assert( sqlite3MemdebugHasType(p,
+                         db ? (MEMTYPE_DB|MEMTYPE_HEAP) : MEMTYPE_HEAP) );
+      sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
+      clearValidEMem(p);
+      sqlite3_free(p);
+    }
+    p = pNext;
   }
 }
 
 /*
-** Change the size of an existing memory allocation
+** Change the size of an existing memory allocation.
+**
+** This is the same as sqlite3_realloc() except that it assumes that
+** the memory subsystem has already been initialized.
 */
 void *sqlite3Realloc(void *pOld, int nBytes){
   int nOld, nNew;
@@ -573,8 +676,9 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
 ** that all prior mallocs (ex: "a") worked too.
 */
 void *sqlite3DbMallocRaw(sqlite3 *db, int n){
-  void *p;
+  EMemHdr *p;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
+  n += sizeof(EMemHdr);
 #ifndef SQLITE_OMIT_LOOKASIDE
   if( db ){
     LookasideSlot *pBuf;
@@ -588,7 +692,8 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
       if( db->lookaside.nOut>db->lookaside.mxOut ){
         db->lookaside.mxOut = db->lookaside.nOut;
       }
-      return (void*)pBuf;
+      p = (EMemHdr*)pBuf;
+      goto finish_emalloc_raw;
     }
   }
 #else
@@ -597,49 +702,69 @@ void *sqlite3DbMallocRaw(sqlite3 *db, int n){
   }
 #endif
   p = sqlite3Malloc(n);
-  if( !p && db ){
-    db->mallocFailed = 1;
+  if( !p ){
+    if( db ) db->mallocFailed = 1;
+    return 0;
   }
   sqlite3MemdebugSetType(p, MEMTYPE_RECURSIVE |
             ((db && db->lookaside.bEnabled) ? MEMTYPE_DB : MEMTYPE_HEAP));
-  return p;
+
+finish_emalloc_raw:
+  memset(p, 0, sizeof(EMemHdr));
+  setValidEMem(p);
+  return (void*)&p[1];
 }
 
 /*
 ** Resize the block of memory pointed to by p to n bytes. If the
 ** resize fails, set the mallocFailed flag in the connection object.
+**
+** The pOld memory block must not be linked into an allocation hierarchy
+** as a child.  It is OK for the allocation to be the root of a hierarchy
+** of allocations; the only restriction is that there must be no other
+** allocations above the pOld allocation in the hierarchy.  To resize 
+** an allocation that is a child within a hierarchy, first
+** unlink the allocation, resize it, then relink it.  
 */
-void *sqlite3DbRealloc(sqlite3 *db, void *p, int n){
-  void *pNew = 0;
+void *sqlite3DbRealloc(sqlite3 *db, void *pOld, int n){
+  EMemHdr *p = (EMemHdr*)pOld;
+  EMemHdr *pNew = 0;
   assert( db!=0 );
   assert( sqlite3_mutex_held(db->mutex) );
   if( db->mallocFailed==0 ){
     if( p==0 ){
       return sqlite3DbMallocRaw(db, n);
     }
+    p--;
+    assert( isValidEMem(p) );    /* pOld obtained from extended allocator */
+    assert( !isChildEMem(p) );   /* pOld must not be a child allocation */
     if( isLookaside(db, p) ){
-      if( n<=db->lookaside.sz ){
-        return p;
+      if( n+sizeof(EMemHdr)<=db->lookaside.sz ){
+        return pOld;
       }
       pNew = sqlite3DbMallocRaw(db, n);
       if( pNew ){
-        memcpy(pNew, p, db->lookaside.sz);
-        sqlite3DbFree(db, p);
+        memcpy(pNew-1, p, db->lookaside.sz);
+        setValidEMem(pNew-1);
+        sqlite3DbFree(db, pOld);
       }
     }else{
       assert( sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
       assert( sqlite3MemdebugHasType(p, MEMTYPE_DB|MEMTYPE_HEAP) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
-      pNew = sqlite3_realloc(p, n);
+      pNew = sqlite3_realloc(p, n+sizeof(EMemHdr));
       if( !pNew ){
         sqlite3MemdebugSetType(p, MEMTYPE_RECURSIVE|MEMTYPE_HEAP);
         db->mallocFailed = 1;
+      }else{
+        sqlite3MemdebugSetType(pNew, MEMTYPE_RECURSIVE | 
+              (db->lookaside.bEnabled ? MEMTYPE_DB : MEMTYPE_HEAP));
+        setValidEMem(pNew);
+        pNew++;
       }
-      sqlite3MemdebugSetType(pNew, MEMTYPE_RECURSIVE | 
-            (db->lookaside.bEnabled ? MEMTYPE_DB : MEMTYPE_HEAP));
     }
   }
-  return pNew;
+  return (void*)pNew;
 }
 
 /*
@@ -689,6 +814,53 @@ char *sqlite3DbStrNDup(sqlite3 *db, const char *z, int n){
   }
   return zNew;
 }
+
+/*
+** Link extended allocation nodes such that deallocating the parent
+** causes the child to be automatically deallocated.
+*/
+void sqlite3MemLink(void *pParentObj, void *pChildObj){
+  EMemHdr *pParent = (EMemHdr*)pParentObj;
+  EMemHdr *pChild = (EMemHdr*)pChildObj;
+  if( pParent && pChild ){
+    pParent--;
+    assert( isValidEMem(pParent) );  /* pParentObj is an extended allocation */ 
+    pChild--;
+    assert( isValidEMem(pChild) );   /* pChildObj is an extended allocation */
+    assert( !isChildEMem(pChild) );  /* pChildObj not a child of another obj */
+    pChild->pESibling = pParent->pEChild;
+    pParent->pEChild = pChild;
+    setChildEMem(pChild);
+  }
+}
+
+/*
+** pChildObj is a child object of pParentObj due to a prior call
+** to sqlite3MemLink().  This routine breaks that linkage, making
+** pChildObj an independent node that is not a child of any other node.
+*/
+void sqlite3MemUnlink(void *pParentObj, void *pChildObj){
+  EMemHdr *pParent = (EMemHdr*)pParentObj;
+  EMemHdr *pChild = (EMemHdr*)pChildObj;
+  EMemHdr **pp;
+
+  assert( pParentObj!=0 );
+  assert( pChildObj!=0 );
+  pParent--;
+  assert( isValidEMem(pParent) );  /* pParentObj is an extended allocation */ 
+  pChild--;
+  assert( isValidEMem(pChild) );   /* pChildObj is an extended allocation */
+  assert( isChildEMem(pChild) );   /* pChildObj a child of something */
+  for(pp=&pParent->pEChild; (*pp)!=pChild; pp = &(*pp)->pESibling){
+    assert( *pp );                /* pChildObj is a child of pParentObj */
+    assert( isValidEMem(*pp) );   /* All children of pParentObj are valid */
+    assert( isChildEMem(*pp) );   /* All children of pParentObj are children */
+  }
+  *pp = pChild->pESibling;
+  pChild->pESibling = 0;
+  clearChildEMem(pChild);
+}
+
 
 /*
 ** Create a string from the zFromat argument and the va_list that follows.
