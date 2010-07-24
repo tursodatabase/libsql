@@ -349,7 +349,6 @@ static void freeIndex(sqlite3 *db, Index *p){
 #ifndef SQLITE_OMIT_ANALYZE
   sqlite3DeleteIndexSamples(p);
 #endif
-  sqlite3DbFree(db, p->zColAff);
   sqlite3DbFree(db, p);
 }
 
@@ -524,7 +523,6 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   */
   sqliteResetColumnNames(db, pTable);
   sqlite3DbFree(db, pTable->zName);
-  sqlite3DbFree(db, pTable->zColAff);
   sqlite3SelectDelete(db, pTable->pSelect);
 #ifndef SQLITE_OMIT_CHECK
   sqlite3ExprDelete(db, pTable->pCheck);
@@ -2813,10 +2811,7 @@ Index *sqlite3CreateIndex(
 
   /* Clean up before exiting */
 exit_create_index:
-  if( pIndex ){
-    sqlite3DbFree(db, pIndex->zColAff);
-    sqlite3DbFree(db, pIndex);
-  }
+  sqlite3DbFree(db, pIndex);
   sqlite3ExprListDelete(db, pList);
   sqlite3SrcListDelete(db, pTblName);
   sqlite3DbFree(db, zName);

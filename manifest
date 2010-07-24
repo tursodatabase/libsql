@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sinfrastructure\sto\ssupport\sa\shierarchy\sof\smemory\sallocations\swith\nautomatic\sdeallocation\sof\ssubstructure.
-D 2010-07-24T18:25:21
+C Additional\smalloc\ssanity\schanges.\s\sUse\ssqlite3MemLink()\son\sIndex.zColAff\sand\nTable.zColAff\sas\sa\sproof\sof\sconcept.
+D 2010-07-24T19:08:13
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -119,7 +119,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c ed454f53f7bf7fb89c7a89f93fa93c5cd35e7aae
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
-F src/build.c 6d3bd01296ac236f50519ec74711a38c8cee4fd7
+F src/build.c 216e3635a8f675d86f1c102534b9ef05ae27be82
 F src/callback.c da3c38d0ef5d7f04fae371e519bda61aa9cb1704
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
@@ -133,13 +133,13 @@ F src/global.c 02335177cf6946fe5525c6f0755cf181140debf3
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c ba455ebb100283ccc5da03da3498fcbca48ce6bb
+F src/insert.c e21574be131ce9912a85b4f9f30465d7e0825536
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 2dbc736554431cc0efde4984fe07ae7a09d50001
+F src/malloc.c 4ab52050d99528b0d7d7109df3438346eee9c61c
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 716e62689d49b01ee742be6c745b1c3bbfbccd18
@@ -233,7 +233,7 @@ F src/vtab.c 838248ec64b1eda7afdf9303df30e8f1b96bc60f
 F src/wal.c 0925601f3299c2941a67c9cfff41ee710f70ca82
 F src/wal.h 906c85760598b18584921fe08008435aa4eeeeb2
 F src/walker.c 3112bb3afe1d85dc52317cb1d752055e9a781f8f
-F src/where.c 79202ca81e740eeb1f54512147e29b6c518d84ca
+F src/where.c 8cf9ca6fff115d29f578e282edc72fa0f028864b
 F test/aggerror.test a867e273ef9e3d7919f03ef4f0e8c0d2767944f2
 F test/alias.test 4529fbc152f190268a15f9384a5651bbbabc9d87
 F test/all.test 6745008c144bd2956d58864d21f7b304689c1cce
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P ac1f37a647e9ed1c00a901d26d9956a86c40117a
-R 8200e036f2297f3649990254ca64df15
+P 48ef221c28ceaeb11427d9fe3049aa16249d466e
+R 32338a1f34513b853c12a700e9047211
 U drh
-Z e772520594cdb03d289dcb1d7543238f
+Z 4d4eddfc2c83d359d3776863df1232ad
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMSzAVoxKgR168RlERArS9AJ9M/k0LPViOCHCXlKtw4x3doAYAbwCdHEUq
-R1H3Xkn1TDNmQFgxUCzSKtI=
-=NT+f
+iD8DBQFMSzoioxKgR168RlERArlYAJ9mL1s/uk/lQ08E8yNlsC0CIXElUQCeNRTU
+xF13RI4V3Pr7PzVNeUBhJFE=
+=4aJd
 -----END PGP SIGNATURE-----

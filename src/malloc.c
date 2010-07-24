@@ -546,15 +546,23 @@ void sqlite3_free(void *p){
 /*
 ** Free memory that might be associated with a particular database
 ** connection.  All child allocations are also freed.
+**
+** pObj must be a top-level allocation in the heirarchy.  It is not
+** allowed to delete a child allocation since that would leave a
+** dangling child pointer in the parent.
 */
 void sqlite3DbFree(sqlite3 *db, void *pObj){
   EMemHdr *p = (EMemHdr*)pObj;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
   if( p ) p--;
+  assert( p==0 || !isChildEMem(p) );  /* pObj is not child allocation */
   while( p ){
     EMemHdr *pNext = p->pESibling;
-    assert( isValidEMem(p) );
-    if( p->pEChild ) sqlite3DbFree(db, (void*)&p->pEChild[1]);
+    assert( isValidEMem(p) );   /* pObj and all siblings are valid */
+    if( p->pEChild ){
+      clearChildEMem(p->pEChild);
+      sqlite3DbFree(db, (void*)&p->pEChild[1]);
+    }
     if( isLookaside(db, p) ){
       LookasideSlot *pBuf = (LookasideSlot*)p;
       clearValidEMem(p);

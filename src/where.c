@@ -3805,10 +3805,7 @@ static void whereInfoFree(sqlite3 *db, WhereInfo *pWInfo){
       }
       if( pWInfo->a[i].plan.wsFlags & WHERE_TEMP_INDEX ){
         Index *pIdx = pWInfo->a[i].plan.u.pIdx;
-        if( pIdx ){
-          sqlite3DbFree(db, pIdx->zColAff);
-          sqlite3DbFree(db, pIdx);
-        }
+        sqlite3DbFree(db, pIdx);
       }
     }
     whereClauseClear(pWInfo->pWC);
