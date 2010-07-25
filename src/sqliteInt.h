@@ -3121,6 +3121,10 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 ** sqlite3MemdebugHasType() returns true if any of the bits in its second
 ** argument match the type set by the previous sqlite3MemdebugSetType().
 ** sqlite3MemdebugHasType() is intended for use inside assert() statements.
+**
+** sqlite3MemdebugNoType() returns true if none of the bits in its second
+** argument match the type set by the previous sqlite3MemdebugSetType().
+**
 ** For example:
 **
 **     assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
@@ -3139,9 +3143,11 @@ SQLITE_EXTERN void (*sqlite3IoTrace)(const char*,...);
 #ifdef SQLITE_MEMDEBUG
   void sqlite3MemdebugSetType(void*,u8);
   int sqlite3MemdebugHasType(void*,u8);
+  int sqlite3MemdebugNoType(void*,u8);
 #else
 # define sqlite3MemdebugSetType(X,Y)  /* no-op */
 # define sqlite3MemdebugHasType(X,Y)  1
+# define sqlite3MemdebugNoType(X,Y)   1
 #endif
 #define MEMTYPE_HEAP      0x01    /* General heap allocations */
 #define MEMTYPE_DB        0x02    /* Associated with a database connection */

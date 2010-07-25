@@ -408,6 +408,27 @@ int sqlite3MemdebugHasType(void *p, u8 eType){
   return rc;
 }
  
+/*
+** Return TRUE if the mask of type in eType matches no bits of the type of the
+** allocation p.  Also return true if p==NULL.
+**
+** This routine is designed for use within an assert() statement, to
+** verify the type of an allocation.  For example:
+**
+**     assert( sqlite3MemdebugNoType(p, MEMTYPE_DB) );
+*/
+int sqlite3MemdebugNoType(void *p, u8 eType){
+  int rc = 1;
+  if( p ){
+    struct MemBlockHdr *pHdr;
+    pHdr = sqlite3MemsysGetHeader(p);
+    assert( pHdr->iForeGuard==FOREGUARD );         /* Allocation is valid */
+    if( (pHdr->eType&eType)!=0 ){
+      rc = 0;
+    }
+  }
+  return rc;
+}
 
 /*
 ** Set the number of backtrace levels kept for each allocation.

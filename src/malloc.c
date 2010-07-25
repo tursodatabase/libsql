@@ -82,13 +82,15 @@ struct EMemHdr {
 # define setValidEMem(E)    (E)->iEMemMagic = 0xc0a43fad
 # define clearValidEMem(E)  (E)->iEMemMagic = 0x12345678
 # define isChildEMem(E)     ((E)->isAChild!=0)
+# define notChildEMem(E)    ((E)->isAChild==0)
 # define setChildEMem(E)    (E)->isAChild = 1
 # define clearChildEMem(E)  (E)->isAChild = 0
 #else
-# define isValidEMem(E)
+# define isValidEMem(E)     1
 # define setValidEMem(E)
 # define clearValidEMem(E)
-# define isChildEMem(E)
+# define isChildEMem(E)     1
+# define notChildEMem(E)    1
 # define setChildEMem(E)
 # define clearChildEMem(E)
 #endif
@@ -450,7 +452,7 @@ void sqlite3ScratchFree(void *p){
            || p<sqlite3GlobalConfig.pScratch
            || p>=(void*)mem0.aScratchFree ){
       assert( sqlite3MemdebugHasType(p, MEMTYPE_SCRATCH) );
-      assert( !sqlite3MemdebugHasType(p, ~MEMTYPE_SCRATCH) );
+      assert( sqlite3MemdebugNoType(p, ~MEMTYPE_SCRATCH) );
       sqlite3MemdebugSetType(p, MEMTYPE_HEAP);
       if( sqlite3GlobalConfig.bMemstat ){
         int iSize = sqlite3MallocSize(p);
@@ -506,7 +508,7 @@ static int isLookaside(sqlite3 *db, void *p){
 */
 int sqlite3MallocSize(void *p){
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
-  assert( !sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
+  assert( sqlite3MemdebugNoType(p, MEMTYPE_RECURSIVE) );
   return sqlite3GlobalConfig.m.xSize(p);
 }
 int sqlite3DbMallocSize(sqlite3 *db, void *pObj){
@@ -531,7 +533,7 @@ int sqlite3DbMallocSize(sqlite3 *db, void *pObj){
 */
 void sqlite3_free(void *p){
   if( p==0 ) return;
-  assert( !sqlite3MemdebugHasType(p, MEMTYPE_RECURSIVE) );
+  assert( sqlite3MemdebugNoType(p, MEMTYPE_RECURSIVE) );
   assert( sqlite3MemdebugHasType(p, MEMTYPE_HEAP) );
   if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
@@ -555,7 +557,7 @@ void sqlite3DbFree(sqlite3 *db, void *pObj){
   EMemHdr *p = (EMemHdr*)pObj;
   assert( db==0 || sqlite3_mutex_held(db->mutex) );
   if( p ) p--;
-  assert( p==0 || !isChildEMem(p) );  /* pObj is not child allocation */
+  assert( p==0 || notChildEMem(p) );  /* pObj is not child allocation */
   while( p ){
     EMemHdr *pNext = p->pESibling;
     assert( isValidEMem(p) );   /* pObj and all siblings are valid */
@@ -613,7 +615,7 @@ void *sqlite3Realloc(void *pOld, int nBytes){
       sqlite3MallocAlarm(nNew-nOld);
     }
     assert( sqlite3MemdebugHasType(pOld, MEMTYPE_HEAP) );
-    assert( !sqlite3MemdebugHasType(pOld, ~MEMTYPE_HEAP) );
+    assert( sqlite3MemdebugNoType(pOld, ~MEMTYPE_HEAP) );
     pNew = sqlite3GlobalConfig.m.xRealloc(pOld, nNew);
     if( pNew==0 && mem0.alarmCallback ){
       sqlite3MallocAlarm(nBytes);
@@ -769,7 +771,7 @@ void *sqlite3DbRealloc(sqlite3 *db, void *pOld, int n){
     }
     p--;
     assert( isValidEMem(p) );    /* pOld obtained from extended allocator */
-    assert( !isChildEMem(p) );   /* pOld must not be a child allocation */
+    assert( notChildEMem(p) );   /* pOld must not be a child allocation */
     if( isLookaside(db, p) ){
       if( n+sizeof(EMemHdr)<=db->lookaside.sz ){
         return pOld;
@@ -859,7 +861,7 @@ void sqlite3MemLink(void *pParentObj, void *pChildObj){
     assert( isValidEMem(pParent) );  /* pParentObj is an extended allocation */ 
     pChild--;
     assert( isValidEMem(pChild) );   /* pChildObj is an extended allocation */
-    assert( !isChildEMem(pChild) );  /* pChildObj not a child of another obj */
+    assert( notChildEMem(pChild) );  /* pChildObj not a child of another obj */
     pChild->pESibling = pParent->pEChild;
     pParent->pEChild = pChild;
     setChildEMem(pChild);
