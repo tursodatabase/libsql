@@ -67,12 +67,11 @@ const char *sqlite3IndexAffinityStr(Vdbe *v, Index *pIdx){
     int n;
     Table *pTab = pIdx->pTable;
     sqlite3 *db = sqlite3VdbeDb(v);
-    pIdx->zColAff = (char *)sqlite3DbMallocRaw(0, pIdx->nColumn+2);
+    pIdx->zColAff = (char *)sqlite3DbMallocRawChild(0, pIdx->nColumn+2, pIdx);
     if( !pIdx->zColAff ){
       db->mallocFailed = 1;
       return 0;
     }
-    sqlite3MemLink(pIdx, pIdx->zColAff);
     for(n=0; n<pIdx->nColumn; n++){
       pIdx->zColAff[n] = pTab->aCol[pIdx->aiColumn[n]].affinity;
     }
@@ -110,12 +109,11 @@ void sqlite3TableAffinityStr(Vdbe *v, Table *pTab){
     int i;
     sqlite3 *db = sqlite3VdbeDb(v);
 
-    zColAff = (char *)sqlite3DbMallocRaw(0, pTab->nCol+1);
+    zColAff = (char *)sqlite3DbMallocRawChild(0, pTab->nCol+1, pTab);
     if( !zColAff ){
       db->mallocFailed = 1;
       return;
     }
-    sqlite3MemLink(pTab, zColAff);
     for(i=0; i<pTab->nCol; i++){
       zColAff[i] = pTab->aCol[i].affinity;
     }

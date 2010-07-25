@@ -654,7 +654,7 @@ void *sqlite3MallocZero(int n){
 }
 
 /*
-** Allocate and zero memory.  If the allocation fails, make
+** Allocate and zero memory.  If the allocation fails, set
 ** the mallocFailed flag in the connection pointer.
 */
 void *sqlite3DbMallocZero(sqlite3 *db, int n){
@@ -664,6 +664,21 @@ void *sqlite3DbMallocZero(sqlite3 *db, int n){
   }
   return p;
 }
+
+/*
+** Allocate and zero memory child memory.  If the allocation fails, set
+** the mallocFailed flag in the connection pointer.
+*/
+void *sqlite3DbMallocZeroChild(sqlite3 *db, int n, void *pParent){
+  void *p = sqlite3DbMallocRaw(db, n);
+  if( p ){
+    memset(p, 0, n);
+    sqlite3MemLink(pParent, p);
+  }
+  return p;
+}
+
+
 
 /*
 ** Allocate and zero memory.  If the allocation fails, make
@@ -721,6 +736,15 @@ finish_emalloc_raw:
   memset(p, 0, sizeof(EMemHdr));
   setValidEMem(p);
   return (void*)&p[1];
+}
+
+/*
+** A convenience wrapper around sqlite3DbMallocRaw() and sqlite3MemLink().
+*/
+void *sqlite3DbMallocRawChild(sqlite3 *db, int n, void *pParent){
+  void *p = sqlite3DbMallocRaw(db, n);
+  sqlite3MemLink(pParent, p);
+  return p;
 }
 
 /*

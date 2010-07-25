@@ -487,28 +487,6 @@ static int analysisLoader(void *pData, int argc, char **argv, char **NotUsed){
 }
 
 /*
-** If the Index.aSample variable is not NULL, delete the aSample[] array
-** and its contents.
-*/
-void sqlite3DeleteIndexSamples(Index *pIdx){
-#ifdef SQLITE_ENABLE_STAT2
-  if( pIdx->aSample ){
-    int j;
-    for(j=0; j<SQLITE_INDEX_SAMPLES; j++){
-      IndexSample *p = &pIdx->aSample[j];
-      if( p->eType==SQLITE_TEXT || p->eType==SQLITE_BLOB ){
-        sqlite3_free(p->u.z);
-      }
-    }
-    sqlite3DbFree(0, pIdx->aSample);
-    pIdx->aSample = 0;
-  }
-#else
-  UNUSED_PARAMETER(pIdx);
-#endif
-}
-
-/*
 ** Load the content of the sqlite_stat1 and sqlite_stat2 tables. The
 ** contents of sqlite_stat1 are used to populate the Index.aiRowEst[]
 ** arrays. The contents of sqlite_stat2 are used to populate the
@@ -542,7 +520,11 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
   for(i=sqliteHashFirst(&db->aDb[iDb].pSchema->idxHash);i;i=sqliteHashNext(i)){
     Index *pIdx = sqliteHashData(i);
     sqlite3DefaultRowEst(pIdx);
-    sqlite3DeleteIndexSamples(pIdx);
+    if( pIdx->aSample ){
+      sqlite3MemUnlink(pIdx, pIdx->aSample);
+      sqlite3DbFree(db, pIdx->aSample);
+      pIdx->aSample = 0;
+    }
   }
 
   /* Check to make sure the sqlite_stat1 table exists */
@@ -588,20 +570,20 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
           int iSample = sqlite3_column_int(pStmt, 1);
           if( iSample<SQLITE_INDEX_SAMPLES && iSample>=0 ){
             int eType = sqlite3_column_type(pStmt, 2);
+            IndexSample *aSample = pIdx->aSample;
 
-            if( pIdx->aSample==0 ){
+            if( aSample==0 ){
               static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3DbMallocRaw(0, sz);
-              if( pIdx->aSample==0 ){
+              pIdx->aSample = aSample = sqlite3DbMallocZeroChild(0, sz, pIdx);
+              if( aSample==0 ){
                 db->mallocFailed = 1;
                 break;
               }
-	      memset(pIdx->aSample, 0, sz);
             }
-
-            assert( pIdx->aSample );
+  
+            assert( aSample );
             {
-              IndexSample *pSample = &pIdx->aSample[iSample];
+              IndexSample *pSample = &aSample[iSample];
               pSample->eType = (u8)eType;
               if( eType==SQLITE_INTEGER || eType==SQLITE_FLOAT ){
                 pSample->u.r = sqlite3_column_double(pStmt, 2);
@@ -619,9 +601,10 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( n < 1){
                   pSample->u.z = 0;
                 }else{
-                  pSample->u.z = sqlite3Malloc(n);
-                  if( pSample->u.z ){
-                    memcpy(pSample->u.z, z, n);
+                  char *zSample;
+                  pSample->u.z = zSample = sqlite3DbMallocRawChild(0,n,aSample);
+                  if( zSample ){
+                    memcpy(zSample, z, n);
                   }else{
                     db->mallocFailed = 1;
                     break;

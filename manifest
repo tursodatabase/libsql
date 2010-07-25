@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Additional\smalloc\ssanity\schanges.\s\sUse\ssqlite3MemLink()\son\sIndex.zColAff\sand\nTable.zColAff\sas\sa\sproof\sof\sconcept.
-D 2010-07-24T19:08:13
+C Further\sexamples\sof\susing\sautomatic\sdeallocation\sto\sreplace\s"delete"\smethods.
+D 2010-07-25T02:12:51
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -109,8 +109,8 @@ F spec.template 86a4a43b99ebb3e75e6b9a735d5fd293a24e90ca
 F sqlite.pc.in 42b7bf0d02e08b9e77734a47798d1a55a9e0716b
 F sqlite3.1 6be1ad09113570e1fc8dcaff84c9b0b337db5ffc
 F sqlite3.pc.in ae6f59a76e862f5c561eb32a380228a02afc3cad
-F src/alter.c 8dc27638e7e2553e80b2b621f232be5eb1e85ef3
-F src/analyze.c c1bcd04b720e3300edafcdfe8bd2ba6bd9a8dca8
+F src/alter.c 2b9a10affb4d202d51473faee831bb269b1d6dd7
+F src/analyze.c c949a108d1dc43ca12bdd9a5c7f1ffde11e3061d
 F src/attach.c 17bec1f18254d9341369f20f90ba24ce35d20d10
 F src/auth.c 523da7fb4979469955d822ff9298352d6b31de34
 F src/backup.c 51d83300fe0baee39405c416ceb19a58ed30a8ed
@@ -119,7 +119,7 @@ F src/btmutex.c 96a12f50f7a17475155971a241d85ec5171573ff
 F src/btree.c ed454f53f7bf7fb89c7a89f93fa93c5cd35e7aae
 F src/btree.h dd83041eda10c17daf023257c1fc883b5f71f85a
 F src/btreeInt.h b0c87f6725b06a0aa194a6d25d54b16ce9d6e291
-F src/build.c 216e3635a8f675d86f1c102534b9ef05ae27be82
+F src/build.c b4f3c9ba159a4c6e3f6ba6b254f2b560d0fb7a44
 F src/callback.c da3c38d0ef5d7f04fae371e519bda61aa9cb1704
 F src/complete.c dc1d136c0feee03c2f7550bafc0d29075e36deac
 F src/ctime.c 4f3aadad62c6c9f0d4e5a96718516ac4e3c598df
@@ -133,13 +133,13 @@ F src/global.c 02335177cf6946fe5525c6f0755cf181140debf3
 F src/hash.c 458488dcc159c301b8e7686280ab209f1fb915af
 F src/hash.h 2894c932d84d9f892d4b4023a75e501f83050970
 F src/hwtime.h d32741c8f4df852c7d959236615444e2b1063b08
-F src/insert.c e21574be131ce9912a85b4f9f30465d7e0825536
+F src/insert.c 45d9a637f3ede400339f916d841b3e27bd16827e
 F src/journal.c 552839e54d1bf76fb8f7abe51868b66acacf6a0e
 F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 4ab52050d99528b0d7d7109df3438346eee9c61c
+F src/malloc.c a7e805ed0bd140b9b3110cee6fffe70b2361c7a3
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 716e62689d49b01ee742be6c745b1c3bbfbccd18
@@ -171,11 +171,11 @@ F src/printf.c 8ae5082dd38a1b5456030c3755ec3a392cd51506
 F src/random.c cd4a67b3953b88019f8cd4ccd81394a8ddfaba50
 F src/resolve.c 1c0f32b64f8e3f555fe1f732f9d6f501a7f05706
 F src/rowset.c 69afa95a97c524ba6faf3805e717b5b7ae85a697
-F src/select.c 74fef1334bec27e606ef0b19e5c41cd0a639e69c
+F src/select.c b0fec59c8bb5246be793baa40b0518041837cc12
 F src/shell.c fd4ccdb37c3b68de0623eb938a649e0990710714
 F src/sqlite.h.in 2585fc82c922f2772e201e60a76d5fd1ca18370e
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
-F src/sqliteInt.h 2e5a9ae356ea10b65922c720fb2de0e95293a0f2
+F src/sqliteInt.h 0431c9cd9a4158811d4c15dd362c3cae5ecb75da
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
 F src/status.c e2ad9f18c16209dab501e26020590fcebb2b751b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 48ef221c28ceaeb11427d9fe3049aa16249d466e
-R 32338a1f34513b853c12a700e9047211
+P e5ecb15984e433b102e82eadb127d50ba2dc2ce3
+R a33d59e84cff2f0b84bd9d9458cba780
 U drh
-Z 4d4eddfc2c83d359d3776863df1232ad
+Z b0d2c45f9a50710478f7169e725e5290
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMSzoioxKgR168RlERArlYAJ9mL1s/uk/lQ08E8yNlsC0CIXElUQCeNRTU
-xF13RI4V3Pr7PzVNeUBhJFE=
-=4aJd
+iD8DBQFMS52moxKgR168RlERAidqAJ4wHohDl6Iox9qRr6lkRAJPtN4DEwCfUboT
+TLoFiPNTB9PUW0R9U0mj5LI=
+=EF4M
 -----END PGP SIGNATURE-----

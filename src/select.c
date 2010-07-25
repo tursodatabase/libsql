@@ -1268,11 +1268,13 @@ static void selectAddColumnTypeAndCollation(
   for(i=0, pCol=aCol; i<nCol; i++, pCol++){
     p = a[i].pExpr;
     pCol->zType = sqlite3DbStrDup(db, columnType(&sNC, p, 0, 0, 0));
+    sqlite3MemLink(aCol, pCol->zType);
     pCol->affinity = sqlite3ExprAffinity(p);
     if( pCol->affinity==0 ) pCol->affinity = SQLITE_AFF_NONE;
     pColl = sqlite3ExprCollSeq(pParse, p);
     if( pColl ){
       pCol->zColl = sqlite3DbStrDup(db, pColl->zName);
+      sqlite3MemLink(aCol, pCol->zColl);
     }
   }
 }
@@ -3097,6 +3099,7 @@ static int selectExpander(Walker *pWalker, Select *p){
       if( pTab==0 ) return WRC_Abort;
       pTab->nRef = 1;
       pTab->zName = sqlite3MPrintf(db, "sqlite_subquery_%p_", (void*)pTab);
+      sqlite3MemLink(pTab, pTab->zName);
       while( pSel->pPrior ){ pSel = pSel->pPrior; }
       selectColumnsFromExprList(pParse, pSel->pEList, &pTab->nCol, &pTab->aCol);
       pTab->iPKey = -1;

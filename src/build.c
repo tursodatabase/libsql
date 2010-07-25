@@ -346,9 +346,6 @@ Index *sqlite3FindIndex(sqlite3 *db, const char *zName, const char *zDb){
 ** Reclaim the memory used by an index
 */
 static void freeIndex(sqlite3 *db, Index *p){
-#ifndef SQLITE_OMIT_ANALYZE
-  sqlite3DeleteIndexSamples(p);
-#endif
   sqlite3DbFree(db, p);
 }
 
@@ -477,9 +474,6 @@ static void sqliteResetColumnNames(sqlite3 *db, Table *pTable){
     for(i=0; i<pTable->nCol; i++, pCol++){
       sqlite3DbFree(db, pCol->zName);
       sqlite3ExprDelete(db, pCol->pDflt);
-      sqlite3DbFree(db, pCol->zDflt);
-      sqlite3DbFree(db, pCol->zType);
-      sqlite3DbFree(db, pCol->zColl);
     }
     sqlite3DbFree(db, pTable->aCol);
   }
@@ -522,7 +516,6 @@ void sqlite3DeleteTable(sqlite3 *db, Table *pTable){
   /* Delete the Table structure itself.
   */
   sqliteResetColumnNames(db, pTable);
-  sqlite3DbFree(db, pTable->zName);
   sqlite3SelectDelete(db, pTable->pSelect);
 #ifndef SQLITE_OMIT_CHECK
   sqlite3ExprDelete(db, pTable->pCheck);
@@ -811,6 +804,7 @@ void sqlite3StartTable(
     goto begin_table_error;
   }
   pTable->zName = zName;
+  sqlite3MemLink(pTable, zName);
   pTable->iPKey = -1;
   pTable->pSchema = db->aDb[iDb].pSchema;
   pTable->nRef = 1;
@@ -943,7 +937,7 @@ void sqlite3AddColumn(Parse *pParse, Token *pName){
   }
   if( (p->nCol & 0x7)==0 ){
     Column *aNew;
-    aNew = sqlite3DbRealloc(db,p->aCol,(p->nCol+8)*sizeof(p->aCol[0]));
+    aNew = sqlite3DbRealloc(db, p->aCol, (p->nCol+8)*sizeof(p->aCol[0]));
     if( aNew==0 ){
       sqlite3DbFree(db, z);
       return;
@@ -1054,6 +1048,7 @@ void sqlite3AddColumnType(Parse *pParse, Token *pType){
   pCol = &p->aCol[p->nCol-1];
   assert( pCol->zType==0 );
   pCol->zType = sqlite3NameFromToken(pParse->db, pType);
+  sqlite3MemLink(p->aCol, pCol->zType);
   pCol->affinity = sqlite3AffinityType(pCol->zType);
 }
 
@@ -1084,9 +1079,9 @@ void sqlite3AddDefaultValue(Parse *pParse, ExprSpan *pSpan){
       */
       sqlite3ExprDelete(db, pCol->pDflt);
       pCol->pDflt = sqlite3ExprDup(db, pSpan->pExpr, EXPRDUP_REDUCE);
-      sqlite3DbFree(db, pCol->zDflt);
       pCol->zDflt = sqlite3DbStrNDup(db, (char*)pSpan->zStart,
                                      (int)(pSpan->zEnd - pSpan->zStart));
+      sqlite3MemLink(p->aCol, pCol->zDflt);
     }
   }
   sqlite3ExprDelete(db, pSpan->pExpr);
@@ -1209,6 +1204,7 @@ void sqlite3AddCollateType(Parse *pParse, Token *pToken){
   if( sqlite3LocateCollSeq(pParse, zColl) ){
     Index *pIdx;
     p->aCol[i].zColl = zColl;
+    sqlite3MemLink(p->aCol, zColl);
   
     /* If the column is declared as "<name> PRIMARY KEY COLLATE <type>",
     ** then an index may have been created on this column before the
