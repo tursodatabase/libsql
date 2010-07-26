@@ -138,6 +138,11 @@ int sqlite3_db_status(
       break;
     }
 
+    /*
+    ** *pCurrent gets an accurate estimate of the amount of memory used
+    ** to store the schema for all databases (main, temp, and any ATTACHed
+    ** databases.  *pHighwater is set to zero.
+    */
     case SQLITE_DBSTATUS_SCHEMA_USED: {
       int i;                      /* Used to iterate through schemas */
       int nByte = 0;              /* Used to accumulate return value */
@@ -175,6 +180,11 @@ int sqlite3_db_status(
       break;
     }
 
+    /*
+    ** *pCurrent gets an accurate estimate of the amount of memory used
+    ** to store all prepared statements.
+    ** *pHighwater is set to zero.
+    */
     case SQLITE_DBSTATUS_STMT_USED: {
       struct Vdbe *pVdbe;         /* Used to iterate through VMs */
       int nByte = 0;              /* Used to accumulate return value */

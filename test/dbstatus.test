@@ -50,7 +50,7 @@ proc lookaside {db} {
 }
 
 #---------------------------------------------------------------------------
-# Run the dbstatus-2 and dbstatus-3 tests with a couple of different
+# Run the dbstatus-2 and dbstatus-3 tests with several of different
 # lookaside buffer sizes.
 #
 foreach ::lookaside_buffer_size {0 64 120} {
