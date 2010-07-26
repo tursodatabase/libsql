@@ -147,7 +147,6 @@ int sqlite3_db_status(
       int i;                      /* Used to iterate through schemas */
       int nByte = 0;              /* Used to accumulate return value */
 
-      assert( db->pSubProgram==0 );
       db->pnBytesFreed = &nByte;
       for(i=0; i<db->nDb; i++){
 	Schema *pSchema = db->aDb[i].pSchema;
