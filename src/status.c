@@ -150,8 +150,8 @@ int sqlite3_db_status(
       db->pnBytesFreed = &nByte;
       for(i=0; i<db->nDb; i++){
         Schema *pSchema = db->aDb[i].pSchema;
-        if( pSchema ){
-            HashElem *p;
+        if( ALWAYS(pSchema!=0) ){
+          HashElem *p;
 
           nByte += sqlite3GlobalConfig.m.xRoundup(sizeof(HashElem)) * (
               pSchema->tblHash.count 

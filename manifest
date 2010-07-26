@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\sthe\sSQLITE_STATUS_MALLOC_COUNT\soption\sfor\ssqlite3_status().
-D 2010-07-26T18:43:41
+C Fix\sa\sbug\sin\sthe\sSQLITE_STATUS_MALLOC_COUNT\scounter.\s\sAdd\san\sALWAYS()\saround\na\scondition\sin\sthe\sSQLITE_DBSTATUS_SCHEMA_USED\slogic\sthat\sis\salways\strue.
+D 2010-07-26T19:09:32
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -139,7 +139,7 @@ F src/legacy.c a199d7683d60cef73089e892409113e69c23a99f
 F src/lempar.c 7f026423f4d71d989e719a743f98a1cbd4e6d99e
 F src/loadext.c 6d422ea91cf3d2d00408c5a8f2391cd458da85f8
 F src/main.c a487fe90aecaccb142e4a6b738c7e26e99145bcd
-F src/malloc.c 52c19b9ea68aaad4e0ab8d0722ec448660e7a151
+F src/malloc.c 19a468460c7df72de245f10c06bd0625777b7c83
 F src/mem0.c 6a55ebe57c46ca1a7d98da93aaa07f99f1059645
 F src/mem1.c 89d4ea8d5cdd55635cbaa48ad53132af6294cbb2
 F src/mem2.c 12c91260fd2320eda9355dea5445b137f848c05b
@@ -177,7 +177,7 @@ F src/sqlite.h.in 5bc6d2d1bc5251b887123b12b67895785ff41a5f
 F src/sqlite3ext.h 69dfb8116af51b84a029cddb3b35062354270c89
 F src/sqliteInt.h a9be6badc6cd6a3c1ae54475a98661cf351ecad5
 F src/sqliteLimit.h 196e2f83c3b444c4548fc1874f52f84fdbda40f3
-F src/status.c f61b49b65fc0c681298e9b123c5ff1fc3f3a5662
+F src/status.c 496913d4e8441195f6f2a75b1c95993a45b9b30b
 F src/table.c 2cd62736f845d82200acfa1287e33feb3c15d62e
 F src/tclsqlite.c ae1e4fb653c91ddad7e2534d209711a12604ccc4
 F src/test1.c ff3b4533fc4d78d1bff2ef831a5791db55096ed3
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P 1d7571e4be6d96aec13cd8b3b7b10b8dc44d19a5
-R 9d00d63ded465dd4ba007fd57cd90c94
+P 8f8e442b3af553753e25c304efa289b626e3a227
+R 5371a85b2515d99b31bc6a1e384719ad
 U drh
-Z 97b8e702c8fc82f2c81b86c540c762cb
+Z 87f1a64358a92f9d6ead03c3021e38e6
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMTddhoxKgR168RlERAjMdAJ9CQU8kCdBo5Cl1oO/prGACkzVGEgCgjc6P
-yq0ZsmI2azw9P5tIzO1YjII=
-=HMXo
+iD8DBQFMTd1voxKgR168RlERAmvEAJ9Dgn0OTr0OmSVFUH3d22Y+JTDFdACeJ8b1
+r/VI49yVB7hY03oBNs8YaCk=
+=iNp6
 -----END PGP SIGNATURE-----
