@@ -607,7 +607,11 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         break;
       }
       case P4_MEM: {
-        sqlite3ValueFree((sqlite3_value*)p4);
+        if( db->pnBytesFreed==0 ){
+          sqlite3ValueFree((sqlite3_value*)p4);
+        }else{
+          sqlite3DbFree(db, ((Mem*)p4)->zMalloc);
+        }
         break;
       }
       case P4_VTAB : {
@@ -989,7 +993,8 @@ static void releaseMemArray(Mem *p, int N){
       for(pEnd=&p[N]; p<pEnd; p++){
         sqlite3DbFree(db, p->zMalloc);
       }
-    }else
+      return;
+    }
     for(pEnd=&p[N]; p<pEnd; p++){
       assert( (&p[1])==pEnd || p[0].db==p[1].db );
 

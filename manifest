@@ -1,8 +1,8 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Make\ssure\ssqlite3_free()\sis\snot\scalled\sfor\sP4_MPRINTF\sduring\sa\ssize\nmeasurement.
-D 2010-07-26T12:38:13
+C Fix\san\sissue\swith\sP4_MEM\sand\sthe\sschema\ssize\smeasurement\slogic.\s\sAlso\sfix\na\scompiler\swarning.
+D 2010-07-26T13:58:00
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
@@ -222,10 +222,10 @@ F src/utf.c 1baeeac91707a4df97ccc6141ec0f808278af685
 F src/util.c 32aebf04c10e51ad3977a928b7416bed671b620b
 F src/vacuum.c 241a8386727c1497eba4955933356dfba6ff8c9f
 F src/vdbe.c cefff41564b68a412e65e6a1013ec1b1c1ece6c4
-F src/vdbe.h e1b91019c807519b8060199f6341ad4255066ae8
+F src/vdbe.h 4de0efb4b0fdaaa900cf419b35c458933ef1c6d2
 F src/vdbeInt.h ffd68c4d4229227a5089bec53a1c635146177abc
 F src/vdbeapi.c dc3138f10afbc95ed3c21dd25abb154504b1db9d
-F src/vdbeaux.c 30fa2472d2a5cff466902cb60d7563132fa88e0d
+F src/vdbeaux.c 7564dc5c50fa28b748f10fa5e5c1e273bd5f5887
 F src/vdbeblob.c 258a6010ba7a82b72b327fb24c55790655689256
 F src/vdbemem.c 5e579abf6532001dfbee0e640dc34eae897a9807
 F src/vdbetrace.c 864cef96919323482ebd9986f2132435115e9cc2
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P c04907e69820bd19f647c5f555327e0058db4e6d
-R c8d2853b53bf3a4ee312052fa3aebfa3
+P 56f11f8823cd06a69eebce6a9613e22b1810b59b
+R 34254bf6f8c3e90782d40aa93cfa271f
 U drh
-Z 0936acd726a9e8014ca3c111b4cd3356
+Z 053e423507811669e6a10059a2d5d2e9
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMTYG4oxKgR168RlERAhQwAJwIMX5vE4H/BJq4TNhZLUQreYATwACeP/OW
-1I5I4Xxua1NJmSm7HroiED4=
-=YZxD
+iD8DBQFMTZRroxKgR168RlERAsS+AJ9MiRO/zfORO0eoZBt1tMKhCsUZ3wCggu8Q
+uWtBYTUhSwjacgrB9Ov6EPA=
+=QK5H
 -----END PGP SIGNATURE-----
