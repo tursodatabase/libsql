@@ -21,8 +21,8 @@
 */
 typedef struct sqlite3StatType sqlite3StatType;
 static SQLITE_WSD struct sqlite3StatType {
-  int nowValue[9];         /* Current value */
-  int mxValue[9];          /* Maximum value */
+  int nowValue[10];         /* Current value */
+  int mxValue[10];          /* Maximum value */
 } sqlite3Stat = { {0,}, {0,} };
 
 

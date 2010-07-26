@@ -251,6 +251,7 @@ static int mallocWithAlarm(int n, void **pp){
   if( p ){
     nFull = sqlite3MallocSize(p);
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, nFull);
+    sqlite3StatusAdd(SQLITE_STATUS_MALLOC_COUNT, 1);
   }
   *pp = p;
   return nFull;
@@ -446,6 +447,7 @@ void sqlite3_free(void *p){
   if( sqlite3GlobalConfig.bMemstat ){
     sqlite3_mutex_enter(mem0.mutex);
     sqlite3StatusAdd(SQLITE_STATUS_MEMORY_USED, -sqlite3MallocSize(p));
+    sqlite3StatusAdd(SQLITE_STATUS_MALLOC_COUNT, -1);
     sqlite3GlobalConfig.m.xFree(p);
     sqlite3_mutex_leave(mem0.mutex);
   }else{
