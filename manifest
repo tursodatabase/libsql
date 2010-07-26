@@ -1,14 +1,14 @@
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-C Add\ssupport\sfor\sSQLITE_DBSTATUS_SCHEMA_USED\sand\sSQLITE_DBSTATUS_STMT_USED\sto\nthe\strunk.
-D 2010-07-26T16:24:36
+C Increase\sthe\sversion\snumber\sto\s3.7.1\sdue\sto\sthe\sAPI\senhancement\sof\sthe\sprevious\ncheck-in.
+D 2010-07-26T16:40:04
 F Makefile.arm-wince-mingw32ce-gcc fcd5e9cd67fe88836360bb4f9ef4cb7f8e2fb5a0
 F Makefile.in ec08dc838fd8110fe24c92e5130bcd91cbb1ff2e
 F Makefile.linux-gcc d53183f4aa6a9192d249731c90dbdffbd2c68654
 F Makefile.vxworks 4314cde20a1d9460ec5083526ea975442306ae7e
 F README cd04a36fbc7ea56932a4052d7d0b7f09f27c33d6
-F VERSION 4dce4379514b12d6bc5c30f7d1f64582ccb4f412
+F VERSION ddbfd1d7e557883fe2fd646cffe46c28cebcff48
 F aclocal.m4 a5c22d164aff7ed549d53a90fa56d56955281f50
 F addopcodes.awk 17dc593f791f874d2c23a0f9360850ded0286531
 F art/2005osaward.gif 0d1851b2a7c1c9d0ccce545f3e14bca42d7fd248
@@ -24,7 +24,7 @@ F art/src_logo.gif 9341ef09f0e53cd44c0c9b6fc3c16f7f3d6c2ad9
 F config.guess 226d9a188c6196f3033ffc651cbc9dcee1a42977
 F config.h.in 868fdb48c028421a203470e15c69ada15b9ba673
 F config.sub 9ebe4c3b3dab6431ece34f16828b594fb420da55
-F configure 009ceb10a7bd768b6460b7b8782eb639063c8899 x
+F configure c7e2aee57206205b4c7c0811b3d055570d95421f x
 F configure.ac 14740970ddb674d92a9f5da89083dff1179014ff
 F contrib/sqlitecon.tcl 210a913ad63f9f991070821e599d600bd913e0ad
 F doc/lemon.html f0f682f50210928c07e562621c3b7e8ab912a538
@@ -841,14 +841,14 @@ F tool/speedtest2.tcl ee2149167303ba8e95af97873c575c3e0fab58ff
 F tool/speedtest8.c 2902c46588c40b55661e471d7a86e4dd71a18224
 F tool/speedtest8inst1.c 293327bc76823f473684d589a8160bde1f52c14e
 F tool/vdbe-compress.tcl d70ea6d8a19e3571d7ab8c9b75cba86d1173ff0f
-P a6bb2108bfb562a7067ef6150e43382736c0c4f5 e327ef37faec52ce99591266160be2ce2d577cc3
-R 2474ec9a0af1eced2c64b9ba3d68389f
+P 008368b2bd1513e2df21c2070548c6fc94abebb1
+R e0e547721eadb5865947ac95d9a5637b
 U drh
-Z 5a91a5a2d31812a0723fa28918b10bce
+Z b2f076ca75f409c11b1173e904fc1e43
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFMTbbHoxKgR168RlERAmMbAJ9JStkug5wbakxYIN2Hn/5hNczpFwCbBgGp
-Zrj4LJf3BjrfWpwh2ejIy1Y=
-=P1qG
+iD8DBQFMTbpnoxKgR168RlERAgRsAKCEDv9PrVdoUqb+GgrX9p308vOjrgCgi4/A
+Wv1UV7AZmSjiGasHOtjRZXM=
+=082N
 -----END PGP SIGNATURE-----
