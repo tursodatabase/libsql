@@ -439,7 +439,7 @@ Schema *sqlite3SchemaGet(sqlite3 *db, Btree *pBt){
   if( pBt ){
     p = (Schema *)sqlite3BtreeSchema(pBt, sizeof(Schema), sqlite3SchemaFree);
   }else{
-    p = (Schema *)sqlite3MallocZero(sizeof(Schema));
+    p = (Schema *)sqlite3DbMallocZero(0, sizeof(Schema));
   }
   if( !p ){
     db->mallocFailed = 1;

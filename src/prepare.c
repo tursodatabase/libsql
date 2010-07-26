@@ -670,7 +670,6 @@ static int sqlite3Prepare(
   while( pParse->pTriggerPrg ){
     TriggerPrg *pT = pParse->pTriggerPrg;
     pParse->pTriggerPrg = pT->pNext;
-    sqlite3VdbeProgramDelete(db, pT->pProgram, 0);
     sqlite3DbFree(db, pT);
   }
 

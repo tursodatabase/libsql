@@ -573,15 +573,17 @@ static void freeEphemeralFunction(sqlite3 *db, FuncDef *pDef){
   }
 }
 
+static void vdbeFreeOpArray(sqlite3 *, Op *, int);
+
 /*
 ** Delete a P4 value if necessary.
 */
 static void freeP4(sqlite3 *db, int p4type, void *p4){
   if( p4 ){
+    assert( db );
     switch( p4type ){
       case P4_REAL:
       case P4_INT64:
-      case P4_MPRINTF:
       case P4_DYNAMIC:
       case P4_KEYINFO:
       case P4_INTARRAY:
@@ -589,10 +591,14 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         sqlite3DbFree(db, p4);
         break;
       }
+      case P4_MPRINTF: {
+        if( db->pnBytesFreed==0 ) sqlite3_free(p4);
+        break;
+      }
       case P4_VDBEFUNC: {
         VdbeFunc *pVdbeFunc = (VdbeFunc *)p4;
         freeEphemeralFunction(db, pVdbeFunc->pFunc);
-        sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
+        if( db->pnBytesFreed==0 ) sqlite3VdbeDeleteAuxData(pVdbeFunc, 0);
         sqlite3DbFree(db, pVdbeFunc);
         break;
       }
@@ -601,15 +607,17 @@ static void freeP4(sqlite3 *db, int p4type, void *p4){
         break;
       }
       case P4_MEM: {
-        sqlite3ValueFree((sqlite3_value*)p4);
+        if( db->pnBytesFreed==0 ){
+          sqlite3ValueFree((sqlite3_value*)p4);
+        }else{
+          Mem *p = (Mem*)p4;
+          sqlite3DbFree(db, p->zMalloc);
+          sqlite3DbFree(db, p);
+        }
         break;
       }
       case P4_VTAB : {
-        sqlite3VtabUnlock((VTable *)p4);
-        break;
-      }
-      case P4_SUBPROGRAM : {
-        sqlite3VdbeProgramDelete(db, (SubProgram *)p4, 1);
+        if( db->pnBytesFreed==0 ) sqlite3VtabUnlock((VTable *)p4);
         break;
       }
     }
@@ -635,34 +643,14 @@ static void vdbeFreeOpArray(sqlite3 *db, Op *aOp, int nOp){
 }
 
 /*
-** Decrement the ref-count on the SubProgram structure passed as the
-** second argument. If the ref-count reaches zero, free the structure.
-**
-** The array of VDBE opcodes stored as SubProgram.aOp is freed if
-** either the ref-count reaches zero or parameter freeop is non-zero.
-**
-** Since the array of opcodes pointed to by SubProgram.aOp may directly
-** or indirectly contain a reference to the SubProgram structure itself.
-** By passing a non-zero freeop parameter, the caller may ensure that all
-** SubProgram structures and their aOp arrays are freed, even when there
-** are such circular references.
+** Link the SubProgram object passed as the second argument into the linked
+** list at Vdbe.pSubProgram. This list is used to delete all sub-program
+** objects when the VM is no longer required.
 */
-void sqlite3VdbeProgramDelete(sqlite3 *db, SubProgram *p, int freeop){
-  if( p ){
-    assert( p->nRef>0 );
-    if( freeop || p->nRef==1 ){
-      Op *aOp = p->aOp;
-      p->aOp = 0;
-      vdbeFreeOpArray(db, aOp, p->nOp);
-      p->nOp = 0;
-    }
-    p->nRef--;
-    if( p->nRef==0 ){
-      sqlite3DbFree(db, p);
-    }
-  }
+void sqlite3VdbeLinkSubProgram(Vdbe *pVdbe, SubProgram *p){
+  p->pNext = pVdbe->pProgram;
+  pVdbe->pProgram = p;
 }
-
 
 /*
 ** Change N opcodes starting at addr to No-ops.
@@ -739,7 +727,7 @@ void sqlite3VdbeChangeP4(Vdbe *p, int addr, const char *zP4, int n){
 
     nField = ((KeyInfo*)zP4)->nField;
     nByte = sizeof(*pKeyInfo) + (nField-1)*sizeof(pKeyInfo->aColl[0]) + nField;
-    pKeyInfo = sqlite3Malloc( nByte );
+    pKeyInfo = sqlite3DbMallocRaw(0, nByte);
     pOp->p4.pKeyInfo = pKeyInfo;
     if( pKeyInfo ){
       u8 *aSortOrder;
@@ -1003,6 +991,12 @@ static void releaseMemArray(Mem *p, int N){
     Mem *pEnd;
     sqlite3 *db = p->db;
     u8 malloc_failed = db->mallocFailed;
+    if( db->pnBytesFreed ){
+      for(pEnd=&p[N]; p<pEnd; p++){
+        sqlite3DbFree(db, p->zMalloc);
+      }
+      return;
+    }
     for(pEnd=&p[N]; p<pEnd; p++){
       assert( (&p[1])==pEnd || p[0].db==p[1].db );
 
@@ -2336,6 +2330,30 @@ void sqlite3VdbeDeleteAuxData(VdbeFunc *pVdbeFunc, int mask){
 }
 
 /*
+** Free all memory associated with the Vdbe passed as the second argument.
+** The difference between this function and sqlite3VdbeDelete() is that
+** VdbeDelete() also unlinks the Vdbe from the list of VMs associated with
+** the database connection.
+*/
+void sqlite3VdbeDeleteObject(sqlite3 *db, Vdbe *p){
+  SubProgram *pSub, *pNext;
+  assert( p->db==0 || p->db==db );
+  releaseMemArray(p->aVar, p->nVar);
+  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
+  for(pSub=p->pProgram; pSub; pSub=pNext){
+    pNext = pSub->pNext;
+    vdbeFreeOpArray(db, pSub->aOp, pSub->nOp);
+    sqlite3DbFree(db, pSub);
+  }
+  vdbeFreeOpArray(db, p->aOp, p->nOp);
+  sqlite3DbFree(db, p->aLabel);
+  sqlite3DbFree(db, p->aColName);
+  sqlite3DbFree(db, p->zSql);
+  sqlite3DbFree(db, p->pFree);
+  sqlite3DbFree(db, p);
+}
+
+/*
 ** Delete an entire VDBE.
 */
 void sqlite3VdbeDelete(Vdbe *p){
@@ -2352,16 +2370,9 @@ void sqlite3VdbeDelete(Vdbe *p){
   if( p->pNext ){
     p->pNext->pPrev = p->pPrev;
   }
-  releaseMemArray(p->aVar, p->nVar);
-  releaseMemArray(p->aColName, p->nResColumn*COLNAME_N);
-  vdbeFreeOpArray(db, p->aOp, p->nOp);
-  sqlite3DbFree(db, p->aLabel);
-  sqlite3DbFree(db, p->aColName);
-  sqlite3DbFree(db, p->zSql);
   p->magic = VDBE_MAGIC_DEAD;
-  sqlite3DbFree(db, p->pFree);
   p->db = 0;
-  sqlite3DbFree(db, p);
+  sqlite3VdbeDeleteObject(db, p);
 }
 
 /*

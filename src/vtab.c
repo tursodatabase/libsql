@@ -222,7 +222,7 @@ void sqlite3VtabUnlockList(sqlite3 *db){
 ** database connection.
 */
 void sqlite3VtabClear(sqlite3 *db, Table *p){
-  vtabDisconnectAll(0, p);
+  if( !db || db->pnBytesFreed==0 ) vtabDisconnectAll(0, p);
   if( p->azModuleArg ){
     int i;
     for(i=0; i<p->nModuleArg; i++){
@@ -466,7 +466,7 @@ static int vtabCallConstructor(
       *pzErr = sqlite3MPrintf(db, "vtable constructor failed: %s", zModuleName);
     }else {
       *pzErr = sqlite3MPrintf(db, "%s", zErr);
-      sqlite3DbFree(db, zErr);
+      sqlite3_free(zErr);
     }
     sqlite3DbFree(db, pVTable);
   }else if( ALWAYS(pVTable->pVtab) ){
@@ -673,7 +673,7 @@ int sqlite3_declare_vtab(sqlite3 *db, const char *zCreateTable){
       db->pVTab = 0;
     }else{
       sqlite3Error(db, SQLITE_ERROR, zErr);
-      sqlite3DbFree(db, zErr);
+      sqlite3_free(zErr);
       rc = SQLITE_ERROR;
     }
     pParse->declareVtab = 0;
@@ -768,8 +768,8 @@ int sqlite3VtabSync(sqlite3 *db, char **pzErrmsg){
     if( pVtab && (x = pVtab->pModule->xSync)!=0 ){
       rc = x(pVtab);
       sqlite3DbFree(db, *pzErrmsg);
-      *pzErrmsg = pVtab->zErrMsg;
-      pVtab->zErrMsg = 0;
+      *pzErrmsg = sqlite3DbStrDup(db, pVtab->zErrMsg);
+      sqlite3_free(pVtab->zErrMsg);
     }
   }
   db->aVTrans = aVTrans;

@@ -255,7 +255,7 @@ void sqlite3ConnectionUnlocked(sqlite3 *db){
       assert( aArg==aDyn || (aDyn==0 && aArg==aStatic) );
       assert( nArg<=(int)ArraySize(aStatic) || aArg==aDyn );
       if( (!aDyn && nArg==(int)ArraySize(aStatic))
-       || (aDyn && nArg==(int)(sqlite3DbMallocSize(db, aDyn)/sizeof(void*)))
+       || (aDyn && nArg==(int)(sqlite3MallocSize(aDyn)/sizeof(void*)))
       ){
         /* The aArg[] array needs to grow. */
         void **pNew = (void **)sqlite3Malloc(nArg*sizeof(void *)*2);

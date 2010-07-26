@@ -1158,27 +1158,29 @@ void sqlite3FkDelete(sqlite3 *db, Table *pTab){
   for(pFKey=pTab->pFKey; pFKey; pFKey=pNext){
 
     /* Remove the FK from the fkeyHash hash table. */
-    if( pFKey->pPrevTo ){
-      pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
-    }else{
-      void *data = (void *)pFKey->pNextTo;
-      const char *z = (data ? pFKey->pNextTo->zTo : pFKey->zTo);
-      sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, sqlite3Strlen30(z), data);
+    if( !db || db->pnBytesFreed==0 ){
+      if( pFKey->pPrevTo ){
+        pFKey->pPrevTo->pNextTo = pFKey->pNextTo;
+      }else{
+        void *p = (void *)pFKey->pNextTo;
+        const char *z = (p ? pFKey->pNextTo->zTo : pFKey->zTo);
+        sqlite3HashInsert(&pTab->pSchema->fkeyHash, z, sqlite3Strlen30(z), p);
+      }
+      if( pFKey->pNextTo ){
+        pFKey->pNextTo->pPrevTo = pFKey->pPrevTo;
+      }
     }
-    if( pFKey->pNextTo ){
-      pFKey->pNextTo->pPrevTo = pFKey->pPrevTo;
-    }
+
+    /* EV: R-30323-21917 Each foreign key constraint in SQLite is
+    ** classified as either immediate or deferred.
+    */
+    assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
 
     /* Delete any triggers created to implement actions for this FK. */
 #ifndef SQLITE_OMIT_TRIGGER
     fkTriggerDelete(db, pFKey->apTrigger[0]);
     fkTriggerDelete(db, pFKey->apTrigger[1]);
 #endif
-
-    /* EV: R-30323-21917 Each foreign key constraint in SQLite is
-    ** classified as either immediate or deferred.
-    */
-    assert( pFKey->isDeferred==0 || pFKey->isDeferred==1 );
 
     pNext = pFKey->pNextFrom;
     sqlite3DbFree(db, pFKey);
