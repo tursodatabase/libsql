@@ -765,7 +765,7 @@ void sqlite3Pragma(
       }
       sqlite3_free(sqlite3_temp_directory);
       if( zRight[0] ){
-        sqlite3_temp_directory = sqlite3DbStrDup(0, zRight);
+        sqlite3_temp_directory = sqlite3_mprintf("%s", zRight);
       }else{
         sqlite3_temp_directory = 0;
       }

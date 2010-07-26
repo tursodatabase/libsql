@@ -772,7 +772,11 @@ void sqlite3StrAccumAppend(StrAccum *p, const char *z, int N){
       }else{
         p->nAlloc = (int)szNew;
       }
-      zNew = sqlite3DbMallocRaw(p->db, p->nAlloc );
+      if( p->useMalloc==1 ){
+        zNew = sqlite3DbMallocRaw(p->db, p->nAlloc );
+      }else{
+        zNew = sqlite3_malloc(p->nAlloc);
+      }
       if( zNew ){
         memcpy(zNew, p->zText, p->nChar);
         sqlite3StrAccumReset(p);
@@ -797,7 +801,11 @@ char *sqlite3StrAccumFinish(StrAccum *p){
   if( p->zText ){
     p->zText[p->nChar] = 0;
     if( p->useMalloc && p->zText==p->zBase ){
-      p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+      if( p->useMalloc==1 ){
+        p->zText = sqlite3DbMallocRaw(p->db, p->nChar+1 );
+      }else{
+        p->zText = sqlite3_malloc(p->nChar+1);
+      }
       if( p->zText ){
         memcpy(p->zText, p->zBase, p->nChar+1);
       }else{
@@ -813,7 +821,11 @@ char *sqlite3StrAccumFinish(StrAccum *p){
 */
 void sqlite3StrAccumReset(StrAccum *p){
   if( p->zText!=p->zBase ){
-    sqlite3DbFree(p->db, p->zText);
+    if( p->useMalloc==1 ){
+      sqlite3DbFree(p->db, p->zText);
+    }else{
+      sqlite3_free(p->zText);
+    }
   }
   p->zText = 0;
 }
@@ -895,6 +907,7 @@ char *sqlite3_vmprintf(const char *zFormat, va_list ap){
   if( sqlite3_initialize() ) return 0;
 #endif
   sqlite3StrAccumInit(&acc, zBase, sizeof(zBase), SQLITE_MAX_LENGTH);
+  acc.useMalloc = 2;
   sqlite3VXPrintf(&acc, 0, zFormat, ap);
   z = sqlite3StrAccumFinish(&acc);
   return z;

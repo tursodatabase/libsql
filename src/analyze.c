@@ -591,7 +591,7 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
 
             if( pIdx->aSample==0 ){
               static const int sz = sizeof(IndexSample)*SQLITE_INDEX_SAMPLES;
-              pIdx->aSample = (IndexSample *)sqlite3Malloc(sz);
+              pIdx->aSample = (IndexSample *)sqlite3DbMallocRaw(0, sz);
               if( pIdx->aSample==0 ){
                 db->mallocFailed = 1;
                 break;
@@ -619,10 +619,8 @@ int sqlite3AnalysisLoad(sqlite3 *db, int iDb){
                 if( n < 1){
                   pSample->u.z = 0;
                 }else{
-                  pSample->u.z = sqlite3Malloc(n);
-                  if( pSample->u.z ){
-                    memcpy(pSample->u.z, z, n);
-                  }else{
+                  pSample->u.z = sqlite3DbStrNDup(0, z, n);
+                  if( pSample->u.z==0 ){
                     db->mallocFailed = 1;
                     break;
                   }
