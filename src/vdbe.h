@@ -81,7 +81,6 @@ struct SubProgram {
   int nOp;                      /* Elements in aOp[] */
   int nMem;                     /* Number of memory cells required */
   int nCsr;                     /* Number of cursors required */
-  int nRef;                     /* Number of pointers to this structure */
   void *token;                  /* id that may be used to recursive triggers */
   SubProgram *pNext;            /* Next sub-program already visited */
 };
@@ -213,6 +212,10 @@ void sqlite3VdbeSetVarmask(Vdbe*, int);
 UnpackedRecord *sqlite3VdbeRecordUnpack(KeyInfo*,int,const void*,char*,int);
 void sqlite3VdbeDeleteUnpackedRecord(UnpackedRecord*);
 int sqlite3VdbeRecordCompare(int,const void*,UnpackedRecord*);
+
+#ifndef SQLITE_OMIT_TRIGGER
+void sqlite3VdbeLinkSubProgram(Vdbe *, SubProgram *);
+#endif
 
 
 #ifndef NDEBUG

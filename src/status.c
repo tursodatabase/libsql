@@ -191,13 +191,7 @@ int sqlite3_db_status(
 
       db->pnBytesFreed = &nByte;
       for(pVdbe=db->pVdbe; pVdbe; pVdbe=pVdbe->pNext){
-        SubProgram *pSub, *pNext;
 	sqlite3VdbeDeleteObject(db, pVdbe);
-        for(pSub=db->pSubProgram; pSub; pSub=pNext){
-	  pNext = pSub->pNext;
-	  pSub->pNext = 0;
-        }
-	db->pSubProgram = 0;
       }
       db->pnBytesFreed = 0;
 

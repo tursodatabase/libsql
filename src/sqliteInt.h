@@ -861,7 +861,6 @@ struct sqlite3 {
   u8 isTransactionSavepoint;    /* True if the outermost savepoint is a TS */
   i64 nDeferredCons;            /* Net deferred constraints this transaction. */
   int *pnBytesFreed;            /* If not NULL, increment this in DbFree() */
-  SubProgram *pSubProgram;      /* List of sub-programs already visited*/
 
 #ifdef SQLITE_ENABLE_UNLOCK_NOTIFY
   /* The following variables are all protected by the STATIC_MASTER 
